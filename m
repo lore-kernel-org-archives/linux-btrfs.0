@@ -6,29 +6,29 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D985EC43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 03:25:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ACF16C43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 03:25:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id AE15C21104
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 03:25:08 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org AE15C21104
+	by mail.kernel.org (Postfix) with ESMTP id 81CA421104
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 03:25:25 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 81CA421104
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727207AbeKUN5b (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 21 Nov 2018 08:57:31 -0500
-Received: from mx1.redhat.com ([209.132.183.28]:42754 "EHLO mx1.redhat.com"
+        id S1727360AbeKUN5s (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 21 Nov 2018 08:57:48 -0500
+Received: from mx1.redhat.com ([209.132.183.28]:37582 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726165AbeKUN5b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Nov 2018 08:57:31 -0500
-Received: from smtp.corp.redhat.com (int-mx03.intmail.prod.int.phx2.redhat.com [10.5.11.13])
+        id S1726165AbeKUN5s (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Nov 2018 08:57:48 -0500
+Received: from smtp.corp.redhat.com (int-mx02.intmail.prod.int.phx2.redhat.com [10.5.11.12])
         (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
         (No client certificate requested)
-        by mx1.redhat.com (Postfix) with ESMTPS id 81FB337E79;
-        Wed, 21 Nov 2018 03:25:00 +0000 (UTC)
+        by mx1.redhat.com (Postfix) with ESMTPS id E04BD81DE1;
+        Wed, 21 Nov 2018 03:25:16 +0000 (UTC)
 Received: from localhost (ovpn-8-21.pek2.redhat.com [10.72.8.21])
-        by smtp.corp.redhat.com (Postfix) with ESMTP id 97DDA608C4;
-        Wed, 21 Nov 2018 03:24:46 +0000 (UTC)
+        by smtp.corp.redhat.com (Postfix) with ESMTP id AFB61BABB;
+        Wed, 21 Nov 2018 03:25:02 +0000 (UTC)
 From:   Ming Lei <ming.lei@redhat.com>
 To:     Jens Axboe <axboe@kernel.dk>
 Cc:     linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
@@ -49,53 +49,116 @@ Cc:     linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
         Boaz Harrosh <ooo@electrozaur.com>,
         Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com,
         Ming Lei <ming.lei@redhat.com>
-Subject: [PATCH V11 01/19] block: don't use bio->bi_vcnt to figure out segment number
-Date:   Wed, 21 Nov 2018 11:23:09 +0800
-Message-Id: <20181121032327.8434-2-ming.lei@redhat.com>
+Subject: [PATCH V11 02/19] block: introduce multi-page bvec helpers
+Date:   Wed, 21 Nov 2018 11:23:10 +0800
+Message-Id: <20181121032327.8434-3-ming.lei@redhat.com>
 In-Reply-To: <20181121032327.8434-1-ming.lei@redhat.com>
 References: <20181121032327.8434-1-ming.lei@redhat.com>
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.13
-X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.29]); Wed, 21 Nov 2018 03:25:00 +0000 (UTC)
+X-Scanned-By: MIMEDefang 2.79 on 10.5.11.12
+X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.25]); Wed, 21 Nov 2018 03:25:17 +0000 (UTC)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-It is wrong to use bio->bi_vcnt to figure out how many segments
-there are in the bio even though CLONED flag isn't set on this bio,
-because this bio may be splitted or advanced.
+This patch introduces helpers of 'segment_iter_*' for multipage
+bvec support.
 
-So always use bio_segments() in blk_recount_segments(), and it shouldn't
-cause any performance loss now because the physical segment number is figured
-out in blk_queue_split() and BIO_SEG_VALID is set meantime since
-bdced438acd83ad83a6c ("block: setup bi_phys_segments after splitting").
+The introduced helpers treate one bvec as real multi-page segment,
+which may include more than one pages.
 
-Reviewed-by: Christoph Hellwig <hch@lst.de>
-Fixes: 76d8137a3113 ("blk-merge: recaculate segment if it isn't less than max segments")
+The existed helpers of bvec_iter_* are interfaces for supporting current
+bvec iterator which is thought as single-page by drivers, fs, dm and
+etc. These introduced helpers will build single-page bvec in flight, so
+this way won't break current bio/bvec users, which needn't any change.
+
+Follows some multi-page bvec background:
+
+- bvecs stored in bio->bi_io_vec is always multi-page style
+
+- bvec(struct bio_vec) represents one physically contiguous I/O
+  buffer, now the buffer may include more than one page after
+  multi-page bvec is supported, and all these pages represented
+  by one bvec is physically contiguous. Before multi-page bvec
+  support, at most one page is included in one bvec, we call it
+  single-page bvec.
+
+- .bv_page of the bvec points to the 1st page in the multi-page bvec
+
+- .bv_offset of the bvec is the offset of the buffer in the bvec
+
+The effect on the current drivers/filesystem/dm/bcache/...:
+
+- almost everyone supposes that one bvec only includes one single
+  page, so we keep the sp interface not changed, for example,
+  bio_for_each_segment() still returns single-page bvec
+
+- bio_for_each_segment_all() will return single-page bvec too
+
+- during iterating, iterator variable(struct bvec_iter) is always
+  updated in multi-page bvec style, and bvec_iter_advance() is kept
+  not changed
+
+- returned(copied) single-page bvec is built in flight by bvec
+  helpers from the stored multi-page bvec
+
+Reviewed-by: Omar Sandoval <osandov@fb.com>
 Signed-off-by: Ming Lei <ming.lei@redhat.com>
 ---
- block/blk-merge.c | 8 +-------
- 1 file changed, 1 insertion(+), 7 deletions(-)
+ include/linux/bvec.h | 26 +++++++++++++++++++++++---
+ 1 file changed, 23 insertions(+), 3 deletions(-)
 
-diff --git a/block/blk-merge.c b/block/blk-merge.c
-index b1df622cbd85..f52400ce2187 100644
---- a/block/blk-merge.c
-+++ b/block/blk-merge.c
-@@ -368,13 +368,7 @@ void blk_recalc_rq_segments(struct request *rq)
+diff --git a/include/linux/bvec.h b/include/linux/bvec.h
+index 02c73c6aa805..ed90bbf4c9c9 100644
+--- a/include/linux/bvec.h
++++ b/include/linux/bvec.h
+@@ -23,6 +23,7 @@
+ #include <linux/kernel.h>
+ #include <linux/bug.h>
+ #include <linux/errno.h>
++#include <linux/mm.h>
  
- void blk_recount_segments(struct request_queue *q, struct bio *bio)
- {
--	unsigned short seg_cnt;
--
--	/* estimate segment number by bi_vcnt for non-cloned bio */
--	if (bio_flagged(bio, BIO_CLONED))
--		seg_cnt = bio_segments(bio);
--	else
--		seg_cnt = bio->bi_vcnt;
-+	unsigned short seg_cnt = bio_segments(bio);
+ /*
+  * was unsigned short, but we might as well be ready for > 64kB I/O pages
+@@ -50,16 +51,35 @@ struct bvec_iter {
+  */
+ #define __bvec_iter_bvec(bvec, iter)	(&(bvec)[(iter).bi_idx])
  
- 	if (test_bit(QUEUE_FLAG_NO_SG_MERGE, &q->queue_flags) &&
- 			(seg_cnt < queue_max_segments(q)))
+-#define bvec_iter_page(bvec, iter)				\
++#define segment_iter_page(bvec, iter)				\
+ 	(__bvec_iter_bvec((bvec), (iter))->bv_page)
+ 
+-#define bvec_iter_len(bvec, iter)				\
++#define segment_iter_len(bvec, iter)				\
+ 	min((iter).bi_size,					\
+ 	    __bvec_iter_bvec((bvec), (iter))->bv_len - (iter).bi_bvec_done)
+ 
+-#define bvec_iter_offset(bvec, iter)				\
++#define segment_iter_offset(bvec, iter)				\
+ 	(__bvec_iter_bvec((bvec), (iter))->bv_offset + (iter).bi_bvec_done)
+ 
++#define segment_iter_page_idx(bvec, iter)			\
++	(segment_iter_offset((bvec), (iter)) / PAGE_SIZE)
++
++/*
++ * <page, offset,length> of single-page segment.
++ *
++ * This helpers are for building single-page bvec in flight.
++ */
++#define bvec_iter_offset(bvec, iter)					\
++	(segment_iter_offset((bvec), (iter)) % PAGE_SIZE)
++
++#define bvec_iter_len(bvec, iter)					\
++	min_t(unsigned, segment_iter_len((bvec), (iter)),		\
++	      PAGE_SIZE - bvec_iter_offset((bvec), (iter)))
++
++#define bvec_iter_page(bvec, iter)					\
++	nth_page(segment_iter_page((bvec), (iter)),		\
++		 segment_iter_page_idx((bvec), (iter)))
++
+ #define bvec_iter_bvec(bvec, iter)				\
+ ((struct bio_vec) {						\
+ 	.bv_page	= bvec_iter_page((bvec), (iter)),	\
 -- 
 2.9.5
 

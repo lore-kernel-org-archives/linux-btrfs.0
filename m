@@ -2,73 +2,87 @@ Return-Path: <SRS0=CLOi=OA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.3 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A0DFBC43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 08:46:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 41EABC43610
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 09:23:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 69DC220989
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 08:46:19 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 69DC220989
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=lst.de
+	by mail.kernel.org (Postfix) with ESMTP id F318E20989
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 09:23:45 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="KoD1Aprt"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org F318E20989
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728301AbeKUTTs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 21 Nov 2018 14:19:48 -0500
-Received: from verein.lst.de ([213.95.11.211]:50061 "EHLO newverein.lst.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728210AbeKUTTr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Nov 2018 14:19:47 -0500
-Received: by newverein.lst.de (Postfix, from userid 2407)
-        id 4F0CA68C19; Wed, 21 Nov 2018 09:46:08 +0100 (CET)
-Date:   Wed, 21 Nov 2018 09:46:08 +0100
-From:   Christoph Hellwig <hch@lst.de>
-To:     Sagi Grimberg <sagi@grimberg.me>
-Cc:     Ming Lei <ming.lei@redhat.com>, Christoph Hellwig <hch@lst.de>,
-        Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
-        Dave Chinner <dchinner@redhat.com>,
-        Kent Overstreet <kent.overstreet@gmail.com>,
-        Mike Snitzer <snitzer@redhat.com>, dm-devel@redhat.com,
+        id S1729402AbeKUT50 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 21 Nov 2018 14:57:26 -0500
+Received: from bombadil.infradead.org ([198.137.202.133]:54184 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726001AbeKUT5Z (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Nov 2018 14:57:25 -0500
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20170209; h=In-Reply-To:Content-Type:MIME-Version
+        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:
+        Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
+        List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+         bh=p84vfnNyk96jU95Gxdp3t/FHiKW4InuBz1Vk1V8sLrI=; b=KoD1AprtS8paGKywSh1/+FLeh
+        7Z2G2xmOWEnCcxat1bO+87kLkK7Crustsg8guLT6KbMp/4S7GyHZWx/haAagsK9RmjU+BuzGQvbUo
+        eHuES7RpS7WThYdzdODUR/GYpAfT2PM9qGWEI7assHXUo//jIVlOEh4Ep5CCnrbWImhtYZALmY+A/
+        QjpQmxwpInC8nhP8UCQbkDRbONIrTAFHMJGxKQ5b0w/W8k9B+wfSomk6plywiTUP2UC8tUNN5ra+9
+        +wEWUnRKFpoOtUE91VmArJI8dWH0g6s8gl0nJMK2EfaSu1h3NtWNM7jH8xH+pMHfT7hx/CCzCDAk9
+        YPFgerYbA==;
+Received: from hch by bombadil.infradead.org with local (Exim 4.90_1 #2 (Red Hat Linux))
+        id 1gPOj4-0004oM-Sz; Wed, 21 Nov 2018 09:23:14 +0000
+Date:   Wed, 21 Nov 2018 01:23:14 -0800
+From:   Christoph Hellwig <hch@infradead.org>
+To:     Eiichi Tsukata <devel@etsukata.com>
+Cc:     andi@firstfloor.org, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, Theodore Ts'o <tytso@mit.edu>,
+        Andreas Dilger <adilger.kernel@dilger.ca>,
+        Jaegeuk Kim <jaegeuk@kernel.org>, Chao Yu <yuchao0@huawei.com>,
+        Miklos Szeredi <miklos@szeredi.hu>,
+        Bob Peterson <rpeterso@redhat.com>,
+        Andreas Gruenbacher <agruenba@redhat.com>,
         Alexander Viro <viro@zeniv.linux.org.uk>,
-        linux-fsdevel@vger.kernel.org, Shaohua Li <shli@kernel.org>,
-        linux-raid@vger.kernel.org, linux-erofs@lists.ozlabs.org,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        "Darrick J . Wong" <darrick.wong@oracle.com>,
-        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
-        Theodore Ts'o <tytso@mit.edu>, linux-ext4@vger.kernel.org,
-        Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
-        Boaz Harrosh <ooo@electrozaur.com>,
-        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
-Subject: Re: [PATCH V10 09/19] block: introduce bio_bvecs()
-Message-ID: <20181121084608.GA29622@lst.de>
-References: <002fe56b-25e4-573e-c09b-bb12c3e8d25a@grimberg.me> <20181120161651.GB2629@lst.de> <53526aae-fb9b-ee38-0a01-e5899e2d4e4d@grimberg.me> <20181121005902.GA31748@ming.t460p> <2d9bee7a-f010-dcf4-1184-094101058584@grimberg.me> <20181121034415.GA8408@ming.t460p> <2a47d336-c19b-6bf4-c247-d7382871eeea@grimberg.me> <7378bf49-5a7e-5622-d4d1-808ba37ce656@grimberg.me> <20181121050359.GA31915@ming.t460p> <fc268b0e-61b5-aacc-67be-cb7b266c6d8f@grimberg.me>
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net,
+        linux-fsdevel@vger.kernel.org, cluster-devel@redhat.com,
+        linux-unionfs@vger.kernel.org
+Subject: Re: [PATCH v1 3/4] f2fs: fix race between llseek SEEK_END and write
+Message-ID: <20181121092314.GB10667@infradead.org>
+References: <20181121024400.4346-1-devel@etsukata.com>
+ <20181121024400.4346-4-devel@etsukata.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <fc268b0e-61b5-aacc-67be-cb7b266c6d8f@grimberg.me>
-User-Agent: Mutt/1.5.17 (2007-11-01)
+In-Reply-To: <20181121024400.4346-4-devel@etsukata.com>
+User-Agent: Mutt/1.9.2 (2017-12-15)
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Nov 20, 2018 at 09:35:07PM -0800, Sagi Grimberg wrote:
->> Given it is over TCP, I guess it should be doable for you to preallocate one
->> 256-bvec table in one page for each request, then sets the max segment size as
->> (unsigned int)-1, and max segment number as 256, the preallocated table
->> should work anytime.
->
-> 256 bvec table is really a lot to preallocate, especially when its not
-> needed, I can easily initialize the bvec_iter on the bio bvec. If this
-> involves preallocation of the worst-case than I don't consider this to
-> be an improvement.
+On Wed, Nov 21, 2018 at 11:43:59AM +0900, Eiichi Tsukata wrote:
+> This patch itself seems to be just a cleanup but with the
+> commit b25bd1d9fd87 ("vfs: fix race between llseek SEEK_END and write")
+> it fixes race.
 
-Ok, I took a look at the nvme-tcp code and it seems you care about
-bios because you want a contiguos bio chunk for sending it down
-the networking code.  Yes, in that case we sort of need to iterate
-over bios.  But you already have a special case for discard, so you
-don't really need any of the magic in the bio_bvecs() helper either
-can can just count bi_vcnt in the bio.
+Please move this patch to the beginning of the series and replace
+the commit log with something like the one below.  Note that your
+commit id is different from the one that will appear once applied
+upstream, so the aboe isn't too helpful.
+
+---
+f2fs: use generic_file_llseek
+
+f2fs always passes inode->i_sb->s_maxbytes to generic_file_llseek_size,
+and thus should simply use generic_file_llseek.  For now this is a just
+a cleanup, but it will allow f2fs to pick up a race fix in
+generic_file_llseek for free.

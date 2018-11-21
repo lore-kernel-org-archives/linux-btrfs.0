@@ -2,110 +2,170 @@ Return-Path: <SRS0=CLOi=OA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=unavailable autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-5.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 21DECC43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 05:35:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BB488C43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 07:31:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E931B21104
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 05:35:19 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E931B21104
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=grimberg.me
+	by mail.kernel.org (Postfix) with ESMTP id 72B7B2146F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 07:31:52 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="frB/VVYJ"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 72B7B2146F
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726705AbeKUQIK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 21 Nov 2018 11:08:10 -0500
-Received: from mail-pl1-f195.google.com ([209.85.214.195]:36546 "EHLO
-        mail-pl1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725995AbeKUQIK (ORCPT
+        id S1726195AbeKUSFN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 21 Nov 2018 13:05:13 -0500
+Received: from userp2130.oracle.com ([156.151.31.86]:36696 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726001AbeKUSFM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Nov 2018 11:08:10 -0500
-Received: by mail-pl1-f195.google.com with SMTP id y6-v6so3776208plt.3;
-        Tue, 20 Nov 2018 21:35:11 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=Uw2Rc/+SN/AQ2BCQF67M559YyvRnmu3XKYQrGvf+BK4=;
-        b=J3V8cWzJgIRg5cI/uFjFq6RzxJcszoO5u1FeQuG6n8nOJPx+49XnivAVd3vIK20cWc
-         BAsFneKl3ts/xYgp07jxKFxzGb6mEpTMe6yOLv/s3gSiCoXBSGsZFhpIMeMd4ehDj/tT
-         XLz084oQqInS+MfbQXGbSbD+/X7LxFcWI1SyZlYKjYFeXH/ZQER6yvFvKeYfbJ9aAd7f
-         D0ebC2Q5z005XpBrp75yzonBw0o/Ln2lYb42DjulbhWRqinJltFNHRTnXdpSFV8bRa23
-         8CT+JgKue7G1KLcDu/D0fZDqBkIymqT1DYlygBitaSCK3Wb0VfFnmJOv83zEE3JsjFmK
-         Skng==
-X-Gm-Message-State: AA+aEWb8Hpcnblk+XGpFNpZnVXC3sfU10djgKmOgoFuW3+yoNbyz3KYu
-        Vccz16UpJFzem29qH1ZWVCo=
-X-Google-Smtp-Source: AFSGD/WkT/yqAhpG/m/H/089gI8a+YTXF6dmZ52eIxWlemBQhNwe4w7mEaT1whWhxkeR4rRsjCwFKg==
-X-Received: by 2002:a17:902:1126:: with SMTP id d35mr1769887pla.1.1542778511439;
-        Tue, 20 Nov 2018 21:35:11 -0800 (PST)
-Received: from ?IPv6:2601:647:4800:973f:8a0:7611:3223:f4db? ([2601:647:4800:973f:8a0:7611:3223:f4db])
-        by smtp.gmail.com with ESMTPSA id 19sm42960007pfs.108.2018.11.20.21.35.08
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 20 Nov 2018 21:35:10 -0800 (PST)
-Subject: Re: [PATCH V10 09/19] block: introduce bio_bvecs()
-To:     Ming Lei <ming.lei@redhat.com>
-Cc:     Christoph Hellwig <hch@lst.de>, Jens Axboe <axboe@kernel.dk>,
-        linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-mm@kvack.org, Dave Chinner <dchinner@redhat.com>,
-        Kent Overstreet <kent.overstreet@gmail.com>,
-        Mike Snitzer <snitzer@redhat.com>, dm-devel@redhat.com,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        linux-fsdevel@vger.kernel.org, Shaohua Li <shli@kernel.org>,
-        linux-raid@vger.kernel.org, linux-erofs@lists.ozlabs.org,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        "Darrick J . Wong" <darrick.wong@oracle.com>,
-        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
-        Theodore Ts'o <tytso@mit.edu>, linux-ext4@vger.kernel.org,
-        Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
-        Boaz Harrosh <ooo@electrozaur.com>,
-        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
-References: <20181115085306.9910-10-ming.lei@redhat.com>
- <20181116134541.GH3165@lst.de>
- <002fe56b-25e4-573e-c09b-bb12c3e8d25a@grimberg.me>
- <20181120161651.GB2629@lst.de>
- <53526aae-fb9b-ee38-0a01-e5899e2d4e4d@grimberg.me>
- <20181121005902.GA31748@ming.t460p>
- <2d9bee7a-f010-dcf4-1184-094101058584@grimberg.me>
- <20181121034415.GA8408@ming.t460p>
- <2a47d336-c19b-6bf4-c247-d7382871eeea@grimberg.me>
- <7378bf49-5a7e-5622-d4d1-808ba37ce656@grimberg.me>
- <20181121050359.GA31915@ming.t460p>
-From:   Sagi Grimberg <sagi@grimberg.me>
-Message-ID: <fc268b0e-61b5-aacc-67be-cb7b266c6d8f@grimberg.me>
-Date:   Tue, 20 Nov 2018 21:35:07 -0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+        Wed, 21 Nov 2018 13:05:12 -0500
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wAL7TNBH141900;
+        Wed, 21 Nov 2018 07:31:45 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : subject : to :
+ cc : references : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2018-07-02;
+ bh=uSANn56gxSC1EyF/iM1sm126dICUUnjNriLf87BYFfw=;
+ b=frB/VVYJ+OiA6uSEAg1rwmSFRESA5dmoiQ3Px/SQpGw1G2y2I/BsNhAQRjH6OWnPo67D
+ fqFDBGwUyRRNb5Q42e602oQrRDRZ8GvDmD4v40F3MYUG0G7oGd96hfSaGSm2Od39wlFd
+ PuEMZFRBTPJYs+isD6Op7i9qM30HvfVsl289r7Bvn+ZSVQHfyWDktVn2VIUuYU15flUl
+ yF/36tZSAwpoKus089RxGBt3XLfhPbr5Gny8GWD0gb3ZMbYiiBj5OKrVV2h0LqwnyULv
+ BbWB9jy69BHCIyvrGuJz/PxDyCbZzGf1VuTl5mS+Y6GwaipiWV3VgA76VCbxawEEO4Y0 3w== 
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by userp2130.oracle.com with ESMTP id 2ntadtyvxd-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 21 Nov 2018 07:31:45 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id wAL7Vip4031609
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 21 Nov 2018 07:31:44 GMT
+Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id wAL7Vhnq021494;
+        Wed, 21 Nov 2018 07:31:43 GMT
+Received: from [10.186.50.4] (/10.186.50.4)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Tue, 20 Nov 2018 23:31:43 -0800
+From:   Anand Jain <anand.jain@oracle.com>
+Subject: Re: [RFC] BTRFS_DEV_REPLACE_ITEM_STATE_* doesn't match with on disk
+To:     David Sterba <dsterba@suse.com>, dsterba@suse.cz
+Cc:     Nikolay Borisov <nborisov@suse.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <e932064c-6182-a87c-3475-bf1765b165bc@oracle.com>
+ <e19a1d1c-3d93-7b5c-01b1-83c0c53323c8@suse.com>
+ <dd4eb64b-0841-1f81-04e1-309212bbbedd@oracle.com>
+X-Mozilla-News-Host: news://nntp.lore.kernel.org
+Message-ID: <fad69f0c-a56e-0cbc-2ae0-85957b8f339e@oracle.com>
+Date:   Wed, 21 Nov 2018 15:31:34 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
+ Thunderbird/52.9.1
 MIME-Version: 1.0
-In-Reply-To: <20181121050359.GA31915@ming.t460p>
+In-Reply-To: <dd4eb64b-0841-1f81-04e1-309212bbbedd@oracle.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9083 signatures=668683
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1810050000 definitions=main-1811210070
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
->> Wait, I see that the bvec is still a single array per bio. When you said
->> a table I thought you meant a 2-dimentional array...
-> 
-> I mean a new 1-d table A has to be created for multiple bios in one rq,
-> and build it in the following way
-> 
->             rq_for_each_bvec(tmp, rq, rq_iter)
->                      *A = tmp;
-> 
-> Then you can pass A to iov_iter_bvec() & send().
-> 
-> Given it is over TCP, I guess it should be doable for you to preallocate one
-> 256-bvec table in one page for each request, then sets the max segment size as
-> (unsigned int)-1, and max segment number as 256, the preallocated table
-> should work anytime.
+David, any comments on this please.
 
-256 bvec table is really a lot to preallocate, especially when its not
-needed, I can easily initialize the bvec_iter on the bio bvec. If this
-involves preallocation of the worst-case than I don't consider this to
-be an improvement.
+Thanks, Anand
+
+
+On 11/13/2018 06:32 PM, Anand Jain wrote:
+> 
+> David, Gentle ping.
+> 
+> Thanks, Anand
+> 
+> On 11/12/2018 03:50 PM, Nikolay Borisov wrote:
+>>
+>>
+>> On 12.11.18 г. 6:58 ч., Anand Jain wrote:
+>>>
+>>> The dev_replace_state defines are miss matched between the
+>>> BTRFS_IOCTL_DEV_REPLACE_STATE_* and BTRFS_DEV_REPLACE_ITEM_STATE_* [1].
+>>>
+>>> [1]
+>>> -----------------------------
+>>> btrfs.h:#define BTRFS_IOCTL_DEV_REPLACE_STATE_FINISHED        2
+>>> btrfs.h:#define BTRFS_IOCTL_DEV_REPLACE_STATE_CANCELED        3
+>>> btrfs.h:#define BTRFS_IOCTL_DEV_REPLACE_STATE_SUSPENDED        4
+>>>
+>>> btrfs_tree.h:#define BTRFS_DEV_REPLACE_ITEM_STATE_SUSPENDED    2
+>>> btrfs_tree.h:#define BTRFS_DEV_REPLACE_ITEM_STATE_FINISHED    3
+>>> btrfs_tree.h:#define BTRFS_DEV_REPLACE_ITEM_STATE_CANCELED    4
+>>> -----------------------------
+>>>
+>>> The BTRFS_DEV_REPLACE_ITEM_STATE_* series is unused in both btrfs.ko and
+>>> btrfs-progs, the on-disk also follows BTRFS_IOCTL_DEV_REPLACE_STATE_*
+>>> (we set dev_replace->replace_state using the
+>>> BTRFS_IOCTL_DEV_REPLACE_STATE_* defines and write to the on-disk).
+>>>
+>>>   359         btrfs_set_dev_replace_replace_state(eb, ptr,
+>>>   360                 dev_replace->replace_state);
+>>>
+>>> IMO it should be ok to delete the BTRFS_DEV_REPLACE_ITEM_STATE_*
+>>> altogether? But how about the userland progs other than btrfs-progs?
+>>> If not at least fix the miss match as in [2], any comments?
+>>
+>> Unfortunately you are right. This seems to stem from sloppy job back in
+>> the days of initial dev-replace support. BTRFS_DEV_REPLACE_ITEM_STATE_*
+>> were added in e922e087a35c ("Btrfs: enhance btrfs structures for device
+>> replace support"), yet they were never used. And the
+>> IOCTL_DEV_REPLACE_STATE* were added in e93c89c1aaaa ("Btrfs: add new
+>> sources for device replace code").
+>>
+>> It looks like the ITEM_STATE* definitions were stillborn so to speak and
+>> personally I'm in favor of removing them. They shouldn't have been
+>> merged in the first place and indeed the patch doesn't even have a
+>> Reviewed-by tag. So it originated from the, I'd say, spartan days of
+>> btrfs development...
+>>
+>> David,  any code which is using BTRFS_DEV_REPLACE_ITEM_STATE_SUSPENDED
+>> is inherently broken, so how about we remove those definitions, then
+>> when it's compilation is broken in the future the author will actually
+>> have a chance to fix it, though it's highly unlikely anyone is relying
+>> on those definitions.
+>>
+>>
+>>>
+>>> [2]
+>>> --------------------------------------
+>>> diff --git a/include/uapi/linux/btrfs_tree.h
+>>> b/include/uapi/linux/btrfs_tree.h
+>>> index aff1356c2bb8..9ffa7534cadf 100644
+>>> --- a/include/uapi/linux/btrfs_tree.h
+>>> +++ b/include/uapi/linux/btrfs_tree.h
+>>> @@ -805,9 +805,9 @@ struct btrfs_dev_stats_item {
+>>>   #define 
+>>> BTRFS_DEV_REPLACE_ITEM_CONT_READING_FROM_SRCDEV_MODE_AVOID     1
+>>>   #define BTRFS_DEV_REPLACE_ITEM_STATE_NEVER_STARTED     0
+>>>   #define BTRFS_DEV_REPLACE_ITEM_STATE_STARTED           1
+>>> -#define BTRFS_DEV_REPLACE_ITEM_STATE_SUSPENDED         2
+>>> -#define BTRFS_DEV_REPLACE_ITEM_STATE_FINISHED          3
+>>> -#define BTRFS_DEV_REPLACE_ITEM_STATE_CANCELED          4
+>>> +#define BTRFS_DEV_REPLACE_ITEM_STATE_FINISHED          2
+>>> +#define BTRFS_DEV_REPLACE_ITEM_STATE_CANCELED          3
+>>> +#define BTRFS_DEV_REPLACE_ITEM_STATE_SUSPENDED         4
+>>>
+>>>   struct btrfs_dev_replace_item {
+>>>          /*
+>>> --------------------------------------
+>>>
+>>>
+>>> Thanks, Anand
+>>>
+

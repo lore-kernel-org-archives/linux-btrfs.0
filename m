@@ -2,129 +2,62 @@ Return-Path: <SRS0=CLOi=OA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.8 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 61704C43610
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 13:32:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 55446C04EBA
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 13:59:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 32B82214DA
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 13:32:55 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 32B82214DA
+	by mail.kernel.org (Postfix) with ESMTP id 1E0C52146F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 13:59:14 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="di97X2gW"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1E0C52146F
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=lst.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730716AbeKVAHL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 21 Nov 2018 19:07:11 -0500
-Received: from verein.lst.de ([213.95.11.211]:51393 "EHLO newverein.lst.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727486AbeKVAHL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Nov 2018 19:07:11 -0500
-Received: by newverein.lst.de (Postfix, from userid 2407)
-        id B141D68C19; Wed, 21 Nov 2018 14:32:44 +0100 (CET)
-Date:   Wed, 21 Nov 2018 14:32:44 +0100
+        id S1730102AbeKVAdo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 21 Nov 2018 19:33:44 -0500
+Received: from bombadil.infradead.org ([198.137.202.133]:33534 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729157AbeKVAdo (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Nov 2018 19:33:44 -0500
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20170209; h=Content-Transfer-Encoding:
+        MIME-Version:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:
+        Content-ID:Content-Description:Resent-Date:Resent-From:Resent-Sender:
+        Resent-To:Resent-Cc:Resent-Message-ID:In-Reply-To:References:List-Id:
+        List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+         bh=aCpM8O44TpcfxbgrCpIjUUinsfY0nw8Lwh4bPHbsg7w=; b=di97X2gWXrJCyn3cBywKryrzS
+        TRhdqDPHO0LoDzXPnPd09zAoMXVsXHnn9eEyckMJxPe+5vBkezJrV1PCiet8AcEPHSXnFhkZ33guA
+        kdCVTeQQa/qK4L7HY8MekLQaI8tZiBrn2jd1sWJ2b4LK5+qbDxV9hHXbabMV6TyKl+Fh8Ix+d8Lac
+        qjF82gpwhZkEBlZtNIjeLcGnCrmQ7GaTT02LqlIcYNYDQhurWEi7ySFhX+EKOfy5a7amDrOTXWUEz
+        MzGBBlt/LlG/qPtMwoWb/9h52uLX7IuhDTzL9OVrdzTp9Hz1DhG0yxUM+F+KmqSuywWNbD1UOYt7B
+        /WI5IZEVQ==;
+Received: from 089144201193.atnat0010.highway.a1.net ([89.144.201.193] helo=localhost)
+        by bombadil.infradead.org with esmtpsa (Exim 4.90_1 #2 (Red Hat Linux))
+        id 1gPT27-0006gM-QE; Wed, 21 Nov 2018 13:59:12 +0000
 From:   Christoph Hellwig <hch@lst.de>
-To:     Ming Lei <ming.lei@redhat.com>
-Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
-        Theodore Ts'o <tytso@mit.edu>, Omar Sandoval <osandov@fb.com>,
-        Sagi Grimberg <sagi@grimberg.me>,
-        Dave Chinner <dchinner@redhat.com>,
-        Kent Overstreet <kent.overstreet@gmail.com>,
-        Mike Snitzer <snitzer@redhat.com>, dm-devel@redhat.com,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        linux-fsdevel@vger.kernel.org, Shaohua Li <shli@kernel.org>,
-        linux-raid@vger.kernel.org, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org,
-        "Darrick J . Wong" <darrick.wong@oracle.com>,
-        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
-        Christoph Hellwig <hch@lst.de>, linux-ext4@vger.kernel.org,
-        Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
-        Boaz Harrosh <ooo@electrozaur.com>,
-        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
-Subject: Re: [PATCH V11 03/19] block: introduce bio_for_each_bvec()
-Message-ID: <20181121133244.GB1640@lst.de>
-References: <20181121032327.8434-1-ming.lei@redhat.com> <20181121032327.8434-4-ming.lei@redhat.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Ming Lei <ming.lei@redhat.com>, Omar Sandoval <osandov@fb.com>,
+        linux-block@vger.kernel.org
+Subject: btrfs bio usage cleanups for multi-page bvec enabledment
+Date:   Wed, 21 Nov 2018 14:59:06 +0100
+Message-Id: <20181121135908.4720-1-hch@lst.de>
+X-Mailer: git-send-email 2.19.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20181121032327.8434-4-ming.lei@redhat.com>
-User-Agent: Mutt/1.5.17 (2007-11-01)
+Content-Transfer-Encoding: 8bit
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-> +#define bio_iter_mp_iovec(bio, iter)				\
-> +	segment_iter_bvec((bio)->bi_io_vec, (iter))
+Hi btrfs maintainers,
 
-Besides the mp naming we'd like to get rid off there also is just
-a single user of this macro, please just expand it there.
-
-> +#define segment_iter_bvec(bvec, iter)				\
-> +((struct bio_vec) {							\
-> +	.bv_page	= segment_iter_page((bvec), (iter)),	\
-> +	.bv_len		= segment_iter_len((bvec), (iter)),	\
-> +	.bv_offset	= segment_iter_offset((bvec), (iter)),	\
-> +})
-
-And for this one please keep the segment vs bvec versions of these
-macros close together in the file please, right now it follow the
-bvec_iter_bvec variant closely.
-
-> +static inline void __bio_advance_iter(struct bio *bio, struct bvec_iter *iter,
-> +				      unsigned bytes, unsigned max_seg_len)
->  {
->  	iter->bi_sector += bytes >> 9;
->  
->  	if (bio_no_advance_iter(bio))
->  		iter->bi_size -= bytes;
->  	else
-> -		bvec_iter_advance(bio->bi_io_vec, iter, bytes);
-> +		__bvec_iter_advance(bio->bi_io_vec, iter, bytes, max_seg_len);
->  		/* TODO: It is reasonable to complete bio with error here. */
->  }
->  
-> +static inline void bio_advance_iter(struct bio *bio, struct bvec_iter *iter,
-> +				    unsigned bytes)
-> +{
-> +	__bio_advance_iter(bio, iter, bytes, PAGE_SIZE);
-> +}
-
-Btw, I think the remaining users of bio_advance_iter() in bio.h
-should probably switch to using __bio_advance_iter to make them a little
-more clear to read.
-
-> +/* returns one real segment(multi-page bvec) each time */
-
-space before the brace, please.
-
-> +#define BVEC_MAX_LEN  ((unsigned int)-1)
-
->  	while (bytes) {
-> +		unsigned segment_len = segment_iter_len(bv, *iter);
->  
-> -		iter->bi_bvec_done += len;
-> +		if (max_seg_len < BVEC_MAX_LEN)
-> +			segment_len = min_t(unsigned, segment_len,
-> +					    max_seg_len -
-> +					    bvec_iter_offset(bv, *iter));
-> +
-> +		segment_len = min(bytes, segment_len);
-
-Please stick to passing the magic zero here as can often generate more
-efficient code.
-
-Talking about efficent code - I wonder how much code size we'd save
-by moving this function out of line..
-
-But while looking over this I wonder why we even need the max_seg_len
-here.  The only thing __bvec_iter_advance does it to move bi_bvec_done
-and bi_idx forward, with corresponding decrements of bi_size.  As far
-as I can tell the only thing that max_seg_len does is that we need
-to more iterations of the while loop to archive the same thing.
-
-And actual bvec used by the caller will be obtained using
-bvec_iter_bvec or segment_iter_bvec depending on if they want multi-page
-or single-page variants.
+can you review and ACK these two btrfs patches that clean up some
+interactions with the bio code?  I'd like to get these in as the
+base of Mings multi-page bio_vec work, which currently contain some
+not quite as nice workaround in this area.

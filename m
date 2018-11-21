@@ -2,30 +2,36 @@ Return-Path: <SRS0=CLOi=OA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5549BC43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 14:55:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3E305C43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 15:08:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1FE07214C4
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 14:55:13 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1FE07214C4
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=lst.de
+	by mail.kernel.org (Postfix) with ESMTP id 04B2021479
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 15:08:00 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 04B2021479
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731370AbeKVB3t (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 21 Nov 2018 20:29:49 -0500
-Received: from verein.lst.de ([213.95.11.211]:51843 "EHLO newverein.lst.de"
+        id S1731192AbeKVBmL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 21 Nov 2018 20:42:11 -0500
+Received: from mx1.redhat.com ([209.132.183.28]:34052 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1731048AbeKVB3t (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Nov 2018 20:29:49 -0500
-Received: by newverein.lst.de (Postfix, from userid 2407)
-        id 4ABAF68C19; Wed, 21 Nov 2018 15:55:02 +0100 (CET)
-Date:   Wed, 21 Nov 2018 15:55:02 +0100
-From:   Christoph Hellwig <hch@lst.de>
-To:     Ming Lei <ming.lei@redhat.com>
+        id S1729828AbeKVBmJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Nov 2018 20:42:09 -0500
+Received: from smtp.corp.redhat.com (int-mx02.intmail.prod.int.phx2.redhat.com [10.5.11.12])
+        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mx1.redhat.com (Postfix) with ESMTPS id 65ADB3002F82;
+        Wed, 21 Nov 2018 15:07:21 +0000 (UTC)
+Received: from ming.t460p (ovpn-8-20.pek2.redhat.com [10.72.8.20])
+        by smtp.corp.redhat.com (Postfix) with ESMTPS id 0B9468271A;
+        Wed, 21 Nov 2018 15:06:15 +0000 (UTC)
+Date:   Wed, 21 Nov 2018 23:06:11 +0800
+From:   Ming Lei <ming.lei@redhat.com>
+To:     Christoph Hellwig <hch@lst.de>
 Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
         linux-kernel@vger.kernel.org, linux-mm@kvack.org,
         Theodore Ts'o <tytso@mit.edu>, Omar Sandoval <osandov@fb.com>,
@@ -39,159 +45,48 @@ Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
         linux-btrfs@vger.kernel.org,
         "Darrick J . Wong" <darrick.wong@oracle.com>,
         linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
-        Christoph Hellwig <hch@lst.de>, linux-ext4@vger.kernel.org,
-        Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
-        Boaz Harrosh <ooo@electrozaur.com>,
+        linux-ext4@vger.kernel.org, Coly Li <colyli@suse.de>,
+        linux-bcache@vger.kernel.org, Boaz Harrosh <ooo@electrozaur.com>,
         Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
-Subject: Re: [PATCH V11 15/19] block: enable multipage bvecs
-Message-ID: <20181121145502.GA3241@lst.de>
-References: <20181121032327.8434-1-ming.lei@redhat.com> <20181121032327.8434-16-ming.lei@redhat.com>
+Subject: Re: [PATCH V11 02/19] block: introduce multi-page bvec helpers
+Message-ID: <20181121150610.GA19111@ming.t460p>
+References: <20181121032327.8434-1-ming.lei@redhat.com>
+ <20181121032327.8434-3-ming.lei@redhat.com>
+ <20181121131928.GA1640@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181121032327.8434-16-ming.lei@redhat.com>
-User-Agent: Mutt/1.5.17 (2007-11-01)
+In-Reply-To: <20181121131928.GA1640@lst.de>
+User-Agent: Mutt/1.9.1 (2017-09-22)
+X-Scanned-By: MIMEDefang 2.79 on 10.5.11.12
+X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.47]); Wed, 21 Nov 2018 15:07:21 +0000 (UTC)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Nov 21, 2018 at 11:23:23AM +0800, Ming Lei wrote:
->  	if (bio->bi_vcnt > 0) {
-> -		struct bio_vec *bv = &bio->bi_io_vec[bio->bi_vcnt - 1];
-> +		struct bio_vec bv;
-> +		struct bio_vec *seg = &bio->bi_io_vec[bio->bi_vcnt - 1];
->  
-> -		if (page == bv->bv_page && off == bv->bv_offset + bv->bv_len) {
-> -			bv->bv_len += len;
-> +		bvec_last_segment(seg, &bv);
-> +
-> +		if (page == bv.bv_page && off == bv.bv_offset + bv.bv_len) {
+On Wed, Nov 21, 2018 at 02:19:28PM +0100, Christoph Hellwig wrote:
+> On Wed, Nov 21, 2018 at 11:23:10AM +0800, Ming Lei wrote:
+> > This patch introduces helpers of 'segment_iter_*' for multipage
+> > bvec support.
+> > 
+> > The introduced helpers treate one bvec as real multi-page segment,
+> > which may include more than one pages.
+> 
+> Unless I'm missing something these bvec vs segment names are exactly
+> inverted vs how we use it elsewhere.
+> 
+> In the iterators we use segment for single-page bvec, and bvec for multi
+> page ones, and here it is inverse.  Please switch it around.
 
-I think this we can simplify the try to merge into bio case a bit,
-and also document it better with something like this:
+bvec_iter_* is used for single-page bvec in current linus tree, and there are
+lots of users now:
 
-diff --git a/block/bio.c b/block/bio.c
-index 854676edc438..cc913281a723 100644
---- a/block/bio.c
-+++ b/block/bio.c
-@@ -822,54 +822,40 @@ EXPORT_SYMBOL(bio_add_pc_page);
-  * @page: page to add
-  * @len: length of the data to add
-  * @off: offset of the data in @page
-+ * @same_page: if %true only merge if the new data is in the same physical
-+ *		page as the last segment of the bio.
-  *
-- * Try to add the data at @page + @off to the last page of @bio.  This is a
-+ * Try to add the data at @page + @off to the last bvec of @bio.  This is a
-  * a useful optimisation for file systems with a block size smaller than the
-  * page size.
-  *
-  * Return %true on success or %false on failure.
-  */
- bool __bio_try_merge_page(struct bio *bio, struct page *page,
--		unsigned int len, unsigned int off)
-+		unsigned int len, unsigned int off, bool same_page)
- {
- 	if (WARN_ON_ONCE(bio_flagged(bio, BIO_CLONED)))
- 		return false;
- 
- 	if (bio->bi_vcnt > 0) {
--		struct bio_vec bv;
--		struct bio_vec *seg = &bio->bi_io_vec[bio->bi_vcnt - 1];
--
--		bvec_last_segment(seg, &bv);
--
--		if (page == bv.bv_page && off == bv.bv_offset + bv.bv_len) {
--			seg->bv_len += len;
--			bio->bi_iter.bi_size += len;
--			return true;
--		}
-+		struct bio_vec *bv = &bio->bi_io_vec[bio->bi_vcnt - 1];
-+		phys_addr_t vec_addr = page_to_phys(bv->bv_page);
-+		phys_addr_t page_addr = page_to_phys(page);
-+
-+		if (vec_addr + bv->bv_offset + bv->bv_len != page_addr + off)
-+			return false;
-+		if (same_page &&
-+		    (vec_addr & PAGE_SIZE) != (page_addr & PAGE_SIZE))
-+			return false;
-+
-+		bv->bv_len += len;
-+		bio->bi_iter.bi_size += len;
-+		return true;
- 	}
- 	return false;
- }
- EXPORT_SYMBOL_GPL(__bio_try_merge_page);
- 
--static bool bio_try_merge_segment(struct bio *bio, struct page *page,
--				  unsigned int len, unsigned int off)
--{
--	if (WARN_ON_ONCE(bio_flagged(bio, BIO_CLONED)))
--		return false;
--
--	if (bio->bi_vcnt > 0) {
--		struct bio_vec *seg = &bio->bi_io_vec[bio->bi_vcnt - 1];
--
--		if (page_to_phys(seg->bv_page) + seg->bv_offset + seg->bv_len ==
--		    page_to_phys(page) + off) {
--			seg->bv_len += len;
--			bio->bi_iter.bi_size += len;
--			return true;
--		}
--	}
--	return false;
--}
--
- /**
-  * __bio_add_page - add page to a bio in a new segment
-  * @bio: destination bio
-@@ -910,7 +896,7 @@ EXPORT_SYMBOL_GPL(__bio_add_page);
- int bio_add_page(struct bio *bio, struct page *page,
- 		 unsigned int len, unsigned int offset)
- {
--	if (!bio_try_merge_segment(bio, page, len, offset)) {
-+	if (!__bio_try_merge_page(bio, page, len, offset, false)) {
- 		if (bio_full(bio))
- 			return 0;
- 		__bio_add_page(bio, page, len, offset);
-diff --git a/fs/iomap.c b/fs/iomap.c
-index ccc2ba115f4d..d918acb9bfc9 100644
---- a/fs/iomap.c
-+++ b/fs/iomap.c
-@@ -313,7 +313,7 @@ iomap_readpage_actor(struct inode *inode, loff_t pos, loff_t length, void *data,
- 	 */
- 	sector = iomap_sector(iomap, pos);
- 	if (ctx->bio && bio_end_sector(ctx->bio) == sector) {
--		if (__bio_try_merge_page(ctx->bio, page, plen, poff))
-+		if (__bio_try_merge_page(ctx->bio, page, plen, poff, true))
- 			goto done;
- 		is_contig = true;
- 	}
-diff --git a/fs/xfs/xfs_aops.c b/fs/xfs/xfs_aops.c
-index 5c2190216614..b9fd44168f61 100644
---- a/fs/xfs/xfs_aops.c
-+++ b/fs/xfs/xfs_aops.c
-@@ -616,7 +616,7 @@ xfs_add_to_ioend(
- 				bdev, sector);
- 	}
- 
--	if (!__bio_try_merge_page(wpc->ioend->io_bio, page, len, poff)) {
-+	if (!__bio_try_merge_page(wpc->ioend->io_bio, page, len, poff, true)) {
- 		if (iop)
- 			atomic_inc(&iop->write_count);
- 		if (bio_full(wpc->ioend->io_bio))
-diff --git a/include/linux/bio.h b/include/linux/bio.h
-index e5b975fa0558..f08e6940c1ab 100644
---- a/include/linux/bio.h
-+++ b/include/linux/bio.h
-@@ -442,7 +442,7 @@ extern int bio_add_page(struct bio *, struct page *, unsigned int,unsigned int);
- extern int bio_add_pc_page(struct request_queue *, struct bio *, struct page *,
- 			   unsigned int, unsigned int);
- bool __bio_try_merge_page(struct bio *bio, struct page *page,
--		unsigned int len, unsigned int off);
-+		unsigned int len, unsigned int off, bool same_page);
- void __bio_add_page(struct bio *bio, struct page *page,
- 		unsigned int len, unsigned int off);
- int bio_iov_iter_get_pages(struct bio *bio, struct iov_iter *iter);
+[linux]$ git grep -n "bvec_iter_*" ./ | wc
+    191     995   13242
+
+If we have to switch it first, it can be a big change, just wondering if Jens
+is happy with that?
+
+Thanks,
+Ming

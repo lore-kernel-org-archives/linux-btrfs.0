@@ -7,61 +7,61 @@ X-Spam-Status: No, score=-10.5 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3EF7CC43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 19:03:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8765DC43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 19:03:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id F07A6214D9
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 19:03:27 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4AE5F214D9
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 19:03:29 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="nlUJHKDk"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org F07A6214D9
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="G/Nph4tg"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4AE5F214D9
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732023AbeKVFi6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 22 Nov 2018 00:38:58 -0500
-Received: from mail-yw1-f48.google.com ([209.85.161.48]:43291 "EHLO
-        mail-yw1-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730172AbeKVFi5 (ORCPT
+        id S1732032AbeKVFi7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 22 Nov 2018 00:38:59 -0500
+Received: from mail-yb1-f195.google.com ([209.85.219.195]:40091 "EHLO
+        mail-yb1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1730172AbeKVFi7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Nov 2018 00:38:57 -0500
-Received: by mail-yw1-f48.google.com with SMTP id l200so2670232ywe.10
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Nov 2018 11:03:25 -0800 (PST)
+        Thu, 22 Nov 2018 00:38:59 -0500
+Received: by mail-yb1-f195.google.com with SMTP id g9-v6so2635213ybh.7
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Nov 2018 11:03:27 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references;
-        bh=590qDmUnB326tQzkd/+1OymhYv+QHhCcRR/OCakP6Ok=;
-        b=nlUJHKDkxzQc8oc19Js5/CtTCf2WOqSJp169/0rdFOdmV7PW3oru8CuQnjs4VUR6QV
-         vVCZVLavx8PbuRkcFQZseQcXa+wyYGLdBFHldyKVcvDw9fg6xkuMR1Sbnxf6iSHGyd/o
-         a5X/1gNq4+BPGcPPuO5JBSZde+AO9XB7w4fgcKF3AxZYY8xDtBSzeniA9YsCaXmZfuxG
-         X8j8k6i5m6qJf+wOirM0E3y41qs3DjwVVw1GwKIck1qa8Shbnneh+jz01hLu2wKoaioY
-         1oZOLV2SqvRVzm5supSqTr6ezdrqX20VTcJ99RSL4dr/0f3lfcVVAIrLgsSgLmK/MDAD
-         m2Jw==
+        bh=buaPteFeVuIpD8HDkTwU+lZ4EhwxY+ANt8BGHXpmHmw=;
+        b=G/Nph4tggca3zCWPik/PqDxA12sQTRqntGxluksrIIhqmvuiYQ5z8jam66JZfwLgCl
+         oP/Dgn6jZvkgqxyeBozMW9XwF/Fw0RiwqJZgB86nUqOTq3AKozfCqRNBChh24Nsfwuv6
+         aGWmiu9DZunM35hEQKVqktZbgPMN4WUfsjrP1sSW1Q4NvUzSgsAfwx+8n1PFiFLep9fe
+         xA+7R8xodk8lybBBE0iSAAaFO1bhHn0b6zGMRjmLkYQOozMFTKCG8vXvtXUdSRDKo0TE
+         WjQP49EIMNKJYbdcNnJTbZmbUadHeBo5dsIDjaVyD96/qAzoEdnSOIBETI85EhzBWru6
+         kKvA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references;
-        bh=590qDmUnB326tQzkd/+1OymhYv+QHhCcRR/OCakP6Ok=;
-        b=iqtl39a+c6b0Es+i1/H6vR9H+3pby1Cytdl8JZpxsad1bYg/qitPKC2Pq1DeInQrsT
-         qPwXmu7l1l4warNHxWxePX0ZAtANzOk65dq3mqrZtMf4auBCb8dSvJmHZ0i1neoYp15X
-         bcFYV74eR+od29VFaKkOgplpfv63nFoGDLaS2KDsnMPognkCXO481AIatCGkqQP21Qs3
-         L2yID4FlYopd3ED+502n1AniVoWGZCfKHRilgq2+Zx4ifQCf9uVmKbx0r3kPbcZD1aHx
-         Vwo1iF1F6G9rSdOfZ5mFCbCgvLRavk1+3OHrHskwOXi2F0wqGHHOSA9DZZltzuZN7A/a
-         yWmA==
-X-Gm-Message-State: AGRZ1gL6WUGIq9J+A2yg+u7yxxrFhKkfRPAqDPkfVAICGAj2rl4/VUT1
-        oe9fl6iURWiCs7wPQPOVUe8UMOQsk3s=
-X-Google-Smtp-Source: AJdET5et3uGHpryETHJRzi7COTgcmo/haYsoIaybkDlZv9TqXafiaSRWBHVRSO3h+W+sXp84cYIm3Q==
-X-Received: by 2002:a81:5683:: with SMTP id k125mr7333556ywb.436.1542827004900;
-        Wed, 21 Nov 2018 11:03:24 -0800 (PST)
+        bh=buaPteFeVuIpD8HDkTwU+lZ4EhwxY+ANt8BGHXpmHmw=;
+        b=layztpmgD08uPKYqBZpWfpkdGcszQulXxvAVfGnddFSPkqpoJVhG6maoZil+JVTENG
+         vzMezZ+XVDpiKUZZX6x6mLUam7clBeWuHaWRdrkfVckQlkKnGhHD18i+PLjq65XdO5rf
+         6OvXtaBFld9MjxfBhCEuSqm1gbtdw4gAQp+aG8Wd8WOJiA86+cEN6HWNaG0qpZWgWRKB
+         uJf9f5MiY9EYZ0glkntnolYTMolqocRUNf2aUBsrU6gDQ0ouUpyjEZMPVEOSrq9ZSb9L
+         gB1z+SfwVVfdfnTwMucudCdVSvVgLyVtr7SujW1Dw0XYTasgyLmSW6dC0e6AqHaT151c
+         xkxw==
+X-Gm-Message-State: AA+aEWaJ3mC3vmrjBxI6adwJbkGUEmppgdfY3IDZzcSkRFT/78yr4esq
+        dXtsNOYHprKzsYLT64CJX4Qh53c4g1Q=
+X-Google-Smtp-Source: AFSGD/U5FMf3rqiTjmBJUy44zLFKTWhvr99MNGNXu8gZ3sjHX4sFsWMHGAPq/106E5tEFjCizf0low==
+X-Received: by 2002:a25:ba04:: with SMTP id t4-v6mr7847872ybg.251.1542827006592;
+        Wed, 21 Nov 2018 11:03:26 -0800 (PST)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id d85sm2417327ywd.22.2018.11.21.11.03.23
+        by smtp.gmail.com with ESMTPSA id k206sm1592652ywa.16.2018.11.21.11.03.25
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Wed, 21 Nov 2018 11:03:24 -0800 (PST)
+        Wed, 21 Nov 2018 11:03:25 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 5/8] btrfs: don't enospc all tickets on flush failure
-Date:   Wed, 21 Nov 2018 14:03:10 -0500
-Message-Id: <20181121190313.24575-6-josef@toxicpanda.com>
+Subject: [PATCH 6/8] btrfs: loop in inode_rsv_refill
+Date:   Wed, 21 Nov 2018 14:03:11 -0500
+Message-Id: <20181121190313.24575-7-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.14.3
 In-Reply-To: <20181121190313.24575-1-josef@toxicpanda.com>
 References: <20181121190313.24575-1-josef@toxicpanda.com>
@@ -70,149 +70,106 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-With the introduction of the per-inode block_rsv it became possible to
-have really really large reservation requests made because of data
-fragmentation.  Since the ticket stuff assumed that we'd always have
-relatively small reservation requests it just killed all tickets if we
-were unable to satisfy the current request.  However this is generally
-not the case anymore.  So fix this logic to instead see if we had a
-ticket that we were able to give some reservation to, and if we were
-continue the flushing loop again.  Likewise we make the tickets use the
-space_info_add_old_bytes() method of returning what reservation they did
-receive in hopes that it could satisfy reservations down the line.
+With severe fragmentation we can end up with our inode rsv size being
+huge during writeout, which would cause us to need to make very large
+metadata reservations.  However we may not actually need that much once
+writeout is complete.  So instead try to make our reservation, and if we
+couldn't make it re-calculate our new reservation size and try again.
+If our reservation size doesn't change between tries then we know we are
+actually out of space and can error out.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/extent-tree.c | 45 +++++++++++++++++++++++++--------------------
- 1 file changed, 25 insertions(+), 20 deletions(-)
+ fs/btrfs/extent-tree.c | 56 ++++++++++++++++++++++++++++++++++++--------------
+ 1 file changed, 41 insertions(+), 15 deletions(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index e6bb6ce23c84..983d086fa768 100644
+index 983d086fa768..0e9ba77e5316 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -4791,6 +4791,7 @@ static void shrink_delalloc(struct btrfs_fs_info *fs_info, u64 to_reclaim,
- }
- 
- struct reserve_ticket {
-+	u64 orig_bytes;
- 	u64 bytes;
- 	int error;
- 	struct list_head list;
-@@ -5012,7 +5013,7 @@ static inline int need_do_async_reclaim(struct btrfs_fs_info *fs_info,
- 		!test_bit(BTRFS_FS_STATE_REMOUNTING, &fs_info->fs_state));
- }
- 
--static void wake_all_tickets(struct list_head *head)
-+static bool wake_all_tickets(struct list_head *head)
- {
- 	struct reserve_ticket *ticket;
- 
-@@ -5021,7 +5022,10 @@ static void wake_all_tickets(struct list_head *head)
- 		list_del_init(&ticket->list);
- 		ticket->error = -ENOSPC;
- 		wake_up(&ticket->wait);
-+		if (ticket->bytes != ticket->orig_bytes)
-+			return true;
- 	}
-+	return false;
- }
- 
- /*
-@@ -5089,8 +5093,12 @@ static void btrfs_async_reclaim_metadata_space(struct work_struct *work)
- 		if (flush_state > COMMIT_TRANS) {
- 			commit_cycles++;
- 			if (commit_cycles > 2) {
--				wake_all_tickets(&space_info->tickets);
--				space_info->flush = 0;
-+				if (wake_all_tickets(&space_info->tickets)) {
-+					flush_state = FLUSH_DELAYED_ITEMS_NR;
-+					commit_cycles--;
-+				} else {
-+					space_info->flush = 0;
-+				}
- 			} else {
- 				flush_state = FLUSH_DELAYED_ITEMS_NR;
- 			}
-@@ -5142,10 +5150,11 @@ static void priority_reclaim_metadata_space(struct btrfs_fs_info *fs_info,
- 
- static int wait_reserve_ticket(struct btrfs_fs_info *fs_info,
- 			       struct btrfs_space_info *space_info,
--			       struct reserve_ticket *ticket, u64 orig_bytes)
-+			       struct reserve_ticket *ticket)
- 
- {
- 	DEFINE_WAIT(wait);
-+	u64 reclaim_bytes = 0;
- 	int ret = 0;
- 
- 	spin_lock(&space_info->lock);
-@@ -5166,14 +5175,12 @@ static int wait_reserve_ticket(struct btrfs_fs_info *fs_info,
- 		ret = ticket->error;
- 	if (!list_empty(&ticket->list))
- 		list_del_init(&ticket->list);
--	if (ticket->bytes && ticket->bytes < orig_bytes) {
--		u64 num_bytes = orig_bytes - ticket->bytes;
--		update_bytes_may_use(space_info, -num_bytes);
--		trace_btrfs_space_reservation(fs_info, "space_info",
--					      space_info->flags, num_bytes, 0);
--	}
-+	if (ticket->bytes && ticket->bytes < ticket->orig_bytes)
-+		reclaim_bytes = ticket->orig_bytes - ticket->bytes;
- 	spin_unlock(&space_info->lock);
- 
-+	if (reclaim_bytes)
-+		space_info_add_old_bytes(fs_info, space_info, reclaim_bytes);
+@@ -5776,6 +5776,21 @@ int btrfs_block_rsv_refill(struct btrfs_root *root,
  	return ret;
  }
  
-@@ -5199,6 +5206,7 @@ static int __reserve_metadata_bytes(struct btrfs_fs_info *fs_info,
- {
- 	struct reserve_ticket ticket;
- 	u64 used;
-+	u64 reclaim_bytes = 0;
- 	int ret = 0;
- 
- 	ASSERT(orig_bytes);
-@@ -5234,6 +5242,7 @@ static int __reserve_metadata_bytes(struct btrfs_fs_info *fs_info,
- 	 * the list and we will do our own flushing further down.
- 	 */
- 	if (ret && flush != BTRFS_RESERVE_NO_FLUSH) {
-+		ticket.orig_bytes = orig_bytes;
- 		ticket.bytes = orig_bytes;
- 		ticket.error = 0;
- 		init_waitqueue_head(&ticket.wait);
-@@ -5274,25 +5283,21 @@ static int __reserve_metadata_bytes(struct btrfs_fs_info *fs_info,
- 		return ret;
- 
- 	if (flush == BTRFS_RESERVE_FLUSH_ALL)
--		return wait_reserve_ticket(fs_info, space_info, &ticket,
--					   orig_bytes);
-+		return wait_reserve_ticket(fs_info, space_info, &ticket);
- 
- 	ret = 0;
- 	priority_reclaim_metadata_space(fs_info, space_info, &ticket);
- 	spin_lock(&space_info->lock);
- 	if (ticket.bytes) {
--		if (ticket.bytes < orig_bytes) {
--			u64 num_bytes = orig_bytes - ticket.bytes;
--			update_bytes_may_use(space_info, -num_bytes);
--			trace_btrfs_space_reservation(fs_info, "space_info",
--						      space_info->flags,
--						      num_bytes, 0);
--
--		}
-+		if (ticket.bytes < orig_bytes)
-+			reclaim_bytes = orig_bytes - ticket.bytes;
- 		list_del_init(&ticket.list);
- 		ret = -ENOSPC;
- 	}
- 	spin_unlock(&space_info->lock);
++static inline void __get_refill_bytes(struct btrfs_block_rsv *block_rsv,
++				      u64 *metadata_bytes, u64 *qgroup_bytes)
++{
++	*metadata_bytes = 0;
++	*qgroup_bytes = 0;
 +
-+	if (reclaim_bytes)
-+		space_info_add_old_bytes(fs_info, space_info, reclaim_bytes);
- 	ASSERT(list_empty(&ticket.list));
++	spin_lock(&block_rsv->lock);
++	if (block_rsv->reserved < block_rsv->size)
++		*metadata_bytes = block_rsv->size - block_rsv->reserved;
++	if (block_rsv->qgroup_rsv_reserved < block_rsv->qgroup_rsv_size)
++		*qgroup_bytes = block_rsv->qgroup_rsv_size -
++			block_rsv->qgroup_rsv_reserved;
++	spin_unlock(&block_rsv->lock);
++}
++
+ /**
+  * btrfs_inode_rsv_refill - refill the inode block rsv.
+  * @inode - the inode we are refilling.
+@@ -5791,25 +5806,37 @@ static int btrfs_inode_rsv_refill(struct btrfs_inode *inode,
+ {
+ 	struct btrfs_root *root = inode->root;
+ 	struct btrfs_block_rsv *block_rsv = &inode->block_rsv;
+-	u64 num_bytes = 0;
++	u64 num_bytes = 0, last = 0;
+ 	u64 qgroup_num_bytes = 0;
+ 	int ret = -ENOSPC;
+ 
+-	spin_lock(&block_rsv->lock);
+-	if (block_rsv->reserved < block_rsv->size)
+-		num_bytes = block_rsv->size - block_rsv->reserved;
+-	if (block_rsv->qgroup_rsv_reserved < block_rsv->qgroup_rsv_size)
+-		qgroup_num_bytes = block_rsv->qgroup_rsv_size -
+-				   block_rsv->qgroup_rsv_reserved;
+-	spin_unlock(&block_rsv->lock);
+-
++	__get_refill_bytes(block_rsv, &num_bytes, &qgroup_num_bytes);
+ 	if (num_bytes == 0)
+ 		return 0;
+ 
+-	ret = btrfs_qgroup_reserve_meta_prealloc(root, qgroup_num_bytes, true);
+-	if (ret)
+-		return ret;
+-	ret = reserve_metadata_bytes(root, block_rsv, num_bytes, flush);
++	do {
++		ret = btrfs_qgroup_reserve_meta_prealloc(root, qgroup_num_bytes, true);
++		if (ret)
++			return ret;
++		ret = reserve_metadata_bytes(root, block_rsv, num_bytes, flush);
++		if (ret) {
++			btrfs_qgroup_free_meta_prealloc(root, qgroup_num_bytes);
++			last = num_bytes;
++			/*
++			 * If we are fragmented we can end up with a lot of
++			 * outstanding extents which will make our size be much
++			 * larger than our reserved amount.  If we happen to
++			 * try to do a reservation here that may result in us
++			 * trying to do a pretty hefty reservation, which we may
++			 * not need once delalloc flushing happens.  If this is
++			 * the case try and do the reserve again.
++			 */
++			if (flush == BTRFS_RESERVE_FLUSH_ALL)
++				__get_refill_bytes(block_rsv, &num_bytes,
++						   &qgroup_num_bytes);
++		}
++	} while (ret && last != num_bytes);
++
+ 	if (!ret) {
+ 		block_rsv_add_bytes(block_rsv, num_bytes, false);
+ 		trace_btrfs_space_reservation(root->fs_info, "delalloc",
+@@ -5819,8 +5846,7 @@ static int btrfs_inode_rsv_refill(struct btrfs_inode *inode,
+ 		spin_lock(&block_rsv->lock);
+ 		block_rsv->qgroup_rsv_reserved += qgroup_num_bytes;
+ 		spin_unlock(&block_rsv->lock);
+-	} else
+-		btrfs_qgroup_free_meta_prealloc(root, qgroup_num_bytes);
++	}
  	return ret;
  }
+ 
 -- 
 2.14.3
 

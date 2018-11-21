@@ -2,33 +2,34 @@ Return-Path: <SRS0=CLOi=OA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3706FC43610
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 14:34:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 69540C43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 14:34:54 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 00C7721479
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 14:34:07 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 00C7721479
+	by mail.kernel.org (Postfix) with ESMTP id 3526221479
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 14:34:54 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3526221479
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=lst.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731014AbeKVBIi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 21 Nov 2018 20:08:38 -0500
-Received: from verein.lst.de ([213.95.11.211]:51717 "EHLO newverein.lst.de"
+        id S1731056AbeKVBJZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 21 Nov 2018 20:09:25 -0500
+Received: from verein.lst.de ([213.95.11.211]:51729 "EHLO newverein.lst.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726778AbeKVBIh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Nov 2018 20:08:37 -0500
+        id S1729658AbeKVBJZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Nov 2018 20:09:25 -0500
 Received: by newverein.lst.de (Postfix, from userid 2407)
-        id E98EB68C19; Wed, 21 Nov 2018 15:33:55 +0100 (CET)
-Date:   Wed, 21 Nov 2018 15:33:55 +0100
+        id 1B88068C1D; Wed, 21 Nov 2018 15:34:44 +0100 (CET)
+Date:   Wed, 21 Nov 2018 15:34:44 +0100
 From:   Christoph Hellwig <hch@lst.de>
-To:     Ming Lei <ming.lei@redhat.com>
-Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
-        Theodore Ts'o <tytso@mit.edu>, Omar Sandoval <osandov@fb.com>,
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     Ming Lei <ming.lei@redhat.com>, Jens Axboe <axboe@kernel.dk>,
+        linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-mm@kvack.org, Theodore Ts'o <tytso@mit.edu>,
+        Omar Sandoval <osandov@fb.com>,
         Sagi Grimberg <sagi@grimberg.me>,
         Dave Chinner <dchinner@redhat.com>,
         Kent Overstreet <kent.overstreet@gmail.com>,
@@ -43,174 +44,40 @@ Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
         Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
         Boaz Harrosh <ooo@electrozaur.com>,
         Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
-Subject: Re: [PATCH V11 14/19] block: handle non-cluster bio out of
- blk_bio_segment_split
-Message-ID: <20181121143355.GB2594@lst.de>
-References: <20181121032327.8434-1-ming.lei@redhat.com> <20181121032327.8434-15-ming.lei@redhat.com>
+Subject: Re: [PATCH V11 17/19] block: document usage of bio iterator helpers
+Message-ID: <20181121143443.GC2594@lst.de>
+References: <20181121032327.8434-1-ming.lei@redhat.com> <20181121032327.8434-18-ming.lei@redhat.com> <1f93e845-09e8-2c6c-3643-654b8c490597@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181121032327.8434-15-ming.lei@redhat.com>
+In-Reply-To: <1f93e845-09e8-2c6c-3643-654b8c490597@suse.com>
 User-Agent: Mutt/1.5.17 (2007-11-01)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-> +			non-cluster.o
+On Wed, Nov 21, 2018 at 09:45:25AM +0200, Nikolay Borisov wrote:
+> > +	bio_for_each_segment_all()
+> > +	bio_first_bvec_all()
+> > +	bio_first_page_all()
+> > +	bio_last_bvec_all()
+> > +
+> > +* The following helpers iterate over single-page bvecs. The passed 'struct
+> > +bio_vec' will contain a single-page IO vector during the iteration
+> > +
+> > +	bio_for_each_segment()
+> > +	bio_for_each_segment_all()
+> > +
+> > +* The following helpers iterate over single-page bvecs. The passed 'struct
+> > +bio_vec' will contain a single-page IO vector during the iteration
+> > +
+> > +	bio_for_each_bvec()
+> 
+> Just put this helper right below the above 2, no need to repeat the
+> explanation. Also I'd suggest introducing another catch-all sentence
+> "All other helpers are assumed to iterate multipage bio vecs" and
+> perhaps give an example with 1-2 helpers.
 
-Do we really need a new source file for these few functions?
-
->  	default:
-> +		if (!blk_queue_cluster(q)) {
-> +			blk_queue_non_cluster_bio(q, bio);
-> +			return;
-
-I'd name this blk_bio_segment_split_singlepage or similar.
-
-> +static __init int init_non_cluster_bioset(void)
-> +{
-> +	WARN_ON(bioset_init(&non_cluster_bio_set, BIO_POOL_SIZE, 0,
-> +			   BIOSET_NEED_BVECS));
-> +	WARN_ON(bioset_integrity_create(&non_cluster_bio_set, BIO_POOL_SIZE));
-> +	WARN_ON(bioset_init(&non_cluster_bio_split, BIO_POOL_SIZE, 0, 0));
-
-Please only allocate the resources once a queue without the cluster
-flag is registered, there are only very few modern drivers that do that.
-
-> +static void non_cluster_end_io(struct bio *bio)
-> +{
-> +	struct bio *bio_orig = bio->bi_private;
-> +
-> +	bio_orig->bi_status = bio->bi_status;
-> +	bio_endio(bio_orig);
-> +	bio_put(bio);
-> +}
-
-Why can't we use bio_chain for the split bios?
-
-> +	bio_for_each_segment(from, *bio_orig, iter) {
-> +		if (i++ < max_segs)
-> +			sectors += from.bv_len >> 9;
-> +		else
-> +			break;
-> +	}
-
-The easy to read way would be:
-
-	bio_for_each_segment(from, *bio_orig, iter) {
-		if (i++ == max_segs)
-			break;
-		sectors += from.bv_len >> 9;
-	}
-
-> +	if (sectors < bio_sectors(*bio_orig)) {
-> +		bio = bio_split(*bio_orig, sectors, GFP_NOIO,
-> +				&non_cluster_bio_split);
-> +		bio_chain(bio, *bio_orig);
-> +		generic_make_request(*bio_orig);
-> +		*bio_orig = bio;
-
-I don't think this is very efficient, as this means we now
-clone the bio twice, first to split it at the sector boundary,
-and then again when converting it to single-page bio_vec.
-
-I think this could be something like this (totally untested):
-
-diff --git a/block/non-cluster.c b/block/non-cluster.c
-index 9c2910be9404..60389f275c43 100644
---- a/block/non-cluster.c
-+++ b/block/non-cluster.c
-@@ -13,58 +13,59 @@
- 
- #include "blk.h"
- 
--static struct bio_set non_cluster_bio_set, non_cluster_bio_split;
-+static struct bio_set non_cluster_bio_set;
- 
- static __init int init_non_cluster_bioset(void)
- {
- 	WARN_ON(bioset_init(&non_cluster_bio_set, BIO_POOL_SIZE, 0,
- 			   BIOSET_NEED_BVECS));
- 	WARN_ON(bioset_integrity_create(&non_cluster_bio_set, BIO_POOL_SIZE));
--	WARN_ON(bioset_init(&non_cluster_bio_split, BIO_POOL_SIZE, 0, 0));
- 
- 	return 0;
- }
- __initcall(init_non_cluster_bioset);
- 
--static void non_cluster_end_io(struct bio *bio)
--{
--	struct bio *bio_orig = bio->bi_private;
--
--	bio_orig->bi_status = bio->bi_status;
--	bio_endio(bio_orig);
--	bio_put(bio);
--}
--
- void blk_queue_non_cluster_bio(struct request_queue *q, struct bio **bio_orig)
- {
--	struct bio *bio;
- 	struct bvec_iter iter;
--	struct bio_vec from;
--	unsigned i = 0;
--	unsigned sectors = 0;
--	unsigned short max_segs = min_t(unsigned short, BIO_MAX_PAGES,
--					queue_max_segments(q));
-+	struct bio *bio;
-+	struct bio_vec bv;
-+	unsigned short max_segs, segs = 0;
-+
-+	bio = bio_alloc_bioset(GFP_NOIO, bio_segments(*bio_orig),
-+			&non_cluster_bio_set);
-+	bio->bi_disk		= (*bio_orig)->bi_disk;
-+	bio->bi_partno		= (*bio_orig)->bi_partno;
-+	bio_set_flag(bio, BIO_CLONED);
-+	if (bio_flagged(*bio_orig, BIO_THROTTLED))
-+		bio_set_flag(bio, BIO_THROTTLED);
-+	bio->bi_opf		= (*bio_orig)->bi_opf;
-+	bio->bi_ioprio		= (*bio_orig)->bi_ioprio;
-+	bio->bi_write_hint	= (*bio_orig)->bi_write_hint;
-+	bio->bi_iter.bi_sector	= (*bio_orig)->bi_iter.bi_sector;
-+	bio->bi_iter.bi_size	= (*bio_orig)->bi_iter.bi_size;
-+
-+	if (bio_integrity(*bio_orig))
-+		bio_integrity_clone(bio, *bio_orig, GFP_NOIO);
- 
--	bio_for_each_segment(from, *bio_orig, iter) {
--		if (i++ < max_segs)
--			sectors += from.bv_len >> 9;
--		else
-+	bio_clone_blkcg_association(bio, *bio_orig);
-+
-+	max_segs = min_t(unsigned short, queue_max_segments(q), BIO_MAX_PAGES);
-+	bio_for_each_segment(bv, *bio_orig, iter) {
-+		bio->bi_io_vec[segs++] = bv;
-+		if (segs++ == max_segs)
- 			break;
- 	}
- 
--	if (sectors < bio_sectors(*bio_orig)) {
--		bio = bio_split(*bio_orig, sectors, GFP_NOIO,
--				&non_cluster_bio_split);
--		bio_chain(bio, *bio_orig);
--		generic_make_request(*bio_orig);
--		*bio_orig = bio;
--	}
--	bio = bio_clone_bioset(*bio_orig, GFP_NOIO, &non_cluster_bio_set);
-+	bio->bi_vcnt = segs;
-+	bio->bi_phys_segments = segs;
-+	bio_set_flag(bio, BIO_SEG_VALID);
-+	bio_chain(bio, *bio_orig);
- 
--	bio->bi_phys_segments = bio_segments(bio);
--        bio_set_flag(bio, BIO_SEG_VALID);
--	bio->bi_end_io = non_cluster_end_io;
-+	if (bio_integrity(bio))
-+		bio_integrity_trim(bio);
-+	bio_advance(bio, (*bio_orig)->bi_iter.bi_size);
- 
--	bio->bi_private = *bio_orig;
-+	generic_make_request(*bio_orig);
- 	*bio_orig = bio;
- }
+Well, I think the second explanation is wrong - bio_for_each_bvec
+iterates over the whole bvecs, not just single page.

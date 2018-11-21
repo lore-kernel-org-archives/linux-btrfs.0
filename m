@@ -2,36 +2,51 @@ Return-Path: <SRS0=CLOi=OA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 84910C43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 03:44:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9260FC43610
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 04:26:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5964A213A2
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 03:44:54 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5964A213A2
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
+	by mail.kernel.org (Postfix) with ESMTP id 65C792146D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 04:26:41 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 65C792146D
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=grimberg.me
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726948AbeKUORV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 21 Nov 2018 09:17:21 -0500
-Received: from mx1.redhat.com ([209.132.183.28]:37070 "EHLO mx1.redhat.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726195AbeKUORV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Nov 2018 09:17:21 -0500
-Received: from smtp.corp.redhat.com (int-mx08.intmail.prod.int.phx2.redhat.com [10.5.11.23])
-        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
-        (No client certificate requested)
-        by mx1.redhat.com (Postfix) with ESMTPS id 815D730820D3;
-        Wed, 21 Nov 2018 03:44:44 +0000 (UTC)
-Received: from ming.t460p (ovpn-8-21.pek2.redhat.com [10.72.8.21])
-        by smtp.corp.redhat.com (Postfix) with ESMTPS id A0D4D19C7F;
-        Wed, 21 Nov 2018 03:44:20 +0000 (UTC)
-Date:   Wed, 21 Nov 2018 11:44:16 +0800
-From:   Ming Lei <ming.lei@redhat.com>
-To:     Sagi Grimberg <sagi@grimberg.me>
+        id S1726343AbeKUO6f (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 21 Nov 2018 09:58:35 -0500
+Received: from mail-pl1-f194.google.com ([209.85.214.194]:34975 "EHLO
+        mail-pl1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725939AbeKUO6e (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Nov 2018 09:58:34 -0500
+Received: by mail-pl1-f194.google.com with SMTP id v1-v6so3546054plo.2;
+        Tue, 20 Nov 2018 20:25:50 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=qlXNnk0fz2zW30JawgPi0MLm0NV117hTjPsSlAiELmg=;
+        b=EuO7JMgv8NoR/UGeyrK9pSGK4Drml396tt0iHO2NqbCSkiSntbMP9Ww6MAlghS/XFA
+         6vD7dkn+34A8qVrv7Jjgjxh/d3OHgtd6Wc8203BBMoHjHqEGGFYxe/sMgG9iH99mZULJ
+         ITjBYf3reQu7Bw1GduRrvvF44YAemA6UpaDsgg5xShircgkS6R9vkd99CXvL4nAu3m3H
+         HuzdROYJO4JMjjD6xrs6wg9bl0JBt5wpH6e+FmITaYfz+7MJAig7LwPaNa0D9CGP2QcI
+         +hALwUitTUaaO4PIWEQND+bPX1cFmdGGUhqzQTxwzTZm/HtO9fkqV3hC5n8ZWRGs1gMd
+         mDJw==
+X-Gm-Message-State: AA+aEWYkmo54NajRX72pdpqVmEKzj0xmH2U0WlMPvbYWDAXCcRxQkVAo
+        Q+WG0KLovudinxS7LJXwts0=
+X-Google-Smtp-Source: AFSGD/UexPBrEp2S/E9R6iYGoOvVqrdynAVs3uJhUpol3pmPd0ri99U0GAHIvhhvRGfjFJdmd/ZyuA==
+X-Received: by 2002:a17:902:aa84:: with SMTP id d4-v6mr5236385plr.25.1542774349548;
+        Tue, 20 Nov 2018 20:25:49 -0800 (PST)
+Received: from ?IPv6:2601:647:4800:973f:8a0:7611:3223:f4db? ([2601:647:4800:973f:8a0:7611:3223:f4db])
+        by smtp.gmail.com with ESMTPSA id t13sm86916556pgr.42.2018.11.20.20.25.47
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Tue, 20 Nov 2018 20:25:48 -0800 (PST)
+Subject: Re: [PATCH V10 09/19] block: introduce bio_bvecs()
+To:     Ming Lei <ming.lei@redhat.com>
 Cc:     Christoph Hellwig <hch@lst.de>, Jens Axboe <axboe@kernel.dk>,
         linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
         linux-mm@kvack.org, Dave Chinner <dchinner@redhat.com>,
@@ -47,93 +62,126 @@ Cc:     Christoph Hellwig <hch@lst.de>, Jens Axboe <axboe@kernel.dk>,
         Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
         Boaz Harrosh <ooo@electrozaur.com>,
         Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
-Subject: Re: [PATCH V10 09/19] block: introduce bio_bvecs()
-Message-ID: <20181121034415.GA8408@ming.t460p>
 References: <20181115085306.9910-1-ming.lei@redhat.com>
- <20181115085306.9910-10-ming.lei@redhat.com>
- <20181116134541.GH3165@lst.de>
+ <20181115085306.9910-10-ming.lei@redhat.com> <20181116134541.GH3165@lst.de>
  <002fe56b-25e4-573e-c09b-bb12c3e8d25a@grimberg.me>
  <20181120161651.GB2629@lst.de>
  <53526aae-fb9b-ee38-0a01-e5899e2d4e4d@grimberg.me>
  <20181121005902.GA31748@ming.t460p>
  <2d9bee7a-f010-dcf4-1184-094101058584@grimberg.me>
+ <20181121034415.GA8408@ming.t460p>
+From:   Sagi Grimberg <sagi@grimberg.me>
+Message-ID: <2a47d336-c19b-6bf4-c247-d7382871eeea@grimberg.me>
+Date:   Tue, 20 Nov 2018 20:25:46 -0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <2d9bee7a-f010-dcf4-1184-094101058584@grimberg.me>
-User-Agent: Mutt/1.9.1 (2017-09-22)
-X-Scanned-By: MIMEDefang 2.84 on 10.5.11.23
-X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.47]); Wed, 21 Nov 2018 03:44:45 +0000 (UTC)
+In-Reply-To: <20181121034415.GA8408@ming.t460p>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Nov 20, 2018 at 07:20:45PM -0800, Sagi Grimberg wrote:
+
+>> I would like to avoid growing bvec tables and keep everything
+>> preallocated. Plus, a bvec_iter operates on a bvec which means
+>> we'll need a table there as well... Not liking it so far...
 > 
-> > Not sure I understand the 'blocking' problem in this case.
-> > 
-> > We can build a bvec table from this req, and send them all
-> > in send(),
+> In case of bios in one request, we can't know how many bvecs there
+> are except for calling rq_bvecs(), so it may not be suitable to
+> preallocate the table. If you have to send the IO request in one send(),
+> runtime allocation may be inevitable.
+
+I don't want to do that, I want to work on a single bvec at a time like
+the current implementation does.
+
+> If you don't require to send the IO request in one send(), you may send
+> one bio in one time, and just uses the bio's bvec table directly,
+> such as the single bio case in lo_rw_aio().
+
+we'd need some indication that we need to reinit my iter with the
+new bvec, today we do:
+
+static inline void nvme_tcp_advance_req(struct nvme_tcp_request *req,
+                 int len)
+{
+         req->snd.data_sent += len;
+         req->pdu_sent += len;
+         iov_iter_advance(&req->snd.iter, len);
+         if (!iov_iter_count(&req->snd.iter) &&
+             req->snd.data_sent < req->data_len) {
+                 req->snd.curr_bio = req->snd.curr_bio->bi_next;
+                 nvme_tcp_init_send_iter(req);
+         }
+}
+
+and initialize the send iter. I imagine that now I will need to
+switch to the next bvec and only if I'm on the last I need to
+use the next bio...
+
+Do you offer an API for that?
+
+
+>>> can this way avoid your blocking issue? You may see this
+>>> example in branch 'rq->bio != rq->biotail' of lo_rw_aio().
+>>
+>> This is exactly an example of not ignoring the bios...
 > 
-> I would like to avoid growing bvec tables and keep everything
-> preallocated. Plus, a bvec_iter operates on a bvec which means
-> we'll need a table there as well... Not liking it so far...
+> Yeah, that is the most common example, given merge is enabled
+> in most of cases. If the driver or device doesn't care merge,
+> you can disable it and always get single bio request, then the
+> bio's bvec table can be reused for send().
 
-In case of bios in one request, we can't know how many bvecs there
-are except for calling rq_bvecs(), so it may not be suitable to
-preallocate the table. If you have to send the IO request in one send(),
-runtime allocation may be inevitable.
+Does bvec_iter span bvecs with your patches? I didn't see that change?
 
-If you don't require to send the IO request in one send(), you may send
-one bio in one time, and just uses the bio's bvec table directly,
-such as the single bio case in lo_rw_aio().
-
+>> I'm not sure how this helps me either. Unless we can set a bvec_iter to
+>> span bvecs or have an abstract bio crossing when we re-initialize the
+>> bvec_iter I don't see how I can ignore bios completely...
 > 
-> > can this way avoid your blocking issue? You may see this
-> > example in branch 'rq->bio != rq->biotail' of lo_rw_aio().
+> rq_for_each_bvec() will iterate over all bvecs from all bios, so you
+> needn't to see any bio in this req.
+
+But I don't need this iteration, I need a transparent API like;
+bvec2 = rq_bvec_next(rq, bvec)
+
+This way I can simply always reinit my iter without thinking about how
+the request/bios/bvecs are constructed...
+
+> rq_bvecs() will return how many bvecs there are in this request(cover
+> all bios in this req)
+
+Still not very useful given that I don't want to use a table...
+
+>>> So looks nvme-tcp host driver might be the 2nd driver which benefits
+>>> from multi-page bvec directly.
+>>>
+>>> The multi-page bvec V11 has passed my tests and addressed almost
+>>> all the comments during review on V10. I removed bio_vecs() in V11,
+>>> but it won't be big deal, we can introduce them anytime when there
+>>> is the requirement.
+>>
+>> multipage-bvecs and nvme-tcp are going to conflict, so it would be good
+>> to coordinate on this. I think that nvme-tcp host needs some adjustments
+>> as setting a bvec_iter. I'm under the impression that the change is rather
+>> small and self-contained, but I'm not sure I have the full
+>> picture here.
 > 
-> This is exactly an example of not ignoring the bios...
+> I guess I may not get your exact requirement on block io iterator from nvme-tcp
+> too, :-(
 
-Yeah, that is the most common example, given merge is enabled
-in most of cases. If the driver or device doesn't care merge,
-you can disable it and always get single bio request, then the
-bio's bvec table can be reused for send().
+They are pretty much listed above. Today nvme-tcp sets an iterator with:
 
-> 
-> > If this way is what you need, I think you are right, even we may
-> > introduce the following helpers:
-> > 
-> > 	rq_for_each_bvec()
-> > 	rq_bvecs()
-> 
-> I'm not sure how this helps me either. Unless we can set a bvec_iter to
-> span bvecs or have an abstract bio crossing when we re-initialize the
-> bvec_iter I don't see how I can ignore bios completely...
+vec = __bvec_iter_bvec(bio->bi_io_vec, bio->bi_iter);
+nsegs = bio_segments(bio);
+size = bio->bi_iter.bi_size;
+offset = bio->bi_iter.bi_bvec_done;
+iov_iter_bvec(&req->snd.iter, WRITE, vec, nsegs, size);
 
-rq_for_each_bvec() will iterate over all bvecs from all bios, so you
-needn't to see any bio in this req.
+and when done, iterate to the next bio and do the same.
 
-rq_bvecs() will return how many bvecs there are in this request(cover
-all bios in this req)
-
-> 
-> > So looks nvme-tcp host driver might be the 2nd driver which benefits
-> > from multi-page bvec directly.
-> > 
-> > The multi-page bvec V11 has passed my tests and addressed almost
-> > all the comments during review on V10. I removed bio_vecs() in V11,
-> > but it won't be big deal, we can introduce them anytime when there
-> > is the requirement.
-> 
-> multipage-bvecs and nvme-tcp are going to conflict, so it would be good
-> to coordinate on this. I think that nvme-tcp host needs some adjustments
-> as setting a bvec_iter. I'm under the impression that the change is rather
-> small and self-contained, but I'm not sure I have the full
-> picture here.
-
-I guess I may not get your exact requirement on block io iterator from nvme-tcp
-too, :-(
-
-thanks,
-Ming
+With multipage bvec it would be great if we can simply have
+something like rq_bvec_next() that would pretty much satisfy
+the requirements from the nvme-tcp side...

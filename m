@@ -2,105 +2,76 @@ Return-Path: <SRS0=CLOi=OA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.5 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.5 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6654DC43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 19:06:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1200FC04EBA
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 19:09:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2DA79214D9
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 19:06:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CA4092151B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 19:09:27 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="v5hoo/Hd"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2DA79214D9
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="BVjMPRzw"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org CA4092151B
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732250AbeKVFlc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 22 Nov 2018 00:41:32 -0500
-Received: from mail-yb1-f195.google.com ([209.85.219.195]:42733 "EHLO
-        mail-yb1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730172AbeKVFlc (ORCPT
+        id S2388414AbeKVFo7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 22 Nov 2018 00:44:59 -0500
+Received: from mail-yw1-f50.google.com ([209.85.161.50]:38446 "EHLO
+        mail-yw1-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729345AbeKVFo5 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Nov 2018 00:41:32 -0500
-Received: by mail-yb1-f195.google.com with SMTP id o204-v6so2631975yba.9
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Nov 2018 11:06:00 -0800 (PST)
+        Thu, 22 Nov 2018 00:44:57 -0500
+Received: by mail-yw1-f50.google.com with SMTP id i20so2682359ywc.5
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Nov 2018 11:09:24 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references;
-        bh=ChDhmHleKb4VZu9DLBBdualiLEzB3kbTWeFT8Vil964=;
-        b=v5hoo/Hd9i8mxyHynQcrpKJc59+79guNfS/aXoUkOk3bsFK4EiPcSqcQ/9mbMtTKaP
-         4v8LQRz+Zp1ACfkXob7ZFgBqyHXiKBhO5bzMN0PdxlMG7UY6dbmchNF9ODxI9c8l56TT
-         CUvV6Tj/5CN4+9fPN/eONx6oSsKrqbk0aeKhg4LqABALDKI5dTbNVIu5zhbxlXWp2Rn/
-         I7y4Ho/3xVQcWHC4lWqMV1Oi6unYUN+d3zDecj574/T0Th54Ls6oZrkQOCSwpLwsDikW
-         Lh8A+SWxF61+5vSn8wRAFurwD9v20iyxoX2oKh6MRT9xH6Cz7t0KkHTQupyK0ZLxLOcm
-         PBWQ==
+        h=from:to:subject:date:message-id;
+        bh=X6Gbv5tsZt+MPTQuEvbbYi8vVeiQI/cuP9VjojUyGhk=;
+        b=BVjMPRzw8vr+TeQoWSwIHxRGFYdGEs8eH2QWRhUtFnmOXfE1H1S2qWMHE0Yi7Knckz
+         NKawIJ1uEOmsL/ZerK6t1DmCZ4ipfZ1Gnf255hbuz7NcOCwkRCnUxp3EKmAvwXm3P8m8
+         gOT52ySvWYJs5yspqCqkfZhJEkvE/RA+KZSEuRVCRAEHv5on9zmxybuhOGPY+nxXLzou
+         utuRcWzeCD+qlxEt/o5qwzfsVg6X5I7MyBVEQRX488WqN/i/c2op9ERyriLTeorakFDv
+         g9zeh0shCu7+T8c+/264D86jeKnCmOfS/00qltqpHDdLgUxIzC1yh4/H3W+4W8oKhChE
+         uiuQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
-         :references;
-        bh=ChDhmHleKb4VZu9DLBBdualiLEzB3kbTWeFT8Vil964=;
-        b=jbs/PFRACMHesx773aIrrfpz0Ch/QMs+Ga7x/WrxqAbH1tkLCWTgUkD9T6MqIRru0z
-         Yjzi2rdmb0+EwohWzUNC3Zhy6Y77QUovnV9i9cpC0ayzXmvFCKuxOBPb9OpwX0uTmX4z
-         OEvwNEuiaxiOJy+zO9YScomAKXmHosz3BoDfbcrUsZE9oyl+/FkY8osAJJNEJINTOI3T
-         zXoGiG4av4v4Zq8W8uYFLc5PY+Ggcu5puGcH5+tHoVHaxpOUxtvXimxVhTepPpzqd3sf
-         4qUvKoootyUKbLfQafQzMQw0OybVFdjqlBuDqCC83BAs+3fKN4VrKwbhaOx3DRsYkxRr
-         jZaw==
-X-Gm-Message-State: AA+aEWZta9gpCx/x1EV8M4t3B+RQwWdENmzPLiPCLJu/MkwaDzI1cmwM
-        mpO38ibYII35t6GG2AqrdIFlddOZSww=
-X-Google-Smtp-Source: AFSGD/VnYaf3h7bFfu5iBNIxutxtI10wQAxh/YLf0a3j93puqjkL4ZUKt6aFyNcM9o4A06qnbbp6DA==
-X-Received: by 2002:a25:aae2:: with SMTP id t89-v6mr7530049ybi.200.1542827159701;
-        Wed, 21 Nov 2018 11:05:59 -0800 (PST)
+        h=x-gm-message-state:from:to:subject:date:message-id;
+        bh=X6Gbv5tsZt+MPTQuEvbbYi8vVeiQI/cuP9VjojUyGhk=;
+        b=EojZzJR8GLtu/PnQYaKTbRPbAYyg+tTrxlL3v1nx60N+rvRsp1XOeSR4YT2SMFEHpm
+         oUjRYg41n3YOooKa/Bisoy+LvEupw1TuOPNye3kOZcul218iIr1tcQ4ES9PzfUpJaMpX
+         9TOcbhwBCACBMPl67M9Igov2oLNgvKiXJefApVtfJ3Uwq0LFaAyzkDlYDo+5e6JlaYqx
+         L4b3+Q8pqEiM1B2M2eG/nXOXaCjpZUyN23AucsSMC9lIgY4mvV12eaMjl5svFOzHSW9k
+         XCH8+wBn0ad88q9uiXuoJvM2EGntomZ8l/8Ra7eP4NIR23uhmvERdZRLWXmKai3xiyIM
+         KISQ==
+X-Gm-Message-State: AGRZ1gJjf010J4WIgsMdwweF/EKZDqs7Qm2rlm0IwLzoy31aeI6heDGH
+        WpzMmlKBeuYPDVNsmYNtkndhwLV033k=
+X-Google-Smtp-Source: AJdET5cNSXd4HqhZ7oLnxmTuR5wE1JUgujUyQIA7nUpGUE/x7eFvzoZlYBM+aGg7CwH5lxrpH279Xg==
+X-Received: by 2002:a81:3757:: with SMTP id e84mr7921805ywa.380.1542827364094;
+        Wed, 21 Nov 2018 11:09:24 -0800 (PST)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id d138sm9746967ywb.44.2018.11.21.11.05.58
+        by smtp.gmail.com with ESMTPSA id m126sm5977415ywd.39.2018.11.21.11.09.23
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Wed, 21 Nov 2018 11:05:59 -0800 (PST)
+        Wed, 21 Nov 2018 11:09:23 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 7/7] btrfs: wait on ordered extents on abort cleanup
-Date:   Wed, 21 Nov 2018 14:05:45 -0500
-Message-Id: <20181121190545.24798-8-josef@toxicpanda.com>
+Subject: [PATCH 0/3] Delayed iput fixes
+Date:   Wed, 21 Nov 2018 14:09:19 -0500
+Message-Id: <20181121190922.25038-1-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.14.3
-In-Reply-To: <20181121190545.24798-1-josef@toxicpanda.com>
-References: <20181121190545.24798-1-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-If we flip read-only before we initiate writeback on all dirty pages for
-ordered extents we've created then we'll have ordered extents left over
-on umount, which results in all sorts of bad things happening.  Fix this
-by making sure we wait on ordered extents if we have to do the aborted
-transaction cleanup stuff.
+Here are some delayed iput fixes.  Delayed iputs can hold reservations for a
+while and there's no real good way to make sure they were gone for good, which
+means we could early enospc when in reality if we had just waited for the iput
+we would have had plenty of space.  So fix this up by making us wait for delayed
+iputs when deciding if we need to commit for enospc flushing, and then cleanup
+and rework how we run delayed iputs to make it more straightforward to wait on
+them and make sure we're all done using them.  Thanks,
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/disk-io.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 8e7926c91e35..c5918ff8241b 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -4171,6 +4171,14 @@ static void btrfs_destroy_all_ordered_extents(struct btrfs_fs_info *fs_info)
- 		spin_lock(&fs_info->ordered_root_lock);
- 	}
- 	spin_unlock(&fs_info->ordered_root_lock);
-+
-+	/*
-+	 * We need this here because if we've been flipped read-only we won't
-+	 * get sync() from the umount, so we need to make sure any ordered
-+	 * extents that haven't had their dirty pages IO start writeout yet
-+	 * actually get run and error out properly.
-+	 */
-+	btrfs_wait_ordered_roots(fs_info, U64_MAX, 0, (u64)-1);
- }
- 
- static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
--- 
-2.14.3
-
+Josef

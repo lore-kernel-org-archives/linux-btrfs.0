@@ -6,24 +6,24 @@ X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 58017C43610
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 13:19:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 61704C43610
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 13:32:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1645E2146F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 13:19:39 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1645E2146F
+	by mail.kernel.org (Postfix) with ESMTP id 32B82214DA
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 13:32:55 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 32B82214DA
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=lst.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730199AbeKUXxw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 21 Nov 2018 18:53:52 -0500
-Received: from verein.lst.de ([213.95.11.211]:51324 "EHLO newverein.lst.de"
+        id S1730716AbeKVAHL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 21 Nov 2018 19:07:11 -0500
+Received: from verein.lst.de ([213.95.11.211]:51393 "EHLO newverein.lst.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727100AbeKUXxw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Nov 2018 18:53:52 -0500
+        id S1727486AbeKVAHL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Nov 2018 19:07:11 -0500
 Received: by newverein.lst.de (Postfix, from userid 2407)
-        id 95D2868C19; Wed, 21 Nov 2018 14:19:28 +0100 (CET)
-Date:   Wed, 21 Nov 2018 14:19:28 +0100
+        id B141D68C19; Wed, 21 Nov 2018 14:32:44 +0100 (CET)
+Date:   Wed, 21 Nov 2018 14:32:44 +0100
 From:   Christoph Hellwig <hch@lst.de>
 To:     Ming Lei <ming.lei@redhat.com>
 Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
@@ -43,28 +43,88 @@ Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
         Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
         Boaz Harrosh <ooo@electrozaur.com>,
         Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
-Subject: Re: [PATCH V11 02/19] block: introduce multi-page bvec helpers
-Message-ID: <20181121131928.GA1640@lst.de>
-References: <20181121032327.8434-1-ming.lei@redhat.com> <20181121032327.8434-3-ming.lei@redhat.com>
+Subject: Re: [PATCH V11 03/19] block: introduce bio_for_each_bvec()
+Message-ID: <20181121133244.GB1640@lst.de>
+References: <20181121032327.8434-1-ming.lei@redhat.com> <20181121032327.8434-4-ming.lei@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181121032327.8434-3-ming.lei@redhat.com>
+In-Reply-To: <20181121032327.8434-4-ming.lei@redhat.com>
 User-Agent: Mutt/1.5.17 (2007-11-01)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Nov 21, 2018 at 11:23:10AM +0800, Ming Lei wrote:
-> This patch introduces helpers of 'segment_iter_*' for multipage
-> bvec support.
-> 
-> The introduced helpers treate one bvec as real multi-page segment,
-> which may include more than one pages.
+> +#define bio_iter_mp_iovec(bio, iter)				\
+> +	segment_iter_bvec((bio)->bi_io_vec, (iter))
 
-Unless I'm missing something these bvec vs segment names are exactly
-inverted vs how we use it elsewhere.
+Besides the mp naming we'd like to get rid off there also is just
+a single user of this macro, please just expand it there.
 
-In the iterators we use segment for single-page bvec, and bvec for multi
-page ones, and here it is inverse.  Please switch it around.
+> +#define segment_iter_bvec(bvec, iter)				\
+> +((struct bio_vec) {							\
+> +	.bv_page	= segment_iter_page((bvec), (iter)),	\
+> +	.bv_len		= segment_iter_len((bvec), (iter)),	\
+> +	.bv_offset	= segment_iter_offset((bvec), (iter)),	\
+> +})
+
+And for this one please keep the segment vs bvec versions of these
+macros close together in the file please, right now it follow the
+bvec_iter_bvec variant closely.
+
+> +static inline void __bio_advance_iter(struct bio *bio, struct bvec_iter *iter,
+> +				      unsigned bytes, unsigned max_seg_len)
+>  {
+>  	iter->bi_sector += bytes >> 9;
+>  
+>  	if (bio_no_advance_iter(bio))
+>  		iter->bi_size -= bytes;
+>  	else
+> -		bvec_iter_advance(bio->bi_io_vec, iter, bytes);
+> +		__bvec_iter_advance(bio->bi_io_vec, iter, bytes, max_seg_len);
+>  		/* TODO: It is reasonable to complete bio with error here. */
+>  }
+>  
+> +static inline void bio_advance_iter(struct bio *bio, struct bvec_iter *iter,
+> +				    unsigned bytes)
+> +{
+> +	__bio_advance_iter(bio, iter, bytes, PAGE_SIZE);
+> +}
+
+Btw, I think the remaining users of bio_advance_iter() in bio.h
+should probably switch to using __bio_advance_iter to make them a little
+more clear to read.
+
+> +/* returns one real segment(multi-page bvec) each time */
+
+space before the brace, please.
+
+> +#define BVEC_MAX_LEN  ((unsigned int)-1)
+
+>  	while (bytes) {
+> +		unsigned segment_len = segment_iter_len(bv, *iter);
+>  
+> -		iter->bi_bvec_done += len;
+> +		if (max_seg_len < BVEC_MAX_LEN)
+> +			segment_len = min_t(unsigned, segment_len,
+> +					    max_seg_len -
+> +					    bvec_iter_offset(bv, *iter));
+> +
+> +		segment_len = min(bytes, segment_len);
+
+Please stick to passing the magic zero here as can often generate more
+efficient code.
+
+Talking about efficent code - I wonder how much code size we'd save
+by moving this function out of line..
+
+But while looking over this I wonder why we even need the max_seg_len
+here.  The only thing __bvec_iter_advance does it to move bi_bvec_done
+and bi_idx forward, with corresponding decrements of bi_size.  As far
+as I can tell the only thing that max_seg_len does is that we need
+to more iterations of the while loop to archive the same thing.
+
+And actual bvec used by the caller will be obtained using
+bvec_iter_bvec or segment_iter_bvec depending on if they want multi-page
+or single-page variants.

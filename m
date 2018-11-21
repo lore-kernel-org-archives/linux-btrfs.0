@@ -2,121 +2,139 @@ Return-Path: <SRS0=CLOi=OA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.5 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C823FC43610
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 00:59:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F341DC43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 02:44:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9C87520671
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 00:59:48 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9C87520671
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
+	by mail.kernel.org (Postfix) with ESMTP id BAE7021104
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Nov 2018 02:44:14 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=etsukata-com.20150623.gappssmtp.com header.i=@etsukata-com.20150623.gappssmtp.com header.b="gzL7tHpQ"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BAE7021104
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=etsukata.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726434AbeKULbj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 21 Nov 2018 06:31:39 -0500
-Received: from mx1.redhat.com ([209.132.183.28]:33684 "EHLO mx1.redhat.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726135AbeKULbi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Nov 2018 06:31:38 -0500
-Received: from smtp.corp.redhat.com (int-mx06.intmail.prod.int.phx2.redhat.com [10.5.11.16])
-        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
-        (No client certificate requested)
-        by mx1.redhat.com (Postfix) with ESMTPS id 8642981DEC;
-        Wed, 21 Nov 2018 00:59:36 +0000 (UTC)
-Received: from ming.t460p (ovpn-8-21.pek2.redhat.com [10.72.8.21])
-        by smtp.corp.redhat.com (Postfix) with ESMTPS id 9C1396A51B;
-        Wed, 21 Nov 2018 00:59:09 +0000 (UTC)
-Date:   Wed, 21 Nov 2018 08:59:03 +0800
-From:   Ming Lei <ming.lei@redhat.com>
-To:     Sagi Grimberg <sagi@grimberg.me>
-Cc:     Christoph Hellwig <hch@lst.de>, Jens Axboe <axboe@kernel.dk>,
-        linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-mm@kvack.org, Dave Chinner <dchinner@redhat.com>,
-        Kent Overstreet <kent.overstreet@gmail.com>,
-        Mike Snitzer <snitzer@redhat.com>, dm-devel@redhat.com,
+        id S1726101AbeKUNQf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 21 Nov 2018 08:16:35 -0500
+Received: from mail-pl1-f194.google.com ([209.85.214.194]:43416 "EHLO
+        mail-pl1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725950AbeKUNQf (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Nov 2018 08:16:35 -0500
+Received: by mail-pl1-f194.google.com with SMTP id gn14so3199845plb.10
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Nov 2018 18:44:13 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=etsukata-com.20150623.gappssmtp.com; s=20150623;
+        h=from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=H/VYLi6U4iBE4eE2CcKKa7D9aRHjN0CLWuRfVxyf9i8=;
+        b=gzL7tHpQppPG6H2q6XJAekkauuxuemA3cqF44dCo6WHLkk2+LyxJvAhUsTtq3xNsLc
+         /qioC1tOg6QniVxdcLVuJdGX10qWCad8pNj1OdZhZyuITpGGXXdS0Xn8h91Kz4YyofTL
+         kE08oGzcexOSTjoJUDdLuQoy53LtvEIBgUgFh3qMhc0pSEiFAGs5eu78afigpBBWtJD2
+         OICQkZcUNpnHITn3DbbDIK+AwCUG6GrGItnxn6L08ag25QTS6uE0uPrnxi+o2yRq81ak
+         6zg+wXpdy6PX6+7caxkQJpN1qWeMOuQC7kKsdIE//tTq57SFE7E4Lv7o0joJJuE6iGuF
+         ZHaQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=H/VYLi6U4iBE4eE2CcKKa7D9aRHjN0CLWuRfVxyf9i8=;
+        b=eyAx6kWtzuNRxPMT2I3aOpHEnQ4qXpU9iODwve6JGGoQb+bNm8YvWE68xjTM1EeWJi
+         3nc6Cgl+Y3r59DTqiC9lRTyfibObRQMbvEP9JwSjzmnekNkDvu4HMR4cck1meMr2awhw
+         EEsCxiFyA3PCrl2/cB9SJc7iaPVyBoFzfYzdibhQtYY8fGYvaWw9dMn3EjVZnVY7fe3F
+         FM7Z9oWWCkuQd8LHP5Q880mkGBOidX7uMoIwCQDezKXbGLsBZzIbItN/3nZPq70mLrb5
+         91+2gkz2VSO65kjc9qJsWFpsYpqANt/XU9cQo9NknuDQk4+2b7NLxCc0uFAu770pnjKV
+         OtxQ==
+X-Gm-Message-State: AA+aEWbuS2lxPEBIvp21BreG1+iVFTPHQEJKdoTWjoaN9uyazC1LIAN6
+        LQz+XtgdKwJrH9yHZQP0GarkXA==
+X-Google-Smtp-Source: AFSGD/VtX4VsaOh0ScdtJ7EuZP2uGVoUU4W1SYpsS2c6Ge7+MDAz+PmhTQkU02evyhqKpL0SFw784Q==
+X-Received: by 2002:a17:902:a411:: with SMTP id p17mr4828581plq.292.1542768253159;
+        Tue, 20 Nov 2018 18:44:13 -0800 (PST)
+Received: from fedora.fout.local (fs76eecbcd.tkyc008.ap.nuro.jp. [118.238.203.205])
+        by smtp.gmail.com with ESMTPSA id l63-v6sm46356677pfb.75.2018.11.20.18.44.07
+        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
+        Tue, 20 Nov 2018 18:44:12 -0800 (PST)
+From:   Eiichi Tsukata <devel@etsukata.com>
+To:     andi@firstfloor.org, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
+        "Theodore Ts'o" <tytso@mit.edu>,
+        Andreas Dilger <adilger.kernel@dilger.ca>,
+        Jaegeuk Kim <jaegeuk@kernel.org>, Chao Yu <yuchao0@huawei.com>,
+        Miklos Szeredi <miklos@szeredi.hu>,
+        Bob Peterson <rpeterso@redhat.com>,
+        Andreas Gruenbacher <agruenba@redhat.com>,
         Alexander Viro <viro@zeniv.linux.org.uk>,
-        linux-fsdevel@vger.kernel.org, Shaohua Li <shli@kernel.org>,
-        linux-raid@vger.kernel.org, linux-erofs@lists.ozlabs.org,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        "Darrick J . Wong" <darrick.wong@oracle.com>,
-        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
-        Theodore Ts'o <tytso@mit.edu>, linux-ext4@vger.kernel.org,
-        Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
-        Boaz Harrosh <ooo@electrozaur.com>,
-        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
-Subject: Re: [PATCH V10 09/19] block: introduce bio_bvecs()
-Message-ID: <20181121005902.GA31748@ming.t460p>
-References: <20181115085306.9910-1-ming.lei@redhat.com>
- <20181115085306.9910-10-ming.lei@redhat.com>
- <20181116134541.GH3165@lst.de>
- <002fe56b-25e4-573e-c09b-bb12c3e8d25a@grimberg.me>
- <20181120161651.GB2629@lst.de>
- <53526aae-fb9b-ee38-0a01-e5899e2d4e4d@grimberg.me>
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net,
+        linux-fsdevel@vger.kernel.org, cluster-devel@redhat.com,
+        linux-unionfs@vger.kernel.org
+Cc:     Eiichi Tsukata <devel@etsukata.com>
+Subject: [PATCH v1 0/4] fs: fix race between llseek SEEK_END and write
+Date:   Wed, 21 Nov 2018 11:43:56 +0900
+Message-Id: <20181121024400.4346-1-devel@etsukata.com>
+X-Mailer: git-send-email 2.19.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <53526aae-fb9b-ee38-0a01-e5899e2d4e4d@grimberg.me>
-User-Agent: Mutt/1.9.1 (2017-09-22)
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.16
-X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.25]); Wed, 21 Nov 2018 00:59:37 +0000 (UTC)
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Nov 20, 2018 at 12:11:35PM -0800, Sagi Grimberg wrote:
-> 
-> > > > The only user in your final tree seems to be the loop driver, and
-> > > > even that one only uses the helper for read/write bios.
-> > > > 
-> > > > I think something like this would be much simpler in the end:
-> > > 
-> > > The recently submitted nvme-tcp host driver should also be a user
-> > > of this. Does it make sense to keep it as a helper then?
-> > 
-> > I did take a brief look at the code, and I really don't understand
-> > why the heck it even deals with bios to start with.  Like all the
-> > other nvme transports it is a blk-mq driver and should iterate
-> > over segments in a request and more or less ignore bios.  Something
-> > is horribly wrong in the design.
-> 
-> Can you explain a little more? I'm more than happy to change that but
-> I'm not completely clear how...
-> 
-> Before we begin a data transfer, we need to set our own iterator that
-> will advance with the progression of the data transfer. We also need to
-> keep in mind that all the data transfer (both send and recv) are
-> completely non blocking (and zero-copy when we send).
-> 
-> That means that every data movement needs to be able to suspend
-> and resume asynchronously. i.e. we cannot use the following pattern:
-> rq_for_each_segment(bvec, rq, rq_iter) {
-> 	iov_iter_bvec(&iov_iter, WRITE, &bvec, 1, bvec.bv_len);
-> 	send(sock, iov_iter);
-> }
+Some file systems (including ext4, xfs, ramfs ...) have the following
+problem as I've described in the commit message of the 1/4 patch.
 
-Not sure I understand the 'blocking' problem in this case.
+  The commit ef3d0fd27e90 ("vfs: do (nearly) lockless generic_file_llseek")
+  removed almost all locks in llseek() including SEEK_END. It based on the
+  idea that write() updates size atomically. But in fact, write() can be
+  divided into two or more parts in generic_perform_write() when pos
+  straddles over the PAGE_SIZE, which results in updating size multiple
+  times in one write(). It means that llseek() can see the size being
+  updated during write().
 
-We can build a bvec table from this req, and send them all
-in send(), can this way avoid your blocking issue? You may see this
-example in branch 'rq->bio != rq->biotail' of lo_rw_aio().
+  This race changes behavior of some applications. 'tail' is one of those
+  applications. It reads range [pos, pos_end] where pos_end is obtained
+  via llseek() SEEK_END. Sometimes, a read line could be broken.
 
-If this way is what you need, I think you are right, even we may
-introduce the following helpers:
+  reproducer:
 
-	rq_for_each_bvec()
-	rq_bvecs()
+    $ while true; do echo 123456 >> out; done
+    $ while true; do tail out | grep -v 123456 ; done
 
-So looks nvme-tcp host driver might be the 2nd driver which benefits
-from multi-page bvec directly.
+  example output(take 30 secs):
 
-The multi-page bvec V11 has passed my tests and addressed almost
-all the comments during review on V10. I removed bio_vecs() in V11,
-but it won't be big deal, we can introduce them anytime when there
-is the requirement.
+    12345
+    1
+    1234
+    1
+    12
+    1234
 
-Thanks,
-Ming
+Note: Some file systems which indivisually implements llseek() and hold
+      inode mutex lock in it are not affected. ex:) btrfs, ocfs2
+
+Patch 1: re-implements inode lock for SEEK_END in generic_file_llseek()
+Patch 2 to 4: implement inode lock for SEEK_END in each file systems
+
+Eiichi Tsukata (4):
+  vfs: fix race between llseek SEEK_END and write
+  ext4: fix race between llseek SEEK_END and write
+  f2fs: fix race between llseek SEEK_END and write
+  overlayfs: fix race between llseek SEEK_END and write
+
+ fs/btrfs/file.c     |  2 +-
+ fs/ext4/file.c      | 10 ++++++++++
+ fs/f2fs/file.c      |  6 +-----
+ fs/fuse/file.c      |  5 +++--
+ fs/gfs2/file.c      |  3 ++-
+ fs/overlayfs/file.c | 23 ++++++++++++++++++++---
+ fs/read_write.c     | 37 ++++++++++++++++++++++++++++++++++---
+ include/linux/fs.h  |  2 ++
+ 8 files changed, 73 insertions(+), 15 deletions(-)
+
+-- 
+2.19.1
+

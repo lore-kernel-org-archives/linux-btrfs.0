@@ -2,178 +2,62 @@ Return-Path: <SRS0=krA0=OB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B23D2C43441
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 14:58:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7591FC43441
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 16:16:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8181D206B2
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 14:58:26 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8181D206B2
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
+	by mail.kernel.org (Postfix) with ESMTP id 3CE8B20672
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 16:16:58 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3CE8B20672
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2405678AbeKWBiB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 22 Nov 2018 20:38:01 -0500
-Received: from mx1.redhat.com ([209.132.183.28]:34462 "EHLO mx1.redhat.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2388992AbeKWBiB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Nov 2018 20:38:01 -0500
-Received: from smtp.corp.redhat.com (int-mx02.intmail.prod.int.phx2.redhat.com [10.5.11.12])
-        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
-        (No client certificate requested)
-        by mx1.redhat.com (Postfix) with ESMTPS id 5279630024F0;
-        Thu, 22 Nov 2018 14:58:17 +0000 (UTC)
-Received: from ming.t460p (ovpn-8-16.pek2.redhat.com [10.72.8.16])
-        by smtp.corp.redhat.com (Postfix) with ESMTPS id E482282714;
-        Thu, 22 Nov 2018 14:57:54 +0000 (UTC)
-Date:   Thu, 22 Nov 2018 22:57:50 +0800
-From:   Ming Lei <ming.lei@redhat.com>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
-        Theodore Ts'o <tytso@mit.edu>, Omar Sandoval <osandov@fb.com>,
-        Sagi Grimberg <sagi@grimberg.me>,
-        Dave Chinner <dchinner@redhat.com>,
-        Kent Overstreet <kent.overstreet@gmail.com>,
-        Mike Snitzer <snitzer@redhat.com>, dm-devel@redhat.com,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        linux-fsdevel@vger.kernel.org, Shaohua Li <shli@kernel.org>,
-        linux-raid@vger.kernel.org, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org,
-        "Darrick J . Wong" <darrick.wong@oracle.com>,
-        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
-        linux-ext4@vger.kernel.org, Coly Li <colyli@suse.de>,
-        linux-bcache@vger.kernel.org, Boaz Harrosh <ooo@electrozaur.com>,
-        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
-Subject: Re: [PATCH V11 03/19] block: introduce bio_for_each_bvec()
-Message-ID: <20181122145749.GA22146@ming.t460p>
-References: <20181121032327.8434-1-ming.lei@redhat.com>
- <20181121032327.8434-4-ming.lei@redhat.com>
- <20181121133244.GB1640@lst.de>
- <20181121153135.GB19111@ming.t460p>
- <20181121161025.GB4977@lst.de>
- <20181121171217.GA6259@lst.de>
- <20181122101527.GB27273@ming.t460p>
- <20181122102309.GA29295@lst.de>
- <20181122103033.GA29418@lst.de>
+        id S2405904AbeKWC46 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 22 Nov 2018 21:56:58 -0500
+Received: from mx2.suse.de ([195.135.220.15]:57922 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1730352AbeKWC46 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Nov 2018 21:56:58 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 167DCAD12
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Nov 2018 16:16:55 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 3FB79DA829; Thu, 22 Nov 2018 17:16:39 +0100 (CET)
+From:   David Sterba <dsterba@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     David Sterba <dsterba@suse.com>
+Subject: [PATCH 0/4] Minor helper and struct member cleanups
+Date:   Thu, 22 Nov 2018 17:16:39 +0100
+Message-Id: <cover.1542902890.git.dsterba@suse.com>
+X-Mailer: git-send-email 2.19.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20181122103033.GA29418@lst.de>
-User-Agent: Mutt/1.9.1 (2017-09-22)
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.12
-X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.45]); Thu, 22 Nov 2018 14:58:18 +0000 (UTC)
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Nov 22, 2018 at 11:30:33AM +0100, Christoph Hellwig wrote:
-> Btw, this patch instead of the plain rever might make it a little
-> more clear what is going on by skipping the confusing helper altogher
-> and operating on the raw bvec array:
-> 
-> 
-> diff --git a/include/linux/bio.h b/include/linux/bio.h
-> index e5b975fa0558..926550ce2d21 100644
-> --- a/include/linux/bio.h
-> +++ b/include/linux/bio.h
-> @@ -137,24 +137,18 @@ static inline bool bio_full(struct bio *bio)
->  	for (i = 0, iter_all.idx = 0; iter_all.idx < (bio)->bi_vcnt; iter_all.idx++)	\
->  		bvec_for_each_segment(bvl, &((bio)->bi_io_vec[iter_all.idx]), i, iter_all)
->  
-> -static inline void __bio_advance_iter(struct bio *bio, struct bvec_iter *iter,
-> -				      unsigned bytes, unsigned max_seg_len)
-> +static inline void bio_advance_iter(struct bio *bio, struct bvec_iter *iter,
-> +				    unsigned bytes)
->  {
->  	iter->bi_sector += bytes >> 9;
->  
->  	if (bio_no_advance_iter(bio))
->  		iter->bi_size -= bytes;
->  	else
-> -		__bvec_iter_advance(bio->bi_io_vec, iter, bytes, max_seg_len);
-> +		bvec_iter_advance(bio->bi_io_vec, iter, bytes);
->  		/* TODO: It is reasonable to complete bio with error here. */
->  }
->  
-> -static inline void bio_advance_iter(struct bio *bio, struct bvec_iter *iter,
-> -				    unsigned bytes)
-> -{
-> -	__bio_advance_iter(bio, iter, bytes, PAGE_SIZE);
-> -}
-> -
->  #define __bio_for_each_segment(bvl, bio, iter, start)			\
->  	for (iter = (start);						\
->  	     (iter).bi_size &&						\
-> @@ -168,7 +162,7 @@ static inline void bio_advance_iter(struct bio *bio, struct bvec_iter *iter,
->  	for (iter = (start);						\
->  	     (iter).bi_size &&						\
->  		((bvl = bio_iter_mp_iovec((bio), (iter))), 1);	\
-> -	     __bio_advance_iter((bio), &(iter), (bvl).bv_len, BVEC_MAX_LEN))
-> +	     bio_advance_iter((bio), &(iter), (bvl).bv_len))
->  
->  /* returns one real segment(multi-page bvec) each time */
->  #define bio_for_each_bvec(bvl, bio, iter)			\
-> diff --git a/include/linux/bvec.h b/include/linux/bvec.h
-> index cab36d838ed0..7d0f9bdb6f05 100644
-> --- a/include/linux/bvec.h
-> +++ b/include/linux/bvec.h
-> @@ -25,8 +25,6 @@
->  #include <linux/errno.h>
->  #include <linux/mm.h>
->  
-> -#define BVEC_MAX_LEN  ((unsigned int)-1)
-> -
->  /*
->   * was unsigned short, but we might as well be ready for > 64kB I/O pages
->   */
-> @@ -102,8 +100,8 @@ struct bvec_iter_all {
->  	.bv_offset	= segment_iter_offset((bvec), (iter)),	\
->  })
->  
-> -static inline bool __bvec_iter_advance(const struct bio_vec *bv,
-> -		struct bvec_iter *iter, unsigned bytes, unsigned max_seg_len)
-> +static inline bool bvec_iter_advance(const struct bio_vec *bv,
-> +		struct bvec_iter *iter, unsigned bytes)
->  {
->  	if (WARN_ONCE(bytes > iter->bi_size,
->  		     "Attempted to advance past end of bvec iter\n")) {
-> @@ -112,20 +110,15 @@ static inline bool __bvec_iter_advance(const struct bio_vec *bv,
->  	}
->  
->  	while (bytes) {
-> -		unsigned segment_len = segment_iter_len(bv, *iter);
-> -
-> -		if (max_seg_len < BVEC_MAX_LEN)
-> -			segment_len = min_t(unsigned, segment_len,
-> -					    max_seg_len -
-> -					    bvec_iter_offset(bv, *iter));
-> +		const struct bio_vec *cur = bv + iter->bi_idx;
-> +		unsigned len = min3(bytes, iter->bi_size,
-> +				    cur->bv_len - iter->bi_bvec_done);
->  
-> -		segment_len = min(bytes, segment_len);
-> -
-> -		bytes -= segment_len;
-> -		iter->bi_size -= segment_len;
-> -		iter->bi_bvec_done += segment_len;
-> +		bytes -= len;
-> +		iter->bi_size -= len;
-> +		iter->bi_bvec_done += len;
->  
-> -		if (iter->bi_bvec_done == __bvec_iter_bvec(bv, *iter)->bv_len) {
-> +		if (iter->bi_bvec_done == cur->bv_len) {
->  			iter->bi_bvec_done = 0;
->  			iter->bi_idx++;
->  		}
+Assorted updates to code vaguely related to the bio callbacks and
+structures. Remove call indirection, remove redundant struct members,
+etc.
 
-I'd rather not do the optimization part in this patchset, given it doesn't
-belong to this patchset, and it may decrease readability. So I plan to revert
-the delta part in V12 first.
+David Sterba (4):
+  btrfs: merge btrfs_submit_bio_done to its caller
+  btrfs: replace async_cow::root with fs_info
+  btrfs: remove redundant csum buffer in btrfs_io_bio
+  btrfs: replace btrfs_io_bio::end_io with a simple helper
 
-Thanks,
-Ming
+ fs/btrfs/disk-io.c   | 18 +++++++++++++++++-
+ fs/btrfs/extent_io.c |  3 +--
+ fs/btrfs/file-item.c | 13 +++----------
+ fs/btrfs/inode.c     | 39 +++++----------------------------------
+ fs/btrfs/volumes.h   | 11 ++++++++---
+ 5 files changed, 34 insertions(+), 50 deletions(-)
+
+-- 
+2.19.1
+

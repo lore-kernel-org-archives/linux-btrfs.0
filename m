@@ -6,33 +6,33 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 40436C43441
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 16:17:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 342FEC43610
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 16:17:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 04C2F20672
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 16:17:07 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 04C2F20672
+	by mail.kernel.org (Postfix) with ESMTP id 02CDF20672
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 16:17:08 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 02CDF20672
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2437089AbeKWC5B (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 22 Nov 2018 21:57:01 -0500
-Received: from mx2.suse.de ([195.135.220.15]:57936 "EHLO mx1.suse.de"
+        id S2438122AbeKWC5I (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 22 Nov 2018 21:57:08 -0500
+Received: from mx2.suse.de ([195.135.220.15]:57956 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2436801AbeKWC5B (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Nov 2018 21:57:01 -0500
+        id S1730352AbeKWC5I (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Nov 2018 21:57:08 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id E2A20AD12
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Nov 2018 16:16:58 +0000 (UTC)
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 510FEAD17
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Nov 2018 16:17:04 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id A069BDA829; Thu, 22 Nov 2018 17:16:44 +0100 (CET)
+        id 10357DA829; Thu, 22 Nov 2018 17:16:50 +0100 (CET)
 From:   David Sterba <dsterba@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH 2/4] btrfs: replace async_cow::root with fs_info
-Date:   Thu, 22 Nov 2018 17:16:44 +0100
-Message-Id: <fd6d887df4b22a7522ae3fa4dc0a2c6db88ff27b.1542902890.git.dsterba@suse.com>
+Subject: [PATCH 4/4] btrfs: replace btrfs_io_bio::end_io with a simple helper
+Date:   Thu, 22 Nov 2018 17:16:49 +0100
+Message-Id: <d714df92c07fadf07f92c10f6d629c6fdbe9d9dd.1542902890.git.dsterba@suse.com>
 X-Mailer: git-send-email 2.19.1
 In-Reply-To: <cover.1542902890.git.dsterba@suse.com>
 References: <cover.1542902890.git.dsterba@suse.com>
@@ -43,60 +43,122 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The async_cow::root is used to propagate fs_info to async_cow_submit.
-We can't use inode to reach it because it could become NULL after
-write without compression in async_cow_start.
+The end_io callback implemented as btrfs_io_bio_endio_readpage only
+calls kfree. Also the callback is set only in case the csum buffer is
+allocated and not pointing to the inline buffer. We can use that
+information to drop the indirection and call a helper that will free the
+csums only in the right case.
+
+This shrinks struct btrfs_io_bio by 8 bytes.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/inode.c | 9 +++------
- 1 file changed, 3 insertions(+), 6 deletions(-)
+ fs/btrfs/extent_io.c |  3 +--
+ fs/btrfs/file-item.c |  9 ---------
+ fs/btrfs/inode.c     |  7 ++-----
+ fs/btrfs/volumes.h   | 10 ++++++++--
+ 4 files changed, 11 insertions(+), 18 deletions(-)
 
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 4ea808d6cfbc..aef3c9866ff0 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2623,8 +2623,7 @@ static void end_bio_extent_readpage(struct bio *bio)
+ 	if (extent_len)
+ 		endio_readpage_release_extent(tree, extent_start, extent_len,
+ 					      uptodate);
+-	if (io_bio->end_io)
+-		io_bio->end_io(io_bio, blk_status_to_errno(bio->bi_status));
++	btrfs_io_bio_free_csum(io_bio);
+ 	bio_put(bio);
+ }
+ 
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index 1f2d0a6ab634..920bf3b4b0ef 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -142,14 +142,6 @@ int btrfs_lookup_file_extent(struct btrfs_trans_handle *trans,
+ 	return ret;
+ }
+ 
+-static void btrfs_io_bio_endio_readpage(struct btrfs_io_bio *bio, int err)
+-{
+-	if (bio->csum != bio->csum_inline) {
+-		kfree(bio->csum);
+-		bio->csum = NULL;
+-	}
+-}
+-
+ static blk_status_t __btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio,
+ 				   u64 logical_offset, u32 *dst, int dio)
+ {
+@@ -184,7 +176,6 @@ static blk_status_t __btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio
+ 				btrfs_free_path(path);
+ 				return BLK_STS_RESOURCE;
+ 			}
+-			btrfs_bio->end_io = btrfs_io_bio_endio_readpage;
+ 		} else {
+ 			btrfs_bio->csum = btrfs_bio->csum_inline;
+ 		}
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index a88122b89f50..26b8bec7c2dc 100644
+index 26b8bec7c2dc..6bfd37e58924 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -358,7 +358,7 @@ struct async_extent {
+@@ -8017,9 +8017,7 @@ static void btrfs_endio_direct_read(struct bio *bio)
  
- struct async_cow {
- 	struct inode *inode;
--	struct btrfs_root *root;
-+	struct btrfs_fs_info *fs_info;
- 	struct page *locked_page;
- 	u64 start;
- 	u64 end;
-@@ -1144,13 +1144,11 @@ static noinline void async_cow_submit(struct btrfs_work *work)
- {
- 	struct btrfs_fs_info *fs_info;
- 	struct async_cow *async_cow;
--	struct btrfs_root *root;
- 	unsigned long nr_pages;
+ 	dio_bio->bi_status = err;
+ 	dio_end_io(dio_bio);
+-
+-	if (io_bio->end_io)
+-		io_bio->end_io(io_bio, blk_status_to_errno(err));
++	btrfs_io_bio_free_csum(io_bio);
+ 	bio_put(bio);
+ }
  
- 	async_cow = container_of(work, struct async_cow, work);
+@@ -8372,8 +8370,7 @@ static void btrfs_submit_direct(struct bio *dio_bio, struct inode *inode,
+ 	if (!ret)
+ 		return;
  
--	root = async_cow->root;
--	fs_info = root->fs_info;
-+	fs_info = async_cow->fs_info;
- 	nr_pages = (async_cow->end - async_cow->start + PAGE_SIZE) >>
- 		PAGE_SHIFT;
+-	if (io_bio->end_io)
+-		io_bio->end_io(io_bio, ret);
++	btrfs_io_bio_free_csum(io_bio);
  
-@@ -1179,7 +1177,6 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct async_cow *async_cow;
--	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	unsigned long nr_pages;
- 	u64 cur_end;
+ free_ordered:
+ 	/*
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 9a764f2d462e..a13045fcfc45 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -267,14 +267,12 @@ struct btrfs_fs_devices {
+  * we allocate are actually btrfs_io_bios.  We'll cram as much of
+  * struct btrfs_bio as we can into this over time.
+  */
+-typedef void (btrfs_io_bio_end_io_t) (struct btrfs_io_bio *bio, int err);
+ struct btrfs_io_bio {
+ 	unsigned int mirror_num;
+ 	unsigned int stripe_index;
+ 	u64 logical;
+ 	u8 *csum;
+ 	u8 csum_inline[BTRFS_BIO_INLINE_CSUM_SIZE];
+-	btrfs_io_bio_end_io_t *end_io;
+ 	struct bvec_iter iter;
+ 	/*
+ 	 * This member must come last, bio_alloc_bioset will allocate enough
+@@ -288,6 +286,14 @@ static inline struct btrfs_io_bio *btrfs_io_bio(struct bio *bio)
+ 	return container_of(bio, struct btrfs_io_bio, bio);
+ }
  
-@@ -1189,7 +1186,7 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
- 		async_cow = kmalloc(sizeof(*async_cow), GFP_NOFS);
- 		BUG_ON(!async_cow); /* -ENOMEM */
- 		async_cow->inode = igrab(inode);
--		async_cow->root = root;
-+		async_cow->fs_info = fs_info;
- 		async_cow->locked_page = locked_page;
- 		async_cow->start = start;
- 		async_cow->write_flags = write_flags;
++static inline void btrfs_io_bio_free_csum(struct btrfs_io_bio *io_bio)
++{
++	if (io_bio->csum != io_bio->csum_inline) {
++		kfree(io_bio->csum);
++		io_bio->csum = NULL;
++	}
++}
++
+ struct btrfs_bio_stripe {
+ 	struct btrfs_device *dev;
+ 	u64 physical;
 -- 
 2.19.1
 

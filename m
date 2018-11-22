@@ -2,136 +2,207 @@ Return-Path: <SRS0=krA0=OB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D6A60C43441
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 13:44:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 03AA5C43441
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 13:46:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9F46A20672
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 13:44:39 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9F46A20672
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.de
+	by mail.kernel.org (Postfix) with ESMTP id B0C2E20672
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 13:46:58 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B0C2E20672
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2437039AbeKWAYD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 22 Nov 2018 19:24:03 -0500
-Received: from mx2.suse.de ([195.135.220.15]:55432 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2437016AbeKWAYC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Nov 2018 19:24:02 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id AC2D4AD70
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Nov 2018 13:44:35 +0000 (UTC)
-Subject: Re: [PATCH] btrfs: improve error handling of btrfs_add_link()
-To:     dsterba@suse.cz, David Sterba <dsterba@suse.com>,
-        Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
-References: <20181122131528.19421-1-jthumshirn@suse.de>
- <20181122133555.GR24115@twin.jikos.cz>
-From:   Johannes Thumshirn <jthumshirn@suse.de>
+        id S2391362AbeKWA0W (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 22 Nov 2018 19:26:22 -0500
+Received: from mout.gmx.net ([212.227.15.18]:52167 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1732583AbeKWA0W (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Nov 2018 19:26:22 -0500
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx002
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0LaXEN-1fiUcf016t-00mJzJ; Thu, 22
+ Nov 2018 14:46:51 +0100
+Subject: Re: [PATCH v2] Btrfs: fix deadlock when enabling quotas due to
+ concurrent snapshot creation
+To:     dsterba@suse.cz, Filipe Manana <fdmanana@kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <20181119094823.27346-1-fdmanana@kernel.org>
+ <20181119141536.20748-1-fdmanana@kernel.org>
+ <19a37acc-9b6f-7606-7ddd-2119b9bda207@gmx.com>
+ <CAL3q7H5Zb7urzHfXUEEJQOeHJb8Uxkck35-5WAOggnYY=NkFMg@mail.gmail.com>
+ <3b5c8646-42f7-e51d-e1f8-c28541558192@gmx.com>
+ <20181122131257.GQ24115@twin.jikos.cz>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <d1917f36-89c4-6219-ade0-8f1d4892341d@suse.de>
-Date:   Thu, 22 Nov 2018 14:44:35 +0100
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <2046f027-fe50-a160-bcde-cbe316cdad90@gmx.com>
+Date:   Thu, 22 Nov 2018 21:46:44 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+ Thunderbird/60.3.1
 MIME-Version: 1.0
-In-Reply-To: <20181122133555.GR24115@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20181122131257.GQ24115@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="fGJjz5l99wuVCyfTmvjOfSJMTaszl16no"
+X-Provags-ID: V03:K1:Ti5Nx+HGhoHClpVx1R4H3A4GMkpsSYbYzWH0918M1JNt349l66t
+ FfX0sNuQMJsq5JQ7HDfd3yp/pWWKPS5I2Ktw4w0HKZWYf88fKl3qQ/cBjV/eyhngf4CyFl7
+ U+WKHz+u69vkKNvfxxytYeZfLdqpYH9P/g3hzob3HGSLxC9JUoXDA7WT1Z/JSckFCf1tQHo
+ 5na02xb58MbCUrzwVQYvw==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:TmTnz3y5zlw=:VTaUJThlbq0hGtHZ/B8rym
+ oQnD4v3MZdBEhc6Q7MsCXJzERpr/NNRCCDzZ+Gq0VVA5X/R0BtEBDXMuNMv6qqTUPezRHNQlz
+ zBRWb3lkB8UKjNZhiqvLKu10XYrd6+wCfah0GqJjc78QHIzS5gWyuxnMJDJapPzvwM1YKtTo2
+ FfEJEiJyvaRb+3vJ/STo11XLpM4r9UzdosEWxMArxGn7hpptTGCmVD4GN2BUwEbkBagz3A9GJ
+ HKuiwovlZhD8nSt7MHrupw2BGNvI9QalVBe3gNXTPEgL6NVbayckr2HAgJxoPCsmr7IcPRDS4
+ Vlmk/fm8cS0bRx7wOmuYIKc9pE7p1xP4tf/O6KWlfuKN1M7mMA0n+UUnLmaIAdjNAfd8Qe6pZ
+ yoEfTkzEDWkQGepjA3R9U9aLqT8owOialJt9ZjI120QquA03cxfoo7Zzi7rGZSCm6tzFdP+Le
+ d+oiis8JwBVMJ3SY8UH6n5VmO63Q95HvpXnXk0kjY4+dVHsJT+EqQzAiwweVWdtUs9wo4ENkL
+ jyq3/EnB+AEvjh1mSMjKfkeqaftyeN95kGZU/kVMgOVwb+JPvHwOzLIUtJueXDZo7WdQGLenY
+ vvFVbyYMjqlhqjQOl7Jt7daPv6BzUe7PsvT8LJQ5o0FX+sYr6+52gnbKODDqU/zxx3k4Iqvw/
+ ymUvyft8AM51lP/E1MijSiHskLYB1+c5MbC66BWS6q9WILXNpYDZOp1K0k/7ZeID8i8U6CmK7
+ K6bnsGdIdw7o5IMueHUK8gLl/Hi6fV4Xwa6FB/6eQXopnjjoyDTAfouxgZ8xQuG1Wj3fpkDjK
+ WX8XADyHTxO7TbjNHXCNAjGq1MiUSU5KfLiLPpct5MR5bDjmLhVTsbHqRe6LUk7DOaNFch/oP
+ Vx8UW1mZ43h14Oo6CvZ7XpJINZAI/R/RploEEqp8Q=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 22/11/2018 14:35, David Sterba wrote:
-> On Thu, Nov 22, 2018 at 02:15:28PM +0100, Johannes Thumshirn wrote:
->> err holds the return value of either btrfs_del_root_ref() or
->> btrfs_del_inode_ref() but it hasn't been checked since it's
->> introduction with commit fe66a05a0679 (Btrfs: improve error handling
->> for btrfs_insert_dir_item callers) in 2012.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--fGJjz5l99wuVCyfTmvjOfSJMTaszl16no
+Content-Type: multipart/mixed; boundary="YVGPwniVVg7xaFVOK9MBEMaLZcMecKGxC";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: dsterba@suse.cz, Filipe Manana <fdmanana@kernel.org>,
+ linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <2046f027-fe50-a160-bcde-cbe316cdad90@gmx.com>
+Subject: Re: [PATCH v2] Btrfs: fix deadlock when enabling quotas due to
+ concurrent snapshot creation
+References: <20181119094823.27346-1-fdmanana@kernel.org>
+ <20181119141536.20748-1-fdmanana@kernel.org>
+ <19a37acc-9b6f-7606-7ddd-2119b9bda207@gmx.com>
+ <CAL3q7H5Zb7urzHfXUEEJQOeHJb8Uxkck35-5WAOggnYY=NkFMg@mail.gmail.com>
+ <3b5c8646-42f7-e51d-e1f8-c28541558192@gmx.com>
+ <20181122131257.GQ24115@twin.jikos.cz>
+In-Reply-To: <20181122131257.GQ24115@twin.jikos.cz>
+
+--YVGPwniVVg7xaFVOK9MBEMaLZcMecKGxC
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+
+
+
+On 2018/11/22 =E4=B8=8B=E5=8D=889:12, David Sterba wrote:
+> On Tue, Nov 20, 2018 at 08:32:42AM +0800, Qu Wenruo wrote:
+>>>>> @@ -1013,16 +1013,22 @@ int btrfs_quota_enable(struct btrfs_fs_info=
+ *fs_info)
+>>>>>               btrfs_abort_transaction(trans, ret);
+>>>>>               goto out_free_path;
+>>>>>       }
+>>>>> -     spin_lock(&fs_info->qgroup_lock);
+>>>>> -     fs_info->quota_root =3D quota_root;
+>>>>> -     set_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags);
+>>>>> -     spin_unlock(&fs_info->qgroup_lock);
+>>>>>
+>>>>>       ret =3D btrfs_commit_transaction(trans);
+>>>>>       trans =3D NULL;
+>>>>>       if (ret)
+>>>>>               goto out_free_path;
+>>>>
+>>>> The main concern here is, if we don't set qgroup enabled bit before =
+we
+>>>> commit transaction, there will be a window where new tree modificati=
+on
+>>>> could happen before QGROUP_ENABLED bit set.
+>>>
+>>> That doesn't seem to make much sense to me, if I understood correctly=
+=2E
+>>> Essentially you're saying stuff done to any tree in the the
+>>> transaction we use to
+>>> enable quotas must be accounted for. In that case the quota enabled b=
+it should
+>>> be done as soon as the transaction is started, because before we set
+>>> it and after
+>>> we started (or joined) a transaction, a lot could of modifications ma=
+y
+>>> have happened.
+>>> Nevertheless I don't think it's unexpected for anyone to have the
+>>> accounting happening
+>>> only after the quota enable ioctl returns success.
 >>
->> The first attempt in removing the variable was rejected, so instead of
->> removing 'err', start handling the errors of
->> btrfs_del_root_ref()/btrfs_del_inode_ref() by aborting the transaction in
->> btrfs_add_link() directly instead of the call-sites.
-> 
-> ... which is an anti-pattern.
-> 
-> https://btrfs.wiki.kernel.org/index.php/Development_notes#Error_handling_and_transaction_abort
-> 
-> In case there are several conditons that can fail we want to see the
-> first one for later analysis and debugging.
+>> The problem is not accounting, the qgroup number won't cause problem.
+>>
+>> It's the reserved space. Like some dirty pages are dirtied before quot=
+a
+>> enabled, but at run_dealloc() time quota is enabled.
+>>
+>> For such case we have io_tree based method to avoid underflow so it
+>> should be OK.
+>>
+>> So v2 patch looks OK.
+>=20
+> Does that mean reviewed-by? In case there's a evolved discussion under =
+a
+> patch, a clear yes/no is appreciated and an explicit Reviewed-by even
+> more. I'm about to add this patch to rc4 pull, thre's still some time t=
+o
+> add the tag. Thanks.
+>=20
 
-OK, but then handling the error of either btrfs_del_root_ref() or
-btrfs_del_inode_ref() will essentially only be printing an error message
-as anything else would hide the error condition which has led us into
-this path (i.e. btrfs_insert_dir_item() returning EEXISTS or EOVERFLOW),
-wouldn't it?
+I'd like to add reviewed-by tab, but I'm still not 100% if this will
+cause extra qgroup reserved space related problem.
 
-Byte,
-	Johannes
--- 
-Johannes Thumshirn                                        SUSE Labs
-jthumshirn@suse.de                                +49 911 74053 689
-SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
-GF: Felix Imendörffer, Jane Smithard, Graham Norton
-HRB 21284 (AG Nürnberg)
-Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850
+At least from my side, I can't directly see a case where it will cause
+problem.
+
+Does such case mean a reviewed-by tag? Or something LGTM-but-uncertain?
+
+Thanks,
+Qu
+
+
+--YVGPwniVVg7xaFVOK9MBEMaLZcMecKGxC--
+
+--fGJjz5l99wuVCyfTmvjOfSJMTaszl16no
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlv2s0QACgkQwj2R86El
+/qgtigf9ET9EWaInXm6TIluiGgURFyTdlUDxhJqeYXhh8m9kZTXlne4D9eUtA2eH
+kQQlAu4zIadUw77lUi8Oq7+j4sZbcniuii8fgF73mfeLx/tNyI/biPILtLRu8qxl
+MQmLWFCZHP2QBw1Ze7bA9qBWONx368MsaIVgmjkzpw56UsLX5p1v0maPKRzvZ/8b
+n4h3JtbQ+vFzaMTnnVYgEHxYJrZlZA/nvhAloPlEvr+b64PQG8pzbeXM4J3jryFk
+t0Nq15RmpAoFmiNn9IsNZSEHN+CumY+4nAl76qDn4ltFJGhU9vmvNB5amP2LQhaT
+9xOrdb5VI8s6JzCOryu1Gi111ToH1Q==
+=924B
+-----END PGP SIGNATURE-----
+
+--fGJjz5l99wuVCyfTmvjOfSJMTaszl16no--

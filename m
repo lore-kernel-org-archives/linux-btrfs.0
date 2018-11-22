@@ -6,29 +6,30 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 656DAC43441
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 16:21:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6CE44C43441
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 16:22:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 28BEF20818
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 16:21:04 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 28BEF20818
+	by mail.kernel.org (Postfix) with ESMTP id 2D441206B2
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 16:22:22 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2D441206B2
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2405933AbeKWDBF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 22 Nov 2018 22:01:05 -0500
-Received: from mx2.suse.de ([195.135.220.15]:58408 "EHLO mx1.suse.de"
+        id S2405771AbeKWDCY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 22 Nov 2018 22:02:24 -0500
+Received: from mx2.suse.de ([195.135.220.15]:58510 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1730352AbeKWDBF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Nov 2018 22:01:05 -0500
+        id S2404206AbeKWDCY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Nov 2018 22:02:24 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 75FA4B0B7
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Nov 2018 16:21:00 +0000 (UTC)
-Subject: Re: [PATCH 3/4] btrfs: remove redundant csum buffer in btrfs_io_bio
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id DC37FB0B7
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Nov 2018 16:22:15 +0000 (UTC)
+Subject: Re: [PATCH 4/4] btrfs: replace btrfs_io_bio::end_io with a simple
+ helper
 To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 References: <cover.1542902890.git.dsterba@suse.com>
- <8eeb7eb407bf3d0d8defffd5564b45da1eb3da07.1542902890.git.dsterba@suse.com>
+ <d714df92c07fadf07f92c10f6d629c6fdbe9d9dd.1542902890.git.dsterba@suse.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -73,12 +74,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <12d025e9-fb24-a96f-b3a2-f55df4830e22@suse.com>
-Date:   Thu, 22 Nov 2018 18:20:59 +0200
+Message-ID: <f103f421-25a0-2c6d-7b48-7800f681b1b5@suse.com>
+Date:   Thu, 22 Nov 2018 18:22:15 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <8eeb7eb407bf3d0d8defffd5564b45da1eb3da07.1542902890.git.dsterba@suse.com>
+In-Reply-To: <d714df92c07fadf07f92c10f6d629c6fdbe9d9dd.1542902890.git.dsterba@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -90,11 +91,11 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 22.11.18 г. 18:16 ч., David Sterba wrote:
-> The io_bio tracks checksums and has an inline buffer or an allocated
-> one. And there's a third member that points to the right one, but we
-> don't need to use an extra pointer for that. Let btrfs_io_bio::csum
-> point to the right buffer and check that the inline buffer is not
-> accidentally freed.
+> The end_io callback implemented as btrfs_io_bio_endio_readpage only
+> calls kfree. Also the callback is set only in case the csum buffer is
+> allocated and not pointing to the inline buffer. We can use that
+> information to drop the indirection and call a helper that will free the
+> csums only in the right case.
 > 
 > This shrinks struct btrfs_io_bio by 8 bytes.
 > 
@@ -103,53 +104,110 @@ On 22.11.18 г. 18:16 ч., David Sterba wrote:
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
 > ---
->  fs/btrfs/file-item.c | 12 +++++++-----
->  fs/btrfs/volumes.h   |  1 -
->  2 files changed, 7 insertions(+), 6 deletions(-)
+>  fs/btrfs/extent_io.c |  3 +--
+>  fs/btrfs/file-item.c |  9 ---------
+>  fs/btrfs/inode.c     |  7 ++-----
+>  fs/btrfs/volumes.h   | 10 ++++++++--
+>  4 files changed, 11 insertions(+), 18 deletions(-)
 > 
-> diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-> index ba74827beb32..1f2d0a6ab634 100644
-> --- a/fs/btrfs/file-item.c
-> +++ b/fs/btrfs/file-item.c
-> @@ -144,7 +144,10 @@ int btrfs_lookup_file_extent(struct btrfs_trans_handle *trans,
->  
->  static void btrfs_io_bio_endio_readpage(struct btrfs_io_bio *bio, int err)
->  {
-> -	kfree(bio->csum_allocated);
-> +	if (bio->csum != bio->csum_inline) {
-> +		kfree(bio->csum);
-> +		bio->csum = NULL;
-> +	}
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 4ea808d6cfbc..aef3c9866ff0 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -2623,8 +2623,7 @@ static void end_bio_extent_readpage(struct bio *bio)
+>  	if (extent_len)
+>  		endio_readpage_release_extent(tree, extent_start, extent_len,
+>  					      uptodate);
+> -	if (io_bio->end_io)
+> -		io_bio->end_io(io_bio, blk_status_to_errno(bio->bi_status));
+> +	btrfs_io_bio_free_csum(io_bio);
+>  	bio_put(bio);
 >  }
 >  
+> diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+> index 1f2d0a6ab634..920bf3b4b0ef 100644
+> --- a/fs/btrfs/file-item.c
+> +++ b/fs/btrfs/file-item.c
+> @@ -142,14 +142,6 @@ int btrfs_lookup_file_extent(struct btrfs_trans_handle *trans,
+>  	return ret;
+>  }
+>  
+> -static void btrfs_io_bio_endio_readpage(struct btrfs_io_bio *bio, int err)
+> -{
+> -	if (bio->csum != bio->csum_inline) {
+> -		kfree(bio->csum);
+> -		bio->csum = NULL;
+> -	}
+> -}
+> -
 >  static blk_status_t __btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio,
-> @@ -175,13 +178,12 @@ static blk_status_t __btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio
->  	nblocks = bio->bi_iter.bi_size >> inode->i_sb->s_blocksize_bits;
->  	if (!dst) {
->  		if (nblocks * csum_size > BTRFS_BIO_INLINE_CSUM_SIZE) {
-> -			btrfs_bio->csum_allocated = kmalloc_array(nblocks,
-> -					csum_size, GFP_NOFS);
-> -			if (!btrfs_bio->csum_allocated) {
-> +			btrfs_bio->csum = kmalloc_array(nblocks, csum_size,
-> +							GFP_NOFS);
-> +			if (!btrfs_bio->csum) {
+>  				   u64 logical_offset, u32 *dst, int dio)
+>  {
+> @@ -184,7 +176,6 @@ static blk_status_t __btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio
 >  				btrfs_free_path(path);
 >  				return BLK_STS_RESOURCE;
 >  			}
-> -			btrfs_bio->csum = btrfs_bio->csum_allocated;
->  			btrfs_bio->end_io = btrfs_io_bio_endio_readpage;
+> -			btrfs_bio->end_io = btrfs_io_bio_endio_readpage;
 >  		} else {
 >  			btrfs_bio->csum = btrfs_bio->csum_inline;
+>  		}
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 26b8bec7c2dc..6bfd37e58924 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -8017,9 +8017,7 @@ static void btrfs_endio_direct_read(struct bio *bio)
+>  
+>  	dio_bio->bi_status = err;
+>  	dio_end_io(dio_bio);
+> -
+> -	if (io_bio->end_io)
+> -		io_bio->end_io(io_bio, blk_status_to_errno(err));
+> +	btrfs_io_bio_free_csum(io_bio);
+>  	bio_put(bio);
+>  }
+>  
+> @@ -8372,8 +8370,7 @@ static void btrfs_submit_direct(struct bio *dio_bio, struct inode *inode,
+>  	if (!ret)
+>  		return;
+>  
+> -	if (io_bio->end_io)
+> -		io_bio->end_io(io_bio, ret);
+> +	btrfs_io_bio_free_csum(io_bio);
+>  
+>  free_ordered:
+>  	/*
 > diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-> index 1d936ce282c3..9a764f2d462e 100644
+> index 9a764f2d462e..a13045fcfc45 100644
 > --- a/fs/btrfs/volumes.h
 > +++ b/fs/btrfs/volumes.h
-> @@ -274,7 +274,6 @@ struct btrfs_io_bio {
+> @@ -267,14 +267,12 @@ struct btrfs_fs_devices {
+>   * we allocate are actually btrfs_io_bios.  We'll cram as much of
+>   * struct btrfs_bio as we can into this over time.
+>   */
+> -typedef void (btrfs_io_bio_end_io_t) (struct btrfs_io_bio *bio, int err);
+>  struct btrfs_io_bio {
+>  	unsigned int mirror_num;
+>  	unsigned int stripe_index;
 >  	u64 logical;
 >  	u8 *csum;
 >  	u8 csum_inline[BTRFS_BIO_INLINE_CSUM_SIZE];
-> -	u8 *csum_allocated;
->  	btrfs_io_bio_end_io_t *end_io;
+> -	btrfs_io_bio_end_io_t *end_io;
 >  	struct bvec_iter iter;
 >  	/*
+>  	 * This member must come last, bio_alloc_bioset will allocate enough
+> @@ -288,6 +286,14 @@ static inline struct btrfs_io_bio *btrfs_io_bio(struct bio *bio)
+>  	return container_of(bio, struct btrfs_io_bio, bio);
+>  }
+>  
+> +static inline void btrfs_io_bio_free_csum(struct btrfs_io_bio *io_bio)
+> +{
+> +	if (io_bio->csum != io_bio->csum_inline) {
+> +		kfree(io_bio->csum);
+> +		io_bio->csum = NULL;
+> +	}
+> +}
+> +
+>  struct btrfs_bio_stripe {
+>  	struct btrfs_device *dev;
+>  	u64 physical;
 > 

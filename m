@@ -6,35 +6,30 @@ X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4682DC43610
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 10:32:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 00D37C43441
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 10:41:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 07CF520684
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 10:32:54 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 07CF520684
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
+	by mail.kernel.org (Postfix) with ESMTP id B48FE20865
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 10:40:59 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B48FE20865
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=lst.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2390803AbeKVVLf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 22 Nov 2018 16:11:35 -0500
-Received: from mx1.redhat.com ([209.132.183.28]:34264 "EHLO mx1.redhat.com"
+        id S2394085AbeKVVTm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 22 Nov 2018 16:19:42 -0500
+Received: from verein.lst.de ([213.95.11.211]:57545 "EHLO newverein.lst.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2388243AbeKVVLf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Nov 2018 16:11:35 -0500
-Received: from smtp.corp.redhat.com (int-mx06.intmail.prod.int.phx2.redhat.com [10.5.11.16])
-        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
-        (No client certificate requested)
-        by mx1.redhat.com (Postfix) with ESMTPS id B03862D2BEB;
-        Thu, 22 Nov 2018 10:32:45 +0000 (UTC)
-Received: from ming.t460p (ovpn-8-23.pek2.redhat.com [10.72.8.23])
-        by smtp.corp.redhat.com (Postfix) with ESMTPS id 26F795C25A;
-        Thu, 22 Nov 2018 10:32:13 +0000 (UTC)
-Date:   Thu, 22 Nov 2018 18:32:09 +0800
-From:   Ming Lei <ming.lei@redhat.com>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
-        Theodore Ts'o <tytso@mit.edu>, Omar Sandoval <osandov@fb.com>,
+        id S2388382AbeKVVTm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Nov 2018 16:19:42 -0500
+Received: by newverein.lst.de (Postfix, from userid 2407)
+        id A4AA568BC7; Thu, 22 Nov 2018 11:40:49 +0100 (CET)
+Date:   Thu, 22 Nov 2018 11:40:49 +0100
+From:   Christoph Hellwig <hch@lst.de>
+To:     Ming Lei <ming.lei@redhat.com>
+Cc:     Christoph Hellwig <hch@lst.de>, Jens Axboe <axboe@kernel.dk>,
+        linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-mm@kvack.org, Theodore Ts'o <tytso@mit.edu>,
+        Omar Sandoval <osandov@fb.com>,
         Sagi Grimberg <sagi@grimberg.me>,
         Dave Chinner <dchinner@redhat.com>,
         Kent Overstreet <kent.overstreet@gmail.com>,
@@ -50,54 +45,30 @@ Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
         Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
 Subject: Re: [PATCH V11 14/19] block: handle non-cluster bio out of
  blk_bio_segment_split
-Message-ID: <20181122103208.GD27273@ming.t460p>
-References: <20181121032327.8434-1-ming.lei@redhat.com>
- <20181121032327.8434-15-ming.lei@redhat.com>
- <20181121143355.GB2594@lst.de>
- <20181121153726.GC19111@ming.t460p>
- <20181121174621.GA6961@lst.de>
- <20181122093259.GA27007@ming.t460p>
- <20181122100427.GA28871@lst.de>
+Message-ID: <20181122104049.GA29654@lst.de>
+References: <20181121032327.8434-1-ming.lei@redhat.com> <20181121032327.8434-15-ming.lei@redhat.com> <20181121143355.GB2594@lst.de> <20181121153726.GC19111@ming.t460p> <20181121174621.GA6961@lst.de> <20181122093259.GA27007@ming.t460p> <20181122100427.GA28871@lst.de> <20181122102616.GC27273@ming.t460p>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181122100427.GA28871@lst.de>
-User-Agent: Mutt/1.9.1 (2017-09-22)
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.16
-X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.39]); Thu, 22 Nov 2018 10:32:46 +0000 (UTC)
+In-Reply-To: <20181122102616.GC27273@ming.t460p>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Nov 22, 2018 at 11:04:28AM +0100, Christoph Hellwig wrote:
-> On Thu, Nov 22, 2018 at 05:33:00PM +0800, Ming Lei wrote:
-> > However, using virt boundary limit on non-cluster seems over-kill,
-> > because the bio will be over-split(each small bvec may be split as one bio)
-> > if it includes lots of small segment.
+On Thu, Nov 22, 2018 at 06:26:17PM +0800, Ming Lei wrote:
+> Suppose one bio includes (pg0, 0, 512) and (pg1, 512, 512):
 > 
-> The combination of the virt boundary of PAGE_SIZE - 1 and a
-> max_segment_size of PAGE_SIZE will only split if the to me merged
-> segment is in a different page than the previous one, which is exactly
-> what we need here.  Multiple small bvec inside the same page (e.g.
-> 512 byte buffer_heads) will still be merged.
+> The split is introduced by the following code in blk_bio_segment_split():
 > 
-> > What we want to do is just to avoid to merge bvecs to segment, which
-> > should have been done by NO_SG_MERGE simply. However, after multi-page
-> > is enabled, two adjacent bvecs won't be merged any more, I just forget
-> > to remove the bvec merge code in V11.
-> > 
-> > So seems we can simply avoid to use virt boundary limit for non-cluster
-> > after multipage bvec is enabled?
+>       if (bvprvp && bvec_gap_to_prev(q, bvprvp, bv.bv_offset))
+> 		  	goto split;
 > 
-> No, we can't just remove it.  As explained in the patch there is one very
-> visible difference of setting the flag amd that is no segment will span a
-> page boundary, and at least the iSCSI code seems to rely on that.
+> Without this patch, for non-cluster, the two bvecs are just in different
+> segment, but still handled by one same bio. Now you convert into two bios.
 
-IMO, we should use queue_segment_boundary() to enhance the rule during splitting
-segment after multi-page bvec is enabled.
+Oh, true - we create new bios instead of new segments.  So I guess we
+need to do something special here if we don't want to pay that overhead.
 
-Seems we miss the segment boundary limit in bvec_split_segs().
-
-Thanks,
-Ming
+Or just look into killing the cluster setting..

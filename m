@@ -6,33 +6,33 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D2111C43441
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 16:16:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B6694C43441
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 16:17:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A003920672
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 16:16:59 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A003920672
+	by mail.kernel.org (Postfix) with ESMTP id 81BCD20672
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 16:17:05 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 81BCD20672
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2436795AbeKWC5A (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 22 Nov 2018 21:57:00 -0500
-Received: from mx2.suse.de ([195.135.220.15]:57928 "EHLO mx1.suse.de"
+        id S2438119AbeKWC5F (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 22 Nov 2018 21:57:05 -0500
+Received: from mx2.suse.de ([195.135.220.15]:57950 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1730352AbeKWC47 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Nov 2018 21:56:59 -0500
+        id S1730352AbeKWC5F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Nov 2018 21:57:05 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 8CACEAD17
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Nov 2018 16:16:56 +0000 (UTC)
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 89569AD17
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Nov 2018 16:17:01 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 48D7FDA829; Thu, 22 Nov 2018 17:16:42 +0100 (CET)
+        id EF49EDA829; Thu, 22 Nov 2018 17:16:46 +0100 (CET)
 From:   David Sterba <dsterba@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH 1/4] btrfs: merge btrfs_submit_bio_done to its caller
-Date:   Thu, 22 Nov 2018 17:16:42 +0100
-Message-Id: <8a765283a6ba9c2eb3f2a61c41d5246a984e583b.1542902890.git.dsterba@suse.com>
+Subject: [PATCH 3/4] btrfs: remove redundant csum buffer in btrfs_io_bio
+Date:   Thu, 22 Nov 2018 17:16:46 +0100
+Message-Id: <8eeb7eb407bf3d0d8defffd5564b45da1eb3da07.1542902890.git.dsterba@suse.com>
 X-Mailer: git-send-email 2.19.1
 In-Reply-To: <cover.1542902890.git.dsterba@suse.com>
 References: <cover.1542902890.git.dsterba@suse.com>
@@ -43,90 +43,65 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There's one caller and its code is simple, we can open code it in
-run_one_async_done. The errors are passed through bio.
+The io_bio tracks checksums and has an inline buffer or an allocated
+one. And there's a third member that points to the right one, but we
+don't need to use an extra pointer for that. Let btrfs_io_bio::csum
+point to the right buffer and check that the inline buffer is not
+accidentally freed.
+
+This shrinks struct btrfs_io_bio by 8 bytes.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/disk-io.c | 18 +++++++++++++++++-
- fs/btrfs/inode.c   | 23 -----------------------
- 2 files changed, 17 insertions(+), 24 deletions(-)
+ fs/btrfs/file-item.c | 12 +++++++-----
+ fs/btrfs/volumes.h   |  1 -
+ 2 files changed, 7 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index feb67dfd663d..2f5c5442cf00 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -764,11 +764,22 @@ static void run_one_async_start(struct btrfs_work *work)
- 		async->status = ret;
- }
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index ba74827beb32..1f2d0a6ab634 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -144,7 +144,10 @@ int btrfs_lookup_file_extent(struct btrfs_trans_handle *trans,
  
-+/*
-+ * In order to insert checksums into the metadata in large chunks, we wait
-+ * until bio submission time.   All the pages in the bio are checksummed and
-+ * sums are attached onto the ordered extent record.
-+ *
-+ * At IO completion time the csums attached on the ordered extent record are
-+ * inserted into the tree.
-+ */
- static void run_one_async_done(struct btrfs_work *work)
+ static void btrfs_io_bio_endio_readpage(struct btrfs_io_bio *bio, int err)
  {
- 	struct async_submit_bio *async;
-+	struct inode *inode;
-+	blk_status_t ret;
- 
- 	async = container_of(work, struct  async_submit_bio, work);
-+	inode = async->private_data;
- 
- 	/* If an error occurred we just want to clean up the bio and move on */
- 	if (async->status) {
-@@ -777,7 +788,12 @@ static void run_one_async_done(struct btrfs_work *work)
- 		return;
- 	}
- 
--	btrfs_submit_bio_done(async->private_data, async->bio, async->mirror_num);
-+	ret = btrfs_map_bio(btrfs_sb(inode->i_sb), async->bio,
-+			async->mirror_num, 1);
-+	if (ret) {
-+		async->bio->bi_status = ret;
-+		bio_endio(async->bio);
+-	kfree(bio->csum_allocated);
++	if (bio->csum != bio->csum_inline) {
++		kfree(bio->csum);
++		bio->csum = NULL;
 +	}
  }
  
- static void run_one_async_free(struct btrfs_work *work)
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 9becf8543489..a88122b89f50 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1924,29 +1924,6 @@ static blk_status_t btrfs_submit_bio_start(void *private_data, struct bio *bio,
- 	return 0;
- }
- 
--/*
-- * in order to insert checksums into the metadata in large chunks,
-- * we wait until bio submission time.   All the pages in the bio are
-- * checksummed and sums are attached onto the ordered extent record.
-- *
-- * At IO completion time the cums attached on the ordered extent record
-- * are inserted into the btree
-- */
--blk_status_t btrfs_submit_bio_done(void *private_data, struct bio *bio,
--			  int mirror_num)
--{
--	struct inode *inode = private_data;
--	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
--	blk_status_t ret;
--
--	ret = btrfs_map_bio(fs_info, bio, mirror_num, 1);
--	if (ret) {
--		bio->bi_status = ret;
--		bio_endio(bio);
--	}
--	return ret;
--}
--
- /*
-  * extent_io.c submission hook. This does the right thing for csum calculation
-  * on write, or reading the csums from the tree before a read.
+ static blk_status_t __btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio,
+@@ -175,13 +178,12 @@ static blk_status_t __btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio
+ 	nblocks = bio->bi_iter.bi_size >> inode->i_sb->s_blocksize_bits;
+ 	if (!dst) {
+ 		if (nblocks * csum_size > BTRFS_BIO_INLINE_CSUM_SIZE) {
+-			btrfs_bio->csum_allocated = kmalloc_array(nblocks,
+-					csum_size, GFP_NOFS);
+-			if (!btrfs_bio->csum_allocated) {
++			btrfs_bio->csum = kmalloc_array(nblocks, csum_size,
++							GFP_NOFS);
++			if (!btrfs_bio->csum) {
+ 				btrfs_free_path(path);
+ 				return BLK_STS_RESOURCE;
+ 			}
+-			btrfs_bio->csum = btrfs_bio->csum_allocated;
+ 			btrfs_bio->end_io = btrfs_io_bio_endio_readpage;
+ 		} else {
+ 			btrfs_bio->csum = btrfs_bio->csum_inline;
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 1d936ce282c3..9a764f2d462e 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -274,7 +274,6 @@ struct btrfs_io_bio {
+ 	u64 logical;
+ 	u8 *csum;
+ 	u8 csum_inline[BTRFS_BIO_INLINE_CSUM_SIZE];
+-	u8 *csum_allocated;
+ 	btrfs_io_bio_end_io_t *end_io;
+ 	struct bvec_iter iter;
+ 	/*
 -- 
 2.19.1
 

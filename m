@@ -2,111 +2,159 @@ Return-Path: <SRS0=krA0=OB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7F06CC43441
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 07:07:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E4B19C43441
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 07:24:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4CC6520865
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 07:07:28 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4CC6520865
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=ZenIV.linux.org.uk
+	by mail.kernel.org (Postfix) with ESMTP id 9B16520820
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 07:24:51 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9B16520820
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2392389AbeKVRpb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 22 Nov 2018 12:45:31 -0500
-Received: from zeniv.linux.org.uk ([195.92.253.2]:59898 "EHLO
-        ZenIV.linux.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1733037AbeKVRpb (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Nov 2018 12:45:31 -0500
-Received: from viro by ZenIV.linux.org.uk with local (Exim 4.90_1 #2 (Red Hat Linux))
-        id 1gPj4c-0007Yb-TQ; Thu, 22 Nov 2018 07:06:50 +0000
-Date:   Thu, 22 Nov 2018 07:06:50 +0000
-From:   Al Viro <viro@ZenIV.linux.org.uk>
-To:     Eiichi Tsukata <devel@etsukata.com>
-Cc:     andi@firstfloor.org, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, Theodore Ts'o <tytso@mit.edu>,
-        Andreas Dilger <adilger.kernel@dilger.ca>,
-        Jaegeuk Kim <jaegeuk@kernel.org>, Chao Yu <yuchao0@huawei.com>,
-        Miklos Szeredi <miklos@szeredi.hu>,
-        Bob Peterson <rpeterso@redhat.com>,
-        Andreas Gruenbacher <agruenba@redhat.com>,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net,
-        linux-fsdevel@vger.kernel.org, cluster-devel@redhat.com,
-        linux-unionfs@vger.kernel.org
-Subject: Re: [PATCH v1 0/4] fs: fix race between llseek SEEK_END and write
-Message-ID: <20181122070650.GN32577@ZenIV.linux.org.uk>
-References: <20181121024400.4346-1-devel@etsukata.com>
- <20181121045440.GM32577@ZenIV.linux.org.uk>
- <CANhTXPQzKmsyPO9QrGz6eijjuMFzLN4BhUV=6ABDJysX0xyKfw@mail.gmail.com>
+        id S1733045AbeKVSC7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 22 Nov 2018 13:02:59 -0500
+Received: from mx2.suse.de ([195.135.220.15]:46192 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1730323AbeKVSC6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Nov 2018 13:02:58 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 4954AAE80;
+        Thu, 22 Nov 2018 07:24:48 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: only run delayed refs if we're committing
+To:     Josef Bacik <josef@toxicpanda.com>, kernel-team@fb.com,
+        linux-btrfs@vger.kernel.org
+References: <20181121191016.25224-1-josef@toxicpanda.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ xsFNBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
+ T7g+RbfPFlmQp+EwFWOtABXlKC54zgSf+uulGwx5JAUFVUIRBmnHOYi/lUiE0yhpnb1KCA7f
+ u/W+DkwGerXqhhe9TvQoGwgCKNfzFPZoM+gZrm+kWv03QLUCr210n4cwaCPJ0Nr9Z3c582xc
+ bCUVbsjt7BN0CFa2BByulrx5xD9sDAYIqfLCcZetAqsTRGxM7LD0kh5WlKzOeAXj5r8DOrU2
+ GdZS33uKZI/kZJZVytSmZpswDsKhnGzRN1BANGP8sC+WD4eRXajOmNh2HL4P+meO1TlM3GLl
+ EQd2shHFY0qjEo7wxKZI1RyZZ5AgJnSmehrPCyuIyVY210CbMaIKHUIsTqRgY5GaNME24w7h
+ TyyVCy2qAM8fLJ4Vw5bycM/u5xfWm7gyTb9V1TkZ3o1MTrEsrcqFiRrBY94Rs0oQkZvunqia
+ c+NprYSaOG1Cta14o94eMH271Kka/reEwSZkC7T+o9hZ4zi2CcLcY0DXj0qdId7vUKSJjEep
+ c++s8ncFekh1MPhkOgNj8pk17OAESanmDwksmzh1j12lgA5lTFPrJeRNu6/isC2zyZhTwMWs
+ k3LkcTa8ZXxh0RfWAqgx/ogKPk4ZxOXQEZetkEyTFghbRH2BIwARAQABzSJOaWtvbGF5IEJv
+ cmlzb3YgPG5ib3Jpc292QHN1c2UuZGU+wsF4BBMBAgAiBQJYijkSAhsDBgsJCAcDAgYVCAIJ
+ CgsEFgIDAQIeAQIXgAAKCRBxvoJG5T8oV/B6D/9a8EcRPdHg8uLEPywuJR8URwXzkofT5bZE
+ IfGF0Z+Lt2ADe+nLOXrwKsamhweUFAvwEUxxnndovRLPOpWerTOAl47lxad08080jXnGfYFS
+ Dc+ew7C3SFI4tFFHln8Y22Q9075saZ2yQS1ywJy+TFPADIprAZXnPbbbNbGtJLoq0LTiESnD
+ w/SUC6sfikYwGRS94Dc9qO4nWyEvBK3Ql8NkoY0Sjky3B0vL572Gq0ytILDDGYuZVo4alUs8
+ LeXS5ukoZIw1QYXVstDJQnYjFxYgoQ5uGVi4t7FsFM/6ykYDzbIPNOx49Rbh9W4uKsLVhTzG
+ BDTzdvX4ARl9La2kCQIjjWRg+XGuBM5rxT/NaTS78PXjhqWNYlGc5OhO0l8e5DIS2tXwYMDY
+ LuHYNkkpMFksBslldvNttSNei7xr5VwjVqW4vASk2Aak5AleXZS+xIq2FADPS/XSgIaepyTV
+ tkfnyreep1pk09cjfXY4A7qpEFwazCRZg9LLvYVc2M2eFQHDMtXsH59nOMstXx2OtNMcx5p8
+ 0a5FHXE/HoXz3p9bD0uIUq6p04VYOHsMasHqHPbsMAq9V2OCytJQPWwe46bBjYZCOwG0+x58
+ fBFreP/NiJNeTQPOa6FoxLOLXMuVtpbcXIqKQDoEte9aMpoj9L24f60G4q+pL/54ql2VRscK
+ d87BTQRYigc+ARAAyJSq9EFk28++SLfg791xOh28tLI6Yr8wwEOvM3wKeTfTZd+caVb9gBBy
+ wxYhIopKlK1zq2YP7ZjTP1aPJGoWvcQZ8fVFdK/1nW+Z8/NTjaOx1mfrrtTGtFxVBdSCgqBB
+ jHTnlDYV1R5plJqK+ggEP1a0mr/rpQ9dFGvgf/5jkVpRnH6BY0aYFPprRL8ZCcdv2DeeicOO
+ YMobD5g7g/poQzHLLeT0+y1qiLIFefNABLN06Lf0GBZC5l8hCM3Rpb4ObyQ4B9PmL/KTn2FV
+ Xq/c0scGMdXD2QeWLePC+yLMhf1fZby1vVJ59pXGq+o7XXfYA7xX0JsTUNxVPx/MgK8aLjYW
+ hX+TRA4bCr4uYt/S3ThDRywSX6Hr1lyp4FJBwgyb8iv42it8KvoeOsHqVbuCIGRCXqGGiaeX
+ Wa0M/oxN1vJjMSIEVzBAPi16tztL/wQtFHJtZAdCnuzFAz8ue6GzvsyBj97pzkBVacwp3/Mw
+ qbiu7sDz7yB0d7J2tFBJYNpVt/Lce6nQhrvon0VqiWeMHxgtQ4k92Eja9u80JDaKnHDdjdwq
+ FUikZirB28UiLPQV6PvCckgIiukmz/5ctAfKpyYRGfez+JbAGl6iCvHYt/wAZ7Oqe/3Cirs5
+ KhaXBcMmJR1qo8QH8eYZ+qhFE3bSPH446+5oEw8A9v5oonKV7zMAEQEAAcLBXwQYAQIACQUC
+ WIoHPgIbDAAKCRBxvoJG5T8oV1pyD/4zdXdOL0lhkSIjJWGqz7Idvo0wjVHSSQCbOwZDWNTN
+ JBTP0BUxHpPu/Z8gRNNP9/k6i63T4eL1xjy4umTwJaej1X15H8Hsh+zakADyWHadbjcUXCkg
+ OJK4NsfqhMuaIYIHbToi9K5pAKnV953xTrK6oYVyd/Rmkmb+wgsbYQJ0Ur1Ficwhp6qU1CaJ
+ mJwFjaWaVgUERoxcejL4ruds66LM9Z1Qqgoer62ZneID6ovmzpCWbi2sfbz98+kW46aA/w8r
+ 7sulgs1KXWhBSv5aWqKU8C4twKjlV2XsztUUsyrjHFj91j31pnHRklBgXHTD/pSRsN0UvM26
+ lPs0g3ryVlG5wiZ9+JbI3sKMfbdfdOeLxtL25ujs443rw1s/PVghphoeadVAKMPINeRCgoJH
+ zZV/2Z/myWPRWWl/79amy/9MfxffZqO9rfugRBORY0ywPHLDdo9Kmzoxoxp9w3uTrTLZaT9M
+ KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
+ zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
+ Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
+Message-ID: <7f30e9f3-f263-ca09-fac9-68f203eb55bc@suse.com>
+Date:   Thu, 22 Nov 2018 09:24:45 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
+In-Reply-To: <20181121191016.25224-1-josef@toxicpanda.com>
 Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
+Content-Language: en-US
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <CANhTXPQzKmsyPO9QrGz6eijjuMFzLN4BhUV=6ABDJysX0xyKfw@mail.gmail.com>
-User-Agent: Mutt/1.9.1 (2017-09-22)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Nov 22, 2018 at 02:40:50PM +0900, Eiichi Tsukata wrote:
-> 2018年11月21日(水) 13:54 Al Viro <viro@zeniv.linux.org.uk>:
-> >
-> > On Wed, Nov 21, 2018 at 11:43:56AM +0900, Eiichi Tsukata wrote:
-> > > Some file systems (including ext4, xfs, ramfs ...) have the following
-> > > problem as I've described in the commit message of the 1/4 patch.
-> > >
-> > >   The commit ef3d0fd27e90 ("vfs: do (nearly) lockless generic_file_llseek")
-> > >   removed almost all locks in llseek() including SEEK_END. It based on the
-> > >   idea that write() updates size atomically. But in fact, write() can be
-> > >   divided into two or more parts in generic_perform_write() when pos
-> > >   straddles over the PAGE_SIZE, which results in updating size multiple
-> > >   times in one write(). It means that llseek() can see the size being
-> > >   updated during write().
-> >
-> > And?  Who has ever promised anything that insane?  write(2) can take an arbitrary
-> > amount of time; another process doing lseek() on independently opened descriptor
-> > is *not* going to wait for that (e.g. page-in of the buffer being written, which
-> > just happens to be mmapped from a file on NFS over RFC1149 link).
+
+
+On 21.11.18 г. 21:10 ч., Josef Bacik wrote:
+> I noticed in a giant dbench run that we spent a lot of time on lock
+> contention while running transaction commit.  This is because dbench
+> results in a lot of fsync()'s that do a btrfs_transaction_commit(), and
+> they all run the delayed refs first thing, so they all contend with
+> each other.  This leads to seconds of 0 throughput.  Change this to only
+> run the delayed refs if we're the ones committing the transaction.  This
+> makes the latency go away and we get no more lock contention.
 > 
-> Thanks.
+> Reviewed-by: Omar Sandoval <osandov@fb.com>
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+Wohooo, we no longer run delayed refs at arbitrary points during
+transaction commit.
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  fs/btrfs/transaction.c | 24 +++++++++---------------
+>  1 file changed, 9 insertions(+), 15 deletions(-)
 > 
-> The lock I added in NFS was nothing but slow down lseek() because a file size is
-> updated atomically. Even `spin_lock(&inode->i_lock)` is unnecessary.
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index 3c1be9db897c..41cc96cc59a3 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -1918,15 +1918,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+>  	btrfs_trans_release_metadata(trans);
+>  	trans->block_rsv = NULL;
+>  
+> -	/* make a pass through all the delayed refs we have so far
+> -	 * any runnings procs may add more while we are here
+> -	 */
+> -	ret = btrfs_run_delayed_refs(trans, 0);
+> -	if (ret) {
+> -		btrfs_end_transaction(trans);
+> -		return ret;
+> -	}
+> -
+>  	cur_trans = trans->transaction;
+>  
+>  	/*
+> @@ -1938,12 +1929,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+>  
+>  	btrfs_create_pending_block_groups(trans);
+>  
+> -	ret = btrfs_run_delayed_refs(trans, 0);
+> -	if (ret) {
+> -		btrfs_end_transaction(trans);
+> -		return ret;
+> -	}
+> -
+>  	if (!test_bit(BTRFS_TRANS_DIRTY_BG_RUN, &cur_trans->flags)) {
+>  		int run_it = 0;
+>  
+> @@ -2014,6 +1999,15 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+>  		spin_unlock(&fs_info->trans_lock);
+>  	}
+>  
+> +	/*
+> +	 * We are now the only one in the commit area, we can run delayed refs
+> +	 * without hitting a bunch of lock contention from a lot of people
+> +	 * trying to commit the transaction at once.
+> +	 */
+> +	ret = btrfs_run_delayed_refs(trans, 0);
+> +	if (ret)
+> +		goto cleanup_transaction;
+> +
+>  	extwriter_counter_dec(cur_trans, trans->type);
+>  
+>  	ret = btrfs_start_delalloc_flush(fs_info);
 > 
-> I'll fix the commit message which only refers to specific local file
-> systems that use
-> generic_perform_write() and remove unnecessary locks in some
-> distributed file systems
-> (e.g. nfs, cifs, or more) by replacing generic_file_llseek() with
-> generic_file_llseek_unlocked()
-> so that `tail` don't have to wait for avian carriers.
-
-fd = open("/mnt/sloooow/foo", O_RDONLY);
-p = mmap(NULL, 8192, PROT_READ, MAP_SHARED, fd, 0);
-local_fd = open("/tmp/foo", O_RDWR);
-write(local_fd, p, 8192);
-
-and there you go - extremely slow write(2).  To file on a local filesystem.
-
-Can you show me where does POSIX/SuS/whatever it's called these days promise
-that kind of atomicity?  TBH, I would be very surprised if any Unix promised
-to have file size updated no more than once per write(2).  Any userland code
-that relies on such property is, as minimum, non-portable and I would argue
-that it is outright broken.
-
-Note, BTW, that your example depends upon rather non-obvious details of echo
-implementation, starting with the bufferization logics used by particular
-shell.  And AFAICS ash(1) ends up with possibility of more than one write(2)
-anyway - get SIGSTOP delivered, followed by SIGCONT and you've got just that.
-Transparently for echo(1).  I'm fairly sure that the same holds for anything
-that isn't outright broken - write(2) *IS* interruptible (must be, for obvious
-reasons) and that pair of signals will lead to short write if it comes at the
-right time.  The only thing userland can do (and does) is to issue further
-write(2) on anything that hadn't been written the last time around.

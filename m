@@ -2,181 +2,167 @@ Return-Path: <SRS0=krA0=OB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1D9A6C43441
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 10:09:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D4E48C43441
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 10:16:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D240120684
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 10:09:39 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D240120684
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 9590F20684
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Nov 2018 10:16:08 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9590F20684
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2390319AbeKVUsY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 22 Nov 2018 15:48:24 -0500
-Received: from mx2.suse.de ([195.135.220.15]:49498 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1731910AbeKVUsX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Nov 2018 15:48:23 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B9C1DAD4A;
-        Thu, 22 Nov 2018 10:09:35 +0000 (UTC)
-Subject: Re: [PATCH 3/6] btrfs: cleanup extent_op handling
-To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-Cc:     Josef Bacik <jbacik@fb.com>
-References: <20181121185912.24288-1-josef@toxicpanda.com>
- <20181121185912.24288-4-josef@toxicpanda.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <c292598c-233c-09aa-7674-42a3eca8830c@suse.com>
-Date:   Thu, 22 Nov 2018 12:09:34 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+        id S2405175AbeKVUyt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 22 Nov 2018 15:54:49 -0500
+Received: from mx1.redhat.com ([209.132.183.28]:49008 "EHLO mx1.redhat.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S2390653AbeKVUys (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Nov 2018 15:54:48 -0500
+Received: from smtp.corp.redhat.com (int-mx08.intmail.prod.int.phx2.redhat.com [10.5.11.23])
+        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mx1.redhat.com (Postfix) with ESMTPS id 8E4AE8666D;
+        Thu, 22 Nov 2018 10:16:00 +0000 (UTC)
+Received: from ming.t460p (ovpn-8-23.pek2.redhat.com [10.72.8.23])
+        by smtp.corp.redhat.com (Postfix) with ESMTPS id 6A0FB2857A;
+        Thu, 22 Nov 2018 10:15:34 +0000 (UTC)
+Date:   Thu, 22 Nov 2018 18:15:28 +0800
+From:   Ming Lei <ming.lei@redhat.com>
+To:     Christoph Hellwig <hch@lst.de>
+Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
+        Theodore Ts'o <tytso@mit.edu>, Omar Sandoval <osandov@fb.com>,
+        Sagi Grimberg <sagi@grimberg.me>,
+        Dave Chinner <dchinner@redhat.com>,
+        Kent Overstreet <kent.overstreet@gmail.com>,
+        Mike Snitzer <snitzer@redhat.com>, dm-devel@redhat.com,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        linux-fsdevel@vger.kernel.org, Shaohua Li <shli@kernel.org>,
+        linux-raid@vger.kernel.org, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
+        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
+        linux-ext4@vger.kernel.org, Coly Li <colyli@suse.de>,
+        linux-bcache@vger.kernel.org, Boaz Harrosh <ooo@electrozaur.com>,
+        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
+Subject: Re: [PATCH V11 03/19] block: introduce bio_for_each_bvec()
+Message-ID: <20181122101527.GB27273@ming.t460p>
+References: <20181121032327.8434-1-ming.lei@redhat.com>
+ <20181121032327.8434-4-ming.lei@redhat.com>
+ <20181121133244.GB1640@lst.de>
+ <20181121153135.GB19111@ming.t460p>
+ <20181121161025.GB4977@lst.de>
+ <20181121171217.GA6259@lst.de>
 MIME-Version: 1.0
-In-Reply-To: <20181121185912.24288-4-josef@toxicpanda.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20181121171217.GA6259@lst.de>
+User-Agent: Mutt/1.9.1 (2017-09-22)
+X-Scanned-By: MIMEDefang 2.84 on 10.5.11.23
+X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.26]); Thu, 22 Nov 2018 10:16:01 +0000 (UTC)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 21.11.18 г. 20:59 ч., Josef Bacik wrote:
-> From: Josef Bacik <jbacik@fb.com>
+On Wed, Nov 21, 2018 at 06:12:17PM +0100, Christoph Hellwig wrote:
+> On Wed, Nov 21, 2018 at 05:10:25PM +0100, Christoph Hellwig wrote:
+> > No - I think we can always use the code without any segment in
+> > bvec_iter_advance.  Because bvec_iter_advance only operates on the
+> > iteractor, the generation of an actual single-page or multi-page
+> > bvec is left to the caller using the bvec_iter_bvec or segment_iter_bvec
+> > helpers.  The only difference is how many bytes you can move the
+> > iterator forward in a single loop iteration - so if you pass in
+> > PAGE_SIZE as the max_seg_len you just will have to loop more often
+> > for a large enough bytes, but not actually do anything different.
 > 
-> The cleanup_extent_op function actually would run the extent_op if it
-> needed running, which made the name sort of a misnomer.  Change it to
-> run_and_cleanup_extent_op, and move the actual cleanup work to
-> cleanup_extent_op so it can be used by check_ref_cleanup() in order to
-> unify the extent op handling.
-
-The whole name extent_op is actually a misnomer since AFAIR this is some
-sort of modification of the references of metadata nodes. I don't see
-why it can't be made as yet another type of reference which is run for a
-given node.
-
+> FYI, this patch reverts the max_seg_len related changes back to where
+> we are in mainline, and as expected everything works fine for me:
 > 
-> Signed-off-by: Josef Bacik <jbacik@fb.com>
-> ---
->  fs/btrfs/extent-tree.c | 36 +++++++++++++++++++++++-------------
->  1 file changed, 23 insertions(+), 13 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index e3ed3507018d..8a776dc9cb38 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -2424,19 +2424,33 @@ static void unselect_delayed_ref_head(struct btrfs_delayed_ref_root *delayed_ref
->  	btrfs_delayed_ref_unlock(head);
+> diff --git a/include/linux/bio.h b/include/linux/bio.h
+> index e5b975fa0558..926550ce2d21 100644
+> --- a/include/linux/bio.h
+> +++ b/include/linux/bio.h
+> @@ -137,24 +137,18 @@ static inline bool bio_full(struct bio *bio)
+>  	for (i = 0, iter_all.idx = 0; iter_all.idx < (bio)->bi_vcnt; iter_all.idx++)	\
+>  		bvec_for_each_segment(bvl, &((bio)->bi_io_vec[iter_all.idx]), i, iter_all)
+>  
+> -static inline void __bio_advance_iter(struct bio *bio, struct bvec_iter *iter,
+> -				      unsigned bytes, unsigned max_seg_len)
+> +static inline void bio_advance_iter(struct bio *bio, struct bvec_iter *iter,
+> +				    unsigned bytes)
+>  {
+>  	iter->bi_sector += bytes >> 9;
+>  
+>  	if (bio_no_advance_iter(bio))
+>  		iter->bi_size -= bytes;
+>  	else
+> -		__bvec_iter_advance(bio->bi_io_vec, iter, bytes, max_seg_len);
+> +		bvec_iter_advance(bio->bi_io_vec, iter, bytes);
+>  		/* TODO: It is reasonable to complete bio with error here. */
 >  }
 >  
-> -static int cleanup_extent_op(struct btrfs_trans_handle *trans,
-> -			     struct btrfs_delayed_ref_head *head)
-> +static struct btrfs_delayed_extent_op *
-> +cleanup_extent_op(struct btrfs_trans_handle *trans,
-> +		  struct btrfs_delayed_ref_head *head)
+> -static inline void bio_advance_iter(struct bio *bio, struct bvec_iter *iter,
+> -				    unsigned bytes)
+> -{
+> -	__bio_advance_iter(bio, iter, bytes, PAGE_SIZE);
+> -}
+> -
+>  #define __bio_for_each_segment(bvl, bio, iter, start)			\
+>  	for (iter = (start);						\
+>  	     (iter).bi_size &&						\
+> @@ -168,7 +162,7 @@ static inline void bio_advance_iter(struct bio *bio, struct bvec_iter *iter,
+>  	for (iter = (start);						\
+>  	     (iter).bi_size &&						\
+>  		((bvl = bio_iter_mp_iovec((bio), (iter))), 1);	\
+> -	     __bio_advance_iter((bio), &(iter), (bvl).bv_len, BVEC_MAX_LEN))
+> +	     bio_advance_iter((bio), &(iter), (bvl).bv_len))
+>  
+>  /* returns one real segment(multi-page bvec) each time */
+>  #define bio_for_each_bvec(bvl, bio, iter)			\
+> diff --git a/include/linux/bvec.h b/include/linux/bvec.h
+> index cab36d838ed0..138b4007b8f2 100644
+> --- a/include/linux/bvec.h
+> +++ b/include/linux/bvec.h
+> @@ -25,8 +25,6 @@
+>  #include <linux/errno.h>
+>  #include <linux/mm.h>
+>  
+> -#define BVEC_MAX_LEN  ((unsigned int)-1)
+> -
+>  /*
+>   * was unsigned short, but we might as well be ready for > 64kB I/O pages
+>   */
+> @@ -102,8 +100,8 @@ struct bvec_iter_all {
+>  	.bv_offset	= segment_iter_offset((bvec), (iter)),	\
+>  })
+>  
+> -static inline bool __bvec_iter_advance(const struct bio_vec *bv,
+> -		struct bvec_iter *iter, unsigned bytes, unsigned max_seg_len)
+> +static inline bool bvec_iter_advance(const struct bio_vec *bv,
+> +		struct bvec_iter *iter, unsigned bytes)
 >  {
->  	struct btrfs_delayed_extent_op *extent_op = head->extent_op;
-> -	int ret;
->  
->  	if (!extent_op)
-> -		return 0;
-> -	head->extent_op = NULL;
-> +		return NULL;
-> +
->  	if (head->must_insert_reserved) {
-> +		head->extent_op = NULL;
->  		btrfs_free_delayed_extent_op(extent_op);
-> -		return 0;
-> +		return NULL;
+>  	if (WARN_ONCE(bytes > iter->bi_size,
+>  		     "Attempted to advance past end of bvec iter\n")) {
+> @@ -112,18 +110,12 @@ static inline bool __bvec_iter_advance(const struct bio_vec *bv,
 >  	}
-> +	return extent_op;
-> +}
-> +
-> +static int run_and_cleanup_extent_op(struct btrfs_trans_handle *trans,
-> +				     struct btrfs_delayed_ref_head *head)
-> +{
-> +	struct btrfs_delayed_extent_op *extent_op =
-> +		cleanup_extent_op(trans, head);
-> +	int ret;
-> +
-> +	if (!extent_op)
-> +		return 0;
-> +	head->extent_op = NULL;
->  	spin_unlock(&head->lock);
->  	ret = run_delayed_extent_op(trans, head, extent_op);
->  	btrfs_free_delayed_extent_op(extent_op);
-> @@ -2488,7 +2502,7 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
 >  
->  	delayed_refs = &trans->transaction->delayed_refs;
->  
-> -	ret = cleanup_extent_op(trans, head);
-> +	ret = run_and_cleanup_extent_op(trans, head);
->  	if (ret < 0) {
->  		unselect_delayed_ref_head(delayed_refs, head);
->  		btrfs_debug(fs_info, "run_delayed_extent_op returned %d", ret);
-> @@ -6977,12 +6991,8 @@ static noinline int check_ref_cleanup(struct btrfs_trans_handle *trans,
->  	if (!RB_EMPTY_ROOT(&head->ref_tree.rb_root))
->  		goto out;
->  
-> -	if (head->extent_op) {
-> -		if (!head->must_insert_reserved)
-> -			goto out;
-> -		btrfs_free_delayed_extent_op(head->extent_op);
-> -		head->extent_op = NULL;
-> -	}
-> +	if (cleanup_extent_op(trans, head) != NULL)
-> +		goto out;
->  
->  	/*
->  	 * waiting for the lock here would deadlock.  If someone else has it
-> 
+>  	while (bytes) {
+> -		unsigned segment_len = segment_iter_len(bv, *iter);
+> -
+> -		if (max_seg_len < BVEC_MAX_LEN)
+> -			segment_len = min_t(unsigned, segment_len,
+> -					    max_seg_len -
+> -					    bvec_iter_offset(bv, *iter));
+> +		unsigned iter_len = bvec_iter_len(bv, *iter);
+> +		unsigned len = min(bytes, iter_len);
+
+It may not work to always use bvec_iter_len() here, and 'segment_len'
+should be max length of the passed 'bv', however we don't know if it is
+single-page or mutli-page bvec if no one tells us.
+
+Thanks,
+Ming

@@ -4,59 +4,68 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
-	autolearn=ham autolearn_force=no version=3.4.0
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 192B6C43441
-	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Nov 2018 12:41:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C9266C43441
+	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Nov 2018 12:47:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D922B20672
-	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Nov 2018 12:41:16 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D922B20672
+	by mail.kernel.org (Postfix) with ESMTP id 9B15720672
+	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Nov 2018 12:47:12 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9B15720672
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2409874AbeKWXZS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 23 Nov 2018 18:25:18 -0500
-Received: from mx2.suse.de ([195.135.220.15]:37786 "EHLO mx1.suse.de"
+        id S2394775AbeKWXbK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 23 Nov 2018 18:31:10 -0500
+Received: from mx2.suse.de ([195.135.220.15]:38614 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2405500AbeKWXZS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Nov 2018 18:25:18 -0500
+        id S2394756AbeKWXbJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 23 Nov 2018 18:31:09 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D1E21AD6B
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Nov 2018 12:41:13 +0000 (UTC)
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id AFDB7AEFA;
+        Fri, 23 Nov 2018 12:47:04 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 6AE33DA858; Fri, 23 Nov 2018 13:40:57 +0100 (CET)
-Date:   Fri, 23 Nov 2018 13:40:57 +0100
+        id BCF29DA858; Fri, 23 Nov 2018 13:46:49 +0100 (CET)
+Date:   Fri, 23 Nov 2018 13:46:49 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Johannes Thumshirn <jthumshirn@suse.de>
-Cc:     David Sterba <dsterba@suse.com>,
-        Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: remove btrfs_bio_end_io_t
-Message-ID: <20181123124057.GA2842@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Johannes Thumshirn <jthumshirn@suse.de>,
+To:     Pan Bian <bianpan2016@163.com>
+Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
-        Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
-References: <20181123084227.25840-1-jthumshirn@suse.de>
+        Wang Shilong <wangsl.fnst@cn.fujitsu.com>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] btrfs: relocation: set trans to be NULL after free
+Message-ID: <20181123124648.GB2842@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Pan Bian <bianpan2016@163.com>,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
+        Wang Shilong <wangsl.fnst@cn.fujitsu.com>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+References: <1542967815-14547-1-git-send-email-bianpan2016@163.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181123084227.25840-1-jthumshirn@suse.de>
+In-Reply-To: <1542967815-14547-1-git-send-email-bianpan2016@163.com>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Nov 23, 2018 at 09:42:27AM +0100, Johannes Thumshirn wrote:
-> The btrfs_bio_end_io_t typedef was introduced with commit
-> a1d3c4786a4b ("btrfs: btrfs_multi_bio replaced with btrfs_bio")
-> but never used anywhere. This commit also introduced a forward declaration
-> of 'struct btrfs_bio' which is only needed for btrfs_bio_end_io_t.
+On Fri, Nov 23, 2018 at 06:10:15PM +0800, Pan Bian wrote:
+> The function relocate_block_group calls btrfs_end_transaction to release
+> trans when update_backref_cache returns 1, and then continues the loop
+> body. If btrfs_block_rsv_refill fails this time, it will jump out the
+> loop and the freed trans will be accessed. This may result in a
+> use-after-free bug. The patch assigns NULL to trans after trans is
+> released so that it will not be accessed.
 > 
-> Remove both as they're not needed anywhere.
+> Fixes: 0647bf564f1("Btrfs: improve forever loop when doing balance
+> relocation")
 > 
-> Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+> Signed-off-by: Pan Bian <bianpan2016@163.com>
 
-Added to misc-next, thanks.
+Good catch, thanks.
+
+Reviewed-by: David Sterba <dsterba@suse.com>

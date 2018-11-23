@@ -2,122 +2,170 @@ Return-Path: <SRS0=1Z4l=OC=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BCAE3C43441
-	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Nov 2018 08:45:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2FEE6C43441
+	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Nov 2018 09:34:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7F0D620824
-	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Nov 2018 08:45:08 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7F0D620824
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id E33FC20820
+	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Nov 2018 09:34:18 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=theleadbetters.com header.i=@theleadbetters.com header.b="JfhBUilI"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E33FC20820
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=theleadbetters.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2408670AbeKWT2X (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 23 Nov 2018 14:28:23 -0500
-Received: from mx2.suse.de ([195.135.220.15]:59088 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2390357AbeKWT2X (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Nov 2018 14:28:23 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 79BB5AE00
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Nov 2018 08:45:05 +0000 (UTC)
-Subject: Re: [PATCH] btrfs: remove btrfs_bio_end_io_t
-To:     Johannes Thumshirn <jthumshirn@suse.de>,
-        David Sterba <dsterba@suse.com>
-Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
-References: <20181123084227.25840-1-jthumshirn@suse.de>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <063bcdf0-ccde-c7ff-b6bb-31d0aff05ed5@suse.com>
-Date:   Fri, 23 Nov 2018 10:45:03 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+        id S2394243AbeKWURp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 23 Nov 2018 15:17:45 -0500
+Received: from mail-oi1-f194.google.com ([209.85.167.194]:39585 "EHLO
+        mail-oi1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2387987AbeKWURp (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 23 Nov 2018 15:17:45 -0500
+Received: by mail-oi1-f194.google.com with SMTP id 192-v6so9487370oii.6
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 Nov 2018 01:34:16 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=theleadbetters.com; s=google;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=sms7DW3LBGN21nekXBtW5mQxNUmOiPORFpmqiuHD10k=;
+        b=JfhBUilIZeu8qsHVayuNjFDHDS7qzige224f9tpPvVDs0/6i6oJzWOvdhMGe3tWEcH
+         OdahCCZdg66McMAnQTwB8H4voLUz34cq6LgxTWFo2HIqr+FXnmOCQ09VKXPDysWUkats
+         uLbAKLUrABwRjduqIlQ3mpsVr/OZxxy+9I6Tg=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=sms7DW3LBGN21nekXBtW5mQxNUmOiPORFpmqiuHD10k=;
+        b=nRIhoposGkbdFoTiRWb3ijjGnNa+FgCq+orNLbS/sqgMOlYnB3URJOzbKqHVsBK0H9
+         +NtrO0uDW9DFqUyDBntRhvzZ4KU1P/ExGeZyNZLXTnIKj2Tfv/zMXecTPH/WPmaRQwfY
+         3zz4nJ2a47ThIOPU+KWNuZZxK/5Mj0njT4lXuq52hCQ8qP2TyI9GI+JlFdNuvoEBNt2w
+         +q7Ca1aXBpgedMiipZh+VUgdk7pz79qls6mvTnXpEDnKZsJDwZ2bLXdjrH3JDnkZN7y2
+         xfc+JbQrQPZ2FHArpPcdF0MoSKkQI6bL0F12vPeeHAdnxsaB9oUaB58ryPP6w3UCbwTO
+         GLyw==
+X-Gm-Message-State: AGRZ1gJO96KJlNByO67Qj73Wedd7CedO+5DV0GlOtuJaLL7tGOSXRCfE
+        3H2JDJWj//+o0xOyMgotuwOoMgs1aTjuWJSMOznxWQDKYt0=
+X-Google-Smtp-Source: AJdET5c/MuuT4NXdudkBenIVbcMmxpU1i5Oioc+NryERXScmfx22tK2lGOlsIHUIV8ky9/Wkt3l+C0z7QdH/2HsZLJE=
+X-Received: by 2002:aca:ab16:: with SMTP id u22mr8322115oie.249.1542965656058;
+ Fri, 23 Nov 2018 01:34:16 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20181123084227.25840-1-jthumshirn@suse.de>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+References: <CAJUWh6qyHerKg=-oaFN+USa10_Aag5+SYjBOeLCX1qM+WcDUwA@mail.gmail.com>
+ <CAJCQCtSRgX+nffcycRgPhYLZN7_HNL-OM2wgyw7MpLLWqzY5dw@mail.gmail.com>
+In-Reply-To: <CAJCQCtSRgX+nffcycRgPhYLZN7_HNL-OM2wgyw7MpLLWqzY5dw@mail.gmail.com>
+From:   Andy Leadbetter <andy.leadbetter@theleadbetters.com>
+Date:   Fri, 23 Nov 2018 09:34:03 +0000
+Message-ID: <CAJUWh6pFz=-K_Tg=uAD4KGF=kGjTN0Qc3omFKBzYOhJiUCqbyw@mail.gmail.com>
+Subject: Re:
+To:     lists@colorremedies.com
+Cc:     linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 23.11.18 г. 10:42 ч., Johannes Thumshirn wrote:
-> The btrfs_bio_end_io_t typedef was introduced with commit
-> a1d3c4786a4b ("btrfs: btrfs_multi_bio replaced with btrfs_bio")
-> but never used anywhere. This commit also introduced a forward declaration
-> of 'struct btrfs_bio' which is only needed for btrfs_bio_end_io_t.
-> 
-> Remove both as they're not needed anywhere.
-> 
-> Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
-> ---
->  fs/btrfs/volumes.h | 3 ---
->  1 file changed, 3 deletions(-)
-> 
-> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-> index 8b092bb1e2ee..c93097b0b469 100644
-> --- a/fs/btrfs/volumes.h
-> +++ b/fs/btrfs/volumes.h
-> @@ -295,9 +295,6 @@ struct btrfs_bio_stripe {
->  	u64 length; /* only used for discard mappings */
->  };
->  
-> -struct btrfs_bio;
-> -typedef void (btrfs_bio_end_io_t) (struct btrfs_bio *bio, int err);
-> -
->  struct btrfs_bio {
->  	refcount_t refs;
->  	atomic_t stripes_pending;
-> 
+Will capture all of that this evening, and try it with the latest
+kernel and tools.  Thanks for the input on what info is relevant, with
+gather it asap.
+On Fri, 23 Nov 2018 at 07:53, Chris Murphy <lists@colorremedies.com> wrote:
+>
+> On Thu, Nov 22, 2018 at 11:41 PM Andy Leadbetter
+> <andy.leadbetter@theleadbetters.com> wrote:
+> >
+> > I have a failing 2TB disk that is part of a 4 disk RAID 6 system.  I
+> > have added a new 2TB disk to the computer, and started a BTRFS replace
+> > for the old and new disk.  The process starts correctly however some
+> > hours into the job, there is an error and kernel oops. relevant log
+> > below.
+>
+> The relevant log is the entire dmesg, not a snippet. It's decently
+> likely there's more than one thing going on here. We also need full
+> output of 'smartctl -x' for all four drives, and also 'smartctl -l
+> scterc' for all four drives, and also 'cat
+> /sys/block/sda/device/timeout' for all four drives. And which bcache
+> mode you're using.
+>
+> The call trace provided is from kernel 4.15 which is sufficiently long
+> ago I think any dev working on raid56 might want to see where it's
+> getting tripped up on something a lot newer, and this is why:
+>
+> https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/diff/fs/btrfs/raid56.c?id=v4.19.3&id2=v4.15.1
+>
+> That's a lot of changes in just the raid56 code between 4.15 and 4.19.
+> And then in you call trace, btrfs_dev_replace_start is found in
+> dev-replace.c which likewise has a lot of changes. But then also, I
+> think 4.15 might still be in the era where it was not recommended to
+> use 'btrfs dev replace' for raid56, only non-raid56. I'm not sure if
+> the problems with device replace were fixed, and if they were fixed
+> kernel or progs side. Anyway, the latest I recall, it was recommended
+> on raid56 to 'btrfs dev add' then 'btrfs dev remove'.
+>
+> https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/diff/fs/btrfs/dev-replace.c?id=v4.19.3&id2=v4.15.1
+>
+> And that's only a few hundred changes for each. Check out inode.c -
+> there are over 2000 changes.
+>
+>
+> > The disks are configured on top of bcache, in 5 arrays with a small
+> > 128GB SSD cache shared.  The system in this configuration has worked
+> > perfectly for 3 years, until 2 weeks ago csum errors started
+> > appearing.  I have a crashplan backup of all files on the disk, so I
+> > am not concerned about data loss, but I would like to avoid rebuild
+> > the system.
+>
+> btrfs-progs 4.17 still considers raid56 experimental, not for
+> production use. And three years ago, the current upstream kernel
+> released was 4.3 so I'm gonna guess the kernel history of this file
+> system goes back older than that, very close to raid56 code birth. And
+> then adding bcache to this mix just makes it all the more complicated.
+>
+>
+>
+> >
+> > btrfs dev stats shows
+> > [/dev/bcache0].write_io_errs    0
+> > [/dev/bcache0].read_io_errs     0
+> > [/dev/bcache0].flush_io_errs    0
+> > [/dev/bcache0].corruption_errs  0
+> > [/dev/bcache0].generation_errs  0
+> > [/dev/bcache1].write_io_errs    0
+> > [/dev/bcache1].read_io_errs     20
+> > [/dev/bcache1].flush_io_errs    0
+> > [/dev/bcache1].corruption_errs  0
+> > [/dev/bcache1].generation_errs  14
+> > [/dev/bcache3].write_io_errs    0
+> > [/dev/bcache3].read_io_errs     0
+> > [/dev/bcache3].flush_io_errs    0
+> > [/dev/bcache3].corruption_errs  0
+> > [/dev/bcache3].generation_errs  19
+> > [/dev/bcache2].write_io_errs    0
+> > [/dev/bcache2].read_io_errs     0
+> > [/dev/bcache2].flush_io_errs    0
+> > [/dev/bcache2].corruption_errs  0
+> > [/dev/bcache2].generation_errs  2
+>
+>
+> 3 of 4 drives have at least one generation error. While there are no
+> corruptions reported, generation errors can be really tricky to
+> recover from at all. If only one device had only read errors, this
+> would be a lot less difficult.
+>
+>
+> > I've tried the latest kernel, and the latest tools, but nothing will
+> > allow me to replace, or delete the failed disk.
+>
+> If the file system is mounted, I would try to make a local backup ASAP
+> before you lose the whole volume. Whether it's LVM pool of two drives
+> (linear/concat) with XFS, or if you go with Btrfs -dsingle -mraid1
+> (also basically a concat) doesn't really matter, but I'd get whatever
+> you can off the drive. I expect avoiding a rebuild in some form or
+> another is very wishful thinking and not very likely.
+>
+> The more changes are made to the file system, repair attempts or
+> otherwise writing to it, decreases the chance of recovery.
+>
+> --
+> Chris Murphy

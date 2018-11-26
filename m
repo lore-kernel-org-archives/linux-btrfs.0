@@ -3,33 +3,33 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0ACD4C43441
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 09:44:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 15C01C43610
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 09:47:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C0A1A20850
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 09:44:35 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C0A1A20850
+	by mail.kernel.org (Postfix) with ESMTP id DC62C2086B
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 09:47:54 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org DC62C2086B
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726274AbeKZUiH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 26 Nov 2018 15:38:07 -0500
-Received: from mx2.suse.de ([195.135.220.15]:46564 "EHLO mx1.suse.de"
+        id S1726464AbeKZUl1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 26 Nov 2018 15:41:27 -0500
+Received: from mx2.suse.de ([195.135.220.15]:47266 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726184AbeKZUiH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Nov 2018 15:38:07 -0500
+        id S1726280AbeKZUl0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Nov 2018 15:41:26 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 75CFFACA9;
-        Mon, 26 Nov 2018 09:44:31 +0000 (UTC)
-Subject: Re: [PATCH 6/6] btrfs: fix truncate throttling
-To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-References: <20181121185912.24288-1-josef@toxicpanda.com>
- <20181121185912.24288-7-josef@toxicpanda.com>
+        by mx1.suse.de (Postfix) with ESMTP id CBC31AF6A;
+        Mon, 26 Nov 2018 09:47:50 +0000 (UTC)
+Subject: Re: [PATCH 1/2] btrfs: scrub: maintain the unlock order in scrub
+ thread
+To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+References: <1543223228-28232-1-git-send-email-anand.jain@oracle.com>
+ <1543223228-28232-2-git-send-email-anand.jain@oracle.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -74,12 +74,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <c37d25d1-bdfd-3c76-ff04-f90126e1c53e@suse.com>
-Date:   Mon, 26 Nov 2018 11:44:30 +0200
+Message-ID: <f7d06f21-f4a0-f46f-c241-fab35b9c0ed7@suse.com>
+Date:   Mon, 26 Nov 2018 11:47:50 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181121185912.24288-7-josef@toxicpanda.com>
+In-Reply-To: <1543223228-28232-2-git-send-email-anand.jain@oracle.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -90,145 +90,56 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 21.11.18 г. 20:59 ч., Josef Bacik wrote:
-> We have a bunch of magic to make sure we're throttling delayed refs when
-> truncating a file.  Now that we have a delayed refs rsv and a mechanism
-> for refilling that reserve simply use that instead of all of this magic.
+On 26.11.18 г. 11:07 ч., Anand Jain wrote:
+> The fs_info::device_list_mutex and fs_info::scrub_lock creates a
+> nested locks in btrfs_scrub_dev(). During the lock acquire the
+> hierarchy is fs_info::device_list_mutex and then fs_info::scrub_lock,
+> so following the same reverse order during unlock, that is
+> fs_info::scrub_lock and then fs_info::device_list_mutex.
 > 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 > ---
->  fs/btrfs/inode.c | 79 ++++++++++++--------------------------------------------
->  1 file changed, 17 insertions(+), 62 deletions(-)
+>  fs/btrfs/scrub.c | 16 +++++++---------
+>  1 file changed, 7 insertions(+), 9 deletions(-)
 > 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 8532a2eb56d1..cae30f6c095f 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -4437,31 +4437,6 @@ static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
->  	return err;
->  }
->  
-> -static int truncate_space_check(struct btrfs_trans_handle *trans,
-> -				struct btrfs_root *root,
-> -				u64 bytes_deleted)
-> -{
-> -	struct btrfs_fs_info *fs_info = root->fs_info;
-> -	int ret;
-> -
-> -	/*
-> -	 * This is only used to apply pressure to the enospc system, we don't
-> -	 * intend to use this reservation at all.
-> -	 */
-> -	bytes_deleted = btrfs_csum_bytes_to_leaves(fs_info, bytes_deleted);
-> -	bytes_deleted *= fs_info->nodesize;
-> -	ret = btrfs_block_rsv_add(root, &fs_info->trans_block_rsv,
-> -				  bytes_deleted, BTRFS_RESERVE_NO_FLUSH);
-> -	if (!ret) {
-> -		trace_btrfs_space_reservation(fs_info, "transaction",
-> -					      trans->transid,
-> -					      bytes_deleted, 1);
-> -		trans->bytes_reserved += bytes_deleted;
-> -	}
-> -	return ret;
-> -
-> -}
-> -
->  /*
->   * Return this if we need to call truncate_block for the last bit of the
->   * truncate.
-> @@ -4506,7 +4481,6 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
->  	u64 bytes_deleted = 0;
->  	bool be_nice = false;
->  	bool should_throttle = false;
-> -	bool should_end = false;
->  
->  	BUG_ON(new_size > 0 && min_type != BTRFS_EXTENT_DATA_KEY);
->  
-> @@ -4719,15 +4693,7 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
->  				btrfs_abort_transaction(trans, ret);
->  				break;
->  			}
-> -			if (btrfs_should_throttle_delayed_refs(trans))
-> -				btrfs_async_run_delayed_refs(fs_info,
-> -					trans->delayed_ref_updates * 2,
-> -					trans->transid, 0);
->  			if (be_nice) {
-> -				if (truncate_space_check(trans, root,
-> -							 extent_num_bytes)) {
-> -					should_end = true;
-> -				}
->  				if (btrfs_should_throttle_delayed_refs(trans))
->  					should_throttle = true;
->  			}
-> @@ -4738,7 +4704,7 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
->  
->  		if (path->slots[0] == 0 ||
->  		    path->slots[0] != pending_del_slot ||
-> -		    should_throttle || should_end) {
-> +		    should_throttle) {
->  			if (pending_del_nr) {
->  				ret = btrfs_del_items(trans, root, path,
->  						pending_del_slot,
-> @@ -4750,23 +4716,24 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
->  				pending_del_nr = 0;
->  			}
->  			btrfs_release_path(path);
-> -			if (should_throttle) {
-> -				unsigned long updates = trans->delayed_ref_updates;
-> -				if (updates) {
-> -					trans->delayed_ref_updates = 0;
-> -					ret = btrfs_run_delayed_refs(trans,
-> -								   updates * 2);
-> -					if (ret)
-> -						break;
-> -				}
-> -			}
-> +
->  			/*
-> -			 * if we failed to refill our space rsv, bail out
-> -			 * and let the transaction restart
-> +			 * We can generate a lot of delayed refs, so we need to
-> +			 * throttle every once and a while and make sure we're
-> +			 * adding enough space to keep up with the work we are
-> +			 * generating.  Since we hold a transaction here we
-> +			 * can't flush, and we don't want to FLUSH_LIMIT because
-> +			 * we could have generated too many delayed refs to
-> +			 * actually allocate, so just bail if we're short and
-> +			 * let the normal reservation dance happen higher up.
->  			 */
-> -			if (should_end) {
-> -				ret = -EAGAIN;
-> -				break;
-> +			if (should_throttle) {
-> +				ret = btrfs_throttle_delayed_refs(fs_info,
-> +							BTRFS_RESERVE_NO_FLUSH);
-> +				if (ret) {
-> +					ret = -EAGAIN;
-> +					break;
-> +				}
->  			}
->  			goto search_again;
->  		} else {
-> @@ -4792,18 +4759,6 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
+> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+> index 902819d3cf41..b1c2d1cdbd4b 100644
+> --- a/fs/btrfs/scrub.c
+> +++ b/fs/btrfs/scrub.c
+> @@ -3865,7 +3865,6 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
 >  	}
+>  	sctx->readonly = readonly;
+>  	dev->scrub_ctx = sctx;
+> -	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
 >  
->  	btrfs_free_path(path);
-> -
-> -	if (be_nice && bytes_deleted > SZ_32M && (ret >= 0 || ret == -EAGAIN)) {
-> -		unsigned long updates = trans->delayed_ref_updates;
-> -		int err;
-> -
-> -		if (updates) {
-> -			trans->delayed_ref_updates = 0;
-> -			err = btrfs_run_delayed_refs(trans, updates * 2);
-> -			if (err)
-> -				ret = err;
-> -		}
+>  	/*
+>  	 * checking @scrub_pause_req here, we can avoid
+> @@ -3875,15 +3874,14 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+>  	atomic_inc(&fs_info->scrubs_running);
+>  	mutex_unlock(&fs_info->scrub_lock);
+>  
+> -	if (!is_dev_replace) {
+> -		/*
+> -		 * by holding device list mutex, we can
+> -		 * kick off writing super in log tree sync.
+> -		 */
+> -		mutex_lock(&fs_info->fs_devices->device_list_mutex);
+> +	/*
+> +	 * by holding device list mutex, we can kick off writing super in log
+> +	 * tree sync.
+> +	 */
+> +	if (!is_dev_replace)
+>  		ret = scrub_supers(sctx, dev);
+> -		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
 > -	}
->  	return ret;
->  }
+> +
+> +	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+
+Have you considered whether this change will have any negative impact
+due to the fact that __scrtub_blocked_if_needed can go to sleep for
+arbitrary time with device_list_mutex held now ?
+
 >  
+>  	if (!ret)
+>  		ret = scrub_enumerate_chunks(sctx, dev, start, end);
 > 

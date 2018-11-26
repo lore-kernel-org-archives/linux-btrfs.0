@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1CD72C43441
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 11:28:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B8F42C43441
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 12:25:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D324020672
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 11:28:37 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D324020672
+	by mail.kernel.org (Postfix) with ESMTP id 7A02920664
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 12:25:58 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7A02920664
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726511AbeKZWW0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 26 Nov 2018 17:22:26 -0500
-Received: from mx2.suse.de ([195.135.220.15]:36844 "EHLO mx1.suse.de"
+        id S1726451AbeKZXTz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 26 Nov 2018 18:19:55 -0500
+Received: from mx2.suse.de ([195.135.220.15]:44592 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726266AbeKZWWZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Nov 2018 17:22:25 -0500
+        id S1726203AbeKZXTz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Nov 2018 18:19:55 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 8246CAEDA;
-        Mon, 26 Nov 2018 11:28:33 +0000 (UTC)
-Subject: Re: [PATCH 4/8] btrfs: add ALLOC_CHUNK_FORCE to the flushing code
+        by mx1.suse.de (Postfix) with ESMTP id 644C0ACB4;
+        Mon, 26 Nov 2018 12:25:54 +0000 (UTC)
+Subject: Re: [PATCH 5/8] btrfs: don't enospc all tickets on flush failure
 To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
         kernel-team@fb.com
 References: <20181121190313.24575-1-josef@toxicpanda.com>
- <20181121190313.24575-5-josef@toxicpanda.com>
+ <20181121190313.24575-6-josef@toxicpanda.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -74,12 +74,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <30bf1159-9bbc-96fb-89a2-41cf6b22df7b@suse.com>
-Date:   Mon, 26 Nov 2018 13:28:32 +0200
+Message-ID: <ccd81359-764f-6651-a738-ba3b3843b9b3@suse.com>
+Date:   Mon, 26 Nov 2018 14:25:52 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181121190313.24575-5-josef@toxicpanda.com>
+In-Reply-To: <20181121190313.24575-6-josef@toxicpanda.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -91,97 +91,158 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 21.11.18 г. 21:03 ч., Josef Bacik wrote:
-> With my change to no longer take into account the global reserve for
-> metadata allocation chunks we have this side-effect for mixed block
-> group fs'es where we are no longer allocating enough chunks for the
-> data/metadata requirements.  To deal with this add a ALLOC_CHUNK_FORCE
-> step to the flushing state machine.  This will only get used if we've
-> already made a full loop through the flushing machinery and tried
-> committing the transaction.  If we have then we can try and force a
-> chunk allocation since we likely need it to make progress.  This
-> resolves the issues I was seeing with the mixed bg tests in xfstests
-> with my previous patch.
+> With the introduction of the per-inode block_rsv it became possible to
+> have really really large reservation requests made because of data
+> fragmentation.  Since the ticket stuff assumed that we'd always have
+> relatively small reservation requests it just killed all tickets if we
+> were unable to satisfy the current request.  However this is generally
+> not the case anymore.  So fix this logic to instead see if we had a
+> ticket that we were able to give some reservation to, and if we were
+> continue the flushing loop again.  Likewise we make the tickets use the
+> space_info_add_old_bytes() method of returning what reservation they did
+> receive in hopes that it could satisfy reservations down the line.
+
+
+The logic of the patch can be summarised as follows:
+
+If no progress is made for a ticket, then start fail all tickets until
+the first one that has progress made on its reservation (inclusive). In
+this case this first ticket will be failed but at least it's space will
+be reused via space_info_add_old_bytes.
+
+Frankly this seem really arbitrary.
+
 > 
 > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
-Still, my observation is that the metadata reclaim code is increasing in
-complexity for rather niche use cases or the details become way too subtle.
-
 > ---
->  fs/btrfs/ctree.h             |  3 ++-
->  fs/btrfs/extent-tree.c       | 18 +++++++++++++++++-
->  include/trace/events/btrfs.h |  1 +
->  3 files changed, 20 insertions(+), 2 deletions(-)
+>  fs/btrfs/extent-tree.c | 45 +++++++++++++++++++++++++--------------------
+>  1 file changed, 25 insertions(+), 20 deletions(-)
 > 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 0c6d589c8ce4..8ccc5019172b 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -2750,7 +2750,8 @@ enum btrfs_flush_state {
->  	FLUSH_DELALLOC		=	5,
->  	FLUSH_DELALLOC_WAIT	=	6,
->  	ALLOC_CHUNK		=	7,
-> -	COMMIT_TRANS		=	8,
-> +	ALLOC_CHUNK_FORCE	=	8,
-> +	COMMIT_TRANS		=	9,
->  };
->  
->  int btrfs_alloc_data_chunk_ondemand(struct btrfs_inode *inode, u64 bytes);
 > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index a91b3183dcae..e6bb6ce23c84 100644
+> index e6bb6ce23c84..983d086fa768 100644
 > --- a/fs/btrfs/extent-tree.c
 > +++ b/fs/btrfs/extent-tree.c
-> @@ -4927,6 +4927,7 @@ static void flush_space(struct btrfs_fs_info *fs_info,
->  		btrfs_end_transaction(trans);
->  		break;
->  	case ALLOC_CHUNK:
-> +	case ALLOC_CHUNK_FORCE:
->  		trans = btrfs_join_transaction(root);
->  		if (IS_ERR(trans)) {
->  			ret = PTR_ERR(trans);
-> @@ -4934,7 +4935,9 @@ static void flush_space(struct btrfs_fs_info *fs_info,
->  		}
->  		ret = do_chunk_alloc(trans,
->  				     btrfs_metadata_alloc_profile(fs_info),
-> -				     CHUNK_ALLOC_NO_FORCE);
-> +				     (state == ALLOC_CHUNK) ?
-> +				     CHUNK_ALLOC_NO_FORCE :
-> +				     CHUNK_ALLOC_FORCE);
->  		btrfs_end_transaction(trans);
->  		if (ret > 0 || ret == -ENOSPC)
->  			ret = 0;
-> @@ -5070,6 +5073,19 @@ static void btrfs_async_reclaim_metadata_space(struct work_struct *work)
->  				commit_cycles--;
->  		}
+> @@ -4791,6 +4791,7 @@ static void shrink_delalloc(struct btrfs_fs_info *fs_info, u64 to_reclaim,
+>  }
 >  
-> +		/*
-> +		 * We don't want to force a chunk allocation until we've tried
-> +		 * pretty hard to reclaim space.  Think of the case where we
-> +		 * free'd up a bunch of space and so have a lot of pinned space
-> +		 * to reclaim.  We would rather use that than possibly create a
-> +		 * underutilized metadata chunk.  So if this is our first run
-> +		 * through the flushing state machine skip ALLOC_CHUNK_FORCE and
-> +		 * commit the transaction.  If nothing has changed the next go
-> +		 * around then we can force a chunk allocation.
-> +		 */
-> +		if (flush_state == ALLOC_CHUNK_FORCE && !commit_cycles)
-> +			flush_state++;
-> +
+>  struct reserve_ticket {
+> +	u64 orig_bytes;
+>  	u64 bytes;
+>  	int error;
+>  	struct list_head list;
+> @@ -5012,7 +5013,7 @@ static inline int need_do_async_reclaim(struct btrfs_fs_info *fs_info,
+>  		!test_bit(BTRFS_FS_STATE_REMOUNTING, &fs_info->fs_state));
+>  }
+>  
+> -static void wake_all_tickets(struct list_head *head)
+> +static bool wake_all_tickets(struct list_head *head)
+>  {
+>  	struct reserve_ticket *ticket;
+>  
+> @@ -5021,7 +5022,10 @@ static void wake_all_tickets(struct list_head *head)
+>  		list_del_init(&ticket->list);
+>  		ticket->error = -ENOSPC;
+>  		wake_up(&ticket->wait);
+> +		if (ticket->bytes != ticket->orig_bytes)
+> +			return true;
+>  	}
+> +	return false;
+>  }
+>  
+>  /*
+> @@ -5089,8 +5093,12 @@ static void btrfs_async_reclaim_metadata_space(struct work_struct *work)
 >  		if (flush_state > COMMIT_TRANS) {
 >  			commit_cycles++;
 >  			if (commit_cycles > 2) {
-> diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-> index 63d1f9d8b8c7..dd0e6f8d6b6e 100644
-> --- a/include/trace/events/btrfs.h
-> +++ b/include/trace/events/btrfs.h
-> @@ -1051,6 +1051,7 @@ TRACE_EVENT(btrfs_trigger_flush,
->  		{ FLUSH_DELAYED_REFS_NR,	"FLUSH_DELAYED_REFS_NR"},	\
->  		{ FLUSH_DELAYED_REFS,		"FLUSH_ELAYED_REFS"},		\
->  		{ ALLOC_CHUNK,			"ALLOC_CHUNK"},			\
-> +		{ ALLOC_CHUNK_FORCE,		"ALLOC_CHUNK_FORCE"},		\
->  		{ COMMIT_TRANS,			"COMMIT_TRANS"})
+> -				wake_all_tickets(&space_info->tickets);
+> -				space_info->flush = 0;
+> +				if (wake_all_tickets(&space_info->tickets)) {
+> +					flush_state = FLUSH_DELAYED_ITEMS_NR;
+> +					commit_cycles--;
+> +				} else {
+> +					space_info->flush = 0;
+> +				}
+>  			} else {
+>  				flush_state = FLUSH_DELAYED_ITEMS_NR;
+>  			}
+> @@ -5142,10 +5150,11 @@ static void priority_reclaim_metadata_space(struct btrfs_fs_info *fs_info,
 >  
->  TRACE_EVENT(btrfs_flush_space,
+>  static int wait_reserve_ticket(struct btrfs_fs_info *fs_info,
+>  			       struct btrfs_space_info *space_info,
+> -			       struct reserve_ticket *ticket, u64 orig_bytes)
+> +			       struct reserve_ticket *ticket)
+>  
+>  {
+>  	DEFINE_WAIT(wait);
+> +	u64 reclaim_bytes = 0;
+>  	int ret = 0;
+>  
+>  	spin_lock(&space_info->lock);
+> @@ -5166,14 +5175,12 @@ static int wait_reserve_ticket(struct btrfs_fs_info *fs_info,
+>  		ret = ticket->error;
+>  	if (!list_empty(&ticket->list))
+>  		list_del_init(&ticket->list);
+> -	if (ticket->bytes && ticket->bytes < orig_bytes) {
+> -		u64 num_bytes = orig_bytes - ticket->bytes;
+> -		update_bytes_may_use(space_info, -num_bytes);
+> -		trace_btrfs_space_reservation(fs_info, "space_info",
+> -					      space_info->flags, num_bytes, 0);
+> -	}
+> +	if (ticket->bytes && ticket->bytes < ticket->orig_bytes)
+> +		reclaim_bytes = ticket->orig_bytes - ticket->bytes;
+>  	spin_unlock(&space_info->lock);
+>  
+> +	if (reclaim_bytes)
+> +		space_info_add_old_bytes(fs_info, space_info, reclaim_bytes);
+>  	return ret;
+>  }
+>  
+> @@ -5199,6 +5206,7 @@ static int __reserve_metadata_bytes(struct btrfs_fs_info *fs_info,
+>  {
+>  	struct reserve_ticket ticket;
+>  	u64 used;
+> +	u64 reclaim_bytes = 0;
+>  	int ret = 0;
+>  
+>  	ASSERT(orig_bytes);
+> @@ -5234,6 +5242,7 @@ static int __reserve_metadata_bytes(struct btrfs_fs_info *fs_info,
+>  	 * the list and we will do our own flushing further down.
+>  	 */
+>  	if (ret && flush != BTRFS_RESERVE_NO_FLUSH) {
+> +		ticket.orig_bytes = orig_bytes;
+>  		ticket.bytes = orig_bytes;
+>  		ticket.error = 0;
+>  		init_waitqueue_head(&ticket.wait);
+> @@ -5274,25 +5283,21 @@ static int __reserve_metadata_bytes(struct btrfs_fs_info *fs_info,
+>  		return ret;
+>  
+>  	if (flush == BTRFS_RESERVE_FLUSH_ALL)
+> -		return wait_reserve_ticket(fs_info, space_info, &ticket,
+> -					   orig_bytes);
+> +		return wait_reserve_ticket(fs_info, space_info, &ticket);
+>  
+>  	ret = 0;
+>  	priority_reclaim_metadata_space(fs_info, space_info, &ticket);
+>  	spin_lock(&space_info->lock);
+>  	if (ticket.bytes) {
+> -		if (ticket.bytes < orig_bytes) {
+> -			u64 num_bytes = orig_bytes - ticket.bytes;
+> -			update_bytes_may_use(space_info, -num_bytes);
+> -			trace_btrfs_space_reservation(fs_info, "space_info",
+> -						      space_info->flags,
+> -						      num_bytes, 0);
+> -
+> -		}
+> +		if (ticket.bytes < orig_bytes)
+> +			reclaim_bytes = orig_bytes - ticket.bytes;
+>  		list_del_init(&ticket.list);
+>  		ret = -ENOSPC;
+>  	}
+>  	spin_unlock(&space_info->lock);
+> +
+> +	if (reclaim_bytes)
+> +		space_info_add_old_bytes(fs_info, space_info, reclaim_bytes);
+>  	ASSERT(list_empty(&ticket.list));
+>  	return ret;
+>  }
 > 

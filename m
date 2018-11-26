@@ -2,131 +2,113 @@ Return-Path: <SRS0=mYd/=OF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.3 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5FEB4C43441
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 14:45:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 91D64C43441
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 15:01:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2522620817
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 14:45:04 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2522620817
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 592FC20865
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 15:01:51 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="NiHFJzLt"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 592FC20865
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=linux.it
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726859AbeK0BjW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 26 Nov 2018 20:39:22 -0500
-Received: from mx2.suse.de ([195.135.220.15]:38782 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726200AbeK0BjW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Nov 2018 20:39:22 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D3F72AC17;
-        Mon, 26 Nov 2018 14:45:00 +0000 (UTC)
-Subject: Re: [PATCH 1/3] btrfs: run delayed iputs before committing
-To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-References: <20181121190922.25038-1-josef@toxicpanda.com>
- <20181121190922.25038-2-josef@toxicpanda.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <8f2bb705-f412-c705-f8e2-88941877b12a@suse.com>
-Date:   Mon, 26 Nov 2018 16:44:59 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+        id S1726535AbeK0B4G (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 26 Nov 2018 20:56:06 -0500
+Received: from mail-ed1-f68.google.com ([209.85.208.68]:41274 "EHLO
+        mail-ed1-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726203AbeK0B4G (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Nov 2018 20:56:06 -0500
+Received: by mail-ed1-f68.google.com with SMTP id z28so16087654edi.8
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Nov 2018 07:01:43 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=sender:date:from:to:subject:message-id:mime-version
+         :content-disposition:content-transfer-encoding:user-agent;
+        bh=gf18HhMxdT+FROsh2UneG755TVessAjLPkoZxQaTp2c=;
+        b=NiHFJzLtguCDiTwHlj+iQDqjMIBSgO90wLXEDFZgUEzp3jKW3h1xs87CcM+pS+vJGl
+         nou0lfyF1RZy6uBXdrYjiNRXbDowdJu9kU6JgkGSNoesk7HP/6BDbsg2VEaDTiTKY73z
+         2kyOMC0w6cec4Dyhqc2IiBW5UnKWg+d5u7GjKa5UHqZzvc5KHI5afr4jjGXiQyri0MDm
+         HXengmetWKwXR+h9jaTCPhX0MmwJQ8htci/pFQ+CjoJO5pdKiUDfpQ7UEGWg/sg9p2FV
+         /V353GlywLA2uX5kGqpeA3l9i2uqbt5y57dyPIGT3GystPANffCYZOHlElP7DRLT0C0a
+         CJHg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:sender:date:from:to:subject:message-id
+         :mime-version:content-disposition:content-transfer-encoding
+         :user-agent;
+        bh=gf18HhMxdT+FROsh2UneG755TVessAjLPkoZxQaTp2c=;
+        b=CouX+uEgiVTiMWDLTtLhsM0YR0kxvdl46JOMzftBl0NnKWfifsTt+bAesJDqbXI/a7
+         MAH22VY+eaf5vd44Y8+H8CWyy4HhB9IFdX5qNMQqUuE11sCvv1dOb5KAbBNOJh9jvyGu
+         ACfO+K0ZM9OVoxDrG2nmiKIgJ5fbctfVEXlWqIQCNbTXooiiGOsTXCZMrcjt40aAaFzD
+         niFo/I/mXU6QA1sZVM2KU0FO2mKKa6gcFGouqRnb6td0FplE9Od2z1sq9S4axkOWjhdT
+         yXrl6WeAAtQ8w4tinjUUnfRecmz+YJAfwRzarX2UsrU3Mv4EA+KyDwRNizHqwIAxW005
+         H38A==
+X-Gm-Message-State: AA+aEWYY5iZceCEenm7zGOLVY/pPKOKFjie0/XqgjuYu63Ut19Rj6tS/
+        h2XtDGVnMiEZVXMji2fSguv21ko5AO4=
+X-Google-Smtp-Source: AFSGD/WHZ3pAnNHkrLuPj/1R7l1ivN5+ttQHjLH0ZPRuzi9zugGDpxL+6HJJQyJnoebK49ccRlduzw==
+X-Received: by 2002:a50:bdc8:: with SMTP id z8mr16861574edh.46.1543244501948;
+        Mon, 26 Nov 2018 07:01:41 -0800 (PST)
+Received: from glet (anon-38-203.vpn.ipredator.se. [46.246.38.203])
+        by smtp.gmail.com with ESMTPSA id v20-v6sm135922ejr.46.2018.11.26.07.01.40
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
+        Mon, 26 Nov 2018 07:01:41 -0800 (PST)
+Date:   Mon, 26 Nov 2018 16:01:37 +0100
+From:   Andrea Gelmini <andrea.gelmini@linux.it>
+To:     linux-btrfs@vger.kernel.org
+Subject: Linux-next regression?
+Message-ID: <20181126150137.GA16029@glet>
 MIME-Version: 1.0
-In-Reply-To: <20181121190922.25038-2-josef@toxicpanda.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Hi everybody,
+   and thanks a lot for your work.
 
+   I'm using BTRFS over LVM over cryptsetup, over Samsung SSD 860 EVO (latest git of btrfs-progs).
+   Usually I run kernel in development, because I know BTRFS is young and there are still lots of bugs and corner case to fix.
 
-On 21.11.18 Ð³. 21:09 Ñ‡., Josef Bacik wrote:
-> Delayed iputs means we can have final iputs of deleted inodes in the
-> queue, which could potentially generate a lot of pinned space that could
-> be free'd.  So before we decide to commit the transaction for ENOPSC
-> reasons, run the delayed iputs so that any potential space is free'd up.
-> If there is and we freed enough we can then commit the transaction and
-> potentially be able to make our reservation.
-> 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-> Reviewed-by: Omar Sandoval <osandov@fb.com>
-> ---
->  fs/btrfs/extent-tree.c | 9 +++++++++
->  1 file changed, 9 insertions(+)
-> 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 90423b6749b7..3a90dc1d6b31 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -4833,6 +4833,15 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
->  	if (!bytes)
->  		return 0;
->  
-> +	/*
-> +	 * If we have pending delayed iputs then we could free up a bunch of
-> +	 * pinned space, so make sure we run the iputs before we do our pinned
-> +	 * bytes check below.
-> +	 */
-> +	mutex_lock(&fs_info->cleaner_delayed_iput_mutex);
-> +	btrfs_run_delayed_iputs(fs_info);
-> +	mutex_unlock(&fs_info->cleaner_delayed_iput_mutex);
+   Anyway, I just want to submit to you a - maybe - useful info.
 
-IMHO this code is better suited to be in case COMMIT_TRANS in
-flush_space. Let's leave may_commit_Trans to just decide whether it
-should commit or not.
+   Yesterday I compiled and booted latest linux-next,¹ and I've got this:
 
-> +
->  	trans = btrfs_join_transaction(fs_info->extent_root);
->  	if (IS_ERR(trans))
->  		return PTR_ERR(trans);
-> 
+-----------
+nov 26 01:18:22 glet kernel: Btrfs loaded, crc32c=crc32c-intel
+nov 26 01:18:22 glet kernel: BTRFS: device label home devid 1 transid 32759 /dev/mapper/cry-home
+nov 26 01:18:23 glet kernel: BTRFS info (device dm-3): force lzo compression, level 0
+nov 26 01:18:23 glet kernel: BTRFS info (device dm-3): disk space caching is enabled
+nov 26 01:18:23 glet kernel: BTRFS info (device dm-3): has skinny extents
+nov 26 01:18:23 glet kernel: BTRFS error (device dm-3): bad tree block start, want 2152002191360 have 8829432654847901262
+nov 26 01:18:23 glet kernel: BTRFS error (device dm-3): failed to read block groups: -5
+nov 26 01:18:23 glet kernel: BTRFS error (device dm-3): open_ctree failed
+-----------
+
+   Now, rebooting with 4.19.0-041900 (downloaded from here)², or 4.20-rc4 (compiled on this machine), the problem disappears.
+
+   Now, running scrub a few times, and copying data (all files of the logical volume) to external device, gives no complain.
+
+   Here I stop. This is my primary dev laptop, and at the moment I can't spend time switching/rebooting/testing. I'm comparing the data with last backup (I rsync each hour), but it takes time (it's more then 3TB).
+
+   So, that was about to let you know. Well, it's Ubuntu 18.10, and between reboots no dist-upgrade or changes in booting related packages or systemd.
+
+  One question: I can completely trust the ok return status of scrub? I know is made for this, but shit happens...
+
+Kisses,
+Gelma   
+
+-----------------
+¹ commit:  8c9733fd9806c71e7f2313a280f98cb3051f93df
+  "Add linux-next specific files for 20181123"
+² http://kernel.ubuntu.com/~kernel-ppa/mainline/v4.19/

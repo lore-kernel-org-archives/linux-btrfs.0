@@ -2,118 +2,77 @@ Return-Path: <SRS0=mYd/=OF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,
-	URIBL_BLOCKED autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A564FC43441
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 08:17:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 469BDC43441
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 09:07:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 69C112082F
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 08:17:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0DD3820672
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 09:07:20 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="OPgJf0II"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 69C112082F
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="N6itOEf2"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0DD3820672
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726288AbeKZTKv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 26 Nov 2018 14:10:51 -0500
-Received: from mail-lj1-f194.google.com ([209.85.208.194]:42964 "EHLO
-        mail-lj1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726191AbeKZTKu (ORCPT
+        id S1726200AbeKZUAp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 26 Nov 2018 15:00:45 -0500
+Received: from userp2130.oracle.com ([156.151.31.86]:38400 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726165AbeKZUAp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Nov 2018 14:10:50 -0500
-Received: by mail-lj1-f194.google.com with SMTP id l15-v6so15677134lja.9;
-        Mon, 26 Nov 2018 00:17:28 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=DL1JU2Jl6dHmu7oOgaXiyAFBJJhQbFK6TWDQpuzmsr4=;
-        b=OPgJf0IIpylcteRNfDc3IqVd95zj+0p2O6hBuUB8D3uwtsDz/KrvNzhOvR4cw8fSmf
-         1HHWDwFzsaAENxmFNKK+e1RhvMAuhAgf1/p0uCXIqEx6JdoL2JWxl8tnHgisByCyB7DX
-         hBzdAxtbDHUlcUwnJONnm2ifPBzoVGfPDq/78lxTtTfRbtfiAM/Vd/sfmtPhIdgY8I+o
-         2tWwwVA9NJ/gP2AndTm/NReUOhg510NEzWNKvTJSNCjMkbd7euf2L8TdUZTurfktp5xq
-         qP+/pxlBBYTWaixtzzGVUHeg0TAIOOo8PrD2tJiyB7hq3gyeiBdYxn4uhZczS179gF19
-         vf1g==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=DL1JU2Jl6dHmu7oOgaXiyAFBJJhQbFK6TWDQpuzmsr4=;
-        b=F/uThOZyatIp0yHmlZb0JjM1HBZ0JxhuYJ3j60HsqhetcMLXmOLlhiGUNOMF8EJYFU
-         X/AdyN5KWGt9NESLY6tTKIhK0ko+5SCgwU1tRPXBJOKpTuHeMzoTu/h20KO7sbE0kMBP
-         RPvDwnNC+qF8BE1h32TUPFt1niBflNsyS7RWU55J5i4T7FL5242rAi8LpKAYv6Gq9ry5
-         6p7plxFRl0Mt5NAqHBfs2QadPVweE+0uaVxnmx+gT21/xr/2TrqT+4QbhQLDugBAaxJh
-         I5/MwcTz6QaInR8IkxGjoymnvJ7ZWOgiB2SR2rFphoQOVz3ExaLzrfx4+Un5CoeRDmDJ
-         c1cg==
-X-Gm-Message-State: AA+aEWauZe+U1RlUyz8pFmXz08Z6Ybl6khQvyMEy2SgYBqQ5lSkzBFH7
-        BqTVynFMafxotetlqOjucnCDv39ug4fB7fPtcz4=
-X-Google-Smtp-Source: AFSGD/VTOt2bq0cxRq6Vx5uu/66ncyC731ADEI57OU28qOq5jRn5s9MSl77HgATKVmyT1/PlGeH5BLIRNlUyr8UuEas=
-X-Received: by 2002:a2e:5054:: with SMTP id v20-v6mr15822680ljd.45.1543220247340;
- Mon, 26 Nov 2018 00:17:27 -0800 (PST)
-MIME-Version: 1.0
-References: <20181126021720.19471-1-ming.lei@redhat.com> <20181126021720.19471-7-ming.lei@redhat.com>
-In-Reply-To: <20181126021720.19471-7-ming.lei@redhat.com>
-From:   Miguel Ojeda <miguel.ojeda.sandonis@gmail.com>
-Date:   Mon, 26 Nov 2018 09:17:16 +0100
-Message-ID: <CANiq72nSa-=n2WUvmQOieDRtf+gC1wg2YuRvKDniSAtDn8=U8g@mail.gmail.com>
-Subject: Re: [PATCH V12 06/20] block: rename bvec helpers
-To:     ming.lei@redhat.com
-Cc:     axboe@kernel.dk, linux-block@vger.kernel.org,
-        linux-kernel <linux-kernel@vger.kernel.org>,
-        Linux-MM <linux-mm@kvack.org>, "Ted Ts'o" <tytso@mit.edu>,
-        osandov@fb.com, sagi@grimberg.me, dchinner@redhat.com,
-        kent.overstreet@gmail.com, snitzer@redhat.com, dm-devel@redhat.com,
-        Al Viro <viro@zeniv.linux.org.uk>,
-        linux-fsdevel@vger.kernel.org, shli@kernel.org,
-        linux-raid@vger.kernel.org, David Sterba <dsterba@suse.com>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        darrick.wong@oracle.com, linux-xfs@vger.kernel.org,
-        gaoxiang25@huawei.com, hch@lst.de,
-        Ext4 Developers List <linux-ext4@vger.kernel.org>,
-        colyli@suse.de, linux-bcache@vger.kernel.org, ooo@electrozaur.com,
-        rpeterso@redhat.com, cluster-devel@redhat.com
-Content-Type: text/plain; charset="UTF-8"
+        Mon, 26 Nov 2018 15:00:45 -0500
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wAQ94SVr153257
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Nov 2018 09:07:17 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
+ date : message-id; s=corp-2018-07-02;
+ bh=b2epHm3oOi1sDvqdZwvgvnud+sASPdd15tCgMXzXghE=;
+ b=N6itOEf2n7bejDct0DZrQ8oYNrh11g/ay4GyZqk6zatFymaKkmIMXgyN3cZZw00LVZnw
+ mTqF/fyPZHtG8bXq/2ziJ/6MTQowZJ5aVY5Pfc6XPZXUJrfTyg395m/R9ds4L6apJ9pi
+ Q3LspRK3Tspb/xzd1k2pj1G93XXQbHcVO/4J/E8Ftyq2JKfvEOJeqvdWA8J+2mzl+D2B
+ 2naArrrpazYrrKddg8xtJRCKoBLzpKiO+f/+m+eXvt5J7ug2lGxxxBt+IU0cXsgkNI7p
+ lH6GeCRomG/Dvfv0SxLoAS9w+8MiP4/aICeRs/XbMbjn+uLSwCO85zup3r4EnGAW1pE4 pQ== 
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by userp2130.oracle.com with ESMTP id 2nxx2tve23-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Nov 2018 09:07:17 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id wAQ97GrQ021075
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Nov 2018 09:07:16 GMT
+Received: from abhmp0014.oracle.com (abhmp0014.oracle.com [141.146.116.20])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id wAQ97GY9021054
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Nov 2018 09:07:16 GMT
+Received: from tpasj.sg.oracle.com (/192.188.170.109)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Mon, 26 Nov 2018 01:07:15 -0800
+From:   Anand Jain <anand.jain@oracle.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/2] btrfs: scrub: fix scrub_lock
+Date:   Mon, 26 Nov 2018 17:07:06 +0800
+Message-Id: <1543223228-28232-1-git-send-email-anand.jain@oracle.com>
+X-Mailer: git-send-email 1.8.3.1
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9088 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=1 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=479
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1810050000 definitions=main-1811260085
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Nov 26, 2018 at 3:20 AM Ming Lei <ming.lei@redhat.com> wrote:
->
-> We will support multi-page bvec soon, and have to deal with
-> single-page vs multi-page bvec. This patch follows Christoph's
-> suggestion to rename all the following helpers:
->
->         for_each_bvec
->         bvec_iter_bvec
->         bvec_iter_len
->         bvec_iter_page
->         bvec_iter_offset
->
-> into:
->         for_each_segment
->         segment_iter_bvec
->         segment_iter_len
->         segment_iter_page
->         segment_iter_offset
->
-> so that these helpers named with 'segment' only deal with single-page
-> bvec, or called segment. We will introduce helpers named with 'bvec'
-> for multi-page bvec.
->
-> bvec_iter_advance() isn't renamed becasue this helper is always operated
-> on real bvec even though multi-page bvec is supported.
->
-> Suggested-by: Christoph Hellwig <hch@lst.de>
-> Signed-off-by: Ming Lei <ming.lei@redhat.com>
-> ---
->  .clang-format                  |  2 +-
+Anand Jain (2):
+  btrfs: scrub: maintain the unlock order in scrub thread
+  btrfs: scrub: fix circular locking dependency warning
 
-Acked-by: Miguel Ojeda <miguel.ojeda.sandonis@gmail.com>
+ fs/btrfs/scrub.c | 19 ++++++++++---------
+ 1 file changed, 10 insertions(+), 9 deletions(-)
 
-Cheers,
-Miguel
+-- 
+1.8.3.1
+

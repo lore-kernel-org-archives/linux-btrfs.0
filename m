@@ -6,29 +6,29 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A64F7C43441
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 02:18:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D8882C43441
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 02:18:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7710D20865
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 02:18:12 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7710D20865
+	by mail.kernel.org (Postfix) with ESMTP id A7FA520865
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 02:18:26 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A7FA520865
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=redhat.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726304AbeKZNKk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 26 Nov 2018 08:10:40 -0500
-Received: from mx1.redhat.com ([209.132.183.28]:60452 "EHLO mx1.redhat.com"
+        id S1726395AbeKZNKx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 26 Nov 2018 08:10:53 -0500
+Received: from mx1.redhat.com ([209.132.183.28]:57070 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726053AbeKZNKi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Nov 2018 08:10:38 -0500
-Received: from smtp.corp.redhat.com (int-mx04.intmail.prod.int.phx2.redhat.com [10.5.11.14])
+        id S1726053AbeKZNKw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Nov 2018 08:10:52 -0500
+Received: from smtp.corp.redhat.com (int-mx05.intmail.prod.int.phx2.redhat.com [10.5.11.15])
         (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
         (No client certificate requested)
-        by mx1.redhat.com (Postfix) with ESMTPS id 06E193084035;
-        Mon, 26 Nov 2018 02:18:03 +0000 (UTC)
+        by mx1.redhat.com (Postfix) with ESMTPS id B9DF4C0578FA;
+        Mon, 26 Nov 2018 02:18:16 +0000 (UTC)
 Received: from localhost (ovpn-8-19.pek2.redhat.com [10.72.8.19])
-        by smtp.corp.redhat.com (Postfix) with ESMTP id 077FA6A6B4;
-        Mon, 26 Nov 2018 02:17:55 +0000 (UTC)
+        by smtp.corp.redhat.com (Postfix) with ESMTP id EC0292CD5B;
+        Mon, 26 Nov 2018 02:18:15 +0000 (UTC)
 From:   Ming Lei <ming.lei@redhat.com>
 To:     Jens Axboe <axboe@kernel.dk>
 Cc:     linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
@@ -47,66 +47,55 @@ Cc:     linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
         Christoph Hellwig <hch@lst.de>, linux-ext4@vger.kernel.org,
         Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
         Boaz Harrosh <ooo@electrozaur.com>,
-        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
-Subject: [PATCH V12 02/20] btrfs: look at bi_size for repair decisions
-Date:   Mon, 26 Nov 2018 10:17:02 +0800
-Message-Id: <20181126021720.19471-3-ming.lei@redhat.com>
+        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com,
+        Ming Lei <ming.lei@redhat.com>
+Subject: [PATCH V12 04/20] block: don't use bio->bi_vcnt to figure out segment number
+Date:   Mon, 26 Nov 2018 10:17:04 +0800
+Message-Id: <20181126021720.19471-5-ming.lei@redhat.com>
 In-Reply-To: <20181126021720.19471-1-ming.lei@redhat.com>
 References: <20181126021720.19471-1-ming.lei@redhat.com>
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.14
-X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.40]); Mon, 26 Nov 2018 02:18:03 +0000 (UTC)
+X-Scanned-By: MIMEDefang 2.79 on 10.5.11.15
+X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.31]); Mon, 26 Nov 2018 02:18:17 +0000 (UTC)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Christoph Hellwig <hch@lst.de>
+It is wrong to use bio->bi_vcnt to figure out how many segments
+there are in the bio even though CLONED flag isn't set on this bio,
+because this bio may be splitted or advanced.
 
-bio_readpage_error currently uses bi_vcnt to decide if it is worth
-retrying an I/O.  But the vector count is mostly an implementation
-artifact - it really should figure out if there is more than a
-single sector worth retrying.  Use bi_size for that and shift by
-PAGE_SHIFT.  This really should be blocks/sectors, but given that
-btrfs doesn't support a sector size different from the PAGE_SIZE
-using the page size keeps the changes to a minimum.
+So always use bio_segments() in blk_recount_segments(), and it shouldn't
+cause any performance loss now because the physical segment number is figured
+out in blk_queue_split() and BIO_SEG_VALID is set meantime since
+bdced438acd83ad83a6c ("block: setup bi_phys_segments after splitting").
 
-Reviewed-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+Fixes: 76d8137a3113 ("blk-merge: recaculate segment if it isn't less than max segments")
+Signed-off-by: Ming Lei <ming.lei@redhat.com>
 ---
- fs/btrfs/extent_io.c | 2 +-
- include/linux/bio.h  | 6 ------
- 2 files changed, 1 insertion(+), 7 deletions(-)
+ block/blk-merge.c | 8 +-------
+ 1 file changed, 1 insertion(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 15fd46582bb2..40751e86a2a9 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2368,7 +2368,7 @@ static int bio_readpage_error(struct bio *failed_bio, u64 phy_offset,
- 	int read_mode = 0;
- 	blk_status_t status;
- 	int ret;
--	unsigned failed_bio_pages = bio_pages_all(failed_bio);
-+	unsigned failed_bio_pages = failed_bio->bi_iter.bi_size >> PAGE_SHIFT;
+diff --git a/block/blk-merge.c b/block/blk-merge.c
+index e69d8f8ba819..51ec6ca56a0a 100644
+--- a/block/blk-merge.c
++++ b/block/blk-merge.c
+@@ -367,13 +367,7 @@ void blk_recalc_rq_segments(struct request *rq)
  
- 	BUG_ON(bio_op(failed_bio) == REQ_OP_WRITE);
- 
-diff --git a/include/linux/bio.h b/include/linux/bio.h
-index 056fb627edb3..6f6bc331a5d1 100644
---- a/include/linux/bio.h
-+++ b/include/linux/bio.h
-@@ -263,12 +263,6 @@ static inline void bio_get_last_bvec(struct bio *bio, struct bio_vec *bv)
- 		bv->bv_len = iter.bi_bvec_done;
- }
- 
--static inline unsigned bio_pages_all(struct bio *bio)
--{
--	WARN_ON_ONCE(bio_flagged(bio, BIO_CLONED));
--	return bio->bi_vcnt;
--}
--
- static inline struct bio_vec *bio_first_bvec_all(struct bio *bio)
+ void blk_recount_segments(struct request_queue *q, struct bio *bio)
  {
- 	WARN_ON_ONCE(bio_flagged(bio, BIO_CLONED));
+-	unsigned short seg_cnt;
+-
+-	/* estimate segment number by bi_vcnt for non-cloned bio */
+-	if (bio_flagged(bio, BIO_CLONED))
+-		seg_cnt = bio_segments(bio);
+-	else
+-		seg_cnt = bio->bi_vcnt;
++	unsigned short seg_cnt = bio_segments(bio);
+ 
+ 	if (test_bit(QUEUE_FLAG_NO_SG_MERGE, &q->queue_flags) &&
+ 			(seg_cnt < queue_max_segments(q)))
 -- 
 2.9.5
 

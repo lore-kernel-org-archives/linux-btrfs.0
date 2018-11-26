@@ -2,86 +2,178 @@ Return-Path: <SRS0=mYd/=OF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 45657C43441
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 19:13:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8B77BC43441
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 20:07:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BB83F20663
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 19:13:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4F062205C9
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 20:07:24 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=nuclearwinter.com header.i=@nuclearwinter.com header.b="tpdK9ga3"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BB83F20663
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=nuclearwinter.com
+	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="t9j8ZNAu"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4F062205C9
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726254AbeK0GIS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 27 Nov 2018 01:08:18 -0500
-Received: from titan.nuclearwinter.com ([205.185.120.7]:36616 "EHLO
-        titan.nuclearwinter.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725723AbeK0GIS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Nov 2018 01:08:18 -0500
-X-Greylist: delayed 3311 seconds by postgrey-1.27 at vger.kernel.org; Tue, 27 Nov 2018 01:08:17 EST
-Received: from [IPv6:2601:6c5:8000:6b90:54ff:ba2b:b29:792c] ([IPv6:2601:6c5:8000:6b90:54ff:ba2b:b29:792c])
-        (authenticated bits=0)
-        by titan.nuclearwinter.com (8.14.7/8.14.7) with ESMTP id wAQII9Lv003187
-        (version=TLSv1/SSLv3 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NO)
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Nov 2018 13:18:10 -0500
-DKIM-Filter: OpenDKIM Filter v2.11.0 titan.nuclearwinter.com wAQII9Lv003187
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=nuclearwinter.com;
-        s=201211; t=1543256290;
-        bh=DRP9BWhAjR+kHxTTu0RgeOb/tcWWhG+TFtumZzxxZQ0=;
-        h=To:From:Subject:Date:From;
-        b=tpdK9ga3WuCiONIODfQVsA50NOC87kWP70FbYYxBYnPRw/Bhl//LIfnrpN7OiCV7+
-         UrVJKLEUET7QIg+Z2PEns4AFyKueHUaRD7mIUdIPGKD/fa73Qp7CegRX+jMU4KeaZV
-         KSTEJKRiZAlxFnV6WiqqKdo/iq/zdFp6a0ElnsZo=
-To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From:   Larkin Lowrey <llowrey@nuclearwinter.com>
-Subject: Possible deadlock when writing
-Message-ID: <61991cd9-13ba-1834-3112-0f10e925a48c@nuclearwinter.com>
-Date:   Mon, 26 Nov 2018 13:18:06 -0500
-User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
- Thunderbird/60.3.0
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: 7bit
-Content-Language: en-US
-X-Greylist: Sender succeeded SMTP AUTH, not delayed by milter-greylist-4.5.16 (titan.nuclearwinter.com [IPv6:2605:6400:20:950:ed61:983f:b93a:fc2b]); Mon, 26 Nov 2018 13:18:10 -0500 (EST)
+        id S1726513AbeK0HCg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 27 Nov 2018 02:02:36 -0500
+Received: from mail.kernel.org ([198.145.29.99]:32898 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727229AbeK0HCg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Nov 2018 02:02:36 -0500
+Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id DB63A205C9
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Nov 2018 20:07:20 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1543262841;
+        bh=Bl7uWHQ2F7Xghc9N2H/l6At5Mk2jBWj0m2MLAETXEJQ=;
+        h=From:To:Subject:Date:In-Reply-To:References:From;
+        b=t9j8ZNAuTeNjA8no7XCOO6zNuc8m2Gk8DmZ3hDc06wJrBagvxXFaCgCKWI4+hkhFE
+         2KNlShSMYRbmms3ec56eyLQiWnWk4peiF6H4e67Fl9mLclnS2Mvn8pNoKm5ZSx9AOJ
+         WyQF2iYcYfaupuhzpwr8xGeTNV4eWetvBL27LIQQ=
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH v5] Btrfs: fix deadlock with memory reclaim during scrub
+Date:   Mon, 26 Nov 2018 20:07:17 +0000
+Message-Id: <20181126200717.4546-1-fdmanana@kernel.org>
+X-Mailer: git-send-email 2.11.0
+In-Reply-To: <20181123134543.20199-1-fdmanana@kernel.org>
+References: <20181123134543.20199-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I started having a host freeze randomly when running a 4.18 kernel. The 
-host was stable when running 4.17.12.
+From: Filipe Manana <fdmanana@suse.com>
 
-At first, it appeared that it was only IO that was frozen since I could 
-run common commands that were likely cached in RAM and that did not 
-touch storage. Anything that did touch storage would freeze and I would 
-not be able to ctrl-c it.
+When a transaction commit starts, it attempts to pause scrub and it blocks
+until the scrub is paused. So while the transaction is blocked waiting for
+scrub to pause, we can not do memory allocation with GFP_KERNEL from scrub,
+otherwise we risk getting into a deadlock with reclaim.
 
-I noticed today, when it happened with kernel 4.19.2, that backups were 
-still running and that the backup app could still read from the backup 
-snapshot subvol. It's possible that the backups are still able to 
-proceed because the accesses are all read-only and the snapshot was 
-mounted with noatime so the backup process never triggers a write.
+Checking for scrub pause requests is done early at the beginning of the
+while loop of scrub_stripe() and later in the loop, scrub_extent() and
+scrub_raid56_parity() are called, which in turn call scrub_pages() and
+scrub_pages_for_parity() respectively. These last two functions do memory
+allocations using GFP_KERNEL. Same problem could happen while scrubbing
+the super blocks, since it calls scrub_pages().
 
-There never are any errors output to the console when this happens and 
-nothing is logged. When I first encountered this back in Sept. I managed 
-to record a few sysrq dumps and attached them to a redhat ticket. See 
-links below.
+We also can not have any of the worker tasks, created by the scrub task,
+doing GFP_KERNEL allocations, because before pausing, the scrub task waits
+for all the worker tasks to complete (also done at scrub_stripe()).
 
-https://bugzilla.redhat.com/show_bug.cgi?id=1627288
-https://bugzilla.redhat.com/attachment.cgi?id=1482177
+So make sure GFP_NOFS is used for the memory allocations because at any
+time a scrub pause request can happen from another task that started to
+commit a transaction.
 
-I do have several VMs running that have their image files nocow'd. 
-Interestingly, all the VMs, except 1, seem to be able to write just 
-fine. The one that can't has frozen completely and is the one that 
-regularly generates the most IO.
+Fixes: 58c4e173847a ("btrfs: scrub: use GFP_KERNEL on the submission path")
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
 
-Any ideas on how to debug this further?
+V2: Make using GFP_NOFS unconditionial. Previous version was racy, as pausing
+requests migth happen just after we checked for them.
 
---Larkin
+V3: Use memalloc_nofs_save() just like V1 did.
+
+V4: Similar problem happened for raid56, which was previously missed, so
+    deal with it as well as the case for scrub_supers().
+
+V5: Make sure worker tasks, created by scrub, also don't do GFP_KERNEL
+    allocations, because in order to pause, the scrub task waits for all
+    the workers to complete first.
+
+ fs/btrfs/scrub.c | 35 ++++++++++++++++++++++++++++++++++-
+ 1 file changed, 34 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 3be1456b5116..392f8a7f65ab 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -322,6 +322,7 @@ static struct full_stripe_lock *insert_full_stripe_lock(
+ 	struct rb_node *parent = NULL;
+ 	struct full_stripe_lock *entry;
+ 	struct full_stripe_lock *ret;
++	unsigned int nofs_flag;
+ 
+ 	lockdep_assert_held(&locks_root->lock);
+ 
+@@ -339,8 +340,17 @@ static struct full_stripe_lock *insert_full_stripe_lock(
+ 		}
+ 	}
+ 
+-	/* Insert new lock */
++	/*
++	 * Insert new lock.
++	 *
++	 * We must use GFP_NOFS because the scrub task might be waiting for a
++	 * worker task executing this function and in turn a transaction commit
++	 * might be waiting the scrub task to pause (which needs to wait for all
++	 * the worker tasks to complete before pausing).
++	 */
++	nofs_flag = memalloc_nofs_save();
+ 	ret = kmalloc(sizeof(*ret), GFP_KERNEL);
++	memalloc_nofs_restore(nofs_flag);
+ 	if (!ret)
+ 		return ERR_PTR(-ENOMEM);
+ 	ret->logical = fstripe_logical;
+@@ -1622,8 +1632,19 @@ static int scrub_add_page_to_wr_bio(struct scrub_ctx *sctx,
+ 	mutex_lock(&sctx->wr_lock);
+ again:
+ 	if (!sctx->wr_curr_bio) {
++		unsigned int nofs_flag;
++
++		/*
++		 * We must use GFP_NOFS because the scrub task might be waiting
++		 * for a worker task executing this function and in turn a
++		 * transaction commit might be waiting the scrub task to pause
++		 * (which needs to wait for all the worker tasks to complete
++		 * before pausing).
++		 */
++		nofs_flag = memalloc_nofs_save();
+ 		sctx->wr_curr_bio = kzalloc(sizeof(*sctx->wr_curr_bio),
+ 					      GFP_KERNEL);
++		memalloc_nofs_restore(nofs_flag);
+ 		if (!sctx->wr_curr_bio) {
+ 			mutex_unlock(&sctx->wr_lock);
+ 			return -ENOMEM;
+@@ -3779,6 +3800,7 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+ 	struct scrub_ctx *sctx;
+ 	int ret;
+ 	struct btrfs_device *dev;
++	unsigned int nofs_flag;
+ 
+ 	if (btrfs_fs_closing(fs_info))
+ 		return -EINVAL;
+@@ -3882,6 +3904,16 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+ 	atomic_inc(&fs_info->scrubs_running);
+ 	mutex_unlock(&fs_info->scrub_lock);
+ 
++	/*
++	 * In order to avoid deadlock with reclaim when there is a transaction
++	 * trying to pause scrub, make sure we use GFP_NOFS for all the
++	 * allocations done at btrfs_scrub_pages() and scrub_pages_for_parity()
++	 * invoked by our callees. The pausing request is done when the
++	 * transaction commit starts, and it blocks the transaction until scrub
++	 * is paused (done at specific points at scrub_stripe() or right above
++	 * before incrementing fs_info->scrubs_running).
++	 */
++	nofs_flag = memalloc_nofs_save();
+ 	if (!is_dev_replace) {
+ 		/*
+ 		 * by holding device list mutex, we can
+@@ -3895,6 +3927,7 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+ 	if (!ret)
+ 		ret = scrub_enumerate_chunks(sctx, dev, start, end,
+ 					     is_dev_replace);
++	memalloc_nofs_restore(nofs_flag);
+ 
+ 	wait_event(sctx->list_wait, atomic_read(&sctx->bios_in_flight) == 0);
+ 	atomic_dec(&fs_info->scrubs_running);
+-- 
+2.11.0
+

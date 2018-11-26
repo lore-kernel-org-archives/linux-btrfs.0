@@ -2,268 +2,173 @@ Return-Path: <SRS0=mYd/=OF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EC0D2C43441
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 09:59:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7CF3CC43441
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 10:23:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9FD3320850
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 09:59:31 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9FD3320850
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id F1D4520989
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 10:23:48 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org F1D4520989
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=mpi-dortmund.mpg.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726242AbeKZUxF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 26 Nov 2018 15:53:05 -0500
-Received: from mx2.suse.de ([195.135.220.15]:48992 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726184AbeKZUxF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Nov 2018 15:53:05 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D5733AF6A;
-        Mon, 26 Nov 2018 09:59:26 +0000 (UTC)
-Subject: Re: [PATCH 2/2] btrfs: scrub: fix circular locking dependency warning
-To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-References: <1543223228-28232-1-git-send-email-anand.jain@oracle.com>
- <1543223228-28232-3-git-send-email-anand.jain@oracle.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <ed04b1e5-b187-7ea9-3f8d-0a14f1143232@suse.com>
-Date:   Mon, 26 Nov 2018 11:59:25 +0200
+        id S1726229AbeKZVR1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 26 Nov 2018 16:17:27 -0500
+Received: from mail-edge2.mpi-dortmund.mpg.de ([141.5.144.112]:43323 "EHLO
+        smtp.mpi-dortmund.mpg.de" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1726184AbeKZVR0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Nov 2018 16:17:26 -0500
+Received: from Exchange2013-2.mpi-dortmund.mpg.de (141.5.200.102) by
+ EX2013-Edge2.mpi-dortmund.mpg.de (141.5.200.112) with Microsoft SMTP Server
+ (TLS) id 15.0.1395.4; Mon, 26 Nov 2018 11:22:54 +0100
+Received: from [141.5.196.33] (141.5.200.120) by
+ Exchange2013-2.mpi-dortmund.mpg.de (141.5.200.102) with Microsoft SMTP Server
+ (TLS) id 15.0.1395.4; Mon, 26 Nov 2018 11:23:00 +0100
+Subject: Re: unable to fixup (regular) error
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <f367f1b4-f360-0f6d-ee30-42eb735a9bbc@mpi-dortmund.mpg.de>
+ <beefd32d-b34b-9242-b16d-e66c82b23d8f@gmx.com>
+From:   Alexander Fieroch <alexander.fieroch@mpi-dortmund.mpg.de>
+Message-ID: <a1766b0a-8293-3cb5-e592-df09754e4417@mpi-dortmund.mpg.de>
+Date:   Mon, 26 Nov 2018 11:23:00 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <1543223228-28232-3-git-send-email-anand.jain@oracle.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <beefd32d-b34b-9242-b16d-e66c82b23d8f@gmx.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature";
+        micalg=sha-256; boundary="------------ms030903060103040405030908"
+X-ClientProxiedBy: Exchange2013-1.mpi-dortmund.mpg.de (141.5.200.101) To
+ Exchange2013-2.mpi-dortmund.mpg.de (141.5.200.102)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+--------------ms030903060103040405030908
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: de-DE
+Content-Transfer-Encoding: quoted-printable
+
+Am 26.11.18 um 09:13 schrieb Qu Wenruo:
+> The corruption itself looks like some disk error, not some btrfs error
+> like transid error.
+
+You're right! SMART has an increased value for one harddisk on=20
+reallocated sector count. Sorry, I missed to check this first...
+
+I'll try to salvage my data...
+
+Thanks!
+
+Best,
+Alexander
 
 
-On 26.11.18 г. 11:07 ч., Anand Jain wrote:
-> Circular locking dependency check reports warning[1], that's because
-> the btrfs_scrub_dev() calls the stack #0 below with, the
-> fs_info::scrub_lock held. The test case leading to this warning..
-> 
->   mkfs.btrfs -fq /dev/sdb && mount /dev/sdb /btrfs
->   btrfs scrub start -B /btrfs
-> 
-> In fact we have fs_info::scrub_workers_refcnt to tack if the init and
-> destroy of the scrub workers are needed. So once we have incremented
-> and decremented the fs_info::scrub_workers_refcnt value in the thread,
-> its ok to drop the scrub_lock, and then actually do the
-> btrfs_destroy_workqueue() part. So this patch drops the scrub_lock
-> before calling btrfs_destroy_workqueue().
-> 
-> [1]
-> [   76.146826] ======================================================
-> [   76.147086] WARNING: possible circular locking dependency detected
-> [   76.147316] 4.20.0-rc3+ #41 Not tainted
-> [   76.147489] ------------------------------------------------------
-> [   76.147722] btrfs/4065 is trying to acquire lock:
-> [   76.147984] 0000000038593bc0 ((wq_completion)"%s-%s""btrfs",
-> name){+.+.}, at: flush_workqueue+0x70/0x4d0
-> [   76.148337]
-> but task is already holding lock:
-> [   76.148594] 0000000062392ab7 (&fs_info->scrub_lock){+.+.}, at:
-> btrfs_scrub_dev+0x316/0x5d0 [btrfs]
-> [   76.148909]
-> which lock already depends on the new lock.
-> 
-> [   76.149191]
-> the existing dependency chain (in reverse order) is:
-> [   76.149446]
-> -> #3 (&fs_info->scrub_lock){+.+.}:
-> [   76.149707]        btrfs_scrub_dev+0x11f/0x5d0 [btrfs]
-> [   76.149924]        btrfs_ioctl+0x1ac3/0x2d80 [btrfs]
-> [   76.150216]        do_vfs_ioctl+0xa9/0x6d0
-> [   76.150468]        ksys_ioctl+0x60/0x90
-> [   76.150716]        __x64_sys_ioctl+0x16/0x20
-> [   76.150911]        do_syscall_64+0x50/0x180
-> [   76.151182]        entry_SYSCALL_64_after_hwframe+0x49/0xbe
-> [   76.151469]
-> -> #2 (&fs_devs->device_list_mutex){+.+.}:
-> [   76.151851]        reada_start_machine_worker+0xca/0x3f0 [btrfs]
-> [   76.152195]        normal_work_helper+0xf0/0x4c0 [btrfs]
-> [   76.152489]        process_one_work+0x1f4/0x520
-> [   76.152751]        worker_thread+0x46/0x3d0
-> [   76.153715]        kthread+0xf8/0x130
-> [   76.153912]        ret_from_fork+0x3a/0x50
-> [   76.154178]
-> -> #1 ((work_completion)(&work->normal_work)){+.+.}:
-> [   76.154575]        worker_thread+0x46/0x3d0
-> [   76.154828]        kthread+0xf8/0x130
-> [   76.155108]        ret_from_fork+0x3a/0x50
-> [   76.155357]
-> -> #0 ((wq_completion)"%s-%s""btrfs", name){+.+.}:
-> [   76.155751]        flush_workqueue+0x9a/0x4d0
-> [   76.155911]        drain_workqueue+0xca/0x1a0
-> [   76.156182]        destroy_workqueue+0x17/0x230
-> [   76.156455]        btrfs_destroy_workqueue+0x5d/0x1c0 [btrfs]
-> [   76.156756]        scrub_workers_put+0x2e/0x60 [btrfs]
-> [   76.156931]        btrfs_scrub_dev+0x329/0x5d0 [btrfs]
-> [   76.157219]        btrfs_ioctl+0x1ac3/0x2d80 [btrfs]
-> [   76.157491]        do_vfs_ioctl+0xa9/0x6d0
-> [   76.157742]        ksys_ioctl+0x60/0x90
-> [   76.157910]        __x64_sys_ioctl+0x16/0x20
-> [   76.158177]        do_syscall_64+0x50/0x180
-> [   76.158429]        entry_SYSCALL_64_after_hwframe+0x49/0xbe
-> [   76.158716]
-> other info that might help us debug this:
-> 
-> [   76.158908] Chain exists of:
->   (wq_completion)"%s-%s""btrfs", name --> &fs_devs->device_list_mutex
-> --> &fs_info->scrub_lock
-> 
-> [   76.159629]  Possible unsafe locking scenario:
-> 
-> [   76.160607]        CPU0                    CPU1
-> [   76.160934]        ----                    ----
-> [   76.161210]   lock(&fs_info->scrub_lock);
-> [   76.161458]
-> lock(&fs_devs->device_list_mutex);
-> [   76.161805]
-> lock(&fs_info->scrub_lock);
-> [   76.161909]   lock((wq_completion)"%s-%s""btrfs", name);
-> [   76.162201]
->  *** DEADLOCK ***
-> 
-> [   76.162627] 2 locks held by btrfs/4065:
-> [   76.162897]  #0: 00000000bef2775b (sb_writers#12){.+.+}, at:
-> mnt_want_write_file+0x24/0x50
-> [   76.163335]  #1: 0000000062392ab7 (&fs_info->scrub_lock){+.+.}, at:
-> btrfs_scrub_dev+0x316/0x5d0 [btrfs]
-> [   76.163796]
-> stack backtrace:
-> [   76.163911] CPU: 1 PID: 4065 Comm: btrfs Not tainted 4.20.0-rc3+ #41
-> [   76.164228] Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS
-> VirtualBox 12/01/2006
-> [   76.164646] Call Trace:
-> [   76.164872]  dump_stack+0x5e/0x8b
-> [   76.165128]  print_circular_bug.isra.37+0x1f1/0x1fe
-> [   76.165398]  __lock_acquire+0x14aa/0x1620
-> [   76.165652]  lock_acquire+0xb0/0x190
-> [   76.165910]  ? flush_workqueue+0x70/0x4d0
-> [   76.166175]  flush_workqueue+0x9a/0x4d0
-> [   76.166420]  ? flush_workqueue+0x70/0x4d0
-> [   76.166671]  ? drain_workqueue+0x52/0x1a0
-> [   76.166911]  drain_workqueue+0xca/0x1a0
-> [   76.167167]  destroy_workqueue+0x17/0x230
-> [   76.167428]  btrfs_destroy_workqueue+0x5d/0x1c0 [btrfs]
-> [   76.167720]  scrub_workers_put+0x2e/0x60 [btrfs]
-> [   76.168233]  btrfs_scrub_dev+0x329/0x5d0 [btrfs]
-> [   76.168504]  ? __sb_start_write+0x121/0x1b0
-> [   76.168759]  ? mnt_want_write_file+0x24/0x50
-> [   76.169654]  btrfs_ioctl+0x1ac3/0x2d80 [btrfs]
-> [   76.169934]  ? find_held_lock+0x2d/0x90
-> [   76.170204]  ? find_held_lock+0x2d/0x90
-> [   76.170450]  do_vfs_ioctl+0xa9/0x6d0
-> [   76.170690]  ? __fget+0x101/0x1f0
-> [   76.170910]  ? __fget+0x5/0x1f0
-> [   76.171157]  ksys_ioctl+0x60/0x90
-> [   76.171391]  __x64_sys_ioctl+0x16/0x20
-> [   76.171634]  do_syscall_64+0x50/0x180
-> [   76.171892]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
-> [   76.172186] RIP: 0033:0x7f61d422e567
-> [   76.172425] Code: 44 00 00 48 8b 05 29 09 2d 00 64 c7 00 26 00 00 00
-> 48 c7 c0 ff ff ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 b8 10 00 00 00 0f
-> 05 <48> 3d 01 f0 ff ff 73 01 c3 48 8b 0d f9 08 2d 00 f7 d8 64 89 01 48
-> [   76.172911] RSP: 002b:00007f61d3936d68 EFLAGS: 00000246 ORIG_RAX:
-> 0000000000000010
-> [   76.173328] RAX: ffffffffffffffda RBX: 00000000019026b0 RCX:
-> 00007f61d422e567
-> [   76.173649] RDX: 00000000019026b0 RSI: 00000000c400941b RDI:
-> 0000000000000003
-> [   76.173909] RBP: 0000000000000000 R08: 00007f61d3937700 R09:
-> 0000000000000000
-> [   76.174244] R10: 00007f61d3937700 R11: 0000000000000246 R12:
-> 0000000000000000
-> [   76.174566] R13: 0000000000801000 R14: 0000000000000000 R15:
-> 00007f61d3937700
-> [   76.175217] btrfs (4065) used greatest stack depth: 11424 bytes left
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  fs/btrfs/scrub.c | 3 +++
->  1 file changed, 3 insertions(+)
-> 
-> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-> index b1c2d1cdbd4b..3fc31eeef2a7 100644
-> --- a/fs/btrfs/scrub.c
-> +++ b/fs/btrfs/scrub.c
-> @@ -3757,10 +3757,13 @@ static noinline_for_stack int scrub_workers_get(struct btrfs_fs_info *fs_info,
->  
->  static noinline_for_stack void scrub_workers_put(struct btrfs_fs_info *fs_info)
->  {
-> +	lockdep_assert_held(&fs_info->scrub_lock);
->  	if (--fs_info->scrub_workers_refcnt == 0) {
-> +		mutex_unlock(&fs_info->scrub_lock);
->  		btrfs_destroy_workqueue(fs_info->scrub_workers);
->  		btrfs_destroy_workqueue(fs_info->scrub_wr_completion_workers);
->  		btrfs_destroy_workqueue(fs_info->scrub_parity_workers);
-> +		mutex_lock(&fs_info->scrub_lock);
->  	}
+--------------ms030903060103040405030908
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
 
-This looks ok, however:
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgEFADCABgkqhkiG9w0BBwEAAKCC
+EGQwggUSMIID+qADAgECAgkA4wvV+K8l2YEwDQYJKoZIhvcNAQELBQAwgYIxCzAJBgNVBAYT
+AkRFMSswKQYDVQQKDCJULVN5c3RlbXMgRW50ZXJwcmlzZSBTZXJ2aWNlcyBHbWJIMR8wHQYD
+VQQLDBZULVN5c3RlbXMgVHJ1c3QgQ2VudGVyMSUwIwYDVQQDDBxULVRlbGVTZWMgR2xvYmFs
+Um9vdCBDbGFzcyAyMB4XDTE2MDIyMjEzMzgyMloXDTMxMDIyMjIzNTk1OVowgZUxCzAJBgNV
+BAYTAkRFMUUwQwYDVQQKEzxWZXJlaW4genVyIEZvZXJkZXJ1bmcgZWluZXMgRGV1dHNjaGVu
+IEZvcnNjaHVuZ3NuZXR6ZXMgZS4gVi4xEDAOBgNVBAsTB0RGTi1QS0kxLTArBgNVBAMTJERG
+Ti1WZXJlaW4gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkgMjCCASIwDQYJKoZIhvcNAQEBBQAD
+ggEPADCCAQoCggEBAMtg1/9moUHN0vqHl4pzq5lN6mc5WqFggEcVToyVsuXPztNXS43O+FZs
+FVV2B+pG/cgDRWM+cNSrVICxI5y+NyipCf8FXRgPxJiZN7Mg9mZ4F4fCnQ7MSjLnFp2uDo0p
+eQcAIFTcFV9Kltd4tjTTwXS1nem/wHdN6r1ZB+BaL2w8pQDcNb1lDY9/Mm3yWmpLYgHurDg0
+WUU2SQXaeMpqbVvAgWsRzNI8qIv4cRrKO+KA3Ra0Z3qLNupOkSk9s1FcragMvp0049ENF4N1
+xDkesJQLEvHVaY4l9Lg9K7/AjsMeO6W/VRCrKq4Xl14zzsjz9AkH4wKGMUZrAcUQDBHHWekC
+AwEAAaOCAXQwggFwMA4GA1UdDwEB/wQEAwIBBjAdBgNVHQ4EFgQUk+PYMiba1fFKpZFK4OpL
+4qIMz+EwHwYDVR0jBBgwFoAUv1kgNgB5oKAia4zV8mHSuCzLgkowEgYDVR0TAQH/BAgwBgEB
+/wIBAjAzBgNVHSAELDAqMA8GDSsGAQQBga0hgiwBAQQwDQYLKwYBBAGBrSGCLB4wCAYGZ4EM
+AQICMEwGA1UdHwRFMEMwQaA/oD2GO2h0dHA6Ly9wa2kwMzM2LnRlbGVzZWMuZGUvcmwvVGVs
+ZVNlY19HbG9iYWxSb290X0NsYXNzXzIuY3JsMIGGBggrBgEFBQcBAQR6MHgwLAYIKwYBBQUH
+MAGGIGh0dHA6Ly9vY3NwMDMzNi50ZWxlc2VjLmRlL29jc3ByMEgGCCsGAQUFBzAChjxodHRw
+Oi8vcGtpMDMzNi50ZWxlc2VjLmRlL2NydC9UZWxlU2VjX0dsb2JhbFJvb3RfQ2xhc3NfMi5j
+ZXIwDQYJKoZIhvcNAQELBQADggEBAIcL/z4Cm2XIVi3WO5qYi3FP2ropqiH5Ri71sqQPrhE4
+eTizDnS6dl2e6BiClmLbTDPo3flq3zK9LExHYFV/53RrtCyD2HlrtrdNUAtmB7Xts5et6u5/
+MOaZ/SLick0+hFvu+c+Z6n/XUjkurJgARH5pO7917tALOxrN5fcPImxHhPalR6D90Bo0fa3S
+PXez7vTXTf/D6OWST1k+kEcQSrCFWMBvf/iu7QhCnh7U3xQuTY+8npTD5+32GPg8SecmqKc2
+2CzeIs2LgtjZeOJVEqM7h0S2EQvVDFKvaYwPBt/QolOLV5h7z/0HJPT8vcP9SpIClxvyt7bP
+ZYoaorVyGTkwggWNMIIEdaADAgECAgwcOtRQhH7u81j4jncwDQYJKoZIhvcNAQELBQAwgZUx
+CzAJBgNVBAYTAkRFMUUwQwYDVQQKEzxWZXJlaW4genVyIEZvZXJkZXJ1bmcgZWluZXMgRGV1
+dHNjaGVuIEZvcnNjaHVuZ3NuZXR6ZXMgZS4gVi4xEDAOBgNVBAsTB0RGTi1QS0kxLTArBgNV
+BAMTJERGTi1WZXJlaW4gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkgMjAeFw0xNjExMDMxNTI0
+NDhaFw0zMTAyMjIyMzU5NTlaMGoxCzAJBgNVBAYTAkRFMQ8wDQYDVQQIDAZCYXllcm4xETAP
+BgNVBAcMCE11ZW5jaGVuMSAwHgYDVQQKDBdNYXgtUGxhbmNrLUdlc2VsbHNjaGFmdDEVMBMG
+A1UEAwwMTVBHIENBIC0gRzAyMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnhx4
+59Lh4WqgOs/Md04XxU2yFtfM15ZuJV0PZP7BmqSJKLLPyqmOrADfNdJ5PIGBto2JBhtRRBHd
+G0GROOvTRHjzOga95WOTeura79T21FWwwAwa29OFnD3ZplQs6HgdwQrZWNi1WHNJxn/4mA19
+rNEBUc5urSIpZPvZi5XmlF3v3JHOlx3KWV7mUteB4pwEEfGTg4npPAJbp2o7arxQdoIq+Pu2
+OsvqhD7Rk4QeaX+EM1QS4lqd1otW4hE70h/ODPy1xffgbZiuotWQLC6nIwa65Qv6byqlIX0q
+Zuu99Vsu+r3sWYsL5SBkgecNI7fMJ5tfHrjoxfrKl/ErTAt8GQIDAQABo4ICBTCCAgEwEgYD
+VR0TAQH/BAgwBgEB/wIBATAOBgNVHQ8BAf8EBAMCAQYwKQYDVR0gBCIwIDANBgsrBgEEAYGt
+IYIsHjAPBg0rBgEEAYGtIYIsAQEEMB0GA1UdDgQWBBTEiKUH7rh7qgwTv9opdGNSG0lwFjAf
+BgNVHSMEGDAWgBST49gyJtrV8UqlkUrg6kviogzP4TCBjwYDVR0fBIGHMIGEMECgPqA8hjpo
+dHRwOi8vY2RwMS5wY2EuZGZuLmRlL2dsb2JhbC1yb290LWcyLWNhL3B1Yi9jcmwvY2Fjcmwu
+Y3JsMECgPqA8hjpodHRwOi8vY2RwMi5wY2EuZGZuLmRlL2dsb2JhbC1yb290LWcyLWNhL3B1
+Yi9jcmwvY2FjcmwuY3JsMIHdBggrBgEFBQcBAQSB0DCBzTAzBggrBgEFBQcwAYYnaHR0cDov
+L29jc3AucGNhLmRmbi5kZS9PQ1NQLVNlcnZlci9PQ1NQMEoGCCsGAQUFBzAChj5odHRwOi8v
+Y2RwMS5wY2EuZGZuLmRlL2dsb2JhbC1yb290LWcyLWNhL3B1Yi9jYWNlcnQvY2FjZXJ0LmNy
+dDBKBggrBgEFBQcwAoY+aHR0cDovL2NkcDIucGNhLmRmbi5kZS9nbG9iYWwtcm9vdC1nMi1j
+YS9wdWIvY2FjZXJ0L2NhY2VydC5jcnQwDQYJKoZIhvcNAQELBQADggEBABLpeD5FygzqOjj+
+/lAOy20UQOGWlx0RMuPcI4nuyFT8SGmK9lD7QCg/HoaJlfU/r78ex+SEide326evlFAoJXIF
+jVyzNltDhpMKrPIDuh2N12zyn1EtagqPL6hu4pVRzcBpl/F2HCvtmMx5K4WN1L1fmHWLcSap
+dhXLvAZ9RG/B3rqyULLSNN8xHXYXpmtvG0VGJAndZ+lj+BH7uvd3nHWnXEHC2q7iQlDUqg0a
+wIqWJgdLlx1Q8Dg/sodv0m+LN0kOzGvVDRCmowBdWGhhusD+duKV66pBl+qhC+4LipariWaM
+qK5ppMQROATjYeNRvwI+nDcEXr2vDaKmdbxgDVwwggW5MIIEoaADAgECAgwf2pQ6+dTvmG2k
+SlwwDQYJKoZIhvcNAQELBQAwajELMAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8G
+A1UEBwwITXVlbmNoZW4xIDAeBgNVBAoMF01heC1QbGFuY2stR2VzZWxsc2NoYWZ0MRUwEwYD
+VQQDDAxNUEcgQ0EgLSBHMDIwHhcNMTgxMDA4MDgzNDU5WhcNMjExMDA3MDgzNDU5WjCBhTEL
+MAkGA1UEBhMCREUxIDAeBgNVBAoMF01heC1QbGFuY2stR2VzZWxsc2NoYWZ0MTgwNgYDVQQL
+DC9NYXgtUGxhbmNrLUluc3RpdHV0IGZ1ZXIgbW9sZWt1bGFyZSBQaHlzaW9sb2dpZTEaMBgG
+A1UEAwwRQWxleGFuZGVyIEZpZXJvY2gwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIB
+AQDkaBKm1senmmNAYrpp+354J72gly61fBelNtl7FBFx/+oVrgok1dW2CQSVnCw9f4Ks6ebG
+D+iGe2T4VDiele1LWmG+2IaX6BJy8jMsnMc+l9OZZ18QYLhQYeKKzOM00Zj0oFtBd00zKnp4
+PWTeXZdQP9y4qKuba5LfypzSpLSIjKpK8lh8n20x2ksBQBafTrbexPBZ/Gqj8kozS+45ZUep
+YwcQ0TVE3vrAr5na/3AJ3up1bxXH+/+o1LRMWjKAB3g5A2vmRYCdXCX7khbdoTha00WcC5Yv
+OdPgzcqve15nz+LmGwmNXl6UwyLM0GU0gVkMFxmEptUt4uOkOPjrReGLAgMBAAGjggJBMIIC
+PTAJBgNVHRMEAjAAMA4GA1UdDwEB/wQEAwIF4DAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYB
+BQUHAwQwHQYDVR0OBBYEFLBDBGZbsOXrX1A1IrIHII1lNJKzMB8GA1UdIwQYMBaAFMSIpQfu
+uHuqDBO/2il0Y1IbSXAWMDAGA1UdEQQpMCeBJWFsZXhhbmRlci5maWVyb2NoQG1waS1kb3J0
+bXVuZC5tcGcuZGUwfQYDVR0fBHYwdDA4oDagNIYyaHR0cDovL2NkcDEucGNhLmRmbi5kZS9t
+cGctZzItY2EvcHViL2NybC9jYWNybC5jcmwwOKA2oDSGMmh0dHA6Ly9jZHAyLnBjYS5kZm4u
+ZGUvbXBnLWcyLWNhL3B1Yi9jcmwvY2FjcmwuY3JsMIHNBggrBgEFBQcBAQSBwDCBvTAzBggr
+BgEFBQcwAYYnaHR0cDovL29jc3AucGNhLmRmbi5kZS9PQ1NQLVNlcnZlci9PQ1NQMEIGCCsG
+AQUFBzAChjZodHRwOi8vY2RwMS5wY2EuZGZuLmRlL21wZy1nMi1jYS9wdWIvY2FjZXJ0L2Nh
+Y2VydC5jcnQwQgYIKwYBBQUHMAKGNmh0dHA6Ly9jZHAyLnBjYS5kZm4uZGUvbXBnLWcyLWNh
+L3B1Yi9jYWNlcnQvY2FjZXJ0LmNydDBABgNVHSAEOTA3MA8GDSsGAQQBga0hgiwBAQQwEQYP
+KwYBBAGBrSGCLAEBBAMIMBEGDysGAQQBga0hgiwCAQQDCDANBgkqhkiG9w0BAQsFAAOCAQEA
+WebfqQ4rY+BOrhQ5tofe4oLUC3FZ21Cezk21+XpDmMWO4yvBMCErAhR81daQGG5vkxqExLtC
+8pRopADSd3UzKWHiNJgeywXjvICfPbgpECse3Zixp+iPV5+tZMhtUKPiaH20Kgdfepraw2/D
+Gs8MWlcVGdTn2XwDJDbC1iCqnXq7fBz5r8I+WhvqnUFlavzOLgV4yZDq96zyYc1D+z809kYr
+3dO1t4aeijE66rZrWI69jeIH3Uh5jOvK8AkWmq5v4HSPVnxLlsIi6onXjVGuwF6dBboRuDiJ
+eytT16YSj7a61SkdyzQFis1q0ztup8tMdfcRrBTaZp3Hsxl3B3o89DGCA5owggOWAgEBMHow
+ajELMAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITXVlbmNoZW4xIDAe
+BgNVBAoMF01heC1QbGFuY2stR2VzZWxsc2NoYWZ0MRUwEwYDVQQDDAxNUEcgQ0EgLSBHMDIC
+DB/alDr51O+YbaRKXDANBglghkgBZQMEAgEFAKCCAfEwGAYJKoZIhvcNAQkDMQsGCSqGSIb3
+DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgxMTI2MTAyMzAwWjAvBgkqhkiG9w0BCQQxIgQgDH1Z
+jX059Ua8aI6Arhp+REl8VcHMKZFzkztZ+y6kjNIwbAYJKoZIhvcNAQkPMV8wXTALBglghkgB
+ZQMEASowCwYJYIZIAWUDBAECMAoGCCqGSIb3DQMHMA4GCCqGSIb3DQMCAgIAgDANBggqhkiG
+9w0DAgIBQDAHBgUrDgMCBzANBggqhkiG9w0DAgIBKDCBiQYJKwYBBAGCNxAEMXwwejBqMQsw
+CQYDVQQGEwJERTEPMA0GA1UECAwGQmF5ZXJuMREwDwYDVQQHDAhNdWVuY2hlbjEgMB4GA1UE
+CgwXTWF4LVBsYW5jay1HZXNlbGxzY2hhZnQxFTATBgNVBAMMDE1QRyBDQSAtIEcwMgIMH9qU
+OvnU75htpEpcMIGLBgsqhkiG9w0BCRACCzF8oHowajELMAkGA1UEBhMCREUxDzANBgNVBAgM
+BkJheWVybjERMA8GA1UEBwwITXVlbmNoZW4xIDAeBgNVBAoMF01heC1QbGFuY2stR2VzZWxs
+c2NoYWZ0MRUwEwYDVQQDDAxNUEcgQ0EgLSBHMDICDB/alDr51O+YbaRKXDANBgkqhkiG9w0B
+AQEFAASCAQBGzlflwW+H+XtbqhQ4RjN9Ua1BmR0TSktNudE+LTHEtzN0Pd+Zx9CDEobR4hOt
+Xb1HydW+tKBJrnYh2pvZRttffFeaMqJdGuaqSr6JWCiAQPE2bwyuDdVXz0QFqzjiVAWYDocs
+BczCuArPDazLFhafbo7IE1o4E900Wr+BX4BaFm+Mr28fCvDo5txUNEkbXLBRcPaEbpXwXQYg
+uKZue6EsiSJ5W5yqtJj083uqJEWDupg/uaujWIcIdS1oXtAvrxC9AKwmWGHRqo+G+gao2bx3
+yoFBaCj5lZhoZO7EvPeImv4QKnZVVudQfvcgGSSmegf/Kp44Xj0loJuJ68rosOJUAAAAAAAA
 
-1. lockdep_assert_held should also be added to get scrub workers
-
-2. scrub_workers_refcnt must eventually be converted to refcount_t type
-and the _refcnt dropped from the name
-
-3. Do we really need 3 workqueues for scrub? Are we really winning
-anything by having that many instead of one or just queueing scrub to a
-generic one?
-
->  	WARN_ON(fs_info->scrub_workers_refcnt < 0);
->  }
-> 
+--------------ms030903060103040405030908--

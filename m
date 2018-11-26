@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ED7EFC43441
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 11:25:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1CD72C43441
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 11:28:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BE1DB20672
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 11:25:09 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BE1DB20672
+	by mail.kernel.org (Postfix) with ESMTP id D324020672
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 11:28:37 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D324020672
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726356AbeKZWS5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 26 Nov 2018 17:18:57 -0500
-Received: from mx2.suse.de ([195.135.220.15]:36406 "EHLO mx1.suse.de"
+        id S1726511AbeKZWW0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 26 Nov 2018 17:22:26 -0500
+Received: from mx2.suse.de ([195.135.220.15]:36844 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726279AbeKZWS4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Nov 2018 17:18:56 -0500
+        id S1726266AbeKZWWZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Nov 2018 17:22:25 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 6324EAE88;
-        Mon, 26 Nov 2018 11:25:05 +0000 (UTC)
-Subject: Re: [PATCH 3/8] btrfs: don't use global rsv for chunk allocation
+        by mx1.suse.de (Postfix) with ESMTP id 8246CAEDA;
+        Mon, 26 Nov 2018 11:28:33 +0000 (UTC)
+Subject: Re: [PATCH 4/8] btrfs: add ALLOC_CHUNK_FORCE to the flushing code
 To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
         kernel-team@fb.com
 References: <20181121190313.24575-1-josef@toxicpanda.com>
- <20181121190313.24575-4-josef@toxicpanda.com>
+ <20181121190313.24575-5-josef@toxicpanda.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -74,12 +74,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <d321d237-012b-f000-3771-f7946b38b2b7@suse.com>
-Date:   Mon, 26 Nov 2018 13:25:04 +0200
+Message-ID: <30bf1159-9bbc-96fb-89a2-41cf6b22df7b@suse.com>
+Date:   Mon, 26 Nov 2018 13:28:32 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181121190313.24575-4-josef@toxicpanda.com>
+In-Reply-To: <20181121190313.24575-5-josef@toxicpanda.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -91,46 +91,97 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 21.11.18 г. 21:03 ч., Josef Bacik wrote:
-> We've done this forever because of the voodoo around knowing how much
-> space we have.  However we have better ways of doing this now, and on
-> normal file systems we'll easily have a global reserve of 512MiB, and
-> since metadata chunks are usually 1GiB that means we'll allocate
-> metadata chunks more readily.  Instead use the actual used amount when
-> determining if we need to allocate a chunk or not.
-
-This explanation could use more concrete wording currently it's way too
-"hand wavy"/vague.
-
+> With my change to no longer take into account the global reserve for
+> metadata allocation chunks we have this side-effect for mixed block
+> group fs'es where we are no longer allocating enough chunks for the
+> data/metadata requirements.  To deal with this add a ALLOC_CHUNK_FORCE
+> step to the flushing state machine.  This will only get used if we've
+> already made a full loop through the flushing machinery and tried
+> committing the transaction.  If we have then we can try and force a
+> chunk allocation since we likely need it to make progress.  This
+> resolves the issues I was seeing with the mixed bg tests in xfstests
+> with my previous patch.
 > 
 > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
+Still, my observation is that the metadata reclaim code is increasing in
+complexity for rather niche use cases or the details become way too subtle.
+
 > ---
->  fs/btrfs/extent-tree.c | 9 ---------
->  1 file changed, 9 deletions(-)
+>  fs/btrfs/ctree.h             |  3 ++-
+>  fs/btrfs/extent-tree.c       | 18 +++++++++++++++++-
+>  include/trace/events/btrfs.h |  1 +
+>  3 files changed, 20 insertions(+), 2 deletions(-)
 > 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 0c6d589c8ce4..8ccc5019172b 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -2750,7 +2750,8 @@ enum btrfs_flush_state {
+>  	FLUSH_DELALLOC		=	5,
+>  	FLUSH_DELALLOC_WAIT	=	6,
+>  	ALLOC_CHUNK		=	7,
+> -	COMMIT_TRANS		=	8,
+> +	ALLOC_CHUNK_FORCE	=	8,
+> +	COMMIT_TRANS		=	9,
+>  };
+>  
+>  int btrfs_alloc_data_chunk_ondemand(struct btrfs_inode *inode, u64 bytes);
 > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 7a30fbc05e5e..a91b3183dcae 100644
+> index a91b3183dcae..e6bb6ce23c84 100644
 > --- a/fs/btrfs/extent-tree.c
 > +++ b/fs/btrfs/extent-tree.c
-> @@ -4388,21 +4388,12 @@ static inline u64 calc_global_rsv_need_space(struct btrfs_block_rsv *global)
->  static int should_alloc_chunk(struct btrfs_fs_info *fs_info,
->  			      struct btrfs_space_info *sinfo, int force)
->  {
-> -	struct btrfs_block_rsv *global_rsv = &fs_info->global_block_rsv;
->  	u64 bytes_used = btrfs_space_info_used(sinfo, false);
->  	u64 thresh;
+> @@ -4927,6 +4927,7 @@ static void flush_space(struct btrfs_fs_info *fs_info,
+>  		btrfs_end_transaction(trans);
+>  		break;
+>  	case ALLOC_CHUNK:
+> +	case ALLOC_CHUNK_FORCE:
+>  		trans = btrfs_join_transaction(root);
+>  		if (IS_ERR(trans)) {
+>  			ret = PTR_ERR(trans);
+> @@ -4934,7 +4935,9 @@ static void flush_space(struct btrfs_fs_info *fs_info,
+>  		}
+>  		ret = do_chunk_alloc(trans,
+>  				     btrfs_metadata_alloc_profile(fs_info),
+> -				     CHUNK_ALLOC_NO_FORCE);
+> +				     (state == ALLOC_CHUNK) ?
+> +				     CHUNK_ALLOC_NO_FORCE :
+> +				     CHUNK_ALLOC_FORCE);
+>  		btrfs_end_transaction(trans);
+>  		if (ret > 0 || ret == -ENOSPC)
+>  			ret = 0;
+> @@ -5070,6 +5073,19 @@ static void btrfs_async_reclaim_metadata_space(struct work_struct *work)
+>  				commit_cycles--;
+>  		}
 >  
->  	if (force == CHUNK_ALLOC_FORCE)
->  		return 1;
+> +		/*
+> +		 * We don't want to force a chunk allocation until we've tried
+> +		 * pretty hard to reclaim space.  Think of the case where we
+> +		 * free'd up a bunch of space and so have a lot of pinned space
+> +		 * to reclaim.  We would rather use that than possibly create a
+> +		 * underutilized metadata chunk.  So if this is our first run
+> +		 * through the flushing state machine skip ALLOC_CHUNK_FORCE and
+> +		 * commit the transaction.  If nothing has changed the next go
+> +		 * around then we can force a chunk allocation.
+> +		 */
+> +		if (flush_state == ALLOC_CHUNK_FORCE && !commit_cycles)
+> +			flush_state++;
+> +
+>  		if (flush_state > COMMIT_TRANS) {
+>  			commit_cycles++;
+>  			if (commit_cycles > 2) {
+> diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+> index 63d1f9d8b8c7..dd0e6f8d6b6e 100644
+> --- a/include/trace/events/btrfs.h
+> +++ b/include/trace/events/btrfs.h
+> @@ -1051,6 +1051,7 @@ TRACE_EVENT(btrfs_trigger_flush,
+>  		{ FLUSH_DELAYED_REFS_NR,	"FLUSH_DELAYED_REFS_NR"},	\
+>  		{ FLUSH_DELAYED_REFS,		"FLUSH_ELAYED_REFS"},		\
+>  		{ ALLOC_CHUNK,			"ALLOC_CHUNK"},			\
+> +		{ ALLOC_CHUNK_FORCE,		"ALLOC_CHUNK_FORCE"},		\
+>  		{ COMMIT_TRANS,			"COMMIT_TRANS"})
 >  
-> -	/*
-> -	 * We need to take into account the global rsv because for all intents
-> -	 * and purposes it's used space.  Don't worry about locking the
-> -	 * global_rsv, it doesn't change except when the transaction commits.
-> -	 */
-> -	if (sinfo->flags & BTRFS_BLOCK_GROUP_METADATA)
-> -		bytes_used += calc_global_rsv_need_space(global_rsv);
-> -
->  	/*
->  	 * in limited mode, we want to have some free space up to
->  	 * about 1% of the FS size.
+>  TRACE_EVENT(btrfs_flush_space,
 > 

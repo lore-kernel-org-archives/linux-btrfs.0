@@ -6,31 +6,32 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 253F0C43441
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 12:41:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 12009C43441
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 12:45:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E0F6C20660
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 12:41:25 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E0F6C20660
+	by mail.kernel.org (Postfix) with ESMTP id C6A8E20855
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 12:45:42 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C6A8E20855
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726444AbeKZXfZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 26 Nov 2018 18:35:25 -0500
-Received: from mx2.suse.de ([195.135.220.15]:46656 "EHLO mx1.suse.de"
+        id S1726381AbeKZXjm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 26 Nov 2018 18:39:42 -0500
+Received: from mx2.suse.de ([195.135.220.15]:47638 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726409AbeKZXfY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Nov 2018 18:35:24 -0500
+        id S1726203AbeKZXjm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Nov 2018 18:39:42 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 0FF33AD0A;
-        Mon, 26 Nov 2018 12:41:22 +0000 (UTC)
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 89950AF6F;
+        Mon, 26 Nov 2018 12:45:38 +0000 (UTC)
 Subject: Re: [PATCH 7/8] btrfs: be more explicit about allowed flush states
+From:   Nikolay Borisov <nborisov@suse.com>
 To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
         kernel-team@fb.com
 References: <20181121190313.24575-1-josef@toxicpanda.com>
  <20181121190313.24575-8-josef@toxicpanda.com>
-From:   Nikolay Borisov <nborisov@suse.com>
+ <95d8b6d0-11c1-2368-2b46-531b7e27a7d1@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  xsFNBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
@@ -74,12 +75,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <95d8b6d0-11c1-2368-2b46-531b7e27a7d1@suse.com>
-Date:   Mon, 26 Nov 2018 14:41:21 +0200
+Message-ID: <34e685e2-bac5-ed74-4674-282ae70d7d11@suse.com>
+Date:   Mon, 26 Nov 2018 14:45:37 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181121190313.24575-8-josef@toxicpanda.com>
+In-Reply-To: <95d8b6d0-11c1-2368-2b46-531b7e27a7d1@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -90,75 +91,85 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 21.11.18 г. 21:03 ч., Josef Bacik wrote:
-> For FLUSH_LIMIT flushers we really can only allocate chunks and flush
-> delayed inode items, everything else is problematic.  I added a bunch of
-> new states and it lead to weirdness in the FLUSH_LIMIT case because I
-> forgot about how it worked.  So instead explicitly declare the states
-> that are ok for flushing with FLUSH_LIMIT and use that for our state
-> machine.  Then as we add new things that are safe we can just add them
-> to this list.
+On 26.11.18 г. 14:41 ч., Nikolay Borisov wrote:
+> 
+> 
+> On 21.11.18 г. 21:03 ч., Josef Bacik wrote:
+>> For FLUSH_LIMIT flushers we really can only allocate chunks and flush
+>> delayed inode items, everything else is problematic.  I added a bunch of
+>> new states and it lead to weirdness in the FLUSH_LIMIT case because I
+>> forgot about how it worked.  So instead explicitly declare the states
+>> that are ok for flushing with FLUSH_LIMIT and use that for our state
+>> machine.  Then as we add new things that are safe we can just add them
+>> to this list.
+> 
+> 
+> Code-wise it's ok but the changelog needs rewording. At the very least
+> explain the weirdness. Also in the last sentence the word 'thing' is
+> better substituted with "flush states".
 
+Case in point, you yourself mention that you have forgotten how the
+FLUSH_LIMIT case works. That's why we need good changelogs so that those
+details can be quickly worked out from reading the changelog.
 
-Code-wise it's ok but the changelog needs rewording. At the very least
-explain the weirdness. Also in the last sentence the word 'thing' is
-better substituted with "flush states".
 
 > 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-> ---
->  fs/btrfs/extent-tree.c | 21 ++++++++++-----------
->  1 file changed, 10 insertions(+), 11 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 0e9ba77e5316..e31980d451c2 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -5112,12 +5112,18 @@ void btrfs_init_async_reclaim_work(struct work_struct *work)
->  	INIT_WORK(work, btrfs_async_reclaim_metadata_space);
->  }
->  
-> +static const enum btrfs_flush_state priority_flush_states[] = {
-> +	FLUSH_DELAYED_ITEMS_NR,
-> +	FLUSH_DELAYED_ITEMS,
-> +	ALLOC_CHUNK,
-> +};
-> +
->  static void priority_reclaim_metadata_space(struct btrfs_fs_info *fs_info,
->  					    struct btrfs_space_info *space_info,
->  					    struct reserve_ticket *ticket)
->  {
->  	u64 to_reclaim;
-> -	int flush_state = FLUSH_DELAYED_ITEMS_NR;
-> +	int flush_state = 0;
->  
->  	spin_lock(&space_info->lock);
->  	to_reclaim = btrfs_calc_reclaim_metadata_size(fs_info, space_info,
-> @@ -5129,7 +5135,8 @@ static void priority_reclaim_metadata_space(struct btrfs_fs_info *fs_info,
->  	spin_unlock(&space_info->lock);
->  
->  	do {
-> -		flush_space(fs_info, space_info, to_reclaim, flush_state);
-> +		flush_space(fs_info, space_info, to_reclaim,
-> +			    priority_flush_states[flush_state]);
->  		flush_state++;
->  		spin_lock(&space_info->lock);
->  		if (ticket->bytes == 0) {
-> @@ -5137,15 +5144,7 @@ static void priority_reclaim_metadata_space(struct btrfs_fs_info *fs_info,
->  			return;
->  		}
->  		spin_unlock(&space_info->lock);
-> -
-> -		/*
-> -		 * Priority flushers can't wait on delalloc without
-> -		 * deadlocking.
-> -		 */
-> -		if (flush_state == FLUSH_DELALLOC ||
-> -		    flush_state == FLUSH_DELALLOC_WAIT)
-> -			flush_state = ALLOC_CHUNK;
-> -	} while (flush_state < COMMIT_TRANS);
-> +	} while (flush_state < ARRAY_SIZE(priority_flush_states));
->  }
->  
->  static int wait_reserve_ticket(struct btrfs_fs_info *fs_info,
+>>
+>> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+>> ---
+>>  fs/btrfs/extent-tree.c | 21 ++++++++++-----------
+>>  1 file changed, 10 insertions(+), 11 deletions(-)
+>>
+>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+>> index 0e9ba77e5316..e31980d451c2 100644
+>> --- a/fs/btrfs/extent-tree.c
+>> +++ b/fs/btrfs/extent-tree.c
+>> @@ -5112,12 +5112,18 @@ void btrfs_init_async_reclaim_work(struct work_struct *work)
+>>  	INIT_WORK(work, btrfs_async_reclaim_metadata_space);
+>>  }
+>>  
+>> +static const enum btrfs_flush_state priority_flush_states[] = {
+>> +	FLUSH_DELAYED_ITEMS_NR,
+>> +	FLUSH_DELAYED_ITEMS,
+>> +	ALLOC_CHUNK,
+>> +};
+>> +
+>>  static void priority_reclaim_metadata_space(struct btrfs_fs_info *fs_info,
+>>  					    struct btrfs_space_info *space_info,
+>>  					    struct reserve_ticket *ticket)
+>>  {
+>>  	u64 to_reclaim;
+>> -	int flush_state = FLUSH_DELAYED_ITEMS_NR;
+>> +	int flush_state = 0;
+>>  
+>>  	spin_lock(&space_info->lock);
+>>  	to_reclaim = btrfs_calc_reclaim_metadata_size(fs_info, space_info,
+>> @@ -5129,7 +5135,8 @@ static void priority_reclaim_metadata_space(struct btrfs_fs_info *fs_info,
+>>  	spin_unlock(&space_info->lock);
+>>  
+>>  	do {
+>> -		flush_space(fs_info, space_info, to_reclaim, flush_state);
+>> +		flush_space(fs_info, space_info, to_reclaim,
+>> +			    priority_flush_states[flush_state]);
+>>  		flush_state++;
+>>  		spin_lock(&space_info->lock);
+>>  		if (ticket->bytes == 0) {
+>> @@ -5137,15 +5144,7 @@ static void priority_reclaim_metadata_space(struct btrfs_fs_info *fs_info,
+>>  			return;
+>>  		}
+>>  		spin_unlock(&space_info->lock);
+>> -
+>> -		/*
+>> -		 * Priority flushers can't wait on delalloc without
+>> -		 * deadlocking.
+>> -		 */
+>> -		if (flush_state == FLUSH_DELALLOC ||
+>> -		    flush_state == FLUSH_DELALLOC_WAIT)
+>> -			flush_state = ALLOC_CHUNK;
+>> -	} while (flush_state < COMMIT_TRANS);
+>> +	} while (flush_state < ARRAY_SIZE(priority_flush_states));
+>>  }
+>>  
+>>  static int wait_reserve_ticket(struct btrfs_fs_info *fs_info,
+>>
 > 

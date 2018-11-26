@@ -2,63 +2,63 @@ Return-Path: <SRS0=mYd/=OF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.5 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=unavailable
+X-Spam-Status: No, score=-5.5 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 766F6C43441
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 22:40:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AA125C43441
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 22:42:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3D85620873
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 22:40:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6DD9620659
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 22:42:49 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="i3qnjehB"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3D85620873
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="Bx1j+lqw"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6DD9620659
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=osandov.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727645AbeK0Jfs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 27 Nov 2018 04:35:48 -0500
-Received: from mail-pl1-f193.google.com ([209.85.214.193]:37154 "EHLO
-        mail-pl1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727633AbeK0Jfp (ORCPT
+        id S1727416AbeK0JiV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 27 Nov 2018 04:38:21 -0500
+Received: from mail-pf1-f195.google.com ([209.85.210.195]:39338 "EHLO
+        mail-pf1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727188AbeK0JiV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Nov 2018 04:35:45 -0500
-Received: by mail-pl1-f193.google.com with SMTP id b5so14582638plr.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Nov 2018 14:40:05 -0800 (PST)
+        Tue, 27 Nov 2018 04:38:21 -0500
+Received: by mail-pf1-f195.google.com with SMTP id c72so7299038pfc.6
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Nov 2018 14:42:41 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
         h=date:from:to:cc:subject:message-id:references:mime-version
          :content-disposition:in-reply-to:user-agent;
-        bh=7SO7oOEdYQMovzlJck3mc2068mng5do2HhlfyldvWPU=;
-        b=i3qnjehBiyOqrFRjAHBr9Jb6QUj670RxC/4MexyY1O/JiJiZzrjd8nTLEhgSW7RAfc
-         +FVQbE8UyT+he+H1Q/aEJn7aHCBC5DFtZgeBL+uBBaKIAdDIfovyVnEu86oD25w4aMJ3
-         bDQLit7fjyShtnmlwlIKSnMKWauICluAa5y02isaD/gK3jBbk0SVRWiSOASYM62FQd1D
-         E0TxievofnMe9YDLX8FKtJ0j3ToCj7fKJfNyPMY1owCLnWL/ioXt1vjKxzo45yRN8OMG
-         qi64+ePkHIswSk+nzc6tG7YZyrgg/qop0MKatM26GS0yrqjjnl2yv8qFAO7A1OlHW3pX
-         JO3g==
+        bh=YuH1w73FA6WYLZ5PA5S14thQJO6eyI0QOFLNT60OTJc=;
+        b=Bx1j+lqwud+6YMhgE8fvAnnofXRSIVMmc4+dX0jlcXSpQCJIk4B+bUhHBljIazVRGJ
+         Yk7s53K7vLYUdH1weyn8juWVj7JnXzi4lGAfPAqHbV7l99W7b0q0X6Xn3PZqUWOcrEkd
+         mZuZVvlCcEBBZzZGHo/SlfB6fKZZiy8Kphak3sinkPySYb/ehv1xJQG2UrhQdwAVIpJw
+         SqRls5qx0kDzq2oTQD6DeCRgGHBuLLy8Sf+pc5mZcJ7ip/ry2XBAAlCV/u0qQg7CnysJ
+         Vjndg8quzQ7mwS0+GVH6zYEhFL676afI+yrinTaascDgESuKXzWQNI44jdwT8ZuzLxT3
+         YTVg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:date:from:to:cc:subject:message-id:references
          :mime-version:content-disposition:in-reply-to:user-agent;
-        bh=7SO7oOEdYQMovzlJck3mc2068mng5do2HhlfyldvWPU=;
-        b=AR7yDKE/aGsOWK49+sZOaZohqq12vfiqMPXG1umW9Q5kq9NtUW9w0FOJN4+TjNCOSH
-         X4VeWYhq2OjKIuvaT0plyiehe+LKp5XaF12fghn3aEI43zmEzFpgHypRBQohp/Oh4DSV
-         cxTNcy85MO1Pa0cbhnB3MXT6l0kAoNSEnMEMwAG0RePo216K8qOjSRDju41C05SuZMIh
-         f6JsdFqbyNdeEKylRbWXZjkdIj9xy8uTRkW8OyG0C62ZbqavJNYglommd2NxNV9eZibz
-         A2KO83jyePvBb5SBvScABApsQp+PJVL98Rk+biPZiLOmhvJ9nJ9RK3oFW4c/wtt85f/C
-         qQAw==
-X-Gm-Message-State: AA+aEWYGJqukiq3MK6hAochItV3wPMFuIgHS+6QA87i4aJ1/I+AxrZGH
-        wUzgdFirvuQrCMga1JMwQ+DXUw==
-X-Google-Smtp-Source: AFSGD/XiSRQHKl6i4Ud9hpVkTqDz9dHlgDZMIs2FFvUUJM4ork3eboFR7OiJBXZO5SjLcJMPsHmCow==
-X-Received: by 2002:a17:902:aa8c:: with SMTP id d12mr7815591plr.25.1543272005111;
-        Mon, 26 Nov 2018 14:40:05 -0800 (PST)
+        bh=YuH1w73FA6WYLZ5PA5S14thQJO6eyI0QOFLNT60OTJc=;
+        b=t74+s08NrA214QqDfuWBcvAK3yABl2P7w3G4q/K7MJwYlQac8PasXQ0b33fmdsKD0D
+         zm+eDAo7MYJ1dzKPIfCJsYUkMzzJqn8MwiV6P1ragG1UwsjKsbGZ+R0JRGYAEQy7Jut3
+         Hl1RXxI9CRQ1CPkfjZyIVi9ericNb0dpPUrH3MyUWhJ+h8oiZhSVoK+ylGpi5xHCym0X
+         U1CSLC62zarghFi9yV1JPv1On3GkcpnSZaImxSR63KWZ0WfelKmRguDzNKX5sQqCjTEJ
+         bOULVN2CJufgVMuaBFJYpP5ZjULOkR/1QNc16kq0XW0W9Q8XRAx4eQaPaIYQ3xvsSzFU
+         e2eA==
+X-Gm-Message-State: AGRZ1gJlc45fy6Lbuonv5hmZx/WDvpHKaevm8mov/ITHCkzAplwEun6n
+        PF1Ma4VvdFVALA7LPZ6VA9+qaQ==
+X-Google-Smtp-Source: AJdET5e2BEpZc6Fotrea8olGNGHkemA82Jgu1cMl9/akUhhNFtk5Vm9tZfEYpy7G9FZMTaL59XcYxg==
+X-Received: by 2002:a62:7687:: with SMTP id r129mr29880739pfc.17.1543272161181;
+        Mon, 26 Nov 2018 14:42:41 -0800 (PST)
 Received: from vader ([2601:602:8b00:55d3:e6a7:a0ff:fe0b:c9a8])
-        by smtp.gmail.com with ESMTPSA id t13sm3253245pgr.42.2018.11.26.14.40.03
+        by smtp.gmail.com with ESMTPSA id i4sm2029143pfj.82.2018.11.26.14.42.39
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Mon, 26 Nov 2018 14:40:04 -0800 (PST)
-Date:   Mon, 26 Nov 2018 14:40:03 -0800
+        Mon, 26 Nov 2018 14:42:40 -0800 (PST)
+Date:   Mon, 26 Nov 2018 14:42:39 -0800
 From:   Omar Sandoval <osandov@osandov.com>
 To:     Ming Lei <ming.lei@redhat.com>
 Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
@@ -78,54 +78,60 @@ Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
         Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
         Boaz Harrosh <ooo@electrozaur.com>,
         Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
-Subject: Re: [PATCH V12 14/20] bcache: avoid to use
- bio_for_each_segment_all() in bch_bio_alloc_pages()
-Message-ID: <20181126224003.GK30411@vader>
+Subject: Re: [PATCH V12 15/20] block: allow bio_for_each_segment_all() to
+ iterate over multi-page bvec
+Message-ID: <20181126224239.GL30411@vader>
 References: <20181126021720.19471-1-ming.lei@redhat.com>
- <20181126021720.19471-15-ming.lei@redhat.com>
+ <20181126021720.19471-16-ming.lei@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181126021720.19471-15-ming.lei@redhat.com>
+In-Reply-To: <20181126021720.19471-16-ming.lei@redhat.com>
 User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Nov 26, 2018 at 10:17:14AM +0800, Ming Lei wrote:
-> bch_bio_alloc_pages() is always called on one new bio, so it is safe
-> to access the bvec table directly. Given it is the only kind of this
-> case, open code the bvec table access since bio_for_each_segment_all()
-> will be changed to support for iterating over multipage bvec.
+On Mon, Nov 26, 2018 at 10:17:15AM +0800, Ming Lei wrote:
+> This patch introduces one extra iterator variable to bio_for_each_segment_all(),
+> then we can allow bio_for_each_segment_all() to iterate over multi-page bvec.
 > 
-> Acked-by: Coly Li <colyli@suse.de>
+> Given it is just one mechannical & simple change on all bio_for_each_segment_all()
+> users, this patch does tree-wide change in one single patch, so that we can
+> avoid to use a temporary helper for this conversion.
+> 
 > Reviewed-by: Christoph Hellwig <hch@lst.de>
 
 Reviewed-by: Omar Sandoval <osandov@fb.com>
 
 > Signed-off-by: Ming Lei <ming.lei@redhat.com>
 > ---
->  drivers/md/bcache/util.c | 6 +++++-
->  1 file changed, 5 insertions(+), 1 deletion(-)
-> 
-> diff --git a/drivers/md/bcache/util.c b/drivers/md/bcache/util.c
-> index 20eddeac1531..62fb917f7a4f 100644
-> --- a/drivers/md/bcache/util.c
-> +++ b/drivers/md/bcache/util.c
-> @@ -270,7 +270,11 @@ int bch_bio_alloc_pages(struct bio *bio, gfp_t gfp_mask)
->  	int i;
->  	struct bio_vec *bv;
->  
-> -	bio_for_each_segment_all(bv, bio, i) {
-> +	/*
-> +	 * This is called on freshly new bio, so it is safe to access the
-> +	 * bvec table directly.
-> +	 */
-> +	for (i = 0, bv = bio->bi_io_vec; i < bio->bi_vcnt; bv++, i++) {
->  		bv->bv_page = alloc_page(gfp_mask);
->  		if (!bv->bv_page) {
->  			while (--bv >= bio->bi_io_vec)
-> -- 
-> 2.9.5
-> 
+>  block/bio.c                       | 27 ++++++++++++++++++---------
+>  block/bounce.c                    |  6 ++++--
+>  drivers/md/bcache/btree.c         |  3 ++-
+>  drivers/md/dm-crypt.c             |  3 ++-
+>  drivers/md/raid1.c                |  3 ++-
+>  drivers/staging/erofs/data.c      |  3 ++-
+>  drivers/staging/erofs/unzip_vle.c |  3 ++-
+>  fs/block_dev.c                    |  6 ++++--
+>  fs/btrfs/compression.c            |  3 ++-
+>  fs/btrfs/disk-io.c                |  3 ++-
+>  fs/btrfs/extent_io.c              |  9 ++++++---
+>  fs/btrfs/inode.c                  |  6 ++++--
+>  fs/btrfs/raid56.c                 |  3 ++-
+>  fs/crypto/bio.c                   |  3 ++-
+>  fs/direct-io.c                    |  4 +++-
+>  fs/exofs/ore.c                    |  3 ++-
+>  fs/exofs/ore_raid.c               |  3 ++-
+>  fs/ext4/page-io.c                 |  3 ++-
+>  fs/ext4/readpage.c                |  3 ++-
+>  fs/f2fs/data.c                    |  9 ++++++---
+>  fs/gfs2/lops.c                    |  6 ++++--
+>  fs/gfs2/meta_io.c                 |  3 ++-
+>  fs/iomap.c                        |  6 ++++--
+>  fs/mpage.c                        |  3 ++-
+>  fs/xfs/xfs_aops.c                 |  5 +++--
+>  include/linux/bio.h               | 11 +++++++++--
+>  include/linux/bvec.h              | 30 ++++++++++++++++++++++++++++++
+>  27 files changed, 125 insertions(+), 45 deletions(-)

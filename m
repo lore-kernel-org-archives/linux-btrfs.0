@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0488CC43441
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 10:45:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ED7EFC43441
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 11:25:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B6CD12089F
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 10:45:53 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B6CD12089F
+	by mail.kernel.org (Postfix) with ESMTP id BE1DB20672
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 11:25:09 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org BE1DB20672
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726225AbeKZVje (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 26 Nov 2018 16:39:34 -0500
-Received: from mx2.suse.de ([195.135.220.15]:55950 "EHLO mx1.suse.de"
+        id S1726356AbeKZWS5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 26 Nov 2018 17:18:57 -0500
+Received: from mx2.suse.de ([195.135.220.15]:36406 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726138AbeKZVje (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Nov 2018 16:39:34 -0500
+        id S1726279AbeKZWS4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Nov 2018 17:18:56 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 7ED3DAD24;
-        Mon, 26 Nov 2018 10:45:49 +0000 (UTC)
-Subject: Re: [PATCH 1/8] btrfs: check if free bgs for commit
+        by mx1.suse.de (Postfix) with ESMTP id 6324EAE88;
+        Mon, 26 Nov 2018 11:25:05 +0000 (UTC)
+Subject: Re: [PATCH 3/8] btrfs: don't use global rsv for chunk allocation
 To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
         kernel-team@fb.com
 References: <20181121190313.24575-1-josef@toxicpanda.com>
- <20181121190313.24575-2-josef@toxicpanda.com>
+ <20181121190313.24575-4-josef@toxicpanda.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -74,12 +74,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <d721b79a-289b-d5fc-6b19-d5a4c9df5f47@suse.com>
-Date:   Mon, 26 Nov 2018 12:45:48 +0200
+Message-ID: <d321d237-012b-f000-3771-f7946b38b2b7@suse.com>
+Date:   Mon, 26 Nov 2018 13:25:04 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181121190313.24575-2-josef@toxicpanda.com>
+In-Reply-To: <20181121190313.24575-4-josef@toxicpanda.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -91,81 +91,46 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 21.11.18 г. 21:03 ч., Josef Bacik wrote:
-> may_commit_transaction will skip committing the transaction if we don't
-> have enough pinned space or if we're trying to find space for a SYSTEM
-> chunk.  However if we have pending free block groups in this transaction
-> we still want to commit as we may be able to allocate a chunk to make
-> our reservation.  So instead of just returning ENOSPC, check if we have
-> free block groups pending, and if so commit the transaction to allow us
-> to use that free space.
+> We've done this forever because of the voodoo around knowing how much
+> space we have.  However we have better ways of doing this now, and on
+> normal file systems we'll easily have a global reserve of 512MiB, and
+> since metadata chunks are usually 1GiB that means we'll allocate
+> metadata chunks more readily.  Instead use the actual used amount when
+> determining if we need to allocate a chunk or not.
+
+This explanation could use more concrete wording currently it's way too
+"hand wavy"/vague.
+
 > 
 > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-> Reviewed-by: Omar Sandoval <osandov@fb.com>
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
 > ---
->  fs/btrfs/extent-tree.c | 33 +++++++++++++++++++--------------
->  1 file changed, 19 insertions(+), 14 deletions(-)
+>  fs/btrfs/extent-tree.c | 9 ---------
+>  1 file changed, 9 deletions(-)
 > 
 > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 8af68b13fa27..0dca250dc02e 100644
+> index 7a30fbc05e5e..a91b3183dcae 100644
 > --- a/fs/btrfs/extent-tree.c
 > +++ b/fs/btrfs/extent-tree.c
-> @@ -4843,10 +4843,18 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
->  	if (!bytes)
->  		return 0;
+> @@ -4388,21 +4388,12 @@ static inline u64 calc_global_rsv_need_space(struct btrfs_block_rsv *global)
+>  static int should_alloc_chunk(struct btrfs_fs_info *fs_info,
+>  			      struct btrfs_space_info *sinfo, int force)
+>  {
+> -	struct btrfs_block_rsv *global_rsv = &fs_info->global_block_rsv;
+>  	u64 bytes_used = btrfs_space_info_used(sinfo, false);
+>  	u64 thresh;
 >  
-> -	/* See if there is enough pinned space to make this reservation */
-> -	if (__percpu_counter_compare(&space_info->total_bytes_pinned,
-> -				   bytes,
-> -				   BTRFS_TOTAL_BYTES_PINNED_BATCH) >= 0)
-> +	trans = btrfs_join_transaction(fs_info->extent_root);
-> +	if (IS_ERR(trans))
-> +		return PTR_ERR(trans);
-> +
-> +	/*
-> +	 * See if there is enough pinned space to make this reservation, or if
-> +	 * we have bg's that are going to be freed, allowing us to possibly do a
-> +	 * chunk allocation the next loop through.
-> +	 */
-> +	if (test_bit(BTRFS_TRANS_HAVE_FREE_BGS, &trans->transaction->flags) ||
-> +	    __percpu_counter_compare(&space_info->total_bytes_pinned, bytes,
-> +				     BTRFS_TOTAL_BYTES_PINNED_BATCH) >= 0)
->  		goto commit;
+>  	if (force == CHUNK_ALLOC_FORCE)
+>  		return 1;
 >  
+> -	/*
+> -	 * We need to take into account the global rsv because for all intents
+> -	 * and purposes it's used space.  Don't worry about locking the
+> -	 * global_rsv, it doesn't change except when the transaction commits.
+> -	 */
+> -	if (sinfo->flags & BTRFS_BLOCK_GROUP_METADATA)
+> -		bytes_used += calc_global_rsv_need_space(global_rsv);
+> -
 >  	/*
-> @@ -4854,7 +4862,7 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
->  	 * this reservation.
->  	 */
->  	if (space_info != delayed_rsv->space_info)
-> -		return -ENOSPC;
-> +		goto enospc;
->  
->  	spin_lock(&delayed_rsv->lock);
->  	reclaim_bytes += delayed_rsv->reserved;
-> @@ -4868,17 +4876,14 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
->  	bytes -= reclaim_bytes;
->  
->  	if (__percpu_counter_compare(&space_info->total_bytes_pinned,
-> -				   bytes,
-> -				   BTRFS_TOTAL_BYTES_PINNED_BATCH) < 0) {
-> -		return -ENOSPC;
-> -	}
-> -
-> +				     bytes,
-> +				     BTRFS_TOTAL_BYTES_PINNED_BATCH) < 0)
-> +		goto enospc;
->  commit:
-> -	trans = btrfs_join_transaction(fs_info->extent_root);
-> -	if (IS_ERR(trans))
-> -		return -ENOSPC;
-> -
->  	return btrfs_commit_transaction(trans);
-> +enospc:
-> +	btrfs_end_transaction(trans);
-> +	return -ENOSPC;
->  }
->  
->  /*
+>  	 * in limited mode, we want to have some free space up to
+>  	 * about 1% of the FS size.
 > 

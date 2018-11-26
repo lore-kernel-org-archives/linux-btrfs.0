@@ -6,113 +6,97 @@ X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9D6ABC43610
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 18:17:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 45388C43441
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 18:38:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6F84020817
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 18:17:32 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6F84020817
+	by mail.kernel.org (Postfix) with ESMTP id 0A26D20855
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 18:38:19 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0A26D20855
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726414AbeK0FMZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 27 Nov 2018 00:12:25 -0500
-Received: from mx2.suse.de ([195.135.220.15]:45992 "EHLO mx1.suse.de"
+        id S1726182AbeK0FdP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 27 Nov 2018 00:33:15 -0500
+Received: from mx2.suse.de ([195.135.220.15]:49186 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725882AbeK0FMY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Nov 2018 00:12:24 -0500
+        id S1725723AbeK0FdP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Nov 2018 00:33:15 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A2470AE12;
-        Mon, 26 Nov 2018 18:17:28 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id E875BAC5A
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Nov 2018 18:38:15 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 63FC7DAD8F; Mon, 26 Nov 2018 19:17:12 +0100 (CET)
-Date:   Mon, 26 Nov 2018 19:17:11 +0100
+        id 1768ADAD8F; Mon, 26 Nov 2018 19:38:00 +0100 (CET)
+Date:   Mon, 26 Nov 2018 19:37:59 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     fdmanana@kernel.org
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v4] Btrfs: fix deadlock with memory reclaim during scrub
-Message-ID: <20181126181711.GI2842@twin.jikos.cz>
+To:     Johannes Thumshirn <jthumshirn@suse.de>
+Cc:     David Sterba <dsterba@suse.com>,
+        Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v2] btrfs: improve error handling of btrfs_add_link()
+Message-ID: <20181126183759.GJ2842@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
-        linux-btrfs@vger.kernel.org
-References: <20181123134543.20199-1-fdmanana@kernel.org>
- <20181123182540.7206-1-fdmanana@kernel.org>
+Mail-Followup-To: dsterba@suse.cz, Johannes Thumshirn <jthumshirn@suse.de>,
+        David Sterba <dsterba@suse.com>,
+        Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
+References: <20181123084243.25899-1-jthumshirn@suse.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181123182540.7206-1-fdmanana@kernel.org>
+In-Reply-To: <20181123084243.25899-1-jthumshirn@suse.de>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Nov 23, 2018 at 06:25:40PM +0000, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
+On Fri, Nov 23, 2018 at 09:42:43AM +0100, Johannes Thumshirn wrote:
+> err holds the return value of either btrfs_del_root_ref() or
+> btrfs_del_inode_ref() but it hasn't been checked since it's
+> introduction with commit fe66a05a0679 (Btrfs: improve error handling
+> for btrfs_insert_dir_item callers) in 2012.
 > 
-> When a transaction commit starts, it attempts to pause scrub and it blocks
-> until the scrub is paused. So while the transaction is blocked waiting for
-> scrub to pause, we can not do memory allocation with GFP_KERNEL from scrub,
-> otherwise we risk getting into a deadlock with reclaim.
+> Instead of silently ignoring the return values, print a message so the user
+> knows what kind of error has encountered.
 > 
-> Checking for scrub pause requests is done early at the beginning of the
-> while loop of scrub_stripe() and later in the loop, scrub_extent() and
-> scrub_raid56_parity() are called, which in turn call scrub_pages() and
-> scrub_pages_for_parity() respectively. These last two functions do memory
-> allocations using GFP_KERNEL. Same problem could happen while scrubbing
-> the super blocks, since it calls scrub_pages().
-> 
-> So make sure GFP_NOFS is used for the memory allocations because at any
-> time a scrub pause request can happen from another task that started to
-> commit a transaction.
-> 
-> Fixes: 58c4e173847a ("btrfs: scrub: use GFP_KERNEL on the submission path")
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> Link: https://lore.kernel.org/linux-btrfs/20181119141323.GC24115@twin.jikos.cz
+> Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
 > ---
 > 
-> V2: Make using GFP_NOFS unconditionial. Previous version was racy, as pausing
-> requests migth happen just after we checked for them.
+> Changes to v1:
+> * Only print an error message and let the callers abort the transaction (Dave)
+> ---
+>  fs/btrfs/inode.c | 13 +++++++++++--
+>  1 file changed, 11 insertions(+), 2 deletions(-)
 > 
-> V3: Use memalloc_nofs_save() just like V1 did.
-> 
-> V4: Similar problem happened for raid56, which was previously missed, so
->     deal with it as well as the case for scrub_supers().
-
-Enclosing the whole scrub to 'nofs' seems like the best option and
-future proof. What I missed in 58c4e173847a was the "don't hold big lock
-under GFP_KERNEL allocation" pattern.
-
->  fs/btrfs/scrub.c | 12 ++++++++++++
->  1 file changed, 12 insertions(+)
-> 
-> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-> index 3be1456b5116..e08b7502d1f0 100644
-> --- a/fs/btrfs/scrub.c
-> +++ b/fs/btrfs/scrub.c
-> @@ -3779,6 +3779,7 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
->  	struct scrub_ctx *sctx;
->  	int ret;
->  	struct btrfs_device *dev;
-> +	unsigned int nofs_flag;
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 9becf8543489..8ca2f82b35a3 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -6351,6 +6351,7 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
+>  	struct btrfs_root *root = parent_inode->root;
+>  	u64 ino = btrfs_ino(inode);
+>  	u64 parent_ino = btrfs_ino(parent_inode);
+> +	int err;
 >  
->  	if (btrfs_fs_closing(fs_info))
->  		return -EINVAL;
-> @@ -3882,6 +3883,16 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
->  	atomic_inc(&fs_info->scrubs_running);
->  	mutex_unlock(&fs_info->scrub_lock);
->  
-> +	/*
-> +	 * In order to avoid deadlock with reclaim when there is a transaction
-> +	 * trying to pause scrub, make sure we use GFP_NOFS for all the
-> +	 * allocations done at btrfs_scrub_pages() and scrub_pages_for_parity()
-> +	 * invoked by our callees. The pausing request is done when the
-> +	 * transaction commit starts, and it blocks the transaction until scrub
-> +	 * is paused (done at specific points at scrub_stripe() or right above
-> +	 * before incrementing fs_info->scrubs_running).
+>  	if (unlikely(ino == BTRFS_FIRST_FREE_OBJECTID)) {
+>  		memcpy(&key, &inode->root->root_key, sizeof(key));
+> @@ -6395,17 +6396,25 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
+>  fail_dir_item:
+>  	if (unlikely(ino == BTRFS_FIRST_FREE_OBJECTID)) {
+>  		u64 local_index;
+> -		int err;
+> +
+>  		err = btrfs_del_root_ref(trans, key.objectid,
+>  					 root->root_key.objectid, parent_ino,
+>  					 &local_index, name, name_len);
+> +		if (err)
+> +			btrfs_info(trans->fs_info,
+> +		   "failed to delete reference to %.*s, root %llu ref %llu",
+> +				   name_len, name, key.objectid,
+> +				   root->root_key.objectid);
 
-This hilights why there's perhaps no point in trying to make the nofs
-section smaller, handling all the interactions between scrub and
-transaction would be too complex.
-
-Reviewed-by: David Sterba <dsterba@suse.com>
+I though a transaction abort would be here, as the state is not
+consistent. Also I'm not sure what I as a user would get from such error
+message after calling link(). If the error handling in the error
+handling fails, there's not much left to do and the abort either
+happened earlier in the callees or is necessary here.

@@ -2,28 +2,28 @@ Return-Path: <SRS0=mYd/=OF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1ADA1C43610
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 12:59:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 61BEDC43441
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 13:11:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DEF0420817
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 12:59:10 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org DEF0420817
+	by mail.kernel.org (Postfix) with ESMTP id 30B1820664
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Nov 2018 13:11:36 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 30B1820664
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=lst.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726966AbeKZXxI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 26 Nov 2018 18:53:08 -0500
-Received: from verein.lst.de ([213.95.11.211]:51895 "EHLO newverein.lst.de"
+        id S1726729AbeK0AF2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 26 Nov 2018 19:05:28 -0500
+Received: from verein.lst.de ([213.95.11.211]:51987 "EHLO newverein.lst.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726206AbeKZXxI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Nov 2018 18:53:08 -0500
+        id S1726227AbeK0AF2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Nov 2018 19:05:28 -0500
 Received: by newverein.lst.de (Postfix, from userid 2407)
-        id 52E7768BF4; Mon, 26 Nov 2018 13:59:02 +0100 (CET)
-Date:   Mon, 26 Nov 2018 13:59:02 +0100
+        id 33F8468BF4; Mon, 26 Nov 2018 14:11:20 +0100 (CET)
+Date:   Mon, 26 Nov 2018 14:11:20 +0100
 From:   Christoph Hellwig <hch@lst.de>
 To:     Ming Lei <ming.lei@redhat.com>
 Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
@@ -43,26 +43,36 @@ Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
         Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
         Boaz Harrosh <ooo@electrozaur.com>,
         Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
-Subject: Re: [PATCH V12 18/20] block: document usage of bio iterator helpers
-Message-ID: <20181126125902.GF6383@lst.de>
-References: <20181126021720.19471-1-ming.lei@redhat.com> <20181126021720.19471-19-ming.lei@redhat.com>
+Subject: Re: [PATCH V12 09/20] block: use bio_for_each_bvec() to compute
+ multi-page bvec count
+Message-ID: <20181126131120.GA6757@lst.de>
+References: <20181126021720.19471-1-ming.lei@redhat.com> <20181126021720.19471-10-ming.lei@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181126021720.19471-19-ming.lei@redhat.com>
+In-Reply-To: <20181126021720.19471-10-ming.lei@redhat.com>
 User-Agent: Mutt/1.5.17 (2007-11-01)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Nov 26, 2018 at 10:17:18AM +0800, Ming Lei wrote:
-> Now multi-page bvec is supported, some helpers may return page by
-> page, meantime some may return segment by segment, this patch
-> documents the usage.
-> 
-> Signed-off-by: Ming Lei <ming.lei@redhat.com>
-
-Looks fine,
+Looks fine:
 
 Reviewed-by: Christoph Hellwig <hch@lst.de>
+
+Nitpick below:
+
+> +{
+> +	unsigned len = bv->bv_len;
+> +	unsigned total_len = 0;
+> +	unsigned new_nsegs = 0, seg_size = 0;
+> +
+> +	/*
+> +	 * Multipage bvec may be too big to hold in one segment,
+> +	 * so the current bvec has to be splitted as multiple
+> +	 * segments.
+> +	 */
+
+Please use up all 80 chars in a line.
+

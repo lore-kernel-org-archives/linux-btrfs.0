@@ -6,32 +6,32 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 32139C43441
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 16:33:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8263CC43441
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 16:36:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 06F0D2086B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 16:33:14 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 06F0D2086B
+	by mail.kernel.org (Postfix) with ESMTP id 4E81621104
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 16:36:14 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4E81621104
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731096AbeK1Dbj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 27 Nov 2018 22:31:39 -0500
-Received: from mx2.suse.de ([195.135.220.15]:60458 "EHLO mx1.suse.de"
+        id S1730948AbeK1Dek (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 27 Nov 2018 22:34:40 -0500
+Received: from mx2.suse.de ([195.135.220.15]:60810 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1730673AbeK1Dbj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Nov 2018 22:31:39 -0500
+        id S1726409AbeK1Dej (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Nov 2018 22:34:39 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id CEDD3AF57
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Nov 2018 16:33:10 +0000 (UTC)
-Subject: Re: [PATCH 2/3] btrfs: use offset_in_page for start_offset in
- map_private_extent_buffer()
+        by mx1.suse.de (Postfix) with ESMTP id 3F6BAACE3
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Nov 2018 16:36:11 +0000 (UTC)
+Subject: Re: [PATCH 3/3] btrfs: document extent mapping assumptions in
+ checksum
 To:     Johannes Thumshirn <jthumshirn@suse.de>,
         David Sterba <dsterba@suse.com>
 Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
 References: <20181127160010.18123-1-jthumshirn@suse.de>
- <20181127160010.18123-3-jthumshirn@suse.de>
+ <20181127160010.18123-4-jthumshirn@suse.de>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -76,12 +76,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <bf725d53-6811-9138-0888-c35fa85ced5e@suse.com>
-Date:   Tue, 27 Nov 2018 18:33:10 +0200
+Message-ID: <9cc979bd-167f-fd92-1308-ebb1ca85bc99@suse.com>
+Date:   Tue, 27 Nov 2018 18:36:10 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181127160010.18123-3-jthumshirn@suse.de>
+In-Reply-To: <20181127160010.18123-4-jthumshirn@suse.de>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -93,28 +93,48 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 27.11.18 г. 18:00 ч., Johannes Thumshirn wrote:
-> In map_private_extent_buffer() use offset_in_page() to initialize
-> 'start_offset' instead of open-coding it.
+> Document why map_private_extent_buffer() cannot return '1' (i.e. the map
+> spans two pages) for the csum_tree_block() case.
+> 
+> The current algorithm for detecting a page boundary crossing in
+> map_private_extent_buffer() will return a '1' *IFF* the product of the
+
+I think the word product must be replaced with 'sum', since product
+implies multiplication :)
+
+> extent buffer's offset in the page + the offset passed in by
+> csum_tree_block() and the minimal length passed in by csum_tree_block() - 1
+> are bigger than PAGE_SIZE.
+> 
+> We always pass BTRFS_CSUM_SIZE (32) as offset and a minimal length of 32
+> and the current extent buffer allocator always guarantees page aligned
+> extends, so the above condition can't be true.
 > 
 > Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+
+With that wording changed:
 
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
 > ---
->  fs/btrfs/extent_io.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
+>  fs/btrfs/disk-io.c | 6 ++++++
+>  1 file changed, 6 insertions(+)
 > 
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 7aafdec49dc3..85cd3975c680 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -5383,7 +5383,7 @@ int map_private_extent_buffer(const struct extent_buffer *eb,
->  	size_t offset;
->  	char *kaddr;
->  	struct page *p;
-> -	size_t start_offset = eb->start & ((u64)PAGE_SIZE - 1);
-> +	size_t start_offset = offset_in_page(eb->start);
->  	unsigned long i = (start_offset + start) >> PAGE_SHIFT;
->  	unsigned long end_i = (start_offset + start + min_len - 1) >>
->  		PAGE_SHIFT;
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 4bc270ef29b4..14d355d0cb7a 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -279,6 +279,12 @@ static int csum_tree_block(struct btrfs_fs_info *fs_info,
+>  
+>  	len = buf->len - offset;
+>  	while (len > 0) {
+> +		/*
+> +		 * Note: we don't need to check for the err == 1 case here, as
+> +		 * with the given combination of 'start = BTRFS_CSUM_SIZE (32)'
+> +		 * and 'min_len = 32' and the currently implemented mapping
+> +		 * algorithm we cannot cross a page boundary.
+> +		 */
+>  		err = map_private_extent_buffer(buf, offset, 32,
+>  					&kaddr, &map_start, &map_len);
+>  		if (err)
 > 

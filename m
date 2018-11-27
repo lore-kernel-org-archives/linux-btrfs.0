@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 38563C43441
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 02:33:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 35AC7C43441
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 02:33:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0D018208E4
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 02:33:24 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0D018208E4
+	by mail.kernel.org (Postfix) with ESMTP id 07D3A208E4
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 02:33:27 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 07D3A208E4
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728241AbeK0N3j (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 27 Nov 2018 08:29:39 -0500
-Received: from mx2.suse.de ([195.135.220.15]:58534 "EHLO mx1.suse.de"
+        id S1728317AbeK0N3n (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 27 Nov 2018 08:29:43 -0500
+Received: from mx2.suse.de ([195.135.220.15]:58554 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728009AbeK0N3j (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Nov 2018 08:29:39 -0500
+        id S1728272AbeK0N3n (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Nov 2018 08:29:43 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 2A821AF57
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Nov 2018 02:33:21 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id C9040AF5C
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Nov 2018 02:33:24 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/5] btrfs-progs: image: Refactor fixup_devices() to fixup_chunks_and_devices()
-Date:   Tue, 27 Nov 2018 10:33:11 +0800
-Message-Id: <20181127023315.28176-2-wqu@suse.com>
+Subject: [PATCH 3/5] btrfs-progs: image: Remove all existing dev extents for later rebuild
+Date:   Tue, 27 Nov 2018 10:33:13 +0800
+Message-Id: <20181127023315.28176-4-wqu@suse.com>
 X-Mailer: git-send-email 2.19.2
 In-Reply-To: <20181127023315.28176-1-wqu@suse.com>
 References: <20181127023315.28176-1-wqu@suse.com>
@@ -40,115 +40,99 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Current fixup_devices() will only remove DEV_ITEMs and reset DEV_ITEM
-size.
-Later we need to do more fixup works, so change the name to
-fixup_chunks_and_devices() and refactor the original device size fixup
-to fixup_device_size().
+This patch will remove all existing dev extents for later rebuild.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- image/main.c | 52 ++++++++++++++++++++++++++++++++++++----------------
- 1 file changed, 36 insertions(+), 16 deletions(-)
+ image/main.c | 68 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 68 insertions(+)
 
 diff --git a/image/main.c b/image/main.c
-index c680ab19de6c..36b5c95ea146 100644
+index 9060f6b1b665..707568f22e01 100644
 --- a/image/main.c
 +++ b/image/main.c
-@@ -2084,28 +2084,19 @@ static void remap_overlapping_chunks(struct mdrestore_struct *mdres)
+@@ -2210,6 +2210,70 @@ static void fixup_block_groups(struct btrfs_trans_handle *trans,
  	}
  }
  
--static int fixup_devices(struct btrfs_fs_info *fs_info,
--			 struct mdrestore_struct *mdres, off_t dev_size)
-+static int fixup_device_size(struct btrfs_trans_handle *trans,
-+			     struct btrfs_fs_info *fs_info,
-+			     struct mdrestore_struct *mdres,
-+			     off_t dev_size)
- {
--	struct btrfs_trans_handle *trans;
- 	struct btrfs_dev_item *dev_item;
- 	struct btrfs_path path;
--	struct extent_buffer *leaf;
- 	struct btrfs_root *root = fs_info->chunk_root;
- 	struct btrfs_key key;
-+	struct extent_buffer *leaf;
- 	u64 devid, cur_devid;
- 	int ret;
- 
--	if (btrfs_super_log_root(fs_info->super_copy)) {
--		warning(
--		"log tree detected, its generation will not match superblock");
--	}
--	trans = btrfs_start_transaction(fs_info->tree_root, 1);
--	if (IS_ERR(trans)) {
--		error("cannot starting transaction %ld", PTR_ERR(trans));
--		return PTR_ERR(trans);
--	}
--
- 	dev_item = &fs_info->super_copy->dev_item;
- 
- 	devid = btrfs_stack_device_id(dev_item);
-@@ -2123,7 +2114,7 @@ again:
- 	ret = btrfs_search_slot(trans, root, &key, &path, -1, 1);
- 	if (ret < 0) {
- 		error("search failed: %d", ret);
--		exit(1);
-+		return ret;
- 	}
- 
- 	while (1) {
-@@ -2170,12 +2161,41 @@ again:
- 	}
- 
- 	btrfs_release_path(&path);
-+	return 0;
-+}
-+
-+static int fixup_chunks_and_devices(struct btrfs_fs_info *fs_info,
-+			 struct mdrestore_struct *mdres, off_t dev_size)
++static int remove_all_dev_extents(struct btrfs_trans_handle *trans,
++				  struct btrfs_fs_info *fs_info)
 +{
-+	struct btrfs_trans_handle *trans;
++	struct btrfs_root *root = fs_info->dev_root;
++	struct btrfs_path path;
++	struct btrfs_key key;
++	struct extent_buffer *leaf;
++	int slot;
 +	int ret;
 +
-+	if (btrfs_super_log_root(fs_info->super_copy)) {
-+		warning(
-+		"log tree detected, its generation will not match superblock");
-+	}
-+	trans = btrfs_start_transaction(fs_info->tree_root, 1);
-+	if (IS_ERR(trans)) {
-+		error("cannot starting transaction %ld", PTR_ERR(trans));
-+		return PTR_ERR(trans);
++	key.objectid = 1;
++	key.type = BTRFS_DEV_EXTENT_KEY;
++	key.offset = 0;
++	btrfs_init_path(&path);
++
++	ret = btrfs_search_slot(trans, root, &key, &path, -1, 1);
++	if (ret < 0) {
++		error("failed to search dev tree: %s", strerror(-ret));
++		return ret;
 +	}
 +
-+	ret = fixup_device_size(trans, fs_info, mdres, dev_size);
++	while (1) {
++		slot = path.slots[0];
++		leaf = path.nodes[0];
++		if (slot >= btrfs_header_nritems(leaf)) {
++			ret = btrfs_next_leaf(root, &path);
++			if (ret < 0) {
++				error("failed to search dev tree: %s",
++					strerror(-ret));
++				goto out;
++			}
++			if (ret > 0) {
++				ret = 0;
++				goto out;
++			}
++		}
++
++		btrfs_item_key_to_cpu(leaf, &key, slot);
++		if (key.type != BTRFS_DEV_EXTENT_KEY)
++			break;
++		ret = btrfs_del_item(trans, root, &path);
++		if (ret < 0) {
++			error("failed to delete dev extent %llu, %llu: %s",
++				key.objectid, key.offset, strerror(-ret));
++			goto out;
++		}
++	}
++out:
++	btrfs_release_path(&path);
++	return ret;
++}
++
++static int fixup_dev_extents(struct btrfs_trans_handle *trans,
++			     struct btrfs_fs_info *fs_info)
++{
++	int ret;
++
++	ret = remove_all_dev_extents(trans, fs_info);
++	if (ret < 0)
++		error("failed to remove all existing dev extents: %s",
++			strerror(-ret));
++	return ret;
++}
++
+ static int fixup_chunks_and_devices(struct btrfs_fs_info *fs_info,
+ 			 struct mdrestore_struct *mdres, off_t dev_size)
+ {
+@@ -2227,6 +2291,10 @@ static int fixup_chunks_and_devices(struct btrfs_fs_info *fs_info,
+ 	}
+ 
+ 	fixup_block_groups(trans, fs_info);
++	ret = fixup_dev_extents(trans, fs_info);
 +	if (ret < 0)
 +		goto error;
 +
- 	ret = btrfs_commit_transaction(trans, fs_info->tree_root);
- 	if (ret) {
- 		error("unable to commit transaction: %d", ret);
- 		return ret;
- 	}
- 	return 0;
-+error:
-+	error(
-+"failed to fix chunks and devices mapping, the fs may not be mountable: %s",
-+		strerror(-ret));
-+	btrfs_abort_transaction(trans, ret);
-+	return ret;
- }
- 
- static int restore_metadump(const char *input, FILE *out, int old_restore,
-@@ -2282,7 +2302,7 @@ static int restore_metadump(const char *input, FILE *out, int old_restore,
- 			return 1;
- 		}
- 
--		ret = fixup_devices(info, &mdrestore, st.st_size);
-+		ret = fixup_chunks_and_devices(info, &mdrestore, st.st_size);
- 		close_ctree(info->chunk_root);
- 		if (ret)
- 			goto out;
+ 	ret = fixup_device_size(trans, fs_info, mdres, dev_size);
+ 	if (ret < 0)
+ 		goto error;
 -- 
 2.19.2
 

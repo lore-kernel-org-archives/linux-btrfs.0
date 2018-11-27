@@ -2,317 +2,206 @@ Return-Path: <SRS0=/x7k=OG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 74E4AC43441
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 05:31:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8B2C1C43441
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 07:13:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3B6EC208E4
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 05:31:58 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3B6EC208E4
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=jp.fujitsu.com
+	by mail.kernel.org (Postfix) with ESMTP id 4F1812086B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 07:13:46 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4F1812086B
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728553AbeK0Q2i (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 27 Nov 2018 11:28:38 -0500
-Received: from mgwym02.jp.fujitsu.com ([211.128.242.41]:39421 "EHLO
-        mgwym02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728267AbeK0Q2i (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Nov 2018 11:28:38 -0500
-Received: from yt-mxoi2.gw.nic.fujitsu.com (unknown [192.168.229.69]) by mgwym02.jp.fujitsu.com with smtp
-         id 0238_95b3_edefa8bc_83bc_42e3_96d7_4a85b7208d69;
-        Tue, 27 Nov 2018 14:20:24 +0900
-Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
-        by yt-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 87603AC00E3
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Nov 2018 14:20:24 +0900 (JST)
-Received: from g01jpexchyt37.g01.fujitsu.local (unknown [10.128.193.4])
-        by g01jpfmpwyt01.exch.g01.fujitsu.local (Postfix) with ESMTP id A6F276D656B;
-        Tue, 27 Nov 2018 14:20:23 +0900 (JST)
-Received: from luna3.soft.fujitsu.com (10.124.196.199) by
- g01jpexchyt37.g01.fujitsu.local (10.128.193.67) with Microsoft SMTP Server id
- 14.3.352.0; Tue, 27 Nov 2018 14:20:23 +0900
-From:   Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-To:     <linux-btrfs@vger.kernel.org>
-CC:     David Sterba <dsterba@suse.com>
-Subject: [PATCH 6/8] btrfs-progs: sub show: Allow non-privileged user to call "subvolume show"
-Date:   Tue, 27 Nov 2018 14:24:47 +0900
-Message-ID: <be63681e0f2bd653b20f8f46a00b1eec373ec4af.1543294426.git.misono.tomohiro@jp.fujitsu.com>
-X-Mailer: git-send-email 2.19.1
-In-Reply-To: <cover.1543294426.git.misono.tomohiro@jp.fujitsu.com>
-References: <cover.1543294426.git.misono.tomohiro@jp.fujitsu.com>
+        id S1727593AbeK0SKj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 27 Nov 2018 13:10:39 -0500
+Received: from mx2.suse.de ([195.135.220.15]:56544 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727311AbeK0SKj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Nov 2018 13:10:39 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 5D8BFAE26
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Nov 2018 07:13:42 +0000 (UTC)
+Subject: Re: [PATCH 1/5] btrfs-progs: image: Refactor fixup_devices() to
+ fixup_chunks_and_devices()
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20181127023315.28176-1-wqu@suse.com>
+ <20181127023315.28176-2-wqu@suse.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <acd445d3-5a04-792f-49b8-8eee9071400c@suse.com>
+Date:   Tue, 27 Nov 2018 09:13:41 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-Content-Transfer-Encoding: 7BIT
-Content-Type:   text/plain; charset=US-ASCII
-X-SecurityPolicyCheck-GC: OK by FENCE-Mail
-X-TM-AS-MML: disable
+In-Reply-To: <20181127023315.28176-2-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Allow non-privileged user to call subvolume show if new ioctls
-(BTRFS_IOC_GET_SUBVOL_INFO/BTRFS_IOC_GET_SUBVOL_ROOTREF,
-BTRFS_IOC_INO_LOOKUP_USER, from kernel 4.18) are available.
-Non-privileged user still cannot use -r or -u option.
-
-The behavior for root user is the same as before.
-
-There are some output differences between root and user:
-  root ... subvolume path is from top-level subvolume
-           list all snapshots in the fs (inc. non-accessible ones)
-  user ... subvolume path is absolute path
-           list snapshots under the mountpoint
-	   (only to which the user has appropriate access right)
-
-[Example]
- $ sudo mkfs.btrfs -f $DEV
- $ sudo mount $DEV /mnt
-
- $ sudo btrfs subvolume create /mnt/AAA
- $ sudo btrfs subvolume snapshot /mnt/AAA /mnt/snap1
- $ sudo btrfs subvolume snapshot /mnt/AAA /mnt/AAA/snap2
-
- $ sudo umount /mnt
- $ sudo mount -o subvol=AAA $DEV /mnt
-
- # root
- $ sudo btrfs subvolume show /mnt
- AAA
-      Name:        AAA
-      UUID:        15e80697-2ffb-0b4b-8e1e-e0873a7cf944
-      ...
-      Snapshot(s):
-                   AAA/snap2
-                   snap1
-
- # non-privileged user
- $ btrfs subvolume show /mnt
- /mnt
-      Name:        AAA
-      UUID:        15e80697-2ffb-0b4b-8e1e-e0873a7cf944
-      ...
-      Snapshot(s):
-                   /mnt/snap2
-
-Signed-off-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- Documentation/btrfs-subvolume.asciidoc |  11 ++-
- cmds-subvolume.c                       | 107 ++++++++++++++++++++++---
- 2 files changed, 105 insertions(+), 13 deletions(-)
-
-diff --git a/Documentation/btrfs-subvolume.asciidoc b/Documentation/btrfs-subvolume.asciidoc
-index 428a2faa..ea8e9554 100644
---- a/Documentation/btrfs-subvolume.asciidoc
-+++ b/Documentation/btrfs-subvolume.asciidoc
-@@ -182,12 +182,19 @@ The id can be obtained from *btrfs subvolume list*, *btrfs subvolume show* or
- *show* [options] <path>|<mnt>::
- Show information of a given subvolume in the <path>.
- +
-+This command had required root privileges. From kernel 4.18,
-+non-privileged user can call this unless -r/-u option is not used.
-+Note that for root, output path is relative to the top-level subvolume
-+while absolute path is shown for non-privileged user.
-+Also for root, snapshots filed lists all the snapshots in the fs while
-+only snapshots under mount point are shown for non-privileged user.
-++
- `Options`
- +
- -r|--rootid::::
--rootid of the subvolume.
-+rootid of the subvolume (require root privileges).
- -u|--uuid:::
--UUID of the subvolume.
-+UUID of the subvolume (require root privileges).
- 
- +
- If no option is specified, subvolume information of <path> is shown,
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index cd2e4425..ab1f14a2 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -1886,8 +1886,12 @@ static int cmd_subvol_find_new(int argc, char **argv)
- static const char * const cmd_subvol_show_usage[] = {
- 	"btrfs subvolume show [options] <subvol-path>|<mnt>",
- 	"Show more information about the subvolume",
--	"-r|--rootid   rootid of the subvolume",
--	"-u|--uuid     uuid of the subvolume",
-+	"",
-+	"This command had required root privileges. From kernel 4.18,",
-+	"non-privileged user can call this unless -r/-u option is not used.",
-+	"",
-+	"-r|--rootid   rootid of the subvolume (require root privileges)",
-+	"-u|--uuid     uuid of the subvolume   (require root privileges)",
- 	"",
- 	"If no option is specified, <subvol-path> will be shown, otherwise",
- 	"the rootid or uuid are resolved relative to the <mnt> path.",
-@@ -1900,8 +1904,10 @@ static int cmd_subvol_show(int argc, char **argv)
- 	char uuidparse[BTRFS_UUID_UNPARSED_SIZE];
- 	char *fullpath = NULL;
- 	int fd = -1;
-+	int fd_mnt = -1;
- 	int ret = 1;
- 	DIR *dirstream1 = NULL;
-+	DIR *dirstream_mnt = NULL;
- 	int by_rootid = 0;
- 	int by_uuid = 0;
- 	u64 rootid_arg = 0;
-@@ -1909,7 +1915,10 @@ static int cmd_subvol_show(int argc, char **argv)
- 	struct btrfs_util_subvolume_iterator *iter;
- 	struct btrfs_util_subvolume_info subvol;
- 	char *subvol_path = NULL;
-+	char *subvol_name = NULL;
-+	char *mount_point = NULL;
- 	enum btrfs_util_error err;
-+	bool root;
- 
- 	optind = 0;
- 	while (1) {
-@@ -1947,6 +1956,12 @@ static int cmd_subvol_show(int argc, char **argv)
- 		usage(cmd_subvol_show_usage);
- 	}
- 
-+	root = is_root();
-+	if (!root && (by_rootid || by_uuid)) {
-+		error("only root can use -r or -u options");
-+		return -1;
-+	}
-+
- 	fullpath = realpath(argv[optind], NULL);
- 	if (!fullpath) {
- 		error("cannot find real path for '%s': %m", argv[optind]);
-@@ -2001,19 +2016,53 @@ static int cmd_subvol_show(int argc, char **argv)
- 			goto out;
- 		}
- 
--		err = btrfs_util_subvolume_path_fd(fd, subvol.id, &subvol_path);
--		if (err) {
--			error_btrfs_util(err);
--			goto out;
-+		if (root) {
-+			/* Construct path relative to top-level subvolume */
-+			err = btrfs_util_subvolume_path_fd(fd, subvol.id,
-+								&subvol_path);
-+			if (err) {
-+				error_btrfs_util(err);
-+				goto out;
-+			}
-+			subvol_name = strdup(basename(subvol_path));
-+		} else {
-+			/* Show absolute path */
-+			subvol_path = strdup(fullpath);
-+
-+			ret = find_mount_root(fullpath, &mount_point);
-+			if (ret < 0) {
-+				error("cannot get mount point");
-+				goto out;
-+			}
-+			fd_mnt = open_file_or_dir(mount_point, &dirstream_mnt);
-+			if (fd_mnt < 0) {
-+				error("cannot open mount point");
-+				goto out;
-+			}
-+			/* Get real name if the path is mount point */
-+			if (strlen(fullpath) == strlen(mount_point)) {
-+				struct btrfs_ioctl_get_subvol_info_args arg;
-+
-+				ret = ioctl(fd_mnt, BTRFS_IOC_GET_SUBVOL_INFO,
-+							&arg);
-+				if (ret < 0) {
-+					error("cannot get subvolume info");
-+					goto out;
-+				}
-+				subvol_name = strdup(arg.name);
-+			} else {
-+				subvol_name = strdup(basename(subvol_path));
-+			}
- 		}
- 
- 	}
- 
- 	/* print the info */
--	printf("%s\n", subvol.id == BTRFS_FS_TREE_OBJECTID ? "/" : subvol_path);
-+	printf("%s\n", (subvol.id == BTRFS_FS_TREE_OBJECTID && root) ?
-+			"/" : subvol_path);
- 	printf("\tName: \t\t\t%s\n",
- 	       (subvol.id == BTRFS_FS_TREE_OBJECTID ? "<FS_TREE>" :
--		basename(subvol_path)));
-+					subvol_name));
- 
- 	if (uuid_is_null(subvol.uuid))
- 		strcpy(uuidparse, "-");
-@@ -2056,9 +2105,18 @@ static int cmd_subvol_show(int argc, char **argv)
- 	/* print the snapshots of the given subvol if any*/
- 	printf("\tSnapshot(s):\n");
- 
--	err = btrfs_util_create_subvolume_iterator_fd(fd,
--						      BTRFS_FS_TREE_OBJECTID, 0,
--						      &iter);
-+	/*
-+	 * For root, show all snapshots in the filesystem.
-+	 * For non-privileged user, show all snapshots under mount point.
-+	 */
-+	if (root)
-+		err = btrfs_util_create_subvolume_iterator_fd(fd,
-+					      BTRFS_FS_TREE_OBJECTID, 0,
-+					      &iter);
-+	else
-+		err = btrfs_util_create_subvolume_iterator_fd(fd_mnt,
-+					      0, 0,
-+					      &iter);
- 
- 	for (;;) {
- 		struct btrfs_util_subvolume_info subvol2;
-@@ -2070,9 +2128,33 @@ static int cmd_subvol_show(int argc, char **argv)
- 		} else if (err) {
- 			error_btrfs_util(err);
- 			btrfs_util_destroy_subvolume_iterator(iter);
-+			ret = -1;
- 			goto out;
- 		}
- 
-+		if (!root) {
-+			/* Make path absolute */
-+			char *temp = malloc(strlen(mount_point) +
-+						   strlen(path) + 2);
-+
-+			if (!temp) {
-+				error("out of memory");
-+				ret = -1;
-+				goto out;
-+			}
-+
-+			strcpy(temp, mount_point);
-+			if (strlen(mount_point) == 1) {
-+				strcpy(temp + 1, path);
-+			} else {
-+				temp[strlen(mount_point)] = '/';
-+				strcpy(temp + strlen(mount_point) + 1, path);
-+			}
-+
-+			free(path);
-+			path = temp;
-+		}
-+
- 		if (uuid_compare(subvol2.parent_uuid, subvol.uuid) == 0)
- 			printf("\t\t\t\t%s\n", path);
- 
-@@ -2083,8 +2165,11 @@ static int cmd_subvol_show(int argc, char **argv)
- 	ret = 0;
- out:
- 	free(subvol_path);
-+	free(subvol_name);
- 	close_file_or_dir(fd, dirstream1);
-+	close_file_or_dir(fd_mnt, dirstream_mnt);
- 	free(fullpath);
-+	free(mount_point);
- 	return !!ret;
- }
- 
--- 
-2.19.1
 
 
+On 27.11.18 г. 4:33 ч., Qu Wenruo wrote:
+> Current fixup_devices() will only remove DEV_ITEMs and reset DEV_ITEM
+> size.
+> Later we need to do more fixup works, so change the name to
+> fixup_chunks_and_devices() and refactor the original device size fixup
+> to fixup_device_size().
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  image/main.c | 52 ++++++++++++++++++++++++++++++++++++----------------
+>  1 file changed, 36 insertions(+), 16 deletions(-)
+> 
+> diff --git a/image/main.c b/image/main.c
+> index c680ab19de6c..36b5c95ea146 100644
+> --- a/image/main.c
+> +++ b/image/main.c
+> @@ -2084,28 +2084,19 @@ static void remap_overlapping_chunks(struct mdrestore_struct *mdres)
+>  	}
+>  }
+>  
+> -static int fixup_devices(struct btrfs_fs_info *fs_info,
+> -			 struct mdrestore_struct *mdres, off_t dev_size)
+> +static int fixup_device_size(struct btrfs_trans_handle *trans,
+> +			     struct btrfs_fs_info *fs_info,
+
+trans already has a handle to the fs_info so you can drop it from the
+param list.
+
+> +			     struct mdrestore_struct *mdres,
+> +			     off_t dev_size)
+>  {
+> -	struct btrfs_trans_handle *trans;
+>  	struct btrfs_dev_item *dev_item;
+>  	struct btrfs_path path;
+> -	struct extent_buffer *leaf;
+>  	struct btrfs_root *root = fs_info->chunk_root;
+>  	struct btrfs_key key;
+> +	struct extent_buffer *leaf;
+>  	u64 devid, cur_devid;
+>  	int ret;
+>  
+> -	if (btrfs_super_log_root(fs_info->super_copy)) {
+> -		warning(
+> -		"log tree detected, its generation will not match superblock");
+> -	}
+> -	trans = btrfs_start_transaction(fs_info->tree_root, 1);
+> -	if (IS_ERR(trans)) {
+> -		error("cannot starting transaction %ld", PTR_ERR(trans));
+> -		return PTR_ERR(trans);
+> -	}
+> -
+>  	dev_item = &fs_info->super_copy->dev_item;
+>  
+>  	devid = btrfs_stack_device_id(dev_item);
+> @@ -2123,7 +2114,7 @@ again:
+>  	ret = btrfs_search_slot(trans, root, &key, &path, -1, 1);
+>  	if (ret < 0) {
+>  		error("search failed: %d", ret);
+> -		exit(1);
+> +		return ret;
+>  	}
+>  
+>  	while (1) {
+> @@ -2170,12 +2161,41 @@ again:
+>  	}
+>  
+>  	btrfs_release_path(&path);
+> +	return 0;
+> +}
+> +
+> +static int fixup_chunks_and_devices(struct btrfs_fs_info *fs_info,
+> +			 struct mdrestore_struct *mdres, off_t dev_size)
+> +{
+> +	struct btrfs_trans_handle *trans;
+> +	int ret;
+> +
+> +	if (btrfs_super_log_root(fs_info->super_copy)) {
+> +		warning(
+> +		"log tree detected, its generation will not match superblock");
+> +	}
+> +	trans = btrfs_start_transaction(fs_info->tree_root, 1);
+> +	if (IS_ERR(trans)) {
+> +		error("cannot starting transaction %ld", PTR_ERR(trans));
+> +		return PTR_ERR(trans);
+> +	}
+> +
+> +	ret = fixup_device_size(trans, fs_info, mdres, dev_size);
+> +	if (ret < 0)
+> +		goto error;
+> +
+>  	ret = btrfs_commit_transaction(trans, fs_info->tree_root);
+>  	if (ret) {
+>  		error("unable to commit transaction: %d", ret);
+>  		return ret;
+>  	}
+>  	return 0;
+> +error:
+> +	error(
+> +"failed to fix chunks and devices mapping, the fs may not be mountable: %s",
+> +		strerror(-ret));
+> +	btrfs_abort_transaction(trans, ret);
+> +	return ret;
+>  }
+>  
+>  static int restore_metadump(const char *input, FILE *out, int old_restore,
+> @@ -2282,7 +2302,7 @@ static int restore_metadump(const char *input, FILE *out, int old_restore,
+>  			return 1;
+>  		}
+>  
+> -		ret = fixup_devices(info, &mdrestore, st.st_size);
+> +		ret = fixup_chunks_and_devices(info, &mdrestore, st.st_size);
+>  		close_ctree(info->chunk_root);
+>  		if (ret)
+>  			goto out;
+> 

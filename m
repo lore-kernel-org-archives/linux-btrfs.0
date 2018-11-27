@@ -2,139 +2,146 @@ Return-Path: <SRS0=/x7k=OG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8263CC43441
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 16:36:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CC36CC43441
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 18:58:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4E81621104
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 16:36:14 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4E81621104
+	by mail.kernel.org (Postfix) with ESMTP id 96D0F208E4
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 18:58:03 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 96D0F208E4
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730948AbeK1Dek (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 27 Nov 2018 22:34:40 -0500
-Received: from mx2.suse.de ([195.135.220.15]:60810 "EHLO mx1.suse.de"
+        id S1729341AbeK1F4v (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Nov 2018 00:56:51 -0500
+Received: from mx2.suse.de ([195.135.220.15]:56086 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726409AbeK1Dej (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Nov 2018 22:34:39 -0500
+        id S1726445AbeK1F4v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Nov 2018 00:56:51 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 3F6BAACE3
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Nov 2018 16:36:11 +0000 (UTC)
-Subject: Re: [PATCH 3/3] btrfs: document extent mapping assumptions in
- checksum
-To:     Johannes Thumshirn <jthumshirn@suse.de>,
-        David Sterba <dsterba@suse.com>
-Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
-References: <20181127160010.18123-1-jthumshirn@suse.de>
- <20181127160010.18123-4-jthumshirn@suse.de>
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 19E17AFF6
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Nov 2018 18:58:00 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- xsFNBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
- T7g+RbfPFlmQp+EwFWOtABXlKC54zgSf+uulGwx5JAUFVUIRBmnHOYi/lUiE0yhpnb1KCA7f
- u/W+DkwGerXqhhe9TvQoGwgCKNfzFPZoM+gZrm+kWv03QLUCr210n4cwaCPJ0Nr9Z3c582xc
- bCUVbsjt7BN0CFa2BByulrx5xD9sDAYIqfLCcZetAqsTRGxM7LD0kh5WlKzOeAXj5r8DOrU2
- GdZS33uKZI/kZJZVytSmZpswDsKhnGzRN1BANGP8sC+WD4eRXajOmNh2HL4P+meO1TlM3GLl
- EQd2shHFY0qjEo7wxKZI1RyZZ5AgJnSmehrPCyuIyVY210CbMaIKHUIsTqRgY5GaNME24w7h
- TyyVCy2qAM8fLJ4Vw5bycM/u5xfWm7gyTb9V1TkZ3o1MTrEsrcqFiRrBY94Rs0oQkZvunqia
- c+NprYSaOG1Cta14o94eMH271Kka/reEwSZkC7T+o9hZ4zi2CcLcY0DXj0qdId7vUKSJjEep
- c++s8ncFekh1MPhkOgNj8pk17OAESanmDwksmzh1j12lgA5lTFPrJeRNu6/isC2zyZhTwMWs
- k3LkcTa8ZXxh0RfWAqgx/ogKPk4ZxOXQEZetkEyTFghbRH2BIwARAQABzSJOaWtvbGF5IEJv
- cmlzb3YgPG5ib3Jpc292QHN1c2UuZGU+wsF4BBMBAgAiBQJYijkSAhsDBgsJCAcDAgYVCAIJ
- CgsEFgIDAQIeAQIXgAAKCRBxvoJG5T8oV/B6D/9a8EcRPdHg8uLEPywuJR8URwXzkofT5bZE
- IfGF0Z+Lt2ADe+nLOXrwKsamhweUFAvwEUxxnndovRLPOpWerTOAl47lxad08080jXnGfYFS
- Dc+ew7C3SFI4tFFHln8Y22Q9075saZ2yQS1ywJy+TFPADIprAZXnPbbbNbGtJLoq0LTiESnD
- w/SUC6sfikYwGRS94Dc9qO4nWyEvBK3Ql8NkoY0Sjky3B0vL572Gq0ytILDDGYuZVo4alUs8
- LeXS5ukoZIw1QYXVstDJQnYjFxYgoQ5uGVi4t7FsFM/6ykYDzbIPNOx49Rbh9W4uKsLVhTzG
- BDTzdvX4ARl9La2kCQIjjWRg+XGuBM5rxT/NaTS78PXjhqWNYlGc5OhO0l8e5DIS2tXwYMDY
- LuHYNkkpMFksBslldvNttSNei7xr5VwjVqW4vASk2Aak5AleXZS+xIq2FADPS/XSgIaepyTV
- tkfnyreep1pk09cjfXY4A7qpEFwazCRZg9LLvYVc2M2eFQHDMtXsH59nOMstXx2OtNMcx5p8
- 0a5FHXE/HoXz3p9bD0uIUq6p04VYOHsMasHqHPbsMAq9V2OCytJQPWwe46bBjYZCOwG0+x58
- fBFreP/NiJNeTQPOa6FoxLOLXMuVtpbcXIqKQDoEte9aMpoj9L24f60G4q+pL/54ql2VRscK
- d87BTQRYigc+ARAAyJSq9EFk28++SLfg791xOh28tLI6Yr8wwEOvM3wKeTfTZd+caVb9gBBy
- wxYhIopKlK1zq2YP7ZjTP1aPJGoWvcQZ8fVFdK/1nW+Z8/NTjaOx1mfrrtTGtFxVBdSCgqBB
- jHTnlDYV1R5plJqK+ggEP1a0mr/rpQ9dFGvgf/5jkVpRnH6BY0aYFPprRL8ZCcdv2DeeicOO
- YMobD5g7g/poQzHLLeT0+y1qiLIFefNABLN06Lf0GBZC5l8hCM3Rpb4ObyQ4B9PmL/KTn2FV
- Xq/c0scGMdXD2QeWLePC+yLMhf1fZby1vVJ59pXGq+o7XXfYA7xX0JsTUNxVPx/MgK8aLjYW
- hX+TRA4bCr4uYt/S3ThDRywSX6Hr1lyp4FJBwgyb8iv42it8KvoeOsHqVbuCIGRCXqGGiaeX
- Wa0M/oxN1vJjMSIEVzBAPi16tztL/wQtFHJtZAdCnuzFAz8ue6GzvsyBj97pzkBVacwp3/Mw
- qbiu7sDz7yB0d7J2tFBJYNpVt/Lce6nQhrvon0VqiWeMHxgtQ4k92Eja9u80JDaKnHDdjdwq
- FUikZirB28UiLPQV6PvCckgIiukmz/5ctAfKpyYRGfez+JbAGl6iCvHYt/wAZ7Oqe/3Cirs5
- KhaXBcMmJR1qo8QH8eYZ+qhFE3bSPH446+5oEw8A9v5oonKV7zMAEQEAAcLBXwQYAQIACQUC
- WIoHPgIbDAAKCRBxvoJG5T8oV1pyD/4zdXdOL0lhkSIjJWGqz7Idvo0wjVHSSQCbOwZDWNTN
- JBTP0BUxHpPu/Z8gRNNP9/k6i63T4eL1xjy4umTwJaej1X15H8Hsh+zakADyWHadbjcUXCkg
- OJK4NsfqhMuaIYIHbToi9K5pAKnV953xTrK6oYVyd/Rmkmb+wgsbYQJ0Ur1Ficwhp6qU1CaJ
- mJwFjaWaVgUERoxcejL4ruds66LM9Z1Qqgoer62ZneID6ovmzpCWbi2sfbz98+kW46aA/w8r
- 7sulgs1KXWhBSv5aWqKU8C4twKjlV2XsztUUsyrjHFj91j31pnHRklBgXHTD/pSRsN0UvM26
- lPs0g3ryVlG5wiZ9+JbI3sKMfbdfdOeLxtL25ujs443rw1s/PVghphoeadVAKMPINeRCgoJH
- zZV/2Z/myWPRWWl/79amy/9MfxffZqO9rfugRBORY0ywPHLDdo9Kmzoxoxp9w3uTrTLZaT9M
- KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
- zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
- Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <9cc979bd-167f-fd92-1308-ebb1ca85bc99@suse.com>
-Date:   Tue, 27 Nov 2018 18:36:10 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
-MIME-Version: 1.0
-In-Reply-To: <20181127160010.18123-4-jthumshirn@suse.de>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH] btrfs: Refactor btrfs_merge_bio_hook
+Date:   Tue, 27 Nov 2018 20:57:58 +0200
+Message-Id: <20181127185758.16220-1-nborisov@suse.com>
+X-Mailer: git-send-email 2.17.1
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This function really checks whether adding more data to the bio will
+straddle a stripe/chunk. So first let's give it a more appropraite
+name - btrfs_bio_fits_in_stripe. Secondly, the offset parameter was
+never used to just remove it. Thirdly, pages are submitted to either
+btree or data inodes so it's guaranteed that tree->ops is set so replace
+the check with an ASSERT. Finally, document the parameters of the
+function. No functional changes.
 
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/compression.c |  7 ++++---
+ fs/btrfs/ctree.h       |  5 ++---
+ fs/btrfs/extent_io.c   |  4 ++--
+ fs/btrfs/inode.c       | 19 ++++++++++++-------
+ 4 files changed, 20 insertions(+), 15 deletions(-)
 
-On 27.11.18 г. 18:00 ч., Johannes Thumshirn wrote:
-> Document why map_private_extent_buffer() cannot return '1' (i.e. the map
-> spans two pages) for the csum_tree_block() case.
-> 
-> The current algorithm for detecting a page boundary crossing in
-> map_private_extent_buffer() will return a '1' *IFF* the product of the
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index 34d50bc5c10d..dba59ae914b8 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -332,7 +332,8 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
+ 		page = compressed_pages[pg_index];
+ 		page->mapping = inode->i_mapping;
+ 		if (bio->bi_iter.bi_size)
+-			submit = btrfs_merge_bio_hook(page, 0, PAGE_SIZE, bio, 0);
++			submit = btrfs_bio_fits_in_stripe(page, PAGE_SIZE, bio,
++							  0);
+ 
+ 		page->mapping = NULL;
+ 		if (submit || bio_add_page(bio, page, PAGE_SIZE, 0) <
+@@ -610,8 +611,8 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 		page->index = em_start >> PAGE_SHIFT;
+ 
+ 		if (comp_bio->bi_iter.bi_size)
+-			submit = btrfs_merge_bio_hook(page, 0, PAGE_SIZE,
+-					comp_bio, 0);
++			submit = btrfs_bio_fits_in_stripe(page, PAGE_SIZE,
++							  comp_bio, 0);
+ 
+ 		page->mapping = NULL;
+ 		if (submit || bio_add_page(comp_bio, page, PAGE_SIZE, 0) <
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index a98507fa9192..791112a82775 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3191,9 +3191,8 @@ void btrfs_merge_delalloc_extent(struct inode *inode, struct extent_state *new,
+ 				 struct extent_state *other);
+ void btrfs_split_delalloc_extent(struct inode *inode,
+ 				 struct extent_state *orig, u64 split);
+-int btrfs_merge_bio_hook(struct page *page, unsigned long offset,
+-			 size_t size, struct bio *bio,
+-			 unsigned long bio_flags);
++int btrfs_bio_fits_in_stripe(struct page *page, size_t size, struct bio *bio,
++			     unsigned long bio_flags);
+ void btrfs_set_range_writeback(struct extent_io_tree *tree, u64 start, u64 end);
+ vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf);
+ int btrfs_readpage(struct file *file, struct page *page);
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 582b4b1c41e0..19f4b8fd654f 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2759,8 +2759,8 @@ static int submit_extent_page(unsigned int opf, struct extent_io_tree *tree,
+ 		else
+ 			contig = bio_end_sector(bio) == sector;
+ 
+-		if (tree->ops && btrfs_merge_bio_hook(page, offset, page_size,
+-						      bio, bio_flags))
++		ASSERT(tree->ops);
++		if (btrfs_bio_fits_in_stripe(page, page_size, bio, bio_flags))
+ 			can_merge = false;
+ 
+ 		if (prev_bio_flags != bio_flags || !contig || !can_merge ||
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index be7d43c42779..11c533db2db7 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1881,16 +1881,21 @@ void btrfs_clear_delalloc_extent(struct inode *vfs_inode,
+ }
+ 
+ /*
+- * Merge bio hook, this must check the chunk tree to make sure we don't create
+- * bios that span stripes or chunks
++ * btrfs_bio_fits_in_stripe - Checks whether the size of the given bio will fit
++ * in a chunk's stripe. This function ensures that bios do not span a
++ * stripe/chunk
+  *
+- * return 1 if page cannot be merged to bio
+- * return 0 if page can be merged to bio
++ * @page - The page we are about to add to the bio
++ * @size - size we want to add to the bio
++ * @bio - bio we want to ensure is smaller than a stripe
++ * @bio_flags - flags of the bio
++ *
++ * return 1 if page cannot be added to the bio
++ * return 0 if page can be added to the bio
+  * return error otherwise
+  */
+-int btrfs_merge_bio_hook(struct page *page, unsigned long offset,
+-			 size_t size, struct bio *bio,
+-			 unsigned long bio_flags)
++int btrfs_bio_fits_in_stripe(struct page *page, size_t size, struct bio *bio,
++			     unsigned long bio_flags)
+ {
+ 	struct inode *inode = page->mapping->host;
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+-- 
+2.17.1
 
-I think the word product must be replaced with 'sum', since product
-implies multiplication :)
-
-> extent buffer's offset in the page + the offset passed in by
-> csum_tree_block() and the minimal length passed in by csum_tree_block() - 1
-> are bigger than PAGE_SIZE.
-> 
-> We always pass BTRFS_CSUM_SIZE (32) as offset and a minimal length of 32
-> and the current extent buffer allocator always guarantees page aligned
-> extends, so the above condition can't be true.
-> 
-> Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
-
-With that wording changed:
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
-> ---
->  fs/btrfs/disk-io.c | 6 ++++++
->  1 file changed, 6 insertions(+)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 4bc270ef29b4..14d355d0cb7a 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -279,6 +279,12 @@ static int csum_tree_block(struct btrfs_fs_info *fs_info,
->  
->  	len = buf->len - offset;
->  	while (len > 0) {
-> +		/*
-> +		 * Note: we don't need to check for the err == 1 case here, as
-> +		 * with the given combination of 'start = BTRFS_CSUM_SIZE (32)'
-> +		 * and 'min_len = 32' and the currently implemented mapping
-> +		 * algorithm we cannot cross a page boundary.
-> +		 */
->  		err = map_private_extent_buffer(buf, offset, 32,
->  					&kaddr, &map_start, &map_len);
->  		if (err)
-> 

@@ -2,117 +2,112 @@ Return-Path: <SRS0=/x7k=OG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
-	USER_AGENT_NEOMUTT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 87F7AC43441
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 20:08:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 32845C43441
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 20:20:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 42A0A2086B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 20:08:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E9B4020645
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 20:20:56 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="PJRLC7VB"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 42A0A2086B
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="IQVHnTIp"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E9B4020645
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726434AbeK1HHM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Nov 2018 02:07:12 -0500
-Received: from mail-qt1-f196.google.com ([209.85.160.196]:34986 "EHLO
-        mail-qt1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726286AbeK1HHM (ORCPT
+        id S1726273AbeK1HT7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Nov 2018 02:19:59 -0500
+Received: from mail-it1-f195.google.com ([209.85.166.195]:51499 "EHLO
+        mail-it1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725764AbeK1HT6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Nov 2018 02:07:12 -0500
-Received: by mail-qt1-f196.google.com with SMTP id v11so23255740qtc.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Nov 2018 12:08:10 -0800 (PST)
+        Wed, 28 Nov 2018 02:19:58 -0500
+Received: by mail-it1-f195.google.com with SMTP id x19so654661itl.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Nov 2018 12:20:54 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:content-transfer-encoding:in-reply-to
-         :user-agent;
-        bh=30PrvaKwktmd3vrzWIt0d9+j5WbYaEL1vuLpjzdinh4=;
-        b=PJRLC7VBW5wYHyh+XFx1JtTsty+4teWox42zDlW7S06/eU8rOBG37xhMn0SBIK8CMB
-         2a9M1TXcKBHkIwADTOXDRTLLdhCbycQx2ApYp+9bz7/Gi0eFMGfUsFVal8r08JmJKNep
-         K2kviOdxc3rG7jHGdz7pC3cG22qIvhKZTBl8uq8+4oEzPRfsygHvIW1JaUCWkzjwyLyR
-         kbPtK6eNq5S6AILq1BGRNradrnTUBH/DwdtFMXGzLNE1MsEBy2E3G72rRq4hMirnXgxk
-         Yk2Evisz5T1Di9aMrJwbRNJz5S9v3KmNxNqxbK/75ZT5bnhCw9i8Lpb7lXXA4u+VQipL
-         vn9w==
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc:content-transfer-encoding;
+        bh=ubcuu9Xg86pQW9E+dvWqbHKptaJoKBWAlQg3MnBI+rU=;
+        b=IQVHnTIprRcFvXFPToKGVfMUGb0t9QfwAhjFXrmuN3sGmcJU6aPJv2xipN9zXpR6w6
+         vHcrewYVtV2Ny5SgHo9Oz2zv5d+rDSYWW4TdrYSKzxn+QgCYqYu/lR2JBphRI8ah8IP7
+         PyvtuS32GER1XGAmZetnZg1jUud3OD2asJ+t2qDkodmVaM/8nnPJ4MS4YytTSEr+T6e5
+         xedtfa5pLNDnAcV9G87qnhqhsPWyKd17uHHPccyrJoXbhLuf3NMOny1z69nFAAWGWxl5
+         cJOiqW7RBIZetS5bB0Hgy/TQFfLCzkzN9VMyO+bVeyfuX0T/NgSP+kmgUR9E4PH8/S5j
+         /Slw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:content-transfer-encoding
-         :in-reply-to:user-agent;
-        bh=30PrvaKwktmd3vrzWIt0d9+j5WbYaEL1vuLpjzdinh4=;
-        b=puKTJCKJ74T/bgG8LTA0rqVdE8TCe2lLbEDxKKC5HGDMZj3L8ZA8a7CakuJiB1KkeW
-         R1lQev6hJP7se07OP/MSQCnajFRXLAueV9UNL1DF1D8EyblKHC/hY8UcArbYHJUToyBE
-         aYi+MQ7ed5Y3OmO9iUvnuqkMwchIqaqTaHSpM67QSJBiILFR9c0SsyOee7JAjYegOS18
-         khKbT0htTZdUNq3aIWCvQhsI3JD7JdDHWd9MEMB3HtYHm5H35Oe9Fk8hsHi++yfk76nJ
-         kpVo9KpwJpgjihqs5ai8HUQCo8CeJmlpWuHrlK2Oid/fAIUxJgoD/hljUNIbHJbZMaSb
-         wvmw==
-X-Gm-Message-State: AA+aEWb7S9nlQgWftYrUU1/U+chO+yOOfNLmDUq5O5tVDcyEJQuL+xsq
-        mskpaRST4gm9XNIostVPaqZFNB+nncU=
-X-Google-Smtp-Source: AFSGD/VrV4wRPL82vgUPWaNe/vl/3Oo8RVaOPHVrmtRJdHfs4wyIy7s/VBOGkRJYV0pEgDW95XPL5g==
-X-Received: by 2002:a0c:bd15:: with SMTP id m21mr32576304qvg.57.1543349290332;
-        Tue, 27 Nov 2018 12:08:10 -0800 (PST)
-Received: from localhost ([2620:10d:c091:180::1:4c40])
-        by smtp.gmail.com with ESMTPSA id t140sm2105445qke.6.2018.11.27.12.08.09
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 27 Nov 2018 12:08:09 -0800 (PST)
-Date:   Tue, 27 Nov 2018 15:08:08 -0500
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     Chris Mason <clm@fb.com>
-Cc:     Josef Bacik <josef@toxicpanda.com>,
-        Nikolay Borisov <nborisov@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Kernel Team <Kernel-team@fb.com>
-Subject: Re: [PATCH 2/3] btrfs: wakeup cleaner thread when adding delayed iput
-Message-ID: <20181127200807.bdnvwap2kuuwuarg@macbook-pro-91.dhcp.thefacebook.com>
-References: <20181121190922.25038-1-josef@toxicpanda.com>
- <20181121190922.25038-3-josef@toxicpanda.com>
- <4e8aad56-42e2-d666-c909-d5d058b799c9@suse.com>
- <20181127195450.fjor2gewhp3hri56@macbook-pro-91.dhcp.thefacebook.com>
- <13D3592A-3719-4F9E-8E8A-944FE88F30D4@fb.com>
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=ubcuu9Xg86pQW9E+dvWqbHKptaJoKBWAlQg3MnBI+rU=;
+        b=s99UYxbuWWT4ACukzy7E2EjlzfgzESdZ0cATlEYbraztXwEP7BBEoleY5APJfjVptp
+         BB9l9GB/XTJv1S3lEY2VTqioNQ7eHXzhICXgeddZpO5YtavPMhCRVAXQfjKJpeiXlrXr
+         5gE2tN6E/JyTkhLrQ96mpKc1ABYuHOMcM1v4pOUTi4M0l2XRDozljTJBVbDF0Gxjj5iE
+         /7CHWhm/Bpme+vHVQPssCd8Qwmi+QfryYgOC9d/X9S+mBqySatjkSN6kSBu7q/cs+YYO
+         nXqyNSHzZWpC7CkpqgUe3ePudGt+cLL1V7YFzL8dXvZI2Ad27G3oCqXbmw+ngwDoOjvs
+         Q9xQ==
+X-Gm-Message-State: AA+aEWYJm4II7PKLBdTdmL9PUGHQjysifSGLmhuF4R+ubcduLH6BxBvk
+        WHkk20tM0q+BGqxQyyqBOdDEoHH0LWN6+JDXtss=
+X-Google-Smtp-Source: AFSGD/XJKxRmPkVJP1i4MEDx7VQ7aWd9i56qfM7iboHDbLURqrASeMRMdPnCT054oVpvG8F/MHKONOABbO4NJal8OFU=
+X-Received: by 2002:a24:53c9:: with SMTP id n192mr382886itb.8.1543350054220;
+ Tue, 27 Nov 2018 12:20:54 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <13D3592A-3719-4F9E-8E8A-944FE88F30D4@fb.com>
-User-Agent: NeoMutt/20180716
+References: <20181127160010.18123-1-jthumshirn@suse.de> <20181127160010.18123-4-jthumshirn@suse.de>
+ <9cc979bd-167f-fd92-1308-ebb1ca85bc99@suse.com> <CADfjVrgC+hd1c_FO_oT5os9H4nacdtq9+a3gXqRmw00sMTmGjQ@mail.gmail.com>
+ <6f819719-5b63-c66c-b139-bd415bcca1d2@suse.com>
+In-Reply-To: <6f819719-5b63-c66c-b139-bd415bcca1d2@suse.com>
+From:   Noah Massey <noah.massey@gmail.com>
+Date:   Tue, 27 Nov 2018 15:20:17 -0500
+Message-ID: <CADfjVriSO62rnHM39_zbUiCVqEG68gwSP7LBJK_FrJ-e4cNxAg@mail.gmail.com>
+Subject: Re: [PATCH 3/3] btrfs: document extent mapping assumptions in checksum
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     jthumshirn@suse.de, David Sterba <dsterba@suse.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Nov 27, 2018 at 07:59:42PM +0000, Chris Mason wrote:
-> On 27 Nov 2018, at 14:54, Josef Bacik wrote:
-> 
-> > On Tue, Nov 27, 2018 at 10:26:15AM +0200, Nikolay Borisov wrote:
+On Tue, Nov 27, 2018 at 2:32 PM Nikolay Borisov <nborisov@suse.com> wrote:
+>
+> On 27.11.18 =D0=B3. 21:08 =D1=87., Noah Massey wrote:
+> > On Tue, Nov 27, 2018 at 11:43 AM Nikolay Borisov <nborisov@suse.com> wr=
+ote:
 > >>
+> >> On 27.11.18 =D0=B3. 18:00 =D1=87., Johannes Thumshirn wrote:
+> >>> Document why map_private_extent_buffer() cannot return '1' (i.e. the =
+map
+> >>> spans two pages) for the csum_tree_block() case.
+> >>>
+> >>> The current algorithm for detecting a page boundary crossing in
+> >>> map_private_extent_buffer() will return a '1' *IFF* the product of th=
+e
 > >>
-> >> On 21.11.18 г. 21:09 ч., Josef Bacik wrote:
-> >>> The cleaner thread usually takes care of delayed iputs, with the
-> >>> exception of the btrfs_end_transaction_throttle path.  The cleaner
-> >>> thread only gets woken up every 30 seconds, so instead wake it up to 
-> >>> do
-> >>> it's work so that we can free up that space as quickly as possible.
+> >> I think the word product must be replaced with 'sum', since product
+> >> implies multiplication :)
 > >>
-> >> Have you done any measurements how this affects the overall system. I
-> >> suspect this introduces a lot of noise since now we are going to be
-> >> doing a thread wakeup on every iput, does this give a chance to have
-> >> nice, large batches of iputs that  the cost of wake up can be 
-> >> amortized
-> >> across?
 > >
-> > I ran the whole patchset with our A/B testing stuff and the patchset 
-> > was a 5%
-> > win overall, so I'm inclined to think it's fine.  Thanks,
-> 
-> It's a good point though, a delayed wakeup may be less overhead.
+> > doesn't 'sum' imply addition? How about 'output'?
+>
+> It does and the code indeed sums the value and not multiply them hence
+> my suggestion.
+>
 
-Sure, but how do we go about that without it sometimes messing up?  In practice
-the only time we're doing this is at the end of finish_ordered_io, so likely to
-not be a constant stream.  I suppose since we have places where we force it to
-run that we don't really need this.  IDK, I'm fine with dropping it.  Thanks,
+I'm sorry, I didn't phrase that well.
 
-Josef
+Since 'sum' already implies addition, it gets confusing with the
+mathematical operators used later in the description. So, if a
+objective noun is required, a generic term such as 'output' or
+'result' reads more cleanly for me. OTOH, dropping that and creating
+an actual expression
+
+*IFF* the extent buffer's offset in the page + the offset passed in by
+csum_tree_block() + the minimal length passed in by csum_tree_block()
+- 1 > PAGE_SIZE.
+
+is also straightforward.

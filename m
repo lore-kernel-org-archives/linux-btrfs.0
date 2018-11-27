@@ -2,146 +2,162 @@ Return-Path: <SRS0=/x7k=OG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIMWL_WL_MED,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
+	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2A4A9C43441
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 02:56:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B669CC43441
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 03:01:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DEE342086B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 02:56:01 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6C5582086B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 03:01:28 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b="FjDMhZc9";
-	dkim=pass (1024-bit key) header.d=fb.onmicrosoft.com header.i=@fb.onmicrosoft.com header.b="DNBhtzk1"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org DEE342086B
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=fb.com
+	dkim=pass (1024-bit key) header.d=fujitsu.onmicrosoft.com header.i=@fujitsu.onmicrosoft.com header.b="TBcTHpxm"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6C5582086B
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=fujitsu.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728203AbeK0NwU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 27 Nov 2018 08:52:20 -0500
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:36536 "EHLO
-        mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1728089AbeK0NwU (ORCPT
+        id S1728479AbeK0N5s (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 27 Nov 2018 08:57:48 -0500
+Received: from esa11.fujitsucc.c3s2.iphmx.com ([216.71.156.121]:30441 "EHLO
+        esa11.fujitsucc.c3s2.iphmx.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1728134AbeK0N5r (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Nov 2018 08:52:20 -0500
-Received: from pps.filterd (m0109332.ppops.net [127.0.0.1])
-        by mx0a-00082601.pphosted.com (8.16.0.22/8.16.0.22) with SMTP id wAR2slOq024192;
-        Mon, 26 Nov 2018 18:55:41 -0800
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
- : date : message-id : references : in-reply-to : content-type : content-id
- : content-transfer-encoding : mime-version; s=facebook;
- bh=458kOmJfsgjYil4GISLVrqJseKjdHtEFBqiTcgS38eE=;
- b=FjDMhZc9xNm3cJy4hcxlUEKm8QzLlAha65tig+qtn7Eq+nwU+5cxHR6YsrCuYXIArptN
- ewBv/dZPAmqPhhjUJexOd5LT6oKc7kEutC5PQHPp7eDHsxxUGN+xYS4XJQISwWkokTsh
- ssYT9GpcG9F1cg5bEYeCnIlol911papUmNE= 
-Received: from mail.thefacebook.com ([199.201.64.23])
-        by mx0a-00082601.pphosted.com with ESMTP id 2p0ug78aqv-2
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-SHA384 bits=256 verify=NOT);
-        Mon, 26 Nov 2018 18:55:41 -0800
-Received: from prn-mbx08.TheFacebook.com (2620:10d:c081:6::22) by
- prn-hub01.TheFacebook.com (2620:10d:c081:35::125) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id
- 15.1.1531.3; Mon, 26 Nov 2018 18:55:35 -0800
-Received: from prn-hub05.TheFacebook.com (2620:10d:c081:35::129) by
- prn-mbx08.TheFacebook.com (2620:10d:c081:6::22) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id
- 15.1.1531.3; Mon, 26 Nov 2018 18:55:35 -0800
-Received: from NAM05-CO1-obe.outbound.protection.outlook.com (192.168.54.28)
- by o365-in.thefacebook.com (192.168.16.29) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id 15.1.1531.3
- via Frontend Transport; Mon, 26 Nov 2018 18:55:35 -0800
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.onmicrosoft.com;
- s=selector1-fb-com;
+        Tue, 27 Nov 2018 08:57:47 -0500
+X-Greylist: delayed 582 seconds by postgrey-1.27 at vger.kernel.org; Tue, 27 Nov 2018 08:57:45 EST
+X-IronPort-AV: E=McAfee;i="5900,7806,9089"; a="1658734"
+X-IronPort-AV: E=Sophos;i="5.56,285,1539615600"; 
+   d="scan'208";a="1658734"
+Received: from mail-hk2apc01lp0207.outbound.protection.outlook.com (HELO APC01-HK2-obe.outbound.protection.outlook.com) ([65.55.88.207])
+  by ob1.fujitsucc.c3s2.iphmx.com with ESMTP/TLS/AES256-SHA256; 27 Nov 2018 11:51:42 +0900
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=fujitsu.onmicrosoft.com; s=selector1-fujitsu-onmicrosoft-com;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=458kOmJfsgjYil4GISLVrqJseKjdHtEFBqiTcgS38eE=;
- b=DNBhtzk1/ICF6afBYELAAHYyTuGiAeU2I85ONA4sUXQH+YVALoWlTzQGIrtJRRcqMRGw6g3rDxOv3rp4IGewBn5QBB6gcxmgnUBS8y3ilJTEf3Tmc8ry3CIapRZ6r2RDo9oJzq6/Yt1ujczPRwrJq9oYXPUqjmm1NkU7SvWgjpE=
-Received: from MW2PR1501MB1993.namprd15.prod.outlook.com (52.132.149.157) by
- MW2PR1501MB1994.namprd15.prod.outlook.com (52.132.149.158) with Microsoft
- SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.20.1361.14; Tue, 27 Nov 2018 02:55:34 +0000
-Received: from MW2PR1501MB1993.namprd15.prod.outlook.com
- ([fe80::f8d1:59bf:c5a8:1e8]) by MW2PR1501MB1993.namprd15.prod.outlook.com
- ([fe80::f8d1:59bf:c5a8:1e8%5]) with mapi id 15.20.1361.019; Tue, 27 Nov 2018
- 02:55:33 +0000
-From:   Nick Terrell <terrelln@fb.com>
-To:     Daniel Kiper <dkiper@net-space.pl>
-CC:     David Sterba <dsterba@suse.cz>, Kernel Team <Kernel-team@fb.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        "grub-devel@gnu.org" <grub-devel@gnu.org>
-Subject: Re: [PATCH v7 0/2] btrfs: Add zstd support to grub btrfs
-Thread-Topic: [PATCH v7 0/2] btrfs: Add zstd support to grub btrfs
-Thread-Index: AQHUgDzqdSqlN0uMt0KvDZNgh7aFGKVXjfsAgAtq3QA=
-Date:   Tue, 27 Nov 2018 02:55:33 +0000
-Message-ID: <4AA367FE-A601-4F1D-A37B-F85F86D31E94@fb.com>
-References: <20181119192008.3496427-1-terrelln@fb.com>
- <20181119203412.rsd2wbx7nc7enpax@tomti.i.net-space.pl>
-In-Reply-To: <20181119203412.rsd2wbx7nc7enpax@tomti.i.net-space.pl>
-Accept-Language: en-US
-Content-Language: en-US
+ bh=wFac1qYmr3qLaJ9XAmemN9r8FgtvulBsWlpu9qgzQ38=;
+ b=TBcTHpxm1Fwf5HMhlsoJTWb9voJVaui1e7e5XWphVwMvYLyPTtj6gcgxyrURkTpF6D8UPGfncysdTDa3Cd3Z4pW+xaM6nj6OMYX1kfGksd9xBP2eFOID+Ikp8ZcbF4EX/9VHPRxbz4sp4T0jUOwtsDB4mbKAc+tjMYXgrGGfSF8=
+Received: from TY2PR01MB3050.jpnprd01.prod.outlook.com (20.177.99.84) by
+ TY2PR01MB3067.jpnprd01.prod.outlook.com (20.177.98.149) with Microsoft SMTP
+ Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.20.1339.26; Tue, 27 Nov 2018 02:51:38 +0000
+Received: from TY2PR01MB3050.jpnprd01.prod.outlook.com
+ ([fe80::ec50:8330:3075:42b3]) by TY2PR01MB3050.jpnprd01.prod.outlook.com
+ ([fe80::ec50:8330:3075:42b3%6]) with mapi id 15.20.1339.032; Tue, 27 Nov 2018
+ 02:51:37 +0000
+From:   "misono.tomohiro@fujitsu.com" <misono.tomohiro@fujitsu.com>
+To:     "'dsterba@suse.cz'" <dsterba@suse.cz>,
+        Omar Sandoval <osandov@osandov.com>
+CC:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "kernel-team@fb.com" <kernel-team@fb.com>
+Subject: RE: [PATCH 00/10] btrfs-progs: my libbtrfsutil patch queue
+Thread-Topic: [PATCH 00/10] btrfs-progs: my libbtrfsutil patch queue
+Thread-Index: AQHUe+5Z2dDiNiF+JUyu84SZCxvJUqViT2QAgACsPIA=
+Date:   Tue, 27 Nov 2018 02:51:37 +0000
+Message-ID: <TY2PR01MB305068E71637C95DC501B6F1E5D00@TY2PR01MB3050.jpnprd01.prod.outlook.com>
+References: <cover.1542181521.git.osandov@fb.com>
+ <20181126161811.GH2842@twin.jikos.cz>
+In-Reply-To: <20181126161811.GH2842@twin.jikos.cz>
+Accept-Language: ja-JP, en-US
+Content-Language: ja-JP
 X-MS-Has-Attach: 
 X-MS-TNEF-Correlator: 
-x-originating-ip: [2620:10d:c090:200::6:2024]
+x-shieldmailcheckerpolicyversion: FJ-ISEC-20180424-NoSave-enc
+x-shieldmailcheckermailid: b4c26742f86b41f5926db39e5b4ac102
+x-securitypolicycheck: OK by SHieldMailChecker v2.5.7
+authentication-results: spf=none (sender IP is )
+ smtp.mailfrom=misono.tomohiro@fujitsu.com; 
+x-originating-ip: [180.43.167.189]
 x-ms-publictraffictype: Email
-x-microsoft-exchange-diagnostics: 1;MW2PR1501MB1994;20:AFnk4PI0bytycODNbqCQnE9Ii5nG1NkcTBfJ04DnFoNP6mMkK2ecWQCWV3+dXuQUV49MopeyugxfiVeAK7BiqsCnjZiR+mjMI+UP9IVjGUDVnUvB2oRI7KkP+Of9a85YQDUzBooCn9Iq6L33prSJQPFgksOa/mFyw8wjSzKaszI=
+x-microsoft-exchange-diagnostics: 1;TY2PR01MB3067;6:ck6bE8C+chSWp0SI+JGa/iEMO/BcFWbT7eGUXHG/uEmbZqIVZ5iN7vLdZpyWqCbXjNDZxXjtXJ72DopKY3hZAMzSW7MARhsJ2HXY8KNWvdDXI6aTU4amfy51UXCOwN3t1+S2OFef1uk1qnuoL4iWFWPM4e1D+SXbfGq5iC07JPWvSXLA6Hy1akMR7bZ/6LUneOnSEDox3KEJrOn5wLqAt+tbHFTsCYKDWClZ8EohwLdORKI/jij+rACVaClyddm0S/KzPTzvXbXGEjiF920ylm2dwfuXDgpgosCdv5lH1VnA3Iq2w1sw5UoJfUhMtZI+dVpEUTGs6leK3F7to55FanO59UA65MiWFaF8PQdLhoul7btw/CZeVogosGF0+AcrnPVFui2vUrjDMJRgOYaqZPiihEmoYSq44/02t6fvODhp4Ldlq8vnz+6DhheTmqn+1GHqrcUJs+6BYw5Cq7sL4g==;5:0HDbdosXHeMuOkav+uZI2chzS49JibHxsVL3Slh/VzD3XSgFkoDZyJr1PSYMbeEy7y0fOKldIFj7MlHwznKFTS4QahKkwSC9yTrJrd084JGx1rDxAkg7ANSYklWwY/ytUyHqquB7cvZTiMQeIyfRsB2wV26Dt+kaCOUEO3O5Dh8=;7:/fl4Q5O8ULINE9D5J6zRdUdMsPG1nUFh+m+TdQnw90Ah1dgcVjeb8t2MNGRNWfg7T8KSkp40vrVw6R3S0UWrUkqQO/Vb1Q9uM9n+YPhKkfF0aUyi9qxV9SFLTNjIwmQ6T1j6ySg4VZsDz5Wv8ffYeA==
 x-ms-exchange-antispam-srfa-diagnostics: SOS;
-x-ms-office365-filtering-correlation-id: 543cf897-c6ee-418f-06f8-08d65413ccfd
-x-microsoft-antispam: BCL:0;PCL:0;RULEID:(2390098)(7020095)(4652040)(8989299)(4534185)(4627221)(201703031133081)(201702281549075)(8990200)(5600074)(711020)(2017052603328)(7153060)(7193020);SRVR:MW2PR1501MB1994;
-x-ms-traffictypediagnostic: MW2PR1501MB1994:
-x-microsoft-antispam-prvs: <MW2PR1501MB19942E84DFD38549A5FF5127ABD00@MW2PR1501MB1994.namprd15.prod.outlook.com>
+x-ms-office365-filtering-correlation-id: f2370826-0a87-4394-74b8-08d65413404c
+x-microsoft-antispam: BCL:0;PCL:0;RULEID:(2390098)(7020095)(4652040)(8989299)(5600074)(711020)(4534185)(4627221)(201703031133081)(201702281549075)(8990200)(2017052603328)(7193020);SRVR:TY2PR01MB3067;
+x-ms-traffictypediagnostic: TY2PR01MB3067:
+x-microsoft-antispam-prvs: <TY2PR01MB3067C1994FC8C514D64FDF87E5D00@TY2PR01MB3067.jpnprd01.prod.outlook.com>
 x-ms-exchange-senderadcheck: 1
-x-exchange-antispam-report-cfa-test: BCL:0;PCL:0;RULEID:(8211001083)(6040522)(2401047)(8121501046)(5005006)(823302103)(93006095)(93001095)(3231443)(11241501185)(944501410)(52105112)(10201501046)(3002001)(148016)(149066)(150057)(6041310)(20161123562045)(20161123564045)(20161123560045)(201703131423095)(201702281528075)(20161123555045)(201703061421075)(201703061406153)(20161123558120)(201708071742011)(7699051)(76991095);SRVR:MW2PR1501MB1994;BCL:0;PCL:0;RULEID:;SRVR:MW2PR1501MB1994;
+x-exchange-antispam-report-cfa-test: BCL:0;PCL:0;RULEID:(8211001083)(6040522)(2401047)(8121501046)(5005006)(10201501046)(3231443)(944501410)(52105112)(3002001)(93006095)(93001095)(6055026)(148016)(149066)(150057)(6041310)(20161123564045)(20161123558120)(20161123560045)(20161123562045)(201703131423095)(201702281528075)(20161123555045)(201703061421075)(201703061406153)(201708071742011)(7699051)(76991095);SRVR:TY2PR01MB3067;BCL:0;PCL:0;RULEID:;SRVR:TY2PR01MB3067;
 x-forefront-prvs: 086943A159
-x-forefront-antispam-report: SFV:NSPM;SFS:(10019020)(396003)(376002)(346002)(39860400002)(136003)(366004)(189003)(199004)(53754006)(6512007)(76176011)(68736007)(53936002)(86362001)(53546011)(345774005)(6506007)(97736004)(102836004)(6116002)(105586002)(106356001)(2906002)(25786009)(316002)(478600001)(99286004)(54906003)(81166006)(6916009)(81156014)(8676002)(8936002)(229853002)(82746002)(36756003)(5660300001)(33656002)(256004)(83716004)(71190400001)(71200400001)(46003)(6436002)(6486002)(446003)(11346002)(2616005)(486006)(476003)(186003)(14454004)(7736002)(305945005)(4326008)(6246003)(17423001);DIR:OUT;SFP:1102;SCL:1;SRVR:MW2PR1501MB1994;H:MW2PR1501MB1993.namprd15.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;MX:1;A:1;
-received-spf: None (protection.outlook.com: fb.com does not designate
- permitted sender hosts)
-x-microsoft-antispam-message-info: YyzZu5BhwjF5fd0iRPH/DkjZEkywJ4A5BDubdFjKfSUGriBYHVL+H4EJUBkTYvCOA60B9E5iHR58KRiTSJlHvn2m6KhKLbQK+s7UaiaEzVC7eWefgL3l++WPMzw3V1PVJJBLuzfnNhqkU+/EgwVIyayFY4C7aJv3rIqBYOaTEW7FeNQvNpWocQukqymUlrIGxw2Ho3JqCw018j+AX/q6VPg/GubnteuKETJ6ymIl5F7k92hRu/XAOa5pZy2B0yQZc29SDDDrCBMJ0/PAbnusViJW8WTP5J0t1x5KvmWfMGzHbtm++68o24lECdQUdWZu9esgXWj9068dJYRXHHkEvef475UufpRUCoplAxA9wOU=
+x-forefront-antispam-report: SFV:NSPM;SFS:(10009020)(136003)(376002)(396003)(366004)(39860400002)(346002)(189003)(199004)(13464003)(446003)(486006)(33656002)(476003)(81156014)(6506007)(11346002)(14454004)(53546011)(6436002)(305945005)(8676002)(81166006)(8936002)(4326008)(76176011)(97736004)(7696005)(3846002)(478600001)(54906003)(102836004)(85182001)(25786009)(2906002)(106356001)(229853002)(9686003)(256004)(66066001)(68736007)(105586002)(6246003)(7736002)(55016002)(186003)(5660300001)(71200400001)(316002)(99286004)(74316002)(26005)(53936002)(14444005)(86362001)(71190400001)(110136005)(6116002)(777600001)(491001);DIR:OUT;SFP:1101;SCL:1;SRVR:TY2PR01MB3067;H:TY2PR01MB3050.jpnprd01.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;MX:1;A:1;
+x-microsoft-antispam-message-info: grCqpNj2q/kwypomSftvqjc7nq5c493tAYsRcPzdpgqv1p41I0BM5bo9LdJcH9fpauXdLVO4wNtLXPXBrGIKibZKhgv8PAA72xGK8BhqG24t2ELof/1mD7LLGUTWXHM/WKSUDQ1Hhy7Gc3iSiZ7b11W3x33U2zKaFZgQeSbjzoYZ5N+NQmrBsT629W4U9VINPkTZ3qdNJAz4ad6WxzU0w8uPkwWFNDClDSwG5qR2R+jb/DSB1cu7bv0puqLTt5dfzcXCW8ieRhBOqDkM3NAE+5p03bfhl8hxbk8PDGVzeb0MMfeLotnN5CY89J9MvPTaXRppRBcEz9NcAz9ca62xapZrfUYcRsLq419+fu4DPDQ=
 spamdiagnosticoutput: 1:99
 spamdiagnosticmetadata: NSPM
-Content-Type: text/plain; charset="us-ascii"
-Content-ID: <93C84E33CC0E224AB55B397A423C0FB8@namprd15.prod.outlook.com>
+Content-Type: text/plain; charset="iso-2022-jp"
 Content-Transfer-Encoding: quoted-printable
 MIME-Version: 1.0
-X-MS-Exchange-CrossTenant-Network-Message-Id: 543cf897-c6ee-418f-06f8-08d65413ccfd
-X-MS-Exchange-CrossTenant-originalarrivaltime: 27 Nov 2018 02:55:33.8269
+X-OriginatorOrg: fujitsu.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: f2370826-0a87-4394-74b8-08d65413404c
+X-MS-Exchange-CrossTenant-originalarrivaltime: 27 Nov 2018 02:51:37.8899
  (UTC)
 X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: 8ae927fe-1255-47a7-a2af-5f3a069daaa2
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: MW2PR1501MB1994
-X-OriginatorOrg: fb.com
-X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10434:,, definitions=2018-11-27_03:,,
- signatures=0
-X-Proofpoint-Spam-Reason: safe
-X-FB-Internal: Safe
+X-MS-Exchange-CrossTenant-id: a19f121d-81e1-4858-a9d8-736e267fd4c7
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: TY2PR01MB3067
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-> On Nov 19, 2018, at 12:34 PM, Daniel Kiper <dkiper@net-space.pl> wrote:
+> -----Original Message-----
+> From: David Sterba [mailto:dsterba@suse.cz]
+> Sent: Tuesday, November 27, 2018 1:18 AM
+> To: Omar Sandoval <osandov@osandov.com>
+> Cc: linux-btrfs@vger.kernel.org; kernel-team@fb.com; Misono, Tomohiro
+> <misono.tomohiro@fujitsu.com>
+> Subject: Re: [PATCH 00/10] btrfs-progs: my libbtrfsutil patch queue
 >=20
-> On Mon, Nov 19, 2018 at 11:20:06AM -0800, Nick Terrell wrote:
->> Hi all,
->>=20
->> This patch set imports the upstream zstd library, adds zstd support to t=
-he
->> btrfs module, and adds a test case. I've also tested the patch set by st=
-oring
->> my boot partition in btrfs with and without zstd compression and rebooti=
-ng.
+> On Tue, Nov 13, 2018 at 11:46:55PM -0800, Omar Sandoval wrote:
+> > From: Omar Sandoval <osandov@fb.com>
+> >
+> > Hi,
+> >
+> > This series contains my backlog of libbtrfsutil changes which I've been
+> > collecting over the past few weeks.
+> >
+> > Patches 1-4 are fixes. Patches 5-6 add functionality to the unit tests
+> > which is needed for patches 7-8. Patches 7-8 add support for the
+> > unprivileged ioctls added in Linux 4.18; more on those below. Patch
+> 9
+> > bumps the library version. Patch 10 adds documentation for the availabl=
+e
+> > API along with examples.
+> >
+> > Patches 7-8 are based on Misono Tomohiro's previous patch series [1],
+> > with a few important changes.
+> >
+> > - Both subvolume_info() and create_subvolume_iterator() now have unit
+> >   tests for the unprivileged case.
+> > - Both no longer explicitly check that top =3D=3D 0 in the unprivileged
+> >   case, since that will already fail with a clear permission error.
+> > - Unprivileged iteration is much simpler: it uses openat() instead of
+> >   fchdir() and is based more closely on the original tree search
+> >   variant. This fixes a bug in post-order iteration in Misono's version=
+.
+> > - Unprivileged iteration does _not_ support passing in a non-subvolume
+> >   path; if this behavior is desired, I'd like it to be a separate chang=
+e
+> >   with an explicit flag.
 >=20
-> LGTM. I will apply both patches in a week or so.
+> Series merged to devel, thanks. I've added link from the main README now
+> that there's the API documentation.
 >=20
-> Thank you for doing the work.
+> The test-libbtrfsutil is missing from the travis CI for some reason, I
+> was about to add it.  So far the testing environment does not provide
+> 'umount' that knows about '-R' so the tests fail. I'll have a look if
+> there's a newer base image provided, otherwise a workaround would be
+> necessary.
 >=20
-> Daniel
+> As for the unprivileged subvolume listing ioctls, the functionality in
+> the util library is self-contained and the interface is up to you to
+> design properly, so this does not depend on the 'btrfs subvolume list'
+> command. That one has unfortunately not bubbled high enough in my todo.
 
+Hello,
+I missed the mails and am sorry for late response.
 
-Thanks for taking the time to review and merge the patches, and for
-maintaining GRUB!
+As mentioned libbtrfsuitl and other progs are mostly independent,
+the patches I submitted (once in devel with your review and some modificati=
+on)
+can be cleanly applied to this version of libbtrfsutil.
 
-Nick
+I will resend them for easier review/comment.
 
+Thanks,
+Misono

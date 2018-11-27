@@ -3,36 +3,36 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E7834C43441
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 19:54:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 48FA8C43441
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 19:54:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id AC0F020873
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 19:54:06 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org AC0F020873
+	by mail.kernel.org (Postfix) with ESMTP id 0EE5720873
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 19:54:09 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0EE5720873
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726336AbeK1GxE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Nov 2018 01:53:04 -0500
-Received: from mx2.suse.de ([195.135.220.15]:35246 "EHLO mx1.suse.de"
+        id S1726402AbeK1GxH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Nov 2018 01:53:07 -0500
+Received: from mx2.suse.de ([195.135.220.15]:35258 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725764AbeK1GxE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Nov 2018 01:53:04 -0500
+        id S1725764AbeK1GxG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Nov 2018 01:53:06 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 26230AC3E
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Nov 2018 19:54:04 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 75738AC3E
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Nov 2018 19:54:06 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 1759ADAC3A; Tue, 27 Nov 2018 20:53:48 +0100 (CET)
+        id 669A4DAC3A; Tue, 27 Nov 2018 20:53:50 +0100 (CET)
 From:   David Sterba <dsterba@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH 4/9] btrfs: switch BTRFS_ROOT_* to enums
-Date:   Tue, 27 Nov 2018 20:53:48 +0100
-Message-Id: <f78a535281ed0bd208db0c2f70aa0e43f18cb40c.1543348078.git.dsterba@suse.com>
+Subject: [PATCH 5/9] btrfs: swtich EXTENT_BUFFER_* to enums
+Date:   Tue, 27 Nov 2018 20:53:50 +0100
+Message-Id: <132de3b38834a3703cc9cebe56e7de8dcbcec1c9.1543348078.git.dsterba@suse.com>
 X-Mailer: git-send-email 2.19.1
 In-Reply-To: <cover.1543348078.git.dsterba@suse.com>
 References: <cover.1543348078.git.dsterba@suse.com>
@@ -44,57 +44,52 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 We can use simple enum for values that are not part of on-disk format:
-root tree flags.
+extent buffer flags;
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/ctree.h | 33 +++++++++++++++++----------------
- 1 file changed, 17 insertions(+), 16 deletions(-)
+ fs/btrfs/extent_io.h | 28 ++++++++++++++++------------
+ 1 file changed, 16 insertions(+), 12 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 7176b95b40e7..4bb0ac3050ff 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1180,22 +1180,23 @@ struct btrfs_subvolume_writers {
- /*
-  * The state of btrfs root
-  */
--/*
-- * btrfs_record_root_in_trans is a multi-step process,
-- * and it can race with the balancing code.   But the
-- * race is very small, and only the first time the root
-- * is added to each transaction.  So IN_TRANS_SETUP
-- * is used to tell us when more checks are required
-- */
--#define BTRFS_ROOT_IN_TRANS_SETUP	0
--#define BTRFS_ROOT_REF_COWS		1
--#define BTRFS_ROOT_TRACK_DIRTY		2
--#define BTRFS_ROOT_IN_RADIX		3
--#define BTRFS_ROOT_ORPHAN_ITEM_INSERTED	4
--#define BTRFS_ROOT_DEFRAG_RUNNING	5
--#define BTRFS_ROOT_FORCE_COW		6
--#define BTRFS_ROOT_MULTI_LOG_TASKS	7
--#define BTRFS_ROOT_DIRTY		8
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index a1d3ea5a0d32..fd42492e62e5 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -37,18 +37,22 @@
+ #define EXTENT_BIO_COMPRESSED 1
+ #define EXTENT_BIO_FLAG_SHIFT 16
+ 
+-/* these are bit numbers for test/set bit */
+-#define EXTENT_BUFFER_UPTODATE 0
+-#define EXTENT_BUFFER_DIRTY 2
+-#define EXTENT_BUFFER_CORRUPT 3
+-#define EXTENT_BUFFER_READAHEAD 4	/* this got triggered by readahead */
+-#define EXTENT_BUFFER_TREE_REF 5
+-#define EXTENT_BUFFER_STALE 6
+-#define EXTENT_BUFFER_WRITEBACK 7
+-#define EXTENT_BUFFER_READ_ERR 8        /* read IO error */
+-#define EXTENT_BUFFER_UNMAPPED 9
+-#define EXTENT_BUFFER_IN_TREE 10
+-#define EXTENT_BUFFER_WRITE_ERR 11    /* write IO error */
 +enum {
-+	/*
-+	 * btrfs_record_root_in_trans is a multi-step process, and it can race
-+	 * with the balancing code.   But the race is very small, and only the
-+	 * first time the root is added to each transaction.  So IN_TRANS_SETUP
-+	 * is used to tell us when more checks are required
-+	 */
-+	BTRFS_ROOT_IN_TRANS_SETUP,
-+	BTRFS_ROOT_REF_COWS,
-+	BTRFS_ROOT_TRACK_DIRTY,
-+	BTRFS_ROOT_IN_RADIX,
-+	BTRFS_ROOT_ORPHAN_ITEM_INSERTED,
-+	BTRFS_ROOT_DEFRAG_RUNNING,
-+	BTRFS_ROOT_FORCE_COW,
-+	BTRFS_ROOT_MULTI_LOG_TASKS,
-+	BTRFS_ROOT_DIRTY,
++	EXTENT_BUFFER_UPTODATE,
++	EXTENT_BUFFER_DIRTY,
++	EXTENT_BUFFER_CORRUPT,
++	/* this got triggered by readahead */
++	EXTENT_BUFFER_READAHEAD,
++	EXTENT_BUFFER_TREE_REF,
++	EXTENT_BUFFER_STALE,
++	EXTENT_BUFFER_WRITEBACK,
++	/* read IO error */
++	EXTENT_BUFFER_READ_ERR,
++	EXTENT_BUFFER_UNMAPPED,
++	EXTENT_BUFFER_IN_TREE,
++	/* write IO error */
++	EXTENT_BUFFER_WRITE_ERR,
 +};
  
- /*
-  * in ram representation of the tree.  extent_root is used for all allocations
+ /* these are flags for __process_pages_contig */
+ #define PAGE_UNLOCK		(1 << 0)
 -- 
 2.19.1
 

@@ -2,76 +2,86 @@ Return-Path: <SRS0=/x7k=OG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 470F8C43441
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 13:38:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3DFDAC43441
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 13:42:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0CC3020989
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 13:38:12 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="jmfxmgef"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0CC3020989
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
+	by mail.kernel.org (Postfix) with ESMTP id 0934820989
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 13:42:00 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0934820989
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727463AbeK1AgI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 27 Nov 2018 19:36:08 -0500
-Received: from userp2120.oracle.com ([156.151.31.85]:42432 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727381AbeK1AgI (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Nov 2018 19:36:08 -0500
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wARDXpnC098115;
-        Tue, 27 Nov 2018 13:38:06 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : subject : to :
- references : message-id : date : mime-version : in-reply-to : content-type
- : content-transfer-encoding; s=corp-2018-07-02;
- bh=d1+mGngOTXnI2rFVs30T/RgYtX04fb3He78ca134154=;
- b=jmfxmgef2Kt0TcJ9MTUXkjRNKlBN8Q/c3Ip8VtUUUgjtQytcZxcyInNEKGO736l/hEUV
- CUcx4RRCzL6HGwS+ETFVx2mqFiA3iuc+Y1GNEJ9Di2KwdAn9+WkLQxd9uXnOvVr1eRoc
- 11iXK81OMVyd1EDx2zO7mEWWa12ybyRAL6NdjekmQqyMaWgKnmYeZCQ3EP2h9T0lajXN
- TQ0GGxi2vA4/aGrvE1yzPUlYehrvI4X80eRIaK6+qFi64qd/wexVQ0iUP7ITqjkJd37P
- n6f3INjB3hTYnCJODXsOVQkOl9jYV1QfzLqzMqM+DhN+UrD9z/SggmjRszNYhCxaamXP Og== 
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by userp2120.oracle.com with ESMTP id 2nxy9r3xc6-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 27 Nov 2018 13:38:06 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id wARDc690023871
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 27 Nov 2018 13:38:06 GMT
-Received: from abhmp0014.oracle.com (abhmp0014.oracle.com [141.146.116.20])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id wARDc5i4001484;
-        Tue, 27 Nov 2018 13:38:05 GMT
-Received: from [192.168.0.120] (/202.156.138.221)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Tue, 27 Nov 2018 05:38:05 -0800
-From:   Anand Jain <anand.jain@oracle.com>
-Subject: Re: [PATCH 1/2] btrfs: scrub: maintain the unlock order in scrub
- thread
-To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-References: <1543223228-28232-1-git-send-email-anand.jain@oracle.com>
- <1543223228-28232-2-git-send-email-anand.jain@oracle.com>
- <f7d06f21-f4a0-f46f-c241-fab35b9c0ed7@suse.com>
-Message-ID: <89cef6a5-ca0c-9017-4219-0c19ce4a04dc@oracle.com>
-Date:   Tue, 27 Nov 2018 21:37:45 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
- Thunderbird/52.9.1
+        id S1726628AbeK1Aj5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 27 Nov 2018 19:39:57 -0500
+Received: from mx2.suse.de ([195.135.220.15]:59880 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726287AbeK1Aj5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Nov 2018 19:39:57 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id CC3A4ABEF;
+        Tue, 27 Nov 2018 13:41:56 +0000 (UTC)
+Subject: Re: [PATCH] Fix typos in docs
+To:     Andrea Gelmini <andrea.gelmini@gelma.net>,
+        linux-btrfs@vger.kernel.org
+References: <20181127133707.20323-1-andrea.gelmini@gelma.net>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <1d338499-6e05-3a1a-e964-ea4ecb1dbef5@suse.com>
+Date:   Tue, 27 Nov 2018 15:41:55 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <f7d06f21-f4a0-f46f-c241-fab35b9c0ed7@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20181127133707.20323-1-andrea.gelmini@gelma.net>
+Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9089 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1810050000 definitions=main-1811270117
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -79,125 +89,87 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 11/26/2018 05:47 PM, Nikolay Borisov wrote:
+On 27.11.18 г. 15:37 ч., Andrea Gelmini wrote:
+> Signed-off-by: Andrea Gelmini <andrea.gelmini@gelma.net>
+> ---
+>  Documentation/DocConventions          | 4 ++--
+>  Documentation/ReleaseChecklist        | 4 ++--
+>  Documentation/btrfs-man5.asciidoc     | 8 ++++----
+>  Documentation/btrfs-property.asciidoc | 2 +-
+>  Documentation/btrfs-qgroup.asciidoc   | 4 ++--
+>  Documentation/mkfs.btrfs.asciidoc     | 2 +-
+>  6 files changed, 12 insertions(+), 12 deletions(-)
 > 
-> 
-> On 26.11.18 г. 11:07 ч., Anand Jain wrote:
->> The fs_info::device_list_mutex and fs_info::scrub_lock creates a
->> nested locks in btrfs_scrub_dev(). During the lock acquire the
->> hierarchy is fs_info::device_list_mutex and then fs_info::scrub_lock,
->> so following the same reverse order during unlock, that is
->> fs_info::scrub_lock and then fs_info::device_list_mutex.
->>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->> ---
->>   fs/btrfs/scrub.c | 16 +++++++---------
->>   1 file changed, 7 insertions(+), 9 deletions(-)
->>
->> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
->> index 902819d3cf41..b1c2d1cdbd4b 100644
->> --- a/fs/btrfs/scrub.c
->> +++ b/fs/btrfs/scrub.c
->> @@ -3865,7 +3865,6 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
->>   	}
->>   	sctx->readonly = readonly;
->>   	dev->scrub_ctx = sctx;
->> -	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
->>   
->>   	/*
->>   	 * checking @scrub_pause_req here, we can avoid
->> @@ -3875,15 +3874,14 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
->>   	atomic_inc(&fs_info->scrubs_running);
->>   	mutex_unlock(&fs_info->scrub_lock);
->>   
->> -	if (!is_dev_replace) {
->> -		/*
->> -		 * by holding device list mutex, we can
->> -		 * kick off writing super in log tree sync.
->> -		 */
->> -		mutex_lock(&fs_info->fs_devices->device_list_mutex);
->> +	/*
->> +	 * by holding device list mutex, we can kick off writing super in log
->> +	 * tree sync.
->> +	 */
->> +	if (!is_dev_replace)
->>   		ret = scrub_supers(sctx, dev);
->> -		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
->> -	}
->> +
->> +	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-> 
-> Have you considered whether this change will have any negative impact
-> due to the fact that __scrtub_blocked_if_needed can go to sleep for
-> arbitrary time with device_list_mutex held now ?
+> diff --git a/Documentation/DocConventions b/Documentation/DocConventions
+> index e84ed7a..969209c 100644
+> --- a/Documentation/DocConventions
+> +++ b/Documentation/DocConventions
+> @@ -23,7 +23,7 @@ Quotation in subcommands:
+>  - command reference: bold *btrfs fi show*
+>  - section references: italics 'EXAMPLES'
+>  
+> -- argument name in option desciption: caps in angle brackets <NAME>
+> +- argument name in option description: caps in angle brackets <NAME>
+>    - reference in help text: caps NAME
+>      also possible: caps italics 'NAME'
+>  
+> @@ -34,6 +34,6 @@ Quotation in subcommands:
+>    - optional parameter with argument: [-p <path>]
+>  
+>  
+> -Refrences:
+> +References:
+>  - full asciidoc syntax: http://asciidoc.org/userguide.html
+>  - cheatsheet: http://powerman.name/doc/asciidoc
+> diff --git a/Documentation/ReleaseChecklist b/Documentation/ReleaseChecklist
+> index d8bf50c..7fdbddf 100644
+> --- a/Documentation/ReleaseChecklist
+> +++ b/Documentation/ReleaseChecklist
+> @@ -4,7 +4,7 @@ Release checklist
+>  Last code touches:
+>  
+>  * make the code ready, collect patches queued for the release
+> -* look to mailinglist for any relevant last-minute fixes
+> +* look to mailin glist for any relevant last-minute fixes
 
-  You are right. I missed that point. The device_list_mutex must not be
-  blocked. In fact here we don't need the nested device_list_mutex and
-  scrub_lock at all. I have comeup with a new fix [1] below separating
-  them.
+Wrong position of space, should be mailing list
+>  
+>  Pre-checks:
+>  
+> @@ -31,7 +31,7 @@ Release:
+>  
+>  Post-release:
+>  
+> -* write and send announcement mail to mailinglist
+> +* write and send announcement mail to mailing list
+>  * update wiki://Main_page#News
+>  * update wiki://Changelog#btrfs-progs
+>  * update title on IRC
+> diff --git a/Documentation/btrfs-man5.asciidoc b/Documentation/btrfs-man5.asciidoc
+> index 448710a..c358cef 100644
+> --- a/Documentation/btrfs-man5.asciidoc
+> +++ b/Documentation/btrfs-man5.asciidoc
+> @@ -156,7 +156,7 @@ under 'nodatacow' are also set the NOCOW file attribute (see `chattr`(1)).
+>  NOTE: If 'nodatacow' or 'nodatasum' are enabled, compression is disabled.
+>  +
+>  Updates in-place improve performance for workloads that do frequent overwrites,
+> -at the cost of potential partial writes, in case the write is interruted
+> +at the cost of potential partial writes, in case the write is interrupted
+>  (system crash, device failure).
+>  
+>  *datasum*::
+> @@ -171,7 +171,7 @@ corresponding file attribute (see `chattr`(1)).
+>  NOTE: If 'nodatacow' or 'nodatasum' are enabled, compression is disabled.
+>  +
+>  There is a slight performance gain when checksums are turned off, the
+> -correspoinding metadata blocks holding the checksums do not need to updated.
+> +corresponding metadata blocks holding the checksums do not need to updated.
 
-[1]
----------------------------------
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 902819d3cf41..db895ad23eda 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -3830,42 +3830,37 @@ int btrfs_scrub_dev(struct btrfs_fs_info 
-*fs_info, u64 devid, u64 start,
-                 return -EROFS;
-         }
+You've missed one grammatical error - the end of the sentence should
+say" do not need to be updated".
 
--       mutex_lock(&fs_info->scrub_lock);
-         if (!test_bit(BTRFS_DEV_STATE_IN_FS_METADATA, &dev->dev_state) ||
-             test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &dev->dev_state)) {
--               mutex_unlock(&fs_info->scrub_lock);
-                 mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-                 return -EIO;
-         }
-+       mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+>  The cost of checksumming of the blocks in memory is much lower than the IO,
+>  modern CPUs feature hardware support of the checksumming algorithm.
+>  
 
-         btrfs_dev_replace_read_lock(&fs_info->dev_replace);
-         if (dev->scrub_ctx ||
-             (!is_dev_replace &&
-              btrfs_dev_replace_is_ongoing(&fs_info->dev_replace))) {
-                 btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
--               mutex_unlock(&fs_info->scrub_lock);
--               mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-                 return -EINPROGRESS;
-         }
-         btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
-
-+       mutex_lock(&fs_info->scrub_lock);
-         ret = scrub_workers_get(fs_info, is_dev_replace);
-         if (ret) {
-                 mutex_unlock(&fs_info->scrub_lock);
--               mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-                 return ret;
-         }
-
-         sctx = scrub_setup_ctx(dev, is_dev_replace);
-         if (IS_ERR(sctx)) {
-                 mutex_unlock(&fs_info->scrub_lock);
--               mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-                 scrub_workers_put(fs_info);
-                 return PTR_ERR(sctx);
-         }
-         sctx->readonly = readonly;
-         dev->scrub_ctx = sctx;
--       mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-
-         /*
-          * checking @scrub_pause_req here, we can avoid
-------------------------------------------------
-
-Will send v2.
-
-Thanks, Anand
-
-
-
-> 
->>   
->>   	if (!ret)
->>   		ret = scrub_enumerate_chunks(sctx, dev, start, end);
->>
+<snip>

@@ -2,153 +2,144 @@ Return-Path: <SRS0=/x7k=OG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_NEOMUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-2.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIMWL_WL_MED,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C0107C43441
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 19:56:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 760DBC43441
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 20:00:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7FC6920663
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 19:56:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 19DC920663
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 20:00:34 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="OYTyurQa"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7FC6920663
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
+	dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b="EjYZoIEi";
+	dkim=pass (1024-bit key) header.d=fb.onmicrosoft.com header.i=@fb.onmicrosoft.com header.b="Z53Xm7B0"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 19DC920663
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=fb.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726273AbeK1Gz2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Nov 2018 01:55:28 -0500
-Received: from mail-yb1-f195.google.com ([209.85.219.195]:38082 "EHLO
-        mail-yb1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725872AbeK1Gz2 (ORCPT
+        id S1726181AbeK1G7c (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Nov 2018 01:59:32 -0500
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:38618 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1725752AbeK1G7c (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Nov 2018 01:55:28 -0500
-Received: by mail-yb1-f195.google.com with SMTP id u103-v6so9601259ybi.5
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Nov 2018 11:56:28 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to:user-agent;
-        bh=y4uf5vz0hI5RuMFrfiHf4NP4t3bQTwoBr43VLpFgo/A=;
-        b=OYTyurQaw8nvLpYjHWCR5xJL6RqLU39lD3mhdoxjhMcW8n/DRejLM39gawXmUY60s3
-         AYxL5G/XbeorLbiyaH1wDqOoQk1NBjOMT5hRXXurrjzLe3gMwHWl/GU0Y5ocvaH7XK2y
-         Wrg+ZCuY7TDVEmZyrerdbjb7a6Y6d6o+s3pVFvykq5p/Qz/kSGpN9KFogfvm7R8V5uF+
-         lsOPm/dIvaXnYPAFiwt0PVG9DlwxY4mrTWS7axVHVtmURSYM6qxy5BjQXE419A1g/hDo
-         pf38gIqs6wv3gmAqU/vxOBf2iIy0/7QSFE/cj1OtWx7xEkichuGhlc9JJZMEXNv0mQYm
-         xzLw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to:user-agent;
-        bh=y4uf5vz0hI5RuMFrfiHf4NP4t3bQTwoBr43VLpFgo/A=;
-        b=MFyolc/g6k9pRcVEoHgs03QTAViXncSFYUbCRmq8GL6NvuyeaI9yS4dqZGFP8fLd+V
-         HyEeFCAN39JL4za/7dxjwGiB4I4iGd6E3EDb8d02W08AY5001qmsPEJk71yBa3fj0Ypd
-         StSO15c9+12i3jOT5aYA1ZciCG5NJXmPbQ7r/Ard2QS9hxEEDIfDXtgDSOazJhw79PzF
-         3ZJrsSshO3TgxIf2JTdQBaGJw8rIYbPEF+FH1F5/X2SglV3yZqyFdo2etvDRBMNIImuD
-         M4OIuNef8jxwfSDzwmUzmlsTT6+V0mqWyBhXGtyjGo91TFlQuUCPQ7c50HW6E45K0Ued
-         17+w==
-X-Gm-Message-State: AA+aEWaGpZSm3r975PBkI7zgBWEduqbE9k5Cc6lacsJt613rKc5xAWJv
-        yBahT2NyB32gSxUQzHTpX3tNOr/Am4I=
-X-Google-Smtp-Source: AFSGD/WTdGe3PS1VCuJ0GjYJKZNn4Wyc/o16cHyAJ5f58S1vx98DxOje4pAwBpyUiL8nHAo49dfUew==
-X-Received: by 2002:a25:2b41:: with SMTP id r62-v6mr24282095ybr.369.1543348588092;
-        Tue, 27 Nov 2018 11:56:28 -0800 (PST)
-Received: from localhost ([2620:10d:c091:180::1:4c40])
-        by smtp.gmail.com with ESMTPSA id f10sm4644348ywb.26.2018.11.27.11.56.27
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 27 Nov 2018 11:56:27 -0800 (PST)
-Date:   Tue, 27 Nov 2018 14:56:26 -0500
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     Filipe Manana <fdmanana@gmail.com>
-Cc:     Josef Bacik <josef@toxicpanda.com>, kernel-team@fb.com,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: only run delayed refs if we're committing
-Message-ID: <20181127195625.btdnqa7m3fb6hwun@macbook-pro-91.dhcp.thefacebook.com>
-References: <20181121191016.25224-1-josef@toxicpanda.com>
- <CAL3q7H45FX3VO0h_9u5-M38ObiWaZPgyXezUDT-4rJvx7BUkhw@mail.gmail.com>
- <20181127192224.zozqhtpcuv5j2qcm@macbook-pro-91.dhcp.thefacebook.com>
- <CAL3q7H4esyeG6uUvegUHdGy0k4Szv8-iw5dDAzUpwiBS_hd7hg@mail.gmail.com>
+        Wed, 28 Nov 2018 01:59:32 -0500
+Received: from pps.filterd (m0001255.ppops.net [127.0.0.1])
+        by mx0b-00082601.pphosted.com (8.16.0.22/8.16.0.22) with SMTP id wARJvleE010467;
+        Tue, 27 Nov 2018 12:00:22 -0800
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
+ : date : message-id : references : in-reply-to : content-type : content-id
+ : content-transfer-encoding : mime-version; s=facebook;
+ bh=QHMlRXEDag3EVePweaGwxCrNunAX/InXVyXmcg8Es0w=;
+ b=EjYZoIEif9TkC6ddemwk+3F0KKjT+WfbZeYTdEb96ImqwnXDExMZ1wxivIEgnTLMZ4/E
+ b9UCF6UBS4zNb+zXgg+qfATNkiOEHNeg/C6RsE91VFSRK4w8afrnMKr0RXqYS/4H3zjv
+ u9eccpeFRC4GHHqI8tkAplxtV5D+39SqmFE= 
+Received: from maileast.thefacebook.com ([199.201.65.23])
+        by mx0b-00082601.pphosted.com with ESMTP id 2p1ar68fk5-2
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-SHA384 bits=256 verify=NOT);
+        Tue, 27 Nov 2018 12:00:21 -0800
+Received: from frc-mbx02.TheFacebook.com (2620:10d:c0a1:f82::26) by
+ frc-hub05.TheFacebook.com (2620:10d:c021:18::175) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id
+ 15.1.1531.3; Tue, 27 Nov 2018 11:59:44 -0800
+Received: from frc-hub04.TheFacebook.com (2620:10d:c021:18::174) by
+ frc-mbx02.TheFacebook.com (2620:10d:c0a1:f82::26) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id
+ 15.1.1531.3; Tue, 27 Nov 2018 11:59:44 -0800
+Received: from NAM05-CO1-obe.outbound.protection.outlook.com (192.168.183.28)
+ by o365-in.thefacebook.com (192.168.177.74) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id 15.1.1531.3
+ via Frontend Transport; Tue, 27 Nov 2018 11:59:44 -0800
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.onmicrosoft.com;
+ s=selector1-fb-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=QHMlRXEDag3EVePweaGwxCrNunAX/InXVyXmcg8Es0w=;
+ b=Z53Xm7B01q1Cs4VH7pxqLruMp3Awesh87A5CvceEpd+DKkf8us7hkIuWHOJPEbl8uLuKSEOTyiKg8VB+IeqzLVbMSb6MYvy8LV4fCO/lROKeLLDEiH1uBGR0UuXOaXRmY5D4zi62IJapfSBM6joZ1G//OUZK5/7/6K8q1J3QSHc=
+Received: from DM5PR15MB1883.namprd15.prod.outlook.com (10.174.247.135) by
+ DM5PR15MB1769.namprd15.prod.outlook.com (10.174.246.139) with Microsoft SMTP
+ Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.20.1361.16; Tue, 27 Nov 2018 19:59:42 +0000
+Received: from DM5PR15MB1883.namprd15.prod.outlook.com
+ ([fe80::f8d4:7c44:756a:6205]) by DM5PR15MB1883.namprd15.prod.outlook.com
+ ([fe80::f8d4:7c44:756a:6205%10]) with mapi id 15.20.1361.019; Tue, 27 Nov
+ 2018 19:59:42 +0000
+From:   Chris Mason <clm@fb.com>
+To:     Josef Bacik <josef@toxicpanda.com>
+CC:     Nikolay Borisov <nborisov@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Kernel Team <Kernel-team@fb.com>
+Subject: Re: [PATCH 2/3] btrfs: wakeup cleaner thread when adding delayed iput
+Thread-Topic: [PATCH 2/3] btrfs: wakeup cleaner thread when adding delayed
+ iput
+Thread-Index: AQHUgc3JQh2lcZKqK0e6arI+VYlyZ6VjUh2AgADAZYCAAAFWAA==
+Date:   Tue, 27 Nov 2018 19:59:42 +0000
+Message-ID: <13D3592A-3719-4F9E-8E8A-944FE88F30D4@fb.com>
+References: <20181121190922.25038-1-josef@toxicpanda.com>
+ <20181121190922.25038-3-josef@toxicpanda.com>
+ <4e8aad56-42e2-d666-c909-d5d058b799c9@suse.com>
+ <20181127195450.fjor2gewhp3hri56@macbook-pro-91.dhcp.thefacebook.com>
+In-Reply-To: <20181127195450.fjor2gewhp3hri56@macbook-pro-91.dhcp.thefacebook.com>
+Accept-Language: en-US
+Content-Language: en-US
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+x-mailer: MailMate (1.12.2r5568)
+x-clientproxiedby: BN6PR0101CA0022.prod.exchangelabs.com
+ (2603:10b6:405:2a::35) To DM5PR15MB1883.namprd15.prod.outlook.com
+ (2603:10b6:4:4f::7)
+x-ms-exchange-messagesentrepresentingtype: 1
+x-originating-ip: [2620:10d:c091:180::1:734e]
+x-ms-publictraffictype: Email
+x-microsoft-exchange-diagnostics: 1;DM5PR15MB1769;20:9vZKYM60OlmM1edmqO7frgGPRbBkNaomG2jbdGusM1X26zyylRX0keFCcnyN1HOzpjtgWemQM2ZU6C8OoglTdAQa3m6euTQV7sQRglfReFRCY56aHGySaoo3DEx4q62a3rBHFBeirTL1efxEoG+heJE2e+efe/pzXHY91Ztry9I=
+x-ms-office365-filtering-correlation-id: 775b9b93-b199-4097-6434-08d654a2defe
+x-microsoft-antispam: BCL:0;PCL:0;RULEID:(2390098)(7020095)(4652040)(8989299)(5600074)(711020)(4534185)(4627221)(201703031133081)(201702281549075)(8990200)(2017052603328)(7153060)(7193020);SRVR:DM5PR15MB1769;
+x-ms-traffictypediagnostic: DM5PR15MB1769:
+x-microsoft-antispam-prvs: <DM5PR15MB176912FC55BA94085AE5E3FAD3D00@DM5PR15MB1769.namprd15.prod.outlook.com>
+x-ms-exchange-senderadcheck: 1
+x-exchange-antispam-report-cfa-test: BCL:0;PCL:0;RULEID:(8211001083)(6040522)(2401047)(5005006)(8121501046)(823302103)(3002001)(10201501046)(3231443)(11241501185)(944501410)(52105112)(93006095)(93001095)(148016)(149066)(150057)(6041310)(201703131423095)(201702281528075)(20161123555045)(201703061421075)(201703061406153)(20161123558120)(20161123560045)(20161123564045)(20161123562045)(201708071742011)(7699051)(76991095);SRVR:DM5PR15MB1769;BCL:0;PCL:0;RULEID:;SRVR:DM5PR15MB1769;
+x-forefront-prvs: 086943A159
+x-forefront-antispam-report: SFV:NSPM;SFS:(10019020)(366004)(396003)(136003)(346002)(376002)(39860400002)(199004)(189003)(81166006)(99286004)(486006)(52116002)(2616005)(446003)(11346002)(36756003)(6512007)(97736004)(106356001)(46003)(256004)(53936002)(6246003)(8676002)(81156014)(71190400001)(83716004)(105586002)(50226002)(71200400001)(478600001)(476003)(6116002)(14454004)(8936002)(54906003)(5660300001)(53546011)(86362001)(4326008)(229853002)(25786009)(2906002)(6436002)(305945005)(102836004)(316002)(6506007)(386003)(6916009)(7736002)(33656002)(68736007)(76176011)(93886005)(6486002)(551934003)(186003)(82746002)(42262002);DIR:OUT;SFP:1102;SCL:1;SRVR:DM5PR15MB1769;H:DM5PR15MB1883.namprd15.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;A:1;MX:1;
+received-spf: None (protection.outlook.com: fb.com does not designate
+ permitted sender hosts)
+x-microsoft-antispam-message-info: B9/Ll0QrJxJzL5VIvPBLy2IqWivv357yONORW3nZ4xJDfUxL7Wd/0iv4j/4pqdR7D0S47F5BxFfjZIEwn2OHm+MWvPOWJDCf1Nt4+1psWJcwc8UMz84XFU8fGthwqoos58s86K0i1lPb9pAxv1zzap9JVvoCUYSDaqwsa2rLUQbxNED4nPwobQkRHwQICBW+9HWF6TDkOU9UmaWFTZ82w8ick8xj+IJOPW9JEfdfjyFsblXczX+ylqwGvKVwEgpuwiCe63XUEK2f1rx1AhD9lLTHd8os0BHxdh6ZbltnhWQz6pNo2u3TDkmyULPAwwz9nUsjF74W2z6UYG2sDM9kyCO4Qi+eot1go88ITT+ks9I=
+spamdiagnosticoutput: 1:99
+spamdiagnosticmetadata: NSPM
+Content-Type: text/plain; charset="utf-8"
+Content-ID: <5D708D4C2507F24A993D5D7F1D8D99D1@namprd15.prod.outlook.com>
+Content-Transfer-Encoding: base64
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAL3q7H4esyeG6uUvegUHdGy0k4Szv8-iw5dDAzUpwiBS_hd7hg@mail.gmail.com>
-User-Agent: NeoMutt/20180716
+X-MS-Exchange-CrossTenant-Network-Message-Id: 775b9b93-b199-4097-6434-08d654a2defe
+X-MS-Exchange-CrossTenant-originalarrivaltime: 27 Nov 2018 19:59:42.7309
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: 8ae927fe-1255-47a7-a2af-5f3a069daaa2
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: DM5PR15MB1769
+X-OriginatorOrg: fb.com
+X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10434:,, definitions=2018-11-27_16:,,
+ signatures=0
+X-Proofpoint-Spam-Reason: safe
+X-FB-Internal: Safe
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Nov 27, 2018 at 07:43:39PM +0000, Filipe Manana wrote:
-> On Tue, Nov 27, 2018 at 7:22 PM Josef Bacik <josef@toxicpanda.com> wrote:
-> >
-> > On Fri, Nov 23, 2018 at 04:59:32PM +0000, Filipe Manana wrote:
-> > > On Thu, Nov 22, 2018 at 12:35 AM Josef Bacik <josef@toxicpanda.com> wrote:
-> > > >
-> > > > I noticed in a giant dbench run that we spent a lot of time on lock
-> > > > contention while running transaction commit.  This is because dbench
-> > > > results in a lot of fsync()'s that do a btrfs_transaction_commit(), and
-> > > > they all run the delayed refs first thing, so they all contend with
-> > > > each other.  This leads to seconds of 0 throughput.  Change this to only
-> > > > run the delayed refs if we're the ones committing the transaction.  This
-> > > > makes the latency go away and we get no more lock contention.
-> > >
-> > > Can you share the following in the changelog please?
-> > >
-> > > 1) How did you ran dbench (parameters, config).
-> > >
-> > > 2) What results did you get before and after this change. So that we all get
-> > >     an idea of how good the impact is.
-> > >
-> > > While the reduced contention makes all sense and seems valid, I'm not
-> > > sure this is always a win.
-> > > It certainly is when multiple tasks are calling
-> > > btrfs_commit_transaction() simultaneously, but,
-> > > what about when only one does it?
-> > >
-> > > By running all delayed references inside the critical section of the
-> > > transaction commit
-> > > (state == TRANS_STATE_COMMIT_START), instead of running most of them
-> > > outside/before,
-> > > we will be blocking for a longer a time other tasks calling
-> > > btrfs_start_transaction() (which is used
-> > > a lot - creating files, unlinking files, adding links, etc, and even fsync).
-> > >
-> > > Won't there by any other types of workload and tests other then dbench
-> > > that can get increased
-> > > latency and/or smaller throughput?
-> > >
-> > > I find that sort of information useful to have in the changelog. If
-> > > you verified that or you think
-> > > it's irrelevant to measure/consider, it would be great to have it
-> > > mentioned in the changelog
-> > > (and explained).
-> > >
-> >
-> > Yeah I thought about the delayed refs being run in the critical section now,
-> > that's not awesome.  I'll drop this for now, I think just having a mutex around
-> > running delayed refs will be good enough, since we want people who care about
-> > flushing delayed refs to wait around for that to finish happening.  Thanks,
-> 
-> Well, I think we can have a solution that doesn't bring such trade-off
-> nor introducing a mutex.
-> We could do like what is currently done for writing space caches, to
-> make sure only the first task
-> calling commit transaction does the work and all others do nothing
-> except waiting for the commit to finish:
-> 
-> btrfs_commit_transaction()
->    if (!test_and_set_bit(BTRFS_TRANS_COMMIT_START, &cur_trans->flags)) {
->        run delayed refs before entering critical section
->    }
-> 
-
-That was my first inclination but then one of the other committers goes past
-this and gets into the start TRANS_STATE_COMMIT_START place and has to wait for
-the guy running the delayed refs to finish before moving forward, essentially
-extending the time in the critical section for the same reason.  The mutex means
-that if 9000 people try to commit the transaction, 1 guy gets to run the delayed
-refs and everybody else waits for him to finish, and in the meantime the
-critical section is small.  Thanks,
-
-Josef
+T24gMjcgTm92IDIwMTgsIGF0IDE0OjU0LCBKb3NlZiBCYWNpayB3cm90ZToNCg0KPiBPbiBUdWUs
+IE5vdiAyNywgMjAxOCBhdCAxMDoyNjoxNUFNICswMjAwLCBOaWtvbGF5IEJvcmlzb3Ygd3JvdGU6
+DQo+Pg0KPj4NCj4+IE9uIDIxLjExLjE4INCzLiAyMTowOSDRhy4sIEpvc2VmIEJhY2lrIHdyb3Rl
+Og0KPj4+IFRoZSBjbGVhbmVyIHRocmVhZCB1c3VhbGx5IHRha2VzIGNhcmUgb2YgZGVsYXllZCBp
+cHV0cywgd2l0aCB0aGUNCj4+PiBleGNlcHRpb24gb2YgdGhlIGJ0cmZzX2VuZF90cmFuc2FjdGlv
+bl90aHJvdHRsZSBwYXRoLiAgVGhlIGNsZWFuZXINCj4+PiB0aHJlYWQgb25seSBnZXRzIHdva2Vu
+IHVwIGV2ZXJ5IDMwIHNlY29uZHMsIHNvIGluc3RlYWQgd2FrZSBpdCB1cCB0byANCj4+PiBkbw0K
+Pj4+IGl0J3Mgd29yayBzbyB0aGF0IHdlIGNhbiBmcmVlIHVwIHRoYXQgc3BhY2UgYXMgcXVpY2ts
+eSBhcyBwb3NzaWJsZS4NCj4+DQo+PiBIYXZlIHlvdSBkb25lIGFueSBtZWFzdXJlbWVudHMgaG93
+IHRoaXMgYWZmZWN0cyB0aGUgb3ZlcmFsbCBzeXN0ZW0uIEkNCj4+IHN1c3BlY3QgdGhpcyBpbnRy
+b2R1Y2VzIGEgbG90IG9mIG5vaXNlIHNpbmNlIG5vdyB3ZSBhcmUgZ29pbmcgdG8gYmUNCj4+IGRv
+aW5nIGEgdGhyZWFkIHdha2V1cCBvbiBldmVyeSBpcHV0LCBkb2VzIHRoaXMgZ2l2ZSBhIGNoYW5j
+ZSB0byBoYXZlDQo+PiBuaWNlLCBsYXJnZSBiYXRjaGVzIG9mIGlwdXRzIHRoYXQgIHRoZSBjb3N0
+IG9mIHdha2UgdXAgY2FuIGJlIA0KPj4gYW1vcnRpemVkDQo+PiBhY3Jvc3M/DQo+DQo+IEkgcmFu
+IHRoZSB3aG9sZSBwYXRjaHNldCB3aXRoIG91ciBBL0IgdGVzdGluZyBzdHVmZiBhbmQgdGhlIHBh
+dGNoc2V0IA0KPiB3YXMgYSA1JQ0KPiB3aW4gb3ZlcmFsbCwgc28gSSdtIGluY2xpbmVkIHRvIHRo
+aW5rIGl0J3MgZmluZS4gIFRoYW5rcywNCg0KSXQncyBhIGdvb2QgcG9pbnQgdGhvdWdoLCBhIGRl
+bGF5ZWQgd2FrZXVwIG1heSBiZSBsZXNzIG92ZXJoZWFkLg0KDQotY2hyaXMNCg==

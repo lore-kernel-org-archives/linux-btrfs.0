@@ -2,152 +2,158 @@ Return-Path: <SRS0=/x7k=OG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CFF1CC43441
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 19:32:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7DC4EC43441
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 19:43:54 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9D03120645
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 19:32:09 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9D03120645
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 1628820873
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 19:43:54 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="hEPOqNRm"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1628820873
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726068AbeK1GbD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Nov 2018 01:31:03 -0500
-Received: from mx2.suse.de ([195.135.220.15]:60630 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725752AbeK1GbD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Nov 2018 01:31:03 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 3B002B024;
-        Tue, 27 Nov 2018 19:32:06 +0000 (UTC)
-Subject: Re: [PATCH 3/3] btrfs: document extent mapping assumptions in
- checksum
-To:     Noah Massey <noah.massey@gmail.com>
-Cc:     jthumshirn@suse.de, David Sterba <dsterba@suse.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <20181127160010.18123-1-jthumshirn@suse.de>
- <20181127160010.18123-4-jthumshirn@suse.de>
- <9cc979bd-167f-fd92-1308-ebb1ca85bc99@suse.com>
- <CADfjVrgC+hd1c_FO_oT5os9H4nacdtq9+a3gXqRmw00sMTmGjQ@mail.gmail.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <6f819719-5b63-c66c-b139-bd415bcca1d2@suse.com>
-Date:   Tue, 27 Nov 2018 21:32:05 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+        id S1726038AbeK1Gmu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Nov 2018 01:42:50 -0500
+Received: from mail-ua1-f66.google.com ([209.85.222.66]:46894 "EHLO
+        mail-ua1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725764AbeK1Gmu (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Nov 2018 01:42:50 -0500
+Received: by mail-ua1-f66.google.com with SMTP id v24so8026055uap.13
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Nov 2018 11:43:51 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
+         :subject:to:cc:content-transfer-encoding;
+        bh=UwXHKQSjOnwWkDA01PqioDlwGOo13JMcfPOjeyzb/hc=;
+        b=hEPOqNRmC2eSW1lWpZ612RjXV2NejHi2ImutsG9jquX8F8VeaTqgNh42HWRpSQlt5g
+         dzunACkpO77/Tc069JIIyE43Hx0BHTsuP36lEdv7TA2oYPYi6pQkSSCZFgwDR1lqharW
+         zBpgBt9Mlg4YMwmDwbn17TY8/o+rhghE/g8CwkkM71cK35AwReZcFyd1dJjv1a1veC9x
+         bL5+vMWKweOH8kBNQ9XJn8AGwIE6+2L9C/71mBSID6Oj3m0VkVBKm6zcSgQ5mOJBbYbT
+         pSeH/pzdacu0uYMP8Kh2dme7qXDRK3BITRxvu5H+IVCXb5h06h4g4IGWfT44y5Zk9Vs0
+         p4Zw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
+         :from:date:message-id:subject:to:cc:content-transfer-encoding;
+        bh=UwXHKQSjOnwWkDA01PqioDlwGOo13JMcfPOjeyzb/hc=;
+        b=suIVmbYMMmx6zrh0ZTt0ctgn/k4nNiY146zq7glUhtbIfppR/Ngrb4ZwNcb281uYJu
+         k+S9jv1stEU71gGAtx+Honi11lRf7OV8dUcNYBYcaEnzWP7KcBg5gp1CaBGCY2VxKQlS
+         u9aern9GrKwEEsCwyH7GVdADBlqXy/AD2Yz4eZQ6DyETvJAy6+XymqRN/c2ELas8M+jf
+         FQaNQSmxHGdE1F8lrxUPhAgNY7udZHLpoGJfx7HyCcaDHrBrOXEoaoiiYWaHFXKViWfu
+         FYjFk7ntVUHN1BTfqzOR3vYXgippGmySTA8Fz+jN0CCziktYsPYckLVbLdxwHD/ZXtUY
+         sGmQ==
+X-Gm-Message-State: AA+aEWYwlRojeWEsyf7kOE2Fek8fDPYcSyBHSx1m/TtZnNxVTU1Yg5VY
+        HWdahvW0h1Jq48dtPpQAGlZqE9Jnd2k9pD/5XPI=
+X-Google-Smtp-Source: AFSGD/VL2n4arQMTodK/fK4FHS6S0mZ4qUzlEOGF6YpuWL0p0OUOHtxx/FgractKdDo32Oy9d0ZiNH0fZuJDnrZCoCg=
+X-Received: by 2002:ab0:590a:: with SMTP id n10mr14175470uad.137.1543347831189;
+ Tue, 27 Nov 2018 11:43:51 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CADfjVrgC+hd1c_FO_oT5os9H4nacdtq9+a3gXqRmw00sMTmGjQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+References: <20181121191016.25224-1-josef@toxicpanda.com> <CAL3q7H45FX3VO0h_9u5-M38ObiWaZPgyXezUDT-4rJvx7BUkhw@mail.gmail.com>
+ <20181127192224.zozqhtpcuv5j2qcm@macbook-pro-91.dhcp.thefacebook.com>
+In-Reply-To: <20181127192224.zozqhtpcuv5j2qcm@macbook-pro-91.dhcp.thefacebook.com>
+Reply-To: fdmanana@gmail.com
+From:   Filipe Manana <fdmanana@gmail.com>
+Date:   Tue, 27 Nov 2018 19:43:39 +0000
+Message-ID: <CAL3q7H4esyeG6uUvegUHdGy0k4Szv8-iw5dDAzUpwiBS_hd7hg@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: only run delayed refs if we're committing
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     kernel-team@fb.com, linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Tue, Nov 27, 2018 at 7:22 PM Josef Bacik <josef@toxicpanda.com> wrote:
+>
+> On Fri, Nov 23, 2018 at 04:59:32PM +0000, Filipe Manana wrote:
+> > On Thu, Nov 22, 2018 at 12:35 AM Josef Bacik <josef@toxicpanda.com> wro=
+te:
+> > >
+> > > I noticed in a giant dbench run that we spent a lot of time on lock
+> > > contention while running transaction commit.  This is because dbench
+> > > results in a lot of fsync()'s that do a btrfs_transaction_commit(), a=
+nd
+> > > they all run the delayed refs first thing, so they all contend with
+> > > each other.  This leads to seconds of 0 throughput.  Change this to o=
+nly
+> > > run the delayed refs if we're the ones committing the transaction.  T=
+his
+> > > makes the latency go away and we get no more lock contention.
+> >
+> > Can you share the following in the changelog please?
+> >
+> > 1) How did you ran dbench (parameters, config).
+> >
+> > 2) What results did you get before and after this change. So that we al=
+l get
+> >     an idea of how good the impact is.
+> >
+> > While the reduced contention makes all sense and seems valid, I'm not
+> > sure this is always a win.
+> > It certainly is when multiple tasks are calling
+> > btrfs_commit_transaction() simultaneously, but,
+> > what about when only one does it?
+> >
+> > By running all delayed references inside the critical section of the
+> > transaction commit
+> > (state =3D=3D TRANS_STATE_COMMIT_START), instead of running most of the=
+m
+> > outside/before,
+> > we will be blocking for a longer a time other tasks calling
+> > btrfs_start_transaction() (which is used
+> > a lot - creating files, unlinking files, adding links, etc, and even fs=
+ync).
+> >
+> > Won't there by any other types of workload and tests other then dbench
+> > that can get increased
+> > latency and/or smaller throughput?
+> >
+> > I find that sort of information useful to have in the changelog. If
+> > you verified that or you think
+> > it's irrelevant to measure/consider, it would be great to have it
+> > mentioned in the changelog
+> > (and explained).
+> >
+>
+> Yeah I thought about the delayed refs being run in the critical section n=
+ow,
+> that's not awesome.  I'll drop this for now, I think just having a mutex =
+around
+> running delayed refs will be good enough, since we want people who care a=
+bout
+> flushing delayed refs to wait around for that to finish happening.  Thank=
+s,
+
+Well, I think we can have a solution that doesn't bring such trade-off
+nor introducing a mutex.
+We could do like what is currently done for writing space caches, to
+make sure only the first task
+calling commit transaction does the work and all others do nothing
+except waiting for the commit to finish:
+
+btrfs_commit_transaction()
+   if (!test_and_set_bit(BTRFS_TRANS_COMMIT_START, &cur_trans->flags)) {
+       run delayed refs before entering critical section
+   }
+
+thanks
+
+>
+> Josef
 
 
-On 27.11.18 г. 21:08 ч., Noah Massey wrote:
-> On Tue, Nov 27, 2018 at 11:43 AM Nikolay Borisov <nborisov@suse.com> wrote:
->>
->> On 27.11.18 г. 18:00 ч., Johannes Thumshirn wrote:
->>> Document why map_private_extent_buffer() cannot return '1' (i.e. the map
->>> spans two pages) for the csum_tree_block() case.
->>>
->>> The current algorithm for detecting a page boundary crossing in
->>> map_private_extent_buffer() will return a '1' *IFF* the product of the
->>
->> I think the word product must be replaced with 'sum', since product
->> implies multiplication :)
->>
-> 
-> doesn't 'sum' imply addition? How about 'output'?
 
-It does and the code indeed sums the value and not multiply them hence
-my suggestion.
+--=20
+Filipe David Manana,
 
-> 
->>> extent buffer's offset in the page + the offset passed in by
->>> csum_tree_block() and the minimal length passed in by csum_tree_block() - 1
->>> are bigger than PAGE_SIZE.
->>>
->>> We always pass BTRFS_CSUM_SIZE (32) as offset and a minimal length of 32
->>> and the current extent buffer allocator always guarantees page aligned
->>> extends, so the above condition can't be true.
->>>
->>> Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
->>
->> With that wording changed:
->>
->> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
->>
->>> ---
->>>  fs/btrfs/disk-io.c | 6 ++++++
->>>  1 file changed, 6 insertions(+)
->>>
->>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->>> index 4bc270ef29b4..14d355d0cb7a 100644
->>> --- a/fs/btrfs/disk-io.c
->>> +++ b/fs/btrfs/disk-io.c
->>> @@ -279,6 +279,12 @@ static int csum_tree_block(struct btrfs_fs_info *fs_info,
->>>
->>>       len = buf->len - offset;
->>>       while (len > 0) {
->>> +             /*
->>> +              * Note: we don't need to check for the err == 1 case here, as
->>> +              * with the given combination of 'start = BTRFS_CSUM_SIZE (32)'
->>> +              * and 'min_len = 32' and the currently implemented mapping
->>> +              * algorithm we cannot cross a page boundary.
->>> +              */
->>>               err = map_private_extent_buffer(buf, offset, 32,
->>>                                       &kaddr, &map_start, &map_len);
->>>               if (err)
->>>
-> 
+=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
+ right.=E2=80=9D

@@ -3,33 +3,33 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 14F1EC43441
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 08:38:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AB5BBC43441
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 08:38:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DB23C2086B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 08:38:39 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org DB23C2086B
+	by mail.kernel.org (Postfix) with ESMTP id 7A85A2086B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 08:38:41 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7A85A2086B
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729572AbeK0Tfq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 27 Nov 2018 14:35:46 -0500
-Received: from mx2.suse.de ([195.135.220.15]:38502 "EHLO mx1.suse.de"
+        id S1729576AbeK0Tfs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 27 Nov 2018 14:35:48 -0500
+Received: from mx2.suse.de ([195.135.220.15]:38510 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729566AbeK0Tfq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Nov 2018 14:35:46 -0500
+        id S1728823AbeK0Tfr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Nov 2018 14:35:47 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 530F1ADED
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Nov 2018 08:38:36 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 3B25EAC15
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Nov 2018 08:38:38 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 3/5] btrfs-progs: volumes: Refactor btrfs_alloc_dev_extent() into two functions
-Date:   Tue, 27 Nov 2018 16:38:26 +0800
-Message-Id: <20181127083828.23861-4-wqu@suse.com>
+Subject: [PATCH v2 4/5] btrfs-progs: image: Remove all existing dev extents for later rebuild
+Date:   Tue, 27 Nov 2018 16:38:27 +0800
+Message-Id: <20181127083828.23861-5-wqu@suse.com>
 X-Mailer: git-send-email 2.19.2
 In-Reply-To: <20181127083828.23861-1-wqu@suse.com>
 References: <20181127083828.23861-1-wqu@suse.com>
@@ -40,131 +40,175 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We have btrfs_alloc_dev_extent() accepting @convert flag to toggle
-special handling for convert.
+For multi-disk btrfs image recovered to single disk, the dev tree would
+look like:
+        item 2 key (1 DEV_EXTENT 22020096)
+                dev extent chunk_tree 3
+                chunk_objectid 256 chunk_offset 22020096 length 8388608
+        item 3 key (1 DEV_EXTENT 30408704)
+                dev extent chunk_tree 3
+                chunk_objectid 256 chunk_offset 30408704 length 1073741824
+        item 4 key (1 DEV_EXTENT 1104150528)
+                dev extent chunk_tree 3
+                chunk_objectid 256 chunk_offset 1104150528 length 536870912
+        item 5 key (2 DEV_EXTENT 1048576)
+                dev extent chunk_tree 3
+                chunk_objectid 256 chunk_offset 22020096 length 8388608
+        item 6 key (2 DEV_EXTENT 9437184)
+                dev extent chunk_tree 3
+                chunk_objectid 256 chunk_offset 30408704 length 1073741824
+        item 7 key (2 DEV_EXTENT 1083179008)
+                dev extent chunk_tree 3
+                chunk_objectid 256 chunk_offset 1104150528 length 536870912
 
-However that @convert flag only determine whether we call
-find_free_dev_extent(), and we may later need to insert dev extents
-without searching dev tree.
+However in chunk tree, we only use devid 2, thus devid 1 is completely
+garbage:
+        item 0 key (DEV_ITEMS DEV_ITEM 2)
+        item 1 key (FIRST_CHUNK_TREE CHUNK_ITEM 22020096) itemoff 16105 itemsize 80
+                length 8388608 owner 2 stripe_len 65536 type SYSTEM
+                num_stripes 1 sub_stripes 0
+                        stripe 0 devid 2 offset 1048576
+        item 2 key (FIRST_CHUNK_TREE CHUNK_ITEM 30408704) itemoff 16025 itemsize 80
+                length 1073741824 owner 2 stripe_len 65536 type METADATA
+                num_stripes 1 sub_stripes 0
+                        stripe 0 devid 2 offset 9437184
+        item 3 key (FIRST_CHUNK_TREE CHUNK_ITEM 1104150528) itemoff 15945 itemsize 80
+                length 1073741824 owner 2 stripe_len 65536 type DATA
+                num_stripes 1 sub_stripes 0
+                        stripe 0 devid 2 offset 1083179008
 
-So refactor btrfs_alloc_dev_extent() into 2 functions,
-btrfs_alloc_dev_extent(), which will try to find free dev extent, and
-btrfs_insert_dev_extent(), which will just insert a dev extent.
+To fix the problem, the most straight-forward way is to remove all
+existing dev extents, and then re-fill correct dev extents from chunk.
 
-For implementation, btrfs_alloc_dev_extent() will call
-btrfs_insert_dev_extent() anyway, so no duplicated code.
-
-This removes the need of @convert parameter, and make
-btrfs_insert_dev_extent() public for later usage.
+So this patch just follow the straight-forward way to fix it, causing
+the final dev extents layout to match with chunk tree, and make btrfs
+check happy.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- volumes.c | 48 ++++++++++++++++++++++++++++++------------------
- volumes.h |  3 +++
- 2 files changed, 33 insertions(+), 18 deletions(-)
+ image/main.c | 102 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 102 insertions(+)
 
-diff --git a/volumes.c b/volumes.c
-index 30090ce5f8e8..0dd082cd1718 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -530,10 +530,12 @@ static int find_free_dev_extent(struct btrfs_device *device, u64 num_bytes,
- 	return find_free_dev_extent_start(device, num_bytes, 0, start, len);
+diff --git a/image/main.c b/image/main.c
+index 9187de34f34a..8f756689a1fa 100644
+--- a/image/main.c
++++ b/image/main.c
+@@ -2209,6 +2209,104 @@ static void fixup_block_groups(struct btrfs_fs_info *fs_info)
+ 	}
  }
  
--static int btrfs_alloc_dev_extent(struct btrfs_trans_handle *trans,
--				  struct btrfs_device *device,
--				  u64 chunk_offset, u64 num_bytes, u64 *start,
--				  int convert)
-+/*
-+ * Insert one device extent into the fs.
-+ */
-+int btrfs_insert_dev_extent(struct btrfs_trans_handle *trans,
-+			    struct btrfs_device *device,
-+			    u64 chunk_offset, u64 num_bytes, u64 start)
- {
- 	int ret;
- 	struct btrfs_path *path;
-@@ -546,18 +548,8 @@ static int btrfs_alloc_dev_extent(struct btrfs_trans_handle *trans,
- 	if (!path)
- 		return -ENOMEM;
- 
--	/*
--	 * For convert case, just skip search free dev_extent, as caller
--	 * is responsible to make sure it's free.
--	 */
--	if (!convert) {
--		ret = find_free_dev_extent(device, num_bytes, start, NULL);
--		if (ret)
--			goto err;
--	}
--
- 	key.objectid = device->devid;
--	key.offset = *start;
-+	key.offset = start;
- 	key.type = BTRFS_DEV_EXTENT_KEY;
- 	ret = btrfs_insert_empty_item(trans, root, path, &key,
- 				      sizeof(*extent));
-@@ -583,6 +575,22 @@ err:
- 	return ret;
- }
- 
-+/*
-+ * Allocate one free dev extent and insert it into the fs.
-+ */
-+static int btrfs_alloc_dev_extent(struct btrfs_trans_handle *trans,
-+				  struct btrfs_device *device,
-+				  u64 chunk_offset, u64 num_bytes, u64 *start)
++static int remove_all_dev_extents(struct btrfs_trans_handle *trans)
 +{
++	struct btrfs_fs_info *fs_info = trans->fs_info;
++	struct btrfs_root *root = fs_info->dev_root;
++	struct btrfs_path path;
++	struct btrfs_key key;
++	struct extent_buffer *leaf;
++	int slot;
 +	int ret;
 +
-+	ret = find_free_dev_extent(device, num_bytes, start, NULL);
-+	if (ret)
++	key.objectid = 1;
++	key.type = BTRFS_DEV_EXTENT_KEY;
++	key.offset = 0;
++	btrfs_init_path(&path);
++
++	ret = btrfs_search_slot(trans, root, &key, &path, -1, 1);
++	if (ret < 0) {
++		error("failed to search dev tree: %s", strerror(-ret));
 +		return ret;
-+	return btrfs_insert_dev_extent(trans, device, chunk_offset, num_bytes,
-+					*start);
++	}
++
++	while (1) {
++		slot = path.slots[0];
++		leaf = path.nodes[0];
++		if (slot >= btrfs_header_nritems(leaf)) {
++			ret = btrfs_next_leaf(root, &path);
++			if (ret < 0) {
++				error("failed to search dev tree: %s",
++					strerror(-ret));
++				goto out;
++			}
++			if (ret > 0) {
++				ret = 0;
++				goto out;
++			}
++		}
++
++		btrfs_item_key_to_cpu(leaf, &key, slot);
++		if (key.type != BTRFS_DEV_EXTENT_KEY)
++			break;
++		ret = btrfs_del_item(trans, root, &path);
++		if (ret < 0) {
++			error("failed to delete dev extent %llu, %llu: %s",
++				key.objectid, key.offset, strerror(-ret));
++			goto out;
++		}
++	}
++out:
++	btrfs_release_path(&path);
++	return ret;
 +}
 +
- static int find_next_chunk(struct btrfs_fs_info *fs_info, u64 *offset)
++static int fixup_dev_extents(struct btrfs_trans_handle *trans)
++{
++	struct btrfs_fs_info *fs_info = trans->fs_info;
++	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
++	struct btrfs_device *dev;
++	struct cache_extent *ce;
++	struct map_lookup *map;
++	u64 devid = btrfs_stack_device_id(&fs_info->super_copy->dev_item);
++	int i;
++	int ret;
++
++	ret = remove_all_dev_extents(trans);
++	if (ret < 0)
++		error("failed to remove all existing dev extents: %s",
++			strerror(-ret));
++
++	dev = btrfs_find_device(fs_info, devid, NULL, NULL);
++	if (!dev) {
++		error("faild to find devid %llu", devid);
++		return -ENODEV;
++	}
++
++	/* Rebuild all dev extents using chunk maps */
++	for (ce = search_cache_extent(&map_tree->cache_tree, 0); ce;
++	     ce = next_cache_extent(ce)) {
++		u64 stripe_len;
++
++		map = container_of(ce, struct map_lookup, ce);
++		stripe_len = calc_stripe_length(map->type, ce->size,
++						map->num_stripes);
++		for (i = 0; i < map->num_stripes; i++) {
++			ret = btrfs_insert_dev_extent(trans, dev, ce->start,
++					stripe_len, map->stripes[i].physical);
++			if (ret < 0) {
++				error(
++				"failed to insert dev extent %llu %llu: %s",
++					devid, map->stripes[i].physical,
++					strerror(-ret));
++				goto out;
++			}
++		}
++	}
++out:
++	return ret;
++}
++
+ static int fixup_chunks_and_devices(struct btrfs_fs_info *fs_info,
+ 			 struct mdrestore_struct *mdres, off_t dev_size)
  {
- 	struct btrfs_root *root = fs_info->chunk_root;
-@@ -1107,7 +1115,7 @@ again:
- 			list_move_tail(&device->dev_list, dev_list);
+@@ -2226,6 +2324,10 @@ static int fixup_chunks_and_devices(struct btrfs_fs_info *fs_info,
+ 	}
  
- 		ret = btrfs_alloc_dev_extent(trans, device, key.offset,
--			     calc_size, &dev_offset, 0);
-+			     calc_size, &dev_offset);
- 		if (ret < 0)
- 			goto out_chunk_map;
- 
-@@ -1241,8 +1249,12 @@ int btrfs_alloc_data_chunk(struct btrfs_trans_handle *trans,
- 	while (index < num_stripes) {
- 		struct btrfs_stripe *stripe;
- 
--		ret = btrfs_alloc_dev_extent(trans, device, key.offset,
--			     calc_size, &dev_offset, convert);
-+		if (convert)
-+			ret = btrfs_insert_dev_extent(trans, device, key.offset,
-+					calc_size, dev_offset);
-+		else
-+			ret = btrfs_alloc_dev_extent(trans, device, key.offset,
-+					calc_size, &dev_offset);
- 		BUG_ON(ret);
- 
- 		device->bytes_used += calc_size;
-diff --git a/volumes.h b/volumes.h
-index b4ea93f0bec3..44284ee75adb 100644
---- a/volumes.h
-+++ b/volumes.h
-@@ -268,6 +268,9 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
- 		       int flags);
- int btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
- void btrfs_close_all_devices(void);
-+int btrfs_insert_dev_extent(struct btrfs_trans_handle *trans,
-+			    struct btrfs_device *device,
-+			    u64 chunk_offset, u64 num_bytes, u64 start);
- int btrfs_add_device(struct btrfs_trans_handle *trans,
- 		     struct btrfs_fs_info *fs_info,
- 		     struct btrfs_device *device);
+ 	fixup_block_groups(fs_info);
++	ret = fixup_dev_extents(trans);
++	if (ret < 0)
++		goto error;
++
+ 	ret = fixup_device_size(trans, mdres, dev_size);
+ 	if (ret < 0)
+ 		goto error;
 -- 
 2.19.2
 

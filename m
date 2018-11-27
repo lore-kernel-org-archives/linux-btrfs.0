@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 74B39C43441
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 08:46:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 94338C43441
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 08:47:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3C2C22086B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 08:46:46 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3C2C22086B
+	by mail.kernel.org (Postfix) with ESMTP id 649912086B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 08:47:55 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 649912086B
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729674AbeK0Tnx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 27 Nov 2018 14:43:53 -0500
-Received: from mx2.suse.de ([195.135.220.15]:39820 "EHLO mx1.suse.de"
+        id S1729572AbeK0TpD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 27 Nov 2018 14:45:03 -0500
+Received: from mx2.suse.de ([195.135.220.15]:39948 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728882AbeK0Tnx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Nov 2018 14:43:53 -0500
+        id S1729539AbeK0TpD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Nov 2018 14:45:03 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 14C6EAE39
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Nov 2018 08:46:42 +0000 (UTC)
-Subject: Re: [PATCH v2 1/5] btrfs-progs: image: Refactor fixup_devices() to
- fixup_chunks_and_devices()
+        by mx1.suse.de (Postfix) with ESMTP id EED62AE39
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Nov 2018 08:47:51 +0000 (UTC)
+Subject: Re: [PATCH v2 5/5] btrfs-progs: misc-tests/021: Do extra btrfs check
+ before mounting
 To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20181127083828.23861-1-wqu@suse.com>
- <20181127083828.23861-2-wqu@suse.com>
+ <20181127083828.23861-6-wqu@suse.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -74,12 +74,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <e40b8c45-2c16-35c0-c583-ca33c1500b97@suse.com>
-Date:   Tue, 27 Nov 2018 10:46:40 +0200
+Message-ID: <f94c8cfc-2262-77d1-5faa-5f5256cc3e02@suse.com>
+Date:   Tue, 27 Nov 2018 10:47:51 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181127083828.23861-2-wqu@suse.com>
+In-Reply-To: <20181127083828.23861-6-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -91,121 +91,37 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 27.11.18 г. 10:38 ч., Qu Wenruo wrote:
-> Current fixup_devices() will only remove DEV_ITEMs and reset DEV_ITEM
-> size.
-> Later we need to do more fixup works, so change the name to
-> fixup_chunks_and_devices() and refactor the original device size fixup
-> to fixup_device_size().
+> Test case misc/021 is testing if we could mount a single disk btrfs
+> image recovered from multi disk fs.
+> 
+> The problem is, current kernel has extra check for block group, chunk
+> and dev extent.
+> This means any image can't pass btrfs check for chunk tree will not
+> mount.
+> 
+> So do extra btrfs check before mount, this will also help us to locate
+> the problem in btrfs-image easier.
 > 
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
 
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
-However, one minor nit below.
-
 > ---
->  image/main.c | 52 ++++++++++++++++++++++++++++++++++++----------------
->  1 file changed, 36 insertions(+), 16 deletions(-)
+>  tests/misc-tests/021-image-multi-devices/test.sh | 3 +++
+>  1 file changed, 3 insertions(+)
 > 
-> diff --git a/image/main.c b/image/main.c
-> index c680ab19de6c..bbfcf8f19298 100644
-> --- a/image/main.c
-> +++ b/image/main.c
-> @@ -2084,28 +2084,19 @@ static void remap_overlapping_chunks(struct mdrestore_struct *mdres)
->  	}
->  }
+> diff --git a/tests/misc-tests/021-image-multi-devices/test.sh b/tests/misc-tests/021-image-multi-devices/test.sh
+> index 5430847f4e2f..26beae6e4b85 100755
+> --- a/tests/misc-tests/021-image-multi-devices/test.sh
+> +++ b/tests/misc-tests/021-image-multi-devices/test.sh
+> @@ -37,6 +37,9 @@ run_check $SUDO_HELPER wipefs -a "$loop2"
 >  
-> -static int fixup_devices(struct btrfs_fs_info *fs_info,
-> -			 struct mdrestore_struct *mdres, off_t dev_size)
-> +static int fixup_device_size(struct btrfs_trans_handle *trans,
-> +			     struct mdrestore_struct *mdres,
-> +			     off_t dev_size)
->  {
-> -	struct btrfs_trans_handle *trans;
-> +	struct btrfs_fs_info *fs_info = trans->fs_info;
->  	struct btrfs_dev_item *dev_item;
->  	struct btrfs_path path;
-> -	struct extent_buffer *leaf;
->  	struct btrfs_root *root = fs_info->chunk_root;
->  	struct btrfs_key key;
-> +	struct extent_buffer *leaf;
-
-nit: Unnecessary change
-
->  	u64 devid, cur_devid;
->  	int ret;
+>  run_check $SUDO_HELPER "$TOP/btrfs-image" -r "$IMAGE" "$loop1"
 >  
-> -	if (btrfs_super_log_root(fs_info->super_copy)) {
-> -		warning(
-> -		"log tree detected, its generation will not match superblock");
-> -	}
-> -	trans = btrfs_start_transaction(fs_info->tree_root, 1);
-> -	if (IS_ERR(trans)) {
-> -		error("cannot starting transaction %ld", PTR_ERR(trans));
-> -		return PTR_ERR(trans);
-> -	}
-> -
->  	dev_item = &fs_info->super_copy->dev_item;
->  
->  	devid = btrfs_stack_device_id(dev_item);
-> @@ -2123,7 +2114,7 @@ again:
->  	ret = btrfs_search_slot(trans, root, &key, &path, -1, 1);
->  	if (ret < 0) {
->  		error("search failed: %d", ret);
-> -		exit(1);
-> +		return ret;
->  	}
->  
->  	while (1) {
-> @@ -2170,12 +2161,41 @@ again:
->  	}
->  
->  	btrfs_release_path(&path);
-> +	return 0;
-> +}
+> +# Run check to make sure there is nothing wrong for the recovered image
+> +run_check "$TOP/btrfs" check "$loop1"
 > +
-> +static int fixup_chunks_and_devices(struct btrfs_fs_info *fs_info,
-> +			 struct mdrestore_struct *mdres, off_t dev_size)
-> +{
-> +	struct btrfs_trans_handle *trans;
-> +	int ret;
-> +
-> +	if (btrfs_super_log_root(fs_info->super_copy)) {
-> +		warning(
-> +		"log tree detected, its generation will not match superblock");
-> +	}
-> +	trans = btrfs_start_transaction(fs_info->tree_root, 1);
-> +	if (IS_ERR(trans)) {
-> +		error("cannot starting transaction %ld", PTR_ERR(trans));
-> +		return PTR_ERR(trans);
-> +	}
-> +
-> +	ret = fixup_device_size(trans, mdres, dev_size);
-> +	if (ret < 0)
-> +		goto error;
-> +
->  	ret = btrfs_commit_transaction(trans, fs_info->tree_root);
->  	if (ret) {
->  		error("unable to commit transaction: %d", ret);
->  		return ret;
->  	}
->  	return 0;
-> +error:
-> +	error(
-> +"failed to fix chunks and devices mapping, the fs may not be mountable: %s",
-> +		strerror(-ret));
-> +	btrfs_abort_transaction(trans, ret);
-> +	return ret;
->  }
->  
->  static int restore_metadump(const char *input, FILE *out, int old_restore,
-> @@ -2282,7 +2302,7 @@ static int restore_metadump(const char *input, FILE *out, int old_restore,
->  			return 1;
->  		}
->  
-> -		ret = fixup_devices(info, &mdrestore, st.st_size);
-> +		ret = fixup_chunks_and_devices(info, &mdrestore, st.st_size);
->  		close_ctree(info->chunk_root);
->  		if (ret)
->  			goto out;
+>  run_check $SUDO_HELPER mount "$loop1" "$TEST_MNT"
+>  new_md5=$(run_check_stdout md5sum "$TEST_MNT/foobar" | cut -d ' ' -f 1)
+>  run_check $SUDO_HELPER umount "$TEST_MNT"
 > 

@@ -2,61 +2,71 @@ Return-Path: <SRS0=/x7k=OG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_NEOMUTT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AEC97C43441
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 09:48:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 973EFC43441
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 13:10:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6162C20817
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 09:48:22 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6162C20817
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=lichtvoll.de
+	by mail.kernel.org (Postfix) with ESMTP id 4987A20989
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 13:10:14 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4987A20989
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=net-space.pl
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730248AbeK0Upk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 27 Nov 2018 15:45:40 -0500
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:57055 "EHLO
-        mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726807AbeK0Upk (ORCPT
+        id S1726667AbeK1AIF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 27 Nov 2018 19:08:05 -0500
+Received: from dibed.net-space.pl ([84.10.22.86]:41307 "EHLO
+        dibed.net-space.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726467AbeK1AIF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Nov 2018 15:45:40 -0500
-Authentication-Results: auth=pass smtp.auth=martin smtp.mailfrom=martin@lichtvoll.de
-Received: from 127.0.0.1 (localhost [127.0.0.1])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by mail.lichtvoll.de (Postfix) with ESMTPSA id 55331401078;
-        Tue, 27 Nov 2018 10:48:19 +0100 (CET)
-From:   Martin Steigerwald <martin@lichtvoll.de>
-To:     Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH RESEND 0/8] btrfs-progs: sub: Relax the privileges of "subvolume list/show"
-Date:   Tue, 27 Nov 2018 10:48:18 +0100
-Message-ID: <1924429.dG6BgaDeF9@merkaba>
-In-Reply-To: <cover.1543294426.git.misono.tomohiro@jp.fujitsu.com>
-References: <cover.1543294426.git.misono.tomohiro@jp.fujitsu.com>
+        Tue, 27 Nov 2018 19:08:05 -0500
+Received: from router-fw.i.net-space.pl ([192.168.52.1]:37484 "EHLO
+        tomti.i.net-space.pl") by router-fw-old.i.net-space.pl with ESMTP
+        id S1876755AbeK0NJv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Nov 2018 14:09:51 +0100
+X-Comment: RFC 2476 MSA function at dibed.net-space.pl logged sender identity as: dkiper
+Date:   Tue, 27 Nov 2018 14:09:48 +0100
+From:   Daniel Kiper <dkiper@net-space.pl>
+To:     Nick Terrell <terrelln@fb.com>
+Cc:     David Sterba <dsterba@suse.cz>, Kernel Team <Kernel-team@fb.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        "grub-devel@gnu.org" <grub-devel@gnu.org>
+Subject: Re: [PATCH v7 0/2] btrfs: Add zstd support to grub btrfs
+Message-ID: <20181127130948.hjktrautuxc6ql5b@tomti.i.net-space.pl>
+References: <20181119192008.3496427-1-terrelln@fb.com>
+ <20181119203412.rsd2wbx7nc7enpax@tomti.i.net-space.pl>
+ <4AA367FE-A601-4F1D-A37B-F85F86D31E94@fb.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <4AA367FE-A601-4F1D-A37B-F85F86D31E94@fb.com>
+User-Agent: NeoMutt/20170113 (1.7.2)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Misono Tomohiro - 27.11.18, 06:24:
-> Importantly, in order to make output consistent for both root and
-> non-privileged user, this changes the behavior of "subvolume list":
->  - (default) Only list in subvolume under the specified path.
->    Path needs to be a subvolume.
+On Tue, Nov 27, 2018 at 02:55:33AM +0000, Nick Terrell wrote:
+> > On Nov 19, 2018, at 12:34 PM, Daniel Kiper <dkiper@net-space.pl> wrote:
+> > On Mon, Nov 19, 2018 at 11:20:06AM -0800, Nick Terrell wrote:
+> >> Hi all,
+> >>
+> >> This patch set imports the upstream zstd library, adds zstd support to the
+> >> btrfs module, and adds a test case. I've also tested the patch set by storing
+> >> my boot partition in btrfs with and without zstd compression and rebooting.
+> >
+> > LGTM. I will apply both patches in a week or so.
+> >
+> > Thank you for doing the work.
+> >
+> > Daniel
+>
+>
+> Thanks for taking the time to review and merge the patches, and for
+> maintaining GRUB!
 
-Does that work recursively?
+You are welcome!
 
-I wound find it quite unexpected if I did btrfs subvol list in or on the 
-root directory of a BTRFS filesystem would not display any subvolumes on 
-that filesystem no matter where they are.
-
-Thanks,
--- 
-Martin
-
-
+Daniel

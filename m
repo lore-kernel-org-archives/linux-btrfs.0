@@ -6,33 +6,33 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 14760C43441
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 19:54:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 51C0CC43441
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 19:54:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CF62120873
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 19:53:59 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org CF62120873
+	by mail.kernel.org (Postfix) with ESMTP id 1565920873
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Nov 2018 19:54:02 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1565920873
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726317AbeK1Gw5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Nov 2018 01:52:57 -0500
-Received: from mx2.suse.de ([195.135.220.15]:35216 "EHLO mx1.suse.de"
+        id S1726327AbeK1GxA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Nov 2018 01:53:00 -0500
+Received: from mx2.suse.de ([195.135.220.15]:35222 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725764AbeK1Gw5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Nov 2018 01:52:57 -0500
+        id S1725764AbeK1Gw7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Nov 2018 01:52:59 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 2CFDCABE6
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Nov 2018 19:53:57 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 76B08ABE6
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Nov 2018 19:53:59 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 1E47DDAC3A; Tue, 27 Nov 2018 20:53:41 +0100 (CET)
+        id 6935EDAC3A; Tue, 27 Nov 2018 20:53:43 +0100 (CET)
 From:   David Sterba <dsterba@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH 1/9] btrfs: switch BTRFS_FS_STATE_* to enums
-Date:   Tue, 27 Nov 2018 20:53:41 +0100
-Message-Id: <4365d4183bf65240273c8602faa0a75e88906d38.1543348078.git.dsterba@suse.com>
+Subject: [PATCH 2/9] btrfs: switch BTRFS_BLOCK_RSV_* to enums
+Date:   Tue, 27 Nov 2018 20:53:43 +0100
+Message-Id: <cc7de532fc2398392c2735c085f09d5ee07c3b9b.1543348078.git.dsterba@suse.com>
 X-Mailer: git-send-email 2.19.1
 In-Reply-To: <cover.1543348078.git.dsterba@suse.com>
 References: <cover.1543348078.git.dsterba@suse.com>
@@ -44,50 +44,43 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 We can use simple enum for values that are not part of on-disk format:
-global filesystem states.
+block reserve types.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/ctree.h | 25 +++++++++++++++++++------
- 1 file changed, 19 insertions(+), 6 deletions(-)
+ fs/btrfs/ctree.h | 19 ++++++++++++-------
+ 1 file changed, 12 insertions(+), 7 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index a98507fa9192..f82ec5e41b0c 100644
+index f82ec5e41b0c..40c405d74a01 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -109,13 +109,26 @@ static inline unsigned long btrfs_chunk_item_size(int num_stripes)
- }
+@@ -461,13 +461,18 @@ struct btrfs_space_info {
+ 	struct kobject *block_group_kobjs[BTRFS_NR_RAID_TYPES];
+ };
  
- /*
-- * File system states
-+ * Runtime (in-memory) states of filesystem
-  */
--#define BTRFS_FS_STATE_ERROR		0
--#define BTRFS_FS_STATE_REMOUNTING	1
--#define BTRFS_FS_STATE_TRANS_ABORTED	2
--#define BTRFS_FS_STATE_DEV_REPLACING	3
--#define BTRFS_FS_STATE_DUMMY_FS_INFO	4
+-#define	BTRFS_BLOCK_RSV_GLOBAL		1
+-#define	BTRFS_BLOCK_RSV_DELALLOC	2
+-#define	BTRFS_BLOCK_RSV_TRANS		3
+-#define	BTRFS_BLOCK_RSV_CHUNK		4
+-#define	BTRFS_BLOCK_RSV_DELOPS		5
+-#define	BTRFS_BLOCK_RSV_EMPTY		6
+-#define	BTRFS_BLOCK_RSV_TEMP		7
++/*
++ * Types of block reserves
++ */
 +enum {
-+	/* Global indicator of serious filesysystem errors */
-+	BTRFS_FS_STATE_ERROR,
-+	/*
-+	 * Filesystem is being remounted, allow to skip some operations, like
-+	 * defrag
-+	 */
-+	BTRFS_FS_STATE_REMOUNTING,
-+	/* Track if the transaction abort has been reported */
-+	BTRFS_FS_STATE_TRANS_ABORTED,
-+	/*
-+	 * Indicate that replace source or target device state is changed and
-+	 * allow to block bio operations
-+	 */
-+	BTRFS_FS_STATE_DEV_REPLACING,
-+	/* The btrfs_fs_info created for self-tests */
-+	BTRFS_FS_STATE_DUMMY_FS_INFO,
++	BTRFS_BLOCK_RSV_GLOBAL,
++	BTRFS_BLOCK_RSV_DELALLOC,
++	BTRFS_BLOCK_RSV_TRANS,
++	BTRFS_BLOCK_RSV_CHUNK,
++	BTRFS_BLOCK_RSV_DELOPS,
++	BTRFS_BLOCK_RSV_EMPTY,
++	BTRFS_BLOCK_RSV_TEMP,
 +};
  
- #define BTRFS_BACKREF_REV_MAX		256
- #define BTRFS_BACKREF_REV_SHIFT		56
+ struct btrfs_block_rsv {
+ 	u64 size;
 -- 
 2.19.1
 

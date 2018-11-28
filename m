@@ -2,136 +2,169 @@ Return-Path: <SRS0=CI8N=OH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.7 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A43F0C04EB8
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 13:44:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E44AFC43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 13:50:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 68C482147C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 13:44:10 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel-dk.20150623.gappssmtp.com header.i=@kernel-dk.20150623.gappssmtp.com header.b="z6atr7yQ"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 68C482147C
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=kernel.dk
+	by mail.kernel.org (Postfix) with ESMTP id AD1AF20832
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 13:50:21 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org AD1AF20832
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728488AbeK2Apu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Nov 2018 19:45:50 -0500
-Received: from mail-pg1-f195.google.com ([209.85.215.195]:42912 "EHLO
-        mail-pg1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728217AbeK2Aps (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Nov 2018 19:45:48 -0500
-Received: by mail-pg1-f195.google.com with SMTP id d72so9516233pga.9
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Nov 2018 05:44:06 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=kernel-dk.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=7zDTfHt/ugH4s9MDSR3+6OcGT1VGlctx6MQg0nD7ryE=;
-        b=z6atr7yQ3iFy6c+mjsKbGtJKtoY4INRIDKLn2ctg3Xp5JT6x7ocMzEZ2HPxv9dHQTK
-         iijiZCJLg9jEmNS89Id8ye5JAjUXqQJQr6mGAWvONxa0Zh7vUWCrN4Uf+UeabhKijE/1
-         34E/tod9+3QfnjbAD9gRnVDmsQn5Wt8P2XzRNETPBUeWJsWy4/kqLmPBoILTF8lRVOf6
-         pBSdGhHY0cVZ+BOiI5ZTUD5xjSMICY7sVkTod4fkrIfWxG4hZgYLFockgeTx3eHYpP6T
-         +oKZfOv9sStHO9kpfKBmSnsZE4W/8gxQnwt8rHsHMN9ZdvdQ107GNLbCW62zgksaAg+T
-         /7fg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=7zDTfHt/ugH4s9MDSR3+6OcGT1VGlctx6MQg0nD7ryE=;
-        b=I5WaUuKoBQFfw90is1nR1qKCv2DATxKZk3pNEsaB10CflMeC1rG/HqQkG562fhBKe+
-         inU3HW5kxNs56YXjxcPCIVW0w7lyRaaOd3km/V40OX2a2J2O4graGiI8nH+8jZLIWugA
-         Q4l4Q7IlspJ+O6zVl9h7lm3Wc+hRLiUoDd4SBZC+akJcyTp/G4F17a5Om9VL0jp6jFtM
-         TyC0kn9UKmKWNCpGW/UBwNqwd65fZDASQeaFKDWUczQv0AAKrQ/+1aBk7ADxRLBk/NTH
-         xIIQkAblLUcsEKLUxJFeie0NCY9t4CgNVXtJ4rgoB7h1cFPMbtyn/aZ8imnXiW6dReq/
-         3teg==
-X-Gm-Message-State: AA+aEWYNoCIV4ObiqfmG3OO3X5ARW0ldiuBB94CO5aipo2Al2YMB4x70
-        gjzuZ9NgdgRtW4GAOmpp3lN5Hg==
-X-Google-Smtp-Source: AFSGD/VpgWFbWqw7HHw4H6IebL4oKrh/k/zhasDsE54IK5/AtyaiHcazONlEr8g8biKk8VA/p/HR1g==
-X-Received: by 2002:a63:441e:: with SMTP id r30mr33671645pga.128.1543412645990;
-        Wed, 28 Nov 2018 05:44:05 -0800 (PST)
-Received: from [192.168.1.121] (66.29.188.166.static.utbb.net. [66.29.188.166])
-        by smtp.gmail.com with ESMTPSA id n22sm14673393pfh.166.2018.11.28.05.44.02
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Wed, 28 Nov 2018 05:44:04 -0800 (PST)
-Subject: Re: [PATCH V12 00/20] block: support multi-page bvec
-To:     Ming Lei <ming.lei@redhat.com>
-Cc:     linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-mm@kvack.org, Theodore Ts'o <tytso@mit.edu>,
-        Omar Sandoval <osandov@fb.com>,
-        Sagi Grimberg <sagi@grimberg.me>,
-        Dave Chinner <dchinner@redhat.com>,
-        Kent Overstreet <kent.overstreet@gmail.com>,
-        Mike Snitzer <snitzer@redhat.com>, dm-devel@redhat.com,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        linux-fsdevel@vger.kernel.org, Shaohua Li <shli@kernel.org>,
-        linux-raid@vger.kernel.org, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org,
-        "Darrick J . Wong" <darrick.wong@oracle.com>,
-        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
-        Christoph Hellwig <hch@lst.de>, linux-ext4@vger.kernel.org,
-        Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
-        Boaz Harrosh <ooo@electrozaur.com>,
-        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
-References: <20181126021720.19471-1-ming.lei@redhat.com>
-From:   Jens Axboe <axboe@kernel.dk>
-Message-ID: <7096bc4e-0617-29d0-a90d-ae7caf09a16d@kernel.dk>
-Date:   Wed, 28 Nov 2018 06:44:00 -0700
+        id S1728215AbeK2AwD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Nov 2018 19:52:03 -0500
+Received: from mout.gmx.net ([212.227.17.20]:35607 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727982AbeK2AwD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Nov 2018 19:52:03 -0500
+Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx102
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0MPZuP-1gNrMK2WZd-004mdp; Wed, 28
+ Nov 2018 14:50:15 +0100
+Subject: Re: [PATCH 0/9] Switch defines to enums
+To:     dsterba@suse.cz, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <cover.1543348078.git.dsterba@suse.com>
+ <45dcab9e-fb88-8980-90d9-1875ea1ee992@gmx.com>
+ <20181128132549.GM2842@twin.jikos.cz>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <03fc4e39-205c-9bac-33f0-cc3fb19ede6e@gmx.com>
+Date:   Wed, 28 Nov 2018 21:50:06 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+ Thunderbird/60.3.1
 MIME-Version: 1.0
-In-Reply-To: <20181126021720.19471-1-ming.lei@redhat.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+In-Reply-To: <20181128132549.GM2842@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="wonZRvP8wpInTlmhV9dRZYmV7P5tvBC0V"
+X-Provags-ID: V03:K1:pbYjGsJKLfG8xpGur7N5+W9V0WEoz3vaJY0u0r+pTENgAPhlJVr
+ DatvCr7nRbhgrA6yf9pS0QRSWcGH/mqX11jopaU1BlS8wmUIWmO5xG+mXTN86lQh+qhq/Gx
+ 9cYI2iuhZHudgjzjYJsxPXoIP5vTJVXtCS9WZy8fUSo7lXICPaDfZbs770dcSZTqJR5y0F/
+ Wgt19VWTa/lZtcF6CIc4A==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:LAEGcFQqpKA=:vJkEK0mjMD0rdPhF0cYPKE
+ oQg6Tu8Illn4kImEBQ2NDus/QrHSxUPAM+PfxNNG5B+gYGqW0LwlajaTHVL3pbAEyLtjxtq+f
+ b/d+AjKevV4zTd2xFIVMfoAd04X2lOLw86DIj5ql5HFu/FTYH5ORXYOabw2zk0PZbBNPcnMB0
+ gRVI/fkipR+sgbF42rGPGfrmP0L2udyqdHsfpbCip/UfgxiROrMcjIrxuYR1ZkqmjhUdD0Pfr
+ pGRbWjUmw9/aN7OEVEzSs0ZNrOcu5a1ulFjjjIfaeRmSXYwr4JwVZ4uxYWhz3PvcM2evZc9BU
+ Px5u+cthbi9Ri37Su1VR1w20TEqPOU4V/hQQVRxcVu4xKfv9ewj3z/GV68Q+9nQRzfVb6qQHZ
+ Y58hmZZCQF6Tn3/3C/CvW1Q8HuxZIv3qzBYHiex5zltgBfBrnnXYvWhOOBMZYZ75CCA83tLD5
+ 3iZ3Q0P0tTVTd+dU11d9s1KeuulPorDd19f79FK1F+8LhSOvTP50MxR29aZcYpQJowZZ371xu
+ nIY1hts+TBC7jYbX4Ldl715bDCtSMHv5K4bzuSKHhujG6jL1ESdzs/6rOEO2lVitTgpSKAyy+
+ 5m5+mGHGt4fRwNtTtseFBSdmKmYVPxehMezJa+/nM5CwpFFHI3jUQ8GjCwTqubtcNYsR4uOAa
+ VCXhYrlw2oGONmVj/BRgg8ojPMV8X6rM5jrNfBK8joisBFCFh1Jlkbu7plrv1BDy6ESH1kmnY
+ PIxFrkB7n6i+WsNfm9/kQQaTLyjc2s4xNJt9BHty3ZGjshg/YnaS3XfUcGxzOfDM3F609l9ZO
+ GBLWiHIHkYjBy06IiVlLM+iZiNwCp6+fnVBmKgOsnmH9nRlPOdYYq821ZVGwbKxVjQjRCuMJk
+ s0Tm8s1DkpW1nb2R/cJsXfd3CoV3bBKpDvErSWYnsQ9Aiojak9yHjeFh56v8Pc
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 11/25/18 7:17 PM, Ming Lei wrote:
-> Hi,
-> 
-> This patchset brings multi-page bvec into block layer:
-> 
-> 1) what is multi-page bvec?
-> 
-> Multipage bvecs means that one 'struct bio_bvec' can hold multiple pages
-> which are physically contiguous instead of one single page used in linux
-> kernel for long time.
-> 
-> 2) why is multi-page bvec introduced?
-> 
-> Kent proposed the idea[1] first. 
-> 
-> As system's RAM becomes much bigger than before, and huge page, transparent
-> huge page and memory compaction are widely used, it is a bit easy now
-> to see physically contiguous pages from fs in I/O. On the other hand, from
-> block layer's view, it isn't necessary to store intermediate pages into bvec,
-> and it is enough to just store the physicallly contiguous 'segment' in each
-> io vector.
-> 
-> Also huge pages are being brought to filesystem and swap [2][6], we can
-> do IO on a hugepage each time[3], which requires that one bio can transfer
-> at least one huge page one time. Turns out it isn't flexiable to change
-> BIO_MAX_PAGES simply[3][5]. Multipage bvec can fit in this case very well.
-> As we saw, if CONFIG_THP_SWAP is enabled, BIO_MAX_PAGES can be configured
-> as much bigger, such as 512, which requires at least two 4K pages for holding
-> the bvec table.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--wonZRvP8wpInTlmhV9dRZYmV7P5tvBC0V
+Content-Type: multipart/mixed; boundary="iwWAiKL4VyBN51eJtPTNswMdKzk6L6tWc";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: dsterba@suse.cz, David Sterba <dsterba@suse.com>,
+ linux-btrfs@vger.kernel.org
+Message-ID: <03fc4e39-205c-9bac-33f0-cc3fb19ede6e@gmx.com>
+Subject: Re: [PATCH 0/9] Switch defines to enums
+References: <cover.1543348078.git.dsterba@suse.com>
+ <45dcab9e-fb88-8980-90d9-1875ea1ee992@gmx.com>
+ <20181128132549.GM2842@twin.jikos.cz>
+In-Reply-To: <20181128132549.GM2842@twin.jikos.cz>
 
-I'm pretty happy with this patchset at this point, looks like it just
-needs a respin to address the last comments. My only concern is whether
-it's a good idea to target this for 4.21, or if we should wait until
-4.22. 4.21 has a fairly substantial amount of changes in terms of block
-already, it's not the best timing for something of this magnitude too.
+--iwWAiKL4VyBN51eJtPTNswMdKzk6L6tWc
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-I'm going back and forth on those one a bit. Any concerns with
-pushing this to 4.22?
 
--- 
-Jens Axboe
 
+On 2018/11/28 =E4=B8=8B=E5=8D=889:25, David Sterba wrote:
+> On Wed, Nov 28, 2018 at 09:33:50AM +0800, Qu Wenruo wrote:
+>> On 2018/11/28 =E4=B8=8A=E5=8D=883:53, David Sterba wrote:
+>>> This is motivated by a merging mistake that happened a few releases a=
+go.
+>>> Two patches updated BTRFS_FS_* flags independently to the same value,=
+
+>>> git did not see any direct merge conflict. The two values got mixed a=
+t
+>>> runtime and caused crash.
+>>>
+>>> Update all #define sequential values, the above merging problem would=
+
+>>> not happen as there would be a conflict and the enum value
+>>> auto-increment would prevent duplicated values anyway.
+>>
+>> Just one small question for the bitmap usage.
+>>
+>> For enum we won't directly know the last number is, my concern is if
+>> we're using u16 as bitmap and there is some enum over 15, will we get =
+a
+>> warning at compile time or some bug would just sneak into kernel?
+>=20
+> Do you have a concrete example where this would happen? Most bits are
+> used in 'long' that should be at least 32. I'm not aware of 16bit bits
+> flags.
+>=20
+
+OK, I'm too paranoid here.
+
+The set_bit() definition needs unsigned long *, and passing a u16 * will
+cause compile time warning, so it shouldn't be a problem.
+
+And for enum over 63, reviewers will definitely complain anyway.
+
+Thanks,
+Qu
+
+
+--iwWAiKL4VyBN51eJtPTNswMdKzk6L6tWc--
+
+--wonZRvP8wpInTlmhV9dRZYmV7P5tvBC0V
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlv+nQ4ACgkQwj2R86El
+/qj0FQf+JdVAIsJsdqJT8Ul/jVuxBMomy1JxnfNI4F8ViiLioRBpiKouU22Dv28m
+ET303+qhluRsyZxjpcMiiiVOkI8IMReOlA27A/9sAVkmP///GNj+j6bDNfMj0vn9
+53yhR5Bq4H9P6uQdPb8lFxrPDTMtSSJBFKUCEPkMtuSOmJ8uxor0MZBK4QAahSfK
+ZOabbweEz3g0Yft4ESoD/Xj72/lKDweUiQwJKFkwM+zQWQCijK7LfjezBorFMYqv
+L1e9ZQDEt217YyDJzop0L+IkNXZlUyI/hHAc2bSF8h8JS3YiM7bUJc/YGPRdKCqd
+9TKi2BXyH/uZsFog9KvNuhA2SdPFMw==
+=USxY
+-----END PGP SIGNATURE-----
+
+--wonZRvP8wpInTlmhV9dRZYmV7P5tvBC0V--

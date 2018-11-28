@@ -6,30 +6,28 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6C18EC43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 07:04:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 56448C43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 07:15:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 16C922082F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 07:04:36 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 16C922082F
+	by mail.kernel.org (Postfix) with ESMTP id E25DC20832
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 07:15:02 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E25DC20832
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727268AbeK1SFM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Nov 2018 13:05:12 -0500
-Received: from mx2.suse.de ([195.135.220.15]:58550 "EHLO mx1.suse.de"
+        id S1727275AbeK1SPj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Nov 2018 13:15:39 -0500
+Received: from mx2.suse.de ([195.135.220.15]:59416 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727230AbeK1SFL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Nov 2018 13:05:11 -0500
+        id S1727230AbeK1SPj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Nov 2018 13:15:39 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id C1947AF8A;
-        Wed, 28 Nov 2018 07:04:32 +0000 (UTC)
-Subject: Re: [PATCH 3/3] btrfs: remove redundant nowait check for
- buffered_write
-To:     Lu Fengqi <lufq.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-References: <20181128032130.11452-1-lufq.fnst@cn.fujitsu.com>
- <20181128032330.11753-1-lufq.fnst@cn.fujitsu.com>
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 2992DACD9;
+        Wed, 28 Nov 2018 07:14:59 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: adjust order of unlocks in do_trimming()
+To:     Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <20181128032112.1152-1-suy.fnst@cn.fujitsu.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -74,12 +72,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <2aa63759-0c0a-a8f8-c02e-e215e1be6c73@suse.com>
-Date:   Wed, 28 Nov 2018 09:04:31 +0200
+Message-ID: <c0bcde67-5d0c-16ec-1242-d83f488d9513@suse.com>
+Date:   Wed, 28 Nov 2018 09:14:58 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181128032330.11753-1-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <20181128032112.1152-1-suy.fnst@cn.fujitsu.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -90,35 +88,30 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 28.11.18 г. 5:23 ч., Lu Fengqi wrote:
-> The generic_write_checks will check the combination of IOCB_NOWAIT and
-> !IOCB_DIRECT.
-
-True, however btrfs will return ENOSUPP whereas the generic code returns
-EINVAL. I guess this is not a big deal and it's likely generic code is
-correct, so:
+On 28.11.18 г. 5:21 ч., Su Yue wrote:
+> In function do_trimming(), block_group->lock should be unlocked first.
+> 
+> Fixes: 7fe1e6415026 ("Btrfs: rewrite btrfs_trim_block_group()")
+> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
-> 
-> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 > ---
->  fs/btrfs/file.c | 4 ----
->  1 file changed, 4 deletions(-)
+>  fs/btrfs/free-space-cache.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
 > 
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index 3835bb8c146d..190db9a685a2 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -1889,10 +1889,6 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
->  	loff_t oldsize;
->  	int clean_page = 0;
+> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+> index 4ba0aedc878b..3731fa92df56 100644
+> --- a/fs/btrfs/free-space-cache.c
+> +++ b/fs/btrfs/free-space-cache.c
+> @@ -3149,8 +3149,8 @@ static int do_trimming(struct btrfs_block_group_cache *block_group,
+>  			space_info->bytes_readonly += reserved_bytes;
+>  		block_group->reserved -= reserved_bytes;
+>  		space_info->bytes_reserved -= reserved_bytes;
+> -		spin_unlock(&space_info->lock);
+>  		spin_unlock(&block_group->lock);
+> +		spin_unlock(&space_info->lock);
+>  	}
 >  
-> -	if (!(iocb->ki_flags & IOCB_DIRECT) &&
-> -	    (iocb->ki_flags & IOCB_NOWAIT))
-> -		return -EOPNOTSUPP;
-> -
->  	if (!inode_trylock(inode)) {
->  		if (iocb->ki_flags & IOCB_NOWAIT)
->  			return -EAGAIN;
+>  	return ret;
 > 

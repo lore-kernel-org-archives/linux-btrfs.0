@@ -6,29 +6,29 @@ X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EAE19C43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 12:49:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0605DC43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 12:50:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B3BAA20660
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 12:49:30 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B3BAA20660
+	by mail.kernel.org (Postfix) with ESMTP id C542B20660
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 12:50:13 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C542B20660
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727847AbeK1XvC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Nov 2018 18:51:02 -0500
-Received: from mx2.suse.de ([195.135.220.15]:35156 "EHLO mx1.suse.de"
+        id S1728000AbeK1Xvp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Nov 2018 18:51:45 -0500
+Received: from mx2.suse.de ([195.135.220.15]:35284 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727811AbeK1XvC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Nov 2018 18:51:02 -0500
+        id S1727676AbeK1Xvp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Nov 2018 18:51:45 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 9DD54AFDF
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Nov 2018 12:49:26 +0000 (UTC)
-Subject: Re: [PATCH 1/9] btrfs: switch BTRFS_FS_STATE_* to enums
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 47408AFDF
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Nov 2018 12:50:10 +0000 (UTC)
+Subject: Re: [PATCH 2/9] btrfs: switch BTRFS_BLOCK_RSV_* to enums
 To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 References: <cover.1543348078.git.dsterba@suse.com>
- <4365d4183bf65240273c8602faa0a75e88906d38.1543348078.git.dsterba@suse.com>
+ <cc7de532fc2398392c2735c085f09d5ee07c3b9b.1543348078.git.dsterba@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -86,12 +86,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <5db4394f-4863-6181-deff-6516ee00e082@suse.de>
-Date:   Wed, 28 Nov 2018 13:49:26 +0100
+Message-ID: <d1f9bf03-2ea8-d2da-d5cc-9516168576fa@suse.de>
+Date:   Wed, 28 Nov 2018 13:50:09 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <4365d4183bf65240273c8602faa0a75e88906d38.1543348078.git.dsterba@suse.com>
+In-Reply-To: <cc7de532fc2398392c2735c085f09d5ee07c3b9b.1543348078.git.dsterba@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit

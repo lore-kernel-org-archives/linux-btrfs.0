@@ -7,162 +7,130 @@ X-Spam-Status: No, score=-8.5 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7E628C43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 00:28:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A6CB6C43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 00:30:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3E1B0204FD
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 00:28:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6BF88204FD
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 00:30:28 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="gs6fSXTr"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3E1B0204FD
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="hSMVlj/r"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6BF88204FD
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=osandov.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726539AbeK1L23 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Nov 2018 06:28:29 -0500
-Received: from mail-pl1-f195.google.com ([209.85.214.195]:46756 "EHLO
-        mail-pl1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726460AbeK1L23 (ORCPT
+        id S1726731AbeK1LaF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Nov 2018 06:30:05 -0500
+Received: from mail-pf1-f194.google.com ([209.85.210.194]:45427 "EHLO
+        mail-pf1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726418AbeK1LaF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Nov 2018 06:28:29 -0500
-Received: by mail-pl1-f195.google.com with SMTP id t13so16439668ply.13
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Nov 2018 16:28:50 -0800 (PST)
+        Wed, 28 Nov 2018 06:30:05 -0500
+Received: by mail-pf1-f194.google.com with SMTP id g62so9226377pfd.12
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Nov 2018 16:30:26 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
         h=date:from:to:cc:subject:message-id:references:mime-version
          :content-disposition:in-reply-to:user-agent;
-        bh=Wmk8G5mi5lIqSGfp4MF3wRMXt1V24erTsfY43EEG76o=;
-        b=gs6fSXTrL+abVqmjfKiXD4O9h12QiUrV6MuWLKXKjpGq1g6HrkpTmUhd9VP1fd4yR+
-         yhBsaCtbEEO20m5EQjnbZ1biVutorGSmvvK9tcEYT9t5/MAUXL7oAPfoJLnZwiVWDgkb
-         4DDopdSXz18KomNWORfE2jrXc9Ivx7dsiCI/x4//5lEPbOZjTsnpMQuRmkl0zQUeTvrf
-         oPYBzPoyN6pdY6G5c1MF4g2vhF5j5wXh0aa36suikrEqka5K6jFjTBKapvfWvtZMho3D
-         JI4pmO+Ovu8FNAr5WBh8PR8G9XeC3Yxb7tYvJGTjdZGE4cr9uR0jD9jvzg+yVYfZnvBb
-         95ig==
+        bh=z16+FdApu8v+Bu7zIQZz10387kMHuUREoT28ZDIa28Q=;
+        b=hSMVlj/r3o8eZpKJo6fT5aRsUt7+WvvGbp0i+FacDK1S/mraVtB5oUlOx51yoXYHb7
+         ihuW0J2pQDUgfk9B1Y/MKFHQJ9+GzYLIOlVOx43ksC3V3sOZG/nvIgD89nia9HJsk49g
+         ipv6mwZMe8X9JQj1MR+puhcMZxN8kGlfxgEhcoXQhsNhmLBwGo61gAEje23cmffzCoo+
+         uFY6xq5G7Z3jBFW5HyQYTFmfFchA0BDbzkdffwLYtdU5B36NmFg2FU3/bVRvl3D+eyG5
+         FaIqSI3VyBn14d368i9mjG6Isbu09HG2C4dkSeXdgmUORqRcsv00uTprtHFpmjGO01IE
+         rFbw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:date:from:to:cc:subject:message-id:references
          :mime-version:content-disposition:in-reply-to:user-agent;
-        bh=Wmk8G5mi5lIqSGfp4MF3wRMXt1V24erTsfY43EEG76o=;
-        b=LGmDUh/shPaw2tdaDPYNGoQw1h4HFk0st+7DTe3Brw27ZTQo365YRihZ1OnGrfODiH
-         2P1MZBUp2lDELFbb+9djDMLuRrZsWMFvCy4ABtGV7gGnLfs2gGqf6bUyLyNSO7IFm+Sd
-         HmbxgP9w9NK+2gX5VjLS2yYcMyTCK7nNkE6qC5M+HUgGQeYFbsan37EdzvUQufcHLZln
-         D2NprswZ7TMvUZz6S5QIb9iKHQgA6rQBc/wfn+rgPfNLcWBHFXv44gahUHxw0ZRIHvMk
-         tQ2xLErR6ZLGXBFFNXHnv4x+bPc/eVZCh9i8InGFV2BojiFTlIXPSJ6yN/JRtHuqeVNJ
-         9MzQ==
-X-Gm-Message-State: AA+aEWbfTMnes2OKQoUDuj8EO0s78iWdOrtV6UjS/RuTbw8P3Tx/rjCo
-        MDNCZm2VBMcYvUl6YmpBvfFmb/z87p8=
-X-Google-Smtp-Source: AFSGD/WJ2prs/yfQpMCMkfHG30yvrnkAZ3zyMM0Q9mHxPZmudN2072WEHG4zhzk16pgpGgIQqIpZww==
-X-Received: by 2002:a17:902:7603:: with SMTP id k3mr35101475pll.285.1543364929847;
-        Tue, 27 Nov 2018 16:28:49 -0800 (PST)
+        bh=z16+FdApu8v+Bu7zIQZz10387kMHuUREoT28ZDIa28Q=;
+        b=i0ZgAglnhab+2qxs/2mmatu36WznTXPOfkcrkDuJ+qBWqmh4IYBuEeY6rsCBK9OOfs
+         TTbLuaOlvSd6IRBGrBhUq85EYS6bPXD8M9+NP2XfSRAaTcB9M/dUTk8ihjGfqOk/a1a6
+         c+7KrGJurELB7evVUCH30+UCDuvkvTzE/iyKF34xe7nVxhKUQi3EZmSCT7YNQ9J2VdAZ
+         4/XeyGxskyN2K/rM06KB7+tZHQmPe5oA8qDRM4zvjqsrriUENm8E27fMzXzU/uGh4e68
+         wOZWjx3pgt84fUbK6pGECmKLxD0D/Rwp3HzAa9D2xxPXBRKNddI4CiaGXrAqXQa+6oQ4
+         MQIg==
+X-Gm-Message-State: AA+aEWYqeyRyZO/OHCqfI7JVUG60dGSBfRUSFhuBfUwjSIVCbI5dOqfy
+        oQIHQinDCGcijs/3d0lJQnht2+zT+J8=
+X-Google-Smtp-Source: AFSGD/XtLyvtXceOUc3+8TuEdz/7HLkJP0sHExEyBv+0It+c/wS4WahqUX59rmj8s4JiUVyziMFr9Q==
+X-Received: by 2002:a63:5c22:: with SMTP id q34mr31022925pgb.417.1543365025620;
+        Tue, 27 Nov 2018 16:30:25 -0800 (PST)
 Received: from vader ([2620:10d:c090:200::5:71bd])
-        by smtp.gmail.com with ESMTPSA id g2sm6284739pfi.95.2018.11.27.16.28.49
+        by smtp.gmail.com with ESMTPSA id u186sm6543180pfu.51.2018.11.27.16.30.24
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Tue, 27 Nov 2018 16:28:49 -0800 (PST)
-Date:   Tue, 27 Nov 2018 16:28:48 -0800
+        Tue, 27 Nov 2018 16:30:25 -0800 (PST)
+Date:   Tue, 27 Nov 2018 16:30:24 -0800
 From:   Omar Sandoval <osandov@osandov.com>
 To:     David Sterba <dsterba@suse.com>
 Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/9] btrfs: switch BTRFS_FS_* to enums
-Message-ID: <20181128002848.GK846@vader>
+Subject: Re: [PATCH 4/9] btrfs: switch BTRFS_ROOT_* to enums
+Message-ID: <20181128003024.GL846@vader>
 References: <cover.1543348078.git.dsterba@suse.com>
- <9ff441008db0d0bb2780cb94830c66fa65c78f60.1543348078.git.dsterba@suse.com>
+ <f78a535281ed0bd208db0c2f70aa0e43f18cb40c.1543348078.git.dsterba@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <9ff441008db0d0bb2780cb94830c66fa65c78f60.1543348078.git.dsterba@suse.com>
+In-Reply-To: <f78a535281ed0bd208db0c2f70aa0e43f18cb40c.1543348078.git.dsterba@suse.com>
 User-Agent: Mutt/1.11.0 (2018-11-25)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Nov 27, 2018 at 08:53:45PM +0100, David Sterba wrote:
+On Tue, Nov 27, 2018 at 08:53:48PM +0100, David Sterba wrote:
 > We can use simple enum for values that are not part of on-disk format:
-> internal filesystem states.
-
-Hah, looks like we never had a bit 0 ;)
+> root tree flags.
 
 Reviewed-by: Omar Sandoval <osandov@fb.com>
 
 > Signed-off-by: David Sterba <dsterba@suse.com>
 > ---
->  fs/btrfs/ctree.h | 63 ++++++++++++++++++++++++------------------------
->  1 file changed, 31 insertions(+), 32 deletions(-)
+>  fs/btrfs/ctree.h | 33 +++++++++++++++++----------------
+>  1 file changed, 17 insertions(+), 16 deletions(-)
 > 
 > diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 40c405d74a01..7176b95b40e7 100644
+> index 7176b95b40e7..4bb0ac3050ff 100644
 > --- a/fs/btrfs/ctree.h
 > +++ b/fs/btrfs/ctree.h
-> @@ -757,38 +757,37 @@ struct btrfs_swapfile_pin {
->  
->  bool btrfs_pinned_by_swapfile(struct btrfs_fs_info *fs_info, void *ptr);
->  
-> -#define BTRFS_FS_BARRIER			1
-> -#define BTRFS_FS_CLOSING_START			2
-> -#define BTRFS_FS_CLOSING_DONE			3
-> -#define BTRFS_FS_LOG_RECOVERING			4
-> -#define BTRFS_FS_OPEN				5
-> -#define BTRFS_FS_QUOTA_ENABLED			6
-> -#define BTRFS_FS_UPDATE_UUID_TREE_GEN		9
-> -#define BTRFS_FS_CREATING_FREE_SPACE_TREE	10
-> -#define BTRFS_FS_BTREE_ERR			11
-> -#define BTRFS_FS_LOG1_ERR			12
-> -#define BTRFS_FS_LOG2_ERR			13
-> -#define BTRFS_FS_QUOTA_OVERRIDE			14
-> -/* Used to record internally whether fs has been frozen */
-> -#define BTRFS_FS_FROZEN				15
-> -
+> @@ -1180,22 +1180,23 @@ struct btrfs_subvolume_writers {
+>  /*
+>   * The state of btrfs root
+>   */
 > -/*
-> - * Indicate that a whole-filesystem exclusive operation is running
-> - * (device replace, resize, device add/delete, balance)
+> - * btrfs_record_root_in_trans is a multi-step process,
+> - * and it can race with the balancing code.   But the
+> - * race is very small, and only the first time the root
+> - * is added to each transaction.  So IN_TRANS_SETUP
+> - * is used to tell us when more checks are required
 > - */
-> -#define BTRFS_FS_EXCL_OP			16
-> -
-> -/*
-> - * To info transaction_kthread we need an immediate commit so it doesn't
-> - * need to wait for commit_interval
-> - */
-> -#define BTRFS_FS_NEED_ASYNC_COMMIT		17
-> -
-> -/*
-> - * Indicate that balance has been set up from the ioctl and is in the main
-> - * phase. The fs_info::balance_ctl is initialized.
-> - */
-> -#define BTRFS_FS_BALANCE_RUNNING		18
+> -#define BTRFS_ROOT_IN_TRANS_SETUP	0
+> -#define BTRFS_ROOT_REF_COWS		1
+> -#define BTRFS_ROOT_TRACK_DIRTY		2
+> -#define BTRFS_ROOT_IN_RADIX		3
+> -#define BTRFS_ROOT_ORPHAN_ITEM_INSERTED	4
+> -#define BTRFS_ROOT_DEFRAG_RUNNING	5
+> -#define BTRFS_ROOT_FORCE_COW		6
+> -#define BTRFS_ROOT_MULTI_LOG_TASKS	7
+> -#define BTRFS_ROOT_DIRTY		8
 > +enum {
-> +	BTRFS_FS_BARRIER,
-> +	BTRFS_FS_CLOSING_START,
-> +	BTRFS_FS_CLOSING_DONE,
-> +	BTRFS_FS_LOG_RECOVERING,
-> +	BTRFS_FS_OPEN,
-> +	BTRFS_FS_QUOTA_ENABLED,
-> +	BTRFS_FS_UPDATE_UUID_TREE_GEN,
-> +	BTRFS_FS_CREATING_FREE_SPACE_TREE,
-> +	BTRFS_FS_BTREE_ERR,
-> +	BTRFS_FS_LOG1_ERR,
-> +	BTRFS_FS_LOG2_ERR,
-> +	BTRFS_FS_QUOTA_OVERRIDE,
-> +	/* Used to record internally whether fs has been frozen */
-> +	BTRFS_FS_FROZEN,
 > +	/*
-> +	 * Indicate that a whole-filesystem exclusive operation is running
-> +	 * (device replace, resize, device add/delete, balance)
+> +	 * btrfs_record_root_in_trans is a multi-step process, and it can race
+> +	 * with the balancing code.   But the race is very small, and only the
+> +	 * first time the root is added to each transaction.  So IN_TRANS_SETUP
+> +	 * is used to tell us when more checks are required
 > +	 */
-> +	BTRFS_FS_EXCL_OP,
-> +	/*
-> +	 * To info transaction_kthread we need an immediate commit so it
-> +	 * doesn't need to wait for commit_interval
-> +	 */
-> +	BTRFS_FS_NEED_ASYNC_COMMIT,
-> +	/*
-> +	 * Indicate that balance has been set up from the ioctl and is in the
-> +	 * main phase. The fs_info::balance_ctl is initialized.
-> +	 */
-> +	BTRFS_FS_BALANCE_RUNNING,
+> +	BTRFS_ROOT_IN_TRANS_SETUP,
+> +	BTRFS_ROOT_REF_COWS,
+> +	BTRFS_ROOT_TRACK_DIRTY,
+> +	BTRFS_ROOT_IN_RADIX,
+> +	BTRFS_ROOT_ORPHAN_ITEM_INSERTED,
+> +	BTRFS_ROOT_DEFRAG_RUNNING,
+> +	BTRFS_ROOT_FORCE_COW,
+> +	BTRFS_ROOT_MULTI_LOG_TASKS,
+> +	BTRFS_ROOT_DIRTY,
 > +};
 >  
->  struct btrfs_fs_info {
->  	u8 chunk_tree_uuid[BTRFS_UUID_SIZE];
+>  /*
+>   * in ram representation of the tree.  extent_root is used for all allocations
 > -- 
 > 2.19.1
 > 

@@ -2,63 +2,71 @@ Return-Path: <SRS0=CI8N=OH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 67C47C43441
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 94229C04EB8
 	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 08:55:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3994A2082F
+	by mail.kernel.org (Postfix) with ESMTP id 66F3A2086B
 	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 08:55:07 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3994A2082F
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 66F3A2086B
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727678AbeK1Tz5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Nov 2018 14:55:57 -0500
-Received: from mx2.suse.de ([195.135.220.15]:44804 "EHLO mx1.suse.de"
+        id S1727738AbeK1Tz6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Nov 2018 14:55:58 -0500
+Received: from mx2.suse.de ([195.135.220.15]:44806 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727341AbeK1Tz5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1727519AbeK1Tz5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 28 Nov 2018 14:55:57 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 6A243AC15
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 7ACC0ACE8
         for <linux-btrfs@vger.kernel.org>; Wed, 28 Nov 2018 08:55:04 +0000 (UTC)
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 To:     David Sterba <dsterba@suse.com>
 Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
         Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH v2 0/3] Misc cosmetic changes for map_private_extent_buffer
-Date:   Wed, 28 Nov 2018 09:54:53 +0100
-Message-Id: <20181128085456.5702-1-jthumshirn@suse.de>
+Subject: [PATCH v2 1/3] btrfs: don't initialize 'offset' in map_private_extent_buffer()
+Date:   Wed, 28 Nov 2018 09:54:54 +0100
+Message-Id: <20181128085456.5702-2-jthumshirn@suse.de>
 X-Mailer: git-send-email 2.16.4
+In-Reply-To: <20181128085456.5702-1-jthumshirn@suse.de>
+References: <20181128085456.5702-1-jthumshirn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-While trying to understand the checksum code I came across some oddities
-regarding map_private_extent_buffer() and it's interaction with
-csum_tree_block().
+In map_private_extent_buffer() the 'offset' variable is initialized to a
+page aligned version of the 'start' parameter.
 
-These patches address them but are either purely cosmetic or only add a
-comment documenting behaviour.
+But later on it is overwritten with either the offset from the extent
+buffer's start or 0.
 
-Changes to v1:
-* Add Reviewed-by tags
-* Change wording of commit message in patch 3/3
+So get rid of the initial initialization.
 
-Johannes Thumshirn (3):
-  btrfs: don't initialize 'offset' in map_private_extent_buffer()
-  btrfs: use offset_in_page for start_offset in
-    map_private_extent_buffer()
-  btrfs: document extent mapping assumptions in checksum
+Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/extent_io.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- fs/btrfs/disk-io.c   | 6 ++++++
- fs/btrfs/extent_io.c | 4 ++--
- 2 files changed, 8 insertions(+), 2 deletions(-)
-
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 582b4b1c41e0..7aafdec49dc3 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -5380,7 +5380,7 @@ int map_private_extent_buffer(const struct extent_buffer *eb,
+ 			      char **map, unsigned long *map_start,
+ 			      unsigned long *map_len)
+ {
+-	size_t offset = start & (PAGE_SIZE - 1);
++	size_t offset;
+ 	char *kaddr;
+ 	struct page *p;
+ 	size_t start_offset = eb->start & ((u64)PAGE_SIZE - 1);
 -- 
 2.16.4
 

@@ -2,36 +2,35 @@ Return-Path: <SRS0=CI8N=OH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A7C9BC43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 07:48:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6DFC3C43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 08:11:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 712C82082F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 07:48:12 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 712C82082F
+	by mail.kernel.org (Postfix) with ESMTP id 302DA2081C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 08:11:26 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 302DA2081C
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727398AbeK1Ssx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Nov 2018 13:48:53 -0500
-Received: from mx2.suse.de ([195.135.220.15]:35542 "EHLO mx1.suse.de"
+        id S1727827AbeK1TMK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Nov 2018 14:12:10 -0500
+Received: from mx2.suse.de ([195.135.220.15]:38486 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727247AbeK1Ssx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Nov 2018 13:48:53 -0500
+        id S1727795AbeK1TMK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Nov 2018 14:12:10 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id DBE5EAF88;
-        Wed, 28 Nov 2018 07:48:08 +0000 (UTC)
-Subject: Re: [RFC PATCH] btrfs: drop file privileges in btrfs_clone_files
-To:     Christoph Hellwig <hch@infradead.org>
-Cc:     Lu Fengqi <lufq.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org,
-        Filipe Manana <fdmanana@suse.com>
-References: <20181128030731.10288-1-lufq.fnst@cn.fujitsu.com>
- <3377ecbb-a46b-bd85-10b3-7163535a4332@suse.com>
- <20181128074625.GA27028@infradead.org>
+        by mx1.suse.de (Postfix) with ESMTP id EFA12AF07;
+        Wed, 28 Nov 2018 08:11:22 +0000 (UTC)
+Subject: Re: [PATCH 5/8] btrfs: don't enospc all tickets on flush failure
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+References: <20181121190313.24575-1-josef@toxicpanda.com>
+ <20181121190313.24575-6-josef@toxicpanda.com>
+ <ccd81359-764f-6651-a738-ba3b3843b9b3@suse.com>
+ <20181127194601.sdl3qhekvixvevgu@macbook-pro-91.dhcp.thefacebook.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -76,12 +75,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <c47362b2-59e6-56d2-a023-1e101edc161c@suse.com>
-Date:   Wed, 28 Nov 2018 09:48:07 +0200
+Message-ID: <684d2544-315c-330a-f0be-925963019c8a@suse.com>
+Date:   Wed, 28 Nov 2018 10:11:21 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181128074625.GA27028@infradead.org>
+In-Reply-To: <20181127194601.sdl3qhekvixvevgu@macbook-pro-91.dhcp.thefacebook.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -92,29 +91,45 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 28.11.18 г. 9:46 ч., Christoph Hellwig wrote:
-> On Wed, Nov 28, 2018 at 09:44:59AM +0200, Nikolay Borisov wrote:
+On 27.11.18 г. 21:46 ч., Josef Bacik wrote:
+> On Mon, Nov 26, 2018 at 02:25:52PM +0200, Nikolay Borisov wrote:
 >>
 >>
->> On 28.11.18 г. 5:07 ч., Lu Fengqi wrote:
->>> The generic/513 tell that cloning into a file did not strip security
->>> privileges (suid, capabilities) like a regular write would.
->>>
->>> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
->>> ---
->>> The xfs and ocfs2 call generic_remap_file_range_prep to drop file
->>> privileges, I'm not sure whether btrfs should do the same thing.
+>> On 21.11.18 г. 21:03 ч., Josef Bacik wrote:
+>>> With the introduction of the per-inode block_rsv it became possible to
+>>> have really really large reservation requests made because of data
+>>> fragmentation.  Since the ticket stuff assumed that we'd always have
+>>> relatively small reservation requests it just killed all tickets if we
+>>> were unable to satisfy the current request.  However this is generally
+>>> not the case anymore.  So fix this logic to instead see if we had a
+>>> ticket that we were able to give some reservation to, and if we were
+>>> continue the flushing loop again.  Likewise we make the tickets use the
+>>> space_info_add_old_bytes() method of returning what reservation they did
+>>> receive in hopes that it could satisfy reservations down the line.
 >>
->> Why do you think btrfs shouldn't do the same thing. Looking at
->> remap_file_range_prep it seems that btrfs is missing a ton of checks
->> that are useful i.e immutable files/aligned offsets etc.
+>>
+>> The logic of the patch can be summarised as follows:
+>>
+>> If no progress is made for a ticket, then start fail all tickets until
+>> the first one that has progress made on its reservation (inclusive). In
+>> this case this first ticket will be failed but at least it's space will
+>> be reused via space_info_add_old_bytes.
+>>
+>> Frankly this seem really arbitrary.
 > 
-> Any chance we could move btrfs over to use remap_file_range_prep so that
-> all file systems share the exact same checks?
+> It's not though.  The tickets are in order of who requested the reservation.
+> Because we will backfill reservations for things like hugely fragmented files or
+> large amounts of delayed refs we can have spikes where we're trying to reserve
+> 100mb's of metadata space.  We may fill 50mb of that before we run out of space.
+> Well so we can't satisfy that reservation, but the small 100k reservations that
+> are waiting to be serviced can be satisfied and they can run.  The alternative
+> is you get ENOSPC and then you can turn around and touch a file no problem
+> because it's a small reservation and there was room for it.  This patch enables
+> better behavior for the user.  Thanks,
 
-I'm not very familiar with the, Filipe is more familiar so adding to CC.
-But IMO we should do that provided there are no blockers.
+Well this information needs to be in the changelog since it describe the
+situation where this patch is useful.
 
-Filipe, what do you think, is it feasible?
-
+> 
+> Josef
 > 

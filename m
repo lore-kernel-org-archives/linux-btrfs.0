@@ -2,35 +2,34 @@ Return-Path: <SRS0=CI8N=OH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6DFC3C43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 08:11:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6D4ECC43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 08:25:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 302DA2081C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 08:11:26 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 302DA2081C
+	by mail.kernel.org (Postfix) with ESMTP id 349512081C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 08:25:03 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 349512081C
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727827AbeK1TMK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Nov 2018 14:12:10 -0500
-Received: from mx2.suse.de ([195.135.220.15]:38486 "EHLO mx1.suse.de"
+        id S1727803AbeK1TZs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Nov 2018 14:25:48 -0500
+Received: from mx2.suse.de ([195.135.220.15]:40258 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727795AbeK1TMK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Nov 2018 14:12:10 -0500
+        id S1727486AbeK1TZs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Nov 2018 14:25:48 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id EFA12AF07;
-        Wed, 28 Nov 2018 08:11:22 +0000 (UTC)
-Subject: Re: [PATCH 5/8] btrfs: don't enospc all tickets on flush failure
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-References: <20181121190313.24575-1-josef@toxicpanda.com>
- <20181121190313.24575-6-josef@toxicpanda.com>
- <ccd81359-764f-6651-a738-ba3b3843b9b3@suse.com>
- <20181127194601.sdl3qhekvixvevgu@macbook-pro-91.dhcp.thefacebook.com>
+        by mx1.suse.de (Postfix) with ESMTP id C006DAD0A;
+        Wed, 28 Nov 2018 08:24:58 +0000 (UTC)
+Subject: Re: [RFC PATCH 01/17] btrfs: priority alloc: prepare of priority
+ aware allocator
+To:     Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <20181128031148.357-1-suy.fnst@cn.fujitsu.com>
+ <20181128031148.357-2-suy.fnst@cn.fujitsu.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -75,12 +74,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <684d2544-315c-330a-f0be-925963019c8a@suse.com>
-Date:   Wed, 28 Nov 2018 10:11:21 +0200
+Message-ID: <3abe66e9-d836-71d1-8e93-8facc8a5576a@suse.com>
+Date:   Wed, 28 Nov 2018 10:24:56 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181127194601.sdl3qhekvixvevgu@macbook-pro-91.dhcp.thefacebook.com>
+In-Reply-To: <20181128031148.357-2-suy.fnst@cn.fujitsu.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -91,45 +90,90 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 27.11.18 г. 21:46 ч., Josef Bacik wrote:
-> On Mon, Nov 26, 2018 at 02:25:52PM +0200, Nikolay Borisov wrote:
->>
->>
->> On 21.11.18 г. 21:03 ч., Josef Bacik wrote:
->>> With the introduction of the per-inode block_rsv it became possible to
->>> have really really large reservation requests made because of data
->>> fragmentation.  Since the ticket stuff assumed that we'd always have
->>> relatively small reservation requests it just killed all tickets if we
->>> were unable to satisfy the current request.  However this is generally
->>> not the case anymore.  So fix this logic to instead see if we had a
->>> ticket that we were able to give some reservation to, and if we were
->>> continue the flushing loop again.  Likewise we make the tickets use the
->>> space_info_add_old_bytes() method of returning what reservation they did
->>> receive in hopes that it could satisfy reservations down the line.
->>
->>
->> The logic of the patch can be summarised as follows:
->>
->> If no progress is made for a ticket, then start fail all tickets until
->> the first one that has progress made on its reservation (inclusive). In
->> this case this first ticket will be failed but at least it's space will
->> be reused via space_info_add_old_bytes.
->>
->> Frankly this seem really arbitrary.
+On 28.11.18 г. 5:11 ч., Su Yue wrote:
+> To implement priority aware allocator, this patch:
+> Introduces struct btrfs_priority_tree which contains block groups
+> in same level.
+> Adds member priority to struct btrfs_block_group_cache and pointer
+> points to the priority tree it's located.
 > 
-> It's not though.  The tickets are in order of who requested the reservation.
-> Because we will backfill reservations for things like hugely fragmented files or
-> large amounts of delayed refs we can have spikes where we're trying to reserve
-> 100mb's of metadata space.  We may fill 50mb of that before we run out of space.
-> Well so we can't satisfy that reservation, but the small 100k reservations that
-> are waiting to be serviced can be satisfied and they can run.  The alternative
-> is you get ENOSPC and then you can turn around and touch a file no problem
-> because it's a small reservation and there was room for it.  This patch enables
-> better behavior for the user.  Thanks,
-
-Well this information needs to be in the changelog since it describe the
-situation where this patch is useful.
-
+> Adds member priority_trees to struct btrfs_space_info to represents
+> priority trees in different raid types.
 > 
-> Josef
+> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+> ---
+>  fs/btrfs/ctree.h | 24 ++++++++++++++++++++++++
+>  1 file changed, 24 insertions(+)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index e62824cae00a..5c4651d8a524 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -437,6 +437,8 @@ struct btrfs_space_info {
+>  	struct rw_semaphore groups_sem;
+>  	/* for block groups in our same type */
+>  	struct list_head block_groups[BTRFS_NR_RAID_TYPES];
+> +	/* for priority trees in our same type */
+> +	struct rb_root priority_trees[BTRFS_NR_RAID_TYPES];
+>  	wait_queue_head_t wait;
+>  
+>  	struct kobject kobj;
+> @@ -558,6 +560,21 @@ struct btrfs_full_stripe_locks_tree {
+>  	struct mutex lock;
+>  };
+>  
+> +/*
+> + * Tree to record all block_groups in same priority level.
+> + * Only used in priority aware allocator.
+> + */
+> +struct btrfs_priority_tree {
+> +	/* protected by groups_sem */
+> +	struct rb_root block_groups;
+> +	struct rw_semaphore groups_sem;
+> +
+> +	/* for different level priority trees in same index*/
+> +	struct rb_node node;
+> +
+> +	int level;
+
+Do you ever expect the level to be a negative number? If not then use
+u8/u32 depending on the range of levels you expect.
+
+> +};
+> +
+>  struct btrfs_block_group_cache {
+>  	struct btrfs_key key;
+>  	struct btrfs_block_group_item item;
+> @@ -571,6 +588,8 @@ struct btrfs_block_group_cache {
+>  	u64 flags;
+>  	u64 cache_generation;
+>  
+> +	/* It's used only when priority aware allocator is enabled. */
+> +	long priority;
+
+What's the range of priorities you are expecting, wouldn't an u8 be
+sufficient, that gives us 256 priorities?
+
+>  	/*
+>  	 * If the free space extent count exceeds this number, convert the block
+>  	 * group to bitmaps.
+> @@ -616,6 +635,9 @@ struct btrfs_block_group_cache {
+>  	/* for block groups in the same raid type */
+>  	struct list_head list;
+>  
+> +	/* for block groups in the same priority level */
+> +	struct rb_node node;
+> +
+>  	/* usage count */
+>  	atomic_t count;
+>  
+> @@ -670,6 +692,8 @@ struct btrfs_block_group_cache {
+>  
+>  	/* Record locked full stripes for RAID5/6 block group */
+>  	struct btrfs_full_stripe_locks_tree full_stripe_locks_root;
+> +
+> +	struct btrfs_priority_tree *priority_tree;
+>  };
+>  
+>  /* delayed seq elem */
 > 

@@ -2,202 +2,112 @@ Return-Path: <SRS0=CI8N=OH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6DCD8C43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 14:54:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4C59FC43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 15:22:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2BFBD2086B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 14:54:34 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="D1Go4j6M"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2BFBD2086B
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
+	by mail.kernel.org (Postfix) with ESMTP id EE88520832
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 15:22:37 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EE88520832
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728614AbeK2B42 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Nov 2018 20:56:28 -0500
-Received: from mail.kernel.org ([198.145.29.99]:53838 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727789AbeK2B42 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Nov 2018 20:56:28 -0500
-Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 7007D2086B
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Nov 2018 14:54:31 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1543416871;
-        bh=YQQYjd2WITnGQsIp8pgU1nyTTDHzjx0RBAc8rw+xYAM=;
-        h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=D1Go4j6Mhs2jReSQdm7sVRkXajq7XkAwrB0vcjzrY3Ucv4OBPjmd2rXIhWkqkKo7k
-         dzXBzAXNgey4a8bNCTYdsQ5oqOO96ywErId+R2dT3AtbDt6q93rOxnuNV02nfK7Z1L
-         obkfYoHZNxjk0WjruyIoIGl6JsxCINjtX6Q9/0ek=
-From:   fdmanana@kernel.org
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] Btrfs: fix fsync of files with multiple hard links in new directories
-Date:   Wed, 28 Nov 2018 14:54:28 +0000
-Message-Id: <20181128145428.22944-1-fdmanana@kernel.org>
-X-Mailer: git-send-email 2.11.0
-In-Reply-To: <20181128142231.18822-1-fdmanana@kernel.org>
-References: <20181128142231.18822-1-fdmanana@kernel.org>
+        id S1728310AbeK2CYh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Nov 2018 21:24:37 -0500
+Received: from mx2.suse.de ([195.135.220.15]:40814 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727726AbeK2CYg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Nov 2018 21:24:36 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id C89E5AED5;
+        Wed, 28 Nov 2018 15:22:34 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 00DB5DAC7F; Wed, 28 Nov 2018 16:22:17 +0100 (CET)
+Date:   Wed, 28 Nov 2018 16:22:17 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Omar Sandoval <osandov@osandov.com>
+Cc:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/9] btrfs: switch BTRFS_FS_STATE_* to enums
+Message-ID: <20181128152217.GP2842@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Omar Sandoval <osandov@osandov.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+References: <cover.1543348078.git.dsterba@suse.com>
+ <4365d4183bf65240273c8602faa0a75e88906d38.1543348078.git.dsterba@suse.com>
+ <20181128002403.GI846@vader>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20181128002403.GI846@vader>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+On Tue, Nov 27, 2018 at 04:24:03PM -0800, Omar Sandoval wrote:
+> On Tue, Nov 27, 2018 at 08:53:41PM +0100, David Sterba wrote:
+> > We can use simple enum for values that are not part of on-disk format:
+> > global filesystem states.
+> 
+> Reviewed-by: Omar Sandoval <osandov@fb.com>
+> 
+> Some typos/wording suggestions below.
+> 
+> > Signed-off-by: David Sterba <dsterba@suse.com>
+> > ---
+> >  fs/btrfs/ctree.h | 25 +++++++++++++++++++------
+> >  1 file changed, 19 insertions(+), 6 deletions(-)
+> > 
+> > diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> > index a98507fa9192..f82ec5e41b0c 100644
+> > --- a/fs/btrfs/ctree.h
+> > +++ b/fs/btrfs/ctree.h
+> > @@ -109,13 +109,26 @@ static inline unsigned long btrfs_chunk_item_size(int num_stripes)
+> >  }
+> >  
+> >  /*
+> > - * File system states
+> > + * Runtime (in-memory) states of filesystem
+> >   */
+> > -#define BTRFS_FS_STATE_ERROR		0
+> > -#define BTRFS_FS_STATE_REMOUNTING	1
+> > -#define BTRFS_FS_STATE_TRANS_ABORTED	2
+> > -#define BTRFS_FS_STATE_DEV_REPLACING	3
+> > -#define BTRFS_FS_STATE_DUMMY_FS_INFO	4
+> > +enum {
+> > +	/* Global indicator of serious filesysystem errors */
+> 
+> filesysystem -> filesystem
+> 
+> > +	BTRFS_FS_STATE_ERROR,
+> > +	/*
+> > +	 * Filesystem is being remounted, allow to skip some operations, like
+> > +	 * defrag
+> > +	 */
+> > +	BTRFS_FS_STATE_REMOUNTING,
+> > +	/* Track if the transaction abort has been reported */
+> 
+> Which one is "the" transaction abort? This gives me the impression that
+> this is a flag on the transaction, but it's actually filesystem state.
+> Maybe "Track if a transaction abort has been reported on this
+> filesystem"?
 
-The log tree has a long standing problem that when a file is fsync'ed we
-only check for new ancestors, created in the current transaction, by
-following only the hard link for which the fsync was issued. We follow the
-ancestors using the VFS' dget_parent() API. This means that if we create a
-new link for a file in a directory that is new (or in an any other new
-ancestor directory) and then fsync the file using an old hard link, we end
-up not logging the new ancestor, and on log replay that new hard link and
-ancestor do not exist. In some cases, involving renames, the file will not
-exist at all.
+Your wording is more clear and I've used it in the patch.
 
-Example:
+> > +	BTRFS_FS_STATE_TRANS_ABORTED,
+> > +	/*
+> > +	 * Indicate that replace source or target device state is changed and
+> > +	 * allow to block bio operations
+> > +	 */
+> 
+> Again, this makes it sound like it's device state, but it's actually
+> filesystem state. How about "Bio operations should be blocked on this
+> filesystem because a source or target device is being destroyed as part
+> of a device replace"?
 
-  mkfs.btrfs -f /dev/sdb
-  mount /dev/sdb /mnt
-
-  mkdir /mnt/A
-  touch /mnt/foo
-  ln /mnt/foo /mnt/A/bar
-  xfs_io -c fsync /mnt/foo
-
-  <power failure>
-
-In this example after log replay only the hard link named 'foo' exists
-and directory A does not exist, which is unexpected. In other major linux
-filesystems, such as ext4, xfs and f2fs for example, both hard links exist
-and so does directory A after mounting again the filesystem.
-
-Checking if any new ancestors are new and need to be logged was added in
-2009 by commit 12fcfd22fe5b ("Btrfs: tree logging unlink/rename fixes"),
-however only for the ancestors of the hard link (dentry) for which the
-fsync was issued, instead of checking for all ancestors for all of the
-inode's hard links.
-
-So fix this by tracking the id of the last transaction where a hard link
-was created for an inode and then on fsync fallback to a full transaction
-commit when an inode has more than one hard link and at least one new hard
-link was created in the current transaction. This is the simplest solution
-since this is not a common use case (adding frequently hard links for
-which there's an ancestor created in the current transaction and then
-fsync the file). In case it ever becomes a common use case, a solution
-that consists of iterating the fs/subvol btree for each hard link and
-check if any ancestor is new, could be implemented.
-
-This solves many unexpected scenarios reported by Jayashree Mohan and
-Vijay Chidambaram, and for which there is a new test case for fstests
-under review.
-
-Reported-by: Vijay Chidambaram <vvijay03@gmail.com>
-Reported-by: Jayashree Mohan <jayashree2912@gmail.com>
-Fixes: 12fcfd22fe5b ("Btrfs: tree logging unlink/rename fixes")
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
-
-V2: Added missing case set last_link_trans after an inode is evicted and
-    loaded again.
-
- fs/btrfs/btrfs_inode.h |  6 ++++++
- fs/btrfs/inode.c       | 17 +++++++++++++++++
- fs/btrfs/tree-log.c    | 16 ++++++++++++++++
- 3 files changed, 39 insertions(+)
-
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 1343ac57b438..7177d1d33584 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -147,6 +147,12 @@ struct btrfs_inode {
- 	u64 last_unlink_trans;
- 
- 	/*
-+	 * Track the transaction id of the last transaction used to create a
-+	 * hard link for the inode. This is used by the log tree (fsync).
-+	 */
-+	u64 last_link_trans;
-+
-+	/*
- 	 * Number of bytes outstanding that are going to need csums.  This is
- 	 * used in ENOSPC accounting.
- 	 */
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 64ea749c1ba4..51f4628be2d2 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3685,6 +3685,21 @@ static int btrfs_read_locked_inode(struct inode *inode,
- 	 * inode is not a directory, logging its parent unnecessarily.
- 	 */
- 	BTRFS_I(inode)->last_unlink_trans = BTRFS_I(inode)->last_trans;
-+	/*
-+	 * Similar reasoning for last_link_trans, needs to be set otherwise
-+	 * for a case like the following:
-+	 *
-+	 * mkdir A
-+	 * touch foo
-+	 * ln foo A/bar
-+	 * echo 2 > /proc/sys/vm/drop_caches
-+	 * fsync foo
-+	 * <power failure>
-+	 *
-+	 * Would result in link bar and directory A not existing after the power
-+	 * failure.
-+	 */
-+	BTRFS_I(inode)->last_link_trans = BTRFS_I(inode)->last_trans;
- 
- 	path->slots[0]++;
- 	if (inode->i_nlink != 1 ||
-@@ -6651,6 +6666,7 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
- 			if (err)
- 				goto fail;
- 		}
-+		BTRFS_I(inode)->last_link_trans = trans->transid;
- 		d_instantiate(dentry, inode);
- 		ret = btrfs_log_new_name(trans, BTRFS_I(inode), NULL, parent,
- 					 true, NULL);
-@@ -9179,6 +9195,7 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
- 	ei->index_cnt = (u64)-1;
- 	ei->dir_index = 0;
- 	ei->last_unlink_trans = 0;
-+	ei->last_link_trans = 0;
- 	ei->last_log_commit = 0;
- 
- 	spin_lock_init(&ei->lock);
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index aac3749f697f..896d79144052 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -5760,6 +5760,22 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
- 			goto end_trans;
- 	}
- 
-+	/*
-+	 * If a new hard link was added to the inode in the current transaction
-+	 * and its link count is now greater than 1, we need to fallback to a
-+	 * transaction commit, otherwise we can end up not logging all its new
-+	 * parents for all the hard links. Here just from the dentry used to
-+	 * fsync, we can not visit the ancestor inodes for all the other hard
-+	 * links to figure out if any is new, so we fallback to a transaction
-+	 * commit (instead of adding a lot of complexity of scanning a btree,
-+	 * since this scenario is not a common use case).
-+	 */
-+	if (inode->vfs_inode.i_nlink > 1 &&
-+	    inode->last_link_trans > last_committed) {
-+		ret = -EMLINK;
-+		goto end_trans;
-+	}
-+
- 	while (1) {
- 		if (!parent || d_really_is_negative(parent) || sb != parent->d_sb)
- 			break;
--- 
-2.11.0
-
+Same. Thanks.

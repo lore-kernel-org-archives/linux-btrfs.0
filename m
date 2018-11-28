@@ -2,181 +2,202 @@ Return-Path: <SRS0=CI8N=OH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+X-Spam-Status: No, score=-10.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CB1F6C43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 14:40:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6DCD8C43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 14:54:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 80959206B6
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 14:40:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2BFBD2086B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 14:54:34 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="IW+rGuRg"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 80959206B6
+	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="D1Go4j6M"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2BFBD2086B
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728391AbeK2BmO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Nov 2018 20:42:14 -0500
-Received: from mail.kernel.org ([198.145.29.99]:45794 "EHLO mail.kernel.org"
+        id S1728614AbeK2B42 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Nov 2018 20:56:28 -0500
+Received: from mail.kernel.org ([198.145.29.99]:53838 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728223AbeK2BmN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Nov 2018 20:42:13 -0500
-Received: from mail-ua1-f48.google.com (mail-ua1-f48.google.com [209.85.222.48])
+        id S1727789AbeK2B42 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Nov 2018 20:56:28 -0500
+Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 25B702086B
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Nov 2018 14:40:20 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 7007D2086B
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Nov 2018 14:54:31 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1543416020;
-        bh=of0TUJKmXe/OdrJBSNNixcfaKAD20C9Kwx/g+yRgoFc=;
-        h=References:In-Reply-To:From:Date:Subject:To:From;
-        b=IW+rGuRgXQomtdGQ+loj27yXgctmryLABQOA6LZcoHyMqBhETqCepXIPn24OCvj+P
-         AmAhvo6oY5pRH3IYYt6/3I2WKhPP0J3CO7NyU6lKqp5J+V+d1LP6Xzc5LL+O9rV5LX
-         GfwSg6eJNGZNF5QX2oiT3kLXGH2Yt6Xx3iBHHa1Q=
-Received: by mail-ua1-f48.google.com with SMTP id d21so8970224uap.9
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Nov 2018 06:40:20 -0800 (PST)
-X-Gm-Message-State: AA+aEWYiaBXw0oH0tideaisE4Js6vnnRYTn2/naRdCvOHZ4loZnSKzBI
-        1bJA0i7I9+ZQ/tzjVM8KDWC6MM/0Tp9TtbXV17Q=
-X-Google-Smtp-Source: AFSGD/U4TysAOvxaiVltnLJdt4Jrll6cCHh5sdlK9PaNJLJav5HobojvH4ISmuqvqeWTkez2DObLe8vR/a+8T/FyzJU=
-X-Received: by 2002:ab0:3259:: with SMTP id r25mr14683993uan.108.1543416019012;
- Wed, 28 Nov 2018 06:40:19 -0800 (PST)
-MIME-Version: 1.0
-References: <20181123134543.20199-1-fdmanana@kernel.org> <20181123182540.7206-1-fdmanana@kernel.org>
- <20181126181711.GI2842@twin.jikos.cz> <CAL3q7H5kGb9otnqmOGddOGvnT3BnNG6hZHVaBUaOJrOXawVNAA@mail.gmail.com>
- <20181128142217.GO2842@twin.jikos.cz>
-In-Reply-To: <20181128142217.GO2842@twin.jikos.cz>
-From:   Filipe Manana <fdmanana@kernel.org>
-Date:   Wed, 28 Nov 2018 14:40:07 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H6nEFPa20iPLuap7xNpSugTScDt+Z1zvf1WS1dOpOtFDg@mail.gmail.com>
-Message-ID: <CAL3q7H6nEFPa20iPLuap7xNpSugTScDt+Z1zvf1WS1dOpOtFDg@mail.gmail.com>
-Subject: Re: [PATCH v4] Btrfs: fix deadlock with memory reclaim during scrub
-To:     dsterba@suse.cz, linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+        s=default; t=1543416871;
+        bh=YQQYjd2WITnGQsIp8pgU1nyTTDHzjx0RBAc8rw+xYAM=;
+        h=From:To:Subject:Date:In-Reply-To:References:From;
+        b=D1Go4j6Mhs2jReSQdm7sVRkXajq7XkAwrB0vcjzrY3Ucv4OBPjmd2rXIhWkqkKo7k
+         dzXBzAXNgey4a8bNCTYdsQ5oqOO96ywErId+R2dT3AtbDt6q93rOxnuNV02nfK7Z1L
+         obkfYoHZNxjk0WjruyIoIGl6JsxCINjtX6Q9/0ek=
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH v2] Btrfs: fix fsync of files with multiple hard links in new directories
+Date:   Wed, 28 Nov 2018 14:54:28 +0000
+Message-Id: <20181128145428.22944-1-fdmanana@kernel.org>
+X-Mailer: git-send-email 2.11.0
+In-Reply-To: <20181128142231.18822-1-fdmanana@kernel.org>
+References: <20181128142231.18822-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Nov 28, 2018 at 2:22 PM David Sterba <dsterba@suse.cz> wrote:
->
-> On Mon, Nov 26, 2018 at 08:10:30PM +0000, Filipe Manana wrote:
-> > On Mon, Nov 26, 2018 at 6:17 PM David Sterba <dsterba@suse.cz> wrote:
-> > >
-> > > On Fri, Nov 23, 2018 at 06:25:40PM +0000, fdmanana@kernel.org wrote:
-> > > > From: Filipe Manana <fdmanana@suse.com>
-> > > >
-> > > > When a transaction commit starts, it attempts to pause scrub and it blocks
-> > > > until the scrub is paused. So while the transaction is blocked waiting for
-> > > > scrub to pause, we can not do memory allocation with GFP_KERNEL from scrub,
-> > > > otherwise we risk getting into a deadlock with reclaim.
-> > > >
-> > > > Checking for scrub pause requests is done early at the beginning of the
-> > > > while loop of scrub_stripe() and later in the loop, scrub_extent() and
-> > > > scrub_raid56_parity() are called, which in turn call scrub_pages() and
-> > > > scrub_pages_for_parity() respectively. These last two functions do memory
-> > > > allocations using GFP_KERNEL. Same problem could happen while scrubbing
-> > > > the super blocks, since it calls scrub_pages().
-> > > >
-> > > > So make sure GFP_NOFS is used for the memory allocations because at any
-> > > > time a scrub pause request can happen from another task that started to
-> > > > commit a transaction.
-> > > >
-> > > > Fixes: 58c4e173847a ("btrfs: scrub: use GFP_KERNEL on the submission path")
-> > > > Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> > > > ---
-> > > >
-> > > > V2: Make using GFP_NOFS unconditionial. Previous version was racy, as pausing
-> > > > requests migth happen just after we checked for them.
-> > > >
-> > > > V3: Use memalloc_nofs_save() just like V1 did.
-> > > >
-> > > > V4: Similar problem happened for raid56, which was previously missed, so
-> > > >     deal with it as well as the case for scrub_supers().
-> > >
-> > > Enclosing the whole scrub to 'nofs' seems like the best option and
-> > > future proof. What I missed in 58c4e173847a was the "don't hold big lock
-> > > under GFP_KERNEL allocation" pattern.
-> > >
-> > > >  fs/btrfs/scrub.c | 12 ++++++++++++
-> > > >  1 file changed, 12 insertions(+)
-> > > >
-> > > > diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-> > > > index 3be1456b5116..e08b7502d1f0 100644
-> > > > --- a/fs/btrfs/scrub.c
-> > > > +++ b/fs/btrfs/scrub.c
-> > > > @@ -3779,6 +3779,7 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
-> > > >       struct scrub_ctx *sctx;
-> > > >       int ret;
-> > > >       struct btrfs_device *dev;
-> > > > +     unsigned int nofs_flag;
-> > > >
-> > > >       if (btrfs_fs_closing(fs_info))
-> > > >               return -EINVAL;
-> > > > @@ -3882,6 +3883,16 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
-> > > >       atomic_inc(&fs_info->scrubs_running);
-> > > >       mutex_unlock(&fs_info->scrub_lock);
-> > > >
-> > > > +     /*
-> > > > +      * In order to avoid deadlock with reclaim when there is a transaction
-> > > > +      * trying to pause scrub, make sure we use GFP_NOFS for all the
-> > > > +      * allocations done at btrfs_scrub_pages() and scrub_pages_for_parity()
-> > > > +      * invoked by our callees. The pausing request is done when the
-> > > > +      * transaction commit starts, and it blocks the transaction until scrub
-> > > > +      * is paused (done at specific points at scrub_stripe() or right above
-> > > > +      * before incrementing fs_info->scrubs_running).
-> > >
-> > > This hilights why there's perhaps no point in trying to make the nofs
-> > > section smaller, handling all the interactions between scrub and
-> > > transaction would be too complex.
-> > >
-> > > Reviewed-by: David Sterba <dsterba@suse.com>
-> >
-> > Well, the worker tasks can also not use gfp_kernel, since the scrub
-> > task waits for them to complete before pausing.
-> > I missed this, and 2 reviewers as well, so perhaps it wasn't that
-> > trivial and I shouldn't feel that I miserably failed to identify all
-> > cases for something rather trivial. V5 sent.
->
-> You can say that you left it there intentionally, such cookies are a
-> good drill for reviewers to stay sharp.
+From: Filipe Manana <fdmanana@suse.com>
 
-Unfortunately for me, it was not on purpose.
+The log tree has a long standing problem that when a file is fsync'ed we
+only check for new ancestors, created in the current transaction, by
+following only the hard link for which the fsync was issued. We follow the
+ancestors using the VFS' dget_parent() API. This means that if we create a
+new link for a file in a directory that is new (or in an any other new
+ancestor directory) and then fsync the file using an old hard link, we end
+up not logging the new ancestor, and on log replay that new hard link and
+ancestor do not exist. In some cases, involving renames, the file will not
+exist at all.
 
-However there's the small drill of, for the workers only, potentially
-moving the memalloc_nofs_save() and
-restore to scrub_handle_errored_block(), since the only two possible
-gfp_kernel allocations for workers
-are during the case where a repair is needed:
+Example:
 
-scrub_bio_end_io_worker()
-  scrub_block_complete()
-    scrub_handle_errored_block()
-      lock_full_stripe()
-        insert_full_stripe_lock()
-          -> kmalloc with GFP_KERNEL
+  mkfs.btrfs -f /dev/sdb
+  mount /dev/sdb /mnt
 
+  mkdir /mnt/A
+  touch /mnt/foo
+  ln /mnt/foo /mnt/A/bar
+  xfs_io -c fsync /mnt/foo
 
-scrub_bio_end_io_worker()
-   scrub_block_complete()
-     scrub_handle_errored_block()
-       scrub_write_page_to_dev_replace()
-         scrub_add_page_to_wr_bio()
-           -> kzalloc with GFP_KERNEL
+  <power failure>
 
-Just to avoid some duplication.
+In this example after log replay only the hard link named 'foo' exists
+and directory A does not exist, which is unexpected. In other major linux
+filesystems, such as ext4, xfs and f2fs for example, both hard links exist
+and so does directory A after mounting again the filesystem.
 
->
-> When I started the conversions of GFP_NOFS -> GFP_KERNEL, scrub looked
-> quite safe in this respect but turns out it's not. I was wondering if we
-> could add some lock assertions before GFP_KERNEL allocations, like:
->
->         assert_lock_not_held(fs_info->device_list_mutex)
->         kmalloc(GFP_KERNEL)
->
-> and add more locks per subsystem (eg. the scrub lock) and possibly some
-> convenience wrappers. Michal's scope GFS_NOFS patch series has a
-> debugging warning where NOFS is used in context where it does not need
-> to, while having the 'must not hold an important lock' would be a good
-> debugging helper too.
+Checking if any new ancestors are new and need to be logged was added in
+2009 by commit 12fcfd22fe5b ("Btrfs: tree logging unlink/rename fixes"),
+however only for the ancestors of the hard link (dentry) for which the
+fsync was issued, instead of checking for all ancestors for all of the
+inode's hard links.
+
+So fix this by tracking the id of the last transaction where a hard link
+was created for an inode and then on fsync fallback to a full transaction
+commit when an inode has more than one hard link and at least one new hard
+link was created in the current transaction. This is the simplest solution
+since this is not a common use case (adding frequently hard links for
+which there's an ancestor created in the current transaction and then
+fsync the file). In case it ever becomes a common use case, a solution
+that consists of iterating the fs/subvol btree for each hard link and
+check if any ancestor is new, could be implemented.
+
+This solves many unexpected scenarios reported by Jayashree Mohan and
+Vijay Chidambaram, and for which there is a new test case for fstests
+under review.
+
+Reported-by: Vijay Chidambaram <vvijay03@gmail.com>
+Reported-by: Jayashree Mohan <jayashree2912@gmail.com>
+Fixes: 12fcfd22fe5b ("Btrfs: tree logging unlink/rename fixes")
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+
+V2: Added missing case set last_link_trans after an inode is evicted and
+    loaded again.
+
+ fs/btrfs/btrfs_inode.h |  6 ++++++
+ fs/btrfs/inode.c       | 17 +++++++++++++++++
+ fs/btrfs/tree-log.c    | 16 ++++++++++++++++
+ 3 files changed, 39 insertions(+)
+
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 1343ac57b438..7177d1d33584 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -147,6 +147,12 @@ struct btrfs_inode {
+ 	u64 last_unlink_trans;
+ 
+ 	/*
++	 * Track the transaction id of the last transaction used to create a
++	 * hard link for the inode. This is used by the log tree (fsync).
++	 */
++	u64 last_link_trans;
++
++	/*
+ 	 * Number of bytes outstanding that are going to need csums.  This is
+ 	 * used in ENOSPC accounting.
+ 	 */
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 64ea749c1ba4..51f4628be2d2 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3685,6 +3685,21 @@ static int btrfs_read_locked_inode(struct inode *inode,
+ 	 * inode is not a directory, logging its parent unnecessarily.
+ 	 */
+ 	BTRFS_I(inode)->last_unlink_trans = BTRFS_I(inode)->last_trans;
++	/*
++	 * Similar reasoning for last_link_trans, needs to be set otherwise
++	 * for a case like the following:
++	 *
++	 * mkdir A
++	 * touch foo
++	 * ln foo A/bar
++	 * echo 2 > /proc/sys/vm/drop_caches
++	 * fsync foo
++	 * <power failure>
++	 *
++	 * Would result in link bar and directory A not existing after the power
++	 * failure.
++	 */
++	BTRFS_I(inode)->last_link_trans = BTRFS_I(inode)->last_trans;
+ 
+ 	path->slots[0]++;
+ 	if (inode->i_nlink != 1 ||
+@@ -6651,6 +6666,7 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
+ 			if (err)
+ 				goto fail;
+ 		}
++		BTRFS_I(inode)->last_link_trans = trans->transid;
+ 		d_instantiate(dentry, inode);
+ 		ret = btrfs_log_new_name(trans, BTRFS_I(inode), NULL, parent,
+ 					 true, NULL);
+@@ -9179,6 +9195,7 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
+ 	ei->index_cnt = (u64)-1;
+ 	ei->dir_index = 0;
+ 	ei->last_unlink_trans = 0;
++	ei->last_link_trans = 0;
+ 	ei->last_log_commit = 0;
+ 
+ 	spin_lock_init(&ei->lock);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index aac3749f697f..896d79144052 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -5760,6 +5760,22 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 			goto end_trans;
+ 	}
+ 
++	/*
++	 * If a new hard link was added to the inode in the current transaction
++	 * and its link count is now greater than 1, we need to fallback to a
++	 * transaction commit, otherwise we can end up not logging all its new
++	 * parents for all the hard links. Here just from the dentry used to
++	 * fsync, we can not visit the ancestor inodes for all the other hard
++	 * links to figure out if any is new, so we fallback to a transaction
++	 * commit (instead of adding a lot of complexity of scanning a btree,
++	 * since this scenario is not a common use case).
++	 */
++	if (inode->vfs_inode.i_nlink > 1 &&
++	    inode->last_link_trans > last_committed) {
++		ret = -EMLINK;
++		goto end_trans;
++	}
++
+ 	while (1) {
+ 		if (!parent || d_really_is_negative(parent) || sb != parent->d_sb)
+ 			break;
+-- 
+2.11.0
+

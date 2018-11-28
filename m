@@ -3,33 +3,33 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2C828C43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 07:02:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6C18EC43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 07:04:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id F1D372082F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 07:02:18 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org F1D372082F
+	by mail.kernel.org (Postfix) with ESMTP id 16C922082F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 07:04:36 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 16C922082F
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727473AbeK1SCy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Nov 2018 13:02:54 -0500
-Received: from mx2.suse.de ([195.135.220.15]:58264 "EHLO mx1.suse.de"
+        id S1727268AbeK1SFM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Nov 2018 13:05:12 -0500
+Received: from mx2.suse.de ([195.135.220.15]:58550 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727107AbeK1SCy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Nov 2018 13:02:54 -0500
+        id S1727230AbeK1SFL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Nov 2018 13:05:11 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 7D0C1AF8A;
-        Wed, 28 Nov 2018 07:02:15 +0000 (UTC)
-Subject: Re: [PATCH 2/3] btrfs: cleanup the useless DEFINE_WAIT in
- cleanup_transaction
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id C1947AF8A;
+        Wed, 28 Nov 2018 07:04:32 +0000 (UTC)
+Subject: Re: [PATCH 3/3] btrfs: remove redundant nowait check for
+ buffered_write
 To:     Lu Fengqi <lufq.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 References: <20181128032130.11452-1-lufq.fnst@cn.fujitsu.com>
- <20181128032254.11625-1-lufq.fnst@cn.fujitsu.com>
+ <20181128032330.11753-1-lufq.fnst@cn.fujitsu.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -74,12 +74,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <4ed73c3e-e980-5842-c343-a3a1f6bc6625@suse.com>
-Date:   Wed, 28 Nov 2018 09:02:14 +0200
+Message-ID: <2aa63759-0c0a-a8f8-c02e-e215e1be6c73@suse.com>
+Date:   Wed, 28 Nov 2018 09:04:31 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181128032254.11625-1-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <20181128032330.11753-1-lufq.fnst@cn.fujitsu.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -90,28 +90,35 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 28.11.18 г. 5:22 ч., Lu Fengqi wrote:
-> When it is introduced at commit f094ac32aba3 ("Btrfs: fix NULL pointer
-> after aborting a transaction"), it's useless.
-> 
-> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+On 28.11.18 г. 5:23 ч., Lu Fengqi wrote:
+> The generic_write_checks will check the combination of IOCB_NOWAIT and
+> !IOCB_DIRECT.
+
+True, however btrfs will return ENOSUPP whereas the generic code returns
+EINVAL. I guess this is not a big deal and it's likely generic code is
+correct, so:
 
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
-> ---
->  fs/btrfs/transaction.c | 1 -
->  1 file changed, 1 deletion(-)
 > 
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index f92c0a88c4ad..67e84939b758 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -1840,7 +1840,6 @@ static void cleanup_transaction(struct btrfs_trans_handle *trans, int err)
->  {
->  	struct btrfs_fs_info *fs_info = trans->fs_info;
->  	struct btrfs_transaction *cur_trans = trans->transaction;
-> -	DEFINE_WAIT(wait);
+> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+> ---
+>  fs/btrfs/file.c | 4 ----
+>  1 file changed, 4 deletions(-)
+> 
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index 3835bb8c146d..190db9a685a2 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -1889,10 +1889,6 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
+>  	loff_t oldsize;
+>  	int clean_page = 0;
 >  
->  	WARN_ON(refcount_read(&trans->use_count) > 1);
->  
+> -	if (!(iocb->ki_flags & IOCB_DIRECT) &&
+> -	    (iocb->ki_flags & IOCB_NOWAIT))
+> -		return -EOPNOTSUPP;
+> -
+>  	if (!inode_trylock(inode)) {
+>  		if (iocb->ki_flags & IOCB_NOWAIT)
+>  			return -EAGAIN;
 > 

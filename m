@@ -2,31 +2,33 @@ Return-Path: <SRS0=CI8N=OH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 14C7DC43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 01:34:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5DACAC43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 01:36:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DB6362086B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 01:33:59 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org DB6362086B
+	by mail.kernel.org (Postfix) with ESMTP id 0CECF2086B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 01:36:08 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0CECF2086B
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726869AbeK1Mdq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Nov 2018 07:33:46 -0500
-Received: from mout.gmx.net ([212.227.15.15]:47271 "EHLO mout.gmx.net"
+        id S1726705AbeK1Mfz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Nov 2018 07:35:55 -0500
+Received: from mout.gmx.net ([212.227.15.15]:59959 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726567AbeK1Mdq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Nov 2018 07:33:46 -0500
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx003
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0MYP57-1fwcqY14ID-00VA3v; Wed, 28
- Nov 2018 02:33:56 +0100
-Subject: Re: [PATCH 0/9] Switch defines to enums
+        id S1726539AbeK1Mfy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Nov 2018 07:35:54 -0500
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx001
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0M3RVA-1faods0gXQ-00r1ZQ; Wed, 28
+ Nov 2018 02:36:01 +0100
+Subject: Re: [PATCH 9/9] btrfs: drop extra enum initialization where using
+ defaults
 To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 References: <cover.1543348078.git.dsterba@suse.com>
+ <932e555ce5dff2ec978bf1d21a4ef1d8d5e7ccfd.1543348078.git.dsterba@suse.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -53,50 +55,52 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <45dcab9e-fb88-8980-90d9-1875ea1ee992@gmx.com>
-Date:   Wed, 28 Nov 2018 09:33:50 +0800
+Message-ID: <efea97ef-f7e8-eb43-b5b6-212b0bae8cb4@gmx.com>
+Date:   Wed, 28 Nov 2018 09:35:57 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.3.1
 MIME-Version: 1.0
-In-Reply-To: <cover.1543348078.git.dsterba@suse.com>
+In-Reply-To: <932e555ce5dff2ec978bf1d21a4ef1d8d5e7ccfd.1543348078.git.dsterba@suse.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="RNbrPZkQIir6nMUfgAIKSatosFiR6DYOR"
-X-Provags-ID: V03:K1:gM9EOW8OiapWpb1dsgiz9QFD/fD7mVIpdsiK7ac471ljwDHTwnP
- kFQw5gtWRe6GsOS0OiehRK3O3C8ss0GcOjWqgY862XxLe6AWaVTw5EbY29QWSevs1DcHLAz
- CLxP1rGLdW9jlh+HPI2vgGPvIdysK4sYqEAoDG2PmB6JKVFJbC4dA1gOQlAm0i6hRcADkkk
- ix/+tN2piGMlsnmEBRnkA==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:uE3FPSw41xQ=:jnDTnIpG2FRc2dwv/Rwlm+
- Rmzp6X3JE+6pDbSPlJ6GHdW1MtsYv4a69rlXNfOuZzInswNloWKADcEO9Pe123Fw/XTxTji/l
- rv/Lfh/mau7lkP+nanCr6/oUCM1qAELoIXtgka3cmTJYSMyVvg9YPAfwFNQgi6MYp8vgMvWst
- tsBbo5e5tUuI5O67s/Hxs9Mykq/9bzhG8JEGdYa20S8rw3zoBkiRLGiGCAmLgpeDU4Dxq/sxx
- i1lXh0uM117dM+lf9i8gecXG0izd7vWHq+vpZIQIQHPgEPcM0KxHdiA/q18yPKMCdKCH4j/sM
- M9+66kQsIPu+PQ9CNHr3xXF4JQDOsQZTr3QooJ6hbN/4e+2iDyK5o2ojx+LNujMrIHXipPzCi
- dgr8avNEQ2EN8CzjyMVHEQL8bkpGqQkYF7ZMpFMC90yAVC0AlFaQxPR70xKE5rU3+FDODCz/B
- vKOOi0xCcY059sPd5aTGZ0sAS2Rd57h4FWFwH5L5y9n2cbDCXOKWZans2FMNzpNBQgjDZs+N7
- vABMN/h4g3VfpjpSPnuv+5XhErcAnPOzNlU3SLaUsNKSvYZb6RNeID/mTNaS4Cl/dFpcEuBbn
- 5TGSaGOBltnTRmN2W1XjoHL/jH2klpzR8FKs/W3ym0UnNnbdUMW3SHwF9ayKPTsCZYdroMley
- k1mafCAK2Al5Mu2tkwX7PJJmueMvXcubNtZnH1Xcv19B0rZmDwPkFwcR362t67w21znp6dcPw
- 6vDSMclbInuVsJPEvlyxrwLjiLF6Tr6CjklVd5np0dXIDDTVZzSb+2rX3CYTrCXdnOBRGih+1
- uYnLE2K8VIqItXtIKIaIdHxEtJujN9GPVC2F4uNqCnFlJLJgAcg0dJNM8MkYoCpYAd3lgiTeM
- D6vKtnZArrDqpbHiPCvBDbGhOOljLM51N2hWeDKBQ=
+ boundary="79BAnNAuU7xSDvxKkFhflM03NWaiCfRtX"
+X-Provags-ID: V03:K1:SmRsPxeAZFiQHJGb7PXiWwuMQ8DykPfjmJ0PdZzXKOp9pSDadFK
+ WAUVNV6HurEaYB3j1K95b4j4BL7cfwc8p44/BiMLhmcpcHaYJBMVzfy448/lI4V4zW+x4GW
+ vER/Zsa0Vg3WHuWYyAE6W8j/rfS5Y6ynd8FD/nmQ/m9xD728ZvpcXSLdRU8jRlLyKJnM7+x
+ 52RYBkJwbUpVc7A32Yhxg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:UPKX1B7WTzo=:rfkWpJEe6hdXjwwKNlyrQ8
+ TXzRR66q7xcN0mgfrtS3giB1yu/ryl1pcYfiDmkB8Rx+xLUw02N9IRhkDVUF9ynkg27fXYHBF
+ IVylcNajnTX2iD4onaisuyTgoHRcWLioteLcnO43k3QnrS09DaohpTN+fMNhqdFrGgODEC+4L
+ ochOezPs44lXqvHJFULXmsl6nxZZwHlIdZp3Kl/bED0S1ptR2EwFF9Dxl6C1J5FG4YZ3zB7dL
+ gpx2irAQc26xcTcYmdsWO8vyACCiiF72TnqBV0HZd3Ev8U7AAHOijFshtTmuKgZ/s0otGI0Yk
+ EYGqi9W7YzZvSureKBEj5SYkRx9B+J+RV+f+BrhFYDq8ZAEt2GFkErWDGl5Z1HZGt1YhXIRVG
+ oU0M2NtzMX9jNcuXEQ4VCsPdmC6bG47N131VK0iRFB1lPFf7usacTlsDmC6DVKnjlMNPmh/O0
+ TcyqnRfUE6j88c/AcHo7w9xU57jKK0nZGWzqUIqRMqYillag5cK2S5zgHFD7KK5fioOjdusxc
+ Bc6wogw1wlscNn2jXsJQqd8OTOgur1xqW3uAPVhlPsE/iLt8hOl3jhJ86kzfrK5T/eJ3WbB//
+ 6/Gd40hCaZ1/wGofzXF/A8AGtUCbAZIq+jWqUpmbSdpjHxjvt3lKT4f3hBXEefmiif8su5+2R
+ 2zgzGdxHE5svcpjagtjgcG9Dpg4XxzmeTibXiJ0bi2tLxfavcI+wBMQKXux7F/WanOQVvVmDT
+ Xki8SB2oReGwsvrG+ScOAj5Efgitp6C/8/gK0tSwCPhQ8Qk6pj2+RVj9pQXel/qbEyP5P3hy6
+ 3vqYtc2O2w4nCriGZ0ehnfNCXVXB6LPnLAcmv4iXq4X+weGTAYKlxEnJyR3ks5E6LmZvSGtiB
+ 2ca5wN7Tip+3LgTT7h49yYuL7TFrH7jX6+UdzQF7o=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---RNbrPZkQIir6nMUfgAIKSatosFiR6DYOR
-Content-Type: multipart/mixed; boundary="73i2IkkDiRPKvmaJx5QygT3FPalafrD0n";
+--79BAnNAuU7xSDvxKkFhflM03NWaiCfRtX
+Content-Type: multipart/mixed; boundary="JSbtM0LSPkEJV3z4TiyKSbkzJurPRjKZF";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <45dcab9e-fb88-8980-90d9-1875ea1ee992@gmx.com>
-Subject: Re: [PATCH 0/9] Switch defines to enums
+Message-ID: <efea97ef-f7e8-eb43-b5b6-212b0bae8cb4@gmx.com>
+Subject: Re: [PATCH 9/9] btrfs: drop extra enum initialization where using
+ defaults
 References: <cover.1543348078.git.dsterba@suse.com>
-In-Reply-To: <cover.1543348078.git.dsterba@suse.com>
+ <932e555ce5dff2ec978bf1d21a4ef1d8d5e7ccfd.1543348078.git.dsterba@suse.com>
+In-Reply-To: <932e555ce5dff2ec978bf1d21a4ef1d8d5e7ccfd.1543348078.git.dsterba@suse.com>
 
---73i2IkkDiRPKvmaJx5QygT3FPalafrD0n
+--JSbtM0LSPkEJV3z4TiyKSbkzJurPRjKZF
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
@@ -104,69 +108,188 @@ Content-Transfer-Encoding: quoted-printable
 
 
 On 2018/11/28 =E4=B8=8A=E5=8D=883:53, David Sterba wrote:
-> This is motivated by a merging mistake that happened a few releases ago=
-=2E
-> Two patches updated BTRFS_FS_* flags independently to the same value,
-> git did not see any direct merge conflict. The two values got mixed at
-> runtime and caused crash.
+> The first auto-assigned value to enum is 0, we can use that and not
+> initialize all members where the auto-increment does the same. This is
+> used for values that are not part of on-disk format.
 >=20
-> Update all #define sequential values, the above merging problem would
-> not happen as there would be a conflict and the enum value
-> auto-increment would prevent duplicated values anyway.
+> Signed-off-by: David Sterba <dsterba@suse.com>
 
-Just one small question for the bitmap usage.
-
-For enum we won't directly know the last number is, my concern is if
-we're using u16 as bitmap and there is some enum over 15, will we get a
-warning at compile time or some bug would just sneak into kernel?
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
 Thanks,
 Qu
 
+> ---
+>  fs/btrfs/btrfs_inode.h |  2 +-
+>  fs/btrfs/ctree.h       | 28 ++++++++++++++--------------
+>  fs/btrfs/disk-io.h     | 10 +++++-----
+>  fs/btrfs/qgroup.h      |  2 +-
+>  fs/btrfs/sysfs.h       |  2 +-
+>  fs/btrfs/transaction.h | 14 +++++++-------
+>  6 files changed, 29 insertions(+), 29 deletions(-)
 >=20
-> David Sterba (9):
->   btrfs: switch BTRFS_FS_STATE_* to enums
->   btrfs: switch BTRFS_BLOCK_RSV_* to enums
->   btrfs: switch BTRFS_FS_* to enums
->   btrfs: switch BTRFS_ROOT_* to enums
->   btrfs: swtich EXTENT_BUFFER_* to enums
->   btrfs: switch EXTENT_FLAG_* to enums
->   btrfs: switch BTRFS_*_LOCK to enums
->   btrfs: switch BTRFS_ORDERED_* to enums
->   btrfs: drop extra enum initialization where using defaults
+> diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+> index 4de321aee7a5..fc25607304f2 100644
+> --- a/fs/btrfs/btrfs_inode.h
+> +++ b/fs/btrfs/btrfs_inode.h
+> @@ -20,7 +20,7 @@
+>   * new data the application may have written before commit.
+>   */
+>  enum {
+> -	BTRFS_INODE_ORDERED_DATA_CLOSE =3D 0,
+> +	BTRFS_INODE_ORDERED_DATA_CLOSE,
+>  	BTRFS_INODE_DUMMY,
+>  	BTRFS_INODE_IN_DEFRAG,
+>  	BTRFS_INODE_HAS_ASYNC_EXTENT,
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 4bb0ac3050ff..f1d1c6ba3aa1 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -334,7 +334,7 @@ struct btrfs_node {
+>   * The slots array records the index of the item or block pointer
+>   * used while walking the tree.
+>   */
+> -enum { READA_NONE =3D 0, READA_BACK, READA_FORWARD };
+> +enum { READA_NONE, READA_BACK, READA_FORWARD };
+>  struct btrfs_path {
+>  	struct extent_buffer *nodes[BTRFS_MAX_LEVEL];
+>  	int slots[BTRFS_MAX_LEVEL];
+> @@ -532,18 +532,18 @@ struct btrfs_free_cluster {
+>  };
+> =20
+>  enum btrfs_caching_type {
+> -	BTRFS_CACHE_NO		=3D 0,
+> -	BTRFS_CACHE_STARTED	=3D 1,
+> -	BTRFS_CACHE_FAST	=3D 2,
+> -	BTRFS_CACHE_FINISHED	=3D 3,
+> -	BTRFS_CACHE_ERROR	=3D 4,
+> +	BTRFS_CACHE_NO,
+> +	BTRFS_CACHE_STARTED,
+> +	BTRFS_CACHE_FAST,
+> +	BTRFS_CACHE_FINISHED,
+> +	BTRFS_CACHE_ERROR,
+>  };
+> =20
+>  enum btrfs_disk_cache_state {
+> -	BTRFS_DC_WRITTEN	=3D 0,
+> -	BTRFS_DC_ERROR		=3D 1,
+> -	BTRFS_DC_CLEAR		=3D 2,
+> -	BTRFS_DC_SETUP		=3D 3,
+> +	BTRFS_DC_WRITTEN,
+> +	BTRFS_DC_ERROR,
+> +	BTRFS_DC_CLEAR,
+> +	BTRFS_DC_SETUP,
+>  };
+> =20
+>  struct btrfs_caching_control {
+> @@ -2621,10 +2621,10 @@ static inline gfp_t btrfs_alloc_write_mask(stru=
+ct address_space *mapping)
+>  /* extent-tree.c */
+> =20
+>  enum btrfs_inline_ref_type {
+> -	BTRFS_REF_TYPE_INVALID =3D	 0,
+> -	BTRFS_REF_TYPE_BLOCK =3D		 1,
+> -	BTRFS_REF_TYPE_DATA =3D		 2,
+> -	BTRFS_REF_TYPE_ANY =3D		 3,
+> +	BTRFS_REF_TYPE_INVALID,
+> +	BTRFS_REF_TYPE_BLOCK,
+> +	BTRFS_REF_TYPE_DATA,
+> +	BTRFS_REF_TYPE_ANY,
+>  };
+> =20
+>  int btrfs_get_extent_inline_ref_type(const struct extent_buffer *eb,
+> diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+> index 4cccba22640f..987a64bc0c66 100644
+> --- a/fs/btrfs/disk-io.h
+> +++ b/fs/btrfs/disk-io.h
+> @@ -21,11 +21,11 @@
+>  #define BTRFS_BDEV_BLOCKSIZE	(4096)
+> =20
+>  enum btrfs_wq_endio_type {
+> -	BTRFS_WQ_ENDIO_DATA =3D 0,
+> -	BTRFS_WQ_ENDIO_METADATA =3D 1,
+> -	BTRFS_WQ_ENDIO_FREE_SPACE =3D 2,
+> -	BTRFS_WQ_ENDIO_RAID56 =3D 3,
+> -	BTRFS_WQ_ENDIO_DIO_REPAIR =3D 4,
+> +	BTRFS_WQ_ENDIO_DATA,
+> +	BTRFS_WQ_ENDIO_METADATA,
+> +	BTRFS_WQ_ENDIO_FREE_SPACE,
+> +	BTRFS_WQ_ENDIO_RAID56,
+> +	BTRFS_WQ_ENDIO_DIO_REPAIR,
+>  };
+> =20
+>  static inline u64 btrfs_sb_offset(int mirror)
+> diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+> index d8f78f5ab854..e4e6ee44073a 100644
+> --- a/fs/btrfs/qgroup.h
+> +++ b/fs/btrfs/qgroup.h
+> @@ -70,7 +70,7 @@ struct btrfs_qgroup_extent_record {
+>   *	be converted into META_PERTRANS.
+>   */
+>  enum btrfs_qgroup_rsv_type {
+> -	BTRFS_QGROUP_RSV_DATA =3D 0,
+> +	BTRFS_QGROUP_RSV_DATA,
+>  	BTRFS_QGROUP_RSV_META_PERTRANS,
+>  	BTRFS_QGROUP_RSV_META_PREALLOC,
+>  	BTRFS_QGROUP_RSV_LAST,
+> diff --git a/fs/btrfs/sysfs.h b/fs/btrfs/sysfs.h
+> index c6ee600aff89..40716b357c1d 100644
+> --- a/fs/btrfs/sysfs.h
+> +++ b/fs/btrfs/sysfs.h
+> @@ -9,7 +9,7 @@
+>  extern u64 btrfs_debugfs_test;
+> =20
+>  enum btrfs_feature_set {
+> -	FEAT_COMPAT =3D 0,
+> +	FEAT_COMPAT,
+>  	FEAT_COMPAT_RO,
+>  	FEAT_INCOMPAT,
+>  	FEAT_MAX
+> diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+> index 703d5116a2fc..f1ba78949d1b 100644
+> --- a/fs/btrfs/transaction.h
+> +++ b/fs/btrfs/transaction.h
+> @@ -12,13 +12,13 @@
+>  #include "ctree.h"
+> =20
+>  enum btrfs_trans_state {
+> -	TRANS_STATE_RUNNING		=3D 0,
+> -	TRANS_STATE_BLOCKED		=3D 1,
+> -	TRANS_STATE_COMMIT_START	=3D 2,
+> -	TRANS_STATE_COMMIT_DOING	=3D 3,
+> -	TRANS_STATE_UNBLOCKED		=3D 4,
+> -	TRANS_STATE_COMPLETED		=3D 5,
+> -	TRANS_STATE_MAX			=3D 6,
+> +	TRANS_STATE_RUNNING,
+> +	TRANS_STATE_BLOCKED,
+> +	TRANS_STATE_COMMIT_START,
+> +	TRANS_STATE_COMMIT_DOING,
+> +	TRANS_STATE_UNBLOCKED,
+> +	TRANS_STATE_COMPLETED,
+> +	TRANS_STATE_MAX,
+>  };
+> =20
+>  #define BTRFS_TRANS_HAVE_FREE_BGS	0
 >=20
->  fs/btrfs/btrfs_inode.h  |   2 +-
->  fs/btrfs/ctree.h        | 168 ++++++++++++++++++++++------------------=
-
->  fs/btrfs/disk-io.h      |  10 +--
->  fs/btrfs/extent_io.h    |  28 ++++---
->  fs/btrfs/extent_map.h   |  21 +++--
->  fs/btrfs/locking.h      |  10 ++-
->  fs/btrfs/ordered-data.h |  45 ++++++-----
->  fs/btrfs/qgroup.h       |   2 +-
->  fs/btrfs/sysfs.h        |   2 +-
->  fs/btrfs/transaction.h  |  14 ++--
->  10 files changed, 169 insertions(+), 133 deletions(-)
->=20
 
 
---73i2IkkDiRPKvmaJx5QygT3FPalafrD0n--
+--JSbtM0LSPkEJV3z4TiyKSbkzJurPRjKZF--
 
---RNbrPZkQIir6nMUfgAIKSatosFiR6DYOR
+--79BAnNAuU7xSDvxKkFhflM03NWaiCfRtX
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlv98H4ACgkQwj2R86El
-/qisoAf8CDgmwdmjljcIa3/L5XiOO62UsOMcIgEa9hvoXT70CC7kz2KOKi+I1pJn
-XUhbCfzv5DCfQhK7cHzcgJuzo8Ne4YINSaUFB289GTWrxyoLcVziKp0D4u188tFA
-CMOgDF9D5efj6EHY+RqtNgNbO11xHlrVhcJiKDjjSodYsQQ6rdNQh1TkGDCtHwMg
-XRIPMmPejy0aAuFNCltwnvT0Bp9qS1+1pVlPTjNWrWoyo9iZy7PjMsvMxEAgmcRt
-LwQFIAaoMZpw1WPYT7PGveEBc869wfjh9YwX7kH2wGXKILTrjYEh5Ipq0VntV3nJ
-JEwpeAUdWnYE6wGTSMaFRTbTTtNkuQ==
-=ye0N
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlv98P0ACgkQwj2R86El
+/qj4BwgAmQPeS8v/x7UdKCzb52MuDEX0W28pPU1SqUg6xQWYBUNYuYL33G7Fk2Qz
+lryiXt9AgWPMB7YEqfwluxQWfjtSpLvxWlN26MSBqR4LRTTCANWQsHb5PO1Y+hdg
+Kks2P25l5UtUq6UMXhCdkWUN4/v916H0vbGlI+CA8mytkGoGDRqeRt8wqYj1U9OS
+4YfPCzbQNjUh1CPpMHK7tszM+sQ8q3UrtgwO5WDelxM0X9+0wEdoQfFhZkYFwCcW
+QJxIvkWDVuWSJzdF1DWAoUg7gdILSlrbGP7h1CPBdriNYtPLVB3cXN9RrL8ck5wh
+Ml97CqCpv+BVOkHDijWuzwg/PZSqKg==
+=gW0Z
 -----END PGP SIGNATURE-----
 
---RNbrPZkQIir6nMUfgAIKSatosFiR6DYOR--
+--79BAnNAuU7xSDvxKkFhflM03NWaiCfRtX--

@@ -3,33 +3,33 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-0.7 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
+	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E44AFC43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 13:50:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 304A3C43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 13:54:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id AD1AF20832
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 13:50:21 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org AD1AF20832
+	by mail.kernel.org (Postfix) with ESMTP id DF2262081B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 13:54:46 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org DF2262081B
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728215AbeK2AwD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Nov 2018 19:52:03 -0500
-Received: from mout.gmx.net ([212.227.17.20]:35607 "EHLO mout.gmx.net"
+        id S1728223AbeK2A43 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Nov 2018 19:56:29 -0500
+Received: from mout.gmx.net ([212.227.17.22]:45463 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727982AbeK2AwD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Nov 2018 19:52:03 -0500
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx102
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0MPZuP-1gNrMK2WZd-004mdp; Wed, 28
- Nov 2018 14:50:15 +0100
-Subject: Re: [PATCH 0/9] Switch defines to enums
-To:     dsterba@suse.cz, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <cover.1543348078.git.dsterba@suse.com>
- <45dcab9e-fb88-8980-90d9-1875ea1ee992@gmx.com>
- <20181128132549.GM2842@twin.jikos.cz>
+        id S1727872AbeK2A43 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Nov 2018 19:56:29 -0500
+Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx103
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0LfkJC-1fcj6p4A2s-00pJKX; Wed, 28
+ Nov 2018 14:54:43 +0100
+Subject: Re: Balance: invalid convert data profile raid10
+To:     Mikko Merikivi <mikkommm@gmail.com>
+Cc:     linux-btrfs@vger.kernel.org
+References: <CAFmqBADbLrmjE1A9ZCNYFo0jotLCnGHEiDZ5mHo1VNP1M-r2Ww@mail.gmail.com>
+ <086b9093-dfd8-c7e6-10db-0ddd0ab8ffee@gmx.com>
+ <CAFmqBACW=tf5ATAr7vNvtQ0ZLMEaJOw7-vEifbuc2CKKaQa7HA@mail.gmail.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -56,115 +56,206 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <03fc4e39-205c-9bac-33f0-cc3fb19ede6e@gmx.com>
-Date:   Wed, 28 Nov 2018 21:50:06 +0800
+Message-ID: <7b9f7c3f-910d-943b-93ac-72b237c7c013@gmx.com>
+Date:   Wed, 28 Nov 2018 21:54:37 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.3.1
 MIME-Version: 1.0
-In-Reply-To: <20181128132549.GM2842@twin.jikos.cz>
+In-Reply-To: <CAFmqBACW=tf5ATAr7vNvtQ0ZLMEaJOw7-vEifbuc2CKKaQa7HA@mail.gmail.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="wonZRvP8wpInTlmhV9dRZYmV7P5tvBC0V"
-X-Provags-ID: V03:K1:pbYjGsJKLfG8xpGur7N5+W9V0WEoz3vaJY0u0r+pTENgAPhlJVr
- DatvCr7nRbhgrA6yf9pS0QRSWcGH/mqX11jopaU1BlS8wmUIWmO5xG+mXTN86lQh+qhq/Gx
- 9cYI2iuhZHudgjzjYJsxPXoIP5vTJVXtCS9WZy8fUSo7lXICPaDfZbs770dcSZTqJR5y0F/
- Wgt19VWTa/lZtcF6CIc4A==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:LAEGcFQqpKA=:vJkEK0mjMD0rdPhF0cYPKE
- oQg6Tu8Illn4kImEBQ2NDus/QrHSxUPAM+PfxNNG5B+gYGqW0LwlajaTHVL3pbAEyLtjxtq+f
- b/d+AjKevV4zTd2xFIVMfoAd04X2lOLw86DIj5ql5HFu/FTYH5ORXYOabw2zk0PZbBNPcnMB0
- gRVI/fkipR+sgbF42rGPGfrmP0L2udyqdHsfpbCip/UfgxiROrMcjIrxuYR1ZkqmjhUdD0Pfr
- pGRbWjUmw9/aN7OEVEzSs0ZNrOcu5a1ulFjjjIfaeRmSXYwr4JwVZ4uxYWhz3PvcM2evZc9BU
- Px5u+cthbi9Ri37Su1VR1w20TEqPOU4V/hQQVRxcVu4xKfv9ewj3z/GV68Q+9nQRzfVb6qQHZ
- Y58hmZZCQF6Tn3/3C/CvW1Q8HuxZIv3qzBYHiex5zltgBfBrnnXYvWhOOBMZYZ75CCA83tLD5
- 3iZ3Q0P0tTVTd+dU11d9s1KeuulPorDd19f79FK1F+8LhSOvTP50MxR29aZcYpQJowZZ371xu
- nIY1hts+TBC7jYbX4Ldl715bDCtSMHv5K4bzuSKHhujG6jL1ESdzs/6rOEO2lVitTgpSKAyy+
- 5m5+mGHGt4fRwNtTtseFBSdmKmYVPxehMezJa+/nM5CwpFFHI3jUQ8GjCwTqubtcNYsR4uOAa
- VCXhYrlw2oGONmVj/BRgg8ojPMV8X6rM5jrNfBK8joisBFCFh1Jlkbu7plrv1BDy6ESH1kmnY
- PIxFrkB7n6i+WsNfm9/kQQaTLyjc2s4xNJt9BHty3ZGjshg/YnaS3XfUcGxzOfDM3F609l9ZO
- GBLWiHIHkYjBy06IiVlLM+iZiNwCp6+fnVBmKgOsnmH9nRlPOdYYq821ZVGwbKxVjQjRCuMJk
- s0Tm8s1DkpW1nb2R/cJsXfd3CoV3bBKpDvErSWYnsQ9Aiojak9yHjeFh56v8Pc
+ boundary="igIC8lzzb8V25RKBgt3DEHJySJlPtDb4y"
+X-Provags-ID: V03:K1:OSHq19XE/sNMhjA+MXG9B9YYYlYQHd9cadqtmutmx9/9IFip68u
+ harahVdVea+J1QDFfW1mYjygsrvzQ9fuXR4GlmTIUVeOgToPiR179PULCW8jYZJReq3EtJk
+ GRJHkuwjnoVfJoAn2fgT0LRVO3DnLk7B2fRXESeJxwwbe1fvMmucKh3/mnrgGNteeJp0AZI
+ EOoY/yMpC/rOzOldv+/Xw==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:qxxVHdffGtk=:ZfCdKcIPnxiI1hzZh6yHRP
+ G7krJiGQwTSjNtTb69A5W/NO5jWSJS6BAnAXegcQh7c6+8KczVDRM4X51L7MoEBPI0ZEEYpZK
+ NFBAkvvMsSvCUco9HxOsIwS2gtTGeU5L9GQcoN3nVHsVVUlJawpldLdoqXvrIoslmpde+x+Dz
+ 4jtlNTV9x+U9fVkGrYpYG40RRac1TSsr/RU1atrvr50aOOGKwTZqQNRHADy/Q4FmLRvWQDDXF
+ XSeBGkXHcZWKUw4j6OhbYyJmbxigZZiNcfFAySawf7oTPvykn7cUPo3Am0L79Nyk0bvnZBAI2
+ OjDIntF5FcxzlXJInZrHrKqMGKsOA/NYmpRTVcxLmGsiIIpZGek0WMWmkKtJQNgYuLyV2TZXl
+ ZtIj7/GB31AaZGkSu+lEbFDE2wERm4qxpmfkTaOWStokc9wKXw5CHeivv/MtzGFbRxA7wgVQH
+ C7kUnAT3Cl+Y2WAO6vzefBtbQZsuALtVlq9pBpBkTaPK2TbNln3Y4XuvrcxOtZIqNmfgUQlvm
+ ZgA8Pj+ULSU/fXKenFxQ/Y3LkusuCJOhXt8USxJPskUBSF6oUIEUX7K1eTd6W5tKPr8petjvo
+ HX1yC93O67iIDhxYvRNsRvII0ISx7HalIqHAV6RTJcRRtNRcSVSWWBJ7qZTNQFIXxAvcPxaex
+ Lha5V/7/MlXXDe7OXTTVLNYKmXVyT+bpmkgjNAUb+2wr89LTNv7Oa8yJuy8/vR/n4hLNjLqYl
+ Bt2cUOM5b1sWhJdq1HQCmtqIj0Kx1QrDUZqrBoiR5JQY4G/1qMFrYqgT833yVIfA2OMXOripK
+ LAO/83txF/xNjnZ2YSn9Dh1nIUEPQxviVhM6otdcY8e867/r9rg0FEuDgtFZcEFtKcSjgA9FO
+ 7+vFI87nCgcsIaAtnfDOb8mOiuS6zHYZhgQie8KJB4jKuQPshRJ6LPZzj1KIVa
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---wonZRvP8wpInTlmhV9dRZYmV7P5tvBC0V
-Content-Type: multipart/mixed; boundary="iwWAiKL4VyBN51eJtPTNswMdKzk6L6tWc";
+--igIC8lzzb8V25RKBgt3DEHJySJlPtDb4y
+Content-Type: multipart/mixed; boundary="aDAZVWvE3nAlLASVBLqHG4EtctVSjAd2Z";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, David Sterba <dsterba@suse.com>,
- linux-btrfs@vger.kernel.org
-Message-ID: <03fc4e39-205c-9bac-33f0-cc3fb19ede6e@gmx.com>
-Subject: Re: [PATCH 0/9] Switch defines to enums
-References: <cover.1543348078.git.dsterba@suse.com>
- <45dcab9e-fb88-8980-90d9-1875ea1ee992@gmx.com>
- <20181128132549.GM2842@twin.jikos.cz>
-In-Reply-To: <20181128132549.GM2842@twin.jikos.cz>
+To: Mikko Merikivi <mikkommm@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Message-ID: <7b9f7c3f-910d-943b-93ac-72b237c7c013@gmx.com>
+Subject: Re: Balance: invalid convert data profile raid10
+References: <CAFmqBADbLrmjE1A9ZCNYFo0jotLCnGHEiDZ5mHo1VNP1M-r2Ww@mail.gmail.com>
+ <086b9093-dfd8-c7e6-10db-0ddd0ab8ffee@gmx.com>
+ <CAFmqBACW=tf5ATAr7vNvtQ0ZLMEaJOw7-vEifbuc2CKKaQa7HA@mail.gmail.com>
+In-Reply-To: <CAFmqBACW=tf5ATAr7vNvtQ0ZLMEaJOw7-vEifbuc2CKKaQa7HA@mail.gmail.com>
 
---iwWAiKL4VyBN51eJtPTNswMdKzk6L6tWc
+--aDAZVWvE3nAlLASVBLqHG4EtctVSjAd2Z
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2018/11/28 =E4=B8=8B=E5=8D=889:25, David Sterba wrote:
-> On Wed, Nov 28, 2018 at 09:33:50AM +0800, Qu Wenruo wrote:
->> On 2018/11/28 =E4=B8=8A=E5=8D=883:53, David Sterba wrote:
->>> This is motivated by a merging mistake that happened a few releases a=
-go.
->>> Two patches updated BTRFS_FS_* flags independently to the same value,=
-
->>> git did not see any direct merge conflict. The two values got mixed a=
-t
->>> runtime and caused crash.
->>>
->>> Update all #define sequential values, the above merging problem would=
-
->>> not happen as there would be a conflict and the enum value
->>> auto-increment would prevent duplicated values anyway.
->>
->> Just one small question for the bitmap usage.
->>
->> For enum we won't directly know the last number is, my concern is if
->> we're using u16 as bitmap and there is some enum over 15, will we get =
-a
->> warning at compile time or some bug would just sneak into kernel?
+On 2018/11/28 =E4=B8=8B=E5=8D=883:20, Mikko Merikivi wrote:
+> Well, excuse me for thinking it wouldn't since in md-raid it worked.
+> https://wiki.archlinux.org/index.php/RAID#RAID_level_comparison
 >=20
-> Do you have a concrete example where this would happen? Most bits are
-> used in 'long' that should be at least 32. I'm not aware of 16bit bits
-> flags.
+> Anyway, the error message is truly confusing for someone who doesn't
+> know about btrfs's implementation. I suppose in md-raid the near
+> layout is actually RAID 1 and far2 uses twice as much space.
+> https://en.wikipedia.org/wiki/Non-standard_RAID_levels#LINUX-MD-RAID-10=
+
 >=20
+> Well, I guess I'll go with RAID 1, then. Thanks for clearing up the con=
+fusion.
 
-OK, I'm too paranoid here.
-
-The set_bit() definition needs unsigned long *, and passing a u16 * will
-cause compile time warning, so it shouldn't be a problem.
-
-And for enum over 63, reviewers will definitely complain anyway.
+You should check mkfs.btrfs(8).
+It has a pretty good datasheet for all supported profiles under PROFILES
+section, and it mentions min/max devices.
 
 Thanks,
 Qu
 
 
---iwWAiKL4VyBN51eJtPTNswMdKzk6L6tWc--
+> ke 28. marrask. 2018 klo 3.14 Qu Wenruo (quwenruo.btrfs@gmx.com) kirjoi=
+tti:
+>>
+>>
+>>
+>> On 2018/11/28 =E4=B8=8A=E5=8D=885:16, Mikko Merikivi wrote:
+>>> I seem unable to convert an existing btrfs device array to RAID 10.
+>>> Since it's pretty much RAID 0 and 1 combined, and 5 and 6 are
+>>> unstable, it's what I would like to use.
+>>>
+>>> After I did tried this with 4.19.2-arch1-1-ARCH and btrfs-progs v4.19=
+,
+>>> I updated my system and tried btrfs balance again with this system
+>>> information:
+>>> [mikko@localhost lvdata]$ uname -a
+>>> Linux localhost 4.19.4-arch1-1-ARCH #1 SMP PREEMPT Fri Nov 23 09:06:5=
+8
+>>> UTC 2018 x86_64 GNU/Linux
+>>> [mikko@localhost lvdata]$ btrfs --version
+>>> btrfs-progs v4.19
+>>> [mikko@localhost lvdata]$ sudo btrfs fi show
+>>> Label: 'main1'  uuid: c7cbb9c3-8c55-45f1-b03c-48992efe2f11
+>>>         Total devices 1 FS bytes used 2.90TiB
+>>>         devid    1 size 3.64TiB used 2.91TiB path /dev/mapper/main
+>>>
+>>> Label: 'red'  uuid: f3c781a8-0f3e-4019-acbf-0b783cf566d0
+>>>         Total devices 2 FS bytes used 640.00KiB
+>>>         devid    1 size 931.51GiB used 2.03GiB path /dev/mapper/red1
+>>>         devid    2 size 931.51GiB used 2.03GiB path /dev/mapper/red2
+>>
+>> RAID10 needs at least 4 devices.
+>>
+>> Thanks,
+>> Qu
+>>
+>>> [mikko@localhost lvdata]$ btrfs fi df /mnt/red/
+>>> Data, RAID1: total=3D1.00GiB, used=3D512.00KiB
+>>> System, RAID1: total=3D32.00MiB, used=3D16.00KiB
+>>> Metadata, RAID1: total=3D1.00GiB, used=3D112.00KiB
+>>> GlobalReserve, single: total=3D16.00MiB, used=3D0.00B
+>>>
+>>> ---
+>>>
+>>> Here are the steps I originally used:
+>>>
+>>> [mikko@localhost lvdata]$ sudo cryptsetup luksFormat -s 512
+>>> --use-random /dev/sdc
+>>> [mikko@localhost lvdata]$ sudo cryptsetup luksFormat -s 512
+>>> --use-random /dev/sdd
+>>> [mikko@localhost lvdata]$ sudo cryptsetup luksOpen /dev/sdc red1
+>>> [mikko@localhost lvdata]$ sudo cryptsetup luksOpen /dev/sdd red2
+>>> [mikko@localhost lvdata]$ sudo mkfs.btrfs -L red /dev/mapper/red1
+>>> btrfs-progs v4.19
+>>> See http://btrfs.wiki.kernel.org for more information.
+>>>
+>>> Label:              red
+>>> UUID:               f3c781a8-0f3e-4019-acbf-0b783cf566d0
+>>> Node size:          16384
+>>> Sector size:        4096
+>>> Filesystem size:    931.51GiB
+>>> Block group profiles:
+>>>   Data:             single            8.00MiB
+>>>   Metadata:         DUP               1.00GiB
+>>>   System:           DUP               8.00MiB
+>>> SSD detected:       no
+>>> Incompat features:  extref, skinny-metadata
+>>> Number of devices:  1
+>>> Devices:
+>>>    ID        SIZE  PATH
+>>>     1   931.51GiB  /dev/mapper/red1
+>>>
+>>> [mikko@localhost lvdata]$ sudo mount -t btrfs -o
+>>> defaults,noatime,nodiratime,autodefrag,compress=3Dlzo /dev/mapper/red=
+1
+>>> /mnt/red
+>>> [mikko@localhost lvdata]$ sudo btrfs device add /dev/mapper/red2 /mnt=
+/red
+>>> [mikko@localhost lvdata]$ sudo btrfs balance start -dconvert=3Draid10=
 
---wonZRvP8wpInTlmhV9dRZYmV7P5tvBC0V
+>>> -mconvert=3Draid10 /mnt/red
+>>> ERROR: error during balancing '/mnt/red': Invalid argument
+>>> There may be more info in syslog - try dmesg | tail
+>>> code 1
+>>>
+>>> [mikko@localhost lvdata]$ dmesg | tail
+>>> [12026.263243] BTRFS info (device dm-1): disk space caching is enable=
+d
+>>> [12026.263244] BTRFS info (device dm-1): has skinny extents
+>>> [12026.263245] BTRFS info (device dm-1): flagging fs with big metadat=
+a feature
+>>> [12026.275153] BTRFS info (device dm-1): checking UUID tree
+>>> [12195.431766] BTRFS info (device dm-1): enabling auto defrag
+>>> [12195.431769] BTRFS info (device dm-1): use lzo compression, level 0=
+
+>>> [12195.431770] BTRFS info (device dm-1): disk space caching is enable=
+d
+>>> [12195.431771] BTRFS info (device dm-1): has skinny extents
+>>> [12205.815941] BTRFS info (device dm-1): disk added /dev/mapper/red2
+>>> [12744.788747] BTRFS error (device dm-1): balance: invalid convert
+>>> data profile raid10
+>>>
+>>> Converting to RAID 1 did work but what can I do to make it RAID 10?
+>>> With the up-to-date system it still says "invalid convert data profil=
+e
+>>> raid10".
+>>>
+>>
+
+
+--aDAZVWvE3nAlLASVBLqHG4EtctVSjAd2Z--
+
+--igIC8lzzb8V25RKBgt3DEHJySJlPtDb4y
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlv+nQ4ACgkQwj2R86El
-/qj0FQf+JdVAIsJsdqJT8Ul/jVuxBMomy1JxnfNI4F8ViiLioRBpiKouU22Dv28m
-ET303+qhluRsyZxjpcMiiiVOkI8IMReOlA27A/9sAVkmP///GNj+j6bDNfMj0vn9
-53yhR5Bq4H9P6uQdPb8lFxrPDTMtSSJBFKUCEPkMtuSOmJ8uxor0MZBK4QAahSfK
-ZOabbweEz3g0Yft4ESoD/Xj72/lKDweUiQwJKFkwM+zQWQCijK7LfjezBorFMYqv
-L1e9ZQDEt217YyDJzop0L+IkNXZlUyI/hHAc2bSF8h8JS3YiM7bUJc/YGPRdKCqd
-9TKi2BXyH/uZsFog9KvNuhA2SdPFMw==
-=USxY
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlv+nh0ACgkQwj2R86El
+/qgXFAf/YzzjTlkwUBBUasL3kyiy1GLPEAmoL8XR3Lt8Z8pfaeHjLzON57ctUb1i
+HcwHcpjDehmeqr4ImB2NlZouDW9ak+/UA93AzQgPSENLiQm/H9oe0oLJcXM4WgR5
+Jea3G8RAax9ay3eKsnkP8YnOAg0Cv50c2loSDIAUsEmLoMqzx6CaDP6rcuZFDNpu
+s0Oe2pk3d0n0mDcACr8AF39gnbuq+mEnaHqg2kRd5iKgl0Kk5uJ+rGfpLP5qNydB
+mtc5t3tRmFtjxbjDH9s/FvWPOCOSqJixovtm+XIVSDNcg2NuX14fcu92Y087MiCS
+zr+vO6Usm2bjamHTZgZJyQBsU0NPIQ==
+=BhRR
 -----END PGP SIGNATURE-----
 
---wonZRvP8wpInTlmhV9dRZYmV7P5tvBC0V--
+--igIC8lzzb8V25RKBgt3DEHJySJlPtDb4y--

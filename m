@@ -2,180 +2,125 @@ Return-Path: <SRS0=CI8N=OH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4A85AC43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 07:21:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3DE95C43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 07:45:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0E29A20832
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 07:21:12 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="kvAJ9BYJ"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0E29A20832
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	by mail.kernel.org (Postfix) with ESMTP id D52E52082F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 07:45:04 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D52E52082F
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727285AbeK1SVt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Nov 2018 13:21:49 -0500
-Received: from mail-ot1-f47.google.com ([209.85.210.47]:37971 "EHLO
-        mail-ot1-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727247AbeK1SVt (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Nov 2018 13:21:49 -0500
-Received: by mail-ot1-f47.google.com with SMTP id e12so18351461otl.5
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Nov 2018 23:21:10 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc:content-transfer-encoding;
-        bh=WyEk3zGzL50KiCgQQP1bOC5ekjwh5TbppKnfJycJkqs=;
-        b=kvAJ9BYJc7vPryVsrlPRBtxGD0zqIEG7iKhwLcENPEtAganH3FQSnj29f4vsk5tWio
-         YUXargyJ04fiMsRWEDyHv77hWCzXn+jiHfR0pXPXg3i2FafUb/ySuApzH6O/Emuk0/+i
-         KZYx2KzM+9C9ucXLCP1pmCoiHNScBpQQFWtPpxaDMKzhN68g1SVKvVRCoHLfhgl0nGMK
-         QVDAjG86eWJI8jFtGfHvZIM+ED3x2kD735avT0CmLKuao2i6Nv4ho/inA01EzVivzfL+
-         52dAZDOOYxV5j5Myk+KNiAnYk+eA2Fno0gIgB4jZLfQWncRJvPrVmL8c2aEVKxHJ4+sQ
-         jCXQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc:content-transfer-encoding;
-        bh=WyEk3zGzL50KiCgQQP1bOC5ekjwh5TbppKnfJycJkqs=;
-        b=pQruUEkYgyMUSJeuu1Vy/wOmnSJOWfKDHp0flaEpSECKIhPL1OGSAGToVU58/vpvI6
-         3OvMJ5e6GLMcBj2Yx0CiwSAjnGqctf3Yz/SKZqHCSaioadVB1hawOjJoigR786S68/4k
-         Kl1QzWU0jer+zZ0NosYTu38L1MAfc+Sakj4wblLPapZF6FpEs3JsgPMCDKDQUsN2wIuE
-         TryvQZXbEgJH0WcQbUG1QDzqIV4OUff5C3ki2ZsCPmGrN6iysXd4ZcLrJc3az2odnMNu
-         5Pv14m7dFU7MAK8jdcqU1lq8gsONk5RWOPWqwXPTlmpL9YYjkPPEdgjcusB3ynLGSkIt
-         XzKQ==
-X-Gm-Message-State: AA+aEWaTRACmCY0emIDiTpCpVbvWfhCE+yj8jKL4ic/iLFnR88VjMcNt
-        hpfQQWjDk56CFjp8hCqXZ9h2+jG8eqmcBB/zjg==
-X-Google-Smtp-Source: AFSGD/VmSiSz0JQbzd3VCHLdLIx7PTh1Lr5pMh93yDIiXgZkhxrFWCZDj5cioi/s+R0mDqioNFV9MxmeIdx6aRclEBA=
-X-Received: by 2002:a9d:51c2:: with SMTP id d2mr21176993oth.0.1543389669486;
- Tue, 27 Nov 2018 23:21:09 -0800 (PST)
+        id S1727581AbeK1Spp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Nov 2018 13:45:45 -0500
+Received: from mx2.suse.de ([195.135.220.15]:34896 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727247AbeK1Spp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Nov 2018 13:45:45 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 01298AF88;
+        Wed, 28 Nov 2018 07:45:01 +0000 (UTC)
+Subject: Re: [RFC PATCH] btrfs: drop file privileges in btrfs_clone_files
+To:     Lu Fengqi <lufq.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <20181128030731.10288-1-lufq.fnst@cn.fujitsu.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <3377ecbb-a46b-bd85-10b3-7163535a4332@suse.com>
+Date:   Wed, 28 Nov 2018 09:44:59 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-References: <CAFmqBADbLrmjE1A9ZCNYFo0jotLCnGHEiDZ5mHo1VNP1M-r2Ww@mail.gmail.com>
- <086b9093-dfd8-c7e6-10db-0ddd0ab8ffee@gmx.com>
-In-Reply-To: <086b9093-dfd8-c7e6-10db-0ddd0ab8ffee@gmx.com>
-From:   Mikko Merikivi <mikkommm@gmail.com>
-Date:   Wed, 28 Nov 2018 09:20:57 +0200
-Message-ID: <CAFmqBACW=tf5ATAr7vNvtQ0ZLMEaJOw7-vEifbuc2CKKaQa7HA@mail.gmail.com>
-Subject: Re: Balance: invalid convert data profile raid10
-To:     quwenruo.btrfs@gmx.com
-Cc:     linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+In-Reply-To: <20181128030731.10288-1-lufq.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Well, excuse me for thinking it wouldn't since in md-raid it worked.
-https://wiki.archlinux.org/index.php/RAID#RAID_level_comparison
 
-Anyway, the error message is truly confusing for someone who doesn't
-know about btrfs's implementation. I suppose in md-raid the near
-layout is actually RAID 1 and far2 uses twice as much space.
-https://en.wikipedia.org/wiki/Non-standard_RAID_levels#LINUX-MD-RAID-10
 
-Well, I guess I'll go with RAID 1, then. Thanks for clearing up the confusi=
-on.
-ke 28. marrask. 2018 klo 3.14 Qu Wenruo (quwenruo.btrfs@gmx.com) kirjoitti:
->
->
->
-> On 2018/11/28 =E4=B8=8A=E5=8D=885:16, Mikko Merikivi wrote:
-> > I seem unable to convert an existing btrfs device array to RAID 10.
-> > Since it's pretty much RAID 0 and 1 combined, and 5 and 6 are
-> > unstable, it's what I would like to use.
-> >
-> > After I did tried this with 4.19.2-arch1-1-ARCH and btrfs-progs v4.19,
-> > I updated my system and tried btrfs balance again with this system
-> > information:
-> > [mikko@localhost lvdata]$ uname -a
-> > Linux localhost 4.19.4-arch1-1-ARCH #1 SMP PREEMPT Fri Nov 23 09:06:58
-> > UTC 2018 x86_64 GNU/Linux
-> > [mikko@localhost lvdata]$ btrfs --version
-> > btrfs-progs v4.19
-> > [mikko@localhost lvdata]$ sudo btrfs fi show
-> > Label: 'main1'  uuid: c7cbb9c3-8c55-45f1-b03c-48992efe2f11
-> >         Total devices 1 FS bytes used 2.90TiB
-> >         devid    1 size 3.64TiB used 2.91TiB path /dev/mapper/main
-> >
-> > Label: 'red'  uuid: f3c781a8-0f3e-4019-acbf-0b783cf566d0
-> >         Total devices 2 FS bytes used 640.00KiB
-> >         devid    1 size 931.51GiB used 2.03GiB path /dev/mapper/red1
-> >         devid    2 size 931.51GiB used 2.03GiB path /dev/mapper/red2
->
-> RAID10 needs at least 4 devices.
->
-> Thanks,
-> Qu
->
-> > [mikko@localhost lvdata]$ btrfs fi df /mnt/red/
-> > Data, RAID1: total=3D1.00GiB, used=3D512.00KiB
-> > System, RAID1: total=3D32.00MiB, used=3D16.00KiB
-> > Metadata, RAID1: total=3D1.00GiB, used=3D112.00KiB
-> > GlobalReserve, single: total=3D16.00MiB, used=3D0.00B
-> >
-> > ---
-> >
-> > Here are the steps I originally used:
-> >
-> > [mikko@localhost lvdata]$ sudo cryptsetup luksFormat -s 512
-> > --use-random /dev/sdc
-> > [mikko@localhost lvdata]$ sudo cryptsetup luksFormat -s 512
-> > --use-random /dev/sdd
-> > [mikko@localhost lvdata]$ sudo cryptsetup luksOpen /dev/sdc red1
-> > [mikko@localhost lvdata]$ sudo cryptsetup luksOpen /dev/sdd red2
-> > [mikko@localhost lvdata]$ sudo mkfs.btrfs -L red /dev/mapper/red1
-> > btrfs-progs v4.19
-> > See http://btrfs.wiki.kernel.org for more information.
-> >
-> > Label:              red
-> > UUID:               f3c781a8-0f3e-4019-acbf-0b783cf566d0
-> > Node size:          16384
-> > Sector size:        4096
-> > Filesystem size:    931.51GiB
-> > Block group profiles:
-> >   Data:             single            8.00MiB
-> >   Metadata:         DUP               1.00GiB
-> >   System:           DUP               8.00MiB
-> > SSD detected:       no
-> > Incompat features:  extref, skinny-metadata
-> > Number of devices:  1
-> > Devices:
-> >    ID        SIZE  PATH
-> >     1   931.51GiB  /dev/mapper/red1
-> >
-> > [mikko@localhost lvdata]$ sudo mount -t btrfs -o
-> > defaults,noatime,nodiratime,autodefrag,compress=3Dlzo /dev/mapper/red1
-> > /mnt/red
-> > [mikko@localhost lvdata]$ sudo btrfs device add /dev/mapper/red2 /mnt/r=
-ed
-> > [mikko@localhost lvdata]$ sudo btrfs balance start -dconvert=3Draid10
-> > -mconvert=3Draid10 /mnt/red
-> > ERROR: error during balancing '/mnt/red': Invalid argument
-> > There may be more info in syslog - try dmesg | tail
-> > code 1
-> >
-> > [mikko@localhost lvdata]$ dmesg | tail
-> > [12026.263243] BTRFS info (device dm-1): disk space caching is enabled
-> > [12026.263244] BTRFS info (device dm-1): has skinny extents
-> > [12026.263245] BTRFS info (device dm-1): flagging fs with big metadata =
-feature
-> > [12026.275153] BTRFS info (device dm-1): checking UUID tree
-> > [12195.431766] BTRFS info (device dm-1): enabling auto defrag
-> > [12195.431769] BTRFS info (device dm-1): use lzo compression, level 0
-> > [12195.431770] BTRFS info (device dm-1): disk space caching is enabled
-> > [12195.431771] BTRFS info (device dm-1): has skinny extents
-> > [12205.815941] BTRFS info (device dm-1): disk added /dev/mapper/red2
-> > [12744.788747] BTRFS error (device dm-1): balance: invalid convert
-> > data profile raid10
-> >
-> > Converting to RAID 1 did work but what can I do to make it RAID 10?
-> > With the up-to-date system it still says "invalid convert data profile
-> > raid10".
-> >
->
+On 28.11.18 г. 5:07 ч., Lu Fengqi wrote:
+> The generic/513 tell that cloning into a file did not strip security
+> privileges (suid, capabilities) like a regular write would.
+> 
+> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+> ---
+> The xfs and ocfs2 call generic_remap_file_range_prep to drop file
+> privileges, I'm not sure whether btrfs should do the same thing.
+
+Why do you think btrfs shouldn't do the same thing. Looking at
+remap_file_range_prep it seems that btrfs is missing a ton of checks
+that are useful i.e immutable files/aligned offsets etc.
+
+
+> 
+> Any suggestion?
+> 
+>  fs/btrfs/ioctl.c | 4 ++++
+>  1 file changed, 4 insertions(+)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 410c7e007ba8..bc33c480603b 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -4312,6 +4312,10 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
+>  			goto out_unlock;
+>  	}
+>  
+> +	ret = file_remove_privs(file);
+> +	if (ret)
+> +		goto out_unlock;
+> +
+>  	if (destoff > inode->i_size) {
+>  		ret = btrfs_cont_expand(inode, inode->i_size, destoff);
+>  		if (ret)
+> 

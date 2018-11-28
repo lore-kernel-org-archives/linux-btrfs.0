@@ -6,29 +6,29 @@ X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7A6B0C43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 13:17:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1F2B8C43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 13:19:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4BD9320989
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 13:17:39 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4BD9320989
+	by mail.kernel.org (Postfix) with ESMTP id E337E2081B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 13:19:11 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E337E2081B
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728342AbeK2ATP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Nov 2018 19:19:15 -0500
-Received: from mx2.suse.de ([195.135.220.15]:40466 "EHLO mx1.suse.de"
+        id S1728493AbeK2AUs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Nov 2018 19:20:48 -0500
+Received: from mx2.suse.de ([195.135.220.15]:40790 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727726AbeK2ATP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Nov 2018 19:19:15 -0500
+        id S1727726AbeK2AUs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Nov 2018 19:20:48 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 25686B052
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Nov 2018 13:17:35 +0000 (UTC)
-Subject: Re: [PATCH 4/9] btrfs: switch BTRFS_ROOT_* to enums
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 42D77B06D
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Nov 2018 13:19:08 +0000 (UTC)
+Subject: Re: [PATCH 5/9] btrfs: swtich EXTENT_BUFFER_* to enums
 To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 References: <cover.1543348078.git.dsterba@suse.com>
- <f78a535281ed0bd208db0c2f70aa0e43f18cb40c.1543348078.git.dsterba@suse.com>
+ <132de3b38834a3703cc9cebe56e7de8dcbcec1c9.1543348078.git.dsterba@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -86,12 +86,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <b8e00e21-470b-651e-7e44-d73ad6b46335@suse.de>
-Date:   Wed, 28 Nov 2018 14:17:34 +0100
+Message-ID: <310a2219-105e-2988-a18b-718591c15f03@suse.de>
+Date:   Wed, 28 Nov 2018 14:19:08 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <f78a535281ed0bd208db0c2f70aa0e43f18cb40c.1543348078.git.dsterba@suse.com>
+In-Reply-To: <132de3b38834a3703cc9cebe56e7de8dcbcec1c9.1543348078.git.dsterba@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -100,7 +100,6 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Looks good,
 Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems

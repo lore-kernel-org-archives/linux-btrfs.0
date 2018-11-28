@@ -2,33 +2,32 @@ Return-Path: <SRS0=CI8N=OH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.7 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+X-Spam-Status: No, score=-6.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
 	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+	SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 68229C43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 01:23:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D7E93C43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 01:24:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2EF7F20851
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 01:23:00 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2EF7F20851
+	by mail.kernel.org (Postfix) with ESMTP id 9EA3B2082F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 01:24:53 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9EA3B2082F
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726924AbeK1MWp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Nov 2018 07:22:45 -0500
-Received: from mout.gmx.net ([212.227.15.19]:34529 "EHLO mout.gmx.net"
+        id S1726731AbeK1MYi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Nov 2018 07:24:38 -0500
+Received: from mout.gmx.net ([212.227.15.18]:41719 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726548AbeK1MWo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Nov 2018 07:22:44 -0500
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx003
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0ML7NR-1gRXRu2dtZ-000JOr; Wed, 28
- Nov 2018 02:22:56 +0100
-Subject: Re: [PATCH 4/9] btrfs: switch BTRFS_ROOT_* to enums
+        id S1726548AbeK1MYi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Nov 2018 07:24:38 -0500
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx001
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0M6zkD-1fV3Gb3K6f-00wmKa; Wed, 28
+ Nov 2018 02:24:46 +0100
+Subject: Re: [PATCH 5/9] btrfs: swtich EXTENT_BUFFER_* to enums
 To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 References: <cover.1543348078.git.dsterba@suse.com>
- <f78a535281ed0bd208db0c2f70aa0e43f18cb40c.1543348078.git.dsterba@suse.com>
+ <132de3b38834a3703cc9cebe56e7de8dcbcec1c9.1543348078.git.dsterba@suse.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -55,51 +54,51 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <fb77a24d-5e5c-b7bb-a83a-e43eef90a0fb@gmx.com>
-Date:   Wed, 28 Nov 2018 09:22:52 +0800
+Message-ID: <ff8334f4-6980-8013-3234-22ab1bf58c05@gmx.com>
+Date:   Wed, 28 Nov 2018 09:24:35 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.3.1
 MIME-Version: 1.0
-In-Reply-To: <f78a535281ed0bd208db0c2f70aa0e43f18cb40c.1543348078.git.dsterba@suse.com>
+In-Reply-To: <132de3b38834a3703cc9cebe56e7de8dcbcec1c9.1543348078.git.dsterba@suse.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="uBeJfrJV0czMoBF6u5HzALd5C3oWSKDZm"
-X-Provags-ID: V03:K1:folYSviMBSxaCZA6iYKznGkDQA8a/S/BOxPx22bC/ghm4eoP8PC
- WOCFmapx4WvwQvHmUek0eYYcJNjQgPMN2BgwK9KvfTvvZIcXCJYX19Spvu4RdsN+Sfh9Ps7
- TbsNE+QH/Susg2Uz226mPb64n+GeKgBppeGcGctfW49VUqDtTPJ0cDDxNLCUWJLKGj48s3e
- 9OR3kNmLyn9112T/nnruA==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:Run7Rgs0Zfw=:9HXi0JB5xdiv45E0E7v2lQ
- EdguSvqh31fkb16ss9Yfs/bDUhV9HY+A+E9HGAvL93J3zZYeUdA+zqZpy3KjZOtWtQ32UrNU6
- UOSWZiy/1hD2q5YhjyBq9wkf7OE4ggNljiYX69GAkWAH8kdseLCcoq4IXOMQg82pHsqp7CI1M
- Ptmzggd6K81e9Dx5eCmIc4LfD+nTxyrev9JogonFgmtJGfm50JU/L3mKkJ5s/PbYtIqdJdBub
- w5xmN+3K2yuwSx8AtKdNHadvhKDeserh1WCf4+83HVOR1gDryUr047XT058hJrduz2o4R1zTq
- 3clS+kZjz9KkbUt3tDahatFsg/YI2nCS7LleH5r6ZvCItg0YZ9RwFbvuJCQqFgNJM10Tjba9y
- CZ/gw5MOkKTRxLEirK4323miDHdIuprvDMTaiPNiQjF8jublQiCB0LPSLbW3mJZG9MPbR1sSi
- R+4vQURckTqzsPdIrVSCeaJnrzg4FSrjDJ9gGOrDamdm0JRFR9KgmdPMsvdMgF/mHgSlo4y+j
- V3bEuK+4YT6EjhpdGG5g9mwm3andou91G2VX5pcFO1J9UVprkZNce1gRrWnlgPbOVXh6x4WbK
- 7651TeYOTqnG32Y2193ilV1gpZCRExA0Shd5af/jNMI709ysk1LjZWuEV3AEbBzAYtc7YMj/L
- M7AxixjPzSOvIHcGoVi/zbAEOGNgmNhsqeR2Ujwc4DInrpLmiIDF4mQA02erARGLedJj5YGgF
- JkPnc1b+9cpIMfDB2NIKbCORYiIUvM2bWtoD9gHSKN+6JMHEz+wVCT7iyROHYhL/mimIyOUaU
- dfCFbjwj8fecnqwQ4rRpEa5m/c5UqK1LkDqkNtb0zpBeATuWI62ldY6kFMlTKYfKaMcaNhU3/
- B4qiPphq2cmvDlXjjMd/PL5lN/B4raEa/JnwEPfCQ=
+ boundary="SuDDCV7LjhsLoydnXVmv3El5I3SDw4rkO"
+X-Provags-ID: V03:K1:gCuqtgXArN/kKYjPcaCrRCSK3JaEqTdEIBKGyIhewxbuJ/MXvrU
+ c5O6bIZTk4JOiGLGdKo2uSOD/YW5kzg9Gu9ol0qY9cGAV8VR9itrnf4dV0MKhr1iv/R9/gK
+ DacMN6sTjVZea/NI1ITj+wtrbM63NP+V1MrxpTLwsEg2nim/dIJaEwHNnkFmVLOBAdtCb6e
+ 4E7E7HDGxP8qPqnEZURkw==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:SeJiRssWPXU=:Vpjp0tYg1RKDUNacM2VEE/
+ zs73vrgSDbrbIE5e5Are8H+nfMtpSmJLHFMZqTbUUOdWJEY8iV6bXfIxR4IfVNG0MpEbP/vit
+ khcyUZzfBQ5Ftz+hFGwWLrL7Tztvhi/7jvES7YTvAOsUu8JWIaKPbrT4wB1azBEkYHGMrgDhf
+ 9EYMJobGmWLq3/Hi/fobeBNzPR8mkdP0LfFJjJDUUgk+9t9Kdef1pytcyiJquYPgR8A1enpPX
+ zn1XIF+hNyKM0Jwp6+F97YIvfft1cxjKq3qCWHI1jR6cnIaKF7Gdm1ywdI3SdrLn6m8pmq4pN
+ 96ZrqEb26Xabfbnaow+YFncceNTcqB3JcYyFhDQXAsle90tNUwXpP5lWqe/gfiq99kZLtHHv5
+ zD5eit1T6nmx0C9aNahqbaRPf445RDK0rO+U0gAYlLDYfivUFJkwo+4EbeBMgjaH2d4QUETMc
+ soh/cJX4KpigzoyhCwZeJnS1KUYYiG3Yp61gFD+lbiUZ3LQfb2W1SsuII03HsceMtWTnuiDje
+ D4HA0H0trYtTLS/Hgk3kvP9rLCOgLyWQK84yZclh6ddNZ5OfzJwLvorJOdgkx+iUsceEpr2yT
+ EyA8Tr7MNQA2iXjnuBP9pGrTp2ci6HpM8keq4g8KZBCsv0HNc4QGCWX/PJggSTqWssQa235uN
+ WQey0kYxUaiHs7Uu/SeGZYDEFMGS9IhoPD4bguW69n9SJxA7HqasPX56BNRv0GG8gTjNyNHu5
+ SfbI6gQwci1WnCyBS6G/1VvxC9OdkOTJ6MP4v6IsGHZr6AhdwYh7sXNDISxS/cgFfhqeRPvd9
+ MpjU/iQBoVG1zM542KNQwoW5gk89lj11Uc1xGHa7qHqZOjqFSMLRU7Ufj/0LGrKkPqNEC2kDc
+ XLRqcb9p9gVsJ54on1kgG28l6/V3YwrIpGNCOr+nleJ758SVxEPqG3wB0j1kDK
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---uBeJfrJV0czMoBF6u5HzALd5C3oWSKDZm
-Content-Type: multipart/mixed; boundary="9WEPuLbfZHLgb0ja2O32JzgS6CK9yDksF";
+--SuDDCV7LjhsLoydnXVmv3El5I3SDw4rkO
+Content-Type: multipart/mixed; boundary="hG5nNwEZ1l6SWUtL8Xzr7jNVkb0hoRHiG";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <fb77a24d-5e5c-b7bb-a83a-e43eef90a0fb@gmx.com>
-Subject: Re: [PATCH 4/9] btrfs: switch BTRFS_ROOT_* to enums
+Message-ID: <ff8334f4-6980-8013-3234-22ab1bf58c05@gmx.com>
+Subject: Re: [PATCH 5/9] btrfs: swtich EXTENT_BUFFER_* to enums
 References: <cover.1543348078.git.dsterba@suse.com>
- <f78a535281ed0bd208db0c2f70aa0e43f18cb40c.1543348078.git.dsterba@suse.com>
-In-Reply-To: <f78a535281ed0bd208db0c2f70aa0e43f18cb40c.1543348078.git.dsterba@suse.com>
+ <132de3b38834a3703cc9cebe56e7de8dcbcec1c9.1543348078.git.dsterba@suse.com>
+In-Reply-To: <132de3b38834a3703cc9cebe56e7de8dcbcec1c9.1543348078.git.dsterba@suse.com>
 
---9WEPuLbfZHLgb0ja2O32JzgS6CK9yDksF
+--hG5nNwEZ1l6SWUtL8Xzr7jNVkb0hoRHiG
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
@@ -108,7 +107,7 @@ Content-Transfer-Encoding: quoted-printable
 
 On 2018/11/28 =E4=B8=8A=E5=8D=883:53, David Sterba wrote:
 > We can use simple enum for values that are not part of on-disk format:
-> root tree flags.
+> extent buffer flags;
 >=20
 > Signed-off-by: David Sterba <dsterba@suse.com>
 
@@ -118,77 +117,69 @@ Thanks,
 Qu
 
 > ---
->  fs/btrfs/ctree.h | 33 +++++++++++++++++----------------
->  1 file changed, 17 insertions(+), 16 deletions(-)
+>  fs/btrfs/extent_io.h | 28 ++++++++++++++++------------
+>  1 file changed, 16 insertions(+), 12 deletions(-)
 >=20
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 7176b95b40e7..4bb0ac3050ff 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -1180,22 +1180,23 @@ struct btrfs_subvolume_writers {
->  /*
->   * The state of btrfs root
->   */
-> -/*
-> - * btrfs_record_root_in_trans is a multi-step process,
-> - * and it can race with the balancing code.   But the
-> - * race is very small, and only the first time the root
-> - * is added to each transaction.  So IN_TRANS_SETUP
-> - * is used to tell us when more checks are required
-> - */
-> -#define BTRFS_ROOT_IN_TRANS_SETUP	0
-> -#define BTRFS_ROOT_REF_COWS		1
-> -#define BTRFS_ROOT_TRACK_DIRTY		2
-> -#define BTRFS_ROOT_IN_RADIX		3
-> -#define BTRFS_ROOT_ORPHAN_ITEM_INSERTED	4
-> -#define BTRFS_ROOT_DEFRAG_RUNNING	5
-> -#define BTRFS_ROOT_FORCE_COW		6
-> -#define BTRFS_ROOT_MULTI_LOG_TASKS	7
-> -#define BTRFS_ROOT_DIRTY		8
+> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+> index a1d3ea5a0d32..fd42492e62e5 100644
+> --- a/fs/btrfs/extent_io.h
+> +++ b/fs/btrfs/extent_io.h
+> @@ -37,18 +37,22 @@
+>  #define EXTENT_BIO_COMPRESSED 1
+>  #define EXTENT_BIO_FLAG_SHIFT 16
+> =20
+> -/* these are bit numbers for test/set bit */
+> -#define EXTENT_BUFFER_UPTODATE 0
+> -#define EXTENT_BUFFER_DIRTY 2
+> -#define EXTENT_BUFFER_CORRUPT 3
+> -#define EXTENT_BUFFER_READAHEAD 4	/* this got triggered by readahead *=
+/
+> -#define EXTENT_BUFFER_TREE_REF 5
+> -#define EXTENT_BUFFER_STALE 6
+> -#define EXTENT_BUFFER_WRITEBACK 7
+> -#define EXTENT_BUFFER_READ_ERR 8        /* read IO error */
+> -#define EXTENT_BUFFER_UNMAPPED 9
+> -#define EXTENT_BUFFER_IN_TREE 10
+> -#define EXTENT_BUFFER_WRITE_ERR 11    /* write IO error */
 > +enum {
-> +	/*
-> +	 * btrfs_record_root_in_trans is a multi-step process, and it can rac=
-e
-> +	 * with the balancing code.   But the race is very small, and only th=
-e
-> +	 * first time the root is added to each transaction.  So IN_TRANS_SET=
-UP
-> +	 * is used to tell us when more checks are required
-> +	 */
-> +	BTRFS_ROOT_IN_TRANS_SETUP,
-> +	BTRFS_ROOT_REF_COWS,
-> +	BTRFS_ROOT_TRACK_DIRTY,
-> +	BTRFS_ROOT_IN_RADIX,
-> +	BTRFS_ROOT_ORPHAN_ITEM_INSERTED,
-> +	BTRFS_ROOT_DEFRAG_RUNNING,
-> +	BTRFS_ROOT_FORCE_COW,
-> +	BTRFS_ROOT_MULTI_LOG_TASKS,
-> +	BTRFS_ROOT_DIRTY,
+> +	EXTENT_BUFFER_UPTODATE,
+> +	EXTENT_BUFFER_DIRTY,
+> +	EXTENT_BUFFER_CORRUPT,
+> +	/* this got triggered by readahead */
+> +	EXTENT_BUFFER_READAHEAD,
+> +	EXTENT_BUFFER_TREE_REF,
+> +	EXTENT_BUFFER_STALE,
+> +	EXTENT_BUFFER_WRITEBACK,
+> +	/* read IO error */
+> +	EXTENT_BUFFER_READ_ERR,
+> +	EXTENT_BUFFER_UNMAPPED,
+> +	EXTENT_BUFFER_IN_TREE,
+> +	/* write IO error */
+> +	EXTENT_BUFFER_WRITE_ERR,
 > +};
 > =20
->  /*
->   * in ram representation of the tree.  extent_root is used for all all=
-ocations
+>  /* these are flags for __process_pages_contig */
+>  #define PAGE_UNLOCK		(1 << 0)
 >=20
 
 
---9WEPuLbfZHLgb0ja2O32JzgS6CK9yDksF--
+--hG5nNwEZ1l6SWUtL8Xzr7jNVkb0hoRHiG--
 
---uBeJfrJV0czMoBF6u5HzALd5C3oWSKDZm
+--SuDDCV7LjhsLoydnXVmv3El5I3SDw4rkO
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlv97ewACgkQwj2R86El
-/qgq9gf/Vyo4VeJ4d05yGlX6rtm/Rdj9MbHgB1RigykZO474HU+9WVrcgFq6G3B4
-RzhMa7aCA6CHZcyhXr3uGPfOVC2djJ+O+7DZBtdpX91qym4JSGFftDKejBsIb/kg
-rU8mHQEzLOjl5rkDXuF/6OI8ED9d+dN7cQOqV+Rjzywy9Hsd787+J4vxJ4ufyafz
-E4F0bp6IeOBA7Yz8RxT99mmm/OKH3IfYtOO48IB0WcnD3xZs0mGu2PUNCzFvm7kT
-jcKhUygdBOkwoH0ZnPqMVf4xfwMsxy6YHb8tm1nQQhZXjuqAQDBX0952Fj+EqOoq
-cckltuHovCaM11wOCSqyNiSamoQx9Q==
-=wzmW
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlv97lMACgkQwj2R86El
+/qi4RQf/bRsM/eXVzdPGFQZnGZGoG0p0oIFGuvpSeTO+gs0JhkOllzWDUAz/hnFM
+F1xtR+keZ/s4WsjjRdqnxoUryAn6Nhcd3x4pPTs4Ms2H1hfs2dXSESxhTG709SmA
+w4sf4FrXw8my/POF+Vzwaq2aeu0WnOiZwZXyGu/iWmB9+6bty3rMD/RbZqG74bhb
+I37eZYF/jCfYT0/79ZMqflgxbZcOCnU7usbFrGMhg5EJNjH0TCofSBvALTWH6TOH
+6WeSYKwE4oRTHVmKkmkvM1TFxZ5na+RxWZ+Rj2A9QFzcFc9kjhZMLRlK0iFdwdqy
+UGFAjxRTgyJUHu0bywXpLXfL2xItkw==
+=kv3j
 -----END PGP SIGNATURE-----
 
---uBeJfrJV0czMoBF6u5HzALd5C3oWSKDZm--
+--SuDDCV7LjhsLoydnXVmv3El5I3SDw4rkO--

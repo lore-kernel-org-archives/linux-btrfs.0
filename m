@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F296EC43441
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 13:34:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 06FFDC43441
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 13:36:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C21EF2081B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 13:34:31 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C21EF2081B
+	by mail.kernel.org (Postfix) with ESMTP id C60012081B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 13:36:51 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C60012081B
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728215AbeK2AgK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Nov 2018 19:36:10 -0500
-Received: from mx2.suse.de ([195.135.220.15]:44994 "EHLO mx1.suse.de"
+        id S1728163AbeK2Aib (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Nov 2018 19:38:31 -0500
+Received: from mx2.suse.de ([195.135.220.15]:45320 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727802AbeK2AgK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Nov 2018 19:36:10 -0500
+        id S1727802AbeK2Aib (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Nov 2018 19:38:31 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id CA701AEB3;
-        Wed, 28 Nov 2018 13:34:27 +0000 (UTC)
-Subject: Re: [PATCH 2/3] btrfs: cleanup the useless DEFINE_WAIT in
- cleanup_transaction
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 3A2C1AEB3;
+        Wed, 28 Nov 2018 13:36:48 +0000 (UTC)
+Subject: Re: [PATCH 3/3] btrfs: remove redundant nowait check for
+ buffered_write
 To:     Lu Fengqi <lufq.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 References: <20181128032130.11452-1-lufq.fnst@cn.fujitsu.com>
- <20181128032254.11625-1-lufq.fnst@cn.fujitsu.com>
+ <20181128032330.11753-1-lufq.fnst@cn.fujitsu.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -87,12 +87,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <f592de54-28f6-ffbd-29a9-490cbf2072c0@suse.de>
-Date:   Wed, 28 Nov 2018 14:34:27 +0100
+Message-ID: <b38dda29-91ae-b444-9561-cdba224d4f62@suse.de>
+Date:   Wed, 28 Nov 2018 14:36:48 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181128032254.11625-1-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <20181128032330.11753-1-lufq.fnst@cn.fujitsu.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit

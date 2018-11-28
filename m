@@ -6,38 +6,38 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 27065C43441
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7D65EC04EBA
 	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 03:04:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EA3372086B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 03:04:23 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EA3372086B
+	by mail.kernel.org (Postfix) with ESMTP id 505102086B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Nov 2018 03:04:24 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 505102086B
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=cn.fujitsu.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727280AbeK1OEX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Nov 2018 09:04:23 -0500
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:19247 "EHLO
+        id S1727276AbeK1OEW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Nov 2018 09:04:22 -0500
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:16765 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1727209AbeK1OEU (ORCPT
+        with ESMTP id S1727268AbeK1OEV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Nov 2018 09:04:20 -0500
+        Wed, 28 Nov 2018 09:04:21 -0500
 X-IronPort-AV: E=Sophos;i="5.56,289,1539619200"; 
-   d="scan'208";a="48766254"
+   d="scan'208";a="48766257"
 Received: from unknown (HELO cn.fujitsu.com) ([10.167.33.5])
   by heian.cn.fujitsu.com with ESMTP; 28 Nov 2018 11:04:16 +0800
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id 972034B6AE19
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Nov 2018 11:04:16 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id 1990A4B734A5
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Nov 2018 11:04:17 +0800 (CST)
 Received: from localhost.localdomain (10.167.226.22) by
  G08CNEXCHPEKD01.g08.fujitsu.local (10.167.33.89) with Microsoft SMTP Server
- (TLS) id 14.3.408.0; Wed, 28 Nov 2018 11:04:21 +0800
+ (TLS) id 14.3.408.0; Wed, 28 Nov 2018 11:04:22 +0800
 From:   Su Yue <suy.fnst@cn.fujitsu.com>
 To:     <linux-btrfs@vger.kernel.org>
 CC:     <suy.fnst@cn.fujitsu.com>
-Subject: [RFC PATCH 16/17] btrfs: priority alloc: write bg->priority_tree->groups_sem to avoid race in btrfs_delete_unused_bgs()
-Date:   Wed, 28 Nov 2018 11:11:47 +0800
-Message-ID: <20181128031148.357-17-suy.fnst@cn.fujitsu.com>
+Subject: [RFC PATCH 17/17] btrfs: add mount option "priority_alloc=%s"
+Date:   Wed, 28 Nov 2018 11:11:48 +0800
+Message-ID: <20181128031148.357-18-suy.fnst@cn.fujitsu.com>
 X-Mailer: git-send-email 2.19.1
 In-Reply-To: <20181128031148.357-1-suy.fnst@cn.fujitsu.com>
 References: <20181128031148.357-1-suy.fnst@cn.fujitsu.com>
@@ -45,7 +45,7 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 7BIT
 Content-Type:   text/plain; charset=US-ASCII
 X-Originating-IP: [10.167.226.22]
-X-yoursite-MailScanner-ID: 972034B6AE19.A8A2A
+X-yoursite-MailScanner-ID: 1990A4B734A5.A7092
 X-yoursite-MailScanner: Found to be clean
 X-yoursite-MailScanner-From: suy.fnst@cn.fujitsu.com
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -53,106 +53,67 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-If use priority aware allocator, bg->priority_tree->groups_sem should
-be written instead of space_info->groups_sem.
+Add mount option "priority_alloc=%s", now %s only supports "usage" and
+"off". The latter is used for remount.
+"priority_alloc=usage" will active priority aware allocator.
+This mount option changes the way of find_free_extent to search
+block groups and may cost more time.
 
 Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c | 60 +++++++++++++++++++++++++++++++-----------
- 1 file changed, 44 insertions(+), 16 deletions(-)
+ fs/btrfs/super.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 6627bbe56ad5..5c9536609621 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -10944,6 +10944,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 	struct btrfs_block_group_cache *block_group;
- 	struct btrfs_space_info *space_info;
- 	struct btrfs_trans_handle *trans;
-+	bool use_priority = is_priority_alloc_enabled(fs_info);
- 	int ret = 0;
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index cbc9d0d2c12d..4a6ccd4c29fd 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -326,6 +326,7 @@ enum {
+ 	Opt_treelog, Opt_notreelog,
+ 	Opt_usebackuproot,
+ 	Opt_user_subvol_rm_allowed,
++	Opt_priority_allocator,
  
- 	if (!test_bit(BTRFS_FS_OPEN, &fs_info->flags))
-@@ -10953,6 +10954,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 	while (!list_empty(&fs_info->unused_bgs)) {
- 		u64 start, end;
- 		int trimming;
-+		struct btrfs_priority_tree *pt;
+ 	/* Deprecated options */
+ 	Opt_alloc_start,
+@@ -393,6 +394,7 @@ static const match_table_t tokens = {
+ 	{Opt_notreelog, "notreelog"},
+ 	{Opt_usebackuproot, "usebackuproot"},
+ 	{Opt_user_subvol_rm_allowed, "user_subvol_rm_allowed"},
++	{Opt_priority_allocator, "priority_alloc=%s"},
  
- 		block_group = list_first_entry(&fs_info->unused_bgs,
- 					       struct btrfs_block_group_cache,
-@@ -10969,29 +10971,55 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 
- 		mutex_lock(&fs_info->delete_unused_bgs_mutex);
- 
--		/* Don't want to race with allocators so take the groups_sem */
--		down_write(&space_info->groups_sem);
--		spin_lock(&block_group->lock);
--		if (block_group->reserved || block_group->pinned ||
--		    btrfs_block_group_used(&block_group->item) ||
--		    block_group->ro ||
--		    list_is_singular(&block_group->list)) {
-+		if (use_priority) {
-+			spin_lock(&block_group->lock);
-+			if (block_group->reserved || block_group->pinned ||
-+			    btrfs_block_group_used(&block_group->item) ||
-+			    block_group->ro ||
-+			    block_group->priority != 0) {
-+				trace_btrfs_skip_unused_block_group(
-+					block_group);
-+				spin_unlock(&block_group->lock);
-+				goto next;
+ 	/* Deprecated options */
+ 	{Opt_alloc_start, "alloc_start=%s"},
+@@ -765,6 +767,18 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+ 		case Opt_skip_balance:
+ 			btrfs_set_opt(info->mount_opt, SKIP_BALANCE);
+ 			break;
++		case Opt_priority_allocator:
++			if (strcmp(args[0].from, "usage") == 0) {
++				btrfs_set_and_info(info, PRIORITY_USAGE,
++				   "using priority usage-aware allocator");
++			} else if (strcmp(args[0].from, "off") == 0) {
++				btrfs_clear_and_info(info, PRIORITY_USAGE,
++				   "priority awareallocator disabled");
++			} else {
++				ret = -EINVAL;
++				goto out;
 +			}
-+			block_group->priority = PRIORITY_BG_BUSY;
-+			spin_unlock(&block_group->lock);
-+			pt = block_group->priority_tree;
-+			down_write(&pt->groups_sem);
-+		} else {
- 			/*
--			 * We want to bail if we made new allocations or have
--			 * outstanding allocations in this block group.  We do
--			 * the ro check in case balance is currently acting on
--			 * this block group.
-+			 * Don't want to race with allocators so take the
-+			 * groups_sem
- 			 */
--			trace_btrfs_skip_unused_block_group(block_group);
-+			down_write(&space_info->groups_sem);
-+			spin_lock(&block_group->lock);
-+			if (block_group->reserved || block_group->pinned ||
-+			    btrfs_block_group_used(&block_group->item) ||
-+			    block_group->ro ||
-+			    list_is_singular(&block_group->list)) {
-+				/*
-+				 * We want to bail if we made new allocations
-+				 * or have outstanding allocations in this
-+				 * block group.  We do the ro check in case
-+				 * balance is currently acting on this block
-+				 * group.
-+				 */
-+				trace_btrfs_skip_unused_block_group(
-+					block_group);
-+				spin_unlock(&block_group->lock);
-+				up_write(&space_info->groups_sem);
-+				goto next;
-+			}
- 			spin_unlock(&block_group->lock);
--			up_write(&space_info->groups_sem);
--			goto next;
- 		}
--		spin_unlock(&block_group->lock);
- 
- 		/* We don't want to force the issue, only flip if it's ok. */
- 		ret = inc_block_group_ro(block_group, 0);
--		up_write(&space_info->groups_sem);
-+		if (use_priority)
-+			up_write(&pt->groups_sem);
-+		else
-+			up_write(&space_info->groups_sem);
-+
- 		if (ret < 0) {
- 			ret = 0;
- 			goto next;
++			break;
+ #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
+ 		case Opt_check_integrity_including_extent_data:
+ 			btrfs_info(info,
+@@ -1337,6 +1351,10 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+ 		seq_puts(seq, ",inode_cache");
+ 	if (btrfs_test_opt(info, SKIP_BALANCE))
+ 		seq_puts(seq, ",skip_balance");
++	if (btrfs_test_opt(info, PRIORITY_USAGE))
++		seq_puts(seq, ",priority_alloc=usage");
++	else
++		seq_puts(seq, ",priority_alloc=off");
+ #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
+ 	if (btrfs_test_opt(info, CHECK_INTEGRITY_INCLUDING_EXTENT_DATA))
+ 		seq_puts(seq, ",check_int_data");
 -- 
 2.19.1
 

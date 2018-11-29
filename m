@@ -2,88 +2,132 @@ Return-Path: <SRS0=A/rP=OI=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AD330C43441
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Nov 2018 14:51:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5E972C43441
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Nov 2018 16:41:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7F42220673
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Nov 2018 14:51:04 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7F42220673
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+	by mail.kernel.org (Postfix) with ESMTP id 2FBFC20989
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Nov 2018 16:41:39 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2FBFC20989
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732823AbeK3B4j (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 29 Nov 2018 20:56:39 -0500
-Received: from mx2.suse.de ([195.135.220.15]:55690 "EHLO mx1.suse.de"
+        id S1729391AbeK3Drf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 29 Nov 2018 22:47:35 -0500
+Received: from mx2.suse.de ([195.135.220.15]:58656 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728695AbeK3B4i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Nov 2018 20:56:38 -0500
+        id S1729290AbeK3Dre (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 29 Nov 2018 22:47:34 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id E79B0AFF5;
-        Thu, 29 Nov 2018 14:51:00 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 228F2DAC25; Thu, 29 Nov 2018 15:50:44 +0100 (CET)
-Date:   Thu, 29 Nov 2018 15:50:43 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Filipe Manana <fdmanana@kernel.org>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.com>
-Subject: Re: [PATCH] Btrfs: bring back key search optimization to
- btrfs_search_old_slot()
-Message-ID: <20181129145043.GB2842@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Filipe Manana <fdmanana@kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.com>
-References: <20181116110845.28561-1-fdmanana@kernel.org>
- <CAL3q7H6kM3kG-tm3omMYzx_Ma31vK2OaxqJ0YGKiq8agu9QB0g@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAL3q7H6kM3kG-tm3omMYzx_Ma31vK2OaxqJ0YGKiq8agu9QB0g@mail.gmail.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id ED88DAD48
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Nov 2018 16:41:35 +0000 (UTC)
+From:   Nikolay Borisov <nborisov@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH] btrfs: Refactor main loop in extent_readpages
+Date:   Thu, 29 Nov 2018 18:41:31 +0200
+Message-Id: <20181129164131.4716-1-nborisov@suse.com>
+X-Mailer: git-send-email 2.17.1
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Nov 26, 2018 at 04:53:11PM +0000, Filipe Manana wrote:
-> On Fri, Nov 16, 2018 at 11:09 AM <fdmanana@kernel.org> wrote:
-> >
-> > From: Filipe Manana <fdmanana@suse.com>
-> >
-> > Commit d7396f07358a ("Btrfs: optimize key searches in btrfs_search_slot"),
-> > dated from August 2013, introduced an optimization to search for keys in a
-> > node/leaf to both btrfs_search_slot() and btrfs_search_old_slot(). For the
-> > later, it ended up being reverted in commit d4b4087c43cc ("Btrfs: do a
-> > full search everytime in btrfs_search_old_slot"), from September 2013,
-> > because the content of extent buffers were often inconsistent during
-> > replay. It turned out that the reason why they were often inconsistent was
-> > because the extent buffer replay stopped being done atomically, and got
-> > broken after commit c8cc63416537 ("Btrfs: stop using GFP_ATOMIC for the
-> > tree mod log allocations"), introduced in July 2013. The extent buffer
-> > replay issue was then found and fixed by commit 5de865eebb83 ("Btrfs: fix
-> > tree mod logging"), dated from December 2013.
-> >
-> > So bring back the optimization to btrfs_search_old_slot() as skipping it
-> > and its comment about disabling it confusing. After all, if unwinding
-> > extent buffers resulted in some inconsistency, the normal searches (binary
-> > searches) would also not always work.
-> >
-> > Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> 
-> David, please remove this change from the integration branch.
-> 
-> It turns out after 3 weeks of stress tests it finally triggered an
-> assertion failure (hard to hit) and
-> it's indeed not reliable to use the search optimization because of how
-> the mod log tree currently works.
-> The idea was just to not make it different from btrfs_search_slot().
-> Use of the mod log tree is limited
-> to some cases where occasional faster search wouldn't bring much benefits.
+extent_readpages processes all pages in the readlist in batches of 16,
+this is implemented by a single for loop but thanks to an if condition
+the loop does 2 things based on whether we've filled the batch or not.
+Additionally due to the structure of the code there is an additional
+check which deals with partial batches.
 
-Understood, thanks. Patch removed from misc-next.
+Streamline all of this by explicitly using two loops. The outter one is
+used to process all pages while the inner one just fills in the batch
+of 16 (currently). Due to this new structure the code guarantees that
+all pages are processed in the loop hence the code to deal with any
+leftovers is eliminated.
+
+This also enable the compiler to inline __extent_readpages:
+
+	./scripts/bloat-o-meter fs/btrfs/extent_io.o extent_io.for
+
+	add/remove: 0/1 grow/shrink: 1/0 up/down: 660/-820 (-160)
+	Function                                     old     new   delta
+	extent_readpages                             476    1136    +660
+	__extent_readpages                           820       -    -820
+	Total: Before=44315, After=44155, chg -0.36%
+
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/extent_io.c | 37 ++++++++++++++++---------------------
+ 1 file changed, 16 insertions(+), 21 deletions(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 8332c5f4b1c3..233f835dd6f8 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4093,43 +4093,38 @@ int extent_writepages(struct address_space *mapping,
+ int extent_readpages(struct address_space *mapping, struct list_head *pages,
+ 		     unsigned nr_pages)
+ {
++#define BTRFS_PAGES_BATCH 16
++
+ 	struct bio *bio = NULL;
+-	unsigned page_idx;
+ 	unsigned long bio_flags = 0;
+-	struct page *pagepool[16];
+-	struct page *page;
++	struct page *pagepool[BTRFS_PAGES_BATCH];
+ 	struct extent_map *em_cached = NULL;
+ 	struct extent_io_tree *tree = &BTRFS_I(mapping->host)->io_tree;
+ 	int nr = 0;
+ 	u64 prev_em_start = (u64)-1;
+ 
+-	for (page_idx = 0; page_idx < nr_pages; page_idx++) {
+-		page = lru_to_page(pages);
++	while (!list_empty(pages)) {
++		for (nr = 0; nr < BTRFS_PAGES_BATCH && !list_empty(pages);) {
++			struct page *page = lru_to_page(pages);
+ 
+-		prefetchw(&page->flags);
+-		list_del(&page->lru);
+-		if (add_to_page_cache_lru(page, mapping,
+-					page->index,
+-					readahead_gfp_mask(mapping))) {
+-			put_page(page);
+-			continue;
++			prefetchw(&page->flags);
++			list_del(&page->lru);
++			if (add_to_page_cache_lru(page, mapping, page->index,
++						readahead_gfp_mask(mapping))) {
++				put_page(page);
++				continue;
++			}
++
++			pagepool[nr++] = page;
+ 		}
+ 
+-		pagepool[nr++] = page;
+-		if (nr < ARRAY_SIZE(pagepool))
+-			continue;
+ 		__extent_readpages(tree, pagepool, nr, &em_cached, &bio,
+-				&bio_flags, &prev_em_start);
+-		nr = 0;
++				   &bio_flags, &prev_em_start);
+ 	}
+-	if (nr)
+-		__extent_readpages(tree, pagepool, nr, &em_cached, &bio,
+-				&bio_flags, &prev_em_start);
+ 
+ 	if (em_cached)
+ 		free_extent_map(em_cached);
+ 
+-	BUG_ON(!list_empty(pages));
+ 	if (bio)
+ 		return submit_one_bio(bio, 0, bio_flags);
+ 	return 0;
+-- 
+2.17.1
+

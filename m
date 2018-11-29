@@ -2,176 +2,304 @@ Return-Path: <SRS0=A/rP=OI=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_MUTT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 41460C43441
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Nov 2018 10:36:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0FCCFC43441
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Nov 2018 11:17:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EB0F720834
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Nov 2018 10:36:43 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="biGGMo+r"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EB0F720834
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	by mail.kernel.org (Postfix) with ESMTP id C02FF2081B
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Nov 2018 11:17:50 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C02FF2081B
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=linux.ibm.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726902AbeK2Vlg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 29 Nov 2018 16:41:36 -0500
-Received: from mail-vs1-f65.google.com ([209.85.217.65]:44545 "EHLO
-        mail-vs1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726740AbeK2Vlf (ORCPT
+        id S1728053AbeK2WWt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 29 Nov 2018 17:22:49 -0500
+Received: from mx0b-001b2d01.pphosted.com ([148.163.158.5]:53452 "EHLO
+        mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1727114AbeK2WWm (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Nov 2018 16:41:35 -0500
-Received: by mail-vs1-f65.google.com with SMTP id g68so816885vsd.11
-        for <linux-btrfs@vger.kernel.org>; Thu, 29 Nov 2018 02:36:41 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
-         :subject:to:cc:content-transfer-encoding;
-        bh=aTQ5FQWml0JvRYZ5aZPvq5QJKmXFr/mUstaHCbLLjQ8=;
-        b=biGGMo+rgRbvqRFLkpHhUpn/CWBjasGA5//CQXPWsQN4gPgKBjdEiGqSexUCgc7BJg
-         ZrrBl2eJ+KqkosrIB6m4FiCHp/CwDglBARN+zCYHpV4rDGCIVCj2K4Teq+67QuJwVvZl
-         gvzQvTBLVfLgCyzxqVzuNmo0S9NziPUVF0N3+CjsNRDsQffU4SH8kXwgqI0p1B7tbdDy
-         wlvFpOfFaLJ8lTppG2k2odk7MD7Tg2FySL5/GwvxV+tq5egWt8Mpqia8qjVy+/EuN0aP
-         Pbz+sqkwKmy72Jn3lfFgxhZjyaQc988uKuBhz8BVylUUVnEFjVTrpz/XJZlDNQbUSlmD
-         9mig==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
-         :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=aTQ5FQWml0JvRYZ5aZPvq5QJKmXFr/mUstaHCbLLjQ8=;
-        b=iOaRLjMqE7WgFixS09p+ZyphlXIWMwjsX0NdL0VNSLGZxE2A8T4F18X7/Q+T083Xon
-         HllU7+1i0eUw/teP+B0PqYyiD00ixRZe4olArEidO3DvR5p8Uu+lOOBd0NHbKDm+BRGB
-         ETmhnWMJEJ8WuhSn2o/IapAnx1AN997jCJeIxigSSEDofCWx/gMD2JK6sCYTMn9a+XI+
-         3APdoMYFnsuhzbf/ptxn1+MuuGv5ledFORD1gtkbolaQ1l/o3y1ZEj2bzd1CiYxQSyWQ
-         F9xNLi2ZBTMprKuopyyaWgyJ0iRrIPauFkuhLreZdClEV+K4FsMCUU3Z56/QEldFNvbW
-         ouYg==
-X-Gm-Message-State: AA+aEWZaA8XxnOFBoELVC4oFfOfKbXOl3tmcn9cKWxIgUpkEqz8PZtXK
-        xaEARmRN9Rje8Yb97tScgLkQvx0UNa5B7FVwJeA=
-X-Google-Smtp-Source: AFSGD/VR7jQuomwPbL32gPf4NrvCJJoe9/pbYfZdS7GhslELd8XR/Lbk5uwFxouqbbJqt4HaILK2BRoOZ1LX8OTDJ9Q=
-X-Received: by 2002:a67:4c51:: with SMTP id z78mr306058vsa.99.1543487801146;
- Thu, 29 Nov 2018 02:36:41 -0800 (PST)
+        Thu, 29 Nov 2018 17:22:42 -0500
+Received: from pps.filterd (m0098420.ppops.net [127.0.0.1])
+        by mx0b-001b2d01.pphosted.com (8.16.0.22/8.16.0.22) with SMTP id wATBDfnr150726
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Nov 2018 06:17:40 -0500
+Received: from e06smtp01.uk.ibm.com (e06smtp01.uk.ibm.com [195.75.94.97])
+        by mx0b-001b2d01.pphosted.com with ESMTP id 2p2dtm3sx3-1
+        (version=TLSv1.2 cipher=AES256-GCM-SHA384 bits=256 verify=NOT)
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Nov 2018 06:17:39 -0500
+Received: from localhost
+        by e06smtp01.uk.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+        for <linux-btrfs@vger.kernel.org> from <rppt@linux.ibm.com>;
+        Thu, 29 Nov 2018 11:17:37 -0000
+Received: from b06cxnps3074.portsmouth.uk.ibm.com (9.149.109.194)
+        by e06smtp01.uk.ibm.com (192.168.101.131) with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted;
+        (version=TLSv1/SSLv3 cipher=AES256-GCM-SHA384 bits=256/256)
+        Thu, 29 Nov 2018 11:17:29 -0000
+Received: from d06av25.portsmouth.uk.ibm.com (d06av25.portsmouth.uk.ibm.com [9.149.105.61])
+        by b06cxnps3074.portsmouth.uk.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id wATBHS7F59637764
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
+        Thu, 29 Nov 2018 11:17:28 GMT
+Received: from d06av25.portsmouth.uk.ibm.com (unknown [127.0.0.1])
+        by IMSVA (Postfix) with ESMTP id 044EC11C04C;
+        Thu, 29 Nov 2018 11:17:28 +0000 (GMT)
+Received: from d06av25.portsmouth.uk.ibm.com (unknown [127.0.0.1])
+        by IMSVA (Postfix) with ESMTP id C0E8911C069;
+        Thu, 29 Nov 2018 11:17:25 +0000 (GMT)
+Received: from rapoport-lnx (unknown [9.148.8.213])
+        by d06av25.portsmouth.uk.ibm.com (Postfix) with ESMTPS;
+        Thu, 29 Nov 2018 11:17:25 +0000 (GMT)
+Date:   Thu, 29 Nov 2018 13:17:24 +0200
+From:   Mike Rapoport <rppt@linux.ibm.com>
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     Michal Hocko <mhocko@kernel.org>, linux-kernel@vger.kernel.org,
+        David Howells <dhowells@redhat.com>, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
+        "Yan, Zheng" <zyan@redhat.com>, Sage Weil <sage@redhat.com>,
+        Ilya Dryomov <idryomov@gmail.com>,
+        Steve French <sfrench@samba.org>,
+        "Theodore Ts'o" <tytso@mit.edu>,
+        Andreas Dilger <adilger.kernel@dilger.ca>,
+        Mark Fasheh <mark@fasheh.com>,
+        Joel Becker <jlbec@evilplan.org>,
+        Mike Marshall <hubcap@omnibond.com>,
+        Martin Brandenburg <martin@omnibond.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Mike Rapoport <rppt@linux.vnet.ibm.com>,
+        Matthew Wilcox <willy@infradead.org>,
+        Randy Dunlap <rdunlap@infradead.org>,
+        YueHaibing <yuehaibing@huawei.com>,
+        Shakeel Butt <shakeelb@google.com>,
+        Dan Williams <dan.j.williams@intel.com>,
+        linux-afs@lists.infradead.org, linux-btrfs@vger.kernel.org,
+        ceph-devel@vger.kernel.org, linux-cifs@vger.kernel.org,
+        samba-technical@lists.samba.org, linux-ext4@vger.kernel.org,
+        ocfs2-devel@oss.oracle.com, devel@lists.orangefs.org,
+        linux-mm@kvack.org
+Subject: Re: [PATCH 2/2] fs: Don't open-code lru_to_page
+References: <20181129075301.29087-1-nborisov@suse.com>
+ <20181129075301.29087-2-nborisov@suse.com>
+ <20181129081826.GO6923@dhcp22.suse.cz>
+ <0921bc8f-b899-4925-51f2-a9f45d4c906a@suse.com>
 MIME-Version: 1.0
-References: <1543483513-16724-1-git-send-email-anand.jain@oracle.com> <1543483513-16724-2-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1543483513-16724-2-git-send-email-anand.jain@oracle.com>
-Reply-To: fdmanana@gmail.com
-From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Thu, 29 Nov 2018 10:36:29 +0000
-Message-ID: <CAL3q7H667aumMBiyOQrcULVVNpiCP3FJ5W7FPjf_8-udSMn0Qg@mail.gmail.com>
-Subject: Re: [PATCH v2 1/3] btrfs: scrub: maintain the unlock order in scrub thread
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <0921bc8f-b899-4925-51f2-a9f45d4c906a@suse.com>
+User-Agent: Mutt/1.5.24 (2015-08-30)
+X-TM-AS-GCONF: 00
+x-cbid: 18112911-4275-0000-0000-000002E88203
+X-IBM-AV-DETECTION: SAVI=unused REMOTE=unused XFE=unused
+x-cbparentid: 18112911-4276-0000-0000-000037F5C617
+Message-Id: <20181129111723.GD9315@rapoport-lnx>
+X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10434:,, definitions=2018-11-29_07:,,
+ signatures=0
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 priorityscore=1501
+ malwarescore=0 suspectscore=0 phishscore=0 bulkscore=0 spamscore=0
+ clxscore=1011 lowpriorityscore=0 mlxscore=0 impostorscore=0
+ mlxlogscore=999 adultscore=0 classifier=spam adjust=0 reason=mlx
+ scancount=1 engine=8.0.1-1810050000 definitions=main-1811290098
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Nov 29, 2018 at 9:27 AM Anand Jain <anand.jain@oracle.com> wrote:
->
-> The device_list_mutex and scrub_lock creates a nested locks in
-> btrfs_scrub_dev().
->
-> During lock the order is device_list_mutex and then scrub_lock, and durin=
-g
-> unlock, the order is device_list_mutex and then scrub_lock.
-> Fix this to the lock order of scrub_lock and then device_list_mutex.
->
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
-> v1->v2: change the order of lock acquire first scrub_lock and then
->         device_list_mutex, which matches with the order of unlock.
->         The extra line which are now in the scrub_lock are ok to be
->         under the scrub_lock.
+On Thu, Nov 29, 2018 at 10:50:08AM +0200, Nikolay Borisov wrote:
+> 
+> 
+> On 29.11.18 г. 10:18 ч., Michal Hocko wrote:
+> > On Thu 29-11-18 09:52:57, Nikolay Borisov wrote:
+> >> There are a bunch of filesystems which essentially open-code lru_to_page
+> >> helper. Change them to using the helper. No functional changes.
+> > 
+> > I would just squash the two into a single patch. It makes the first one
+> > more obvious. Or is there any reason to have them separate?
+> 
+> No reason, just didn't know how people would react so that's why I chose
+> to send as two separate.
 
-I don't get it.
-What problem does this patch fixes?
-Doesn't seem any functional fix to me, nor performance gain (by the
-contrary, the scrub_lock is now held for a longer time than needed),
-nor makes anything more readable or "beautiful".
+I'm with Michal on this, a single patch seems better here.
+Yet, for either way:
 
->  fs/btrfs/scrub.c | 13 +++++++------
->  1 file changed, 7 insertions(+), 6 deletions(-)
->
-> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-> index 902819d3cf41..a9d6fc3b01d4 100644
-> --- a/fs/btrfs/scrub.c
-> +++ b/fs/btrfs/scrub.c
-> @@ -3813,28 +3813,29 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info=
-, u64 devid, u64 start,
->                 return -EINVAL;
->         }
->
-> -
-> +       mutex_lock(&fs_info->scrub_lock);
->         mutex_lock(&fs_info->fs_devices->device_list_mutex);
->         dev =3D btrfs_find_device(fs_info, devid, NULL, NULL);
->         if (!dev || (test_bit(BTRFS_DEV_STATE_MISSING, &dev->dev_state) &=
-&
->                      !is_dev_replace)) {
->                 mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-> +               mutex_unlock(&fs_info->scrub_lock);
->                 return -ENODEV;
->         }
->
->         if (!is_dev_replace && !readonly &&
->             !test_bit(BTRFS_DEV_STATE_WRITEABLE, &dev->dev_state)) {
->                 mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-> +               mutex_unlock(&fs_info->scrub_lock);
->                 btrfs_err_in_rcu(fs_info, "scrub: device %s is not writab=
-le",
->                                 rcu_str_deref(dev->name));
->                 return -EROFS;
->         }
->
-> -       mutex_lock(&fs_info->scrub_lock);
->         if (!test_bit(BTRFS_DEV_STATE_IN_FS_METADATA, &dev->dev_state) ||
->             test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &dev->dev_state)) {
-> -               mutex_unlock(&fs_info->scrub_lock);
->                 mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-> +               mutex_unlock(&fs_info->scrub_lock);
->                 return -EIO;
->         }
->
-> @@ -3843,23 +3844,23 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info=
-, u64 devid, u64 start,
->             (!is_dev_replace &&
->              btrfs_dev_replace_is_ongoing(&fs_info->dev_replace))) {
->                 btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
-> -               mutex_unlock(&fs_info->scrub_lock);
->                 mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-> +               mutex_unlock(&fs_info->scrub_lock);
->                 return -EINPROGRESS;
->         }
->         btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
->
->         ret =3D scrub_workers_get(fs_info, is_dev_replace);
->         if (ret) {
-> -               mutex_unlock(&fs_info->scrub_lock);
->                 mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-> +               mutex_unlock(&fs_info->scrub_lock);
->                 return ret;
->         }
->
->         sctx =3D scrub_setup_ctx(dev, is_dev_replace);
->         if (IS_ERR(sctx)) {
-> -               mutex_unlock(&fs_info->scrub_lock);
->                 mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-> +               mutex_unlock(&fs_info->scrub_lock);
->                 scrub_workers_put(fs_info);
->                 return PTR_ERR(sctx);
->         }
-> --
-> 1.8.3.1
+Reviewed-by: Mike Rapoport <rppt@linux.ibm.com>
+ 
+> If I squash them who would be the best person to take them ?
+> 
+> > 
+> >> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> > 
+> > Acked-by: Michal Hocko <mhocko@suse.com>
+> > 
+> >> ---
+> >>
+> >> Since this is a mostly mechanical change I've actually batched all of them in 
+> >> a single patch. 
+> >>
+> >>  fs/afs/file.c        | 5 +++--
+> >>  fs/btrfs/extent_io.c | 2 +-
+> >>  fs/ceph/addr.c       | 5 ++---
+> >>  fs/cifs/file.c       | 3 ++-
+> >>  fs/ext4/readpage.c   | 2 +-
+> >>  fs/ocfs2/aops.c      | 3 ++-
+> >>  fs/orangefs/inode.c  | 2 +-
+> >>  mm/swap.c            | 2 +-
+> >>  8 files changed, 13 insertions(+), 11 deletions(-)
+> >>
+> >> diff --git a/fs/afs/file.c b/fs/afs/file.c
+> >> index d6bc3f5d784b..323ae9912203 100644
+> >> --- a/fs/afs/file.c
+> >> +++ b/fs/afs/file.c
+> >> @@ -17,6 +17,7 @@
+> >>  #include <linux/writeback.h>
+> >>  #include <linux/gfp.h>
+> >>  #include <linux/task_io_accounting_ops.h>
+> >> +#include <linux/mm.h>
+> >>  #include "internal.h"
+> >>  
+> >>  static int afs_file_mmap(struct file *file, struct vm_area_struct *vma);
+> >> @@ -441,7 +442,7 @@ static int afs_readpages_one(struct file *file, struct address_space *mapping,
+> >>  	/* Count the number of contiguous pages at the front of the list.  Note
+> >>  	 * that the list goes prev-wards rather than next-wards.
+> >>  	 */
+> >> -	first = list_entry(pages->prev, struct page, lru);
+> >> +	first = lru_to_page(pages);
+> >>  	index = first->index + 1;
+> >>  	n = 1;
+> >>  	for (p = first->lru.prev; p != pages; p = p->prev) {
+> >> @@ -473,7 +474,7 @@ static int afs_readpages_one(struct file *file, struct address_space *mapping,
+> >>  	 * page at the end of the file.
+> >>  	 */
+> >>  	do {
+> >> -		page = list_entry(pages->prev, struct page, lru);
+> >> +		page = lru_to_page(pages);
+> >>  		list_del(&page->lru);
+> >>  		index = page->index;
+> >>  		if (add_to_page_cache_lru(page, mapping, index,
+> >> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> >> index 19f4b8fd654f..8332c5f4b1c3 100644
+> >> --- a/fs/btrfs/extent_io.c
+> >> +++ b/fs/btrfs/extent_io.c
+> >> @@ -4104,7 +4104,7 @@ int extent_readpages(struct address_space *mapping, struct list_head *pages,
+> >>  	u64 prev_em_start = (u64)-1;
+> >>  
+> >>  	for (page_idx = 0; page_idx < nr_pages; page_idx++) {
+> >> -		page = list_entry(pages->prev, struct page, lru);
+> >> +		page = lru_to_page(pages);
+> >>  
+> >>  		prefetchw(&page->flags);
+> >>  		list_del(&page->lru);
+> >> diff --git a/fs/ceph/addr.c b/fs/ceph/addr.c
+> >> index 8eade7a993c1..5d0c05e288cc 100644
+> >> --- a/fs/ceph/addr.c
+> >> +++ b/fs/ceph/addr.c
+> >> @@ -306,7 +306,7 @@ static int start_read(struct inode *inode, struct ceph_rw_context *rw_ctx,
+> >>  	struct ceph_osd_client *osdc =
+> >>  		&ceph_inode_to_client(inode)->client->osdc;
+> >>  	struct ceph_inode_info *ci = ceph_inode(inode);
+> >> -	struct page *page = list_entry(page_list->prev, struct page, lru);
+> >> +	struct page *page = lru_to_page(page_list);
+> >>  	struct ceph_vino vino;
+> >>  	struct ceph_osd_request *req;
+> >>  	u64 off;
+> >> @@ -333,8 +333,7 @@ static int start_read(struct inode *inode, struct ceph_rw_context *rw_ctx,
+> >>  			if (got)
+> >>  				ceph_put_cap_refs(ci, got);
+> >>  			while (!list_empty(page_list)) {
+> >> -				page = list_entry(page_list->prev,
+> >> -						  struct page, lru);
+> >> +				page = lru_to_page(page_list);
+> >>  				list_del(&page->lru);
+> >>  				put_page(page);
+> >>  			}
+> >> diff --git a/fs/cifs/file.c b/fs/cifs/file.c
+> >> index 74c33d5fafc8..b16a4d887d17 100644
+> >> --- a/fs/cifs/file.c
+> >> +++ b/fs/cifs/file.c
+> >> @@ -33,6 +33,7 @@
+> >>  #include <linux/mount.h>
+> >>  #include <linux/slab.h>
+> >>  #include <linux/swap.h>
+> >> +#include <linux/mm.h>
+> >>  #include <asm/div64.h>
+> >>  #include "cifsfs.h"
+> >>  #include "cifspdu.h"
+> >> @@ -3975,7 +3976,7 @@ readpages_get_pages(struct address_space *mapping, struct list_head *page_list,
+> >>  
+> >>  	INIT_LIST_HEAD(tmplist);
+> >>  
+> >> -	page = list_entry(page_list->prev, struct page, lru);
+> >> +	page = lru_to_page(page_list);
+> >>  
+> >>  	/*
+> >>  	 * Lock the page and put it in the cache. Since no one else
+> >> diff --git a/fs/ext4/readpage.c b/fs/ext4/readpage.c
+> >> index f461d75ac049..6aa282ee455a 100644
+> >> --- a/fs/ext4/readpage.c
+> >> +++ b/fs/ext4/readpage.c
+> >> @@ -128,7 +128,7 @@ int ext4_mpage_readpages(struct address_space *mapping,
+> >>  
+> >>  		prefetchw(&page->flags);
+> >>  		if (pages) {
+> >> -			page = list_entry(pages->prev, struct page, lru);
+> >> +			page = lru_to_page(pages);
+> >>  			list_del(&page->lru);
+> >>  			if (add_to_page_cache_lru(page, mapping, page->index,
+> >>  				  readahead_gfp_mask(mapping)))
+> >> diff --git a/fs/ocfs2/aops.c b/fs/ocfs2/aops.c
+> >> index eb1ce30412dc..832c1759a09a 100644
+> >> --- a/fs/ocfs2/aops.c
+> >> +++ b/fs/ocfs2/aops.c
+> >> @@ -30,6 +30,7 @@
+> >>  #include <linux/quotaops.h>
+> >>  #include <linux/blkdev.h>
+> >>  #include <linux/uio.h>
+> >> +#include <linux/mm.h>
+> >>  
+> >>  #include <cluster/masklog.h>
+> >>  
+> >> @@ -397,7 +398,7 @@ static int ocfs2_readpages(struct file *filp, struct address_space *mapping,
+> >>  	 * Check whether a remote node truncated this file - we just
+> >>  	 * drop out in that case as it's not worth handling here.
+> >>  	 */
+> >> -	last = list_entry(pages->prev, struct page, lru);
+> >> +	last = lru_to_page(pages);
+> >>  	start = (loff_t)last->index << PAGE_SHIFT;
+> >>  	if (start >= i_size_read(inode))
+> >>  		goto out_unlock;
+> >> diff --git a/fs/orangefs/inode.c b/fs/orangefs/inode.c
+> >> index fe53381b26b1..f038235c64bd 100644
+> >> --- a/fs/orangefs/inode.c
+> >> +++ b/fs/orangefs/inode.c
+> >> @@ -77,7 +77,7 @@ static int orangefs_readpages(struct file *file,
+> >>  	for (page_idx = 0; page_idx < nr_pages; page_idx++) {
+> >>  		struct page *page;
+> >>  
+> >> -		page = list_entry(pages->prev, struct page, lru);
+> >> +		page = lru_to_page(pages);
+> >>  		list_del(&page->lru);
+> >>  		if (!add_to_page_cache(page,
+> >>  				       mapping,
+> >> diff --git a/mm/swap.c b/mm/swap.c
+> >> index aa483719922e..20b9e9d99652 100644
+> >> --- a/mm/swap.c
+> >> +++ b/mm/swap.c
+> >> @@ -126,7 +126,7 @@ void put_pages_list(struct list_head *pages)
+> >>  	while (!list_empty(pages)) {
+> >>  		struct page *victim;
+> >>  
+> >> -		victim = list_entry(pages->prev, struct page, lru);
+> >> +		victim = lru_to_page(pages);
+> >>  		list_del(&victim->lru);
+> >>  		put_page(victim);
+> >>  	}
+> >> -- 
+> >> 2.17.1
+> > 
+> 
 
+-- 
+Sincerely yours,
+Mike.
 
-
---=20
-Filipe David Manana,
-
-=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
- right.=E2=80=9D

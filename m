@@ -2,132 +2,93 @@ Return-Path: <SRS0=A/rP=OI=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5E972C43441
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Nov 2018 16:41:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E1BF6C43441
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Nov 2018 16:52:54 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2FBFC20989
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Nov 2018 16:41:39 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2FBFC20989
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 2AE7720868
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Nov 2018 16:52:54 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (1024-bit key) header.d=ime.usp.br header.i=@ime.usp.br header.b="E4dYg0Zk"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2AE7720868
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=ime.usp.br
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729391AbeK3Drf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 29 Nov 2018 22:47:35 -0500
-Received: from mx2.suse.de ([195.135.220.15]:58656 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729290AbeK3Dre (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Nov 2018 22:47:34 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id ED88DAD48
-        for <linux-btrfs@vger.kernel.org>; Thu, 29 Nov 2018 16:41:35 +0000 (UTC)
-From:   Nikolay Borisov <nborisov@suse.com>
+        id S1729790AbeK3D6w (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 29 Nov 2018 22:58:52 -0500
+Received: from iris.ime.usp.br ([143.107.45.5]:47802 "EHLO iris.ime.usp.br"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1728562AbeK3D6w (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 29 Nov 2018 22:58:52 -0500
+X-Greylist: delayed 534 seconds by postgrey-1.27 at vger.kernel.org; Thu, 29 Nov 2018 22:58:51 EST
+Received: from mail-it1-f179.google.com (mail-it1-f179.google.com [209.85.166.179])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        (Authenticated sender: jeanfobe@iris.ime.usp.br)
+        by iris.ime.usp.br (Postfix) with ESMTPSA id B4EC22900A09
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Nov 2018 14:43:55 -0200 (-02)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=ime.usp.br; s=mail;
+        t=1543509836; bh=USESj1GtT++iAmH/XbRCNuuo2DrufL9mVIUKZKyHWkU=;
+        h=From:Date:Subject:To:From;
+        b=E4dYg0Zki/e/lsaeV+/Igh2e/wmYXSSagMe7QRRip/kaipm21tL8xjTVk3SlXMlCg
+         olhjBna8jth9u0g8Ov67UTtxZpZn44zfPYMDNBM8xAMfeShnX5koz2mGd6b0lzOKtl
+         SJ9Ekhndlo1c03zHxHhQ+gCXhgXJxSK8efp38XnM=
+Received: by mail-it1-f179.google.com with SMTP id g85so4574106ita.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Nov 2018 08:43:55 -0800 (PST)
+X-Gm-Message-State: AA+aEWa6G/c9vSvCzG3B6CokGFJHzUmZd9tJC2EaNl7EkbvVaqqL0+NX
+        EJms55T6qz8ndua3Blzc6VcJYV24rYwGIfybIr8=
+X-Google-Smtp-Source: AFSGD/WJ0a1I5zG++7QTmIoHqcPPfmu2Rw2uuBP6ipOxsVjXfoi2TO8qN47F56wdomScZzX1nW+GHX8FKwcPD4Q+IRo=
+X-Received: by 2002:a24:508a:: with SMTP id m132-v6mr2057171itb.19.1543509834167;
+ Thu, 29 Nov 2018 08:43:54 -0800 (PST)
+MIME-Version: 1.0
+From:   Jean Fobe <jeanfobe@ime.usp.br>
+Date:   Thu, 29 Nov 2018 14:43:25 -0200
+X-Gmail-Original-Message-ID: <CAMHc_wN+-qHc1+q6fuRCzzJ9fsE2-vwa5N3031ANpZ8+tXb7WQ@mail.gmail.com>
+Message-ID: <CAMHc_wN+-qHc1+q6fuRCzzJ9fsE2-vwa5N3031ANpZ8+tXb7WQ@mail.gmail.com>
+Subject: btrfs development - question about crypto api integration
 To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: Refactor main loop in extent_readpages
-Date:   Thu, 29 Nov 2018 18:41:31 +0200
-Message-Id: <20181129164131.4716-1-nborisov@suse.com>
-X-Mailer: git-send-email 2.17.1
+Content-Type: text/plain; charset="UTF-8"
+X-Rspamd-Level: 
+X-Rspamd-Bar: ------
+X-Rspamd-Status: No, score=-6.20
+X-Spamd-Bar: ------
+Authentication-Results: ORIGINATING;
+        auth=pass smtp.auth=jeanfobe@iris.ime.usp.br smtp.mailfrom=jeanfobe@ime.usp.br
+X-Rspamd-Server: nemesis
+X-Rspamd-Queue-Id: B4EC22900A09
+X-Spamd-Result: default: False [-6.20 / 15.00];
+         ARC_NA(0.00)[];
+         RCVD_VIA_SMTP_AUTH(0.00)[];
+         FROM_HAS_DN(0.00)[];
+         TO_MATCH_ENVRCPT_ALL(0.00)[];
+         MIME_GOOD(-0.10)[text/plain];
+         PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+         TO_DN_NONE(0.00)[];
+         RCPT_COUNT_ONE(0.00)[1];
+         FROM_IME(-6.00)[];
+         FROM_EQ_ENVFROM(0.00)[];
+         MIME_TRACE(0.00)[0:+];
+         RCVD_TLS_LAST(0.00)[];
+         ASN(0.00)[asn:15169, ipnet:209.85.128.0/17, country:US];
+         RCVD_COUNT_TWO(0.00)[2];
+         BAYES_HAM(-0.10)[65.19%]
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-extent_readpages processes all pages in the readlist in batches of 16,
-this is implemented by a single for loop but thanks to an if condition
-the loop does 2 things based on whether we've filled the batch or not.
-Additionally due to the structure of the code there is an additional
-check which deals with partial batches.
+Hi all,
+    I've been studying LZ4 and other compression algorithms on the
+kernel, and seen other projects such as zram and ubifs using the
+crypto api. Is there a technical reason for not using the crypto api
+for compression (and possibly for encryption) in btrfs?
+    I did not find any design/technical implementation choices in
+btrfs development in the developer's FAQ on the wiki. If I completely
+missed it, could someone point me in the right direction?
+    Lastly, if there is no technical reason for this, would it be
+something interesting to have implemented?
 
-Streamline all of this by explicitly using two loops. The outter one is
-used to process all pages while the inner one just fills in the batch
-of 16 (currently). Due to this new structure the code guarantees that
-all pages are processed in the loop hence the code to deal with any
-leftovers is eliminated.
-
-This also enable the compiler to inline __extent_readpages:
-
-	./scripts/bloat-o-meter fs/btrfs/extent_io.o extent_io.for
-
-	add/remove: 0/1 grow/shrink: 1/0 up/down: 660/-820 (-160)
-	Function                                     old     new   delta
-	extent_readpages                             476    1136    +660
-	__extent_readpages                           820       -    -820
-	Total: Before=44315, After=44155, chg -0.36%
-
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/extent_io.c | 37 ++++++++++++++++---------------------
- 1 file changed, 16 insertions(+), 21 deletions(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 8332c5f4b1c3..233f835dd6f8 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4093,43 +4093,38 @@ int extent_writepages(struct address_space *mapping,
- int extent_readpages(struct address_space *mapping, struct list_head *pages,
- 		     unsigned nr_pages)
- {
-+#define BTRFS_PAGES_BATCH 16
-+
- 	struct bio *bio = NULL;
--	unsigned page_idx;
- 	unsigned long bio_flags = 0;
--	struct page *pagepool[16];
--	struct page *page;
-+	struct page *pagepool[BTRFS_PAGES_BATCH];
- 	struct extent_map *em_cached = NULL;
- 	struct extent_io_tree *tree = &BTRFS_I(mapping->host)->io_tree;
- 	int nr = 0;
- 	u64 prev_em_start = (u64)-1;
- 
--	for (page_idx = 0; page_idx < nr_pages; page_idx++) {
--		page = lru_to_page(pages);
-+	while (!list_empty(pages)) {
-+		for (nr = 0; nr < BTRFS_PAGES_BATCH && !list_empty(pages);) {
-+			struct page *page = lru_to_page(pages);
- 
--		prefetchw(&page->flags);
--		list_del(&page->lru);
--		if (add_to_page_cache_lru(page, mapping,
--					page->index,
--					readahead_gfp_mask(mapping))) {
--			put_page(page);
--			continue;
-+			prefetchw(&page->flags);
-+			list_del(&page->lru);
-+			if (add_to_page_cache_lru(page, mapping, page->index,
-+						readahead_gfp_mask(mapping))) {
-+				put_page(page);
-+				continue;
-+			}
-+
-+			pagepool[nr++] = page;
- 		}
- 
--		pagepool[nr++] = page;
--		if (nr < ARRAY_SIZE(pagepool))
--			continue;
- 		__extent_readpages(tree, pagepool, nr, &em_cached, &bio,
--				&bio_flags, &prev_em_start);
--		nr = 0;
-+				   &bio_flags, &prev_em_start);
- 	}
--	if (nr)
--		__extent_readpages(tree, pagepool, nr, &em_cached, &bio,
--				&bio_flags, &prev_em_start);
- 
- 	if (em_cached)
- 		free_extent_map(em_cached);
- 
--	BUG_ON(!list_empty(pages));
- 	if (bio)
- 		return submit_one_bio(bio, 0, bio_flags);
- 	return 0;
--- 
-2.17.1
-
+Best regards

@@ -2,243 +2,262 @@ Return-Path: <SRS0=Nx1q=OJ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6CC98C64EB4
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Nov 2018 08:52:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E2EDCC64EB4
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Nov 2018 09:11:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 271BF206B7
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Nov 2018 08:52:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9AA8E20868
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Nov 2018 09:11:57 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="R35LBSCB"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 271BF206B7
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=oracle.com
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="oJ54QHBD"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9AA8E20868
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727245AbeK3UBT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 30 Nov 2018 15:01:19 -0500
-Received: from userp2130.oracle.com ([156.151.31.86]:48912 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726600AbeK3UBS (ORCPT
+        id S1726615AbeK3UUc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 30 Nov 2018 15:20:32 -0500
+Received: from mail-qk1-f193.google.com ([209.85.222.193]:44191 "EHLO
+        mail-qk1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726465AbeK3UUc (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Nov 2018 15:01:18 -0500
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wAU8iLBv108268
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 Nov 2018 08:52:42 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
- date : message-id : in-reply-to : references; s=corp-2018-07-02;
- bh=CdUsd8Y//X0hSfXCygX7EqTtv42ADSwt+nLT9khvfHE=;
- b=R35LBSCB3ZNpA8BtNaidQ+wa+b445LFA5O+8/yno4alXNQzHBdVrIY3+OH8bP+0hrcxW
- 7eHXmCK5I1LoSdw3Fvzp+J7GUBkZxdn1kYFNJN3Hj96BUCnGfgy0QRGkPspGaT3E/0u9
- /6jFkvnkmCUvlSns6w9kUEZbei8KrCHnp5GNLJfM1Ghvowyy2kZOzomyQgCvUOtU/K1D
- lSlOmiIekNM8b2nRWasPeWnvHPRrefV6FF6OiqQ+GEXlvLdSl+v69mgsRTsUWt1JKdAP
- kWTWuRFrhKR016bERBOcNc9DuXY2KcUTFzH44GuMjHMvVCCUfkp7s0vLa0o/TjI+GAyG TA== 
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by userp2130.oracle.com with ESMTP id 2p2jf0kyp9-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 Nov 2018 08:52:42 +0000
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id wAU8qabF023076
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 Nov 2018 08:52:36 GMT
-Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id wAU8qZ1j023719
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 Nov 2018 08:52:36 GMT
-Received: from tpasj.localdomain (/202.156.140.209)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Fri, 30 Nov 2018 00:52:35 -0800
-From:   Anand Jain <anand.jain@oracle.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH RESEND] fstests: btrfs use forget if not reload
-Date:   Fri, 30 Nov 2018 16:52:06 +0800
-Message-Id: <1543567926-20080-5-git-send-email-anand.jain@oracle.com>
-X-Mailer: git-send-email 1.8.3.1
-In-Reply-To: <1543567926-20080-1-git-send-email-anand.jain@oracle.com>
-References: <1543567926-20080-1-git-send-email-anand.jain@oracle.com>
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9092 signatures=668686
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=1 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1810050000 definitions=main-1811300077
+        Fri, 30 Nov 2018 15:20:32 -0500
+Received: by mail-qk1-f193.google.com with SMTP id n12so2733367qkh.11;
+        Fri, 30 Nov 2018 01:11:52 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=xPgiQv76Tbaq5oCVyqFwL3566XE+B00LG3k/7dV9AcE=;
+        b=oJ54QHBD9Fb+hY5WE/KT5Iq58+uCn5UJTPyrt515UH/P7qtAnJombyk707833+rnPY
+         20/M5ZwHHzZGBfAtSVgXy1LSCjTaZkLIfLWcRJusQ+Bh9wGr+UMI6A6MLgTYaICkb17F
+         QaGKIxYEPQRSDt8digwBzBVPNWmunOPXJbh0dfqt+RJZsfs/C4YbiAOFPb5DKb3XB2Ze
+         qe6JEirblPlnsO17RROCPEJg6hkUbu726lvmObiakEtUqd2azKv85eRATTYRDFbNpFMb
+         IS0rzpon0X+mydpT0yVc3I1sgWcIMCi+47NmAHT+T3pmX/vbEa8cV93bRq0p45wk6Nm7
+         473Q==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=xPgiQv76Tbaq5oCVyqFwL3566XE+B00LG3k/7dV9AcE=;
+        b=LsTNhQ+mTCgvqTG7Al/HoaMP0CD9Hkr5ya0UL2kT1eMaQT3l/o1io+vTsEWSSlpv8I
+         4f6mXlHje/HGFFYVCTlJHObb5k2W7MXIVn+owcTx3xdwpaYadXUA+fuWV4smVV0jJkEO
+         DwbtzQ08n2xr/Yf590eGfE2I7dcMSI8fsPLoT0dJ/o1n0hU7MdeQL8BkxymdVRBMJHOE
+         eZIBEARG5wPbYIQ93EE1ggiZG8twa0GjhxofxfzZLdG8GixRkC9i0q1SmeOAinvkkLYT
+         RMTNpalw+POfl8O6GWYqPGGWbKQQRDnjwfef3ObA7LH1sKPjOWgQ22ONxaP599tdLrOp
+         HuRw==
+X-Gm-Message-State: AA+aEWY8lyBas8TIvoaNmgc+M+JGMPGFqw/Uhg1ebjmuv7qHouzGedvO
+        Ar0GtCUV8fl8MthN0IYI7ocGYtEKcgyuXUlUBFw=
+X-Google-Smtp-Source: AFSGD/WnhoE6N7sxX9mqDyLE/7V8TTL3chu/zMlu2b7iABiCnX1kGBRLaT9bEvafnDxyCsvqVyo7a60Nt1P22I3/Lmw=
+X-Received: by 2002:a37:b2c2:: with SMTP id b185mr4420885qkf.194.1543569112384;
+ Fri, 30 Nov 2018 01:11:52 -0800 (PST)
+MIME-Version: 1.0
+References: <20181129075301.29087-1-nborisov@suse.com> <20181129075301.29087-2-nborisov@suse.com>
+In-Reply-To: <20181129075301.29087-2-nborisov@suse.com>
+From:   "Yan, Zheng" <ukernel@gmail.com>
+Date:   Fri, 30 Nov 2018 17:11:39 +0800
+Message-ID: <CAAM7YA==GN5epC5BZYVmcXuyZp-reVi+_MdhDrgcOjnVwME6zA@mail.gmail.com>
+Subject: Re: [PATCH 2/2] fs: Don't open-code lru_to_page
+To:     nborisov@suse.com
+Cc:     Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        David Howells <dhowells@redhat.com>, Chris Mason <clm@fb.com>,
+        josef@toxicpanda.com, David Sterba <dsterba@suse.com>,
+        Zheng Yan <zyan@redhat.com>, Sage Weil <sage@redhat.com>,
+        Ilya Dryomov <idryomov@gmail.com>, sfrench@samba.org,
+        "Theodore Ts'o" <tytso@mit.edu>, adilger.kernel@dilger.ca,
+        mark@fasheh.com, jlbec@evilplan.org, hubcap@omnibond.com,
+        martin@omnibond.com, Andrew Morton <akpm@linux-foundation.org>,
+        rppt@linux.vnet.ibm.com, willy@infradead.org,
+        rdunlap@infradead.org, yuehaibing@huawei.com, shakeelb@google.com,
+        dan.j.williams@intel.com, mhocko@suse.com,
+        linux-afs@lists.infradead.org,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        ceph-devel <ceph-devel@vger.kernel.org>,
+        linux-cifs@vger.kernel.org, samba-technical@lists.samba.org,
+        linux-ext4@vger.kernel.org, ocfs2-devel@oss.oracle.com,
+        devel@lists.orangefs.org, linux-mm@kvack.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[I will send this the xfstest ML after kernel and progs patch
- has been integrated].
+On Thu, Nov 29, 2018 at 3:56 PM Nikolay Borisov <nborisov@suse.com> wrote:
+>
+> There are a bunch of filesystems which essentially open-code lru_to_page
+> helper. Change them to using the helper. No functional changes.
+>
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>
+> Since this is a mostly mechanical change I've actually batched all of them in
+> a single patch.
+>
+>  fs/afs/file.c        | 5 +++--
+>  fs/btrfs/extent_io.c | 2 +-
+>  fs/ceph/addr.c       | 5 ++---
+>  fs/cifs/file.c       | 3 ++-
+>  fs/ext4/readpage.c   | 2 +-
+>  fs/ocfs2/aops.c      | 3 ++-
+>  fs/orangefs/inode.c  | 2 +-
+>  mm/swap.c            | 2 +-
+>  8 files changed, 13 insertions(+), 11 deletions(-)
+>
+> diff --git a/fs/afs/file.c b/fs/afs/file.c
+> index d6bc3f5d784b..323ae9912203 100644
+> --- a/fs/afs/file.c
+> +++ b/fs/afs/file.c
+> @@ -17,6 +17,7 @@
+>  #include <linux/writeback.h>
+>  #include <linux/gfp.h>
+>  #include <linux/task_io_accounting_ops.h>
+> +#include <linux/mm.h>
+>  #include "internal.h"
+>
+>  static int afs_file_mmap(struct file *file, struct vm_area_struct *vma);
+> @@ -441,7 +442,7 @@ static int afs_readpages_one(struct file *file, struct address_space *mapping,
+>         /* Count the number of contiguous pages at the front of the list.  Note
+>          * that the list goes prev-wards rather than next-wards.
+>          */
+> -       first = list_entry(pages->prev, struct page, lru);
+> +       first = lru_to_page(pages);
+>         index = first->index + 1;
+>         n = 1;
+>         for (p = first->lru.prev; p != pages; p = p->prev) {
+> @@ -473,7 +474,7 @@ static int afs_readpages_one(struct file *file, struct address_space *mapping,
+>          * page at the end of the file.
+>          */
+>         do {
+> -               page = list_entry(pages->prev, struct page, lru);
+> +               page = lru_to_page(pages);
+>                 list_del(&page->lru);
+>                 index = page->index;
+>                 if (add_to_page_cache_lru(page, mapping, index,
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 19f4b8fd654f..8332c5f4b1c3 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -4104,7 +4104,7 @@ int extent_readpages(struct address_space *mapping, struct list_head *pages,
+>         u64 prev_em_start = (u64)-1;
+>
+>         for (page_idx = 0; page_idx < nr_pages; page_idx++) {
+> -               page = list_entry(pages->prev, struct page, lru);
+> +               page = lru_to_page(pages);
+>
+>                 prefetchw(&page->flags);
+>                 list_del(&page->lru);
+> diff --git a/fs/ceph/addr.c b/fs/ceph/addr.c
+> index 8eade7a993c1..5d0c05e288cc 100644
+> --- a/fs/ceph/addr.c
+> +++ b/fs/ceph/addr.c
+> @@ -306,7 +306,7 @@ static int start_read(struct inode *inode, struct ceph_rw_context *rw_ctx,
+>         struct ceph_osd_client *osdc =
+>                 &ceph_inode_to_client(inode)->client->osdc;
+>         struct ceph_inode_info *ci = ceph_inode(inode);
+> -       struct page *page = list_entry(page_list->prev, struct page, lru);
+> +       struct page *page = lru_to_page(page_list);
+>         struct ceph_vino vino;
+>         struct ceph_osd_request *req;
+>         u64 off;
+> @@ -333,8 +333,7 @@ static int start_read(struct inode *inode, struct ceph_rw_context *rw_ctx,
+>                         if (got)
+>                                 ceph_put_cap_refs(ci, got);
+>                         while (!list_empty(page_list)) {
+> -                               page = list_entry(page_list->prev,
+> -                                                 struct page, lru);
+> +                               page = lru_to_page(page_list);
+>                                 list_del(&page->lru);
+>                                 put_page(page);
+>                         }
 
-btrfs reload was introduced to cleanup the device list inside the btrfs
-kernel module.
+For the ceph patch
 
-The problem with the reload approach is that you can't run btrfs test
-cases 124,125, 154 and 164 on the system with btrfs as root fs.
+Acked-by:: "Yan, Zheng" <zyan@redhat.com
 
-Now as we are introducing the btrfs forget feature as an btrfs device
-scan option [1], so here are its pertaining changes in the fstests.
-
-So these changes ensures we use the forget feature where available and
-if its not then falls back to the reload approach.
-
-[1]
-btrfs-progs: add cli to forget one or all scanned devices
-btrfs: introduce feature to forget a btrfs device
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- common/btrfs    | 20 ++++++++++++++++++++
- tests/btrfs/124 |  6 +++---
- tests/btrfs/125 |  6 +++---
- tests/btrfs/154 |  6 +++---
- tests/btrfs/164 |  4 ++--
- 5 files changed, 31 insertions(+), 11 deletions(-)
-
-diff --git a/common/btrfs b/common/btrfs
-index 26dc0bb9600f..c7fbec11c8c1 100644
---- a/common/btrfs
-+++ b/common/btrfs
-@@ -374,3 +374,23 @@ _scratch_btrfs_sectorsize()
- 	$BTRFS_UTIL_PROG inspect-internal dump-super $SCRATCH_DEV |\
- 		grep sectorsize | awk '{print $2}'
- }
-+
-+_btrfs_supports_forget()
-+{
-+	$BTRFS_UTIL_PROG device scan --help | grep -wq forget && \
-+		$BTRFS_UTIL_PROG device scan --forget > /dev/null 2>&1
-+}
-+
-+_require_btrfs_forget_if_not_fs_loadable()
-+{
-+	_btrfs_supports_forget && return
-+
-+	_require_loadable_fs_module "btrfs"
-+}
-+
-+_btrfs_forget_if_not_fs_reload()
-+{
-+	_btrfs_supports_forget && return
-+
-+	_reload_fs_module "btrfs"
-+}
-diff --git a/tests/btrfs/124 b/tests/btrfs/124
-index ce3ad6aa3a58..edbeff1443f5 100755
---- a/tests/btrfs/124
-+++ b/tests/btrfs/124
-@@ -51,7 +51,7 @@ _supported_fs btrfs
- _supported_os Linux
- _require_scratch_dev_pool 2
- _test_unmount
--_require_loadable_fs_module "btrfs"
-+_require_btrfs_forget_if_not_fs_loadable
- 
- _scratch_dev_pool_get 2
- 
-@@ -86,7 +86,7 @@ echo "clean btrfs ko" >> $seqres.full
- _scratch_unmount
- 
- # un-scan the btrfs devices
--_reload_fs_module "btrfs"
-+_btrfs_forget_if_not_fs_reload
- 
- echo >> $seqres.full
- echo "-----Write degraded mount fill upto $max_fs_sz bytes-----" >> $seqres.full
-@@ -125,7 +125,7 @@ echo
- echo "Mount degraded with the other dev"
- _scratch_unmount
- # un-scan the btrfs devices
--_reload_fs_module "btrfs"
-+_btrfs_forget_if_not_fs_reload
- _mount -o degraded $dev2 $SCRATCH_MNT >>$seqres.full 2>&1
- _run_btrfs_util_prog filesystem show
- checkpoint3=`md5sum $SCRATCH_MNT/tf2`
-diff --git a/tests/btrfs/125 b/tests/btrfs/125
-index e38de264b28e..9161a2ddeaad 100755
---- a/tests/btrfs/125
-+++ b/tests/btrfs/125
-@@ -50,7 +50,7 @@ _supported_fs btrfs
- _supported_os Linux
- _require_scratch_dev_pool 3
- _test_unmount
--_require_loadable_fs_module "btrfs"
-+_require_btrfs_forget_if_not_fs_loadable
- 
- _scratch_dev_pool_get 3
- 
-@@ -102,7 +102,7 @@ echo "unmount" >> $seqres.full
- _scratch_unmount
- echo "clean btrfs ko" >> $seqres.full
- # un-scan the btrfs devices
--_reload_fs_module "btrfs"
-+_btrfs_forget_if_not_fs_reload
- _mount -o degraded,device=$dev2 $dev1 $SCRATCH_MNT >>$seqres.full 2>&1
- dd if=/dev/zero of="$SCRATCH_MNT"/tf2 bs=$bs count=$count \
- 					>>$seqres.full 2>&1
-@@ -138,7 +138,7 @@ echo "Mount degraded but with other dev"
- 
- _scratch_unmount
- # un-scan the btrfs devices
--_reload_fs_module "btrfs"
-+_btrfs_forget_if_not_fs_reload
- 
- _mount -o degraded,device=${dev2} $dev3 $SCRATCH_MNT >>$seqres.full 2>&1
- 
-diff --git a/tests/btrfs/154 b/tests/btrfs/154
-index 99ea232aba4c..01745d20e9fc 100755
---- a/tests/btrfs/154
-+++ b/tests/btrfs/154
-@@ -36,7 +36,7 @@ rm -f $seqres.full
- _supported_fs btrfs
- _supported_os Linux
- _require_scratch_dev_pool 2
--_require_loadable_fs_module "btrfs"
-+_require_btrfs_forget_if_not_fs_loadable
- 
- _scratch_dev_pool_get 2
- 
-@@ -90,7 +90,7 @@ degrade_mount_write()
- 
- 	echo "clean btrfs ko" >> $seqres.full
- 	# un-scan the btrfs devices
--	_reload_fs_module "btrfs"
-+	_btrfs_forget_if_not_fs_reload
- 	_mount -o degraded $DEV1 $SCRATCH_MNT >>$seqres.full 2>&1
- 	cnt=$(( $COUNT/10 ))
- 	dd if=/dev/urandom of="$SCRATCH_MNT"/tf1 bs=$bs count=$cnt \
-@@ -142,7 +142,7 @@ verify()
- 	echo "unmount" >> $seqres.full
- 
- 	_scratch_unmount
--	_reload_fs_module "btrfs"
-+	_btrfs_forget_if_not_fs_reload
- 	_mount -o degraded $DEV2 $SCRATCH_MNT >>$seqres.full 2>&1
- 	verify_checkpoint1=`md5sum $SCRATCH_MNT/tf1`
- 	verify_checkpoint2=`md5sum $SCRATCH_MNT/tf2`
-diff --git a/tests/btrfs/164 b/tests/btrfs/164
-index 097191a0e493..55042c4035e0 100755
---- a/tests/btrfs/164
-+++ b/tests/btrfs/164
-@@ -36,7 +36,7 @@ rm -f $seqres.full
- # Modify as appropriate.
- _supported_fs btrfs
- _supported_os Linux
--_require_loadable_fs_module "btrfs"
-+_require_btrfs_forget_if_not_fs_loadable
- _require_scratch_dev_pool 2
- 
- _scratch_dev_pool_get 2
-@@ -69,7 +69,7 @@ delete_seed()
- {
- 	_run_btrfs_util_prog device delete $dev_seed $SCRATCH_MNT
- 	_scratch_unmount
--	_reload_fs_module "btrfs"
-+	_btrfs_forget_if_not_fs_reload
- 	run_check _mount $dev_sprout $SCRATCH_MNT
- 	_run_btrfs_util_prog filesystem show -m $SCRATCH_MNT
- 	echo -- sprout --
--- 
-1.8.3.1
-
+> diff --git a/fs/cifs/file.c b/fs/cifs/file.c
+> index 74c33d5fafc8..b16a4d887d17 100644
+> --- a/fs/cifs/file.c
+> +++ b/fs/cifs/file.c
+> @@ -33,6 +33,7 @@
+>  #include <linux/mount.h>
+>  #include <linux/slab.h>
+>  #include <linux/swap.h>
+> +#include <linux/mm.h>
+>  #include <asm/div64.h>
+>  #include "cifsfs.h"
+>  #include "cifspdu.h"
+> @@ -3975,7 +3976,7 @@ readpages_get_pages(struct address_space *mapping, struct list_head *page_list,
+>
+>         INIT_LIST_HEAD(tmplist);
+>
+> -       page = list_entry(page_list->prev, struct page, lru);
+> +       page = lru_to_page(page_list);
+>
+>         /*
+>          * Lock the page and put it in the cache. Since no one else
+> diff --git a/fs/ext4/readpage.c b/fs/ext4/readpage.c
+> index f461d75ac049..6aa282ee455a 100644
+> --- a/fs/ext4/readpage.c
+> +++ b/fs/ext4/readpage.c
+> @@ -128,7 +128,7 @@ int ext4_mpage_readpages(struct address_space *mapping,
+>
+>                 prefetchw(&page->flags);
+>                 if (pages) {
+> -                       page = list_entry(pages->prev, struct page, lru);
+> +                       page = lru_to_page(pages);
+>                         list_del(&page->lru);
+>                         if (add_to_page_cache_lru(page, mapping, page->index,
+>                                   readahead_gfp_mask(mapping)))
+> diff --git a/fs/ocfs2/aops.c b/fs/ocfs2/aops.c
+> index eb1ce30412dc..832c1759a09a 100644
+> --- a/fs/ocfs2/aops.c
+> +++ b/fs/ocfs2/aops.c
+> @@ -30,6 +30,7 @@
+>  #include <linux/quotaops.h>
+>  #include <linux/blkdev.h>
+>  #include <linux/uio.h>
+> +#include <linux/mm.h>
+>
+>  #include <cluster/masklog.h>
+>
+> @@ -397,7 +398,7 @@ static int ocfs2_readpages(struct file *filp, struct address_space *mapping,
+>          * Check whether a remote node truncated this file - we just
+>          * drop out in that case as it's not worth handling here.
+>          */
+> -       last = list_entry(pages->prev, struct page, lru);
+> +       last = lru_to_page(pages);
+>         start = (loff_t)last->index << PAGE_SHIFT;
+>         if (start >= i_size_read(inode))
+>                 goto out_unlock;
+> diff --git a/fs/orangefs/inode.c b/fs/orangefs/inode.c
+> index fe53381b26b1..f038235c64bd 100644
+> --- a/fs/orangefs/inode.c
+> +++ b/fs/orangefs/inode.c
+> @@ -77,7 +77,7 @@ static int orangefs_readpages(struct file *file,
+>         for (page_idx = 0; page_idx < nr_pages; page_idx++) {
+>                 struct page *page;
+>
+> -               page = list_entry(pages->prev, struct page, lru);
+> +               page = lru_to_page(pages);
+>                 list_del(&page->lru);
+>                 if (!add_to_page_cache(page,
+>                                        mapping,
+> diff --git a/mm/swap.c b/mm/swap.c
+> index aa483719922e..20b9e9d99652 100644
+> --- a/mm/swap.c
+> +++ b/mm/swap.c
+> @@ -126,7 +126,7 @@ void put_pages_list(struct list_head *pages)
+>         while (!list_empty(pages)) {
+>                 struct page *victim;
+>
+> -               victim = list_entry(pages->prev, struct page, lru);
+> +               victim = lru_to_page(pages);
+>                 list_del(&victim->lru);
+>                 put_page(victim);
+>         }
+> --
+> 2.17.1
+>

@@ -7,64 +7,64 @@ X-Spam-Status: No, score=-6.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
 	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D3737C04EB8
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Nov 2018 17:12:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 69B03C64EB4
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Nov 2018 17:15:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9779C2145D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Nov 2018 17:12:46 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2E74920834
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Nov 2018 17:15:09 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="KKsTRyNR"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9779C2145D
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="kzFwlc1E"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2E74920834
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726830AbeLAEWn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 30 Nov 2018 23:22:43 -0500
-Received: from mail-vk1-f195.google.com ([209.85.221.195]:43514 "EHLO
-        mail-vk1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726732AbeLAEWm (ORCPT
+        id S1727063AbeLAEZF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 30 Nov 2018 23:25:05 -0500
+Received: from mail-ua1-f65.google.com ([209.85.222.65]:41927 "EHLO
+        mail-ua1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726659AbeLAEZE (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Nov 2018 23:22:42 -0500
-Received: by mail-vk1-f195.google.com with SMTP id o130so1436390vke.10;
-        Fri, 30 Nov 2018 09:12:44 -0800 (PST)
+        Fri, 30 Nov 2018 23:25:04 -0500
+Received: by mail-ua1-f65.google.com with SMTP id z24so2131247ual.8
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Nov 2018 09:15:05 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=mime-version:references:in-reply-to:reply-to:from:date:message-id
          :subject:to:cc:content-transfer-encoding;
-        bh=FfCxMIDR8QNT5TN07pFH5AjALNx+TrHPocUrKre81vQ=;
-        b=KKsTRyNRWx/N++NjFroj0RY4M0FkxMOsIoa/VoSg8J1q6ghHceOZSA2syBoZ7/uEys
-         TIxyZuDozbZYr8Hls7FqvqnGW6VQI7eRlyP009O7k03mR1S5DjjVrncn6uNTp9LuFBk1
-         LrMnRBNBgdAN2RqP3AFjQo5mtYrgV7K7pmUSmtyWh4vVF7CsH/CPBO8VgZT3uNTMyhkG
-         xLopxgUqSPeOY7iJgUZqE2pjFWlJBAKlhZItFJ9ksDMo/xldFEC4sVDctpwH/gmscGZj
-         MFLpgPwSwilGG6ZaeNdU8U/8wAouudJyVmB8f9MA8reBa9orOvKqU9raJjHCTJNWHwKt
-         HJhQ==
+        bh=84K0f1Zk03sNd+QuCH14zv/nseRpih8UHODV+5fai2I=;
+        b=kzFwlc1EOUM6dIOaNdvgUD82STMaxnSZPwAiK6pHF2V5flg4S3LEkcYC3zTHDVw7kt
+         0N81Ne6CrHzZ7qb8UWfcF901v2HiRInM1x31Uq32Vbg0u9XOUCcTsoORAqGgzPZY/Eco
+         0VyDkAbq9+Goes9ebkCOc1hRbIuwQ6OoxaGoyUpM6VMS03r2xzEXtOdYvHirgAaBIShz
+         cwKTHPqxqapVxneU4RUj6EnHPiMP3PKC4kgqh3ws/UwsoPxSrOtY0Ts50Ki4D2mdFk2V
+         vLWjWzztgdwtx/yj+2LbJ7bNlU/5L3o86AFIws35tJGNEY6G9WF6sEGxaXnqerh2mtWv
+         XFxw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
          :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=FfCxMIDR8QNT5TN07pFH5AjALNx+TrHPocUrKre81vQ=;
-        b=AlYLfbpBWOS7kzYxgSIB6TzWWfuPwOpuptw1KBCcPqAWqFFb+aMpyT1zfwBpwWo9ne
-         M8SGRoCHM03T+u8ldkBt4Xa0UmyffxDDys709fJrD/7lbkjf7cobv1FWPKzTRSUxxiru
-         QY9EpoGA4hn8fGA0V74oVwrx4f6d0llW1z1mtRk9cbipYRiM5AQ+VNtsZ808SMLuDgOd
-         w4ggukLyfSHm3/bUj/7+ctYL3/uMefowiPa7wfpfuCXM10KcvCrqNT7NtzacK7ftJJ8H
-         LuKcMYKnsGc5BroESxdEsbA4pZk/zuq9ZtvqeIRFizb6BmjypOokcA1V3tAiV0KiKDYV
-         yFMA==
-X-Gm-Message-State: AA+aEWZXu32YZQmkkDu1zGnIEreCfhfvsK7gvleezI6aAxQWd+uJLnhz
-        U+Eos7ukyUuqkIFc+tMYWnOyg4UeI2bBVjZZoRmom7ta
-X-Google-Smtp-Source: AFSGD/UikPeaZNA44BAM1NnbkOla9pMBfHhirybQ6+6erRCpQtdUlSzK2BQrNeMqSR1fUAKYrZwwtXb/zD5w27C239o=
-X-Received: by 2002:a1f:4982:: with SMTP id w124mr2850208vka.4.1543597963670;
- Fri, 30 Nov 2018 09:12:43 -0800 (PST)
+        bh=84K0f1Zk03sNd+QuCH14zv/nseRpih8UHODV+5fai2I=;
+        b=sCZ6HGOFPg2IwADW8Aoo8cjWKzDnirrkJ/3qsYStQJmVkPUvMTu8tNdS8+5YDKCZLO
+         Dg6WQh3Hg+M3YbjDsbC/NUzuTrdaU905EqiKOrYNckh98nKywhpA0iSHjhc1B9m6NPYS
+         yqJoOSMapTTHRKSXQI9Dph6sy7+Cju25n+KtvIn7nGT+Gbq46JFwvCMi1xvfDbSPvlJR
+         KmQ9czrcvBrOIe72yIeThjL5+ggwgfhwWfF7z9PJlh9jJMEZaogNH1AhIV2d6gPWarEF
+         GpasUORnZK0JjknB787YuyRL3n6P9Fkhcu1ykjqgWDCv9N3RIG4uVetYZqkcfFcpV0HQ
+         5lmQ==
+X-Gm-Message-State: AA+aEWYdZE/ipQh3Qd+8i/lkmUrdtaHymkoab84N3iJpe+ChdZdo5m4k
+        pB4DHapsXHZGn2MJQUqJh9jFg6+QONdFRnefeug=
+X-Google-Smtp-Source: AFSGD/VjVcgYOMB4BgC8USLzWysKKPvtePAphm571fS1ECVqmuJqEkmCCUUHND/GKvqkRFKg6lOwYdQGWp+SzZh02Bg=
+X-Received: by 2002:ab0:621a:: with SMTP id m26mr2565057uao.36.1543598105184;
+ Fri, 30 Nov 2018 09:15:05 -0800 (PST)
 MIME-Version: 1.0
-References: <20181130165214.17883-1-josef@toxicpanda.com> <20181130165214.17883-3-josef@toxicpanda.com>
-In-Reply-To: <20181130165214.17883-3-josef@toxicpanda.com>
+References: <20181130165214.17883-1-josef@toxicpanda.com> <20181130165214.17883-2-josef@toxicpanda.com>
+In-Reply-To: <20181130165214.17883-2-josef@toxicpanda.com>
 Reply-To: fdmanana@gmail.com
 From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Fri, 30 Nov 2018 17:12:31 +0000
-Message-ID: <CAL3q7H7N8ozNzhkTmt=s30SLaH-TptHZNv3b_Wv_Tif_c_nJVg@mail.gmail.com>
-Subject: Re: [PATCH 2/2] btrfs: run delayed items before dropping the snapshot
+Date:   Fri, 30 Nov 2018 17:14:54 +0000
+Message-ID: <CAL3q7H6o=TiqyiQ9Ljy8=4Gc9+-ww-S1ATc-MNq=8k3F_BsLzQ@mail.gmail.com>
+Subject: Re: [PATCH 1/2] btrfs: catch cow on deleting snapshots
 To:     Josef Bacik <josef@toxicpanda.com>
 Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>, kernel-team@fb.com,
-        Josef Bacik <jbacik@fb.com>, stable@vger.kernel.org
+        Josef Bacik <jbacik@fb.com>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -76,108 +76,82 @@ On Fri, Nov 30, 2018 at 4:53 PM Josef Bacik <josef@toxicpanda.com> wrote:
 >
 > From: Josef Bacik <jbacik@fb.com>
 >
-> With my delayed refs patches in place we started seeing a large amount
-> of aborts in __btrfs_free_extent
+> When debugging some weird extent reference bug I suspected that we were
+> changing a snapshot while we were deleting it, which could explain my
+> bug.  This was indeed what was happening, and this patch helped me
+> verify my theory.  It is never correct to modify the snapshot once it's
+> being deleted, so mark the root when we are deleting it and make sure we
+> complain about it when it happens.
 >
-> BTRFS error (device sdb1): unable to find ref byte nr 91947008 parent 0 r=
-oot 35964  owner 1 offset 0
-> Call Trace:
->  ? btrfs_merge_delayed_refs+0xaf/0x340
->  __btrfs_run_delayed_refs+0x6ea/0xfc0
->  ? btrfs_set_path_blocking+0x31/0x60
->  btrfs_run_delayed_refs+0xeb/0x180
->  btrfs_commit_transaction+0x179/0x7f0
->  ? btrfs_check_space_for_delayed_refs+0x30/0x50
->  ? should_end_transaction.isra.19+0xe/0x40
->  btrfs_drop_snapshot+0x41c/0x7c0
->  btrfs_clean_one_deleted_snapshot+0xb5/0xd0
->  cleaner_kthread+0xf6/0x120
->  kthread+0xf8/0x130
->  ? btree_invalidatepage+0x90/0x90
->  ? kthread_bind+0x10/0x10
->  ret_from_fork+0x35/0x40
->
-> This was because btrfs_drop_snapshot depends on the root not being modifi=
-ed
-> while it's dropping the snapshot.  It will unlock the root node (and real=
-ly
-> every node) as it walks down the tree, only to re-lock it when it needs t=
-o do
-> something.  This is a problem because if we modify the tree we could cow =
-a block
-> in our path, which free's our reference to that block.  Then once we get =
-back to
-> that shared block we'll free our reference to it again, and get ENOENT wh=
-en
-> trying to lookup our extent reference to that block in __btrfs_free_exten=
-t.
->
-> This is ultimately happening because we have delayed items left to be pro=
-cessed
-> for our deleted snapshot _after_ all of the inodes are closed for the sna=
-pshot.
-> We only run the delayed inode item if we're deleting the inode, and even =
-then we
-> do not run the delayed insertions or delayed removals.  These can be run =
-at any
-> point after our final inode does it's last iput, which is what triggers t=
-he
-> snapshot deletion.  We can end up with the snapshot deletion happening an=
-d then
-> have the delayed items run on that file system, resulting in the above pr=
-oblem.
->
-> This problem has existed forever, however my patches made it much easier =
-to hit
-> as I wake up the cleaner much more often to deal with delayed iputs, whic=
-h made
-> us more likely to start the snapshot dropping work before the transaction
-> commits, which is when the delayed items would generally be run.  Before,
-> generally speaking, we would run the delayed items, commit the transactio=
-n, and
-> wakeup the cleaner thread to start deleting snapshots, which means we wer=
-e less
-> likely to hit this problem.  You could still hit it if you had multiple
-> snapshots to be deleted and ended up with lots of delayed items, but it w=
-as
-> definitely harder.
->
-> Fix for now by simply running all the delayed items before starting to dr=
-op the
-> snapshot.  We could make this smarter in the future by making the delayed=
- items
-> per-root, and then simply drop any delayed items for roots that we are go=
-ing to
-> delete.  But for now just a quick and easy solution is the safest.
->
-> Cc: stable@vger.kernel.org
 > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> ---
+>  fs/btrfs/ctree.c       | 3 +++
+>  fs/btrfs/ctree.h       | 1 +
+>  fs/btrfs/extent-tree.c | 9 +++++++++
+>  3 files changed, 13 insertions(+)
+>
+> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> index 5912a97b07a6..5f82f86085e8 100644
+> --- a/fs/btrfs/ctree.c
+> +++ b/fs/btrfs/ctree.c
+> @@ -1440,6 +1440,9 @@ noinline int btrfs_cow_block(struct btrfs_trans_han=
+dle *trans,
+>         u64 search_start;
+>         int ret;
+>
+> +       if (test_bit(BTRFS_ROOT_DELETING, &root->state))
+> +               WARN(1, KERN_CRIT "cow'ing blocks on a fs root thats bein=
+g dropped\n");
 
+Please use btrfs_warn(), it makes sure we use a consistent message
+style, identifies the fs, etc.
+Also, "thats" should be "that is" or "that's".
+
+With that fixed,
 Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-Great catch!
-I've hit this error from  __btrfs_free_extent() a handful of times
-over the years, but never managed
-to reproduce it on demand or figure out it was related to snapshot deletion=
-.
-
-> ---
->  fs/btrfs/extent-tree.c | 2 ++
->  1 file changed, 2 insertions(+)
+> +
+>         if (trans->transaction !=3D fs_info->running_transaction)
+>                 WARN(1, KERN_CRIT "trans %llu running %llu\n",
+>                        trans->transid,
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index facde70c15ed..5a3a94ccb65c 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -1199,6 +1199,7 @@ enum {
+>         BTRFS_ROOT_FORCE_COW,
+>         BTRFS_ROOT_MULTI_LOG_TASKS,
+>         BTRFS_ROOT_DIRTY,
+> +       BTRFS_ROOT_DELETING,
+>  };
 >
+>  /*
 > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index dcb699dd57f3..965702034b22 100644
+> index 581c2a0b2945..dcb699dd57f3 100644
 > --- a/fs/btrfs/extent-tree.c
 > +++ b/fs/btrfs/extent-tree.c
-> @@ -9330,6 +9330,8 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
->                 goto out_free;
->         }
->
-> +       btrfs_run_delayed_items(trans);
-> +
+> @@ -9333,6 +9333,15 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
 >         if (block_rsv)
 >                 trans->block_rsv =3D block_rsv;
 >
+> +       /*
+> +        * This will help us catch people modifying the fs tree while we'=
+re
+> +        * dropping it.  It is unsafe to mess with the fs tree while it's=
+ being
+> +        * dropped as we unlock the root node and parent nodes as we walk=
+ down
+> +        * the tree, assuming nothing will change.  If something does cha=
+nge
+> +        * then we'll have stale information and drop references to block=
+s we've
+> +        * already dropped.
+> +        */
+> +       set_bit(BTRFS_ROOT_DELETING, &root->state);
+>         if (btrfs_disk_key_objectid(&root_item->drop_progress) =3D=3D 0) =
+{
+>                 level =3D btrfs_header_level(root->node);
+>                 path->nodes[level] =3D btrfs_lock_root_node(root);
 > --
 > 2.14.3
 >

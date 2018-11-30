@@ -2,125 +2,77 @@ Return-Path: <SRS0=Nx1q=OJ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 437EFC04EB8
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Nov 2018 16:28:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E0655C04EB8
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Nov 2018 16:52:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 13FD320834
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Nov 2018 16:28:05 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 13FD320834
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id A67D220867
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Nov 2018 16:52:20 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="cnEvWLOf"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A67D220867
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726881AbeLADhy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 30 Nov 2018 22:37:54 -0500
-Received: from mx2.suse.de ([195.135.220.15]:60942 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726644AbeLADhy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Nov 2018 22:37:54 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 39664AF41;
-        Fri, 30 Nov 2018 16:28:01 +0000 (UTC)
-Subject: Re: btrfs development - question about crypto api integration
-To:     Chris Mason <clm@fb.com>
-Cc:     Jean Fobe <jeanfobe@ime.usp.br>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <CAMHc_wN+-qHc1+q6fuRCzzJ9fsE2-vwa5N3031ANpZ8+tXb7WQ@mail.gmail.com>
- <8db22a5b-14de-3e8a-241f-d7e963ea5a57@suse.com>
- <017BD22D-F708-4DBA-B977-78AFCCF58D0F@fb.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <694b5ea4-d177-f1e2-3f7a-6ece6cbc8ed4@suse.com>
-Date:   Fri, 30 Nov 2018 18:27:58 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
-MIME-Version: 1.0
-In-Reply-To: <017BD22D-F708-4DBA-B977-78AFCCF58D0F@fb.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+        id S1726732AbeLAECN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 30 Nov 2018 23:02:13 -0500
+Received: from mail-yw1-f67.google.com ([209.85.161.67]:45628 "EHLO
+        mail-yw1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726645AbeLAECN (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 30 Nov 2018 23:02:13 -0500
+Received: by mail-yw1-f67.google.com with SMTP id d190so2517882ywd.12
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Nov 2018 08:52:18 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=from:to:subject:date:message-id;
+        bh=xGCn3Cunh5e98ke9fS8OMASaq/+O8V/a1QdSYGRoeV4=;
+        b=cnEvWLOf5VV/eCuw9kyij6LE98dUqoRXJLWRXwv+r6J7Qq6hjomuzax36ZYG1500wy
+         2oporzntId2IQ20KyEqdDWI1BOzO/Ga1vXqo10gqpmgNchZGIVKSVTpSqr1nRVk+Ke44
+         MNX4h0lekvZluVutyJDihSecYJz2ltYsglN0EMSFuYNuBGOhAsxJ735dzh1k/qYdc0io
+         zO1ewncU56IKqbcGEaO5Ex6UT0tO/Fk+gd1uUm85dkeEuk0jgM3chVdA8MzSllf1lgeY
+         nrTqApO/9tjZe76blROyeuG7Wy93EXE8J1RzrMfXQXjjmOcUUtrBSE1DC66SpxOO6jYM
+         q2zA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:subject:date:message-id;
+        bh=xGCn3Cunh5e98ke9fS8OMASaq/+O8V/a1QdSYGRoeV4=;
+        b=PUK6PxbJuFePDpx9J51GCLOR3wj4G6IRl1I/kKBYgb2BgwjFLuNtrs2jl6m2NxnC8L
+         ZqhnYiiKTidN49ID4B6zizO+Y4Psw3ELbWHjQPLCyIVRTpmXAeVICVpFyNpdpm/3lUR/
+         1ggXhOe5RPyrjmw+5wVaeA1dWlKNlboV1ghKIbyastWGoaczvlYQLljfax4Y8meRqQ3E
+         MhY3DPx2PdjgnRHYSUh8TlucYSlt5Hb7iIrbDGa/kNNJ7cEb0jiCV0qt+qjB5/kEfVaq
+         44QD2cYsy8DqsZiICSOv4Xb2/+gC4mDyAv6qaVBa0OumbIVOXSETuZH13+gufcs1nxg6
+         k1Zw==
+X-Gm-Message-State: AA+aEWYe0y+cwjt+em/nj122frqAGt2kYooujfQdtPF+goSlwkdH3VH7
+        /LLHXvwwWfnbkQ4lQqgHcCUoIhG4ieI=
+X-Google-Smtp-Source: AFSGD/VoXTQagg2ZLv8nzCPgHFVq/4rX0s8m19obKwV1SJisi4dqv1Vc+GwFC9RWgIlG/mLJUgO4RQ==
+X-Received: by 2002:a81:7541:: with SMTP id q62mr5836728ywc.499.1543596737459;
+        Fri, 30 Nov 2018 08:52:17 -0800 (PST)
+Received: from localhost ([107.15.81.208])
+        by smtp.gmail.com with ESMTPSA id s189-v6sm1701628ywg.69.2018.11.30.08.52.16
+        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
+        Fri, 30 Nov 2018 08:52:16 -0800 (PST)
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: [PATCH 0/2] Fix aborts when dropping snapshots
+Date:   Fri, 30 Nov 2018 11:52:12 -0500
+Message-Id: <20181130165214.17883-1-josef@toxicpanda.com>
+X-Mailer: git-send-email 2.14.3
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+With more machines running my recent delayed ref rsv patches we started seeing a
+spike in boxes aborting in __btrfs_free_extent with being unable to find the
+extent ref.  The full details are in 2/2, but the summary is there's been a bug
+ever since the original delayed inode item stuff was introduced where it could
+run once the snapshot was being deleted, which will result in all sorts of
+extent reference shenanigans.  This was tricky to hit before, but with my iput
+changes it's become much easier to hit on our build boxes that are heavy users
+of snapshot creation/deletion.  Thanks,
 
-
-On 30.11.18 г. 17:22 ч., Chris Mason wrote:
-> On 29 Nov 2018, at 12:37, Nikolay Borisov wrote:
-> 
->> On 29.11.18 г. 18:43 ч., Jean Fobe wrote:
->>> Hi all,
->>>     I've been studying LZ4 and other compression algorithms on the
->>> kernel, and seen other projects such as zram and ubifs using the
->>> crypto api. Is there a technical reason for not using the crypto api
->>> for compression (and possibly for encryption) in btrfs?
->>>     I did not find any design/technical implementation choices in
->>> btrfs development in the developer's FAQ on the wiki. If I completely
->>> missed it, could someone point me in the right direction?
->>>     Lastly, if there is no technical reason for this, would it be
->>> something interesting to have implemented?
->>
->> I personally think it would be better if btrfs' exploited the generic
->> framework. And in fact when you look at zstd, btrfs does use the
->> generic, low-level ZSTD routines but not the crypto library wrappers. 
->> If
->> I were I'd try and convert zstd (since it's the most recently added
->> algorithm) to using the crypto layer to see if there are any lurking
->> problems.
-> 
-> Back when I first added the zlib support, the zlib API was both easier 
-> to use and a better fit for our async worker threads.  That doesn't mean 
-> we shouldn't switch, it's just how we got to step one ;)
-
-And what about zstd? WHy is it also using the low level api and not the
-crypto wrappers?
-
-> 
-> -chris
-> 
+Josef

@@ -1,33 +1,36 @@
-Return-Path: <SRS0=Nx1q=OJ=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=eQkg=OK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.7 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.7 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 56B8BC64EB4
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Nov 2018 23:57:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 773E4C04EB8
+	for <linux-btrfs@archiver.kernel.org>; Sat,  1 Dec 2018 00:19:54 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0C66320660
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Nov 2018 23:57:47 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0C66320660
+	by mail.kernel.org (Postfix) with ESMTP id 30B4D20673
+	for <linux-btrfs@archiver.kernel.org>; Sat,  1 Dec 2018 00:19:54 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 30B4D20673
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726926AbeLALIq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 1 Dec 2018 06:08:46 -0500
-Received: from mout.gmx.net ([212.227.17.20]:33987 "EHLO mout.gmx.net"
+        id S1726340AbeLALa7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 1 Dec 2018 06:30:59 -0500
+Received: from mout.gmx.net ([212.227.17.22]:43413 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726910AbeLALIo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 1 Dec 2018 06:08:44 -0500
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx103
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0LnPnu-1hAC260YL0-00hb3x; Sat, 01
- Dec 2018 00:57:32 +0100
-Subject: Re: Need help with potential ~45TB dataloss
-To:     Patrick Dijkgraaf <bolderbast@duckstad.net>,
-        linux-btrfs@vger.kernel.org
-References: <8bc37755da04dffae1a34cea2a06bcffdf2c75d7.camel@duckstad.net>
+        id S1725867AbeLALa7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 1 Dec 2018 06:30:59 -0500
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx102
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0MSY2q-1guM2n09Lg-00RbJI; Sat, 01
+ Dec 2018 01:19:45 +0100
+Subject: Re: [PATCH 1/2] btrfs: catch cow on deleting snapshots
+To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+Cc:     Josef Bacik <jbacik@fb.com>
+References: <20181130165214.17883-1-josef@toxicpanda.com>
+ <20181130165214.17883-2-josef@toxicpanda.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -54,256 +57,160 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <6ce9cd01-960f-af3d-0273-0b9abfa1d4f8@gmx.com>
-Date:   Sat, 1 Dec 2018 07:57:28 +0800
+Message-ID: <4a9577f2-9c3b-eb9e-a6a5-b3878769cd2e@gmx.com>
+Date:   Sat, 1 Dec 2018 08:19:40 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.3.1
 MIME-Version: 1.0
-In-Reply-To: <8bc37755da04dffae1a34cea2a06bcffdf2c75d7.camel@duckstad.net>
+In-Reply-To: <20181130165214.17883-2-josef@toxicpanda.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="f20gQiyW3jc2aV6JIzuRKVBcQ8StNwWtl"
-X-Provags-ID: V03:K1:VLX0iPDhAowgb6yGBDOSjwpWotgj/GT6px9KLpa35XxHiGB9NPZ
- 40tMOJwC609UU4EI7UaERUv3p8XL9CwFfbuYfbQk9pNlSymDkD0UewoIx7JQnpKjjZdfPPQ
- bOOoul0z/hqsHLVfIe0yevh+vpBdS7GHGqNdkOuY1uAV+HNB81H3PfDa3pi6TTZvRna9Fa1
- 0DJjJHLKVIw8AYWpLP81A==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:a8idX++Y8RM=:bKUkkvk1k1PUc1Ka+2xuQo
- soKqWIEPAG7QrV6fdrODQSrcABQIrq+kI6pmqV1opZcbKF9PsoVoLz8T/cfc15S/YqKxLryin
- YGP40u9514SsP4fP/dj0Xanc/D1KheTSpuYaM1cV8s3Za99Bjx99bLlCEqDDi3548+v/BDmq7
- HaaClEZ13oMsHHgA9LZ6+TEKUNRQDdfb53+RXu2FZaSCq4GZiJs7qJaC4IP9SqBkPVC6Ob4+b
- GJ5fR/naJyPlA9ox3VLVRMnmqmw0XhMXdXyN4l3F5+lnsf20tsPvfr6hkai1TR+hB6UVDqRFi
- LaQkUsePEwXCBUs5OqAXqgkHheGy//fRXHfh4BWfzycL0wPPMSQ8OL6VMVW0Spb5YCuX/DaIE
- 1Gb0upKC7DchZv9UDL3ChlyCVBpI0++lW/CcUAvG7XoGzJZ6WNEk0H/MDQhiA9G0MwgsNaYpx
- lCpILhMZkx/Oq3AEKBbPTLrfG3Dj/UwTb5g0caeylw3MsDQ/eQ4ovnF3iQLA49ENz0dfP2vwj
- 2gTIRl4jZQeSHh6Qd6EU0ndoSPo9xJXYrCt+8/7h0bP9Oco6WqelESqGInp6O9mO6aOUbYbA5
- m5TgiA1fCe+BVfTshr98oUDSBTUMpS9j1JgLAZzY1bTspFNYlDxeufFuYRZnTPxS8pGV+31bk
- x2HPwuVZkSHirRHfoGrOIdtmkZNWJQuDsgUlUZ9t3ElkVzftz94aVR+XfSs8mxsVwe9L9FDKW
- iVhBDGraP7yE5mBoX/1h2JYQY0pULqIYsb70cRJeVPZxy/Odm+RiazZW/tF8Vdz4XN/5doLo9
- xPcULn87v6cpBBF1YB/Tiydr+MBoN9ar/997nRgBnIBtxBcungfa7cy4Pfl4w4W2KnSdCW7D0
- GGBTmlD+UsHSf2kDegaVqq+GzvosX9mAKDU/cbx4wH15pBhMgn4lY7kb99X0gv
+ boundary="x6Q4ffyH4VaAnupsSc9sdbJwRVPpJgzUM"
+X-Provags-ID: V03:K1:PBxKUPq2ik9Z9QgTRr2y60UeBJaWrDzxLnZzHsboEcRKoVWpAtU
+ X0WXyKcavJKaA0HHECsHXH7c4U9cOYF6fSdgGvud4CUsTBY66Hd9OiNuY/Usi4GY/I+BW4o
+ Ttl6jEmfH9MHOqD2zaTsDZyXrtZcXuCDKyNOgeZgwPvEI4VH71JYMZXmfBsPpUzJUsAShYn
+ q02zgkTXVZxaC4CJYl1Ng==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:MzW/dH2xEJs=:81FlunJB8bJht3SclDdRGa
+ i7YK54ZXt0pqLOH0X7Sz7yaDEDfo75bQs1AL3x7l4AikGu2ILTd7N7B4wuSHjlwfKSeYyy6oU
+ HIJMFmeS4fmo5rnAc67O599dc+Axdb9+4pSy4IFdv+JioMXhF1xD4lTOdVkoTq7h6rPsbWSIY
+ MSdkMG0xZVpQCp1HsbhoCuPgx6HWsL1BbNi4lHZGAtRS97uXTpIhtgdxkupRB/uH1ZAtoyqCO
+ jdOIKujqy7jflCqVKmeMcW4cGBFBFMOocKjFvOSQiLcve0Ret/oZk02vzCyUIsZ8y1pHNTSi0
+ M7CNw4BbLgbenQpujRbqfqEX8nTvz2TRhF+Yp43Ccijzhvk+0e5Cbm9CLQd8so4BjOa1yGSjB
+ qzYgSPqn/kC/GlCka8A4WtlD5AoIPi7eXxks7Nn291oDxvqjddpHnDl/vHeyUDrFIlGZmLuHj
+ Q/GHkOfXkHBaDGCRjw3QgeVl29gW7FOnY94Caz5Hl1xYpYg2dzkiq1pvd7IaFk7p/sZQH18UO
+ TQE5RHDsbl+bs4ee0inBA1mlAr7D6a22rklC8PaX52+aCAlbxgriZEmoUn9aIUcXcQJMAHyUv
+ p4/OMEIodksm2K/YUnTavAQLeUZ//eb/3z1YYF/eT97TzlRP41V1jh3580bhBkYVzOpEI1E5Z
+ wQnsU5GSXc4QT6aBYeGchQODx7TSiGjAQfE4XjadyNUCIsWALCHuHvF+YivQ40HiMqcAbaD2j
+ y0T51FmtvRcM1zeO/0XzFPYMJWn1gXz9f1EkqoxOLkIdV77LjacN+rrIGZMMSR61zMM1TYPDB
+ AoELi58Hws47f2q12ZbsbtzYzm9Ec/4GMWym69Bz2+LshSje1DmuVSINdidIzusrxDg0Sru/D
+ jiCjW6+YioyTmW7uL0mviFILUDipWSrwMM79BIrq89RIL4YvINp3PLTIXezaNQ
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---f20gQiyW3jc2aV6JIzuRKVBcQ8StNwWtl
-Content-Type: multipart/mixed; boundary="gl0j4BsLgaTrkubVhKhk5x9j6PtXeXIgz";
+--x6Q4ffyH4VaAnupsSc9sdbJwRVPpJgzUM
+Content-Type: multipart/mixed; boundary="DwNVpvVOHnmfFX9EBsC0io2wxt3KnVDOW";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Patrick Dijkgraaf <bolderbast@duckstad.net>, linux-btrfs@vger.kernel.org
-Message-ID: <6ce9cd01-960f-af3d-0273-0b9abfa1d4f8@gmx.com>
-Subject: Re: Need help with potential ~45TB dataloss
-References: <8bc37755da04dffae1a34cea2a06bcffdf2c75d7.camel@duckstad.net>
-In-Reply-To: <8bc37755da04dffae1a34cea2a06bcffdf2c75d7.camel@duckstad.net>
+To: Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+ kernel-team@fb.com
+Cc: Josef Bacik <jbacik@fb.com>
+Message-ID: <4a9577f2-9c3b-eb9e-a6a5-b3878769cd2e@gmx.com>
+Subject: Re: [PATCH 1/2] btrfs: catch cow on deleting snapshots
+References: <20181130165214.17883-1-josef@toxicpanda.com>
+ <20181130165214.17883-2-josef@toxicpanda.com>
+In-Reply-To: <20181130165214.17883-2-josef@toxicpanda.com>
 
---gl0j4BsLgaTrkubVhKhk5x9j6PtXeXIgz
+--DwNVpvVOHnmfFX9EBsC0io2wxt3KnVDOW
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2018/11/30 =E4=B8=8B=E5=8D=889:53, Patrick Dijkgraaf wrote:
-> Hi all,
+On 2018/12/1 =E4=B8=8A=E5=8D=8812:52, Josef Bacik wrote:
+> From: Josef Bacik <jbacik@fb.com>
 >=20
-> I have been a happy BTRFS user for quite some time. But now I'm facing
-> a potential ~45TB dataloss... :-(
-> I hope someone can help!
->=20
-> I have Server A and Server B. Both having a 20-devices BTRFS RAID6
-> filesystem. Because of known RAID5/6 risks, Server B was a backup of
-> Server A.
-> After applying updates to server B and reboot, the FS would not mount
-> anymore. Because it was "just" a backup. I decided to recreate the FS
-> and perform a new backup. Later, I discovered that the FS was not
-> broken, but I faced this issue:=20
-> https://patchwork.kernel.org/patch/10694997/
+> When debugging some weird extent reference bug I suspected that we were=
 
-Sorry for the inconvenience.
+> changing a snapshot while we were deleting it, which could explain my
+> bug.
 
-I didn't realize the max_chunk_size limit isn't reliable at that timing.
+May I ask under which case we're going to modify an unlinked snapshot?
 
->=20
-> Anyway, the FS was already recreated, so I needed to do a new backup.
-> During the backup (using rsync -vah), Server A (the source) encountered=
-
-> an I/O error and my rsync failed. In an attempt to "quick fix" the
-> issue, I rebooted Server A after which the FS would not mount anymore.
-
-Did you have any dmesg about that IO error?
-
-And how is the reboot scheduled? Forced power off or normal reboot comman=
-d?
-
->=20
-> I documented what I have tried, below. I have not yet tried anything
-> except what is shown, because I am afraid of causing more harm to
-> the FS.
-
-Pretty clever, no btrfs check --repair is a pretty good move.
-
-> I hope somebody here can give me advice on how to (hopefully)
-> retrieve my data...
->=20
-> Thanks in advance!
->=20
-> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
->=20
-> [root@cornelis ~]# btrfs fi show
-> Label: 'cornelis-btrfs'  uuid: ac643516-670e-40f3-aa4c-f329fc3795fd
-> 	Total devices 1 FS bytes used 463.92GiB
-> 	devid    1 size 800.00GiB used 493.02GiB path
-> /dev/mapper/cornelis-cornelis--btrfs
->=20
-> Label: 'data'  uuid: 4c66fa8b-8fc6-4bba-9d83-02a2a1d69ad5
-> 	Total devices 20 FS bytes used 44.85TiB
-> 	devid    1 size 3.64TiB used 3.64TiB path /dev/sdn2
-> 	devid    2 size 3.64TiB used 3.64TiB path /dev/sdp2
-> 	devid    3 size 3.64TiB used 3.64TiB path /dev/sdu2
-> 	devid    4 size 3.64TiB used 3.64TiB path /dev/sdx2
-> 	devid    5 size 3.64TiB used 3.64TiB path /dev/sdh2
-> 	devid    6 size 3.64TiB used 3.64TiB path /dev/sdg2
-> 	devid    7 size 3.64TiB used 3.64TiB path /dev/sdm2
-> 	devid    8 size 3.64TiB used 3.64TiB path /dev/sdw2
-> 	devid    9 size 3.64TiB used 3.64TiB path /dev/sdj2
-> 	devid   10 size 3.64TiB used 3.64TiB path /dev/sdt2
-> 	devid   11 size 3.64TiB used 3.64TiB path /dev/sdk2
-> 	devid   12 size 3.64TiB used 3.64TiB path /dev/sdq2
-> 	devid   13 size 3.64TiB used 3.64TiB path /dev/sds2
-> 	devid   14 size 3.64TiB used 3.64TiB path /dev/sdf2
-> 	devid   15 size 7.28TiB used 588.80GiB path /dev/sdr2
-> 	devid   16 size 7.28TiB used 588.80GiB path /dev/sdo2
-> 	devid   17 size 7.28TiB used 588.80GiB path /dev/sdv2
-> 	devid   18 size 7.28TiB used 588.80GiB path /dev/sdi2
-> 	devid   19 size 7.28TiB used 588.80GiB path /dev/sdl2
-> 	devid   20 size 7.28TiB used 588.80GiB path /dev/sde2
->=20
-> [root@cornelis ~]# mount /dev/sdn2 /mnt/data
-> mount: /mnt/data: wrong fs type, bad option, bad superblock on
-> /dev/sdn2, missing codepage or helper program, or other error.
-
-What is the dmesg of the mount failure?
-
-And have you tried -o ro,degraded ?
-
->=20
-> [root@cornelis ~]# btrfs check /dev/sdn2
-> Opening filesystem to check...
-> parent transid verify failed on 46451963543552 wanted 114401 found
-> 114173
-> parent transid verify failed on 46451963543552 wanted 114401 found
-> 114173
-> checksum verify failed on 46451963543552 found A8F2A769 wanted 4C111ADF=
-
-> checksum verify failed on 46451963543552 found 32153BE8 wanted 8B07ABE4=
-
-> checksum verify failed on 46451963543552 found 32153BE8 wanted 8B07ABE4=
-
-> bad tree block 46451963543552, bytenr mismatch, want=3D46451963543552,
-> have=3D75208089814272
-> Couldn't read tree root
-
-Would you please also paste the output of "btrfs ins dump-super /dev/sdn2=
-" ?
-
-It looks like your tree root (or at least some tree root nodes/leaves
-get corrupted)
-
-> ERROR: cannot open file system
-
-And since it's your tree root corrupted, you could also try
-"btrfs-find-root <device>" to try to get a good old copy of your tree roo=
-t.
-
-But I suspect the corruption happens before you noticed, thus the old
-tree root may not help much.
-
-Also, the output of "btrfs ins dump-tree -t root <device>" will help.
+Maybe metadata relocation?
 
 Thanks,
 Qu
+
+> This was indeed what was happening, and this patch helped me
+> verify my theory.  It is never correct to modify the snapshot once it's=
+
+> being deleted, so mark the root when we are deleting it and make sure w=
+e
+> complain about it when it happens.
 >=20
-> [root@cornelis ~]# btrfs restore /dev/sdn2 /mnt/data/
-> parent transid verify failed on 46451963543552 wanted 114401 found
-> 114173
-> parent transid verify failed on 46451963543552 wanted 114401 found
-> 114173
-> checksum verify failed on 46451963543552 found A8F2A769 wanted 4C111ADF=
-
-> checksum verify failed on 46451963543552 found 32153BE8 wanted 8B07ABE4=
-
-> checksum verify failed on 46451963543552 found 32153BE8 wanted 8B07ABE4=
-
-> bad tree block 46451963543552, bytenr mismatch, want=3D46451963543552,
-> have=3D75208089814272
-> Couldn't read tree root
-> Could not open root, trying backup super
-> warning, device 14 is missing
-> warning, device 13 is missing
-> warning, device 12 is missing
-> warning, device 11 is missing
-> warning, device 10 is missing
-> warning, device 9 is missing
-> warning, device 8 is missing
-> warning, device 7 is missing
-> warning, device 6 is missing
-> warning, device 5 is missing
-> warning, device 4 is missing
-> warning, device 3 is missing
-> warning, device 2 is missing
-> checksum verify failed on 22085632 found 5630EA32 wanted 1AA6FFF0
-> checksum verify failed on 22085632 found 5630EA32 wanted 1AA6FFF0
-> bad tree block 22085632, bytenr mismatch, want=3D22085632,
-> have=3D1147797504
-> ERROR: cannot read chunk root
-> Could not open root, trying backup super
-> warning, device 14 is missing
-> warning, device 13 is missing
-> warning, device 12 is missing
-> warning, device 11 is missing
-> warning, device 10 is missing
-> warning, device 9 is missing
-> warning, device 8 is missing
-> warning, device 7 is missing
-> warning, device 6 is missing
-> warning, device 5 is missing
-> warning, device 4 is missing
-> warning, device 3 is missing
-> warning, device 2 is missing
-> checksum verify failed on 22085632 found 5630EA32 wanted 1AA6FFF0
-> checksum verify failed on 22085632 found 5630EA32 wanted 1AA6FFF0
-> bad tree block 22085632, bytenr mismatch, want=3D22085632,
-> have=3D1147797504
-> ERROR: cannot read chunk root
-> Could not open root, trying backup super
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> ---
+>  fs/btrfs/ctree.c       | 3 +++
+>  fs/btrfs/ctree.h       | 1 +
+>  fs/btrfs/extent-tree.c | 9 +++++++++
+>  3 files changed, 13 insertions(+)
 >=20
-> [root@cornelis ~]# uname -r
-> 4.18.16-arch1-1-ARCH
+> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> index 5912a97b07a6..5f82f86085e8 100644
+> --- a/fs/btrfs/ctree.c
+> +++ b/fs/btrfs/ctree.c
+> @@ -1440,6 +1440,9 @@ noinline int btrfs_cow_block(struct btrfs_trans_h=
+andle *trans,
+>  	u64 search_start;
+>  	int ret;
+> =20
+> +	if (test_bit(BTRFS_ROOT_DELETING, &root->state))
+> +		WARN(1, KERN_CRIT "cow'ing blocks on a fs root thats being dropped\n=
+");
+> +
+>  	if (trans->transaction !=3D fs_info->running_transaction)
+>  		WARN(1, KERN_CRIT "trans %llu running %llu\n",
+>  		       trans->transid,
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index facde70c15ed..5a3a94ccb65c 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -1199,6 +1199,7 @@ enum {
+>  	BTRFS_ROOT_FORCE_COW,
+>  	BTRFS_ROOT_MULTI_LOG_TASKS,
+>  	BTRFS_ROOT_DIRTY,
+> +	BTRFS_ROOT_DELETING,
+>  };
+> =20
+>  /*
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 581c2a0b2945..dcb699dd57f3 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -9333,6 +9333,15 @@ int btrfs_drop_snapshot(struct btrfs_root *root,=
+
+>  	if (block_rsv)
+>  		trans->block_rsv =3D block_rsv;
+> =20
+> +	/*
+> +	 * This will help us catch people modifying the fs tree while we're
+> +	 * dropping it.  It is unsafe to mess with the fs tree while it's bei=
+ng
+> +	 * dropped as we unlock the root node and parent nodes as we walk dow=
+n
+> +	 * the tree, assuming nothing will change.  If something does change
+> +	 * then we'll have stale information and drop references to blocks we=
+'ve
+> +	 * already dropped.
+> +	 */
+> +	set_bit(BTRFS_ROOT_DELETING, &root->state);
+>  	if (btrfs_disk_key_objectid(&root_item->drop_progress) =3D=3D 0) {
+>  		level =3D btrfs_header_level(root->node);
+>  		path->nodes[level] =3D btrfs_lock_root_node(root);
 >=20
-> [root@cornelis ~]# btrfs --version
-> btrfs-progs v4.19
->=20
 
 
---gl0j4BsLgaTrkubVhKhk5x9j6PtXeXIgz--
+--DwNVpvVOHnmfFX9EBsC0io2wxt3KnVDOW--
 
---f20gQiyW3jc2aV6JIzuRKVBcQ8StNwWtl
+--x6Q4ffyH4VaAnupsSc9sdbJwRVPpJgzUM
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlwBzmgACgkQwj2R86El
-/qicWwf/aZzIUPom86eXq5SJBrbe6pxXC6BkeTS0sgsJkirJ5T3kI0KFRNigX6Hv
-Eu1nWPtq/0Hc1Qzf0KrkaeYtNP2W45EEiXUYhq6a3RRQ4CFrQ0W1GB5lT2L+rG0e
-MFTtpoJvehYha8d5a6rWHpjJ+bd+hfE5vcCewdpmyuYfcr3gtNj22Dk+WZaxA41T
-kwWVYoRDX9421b3r8/2ZXqtYpVmXRZGvIae7piY6br/vn33oh2Yyl/1RaPRSN3dZ
-2UAuwVB8R5nzPjH71TcgjgsF3slxkFGr9QTfmrPijNC5F+NawI5teCqXP93GBnSl
-+KUPKpKOBbCM1ZRPGXdipOHoagXwkA==
-=0YTd
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlwB05wACgkQwj2R86El
+/qhAbgf9HXjfc53I/nKhRlQjbIULt5AoJ9kEvnf7Qg9ff0jcZ2xAKfn+9dJaW/g7
+01hV6yMJ4hDv8Nu9c/ToCN7OGWm575UOJfTlr2SDXxMIJTDftKNm90m27QM2sVNg
+jcpR5Us9tkhGUb7UIiaMP/hSOp+sgnZ2yzOywGsENfQ+SKWFao9wOKKXkmfp4Yf5
+erjcut+KvVZZgKupO9pj+0QW+wSzwB0qd9i4vaSxwgS78EAufa0lOuSekrc5QuWf
+guJSrPYDJvPRi/mkg03n4anGXUXK9tHqjyQrW8LMVLZCE5zKDqJKHFyWJhjFR6EB
+SOlka8z51IklsqdCzykJ8D5oIKqDNg==
+=ufm5
 -----END PGP SIGNATURE-----
 
---f20gQiyW3jc2aV6JIzuRKVBcQ8StNwWtl--
+--x6Q4ffyH4VaAnupsSc9sdbJwRVPpJgzUM--

@@ -7,110 +7,103 @@ X-Spam-Status: No, score=-0.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7AA4FC04EB9
-	for <linux-btrfs@archiver.kernel.org>; Sat,  1 Dec 2018 15:16:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A93EFC04EB9
+	for <linux-btrfs@archiver.kernel.org>; Sat,  1 Dec 2018 23:21:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2D89520834
-	for <linux-btrfs@archiver.kernel.org>; Sat,  1 Dec 2018 15:16:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5A04F2081D
+	for <linux-btrfs@archiver.kernel.org>; Sat,  1 Dec 2018 23:21:17 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="aasWrqwZ"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2D89520834
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="NUk3WwIZ"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5A04F2081D
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726826AbeLBC24 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 1 Dec 2018 21:28:56 -0500
-Received: from mail-wr1-f50.google.com ([209.85.221.50]:37462 "EHLO
-        mail-wr1-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726778AbeLBC24 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Dec 2018 21:28:56 -0500
-Received: by mail-wr1-f50.google.com with SMTP id j10so7976276wru.4
-        for <linux-btrfs@vger.kernel.org>; Sat, 01 Dec 2018 07:16:11 -0800 (PST)
+        id S1725753AbeLBKex (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 2 Dec 2018 05:34:53 -0500
+Received: from mail-it1-f193.google.com ([209.85.166.193]:55836 "EHLO
+        mail-it1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725729AbeLBKex (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Dec 2018 05:34:53 -0500
+Received: by mail-it1-f193.google.com with SMTP id o19so4016192itg.5
+        for <linux-btrfs@vger.kernel.org>; Sat, 01 Dec 2018 15:21:15 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to;
-        bh=8yskvswqLIOxYYGNwS2A78Wi/PRdNOjJU8T13u5ZhD8=;
-        b=aasWrqwZX5GCAsqBxsqSla02B/hzVJe+FgKZ/1G2x7ajoSdoUGSt/6rh2KDThR98e+
-         Fie8LGL9EI7b7wbYCwoRD4nm3/PEgOZ+rIJ9+rpdrVieC/MM4icXPVDhqkzEHA9AH6X+
-         6aqdGvkGTnzdsvoYIDmiywht8TpRMYpAR1tuJe2GxCv/P0GaYbrQ2T5o5zxJoqH5MwW0
-         sbOrZaW/ZnvLKrpFb3sQLbvIIhvsWwWu37PJxVj3vwQs01hnH8/BeugyAYDwaHXL5SAT
-         GG0DXHSO0+8c7GQlT3FC1Wf1bcInccZsk0ePDJlCsOOeMJad5b0fqGaxbaZoUDXRpSvW
-         uCww==
+        h=from:content-transfer-encoding:reply-to:mime-version:subject
+         :message-id:date:to;
+        bh=al94s7PCXjADt9iL5gzoTQ7WyDM+Q1lyzYHQ+5QzkYs=;
+        b=NUk3WwIZX8w3nL5dIC6f47ig+LeajbSFlaa0MPo3of4MfJPSC0AXz6xa9uqf10Xkw5
+         X1tfYWImLLYZoV+Kcq/l8WiC+aYhjelTeFV8npTDmXojbtX4k2hihhmwd4Nte2uUSaSO
+         3DHq9mbEWdgsp/LR1TjWR5R5V9HD5ea2GByCFFC/CXtotMGcCTJ0M5svo+NxaxNE4cIZ
+         wNRKoZZacaJIVnOBEju39UG1FaCopODwjcDOTEOcgnDzRufXn94a75XPIxi076pYZYK+
+         A8qwQvAiibgLsJvUeFksXomjiSCowZG6Kv/PcCYFzXPY+pZK9rMg17JGToLH+DLNLEzm
+         niCg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to;
-        bh=8yskvswqLIOxYYGNwS2A78Wi/PRdNOjJU8T13u5ZhD8=;
-        b=dM9f3FSt6n39XTdoOKy/ARB1cw6EQDpfkTtJGKl/FFCf9+pOUO6RWRMFGQISkTG5IX
-         xoHUxXXpSPuoFFjoB0Ip7/rdBTStN2Ty2NohP8Lo7ejNmM1qMfZW6JPygs5kBJNiopkV
-         cRASJ28LeIQ/yO2Y8/fGXTYfqv6n8jNGc0ZxoSAX1YyQ5q9lBnftTN1qRFDO12s4Uzf9
-         Bwu1/AEjS7h0/TujuN5ks10jgly2CChxXz1Y9DKzZur8/TQjP70V4kRRXjFDw9Yk+/Iy
-         QWRqhh8ywjE9VfGpcpM6TZ9NCpXDCb5MT4gA3f3pxwGSZkLUTO7F3RGaHAqZV/tqu9cV
-         H4zQ==
-X-Gm-Message-State: AA+aEWYKZz67HI3HoCYUU6iFzrparj2eI56LXe9NscVkbZfyBjG1HiOB
-        VVm5NsJ7PeXsGrQzqkTWU+D15Zm4T/bGWSDq4bmJsvL2
-X-Google-Smtp-Source: AFSGD/U7QH7TpgO40yshAkNDEYnxu+DQ6e5b846s24lzgaqhSL5TE/loE6EV6Uqfp6VUD3RWaqNa+DuxHzVXJJKeUFk=
-X-Received: by 2002:adf:8228:: with SMTP id 37mr8141675wrb.160.1543677370762;
- Sat, 01 Dec 2018 07:16:10 -0800 (PST)
-MIME-Version: 1.0
-References: <61991cd9-13ba-1834-3112-0f10e925a48c@nuclearwinter.com>
-In-Reply-To: <61991cd9-13ba-1834-3112-0f10e925a48c@nuclearwinter.com>
-From:   "Janos Toth F." <toth.f.janos@gmail.com>
-Date:   Sat, 1 Dec 2018 16:15:57 +0100
-Message-ID: <CANznX5GqHJwx+y6b9kruzYXEP93oEhRtHyG_yuWwHV286+fQdw@mail.gmail.com>
+        h=x-gm-message-state:from:content-transfer-encoding:reply-to
+         :mime-version:subject:message-id:date:to;
+        bh=al94s7PCXjADt9iL5gzoTQ7WyDM+Q1lyzYHQ+5QzkYs=;
+        b=UJYbP/tzHQbdN3Z3UMRBIqMrhLCwo982eWA6tMsTc96aC0r4xQXTiwfL+G/mX080ll
+         AogDkqXhZ5yj6U1ni5eAyM2LohTnbi/66C4i9FDj8gJR0WRii1/zYFRj07DKuDlEvXqP
+         KdV760OKjusEY2gLInIsgrbyAcxTJKTGxQNjcBtDL753yIQiOVSd7jS3OPYIb2yvkWJq
+         IGaYxRSYyq2FXQNW+msn7Y5pw7f0g1TsjWdkdSOJNLq0NRUVttE6nu8ht7NLKBr/DVQI
+         83h2uAoadTp41zrV4OHPwc1QwbES+AfWXVX5pYRXvTpG/+ghT94H3VQfSW/ksBZQTDN7
+         G1wA==
+X-Gm-Message-State: AA+aEWYsKGg+385JyHGyHEjKfO7z9MY8yE6U/+slXMGFd7ZasqrmdzAe
+        7HG+YC3jxQvo/D5xkkaqS5A=
+X-Google-Smtp-Source: AFSGD/Vs5fzSkURP8p2zzkqg4ngfRKSbprZFb5Q7tjASFf0DCI9ztaMlspemNuDrrTqlmPNzShW//g==
+X-Received: by 2002:a24:7a94:: with SMTP id a142mr2915991itc.88.1543706474641;
+        Sat, 01 Dec 2018 15:21:14 -0800 (PST)
+Received: from [10.0.0.233] ([8.42.79.29])
+        by smtp.gmail.com with ESMTPSA id u22sm3529523ioc.28.2018.12.01.15.21.13
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Sat, 01 Dec 2018 15:21:14 -0800 (PST)
+From:   Martin Bakiev <mbakiev@gmail.com>
+Content-Type: text/plain;
+        charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+Reply-To: CANznX5GqHJwx+y6b9kruzYXEP93oEhRtHyG_yuWwHV286+fQdw@mail.gmail.com
+Mime-Version: 1.0 (Mac OS X Mail 12.1 \(3445.101.1\))
 Subject: Re: Possible deadlock when writing
-To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Message-Id: <ABEF1951-66FC-48F8-A7C4-0D499F48AF84@gmail.com>
+Date:   Sat, 1 Dec 2018 16:21:13 -0700
+To:     toth.f.janos@gmail.com, llowrey@nuclearwinter.com,
+        linux-btrfs@vger.kernel.org
+X-Mailer: Apple Mail (2.3445.101.1)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I obviously can't be sure (due to obscure nature of this issue) but I
-think I observed similar behavior. For me it usually kicked in during
-scheduled de-fragmentation runs. I initially suspected it might have
-something to do with running defrag on files which are still opened
-for appending writes (through specifying the entire root subvolume
-folder recursively). But it kept happening after I omitted those
-folders. And I think defrag has nothing more to do with this other
-than generating a lot of IO. The SMART status is fine on all disks in
-the multi-device filesystem. When this happens the write buffer in the
-system RAM is ~full, manual sync hangs forever but some read
-operations are successful. Normal reboot is not possible since sync
-won't finish (but usually locks the system up pretty well if
-attempted).
+I was having the same issue with kernels 4.19.2 and 4.19.4. I don=E2=80=99=
+t appear to have the issue with 4.20.0-0.rc1 on Fedora Server 29.
 
-I didn't see this happening since I updated to 4.19.3 (if I recall
-correctly). Although not much time has passed.
-On Mon, Nov 26, 2018 at 8:14 PM Larkin Lowrey <llowrey@nuclearwinter.com> wrote:
->
-> I started having a host freeze randomly when running a 4.18 kernel. The
-> host was stable when running 4.17.12.
->
-> At first, it appeared that it was only IO that was frozen since I could
-> run common commands that were likely cached in RAM and that did not
-> touch storage. Anything that did touch storage would freeze and I would
-> not be able to ctrl-c it.
->
-> I noticed today, when it happened with kernel 4.19.2, that backups were
-> still running and that the backup app could still read from the backup
-> snapshot subvol. It's possible that the backups are still able to
-> proceed because the accesses are all read-only and the snapshot was
-> mounted with noatime so the backup process never triggers a write.
->
-> There never are any errors output to the console when this happens and
-> nothing is logged. When I first encountered this back in Sept. I managed
-> to record a few sysrq dumps and attached them to a redhat ticket. See
-> links below.
->
-> https://bugzilla.redhat.com/show_bug.cgi?id=1627288
-> https://bugzilla.redhat.com/attachment.cgi?id=1482177
->
-> I do have several VMs running that have their image files nocow'd.
-> Interestingly, all the VMs, except 1, seem to be able to write just
-> fine. The one that can't has frozen completely and is the one that
-> regularly generates the most IO.
->
-> Any ideas on how to debug this further?
->
-> --Larkin
+The issue is very easy to reproduce on my setup, not sure how much of it =
+is actually relevant, but here it is:
+
+- 3 drive RAID5 created
+- Some data moved to it
+- Expanded to 7 drives
+- No balancing
+
+The issue is easily reproduced (within 30 mins) by starting multiple =
+transfers to the volume (several TB in the form of many 30GB+ files). =
+Multiple concurrent =E2=80=98rsync=E2=80=99 transfers seems to take a =
+bit longer to trigger the issue, but multiple =E2=80=98cp=E2=80=99 =
+commands will do it much quicker (again not sure if relevant).
+
+I have not seen the issue occur with a single =E2=80=98rsync=E2=80=99 or =
+=E2=80=98cp=E2=80=99 transfer, but I haven=E2=80=99t left one running =
+alone for too long (copying the data from multiple drives, so there is a =
+lot to be gained from parallelizing the transfers).
+
+I=E2=80=99m not sure what state the FS is left in after Magic SysRq =
+reboot after it deadlocks, but seemingly it=E2=80=99s fine. No problems =
+mounting and =E2=80=98btrfs check=E2=80=99 passes OK. I=E2=80=99m sure =
+some of the data doesn=E2=80=99t get flushed, but it=E2=80=99s no =
+problem for my use case.
+
+I=E2=80=99ve been running nonstop concurrent transfers with kernel =
+4.20.0-0.rc1 for 24hr nonstop and I haven=E2=80=99t experienced the =
+issue.
+
+Hope this helps.=

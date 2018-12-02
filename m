@@ -2,100 +2,387 @@ Return-Path: <SRS0=5FUL=OL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=DATE_IN_FUTURE_06_12,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3AED0C04EB8
-	for <linux-btrfs@archiver.kernel.org>; Sun,  2 Dec 2018 07:09:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A2CBBC64EB4
+	for <linux-btrfs@archiver.kernel.org>; Sun,  2 Dec 2018 09:03:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E64522082F
-	for <linux-btrfs@archiver.kernel.org>; Sun,  2 Dec 2018 07:09:04 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="GBiUodcw"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E64522082F
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	by mail.kernel.org (Postfix) with ESMTP id 4517720660
+	for <linux-btrfs@archiver.kernel.org>; Sun,  2 Dec 2018 09:03:33 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4517720660
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=duckstad.net
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725536AbeLBHJE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 2 Dec 2018 02:09:04 -0500
-Received: from mail-pf1-f196.google.com ([209.85.210.196]:43893 "EHLO
-        mail-pf1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725379AbeLBHJE (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Dec 2018 02:09:04 -0500
-Received: by mail-pf1-f196.google.com with SMTP id w73so4804168pfk.10
-        for <linux-btrfs@vger.kernel.org>; Sat, 01 Dec 2018 23:09:02 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=jc07g/+TsxcwD3TRcX/tVh53jvEcMcIMNo+fYO+46a4=;
-        b=GBiUodcwLyoejSVCdZD8Z2BSIBUMEYCEgE2qlMRkg8V0kN4TYIfKtOKC1qG/Wf04SD
-         n4yMgxAsLP6AFNcYjeAGxqME1hfwoRKmx9Txd5uy29QzebTFJbBx/PqDpzq3VokArZkF
-         8kAeGDmy0cDbB2S2hymWX/BoPuf/S6EBMRqdDQqgVu/Ji2QzjyZpVPvyI5ZTyBz/u39i
-         Nsitla6EdEbYD9bxfdSirIYVa677JFGffZ40g6V9+RGVaUeYzcavGZXQSGIyfaz0+GXq
-         HddwOmtDM7Oc5yyyCJL8Pe7vazNDxREk0BzRKsFvMHPxL5DEpPmjXDiw0CGt3S0UGN78
-         rZlA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=jc07g/+TsxcwD3TRcX/tVh53jvEcMcIMNo+fYO+46a4=;
-        b=FivA8efqpip9/tu72L/zCjfbkCJMYEsfnUcT5DgVZXrvNepoWJO61XtUrjvXYM+33d
-         vK4cV2RQfTmUHZHWMHctC4ji1g+9i5QBKOneJjIK6sC+PuJtRS0rGAEpYs4vXj3c4bJA
-         LQrWwpvMDZJ/kfHxP8PXaHK/aFa6jbOcCZZaz0MvNRTyoPHT4lcuONKaMuqSXa2RsrS9
-         7mljADbIErCDDX9rbNuC/YoeCvTd6Pd9KOFvWK05hcAP16a6z6LpM6yEtE3KT01oeTf6
-         jocrBpRv4mW52uVmTZSntykpsEqp6HCcg5/80qOBuS+snRxdt5dJ72Be5eIHoeMZ4Xur
-         4YfQ==
-X-Gm-Message-State: AA+aEWZtieYSeywwZej1Woi8aiNwdFKghmXLQ0lLrV3NS/7Kvf3E729J
-        e1VWya8XLnJXL2231VngA4jEte+h
-X-Google-Smtp-Source: AFSGD/VY9fE9K40d9eT5vLAlq8OOcVEboqBmscacZpqdE5US3gJY3B1T2KJQ6pCl3Tmh8ntnhPKhwQ==
-X-Received: by 2002:a62:cd44:: with SMTP id o65mr11449689pfg.222.1543734537447;
-        Sat, 01 Dec 2018 23:08:57 -0800 (PST)
-Received: from cat-arch.lan ([173.82.208.113])
-        by smtp.gmail.com with ESMTPSA id g2sm13328443pfi.95.2018.12.01.23.08.55
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Sat, 01 Dec 2018 23:08:56 -0800 (PST)
-From:   damenly.su@gmail.com
-X-Google-Original-From: suy.fnst@cn.fujitsu.com
-To:     linux-btrfs@vger.kernel.org
-Cc:     suy.fnst@cn.fujitsu.com
-Subject: [PATCH] btrfs-progs: trivial fix about line breaker in repair_inode_nbytes_lowmem()
-Date:   Sun,  2 Dec 2018 15:08:36 +0000
-Message-Id: <20181202150836.16625-1-suy.fnst@cn.fujitsu.com>
-X-Mailer: git-send-email 2.19.1
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+        id S1725844AbeLBJDe convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 2 Dec 2018 04:03:34 -0500
+Received: from smtp-out2.caiw.net ([62.45.45.126]:55693 "EHLO
+        smtp-out2.caiw.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725771AbeLBJDd (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Dec 2018 04:03:33 -0500
+Received: from barracuda-out-2.caiw.net (barracuda-out-2.caiw.net [62.45.59.18])
+        by smtp-out2.caiw.net (Postfix) with ESMTP id C39B562857
+        for <linux-btrfs@vger.kernel.org>; Sun,  2 Dec 2018 10:03:28 +0100 (CET)
+X-ASG-Debug-ID: 1543741408-08d4fd4978a66a0001-6jHSXT
+Received: from smtp-out1.caiw.net (smtp-out1.caiw.net [62.45.45.125]) by barracuda-out-2.caiw.net with ESMTP id ZD240f3ZfA9kvHTw; Sun, 02 Dec 2018 10:03:28 +0100 (CET)
+X-Barracuda-Envelope-From: bolderbast@duckstad.net
+X-Barracuda-RBL-Trusted-Forwarder: 62.45.45.125
+Received: from katrien.duckstad.net (200-228-045-062.dynamic.caiway.nl [62.45.228.200])
+        by smtp-out1.caiw.net (Postfix) with ESMTP id 002E2E0086;
+        Sun,  2 Dec 2018 10:03:28 +0100 (CET)
+Received: from localhost (localhost.localdomain [127.0.0.1])
+        by katrien.duckstad.net (Postfix) with ESMTP id 92CC73802F;
+        Sun,  2 Dec 2018 10:03:27 +0100 (CET)
+X-Barracuda-RBL-IP: 62.45.228.200
+X-Barracuda-Effective-Source-IP: 200-228-045-062.dynamic.caiway.nl[62.45.228.200]
+X-Barracuda-Apparent-Source-IP: 62.45.228.200
+Received: from katrien.duckstad.net ([127.0.0.1])
+        by localhost (katrien.duckstad.net [127.0.0.1]) (amavisd-new, port 10032)
+        with ESMTP id aml_B0E5vpYg; Sun,  2 Dec 2018 10:03:25 +0100 (CET)
+Received: from localhost (localhost.localdomain [127.0.0.1])
+        by katrien.duckstad.net (Postfix) with ESMTP id 351A638030;
+        Sun,  2 Dec 2018 10:03:25 +0100 (CET)
+X-Virus-Scanned: amavisd-new at katrien.duckstad.net
+Received: from katrien.duckstad.net ([127.0.0.1])
+        by localhost (katrien.duckstad.net [127.0.0.1]) (amavisd-new, port 10026)
+        with ESMTP id x64i-_Cjjvyr; Sun,  2 Dec 2018 10:03:24 +0100 (CET)
+Received: from bolderbast (unknown [10.4.2.1])
+        by katrien.duckstad.net (Postfix) with ESMTPSA id 8CF6C3802F;
+        Sun,  2 Dec 2018 10:03:23 +0100 (CET)
+Message-ID: <c723ab8e8e99e54c6f93dc70f897725525f0db29.camel@duckstad.net>
+Subject: Re: Need help with potential ~45TB dataloss
+From:   Patrick Dijkgraaf <bolderbast@duckstad.net>
+X-ASG-Orig-Subj: Re: Need help with potential ~45TB dataloss
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+Date:   Sun, 02 Dec 2018 10:03:23 +0100
+In-Reply-To: <6ce9cd01-960f-af3d-0273-0b9abfa1d4f8@gmx.com>
+References: <8bc37755da04dffae1a34cea2a06bcffdf2c75d7.camel@duckstad.net>
+         <6ce9cd01-960f-af3d-0273-0b9abfa1d4f8@gmx.com>
+Content-Type: text/plain; charset="UTF-8"
+User-Agent: Evolution 3.30.2 
+Mime-Version: 1.0
+Content-Transfer-Encoding: 8BIT
+X-Barracuda-Connect: smtp-out1.caiw.net[62.45.45.125]
+X-Barracuda-Start-Time: 1543741408
+X-Barracuda-URL: https://62.45.59.18:443/cgi-mod/mark.cgi
+X-Virus-Scanned: by bsmtpd at caiw.net
+X-Barracuda-Scan-Msg-Size: 10274
+X-Barracuda-BRTS-Status: 1
+X-Barracuda-Bayes: INNOCENT GLOBAL 0.4904 1.0000 0.0000
+X-Barracuda-Spam-Score: 0.50
+X-Barracuda-Spam-Status: No, SCORE=0.50 using global scores of TAG_LEVEL=1000.0 QUARANTINE_LEVEL=7.0 KILL_LEVEL=1000.0 tests=BSF_RULE7568M
+X-Barracuda-Spam-Report: Code version 3.2, rules version 3.2.3.62886
+        Rule breakdown below
+         pts rule name              description
+        ---- ---------------------- --------------------------------------------------
+        0.50 BSF_RULE7568M          Custom Rule 7568M
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Su Yue <suy.fnst@cn.fujitsu.com>
+Hi Qu,
 
-Move "\n" at end of the sentence to print.
+Thanks for helping me!
 
-Fixes: 281eec7a9ddf ("btrfs-progs: check: repair inode nbytes in lowmem mode")
-Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
----
- check/mode-lowmem.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Please see the reponses in-line.
+Any suggestions based on this?
 
-diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
-index 14bbc9ee6cb6..919cbc2ea0ce 100644
---- a/check/mode-lowmem.c
-+++ b/check/mode-lowmem.c
-@@ -2142,7 +2142,7 @@ out:
- 		error("failed to set nbytes in inode %llu root %llu",
- 		      ino, root->root_key.objectid);
- 	else
--		printf("Set nbytes in inode item %llu root %llu\n to %llu", ino,
-+		printf("Set nbytes in inode item %llu root %llu to %llu\n", ino,
- 		       root->root_key.objectid, nbytes);
- 
- 	/* research path */
+Thanks!
+
+
+On Sat, 2018-12-01 at 07:57 +0800, Qu Wenruo wrote:
+> On 2018/11/30 下午9:53, Patrick Dijkgraaf wrote:
+> > Hi all,
+> > 
+> > I have been a happy BTRFS user for quite some time. But now I'm
+> > facing
+> > a potential ~45TB dataloss... :-(
+> > I hope someone can help!
+> > 
+> > I have Server A and Server B. Both having a 20-devices BTRFS RAID6
+> > filesystem. Because of known RAID5/6 risks, Server B was a backup
+> > of
+> > Server A.
+> > After applying updates to server B and reboot, the FS would not
+> > mount
+> > anymore. Because it was "just" a backup. I decided to recreate the
+> > FS
+> > and perform a new backup. Later, I discovered that the FS was not
+> > broken, but I faced this issue: 
+> > https://patchwork.kernel.org/patch/10694997/
+> > 
+> 
+> Sorry for the inconvenience.
+> 
+> I didn't realize the max_chunk_size limit isn't reliable at that
+> timing.
+
+No problem, I should not have jumped to the conclusion to recreate the
+backup volume.
+
+> > Anyway, the FS was already recreated, so I needed to do a new
+> > backup.
+> > During the backup (using rsync -vah), Server A (the source)
+> > encountered
+> > an I/O error and my rsync failed. In an attempt to "quick fix" the
+> > issue, I rebooted Server A after which the FS would not mount
+> > anymore.
+> 
+> Did you have any dmesg about that IO error?
+
+Yes there was. But I omitted capturing it... The system is now rebooted
+and I can't retrieve it anymore. :-(
+
+> And how is the reboot scheduled? Forced power off or normal reboot
+> command?
+
+The system was rebooted using a normal reboot command.
+
+> > I documented what I have tried, below. I have not yet tried
+> > anything
+> > except what is shown, because I am afraid of causing more harm to
+> > the FS.
+> 
+> Pretty clever, no btrfs check --repair is a pretty good move.
+> 
+> > I hope somebody here can give me advice on how to (hopefully)
+> > retrieve my data...
+> > 
+> > Thanks in advance!
+> > 
+> > ==========================================
+> > 
+> > [root@cornelis ~]# btrfs fi show
+> > Label: 'cornelis-btrfs'  uuid: ac643516-670e-40f3-aa4c-f329fc3795fd
+> > 	Total devices 1 FS bytes used 463.92GiB
+> > 	devid    1 size 800.00GiB used 493.02GiB path
+> > /dev/mapper/cornelis-cornelis--btrfs
+> > 
+> > Label: 'data'  uuid: 4c66fa8b-8fc6-4bba-9d83-02a2a1d69ad5
+> > 	Total devices 20 FS bytes used 44.85TiB
+> > 	devid    1 size 3.64TiB used 3.64TiB path /dev/sdn2
+> > 	devid    2 size 3.64TiB used 3.64TiB path /dev/sdp2
+> > 	devid    3 size 3.64TiB used 3.64TiB path /dev/sdu2
+> > 	devid    4 size 3.64TiB used 3.64TiB path /dev/sdx2
+> > 	devid    5 size 3.64TiB used 3.64TiB path /dev/sdh2
+> > 	devid    6 size 3.64TiB used 3.64TiB path /dev/sdg2
+> > 	devid    7 size 3.64TiB used 3.64TiB path /dev/sdm2
+> > 	devid    8 size 3.64TiB used 3.64TiB path /dev/sdw2
+> > 	devid    9 size 3.64TiB used 3.64TiB path /dev/sdj2
+> > 	devid   10 size 3.64TiB used 3.64TiB path /dev/sdt2
+> > 	devid   11 size 3.64TiB used 3.64TiB path /dev/sdk2
+> > 	devid   12 size 3.64TiB used 3.64TiB path /dev/sdq2
+> > 	devid   13 size 3.64TiB used 3.64TiB path /dev/sds2
+> > 	devid   14 size 3.64TiB used 3.64TiB path /dev/sdf2
+> > 	devid   15 size 7.28TiB used 588.80GiB path /dev/sdr2
+> > 	devid   16 size 7.28TiB used 588.80GiB path /dev/sdo2
+> > 	devid   17 size 7.28TiB used 588.80GiB path /dev/sdv2
+> > 	devid   18 size 7.28TiB used 588.80GiB path /dev/sdi2
+> > 	devid   19 size 7.28TiB used 588.80GiB path /dev/sdl2
+> > 	devid   20 size 7.28TiB used 588.80GiB path /dev/sde2
+> > 
+> > [root@cornelis ~]# mount /dev/sdn2 /mnt/data
+> > mount: /mnt/data: wrong fs type, bad option, bad superblock on
+> > /dev/sdn2, missing codepage or helper program, or other error.
+> 
+> What is the dmesg of the mount failure?
+
+[Sun Dec  2 09:41:08 2018] BTRFS info (device sdn2): disk space caching
+is enabled
+[Sun Dec  2 09:41:08 2018] BTRFS info (device sdn2): has skinny extents
+[Sun Dec  2 09:41:08 2018] BTRFS error (device sdn2): parent transid
+verify failed on 46451963543552 wanted 114401 found 114173
+[Sun Dec  2 09:41:08 2018] BTRFS critical (device sdn2): corrupt leaf:
+root=2 block=46451963543552 slot=0, unexpected item end, have
+1387359977 expect 16283
+[Sun Dec  2 09:41:08 2018] BTRFS warning (device sdn2): failed to read
+tree root
+[Sun Dec  2 09:41:08 2018] BTRFS error (device sdn2): open_ctree failed
+
+> And have you tried -o ro,degraded ?
+
+Tried it just now, gives the exact same error.
+
+> > [root@cornelis ~]# btrfs check /dev/sdn2
+> > Opening filesystem to check...
+> > parent transid verify failed on 46451963543552 wanted 114401 found
+> > 114173
+> > parent transid verify failed on 46451963543552 wanted 114401 found
+> > 114173
+> > checksum verify failed on 46451963543552 found A8F2A769 wanted
+> > 4C111ADF
+> > checksum verify failed on 46451963543552 found 32153BE8 wanted
+> > 8B07ABE4
+> > checksum verify failed on 46451963543552 found 32153BE8 wanted
+> > 8B07ABE4
+> > bad tree block 46451963543552, bytenr mismatch,
+> > want=46451963543552,
+> > have=75208089814272
+> > Couldn't read tree root
+> 
+> Would you please also paste the output of "btrfs ins dump-super
+> /dev/sdn2" ?
+
+[root@cornelis ~]# btrfs ins dump-super /dev/sdn2
+superblock: bytenr=65536, device=/dev/sdn2
+---------------------------------------------------------
+csum_type		0 (crc32c)
+csum_size		4
+csum			0x51725c39 [match]
+bytenr			65536
+flags			0x1
+			( WRITTEN )
+magic			_BHRfS_M [match]
+fsid			4c66fa8b-8fc6-4bba-9d83-02a2a1d69ad5
+label			data
+generation		114401
+root			46451963543552
+sys_array_size		513
+chunk_root_generation	112769
+root_level		1
+chunk_root		22085632
+chunk_root_level	1
+log_root		46451935461376
+log_root_transid	0
+log_root_level		0
+total_bytes		104020314161152
+bytes_used		49308554543104
+sectorsize		4096
+nodesize		16384
+leafsize (deprecated)		16384
+stripesize		4096
+root_dir		6
+num_devices		20
+compat_flags		0x0
+compat_ro_flags		0x0
+incompat_flags		0x1e1
+			( MIXED_BACKREF |
+			  BIG_METADATA |
+			  EXTENDED_IREF |
+			  RAID56 |
+			  SKINNY_METADATA )
+cache_generation	114401
+uuid_tree_generation	114401
+dev_item.uuid		c6b44903-e849-4403-98c4-f3ba4d0b3fc3
+dev_item.fsid		4c66fa8b-8fc6-4bba-9d83-02a2a1d69ad5 [match]
+dev_item.type		0
+dev_item.total_bytes	4000783007744
+dev_item.bytes_used	4000781959168
+dev_item.io_align	4096
+dev_item.io_width	4096
+dev_item.sector_size	4096
+dev_item.devid		1
+dev_item.dev_group	0
+dev_item.seek_speed	0
+dev_item.bandwidth	0
+dev_item.generation	0
+
+> It looks like your tree root (or at least some tree root nodes/leaves
+> get corrupted)
+> 
+> > ERROR: cannot open file system
+> 
+> And since it's your tree root corrupted, you could also try
+> "btrfs-find-root <device>" to try to get a good old copy of your tree
+> root.
+
+The output is rather long. I pasted it here: 
+https://pastebin.com/FkyBLgj9
+I'm unsure what to look for in this output?
+
+> But I suspect the corruption happens before you noticed, thus the old
+> tree root may not help much.
+> 
+> Also, the output of "btrfs ins dump-tree -t root <device>" will help.
+
+Here it is:
+
+[root@cornelis ~]# btrfs ins dump-tree -t root /dev/sdn2
+btrfs-progs v4.19 
+parent transid verify failed on 46451963543552 wanted 114401 found
+114173
+parent transid verify failed on 46451963543552 wanted 114401 found
+114173
+checksum verify failed on 46451963543552 found A8F2A769 wanted 4C111ADF
+checksum verify failed on 46451963543552 found 32153BE8 wanted 8B07ABE4
+checksum verify failed on 46451963543552 found 32153BE8 wanted 8B07ABE4
+bad tree block 46451963543552, bytenr mismatch, want=46451963543552,
+have=75208089814272
+Couldn't read tree root
+ERROR: unable to open /dev/sdn2
+
+> Thanks,
+> Qu
+
+No, thank YOU! :-)
+
+> > [root@cornelis ~]# btrfs restore /dev/sdn2 /mnt/data/
+> > parent transid verify failed on 46451963543552 wanted 114401 found
+> > 114173
+> > parent transid verify failed on 46451963543552 wanted 114401 found
+> > 114173
+> > checksum verify failed on 46451963543552 found A8F2A769 wanted
+> > 4C111ADF
+> > checksum verify failed on 46451963543552 found 32153BE8 wanted
+> > 8B07ABE4
+> > checksum verify failed on 46451963543552 found 32153BE8 wanted
+> > 8B07ABE4
+> > bad tree block 46451963543552, bytenr mismatch,
+> > want=46451963543552,
+> > have=75208089814272
+> > Couldn't read tree root
+> > Could not open root, trying backup super
+> > warning, device 14 is missing
+> > warning, device 13 is missing
+> > warning, device 12 is missing
+> > warning, device 11 is missing
+> > warning, device 10 is missing
+> > warning, device 9 is missing
+> > warning, device 8 is missing
+> > warning, device 7 is missing
+> > warning, device 6 is missing
+> > warning, device 5 is missing
+> > warning, device 4 is missing
+> > warning, device 3 is missing
+> > warning, device 2 is missing
+> > checksum verify failed on 22085632 found 5630EA32 wanted 1AA6FFF0
+> > checksum verify failed on 22085632 found 5630EA32 wanted 1AA6FFF0
+> > bad tree block 22085632, bytenr mismatch, want=22085632,
+> > have=1147797504
+> > ERROR: cannot read chunk root
+> > Could not open root, trying backup super
+> > warning, device 14 is missing
+> > warning, device 13 is missing
+> > warning, device 12 is missing
+> > warning, device 11 is missing
+> > warning, device 10 is missing
+> > warning, device 9 is missing
+> > warning, device 8 is missing
+> > warning, device 7 is missing
+> > warning, device 6 is missing
+> > warning, device 5 is missing
+> > warning, device 4 is missing
+> > warning, device 3 is missing
+> > warning, device 2 is missing
+> > checksum verify failed on 22085632 found 5630EA32 wanted 1AA6FFF0
+> > checksum verify failed on 22085632 found 5630EA32 wanted 1AA6FFF0
+> > bad tree block 22085632, bytenr mismatch, want=22085632,
+> > have=1147797504
+> > ERROR: cannot read chunk root
+> > Could not open root, trying backup super
+> > 
+> > [root@cornelis ~]# uname -r
+> > 4.18.16-arch1-1-ARCH
+> > 
+> > [root@cornelis ~]# btrfs --version
+> > btrfs-progs v4.19
+> > 
 -- 
-2.19.1
+Groet / Cheers,
+Patrick Dijkgraaf
+
+
 

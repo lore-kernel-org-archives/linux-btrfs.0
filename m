@@ -2,97 +2,154 @@ Return-Path: <SRS0=i+cT=OM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
+	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D0E52C65BAE
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 09:33:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2FC4FC04EB9
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 09:36:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5520B214C1
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 09:33:20 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C9C0F20660
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 09:36:27 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=netcologne.de header.i=@netcologne.de header.b="SFsLdGwr"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5520B214C1
-Authentication-Results: mail.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=netcologne.de
+	dkim=pass (2048-bit key) header.d=libpcap-net.20150623.gappssmtp.com header.i=@libpcap-net.20150623.gappssmtp.com header.b="nktMvlki"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C9C0F20660
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=libpcap.net
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726191AbeLCJdd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 3 Dec 2018 04:33:33 -0500
-Received: from cc-smtpout2.netcologne.de ([89.1.8.212]:43344 "EHLO
-        cc-smtpout2.netcologne.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725894AbeLCJbr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Dec 2018 04:31:47 -0500
-Received: from cc-smtpin3.netcologne.de (cc-smtpin3.netcologne.de [89.1.8.203])
-        by cc-smtpout2.netcologne.de (Postfix) with ESMTP id 703EA126F8
-        for <linux-btrfs@vger.kernel.org>; Mon,  3 Dec 2018 10:31:30 +0100 (CET)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=netcologne.de;
-        s=nc1116a; t=1543829490;
-        bh=9xx4wxLDSIGqLAYhOj7r5Yq1XUZ/6P1tLoaOdmVaD2M=;
-        h=From:Date:Message-ID:Subject:To:From;
-        b=SFsLdGwrA59hL6Ywwgr68I/PFdW4miGvuUmRrOpgKhZRyX7syPrNwnx04UPStRg1e
-         4ScQaAh4qkHEThTtSuAY/aiOCcH6xc0vZ2C0QdhMck4lMdSYJaxZeZWCrVHhtoJnfD
-         9bVd7MATt7W8gGITYMSgy5uZnDVvuArzcTle3MQ8aKq9V04CzXVEb7FUAyztedAb0h
-         eGuJ6fW5+84x5Qep6W/hep+wsus8/IuWgYhuAXy8QYm/CZqLYwa+UOCfILs6iIJ+q4
-         /o0Ww341+syUXEm4AWi8PqgOQZWBtva1iDDSD8gNBQ853JGBwa3UUfw/IKGLPfkgu3
-         1TzKg074tVXMw==
-Received: from localhost (localhost [127.0.0.1])
-        by cc-smtpin3.netcologne.de (Postfix) with ESMTP id 6AFD111ECA
-        for <linux-btrfs@vger.kernel.org>; Mon,  3 Dec 2018 10:31:30 +0100 (CET)
-Received: from [209.85.221.175] (helo=cc-smtpin3.netcologne.de)
-        by localhost with ESMTP (eXpurgate 4.6.0)
-        (envelope-from <s.schumacher@netcologne.de>)
-        id 5c04f7f2-0bea-7f0000012729-7f000001e144-1
-        for <linux-btrfs@vger.kernel.org>; Mon, 03 Dec 2018 10:31:30 +0100
-Received: from mail-vk1-f175.google.com (mail-vk1-f175.google.com [209.85.221.175])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by cc-smtpin3.netcologne.de (Postfix) with ESMTPSA
-        for <linux-btrfs@vger.kernel.org>; Mon,  3 Dec 2018 10:31:30 +0100 (CET)
-Received: by mail-vk1-f175.google.com with SMTP id b18so2728814vke.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 03 Dec 2018 01:31:30 -0800 (PST)
-X-Gm-Message-State: AA+aEWYHK7d64Yloo92JCM2Ilf5xVH9NRhwOfCS781R7XpiDvNxmD6+g
-        9JfoicNhxHDXl2rhUPLOw5mAo91GpsilYYV4aDo=
-X-Google-Smtp-Source: AFSGD/VfoFIrHRL7d3vtEicuKgHLJlDfQdrsL5Ay9w+Ma82DPjUor4R2ygCpCFqHysAgzHCL77Jnu05Gvl5q+v8eW9g=
-X-Received: by 2002:a1f:bfc6:: with SMTP id p189mr6557898vkf.83.1543829489151;
- Mon, 03 Dec 2018 01:31:29 -0800 (PST)
+        id S1725948AbeLCJgl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 3 Dec 2018 04:36:41 -0500
+Received: from mail-pf1-f171.google.com ([209.85.210.171]:46785 "EHLO
+        mail-pf1-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725864AbeLCJgl (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Dec 2018 04:36:41 -0500
+Received: by mail-pf1-f171.google.com with SMTP id c73so6048064pfe.13
+        for <linux-btrfs@vger.kernel.org>; Mon, 03 Dec 2018 01:36:25 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=libpcap-net.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc:content-transfer-encoding;
+        bh=cK10XOI7jevq+Gscieq6sTiWQE+PTepGVNWEW9ysz6I=;
+        b=nktMvlkiU/WpE7kW166jp3p5A3E/aUeuDpMq9ZhPu25CFhYjXA2db3k4oGzcsU2hOx
+         7JQwR8UMWAFMkJmAIjSnhZQUGWmJSLvKPdIkcxuFs852LBxtgwPW398DlX3qO/+9v6EA
+         3DOX1SY7xgfQwwfaZuyR9hTmXn6N30lrTKrNj79cKGPgargpYOnYSB332qJa882alCfM
+         FxhQTWcyi0tn3pl4vGZDDeaeW+s5XfIBVrVKhTIqYnsu7G5FJGeAKtc15fhoxwmcGv1m
+         NayB6FesneVIjHeoz3qzCLssKp1R6u39/mBvmq9FhC9NfePAH2kAExz9i/a0EkVJQ82i
+         s+xw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=cK10XOI7jevq+Gscieq6sTiWQE+PTepGVNWEW9ysz6I=;
+        b=rcb188ZnWSnn6UN3eyMGojPqwWH5MpqiuNwTpoz9/AMok4MAXvlwSEEmcLX6U4eh06
+         QW++jUkujWWGy1DDA5sgDOBp45zSFNM0OHVLHA95S+pELBN/yCKXJtY9iZlNBKDcD/oy
+         1Le5akT/NBoG5ST+h0X9HNOfAXFmTZQrPELZqcNTDnM7uFAvm9MUBNfCzS9fiASV9IKY
+         JJLKsNDBHL5vUuu7QsHKlaRxXTgMJkdEX4FO65c1bTxaSn12IuZ4wFCbKH0ZAJMDu10N
+         /X431d+3ml2GAn+X1I+M0VFkalyUJIjyaZ9t6Tu6+2eEvLs5s/zszBtp1WoNsOGqkeqx
+         pjbw==
+X-Gm-Message-State: AA+aEWZTiIIONx41SoB6xmd8LUhvqtLgtleFNSDTnoJvRc9Rf0k8feG2
+        gjW3JHxsOluxdzRUTr9cJS4SY4xQ3xWNhDbWFvMToA==
+X-Google-Smtp-Source: AFSGD/W6+ynfODc37xI9vcgTuvellk3c8ZT8971GsjSBs4bOHIgxG0DE/6FFquxKWEqJRvvw1P/q1r6UmT1MW48XEzI=
+X-Received: by 2002:a63:1321:: with SMTP id i33mr12913649pgl.380.1543829785182;
+ Mon, 03 Dec 2018 01:36:25 -0800 (PST)
 MIME-Version: 1.0
-From:   Stefan Malte Schumacher <s.schumacher@netcologne.de>
-Date:   Mon, 3 Dec 2018 10:31:15 +0100
-X-Gmail-Original-Message-ID: <CAA3ktqmXjF0AFjtL55798c7DyXmWewjXBtM_FNoktH1aAtRoNQ@mail.gmail.com>
-Message-ID: <CAA3ktqmXjF0AFjtL55798c7DyXmWewjXBtM_FNoktH1aAtRoNQ@mail.gmail.com>
-Subject: Filesystem Corruption
-To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <ABEF1951-66FC-48F8-A7C4-0D499F48AF84@gmail.com>
+In-Reply-To: <ABEF1951-66FC-48F8-A7C4-0D499F48AF84@gmail.com>
+From:   Tony Lambiris <tony@libpcap.net>
+Date:   Mon, 3 Dec 2018 04:36:14 -0500
+Message-ID: <CAFv=4tESCPF6vo64apw5G=5_EHFxPt1Q2F_tci7JXvD1-_8RvQ@mail.gmail.com>
+Subject: Re: Possible deadlock when writing
+To:     CANznX5GqHJwx+y6b9kruzYXEP93oEhRtHyG_yuWwHV286+fQdw@mail.gmail.com
+Cc:     toth.f.janos@gmail.com, llowrey@nuclearwinter.com,
+        linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
+I've been running into (what I believe) is the same issue ever since
+upgrading to 4.19:
 
-I have noticed an unusual amount of crc-errors in downloaded rars,
-beginning about a week ago. But lets start with the preliminaries. I
-am using Debian Stretch.
-Kernel: Linux mars 4.9.0-8-amd64 #1 SMP Debian 4.9.110-3+deb9u4
-(2018-08-21) x86_64 GNU/Linux
-BTRFS-Tools btrfs-progs  4.7.3-1
-Smartctl shows no errors for any of the drives in the filesystem.
+[28950.083040] BTRFS error (device dm-0): bad tree block start, want
+1815648960512 have 0
+[28950.083047] BTRFS: error (device dm-0) in __btrfs_free_extent:6804:
+errno=3D-5 IO failure
+[28950.083048] BTRFS info (device dm-0): forced readonly
+[28950.083050] BTRFS: error (device dm-0) in
+btrfs_run_delayed_refs:2935: errno=3D-5 IO failure
+[28950.083866] BTRFS error (device dm-0): pending csums is 9564160
+[29040.413973] TaskSchedulerFo[17189]: segfault at 0 ip
+000056121a2cb73b sp 00007f1cca425b80 error 4 in
+chrome[561218101000+6513000]
 
-Btrfs /dev/stats shows zero errors, but dmesg gives me a lot of
-filesystem related error messages.
+This has been happening consistently to me on two laptops and a
+workstation all running Arch Linux -- all different hardware the only
+thing in common is they have SSDs/nvme storage and they all use btrfs.
 
-[5390748.884929] Buffer I/O error on dev dm-0, logical block
-976701312, async page read
-This errors is shown a lot of time in the log.
+I initially thought it had something to do with the fstrim.timer unit
+kicking off an fstrim run that was somehow causing contention with
+btrfs. As luck would have it my btrfs file-system on one laptop just
+remounted read-only and I believe that while my physical memory was
+not entirely used up (I would guess usage to be ~45% physical). While
+I believe the rest of available memory was being utilized by the VFS
+buffer cache, I'm not 100% on actual utilization but after reading the
+email from mbakiev@ I did make a mental note before initiating a
+required reboot.
 
-This seems to affect just newly written files. This is the output of
-btrfs scrub status:
-scrub status for 1609e4e1-4037-4d31-bf12-f84a691db5d8
-        scrub started at Tue Nov 27 06:02:04 2018 and finished after 07:34:16
-        total bytes scrubbed: 17.29TiB with 0 errors
+I came across this comment from Ubuntu's bugtracker:
+https://bugs.launchpad.net/ubuntu/+source/linux/+bug/159356/comments/62
 
-What is the probable cause of these errors? How can I fix this?
+The author of post #62 notes that this particular behavior happens
+when they are running several instances of Chrome. I don't know if
+this bug filed or issue is related at all, but an interesting note is
+that I also almost always happen to be interacting with Google Chrome
+when the read-only remount happens.
 
-Thanks in advance for your advice
-Stefan
+Here is the last entry from journald before I rebooted:
+Dec 03 00:00:39 tenforward kernel: BTRFS error (device dm-3): bad tree
+block start, want 761659392 have 15159222128734632161
+
+Here are the only changes I made that would be relevant:
+vm.swappiness =3D 10
+vm.overcommit_memory =3D 1
+vm.oom_kill_allocating_task =3D 1
+vm.panic_on_oom =3D 1
+
+Hope I didn't miss anything, thanks!
+
+On Sat, Dec 1, 2018 at 6:21 PM Martin Bakiev <mbakiev@gmail.com> wrote:
+>
+> I was having the same issue with kernels 4.19.2 and 4.19.4. I don=E2=80=
+=99t appear to have the issue with 4.20.0-0.rc1 on Fedora Server 29.
+>
+> The issue is very easy to reproduce on my setup, not sure how much of it =
+is actually relevant, but here it is:
+>
+> - 3 drive RAID5 created
+> - Some data moved to it
+> - Expanded to 7 drives
+> - No balancing
+>
+> The issue is easily reproduced (within 30 mins) by starting multiple tran=
+sfers to the volume (several TB in the form of many 30GB+ files). Multiple =
+concurrent =E2=80=98rsync=E2=80=99 transfers seems to take a bit longer to =
+trigger the issue, but multiple =E2=80=98cp=E2=80=99 commands will do it mu=
+ch quicker (again not sure if relevant).
+>
+> I have not seen the issue occur with a single =E2=80=98rsync=E2=80=99 or =
+=E2=80=98cp=E2=80=99 transfer, but I haven=E2=80=99t left one running alone=
+ for too long (copying the data from multiple drives, so there is a lot to =
+be gained from parallelizing the transfers).
+>
+> I=E2=80=99m not sure what state the FS is left in after Magic SysRq reboo=
+t after it deadlocks, but seemingly it=E2=80=99s fine. No problems mounting=
+ and =E2=80=98btrfs check=E2=80=99 passes OK. I=E2=80=99m sure some of the =
+data doesn=E2=80=99t get flushed, but it=E2=80=99s no problem for my use ca=
+se.
+>
+> I=E2=80=99ve been running nonstop concurrent transfers with kernel 4.20.0=
+-0.rc1 for 24hr nonstop and I haven=E2=80=99t experienced the issue.
+>
+> Hope this helps.

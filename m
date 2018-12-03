@@ -7,60 +7,60 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C492FC04EBF
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 15:25:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5BD27C04EBF
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 15:25:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8B13D20834
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 15:25:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 22AC820834
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 15:25:11 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="DgBpl8Ub"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8B13D20834
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="df6/LLql"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 22AC820834
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726634AbeLCPZJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 3 Dec 2018 10:25:09 -0500
-Received: from mail-yb1-f193.google.com ([209.85.219.193]:43332 "EHLO
-        mail-yb1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726549AbeLCPZJ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Dec 2018 10:25:09 -0500
-Received: by mail-yb1-f193.google.com with SMTP id x144so1262239ybg.10
-        for <linux-btrfs@vger.kernel.org>; Mon, 03 Dec 2018 07:25:07 -0800 (PST)
+        id S1726638AbeLCPZL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 3 Dec 2018 10:25:11 -0500
+Received: from mail-yb1-f196.google.com ([209.85.219.196]:36223 "EHLO
+        mail-yb1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726549AbeLCPZL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Dec 2018 10:25:11 -0500
+Received: by mail-yb1-f196.google.com with SMTP id w203so1586222ybg.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 03 Dec 2018 07:25:09 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references;
-        bh=nl6MLo/NHjX/vVb0yXW5grQ7bMmst7d2p+95T9TiGdo=;
-        b=DgBpl8UbQoBHUM9FcGnPacNGamLAY0XoDNnQnc4aVPPJ3lMKcun+l4LU3uw3oeqKzq
-         HOsyRLnMIvzErs74tDSo3IgMQYBcYEL7CUodoPDCQpa8tRkZcOuBxKS9NCq+RlPzck1c
-         OadgvET4OOtmbmV5BqFEudRxbJe6moh66ZcLQzwe8+uy0+pvnHfczmoiUi747kDL+3Uj
-         bQZpV93ZgFSoeXdGf1FCkX85ntfdYalSJriCjBApaDg7JUtJQX4DdRaTud42tuQf3TNo
-         f79ortJpw1fGDgZsYhhEzgzkGnaARLDHSlSFUN8PmsG8WRpiSNPsfcyTq5xaR91HhpIU
-         b6PA==
+        bh=iwTvMK0gGUVyoCFdtpRx1Deu3QpUxgWMXXQOJa7rTfc=;
+        b=df6/LLqlRqmZrEbseIBgfVFgwLLvVFigTNWVI09G541xHSrrfByBgRB6fGAAUBF+v7
+         b3sxhrC1bHSMwb4uzM/gVVxXpZ7cWkGYyVXECSlOmXSWBcqXpsP/q+yQ6QIra8fNM+TP
+         /aceNtKfPvhepQm1tldHrWNuP4WZAoeNg2HPvuZiHCLzqIrRDFlx9QWB8mE50Yy9fFsF
+         g12WWOakI1kaUvEqESxtM+pJpxG7+2N9cd1b6nuRReTPGBdXMkKnR9kGrFbqC+FE8m1A
+         JpJtIf+RwpWbwr/lKYuOLz332fhfR8NFqyqzby74i3X2qVzhkHL+Hn2OvN3vPXoRKYDO
+         9tVg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references;
-        bh=nl6MLo/NHjX/vVb0yXW5grQ7bMmst7d2p+95T9TiGdo=;
-        b=Sz/dCRFT07kwPppaY7Lk8mH/HlBsLdW+e04XWLQocYDbKIPr4QxMpbgBFOiEIuZH4m
-         gJM+RNKqY0lW2mRFW0k248ps8NhiHoA8bFoKszVOof9b37/7BqpkAiCF2yUvK93XIi0T
-         S8wzfo1+7ZIeIdjNQrNK1EdbpCu9H8w6xBiRu9NdD8a9n7M3H8BdyW5JIjXeOZDm35xi
-         9UaM31Kz6q9K8EjK6RSNs/JGBVOm9ZBUX+TRVjWg9k+Y1ZRMjZ/BCAxjJYtG1mtoQTrR
-         1yukpaG7xd5VrioERbxBU7i/NU1Ak17GYG7M3YE7cIhlMWda6Gj7Dhqs/YKFvmjOSQ8c
-         JKKQ==
-X-Gm-Message-State: AA+aEWYJTpyQQyTTtjIN11tiGG1rpnpjQVNcTk3ppB7h5A98Bkk9W6jH
-        qpzXiOyHZQZaPzM3qHb2Ufl8HguFc1s=
-X-Google-Smtp-Source: AFSGD/UCMfzqk0rxKo6fpERW9ixWqZJec0l8kD19zWCH3Hxe+pFBgMw1b5ch6YE8+7hKGoXE+sOOhg==
-X-Received: by 2002:a25:ac9d:: with SMTP id x29mr2028052ybi.85.1543850706776;
-        Mon, 03 Dec 2018 07:25:06 -0800 (PST)
+        bh=iwTvMK0gGUVyoCFdtpRx1Deu3QpUxgWMXXQOJa7rTfc=;
+        b=k/pJX2hCM0XChZmwq2HNhPvVhqkXd+KNacYNIozv7W+w7Zqalo0zJdjz3sUJSbQI3A
+         /si0wF0KCeIhduvRT+u8aP6HISHEu7ePYb95txt5kcsfpOkYWWtygoCxd9u7RoyV+gTh
+         sN9T4RAYfa2W5zL9OD/aqAoHaJjqDIx2ywH2vUsCwJjpkqpba/cwX0C4QInNAuX9ZZxm
+         cnU1xOyUFvUEKk0pHDZo8Cmh4rajRg3A/fJT4EgrDV/Quqt7rQMdIDKQUNP/YWpOQyce
+         JJmbgbtWo8vPLgb1vkZewglRNfLNDC0PmaHHh92WeVg3DVXARafoLWyQnjRLe3iSGRA9
+         2pWA==
+X-Gm-Message-State: AA+aEWYJ+dInAei3ybgBlfVie5SIgiB/T+rKg1zYLTDcgrGb3/3camwH
+        TnVOHNuU2wRE0qJ9LKrPeh47+B0F2qI=
+X-Google-Smtp-Source: AFSGD/Xmlkzyye6reICm+zF93dSwEiXNyJxeJhGwkDCagiRQZjdh1N9wzeBZOf48Y2aBPBHIskT3SQ==
+X-Received: by 2002:a25:3005:: with SMTP id w5-v6mr15679085ybw.365.1543850708415;
+        Mon, 03 Dec 2018 07:25:08 -0800 (PST)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id i2sm5436191ywc.59.2018.12.03.07.25.05
+        by smtp.gmail.com with ESMTPSA id s185sm1335636yws.69.2018.12.03.07.25.07
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Mon, 03 Dec 2018 07:25:06 -0800 (PST)
+        Mon, 03 Dec 2018 07:25:07 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 3/8] btrfs: don't use global rsv for chunk allocation
-Date:   Mon,  3 Dec 2018 10:24:54 -0500
-Message-Id: <20181203152459.21630-4-josef@toxicpanda.com>
+Subject: [PATCH 4/8] btrfs: add ALLOC_CHUNK_FORCE to the flushing code
+Date:   Mon,  3 Dec 2018 10:24:55 -0500
+Message-Id: <20181203152459.21630-5-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.14.3
 In-Reply-To: <20181203152459.21630-1-josef@toxicpanda.com>
 References: <20181203152459.21630-1-josef@toxicpanda.com>
@@ -69,53 +69,94 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The should_alloc_chunk code has math in it to decide if we're getting
-short on space and if we should go ahead and pre-emptively allocate a
-new chunk.  Previously when we did not have the delayed_refs_rsv, we had
-to assume that the global block rsv was essentially used space and could
-be allocated completely at any time, so we counted this space as "used"
-when determining if we had enough slack space in our current space_info.
-But on any slightly used file system (10gib or more) you can have a
-global reserve of 512mib.  With our default chunk size being 1gib that
-means we just assume half of the block group is used, which could result
-in us allocating more metadata chunks than is actually required.
+With my change to no longer take into account the global reserve for
+metadata allocation chunks we have this side-effect for mixed block
+group fs'es where we are no longer allocating enough chunks for the
+data/metadata requirements.  To deal with this add a ALLOC_CHUNK_FORCE
+step to the flushing state machine.  This will only get used if we've
+already made a full loop through the flushing machinery and tried
+committing the transaction.  If we have then we can try and force a
+chunk allocation since we likely need it to make progress.  This
+resolves the issues I was seeing with the mixed bg tests in xfstests
+with my previous patch.
 
-With the delayed refs rsv we can flush delayed refs as the space becomes
-tight, and if we actually need more block groups then they will be
-allocated based on space pressure.  We no longer require assuming the
-global reserve is used space in our calculations.
-
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/extent-tree.c | 9 ---------
- 1 file changed, 9 deletions(-)
+ fs/btrfs/ctree.h             |  3 ++-
+ fs/btrfs/extent-tree.c       | 18 +++++++++++++++++-
+ include/trace/events/btrfs.h |  1 +
+ 3 files changed, 20 insertions(+), 2 deletions(-)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 30da075c042e..7cf6ad021d81 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2750,7 +2750,8 @@ enum btrfs_flush_state {
+ 	FLUSH_DELALLOC		=	5,
+ 	FLUSH_DELALLOC_WAIT	=	6,
+ 	ALLOC_CHUNK		=	7,
+-	COMMIT_TRANS		=	8,
++	ALLOC_CHUNK_FORCE	=	8,
++	COMMIT_TRANS		=	9,
+ };
+ 
+ int btrfs_alloc_data_chunk_ondemand(struct btrfs_inode *inode, u64 bytes);
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 204b35434056..667b992d322d 100644
+index 667b992d322d..2d0dd70570ca 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -4398,21 +4398,12 @@ static inline u64 calc_global_rsv_need_space(struct btrfs_block_rsv *global)
- static int should_alloc_chunk(struct btrfs_fs_info *fs_info,
- 			      struct btrfs_space_info *sinfo, int force)
- {
--	struct btrfs_block_rsv *global_rsv = &fs_info->global_block_rsv;
- 	u64 bytes_used = btrfs_space_info_used(sinfo, false);
- 	u64 thresh;
+@@ -4938,6 +4938,7 @@ static void flush_space(struct btrfs_fs_info *fs_info,
+ 		btrfs_end_transaction(trans);
+ 		break;
+ 	case ALLOC_CHUNK:
++	case ALLOC_CHUNK_FORCE:
+ 		trans = btrfs_join_transaction(root);
+ 		if (IS_ERR(trans)) {
+ 			ret = PTR_ERR(trans);
+@@ -4945,7 +4946,9 @@ static void flush_space(struct btrfs_fs_info *fs_info,
+ 		}
+ 		ret = do_chunk_alloc(trans,
+ 				     btrfs_metadata_alloc_profile(fs_info),
+-				     CHUNK_ALLOC_NO_FORCE);
++				     (state == ALLOC_CHUNK) ?
++				     CHUNK_ALLOC_NO_FORCE :
++				     CHUNK_ALLOC_FORCE);
+ 		btrfs_end_transaction(trans);
+ 		if (ret > 0 || ret == -ENOSPC)
+ 			ret = 0;
+@@ -5081,6 +5084,19 @@ static void btrfs_async_reclaim_metadata_space(struct work_struct *work)
+ 				commit_cycles--;
+ 		}
  
- 	if (force == CHUNK_ALLOC_FORCE)
- 		return 1;
++		/*
++		 * We don't want to force a chunk allocation until we've tried
++		 * pretty hard to reclaim space.  Think of the case where we
++		 * free'd up a bunch of space and so have a lot of pinned space
++		 * to reclaim.  We would rather use that than possibly create a
++		 * underutilized metadata chunk.  So if this is our first run
++		 * through the flushing state machine skip ALLOC_CHUNK_FORCE and
++		 * commit the transaction.  If nothing has changed the next go
++		 * around then we can force a chunk allocation.
++		 */
++		if (flush_state == ALLOC_CHUNK_FORCE && !commit_cycles)
++			flush_state++;
++
+ 		if (flush_state > COMMIT_TRANS) {
+ 			commit_cycles++;
+ 			if (commit_cycles > 2) {
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index 63d1f9d8b8c7..dd0e6f8d6b6e 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -1051,6 +1051,7 @@ TRACE_EVENT(btrfs_trigger_flush,
+ 		{ FLUSH_DELAYED_REFS_NR,	"FLUSH_DELAYED_REFS_NR"},	\
+ 		{ FLUSH_DELAYED_REFS,		"FLUSH_ELAYED_REFS"},		\
+ 		{ ALLOC_CHUNK,			"ALLOC_CHUNK"},			\
++		{ ALLOC_CHUNK_FORCE,		"ALLOC_CHUNK_FORCE"},		\
+ 		{ COMMIT_TRANS,			"COMMIT_TRANS"})
  
--	/*
--	 * We need to take into account the global rsv because for all intents
--	 * and purposes it's used space.  Don't worry about locking the
--	 * global_rsv, it doesn't change except when the transaction commits.
--	 */
--	if (sinfo->flags & BTRFS_BLOCK_GROUP_METADATA)
--		bytes_used += calc_global_rsv_need_space(global_rsv);
--
- 	/*
- 	 * in limited mode, we want to have some free space up to
- 	 * about 1% of the FS size.
+ TRACE_EVENT(btrfs_flush_space,
 -- 
 2.14.3
 

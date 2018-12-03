@@ -2,108 +2,72 @@ Return-Path: <SRS0=i+cT=OM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B2181C04EB9
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 16:47:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B862AC07E85
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 17:14:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 844B720672
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 16:47:33 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 844B720672
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 896AC20848
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 17:14:40 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 896AC20848
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726799AbeLCQrc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 3 Dec 2018 11:47:32 -0500
-Received: from mx2.suse.de ([195.135.220.15]:56302 "EHLO mx1.suse.de"
+        id S1726986AbeLCROl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 3 Dec 2018 12:14:41 -0500
+Received: from mx2.suse.de ([195.135.220.15]:33002 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726650AbeLCQrc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 3 Dec 2018 11:47:32 -0500
+        id S1726687AbeLCROh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 3 Dec 2018 12:14:37 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 7E38CAECF
-        for <linux-btrfs@vger.kernel.org>; Mon,  3 Dec 2018 16:47:30 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id AC8B3ADD4
+        for <linux-btrfs@vger.kernel.org>; Mon,  3 Dec 2018 17:14:34 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 4EEA6DAF63; Mon,  3 Dec 2018 17:47:12 +0100 (CET)
-From:   David Sterba <dsterba@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: Btrfs progs pre-release 4.19.1-rc1
-Date:   Mon,  3 Dec 2018 17:47:12 +0100
-Message-Id: <20181203164712.15877-1-dsterba@suse.com>
-X-Mailer: git-send-email 2.19.1
+        id 712C6DAF63; Mon,  3 Dec 2018 18:14:16 +0100 (CET)
+Date:   Mon, 3 Dec 2018 18:14:16 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     David Sterba <dsterba@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/4] Replace custom device-replace locking with rwsem
+Message-ID: <20181203171415.GA17773@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <cover.1542717531.git.dsterba@suse.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <cover.1542717531.git.dsterba@suse.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+On Tue, Nov 20, 2018 at 01:50:54PM +0100, David Sterba wrote:
+> The first cleanup part went to 4.19, the actual switch from the custom
+> locking to rswem was postponed as I found performance degradation. This
+> turned out to be related to VM cache settings, so I'm resending the
+> series again.
+> 
+> The custom locking is based on rwlock protected reader/writer counters,
+> waitqueues, which essentially is what the readwrite semaphore does.
+> 
+> Previous patchset:
+> https://lore.kernel.org/linux-btrfs/cover.1536331604.git.dsterba@suse.com/
+> 
+> Patches correspond to 8/11-11/11 and there's no change besides
+> refreshing on top of current misc-next.
+> 
+> David Sterba (4):
+>   btrfs: reada: reorder dev-replace locks before radix tree preload
+>   btrfs: dev-replace: swich locking to rw semaphore
+>   btrfs: dev-replace: remove custom read/write blocking scheme
+>   btrfs: dev-replace: open code trivial locking helpers
 
-this is a pre-release of btrfs-progs, 4.19.1-rc1. There are build fixes, minor
-update to libbtrfsutil and documentation updates.
-
-The 4.19.1 release is scheduled to this Wednesday, +2 days (2018-12-05).
-
-Changelog:
-  * build fixes
-    * big-endian builds fail due to bswap helpers clash
-    * 'swap' macro is too generic, renamed to prevent build failures
-  * libbtrfs
-    * monor version update to 1.1.0
-    * fix default search to top=0 as documented
-    * rename 'async' to avoid future python binding problems
-    * add support for unprivileged subvolume listing ioctls
-    * added tests, API docs
-  * other
-    * lot of typos fixed
-    * warning cleanups
-    * doc formatting updates
-    * CI tests against zstd 1.3.7
-
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
-
-Shortlog:
-
-David Sterba (7):
-      btrfs-progs: kerncompat: rename swap to __swap
-      btrfs-progs: README: add link to INSTALL
-      btrfs-progs: docs: fix rendering of exponents in manual pages
-      btrfs-progs: link to libbtrfsutil/README from the main README
-      btrfs-progs: tests: pull zstd version 1.3.7 to the travis CI
-      btrfs-progs: update CHANGES for v4.19.1
-      Btrfs progs v4.19.1-rc1
-
-Josh Soref (11):
-      btrfs-progs: docs: fix typos in Documentation
-      btrfs-progs: docs: fix typos in READMEs, INSTALL and CHANGES
-      btrfs-progs: fix typos in Makefile
-      btrfs-progs: tests: fix typos in test comments
-      btrfs-progs: tests: fsck/025, fix typo in helpre name
-      btrfs-progs: fix typos in comments
-      btrfs-progs: fix typos in user-visible strings
-      btrfs-progs: check: fix typo in device_extent_record::chunk_objectid
-      btrfs-progs: utils: fix typo in a variable
-      btrfs-progs: mkfs: fix typo in "multipler" variables
-      btrfs-progs: fix typo in btrfs-list function export
-
-Omar Sandoval (10):
-      libbtrfsutil: use top=0 as default for SubvolumeIterator()
-      libbtrfsutil: change async parameters to async_ in Python bindings
-      libbtrfsutil: document qgroup_inherit parameter in Python bindings
-      libbtrfsutil: use SubvolumeIterator as context manager in tests
-      libbtrfsutil: add test helpers for dropping privileges
-      libbtrfsutil: allow tests to create multiple Btrfs instances
-      libbtrfsutil: relax the privileges of subvolume_info()
-      libbtrfsutil: relax the privileges of subvolume iterator
-      libbtrfsutil: bump version to 1.1.0
-      libbtrfsutil: document API in README
-
-Rosen Penev (3):
-      btrfs-progs: kernel-lib: bitops: Fix big endian compilation
-      btrfs-progs: task-utils: Fix comparison between pointer and integer
-      btrfs-progs: treewide: Fix missing declarations
-
+This has been sitting in for-next for some time, no problems reported.
+If anybody wants to add a review tag, please let me know. I'm going to
+add the patchset to misc-next soon.

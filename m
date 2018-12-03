@@ -2,240 +2,120 @@ Return-Path: <SRS0=i+cT=OM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A3984C04EB9
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 10:25:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 783F1C04EB9
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 10:59:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6B252214D9
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 10:25:39 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6B252214D9
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 4773F20848
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 10:59:41 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4773F20848
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726157AbeLCK0D (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 3 Dec 2018 05:26:03 -0500
-Received: from mx2.suse.de ([195.135.220.15]:43420 "EHLO mx1.suse.de"
+        id S1726274AbeLCLAM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 3 Dec 2018 06:00:12 -0500
+Received: from mx2.suse.de ([195.135.220.15]:50400 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726045AbeLCK0D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 3 Dec 2018 05:26:03 -0500
+        id S1726174AbeLCLAM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 3 Dec 2018 06:00:12 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id E03F2AC17
-        for <linux-btrfs@vger.kernel.org>; Mon,  3 Dec 2018 10:25:34 +0000 (UTC)
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [RFC PATCH] btrfs: Remove __extent_readpages
-Date:   Mon,  3 Dec 2018 12:25:32 +0200
-Message-Id: <20181203102532.13945-1-nborisov@suse.com>
-X-Mailer: git-send-email 2.17.1
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id C4F56AE6B
+        for <linux-btrfs@vger.kernel.org>; Mon,  3 Dec 2018 10:59:37 +0000 (UTC)
+Subject: Re: [PATCH v2 2/3] btrfs: use offset_in_page for start_offset in
+ map_private_extent_buffer()
+To:     dsterba@suse.cz, David Sterba <dsterba@suse.com>,
+        Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
+References: <20181128085456.5702-1-jthumshirn@suse.de>
+ <20181128085456.5702-3-jthumshirn@suse.de>
+ <20181128154150.GQ2842@twin.jikos.cz>
+From:   Johannes Thumshirn <jthumshirn@suse.de>
+Openpgp: preference=signencrypt
+Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <2601dad8-0a67-735d-c21e-0b950b10d28f@suse.de>
+Date:   Mon, 3 Dec 2018 11:59:37 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
+MIME-Version: 1.0
+In-Reply-To: <20181128154150.GQ2842@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-When extent_readpages is called from the generic readahead code it first
-builds a batch of 16 pages (which might or might not be consecutive,
-depending on whether add_to_page_cache_lru failed) and submits them to
-__extent_readpages. The latter ensures that the range of pages (in the
-batch of 16) that is passed to __do_contiguous_readpages is consecutive.
+On 28/11/2018 16:41, David Sterba wrote:
+> On Wed, Nov 28, 2018 at 09:54:55AM +0100, Johannes Thumshirn wrote:
+>> In map_private_extent_buffer() use offset_in_page() to initialize
+>> 'start_offset' instead of open-coding it.
+> 
+> Can you please fix all instances where it's opencoded? Grepping for
+> 'PAGE_SIZE - 1' finds a number of them. Thanks.
 
-If add_to_page_cache_lru does't fail then __extent_readpages will call
-__do_contiguous_readpages only once with the whole batch of 16.
-Alternatively, if add_to_page_cache_lru fails once on the 8th page (as an example)
-then the contigous page read code will be called twice.
+Sure will do.
 
-All of this can be simplified by exploiting the fact that all pages passed
-to extent_readpages are consecutive, thus when the batch is built in
-that function it is already consecutive (barring add_to_page_cache_lru
-failures) so are ready to be submitted directly to __do_contiguous_readpages.
-Also simplify the name of the function to contiguous_readpages. 
-
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
-
-So this patch looks like a very nice cleanup, however when doing performance 
-measurements with fio I was shocked to see that it actually is detrimental to 
-performance. Here are the results: 
-
-The command line used for fio: 
-fio --name=/media/scratch/seqread --rw=read --direct=0 --ioengine=sync --bs=4k
- --numjobs=1 --size=1G --runtime=600  --group_reporting --loop 10
-
-This was tested on a vm with 4g of ram so the size of the test is smaller than 
-the memory, so pages should have been nicely readahead. 
-
-PATCHED: 
-
-Starting 1 process
-Jobs: 1 (f=1): [R(1)][100.0%][r=519MiB/s][r=133k IOPS][eta 00m:00s] 
-/media/scratch/seqread: (groupid=0, jobs=1): err= 0: pid=3722: Mon Dec  3 09:57:17 2018
-  read: IOPS=78.4k, BW=306MiB/s (321MB/s)(10.0GiB/33444msec)
-    clat (nsec): min=1703, max=9042.7k, avg=5463.97, stdev=121068.28
-     lat (usec): min=2, max=9043, avg= 6.00, stdev=121.07
-    clat percentiles (nsec):
-     |  1.00th=[   1848],  5.00th=[   1896], 10.00th=[   1912],
-     | 20.00th=[   1960], 30.00th=[   2024], 40.00th=[   2160],
-     | 50.00th=[   2384], 60.00th=[   2576], 70.00th=[   2800],
-     | 80.00th=[   3120], 90.00th=[   3824], 95.00th=[   4768],
-     | 99.00th=[   7968], 99.50th=[  14912], 99.90th=[  50944],
-     | 99.95th=[ 667648], 99.99th=[5931008]
-   bw (  KiB/s): min= 2768, max=544542, per=100.00%, avg=409912.68, stdev=162333.72, samples=50
-   iops        : min=  692, max=136135, avg=102478.08, stdev=40583.47, samples=50
-  lat (usec)   : 2=25.93%, 4=65.58%, 10=7.69%, 20=0.57%, 50=0.13%
-  lat (usec)   : 100=0.04%, 250=0.01%, 500=0.01%, 750=0.01%, 1000=0.01%
-  lat (msec)   : 2=0.01%, 4=0.01%, 10=0.05%
-  cpu          : usr=7.20%, sys=92.55%, ctx=396, majf=0, minf=9
-  IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
-     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
-     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
-     issued rwts: total=2621440,0,0,0 short=0,0,0,0 dropped=0,0,0,0
-     latency   : target=0, window=0, percentile=100.00%, depth=1
-
-Run status group 0 (all jobs):
-   READ: bw=306MiB/s (321MB/s), 306MiB/s-306MiB/s (321MB/s-321MB/s), io=10.0GiB (10.7GB), run=33444-33444msec
-
-
-UNPATCHED:
-
-Starting 1 process
-Jobs: 1 (f=1): [R(1)][100.0%][r=568MiB/s][r=145k IOPS][eta 00m:00s] 
-/media/scratch/seqread: (groupid=0, jobs=1): err= 0: pid=640: Mon Dec  3 10:07:38 2018
-  read: IOPS=90.4k, BW=353MiB/s (370MB/s)(10.0GiB/29008msec)
-    clat (nsec): min=1418, max=12374k, avg=4816.38, stdev=109448.00
-     lat (nsec): min=1836, max=12374k, avg=5284.46, stdev=109451.36
-    clat percentiles (nsec):
-     |  1.00th=[   1576],  5.00th=[   1608], 10.00th=[   1640],
-     | 20.00th=[   1672], 30.00th=[   1720], 40.00th=[   1832],
-     | 50.00th=[   2096], 60.00th=[   2288], 70.00th=[   2480],
-     | 80.00th=[   2736], 90.00th=[   3248], 95.00th=[   3952],
-     | 99.00th=[   6368], 99.50th=[  12736], 99.90th=[  43776],
-     | 99.95th=[ 798720], 99.99th=[5341184]
-   bw (  KiB/s): min=34144, max=606208, per=100.00%, avg=465737.56, stdev=177637.57, samples=45
-   iops        : min= 8536, max=151552, avg=116434.33, stdev=44409.46, samples=45
-  lat (usec)   : 2=45.74%, 4=49.50%, 10=4.13%, 20=0.45%, 50=0.08%
-  lat (usec)   : 100=0.03%, 250=0.01%, 500=0.01%, 750=0.01%, 1000=0.01%
-  lat (msec)   : 2=0.01%, 4=0.01%, 10=0.05%, 20=0.01%
-  cpu          : usr=7.14%, sys=92.39%, ctx=1059, majf=0, minf=9
-  IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
-     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
-     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
-     issued rwts: total=2621440,0,0,0 short=0,0,0,0 dropped=0,0,0,0
-     latency   : target=0, window=0, percentile=100.00%, depth=1
-
-Run status group 0 (all jobs):
-   READ: bw=353MiB/s (370MB/s), 353MiB/s-353MiB/s (370MB/s-370MB/s), io=10.0GiB (10.7GB), run=29008-29008msec
-
-Clearly both bandwidth and iops are worse. However I'm puzzled as to why this is 
-the case, given that I don't see how this patch affects the submission of 
-readahead io. 
-
- fs/btrfs/extent_io.c | 63 +++++++++++++-------------------------------
- 1 file changed, 19 insertions(+), 44 deletions(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 233f835dd6f8..c097eec1b73d 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3059,7 +3059,7 @@ static int __do_readpage(struct extent_io_tree *tree,
- 	return ret;
- }
- 
--static inline void __do_contiguous_readpages(struct extent_io_tree *tree,
-+static inline void contiguous_readpages(struct extent_io_tree *tree,
- 					     struct page *pages[], int nr_pages,
- 					     u64 start, u64 end,
- 					     struct extent_map **em_cached,
-@@ -3090,46 +3090,6 @@ static inline void __do_contiguous_readpages(struct extent_io_tree *tree,
- 	}
- }
- 
--static void __extent_readpages(struct extent_io_tree *tree,
--			       struct page *pages[],
--			       int nr_pages,
--			       struct extent_map **em_cached,
--			       struct bio **bio, unsigned long *bio_flags,
--			       u64 *prev_em_start)
--{
--	u64 start = 0;
--	u64 end = 0;
--	u64 page_start;
--	int index;
--	int first_index = 0;
--
--	for (index = 0; index < nr_pages; index++) {
--		page_start = page_offset(pages[index]);
--		if (!end) {
--			start = page_start;
--			end = start + PAGE_SIZE - 1;
--			first_index = index;
--		} else if (end + 1 == page_start) {
--			end += PAGE_SIZE;
--		} else {
--			__do_contiguous_readpages(tree, &pages[first_index],
--						  index - first_index, start,
--						  end, em_cached,
--						  bio, bio_flags,
--						  prev_em_start);
--			start = page_start;
--			end = start + PAGE_SIZE - 1;
--			first_index = index;
--		}
--	}
--
--	if (end)
--		__do_contiguous_readpages(tree, &pages[first_index],
--					  index - first_index, start,
--					  end, em_cached, bio,
--					  bio_flags, prev_em_start);
--}
--
- static int __extent_read_full_page(struct extent_io_tree *tree,
- 				   struct page *page,
- 				   get_extent_t *get_extent,
-@@ -4104,6 +4064,13 @@ int extent_readpages(struct address_space *mapping, struct list_head *pages,
- 	u64 prev_em_start = (u64)-1;
- 
- 	while (!list_empty(pages)) {
-+		u64 contig_end = 0;
-+
-+		/*
-+		 * Produces a batch of up to 16 contiguous pages, assumes
-+		 * that pages are consecutive in pages list (guaranteed by the
-+		 * generic code)
-+		 **/
- 		for (nr = 0; nr < BTRFS_PAGES_BATCH && !list_empty(pages);) {
- 			struct page *page = lru_to_page(pages);
- 
-@@ -4112,14 +4079,22 @@ int extent_readpages(struct address_space *mapping, struct list_head *pages,
- 			if (add_to_page_cache_lru(page, mapping, page->index,
- 						readahead_gfp_mask(mapping))) {
- 				put_page(page);
--				continue;
-+				break;
- 			}
- 
- 			pagepool[nr++] = page;
-+			contig_end = page_offset(page) + PAGE_SIZE - 1;
- 		}
- 
--		__extent_readpages(tree, pagepool, nr, &em_cached, &bio,
--				   &bio_flags, &prev_em_start);
-+		if (nr) {
-+			u64 contig_start = page_offset(pagepool[0]);
-+
-+			ASSERT(contig_start + (nr*PAGE_SIZE) - 1 == contig_end);
-+
-+			contiguous_readpages(tree, pagepool, nr, contig_start,
-+				     contig_end, &em_cached, &bio, &bio_flags,
-+				     &prev_em_start);
-+		}
- 	}
- 
- 	if (em_cached)
 -- 
-2.17.1
-
+Johannes Thumshirn                            SUSE Labs Filesystems
+jthumshirn@suse.de                                +49 911 74053 689
+SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
+GF: Felix Imendörffer, Jane Smithard, Graham Norton
+HRB 21284 (AG Nürnberg)
+Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850

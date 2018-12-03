@@ -2,213 +2,97 @@ Return-Path: <SRS0=i+cT=OM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.9 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 197BAC04EB9
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 05:59:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D0E52C65BAE
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 09:33:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C7CA220851
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 05:58:59 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C7CA220851
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
+	by mail.kernel.org (Postfix) with ESMTP id 5520B214C1
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 09:33:20 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=netcologne.de header.i=@netcologne.de header.b="SFsLdGwr"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5520B214C1
+Authentication-Results: mail.kernel.org; dmarc=fail (p=quarantine dis=none) header.from=netcologne.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725823AbeLCF7C (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 3 Dec 2018 00:59:02 -0500
-Received: from mout.gmx.net ([212.227.17.22]:33961 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725818AbeLCF7B (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 3 Dec 2018 00:59:01 -0500
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx103
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0MQih7-1gvRQA2UCT-00U6nz; Mon, 03
- Dec 2018 06:58:48 +0100
-Subject: Re: Need help with potential ~45TB dataloss
-To:     Andrei Borzenkov <arvidjaar@gmail.com>,
-        Patrick Dijkgraaf <bolderbast@duckstad.net>,
-        linux-btrfs@vger.kernel.org
-References: <8bc37755da04dffae1a34cea2a06bcffdf2c75d7.camel@duckstad.net>
- <6ce9cd01-960f-af3d-0273-0b9abfa1d4f8@gmx.com>
- <c723ab8e8e99e54c6f93dc70f897725525f0db29.camel@duckstad.net>
- <c24627dec9738552e1635617aace7720f395ba39.camel@duckstad.net>
- <2b235519-5c8d-9e86-b4f3-28cd7f778c4f@gmail.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <7dac5577-2231-dcba-39fd-c229e4ed5e02@gmx.com>
-Date:   Mon, 3 Dec 2018 13:58:44 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.3.1
+        id S1726191AbeLCJdd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 3 Dec 2018 04:33:33 -0500
+Received: from cc-smtpout2.netcologne.de ([89.1.8.212]:43344 "EHLO
+        cc-smtpout2.netcologne.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725894AbeLCJbr (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Dec 2018 04:31:47 -0500
+Received: from cc-smtpin3.netcologne.de (cc-smtpin3.netcologne.de [89.1.8.203])
+        by cc-smtpout2.netcologne.de (Postfix) with ESMTP id 703EA126F8
+        for <linux-btrfs@vger.kernel.org>; Mon,  3 Dec 2018 10:31:30 +0100 (CET)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=netcologne.de;
+        s=nc1116a; t=1543829490;
+        bh=9xx4wxLDSIGqLAYhOj7r5Yq1XUZ/6P1tLoaOdmVaD2M=;
+        h=From:Date:Message-ID:Subject:To:From;
+        b=SFsLdGwrA59hL6Ywwgr68I/PFdW4miGvuUmRrOpgKhZRyX7syPrNwnx04UPStRg1e
+         4ScQaAh4qkHEThTtSuAY/aiOCcH6xc0vZ2C0QdhMck4lMdSYJaxZeZWCrVHhtoJnfD
+         9bVd7MATt7W8gGITYMSgy5uZnDVvuArzcTle3MQ8aKq9V04CzXVEb7FUAyztedAb0h
+         eGuJ6fW5+84x5Qep6W/hep+wsus8/IuWgYhuAXy8QYm/CZqLYwa+UOCfILs6iIJ+q4
+         /o0Ww341+syUXEm4AWi8PqgOQZWBtva1iDDSD8gNBQ853JGBwa3UUfw/IKGLPfkgu3
+         1TzKg074tVXMw==
+Received: from localhost (localhost [127.0.0.1])
+        by cc-smtpin3.netcologne.de (Postfix) with ESMTP id 6AFD111ECA
+        for <linux-btrfs@vger.kernel.org>; Mon,  3 Dec 2018 10:31:30 +0100 (CET)
+Received: from [209.85.221.175] (helo=cc-smtpin3.netcologne.de)
+        by localhost with ESMTP (eXpurgate 4.6.0)
+        (envelope-from <s.schumacher@netcologne.de>)
+        id 5c04f7f2-0bea-7f0000012729-7f000001e144-1
+        for <linux-btrfs@vger.kernel.org>; Mon, 03 Dec 2018 10:31:30 +0100
+Received: from mail-vk1-f175.google.com (mail-vk1-f175.google.com [209.85.221.175])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by cc-smtpin3.netcologne.de (Postfix) with ESMTPSA
+        for <linux-btrfs@vger.kernel.org>; Mon,  3 Dec 2018 10:31:30 +0100 (CET)
+Received: by mail-vk1-f175.google.com with SMTP id b18so2728814vke.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 03 Dec 2018 01:31:30 -0800 (PST)
+X-Gm-Message-State: AA+aEWYHK7d64Yloo92JCM2Ilf5xVH9NRhwOfCS781R7XpiDvNxmD6+g
+        9JfoicNhxHDXl2rhUPLOw5mAo91GpsilYYV4aDo=
+X-Google-Smtp-Source: AFSGD/VfoFIrHRL7d3vtEicuKgHLJlDfQdrsL5Ay9w+Ma82DPjUor4R2ygCpCFqHysAgzHCL77Jnu05Gvl5q+v8eW9g=
+X-Received: by 2002:a1f:bfc6:: with SMTP id p189mr6557898vkf.83.1543829489151;
+ Mon, 03 Dec 2018 01:31:29 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <2b235519-5c8d-9e86-b4f3-28cd7f778c4f@gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="mB2SR6cLb5zPRoJE1XK4SrCZmSLB9J48k"
-X-Provags-ID: V03:K1:HMXXM3OgJR6pX62yS7Qy9coR96NRr+IGCNT7a5MFUeEQpw+os00
- NXwpJH8UQWeBvmzI9Vn4JbPGt0JdEFkb3F+yOykphFKMNhlNMldWPYS+k5g8TwD2NllaI1G
- JY5wCCpNW+Ao8F6HaDkyrNOMDOdeQ/6l3mbZudXKqGMD0mbkEhC87fJ9ulxzdK3dS1Pl/PV
- +NaxyajahzgPajzyrq/DQ==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:apvR87KauK4=:ZTpe9aYFcwpkRQDRPlnu9f
- O/zvMOZAxtEn8+nJP2Od4fZRxAB0dSJGosMz1wqXhDa+oOpKQa6ly8VqUFjSWb5kqd9a+nb/x
- fQcMHfF692szCZHn+BgGH2Znk1mYy4paXole1Eiw3oQWHsQSv713ynMfcTmFOOGSVXWDpcNvP
- vjfKnrHGS5Bk1vr2W6ys6KEVPEKpuw37BskQrI/vjTaZjDc3weYx4/SLdSIAz/M7HweAFk54W
- XyPaW0vT/5MV3sImxGHIJB8BcA3xhdX4epqTSxZD87xhK2whty/z9wpLIT/r3/wniad8RQq4d
- R5xCYmCnsS6KyE8u/LnpbDbv3XGGYQ4UHtdHvTfP+ewKI5EsaUU/jogPV1Hc21KeMHcjiJNfI
- jWA0uVHLDHLDwaWAgDfjFXO8OS0XG0xvcBpPwg5DWUGyjesUseBlzu7B5wA7T9/IwZIqz7aBQ
- O1j7tb6eAoYOLjUBCJN9vgfD3eA9SE3LdYMW7VinlEqa3QjMAy99Q+f/X6tRtNci23f5+euAI
- TYreB4mE8lTJ3IFyn/h33wiB2p/NTMfrZN2VX+CvnJflAVSl1iCvpKPjqZORmx8V92S2pEmF9
- U7EwU95ehASSQoSHbsc7Ln+lp72ehZIh4xyRR26DKWp27evIFi0wdOf2drOiddqndEANG23mM
- ztogNzfsGoTKRMKXLSSVn3MlwAQoWVIgMaYVYPYIz/AHhWWWeO0pSk1LHvm/fg36+aocS5Jkk
- 7Qf4oykZu3rn0RRGs1zeFCslEUJ2I12t9CahMZPBeo/Msu3YN+uIblsXgYjBPyLLxIZvDXaQJ
- nOeDcG7aMBQK3kI1NoOZFzUYPDel8pvWOOe2FC5SfrepPCQQWcZH6sclkmlKAekPojkE/Vb9+
- xl11HFp/EvWauh4ZKpsWDT0xiuMEiBpAM8R72E2uigtBB1MHWJnqE9GyiIKua5
+From:   Stefan Malte Schumacher <s.schumacher@netcologne.de>
+Date:   Mon, 3 Dec 2018 10:31:15 +0100
+X-Gmail-Original-Message-ID: <CAA3ktqmXjF0AFjtL55798c7DyXmWewjXBtM_FNoktH1aAtRoNQ@mail.gmail.com>
+Message-ID: <CAA3ktqmXjF0AFjtL55798c7DyXmWewjXBtM_FNoktH1aAtRoNQ@mail.gmail.com>
+Subject: Filesystem Corruption
+To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---mB2SR6cLb5zPRoJE1XK4SrCZmSLB9J48k
-Content-Type: multipart/mixed; boundary="Qa8DMbcRZcapIHrt1w5YsPyBnD334HU2T";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Andrei Borzenkov <arvidjaar@gmail.com>,
- Patrick Dijkgraaf <bolderbast@duckstad.net>, linux-btrfs@vger.kernel.org
-Message-ID: <7dac5577-2231-dcba-39fd-c229e4ed5e02@gmx.com>
-Subject: Re: Need help with potential ~45TB dataloss
-References: <8bc37755da04dffae1a34cea2a06bcffdf2c75d7.camel@duckstad.net>
- <6ce9cd01-960f-af3d-0273-0b9abfa1d4f8@gmx.com>
- <c723ab8e8e99e54c6f93dc70f897725525f0db29.camel@duckstad.net>
- <c24627dec9738552e1635617aace7720f395ba39.camel@duckstad.net>
- <2b235519-5c8d-9e86-b4f3-28cd7f778c4f@gmail.com>
-In-Reply-To: <2b235519-5c8d-9e86-b4f3-28cd7f778c4f@gmail.com>
+Hello,
 
---Qa8DMbcRZcapIHrt1w5YsPyBnD334HU2T
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+I have noticed an unusual amount of crc-errors in downloaded rars,
+beginning about a week ago. But lets start with the preliminaries. I
+am using Debian Stretch.
+Kernel: Linux mars 4.9.0-8-amd64 #1 SMP Debian 4.9.110-3+deb9u4
+(2018-08-21) x86_64 GNU/Linux
+BTRFS-Tools btrfs-progs  4.7.3-1
+Smartctl shows no errors for any of the drives in the filesystem.
 
+Btrfs /dev/stats shows zero errors, but dmesg gives me a lot of
+filesystem related error messages.
 
+[5390748.884929] Buffer I/O error on dev dm-0, logical block
+976701312, async page read
+This errors is shown a lot of time in the log.
 
-On 2018/12/3 =E4=B8=8A=E5=8D=884:30, Andrei Borzenkov wrote:
-> 02.12.2018 23:14, Patrick Dijkgraaf =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
->> I have some additional info.
->>
->> I found the reason the FS got corrupted. It was a single failing drive=
-,
->> which caused the entire cabinet (containing 7 drives) to reset. So the=
+This seems to affect just newly written files. This is the output of
+btrfs scrub status:
+scrub status for 1609e4e1-4037-4d31-bf12-f84a691db5d8
+        scrub started at Tue Nov 27 06:02:04 2018 and finished after 07:34:16
+        total bytes scrubbed: 17.29TiB with 0 errors
 
->> FS suddenly lost 7 drives.
->>
->=20
-> This remains mystery for me. btrfs is marketed to be always consistent
-> on disk - you either have previous full transaction or current full
-> transaction. If current transaction was interrupted the promise is you
-> are left with previous valid consistent transaction.
->=20
-> Obviously this is not what happens in practice. Which nullifies the mai=
-n
-> selling point of btrfs.
->=20
-> Unless this is expected behavior, it sounds like some barriers are
-> missing and summary data is updated before (and without waiting for)
-> subordinate data. And if it is expected behavior ...
+What is the probable cause of these errors? How can I fix this?
 
-There are one (unfortunately) known problem for RAID5/6 and one special
-problem for RAID6.
-
-The common problem is write hole.
-For a RAID5 stripe like:
-        Disk 1      |        Disk 2        |       Disk 3
----------------------------------------------------------------
-        DATA1       |        DATA2         |       PARITY
-
-If we have written something into DATA1, but powerloss happened before
-we update PARITY in disk 3.
-In this case, we can't tolerant Disk 2 loss, since DATA1 doesn't match
-PARAITY anymore.
-
-Without the ability to know what exactly block we have written, for
-write hole problem exists for any parity based solution, including BTRFS
-RAID5/6.
-
-=46rom the guys in the mail list, other RAID5/6 implementations have thei=
-r
-own record of which block is updated on-disk, and for powerloss case
-they will rebuild involved stripes.
-
-Since btrfs doesn't has such ability, we need to scrub the whole fs to
-regain the disk loss tolerance (and hope there will not be another power
-loss during it)
-
-
-The RAID6 special problem is the missing of rebuilt retry logic.
-(Not any more after 4.16 kernel, but still missing btrfs-progs support)
-
-For a RAID6 stripe like:
-    Disk 1     |    Disk 2      |     Disk 3     |    Disk 4
-----------------------------------------------------------------
-    DATA1      |    DATA2       |       P        |      Q
-
-If data read from DATA1 failed, we have 3 ways to rebuild the data:
-1) Using DATA2 and P (just as RAID5)
-2) Using P and Q
-3) Using DATA2 and Q
-
-However until 4.16 we won't retry all possible ways to build it.
-(Thanks Liu for solving this problem).
-
-Thanks,
-Qu
-
->=20
->> I have removed the failed drive, so the RAID is now degraded. I hope
->> the data is still recoverable... =E2=98=B9
->>
->=20
-
-
---Qa8DMbcRZcapIHrt1w5YsPyBnD334HU2T--
-
---mB2SR6cLb5zPRoJE1XK4SrCZmSLB9J48k
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlwExhQACgkQwj2R86El
-/qgvKggAgSypXnbtLuXxgPpjOHaOfArUOnjOcvhEqHfJMv0aitrcORYXNsHXBKI3
-MiHEaAARQ68R9zOSTO4TkxzQYBWRIpXR0E6rBsUihtrvIHwYlxWpkqL5agRkkbcp
-WB3zssebnpMIw9MW2OlvV5zju5XshJjFVLxcYZO18FzulbT9lyNaxHS9tRSIECPr
-OyBTBLhTIvsKyl3ezirANR155kqm5UlomGIJrR3VFBa70+R2Wh59/iZSJsswH82u
-W6Xea0JYUrF43b7/6sg8D/A/Uk/4YsBY4DEUeSfgsT6OsYfHD15Usc3PE31LdKSm
-yyK0RnfcVU9MiI6gh4qHOnUfQ1ImHQ==
-=MhOR
------END PGP SIGNATURE-----
-
---mB2SR6cLb5zPRoJE1XK4SrCZmSLB9J48k--
+Thanks in advance for your advice
+Stefan

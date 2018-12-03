@@ -2,99 +2,169 @@ Return-Path: <SRS0=i+cT=OM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C61B5C04EB9
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 15:20:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BFFF8C04EBF
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 15:20:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7EEC420834
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 15:20:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7CB5720848
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 15:20:46 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="Do5cBWNL"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7EEC420834
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="EggwHEZU"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7CB5720848
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726685AbeLCPUn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 3 Dec 2018 10:20:43 -0500
-Received: from mail-yb1-f195.google.com ([209.85.219.195]:41835 "EHLO
+        id S1726689AbeLCPUp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 3 Dec 2018 10:20:45 -0500
+Received: from mail-yb1-f195.google.com ([209.85.219.195]:33087 "EHLO
         mail-yb1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726549AbeLCPUn (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Dec 2018 10:20:43 -0500
-Received: by mail-yb1-f195.google.com with SMTP id t13-v6so5410230ybb.8
-        for <linux-btrfs@vger.kernel.org>; Mon, 03 Dec 2018 07:20:42 -0800 (PST)
+        with ESMTP id S1726549AbeLCPUp (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Dec 2018 10:20:45 -0500
+Received: by mail-yb1-f195.google.com with SMTP id f125so674840ybc.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 03 Dec 2018 07:20:44 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id;
-        bh=65kvr22rmQkWIJM7Q3OgY3lmilLwgOmqwcx6cMlfjMk=;
-        b=Do5cBWNLsUh9V+gy0btQXSahku61nE41I3CgpgcTV40PgQNn1fCovxIhQeBCY/sovD
-         2Wks6ob0QtmQ47+FCqhZvRnheBSgkAq44UM2dopQFkiUozDbWjXjSs5LdNg96+IhayVD
-         EYut9P2v3Hk+xvP7cTKa6UF2ySzMH6kgTCYf/TaSrqBGf3B1KKbszytTcrdrP0PPlclk
-         yvg7Y2L662oBQNkAn8a9RCoxJHzkY2xMwRhvV/+GyHV4URDeBpX4bh3o7VwbVBLphxYN
-         irH2Qg7qzq5njcsOOOYGKUhA0VqrP4053OEBOV2ch5g51pg6OTud1M3Y4EiveEyGYE6u
-         uoEw==
+        h=from:to:cc:subject:date:message-id:in-reply-to:references;
+        bh=pRCx2eP/l80aL+OLubW7i+4YyKvLhkbzZ3rfIZGfT4g=;
+        b=EggwHEZUIePK54lc0IS05HffMMVGVyjTBzNhIhSjPAmLdnO/DpQJKFSS7FCxj6637X
+         Z2WrDa1hK2PbyFV0cW+gF8zOOZ5SowVt+jil8XGiRMyVhgfmgOWQ5de0C4mkKqpii4gz
+         v7liwSAEOKtiRu6osHoFs/DaozLEk7FY7ouCpAmvcxUbegOeP3kim2EcFyYXST1yJ41F
+         d31uXhZwX0Y7BlvSzQ5jjDKjt2sgAimOdDIUtDyBIf2Kj7hrGRyO8U6D3cZZ3sSfIhnW
+         s+mpGtSd01OCYYhFgQn+GWJ2r9J/b2l6S9tTECIRVWIWNTiwSMmSRNxHqehEBWs2qK2R
+         YwqQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id;
-        bh=65kvr22rmQkWIJM7Q3OgY3lmilLwgOmqwcx6cMlfjMk=;
-        b=pLeFUaHHuLUHMApJKxCpLueAZkiDJaFHgYLoeQQc2kUvxFqVwCsCoRjejD3u3yKMzC
-         Ma0UQzO+65/LzpJ3080Wn6B5Bwki7BB8j1njJJ4qnyJ+CQ5Y2CxrUmxyDYC/6LseFU/d
-         dA64Vb9kS+CGSFoMCQzmLULZTui7GlmqJdTA7jVDC1Rq6gtQzSMVaf+X0vvnutQ9IFAZ
-         fNoEUZI6mfLtQf5szjnRW6nsFRTfFlZfIND8CDrUkGUXh41nu3tCtQPA3P9CI3cjJ18O
-         8lDWWDnJ6tR8ZJz3cmimzSpgwA1voFdyvSooENL41WGSA7RUssztEH9ZULN/0M6CUEmF
-         LhOg==
-X-Gm-Message-State: AA+aEWZK5z7xBUGwcDlSfp14W64LQFM5X3K9X7FtkJr9CW2oX7kzQg5Z
-        Gw5HASxu5lXbrUV+HBDKNma4VofGgHI=
-X-Google-Smtp-Source: AFSGD/XXR0sKRfEOr+hqumD8ozQ1crMiOIYZ4D85DoDDOnJFIaMb24Wvv4UgVucY5LQH71GZUxWvSA==
-X-Received: by 2002:a25:73cd:: with SMTP id o196mr9259229ybc.374.1543850441012;
-        Mon, 03 Dec 2018 07:20:41 -0800 (PST)
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references;
+        bh=pRCx2eP/l80aL+OLubW7i+4YyKvLhkbzZ3rfIZGfT4g=;
+        b=HmEoSw8Q6D7ZxcQYJnLB6Z1EmJJ8NAoYyPh0AU+4O8CkRjuuiINFVfjs5ruzwEa16m
+         MLguX2POt6QajwZkqZZGWddcrR6itvqNl+a3yu91DHHu0EsiBUkdFiPOBkSRt+z3Bz9f
+         pbJHMlt00cEFx/OaH/4F0hlJoM5DxYllmm4khWQcLCPOluVs9paoV/OWFx7Rn0Jpsbzj
+         fKP0rxPjsgEqT3sz5b/eUpNrLgoBIYe3scF0g3ScfqxxPCdfbbK9DQY/hyOAFA0ppaaU
+         d2cKMB55NA4wGrzfMJLc4IjlTB/juIq10zNhtt6V743m+4BVNMibKust0+RJUuK+O1mN
+         OYiQ==
+X-Gm-Message-State: AA+aEWbOacZZy55tu1zF7YbUD21l8vcHZb9E/5aMWuYUH/NXc6bhEbyw
+        oPq+61iP/0pnCleD0TZHEOBJtSMRyIc=
+X-Google-Smtp-Source: AFSGD/Urd+IaPybVu+11T53mgtCNXGC87CCm1Pkcuzr0PKiErLzsBkbxPrL3KBhg3O/xx2duO3yymA==
+X-Received: by 2002:a25:d050:: with SMTP id h77-v6mr14796785ybg.423.1543850443411;
+        Mon, 03 Dec 2018 07:20:43 -0800 (PST)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id u81sm4510331ywf.6.2018.12.03.07.20.39
+        by smtp.gmail.com with ESMTPSA id l83sm4496666ywb.23.2018.12.03.07.20.41
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Mon, 03 Dec 2018 07:20:40 -0800 (PST)
+        Mon, 03 Dec 2018 07:20:42 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 00/10][V2] Delayed refs rsv
-Date:   Mon,  3 Dec 2018 10:20:28 -0500
-Message-Id: <20181203152038.21388-1-josef@toxicpanda.com>
+Cc:     Josef Bacik <jbacik@fb.com>
+Subject: [PATCH 01/10] btrfs: add btrfs_delete_ref_head helper
+Date:   Mon,  3 Dec 2018 10:20:29 -0500
+Message-Id: <20181203152038.21388-2-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.14.3
+In-Reply-To: <20181203152038.21388-1-josef@toxicpanda.com>
+References: <20181203152038.21388-1-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-v1->v2:
-- addressed the comments from the various reviewers.
-- split "introduce delayed_refs_rsv" into 5 patches.  The patches are the same
-  together as they were, just split out more logically.  They can't really be
-  bisected across in that you will likely have fun enospc failures, but they
-  compile properly.  This was done to make it easier for review.
+From: Josef Bacik <jbacik@fb.com>
 
--- Original message --
+We do this dance in cleanup_ref_head and check_ref_cleanup, unify it
+into a helper and cleanup the calling functions.
 
-This patchset changes how we do space reservations for delayed refs.  We were
-hitting probably 20-40 enospc abort's per day in production while running
-delayed refs at transaction commit time.  This means we ran out of space in the
-global reserve and couldn't easily get more space in use_block_rsv().
+Signed-off-by: Josef Bacik <jbacik@fb.com>
+Reviewed-by: Omar Sandoval <osandov@fb.com>
+---
+ fs/btrfs/delayed-ref.c | 14 ++++++++++++++
+ fs/btrfs/delayed-ref.h |  3 ++-
+ fs/btrfs/extent-tree.c | 22 +++-------------------
+ 3 files changed, 19 insertions(+), 20 deletions(-)
 
-The global reserve has grown to cover everything we don't reserve space
-explicitly for, and we've grown a lot of weird ad-hoc hueristics to know if
-we're running short on space and when it's time to force a commit.  A failure
-rate of 20-40 file systems when we run hundreds of thousands of them isn't super
-high, but cleaning up this code will make things less ugly and more predictible.
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index 9301b3ad9217..b3e4c9fcb664 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -400,6 +400,20 @@ struct btrfs_delayed_ref_head *btrfs_select_ref_head(
+ 	return head;
+ }
+ 
++void btrfs_delete_ref_head(struct btrfs_delayed_ref_root *delayed_refs,
++			   struct btrfs_delayed_ref_head *head)
++{
++	lockdep_assert_held(&delayed_refs->lock);
++	lockdep_assert_held(&head->lock);
++
++	rb_erase_cached(&head->href_node, &delayed_refs->href_root);
++	RB_CLEAR_NODE(&head->href_node);
++	atomic_dec(&delayed_refs->num_entries);
++	delayed_refs->num_heads--;
++	if (head->processing == 0)
++		delayed_refs->num_heads_ready--;
++}
++
+ /*
+  * Helper to insert the ref_node to the tail or merge with tail.
+  *
+diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+index 8e20c5cb5404..d2af974f68a1 100644
+--- a/fs/btrfs/delayed-ref.h
++++ b/fs/btrfs/delayed-ref.h
+@@ -261,7 +261,8 @@ static inline void btrfs_delayed_ref_unlock(struct btrfs_delayed_ref_head *head)
+ {
+ 	mutex_unlock(&head->mutex);
+ }
+-
++void btrfs_delete_ref_head(struct btrfs_delayed_ref_root *delayed_refs,
++			   struct btrfs_delayed_ref_head *head);
+ 
+ struct btrfs_delayed_ref_head *btrfs_select_ref_head(
+ 		struct btrfs_delayed_ref_root *delayed_refs);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index d242a1174e50..c36b3a42f2bb 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2474,12 +2474,9 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
+ 		spin_unlock(&delayed_refs->lock);
+ 		return 1;
+ 	}
+-	delayed_refs->num_heads--;
+-	rb_erase_cached(&head->href_node, &delayed_refs->href_root);
+-	RB_CLEAR_NODE(&head->href_node);
++	btrfs_delete_ref_head(delayed_refs, head);
+ 	spin_unlock(&head->lock);
+ 	spin_unlock(&delayed_refs->lock);
+-	atomic_dec(&delayed_refs->num_entries);
+ 
+ 	trace_run_delayed_ref_head(fs_info, head, 0);
+ 
+@@ -6984,22 +6981,9 @@ static noinline int check_ref_cleanup(struct btrfs_trans_handle *trans,
+ 	if (!mutex_trylock(&head->mutex))
+ 		goto out;
+ 
+-	/*
+-	 * at this point we have a head with no other entries.  Go
+-	 * ahead and process it.
+-	 */
+-	rb_erase_cached(&head->href_node, &delayed_refs->href_root);
+-	RB_CLEAR_NODE(&head->href_node);
+-	atomic_dec(&delayed_refs->num_entries);
+-
+-	/*
+-	 * we don't take a ref on the node because we're removing it from the
+-	 * tree, so we just steal the ref the tree was holding.
+-	 */
+-	delayed_refs->num_heads--;
+-	if (head->processing == 0)
+-		delayed_refs->num_heads_ready--;
++	btrfs_delete_ref_head(delayed_refs, head);
+ 	head->processing = 0;
++
+ 	spin_unlock(&head->lock);
+ 	spin_unlock(&delayed_refs->lock);
+ 
+-- 
+2.14.3
 
-Thus the delayed refs rsv.  We always know how many delayed refs we have
-outstanding, and although running them generates more we can use the global
-reserve for that spill over, which fits better into it's desired use than a full
-blown reservation.  This first approach is to simply take how many times we're
-reserving space for and multiply that by 2 in order to save enough space for the
-delayed refs that could be generated.  This is a niave approach and will
-probably evolve, but for now it works.
-
-With this patchset we've gone down to 2-8 failures per week.  It's not perfect,
-there are some corner cases that still need to be addressed, but is
-significantly better than what we had.  Thanks,
-
-Josef

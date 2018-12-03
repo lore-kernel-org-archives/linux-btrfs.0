@@ -7,60 +7,60 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9CB3DC04EBF
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 15:25:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 12AD6C04EB9
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 15:25:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6493A20834
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 15:25:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CDFC220834
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 15:25:07 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="a85Tl588"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6493A20834
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="OajTh97u"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org CDFC220834
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726608AbeLCPZG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 3 Dec 2018 10:25:06 -0500
-Received: from mail-yb1-f194.google.com ([209.85.219.194]:42959 "EHLO
-        mail-yb1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726549AbeLCPZG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Dec 2018 10:25:06 -0500
-Received: by mail-yb1-f194.google.com with SMTP id s8so3257300ybe.9
-        for <linux-btrfs@vger.kernel.org>; Mon, 03 Dec 2018 07:25:04 -0800 (PST)
+        id S1726615AbeLCPZI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 3 Dec 2018 10:25:08 -0500
+Received: from mail-yw1-f68.google.com ([209.85.161.68]:35419 "EHLO
+        mail-yw1-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726549AbeLCPZH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Dec 2018 10:25:07 -0500
+Received: by mail-yw1-f68.google.com with SMTP id h32so5530527ywk.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 03 Dec 2018 07:25:06 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references;
-        bh=Dk7Yvr9EVggjdM9t/BJP8axY+xIS+ZF2B97rLLoiB4U=;
-        b=a85Tl588eVrs/7przLhnQqwuoh5zb0GAqePTvDvIKfIRNhSe5spN0M8Fmx7oWG+tML
-         mxj1ObTyRefAUUnS955wp+LLakWh8bF4dmHSD/oBWG1d48QjNEY9gLB44KNQPcYMYcNR
-         DcvudLyarcZh4TxqGwQEjMdQqEOlbwakJ18d37WRN5OMbFR2kjNS4XYsyOMeGITXxRV7
-         30RSpNFHpmVGcq7lh7eIScE7xw8lwsWSHtDZU5PmGZs4uqnXdveOHCdSTpw72RvguZ68
-         kiYAGG0gIPhGMUyaljCGWhPl6RvN3oNPW482P1v/6hrgDWSP/kMkwLVhAbkDeDd24ZXI
-         EaeA==
+        bh=SmlpN9F1+q2xkMrPjnZJbzIpYw7l8bDfk05UNYsHm5g=;
+        b=OajTh97u2cbPaRa4OxUxePwTwd5GrZR6gXAG1/2d0hMhWLnQk95pKcS8mBv4AlEyxi
+         zD28W8WRmkhayoO9CnkQ5D9YZKRxBvmjNJIZJFsideq1TsaB0mbQIGAUGXgQtBTVevx1
+         0GQrvfw1wXRhtAixqFQZOcYHEwdr1VU722mN6xtpCwlHVATD1P7moTLQavSVY2QM8PfB
+         l7ygxujEWfqHlmBWQtclea1ZhfuiAyFjzf23KfapqPDo0USc0m4GUk3DZ/FjsaG4zM5X
+         eWBVUEjSyfzqBcf4G3PkrDlFSFJL/Rv7IJKKzAu1k8uOiyEZhxUYX/cI/k1QCTwSvu7G
+         VMyw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references;
-        bh=Dk7Yvr9EVggjdM9t/BJP8axY+xIS+ZF2B97rLLoiB4U=;
-        b=qjjqk5vkOjWc5j5y6FoxugZQOjT1R2O+AiR+ygGejEDhI4TXL97QXTQdzKbdVaSN4I
-         1D03Svt4VmgFowAc8Tm5JQY3jtAq9qNj3gl7ZCDFqNnSS4p5qLBGm/1szT6d8r7LqRCK
-         y8y8GeHIQ4oSMJCRV9750lT028WdQC8AIJ+HFVhXjSs+UpNb3cT8cs24UvAWcufkLYt+
-         3BfJXAVZmcywF4ohzf1pPn9tBuW7PUJ6MpKsUEJR6rAGmGJCCyHuRb46+rjqqHMfHmWS
-         MbhuEPEC9nSya01fTJXG6u6cM+3V/e0CizDyXLNXpFdNvSh1YUD/81rdrRCS7Tw8yIVa
-         KBhw==
-X-Gm-Message-State: AA+aEWZQJ5+bAN/llzW58iJnH6oGVaNHKjOXMU4Ed5X7H/GuFs0+KTbt
-        IrstHyhNtddTdTdZs4cUohIXcc1932s=
-X-Google-Smtp-Source: AFSGD/XDYNuBWw1cKWQr48SOkpwlEbMw0QRQcd/H7Pgu5Xyw3vKWKKPZ8KiP89N5Kht/Ml0KR3s26w==
-X-Received: by 2002:a25:b315:: with SMTP id l21mr4581423ybj.191.1543850703709;
-        Mon, 03 Dec 2018 07:25:03 -0800 (PST)
+        bh=SmlpN9F1+q2xkMrPjnZJbzIpYw7l8bDfk05UNYsHm5g=;
+        b=LGQ8pQD3tm2QiMlM8Mmt1c4x8jXc185ONyflAol15YLs4YYqvqcPp1juihRrkLdDmr
+         htaGFEQn/fT9fend+HuXWR3vrVTXdaebkRkoJHuAaI5bQIJevPIhvhwHckddJ8Re27+y
+         WUt9ZmWDKUTg1BwKCOohclE3IDlqK0y1IQGNUi6CiQGpIr9+Fgh5P6BJLc5GTpM1xusu
+         nB/6etJgIVJLt0oxAs3Hb7yCqzYnNwJBaSnHaT9YqdNrK+5TmOhHNcoeN+j2WcV8CHxh
+         b/Akq/7uxkoEHxIr9LQby8sznBrmFxukRo7SvjtT71aLuk0Ry249SP5+qXUKnSkJFa0e
+         NXag==
+X-Gm-Message-State: AA+aEWaHmYBeysu57IzBNZzfW6Dciyv454RExqCNu9uuNJSQbTWEd/Xl
+        fX5JP4gzF9wFYk+1Ka8+D2q1fhFhDWA=
+X-Google-Smtp-Source: AFSGD/VDacxTKHSn9t1iM84p7/d9gqm/d3YBTZlOW5c0RFH8zbox9SHXd7CTKu7Bnz7WsvUSATCKIg==
+X-Received: by 2002:a81:b342:: with SMTP id r63mr15943833ywh.475.1543850705234;
+        Mon, 03 Dec 2018 07:25:05 -0800 (PST)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id x132sm5793119ywx.27.2018.12.03.07.25.02
+        by smtp.gmail.com with ESMTPSA id a71sm4508506ywe.66.2018.12.03.07.25.04
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Mon, 03 Dec 2018 07:25:03 -0800 (PST)
+        Mon, 03 Dec 2018 07:25:04 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 1/8] btrfs: check if free bgs for commit
-Date:   Mon,  3 Dec 2018 10:24:52 -0500
-Message-Id: <20181203152459.21630-2-josef@toxicpanda.com>
+Subject: [PATCH 2/8] btrfs: dump block_rsv whe dumping space info
+Date:   Mon,  3 Dec 2018 10:24:53 -0500
+Message-Id: <20181203152459.21630-3-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.14.3
 In-Reply-To: <20181203152459.21630-1-josef@toxicpanda.com>
 References: <20181203152459.21630-1-josef@toxicpanda.com>
@@ -69,82 +69,49 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-may_commit_transaction will skip committing the transaction if we don't
-have enough pinned space or if we're trying to find space for a SYSTEM
-chunk.  However if we have pending free block groups in this transaction
-we still want to commit as we may be able to allocate a chunk to make
-our reservation.  So instead of just returning ENOSPC, check if we have
-free block groups pending, and if so commit the transaction to allow us
-to use that free space.
+For enospc_debug having the block rsvs is super helpful to see if we've
+done something wrong.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 Reviewed-by: Omar Sandoval <osandov@fb.com>
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/extent-tree.c | 34 ++++++++++++++++++++--------------
- 1 file changed, 20 insertions(+), 14 deletions(-)
+ fs/btrfs/extent-tree.c | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 07ef1b8087f7..755eb226d32d 100644
+index 755eb226d32d..204b35434056 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -4853,10 +4853,19 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
- 	if (!bytes_needed)
- 		return 0;
- 
--	/* See if there is enough pinned space to make this reservation */
--	if (__percpu_counter_compare(&space_info->total_bytes_pinned,
--				   bytes_needed,
--				   BTRFS_TOTAL_BYTES_PINNED_BATCH) >= 0)
-+	trans = btrfs_join_transaction(fs_info->extent_root);
-+	if (IS_ERR(trans))
-+		return PTR_ERR(trans);
-+
-+	/*
-+	 * See if there is enough pinned space to make this reservation, or if
-+	 * we have bg's that are going to be freed, allowing us to possibly do a
-+	 * chunk allocation the next loop through.
-+	 */
-+	if (test_bit(BTRFS_TRANS_HAVE_FREE_BGS, &trans->transaction->flags) ||
-+	    __percpu_counter_compare(&space_info->total_bytes_pinned,
-+				     bytes_needed,
-+				     BTRFS_TOTAL_BYTES_PINNED_BATCH) >= 0)
- 		goto commit;
- 
- 	/*
-@@ -4864,7 +4873,7 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
- 	 * this reservation.
- 	 */
- 	if (space_info != delayed_rsv->space_info)
--		return -ENOSPC;
-+		goto enospc;
- 
- 	spin_lock(&delayed_rsv->lock);
- 	reclaim_bytes += delayed_rsv->reserved;
-@@ -4878,17 +4887,14 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
- 	bytes_needed -= reclaim_bytes;
- 
- 	if (__percpu_counter_compare(&space_info->total_bytes_pinned,
--				   bytes_needed,
--				   BTRFS_TOTAL_BYTES_PINNED_BATCH) < 0) {
--		return -ENOSPC;
--	}
--
-+				     bytes_needed,
-+				     BTRFS_TOTAL_BYTES_PINNED_BATCH) < 0)
-+		goto enospc;
- commit:
--	trans = btrfs_join_transaction(fs_info->extent_root);
--	if (IS_ERR(trans))
--		return -ENOSPC;
--
- 	return btrfs_commit_transaction(trans);
-+enospc:
-+	btrfs_end_transaction(trans);
-+	return -ENOSPC;
+@@ -8063,6 +8063,15 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ 	return ret;
  }
  
- /*
++#define DUMP_BLOCK_RSV(fs_info, rsv_name)				\
++do {									\
++	struct btrfs_block_rsv *__rsv = &(fs_info)->rsv_name;		\
++	spin_lock(&__rsv->lock);					\
++	btrfs_info(fs_info, #rsv_name ": size %llu reserved %llu",	\
++		   __rsv->size, __rsv->reserved);			\
++	spin_unlock(&__rsv->lock);					\
++} while (0)
++
+ static void dump_space_info(struct btrfs_fs_info *fs_info,
+ 			    struct btrfs_space_info *info, u64 bytes,
+ 			    int dump_block_groups)
+@@ -8082,6 +8091,12 @@ static void dump_space_info(struct btrfs_fs_info *fs_info,
+ 		info->bytes_readonly);
+ 	spin_unlock(&info->lock);
+ 
++	DUMP_BLOCK_RSV(fs_info, global_block_rsv);
++	DUMP_BLOCK_RSV(fs_info, trans_block_rsv);
++	DUMP_BLOCK_RSV(fs_info, chunk_block_rsv);
++	DUMP_BLOCK_RSV(fs_info, delayed_block_rsv);
++	DUMP_BLOCK_RSV(fs_info, delayed_refs_rsv);
++
+ 	if (!dump_block_groups)
+ 		return;
+ 
 -- 
 2.14.3
 

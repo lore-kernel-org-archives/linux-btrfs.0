@@ -7,60 +7,60 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3BEADC04EBF
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 16:06:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BE7D5C04EBF
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 16:07:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0112120834
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 16:06:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8686420834
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Dec 2018 16:07:00 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="FU0rH9gQ"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0112120834
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="u3nRdZtJ"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8686420834
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726649AbeLCQHD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 3 Dec 2018 11:07:03 -0500
-Received: from mail-yw1-f67.google.com ([209.85.161.67]:37099 "EHLO
-        mail-yw1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726631AbeLCQHD (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Dec 2018 11:07:03 -0500
-Received: by mail-yw1-f67.google.com with SMTP id h193so5592661ywc.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 03 Dec 2018 08:06:57 -0800 (PST)
+        id S1726657AbeLCQHF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 3 Dec 2018 11:07:05 -0500
+Received: from mail-yb1-f195.google.com ([209.85.219.195]:33812 "EHLO
+        mail-yb1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726631AbeLCQHF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Dec 2018 11:07:05 -0500
+Received: by mail-yb1-f195.google.com with SMTP id a67-v6so5509577ybg.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 03 Dec 2018 08:06:59 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references;
-        bh=N45SWvepwcroEPnphEt+dLodfsACU/p3srtHQgF6qi4=;
-        b=FU0rH9gQbSljlZfnV/pawU4pC8zqF3RzyBgj2ELHdiuHMjUoqLraBsNaEDxqKgx1r2
-         Ybt1ZDjJUMTPimmVoDYYNP8wmYcDHdu04yZi9k6ooSO2w8UNYvx65Zlop5TajCcJhFyX
-         VohcJtbQXdfgD8uUpb+FjvOCPwvFfGmYzZD68FfIvLtjHHGqgMJO0jrZ4WC7yIrSx6Cv
-         R6Znw9P0xLaRzngGCSsDcTz3f08M9wul8M7KMO0EudLBkXcrhyj/R7/cXyB8M1bAJeUB
-         hLYhReJEmO9hxr6hrLi5KKwqNB5LeVcEwCIx8z1qoW70RGGXVmtK4LWeNtE0IeC5ET1Z
-         rh6A==
+        bh=5RgYwqqSVSFbkShpgn7NvEoDIwCv3RrCPhGohzTUgTQ=;
+        b=u3nRdZtJwEcCmCvvW4q0UU00DQx8Y2j4tA5hy9guzxT2bNP1s1czGB4R+HapCK8z05
+         9y15iNJjPGot698VhxsGZZSCyMK/S0zAq8yR1RWbZWbQRJlNY61ndW13rmtjf0BsPHxO
+         lKES/LoPYtPAlEEnSDjak0WItIpX0uR9cM3oRAEzqw+VvIAesw1TOFJK9Jh8pk8fz+0K
+         7COP2ygERaDC7yFnzmQaxKqnBN2ny1Goa97BpMHUvmDunwakoc+Yrj+XG/g9YpQ+iRk3
+         B9sYaaIjF5TM0UCrK1Df+EwyvY4eoR6lstwMoo5UFTONUNBJwK6la5E57RWiduW3QfbP
+         A0YQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references;
-        bh=N45SWvepwcroEPnphEt+dLodfsACU/p3srtHQgF6qi4=;
-        b=dZGfCV3J2VoaJUVIQV6J5r8Bp7AqaAYXQmp4htqpDx1I5JKqESj9Ym/l0nh6a3l324
-         o58FeYC2/SLwkyOpxCo1lLUpGi4sbY6Jvd0kjIKP7jD3yQbi0m2fT11FuImDuD+9JbCu
-         vSLGjbQgK3D6aiqX2WxZgJyUyPj1qWUP4UaChxnw/9a8dAQfLL053XevxsSMw3V/2sD0
-         926FpiNRTN0PHpjvoaYiVxTTwaGe/7fw122juAk07uZIwXEmJNvEi+aQfq5BNHVJ8BxT
-         /5IHIgqfzFkUMfqZcsGbZk7eWr6hLPWVLLK2rojEJSmO7F5tVyuy+HdT9WoVVJcXh67A
-         S+zw==
-X-Gm-Message-State: AA+aEWaoX50b/cISIH71YUiwGIXSGb06d72X4TJIukIKpqHJkZgfS4RE
-        06tsgNdi7LZPMpkOnahNRQ5xqoYVUgs=
-X-Google-Smtp-Source: AFSGD/VrTabPseuABf/kIEvn7F2sjQVfHmQr0OIuYifC/p5u4dX/8FmbevwU2WbRtT8B0GsxX3c03w==
-X-Received: by 2002:a81:3685:: with SMTP id d127mr5296960ywa.71.1543853216231;
-        Mon, 03 Dec 2018 08:06:56 -0800 (PST)
+        bh=5RgYwqqSVSFbkShpgn7NvEoDIwCv3RrCPhGohzTUgTQ=;
+        b=XE5bDxCirt1sKE3z8foRtfYv+aQE9f11lIvu5saMYZfIeYZS90bLvYPMoQ5/uFinKD
+         rr8wK4RRUltapFyOnOe9B3W+8qgqqZn8orW5Vt1/XeLdYdiYWfvPexWE/Bkcs5K80ZWh
+         S0oZu7niS7wLc85fK88SmSS+Gtq5+fh/EkeJPkIAZxI+ULodqR8rl7kKna54Bi6y6sJ1
+         BJLa/ciyi0KddsPlxiWTIlMOHyQtDEQ8f7rk5PAQQCLCC8IO5Z7fAiXc8UciWazw2Uo8
+         LfbB5FqaitnjTtEm2ndFezyEJe/NfUtACIEF9if6Ai7Xs0JrdIrzpLstXKRLoUgfH//s
+         MRTQ==
+X-Gm-Message-State: AA+aEWamnNis+wURuJGTOIIPJKNZRUuUiZI0UgXeSOB/YujHSqRemHC7
+        7TL4R3MyGfLYcJVWU5+BsuN8fPrTo+0=
+X-Google-Smtp-Source: AFSGD/UrBiFieFISkfjrPYA1zBoJU1FjkyDI4/KxBZylT+WOxbPvnv9DGjMY2I7ZxZeOHpS9G43row==
+X-Received: by 2002:a25:3b88:: with SMTP id i130-v6mr11727018yba.170.1543853218274;
+        Mon, 03 Dec 2018 08:06:58 -0800 (PST)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id v191sm4602919ywc.102.2018.12.03.08.06.55
+        by smtp.gmail.com with ESMTPSA id j12sm1406963ywk.43.2018.12.03.08.06.57
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Mon, 03 Dec 2018 08:06:55 -0800 (PST)
+        Mon, 03 Dec 2018 08:06:57 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 1/3] btrfs: run delayed iputs before committing
-Date:   Mon,  3 Dec 2018 11:06:50 -0500
-Message-Id: <20181203160652.25078-2-josef@toxicpanda.com>
+Subject: [PATCH 2/3] btrfs: wakeup cleaner thread when adding delayed iput
+Date:   Mon,  3 Dec 2018 11:06:51 -0500
+Message-Id: <20181203160652.25078-3-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.14.3
 In-Reply-To: <20181203160652.25078-1-josef@toxicpanda.com>
 References: <20181203160652.25078-1-josef@toxicpanda.com>
@@ -69,39 +69,67 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Delayed iputs means we can have final iputs of deleted inodes in the
-queue, which could potentially generate a lot of pinned space that could
-be free'd.  So before we decide to commit the transaction for ENOPSC
-reasons, run the delayed iputs so that any potential space is free'd up.
-If there is and we freed enough we can then commit the transaction and
-potentially be able to make our reservation.
+The cleaner thread usually takes care of delayed iputs, with the
+exception of the btrfs_end_transaction_throttle path.  The cleaner
+thread only gets woken up every 30 seconds, so instead wake it up to do
+it's work so that we can free up that space as quickly as possible.
 
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-Reviewed-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/extent-tree.c | 9 +++++++++
- 1 file changed, 9 insertions(+)
+ fs/btrfs/ctree.h   | 3 +++
+ fs/btrfs/disk-io.c | 3 +++
+ fs/btrfs/inode.c   | 2 ++
+ 3 files changed, 8 insertions(+)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 8dfddfd3f315..0127d272cd2a 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4953,6 +4953,15 @@ static void flush_space(struct btrfs_fs_info *fs_info,
- 			ret = 0;
- 		break;
- 	case COMMIT_TRANS:
-+		/*
-+		 * If we have pending delayed iputs then we could free up a
-+		 * bunch of pinned space, so make sure we run the iputs before
-+		 * we do our pinned bytes check below.
-+		 */
-+		mutex_lock(&fs_info->cleaner_delayed_iput_mutex);
-+		btrfs_run_delayed_iputs(fs_info);
-+		mutex_unlock(&fs_info->cleaner_delayed_iput_mutex);
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index c8ddbacb6748..dc56a4d940c3 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -769,6 +769,9 @@ bool btrfs_pinned_by_swapfile(struct btrfs_fs_info *fs_info, void *ptr);
+  */
+ #define BTRFS_FS_BALANCE_RUNNING		18
+ 
++/* Indicate that the cleaner thread is awake and doing something. */
++#define BTRFS_FS_CLEANER_RUNNING		19
 +
- 		ret = may_commit_transaction(fs_info, space_info);
- 		break;
- 	default:
+ struct btrfs_fs_info {
+ 	u8 fsid[BTRFS_FSID_SIZE];
+ 	u8 chunk_tree_uuid[BTRFS_UUID_SIZE];
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index c5918ff8241b..f40f6fdc1019 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1669,6 +1669,8 @@ static int cleaner_kthread(void *arg)
+ 	while (1) {
+ 		again = 0;
+ 
++		set_bit(BTRFS_FS_CLEANER_RUNNING, &fs_info->flags);
++
+ 		/* Make the cleaner go to sleep early. */
+ 		if (btrfs_need_cleaner_sleep(fs_info))
+ 			goto sleep;
+@@ -1715,6 +1717,7 @@ static int cleaner_kthread(void *arg)
+ 		 */
+ 		btrfs_delete_unused_bgs(fs_info);
+ sleep:
++		clear_bit(BTRFS_FS_CLEANER_RUNNING, &fs_info->flags);
+ 		if (kthread_should_park())
+ 			kthread_parkme();
+ 		if (kthread_should_stop())
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 8ac7abe2ae9b..0b9f3e482cea 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3264,6 +3264,8 @@ void btrfs_add_delayed_iput(struct inode *inode)
+ 	ASSERT(list_empty(&binode->delayed_iput));
+ 	list_add_tail(&binode->delayed_iput, &fs_info->delayed_iputs);
+ 	spin_unlock(&fs_info->delayed_iput_lock);
++	if (!test_bit(BTRFS_FS_CLEANER_RUNNING, &fs_info->flags))
++		wake_up_process(fs_info->cleaner_kthread);
+ }
+ 
+ void btrfs_run_delayed_iputs(struct btrfs_fs_info *fs_info)
 -- 
 2.14.3
 

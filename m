@@ -2,164 +2,101 @@ Return-Path: <SRS0=1LDH=ON=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-6.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 36FA3C04EBF
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 16:28:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5EC0AC04EB8
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 16:45:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 067E1206B7
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 16:28:30 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 067E1206B7
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 18C64206B7
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 16:45:51 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 18C64206B7
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=bouton.name
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726570AbeLDQ2a (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 4 Dec 2018 11:28:30 -0500
-Received: from mx2.suse.de ([195.135.220.15]:43990 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726618AbeLDQ23 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 4 Dec 2018 11:28:29 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id DC031B0DE
-        for <linux-btrfs@vger.kernel.org>; Tue,  4 Dec 2018 16:28:24 +0000 (UTC)
-Subject: Re: [PATCHv3] btrfs: Fix error handling in
- btrfs_cleanup_ordered_extents
-To:     linux-btrfs@vger.kernel.org
-References: <20181121151052.18744-1-nborisov@suse.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <61064647-1fa0-08bd-c8aa-178837b65407@suse.com>
-Date:   Tue, 4 Dec 2018 18:28:23 +0200
+        id S1727042AbeLDQpu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 4 Dec 2018 11:45:50 -0500
+Received: from ns.bouton.name ([109.74.195.142]:56236 "EHLO mail.bouton.name"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726367AbeLDQpt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 4 Dec 2018 11:45:49 -0500
+Received: from [192.168.30.46] (laubervilliers-657-1-19-239.w80-15.abo.wanadoo.fr [80.15.154.239])
+        by mail.bouton.name (Postfix) with ESMTP id B454CB849;
+        Tue,  4 Dec 2018 17:45:47 +0100 (CET)
+Subject: [Mount time bug bounty?] was: BTRFS Mount Delay Time Graph
+To:     Hans van Kranenburg <Hans.van.Kranenburg@mendix.com>,
+        "Wilson, Ellis" <ellisw@panasas.com>,
+        BTRFS <linux-btrfs@vger.kernel.org>
+References: <25a99c85-b048-a678-b61b-97dfc1338cb3@panasas.com>
+ <4746e8ba-b20c-01e2-379e-b76f0d2ab5a7@bouton.name>
+ <57bdbd3d-e605-7dad-4b9a-d78a2f657dce@mendix.com>
+From:   Lionel Bouton <lionel-subscription@bouton.name>
+Message-ID: <0a25ef18-83d1-de59-e2ab-1f36b04d9625@bouton.name>
+Date:   Tue, 4 Dec 2018 17:45:47 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+ Thunderbird/60.3.2
 MIME-Version: 1.0
-In-Reply-To: <20181121151052.18744-1-nborisov@suse.com>
+In-Reply-To: <57bdbd3d-e605-7dad-4b9a-d78a2f657dce@mendix.com>
 Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
 Content-Transfer-Encoding: 8bit
+Content-Language: en-US
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Le 03/12/2018 à 23:22, Hans van Kranenburg a écrit :
+> [...]
+> Yes, I think that's true. See btrfs_read_block_groups in extent-tree.c:
+>
+> https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/fs/btrfs/extent-tree.c#n9982
+>
+> What the code is doing here is starting at the beginning of the extent
+> tree, searching forward until it sees the first BLOCK_GROUP_ITEM (which
+> is not that far away), and then based on the information in it, computes
+> where the next one will be (just after the end of the vaddr+length of
+> it), and then jumps over all normal extent items and searches again near
+> where the next block group item has to be. So, yes, that means that they
+> depend on each other.
+>
+> Two possible ways to improve this:
+>
+> 1. Instead, walk the chunk tree (which has all related items packed
+> together) instead to find out at which locations in the extent tree the
+> block group items are located and then start getting items in parallel.
+> If you have storage with a lot of rotating rust that can deliver much
+> more random reads if you ask for more of them at the same time, then
+> this can already cause a massive speedup.
+>
+> 2. Move the block group items somewhere else, where they can nicely be
+> grouped together, so that the amount of metadata pages that has to be
+> looked up is minimal. Quoting from the link below, "slightly tricky
+> [...] but there are no fundamental obstacles".
+>
+> https://www.spinics.net/lists/linux-btrfs/msg71766.html
+>
+> I think the main obstacle here is finding a developer with enough
+> experience and time to do it. :)
 
+I would definitely be interested in sponsoring at least a part of the
+needed time through my company (we are too small to hire kernel
+developers full-time but we can make a one-time contribution for
+something as valuable to us as faster mount delays).
 
-On 21.11.18 г. 17:10 ч., Nikolay Borisov wrote:
-> Running btrfs/124 in a loop hung up on me sporadically with the
-> following call trace:
-> 	btrfs           D    0  5760   5324 0x00000000
-> 	Call Trace:
-> 	 ? __schedule+0x243/0x800
-> 	 schedule+0x33/0x90
-> 	 btrfs_start_ordered_extent+0x10c/0x1b0 [btrfs]
-> 	 ? wait_woken+0xa0/0xa0
-> 	 btrfs_wait_ordered_range+0xbb/0x100 [btrfs]
-> 	 btrfs_relocate_block_group+0x1ff/0x230 [btrfs]
-> 	 btrfs_relocate_chunk+0x49/0x100 [btrfs]
-> 	 btrfs_balance+0xbeb/0x1740 [btrfs]
-> 	 btrfs_ioctl_balance+0x2ee/0x380 [btrfs]
-> 	 btrfs_ioctl+0x1691/0x3110 [btrfs]
-> 	 ? lockdep_hardirqs_on+0xed/0x180
-> 	 ? __handle_mm_fault+0x8e7/0xfb0
-> 	 ? _raw_spin_unlock+0x24/0x30
-> 	 ? __handle_mm_fault+0x8e7/0xfb0
-> 	 ? do_vfs_ioctl+0xa5/0x6e0
-> 	 ? btrfs_ioctl_get_supported_features+0x30/0x30 [btrfs]
-> 	 do_vfs_ioctl+0xa5/0x6e0
-> 	 ? entry_SYSCALL_64_after_hwframe+0x3e/0xbe
-> 	 ksys_ioctl+0x3a/0x70
-> 	 __x64_sys_ioctl+0x16/0x20
-> 	 do_syscall_64+0x60/0x1b0
-> 	 entry_SYSCALL_64_after_hwframe+0x49/0xbe
-> 
-> This happens because during page writeback it's valid for
-> writepage_delalloc to instantiate a delalloc range which doesn't
-> belong to the page currently being written back.
-> 
-> The reason this case is valid is due to find_lock_delalloc_range
-> returning any available range after the passed delalloc_start and
-> ignorting whether the page under writeback is within that range.
-> In turn ordered extents (OE) are always created for the returned range
-> from find_lock_delalloc_range. If, however, a failure occurs while OE
-> are being created then the clean up code in btrfs_cleanup_ordered_extents
-> will be called.
-> 
-> Unfortunately the code in btrfs_cleanup_ordered_extents doesn't consider
-> the case of such 'foreign' range being processed and instead it always
-> assumes that the range OE are created for belongs to the page. This
-> leads to the first page of such foregin range to not be cleaned up since
-> it's deliberately missed skipped by the current cleaning up code.
-> 
-> Fix this by correctly checking whether the current page belongs to the
-> range being instantiated and if so adjsut the range parameters
-> passed for cleaning up. If it doesn't, then just clean the whole OE
-> range directly.
-> 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-> ---
-> V3:
->  * Re-worded the commit for easier comprehension
->  * Added RB tag from Josef
-> 
-> V2:
->  * Fix compilation failure due to missing parentheses
->  * Fixed the "Fixes" tag.
->  fs/btrfs/inode.c | 29 ++++++++++++++++++++---------
->  1 file changed, 20 insertions(+), 9 deletions(-)
-> 
+If needed it could be split in two steps with separate bounties :
+- providing a patch for the latest LTS kernel with a substantial
+decrease in mount time in our case (ideally less than a minute instead
+of 15 minutes but <5 minutes is already worth it).
+- having it integrated in mainline.
 
-Ping,
+I don't have any experience with company sponsorship/bounties but I'm
+willing to learn (don't hesitate to make suggestions). I'll have to
+discuss it with our accountant to make sure we do it correctly.
 
-Also this patch needs:
+Is it the right place to discuss this kind of subject or should I take
+the discussion elsewhere ?
 
-Fixes: 524272607e88 ("btrfs: Handle delalloc error correctly to avoid
-ordered extent hang") and it needs to be applied to the stable releases 4.14
+Best regards,
 
-
-<snip>
+Lionel

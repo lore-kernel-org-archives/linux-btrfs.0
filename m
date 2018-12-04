@@ -6,30 +6,31 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CBC09C04EB8
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 15:16:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D9AD2C04EB8
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 15:22:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9BC13206B7
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 15:16:05 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9BC13206B7
+	by mail.kernel.org (Postfix) with ESMTP id 9F44B2081C
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 15:22:25 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9F44B2081C
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726683AbeLDPQE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 4 Dec 2018 10:16:04 -0500
-Received: from mx2.suse.de ([195.135.220.15]:60280 "EHLO mx1.suse.de"
+        id S1726769AbeLDPWY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 4 Dec 2018 10:22:24 -0500
+Received: from mx2.suse.de ([195.135.220.15]:33154 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725910AbeLDPQE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 4 Dec 2018 10:16:04 -0500
+        id S1726151AbeLDPWY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 4 Dec 2018 10:22:24 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 6B283AF86
-        for <linux-btrfs@vger.kernel.org>; Tue,  4 Dec 2018 15:16:01 +0000 (UTC)
-Subject: Re: [PATCH 1/2] btrfs: scrub: pass fs_info to scrub_setup_ctx
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 7BF72AF6E
+        for <linux-btrfs@vger.kernel.org>; Tue,  4 Dec 2018 15:22:20 +0000 (UTC)
+Subject: Re: [PATCH 2/2] btrfs: scrub: move scrub_setup_ctx allocation out of
+ device_list_mutex
 To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 Cc:     fdmanana@suse.com
 References: <cover.1543935982.git.dsterba@suse.com>
- <9049971b8dd554eed0b19134e0642b238792e29b.1543935982.git.dsterba@suse.com>
+ <cfd97a36f22e60f29878598673be01f69208fea9.1543935982.git.dsterba@suse.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -74,12 +75,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <223f1aa0-5b15-71a2-46d2-b9141eb2f3a2@suse.com>
-Date:   Tue, 4 Dec 2018 17:15:59 +0200
+Message-ID: <e0917cec-7d06-6217-16f4-9f83d3ae5ff6@suse.com>
+Date:   Tue, 4 Dec 2018 17:22:19 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <9049971b8dd554eed0b19134e0642b238792e29b.1543935982.git.dsterba@suse.com>
+In-Reply-To: <cfd97a36f22e60f29878598673be01f69208fea9.1543935982.git.dsterba@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -91,52 +92,107 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 4.12.18 г. 17:11 ч., David Sterba wrote:
-> We can pass fs_info directly as this is the only member of btrfs_device
-> that's bing used inside scrub_setup_ctx.
+> The scrub context is allocated with GFP_KERNEL and called from
+> btrfs_scrub_dev under the fs_info::device_list_mutex. This is not safe
+> regarding reclaim that could try to flush filesystem data in order to
+> get the memory. And the device_list_mutex is held during superblock
+> commit, so this would cause a lockup.
+> 
+> Move the alocation and initialization before any changes that require
+> the mutex.
 > 
 > Signed-off-by: David Sterba <dsterba@suse.com>
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
 > ---
->  fs/btrfs/scrub.c | 9 ++++-----
->  1 file changed, 4 insertions(+), 5 deletions(-)
+>  fs/btrfs/scrub.c | 30 ++++++++++++++++++------------
+>  1 file changed, 18 insertions(+), 12 deletions(-)
 > 
 > diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-> index bbd1b36f4918..ffcab263e057 100644
+> index ffcab263e057..051d14c9f013 100644
 > --- a/fs/btrfs/scrub.c
 > +++ b/fs/btrfs/scrub.c
-> @@ -578,12 +578,11 @@ static void scrub_put_ctx(struct scrub_ctx *sctx)
->  		scrub_free_ctx(sctx);
->  }
->  
-> -static noinline_for_stack
-> -struct scrub_ctx *scrub_setup_ctx(struct btrfs_device *dev, int is_dev_replace)
-> +static noinline_for_stack struct scrub_ctx *scrub_setup_ctx(
-> +		struct btrfs_fs_info *fs_info, int is_dev_replace)
->  {
->  	struct scrub_ctx *sctx;
->  	int		i;
-> -	struct btrfs_fs_info *fs_info = dev->fs_info;
->  
->  	sctx = kzalloc(sizeof(*sctx), GFP_KERNEL);
->  	if (!sctx)
-> @@ -592,7 +591,7 @@ struct scrub_ctx *scrub_setup_ctx(struct btrfs_device *dev, int is_dev_replace)
->  	sctx->is_dev_replace = is_dev_replace;
->  	sctx->pages_per_rd_bio = SCRUB_PAGES_PER_RD_BIO;
->  	sctx->curr = -1;
-> -	sctx->fs_info = dev->fs_info;
-> +	sctx->fs_info = fs_info;
->  	for (i = 0; i < SCRUB_BIOS_PER_SCTX; ++i) {
->  		struct scrub_bio *sbio;
->  
-> @@ -3878,7 +3877,7 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
->  		return ret;
+> @@ -3834,13 +3834,18 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+>  		return -EINVAL;
 >  	}
 >  
-> -	sctx = scrub_setup_ctx(dev, is_dev_replace);
+> +	/* Allocate outside of device_list_mutex */
 > +	sctx = scrub_setup_ctx(fs_info, is_dev_replace);
->  	if (IS_ERR(sctx)) {
+> +	if (IS_ERR(sctx))
+> +		return PTR_ERR(sctx);
+>  
+>  	mutex_lock(&fs_info->fs_devices->device_list_mutex);
+>  	dev = btrfs_find_device(fs_info, devid, NULL, NULL);
+>  	if (!dev || (test_bit(BTRFS_DEV_STATE_MISSING, &dev->dev_state) &&
+>  		     !is_dev_replace)) {
+>  		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+> -		return -ENODEV;
+> +		ret = -ENODEV;
+> +		goto out_free_ctx;
+>  	}
+>  
+>  	if (!is_dev_replace && !readonly &&
+> @@ -3848,7 +3853,8 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+>  		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+>  		btrfs_err_in_rcu(fs_info, "scrub: device %s is not writable",
+>  				rcu_str_deref(dev->name));
+> -		return -EROFS;
+> +		ret = -EROFS;
+> +		goto out_free_ctx;
+>  	}
+>  
+>  	mutex_lock(&fs_info->scrub_lock);
+> @@ -3856,7 +3862,8 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+>  	    test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &dev->dev_state)) {
 >  		mutex_unlock(&fs_info->scrub_lock);
 >  		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+> -		return -EIO;
+> +		ret = -EIO;
+> +		goto out_free_ctx;
+>  	}
+>  
+>  	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
+> @@ -3866,7 +3873,8 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+>  		btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
+>  		mutex_unlock(&fs_info->scrub_lock);
+>  		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+> -		return -EINPROGRESS;
+> +		ret = -EINPROGRESS;
+> +		goto out_free_ctx;
+>  	}
+>  	btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
+>  
+> @@ -3874,16 +3882,9 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+>  	if (ret) {
+>  		mutex_unlock(&fs_info->scrub_lock);
+>  		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+> -		return ret;
+> +		goto out_free_ctx;
+
+Don't we suffer the same issue when calling scrub_workers_get since in
+it we do btrfs_alloc_workqueue which also calls kzalloc with GFP_KERNEL?
+
+
+>  	}
+>  
+> -	sctx = scrub_setup_ctx(fs_info, is_dev_replace);
+> -	if (IS_ERR(sctx)) {
+> -		mutex_unlock(&fs_info->scrub_lock);
+> -		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+> -		scrub_workers_put(fs_info);
+> -		return PTR_ERR(sctx);
+> -	}
+>  	sctx->readonly = readonly;
+>  	dev->scrub_ctx = sctx;
+>  	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+> @@ -3936,6 +3937,11 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+>  
+>  	scrub_put_ctx(sctx);
+>  
+> +	return ret;
+> +
+> +out_free_ctx:
+> +	scrub_free_ctx(sctx);
+> +
+>  	return ret;
+>  }
+>  
 > 

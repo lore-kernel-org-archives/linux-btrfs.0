@@ -2,74 +2,85 @@ Return-Path: <SRS0=1LDH=ON=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2FEAAC04EB8
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 12:38:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DC0C2C04EB8
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 12:42:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E468B20878
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 12:38:45 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Fosvd2Ua"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E468B20878
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	by mail.kernel.org (Postfix) with ESMTP id A36E020878
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 12:42:35 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A36E020878
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726222AbeLDMio (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 4 Dec 2018 07:38:44 -0500
-Received: from mail-io1-f65.google.com ([209.85.166.65]:40835 "EHLO
-        mail-io1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725910AbeLDMio (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Dec 2018 07:38:44 -0500
-Received: by mail-io1-f65.google.com with SMTP id n9so13459999ioh.7
-        for <linux-btrfs@vger.kernel.org>; Tue, 04 Dec 2018 04:38:43 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=subject:to:references:from:message-id:date:user-agent:mime-version
-         :in-reply-to:content-language:content-transfer-encoding;
-        bh=jzBalv5q1STN9E6EgFkzMyPkte8Tt6vJGfT4i6jo/1Q=;
-        b=Fosvd2Ua2/5gYPVQTBg9d5o9Pzt/2xg406iMUtNvm8BT4wRWH5c6z7U53ix/Npbwgd
-         Aac6rqXv2YOBhEaHuwYKYZ4FF0B4SL8VA+Dlq48TYR6K5hzS+ejCxeinB2+xVmb/GhCN
-         CBocOctQYNHyiAc6CMxbv4RodriDxc5Mtfky0CuGUWulQBfgsRLt848PsD2hkYYQ8toI
-         wwAu9OxEuG90CluTZopaWb9ioi2yc0YHYOuQx9MPpqpg+DdA9XxTKNCVE9MwU6a4LgZB
-         Z9WM06bAerTGQkww4zVBKY2EbXWDBXlR8Wyxt/U7R1JxSVMQ/xdYpsDY/GGHGMYufZVk
-         FWxA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=jzBalv5q1STN9E6EgFkzMyPkte8Tt6vJGfT4i6jo/1Q=;
-        b=JWWJeh4SD02+8WR0RIYAvqRLTWr+kZE0fzO5JWy8b2bWWT5W/dJi5byObcNao+bQFF
-         ysn1an1Ku/0bLu6/yIo3/Hpmfu5e0oAAseYHBnRxzCBKCikIefs57CyAxwTQQ38aXBIM
-         KGARmbBKdkN2E+XOTSjqjaJ7vqWHtdEq9EFhxGRXT+yiaDoMrAbJ31MdjSv5rwbp+O2Z
-         WwYwzaPq5HD22Gy6ndTZEyLYTn4xjpfTi7Ik4HFqAFojacgkNhwT4TeUqVyx41XIMNCj
-         dmzqA5ooWO6FtR3v/ssPUsdWf93VQvhP//S/qP1r7KRBr+CQUFyHgFpe/CxEpLpFrWO2
-         fqTQ==
-X-Gm-Message-State: AA+aEWZdcPiXgh8pRAlVS55MOz5B0PtNYuAXUZn3xqJvbYWG3TtP4FtK
-        m4u8h1qOTFpmwkHm85UYd54wah1Z2b8=
-X-Google-Smtp-Source: AFSGD/V4PS57b6JQhCGt24kRrsWj5BHGL/5rQrJ3HbJoFfw1PaUHYxRLWtQQovldGYnBEeoNt6a2/w==
-X-Received: by 2002:a5d:9602:: with SMTP id w2mr6254841iol.86.1543927122598;
-        Tue, 04 Dec 2018 04:38:42 -0800 (PST)
-Received: from [191.9.209.46] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
-        by smtp.gmail.com with ESMTPSA id i78sm5485468itb.6.2018.12.04.04.38.41
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 04 Dec 2018 04:38:41 -0800 (PST)
-Subject: Re: experiences running btrfs on external USB disks?
-To:     Tomasz Chmielewski <mangoo@wpkg.org>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <e94da83b0a57c01663ad1e40fa6b9b5e@wpkg.org>
-From:   "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <7c8a85c7-52d8-202b-5bc7-0fa0c5c6e502@gmail.com>
-Date:   Tue, 4 Dec 2018 07:38:38 -0500
-User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
- Thunderbird/60.3.2
+        id S1726042AbeLDMme (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 4 Dec 2018 07:42:34 -0500
+Received: from mx2.suse.de ([195.135.220.15]:60648 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725767AbeLDMme (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 4 Dec 2018 07:42:34 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id DEDFFAF51;
+        Tue,  4 Dec 2018 12:42:30 +0000 (UTC)
+Subject: Re: [PATCH 7/9] btrfs-progs: Fix Wmaybe-uninitialized warning
+To:     Adam Borowski <kilobyte@angband.pl>, dsterba@suse.cz,
+        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20181116075426.4142-1-wqu@suse.com>
+ <20181116075426.4142-8-wqu@suse.com> <20181204121704.GL17773@twin.jikos.cz>
+ <20181204122248.liocpfkyqodb5vco@angband.pl>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <d4f18a93-7cad-9813-65ea-9e278e133397@suse.com>
+Date:   Tue, 4 Dec 2018 14:42:29 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <e94da83b0a57c01663ad1e40fa6b9b5e@wpkg.org>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20181204122248.liocpfkyqodb5vco@angband.pl>
+Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -77,45 +88,37 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 2018-12-04 00:37, Tomasz Chmielewski wrote:
-> I'm trying to use btrfs on an external USB drive, without much success.
-> 
-> When the drive is connected for 2-3+ days, the filesystem gets remounted 
-> readonly, with BTRFS saying "IO failure":
-> 
-> [77760.444607] BTRFS error (device sdb1): bad tree block start, want 
-> 378372096 have 0
-> [77760.550933] BTRFS error (device sdb1): bad tree block start, want 
-> 378372096 have 0
-> [77760.550972] BTRFS: error (device sdb1) in __btrfs_free_extent:6804: 
-> errno=-5 IO failure
-> [77760.550979] BTRFS info (device sdb1): forced readonly
-> [77760.551003] BTRFS: error (device sdb1) in 
-> btrfs_run_delayed_refs:2935: errno=-5 IO failure
-> [77760.553223] BTRFS error (device sdb1): pending csums is 4096
-> 
-> 
-> Note that there are no other kernel messages (i.e. that would indicate a 
-> problem with disk, cable disconnection etc.).
-> 
-> The load on the drive itself can be quite heavy at times (i.e. 100% IO 
-> for 1-2 h and more) - can it contribute to the problem (i.e. btrfs 
-> thinks there is some timeout somewhere)?
-> 
-> Running 4.19.6 right now, but was experiencing the issue also with 4.18 
-> kernels.
-> 
-> 
-> 
-> # btrfs device stats /data
-> [/dev/sda1].write_io_errs    0
-> [/dev/sda1].read_io_errs     0
-> [/dev/sda1].flush_io_errs    0
-> [/dev/sda1].corruption_errs  0
-> [/dev/sda1].generation_errs  0
-It looks to me like the typical USB issues that are present with almost 
-all filesystems but only seem to be noticed by BTRFS because it does 
-more rigorous checking of data.
 
-In short, USB is _crap_ for fixed storage, don't use it like that, even 
-if you are using filesystems which don't appear to complain.
+
+On 4.12.18 г. 14:22 ч., Adam Borowski wrote:
+> On Tue, Dec 04, 2018 at 01:17:04PM +0100, David Sterba wrote:
+>> On Fri, Nov 16, 2018 at 03:54:24PM +0800, Qu Wenruo wrote:
+>>> The only location is the following code:
+>>>
+>>> 	int level = path->lowest_level + 1;
+>>>  	BUG_ON(path->lowest_level + 1 >= BTRFS_MAX_LEVEL);
+>>>  	while(level < BTRFS_MAX_LEVEL) {
+>>> 		slot = path->slots[level] + 1;
+>>> 		...
+>>> 	}
+>>> 	path->slots[level] = slot;
+>>>
+>>> Again, it's the stupid compiler needs some hint for the fact that
+>>> we will always enter the while loop for at least once, thus @slot should
+>>> always be initialized.
+>>
+>> Harsh words for the compiler, and I say not deserved. The same code
+>> pasted to kernel a built with the same version does not report the
+>> warning, so it's apparently a missing annotation of BUG_ON in
+>> btrfs-progs that does not give the right hint.
+> 
+> It's be nice if the C language provided a kind of a while loop that executes
+> at least once...
+
+But it does, it's called:
+
+do {
+
+} while()
+
+> 

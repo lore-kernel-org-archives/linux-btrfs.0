@@ -2,35 +2,33 @@ Return-Path: <SRS0=1LDH=ON=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D9AD2C04EB8
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 15:22:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 36FA3C04EBF
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 16:28:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9F44B2081C
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 15:22:25 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9F44B2081C
+	by mail.kernel.org (Postfix) with ESMTP id 067E1206B7
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 16:28:30 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 067E1206B7
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726769AbeLDPWY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 4 Dec 2018 10:22:24 -0500
-Received: from mx2.suse.de ([195.135.220.15]:33154 "EHLO mx1.suse.de"
+        id S1726570AbeLDQ2a (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 4 Dec 2018 11:28:30 -0500
+Received: from mx2.suse.de ([195.135.220.15]:43990 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726151AbeLDPWY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 4 Dec 2018 10:22:24 -0500
+        id S1726618AbeLDQ23 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 4 Dec 2018 11:28:29 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 7BF72AF6E
-        for <linux-btrfs@vger.kernel.org>; Tue,  4 Dec 2018 15:22:20 +0000 (UTC)
-Subject: Re: [PATCH 2/2] btrfs: scrub: move scrub_setup_ctx allocation out of
- device_list_mutex
-To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Cc:     fdmanana@suse.com
-References: <cover.1543935982.git.dsterba@suse.com>
- <cfd97a36f22e60f29878598673be01f69208fea9.1543935982.git.dsterba@suse.com>
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id DC031B0DE
+        for <linux-btrfs@vger.kernel.org>; Tue,  4 Dec 2018 16:28:24 +0000 (UTC)
+Subject: Re: [PATCHv3] btrfs: Fix error handling in
+ btrfs_cleanup_ordered_extents
+To:     linux-btrfs@vger.kernel.org
+References: <20181121151052.18744-1-nborisov@suse.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -75,12 +73,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <e0917cec-7d06-6217-16f4-9f83d3ae5ff6@suse.com>
-Date:   Tue, 4 Dec 2018 17:22:19 +0200
+Message-ID: <61064647-1fa0-08bd-c8aa-178837b65407@suse.com>
+Date:   Tue, 4 Dec 2018 18:28:23 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <cfd97a36f22e60f29878598673be01f69208fea9.1543935982.git.dsterba@suse.com>
+In-Reply-To: <20181121151052.18744-1-nborisov@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -91,108 +89,77 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 4.12.18 г. 17:11 ч., David Sterba wrote:
-> The scrub context is allocated with GFP_KERNEL and called from
-> btrfs_scrub_dev under the fs_info::device_list_mutex. This is not safe
-> regarding reclaim that could try to flush filesystem data in order to
-> get the memory. And the device_list_mutex is held during superblock
-> commit, so this would cause a lockup.
+On 21.11.18 г. 17:10 ч., Nikolay Borisov wrote:
+> Running btrfs/124 in a loop hung up on me sporadically with the
+> following call trace:
+> 	btrfs           D    0  5760   5324 0x00000000
+> 	Call Trace:
+> 	 ? __schedule+0x243/0x800
+> 	 schedule+0x33/0x90
+> 	 btrfs_start_ordered_extent+0x10c/0x1b0 [btrfs]
+> 	 ? wait_woken+0xa0/0xa0
+> 	 btrfs_wait_ordered_range+0xbb/0x100 [btrfs]
+> 	 btrfs_relocate_block_group+0x1ff/0x230 [btrfs]
+> 	 btrfs_relocate_chunk+0x49/0x100 [btrfs]
+> 	 btrfs_balance+0xbeb/0x1740 [btrfs]
+> 	 btrfs_ioctl_balance+0x2ee/0x380 [btrfs]
+> 	 btrfs_ioctl+0x1691/0x3110 [btrfs]
+> 	 ? lockdep_hardirqs_on+0xed/0x180
+> 	 ? __handle_mm_fault+0x8e7/0xfb0
+> 	 ? _raw_spin_unlock+0x24/0x30
+> 	 ? __handle_mm_fault+0x8e7/0xfb0
+> 	 ? do_vfs_ioctl+0xa5/0x6e0
+> 	 ? btrfs_ioctl_get_supported_features+0x30/0x30 [btrfs]
+> 	 do_vfs_ioctl+0xa5/0x6e0
+> 	 ? entry_SYSCALL_64_after_hwframe+0x3e/0xbe
+> 	 ksys_ioctl+0x3a/0x70
+> 	 __x64_sys_ioctl+0x16/0x20
+> 	 do_syscall_64+0x60/0x1b0
+> 	 entry_SYSCALL_64_after_hwframe+0x49/0xbe
 > 
-> Move the alocation and initialization before any changes that require
-> the mutex.
+> This happens because during page writeback it's valid for
+> writepage_delalloc to instantiate a delalloc range which doesn't
+> belong to the page currently being written back.
 > 
-> Signed-off-by: David Sterba <dsterba@suse.com>
+> The reason this case is valid is due to find_lock_delalloc_range
+> returning any available range after the passed delalloc_start and
+> ignorting whether the page under writeback is within that range.
+> In turn ordered extents (OE) are always created for the returned range
+> from find_lock_delalloc_range. If, however, a failure occurs while OE
+> are being created then the clean up code in btrfs_cleanup_ordered_extents
+> will be called.
+> 
+> Unfortunately the code in btrfs_cleanup_ordered_extents doesn't consider
+> the case of such 'foreign' range being processed and instead it always
+> assumes that the range OE are created for belongs to the page. This
+> leads to the first page of such foregin range to not be cleaned up since
+> it's deliberately missed skipped by the current cleaning up code.
+> 
+> Fix this by correctly checking whether the current page belongs to the
+> range being instantiated and if so adjsut the range parameters
+> passed for cleaning up. If it doesn't, then just clean the whole OE
+> range directly.
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 > ---
->  fs/btrfs/scrub.c | 30 ++++++++++++++++++------------
->  1 file changed, 18 insertions(+), 12 deletions(-)
+> V3:
+>  * Re-worded the commit for easier comprehension
+>  * Added RB tag from Josef
 > 
-> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-> index ffcab263e057..051d14c9f013 100644
-> --- a/fs/btrfs/scrub.c
-> +++ b/fs/btrfs/scrub.c
-> @@ -3834,13 +3834,18 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
->  		return -EINVAL;
->  	}
->  
-> +	/* Allocate outside of device_list_mutex */
-> +	sctx = scrub_setup_ctx(fs_info, is_dev_replace);
-> +	if (IS_ERR(sctx))
-> +		return PTR_ERR(sctx);
->  
->  	mutex_lock(&fs_info->fs_devices->device_list_mutex);
->  	dev = btrfs_find_device(fs_info, devid, NULL, NULL);
->  	if (!dev || (test_bit(BTRFS_DEV_STATE_MISSING, &dev->dev_state) &&
->  		     !is_dev_replace)) {
->  		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-> -		return -ENODEV;
-> +		ret = -ENODEV;
-> +		goto out_free_ctx;
->  	}
->  
->  	if (!is_dev_replace && !readonly &&
-> @@ -3848,7 +3853,8 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
->  		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
->  		btrfs_err_in_rcu(fs_info, "scrub: device %s is not writable",
->  				rcu_str_deref(dev->name));
-> -		return -EROFS;
-> +		ret = -EROFS;
-> +		goto out_free_ctx;
->  	}
->  
->  	mutex_lock(&fs_info->scrub_lock);
-> @@ -3856,7 +3862,8 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
->  	    test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &dev->dev_state)) {
->  		mutex_unlock(&fs_info->scrub_lock);
->  		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-> -		return -EIO;
-> +		ret = -EIO;
-> +		goto out_free_ctx;
->  	}
->  
->  	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
-> @@ -3866,7 +3873,8 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
->  		btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
->  		mutex_unlock(&fs_info->scrub_lock);
->  		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-> -		return -EINPROGRESS;
-> +		ret = -EINPROGRESS;
-> +		goto out_free_ctx;
->  	}
->  	btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
->  
-> @@ -3874,16 +3882,9 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
->  	if (ret) {
->  		mutex_unlock(&fs_info->scrub_lock);
->  		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-> -		return ret;
-> +		goto out_free_ctx;
-
-Don't we suffer the same issue when calling scrub_workers_get since in
-it we do btrfs_alloc_workqueue which also calls kzalloc with GFP_KERNEL?
-
-
->  	}
->  
-> -	sctx = scrub_setup_ctx(fs_info, is_dev_replace);
-> -	if (IS_ERR(sctx)) {
-> -		mutex_unlock(&fs_info->scrub_lock);
-> -		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-> -		scrub_workers_put(fs_info);
-> -		return PTR_ERR(sctx);
-> -	}
->  	sctx->readonly = readonly;
->  	dev->scrub_ctx = sctx;
->  	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-> @@ -3936,6 +3937,11 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
->  
->  	scrub_put_ctx(sctx);
->  
-> +	return ret;
-> +
-> +out_free_ctx:
-> +	scrub_free_ctx(sctx);
-> +
->  	return ret;
->  }
->  
+> V2:
+>  * Fix compilation failure due to missing parentheses
+>  * Fixed the "Fixes" tag.
+>  fs/btrfs/inode.c | 29 ++++++++++++++++++++---------
+>  1 file changed, 20 insertions(+), 9 deletions(-)
 > 
+
+Ping,
+
+Also this patch needs:
+
+Fixes: 524272607e88 ("btrfs: Handle delalloc error correctly to avoid
+ordered extent hang") and it needs to be applied to the stable releases 4.14
+
+
+<snip>

@@ -2,123 +2,163 @@ Return-Path: <SRS0=1LDH=ON=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 55BF7C04EB8
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 06:34:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 32476C04EBF
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 06:46:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0DFD7208A3
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 06:34:21 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0DFD7208A3
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id E45F620834
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 06:46:28 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="gmC8LIb5"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E45F620834
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726027AbeLDGeU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 4 Dec 2018 01:34:20 -0500
-Received: from mx2.suse.de ([195.135.220.15]:37830 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725983AbeLDGeT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 4 Dec 2018 01:34:19 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id E519FAC6C;
-        Tue,  4 Dec 2018 06:34:17 +0000 (UTC)
-Subject: Re: [PATCH 2/5] btrfs: Refactor btrfs_can_relocate
-To:     dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
-        linux-btrfs@vger.kernel.org
-References: <1540554201-11305-1-git-send-email-nborisov@suse.com>
- <1540554201-11305-3-git-send-email-nborisov@suse.com>
- <eb2690a3-7a47-af8f-a7cc-3d0cee98a1da@oracle.com>
- <20181203172511.GB17773@twin.jikos.cz>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <4b92747a-3a4d-9a61-8770-c0ac6cefa8d7@suse.com>
-Date:   Tue, 4 Dec 2018 08:34:15 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+        id S1726070AbeLDGq1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 4 Dec 2018 01:46:27 -0500
+Received: from mail-it1-f195.google.com ([209.85.166.195]:38741 "EHLO
+        mail-it1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726065AbeLDGq0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Dec 2018 01:46:26 -0500
+Received: by mail-it1-f195.google.com with SMTP id h65so12750869ith.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 03 Dec 2018 22:46:26 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=Zs2FnWRhF1GB44BZU5BjuSNPbL4u+/IbzeLj+nlp8aY=;
+        b=gmC8LIb5orpTet2WC06I9rrE7hyn4ApfDRs1XAmU3HLr7RkrYi+tTe3M/ca9EwKZzU
+         ROS9WJ7aV+ugWwR+NfrJ3Pxf8+oeIkbBk8DB82eESKR+RoGV1ZhgaqIU8BeX5n9GqTFe
+         uqC2rFG/nGTT7sSMhy6bASRwWUbnz8BmYl5Os/mB2Sag+7fTjnPCF2GBPu6iV7+C+kr0
+         Ek0eQllrn0LM8NZXmuHLCt6Ugj72auEQtVieL1FPIQzwpP7T9PDohPTRypYI9Fc8gkvQ
+         RoqrzKXfEeK8s4tpJks2rBsYbn8P34qI8Q0SW9Th3QGxau0EdeSnj8IJ3lJeOn6X3S1j
+         aBbQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=Zs2FnWRhF1GB44BZU5BjuSNPbL4u+/IbzeLj+nlp8aY=;
+        b=Pfi7/P0EN8n1T5fU7miVw2l+FBGFP/mEaoYIsV5tLFy/5TArW3dm2VlTdrSrOpQPSQ
+         EmLaODN1hrEoWJ+hwzuC485so7svMjNoNHyF6bv2/4NCqzBUzaUlbwMjP05gZkjTuI3X
+         1qn7Rdhy95WQrwbffXQyhonyaRVM/0aG4x/5/ebE1plIuzmBvZddShZLr4njhWty8tTj
+         BlSyKmCwOMjfiF9K2d1CjmfCzAVk+ZYX+3meb4OawXkdisYp494Eaq1OIJndTEQC08lz
+         j7tFqcVJKk86GDxY8BA5kVoT0HjO3czLPzjHNq60OVBTwyiW9jBzN60+towJtowGIKMf
+         YbiA==
+X-Gm-Message-State: AA+aEWYm1sh0we6uWJFZIoZ9oWPapKng7EdSjANCMbK51kdVLr9xKGBy
+        gh8pC9XC8HzbsTTQvhm6hM/TEawJK8i/aBy0/4YnFkIfUQ4=
+X-Google-Smtp-Source: AFSGD/V4bxasd3JhZJAa1ugMFr4sd5w5onbUAbJRnv6/6bOS02yfdu3GPW83fXDNRQY6ofd9Slh3cfflfH5I78DEFLo=
+X-Received: by 2002:a24:43c5:: with SMTP id s188mr10937807itb.150.1543905985694;
+ Mon, 03 Dec 2018 22:46:25 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20181203172511.GB17773@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+References: <CAOv1SKD46XeF=iqi4At-0YJpK6nHQ+3ErKDN_sW_4fAPMyAgMw@mail.gmail.com>
+ <CAJCQCtRUTavGyh2A4qZe=yT=ydcu1byBy-LKF0jKZwNdZqaEWA@mail.gmail.com>
+In-Reply-To: <CAJCQCtRUTavGyh2A4qZe=yT=ydcu1byBy-LKF0jKZwNdZqaEWA@mail.gmail.com>
+From:   Mike Javorski <mike.javorski@gmail.com>
+Date:   Mon, 3 Dec 2018 22:46:14 -0800
+Message-ID: <CAOv1SKDiRwMP8ffLS5po6zecqmEgd4ywau4jhE1G_MC0bSJLgA@mail.gmail.com>
+Subject: Re: Ran into "invalid block group size" bug, unclear how to proceed.
+To:     lists@colorremedies.com
+Cc:     linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Apologies for the dupe Chris, I neglected to hit Reply-All.. Comments below.
 
+On Mon, Dec 3, 2018 at 9:56 PM Chris Murphy <lists@colorremedies.com> wrote:
+>
+> On Mon, Dec 3, 2018 at 8:32 PM Mike Javorski <mike.javorski@gmail.com> wrote:
+> >
+> > Need a bit of advice here ladies / gents. I am running into an issue
+> > which Qu Wenruo seems to have posted a patch for several weeks ago
+> > (see https://patchwork.kernel.org/patch/10694997/).
+> >
+> > Here is the relevant dmesg output which led me to Qu's patch.
+> > ----
+> > [   10.032475] BTRFS critical (device sdb): corrupt leaf: root=2
+> > block=24655027060736 slot=20 bg_start=13188988928 bg_len=10804527104,
+> > invalid block group size, have 10804527104 expect (0, 10737418240]
+> > [   10.032493] BTRFS error (device sdb): failed to read block groups: -5
+> > [   10.053365] BTRFS error (device sdb): open_ctree failed
+> > ----
+> >
+> > This server has a 16 disk btrfs filesystem (RAID6) which I boot
+> > periodically to btrfs-send snapshots to. This machine is running
+> > ArchLinux and I had just updated  to their latest 4.19.4 kernel
+> > package (from 4.18.10 which was working fine). I've tried updating to
+> > the 4.19.6 kernel that is in testing, but that doesn't seem to resolve
+> > the issue. From what I can see on kernel.org, the patch above is not
+> > pushed to stable or to Linus' tree.
+> >
+> > At this point the question is what to do. Is my FS toast? Could I
+> > revert to the 4.18.10 kernel and boot safely? I don't know if the 4.19
+> > boot process may have flipped some bits which would make reverting
+> > problematic.
+>
+> That patch is not yet merged in linux-next so to use it, you'd need to
+> apply yourself and compile a kernel. I can't tell for sure if it'd
+> help.
+>
+> But, the less you change the file system, the better chance of saving
+> it. I have no idea why there'd be a corrupt leaf just due to a kernel
+> version change, though.
+>
+> Needless to say, raid56 just seems fragile once it runs into any kind
+> of trouble. I personally wouldn't boot off it at all. I would only
+> mount it from another system, ideally an installed system but a live
+> system with the kernel versions you need would also work. That way you
+> can get more information without changes, and booting will almost
+> immediately mount rw, if mount succeeds at all, and will write a bunch
+> of changes to the file system.
+>
 
-On 3.12.18 г. 19:25 ч., David Sterba wrote:
-> On Sat, Nov 17, 2018 at 09:29:27AM +0800, Anand Jain wrote:
->>> -			ret = find_free_dev_extent(trans, device, min_free,
->>> -						   &dev_offset, NULL);
->>> -			if (!ret)
->>> +			if (!find_free_dev_extent(trans, device, min_free,
->>> +						   &dev_offset, NULL))
->>
->>   This can return -ENOMEM;
->>
->>> @@ -2856,8 +2856,7 @@ static int btrfs_relocate_chunk(struct btrfs_fs_info *fs_info, u64 chunk_offset)
->>>   	 */
->>>   	lockdep_assert_held(&fs_info->delete_unused_bgs_mutex);
->>>   
->>> -	ret = btrfs_can_relocate(fs_info, chunk_offset);
->>> -	if (ret)
->>> +	if (!btrfs_can_relocate(fs_info, chunk_offset))
->>>   		return -ENOSPC;
->>
->>   And ends up converting -ENOMEM to -ENOSPC.
->>
->>   Its better to propagate the accurate error.
-> 
-> Right, converting to bool is obscuring the reason why the functions
-> fail. Making the code simpler at this cost does not look like a good
-> idea to me. I'll remove the patch from misc-next for now.
+If the boot could corrupt the disk, that ship has already sailed as I
+have previously attempted to mount the volume with the 4.19.4 and
+4.19.6 kernels, but they both failed reporting the log lines in my
+original message. I am hoping that Qu notices this thread at some
+point as they are the author of the original patch which introduced
+the check which is now failing, as well as the un-merged patch linked
+earlier that adjusts the check condition.
 
-The patch itself does not make the code more obscure than currently is,
-because even if ENOMEM is returned it's still converted to ENOSPC in
-btrfs_relocate_chunk.
-> 
+What I don't know is if the checks up until that mount failure have
+been read-only and thus I can revert to the older kernel, or if
+something would have been written to disk prior to the mount call
+failing. I don't want to risk the 23 TiB of snapshot data stored if
+it's an easy workaround :-).  I realize there are risks with the
+RAID56 code, but I've done my best to mitigate with server-grade
+hardware, ECC memory, a UPS and a redundant copy of the data via
+btrfs-send to this machine. Losing this snapshot volume is not the end
+of the world, but I am about to upgrade the primary server (which is
+currently running 4.19.4 without issue btw) and want to have a best
+effort snapshot/backup in place before I do so.
+
+> Whether it's a case of 4.18.10 not detecting corruption that 4.19
+> sees, or if 4.19 already caused it, the best chance is to not mount it
+> rw, and not run check --repair, until you get some feedback from a
+> developer.
+>
+
++1
+
+> The thing I'd like to see is
+> # btrfs rescue super -v /anydevice/
+> # btrfs insp dump-s -f /anydevice/
+>
+> First command will tell us if all the supers are the same and valid
+> across all devices. And the second one, hopefully it's pointed to a
+> device with valid super, will tell us if there's a log root value
+> other than 0. Both of those are read only commands.
+>
+
+It was my understanding that rescue writes to the disk (the man page
+indicates it recovers superblocks which would imply writes). If you
+are sure they both leave the on-disk data structures completely
+intact, I would be willing to run them.
+
+- mike

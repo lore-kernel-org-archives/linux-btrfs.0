@@ -2,139 +2,191 @@ Return-Path: <SRS0=1LDH=ON=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8AFEFC04EB8
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 11:16:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2231CC04EB8
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 11:47:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4E4D32082D
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 11:16:53 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4E4D32082D
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+	by mail.kernel.org (Postfix) with ESMTP id D4DF62087F
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 11:47:06 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D4DF62087F
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728077AbeLDLQs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 4 Dec 2018 06:16:48 -0500
-Received: from mx2.suse.de ([195.135.220.15]:48204 "EHLO mx1.suse.de"
+        id S1726064AbeLDLrF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 4 Dec 2018 06:47:05 -0500
+Received: from mx2.suse.de ([195.135.220.15]:53914 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727374AbeLDLQr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 4 Dec 2018 06:16:47 -0500
+        id S1725764AbeLDLrF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 4 Dec 2018 06:47:05 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 5165AAA71;
-        Tue,  4 Dec 2018 11:16:44 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id AA36EDA7A3; Tue,  4 Dec 2018 12:16:25 +0100 (CET)
-Date:   Tue, 4 Dec 2018 12:16:25 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3 1/2] btrfs: scrub: fix circular locking dependency
- warning
-Message-ID: <20181204111625.GK17773@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
-        linux-btrfs@vger.kernel.org
-References: <1543554924-17397-1-git-send-email-anand.jain@oracle.com>
- <1543554924-17397-2-git-send-email-anand.jain@oracle.com>
+        by mx1.suse.de (Postfix) with ESMTP id AC218AF63;
+        Tue,  4 Dec 2018 11:46:59 +0000 (UTC)
+Subject: Re: [PATCH 3/3] btrfs: replace cleaner_delayed_iput_mutex with a
+ waitqueue
+To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+References: <20181203160652.25078-1-josef@toxicpanda.com>
+ <20181203160652.25078-4-josef@toxicpanda.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <5caa415a-bfd4-2abb-11ca-d247c0d87c2c@suse.com>
+Date:   Tue, 4 Dec 2018 13:46:58 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <1543554924-17397-2-git-send-email-anand.jain@oracle.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+In-Reply-To: <20181203160652.25078-4-josef@toxicpanda.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Nov 30, 2018 at 01:15:23PM +0800, Anand Jain wrote:
-> @@ -3757,10 +3757,13 @@ static noinline_for_stack int scrub_workers_get(struct btrfs_fs_info *fs_info,
+
+
+On 3.12.18 г. 18:06 ч., Josef Bacik wrote:
+> The throttle path doesn't take cleaner_delayed_iput_mutex, which means
+> we could think we're done flushing iputs in the data space reservation
+> path when we could have a throttler doing an iput.  There's no real
+> reason to serialize the delayed iput flushing, so instead of taking the
+> cleaner_delayed_iput_mutex whenever we flush the delayed iputs just
+> replace it with an atomic counter and a waitqueue.  This removes the
+> short (or long depending on how big the inode is) window where we think
+> there are no more pending iputs when there really are some.
+> 
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> ---
+>  fs/btrfs/ctree.h       |  4 +++-
+>  fs/btrfs/disk-io.c     |  5 ++---
+>  fs/btrfs/extent-tree.c | 13 ++++++++-----
+>  fs/btrfs/inode.c       | 21 +++++++++++++++++++++
+>  4 files changed, 34 insertions(+), 9 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index dc56a4d940c3..20af5d6d81f1 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -915,7 +915,8 @@ struct btrfs_fs_info {
 >  
->  static noinline_for_stack void scrub_workers_put(struct btrfs_fs_info *fs_info)
->  {
-> +	lockdep_assert_held(&fs_info->scrub_lock);
->  	if (--fs_info->scrub_workers_refcnt == 0) {
-> +		mutex_unlock(&fs_info->scrub_lock);
->  		btrfs_destroy_workqueue(fs_info->scrub_workers);
->  		btrfs_destroy_workqueue(fs_info->scrub_wr_completion_workers);
->  		btrfs_destroy_workqueue(fs_info->scrub_parity_workers);
-> +		mutex_lock(&fs_info->scrub_lock);
+>  	spinlock_t delayed_iput_lock;
+>  	struct list_head delayed_iputs;
+> -	struct mutex cleaner_delayed_iput_mutex;
+> +	atomic_t nr_delayed_iputs;
+> +	wait_queue_head_t delayed_iputs_wait;
+>  
+
+Have you considered whether the same could be achieved with a completion
+rather than an open-coded waitqueue? I tried prototyping it and it could
+be done but it becomes messy regarding when the completion should be
+initialised i.e only when it's not in btrfs_add_delayed_iput
+
+
+<snip>
+
+> @@ -4958,9 +4962,8 @@ static void flush_space(struct btrfs_fs_info *fs_info,
+>  		 * bunch of pinned space, so make sure we run the iputs before
+>  		 * we do our pinned bytes check below.
+>  		 */
+> -		mutex_lock(&fs_info->cleaner_delayed_iput_mutex);
+>  		btrfs_run_delayed_iputs(fs_info);
+> -		mutex_unlock(&fs_info->cleaner_delayed_iput_mutex);
+> +		btrfs_wait_on_delayed_iputs(fs_info);
+
+Waiting on delayed iputs here is pointless since they are run
+synchronously form this context.
+
+>  
+>  		ret = may_commit_transaction(fs_info, space_info);
+>  		break;
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 0b9f3e482cea..958e30c7c744 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -3260,6 +3260,7 @@ void btrfs_add_delayed_iput(struct inode *inode)
+>  	if (atomic_add_unless(&inode->i_count, -1, 1))
+>  		return;
+>  
+> +	atomic_inc(&fs_info->nr_delayed_iputs);
+>  	spin_lock(&fs_info->delayed_iput_lock);
+>  	ASSERT(list_empty(&binode->delayed_iput));
+>  	list_add_tail(&binode->delayed_iput, &fs_info->delayed_iputs);
+> @@ -3280,11 +3281,31 @@ void btrfs_run_delayed_iputs(struct btrfs_fs_info *fs_info)
+>  		list_del_init(&inode->delayed_iput);
+>  		spin_unlock(&fs_info->delayed_iput_lock);
+>  		iput(&inode->vfs_inode);
+> +		if (atomic_dec_and_test(&fs_info->nr_delayed_iputs))
+> +			wake_up(&fs_info->delayed_iputs_wait);
+>  		spin_lock(&fs_info->delayed_iput_lock);
 >  	}
->  	WARN_ON(fs_info->scrub_workers_refcnt < 0);
+>  	spin_unlock(&fs_info->delayed_iput_lock);
 >  }
-
-btrfs/011 lockdep warning is gone, but now there's a list corruption
-reported by btrfs/073. I'm testing the 2 patches on top of current
-master to avoid interference with misc-next patches.
-
-btrfs/073               [11:07:19]
-[ 3580.466293] run fstests btrfs/073at 2018-12-04 11:07:19
-[ 3580.610367] BTRFS info (device vda): disk space caching is enabled
-[ 3580.612809] BTRFS info (device vda): has skinny extents
-[ 3580.876639] BTRFS: device fsid d452261d-c956-4b54-aab9-8318c3c211fcdevid 1 transid 5 /dev/vdb
-[ 3580.880569] BTRFS: device fsid d452261d-c956-4b54-aab9-8318c3c211fcdevid 2 transid 5 /dev/vdc
-[ 3580.882947] BTRFS: device fsid d452261d-c956-4b54-aab9-8318c3c211fcdevid 3 transid 5 /dev/vdd
-[ 3580.885499] BTRFS: device fsid d452261d-c956-4b54-aab9-8318c3c211fcdevid 4 transid 5 /dev/vde
-[ 3580.887972] BTRFS: device fsid d452261d-c956-4b54-aab9-8318c3c211fcdevid 5 transid 5 /dev/vdf
-[ 3580.890394] BTRFS: device fsid d452261d-c956-4b54-aab9-8318c3c211fcdevid 6 transid 5 /dev/vdg
-[ 3580.893729] BTRFS: device fsid d452261d-c956-4b54-aab9-8318c3c211fcdevid 7 transid 5 /dev/vdh
-[ 3580.903180] BTRFS info (device vdb): disk space caching is enabled
-[ 3580.904538] BTRFS info (device vdb): has skinny extents
-[ 3580.905322] BTRFS info (device vdb): flagging fs with big metadatafeature
-[ 3580.908555] BTRFS info (device vdb): checking UUID tree
-[ 3580.951440] ------------[ cut here ]------------
-[ 3580.954122] list_add corruption. prev->next should be next(ffffa189faa9acc8), but was ffffa189faa9adc0. (prev=ffffa189faa9a480).
-[ 3580.960061] WARNING: CPU: 0 PID: 24578 at lib/list_debug.c:28__list_add_valid+0x4d/0x70
-[ 3580.962346] BTRFS info (device vdb): use no compression, level 0
-[ 3580.963694] Modules linked in: dm_flakey dm_mod btrfs libcrc32c xorzstd_decompress zstd_compress xxhash raid6_pq loop
-[ 3580.963702] CPU: 0 PID: 24578 Comm: btrfs Not tainted4.20.0-rc5-default+ #366
-[ 3580.963703] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996),BIOS rel-1.11.2-0-gf9626cc-prebuilt.qemu-project.org 04/01/2014
-[ 3580.963706] RIP: 0010:__list_add_valid+0x4d/0x70
-[ 3580.963708] RSP: 0018:ffffb72d88817b90 EFLAGS: 00010286
-[ 3580.963709] RAX: 0000000000000000 RBX: ffffb72d88817c10 RCX:0000000000000000
-[ 3580.963710] RDX: 0000000000000002 RSI: 0000000000000001 RDI:ffffffff860c4c1d
-[ 3580.963710] RBP: ffffa189faa9acc8 R08: 0000000000000001 R09:0000000000000000
-[ 3580.963714] R10: 0000000000000000 R11: ffffffff882a0a2d R12:ffffa189faa9ac70
-[ 3580.966020] BTRFS info (device vdb): disk space caching is enabled
-[ 3580.967721] R13: ffffa189faa9a480 R14: ffffa189faa9ac70 R15:ffffa189faa9ac78
-[ 3580.967724] FS:  00007f04289d1700(0000) GS:ffffa189fd400000(0000)knlGS:0000000000000000
-[ 3580.967725] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[ 3580.967725] CR2: 00007f7b58b034ac CR3: 00000000699d9000 CR4:00000000000006f0
-[ 3580.967729] Call Trace:
-[ 3580.967736]  __mutex_add_waiter+0x34/0x70
-[ 3580.967743]  ? drain_workqueue+0x1e/0x180
-[ 3580.994465]  __mutex_lock+0x134/0x9d0
-[ 3580.995526]  ? __schedule+0x2eb/0xb20
-[ 3580.996584]  ? drain_workqueue+0x1e/0x180
-[ 3580.997727]  drain_workqueue+0x1e/0x180
-[ 3580.998793]  destroy_workqueue+0x17/0x240
-[ 3580.999879]  btrfs_destroy_workqueue+0x57/0x200 [btrfs]
-[ 3581.001148]  scrub_workers_put+0x6c/0x90 [btrfs]
-[ 3581.002257]  btrfs_scrub_dev+0x2f6/0x590 [btrfs]
-[ 3581.003370]  ? __sb_start_write+0x12c/0x1d0
-[ 3581.004450]  ? mnt_want_write_file+0x24/0x60
-[ 3581.005613]  btrfs_ioctl+0xfc7/0x2f00 [btrfs]
-[ 3581.006361]  ? get_task_io_context+0x2d/0x90
-[ 3581.007025]  ? do_vfs_ioctl+0xa2/0x6d0
-[ 3581.007699]  do_vfs_ioctl+0xa2/0x6d0
-[ 3581.008603]  ? __fget+0x109/0x1e0
-[ 3581.009413]  ksys_ioctl+0x3a/0x70
-[ 3581.010326]  __x64_sys_ioctl+0x16/0x20
-[ 3581.011234]  do_syscall_64+0x54/0x180
-[ 3581.012143]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
-[ 3581.013213] RIP: 0033:0x7f042bac9aa7
-[ 3581.014133] Code: 00 00 90 48 8b 05 f1 83 2c 00 64 c7 00 26 00 00 0048 c7 c0 ff ff ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 b8 10 00 00 00 0f05 <48> 3d 01 f0 ff ff 73 01 c3 48 8b 0d c1 83 2c 00 f7 d8 64 89 01 48
-[ 3581.018486] RSP: 002b:00007f04289d0d38 EFLAGS: 00000246 ORIG_RAX:0000000000000010
-[ 3581.019703] RAX: ffffffffffffffda RBX: 000055c05475de10 RCX:00007f042bac9aa7
-[ 3581.021465] RDX: 000055c05475de10 RSI: 00000000c400941b RDI:0000000000000003
-[ 3581.023120] RBP: 0000000000000000 R08: 00007f04289d1700 R09:0000000000000000
-[ 3581.024968] R10: 00007f04289d1700 R11: 0000000000000246 R12:00007ffd6b29a03e
-[ 3581.027977] R13: 00007ffd6b29a03f R14: 00007ffd6b29a040 R15:0000000000000000
-[ 3581.029767] irq event stamp: 0
-[ 3581.030631] hardirqs last  enabled at (0): [<0000000000000000>](null)
-[ 3581.032630] hardirqs last disabled at (0): [<ffffffff8605c23b>]copy_process.part.72+0x86b/0x1e20
-[ 3581.034970] softirqs last  enabled at (0): [<ffffffff8605c23b>]copy_process.part.72+0x86b/0x1e20
-[ 3581.037224] softirqs last disabled at (0): [<0000000000000000>](null)
-[ 3581.038955] ---[ end trace f0e217183915884a ]---
+>  
+> +/**
+> + * btrfs_wait_on_delayed_iputs - wait on the delayed iputs to be done running
+> + * @fs_info - the fs_info for this fs
+> + * @return - EINTR if we were killed, 0 if nothing's pending
+> + *
+> + * This will wait on any delayed iputs that are currently running with KILLABLE
+> + * set.  Once they are all done running we will return, unless we are killed in
+> + * which case we return EINTR.
+> + */
+> +int btrfs_wait_on_delayed_iputs(struct btrfs_fs_info *fs_info)
+> +{
+> +	int ret = wait_event_killable(fs_info->delayed_iputs_wait,
+> +			atomic_read(&fs_info->nr_delayed_iputs) == 0);
+> +	if (ret)
+> +		return -EINTR;
+> +	return 0;
+> +}
+> +
+>  /*
+>   * This creates an orphan entry for the given inode in case something goes wrong
+>   * in the middle of an unlink.
+> 

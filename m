@@ -3,33 +3,33 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D3802C04EB8
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 09:04:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E0676C04EB8
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 09:21:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A2BEC208A3
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 09:04:04 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A2BEC208A3
+	by mail.kernel.org (Postfix) with ESMTP id A932920851
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 09:21:20 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A932920851
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725841AbeLDJED (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 4 Dec 2018 04:04:03 -0500
-Received: from mx2.suse.de ([195.135.220.15]:53988 "EHLO mx1.suse.de"
+        id S1725769AbeLDJVT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 4 Dec 2018 04:21:19 -0500
+Received: from mx2.suse.de ([195.135.220.15]:55928 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725613AbeLDJED (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 4 Dec 2018 04:04:03 -0500
+        id S1725613AbeLDJVT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 4 Dec 2018 04:21:19 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 85941AE49;
-        Tue,  4 Dec 2018 09:03:59 +0000 (UTC)
-Subject: Re: [PATCH 1/3] btrfs: run delayed iputs before committing
+        by mx1.suse.de (Postfix) with ESMTP id A87AEB025;
+        Tue,  4 Dec 2018 09:21:15 +0000 (UTC)
+Subject: Re: [PATCH 2/3] btrfs: wakeup cleaner thread when adding delayed iput
 To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
         kernel-team@fb.com
 References: <20181203160652.25078-1-josef@toxicpanda.com>
- <20181203160652.25078-2-josef@toxicpanda.com>
+ <20181203160652.25078-3-josef@toxicpanda.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -74,12 +74,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <94f50845-eb68-0c61-bf88-d4323e21557d@suse.com>
-Date:   Tue, 4 Dec 2018 11:03:57 +0200
+Message-ID: <410f70ed-232b-5e1d-1368-0adf9f180b48@suse.com>
+Date:   Tue, 4 Dec 2018 11:21:14 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181203160652.25078-2-josef@toxicpanda.com>
+In-Reply-To: <20181203160652.25078-3-josef@toxicpanda.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -91,40 +91,76 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 3.12.18 г. 18:06 ч., Josef Bacik wrote:
-> Delayed iputs means we can have final iputs of deleted inodes in the
-> queue, which could potentially generate a lot of pinned space that could
-> be free'd.  So before we decide to commit the transaction for ENOPSC
-> reasons, run the delayed iputs so that any potential space is free'd up.
-> If there is and we freed enough we can then commit the transaction and
-> potentially be able to make our reservation.
+> The cleaner thread usually takes care of delayed iputs, with the
+> exception of the btrfs_end_transaction_throttle path.  The cleaner
+> thread only gets woken up every 30 seconds, so instead wake it up to do
+> it's work so that we can free up that space as quickly as possible.
+
+This description misses any rationale whatsoever about why the cleaner
+needs to be woken up more frequently than 30 seconds (and IMO this is
+the most important question that needs answering).
+
+Also have you done any measurements of the number of processed delayed
+inodes with this change. Given the behavior you so desire why not just
+make delayed iputs to be run via schedule_work on the global workqueue
+and be done with it? I'm sure the latency will be better than the
+current 30 seconds one :)
+
 > 
+> Reviewed-by: Filipe Manana <fdmanana@suse.com>
 > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-> Reviewed-by: Omar Sandoval <osandov@fb.com>
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
 > ---
->  fs/btrfs/extent-tree.c | 9 +++++++++
->  1 file changed, 9 insertions(+)
+>  fs/btrfs/ctree.h   | 3 +++
+>  fs/btrfs/disk-io.c | 3 +++
+>  fs/btrfs/inode.c   | 2 ++
+>  3 files changed, 8 insertions(+)
 > 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 8dfddfd3f315..0127d272cd2a 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -4953,6 +4953,15 @@ static void flush_space(struct btrfs_fs_info *fs_info,
->  			ret = 0;
->  		break;
->  	case COMMIT_TRANS:
-> +		/*
-> +		 * If we have pending delayed iputs then we could free up a
-> +		 * bunch of pinned space, so make sure we run the iputs before
-> +		 * we do our pinned bytes check below.
-> +		 */
-> +		mutex_lock(&fs_info->cleaner_delayed_iput_mutex);
-> +		btrfs_run_delayed_iputs(fs_info);
-> +		mutex_unlock(&fs_info->cleaner_delayed_iput_mutex);
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index c8ddbacb6748..dc56a4d940c3 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -769,6 +769,9 @@ bool btrfs_pinned_by_swapfile(struct btrfs_fs_info *fs_info, void *ptr);
+>   */
+>  #define BTRFS_FS_BALANCE_RUNNING		18
+>  
+> +/* Indicate that the cleaner thread is awake and doing something. */
+> +#define BTRFS_FS_CLEANER_RUNNING		19
 > +
->  		ret = may_commit_transaction(fs_info, space_info);
->  		break;
->  	default:
+>  struct btrfs_fs_info {
+>  	u8 fsid[BTRFS_FSID_SIZE];
+>  	u8 chunk_tree_uuid[BTRFS_UUID_SIZE];
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index c5918ff8241b..f40f6fdc1019 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -1669,6 +1669,8 @@ static int cleaner_kthread(void *arg)
+>  	while (1) {
+>  		again = 0;
+>  
+> +		set_bit(BTRFS_FS_CLEANER_RUNNING, &fs_info->flags);
+> +
+>  		/* Make the cleaner go to sleep early. */
+>  		if (btrfs_need_cleaner_sleep(fs_info))
+>  			goto sleep;
+> @@ -1715,6 +1717,7 @@ static int cleaner_kthread(void *arg)
+>  		 */
+>  		btrfs_delete_unused_bgs(fs_info);
+>  sleep:
+> +		clear_bit(BTRFS_FS_CLEANER_RUNNING, &fs_info->flags);
+>  		if (kthread_should_park())
+>  			kthread_parkme();
+>  		if (kthread_should_stop())
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 8ac7abe2ae9b..0b9f3e482cea 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -3264,6 +3264,8 @@ void btrfs_add_delayed_iput(struct inode *inode)
+>  	ASSERT(list_empty(&binode->delayed_iput));
+>  	list_add_tail(&binode->delayed_iput, &fs_info->delayed_iputs);
+>  	spin_unlock(&fs_info->delayed_iput_lock);
+> +	if (!test_bit(BTRFS_FS_CLEANER_RUNNING, &fs_info->flags))
+> +		wake_up_process(fs_info->cleaner_kthread);
+>  }
+>  
+>  void btrfs_run_delayed_iputs(struct btrfs_fs_info *fs_info)
 > 

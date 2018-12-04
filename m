@@ -2,108 +2,151 @@ Return-Path: <SRS0=1LDH=ON=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIMWL_WL_MED,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EA2CFC04EBF
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 20:14:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 46645C04EB8
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 22:30:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 898C02081C
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 20:14:50 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 898C02081C
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=panasas.com
+	by mail.kernel.org (Postfix) with ESMTP id F08C520834
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 22:30:40 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b="TbIr30UQ";
+	dkim=temperror (0-bit key) header.d=fb.onmicrosoft.com header.i=@fb.onmicrosoft.com header.b="IkvJB3iY"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org F08C520834
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=fb.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726258AbeLDUOt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 4 Dec 2018 15:14:49 -0500
-Received: from mail-eopbgr790075.outbound.protection.outlook.com ([40.107.79.75]:62688
-        "EHLO NAM03-CO1-obe.outbound.protection.outlook.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726206AbeLDUOt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 4 Dec 2018 15:14:49 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=panasas.onmicrosoft.com; s=selector1-panasas-com;
+        id S1726092AbeLDWaj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 4 Dec 2018 17:30:39 -0500
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:43318 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1725875AbeLDWai (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 4 Dec 2018 17:30:38 -0500
+Received: from pps.filterd (m0109334.ppops.net [127.0.0.1])
+        by mx0a-00082601.pphosted.com (8.16.0.27/8.16.0.27) with SMTP id wB4MSFjv031360;
+        Tue, 4 Dec 2018 14:30:33 -0800
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
+ : date : message-id : references : in-reply-to : content-type :
+ content-transfer-encoding : mime-version; s=facebook;
+ bh=cjFBFQGMyYWQGxTKJ+Gj1mvVjnYEAH+XiNdIfjGGDcI=;
+ b=TbIr30UQCdreu8I2Twnfkbw5V3OROYyzk+anih9eDNoq/XQe2OLily/yM+7KjMSW0SVy
+ ynzK/4NnAH7CAGosS4rMrvHSancW4dEQniLTYCMw8+AZRFhZmIvnbLXES74NrvziUnVl
+ m4lopMLnibe2kXjPnbrd6nAsrAUzq89bgVE= 
+Received: from maileast.thefacebook.com ([199.201.65.23])
+        by mx0a-00082601.pphosted.com with ESMTP id 2p61f10973-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-SHA384 bits=256 verify=NOT);
+        Tue, 04 Dec 2018 14:30:33 -0800
+Received: from frc-hub02.TheFacebook.com (2620:10d:c021:18::172) by
+ frc-hub02.TheFacebook.com (2620:10d:c021:18::172) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id
+ 15.1.1531.3; Tue, 4 Dec 2018 14:30:07 -0800
+Received: from NAM05-BY2-obe.outbound.protection.outlook.com (192.168.183.28)
+ by o365-in.thefacebook.com (192.168.177.72) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id 15.1.1531.3
+ via Frontend Transport; Tue, 4 Dec 2018 14:30:06 -0800
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.onmicrosoft.com;
+ s=selector1-fb-com;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=trF8LPyyslQO7zT8ZXaV0LeIA+FGfYRkFcNkBtcUksA=;
- b=Httx9m8aEW45V+9NACY4cb4ykI6V4A6RXt3M/fR1Gj+Pl3B+CylZUG/OhfJpIljVMvbpRy0yiLwIO3ZUzr45Dg55SQwK5RflzpZyo+7aq0SqiacBAEW1YoniVDtAX0G0GetOPbFmrJFq358KrXDG/ctMDeA3ifP4HubWQ7n699s=
-Received: from CY4PR08MB2886.namprd08.prod.outlook.com (10.173.60.8) by
- CY4PR08MB3589.namprd08.prod.outlook.com (10.171.254.28) with Microsoft SMTP
+ bh=cjFBFQGMyYWQGxTKJ+Gj1mvVjnYEAH+XiNdIfjGGDcI=;
+ b=IkvJB3iYHilGScH6PvWm6E40MDjvgcZH2poEvRH2Cg+7sSpA99lPCFsEc/1OztVhBlwuxLEcocO+tPPe3HGK7cBOQXy5xQFo0D+6eB0AMNDiAr6FHjJWWu4eoSNeA1fp35yjPonGkpmCfEEHuymUeBvXVRA5GmhHCfHbqL0lCYo=
+Received: from DM5PR15MB1883.namprd15.prod.outlook.com (10.174.247.135) by
+ DM5PR15MB1562.namprd15.prod.outlook.com (10.173.222.141) with Microsoft SMTP
  Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.20.1382.22; Tue, 4 Dec 2018 20:14:46 +0000
-Received: from CY4PR08MB2886.namprd08.prod.outlook.com
- ([fe80::695d:2c94:133f:36bd]) by CY4PR08MB2886.namprd08.prod.outlook.com
- ([fe80::695d:2c94:133f:36bd%2]) with mapi id 15.20.1382.020; Tue, 4 Dec 2018
- 20:14:46 +0000
-From:   "Wilson, Ellis" <ellisw@panasas.com>
-To:     Nikolay Borisov <nborisov@suse.com>,
-        BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: BTRFS Mount Delay Time Graph
-Thread-Topic: BTRFS Mount Delay Time Graph
-Thread-Index: AQHUizTqpABbJ5V+NEK7aSu9VpssYqVujkQAgAB3UAA=
-Date:   Tue, 4 Dec 2018 20:14:46 +0000
-Message-ID: <a511850e-c08b-d6c5-0471-e523eff73680@panasas.com>
-References: <25a99c85-b048-a678-b61b-97dfc1338cb3@panasas.com>
- <b4183c50-a2a3-7470-3038-1e759a99369c@suse.com>
-In-Reply-To: <b4183c50-a2a3-7470-3038-1e759a99369c@suse.com>
+ 15.20.1382.21; Tue, 4 Dec 2018 22:29:49 +0000
+Received: from DM5PR15MB1883.namprd15.prod.outlook.com
+ ([fe80::f8d4:7c44:756a:6205]) by DM5PR15MB1883.namprd15.prod.outlook.com
+ ([fe80::f8d4:7c44:756a:6205%12]) with mapi id 15.20.1382.020; Tue, 4 Dec 2018
+ 22:29:49 +0000
+From:   Chris Mason <clm@fb.com>
+To:     Andrea Gelmini <andrea.gelmini@gelma.net>
+CC:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Linux-next regression?
+Thread-Topic: Linux-next regression?
+Thread-Index: AQHUhZj7md68OP6+WEeStf1281SPv6Vi0X0AgADZkQCAAAFvAIABsKeAgAnZXwA=
+Date:   Tue, 4 Dec 2018 22:29:49 +0000
+Message-ID: <FEDBF117-C83C-4DEC-96D1-A549DBCF4950@fb.com>
+References: <20181126150137.GA16029@glet>
+ <845890af-0659-fbfa-c445-d6f109bd5015@gmx.com> <20181127141144.GA23269@glet>
+ <4f1bb6e7-434a-47d2-a75f-8aca702f5395@gmx.com> <20181128160523.GA5288@glet>
+In-Reply-To: <20181128160523.GA5288@glet>
 Accept-Language: en-US
 Content-Language: en-US
 X-MS-Has-Attach: 
 X-MS-TNEF-Correlator: 
-x-clientproxiedby: BN6PR12CA0046.namprd12.prod.outlook.com
- (2603:10b6:405:70::32) To CY4PR08MB2886.namprd08.prod.outlook.com
- (2603:10b6:903:144::8)
-authentication-results: spf=none (sender IP is )
- smtp.mailfrom=ellisw@panasas.com; 
+x-mailer: MailMate (1.12.2r5568)
+x-clientproxiedby: BN4PR12CA0012.namprd12.prod.outlook.com
+ (2603:10b6:403:2::22) To DM5PR15MB1883.namprd15.prod.outlook.com
+ (2603:10b6:4:4f::7)
 x-ms-exchange-messagesentrepresentingtype: 1
-x-originating-ip: [65.205.22.243]
+x-originating-ip: [2620:10d:c091:180::1:1cc6]
 x-ms-publictraffictype: Email
-x-microsoft-exchange-diagnostics: 1;CY4PR08MB3589;6:B4dofgPI349w/x8k+aiuva/uwNuRmOT+KrkLOzOIDWk6wB+Q/D1ySU0nId9icgFsbE8kFYe9vCrytq4sQMW/RKV8J5T2y55a+gNDYiHip/ANDsr90QFNlEU6LkpAWLv+y7508J1PknFwsfto9VVE6c/6gJzM7xYH/wcGzffWHAXBa07T8PTlH3c4PkGm1KEk2D/6BdYSxEXhtL99gk1eYpcONaLTaErcFoRrGNE+y8yiVx/F6ChPoMypDh6hEtbEZA+BqIidgaEv7vBHZfkbgyDFGqvNPwkURswnoenV77l4pf30uHHiBRRZ3gRTBni3N/FKYLfP4+zbsmhgCzLBUpssZrpGWHwX1dfueo6E/9DbwSIZ0dkj3+zHm8ZDQEWXJL38kxOj+a2pHblxuRW+vzDgkM1hkOh4cSzEFkUW9EtLs5/Ie6u23W2o9Hj4eOsTbS1I0OTjfUFZYNAc5wye5A==;5:lsDppCjo+1iQVRKhsJCeDJlYkGzoh+fP7rE5dqXxqrjF/K0/MppWanzGA4/CmfaKRVxaIae54GENsdb1+jFsCppM81fGWJvrf6zukuVzFFeRH35eKXxEOQyFZa97jr/Egf758Zk2jla7J9Pwyrc5qKwU5ltNZeRQBu03e1IhwcU=;7:k5bSTZv29mSwAQruvjznjBqLh4bRZpEPJA/aTCzYbEJq0mwZfK5IVWJLVMlO+o5SZrgLj/WQkqdRcFzqAOc2ZgV7Yonq6mxGjp7AUrM9Xok9MZNIbQhlcmCjeErhaoDI+4gRP29BVyPOsA4YWBq2nA==
-x-ms-office365-filtering-correlation-id: 88cb499f-1e8a-42a9-f30e-08d65a2522d2
-x-microsoft-antispam: BCL:0;PCL:0;RULEID:(2390098)(7020095)(4652040)(8989299)(5600074)(711020)(4534185)(4627221)(201703031133081)(201702281549075)(8990200)(2017052603328)(7153060)(7193020);SRVR:CY4PR08MB3589;
-x-ms-traffictypediagnostic: CY4PR08MB3589:
-x-microsoft-antispam-prvs: <CY4PR08MB35897B5071B7C1ACFCEEEF9EC2AF0@CY4PR08MB3589.namprd08.prod.outlook.com>
+x-microsoft-exchange-diagnostics: 1;DM5PR15MB1562;20:DyN/ExCzbQQxIO6fWcWFJOkt4RunbwSS8KJNVYCDt9THDUrLlfSf0QTafq7McR7eajLdFHtWh/8AB/Hdp1f/bf47Hp1hj2IrMoOOanDEl1ok6s/S0xQ1/L5a6WqFAKFIleyVnLO6M5l/XAyDI/Amg1VGdTF6WpYG2sQg+pS5q+0=
+x-ms-office365-filtering-correlation-id: acbd2770-0ad9-41f9-b894-08d65a380042
+x-microsoft-antispam: BCL:0;PCL:0;RULEID:(2390098)(7020095)(4652040)(8989299)(5600074)(711020)(4534185)(4627221)(201703031133081)(201702281549075)(8990200)(2017052603328)(7153060)(7193020);SRVR:DM5PR15MB1562;
+x-ms-traffictypediagnostic: DM5PR15MB1562:
+x-microsoft-antispam-prvs: <DM5PR15MB1562364934AEB266E99B660AD3AF0@DM5PR15MB1562.namprd15.prod.outlook.com>
 x-ms-exchange-senderadcheck: 1
-x-exchange-antispam-report-cfa-test: BCL:0;PCL:0;RULEID:(6040522)(2401047)(8121501046)(5005006)(93006095)(93001095)(3231455)(999002)(944501493)(52105112)(3002001)(10201501046)(148016)(149066)(150057)(6041310)(20161123562045)(201703131423095)(201702281528075)(20161123555045)(201703061421075)(201703061406153)(20161123560045)(20161123564045)(20161123558120)(201708071742011)(7699051)(76991095);SRVR:CY4PR08MB3589;BCL:0;PCL:0;RULEID:;SRVR:CY4PR08MB3589;
+x-exchange-antispam-report-cfa-test: BCL:0;PCL:0;RULEID:(8211001083)(6040522)(2401047)(8121501046)(5005006)(10201501046)(3002001)(3231455)(999002)(11241501185)(944501493)(52105112)(93006095)(93001095)(148016)(149066)(150057)(6041310)(201703131423095)(201702281528075)(20161123555045)(201703061421075)(201703061406153)(20161123558120)(20161123564045)(20161123560045)(20161123562045)(201708071742011)(7699051)(76991095);SRVR:DM5PR15MB1562;BCL:0;PCL:0;RULEID:;SRVR:DM5PR15MB1562;
 x-forefront-prvs: 0876988AF0
-x-forefront-antispam-report: SFV:NSPM;SFS:(10009020)(136003)(366004)(39840400004)(346002)(376002)(396003)(189003)(199004)(6116002)(6246003)(81156014)(76176011)(3846002)(53936002)(99286004)(97736004)(68736007)(186003)(8936002)(5660300001)(52116002)(110136005)(6512007)(305945005)(229853002)(316002)(6486002)(81166006)(66066001)(8676002)(71190400001)(36756003)(71200400001)(7736002)(31686004)(26005)(6436002)(25786009)(486006)(102836004)(478600001)(476003)(2906002)(14454004)(105586002)(86362001)(31696002)(6506007)(386003)(2616005)(53546011)(256004)(446003)(106356001)(11346002);DIR:OUT;SFP:1101;SCL:1;SRVR:CY4PR08MB3589;H:CY4PR08MB2886.namprd08.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;MX:1;A:1;
-received-spf: None (protection.outlook.com: panasas.com does not designate
+x-forefront-antispam-report: SFV:NSPM;SFS:(10019020)(136003)(396003)(39860400002)(346002)(376002)(366004)(189003)(199004)(52314003)(2616005)(36756003)(54906003)(6916009)(14454004)(105586002)(5660300001)(82746002)(106356001)(4326008)(68736007)(11346002)(478600001)(476003)(71190400001)(83716004)(71200400001)(33656002)(486006)(6512007)(446003)(3480700005)(6306002)(53546011)(6116002)(6246003)(97736004)(99286004)(52116002)(8676002)(305945005)(966005)(6506007)(186003)(7736002)(53936002)(76176011)(256004)(25786009)(8936002)(229853002)(386003)(81166006)(50226002)(81156014)(46003)(6486002)(316002)(86362001)(6436002)(93886005)(2906002)(102836004)(42262002);DIR:OUT;SFP:1102;SCL:1;SRVR:DM5PR15MB1562;H:DM5PR15MB1883.namprd15.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;MX:1;A:1;
+received-spf: None (protection.outlook.com: fb.com does not designate
  permitted sender hosts)
-x-microsoft-antispam-message-info: xCEiTeDcVH8m2NKfyI0mMHoG08fuGzZHpsxS30Rk/gO0gCnjCL7bsHppCWemY9gQfPPkYZ5XobZL7vgeNw8IutjKKxouf5TLxewCxNFmLKvhWmZmNkzbnahwsrQ5d5+QApskzCFIN4kR43ackue6hC6ZQfNq8iGFrmMN0pjNPMi9ds6Dk8J5dFAakKRbuB/kP/gr3nWORQjfjVvazCaNwGmiIcA3RiMQf3h0sFqKYTT5fwfcHyR9XDQkZJEzudXp00cMcW/Cu9zR093OeS5GbIK16gKQ6YoYRUyl8m7pAGFg5jq5RAqITZsBcy+RADnt9EbooRHD+RWzDOwt5Y0Y2scdsQFFNMe5hv2N6MFoel0=
+x-microsoft-antispam-message-info: wfctaue7EUa7jNjnwpYENo/zKsP4YKcjGn2RqaCTjDCTQfkA76r0s5EJB86RUSkriaMogf2i6a3ATDeOARwl7Blpt1vZqrSEVXmSwThgmDr8lkzd2vPWiLxn+hwp8Gr3cyO2H1J9mBDUcfMhsVLdptvmz/NK3XkJZFaD8CcvD32UCDXFpdtCQJfF1SsysfDhfWScR5nS45jT+zeU+KseQrKojpoYW8zeSAADxOEN/8HbiIuks7Fqp1hgQg3UpwRkhNgQvZCeVtSfqn/kiGUqbve1s5loul6M6etvyAu7Wiiun5aChKbEQxEUwxHNF+mPiN3TBjIhUV47P7ZPkKnOqnUZxXCvMgdalruEvDqW/Rg=
 spamdiagnosticoutput: 1:99
 spamdiagnosticmetadata: NSPM
-Content-Type: text/plain; charset="utf-8"
-Content-ID: <6A0CB7646E12764681239425120B8F8E@namprd08.prod.outlook.com>
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 MIME-Version: 1.0
-X-OriginatorOrg: panasas.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 88cb499f-1e8a-42a9-f30e-08d65a2522d2
-X-MS-Exchange-CrossTenant-originalarrivaltime: 04 Dec 2018 20:14:46.7256
+X-MS-Exchange-CrossTenant-Network-Message-Id: acbd2770-0ad9-41f9-b894-08d65a380042
+X-MS-Exchange-CrossTenant-originalarrivaltime: 04 Dec 2018 22:29:49.2107
  (UTC)
 X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: acf01c9d-c699-42af-bdbb-44bf582e60b0
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: CY4PR08MB3589
+X-MS-Exchange-CrossTenant-id: 8ae927fe-1255-47a7-a2af-5f3a069daaa2
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: DM5PR15MB1562
+X-OriginatorOrg: fb.com
+X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10434:,, definitions=2018-12-04_09:,,
+ signatures=0
+X-Proofpoint-Spam-Reason: safe
+X-FB-Internal: Safe
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-T24gMTIvNC8xOCA4OjA3IEFNLCBOaWtvbGF5IEJvcmlzb3Ygd3JvdGU6DQo+IE9uIDMuMTIuMTgg
-0LMuIDIwOjIwINGHLiwgV2lsc29uLCBFbGxpcyB3cm90ZToNCj4+IFdpdGggMTRUQiBkcml2ZXMg
-YXZhaWxhYmxlIHRvZGF5LCBpdCBkb2Vzbid0IHRha2UgbW9yZSB0aGFuIGEgaGFuZGZ1bCBvZg0K
-Pj4gZHJpdmVzIHRvIHJlc3VsdCBpbiBhIGZpbGVzeXN0ZW0gdGhhdCB0YWtlcyBhcm91bmQgYSBt
-aW51dGUgdG8gbW91bnQuDQo+PiBBcyBhIHJlc3VsdCBvZiB0aGlzLCBJIHN1c3BlY3QgdGhpcyB3
-aWxsIGJlY29tZSBhbiBpbmNyZWFzaW5nbHkgcHJvYmxlbQ0KPj4gZm9yIHNlcmlvdXMgdXNlcnMg
-b2YgQlRSRlMgYXMgdGltZSBnb2VzIG9uLiAgSSdtIG5vdCBjb21wbGFpbmluZyBhcyBJJ20NCj4+
-IG5vdCBhIGNvbnRyaWJ1dG9yIHNvIEkgaGF2ZSBubyByb29tIHRvIGRvIHNvIC0tIGp1c3Qgc2hl
-ZGRpbmcgc29tZSBsaWdodA0KPj4gb24gYSBwcm9ibGVtIHRoYXQgbWF5IGRlc2VydmUgYXR0ZW50
-aW9uIGFzIGZpbGVzeXN0ZW0gc2l6ZXMgY29udGludWUgdG8NCj4+IGdyb3cuDQo+IFdvdWxkIGl0
-IGJlIHBvc3NpYmxlIHRvIHByb3ZpZGUgcGVyZiB0cmFjZXMgb2YgdGhlIGxvbmdlci1ydW5uaW5n
-IG1vdW50DQo+IHRpbWU/IEV2ZXJ5b25lIHNlZW1zIHRvIGJlIGZpeGF0ZWQgb24gcmVhZGluZyBi
-bG9jayBncm91cHMgKHdoaWNoIGlzDQo+IGxpa2VseSB0byBiZSB0aGUgY3VscHJpdCkgYnV0IGJl
-Zm9yZSBwb2ludGluZyBmaW5nZXIgSSdkIGxpa2UgY29uY3JldGUNCj4gZXZpZGVuY2UgcG9pbnRl
-ZCBhdCB0aGUgb2ZmZW5kZXIuDQoNCkkgYW0gZ2xhZCB0byBjb2xsZWN0IHN1Y2ggdHJhY2VzIC0t
-IHBsZWFzZSBhZHZpc2Ugd2l0aCBjb21tYW5kcyB0aGF0IA0Kd291bGQgYWNoaWV2ZSB0aGF0LiAg
-SWYgeW91IGp1c3QgbWVhbiBibG9jayB0cmFjZXMsIEkgY2FuIGRvIHRoYXQsIGJ1dCBJIA0Kc3Vz
-cGVjdCB5b3UgbWVhbiBzb21ldGhpbmcgbW9yZSBCVFJGUy1zcGVjaWZpYy4NCg0KQmVzdCwNCg0K
-ZWxsaXMNCg0K
+On 28 Nov 2018, at 11:05, Andrea Gelmini wrote:
+
+> On Tue, Nov 27, 2018 at 10:16:52PM +0800, Qu Wenruo wrote:
+>>
+>> But it's less a concerning problem since it doesn't reach latest RC,=20
+>> so
+>> if you could reproduce it stably, I'd recommend to do a bisect.
+>
+> No problem to bisect, usually.
+> But right now it's not possible for me, I explain further.
+> Anyway, here the rest of the story.
+>
+> So, in the end I:
+> a) booted with 4.20.0-rc4
+> b) updated backup
+> c) did the btrfs check --read-only
+> d) seven steps, everything is perfect
+> e) no complains on screen or in logs (never had)
+> f) so, started to compile linux-next 20181128 (on another partition)
+> e) without using (reading or writing) on /home, I started
+> f) btrfs filesystem defrag -v -r -t 128M /home
+> g) it worked without complain (in screen or logs)
+> h) then, reboot with kernel tag 20181128
+> i) and no way to mount:
+
+I think (hope) this is:
+
+https://bugzilla.kernel.org/show_bug.cgi?id=3D201685
+
+Which was just nailed down to a blkmq bug.  It triggers when you have=20
+scsi devices using elevator=3Dnone over blkmq.
+
+-chris

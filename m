@@ -2,336 +2,208 @@ Return-Path: <SRS0=1LDH=ON=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-6.9 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B41F4C04EB8
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 10:10:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 15283C04EB8
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 10:15:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 697C520878
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 10:10:03 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 697C520878
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=duckstad.net
+	by mail.kernel.org (Postfix) with ESMTP id C97D920878
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 10:15:38 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C97D920878
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725802AbeLDKKC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 4 Dec 2018 05:10:02 -0500
-Received: from smtp-out2.caiw.net ([62.45.45.126]:45685 "EHLO
-        smtp-out2.caiw.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725764AbeLDKKB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Dec 2018 05:10:01 -0500
-Received: from barracuda-out-1.caiw.net (barracuda-out.caiw.net [62.45.59.17])
-        by smtp-out2.caiw.net (Postfix) with ESMTP id 50B3161CFE
-        for <linux-btrfs@vger.kernel.org>; Tue,  4 Dec 2018 11:09:58 +0100 (CET)
-X-ASG-Debug-ID: 1543918197-08d68a6e1e1280a0001-6jHSXT
-Received: from smtp-out2.caiw.net (smtp-out2.caiw.net [62.45.45.126]) by barracuda-out-1.caiw.net with ESMTP id vSWrjLyRCfA95xcd; Tue, 04 Dec 2018 11:09:57 +0100 (CET)
-X-Barracuda-Envelope-From: bolderbast@duckstad.net
-X-Barracuda-RBL-Trusted-Forwarder: 62.45.45.126
-Received: from katrien.duckstad.net (200-228-045-062.dynamic.caiway.nl [62.45.228.200])
-        by smtp-out2.caiw.net (Postfix) with ESMTP id 8C2F8C0022;
-        Tue,  4 Dec 2018 11:09:57 +0100 (CET)
-Received: from localhost (localhost.localdomain [127.0.0.1])
-        by katrien.duckstad.net (Postfix) with ESMTP id 7072C3802F;
-        Tue,  4 Dec 2018 11:09:57 +0100 (CET)
-X-Barracuda-RBL-IP: 62.45.228.200
-X-Barracuda-Effective-Source-IP: 200-228-045-062.dynamic.caiway.nl[62.45.228.200]
-X-Barracuda-Apparent-Source-IP: 62.45.228.200
-Received: from katrien.duckstad.net ([127.0.0.1])
-        by localhost (katrien.duckstad.net [127.0.0.1]) (amavisd-new, port 10032)
-        with ESMTP id 8O_7KLyRj2dI; Tue,  4 Dec 2018 11:09:56 +0100 (CET)
-Received: from localhost (localhost.localdomain [127.0.0.1])
-        by katrien.duckstad.net (Postfix) with ESMTP id F08B938030;
-        Tue,  4 Dec 2018 11:09:55 +0100 (CET)
-X-Virus-Scanned: amavisd-new at katrien.duckstad.net
-Received: from katrien.duckstad.net ([127.0.0.1])
-        by localhost (katrien.duckstad.net [127.0.0.1]) (amavisd-new, port 10026)
-        with ESMTP id SzKcl8eDTOAC; Tue,  4 Dec 2018 11:09:55 +0100 (CET)
-Received: from bolderbast (unknown [10.4.2.1])
-        by katrien.duckstad.net (Postfix) with ESMTPSA id 6E0243802F;
-        Tue,  4 Dec 2018 11:09:55 +0100 (CET)
-Message-ID: <8e5729f3c15997a13bdce73800146e91222ed89c.camel@duckstad.net>
-Subject: Re: Need help with potential ~45TB dataloss
-From:   Patrick Dijkgraaf <bolderbast@duckstad.net>
-X-ASG-Orig-Subj: Re: Need help with potential ~45TB dataloss
-To:     Chris Murphy <lists@colorremedies.com>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     Andrei Borzenkov <arvidjaar@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Date:   Tue, 04 Dec 2018 11:09:55 +0100
-In-Reply-To: <CAJCQCtRgzw=UPfHxeaiDzqKGzrbSKz-B3xfUpBjYM4GGe=W4YA@mail.gmail.com>
-References: <8bc37755da04dffae1a34cea2a06bcffdf2c75d7.camel@duckstad.net>
-         <6ce9cd01-960f-af3d-0273-0b9abfa1d4f8@gmx.com>
-         <c723ab8e8e99e54c6f93dc70f897725525f0db29.camel@duckstad.net>
-         <c24627dec9738552e1635617aace7720f395ba39.camel@duckstad.net>
-         <2b235519-5c8d-9e86-b4f3-28cd7f778c4f@gmail.com>
-         <7dac5577-2231-dcba-39fd-c229e4ed5e02@gmx.com>
-         <CAJCQCtRgzw=UPfHxeaiDzqKGzrbSKz-B3xfUpBjYM4GGe=W4YA@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"
-User-Agent: Evolution 3.30.2 
-Mime-Version: 1.0
-Content-Transfer-Encoding: 7bit
-X-Barracuda-Connect: smtp-out2.caiw.net[62.45.45.126]
-X-Barracuda-Start-Time: 1543918197
-X-Barracuda-URL: https://62.45.59.17:443/cgi-mod/mark.cgi
-X-Virus-Scanned: by bsmtpd at caiw.net
-X-Barracuda-Scan-Msg-Size: 7380
-X-Barracuda-BRTS-Status: 1
-X-Barracuda-Bayes: INNOCENT GLOBAL 0.0264 1.0000 -1.8498
-X-Barracuda-Spam-Score: -1.85
-X-Barracuda-Spam-Status: No, SCORE=-1.85 using global scores of TAG_LEVEL=1000.0 QUARANTINE_LEVEL=7.0 KILL_LEVEL=1000.0 tests=
-X-Barracuda-Spam-Report: Code version 3.2, rules version 3.2.3.63027
-        Rule breakdown below
-         pts rule name              description
-        ---- ---------------------- --------------------------------------------------
+        id S1726042AbeLDKPh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 4 Dec 2018 05:15:37 -0500
+Received: from mout.gmx.net ([212.227.17.20]:48959 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725613AbeLDKPh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 4 Dec 2018 05:15:37 -0500
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx101
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0MPHrQ-1gYVRm2ysS-004VLh; Tue, 04
+ Dec 2018 11:15:19 +0100
+Subject: Re: [PATCH] btrfs: tree-checker: Don't check max block group size as
+ current max chunk size limit is unreliable
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+        David Sterba <dsterba@suse.cz>
+Cc:     stable@vger.kernel.org
+References: <20181123010636.19363-1-wqu@suse.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <3cd7ba2f-377f-604e-5996-fbf5086b9843@gmx.com>
+Date:   Tue, 4 Dec 2018 18:15:13 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.3.1
+MIME-Version: 1.0
+In-Reply-To: <20181123010636.19363-1-wqu@suse.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="g6rgBG7u2rhmhBjNrgTdwXHeKcAxJkypS"
+X-Provags-ID: V03:K1:g9uezsBzymy5dY3bN1C9m3eEilzaBmKKt96TNIbmZF3YW69HnGD
+ nNrGiNtMvrwEXuM0X57SYHNv7CI+LQqAgzBNrDEfQd9EKyczfvTkY9oWH8VA4pkdKMuGUf3
+ nOzovi+sbToZRNdxi0S7Nf62jOPmbwImlPU1Ja8yn8vNowJFHLfbuF6MNtyZpaB77fKKvhb
+ g7s6f6bWZePX9lnkKUtXw==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:Ev8RZC2th1o=:oft/u2FQ8ml5Qrho4jhCV0
+ dYgoe48+5+41063i37OTONrBoBZxdom6CxsgKINbIx62G2Z7G+ELq8SA7Fg1kuoq/gC0c9gjP
+ i8HH1WKlYk1qV2+7g5AipbwYk4jG4Qv7YLdHcnSdWoTbhhVRy2E8QtWtZLQzp+psMbDmx5Oa6
+ M/bQPH4Am2OA5e1X3eBWgkq48t7iTj4aCCABdeyyFra3yjeQmNi+Djmt4ggU8N5FtHcQVzizG
+ cNeq+OxqRDqrSCsRU93ZsJSUWuRK7mDyspKazkTKSigQkM0QOrry77CKi3Z7Vzbc897rRre6P
+ HZkFqvcSyVZbvH0zzBTxXZnT/BlVMVEXtE3gpOqdCfxwd9rTAM8mjFCG2GAtXxzYPbdkhH9un
+ nMW+lJW1P+k2ru7aD5e6LCdb713TiKs8QwIgFKfT/oNsEwlmynnLqHMzTrma+CPBELvmQrjJh
+ L61r2dHmOsZoC4WlqYGYx23hSTHjam1LdAmVfsMaf0iMYexrBDRXLiGK0rrbJ+zMSH3aOdCN0
+ 2Gf0CELkpDKv00bUk71gd6pQsAVHgFAAXI8ydsRU8QRI2gTCxoRQj7KizPfxj/Kt7qoTMv1TO
+ CrQN7etl4SX/JKsHRG6Rz4Xl4hK+eZuv1ok5URlMLzdWde+MsHrHl0Vij6mKtDp2S1xsF1ul0
+ PG5jBwBVUiCVzEMUTqNxenhuCShzj3vIdjmzgX9TbMSs0S3+F4iNruI67M5YfE8rd466D0T4h
+ fjXvJ0Zu9+p8BlEnlOEfrOhfcgiPzRUQjyoU9DBak5U7exUYgWqnkibM1wc+gVuiALSFwpJCB
+ DYHfURZa5nAZ0YT7gX5aGx5Y653qAckO5kShM++2I/jTQ1+ieXeJrZxr/tw7CGkxHjUbNmyZH
+ cDWK4u+tUJT6i6WaV2mw2gKOz64yXkDdY5AJ+gmq5mJxp4EiEl05jSi65lff+q
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi Chris,
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--g6rgBG7u2rhmhBjNrgTdwXHeKcAxJkypS
+Content-Type: multipart/mixed; boundary="fOWB6VPNpiNZHP2DTCDxVojnoGH7ACVCX";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+ David Sterba <dsterba@suse.cz>
+Cc: stable@vger.kernel.org
+Message-ID: <3cd7ba2f-377f-604e-5996-fbf5086b9843@gmx.com>
+Subject: Re: [PATCH] btrfs: tree-checker: Don't check max block group size as
+ current max chunk size limit is unreliable
+References: <20181123010636.19363-1-wqu@suse.com>
+In-Reply-To: <20181123010636.19363-1-wqu@suse.com>
 
-See the output below. Any suggestions based on it?
-Thanks!
+--fOWB6VPNpiNZHP2DTCDxVojnoGH7ACVCX
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
--- 
-Groet / Cheers,
-Patrick Dijkgraaf
+Gentle ping.
+
+Please put this patch into current release as the new block group size
+limit check introduced in v4.19 is causing at least 2 reports in mail lis=
+t.
+
+Thanks,
+Qu
+
+On 2018/11/23 =E4=B8=8A=E5=8D=889:06, Qu Wenruo wrote:
+> [BUG]
+> A completely valid btrfs will refuse to mount, with error message like:=
+
+>   BTRFS critical (device sdb2): corrupt leaf: root=3D2 block=3D23968153=
+6 slot=3D172 \
+>     bg_start=3D12018974720 bg_len=3D10888413184, invalid block group si=
+ze, \
+>     have 10888413184 expect (0, 10737418240]
+>=20
+> Btrfs check returns no error, and all kernels used on this fs is later
+> than 2011, which should all have the 10G size limit commit.
+>=20
+> [CAUSE]
+> For a 12 devices btrfs, we could allocate a chunk larger than 10G due t=
+o
+> stripe stripe bump up.
+>=20
+> __btrfs_alloc_chunk()
+> |- max_stripe_size =3D 1G
+> |- max_chunk_size =3D 10G
+> |- data_stripe =3D 11
+> |- if (1G * 11 > 10G) {
+>        stripe_size =3D 976128930;
+>        stripe_size =3D round_up(976128930, SZ_16M) =3D 989855744
+>=20
+> However the final stripe_size (989855744) * 11 =3D 10888413184, which i=
+s
+> still larger than 10G.
+>=20
+> [FIX]
+> For the comprehensive check, we need to do the full check at chunk
+> read time, and rely on bg <-> chunk mapping to do the check.
+>=20
+> We could just skip the length check for now.
+>=20
+> Fixes: fce466eab7ac ("btrfs: tree-checker: Verify block_group_item")
+> Cc: stable@vger.kernel.org # v4.19+
+> Reported-by: Wang Yugui <wangyugui@e16-tech.com>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/tree-checker.c | 8 +++-----
+>  1 file changed, 3 insertions(+), 5 deletions(-)
+>=20
+> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+> index cab0b1f1f741..d8bd5340fbbc 100644
+> --- a/fs/btrfs/tree-checker.c
+> +++ b/fs/btrfs/tree-checker.c
+> @@ -389,13 +389,11 @@ static int check_block_group_item(struct btrfs_fs=
+_info *fs_info,
+> =20
+>  	/*
+>  	 * Here we don't really care about alignment since extent allocator c=
+an
+> -	 * handle it.  We care more about the size, as if one block group is
+> -	 * larger than maximum size, it's must be some obvious corruption.
+> +	 * handle it.  We care more about the size.
+>  	 */
+> -	if (key->offset > BTRFS_MAX_DATA_CHUNK_SIZE || key->offset =3D=3D 0) =
+{
+> +	if (key->offset =3D=3D 0) {
+>  		block_group_err(fs_info, leaf, slot,
+> -			"invalid block group size, have %llu expect (0, %llu]",
+> -				key->offset, BTRFS_MAX_DATA_CHUNK_SIZE);
+> +				"invalid block group size 0");
+>  		return -EUCLEAN;
+>  	}
+> =20
+>=20
 
 
+--fOWB6VPNpiNZHP2DTCDxVojnoGH7ACVCX--
 
-On Mon, 2018-12-03 at 20:16 -0700, Chris Murphy wrote:
-> Also useful information for autopsy, perhaps not for fixing, is to
-> know whether the SCT ERC value for every drive is less than the
-> kernel's SCSI driver block device command timeout value. It's super
-> important that the drive reports an explicit read failure before the
-> read command is considered failed by the kernel. If the drive is
-> still
-> trying to do a read, and the kernel command timer times out, it'll
-> just do a reset of the whole link and we lose the outcome for the
-> hanging command. Upon explicit read error only, can Btrfs, or md
-> RAID,
-> know what device and physical sector has a problem, and therefore how
-> to reconstruct the block, and fix the bad sector with a write of
-> known
-> good data.
-> 
-> smartctl -l scterc /device/
+--g6rgBG7u2rhmhBjNrgTdwXHeKcAxJkypS
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
-Seems to not work:
+-----BEGIN PGP SIGNATURE-----
 
-[root@cornelis ~]# for disk in /dev/sd{e..x}; do echo ${disk}; smartctl
--l scterc ${disk}; done
-/dev/sde
-smartctl 6.6 2017-11-05 r4594 [x86_64-linux-4.18.16-arch1-1-ARCH]
-(local build)
-Copyright (C) 2002-17, Bruce Allen, Christian Franke, 
-www.smartmontools.org
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlwGU7EACgkQwj2R86El
+/qgdPwf9EPA12WBTWXVEN3rxAjfSQlOJ6uakcIjWKeoK3AF2VhHVz3GZhx9zdh8C
+BB49NP3bPl/avj78R2l/3dfpZ5hajmMBqfbzt1VxiTcV1S5TuY+vr633OlrwGZeQ
+Y6UiDqBm0oSCpy4PQ94eBNBKnkp/L5CYCNaGgm4BgmzT6vIffTjGoSVdqyabjKew
+I8G0w+Gn59LeKVQ4Pv4GGYU30HL1TRKu7kfSpUP6EIZLAZ1f+v7d44uiXmiJEFhS
+AaodqHnqf2dzVCDFD70zgMBoCk7CxFF7PzZ/I47QKb+SXk/iyJNBuGSzchRLjhhc
+iXzF23QFL5KsXqRl/r0oYI9M1HHykg==
+=mNUs
+-----END PGP SIGNATURE-----
 
-SMART WRITE LOG does not return COUNT and LBA_LOW register
-SCT (Get) Error Recovery Control command failed
-
-/dev/sdf
-smartctl 6.6 2017-11-05 r4594 [x86_64-linux-4.18.16-arch1-1-ARCH]
-(local build)
-Copyright (C) 2002-17, Bruce Allen, Christian Franke, 
-www.smartmontools.org
-
-SMART WRITE LOG does not return COUNT and LBA_LOW register
-SCT (Get) Error Recovery Control command failed
-
-/dev/sdg
-smartctl 6.6 2017-11-05 r4594 [x86_64-linux-4.18.16-arch1-1-ARCH]
-(local build)
-Copyright (C) 2002-17, Bruce Allen, Christian Franke, 
-www.smartmontools.org
-
-SMART WRITE LOG does not return COUNT and LBA_LOW register
-SCT (Get) Error Recovery Control command failed
-
-/dev/sdh
-smartctl 6.6 2017-11-05 r4594 [x86_64-linux-4.18.16-arch1-1-ARCH]
-(local build)
-Copyright (C) 2002-17, Bruce Allen, Christian Franke, 
-www.smartmontools.org
-
-SMART WRITE LOG does not return COUNT and LBA_LOW register
-SCT (Get) Error Recovery Control command failed
-
-/dev/sdi
-smartctl 6.6 2017-11-05 r4594 [x86_64-linux-4.18.16-arch1-1-ARCH]
-(local build)
-Copyright (C) 2002-17, Bruce Allen, Christian Franke, 
-www.smartmontools.org
-
-SMART WRITE LOG does not return COUNT and LBA_LOW register
-SCT (Get) Error Recovery Control command failed
-
-/dev/sdj
-smartctl 6.6 2017-11-05 r4594 [x86_64-linux-4.18.16-arch1-1-ARCH]
-(local build)
-Copyright (C) 2002-17, Bruce Allen, Christian Franke, 
-www.smartmontools.org
-
-SMART WRITE LOG does not return COUNT and LBA_LOW register
-SCT (Get) Error Recovery Control command failed
-
-/dev/sdk
-smartctl 6.6 2017-11-05 r4594 [x86_64-linux-4.18.16-arch1-1-ARCH]
-(local build)
-Copyright (C) 2002-17, Bruce Allen, Christian Franke, 
-www.smartmontools.org
-
-Smartctl open device: /dev/sdk failed: No such device
-/dev/sdl
-smartctl 6.6 2017-11-05 r4594 [x86_64-linux-4.18.16-arch1-1-ARCH]
-(local build)
-Copyright (C) 2002-17, Bruce Allen, Christian Franke, 
-www.smartmontools.org
-
-SMART WRITE LOG does not return COUNT and LBA_LOW register
-SCT (Get) Error Recovery Control command failed
-
-/dev/sdm
-smartctl 6.6 2017-11-05 r4594 [x86_64-linux-4.18.16-arch1-1-ARCH]
-(local build)
-Copyright (C) 2002-17, Bruce Allen, Christian Franke, 
-www.smartmontools.org
-
-SMART WRITE LOG does not return COUNT and LBA_LOW register
-SCT (Get) Error Recovery Control command failed
-
-/dev/sdn
-smartctl 6.6 2017-11-05 r4594 [x86_64-linux-4.18.16-arch1-1-ARCH]
-(local build)
-Copyright (C) 2002-17, Bruce Allen, Christian Franke, 
-www.smartmontools.org
-
-SCT Error Recovery Control command not supported
-
-/dev/sdo
-smartctl 6.6 2017-11-05 r4594 [x86_64-linux-4.18.16-arch1-1-ARCH]
-(local build)
-Copyright (C) 2002-17, Bruce Allen, Christian Franke, 
-www.smartmontools.org
-
-SMART WRITE LOG does not return COUNT and LBA_LOW register
-SCT (Get) Error Recovery Control command failed
-
-/dev/sdp
-smartctl 6.6 2017-11-05 r4594 [x86_64-linux-4.18.16-arch1-1-ARCH]
-(local build)
-Copyright (C) 2002-17, Bruce Allen, Christian Franke, 
-www.smartmontools.org
-
-SMART WRITE LOG does not return COUNT and LBA_LOW register
-SCT (Get) Error Recovery Control command failed
-
-/dev/sdq
-smartctl 6.6 2017-11-05 r4594 [x86_64-linux-4.18.16-arch1-1-ARCH]
-(local build)
-Copyright (C) 2002-17, Bruce Allen, Christian Franke, 
-www.smartmontools.org
-
-SMART WRITE LOG does not return COUNT and LBA_LOW register
-SCT (Get) Error Recovery Control command failed
-
-/dev/sdr
-smartctl 6.6 2017-11-05 r4594 [x86_64-linux-4.18.16-arch1-1-ARCH]
-(local build)
-Copyright (C) 2002-17, Bruce Allen, Christian Franke, 
-www.smartmontools.org
-
-SMART WRITE LOG does not return COUNT and LBA_LOW register
-SCT (Get) Error Recovery Control command failed
-
-/dev/sds
-smartctl 6.6 2017-11-05 r4594 [x86_64-linux-4.18.16-arch1-1-ARCH]
-(local build)
-Copyright (C) 2002-17, Bruce Allen, Christian Franke, 
-www.smartmontools.org
-
-SMART WRITE LOG does not return COUNT and LBA_LOW register
-SCT (Get) Error Recovery Control command failed
-
-/dev/sdt
-smartctl 6.6 2017-11-05 r4594 [x86_64-linux-4.18.16-arch1-1-ARCH]
-(local build)
-Copyright (C) 2002-17, Bruce Allen, Christian Franke, 
-www.smartmontools.org
-
-SCT Error Recovery Control command not supported
-
-/dev/sdu
-smartctl 6.6 2017-11-05 r4594 [x86_64-linux-4.18.16-arch1-1-ARCH]
-(local build)
-Copyright (C) 2002-17, Bruce Allen, Christian Franke, 
-www.smartmontools.org
-
-SMART WRITE LOG does not return COUNT and LBA_LOW register
-SCT (Get) Error Recovery Control command failed
-
-/dev/sdv
-smartctl 6.6 2017-11-05 r4594 [x86_64-linux-4.18.16-arch1-1-ARCH]
-(local build)
-Copyright (C) 2002-17, Bruce Allen, Christian Franke, 
-www.smartmontools.org
-
-SMART WRITE LOG does not return COUNT and LBA_LOW register
-SCT (Get) Error Recovery Control command failed
-
-/dev/sdw
-smartctl 6.6 2017-11-05 r4594 [x86_64-linux-4.18.16-arch1-1-ARCH]
-(local build)
-Copyright (C) 2002-17, Bruce Allen, Christian Franke, 
-www.smartmontools.org
-
-SMART WRITE LOG does not return COUNT and LBA_LOW register
-SCT (Get) Error Recovery Control command failed
-
-/dev/sdx
-smartctl 6.6 2017-11-05 r4594 [x86_64-linux-4.18.16-arch1-1-ARCH]
-(local build)
-Copyright (C) 2002-17, Bruce Allen, Christian Franke, 
-www.smartmontools.org
-
-SCT Error Recovery Control command not supported
-
-> and
-> cat /sys/block/sda/device/timeout
-
-[root@cornelis ~]# cat /sys/block/sd{e..x}/device/timeout
-30
-30
-30
-30
-30
-30
-cat: /sys/block/sdk/device/timeout: No such file or directory
-30
-30
-30
-30
-30
-30
-30
-30
-30
-30
-30
-30
-30
-
-> Only if SCT ERC is enabled with a value below 30, or if the kernel
-> command timer is change to be well above 30 (like 180, which is
-> absolutely crazy but a separate conversation) can we be sure that
-> there haven't just been resets going on for a while, preventing bad
-> sectors from being fixed up all along, and can contribute to the
-> problem. This comes up on the linux-raid (mainly md driver) list all
-> the time, and it contributes to lost RAID all the time. And arguably
-> it leads to unnecessary data loss in even the single device
-> desktop/laptop use case as well.
-> 
-> 
-> Chris Murphy
-
+--g6rgBG7u2rhmhBjNrgTdwXHeKcAxJkypS--

@@ -3,63 +3,63 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
+	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 35F48C04EB8
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 05:56:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3596FC04EB8
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 05:59:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D205720834
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 05:56:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id EBD0920834
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 05:59:25 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="Roswejf2"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org D205720834
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="g7pMJnr4"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EBD0920834
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=colorremedies.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726013AbeLDF4x (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 4 Dec 2018 00:56:53 -0500
-Received: from mail-lj1-f196.google.com ([209.85.208.196]:43425 "EHLO
-        mail-lj1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725988AbeLDF4x (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Dec 2018 00:56:53 -0500
-Received: by mail-lj1-f196.google.com with SMTP id 83-v6so13706095ljf.10
-        for <linux-btrfs@vger.kernel.org>; Mon, 03 Dec 2018 21:56:52 -0800 (PST)
+        id S1726005AbeLDF7Y (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 4 Dec 2018 00:59:24 -0500
+Received: from mail-lf1-f54.google.com ([209.85.167.54]:40420 "EHLO
+        mail-lf1-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725988AbeLDF7Y (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Dec 2018 00:59:24 -0500
+Received: by mail-lf1-f54.google.com with SMTP id v5so11008678lfe.7
+        for <linux-btrfs@vger.kernel.org>; Mon, 03 Dec 2018 21:59:23 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
         h=mime-version:references:in-reply-to:from:date:message-id:subject:to
          :cc;
-        bh=Fmh6liaFTmMqR37ft2l7HPcsj6JsfFHFOuPfV9P5628=;
-        b=Roswejf2AbyC0UWtC/caStLkNSeimqsuCp4QvvLQ0XcLsYVT2to9wfb7aY1Jgwl46k
-         +6+O3OxwbDSekyw78LGRtfUQLWdNFaAewcW6HOoBNx57+hPvuwLxDJyXyhsAR/0MxuDu
-         uXo+3skknh7HGAWYbJHqu1xY+POnW5cNpKdwS8JkLjfYGHtETapKpnteLFQv2KqogQgy
-         hPiPie2e5VOv/O1Jx3kqSrGLxey+Si3YkehlfOZISLdYIAbZfsSTvGDHY9Dn8ctoMH8E
-         PcfzqgWN5+c9hZQA1ojov/Yzwqjypboj9/vT/rjZnBQW56BaUHNJVzxgqzZqnnRX1yjg
-         pRnw==
+        bh=0eEaceD1MaWM8l8pnRQIfF07oOp5ikXMBLDupeCqFP8=;
+        b=g7pMJnr4U39H7nXwuBKrb1RwXXkXAeI0REPiFHgOWtyNOztJrV5+nHMHmZ8+ZritHP
+         YJV4vRoErbriE+EheEU6P7w2TbqqQNIp9l52JQD1qGM/alvrH9IySNGxmPIO+zO1pM67
+         /ZjGpEPnzP52/x5PTUE4g6iXtyzxcqjcCUFX1RuKkcWMIA6pLJVfzQ+/rpKTYMY0xsg/
+         8DfOSoSgI6FxMqkxr32jeFsnbMooDsDOhFAiAGEzF+l6Z4KV8m3xDsjxZzmQCwLaLVNk
+         /Vs+4JV0MaKOglJgipqo8RrXBkSSVnLzz5GqkSGcolsBNOfSUD3evyPvCmEchifhsrAO
+         TZUw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
          :message-id:subject:to:cc;
-        bh=Fmh6liaFTmMqR37ft2l7HPcsj6JsfFHFOuPfV9P5628=;
-        b=bnxI2E423cymihuKnhzJQS9QEhNSaDQUDD5pJ2NNfdo2t/zAxtUPV3vJ6QpUxfCBTC
-         iSrl8A3jsHHa8ql1QDnD+zNdFUCCDcvxfQiIau2fcSubwC5MaSfzorSM3oj99xnp5MLV
-         ajFrNPxSP8m1/t8qUfA+fXQSizXB+ZSkrbTq34w0TirpJZx1Gs7wrdhSTPqL26qSVi24
-         U5K7fLLawlIVAlUMyJRwxdVQMiAmgpJWMuSE+DN654oE/eDxUMPViqgz7P6Snk8ajq1v
-         9F73P2i7AZzQ3BK9Qps6od/cn/MYmrXjtO9oFCgYd5GBjitmw/XH3jNkmKVwvAYhnf14
-         MJqw==
-X-Gm-Message-State: AA+aEWZPohRA0aiDI1U78qZgz0QXXqPx47U32JK3O1gLBEu58oywzVTu
-        /h3DeIvfQKJuzmUQhQDAhpd4LihVU/net+tmJd+7m0cGeDA=
-X-Google-Smtp-Source: AFSGD/UmipPEBUpUqbZqdt5URyzN1MwC6P86m9LHvhVV+GYFSd9sLJljgurs2Rs5ix6BfqtW5jS/TFNS7zeQaNmx8jc=
-X-Received: by 2002:a2e:5654:: with SMTP id k81-v6mr11591105ljb.48.1543903011029;
- Mon, 03 Dec 2018 21:56:51 -0800 (PST)
+        bh=0eEaceD1MaWM8l8pnRQIfF07oOp5ikXMBLDupeCqFP8=;
+        b=dI525s5ffNjyB3DchUuxWU+1YBN6+NHcs/JtaLr6hocVPpBggIYlBEMJ+D0N8aWZBb
+         PEXSiSCvgO88/f+jrWarUavm1qrnIldv21kIlf9zMHeVsc/6LK7OdxTodEP4fNvDuZfp
+         FumN985DTZxmGrhW9WHyIWuYxduLks1I0Y2kBeM9tr2rME6Cd26OoytxUjpQJP0LK/+Y
+         rkY3Rw3kbZHLQRe0R8fpftxGv5GbP14r865YyieiAWItJQ89i09aNLdWTAI/vfdEd1Bx
+         z4CFpzUNj2G1zRoN1Q5IODb1fO2bOBIE2Gcav5rbYp3waW0MiLAGJUCKyeBDywlUGogR
+         gT5g==
+X-Gm-Message-State: AA+aEWaDjDw+GXLxtqhaE9zvh4zgMF78+uiXK7+ag5h1WluixVQ01tr2
+        vtYSCPDjAhCxVYnmo1zo2G55shL8NG9xqFxuwEcM5g==
+X-Google-Smtp-Source: AFSGD/WQXo4IiQlLs8v62rl9ek6N/veCCpxrYBuussisUJ3wiP8tVXsD7hAQUJyEWHcshX3zzwV2LjleYP89fcpCNeQ=
+X-Received: by 2002:a19:2755:: with SMTP id n82mr3348297lfn.94.1543903162246;
+ Mon, 03 Dec 2018 21:59:22 -0800 (PST)
 MIME-Version: 1.0
-References: <CAOv1SKD46XeF=iqi4At-0YJpK6nHQ+3ErKDN_sW_4fAPMyAgMw@mail.gmail.com>
-In-Reply-To: <CAOv1SKD46XeF=iqi4At-0YJpK6nHQ+3ErKDN_sW_4fAPMyAgMw@mail.gmail.com>
+References: <e94da83b0a57c01663ad1e40fa6b9b5e@wpkg.org>
+In-Reply-To: <e94da83b0a57c01663ad1e40fa6b9b5e@wpkg.org>
 From:   Chris Murphy <lists@colorremedies.com>
-Date:   Mon, 3 Dec 2018 22:56:38 -0700
-Message-ID: <CAJCQCtRUTavGyh2A4qZe=yT=ydcu1byBy-LKF0jKZwNdZqaEWA@mail.gmail.com>
-Subject: Re: Ran into "invalid block group size" bug, unclear how to proceed.
-To:     mike.javorski@gmail.com
+Date:   Mon, 3 Dec 2018 22:59:08 -0700
+Message-ID: <CAJCQCtRCu5ED+L+j0vWaiPO1ujm=MpMTxD1OvW1v3ZYpT_SMyw@mail.gmail.com>
+Subject: Re: experiences running btrfs on external USB disks?
+To:     Tomasz Chmielewski <mangoo@wpkg.org>
 Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -67,64 +67,48 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Dec 3, 2018 at 8:32 PM Mike Javorski <mike.javorski@gmail.com> wrote:
+On Mon, Dec 3, 2018 at 10:44 PM Tomasz Chmielewski <mangoo@wpkg.org> wrote:
 >
-> Need a bit of advice here ladies / gents. I am running into an issue
-> which Qu Wenruo seems to have posted a patch for several weeks ago
-> (see https://patchwork.kernel.org/patch/10694997/).
+> I'm trying to use btrfs on an external USB drive, without much success.
 >
-> Here is the relevant dmesg output which led me to Qu's patch.
-> ----
-> [   10.032475] BTRFS critical (device sdb): corrupt leaf: root=2
-> block=24655027060736 slot=20 bg_start=13188988928 bg_len=10804527104,
-> invalid block group size, have 10804527104 expect (0, 10737418240]
-> [   10.032493] BTRFS error (device sdb): failed to read block groups: -5
-> [   10.053365] BTRFS error (device sdb): open_ctree failed
-> ----
+> When the drive is connected for 2-3+ days, the filesystem gets remounted
+> readonly, with BTRFS saying "IO failure":
 >
-> This server has a 16 disk btrfs filesystem (RAID6) which I boot
-> periodically to btrfs-send snapshots to. This machine is running
-> ArchLinux and I had just updated  to their latest 4.19.4 kernel
-> package (from 4.18.10 which was working fine). I've tried updating to
-> the 4.19.6 kernel that is in testing, but that doesn't seem to resolve
-> the issue. From what I can see on kernel.org, the patch above is not
-> pushed to stable or to Linus' tree.
+> [77760.444607] BTRFS error (device sdb1): bad tree block start, want
+> 378372096 have 0
+> [77760.550933] BTRFS error (device sdb1): bad tree block start, want
+> 378372096 have 0
+> [77760.550972] BTRFS: error (device sdb1) in __btrfs_free_extent:6804:
+> errno=-5 IO failure
+> [77760.550979] BTRFS info (device sdb1): forced readonly
+> [77760.551003] BTRFS: error (device sdb1) in
+> btrfs_run_delayed_refs:2935: errno=-5 IO failure
+> [77760.553223] BTRFS error (device sdb1): pending csums is 4096
 >
-> At this point the question is what to do. Is my FS toast? Could I
-> revert to the 4.18.10 kernel and boot safely? I don't know if the 4.19
-> boot process may have flipped some bits which would make reverting
-> problematic.
+>
+> Note that there are no other kernel messages (i.e. that would indicate a
+> problem with disk, cable disconnection etc.).
+>
+> The load on the drive itself can be quite heavy at times (i.e. 100% IO
+> for 1-2 h and more) - can it contribute to the problem (i.e. btrfs
+> thinks there is some timeout somewhere)?
+>
+> Running 4.19.6 right now, but was experiencing the issue also with 4.18
+> kernels.
+>
+>
+>
+> # btrfs device stats /data
+> [/dev/sda1].write_io_errs    0
+> [/dev/sda1].read_io_errs     0
+> [/dev/sda1].flush_io_errs    0
+> [/dev/sda1].corruption_errs  0
+> [/dev/sda1].generation_errs  0
 
-That patch is not yet merged in linux-next so to use it, you'd need to
-apply yourself and compile a kernel. I can't tell for sure if it'd
-help.
 
-But, the less you change the file system, the better chance of saving
-it. I have no idea why there'd be a corrupt leaf just due to a kernel
-version change, though.
-
-Needless to say, raid56 just seems fragile once it runs into any kind
-of trouble. I personally wouldn't boot off it at all. I would only
-mount it from another system, ideally an installed system but a live
-system with the kernel versions you need would also work. That way you
-can get more information without changes, and booting will almost
-immediately mount rw, if mount succeeds at all, and will write a bunch
-of changes to the file system.
-
-Whether it's a case of 4.18.10 not detecting corruption that 4.19
-sees, or if 4.19 already caused it, the best chance is to not mount it
-rw, and not run check --repair, until you get some feedback from a
-developer.
-
-The thing I'd like to see is
-# btrfs rescue super -v /anydevice/
-# btrfs insp dump-s -f /anydevice/
-
-First command will tell us if all the supers are the same and valid
-across all devices. And the second one, hopefully it's pointed to a
-device with valid super, will tell us if there's a log root value
-other than 0. Both of those are read only commands.
-
+Hard to say without a complete dmesg; but errno=-5 IO failure is
+pretty much some kind of hardware problem in my experience. I haven't
+seen it be a bug.
 
 -- 
 Chris Murphy

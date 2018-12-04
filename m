@@ -2,100 +2,78 @@ Return-Path: <SRS0=1LDH=ON=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-3.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_NEOMUTT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 34A3DC04EB8
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 12:22:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F10E4C04EB8
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 12:22:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EFEC02087F
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 12:22:29 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EFEC02087F
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+	by mail.kernel.org (Postfix) with ESMTP id 9E2C12087F
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Dec 2018 12:22:55 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9E2C12087F
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=angband.pl
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725956AbeLDMW3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 4 Dec 2018 07:22:29 -0500
-Received: from mx2.suse.de ([195.135.220.15]:58098 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725767AbeLDMW2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 4 Dec 2018 07:22:28 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id EBB40AC5F
-        for <linux-btrfs@vger.kernel.org>; Tue,  4 Dec 2018 12:22:25 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 6273ADA7A3; Tue,  4 Dec 2018 13:22:07 +0100 (CET)
-Date:   Tue, 4 Dec 2018 13:22:07 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v1.1 9/9] btrfs-progs: Cleanup warning reported by
- -Wmissing-prototypes
-Message-ID: <20181204122207.GM17773@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        id S1726145AbeLDMWy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 4 Dec 2018 07:22:54 -0500
+Received: from tartarus.angband.pl ([54.37.238.230]:39972 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725767AbeLDMWy (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Dec 2018 07:22:54 -0500
+Received: from kilobyte by tartarus.angband.pl with local (Exim 4.89)
+        (envelope-from <kilobyte@angband.pl>)
+        id 1gU9iy-000176-Fr; Tue, 04 Dec 2018 13:22:48 +0100
+Date:   Tue, 4 Dec 2018 13:22:48 +0100
+From:   Adam Borowski <kilobyte@angband.pl>
+To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
-References: <20181116075426.4142-10-wqu@suse.com>
- <20181116080451.6306-1-wqu@suse.com>
+Subject: Re: [PATCH 7/9] btrfs-progs: Fix Wmaybe-uninitialized warning
+Message-ID: <20181204122248.liocpfkyqodb5vco@angband.pl>
+References: <20181116075426.4142-1-wqu@suse.com>
+ <20181116075426.4142-8-wqu@suse.com>
+ <20181204121704.GL17773@twin.jikos.cz>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <20181116080451.6306-1-wqu@suse.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <20181204121704.GL17773@twin.jikos.cz>
+X-Junkbait: aaron@angband.pl, zzyx@angband.pl
+User-Agent: NeoMutt/20170113 (1.7.2)
+X-SA-Exim-Connect-IP: <locally generated>
+X-SA-Exim-Mail-From: kilobyte@angband.pl
+X-SA-Exim-Scanned: No (on tartarus.angband.pl); SAEximRunCond expanded to false
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Nov 16, 2018 at 04:04:51PM +0800, Qu Wenruo wrote:
-> The following missing prototypes will be fixed:
-> 1)  btrfs.c::handle_special_globals()
-> 2)  check/mode-lowmem.c::repair_ternary_lowmem()
-> 3)  extent-tree.c::btrfs_search_overlap_extent()
->     Above 3 can be fixed by making them static
+On Tue, Dec 04, 2018 at 01:17:04PM +0100, David Sterba wrote:
+> On Fri, Nov 16, 2018 at 03:54:24PM +0800, Qu Wenruo wrote:
+> > The only location is the following code:
+> > 
+> > 	int level = path->lowest_level + 1;
+> >  	BUG_ON(path->lowest_level + 1 >= BTRFS_MAX_LEVEL);
+> >  	while(level < BTRFS_MAX_LEVEL) {
+> > 		slot = path->slots[level] + 1;
+> > 		...
+> > 	}
+> > 	path->slots[level] = slot;
+> > 
+> > Again, it's the stupid compiler needs some hint for the fact that
+> > we will always enter the while loop for at least once, thus @slot should
+> > always be initialized.
 > 
-> 4)  utils.c::btrfs_check_nodesize()
->     Fixed by moving it to fsfeatures.c
-> 
-> 5)  chunk-recover.c::btrfs_recover_chunk_tree()
-> 6)  super-recover.c::btrfs_recover_superblocks()
->     Fixed by moving the declaration from cmds-rescue.c to rescue.h
-> 
-> 7)  utils-lib.c::arg_strtou64()
-> 8)  utils-lib.c::lookup_path_rootid()
->     Fixed by include "utils.h"
-> 
-> 9)  free-space-tree.c::set_free_space_tree_thresholds()
->     Fixed by deleting it, as there is no user.
-> 
-> 10) free-space-tree.c::convert_free_space_to_bitmaps()
-> 11) free-space-tree.c::convert_free_space_to_extents()
-> 12) free-space-tree.c::__remove_from_free_space_tree()
-> 13) free-space-tree.c::__add_to_free_space_tree()
-> 14) free-space-tree.c::btrfs_create_tree()
->     Fixed by making them static.
+> Harsh words for the compiler, and I say not deserved. The same code
+> pasted to kernel a built with the same version does not report the
+> warning, so it's apparently a missing annotation of BUG_ON in
+> btrfs-progs that does not give the right hint.
 
-Please split this to more patches grouped by the type of change.
+It's be nice if the C language provided a kind of a while loop that executes
+at least once...
 
-> --- /dev/null
-> +++ b/rescue.h
-> @@ -0,0 +1,14 @@
-> +/*
-> + * Copyright (C) 2018 SUSE.  All rights reserved.
-> + *
-> + * This program is free software; you can redistribute it and/or
-> + * modify it under the terms of the GNU General Public
-> + * License v2 as published by the Free Software Foundation.
-> + *
-> + * This program is distributed in the hope that it will be useful,
-> + * but WITHOUT ANY WARRANTY; without even the implied warranty of
-> + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-> + * General Public License for more details.
-> + */
-
-Missing ifdef to prevent multiple inclusion
-
-> +int btrfs_recover_superblocks(const char *path, int verbose, int yes);
-> +int btrfs_recover_chunk_tree(const char *path, int verbose, int yes);
+-- 
+⢀⣴⠾⠻⢶⣦⠀ 
+⣾⠁⢠⠒⠀⣿⡁ Ivan was a worldly man: born in St. Petersburg, raised in
+⢿⡄⠘⠷⠚⠋⠀ Petrograd, lived most of his life in Leningrad, then returned
+⠈⠳⣄⠀⠀⠀⠀ to the city of his birth to die.

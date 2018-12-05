@@ -2,62 +2,84 @@ Return-Path: <SRS0=6XAY=OO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_NEOMUTT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 568AFC04EB9
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 14:52:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4BC00C04EB9
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 14:59:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 18E60206B7
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 14:52:29 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="SjYaW5db"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 18E60206B7
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org
+	by mail.kernel.org (Postfix) with ESMTP id DF1F8206B7
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 14:59:11 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org DF1F8206B7
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=angband.pl
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727349AbeLEOw2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 5 Dec 2018 09:52:28 -0500
-Received: from bombadil.infradead.org ([198.137.202.133]:50650 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727309AbeLEOw2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Dec 2018 09:52:28 -0500
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20170209; h=In-Reply-To:Content-Type:MIME-Version
-        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:
-        Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
-        List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-         bh=xVCwFHI6HvKxY0zmrsGlmeP093nzMUJ0MF1dyYdupng=; b=SjYaW5dbXiieUPLMJUvVm/vKd
-        6DEqWhUXvMS4pgia+lxdiDdlcN20pBdeOWEWQ4tvp5Z3Jr59RHIMWIafZH1DC1VMi/gnJuiINNuaR
-        qJRWQKC8ZczTr/rSxFPZnXjwXHABV5KQOZ5JY1Xya5UUpBXonjq84qyaLMdaVaeQTkbyKRwSxdMcn
-        Q3xrin7yFUjFigCoEWc88wXug/V7YFD5tKdC/6473oYFYufjLpn5AQ3rO8CDu6QhFFmjZ6OuoAI0y
-        FTawTz+psBbPghLrSTL9b34P7RalQ0Ks14yds8A6kXlLuVbIHCOnHF33yLa6/xkWZqxOvrJaCKzTg
-        DebGEKX5g==;
-Received: from hch by bombadil.infradead.org with local (Exim 4.90_1 #2 (Red Hat Linux))
-        id 1gUYXL-0003dG-Dg; Wed, 05 Dec 2018 14:52:27 +0000
-Date:   Wed, 5 Dec 2018 06:52:27 -0800
-From:   Christoph Hellwig <hch@infradead.org>
-To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc:     linux-btrfs@vger.kernel.org, Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: Re: [PATCH 07/10] dax: export functions for use with btrfs
-Message-ID: <20181205145227.GA12361@infradead.org>
+        id S1727889AbeLEO7K (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 5 Dec 2018 09:59:10 -0500
+Received: from tartarus.angband.pl ([54.37.238.230]:34080 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727610AbeLEO7K (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Dec 2018 09:59:10 -0500
+Received: from kilobyte by tartarus.angband.pl with local (Exim 4.89)
+        (envelope-from <kilobyte@angband.pl>)
+        id 1gUYdl-0003Gt-3l; Wed, 05 Dec 2018 15:59:05 +0100
+Date:   Wed, 5 Dec 2018 15:59:05 +0100
+From:   Adam Borowski <kilobyte@angband.pl>
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     Goldwyn Rodrigues <rgoldwyn@suse.de>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 01/10] btrfs: create a mount option for dax
+Message-ID: <20181205145905.xgwjyomiak6r22rs@angband.pl>
 References: <20181205122835.19290-1-rgoldwyn@suse.de>
- <20181205122835.19290-8-rgoldwyn@suse.de>
+ <20181205122835.19290-2-rgoldwyn@suse.de>
+ <4bf87dcb-dbac-c7ab-800c-98e10157f569@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <20181205122835.19290-8-rgoldwyn@suse.de>
-User-Agent: Mutt/1.9.2 (2017-12-15)
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <4bf87dcb-dbac-c7ab-800c-98e10157f569@suse.com>
+X-Junkbait: aaron@angband.pl, zzyx@angband.pl
+User-Agent: NeoMutt/20170113 (1.7.2)
+X-SA-Exim-Connect-IP: <locally generated>
+X-SA-Exim-Mail-From: kilobyte@angband.pl
+X-SA-Exim-Scanned: No (on tartarus.angband.pl); SAEximRunCond expanded to false
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-If you want to export these at all they have to be EXPORT_SYMBOL_GPL.
+On Wed, Dec 05, 2018 at 02:43:03PM +0200, Nikolay Borisov wrote:
+> One question below though .
+> 
+> > +++ b/fs/btrfs/super.c
+> > @@ -739,6 +741,17 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+> >  		case Opt_user_subvol_rm_allowed:
+> >  			btrfs_set_opt(info->mount_opt, USER_SUBVOL_RM_ALLOWED);
+> >  			break;
+> > +#ifdef CONFIG_FS_DAX
+> > +		case Opt_dax:
+> > +			if (btrfs_super_num_devices(info->super_copy) > 1) {
+> > +				btrfs_info(info,
+> > +					   "dax not supported for multi-device btrfs partition\n");
+> 
+> What prevents supporting dax for multiple devices so long as all devices
+> are dax?
 
-But I'd really like to avoid seeing another duplicate DAX I/O path.
-Please try to adopt the existing iomap-based infrastructure for your
-needs first.
+As I mentioned in a separate mail, most profiles are either redundant
+(RAID0), require hardware support (RAID1, DUP) or are impossible (RAID5,
+RAID6).
+
+But, "single" profile multi-device would be useful and actually provide
+something other dax-supporting filesystems don't have: combining multiple
+devices into one logical piece.
+
+On the other hand, DUP profiles need to be banned.  In particular, the
+filesystem you mount might have existing DUP block groups.
+
+
+Meow!
+-- 
+⢀⣴⠾⠻⢶⣦⠀ 
+⣾⠁⢠⠒⠀⣿⡁ Ivan was a worldly man: born in St. Petersburg, raised in
+⢿⡄⠘⠷⠚⠋⠀ Petrograd, lived most of his life in Leningrad, then returned
+⠈⠳⣄⠀⠀⠀⠀ to the city of his birth to die.

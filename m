@@ -2,35 +2,36 @@ Return-Path: <SRS0=6XAY=OO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,
+	UNWANTED_LANGUAGE_BODY,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4CC76C04EB9
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 12:29:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 46310C04EBF
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 12:29:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0FD512084C
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 12:29:10 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0FD512084C
+	by mail.kernel.org (Postfix) with ESMTP id 139AC2084C
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 12:29:11 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 139AC2084C
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727799AbeLEM3J (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 5 Dec 2018 07:29:09 -0500
-Received: from mx2.suse.de ([195.135.220.15]:48516 "EHLO mx1.suse.de"
+        id S1727803AbeLEM3K (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 5 Dec 2018 07:29:10 -0500
+Received: from mx2.suse.de ([195.135.220.15]:48528 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727778AbeLEM3I (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 5 Dec 2018 07:29:08 -0500
+        id S1727787AbeLEM3J (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 5 Dec 2018 07:29:09 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 777C3ADA9
-        for <linux-btrfs@vger.kernel.org>; Wed,  5 Dec 2018 12:29:05 +0000 (UTC)
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id A4BDAAEB9
+        for <linux-btrfs@vger.kernel.org>; Wed,  5 Dec 2018 12:29:07 +0000 (UTC)
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 07/10] dax: export functions for use with btrfs
-Date:   Wed,  5 Dec 2018 06:28:32 -0600
-Message-Id: <20181205122835.19290-8-rgoldwyn@suse.de>
+Subject: [PATCH 08/10] btrfs: dax add read mmap path
+Date:   Wed,  5 Dec 2018 06:28:33 -0600
+Message-Id: <20181205122835.19290-9-rgoldwyn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20181205122835.19290-1-rgoldwyn@suse.de>
 References: <20181205122835.19290-1-rgoldwyn@suse.de>
@@ -41,186 +42,102 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-These functions are required for btrfs dax support.
-
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 ---
- fs/dax.c            | 35 ++++++++++++++++++++++++-----------
- include/linux/dax.h | 16 ++++++++++++++++
- 2 files changed, 40 insertions(+), 11 deletions(-)
+ fs/btrfs/ctree.h |  1 +
+ fs/btrfs/dax.c   | 43 +++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/file.c  | 12 +++++++++++-
+ 3 files changed, 55 insertions(+), 1 deletion(-)
 
-diff --git a/fs/dax.c b/fs/dax.c
-index 9bcce89ea18e..4578640af631 100644
---- a/fs/dax.c
-+++ b/fs/dax.c
-@@ -244,7 +244,7 @@ static void put_unlocked_entry(struct xa_state *xas, void *entry)
-  * dropped the xa_lock, so we know the xa_state is stale and must be reset
-  * before use.
-  */
--static void dax_unlock_entry(struct xa_state *xas, void *entry)
-+void dax_unlock_entry(struct xa_state *xas, void *entry)
- {
- 	void *old;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index d91ff283a966..33648121ca52 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3694,6 +3694,7 @@ int btree_readahead_hook(struct extent_buffer *eb, int err);
+ /* dax.c */
+ ssize_t btrfs_file_dax_read(struct kiocb *iocb, struct iov_iter *to);
+ ssize_t btrfs_file_dax_write(struct kiocb *iocb, struct iov_iter *from);
++vm_fault_t btrfs_dax_fault(struct vm_fault *vmf);
+ #endif /* CONFIG_FS_DAX */
  
-@@ -256,6 +256,7 @@ static void dax_unlock_entry(struct xa_state *xas, void *entry)
- 	BUG_ON(!dax_is_locked(old));
- 	dax_wake_entry(xas, entry, false);
- }
-+EXPORT_SYMBOL(dax_unlock_entry);
- 
- /*
-  * Return: The entry stored at this location before it was locked.
-@@ -448,7 +449,7 @@ void dax_unlock_mapping_entry(struct page *page)
-  * a VM_FAULT code, encoded as an xarray internal entry.  The ERR_PTR values
-  * overlap with xarray value entries.
-  */
--static void *grab_mapping_entry(struct xa_state *xas,
-+void *grab_mapping_entry(struct xa_state *xas,
- 		struct address_space *mapping, unsigned long size_flag)
- {
- 	unsigned long index = xas->xa_index;
-@@ -531,6 +532,7 @@ static void *grab_mapping_entry(struct xa_state *xas,
- 	xas_unlock_irq(xas);
- 	return xa_mk_internal(VM_FAULT_FALLBACK);
- }
-+EXPORT_SYMBOL(grab_mapping_entry);
- 
- /**
-  * dax_layout_busy_page - find first pinned page in @mapping
-@@ -654,7 +656,7 @@ int dax_invalidate_mapping_entry_sync(struct address_space *mapping,
- 	return __dax_invalidate_entry(mapping, index, false);
- }
- 
--static int copy_user_dax(struct block_device *bdev, struct dax_device *dax_dev,
-+int copy_user_dax(struct block_device *bdev, struct dax_device *dax_dev,
- 		sector_t sector, size_t size, struct page *to,
- 		unsigned long vaddr)
- {
-@@ -679,6 +681,7 @@ static int copy_user_dax(struct block_device *bdev, struct dax_device *dax_dev,
- 	dax_read_unlock(id);
- 	return 0;
- }
-+EXPORT_SYMBOL(copy_user_dax);
- 
- /*
-  * By this point grab_mapping_entry() has ensured that we have a locked entry
-@@ -687,7 +690,7 @@ static int copy_user_dax(struct block_device *bdev, struct dax_device *dax_dev,
-  * already in the tree, we will skip the insertion and just dirty the PMD as
-  * appropriate.
-  */
--static void *dax_insert_entry(struct xa_state *xas,
-+void *dax_insert_entry(struct xa_state *xas,
- 		struct address_space *mapping, struct vm_fault *vmf,
- 		void *entry, pfn_t pfn, unsigned long flags, bool dirty)
- {
-@@ -736,6 +739,7 @@ static void *dax_insert_entry(struct xa_state *xas,
- 	xas_unlock_irq(xas);
- 	return entry;
- }
-+EXPORT_SYMBOL(dax_insert_entry);
- 
- static inline
- unsigned long pgoff_address(pgoff_t pgoff, struct vm_area_struct *vma)
-@@ -962,19 +966,18 @@ static sector_t dax_iomap_sector(struct iomap *iomap, loff_t pos)
- 	return (iomap->addr + (pos & PAGE_MASK) - iomap->offset) >> 9;
- }
- 
--static int dax_iomap_pfn(struct iomap *iomap, loff_t pos, size_t size,
--			 pfn_t *pfnp)
-+int dax_pfn(struct dax_device *dax_dev, struct block_device *bdev,
-+	    const sector_t sector, size_t size, pfn_t *pfnp)
- {
--	const sector_t sector = dax_iomap_sector(iomap, pos);
- 	pgoff_t pgoff;
- 	int id, rc;
- 	long length;
- 
--	rc = bdev_dax_pgoff(iomap->bdev, sector, size, &pgoff);
-+	rc = bdev_dax_pgoff(bdev, sector, size, &pgoff);
- 	if (rc)
- 		return rc;
- 	id = dax_read_lock();
--	length = dax_direct_access(iomap->dax_dev, pgoff, PHYS_PFN(size),
-+	length = dax_direct_access(dax_dev, pgoff, PHYS_PFN(size),
- 				   NULL, pfnp);
- 	if (length < 0) {
- 		rc = length;
-@@ -993,6 +996,14 @@ static int dax_iomap_pfn(struct iomap *iomap, loff_t pos, size_t size,
- 	dax_read_unlock(id);
- 	return rc;
- }
-+EXPORT_SYMBOL(dax_pfn);
-+
-+static int dax_iomap_pfn(struct iomap *iomap, loff_t pos, size_t size,
-+			 pfn_t *pfnp)
-+{
-+	const sector_t sector = dax_iomap_sector(iomap, pos);
-+	return dax_pfn(iomap->dax_dev, iomap->bdev, sector, size, pfnp);
+ static inline int is_fstree(u64 rootid)
+diff --git a/fs/btrfs/dax.c b/fs/btrfs/dax.c
+index 4000259a426c..88017f8799d1 100644
+--- a/fs/btrfs/dax.c
++++ b/fs/btrfs/dax.c
+@@ -190,5 +190,48 @@ ssize_t btrfs_file_dax_write(struct kiocb *iocb, struct iov_iter *from)
+ 				count - done, true);
+ 	extent_changeset_free(data_reserved);
+         return done ? done : ret;
 +}
++
++/* As copied from dax_iomap_pte_fault() */
++vm_fault_t btrfs_dax_fault(struct vm_fault *vmf)
++{
++	pfn_t pfn;
++	struct address_space *mapping = vmf->vma->vm_file->f_mapping;
++	XA_STATE(xas, &mapping->i_pages, vmf->pgoff);
++	struct inode *inode = mapping->host;
++	loff_t pos = (loff_t)vmf->pgoff << PAGE_SHIFT;
++	void *entry = NULL;
++	vm_fault_t ret = 0;
++
++	if (pos > i_size_read(inode)) {
++		ret = VM_FAULT_SIGBUS;
++		goto out;
++	}
  
- /*
-  * The user has performed a load from a hole in the file.  Allocating a new
-@@ -1001,7 +1012,7 @@ static int dax_iomap_pfn(struct iomap *iomap, loff_t pos, size_t size,
-  * If this page is ever written to we will re-fault and change the mapping to
-  * point to real DAX storage instead.
-  */
--static vm_fault_t dax_load_hole(struct xa_state *xas,
-+vm_fault_t dax_load_hole(struct xa_state *xas,
- 		struct address_space *mapping, void **entry,
- 		struct vm_fault *vmf)
- {
-@@ -1017,6 +1028,7 @@ static vm_fault_t dax_load_hole(struct xa_state *xas,
- 	trace_dax_load_hole(inode, vmf, ret);
- 	return ret;
++	entry = grab_mapping_entry(&xas, mapping, 0);
++	if (IS_ERR(entry)) {
++		ret = dax_fault_return(PTR_ERR(entry));
++		goto out;
++	}
++
++	if (!vmf->cow_page) {
++        	sector_t sector;
++		struct extent_map *em;
++                em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, pos, PAGE_SIZE, 0);
++		if (em->block_start == EXTENT_MAP_HOLE) {
++			ret = dax_load_hole(&xas, mapping, entry, vmf);
++			goto out;
++		}
++	        sector = ((get_start_sect(em->bdev) << 9) +
++			  (em->block_start + (pos - em->start))) >> 9;
++		ret = dax_pfn(fs_dax_get_by_bdev(em->bdev), em->bdev, sector, PAGE_SIZE, &pfn);
++		if (ret)
++			goto out;
++		dax_insert_entry(&xas, mapping, vmf, entry, pfn, 0, false);
++		ret = vmf_insert_mixed(vmf->vma, vmf->address, pfn);
++	}
++out:
++	if (entry)
++		dax_unlock_entry(&xas, entry);
++	return ret;
  }
-+EXPORT_SYMBOL(dax_load_hole);
- 
- static bool dax_range_is_aligned(struct block_device *bdev,
- 				 unsigned int offset, unsigned int length)
-@@ -1195,7 +1207,7 @@ dax_iomap_rw(struct kiocb *iocb, struct iov_iter *iter,
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 29a3b12e6660..38b494686fb2 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2227,8 +2227,18 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 	return ret > 0 ? -EIO : ret;
  }
- EXPORT_SYMBOL_GPL(dax_iomap_rw);
  
--static vm_fault_t dax_fault_return(int error)
-+vm_fault_t dax_fault_return(int error)
- {
- 	if (error == 0)
- 		return VM_FAULT_NOPAGE;
-@@ -1203,6 +1215,7 @@ static vm_fault_t dax_fault_return(int error)
- 		return VM_FAULT_OOM;
- 	return VM_FAULT_SIGBUS;
- }
-+EXPORT_SYMBOL(dax_fault_return);
- 
- /*
-  * MAP_SYNC on a dax mapping guarantees dirty metadata is
-diff --git a/include/linux/dax.h b/include/linux/dax.h
-index 450b28db9533..72f0a1e85ab5 100644
---- a/include/linux/dax.h
-+++ b/include/linux/dax.h
-@@ -155,6 +155,22 @@ vm_fault_t dax_finish_sync_fault(struct vm_fault *vmf,
- int dax_delete_mapping_entry(struct address_space *mapping, pgoff_t index);
- int dax_invalidate_mapping_entry_sync(struct address_space *mapping,
- 				      pgoff_t index);
-+int dax_pfn(struct dax_device *dax_dev, struct block_device *bdev,
-+	    const sector_t sector, size_t size, pfn_t *pfn);
-+void *dax_insert_entry(struct xa_state *xas,
-+	               struct address_space *mapping, struct vm_fault *vmf,
-+	               void *entry, pfn_t pfn, unsigned long flags, bool dirty);
-+void *grab_mapping_entry(struct xa_state *xas,
-+	                 struct address_space *mapping,
-+			 unsigned long size_flag);
-+void dax_unlock_entry(struct xa_state *xas, void *entry);
-+vm_fault_t dax_load_hole(struct xa_state *xas,
-+			 struct address_space *mapping, void **entry,
-+			 struct vm_fault *vmf);
-+vm_fault_t dax_fault_return(int error);
-+int copy_user_dax(struct block_device *bdev, struct dax_device *dax_dev,
-+		sector_t sector, size_t size, struct page *to,
-+		unsigned long vaddr);
- 
- #ifdef CONFIG_FS_DAX
- int __dax_zero_page_range(struct block_device *bdev,
++static vm_fault_t btrfs_fault(struct vm_fault *vmf)
++{
++	struct inode *inode = vmf->vma->vm_file->f_mapping->host;
++#ifdef CONFIG_FS_DAX
++	if (IS_DAX(inode))
++		return btrfs_dax_fault(vmf);
++#endif
++	return filemap_fault(vmf);
++}
++
+ static const struct vm_operations_struct btrfs_file_vm_ops = {
+-	.fault		= filemap_fault,
++	.fault		= btrfs_fault,
+ 	.map_pages	= filemap_map_pages,
+ 	.page_mkwrite	= btrfs_page_mkwrite,
+ };
 -- 
 2.16.4
 

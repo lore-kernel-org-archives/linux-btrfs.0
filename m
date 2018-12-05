@@ -7,47 +7,47 @@ X-Spam-Status: No, score=-10.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7073BC04EB9
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 09:59:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1B478C04EBF
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 10:01:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2A57A20989
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 09:59:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CC7E020989
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 10:01:06 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="mtmfdVXZ"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2A57A20989
+	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="tCpYX2+Z"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org CC7E020989
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729895AbeLEJwv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 5 Dec 2018 04:52:51 -0500
-Received: from mail.kernel.org ([198.145.29.99]:59362 "EHLO mail.kernel.org"
+        id S1728586AbeLEKBB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 5 Dec 2018 05:01:01 -0500
+Received: from mail.kernel.org ([198.145.29.99]:55792 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729861AbeLEJwu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 5 Dec 2018 04:52:50 -0500
+        id S1728229AbeLEJtj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 5 Dec 2018 04:49:39 -0500
 Received: from sasha-vm.mshome.net (unknown [213.57.143.11])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 773BF213A2;
-        Wed,  5 Dec 2018 09:52:46 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 094572087F;
+        Wed,  5 Dec 2018 09:49:35 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1544003569;
-        bh=NQqHe9JIHXRzU7sekC8XEUurqkShQMZdC9B/VYfkdvg=;
+        s=default; t=1544003378;
+        bh=/nuJRpR5ZhXgX+Bt6hiWyf5T2NfQE9eAfL8I8Wddwm0=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=mtmfdVXZtiap0ujs18zuaALgbDqVlI9DGAC9SHCHnMQEHQr6CN/01c3/sSCiyEud4
-         WSPstT/YdSMkMHwTeaQ1w6bvQ45uxtb1VdKyaH8SaJLaDHuqT5C2cERXPGdz64pys9
-         oXg+eJFojSJtZVKFoT5dVaXFT2cGCQ183aVQkTTk=
+        b=tCpYX2+Z6cdODF/Vnbbeeyi9Oz+rwzRWYzX1BS2gmy67IOq1OjtJ4j+6inX7uZYDO
+         y11NNOFmQkhLTeSqwYjWHUG0QFJef0kP4lu+DnJR0TIE47hoabskPfRfSLiyjDmwGX
+         imQ0SQJHqTVRU0wFb5jw4p25I3tIb75aVp+eCGQI=
 From:   Sasha Levin <sashal@kernel.org>
 To:     stable@vger.kernel.org, linux-kernel@vger.kernel.org
 Cc:     Robbie Ko <robbieko@synology.com>,
         Filipe Manana <fdmanana@suse.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.4 08/33] Btrfs: send, fix infinite loop due to directory rename dependencies
-Date:   Wed,  5 Dec 2018 04:51:06 -0500
-Message-Id: <20181205095131.7685-8-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 4.9 14/45] Btrfs: send, fix infinite loop due to directory rename dependencies
+Date:   Wed,  5 Dec 2018 04:46:35 -0500
+Message-Id: <20181205094706.7225-14-sashal@kernel.org>
 X-Mailer: git-send-email 2.17.1
-In-Reply-To: <20181205095131.7685-1-sashal@kernel.org>
-References: <20181205095131.7685-1-sashal@kernel.org>
+In-Reply-To: <20181205094706.7225-1-sashal@kernel.org>
+References: <20181205094706.7225-1-sashal@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -205,10 +205,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 8 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 83c73738165e..40d1ab957fb6 100644
+index 79dc3ee1de58..a45f26ac5da7 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -3232,7 +3232,8 @@ static void free_pending_move(struct send_ctx *sctx, struct pending_dir_move *m)
+@@ -3349,7 +3349,8 @@ static void free_pending_move(struct send_ctx *sctx, struct pending_dir_move *m)
  	kfree(m);
  }
  
@@ -218,7 +218,7 @@ index 83c73738165e..40d1ab957fb6 100644
  				      struct list_head *stack)
  {
  	if (list_empty(&moves->list)) {
-@@ -3243,6 +3244,10 @@ static void tail_append_pending_moves(struct pending_dir_move *moves,
+@@ -3360,6 +3361,10 @@ static void tail_append_pending_moves(struct pending_dir_move *moves,
  		list_add_tail(&moves->list, stack);
  		list_splice_tail(&list, stack);
  	}
@@ -229,7 +229,7 @@ index 83c73738165e..40d1ab957fb6 100644
  }
  
  static int apply_children_dir_moves(struct send_ctx *sctx)
-@@ -3257,7 +3262,7 @@ static int apply_children_dir_moves(struct send_ctx *sctx)
+@@ -3374,7 +3379,7 @@ static int apply_children_dir_moves(struct send_ctx *sctx)
  		return 0;
  
  	INIT_LIST_HEAD(&stack);
@@ -238,7 +238,7 @@ index 83c73738165e..40d1ab957fb6 100644
  
  	while (!list_empty(&stack)) {
  		pm = list_first_entry(&stack, struct pending_dir_move, list);
-@@ -3268,7 +3273,7 @@ static int apply_children_dir_moves(struct send_ctx *sctx)
+@@ -3385,7 +3390,7 @@ static int apply_children_dir_moves(struct send_ctx *sctx)
  			goto out;
  		pm = get_pending_dir_moves(sctx, parent_ino);
  		if (pm)

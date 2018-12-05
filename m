@@ -6,31 +6,31 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 07D72C04EB9
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 14:31:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C58C1C04EB9
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 14:32:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C0C322081C
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 14:31:16 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C0C322081C
+	by mail.kernel.org (Postfix) with ESMTP id 72B472081C
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 14:32:45 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 72B472081C
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727242AbeLEObP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 5 Dec 2018 09:31:15 -0500
-Received: from mx2.suse.de ([195.135.220.15]:48366 "EHLO mx1.suse.de"
+        id S1727523AbeLEOco (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 5 Dec 2018 09:32:44 -0500
+Received: from mx2.suse.de ([195.135.220.15]:48652 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727025AbeLEObP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 5 Dec 2018 09:31:15 -0500
+        id S1727195AbeLEOco (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 5 Dec 2018 09:32:44 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 5B80CAD4B
-        for <linux-btrfs@vger.kernel.org>; Wed,  5 Dec 2018 14:31:12 +0000 (UTC)
-Subject: Re: [PATCH 2/3] btrfs: use PAGE_ALIGNED instead of open-coding it
+        by mx1.suse.de (Postfix) with ESMTP id 85C2BAD4B
+        for <linux-btrfs@vger.kernel.org>; Wed,  5 Dec 2018 14:32:40 +0000 (UTC)
+Subject: Re: [PATCH 1/3] btrfs: use offset_in_page instead of open-coding it
 To:     Johannes Thumshirn <jthumshirn@suse.de>,
         David Sterba <dsterba@suse.com>
 Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
 References: <20181205142305.15361-1-jthumshirn@suse.de>
- <20181205142305.15361-3-jthumshirn@suse.de>
+ <20181205142305.15361-2-jthumshirn@suse.de>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -75,12 +75,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <ee29c8b4-f817-7f97-4503-20efde877e28@suse.com>
-Date:   Wed, 5 Dec 2018 16:31:11 +0200
+Message-ID: <4b49c528-1277-7b28-a0b6-4ef9a01aa2c6@suse.com>
+Date:   Wed, 5 Dec 2018 16:32:39 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181205142305.15361-3-jthumshirn@suse.de>
+In-Reply-To: <20181205142305.15361-2-jthumshirn@suse.de>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -92,83 +92,354 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 5.12.18 г. 16:23 ч., Johannes Thumshirn wrote:
-> When using a 'var & (PAGE_SIZE - 1)' construct one is checking for a page
-> alignment and thus should use the PAGE_ALIGNED() macro instead of
-> open-coding it.
+> Constructs like 'var & (PAGE_SIZE - 1)' or 'var & ~PAGE_MASK' can denote an
+> offset into a page.
 > 
-> Convert all open-coded occurrences of PAGE_ALIGNED().
+> So replace them by the offset_in_page() macro instead of open-coding it if
+> they're not used as an alignment check.
 > 
 > Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
 
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
 > ---
->  fs/btrfs/check-integrity.c | 8 ++++----
->  fs/btrfs/compression.c     | 2 +-
->  fs/btrfs/inode.c           | 2 +-
->  3 files changed, 6 insertions(+), 6 deletions(-)
+>  fs/btrfs/check-integrity.c | 12 +++++------
+>  fs/btrfs/compression.c     |  2 +-
+>  fs/btrfs/extent_io.c       | 53 +++++++++++++++++++++-------------------------
+>  fs/btrfs/file.c            |  4 ++--
+>  fs/btrfs/inode.c           |  7 +++---
+>  fs/btrfs/send.c            |  2 +-
+>  fs/btrfs/volumes.c         |  2 +-
+>  7 files changed, 38 insertions(+), 44 deletions(-)
 > 
 > diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
-> index d319c3020c09..84e9729badaa 100644
+> index 781cae168d2a..d319c3020c09 100644
 > --- a/fs/btrfs/check-integrity.c
 > +++ b/fs/btrfs/check-integrity.c
-> @@ -1601,7 +1601,7 @@ static int btrfsic_read_block(struct btrfsic_state *state,
->  	BUG_ON(block_ctx->datav);
->  	BUG_ON(block_ctx->pagev);
->  	BUG_ON(block_ctx->mem_to_free);
-> -	if (block_ctx->dev_bytenr & ((u64)PAGE_SIZE - 1)) {
-> +	if (!PAGE_ALIGNED(block_ctx->dev_bytenr)) {
->  		pr_info("btrfsic: read_block() with unaligned bytenr %llu\n",
->  		       block_ctx->dev_bytenr);
->  		return -1;
-> @@ -1778,7 +1778,7 @@ static void btrfsic_process_written_block(struct btrfsic_dev_state *dev_state,
->  				return;
->  			}
->  			is_metadata = 1;
-> -			BUG_ON(BTRFS_SUPER_INFO_SIZE & (PAGE_SIZE - 1));
-> +			BUG_ON(!PAGE_ALIGNED(BTRFS_SUPER_INFO_SIZE));
->  			processed_len = BTRFS_SUPER_INFO_SIZE;
->  			if (state->print_mask &
->  			    BTRFSIC_PRINT_MASK_TREE_BEFORE_SB_WRITE) {
-> @@ -2892,12 +2892,12 @@ int btrfsic_mount(struct btrfs_fs_info *fs_info,
->  	struct list_head *dev_head = &fs_devices->devices;
->  	struct btrfs_device *device;
+> @@ -1202,24 +1202,24 @@ static void btrfsic_read_from_block_data(
+>  	void *dstv, u32 offset, size_t len)
+>  {
+>  	size_t cur;
+> -	size_t offset_in_page;
+> +	size_t pgoff;
+>  	char *kaddr;
+>  	char *dst = (char *)dstv;
+> -	size_t start_offset = block_ctx->start & ((u64)PAGE_SIZE - 1);
+> +	size_t start_offset = offset_in_page(block_ctx->start);
+>  	unsigned long i = (start_offset + offset) >> PAGE_SHIFT;
 >  
-> -	if (fs_info->nodesize & ((u64)PAGE_SIZE - 1)) {
-> +	if (!PAGE_ALIGNED(fs_info->nodesize)) {
->  		pr_info("btrfsic: cannot handle nodesize %d not being a multiple of PAGE_SIZE %ld!\n",
->  		       fs_info->nodesize, PAGE_SIZE);
->  		return -1;
+>  	WARN_ON(offset + len > block_ctx->len);
+> -	offset_in_page = (start_offset + offset) & (PAGE_SIZE - 1);
+> +	pgoff = offset_in_page(start_offset + offset);
+>  
+>  	while (len > 0) {
+> -		cur = min(len, ((size_t)PAGE_SIZE - offset_in_page));
+> +		cur = min(len, ((size_t)PAGE_SIZE - pgoff));
+>  		BUG_ON(i >= DIV_ROUND_UP(block_ctx->len, PAGE_SIZE));
+>  		kaddr = block_ctx->datav[i];
+> -		memcpy(dst, kaddr + offset_in_page, cur);
+> +		memcpy(dst, kaddr + pgoff, cur);
+>  
+>  		dst += cur;
+>  		len -= cur;
+> -		offset_in_page = 0;
+> +		pgoff = 0;
+>  		i++;
 >  	}
-> -	if (fs_info->sectorsize & ((u64)PAGE_SIZE - 1)) {
-> +	if (!PAGE_ALIGNED(fs_info->sectorsize)) {
->  		pr_info("btrfsic: cannot handle sectorsize %d not being a multiple of PAGE_SIZE %ld!\n",
->  		       fs_info->sectorsize, PAGE_SIZE);
->  		return -1;
+>  }
 > diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-> index 2ab5591449f2..d5381f39a9e8 100644
+> index dba59ae914b8..2ab5591449f2 100644
 > --- a/fs/btrfs/compression.c
 > +++ b/fs/btrfs/compression.c
-> @@ -301,7 +301,7 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
->  	blk_status_t ret;
->  	int skip_sum = BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM;
+> @@ -477,7 +477,7 @@ static noinline int add_ra_bio_pages(struct inode *inode,
 >  
-> -	WARN_ON(start & ((u64)PAGE_SIZE - 1));
-> +	WARN_ON(!PAGE_ALIGNED(start));
->  	cb = kmalloc(compressed_bio_size(fs_info, compressed_len), GFP_NOFS);
->  	if (!cb)
->  		return BLK_STS_RESOURCE;
+>  		if (page->index == end_index) {
+>  			char *userpage;
+> -			size_t zero_offset = isize & (PAGE_SIZE - 1);
+> +			size_t zero_offset = offset_in_page(isize);
+>  
+>  			if (zero_offset) {
+>  				int zeros;
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index b2769e92b556..e365c5272e6b 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -2585,7 +2585,7 @@ static void end_bio_extent_readpage(struct bio *bio)
+>  			unsigned off;
+>  
+>  			/* Zero out the end if this page straddles i_size */
+> -			off = i_size & (PAGE_SIZE-1);
+> +			off = offset_in_page(i_size);
+>  			if (page->index == end_index && off)
+>  				zero_user_segment(page, off, PAGE_SIZE);
+>  			SetPageUptodate(page);
+> @@ -2888,7 +2888,7 @@ static int __do_readpage(struct extent_io_tree *tree,
+>  
+>  	if (page->index == last_byte >> PAGE_SHIFT) {
+>  		char *userpage;
+> -		size_t zero_offset = last_byte & (PAGE_SIZE - 1);
+> +		size_t zero_offset = offset_in_page(last_byte);
+>  
+>  		if (zero_offset) {
+>  			iosize = PAGE_SIZE - zero_offset;
+> @@ -3432,7 +3432,7 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
+>  
+>  	ClearPageError(page);
+>  
+> -	pg_offset = i_size & (PAGE_SIZE - 1);
+> +	pg_offset = offset_in_page(i_size);
+>  	if (page->index > end_index ||
+>  	   (page->index == end_index && !pg_offset)) {
+>  		page->mapping->a_ops->invalidatepage(page, 0, PAGE_SIZE);
+> @@ -5307,7 +5307,7 @@ void read_extent_buffer(const struct extent_buffer *eb, void *dstv,
+>  	struct page *page;
+>  	char *kaddr;
+>  	char *dst = (char *)dstv;
+> -	size_t start_offset = eb->start & ((u64)PAGE_SIZE - 1);
+> +	size_t start_offset = offset_in_page(eb->start);
+>  	unsigned long i = (start_offset + start) >> PAGE_SHIFT;
+>  
+>  	if (start + len > eb->len) {
+> @@ -5317,7 +5317,7 @@ void read_extent_buffer(const struct extent_buffer *eb, void *dstv,
+>  		return;
+>  	}
+>  
+> -	offset = (start_offset + start) & (PAGE_SIZE - 1);
+> +	offset = offset_in_page(start_offset + start);
+>  
+>  	while (len > 0) {
+>  		page = eb->pages[i];
+> @@ -5342,14 +5342,14 @@ int read_extent_buffer_to_user(const struct extent_buffer *eb,
+>  	struct page *page;
+>  	char *kaddr;
+>  	char __user *dst = (char __user *)dstv;
+> -	size_t start_offset = eb->start & ((u64)PAGE_SIZE - 1);
+> +	size_t start_offset = offset_in_page(eb->start);
+>  	unsigned long i = (start_offset + start) >> PAGE_SHIFT;
+>  	int ret = 0;
+>  
+>  	WARN_ON(start > eb->len);
+>  	WARN_ON(start + len > eb->start + eb->len);
+>  
+> -	offset = (start_offset + start) & (PAGE_SIZE - 1);
+> +	offset = offset_in_page(start_offset + start);
+>  
+>  	while (len > 0) {
+>  		page = eb->pages[i];
+> @@ -5383,7 +5383,7 @@ int map_private_extent_buffer(const struct extent_buffer *eb,
+>  	size_t offset;
+>  	char *kaddr;
+>  	struct page *p;
+> -	size_t start_offset = eb->start & ((u64)PAGE_SIZE - 1);
+> +	size_t start_offset = offset_in_page(eb->start);
+>  	unsigned long i = (start_offset + start) >> PAGE_SHIFT;
+>  	unsigned long end_i = (start_offset + start + min_len - 1) >>
+>  		PAGE_SHIFT;
+> @@ -5420,14 +5420,14 @@ int memcmp_extent_buffer(const struct extent_buffer *eb, const void *ptrv,
+>  	struct page *page;
+>  	char *kaddr;
+>  	char *ptr = (char *)ptrv;
+> -	size_t start_offset = eb->start & ((u64)PAGE_SIZE - 1);
+> +	size_t start_offset = offset_in_page(eb->start);
+>  	unsigned long i = (start_offset + start) >> PAGE_SHIFT;
+>  	int ret = 0;
+>  
+>  	WARN_ON(start > eb->len);
+>  	WARN_ON(start + len > eb->start + eb->len);
+>  
+> -	offset = (start_offset + start) & (PAGE_SIZE - 1);
+> +	offset = offset_in_page(start_offset + start);
+>  
+>  	while (len > 0) {
+>  		page = eb->pages[i];
+> @@ -5476,13 +5476,13 @@ void write_extent_buffer(struct extent_buffer *eb, const void *srcv,
+>  	struct page *page;
+>  	char *kaddr;
+>  	char *src = (char *)srcv;
+> -	size_t start_offset = eb->start & ((u64)PAGE_SIZE - 1);
+> +	size_t start_offset = offset_in_page(eb->start);
+>  	unsigned long i = (start_offset + start) >> PAGE_SHIFT;
+>  
+>  	WARN_ON(start > eb->len);
+>  	WARN_ON(start + len > eb->start + eb->len);
+>  
+> -	offset = (start_offset + start) & (PAGE_SIZE - 1);
+> +	offset = offset_in_page(start_offset + start);
+>  
+>  	while (len > 0) {
+>  		page = eb->pages[i];
+> @@ -5506,13 +5506,13 @@ void memzero_extent_buffer(struct extent_buffer *eb, unsigned long start,
+>  	size_t offset;
+>  	struct page *page;
+>  	char *kaddr;
+> -	size_t start_offset = eb->start & ((u64)PAGE_SIZE - 1);
+> +	size_t start_offset = offset_in_page(eb->start);
+>  	unsigned long i = (start_offset + start) >> PAGE_SHIFT;
+>  
+>  	WARN_ON(start > eb->len);
+>  	WARN_ON(start + len > eb->start + eb->len);
+>  
+> -	offset = (start_offset + start) & (PAGE_SIZE - 1);
+> +	offset = offset_in_page(start_offset + start);
+>  
+>  	while (len > 0) {
+>  		page = eb->pages[i];
+> @@ -5551,13 +5551,12 @@ void copy_extent_buffer(struct extent_buffer *dst, struct extent_buffer *src,
+>  	size_t offset;
+>  	struct page *page;
+>  	char *kaddr;
+> -	size_t start_offset = dst->start & ((u64)PAGE_SIZE - 1);
+> +	size_t start_offset = offset_in_page(dst->start);
+>  	unsigned long i = (start_offset + dst_offset) >> PAGE_SHIFT;
+>  
+>  	WARN_ON(src->len != dst_len);
+>  
+> -	offset = (start_offset + dst_offset) &
+> -		(PAGE_SIZE - 1);
+> +	offset = offset_in_page(start_offset + dst_offset);
+>  
+>  	while (len > 0) {
+>  		page = dst->pages[i];
+> @@ -5593,7 +5592,7 @@ static inline void eb_bitmap_offset(struct extent_buffer *eb,
+>  				    unsigned long *page_index,
+>  				    size_t *page_offset)
+>  {
+> -	size_t start_offset = eb->start & ((u64)PAGE_SIZE - 1);
+> +	size_t start_offset = offset_in_page(eb->start);
+>  	size_t byte_offset = BIT_BYTE(nr);
+>  	size_t offset;
+>  
+> @@ -5605,7 +5604,7 @@ static inline void eb_bitmap_offset(struct extent_buffer *eb,
+>  	offset = start_offset + start + byte_offset;
+>  
+>  	*page_index = offset >> PAGE_SHIFT;
+> -	*page_offset = offset & (PAGE_SIZE - 1);
+> +	*page_offset = offset_in_page(offset);
+>  }
+>  
+>  /**
+> @@ -5747,7 +5746,7 @@ void memcpy_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
+>  	size_t cur;
+>  	size_t dst_off_in_page;
+>  	size_t src_off_in_page;
+> -	size_t start_offset = dst->start & ((u64)PAGE_SIZE - 1);
+> +	size_t start_offset = offset_in_page(dst->start);
+>  	unsigned long dst_i;
+>  	unsigned long src_i;
+>  
+> @@ -5765,10 +5764,8 @@ void memcpy_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
+>  	}
+>  
+>  	while (len > 0) {
+> -		dst_off_in_page = (start_offset + dst_offset) &
+> -			(PAGE_SIZE - 1);
+> -		src_off_in_page = (start_offset + src_offset) &
+> -			(PAGE_SIZE - 1);
+> +		dst_off_in_page = offset_in_page(start_offset + dst_offset);
+> +		src_off_in_page = offset_in_page(start_offset + src_offset);
+>  
+>  		dst_i = (start_offset + dst_offset) >> PAGE_SHIFT;
+>  		src_i = (start_offset + src_offset) >> PAGE_SHIFT;
+> @@ -5796,7 +5793,7 @@ void memmove_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
+>  	size_t src_off_in_page;
+>  	unsigned long dst_end = dst_offset + len - 1;
+>  	unsigned long src_end = src_offset + len - 1;
+> -	size_t start_offset = dst->start & ((u64)PAGE_SIZE - 1);
+> +	size_t start_offset = offset_in_page(dst->start);
+>  	unsigned long dst_i;
+>  	unsigned long src_i;
+>  
+> @@ -5820,10 +5817,8 @@ void memmove_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
+>  		dst_i = (start_offset + dst_end) >> PAGE_SHIFT;
+>  		src_i = (start_offset + src_end) >> PAGE_SHIFT;
+>  
+> -		dst_off_in_page = (start_offset + dst_end) &
+> -			(PAGE_SIZE - 1);
+> -		src_off_in_page = (start_offset + src_end) &
+> -			(PAGE_SIZE - 1);
+> +		dst_off_in_page = offset_in_page(start_offset + dst_end);
+> +		src_off_in_page = offset_in_page(start_offset + src_end);
+>  
+>  		cur = min_t(unsigned long, len, src_off_in_page + 1);
+>  		cur = min(cur, dst_off_in_page + 1);
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index 3835bb8c146d..81aae230d1a5 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -399,7 +399,7 @@ static noinline int btrfs_copy_from_user(loff_t pos, size_t write_bytes,
+>  	size_t copied = 0;
+>  	size_t total_copied = 0;
+>  	int pg = 0;
+> -	int offset = pos & (PAGE_SIZE - 1);
+> +	int offset = offset_in_page(pos);
+>  
+>  	while (write_bytes > 0) {
+>  		size_t count = min_t(size_t,
+> @@ -1611,7 +1611,7 @@ static noinline ssize_t btrfs_buffered_write(struct kiocb *iocb,
+>  		return -ENOMEM;
+>  
+>  	while (iov_iter_count(i) > 0) {
+> -		size_t offset = pos & (PAGE_SIZE - 1);
+> +		size_t offset = offset_in_page(pos);
+>  		size_t sector_offset;
+>  		size_t write_bytes = min(iov_iter_count(i),
+>  					 nrptrs * (size_t)PAGE_SIZE -
 > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index bc0564c384de..5c52e91b01e8 100644
+> index d54bdef16d8d..bc0564c384de 100644
 > --- a/fs/btrfs/inode.c
 > +++ b/fs/btrfs/inode.c
-> @@ -2027,7 +2027,7 @@ int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
->  			      unsigned int extra_bits,
->  			      struct extent_state **cached_state, int dedupe)
->  {
-> -	WARN_ON((end & (PAGE_SIZE - 1)) == 0);
-> +	WARN_ON(PAGE_ALIGNED(end));
->  	return set_extent_delalloc(&BTRFS_I(inode)->io_tree, start, end,
->  				   extra_bits, cached_state);
->  }
+> @@ -230,7 +230,7 @@ static int insert_inline_extent(struct btrfs_trans_handle *trans,
+>  				     start >> PAGE_SHIFT);
+>  		btrfs_set_file_extent_compression(leaf, ei, 0);
+>  		kaddr = kmap_atomic(page);
+> -		offset = start & (PAGE_SIZE - 1);
+> +		offset = offset_in_page(start);
+>  		write_extent_buffer(leaf, kaddr + offset, ptr, size);
+>  		kunmap_atomic(kaddr);
+>  		put_page(page);
+> @@ -539,8 +539,7 @@ static noinline void compress_file_range(struct inode *inode,
+>  					   &total_compressed);
+>  
+>  		if (!ret) {
+> -			unsigned long offset = total_compressed &
+> -				(PAGE_SIZE - 1);
+> +			unsigned long offset = offset_in_page(total_compressed);
+>  			struct page *page = pages[nr_pages - 1];
+>  			char *kaddr;
+>  
+> @@ -8878,7 +8877,7 @@ vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
+>  
+>  	/* page is wholly or partially inside EOF */
+>  	if (page_start + PAGE_SIZE > size)
+> -		zero_start = size & ~PAGE_MASK;
+> +		zero_start = offset_in_page(size);
+>  	else
+>  		zero_start = PAGE_SIZE;
+>  
+> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> index 5be83b5a1b43..9df4c0b0e789 100644
+> --- a/fs/btrfs/send.c
+> +++ b/fs/btrfs/send.c
+> @@ -4775,7 +4775,7 @@ static ssize_t fill_read_buf(struct send_ctx *sctx, u64 offset, u32 len)
+>  	struct btrfs_key key;
+>  	pgoff_t index = offset >> PAGE_SHIFT;
+>  	pgoff_t last_index;
+> -	unsigned pg_offset = offset & ~PAGE_MASK;
+> +	unsigned pg_offset = offset_in_page(offset);
+>  	ssize_t ret = 0;
+>  
+>  	key.objectid = sctx->cur_ino;
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index d49baad64fe6..bb0430b2a8ba 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -1436,7 +1436,7 @@ static int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
+>  	p = kmap(*page);
+>  
+>  	/* align our pointer to the offset of the super block */
+> -	*disk_super = p + (bytenr & ~PAGE_MASK);
+> +	*disk_super = p + offset_in_page(bytenr);
+>  
+>  	if (btrfs_super_bytenr(*disk_super) != bytenr ||
+>  	    btrfs_super_magic(*disk_super) != BTRFS_MAGIC) {
 > 

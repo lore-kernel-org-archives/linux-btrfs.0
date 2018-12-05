@@ -6,32 +6,33 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B2AC4C07E85
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 14:23:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9888AC04EB9
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 14:23:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 84CA82083F
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 14:23:15 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 84CA82083F
+	by mail.kernel.org (Postfix) with ESMTP id 5FAFD2083F
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 14:23:17 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5FAFD2083F
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727549AbeLEOXO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 5 Dec 2018 09:23:14 -0500
-Received: from mx2.suse.de ([195.135.220.15]:46006 "EHLO mx1.suse.de"
+        id S1727604AbeLEOXQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 5 Dec 2018 09:23:16 -0500
+Received: from mx2.suse.de ([195.135.220.15]:46010 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727337AbeLEOXO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1727339AbeLEOXO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 5 Dec 2018 09:23:14 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id DFAABAD4C
-        for <linux-btrfs@vger.kernel.org>; Wed,  5 Dec 2018 14:23:12 +0000 (UTC)
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id EF748ADD4;
+        Wed,  5 Dec 2018 14:23:12 +0000 (UTC)
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 To:     David Sterba <dsterba@suse.com>
 Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
-        Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH 2/3] btrfs: use PAGE_ALIGNED instead of open-coding it
-Date:   Wed,  5 Dec 2018 15:23:04 +0100
-Message-Id: <20181205142305.15361-3-jthumshirn@suse.de>
+        Johannes Thumshirn <jthumshirn@suse.de>,
+        Julia Lawall <julia.lawall@lip6.fr>
+Subject: [RFC PATCH 3/3] coccinelle: api: add offset_in_page.cocci
+Date:   Wed,  5 Dec 2018 15:23:05 +0100
+Message-Id: <20181205142305.15361-4-jthumshirn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20181205142305.15361-1-jthumshirn@suse.de>
 References: <20181205142305.15361-1-jthumshirn@suse.de>
@@ -40,82 +41,108 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-When using a 'var & (PAGE_SIZE - 1)' construct one is checking for a page
-alignment and thus should use the PAGE_ALIGNED() macro instead of
-open-coding it.
+Constructs like 'var & (PAGE_SIZE - 1)' or 'var & ~PAGE_MASK' can be
+replaced by the offset_in_page() macro instead of open-coding it.
 
-Convert all open-coded occurrences of PAGE_ALIGNED().
+Add a coccinelle semantic patch to ease detection and conversion of these.
 
+This unfortunately doesn't account for the case when we want PAGE_ALIGNED()
+instead of offset_in_page() yet.
+
+Cc: Julia Lawall <julia.lawall@lip6.fr>
 Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
 ---
- fs/btrfs/check-integrity.c | 8 ++++----
- fs/btrfs/compression.c     | 2 +-
- fs/btrfs/inode.c           | 2 +-
- 3 files changed, 6 insertions(+), 6 deletions(-)
+ scripts/coccinelle/api/offset_in_page.cocci | 81 +++++++++++++++++++++++++++++
+ 1 file changed, 81 insertions(+)
+ create mode 100644 scripts/coccinelle/api/offset_in_page.cocci
 
-diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
-index d319c3020c09..84e9729badaa 100644
---- a/fs/btrfs/check-integrity.c
-+++ b/fs/btrfs/check-integrity.c
-@@ -1601,7 +1601,7 @@ static int btrfsic_read_block(struct btrfsic_state *state,
- 	BUG_ON(block_ctx->datav);
- 	BUG_ON(block_ctx->pagev);
- 	BUG_ON(block_ctx->mem_to_free);
--	if (block_ctx->dev_bytenr & ((u64)PAGE_SIZE - 1)) {
-+	if (!PAGE_ALIGNED(block_ctx->dev_bytenr)) {
- 		pr_info("btrfsic: read_block() with unaligned bytenr %llu\n",
- 		       block_ctx->dev_bytenr);
- 		return -1;
-@@ -1778,7 +1778,7 @@ static void btrfsic_process_written_block(struct btrfsic_dev_state *dev_state,
- 				return;
- 			}
- 			is_metadata = 1;
--			BUG_ON(BTRFS_SUPER_INFO_SIZE & (PAGE_SIZE - 1));
-+			BUG_ON(!PAGE_ALIGNED(BTRFS_SUPER_INFO_SIZE));
- 			processed_len = BTRFS_SUPER_INFO_SIZE;
- 			if (state->print_mask &
- 			    BTRFSIC_PRINT_MASK_TREE_BEFORE_SB_WRITE) {
-@@ -2892,12 +2892,12 @@ int btrfsic_mount(struct btrfs_fs_info *fs_info,
- 	struct list_head *dev_head = &fs_devices->devices;
- 	struct btrfs_device *device;
- 
--	if (fs_info->nodesize & ((u64)PAGE_SIZE - 1)) {
-+	if (!PAGE_ALIGNED(fs_info->nodesize)) {
- 		pr_info("btrfsic: cannot handle nodesize %d not being a multiple of PAGE_SIZE %ld!\n",
- 		       fs_info->nodesize, PAGE_SIZE);
- 		return -1;
- 	}
--	if (fs_info->sectorsize & ((u64)PAGE_SIZE - 1)) {
-+	if (!PAGE_ALIGNED(fs_info->sectorsize)) {
- 		pr_info("btrfsic: cannot handle sectorsize %d not being a multiple of PAGE_SIZE %ld!\n",
- 		       fs_info->sectorsize, PAGE_SIZE);
- 		return -1;
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 2ab5591449f2..d5381f39a9e8 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -301,7 +301,7 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
- 	blk_status_t ret;
- 	int skip_sum = BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM;
- 
--	WARN_ON(start & ((u64)PAGE_SIZE - 1));
-+	WARN_ON(!PAGE_ALIGNED(start));
- 	cb = kmalloc(compressed_bio_size(fs_info, compressed_len), GFP_NOFS);
- 	if (!cb)
- 		return BLK_STS_RESOURCE;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index bc0564c384de..5c52e91b01e8 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2027,7 +2027,7 @@ int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
- 			      unsigned int extra_bits,
- 			      struct extent_state **cached_state, int dedupe)
- {
--	WARN_ON((end & (PAGE_SIZE - 1)) == 0);
-+	WARN_ON(PAGE_ALIGNED(end));
- 	return set_extent_delalloc(&BTRFS_I(inode)->io_tree, start, end,
- 				   extra_bits, cached_state);
- }
+diff --git a/scripts/coccinelle/api/offset_in_page.cocci b/scripts/coccinelle/api/offset_in_page.cocci
+new file mode 100644
+index 000000000000..ea5b3a8e0390
+--- /dev/null
++++ b/scripts/coccinelle/api/offset_in_page.cocci
+@@ -0,0 +1,81 @@
++// SPDX-License-Identifier: GPL-2.0
++///
++/// Use offset_in_page macro on address instead of explicit computation.
++///
++//  Confidence: High
++//  Keywords: offset_in_page
++//  Comment: Based on vma_pages.cocci
++
++virtual context
++virtual patch
++virtual org
++virtual report
++
++
++//----------------------------------------------------------
++//  For context mode
++//----------------------------------------------------------
++
++@r_context depends on context && !patch && !org && !report@
++expression E;
++@@
++
++(
++* E & ~PAGE_MASK
++|
++* E & (PAGE_SIZE - 1)
++)
++
++
++//----------------------------------------------------------
++//  For patch mode
++//----------------------------------------------------------
++
++@r_patch depends on !context && patch && !org && !report@
++expression E;
++type T;
++@@
++
++(
++- E & ~PAGE_MASK
+++ offset_in_page(E)
++|
++- E & (PAGE_SIZE - 1)
+++ offset_in_page(E)
++|
++- E & ((T)PAGE_SIZE - 1)
+++ offset_in_page(E)
++)
++
++//----------------------------------------------------------
++//  For org mode
++//----------------------------------------------------------
++
++@r_org depends on !context && !patch && (org || report)@
++expression E;
++position p;
++@@
++
++  (
++  * E@p & ~PAGE_MASK
++  |
++  * E@p & (PAGE_SIZE - 1)
++  )
++
++@script:python depends on report@
++p << r_org.p;
++x << r_org.E;
++@@
++
++msg="WARNING: Consider using offset_in_page helper on %s" % (x)
++coccilib.report.print_report(p[0], msg)
++
++@script:python depends on org@
++p << r_org.p;
++x << r_org.E;
++@@
++
++msg="WARNING: Consider using offset_in_page helper on %s" % (x)
++msg_safe=msg.replace("[","@(").replace("]",")")
++coccilib.org.print_todo(p[0], msg_safe)
++
 -- 
 2.16.4
 

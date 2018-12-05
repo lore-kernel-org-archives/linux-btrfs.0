@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E9A87C04EB9
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 06:40:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4E678C04EBF
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 06:40:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B8DF32082B
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 06:40:48 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B8DF32082B
+	by mail.kernel.org (Postfix) with ESMTP id 1270C2082B
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 06:40:50 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1270C2082B
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727192AbeLEGkr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 5 Dec 2018 01:40:47 -0500
-Received: from mx2.suse.de ([195.135.220.15]:49774 "EHLO mx1.suse.de"
+        id S1727173AbeLEGko (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 5 Dec 2018 01:40:44 -0500
+Received: from mx2.suse.de ([195.135.220.15]:49760 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727161AbeLEGkq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 5 Dec 2018 01:40:46 -0500
+        id S1727142AbeLEGkn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 5 Dec 2018 01:40:43 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id BEB02AEB4
-        for <linux-btrfs@vger.kernel.org>; Wed,  5 Dec 2018 06:40:45 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 0051EAEDA
+        for <linux-btrfs@vger.kernel.org>; Wed,  5 Dec 2018 06:40:41 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 12/13] btrfs-progs: Add utils.h include to solve missing-prototypes warning
-Date:   Wed,  5 Dec 2018 14:40:17 +0800
-Message-Id: <20181205064018.27755-13-wqu@suse.com>
+Subject: [PATCH v2 10/13] btrfs-progs: Move btrfs_check_nodesize to fsfeatures.c to fix missing-prototypes warning
+Date:   Wed,  5 Dec 2018 14:40:15 +0800
+Message-Id: <20181205064018.27755-11-wqu@suse.com>
 X-Mailer: git-send-email 2.19.2
 In-Reply-To: <20181205064018.27755-1-wqu@suse.com>
 References: <20181205064018.27755-1-wqu@suse.com>
@@ -40,27 +40,80 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Prototypes for arg_strtou64() and lookup_path_rootid() are included in
-utils.c, resulting make W=1 warning for them.
-
-Just include that header to make W=1 happier.
+And fsfeatures.c is indeed a better location for that function.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
- utils-lib.c | 1 +
- 1 file changed, 1 insertion(+)
+ fsfeatures.c | 23 +++++++++++++++++++++++
+ utils.c      | 23 -----------------------
+ 2 files changed, 23 insertions(+), 23 deletions(-)
 
-diff --git a/utils-lib.c b/utils-lib.c
-index 044f93fc4446..5bb89f2f1a8d 100644
---- a/utils-lib.c
-+++ b/utils-lib.c
-@@ -1,4 +1,5 @@
- #include "kerncompat.h"
-+#include "utils.h"
- #include <unistd.h>
- #include <stdlib.h>
- #include <limits.h>
+diff --git a/fsfeatures.c b/fsfeatures.c
+index 7d85d60f1277..13ad030870cd 100644
+--- a/fsfeatures.c
++++ b/fsfeatures.c
+@@ -225,3 +225,26 @@ u32 get_running_kernel_version(void)
+ 	return version;
+ }
+ 
++int btrfs_check_nodesize(u32 nodesize, u32 sectorsize, u64 features)
++{
++	if (nodesize < sectorsize) {
++		error("illegal nodesize %u (smaller than %u)",
++				nodesize, sectorsize);
++		return -1;
++	} else if (nodesize > BTRFS_MAX_METADATA_BLOCKSIZE) {
++		error("illegal nodesize %u (larger than %u)",
++			nodesize, BTRFS_MAX_METADATA_BLOCKSIZE);
++		return -1;
++	} else if (nodesize & (sectorsize - 1)) {
++		error("illegal nodesize %u (not aligned to %u)",
++			nodesize, sectorsize);
++		return -1;
++	} else if (features & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS &&
++		   nodesize != sectorsize) {
++		error(
++		"illegal nodesize %u (not equal to %u for mixed block group)",
++			nodesize, sectorsize);
++		return -1;
++	}
++	return 0;
++}
+diff --git a/utils.c b/utils.c
+index b274f46fdd9d..a7e34b804551 100644
+--- a/utils.c
++++ b/utils.c
+@@ -2266,29 +2266,6 @@ int btrfs_tree_search2_ioctl_supported(int fd)
+ 	return ret;
+ }
+ 
+-int btrfs_check_nodesize(u32 nodesize, u32 sectorsize, u64 features)
+-{
+-	if (nodesize < sectorsize) {
+-		error("illegal nodesize %u (smaller than %u)",
+-				nodesize, sectorsize);
+-		return -1;
+-	} else if (nodesize > BTRFS_MAX_METADATA_BLOCKSIZE) {
+-		error("illegal nodesize %u (larger than %u)",
+-			nodesize, BTRFS_MAX_METADATA_BLOCKSIZE);
+-		return -1;
+-	} else if (nodesize & (sectorsize - 1)) {
+-		error("illegal nodesize %u (not aligned to %u)",
+-			nodesize, sectorsize);
+-		return -1;
+-	} else if (features & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS &&
+-		   nodesize != sectorsize) {
+-		error("illegal nodesize %u (not equal to %u for mixed block group)",
+-			nodesize, sectorsize);
+-		return -1;
+-	}
+-	return 0;
+-}
+-
+ /*
+  * Copy a path argument from SRC to DEST and check the SRC length if it's at
+  * most PATH_MAX and fits into DEST. DESTLEN is supposed to be exact size of
 -- 
 2.19.2
 

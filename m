@@ -2,128 +2,182 @@ Return-Path: <SRS0=6XAY=OO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-0.9 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EA263C04EB9
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 13:59:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E5EB2C04EB9
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 14:03:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B263E2084C
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 13:59:22 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B263E2084C
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.de
+	by mail.kernel.org (Postfix) with ESMTP id AFCD32084C
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 14:03:50 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org AFCD32084C
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727349AbeLEN7V (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 5 Dec 2018 08:59:21 -0500
-Received: from mx2.suse.de ([195.135.220.15]:41422 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727142AbeLEN7V (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 5 Dec 2018 08:59:21 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id EB02FAC52
-        for <linux-btrfs@vger.kernel.org>; Wed,  5 Dec 2018 13:59:18 +0000 (UTC)
-Subject: Re: [PATCH 07/10] dax: export functions for use with btrfs
-To:     Goldwyn Rodrigues <rgoldwyn@suse.de>, linux-btrfs@vger.kernel.org
-Cc:     Goldwyn Rodrigues <rgoldwyn@suse.com>
-References: <20181205122835.19290-1-rgoldwyn@suse.de>
- <20181205122835.19290-8-rgoldwyn@suse.de>
-From:   Johannes Thumshirn <jthumshirn@suse.de>
+        id S1727297AbeLEODt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 5 Dec 2018 09:03:49 -0500
+Received: from mout.gmx.net ([212.227.15.15]:36989 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726918AbeLEODt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 5 Dec 2018 09:03:49 -0500
+Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx002
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0MhRI2-1gpu8p39og-00MZGJ; Wed, 05
+ Dec 2018 15:03:38 +0100
+Subject: Re: [PATCH v2 07/13] btrfs-progs: Fix Wmaybe-uninitialized warning
+To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20181205064018.27755-1-wqu@suse.com>
+ <20181205064018.27755-8-wqu@suse.com> <20181205134005.GB3905@twin.jikos.cz>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <4c25552f-17f7-2725-c87f-e22b35bf4d04@suse.de>
-Date:   Wed, 5 Dec 2018 14:59:18 +0100
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <926908c6-14c0-5c10-7ce2-de4b810e702b@gmx.com>
+Date:   Wed, 5 Dec 2018 22:03:30 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+ Thunderbird/60.3.1
 MIME-Version: 1.0
-In-Reply-To: <20181205122835.19290-8-rgoldwyn@suse.de>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20181205134005.GB3905@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="cgeltA27miE5VxTVsT2Adh3QmybuFdiP6"
+X-Provags-ID: V03:K1:ucTOMf7piIZFQX2J9Og9xuDnFcCGduWFvbaP9+L9oy2Z8hhk2cT
+ ucDYMUQMr9b3P1qqvAC79fBWfMDqGfxNwosBZNPtmkFllwSP/L7axsHZYz5elScJ5hE7nkm
+ TrnvEe0DbxFqgb754V/Jht2jD5ufM7urhCrmvHgZWVApye1c8YJvLoaFmY/LgBnBekbqFB7
+ hnMoMzlxH29sinP4Vsqew==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:YY7Ixqgqm3U=:nwfFbeNO5JgVwlaz996Qrv
+ NYxXy418zCm6fe8G2kXWGUij8+j9sorz5gENXflDPNt5St6Hs2yZYS+AoOkAkRDbT4jWtnL5Y
+ nP0E0j17BHZbM5+f/TcSZEd+xEhEBsUkMWh4M6m5GxdgWk2Ale6c8gbzxumUR14fky5aeP0MA
+ AER1gIV+KkMZrbsi47vHYgMtIB0P+PG41raxzccHI8O2tAIPxtMi8JTll9MXmeTFODKM27X6f
+ SxwvDx2sH2JfZGaEdnYgT2zErWau5/QFbxxehvSl2JPqU8xOSNj1bzVOkhys1Hn+x33An2Vow
+ 992A/p6yOue5XlMUdIFCoGqlWuRAyBoe16i1aO/2kJTwAVINbmELzgOwH13wsxIPO0VS2Lhmy
+ 5f5RBbXvidazpEfSgBxXpCsSGxgVcf8STF1mf+HDmZK2bQLecCLUGvzpWwSZgqpVZyRTQEdRG
+ SWDJSPGHvw0yUExUL8Ei4Nw0aRGsVxKbDtaizEVZkmdHQdQvUq/gnQ9ZmPm/DntrBdmdhKIfI
+ IvGBTHnQulMU3PJeLtDzYmXgWW6GZhXgbQyMddHDbASDFDZ0AvW3ArUhR6Vdg538Ydo6e9/+G
+ EZWhfoVoKk0BXUrFaun2URgYlqfNAgpZwTBy4Xa+0ZpRvC/8QzGr0eNICcGgYSH8Sa4Oofkh7
+ rhxdcXaRFi7wrxtuDVWO3SJ9L+R+xhG0vB6e0ipKkYS9R45FHgpHo/3WTnAa6/KFfs6wtQdk1
+ KOYrVP2P/Wyc5puk8RXQL/s2lEjsPwZSesdjM04w0tFI14T9dQXqe4pJtPsklHiSzz7cGSv3v
+ +2djYA4oof7YfQMGO97gY7pD5p/CifAgVXrzFo2rXXtvJpozF6o3ocDUCo3Hah/0gjpDzFVA+
+ o2IVly5vI1BU+kpRv5EA1EdkbS7gNHgrC2DUe85dT47mP6IJatMU+E/OeB23UV
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 05/12/2018 13:28, Goldwyn Rodrigues wrote:
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--cgeltA27miE5VxTVsT2Adh3QmybuFdiP6
+Content-Type: multipart/mixed; boundary="POUCqF7pVN2LKzHd6j8zyLrdxg7svQRnV";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <926908c6-14c0-5c10-7ce2-de4b810e702b@gmx.com>
+Subject: Re: [PATCH v2 07/13] btrfs-progs: Fix Wmaybe-uninitialized warning
+References: <20181205064018.27755-1-wqu@suse.com>
+ <20181205064018.27755-8-wqu@suse.com> <20181205134005.GB3905@twin.jikos.cz>
+In-Reply-To: <20181205134005.GB3905@twin.jikos.cz>
 
-[...]
-
-> -static void *grab_mapping_entry(struct xa_state *xas,
-> +void *grab_mapping_entry(struct xa_state *xas,
->  		struct address_space *mapping, unsigned long size_flag)
->  {
->  	unsigned long index = xas->xa_index;
-> @@ -531,6 +532,7 @@ static void *grab_mapping_entry(struct xa_state *xas,
->  	xas_unlock_irq(xas);
->  	return xa_mk_internal(VM_FAULT_FALLBACK);
->  }
-> +EXPORT_SYMBOL(grab_mapping_entry);
-
-dax_grab_mapping_entry() please.
+--POUCqF7pVN2LKzHd6j8zyLrdxg7svQRnV
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
 
--- 
-Johannes Thumshirn                            SUSE Labs Filesystems
-jthumshirn@suse.de                                +49 911 74053 689
-SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
-GF: Felix Imendörffer, Jane Smithard, Graham Norton
-HRB 21284 (AG Nürnberg)
-Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850
+On 2018/12/5 =E4=B8=8B=E5=8D=889:40, David Sterba wrote:
+> On Wed, Dec 05, 2018 at 02:40:12PM +0800, Qu Wenruo wrote:
+>> GCC 8.2.1 will report the following warning with "make W=3D1":
+>>
+>>   ctree.c: In function 'btrfs_next_sibling_tree_block':
+>>   ctree.c:2990:21: warning: 'slot' may be used uninitialized in this f=
+unction [-Wmaybe-uninitialized]
+>>     path->slots[level] =3D slot;
+>>     ~~~~~~~~~~~~~~~~~~~^~~~~~
+>>
+>> The culprit is the following code:
+>>
+>> 	int slot;		<< Not initialized
+>> 	int level =3D path->lowest_level + 1;
+>>  	BUG_ON(path->lowest_level + 1 >=3D BTRFS_MAX_LEVEL);
+>>  	while(level < BTRFS_MAX_LEVEL) {
+>> 		slot =3D path->slots[level] + 1;
+>> 		^^^^^^ but we initialize @slot here.
+>> 		...
+>> 	}
+>> 	path->slots[level] =3D slot;
+>>
+>> It's possible that compiler doesn't get enough hint for BUG_ON() on
+>> lowest_level + 1 >=3D BTRFS_MAX_LEVEL case.
+>>
+>> Fix it by using a do {} while() loop other than while() {} loop, to
+>> ensure we will run the loop for at least once.
+>=20
+> I was hoping that we can actually add the hint to BUG_ON so the code
+> does not continue if the condition is true.
+>=20
+I checked that method, but I'm not that confident about things like:
+
+bugon_trace()
+{
+	if (!val)
+		return;
+	__bugon_trace();
+}
+
+__attribute__ ((noreturn))
+static inline void __bugon_trace();
+
+This is as simple as just one extra function call, but the original
+problem is just one more function call before hitting abort().
+
+So I just give up screwing up things I'm not comfort enough to tweaking.
+
+The current do {} while() loop is the most direct solution, if gcc one
+day still gives such warning then I could say some harsh word then.
+
+Thanks,
+Qu
+
+
+--POUCqF7pVN2LKzHd6j8zyLrdxg7svQRnV--
+
+--cgeltA27miE5VxTVsT2Adh3QmybuFdiP6
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlwH2rIACgkQwj2R86El
+/qjfAwgApG130WyOTgjS8tmDAFzZwfqAwubkzPtNhXByHCT+A9NXScVBkUwzFw3r
+2AmS/hfyxlAAhJfRCKPU3GSdf/UK3c0U+zl1Zpvo4mEgdx4qME+qG9DGfbS5XyUc
+E89+CH1aRFUkUitpCvjR6w8G9o7sGN3HUiz1/re27/caIqfsimNmrnTwGZqOf98m
+j53NHClideBQzPQ3WN6erYaKrm6OyF22tNYlbkFraDK9om1xvsII/1xZkmaCb3QM
+3strWOxT9VgQNyg51REXvsbYSlmCZeYIzIKgR2RLClgWY0JdJzeSCjyEzX5uhs1n
+JLQ3a4xNiphSvH4tmDxW1On0bEFOJQ==
+=r+sW
+-----END PGP SIGNATURE-----
+
+--cgeltA27miE5VxTVsT2Adh3QmybuFdiP6--

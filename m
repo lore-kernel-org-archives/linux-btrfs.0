@@ -2,151 +2,251 @@ Return-Path: <SRS0=6XAY=OO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 491F5C04EBF
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 08:48:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CE0FDC04EBF
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 09:58:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 18CAD206B7
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 08:48:57 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 18CAD206B7
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 8A6F120661
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 09:58:06 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="F6jXkS6H"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8A6F120661
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726889AbeLEIs4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 5 Dec 2018 03:48:56 -0500
-Received: from mx2.suse.de ([195.135.220.15]:39234 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726102AbeLEIs4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 5 Dec 2018 03:48:56 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 44C66B086;
-        Wed,  5 Dec 2018 08:48:53 +0000 (UTC)
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     dsterba@suze.cz
-Cc:     linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2] btrfs: Remove unnecessary code from __btrfs_rebalance
-Date:   Wed,  5 Dec 2018 10:48:50 +0200
-Message-Id: <20181205084850.13598-1-nborisov@suse.com>
+        id S1730127AbeLEJzi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 5 Dec 2018 04:55:38 -0500
+Received: from mail.kernel.org ([198.145.29.99]:34036 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1730096AbeLEJzh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 5 Dec 2018 04:55:37 -0500
+Received: from sasha-vm.mshome.net (unknown [213.57.143.11])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id E20D320989;
+        Wed,  5 Dec 2018 09:55:33 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1544003735;
+        bh=YeIfIR2wN3qEz37zVr370iCGfK0FyQ3vDDgMGypfE6o=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=F6jXkS6HwnmV8b20f3DwlicZ4VhOFAbUraSzIzmvTiL2WQsuqsVrUaMzMq4UoFx4n
+         MO/nK7BBzuiksXi/lT376apFnZxq5jATRu3CGo8QhBKXyxOvQrD29gzxSotv/LLZSM
+         xwMIm4YccVsYnRTUFXhva+CdVI1/RoPlHxdE2FvE=
+From:   Sasha Levin <sashal@kernel.org>
+To:     stable@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc:     Robbie Ko <robbieko@synology.com>,
+        Filipe Manana <fdmanana@suse.com>,
+        David Sterba <dsterba@suse.com>,
+        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 3.18 06/26] Btrfs: send, fix infinite loop due to directory rename dependencies
+Date:   Wed,  5 Dec 2018 04:54:10 -0500
+Message-Id: <20181205095430.8019-6-sashal@kernel.org>
 X-Mailer: git-send-email 2.17.1
-In-Reply-To: <20181122081733.26082-1-nborisov@suse.com>
-References: <20181122081733.26082-1-nborisov@suse.com>
+In-Reply-To: <20181205095430.8019-1-sashal@kernel.org>
+References: <20181205095430.8019-1-sashal@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The first step fo the rebalance process, ensuring there is 1mb free on
-each device. This number seems rather small. And in fact when talking
-to the original authors their opinions were:
+From: Robbie Ko <robbieko@synology.com>
 
-"man that's a little bonkers"
-"i don't think we even need that code anymore"
-"I think it was there to make sure we had room for the blank 1M at the
-beginning. I bet it goes all the way back to v0"
-"we just don't need any of that tho, i say we just delete it"
+[ Upstream commit a4390aee72713d9e73f1132bcdeb17d72fbbf974 ]
 
-Clearly, this piece of code has lost its original intent throughout
-the years. It doesn't really bring any real practical benefits to the
-relocation process. Additionally, this patch makes the balance process
-more lightweight by removing a pair of shrink/grow operations which
-are rather expensive for heavily populated filesystems. This is mainly due to 
-shrink requiring relocating block groups, involving heavy use of the btree.
+When doing an incremental send, due to the need of delaying directory move
+(rename) operations we can end up in infinite loop at
+apply_children_dir_moves().
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-Suggested-by: Josef Bacik <josef@toxicpanda.com>
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+An example scenario that triggers this problem is described below, where
+directory names correspond to the numbers of their respective inodes.
+
+Parent snapshot:
+
+ .
+ |--- 261/
+       |--- 271/
+             |--- 266/
+                   |--- 259/
+                   |--- 260/
+                   |     |--- 267
+                   |
+                   |--- 264/
+                   |     |--- 258/
+                   |           |--- 257/
+                   |
+                   |--- 265/
+                   |--- 268/
+                   |--- 269/
+                   |     |--- 262/
+                   |
+                   |--- 270/
+                   |--- 272/
+                   |     |--- 263/
+                   |     |--- 275/
+                   |
+                   |--- 274/
+                         |--- 273/
+
+Send snapshot:
+
+ .
+ |-- 275/
+      |-- 274/
+           |-- 273/
+                |-- 262/
+                     |-- 269/
+                          |-- 258/
+                               |-- 271/
+                                    |-- 268/
+                                         |-- 267/
+                                              |-- 270/
+                                                   |-- 259/
+                                                   |    |-- 265/
+                                                   |
+                                                   |-- 272/
+                                                        |-- 257/
+                                                             |-- 260/
+                                                             |-- 264/
+                                                                  |-- 263/
+                                                                       |-- 261/
+                                                                            |-- 266/
+
+When processing inode 257 we delay its move (rename) operation because its
+new parent in the send snapshot, inode 272, was not yet processed. Then
+when processing inode 272, we delay the move operation for that inode
+because inode 274 is its ancestor in the send snapshot. Finally we delay
+the move operation for inode 274 when processing it because inode 275 is
+its new parent in the send snapshot and was not yet moved.
+
+When finishing processing inode 275, we start to do the move operations
+that were previously delayed (at apply_children_dir_moves()), resulting in
+the following iterations:
+
+1) We issue the move operation for inode 274;
+
+2) Because inode 262 depended on the move operation of inode 274 (it was
+   delayed because 274 is its ancestor in the send snapshot), we issue the
+   move operation for inode 262;
+
+3) We issue the move operation for inode 272, because it was delayed by
+   inode 274 too (ancestor of 272 in the send snapshot);
+
+4) We issue the move operation for inode 269 (it was delayed by 262);
+
+5) We issue the move operation for inode 257 (it was delayed by 272);
+
+6) We issue the move operation for inode 260 (it was delayed by 272);
+
+7) We issue the move operation for inode 258 (it was delayed by 269);
+
+8) We issue the move operation for inode 264 (it was delayed by 257);
+
+9) We issue the move operation for inode 271 (it was delayed by 258);
+
+10) We issue the move operation for inode 263 (it was delayed by 264);
+
+11) We issue the move operation for inode 268 (it was delayed by 271);
+
+12) We verify if we can issue the move operation for inode 270 (it was
+    delayed by 271). We detect a path loop in the current state, because
+    inode 267 needs to be moved first before we can issue the move
+    operation for inode 270. So we delay again the move operation for
+    inode 270, this time we will attempt to do it after inode 267 is
+    moved;
+
+13) We issue the move operation for inode 261 (it was delayed by 263);
+
+14) We verify if we can issue the move operation for inode 266 (it was
+    delayed by 263). We detect a path loop in the current state, because
+    inode 270 needs to be moved first before we can issue the move
+    operation for inode 266. So we delay again the move operation for
+    inode 266, this time we will attempt to do it after inode 270 is
+    moved (its move operation was delayed in step 12);
+
+15) We issue the move operation for inode 267 (it was delayed by 268);
+
+16) We verify if we can issue the move operation for inode 266 (it was
+    delayed by 270). We detect a path loop in the current state, because
+    inode 270 needs to be moved first before we can issue the move
+    operation for inode 266. So we delay again the move operation for
+    inode 266, this time we will attempt to do it after inode 270 is
+    moved (its move operation was delayed in step 12). So here we added
+    again the same delayed move operation that we added in step 14;
+
+17) We attempt again to see if we can issue the move operation for inode
+    266, and as in step 16, we realize we can not due to a path loop in
+    the current state due to a dependency on inode 270. Again we delay
+    inode's 266 rename to happen after inode's 270 move operation, adding
+    the same dependency to the empty stack that we did in steps 14 and 16.
+    The next iteration will pick the same move dependency on the stack
+    (the only entry) and realize again there is still a path loop and then
+    again the same dependency to the stack, over and over, resulting in
+    an infinite loop.
+
+So fix this by preventing adding the same move dependency entries to the
+stack by removing each pending move record from the red black tree of
+pending moves. This way the next call to get_pending_dir_moves() will
+not return anything for the current parent inode.
+
+A test case for fstests, with this reproducer, follows soon.
+
+Signed-off-by: Robbie Ko <robbieko@synology.com>
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+[Wrote changelog with example and more clear explanation]
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
-Changes since v1: 
- * Improved changelog by adding information about reduced runtimes and explaining
- where they would come from.
+ fs/btrfs/send.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
 
- I did measurements of btrfs balance with and without the patch with 
- funclatency from bcc tools but didn't observe large differences, but this was 
- on a ligthly populated filesystem. 
-
- fs/btrfs/volumes.c | 53 ----------------------------------------------
- 1 file changed, 53 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index d49baad64fe6..19cc31de1e84 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3699,17 +3699,11 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
- {
- 	struct btrfs_balance_control *bctl = fs_info->balance_ctl;
- 	struct btrfs_root *chunk_root = fs_info->chunk_root;
--	struct btrfs_root *dev_root = fs_info->dev_root;
--	struct list_head *devices;
--	struct btrfs_device *device;
--	u64 old_size;
--	u64 size_to_free;
- 	u64 chunk_type;
- 	struct btrfs_chunk *chunk;
- 	struct btrfs_path *path = NULL;
- 	struct btrfs_key key;
- 	struct btrfs_key found_key;
--	struct btrfs_trans_handle *trans;
- 	struct extent_buffer *leaf;
- 	int slot;
- 	int ret;
-@@ -3724,53 +3718,6 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
- 	u32 count_sys = 0;
- 	int chunk_reserved = 0;
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index b0350e2ec518..e41bc7c9ba13 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -3255,7 +3255,8 @@ static void free_pending_move(struct send_ctx *sctx, struct pending_dir_move *m)
+ 	kfree(m);
+ }
  
--	/* step one make some room on all the devices */
--	devices = &fs_info->fs_devices->devices;
--	list_for_each_entry(device, devices, dev_list) {
--		old_size = btrfs_device_get_total_bytes(device);
--		size_to_free = div_factor(old_size, 1);
--		size_to_free = min_t(u64, size_to_free, SZ_1M);
--		if (!test_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state) ||
--		    btrfs_device_get_total_bytes(device) -
--		    btrfs_device_get_bytes_used(device) > size_to_free ||
--		    test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state))
--			continue;
--
--		ret = btrfs_shrink_device(device, old_size - size_to_free);
--		if (ret == -ENOSPC)
--			break;
--		if (ret) {
--			/* btrfs_shrink_device never returns ret > 0 */
--			WARN_ON(ret > 0);
--			goto error;
--		}
--
--		trans = btrfs_start_transaction(dev_root, 0);
--		if (IS_ERR(trans)) {
--			ret = PTR_ERR(trans);
--			btrfs_info_in_rcu(fs_info,
--		 "resize: unable to start transaction after shrinking device %s (error %d), old size %llu, new size %llu",
--					  rcu_str_deref(device->name), ret,
--					  old_size, old_size - size_to_free);
--			goto error;
--		}
--
--		ret = btrfs_grow_device(trans, device, old_size);
--		if (ret) {
--			btrfs_end_transaction(trans);
--			/* btrfs_grow_device never returns ret > 0 */
--			WARN_ON(ret > 0);
--			btrfs_info_in_rcu(fs_info,
--		 "resize: unable to grow device after shrinking device %s (error %d), old size %llu, new size %llu",
--					  rcu_str_deref(device->name), ret,
--					  old_size, old_size - size_to_free);
--			goto error;
--		}
--
--		btrfs_end_transaction(trans);
--	}
--
--	/* step two, relocate all the chunks */
- 	path = btrfs_alloc_path();
- 	if (!path) {
- 		ret = -ENOMEM;
+-static void tail_append_pending_moves(struct pending_dir_move *moves,
++static void tail_append_pending_moves(struct send_ctx *sctx,
++				      struct pending_dir_move *moves,
+ 				      struct list_head *stack)
+ {
+ 	if (list_empty(&moves->list)) {
+@@ -3266,6 +3267,10 @@ static void tail_append_pending_moves(struct pending_dir_move *moves,
+ 		list_add_tail(&moves->list, stack);
+ 		list_splice_tail(&list, stack);
+ 	}
++	if (!RB_EMPTY_NODE(&moves->node)) {
++		rb_erase(&moves->node, &sctx->pending_dir_moves);
++		RB_CLEAR_NODE(&moves->node);
++	}
+ }
+ 
+ static int apply_children_dir_moves(struct send_ctx *sctx)
+@@ -3280,7 +3285,7 @@ static int apply_children_dir_moves(struct send_ctx *sctx)
+ 		return 0;
+ 
+ 	INIT_LIST_HEAD(&stack);
+-	tail_append_pending_moves(pm, &stack);
++	tail_append_pending_moves(sctx, pm, &stack);
+ 
+ 	while (!list_empty(&stack)) {
+ 		pm = list_first_entry(&stack, struct pending_dir_move, list);
+@@ -3291,7 +3296,7 @@ static int apply_children_dir_moves(struct send_ctx *sctx)
+ 			goto out;
+ 		pm = get_pending_dir_moves(sctx, parent_ino);
+ 		if (pm)
+-			tail_append_pending_moves(pm, &stack);
++			tail_append_pending_moves(sctx, pm, &stack);
+ 	}
+ 	return 0;
+ 
 -- 
 2.17.1
 

@@ -2,109 +2,64 @@ Return-Path: <SRS0=6XAY=OO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AE3C4C04EB9
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 14:13:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 699EEC04EB9
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 14:23:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7C9EF2082B
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 14:13:11 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7C9EF2082B
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 36BD62083F
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 14:23:15 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 36BD62083F
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727339AbeLEONK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 5 Dec 2018 09:13:10 -0500
-Received: from mx2.suse.de ([195.135.220.15]:44008 "EHLO mx1.suse.de"
+        id S1727505AbeLEOXO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 5 Dec 2018 09:23:14 -0500
+Received: from mx2.suse.de ([195.135.220.15]:46004 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727094AbeLEONK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 5 Dec 2018 09:13:10 -0500
+        id S1727297AbeLEOXO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 5 Dec 2018 09:23:14 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 72B29AEE5
-        for <linux-btrfs@vger.kernel.org>; Wed,  5 Dec 2018 14:13:08 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id A3351DAB92; Wed,  5 Dec 2018 15:12:49 +0100 (CET)
-From:   David Sterba <dsterba@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: Btrfs progs release 4.19.1
-Date:   Wed,  5 Dec 2018 15:12:49 +0100
-Message-Id: <20181205141249.3498-1-dsterba@suse.com>
-X-Mailer: git-send-email 2.19.1
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id CF629ACC2
+        for <linux-btrfs@vger.kernel.org>; Wed,  5 Dec 2018 14:23:12 +0000 (UTC)
+From:   Johannes Thumshirn <jthumshirn@suse.de>
+To:     David Sterba <dsterba@suse.com>
+Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
+        Johannes Thumshirn <jthumshirn@suse.de>
+Subject: [PATCH 0/3] btrfs: use offset_in_page and PAGE_ALIGNED 
+Date:   Wed,  5 Dec 2018 15:23:02 +0100
+Message-Id: <20181205142305.15361-1-jthumshirn@suse.de>
+X-Mailer: git-send-email 2.16.4
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+Use the offset_in_page() and PAGE_ALIGNED() macros instead of open-coding them
+throughout btrfs.
 
-btrfs-progs version 4.19.1 have been released.  There are build fixes, minor
-update to libbtrfsutil and documentation updates.
+This series also includes a patch for 'make coccicheck' which is marked as an
+RFC and I've CCed Julia in the hoping to get input from her.
 
-Changes since 4.19.1-rc1: fix typos in CHANGES
+Johannes Thumshirn (3):
+  btrfs: use offset_in_page instead of open-coding it
+  btrfs: use PAGE_ALIGNED instead of open-coding it
+  coccinelle: api: add offset_in_page.cocci
 
-Changes:
+ fs/btrfs/check-integrity.c                  | 20 +++----
+ fs/btrfs/compression.c                      |  4 +-
+ fs/btrfs/extent_io.c                        | 53 +++++++++----------
+ fs/btrfs/file.c                             |  4 +-
+ fs/btrfs/inode.c                            |  9 ++--
+ fs/btrfs/send.c                             |  2 +-
+ fs/btrfs/volumes.c                          |  2 +-
+ scripts/coccinelle/api/offset_in_page.cocci | 81 +++++++++++++++++++++++++++++
+ 8 files changed, 125 insertions(+), 50 deletions(-)
+ create mode 100644 scripts/coccinelle/api/offset_in_page.cocci
 
-  * build fixes
-    * big-endian builds fail due to bswap helper clashes
-    * 'swap' macro is too generic, renamed to prevent build failures
-  * libbtrfs
-    * minor version update to 1.1.0
-    * fix default search to top=0 as documented
-    * rename 'async' to avoid future python binding problems
-    * add support for unprivileged subvolume listing ioctls
-    * added tests, API docs
-  * other
-    * lot of typos fixed
-    * warning cleanups
-    * doc formatting updates
-    * CI tests against zstd 1.3.7
-
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
-
-Shortlog:
-
-David Sterba (7):
-      btrfs-progs: kerncompat: rename swap to __swap
-      btrfs-progs: README: add link to INSTALL
-      btrfs-progs: docs: fix rendering of exponents in manual pages
-      btrfs-progs: link to libbtrfsutil/README from the main README
-      btrfs-progs: tests: pull zstd version 1.3.7 to the travis CI
-      btrfs-progs: update CHANGES for v4.19.1
-      Btrfs progs v4.19.1
-
-Josh Soref (11):
-      btrfs-progs: docs: fix typos in Documentation
-      btrfs-progs: docs: fix typos in READMEs, INSTALL and CHANGES
-      btrfs-progs: fix typos in Makefile
-      btrfs-progs: tests: fix typos in test comments
-      btrfs-progs: tests: fsck/025, fix typo in helpre name
-      btrfs-progs: fix typos in comments
-      btrfs-progs: fix typos in user-visible strings
-      btrfs-progs: check: fix typo in device_extent_record::chunk_objectid
-      btrfs-progs: utils: fix typo in a variable
-      btrfs-progs: mkfs: fix typo in "multipler" variables
-      btrfs-progs: fix typo in btrfs-list function export
-
-Omar Sandoval (10):
-      libbtrfsutil: use top=0 as default for SubvolumeIterator()
-      libbtrfsutil: change async parameters to async_ in Python bindings
-      libbtrfsutil: document qgroup_inherit parameter in Python bindings
-      libbtrfsutil: use SubvolumeIterator as context manager in tests
-      libbtrfsutil: add test helpers for dropping privileges
-      libbtrfsutil: allow tests to create multiple Btrfs instances
-      libbtrfsutil: relax the privileges of subvolume_info()
-      libbtrfsutil: relax the privileges of subvolume iterator
-      libbtrfsutil: bump version to 1.1.0
-      libbtrfsutil: document API in README
-
-Rosen Penev (3):
-      btrfs-progs: kernel-lib: bitops: Fix big endian compilation
-      btrfs-progs: task-utils: Fix comparison between pointer and integer
-      btrfs-progs: treewide: Fix missing declarations
+-- 
+2.16.4
 

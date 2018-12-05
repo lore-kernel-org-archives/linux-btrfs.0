@@ -6,31 +6,31 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E452AC04EB9
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 12:28:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9C528C04EBF
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 12:28:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B62032084C
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 12:28:55 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B62032084C
+	by mail.kernel.org (Postfix) with ESMTP id 6FB702084C
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 12:28:58 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6FB702084C
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727620AbeLEM2y (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 5 Dec 2018 07:28:54 -0500
-Received: from mx2.suse.de ([195.135.220.15]:48444 "EHLO mx1.suse.de"
+        id S1727680AbeLEM25 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 5 Dec 2018 07:28:57 -0500
+Received: from mx2.suse.de ([195.135.220.15]:48450 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727525AbeLEM2y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 5 Dec 2018 07:28:54 -0500
+        id S1727525AbeLEM25 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 5 Dec 2018 07:28:57 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id CA666ADA9
-        for <linux-btrfs@vger.kernel.org>; Wed,  5 Dec 2018 12:28:52 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id C1BF0ADA9
+        for <linux-btrfs@vger.kernel.org>; Wed,  5 Dec 2018 12:28:54 +0000 (UTC)
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 01/10] btrfs: create a mount option for dax
-Date:   Wed,  5 Dec 2018 06:28:26 -0600
-Message-Id: <20181205122835.19290-2-rgoldwyn@suse.de>
+Subject: [PATCH 02/10] btrfs: basic dax read
+Date:   Wed,  5 Dec 2018 06:28:27 -0600
+Message-Id: <20181205122835.19290-3-rgoldwyn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20181205122835.19290-1-rgoldwyn@suse.de>
 References: <20181205122835.19290-1-rgoldwyn@suse.de>
@@ -41,91 +41,143 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-Also, set the inode->i_flags to S_DAX
-
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 ---
- fs/btrfs/ctree.h |  1 +
- fs/btrfs/ioctl.c |  5 ++++-
- fs/btrfs/super.c | 15 +++++++++++++++
- 3 files changed, 20 insertions(+), 1 deletion(-)
+ fs/btrfs/Makefile |  1 +
+ fs/btrfs/ctree.h  |  5 ++++
+ fs/btrfs/dax.c    | 68 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/file.c   | 13 ++++++++++-
+ 4 files changed, 86 insertions(+), 1 deletion(-)
+ create mode 100644 fs/btrfs/dax.c
 
+diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
+index ca693dd554e9..1fa77b875ae9 100644
+--- a/fs/btrfs/Makefile
++++ b/fs/btrfs/Makefile
+@@ -12,6 +12,7 @@ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
+ 	   reada.o backref.o ulist.o qgroup.o send.o dev-replace.o raid56.o \
+ 	   uuid-tree.o props.o free-space-tree.o tree-checker.o
+ 
++btrfs-$(CONFIG_FS_DAX) += dax.o
+ btrfs-$(CONFIG_BTRFS_FS_POSIX_ACL) += acl.o
+ btrfs-$(CONFIG_BTRFS_FS_CHECK_INTEGRITY) += check-integrity.o
+ btrfs-$(CONFIG_BTRFS_FS_REF_VERIFY) += ref-verify.o
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 68f322f600a0..5cc470fa6a40 100644
+index 5cc470fa6a40..038d64ecebe5 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -1353,6 +1353,7 @@ static inline u32 BTRFS_MAX_XATTR_SIZE(const struct btrfs_fs_info *info)
- #define BTRFS_MOUNT_FREE_SPACE_TREE	(1 << 26)
- #define BTRFS_MOUNT_NOLOGREPLAY		(1 << 27)
- #define BTRFS_MOUNT_REF_VERIFY		(1 << 28)
-+#define BTRFS_MOUNT_DAX			(1 << 29)
+@@ -3685,6 +3685,11 @@ int btrfs_reada_wait(void *handle);
+ void btrfs_reada_detach(void *handle);
+ int btree_readahead_hook(struct extent_buffer *eb, int err);
  
- #define BTRFS_DEFAULT_COMMIT_INTERVAL	(30)
- #define BTRFS_DEFAULT_MAX_INLINE	(2048)
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 802a628e9f7d..e9146c157816 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -149,8 +149,11 @@ void btrfs_sync_inode_flags_to_i_flags(struct inode *inode)
- 	if (binode->flags & BTRFS_INODE_DIRSYNC)
- 		new_fl |= S_DIRSYNC;
- 
-+	if ((btrfs_test_opt(btrfs_sb(inode->i_sb), DAX)) && S_ISREG(inode->i_mode))
-+		new_fl |= S_DAX;
++#ifdef CONFIG_FS_DAX
++/* dax.c */
++ssize_t btrfs_file_dax_read(struct kiocb *iocb, struct iov_iter *to);
++#endif /* CONFIG_FS_DAX */
 +
- 	set_mask_bits(&inode->i_flags,
--		      S_SYNC | S_APPEND | S_IMMUTABLE | S_NOATIME | S_DIRSYNC,
-+		      S_SYNC | S_APPEND | S_IMMUTABLE | S_NOATIME | S_DIRSYNC | S_DAX,
- 		      new_fl);
+ static inline int is_fstree(u64 rootid)
+ {
+ 	if (rootid == BTRFS_FS_TREE_OBJECTID ||
+diff --git a/fs/btrfs/dax.c b/fs/btrfs/dax.c
+new file mode 100644
+index 000000000000..d614bf73bf8e
+--- /dev/null
++++ b/fs/btrfs/dax.c
+@@ -0,0 +1,68 @@
++#include <linux/dax.h>
++#include <linux/uio.h>
++#include "ctree.h"
++#include "btrfs_inode.h"
++
++static ssize_t em_dax_rw(struct inode *inode, struct extent_map *em, u64 pos,
++		u64 len, struct iov_iter *iter)
++{
++        struct dax_device *dax_dev = fs_dax_get_by_bdev(em->bdev);
++        ssize_t map_len;
++        pgoff_t blk_pg;
++        void *kaddr;
++        sector_t blk_start;
++        unsigned offset = pos & (PAGE_SIZE - 1);
++
++        len = min(len + offset, em->len - (pos - em->start));
++        len = ALIGN(len, PAGE_SIZE);
++        blk_start = (get_start_sect(em->bdev) << 9) + (em->block_start + (pos - em->start));
++        blk_pg = blk_start - offset;
++        map_len = dax_direct_access(dax_dev, PHYS_PFN(blk_pg), PHYS_PFN(len), &kaddr, NULL);
++        map_len = PFN_PHYS(map_len);
++        kaddr += offset;
++        map_len -= offset;
++        if (map_len > len)
++                map_len = len;
++        if (iov_iter_rw(iter) == WRITE)
++                return dax_copy_from_iter(dax_dev, blk_pg, kaddr, map_len, iter);
++        else
++                return dax_copy_to_iter(dax_dev, blk_pg, kaddr, map_len, iter);
++}
++
++ssize_t btrfs_file_dax_read(struct kiocb *iocb, struct iov_iter *to)
++{
++        size_t ret = 0, done = 0, count = iov_iter_count(to);
++        struct extent_map *em;
++        u64 pos = iocb->ki_pos;
++        u64 end = pos + count;
++        struct inode *inode = file_inode(iocb->ki_filp);
++
++        if (!count)
++                return 0;
++
++        end = i_size_read(inode) < end ? i_size_read(inode) : end;
++
++        while (pos < end) {
++                u64 len = end - pos;
++
++                em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, pos, len, 0);
++                if (IS_ERR(em)) {
++                        if (!ret)
++                                ret = PTR_ERR(em);
++                        goto out;
++                }
++
++                BUG_ON(em->flags & EXTENT_FLAG_FS_MAPPING);
++
++                ret = em_dax_rw(inode, em, pos, len, to);
++                if (ret < 0)
++                        goto out;
++                pos += ret;
++                done += ret;
++        }
++
++out:
++        iocb->ki_pos += done;
++        return done ? done : ret;
++}
++
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 58e93bce3036..ef6ed93f44d1 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -3308,9 +3308,20 @@ static int btrfs_file_open(struct inode *inode, struct file *filp)
+ 	return generic_file_open(inode, filp);
  }
  
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 645fc81e2a94..035263b61cf5 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -326,6 +326,7 @@ enum {
- 	Opt_treelog, Opt_notreelog,
- 	Opt_usebackuproot,
- 	Opt_user_subvol_rm_allowed,
-+	Opt_dax,
- 
- 	/* Deprecated options */
- 	Opt_alloc_start,
-@@ -393,6 +394,7 @@ static const match_table_t tokens = {
- 	{Opt_notreelog, "notreelog"},
- 	{Opt_usebackuproot, "usebackuproot"},
- 	{Opt_user_subvol_rm_allowed, "user_subvol_rm_allowed"},
-+	{Opt_dax, "dax"},
- 
- 	/* Deprecated options */
- 	{Opt_alloc_start, "alloc_start=%s"},
-@@ -739,6 +741,17 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
- 		case Opt_user_subvol_rm_allowed:
- 			btrfs_set_opt(info->mount_opt, USER_SUBVOL_RM_ALLOWED);
- 			break;
++static ssize_t btrfs_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
++{
++	struct inode *inode = file_inode(iocb->ki_filp);
++
 +#ifdef CONFIG_FS_DAX
-+		case Opt_dax:
-+			if (btrfs_super_num_devices(info->super_copy) > 1) {
-+				btrfs_info(info,
-+					   "dax not supported for multi-device btrfs partition\n");
-+				ret = -EOPNOTSUPP;
-+				goto out;
-+			}
-+			btrfs_set_opt(info->mount_opt, DAX);
-+			break;
++	if (IS_DAX(inode))
++		return btrfs_file_dax_read(iocb, to);
 +#endif
- 		case Opt_enospc_debug:
- 			btrfs_set_opt(info->mount_opt, ENOSPC_DEBUG);
- 			break;
-@@ -1329,6 +1342,8 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
- 		seq_puts(seq, ",clear_cache");
- 	if (btrfs_test_opt(info, USER_SUBVOL_RM_ALLOWED))
- 		seq_puts(seq, ",user_subvol_rm_allowed");
-+	if (btrfs_test_opt(info, DAX))
-+		seq_puts(seq, ",dax");
- 	if (btrfs_test_opt(info, ENOSPC_DEBUG))
- 		seq_puts(seq, ",enospc_debug");
- 	if (btrfs_test_opt(info, AUTO_DEFRAG))
++	return generic_file_read_iter(iocb, to);
++}
++
+ const struct file_operations btrfs_file_operations = {
+ 	.llseek		= btrfs_file_llseek,
+-	.read_iter      = generic_file_read_iter,
++	.read_iter      = btrfs_file_read_iter,
+ 	.splice_read	= generic_file_splice_read,
+ 	.write_iter	= btrfs_file_write_iter,
+ 	.mmap		= btrfs_file_mmap,
 -- 
 2.16.4
 

@@ -2,173 +2,193 @@ Return-Path: <SRS0=6XAY=OO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+X-Spam-Status: No, score=-0.9 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 04E85C04EBF
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 12:43:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C9899C04EB9
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 13:03:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C62E22082B
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 12:43:08 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C62E22082B
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 8B7D32054F
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 13:03:19 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8B7D32054F
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727267AbeLEMnI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 5 Dec 2018 07:43:08 -0500
-Received: from mx2.suse.de ([195.135.220.15]:51264 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726149AbeLEMnH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 5 Dec 2018 07:43:07 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 1776FAB4D
-        for <linux-btrfs@vger.kernel.org>; Wed,  5 Dec 2018 12:43:05 +0000 (UTC)
-Subject: Re: [PATCH 01/10] btrfs: create a mount option for dax
+        id S1727573AbeLENDS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 5 Dec 2018 08:03:18 -0500
+Received: from mout.gmx.net ([212.227.15.15]:40733 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727006AbeLENDS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 5 Dec 2018 08:03:18 -0500
+Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx003
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0MaqqY-1gnhc32iJG-00KMCl; Wed, 05
+ Dec 2018 14:03:14 +0100
+Subject: Re: [PATCH 00/10] btrfs: Support for DAX devices
 To:     Goldwyn Rodrigues <rgoldwyn@suse.de>, linux-btrfs@vger.kernel.org
-Cc:     Goldwyn Rodrigues <rgoldwyn@suse.com>
 References: <20181205122835.19290-1-rgoldwyn@suse.de>
- <20181205122835.19290-2-rgoldwyn@suse.de>
-From:   Nikolay Borisov <nborisov@suse.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <4bf87dcb-dbac-c7ab-800c-98e10157f569@suse.com>
-Date:   Wed, 5 Dec 2018 14:43:03 +0200
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <1d687042-774f-e27b-7341-e5cd7a6be3d2@gmx.com>
+Date:   Wed, 5 Dec 2018 21:03:08 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+ Thunderbird/60.3.1
 MIME-Version: 1.0
-In-Reply-To: <20181205122835.19290-2-rgoldwyn@suse.de>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20181205122835.19290-1-rgoldwyn@suse.de>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="n3MPJSSrjfFRbz1EtrxbjAT6ST1PCrQe1"
+X-Provags-ID: V03:K1:MWQ75I5QKW+i0U2QooPl278xAi/NEP+plxoQ4RYVeSOe7uzPH5n
+ 9l6BcveRXMOcYRAQjaynKrQ+uXNi/i0/jILXGqsEzNnuJmCbl2iwdC93CDlJtqrdK7jR84o
+ bDhxAK4OCRzFN8xFEGUqtB3zZjRr27y2VAreHFpAhXAPp3wj+DBrU0cKQPSkt/nOPFIOVPs
+ zzjYj0eCtLnpNKwzdTz4A==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:M5+C8a/DZDg=:l+XjpOR74JgvTz2YcdYrnz
+ +DyWnNmtfRfBwuh2xzUDo0DQH9jUQHZGsMH7AKYh8zzbLTg+nZ60aCC/4EhRuEI2ChxXjb5HY
+ Gh34jArhNA+62lYz8xPTCUXacl8vQFmHzhZaZs/48/vsJ6I8cCnk4bJys1gSCLvRoBe4R7DDO
+ fTw2PQrk/U1nzUsRVH2234ZlmWSNGf+wR0r5iZNtM/NNI11s/MVTVjqEub1xa25VwV5ym3ZF4
+ tVnrJE4imTE+L9+flQt4cvbApGNNnCxLdvld/71SScOKqYi+pD9DLUwgG/evKkx9em7h4qJLP
+ AmL5j4V1yKc4wBw1/j327Q0Ql+hLHcx1KdYWvOQItI4IDErNbsjuUZIEduAKwuidLVEy9y6Ei
+ I6luip2QSdlyCIc1Gtj8I//PKyQYIMXgCKt8LUa5o4sCiBRtF7o5AFCHuaz06MnLJ3c5PC9Na
+ y6SCf1ls1PRNs1W8vhVA8ZvcwJK65PwPGrJUZ20GDGg5bZNFOKl5aGanwUcynm8R/Q4zh+Zk6
+ cUxkqjbqyrJHp14W6GY69s2si34SaHmts8BKQBqmPas1uv8JljFDQCm2EYMlr92WLdTgBJGDp
+ RrDRmSVhDtSWyBczBO4ey/UG0hSritlRroS5nvCscejdAWPj1DdW9jPL3Ms3TB810uOi7CUms
+ jb93VeyV5qP9GEuIB+FgOWjZFTCUv9QfW5Wk/JDfrgZhezQztOmZfbMqznDoAozQ311/FkVhc
+ TS4mmOSjMeWeome5/HikQ69Hh/Be7TFN3JEZP6Ls460xNx4sjv8xPC0gKQ0TmkV+u7Mo2l5Om
+ NisXDZ8/jxFzcXdMzQkwutO5rGgQQq3yjArOFaknfjn1hkseUkH7nQ+13oJgBJxzofju7gPaR
+ oP/IM3IrynkjzGzKGql0L3h4QqlueWR/vkva2OsWEZd1QwCWkX7XEwa81LN4OI
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--n3MPJSSrjfFRbz1EtrxbjAT6ST1PCrQe1
+Content-Type: multipart/mixed; boundary="DelTrRZ7lyAyLoLjHqeUfDVdku3AgSwkH";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Goldwyn Rodrigues <rgoldwyn@suse.de>, linux-btrfs@vger.kernel.org
+Message-ID: <1d687042-774f-e27b-7341-e5cd7a6be3d2@gmx.com>
+Subject: Re: [PATCH 00/10] btrfs: Support for DAX devices
+References: <20181205122835.19290-1-rgoldwyn@suse.de>
+In-Reply-To: <20181205122835.19290-1-rgoldwyn@suse.de>
+
+--DelTrRZ7lyAyLoLjHqeUfDVdku3AgSwkH
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-On 5.12.18 г. 14:28 ч., Goldwyn Rodrigues wrote:
-> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> 
-> Also, set the inode->i_flags to S_DAX
-> 
-> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+On 2018/12/5 =E4=B8=8B=E5=8D=888:28, Goldwyn Rodrigues wrote:
+> This is a support for DAX in btrfs. I understand there have been
+> previous attempts at it. However, I wanted to make sure copy-on-write
+> (COW) works on dax as well.
+>=20
+> Before I present this to the FS folks I wanted to run this through the
+> btrfs. Even though I wish, I cannot get it correct the first time
+> around :/.. Here are some questions for which I need suggestions:
+>=20
+> Questions:
+> 1. I have been unable to do checksumming for DAX devices. While
+> checksumming can be done for reads and writes, it is a problem when mma=
+p
+> is involved because btrfs kernel module does not get back control after=
 
-One question below though .
+> an mmap() writes. Any ideas are appreciated, or we would have to set
+> nodatasum when dax is enabled.
 
-> ---
->  fs/btrfs/ctree.h |  1 +
->  fs/btrfs/ioctl.c |  5 ++++-
->  fs/btrfs/super.c | 15 +++++++++++++++
->  3 files changed, 20 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 68f322f600a0..5cc470fa6a40 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -1353,6 +1353,7 @@ static inline u32 BTRFS_MAX_XATTR_SIZE(const struct btrfs_fs_info *info)
->  #define BTRFS_MOUNT_FREE_SPACE_TREE	(1 << 26)
->  #define BTRFS_MOUNT_NOLOGREPLAY		(1 << 27)
->  #define BTRFS_MOUNT_REF_VERIFY		(1 << 28)
-> +#define BTRFS_MOUNT_DAX			(1 << 29)
->  
->  #define BTRFS_DEFAULT_COMMIT_INTERVAL	(30)
->  #define BTRFS_DEFAULT_MAX_INLINE	(2048)
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 802a628e9f7d..e9146c157816 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -149,8 +149,11 @@ void btrfs_sync_inode_flags_to_i_flags(struct inode *inode)
->  	if (binode->flags & BTRFS_INODE_DIRSYNC)
->  		new_fl |= S_DIRSYNC;
->  
-> +	if ((btrfs_test_opt(btrfs_sb(inode->i_sb), DAX)) && S_ISREG(inode->i_mode))
-> +		new_fl |= S_DAX;
-> +
->  	set_mask_bits(&inode->i_flags,
-> -		      S_SYNC | S_APPEND | S_IMMUTABLE | S_NOATIME | S_DIRSYNC,
-> +		      S_SYNC | S_APPEND | S_IMMUTABLE | S_NOATIME | S_DIRSYNC | S_DAX,
->  		      new_fl);
->  }
->  
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index 645fc81e2a94..035263b61cf5 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -326,6 +326,7 @@ enum {
->  	Opt_treelog, Opt_notreelog,
->  	Opt_usebackuproot,
->  	Opt_user_subvol_rm_allowed,
-> +	Opt_dax,
->  
->  	/* Deprecated options */
->  	Opt_alloc_start,
-> @@ -393,6 +394,7 @@ static const match_table_t tokens = {
->  	{Opt_notreelog, "notreelog"},
->  	{Opt_usebackuproot, "usebackuproot"},
->  	{Opt_user_subvol_rm_allowed, "user_subvol_rm_allowed"},
-> +	{Opt_dax, "dax"},
->  
->  	/* Deprecated options */
->  	{Opt_alloc_start, "alloc_start=%s"},
-> @@ -739,6 +741,17 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
->  		case Opt_user_subvol_rm_allowed:
->  			btrfs_set_opt(info->mount_opt, USER_SUBVOL_RM_ALLOWED);
->  			break;
-> +#ifdef CONFIG_FS_DAX
-> +		case Opt_dax:
-> +			if (btrfs_super_num_devices(info->super_copy) > 1) {
-> +				btrfs_info(info,
-> +					   "dax not supported for multi-device btrfs partition\n");
+I'm not familar with DAX, so it's completely possible I'm talking like
+an idiot.
 
-What prevents supporting dax for multiple devices so long as all devices
-are dax?
+If btrfs_page_mkwrite() can't provide enough control, then I have a
+crazy idea.
 
-<snip>
+Forcing page fault for every mmap() read/write (completely disable page
+cache like DIO).
+So that we could get some control since we're informed to read the page
+and do some hacks there.
 
-> 
+Thanks,
+Qu
+>=20
+> 2. Currently, a user can continue writing on "old" extents of an mmaped=
+ file
+> after a snapshot has been created. How can we enforce writes to be dire=
+cted
+> to new extents after snapshots have been created? Do we keep a list of
+> all mmap()s, and re-mmap them after a snapshot?
+>=20
+> Tested by creating a pmem device in RAM with "memmap=3D2G!4G" kernel
+> command line parameter.
+>=20
+>=20
+> [PATCH 01/10] btrfs: create a mount option for dax
+> [PATCH 02/10] btrfs: basic dax read
+> [PATCH 03/10] btrfs: dax: read zeros from holes
+> [PATCH 04/10] Rename __endio_write_update_ordered() to
+> [PATCH 05/10] btrfs: Carve out btrfs_get_extent_map_write() out of
+> [PATCH 06/10] btrfs: dax write support
+> [PATCH 07/10] dax: export functions for use with btrfs
+> [PATCH 08/10] btrfs: dax add read mmap path
+> [PATCH 09/10] btrfs: dax support for cow_page/mmap_private and shared
+> [PATCH 10/10] btrfs: dax mmap write
+>=20
+>  fs/btrfs/Makefile   |    1=20
+>  fs/btrfs/ctree.h    |   17 ++
+>  fs/btrfs/dax.c      |  303 +++++++++++++++++++++++++++++++++++++++++++=
++++++++--
+>  fs/btrfs/file.c     |   29 ++++
+>  fs/btrfs/inode.c    |   54 +++++----
+>  fs/btrfs/ioctl.c    |    5=20
+>  fs/btrfs/super.c    |   15 ++
+>  fs/dax.c            |   35 ++++--
+>  include/linux/dax.h |   16 ++
+>  9 files changed, 430 insertions(+), 45 deletions(-)
+>=20
+>=20
+
+
+--DelTrRZ7lyAyLoLjHqeUfDVdku3AgSwkH--
+
+--n3MPJSSrjfFRbz1EtrxbjAT6ST1PCrQe1
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlwHzIwACgkQwj2R86El
+/qhF0Af/c99800r4EXzR2TSDgUhjho8+537aLX4LOiNL92hsaT9c1rr+UTz2SNzH
+a1mR3GIZRj5RloZv+hg0TdhZX0n41LFM5IdBzdy+zX8rkbIrLQ/g+/QlGNBAU730
+PPMkmLinhnb1nDbkpFBBVtSRq4ls/F6LgtY3dXQ5dEw/Q3uJrqSQkgXO6TCezH+a
+uDCGClDZz9e04/4A1p7VV8fgkYP40RU0TdyemR3IRhPt7nC2z2oUTk7C+i8arNFO
+PDI2C+bY5ckI3NpGwuHCrqU0pe/jBHYGwPBS2CL9wr9ayL4KW+zUp8qvxNW0i5Tu
+KBRNgZ7eP6+H3pFwWL2WG61/vhIrCw==
+=f0K5
+-----END PGP SIGNATURE-----
+
+--n3MPJSSrjfFRbz1EtrxbjAT6ST1PCrQe1--

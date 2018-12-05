@@ -2,79 +2,93 @@ Return-Path: <SRS0=6XAY=OO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 372AEC04EB9
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 13:11:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B1130C04EB9
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 13:22:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EF84C2084C
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 13:11:19 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EF84C2084C
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 8076D2082B
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 13:22:43 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8076D2082B
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727138AbeLENLT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 5 Dec 2018 08:11:19 -0500
-Received: from mx2.suse.de ([195.135.220.15]:58622 "EHLO mx1.suse.de"
+        id S1727094AbeLENWm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 5 Dec 2018 08:22:42 -0500
+Received: from mx2.suse.de ([195.135.220.15]:60728 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727025AbeLENLS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 5 Dec 2018 08:11:18 -0500
+        id S1726918AbeLENWm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 5 Dec 2018 08:22:42 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 95C45AF41
-        for <linux-btrfs@vger.kernel.org>; Wed,  5 Dec 2018 13:11:15 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id EBDF0B0D1
+        for <linux-btrfs@vger.kernel.org>; Wed,  5 Dec 2018 13:22:39 +0000 (UTC)
 Subject: Re: [PATCH 02/10] btrfs: basic dax read
 To:     Goldwyn Rodrigues <rgoldwyn@suse.de>, linux-btrfs@vger.kernel.org
+Cc:     Goldwyn Rodrigues <rgoldwyn@suse.com>
 References: <20181205122835.19290-1-rgoldwyn@suse.de>
  <20181205122835.19290-3-rgoldwyn@suse.de>
-From:   Nikolay Borisov <nborisov@suse.com>
+From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <b240dbde-6890-3f33-f662-e30e08cefda9@suse.com>
-Date:   Wed, 5 Dec 2018 15:11:14 +0200
+Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <76914b55-1dc2-0bdd-0579-79cbf5b287b9@suse.de>
+Date:   Wed, 5 Dec 2018 14:22:39 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
@@ -87,59 +101,15 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 5.12.18 г. 14:28 ч., Goldwyn Rodrigues wrote:
+On 05/12/2018 13:28, Goldwyn Rodrigues wrote:
 > From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 > 
 > Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> ---
->  fs/btrfs/Makefile |  1 +
->  fs/btrfs/ctree.h  |  5 ++++
->  fs/btrfs/dax.c    | 68 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
->  fs/btrfs/file.c   | 13 ++++++++++-
->  4 files changed, 86 insertions(+), 1 deletion(-)
->  create mode 100644 fs/btrfs/dax.c
-> 
-> diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
-> index ca693dd554e9..1fa77b875ae9 100644
-> --- a/fs/btrfs/Makefile
-> +++ b/fs/btrfs/Makefile
-> @@ -12,6 +12,7 @@ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
->  	   reada.o backref.o ulist.o qgroup.o send.o dev-replace.o raid56.o \
->  	   uuid-tree.o props.o free-space-tree.o tree-checker.o
->  
-> +btrfs-$(CONFIG_FS_DAX) += dax.o
->  btrfs-$(CONFIG_BTRFS_FS_POSIX_ACL) += acl.o
->  btrfs-$(CONFIG_BTRFS_FS_CHECK_INTEGRITY) += check-integrity.o
->  btrfs-$(CONFIG_BTRFS_FS_REF_VERIFY) += ref-verify.o
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 5cc470fa6a40..038d64ecebe5 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -3685,6 +3685,11 @@ int btrfs_reada_wait(void *handle);
->  void btrfs_reada_detach(void *handle);
->  int btree_readahead_hook(struct extent_buffer *eb, int err);
->  
-> +#ifdef CONFIG_FS_DAX
-> +/* dax.c */
-> +ssize_t btrfs_file_dax_read(struct kiocb *iocb, struct iov_iter *to);
-> +#endif /* CONFIG_FS_DAX */
-> +
->  static inline int is_fstree(u64 rootid)
->  {
->  	if (rootid == BTRFS_FS_TREE_OBJECTID ||
-> diff --git a/fs/btrfs/dax.c b/fs/btrfs/dax.c
-> new file mode 100644
-> index 000000000000..d614bf73bf8e
-> --- /dev/null
-> +++ b/fs/btrfs/dax.c
-> @@ -0,0 +1,68 @@
-> +#include <linux/dax.h>
-> +#include <linux/uio.h>
-> +#include "ctree.h"
-> +#include "btrfs_inode.h"
-> +
+Can you explain why we can't use th dax_iomap_rw() interface like XFS or
+EXT4?
+
+[...]
+
 > +static ssize_t em_dax_rw(struct inode *inode, struct extent_map *em, u64 pos,
 > +		u64 len, struct iov_iter *iter)
 > +{
@@ -150,109 +120,15 @@ On 5.12.18 г. 14:28 ч., Goldwyn Rodrigues wrote:
 > +        sector_t blk_start;
 > +        unsigned offset = pos & (PAGE_SIZE - 1);
 
-offset = offset_in_page(pos)
-
-> +
-> +        len = min(len + offset, em->len - (pos - em->start));
-> +        len = ALIGN(len, PAGE_SIZE);
-
-len = PAGE_ALIGN(len);
-
-> +        blk_start = (get_start_sect(em->bdev) << 9) + (em->block_start + (pos - em->start));
-> +        blk_pg = blk_start - offset;
-> +        map_len = dax_direct_access(dax_dev, PHYS_PFN(blk_pg), PHYS_PFN(len), &kaddr, NULL);
-> +        map_len = PFN_PHYS(map_len)> +        kaddr += offset;
-> +        map_len -= offset;
-> +        if (map_len > len)
-> +                map_len = len;
-
-map_len = min(map_len, len);
-
-> +        if (iov_iter_rw(iter) == WRITE)
-> +                return dax_copy_from_iter(dax_dev, blk_pg, kaddr, map_len, iter);
-> +        else
-> +                return dax_copy_to_iter(dax_dev, blk_pg, kaddr, map_len, iter);
-
-Have you looked at the implementation of dax_iomap_actor where they have
-pretty similar code. In case of either of those returning 0 they set ret
-to EFAULT, should the same be done in btrfs_file_dax_read? IMO it will
-be good of you can follow dax_iomap_actor's logic as much as possible
-since this code has been used for quite some time and is deemed robust.
-
-> +}
-> +
-> +ssize_t btrfs_file_dax_read(struct kiocb *iocb, struct iov_iter *to)
-> +{
-> +        size_t ret = 0, done = 0, count = iov_iter_count(to);
-> +        struct extent_map *em;
-> +        u64 pos = iocb->ki_pos;
-> +        u64 end = pos + count;
-> +        struct inode *inode = file_inode(iocb->ki_filp);
-> +
-> +        if (!count)
-> +                return 0;
-> +
-> +        end = i_size_read(inode) < end ? i_size_read(inode) : end;
-
-end = min(i_size_read(inode), end)
-
-> +
-> +        while (pos < end) {
-> +                u64 len = end - pos;
-> +
-> +                em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, pos, len, 0);
-> +                if (IS_ERR(em)) {
-> +                        if (!ret)
-> +                                ret = PTR_ERR(em);
-> +                        goto out;
-> +                }
-> +
-> +                BUG_ON(em->flags & EXTENT_FLAG_FS_MAPPING);
-
-I think this can never trigger, because EXTENT_FLAG_FS_MAPPING is set
-for extents that map chunk and those are housed in the chunk tree at
-fs_info->mapping_tree. Since the write call back is only ever called for
-file inodes I'd say this BUG_ON can be eliminated. Did you manage to
-trigger it during development?
+Nit: unsigned offset = offset_in_page(pos);
 
 
-> +
-> +                ret = em_dax_rw(inode, em, pos, len, to);
-> +                if (ret < 0)
-> +                        goto out;
-> +                pos += ret;
-> +                done += ret;
-> +        }
-> +
-> +out:
-> +        iocb->ki_pos += done;
-> +        return done ? done : ret;
-> +}
-> +
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index 58e93bce3036..ef6ed93f44d1 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -3308,9 +3308,20 @@ static int btrfs_file_open(struct inode *inode, struct file *filp)
->  	return generic_file_open(inode, filp);
->  }
->  
-> +static ssize_t btrfs_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
-> +{
-> +	struct inode *inode = file_inode(iocb->ki_filp);
-> +
-> +#ifdef CONFIG_FS_DAX
-> +	if (IS_DAX(inode))
-> +		return btrfs_file_dax_read(iocb, to);
-> +#endif
-> +	return generic_file_read_iter(iocb, to);
-> +}
-> +
->  const struct file_operations btrfs_file_operations = {
->  	.llseek		= btrfs_file_llseek,
-> -	.read_iter      = generic_file_read_iter,
-> +	.read_iter      = btrfs_file_read_iter,
->  	.splice_read	= generic_file_splice_read,
->  	.write_iter	= btrfs_file_write_iter,
->  	.mmap		= btrfs_file_mmap,
-> 
+
+
+-- 
+Johannes Thumshirn                            SUSE Labs Filesystems
+jthumshirn@suse.de                                +49 911 74053 689
+SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
+GF: Felix Imendörffer, Jane Smithard, Graham Norton
+HRB 21284 (AG Nürnberg)
+Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850

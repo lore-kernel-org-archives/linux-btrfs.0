@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B93EBC04EB9
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 06:40:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A7AB4C04EB9
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 06:40:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8AA0C2082B
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 06:40:43 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8AA0C2082B
+	by mail.kernel.org (Postfix) with ESMTP id 76E572082B
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Dec 2018 06:40:47 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 76E572082B
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727145AbeLEGkm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 5 Dec 2018 01:40:42 -0500
-Received: from mx2.suse.de ([195.135.220.15]:49754 "EHLO mx1.suse.de"
+        id S1727188AbeLEGkq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 5 Dec 2018 01:40:46 -0500
+Received: from mx2.suse.de ([195.135.220.15]:49766 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726037AbeLEGkm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 5 Dec 2018 01:40:42 -0500
+        id S1727161AbeLEGkp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 5 Dec 2018 01:40:45 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 1CD97AEB4
-        for <linux-btrfs@vger.kernel.org>; Wed,  5 Dec 2018 06:40:40 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id B95DAAEB4
+        for <linux-btrfs@vger.kernel.org>; Wed,  5 Dec 2018 06:40:43 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 09/13] btrfs-progs: Fix missing-prototypes warning caused by non-static functions
-Date:   Wed,  5 Dec 2018 14:40:14 +0800
-Message-Id: <20181205064018.27755-10-wqu@suse.com>
+Subject: [PATCH v2 11/13] btrfs-progs: Introduce rescue.h to resolve missing-prototypes for chunk and super rescue
+Date:   Wed,  5 Dec 2018 14:40:16 +0800
+Message-Id: <20181205064018.27755-12-wqu@suse.com>
 X-Mailer: git-send-email 2.19.2
 In-Reply-To: <20181205064018.27755-1-wqu@suse.com>
 References: <20181205064018.27755-1-wqu@suse.com>
@@ -40,137 +40,95 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Make the following functions static to avoid missing-prototypes warning:
- - btrfs.c::handle_special_globals()
- - check/mode-lowmem.c::repair_ternary_lowmem()
- - extent-tree.c::btrfs_search_overlap_extent()
- - free-space-tree.c::convert_free_space_to_bitmaps()
- - free-space-tree.c::convert_free_space_to_extents()
- - free-space-tree.c::__remove_from_free_space_tree()
- - free-space-tree.c::__add_to_free_space_tree()
- - free-space-tree.c::btrfs_create_tree()
+We don't have any header declaring btrfs_recover_chunk_tree() nor
+btrfs_recover_superblocks(), thus W=1 gives missing-prototypes warning
+on them.
+
+Fix it by introducing a new header, rescue.h for these two functions, so
+make W=1 could be much happier.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
- btrfs.c             |  2 +-
- check/mode-lowmem.c |  6 +++---
- extent-tree.c       |  2 +-
- free-space-tree.c   | 30 +++++++++++++++---------------
- 4 files changed, 20 insertions(+), 20 deletions(-)
+ chunk-recover.c |  1 +
+ cmds-rescue.c   |  4 +---
+ rescue.h        | 21 +++++++++++++++++++++
+ super-recover.c |  1 +
+ 4 files changed, 24 insertions(+), 3 deletions(-)
+ create mode 100644 rescue.h
 
-diff --git a/btrfs.c b/btrfs.c
-index 2d39f2ced3e8..78c468d2e050 100644
---- a/btrfs.c
-+++ b/btrfs.c
-@@ -210,7 +210,7 @@ static int handle_global_options(int argc, char **argv)
- 	return shift;
- }
+diff --git a/chunk-recover.c b/chunk-recover.c
+index 1d30db51d8ed..1e554b8e8750 100644
+--- a/chunk-recover.c
++++ b/chunk-recover.c
+@@ -40,6 +40,7 @@
+ #include "utils.h"
+ #include "btrfsck.h"
+ #include "commands.h"
++#include "rescue.h"
  
--void handle_special_globals(int shift, int argc, char **argv)
-+static void handle_special_globals(int shift, int argc, char **argv)
- {
- 	int has_help = 0;
- 	int has_full = 0;
-diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
-index 14bbc9ee6cb6..f56b5e8d45dc 100644
---- a/check/mode-lowmem.c
-+++ b/check/mode-lowmem.c
-@@ -953,9 +953,9 @@ out:
-  * returns 0 means success.
-  * returns not 0 means on error;
-  */
--int repair_ternary_lowmem(struct btrfs_root *root, u64 dir_ino, u64 ino,
--			  u64 index, char *name, int name_len, u8 filetype,
--			  int err)
-+static int repair_ternary_lowmem(struct btrfs_root *root, u64 dir_ino, u64 ino,
-+				 u64 index, char *name, int name_len,
-+				 u8 filetype, int err)
- {
- 	struct btrfs_trans_handle *trans;
- 	int stage = 0;
-diff --git a/extent-tree.c b/extent-tree.c
-index cd98633992ac..8c9cdeff3b02 100644
---- a/extent-tree.c
-+++ b/extent-tree.c
-@@ -3749,7 +3749,7 @@ static void __get_extent_size(struct btrfs_root *root, struct btrfs_path *path,
-  * Return >0 for not found.
-  * Return <0 for err
-  */
--int btrfs_search_overlap_extent(struct btrfs_root *root,
-+static int btrfs_search_overlap_extent(struct btrfs_root *root,
- 				struct btrfs_path *path, u64 bytenr, u64 len)
- {
- 	struct btrfs_key key;
-diff --git a/free-space-tree.c b/free-space-tree.c
-index 6641cdfa42ba..b3ffa90f704c 100644
---- a/free-space-tree.c
-+++ b/free-space-tree.c
-@@ -202,9 +202,9 @@ static void le_bitmap_set(unsigned long *map, unsigned int start, int len)
- 	}
- }
+ struct recover_control {
+ 	int verbose;
+diff --git a/cmds-rescue.c b/cmds-rescue.c
+index 2bc50c0841ed..36e9e1277e40 100644
+--- a/cmds-rescue.c
++++ b/cmds-rescue.c
+@@ -26,15 +26,13 @@
+ #include "commands.h"
+ #include "utils.h"
+ #include "help.h"
++#include "rescue.h"
  
--int convert_free_space_to_bitmaps(struct btrfs_trans_handle *trans,
--				  struct btrfs_block_group_cache *block_group,
--				  struct btrfs_path *path)
-+static int convert_free_space_to_bitmaps(struct btrfs_trans_handle *trans,
-+				struct btrfs_block_group_cache *block_group,
-+				struct btrfs_path *path)
- {
- 	struct btrfs_fs_info *fs_info = trans->fs_info;
- 	struct btrfs_root *root = fs_info->free_space_root;
-@@ -341,9 +341,9 @@ out:
- 	return ret;
- }
+ static const char * const rescue_cmd_group_usage[] = {
+ 	"btrfs rescue <command> [options] <path>",
+ 	NULL
+ };
  
--int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
--				  struct btrfs_block_group_cache *block_group,
--				  struct btrfs_path *path)
-+static int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
-+				struct btrfs_block_group_cache *block_group,
-+				struct btrfs_path *path)
- {
- 	struct btrfs_fs_info *fs_info = trans->fs_info;
- 	struct btrfs_root *root = fs_info->free_space_root;
-@@ -780,9 +780,9 @@ out:
- 	return ret;
- }
+-int btrfs_recover_chunk_tree(const char *path, int verbose, int yes);
+-int btrfs_recover_superblocks(const char *path, int verbose, int yes);
+-
+ static const char * const cmd_rescue_chunk_recover_usage[] = {
+ 	"btrfs rescue chunk-recover [options] <device>",
+ 	"Recover the chunk tree by scanning the devices one by one.",
+diff --git a/rescue.h b/rescue.h
+new file mode 100644
+index 000000000000..de486e2e2004
+--- /dev/null
++++ b/rescue.h
+@@ -0,0 +1,21 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Copyright (C) 2018 SUSE.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ */
++
++#ifndef __BTRFS_RESCUE_H__
++#define __BTRFS_RESCUE_H__
++
++int btrfs_recover_superblocks(const char *path, int verbose, int yes);
++int btrfs_recover_chunk_tree(const char *path, int verbose, int yes);
++
++#endif
+diff --git a/super-recover.c b/super-recover.c
+index 86b3df9867dc..a1af71786034 100644
+--- a/super-recover.c
++++ b/super-recover.c
+@@ -34,6 +34,7 @@
+ #include "crc32c.h"
+ #include "volumes.h"
+ #include "commands.h"
++#include "rescue.h"
  
--int __remove_from_free_space_tree(struct btrfs_trans_handle *trans,
--				  struct btrfs_block_group_cache *block_group,
--				  struct btrfs_path *path, u64 start, u64 size)
-+static int __remove_from_free_space_tree(struct btrfs_trans_handle *trans,
-+				struct btrfs_block_group_cache *block_group,
-+				struct btrfs_path *path, u64 start, u64 size)
- {
- 	struct btrfs_free_space_info *info;
- 	u32 flags;
-@@ -960,9 +960,9 @@ out:
- 	return ret;
- }
- 
--int __add_to_free_space_tree(struct btrfs_trans_handle *trans,
--			     struct btrfs_block_group_cache *block_group,
--			     struct btrfs_path *path, u64 start, u64 size)
-+static int __add_to_free_space_tree(struct btrfs_trans_handle *trans,
-+				struct btrfs_block_group_cache *block_group,
-+				struct btrfs_path *path, u64 start, u64 size)
- {
- 	struct btrfs_fs_info *fs_info = trans->fs_info;
- 	struct btrfs_free_space_info *info;
-@@ -1420,9 +1420,9 @@ out:
- 	return ret;
- }
- 
--struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
--				     struct btrfs_fs_info *fs_info,
--				     u64 objectid)
-+static struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
-+					    struct btrfs_fs_info *fs_info,
-+					    u64 objectid)
- {
- 	struct extent_buffer *leaf;
- 	struct btrfs_root *tree_root = fs_info->tree_root;
+ struct btrfs_recover_superblock {
+ 	struct btrfs_fs_devices *fs_devices;
 -- 
 2.19.2
 

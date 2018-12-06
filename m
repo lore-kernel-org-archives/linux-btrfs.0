@@ -2,210 +2,180 @@ Return-Path: <SRS0=+YL1=OP=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.9 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 42CB2C04EB8
-	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 20:15:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BF6F6C04EB8
+	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 22:51:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id ED9732064D
-	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 20:15:52 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org ED9732064D
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=lip6.fr
+	by mail.kernel.org (Postfix) with ESMTP id 8014B20878
+	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 22:51:39 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8014B20878
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725946AbeLFUPv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 6 Dec 2018 15:15:51 -0500
-Received: from mail3-relais-sop.national.inria.fr ([192.134.164.104]:35565
-        "EHLO mail3-relais-sop.national.inria.fr" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1725916AbeLFUPv (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 6 Dec 2018 15:15:51 -0500
-X-IronPort-AV: E=Sophos;i="5.56,323,1539640800"; 
-   d="scan'208";a="288191127"
-Received: from abo-91-111-68.mrs.modulonet.fr (HELO hadrien) ([85.68.111.91])
-  by mail3-relais-sop.national.inria.fr with ESMTP/TLS/DHE-RSA-AES256-GCM-SHA384; 06 Dec 2018 21:15:48 +0100
-Date:   Thu, 6 Dec 2018 21:15:47 +0100 (CET)
-From:   Julia Lawall <julia.lawall@lip6.fr>
-X-X-Sender: jll@hadrien
-To:     Johannes Thumshirn <jthumshirn@suse.de>
-cc:     David Sterba <dsterba@suse.com>,
-        Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
-        Masahiro Yamada <yamada.masahiro@socionext.com>
-Subject: Re: [RFC PATCH 3/3] coccinelle: api: add offset_in_page.cocci
-In-Reply-To: <e5f96762-d85f-72c0-8c16-696c2f3ae896@suse.de>
-Message-ID: <alpine.DEB.2.21.1812062105180.2464@hadrien>
-References: <20181205142305.15361-1-jthumshirn@suse.de> <20181205142305.15361-4-jthumshirn@suse.de> <alpine.DEB.2.20.1812051542530.3726@hadrien> <e5f96762-d85f-72c0-8c16-696c2f3ae896@suse.de>
-User-Agent: Alpine 2.21 (DEB 202 2017-01-01)
+        id S1726053AbeLFWvh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 6 Dec 2018 17:51:37 -0500
+Received: from mout.gmx.net ([212.227.17.20]:36853 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726045AbeLFWvh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 6 Dec 2018 17:51:37 -0500
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx102
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0MOkQc-1gb6Ea3iIY-006A6X; Thu, 06
+ Dec 2018 23:51:27 +0100
+Subject: Re: [PATCH v2 0/6] btrfs: qgroup: Delay subtree scan to reduce
+ overhead
+To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20181108054919.18253-1-wqu@suse.com>
+ <20181112213332.GS24115@twin.jikos.cz> <20181206193511.GF23615@twin.jikos.cz>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <d52fa1bb-601a-25ee-d256-dbf05213ec9d@gmx.com>
+Date:   Fri, 7 Dec 2018 06:51:21 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.3.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+In-Reply-To: <20181206193511.GF23615@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="x1ZJgyf5SZeGbAsFDbytLJIMEUjy7hnUl"
+X-Provags-ID: V03:K1:TBmktzAvCao0ivPZA2IyTfXi47EeXddDqrzuXb0dj9m+Lw67Ncy
+ fmjNJ+99A7pPBfBIyPTKrzmn+y3VKbsWayXUxBA1/td8Wsxvud5yEjfv6GxSbYjAxI4jdZ9
+ /2z/s1T0tR0xqYJUTZVZR/Zvd2UivVd/fYacNSW84z9kC0bRC+7UVCL3prJgVFVYWctL2xy
+ ixOPyHSU0aBrL+LibSmOQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:MuGwmtbPTFc=:7CN25DryoAIUdMQzPKoRl5
+ i0ojpzjwCqyXnkAahBTIqPtetMaAOem3bRXWpN2QG4E8LCXQeFIjGesbF/9a2Lfsj6DeifS3k
+ ujQrOfgR8ZyED6NAPUre+/kRh4LIB3R5MKAbOij/83kUTrPY8YpGCu5o2SAkqPIZI1gMMk9pe
+ t/M0nVYmJlyIGMp/CG9UsrQRCUaYZRzuVYY1Mske4oOMRD5C5aBq2E9scjLyJp8qHomwwehZv
+ G3iO8VBGIvnUCc3D7OLIfkyXNz5pXXSH9yhxAIKvXsssdA86Xg6RNhfcy4QSICV19D4tzFlon
+ uVGa50rVsuOQiTOiSBBWvAegpgJv9B0UkKKKshS7UiQ95fWq/s6y3S7jBuFe4LIczqqBgmHb9
+ fpCnaW31Vg5ewCX81vJHd2SDrfymhPrwrOnqTf6eBNzL0GceWio9WlR/bwjZKkK+K4b8cTr0G
+ kt6wG3fYJH9ZAzgffDZV8AmID8q3d8Gl2xo1FV+kpdrd1O8vY/HcV+Y5Jz6VwYFVPA9nFnLaH
+ N6kKjXq32W8h/A1Mr+2IawqFXKd16ISjhjtaApVw640pC2VN4jqufB3ibcjJ+o1sV+dcYDmqj
+ q+CZAENdNbmF/k91JY5X/pv0c5e5/ltY+/ilH3wma9ZKp2QFI5TTTEnOsFtvgBYVQZb81lX3y
+ OPlfmLMQ0Han4l+O2cfcNUmIazoJJiNCaKM/S5xL+6xA6nNqoUcjPhLc/xsgxL6o2l4ZMunG5
+ djwxsGz1BlaHLHmseI0/zC7LMjKYKXOSY1LtrhfBDbXknmL2oML71ixRCG3M7q5hcNGKgzPEf
+ HGRlPJ4wU17BKs2mEyM5X1TpMpmQR48Hwdw4DSJqJUnsSEkjzxmrbzZjDdU0kIDrqA8o7RTkT
+ 0DEhb+hNDrjEp9xMPHfKINuo21KRzRXbD+f9ZzDE9Bh0xF4LvtVUi6eGFBWJLx
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--x1ZJgyf5SZeGbAsFDbytLJIMEUjy7hnUl
+Content-Type: multipart/mixed; boundary="kiv5sWcLeyDi8l56pcrEifGT1TNop8Ym8";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <d52fa1bb-601a-25ee-d256-dbf05213ec9d@gmx.com>
+Subject: Re: [PATCH v2 0/6] btrfs: qgroup: Delay subtree scan to reduce
+ overhead
+References: <20181108054919.18253-1-wqu@suse.com>
+ <20181112213332.GS24115@twin.jikos.cz> <20181206193511.GF23615@twin.jikos.cz>
+In-Reply-To: <20181206193511.GF23615@twin.jikos.cz>
 
-
-On Thu, 6 Dec 2018, Johannes Thumshirn wrote:
-
-> On 05/12/2018 15:46, Julia Lawall wrote:
-> [...]
-> >> +@r_patch depends on !context && patch && !org && !report@
-> >> +expression E;
-> >> +type T;
-> >> +@@
-> >> +
-> >> +(
-> >> +- E & ~PAGE_MASK
-> >> ++ offset_in_page(E)
-> >> +|
-> >> +- E & (PAGE_SIZE - 1)
-> >> ++ offset_in_page(E)
-> >
-> > The two lines above should be subsumed by the two lines below.  When there
-> > is a type metavariable that has no other dependencies, an isomorphism will
-> > consider that it is either present or absent.
->
-> Oh OK, I'm sorry I'm not really into cocinelle so I guessed it might
-> take some iterations.
->
-> Do you have an example for this?
-
-Expanation 1:
-
-Coccinelle as a file standard.iso that shows the isomorphisms (rewrite
-rules) that may be applied to semantic patches.  One of the rules is:
-
-Expression
-@ not_ptr1 @
-expression *X;
-@@
- !X => X == NULL
-
-So if you have a pointer typed expression X and you write a transformation
-on !X, it will also apply to occurrences of X == NULL in the source code.
-In this way, you don't have to write so many variants.
-
-Likewise there is an isomorphism:
-
-Expression
-@ drop_cast @
-expression E;
-pure type T;
-@@
-
- (T)E => E
-
-That is, if you have a semantic patch with (T)X, then it will also apply
-to code that matches just X, without the cast.  The word pure means that
-this isomorphism metavariable has to match a semantic patch term that is a
-metavariable and this metavariable can't be used elsewhere.  If you wrote
-
-- (char)x
-
-Then you would probably not want that to apply without the (char) cast.
-But if you have just
-
-- (T)x
-
-for some randome unbound metavariable T, then perhaps you don't case about
-the cast to T.  If you actually do, then you can put disable drop_cast in
-the header of your rule.
+--kiv5sWcLeyDi8l56pcrEifGT1TNop8Ym8
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
 
-Explanation 2:
+On 2018/12/7 =E4=B8=8A=E5=8D=883:35, David Sterba wrote:
+> On Mon, Nov 12, 2018 at 10:33:33PM +0100, David Sterba wrote:
+>> On Thu, Nov 08, 2018 at 01:49:12PM +0800, Qu Wenruo wrote:
+>>> This patchset can be fetched from github:
+>>> https://github.com/adam900710/linux/tree/qgroup_delayed_subtree_rebas=
+ed
+>>>
+>>> Which is based on v4.20-rc1.
+>>
+>> Thanks, I'll add it to for-next soon.
+>=20
+> The branch was there for some time but not for at least a week (my
+> mistake I did not notice in time). I've rebased it on top of recent
+> misc-next, but without the delayed refs patchset from Josef.
+>=20
+> At the moment I'm considering it for merge to 4.21, there's still some
+> time to pull it out in case it shows up to be too problematic. I'm
+> mostly worried about the unknown interactions with the enospc updates o=
+r
 
-To see what your semantic patch is really doing, you can run
+For that part, I don't think it would have some obvious problem for
+enospc updates.
 
-spatch --parse-cocci sp.cocci
+As the user-noticeable effect is the delay of reloc tree deletion.
 
-Here is what I get for your patch rule, with some annotations added:
+Despite that, it's mostly transparent to extent allocation.
 
-@@
-expression E;
-type T;
-@@
+> generally because of lack of qgroup and reloc code reviews.
+
+That's the biggest problem.
+
+However most of the current qgroup + balance optimization is done inside
+qgroup code (to skip certain qgroup record), if we're going to hit some
+problem then this patchset would have the highest possibility to hit
+problem.
+
+Later patches will just keep tweaking qgroup to without affecting any
+other parts mostly.
+
+So I'm fine if you decide to pull it out for now.
+
+Thanks,
+Qu
+
+>=20
+> I'm going to do some testing of the rebased branch before I add it to
+> for-next. The branch is ext/qu/qgroup-delay-scan in my devel repos,
+> plase check if everyghing is still ok there. Thanks.
+>=20
 
 
-(
--E
-  >>> offset_in_page(E)
- -& -~-PAGE_MASK
-|
--~
-  >>> offset_in_page(E)
--PAGE_MASK -& -E
-|
+--kiv5sWcLeyDi8l56pcrEifGT1TNop8Ym8--
 
-// the following come from
-// - E & (PAGE_SIZE - 1)
-// + offset_in_page(E)
+--x1ZJgyf5SZeGbAsFDbytLJIMEUjy7hnUl
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
--E                           // 1
-  >>> offset_in_page(E)
- -& -(-PAGE_SIZE -- -1-)
-|
--E                           // 2
-  >>> offset_in_page(E)
- -& -PAGE_SIZE -- -1
-|
--(                           // 3
-    >>> offset_in_page(E)
-  -PAGE_SIZE -- -1-) -& -E
-|
--PAGE_SIZE                   // 4
-  >>> offset_in_page(E)
- -- -1 -& -E
-|
+-----BEGIN PGP SIGNATURE-----
 
-// the following come from:
-// - E & ((T)PAGE_SIZE - 1)
-// + offset_in_page(E)
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlwJp+oACgkQwj2R86El
+/qiLqQf/f0vkTPYxKU+xQ9af6NL7FCHctdvy8DIanaMZ3ugKLhRnVXo9zyRORmaX
+7onWoc/oCnXKaPmtI9HypFREIhO+uNarucVT8gWeeyDJoI105hOE9GgaGQWs4Mio
+QcABAGEaX87Ux4UwGMyt+XMfwyzSDMsIu/jdKRn0NiMHKnpOC8vXVnAWB+TRcCGI
+w58xtEtzXOw/6yGd95hQkUcPxL1h3e/r9lHcN+yeHJ3m3OZ2Dai8KGTJBU+vi57m
+l/rfJ1s26ZXc4hJhuIOjLN0p/TlHChVqtRKFtIVEqLK8Wn4CqwwaB/v0qd1Mvuy7
+pzVBM6NTK60CW2AThfqfKvdx60uxog==
+=pxsF
+-----END PGP SIGNATURE-----
 
--E
-  >>> offset_in_page(E)
- -& -(-(-T -)-PAGE_SIZE -- -1-)
-|
--E                           // same as 1
-  >>> offset_in_page(E)
- -& -(-PAGE_SIZE -- -1-)
-|
--E
-  >>> offset_in_page(E)
- -& -(-T -)-PAGE_SIZE -- -1
-|
--E                           // same as 2
-  >>> offset_in_page(E)
- -& -PAGE_SIZE -- -1
-|
--(
-    >>> offset_in_page(E)
-  -(-T -)-PAGE_SIZE -- -1-) -& -E
-|
--(                           // same as 3
-    >>> offset_in_page(E)
-  -PAGE_SIZE -- -1-) -& -E
-|
--(
-    >>> offset_in_page(E)
-  -T -)-PAGE_SIZE -- -1 -& -E
-|
--PAGE_SIZE                   // same as 4
-  >>> offset_in_page(E)
- -- -1 -& -E
-)
-
-So all the transformation generated by
-
-- E & (PAGE_SIZE - 1)
-+ offset_in_page(E)
-
-are also generated by
-
-- E & ((T)PAGE_SIZE - 1)
-+ offset_in_page(E)
-
-I hope that is helpful.
-
-julia
+--x1ZJgyf5SZeGbAsFDbytLJIMEUjy7hnUl--

@@ -3,34 +3,33 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7A82CC04EB8
-	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 16:43:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CD397C64EB1
+	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 16:52:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 37A3D20838
-	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 16:43:52 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 37A3D20838
+	by mail.kernel.org (Postfix) with ESMTP id 91B5720868
+	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 16:52:27 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 91B5720868
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725898AbeLFQnv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 6 Dec 2018 11:43:51 -0500
-Received: from mx2.suse.de ([195.135.220.15]:33486 "EHLO mx1.suse.de"
+        id S1725922AbeLFQw0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 6 Dec 2018 11:52:26 -0500
+Received: from mx2.suse.de ([195.135.220.15]:35098 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725862AbeLFQnv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 6 Dec 2018 11:43:51 -0500
+        id S1725862AbeLFQw0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 6 Dec 2018 11:52:26 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 1F096AEB2;
-        Thu,  6 Dec 2018 16:43:48 +0000 (UTC)
-Subject: Re: [PATCH 09/10] btrfs: don't run delayed refs in the end
- transaction logic
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id E1904AFFB;
+        Thu,  6 Dec 2018 16:52:22 +0000 (UTC)
+Subject: Re: [PATCH 08/10] btrfs: rework btrfs_check_space_for_delayed_refs
 To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
         kernel-team@fb.com
 References: <20181203152038.21388-1-josef@toxicpanda.com>
- <20181203152038.21388-10-josef@toxicpanda.com>
+ <20181203152038.21388-9-josef@toxicpanda.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -75,12 +74,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <c7ed4182-2dd8-f986-28af-35f0564cb914@suse.com>
-Date:   Thu, 6 Dec 2018 18:43:46 +0200
+Message-ID: <d1b3748c-3783-a57e-bf93-a92b5fd3806f@suse.com>
+Date:   Thu, 6 Dec 2018 18:52:21 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181203152038.21388-10-josef@toxicpanda.com>
+In-Reply-To: <20181203152038.21388-9-josef@toxicpanda.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -92,104 +91,140 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 3.12.18 г. 17:20 ч., Josef Bacik wrote:
-> Over the years we have built up a lot of infrastructure to keep delayed
-> refs in check, mostly by running them at btrfs_end_transaction() time.
-> We have a lot of different maths we do to figure out how much, if we
-> should do it inline or async, etc.  This existed because we had no
-> feedback mechanism to force the flushing of delayed refs when they
-> became a problem.  However with the enospc flushing infrastructure in
-> place for flushing delayed refs when they put too much pressure on the
-> enospc system we have this problem solved.  Rip out all of this code as
-> it is no longer needed.
+> Now with the delayed_refs_rsv we can now know exactly how much pending
+> delayed refs space we need.  This means we can drastically simplify
+
+IMO it will be helpful if there is a sentence here referring back to
+btrfs_update_delayed_refs_rsv to put your first sentence into context.
+But I guess this is something David can also do.
+
+> btrfs_check_space_for_delayed_refs by simply checking how much space we
+> have reserved for the global rsv (which acts as a spill over buffer) and
+> the delayed refs rsv.  If our total size is beyond that amount then we
+> know it's time to commit the transaction and stop any more delayed refs
+> from being generated.
 > 
 > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
 > ---
->  fs/btrfs/transaction.c | 38 --------------------------------------
->  1 file changed, 38 deletions(-)
+>  fs/btrfs/ctree.h       |  2 +-
+>  fs/btrfs/extent-tree.c | 48 ++++++++++++++++++------------------------------
+>  fs/btrfs/inode.c       |  4 ++--
+>  fs/btrfs/transaction.c |  2 +-
+>  4 files changed, 22 insertions(+), 34 deletions(-)
 > 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 2eba398c722b..30da075c042e 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -2631,7 +2631,7 @@ static inline u64 btrfs_calc_trunc_metadata_size(struct btrfs_fs_info *fs_info,
+>  }
+>  
+>  int btrfs_should_throttle_delayed_refs(struct btrfs_trans_handle *trans);
+> -int btrfs_check_space_for_delayed_refs(struct btrfs_trans_handle *trans);
+> +bool btrfs_check_space_for_delayed_refs(struct btrfs_fs_info *fs_info);
+>  void btrfs_dec_block_group_reservations(struct btrfs_fs_info *fs_info,
+>  					 const u64 start);
+>  void btrfs_wait_block_group_reservations(struct btrfs_block_group_cache *bg);
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 5a2d0b061f57..07ef1b8087f7 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -2839,40 +2839,28 @@ u64 btrfs_csum_bytes_to_leaves(struct btrfs_fs_info *fs_info, u64 csum_bytes)
+>  	return num_csums;
+>  }
+>  
+> -int btrfs_check_space_for_delayed_refs(struct btrfs_trans_handle *trans)
+> +bool btrfs_check_space_for_delayed_refs(struct btrfs_fs_info *fs_info)
+>  {
+> -	struct btrfs_fs_info *fs_info = trans->fs_info;
+> -	struct btrfs_block_rsv *global_rsv;
+> -	u64 num_heads = trans->transaction->delayed_refs.num_heads_ready;
+> -	u64 csum_bytes = trans->transaction->delayed_refs.pending_csums;
+> -	unsigned int num_dirty_bgs = trans->transaction->num_dirty_bgs;
+> -	u64 num_bytes, num_dirty_bgs_bytes;
+> -	int ret = 0;
+> +	struct btrfs_block_rsv *delayed_refs_rsv = &fs_info->delayed_refs_rsv;
+> +	struct btrfs_block_rsv *global_rsv = &fs_info->global_block_rsv;
+> +	bool ret = false;
+> +	u64 reserved;
+>  
+> -	num_bytes = btrfs_calc_trans_metadata_size(fs_info, 1);
+> -	num_heads = heads_to_leaves(fs_info, num_heads);
+> -	if (num_heads > 1)
+> -		num_bytes += (num_heads - 1) * fs_info->nodesize;
+> -	num_bytes <<= 1;
+> -	num_bytes += btrfs_csum_bytes_to_leaves(fs_info, csum_bytes) *
+> -							fs_info->nodesize;
+> -	num_dirty_bgs_bytes = btrfs_calc_trans_metadata_size(fs_info,
+> -							     num_dirty_bgs);
+> -	global_rsv = &fs_info->global_block_rsv;
+> +	spin_lock(&global_rsv->lock);
+> +	reserved = global_rsv->reserved;
+> +	spin_unlock(&global_rsv->lock);
+>  
+>  	/*
+> -	 * If we can't allocate any more chunks lets make sure we have _lots_ of
+> -	 * wiggle room since running delayed refs can create more delayed refs.
+> +	 * Since the global reserve is just kind of magic we don't really want
+> +	 * to rely on it to save our bacon, so if our size is more than the
+> +	 * delayed_refs_rsv and the global rsv then it's time to think about
+> +	 * bailing.
+>  	 */
+> -	if (global_rsv->space_info->full) {
+> -		num_dirty_bgs_bytes <<= 1;
+> -		num_bytes <<= 1;
+> -	}
+> -
+> -	spin_lock(&global_rsv->lock);
+> -	if (global_rsv->reserved <= num_bytes + num_dirty_bgs_bytes)
+> -		ret = 1;
+> -	spin_unlock(&global_rsv->lock);
+> +	spin_lock(&delayed_refs_rsv->lock);
+> +	reserved += delayed_refs_rsv->reserved;
+> +	if (delayed_refs_rsv->size >= reserved)
+> +		ret = true;
+> +	spin_unlock(&delayed_refs_rsv->lock);
+>  	return ret;
+>  }
+>  
+> @@ -2891,7 +2879,7 @@ int btrfs_should_throttle_delayed_refs(struct btrfs_trans_handle *trans)
+>  	if (val >= NSEC_PER_SEC / 2)
+>  		return 2;
+>  
+> -	return btrfs_check_space_for_delayed_refs(trans);
+> +	return btrfs_check_space_for_delayed_refs(trans->fs_info);
+>  }
+>  
+>  struct async_delayed_refs {
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index a097f5fde31d..8532a2eb56d1 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -5326,8 +5326,8 @@ static struct btrfs_trans_handle *evict_refill_and_join(struct btrfs_root *root,
+>  		 * Try to steal from the global reserve if there is space for
+>  		 * it.
+>  		 */
+> -		if (!btrfs_check_space_for_delayed_refs(trans) &&
+> -		    !btrfs_block_rsv_migrate(global_rsv, rsv, rsv->size, false))
+> +		if (!btrfs_check_space_for_delayed_refs(fs_info) &&
+> +		    !btrfs_block_rsv_migrate(global_rsv, rsv, rsv->size, 0))
+>  			return trans;
+>  
+>  		/* If not, commit and try again. */
 > diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 2d8401bf8df9..01f39401619a 100644
+> index a21c4defad92..2d8401bf8df9 100644
 > --- a/fs/btrfs/transaction.c
 > +++ b/fs/btrfs/transaction.c
-> @@ -798,22 +798,12 @@ static int should_end_transaction(struct btrfs_trans_handle *trans)
->  int btrfs_should_end_transaction(struct btrfs_trans_handle *trans)
+> @@ -789,7 +789,7 @@ static int should_end_transaction(struct btrfs_trans_handle *trans)
 >  {
->  	struct btrfs_transaction *cur_trans = trans->transaction;
-> -	int updates;
-> -	int err;
+>  	struct btrfs_fs_info *fs_info = trans->fs_info;
 >  
->  	smp_mb();
->  	if (cur_trans->state >= TRANS_STATE_BLOCKED ||
->  	    cur_trans->delayed_refs.flushing)
+> -	if (btrfs_check_space_for_delayed_refs(trans))
+> +	if (btrfs_check_space_for_delayed_refs(fs_info))
 >  		return 1;
 >  
-> -	updates = trans->delayed_ref_updates;
-> -	trans->delayed_ref_updates = 0;
-> -	if (updates) {
-> -		err = btrfs_run_delayed_refs(trans, updates * 2);
-> -		if (err) /* Error code will also eval true */
-> -			return err;
-> -	}
-> -
->  	return should_end_transaction(trans);
->  }
->  
-> @@ -843,11 +833,8 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
->  {
->  	struct btrfs_fs_info *info = trans->fs_info;
->  	struct btrfs_transaction *cur_trans = trans->transaction;
-> -	u64 transid = trans->transid;
-> -	unsigned long cur = trans->delayed_ref_updates;
->  	int lock = (trans->type != TRANS_JOIN_NOLOCK);
->  	int err = 0;
-> -	int must_run_delayed_refs = 0;
->  
->  	if (refcount_read(&trans->use_count) > 1) {
->  		refcount_dec(&trans->use_count);
-> @@ -858,27 +845,6 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
->  	btrfs_trans_release_metadata(trans);
->  	trans->block_rsv = NULL;
->  
-> -	if (!list_empty(&trans->new_bgs))
-> -		btrfs_create_pending_block_groups(trans);
-
-Is this being deleted because in delayed_refs_rsv you account also fo
-new block groups?
-
-> -
-> -	trans->delayed_ref_updates = 0;
-> -	if (!trans->sync) {
-> -		must_run_delayed_refs =
-> -			btrfs_should_throttle_delayed_refs(trans);
-> -		cur = max_t(unsigned long, cur, 32);
-> -
-> -		/*
-> -		 * don't make the caller wait if they are from a NOLOCK
-> -		 * or ATTACH transaction, it will deadlock with commit
-> -		 */
-> -		if (must_run_delayed_refs == 1 &&
-> -		    (trans->type & (__TRANS_JOIN_NOLOCK | __TRANS_ATTACH)))
-> -			must_run_delayed_refs = 2;
-> -	}
-> -
-> -	btrfs_trans_release_metadata(trans);
-> -	trans->block_rsv = NULL;
-
-Why remove those 2 lines as well ?
-
-> -
->  	if (!list_empty(&trans->new_bgs))
->  		btrfs_create_pending_block_groups(trans);
->  
-> @@ -923,10 +889,6 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
->  	}
->  
->  	kmem_cache_free(btrfs_trans_handle_cachep, trans);
-> -	if (must_run_delayed_refs) {
-> -		btrfs_async_run_delayed_refs(info, cur, transid,
-> -					     must_run_delayed_refs == 1);
-> -	}
->  	return err;
->  }
->  
+>  	return !!btrfs_block_rsv_check(&fs_info->global_block_rsv, 5);
 > 

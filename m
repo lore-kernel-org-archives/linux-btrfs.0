@@ -6,31 +6,31 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0B9FFC04EB8
-	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 12:38:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 899FDC04EB8
+	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 12:51:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C0E9020892
-	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 12:38:28 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C0E9020892
+	by mail.kernel.org (Postfix) with ESMTP id 2743D20878
+	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 12:51:21 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2743D20878
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729446AbeLFMi1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 6 Dec 2018 07:38:27 -0500
-Received: from mx2.suse.de ([195.135.220.15]:39384 "EHLO mx1.suse.de"
+        id S1729054AbeLFMvT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 6 Dec 2018 07:51:19 -0500
+Received: from mx2.suse.de ([195.135.220.15]:41858 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727832AbeLFMi1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 6 Dec 2018 07:38:27 -0500
+        id S1728482AbeLFMvT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 6 Dec 2018 07:51:19 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 33217AFCC;
-        Thu,  6 Dec 2018 12:38:24 +0000 (UTC)
-Subject: Re: [PATCH 02/10] btrfs: add cleanup_ref_head_accounting helper
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 58705AFE7;
+        Thu,  6 Dec 2018 12:51:16 +0000 (UTC)
+Subject: Re: [PATCH 06/10] btrfs: update may_commit_transaction to use the
+ delayed refs rsv
 To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
         kernel-team@fb.com
-Cc:     Josef Bacik <jbacik@fb.com>
 References: <20181203152038.21388-1-josef@toxicpanda.com>
- <20181203152038.21388-3-josef@toxicpanda.com>
+ <20181203152038.21388-7-josef@toxicpanda.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -75,12 +75,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <cf65c838-74a9-4cdc-ff2c-4beb8f23cd6e@suse.com>
-Date:   Thu, 6 Dec 2018 14:38:22 +0200
+Message-ID: <0a817feb-85fc-2f77-7ef9-b3bd09d2e60a@suse.com>
+Date:   Thu, 6 Dec 2018 14:51:14 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181203152038.21388-3-josef@toxicpanda.com>
+In-Reply-To: <20181203152038.21388-7-josef@toxicpanda.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -92,128 +92,124 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 3.12.18 г. 17:20 ч., Josef Bacik wrote:
-> From: Josef Bacik <jbacik@fb.com>
+> Any space used in the delayed_refs_rsv will be freed up by a transaction
+> commit, so instead of just counting the pinned space we also need to
+> account for any space in the delayed_refs_rsv when deciding if it will
+> make a different to commit the transaction to satisfy our space
+> reservation.  If we have enough bytes to satisfy our reservation ticket
+> then we are good to go, otherwise subtract out what space we would gain
+> back by committing the transaction and compare that against the pinned
+> space to make our decision.
 > 
-> We were missing some quota cleanups in check_ref_cleanup, so break the
-> ref head accounting cleanup into a helper and call that from both
-> check_ref_cleanup and cleanup_ref_head.  This will hopefully ensure that
-> we don't screw up accounting in the future for other things that we add.
-> 
-> Reviewed-by: Omar Sandoval <osandov@fb.com>
-> Reviewed-by: Liu Bo <bo.liu@linux.alibaba.com>
-> Signed-off-by: Josef Bacik <jbacik@fb.com>
-
-Doesn't this also need a stable tag? Furthermore, doesn't the missing
-code dealing with total_bytes_pinned in check_ref_cleanup mean that
-every time the last reference for a block was freed we were leaking
-bytes in total_bytes_pinned? Shouldn't this have lead to eventually
-total_bytes_pinned dominating the usage in a space_info ?
-
-Codewise lgtm:
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
+However, look below for one suggestion: 
+
 > ---
->  fs/btrfs/extent-tree.c | 67 +++++++++++++++++++++++++++++---------------------
->  1 file changed, 39 insertions(+), 28 deletions(-)
+>  fs/btrfs/extent-tree.c | 24 +++++++++++++++---------
+>  1 file changed, 15 insertions(+), 9 deletions(-)
 > 
 > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index c36b3a42f2bb..e3ed3507018d 100644
+> index aa0a638d0263..63ff9d832867 100644
 > --- a/fs/btrfs/extent-tree.c
 > +++ b/fs/btrfs/extent-tree.c
-> @@ -2443,6 +2443,41 @@ static int cleanup_extent_op(struct btrfs_trans_handle *trans,
->  	return ret ? ret : 1;
->  }
->  
-> +static void cleanup_ref_head_accounting(struct btrfs_trans_handle *trans,
-> +					struct btrfs_delayed_ref_head *head)
-> +{
-> +	struct btrfs_fs_info *fs_info = trans->fs_info;
-> +	struct btrfs_delayed_ref_root *delayed_refs =
-> +		&trans->transaction->delayed_refs;
-> +
-> +	if (head->total_ref_mod < 0) {
-> +		struct btrfs_space_info *space_info;
-> +		u64 flags;
-> +
-> +		if (head->is_data)
-> +			flags = BTRFS_BLOCK_GROUP_DATA;
-> +		else if (head->is_system)
-> +			flags = BTRFS_BLOCK_GROUP_SYSTEM;
-> +		else
-> +			flags = BTRFS_BLOCK_GROUP_METADATA;
-> +		space_info = __find_space_info(fs_info, flags);
-> +		ASSERT(space_info);
-> +		percpu_counter_add_batch(&space_info->total_bytes_pinned,
-> +				   -head->num_bytes,
-> +				   BTRFS_TOTAL_BYTES_PINNED_BATCH);
-> +
-> +		if (head->is_data) {
-> +			spin_lock(&delayed_refs->lock);
-> +			delayed_refs->pending_csums -= head->num_bytes;
-> +			spin_unlock(&delayed_refs->lock);
-> +		}
-> +	}
-> +
-> +	/* Also free its reserved qgroup space */
-> +	btrfs_qgroup_free_delayed_ref(fs_info, head->qgroup_ref_root,
-> +				      head->qgroup_reserved);
-> +}
-> +
->  static int cleanup_ref_head(struct btrfs_trans_handle *trans,
->  			    struct btrfs_delayed_ref_head *head)
+> @@ -4843,8 +4843,10 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
 >  {
-> @@ -2478,31 +2513,6 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
->  	spin_unlock(&head->lock);
->  	spin_unlock(&delayed_refs->lock);
+>  	struct reserve_ticket *ticket = NULL;
+>  	struct btrfs_block_rsv *delayed_rsv = &fs_info->delayed_block_rsv;
+> +	struct btrfs_block_rsv *delayed_refs_rsv = &fs_info->delayed_refs_rsv;
+>  	struct btrfs_trans_handle *trans;
+> -	u64 bytes;
+> +	u64 bytes_needed;
+> +	u64 reclaim_bytes = 0;
 >  
-> -	trace_run_delayed_ref_head(fs_info, head, 0);
-> -
-> -	if (head->total_ref_mod < 0) {
-> -		struct btrfs_space_info *space_info;
-> -		u64 flags;
-> -
-> -		if (head->is_data)
-> -			flags = BTRFS_BLOCK_GROUP_DATA;
-> -		else if (head->is_system)
-> -			flags = BTRFS_BLOCK_GROUP_SYSTEM;
-> -		else
-> -			flags = BTRFS_BLOCK_GROUP_METADATA;
-> -		space_info = __find_space_info(fs_info, flags);
-> -		ASSERT(space_info);
-> -		percpu_counter_add_batch(&space_info->total_bytes_pinned,
-> -				   -head->num_bytes,
-> -				   BTRFS_TOTAL_BYTES_PINNED_BATCH);
-> -
-> -		if (head->is_data) {
-> -			spin_lock(&delayed_refs->lock);
-> -			delayed_refs->pending_csums -= head->num_bytes;
-> -			spin_unlock(&delayed_refs->lock);
-> -		}
-> -	}
-> -
->  	if (head->must_insert_reserved) {
->  		btrfs_pin_extent(fs_info, head->bytenr,
->  				 head->num_bytes, 1);
-> @@ -2512,9 +2522,9 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
->  		}
->  	}
+>  	trans = (struct btrfs_trans_handle *)current->journal_info;
+>  	if (trans)
+> @@ -4857,15 +4859,15 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
+>  	else if (!list_empty(&space_info->tickets))
+>  		ticket = list_first_entry(&space_info->tickets,
+>  					  struct reserve_ticket, list);
+> -	bytes = (ticket) ? ticket->bytes : 0;
+> +	bytes_needed = (ticket) ? ticket->bytes : 0;
+>  	spin_unlock(&space_info->lock);
 >  
-> -	/* Also free its reserved qgroup space */
-> -	btrfs_qgroup_free_delayed_ref(fs_info, head->qgroup_ref_root,
-> -				      head->qgroup_reserved);
-> +	cleanup_ref_head_accounting(trans, head);
+> -	if (!bytes)
+> +	if (!bytes_needed)
+>  		return 0;
+>  
+>  	/* See if there is enough pinned space to make this reservation */
+>  	if (__percpu_counter_compare(&space_info->total_bytes_pinned,
+> -				   bytes,
+> +				   bytes_needed,
+>  				   BTRFS_TOTAL_BYTES_PINNED_BATCH) >= 0)
+>  		goto commit;
+>  
+> @@ -4877,14 +4879,18 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
+>  		return -ENOSPC;
+
+If we remove this :
+ if (space_info != delayed_rsv->space_info)                              
+                return -ENOSPC; 
+
+Check, can't we move the reclaim_bytes calc code above the __percpu_counter_compare 
+and eventually be left with just a single invocation to percpu_compare. 
+The diff should looke something along the lines of: 
+
+@@ -4828,19 +4827,6 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
+        if (!bytes)
+                return 0;
+ 
+-       /* See if there is enough pinned space to make this reservation */
+-       if (__percpu_counter_compare(&space_info->total_bytes_pinned,
+-                                  bytes,
+-                                  BTRFS_TOTAL_BYTES_PINNED_BATCH) >= 0)
+-               goto commit;
+-
+-       /*
+-        * See if there is some space in the delayed insertion reservation for
+-        * this reservation.
+-        */
+-       if (space_info != delayed_rsv->space_info)
+-               return -ENOSPC;
+-
+        spin_lock(&delayed_rsv->lock);
+        if (delayed_rsv->size > bytes)
+                bytes = 0;
+@@ -4850,9 +4836,8 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
+ 
+        if (__percpu_counter_compare(&space_info->total_bytes_pinned,
+                                   bytes,
+-                                  BTRFS_TOTAL_BYTES_PINNED_BATCH) < 0) {
++                                  BTRFS_TOTAL_BYTES_PINNED_BATCH) < 0)
+                return -ENOSPC;
+-       }
+ 
+ commit:
+        trans = btrfs_join_transaction(fs_info->extent_root);
+
+
+>  
+>  	spin_lock(&delayed_rsv->lock);
+> -	if (delayed_rsv->size > bytes)
+> -		bytes = 0;
+> -	else
+> -		bytes -= delayed_rsv->size;
+> +	reclaim_bytes += delayed_rsv->reserved;
+>  	spin_unlock(&delayed_rsv->lock);
+>  
+> +	spin_lock(&delayed_refs_rsv->lock);
+> +	reclaim_bytes += delayed_refs_rsv->reserved;
+> +	spin_unlock(&delayed_refs_rsv->lock);
+> +	if (reclaim_bytes >= bytes_needed)
+> +		goto commit;
+> +	bytes_needed -= reclaim_bytes;
 > +
-> +	trace_run_delayed_ref_head(fs_info, head, 0);
->  	btrfs_delayed_ref_unlock(head);
->  	btrfs_put_delayed_ref_head(head);
->  	return 0;
-> @@ -6991,6 +7001,7 @@ static noinline int check_ref_cleanup(struct btrfs_trans_handle *trans,
->  	if (head->must_insert_reserved)
->  		ret = 1;
->  
-> +	cleanup_ref_head_accounting(trans, head);
->  	mutex_unlock(&head->mutex);
->  	btrfs_put_delayed_ref_head(head);
->  	return ret;
+>  	if (__percpu_counter_compare(&space_info->total_bytes_pinned,
+> -				   bytes,
+> +				   bytes_needed,
+>  				   BTRFS_TOTAL_BYTES_PINNED_BATCH) < 0) {
+>  		return -ENOSPC;
+>  	}
 > 

@@ -2,313 +2,131 @@ Return-Path: <SRS0=+YL1=OP=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D89B6C04EB8
-	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 07:00:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 66B82C04EB8
+	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 07:40:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6C3FA20878
-	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 07:00:22 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6C3FA20878
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 3120520878
+	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 07:40:48 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3120520878
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=pobox.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729069AbeLFG70 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 6 Dec 2018 01:59:26 -0500
-Received: from mx2.suse.de ([195.135.220.15]:59466 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729075AbeLFG7Z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 6 Dec 2018 01:59:25 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 5697CAED3
-        for <linux-btrfs@vger.kernel.org>; Thu,  6 Dec 2018 06:59:22 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 8/8] btrfs: extent-tree: Use btrfs_ref to refactor btrfs_free_extent()
-Date:   Thu,  6 Dec 2018 14:59:03 +0800
-Message-Id: <20181206065903.11343-9-wqu@suse.com>
-X-Mailer: git-send-email 2.19.2
-In-Reply-To: <20181206065903.11343-1-wqu@suse.com>
-References: <20181206065903.11343-1-wqu@suse.com>
+        id S1728964AbeLFHkq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 6 Dec 2018 02:40:46 -0500
+Received: from resqmta-po-09v.sys.comcast.net ([96.114.154.168]:35598 "EHLO
+        resqmta-po-09v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1728294AbeLFHkq (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 6 Dec 2018 02:40:46 -0500
+Received: from resomta-po-15v.sys.comcast.net ([96.114.154.239])
+        by resqmta-po-09v.sys.comcast.net with ESMTP
+        id UoH7gEVJjVFMTUoH7g2PDP; Thu, 06 Dec 2018 07:40:45 +0000
+Received: from touchy.whiterc.com ([IPv6:2601:601:1400:69b4:35fb:69c0:6cd9:337d])
+        by resomta-po-15v.sys.comcast.net with ESMTPSA
+        id UoH5giZiNS0fxUoH6gud6k; Thu, 06 Dec 2018 07:40:44 +0000
+Subject: Re: [PATCH 00/10] btrfs: Support for DAX devices
+To:     Jeff Mahoney <jeffm@suse.com>,
+        Goldwyn Rodrigues <rgoldwyn@suse.de>,
+        linux-btrfs@vger.kernel.org
+References: <20181205122835.19290-1-rgoldwyn@suse.de>
+ <6a5b4bb8-896f-14c8-fc71-71b7122dd836@suse.com>
+From:   Robert White <rwhite@pobox.com>
+Message-ID: <27107fd9-a8c8-9b3a-6d9f-3f020523f4ea@pobox.com>
+Date:   Thu, 6 Dec 2018 07:40:43 +0000
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.3.0
 MIME-Version: 1.0
+In-Reply-To: <6a5b4bb8-896f-14c8-fc71-71b7122dd836@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-CA
 Content-Transfer-Encoding: 8bit
+X-CMAE-Envelope: MS4wfHTaKKwmAdBQEIkTLoIH//OqZuB6gXxO2APM0RfEYj04e78nexHUD/moe4lAtIb6V0XBr+bSi3rVsIlpd4qIqTeOMT5Fqcb3MXEwjHYnbGFUX3odzZJj
+ 8sUHjP1e+Neoe6qCKgzklWjuS22hNbs/aIiSBoV8LcDbdfdat1ZkclzvDi9bn5DiYEo48VYgvTaz+FdsVTXM5jKV699OcwHJ8G8WNlqzMOLxMeemQhBqlbAM
+ 6BWOkz7gkrI7Mvrb70HP8TpbW3j/Sa8RQE6Q5h6T+pbo8DzIDMp6FtGAF0BuI/cu
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Similar to btrfs_inc_extent_ref(), just use btrfs_ref to replace the
-long parameter list and the confusing @owner parameter.
+On 12/5/18 9:37 PM, Jeff Mahoney wrote:
+> The high level idea that Jan Kara and I came up with in our conversation 
+> at Labs conf is pretty expensive.  We'd need to set a flag that pauses 
+> new page faults, set the WP bit on affected ranges, do the snapshot, 
+> commit, clear the flag, and wake up the waiting threads.  Neither of us 
+> had any concrete idea of how well that would perform and it still 
+> depends on finding a good way to resolve all open mmap ranges on a 
+> subvolume.  Perhaps using the address_space->private_list anchored on 
+> each root would work.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/ctree.h       |  5 +---
- fs/btrfs/extent-tree.c | 53 ++++++++++++++++++------------------------
- fs/btrfs/file.c        | 23 ++++++++++--------
- fs/btrfs/inode.c       | 13 +++++++----
- fs/btrfs/relocation.c  | 26 +++++++++++++--------
- 5 files changed, 62 insertions(+), 58 deletions(-)
+This is a potentially wild idea, so "grain of salt" and all that. I may 
+misuse the exact wording.
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index db3df5ce6087..9ed55a29993d 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2671,10 +2671,7 @@ int btrfs_set_disk_extent_flags(struct btrfs_trans_handle *trans,
- 				struct btrfs_fs_info *fs_info,
- 				u64 bytenr, u64 num_bytes, u64 flags,
- 				int level, int is_data);
--int btrfs_free_extent(struct btrfs_trans_handle *trans,
--		      struct btrfs_root *root,
--		      u64 bytenr, u64 num_bytes, u64 parent, u64 root_objectid,
--		      u64 owner, u64 offset, bool for_reloc);
-+int btrfs_free_extent(struct btrfs_trans_handle *trans, struct btrfs_ref *ref);
- 
- int btrfs_free_reserved_extent(struct btrfs_fs_info *fs_info,
- 			       u64 start, u64 len, int delalloc);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index ff60091aef6b..8a6a73006dc4 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3255,10 +3255,7 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
- 			if (inc)
- 				ret = btrfs_inc_extent_ref(trans, &generic_ref);
- 			else
--				ret = btrfs_free_extent(trans, root, bytenr,
--						num_bytes, parent, ref_root,
--						key.objectid, key.offset,
--						for_reloc);
-+				ret = btrfs_free_extent(trans, &generic_ref);
- 			if (ret)
- 				goto fail;
- 		} else {
-@@ -3272,9 +3269,7 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
- 			if (inc)
- 				ret = btrfs_inc_extent_ref(trans, &generic_ref);
- 			else
--				ret = btrfs_free_extent(trans, root, bytenr,
--						num_bytes, parent, ref_root,
--						level - 1, 0, for_reloc);
-+				ret = btrfs_free_extent(trans, &generic_ref);
- 			if (ret)
- 				goto fail;
- 		}
-@@ -7073,47 +7068,43 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
- }
- 
- /* Can return -ENOMEM */
--int btrfs_free_extent(struct btrfs_trans_handle *trans,
--		      struct btrfs_root *root,
--		      u64 bytenr, u64 num_bytes, u64 parent, u64 root_objectid,
--		      u64 owner, u64 offset, bool for_reloc)
-+int btrfs_free_extent(struct btrfs_trans_handle *trans, struct btrfs_ref *ref)
- {
--	struct btrfs_fs_info *fs_info = root->fs_info;
--	struct btrfs_ref generic_ref = { 0 };
-+	struct btrfs_fs_info *fs_info = trans->fs_info;
- 	int old_ref_mod, new_ref_mod;
- 	int ret;
- 
- 	if (btrfs_is_testing(fs_info))
- 		return 0;
- 
--	btrfs_init_generic_ref(&generic_ref, BTRFS_DROP_DELAYED_REF, bytenr,
--			       num_bytes, root->root_key.objectid, parent);
--	generic_ref.skip_qgroup = for_reloc;
- 	/*
- 	 * tree log blocks never actually go into the extent allocation
- 	 * tree, just update pinning info and exit early.
- 	 */
--	if (root_objectid == BTRFS_TREE_LOG_OBJECTID) {
--		WARN_ON(owner >= BTRFS_FIRST_FREE_OBJECTID);
-+	if ((ref->type == BTRFS_REF_METADATA &&
-+	     ref->tree_ref.root == BTRFS_TREE_LOG_OBJECTID) ||
-+	    (ref->type == BTRFS_REF_DATA &&
-+	     ref->data_ref.ref_root == BTRFS_TREE_LOG_OBJECTID)) {
- 		/* unlocks the pinned mutex */
--		btrfs_pin_extent(fs_info, bytenr, num_bytes, 1);
-+		btrfs_pin_extent(fs_info, ref->bytenr, ref->len, 1);
- 		old_ref_mod = new_ref_mod = 0;
- 		ret = 0;
--	} else if (owner < BTRFS_FIRST_FREE_OBJECTID) {
--		btrfs_init_tree_ref(&generic_ref, (int)owner, root_objectid);
--		ret = btrfs_add_delayed_tree_ref(trans, &generic_ref, NULL,
-+	} else if (ref->type == BTRFS_REF_METADATA) {
-+		ret = btrfs_add_delayed_tree_ref(trans, ref, NULL,
- 						 &old_ref_mod, &new_ref_mod);
- 	} else {
--		btrfs_init_data_ref(&generic_ref, root_objectid, owner, offset);
--		ret = btrfs_add_delayed_data_ref(trans, &generic_ref, 0,
-+		ret = btrfs_add_delayed_data_ref(trans, ref, 0,
- 						 &old_ref_mod, &new_ref_mod);
- 	}
- 
--	if (root_objectid != BTRFS_TREE_LOG_OBJECTID)
--		btrfs_ref_tree_mod(fs_info, &generic_ref);
-+	if (!((ref->type == BTRFS_REF_METADATA &&
-+	       ref->tree_ref.root == BTRFS_TREE_LOG_OBJECTID) ||
-+	      (ref->type == BTRFS_REF_DATA &&
-+	       ref->data_ref.ref_root == BTRFS_TREE_LOG_OBJECTID)))
-+		btrfs_ref_tree_mod(fs_info, ref);
- 
- 	if (ret == 0 && old_ref_mod >= 0 && new_ref_mod < 0)
--		add_pinned_bytes(fs_info, &generic_ref);
-+		add_pinned_bytes(fs_info, ref);
- 
- 	return ret;
- }
-@@ -8548,6 +8539,7 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
- 	u32 blocksize;
- 	struct btrfs_key key;
- 	struct btrfs_key first_key;
-+	struct btrfs_ref ref = { 0 };
- 	struct extent_buffer *next;
- 	int level = wc->level;
- 	int reada = 0;
-@@ -8694,9 +8686,10 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
- 					     ret);
- 			}
- 		}
--		ret = btrfs_free_extent(trans, root, bytenr, blocksize,
--					parent, root->root_key.objectid,
--					level - 1, 0, false);
-+		btrfs_init_generic_ref(&ref, BTRFS_DROP_DELAYED_REF, bytenr,
-+				blocksize, root->root_key.objectid, parent);
-+		btrfs_init_tree_ref(&ref, level - 1, root->root_key.objectid);
-+		ret = btrfs_free_extent(trans, &ref);
- 		if (ret)
- 			goto out_unlock;
- 	}
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 35c786334972..0a6793498f6c 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -998,11 +998,15 @@ int __btrfs_drop_extents(struct btrfs_trans_handle *trans,
- 				extent_end = ALIGN(extent_end,
- 						   fs_info->sectorsize);
- 			} else if (update_refs && disk_bytenr > 0) {
--				ret = btrfs_free_extent(trans, root,
--						disk_bytenr, num_bytes, 0,
-+				btrfs_init_generic_ref(&ref,
-+						BTRFS_DROP_DELAYED_REF,
-+						disk_bytenr, num_bytes,
-+						root->root_key.objectid, 0);
-+				btrfs_init_data_ref(&ref,
- 						root->root_key.objectid,
--						key.objectid, key.offset -
--						extent_offset, false);
-+						key.objectid,
-+						key.offset - extent_offset);
-+				ret = btrfs_free_extent(trans, &ref);
- 				BUG_ON(ret); /* -ENOMEM */
- 				inode_sub_bytes(inode,
- 						extent_end - key.offset);
-@@ -1319,6 +1323,9 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
- 
- 	other_start = end;
- 	other_end = 0;
-+	btrfs_init_generic_ref(&ref, BTRFS_DROP_DELAYED_REF, bytenr,
-+			       num_bytes, root->root_key.objectid, 0);
-+	btrfs_init_data_ref(&ref, root->root_key.objectid, ino, orig_offset);
- 	if (extent_mergeable(leaf, path->slots[0] + 1,
- 			     ino, bytenr, orig_offset,
- 			     &other_start, &other_end)) {
-@@ -1329,9 +1336,7 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
- 		extent_end = other_end;
- 		del_slot = path->slots[0] + 1;
- 		del_nr++;
--		ret = btrfs_free_extent(trans, root, bytenr, num_bytes,
--					0, root->root_key.objectid,
--					ino, orig_offset, false);
-+		ret = btrfs_free_extent(trans, &ref);
- 		if (ret) {
- 			btrfs_abort_transaction(trans, ret);
- 			goto out;
-@@ -1349,9 +1354,7 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
- 		key.offset = other_start;
- 		del_slot = path->slots[0];
- 		del_nr++;
--		ret = btrfs_free_extent(trans, root, bytenr, num_bytes,
--					0, root->root_key.objectid,
--					ino, orig_offset, false);
-+		ret = btrfs_free_extent(trans, &ref);
- 		if (ret) {
- 			btrfs_abort_transaction(trans, ret);
- 			goto out;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index aa83f68e22ee..12dd3a3f4b1c 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4714,12 +4714,17 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
- 		if (found_extent &&
- 		    (test_bit(BTRFS_ROOT_REF_COWS, &root->state) ||
- 		     root == fs_info->tree_root)) {
-+			struct btrfs_ref ref = { 0 };
-+
- 			btrfs_set_path_blocking(path);
- 			bytes_deleted += extent_num_bytes;
--			ret = btrfs_free_extent(trans, root, extent_start,
--						extent_num_bytes, 0,
--						btrfs_header_owner(leaf),
--						ino, extent_offset, false);
-+
-+			btrfs_init_generic_ref(&ref, BTRFS_DROP_DELAYED_REF,
-+					extent_start, extent_num_bytes,
-+					root->root_key.objectid, 0);
-+			btrfs_init_data_ref(&ref, btrfs_header_owner(leaf),
-+					ino, extent_offset);
-+			ret = btrfs_free_extent(trans, &ref);
- 			if (ret) {
- 				btrfs_abort_transaction(trans, ret);
- 				break;
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 7aa240d1f361..d2c3b6560a3f 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -1731,9 +1731,11 @@ int replace_file_extents(struct btrfs_trans_handle *trans,
- 			break;
- 		}
- 
--		ret = btrfs_free_extent(trans, root, bytenr, num_bytes,
--					parent, btrfs_header_owner(leaf),
--					key.objectid, key.offset, false);
-+		btrfs_init_generic_ref(&ref, BTRFS_DROP_DELAYED_REF, bytenr,
-+				num_bytes, root->root_key.objectid, parent);
-+		btrfs_init_data_ref(&ref, btrfs_header_owner(leaf),
-+				    key.objectid, key.offset);
-+		ret = btrfs_free_extent(trans, &ref);
- 		if (ret) {
- 			btrfs_abort_transaction(trans, ret);
- 			break;
-@@ -1948,15 +1950,19 @@ int replace_path(struct btrfs_trans_handle *trans, struct reloc_control *rc,
- 		ret = btrfs_inc_extent_ref(trans, &ref);
- 		BUG_ON(ret);
- 
--		ret = btrfs_free_extent(trans, src, new_bytenr, blocksize,
--					path->nodes[level]->start,
--					src->root_key.objectid, level - 1, 0,
--					true);
-+		btrfs_init_generic_ref(&ref, BTRFS_DROP_DELAYED_REF, new_bytenr,
-+				       blocksize, src->root_key.objectid,
-+				       path->nodes[level]->start);
-+		btrfs_init_tree_ref(&ref, level - 1, src->root_key.objectid);
-+		ref.skip_qgroup = true;
-+		ret = btrfs_free_extent(trans, &ref);
- 		BUG_ON(ret);
- 
--		ret = btrfs_free_extent(trans, dest, old_bytenr, blocksize,
--					0, dest->root_key.objectid, level - 1,
--					0, true);
-+		btrfs_init_generic_ref(&ref, BTRFS_DROP_DELAYED_REF, old_bytenr,
-+				       blocksize, dest->root_key.objectid, 0);
-+		btrfs_init_tree_ref(&ref, level - 1, dest->root_key.objectid);
-+		ref.skip_qgroup = true;
-+		ret = btrfs_free_extent(trans, &ref);
- 		BUG_ON(ret);
- 
- 		btrfs_unlock_up_safe(path, 0);
--- 
-2.19.2
+So the essential problem of DAX is basically the opposite of 
+data-deduplication. Instead of merging two duplicate data regions, you 
+want to mark regions as at-risk while keeping the original content 
+intact if there are snapshots in conflict.
 
+So suppose you _require_ data checksums and data mode of "dup" or mirror 
+or one of the other fault tolerant layouts.
+
+By definition any block that gets written with content that it didn't 
+have before will now have a bad checksum.
+
+If the inode is flagged for direct IO that's an indication that the 
+block has been updated.
+
+At this point you really just need to do the opposite of deduplication, 
+as in find/recover the original contents and assign/leave assigned those 
+to the old/other snapshots, then compute the new checksum on the 
+"original block" and assign it to the active subvolume.
+
+So when a region is mapped for direct IO, and it's refcount is greater 
+than one, and you get to a sync or close event, you "recover" the old 
+contents into a new location and assign those to "all the other users". 
+Now that original storage region has only one user, so on sync or close 
+you fix its checksums on the cheap.
+
+Instead of the new data being a small rock sitting over a large rug to 
+make a lump, the new data is like a rock being slid under the rug to 
+make a lump.
+
+So the first write to an extent creates a burdensome copy to retain the 
+old contents, but second and subsequent writes to the same extent only 
+have the cost of an _eventual_ checksum of the original block list.
+
+Maybe If the data isn't already duplicated then the write mapping or the 
+DAX open or the setting of the S_DUP flag could force the file into an 
+extent block that _is_ duplicated.
+
+The mental leap required is that the new blocks don't need to belong to 
+the new state being created. The new blocks can be associated to the 
+snapshots since data copy is idempotent.
+
+The side note is that it only ever matters if the usage count is greater 
+than one, so at worst taking a snapshot, which is already a _little_ 
+racy anyway, would/could trigger a semi-lightweight copy of any S_DAX files:
+
+If S_DAX :
+   If checksum invalid :
+     copy data as-is and checksum, store in snapshot
+   else : look for duplicate checksum
+     if duplicate found :
+       assign that extent to the snapshot
+     else :
+       If file opened for writing and has any mmaps for write :
+         copy extent and assign to new snapshot.
+       else :
+         increment usage count and assign current block to snapshot
+
+Anyway, I only know enough of the internals to be dangerous.
+
+Since the real goal of mmap is speed during actual update, this idea is 
+basically about amortizing the copy costs into the task of maintaining 
+the snapshots instead of leaving them in the immediate hands of the 
+time-critical updater.
+
+The flush, unmmap, or close by the user, or a system-wide sync event, 
+are also good points to expense the bookeeping time.

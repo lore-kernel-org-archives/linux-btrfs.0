@@ -6,31 +6,31 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 35244C04EB9
-	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 12:32:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0B9FFC04EB8
+	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 12:38:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EE40A20838
-	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 12:32:08 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EE40A20838
+	by mail.kernel.org (Postfix) with ESMTP id C0E9020892
+	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 12:38:28 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org C0E9020892
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729501AbeLFMcH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 6 Dec 2018 07:32:07 -0500
-Received: from mx2.suse.de ([195.135.220.15]:37814 "EHLO mx1.suse.de"
+        id S1729446AbeLFMi1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 6 Dec 2018 07:38:27 -0500
+Received: from mx2.suse.de ([195.135.220.15]:39384 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728482AbeLFMcH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 6 Dec 2018 07:32:07 -0500
+        id S1727832AbeLFMi1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 6 Dec 2018 07:38:27 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 8E06FAD8F;
-        Thu,  6 Dec 2018 12:32:04 +0000 (UTC)
-Subject: Re: [PATCH 01/10] btrfs: add btrfs_delete_ref_head helper
+        by mx1.suse.de (Postfix) with ESMTP id 33217AFCC;
+        Thu,  6 Dec 2018 12:38:24 +0000 (UTC)
+Subject: Re: [PATCH 02/10] btrfs: add cleanup_ref_head_accounting helper
 To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
         kernel-team@fb.com
 Cc:     Josef Bacik <jbacik@fb.com>
 References: <20181203152038.21388-1-josef@toxicpanda.com>
- <20181203152038.21388-2-josef@toxicpanda.com>
+ <20181203152038.21388-3-josef@toxicpanda.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -75,12 +75,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <ad910339-556f-d554-634b-9b7f70b4371e@suse.com>
-Date:   Thu, 6 Dec 2018 14:32:02 +0200
+Message-ID: <cf65c838-74a9-4cdc-ff2c-4beb8f23cd6e@suse.com>
+Date:   Thu, 6 Dec 2018 14:38:22 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181203152038.21388-2-josef@toxicpanda.com>
+In-Reply-To: <20181203152038.21388-3-josef@toxicpanda.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -94,100 +94,126 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 On 3.12.18 г. 17:20 ч., Josef Bacik wrote:
 > From: Josef Bacik <jbacik@fb.com>
 > 
-> We do this dance in cleanup_ref_head and check_ref_cleanup, unify it
-> into a helper and cleanup the calling functions.
+> We were missing some quota cleanups in check_ref_cleanup, so break the
+> ref head accounting cleanup into a helper and call that from both
+> check_ref_cleanup and cleanup_ref_head.  This will hopefully ensure that
+> we don't screw up accounting in the future for other things that we add.
 > 
-> Signed-off-by: Josef Bacik <jbacik@fb.com>
 > Reviewed-by: Omar Sandoval <osandov@fb.com>
+> Reviewed-by: Liu Bo <bo.liu@linux.alibaba.com>
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
+
+Doesn't this also need a stable tag? Furthermore, doesn't the missing
+code dealing with total_bytes_pinned in check_ref_cleanup mean that
+every time the last reference for a block was freed we were leaking
+bytes in total_bytes_pinned? Shouldn't this have lead to eventually
+total_bytes_pinned dominating the usage in a space_info ?
+
+Codewise lgtm:
 
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
 > ---
->  fs/btrfs/delayed-ref.c | 14 ++++++++++++++
->  fs/btrfs/delayed-ref.h |  3 ++-
->  fs/btrfs/extent-tree.c | 22 +++-------------------
->  3 files changed, 19 insertions(+), 20 deletions(-)
+>  fs/btrfs/extent-tree.c | 67 +++++++++++++++++++++++++++++---------------------
+>  1 file changed, 39 insertions(+), 28 deletions(-)
 > 
-> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-> index 9301b3ad9217..b3e4c9fcb664 100644
-> --- a/fs/btrfs/delayed-ref.c
-> +++ b/fs/btrfs/delayed-ref.c
-> @@ -400,6 +400,20 @@ struct btrfs_delayed_ref_head *btrfs_select_ref_head(
->  	return head;
->  }
->  
-> +void btrfs_delete_ref_head(struct btrfs_delayed_ref_root *delayed_refs,
-> +			   struct btrfs_delayed_ref_head *head)
-> +{
-> +	lockdep_assert_held(&delayed_refs->lock);
-> +	lockdep_assert_held(&head->lock);
-> +
-> +	rb_erase_cached(&head->href_node, &delayed_refs->href_root);
-> +	RB_CLEAR_NODE(&head->href_node);
-> +	atomic_dec(&delayed_refs->num_entries);
-> +	delayed_refs->num_heads--;
-> +	if (head->processing == 0)
-> +		delayed_refs->num_heads_ready--;
-> +}
-> +
->  /*
->   * Helper to insert the ref_node to the tail or merge with tail.
->   *
-> diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
-> index 8e20c5cb5404..d2af974f68a1 100644
-> --- a/fs/btrfs/delayed-ref.h
-> +++ b/fs/btrfs/delayed-ref.h
-> @@ -261,7 +261,8 @@ static inline void btrfs_delayed_ref_unlock(struct btrfs_delayed_ref_head *head)
->  {
->  	mutex_unlock(&head->mutex);
->  }
-> -
-> +void btrfs_delete_ref_head(struct btrfs_delayed_ref_root *delayed_refs,
-> +			   struct btrfs_delayed_ref_head *head);
->  
->  struct btrfs_delayed_ref_head *btrfs_select_ref_head(
->  		struct btrfs_delayed_ref_root *delayed_refs);
 > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index d242a1174e50..c36b3a42f2bb 100644
+> index c36b3a42f2bb..e3ed3507018d 100644
 > --- a/fs/btrfs/extent-tree.c
 > +++ b/fs/btrfs/extent-tree.c
-> @@ -2474,12 +2474,9 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
->  		spin_unlock(&delayed_refs->lock);
->  		return 1;
->  	}
-> -	delayed_refs->num_heads--;
-> -	rb_erase_cached(&head->href_node, &delayed_refs->href_root);
-> -	RB_CLEAR_NODE(&head->href_node);
-> +	btrfs_delete_ref_head(delayed_refs, head);
->  	spin_unlock(&head->lock);
->  	spin_unlock(&delayed_refs->lock);
-> -	atomic_dec(&delayed_refs->num_entries);
+> @@ -2443,6 +2443,41 @@ static int cleanup_extent_op(struct btrfs_trans_handle *trans,
+>  	return ret ? ret : 1;
+>  }
 >  
->  	trace_run_delayed_ref_head(fs_info, head, 0);
->  
-> @@ -6984,22 +6981,9 @@ static noinline int check_ref_cleanup(struct btrfs_trans_handle *trans,
->  	if (!mutex_trylock(&head->mutex))
->  		goto out;
->  
-> -	/*
-> -	 * at this point we have a head with no other entries.  Go
-> -	 * ahead and process it.
-> -	 */
-> -	rb_erase_cached(&head->href_node, &delayed_refs->href_root);
-> -	RB_CLEAR_NODE(&head->href_node);
-> -	atomic_dec(&delayed_refs->num_entries);
-> -
-> -	/*
-> -	 * we don't take a ref on the node because we're removing it from the
-> -	 * tree, so we just steal the ref the tree was holding.
-> -	 */
-> -	delayed_refs->num_heads--;
-> -	if (head->processing == 0)
-> -		delayed_refs->num_heads_ready--;
-> +	btrfs_delete_ref_head(delayed_refs, head);
->  	head->processing = 0;
+> +static void cleanup_ref_head_accounting(struct btrfs_trans_handle *trans,
+> +					struct btrfs_delayed_ref_head *head)
+> +{
+> +	struct btrfs_fs_info *fs_info = trans->fs_info;
+> +	struct btrfs_delayed_ref_root *delayed_refs =
+> +		&trans->transaction->delayed_refs;
 > +
+> +	if (head->total_ref_mod < 0) {
+> +		struct btrfs_space_info *space_info;
+> +		u64 flags;
+> +
+> +		if (head->is_data)
+> +			flags = BTRFS_BLOCK_GROUP_DATA;
+> +		else if (head->is_system)
+> +			flags = BTRFS_BLOCK_GROUP_SYSTEM;
+> +		else
+> +			flags = BTRFS_BLOCK_GROUP_METADATA;
+> +		space_info = __find_space_info(fs_info, flags);
+> +		ASSERT(space_info);
+> +		percpu_counter_add_batch(&space_info->total_bytes_pinned,
+> +				   -head->num_bytes,
+> +				   BTRFS_TOTAL_BYTES_PINNED_BATCH);
+> +
+> +		if (head->is_data) {
+> +			spin_lock(&delayed_refs->lock);
+> +			delayed_refs->pending_csums -= head->num_bytes;
+> +			spin_unlock(&delayed_refs->lock);
+> +		}
+> +	}
+> +
+> +	/* Also free its reserved qgroup space */
+> +	btrfs_qgroup_free_delayed_ref(fs_info, head->qgroup_ref_root,
+> +				      head->qgroup_reserved);
+> +}
+> +
+>  static int cleanup_ref_head(struct btrfs_trans_handle *trans,
+>  			    struct btrfs_delayed_ref_head *head)
+>  {
+> @@ -2478,31 +2513,6 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
 >  	spin_unlock(&head->lock);
 >  	spin_unlock(&delayed_refs->lock);
 >  
+> -	trace_run_delayed_ref_head(fs_info, head, 0);
+> -
+> -	if (head->total_ref_mod < 0) {
+> -		struct btrfs_space_info *space_info;
+> -		u64 flags;
+> -
+> -		if (head->is_data)
+> -			flags = BTRFS_BLOCK_GROUP_DATA;
+> -		else if (head->is_system)
+> -			flags = BTRFS_BLOCK_GROUP_SYSTEM;
+> -		else
+> -			flags = BTRFS_BLOCK_GROUP_METADATA;
+> -		space_info = __find_space_info(fs_info, flags);
+> -		ASSERT(space_info);
+> -		percpu_counter_add_batch(&space_info->total_bytes_pinned,
+> -				   -head->num_bytes,
+> -				   BTRFS_TOTAL_BYTES_PINNED_BATCH);
+> -
+> -		if (head->is_data) {
+> -			spin_lock(&delayed_refs->lock);
+> -			delayed_refs->pending_csums -= head->num_bytes;
+> -			spin_unlock(&delayed_refs->lock);
+> -		}
+> -	}
+> -
+>  	if (head->must_insert_reserved) {
+>  		btrfs_pin_extent(fs_info, head->bytenr,
+>  				 head->num_bytes, 1);
+> @@ -2512,9 +2522,9 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
+>  		}
+>  	}
+>  
+> -	/* Also free its reserved qgroup space */
+> -	btrfs_qgroup_free_delayed_ref(fs_info, head->qgroup_ref_root,
+> -				      head->qgroup_reserved);
+> +	cleanup_ref_head_accounting(trans, head);
+> +
+> +	trace_run_delayed_ref_head(fs_info, head, 0);
+>  	btrfs_delayed_ref_unlock(head);
+>  	btrfs_put_delayed_ref_head(head);
+>  	return 0;
+> @@ -6991,6 +7001,7 @@ static noinline int check_ref_cleanup(struct btrfs_trans_handle *trans,
+>  	if (head->must_insert_reserved)
+>  		ret = 1;
+>  
+> +	cleanup_ref_head_accounting(trans, head);
+>  	mutex_unlock(&head->mutex);
+>  	btrfs_put_delayed_ref_head(head);
+>  	return ret;
 > 

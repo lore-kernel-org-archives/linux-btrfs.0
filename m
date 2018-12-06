@@ -2,209 +2,192 @@ Return-Path: <SRS0=+YL1=OP=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_NEOMUTT autolearn=ham
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7F8EEC04EB8
-	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 11:48:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 35244C04EB9
+	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 12:32:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4488F20661
-	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 11:48:00 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4488F20661
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.de
+	by mail.kernel.org (Postfix) with ESMTP id EE40A20838
+	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 12:32:08 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org EE40A20838
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728482AbeLFLr6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 6 Dec 2018 06:47:58 -0500
-Received: from mx2.suse.de ([195.135.220.15]:57008 "EHLO mx1.suse.de"
+        id S1729501AbeLFMcH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 6 Dec 2018 07:32:07 -0500
+Received: from mx2.suse.de ([195.135.220.15]:37814 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727832AbeLFLr6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 6 Dec 2018 06:47:58 -0500
+        id S1728482AbeLFMcH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 6 Dec 2018 07:32:07 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D9EAFAFA6
-        for <linux-btrfs@vger.kernel.org>; Thu,  6 Dec 2018 11:47:55 +0000 (UTC)
-Date:   Thu, 6 Dec 2018 05:47:53 -0600
-From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
-To:     Johannes Thumshirn <jthumshirn@suse.de>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 00/10] btrfs: Support for DAX devices
-Message-ID: <20181206114753.oqi5fg6krqmgmj4e@merlin>
-References: <20181205122835.19290-1-rgoldwyn@suse.de>
- <522e5e66-9d37-1f0d-95cc-eabcf19f8fc8@suse.de>
+        by mx1.suse.de (Postfix) with ESMTP id 8E06FAD8F;
+        Thu,  6 Dec 2018 12:32:04 +0000 (UTC)
+Subject: Re: [PATCH 01/10] btrfs: add btrfs_delete_ref_head helper
+To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+Cc:     Josef Bacik <jbacik@fb.com>
+References: <20181203152038.21388-1-josef@toxicpanda.com>
+ <20181203152038.21388-2-josef@toxicpanda.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <ad910339-556f-d554-634b-9b7f70b4371e@suse.com>
+Date:   Thu, 6 Dec 2018 14:32:02 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
+In-Reply-To: <20181203152038.21388-2-josef@toxicpanda.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <522e5e66-9d37-1f0d-95cc-eabcf19f8fc8@suse.de>
-User-Agent: NeoMutt/20180323
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 11:07 06/12, Johannes Thumshirn wrote:
-> On 05/12/2018 13:28, Goldwyn Rodrigues wrote:
-> > This is a support for DAX in btrfs. I understand there have been
-> > previous attempts at it. However, I wanted to make sure copy-on-write
-> > (COW) works on dax as well.
-> > 
-> > Before I present this to the FS folks I wanted to run this through the
-> > btrfs. Even though I wish, I cannot get it correct the first time
-> > around :/.. Here are some questions for which I need suggestions:
-> 
-> Hi Goldwyn,
-> 
-> I've thrown your patches (from your git tree) onto one of my pmem test
-> machines with this pmem config:
 
-Thanks. I will check on this. Ordered extents have been a pain to deal
-with for me (though mainly because of my incorrect usage)
 
+On 3.12.18 Ð³. 17:20 Ñ‡., Josef Bacik wrote:
+> From: Josef Bacik <jbacik@fb.com>
 > 
-> mayhem:~/:[0]# ndctl list
-> [
->   {
->     "dev":"namespace1.0",
->     "mode":"fsdax",
->     "map":"dev",
->     "size":792721358848,
->     "uuid":"3fd4ab18-5145-4675-85a0-e05e6f9bcee4",
->     "raw_uuid":"49264743-2351-41c5-9db9-38534813df61",
->     "sector_size":512,
->     "blockdev":"pmem1",
->     "numa_node":1
->   },
->   {
->     "dev":"namespace0.0",
->     "mode":"fsdax",
->     "map":"dev",
->     "size":792721358848,
->     "uuid":"dd0aec3c-7721-4621-8898-e50684a371b5",
->     "raw_uuid":"84ff5463-f76e-4ddf-a248-85122541e909",
->     "sector_size":4096,
->     "blockdev":"pmem0",
->     "numa_node":0
->   }
-> ]
+> We do this dance in cleanup_ref_head and check_ref_cleanup, unify it
+> into a helper and cleanup the calling functions.
 > 
-> Unfortunately I hit a btrfs_panic() with btrfs/002.
-> export TEST_DEV=/dev/pmem0
-> export SCRATCH_DEV=/dev/pmem1
-> export MOUNT_OPTIONS="-o dax"
-> ./check
-> [...]
-> [  178.173113] run fstests btrfs/002 at 2018-12-06 10:55:43
-> [  178.357044] BTRFS info (device pmem0): disk space caching is enabled
-> [  178.357047] BTRFS info (device pmem0): has skinny extents
-> [  178.360042] BTRFS info (device pmem0): enabling ssd optimizations
-> [  178.475918] BTRFS: device fsid ee888255-7f4a-4bf7-af65-e8a6a354aca8
-> devid 1 transid 3 /dev/pmem1
-> [  178.505717] BTRFS info (device pmem1): disk space caching is enabled
-> [  178.513593] BTRFS info (device pmem1): has skinny extents
-> [  178.520384] BTRFS info (device pmem1): flagging fs with big metadata
-> feature
-> [  178.530997] BTRFS info (device pmem1): enabling ssd optimizations
-> [  178.538331] BTRFS info (device pmem1): creating UUID tree
-> [  178.587200] BTRFS critical (device pmem1): panic in
-> ordered_data_tree_panic:57: Inconsistency in ordered tree at offset 0
-> (errno=-17 Object already exists)
-> [  178.603129] ------------[ cut here ]------------
-> [  178.608667] kernel BUG at fs/btrfs/ordered-data.c:57!
-> [  178.614333] invalid opcode: 0000 [#1] SMP PTI
-> [  178.619295] CPU: 87 PID: 8225 Comm: dd Kdump: loaded Tainted: G
->       E     4.20.0-rc5-default-btrfs-dax #920
-> [  178.630090] Hardware name: Intel Corporation PURLEY/PURLEY, BIOS
-> SE5C620.86B.0D.01.0010.072020182008 07/20/2018
-> [  178.640626] RIP: 0010:__btrfs_add_ordered_extent+0x325/0x410 [btrfs]
-> [  178.647404] Code: 28 4d 89 f1 49 c7 c0 90 9c 57 c0 b9 ef ff ff ff ba
-> 39 00 00 00 48 c7 c6 10 fe 56 c0 48 8b b8 d8 03 00 00 31 c0 e8 e2 99 06
-> 00 <0f> 0b 65 8b 05 d2 e4 b0 3f 89 c0 48 0f a3 05 78 5e cf c2 0f 92 c0
-> [  178.667019] RSP: 0018:ffffa3e3674c7ba8 EFLAGS: 00010096
-> [  178.672684] RAX: 000000000000008f RBX: ffff9770c2ac5748 RCX:
-> 0000000000000000
-> [  178.680254] RDX: ffff97711f9dee80 RSI: ffff97711f9d6868 RDI:
-> ffff97711f9d6868
-> [  178.687831] RBP: ffff97711d523000 R08: 0000000000000000 R09:
-> 000000000000065a
-> [  178.695411] R10: 00000000000003ff R11: 0000000000000001 R12:
-> ffff97710d66da70
-> [  178.702993] R13: ffff9770c2ac5600 R14: 0000000000000000 R15:
-> ffff97710d66d9c0
-> [  178.710573] FS:  00007fe11ef90700(0000) GS:ffff97711f9c0000(0000)
-> knlGS:0000000000000000
-> [  178.719122] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> [  178.725380] CR2: 000000000156a000 CR3: 000000eb30dfc006 CR4:
-> 00000000007606e0
-> [  178.732999] DR0: 0000000000000000 DR1: 0000000000000000 DR2:
-> 0000000000000000
-> [  178.740574] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7:
-> 0000000000000400
-> [  178.748147] PKRU: 55555554
-> [  178.751297] Call Trace:
-> [  178.754230]  btrfs_add_ordered_extent_dio+0x1d/0x30 [btrfs]
-> [  178.760269]  btrfs_create_dio_extent+0x79/0xe0 [btrfs]
-> [  178.765930]  btrfs_get_extent_map_write+0x1a9/0x2b0 [btrfs]
-> [  178.771959]  btrfs_file_dax_write+0x1f8/0x4f0 [btrfs]
-> [  178.777508]  ? current_time+0x3f/0x70
-> [  178.781672]  btrfs_file_write_iter+0x384/0x580 [btrfs]
-> [  178.787265]  ? pipe_read+0x243/0x2a0
-> [  178.791298]  __vfs_write+0xee/0x170
-> [  178.795241]  vfs_write+0xad/0x1a0
-> [  178.799008]  ? vfs_read+0x111/0x130
-> [  178.802949]  ksys_write+0x42/0x90
-> [  178.806712]  do_syscall_64+0x5b/0x180
-> [  178.810829]  entry_SYSCALL_64_after_hwframe+0x44/0xa9
-> [  178.816334] RIP: 0033:0x7fe11eabb3d0
-> [  178.820364] Code: 73 01 c3 48 8b 0d b8 ea 2b 00 f7 d8 64 89 01 48 83
-> c8 ff c3 66 0f 1f 44 00 00 83 3d b9 43 2c 00 00 75 10 b8 01 00 00 00 0f
-> 05 <48> 3d 01 f0 ff ff 73 31 c3 48 83 ec 08 e8 2e 90 01 00 48 89 04 24
-> [  178.840052] RSP: 002b:00007ffec969d978 EFLAGS: 00000246 ORIG_RAX:
-> 0000000000000001
-> [  178.848100] RAX: ffffffffffffffda RBX: 0000000000000000 RCX:
-> 00007fe11eabb3d0
-> [  178.855715] RDX: 0000000000000400 RSI: 000000000156a000 RDI:
-> 0000000000000001
-> [  178.863326] RBP: 0000000000000400 R08: 0000000000000003 R09:
-> 00007fe11ed7a698
-> [  178.870928] R10: 0000000010a8b550 R11: 0000000000000246 R12:
-> 000000000156a000
-> [  178.878529] R13: 0000000000000000 R14: 000000000156a000 R15:
-> 00007ffec969e9f1
-> [  178.886177] Modules linked in: rpcsec_gss_krb5(E) auth_rpcgss(E)
-> nfsv4(E) dns_resolver(E) nfs(E) lockd(E) grace(E) fscache(E) devlink(E)
-> ebtable_filter(E) ebtables(E) ip6table_filter(E) ip6_tables(E)
-> iptable_filter(E) ip_tables(E) x_tables(E) rpcrdma(E) sunrpc(E)
-> rdma_ucm(E) ib_uverbs(E) ib_iser(E) rdma_cm(E) iw_cm(E) ib_cm(E)
-> intel_rapl(E) libiscsi(E) af_packet(E) scsi_transport_iscsi(E)
-> skx_edac(E) configfs(E) x86_pkg_temp_thermal(E) intel_powerclamp(E)
-> iscsi_ibft(E) coretemp(E) iscsi_boot_sysfs(E) ipmi_ssif(E) kvm(E) msr(E)
-> i40iw(E) ib_core(E) ext4(E) nls_iso8859_1(E) nls_cp437(E) crc16(E)
-> mbcache(E) vfat(E) irqbypass(E) crc32_pclmul(E) ghash_clmulni_intel(E)
-> jbd2(E) joydev(E) fat(E) i40e(E) aesni_intel(E) iTCO_wdt(E) ptp(E)
-> aes_x86_64(E) iTCO_vendor_support(E) mei_me(E) crypto_simd(E) ipmi_si(E)
-> pps_core(E) lpc_ich(E) ioatdma(E) dax_pmem(E) ipmi_devintf(E) nd_pmem(E)
-> cryptd(E) glue_helper(E) pcspkr(E) mfd_core(E) i2c_i801(E) device_dax(E)
-> ipmi_msghandler(E) mei(E) nd_btt(E) dca(E)
-> [  178.886201]  pcc_cpufreq(E) acpi_pad(E) btrfs(E) libcrc32c(E) xor(E)
-> zstd_decompress(E) zstd_compress(E) xxhash(E) raid6_pq(E) hid_generic(E)
-> usbhid(E) sd_mod(E) sr_mod(E) cdrom(E) ast(E) i2c_algo_bit(E)
-> drm_kms_helper(E) syscopyarea(E) ahci(E) sysfillrect(E) xhci_pci(E)
-> sysimgblt(E) fb_sys_fops(E) libahci(E) xhci_hcd(E) ttm(E)
-> crc32c_intel(E) drm(E) libata(E) usbcore(E) wmi(E) nfit(E) libnvdimm(E)
-> button(E) sg(E) dm_multipath(E) dm_mod(E) scsi_dh_rdac(E) scsi_dh_emc(E)
-> scsi_dh_alua(E) scsi_mod(E) efivarfs(E) autofs4(E)
-> 
-> 
-> 
-> -- 
-> Johannes Thumshirn                            SUSE Labs Filesystems
-> jthumshirn@suse.de                                +49 911 74053 689
-> SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
-> GF: Felix Imendörffer, Jane Smithard, Graham Norton
-> HRB 21284 (AG Nürnberg)
-> Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
+> Reviewed-by: Omar Sandoval <osandov@fb.com>
 
--- 
-Goldwyn
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
+> ---
+>  fs/btrfs/delayed-ref.c | 14 ++++++++++++++
+>  fs/btrfs/delayed-ref.h |  3 ++-
+>  fs/btrfs/extent-tree.c | 22 +++-------------------
+>  3 files changed, 19 insertions(+), 20 deletions(-)
+> 
+> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+> index 9301b3ad9217..b3e4c9fcb664 100644
+> --- a/fs/btrfs/delayed-ref.c
+> +++ b/fs/btrfs/delayed-ref.c
+> @@ -400,6 +400,20 @@ struct btrfs_delayed_ref_head *btrfs_select_ref_head(
+>  	return head;
+>  }
+>  
+> +void btrfs_delete_ref_head(struct btrfs_delayed_ref_root *delayed_refs,
+> +			   struct btrfs_delayed_ref_head *head)
+> +{
+> +	lockdep_assert_held(&delayed_refs->lock);
+> +	lockdep_assert_held(&head->lock);
+> +
+> +	rb_erase_cached(&head->href_node, &delayed_refs->href_root);
+> +	RB_CLEAR_NODE(&head->href_node);
+> +	atomic_dec(&delayed_refs->num_entries);
+> +	delayed_refs->num_heads--;
+> +	if (head->processing == 0)
+> +		delayed_refs->num_heads_ready--;
+> +}
+> +
+>  /*
+>   * Helper to insert the ref_node to the tail or merge with tail.
+>   *
+> diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+> index 8e20c5cb5404..d2af974f68a1 100644
+> --- a/fs/btrfs/delayed-ref.h
+> +++ b/fs/btrfs/delayed-ref.h
+> @@ -261,7 +261,8 @@ static inline void btrfs_delayed_ref_unlock(struct btrfs_delayed_ref_head *head)
+>  {
+>  	mutex_unlock(&head->mutex);
+>  }
+> -
+> +void btrfs_delete_ref_head(struct btrfs_delayed_ref_root *delayed_refs,
+> +			   struct btrfs_delayed_ref_head *head);
+>  
+>  struct btrfs_delayed_ref_head *btrfs_select_ref_head(
+>  		struct btrfs_delayed_ref_root *delayed_refs);
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index d242a1174e50..c36b3a42f2bb 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -2474,12 +2474,9 @@ static int cleanup_ref_head(struct btrfs_trans_handle *trans,
+>  		spin_unlock(&delayed_refs->lock);
+>  		return 1;
+>  	}
+> -	delayed_refs->num_heads--;
+> -	rb_erase_cached(&head->href_node, &delayed_refs->href_root);
+> -	RB_CLEAR_NODE(&head->href_node);
+> +	btrfs_delete_ref_head(delayed_refs, head);
+>  	spin_unlock(&head->lock);
+>  	spin_unlock(&delayed_refs->lock);
+> -	atomic_dec(&delayed_refs->num_entries);
+>  
+>  	trace_run_delayed_ref_head(fs_info, head, 0);
+>  
+> @@ -6984,22 +6981,9 @@ static noinline int check_ref_cleanup(struct btrfs_trans_handle *trans,
+>  	if (!mutex_trylock(&head->mutex))
+>  		goto out;
+>  
+> -	/*
+> -	 * at this point we have a head with no other entries.  Go
+> -	 * ahead and process it.
+> -	 */
+> -	rb_erase_cached(&head->href_node, &delayed_refs->href_root);
+> -	RB_CLEAR_NODE(&head->href_node);
+> -	atomic_dec(&delayed_refs->num_entries);
+> -
+> -	/*
+> -	 * we don't take a ref on the node because we're removing it from the
+> -	 * tree, so we just steal the ref the tree was holding.
+> -	 */
+> -	delayed_refs->num_heads--;
+> -	if (head->processing == 0)
+> -		delayed_refs->num_heads_ready--;
+> +	btrfs_delete_ref_head(delayed_refs, head);
+>  	head->processing = 0;
+> +
+>  	spin_unlock(&head->lock);
+>  	spin_unlock(&delayed_refs->lock);
+>  
+> 

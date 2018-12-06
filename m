@@ -2,214 +2,164 @@ Return-Path: <SRS0=+YL1=OP=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 899FDC04EB8
-	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 12:51:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AF913C04EB8
+	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 13:04:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2743D20878
-	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 12:51:21 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2743D20878
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 6008320878
+	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 13:04:42 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="fW1/joF1"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 6008320878
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729054AbeLFMvT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 6 Dec 2018 07:51:19 -0500
-Received: from mx2.suse.de ([195.135.220.15]:41858 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728482AbeLFMvT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 6 Dec 2018 07:51:19 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 58705AFE7;
-        Thu,  6 Dec 2018 12:51:16 +0000 (UTC)
-Subject: Re: [PATCH 06/10] btrfs: update may_commit_transaction to use the
- delayed refs rsv
-To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-References: <20181203152038.21388-1-josef@toxicpanda.com>
- <20181203152038.21388-7-josef@toxicpanda.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <0a817feb-85fc-2f77-7ef9-b3bd09d2e60a@suse.com>
-Date:   Thu, 6 Dec 2018 14:51:14 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+        id S1728953AbeLFNEl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 6 Dec 2018 08:04:41 -0500
+Received: from mail-qt1-f194.google.com ([209.85.160.194]:43351 "EHLO
+        mail-qt1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728482AbeLFNEk (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Dec 2018 08:04:40 -0500
+Received: by mail-qt1-f194.google.com with SMTP id i7so363904qtj.10
+        for <linux-btrfs@vger.kernel.org>; Thu, 06 Dec 2018 05:04:39 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=subject:to:references:from:message-id:date:user-agent:mime-version
+         :in-reply-to:content-language:content-transfer-encoding;
+        bh=/rLg64+T+2R8gXZc8wyc2GhXGAG/YUkxxjO+U2eALNs=;
+        b=fW1/joF1k1clWriVeDBBoTI5S/0fZCnRN/VUbHRjuw39HYnaEI80W7YNa7sSZNH1nI
+         pVT3Qjps1sX41jUUnn+/kMHO3L/o6qIMto+F7i18hSCgrloQn067FXcxPcE30xrZqedP
+         OakRvOJABPdJG/D7HXTlAWgiyDcxtjnbVun7uRGFZmIuFIxTYVtQfbJ3eIG6d4Uueh8J
+         Llj1lv600sFIkELTA6TnEZ6jOBzSsx+8F+kl4XHcfX2Xi+aj6ZEOa2bFqCnqLHJOHeRt
+         VFS5Um00EnEAmS9lxdSjV5z2OaKHuwjhaiD0Jz85BewlGSsxA9kI/nbgOjmbUqCKMY6R
+         RyyQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=/rLg64+T+2R8gXZc8wyc2GhXGAG/YUkxxjO+U2eALNs=;
+        b=Khdj5QADEtZl4jD1CcmNQIaNRimDm0F7QHPluBjr6pxwzEm40GGABdnYmTbKtsIVZs
+         Q7Z65hwBac6o/zke6BcrK4CPkBStGmUacqRLlAZNFGeYTFft751tylS9njRqIqOrqk8Z
+         2JqAJdJlGeU0lzSCyU4p2cYh9wqiIeanBqTMAM7JSIo3vLlj9YisPtSYxmHczLzp844Z
+         sE4narUea8lIcE13ttYyVjjU/dKPqI/K63wwWqAExabYOsCVyjwMqtTc2b1HcW5coUWu
+         X3RXkAwj5mK0QMM5MGyXDAVZgkTK9GL9QpnKZBzNoEqcXhupNYsZ4Zt65kdkyW8kIHJW
+         RzbA==
+X-Gm-Message-State: AA+aEWa2J1yPboUZHxJxFxXE7YaVSyMi0+udMP/IVFC6r3YwoNE9QSUU
+        uGg5qf4Xh4TEsyoQTAgX18ErFVtLQCc=
+X-Google-Smtp-Source: AFSGD/WQuT43iL47G25IV5qGs+y9g8hGMgc97+Jw1quAVQ++ASwgFVhgWfyc2pucrUjImSnurPnt8Q==
+X-Received: by 2002:ad4:40c9:: with SMTP id x9mr27373319qvp.165.1544101478596;
+        Thu, 06 Dec 2018 05:04:38 -0800 (PST)
+Received: from [191.9.209.46] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.gmail.com with ESMTPSA id j89sm201798qkh.34.2018.12.06.05.04.37
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Thu, 06 Dec 2018 05:04:37 -0800 (PST)
+Subject: Re: What if TRIM issued a wipe on devices that don't TRIM?
+To:     Robert White <rwhite@pobox.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <bca3c064-0df5-a18c-7196-ac12c64141bf@pobox.com>
+From:   "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <6c2a6a00-509d-1585-381f-68582c44591f@gmail.com>
+Date:   Thu, 6 Dec 2018 08:04:33 -0500
+User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
+ Thunderbird/60.3.2
 MIME-Version: 1.0
-In-Reply-To: <20181203152038.21388-7-josef@toxicpanda.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <bca3c064-0df5-a18c-7196-ac12c64141bf@pobox.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 3.12.18 г. 17:20 ч., Josef Bacik wrote:
-> Any space used in the delayed_refs_rsv will be freed up by a transaction
-> commit, so instead of just counting the pinned space we also need to
-> account for any space in the delayed_refs_rsv when deciding if it will
-> make a different to commit the transaction to satisfy our space
-> reservation.  If we have enough bytes to satisfy our reservation ticket
-> then we are good to go, otherwise subtract out what space we would gain
-> back by committing the transaction and compare that against the pinned
-> space to make our decision.
+On 2018-12-06 01:11, Robert White wrote:
+> (1) Automatic and selective wiping of unused and previously used disk 
+> blocks is a good security measure, particularly when there is an 
+> encryption layer beneath the file system.
 > 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
-However, look below for one suggestion: 
-
-> ---
->  fs/btrfs/extent-tree.c | 24 +++++++++++++++---------
->  1 file changed, 15 insertions(+), 9 deletions(-)
+> (2) USB attached devices _never_ support TRIM and they are the most 
+> likely to fall into strangers hands.
+Not true on the first count.  Some really nice UAS devices do support 
+SCSI UNMAP and WRITESAME commands.
 > 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index aa0a638d0263..63ff9d832867 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -4843,8 +4843,10 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
->  {
->  	struct reserve_ticket *ticket = NULL;
->  	struct btrfs_block_rsv *delayed_rsv = &fs_info->delayed_block_rsv;
-> +	struct btrfs_block_rsv *delayed_refs_rsv = &fs_info->delayed_refs_rsv;
->  	struct btrfs_trans_handle *trans;
-> -	u64 bytes;
-> +	u64 bytes_needed;
-> +	u64 reclaim_bytes = 0;
->  
->  	trans = (struct btrfs_trans_handle *)current->journal_info;
->  	if (trans)
-> @@ -4857,15 +4859,15 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
->  	else if (!list_empty(&space_info->tickets))
->  		ticket = list_first_entry(&space_info->tickets,
->  					  struct reserve_ticket, list);
-> -	bytes = (ticket) ? ticket->bytes : 0;
-> +	bytes_needed = (ticket) ? ticket->bytes : 0;
->  	spin_unlock(&space_info->lock);
->  
-> -	if (!bytes)
-> +	if (!bytes_needed)
->  		return 0;
->  
->  	/* See if there is enough pinned space to make this reservation */
->  	if (__percpu_counter_compare(&space_info->total_bytes_pinned,
-> -				   bytes,
-> +				   bytes_needed,
->  				   BTRFS_TOTAL_BYTES_PINNED_BATCH) >= 0)
->  		goto commit;
->  
-> @@ -4877,14 +4879,18 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
->  		return -ENOSPC;
-
-If we remove this :
- if (space_info != delayed_rsv->space_info)                              
-                return -ENOSPC; 
-
-Check, can't we move the reclaim_bytes calc code above the __percpu_counter_compare 
-and eventually be left with just a single invocation to percpu_compare. 
-The diff should looke something along the lines of: 
-
-@@ -4828,19 +4827,6 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
-        if (!bytes)
-                return 0;
- 
--       /* See if there is enough pinned space to make this reservation */
--       if (__percpu_counter_compare(&space_info->total_bytes_pinned,
--                                  bytes,
--                                  BTRFS_TOTAL_BYTES_PINNED_BATCH) >= 0)
--               goto commit;
--
--       /*
--        * See if there is some space in the delayed insertion reservation for
--        * this reservation.
--        */
--       if (space_info != delayed_rsv->space_info)
--               return -ENOSPC;
--
-        spin_lock(&delayed_rsv->lock);
-        if (delayed_rsv->size > bytes)
-                bytes = 0;
-@@ -4850,9 +4836,8 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
- 
-        if (__percpu_counter_compare(&space_info->total_bytes_pinned,
-                                   bytes,
--                                  BTRFS_TOTAL_BYTES_PINNED_BATCH) < 0) {
-+                                  BTRFS_TOTAL_BYTES_PINNED_BATCH) < 0)
-                return -ENOSPC;
--       }
- 
- commit:
-        trans = btrfs_join_transaction(fs_info->extent_root);
-
-
->  
->  	spin_lock(&delayed_rsv->lock);
-> -	if (delayed_rsv->size > bytes)
-> -		bytes = 0;
-> -	else
-> -		bytes -= delayed_rsv->size;
-> +	reclaim_bytes += delayed_rsv->reserved;
->  	spin_unlock(&delayed_rsv->lock);
->  
-> +	spin_lock(&delayed_refs_rsv->lock);
-> +	reclaim_bytes += delayed_refs_rsv->reserved;
-> +	spin_unlock(&delayed_refs_rsv->lock);
-> +	if (reclaim_bytes >= bytes_needed)
-> +		goto commit;
-> +	bytes_needed -= reclaim_bytes;
-> +
->  	if (__percpu_counter_compare(&space_info->total_bytes_pinned,
-> -				   bytes,
-> +				   bytes_needed,
->  				   BTRFS_TOTAL_BYTES_PINNED_BATCH) < 0) {
->  		return -ENOSPC;
->  	}
+> (3) I vaguely recall that some flash chips will take bulk writhes of 
+> full sectors of 0x00 or 0xFF (I don't remember which) were second-best 
+> to TRIM for letting the flash controllers defragment their internals.
 > 
+> So it would be dog-slow, but it would be neat if BTRFS had a mount 
+> option to convert any TRIM command from above into the write of a zero, 
+> 0xFF, or trash block to the device below if that device doesn't support 
+> TRIM. Real TRIM support would override the block write.
+> 
+> Obviously doing an fstrim would involve a lot of slow device writes but 
+> only for people likely to do that sort of thing.
+> 
+> For testing purposes the destruction of unused pages in this manner 
+> might catch file system failures or coding errors.
+> 
+> (The other layer where this might be most appropriate is in cryptsetup 
+> et al, where it could lie about TRIM support, but that sort of stealth 
+> lag might be bad for filesystem-level operations. Doing it there would 
+> also loose the simpler USB use cases.)
+> 
+> ...Just a thought...
+First off, TRIM is an ATA command, not the kernel term.  `fstrim` 
+inherited the ATA name, but in kernel it's called a discard operation, 
+and it's kind of important to understand here that a discard operation 
+can result in a number of different behaviors.
+
+In particular, you have at least the following implementations:
+
+* On SCSI devices, a discard operation translates to a SCSI UNMAP 
+command.  As pointed out by Ronnie Sahlberg in his reply, this command 
+is purely advisory, may not result in any actual state change on the 
+target device, and is not guaranteed to wipe the data.  To actually wipe 
+things, you have to explicitly write bogus data to the given regions 
+(using either regular writes, or a WRITESAME command with the desired 
+pattern), and _then_ call UNMAP on them.
+* On dm-thinp devices, a discard operation results in simply unmapping 
+the blocks in the region it covers.  The underlying blocks themselves 
+are not wiped until they get reallocated (which may not happen when you 
+write to that region of the dm-thinp device again), and may not even be 
+wiped then (depending on how the dm-thinp device is configured).  Thus, 
+the same behavior as for SCSI is required here.
+* On SD/MMC devices, a discard operation results in an SD ERASE command 
+being issued.  This one is non-advisory (that is, it's guaranteed to 
+happen), and is supposed to guarantee an overwrite of the region with 
+zeroes or ones.
+* eMMC devices additionally define a discard operation independent of 
+the SD ERASE command which unmaps the region in the translation layer, 
+but does not wipe the blocks either on issuing the command or on 
+re-allocating the low-level blocks.  Essentially, it's just a hint for 
+the wear-leveling algorithm.
+* NVMe provides two different discard operations, and I'm not sure which 
+the kernel uses for NVMe block emulation.  They correspond almost 
+exactly to the SCSI UNMAP and SD ERASE commands in terms of behavior.
+* For ATA devices, a discard operation translates to an ATA TRIM 
+command.  This command doesn't even require that the data read back from 
+a region the command has been issued against be consistent between 
+reads, let alone that it actually returns zeroes, and it is completely 
+silent on how the device should actually implement the operation.  In 
+practice, most drives that implement it actually behave like dm-thinp 
+devices, unmapping the low-level blocks in the region and only clearing 
+them when they get reallocated, while returning any data they want on 
+subsequent reads to that logical region until a write happens.
+* The MTD subsystem has support for discard operations in the various 
+FTL's, and they appear from a cursory look at the code to behave like a 
+non-advisory version of the SCSI UNMAP command (FWIW, MTD's are what the 
+concept of a discard operation was originally implemented in Linux for).
+
+Notice that the only implementations that are actually guaranteed to 
+clear out the low-level physical blocks are the SD ERASE and one of the 
+two NVMe options, and all others require you to manually wipe the data 
+before issuing the discard operation to guarantee that no data is retained.
+
+Given this, I don't think this should be done as a mechanism of 
+intercepting or translating discard operations, but as something else 
+entirely.  Perhaps as a block-layer that wipes the region then issues a 
+discard for it to the lower level device if the device supports it?

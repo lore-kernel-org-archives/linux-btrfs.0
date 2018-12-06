@@ -3,130 +3,70 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 66B82C04EB8
-	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 07:40:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E1DC6C04EB8
+	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 07:54:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3120520878
-	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 07:40:48 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3120520878
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=pobox.com
+	by mail.kernel.org (Postfix) with ESMTP id B1A952082B
+	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Dec 2018 07:54:58 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B1A952082B
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=redracingparts.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728964AbeLFHkq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 6 Dec 2018 02:40:46 -0500
-Received: from resqmta-po-09v.sys.comcast.net ([96.114.154.168]:35598 "EHLO
-        resqmta-po-09v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1728294AbeLFHkq (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 6 Dec 2018 02:40:46 -0500
-Received: from resomta-po-15v.sys.comcast.net ([96.114.154.239])
-        by resqmta-po-09v.sys.comcast.net with ESMTP
-        id UoH7gEVJjVFMTUoH7g2PDP; Thu, 06 Dec 2018 07:40:45 +0000
-Received: from touchy.whiterc.com ([IPv6:2601:601:1400:69b4:35fb:69c0:6cd9:337d])
-        by resomta-po-15v.sys.comcast.net with ESMTPSA
-        id UoH5giZiNS0fxUoH6gud6k; Thu, 06 Dec 2018 07:40:44 +0000
-Subject: Re: [PATCH 00/10] btrfs: Support for DAX devices
-To:     Jeff Mahoney <jeffm@suse.com>,
-        Goldwyn Rodrigues <rgoldwyn@suse.de>,
-        linux-btrfs@vger.kernel.org
-References: <20181205122835.19290-1-rgoldwyn@suse.de>
- <6a5b4bb8-896f-14c8-fc71-71b7122dd836@suse.com>
-From:   Robert White <rwhite@pobox.com>
-Message-ID: <27107fd9-a8c8-9b3a-6d9f-3f020523f4ea@pobox.com>
-Date:   Thu, 6 Dec 2018 07:40:43 +0000
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.3.0
+        id S1729062AbeLFHy5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 6 Dec 2018 02:54:57 -0500
+Received: from mx4.mailmox.it ([78.47.95.75]:42452 "EHLO mx4.mailmox.it"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1728939AbeLFHy5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 6 Dec 2018 02:54:57 -0500
+X-Greylist: delayed 325 seconds by postgrey-1.27 at vger.kernel.org; Thu, 06 Dec 2018 02:54:56 EST
+Received: from mx7.mailmox.it (mx7.mailmox.it [217.146.207.17])
+        by mx4.mailmox.it (Postfix) with ESMTP id 0A38D54186
+        for <linux-btrfs@vger.kernel.org>; Thu,  6 Dec 2018 08:49:31 +0100 (CET)
+Received: from mx6.mailmox.it (mx6.mailmox.it [217.146.207.33])
+        by mx7.mailmox.it (Postfix) with ESMTPS id ECACE60BA4
+        for <linux-btrfs@vger.kernel.org>; Thu,  6 Dec 2018 08:49:29 +0100 (CET)
+Received: from lx.redracingparts.com (red.defende.it [217.146.207.57])
+        by mx6.mailmox.it (Postfix) with ESMTPSA id DCB3121DBE
+        for <linux-btrfs@vger.kernel.org>; Thu,  6 Dec 2018 08:49:29 +0100 (CET)
+Date:   Thu, 6 Dec 2018 08:49:29 +0100
+To:     linux-btrfs@vger.kernel.org
+From:   "RED Racing Parts (Info)" <newsletter@redracingparts.com>
+Reply-To: "RED Racing Parts (Info)" <red@redracingparts.com>
+Subject: New RED Racing Parts: 10% / 15% off and free shipping
+Message-ID: <KhnYUNZ4GypqQtoIEBjLoCXoJkOZRFDXS0vGA8TAo@lx.redracingparts.com>
+X-Mailer: PHPMailer 6.0.5 (https://github.com/PHPMailer/PHPMailer)
 MIME-Version: 1.0
-In-Reply-To: <6a5b4bb8-896f-14c8-fc71-71b7122dd836@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-CA
-Content-Transfer-Encoding: 8bit
-X-CMAE-Envelope: MS4wfHTaKKwmAdBQEIkTLoIH//OqZuB6gXxO2APM0RfEYj04e78nexHUD/moe4lAtIb6V0XBr+bSi3rVsIlpd4qIqTeOMT5Fqcb3MXEwjHYnbGFUX3odzZJj
- 8sUHjP1e+Neoe6qCKgzklWjuS22hNbs/aIiSBoV8LcDbdfdat1ZkclzvDi9bn5DiYEo48VYgvTaz+FdsVTXM5jKV699OcwHJ8G8WNlqzMOLxMeemQhBqlbAM
- 6BWOkz7gkrI7Mvrb70HP8TpbW3j/Sa8RQE6Q5h6T+pbo8DzIDMp6FtGAF0BuI/cu
+Content-Type: text/plain; charset=iso-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 12/5/18 9:37 PM, Jeff Mahoney wrote:
-> The high level idea that Jan Kara and I came up with in our conversation 
-> at Labs conf is pretty expensive.  We'd need to set a flag that pauses 
-> new page faults, set the WP bit on affected ranges, do the snapshot, 
-> commit, clear the flag, and wake up the waiting threads.  Neither of us 
-> had any concrete idea of how well that would perform and it still 
-> depends on finding a good way to resolve all open mmap ranges on a 
-> subvolume.  Perhaps using the address_space->private_list anchored on 
-> each root would work.
 
-This is a potentially wild idea, so "grain of salt" and all that. I may 
-misuse the exact wording.
+Dear Rider,
 
-So the essential problem of DAX is basically the opposite of 
-data-deduplication. Instead of merging two duplicate data regions, you 
-want to mark regions as at-risk while keeping the original content 
-intact if there are snapshots in conflict.
+RED Racing Parts offers the new full line of carbon fiber parts for your motorbike.
 
-So suppose you _require_ data checksums and data mode of "dup" or mirror 
-or one of the other fault tolerant layouts.
+For road / offroad motorcycles, visit our website on 
+https://www.redracingparts.com/english/motorbikesmotorcycles/productsandcomponents/general/intro/carbonfibrefiber.php
 
-By definition any block that gets written with content that it didn't 
-have before will now have a bad checksum.
+For trial motorcycles, visit our website on 
+https://www.redracingparts.com/english/motorbikesmotorcycles/productsandcomponents/general/intro/2mCarbonFiberParts.php
 
-If the inode is flagged for direct IO that's an indication that the 
-block has been updated.
+Free shipping and 10% OFF (15% OFF paying with Bitcoin) for today only.
 
-At this point you really just need to do the opposite of deduplication, 
-as in find/recover the original contents and assign/leave assigned those 
-to the old/other snapshots, then compute the new checksum on the 
-"original block" and assign it to the active subvolume.
 
-So when a region is mapped for direct IO, and it's refcount is greater 
-than one, and you get to a sync or close event, you "recover" the old 
-contents into a new location and assign those to "all the other users". 
-Now that original storage region has only one user, so on sync or close 
-you fix its checksums on the cheap.
+RED Racing Parts Staff
 
-Instead of the new data being a small rock sitting over a large rug to 
-make a lump, the new data is like a rock being slid under the rug to 
-make a lump.
 
-So the first write to an extent creates a burdensome copy to retain the 
-old contents, but second and subsequent writes to the same extent only 
-have the cost of an _eventual_ checksum of the original block list.
 
-Maybe If the data isn't already duplicated then the write mapping or the 
-DAX open or the setting of the S_DUP flag could force the file into an 
-extent block that _is_ duplicated.
 
-The mental leap required is that the new blocks don't need to belong to 
-the new state being created. The new blocks can be associated to the 
-snapshots since data copy is idempotent.
+If you found this email useful, please forward it on to your friends.
 
-The side note is that it only ever matters if the usage count is greater 
-than one, so at worst taking a snapshot, which is already a _little_ 
-racy anyway, would/could trigger a semi-lightweight copy of any S_DAX files:
+To unsubscribe our newsletters click here
+https://www.redracingparts.com/news/u.php?l=e&p=a0xLE2HGvDQRZhrJmqTPlinux-btrfs@vger.kernel.org
 
-If S_DAX :
-   If checksum invalid :
-     copy data as-is and checksum, store in snapshot
-   else : look for duplicate checksum
-     if duplicate found :
-       assign that extent to the snapshot
-     else :
-       If file opened for writing and has any mmaps for write :
-         copy extent and assign to new snapshot.
-       else :
-         increment usage count and assign current block to snapshot
 
-Anyway, I only know enough of the internals to be dangerous.
-
-Since the real goal of mmap is speed during actual update, this idea is 
-basically about amortizing the copy costs into the task of maintaining 
-the snapshots instead of leaving them in the immediate hands of the 
-time-critical updater.
-
-The flush, unmmap, or close by the user, or a system-wide sync event, 
-are also good points to expense the bookeeping time.

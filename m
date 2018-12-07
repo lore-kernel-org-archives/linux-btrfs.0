@@ -2,88 +2,77 @@ Return-Path: <SRS0=lg0L=OQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 31784C64EB1
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Dec 2018 09:57:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4AFECC07E85
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Dec 2018 12:18:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0290A20868
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Dec 2018 09:57:22 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0290A20868
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 09B6820892
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Dec 2018 12:18:50 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="T3cF5YAR"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 09B6820892
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726038AbeLGJ5U (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 7 Dec 2018 04:57:20 -0500
-Received: from mx2.suse.de ([195.135.220.15]:58006 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725985AbeLGJ5U (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 7 Dec 2018 04:57:20 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id CC320AC3E;
-        Fri,  7 Dec 2018 09:57:17 +0000 (UTC)
-Subject: Re: [PATCH 08/10] btrfs: rework btrfs_check_space_for_delayed_refs
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com
-References: <20181203152038.21388-1-josef@toxicpanda.com>
- <20181203152038.21388-9-josef@toxicpanda.com>
- <d1b3748c-3783-a57e-bf93-a92b5fd3806f@suse.com>
- <20181206175408.GB23615@twin.jikos.cz>
- <9fe84f0f-491a-1e63-e622-bb14282d5229@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <a0c4f7b8-98bc-0ac4-18f9-5790adbd3c76@suse.com>
-Date:   Fri, 7 Dec 2018 11:57:16 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+        id S1726117AbeLGMSs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 7 Dec 2018 07:18:48 -0500
+Received: from mail-it1-f180.google.com ([209.85.166.180]:53005 "EHLO
+        mail-it1-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726013AbeLGMSs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Dec 2018 07:18:48 -0500
+Received: by mail-it1-f180.google.com with SMTP id g76so6558072itg.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 07 Dec 2018 04:18:48 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=subject:to:references:from:message-id:date:user-agent:mime-version
+         :in-reply-to:content-language:content-transfer-encoding;
+        bh=2G9d+38rG7OfcXFxq23CXr16BRMuKHUzgC4SXaEYhh0=;
+        b=T3cF5YARxGCfXGTuJlraG4meYuaxap8XFHE84ZmAHqaQGgHbJp6rILdg11nD5y9PF+
+         /gbD5tWK0F6rxjNcHP5CrCbspLXtNZABwneES2VJ/nWUUt5Z3LFGNjxRoSQHdDYoB3tC
+         j/ceGuLtLEmKQVjrCs3oryY6q6x7dxpPmA2eqV9ZFvSCZgwMNNHunO0sR4hUmc2JImND
+         zWZwWv0ED6/yIUkjhz7nWmaTl7c3rDnYgSLeF9PYY6rLtMJwY6e52h8dyPmNzEnM3ji0
+         MO/dUW3PqS6BTVSqcroazvlTPJRkX/eaVfPZJ6REX1SCkuWgusD83brLCu4ADaHdfe6r
+         1jEA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=2G9d+38rG7OfcXFxq23CXr16BRMuKHUzgC4SXaEYhh0=;
+        b=qX9MNblzZ3IWET/YLDl59J6AQ2xqk/LIx3V9OUy9wjLL9JU0aU0Wf0FwhqrsBykv5s
+         v7rCRQpc5ZRovTXl7eI14xnBZSx/MJcWKcj4itxqAvVKxs72LNzVGyyg1T2ATRyicS6g
+         zzwMnpJQfMRt6YK8OZCQHsTTVp/jZ+BOg+/N51MFgfd2i00jNJYSLBXfk3IJbR+gRufg
+         XRHQK4LGfZ9nNrtxOIGvS+jVfZXAgkOsCBZRBYoHr5Tc7PcGZVC2Y0lzK5Uf/asAetjj
+         mqACooSTH69QZ3VL7V9xYS60tNzVaFPs1YIsXOhk3hXto1eGoDYmh96Reorfs4+ShE8m
+         P9Xg==
+X-Gm-Message-State: AA+aEWau6MB5ontZu63ahw29S/dQ0AXKHrxnwvvcdbFZdNQ0FECNt5v5
+        6MofyHQii1cwvdWUagvz/sx5NnvkCv8=
+X-Google-Smtp-Source: AFSGD/UAxs2v7MPePGTp19CHav2U9ClZloj9/Ijby+tfGtmS7oj6iNFIPUW7YkEFm1naP9PynKzvjg==
+X-Received: by 2002:a24:5608:: with SMTP id o8mr1795252itb.35.1544185126948;
+        Fri, 07 Dec 2018 04:18:46 -0800 (PST)
+Received: from [191.9.209.46] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.gmail.com with ESMTPSA id k64sm2329984itb.7.2018.12.07.04.18.45
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Fri, 07 Dec 2018 04:18:46 -0800 (PST)
+Subject: Re: What if TRIM issued a wipe on devices that don't TRIM?
+To:     Andrei Borzenkov <arvidjaar@gmail.com>,
+        Robert White <rwhite@pobox.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <bca3c064-0df5-a18c-7196-ac12c64141bf@pobox.com>
+ <6c2a6a00-509d-1585-381f-68582c44591f@gmail.com>
+ <90f90edd-c22c-b36e-4394-5a17b2a986ec@gmail.com>
+From:   "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <62109e89-331d-a5ea-456a-a79bc1a31451@gmail.com>
+Date:   Fri, 7 Dec 2018 07:18:43 -0500
+User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
+ Thunderbird/60.3.2
 MIME-Version: 1.0
-In-Reply-To: <9fe84f0f-491a-1e63-e622-bb14282d5229@suse.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <90f90edd-c22c-b36e-4394-5a17b2a986ec@gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -91,48 +80,21 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 7.12.18 г. 9:09 ч., Nikolay Borisov wrote:
-> 
-> 
-> On 6.12.18 г. 19:54 ч., David Sterba wrote:
->> On Thu, Dec 06, 2018 at 06:52:21PM +0200, Nikolay Borisov wrote:
->>>
->>>
->>> On 3.12.18 г. 17:20 ч., Josef Bacik wrote:
->>>> Now with the delayed_refs_rsv we can now know exactly how much pending
->>>> delayed refs space we need.  This means we can drastically simplify
->>>
->>> IMO it will be helpful if there is a sentence here referring back to
->>> btrfs_update_delayed_refs_rsv to put your first sentence into context.
->>> But I guess this is something David can also do.
+On 2018-12-06 23:09, Andrei Borzenkov wrote:
+> 06.12.2018 16:04, Austin S. Hemmelgarn пишет:
 >>
->> I'll update the changelog, but I'm not sure what exactly you want to see
->> there, please post the replacement text. Thanks.
+>> * On SCSI devices, a discard operation translates to a SCSI UNMAP
+>> command.  As pointed out by Ronnie Sahlberg in his reply, this command
+>> is purely advisory, may not result in any actual state change on the
+>> target device, and is not guaranteed to wipe the data.  To actually wipe
+>> things, you have to explicitly write bogus data to the given regions
+>> (using either regular writes, or a WRITESAME command with the desired
+>> pattern), and _then_ call UNMAP on them.
 > 
-> With the introduction of dealyed_refs_rsv infrastructure, namely
-> btrfs_update_delayed_refs_rsv we now know exactly how much pending
-> delayed refs space is required.
-
-To put things into context as to why I deem this change beneficial -
-basically doing the migration of reservation from transaction to delayed
-refs rsv modifies both size and reserved - they will be equal. Calling
-btrfs_update_delayed_refs_rsv actually increases ->size and doesn't
-really decrement ->reserved. Also we never do
-btrfs_block_rsv_migrate/use_block_rsv on the delayed refs block rsv so
-managing ->reserved  value for delayed refs rsv is different than for
-the rest of the block rsv.
-
-
+> WRITE SAME command has UNMAP bit and depending on device and kernel
+> version kernel may actually issue either UNMAP or WRITE SAME with UNMAP
+> bit set when doing discard.
 > 
->>
->>>> btrfs_check_space_for_delayed_refs by simply checking how much space we
->>>> have reserved for the global rsv (which acts as a spill over buffer) and
->>>> the delayed refs rsv.  If our total size is beyond that amount then we
->>>> know it's time to commit the transaction and stop any more delayed refs
->>>> from being generated.
->>>>
->>>> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
->>
-> 
+Good to know.  I've not looked at the SCSI code much, and actually 
+didn't know about the UNMAP bit for the WRITE SAME command, so I just 
+assumed that the kernel only used the UNMAP command.

@@ -2,114 +2,161 @@ Return-Path: <SRS0=lg0L=OQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,T_MIXED_ES
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 95A3CC07E85
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Dec 2018 04:09:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 805D5C07E85
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Dec 2018 05:24:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 548652082D
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Dec 2018 04:09:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1EE1620700
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Dec 2018 05:24:55 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="m2C3QSAo"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 548652082D
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="cShPYAO3"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1EE1620700
 Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725976AbeLGEJ4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 6 Dec 2018 23:09:56 -0500
-Received: from mail-lj1-f170.google.com ([209.85.208.170]:34288 "EHLO
-        mail-lj1-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725948AbeLGEJ4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Dec 2018 23:09:56 -0500
-Received: by mail-lj1-f170.google.com with SMTP id u6-v6so2388961ljd.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 06 Dec 2018 20:09:54 -0800 (PST)
+        id S1725952AbeLGFYy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 7 Dec 2018 00:24:54 -0500
+Received: from mail-wm1-f68.google.com ([209.85.128.68]:37174 "EHLO
+        mail-wm1-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725939AbeLGFYx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Dec 2018 00:24:53 -0500
+Received: by mail-wm1-f68.google.com with SMTP id g67so3214152wmd.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 06 Dec 2018 21:24:52 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
-        h=subject:to:references:from:openpgp:autocrypt:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=UjG+fVRoUDK8D9pWdnaiXQqndtHzGi/4x1zuXJs6B2E=;
-        b=m2C3QSAok5/NLt4UfcdN/NYTh+uZ3XqNdlocu45IZeYyfWoXi4l5345qyERmFVr1PI
-         KobA6X28wEBmsu8W+05iwxWEhsXp4HLCeOJUwWFdsaBDsJgIR0AfCDzAtg0sZT8VcR07
-         hWica9PbnaGIOXDNQyo0VixCShfHc3O119EsBIPGvVcb20XXEwLAXQUSvLZ752azpXXv
-         pUDzLj/dK+Vw2QggeTGdQB5nrbJr+B/9ObpZH4+WExc9rgQ7GOt6unEEGlsiB/WwmzBz
-         5zTyQap9eibraNYwwf19Id0hc7B5njLQYPqQRTFXhOQNHswSA63a/a29d1+fsfdB6t0o
-         G4pA==
+        h=mime-version:from:date:message-id:subject:to;
+        bh=HWI/JLlOQ7TQwDuGkZuUwR02Lj7SUeRywbrkhyA2118=;
+        b=cShPYAO3j7R+KpkMFpAk0x0QRLpRhKZgn2NJWN9I3dOvKSO5dB7WcXbiN9NvLfX1Hq
+         JcS2Sj2h/tRg2Jgrf0P3S2tCLSOfsBxptUDjbU2U/fDGQiSDvVBo8i2GJgl1bMHMsyPP
+         PaBuHRV7Z2g0PGd1iJTSo/bYKlZKStlGu3i6/RuAadE8Ey6HGOA1vowzzbt4284GPJOn
+         uHh/xnQ8JCSxznq7KZ7rQMxNpvaNPC+x1NvnibXmPVdprkhsqB8lmSukXn2lu7EdpBqy
+         d0clxjTRXvvFu8QIqmN7T5nnbovD9tH896UEaCep79QjnvNPbABhP9B7XhbREcq4uv2q
+         YfbQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:openpgp:autocrypt
-         :message-id:date:user-agent:mime-version:in-reply-to
-         :content-language:content-transfer-encoding;
-        bh=UjG+fVRoUDK8D9pWdnaiXQqndtHzGi/4x1zuXJs6B2E=;
-        b=PSt17qCRopdR30SH5vTSCqZ8sNwZ+/Fa3K1x9jl6b1XqmYPpTAH9GlZ03scqQQ3r9D
-         d1bozmSerlODZNO8HEpHQPh7uJX50eR+r8oDej8Ht4Qt9YPu9eHELXsXnb7MwBQe2uG0
-         nDo6uO67hb+e5I4qTreat09RANg2MHIC+u0pAJzawmryVsQAZsSMnyooJUtI7m7avRk0
-         2WtGIvHALidR8MRxGA2uIFz8OWCkRo2nIlvlhgDVAkqnT8TBrDPQOlbYh4kgtZAghuoa
-         0PxBdkuZMIxDQzQ1Tb32n3QBhC2QQM7aUEPdbCiZWZ3ZDnaIv8xV5iSHpgPHdPvKrj/e
-         rHHw==
-X-Gm-Message-State: AA+aEWaCeM0e8jrojxpeAp+s/5siUntPKjMR1DlM2sNO/Uu412DKw9/N
-        8pTAcHgMl2LA4sBWeGFOeqOc28Af6Bo=
-X-Google-Smtp-Source: AFSGD/UpgodRJTcwOe4SeMyOvnP0l566BuXKaFUEsEi3G/ClblMxmaDAb1XjvfVN/9zH2Q0kHaOahg==
-X-Received: by 2002:a2e:94ce:: with SMTP id r14-v6mr332846ljh.34.1544155793550;
-        Thu, 06 Dec 2018 20:09:53 -0800 (PST)
-Received: from [192.168.1.4] (109-252-55-124.nat.spd-mgts.ru. [109.252.55.124])
-        by smtp.gmail.com with ESMTPSA id p19-v6sm382036ljb.47.2018.12.06.20.09.51
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 06 Dec 2018 20:09:51 -0800 (PST)
-Subject: Re: What if TRIM issued a wipe on devices that don't TRIM?
-To:     "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Robert White <rwhite@pobox.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <bca3c064-0df5-a18c-7196-ac12c64141bf@pobox.com>
- <6c2a6a00-509d-1585-381f-68582c44591f@gmail.com>
-From:   Andrei Borzenkov <arvidjaar@gmail.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=arvidjaar@gmail.com; prefer-encrypt=mutual; keydata=
- xsDiBDxiRwwRBAC3CN9wdwpVEqUGmSoqF8tWVIT4P/bLCSZLkinSZ2drsblKpdG7x+guxwts
- +LgI8qjf/q5Lah1TwOqzDvjHYJ1wbBauxZ03nDzSLUhD4Ms1IsqlIwyTLumQs4vcQdvLxjFs
- G70aDglgUSBogtaIEsiYZXl4X0j3L9fVstuz4/wXtwCg1cN/yv/eBC0tkcM1nsJXQrC5Ay8D
- /1aA5qPticLBpmEBxqkf0EMHuzyrFlqVw1tUjZ+Ep2LMlem8malPvfdZKEZ71W1a/XbRn8FE
- SOp0tUa5GwdoDXgEp1CJUn+WLurR0KPDf01E4j/PHHAoABgrqcOTcIVoNpv2gNiBySVsNGzF
- XTeY/Yd6vQclkqjBYONGN3r9R8bWA/0Y1j4XK61qjowRk3Iy8sBggM3PmmNRUJYgroerpcAr
- 2byz6wTsb3U7OzUZ1Llgisk5Qum0RN77m3I37FXlIhCmSEY7KZVzGNW3blugLHcfw/HuCB7R
- 1w5qiLWKK6eCQHL+BZwiU8hX3dtTq9d7WhRW5nsVPEaPqudQfMSi/Ux1kc0mQW5kcmVpIEJv
- cnplbmtvdiA8YXJ2aWRqYWFyQGdtYWlsLmNvbT7CZQQTEQIAJQIbAwYLCQgHAwIGFQgCCQoL
- BBYCAwECHgECF4AFAliWAiQCGQEACgkQR6LMutpd94wFGwCeNuQnMDxve/Fo3EvYIkAOn+zE
- 21cAnRCQTXd1hTgcRHfpArEd/Rcb5+SczsBNBDxiRyQQBACQtME33UHfFOCApLki4kLFrIw1
- 5A5asua10jm5It+hxzI9jDR9/bNEKDTKSciHnM7aRUggLwTt+6CXkMy8an+tVqGL/MvDc4/R
- KKlZxj39xP7wVXdt8y1ciY4ZqqZf3tmmSN9DlLcZJIOT82DaJZuvr7UJ7rLzBFbAUh4yRKaN
- nwADBwQAjNvMr/KBcGsV/UvxZSm/mdpvUPtcw9qmbxCrqFQoB6TmoZ7F6wp/rL3TkQ5UElPR
- gsG12+Dk9GgRhnnxTHCFgN1qTiZNX4YIFpNrd0au3W/Xko79L0c4/49ten5OrFI/psx53fhY
- vLYfkJnc62h8hiNeM6kqYa/x0BEddu92ZG7CRgQYEQIABgUCPGJHJAAKCRBHosy62l33jMhd
- AJ48P7WDvKLQQ5MKnn2D/TI337uA/gCgn5mnvm4SBctbhaSBgckRmgSxfwQ=
-Message-ID: <90f90edd-c22c-b36e-4394-5a17b2a986ec@gmail.com>
-Date:   Fri, 7 Dec 2018 07:09:50 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
+        bh=HWI/JLlOQ7TQwDuGkZuUwR02Lj7SUeRywbrkhyA2118=;
+        b=aBvGNG9FVGWtk6PsEEpa5aDxXL7ft1QopxkaZlfVXWqcX7PDN2LAoeBUToSQErRaLc
+         iJ/5Jur28py9m46FjBeE4gvRzFauwYCo1+7WE1OjPX5MU9HJXiKjNOkPwWVKetlB7LRF
+         Co6SAE6O6onrzDZb6cDCokkaD0aI3HNgSrOC3z7cCpsYY33POVIK9aHcxfRAwIAlTlXW
+         Q7mXqJC15YTBwcx/qWjUKFhFodytEvCKGOpN4aEgJuLMxH+6TDpVyWnjdFVEWNjW8DCp
+         hq0J/PLEPtPrzUSWJsLmEsqSIRKYI0/VJHJgeb3ExgKAJYJHFspaMhN0cJ4jzSzkvuz4
+         w8sA==
+X-Gm-Message-State: AA+aEWboucyUFAD1GW1EziJ/WOZkmzmszHWbTc3DAKAc0oHZLrqcb3C3
+        9Sx2ooyn2LtN+2ZGveqP9AI/8239GIrrSl8YVN76Q1Wf
+X-Google-Smtp-Source: AFSGD/VGJX4O2d9BCSRjb3sYlvafF9pdNKgf9ZE5wmFc0tRFQVLVOuowi/Z9CS2kUrua2HJqW+9hNi1Y65Rnv6fLeu4=
+X-Received: by 2002:a1c:9183:: with SMTP id t125mr854088wmd.79.1544160290825;
+ Thu, 06 Dec 2018 21:24:50 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <6c2a6a00-509d-1585-381f-68582c44591f@gmail.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+From:   Doni Crosby <doni.crosby1995@gmail.com>
+Date:   Fri, 7 Dec 2018 00:24:40 -0500
+Message-ID: <CAJkMDBxer61uXZW0aWjJP4Ks1Ax76Jt10ogPF+KiSmSnACDjYA@mail.gmail.com>
+Subject: System unable to mount partition after a power loss
+To:     linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-06.12.2018 16:04, Austin S. Hemmelgarn пишет:
-> 
-> * On SCSI devices, a discard operation translates to a SCSI UNMAP
-> command.  As pointed out by Ronnie Sahlberg in his reply, this command
-> is purely advisory, may not result in any actual state change on the
-> target device, and is not guaranteed to wipe the data.  To actually wipe
-> things, you have to explicitly write bogus data to the given regions
-> (using either regular writes, or a WRITESAME command with the desired
-> pattern), and _then_ call UNMAP on them.
+All,
 
-WRITE SAME command has UNMAP bit and depending on device and kernel
-version kernel may actually issue either UNMAP or WRITE SAME with UNMAP
-bit set when doing discard.
+I'm coming to you to see if there is a way to fix or at least recover
+most of the data I have from a btrfs filesystem. The system went down
+after both a breaker and the battery backup failed. I cannot currently
+mount the system, with the following error from dmesg:
 
+Note: The vda1 is just the entire disk being passed from the VM host
+to the VM it's not an actual true virtual block device
+
+[ 499.704398] BTRFS info (device vda1): disk space caching is enabled
+[  499.704401] BTRFS info (device vda1): has skinny extents
+[  499.739522] BTRFS error (device vda1): parent transid verify failed
+on 3563231428608 wanted 5184691 found 5183327
+[  499.740257] BTRFS error (device vda1): parent transid verify failed
+on 3563231428608 wanted 5184691 found 5183327
+[  499.770847] BTRFS error (device vda1): open_ctree failed
+
+I have tried running btrfsck:
+parent transid verify failed on 3563224121344 wanted 5184691 found 5184688
+parent transid verify failed on 3563224121344 wanted 5184691 found 5184688
+parent transid verify failed on 3563224121344 wanted 5184691 found 5184688
+parent transid verify failed on 3563224121344 wanted 5184691 found 5184688
+parent transid verify failed on 3563224121344 wanted 5184691 found 5184688
+parent transid verify failed on 3563224121344 wanted 5184691 found 5184688
+parent transid verify failed on 3563221630976 wanted 5184691 found 5184688
+parent transid verify failed on 3563221630976 wanted 5184691 found 5184688
+parent transid verify failed on 3563223138304 wanted 5184691 found 5184688
+parent transid verify failed on 3563223138304 wanted 5184691 found 5184688
+parent transid verify failed on 3563223138304 wanted 5184691 found 5184688
+parent transid verify failed on 3563223138304 wanted 5184691 found 5184688
+parent transid verify failed on 3563224072192 wanted 5184691 found 5184688
+parent transid verify failed on 3563224072192 wanted 5184691 found 5184688
+parent transid verify failed on 3563225268224 wanted 5184691 found 5184689
+parent transid verify failed on 3563225268224 wanted 5184691 found 5184689
+parent transid verify failed on 3563227398144 wanted 5184691 found 5184689
+parent transid verify failed on 3563227398144 wanted 5184691 found 5184689
+parent transid verify failed on 3563229593600 wanted 5184691 found 5184689
+parent transid verify failed on 3563229593600 wanted 5184691 found 5184689
+parent transid verify failed on 3563229593600 wanted 5184691 found 5184689
+parent transid verify failed on 3563229593600 wanted 5184691 found 5184689
+Ignoring transid failure
+Checking filesystem on /dev/vda1
+UUID: 7c76bb05-b3dc-4804-bf56-88d010a214c6
+checking extents
+parent transid verify failed on 3563224842240 wanted 5184691 found 5184689
+parent transid verify failed on 3563224842240 wanted 5184691 found 5184689
+parent transid verify failed on 3563222974464 wanted 5184691 found 5184688
+parent transid verify failed on 3563222974464 wanted 5184691 found 5184688
+parent transid verify failed on 3563223121920 wanted 5184691 found 5184688
+parent transid verify failed on 3563223121920 wanted 5184691 found 5184688
+parent transid verify failed on 3563229970432 wanted 5184691 found 5184689
+parent transid verify failed on 3563229970432 wanted 5184691 found 5184689
+parent transid verify failed on 3563229970432 wanted 5184691 found 5184689
+parent transid verify failed on 3563229970432 wanted 5184691 found 5184689
+Ignoring transid failure
+parent transid verify failed on 3563231428608 wanted 5184691 found 5183327
+parent transid verify failed on 3563231428608 wanted 5184691 found 5183327
+parent transid verify failed on 3563231428608 wanted 5184691 found 5183327
+parent transid verify failed on 3563231428608 wanted 5184691 found 5183327
+Ignoring transid failure
+parent transid verify failed on 3563231444992 wanted 5184691 found 5183325
+parent transid verify failed on 3563231444992 wanted 5184691 found 5183325
+parent transid verify failed on 3563231444992 wanted 5184691 found 5183325
+parent transid verify failed on 3563231444992 wanted 5184691 found 5183325
+Ignoring transid failure
+parent transid verify failed on 3563231412224 wanted 5184691 found 5183325
+parent transid verify failed on 3563231412224 wanted 5184691 found 5183325
+parent transid verify failed on 3563231412224 wanted 5184691 found 5183325
+parent transid verify failed on 3563231412224 wanted 5184691 found 5183325
+Ignoring transid failure
+parent transid verify failed on 3563231461376 wanted 5184691 found 5183325
+parent transid verify failed on 3563231461376 wanted 5184691 found 5183325
+parent transid verify failed on 3563231461376 wanted 5184691 found 5183325
+parent transid verify failed on 3563231461376 wanted 5184691 found 5183325
+Ignoring transid failure
+Segmentation fault
+
+btrfs check --recover also ends in a segmentation fault
+
+I am aware of chunk-recover and have tried to run it but got weary
+when I saw dev0 not vda1.
+
+Any help would be appreciated,
+Doni
+
+uname -a:
+Linux Homophone 4.18.0-0.bpo.1-amd64 #1 SMP Debian 4.18.6-1~bpo9+1
+(2018-09-13) x86_64 GNU/Linux
+
+btrfs --version:
+btrfs-progs v4.7.3
+
+btrfs fi show:
+Label: 'Array'  uuid: 7c76bb05-b3dc-4804-bf56-88d010a214c6
+        Total devices 1 FS bytes used 6.05TiB
+        devid    1 size 29.11TiB used 6.13TiB path /dev/vda1

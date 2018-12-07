@@ -2,76 +2,85 @@ Return-Path: <SRS0=lg0L=OQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,T_MIXED_ES,
-	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8DC80C07E85
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Dec 2018 17:31:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1EA07C07E85
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Dec 2018 17:39:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3A0A72083D
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Dec 2018 17:31:16 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="ZaulqaAS"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3A0A72083D
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
+	by mail.kernel.org (Postfix) with ESMTP id AFB852083D
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Dec 2018 17:39:52 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org AFB852083D
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726138AbeLGRbP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 7 Dec 2018 12:31:15 -0500
-Received: from mail-qt1-f193.google.com ([209.85.160.193]:41318 "EHLO
-        mail-qt1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726103AbeLGRbO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Dec 2018 12:31:14 -0500
-Received: by mail-qt1-f193.google.com with SMTP id d18so5298069qto.8
-        for <linux-btrfs@vger.kernel.org>; Fri, 07 Dec 2018 09:31:13 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=subject:from:to:cc:references:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=ELvd7ifAv/OnvUyijjRZxcGj/ir+4TBPOpRbPsG8i6Q=;
-        b=ZaulqaASYav2eTMQc/UaQGKlOzvw+PpyVEGrhd6X6ecNSgMvDqOf8nYhvuaqAjG4+9
-         bYOqsKs3KJRcz3o2fQGgWCS9+KUVn/7r4Kxdn6khS89PA2lv9/r3rj45GIhCXoAE58yn
-         ulaU3gxtNIVu04AOEeFW2MDNzPm10smrAF8BxJTrIKA1Y5yK8eACWIk0EWKakv1iet2L
-         hd4ljltZjztqbM2Kwrp30TOlZSIrSG5f5wjSixVtL+2DTtktmpzU7p2drGUbQfPGII/5
-         2TL5F2zlyXNgra+1ITENZwc9Z+hRZXai8vWsQBeHqhzVaob1Ntns1EnLLhO8RsbVHGBL
-         hh1w==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:from:to:cc:references:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=ELvd7ifAv/OnvUyijjRZxcGj/ir+4TBPOpRbPsG8i6Q=;
-        b=cENasjwNvSeP+EnBwS6ck2rFepEwgC6gHFiLi5I0DqoeoAEvtj1f6bTj9A5nT0PWa4
-         G2ViJ39SS9uePPmA1dOPTqJi2VyYQNPDXcvPhuhs0b7KwxbPPs1Pw0l7TXRiu08S3InR
-         hBHKwgbjfnkkH1dgOT/G73ct/ADfrX5sOWdYO3gN8TTgKIuDOZ9J38EzdsLeXI1dPCin
-         DEkgShDn7+VHRmMF+mADgpPplpLIH9rCtFHmV+lwwGAjMk5b2+wxN7KLmKMeaPX7fSJQ
-         T9afIAXqKEEa4jo7dUy/g7cxRYzhAGxzRiYEa+VxteGDDGrj3aqb3A4ckyqbZh8qAW23
-         5iuQ==
-X-Gm-Message-State: AA+aEWYYiPe49AM/XlPxBfzqjdbjeJldAyusoyqQ/MhnB5WW7YL0RLaC
-        /MB6d0bXIHHJHzTxfrHwU/ccYheqVns=
-X-Google-Smtp-Source: AFSGD/XjOMgnUAYIdp4XMQ9oCH7KbAWcCHJB1fnhBDhz5oBlHuaQ3NSbbmbKzmylWjBJXpybiJZDSA==
-X-Received: by 2002:ad4:410c:: with SMTP id i12mr2836215qvp.219.1544203872542;
-        Fri, 07 Dec 2018 09:31:12 -0800 (PST)
-Received: from [192.168.1.104] (c-67-172-41-146.hsd1.ma.comcast.net. [67.172.41.146])
-        by smtp.gmail.com with ESMTPSA id o25sm2794132qtj.10.2018.12.07.09.31.11
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Fri, 07 Dec 2018 09:31:11 -0800 (PST)
-Subject: Re: System unable to mount partition after a power loss
-From:   Doni Crosby <doni.crosby1995@gmail.com>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     linux-btrfs@vger.kernel.org
-References: <CAJkMDBxer61uXZW0aWjJP4Ks1Ax76Jt10ogPF+KiSmSnACDjYA@mail.gmail.com>
- <1a8e4805-10a5-8203-5f62-7cd572ca578e@gmx.com>
- <CAJkMDBxD89DFYxV3Nc8EqKDupcxM2+kNGLtTo6QDWaTz-juT6g@mail.gmail.com>
-Message-ID: <2087f820-798c-c85d-a429-63c24acb8a65@gmail.com>
-Date:   Fri, 7 Dec 2018 12:31:11 -0500
-User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
- Thunderbird/60.3.2
+        id S1726086AbeLGRjv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 7 Dec 2018 12:39:51 -0500
+Received: from mx2.suse.de ([195.135.220.15]:52856 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726062AbeLGRjv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 7 Dec 2018 12:39:51 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 0EF74AFB4
+        for <linux-btrfs@vger.kernel.org>; Fri,  7 Dec 2018 17:39:49 +0000 (UTC)
+Subject: Re: [PATCH 2/8] btrfs: extent-tree: Open-code process_func in
+ __btrfs_mod_ref
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20181206065903.11343-1-wqu@suse.com>
+ <20181206065903.11343-3-wqu@suse.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <451a8151-0e3d-850c-5fb5-d84c753a7364@suse.com>
+Date:   Fri, 7 Dec 2018 19:39:48 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <CAJkMDBxD89DFYxV3Nc8EqKDupcxM2+kNGLtTo6QDWaTz-juT6g@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20181206065903.11343-3-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -79,191 +88,84 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I ran that command and I cannot get the email to send properly to the 
-mailing list as the attachment of the output is over 4.6M.
 
-On 12/7/2018 11:49 AM, Doni Crosby wrote:
-> The output of the command is attached. This is what errors showed up
-> on the system:
-> parent transid verify failed on 3563224842240 wanted 5184691 found 5184689
-> parent transid verify failed on 3563224842240 wanted 5184691 found 5184689
-> parent transid verify failed on 3563222974464 wanted 5184691 found 5184688
-> parent transid verify failed on 3563222974464 wanted 5184691 found 5184688
-> parent transid verify failed on 3563223121920 wanted 5184691 found 5184688
-> parent transid verify failed on 3563223121920 wanted 5184691 found 5184688
-> parent transid verify failed on 3563229970432 wanted 5184691 found 5184689
-> parent transid verify failed on 3563229970432 wanted 5184691 found 5184689
-> parent transid verify failed on 3563229970432 wanted 5184691 found 5184689
-> parent transid verify failed on 3563229970432 wanted 5184691 found 5184689
-> Ignoring transid failure
-> parent transid verify failed on 3563231428608 wanted 5184691 found 5183327
-> parent transid verify failed on 3563231428608 wanted 5184691 found 5183327
-> parent transid verify failed on 3563231428608 wanted 5184691 found 5183327
-> parent transid verify failed on 3563231428608 wanted 5184691 found 5183327
-> Ignoring transid failure
-> parent transid verify failed on 3563231444992 wanted 5184691 found 5183325
-> parent transid verify failed on 3563231444992 wanted 5184691 found 5183325
-> parent transid verify failed on 3563231444992 wanted 5184691 found 5183325
-> parent transid verify failed on 3563231444992 wanted 5184691 found 5183325
-> Ignoring transid failure
-> parent transid verify failed on 3563231412224 wanted 5184691 found 5183325
-> parent transid verify failed on 3563231412224 wanted 5184691 found 5183325
-> parent transid verify failed on 3563231412224 wanted 5184691 found 5183325
-> parent transid verify failed on 3563231412224 wanted 5184691 found 5183325
-> Ignoring transid failure
-> parent transid verify failed on 3563231461376 wanted 5184691 found 5183325
-> parent transid verify failed on 3563231461376 wanted 5184691 found 5183325
-> parent transid verify failed on 3563231461376 wanted 5184691 found 5183325
-> parent transid verify failed on 3563231461376 wanted 5184691 found 5183325
-> Ignoring transid failure
-> WARNING: eb corrupted: parent bytenr 31801344 slot 132 level 1 child
-> bytenr 3563231461376 level has 1 expect 0, skipping the slot
-> parent transid verify failed on 3563231494144 wanted 5184691 found 5183325
-> parent transid verify failed on 3563231494144 wanted 5184691 found 5183325
-> parent transid verify failed on 3563231494144 wanted 5184691 found 5183325
-> parent transid verify failed on 3563231494144 wanted 5184691 found 5183325
-> Ignoring transid failure
-> parent transid verify failed on 3563231526912 wanted 5184691 found 5183325
-> parent transid verify failed on 3563231526912 wanted 5184691 found 5183325
-> parent transid verify failed on 3563231526912 wanted 5184691 found 5183325
-> parent transid verify failed on 3563231526912 wanted 5184691 found 5183325
-> Ignoring transid failure
-> parent transid verify failed on 3563229626368 wanted 5184691 found 5184689
-> parent transid verify failed on 3563229626368 wanted 5184691 found 5184689
-> parent transid verify failed on 3563229937664 wanted 5184691 found 5184689
-> parent transid verify failed on 3563229937664 wanted 5184691 found 5184689
-> parent transid verify failed on 3563226857472 wanted 5184691 found 5184689
-> parent transid verify failed on 3563226857472 wanted 5184691 found 5184689
-> parent transid verify failed on 3563230674944 wanted 5184691 found 5183325
-> parent transid verify failed on 3563230674944 wanted 5184691 found 5183325
-> parent transid verify failed on 3563230674944 wanted 5184691 found 5183325
-> parent transid verify failed on 3563230674944 wanted 5184691 found 5183325
-> Ignoring transid failure
-> On Fri, Dec 7, 2018 at 2:22 AM Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->>
->>
->>
->> On 2018/12/7 下午1:24, Doni Crosby wrote:
->>> All,
->>>
->>> I'm coming to you to see if there is a way to fix or at least recover
->>> most of the data I have from a btrfs filesystem. The system went down
->>> after both a breaker and the battery backup failed. I cannot currently
->>> mount the system, with the following error from dmesg:
->>>
->>> Note: The vda1 is just the entire disk being passed from the VM host
->>> to the VM it's not an actual true virtual block device
->>>
->>> [ 499.704398] BTRFS info (device vda1): disk space caching is enabled
->>> [  499.704401] BTRFS info (device vda1): has skinny extents
->>> [  499.739522] BTRFS error (device vda1): parent transid verify failed
->>> on 3563231428608 wanted 5184691 found 5183327
->>
->> Transid mismatch normally means the fs is screwed up more or less.
->>
->> And according to your mount failure, it looks the fs get screwed up badly.
->>
->> What's the kernel version used in the VM?
->> I don't really think the VM is always using the latest kernel.
->>
->>> [  499.740257] BTRFS error (device vda1): parent transid verify failed
->>> on 3563231428608 wanted 5184691 found 5183327
->>> [  499.770847] BTRFS error (device vda1): open_ctree failed
->>>
->>> I have tried running btrfsck:
->>> parent transid verify failed on 3563224121344 wanted 5184691 found 5184688
->>> parent transid verify failed on 3563224121344 wanted 5184691 found 5184688
->>> parent transid verify failed on 3563224121344 wanted 5184691 found 5184688
->>> parent transid verify failed on 3563224121344 wanted 5184691 found 5184688
->>> parent transid verify failed on 3563224121344 wanted 5184691 found 5184688
->>> parent transid verify failed on 3563224121344 wanted 5184691 found 5184688
->>> parent transid verify failed on 3563221630976 wanted 5184691 found 5184688
->>> parent transid verify failed on 3563221630976 wanted 5184691 found 5184688
->>> parent transid verify failed on 3563223138304 wanted 5184691 found 5184688
->>> parent transid verify failed on 3563223138304 wanted 5184691 found 5184688
->>> parent transid verify failed on 3563223138304 wanted 5184691 found 5184688
->>> parent transid verify failed on 3563223138304 wanted 5184691 found 5184688
->>> parent transid verify failed on 3563224072192 wanted 5184691 found 5184688
->>> parent transid verify failed on 3563224072192 wanted 5184691 found 5184688
->>> parent transid verify failed on 3563225268224 wanted 5184691 found 5184689
->>> parent transid verify failed on 3563225268224 wanted 5184691 found 5184689
->>> parent transid verify failed on 3563227398144 wanted 5184691 found 5184689
->>> parent transid verify failed on 3563227398144 wanted 5184691 found 5184689
->>> parent transid verify failed on 3563229593600 wanted 5184691 found 5184689
->>> parent transid verify failed on 3563229593600 wanted 5184691 found 5184689
->>> parent transid verify failed on 3563229593600 wanted 5184691 found 5184689
->>> parent transid verify failed on 3563229593600 wanted 5184691 found 5184689
->>
->> According to your later dump-super output, it looks pretty possible that
->> the corrupted extents are all belonging to extent tree.
->>
->> So it's still possible that your fs tree and other essential trees are OK.
->>
->> Please dump the following output (with its stderr) to further confirm
->> the damage.
->> # btrfs ins dump-tree -b 31801344 --follow /dev/vda1
->>
->> If your objective is only to recover data, then you could start to try
->> btrfs-restore.
->> It's pretty hard to fix the heavily damaged extent tree.
->>
->> Thanks,
->> Qu
->>> Ignoring transid failure
->>> Checking filesystem on /dev/vda1
->>> UUID: 7c76bb05-b3dc-4804-bf56-88d010a214c6
->>> checking extents
->>> parent transid verify failed on 3563224842240 wanted 5184691 found 5184689
->>> parent transid verify failed on 3563224842240 wanted 5184691 found 5184689
->>> parent transid verify failed on 3563222974464 wanted 5184691 found 5184688
->>> parent transid verify failed on 3563222974464 wanted 5184691 found 5184688
->>> parent transid verify failed on 3563223121920 wanted 5184691 found 5184688
->>> parent transid verify failed on 3563223121920 wanted 5184691 found 5184688
->>> parent transid verify failed on 3563229970432 wanted 5184691 found 5184689
->>> parent transid verify failed on 3563229970432 wanted 5184691 found 5184689
->>> parent transid verify failed on 3563229970432 wanted 5184691 found 5184689
->>> parent transid verify failed on 3563229970432 wanted 5184691 found 5184689
->>> Ignoring transid failure
->>> parent transid verify failed on 3563231428608 wanted 5184691 found 5183327
->>> parent transid verify failed on 3563231428608 wanted 5184691 found 5183327
->>> parent transid verify failed on 3563231428608 wanted 5184691 found 5183327
->>> parent transid verify failed on 3563231428608 wanted 5184691 found 5183327
->>> Ignoring transid failure
->>> parent transid verify failed on 3563231444992 wanted 5184691 found 5183325
->>> parent transid verify failed on 3563231444992 wanted 5184691 found 5183325
->>> parent transid verify failed on 3563231444992 wanted 5184691 found 5183325
->>> parent transid verify failed on 3563231444992 wanted 5184691 found 5183325
->>> Ignoring transid failure
->>> parent transid verify failed on 3563231412224 wanted 5184691 found 5183325
->>> parent transid verify failed on 3563231412224 wanted 5184691 found 5183325
->>> parent transid verify failed on 3563231412224 wanted 5184691 found 5183325
->>> parent transid verify failed on 3563231412224 wanted 5184691 found 5183325
->>> Ignoring transid failure
->>> parent transid verify failed on 3563231461376 wanted 5184691 found 5183325
->>> parent transid verify failed on 3563231461376 wanted 5184691 found 5183325
->>> parent transid verify failed on 3563231461376 wanted 5184691 found 5183325
->>> parent transid verify failed on 3563231461376 wanted 5184691 found 5183325
->>> Ignoring transid failure
->>> Segmentation fault
->>>
->>> btrfs check --recover also ends in a segmentation fault
->>>
->>> I am aware of chunk-recover and have tried to run it but got weary
->>> when I saw dev0 not vda1.
->>>
->>> Any help would be appreciated,
->>> Doni
->>>
->>> uname -a:
->>> Linux Homophone 4.18.0-0.bpo.1-amd64 #1 SMP Debian 4.18.6-1~bpo9+1
->>> (2018-09-13) x86_64 GNU/Linux
->>>
->>> btrfs --version:
->>> btrfs-progs v4.7.3
->>>
->>> btrfs fi show:
->>> Label: 'Array'  uuid: 7c76bb05-b3dc-4804-bf56-88d010a214c6
->>>          Total devices 1 FS bytes used 6.05TiB
->>>          devid    1 size 29.11TiB used 6.13TiB path /dev/vda1
->>>
->>
+
+On 6.12.18 г. 8:58 ч., Qu Wenruo wrote:
+> The process_func is never a function hook used anywhere else.
+> 
+> Open code it to make later delayed ref refactor easier, so we can
+> refactor btrfs_inc_extent_ref() and btrfs_free_extent() in different
+> patches.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
+> ---
+>  fs/btrfs/extent-tree.c | 33 ++++++++++++++++++---------------
+>  1 file changed, 18 insertions(+), 15 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index ea2c3d5220f0..ea68d288d761 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -3220,10 +3220,6 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
+>  	int i;
+>  	int level;
+>  	int ret = 0;
+> -	int (*process_func)(struct btrfs_trans_handle *,
+> -			    struct btrfs_root *,
+> -			    u64, u64, u64, u64, u64, u64, bool);
+> -
+>  
+>  	if (btrfs_is_testing(fs_info))
+>  		return 0;
+> @@ -3235,11 +3231,6 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
+>  	if (!test_bit(BTRFS_ROOT_REF_COWS, &root->state) && level == 0)
+>  		return 0;
+>  
+> -	if (inc)
+> -		process_func = btrfs_inc_extent_ref;
+> -	else
+> -		process_func = btrfs_free_extent;
+> -
+>  	if (full_backref)
+>  		parent = buf->start;
+>  	else
+> @@ -3261,17 +3252,29 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
+>  
+>  			num_bytes = btrfs_file_extent_disk_num_bytes(buf, fi);
+>  			key.offset -= btrfs_file_extent_offset(buf, fi);
+> -			ret = process_func(trans, root, bytenr, num_bytes,
+> -					   parent, ref_root, key.objectid,
+> -					   key.offset, for_reloc);
+> +			if (inc)
+> +				ret = btrfs_inc_extent_ref(trans, root, bytenr,
+> +						num_bytes, parent, ref_root,
+> +						key.objectid, key.offset,
+> +						for_reloc);
+> +			else
+> +				ret = btrfs_free_extent(trans, root, bytenr,
+> +						num_bytes, parent, ref_root,
+> +						key.objectid, key.offset,
+> +						for_reloc);
+>  			if (ret)
+>  				goto fail;
+>  		} else {
+>  			bytenr = btrfs_node_blockptr(buf, i);
+>  			num_bytes = fs_info->nodesize;
+> -			ret = process_func(trans, root, bytenr, num_bytes,
+> -					   parent, ref_root, level - 1, 0,
+> -					   for_reloc);
+> +			if (inc)
+> +				ret = btrfs_inc_extent_ref(trans, root, bytenr,
+> +						num_bytes, parent, ref_root,
+> +						level - 1, 0, for_reloc);
+> +			else
+> +				ret = btrfs_free_extent(trans, root, bytenr,
+> +						num_bytes, parent, ref_root,
+> +						level - 1, 0, for_reloc);
+>  			if (ret)
+>  				goto fail;
+>  		}
+> 

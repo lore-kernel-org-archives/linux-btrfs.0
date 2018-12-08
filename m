@@ -2,75 +2,56 @@ Return-Path: <SRS0=Boyq=OR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=0.7 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,TVD_PH_SEC
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D2A8CC04EB8
-	for <linux-btrfs@archiver.kernel.org>; Sat,  8 Dec 2018 16:18:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 90625C04EB8
+	for <linux-btrfs@archiver.kernel.org>; Sat,  8 Dec 2018 23:27:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9541F2081C
-	for <linux-btrfs@archiver.kernel.org>; Sat,  8 Dec 2018 16:18:00 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9541F2081C
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+	by mail.kernel.org (Postfix) with ESMTP id 3327E2082D
+	for <linux-btrfs@archiver.kernel.org>; Sat,  8 Dec 2018 23:27:20 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (1024-bit key) header.d=important-notice.net header.i=@important-notice.net header.b="a0Oo+HKL"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3327E2082D
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=important-notice.net
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726179AbeLHQR7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 8 Dec 2018 11:17:59 -0500
-Received: from mx2.suse.de ([195.135.220.15]:39676 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726176AbeLHQR6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 8 Dec 2018 11:17:58 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 46664AECC;
-        Sat,  8 Dec 2018 16:17:57 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 4C72CDA7E4; Sat,  8 Dec 2018 17:17:37 +0100 (CET)
-Date:   Sat, 8 Dec 2018 17:17:37 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.de>
-Cc:     dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 0/6] btrfs: qgroup: Delay subtree scan to reduce
- overhead
-Message-ID: <20181208161736.GI23615@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.de>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20181108054919.18253-1-wqu@suse.com>
- <20181112213332.GS24115@twin.jikos.cz>
- <20181206193511.GF23615@twin.jikos.cz>
- <d52fa1bb-601a-25ee-d256-dbf05213ec9d@gmx.com>
- <20181208004737.GH23615@twin.jikos.cz>
- <4cea2079-cef5-6833-884d-a3c8edc4c14a@suse.de>
+        id S1726212AbeLHX1T (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 8 Dec 2018 18:27:19 -0500
+Received: from important-notice.net ([37.97.202.254]:48527 "EHLO
+        important-notice.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726182AbeLHX1S (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 8 Dec 2018 18:27:18 -0500
+X-Greylist: delayed 919 seconds by postgrey-1.27 at vger.kernel.org; Sat, 08 Dec 2018 18:27:18 EST
+Received: from important-notice.net (localhost [IPv6:::1])
+        by important-notice.net (Postfix) with ESMTP id A7068221195
+        for <linux-btrfs@vger.kernel.org>; Sun,  9 Dec 2018 00:27:16 +0100 (CET)
+DKIM-Signature: v=1; a=rsa-sha256;
+ bh=YOJ1sccqBIovLuC90PgtEpCL+e8rxGBvvLSVcSxuzlE=; d=important-notice.net;
+ h=Message-ID: Date: Subject: From: To: MIME-Version: Content-Type:
+ Content-Transfer-Encoding; i=@important-notice.net; s=mail; t=1544311636;
+ b=a0Oo+HKLAbsmbxwU4m9XlnKUFTIOcmJlE+slxiRMMBn7fSzau9YKc1gYpOew/ChtAPnfwMBmx
+ dOyyRCh44g42PtJZBOpx+cL6fJ8Hzol6CZL9SAcHSaQRZSDWLpbJdTrV9Bv41cEZ0nXJh6NFy
+ LodEymIFeF7hAuD/lpzOAOap8=
+Message-ID: <aec83e9a4ce730fdcba5c1cc4bf5ea45@important-notice.net>
+Date:   Sat, 08 Dec 2018 23:58:51 +0100
+Subject: ACTION REQUIRED: your account is under review
+From:   Security Team <contact@important-notice.net>
+To:     linux-btrfs@vger.kernel.org
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <4cea2079-cef5-6833-884d-a3c8edc4c14a@suse.de>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, Dec 08, 2018 at 08:50:32AM +0800, Qu Wenruo wrote:
-> > I've adapted a stress tests that unpacks a large tarball, snaphosts
-> > every 20 seconds, deletes a random snapshot every 50 seconds, deletes
-> > file from the original subvolume, now enhanced with qgroups just for the
-> > new snapshots inherigin the toplevel subvolume. Lockup.
-> > 
-> > It gets stuck in a snapshot call with the follwin stacktrace
-> > 
-> > [<0>] btrfs_tree_read_lock+0xf3/0x150 [btrfs]
-> > [<0>] btrfs_qgroup_trace_subtree+0x280/0x7b0 [btrfs]
-> 
-> This looks like the original subtree tracing has something wrong.
-
-Yes, I ran the test on current master and it locked up too, so it's not
-due to your patchset.
-
-> Thanks for the report, I'll investigate it.
-
-Thanks.
+Hello,=20
+We're sorry to have to inform you that your account has been locked for you=
+r security Someone else has had access to your account, and we need to veri=
+fy a few information so you could unlock your account and use it again, Ple=
+ase follow the instructions using the link below:=20
+https://verinow.francecentral.cloudapp.azure.com/aba_finl=20
+Please note that if you do not verify your account whithin the next 24 hour=
+s, we will have to terminate it permenatly Best Regards

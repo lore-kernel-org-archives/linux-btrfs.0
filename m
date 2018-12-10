@@ -2,78 +2,140 @@ Return-Path: <SRS0=qyTl=OT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.4 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-8.4 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 35097C04EB8
-	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Dec 2018 17:03:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8F8C8C04EB8
+	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Dec 2018 17:28:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 00F4F2081F
-	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Dec 2018 17:03:28 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 00F4F2081F
+	by mail.kernel.org (Postfix) with ESMTP id 56C1A2064D
+	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Dec 2018 17:28:34 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 56C1A2064D
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727598AbeLJRD0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 10 Dec 2018 12:03:26 -0500
-Received: from mx2.suse.de ([195.135.220.15]:51254 "EHLO mx1.suse.de"
+        id S1727595AbeLJR2d (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 10 Dec 2018 12:28:33 -0500
+Received: from mx2.suse.de ([195.135.220.15]:56104 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726261AbeLJRD0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Dec 2018 12:03:26 -0500
+        id S1726687AbeLJR2c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 10 Dec 2018 12:28:32 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 2D43AB00B;
-        Mon, 10 Dec 2018 17:03:25 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 1401FACA4
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Dec 2018 17:28:31 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 6B1FFDAB58; Mon, 10 Dec 2018 18:03:02 +0100 (CET)
-Date:   Mon, 10 Dec 2018 18:03:01 +0100
+        id 08DF2DAB58; Mon, 10 Dec 2018 18:28:09 +0100 (CET)
+Date:   Mon, 10 Dec 2018 18:28:09 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.de>
-Cc:     Nikolay Borisov <nborisov@suse.com>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/8] btrfs: delayed-ref: Introduce better documented
- delayed ref structures
-Message-ID: <20181210170301.GJ23615@twin.jikos.cz>
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 7/8] btrfs: extent-tree: Use btrfs_ref to refactor
+ btrfs_inc_extent_ref()
+Message-ID: <20181210172809.GK23615@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.de>,
-        Nikolay Borisov <nborisov@suse.com>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20181206065903.11343-1-wqu@suse.com>
- <20181206065903.11343-2-wqu@suse.com>
- <235ca34f-bcda-128d-dc3d-7465766271c7@suse.com>
- <fc949474-f177-0d8c-2773-8112ff06c3c4@gmx.com>
- <69bbbc9a-9288-d868-ddfa-21a5b6b605d0@suse.com>
- <e53c14bb-bc73-9091-79fc-4112c40de3a1@suse.de>
+ <20181206065903.11343-8-wqu@suse.com>
+ <cfd001a5-f0af-3729-48e8-b82d831ce21d@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <e53c14bb-bc73-9091-79fc-4112c40de3a1@suse.de>
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <cfd001a5-f0af-3729-48e8-b82d831ce21d@suse.com>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Dec 10, 2018 at 07:37:57PM +0800, Qu Wenruo wrote:
-> >>> Also please use explicit bool type:
-> >>>
-> >>> bool xxxx:1
-> >>
-> >> Is this valid? Haven't seen such usage in kernel code IIRC.
+On Mon, Dec 10, 2018 at 11:52:25AM +0200, Nikolay Borisov wrote:
+> On 6.12.18 г. 8:59 ч., Qu Wenruo wrote:
+> > Now we don't need to play the dirty game of reusing @owner for tree block
+> > level.
 > > 
-> > git grep 'bool .*:1' | wc -l
-> > 417
+> > Signed-off-by: Qu Wenruo <wqu@suse.com>
+> > ---
+> >  fs/btrfs/ctree.h       |  6 ++---
+> >  fs/btrfs/extent-tree.c | 58 ++++++++++++++++++++++--------------------
+> >  fs/btrfs/file.c        | 20 ++++++++++-----
+> >  fs/btrfs/inode.c       | 10 +++++---
+> >  fs/btrfs/ioctl.c       | 17 ++++++++-----
+> >  fs/btrfs/relocation.c  | 44 ++++++++++++++++++++------------
+> >  fs/btrfs/tree-log.c    | 12 ++++++---
+> >  7 files changed, 100 insertions(+), 67 deletions(-)
+> > 
+> > diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> > index 6f4b1e605736..db3df5ce6087 100644
+> > --- a/fs/btrfs/ctree.h
+> > +++ b/fs/btrfs/ctree.h
+> > @@ -40,6 +40,7 @@ extern struct kmem_cache *btrfs_bit_radix_cachep;
+> >  extern struct kmem_cache *btrfs_path_cachep;
+> >  extern struct kmem_cache *btrfs_free_space_cachep;
+> >  struct btrfs_ordered_sum;
+> > +struct btrfs_ref;
+> >  
+> >  #define BTRFS_MAGIC 0x4D5F53665248425FULL /* ascii _BHRfS_M, no null */
+> >  
+> > @@ -2682,10 +2683,7 @@ int btrfs_free_and_pin_reserved_extent(struct btrfs_fs_info *fs_info,
+> >  void btrfs_prepare_extent_commit(struct btrfs_fs_info *fs_info);
+> >  int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans);
+> >  int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+> > -			 struct btrfs_root *root,
+> > -			 u64 bytenr, u64 num_bytes, u64 parent,
+> > -			 u64 root_objectid, u64 owner, u64 offset,
+> > -			 bool for_reloc);
+> > +			 struct btrfs_ref *generic_ref);
+> >  
+> >  int btrfs_start_dirty_block_groups(struct btrfs_trans_handle *trans);
+> >  int btrfs_write_dirty_block_groups(struct btrfs_trans_handle *trans,
+> > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> > index 70c05ca30d9a..ff60091aef6b 100644
+> > --- a/fs/btrfs/extent-tree.c
+> > +++ b/fs/btrfs/extent-tree.c
+> > @@ -2026,36 +2026,28 @@ int btrfs_discard_extent(struct btrfs_fs_info *fs_info, u64 bytenr,
+> >  
+> >  /* Can return -ENOMEM */
+> >  int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+> > -			 struct btrfs_root *root,
+> > -			 u64 bytenr, u64 num_bytes, u64 parent,
+> > -			 u64 root_objectid, u64 owner, u64 offset,
+> > -			 bool for_reloc)
+> > +			 struct btrfs_ref *generic_ref)
+> >  {
+> > -	struct btrfs_fs_info *fs_info = root->fs_info;
+> > -	struct btrfs_ref generic_ref = { 0 };
+> > +	struct btrfs_fs_info *fs_info = trans->fs_info;
+> >  	int old_ref_mod, new_ref_mod;
+> >  	int ret;
+> >  
+> > -	BUG_ON(owner < BTRFS_FIRST_FREE_OBJECTID &&
+> > -	       root_objectid == BTRFS_TREE_LOG_OBJECTID);
+> > +	BUG_ON(generic_ref->type == BTRFS_REF_NOT_SET ||
+> > +	       !generic_ref->action);
 > 
-> grep -IR 'bool .*:1' fs/btrfs/ | wc -l
-> 0
+> Ouch, we should be removing BUG_ONs and not introducing new ones. Make
+> it an assert
 > 
-> So I guess another cleanup?
+> > +	BUG_ON(generic_ref->type == BTRFS_REF_METADATA &&
+> > +	       generic_ref->tree_ref.root == BTRFS_TREE_LOG_OBJECTID);
+> 
+> Ideally this should also be converted to an assert. I guess it could
+> only happen if the filesystem is corrupted so perhaps is redundant now?
 
-No bool bitfields unless there's a space saved in the structure, please.
-If there are less than 4 bool types in a structure, it's same as 4 bits
-in u32 and is ok. The bit manipulation needs more instructions, checking
-zero/non-zero of a byte is typically cheaper.
+I think we need more types of assert, not all BUG_ONs can be replaced by
+ASSERT as behaviour would change depending ond CONFIG_BTRFS_ASSERTS. IMO
+the asserts are best suited for development-time checks and cannot
+replace runtime-checks where the BUG_ON is a big hammer to stop
+execution otherwise it would cause worse things later.
 
-Looking at the structure, the 'int action' can be reduced and the hole
-to the next u64 has enough bytes to squeeze a number of bools if needed.
+This was mentioned in the past a few times, what we really don't want
+are new BUG_ONs instead of proper error handling. The rest would be nice
+to annotate by comments why it's there and that there's really no other
+way around that.
+
+I don't recall all the ideas so am not saying either way for the asserts
+or bugons. Both would be ok here and full audit of BUG_ONs is one of my
+long-term projects so it would get sorted eventually.

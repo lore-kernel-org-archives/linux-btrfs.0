@@ -2,193 +2,244 @@ Return-Path: <SRS0=qyTl=OT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.9 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D8228C04EB8
-	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Dec 2018 09:52:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A4E7DC04EB8
+	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Dec 2018 10:45:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9F85520855
-	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Dec 2018 09:52:32 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9F85520855
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id 620622084E
+	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Dec 2018 10:45:38 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="sBeOn9hI"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 620622084E
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=gmail.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726824AbeLJJwb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 10 Dec 2018 04:52:31 -0500
-Received: from mx2.suse.de ([195.135.220.15]:37476 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726713AbeLJJw3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Dec 2018 04:52:29 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 9EF3EAE10
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Dec 2018 09:52:26 +0000 (UTC)
-Subject: Re: [PATCH 7/8] btrfs: extent-tree: Use btrfs_ref to refactor
- btrfs_inc_extent_ref()
-To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20181206065903.11343-1-wqu@suse.com>
- <20181206065903.11343-8-wqu@suse.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <cfd001a5-f0af-3729-48e8-b82d831ce21d@suse.com>
-Date:   Mon, 10 Dec 2018 11:52:25 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+        id S1726685AbeLJKph (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 10 Dec 2018 05:45:37 -0500
+Received: from mail-vk1-f193.google.com ([209.85.221.193]:45252 "EHLO
+        mail-vk1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726614AbeLJKpg (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 10 Dec 2018 05:45:36 -0500
+Received: by mail-vk1-f193.google.com with SMTP id n126so2383435vke.12
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Dec 2018 02:45:35 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
+         :subject:to:cc:content-transfer-encoding;
+        bh=3SzrCm3oHlPNfjIvXfqE3Ip+rN/qqEVsBrSoQcqZQrA=;
+        b=sBeOn9hI2Hh6tqSw+0bPT09bqZwae7nkYaQzthqjY+88IIK+8Fohmb7DPVfhswlt6Q
+         TMo/fq5m74DOEiI017ApwHuJViqyitPwvhGi476WqMlf1a/z0dPig5gm1oIUW05aXPBK
+         EJ8A6zsA6fpjOeybgbzPsmuOY22EjUQC7fN8Ptpm98k8dPF1pAcuNJpfQbCfa8CMNKQt
+         j6VLynXNY9VRkfA/fDu6zwhnP5PwXAibuUuCjfEOfUYuB2+JynJL61cJfI5MqdNJUVQB
+         EuXXDAZYZKQp/SIoy2DtDHNoZBcPt9ocT59CXs4NDmN9ROqg1Swox85lCyobOfDZs4py
+         tpvw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
+         :from:date:message-id:subject:to:cc:content-transfer-encoding;
+        bh=3SzrCm3oHlPNfjIvXfqE3Ip+rN/qqEVsBrSoQcqZQrA=;
+        b=UuVwunJ5jjk+rsbXuUnFFGGlvK2KQjYtBPJGAwDMsV/WmG8tUybPmYqtJMI3/+rpip
+         HTubPbApfSpBhVXLOBt3f6+qVo2n/Py/sSeAAYvcslmhNJMozc0I1JTBAsWYs1/rWYRL
+         BG/XRR7GbGefhwD0ZsZHYiyxjwK8knh2LaAEPvW1zUYt6eY6r9QDeFMipuZ1Hrlk6/6W
+         TLxHy63TbFpJRmWgyseDNCsbW5e4gfvrQ7wGHUw0VWSkeq+jFH0G4xENIjkork9vkB8W
+         q41MkFzjVBJyZ5Og8LfYkjuiaYygVhkbSSHEaayrFhcA1iUCSaEEkzs/FP+Aji72RuTR
+         eysQ==
+X-Gm-Message-State: AA+aEWZmhn0tLA7y/oa82aoBws2/UYVIZqhrbvcYQmUvvMhy/ru7kRoE
+        7ZMlaEvnwBMa2sKwaUULmJD5uOX6SbQB2EYHilE=
+X-Google-Smtp-Source: AFSGD/V860MeIqvC1xoLlHHRb7DI9EKJpAFkP97qJR2Wrz1MW32w8Pi1KIbSfWninQIT3SS1dqKms87OP4dopE83aaM=
+X-Received: by 2002:a1f:4982:: with SMTP id w124mr4811792vka.4.1544438735151;
+ Mon, 10 Dec 2018 02:45:35 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20181206065903.11343-8-wqu@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+References: <20181108054919.18253-1-wqu@suse.com> <20181112213332.GS24115@twin.jikos.cz>
+ <20181206193511.GF23615@twin.jikos.cz> <d52fa1bb-601a-25ee-d256-dbf05213ec9d@gmx.com>
+ <20181208004737.GH23615@twin.jikos.cz> <4cea2079-cef5-6833-884d-a3c8edc4c14a@suse.de>
+In-Reply-To: <4cea2079-cef5-6833-884d-a3c8edc4c14a@suse.de>
+Reply-To: fdmanana@gmail.com
+From:   Filipe Manana <fdmanana@gmail.com>
+Date:   Mon, 10 Dec 2018 10:45:23 +0000
+Message-ID: <CAL3q7H61QEEHAK4PSfmx8PzO_cWRDPJeHEKizJjS=tdUzT2KSQ@mail.gmail.com>
+Subject: Re: [PATCH v2 0/6] btrfs: qgroup: Delay subtree scan to reduce overhead
+To:     Qu Wenruo <wqu@suse.de>
+Cc:     dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Qu Wenruo <wqu@suse.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Sat, Dec 8, 2018 at 12:51 AM Qu Wenruo <wqu@suse.de> wrote:
+>
+>
+>
+> On 2018/12/8 =E4=B8=8A=E5=8D=888:47, David Sterba wrote:
+> > On Fri, Dec 07, 2018 at 06:51:21AM +0800, Qu Wenruo wrote:
+> >>
+> >>
+> >> On 2018/12/7 =E4=B8=8A=E5=8D=883:35, David Sterba wrote:
+> >>> On Mon, Nov 12, 2018 at 10:33:33PM +0100, David Sterba wrote:
+> >>>> On Thu, Nov 08, 2018 at 01:49:12PM +0800, Qu Wenruo wrote:
+> >>>>> This patchset can be fetched from github:
+> >>>>> https://github.com/adam900710/linux/tree/qgroup_delayed_subtree_reb=
+ased
+> >>>>>
+> >>>>> Which is based on v4.20-rc1.
+> >>>>
+> >>>> Thanks, I'll add it to for-next soon.
+> >>>
+> >>> The branch was there for some time but not for at least a week (my
+> >>> mistake I did not notice in time). I've rebased it on top of recent
+> >>> misc-next, but without the delayed refs patchset from Josef.
+> >>>
+> >>> At the moment I'm considering it for merge to 4.21, there's still som=
+e
+> >>> time to pull it out in case it shows up to be too problematic. I'm
+> >>> mostly worried about the unknown interactions with the enospc updates=
+ or
+> >>
+> >> For that part, I don't think it would have some obvious problem for
+> >> enospc updates.
+> >>
+> >> As the user-noticeable effect is the delay of reloc tree deletion.
+> >>
+> >> Despite that, it's mostly transparent to extent allocation.
+> >>
+> >>> generally because of lack of qgroup and reloc code reviews.
+> >>
+> >> That's the biggest problem.
+> >>
+> >> However most of the current qgroup + balance optimization is done insi=
+de
+> >> qgroup code (to skip certain qgroup record), if we're going to hit som=
+e
+> >> problem then this patchset would have the highest possibility to hit
+> >> problem.
+> >>
+> >> Later patches will just keep tweaking qgroup to without affecting any
+> >> other parts mostly.
+> >>
+> >> So I'm fine if you decide to pull it out for now.
+> >
+> > I've adapted a stress tests that unpacks a large tarball, snaphosts
+> > every 20 seconds, deletes a random snapshot every 50 seconds, deletes
+> > file from the original subvolume, now enhanced with qgroups just for th=
+e
+> > new snapshots inherigin the toplevel subvolume. Lockup.
+> >
+> > It gets stuck in a snapshot call with the follwin stacktrace
+> >
+> > [<0>] btrfs_tree_read_lock+0xf3/0x150 [btrfs]
+> > [<0>] btrfs_qgroup_trace_subtree+0x280/0x7b0 [btrfs]
+>
+> This looks like the original subtree tracing has something wrong.
+>
+> Thanks for the report, I'll investigate it.
+
+Btw, there's another deadlock with qgroups. I don't recall if I ever
+reported it, but I still hit it with fstests (rarely happens) for at
+least 1 year iirc:
+
+[29845.732448] INFO: task kworker/u8:8:3898 blocked for more than 120 secon=
+ds.
+[29845.732852]       Not tainted 4.20.0-rc5-btrfs-next-40 #1
+[29845.733248] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs"
+disables this message.
+[29845.733558] kworker/u8:8    D    0  3898      2 0x80000000
+[29845.733878] Workqueue: btrfs-endio-write btrfs_endio_write_helper [btrfs=
+]
+[29845.734183] Call Trace:
+[29845.734499]  ? __schedule+0x3d4/0xbc0
+[29845.734818]  schedule+0x39/0x90
+[29845.735131]  btrfs_tree_read_lock+0xe7/0x140 [btrfs]
+[29845.735430]  ? remove_wait_queue+0x60/0x60
+[29845.735731]  find_parent_nodes+0x25e/0xe30 [btrfs]
+[29845.736037]  btrfs_find_all_roots_safe+0xc6/0x140 [btrfs]
+[29845.736342]  btrfs_find_all_roots+0x52/0x70 [btrfs]
+[29845.736710]  btrfs_qgroup_trace_extent_post+0x37/0x80 [btrfs]
+[29845.737046]  btrfs_add_delayed_data_ref+0x240/0x3d0 [btrfs]
+[29845.737362]  btrfs_inc_extent_ref+0xb7/0x140 [btrfs]
+[29845.737678]  __btrfs_mod_ref+0x174/0x250 [btrfs]
+[29845.737999]  ? add_pinned_bytes+0x60/0x60 [btrfs]
+[29845.738298]  update_ref_for_cow+0x26b/0x340 [btrfs]
+[29845.738592]  __btrfs_cow_block+0x221/0x5b0 [btrfs]
+[29845.738899]  btrfs_cow_block+0xf4/0x210 [btrfs]
+[29845.739200]  btrfs_search_slot+0x583/0xa40 [btrfs]
+[29845.739527]  ? init_object+0x6b/0x80
+[29845.739823]  btrfs_lookup_file_extent+0x4a/0x70 [btrfs]
+[29845.740119]  __btrfs_drop_extents+0x157/0xd70 [btrfs]
+[29845.740524]  insert_reserved_file_extent.constprop.66+0x97/0x2f0 [btrfs]
+[29845.740853]  ? start_transaction+0xa2/0x490 [btrfs]
+[29845.741166]  btrfs_finish_ordered_io+0x344/0x810 [btrfs]
+[29845.741489]  normal_work_helper+0xea/0x530 [btrfs]
+[29845.741880]  process_one_work+0x22f/0x5d0
+[29845.742174]  worker_thread+0x4f/0x3b0
+[29845.742462]  ? rescuer_thread+0x360/0x360
+[29845.742759]  kthread+0x103/0x140
+[29845.743044]  ? kthread_create_worker_on_cpu+0x70/0x70
+[29845.743336]  ret_from_fork+0x3a/0x50
+
+It happened last friday again on 4.20-rcX. It's caused by a change
+from 2017 (commit fb235dc06fac9eaa4408ade9c8b20d45d63c89b7 btrfs:
+qgroup: Move half of the qgroup accounting time out of commit trans).
+The task is deadlocking with itself.
+
+thanks
 
 
-On 6.12.18 г. 8:59 ч., Qu Wenruo wrote:
-> Now we don't need to play the dirty game of reusing @owner for tree block
-> level.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  fs/btrfs/ctree.h       |  6 ++---
->  fs/btrfs/extent-tree.c | 58 ++++++++++++++++++++++--------------------
->  fs/btrfs/file.c        | 20 ++++++++++-----
->  fs/btrfs/inode.c       | 10 +++++---
->  fs/btrfs/ioctl.c       | 17 ++++++++-----
->  fs/btrfs/relocation.c  | 44 ++++++++++++++++++++------------
->  fs/btrfs/tree-log.c    | 12 ++++++---
->  7 files changed, 100 insertions(+), 67 deletions(-)
-> 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 6f4b1e605736..db3df5ce6087 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -40,6 +40,7 @@ extern struct kmem_cache *btrfs_bit_radix_cachep;
->  extern struct kmem_cache *btrfs_path_cachep;
->  extern struct kmem_cache *btrfs_free_space_cachep;
->  struct btrfs_ordered_sum;
-> +struct btrfs_ref;
->  
->  #define BTRFS_MAGIC 0x4D5F53665248425FULL /* ascii _BHRfS_M, no null */
->  
-> @@ -2682,10 +2683,7 @@ int btrfs_free_and_pin_reserved_extent(struct btrfs_fs_info *fs_info,
->  void btrfs_prepare_extent_commit(struct btrfs_fs_info *fs_info);
->  int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans);
->  int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
-> -			 struct btrfs_root *root,
-> -			 u64 bytenr, u64 num_bytes, u64 parent,
-> -			 u64 root_objectid, u64 owner, u64 offset,
-> -			 bool for_reloc);
-> +			 struct btrfs_ref *generic_ref);
->  
->  int btrfs_start_dirty_block_groups(struct btrfs_trans_handle *trans);
->  int btrfs_write_dirty_block_groups(struct btrfs_trans_handle *trans,
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 70c05ca30d9a..ff60091aef6b 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -2026,36 +2026,28 @@ int btrfs_discard_extent(struct btrfs_fs_info *fs_info, u64 bytenr,
->  
->  /* Can return -ENOMEM */
->  int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
-> -			 struct btrfs_root *root,
-> -			 u64 bytenr, u64 num_bytes, u64 parent,
-> -			 u64 root_objectid, u64 owner, u64 offset,
-> -			 bool for_reloc)
-> +			 struct btrfs_ref *generic_ref)
->  {
-> -	struct btrfs_fs_info *fs_info = root->fs_info;
-> -	struct btrfs_ref generic_ref = { 0 };
-> +	struct btrfs_fs_info *fs_info = trans->fs_info;
->  	int old_ref_mod, new_ref_mod;
->  	int ret;
->  
-> -	BUG_ON(owner < BTRFS_FIRST_FREE_OBJECTID &&
-> -	       root_objectid == BTRFS_TREE_LOG_OBJECTID);
-> +	BUG_ON(generic_ref->type == BTRFS_REF_NOT_SET ||
-> +	       !generic_ref->action);
+> Qu
+>
+> > [<0>] do_walk_down+0x681/0xb20 [btrfs]
+> > [<0>] walk_down_tree+0xf5/0x1c0 [btrfs]
+> > [<0>] btrfs_drop_snapshot+0x43b/0xb60 [btrfs]
+> > [<0>] btrfs_clean_one_deleted_snapshot+0xc1/0x120 [btrfs]
+> > [<0>] cleaner_kthread+0xf8/0x170 [btrfs]
+> > [<0>] kthread+0x121/0x140
+> > [<0>] ret_from_fork+0x27/0x50
+> >
+> > and that's like 10th snapshot and ~3rd deltion. This is qgroup show:
+> >
+> > qgroupid         rfer         excl parent
+> > --------         ----         ---- ------
+> > 0/5         865.27MiB      1.66MiB ---
+> > 0/257           0.00B        0.00B ---
+> > 0/259           0.00B        0.00B ---
+> > 0/260       806.58MiB    637.25MiB ---
+> > 0/262           0.00B        0.00B ---
+> > 0/263           0.00B        0.00B ---
+> > 0/264           0.00B        0.00B ---
+> > 0/265           0.00B        0.00B ---
+> > 0/266           0.00B        0.00B ---
+> > 0/267           0.00B        0.00B ---
+> > 0/268           0.00B        0.00B ---
+> > 0/269           0.00B        0.00B ---
+> > 0/270       989.04MiB      1.22MiB ---
+> > 0/271           0.00B        0.00B ---
+> > 0/272       922.25MiB    416.00KiB ---
+> > 0/273       931.02MiB      1.50MiB ---
+> > 0/274       910.94MiB      1.52MiB ---
+> > 1/1           1.64GiB      1.64GiB
+> > 0/5,0/257,0/259,0/260,0/262,0/263,0/264,0/265,0/266,0/267,0/268,0/269,0=
+/270,0/271,0/272,0/273,0/274
+> >
+> > No IO or cpu activity at this point, the stacktrace and show output
+> > remains the same.
+> >
+> > So, considering this, I'm not going to add the patchset to 4.21 but wil=
+l
+> > keep it in for-next for testing, any fixups or updates will be applied.
+> >
+>
 
-Ouch, we should be removing BUG_ONs and not introducing new ones. Make
-it an assert
 
-> +	BUG_ON(generic_ref->type == BTRFS_REF_METADATA &&
-> +	       generic_ref->tree_ref.root == BTRFS_TREE_LOG_OBJECTID);
+--=20
+Filipe David Manana,
 
-Ideally this should also be converted to an assert. I guess it could
-only happen if the filesystem is corrupted so perhaps is redundant now?
-
->  
-> -	btrfs_init_generic_ref(&generic_ref, BTRFS_ADD_DELAYED_REF, bytenr,
-> -			       num_bytes, root->root_key.objectid, parent);
-> -	generic_ref.skip_qgroup = for_reloc;
-> -	if (owner < BTRFS_FIRST_FREE_OBJECTID) {
-> -		btrfs_init_tree_ref(&generic_ref, (int)owner, root_objectid);
-> -		ret = btrfs_add_delayed_tree_ref(trans, &generic_ref,
-> +	if (generic_ref->type == BTRFS_REF_METADATA)
-> +		ret = btrfs_add_delayed_tree_ref(trans, generic_ref,
->  				NULL, &old_ref_mod, &new_ref_mod);
-> -	} else {
-> -		btrfs_init_data_ref(&generic_ref, root_objectid, owner, offset);
-> -		ret = btrfs_add_delayed_data_ref(trans, &generic_ref, 0,
-> +	else
-> +		ret = btrfs_add_delayed_data_ref(trans, generic_ref, 0,
->  						 &old_ref_mod, &new_ref_mod);
-> -	}
->  
-> -	btrfs_ref_tree_mod(fs_info, &generic_ref);
-> +	btrfs_ref_tree_mod(fs_info, generic_ref);
->  
->  	if (ret == 0 && old_ref_mod < 0 && new_ref_mod >= 0)
-> -		add_pinned_bytes(fs_info, &generic_ref);
-> +		add_pinned_bytes(fs_info, generic_ref);
->  
->  	return ret;
->  }
-
-<snip>
+=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
+ right.=E2=80=9D

@@ -2,34 +2,34 @@ Return-Path: <SRS0=qyTl=OT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.9 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-6.9 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3E91FC04EB8
-	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Dec 2018 08:48:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 475ECC04EB8
+	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Dec 2018 09:21:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id F345020821
-	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Dec 2018 08:48:27 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org F345020821
+	by mail.kernel.org (Postfix) with ESMTP id F067020821
+	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Dec 2018 09:21:15 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org F067020821
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726654AbeLJIs0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 10 Dec 2018 03:48:26 -0500
-Received: from mx2.suse.de ([195.135.220.15]:55364 "EHLO mx1.suse.de"
+        id S1726513AbeLJJVO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 10 Dec 2018 04:21:14 -0500
+Received: from mx2.suse.de ([195.135.220.15]:60422 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726472AbeLJIs0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Dec 2018 03:48:26 -0500
+        id S1726209AbeLJJVO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 10 Dec 2018 04:21:14 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 47885AE3D;
-        Mon, 10 Dec 2018 08:48:23 +0000 (UTC)
-Subject: Re: [PATCH v2] Btrfs: use generic_remap_file_range_prep() for cloning
- and deduplication
-To:     fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <20181207132453.5455-1-fdmanana@kernel.org>
- <20181207152538.19269-1-fdmanana@kernel.org>
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 2787EADDD
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Dec 2018 09:21:11 +0000 (UTC)
+Subject: Re: [PATCH 3/8] btrfs: delayed-ref: Use btrfs_ref to refactor
+ btrfs_add_delayed_tree_ref()
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20181206065903.11343-1-wqu@suse.com>
+ <20181206065903.11343-4-wqu@suse.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -74,12 +74,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <d4bce2da-7803-8e5c-90a2-1ef8fe6be05f@suse.com>
-Date:   Mon, 10 Dec 2018 10:48:22 +0200
+Message-ID: <167bf109-41cf-f10b-4364-9af5701f5ee0@suse.com>
+Date:   Mon, 10 Dec 2018 11:21:10 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181207152538.19269-1-fdmanana@kernel.org>
+In-Reply-To: <20181206065903.11343-4-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -90,137 +90,115 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 7.12.18 г. 17:25 ч., fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
+On 6.12.18 г. 8:58 ч., Qu Wenruo wrote:
+> btrfs_add_delayed_tree_ref() has a longer and longer parameter list, and
+> some caller like btrfs_inc_extent_ref() are using @owner as level for
+> delayed tree ref.
 > 
-> Since cloning and deduplication are no longer Btrfs specific operations, we
-> now have generic code to handle parameter validation, compare file ranges
-> used for deduplication, clear capabilities when cloning, etc. This change
-> makes Btrfs use it, eliminating a lot of code in Btrfs and also fixing a
-> few bugs, such as:
+> Instead of making the parameter list longer and longer, use btrfs_ref to
+> refactor it, so each parameter assignment should be self-explaining
+> without dirty level/owner trick, and provides the basis for later refactor.
 > 
-> 1) When cloning, the destination file's capabilities were not dropped
->    (the fstest generic/513 tests this);
-> 
-> 2) We were not checking if the destination file is immutable;
-> 
-> 3) Not checking if either the source or destination files are swap
->    files (swap file support is coming soon for Btrfs);
-> 
-> 4) System limits were not checked (resource limits and O_LARGEFILE).
-> 
-> Note that the generic helper generic_remap_file_range_prep() does start
-> and waits for writeback by calling filemap_write_and_wait_range(), however
-> that is not enough for Btrfs for two reasons:
-> 
-> 1) With compression, we need to start writeback twice in order to get the
->    pages marked for writeback and ordered extents created;
-> 
-> 2) filemap_write_and_wait_range() (and all its other variants) only waits
->    for the IO to complete, but we need to wait for the ordered extents to
->    finish, so that when we do the actual reflinking operations the file
->    extent items are in the fs tree. This is also important due to the fact
->    that the generic helper, for the deduplication case, compares the
->    contents of the pages in the requested range, which might require
->    reading extents from disk in the very unlikely case that pages get
->    invalidated after writeback finishes (so the file extent items must be
->    up to date in the fs tree).
-> 
-> Since these reasons are specific to Btrfs we have to do it in the Btrfs
-> code before calling generic_remap_file_range_prep(). This also results in
-> a more simple way of dealing with existing delalloc in the source/target
-> ranges, specially for the deduplication case where we used to lock all the
-> pages first and then if we found any dealloc for the range, or ordered
-> extent, we would unlock the pages trigger writeback and wait for ordered
-> extents to complete, then lock all the pages again and check if
-> deduplication can be done. So now we get a simpler approach: lock the
-> inodes, then trigger writeback and then wait for ordered extents to
-> complete.
-> 
-> So make btrfs use generic_remap_file_range_prep() (XFS and OCFS2 use it)
-> to eliminate duplicated code, fix a few bugs and benefit from future bug
-> fixes done there - for example the recent clone and dedupe bugs involving
-> reflinking a partial EOF block got a counterpart fix in the generic helpe,
-> since it affected all filesystems supporting these operations, so we no
-> longer need special checks in Btrfs for them.
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-
-Two minor suggestions but other LGTM so:
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 > ---
+>  fs/btrfs/delayed-ref.c | 24 ++++++++++++++-------
+>  fs/btrfs/delayed-ref.h |  4 +---
+>  fs/btrfs/extent-tree.c | 48 ++++++++++++++++++++++++------------------
+>  3 files changed, 44 insertions(+), 32 deletions(-)
 > 
-> V2: Removed check that verifies if either of the inodes is a directory,
->     as it is done by generic_remap_file_range_prep(). Oddly in btrfs was being
->     done only for cloning but not for dedupe.
-> 
->  fs/btrfs/ioctl.c | 612 ++++++++++++-------------------------------------------
->  1 file changed, 129 insertions(+), 483 deletions(-)
-> 
-
-<snip>
-
-> @@ -4213,11 +3854,9 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
->  	struct inode *inode = file_inode(file);
->  	struct inode *src = file_inode(file_src);
->  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-
-nit: This variable can be removed  and btrfs_sb...
-
-> -	struct btrfs_root *root = BTRFS_I(inode)->root;
+> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+> index 11dd46be4017..c42b8ade7b07 100644
+> --- a/fs/btrfs/delayed-ref.c
+> +++ b/fs/btrfs/delayed-ref.c
+> @@ -710,9 +710,7 @@ static void init_delayed_ref_common(struct btrfs_fs_info *fs_info,
+>   * transaction commits.
+>   */
+>  int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
+> -			       u64 bytenr, u64 num_bytes, u64 parent,
+> -			       u64 ref_root,  int level, bool for_reloc,
+> -			       int action,
+> +			       struct btrfs_ref *generic_ref,
+>  			       struct btrfs_delayed_extent_op *extent_op,
+>  			       int *old_ref_mod, int *new_ref_mod)
+>  {
+> @@ -722,10 +720,17 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
+>  	struct btrfs_delayed_ref_root *delayed_refs;
+>  	struct btrfs_qgroup_extent_record *record = NULL;
+>  	int qrecord_inserted;
+> -	bool is_system = (ref_root == BTRFS_CHUNK_TREE_OBJECTID);
+> +	bool is_system = (generic_ref->real_root == BTRFS_CHUNK_TREE_OBJECTID);
+> +	int action = generic_ref->action;
+> +	int level = generic_ref->tree_ref.level;
 >  	int ret;
->  	u64 len = olen;
->  	u64 bs = fs_info->sb->s_blocksize;
-
-can be used directly here, since we only care about the blocksize, saves
-sizeof(void *) worth of bytes on the stack.
-
-> -	int same_inode = src == inode;
+> +	u64 bytenr = generic_ref->bytenr;
+> +	u64 num_bytes = generic_ref->len;
+> +	u64 parent = generic_ref->parent;
+>  	u8 ref_type;
 >  
->  	/*
->  	 * TODO:
-> @@ -4230,101 +3869,32 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
->  	 *   be either compressed or non-compressed.
->  	 */
->  
-> -	if (btrfs_root_readonly(root))
-> -		return -EROFS;
-> -
-> -	if (file_src->f_path.mnt != file->f_path.mnt ||
-> -	    src->i_sb != inode->i_sb)
-> -		return -EXDEV;
-> -
-> -	if (S_ISDIR(src->i_mode) || S_ISDIR(inode->i_mode))
-> -		return -EISDIR;
-> -
-> -	if (!same_inode) {
-> -		btrfs_double_inode_lock(src, inode);
-> -	} else {
-> -		inode_lock(src);
-> -	}
-> -
->  	/* don't make the dst file partly checksummed */
->  	if ((BTRFS_I(src)->flags & BTRFS_INODE_NODATASUM) !=
-> -	    (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)) {
-> -		ret = -EINVAL;
-> -		goto out_unlock;
-> -	}
-> +	    (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM))
-> +		return -EINVAL;
+> +	ASSERT(generic_ref && generic_ref->type == BTRFS_REF_METADATA &&
+> +		generic_ref->action);
 
-This common check between btrfs_extent_same and btrfs_clone_files can be
-factored out to btrfs_remap_file_range_prep or btrfs_remap_file_range
+You have already dereferenced generic_ref by the time you ASSERT and
+would have crashed. I guess the first condition in the assert can be
+removed.
 
->  
-> -	/* determine range to clone */
-> -	ret = -EINVAL;
-> -	if (off + len > src->i_size || off + len < off)
-> -		goto out_unlock;
-> -	if (len == 0)
-> -		olen = len = src->i_size - off;
+>  	BUG_ON(extent_op && extent_op->is_data);
+>  	ref = kmem_cache_alloc(btrfs_delayed_tree_ref_cachep, GFP_NOFS);
+>  	if (!ref)
 
 <snip>
->  }
+
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -2031,6 +2031,7 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+>  			 bool for_reloc)
+>  {
+>  	struct btrfs_fs_info *fs_info = root->fs_info;
+> +	struct btrfs_ref generic_ref = { 0 };
+>  	int old_ref_mod, new_ref_mod;
+>  	int ret;
 >  
-> 
+> @@ -2040,13 +2041,13 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+>  	btrfs_ref_tree_mod(root, bytenr, num_bytes, parent, root_objectid,
+>  			   owner, offset, BTRFS_ADD_DELAYED_REF);
+>  
+> +	btrfs_init_generic_ref(&generic_ref, BTRFS_ADD_DELAYED_REF, bytenr,
+> +			       num_bytes, root->root_key.objectid, parent);
+> +	generic_ref.skip_qgroup = for_reloc;
+>  	if (owner < BTRFS_FIRST_FREE_OBJECTID) {
+> -		ret = btrfs_add_delayed_tree_ref(trans, bytenr,
+> -						 num_bytes, parent,
+> -						 root_objectid, (int)owner,
+> -						 for_reloc,
+> -						 BTRFS_ADD_DELAYED_REF, NULL,
+> -						 &old_ref_mod, &new_ref_mod);
+> +		btrfs_init_tree_ref(&generic_ref, (int)owner, root_objectid);
+
+The cast is now redundant since the parameter definition of
+btrfs_init_tree_ref is an int.
+> +		ret = btrfs_add_delayed_tree_ref(trans, &generic_ref,
+> +				NULL, &old_ref_mod, &new_ref_mod);
+>  	} else {
+>  		ret = btrfs_add_delayed_data_ref(trans, root, bytenr,
+>  						 num_bytes, parent,
+
+<snip>
+
+> @@ -7102,11 +7110,8 @@ int btrfs_free_extent(struct btrfs_trans_handle *trans,
+>  		old_ref_mod = new_ref_mod = 0;
+>  		ret = 0;
+>  	} else if (owner < BTRFS_FIRST_FREE_OBJECTID) {
+> -		ret = btrfs_add_delayed_tree_ref(trans, bytenr,
+> -						 num_bytes, parent,
+> -						 root_objectid, (int)owner,
+> -						 for_reloc,
+> -						 BTRFS_DROP_DELAYED_REF, NULL,
+> +		btrfs_init_tree_ref(&generic_ref, (int)owner, root_objectid);
+
+ditto about the cast
+> +		ret = btrfs_add_delayed_tree_ref(trans, &generic_ref, NULL,
+>  						 &old_ref_mod, &new_ref_mod);
+>  	} else {
+>  		ret = btrfs_add_delayed_data_ref(trans, root, bytenr,
+
+<sniop>

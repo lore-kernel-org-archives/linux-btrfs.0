@@ -3,33 +3,33 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-6.9 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 475ECC04EB8
-	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Dec 2018 09:21:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6B031C04EB8
+	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Dec 2018 09:23:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id F067020821
-	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Dec 2018 09:21:15 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org F067020821
+	by mail.kernel.org (Postfix) with ESMTP id 2704A20821
+	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Dec 2018 09:23:25 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 2704A20821
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726513AbeLJJVO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 10 Dec 2018 04:21:14 -0500
-Received: from mx2.suse.de ([195.135.220.15]:60422 "EHLO mx1.suse.de"
+        id S1726603AbeLJJXY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 10 Dec 2018 04:23:24 -0500
+Received: from mx2.suse.de ([195.135.220.15]:60774 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726209AbeLJJVO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Dec 2018 04:21:14 -0500
+        id S1726577AbeLJJXX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 10 Dec 2018 04:23:23 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 2787EADDD
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Dec 2018 09:21:11 +0000 (UTC)
-Subject: Re: [PATCH 3/8] btrfs: delayed-ref: Use btrfs_ref to refactor
- btrfs_add_delayed_tree_ref()
+        by mx1.suse.de (Postfix) with ESMTP id D2933ADF2
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Dec 2018 09:23:19 +0000 (UTC)
+Subject: Re: [PATCH 4/8] btrfs: delayed-ref: Use btrfs_ref to refactor
+ btrfs_add_delayed_data_ref()
 To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20181206065903.11343-1-wqu@suse.com>
- <20181206065903.11343-4-wqu@suse.com>
+ <20181206065903.11343-5-wqu@suse.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -74,12 +74,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <167bf109-41cf-f10b-4364-9af5701f5ee0@suse.com>
-Date:   Mon, 10 Dec 2018 11:21:10 +0200
+Message-ID: <a3d9703e-3262-9a70-83e0-ba8322e6eb86@suse.com>
+Date:   Mon, 10 Dec 2018 11:23:19 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181206065903.11343-4-wqu@suse.com>
+In-Reply-To: <20181206065903.11343-5-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -91,114 +91,139 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 6.12.18 г. 8:58 ч., Qu Wenruo wrote:
-> btrfs_add_delayed_tree_ref() has a longer and longer parameter list, and
-> some caller like btrfs_inc_extent_ref() are using @owner as level for
-> delayed tree ref.
-> 
-> Instead of making the parameter list longer and longer, use btrfs_ref to
-> refactor it, so each parameter assignment should be self-explaining
-> without dirty level/owner trick, and provides the basis for later refactor.
+> Just like btrfs_add_delayed_tree_ref(), use btrfs_ref to refactor
+> btrfs_add_delayed_data_ref().
 > 
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
 > ---
->  fs/btrfs/delayed-ref.c | 24 ++++++++++++++-------
->  fs/btrfs/delayed-ref.h |  4 +---
->  fs/btrfs/extent-tree.c | 48 ++++++++++++++++++++++++------------------
->  3 files changed, 44 insertions(+), 32 deletions(-)
+>  fs/btrfs/delayed-ref.c | 19 +++++++++++++------
+>  fs/btrfs/delayed-ref.h |  8 +++-----
+>  fs/btrfs/extent-tree.c | 24 +++++++++++-------------
+>  3 files changed, 27 insertions(+), 24 deletions(-)
 > 
 > diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-> index 11dd46be4017..c42b8ade7b07 100644
+> index c42b8ade7b07..09caf1e6fc22 100644
 > --- a/fs/btrfs/delayed-ref.c
 > +++ b/fs/btrfs/delayed-ref.c
-> @@ -710,9 +710,7 @@ static void init_delayed_ref_common(struct btrfs_fs_info *fs_info,
->   * transaction commits.
+> @@ -800,21 +800,27 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
+>   * add a delayed data ref. it's similar to btrfs_add_delayed_tree_ref.
 >   */
->  int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
-> -			       u64 bytenr, u64 num_bytes, u64 parent,
-> -			       u64 ref_root,  int level, bool for_reloc,
-> -			       int action,
+>  int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
+> -			       struct btrfs_root *root,
+> -			       u64 bytenr, u64 num_bytes,
+> -			       u64 parent, u64 ref_root,
+> -			       u64 owner, u64 offset, u64 reserved, int action,
+> -			       int *old_ref_mod, int *new_ref_mod)
 > +			       struct btrfs_ref *generic_ref,
->  			       struct btrfs_delayed_extent_op *extent_op,
->  			       int *old_ref_mod, int *new_ref_mod)
+> +			       u64 reserved, int *old_ref_mod,
+> +			       int *new_ref_mod)
 >  {
-> @@ -722,10 +720,17 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
+>  	struct btrfs_fs_info *fs_info = trans->fs_info;
+>  	struct btrfs_delayed_data_ref *ref;
+>  	struct btrfs_delayed_ref_head *head_ref;
 >  	struct btrfs_delayed_ref_root *delayed_refs;
 >  	struct btrfs_qgroup_extent_record *record = NULL;
->  	int qrecord_inserted;
-> -	bool is_system = (ref_root == BTRFS_CHUNK_TREE_OBJECTID);
-> +	bool is_system = (generic_ref->real_root == BTRFS_CHUNK_TREE_OBJECTID);
 > +	int action = generic_ref->action;
-> +	int level = generic_ref->tree_ref.level;
+>  	int qrecord_inserted;
 >  	int ret;
 > +	u64 bytenr = generic_ref->bytenr;
 > +	u64 num_bytes = generic_ref->len;
 > +	u64 parent = generic_ref->parent;
+> +	u64 ref_root = generic_ref->data_ref.ref_root;
+> +	u64 owner = generic_ref->data_ref.ino;
+> +	u64 offset = generic_ref->data_ref.offset;
 >  	u8 ref_type;
 >  
-> +	ASSERT(generic_ref && generic_ref->type == BTRFS_REF_METADATA &&
-> +		generic_ref->action);
+> +	ASSERT(generic_ref && generic_ref->type == BTRFS_REF_DATA && action);
 
-You have already dereferenced generic_ref by the time you ASSERT and
-would have crashed. I guess the first condition in the assert can be
-removed.
+generic_ref already dereferenced, no need to assert it.
 
->  	BUG_ON(extent_op && extent_op->is_data);
->  	ref = kmem_cache_alloc(btrfs_delayed_tree_ref_cachep, GFP_NOFS);
+>  	ref = kmem_cache_alloc(btrfs_delayed_data_ref_cachep, GFP_NOFS);
 >  	if (!ref)
-
-<snip>
-
+>  		return -ENOMEM;
+> @@ -838,7 +844,8 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
+>  	}
+>  
+>  	if (test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags) &&
+> -	    is_fstree(ref_root) && is_fstree(root->root_key.objectid)) {
+> +	    is_fstree(ref_root) && is_fstree(generic_ref->real_root) &&
+> +	    !generic_ref->skip_qgroup) {
+>  		record = kzalloc(sizeof(*record), GFP_NOFS);
+>  		if (!record) {
+>  			kmem_cache_free(btrfs_delayed_data_ref_cachep, ref);
+> diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+> index dbe029c4e01b..a8fde33b43fd 100644
+> --- a/fs/btrfs/delayed-ref.h
+> +++ b/fs/btrfs/delayed-ref.h
+> @@ -337,11 +337,9 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
+>  			       struct btrfs_delayed_extent_op *extent_op,
+>  			       int *old_ref_mod, int *new_ref_mod);
+>  int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
+> -			       struct btrfs_root *root,
+> -			       u64 bytenr, u64 num_bytes,
+> -			       u64 parent, u64 ref_root,
+> -			       u64 owner, u64 offset, u64 reserved, int action,
+> -			       int *old_ref_mod, int *new_ref_mod);
+> +			       struct btrfs_ref *generic_ref,
+> +			       u64 reserved, int *old_ref_mod,
+> +			       int *new_ref_mod);
+>  int btrfs_add_delayed_extent_op(struct btrfs_fs_info *fs_info,
+>  				struct btrfs_trans_handle *trans,
+>  				u64 bytenr, u64 num_bytes,
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index ecfa0234863b..fa5dd3dfe2e7 100644
 > --- a/fs/btrfs/extent-tree.c
 > +++ b/fs/btrfs/extent-tree.c
-> @@ -2031,6 +2031,7 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
->  			 bool for_reloc)
->  {
->  	struct btrfs_fs_info *fs_info = root->fs_info;
-> +	struct btrfs_ref generic_ref = { 0 };
->  	int old_ref_mod, new_ref_mod;
->  	int ret;
->  
-> @@ -2040,13 +2041,13 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
->  	btrfs_ref_tree_mod(root, bytenr, num_bytes, parent, root_objectid,
->  			   owner, offset, BTRFS_ADD_DELAYED_REF);
->  
-> +	btrfs_init_generic_ref(&generic_ref, BTRFS_ADD_DELAYED_REF, bytenr,
-> +			       num_bytes, root->root_key.objectid, parent);
-> +	generic_ref.skip_qgroup = for_reloc;
->  	if (owner < BTRFS_FIRST_FREE_OBJECTID) {
-> -		ret = btrfs_add_delayed_tree_ref(trans, bytenr,
-> -						 num_bytes, parent,
-> -						 root_objectid, (int)owner,
-> -						 for_reloc,
-> -						 BTRFS_ADD_DELAYED_REF, NULL,
-> -						 &old_ref_mod, &new_ref_mod);
-> +		btrfs_init_tree_ref(&generic_ref, (int)owner, root_objectid);
-
-The cast is now redundant since the parameter definition of
-btrfs_init_tree_ref is an int.
-> +		ret = btrfs_add_delayed_tree_ref(trans, &generic_ref,
-> +				NULL, &old_ref_mod, &new_ref_mod);
+> @@ -2049,10 +2049,8 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+>  		ret = btrfs_add_delayed_tree_ref(trans, &generic_ref,
+>  				NULL, &old_ref_mod, &new_ref_mod);
 >  	} else {
->  		ret = btrfs_add_delayed_data_ref(trans, root, bytenr,
->  						 num_bytes, parent,
-
-<snip>
-
-> @@ -7102,11 +7110,8 @@ int btrfs_free_extent(struct btrfs_trans_handle *trans,
->  		old_ref_mod = new_ref_mod = 0;
->  		ret = 0;
->  	} else if (owner < BTRFS_FIRST_FREE_OBJECTID) {
-> -		ret = btrfs_add_delayed_tree_ref(trans, bytenr,
+> -		ret = btrfs_add_delayed_data_ref(trans, root, bytenr,
 > -						 num_bytes, parent,
-> -						 root_objectid, (int)owner,
-> -						 for_reloc,
-> -						 BTRFS_DROP_DELAYED_REF, NULL,
-> +		btrfs_init_tree_ref(&generic_ref, (int)owner, root_objectid);
-
-ditto about the cast
-> +		ret = btrfs_add_delayed_tree_ref(trans, &generic_ref, NULL,
+> -						 root_objectid, owner, offset,
+> -						 0, BTRFS_ADD_DELAYED_REF,
+> +		btrfs_init_data_ref(&generic_ref, root_objectid, owner, offset);
+> +		ret = btrfs_add_delayed_data_ref(trans, &generic_ref, 0,
+>  						 &old_ref_mod, &new_ref_mod);
+>  	}
+>  
+> @@ -7114,10 +7112,8 @@ int btrfs_free_extent(struct btrfs_trans_handle *trans,
+>  		ret = btrfs_add_delayed_tree_ref(trans, &generic_ref, NULL,
 >  						 &old_ref_mod, &new_ref_mod);
 >  	} else {
->  		ret = btrfs_add_delayed_data_ref(trans, root, bytenr,
-
-<sniop>
+> -		ret = btrfs_add_delayed_data_ref(trans, root, bytenr,
+> -						 num_bytes, parent,
+> -						 root_objectid, owner, offset,
+> -						 0, BTRFS_DROP_DELAYED_REF,
+> +		btrfs_init_data_ref(&generic_ref, root_objectid, owner, offset);
+> +		ret = btrfs_add_delayed_data_ref(trans, &generic_ref, 0,
+>  						 &old_ref_mod, &new_ref_mod);
+>  	}
+>  
+> @@ -8082,6 +8078,7 @@ int btrfs_alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
+>  				     u64 offset, u64 ram_bytes,
+>  				     struct btrfs_key *ins)
+>  {
+> +	struct btrfs_ref generic_ref = { 0 };
+>  	int ret;
+>  
+>  	BUG_ON(root->root_key.objectid == BTRFS_TREE_LOG_OBJECTID);
+> @@ -8090,11 +8087,12 @@ int btrfs_alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
+>  			   root->root_key.objectid, owner, offset,
+>  			   BTRFS_ADD_DELAYED_EXTENT);
+>  
+> -	ret = btrfs_add_delayed_data_ref(trans, root, ins->objectid,
+> -					 ins->offset, 0,
+> -					 root->root_key.objectid, owner,
+> -					 offset, ram_bytes,
+> -					 BTRFS_ADD_DELAYED_EXTENT, NULL, NULL);
+> +	btrfs_init_generic_ref(&generic_ref, BTRFS_ADD_DELAYED_EXTENT,
+> +			       ins->objectid, ins->offset,
+> +			       root->root_key.objectid, 0);
+> +	btrfs_init_data_ref(&generic_ref, root->root_key.objectid, owner, offset);
+> +	ret = btrfs_add_delayed_data_ref(trans, &generic_ref,
+> +					 ram_bytes, NULL, NULL);
+>  	return ret;
+>  }
+>  
+> 

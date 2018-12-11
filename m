@@ -6,58 +6,88 @@ X-Spam-Status: No, score=-5.4 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1E548C5CFFE
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Dec 2018 18:28:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BB734C67839
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Dec 2018 19:04:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E33CE20851
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Dec 2018 18:28:53 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org E33CE20851
+	by mail.kernel.org (Postfix) with ESMTP id 90A762084E
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Dec 2018 19:04:55 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 90A762084E
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726676AbeLKS2x (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 11 Dec 2018 13:28:53 -0500
-Received: from mx2.suse.de ([195.135.220.15]:35430 "EHLO mx1.suse.de"
+        id S1726470AbeLKTEy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 11 Dec 2018 14:04:54 -0500
+Received: from mx2.suse.de ([195.135.220.15]:42530 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726620AbeLKS2w (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Dec 2018 13:28:52 -0500
+        id S1726331AbeLKTEy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 11 Dec 2018 14:04:54 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 4742AAED3;
-        Tue, 11 Dec 2018 18:28:51 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 7738DACD8;
+        Tue, 11 Dec 2018 19:04:52 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 91B86DA835; Tue, 11 Dec 2018 19:28:29 +0100 (CET)
-Date:   Tue, 11 Dec 2018 19:28:29 +0100
+        id EE094DA835; Tue, 11 Dec 2018 20:04:30 +0100 (CET)
+Date:   Tue, 11 Dec 2018 20:04:30 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH 7/8] btrfs: be more explicit about allowed flush states
-Message-ID: <20181211182829.GO23615@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
         linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH 4/8] btrfs: add ALLOC_CHUNK_FORCE to the flushing code
+Message-ID: <20181211190430.GP23615@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
 References: <20181203152459.21630-1-josef@toxicpanda.com>
- <20181203152459.21630-8-josef@toxicpanda.com>
+ <20181203152459.21630-5-josef@toxicpanda.com>
+ <83a7b193-0763-6f7a-611c-deaf0d6c380e@suse.com>
+ <20181211164751.GN23615@twin.jikos.cz>
+ <ed6b9681-9378-df3e-4a78-e00baaff04d8@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <20181203152459.21630-8-josef@toxicpanda.com>
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <ed6b9681-9378-df3e-4a78-e00baaff04d8@suse.com>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Dec 03, 2018 at 10:24:58AM -0500, Josef Bacik wrote:
-> For FLUSH_LIMIT flushers (think evict, truncate) we can deadlock when
-> running delalloc because we may be holding a tree lock.  We can also
-> deadlock with delayed refs rsv's that are running via the committing
-> mechanism.  The only safe operations for FLUSH_LIMIT is to run the
-> delayed operations and to allocate chunks, everything else has the
-> potential to deadlock.  Future proof this by explicitly specifying the
-> states that FLUSH_LIMIT is allowed to use.  This will keep us from
-> introducing bugs later on when adding new flush states.
+On Tue, Dec 11, 2018 at 06:51:34PM +0200, Nikolay Borisov wrote:
 > 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> 
+> On 11.12.18 г. 18:47 ч., David Sterba wrote:
+> > On Tue, Dec 11, 2018 at 12:08:23PM +0200, Nikolay Borisov wrote:
+> >>
+> >>
+> >> On 3.12.18 г. 17:24 ч., Josef Bacik wrote:
+> >>> With my change to no longer take into account the global reserve for
+> >>> metadata allocation chunks we have this side-effect for mixed block
+> >>> group fs'es where we are no longer allocating enough chunks for the
+> >>> data/metadata requirements.  To deal with this add a ALLOC_CHUNK_FORCE
+> >>> step to the flushing state machine.  This will only get used if we've
+> >>> already made a full loop through the flushing machinery and tried
+> >>> committing the transaction.  If we have then we can try and force a
+> >>> chunk allocation since we likely need it to make progress.  This
+> >>> resolves the issues I was seeing with the mixed bg tests in xfstests
+> >>> with my previous patch.
+> >>>
+> >>> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+> >>> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> >>
+> >> Imo this and the previous patch should be squashed into one.
+> > 
+> > I don't see why, separate patches also look good to me. One changes the
+> > logic regarding global reserve and the other fixes behaviour regarding
+> > mixed block groups.
+> 
+> As far as I understand this deficient behavior is a direct result of the
+> previous patch. In essnse previous patch fixes something and introduces
+> new problem which is subsequently fixed by this patch. The way I see it
+> if both patches are squashed the change log should be :
+> 
+> "I do [explanation of the first change]. However this introduces
+> [explain bug from patch 2] so fix it by [explain fix from 2nd patch]"
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+Ok, patches merged.

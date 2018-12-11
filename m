@@ -2,240 +2,97 @@ Return-Path: <SRS0=yXFy=OU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.9 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.9 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CCEDAC5CFFE
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Dec 2018 14:32:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E7E46C07E85
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Dec 2018 15:03:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 917942082F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Dec 2018 14:32:21 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 917942082F
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id B35D62082F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Dec 2018 15:03:22 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B35D62082F
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726399AbeLKOcU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 11 Dec 2018 09:32:20 -0500
-Received: from mx2.suse.de ([195.135.220.15]:44988 "EHLO mx1.suse.de"
+        id S1726533AbeLKPDV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 11 Dec 2018 10:03:21 -0500
+Received: from mx2.suse.de ([195.135.220.15]:51772 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726176AbeLKOcT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Dec 2018 09:32:19 -0500
+        id S1726366AbeLKPDV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 11 Dec 2018 10:03:21 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A61A9B039;
-        Tue, 11 Dec 2018 14:32:16 +0000 (UTC)
-Subject: Re: [PATCH 5/8] btrfs: don't enospc all tickets on flush failure
-To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-References: <20181203152459.21630-1-josef@toxicpanda.com>
- <20181203152459.21630-6-josef@toxicpanda.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <16b1d02d-5be1-3359-afdd-1c5a864dc687@suse.com>
-Date:   Tue, 11 Dec 2018 16:32:15 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
-MIME-Version: 1.0
-In-Reply-To: <20181203152459.21630-6-josef@toxicpanda.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+        by mx1.suse.de (Postfix) with ESMTP id B0C71AEFD
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Dec 2018 15:03:19 +0000 (UTC)
+From:   Johannes Thumshirn <jthumshirn@suse.de>
+To:     David Sterba <dsterba@suse.com>
+Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
+        Johannes Thumshirn <jthumshirn@suse.de>
+Subject: [PATCH v3] btrfs: improve error handling of btrfs_add_link()
+Date:   Tue, 11 Dec 2018 16:03:15 +0100
+Message-Id: <20181211150315.18414-1-jthumshirn@suse.de>
+X-Mailer: git-send-email 2.16.4
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+err holds the return value of either btrfs_del_root_ref() or
+btrfs_del_inode_ref() but it hasn't been checked since it's
+introduction with commit fe66a05a0679 (Btrfs: improve error handling
+for btrfs_insert_dir_item callers) in 2012.
 
+To quote David:
 
-On 3.12.18 г. 17:24 ч., Josef Bacik wrote:
-> With the introduction of the per-inode block_rsv it became possible to
-> have really really large reservation requests made because of data
-> fragmentation.  Since the ticket stuff assumed that we'd always have
-> relatively small reservation requests it just killed all tickets if we
-> were unable to satisfy the current request.  However this is generally
-> not the case anymore.  So fix this logic to instead see if we had a
-> ticket that we were able to give some reservation to, and if we were
-> continue the flushing loop again.  Likewise we make the tickets use the
-> space_info_add_old_bytes() method of returning what reservation they did
-> receive in hopes that it could satisfy reservations down the line.
-> 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+"If the error handling in the error handling fails, there's not much left to do
+and the abort either happened earlier in the callees or is necessary here."
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+So if one of btrfs_del_root_ref() or btrfs_del_inode_ref() failed, abort the
+transaction.
 
+Link: https://lore.kernel.org/linux-btrfs/20181126183759.GJ2842@twin.jikos.cz/
+Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+---
+ fs/btrfs/inode.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
 
-> ---
->  fs/btrfs/extent-tree.c | 45 +++++++++++++++++++++++++--------------------
->  1 file changed, 25 insertions(+), 20 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 2d0dd70570ca..0ee77a98f867 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -4801,6 +4801,7 @@ static void shrink_delalloc(struct btrfs_fs_info *fs_info, u64 to_reclaim,
->  }
->  
->  struct reserve_ticket {
-> +	u64 orig_bytes;
->  	u64 bytes;
->  	int error;
->  	struct list_head list;
-> @@ -5023,7 +5024,7 @@ static inline int need_do_async_reclaim(struct btrfs_fs_info *fs_info,
->  		!test_bit(BTRFS_FS_STATE_REMOUNTING, &fs_info->fs_state));
->  }
->  
-> -static void wake_all_tickets(struct list_head *head)
-> +static bool wake_all_tickets(struct list_head *head)
->  {
->  	struct reserve_ticket *ticket;
->  
-> @@ -5032,7 +5033,10 @@ static void wake_all_tickets(struct list_head *head)
->  		list_del_init(&ticket->list);
->  		ticket->error = -ENOSPC;
->  		wake_up(&ticket->wait);
-> +		if (ticket->bytes != ticket->orig_bytes)
-> +			return true;
->  	}
-> +	return false;
->  }
->  
->  /*
-> @@ -5100,8 +5104,12 @@ static void btrfs_async_reclaim_metadata_space(struct work_struct *work)
->  		if (flush_state > COMMIT_TRANS) {
->  			commit_cycles++;
->  			if (commit_cycles > 2) {
-> -				wake_all_tickets(&space_info->tickets);
-> -				space_info->flush = 0;
-> +				if (wake_all_tickets(&space_info->tickets)) {
-> +					flush_state = FLUSH_DELAYED_ITEMS_NR;
-> +					commit_cycles--;
-> +				} else {
-> +					space_info->flush = 0;
-> +				}
->  			} else {
->  				flush_state = FLUSH_DELAYED_ITEMS_NR;
->  			}
-> @@ -5153,10 +5161,11 @@ static void priority_reclaim_metadata_space(struct btrfs_fs_info *fs_info,
->  
->  static int wait_reserve_ticket(struct btrfs_fs_info *fs_info,
->  			       struct btrfs_space_info *space_info,
-> -			       struct reserve_ticket *ticket, u64 orig_bytes)
-> +			       struct reserve_ticket *ticket)
->  
->  {
->  	DEFINE_WAIT(wait);
-> +	u64 reclaim_bytes = 0;
->  	int ret = 0;
->  
->  	spin_lock(&space_info->lock);
-> @@ -5177,14 +5186,12 @@ static int wait_reserve_ticket(struct btrfs_fs_info *fs_info,
->  		ret = ticket->error;
->  	if (!list_empty(&ticket->list))
->  		list_del_init(&ticket->list);
-> -	if (ticket->bytes && ticket->bytes < orig_bytes) {
-> -		u64 num_bytes = orig_bytes - ticket->bytes;
-> -		update_bytes_may_use(space_info, -num_bytes);
-> -		trace_btrfs_space_reservation(fs_info, "space_info",
-> -					      space_info->flags, num_bytes, 0);
-> -	}
-> +	if (ticket->bytes && ticket->bytes < ticket->orig_bytes)
-> +		reclaim_bytes = ticket->orig_bytes - ticket->bytes;
->  	spin_unlock(&space_info->lock);
->  
-> +	if (reclaim_bytes)
-> +		space_info_add_old_bytes(fs_info, space_info, reclaim_bytes);
->  	return ret;
->  }
->  
-> @@ -5210,6 +5217,7 @@ static int __reserve_metadata_bytes(struct btrfs_fs_info *fs_info,
->  {
->  	struct reserve_ticket ticket;
->  	u64 used;
-> +	u64 reclaim_bytes = 0;
->  	int ret = 0;
->  
->  	ASSERT(orig_bytes);
-> @@ -5245,6 +5253,7 @@ static int __reserve_metadata_bytes(struct btrfs_fs_info *fs_info,
->  	 * the list and we will do our own flushing further down.
->  	 */
->  	if (ret && flush != BTRFS_RESERVE_NO_FLUSH) {
-> +		ticket.orig_bytes = orig_bytes;
->  		ticket.bytes = orig_bytes;
->  		ticket.error = 0;
->  		init_waitqueue_head(&ticket.wait);
-> @@ -5285,25 +5294,21 @@ static int __reserve_metadata_bytes(struct btrfs_fs_info *fs_info,
->  		return ret;
->  
->  	if (flush == BTRFS_RESERVE_FLUSH_ALL)
-> -		return wait_reserve_ticket(fs_info, space_info, &ticket,
-> -					   orig_bytes);
-> +		return wait_reserve_ticket(fs_info, space_info, &ticket);
->  
->  	ret = 0;
->  	priority_reclaim_metadata_space(fs_info, space_info, &ticket);
->  	spin_lock(&space_info->lock);
->  	if (ticket.bytes) {
-> -		if (ticket.bytes < orig_bytes) {
-> -			u64 num_bytes = orig_bytes - ticket.bytes;
-> -			update_bytes_may_use(space_info, -num_bytes);
-> -			trace_btrfs_space_reservation(fs_info, "space_info",
-> -						      space_info->flags,
-> -						      num_bytes, 0);
-> -
-> -		}
-> +		if (ticket.bytes < orig_bytes)
-> +			reclaim_bytes = orig_bytes - ticket.bytes;
->  		list_del_init(&ticket.list);
->  		ret = -ENOSPC;
->  	}
->  	spin_unlock(&space_info->lock);
-> +
-> +	if (reclaim_bytes)
-> +		space_info_add_old_bytes(fs_info, space_info, reclaim_bytes);
->  	ASSERT(list_empty(&ticket.list));
->  	return ret;
->  }
-> 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index c5c27d5457cc..c9457d2580c0 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6311,6 +6311,7 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
+ 	struct btrfs_root *root = parent_inode->root;
+ 	u64 ino = btrfs_ino(inode);
+ 	u64 parent_ino = btrfs_ino(parent_inode);
++	int err = 0;
+ 
+ 	if (unlikely(ino == BTRFS_FIRST_FREE_OBJECTID)) {
+ 		memcpy(&key, &inode->root->root_key, sizeof(key));
+@@ -6355,18 +6356,21 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
+ fail_dir_item:
+ 	if (unlikely(ino == BTRFS_FIRST_FREE_OBJECTID)) {
+ 		u64 local_index;
+-		int err;
++
+ 		err = btrfs_del_root_ref(trans, key.objectid,
+ 					 root->root_key.objectid, parent_ino,
+ 					 &local_index, name, name_len);
+ 
+ 	} else if (add_backref) {
+ 		u64 local_index;
+-		int err;
+ 
+ 		err = btrfs_del_inode_ref(trans, root, name, name_len,
+ 					  ino, parent_ino, &local_index);
+ 	}
++
++	if (err)
++		btrfs_abort_transaction(trans, err);
++
+ 	return ret;
+ }
+ 
+-- 
+2.16.4
+

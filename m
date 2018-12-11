@@ -2,34 +2,34 @@ Return-Path: <SRS0=yXFy=OU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.9 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.9 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5DB59C07E85
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Dec 2018 09:59:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E2B66C07E85
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Dec 2018 10:08:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 22DC620849
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Dec 2018 09:59:23 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 22DC620849
+	by mail.kernel.org (Postfix) with ESMTP id B3F0E2081B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Dec 2018 10:08:27 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org B3F0E2081B
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726244AbeLKJ7V (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 11 Dec 2018 04:59:21 -0500
-Received: from mx2.suse.de ([195.135.220.15]:50276 "EHLO mx1.suse.de"
+        id S1726325AbeLKKI0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 11 Dec 2018 05:08:26 -0500
+Received: from mx2.suse.de ([195.135.220.15]:52330 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726136AbeLKJ7V (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Dec 2018 04:59:21 -0500
+        id S1726104AbeLKKI0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 11 Dec 2018 05:08:26 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 42C3EAD3F;
-        Tue, 11 Dec 2018 09:59:19 +0000 (UTC)
-Subject: Re: [PATCH 3/8] btrfs: don't use global rsv for chunk allocation
+        by mx1.suse.de (Postfix) with ESMTP id D8485ACC7;
+        Tue, 11 Dec 2018 10:08:23 +0000 (UTC)
+Subject: Re: [PATCH 4/8] btrfs: add ALLOC_CHUNK_FORCE to the flushing code
 To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
         kernel-team@fb.com
 References: <20181203152459.21630-1-josef@toxicpanda.com>
- <20181203152459.21630-4-josef@toxicpanda.com>
+ <20181203152459.21630-5-josef@toxicpanda.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -74,12 +74,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  KIuxEcV8wcVjr+Wr9zRl06waOCkgrQbTPp631hToxo+4rA1jiQF2M80HAet65ytBVR2pFGZF
  zGYYLqiG+mpUZ+FPjxk9kpkRYz61mTLSY7tuFljExfJWMGfgSg1OxfLV631jV1TcdUnx+h3l
  Sqs2vMhAVt14zT8mpIuu2VNxcontxgVr1kzYA/tQg32fVRbGr449j1gw57BV9i0vww==
-Message-ID: <369e6d4e-8b9a-99a6-2103-42866b9788de@suse.com>
-Date:   Tue, 11 Dec 2018 11:59:18 +0200
+Message-ID: <83a7b193-0763-6f7a-611c-deaf0d6c380e@suse.com>
+Date:   Tue, 11 Dec 2018 12:08:23 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181203152459.21630-4-josef@toxicpanda.com>
+In-Reply-To: <20181203152459.21630-5-josef@toxicpanda.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -91,55 +91,27 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 3.12.18 г. 17:24 ч., Josef Bacik wrote:
-> The should_alloc_chunk code has math in it to decide if we're getting
-> short on space and if we should go ahead and pre-emptively allocate a
-> new chunk.  Previously when we did not have the delayed_refs_rsv, we had
-> to assume that the global block rsv was essentially used space and could
-> be allocated completely at any time, so we counted this space as "used"
-> when determining if we had enough slack space in our current space_info.
-> But on any slightly used file system (10gib or more) you can have a
-> global reserve of 512mib.  With our default chunk size being 1gib that
-> means we just assume half of the block group is used, which could result
-> in us allocating more metadata chunks than is actually required.
+> With my change to no longer take into account the global reserve for
+> metadata allocation chunks we have this side-effect for mixed block
+> group fs'es where we are no longer allocating enough chunks for the
+> data/metadata requirements.  To deal with this add a ALLOC_CHUNK_FORCE
+> step to the flushing state machine.  This will only get used if we've
+> already made a full loop through the flushing machinery and tried
+> committing the transaction.  If we have then we can try and force a
+> chunk allocation since we likely need it to make progress.  This
+> resolves the issues I was seeing with the mixed bg tests in xfstests
+> with my previous patch.
 > 
-> With the delayed refs rsv we can flush delayed refs as the space becomes
-> tight, and if we actually need more block groups then they will be
-> allocated based on space pressure.  We no longer require assuming the
-> global reserve is used space in our calculations.
-> 
+> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
+Imo this and the previous patch should be squashed into one.
 
 > ---
->  fs/btrfs/extent-tree.c | 9 ---------
->  1 file changed, 9 deletions(-)
+>  fs/btrfs/ctree.h             |  3 ++-
+>  fs/btrfs/extent-tree.c       | 18 +++++++++++++++++-
+>  include/trace/events/btrfs.h |  1 +
+>  3 files changed, 20 insertions(+), 2 deletions(-)
 > 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 204b35434056..667b992d322d 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -4398,21 +4398,12 @@ static inline u64 calc_global_rsv_need_space(struct btrfs_block_rsv *global)
->  static int should_alloc_chunk(struct btrfs_fs_info *fs_info,
->  			      struct btrfs_space_info *sinfo, int force)
->  {
-> -	struct btrfs_block_rsv *global_rsv = &fs_info->global_block_rsv;
->  	u64 bytes_used = btrfs_space_info_used(sinfo, false);
->  	u64 thresh;
->  
->  	if (force == CHUNK_ALLOC_FORCE)
->  		return 1;
->  
-> -	/*
-> -	 * We need to take into account the global rsv because for all intents
-> -	 * and purposes it's used space.  Don't worry about locking the
-> -	 * global_rsv, it doesn't change except when the transaction commits.
-> -	 */
-> -	if (sinfo->flags & BTRFS_BLOCK_GROUP_METADATA)
-> -		bytes_used += calc_global_rsv_need_space(global_rsv);
-> -
->  	/*
->  	 * in limited mode, we want to have some free space up to
->  	 * about 1% of the FS size.
-> 
+
+<snip>

@@ -6,110 +6,71 @@ X-Spam-Status: No, score=-2.4 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D2A11C65BAF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 15:36:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9FA12C65BAF
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 15:54:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8145020839
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 15:36:43 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8145020839
+	by mail.kernel.org (Postfix) with ESMTP id 66C2D2086D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 15:54:17 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 66C2D2086D
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727676AbeLLPgm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Dec 2018 10:36:42 -0500
-Received: from mx2.suse.de ([195.135.220.15]:39804 "EHLO mx1.suse.de"
+        id S1727861AbeLLPyQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 12 Dec 2018 10:54:16 -0500
+Received: from mx2.suse.de ([195.135.220.15]:43132 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726325AbeLLPgm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Dec 2018 10:36:42 -0500
+        id S1726358AbeLLPyQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Dec 2018 10:54:16 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id E8A3DAE60;
-        Wed, 12 Dec 2018 15:36:39 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 9AB34AEC0;
+        Wed, 12 Dec 2018 15:54:14 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id B2E22DA7E5; Wed, 12 Dec 2018 16:36:17 +0100 (CET)
-Date:   Wed, 12 Dec 2018 16:36:16 +0100
+        id 0BBD8DA7E5; Wed, 12 Dec 2018 16:53:52 +0100 (CET)
+Date:   Wed, 12 Dec 2018 16:53:52 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Martin Raiber <martin@urbackup.org>
-Cc:     Chris Mason <clm@fb.com>, Ethan Lien <ethanlien@synology.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH v2] btrfs: balance dirty metadata pages in
- btrfs_finish_ordered_io
-Message-ID: <20181212153616.GY23615@twin.jikos.cz>
+To:     Dmitriy Gorokh <Dmitriy.Gorokh@wdc.com>
+Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: raid56: data corruption on a device removal
+Message-ID: <20181212155352.GZ23615@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Martin Raiber <martin@urbackup.org>,
-        Chris Mason <clm@fb.com>, Ethan Lien <ethanlien@synology.com>,
+Mail-Followup-To: dsterba@suse.cz, Dmitriy Gorokh <Dmitriy.Gorokh@wdc.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <20180528054821.9092-1-ethanlien@synology.com>
- <D7645E04-6424-4BFA-90C6-D63245EB9435@fb.com>
- <01020167a30347da-385e2eff-ed13-422a-b27f-c3d5933aaef2-000000@eu-west-1.amazonses.com>
+References: <66F8D435-4E51-4761-B6CF-BA96F4BC5986@wdc.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <01020167a30347da-385e2eff-ed13-422a-b27f-c3d5933aaef2-000000@eu-west-1.amazonses.com>
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <66F8D435-4E51-4761-B6CF-BA96F4BC5986@wdc.com>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Dec 12, 2018 at 03:22:40PM +0000, Martin Raiber wrote:
-> On 12.12.2018 15:47 Chris Mason wrote:
-> > On 28 May 2018, at 1:48, Ethan Lien wrote:
-> >
-> > It took me a while to trigger, but this actually deadlocks ;)  More 
-> > below.
-> >
-> >> [Problem description and how we fix it]
-> >> We should balance dirty metadata pages at the end of
-> >> btrfs_finish_ordered_io, since a small, unmergeable random write can
-> >> potentially produce dirty metadata which is multiple times larger than
-> >> the data itself. For example, a small, unmergeable 4KiB write may
-> >> produce:
-> >>
-> >>     16KiB dirty leaf (and possibly 16KiB dirty node) in subvolume tree
-> >>     16KiB dirty leaf (and possibly 16KiB dirty node) in checksum tree
-> >>     16KiB dirty leaf (and possibly 16KiB dirty node) in extent tree
-> >>
-> >> Although we do call balance dirty pages in write side, but in the
-> >> buffered write path, most metadata are dirtied only after we reach the
-> >> dirty background limit (which by far only counts dirty data pages) and
-> >> wakeup the flusher thread. If there are many small, unmergeable random
-> >> writes spread in a large btree, we'll find a burst of dirty pages
-> >> exceeds the dirty_bytes limit after we wakeup the flusher thread - 
-> >> which
-> >> is not what we expect. In our machine, it caused out-of-memory problem
-> >> since a page cannot be dropped if it is marked dirty.
-> >>
-> >> Someone may worry about we may sleep in 
-> >> btrfs_btree_balance_dirty_nodelay,
-> >> but since we do btrfs_finish_ordered_io in a separate worker, it will 
-> >> not
-> >> stop the flusher consuming dirty pages. Also, we use different worker 
-> >> for
-> >> metadata writeback endio, sleep in btrfs_finish_ordered_io help us 
-> >> throttle
-> >> the size of dirty metadata pages.
-> > In general, slowing down btrfs_finish_ordered_io isn't ideal because it 
-> > adds latency to places we need to finish quickly.  Also, 
-> > btrfs_finish_ordered_io is used by the free space cache.  Even though 
-> > this happens from its own workqueue, it means completing free space 
-> > cache writeback may end up waiting on balance_dirty_pages, something 
-> > like this stack trace:
-> >
-> > [..]
-> >
-> > Eventually, we have every process in the system waiting on 
-> > balance_dirty_pages(), and nobody is able to make progress on page 
-> > writeback.
-> >
-> I had lockups with this patch as well. If you put e.g. a loop device on
-> top of a btrfs file, loop sets PF_LESS_THROTTLE to avoid a feed back
-> loop causing delays. The task balancing dirty pages in
-> btrfs_finish_ordered_io doesn't have the flag and causes slow-downs. In
-> my case it managed to cause a feedback loop where it queues other
-> btrfs_finish_ordered_io and gets stuck completely.
+On Wed, Dec 12, 2018 at 12:25:55AM +0000, Dmitriy Gorokh wrote:
+> I found that RAID5 or RAID6 filesystem might be got corrupted in the following scenario:
+> 
+> 1. Create 4 disks RAID6 filesystem
+> 2. Preallocate 16 10Gb files
+> 3. Run fio: 'fio --name=testload --directory=./ --size=10G --numjobs=16 --bs=64k --iodepth=64 --rw=randrw --verify=sha256 --time_based --runtime=3600’
+> 4. After few minutes pull out two drives: 'echo 1 > /sys/block/sdc/device/delete ;  echo 1 > /sys/block/sdd/device/delete’
+> 
+> About 5 of 10 times the test is run, it led to silent data corruption
+> of a random extent, resulting in ‘IO Error’ and ‘csum failed’ messages
+> while trying to read the affected file. It usually affects only small
+> portion of the files and only one underlying extent of a file. When I
+> converted logical address of the damaged extent to physical address
+> and dumped a stripe directly from drives, I saw specific pattern,
+> always the same when the issue occurs.
+> 
+> I found that few bios which were being processed right during the
+> drives removal, contained non zero bio->bi_iter.bi_done field despite
+> of  EIO bi_status. bi_sector field was also increased from original
+> one by that 'bi_done' value. Looks like this is a quite rare
+> condition. Subsequently, in the raid_rmw_end_io handler that failed
+> bio can be translated to a wrong stripe number and fail wrong rbio.
 
-This does not look like the artificial and hard to hit case that's in
-the original patch. I'm thinking about sending a revert to 4.20-rc6, the
-deadlock is IMO worse than OOM.
+Thanks for the analysis, sounds correct to me and the fix too. Would be
+good if you can attach the logs or portions of the dumps you've used to
+understand the problem, like the pattern you mention above.

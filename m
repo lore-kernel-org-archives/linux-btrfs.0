@@ -3,33 +3,33 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-8.9 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6AAA8C6783B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 00:40:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B75CEC67839
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 00:40:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 31C1320849
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 00:40:10 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 31C1320849
+	by mail.kernel.org (Postfix) with ESMTP id 7B6CE20849
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 00:40:13 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7B6CE20849
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726283AbeLLAkJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 11 Dec 2018 19:40:09 -0500
-Received: from mx2.suse.de ([195.135.220.15]:57838 "EHLO mx1.suse.de"
+        id S1726293AbeLLAkM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 11 Dec 2018 19:40:12 -0500
+Received: from mx2.suse.de ([195.135.220.15]:57844 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726271AbeLLAkI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Dec 2018 19:40:08 -0500
+        id S1726218AbeLLAkM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 11 Dec 2018 19:40:12 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B6A95AE43
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Dec 2018 00:40:05 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 3C21EAD88
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Dec 2018 00:40:09 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 2/7] btrfs: qgroup: Don't trigger backref walk at delayed ref insert time
-Date:   Wed, 12 Dec 2018 08:39:48 +0800
-Message-Id: <20181212003953.5643-3-wqu@suse.com>
+Subject: [PATCH v3 3/7] btrfs: relocation: Delay reloc tree deletion after merge_reloc_roots()
+Date:   Wed, 12 Dec 2018 08:39:49 +0800
+Message-Id: <20181212003953.5643-4-wqu@suse.com>
 X-Mailer: git-send-email 2.19.2
 In-Reply-To: <20181212003953.5643-1-wqu@suse.com>
 References: <20181212003953.5643-1-wqu@suse.com>
@@ -40,309 +40,256 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[BUG]
-Since fb235dc06fac ("btrfs: qgroup: Move half of the qgroup accounting
-time out of commit trans"), kernel may lockup with quota enabled.
+Relocation code will drop btrfs_root::reloc_root as soon as
+merge_reloc_root() finishes.
 
-There is one backref trace triggered by snapshot dropping along with
-write operation in the source subvolume.
-The example can be stably reproduced.
+However later qgroup code will need to access btrfs_root::reloc_root
+after merge_reloc_root() for delayed subtree rescan.
 
-  btrfs-cleaner   D    0  4062      2 0x80000000
-  Call Trace:
-   schedule+0x32/0x90
-   btrfs_tree_read_lock+0x93/0x130 [btrfs]
-   find_parent_nodes+0x29b/0x1170 [btrfs]
-   btrfs_find_all_roots_safe+0xa8/0x120 [btrfs]
-   btrfs_find_all_roots+0x57/0x70 [btrfs]
-   btrfs_qgroup_trace_extent_post+0x37/0x70 [btrfs]
-   btrfs_qgroup_trace_leaf_items+0x10b/0x140 [btrfs]
-   btrfs_qgroup_trace_subtree+0xc8/0xe0 [btrfs]
-   do_walk_down+0x541/0x5e3 [btrfs]
-   walk_down_tree+0xab/0xe7 [btrfs]
-   btrfs_drop_snapshot+0x356/0x71a [btrfs]
-   btrfs_clean_one_deleted_snapshot+0xb8/0xf0 [btrfs]
-   cleaner_kthread+0x12b/0x160 [btrfs]
-   kthread+0x112/0x130
-   ret_from_fork+0x27/0x50
+So alter the timming of resetting btrfs_root:::reloc_root, make it
+happens after transaction commit.
 
-[CAUSE]
-When dropping snapshots with qgroup enabled, we will trigger backref
-walk.
+With this patch, we will introduce a new btrfs_root::state,
+BTRFS_ROOT_DEAD_RELOC_TREE, to info part of btrfs_root::reloc_tree user
+that although btrfs_root::reloc_tree is still non-NULL, but still it's
+not used any more.
 
-However such backref walk at that timing is pretty dangerous, as if one
-of the parent nodes get WRITE locked by other thread, we could cause a
-dead lock.
+The lifespan of btrfs_root::reloc tree will become:
+          Old behavior            |              New
+------------------------------------------------------------------------
+btrfs_init_reloc_root()      ---  | btrfs_init_reloc_root()      ---
+  set reloc_root              |   |   set reloc_root              |
+                              |   |                               |
+                              |   |                               |
+merge_reloc_root()            |   | merge_reloc_root()            |
+|- btrfs_update_reloc_root() ---  | |- btrfs_update_reloc_root() -+-
+     clear btrfs_root::reloc_root |      set ROOT_DEAD_RELOC_TREE |
+                                  |      record root into dirty   |
+                                  |      roots rbtree             |
+                                  |                               |
+                                  | reloc_block_group() Or        |
+                                  | btrfs_recover_relocation()    |
+                                  | | After transaction commit    |
+                                  | |- clean_dirty_root()        ---
+                                  |     clear btrfs_root::reloc_root
 
-For example:
+During ROOT_DEAD_RELOC_TREE set lifespan, the only user of
+btrfs_root::reloc_tree should be qgroup.
 
-           FS 260     FS 261 (Dropped)
-            node A        node B
-           /      \      /      \
-       node C      node D      node E
-      /   \         /  \        /     \
-  leaf F|leaf G|leaf H|leaf I|leaf J|leaf K
+And to co-operate this, also delayed btrfs_drop_snapshot() call on reloc
+tree, btrfs_drop_snapshot() call will also be delayed to
+clean_dirty_root().
 
-The lock sequence would be:
-
-      Thread A (cleaner)             |       Thread B (other writer)
------------------------------------------------------------------------
-write_lock(B)                        |
-write_lock(D)                        |
-^^^ called by walk_down_tree()       |
-                                     |       write_lock(A)
-                                     |       write_lock(D) << Stall
-read_lock(H) << for backref walk     |
-read_lock(D) << lock owner is        |
-                the same thread A    |
-                so read lock is OK   |
-read_lock(A) << Stall                |
-
-So thread A hold write lock D, and needs read lock A to unlock.
-While thread B holds write lock A, while needs lock D to unlock.
-
-This will cause a dead lock.
-
-This is not only limited to snapshot dropping case.
-As the backref walk, even only happens on commit trees, is breaking the
-normal top-down locking order, makes it deadlock prone.
-
-[FIX]
-The solution is not to trigger backref walk with any write lock hold.
-This means we can't do backref walk at delayed ref insert time.
-
-So this patch will mostly revert commit fb235dc06fac ("btrfs: qgroup:
-Move half of the qgroup accounting time out of commit trans").
-
-Reported-by: David Sterba <dsterba@suse.cz>
-Reported-by: Filipe Manana <fdmanana@suse.com>
-Fixes: fb235dc06fac ("btrfs: qgroup: Move half of the qgroup accounting time out of commit trans")
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/delayed-ref.c | 24 ++++--------------------
- fs/btrfs/qgroup.c      | 39 +++------------------------------------
- fs/btrfs/qgroup.h      | 30 ++----------------------------
- 3 files changed, 9 insertions(+), 84 deletions(-)
+ fs/btrfs/ctree.h      |   1 +
+ fs/btrfs/relocation.c | 125 ++++++++++++++++++++++++++++++++++++------
+ 2 files changed, 109 insertions(+), 17 deletions(-)
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 7e74bf42f2db..2fc7936a377f 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -604,12 +604,10 @@ static noinline struct btrfs_delayed_ref_head *
- add_delayed_ref_head(struct btrfs_trans_handle *trans,
- 		     struct btrfs_delayed_ref_head *head_ref,
- 		     struct btrfs_qgroup_extent_record *qrecord,
--		     int action, int *qrecord_inserted_ret,
--		     int *old_ref_mod, int *new_ref_mod)
-+		     int action, int *old_ref_mod, int *new_ref_mod)
- {
- 	struct btrfs_delayed_ref_head *existing;
- 	struct btrfs_delayed_ref_root *delayed_refs;
--	int qrecord_inserted = 0;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 80953528572d..2c33506bdaaa 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1149,6 +1149,7 @@ struct btrfs_subvolume_writers {
+ #define BTRFS_ROOT_FORCE_COW		6
+ #define BTRFS_ROOT_MULTI_LOG_TASKS	7
+ #define BTRFS_ROOT_DIRTY		8
++#define BTRFS_ROOT_DEAD_RELOC_TREE	9
  
- 	delayed_refs = &trans->transaction->delayed_refs;
- 
-@@ -618,8 +616,6 @@ add_delayed_ref_head(struct btrfs_trans_handle *trans,
- 		if (btrfs_qgroup_trace_extent_nolock(trans->fs_info,
- 					delayed_refs, qrecord))
- 			kfree(qrecord);
--		else
--			qrecord_inserted = 1;
- 	}
- 
- 	trace_add_delayed_ref_head(trans->fs_info, head_ref, action);
-@@ -645,8 +641,6 @@ add_delayed_ref_head(struct btrfs_trans_handle *trans,
- 		atomic_inc(&delayed_refs->num_entries);
- 		trans->delayed_ref_updates++;
- 	}
--	if (qrecord_inserted_ret)
--		*qrecord_inserted_ret = qrecord_inserted;
- 	if (new_ref_mod)
- 		*new_ref_mod = head_ref->total_ref_mod;
- 
-@@ -720,7 +714,6 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
- 	struct btrfs_delayed_ref_head *head_ref;
- 	struct btrfs_delayed_ref_root *delayed_refs;
- 	struct btrfs_qgroup_extent_record *record = NULL;
--	int qrecord_inserted;
- 	bool is_system = (ref_root == BTRFS_CHUNK_TREE_OBJECTID);
- 	int ret;
- 	u8 ref_type;
-@@ -769,8 +762,7 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
- 	 * the spin lock
- 	 */
- 	head_ref = add_delayed_ref_head(trans, head_ref, record,
--					action, &qrecord_inserted,
--					old_ref_mod, new_ref_mod);
-+					action, old_ref_mod, new_ref_mod);
- 
- 	ret = insert_delayed_ref(trans, delayed_refs, head_ref, &ref->node);
- 	spin_unlock(&delayed_refs->lock);
-@@ -781,9 +773,6 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
- 	if (ret > 0)
- 		kmem_cache_free(btrfs_delayed_tree_ref_cachep, ref);
- 
--	if (qrecord_inserted)
--		btrfs_qgroup_trace_extent_post(fs_info, record);
--
- 	return 0;
- }
- 
-@@ -801,7 +790,6 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
- 	struct btrfs_delayed_ref_head *head_ref;
- 	struct btrfs_delayed_ref_root *delayed_refs;
- 	struct btrfs_qgroup_extent_record *record = NULL;
--	int qrecord_inserted;
- 	int ret;
- 	u8 ref_type;
- 
-@@ -850,8 +838,7 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
- 	 * the spin lock
- 	 */
- 	head_ref = add_delayed_ref_head(trans, head_ref, record,
--					action, &qrecord_inserted,
--					old_ref_mod, new_ref_mod);
-+					action, old_ref_mod, new_ref_mod);
- 
- 	ret = insert_delayed_ref(trans, delayed_refs, head_ref, &ref->node);
- 	spin_unlock(&delayed_refs->lock);
-@@ -862,9 +849,6 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
- 	if (ret > 0)
- 		kmem_cache_free(btrfs_delayed_data_ref_cachep, ref);
- 
--
--	if (qrecord_inserted)
--		return btrfs_qgroup_trace_extent_post(fs_info, record);
- 	return 0;
- }
- 
-@@ -889,7 +873,7 @@ int btrfs_add_delayed_extent_op(struct btrfs_fs_info *fs_info,
- 	spin_lock(&delayed_refs->lock);
- 
- 	add_delayed_ref_head(trans, head_ref, NULL, BTRFS_UPDATE_DELAYED_HEAD,
--			     NULL, NULL, NULL);
-+			     NULL, NULL);
- 
- 	spin_unlock(&delayed_refs->lock);
- 	return 0;
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 0a66f619103d..8729492ac10f 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1559,33 +1559,6 @@ int btrfs_qgroup_trace_extent_nolock(struct btrfs_fs_info *fs_info,
- 	return 0;
- }
- 
--int btrfs_qgroup_trace_extent_post(struct btrfs_fs_info *fs_info,
--				   struct btrfs_qgroup_extent_record *qrecord)
--{
--	struct ulist *old_root;
--	u64 bytenr = qrecord->bytenr;
--	int ret;
--
--	ret = btrfs_find_all_roots(NULL, fs_info, bytenr, 0, &old_root, false);
--	if (ret < 0) {
--		fs_info->qgroup_flags |= BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
--		btrfs_warn(fs_info,
--"error accounting new delayed refs extent (err code: %d), quota inconsistent",
--			ret);
--		return 0;
--	}
--
--	/*
--	 * Here we don't need to get the lock of
--	 * trans->transaction->delayed_refs, since inserted qrecord won't
--	 * be deleted, only qrecord->node may be modified (new qrecord insert)
--	 *
--	 * So modifying qrecord->old_roots is safe here
--	 */
--	qrecord->old_roots = old_root;
--	return 0;
--}
--
- int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans, u64 bytenr,
- 			      u64 num_bytes, gfp_t gfp_flag)
- {
-@@ -1609,11 +1582,9 @@ int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans, u64 bytenr,
- 	spin_lock(&delayed_refs->lock);
- 	ret = btrfs_qgroup_trace_extent_nolock(fs_info, delayed_refs, record);
- 	spin_unlock(&delayed_refs->lock);
--	if (ret > 0) {
-+	if (ret > 0)
- 		kfree(record);
--		return 0;
--	}
--	return btrfs_qgroup_trace_extent_post(fs_info, record);
-+	return 0;
- }
- 
- int btrfs_qgroup_trace_leaf_items(struct btrfs_trans_handle *trans,
-@@ -2563,11 +2534,7 @@ int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans)
- 		trace_btrfs_qgroup_account_extents(fs_info, record);
- 
- 		if (!ret) {
--			/*
--			 * Old roots should be searched when inserting qgroup
--			 * extent record
--			 */
--			if (WARN_ON(!record->old_roots)) {
-+			if (!record->old_roots) {
- 				/* Search commit root to find old_roots */
- 				ret = btrfs_find_all_roots(NULL, fs_info,
- 						record->bytenr, 0,
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index fd26fddacd90..a4de5065de4b 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -174,8 +174,7 @@ struct btrfs_delayed_extent_op;
-  * Inform qgroup to trace one dirty extent, its info is recorded in @record.
-  * So qgroup can account it at transaction committing time.
-  *
-- * No lock version, caller must acquire delayed ref lock and allocated memory,
-- * then call btrfs_qgroup_trace_extent_post() after exiting lock context.
-+ * No lock version, caller must acquire delayed ref lock and allocate memory,
-  *
-  * Return 0 for success insert
-  * Return >0 for existing record, caller can free @record safely.
-@@ -186,37 +185,12 @@ int btrfs_qgroup_trace_extent_nolock(
- 		struct btrfs_delayed_ref_root *delayed_refs,
- 		struct btrfs_qgroup_extent_record *record);
- 
--/*
-- * Post handler after qgroup_trace_extent_nolock().
-- *
-- * NOTE: Current qgroup does the expensive backref walk at transaction
-- * committing time with TRANS_STATE_COMMIT_DOING, this blocks incoming
-- * new transaction.
-- * This is designed to allow btrfs_find_all_roots() to get correct new_roots
-- * result.
-- *
-- * However for old_roots there is no need to do backref walk at that time,
-- * since we search commit roots to walk backref and result will always be
-- * correct.
-- *
-- * Due to the nature of no lock version, we can't do backref there.
-- * So we must call btrfs_qgroup_trace_extent_post() after exiting
-- * spinlock context.
-- *
-- * TODO: If we can fix and prove btrfs_find_all_roots() can get correct result
-- * using current root, then we can move all expensive backref walk out of
-- * transaction committing, but not now as qgroup accounting will be wrong again.
-- */
--int btrfs_qgroup_trace_extent_post(struct btrfs_fs_info *fs_info,
--				   struct btrfs_qgroup_extent_record *qrecord);
--
  /*
-  * Inform qgroup to trace one dirty extent, specified by @bytenr and
-  * @num_bytes.
-  * So qgroup can account it at commit trans time.
-  *
-- * Better encapsulated version, with memory allocation and backref walk for
-- * commit roots.
-+ * Better encapsulated version, with memory allocation
-  * So this can sleep.
-  *
-  * Return 0 if the operation is done.
+  * in ram representation of the tree.  extent_root is used for all allocations
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 924116f654a1..6f1f11b5d8f6 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -143,6 +143,20 @@ struct file_extent_cluster {
+ 	unsigned int nr;
+ };
+ 
++/*
++ * Helper structure to keep record of a file tree whose reloc
++ * root needs to be cleaned up.
++ *
++ * Since reloc_control is used less frequently than btrfs_root, this should
++ * prevent us to add another structure in btrfs_root.
++ */
++struct dirty_source_root {
++	struct rb_node node;
++
++	/* Root must be file tree */
++	struct btrfs_root *root;
++};
++
+ struct reloc_control {
+ 	/* block group to relocate */
+ 	struct btrfs_block_group_cache *block_group;
+@@ -172,6 +186,9 @@ struct reloc_control {
+ 	u64 search_start;
+ 	u64 extents_found;
+ 
++	/* dirty source roots, whose reloc root needs to be cleaned up */
++	struct rb_root dirty_roots;
++
+ 	unsigned int stage:8;
+ 	unsigned int create_reloc_tree:1;
+ 	unsigned int merge_reloc_tree:1;
+@@ -1467,15 +1484,17 @@ int btrfs_update_reloc_root(struct btrfs_trans_handle *trans,
+ 	struct btrfs_root_item *root_item;
+ 	int ret;
+ 
+-	if (!root->reloc_root)
++	if (test_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &root->state) ||
++	    !root->reloc_root)
+ 		goto out;
+ 
+ 	reloc_root = root->reloc_root;
+ 	root_item = &reloc_root->root_item;
+ 
++	/* root->reloc_root will stay until current relocation finished */
+ 	if (fs_info->reloc_ctl->merge_reloc_tree &&
+ 	    btrfs_root_refs(root_item) == 0) {
+-		root->reloc_root = NULL;
++		set_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &root->state);
+ 		__del_reloc_root(reloc_root);
+ 	}
+ 
+@@ -2120,6 +2139,84 @@ static int find_next_key(struct btrfs_path *path, int level,
+ 	return 1;
+ }
+ 
++/*
++ * Helper to insert current root into reloc_control::dirty_roots
++ */
++static int insert_dirty_root(struct btrfs_trans_handle *trans,
++			     struct reloc_control *rc,
++			     struct btrfs_root *root)
++{
++	struct rb_node **p = &rc->dirty_roots.rb_node;
++	struct rb_node *parent = NULL;
++	struct dirty_source_root *entry;
++	struct btrfs_root *reloc_root = root->reloc_root;
++	struct btrfs_root_item *reloc_root_item;
++	u64 root_objectid = root->root_key.objectid;
++
++	/* @root must be a file tree root*/
++	ASSERT(root_objectid != BTRFS_TREE_RELOC_OBJECTID);
++	ASSERT(reloc_root);
++
++	reloc_root_item = &reloc_root->root_item;
++	memset(&reloc_root_item->drop_progress, 0,
++		sizeof(reloc_root_item->drop_progress));
++	reloc_root_item->drop_level = 0;
++	btrfs_set_root_refs(reloc_root_item, 0);
++	btrfs_update_reloc_root(trans, root);
++
++	/* We're at relocation route, not writeback route, GFP_KERNEL is OK */
++	entry = kmalloc(sizeof(*entry), GFP_KERNEL);
++	if (!entry)
++		return -ENOMEM;
++	btrfs_grab_fs_root(root);
++	entry->root = root;
++	while (*p) {
++		struct dirty_source_root *cur_entry;
++
++		parent = *p;
++		cur_entry = rb_entry(parent, struct dirty_source_root, node);
++
++		if (root_objectid < cur_entry->root->root_key.objectid)
++			p = &(*p)->rb_left;
++		else if (root_objectid > cur_entry->root->root_key.objectid)
++			p = &(*p)->rb_right;
++		else {
++			/* This root is already dirtied */
++			btrfs_put_fs_root(root);
++			kfree(entry);
++			return 0;
++		}
++	}
++	rb_link_node(&entry->node, parent, p);
++	rb_insert_color(&entry->node, &rc->dirty_roots);
++	return 0;
++}
++
++static int clean_dirty_root(struct reloc_control *rc)
++{
++	struct dirty_source_root *entry;
++	struct dirty_source_root *next;
++	int err = 0;
++	int ret;
++
++	rbtree_postorder_for_each_entry_safe(entry, next, &rc->dirty_roots,
++					     node) {
++		struct btrfs_root *reloc_root = entry->root->reloc_root;
++
++		clear_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &entry->root->state);
++		entry->root->reloc_root = NULL;
++		if (reloc_root) {
++			ret = btrfs_drop_snapshot(reloc_root, NULL, 0, 1);
++			if (ret < 0 && !err)
++				err = ret;
++		}
++		btrfs_put_fs_root(entry->root);
++		kfree(entry);
++	}
++	rc->dirty_roots = RB_ROOT;
++	return err;
++}
++
+ /*
+  * merge the relocated tree blocks in reloc tree with corresponding
+  * fs tree.
+@@ -2259,13 +2356,8 @@ static noinline_for_stack int merge_reloc_root(struct reloc_control *rc,
+ out:
+ 	btrfs_free_path(path);
+ 
+-	if (err == 0) {
+-		memset(&root_item->drop_progress, 0,
+-		       sizeof(root_item->drop_progress));
+-		root_item->drop_level = 0;
+-		btrfs_set_root_refs(root_item, 0);
+-		btrfs_update_reloc_root(trans, root);
+-	}
++	if (err == 0)
++		err = insert_dirty_root(trans, rc, root);
+ 
+ 	if (trans)
+ 		btrfs_end_transaction_throttle(trans);
+@@ -2410,14 +2502,6 @@ void merge_reloc_roots(struct reloc_control *rc)
+ 		} else {
+ 			list_del_init(&reloc_root->root_list);
+ 		}
+-
+-		ret = btrfs_drop_snapshot(reloc_root, rc->block_rsv, 0, 1);
+-		if (ret < 0) {
+-			if (list_empty(&reloc_root->root_list))
+-				list_add_tail(&reloc_root->root_list,
+-					      &reloc_roots);
+-			goto out;
+-		}
+ 	}
+ 
+ 	if (found) {
+@@ -4078,6 +4162,9 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
+ 		goto out_free;
+ 	}
+ 	btrfs_commit_transaction(trans);
++	ret = clean_dirty_root(rc);
++	if (ret < 0 && !err)
++		err = ret;
+ out_free:
+ 	btrfs_free_block_rsv(fs_info, rc->block_rsv);
+ 	btrfs_free_path(path);
+@@ -4481,6 +4568,10 @@ int btrfs_recover_relocation(struct btrfs_root *root)
+ 		goto out_free;
+ 	}
+ 	err = btrfs_commit_transaction(trans);
++
++	ret = clean_dirty_root(rc);
++	if (ret < 0 && !err)
++		err = ret;
+ out_free:
+ 	kfree(rc);
+ out:
 -- 
 2.19.2
 

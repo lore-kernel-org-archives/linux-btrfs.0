@@ -2,210 +2,151 @@ Return-Path: <SRS0=l3pb=OV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.9 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,T_MIXED_ES,
-	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIMWL_WL_MED,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 43AC6C67839
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 16:02:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4F4F1C65BAF
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 17:56:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 068E820672
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 16:02:03 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 068E820672
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
+	by mail.kernel.org (Postfix) with ESMTP id F19DC20839
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 17:56:05 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b="E43rh/zd";
+	dkim=pass (1024-bit key) header.d=fb.onmicrosoft.com header.i=@fb.onmicrosoft.com header.b="EE67yDzS"
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org F19DC20839
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=fb.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727848AbeLLQCB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Dec 2018 11:02:01 -0500
-Received: from mx2.suse.de ([195.135.220.15]:44536 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726281AbeLLQCB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Dec 2018 11:02:01 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 3E8EAAFD8;
-        Wed, 12 Dec 2018 16:01:58 +0000 (UTC)
-Subject: Re: [PATCH 6/8] btrfs: loop in inode_rsv_refill
-To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-References: <20181203152459.21630-1-josef@toxicpanda.com>
- <20181203152459.21630-7-josef@toxicpanda.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <6a7a6a50-9a58-032e-e62a-c551b257b0ac@suse.com>
-Date:   Wed, 12 Dec 2018 18:01:57 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
-MIME-Version: 1.0
-In-Reply-To: <20181203152459.21630-7-josef@toxicpanda.com>
-Content-Type: text/plain; charset=utf-8
+        id S1727912AbeLLR4F (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 12 Dec 2018 12:56:05 -0500
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:38852 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1727880AbeLLR4E (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Dec 2018 12:56:04 -0500
+Received: from pps.filterd (m0001303.ppops.net [127.0.0.1])
+        by m0001303.ppops.net (8.16.0.27/8.16.0.27) with SMTP id wBCHo6tk003772;
+        Wed, 12 Dec 2018 09:55:47 -0800
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
+ : date : message-id : references : in-reply-to : content-type :
+ content-transfer-encoding : mime-version; s=facebook;
+ bh=4XjW0stMQkgeJVb9JLcZ6JjDELdKODVGhVM7h6bcCjw=;
+ b=E43rh/zdOmWaazM25odJczgRiWcXdtTBqJjZ6lx+eeWKVlGq59zvv3lretGGdkCHJNly
+ 7wyg8remeyxGp6KLZoKRufGEoZQSAzmQiWDvX+cEVKXg2an+B3fsN8Q2pcQVHi/8yGI2
+ pfszUXbKSkeBYWDDDTcfY/DyZbPxfJQzQ9c= 
+Received: from maileast.thefacebook.com ([199.201.65.23])
+        by m0001303.ppops.net with ESMTP id 2pb58b0ewr-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-SHA384 bits=256 verify=NOT);
+        Wed, 12 Dec 2018 09:55:47 -0800
+Received: from frc-hub01.TheFacebook.com (2620:10d:c021:18::171) by
+ frc-hub01.TheFacebook.com (2620:10d:c021:18::171) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id
+ 15.1.1531.3; Wed, 12 Dec 2018 09:55:45 -0800
+Received: from NAM03-CO1-obe.outbound.protection.outlook.com (192.168.183.28)
+ by o365-in.thefacebook.com (192.168.177.71) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id 15.1.1531.3
+ via Frontend Transport; Wed, 12 Dec 2018 09:55:45 -0800
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.onmicrosoft.com;
+ s=selector1-fb-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=4XjW0stMQkgeJVb9JLcZ6JjDELdKODVGhVM7h6bcCjw=;
+ b=EE67yDzSuf/UB2X9gAbyloTiW0ayKgQshLlKVlBBssoGlTyh6Kuqpe3ZhYpVW51k3zJ5uy3Yl3/EzbZQBO4nsNlElFkOunVvlAjqhiyZBU1x9qGUc47rfuK/ZAts2JH8Ytl1ZKxoISvdv+NAX1ANweL1ZHR+SyiY47jD8SyeAvw=
+Received: from DM5PR15MB1883.namprd15.prod.outlook.com (10.174.247.135) by
+ DM5PR15MB1689.namprd15.prod.outlook.com (10.175.112.17) with Microsoft SMTP
+ Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.20.1404.20; Wed, 12 Dec 2018 17:55:43 +0000
+Received: from DM5PR15MB1883.namprd15.prod.outlook.com
+ ([fe80::f8d4:7c44:756a:6205]) by DM5PR15MB1883.namprd15.prod.outlook.com
+ ([fe80::f8d4:7c44:756a:6205%12]) with mapi id 15.20.1404.026; Wed, 12 Dec
+ 2018 17:55:43 +0000
+From:   Chris Mason <clm@fb.com>
+To:     David Sterba <dsterba@suse.cz>
+CC:     Martin Raiber <martin@urbackup.org>,
+        Ethan Lien <ethanlien@synology.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v2] btrfs: balance dirty metadata pages in
+ btrfs_finish_ordered_io
+Thread-Topic: [PATCH v2] btrfs: balance dirty metadata pages in
+ btrfs_finish_ordered_io
+Thread-Index: AQHT9keZ7Z3eAayDI0yo6F7kEUsUfaV8Es4AgABdrQCAAAPMAIAAJvMA
+Date:   Wed, 12 Dec 2018 17:55:43 +0000
+Message-ID: <7F58631F-D0C7-4B22-91FA-DE5125A64D29@fb.com>
+References: <20180528054821.9092-1-ethanlien@synology.com>
+ <D7645E04-6424-4BFA-90C6-D63245EB9435@fb.com>
+ <01020167a30347da-385e2eff-ed13-422a-b27f-c3d5933aaef2-000000@eu-west-1.amazonses.com>
+ <20181212153616.GY23615@twin.jikos.cz>
+In-Reply-To: <20181212153616.GY23615@twin.jikos.cz>
+Accept-Language: en-US
 Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+x-mailer: MailMate (1.12.2r5568)
+x-clientproxiedby: BN6PR2201CA0034.namprd22.prod.outlook.com
+ (2603:10b6:405:5e::47) To DM5PR15MB1883.namprd15.prod.outlook.com
+ (2603:10b6:4:4f::7)
+x-ms-exchange-messagesentrepresentingtype: 1
+x-originating-ip: [2620:10d:c091:180::1:e9ce]
+x-ms-publictraffictype: Email
+x-microsoft-exchange-diagnostics: 1;DM5PR15MB1689;20:0Ox40sfIYujgrr4aCP8EkqOxiAPlqygkYF3RJoez4MxljLX9WgvnE9FQnYJhY20lDL7hfaETDZQPaxhx9EOX/FAwrqj9KtVB7tdZH9caiBW8w4bo9lU9trHcabqdFOTuYLvI2pXbsNfqLXRZW6jeujnMSqhZYku9a6NuKCCohDQ=
+x-ms-office365-filtering-correlation-id: 9f81692e-e282-4040-e133-08d6605b091b
+x-microsoft-antispam: BCL:0;PCL:0;RULEID:(2390098)(7020095)(4652040)(8989299)(4534185)(4627221)(201703031133081)(201702281549075)(8990200)(5600074)(711020)(2017052603328)(7153060)(7193020);SRVR:DM5PR15MB1689;
+x-ms-traffictypediagnostic: DM5PR15MB1689:
+x-microsoft-antispam-prvs: <DM5PR15MB168935CA033D9AA1734657A7D3A70@DM5PR15MB1689.namprd15.prod.outlook.com>
+x-ms-exchange-senderadcheck: 1
+x-exchange-antispam-report-cfa-test: BCL:0;PCL:0;RULEID:(8211001083)(3230017)(999002)(11241501185)(6040522)(2401047)(8121501046)(5005006)(3231472)(944501520)(52105112)(3002001)(10201501046)(93006095)(93001095)(148016)(149066)(150057)(6041310)(20161123558120)(20161123562045)(20161123560045)(201703131423095)(201702281528075)(20161123555045)(201703061421075)(201703061406153)(20161123564045)(201708071742011)(7699051)(76991095);SRVR:DM5PR15MB1689;BCL:0;PCL:0;RULEID:;SRVR:DM5PR15MB1689;
+x-forefront-prvs: 0884AAA693
+x-forefront-antispam-report: SFV:NSPM;SFS:(10019020)(376002)(346002)(39860400002)(366004)(136003)(396003)(189003)(199004)(476003)(53936002)(53546011)(11346002)(2616005)(25786009)(8676002)(81156014)(52116002)(93886005)(486006)(81166006)(316002)(99286004)(8936002)(76176011)(6436002)(186003)(6246003)(446003)(4326008)(97736004)(229853002)(82746002)(86362001)(6512007)(46003)(305945005)(50226002)(7736002)(6506007)(256004)(5660300001)(71200400001)(83716004)(6916009)(36756003)(71190400001)(6486002)(14454004)(54906003)(33656002)(478600001)(105586002)(6116002)(106356001)(386003)(102836004)(2906002)(68736007)(14143004)(42262002);DIR:OUT;SFP:1102;SCL:1;SRVR:DM5PR15MB1689;H:DM5PR15MB1883.namprd15.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;MX:1;A:1;
+received-spf: None (protection.outlook.com: fb.com does not designate
+ permitted sender hosts)
+x-microsoft-antispam-message-info: eIb6ey3kvzzuVce5Yx4nzjATjFUHWOQwf1B9GzRKU3U4VMSwsB7IvmcK+RR5s3VXMmK07GXTX+5EMEnyoRvxM9amYNkMx7VWziOnJMHQPs0sUKDihRjmoG7UUfifh8MuUK/MkucUw30bCulMJC/9HHtPpULVkTbIlaoJOeqQh/6ug4Y0Ur9wGzGQBPvv27SrV5uN5b86E0pY0YwvUIBt4i8si2hHl09t2LRuajY9qdoMXkBtGrimghlpTzAf6qRwB5aS1o6mNERiMnF7h9Slr8sqtejwdyIsukprhEVTR3vudCZ5zFAuo4u0MlS8Nu/k
+spamdiagnosticoutput: 1:99
+spamdiagnosticmetadata: NSPM
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+X-MS-Exchange-CrossTenant-Network-Message-Id: 9f81692e-e282-4040-e133-08d6605b091b
+X-MS-Exchange-CrossTenant-originalarrivaltime: 12 Dec 2018 17:55:43.3708
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: 8ae927fe-1255-47a7-a2af-5f3a069daaa2
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: DM5PR15MB1689
+X-OriginatorOrg: fb.com
+X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10434:,, definitions=2018-12-12_04:,,
+ signatures=0
+X-Proofpoint-Spam-Reason: safe
+X-FB-Internal: Safe
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On 12 Dec 2018, at 10:36, David Sterba wrote:
 
+> On Wed, Dec 12, 2018 at 03:22:40PM +0000, Martin Raiber wrote:
+>> On 12.12.2018 15:47 Chris Mason wrote:
+>>> On 28 May 2018, at 1:48, Ethan Lien wrote:
+>>>
+>>> Eventually, we have every process in the system waiting on
+>>> balance_dirty_pages(), and nobody is able to make progress on page
+>>> writeback.
+>>>
+>> I had lockups with this patch as well. If you put e.g. a loop device=20
+>> on
+>> top of a btrfs file, loop sets PF_LESS_THROTTLE to avoid a feed back
+>> loop causing delays. The task balancing dirty pages in
+>> btrfs_finish_ordered_io doesn't have the flag and causes slow-downs.=20
+>> In
+>> my case it managed to cause a feedback loop where it queues other
+>> btrfs_finish_ordered_io and gets stuck completely.
+>
+> This does not look like the artificial and hard to hit case that's in
+> the original patch. I'm thinking about sending a revert to 4.20-rc6,=20
+> the
+> deadlock is IMO worse than OOM.
 
-On 3.12.18 г. 17:24 ч., Josef Bacik wrote:
-> With severe fragmentation we can end up with our inode rsv size being
-> huge during writeout, which would cause us to need to make very large
-> metadata reservations.  However we may not actually need that much once
+I haven't been able to trigger the OOM this morning.  Ethan, is this=20
+something you can still hit on upstream kernels with the=20
+balance_dirty_pages() removed?
 
-The sentence beginning with "However" needs more information, why might
-we not need that much once writeout is complete?
-> writeout is complete.  So instead try to make our reservation, and if we
-> couldn't make it re-calculate our new reservation size and try again.
-
-Why do you think that recalculating the requested bytes will be
-different the 2nd time ?
-
-> If our reservation size doesn't change between tries then we know we are
-> actually out of space and can error out.
-> 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-> ---
->  fs/btrfs/extent-tree.c | 58 +++++++++++++++++++++++++++++++++++++-------------
->  1 file changed, 43 insertions(+), 15 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 0ee77a98f867..0e1a499035ac 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -5787,6 +5787,21 @@ int btrfs_block_rsv_refill(struct btrfs_root *root,
->  	return ret;
->  }
->  
-> +static inline void __get_refill_bytes(struct btrfs_block_rsv *block_rsv,
-> +				      u64 *metadata_bytes, u64 *qgroup_bytes)
-
-This function needs a better name. Something like calc_required_bytes or
-calc_refill_bytes
-
-> +{
-> +	*metadata_bytes = 0;
-> +	*qgroup_bytes = 0;
-> +
-> +	spin_lock(&block_rsv->lock);
-> +	if (block_rsv->reserved < block_rsv->size)
-> +		*metadata_bytes = block_rsv->size - block_rsv->reserved;
-> +	if (block_rsv->qgroup_rsv_reserved < block_rsv->qgroup_rsv_size)
-> +		*qgroup_bytes = block_rsv->qgroup_rsv_size -
-> +			block_rsv->qgroup_rsv_reserved;
-> +	spin_unlock(&block_rsv->lock);
-> +}
-> +
->  /**
->   * btrfs_inode_rsv_refill - refill the inode block rsv.
->   * @inode - the inode we are refilling.
-> @@ -5802,25 +5817,39 @@ static int btrfs_inode_rsv_refill(struct btrfs_inode *inode,
->  {
->  	struct btrfs_root *root = inode->root;
->  	struct btrfs_block_rsv *block_rsv = &inode->block_rsv;
-> -	u64 num_bytes = 0;
-> +	u64 num_bytes = 0, last = 0;
->  	u64 qgroup_num_bytes = 0;
->  	int ret = -ENOSPC;
->  
-> -	spin_lock(&block_rsv->lock);
-> -	if (block_rsv->reserved < block_rsv->size)
-> -		num_bytes = block_rsv->size - block_rsv->reserved;
-> -	if (block_rsv->qgroup_rsv_reserved < block_rsv->qgroup_rsv_size)
-> -		qgroup_num_bytes = block_rsv->qgroup_rsv_size -
-> -				   block_rsv->qgroup_rsv_reserved;
-> -	spin_unlock(&block_rsv->lock);
-> -
-> +	__get_refill_bytes(block_rsv, &num_bytes, &qgroup_num_bytes);
->  	if (num_bytes == 0)
->  		return 0;
->  
-> -	ret = btrfs_qgroup_reserve_meta_prealloc(root, qgroup_num_bytes, true);
-> -	if (ret)
-> -		return ret;
-> -	ret = reserve_metadata_bytes(root, block_rsv, num_bytes, flush);
-> +	do {
-> +		ret = btrfs_qgroup_reserve_meta_prealloc(root, qgroup_num_bytes, true);
-> +		if (ret)
-> +			return ret;
-> +		ret = reserve_metadata_bytes(root, block_rsv, num_bytes, flush);
-> +		if (ret) {
-> +			btrfs_qgroup_free_meta_prealloc(root, qgroup_num_bytes);
-> +			last = num_bytes;
-> +			/*
-> +			 * If we are fragmented we can end up with a lot of
-> +			 * outstanding extents which will make our size be much
-> +			 * larger than our reserved amount.  If we happen to
-> +			 * try to do a reservation here that may result in us
-> +			 * trying to do a pretty hefty reservation, which we may
-> +			 * not need once delalloc flushing happens.  If this is
-
-The "If we happen" sentence needs to be reworded because it's -ENOPARSE.
-Perhaps one of the "to do a reservation" should go away?
-
-> +			 * the case try and do the reserve again.
-> +			 */
-> +			if (flush == BTRFS_RESERVE_FLUSH_ALL)
-> +				__get_refill_bytes(block_rsv, &num_bytes,
-> +						   &qgroup_num_bytes);
-> +			if (num_bytes == 0)
-> +				return 0;
-> +		}
-> +	} while (ret && last != num_bytes);
-> +
->  	if (!ret) {
->  		block_rsv_add_bytes(block_rsv, num_bytes, false);
->  		trace_btrfs_space_reservation(root->fs_info, "delalloc",
-> @@ -5830,8 +5859,7 @@ static int btrfs_inode_rsv_refill(struct btrfs_inode *inode,
->  		spin_lock(&block_rsv->lock);
->  		block_rsv->qgroup_rsv_reserved += qgroup_num_bytes;
->  		spin_unlock(&block_rsv->lock);
-> -	} else
-> -		btrfs_qgroup_free_meta_prealloc(root, qgroup_num_bytes);
-> +	}
->  	return ret;
->  }
->  
-> 
+-chris

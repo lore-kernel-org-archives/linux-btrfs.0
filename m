@@ -2,102 +2,109 @@ Return-Path: <SRS0=l3pb=OV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.9 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+X-Spam-Status: No, score=-8.4 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AAB48C04EB8
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 14:14:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B9E8FC04EB8
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 14:41:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 790022084E
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 14:14:26 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 790022084E
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.de
+	by mail.kernel.org (Postfix) with ESMTP id 858F12086D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 14:41:21 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 858F12086D
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726249AbeLLOOZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Dec 2018 09:14:25 -0500
-Received: from mx2.suse.de ([195.135.220.15]:53374 "EHLO mx1.suse.de"
+        id S1726358AbeLLOlU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 12 Dec 2018 09:41:20 -0500
+Received: from mx2.suse.de ([195.135.220.15]:58104 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726399AbeLLOOZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Dec 2018 09:14:25 -0500
+        id S1726223AbeLLOlU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Dec 2018 09:41:20 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 9535DAD5F
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Dec 2018 14:14:23 +0000 (UTC)
-From:   Johannes Thumshirn <jthumshirn@suse.de>
-To:     David Sterba <dsterba@suse.com>
-Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
-        Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH v4] btrfs: improve error handling of btrfs_add_link()
-Date:   Wed, 12 Dec 2018 15:14:17 +0100
-Message-Id: <20181212141417.17417-1-jthumshirn@suse.de>
-X-Mailer: git-send-email 2.16.4
+        by mx1.suse.de (Postfix) with ESMTP id 78FDCAFB6
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Dec 2018 14:41:18 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 07ACBDA7E5; Wed, 12 Dec 2018 15:40:54 +0100 (CET)
+Date:   Wed, 12 Dec 2018 15:40:53 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Refactor main loop in extent_readpages
+Message-ID: <20181212144052.GX23615@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20181129164131.4716-1-nborisov@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20181129164131.4716-1-nborisov@suse.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-err holds the return value of either btrfs_del_root_ref() or
-btrfs_del_inode_ref() but it hasn't been checked since it's
-introduction with commit fe66a05a0679 (Btrfs: improve error handling
-for btrfs_insert_dir_item callers) in 2012.
+On Thu, Nov 29, 2018 at 06:41:31PM +0200, Nikolay Borisov wrote:
+> extent_readpages processes all pages in the readlist in batches of 16,
+> this is implemented by a single for loop but thanks to an if condition
+> the loop does 2 things based on whether we've filled the batch or not.
+> Additionally due to the structure of the code there is an additional
+> check which deals with partial batches.
+> 
+> Streamline all of this by explicitly using two loops. The outter one is
+> used to process all pages while the inner one just fills in the batch
+> of 16 (currently). Due to this new structure the code guarantees that
+> all pages are processed in the loop hence the code to deal with any
+> leftovers is eliminated.
+> 
+> This also enable the compiler to inline __extent_readpages:
+> 
+> 	./scripts/bloat-o-meter fs/btrfs/extent_io.o extent_io.for
+> 
+> 	add/remove: 0/1 grow/shrink: 1/0 up/down: 660/-820 (-160)
+> 	Function                                     old     new   delta
+> 	extent_readpages                             476    1136    +660
+> 	__extent_readpages                           820       -    -820
+> 	Total: Before=44315, After=44155, chg -0.36%
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  fs/btrfs/extent_io.c | 37 ++++++++++++++++---------------------
+>  1 file changed, 16 insertions(+), 21 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 8332c5f4b1c3..233f835dd6f8 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -4093,43 +4093,38 @@ int extent_writepages(struct address_space *mapping,
+>  int extent_readpages(struct address_space *mapping, struct list_head *pages,
+>  		     unsigned nr_pages)
 
-To quote David:
+nr_pages becomes unused now. I've checked the MM code that calls here
+and it's guaranteed that the number of list 'pages' members is same as
+nr_pages.
 
-"If the error handling in the error handling fails, there's not much left to do
-and the abort either happened earlier in the callees or is necessary here."
+>  {
+> +#define BTRFS_PAGES_BATCH 16
+> +
+>  	struct bio *bio = NULL;
+> -	unsigned page_idx;
+>  	unsigned long bio_flags = 0;
+> -	struct page *pagepool[16];
+> -	struct page *page;
+> +	struct page *pagepool[BTRFS_PAGES_BATCH];
 
-So if one of btrfs_del_root_ref() or btrfs_del_inode_ref() failed, abort the
-transaction.
+I don't think we need the extra define, if
 
-Link: https://lore.kernel.org/linux-btrfs/20181126183759.GJ2842@twin.jikos.cz/
-Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+	struct page *pagepool[16];
 
----
-Changes to v3:
-* abort transaction directly after failed btrfs_del_{inode,root}_ref()
----
- fs/btrfs/inode.c | 9 +++++++--
- 1 file changed, 7 insertions(+), 2 deletions(-)
+	...
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index c5c27d5457cc..57c6d17780c4 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6311,6 +6311,7 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
- 	struct btrfs_root *root = parent_inode->root;
- 	u64 ino = btrfs_ino(inode);
- 	u64 parent_ino = btrfs_ino(parent_inode);
-+	int err = 0;
- 
- 	if (unlikely(ino == BTRFS_FIRST_FREE_OBJECTID)) {
- 		memcpy(&key, &inode->root->root_key, sizeof(key));
-@@ -6355,18 +6356,22 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
- fail_dir_item:
- 	if (unlikely(ino == BTRFS_FIRST_FREE_OBJECTID)) {
- 		u64 local_index;
--		int err;
-+
- 		err = btrfs_del_root_ref(trans, key.objectid,
- 					 root->root_key.objectid, parent_ino,
- 					 &local_index, name, name_len);
-+		if (err)
-+			btrfs_abort_transaction(trans, err);
- 
- 	} else if (add_backref) {
- 		u64 local_index;
--		int err;
- 
- 		err = btrfs_del_inode_ref(trans, root, name, name_len,
- 					  ino, parent_ino, &local_index);
-+		if (err)
-+			btrfs_abort_transaction(trans, err);
- 	}
-+
- 	return ret;
- }
- 
--- 
-2.16.4
+	for (nr = 0; nr < ARRAY_SIZE(pagepool) ...
 
+Otherwise ok, nice cleanup.
+
+Reviewed-by: David Sterba <dsterba@suse.com>

@@ -6,29 +6,30 @@ X-Spam-Status: No, score=-0.9 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 31393C65BAF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 09:09:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7B40DC04EB8
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 09:14:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 01C6920849
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 09:09:37 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 01C6920849
+	by mail.kernel.org (Postfix) with ESMTP id 489B420849
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 09:14:08 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 489B420849
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726868AbeLLJJh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Dec 2018 04:09:37 -0500
-Received: from mx2.suse.de ([195.135.220.15]:54794 "EHLO mx1.suse.de"
+        id S1726606AbeLLJOH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 12 Dec 2018 04:14:07 -0500
+Received: from mx2.suse.de ([195.135.220.15]:55492 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726603AbeLLJJe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Dec 2018 04:09:34 -0500
+        id S1726242AbeLLJOG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Dec 2018 04:14:06 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id DCF76AE3D;
-        Wed, 12 Dec 2018 09:09:30 +0000 (UTC)
-Subject: Re: [PATCH] btrfs: raid56: data corruption on a device removal
-To:     Dmitriy Gorokh <Dmitriy.Gorokh@wdc.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <66F8D435-4E51-4761-B6CF-BA96F4BC5986@wdc.com>
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 77422ACA7
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Dec 2018 09:14:04 +0000 (UTC)
+Subject: Re: [PATCH 1/3] btrfs: Remove unused arguments from
+ btrfs_get_extent_fiemap
+To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+References: <20181212074234.20613-1-nborisov@suse.com>
+ <20181212074234.20613-2-nborisov@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -86,12 +87,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <75c9a22e-dd24-073f-1a84-b3202dac4744@suse.de>
-Date:   Wed, 12 Dec 2018 10:09:30 +0100
+Message-ID: <c40e9bcc-2526-0946-9148-c1e6b2422942@suse.de>
+Date:   Wed, 12 Dec 2018 10:14:04 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <66F8D435-4E51-4761-B6CF-BA96F4BC5986@wdc.com>
+In-Reply-To: <20181212074234.20613-2-nborisov@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -100,36 +101,7 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 12/12/2018 01:25, Dmitriy Gorokh wrote:
-> I found that RAID5 or RAID6 filesystem might be got corrupted in the following scenario:
-> 
-> 1. Create 4 disks RAID6 filesystem
-> 2. Preallocate 16 10Gb files
-> 3. Run fio: 'fio --name=testload --directory=./ --size=10G --numjobs=16 --bs=64k --iodepth=64 --rw=randrw --verify=sha256 --time_based --runtime=3600’
-> 4. After few minutes pull out two drives: 'echo 1 > /sys/block/sdc/device/delete ;  echo 1 > /sys/block/sdd/device/delete’
-> 
-> About 5 of 10 times the test is run, it led to silent data corruption of a random extent, resulting in ‘IO Error’ and ‘csum failed’ messages while trying to read the affected file. It usually affects only small portion of the files and only one underlying extent of a file. When I converted logical address of the damaged extent to physical address and dumped a stripe directly from drives, I saw specific pattern, always the same when the issue occurs.
-> 
-> I found that few bios which were being processed right during the drives removal, contained non zero bio->bi_iter.bi_done field despite of  EIO bi_status. bi_sector field was also increased from original one by that 'bi_done' value. Looks like this is a quite rare condition. Subsequently, in the raid_rmw_end_io handler that failed bio can be translated to a wrong stripe number and fail wrong rbio.
-> 
-> 
-
-Please wrap the lines in you commit message at 75 and provide a
-Signed-off-by line, see [1].
-
-[1]
-https://www.kernel.org/doc/html/latest/process/submitting-patches.html?highlight=signed%20off#sign-your-work-the-developer-s-certificate-of-origin
-
-[...]
-
->         physical <<= 9;
-> +       // Since the failed bio can return partial data, bi_sector might be incremented
-> +       // by that value. We need to revert it back to the state before the bio was submitted.
-> +       physical -= bio->bi_iter.bi_done;
-
-Please no C++ Style comments.
-
-Otherwise,
+Looks good,
 Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems

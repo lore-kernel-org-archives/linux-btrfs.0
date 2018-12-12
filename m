@@ -3,32 +3,33 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-0.9 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 86BA7C04EB8
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 09:31:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C43F5C04EB8
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 09:41:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5550B20839
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 09:31:42 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 5550B20839
+	by mail.kernel.org (Postfix) with ESMTP id 87A572084E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 09:41:01 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 87A572084E
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726826AbeLLJbl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Dec 2018 04:31:41 -0500
-Received: from mx2.suse.de ([195.135.220.15]:58836 "EHLO mx1.suse.de"
+        id S1726666AbeLLJlA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 12 Dec 2018 04:41:00 -0500
+Received: from mx2.suse.de ([195.135.220.15]:60512 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726478AbeLLJbk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Dec 2018 04:31:40 -0500
+        id S1726519AbeLLJlA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Dec 2018 04:41:00 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 4F11BAFD8
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Dec 2018 09:31:38 +0000 (UTC)
-Subject: Re: [PATCH v2 1/8] btrfs: delayed-ref: Introduce better documented
- delayed ref structures
+        by mx1.suse.de (Postfix) with ESMTP id DA67BAC58
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Dec 2018 09:40:57 +0000 (UTC)
+Subject: Re: [PATCH v2 2/8] btrfs: extent-tree: Open-code process_func in
+ __btrfs_mod_ref
 To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20181212073102.7736-1-wqu@suse.com>
- <20181212073102.7736-2-wqu@suse.com>
+ <20181212073102.7736-3-wqu@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -86,12 +87,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <8a1e395f-878d-3cec-1b8a-4840a0b8c1c0@suse.de>
-Date:   Wed, 12 Dec 2018 10:31:38 +0100
+Message-ID: <c8dadde8-611a-e402-6b1f-495847164028@suse.de>
+Date:   Wed, 12 Dec 2018 10:40:57 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181212073102.7736-2-wqu@suse.com>
+In-Reply-To: <20181212073102.7736-3-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -101,13 +102,20 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 On 12/12/2018 08:30, Qu Wenruo wrote:
->  
-> +enum btrfs_ref_type {
-> +	BTRFS_REF_NOT_SET = 0,
+> The process_func is never a function hook used anywhere else.
+> 
 
-Nit: no need to explicitly initialize an enum to 0.
+Hmm this sounds odd, maybe something like:
 
+The process_func function pointer is local to __btrfs_mod_ref() and
+points to either btrfs_inc_extent_ref() or btrfs_free_extent().
 
+> Open code it to make later delayed ref refactor easier, so we can
+> refactor btrfs_inc_extent_ref() and btrfs_free_extent() in different
+> patches.
+
+Otherwise:
+Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems
 jthumshirn@suse.de                                +49 911 74053 689

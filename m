@@ -2,134 +2,87 @@ Return-Path: <SRS0=l3pb=OV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.4 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
+X-Spam-Status: No, score=-7.4 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,USER_AGENT_MUTT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A30C3C04EB8
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 13:37:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D8F91C04EB8
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 13:50:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 73CD020870
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 13:37:51 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 73CD020870
+	by mail.kernel.org (Postfix) with ESMTP id A9FC320839
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 13:50:30 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org A9FC320839
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727505AbeLLNhu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Dec 2018 08:37:50 -0500
-Received: from mx2.suse.de ([195.135.220.15]:46320 "EHLO mx1.suse.de"
+        id S1727644AbeLLNu3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 12 Dec 2018 08:50:29 -0500
+Received: from mx2.suse.de ([195.135.220.15]:48374 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726245AbeLLNhu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Dec 2018 08:37:50 -0500
+        id S1727290AbeLLNu3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Dec 2018 08:50:29 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 175D5AD0C;
-        Wed, 12 Dec 2018 13:37:48 +0000 (UTC)
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id BDB70AEB7;
+        Wed, 12 Dec 2018 13:50:27 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 13E8ADA7E5; Wed, 12 Dec 2018 14:37:24 +0100 (CET)
-Date:   Wed, 12 Dec 2018 14:37:24 +0100
+        id B9C2FDA7E5; Wed, 12 Dec 2018 14:50:03 +0100 (CET)
+Date:   Wed, 12 Dec 2018 14:50:02 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     fdmanana@kernel.org
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] Btrfs: send, fix race with transaction commits that
- create snapshots
-Message-ID: <20181212133722.GV23615@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
-References: <20181210175502.16620-1-fdmanana@kernel.org>
- <20181211101945.28695-1-fdmanana@kernel.org>
+Subject: Re: [PATCH v3 0/7] btrfs: qgroup: Delay subtree scan to reduce
+ overhead
+Message-ID: <20181212135001.GW23615@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20181212003953.5643-1-wqu@suse.com>
+ <20181212123739.GR23615@twin.jikos.cz>
+ <fde0326c-0590-eb4e-4f61-250b7e202c05@gmx.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <20181211101945.28695-1-fdmanana@kernel.org>
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <fde0326c-0590-eb4e-4f61-250b7e202c05@gmx.com>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Dec 11, 2018 at 10:19:45AM +0000, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
+On Wed, Dec 12, 2018 at 09:20:33PM +0800, Qu Wenruo wrote:
 > 
-> If we create a snapshot of a snapshot currently being used by a send
-> operation, we can end up with send failing unexpectedly (returning
-> -ENOENT error to user space for example). The following diagram shows
-> how this happens.
 > 
->             CPU 1                                   CPU2                                CPU3
+> On 2018/12/12 下午8:37, David Sterba wrote:
+> > On Wed, Dec 12, 2018 at 08:39:46AM +0800, Qu Wenruo wrote:
+> >> changelog:
+> >> v2:
+> >> - Rebase to v4.20-rc1.
+> >> - Instead commit transaction after each reloc tree merge, delay it until
+> >>   merge_reloc_roots() finishes.
+> >> - This provides a more natural behavior, and reduce the unnecessary
+> >>   transaction commits.
+> >> v3:
+> >> - Fix backref walk deadlock by not triggering it at all.
+> >>   This also removes the need for @exec_post refactor and replace the
+> >>   patch to allow @old_root unpopulated.
+> >> - Include the patch that fixes the unexpected data rsv free.
+> > 
+> > I've tested the deadlock fix but it still locks up and there are some
+> > lockdep warnings. I can't spend more time on that given the pre-merge
+> > window timing so I'm going to postpone all qgruop things until the next
+> > cycle.
 > 
->  btrfs_ioctl_send()
->   (...)
->                                      create_snapshot()
->                                       -> creates snapshot of a
->                                          root used by the send
->                                          task
->                                       btrfs_commit_transaction()
->                                        create_pending_snapshot()
->   __get_inode_info()
->    btrfs_search_slot()
->     btrfs_search_slot_get_root()
->      down_read commit_root_sem
+> No problem.
 > 
->      get reference on eb of the
->      commit root
->       -> eb with bytenr == X
-> 
->      up_read commit_root_sem
-> 
->                                         btrfs_cow_block(root node)
->                                          btrfs_free_tree_block()
->                                           -> creates delayed ref to
->                                              free the extent
-> 
->                                        btrfs_run_delayed_refs()
->                                         -> runs the delayed ref,
->                                            adds extent to
->                                            fs_info->pinned_extents
-> 
->                                        btrfs_finish_extent_commit()
->                                         unpin_extent_range()
->                                          -> marks extent as free
->                                             in the free space cache
-> 
->                                       transaction commit finishes
-> 
->                                                                        btrfs_start_transaction()
->                                                                         (...)
->                                                                         btrfs_cow_block()
->                                                                          btrfs_alloc_tree_block()
->                                                                           btrfs_reserve_extent()
->                                                                            -> allocates extent at
->                                                                               bytenr == X
->                                                                           btrfs_init_new_buffer(bytenr X)
->                                                                            btrfs_find_create_tree_block()
->                                                                             alloc_extent_buffer(bytenr X)
->                                                                              find_extent_buffer(bytenr X)
->                                                                               -> returns existing eb,
->                                                                                  which the send task got
-> 
->                                                                         (...)
->                                                                          -> modifies content of the
->                                                                             eb with bytenr == X
-> 
->     -> uses an eb that now
->        belongs to some other
->        tree and no more matches
->        the commit root of the
->        snapshot, resuts will be
->        unpredictable
-> 
-> The consequences of this race can be various, and can lead to searches in
-> the commit root performed by the send task failing unexpectedly (unable to
-> find inode items, returning -ENOENT to user space, for example) or not
-> failing because an inode item with the same number was added to the tree
-> that reused the metadata extent, in which case send can behave incorrectly
-> in the worst case or just fail later for some reason.
-> 
-> Fix this by performing a copy of the commit root's extent buffer when doing
-> a search in the context of a send operation.
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> But would you please provide the reproducer?
+> My test script can't reproduce lockup this time.
 
-Nice catch, patch added to misc-next, thanks.
+git://github.com/kdave/testunion
+
+in the directory test-subvol-qg, it needs a 15GB tarred dump of
+wikipedia, the url is in the repo. You can possibly replace it with
+something else, the scripts need tmux and maybe some other utilites. Run
+with startme script and path to fresh filesystem.

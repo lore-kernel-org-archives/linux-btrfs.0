@@ -2,159 +2,231 @@ Return-Path: <SRS0=l3pb=OV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.9 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
-	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.9 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,T_MIXED_ES,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C85CCC04EB8
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 10:07:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B12BDC04EB8
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 11:01:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 95C2220839
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 10:07:34 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 95C2220839
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=gmx.com
+	by mail.kernel.org (Postfix) with ESMTP id 7B2FB20839
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 11:01:28 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 7B2FB20839
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726832AbeLLKHd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Dec 2018 05:07:33 -0500
-Received: from mout.gmx.net ([212.227.17.21]:45445 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726727AbeLLKHc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Dec 2018 05:07:32 -0500
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx102
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0Ldspr-1hFk2i0Bxj-00j05P; Wed, 12
- Dec 2018 11:07:24 +0100
-Subject: Re: [PATCH v2 2/8] btrfs: extent-tree: Open-code process_func in
- __btrfs_mod_ref
-To:     Johannes Thumshirn <jthumshirn@suse.de>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20181212073102.7736-1-wqu@suse.com>
- <20181212073102.7736-3-wqu@suse.com>
- <c8dadde8-611a-e402-6b1f-495847164028@suse.de>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <96bd3959-822d-5289-4b84-3a5db88ac991@gmx.com>
-Date:   Wed, 12 Dec 2018 18:07:17 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.3.2
+        id S1726879AbeLLLB1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 12 Dec 2018 06:01:27 -0500
+Received: from mx2.suse.de ([195.135.220.15]:45518 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726791AbeLLLB1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Dec 2018 06:01:27 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id E4D6BAEFC
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Dec 2018 11:01:24 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH v2.1 1/8] btrfs: delayed-ref: Introduce better documented delayed ref structures
+Date:   Wed, 12 Dec 2018 19:01:21 +0800
+Message-Id: <20181212110121.16008-1-wqu@suse.com>
+X-Mailer: git-send-email 2.19.2
+In-Reply-To: <20181212073102.7736-2-wqu@suse.com>
+References: <20181212073102.7736-2-wqu@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <c8dadde8-611a-e402-6b1f-495847164028@suse.de>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="hwEDLIRCy43XvnTs5c8wUvRM7V6Sg7WTT"
-X-Provags-ID: V03:K1:nTd/M3qO68THC4lr41ej/zrWB8A9g5k6igDo2QYA9SGK96z5HaN
- l4dnHiS/QxBKnFudpv/j2t6eIuObwipkFprhMG/iNMXtOaBGthT3uiOA67hVVOSJMtsuobJ
- VaeHx3nmJFIUnNry06b1D2SQAcgKouUfynhM5ykKPbkt/tNzjOHcx+jkdcVfd4SeGKUpAHF
- xW7jahC8Hqf6XNvBJrGKg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:QNz/prYMgsY=:iCZL6Zfi9RYe6cB+9rsmRZ
- qh0DP5ob4ejaLvYoCchLKSm1LXEuAdwgP0ZWMA+0DnHJRak6VBzjizaAEZ2A1fW8v3Fn2CpNt
- jxQkpxdmqG+ge8j0x9EKZ1FVsTVzQoAs4s1JFFFNqRF0ovqSKWNhJowKz302WSyfotUtaZZ2+
- BPMHRYSc3/VXDJRE3HpzqA8zaOTYp57jUODbGBTaefrFdG06DBGnyht2aJFT1iHKfd07ejPvk
- FJbg6OpUo5R+AjUCwBEl4FpHNCU8rUdKrlbpM7bseKADeBbvoE/Raim+NmHGhwJYFaiROPqJ8
- zIMUX7frAambI1RLcjhWS2vrBKvjXeeapoBrhTWBEnWWil2dTMgTcGenOikamkUi+fS/VIaxW
- 5vCxc8Phfg3kNhKKtOvaSK99sNNEg1r7r097qrKBpfAzbFaVY61KRwbfP+L8uEJbJxvdJKlXo
- p4YIetQbX8+08htUeo//5MTtOFrS7I8R2qIyXkIHgpT7yfCjknj2gE4Ymm4PiN/tNzmJiMU6N
- l+8aTHfXXAvlcRjASwaaejk6klZFo+wf+6W3rNiYn3CLSEDVKrvGlC31Pg8T6jIEBkZpn/TkS
- +qFc4O73vMO7tTxw+EBtCFiMw7+Ii5mzq1gSbHOi5ODihzqO+3vwAf3jS2RMZ0v9Ofhmcp9qV
- D3emEI1LSJ1FRRoanMIMDY1cogJ2JH9ALLJ6ES1HHzsFTUN8lGoCghnTxY0KW+JtinB5Fak3v
- kpnK5XOCFkoFJy6txiuhtGwQ8XNl7gyml+kIED6QD9vAN1XJlXIP0mnPXZWywUkkrlv8vUxhf
- 27KcAIwoaiagPo1p4SIdeOYeKrHFJtjiXbQn5tKDPd1TSV163s1F/V+ShxeJTeYEuVV/vJ5lB
- ofnfiIqC+CFdRieFVhoJYEOVQ2MS00wird3WXUIuzHanx/pDjOvsHNEUKf2tkr
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---hwEDLIRCy43XvnTs5c8wUvRM7V6Sg7WTT
-Content-Type: multipart/mixed; boundary="Aw7ZPLxrguSwAR3Zzray5CjX9QhdibfNh";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Johannes Thumshirn <jthumshirn@suse.de>, Qu Wenruo <wqu@suse.com>,
- linux-btrfs@vger.kernel.org
-Message-ID: <96bd3959-822d-5289-4b84-3a5db88ac991@gmx.com>
-Subject: Re: [PATCH v2 2/8] btrfs: extent-tree: Open-code process_func in
- __btrfs_mod_ref
-References: <20181212073102.7736-1-wqu@suse.com>
- <20181212073102.7736-3-wqu@suse.com>
- <c8dadde8-611a-e402-6b1f-495847164028@suse.de>
-In-Reply-To: <c8dadde8-611a-e402-6b1f-495847164028@suse.de>
+Current delayed ref interface has several problems:
+- Longer and longer parameter lists
+  bytenr
+  num_bytes
+  parent
+  ---------- so far so good
+  ref_root
+  owner
+  offset
+  ---------- I don't feel good now
 
---Aw7ZPLxrguSwAR3Zzray5CjX9QhdibfNh
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+- Different interpretation for the same parameter
+  Above @owner for data ref is inode number (u64),
+  while for tree ref, it's level (int).
 
+  They are even in different size range.
+  For level we only need 0~8, while for ino it's
+  BTRFS_FIRST_FREE_OBJECTID~BTRFS_LAST_FREE_OBJECTID.
 
+  And @offset doesn't even makes sense for tree ref.
 
-On 2018/12/12 =E4=B8=8B=E5=8D=885:40, Johannes Thumshirn wrote:
-> On 12/12/2018 08:30, Qu Wenruo wrote:
->> The process_func is never a function hook used anywhere else.
->>
->=20
-> Hmm this sounds odd, maybe something like:
->=20
-> The process_func function pointer is local to __btrfs_mod_ref() and
-> points to either btrfs_inc_extent_ref() or btrfs_free_extent().
+  Such parameter reuse may look clever as an hidden union, but it
+  destroys code readability.
 
-Much better, thanks for the better words!
+To solve both problems, we introduce a new structure, btrfs_ref to solve
+them:
 
-I'll reword these commits.
+- Structure instead of long parameter list
+  This makes later expansion easier, and better documented.
 
-Thanks,
-Qu
+- Use btrfs_ref::type to distinguish data and tree ref
 
->=20
->> Open code it to make later delayed ref refactor easier, so we can
->> refactor btrfs_inc_extent_ref() and btrfs_free_extent() in different
->> patches.
->=20
-> Otherwise:
-> Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
->=20
+- Use proper union to store data/tree ref specific structures.
 
+- Use separate functions to fill data/tree ref data, with a common generic
+  function to fill common bytenr/num_bytes members.
 
---Aw7ZPLxrguSwAR3Zzray5CjX9QhdibfNh--
+All parameters will find its place in btrfs_ref, and an extra member,
+@real_root, inspired by ref-verify code, is newly introduced for later
+qgroup code, to record which tree is triggered this extent modification.
 
---hwEDLIRCy43XvnTs5c8wUvRM7V6Sg7WTT
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+This patch doesn't touch any code, but provides the basis for incoming
+refactors.
 
------BEGIN PGP SIGNATURE-----
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+changelog:
+v2->v2.1:
+- Remove the 0 initialization for enum.
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlwQ3dUACgkQwj2R86El
-/qiHSgf/ceOj1v+ZVI+SK+/TpqjeU0PRlWWAi2nICLoN7AHGfnL+ovUsL03jKfRo
-tZ/Qf4giHhrpgmhLU2VFWWTr6Q0Q2I3YWIE36/Zj5fKjxJ5YA1WW6je/WNwuU6GK
-Kkf5oCcJnKq5pErlUZhvR/TuAkPm8xVYlmZ5mNm4N8UTovJJilTxaJjDgD4SzeJ9
-GhjbhzlzndQYNUpX/U1JOvaYVqFrfwCtLUxecXuiw9sfvqAV0BB/TdrrQkbWFzUu
-gV+6WbsypVPHPu4BEF9Q13wNEPhTmq67VeVabcrIV59l8uNi/BDiL1fqaIqsC7CT
-z51RnQ0rdU/L5oii0YAyuGMFN1MEQQ==
-=aTPE
------END PGP SIGNATURE-----
+ fs/btrfs/delayed-ref.h | 116 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 116 insertions(+)
 
---hwEDLIRCy43XvnTs5c8wUvRM7V6Sg7WTT--
+diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+index 09e242159acf..598da6600c7a 100644
+--- a/fs/btrfs/delayed-ref.h
++++ b/fs/btrfs/delayed-ref.h
+@@ -176,6 +176,90 @@ struct btrfs_delayed_ref_root {
+ 	u64 qgroup_to_skip;
+ };
+ 
++enum btrfs_ref_type {
++	BTRFS_REF_NOT_SET,
++	BTRFS_REF_DATA,
++	BTRFS_REF_METADATA,
++	BTRFS_REF_LAST,
++};
++
++struct btrfs_data_ref {
++	/* For EXTENT_DATA_REF */
++
++	/* Root who refers to this data extent */
++	u64 ref_root;
++
++	/* Inode who refers to this data extent */
++	u64 ino;
++
++	/*
++	 * file_offset - extent_offset
++	 *
++	 * file_offset is the key.offset of the EXTENT_DATA key.
++	 * extent_offset is btrfs_file_extent_offset() of the EXTENT_DATA data.
++	 */
++	u64 offset;
++};
++
++struct btrfs_tree_ref {
++	/*
++	 * Level of this tree block
++	 *
++	 * Shared for skinny (TREE_BLOCK_REF) and normal tree ref.
++	 */
++	int level;
++
++	/*
++	 * Root who refers to this tree block.
++	 *
++	 * For TREE_BLOCK_REF (skinny metadata, either inline or keyed)
++	 */
++	u64 root;
++
++	/* For non-skinny metadata, no special member needed */
++};
++
++struct btrfs_ref {
++	enum btrfs_ref_type type;
++	int action;
++
++	/*
++	 * Only use parent pointers as backref (SHARED_BLOCK_REF or
++	 * SHARED_DATA_REF) for this extent and its children.
++	 * Set for reloc trees.
++	 */
++	bool only_backreferences:1;
++
++	/*
++	 * Whether this extent should go through qgroup record.
++	 *
++	 * Normally false, but for certain case like delayed subtree scan,
++	 * setting this flag can hugely reduce qgroup overhead.
++	 */
++	bool skip_qgroup:1;
++
++	/*
++	 * Optional. To which root this modification is for.
++	 * Mostly used for qgroup optimization.
++	 *
++	 * When unset, data/tree ref init code will populate it.
++	 * In certain case, we're modifying reference for a different root.
++	 * E.g. Cow fs tree blocks for balance.
++	 * In that case, tree_ref::root will be fs tree, but we're doing this
++	 * for reloc tree, then we should set @real_root to reloc tree.
++	 */
++	u64 real_root;
++	u64 bytenr;
++	u64 len;
++
++	/* Bytenr of the parent tree block */
++	u64 parent;
++	union {
++		struct btrfs_data_ref data_ref;
++		struct btrfs_tree_ref tree_ref;
++	};
++};
++
+ extern struct kmem_cache *btrfs_delayed_ref_head_cachep;
+ extern struct kmem_cache *btrfs_delayed_tree_ref_cachep;
+ extern struct kmem_cache *btrfs_delayed_data_ref_cachep;
+@@ -184,6 +268,38 @@ extern struct kmem_cache *btrfs_delayed_extent_op_cachep;
+ int __init btrfs_delayed_ref_init(void);
+ void __cold btrfs_delayed_ref_exit(void);
+ 
++static inline void btrfs_init_generic_ref(struct btrfs_ref *generic_ref,
++				int action, u64 bytenr, u64 len, u64 parent)
++{
++	generic_ref->action = action;
++	generic_ref->bytenr = bytenr;
++	generic_ref->len = len;
++	generic_ref->parent = parent;
++}
++
++static inline void btrfs_init_tree_ref(struct btrfs_ref *generic_ref,
++				int level, u64 root)
++{
++	/* If @real_root not set, use @root as fallback */
++	if (!generic_ref->real_root)
++		generic_ref->real_root = root;
++	generic_ref->tree_ref.level = level;
++	generic_ref->tree_ref.root = root;
++	generic_ref->type = BTRFS_REF_METADATA;
++}
++
++static inline void btrfs_init_data_ref(struct btrfs_ref *generic_ref,
++				u64 ref_root, u64 ino, u64 offset)
++{
++	/* If @real_root not set, use @root as fallback */
++	if (!generic_ref->real_root)
++		generic_ref->real_root = ref_root;
++	generic_ref->data_ref.ref_root = ref_root;
++	generic_ref->data_ref.ino = ino;
++	generic_ref->data_ref.offset = offset;
++	generic_ref->type = BTRFS_REF_DATA;
++}
++
+ static inline struct btrfs_delayed_extent_op *
+ btrfs_alloc_delayed_extent_op(void)
+ {
+-- 
+2.19.2
+

@@ -3,33 +3,31 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-0.9 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7B40DC04EB8
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 09:14:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C7630C04EB8
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 09:28:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 489B420849
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 09:14:08 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 489B420849
+	by mail.kernel.org (Postfix) with ESMTP id 9262A20839
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 09:28:43 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 9262A20839
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.de
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726606AbeLLJOH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Dec 2018 04:14:07 -0500
-Received: from mx2.suse.de ([195.135.220.15]:55492 "EHLO mx1.suse.de"
+        id S1726835AbeLLJ2m (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 12 Dec 2018 04:28:42 -0500
+Received: from mx2.suse.de ([195.135.220.15]:58350 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726242AbeLLJOG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Dec 2018 04:14:06 -0500
+        id S1726525AbeLLJ2l (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Dec 2018 04:28:41 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 77422ACA7
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Dec 2018 09:14:04 +0000 (UTC)
-Subject: Re: [PATCH 1/3] btrfs: Remove unused arguments from
- btrfs_get_extent_fiemap
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 6BCC7AF09
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Dec 2018 09:28:39 +0000 (UTC)
+Subject: Re: [PATCH 3/3] btrfs: Remove redundant assignment
 To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 References: <20181212074234.20613-1-nborisov@suse.com>
- <20181212074234.20613-2-nborisov@suse.com>
+ <20181212074234.20613-4-nborisov@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -87,12 +85,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <c40e9bcc-2526-0946-9148-c1e6b2422942@suse.de>
-Date:   Wed, 12 Dec 2018 10:14:04 +0100
+Message-ID: <14dcbda7-f554-5df7-9896-54b572e0f730@suse.de>
+Date:   Wed, 12 Dec 2018 10:28:39 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181212074234.20613-2-nborisov@suse.com>
+In-Reply-To: <20181212074234.20613-4-nborisov@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit

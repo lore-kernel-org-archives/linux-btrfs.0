@@ -2,109 +2,117 @@ Return-Path: <SRS0=l3pb=OV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.3 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-5.4 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,T_MIXED_ES,URIBL_BLOCKED,
+	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4EEC4C65BAF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 18:06:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4DC49C65BAF
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 18:52:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0BE032084E
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 18:06:12 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1544637972;
-	bh=/eV4vNdpA1M8JpfHuF+GdnV3IlulhXuasGHP5F5mwug=;
-	h=From:To:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=dc8+/YZkjm3UaFJJKJ9pqcJUsC7GMkxScsumKNX4mG7zhwy/5sYByN8Wr20IqHOM1
-	 BvjZepRnyIvOndlt6LLRdZWxcKeA6GuTHYW3oSn62Eq0nD9B6zzn+IUNbFLcvqueyh
-	 zVO5uT85V03CyE870rDH4un+XpDy1eb5PxYlJ8NA=
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0BE032084E
-Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
+	by mail.kernel.org (Postfix) with ESMTP id 1C05820811
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 18:52:06 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1C05820811
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728169AbeLLSGL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Dec 2018 13:06:11 -0500
-Received: from mail.kernel.org ([198.145.29.99]:57848 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728160AbeLLSGJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Dec 2018 13:06:09 -0500
-Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 15A162086D
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Dec 2018 18:06:07 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1544637968;
-        bh=/eV4vNdpA1M8JpfHuF+GdnV3IlulhXuasGHP5F5mwug=;
-        h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=Sv42FqJleB8C2udcSlp8NoiCF9nimfciMtnpLAb8KAy3JVXGxcYHBPT+4xKaYxyoB
-         PTq6I32aldcHPEGgjTzNK5XS780VDPes78wCxNzKrO2WFEU+z5U5uthEmWIVUWOkBY
-         3iijjFkrhqYVquC8Y3RGHe4gWNF5yfFmNfsDBnm4=
-From:   fdmanana@kernel.org
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/4] Btrfs: remove no longer needed range length checks for deduplication
-Date:   Wed, 12 Dec 2018 18:05:59 +0000
-Message-Id: <20181212180559.15249-5-fdmanana@kernel.org>
-X-Mailer: git-send-email 2.11.0
-In-Reply-To: <20181212180559.15249-1-fdmanana@kernel.org>
-References: <20181212180559.15249-1-fdmanana@kernel.org>
+        id S1728111AbeLLSwF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 12 Dec 2018 13:52:05 -0500
+Received: from mx2.suse.de ([195.135.220.15]:46062 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727897AbeLLSwE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Dec 2018 13:52:04 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 99D45AC9C;
+        Wed, 12 Dec 2018 18:52:02 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 734A2DA7E5; Wed, 12 Dec 2018 19:51:40 +0100 (CET)
+Date:   Wed, 12 Dec 2018 19:51:39 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     fdmanana@kernel.org
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] Btrfs: use generic_remap_file_range_prep() for
+ cloning and deduplication
+Message-ID: <20181212185139.GA23615@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
+        linux-btrfs@vger.kernel.org
+References: <20181207132453.5455-1-fdmanana@kernel.org>
+ <20181207152538.19269-1-fdmanana@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20181207152538.19269-1-fdmanana@kernel.org>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+On Fri, Dec 07, 2018 at 03:25:38PM +0000, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> Since cloning and deduplication are no longer Btrfs specific operations, we
+> now have generic code to handle parameter validation, compare file ranges
+> used for deduplication, clear capabilities when cloning, etc. This change
+> makes Btrfs use it, eliminating a lot of code in Btrfs and also fixing a
+> few bugs, such as:
+> 
+> 1) When cloning, the destination file's capabilities were not dropped
+>    (the fstest generic/513 tests this);
+> 
+> 2) We were not checking if the destination file is immutable;
+> 
+> 3) Not checking if either the source or destination files are swap
+>    files (swap file support is coming soon for Btrfs);
+> 
+> 4) System limits were not checked (resource limits and O_LARGEFILE).
+> 
+> Note that the generic helper generic_remap_file_range_prep() does start
+> and waits for writeback by calling filemap_write_and_wait_range(), however
+> that is not enough for Btrfs for two reasons:
+> 
+> 1) With compression, we need to start writeback twice in order to get the
+>    pages marked for writeback and ordered extents created;
+> 
+> 2) filemap_write_and_wait_range() (and all its other variants) only waits
+>    for the IO to complete, but we need to wait for the ordered extents to
+>    finish, so that when we do the actual reflinking operations the file
+>    extent items are in the fs tree. This is also important due to the fact
+>    that the generic helper, for the deduplication case, compares the
+>    contents of the pages in the requested range, which might require
+>    reading extents from disk in the very unlikely case that pages get
+>    invalidated after writeback finishes (so the file extent items must be
+>    up to date in the fs tree).
+> 
+> Since these reasons are specific to Btrfs we have to do it in the Btrfs
+> code before calling generic_remap_file_range_prep(). This also results in
+> a more simple way of dealing with existing delalloc in the source/target
+> ranges, specially for the deduplication case where we used to lock all the
+> pages first and then if we found any dealloc for the range, or ordered
+> extent, we would unlock the pages trigger writeback and wait for ordered
+> extents to complete, then lock all the pages again and check if
+> deduplication can be done. So now we get a simpler approach: lock the
+> inodes, then trigger writeback and then wait for ordered extents to
+> complete.
+> 
+> So make btrfs use generic_remap_file_range_prep() (XFS and OCFS2 use it)
+> to eliminate duplicated code, fix a few bugs and benefit from future bug
+> fixes done there - for example the recent clone and dedupe bugs involving
+> reflinking a partial EOF block got a counterpart fix in the generic helpe,
+> since it affected all filesystems supporting these operations, so we no
+> longer need special checks in Btrfs for them.
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+> 
+> V2: Removed check that verifies if either of the inodes is a directory,
+>     as it is done by generic_remap_file_range_prep(). Oddly in btrfs was being
+>     done only for cloning but not for dedupe.
 
-Comparing the content of the pages in the range to deduplicate is now done
-by the generic helper generic_remap_file_range_prep(), which takes care of
-ensuring we do not compare/deduplicate undefined data beyond a file's eof
-(range from eof to the next block boundary). So remove these checks which
-are now redundant.
+A big patch, but I see how the logic is simplified and redundant code
+thrown out. I'm concerned about size here because of potential backports
+to older kernels, where a minimal fix separated from actual code removal
+would cause fewer conflicts.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/ioctl.c | 19 ++-----------------
- 1 file changed, 2 insertions(+), 17 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 4e9efc93340e..3a27efa2b955 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3206,31 +3206,16 @@ static void btrfs_double_inode_lock(struct inode *inode1, struct inode *inode2)
- 	inode_lock_nested(inode2, I_MUTEX_CHILD);
- }
- 
--static int btrfs_extent_same_range(struct inode *src, u64 loff, u64 olen,
-+static int btrfs_extent_same_range(struct inode *src, u64 loff, u64 len,
- 				   struct inode *dst, u64 dst_loff)
- {
--	u64 bs = BTRFS_I(src)->root->fs_info->sb->s_blocksize;
- 	int ret;
--	u64 len = olen;
--
--	if (loff + len == src->i_size)
--		len = ALIGN(src->i_size, bs) - loff;
--	/*
--	 * For same inode case we don't want our length pushed out past i_size
--	 * as comparing that data range makes no sense.
--	 *
--	 * This effectively means we require aligned extents for the single
--	 * inode case, whereas the other cases allow an unaligned length so long
--	 * as it ends at i_size.
--	 */
--	if (dst == src && len != olen)
--		return -EINVAL;
- 
- 	/*
- 	 * Lock destination range to serialize with concurrent readpages().
- 	 */
- 	lock_extent(&BTRFS_I(dst)->io_tree, dst_loff, dst_loff + len - 1);
--	ret = btrfs_clone(src, dst, loff, olen, len, dst_loff, 1);
-+	ret = btrfs_clone(src, dst, loff, len, len, dst_loff, 1);
- 	unlock_extent(&BTRFS_I(dst)->io_tree, dst_loff, dst_loff + len - 1);
- 
- 	return ret;
--- 
-2.11.0
-
+Reviewed-by: David Sterba <dsterba@suse.com>

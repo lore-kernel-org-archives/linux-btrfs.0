@@ -2,78 +2,161 @@ Return-Path: <SRS0=l3pb=OV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT
+X-Spam-Status: No, score=-6.9 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CB17BC04EB8
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 08:07:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D645AC04EB8
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 08:40:54 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8E1B72084E
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 08:07:36 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="jHYx+HDd"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8E1B72084E
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org
+	by mail.kernel.org (Postfix) with ESMTP id 82C3620839
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 08:40:54 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 82C3620839
+Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726667AbeLLIHf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Dec 2018 03:07:35 -0500
-Received: from bombadil.infradead.org ([198.137.202.133]:51308 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726317AbeLLIHe (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Dec 2018 03:07:34 -0500
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20170209; h=In-Reply-To:Content-Type:MIME-Version
-        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:
-        Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
-        List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-         bh=QDp2lOTtdqtGNp8NmlApdHnk+rMQU2i/spgT6VCbZ8o=; b=jHYx+HDdL9AXP+EiZ80HnLYQg
-        d6XCybCU/FydcTInCtkEIGwV410bPWWuKw0gDX3Z4YZg/HpjVclLqLf8g0nAi/L4DWdUIHxea2/Le
-        UsuHU0HJzxwMCTf3BYU6lULH+/3EMlmj6X1CLPUGgkfkZ5sVuxToLFAJnQQx7KcoxBoVKTRFJDH2G
-        Dd3m/CFu5eW9XkX/Gz21jC4HxGSiOhRhUBbqUAghpLGDo4HglaiDyZGalbo4vBBYouY8BF6L4m4J1
-        QRhKHFDjCPZawsrRE5gnpc9B67nXyfJRpezqUp+ux+Y49xsYbRXw16n95sdRHiD09Jhze1jnYtTld
-        RfTmxy2qg==;
-Received: from hch by bombadil.infradead.org with local (Exim 4.90_1 #2 (Red Hat Linux))
-        id 1gWzYM-0005ng-J2; Wed, 12 Dec 2018 08:07:34 +0000
-Date:   Wed, 12 Dec 2018 00:07:34 -0800
-From:   Christoph Hellwig <hch@infradead.org>
-To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc:     Christoph Hellwig <hch@infradead.org>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 07/10] dax: export functions for use with btrfs
-Message-ID: <20181212080734.GB14877@infradead.org>
-References: <20181205122835.19290-1-rgoldwyn@suse.de>
- <20181205122835.19290-8-rgoldwyn@suse.de>
- <20181205145227.GA12361@infradead.org>
- <20181206114601.bzh3356jtyvhxc6m@merlin>
+        id S1726661AbeLLIkx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 12 Dec 2018 03:40:53 -0500
+Received: from mx2.suse.de ([195.135.220.15]:49620 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726020AbeLLIkx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Dec 2018 03:40:53 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 2032AACBF;
+        Wed, 12 Dec 2018 08:40:51 +0000 (UTC)
+Subject: Re: [PATCH 7/8] btrfs: be more explicit about allowed flush states
+To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+References: <20181203152459.21630-1-josef@toxicpanda.com>
+ <20181203152459.21630-8-josef@toxicpanda.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <4048c478-67b9-68a8-0c3e-da4cae995db9@suse.com>
+Date:   Wed, 12 Dec 2018 10:40:49 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20181206114601.bzh3356jtyvhxc6m@merlin>
-User-Agent: Mutt/1.9.2 (2017-12-15)
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+In-Reply-To: <20181203152459.21630-8-josef@toxicpanda.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Dec 06, 2018 at 05:46:01AM -0600, Goldwyn Rodrigues wrote:
-> This is not worth with btrfs. With non-page aligned I/O on btrfs, we
-> need to copy the first/last page of the extents for CoW.
 
-We'll need to do the same for XFS with reflink support anyway.  So
-I'd rather handle it in common code if we can.
 
-> So, we
-> would end up using the exported functions anyways. Believe me, I have
-> spent some time getting btrfs iomap compatible before giving up. The
-> problems are btrfs needs to carry a lot of information across
-> iomap_begin and iomap_end. While the added private variable helps in
-> this, it also needs hooks in bio_submit() functions for crc calculations
-> during direct writes.
+On 3.12.18 г. 17:24 ч., Josef Bacik wrote:
+> For FLUSH_LIMIT flushers (think evict, truncate) we can deadlock when
+> running delalloc because we may be holding a tree lock.  We can also
+> deadlock with delayed refs rsv's that are running via the committing
+> mechanism.  The only safe operations for FLUSH_LIMIT is to run the
+> delayed operations and to allocate chunks, everything else has the
+> potential to deadlock.  Future proof this by explicitly specifying the
+> states that FLUSH_LIMIT is allowed to use.  This will keep us from
+> introducing bugs later on when adding new flush states.
+> 
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 
-Although we'd need to find a smarter way to handle this vs adding
-more indirect calls everywhere.
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
+> ---
+>  fs/btrfs/extent-tree.c | 21 ++++++++++-----------
+>  1 file changed, 10 insertions(+), 11 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 0e1a499035ac..ab9d915d9289 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -5123,12 +5123,18 @@ void btrfs_init_async_reclaim_work(struct work_struct *work)
+>  	INIT_WORK(work, btrfs_async_reclaim_metadata_space);
+>  }
+>  
+> +static const enum btrfs_flush_state priority_flush_states[] = {
+> +	FLUSH_DELAYED_ITEMS_NR,
+> +	FLUSH_DELAYED_ITEMS,
+> +	ALLOC_CHUNK,
+> +};
+> +
+>  static void priority_reclaim_metadata_space(struct btrfs_fs_info *fs_info,
+>  					    struct btrfs_space_info *space_info,
+>  					    struct reserve_ticket *ticket)
+>  {
+>  	u64 to_reclaim;
+> -	int flush_state = FLUSH_DELAYED_ITEMS_NR;
+> +	int flush_state = 0;
+>  
+>  	spin_lock(&space_info->lock);
+>  	to_reclaim = btrfs_calc_reclaim_metadata_size(fs_info, space_info,
+> @@ -5140,7 +5146,8 @@ static void priority_reclaim_metadata_space(struct btrfs_fs_info *fs_info,
+>  	spin_unlock(&space_info->lock);
+>  
+>  	do {
+> -		flush_space(fs_info, space_info, to_reclaim, flush_state);
+> +		flush_space(fs_info, space_info, to_reclaim,
+> +			    priority_flush_states[flush_state]);
+>  		flush_state++;
+>  		spin_lock(&space_info->lock);
+>  		if (ticket->bytes == 0) {
+> @@ -5148,15 +5155,7 @@ static void priority_reclaim_metadata_space(struct btrfs_fs_info *fs_info,
+>  			return;
+>  		}
+>  		spin_unlock(&space_info->lock);
+> -
+> -		/*
+> -		 * Priority flushers can't wait on delalloc without
+> -		 * deadlocking.
+> -		 */
+> -		if (flush_state == FLUSH_DELALLOC ||
+> -		    flush_state == FLUSH_DELALLOC_WAIT)
+> -			flush_state = ALLOC_CHUNK;
+> -	} while (flush_state < COMMIT_TRANS);
+> +	} while (flush_state < ARRAY_SIZE(priority_flush_states));
+>  }
+>  
+>  static int wait_reserve_ticket(struct btrfs_fs_info *fs_info,
+> 

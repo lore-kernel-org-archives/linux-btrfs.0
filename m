@@ -3,34 +3,34 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-8.9 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,T_MIXED_ES,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 51467C04EB8
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 07:42:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6D4E5C67839
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 07:42:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1F2F920849
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 07:42:40 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 1F2F920849
+	by mail.kernel.org (Postfix) with ESMTP id 3A80820849
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 07:42:41 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 3A80820849
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726724AbeLLHmj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1726722AbeLLHmj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Wed, 12 Dec 2018 02:42:39 -0500
-Received: from mx2.suse.de ([195.135.220.15]:40904 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:40910 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726598AbeLLHmi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1726603AbeLLHmi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 12 Dec 2018 02:42:38 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 9DD62AEF5
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id E5068AEFA
         for <linux-btrfs@vger.kernel.org>; Wed, 12 Dec 2018 07:42:36 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 2/3] btrfs: Refactor btrfs_get_extent_fiemap
-Date:   Wed, 12 Dec 2018 09:42:33 +0200
-Message-Id: <20181212074234.20613-3-nborisov@suse.com>
+Subject: [PATCH 3/3] btrfs: Remove redundant assignment
+Date:   Wed, 12 Dec 2018 09:42:34 +0200
+Message-Id: <20181212074234.20613-4-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20181212074234.20613-1-nborisov@suse.com>
 References: <20181212074234.20613-1-nborisov@suse.com>
@@ -39,160 +39,27 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Make btrfs_get_extent_fiemap a bit more friendly. First step is to
-rename the closely related, yet arbitrary named
-range_start/found_end/found variables. They define the delalloc range
-that is found in case a real extent wasn't found. Subsequently remove
-an unnecessary check for hole_em since it's guaranteed to be set i.e the
-check is always true. Top it off by giving all comments a refresh.
-
-No functional changes.
+hole_len is only used if the hole falls within the requested range. Make
+that explicitly clear by only assigning in the corresponding branch.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/inode.c | 84 ++++++++++++++++++++++++++----------------------
- 1 file changed, 45 insertions(+), 39 deletions(-)
+ fs/btrfs/inode.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 67eee4d345c9..95eb18779c19 100644
+index 95eb18779c19..73ae4428d0df 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -6965,10 +6965,10 @@ struct extent_map *btrfs_get_extent_fiemap(struct btrfs_inode *inode,
- {
- 	struct extent_map *em;
- 	struct extent_map *hole_em = NULL;
--	u64 range_start = start;
-+	u64 delalloc_start = start;
- 	u64 end;
--	u64 found;
--	u64 found_end;
-+	u64 delalloc_len;
-+	u64 delalloc_end;
- 	int err = 0;
+@@ -7021,7 +7021,7 @@ struct extent_map *btrfs_get_extent_fiemap(struct btrfs_inode *inode,
  
- 	em = btrfs_get_extent(inode, NULL, 0, start, len, 0);
-@@ -6996,37 +6996,42 @@ struct extent_map *btrfs_get_extent_fiemap(struct btrfs_inode *inode,
- 	em = NULL;
- 
- 	/* ok, we didn't find anything, lets look for delalloc */
--	found = count_range_bits(&inode->io_tree, &range_start,
-+	delalloc_len = count_range_bits(&inode->io_tree, &delalloc_start,
- 				 end, len, EXTENT_DELALLOC, 1);
--	found_end = range_start + found;
--	if (found_end < range_start)
--		found_end = (u64)-1;
-+	delalloc_end = delalloc_start + delalloc_len;
-+	if (delalloc_end < delalloc_start)
-+		delalloc_end = (u64)-1;
- 
- 	/*
--	 * we didn't find anything useful, return
--	 * the original results from get_extent()
-+	 * we didn't find anything useful, return the original results from
-+	 * get_extent()
- 	 */
--	if (range_start > end || found_end <= start) {
-+	if (delalloc_start > end || delalloc_end <= start) {
- 		em = hole_em;
- 		hole_em = NULL;
- 		goto out;
- 	}
- 
--	/* adjust the range_start to make sure it doesn't
--	 * go backwards from the start they passed in
-+	/*
-+	 * adjust the delalloc_start to make sure it doesn't go backwards from
-+	 * the start they passed in
- 	 */
--	range_start = max(start, range_start);
--	found = found_end - range_start;
-+	delalloc_start = max(start, delalloc_start);
-+	delalloc_len = delalloc_end - delalloc_start;
- 
--	if (found > 0) {
--		u64 hole_start = start;
-+	if (delalloc_len) {
-+		u64 hole_start;
- 		u64 hole_len = len;
-+		u64 hole_end = extent_map_end(hole_em);
+ 	if (delalloc_len) {
+ 		u64 hole_start;
+-		u64 hole_len = len;
++		u64 hole_len;
+ 		u64 hole_end = extent_map_end(hole_em);
  
  		em = alloc_extent_map();
- 		if (!em) {
- 			err = -ENOMEM;
- 			goto out;
- 		}
-+		em->bdev = NULL;
-+
-+		ASSERT(hole_em);
- 		/*
- 		 * when btrfs_get_extent can't find anything it
- 		 * returns one huge hole
-@@ -7035,41 +7040,42 @@ struct extent_map *btrfs_get_extent_fiemap(struct btrfs_inode *inode,
- 		 * adjust to make sure it is based on the start from
- 		 * the caller
- 		 */
--		if (hole_em) {
--			u64 calc_end = extent_map_end(hole_em);
--
--			if (calc_end <= start || (hole_em->start > end)) {
--				free_extent_map(hole_em);
--				hole_em = NULL;
--			} else {
--				hole_start = max(hole_em->start, start);
--				hole_len = calc_end - hole_start;
--			}
-+		if (hole_end <= start || (hole_em->start > end)) {
-+		       free_extent_map(hole_em);
-+		       hole_em = NULL;
-+		} else {
-+		       hole_start = max(hole_em->start, start);
-+		       hole_len = hole_end - hole_start;
- 		}
--		em->bdev = NULL;
--		if (hole_em && range_start > hole_start) {
--			/* our hole starts before our delalloc, so we
--			 * have to return just the parts of the hole
--			 * that go until  the delalloc starts
-+
-+		if (hole_em && delalloc_start > hole_start) {
-+			/*
-+			 * our hole starts before our delalloc, so we have to
-+			 * return just the parts of the hole that go until the
-+			 * delalloc starts
- 			 */
--			em->len = min(hole_len,
--				      range_start - hole_start);
-+			em->len = min(hole_len, delalloc_start - hole_start);
- 			em->start = hole_start;
- 			em->orig_start = hole_start;
- 			/*
--			 * don't adjust block start at all,
--			 * it is fixed at EXTENT_MAP_HOLE
-+			 * don't adjust block start at all, it is fixed at
-+			 * EXTENT_MAP_HOLE
- 			 */
- 			em->block_start = hole_em->block_start;
- 			em->block_len = hole_len;
- 			if (test_bit(EXTENT_FLAG_PREALLOC, &hole_em->flags))
- 				set_bit(EXTENT_FLAG_PREALLOC, &em->flags);
- 		} else {
--			em->start = range_start;
--			em->len = found;
--			em->orig_start = range_start;
-+
-+			/*
-+			 * Hole is out of passed range or it starts after
-+			 * delalloc range
-+			 */
-+			em->start = delalloc_start;
-+			em->len = delalloc_len;
-+			em->orig_start = delalloc_start;
- 			em->block_start = EXTENT_MAP_DELALLOC;
--			em->block_len = found;
-+			em->block_len = delalloc_len;
- 		}
- 	} else {
- 		return hole_em;
 -- 
 2.17.1
 

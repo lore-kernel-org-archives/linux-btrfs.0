@@ -2,95 +2,84 @@ Return-Path: <SRS0=l3pb=OV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.9 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,
+	USER_AGENT_MUTT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6E34FC65BAF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 21:02:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 42D65C65BAF
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 23:08:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0A94A20839
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 21:02:08 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="ywUlhG+L"
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0A94A20839
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=colorremedies.com
+	by mail.kernel.org (Postfix) with ESMTP id 069F120672
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Dec 2018 23:08:16 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1544656097;
+	bh=9QTpXwPfVl3V44G2/lGacNO0bHfXdb35aRFOtbPNh0w=;
+	h=Date:From:To:Subject:References:In-Reply-To:List-ID:From;
+	b=j8ECnIg2ph09PqsUcZd6w23vV14wEFBoTplkAX328qSEsmwgbE5AEltOzhrHYDPrk
+	 i0GbRMRdDYqWBGf1nTiAG29slUwvFuDbC4qadKuKKjyQVuxR55MuZLgD2YaCCuuoHO
+	 9zihf3Fzc3bNfsUyBwB0sgJB2tY909pv6HojUVkM=
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 069F120672
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726869AbeLLVCH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Dec 2018 16:02:07 -0500
-Received: from mail-lj1-f171.google.com ([209.85.208.171]:37104 "EHLO
-        mail-lj1-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726248AbeLLVCH (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Dec 2018 16:02:07 -0500
-Received: by mail-lj1-f171.google.com with SMTP id e5-v6so17567116lja.4
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Dec 2018 13:02:05 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=LQAK9jFt7bzK0c7cWjU1X0nyReRhyAy+VZFXVwFYZCY=;
-        b=ywUlhG+LJMkobtz2KjJ+q7iEfG/bNKYgUSUXBSwfG4jHMF6mgE5BXy7+B6CfT90Moy
-         ej1sSC/xlLZZa7mHT2yfRwLFLMlrmx4YlW1lDKgNg/VmUHtMg+5EIYjzlBg4TXqRmye+
-         uBuV7YLhT+KizpEV8zT/yyzyiuxPyoiKYokt/CaMcsEqCj/TPYTuRtFF5KCE5sNTJlSS
-         HdFIEehxnTDUR2HvudHlK7jXVFEAMha011WNLCItxDT/qbPjHkBYGfY4BW7QWScpwyPy
-         /pG6UUZFxY+VNt2f8QhO31ULj7eBbBClSBQqdxLq6+oaVq2H/kEilYiaRMJVfvfblqM6
-         idUQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=LQAK9jFt7bzK0c7cWjU1X0nyReRhyAy+VZFXVwFYZCY=;
-        b=tZABTKoxU/KvSXJAsNr0oVcMa+5njBRuo55w3RObHInm5EBY3Da5CV362KnqOWffOY
-         mZuobXtfiQX3zp43+W22+/gSfMBe2ooEwVj8tctFwTO9GQXbD5lQtfaDnacIVarTPjLa
-         kQkmCB6NkcKnSw5KDTTAi+w8CdBiuSaZxLt3WS9CH6HAKM+X3lz59p1tduDgqH2pz85J
-         /iemM4uwoyuv3dMLU1tKIPrvSMKIzNs4IWjESFGsJk1uRXKIc4mxLgJSwFWhY1iu4W+1
-         NCl+WzNOhXrRE2WISZHVPIxZ7dN8jYkOC+rwkeB939O9xFXRP/uGPNOuvOgLSPKNuQLb
-         v7Dg==
-X-Gm-Message-State: AA+aEWZPGl7SoxbkHN0K+vGTohJwWEK0EYoMNCWd1TEFIo6CtMKmkcJ6
-        /pVY9+IfDRlHqDWHvkW2DnTGiLSrzxRzcTEzc0dk/uDg
-X-Google-Smtp-Source: AFSGD/WO6JPqjr+RHMn43zccPED0N2jrYD/10eOd2VhxEwwkbW7aNyUYI3hrwpV4WPiPiSVUkSnwzbpPQH1uu7C2Gcs=
-X-Received: by 2002:a2e:880a:: with SMTP id x10-v6mr14557671ljh.174.1544648524626;
- Wed, 12 Dec 2018 13:02:04 -0800 (PST)
+        id S1728486AbeLLXIM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 12 Dec 2018 18:08:12 -0500
+Received: from mail.kernel.org ([198.145.29.99]:43578 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726214AbeLLXIK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Dec 2018 18:08:10 -0500
+Received: from localhost (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id EDE5D21104;
+        Wed, 12 Dec 2018 23:08:09 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1544656090;
+        bh=9QTpXwPfVl3V44G2/lGacNO0bHfXdb35aRFOtbPNh0w=;
+        h=Date:From:To:Subject:References:In-Reply-To:From;
+        b=wzgmNxhZ14hvziqr9hhN2J/eqmvVr+cdB+U7Q5v8aXgdjYNRUXdH7fEzqN54h6uV5
+         aLdD9ee/iIz4qBWH33qd3psze5dIyTGvURe44i4T1+EOCl85YHowFb3lAnT6Wwrajc
+         33qmFv5hJXKifenKEjeyYWxNJuqw3JfFigk72hFs=
+Date:   Wed, 12 Dec 2018 18:08:08 -0500
+From:   Sasha Levin <sashal@kernel.org>
+To:     dsterba@suse.cz, stable@vger.kernel.org,
+        linux-kernel@vger.kernel.org, Robbie Ko <robbieko@synology.com>,
+        Filipe Manana <fdmanana@suse.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH AUTOSEL 4.19 052/123] Btrfs: send, fix infinite loop due
+ to directory rename dependencies
+Message-ID: <20181212230808.GF2746@sasha-vm>
+References: <20181205093555.5386-1-sashal@kernel.org>
+ <20181205093555.5386-52-sashal@kernel.org>
+ <20181206175518.GC23615@twin.jikos.cz>
 MIME-Version: 1.0
-References: <20181210120514.GA14828@cuci.nl> <CAJCQCtQxaAKMP9qSF1UnOG7cy8ya=4MckGt9kL0O8oGxD4fitg@mail.gmail.com>
- <20181211115226.GA20157@cuci.nl> <CAJCQCtRva5ZrF2pq93pb0_be7P+CE+0no-nJeQTXtEaq-LpfVQ@mail.gmail.com>
- <20181212072614.GA9188@cuci.nl>
-In-Reply-To: <20181212072614.GA9188@cuci.nl>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Wed, 12 Dec 2018 14:01:52 -0700
-Message-ID: <CAJCQCtSCcM0YTtp0f1i=FmrFigsfJEsr+Excwm=YHx4_wN49gg@mail.gmail.com>
-Subject: Re: Kernel traces
-To:     "Stephen R. van den Berg" <srb@cuci.nl>
-Cc:     Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Disposition: inline
+In-Reply-To: <20181206175518.GC23615@twin.jikos.cz>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Dec 12, 2018 at 12:26 AM Stephen R. van den Berg <srb@cuci.nl> wrote:
+On Thu, Dec 06, 2018 at 06:55:19PM +0100, David Sterba wrote:
+>On Wed, Dec 05, 2018 at 04:34:44AM -0500, Sasha Levin wrote:
+>> From: Robbie Ko <robbieko@synology.com>
+>>
+>> [ Upstream commit a4390aee72713d9e73f1132bcdeb17d72fbbf974 ]
+>...
+>>
+>> Signed-off-by: Robbie Ko <robbieko@synology.com>
+>> Reviewed-by: Filipe Manana <fdmanana@suse.com>
+>> [Wrote changelog with example and more clear explanation]
+>> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+>> Signed-off-by: David Sterba <dsterba@suse.com>
+>> Signed-off-by: Sasha Levin <sashal@kernel.org>
 >
-> Chris Murphy wrote:
-> >Also, what scheduler are you using? And do you get different results
-> >with a different one (better or worse)?
->
-> I'm using CFQ, and I don't think I ever tried a different one.
-> But, btrfs should be compatible with all schedulers.
+>Ack for taking this patch to the stable trees. Thanks.
 
-Sure but there are some workloads we know where CFQ can cause or
-exacerbate problems with some storage stacks, and other schedulers
-exist to deal with those workloads better. So the question is whether
-the problem is made worse or better by trying another scheduler. It
-might have no effect. And it might just flat out be a Btrfs bug, but
-I'm doing send and receive on far more meager hardware with much less
-RAM and haven't run into problems.
+Thanks David.
 
-But yeah, one of the developers might have more to say about it once
-sysrq+w output is available, which should expose what's stuck or busy.
-
-
--- 
-Chris Murphy
+--
+Thanks,
+Sasha

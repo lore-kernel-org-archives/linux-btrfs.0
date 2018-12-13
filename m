@@ -2,77 +2,98 @@ Return-Path: <SRS0=1olR=OW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.4 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+X-Spam-Status: No, score=-9.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7C678C65BAE
-	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Dec 2018 19:15:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D2FEAC65BAE
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Dec 2018 21:16:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4401720811
-	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Dec 2018 19:15:07 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 4401720811
-Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+	by mail.kernel.org (Postfix) with ESMTP id 8D7B820851
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Dec 2018 21:16:51 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1544735811;
+	bh=nLgYKe0mxM+7leaWOp77dt2fMSBjBORgDYMe6PEwuL0=;
+	h=From:To:Subject:Date:List-ID:From;
+	b=COVcb/WYkVk0hjpO8VpDItzVZMNJ86oozc+vs5EIZtXi9xfp9JYuIQMh4vUFqaE0v
+	 4qlV8eDydKL8r2/fcDrw8mWk8PwIdfuB7MSQhktvPeoX7pX2A+PYTR6SWVqwZO+9fs
+	 YlYfyJqocfxZUq5MmszAo654Yu4Bg5DpoqR6B6mA=
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 8D7B820851
+Authentication-Results: mail.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727692AbeLMTPG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 13 Dec 2018 14:15:06 -0500
-Received: from mx2.suse.de ([195.135.220.15]:40936 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727608AbeLMTPF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Dec 2018 14:15:05 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 39003AF1A
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Dec 2018 19:15:04 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 81E24DA7EE; Thu, 13 Dec 2018 20:14:42 +0100 (CET)
-Date:   Thu, 13 Dec 2018 20:14:42 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/8] FSID change userspace v2
-Message-ID: <20181213191442.GM23615@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <1539270244-27076-1-git-send-email-nborisov@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <1539270244-27076-1-git-send-email-nborisov@suse.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+        id S1727455AbeLMVQu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 13 Dec 2018 16:16:50 -0500
+Received: from mail.kernel.org ([198.145.29.99]:47674 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726461AbeLMVQu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 13 Dec 2018 16:16:50 -0500
+Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 29EF820851
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Dec 2018 21:16:49 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1544735809;
+        bh=nLgYKe0mxM+7leaWOp77dt2fMSBjBORgDYMe6PEwuL0=;
+        h=From:To:Subject:Date:From;
+        b=iM7Xd+e3eM5IfQADGBzWCK3isnrTFYTAjpphdNoyIhWrmJbdfiVnwdjIsiWx78iIU
+         nayWA8CQrJ6ESTUGOH2KQPYTy43Q9ccNkoIedHSAlqYjDufWTN4ROp8PvH6cvCigYH
+         gNStaWU4LzUMpVa0S4r3crszMIyM/ZfP9SlngCHo=
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: setup a nofs context for memory allocation at btrfs_create_tree()
+Date:   Thu, 13 Dec 2018 21:16:45 +0000
+Message-Id: <20181213211645.14713-1-fdmanana@kernel.org>
+X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Oct 11, 2018 at 06:03:56PM +0300, Nikolay Borisov wrote:
-> Here is the second posting of the FSID change support for user space. For 
-> background information refer to the the initial posting [0]. The major changes
-> in this version are: 
->  - Modified the sequence of operations when changing the fsid. Now it's split
->  among 2 transactions with the first one setting a flag (similarly to what 
->  the old fsid change code does) and the second transaction applying the new 
->  FSID and incompat flag
-> 
->  - Expanded the test coverage with several crafted images which simulate 
->  failure scenarios that could occur while fsid change is in progress. 
-> 
->  - Also added the last 2 clean up patches which can be merged independently of
->  the fsid changes.
-> 
-> 
-> 
-> [0] https://lore.kernel.org/linux-btrfs/1535531754-29774-1-git-send-email-nborisov@suse.com/
-> Nikolay Borisov (8):
->   btrfstune: Remove fs_info arg from change_device_uuid
->   btrfstune: Rename change_header_uuid to change_buffer_header_uuid
->   btrfs-progs: Add support for metadata_uuid field.
->   btrfstune: Add support for changing the user uuid
->   btrfs-progs: tests: Add tests for changing fsid feature
->   btrfs-progs: Remove fsid/metdata_uuid fields from fs_info
->   btrfs-progs: Remove btrfs_fs_info::new_fsid
->   btrfs-progs: Directly pass root to change_devices_uuid
+From: Filipe Manana <fdmanana@suse.com>
 
-Added to devel, thanks.
+We are holding a transaction handle when creating a tree, therefore we can
+not allocate the root using GFP_KERNEL, as we could deadlock if reclaim is
+triggered by the allocation, therefore setup a nofs context.
+
+Fixes: 74e4d82757f74 ("btrfs: let callers of btrfs_alloc_root pass gfp flags")
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/disk-io.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 67afeaf28a41..3e1b846156dd 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -17,6 +17,7 @@
+ #include <linux/semaphore.h>
+ #include <linux/error-injection.h>
+ #include <linux/crc32c.h>
++#include <linux/sched/mm.h>
+ #include <asm/unaligned.h>
+ #include "ctree.h"
+ #include "disk-io.h"
+@@ -1235,10 +1236,17 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
+ 	struct btrfs_root *tree_root = fs_info->tree_root;
+ 	struct btrfs_root *root;
+ 	struct btrfs_key key;
++	unsigned int nofs_flag;
+ 	int ret = 0;
+ 	uuid_le uuid = NULL_UUID_LE;
+ 
++	/*
++	 * We're holding a transaction handle, so use a NOFS memory allocation
++	 * context to avoid deadlock if reclaim happens.
++	 */
++	nofs_flag = memalloc_nofs_save();
+ 	root = btrfs_alloc_root(fs_info, GFP_KERNEL);
++	memalloc_nofs_restore(nofs_flag);
+ 	if (!root)
+ 		return ERR_PTR(-ENOMEM);
+ 
+-- 
+2.11.0
+

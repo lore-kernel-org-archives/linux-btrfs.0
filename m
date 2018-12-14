@@ -2,33 +2,33 @@ Return-Path: <SRS0=3GAk=OX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.9 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham
+X-Spam-Status: No, score=-6.9 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 45016C67839
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Dec 2018 07:27:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A8E3FC67839
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Dec 2018 07:28:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0DC3C2054F
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Dec 2018 07:27:27 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 0DC3C2054F
+	by mail.kernel.org (Postfix) with ESMTP id 74ABA2054F
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Dec 2018 07:28:35 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.3.2 mail.kernel.org 74ABA2054F
 Authentication-Results: mail.kernel.org; dmarc=none (p=none dis=none) header.from=suse.com
 Authentication-Results: mail.kernel.org; spf=none smtp.mailfrom=linux-btrfs-owner@vger.kernel.org
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726615AbeLNH1Z (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 14 Dec 2018 02:27:25 -0500
-Received: from mx2.suse.de ([195.135.220.15]:59248 "EHLO mx1.suse.de"
+        id S1726634AbeLNH2e (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 14 Dec 2018 02:28:34 -0500
+Received: from mx2.suse.de ([195.135.220.15]:59360 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726510AbeLNH1Z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Dec 2018 02:27:25 -0500
+        id S1726437AbeLNH2e (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 14 Dec 2018 02:28:34 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 07A98AE85;
-        Fri, 14 Dec 2018 07:27:23 +0000 (UTC)
-Subject: Re: [PATCH] Btrfs: avoid deadlock with memory reclaim due to
- allocation of devices
+        by mx1.suse.de (Postfix) with ESMTP id F334AAE85;
+        Fri, 14 Dec 2018 07:28:31 +0000 (UTC)
+Subject: Re: [PATCH] Btrfs: setup a nofs context for memory allocation at
+ btrfs_create_tree()
 To:     fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <20181213211725.14832-1-fdmanana@kernel.org>
+References: <20181213211645.14713-1-fdmanana@kernel.org>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -73,12 +73,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <96be611e-8e71-0e08-4bc7-f903decc98d2@suse.com>
-Date:   Fri, 14 Dec 2018 09:27:21 +0200
+Message-ID: <9d2d88eb-9045-44da-9897-731ae2d9a6dc@suse.com>
+Date:   Fri, 14 Dec 2018 09:28:31 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181213211725.14832-1-fdmanana@kernel.org>
+In-Reply-To: <20181213211645.14713-1-fdmanana@kernel.org>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -89,29 +89,50 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 13.12.18 г. 23:17 ч., fdmanana@kernel.org wrote:
+On 13.12.18 г. 23:16 ч., fdmanana@kernel.org wrote:
 > From: Filipe Manana <fdmanana@suse.com>
 > 
-> Several places allocate a device while holding the device list mutex. This
-> can result in a deadlock if reclaim happens because the device, and its
-> flush bio, are allocated using GFP_KERNEL mode (by __alloc_device() which
-> is used by btrfs_alloc_device()). A transaction commit, which reclaim can
-> trigger, needs to lock the device list mutex in its critical section, done
-> at btrfs_update_commit_device_size().
+> We are holding a transaction handle when creating a tree, therefore we can
+> not allocate the root using GFP_KERNEL, as we could deadlock if reclaim is
+> triggered by the allocation, therefore setup a nofs context.
 > 
-> Some of these places are device_list_add(), which ends up being called
-> through the device scan ioctl, and btrfs_close_one_device(), which ends up
-> being called through the device remove ioctl.
-> 
-> Since all the places that add elements to the list of resized devices (the
-> device grow and shrink functions) only lock the chunk mutex before adding
-> a device to the list, drop the need to acquire the device list mutex from
-> btrfs_update_commit_device_size(), which is the only other place that uses
-> this list and it already locks the chunk mutex.
-> 
-> Fixes: 78f2c9e6dbb14 ("btrfs: device add and remove: use GFP_KERNEL")
-> Fixes: e0ae999414238 ("btrfs: preallocate device flush bio")
+> Fixes: 74e4d82757f74 ("btrfs: let callers of btrfs_alloc_root pass gfp flags")
 > Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
+> ---
+>  fs/btrfs/disk-io.c | 8 ++++++++
+>  1 file changed, 8 insertions(+)
+> 
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 67afeaf28a41..3e1b846156dd 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -17,6 +17,7 @@
+>  #include <linux/semaphore.h>
+>  #include <linux/error-injection.h>
+>  #include <linux/crc32c.h>
+> +#include <linux/sched/mm.h>
+>  #include <asm/unaligned.h>
+>  #include "ctree.h"
+>  #include "disk-io.h"
+> @@ -1235,10 +1236,17 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
+>  	struct btrfs_root *tree_root = fs_info->tree_root;
+>  	struct btrfs_root *root;
+>  	struct btrfs_key key;
+> +	unsigned int nofs_flag;
+>  	int ret = 0;
+>  	uuid_le uuid = NULL_UUID_LE;
+>  
+> +	/*
+> +	 * We're holding a transaction handle, so use a NOFS memory allocation
+> +	 * context to avoid deadlock if reclaim happens.
+> +	 */
+> +	nofs_flag = memalloc_nofs_save();
+>  	root = btrfs_alloc_root(fs_info, GFP_KERNEL);
+> +	memalloc_nofs_restore(nofs_flag);
+>  	if (!root)
+>  		return ERR_PTR(-ENOMEM);
+>  
+> 

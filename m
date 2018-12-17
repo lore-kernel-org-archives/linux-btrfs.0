@@ -7,57 +7,55 @@ X-Spam-Status: No, score=-9.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DBFCFC43387
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 03:14:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 803E2C43387
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 03:14:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A9683206BA
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 03:14:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4DE89206BA
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 03:14:38 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="WvI/pxyu"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="bl0gK4cK"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726404AbeLQDOD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 16 Dec 2018 22:14:03 -0500
-Received: from aserp2130.oracle.com ([141.146.126.79]:57326 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726267AbeLQDOD (ORCPT
+        id S1731079AbeLQDOh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 16 Dec 2018 22:14:37 -0500
+Received: from userp2130.oracle.com ([156.151.31.86]:44540 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726267AbeLQDOg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 16 Dec 2018 22:14:03 -0500
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wBH3DhuB156965
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 03:14:02 GMT
+        Sun, 16 Dec 2018 22:14:36 -0500
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wBH3E1Pc006036
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 03:14:35 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
- date : message-id : in-reply-to : references; s=corp-2018-07-02;
- bh=X2jfYfP35sRPCYtTZEyYOJEP+uDLuSAXAZl0sgmNVfo=;
- b=WvI/pxyurvpITVQoLcLkrP9YZ5S2T2ZFwl2kjj6HlmAWoa4V5yMSoNgimu7RE3DlfIt4
- Rgh6ojFi8FAmRLxqthMqvOmNBYxprfA3Ad+oW0OzGwGloxySpVcG5RsxtiJoQYdiSnhE
- GxaWC64EwI+Qcpp8O6blhK9Qfr3iM4Lbo3ajJkbrPUs5NKi3OCm/kbHitSXDAX6O09Fx
- VdZH4CTlC/qF7GaDJMHdEHMy1JQklbVDN4gZ0gcu1N7Ta8S/dKKZs8JisMJ9Eis5kJg/
- 4mGNB5Uav6LhFA7r2WBGBcwLw/m2k/XApguy4I+K1qt02cfYeBP1rfEc6sj/dUVW1tWy CA== 
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by aserp2130.oracle.com with ESMTP id 2pcq4dkrgm-1
+ date : message-id; s=corp-2018-07-02;
+ bh=YVRA8UZgg87doUJmZ4SuWvRGxHFntVnszk1/Rtd5/h8=;
+ b=bl0gK4cK52dhVQF8Yeg1XkEAmOCLGOOscuj4QrF7ylfKgeejqs4sYdYK4b9Y8zCYlRZ8
+ 2Isna7HNTQwuhCPdLGTZYXim+TFg3XK4mYwHmlC7HXo5GziZ/c+cHiDj1BCSRRR9qMOD
+ MtviFsrXdZ7YfSinS0iv2qMAOnGptWc6rGZnAxhARtdmwK0z+Rp4JQV9i1mmgen5PFh1
+ eEH+8UFuhFWX7Gh8VIpSbczzMMY807kxDItxwea4Qo8TFHKPST//ORJ2i6ZiJI5DYCe3
+ eqqK2j2BEXOxEMGoAHHgcy3oHURR5UH7ci1p8o+qAjk4WJcx8hMuc6DNvFhT/TorGYhT Uw== 
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+        by userp2130.oracle.com with ESMTP id 2pcs1tbknb-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 03:14:01 +0000
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 03:14:35 +0000
 Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id wBH3E0FN018448
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id wBH3EUFi029479
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 03:14:01 GMT
-Received: from abhmp0002.oracle.com (abhmp0002.oracle.com [141.146.116.8])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id wBH3E0bS021877
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 03:14:00 GMT
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 03:14:30 GMT
+Received: from abhmp0003.oracle.com (abhmp0003.oracle.com [141.146.116.9])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id wBH3ETLQ022045
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 03:14:29 GMT
 Received: from tpasj.localdomain (/157.49.189.238)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Sun, 16 Dec 2018 19:13:59 -0800
+        with ESMTP ; Sun, 16 Dec 2018 19:14:29 -0800
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs-progs: replace: gracefully handle the exclusive operation report
-Date:   Mon, 17 Dec 2018 11:13:56 +0800
-Message-Id: <1545016436-4137-2-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH] btrfs: declare btrfs_dev_replace_start as static function
+Date:   Mon, 17 Dec 2018 11:14:30 +0800
+Message-Id: <1545016470-4236-1-git-send-email-anand.jain@oracle.com>
 X-Mailer: git-send-email 1.8.3.1
-In-Reply-To: <1545016436-4137-1-git-send-email-anand.jain@oracle.com>
-References: <1545016436-4137-1-git-send-email-anand.jain@oracle.com>
 X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9109 signatures=668679
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=1 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=747
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=796
  adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.0.1-1810050000 definitions=main-1812170029
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -65,37 +63,41 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Replace start fails to report the appropriate error if balance is already
-running, as below,
-
-btrfs rep start -B -f /dev/sdb /dev/sde /btrfs
-ERROR: ioctl(DEV_REPLACE_START) on '/btrfs' returns error: <illegal
-result value>
-
-Fix it by checking if the return is > 0, as the kernel returns
-BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS for the above cli, if the balance is
-running.
+btrfs_dev_replace_start parent is in the same file dev-replace.c.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- cmds-replace.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ fs/btrfs/dev-replace.c | 2 +-
+ fs/btrfs/dev-replace.h | 3 ---
+ 2 files changed, 1 insertion(+), 4 deletions(-)
 
-diff --git a/cmds-replace.c b/cmds-replace.c
-index 42de4de8c031..696f24c5c6d5 100644
---- a/cmds-replace.c
-+++ b/cmds-replace.c
-@@ -295,6 +295,10 @@ static int cmd_replace_start(int argc, char **argv)
- 			goto leave_with_error;
- 		}
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 2aa48aecc52b..59991165e126 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -390,7 +390,7 @@ static char* btrfs_dev_name(struct btrfs_device *device)
+ 		return rcu_str_deref(device->name);
+ }
  
-+		if (ret > 0)
-+			error("ioctl(DEV_REPLACE_START) '%s': %s", path,
-+			      btrfs_err_str(ret));
-+
- 		if (start_args.result !=
- 		    BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_RESULT &&
- 		    start_args.result !=
+-int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
++static int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
+ 		const char *tgtdev_name, u64 srcdevid, const char *srcdev_name,
+ 		int read_src)
+ {
+diff --git a/fs/btrfs/dev-replace.h b/fs/btrfs/dev-replace.h
+index 795c551f5b5e..27e3bb0cca11 100644
+--- a/fs/btrfs/dev-replace.h
++++ b/fs/btrfs/dev-replace.h
+@@ -13,9 +13,6 @@ int btrfs_run_dev_replace(struct btrfs_trans_handle *trans,
+ 			  struct btrfs_fs_info *fs_info);
+ int btrfs_dev_replace_by_ioctl(struct btrfs_fs_info *fs_info,
+ 			    struct btrfs_ioctl_dev_replace_args *args);
+-int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
+-		const char *tgtdev_name, u64 srcdevid, const char *srcdev_name,
+-		int read_src);
+ void btrfs_dev_replace_status(struct btrfs_fs_info *fs_info,
+ 			      struct btrfs_ioctl_dev_replace_args *args);
+ int btrfs_dev_replace_cancel(struct btrfs_fs_info *fs_info);
 -- 
 1.8.3.1
 

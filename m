@@ -2,82 +2,71 @@ Return-Path: <SRS0=1mW1=O2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 88092C43387
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 06:39:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 181B6C43387
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 06:54:54 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5A0E020675
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 06:39:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C81B520675
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 06:54:53 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="cBFi1vW6"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726505AbeLQGjL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 17 Dec 2018 01:39:11 -0500
-Received: from mx2.suse.de ([195.135.220.15]:44212 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726455AbeLQGjL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Dec 2018 01:39:11 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id BA2D0AC9C;
-        Mon, 17 Dec 2018 06:39:08 +0000 (UTC)
+        id S1726498AbeLQGyw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 17 Dec 2018 01:54:52 -0500
+Received: from aserp2130.oracle.com ([141.146.126.79]:49420 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726327AbeLQGyw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 17 Dec 2018 01:54:52 -0500
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wBH6mw2C101134;
+        Mon, 17 Dec 2018 06:54:25 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2018-07-02;
+ bh=Xk/AS0lQUFabkIGQ3kirRYenxyxvJD37bJjSN6c2Hmw=;
+ b=cBFi1vW6UgQWGhuDBp/qk0f9J4U3WERl9gJjixEnhI3+6NhLbYAO5JqsXRLfvUKJX8u+
+ MZu1peXNp+T2nd4sGze8QrxjE/rarE66p+kBE0Vnvw0ZP8QfVnDA58wCZCFIetYSawIw
+ qlSOJy24vqovqufbpdsE5T4tqBGqsp/FY10DwnTgKRu+xiA/JKmVHu6m1LyYm8iVFtnG
+ T6dQ9SjxysevKPQrtmk6wZasaQ6KRdKH2IqxXhFSxEdwAZ1rinROCb1tQUjHJ6cSE7Jb
+ GLwexDQk7PkzkjHNGUOyZMJ4lm+Sejx/ONlHrwh1GZRCuOT7hing3DY4cXl7jPK3EbDM Ig== 
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by aserp2130.oracle.com with ESMTP id 2pcq4dm9v1-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Mon, 17 Dec 2018 06:54:25 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id wBH6sJhw030913
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Mon, 17 Dec 2018 06:54:20 GMT
+Received: from abhmp0011.oracle.com (abhmp0011.oracle.com [141.146.116.17])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id wBH6sJ5G023851;
+        Mon, 17 Dec 2018 06:54:19 GMT
+Received: from [172.20.10.2] (/157.49.131.71)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Sun, 16 Dec 2018 22:54:18 -0800
 Subject: Re: [PATCH 1/1] btrfs: add kernel scrub log messages
-To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 References: <1545016512-4336-1-git-send-email-anand.jain@oracle.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <9e245d4b-e198-99d4-95b9-d3b1c3b5e11b@suse.com>
-Date:   Mon, 17 Dec 2018 08:39:08 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+ <9e245d4b-e198-99d4-95b9-d3b1c3b5e11b@suse.com>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <dc24b823-b74d-5e7e-3cc4-d5c01a0224ad@oracle.com>
+Date:   Mon, 17 Dec 2018 14:54:25 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
+ Thunderbird/52.9.1
 MIME-Version: 1.0
-In-Reply-To: <1545016512-4336-1-git-send-email-anand.jain@oracle.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <9e245d4b-e198-99d4-95b9-d3b1c3b5e11b@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9109 signatures=668679
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1810050000 definitions=main-1812170065
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -85,40 +74,48 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 17.12.18 г. 5:15 ч., Anand Jain wrote:
-> scrub kernel messages helps debug and audit, add them to the log.
+On 12/17/2018 02:39 PM, Nikolay Borisov wrote:
 > 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  fs/btrfs/scrub.c | 5 +++++
->  1 file changed, 5 insertions(+)
 > 
-> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-> index 902819d3cf41..d7a92521019e 100644
-> --- a/fs/btrfs/scrub.c
-> +++ b/fs/btrfs/scrub.c
-> @@ -3876,6 +3876,7 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
->  	mutex_unlock(&fs_info->scrub_lock);
->  
->  	if (!is_dev_replace) {
-> +		btrfs_info(fs_info, "scrub: devid %llu %s", devid, "started");
+> On 17.12.18 г. 5:15 ч., Anand Jain wrote:
+>> scrub kernel messages helps debug and audit, add them to the log.
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>> ---
+>>   fs/btrfs/scrub.c | 5 +++++
+>>   1 file changed, 5 insertions(+)
+>>
+>> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+>> index 902819d3cf41..d7a92521019e 100644
+>> --- a/fs/btrfs/scrub.c
+>> +++ b/fs/btrfs/scrub.c
+>> @@ -3876,6 +3876,7 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+>>   	mutex_unlock(&fs_info->scrub_lock);
+>>   
+>>   	if (!is_dev_replace) {
+>> +		btrfs_info(fs_info, "scrub: devid %llu %s", devid, "started");
+> 
+> Perhahps those messages needs to be with btrfs_debug, since they are
+> only really useful when someone is debugging otherwise we will make
+> btrfs rather noisy.
 
-Perhahps those messages needs to be with btrfs_debug, since they are
-only really useful when someone is debugging otherwise we will make
-btrfs rather noisy.
+  Not really, its part of audit as well, it should be info. It helps to
+  understand the maintenance history of the FS.
 
->  		/*
->  		 * by holding device list mutex, we can
->  		 * kick off writing super in log tree sync.
-> @@ -3897,6 +3898,10 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
->  	if (progress)
->  		memcpy(progress, &sctx->stat, sizeof(*progress));
->  
-> +	if (!is_dev_replace)
-> +		btrfs_info(fs_info, "scrub: devid %llu %s:%d",
-> +			   devid, ret ? "not finished":"finished", ret);
-> +
->  	mutex_lock(&fs_info->scrub_lock);
->  	dev->scrub_ctx = NULL;
->  	scrub_workers_put(fs_info);
-> 
+Thanks, Anand
+
+>>   		/*
+>>   		 * by holding device list mutex, we can
+>>   		 * kick off writing super in log tree sync.
+>> @@ -3897,6 +3898,10 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+>>   	if (progress)
+>>   		memcpy(progress, &sctx->stat, sizeof(*progress));
+>>   
+>> +	if (!is_dev_replace)
+>> +		btrfs_info(fs_info, "scrub: devid %llu %s:%d",
+>> +			   devid, ret ? "not finished":"finished", ret);
+>> +
+>>   	mutex_lock(&fs_info->scrub_lock);
+>>   	dev->scrub_ctx = NULL;
+>>   	scrub_workers_put(fs_info);
+>>

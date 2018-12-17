@@ -2,147 +2,158 @@ Return-Path: <SRS0=1mW1=O2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=0.5 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FORGED_MUA_MOZILLA,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 570E6C43387
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 13:54:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 41A9EC43387
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 14:00:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 261F9206A2
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 13:54:31 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 839DB2133F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 14:00:49 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=urbackup.org header.i=@urbackup.org header.b="bKOi71rq";
+	dkim=pass (1024-bit key) header.d=amazonses.com header.i=@amazonses.com header.b="ZhhwasoW"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727651AbeLQNy3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 17 Dec 2018 08:54:29 -0500
-Received: from mout.gmx.net ([212.227.15.18]:60537 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726738AbeLQNy3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Dec 2018 08:54:29 -0500
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx002
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0MKIEQ-1gXFBs2wwY-001i5b; Mon, 17
- Dec 2018 14:54:27 +0100
-Subject: Re: mkfs.btrfs vs btrfs-convert
-To:     Raymond Jennings <shentino@gmail.com>, linux-btrfs@vger.kernel.org
-References: <CAGDaZ_qug36TLzvQA47Pvo1t5pVkJdx7FhDYpc2LYa3eAWDiuQ@mail.gmail.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <45581fd8-f959-0df5-3a53-89e03a7a2c84@gmx.com>
-Date:   Mon, 17 Dec 2018 21:54:21 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+        id S1732217AbeLQOAs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 17 Dec 2018 09:00:48 -0500
+Received: from a4-6.smtp-out.eu-west-1.amazonses.com ([54.240.4.6]:42380 "EHLO
+        a4-6.smtp-out.eu-west-1.amazonses.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1727319AbeLQOAs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 17 Dec 2018 09:00:48 -0500
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/simple;
+        s=vbsgq4olmwpaxkmtpgfbbmccllr2wq3g; d=urbackup.org; t=1545055244;
+        h=Subject:To:Cc:References:From:Message-ID:Date:MIME-Version:In-Reply-To:Content-Type:Content-Transfer-Encoding;
+        bh=t+0EgRvC4/3I2d1Eo371nSSdzhTagNgzf+iw8HRH7Ds=;
+        b=bKOi71rqqXgIlEnUAnV7BnAGXxbNwPP5OCWafli71j01iYaxD7yNwg7sb0c5tHFD
+        Vf7T5HeVf3txLemhLOwYgMp9SJ2TotodHXnjs7uhPxt0oT4IRJMoNJmdKkteh5nPwoy
+        hWZ60PVIlf/3kshd7IVIa5iGXSUPv4fJ7j6INrVk=
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/simple;
+        s=uku4taia5b5tsbglxyj6zym32efj7xqv; d=amazonses.com; t=1545055244;
+        h=Subject:To:Cc:References:From:Message-ID:Date:MIME-Version:In-Reply-To:Content-Type:Content-Transfer-Encoding:Feedback-ID;
+        bh=t+0EgRvC4/3I2d1Eo371nSSdzhTagNgzf+iw8HRH7Ds=;
+        b=ZhhwasoWKIsqXARvR8ulqoUDoClGM2mro0IUKhhEF//xoey4bUbnMuk/mH3FCwI9
+        jnNunfOoqVsPpxK1mY9zwnQ4mr8V7s5kul7Yo8qBXbVaUK9XJmV8KF+Q2SQDxhbZhB4
+        QDRUtjV2BBBmPykC9K3RZyYF7IN/RCil7E7ny7hI=
+Subject: Re: [PATCH v2] btrfs: balance dirty metadata pages in
+ btrfs_finish_ordered_io
+To:     ethanlien <ethanlien@synology.com>
+Cc:     Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org,
+        David Sterba <dsterba@suse.cz>,
+        linux-btrfs-owner@vger.kernel.org
+References: <20180528054821.9092-1-ethanlien@synology.com>
+ <D7645E04-6424-4BFA-90C6-D63245EB9435@fb.com>
+ <01020167a30347da-385e2eff-ed13-422a-b27f-c3d5933aaef2-000000@eu-west-1.amazonses.com>
+ <d324045eb532b2fa525203c20c57bed1@synology.com>
+From:   Martin Raiber <martin@urbackup.org>
+Message-ID: <01020167bc7811f0-cb1970f5-3d51-49f9-a5bb-63ba1ea35eea-000000@eu-west-1.amazonses.com>
+Date:   Mon, 17 Dec 2018 14:00:44 +0000
+User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
  Thunderbird/60.3.3
 MIME-Version: 1.0
-In-Reply-To: <CAGDaZ_qug36TLzvQA47Pvo1t5pVkJdx7FhDYpc2LYa3eAWDiuQ@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="rTbpL17gygkbmS2X1mcZ8DY8AnPq1KVb4"
-X-Provags-ID: V03:K1:5K26x4HJOuJFK+L6phRmTo29gncOunrPfMV7P6O+OJId+eUVYJ6
- b0lgcf7wUClf8sLmBpJCC7pAWRZ7RDVZPHoMXIHpQkndm3K6v3XGJtSzjyhwfb/KpbS1DRy
- AhCPsWBisldPIwTHjJQq7Jhh9Gp1vYVZAo3JgFQjZ492fttaObz8atxbtnMfLbJkiP/OabN
- ModPPLNPbSFmXK7+xMaow==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:wpcwHdFhCjI=:YIaGEqD3q3GZjqLOJW9b9B
- 95BY08heV4BrBDIlu1caiCuyF++8fc+vvD3ZFM6sr8jG2v3xktKMcyZ269UIlO69Pd1rljZ4y
- VrQ5SFTDfesImUAL27pCX0Zk7X8L6k3dDKQwreC0NUKU3Q2LdZ+3c10nD71C160p4Ga/zbWo9
- NuZbCdShJRSHW9/J9skF5ybeWvLv7Y1gkDrFL19deXbS34dMqDUnE9OK9ihntUAjpexqCuCJG
- 7LrFjAzBlM6/+QUKTLi1M/IIyxOC+BMCZtDDpTpqByfBD9xJzmbJwJo/Jxy8z9I4MFkeqVyht
- FFwpsZ/VPNdmmH+UTPrAQrEdou8WQ9IkWgoteu5hKG5OvkH4FGNOMLC1Yj+0gqXasYOhVBWZ6
- kJzjv7tAqGPymdQzwWP7vPI0HwN3oZvavNzFQeyEdT8rOFvTiKG3Yrg3TnBJ8L7lsdDlx+iH2
- mu1vQ3WMAfXgVwtEsMJMwJ4NEOyZy3XcTcw7CaTv6HKBCQT+/3cSbq6+UQtgZKZqmL5PNUl15
- uECOX7MVO9wT9FRngmKKH7F9ActiDR4nmFf8j1m2ku5AWtJXAKXOgzuqioIVbXCXtn/M33D6e
- /9jjv3x1FKR2SaB9FQnlVyV9p6DlUx0/3JVnVixJCXwLCGFZrrBWiXDpe0+ge6u9pEv5gNfhD
- Dff6gA7dWowVpXtCc/jWmdrprjYIWKD5CdcsLnXMZpOIpNyiRPeMtYEAB4Ck/47/0P34euMkz
- kyNxhkliBtDPmz9Ee0gBpYj2VAqPsEGC79Kob1p9jsDGbZduqrUTd5KNX4HBV/ziWgBknKl1A
- sMAYTfc/99jUKEmVDh8SHNK2HKLuKJ7aO5aFmpdwFrhMTBvLgqSyfCTLdrCLLzvJuthdm1eE4
- JuFqUz/FiMYjrRywYc5TMInCT/kARdYsg32rNw25D7neMiIlg1hZ0fvdHMv6tX
+In-Reply-To: <d324045eb532b2fa525203c20c57bed1@synology.com>
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
+X-SES-Outgoing: 2018.12.17-54.240.4.6
+Feedback-ID: 1.eu-west-1.zKMZH6MF2g3oUhhjaE2f3oQ8IBjABPbvixQzV8APwT0=:AmazonSES
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---rTbpL17gygkbmS2X1mcZ8DY8AnPq1KVb4
-Content-Type: multipart/mixed; boundary="yeiJJnk8m57z8m0vcrmRlKWoiIVEZjzYs";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Raymond Jennings <shentino@gmail.com>, linux-btrfs@vger.kernel.org
-Message-ID: <45581fd8-f959-0df5-3a53-89e03a7a2c84@gmx.com>
-Subject: Re: mkfs.btrfs vs btrfs-convert
-References: <CAGDaZ_qug36TLzvQA47Pvo1t5pVkJdx7FhDYpc2LYa3eAWDiuQ@mail.gmail.com>
-In-Reply-To: <CAGDaZ_qug36TLzvQA47Pvo1t5pVkJdx7FhDYpc2LYa3eAWDiuQ@mail.gmail.com>
-
---yeiJJnk8m57z8m0vcrmRlKWoiIVEZjzYs
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-
-
-
-On 2018/12/17 =E4=B8=8B=E5=8D=888:51, Raymond Jennings wrote:
-> Just curious, but does btrfs-convert support all the same options as mk=
-fs.btrfs?
-
-Obviously, no multi-device support for btrfs-convert.
-
-And btrfs-convert would create a strange chunk layout.
-Kernel can handle it without problem, but the layout is still weird.
-
-Despite that, one feature, mixed-bg is removed as btrfs-convert uses the
-traditional separate chunk type (the reason the big rework on
-btrfs-convert is to get rid of the mixed-bg).
-
->=20
-> If not, should it?
+On 14.12.2018 09:07 ethanlien wrote:
+> Martin Raiber 於 2018-12-12 23:22 寫到:
+>> On 12.12.2018 15:47 Chris Mason wrote:
+>>> On 28 May 2018, at 1:48, Ethan Lien wrote:
+>>>
+>>> It took me a while to trigger, but this actually deadlocks ;)  More
+>>> below.
+>>>
+>>>> [Problem description and how we fix it]
+>>>> We should balance dirty metadata pages at the end of
+>>>> btrfs_finish_ordered_io, since a small, unmergeable random write can
+>>>> potentially produce dirty metadata which is multiple times larger than
+>>>> the data itself. For example, a small, unmergeable 4KiB write may
+>>>> produce:
+>>>>
+>>>>     16KiB dirty leaf (and possibly 16KiB dirty node) in subvolume tree
+>>>>     16KiB dirty leaf (and possibly 16KiB dirty node) in checksum tree
+>>>>     16KiB dirty leaf (and possibly 16KiB dirty node) in extent tree
+>>>>
+>>>> Although we do call balance dirty pages in write side, but in the
+>>>> buffered write path, most metadata are dirtied only after we reach the
+>>>> dirty background limit (which by far only counts dirty data pages) and
+>>>> wakeup the flusher thread. If there are many small, unmergeable random
+>>>> writes spread in a large btree, we'll find a burst of dirty pages
+>>>> exceeds the dirty_bytes limit after we wakeup the flusher thread -
+>>>> which
+>>>> is not what we expect. In our machine, it caused out-of-memory problem
+>>>> since a page cannot be dropped if it is marked dirty.
+>>>>
+>>>> Someone may worry about we may sleep in
+>>>> btrfs_btree_balance_dirty_nodelay,
+>>>> but since we do btrfs_finish_ordered_io in a separate worker, it will
+>>>> not
+>>>> stop the flusher consuming dirty pages. Also, we use different worker
+>>>> for
+>>>> metadata writeback endio, sleep in btrfs_finish_ordered_io help us
+>>>> throttle
+>>>> the size of dirty metadata pages.
+>>> In general, slowing down btrfs_finish_ordered_io isn't ideal because it
+>>> adds latency to places we need to finish quickly.  Also,
+>>> btrfs_finish_ordered_io is used by the free space cache.  Even though
+>>> this happens from its own workqueue, it means completing free space
+>>> cache writeback may end up waiting on balance_dirty_pages, something
+>>> like this stack trace:
+>>>
+>>> [..]
+>>>
+>>> Eventually, we have every process in the system waiting on
+>>> balance_dirty_pages(), and nobody is able to make progress on
+>>> paclear page's writebackge
+>>> writeback.
+>>>
+>> I had lockups with this patch as well. If you put e.g. a loop device on
+>> top of a btrfs file, loop sets PF_LESS_THROTTLE to avoid a feed back
+>> loop causing delays. The task balancing dirty pages in
+>> btrfs_finish_ordered_io doesn't have the flag and causes slow-downs. In
+>> my case it managed to cause a feedback loop where it queues other
+>> btrfs_finish_ordered_io and gets stuck completely.
+>>
 >
+> The data writepage endio will queue a work for
+> btrfs_finish_ordered_io() in a separate workqueue and clear page's
+> writeback, so throttling in btrfs_finish_ordered_io() should not slow
+> down flusher thread. One suspicious point is while the caller is
+> waiting a range of ordered_extents to complete, they will be
+> blocked until balance_dirty_pages_ratelimited() make some
+> progress, since we finish ordered_extents in
+> btrfs_finish_ordered_io().
+> Do you have call stack information for stuck processes or using
+> fsync/sync frequently? If this is the case, maybe we should pull
+> this thing out and try balance dirty metadata pages somewhere.
 
-For multi-device related one, since ext*/reiserfs doesn't support
-multi-device, there is no need to support them anyway. So at least for
-now, I don't see the need to support that features.
-(You can always add new device after convert)
+Yeah like,
 
-Thanks,
-Qu
+[875317.071433] Call Trace:
+[875317.071438]  ? __schedule+0x306/0x7f0
+[875317.071442]  schedule+0x32/0x80
+[875317.071447]  btrfs_start_ordered_extent+0xed/0x120
+[875317.071450]  ? remove_wait_queue+0x60/0x60
+[875317.071454]  btrfs_wait_ordered_range+0xa0/0x100
+[875317.071457]  btrfs_sync_file+0x1d6/0x400
+[875317.071461]  ? do_fsync+0x38/0x60
+[875317.071463]  ? btrfs_fdatawrite_range+0x50/0x50
+[875317.071465]  do_fsync+0x38/0x60
+[875317.071468]  __x64_sys_fsync+0x10/0x20
+[875317.071470]  do_syscall_64+0x55/0x100
+[875317.071473]  entry_SYSCALL_64_after_hwframe+0x44/0xa9
+
+so I guess the problem is that the calling balance_dirty_pages causes
+fsyncs to the same btrfs (via my unusual setup of loop+fuse)? Those
+fsyncs are deadlocked because they are called indirectly from
+btrfs_finish_ordered_io... It is a unusal setup, which is why I did not
+post it to the mailing list initially.
 
 
---yeiJJnk8m57z8m0vcrmRlKWoiIVEZjzYs--
-
---rTbpL17gygkbmS2X1mcZ8DY8AnPq1KVb4
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlwXqo0ACgkQwj2R86El
-/qhZTAf/UZpm/VySMOEfXMOSac4H5Crg9/+AQxB5QeJ74LuUE5eKy225RUMG7HWf
-Q6g6GMTBnheWQFZzz53OBAhNjdL/hZJsV35NbPnRYCjJAfvUFzTQVPz3D8iYiKHU
-SjbAvyJEfntsd2Forz9l8e/QOVK/zRBEV16b5/ycPelB9UA7Ms5JZrjm1BssL5ei
-xoFjsThL5jqmaLQYAFSzgMNKSo8NjoHbKQF0YlTBErjmyoqIRJEXYySaXUDoBUW6
-f/pdSfspsS7Z9ur5fz0viOCwc7PyW2UnGgrh/zNvVMw1CFBbXz8gKIMywS0jThoi
-3jbj+EBiomPJKugxadpl+hyEbyV9lw==
-=pFKe
------END PGP SIGNATURE-----
-
---rTbpL17gygkbmS2X1mcZ8DY8AnPq1KVb4--

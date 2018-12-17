@@ -3,28 +3,30 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4514DC43387
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 06:55:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4415FC43387
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 07:20:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1930420675
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 06:55:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 17108206A2
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 07:20:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726530AbeLQGzU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 17 Dec 2018 01:55:20 -0500
-Received: from mx2.suse.de ([195.135.220.15]:45878 "EHLO mx1.suse.de"
+        id S1726498AbeLQHUI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 17 Dec 2018 02:20:08 -0500
+Received: from mx2.suse.de ([195.135.220.15]:47736 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726505AbeLQGzT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Dec 2018 01:55:19 -0500
+        id S1726349AbeLQHUI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 17 Dec 2018 02:20:08 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 9A4FBACE7;
-        Mon, 17 Dec 2018 06:55:17 +0000 (UTC)
-Subject: Re: [PATCH 1/2] btrfs-progs: check for no result before using results
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id B13E3AC3B;
+        Mon, 17 Dec 2018 07:20:05 +0000 (UTC)
+Subject: Re: [PATCH 2/2] btrfs-progs: replace: gracefully handle the exclusive
+ operation report
 To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
 References: <1545016436-4137-1-git-send-email-anand.jain@oracle.com>
+ <1545016436-4137-2-git-send-email-anand.jain@oracle.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -69,12 +71,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <d875811a-1030-18fe-fd55-fba8bafcc82a@suse.com>
-Date:   Mon, 17 Dec 2018 08:55:16 +0200
+Message-ID: <147c3237-2931-74bf-2f95-01e7f44fe00b@suse.com>
+Date:   Mon, 17 Dec 2018 09:20:04 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <1545016436-4137-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1545016436-4137-2-git-send-email-anand.jain@oracle.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -86,42 +88,38 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 17.12.18 г. 5:13 ч., Anand Jain wrote:
-> User space understands the ioctl BTRFS_IOC_DEV_REPLACE command status
-> using the struct btrfs_ioctl_dev_replace_args::result, and so userspace
-> initializes this to BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_RESULT, so exclude
-> this value in checking for the error.
+> Replace start fails to report the appropriate error if balance is already
+> running, as below,
+> 
+> btrfs rep start -B -f /dev/sdb /dev/sde /btrfs
+> ERROR: ioctl(DEV_REPLACE_START) on '/btrfs' returns error: <illegal
+> result value>
+> 
+> Fix it by checking if the return is > 0, as the kernel returns
+> BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS for the above cli, if the balance is
+> running.
 > 
 > Signed-off-by: Anand Jain <anand.jain@oracle.com>
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
 > ---
->  cmds-replace.c | 2 ++
->  1 file changed, 2 insertions(+)
+>  cmds-replace.c | 4 ++++
+>  1 file changed, 4 insertions(+)
 > 
 > diff --git a/cmds-replace.c b/cmds-replace.c
-> index b30e6c781e64..42de4de8c031 100644
+> index 42de4de8c031..696f24c5c6d5 100644
 > --- a/cmds-replace.c
 > +++ b/cmds-replace.c
-> @@ -296,6 +296,8 @@ static int cmd_replace_start(int argc, char **argv)
+> @@ -295,6 +295,10 @@ static int cmd_replace_start(int argc, char **argv)
+>  			goto leave_with_error;
 >  		}
 >  
+> +		if (ret > 0)
+> +			error("ioctl(DEV_REPLACE_START) '%s': %s", path,
+> +			      btrfs_err_str(ret));
+> +
 >  		if (start_args.result !=
-> +		    BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_RESULT &&
-> +		    start_args.result !=
-
-While this change is OK, it really is redundant, since we do
-IOC_DEV_REPLACE with CMD_STATUS, meaning in kernel space we always call
-btrfs_dev_replace_status which always overwrites ->result member.
-
-
-Also looking at the other 3 cmds available for this IOCTL it's always
-guaranteed for ->result to be overwritten if it executes btrfs code.
-
-OTOH  if the capable, memdup or an unrecognised ->cmd  is detected then
-an ordinary error code is returned, in which case the ret < 0 check
-executes and laves via "leave_with_error" label.
-
-While your patch is OK code wise it's really a no op
-
->  		    BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR) {
->  			error("ioctl(DEV_REPLACE_START) on '%s' returns error: %s",
->  				path,
+>  		    BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_RESULT &&
+>  		    start_args.result !=
 > 

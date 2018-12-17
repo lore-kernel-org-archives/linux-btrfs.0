@@ -2,121 +2,90 @@ Return-Path: <SRS0=1mW1=O2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+X-Spam-Status: No, score=-9.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham
-	autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E97EBC43387
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 03:02:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 19FB7C43387
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 03:14:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A9A6D20645
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 03:02:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DADD5206BA
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 03:14:00 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="fEIvBgW0"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="BieHuU6B"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731231AbeLQDCV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 16 Dec 2018 22:02:21 -0500
-Received: from userp2120.oracle.com ([156.151.31.85]:47408 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726267AbeLQDCV (ORCPT
+        id S1726378AbeLQDN7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 16 Dec 2018 22:13:59 -0500
+Received: from aserp2130.oracle.com ([141.146.126.79]:57266 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726267AbeLQDN7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 16 Dec 2018 22:02:21 -0500
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wBH32AJp155102;
-        Mon, 17 Dec 2018 03:02:10 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to : cc :
- references : from : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=corp-2018-07-02;
- bh=uHpU8gKuY8NiCLDRQ89ZHjgDWELnRnYLOntEpkKsZNo=;
- b=fEIvBgW0C14+zwibi36RlS2ywuflKfJaunwWGQ/vDgtXJcI5oX/Vgtn5tyvJriD/D1j9
- OoSKtQLqhvqP1C/kIBmUrHIwWTeBG02DHuytE/J+tp9fWtxlgzhrWRbcKiBQI4E1il0i
- GSDw9io/R+rFHeq+/SiRIynq8iKKNTgAJ5un+ieRWbiaPdZaZKV+R66XGwpHPki7MzSM
- EvHOXZ8aNuYfxXABrz3TnUAxsZkXRQxzvHGUVVg0VrjAI8JeemScrZB4/utOnKMxvcy/
- IpRceUJORoxGirhlnfOSQrdugntXTJ4GcUkXXQIilwHxBtCL9dWiqcsYk+h0VBfOShL4 zg== 
+        Sun, 16 Dec 2018 22:13:59 -0500
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wBH3Dnnf156984
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 03:13:58 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
+ date : message-id; s=corp-2018-07-02;
+ bh=V2DM5yrcljvWClVGq1P4iR3WvzqsGWdfHJS0RNGgUTU=;
+ b=BieHuU6BFxGI1ZcY2twv5qdg/yPi6MSeoQg1feSY3xKLKXX8ZFaCXd6UVIOrTNorimdk
+ I9Z4jYcI56cDjJYzpmSiLD6JXN1oCVqf2QrJBsDuyEbRZNoEpeqMguKKHLYieRS+1HgY
+ c4HV70TGDkIQPrPZyvh8aLNeE6j8lvwvX1YYXGPcD79J60tA16R5Gf6uod5WzFeKcJSB
+ H2/yaQC8pRIckFXMuR2lsfm9xmY71/h5YzFoSJw03gjzxe0tqdkMJhYtX9cryvNpDZ1g
+ IEXQhuSVorsMLUwpFeXJqwMeBoBMx6tURsjtPqoV1ZrY8UWf2rbPPlcvqeX3alnvA67c Ag== 
 Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by userp2120.oracle.com with ESMTP id 2pct8qkfpv-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Mon, 17 Dec 2018 03:02:10 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id wBH329iI010089
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Mon, 17 Dec 2018 03:02:09 GMT
-Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id wBH329BD016473;
-        Mon, 17 Dec 2018 03:02:09 GMT
-Received: from [172.20.10.2] (/157.49.189.238)
+        by aserp2130.oracle.com with ESMTP id 2pcq4dkrgh-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 03:13:58 +0000
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id wBH3DugT028551
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 03:13:57 GMT
+Received: from abhmp0002.oracle.com (abhmp0002.oracle.com [141.146.116.8])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id wBH3Du1l006509
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 03:13:56 GMT
+Received: from tpasj.localdomain (/157.49.189.238)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Sun, 16 Dec 2018 19:02:08 -0800
-Subject: Re: [PATCH -next] btrfs: remove set but not used variable 'num_pages'
-To:     linux-btrfs@vger.kernel.org
-Cc:     YueHaibing <yuehaibing@huawei.com>, David Sterba <dsterba@suse.com>
-References: <1544855467-154115-1-git-send-email-yuehaibing@huawei.com>
+        with ESMTP ; Sun, 16 Dec 2018 19:13:55 -0800
 From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <477d62ef-0881-631a-6b18-02c5756da8ce@oracle.com>
-Date:   Mon, 17 Dec 2018 11:02:09 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
- Thunderbird/52.9.1
-MIME-Version: 1.0
-In-Reply-To: <1544855467-154115-1-git-send-email-yuehaibing@huawei.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/2] btrfs-progs: check for no result before using results
+Date:   Mon, 17 Dec 2018 11:13:55 +0800
+Message-Id: <1545016436-4137-1-git-send-email-anand.jain@oracle.com>
+X-Mailer: git-send-email 1.8.3.1
 X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9109 signatures=668679
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=1 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=899
  adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1810050000 definitions=main-1812170027
+ engine=8.0.1-1810050000 definitions=main-1812170029
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+User space understands the ioctl BTRFS_IOC_DEV_REPLACE command status
+using the struct btrfs_ioctl_dev_replace_args::result, and so userspace
+initializes this to BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_RESULT, so exclude
+this value in checking for the error.
 
-(cc-list-updated)
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ cmds-replace.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-On 12/15/2018 02:31 PM, YueHaibing wrote:
-> Fixes gcc '-Wunused-but-set-variable' warning:
-> 
-> fs/btrfs/ioctl.c: In function 'btrfs_extent_same':
-> fs/btrfs/ioctl.c:3260:6: warning:
->   variable 'num_pages' set but not used [-Wunused-but-set-variable]
-> 
-> It not used any more since commit 9ee8234e6220 ("Btrfs: use
-> generic_remap_file_range_prep() for cloning and deduplication")
-> 
-> Signed-off-by: YueHaibing <yuehaibing@huawei.com>
+diff --git a/cmds-replace.c b/cmds-replace.c
+index b30e6c781e64..42de4de8c031 100644
+--- a/cmds-replace.c
++++ b/cmds-replace.c
+@@ -296,6 +296,8 @@ static int cmd_replace_start(int argc, char **argv)
+ 		}
+ 
+ 		if (start_args.result !=
++		    BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_RESULT &&
++		    start_args.result !=
+ 		    BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR) {
+ 			error("ioctl(DEV_REPLACE_START) on '%s' returns error: %s",
+ 				path,
+-- 
+1.8.3.1
 
-This can be rolled up to 9ee8234e6220.
-
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
-
-
-> ---
->   fs/btrfs/ioctl.c | 3 ---
->   1 file changed, 3 deletions(-)
-> 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index fab9443..15fc467 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -3257,7 +3257,6 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
->   			     struct inode *dst, u64 dst_loff)
->   {
->   	int ret;
-> -	int num_pages = PAGE_ALIGN(BTRFS_MAX_DEDUPE_LEN) >> PAGE_SHIFT;
->   	u64 i, tail_len, chunk_count;
->   
->   	/* don't make the dst file partly checksummed */
-> @@ -3270,8 +3269,6 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
->   
->   	tail_len = olen % BTRFS_MAX_DEDUPE_LEN;
->   	chunk_count = div_u64(olen, BTRFS_MAX_DEDUPE_LEN);
-> -	if (chunk_count == 0)
-> -		num_pages = PAGE_ALIGN(tail_len) >> PAGE_SHIFT;
->   
->   	for (i = 0; i < chunk_count; i++) {
->   		ret = btrfs_extent_same_range(src, loff, BTRFS_MAX_DEDUPE_LEN,
-> 
-> 
-> 

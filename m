@@ -3,28 +3,28 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0F673C43387
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 06:36:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 88092C43387
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 06:39:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CDE2A20675
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 06:36:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5A0E020675
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 06:39:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731519AbeLQGgt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 17 Dec 2018 01:36:49 -0500
-Received: from mx2.suse.de ([195.135.220.15]:44012 "EHLO mx1.suse.de"
+        id S1726505AbeLQGjL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 17 Dec 2018 01:39:11 -0500
+Received: from mx2.suse.de ([195.135.220.15]:44212 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726455AbeLQGgt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Dec 2018 01:36:49 -0500
+        id S1726455AbeLQGjL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 17 Dec 2018 01:39:11 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D02B3AC9C;
-        Mon, 17 Dec 2018 06:36:46 +0000 (UTC)
-Subject: Re: [PATCH] btrfs: declare btrfs_dev_replace_start as static function
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id BA2D0AC9C;
+        Mon, 17 Dec 2018 06:39:08 +0000 (UTC)
+Subject: Re: [PATCH 1/1] btrfs: add kernel scrub log messages
 To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-References: <1545016470-4236-1-git-send-email-anand.jain@oracle.com>
+References: <1545016512-4336-1-git-send-email-anand.jain@oracle.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -69,12 +69,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <117c4519-ecfc-db70-3062-17805143c876@suse.com>
-Date:   Mon, 17 Dec 2018 08:36:45 +0200
+Message-ID: <9e245d4b-e198-99d4-95b9-d3b1c3b5e11b@suse.com>
+Date:   Mon, 17 Dec 2018 08:39:08 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <1545016470-4236-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1545016512-4336-1-git-send-email-anand.jain@oracle.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -85,43 +85,40 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 17.12.18 г. 5:14 ч., Anand Jain wrote:
-> btrfs_dev_replace_start parent is in the same file dev-replace.c.
+On 17.12.18 г. 5:15 ч., Anand Jain wrote:
+> scrub kernel messages helps debug and audit, add them to the log.
 > 
 > Signed-off-by: Anand Jain <anand.jain@oracle.com>
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
 > ---
->  fs/btrfs/dev-replace.c | 2 +-
->  fs/btrfs/dev-replace.h | 3 ---
->  2 files changed, 1 insertion(+), 4 deletions(-)
+>  fs/btrfs/scrub.c | 5 +++++
+>  1 file changed, 5 insertions(+)
 > 
-> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-> index 2aa48aecc52b..59991165e126 100644
-> --- a/fs/btrfs/dev-replace.c
-> +++ b/fs/btrfs/dev-replace.c
-> @@ -390,7 +390,7 @@ static char* btrfs_dev_name(struct btrfs_device *device)
->  		return rcu_str_deref(device->name);
->  }
+> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+> index 902819d3cf41..d7a92521019e 100644
+> --- a/fs/btrfs/scrub.c
+> +++ b/fs/btrfs/scrub.c
+> @@ -3876,6 +3876,7 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+>  	mutex_unlock(&fs_info->scrub_lock);
 >  
-> -int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
-> +static int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
->  		const char *tgtdev_name, u64 srcdevid, const char *srcdev_name,
->  		int read_src)
->  {
-> diff --git a/fs/btrfs/dev-replace.h b/fs/btrfs/dev-replace.h
-> index 795c551f5b5e..27e3bb0cca11 100644
-> --- a/fs/btrfs/dev-replace.h
-> +++ b/fs/btrfs/dev-replace.h
-> @@ -13,9 +13,6 @@ int btrfs_run_dev_replace(struct btrfs_trans_handle *trans,
->  			  struct btrfs_fs_info *fs_info);
->  int btrfs_dev_replace_by_ioctl(struct btrfs_fs_info *fs_info,
->  			    struct btrfs_ioctl_dev_replace_args *args);
-> -int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
-> -		const char *tgtdev_name, u64 srcdevid, const char *srcdev_name,
-> -		int read_src);
->  void btrfs_dev_replace_status(struct btrfs_fs_info *fs_info,
->  			      struct btrfs_ioctl_dev_replace_args *args);
->  int btrfs_dev_replace_cancel(struct btrfs_fs_info *fs_info);
+>  	if (!is_dev_replace) {
+> +		btrfs_info(fs_info, "scrub: devid %llu %s", devid, "started");
+
+Perhahps those messages needs to be with btrfs_debug, since they are
+only really useful when someone is debugging otherwise we will make
+btrfs rather noisy.
+
+>  		/*
+>  		 * by holding device list mutex, we can
+>  		 * kick off writing super in log tree sync.
+> @@ -3897,6 +3898,10 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+>  	if (progress)
+>  		memcpy(progress, &sctx->stat, sizeof(*progress));
+>  
+> +	if (!is_dev_replace)
+> +		btrfs_info(fs_info, "scrub: devid %llu %s:%d",
+> +			   devid, ret ? "not finished":"finished", ret);
+> +
+>  	mutex_lock(&fs_info->scrub_lock);
+>  	dev->scrub_ctx = NULL;
+>  	scrub_workers_put(fs_info);
 > 

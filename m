@@ -7,68 +7,66 @@ X-Spam-Status: No, score=-7.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 589D6C43387
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 10:10:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 31E13C43387
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 10:30:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 11CF820874
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 10:10:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CDAC82133F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 10:30:14 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="QpeYjph2"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="CvCVas7X"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726987AbeLQKKD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 17 Dec 2018 05:10:03 -0500
-Received: from userp2120.oracle.com ([156.151.31.85]:40974 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726551AbeLQKKC (ORCPT
+        id S1727000AbeLQKaL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 17 Dec 2018 05:30:11 -0500
+Received: from userp2130.oracle.com ([156.151.31.86]:42786 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726755AbeLQKaL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Dec 2018 05:10:02 -0500
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wBHA3g35057739;
-        Mon, 17 Dec 2018 10:09:59 GMT
+        Mon, 17 Dec 2018 05:30:11 -0500
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wBHAT0Za116640;
+        Mon, 17 Dec 2018 10:30:09 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
  references : from : message-id : date : mime-version : in-reply-to :
  content-type : content-transfer-encoding; s=corp-2018-07-02;
- bh=VeQBYqV2QhzDYyKao0LtojcMeexRpfftKeoBY6vLMls=;
- b=QpeYjph20r3j4zFWI7ffouBPZBuzavEk0rcpSJeVfH9vIkq+cK20HD0zNRR8v9papmuN
- 96aMueRGyCKriim1ZiMI9uPIWsiKe/BngezGX1z8YR+8iRDNiNfWoiGa2To7IJ85g/JB
- K76l85n/h66GppYuonkUZoAPWHVBMpRVbkowr+bTDsdA6TullU+/kuBF37fLFZ03JvSO
- jh51Bk7G7tDsLl9o4ThRBX7JdqIAhAcDLHw9BndkaIQ7oVv7UELnqrVv6Fd9/HL5tS3i
- NuI5BygAdScxhAUy0Ih3uS/ImzSYmJDqATDIwRqzpiDqPhbj0P1aplrGqhJEXVxpbUj8 oQ== 
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by userp2120.oracle.com with ESMTP id 2pct8qmta3-1
+ bh=4XYFoBPGxnqzIxcZnBsI+YijXWJWJs3A4dXKYyTVQio=;
+ b=CvCVas7Xnr94f0kr76DP2TjeDct1JcDt3XEu1vOnsTWMSrCjEM7Rkaz3flNsk7i2o5lL
+ Dwg7Sy2Y62XMmleId4HXBP67kvIBQc93/BE8nNCSxSkAGfX16ez1ClSe6luefus9QAGz
+ cTrK4lEKmI6GsV3ncXyKNDlUj1DqiOC7uTAGQG+PUJwZeOR2JZ2wNpNJUp9/tbcV71ov
+ cy7sf0ykYNfsp63H+8+fafs08vjq/2HtRrphFwPqRSsevXjD1z0F6Zx0T9Ui88FD2kCA
+ sMznnZoxoct8ZWvgw3xe5+Jto2C/7hVJDR9/ZrpyZPJsTrfSp4yF8ep36nP6hqwtQMDm Dg== 
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by userp2130.oracle.com with ESMTP id 2pcs1td03r-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Mon, 17 Dec 2018 10:09:59 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id wBHA9wxg020909
+        Mon, 17 Dec 2018 10:30:08 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id wBHAU86Y020366
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Mon, 17 Dec 2018 10:09:58 GMT
+        Mon, 17 Dec 2018 10:30:08 GMT
 Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id wBHA9wsR004155;
-        Mon, 17 Dec 2018 10:09:58 GMT
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id wBHAU8su026949;
+        Mon, 17 Dec 2018 10:30:08 GMT
 Received: from [172.20.10.2] (/157.49.131.42)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 17 Dec 2018 02:09:58 -0800
-Subject: Re: [PATCH 1/2] btrfs-progs: check for no result before using results
-To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-References: <1545016436-4137-1-git-send-email-anand.jain@oracle.com>
- <d875811a-1030-18fe-fd55-fba8bafcc82a@suse.com>
- <126106a3-d1c7-462b-f813-6240eb9c22ad@oracle.com>
- <2e596d95-1183-a562-a0c3-a1b6e6c1f47f@suse.com>
+        with ESMTP ; Mon, 17 Dec 2018 02:30:08 -0800
+Subject: Re: [PATCH] Btrfs: do not overwrite error return value in the device
+ replace ioctl
+To:     fdmanana@kernel.org, linux-btrfs@vger.kernel.org
+References: <20181214194532.21841-1-fdmanana@kernel.org>
 From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <8a7e8ccd-94fd-d1de-b141-eef46e8c0129@oracle.com>
-Date:   Mon, 17 Dec 2018 18:10:03 +0800
+Message-ID: <1a06c374-c9b2-db42-0fec-8358084fbea1@oracle.com>
+Date:   Mon, 17 Dec 2018 18:30:12 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
  Thunderbird/52.9.1
 MIME-Version: 1.0
-In-Reply-To: <2e596d95-1183-a562-a0c3-a1b6e6c1f47f@suse.com>
+In-Reply-To: <20181214194532.21841-1-fdmanana@kernel.org>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
 X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9109 signatures=668679
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
  phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
  adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1810050000 definitions=main-1812170095
+ engine=8.0.1-1810050000 definitions=main-1812170099
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -76,98 +74,50 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 12/17/2018 04:47 PM, Nikolay Borisov wrote:
+On 12/15/2018 03:45 AM, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
 > 
+> If the call to btrfs_dev_replace_by_ioctl() failed we would overwrite the
+> error returned to user space with -EFAULT if the call to copy_to_user()
+> failed as well. Fix that by calling copy_to_user() only if no error
+> happened before.
 > 
-> On 17.12.18 г. 9:49 ч., Anand Jain wrote:
->>
->>
->> On 12/17/2018 02:55 PM, Nikolay Borisov wrote:
->>>
->>>
->>> On 17.12.18 г. 5:13 ч., Anand Jain wrote:
->>>> User space understands the ioctl BTRFS_IOC_DEV_REPLACE command status
->>>> using the struct btrfs_ioctl_dev_replace_args::result, and so userspace
->>>> initializes this to BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_RESULT, so exclude
->>>> this value in checking for the error.
->>>>
->>>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->>>> ---
->>>>    cmds-replace.c | 2 ++
->>>>    1 file changed, 2 insertions(+)
->>>>
->>>> diff --git a/cmds-replace.c b/cmds-replace.c
->>>> index b30e6c781e64..42de4de8c031 100644
->>>> --- a/cmds-replace.c
->>>> +++ b/cmds-replace.c
->>>> @@ -296,6 +296,8 @@ static int cmd_replace_start(int argc, char **argv)
->>>>            }
->>>>              if (start_args.result !=
->>>> +            BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_RESULT &&
->>>> +            start_args.result !=
->>>
->>> While this change is OK, it really is redundant, since we do
->>> IOC_DEV_REPLACE with CMD_STATUS, meaning in kernel space we always call
->>> btrfs_dev_replace_status which always overwrites ->result member.
->>
->>> Also looking at the other 3 cmds available for this IOCTL it's always
->>> guaranteed for ->result to be overwritten if it executes btrfs code.
->>
->>> OTOH  if the capable, memdup or an unrecognised ->cmd  is detected then
->>> an ordinary error code is returned, in which case the ret < 0 check
->>> executes and laves via "leave_with_error" label.
->>>
->>> While your patch is OK code wise it's really a no op
->>
->>   Did you miss the point that BTRFS_FS_EXCL_OP can be set by some other
->>   thread such as balance?.
->>   So in this context BTRFS_IOCTL_DEV_REPLACE_CMD_STATUS fails to>  report BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS and as the replace thread
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>   fs/btrfs/ioctl.c | 2 +-
+>   1 file changed, 1 insertion(+), 1 deletion(-)
 > 
-> Then perhaps btrfs_dev_replace_status should be modified so that
-> ->status is set to an appropriate value.
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 0b101df822e9..abe45fd97ab5 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -4401,7 +4401,7 @@ static long btrfs_ioctl_dev_replace(struct btrfs_fs_info *fs_info,
+>   		break;
+>   	}
+>   
+> -	if (copy_to_user(arg, p, sizeof(*p)))
+> +	if (ret == 0 && copy_to_user(arg, p, sizeof(*p)))
 
-  I disagree, BTRFS_IOCTL_DEV_REPLACE_CMD_STATUS is only to know the
-  replace status, so if a user want to know the last replace status
-  and if balance is running you are suggesting it should fail with
-  BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS. That's wrong.
+  Its the same thing here too.. we copy ret to args->result even
+  if it fails. Now with this patch, if ret is non-zero, its not
+  in args->result at the userland anymore.  If there
+  is any tool which just checks args->result will be at problem,
+  which I think is rare, should be ok. It would have been nice
+  to have this design as in this patch, in the original code.
+
+------
+  530         ret = btrfs_dev_replace_start(fs_info, 
+args->start.tgtdev_name,
+  531                                         args->start.srcdevid,
+  532                                         args->start.srcdev_name,
+  533 
+args->start.cont_reading_from_srcdev_mode);
+  534         args->result = ret;
+--------
 
 
-> Looking at it
-> replace_dev_result2string will also have to be extended to recognize
-> BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS.
 
-  BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS is a generic btrfs error code,
-  and is part of btrfs_err_str(), it can be merged, but outside of this
-  patch as a cleanup patch.
-
->>   moves further ahead, the BTRFS_IOCTL_DEV_REPLACE_CMD_START will know
->>   that BTRFS_FS_EXCL_OP is set and the kernel does not reset the
->>   start_args.result value set by the user land which is
->>   BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_RESULT.
+>   		ret = -EFAULT;
+>   out:
+>   	kfree(p);
 > 
-> So what? the ioctl call will return BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS
-> which is positive (and you add handling for that in the second patch).
-
->>
->>   Besides checking for BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_RESULT is a
->>   right thing in general.
-> 
-> What is the real problem you are trying to solve here?
-
-  As in the patch 2/2
-
-  ERROR: ioctl(DEV_REPLACE_START) on '/btrfs' returns error: <illegal 
-result value>
-
-  Now with this patch it shall print only if there is a real error if
-  updated by the kernel.
-
-Thanks, Anand
-
->>
->>
->>>>                BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR) {
->>>>                error("ioctl(DEV_REPLACE_START) on '%s' returns error:
->>>> %s",
->>>>                    path,
->>>>

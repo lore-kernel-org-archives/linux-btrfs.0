@@ -2,142 +2,126 @@ Return-Path: <SRS0=1mW1=O2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ADED0C43387
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 09:23:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9D076C43387
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 09:24:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7E4772084D
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 09:23:51 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 67A96217F4
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 09:24:58 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1545038698;
+	bh=Mnb3rVPlVfEcy/1J4SFXmCZHhF+CYLy0ocoVp/1RDMM=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc:List-ID:From;
+	b=c4NpIm+Ve3OqyCkjgcz8/Z8r6oUqjFxYwGb6d33t38JOivgYuIb8QZNZEXshidVpc
+	 6h7WZrf6ig7u/9X/74IgeeZcJlYmLymptd/Lhn6nTGod6Ufd7GfB/tsDfkT8w9oWhU
+	 4oLuYwK0u89AQDS3NcYps9bpYlJNfsvPupoNKiBI=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726746AbeLQJXu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 17 Dec 2018 04:23:50 -0500
-Received: from mx2.suse.de ([195.135.220.15]:34222 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726463AbeLQJXt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Dec 2018 04:23:49 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 4F12EAC8A;
-        Mon, 17 Dec 2018 09:23:48 +0000 (UTC)
-Subject: Re: [PATCH 2/4] btrfs: Consolidate retval checking of core btree
- functions
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
-References: <20181217083602.10166-1-nborisov@suse.com>
- <20181217083602.10166-3-nborisov@suse.com>
- <3a4e1342-f764-6cee-b76c-e9f1b0167191@gmx.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <bebccae7-d14b-1900-88c8-bad2ffde3475@suse.com>
-Date:   Mon, 17 Dec 2018 11:23:47 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+        id S1726805AbeLQJY5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 17 Dec 2018 04:24:57 -0500
+Received: from mail.kernel.org ([198.145.29.99]:51172 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726463AbeLQJY5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 17 Dec 2018 04:24:57 -0500
+Received: from mail-ua1-f53.google.com (mail-ua1-f53.google.com [209.85.222.53])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 05DE5217F4
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 09:24:56 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1545038696;
+        bh=Mnb3rVPlVfEcy/1J4SFXmCZHhF+CYLy0ocoVp/1RDMM=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=0/4HZTza/uUxNNpXlTORvLUP6Z1xkX29R69Rbq5C7IITyQdz9DTcKl4/kS3uAJTEB
+         NbIdeEvfrz5JMj8qJmPzvjHvtbrF9brOBqlm49Byzr+RIeBES1G0SH3Pf2p9IgaY/k
+         ZzgezTiWNcsZrfA9QFVS9vzNoJogE0uzst1gtOjU=
+Received: by mail-ua1-f53.google.com with SMTP id z11so4168260uaa.10
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 01:24:55 -0800 (PST)
+X-Gm-Message-State: AA+aEWY7vmz2e2Gg2RmBhnqv4L3r9DS4Sm+LgVnZyj4tiL+LYVnfg/QZ
+        JYhxAEHlRaWy88WT9MzwriejjX/DzZgEuadReT4=
+X-Google-Smtp-Source: AFSGD/VXFNsc7BWrrWDw52xuCqUwodYWv1TuYsuwmdRC7WLbRs7XdyqPoNv4YB/x4JyBO8F7FFdls/ed1oCPtrFIOo0=
+X-Received: by 2002:ab0:3259:: with SMTP id r25mr5587362uan.108.1545038695114;
+ Mon, 17 Dec 2018 01:24:55 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <3a4e1342-f764-6cee-b76c-e9f1b0167191@gmx.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+References: <20181214194541.21891-1-fdmanana@kernel.org> <9c378108-591d-e275-8898-3c67d97156fa@oracle.com>
+In-Reply-To: <9c378108-591d-e275-8898-3c67d97156fa@oracle.com>
+From:   Filipe Manana <fdmanana@kernel.org>
+Date:   Mon, 17 Dec 2018 09:24:43 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H6NEJiAW8RYRdt8f3svhE3wZg92FoQH+bzFo2aE9ozKPA@mail.gmail.com>
+Message-ID: <CAL3q7H6NEJiAW8RYRdt8f3svhE3wZg92FoQH+bzFo2aE9ozKPA@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: do not overwrite error return value in the balance ioctl
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Mon, Dec 17, 2018 at 8:25 AM Anand Jain <anand.jain@oracle.com> wrote:
+>
+>
+>
+> On 12/15/2018 03:45 AM, fdmanana@kernel.org wrote:
+> > From: Filipe Manana <fdmanana@suse.com>
+> >
+> > If the call to btrfs_balance() failed we would overwrite the error
+> > returned to user space with -EFAULT if the call to copy_to_user() failed
+> > as well. Fix that by calling copy_to_user() only if btrfs_balance()
+> > returned success.
+> >
+> > Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> > ---
+> >   fs/btrfs/ioctl.c | 2 +-
+> >   1 file changed, 1 insertion(+), 1 deletion(-)
+> >
+> > diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> > index abe45fd97ab5..4ad7288f77d0 100644
+> > --- a/fs/btrfs/ioctl.c
+> > +++ b/fs/btrfs/ioctl.c
+> > @@ -4707,7 +4707,7 @@ static long btrfs_ioctl_balance(struct file *file, void __user *arg)
+> >       ret = btrfs_balance(fs_info, bctl, bargs);
+> >       bctl = NULL;
+> >
+> > -     if (arg) {
+> > +     if (ret == 0 && arg) {
+> >               if (copy_to_user(arg, bargs, sizeof(*bargs)))
+> >                       ret = -EFAULT;
+> >       }
+> >
+>
+> This changes the BTRFS_IOC_BALANCE_V2 semantics.
+>
+> Originally, if BTRFS_IOC_BALANCE_V2 is failed/canceled we do update
+> bargs [1] and copy to user land, but after this patch we copy only
+> if the ioctl is successful. I doubt if David is OK with that.
+
+I thought about that. But that logic, if it's really in use by someone
+(something) out there then they must be treating -EFAULT differently
+from any other error.
+Because if copy_to_user() fails it means it didn't copy all bytes it
+was so supposed to (its return value is number of bytes not copied),
+so the arguments structure ends up in an inconsistent state.
 
 
-On 17.12.18 г. 11:09 ч., Qu Wenruo wrote:
-> 
-> 
-> On 2018/12/17 下午4:36, Nikolay Borisov wrote:
->> Core btree functions in btrfs generally return 0 for error
-> 
-> Isn't 0 for key found? It's <0 for error.
-> 
->  and 1 in case
-
-Shit, you are right, 0 found, < 0 error, >0 where it must be inserted
->> the sought item cannot be found. Consolidate the checks for those
->> conditions in one 'if () {} else if () {}' struct rather than 2 separate
->> 'if () {}' statements. This emphasizes that the handling code pertains
->> to a single function. No functional changes.
->>
->> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> The code itself is OK, but the commit message is really confusing.
-> 
-> Thanks,
-> Qu
-> 
->> ---
->>  fs/btrfs/inode.c | 7 ++-----
->>  1 file changed, 2 insertions(+), 5 deletions(-)
->>
->> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
->> index fe25f66a98d9..511d3b314af2 100644
->> --- a/fs/btrfs/inode.c
->> +++ b/fs/btrfs/inode.c
->> @@ -6801,9 +6801,7 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
->>  	if (ret < 0) {
->>  		err = ret;
->>  		goto out;
->> -	}
->> -
->> -	if (ret != 0) {
->> +	} else if (ret > 0) {
->>  		if (path->slots[0] == 0)
->>  			goto not_found;
->>  		path->slots[0]--;
->> @@ -6853,8 +6851,7 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
->>  			if (ret < 0) {
->>  				err = ret;
->>  				goto out;
->> -			}
->> -			if (ret > 0)
->> +			} else if (ret > 0)
->>  				goto not_found;
->>  			leaf = path->nodes[0];
->>  		}
->>
-> 
+>
+> [1]
+> ----------
+> 3717 int btrfs_balance(struct btrfs_fs_info *fs_info,
+> 3718                   struct btrfs_balance_control *bctl,
+> 3719                   struct btrfs_ioctl_balance_args *bargs)
+> 3720 {
+> ::
+>
+> 3855         ret = __btrfs_balance(fs_info);
+> 3856
+> 3857         mutex_lock(&fs_info->balance_mutex);
+> 3858         clear_bit(BTRFS_FS_BALANCE_RUNNING, &fs_info->flags);
+> 3859
+> 3860         if (bargs) {
+> 3861                 memset(bargs, 0, sizeof(*bargs));
+> 3862                 btrfs_update_ioctl_balance_args(fs_info, bargs);
+> 3863         }
+>

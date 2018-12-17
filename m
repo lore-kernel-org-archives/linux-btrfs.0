@@ -2,162 +2,70 @@ Return-Path: <SRS0=1mW1=O2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B2F48C43444
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 15:08:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AEE10C43387
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 16:37:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7EFED2145D
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 15:08:38 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="5qizE8rj"
+	by mail.kernel.org (Postfix) with ESMTP id 895A12133F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 16:37:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727753AbeLQPIe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 17 Dec 2018 10:08:34 -0500
-Received: from aserp2130.oracle.com ([141.146.126.79]:45794 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726434AbeLQPIY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Dec 2018 10:08:24 -0500
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wBHF5jo3088103
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 15:08:22 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
- date : message-id; s=corp-2018-07-02;
- bh=JeFt5D8RyyhHJo5iPf04qY5w5UQ8WcBHejniLwWBtxQ=;
- b=5qizE8rjMYJz8/6Dj6D+vNO/NFQl9T/IigT2d0In6ssj9JuH+/aU+UyEEojE7fClY1jn
- h8jOkYbvNXeCF39VLy27FhXULWPeEIIZhEjFiUxRpMyF74YpFuB78YzUoWTqSSEM0oIa
- eBIS0Ea57T7Xt25YsV4pXwHxd+kiWZEn9KGomViIKlFtE00zivAnGUatWVR1e0xz55nT
- A6vIidyuZr4MOEzaYd4IvoI9VH8ZyTyRATAXf+xiHRmQY0Iz51frzee07hON+2RnoSh3
- MB6KuaNsRc0bxP9+zdWQmNkz/d6cSzOU6WqviOJE5VBWCBtJXibopqrf06+QiEGu4qH6 nA== 
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by aserp2130.oracle.com with ESMTP id 2pcq4dpa9h-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 15:08:22 +0000
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id wBHF8Lil006629
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 15:08:22 GMT
-Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id wBHF8LiY002497
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 15:08:21 GMT
-Received: from tpasj.localdomain (/157.49.131.42)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 17 Dec 2018 07:08:20 -0800
-From:   Anand Jain <anand.jain@oracle.com>
+        id S2388115AbeLQQhi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 17 Dec 2018 11:37:38 -0500
+Received: from mx2.suse.de ([195.135.220.15]:44230 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727771AbeLQQhi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 17 Dec 2018 11:37:38 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 93FAAAE1F
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 16:37:36 +0000 (UTC)
+From:   David Disseldorp <ddiss@suse.de>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH RESEND v12] Add cli and ioctl to forget scanned device(s)
-Date:   Mon, 17 Dec 2018 23:08:19 +0800
-Message-Id: <1545059302-3935-1-git-send-email-anand.jain@oracle.com>
-X-Mailer: git-send-email 1.8.3.1
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9110 signatures=668679
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=3 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1810050000 definitions=main-1812170134
+Cc:     David Disseldorp <ddiss@suse.de>
+Subject: [trivial PATCH] btrfs-progs: docs: fix balance -f grammar
+Date:   Mon, 17 Dec 2018 17:37:29 +0100
+Message-Id: <20181217163729.10991-1-ddiss@suse.de>
+X-Mailer: git-send-email 2.13.7
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-v12:
-  Fixed coding style - leave space between " : ".
+Signed-off-by: David Disseldorp <ddiss@suse.de>
+---
+ Documentation/btrfs-balance.asciidoc | 2 +-
+ cmds-balance.c                       | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-v11:
- btrfs-progs: Bring the code into the else part of if(forget).
-	      Use strerror to print the erorr instead of ret.
-
-v10:
- Make btrfs-progs changes more readable.
- With an effort to keep the known bug [1] as it is..
-  [1]
-   The cli 'btrfs device scan --all /dev/sdb' which should have scanned
-    only one device, ends up scanning all the devices and I am not trying
-    to fix this bug in this patch because..
-  . -d|--all is marked as deprecated, I hope -d option would go away
-  . For now some script might be using this bug as a feature, and fixing
-    this bug might lead to mount failure.
-
-v9:
- Make forget as a btrfs device scan option.
- Use forget in the fstests, now you can run fstests with btrfs as rootfs
-  which helps to exercise the uuid_mutex lock.
-
-v8:
- Change log update in the kernel patch.
-
-v7:
- Use struct btrfs_ioctl_vol_args (instead of struct
-  btrfs_ioctl_vol_args_v2) as its inline with other ioctl
-  btrfs-control
- The CLI usage/features remains same. However internally the ioctl flag
-  is not required to delete all the unmounted devices. Instead leave
-  btrfs_ioctl_vol_args::name NULL.
-
-v6:
- Use the changed fn name btrfs_free_stale_devices().
-
- Change in title:
- Old v5:
- Cover-letter:
-  [PATCH v5] Add cli and ioctl to ignore a scanned device
- Kernel:
-  [PATCH v5] btrfs: introduce feature to ignore a btrfs device
- Progs:
-  [PATCH v5] btrfs-progs: add 'btrfs device ignore' cli
-
-v5:
-  Adds feature to delete all stale devices
-  Reuses btrfs_free_stale_devices() fn and so depends on the
-    patch-set [1] in the ML.
-  Uses struct btrfs_ioctl_vol_args_v2 instead of
-    struct btrfs_ioctl_vol_args as arg
-  Does the device path matching instead of btrfs_device matching
-    (we won't delete the mounted device as btrfs_free_stale_devices()
-    checks for it)
-v4:
-  No change. But as the ML thread may be confusing, so resend.
-v3:
-  No change. Send to correct ML.
-v2:
-  Accepts review from Nikolay, details are in the specific patch.
-  Patch 1/2 is renamed from
-    [PATCH 1/2] btrfs: refactor btrfs_free_stale_device() to get device list delete
-  to
-    [PATCH 1/2] btrfs: add function to device list delete
-
-Adds cli and ioctl to forget a scanned device or forget all stale
-devices in the kernel.
-
-Anand Jain (1):
-  btrfs: introduce feature to forget a btrfs device
-
- fs/btrfs/super.c           | 3 +++
- fs/btrfs/volumes.c         | 9 +++++++++
- fs/btrfs/volumes.h         | 1 +
- include/uapi/linux/btrfs.h | 2 ++
- 4 files changed, 15 insertions(+)
-
-Anand Jain (1):
-  btrfs-progs: add cli to forget one or all scanned devices
-
- cmds-device.c | 63 ++++++++++++++++++++++++++++++++++++++++++++++++++---------
- ioctl.h       |  2 ++
- 2 files changed, 56 insertions(+), 9 deletions(-)
-
-[1]
-Anand Jain (1):
-  fstests: btrfs use forget if not reload
-
- common/btrfs    | 20 ++++++++++++++++++++
- tests/btrfs/124 |  6 +++---
- tests/btrfs/125 |  6 +++---
- tests/btrfs/154 |  6 +++---
- tests/btrfs/164 |  4 ++--
- 5 files changed, 31 insertions(+), 11 deletions(-)
-
+diff --git a/Documentation/btrfs-balance.asciidoc b/Documentation/btrfs-balance.asciidoc
+index 536243bc..bfb76742 100644
+--- a/Documentation/btrfs-balance.asciidoc
++++ b/Documentation/btrfs-balance.asciidoc
+@@ -101,7 +101,7 @@ act on system chunks (requires '-f'), see `FILTERS` section for details about 'f
+ -v::::
+ be verbose and print balance filter arguments
+ -f::::
+-force reducing of metadata integrity, eg. when going from 'raid1' to 'single'
++force a reduction of metadata integrity, eg. when going from 'raid1' to 'single'
+ --background|--bg::::
+ run the balance operation asynchronously in the background, uses `fork`(2) to
+ start the process that calls the kernel ioctl
+diff --git a/cmds-balance.c b/cmds-balance.c
+index 6cc26c35..c1dfe86e 100644
+--- a/cmds-balance.c
++++ b/cmds-balance.c
+@@ -508,7 +508,7 @@ static const char * const cmd_balance_start_usage[] = {
+ 	"-m[filters]    act on metadata chunks",
+ 	"-s[filters]    act on system chunks (only under -f)",
+ 	"-v             be verbose",
+-	"-f             force reducing of metadata integrity",
++	"-f             force a reduction of metadata integrity",
+ 	"--full-balance do not print warning and do not delay start",
+ 	"--background|--bg",
+ 	"               run the balance as a background process",
 -- 
-1.8.3.1
+2.13.7
+

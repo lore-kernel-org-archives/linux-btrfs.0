@@ -7,56 +7,56 @@ X-Spam-Status: No, score=-9.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C8666C43387
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 15:08:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 11BEAC43612
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 15:08:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 940E22145D
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 15:08:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D477B2145D
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 15:08:36 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="euJycP8A"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="APHdTflM"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1733224AbeLQPIe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1732216AbeLQPIe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Mon, 17 Dec 2018 10:08:34 -0500
-Received: from userp2120.oracle.com ([156.151.31.85]:40296 "EHLO
+Received: from userp2120.oracle.com ([156.151.31.85]:40248 "EHLO
         userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727734AbeLQPI2 (ORCPT
+        with ESMTP id S1726667AbeLQPI0 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Dec 2018 10:08:28 -0500
+        Mon, 17 Dec 2018 10:08:26 -0500
 Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wBHF5kh5092681
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 15:08:27 GMT
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wBHF5lFd092690
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 15:08:24 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
  date : message-id : in-reply-to : references; s=corp-2018-07-02;
- bh=TVzDE8kRYDbo2XzjLL45EJ8i8VRrKDp8N/9vxiklv94=;
- b=euJycP8AoG7ZTFtnWD7RNTgb3IzfEdnixtJgsyrOoQvd9LMCz+POe75I6iSzL5cMiXCH
- o8xZ5yd0JU6mpA4A0A30STtN/4+LvFqFqoexg+nFevf/7Wm13ATb3FBNDkMOYbgkyB+D
- Y213DT7L93gNl9KxGeSArHdLYLLcKBHM/q6CDu1JbWBabmXjY+fjd3+7hrzEe/CrfK+t
- r37qJCa5sS3RxKuOoZ9/sr5bWhDJ2Etu+5AwO5ACGV0cksY4/aqHUvnLS7Q9LrPWH+4b
- H6uuNQgcZxJA+jiKUXCAW6opRePBQrhuZVS7oIydZA9D3fuUA2lrEP5VbSFMzlGISF77 Ew== 
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by userp2120.oracle.com with ESMTP id 2pct8qp1vj-1
+ bh=n2s3ss0sZTJS2xCjzl/rk8BxV6S8dr9S/hKeQ4l1gXQ=;
+ b=APHdTflMTh76nz49Xib7g/vA50XfLHkfXCGwiUHmt4VpJ/4+xnC89+D5jIqBTIvByz/T
+ lVJrTxb8Oqj6YPfbMSG9+uNzbbBDWuk4YR79AQbCXCE7HoxL5fF/LxvjHiM5lkHJZlIG
+ lHYN+iZFUfUzhRnP4iMn/Z3gweOZMPgRpfmSG/dQZHhfX6DG5X66RPj1ut1YKUzRp2qu
+ RHNZWZVTlOZuZKzRUyBO7mm9VqOoNn6118BaJ2rViglkbHfT5UR1XGolyAKiGOMmsjqY
+ IP8Yi2bce8vjmtj4IzdkzZQDcAPaBzvhQz/0CWK0QEBsqCCddHoZE6h5Y+e1Tmd33UjG Fw== 
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by userp2120.oracle.com with ESMTP id 2pct8qp1va-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 15:08:26 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id wBHF8QwP007036
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 15:08:24 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id wBHF8NMU031244
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 15:08:26 GMT
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 15:08:24 GMT
 Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id wBHF8Q4n029230
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 15:08:26 GMT
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id wBHF8NJc008337
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Dec 2018 15:08:23 GMT
 Received: from tpasj.localdomain (/157.49.131.42)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 17 Dec 2018 07:08:25 -0800
+        with ESMTP ; Mon, 17 Dec 2018 07:08:23 -0800
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH RESEND v12] btrfs-progs: add cli to forget one or all scanned devices
-Date:   Mon, 17 Dec 2018 23:08:21 +0800
-Message-Id: <1545059302-3935-3-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH RESEND v12] btrfs: introduce feature to forget a btrfs device
+Date:   Mon, 17 Dec 2018 23:08:20 +0800
+Message-Id: <1545059302-3935-2-git-send-email-anand.jain@oracle.com>
 X-Mailer: git-send-email 1.8.3.1
 In-Reply-To: <1545059302-3935-1-git-send-email-anand.jain@oracle.com>
 References: <1545059302-3935-1-git-send-email-anand.jain@oracle.com>
 X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9110 signatures=668679
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=4 malwarescore=0
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=3 malwarescore=0
  phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
  adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.0.1-1810050000 definitions=main-1812170134
@@ -65,151 +65,91 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This patch adds cli
-  btrfs device forget [dev]
-to remove the given device structure in the kernel if the device
-is unmounted. If no argument is given it shall remove all stale
-(device which are not mounted) from the kernel.
+Support for a new command 'btrfs dev forget [dev]' is proposed here
+to undo the effects of 'btrfs dev scan [dev]'. For this purpose
+this patch proposes to use ioctl #5 as it was empty.
+	IOW(BTRFS_IOCTL_MAGIC, 5, ..)
+This patch adds new ioctl BTRFS_IOC_FORGET_DEV which can be sent from
+the /dev/btrfs-control to forget one or all devices, (devices which are
+not mounted) from the btrfs kernel.
+
+The argument it takes is struct btrfs_ioctl_vol_args, and ::name can be
+set to specify the device path. And all unmounted devices can be removed
+from the kernel if no device path is provided.
+
+Again, the devices are removed only if the relevant fsid aren't mounted.
+
+This new cli can provide..
+ . Release of unwanted btrfs_fs_devices and btrfs_devices memory if the
+   device is not going to be mounted.
+ . Ability to mount the device in degraded mode when one of the other
+   device is corrupted like in split brain raid1.
+ . Running test cases which requires btrfs.ko-reload if the rootfs
+   is btrfs.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
-v11->v12: none.
-v1->v12: pls ref to the cover-letter.
+v11->v12: fix coding style add spacing before after ":".
+v1->v11: Pls ref to the cover-letter. (sorry about that).
 
- cmds-device.c | 72 ++++++++++++++++++++++++++++++++++++++++++++++++-----------
- ioctl.h       |  2 ++
- 2 files changed, 61 insertions(+), 13 deletions(-)
+ fs/btrfs/super.c           | 3 +++
+ fs/btrfs/volumes.c         | 9 +++++++++
+ fs/btrfs/volumes.h         | 1 +
+ include/uapi/linux/btrfs.h | 2 ++
+ 4 files changed, 15 insertions(+)
 
-diff --git a/cmds-device.c b/cmds-device.c
-index 2a05f70a76a9..280d6f555377 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -254,10 +254,32 @@ static int cmd_device_delete(int argc, char **argv)
- 	return _cmd_device_remove(argc, argv, cmd_device_delete_usage);
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index d3c6bbc0aa3a..eba2966913ae 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -2247,6 +2247,9 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
+ 		ret = PTR_ERR_OR_ZERO(device);
+ 		mutex_unlock(&uuid_mutex);
+ 		break;
++	case BTRFS_IOC_FORGET_DEV:
++		ret = btrfs_forget_devices(vol->name);
++		break;
+ 	case BTRFS_IOC_DEVICES_READY:
+ 		mutex_lock(&uuid_mutex);
+ 		device = btrfs_scan_one_device(vol->name, FMODE_READ,
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 8e36cbb355df..48415a9edd46 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1397,6 +1397,15 @@ static int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
+ 	return 0;
  }
  
-+static int btrfs_forget_devices(char *path)
++int btrfs_forget_devices(const char *path)
 +{
-+	struct btrfs_ioctl_vol_args args;
-+	int ret;
-+	int fd;
++	mutex_lock(&uuid_mutex);
++	btrfs_free_stale_devices(strlen(path) ? path : NULL, NULL);
++	mutex_unlock(&uuid_mutex);
 +
-+	fd = open("/dev/btrfs-control", O_RDWR);
-+	if (fd < 0)
-+		return -errno;
-+
-+	memset(&args, 0, sizeof(args));
-+	if (path)
-+		strncpy_null(args.name, path);
-+	ret = ioctl(fd, BTRFS_IOC_FORGET_DEV, &args);
-+	if (ret)
-+		ret = -errno;
-+	close(fd);
-+	return ret;
++	return 0;
 +}
 +
- static const char * const cmd_device_scan_usage[] = {
--	"btrfs device scan [(-d|--all-devices)|<device> [<device>...]]",
--	"Scan devices for a btrfs filesystem",
-+	"btrfs device scan [(-d|--all-devices)|(-u|--forget)|<device> "\
-+							"[<device>...]]",
-+	"Scan or forget (deregister) devices for a btrfs filesystem",
- 	" -d|--all-devices (deprecated)",
-+	" -u|--forget [<device> ..]",
- 	NULL
- };
- 
-@@ -267,37 +289,53 @@ static int cmd_device_scan(int argc, char **argv)
- 	int devstart;
- 	int all = 0;
- 	int ret = 0;
-+	int forget = 0;
- 
- 	optind = 0;
- 	while (1) {
- 		int c;
- 		static const struct option long_options[] = {
- 			{ "all-devices", no_argument, NULL, 'd'},
-+			{ "forget", no_argument, NULL, 'u'},
- 			{ NULL, 0, NULL, 0}
- 		};
- 
--		c = getopt_long(argc, argv, "d", long_options, NULL);
-+		c = getopt_long(argc, argv, "du", long_options, NULL);
- 		if (c < 0)
- 			break;
- 		switch (c) {
- 		case 'd':
- 			all = 1;
- 			break;
-+		case 'u':
-+			forget = 1;
-+			break;
- 		default:
- 			usage(cmd_device_scan_usage);
- 		}
- 	}
- 	devstart = optind;
- 
-+	if (all && forget)
-+		usage(cmd_device_scan_usage);
-+
- 	if (all && check_argc_max(argc - optind, 1))
- 		usage(cmd_device_scan_usage);
- 
- 	if (all || argc - optind == 0) {
--		printf("Scanning for Btrfs filesystems\n");
--		ret = btrfs_scan_devices();
--		error_on(ret, "error %d while scanning", ret);
--		ret = btrfs_register_all_devices();
--		error_on(ret, "there are %d errors while registering devices", ret);
-+		if (forget) {
-+			ret = btrfs_forget_devices(NULL);
-+			error_on(ret, "'%s', forget failed",
-+				 strerror(-ret));
-+		} else {
-+			printf("Scanning for Btrfs filesystems\n");
-+			ret = btrfs_scan_devices();
-+			error_on(ret, "error %d while scanning", ret);
-+			ret = btrfs_register_all_devices();
-+			error_on(ret,
-+				"there are %d errors while registering devices",
-+				ret);
-+		}
- 		goto out;
- 	}
- 
-@@ -315,11 +353,19 @@ static int cmd_device_scan(int argc, char **argv)
- 			ret = 1;
- 			goto out;
- 		}
--		printf("Scanning for Btrfs filesystems in '%s'\n", path);
--		if (btrfs_register_one_device(path) != 0) {
--			ret = 1;
--			free(path);
--			goto out;
-+		if (forget) {
-+			ret = btrfs_forget_devices(path);
-+			if (ret)
-+				error("Can't forget '%s': %s",
-+							path, strerror(-ret));
-+		} else {
-+			printf("Scanning for Btrfs filesystems in '%s'\n",
-+									path);
-+			if (btrfs_register_one_device(path) != 0) {
-+				ret = 1;
-+				free(path);
-+				goto out;
-+			}
- 		}
- 		free(path);
- 	}
-diff --git a/ioctl.h b/ioctl.h
-index 709e996f401c..e27d80e09392 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -721,6 +721,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+ /*
+  * Look for a btrfs signature on a device. This may be called out of the mount path
+  * and we are not allowed to call set_blocksize during the scan. The superblock
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 1d936ce282c3..a4a89d5050f5 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -414,6 +414,7 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+ 		       fmode_t flags, void *holder);
+ struct btrfs_device *btrfs_scan_one_device(const char *path,
+ 					   fmode_t flags, void *holder);
++int btrfs_forget_devices(const char *path);
+ int btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
+ void btrfs_free_extra_devids(struct btrfs_fs_devices *fs_devices, int step);
+ void btrfs_assign_next_active_device(struct btrfs_device *device,
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index e0763bc4158e..c195896d478f 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -837,6 +837,8 @@ enum btrfs_err_code {
  				   struct btrfs_ioctl_vol_args)
  #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
  				   struct btrfs_ioctl_vol_args)

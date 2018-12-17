@@ -6,26 +6,25 @@ X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3EDCEC43387
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 08:45:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 84877C43387
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 08:47:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0E867206A2
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 08:45:46 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5B0AA206A2
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 08:47:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731857AbeLQIpo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 17 Dec 2018 03:45:44 -0500
-Received: from mx2.suse.de ([195.135.220.15]:58228 "EHLO mx1.suse.de"
+        id S1731863AbeLQIrQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 17 Dec 2018 03:47:16 -0500
+Received: from mx2.suse.de ([195.135.220.15]:58428 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1731853AbeLQIpo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Dec 2018 03:45:44 -0500
+        id S1726885AbeLQIrQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 17 Dec 2018 03:47:16 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 5F7BCAD5C;
-        Mon, 17 Dec 2018 08:45:42 +0000 (UTC)
-Subject: Re: [PATCH] Btrfs: do not overwrite error return value in the get
- device stats ioctl
-To:     fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <20181214194522.21791-1-fdmanana@kernel.org>
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id C872FAD5C;
+        Mon, 17 Dec 2018 08:47:13 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: declare btrfs_dev_replace_start as static function
+To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+References: <1545016470-4236-1-git-send-email-anand.jain@oracle.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -83,12 +82,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <76eb6a5d-68db-c15b-dc9d-1a55607a8813@suse.de>
-Date:   Mon, 17 Dec 2018 09:45:42 +0100
+Message-ID: <ba2b6264-77f0-182b-f80f-aeea770bc80f@suse.de>
+Date:   Mon, 17 Dec 2018 09:47:13 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181214194522.21791-1-fdmanana@kernel.org>
+In-Reply-To: <1545016470-4236-1-git-send-email-anand.jain@oracle.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -99,9 +98,6 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 Looks good,
 Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
-
-But I agree with Nick's review on the scrub progress ioctl patch,
-splitting the error handling into two parts is easier to read.
 
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems

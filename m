@@ -6,27 +6,26 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4415FC43387
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 07:20:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 450DDC43387
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 07:33:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 17108206A2
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 07:20:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1150620672
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Dec 2018 07:33:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726498AbeLQHUI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 17 Dec 2018 02:20:08 -0500
-Received: from mx2.suse.de ([195.135.220.15]:47736 "EHLO mx1.suse.de"
+        id S1726463AbeLQHdq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 17 Dec 2018 02:33:46 -0500
+Received: from mx2.suse.de ([195.135.220.15]:48824 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726349AbeLQHUI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Dec 2018 02:20:08 -0500
+        id S1726349AbeLQHdq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 17 Dec 2018 02:33:46 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B13E3AC3B;
-        Mon, 17 Dec 2018 07:20:05 +0000 (UTC)
-Subject: Re: [PATCH 2/2] btrfs-progs: replace: gracefully handle the exclusive
- operation report
-To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-References: <1545016436-4137-1-git-send-email-anand.jain@oracle.com>
- <1545016436-4137-2-git-send-email-anand.jain@oracle.com>
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 0F2DCAE20;
+        Mon, 17 Dec 2018 07:33:44 +0000 (UTC)
+Subject: Re: [PATCH] Btrfs: do not overwrite error return value in scrub
+ progress ioctl
+To:     fdmanana@kernel.org, linux-btrfs@vger.kernel.org
+References: <20181214194513.21741-1-fdmanana@kernel.org>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -71,12 +70,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <147c3237-2931-74bf-2f95-01e7f44fe00b@suse.com>
-Date:   Mon, 17 Dec 2018 09:20:04 +0200
+Message-ID: <0b82526f-36b3-4b6d-c4b9-9c5b6d685412@suse.com>
+Date:   Mon, 17 Dec 2018 09:33:43 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <1545016436-4137-2-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <20181214194513.21741-1-fdmanana@kernel.org>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -87,39 +86,47 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 17.12.18 г. 5:13 ч., Anand Jain wrote:
-> Replace start fails to report the appropriate error if balance is already
-> running, as below,
+On 14.12.18 г. 21:45 ч., fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
 > 
-> btrfs rep start -B -f /dev/sdb /dev/sde /btrfs
-> ERROR: ioctl(DEV_REPLACE_START) on '/btrfs' returns error: <illegal
-> result value>
+> If the call to btrfs_scrub_progress() failed we would overwrite the error
+> returned to user space with -EFAULT if the call to copy_to_user() failed
+> as well. Fix that by calling copy_to_user() only if btrfs_scrub_progress()
+> returned success.
 > 
-> Fix it by checking if the return is > 0, as the kernel returns
-> BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS for the above cli, if the balance is
-> running.
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  fs/btrfs/ioctl.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
 > 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 01d18e1a393e..76848214a39f 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -4331,7 +4331,7 @@ static long btrfs_ioctl_scrub_progress(struct btrfs_fs_info *fs_info,
+>  
+>  	ret = btrfs_scrub_progress(fs_info, sa->devid, &sa->progress);
+>  
+> -	if (copy_to_user(arg, sa, sizeof(*sa)))
+> +	if (ret == 0 && copy_to_user(arg, sa, sizeof(*sa)))
+
+While this is ok it's a bit counter intuitive considering the code
+convention. Because you predicate the execution of copy_to_user on the
+ret value of btrfs_scrub_progress in the same if. Perhaps,
+
+if (ret)
+  return ret;
+
+if (copy_to_user)
+  return -EFAULT
+
+
+Same feedback applies to your other patches, but I'm fine if you leave
+it as is so:
 
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
-> ---
->  cmds-replace.c | 4 ++++
->  1 file changed, 4 insertions(+)
-> 
-> diff --git a/cmds-replace.c b/cmds-replace.c
-> index 42de4de8c031..696f24c5c6d5 100644
-> --- a/cmds-replace.c
-> +++ b/cmds-replace.c
-> @@ -295,6 +295,10 @@ static int cmd_replace_start(int argc, char **argv)
->  			goto leave_with_error;
->  		}
+>  		ret = -EFAULT;
 >  
-> +		if (ret > 0)
-> +			error("ioctl(DEV_REPLACE_START) '%s': %s", path,
-> +			      btrfs_err_str(ret));
-> +
->  		if (start_args.result !=
->  		    BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_RESULT &&
->  		    start_args.result !=
+>  	kfree(sa);
 > 

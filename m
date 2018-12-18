@@ -2,109 +2,85 @@ Return-Path: <SRS0=wLRn=O3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 843A0C43387
-	for <linux-btrfs@archiver.kernel.org>; Tue, 18 Dec 2018 16:01:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 32A6DC43387
+	for <linux-btrfs@archiver.kernel.org>; Tue, 18 Dec 2018 16:39:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5403821873
-	for <linux-btrfs@archiver.kernel.org>; Tue, 18 Dec 2018 16:01:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id F041C21873
+	for <linux-btrfs@archiver.kernel.org>; Tue, 18 Dec 2018 16:39:07 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="YqusyGq1"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="ljSVVjaA"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727111AbeLRQBr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 18 Dec 2018 11:01:47 -0500
-Received: from aserp2130.oracle.com ([141.146.126.79]:48112 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727071AbeLRQBq (ORCPT
+        id S1726893AbeLRQiq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 18 Dec 2018 11:38:46 -0500
+Received: from mail-wr1-f54.google.com ([209.85.221.54]:39422 "EHLO
+        mail-wr1-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726691AbeLRQiq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Dec 2018 11:01:46 -0500
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wBIFvbos064565
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Dec 2018 16:01:45 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
- date : message-id; s=corp-2018-07-02;
- bh=VSPl8LuIYh6b+R9OthXCXgt4ACN3C3B9iYyKoe2FDH0=;
- b=YqusyGq1M+5n+NXZaZprziPUrIgM6RXaqd4OvmeqssRBL6XkuwIZSO7ZM0ObZQQt6x1G
- WbpR7Jq4XwDpyWY7jgNLJw7g10JjDT2q0Bnk7iH2GpHRltNAylJSxg6RkL1HCv1rTCCl
- 7Ko3TXBLyNCWvsl3NWPmObEppIkQ4rYAHBr0E+iz+lcgci8WIE9zRLLN1FL8LrRJZlDG
- cfLqa63uC9u9KQTev6ix9uSsFDZcuDwyITKgav6fWJ3PPgEPhCQ0x7n4bUnz0vMNy60H
- YumlhZVEpRVEo+vqRRcx9OU3zw8rQepfMYXoGcoRVqRENBjzCVGk9O6NxWSvzg18CesN HA== 
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by aserp2130.oracle.com with ESMTP id 2pcq4dvgh6-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Dec 2018 16:01:45 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id wBIG1jba025364
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Dec 2018 16:01:45 GMT
-Received: from abhmp0009.oracle.com (abhmp0009.oracle.com [141.146.116.15])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id wBIG1jSi010100
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Dec 2018 16:01:45 GMT
-Received: from tpasj.localdomain (/157.49.157.117)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Tue, 18 Dec 2018 08:01:44 -0800
-From:   Anand Jain <anand.jain@oracle.com>
+        Tue, 18 Dec 2018 11:38:46 -0500
+Received: by mail-wr1-f54.google.com with SMTP id t27so16592033wra.6
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Dec 2018 08:38:44 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=from:to:subject:message-id:date:user-agent:mime-version
+         :content-language:content-transfer-encoding;
+        bh=n2qM2c7KXwBNnLPy8HYNW0FCJkwZQvVKsqi7qHvET7o=;
+        b=ljSVVjaA5LhG1PXeGcxp9iu7BtLberchdnwt8Dlp5pL2NkcGzeLsnnOgbDE8ULC66e
+         M70eYq1R6Zx9yV+o9ceo0x2X6yDKBWaR5CjRkaiSbBjabey6Vm/HsEyhsxZtHnqRKxvJ
+         XKd1m4Jw1Gc+3lgRk4bJuBK+dUxQdBynRwxcR63rrl1+PyjuB6Nqc+bLNILDLCQRMaji
+         4W77sWohc4NY0tlYY/LirMfscGmG0FD5TSKRTUBbGX2FV4j/r9kiwt99RQLFKp2KmrnX
+         22SBaj0U/j9SrvI4ikgz3y3B1seJp4eLuXKoyu7dULjuDrcNys77sibxrlrIRGaPGxIq
+         jmNA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:subject:message-id:date:user-agent
+         :mime-version:content-language:content-transfer-encoding;
+        bh=n2qM2c7KXwBNnLPy8HYNW0FCJkwZQvVKsqi7qHvET7o=;
+        b=fhIi89CkfeY80THM3AArmPtJq0pwFHyf/0CWPL8T4Ec4/wuR/PLz96QaSozkt0r9Ua
+         SIAF7Qr0YWpc4GWFOsSA9CHFyfRv1q74iE9L/ut/4ATCO90BkvG6/0kg7YQ4VBrKG4qi
+         s3jQ0VTsCnQpwVi2vVcocTM41WYAYgHyf0S2NFHuU0MkXbvUdAxvf4HuP20OKT20XW4N
+         /n8JtgHH7bn6SRUc9Kb9pjdY0D/SwBOvwK+LJoD7H9LjYRirJSEpD4WRvGpPwEbQRv/0
+         BzdAcbLXGl+K4PXFzQ9VsEcq5hnasLy57ArhkFlJI8HpCWZdAu2MsFfWE+dv7nUyx/9f
+         Cx8A==
+X-Gm-Message-State: AA+aEWY00uGEiBZrNrr2Z+xX7nq4IwLZhyT6fkFBEW3kIVECOhzfgtVX
+        dcL9vucdtSMglqf2sqQua6yHsOSB
+X-Google-Smtp-Source: AFSGD/Xk6n01vZX38xkDh4DA42//IKbcBxsSBa/iFDdYy3z1HBy9d8lEPQ6+Qu4BmxqhqW98LIRdwA==
+X-Received: by 2002:adf:9168:: with SMTP id j95mr14903938wrj.217.1545151123213;
+        Tue, 18 Dec 2018 08:38:43 -0800 (PST)
+Received: from [192.168.1.51] (ip-78-45-105-225.net.upcbroadband.cz. [78.45.105.225])
+        by smtp.googlemail.com with ESMTPSA id j33sm5316711wre.91.2018.12.18.08.38.42
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Tue, 18 Dec 2018 08:38:42 -0800 (PST)
+From:   Zdenek Kaspar <zkaspar82@gmail.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: handle balance and replace concurrency
-Date:   Wed, 19 Dec 2018 00:01:44 +0800
-Message-Id: <1545148904-32714-1-git-send-email-anand.jain@oracle.com>
-X-Mailer: git-send-email 1.8.3.1
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9111 signatures=668680
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=1 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1810050000 definitions=main-1812180134
+Subject: Better data balancing over multiple devices for raid1/10 (read)
+Message-ID: <acf42b0d-4c38-8010-f50b-92aed2444884@gmail.com>
+Date:   Tue, 18 Dec 2018 17:38:40 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.3.3
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Test case:
-Run replace
- btrfs repl start -B -f /dev/sdd /dev/sdb /btrfs;
-while replace is still running, from another terminal try to start
-balance
- btrfs bal start  --full-balance /btrfs; echo ...:$?
- Done, had to relocate 0 out of 0 chunks
- ...:0
+Hello, regarding Wiki/Idea pool:
+Better data balancing over multiple devices for raid1/10 (read)
 
-which fails to report that balance failed to relocate because another
-exclusive operation is running.
-In fact kernel ioctl BTRFS_IOC_BALANCE(_V2) does return error code 8,
-but progs recast it to 0. Fix it by checking for the error code > 0.
+By looking at [1] (which I currently use) and [2, 3, 4]
+is there agreement to solve this?
 
-After:
- btrfs bal start --full-balance /btrfs; echo ...:$?
- ERROR: balance: add/delete/balance/replace/resize operation in progress
- ...:8
+[1] https://patchwork.kernel.org/patch/10681671/
+[2] https://patchwork.kernel.org/patch/10403299/
+[3] https://patchwork.kernel.org/patch/10403303/
+[4] https://patchwork.kernel.org/patch/10403301/
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- cmds-balance.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
-
-diff --git a/cmds-balance.c b/cmds-balance.c
-index 6cc26c358f95..77402ef62d85 100644
---- a/cmds-balance.c
-+++ b/cmds-balance.c
-@@ -481,11 +481,12 @@ static int do_balance(const char *path, struct btrfs_ioctl_balance_args *args,
- 			"There may be more info in syslog - try dmesg | tail\n");
- 			ret = 1;
- 		}
-+	} else if (ret > 0) {
-+		error("balance: %s", btrfs_err_str(ret));
- 	} else {
- 		printf("Done, had to relocate %llu out of %llu chunks\n",
- 		       (unsigned long long)args->stat.completed,
- 		       (unsigned long long)args->stat.considered);
--		ret = 0;
- 	}
- 
- out:
--- 
-1.8.3.1
-
+TIA, Z.

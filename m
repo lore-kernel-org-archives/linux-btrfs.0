@@ -2,174 +2,291 @@ Return-Path: <SRS0=ilb6=O5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=FREEMAIL_FROM,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 332DDC43387
-	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Dec 2018 05:48:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 50CA7C43387
+	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Dec 2018 08:01:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 00B6020815
-	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Dec 2018 05:48:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1307320815
+	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Dec 2018 08:01:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727767AbeLTFsK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 20 Dec 2018 00:48:10 -0500
-Received: from mout.gmx.net ([212.227.15.19]:43205 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726716AbeLTFsJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Dec 2018 00:48:09 -0500
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx001
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0MAhWl-1gfacf0jtb-00BvmE; Thu, 20
- Dec 2018 06:47:59 +0100
-Subject: Re: BTRFS Mount Delay Time Graph
-To:     Nikolay Borisov <nborisov@suse.com>,
-        "Wilson, Ellis" <ellisw@panasas.com>,
-        BTRFS <linux-btrfs@vger.kernel.org>
-References: <25a99c85-b048-a678-b61b-97dfc1338cb3@panasas.com>
- <b4183c50-a2a3-7470-3038-1e759a99369c@suse.com>
- <a511850e-c08b-d6c5-0471-e523eff73680@panasas.com>
- <558d3344-95de-da81-c385-a6623144d6ae@suse.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <b10017eb-e696-7002-5fd3-91d3630523de@gmx.com>
-Date:   Thu, 20 Dec 2018 13:47:52 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.3.3
+        id S1727767AbeLTIBq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 20 Dec 2018 03:01:46 -0500
+Received: from mx2.suse.de ([195.135.220.15]:40854 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726604AbeLTIBq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 20 Dec 2018 03:01:46 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id AD930AF7E
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Dec 2018 08:01:41 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: Introduce new mount option to skip block group items scan
+Date:   Thu, 20 Dec 2018 16:01:37 +0800
+Message-Id: <20181220080137.22819-1-wqu@suse.com>
+X-Mailer: git-send-email 2.20.1
 MIME-Version: 1.0
-In-Reply-To: <558d3344-95de-da81-c385-a6623144d6ae@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
 Content-Transfer-Encoding: 8bit
-X-Provags-ID: V03:K1:TxDbJMbNqrCrkEH2ddHRpODjYIeExNLy9ITEDBzcQ3nwYogZ1Fp
- 1PeDJ1bqrbo5wjyBVCTrUYsVmI3kwr+UFeMAO1b0xR1ph9UfAkoZ8U83kviicrRcHHf/qQ3
- 6lWdwe0Y2GyZ0aY6dm6qe6GAXJNs87Yvyk3gy2HhldrXM+Cc09g5lE+zo6bSuH84UQc3zRW
- zCGCwwIrvJlmcH8SR35+g==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:2437VwEz0Kc=:+8cAp/CfCSZdcZW8WhKXg6
- n2KhBdQsW82ca1PbUtACPa3uZHa5TH16mBmSBb/yagb8MTFbjjaZHxqQn92BQLZAQoteGjQrh
- 36Wval+EgH8v74iG2PqLgqJdI2p8wmJUlAEA/2mD00ZyqD3yjFcPqZddCFqrQBX44GxBkRF9Y
- Z4ibxCpMpYjFDI+uK/0T/WRLo2RuAzjGS81FdD8Px4fQOcxvycJdBJqrTTTJl824y7D5AA0D1
- XeObb3YZK5HDY1WgVhJStV+ARwRbeGj5NpuLxq7RiOT9J+F9k7VUlOMYVNVJwaclBe79daGry
- 5KqKhNLaPu770MjHp9BzEkFJI99loSo7KVUfnwTjKjfhYV8M2SEAO6kdp4AwPb0x6msbDIQuN
- 95e8uXWTnBq7yxL9+tAFY3DbNjsornKqzjnufse5YBDEKeZ1/ptrYXbtZiId4UpTWz1rZWuGW
- 1+ZNS695c11q2WLkPOWKpRNdCMDvNOE8W60/QHY/02MNBg05q5ZVVnpyc2pNLPmDYqcAvNTMV
- aOqYreHRl4osL93jpdZxvQXiBFXoKBo4cNsdae5m2E5P3jSNmxxwcXtC6dBYqhe4Trqn8452U
- omON7TCEBuQIp9XtEP+9F9KnXqjv/amd50fWB7YJufurSbR8abJHme0eKbaBdo3QzmrGW2SGa
- P0R/pK/o6EoqDulji65G0sGLTLoeWs3KK4tsvKcuV9ZAmIQYeyc2+pGO4NSMLbzis9Of3QoTB
- eAMvd7gFoAtBYmNmFrDhegvKLps6eWrXKwReju+cxifKouFGxrMPfxFB0uipzXOdCBh5SipBt
- ToQKxTjupr5aAWhtRTCp/lgdzIDjf23TaUD1Xha1pdFCLZCh1vcmthrywSKFD8j3DYZgBOCe8
- xxQJBkZxFuN5kbMgaLe4E+2JUKw3JaBZwESo3ct2r/Jc/30R7NJWQugCghEggQhHw7kLaHJPC
- AuW65/W6z6Q==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Btrfs needs to read out all block group (bg) items to fill its bg
+caches.
 
+However such bg caches are only needed for read-write mount, and makes
+no sense for RO mount.
 
-On 2018/12/5 下午2:55, Nikolay Borisov wrote:
-> 
-> 
-> On 4.12.18 г. 22:14 ч., Wilson, Ellis wrote:
->> On 12/4/18 8:07 AM, Nikolay Borisov wrote:
->>> On 3.12.18 г. 20:20 ч., Wilson, Ellis wrote:
->>>> With 14TB drives available today, it doesn't take more than a handful of
->>>> drives to result in a filesystem that takes around a minute to mount.
->>>> As a result of this, I suspect this will become an increasingly problem
->>>> for serious users of BTRFS as time goes on.  I'm not complaining as I'm
->>>> not a contributor so I have no room to do so -- just shedding some light
->>>> on a problem that may deserve attention as filesystem sizes continue to
->>>> grow.
->>> Would it be possible to provide perf traces of the longer-running mount
->>> time? Everyone seems to be fixated on reading block groups (which is
->>> likely to be the culprit) but before pointing finger I'd like concrete
->>> evidence pointed at the offender.
->>
->> I am glad to collect such traces -- please advise with commands that 
->> would achieve that.  If you just mean block traces, I can do that, but I 
->> suspect you mean something more BTRFS-specific.
-> 
-> A command that would be good is :
-> 
-> perf record --all-kernel -g mount /dev/vdc /media/scratch/
+So this patch introduce new mount option, skip_bg, to skip block group
+items scan.
 
+This new 'skip_bg' mount option can only be used with TRUE read-only
+mount, which needs the following dependency:
+- RO mount
+  Obviously.
 
-In fact, if we're just going to verify if it's btrfs_read_block_groups()
-causing the biggest problem, we could use ftrace directly (wrapped by
-"perf ftrace"):
+- No log tree or notreelog mount option
 
-perf ftrace -t function_graph -T open_ctree \
-	-T btrfs_read_block_groups \
-	mount $dev $mnt
+- No way to remoutn RW
+  Similar to notreelog mount option.
 
-The result will be super easy to read, something like:
+- No chunk <-> bg <-> dev extents restrict check
 
- 2)               |  open_ctree [btrfs]() {
- 2)               |    btrfs_read_block_groups [btrfs]() {
- 2) # 1726.598 us |    }
- 2) * 21817.28 us |  }
+This option should only be used as kernel equivalent of btrfs-restore.
 
+With this patch, we can even mount a btrfs whose extent root is
+completely corrupted.
 
-Since I'm just using a small fs, with 4G data copied from /usr, we won't
-populate extent tree with enough backrefs, thus
-btrfs_read_block_groups() won't be a big problem. (only 7.9%)
+But can also be an option to test if btrfs_read_block_groups() is the
+major cause for slow btrfs mount.
 
-However when I populate the fs with small inline files along with small
-data extents, and 4K nodesize to bump up extent tree size, the same 4G
-data would result a different story:
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/ctree.h       |  1 +
+ fs/btrfs/disk-io.c     | 29 ++++++++++++++++++---
+ fs/btrfs/extent-tree.c | 59 ++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/super.c       | 20 ++++++++++++++
+ fs/btrfs/volumes.c     |  7 +++++
+ 5 files changed, 112 insertions(+), 4 deletions(-)
 
- 3)               |  open_ctree [btrfs]() {
- 3)               |    btrfs_read_block_groups [btrfs]() {
- 3) # 4567.645 us |    }
- 3) * 22520.95 us |  }
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 80953528572d..371b5e2f6fbe 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1353,6 +1353,7 @@ static inline u32 BTRFS_MAX_XATTR_SIZE(const struct btrfs_fs_info *info)
+ #define BTRFS_MOUNT_FREE_SPACE_TREE	(1 << 26)
+ #define BTRFS_MOUNT_NOLOGREPLAY		(1 << 27)
+ #define BTRFS_MOUNT_REF_VERIFY		(1 << 28)
++#define BTRFS_MOUNT_SKIP_BG		(1 << 29)
+ 
+ #define BTRFS_DEFAULT_COMMIT_INTERVAL	(30)
+ #define BTRFS_DEFAULT_MAX_INLINE	(2048)
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index b0ab41da91d1..5228320030a5 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2330,11 +2330,15 @@ static int btrfs_read_roots(struct btrfs_fs_info *fs_info)
+ 
+ 	root = btrfs_read_tree_root(tree_root, &location);
+ 	if (IS_ERR(root)) {
+-		ret = PTR_ERR(root);
+-		goto out;
++		if (!btrfs_test_opt(fs_info, SKIP_BG)) {
++			ret = PTR_ERR(root);
++			goto out;
++		}
++		fs_info->extent_root = NULL;
++	} else {
++		set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
++		fs_info->extent_root = root;
+ 	}
+-	set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
+-	fs_info->extent_root = root;
+ 
+ 	location.objectid = BTRFS_DEV_TREE_OBJECTID;
+ 	root = btrfs_read_tree_root(tree_root, &location);
+@@ -2927,6 +2931,23 @@ int open_ctree(struct super_block *sb,
+ 		goto fail_alloc;
+ 	}
+ 
++	/* Skip bg needs RO and no log tree replay */
++	if (btrfs_test_opt(fs_info, SKIP_BG)) {
++		if (!sb_rdonly(sb)) {
++			btrfs_err(fs_info,
++		"skip_bg mount option can only be used with read-only mount");
++			err = -EINVAL;
++			goto fail_alloc;
++		}
++		if (btrfs_super_log_root(disk_super) &&
++		    !btrfs_test_opt(fs_info, NOTREELOG)) {
++			btrfs_err(fs_info,
++	"skip_bg must be used with notreelog mount option for dirty log");
++			err = -EINVAL;
++			goto fail_alloc;
++		}
++	}
++
+ 	ret = btrfs_init_workqueues(fs_info, fs_devices);
+ 	if (ret) {
+ 		err = ret;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index a1febf155747..051a5a63c2b0 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -9948,6 +9948,62 @@ static int check_chunk_block_group_mappings(struct btrfs_fs_info *fs_info)
+ 	return ret;
+ }
+ 
++static int fill_dummy_bgs(struct btrfs_fs_info *fs_info)
++{
++	struct extent_map_tree *em_tree = &fs_info->mapping_tree.map_tree;
++	struct extent_map *em;
++	struct map_lookup *map;
++	struct btrfs_block_group_cache *cache;
++	struct btrfs_space_info *space_info;
++	struct rb_node *node;
++	int ret = 0;
++
++	read_lock(&em_tree->lock);
++	for (node = rb_first_cached(&em_tree->map); node;
++	     node = rb_next(node)) {
++		em = rb_entry(node, struct extent_map, rb_node);
++		map = em->map_lookup;
++		cache = btrfs_create_block_group_cache(fs_info, em->start,
++						       em->len);
++		if (!cache) {
++			ret = -ENOMEM;
++			goto out;
++		}
++
++		/* Fill dummy cache as FULL */
++		cache->flags = map->type;
++		cache->last_byte_to_unpin = (u64)-1;
++		cache->cached = BTRFS_CACHE_FINISHED;
++		btrfs_set_block_group_used(&cache->item, em->len);
++		btrfs_set_block_group_chunk_objectid(&cache->item, em->start);
++		btrfs_set_block_group_flags(&cache->item, map->type);
++		ret = exclude_super_stripes(cache);
++		if (ret) {
++			free_excluded_extents(cache);
++			btrfs_put_block_group(cache);
++			goto out;
++		}
++		free_excluded_extents(cache);
++		ret = btrfs_add_block_group_cache(fs_info, cache);
++		if (ret) {
++			btrfs_remove_free_space_cache(cache);
++			btrfs_put_block_group(cache);
++			goto out;
++		}
++		update_space_info(fs_info, cache->flags, em->start, em->len,
++				  cache->bytes_super, &space_info);
++		cache->space_info = space_info;
++		link_block_group(cache);
++
++		set_avail_alloc_bits(fs_info, cache->flags);
++		if (btrfs_chunk_readonly(fs_info, em->start))
++			inc_block_group_ro(cache, 1);
++	}
++out:
++	read_unlock(&em_tree->lock);
++	return ret;
++}
++
+ int btrfs_read_block_groups(struct btrfs_fs_info *info)
+ {
+ 	struct btrfs_path *path;
+@@ -9962,6 +10018,9 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
+ 	u64 feature;
+ 	int mixed;
+ 
++	if (btrfs_test_opt(info, SKIP_BG))
++		return fill_dummy_bgs(info);
++
+ 	feature = btrfs_super_incompat_flags(info->super_copy);
+ 	mixed = !!(feature & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS);
+ 
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index b362b45dd757..5bc751819b19 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -337,6 +337,7 @@ enum {
+ 	Opt_check_integrity_including_extent_data,
+ 	Opt_check_integrity_print_mask,
+ 	Opt_enospc_debug, Opt_noenospc_debug,
++	Opt_skip_bg,
+ #ifdef CONFIG_BTRFS_DEBUG
+ 	Opt_fragment_data, Opt_fragment_metadata, Opt_fragment_all,
+ #endif
+@@ -393,6 +394,7 @@ static const match_table_t tokens = {
+ 	{Opt_notreelog, "notreelog"},
+ 	{Opt_usebackuproot, "usebackuproot"},
+ 	{Opt_user_subvol_rm_allowed, "user_subvol_rm_allowed"},
++	{Opt_skip_bg, "skip_bg"},
+ 
+ 	/* Deprecated options */
+ 	{Opt_alloc_start, "alloc_start=%s"},
+@@ -664,6 +666,10 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+ 			btrfs_clear_and_info(info, NOTREELOG,
+ 					     "enabling tree log");
+ 			break;
++		case Opt_skip_bg:
++			btrfs_set_and_info(info, SKIP_BG,
++				"skip mount time block groupo searching");
++			break;
+ 		case Opt_norecovery:
+ 		case Opt_nologreplay:
+ 			btrfs_set_and_info(info, NOLOGREPLAY,
+@@ -1797,6 +1803,13 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+ 	if (ret)
+ 		goto restore;
+ 
++	if (btrfs_test_opt(fs_info, SKIP_BG) !=
++	    (old_opts & BTRFS_MOUNT_SKIP_BG)) {
++		btrfs_err(fs_info,
++			"skip_bg mount option can't be changed during remount");
++		ret = -EINVAL;
++		goto restore;
++	}
+ 	btrfs_remount_begin(fs_info, old_opts, *flags);
+ 	btrfs_resize_thread_pool(fs_info,
+ 		fs_info->thread_pool_size, old_thread_pool_size);
+@@ -1858,6 +1871,13 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+ 			goto restore;
+ 		}
+ 
++		if (btrfs_test_opt(fs_info, SKIP_BG)) {
++			btrfs_err(fs_info,
++			"remounting read-write with skip_bg is not allowed");
++			ret = -EINVAL;
++			goto restore;
++		}
++
+ 		ret = btrfs_cleanup_fs_roots(fs_info);
+ 		if (ret)
+ 			goto restore;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index f435d397019e..d614b2fab652 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -7480,6 +7480,13 @@ int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info)
+ 	struct btrfs_key key;
+ 	int ret = 0;
+ 
++	/*
++	 * For skip_bg mount option, we're already RO and are salvaging data,
++	 * no need for such restrict check.
++	 */
++	if (btrfs_test_opt(fs_info, SKIP_BG))
++		return 0;
++
+ 	key.objectid = 1;
+ 	key.type = BTRFS_DEV_EXTENT_KEY;
+ 	key.offset = 0;
+-- 
+2.20.1
 
-Now it's 20.3% of the total mount time.
-I believe the percentage will just increase and go over 70% when the fs
-is larger and larger.
-
-
-So, Wilson, would you please use above "perf ftrace" command to get the
-function duration?
-
-Thanks,
-Qu
-
-> 
-> of course replace device/mount path appropriately. This will result in a
-> perf.data file which contains stacktraces of the hottest paths executed
-> during invocation of mount. If you could send this file to the mailing
-> list or upload it somwhere for interested people (me and perhaps) Qu to
-> inspect would be appreciated.
-> 
-> If the file turned out way too big you can use
-> 
-> perf report --stdio  to create a text output and you could send that as
-> well.
-> 
->>
->> Best,
->>
->> ellis
->>

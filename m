@@ -2,81 +2,72 @@ Return-Path: <SRS0=ilb6=O5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.0 required=3.0 tests=MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FROM,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3BAE3C43387
-	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Dec 2018 10:43:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E0089C43387
+	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Dec 2018 12:07:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 152DD2176F
-	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Dec 2018 10:43:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A22C52176F
+	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Dec 2018 12:07:59 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="SFE8kxV8"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731032AbeLTKn5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 20 Dec 2018 05:43:57 -0500
-Received: from mx2.suse.de ([195.135.220.15]:40976 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725730AbeLTKn5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Dec 2018 05:43:57 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B47F2B035;
-        Thu, 20 Dec 2018 10:43:54 +0000 (UTC)
+        id S1731172AbeLTMH6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 20 Dec 2018 07:07:58 -0500
+Received: from mail-oi1-f178.google.com ([209.85.167.178]:40632 "EHLO
+        mail-oi1-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729246AbeLTMH5 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 20 Dec 2018 07:07:57 -0500
+Received: by mail-oi1-f178.google.com with SMTP id t204so1483450oie.7
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Dec 2018 04:07:57 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=subject:to:references:from:message-id:date:user-agent:mime-version
+         :in-reply-to:content-language:content-transfer-encoding;
+        bh=wuJ68EgCOGmNawkNjtzwGoYF8BkuCiSMV6RRKwELgN8=;
+        b=SFE8kxV8BtVK+5SGsfqXYX9H4nVHaoCIgQv7SSZqB6i6DAeWw9X27sDvsypJKsBiPb
+         6Akr+Xkhs1gWkrgPln/Uli637xPfcID7ezchVmrBOX4JCqFJm5/LGy83qbNdI8Qj/THm
+         IbqV1pyModcjTc3oM3iVJsedqAaRGcKYd4fix3GM6gZGuTWikqexG1F9ZGzS/PM4LQQS
+         QK3HDRtqC3XMnkBd3OAnuUS9pe1wQiWZKjzNsNFGcq8kfSPYAwnN32fGE8d1UNRv6TNQ
+         JFQz0WXieD2rKvyLI693ftLZU8FQzHSQBxa573R3fCoc/bCeVqzj2vy6GOBv8O5W3jOM
+         mGhA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=wuJ68EgCOGmNawkNjtzwGoYF8BkuCiSMV6RRKwELgN8=;
+        b=BXzYFc0irjy1rVm18LAF/8MnrRfuDO+f8wge6PZOfnVka7pibQOa4SBcVW2vXua4G1
+         04lHoXkAuVacK2+rYjhS00XPg8Au9POeli1IfqvUSubI3efu7/uFKKMOZuXI1dLiz5Zc
+         /4dk84f/V6lDm4s6z4zSsZSpVF0TJaGBFWlNVad5xmM2QhS/a6fHhaB0+/0sUDaLytqk
+         nkN6zdTK/6Of+PQ1Ax0SeNqYIiqmGwYrceKeBNfesT3PJ9xVvrnJF6w5kMJ6bKl/zUD5
+         dgS2WEZ7oTgOXjlgJmIBjaMLqC8yrw10X/u/LeVvumRKPQkfitElPA4ww0d3X0W76+R0
+         dqvA==
+X-Gm-Message-State: AA+aEWZod3P34DRjdwEyX1jLPl/DCw5QBjnMDD4JAEhjLl0fHua/VcSs
+        Gk5cm+euaEOQVSMV69trzYuyYMRM1DHn5w==
+X-Google-Smtp-Source: AFSGD/XzYF1RaGnEx0C6NJCyrTGQ45pG7E1oNpoyWCeWz2B0EIZ0ZVF8a+Cmj9JrIcutI58IXH8BOw==
+X-Received: by 2002:aca:f0d5:: with SMTP id o204mr2040118oih.359.1545307676192;
+        Thu, 20 Dec 2018 04:07:56 -0800 (PST)
+Received: from [191.9.209.46] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.gmail.com with ESMTPSA id s13sm11936418otc.40.2018.12.20.04.07.53
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Thu, 20 Dec 2018 04:07:55 -0800 (PST)
 Subject: Re: compress-force not really forcing compression?
 To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, devzero@web.de,
         linux-btrfs@vger.kernel.org
 References: <trinity-138fb9ef-e164-4c58-8ba8-04eaa9813254-1545234086993@3c-app-webde-bs26>
  <79977718-ac8f-3a62-529d-e9046c8066b2@gmx.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <f527b243-4379-ec32-a6f2-3f04c72fb8d9@suse.com>
-Date:   Thu, 20 Dec 2018 12:43:53 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+From:   "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <e97b9cc6-cb8d-9068-1e7e-8aaee7f48aa9@gmail.com>
+Date:   Thu, 20 Dec 2018 07:07:48 -0500
+User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
+ Thunderbird/60.3.3
 MIME-Version: 1.0
 In-Reply-To: <79977718-ac8f-3a62-529d-e9046c8066b2@gmx.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -84,9 +75,7 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 20.12.18 г. 2:57 ч., Qu Wenruo wrote:
+On 12/19/2018 7:57 PM, Qu Wenruo wrote:
 > 
 > 
 > On 2018/12/19 下午11:41, devzero@web.de wrote:
@@ -98,54 +87,18 @@ On 20.12.18 г. 2:57 ч., Qu Wenruo wrote:
 > 
 > If the file is smaller than the sector size (4K for x86_64), then no
 > compression no matter whatever the mount options are.
-
-What FORCE_COMPRESS does is it ensures that compression is always tried
-for a file (check code in compress_file_range in the if (pages) branch).
-However, if btrfs_compress_pages detects compression makes no difference
-then 'if (pages)'  branch is executed since will_compress will not be
-set and only thing it will be do is not set BTRFS_INODE_NOCOMPRESS.
-
-What this all means is that with FORCE_COMPRESS future writes will also
-be tried to be compressed. For example if you do some non-compressible
-writes on a file with no FORCE_COMPRESS then BTRFS_INODE_NOCOMPRESS will
-be set. This means that all future invocation of inode_need_compress for
-this inode will return false. So if at a later time the io pattern
-changes to one which is compressible then it wont' be compressed.
-
-OTOH with force-compress you will also be compressing those portions of
-the file which are compressible.
-
-IMHO the more pertinent question is :
-
-If a file has portions which are not easily compressible does that imply
-all future writes are also incompressible. IMO no, so I think what will
-be prudent is remove FORCE_COMPRESS altogether and make the code act as
-if it's always on.
-
-Any opinions?
-
 > 
 >>
 >> for me (found via compsize - see https://github.com/kilobyte/compsize/issues/24 )  it looks it is problably forcing compression check for every block of a file (while compress= makes btrfs skip compression check after first block) and if some block is incompressible, apparently it's being stored uncompressed.
 > 
 > Any reproducer for this unexpected behavior?
-> 
-> Thanks,
-> Qu
-> 
->>
->> so, the documentation is probably telling misleading information and should be fixed!?
->>
->> roland
->>
->>
->>
->> https://btrfs.wiki.kernel.org/index.php/Compression#What_happens_to_incompressible_files.3F
->>
->> What happens to incompressible files?
->>
->> There is a simple decision logic: if the first portion of data being compressed is not smaller than the original, the compression of the file is disabled -- unless the filesystem is mounted with -o compress-force. In that case it'll be compressed always regardless of the compressibility of the file. This is not optimal and subject to optimizations and further development. 
->>
->>
->>
-> 
+
+Not a reproducer, but this appears to be how it's been behaving on my 
+systems since I started using BTRFS.
+
+It's also arguably far more useful to behave this way than to just 
+unconditionally compress everything, it wastes essentially zero time 
+compared to that, and gets you better space utilization (which is big, 
+since the size of the blocks we're compressing can mean that 
+incompressible data expands significantly when we compress it).
+

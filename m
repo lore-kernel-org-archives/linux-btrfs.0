@@ -2,103 +2,281 @@ Return-Path: <SRS0=ilb6=O5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FROM,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E0089C43387
-	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Dec 2018 12:07:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DCE6CC43387
+	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Dec 2018 16:12:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A22C52176F
-	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Dec 2018 12:07:59 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="SFE8kxV8"
+	by mail.kernel.org (Postfix) with ESMTP id AD17720811
+	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Dec 2018 16:12:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731172AbeLTMH6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 20 Dec 2018 07:07:58 -0500
-Received: from mail-oi1-f178.google.com ([209.85.167.178]:40632 "EHLO
-        mail-oi1-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729246AbeLTMH5 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Dec 2018 07:07:57 -0500
-Received: by mail-oi1-f178.google.com with SMTP id t204so1483450oie.7
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Dec 2018 04:07:57 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=subject:to:references:from:message-id:date:user-agent:mime-version
-         :in-reply-to:content-language:content-transfer-encoding;
-        bh=wuJ68EgCOGmNawkNjtzwGoYF8BkuCiSMV6RRKwELgN8=;
-        b=SFE8kxV8BtVK+5SGsfqXYX9H4nVHaoCIgQv7SSZqB6i6DAeWw9X27sDvsypJKsBiPb
-         6Akr+Xkhs1gWkrgPln/Uli637xPfcID7ezchVmrBOX4JCqFJm5/LGy83qbNdI8Qj/THm
-         IbqV1pyModcjTc3oM3iVJsedqAaRGcKYd4fix3GM6gZGuTWikqexG1F9ZGzS/PM4LQQS
-         QK3HDRtqC3XMnkBd3OAnuUS9pe1wQiWZKjzNsNFGcq8kfSPYAwnN32fGE8d1UNRv6TNQ
-         JFQz0WXieD2rKvyLI693ftLZU8FQzHSQBxa573R3fCoc/bCeVqzj2vy6GOBv8O5W3jOM
-         mGhA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=wuJ68EgCOGmNawkNjtzwGoYF8BkuCiSMV6RRKwELgN8=;
-        b=BXzYFc0irjy1rVm18LAF/8MnrRfuDO+f8wge6PZOfnVka7pibQOa4SBcVW2vXua4G1
-         04lHoXkAuVacK2+rYjhS00XPg8Au9POeli1IfqvUSubI3efu7/uFKKMOZuXI1dLiz5Zc
-         /4dk84f/V6lDm4s6z4zSsZSpVF0TJaGBFWlNVad5xmM2QhS/a6fHhaB0+/0sUDaLytqk
-         nkN6zdTK/6Of+PQ1Ax0SeNqYIiqmGwYrceKeBNfesT3PJ9xVvrnJF6w5kMJ6bKl/zUD5
-         dgS2WEZ7oTgOXjlgJmIBjaMLqC8yrw10X/u/LeVvumRKPQkfitElPA4ww0d3X0W76+R0
-         dqvA==
-X-Gm-Message-State: AA+aEWZod3P34DRjdwEyX1jLPl/DCw5QBjnMDD4JAEhjLl0fHua/VcSs
-        Gk5cm+euaEOQVSMV69trzYuyYMRM1DHn5w==
-X-Google-Smtp-Source: AFSGD/XzYF1RaGnEx0C6NJCyrTGQ45pG7E1oNpoyWCeWz2B0EIZ0ZVF8a+Cmj9JrIcutI58IXH8BOw==
-X-Received: by 2002:aca:f0d5:: with SMTP id o204mr2040118oih.359.1545307676192;
-        Thu, 20 Dec 2018 04:07:56 -0800 (PST)
-Received: from [191.9.209.46] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
-        by smtp.gmail.com with ESMTPSA id s13sm11936418otc.40.2018.12.20.04.07.53
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 20 Dec 2018 04:07:55 -0800 (PST)
-Subject: Re: compress-force not really forcing compression?
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, devzero@web.de,
-        linux-btrfs@vger.kernel.org
-References: <trinity-138fb9ef-e164-4c58-8ba8-04eaa9813254-1545234086993@3c-app-webde-bs26>
- <79977718-ac8f-3a62-529d-e9046c8066b2@gmx.com>
-From:   "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <e97b9cc6-cb8d-9068-1e7e-8aaee7f48aa9@gmail.com>
-Date:   Thu, 20 Dec 2018 07:07:48 -0500
-User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
- Thunderbird/60.3.3
+        id S1732289AbeLTQMQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 20 Dec 2018 11:12:16 -0500
+Received: from mx2.suse.de ([195.135.220.15]:34362 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1730955AbeLTQMQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 20 Dec 2018 11:12:16 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 71960AEC5
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Dec 2018 16:12:11 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: qgroup: Don't trigger backref walk at delayed ref
+ insert time
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20181211050237.19016-1-wqu@suse.com>
+From:   Jeff Mahoney <jeffm@suse.com>
+Message-ID: <a73aeace-e6c0-93e3-d9d5-a99c57f65d9d@suse.com>
+Date:   Thu, 20 Dec 2018 11:12:08 -0500
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:64.0)
+ Gecko/20100101 Thunderbird/64.0
 MIME-Version: 1.0
-In-Reply-To: <79977718-ac8f-3a62-529d-e9046c8066b2@gmx.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20181211050237.19016-1-wqu@suse.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="76DJNlkA8Vs66GrkuBNWd6giGF3ouE0yH"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 12/19/2018 7:57 PM, Qu Wenruo wrote:
-> 
-> 
-> On 2018/12/19 下午11:41, devzero@web.de wrote:
->> does compress-force really force compression?
-> 
-> It should.
-> 
-> The only exception is block size.
-> 
-> If the file is smaller than the sector size (4K for x86_64), then no
-> compression no matter whatever the mount options are.
-> 
->>
->> for me (found via compsize - see https://github.com/kilobyte/compsize/issues/24 )  it looks it is problably forcing compression check for every block of a file (while compress= makes btrfs skip compression check after first block) and if some block is incompressible, apparently it's being stored uncompressed.
-> 
-> Any reproducer for this unexpected behavior?
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--76DJNlkA8Vs66GrkuBNWd6giGF3ouE0yH
+Content-Type: multipart/mixed; boundary="42zgPTG5HcZ0h1gnmaxx4mXMiNG4WQ418";
+ protected-headers="v1"
+From: Jeff Mahoney <jeffm@suse.com>
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <a73aeace-e6c0-93e3-d9d5-a99c57f65d9d@suse.com>
+Subject: Re: [PATCH] btrfs: qgroup: Don't trigger backref walk at delayed ref
+ insert time
+References: <20181211050237.19016-1-wqu@suse.com>
+In-Reply-To: <20181211050237.19016-1-wqu@suse.com>
 
-Not a reproducer, but this appears to be how it's been behaving on my 
-systems since I started using BTRFS.
+--42zgPTG5HcZ0h1gnmaxx4mXMiNG4WQ418
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-It's also arguably far more useful to behave this way than to just 
-unconditionally compress everything, it wastes essentially zero time 
-compared to that, and gets you better space utilization (which is big, 
-since the size of the blocks we're compressing can mean that 
-incompressible data expands significantly when we compress it).
+On 12/11/18 12:02 AM, Qu Wenruo wrote:
+> [BUG]
+> Since fb235dc06fac ("btrfs: qgroup: Move half of the qgroup accounting
+> time out of commit trans"), kernel may lockup with quota enabled.
+>=20
+> There is one backref trace triggered by snapshot dropping along with
+> write operation in the source subvolume.
+> The example can be stably reproduced.
+>=20
+>   btrfs-cleaner   D    0  4062      2 0x80000000
+>   Call Trace:
+>    schedule+0x32/0x90
+>    btrfs_tree_read_lock+0x93/0x130 [btrfs]
+>    find_parent_nodes+0x29b/0x1170 [btrfs]
+>    btrfs_find_all_roots_safe+0xa8/0x120 [btrfs]
+>    btrfs_find_all_roots+0x57/0x70 [btrfs]
+>    btrfs_qgroup_trace_extent_post+0x37/0x70 [btrfs]
+>    btrfs_qgroup_trace_leaf_items+0x10b/0x140 [btrfs]
+>    btrfs_qgroup_trace_subtree+0xc8/0xe0 [btrfs]
+>    do_walk_down+0x541/0x5e3 [btrfs]
+>    walk_down_tree+0xab/0xe7 [btrfs]
+>    btrfs_drop_snapshot+0x356/0x71a [btrfs]
+>    btrfs_clean_one_deleted_snapshot+0xb8/0xf0 [btrfs]
+>    cleaner_kthread+0x12b/0x160 [btrfs]
+>    kthread+0x112/0x130
+>    ret_from_fork+0x27/0x50
+>=20
+> [CAUSE]
+> When dropping snapshots with qgroup enabled, we will trigger backref
+> walk.
+>=20
+> However such backref walk at that timing is pretty dangerous, as if one=
 
+> of the parent nodes get WRITE locked by other thread, we could cause a
+> dead lock.
+>=20
+> For example:
+>=20
+>            FS 260     FS 261 (Dropped)
+>             node A        node B
+>            /      \      /      \
+>        node C      node D      node E
+>       /   \         /  \        /     \
+>   leaf F|leaf G|leaf H|leaf I|leaf J|leaf K
+>=20
+> The lock sequence would be:
+>=20
+>       Thread A (cleaner)             |       Thread B (other writer)
+> -----------------------------------------------------------------------=
+
+> write_lock(B)                        |
+> write_lock(D)                        |
+> ^^^ called by walk_down_tree()       |
+>                                      |       write_lock(A)
+>                                      |       write_lock(D) << Stall
+> read_lock(H) << for backref walk     |
+> read_lock(D) << lock owner is        |
+>                 the same thread A    |
+>                 so read lock is OK   |
+> read_lock(A) << Stall                |
+>=20
+> So thread A hold write lock D, and needs read lock A to unlock.
+> While thread B holds write lock A, while needs lock D to unlock.
+>=20
+> This will cause a dead lock.
+>=20
+> This is not only limited to snapshot dropping case.
+> As the backref walk, even only happens on commit trees, is breaking the=
+
+> normal top-down locking order, makes it deadlock prone.
+>=20
+> [FIX]
+> The solution is not to trigger backref walk with any write lock hold.
+> This means we can't do backref walk at delayed ref insert time.
+>=20
+> So this patch will mostly revert commit fb235dc06fac ("btrfs: qgroup:
+> Move half of the qgroup accounting time out of commit trans").
+>=20
+> Reported-by: David Sterba <dsterba@suse.cz>
+> Reported-by: Filipe Manana <fdmanana@suse.com>
+> Fixes: fb235dc06fac ("btrfs: qgroup: Move half of the qgroup accounting=
+ time out of commit trans")
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/delayed-ref.c |  6 ------
+>  fs/btrfs/qgroup.c      | 35 ++---------------------------------
+>  2 files changed, 2 insertions(+), 39 deletions(-)
+>=20
+> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+> index 9301b3ad9217..7aaae8436986 100644
+> --- a/fs/btrfs/delayed-ref.c
+> +++ b/fs/btrfs/delayed-ref.c
+> @@ -788,9 +788,6 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_h=
+andle *trans,
+>  	if (ret > 0)
+>  		kmem_cache_free(btrfs_delayed_tree_ref_cachep, ref);
+> =20
+> -	if (qrecord_inserted)
+> -		btrfs_qgroup_trace_extent_post(fs_info, record);
+> -
+>  	return 0;
+>  }
+> =20
+> @@ -869,9 +866,6 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans_h=
+andle *trans,
+>  	if (ret > 0)
+>  		kmem_cache_free(btrfs_delayed_data_ref_cachep, ref);
+> =20
+> -
+> -	if (qrecord_inserted)
+> -		return btrfs_qgroup_trace_extent_post(fs_info, record);
+>  	return 0;
+>  }
+
+
+This looks good but is leaving some cruft behind.
+
+These were the only uses for qrecord_inserted so we don't need it in
+either function and we don't need to pass it to add_delayed_ref_head.
+
+-Jeff
+
+> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+> index 45868fd76209..7d485b1e0efb 100644
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -1553,33 +1553,6 @@ int btrfs_qgroup_trace_extent_nolock(struct btrf=
+s_fs_info *fs_info,
+>  	return 0;
+>  }
+> =20
+> -int btrfs_qgroup_trace_extent_post(struct btrfs_fs_info *fs_info,
+> -				   struct btrfs_qgroup_extent_record *qrecord)
+> -{
+> -	struct ulist *old_root;
+> -	u64 bytenr =3D qrecord->bytenr;
+> -	int ret;
+> -
+> -	ret =3D btrfs_find_all_roots(NULL, fs_info, bytenr, 0, &old_root, fal=
+se);
+> -	if (ret < 0) {
+> -		fs_info->qgroup_flags |=3D BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
+> -		btrfs_warn(fs_info,
+> -"error accounting new delayed refs extent (err code: %d), quota incons=
+istent",
+> -			ret);
+> -		return 0;
+> -	}
+> -
+> -	/*
+> -	 * Here we don't need to get the lock of
+> -	 * trans->transaction->delayed_refs, since inserted qrecord won't
+> -	 * be deleted, only qrecord->node may be modified (new qrecord insert=
+)
+> -	 *
+> -	 * So modifying qrecord->old_roots is safe here
+> -	 */
+> -	qrecord->old_roots =3D old_root;
+> -	return 0;
+> -}
+> -
+>  int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans, u64 by=
+tenr,
+>  			      u64 num_bytes, gfp_t gfp_flag)
+>  {
+> @@ -1607,7 +1580,7 @@ int btrfs_qgroup_trace_extent(struct btrfs_trans_=
+handle *trans, u64 bytenr,
+>  		kfree(record);
+>  		return 0;
+>  	}
+> -	return btrfs_qgroup_trace_extent_post(fs_info, record);
+> +	return 0;
+>  }
+> =20
+>  int btrfs_qgroup_trace_leaf_items(struct btrfs_trans_handle *trans,
+> @@ -2557,11 +2530,7 @@ int btrfs_qgroup_account_extents(struct btrfs_tr=
+ans_handle *trans)
+>  		trace_btrfs_qgroup_account_extents(fs_info, record);
+> =20
+>  		if (!ret) {
+> -			/*
+> -			 * Old roots should be searched when inserting qgroup
+> -			 * extent record
+> -			 */
+> -			if (WARN_ON(!record->old_roots)) {
+> +			if (!record->old_roots) {
+>  				/* Search commit root to find old_roots */
+>  				ret =3D btrfs_find_all_roots(NULL, fs_info,
+>  						record->bytenr, 0,
+>=20
+
+--=20
+Jeff Mahoney
+SUSE Labs
+
+
+
+--42zgPTG5HcZ0h1gnmaxx4mXMiNG4WQ418--
+
+--76DJNlkA8Vs66GrkuBNWd6giGF3ouE0yH
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCAAdFiEE8wzgbmZ74SnKPwtDHntLYyF55bIFAlwbv1kACgkQHntLYyF5
+5bKogA/9F2ktzC2aebGzMPq5exbbpV50jMWt/gEQyR4dwW3Wlaz9/TsXi8TkH7Ut
+lwkA9SIapifMYS29DMLKBJHL2/Ouu738q0AkAtQAe7SDfcnwjP7qOUj7zDt60UN9
+JP8Sei9Sio+mtXaK2cbXEP9QI+42kn+izPyMIFwyBgHdT24cCIEKEL64y5IYFcud
+wpi36vAyWljnEzLKhVvhkXUVv+5/FJor3VkS8YoIBqQ8tsCbz1bl8xkR/KEjvFul
+sMdilwLI+cO0xIBwe2DesJ6ca50Z+HTm6AU+sEjo5E2Tye492TFa8bR7CUK7IBE4
+6gjbYwjoO0DzD14xP6PVIXbz76WU6O8DTwSUB0k+eWgClRZScd+k3s9sCMQXb371
+ypPnPbWgJFARH9j3LIQHfjbXPmnZZJoeo9D3EOtsJVvYHHegVBbH7K93kRHJ2MlH
+X4GDa8SVef4fdsdEr37JFolnZ9CAJZ0lfRkIhpAVZ8W+8S8WLvTfoRH83dRxO0bZ
+bOWA5wnn0pxBJKdodTuuTnO/GmkY7yPNIdVqe45TkmJE+szQknSihLpCL4rORm4H
+ldhsOSbNXTBupx4M5HkvP9uDZ8oXGMDKYhAuGtowKTudU2POqnZkw+vfK+Ga8Ow/
+VLrDhYaROvoQ2PERMvDS/+22wKp847YBcMbES7pvtMCtivgJMnI=
+=2czy
+-----END PGP SIGNATURE-----
+
+--76DJNlkA8Vs66GrkuBNWd6giGF3ouE0yH--

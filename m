@@ -2,291 +2,150 @@ Return-Path: <SRS0=ilb6=O5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.0 required=3.0 tests=MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 50CA7C43387
-	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Dec 2018 08:01:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3BAE3C43387
+	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Dec 2018 10:43:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1307320815
-	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Dec 2018 08:01:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 152DD2176F
+	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Dec 2018 10:43:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727767AbeLTIBq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 20 Dec 2018 03:01:46 -0500
-Received: from mx2.suse.de ([195.135.220.15]:40854 "EHLO mx1.suse.de"
+        id S1731032AbeLTKn5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 20 Dec 2018 05:43:57 -0500
+Received: from mx2.suse.de ([195.135.220.15]:40976 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726604AbeLTIBq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Dec 2018 03:01:46 -0500
+        id S1725730AbeLTKn5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 20 Dec 2018 05:43:57 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id AD930AF7E
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Dec 2018 08:01:41 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: Introduce new mount option to skip block group items scan
-Date:   Thu, 20 Dec 2018 16:01:37 +0800
-Message-Id: <20181220080137.22819-1-wqu@suse.com>
-X-Mailer: git-send-email 2.20.1
+        by mx1.suse.de (Postfix) with ESMTP id B47F2B035;
+        Thu, 20 Dec 2018 10:43:54 +0000 (UTC)
+Subject: Re: compress-force not really forcing compression?
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, devzero@web.de,
+        linux-btrfs@vger.kernel.org
+References: <trinity-138fb9ef-e164-4c58-8ba8-04eaa9813254-1545234086993@3c-app-webde-bs26>
+ <79977718-ac8f-3a62-529d-e9046c8066b2@gmx.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <f527b243-4379-ec32-a6f2-3f04c72fb8d9@suse.com>
+Date:   Thu, 20 Dec 2018 12:43:53 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
+In-Reply-To: <79977718-ac8f-3a62-529d-e9046c8066b2@gmx.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Btrfs needs to read out all block group (bg) items to fill its bg
-caches.
 
-However such bg caches are only needed for read-write mount, and makes
-no sense for RO mount.
 
-So this patch introduce new mount option, skip_bg, to skip block group
-items scan.
+On 20.12.18 г. 2:57 ч., Qu Wenruo wrote:
+> 
+> 
+> On 2018/12/19 下午11:41, devzero@web.de wrote:
+>> does compress-force really force compression?
+> 
+> It should.
+> 
+> The only exception is block size.
+> 
+> If the file is smaller than the sector size (4K for x86_64), then no
+> compression no matter whatever the mount options are.
 
-This new 'skip_bg' mount option can only be used with TRUE read-only
-mount, which needs the following dependency:
-- RO mount
-  Obviously.
+What FORCE_COMPRESS does is it ensures that compression is always tried
+for a file (check code in compress_file_range in the if (pages) branch).
+However, if btrfs_compress_pages detects compression makes no difference
+then 'if (pages)'  branch is executed since will_compress will not be
+set and only thing it will be do is not set BTRFS_INODE_NOCOMPRESS.
 
-- No log tree or notreelog mount option
+What this all means is that with FORCE_COMPRESS future writes will also
+be tried to be compressed. For example if you do some non-compressible
+writes on a file with no FORCE_COMPRESS then BTRFS_INODE_NOCOMPRESS will
+be set. This means that all future invocation of inode_need_compress for
+this inode will return false. So if at a later time the io pattern
+changes to one which is compressible then it wont' be compressed.
 
-- No way to remoutn RW
-  Similar to notreelog mount option.
+OTOH with force-compress you will also be compressing those portions of
+the file which are compressible.
 
-- No chunk <-> bg <-> dev extents restrict check
+IMHO the more pertinent question is :
 
-This option should only be used as kernel equivalent of btrfs-restore.
+If a file has portions which are not easily compressible does that imply
+all future writes are also incompressible. IMO no, so I think what will
+be prudent is remove FORCE_COMPRESS altogether and make the code act as
+if it's always on.
 
-With this patch, we can even mount a btrfs whose extent root is
-completely corrupted.
+Any opinions?
 
-But can also be an option to test if btrfs_read_block_groups() is the
-major cause for slow btrfs mount.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/ctree.h       |  1 +
- fs/btrfs/disk-io.c     | 29 ++++++++++++++++++---
- fs/btrfs/extent-tree.c | 59 ++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/super.c       | 20 ++++++++++++++
- fs/btrfs/volumes.c     |  7 +++++
- 5 files changed, 112 insertions(+), 4 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 80953528572d..371b5e2f6fbe 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1353,6 +1353,7 @@ static inline u32 BTRFS_MAX_XATTR_SIZE(const struct btrfs_fs_info *info)
- #define BTRFS_MOUNT_FREE_SPACE_TREE	(1 << 26)
- #define BTRFS_MOUNT_NOLOGREPLAY		(1 << 27)
- #define BTRFS_MOUNT_REF_VERIFY		(1 << 28)
-+#define BTRFS_MOUNT_SKIP_BG		(1 << 29)
- 
- #define BTRFS_DEFAULT_COMMIT_INTERVAL	(30)
- #define BTRFS_DEFAULT_MAX_INLINE	(2048)
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index b0ab41da91d1..5228320030a5 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2330,11 +2330,15 @@ static int btrfs_read_roots(struct btrfs_fs_info *fs_info)
- 
- 	root = btrfs_read_tree_root(tree_root, &location);
- 	if (IS_ERR(root)) {
--		ret = PTR_ERR(root);
--		goto out;
-+		if (!btrfs_test_opt(fs_info, SKIP_BG)) {
-+			ret = PTR_ERR(root);
-+			goto out;
-+		}
-+		fs_info->extent_root = NULL;
-+	} else {
-+		set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
-+		fs_info->extent_root = root;
- 	}
--	set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
--	fs_info->extent_root = root;
- 
- 	location.objectid = BTRFS_DEV_TREE_OBJECTID;
- 	root = btrfs_read_tree_root(tree_root, &location);
-@@ -2927,6 +2931,23 @@ int open_ctree(struct super_block *sb,
- 		goto fail_alloc;
- 	}
- 
-+	/* Skip bg needs RO and no log tree replay */
-+	if (btrfs_test_opt(fs_info, SKIP_BG)) {
-+		if (!sb_rdonly(sb)) {
-+			btrfs_err(fs_info,
-+		"skip_bg mount option can only be used with read-only mount");
-+			err = -EINVAL;
-+			goto fail_alloc;
-+		}
-+		if (btrfs_super_log_root(disk_super) &&
-+		    !btrfs_test_opt(fs_info, NOTREELOG)) {
-+			btrfs_err(fs_info,
-+	"skip_bg must be used with notreelog mount option for dirty log");
-+			err = -EINVAL;
-+			goto fail_alloc;
-+		}
-+	}
-+
- 	ret = btrfs_init_workqueues(fs_info, fs_devices);
- 	if (ret) {
- 		err = ret;
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index a1febf155747..051a5a63c2b0 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -9948,6 +9948,62 @@ static int check_chunk_block_group_mappings(struct btrfs_fs_info *fs_info)
- 	return ret;
- }
- 
-+static int fill_dummy_bgs(struct btrfs_fs_info *fs_info)
-+{
-+	struct extent_map_tree *em_tree = &fs_info->mapping_tree.map_tree;
-+	struct extent_map *em;
-+	struct map_lookup *map;
-+	struct btrfs_block_group_cache *cache;
-+	struct btrfs_space_info *space_info;
-+	struct rb_node *node;
-+	int ret = 0;
-+
-+	read_lock(&em_tree->lock);
-+	for (node = rb_first_cached(&em_tree->map); node;
-+	     node = rb_next(node)) {
-+		em = rb_entry(node, struct extent_map, rb_node);
-+		map = em->map_lookup;
-+		cache = btrfs_create_block_group_cache(fs_info, em->start,
-+						       em->len);
-+		if (!cache) {
-+			ret = -ENOMEM;
-+			goto out;
-+		}
-+
-+		/* Fill dummy cache as FULL */
-+		cache->flags = map->type;
-+		cache->last_byte_to_unpin = (u64)-1;
-+		cache->cached = BTRFS_CACHE_FINISHED;
-+		btrfs_set_block_group_used(&cache->item, em->len);
-+		btrfs_set_block_group_chunk_objectid(&cache->item, em->start);
-+		btrfs_set_block_group_flags(&cache->item, map->type);
-+		ret = exclude_super_stripes(cache);
-+		if (ret) {
-+			free_excluded_extents(cache);
-+			btrfs_put_block_group(cache);
-+			goto out;
-+		}
-+		free_excluded_extents(cache);
-+		ret = btrfs_add_block_group_cache(fs_info, cache);
-+		if (ret) {
-+			btrfs_remove_free_space_cache(cache);
-+			btrfs_put_block_group(cache);
-+			goto out;
-+		}
-+		update_space_info(fs_info, cache->flags, em->start, em->len,
-+				  cache->bytes_super, &space_info);
-+		cache->space_info = space_info;
-+		link_block_group(cache);
-+
-+		set_avail_alloc_bits(fs_info, cache->flags);
-+		if (btrfs_chunk_readonly(fs_info, em->start))
-+			inc_block_group_ro(cache, 1);
-+	}
-+out:
-+	read_unlock(&em_tree->lock);
-+	return ret;
-+}
-+
- int btrfs_read_block_groups(struct btrfs_fs_info *info)
- {
- 	struct btrfs_path *path;
-@@ -9962,6 +10018,9 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
- 	u64 feature;
- 	int mixed;
- 
-+	if (btrfs_test_opt(info, SKIP_BG))
-+		return fill_dummy_bgs(info);
-+
- 	feature = btrfs_super_incompat_flags(info->super_copy);
- 	mixed = !!(feature & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS);
- 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index b362b45dd757..5bc751819b19 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -337,6 +337,7 @@ enum {
- 	Opt_check_integrity_including_extent_data,
- 	Opt_check_integrity_print_mask,
- 	Opt_enospc_debug, Opt_noenospc_debug,
-+	Opt_skip_bg,
- #ifdef CONFIG_BTRFS_DEBUG
- 	Opt_fragment_data, Opt_fragment_metadata, Opt_fragment_all,
- #endif
-@@ -393,6 +394,7 @@ static const match_table_t tokens = {
- 	{Opt_notreelog, "notreelog"},
- 	{Opt_usebackuproot, "usebackuproot"},
- 	{Opt_user_subvol_rm_allowed, "user_subvol_rm_allowed"},
-+	{Opt_skip_bg, "skip_bg"},
- 
- 	/* Deprecated options */
- 	{Opt_alloc_start, "alloc_start=%s"},
-@@ -664,6 +666,10 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
- 			btrfs_clear_and_info(info, NOTREELOG,
- 					     "enabling tree log");
- 			break;
-+		case Opt_skip_bg:
-+			btrfs_set_and_info(info, SKIP_BG,
-+				"skip mount time block groupo searching");
-+			break;
- 		case Opt_norecovery:
- 		case Opt_nologreplay:
- 			btrfs_set_and_info(info, NOLOGREPLAY,
-@@ -1797,6 +1803,13 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
- 	if (ret)
- 		goto restore;
- 
-+	if (btrfs_test_opt(fs_info, SKIP_BG) !=
-+	    (old_opts & BTRFS_MOUNT_SKIP_BG)) {
-+		btrfs_err(fs_info,
-+			"skip_bg mount option can't be changed during remount");
-+		ret = -EINVAL;
-+		goto restore;
-+	}
- 	btrfs_remount_begin(fs_info, old_opts, *flags);
- 	btrfs_resize_thread_pool(fs_info,
- 		fs_info->thread_pool_size, old_thread_pool_size);
-@@ -1858,6 +1871,13 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
- 			goto restore;
- 		}
- 
-+		if (btrfs_test_opt(fs_info, SKIP_BG)) {
-+			btrfs_err(fs_info,
-+			"remounting read-write with skip_bg is not allowed");
-+			ret = -EINVAL;
-+			goto restore;
-+		}
-+
- 		ret = btrfs_cleanup_fs_roots(fs_info);
- 		if (ret)
- 			goto restore;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index f435d397019e..d614b2fab652 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -7480,6 +7480,13 @@ int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info)
- 	struct btrfs_key key;
- 	int ret = 0;
- 
-+	/*
-+	 * For skip_bg mount option, we're already RO and are salvaging data,
-+	 * no need for such restrict check.
-+	 */
-+	if (btrfs_test_opt(fs_info, SKIP_BG))
-+		return 0;
-+
- 	key.objectid = 1;
- 	key.type = BTRFS_DEV_EXTENT_KEY;
- 	key.offset = 0;
--- 
-2.20.1
-
+> 
+>>
+>> for me (found via compsize - see https://github.com/kilobyte/compsize/issues/24 )  it looks it is problably forcing compression check for every block of a file (while compress= makes btrfs skip compression check after first block) and if some block is incompressible, apparently it's being stored uncompressed.
+> 
+> Any reproducer for this unexpected behavior?
+> 
+> Thanks,
+> Qu
+> 
+>>
+>> so, the documentation is probably telling misleading information and should be fixed!?
+>>
+>> roland
+>>
+>>
+>>
+>> https://btrfs.wiki.kernel.org/index.php/Compression#What_happens_to_incompressible_files.3F
+>>
+>> What happens to incompressible files?
+>>
+>> There is a simple decision logic: if the first portion of data being compressed is not smaller than the original, the compression of the file is disabled -- unless the filesystem is mounted with -o compress-force. In that case it'll be compressed always regardless of the compressibility of the file. This is not optimal and subject to optimizations and further development. 
+>>
+>>
+>>
+> 

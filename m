@@ -2,147 +2,101 @@ Return-Path: <SRS0=cIUr=O6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FROM,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 048D9C43387
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Dec 2018 14:27:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3E523C43387
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Dec 2018 22:25:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B1EA92190A
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Dec 2018 14:27:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0114621920
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Dec 2018 22:25:40 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=web.de header.i=@web.de header.b="qLlKwN4F"
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="C0WlGpOl"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2387417AbeLUO1q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 Dec 2018 09:27:46 -0500
-Received: from mout.web.de ([217.72.192.78]:36271 "EHLO mout.web.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730556AbeLUO1p (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Dec 2018 09:27:45 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=web.de;
-        s=dbaedf251592; t=1545402464;
-        bh=lAL8sFho2CvT9kl9kkoqN+V1HiBoZdIaN8FyIKW6wWY=;
-        h=X-UI-Sender-Class:From:To:Subject:Date;
-        b=qLlKwN4FmMFrGEgN8iLUm/h0N4jWDkz6sYaJnP8Ug0XA30zRiCKYArFgivMrYBN1r
-         RW2ZyElF00BIT6TZuixx45/8UOfbnbe4AMS+A/LAOQejbmIjXv0860a5S1nUpuTBjJ
-         cuVPcQL+5yy2Z3zZWjxXR7gOoKLuVUE8t8fr/fPQ=
-X-UI-Sender-Class: c548c8c5-30a9-4db5-a2e7-cb6cb037b8f9
-Received: from [94.79.184.225] ([94.79.184.225]) by web-mail.web.de
- (3c-app-webde-bap30.server.lan [172.19.172.30]) (via HTTP); Fri, 21 Dec
- 2018 15:22:42 +0100
+        id S2404624AbeLUWZi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 Dec 2018 17:25:38 -0500
+Received: from mail-lf1-f43.google.com ([209.85.167.43]:40489 "EHLO
+        mail-lf1-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1730887AbeLUWZi (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 21 Dec 2018 17:25:38 -0500
+Received: by mail-lf1-f43.google.com with SMTP id v5so4923717lfe.7
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Dec 2018 14:25:37 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=vpd+XpVXe07YO2mHMrGUwhkEF8AnPWUWnCiRgqmqmdA=;
+        b=C0WlGpOlJK0XeqYgD+wAYLi07TSmU6l9JEmn7nTpAxsnmpg2THoRIzoX/POaoG0EhM
+         Wp5Sv2E2bEya9/tUfuP9cFXEbvSCuFrGymAz6LVqz7dg/KzVJViSDrfKX5G0Ig3bO2kx
+         2I8aK8F6f3i0utS51iKBfEwZghoP90pR3mwBpUUYQMRDUKW9Wfhi2/1nbTVDE+pRdLUT
+         OSjFKzcjft4TSoAeQfctvzVrEyfu2ui4Xqf9uZIxg1gBbj0BN9lByVdNXDop3ClAC3GX
+         HXndN3mSMOjjxXUNX7CwlGXJvsIHaxgoruNc37pUZtJoSFPMsalfSW5aAr1iv2QPK4u3
+         kxUA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=vpd+XpVXe07YO2mHMrGUwhkEF8AnPWUWnCiRgqmqmdA=;
+        b=d3fpXKebvkBRoKVpe4gZYk5tS5NTx5qcWRfBddvQxjKmCGt0zTsub4TURXz6Thp9GK
+         jGX2nJGJzABtAAt0/d5z3bWHdcIf2y11MY9UugSLJHPGr2lKAZUnMoyTr69VMbLrYjdo
+         D1kJO2sQvyfUrtOBuCTqD+pqFBNjFG5CQRNsTE0QdKbInX668NLPr9LBK5u8+2EBVReZ
+         DEU39gZCTVyIqovEyIEVUEF6+VwUDSQzlrYqYlo1cql5b6+TKSAVsguv1+3wu03kCpZk
+         4Nlq4us6OvmFaMLjiEwFqd6dxPa6cWK6iuOjRnVK3KU6/NlkDfL8GhDbIuwfn+WzIZBT
+         AdDQ==
+X-Gm-Message-State: AA+aEWbkifg8HSs+PqrDfSdqeCwbS3HpzgdBsxmVpYmM1FWw1UwyoD7H
+        XlHIVC0y8rpgulTDqz4PX6q5OcwZtDtP+7kvXQuT1GFoK2I=
+X-Google-Smtp-Source: AFSGD/XPTCHH4FHhazUoLE15xkNmbrbJilyTAx5Ta2HOt70vZvjdnAEf+O+F1nC1r6mlVN+DAWldgdHAI+FEhY0ihdM=
+X-Received: by 2002:a19:a7c1:: with SMTP id q184mr2292997lfe.4.1545431136276;
+ Fri, 21 Dec 2018 14:25:36 -0800 (PST)
 MIME-Version: 1.0
-Message-ID: <trinity-ec0de399-18af-4184-bd8d-364ffa41afd3-1545402162344@3c-app-webde-bap30>
-From:   c.monty@web.de
-To:     linux-btrfs@vger.kernel.org
-Subject: Defining quota on /home
-Content-Type: text/plain; charset=UTF-8
-Date:   Fri, 21 Dec 2018 15:22:42 +0100
-Importance: normal
-Sensitivity: Normal
-Content-Transfer-Encoding: quoted-printable
-X-Priority: 3
-X-Provags-ID: V03:K1:gT0xGnRgsC4mgkCi7QV0Re/7dP18gGH43ArvSvSxDQWYVLLI2BWjhD/zYuKF4JQ0fgeDk
- 7uF+XrsONe3r+gU7P0lcUO2URnE6uaw+9DBFS4R7nSBlSHNbOMSGC3pdZBHMARd+WicT9lJbOH+L
- YYBcibVAFhI4hb+1xPN+KEH9Dbz+OEZMTWllCLcMuFLuiWM2BVhHLhQRDjiYLadL0cdDWkVQ9MI7
- hOjpcxHzVsrcZ/Wv0r4msQQQpbn1HbMZ20aaAt0juvILd4bZLg41TdoE6QIDuK27I4Q5nVX0PGsf
- uA=
-X-UI-Out-Filterresults: notjunk:1;V03:K0:0zFB6Wh00RY=:Q+mAAi77wu9PJrCH8rHQ9l
- kf8BZTeIlQmYGKTsEP1bX9h9rEJkJfOY/ytPV0uCbKPkEoe2F/x8ao7hooCEegPpd7YOokUEs
- gy3EbnqrRLKseA1giDPTdGZ+YZDBUILaLIrttiVPIKNEv9jqHoXrHVngnMK26v8Cvft/Ir63R
- iTs7D2N9A/qMm5l4q/M8jMnjY3iwdZRJRF+Z/EofqdmxAr7+2/5Q8FBs2MXiaEO3po+M/rc0K
- 7c4Yjp23+uBdLcPsUX8v4em/cjcsQuCpvugOXTlfsdkbGOcv2Exs0XO9HWUOEd58OZf1Ms31c
- awwidc9BDmYo2c09l2AarwGgny28qdmG1xF0mVpC7iLhFzc8BL3EQYZsJjjjjxBACGoFxyQr+
- e9HZHUELD/tkC+h7KDtwPDUv7NuXTQAyeSYHpuaJnVZ3Xscv+yPDVNq7nJlflMBgk2WxEDorE
- PH6TGPlYbIShA6Dv0pegQBYJp7SSx1T1X/LatuWXcHuVhZvh/I+UC4gwyR3qjX/Yo1NlZL2mt
- PqGNhbXWNi5P6wdmJZPpjVuosQQyUgzFCByctQBO6rBpW8sXidcnoLPiWrxQm2NOw==
+References: <1aa82e28-3331-bc64-071c-6cf87b08ad94@petezilla.co.uk>
+In-Reply-To: <1aa82e28-3331-bc64-071c-6cf87b08ad94@petezilla.co.uk>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Fri, 21 Dec 2018 15:25:24 -0700
+Message-ID: <CAJCQCtRY-=AoHDxu--YOWfrs774QzrYj-AwvwD3H_YpTzDKfZw@mail.gmail.com>
+Subject: Re: Mount issue, mount /dev/sdc2: can't read superblock
+To:     Peter Chant <pete@petezilla.co.uk>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
-=C2=A0
-I have defined a quota on home with these steps:
-1=2E=C2=A0btrfs quota enable /home
-2=2E=C2=A0btrfs qgroup limit 150G /home
-=C2=A0
-Now I can verify the corresponding setting:
-btrfs qgroup show -reF /home
-WARNING: Qgroup data inconsistent, rescan recommended
-qgroupid =C2=A0 =C2=A0 =C2=A0 =C2=A0 rfer =C2=A0 =C2=A0 =C2=A0 =C2=A0 excl=
- =C2=A0 =C2=A0 max_rfer =C2=A0 =C2=A0 max_excl
--------- =C2=A0 =C2=A0 =C2=A0 =C2=A0 ---- =C2=A0 =C2=A0 =C2=A0 =C2=A0 ----=
- =C2=A0 =C2=A0 -------- =C2=A0 =C2=A0 --------
-0/279 =C2=A0 =C2=A0 =C2=A0 =C2=A0 1=2E79GiB =C2=A0 =C2=A0 =C2=A01=2E79GiB =
-=C2=A0 =C2=A0150=2E00GiB =C2=A0 =C2=A0 =C2=A0 =C2=A0 none
-255/279 =C2=A0 =C2=A0 =C2=A0 1=2E79GiB =C2=A0 =C2=A0 =C2=A01=2E79GiB =C2=
-=A0 =C2=A0 =C2=A0 =C2=A0 none =C2=A0 =C2=A0 =C2=A0 =C2=A0 none
-=C2=A0
-However I don't understand the line with qgroupid 0/279?!?
-=C2=A0
-I have created another quota earlier for /var/log, and there's no second l=
-ine in output of=C2=A0btrfs qgroup show:
-btrfs qgroup show -reF /var/log
-WARNING: Qgroup data inconsistent, rescan recommended
-qgroupid =C2=A0 =C2=A0 =C2=A0 =C2=A0 rfer =C2=A0 =C2=A0 =C2=A0 =C2=A0 excl=
- =C2=A0 =C2=A0 max_rfer =C2=A0 =C2=A0 max_excl
--------- =C2=A0 =C2=A0 =C2=A0 =C2=A0 ---- =C2=A0 =C2=A0 =C2=A0 =C2=A0 ----=
- =C2=A0 =C2=A0 -------- =C2=A0 =C2=A0 --------
-0/275 =C2=A0 =C2=A0 =C2=A0 =C2=A056=2E52MiB =C2=A0 =C2=A0 56=2E52MiB =C2=
-=A0 =C2=A0 =C2=A05=2E00GiB =C2=A0 =C2=A0 =C2=A0 =C2=A0 none
-=C2=A0
-The following subvolumes do exist:
-=C2=A0btrfs su li /
-ID 257 gen 134 top level 5 path @
-ID 258 gen 36271 top level 257 path @/=2Esnapshots
-ID 259 gen 36312 top level 258 path @/=2Esnapshots/1/snapshot
-ID 260 gen 33772 top level 257 path @/boot/grub2/i386-pc
-ID 261 gen 33772 top level 257 path @/boot/grub2/x86_64-efi
-ID 262 gen 36311 top level 257 path @/opt
-ID 263 gen 33772 top level 257 path @/srv
-ID 264 gen 36312 top level 257 path @/tmp
-ID 265 gen 35961 top level 257 path @/usr/local
-ID 266 gen 36310 top level 257 path @/var/cache
-ID 267 gen 33772 top level 257 path @/var/crash
-ID 268 gen 33772 top level 257 path @/var/lib/libvirt/images
-ID 269 gen 33772 top level 257 path @/var/lib/machines
-ID 270 gen 33772 top level 257 path @/var/lib/mailman
-ID 271 gen 33772 top level 257 path @/var/lib/mariadb
-ID 272 gen 33772 top level 257 path @/var/lib/mysql
-ID 273 gen 33772 top level 257 path @/var/lib/named
-ID 274 gen 33772 top level 257 path @/var/lib/pgsql
-ID 275 gen 36312 top level 257 path @/var/log
-ID 276 gen 33772 top level 257 path @/var/opt
-ID 277 gen 36312 top level 257 path @/var/spool
-ID 278 gen 36309 top level 257 path @/var/tmp
-ID 279 gen 36311 top level 257 path @/home
-ID 280 gen 36311 top level 257 path @/usr/sap
-ID 308 gen 17373 top level 258 path @/=2Esnapshots/19/snapshot
-ID 309 gen 17373 top level 258 path @/=2Esnapshots/20/snapshot
-ID 315 gen 17373 top level 258 path @/=2Esnapshots/25/snapshot
-=C2=A0
-This is the additional information demanded when asking a support question=
-:
+On Thu, Dec 20, 2018 at 3:23 PM Peter Chant <pete@petezilla.co.uk> wrote:
+>
+> I managed to break my root partition today.  Playing with GPU
+> passthrough to a second graphics card, unsuccessfully, I suspect lead to
+> some lockups and/or unclean mounts.
 
-lvevm117:~ # uname -a
-Linux lvevm117 4=2E4=2E162-94=2E72-default #1 SMP Mon Nov 12 18:57:45 UTC =
-2018 (9de753f) x86_64 x86_64 x86_64 GNU/Linux
-=C2=A0
-lvevm117:~ # btrfs --version
-btrfs-progs v4=2E5=2E3+20160729
-=C2=A0
-lvevm117:~ # btrfs fi show
-Label: none =C2=A0uuid: fbe2e4f1-2ccd-44df-bc35-790c5e019d66
-=C2=A0 =C2=A0 =C2=A0 =C2=A0 Total devices 1 FS bytes used 8=2E78GiB
-=C2=A0 =C2=A0 =C2=A0 =C2=A0 devid =C2=A0 =C2=A01 size 198=2E84GiB used 23=
-=2E07GiB path /dev/sda3
-=C2=A0
-lvevm117:~ # btrfs fi df /
-Data, single: total=3D20=2E01GiB, used=3D8=2E37GiB
-System, DUP: total=3D32=2E00MiB, used=3D16=2E00KiB
-Metadata, DUP: total=3D1=2E50GiB, used=3D414=2E19MiB
-GlobalReserve, single: total=3D27=2E38MiB, used=3D0=2E00B
-=C2=A0
-=C2=A0
-THX
+Should not matter, in theory.
+
+
+> I've Googled a bit and tried a number of things stopping just before
+> 'btrfs check --repair'.  I'm running kernel 4.19.10.  I now have the
+> latest version of btrfs-progs, but I do admit to 'having a go' with
+> btrfs-progs 4.4.something from a Mint installation.
+>
+> I've tried btrfs-find-root - and got the following:
+>
+> btrfs-find-root /dev/sdc2
+> Superblock thinks the generation is 793794
+> Superblock thinks the level is 1
+> Found tree root at 1113905790976 gen 7937947 level 1
+
+For all supers to be off by nearly 50 generations is really weird.
+That's a lot of transactions to happen, and fail, and only for the
+most recent super commits to happen successfully.
+
+What do you get for ' btrfs rescue super -v <dev>'? That's a read only
+command, I wonder if all the supers are really valid. And if they are,
+then I'd like to see 'btrfs insp dump-s -f <dev>' and see if there's a
+log tree. And then also the output from 'btrfs check --mode=lowmem
+<dev>' which is also read-only, don't use --repair unless a dev
+recommends it.
+
+
+-- 
+Chris Murphy

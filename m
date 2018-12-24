@@ -2,106 +2,144 @@ Return-Path: <SRS0=Gb2+=PB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
+	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 93D64C64E75
-	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Dec 2018 17:21:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2C2C2C64E75
+	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Dec 2018 23:20:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 61985217D6
-	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Dec 2018 17:21:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D14E421850
+	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Dec 2018 23:20:48 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (1024-bit key) header.d=mailmag.net header.i=@mailmag.net header.b="4v1QERiD"
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="mNGfx7cR"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725851AbeLXRVV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 24 Dec 2018 12:21:21 -0500
-Received: from mail.mailmag.net ([5.135.159.181]:55796 "EHLO mail.mailmag.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725747AbeLXRVQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Dec 2018 12:21:16 -0500
-Received: from authenticated-user (mail.mailmag.net [127.0.0.1])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by mail.mailmag.net (Postfix) with ESMTPSA id A62E5EC051B
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Dec 2018 09:21:14 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=mailmag.net; s=mail;
-        t=1545672074; h=from:from:sender:reply-to:subject:subject:date:date:
-         message-id:message-id:to:to:cc:mime-version:mime-version:
-         content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:in-reply-to:
-         references; bh=tDW9zvmlBqvNig86RfgpFTPPtcaUN+3i/43KE4hfn4c=;
-        b=4v1QERiDlpl+z2D44RAV2LMgdnb5fBtHyIA+VXsWSPgT8BVpGk5xDwVP1C9A789kqK7hJh
-        W884p6mI0KlEHEh9fu10jvQ5iZDYG/dUJJXKZilBucOdtLhxt9AyT/7KwpZCxMwSRjTHUY
-        R7PqZxldgEm0pCFScBqg8kBwSEaizMo=
+        id S1725806AbeLXXUr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 24 Dec 2018 18:20:47 -0500
+Received: from mail-lj1-f170.google.com ([209.85.208.170]:34050 "EHLO
+        mail-lj1-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725788AbeLXXUr (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 24 Dec 2018 18:20:47 -0500
+Received: by mail-lj1-f170.google.com with SMTP id u89-v6so11208549lje.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Dec 2018 15:20:46 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=I2kSTeeetQjVfJbJtvLANwaPgzelG4R2XuXTYkVmWe4=;
+        b=mNGfx7cR8BsaiX3iqvuOdIyEz3fUhw7K+dy/GHHu7gkItf9aR+wGfwiyY4c0XPrIoz
+         OETy9S2pI55qImLmg7nPlpy4lY6QFnfDsTwot4wdKM3V+toGp/4079peiKxwiQDNDJF+
+         T+a50HjxJOfLn4eWjDpkegz78O5c0pruk8yfSyhCSmsyCy8toGXHuVOdmkFbQCD2dB3B
+         ey+9zJIlXhObfMJb4tT380fWPMRU1Vp/sxo1IUhRKrcvc1Pw0NB0qxHd+7Jbm+aS/Vc1
+         9sA4QMAiP6ulr06R8j20oDfh4dQ8sAbdYQ/0mzQhqj/K3OVmjPNF1SVwyFbSpIw4r2zo
+         pC4A==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=I2kSTeeetQjVfJbJtvLANwaPgzelG4R2XuXTYkVmWe4=;
+        b=cnWsRR8kwBXHtiGn8FR16L2A3EXC80LhrFcO+4hldKuyI5mssYV13u6eGbIqhI2a4F
+         QPQM4ZbitTaHxB0ZVM/rIoCFtn/lmJJlJfqiLLOWRCOnqxHPD2S/ddqQ70e68Z1m6Ovs
+         tc0NN+lPJB6u+Fv0b8KOHXz/R7cMAlnLHh0DtRw5NblqhfngRIx4Eaq8oB1SRxCQ+IZD
+         0TwHBANNPrV0Q7bb2Ys/Z1gkl3eB9L3Ru2khc+FmoAepJcuJQQP4e2GWrLxmT6bGQI2N
+         og94hmB7wMkoWseJv97i9cx1w9ZDWEbHk3GbH+mohN3NfXsORFNIiXbi1mHZIMYWMtwu
+         M2cA==
+X-Gm-Message-State: AA+aEWaQdSKV69eUER5cbC7yYYZDcJGLC8na4GXWWwAhIqYD6NWLDgvY
+        OLtGAxXPChLGei4mvy1ls4JR66Zj8P4sI5V+pA7nWw==
+X-Google-Smtp-Source: ALg8bN4fjEAsI64r18ozXqvyp4qii8A/Y9tj6WUHoVWptw4e+UOiwe74SlZkOB56wFSmAtGuVOZvX4sAnGh6+9wnfuU=
+X-Received: by 2002:a2e:880a:: with SMTP id x10-v6mr8973621ljh.174.1545693645167;
+ Mon, 24 Dec 2018 15:20:45 -0800 (PST)
 MIME-Version: 1.0
-Date:   Mon, 24 Dec 2018 17:21:14 +0000
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
-From:   joshua@mailmag.net
-Message-ID: <96d61222666591a99b9b9f0c42bf4d5f@mailmag.net>
-Subject: btrfs fi usage -T shows unallocated column as total in drive, not
- total available to btrfs
-To:     "Btrfs BTRFS" <linux-btrfs@vger.kernel.org>
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=mailmag.net;
-        s=mail; t=1545672074; h=from:from:sender:reply-to:subject:subject:date:date:
-         message-id:message-id:to:to:cc:mime-version:mime-version:
-         content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:in-reply-to:
-         references; bh=tDW9zvmlBqvNig86RfgpFTPPtcaUN+3i/43KE4hfn4c=;
-        b=pxK5gkb///uRizWN0ioFDsiCbHourf9R+2ebcuDkZ6Q/a0ohQQX4uT5Nkp64Uk65AxJeO3
-        ibrDcsSJouULsZ51jTk+ug4neikPLuuE8QpO+ZT+Vy1ULWklygqk5fFjnlfK1e/76grHsn
-        kOUpGaAN0jYakP2fCdPB7TKIHQuKVOI=
-ARC-Seal: i=1; s=mail; d=mailmag.net; t=1545672074; a=rsa-sha256; cv=none;
-        b=ZkWjn3lh2o1BY1w6RTBzjhFDUFtdQqvAcT+KW+q9gvuZFY2lVBTkFttwnwl+ktzsZO6Dzz
-        2DrBgiSdqmhKh3TE0tYCMOyynGfszaUQtt6/m2WroMz1IRY92nMIR38PiqzV1fg92v/GSZ
-        OWK4hQ5EDA96PzcznnMsMAXRGSNdc3s=
-ARC-Authentication-Results: i=1;
-        mail.mailmag.net;
-        auth=pass smtp.auth=joshua@mailmag.net smtp.mailfrom=joshua@mailmag.net
+References: <1aa82e28-3331-bc64-071c-6cf87b08ad94@petezilla.co.uk>
+ <CAJCQCtRY-=AoHDxu--YOWfrs774QzrYj-AwvwD3H_YpTzDKfZw@mail.gmail.com>
+ <3b4d0ed3-4151-50b9-b1da-6be240bb58b3@petezilla.co.uk> <CAJCQCtRv2NOabzMB0A9A7hoZcu_-6Fy2+umc8+qYcWnv=wn7bQ@mail.gmail.com>
+ <99716398-e99c-6ee9-e256-6d05fdc48122@petezilla.co.uk>
+In-Reply-To: <99716398-e99c-6ee9-e256-6d05fdc48122@petezilla.co.uk>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Mon, 24 Dec 2018 16:20:33 -0700
+Message-ID: <CAJCQCtT9oWMgtn4nfEjGcXyih4_F7s9=f6VVEON+=DKFw2b27g@mail.gmail.com>
+Subject: Re: Mount issue, mount /dev/sdc2: can't read superblock
+To:     Peter Chant <pete@petezilla.co.uk>
+Cc:     Chris Murphy <lists@colorremedies.com>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I generally use this command to check my drive usage: `btrfs fi usage -T =
-/mnt/data` But this time=0Ait didn't give me useful information:=0A=0AI d=
-ecided to begin replacing a few of my drives with larger drives, so I cou=
-ld remove a lot of my=0Asmaller drives. I ran this command:=0AOverall:=0A=
-Device size: 67.31TiB=0ADevice allocated: 41.73TiB=0ADevice unallocated: =
-25.58TiB=0ADevice missing: 0.00B=0AUsed: 41.69TiB=0AFree (estimated): 12.=
-81TiB (min: 12.81TiB)=0AData ratio: 2.00=0AMetadata ratio: 2.00=0AGlobal =
-reserve: 512.00MiB (used: 0.00B)=0A=0AData Metadata System=0AId Path RAID=
-1 RAID1 RAID1 Unallocated=0A-- -------- -------- -------- -------- ------=
------=0A4 /dev/sda 2.57TiB 3.00GiB - 164.52GiB=0A{-snip-}=0A=0AI then sta=
-rted the replace with this command: `btrfs replace start 4 /dev/sdu /mnt/=
-data`=0AEverything went well, so I checked again:=0Aroot@CENTAUR:~# btrfs=
- fi usage -T /mnt/data=0AOverall:=0ADevice size: 67.31TiB=0ADevice alloca=
-ted: 41.73TiB=0ADevice unallocated: 25.58TiB=0ADevice missing: 0.00B=0AUs=
-ed: 41.69TiB=0AFree (estimated): 12.81TiB (min: 12.81TiB)=0AData ratio: 2=
-.00=0AMetadata ratio: 2.00=0AGlobal reserve: 512.00MiB (used: 0.00B)=0A=
-=0AData Metadata System=0AId Path RAID1 RAID1 RAID1 Unallocated=0A-- ----=
----- -------- -------- -------- -----------=0A4 /dev/sdu 2.57TiB 3.00GiB =
-- 6.53TiB=0A{-snip-}=0A=0AFor a brief moment I was confused, and ran this=
- command to double-check:=0Aroot@CENTAUR:~# btrfs fi sh=0ALabel: 'DATA' u=
-uid: ddafe51b-e1e8-4f4b-bcca-057f53b59a8d=0ATotal devices 17 FS bytes use=
-d 20.84TiB=0A{-snip-}=0Adevid 4 size 2.73TiB used 2.57TiB path /dev/sdu=
-=0A{-snip-}=0A=0AOh right, I have to run resize! So I run resize, and eve=
-rything works exactly as expected.=0A=0AHowever, shouldn't `btrfs fi usag=
-e -T` only report the usable space in the unallocated column?=0A`btrfs fi=
- sh` only reports the available space correctly.=0APerhaps there is a rea=
-son for this behavior? If not, it's a little confusing, and should really=
- be=0Abrought into line with `btrfs fi sh` IMO.=0A=0AFor reference, here =
-is what I ran afterwards:=0A=0Aroot@CENTAUR:~# btrfs fi resize 4:max /mnt=
-/data=0AResize '/mnt/data' of '4:max'=0Aroot@CENTAUR:~# btrfs fi sh=0ALab=
-el: 'DATA' uuid: ddafe51b-e1e8-4f4b-bcca-057f53b59a8d=0ATotal devices 17 =
-FS bytes used 20.84TiB=0A{-snip-}=0Adevid 4 size 9.10TiB used 2.57TiB pat=
-h /dev/sdu=0A{-snip-}=0A=0Aroot@CENTAUR:~# btrfs fi usage -T /mnt/data=0A=
-Overall:=0ADevice size: 73.68TiB=0ADevice allocated: 41.73TiB=0ADevice un=
-allocated: 31.95TiB=0ADevice missing: 0.00B=0AUsed: 41.69TiB=0AFree (esti=
-mated): 15.99TiB (min: 15.99TiB)=0AData ratio: 2.00=0AMetadata ratio: 2.0=
-0=0AGlobal reserve: 512.00MiB (used: 0.00B)=0A=0AData Metadata System=0AI=
-d Path RAID1 RAID1 RAID1 Unallocated=0A-- -------- -------- -------- ----=
----- -----------=0A4 /dev/sdu 2.57TiB 3.00GiB - 6.53TiB=0A{-snip-}=0A=0AS=
-o everything is as I expect it to be afterwards- All ready to begin remov=
-ing multiple drives.
+On Mon, Dec 24, 2018 at 4:31 AM Peter Chant <pete@petezilla.co.uk> wrote:
+
+>
+> Just done that:
+> bash-4.3# btrfs-image -ss -c9 -t4 /dev/sdd2
+> /mnt/backup/btrfs_issue_dec_2018/btrfs_root_image_error_20181224.img
+> WARNING: cannot find a hash collision for '..', generating garbage, it
+> won't match indexes
+
+normal for some files including .. and files with really short names
+
+
+> Now seems to stopped producing output.  Can't see if it is doing
+> something useful.  (note, started again, more such messages)
+
+You can watch if the file size of the image is increasing. With SSD
+it's maybe around 4MB/s throughput, depending on the CPU.
+
+>
+>
+> >
+> > There is no log listed in the super so zero-log isn't indicated, and
+> > also tells me there were no fsync's still flushing at the time of the
+> > crash. The loss should be at most a minute of data, not an
+> > inconsistent file system that can't be mounted anymore. Pretty weird.
+> >
+>
+> I think I ran zero-log to see if that helped.  Given that there was no
+> important data and I'd assume I'd either easily fix it, or wipe it and
+> start over I may have taken the 'monkey radomly pounding the buttons'
+> approach, short of 'btrfs check --repair'.  I only posted here as I
+> though I'd fixed it apart from the one error!  If it were a simple fix
+> then it was worth asking.
+
+Yeah I don't know how zero-log actually works, if it just removes the
+log tree address in the superblock or if it's more involved than that,
+and also changes root tree address+generation.
+
+
+
+>
+>
+> > What were your mount options? Defaults? Anything custom like discard,
+> > commit=, notreelog? Any non-default mount options themselves would not
+> > be the cause of the problem, but might suggest partial ideas for what
+> > might have happened.
+> >
+> fstab states:
+> autodefrag,ssd,discard,noatime,defaults,subvol=_r_sl14.
+> 2,compress=lzo
+
+I suggest not using discard when it passes through to the SSD. There
+are firmware bugs abound that can cause weird problems. And Btrfs does
+not delay discarding any backup metadata once it's dereferenced. So
+all the backup trees in the super, once dereferenced also get TRIM'd
+by the SSD, rendering them useless.
+
+I was running with discard mount option on an NVMe drive in my laptop,
+with no problems. But once I learned how aggressively it TRIMs metdata
+subject to the discard mount option, I dropped it. These days I just
+depend on the included systemd fstrim.service to issue TRIM once a
+week.
+
+I supposed it's possible your problem could be discard/TRIM related,
+but somehow I kinda doubt it. Usually such bugs show up with entire
+block ranges being wiped out when they shouldn't be (either with zeros
+or returning corrupt data). In the meantime, drop it for all file
+systems. And also check to make sure the SSD has the latest firmware
+version.
+
+
+-- 
+Chris Murphy

@@ -2,32 +2,36 @@ Return-Path: <SRS0=cHbd=PD=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,LOTS_OF_MONEY,MAILING_LIST_MULTI,
+	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CEABBC43387
-	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Dec 2018 02:08:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 995F1C43387
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Dec 2018 03:44:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6AC37214D8
-	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Dec 2018 02:08:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 690F520989
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Dec 2018 03:44:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725959AbeLZCIq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 25 Dec 2018 21:08:46 -0500
-Received: from mout.gmx.net ([212.227.15.18]:58215 "EHLO mout.gmx.net"
+        id S1726302AbeLZDoA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 25 Dec 2018 22:44:00 -0500
+Received: from mout.gmx.net ([212.227.17.22]:45675 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725874AbeLZCIq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Dec 2018 21:08:46 -0500
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx002
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0MI5JG-1gejmM1Aze-003tz4; Wed, 26
- Dec 2018 03:08:37 +0100
-Subject: Re: [PATCH v2] btrfs: Validate generation of btrfs super blocks
- before writing it to disk
-To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Cc:     Peter Chant <pete@petezilla.co.uk>
-References: <20181225045058.28566-1-wqu@suse.com>
+        id S1725995AbeLZDoA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 25 Dec 2018 22:44:00 -0500
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx103
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0LeeNW-1h9MB34AqU-00qQru; Wed, 26
+ Dec 2018 04:43:49 +0100
+Subject: Btrfs_read_block_groups() delay (Was Re: BTRFS Mount Delay Time
+ Graph)
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+To:     Nikolay Borisov <nborisov@suse.com>,
+        "Wilson, Ellis" <ellisw@panasas.com>,
+        BTRFS <linux-btrfs@vger.kernel.org>
+References: <25a99c85-b048-a678-b61b-97dfc1338cb3@panasas.com>
+ <b4183c50-a2a3-7470-3038-1e759a99369c@suse.com>
+ <a511850e-c08b-d6c5-0471-e523eff73680@panasas.com>
+ <558d3344-95de-da81-c385-a6623144d6ae@suse.com>
+ <b10017eb-e696-7002-5fd3-91d3630523de@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
@@ -53,247 +57,133 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <946b2d4c-9e3a-c442-8154-ad39a52a045f@gmx.com>
-Date:   Wed, 26 Dec 2018 10:08:31 +0800
+Message-ID: <a7129251-5ce3-cafc-9f82-95eebba415bc@gmx.com>
+Date:   Wed, 26 Dec 2018 11:43:42 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.3.3
 MIME-Version: 1.0
-In-Reply-To: <20181225045058.28566-1-wqu@suse.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="XWhiYOKD62aKCsppy2wFoHkQNHaNu337t"
-X-Provags-ID: V03:K1:gPSWUW5G6q7d65kZ5FlkGc9s2M0KR9+LEGQKt+Nl4Go0rsnC76f
- MI30nTO+0Ka+8e4/aEwMssrJjobUtwGoamQiCj22/xGTAlFWXa2m4byic/DUwSG0V9x96T1
- GWZqX9pw/h3pUbNsPvrzqjSrlBxs7u4S0iJJ1pPF1Y4AqZfzLRgeXQcoo3D+Bh7+7NeLspe
- H4GhbQ8qgVmujUmEg78lg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:9Yh/UdlyGBQ=:uqoxcBiJTJwPqP75qyusTJ
- 2Eu8aAVSXVC2/m8qUlRSLVgUTBHVqz1dN1CEymrREaFxLcKrXXDOZkZivjp3f92Uow1maPPNX
- Kr5PYrsMnYNilTqQkwxFdx96eq2iP17XOWPWGGAi0IbuyWAqdMrjOmwHPIblYx/hzousfjViU
- TYIWdHenwsXoU/wvN14vBgsV7UUtQrG+HV4WeBU+HnIF1gYkMkkZm5VWqAYl1F0cWGzp2Zjle
- dVt1TEFEixR4tkQeN/tpoATGPifJHHhTnfue830RBFhVx4ggOWLpOXTXoBMBgZG2IWAnTLhjY
- 5lV2/nb/0wM1brDWDj5Heix6h2m9taXEsaERCtUfbXPx3QK1ul9u5oc9BXV8bdNnzEVcKgN9S
- ufgkzFUyvfyzDgnY5QTrqd0ch/C+yoMxnl/49HHQTQD8LfzSuq0zw7Z8ZhFdLKmxujCWx4P3d
- 97Weml9N5hBFz6WAu2orD59WTF/xutEKtt7HMKeKpKBOH2UmD+YxXSNsukjqz5+Uo/Olidoe+
- 2aB3Opeu5CafzC3Pi4HH01Jpu7F2AG7ae+qYsYi9Xx+l5+Bx5z7l9DuOuKNPARMP7tIUK9+oO
- adMl/CtYswHHZ2yzM9cU1SIofHkf3RFwBTX5SlY1/5UanUBeHo+DUZRJoE8V2aetqRVKcNkFm
- ICVafj0+SzCunjw96y+JVglQU0IuH7FJ6dnrbHtEGDfOIHGSWjACpd7s2DHnoMBNpiz2SPYF6
- gDLOwvacEqxPKgsNZzKjJ4xfauecihanypQG+JeZgu5NRmolTSA8mBRCikIWx1Nqkl2IsQXoU
- LlgIabv/ht5KYy0ZlOnU72GpaiBh87+gkKJ52GbVIhgDDE/a/9QuoVVO4dq1W792pcucuTpZ5
- VKv87qYgRy6HPcd7s0LrB2BpVC4MAwCNTCC9uB1VKiVaSk7OSkOAXhIEo68pYt
+In-Reply-To: <b10017eb-e696-7002-5fd3-91d3630523de@gmx.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
+X-Provags-ID: V03:K1:4aPpwDNzv+wlKzIDXvS1qJo+VMCaq58wNhgSSYBaWqt7IP/jHv0
+ Y6LIbOBf1bR0h+euzrrqNuxyPEiidUAYNmbwm94WCy2JLx9MPpk1A0t9JTOE/ieYq/8K3Nt
+ lG0iVDE8szs/jTrZMxX0wI/Eqf5eAq1uriBtV2Q6JmCt+ZjkhfDW/Iv6Zkg3PnXE+2fEbM7
+ 86GRZK+oqfj20s/3f+Qcw==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:zOHKibTQStM=:Lxk9C8RT3kneBNHbkklx+k
+ hvByHGKT1tAPu/brcBdMpzFIQ5QoMHx+AW9S2cXX6RmPr6ctW5yxcZlChXuaNJwHwAkro4V2b
+ QZ/UfEQd38c68jOcLMmp4XXKUWta7AggTMwfza4uKDNMEZXeNx8vZgy9po6KU5RoKQOPsQD2M
+ JzLwNZdIKeC1stECsTq9keHfBfYK7n5DVv3YK2OTQfHeb9PpW+5AQacUaRvc3aSYnQmb3Rerw
+ ovdysqy5YLExQqy6Z1nKSZPaJvTo5q3659CiFh9v55MLstBBHJhGIm93Gzims+BHsAv0glDO2
+ Tb7OMGH/1iwewOnevMh1gNQoXbBOUi7HGmO3Ox/XpxclkEvLH3DptfyoatWULG+CXuU1PJvmr
+ XReEgJS91h23khQKhuuHkvKFX369DC5ADnDyGeFJikI4vEzGbatL6Wu356Wj2n2Ql+wzt1kC5
+ 6YzzEomzozeCYFBBLZJPwSX1y3nwCyGWb8100fmDx64NKdks7POUy8Quh8eHqNY5y2ngs46iv
+ s/g1+4GJySR7ivcxNOJD32rGcAr7UcDieCp02slNoyzFTMUDJxmED+sUI7YieQIFvuzyEulDI
+ 9LahhLCJdZJJ/+EP+Ur/ycVIBw6tzCR6zCcfljWCFM31lI2ADqrRhWAamkae/TSvzhQro6KjV
+ qRk5qFu0x6l+548nGzHEKbXcKTzu01LX+ie7DP1QVxDXMmKnxhvJ0QiOApXGbpkXPUH8NqQeD
+ zp1a5fgQnlGYa+NBq4RNQ3AOWQRCZgUeZ4a5puNqw/dCiNpJH0aOb/CdjvEH/9Rby7MeSlyxR
+ DRRV96bthe2Cr4KEiIO+BEqoJTvwetQ1pNI6FS1DU2pI7lex/Mhme56c6B0QeZlRjIobOm/dg
+ U0ohLoCVukZrcbweabRsdAs1LsHQy5dCl45lS0axMN4yrxzsNDuhuA8TDec0V0qVavKcpbNLS
+ YeLZtXwwPTg==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---XWhiYOKD62aKCsppy2wFoHkQNHaNu337t
-Content-Type: multipart/mixed; boundary="YkHHUQxyCNA6d81FQXHWYkUFFgkbpFzr8";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Cc: Peter Chant <pete@petezilla.co.uk>
-Message-ID: <946b2d4c-9e3a-c442-8154-ad39a52a045f@gmx.com>
-Subject: Re: [PATCH v2] btrfs: Validate generation of btrfs super blocks
- before writing it to disk
-References: <20181225045058.28566-1-wqu@suse.com>
-In-Reply-To: <20181225045058.28566-1-wqu@suse.com>
+Now with a little larger fs (257G used, backed by HDD), the result is
+much more obvious:
 
---YkHHUQxyCNA6d81FQXHWYkUFFgkbpFzr8
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+$ sudo perf ftrace -t function_graph \
+                   -T open_ctree \
+                   -T btrfs_read_block_groups \
+                   -T check_chunk_block_group_mappings \
+                   -T btrfs_read_chunk_tree \
+                   -T btrfs_verify_dev_extents \
+                   mount /dev/vdc /mnt/btrfs/
 
-Please discard this patch, such generation check can't handle
-concurrency in snapshot creation.
+ 3)               |  open_ctree [btrfs]() {
+ 3)               |    btrfs_read_chunk_tree [btrfs]() {
+ 3) * 69033.31 us |    }
+ 3)               |    btrfs_verify_dev_extents [btrfs]() {
+ 3) * 90376.15 us |    }
+ 3)               |    btrfs_read_block_groups [btrfs]() {
+ 2) $ 2733853 us  |    } /* btrfs_read_block_groups [btrfs] */
+ 2) $ 3168384 us  |  } /* open_ctree [btrfs] */
 
-And since the original report on generation mismatch is completely
-caused by btrfs-progs, such check has no real-world need.
+For btrfs_read_chunk_tree() and btrfs_verify_dev_extents(), combined
+they take less than 160ms.
+While for btrfs_read_block_groups() it take 2.7s while the total mount
+time is 3.1s, meaning btrfs_read_block_groups() is already taking 87% of
+the mount time.
+
+
+I'll try to make btrfs BLOCK_GROUP_ITEM into one separate tree to make
+they iterate just like chunks tree, and see how it will end up.
 
 Thanks,
 Qu
 
-On 2018/12/25 =E4=B8=8B=E5=8D=8812:50, Qu Wenruo wrote:
-> Even we did super block verification in commit 75cb857d2618
-> ("btrfs: Do super block verification before writing it to disk"), it
-> doesn't check generation against transaction as generation corruption i=
-s
-> not that obvious.
-> This allows super block generation corruption sneak in.
->=20
-> So in this patch, btrfs will check super block generation by:
-> - Check it against expected transid
->   We have 2 different callers who writes all super blocks:
->   * btrfs_commit_transaction()
->     The expected generation is trans->transid.
->   * btrfs_sync_log()
->     The expected generation is trans->transid - 1, since we only
->     update log_root, while not updating generation.
->=20
-> - Chech it against backup roots
->   For backup roots, we should not have any backup roots newer than our
->   current expected generation.
->=20
->   NOTE: Normally we should have a backup root matching the expected
->         generation, but btrfs-progs doesn't update backup roots, which
->         makes a valid repaired fs undergoing fsync() to trigger false
->         alerts. So we don't require backup roots to match generation
->         yet.
->=20
-> With above solution, at least we should be able to catch potential
-> generation corruption early on.
->=20
-> Reported-by: Peter Chant <pete@petezilla.co.uk>
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  fs/btrfs/disk-io.c     | 40 +++++++++++++++++++++++++++++++++++++---
->  fs/btrfs/disk-io.h     |  2 +-
->  fs/btrfs/transaction.c |  2 +-
->  fs/btrfs/tree-log.c    |  2 +-
->  4 files changed, 40 insertions(+), 6 deletions(-)
->=20
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 5228320030a5..e9caf199e579 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -2573,9 +2573,12 @@ static int btrfs_validate_mount_super(struct btr=
-fs_fs_info *fs_info)
->   * Extra checks like csum type and incompat flags will be done here.
->   */
->  static int btrfs_validate_write_super(struct btrfs_fs_info *fs_info,
-> -				      struct btrfs_super_block *sb)
-> +				      struct btrfs_super_block *sb,
-> +				      u64 expected_gen)
->  {
-> +	u64 sb_gen =3D btrfs_super_generation(sb);
->  	int ret;
-> +	int i;
-> =20
->  	ret =3D validate_super(fs_info, sb, -1);
->  	if (ret < 0)
-> @@ -2594,6 +2597,37 @@ static int btrfs_validate_write_super(struct btr=
-fs_fs_info *fs_info,
->  			  (unsigned long long)BTRFS_FEATURE_INCOMPAT_SUPP);
->  		goto out;
->  	}
-> +
-> +	/* super block generation check */
-> +	if (sb_gen !=3D expected_gen) {
-> +		ret =3D -EUCLEAN;
-> +		btrfs_err(fs_info,
-> +			"invalid generation detected, has %llu expect %llu",
-> +			sb_gen, expected_gen);
-> +		goto out;
-> +	}
-> +
-> +	/*
-> +	 * check against backup roots
-> +	 *
-> +	 * NOTE: Normally we should have a backup root matching the expected
-> +	 * generation, however for fsync() call on a btrfs-progs modified fs,=
-
-> +	 * its backup roots aren't updated and could cause false alerts.
-> +	 * So here we only check obvious corrupted backup roots.
-> +	 */
-> +	for (i =3D 0; i < BTRFS_NUM_BACKUP_ROOTS; i++) {
-> +		struct btrfs_root_backup *root_backup =3D sb->super_roots + i;
-> +		u64 backup_gen =3D btrfs_backup_tree_root_gen(root_backup);
-> +
-> +		if (backup_gen > sb_gen) {
-> +			ret =3D -EUCLEAN;
-> +			btrfs_err(fs_info,
-> +	"invalid backup root generation detected, slot %u has %llu expect <%l=
-lu",
-> +				  i, backup_gen, sb_gen);
-> +			goto out;
-> +		}
-> +	}
-> +
->  out:
->  	if (ret < 0)
->  		btrfs_err(fs_info,
-> @@ -3721,7 +3755,7 @@ int btrfs_get_num_tolerated_disk_barrier_failures=
-(u64 flags)
->  	return min_tolerated;
->  }
-> =20
-> -int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
-> +int write_all_supers(struct btrfs_fs_info *fs_info, u64 gen, int max_m=
-irrors)
->  {
->  	struct list_head *head;
->  	struct btrfs_device *dev;
-> @@ -3786,7 +3820,7 @@ int write_all_supers(struct btrfs_fs_info *fs_inf=
-o, int max_mirrors)
->  		flags =3D btrfs_super_flags(sb);
->  		btrfs_set_super_flags(sb, flags | BTRFS_HEADER_FLAG_WRITTEN);
-> =20
-> -		ret =3D btrfs_validate_write_super(fs_info, sb);
-> +		ret =3D btrfs_validate_write_super(fs_info, sb, gen);
->  		if (ret < 0) {
->  			mutex_unlock(&fs_info->fs_devices->device_list_mutex);
->  			btrfs_handle_fs_error(fs_info, -EUCLEAN,
-> diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-> index 4cccba22640f..9f8fd0a9a3a4 100644
-> --- a/fs/btrfs/disk-io.h
-> +++ b/fs/btrfs/disk-io.h
-> @@ -53,7 +53,7 @@ int open_ctree(struct super_block *sb,
->  	       struct btrfs_fs_devices *fs_devices,
->  	       char *options);
->  void close_ctree(struct btrfs_fs_info *fs_info);
-> -int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors);
-> +int write_all_supers(struct btrfs_fs_info *fs_info, u64 gen, int max_m=
-irrors);
->  struct buffer_head *btrfs_read_dev_super(struct block_device *bdev);
->  int btrfs_read_dev_one_super(struct block_device *bdev, int copy_num,
->  			struct buffer_head **bh_ret);
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index d1eeef9ec5da..b61cec2780b9 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -2241,7 +2241,7 @@ int btrfs_commit_transaction(struct btrfs_trans_h=
-andle *trans)
->  		goto scrub_continue;
->  	}
-> =20
-> -	ret =3D write_all_supers(fs_info, 0);
-> +	ret =3D write_all_supers(fs_info, trans->transid, 0);
->  	/*
->  	 * the super is written, we can safely allow the tree-loggers
->  	 * to go about their business
-> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-> index e07f3376b7df..4f84345fdbb6 100644
-> --- a/fs/btrfs/tree-log.c
-> +++ b/fs/btrfs/tree-log.c
-> @@ -3155,7 +3155,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *tra=
-ns,
->  	 * the running transaction open, so a full commit can't hop
->  	 * in and cause problems either.
->  	 */
-> -	ret =3D write_all_supers(fs_info, 1);
-> +	ret =3D write_all_supers(fs_info, trans->transid - 1, 1);
->  	if (ret) {
->  		btrfs_set_log_full_commit(fs_info, trans);
->  		btrfs_abort_transaction(trans, ret);
->=20
-
-
---YkHHUQxyCNA6d81FQXHWYkUFFgkbpFzr8--
-
---XWhiYOKD62aKCsppy2wFoHkQNHaNu337t
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlwi4p8ACgkQwj2R86El
-/qieHAf/dwyDXQzc6jU8g2LA5jE3XIzJoo4hD9CLQwGd94VtjXGD2hsrz8+srLfa
-e0VWbpNJTjxDwww8W2+uPK8W+6OrjtHi8CZbyQTXS8Sz7j8fIuI50hznokVxpJqA
-AX+YhnIG4Yc5RzNIKnjwyj/IJ/pOTZke0Fn4ddRBOZG18qADmjy4WDIgoVPMd57B
-3pFjDMYy4ATCeOvqdg/St0/Ij+geb6Z66/h6kklKa8mgYL2Xdw//91YRZraunHvj
-4HGcmlUy8ha34RebNuhrbh7NnGA8Kr2mXeP1iGSRzI+BAJ/Nn5W4t6a5s/V9JvQZ
-0XbZaeNQhvMIt9hPQW1jcFi0pkjZWw==
-=rQv8
------END PGP SIGNATURE-----
-
---XWhiYOKD62aKCsppy2wFoHkQNHaNu337t--
+On 2018/12/20 下午1:47, Qu Wenruo wrote:
+> 
+> 
+> On 2018/12/5 下午2:55, Nikolay Borisov wrote:
+>>
+>>
+>> On 4.12.18 г. 22:14 ч., Wilson, Ellis wrote:
+>>
+>> A command that would be good is :
+>>
+>> perf record --all-kernel -g mount /dev/vdc /media/scratch/
+> 
+> 
+> In fact, if we're just going to verify if it's btrfs_read_block_groups()
+> causing the biggest problem, we could use ftrace directly (wrapped by
+> "perf ftrace"):
+> 
+> perf ftrace -t function_graph -T open_ctree \
+> 	-T btrfs_read_block_groups \
+> 	mount $dev $mnt
+> 
+> The result will be super easy to read, something like:
+> 
+>  2)               |  open_ctree [btrfs]() {
+>  2)               |    btrfs_read_block_groups [btrfs]() {
+>  2) # 1726.598 us |    }
+>  2) * 21817.28 us |  }
+> 
+> 
+> Since I'm just using a small fs, with 4G data copied from /usr, we won't
+> populate extent tree with enough backrefs, thus
+> btrfs_read_block_groups() won't be a big problem. (only 7.9%)
+> 
+> However when I populate the fs with small inline files along with small
+> data extents, and 4K nodesize to bump up extent tree size, the same 4G
+> data would result a different story:
+> 
+>  3)               |  open_ctree [btrfs]() {
+>  3)               |    btrfs_read_block_groups [btrfs]() {
+>  3) # 4567.645 us |    }
+>  3) * 22520.95 us |  }
+> 
+> Now it's 20.3% of the total mount time.
+> I believe the percentage will just increase and go over 70% when the fs
+> is larger and larger.
+> 
+> 
+> So, Wilson, would you please use above "perf ftrace" command to get the
+> function duration?
+> 
+> Thanks,
+> Qu
+> 
+>>
+>> of course replace device/mount path appropriately. This will result in a
+>> perf.data file which contains stacktraces of the hottest paths executed
+>> during invocation of mount. If you could send this file to the mailing
+>> list or upload it somwhere for interested people (me and perhaps) Qu to
+>> inspect would be appreciated.
+>>
+>> If the file turned out way too big you can use
+>>
+>> perf report --stdio  to create a text output and you could send that as
+>> well.

@@ -2,130 +2,298 @@ Return-Path: <SRS0=cHbd=PD=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 90805C43387
-	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Dec 2018 00:15:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CEABBC43387
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Dec 2018 02:08:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 55AEC2171F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Dec 2018 00:15:43 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="VF1bsy6D"
+	by mail.kernel.org (Postfix) with ESMTP id 6AC37214D8
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Dec 2018 02:08:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725962AbeLZAPl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 25 Dec 2018 19:15:41 -0500
-Received: from mail-qk1-f195.google.com ([209.85.222.195]:43221 "EHLO
-        mail-qk1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725870AbeLZAPl (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Dec 2018 19:15:41 -0500
-Received: by mail-qk1-f195.google.com with SMTP id r71so8658207qkr.10
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Dec 2018 16:15:40 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc:content-transfer-encoding;
-        bh=EsGAoq9uuKmfOKt5qcx3CnoTOlrL2F9fEgVo2XxY4MI=;
-        b=VF1bsy6DApYsy1faOyoXpaHAdWXtsPXYClXZkkBJeO159PfeS6pOmFYiq8ipwcMrwv
-         WX+yeVi6C4whOJ7rCpFfjPp23aROoJcwx16jkvyrY5Z+bcRKPjmbOFBWxrDY9NsCSnlA
-         jlHrugFAa/5JOdMUfNqWH7wdLULcuMGyOhntQukhMy831hg1sMhBGdYcpEwhsP5P8of/
-         NrU7Q5/PhK7gpRprHNeH2rfcHOlMOdq7VKoqk+Cga/G9Bc7ERCV9Lr5CaZYxlYx0skkB
-         hTeKbGpj5NpKbzMppGfxx+iXwCYPgwvEuboSfU1iQ1lPYcLbsoCwZOtB2qFJh3syYuXT
-         G7hQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc:content-transfer-encoding;
-        bh=EsGAoq9uuKmfOKt5qcx3CnoTOlrL2F9fEgVo2XxY4MI=;
-        b=GTK0yKSqVjvG6/5JSJc0zXHO6HY95M5hNPNmYXVoOCSUsMjikbxdsKLIaNy3Y6V5xM
-         DGxK4azf8Q9bPu2HgcpczZ7/AkqjFuinfgNZmOhDiKUGzTToWg6gXYrTcLd516bJfQQG
-         b07gYjiERsa1RG63ydI7o2ceYvpo27khPirB8Qf9ZnyjUYrmSghgOJRL0UOGzpr2X/TX
-         z+eCffPH8iVA9shVxcJVii7Yl0TMqRS8UZgarZmIgaVRydoQ/EhrVbl1jwuqPXbxMXpb
-         O+nqNtCf/NooIsBY4Hlrj/gm9ZI9cAbJEBVtRvaCVXNPENkxH8WSuyTPD0iGuVDPJUeT
-         Lh1A==
-X-Gm-Message-State: AJcUukcAY19COz1oI3nsQQ9jRZlEPgTgYRyJTc4WUU4ND89s9v1Ivx1X
-        J/vbWvxWPcwVE8Fw+jXSKK0sLVOnfqO0BiIrSts=
-X-Google-Smtp-Source: ALg8bN42nXG6i+M0es8RHiFjaEIxaldqYixLavIv0OhZv1tzRlbv/ad0oZbECT+xg3KaOCGgKyi2wcEcvUx26FAbK1Y=
-X-Received: by 2002:a37:a7c3:: with SMTP id q186mr16742130qke.244.1545783340472;
- Tue, 25 Dec 2018 16:15:40 -0800 (PST)
+        id S1725959AbeLZCIq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 25 Dec 2018 21:08:46 -0500
+Received: from mout.gmx.net ([212.227.15.18]:58215 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725874AbeLZCIq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 25 Dec 2018 21:08:46 -0500
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx002
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0MI5JG-1gejmM1Aze-003tz4; Wed, 26
+ Dec 2018 03:08:37 +0100
+Subject: Re: [PATCH v2] btrfs: Validate generation of btrfs super blocks
+ before writing it to disk
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Cc:     Peter Chant <pete@petezilla.co.uk>
+References: <20181225045058.28566-1-wqu@suse.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <946b2d4c-9e3a-c442-8154-ad39a52a045f@gmx.com>
+Date:   Wed, 26 Dec 2018 10:08:31 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.3.3
 MIME-Version: 1.0
-References: <66F8D435-4E51-4761-B6CF-BA96F4BC5986@wdc.com> <CANYdAbLNAxoAXcxuC+ugpdhsCpTbh0zVjY3T5rtOcpVufnmWRA@mail.gmail.com>
-In-Reply-To: <CANYdAbLNAxoAXcxuC+ugpdhsCpTbh0zVjY3T5rtOcpVufnmWRA@mail.gmail.com>
-From:   Liu Bo <obuil.liubo@gmail.com>
-Date:   Tue, 25 Dec 2018 16:15:29 -0800
-Message-ID: <CANQeFDAoG5R4j1hq7um997-5h1FrwWrbSMMc_+bZPs3+rZ_BvA@mail.gmail.com>
-Subject: Re: [PATCH v2] btrfs: raid56: data corruption on a device removal
-To:     Dmitriy Gorokh <dmitriy.gorokh@gmail.com>
-Cc:     linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+In-Reply-To: <20181225045058.28566-1-wqu@suse.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="XWhiYOKD62aKCsppy2wFoHkQNHaNu337t"
+X-Provags-ID: V03:K1:gPSWUW5G6q7d65kZ5FlkGc9s2M0KR9+LEGQKt+Nl4Go0rsnC76f
+ MI30nTO+0Ka+8e4/aEwMssrJjobUtwGoamQiCj22/xGTAlFWXa2m4byic/DUwSG0V9x96T1
+ GWZqX9pw/h3pUbNsPvrzqjSrlBxs7u4S0iJJ1pPF1Y4AqZfzLRgeXQcoo3D+Bh7+7NeLspe
+ H4GhbQ8qgVmujUmEg78lg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:9Yh/UdlyGBQ=:uqoxcBiJTJwPqP75qyusTJ
+ 2Eu8aAVSXVC2/m8qUlRSLVgUTBHVqz1dN1CEymrREaFxLcKrXXDOZkZivjp3f92Uow1maPPNX
+ Kr5PYrsMnYNilTqQkwxFdx96eq2iP17XOWPWGGAi0IbuyWAqdMrjOmwHPIblYx/hzousfjViU
+ TYIWdHenwsXoU/wvN14vBgsV7UUtQrG+HV4WeBU+HnIF1gYkMkkZm5VWqAYl1F0cWGzp2Zjle
+ dVt1TEFEixR4tkQeN/tpoATGPifJHHhTnfue830RBFhVx4ggOWLpOXTXoBMBgZG2IWAnTLhjY
+ 5lV2/nb/0wM1brDWDj5Heix6h2m9taXEsaERCtUfbXPx3QK1ul9u5oc9BXV8bdNnzEVcKgN9S
+ ufgkzFUyvfyzDgnY5QTrqd0ch/C+yoMxnl/49HHQTQD8LfzSuq0zw7Z8ZhFdLKmxujCWx4P3d
+ 97Weml9N5hBFz6WAu2orD59WTF/xutEKtt7HMKeKpKBOH2UmD+YxXSNsukjqz5+Uo/Olidoe+
+ 2aB3Opeu5CafzC3Pi4HH01Jpu7F2AG7ae+qYsYi9Xx+l5+Bx5z7l9DuOuKNPARMP7tIUK9+oO
+ adMl/CtYswHHZ2yzM9cU1SIofHkf3RFwBTX5SlY1/5UanUBeHo+DUZRJoE8V2aetqRVKcNkFm
+ ICVafj0+SzCunjw96y+JVglQU0IuH7FJ6dnrbHtEGDfOIHGSWjACpd7s2DHnoMBNpiz2SPYF6
+ gDLOwvacEqxPKgsNZzKjJ4xfauecihanypQG+JeZgu5NRmolTSA8mBRCikIWx1Nqkl2IsQXoU
+ LlgIabv/ht5KYy0ZlOnU72GpaiBh87+gkKJ52GbVIhgDDE/a/9QuoVVO4dq1W792pcucuTpZ5
+ VKv87qYgRy6HPcd7s0LrB2BpVC4MAwCNTCC9uB1VKiVaSk7OSkOAXhIEo68pYt
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Dec 14, 2018 at 9:51 AM Dmitriy Gorokh <dmitriy.gorokh@gmail.com> w=
-rote:
->
-> RAID5 or RAID6 filesystem might get corrupted in the following scenario:
->
-> 1. Create 4 disks RAID6 filesystem
-> 2. Preallocate 16 10Gb files
-> 3. Run fio: 'fio --name=3Dtestload --directory=3D./ --size=3D10G
-> --numjobs=3D16 --bs=3D64k --iodepth=3D64 --rw=3Drandrw --verify=3Dsha256
-> --time_based --runtime=3D3600=E2=80=99
-> 4. After few minutes pull out two drives: 'echo 1 >
-> /sys/block/sdc/device/delete ;  echo 1 > /sys/block/sdd/device/delete=E2=
-=80=99
->
-> About 5 of 10 times the test is run, it led to a silent data
-> corruption of a random stripe, resulting in =E2=80=98IO Error=E2=80=99 an=
-d =E2=80=98csum
-> failed=E2=80=99 messages while trying to read the affected file. It usual=
-ly
-> affects only small portion of the files.
->
-> It is possible that few bios which were being processed during the
-> drives removal, contained non zero bio->bi_iter.bi_done field despite
-> of EIO bi_status. bi_sector field was also increased from original one
-> by that 'bi_done' value. Looks like this is a quite rare condition.
-> Subsequently, in the raid_rmw_end_io handler that failed bio can be
-> translated to a wrong stripe number and fail wrong rbio.
->
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--XWhiYOKD62aKCsppy2wFoHkQNHaNu337t
+Content-Type: multipart/mixed; boundary="YkHHUQxyCNA6d81FQXHWYkUFFgkbpFzr8";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Cc: Peter Chant <pete@petezilla.co.uk>
+Message-ID: <946b2d4c-9e3a-c442-8154-ad39a52a045f@gmx.com>
+Subject: Re: [PATCH v2] btrfs: Validate generation of btrfs super blocks
+ before writing it to disk
+References: <20181225045058.28566-1-wqu@suse.com>
+In-Reply-To: <20181225045058.28566-1-wqu@suse.com>
 
-Looks good.
+--YkHHUQxyCNA6d81FQXHWYkUFFgkbpFzr8
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-Reviewed-by: Liu Bo <bo.liu@linux.alibaba.com>
+Please discard this patch, such generation check can't handle
+concurrency in snapshot creation.
 
-thanks,
-liubo
+And since the original report on generation mismatch is completely
+caused by btrfs-progs, such check has no real-world need.
 
-> Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
-> Signed-off-by: Dmitriy Gorokh <dmitriy.gorokh@wdc.com>
+Thanks,
+Qu
+
+On 2018/12/25 =E4=B8=8B=E5=8D=8812:50, Qu Wenruo wrote:
+> Even we did super block verification in commit 75cb857d2618
+> ("btrfs: Do super block verification before writing it to disk"), it
+> doesn't check generation against transaction as generation corruption i=
+s
+> not that obvious.
+> This allows super block generation corruption sneak in.
+>=20
+> So in this patch, btrfs will check super block generation by:
+> - Check it against expected transid
+>   We have 2 different callers who writes all super blocks:
+>   * btrfs_commit_transaction()
+>     The expected generation is trans->transid.
+>   * btrfs_sync_log()
+>     The expected generation is trans->transid - 1, since we only
+>     update log_root, while not updating generation.
+>=20
+> - Chech it against backup roots
+>   For backup roots, we should not have any backup roots newer than our
+>   current expected generation.
+>=20
+>   NOTE: Normally we should have a backup root matching the expected
+>         generation, but btrfs-progs doesn't update backup roots, which
+>         makes a valid repaired fs undergoing fsync() to trigger false
+>         alerts. So we don't require backup roots to match generation
+>         yet.
+>=20
+> With above solution, at least we should be able to catch potential
+> generation corruption early on.
+>=20
+> Reported-by: Peter Chant <pete@petezilla.co.uk>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 > ---
->  fs/btrfs/raid56.c | 6 ++++++
->  1 file changed, 6 insertions(+)
->
-> diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-> index 3c8093757497..cd2038315feb 100644
-> --- a/fs/btrfs/raid56.c
-> +++ b/fs/btrfs/raid56.c
-> @@ -1451,6 +1451,12 @@ static int find_bio_stripe(struct btrfs_raid_bio *=
-rbio,
->   struct btrfs_bio_stripe *stripe;
->
->   physical <<=3D 9;
-> + /*
-> +  * Since the failed bio can return partial data, bi_sector might be
-> +  * incremented by that value. We need to revert it back to the
-> +  * state before the bio was submitted.
-> +  */
-> + physical -=3D bio->bi_iter.bi_done;
->
->   for (i =3D 0; i < rbio->bbio->num_stripes; i++) {
->   stripe =3D &rbio->bbio->stripes[i];
-> --
-> 2.17.0
+>  fs/btrfs/disk-io.c     | 40 +++++++++++++++++++++++++++++++++++++---
+>  fs/btrfs/disk-io.h     |  2 +-
+>  fs/btrfs/transaction.c |  2 +-
+>  fs/btrfs/tree-log.c    |  2 +-
+>  4 files changed, 40 insertions(+), 6 deletions(-)
+>=20
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 5228320030a5..e9caf199e579 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -2573,9 +2573,12 @@ static int btrfs_validate_mount_super(struct btr=
+fs_fs_info *fs_info)
+>   * Extra checks like csum type and incompat flags will be done here.
+>   */
+>  static int btrfs_validate_write_super(struct btrfs_fs_info *fs_info,
+> -				      struct btrfs_super_block *sb)
+> +				      struct btrfs_super_block *sb,
+> +				      u64 expected_gen)
+>  {
+> +	u64 sb_gen =3D btrfs_super_generation(sb);
+>  	int ret;
+> +	int i;
+> =20
+>  	ret =3D validate_super(fs_info, sb, -1);
+>  	if (ret < 0)
+> @@ -2594,6 +2597,37 @@ static int btrfs_validate_write_super(struct btr=
+fs_fs_info *fs_info,
+>  			  (unsigned long long)BTRFS_FEATURE_INCOMPAT_SUPP);
+>  		goto out;
+>  	}
+> +
+> +	/* super block generation check */
+> +	if (sb_gen !=3D expected_gen) {
+> +		ret =3D -EUCLEAN;
+> +		btrfs_err(fs_info,
+> +			"invalid generation detected, has %llu expect %llu",
+> +			sb_gen, expected_gen);
+> +		goto out;
+> +	}
+> +
+> +	/*
+> +	 * check against backup roots
+> +	 *
+> +	 * NOTE: Normally we should have a backup root matching the expected
+> +	 * generation, however for fsync() call on a btrfs-progs modified fs,=
+
+> +	 * its backup roots aren't updated and could cause false alerts.
+> +	 * So here we only check obvious corrupted backup roots.
+> +	 */
+> +	for (i =3D 0; i < BTRFS_NUM_BACKUP_ROOTS; i++) {
+> +		struct btrfs_root_backup *root_backup =3D sb->super_roots + i;
+> +		u64 backup_gen =3D btrfs_backup_tree_root_gen(root_backup);
+> +
+> +		if (backup_gen > sb_gen) {
+> +			ret =3D -EUCLEAN;
+> +			btrfs_err(fs_info,
+> +	"invalid backup root generation detected, slot %u has %llu expect <%l=
+lu",
+> +				  i, backup_gen, sb_gen);
+> +			goto out;
+> +		}
+> +	}
+> +
+>  out:
+>  	if (ret < 0)
+>  		btrfs_err(fs_info,
+> @@ -3721,7 +3755,7 @@ int btrfs_get_num_tolerated_disk_barrier_failures=
+(u64 flags)
+>  	return min_tolerated;
+>  }
+> =20
+> -int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
+> +int write_all_supers(struct btrfs_fs_info *fs_info, u64 gen, int max_m=
+irrors)
+>  {
+>  	struct list_head *head;
+>  	struct btrfs_device *dev;
+> @@ -3786,7 +3820,7 @@ int write_all_supers(struct btrfs_fs_info *fs_inf=
+o, int max_mirrors)
+>  		flags =3D btrfs_super_flags(sb);
+>  		btrfs_set_super_flags(sb, flags | BTRFS_HEADER_FLAG_WRITTEN);
+> =20
+> -		ret =3D btrfs_validate_write_super(fs_info, sb);
+> +		ret =3D btrfs_validate_write_super(fs_info, sb, gen);
+>  		if (ret < 0) {
+>  			mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+>  			btrfs_handle_fs_error(fs_info, -EUCLEAN,
+> diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+> index 4cccba22640f..9f8fd0a9a3a4 100644
+> --- a/fs/btrfs/disk-io.h
+> +++ b/fs/btrfs/disk-io.h
+> @@ -53,7 +53,7 @@ int open_ctree(struct super_block *sb,
+>  	       struct btrfs_fs_devices *fs_devices,
+>  	       char *options);
+>  void close_ctree(struct btrfs_fs_info *fs_info);
+> -int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors);
+> +int write_all_supers(struct btrfs_fs_info *fs_info, u64 gen, int max_m=
+irrors);
+>  struct buffer_head *btrfs_read_dev_super(struct block_device *bdev);
+>  int btrfs_read_dev_one_super(struct block_device *bdev, int copy_num,
+>  			struct buffer_head **bh_ret);
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index d1eeef9ec5da..b61cec2780b9 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -2241,7 +2241,7 @@ int btrfs_commit_transaction(struct btrfs_trans_h=
+andle *trans)
+>  		goto scrub_continue;
+>  	}
+> =20
+> -	ret =3D write_all_supers(fs_info, 0);
+> +	ret =3D write_all_supers(fs_info, trans->transid, 0);
+>  	/*
+>  	 * the super is written, we can safely allow the tree-loggers
+>  	 * to go about their business
+> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+> index e07f3376b7df..4f84345fdbb6 100644
+> --- a/fs/btrfs/tree-log.c
+> +++ b/fs/btrfs/tree-log.c
+> @@ -3155,7 +3155,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *tra=
+ns,
+>  	 * the running transaction open, so a full commit can't hop
+>  	 * in and cause problems either.
+>  	 */
+> -	ret =3D write_all_supers(fs_info, 1);
+> +	ret =3D write_all_supers(fs_info, trans->transid - 1, 1);
+>  	if (ret) {
+>  		btrfs_set_log_full_commit(fs_info, trans);
+>  		btrfs_abort_transaction(trans, ret);
+>=20
+
+
+--YkHHUQxyCNA6d81FQXHWYkUFFgkbpFzr8--
+
+--XWhiYOKD62aKCsppy2wFoHkQNHaNu337t
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlwi4p8ACgkQwj2R86El
+/qieHAf/dwyDXQzc6jU8g2LA5jE3XIzJoo4hD9CLQwGd94VtjXGD2hsrz8+srLfa
+e0VWbpNJTjxDwww8W2+uPK8W+6OrjtHi8CZbyQTXS8Sz7j8fIuI50hznokVxpJqA
+AX+YhnIG4Yc5RzNIKnjwyj/IJ/pOTZke0Fn4ddRBOZG18qADmjy4WDIgoVPMd57B
+3pFjDMYy4ATCeOvqdg/St0/Ij+geb6Z66/h6kklKa8mgYL2Xdw//91YRZraunHvj
+4HGcmlUy8ha34RebNuhrbh7NnGA8Kr2mXeP1iGSRzI+BAJ/Nn5W4t6a5s/V9JvQZ
+0XbZaeNQhvMIt9hPQW1jcFi0pkjZWw==
+=rQv8
+-----END PGP SIGNATURE-----
+
+--XWhiYOKD62aKCsppy2wFoHkQNHaNu337t--

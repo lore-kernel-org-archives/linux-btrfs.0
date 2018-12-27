@@ -2,111 +2,124 @@ Return-Path: <SRS0=K5Ec=PE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.7 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED,USER_AGENT_MUTT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E4594C43612
-	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Dec 2018 13:47:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E4C79C43387
+	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Dec 2018 20:06:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B36F421479
-	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Dec 2018 13:47:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9C483208E4
+	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Dec 2018 20:06:36 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="pLpLlsu7"
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="Mcd2Ib3B"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728937AbeL0NrN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 27 Dec 2018 08:47:13 -0500
-Received: from aserp2130.oracle.com ([141.146.126.79]:43372 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727429AbeL0NrM (ORCPT
+        id S1729330AbeL0UGf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 27 Dec 2018 15:06:35 -0500
+Received: from mail-lj1-f170.google.com ([209.85.208.170]:43654 "EHLO
+        mail-lj1-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728837AbeL0UGf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Dec 2018 08:47:12 -0500
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id wBRDd30u050865;
-        Thu, 27 Dec 2018 13:41:10 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
- : subject : message-id : references : mime-version : content-type :
- in-reply-to; s=corp-2018-07-02;
- bh=wWhlKvi6DYO/+w7JYjA/SNhf/XJAF2jtuIRmY0IuZj4=;
- b=pLpLlsu7wAnzIkELBQItlkruOcNnB9iJ3uXpebHwioUiJxQ1DDDMwth+uHf2+MF+A5We
- nj9KTNHdA7E7/qdaioAPmfta88TiY/cWfqhbU+DqbdpuJBW6S0K8hs2NQpBW22TGLNjP
- w+zkwr/gNluxEunFCkDABo/dN0Y4BZy8IYv+8ba3xrIebAAjT1Lnpfa5/d1MoXelqmNG
- xJuOEkpVEa+6ca8MhwaWsPcEHzCb6CFq7Zmsote4JmrENcGPgE0N6dMwO9XLwGU4vAM3
- vAXCHmSqLps+zZ/QWYuOuWOI9e9epAlBxvpHKm+v2eU2o3vS2FuiRBOF5k1+a6dE4ANo Lw== 
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by aserp2130.oracle.com with ESMTP id 2phasdwfjk-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 27 Dec 2018 13:41:10 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id wBRDfAD1032512
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 27 Dec 2018 13:41:10 GMT
-Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id wBRDf940020543;
-        Thu, 27 Dec 2018 13:41:09 GMT
-Received: from kadam (/197.157.34.167)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 27 Dec 2018 05:41:08 -0800
-Date:   Thu, 27 Dec 2018 16:40:55 +0300
-From:   Dan Carpenter <dan.carpenter@oracle.com>
-To:     Tom Psyborg <pozega.tomislav@gmail.com>
-Cc:     Julia Lawall <julia.lawall@lip6.fr>,
-        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
-        kernel-janitors@vger.kernel.org, dmaengine@vger.kernel.org,
-        linux-arm-kernel@lists.infradead.org,
-        Dan Williams <dan.j.williams@intel.com>,
-        linux-scsi@vger.kernel.org, linux-nfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, netdev@vger.kernel.org,
-        linux-rdma@vger.kernel.org, linux-xfs@vger.kernel.org,
-        linux-btrfs@vger.kernel.org,
-        Stefano Stabellini <sstabellini@kernel.org>,
-        xen-devel@lists.xenproject.org, linux-wireless@vger.kernel.org
-Subject: Re: [PATCH 00/20] drop useless LIST_HEAD
-Message-ID: <20181227134055.GA2272@kadam>
-References: <1545555435-24576-1-git-send-email-Julia.Lawall@lip6.fr>
- <CAKR_QVJefW1vxYb7-qiU8=0YdbFghYo15SK2eGjOC-dntRfyYA@mail.gmail.com>
- <alpine.DEB.2.21.1812232304130.2940@hadrien>
- <CAKR_QVLeZBL43W4x1mzcfcakSZyyh9L81vgUMxfnSccKawEfdg@mail.gmail.com>
+        Thu, 27 Dec 2018 15:06:35 -0500
+Received: by mail-lj1-f170.google.com with SMTP id q2-v6so17085057lji.10
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Dec 2018 12:06:33 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=xMW96CqNiJwDpLpdvKWnyFWaKJH1XdBE21yBX8REC3Q=;
+        b=Mcd2Ib3Btmby641o7JnSdTZxLUFtNVPPhU60koA+FP0LkeEfiS7GvsIRetAsSOnpvX
+         AWPzDllEXCaJ985bQqoYC4jKGtOA815n+Dx8CbkmQxMXQ0aGQM2b3StdDVRl4EKuQR8B
+         VBUDQuy6bLSd2ILhE4hHXEAkGBPe3/rrzS5PWnDpKBdQkebDsp+B5emNvSIPv6amvD6t
+         BuTBmCG64uG/q63k8vM7vJOTYUML/Q/OnnJSkWYuyIZKGiGTGaUEsKsbxuHRy5o50guP
+         EwY7o4d1XVWcVFjJSw6/W+PZkkLO/qBYgS9RAFysOK0uzcjnd8kNs11Jt4ik/oxwigbA
+         P5aA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=xMW96CqNiJwDpLpdvKWnyFWaKJH1XdBE21yBX8REC3Q=;
+        b=um7MA9eesZwESkaSHcQxXsnOVA5vBYPXKiHn/gSQJMsWk0Ldr9Jp8MPobewEVU6MhO
+         rMw2jCcjLRQ/Stf5fgbWbkF7Zonq9rMaPvSSKqKgXeLRLRGwQzUGXfMXdeYe42vWacvJ
+         qY/n2euIEiNcqPYBejTYXt+egM9ncaiWaoC9McPReN1KOoKTOS0lLCd2ReKf8vSzFKM8
+         8dBgbNMUgUgSStDskUp7dXZrIGpMnHGmBCGx2i8Pg/ZLNCwazD+WFBhnjloyujdybBAP
+         6LSnfTzaF0aJRAR44Q3cDnfS1jTmHXJB5K3t5enqlDRi6kA/4vtBMBS8oYq53m4fhlhF
+         L+Cw==
+X-Gm-Message-State: AJcUukfdcYH4SlLx+1yu/jIHmn/Y/Z8iZj3I9GGlA94paPZ6zKiyVafO
+        2+KHIUHDztv8R5FsBYdQoeva5p7pUCW2RqDf6gxacA==
+X-Google-Smtp-Source: ALg8bN5cVQ5kNYAoqsQlThTTTjD9eT+0bv31v8sjTWM56QX8ices0haki6K7/+MnatcxASGxFkVZ5SKAk60UfchdEDo=
+X-Received: by 2002:a2e:2e1a:: with SMTP id u26-v6mr16153600lju.8.1545941192697;
+ Thu, 27 Dec 2018 12:06:32 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAKR_QVLeZBL43W4x1mzcfcakSZyyh9L81vgUMxfnSccKawEfdg@mail.gmail.com>
-User-Agent: Mutt/1.9.4 (2018-02-28)
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9118 signatures=668680
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=656
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1810050000 definitions=main-1812270124
+References: <96d61222666591a99b9b9f0c42bf4d5f@mailmag.net> <CAJCQCtS7XJaD4Mhrg152K4zfj-w2P0JkpUvZ0R-M6x8QmCc1tg@mail.gmail.com>
+ <pan$ac19$67da17d$80a83557$ce46be42@cox.net>
+In-Reply-To: <pan$ac19$67da17d$80a83557$ce46be42@cox.net>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Thu, 27 Dec 2018 13:06:21 -0700
+Message-ID: <CAJCQCtQrbGfSLi4N5C5fWdy5iEN+s12YkDRFeqVN4O_+E3zjpw@mail.gmail.com>
+Subject: Re: btrfs fi usage -T shows unallocated column as total in drive, not
+ total available to btrfs
+To:     Duncan <1i5t5.duncan@cox.net>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Dec 25, 2018 at 11:12:20PM +0100, Tom Psyborg wrote:
-> there was discussion about this just some days ago. CC 4-5 lists is
-> more than enough
-> 
+On Thu, Dec 27, 2018 at 12:14 AM Duncan <1i5t5.duncan@cox.net> wrote:
+>
+> Chris Murphy posted on Wed, 26 Dec 2018 17:36:19 -0700 as excerpted:
+>
+>
+> > I'm not really following this. An fs resize is implied by any device
+> > add, remove or replace command. In the case of replace, it will
+> > efficiently copy the device being replaced to the designated drive, and
+> > then once that succeeds resize the file system to reflect the size of
+> > the replacement device. I'm also confused why devid 4 seems to be
+> > present before and after your device replace, so I have to wonder if
+> > your copy paste really worked out as intended? And also, what version of
+> > kernel and btrfs-progs are you using?
+>
+> I thought... yes...
+>
+> Just checked the btrfs-replace manpage (v4.19.1) and it says:
+>
+> Note
+> the filesystem has to be resized to fully take advantage of a larger
+> target device; this can be achieved with btrfs filesystem
+> resize <devid>:max /path
+>
+> So it does *not* auto-resize after the replace.
 
-I don't know who you were discussing this with...
+Oops. That's unexpected.
 
-You should CC the 0th patch to all the mailinglists.  That much is a
-clear rule.
 
-For the rest, Julia's position is the more conservative one.  I was in
-a conversation in RL and they were like, "CC everyone for all the
-patches".  It depends on the context, of course.  If the patches are
-dependent on each other then you *have* to CC everyone for everything.
+>
+>
+> Also, I'm not positive on this, and I don't see it mentioned in the
+> manpage, but I /think/ replace (unlike add/remove) keeps the same devid
+> for the new device.
 
-If we really have other clear rules, then it should be encoded into
-get_maintainer.pl so that it's automatic.
+Also unexpected.
 
-My other question is why do the linux-arm-kernel@lists.infradead.org
-people feel like they need to be CC'd about every driver???  I always
-remove them from the CC list unless it's an arch/arm issue.
 
-regards,
-dan carpenter
+> It'd be interesting to see what device usage (as opposed to filesystem
+> usage) did with the unreachable space in terms of reporting -- maybe it
+> has that separate line tho I doubt it, but if not does it count it or
+> not?.  But that wasn't posted and presumably the query wasn't run while
+> in the still-unresized state, and I guess it's a bit late now to get it...
 
-PS:  Please, no more top posting.
+I'm not sure, it's one of the commands I almost never use. What is device slack?
 
+From my single device that's handy at this moment, the only item I see
+in 'device usage' that I don't see in 'filesystem usage' is "device
+slack".
+
+Both 'device usage' and 'filesystem usage' show allocated and
+unallocated per device. While 'filesystem usage' shows the used
+portion of allocated, it's per profile, not per chunk.
+
+
+-- 
+Chris Murphy

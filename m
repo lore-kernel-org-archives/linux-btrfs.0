@@ -5,91 +5,69 @@ X-Spam-Level:
 X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B0EABC43387
-	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Dec 2018 04:11:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9147FC43387
+	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Dec 2018 05:09:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 74A042148E
-	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Dec 2018 04:11:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 670FE2087F
+	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Dec 2018 05:09:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729294AbeL1ELc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 27 Dec 2018 23:11:32 -0500
-Received: from [195.159.176.226] ([195.159.176.226]:48323 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1726832AbeL1ELc (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Dec 2018 23:11:32 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane.org>)
-        id 1gcjSY-0004C2-Ta
-        for linux-btrfs@vger.kernel.org; Fri, 28 Dec 2018 05:09:18 +0100
-X-Injected-Via-Gmane: http://gmane.org/
+        id S1727717AbeL1FJZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 28 Dec 2018 00:09:25 -0500
+Received: from mx4.mailmox.it ([78.47.95.75]:42674 "EHLO mx4.mailmox.it"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725907AbeL1FJZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 28 Dec 2018 00:09:25 -0500
+Received: from mx7.mailmox.it (mx7.mailmox.it [217.146.207.17])
+        by mx4.mailmox.it (Postfix) with ESMTP id 395AB54150
+        for <linux-btrfs@vger.kernel.org>; Fri, 28 Dec 2018 06:09:23 +0100 (CET)
+Received: from mx8.mailmox.it (mx8.mailmox.it [217.146.207.18])
+        by mx7.mailmox.it (Postfix) with ESMTPS id 58DF661E09
+        for <linux-btrfs@vger.kernel.org>; Fri, 28 Dec 2018 06:09:22 +0100 (CET)
+Received: from mx6.mailmox.it (mx6.mailmox.it [217.146.207.33])
+        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mx8.mailmox.it (Postfix) with ESMTPS id 309AC651C7
+        for <linux-btrfs@vger.kernel.org>; Fri, 28 Dec 2018 06:09:21 +0100 (CET)
+Received: from lx.redracingparts.com (red.defende.it [217.146.207.57])
+        by mx6.mailmox.it (Postfix) with ESMTPSA id 1CD9421467
+        for <linux-btrfs@vger.kernel.org>; Fri, 28 Dec 2018 06:09:21 +0100 (CET)
+Date:   Fri, 28 Dec 2018 06:09:21 +0100
 To:     linux-btrfs@vger.kernel.org
-From:   Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs fi usage -T shows unallocated column as total in drive, not
- total available to btrfs
-Date:   Fri, 28 Dec 2018 04:09:12 +0000 (UTC)
-Message-ID: <pan$369c4$4c203e8d$24a2c9f9$f1866656@cox.net>
-References: <96d61222666591a99b9b9f0c42bf4d5f@mailmag.net>
-        <CAJCQCtS7XJaD4Mhrg152K4zfj-w2P0JkpUvZ0R-M6x8QmCc1tg@mail.gmail.com>
-        <pan$ac19$67da17d$80a83557$ce46be42@cox.net>
-        <ffec4fbe6b91b88e1f7bd57ccb568310@mailmag.net>
-        <CAJCQCtRFwLvPFkjhXfs+UFmOu+rHAQ-Zq3Mk6T_q22Qn0zgc7A@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
-X-Complaints-To: usenet@blaine.gmane.org
-User-Agent: Pan/0.146 (Hic habitat felicitas; e65ba1502)
+From:   "RED Racing Parts (Info)" <newsletter@redracingparts.com>
+Reply-To: "RED Racing Parts (Info)" <red@redracingparts.com>
+Subject: New RED Racing Parts: 18% / 20% off and free shipping
+Message-ID: <EJdp4NpRBohjZZx97s7MdpQ2fKhZCpDAAeL1A67aFps@lx.redracingparts.com>
+X-Mailer: PHPMailer 6.0.6 (https://github.com/PHPMailer/PHPMailer)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Chris Murphy posted on Thu, 27 Dec 2018 16:37:55 -0700 as excerpted:
 
-[Context is btrfs reports when btrfs is smaller on a device than the 
-device it is on.  In this specific case it's due to btrfs replace to a 
-larger device, before using btrfs filesystem resize to increase the size 
-to that of the newer/larger device.]
+Dear Rider,
 
-> OK let me see if I get this right. You're saying it's confusing that
-> 'btrfs fi sh' "devid size" does not change when doing a device replace;
-> whereas 'btrfs fi us' device specific "unallocated" does change, even
-> though you haven't yet done a resize.
-> 
-> I kinda sorta agree. While "unallocated" becomes 6.53TiB for this
-> device, the idea it's unallocated suggests it could be allocated, which
-> before a resize it cannot be allocated.
+From the new RED Racing Parts you find spare parts and accessories for road / offroad motorbike and
+scooter.
+Stickers, ergal / titanium bolts, brake / clutch levers, brake pads, carbon fiber parts, racing
+coolers, clutches and more...
+Excellent quality!
 
-"It depends what the definition of "unallocated" is."[1]
+Visit our website on 
+https://www.redracingparts.com .
 
-Arguably, just as "unallocated" includes space not yet allocated to data/
-metadata/system chunks, it could be argued it should include space on the 
-device not yet allocated to the filesystem as well.  Clearly, that's what 
-the coder of the btrfs filesystem usage functionality thought.
+Free shipping and 18% OFF (20% OFF paying with Bitcoin) for today only.
 
-By that view, "unallocated" includes "not yet allocated to the filesystem 
-itself also, but available on the block device the filesystem is on, to 
-be allocated to the filesystem should the admin decide to do so."
 
-OTOH, as the OP says it's still confusing, and as pointed out in a reply, 
-it's btrfs _filesystem_ usage we're talking about here, not btrfs 
-_device_ usage, and at minimum, _filesystem_ usage including space on the 
-device that's not yet allocated to that filesystem is indeed confusing/
-unintuitive, and arguably actually incorrect, particularly if the btrfs 
-device usage report reports that space under its "device slack" line, 
-which as admins we don't actually know at this point (it doesn't appear 
-to be documented except presumably in the code itself).  And arguably, if 
-btrfs filesystem usage is to report it at all, it should be under a 
-separate (additional) line, presumably device slack, if that's what the 
-device usage version does with that line.
+RED Racing Parts Staff
 
----
-[1] Quote paraphrases a famous US political/legal quote from some years 
-ago...  OT as to the merits, but if you wish the background, 
-s/unallocated/is/ and google it using the search engine of your choice.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+
+
+If you found this email useful, please forward it on to your friends.
+
+To unsubscribe our newsletters click here
+https://www.redracingparts.com/news/u.php?l=e&p=a0xLE2HGvDQRZhrJmqTPlinux-btrfs@vger.kernel.org
+
 

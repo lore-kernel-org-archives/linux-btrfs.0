@@ -2,32 +2,34 @@ Return-Path: <SRS0=VtQK=PK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	LOTS_OF_MONEY,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7737BC43387
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 05:29:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 91F1DC43387
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 05:30:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 471E02089F
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 05:29:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 62FFF2089F
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 05:30:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727579AbfABF34 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 2 Jan 2019 00:29:56 -0500
-Received: from mx2.suse.de ([195.135.220.15]:46502 "EHLO mx1.suse.de"
+        id S1727797AbfABFaA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 2 Jan 2019 00:30:00 -0500
+Received: from mx2.suse.de ([195.135.220.15]:46512 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727496AbfABF3z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 2 Jan 2019 00:29:55 -0500
+        id S1727638AbfABFaA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 2 Jan 2019 00:30:00 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 41AF0AEED
-        for <linux-btrfs@vger.kernel.org>; Wed,  2 Jan 2019 05:29:54 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 7FD80AEED
+        for <linux-btrfs@vger.kernel.org>; Wed,  2 Jan 2019 05:29:57 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/2] Use new incompat feature BG_TREE to hugely reduce mount time
-Date:   Wed,  2 Jan 2019 13:29:43 +0800
-Message-Id: <20190102052945.16325-1-wqu@suse.com>
+Subject: [PATCH 1/2] btrfs: Refactor btrfs_read_block_groups()
+Date:   Wed,  2 Jan 2019 13:29:44 +0800
+Message-Id: <20190102052945.16325-2-wqu@suse.com>
 X-Mailer: git-send-email 2.20.1
+In-Reply-To: <20190102052945.16325-1-wqu@suse.com>
+References: <20190102052945.16325-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -35,94 +37,254 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This patchset can be fetched from:
-https://github.com/adam900710/linux/tree/bg_tree
-Which is based on v4.20-rc1 tag.
+Refactor the work inside the loop of btrfs_read_block_groups() into one
+separate function read_one_block_group().
 
-This patchset will hugely reduce mount time of large fs by putting all
-block group items into its own tree.
+This allows read_one_block_group to be reused for later BG_TREE feature.
 
-The old behavior will try to read out all block group items at mount
-time, however due to the key of block group items are scattered across
-tons of extent items, we must call btrfs_search_slot() for each block
-group.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/extent-tree.c | 207 ++++++++++++++++++++---------------------
+ 1 file changed, 103 insertions(+), 104 deletions(-)
 
-It works fine for small fs, but when number of block groups goes beyond
-200, such tree search will become a random read, causing obvious slow
-down.
-
-On the other hand, btrfs_read_chunk_tree() is still very fast, since we
-put CHUNK_ITEMS into their own tree and package them next to each other.
-
-
-Following this idea, we could do the same thing for block group items,
-so instead of triggering btrfs_search_slot() for each block group, we
-just call btrfs_next_item() and under most case we could finish in
-memory, and hugely speed up mount (see BENCHMARK below).
-
-The only disadvantage is, this method introduce an incompatible feature,
-so existing fs can't use this feature directly.
-Either specify it at mkfs time, or use btrfs-progs offline convert tool
-(*).
-
-*: Mkfs and convert tool are doing the same work, however I haven't
-decide if I should put this feature to btrfstune.
-
-[[Benchmark]]
-Physical device:	HDD (7200RPM)
-Nodesize:		4K  (to bump up tree height)
-Used size:		250G
-Total size:		500G
-Extent data size:	1M
-
-All file extents on disk is in 1M size, ensured by using fallocate.
-
-Without patchset:
-Use ftrace function graph:
-
-  3)               |  open_ctree [btrfs]() {
-  3)               |    btrfs_read_chunk_tree [btrfs]() {
-  3) * 69033.31 us |    }
-  3)               |    btrfs_verify_dev_extents [btrfs]() {
-  3) * 90376.15 us |    }
-  3)               |    btrfs_read_block_groups [btrfs]() {
-  2) $ 2733853 us  |    } /* btrfs_read_block_groups [btrfs] */
-  2) $ 3168384 us  |  } /* open_ctree [btrfs] */
-
- btrfs_read_block_groups() takes 87% of the total mount time,
-
-With patchset, and use -O bg-tree mkfs option:
-  7)               |  open_ctree [btrfs]() {
-  7)               |    btrfs_read_chunk_tree [btrfs]() {
-  7) # 2448.562 us |    }
-  7)               |    btrfs_verify_dev_extents [btrfs]() {
-  7) * 19802.02 us |    }
-  7)               |    btrfs_read_block_groups [btrfs]() {
-  7) # 8610.397 us |    }
-  7) @ 113498.6 us |  }
-
-  open_ctree() time is only 3% of original mount time.
-  And btrfs_read_block_groups() only takes 7.6% of total open_ctree()
-  execution time.
-
-Changelog:
-RFC->v1:
- - Fix memory leak for fs_info->bg_root at module unload time.
- - Add sysfs features interface.
- - Testing shows no regression, so no RFC tag now.
-
-Qu Wenruo (2):
-  btrfs: Refactor btrfs_read_block_groups()
-  btrfs: Introduce new incompat feature, BG_TREE
-
- fs/btrfs/ctree.h                |   5 +-
- fs/btrfs/disk-io.c              |  13 ++
- fs/btrfs/extent-tree.c          | 300 ++++++++++++++++++++------------
- fs/btrfs/sysfs.c                |   2 +
- include/uapi/linux/btrfs.h      |   1 +
- include/uapi/linux/btrfs_tree.h |   3 +
- 6 files changed, 208 insertions(+), 116 deletions(-)
-
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index a1febf155747..367b1a6cce60 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -9948,6 +9948,105 @@ static int check_chunk_block_group_mappings(struct btrfs_fs_info *fs_info)
+ 	return ret;
+ }
+ 
++static int read_one_block_group(struct btrfs_fs_info *info,
++				struct btrfs_path *path,
++				int need_clear)
++{
++	struct extent_buffer *leaf = path->nodes[0];
++	struct btrfs_block_group_cache *cache;
++	struct btrfs_space_info *space_info;
++	struct btrfs_key key;
++	int mixed = btrfs_fs_incompat(info, MIXED_GROUPS);
++	int slot = path->slots[0];
++	int ret;
++
++	btrfs_item_key_to_cpu(leaf, &key, slot);
++	ASSERT(key.type == BTRFS_BLOCK_GROUP_ITEM_KEY);
++
++	cache = btrfs_create_block_group_cache(info, key.objectid,
++					       key.offset);
++	if (!cache)
++		return -ENOMEM;
++
++	if (need_clear) {
++		/*
++		 * When we mount with old space cache, we need to
++		 * set BTRFS_DC_CLEAR and set dirty flag.
++		 *
++		 * a) Setting 'BTRFS_DC_CLEAR' makes sure that we
++		 *    truncate the old free space cache inode and
++		 *    setup a new one.
++		 * b) Setting 'dirty flag' makes sure that we flush
++		 *    the new space cache info onto disk.
++		 */
++		if (btrfs_test_opt(info, SPACE_CACHE))
++			cache->disk_cache_state = BTRFS_DC_CLEAR;
++	}
++	read_extent_buffer(leaf, &cache->item,
++			   btrfs_item_ptr_offset(leaf, slot),
++			   sizeof(cache->item));
++	cache->flags = btrfs_block_group_flags(&cache->item);
++	if (!mixed && ((cache->flags & BTRFS_BLOCK_GROUP_METADATA) &&
++	    (cache->flags & BTRFS_BLOCK_GROUP_DATA))) {
++			btrfs_err(info,
++"bg %llu is a mixed block group but filesystem hasn't enabled mixed block groups",
++				  cache->key.objectid);
++			ret = -EINVAL;
++			goto error;
++	}
++	ret = exclude_super_stripes(cache);
++	if (ret) {
++		/*
++		 * We may have excluded something, so call this just in
++		 * case.
++		 */
++		free_excluded_extents(cache);
++		goto error;
++	}
++
++	/*
++	 * check for two cases, either we are full, and therefore
++	 * don't need to bother with the caching work since we won't
++	 * find any space, or we are empty, and we can just add all
++	 * the space in and be done with it.  This saves us _alot_ of
++	 * time, particularly in the full case.
++	 */
++	if (key.offset == btrfs_block_group_used(&cache->item)) {
++		cache->last_byte_to_unpin = (u64)-1;
++		cache->cached = BTRFS_CACHE_FINISHED;
++		free_excluded_extents(cache);
++	} else if (btrfs_block_group_used(&cache->item) == 0) {
++		cache->last_byte_to_unpin = (u64)-1;
++		cache->cached = BTRFS_CACHE_FINISHED;
++		add_new_free_space(cache, key.objectid,
++				   key.objectid + key.offset);
++		free_excluded_extents(cache);
++	}
++	ret = btrfs_add_block_group_cache(info, cache);
++	if (ret) {
++		btrfs_remove_free_space_cache(cache);
++		goto error;
++	}
++	trace_btrfs_add_block_group(info, cache, 0);
++	update_space_info(info, cache->flags, key.offset,
++			  btrfs_block_group_used(&cache->item),
++			  cache->bytes_super, &space_info);
++
++	cache->space_info = space_info;
++	link_block_group(cache);
++	set_avail_alloc_bits(info, cache->flags);
++	if (btrfs_chunk_readonly(info, cache->key.objectid)) {
++		inc_block_group_ro(cache, 1);
++	} else if (btrfs_block_group_used(&cache->item) == 0) {
++		ASSERT(list_empty(&cache->bg_list));
++		btrfs_mark_bg_unused(cache);
++	}
++	return 0;
++error:
++	btrfs_put_block_group(cache);
++	return ret;
++}
++
+ int btrfs_read_block_groups(struct btrfs_fs_info *info)
+ {
+ 	struct btrfs_path *path;
+@@ -9955,15 +10054,8 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
+ 	struct btrfs_block_group_cache *cache;
+ 	struct btrfs_space_info *space_info;
+ 	struct btrfs_key key;
+-	struct btrfs_key found_key;
+-	struct extent_buffer *leaf;
+ 	int need_clear = 0;
+ 	u64 cache_gen;
+-	u64 feature;
+-	int mixed;
+-
+-	feature = btrfs_super_incompat_flags(info->super_copy);
+-	mixed = !!(feature & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS);
+ 
+ 	key.objectid = 0;
+ 	key.offset = 0;
+@@ -9987,107 +10079,14 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
+ 		if (ret != 0)
+ 			goto error;
+ 
+-		leaf = path->nodes[0];
+-		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
++		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
+ 
+-		cache = btrfs_create_block_group_cache(info, found_key.objectid,
+-						       found_key.offset);
+-		if (!cache) {
+-			ret = -ENOMEM;
+-			goto error;
+-		}
+-
+-		if (need_clear) {
+-			/*
+-			 * When we mount with old space cache, we need to
+-			 * set BTRFS_DC_CLEAR and set dirty flag.
+-			 *
+-			 * a) Setting 'BTRFS_DC_CLEAR' makes sure that we
+-			 *    truncate the old free space cache inode and
+-			 *    setup a new one.
+-			 * b) Setting 'dirty flag' makes sure that we flush
+-			 *    the new space cache info onto disk.
+-			 */
+-			if (btrfs_test_opt(info, SPACE_CACHE))
+-				cache->disk_cache_state = BTRFS_DC_CLEAR;
+-		}
+-
+-		read_extent_buffer(leaf, &cache->item,
+-				   btrfs_item_ptr_offset(leaf, path->slots[0]),
+-				   sizeof(cache->item));
+-		cache->flags = btrfs_block_group_flags(&cache->item);
+-		if (!mixed &&
+-		    ((cache->flags & BTRFS_BLOCK_GROUP_METADATA) &&
+-		    (cache->flags & BTRFS_BLOCK_GROUP_DATA))) {
+-			btrfs_err(info,
+-"bg %llu is a mixed block group but filesystem hasn't enabled mixed block groups",
+-				  cache->key.objectid);
+-			ret = -EINVAL;
++		ret = read_one_block_group(info, path, need_clear);
++		if (ret < 0)
+ 			goto error;
+-		}
+ 
+-		key.objectid = found_key.objectid + found_key.offset;
++		key.objectid = key.objectid + key.offset;
+ 		btrfs_release_path(path);
+-
+-		/*
+-		 * We need to exclude the super stripes now so that the space
+-		 * info has super bytes accounted for, otherwise we'll think
+-		 * we have more space than we actually do.
+-		 */
+-		ret = exclude_super_stripes(cache);
+-		if (ret) {
+-			/*
+-			 * We may have excluded something, so call this just in
+-			 * case.
+-			 */
+-			free_excluded_extents(cache);
+-			btrfs_put_block_group(cache);
+-			goto error;
+-		}
+-
+-		/*
+-		 * check for two cases, either we are full, and therefore
+-		 * don't need to bother with the caching work since we won't
+-		 * find any space, or we are empty, and we can just add all
+-		 * the space in and be done with it.  This saves us _alot_ of
+-		 * time, particularly in the full case.
+-		 */
+-		if (found_key.offset == btrfs_block_group_used(&cache->item)) {
+-			cache->last_byte_to_unpin = (u64)-1;
+-			cache->cached = BTRFS_CACHE_FINISHED;
+-			free_excluded_extents(cache);
+-		} else if (btrfs_block_group_used(&cache->item) == 0) {
+-			cache->last_byte_to_unpin = (u64)-1;
+-			cache->cached = BTRFS_CACHE_FINISHED;
+-			add_new_free_space(cache, found_key.objectid,
+-					   found_key.objectid +
+-					   found_key.offset);
+-			free_excluded_extents(cache);
+-		}
+-
+-		ret = btrfs_add_block_group_cache(info, cache);
+-		if (ret) {
+-			btrfs_remove_free_space_cache(cache);
+-			btrfs_put_block_group(cache);
+-			goto error;
+-		}
+-
+-		trace_btrfs_add_block_group(info, cache, 0);
+-		update_space_info(info, cache->flags, found_key.offset,
+-				  btrfs_block_group_used(&cache->item),
+-				  cache->bytes_super, &space_info);
+-
+-		cache->space_info = space_info;
+-
+-		link_block_group(cache);
+-
+-		set_avail_alloc_bits(info, cache->flags);
+-		if (btrfs_chunk_readonly(info, cache->key.objectid)) {
+-			inc_block_group_ro(cache, 1);
+-		} else if (btrfs_block_group_used(&cache->item) == 0) {
+-			ASSERT(list_empty(&cache->bg_list));
+-			btrfs_mark_bg_unused(cache);
+-		}
+ 	}
+ 
+ 	list_for_each_entry_rcu(space_info, &info->space_info, list) {
 -- 
 2.20.1
 

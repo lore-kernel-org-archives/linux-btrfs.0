@@ -2,108 +2,92 @@ Return-Path: <SRS0=VtQK=PK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.5 required=3.0
-	tests=HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
+X-Spam-Status: No, score=-1.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1EA18C43387
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 18:28:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1CAAAC43387
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 23:46:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id F3F58218E2
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 18:28:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C2A832075B
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 23:46:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727968AbfABS2h (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 2 Jan 2019 13:28:37 -0500
-Received: from mx2.suse.de ([195.135.220.15]:57742 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727749AbfABS2h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 2 Jan 2019 13:28:37 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A3845AF13;
-        Wed,  2 Jan 2019 18:28:35 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 1C7DBDA781; Wed,  2 Jan 2019 19:28:07 +0100 (CET)
-Date:   Wed, 2 Jan 2019 19:28:07 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Filipe Manana <fdmanana@kernel.org>
-Cc:     Anand Jain <anand.jain@oracle.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: do not overwrite error return value in the
- balance ioctl
-Message-ID: <20190102182806.GF23615@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Filipe Manana <fdmanana@kernel.org>,
-        Anand Jain <anand.jain@oracle.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <20181214194541.21891-1-fdmanana@kernel.org>
- <9c378108-591d-e275-8898-3c67d97156fa@oracle.com>
- <CAL3q7H6NEJiAW8RYRdt8f3svhE3wZg92FoQH+bzFo2aE9ozKPA@mail.gmail.com>
+        id S1728003AbfABXqk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 2 Jan 2019 18:46:40 -0500
+Received: from mout.gmx.net ([212.227.17.20]:34593 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726078AbfABXqj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 2 Jan 2019 18:46:39 -0500
+Received: from Damenlys-MBP.lan ([180.111.171.105]) by mail.gmx.com (mrgmx102
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0M82zV-1hZqc9263F-00vhDh; Thu, 03
+ Jan 2019 00:46:29 +0100
+Subject: Re: [PATCH 3/3] btrfs-progs: Create uuid tree with proper contents
+To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20181227071333.10964-1-wqu@suse.com>
+ <20181227071333.10964-4-wqu@suse.com>
+ <48804351-b8b3-b876-529a-807d05259664@gmx.com>
+ <20190102163128.GY23615@twin.jikos.cz>
+From:   Su Yue <Damenly_Su@gmx.com>
+Message-ID: <fdc556bd-3134-f29e-b533-933bc6c7a2ed@gmx.com>
+Date:   Thu, 3 Jan 2019 07:46:24 +0800
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:64.0)
+ Gecko/20100101 Thunderbird/64.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAL3q7H6NEJiAW8RYRdt8f3svhE3wZg92FoQH+bzFo2aE9ozKPA@mail.gmail.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+In-Reply-To: <20190102163128.GY23615@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Provags-ID: V03:K1:r0WbHIXkOqyan49vsiufmAC1l9KicHAk8DqbBLViJbP9yERt8yQ
+ ntLqDMt9IrCL15Ch0CqUYVodIf5f0bsqeTg8UWxM557eT4AxKrV/VuBU2QqHEuScx5gVOz1
+ lERMrhv5ZiqJIJ5UZg+gKMsGPT3UaGr79oOpABm7zFTjR67vPjoUO8O4mJFP3Wvocdej4sA
+ jMU2LaBD7FvvLcKN9pQUQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:bVUvIWZRzt4=:egWwuR0MkFAXDPpelP6+6E
+ I2RFDOpp5+u3cIgnkdIJudJ5B0gIL1+4JSsHdn51kkYQi83n/i9RQdFG2RLaICwKtOT9q1Veb
+ ldvtfGsNVeu+JuS5vaRwczMRK9BbBUAcRHEJyv1fDKb21ms5hDKrJ+FV05pJ8pb5I1QzwQMhx
+ f0JIpf3mVy1w+JdvezL8AXt/xggBC341qYaZtnRCX74HHC6ry8rso9JUxZ7xClztoScRuDWDM
+ meGNPOyaHx9VFWkmrZzoQcFbnufEyeQXetRDN4adKKNV7t3DBPaZfBIUVGS6jdVs5EG/kV+In
+ 4LvC9wND81hJfeGdXudifxB434Tv78b8yMWUIqM8raMBOvQHMTDd7SCTfRqgy05nmm9M13IHz
+ P/CquJrPqwZO2cWIsLyo09irr5hOvyB9KU7s3IYXK80dqPL1BrlokQhZ0L+CEd8U5W7XEupwy
+ iV40R2ac1sa6ECHrQ/bpVvtp7coRZtf7Mn93MDolvYfvE7nq9wgXmV584qA5SwpSlWO5emj0o
+ VLCDu7pBA9oQeDw5+cvkf5SMrxhDdNeCRS8tIdKilW5R/UUVFbgpyMXPK/CFP+frOiwHSUTy+
+ OtxB+sLXs7JTTK7bXkZ4CRLTMkpEI1RL4OWZq8y0VBdRu+bpKlyxWpK5egwhkORaZczjl3z4p
+ A6TVFqZwdh0KBgyeBeWDKyCsxcE8D/4OtvSQORJnpQuq+QOrL7OSMezMY4J47qx4aKjr6nhsx
+ L6809Tr5v9qLexASePErdn15jz6MfKVL/AkkImLKwZ1tS6TZimPNiKwvgInPMlUSwhseTa9wm
+ qnmYnI1bs4nXMwn0dMeglzZemDMsNmRBK1pXkM4ojrVM5kLogh0EgTW04nLIGUxr+jlFVVHUb
+ kmNsn/QE7rwgXMj6//F1kX0Vi9uWhszxYVU1sVQHp61NKCX3S3bHvGyc7ATPx8
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Dec 17, 2018 at 09:24:43AM +0000, Filipe Manana wrote:
-> On Mon, Dec 17, 2018 at 8:25 AM Anand Jain <anand.jain@oracle.com> wrote:
-> >
-> >
-> >
-> > On 12/15/2018 03:45 AM, fdmanana@kernel.org wrote:
-> > > From: Filipe Manana <fdmanana@suse.com>
-> > >
-> > > If the call to btrfs_balance() failed we would overwrite the error
-> > > returned to user space with -EFAULT if the call to copy_to_user() failed
-> > > as well. Fix that by calling copy_to_user() only if btrfs_balance()
-> > > returned success.
-> > >
-> > > Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> > > ---
-> > >   fs/btrfs/ioctl.c | 2 +-
-> > >   1 file changed, 1 insertion(+), 1 deletion(-)
-> > >
-> > > diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> > > index abe45fd97ab5..4ad7288f77d0 100644
-> > > --- a/fs/btrfs/ioctl.c
-> > > +++ b/fs/btrfs/ioctl.c
-> > > @@ -4707,7 +4707,7 @@ static long btrfs_ioctl_balance(struct file *file, void __user *arg)
-> > >       ret = btrfs_balance(fs_info, bctl, bargs);
-> > >       bctl = NULL;
-> > >
-> > > -     if (arg) {
-> > > +     if (ret == 0 && arg) {
-> > >               if (copy_to_user(arg, bargs, sizeof(*bargs)))
-> > >                       ret = -EFAULT;
-> > >       }
-> > >
-> >
-> > This changes the BTRFS_IOC_BALANCE_V2 semantics.
-> >
-> > Originally, if BTRFS_IOC_BALANCE_V2 is failed/canceled we do update
-> > bargs [1] and copy to user land, but after this patch we copy only
-> > if the ioctl is successful. I doubt if David is OK with that.
+
+
+On 2019/1/3 12:31 AM, David Sterba wrote:
+> On Thu, Dec 27, 2018 at 07:28:40PM +0800, Su Yue wrote:
+>>> +}
+>>> +
+>>> +int create_uuid_tree(struct btrfs_trans_handle *trans)
+>>> +{
+>>> +	struct btrfs_fs_info *fs_info = trans->fs_info;
+>>> +	struct btrfs_root *uuid_root = fs_info->uuid_root;
+>>> +	struct btrfs_key key;
+>>> +	int ret;
+>>> +
+>>> +	if (!uuid_root) {
+>>> +		ret = create_empty_tree(trans, BTRFS_UUID_TREE_OBJECTID);
+>>> +		if (ret < 0) {
+>>> +			errno = -ret;
+>>> +			error("failed to create uuid root: %m");
+>>
+>> In personal taste, I don't like such assignment.
+>> Let the community say.
 > 
-> I thought about that. But that logic, if it's really in use by someone
-> (something) out there then they must be treating -EFAULT differently
-> from any other error.
-> Because if copy_to_user() fails it means it didn't copy all bytes it
-> was so supposed to (its return value is number of bytes not copied),
-> so the arguments structure ends up in an inconsistent state.
+> Check eg. 251d32ea5cd1cf74cb52, replaces strerror(errno) with %m and
+> requires no change. As we're using strerror(-ret) in many places, it's a
+> followup that needs the extra errno assignment. This is IMO a small cost
+> on the source code size and the gain in space savings might be
+> noticeable for embedded devices, but we need to do all the conversions.
+> 
 
-The balance ioctl as used in btrfs-progs expects valid contents of the
-bargs even if the ioctl returns negative value, with errno set to
-ECANCELED:
-
-https://github.com/kdave/btrfs-progs/blob/master/cmds-balance.c#L458
-
-So the condition would need to take that into account
-
-	if ((ret == 0 || ret == -ECANCELED) && arg)
-
-I haven't found any other error that would need to be whitelisted here.
+Got it, Thanks.

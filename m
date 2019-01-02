@@ -2,221 +2,218 @@ Return-Path: <SRS0=VtQK=PK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-11.5 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3BEB8C43612
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 05:49:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 82C07C43387
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 08:57:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0B56221019
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 05:49:53 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="UF2g69f/"
+	by mail.kernel.org (Postfix) with ESMTP id 474A621871
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 08:57:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728358AbfABFtp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 2 Jan 2019 00:49:45 -0500
-Received: from aserp2130.oracle.com ([141.146.126.79]:42658 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726353AbfABFtp (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Jan 2019 00:49:45 -0500
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id x025n5hi164389
-        for <linux-btrfs@vger.kernel.org>; Wed, 2 Jan 2019 05:49:44 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
- date : message-id : in-reply-to : references; s=corp-2018-07-02;
- bh=TVzDE8kRYDbo2XzjLL45EJ8i8VRrKDp8N/9vxiklv94=;
- b=UF2g69f/TIveZMr4fK6GVZ1TCzfiQ65AJC68jeh5LtrKTeR2wQ9zD2og0jKYtu23/Bur
- xq5wAgbSU/WjvmnhpsBG4JgIJtTZ5xxQhTy3WsB99nXzbsxONAWxGvNAlny+9nN8kdcn
- o9hmQ8Kmu2CT2yjXw5Z6kHFcTsdvoCFlj/gOWycMVTUezPs7CdWy6dGnbFVQ/EwJ1t7k
- 9RODwF6OrQJtu2xlIcvhKc7elUcwRXn2vwkm+XVmA53OCZ4pu0Sv5TFE7b7oNE6+/SHP
- c9lfAJRWk38KJz8cs0qhSGZPlv2HegfMoMZgroIc+LWB1oX2WmBDoBwFFddDZVRypyUM sg== 
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by aserp2130.oracle.com with ESMTP id 2pnxee0nek-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Jan 2019 05:49:43 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id x025ngmX006664
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 2 Jan 2019 05:49:43 GMT
-Received: from abhmp0017.oracle.com (abhmp0017.oracle.com [141.146.116.23])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x025ngmE016011
-        for <linux-btrfs@vger.kernel.org>; Wed, 2 Jan 2019 05:49:42 GMT
-Received: from tpasj.wifi.oracle.com (/192.188.170.109)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Tue, 01 Jan 2019 21:49:42 -0800
-From:   Anand Jain <anand.jain@oracle.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH RESEND v12] btrfs-progs: add cli to forget one or all scanned devices
-Date:   Wed,  2 Jan 2019 13:49:32 +0800
-Message-Id: <1546408172-5193-3-git-send-email-anand.jain@oracle.com>
-X-Mailer: git-send-email 1.8.3.1
-In-Reply-To: <1546408172-5193-1-git-send-email-anand.jain@oracle.com>
-References: <1546408172-5193-1-git-send-email-anand.jain@oracle.com>
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9123 signatures=668680
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=4 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1810050000 definitions=main-1901020052
+        id S1728973AbfABI5v (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 2 Jan 2019 03:57:51 -0500
+Received: from mx2.suse.de ([195.135.220.15]:35010 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1728915AbfABI5u (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 2 Jan 2019 03:57:50 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 7B618AD9C
+        for <linux-btrfs@vger.kernel.org>; Wed,  2 Jan 2019 08:57:47 +0000 (UTC)
+Subject: Re: [PATCH] btrfs-progs: Update backup roots when writing super
+ blocks
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20181225052845.26322-1-wqu@suse.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <d50be952-a062-5a44-c8f8-48b4077bb441@suse.com>
+Date:   Wed, 2 Jan 2019 10:57:46 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
+MIME-Version: 1.0
+In-Reply-To: <20181225052845.26322-1-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This patch adds cli
-  btrfs device forget [dev]
-to remove the given device structure in the kernel if the device
-is unmounted. If no argument is given it shall remove all stale
-(device which are not mounted) from the kernel.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
----
-v11->v12: none.
-v1->v12: pls ref to the cover-letter.
 
- cmds-device.c | 72 ++++++++++++++++++++++++++++++++++++++++++++++++-----------
- ioctl.h       |  2 ++
- 2 files changed, 61 insertions(+), 13 deletions(-)
+On 25.12.18 г. 7:28 ч., Qu Wenruo wrote:
+> The code is mostly ported from kernel with minimal change.
+> 
+> Since btrfs-progs doesn't support replaying log, there is some code
+> unnecessary for btrfs-progs, but to keep the code the same, that
+> unnecessary code is kept as it.
+> 
+> Now "btrfs check --repair" will update backup roots correctly.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  disk-io.c | 78 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 78 insertions(+)
+> 
+> diff --git a/disk-io.c b/disk-io.c
+> index 133835a4d063..f28a6b526391 100644
+> --- a/disk-io.c
+> +++ b/disk-io.c
+> @@ -1621,6 +1621,83 @@ write_err:
+>  	return ret;
+>  }
+>  
+> +/*
+> + * copy all the root pointers into the super backup array.
+> + * this will bump the backup pointer by one when it is
+> + * done
+> + */
+> +static void backup_super_roots(struct btrfs_fs_info *info)
+> +{
+> +	struct btrfs_root_backup *root_backup;
+> +	int next_backup;
+> +	int last_backup;
+> +
+> +	last_backup = find_best_backup_root(info->super_copy);
 
-diff --git a/cmds-device.c b/cmds-device.c
-index 2a05f70a76a9..280d6f555377 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -254,10 +254,32 @@ static int cmd_device_delete(int argc, char **argv)
- 	return _cmd_device_remove(argc, argv, cmd_device_delete_usage);
- }
- 
-+static int btrfs_forget_devices(char *path)
-+{
-+	struct btrfs_ioctl_vol_args args;
-+	int ret;
-+	int fd;
-+
-+	fd = open("/dev/btrfs-control", O_RDWR);
-+	if (fd < 0)
-+		return -errno;
-+
-+	memset(&args, 0, sizeof(args));
-+	if (path)
-+		strncpy_null(args.name, path);
-+	ret = ioctl(fd, BTRFS_IOC_FORGET_DEV, &args);
-+	if (ret)
-+		ret = -errno;
-+	close(fd);
-+	return ret;
-+}
-+
- static const char * const cmd_device_scan_usage[] = {
--	"btrfs device scan [(-d|--all-devices)|<device> [<device>...]]",
--	"Scan devices for a btrfs filesystem",
-+	"btrfs device scan [(-d|--all-devices)|(-u|--forget)|<device> "\
-+							"[<device>...]]",
-+	"Scan or forget (deregister) devices for a btrfs filesystem",
- 	" -d|--all-devices (deprecated)",
-+	" -u|--forget [<device> ..]",
- 	NULL
- };
- 
-@@ -267,37 +289,53 @@ static int cmd_device_scan(int argc, char **argv)
- 	int devstart;
- 	int all = 0;
- 	int ret = 0;
-+	int forget = 0;
- 
- 	optind = 0;
- 	while (1) {
- 		int c;
- 		static const struct option long_options[] = {
- 			{ "all-devices", no_argument, NULL, 'd'},
-+			{ "forget", no_argument, NULL, 'u'},
- 			{ NULL, 0, NULL, 0}
- 		};
- 
--		c = getopt_long(argc, argv, "d", long_options, NULL);
-+		c = getopt_long(argc, argv, "du", long_options, NULL);
- 		if (c < 0)
- 			break;
- 		switch (c) {
- 		case 'd':
- 			all = 1;
- 			break;
-+		case 'u':
-+			forget = 1;
-+			break;
- 		default:
- 			usage(cmd_device_scan_usage);
- 		}
- 	}
- 	devstart = optind;
- 
-+	if (all && forget)
-+		usage(cmd_device_scan_usage);
-+
- 	if (all && check_argc_max(argc - optind, 1))
- 		usage(cmd_device_scan_usage);
- 
- 	if (all || argc - optind == 0) {
--		printf("Scanning for Btrfs filesystems\n");
--		ret = btrfs_scan_devices();
--		error_on(ret, "error %d while scanning", ret);
--		ret = btrfs_register_all_devices();
--		error_on(ret, "there are %d errors while registering devices", ret);
-+		if (forget) {
-+			ret = btrfs_forget_devices(NULL);
-+			error_on(ret, "'%s', forget failed",
-+				 strerror(-ret));
-+		} else {
-+			printf("Scanning for Btrfs filesystems\n");
-+			ret = btrfs_scan_devices();
-+			error_on(ret, "error %d while scanning", ret);
-+			ret = btrfs_register_all_devices();
-+			error_on(ret,
-+				"there are %d errors while registering devices",
-+				ret);
-+		}
- 		goto out;
- 	}
- 
-@@ -315,11 +353,19 @@ static int cmd_device_scan(int argc, char **argv)
- 			ret = 1;
- 			goto out;
- 		}
--		printf("Scanning for Btrfs filesystems in '%s'\n", path);
--		if (btrfs_register_one_device(path) != 0) {
--			ret = 1;
--			free(path);
--			goto out;
-+		if (forget) {
-+			ret = btrfs_forget_devices(path);
-+			if (ret)
-+				error("Can't forget '%s': %s",
-+							path, strerror(-ret));
-+		} else {
-+			printf("Scanning for Btrfs filesystems in '%s'\n",
-+									path);
-+			if (btrfs_register_one_device(path) != 0) {
-+				ret = 1;
-+				free(path);
-+				goto out;
-+			}
- 		}
- 		free(path);
- 	}
-diff --git a/ioctl.h b/ioctl.h
-index 709e996f401c..e27d80e09392 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -721,6 +721,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
- 				   struct btrfs_ioctl_vol_args)
- #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
- 				   struct btrfs_ioctl_vol_args)
-+#define BTRFS_IOC_FORGET_DEV _IOW(BTRFS_IOCTL_MAGIC, 5, \
-+				   struct btrfs_ioctl_vol_args)
- /* trans start and trans end are dangerous, and only for
-  * use by applications that know how to avoid the
-  * resulting deadlocks
--- 
-1.8.3.1
+Slightly offtopic: but find_best_backup_root only partially resembles
+it's kernel counterpart - find_newest_super_backup. And it's missing the
+code for handling wraparound. So in kernel space if the newest root is
+at index 3 and index 0 backup also has the same gen then we switch the
+index to 0, why is this needed? In any case I think
+'find_best_backup_root' in progs should be renamed to
+'find_newest_super_backup' and copied from kernel space.
 
+> +	next_backup = (last_backup + 1) % BTRFS_NUM_BACKUP_ROOTS;
+
+This logic is different than the kernel one which does:
+last_backup = (next_backup + BTRFS_NUM_BACKUP_ROOTS - 1) %
+                BTRFS_NUM_BACKUP_ROOTS;
+
+So in the kernel when info->backup_root_index == 0 then the newest
+backup root is going to be written at position 3, the next one in pos 1,
+the next in pos 2 and so on. OTOH in userspace we might potentially
+start writing at 1 (which doesn't seem problematic per se). So why the
+difference in logic?
+
+> +
+> +	/* just overwrite the last backup if we're at the same generation */
+> +	root_backup = info->super_copy->super_roots + last_backup;
+> +	if (btrfs_backup_tree_root_gen(root_backup) ==
+> +	    btrfs_header_generation(info->tree_root->node))
+> +		next_backup = last_backup;
+> +
+> +	root_backup = info->super_copy->super_roots + next_backup;
+> +
+> +	/*
+> +	 * make sure all of our padding and empty slots get zero filled
+> +	 * regardless of which ones we use today
+> +	 */
+> +	memset(root_backup, 0, sizeof(*root_backup));
+> +	btrfs_set_backup_tree_root(root_backup, info->tree_root->node->start);
+> +	btrfs_set_backup_tree_root_gen(root_backup,
+> +			       btrfs_header_generation(info->tree_root->node));
+> +	btrfs_set_backup_tree_root_level(root_backup,
+> +			       btrfs_header_level(info->tree_root->node));
+> +
+> +	btrfs_set_backup_chunk_root(root_backup, info->chunk_root->node->start);
+> +	btrfs_set_backup_chunk_root_gen(root_backup,
+> +			       btrfs_header_generation(info->chunk_root->node));
+> +	btrfs_set_backup_chunk_root_level(root_backup,
+> +			       btrfs_header_level(info->chunk_root->node));
+> +
+> +	btrfs_set_backup_extent_root(root_backup, info->extent_root->node->start);
+> +	btrfs_set_backup_extent_root_gen(root_backup,
+> +			       btrfs_header_generation(info->extent_root->node));
+> +	btrfs_set_backup_extent_root_level(root_backup,
+> +			       btrfs_header_level(info->extent_root->node));
+> +	/*
+> +	 * we might commit during log recovery, which happens before we set
+> +	 * the fs_root.  Make sure it is valid before we fill it in.
+> +	 */
+> +	if (info->fs_root && info->fs_root->node) {
+> +		btrfs_set_backup_fs_root(root_backup,
+> +					 info->fs_root->node->start);
+> +		btrfs_set_backup_fs_root_gen(root_backup,
+> +			       btrfs_header_generation(info->fs_root->node));
+> +		btrfs_set_backup_fs_root_level(root_backup,
+> +			       btrfs_header_level(info->fs_root->node));
+> +	}
+> +
+> +	btrfs_set_backup_dev_root(root_backup, info->dev_root->node->start);
+> +	btrfs_set_backup_dev_root_gen(root_backup,
+> +			       btrfs_header_generation(info->dev_root->node));
+> +	btrfs_set_backup_dev_root_level(root_backup,
+> +				       btrfs_header_level(info->dev_root->node));
+> +
+> +	btrfs_set_backup_csum_root(root_backup, info->csum_root->node->start);
+> +	btrfs_set_backup_csum_root_gen(root_backup,
+> +			       btrfs_header_generation(info->csum_root->node));
+> +	btrfs_set_backup_csum_root_level(root_backup,
+> +			       btrfs_header_level(info->csum_root->node));
+> +
+> +	btrfs_set_backup_total_bytes(root_backup,
+> +			     btrfs_super_total_bytes(info->super_copy));
+> +	btrfs_set_backup_bytes_used(root_backup,
+> +			     btrfs_super_bytes_used(info->super_copy));
+> +	btrfs_set_backup_num_devices(root_backup,
+> +			     btrfs_super_num_devices(info->super_copy));
+> +};
+> +
+>  int write_all_supers(struct btrfs_fs_info *fs_info)
+>  {
+>  	struct list_head *head = &fs_info->fs_devices->devices;
+> @@ -1630,6 +1707,7 @@ int write_all_supers(struct btrfs_fs_info *fs_info)
+>  	int ret;
+>  	u64 flags;
+>  
+> +	backup_super_roots(fs_info);
+>  	sb = fs_info->super_copy;
+>  	dev_item = &sb->dev_item;
+>  	list_for_each_entry(dev, head, dev_list) {
+> 

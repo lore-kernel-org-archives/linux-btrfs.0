@@ -2,82 +2,127 @@ Return-Path: <SRS0=VtQK=PK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	LOTS_OF_MONEY,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CDDFFC43387
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 02:53:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7737BC43387
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 05:29:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9E3232080A
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 02:53:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 471E02089F
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 05:29:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726595AbfABCut (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 1 Jan 2019 21:50:49 -0500
-Received: from [195.159.176.226] ([195.159.176.226]:40769 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1725956AbfABCut (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Jan 2019 21:50:49 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane.org>)
-        id 1geWaB-0006R6-Ku
-        for linux-btrfs@vger.kernel.org; Wed, 02 Jan 2019 03:48:35 +0100
-X-Injected-Via-Gmane: http://gmane.org/
+        id S1727579AbfABF34 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 2 Jan 2019 00:29:56 -0500
+Received: from mx2.suse.de ([195.135.220.15]:46502 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727496AbfABF3z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 2 Jan 2019 00:29:55 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 41AF0AEED
+        for <linux-btrfs@vger.kernel.org>; Wed,  2 Jan 2019 05:29:54 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-From:   Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Undelete files
-Date:   Wed, 2 Jan 2019 02:48:28 +0000 (UTC)
-Message-ID: <pan$dcdef$678b9b0d$9f8492f4$6519613a@cox.net>
-References: <20181229225140.08d397fb@ws>
-        <CADXXWGw-8uDqeXSdjkwmBfK4-OiN5Wk7q3k2yPvzFiF3uzYmzQ@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: [PATCH 0/2] Use new incompat feature BG_TREE to hugely reduce mount time
+Date:   Wed,  2 Jan 2019 13:29:43 +0800
+Message-Id: <20190102052945.16325-1-wqu@suse.com>
+X-Mailer: git-send-email 2.20.1
+MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Complaints-To: usenet@blaine.gmane.org
-User-Agent: Pan/0.146 (Hic habitat felicitas; e65ba1502)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Jesse Emeth posted on Sun, 30 Dec 2018 16:58:12 +0800 as excerpted:
+This patchset can be fetched from:
+https://github.com/adam900710/linux/tree/bg_tree
+Which is based on v4.20-rc1 tag.
 
-> Hi Duncan
-> 
-> The backup is irrelevant in this case. I have a backup of this
-> particular problem.
-> I've had BTRFS on my OS system blow up several times.
-> There are several snapshots of this within the subvolume.
-> However, such snapshots are not helpful unless they are snapshots
-> copied elsewhere with restore/rsync etc.
+This patchset will hugely reduce mount time of large fs by putting all
+block group items into its own tree.
 
-How can backups and snapshots not be helpful in terms of a problem where 
-you'd be using undelete?  Undelete implies the filesystem is fine and 
-that you're just trying to get a few files that you mistakenly deleted 
-back, which in fact was the claim, and both backups and snapshots should 
-allow you to do just that, get your deleted files back.
+The old behavior will try to read out all block group items at mount
+time, however due to the key of block group items are scattered across
+tons of extent items, we must call btrfs_search_slot() for each block
+group.
 
-> I had spoken to someone expressing my concerns with BTRFS on IRC.
-> He wanted me to present this so that such problems could be rectified.
-> I also wanted to learn more about BTRFS to see if my determinations
-> about its inadequacies were incorrect.
-> 
-> Thus I want to follow this through to see if what is actually a very
-> very small problem related to just a non essential small Firefox cache
-> directory can actually be fixed.
-> At present this very very small problem brings down the entire volume
-> and all subvolumes with no way to mount any of it rw or easily fix the
-> issue.
-> That is not sane for such a small issue.
+It works fine for small fs, but when number of block groups goes beyond
+200, such tree search will become a random read, causing obvious slow
+down.
 
-That's not a file undelete issue.  That's an entire filesystem issue.  
-Quite a different beast, and not one that I directly addressed in my 
-reply (altho the data value vs. backups stuff applies to fat-fingering 
-such as mistaken deletes, filesystem problems, hardware problems, and 
-natural disasters, all four), because both the title and the content 
-suggested a file undelete issue, which /was/ addressed.
+On the other hand, btrfs_read_chunk_tree() is still very fast, since we
+put CHUNK_ITEMS into their own tree and package them next to each other.
+
+
+Following this idea, we could do the same thing for block group items,
+so instead of triggering btrfs_search_slot() for each block group, we
+just call btrfs_next_item() and under most case we could finish in
+memory, and hugely speed up mount (see BENCHMARK below).
+
+The only disadvantage is, this method introduce an incompatible feature,
+so existing fs can't use this feature directly.
+Either specify it at mkfs time, or use btrfs-progs offline convert tool
+(*).
+
+*: Mkfs and convert tool are doing the same work, however I haven't
+decide if I should put this feature to btrfstune.
+
+[[Benchmark]]
+Physical device:	HDD (7200RPM)
+Nodesize:		4K  (to bump up tree height)
+Used size:		250G
+Total size:		500G
+Extent data size:	1M
+
+All file extents on disk is in 1M size, ensured by using fallocate.
+
+Without patchset:
+Use ftrace function graph:
+
+  3)               |  open_ctree [btrfs]() {
+  3)               |    btrfs_read_chunk_tree [btrfs]() {
+  3) * 69033.31 us |    }
+  3)               |    btrfs_verify_dev_extents [btrfs]() {
+  3) * 90376.15 us |    }
+  3)               |    btrfs_read_block_groups [btrfs]() {
+  2) $ 2733853 us  |    } /* btrfs_read_block_groups [btrfs] */
+  2) $ 3168384 us  |  } /* open_ctree [btrfs] */
+
+ btrfs_read_block_groups() takes 87% of the total mount time,
+
+With patchset, and use -O bg-tree mkfs option:
+  7)               |  open_ctree [btrfs]() {
+  7)               |    btrfs_read_chunk_tree [btrfs]() {
+  7) # 2448.562 us |    }
+  7)               |    btrfs_verify_dev_extents [btrfs]() {
+  7) * 19802.02 us |    }
+  7)               |    btrfs_read_block_groups [btrfs]() {
+  7) # 8610.397 us |    }
+  7) @ 113498.6 us |  }
+
+  open_ctree() time is only 3% of original mount time.
+  And btrfs_read_block_groups() only takes 7.6% of total open_ctree()
+  execution time.
+
+Changelog:
+RFC->v1:
+ - Fix memory leak for fs_info->bg_root at module unload time.
+ - Add sysfs features interface.
+ - Testing shows no regression, so no RFC tag now.
+
+Qu Wenruo (2):
+  btrfs: Refactor btrfs_read_block_groups()
+  btrfs: Introduce new incompat feature, BG_TREE
+
+ fs/btrfs/ctree.h                |   5 +-
+ fs/btrfs/disk-io.c              |  13 ++
+ fs/btrfs/extent-tree.c          | 300 ++++++++++++++++++++------------
+ fs/btrfs/sysfs.c                |   2 +
+ include/uapi/linux/btrfs.h      |   1 +
+ include/uapi/linux/btrfs_tree.h |   3 +
+ 6 files changed, 208 insertions(+), 116 deletions(-)
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+2.20.1
 

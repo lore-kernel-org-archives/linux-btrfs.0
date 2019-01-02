@@ -2,270 +2,117 @@ Return-Path: <SRS0=VtQK=PK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8F72EC43387
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 15:27:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2F36EC43387
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 16:00:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5E710218CD
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 15:27:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0687C2080A
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 16:00:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729831AbfABP1Q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 2 Jan 2019 10:27:16 -0500
-Received: from mx2.suse.de ([195.135.220.15]:57846 "EHLO mx1.suse.de"
+        id S1729511AbfABQAy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 2 Jan 2019 11:00:54 -0500
+Received: from mx2.suse.de ([195.135.220.15]:33236 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729505AbfABP1Q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 2 Jan 2019 10:27:16 -0500
+        id S1729042AbfABQAx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 2 Jan 2019 11:00:53 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 3657EAEAD;
-        Wed,  2 Jan 2019 15:27:13 +0000 (UTC)
-Subject: Re: [PATCH] btrfs-progs: Update backup roots when writing super
- blocks
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 26393AF53;
+        Wed,  2 Jan 2019 16:00:52 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 0D86EDA781; Wed,  2 Jan 2019 17:00:22 +0100 (CET)
+Date:   Wed, 2 Jan 2019 17:00:22 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH RESEND v12] btrfs: introduce feature to forget a btrfs
+ device
+Message-ID: <20190102160022.GW23615@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
         linux-btrfs@vger.kernel.org
-References: <20181225052845.26322-1-wqu@suse.com>
- <d50be952-a062-5a44-c8f8-48b4077bb441@suse.com>
- <e05d3d59-a6ad-b349-7025-5240b782c846@gmx.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <66087c64-e575-3a78-15d4-84cc3caeabe2@suse.com>
-Date:   Wed, 2 Jan 2019 17:27:12 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+References: <1546408172-5193-1-git-send-email-anand.jain@oracle.com>
+ <1546408172-5193-2-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <e05d3d59-a6ad-b349-7025-5240b782c846@gmx.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <1546408172-5193-2-git-send-email-anand.jain@oracle.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Wed, Jan 02, 2019 at 01:49:31PM +0800, Anand Jain wrote:
+> Support for a new command 'btrfs dev forget [dev]' is proposed here
+> to undo the effects of 'btrfs dev scan [dev]'. For this purpose
+> this patch proposes to use ioctl #5 as it was empty.
+> 	IOW(BTRFS_IOCTL_MAGIC, 5, ..)
+> This patch adds new ioctl BTRFS_IOC_FORGET_DEV which can be sent from
+> the /dev/btrfs-control to forget one or all devices, (devices which are
+> not mounted) from the btrfs kernel.
+> 
+> The argument it takes is struct btrfs_ioctl_vol_args, and ::name can be
+> set to specify the device path. And all unmounted devices can be removed
+> from the kernel if no device path is provided.
+> 
+> Again, the devices are removed only if the relevant fsid aren't mounted.
+> 
+> This new cli can provide..
+>  . Release of unwanted btrfs_fs_devices and btrfs_devices memory if the
+>    device is not going to be mounted.
+>  . Ability to mount the device in degraded mode when one of the other
+>    device is corrupted like in split brain raid1.
+>  . Running test cases which requires btrfs.ko-reload if the rootfs
+>    is btrfs.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+> v11->v12: fix coding style add spacing before after ":".
+> v1->v11: Pls ref to the cover-letter. (sorry about that).
+> 
+>  fs/btrfs/super.c           | 3 +++
+>  fs/btrfs/volumes.c         | 9 +++++++++
+>  fs/btrfs/volumes.h         | 1 +
+>  include/uapi/linux/btrfs.h | 2 ++
+>  4 files changed, 15 insertions(+)
+> 
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index d3c6bbc0aa3a..eba2966913ae 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -2247,6 +2247,9 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
+>  		ret = PTR_ERR_OR_ZERO(device);
+>  		mutex_unlock(&uuid_mutex);
+>  		break;
+> +	case BTRFS_IOC_FORGET_DEV:
+> +		ret = btrfs_forget_devices(vol->name);
+> +		break;
+>  	case BTRFS_IOC_DEVICES_READY:
+>  		mutex_lock(&uuid_mutex);
+>  		device = btrfs_scan_one_device(vol->name, FMODE_READ,
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 8e36cbb355df..48415a9edd46 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -1397,6 +1397,15 @@ static int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
+>  	return 0;
+>  }
+>  
+> +int btrfs_forget_devices(const char *path)
+> +{
+> +	mutex_lock(&uuid_mutex);
+> +	btrfs_free_stale_devices(strlen(path) ? path : NULL, NULL);
+> +	mutex_unlock(&uuid_mutex);
+> +
+> +	return 0;
 
+I think this should reflect the status of the operation. The ioctl
+caller has no information about success/error. Eg. an invalid device
+path passed could return -ENOENT, 0 if it was released and 1 if not.
 
-On 2.01.19 г. 12:08 ч., Qu Wenruo wrote:
-> 
-> 
-> On 2019/1/2 下午4:57, Nikolay Borisov wrote:
->>
->>
->> On 25.12.18 г. 7:28 ч., Qu Wenruo wrote:
->>> The code is mostly ported from kernel with minimal change.
->>>
->>> Since btrfs-progs doesn't support replaying log, there is some code
->>> unnecessary for btrfs-progs, but to keep the code the same, that
->>> unnecessary code is kept as it.
->>>
->>> Now "btrfs check --repair" will update backup roots correctly.
->>>
->>> Signed-off-by: Qu Wenruo <wqu@suse.com>
->>> ---
->>>  disk-io.c | 78 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
->>>  1 file changed, 78 insertions(+)
->>>
->>> diff --git a/disk-io.c b/disk-io.c
->>> index 133835a4d063..f28a6b526391 100644
->>> --- a/disk-io.c
->>> +++ b/disk-io.c
->>> @@ -1621,6 +1621,83 @@ write_err:
->>>  	return ret;
->>>  }
->>>  
->>> +/*
->>> + * copy all the root pointers into the super backup array.
->>> + * this will bump the backup pointer by one when it is
->>> + * done
->>> + */
->>> +static void backup_super_roots(struct btrfs_fs_info *info)
->>> +{
->>> +	struct btrfs_root_backup *root_backup;
->>> +	int next_backup;
->>> +	int last_backup;
->>> +
->>> +	last_backup = find_best_backup_root(info->super_copy);
->>
->> Slightly offtopic: but find_best_backup_root only partially resembles
->> it's kernel counterpart - find_newest_super_backup. And it's missing the
->> code for handling wraparound. So in kernel space if the newest root is
->> at index 3 and index 0 backup also has the same gen then we switch the
->> index to 0, why is this needed?
-> 
-> I'm not sure either.
-> 
-> IIRC kernel shouldn't create two backup roots with the same gen.
-
-So I heard back from Chris, his original code could have created
-duplicates but since fed3b381145e ("Btrfs: do not backup tree roots when
-fsync") this is no longer the case. The overflow handling should have
-been removed as part of fed3b381145e but it didn't. So it makes sense to
-actually remove it in a future patch, perhaps when the progs and kernel
-versions are unified.
-
-> 
->> In any case I think
->> 'find_best_backup_root' in progs should be renamed to
->> 'find_newest_super_backup' and copied from kernel space.
->>
->>> +	next_backup = (last_backup + 1) % BTRFS_NUM_BACKUP_ROOTS;
->>
->> This logic is different than the kernel one which does:
->> last_backup = (next_backup + BTRFS_NUM_BACKUP_ROOTS - 1) %
->>                 BTRFS_NUM_BACKUP_ROOTS;
->>
->> So in the kernel when info->backup_root_index == 0 then the newest
->> backup root is going to be written at position 3, the next one in pos 1,
->> the next in pos 2 and so on. OTOH in userspace we might potentially
->> start writing at 1 (which doesn't seem problematic per se). So why the
->> difference in logic?
-> 
-> The logic is the same, for kernel it's 'last_backup' which should, and
-> is, going backward one slot.
-> 
-> And the next one is still written to next slot.
-> 
-> Just as the dump super shows:
-> $ btrfs ins dump-super -f /dev/data/btrfs | grep -A1 "backup "
-> 	backup 0:
-> 		backup_tree_root:	30818304	gen: 10	level: 0
-> --
-> 	backup 1:
-> 		backup_tree_root:	30621696	gen: 7	level: 0
-> --
-> 	backup 2:
-> 		backup_tree_root:	30703616	gen: 8	level: 0
-> --
-> 	backup 3:
-> 		backup_tree_root:	30785536	gen: 9	level: 0
-> 
-> So the logic should be the same.
-> 
-> Just simpler implementation in btrfs-progs, without
-> fs_info->backup_root_index.
-> 
-> Thanks,
-> Qu
-> 
->>
->>> +
->>> +	/* just overwrite the last backup if we're at the same generation */
->>> +	root_backup = info->super_copy->super_roots + last_backup;
->>> +	if (btrfs_backup_tree_root_gen(root_backup) ==
->>> +	    btrfs_header_generation(info->tree_root->node))
->>> +		next_backup = last_backup;
->>> +
->>> +	root_backup = info->super_copy->super_roots + next_backup;
->>> +
->>> +	/*
->>> +	 * make sure all of our padding and empty slots get zero filled
->>> +	 * regardless of which ones we use today
->>> +	 */
->>> +	memset(root_backup, 0, sizeof(*root_backup));
->>> +	btrfs_set_backup_tree_root(root_backup, info->tree_root->node->start);
->>> +	btrfs_set_backup_tree_root_gen(root_backup,
->>> +			       btrfs_header_generation(info->tree_root->node));
->>> +	btrfs_set_backup_tree_root_level(root_backup,
->>> +			       btrfs_header_level(info->tree_root->node));
->>> +
->>> +	btrfs_set_backup_chunk_root(root_backup, info->chunk_root->node->start);
->>> +	btrfs_set_backup_chunk_root_gen(root_backup,
->>> +			       btrfs_header_generation(info->chunk_root->node));
->>> +	btrfs_set_backup_chunk_root_level(root_backup,
->>> +			       btrfs_header_level(info->chunk_root->node));
->>> +
->>> +	btrfs_set_backup_extent_root(root_backup, info->extent_root->node->start);
->>> +	btrfs_set_backup_extent_root_gen(root_backup,
->>> +			       btrfs_header_generation(info->extent_root->node));
->>> +	btrfs_set_backup_extent_root_level(root_backup,
->>> +			       btrfs_header_level(info->extent_root->node));
->>> +	/*
->>> +	 * we might commit during log recovery, which happens before we set
->>> +	 * the fs_root.  Make sure it is valid before we fill it in.
->>> +	 */
->>> +	if (info->fs_root && info->fs_root->node) {
->>> +		btrfs_set_backup_fs_root(root_backup,
->>> +					 info->fs_root->node->start);
->>> +		btrfs_set_backup_fs_root_gen(root_backup,
->>> +			       btrfs_header_generation(info->fs_root->node));
->>> +		btrfs_set_backup_fs_root_level(root_backup,
->>> +			       btrfs_header_level(info->fs_root->node));
->>> +	}
->>> +
->>> +	btrfs_set_backup_dev_root(root_backup, info->dev_root->node->start);
->>> +	btrfs_set_backup_dev_root_gen(root_backup,
->>> +			       btrfs_header_generation(info->dev_root->node));
->>> +	btrfs_set_backup_dev_root_level(root_backup,
->>> +				       btrfs_header_level(info->dev_root->node));
->>> +
->>> +	btrfs_set_backup_csum_root(root_backup, info->csum_root->node->start);
->>> +	btrfs_set_backup_csum_root_gen(root_backup,
->>> +			       btrfs_header_generation(info->csum_root->node));
->>> +	btrfs_set_backup_csum_root_level(root_backup,
->>> +			       btrfs_header_level(info->csum_root->node));
->>> +
->>> +	btrfs_set_backup_total_bytes(root_backup,
->>> +			     btrfs_super_total_bytes(info->super_copy));
->>> +	btrfs_set_backup_bytes_used(root_backup,
->>> +			     btrfs_super_bytes_used(info->super_copy));
->>> +	btrfs_set_backup_num_devices(root_backup,
->>> +			     btrfs_super_num_devices(info->super_copy));
->>> +};
->>> +
->>>  int write_all_supers(struct btrfs_fs_info *fs_info)
->>>  {
->>>  	struct list_head *head = &fs_info->fs_devices->devices;
->>> @@ -1630,6 +1707,7 @@ int write_all_supers(struct btrfs_fs_info *fs_info)
->>>  	int ret;
->>>  	u64 flags;
->>>  
->>> +	backup_super_roots(fs_info);
->>>  	sb = fs_info->super_copy;
->>>  	dev_item = &sb->dev_item;
->>>  	list_for_each_entry(dev, head, dev_list) {
->>>
-> 
+In case of all devices, it's probably ok to return 0.

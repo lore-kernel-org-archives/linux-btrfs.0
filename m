@@ -3,29 +3,29 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 82C07C43387
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 08:57:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 477BBC43387
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 09:13:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 474A621871
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 08:57:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 068552171F
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 09:13:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728973AbfABI5v (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 2 Jan 2019 03:57:51 -0500
-Received: from mx2.suse.de ([195.135.220.15]:35010 "EHLO mx1.suse.de"
+        id S1728612AbfABJNP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 2 Jan 2019 04:13:15 -0500
+Received: from mx2.suse.de ([195.135.220.15]:36560 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728915AbfABI5u (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 2 Jan 2019 03:57:50 -0500
+        id S1726782AbfABJNP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 2 Jan 2019 04:13:15 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 7B618AD9C
-        for <linux-btrfs@vger.kernel.org>; Wed,  2 Jan 2019 08:57:47 +0000 (UTC)
-Subject: Re: [PATCH] btrfs-progs: Update backup roots when writing super
- blocks
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 7F503AEB3
+        for <linux-btrfs@vger.kernel.org>; Wed,  2 Jan 2019 09:13:11 +0000 (UTC)
+Subject: Re: [PATCH 3/3] btrfs-progs: Create uuid tree with proper contents
 To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20181225052845.26322-1-wqu@suse.com>
+References: <20181227071333.10964-1-wqu@suse.com>
+ <20181227071333.10964-4-wqu@suse.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -70,12 +70,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <d50be952-a062-5a44-c8f8-48b4077bb441@suse.com>
-Date:   Wed, 2 Jan 2019 10:57:46 +0200
+Message-ID: <ac1e6b87-f4e3-36c0-af1a-72e3b623c80a@suse.com>
+Date:   Wed, 2 Jan 2019 11:13:10 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181225052845.26322-1-wqu@suse.com>
+In-Reply-To: <20181227071333.10964-4-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -86,134 +86,297 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 25.12.18 г. 7:28 ч., Qu Wenruo wrote:
-> The code is mostly ported from kernel with minimal change.
+On 27.12.18 г. 9:13 ч., Qu Wenruo wrote:
+> Commit 2a496a5b8b74 ("btrfs-progs: mkfs: precreate the uuid tree")
+> creates uuid tree at mkfs time.
 > 
-> Since btrfs-progs doesn't support replaying log, there is some code
-> unnecessary for btrfs-progs, but to keep the code the same, that
-> unnecessary code is kept as it.
+> However it doesn't populate uuid tree correctly nor just create an empty
+> root.
+> It uses create_tree(), which just copies the content of fs root,
+> containing meaningless INODE_ITEM:
 > 
-> Now "btrfs check --repair" will update backup roots correctly.
+> v4.15 mkfs (no uuid tree creation) + kernel mount:
+>   uuid tree key (UUID_TREE ROOT_ITEM 0)
+>   leaf 30572544 items 1 free space 16250 generation 7 owner UUID_TREE
+>   leaf 30572544 flags 0x1(WRITTEN) backref revision 1
+>   fs uuid 33ecddef-fc86-481a-93ce-846b01c11376
+>   chunk uuid 9e58f646-b0da-43ca-9c7d-8bbe3e120246
+> 	item 0 key (0x92457c59d31491be UUID_KEY_SUBVOL 0xef908b5e79aa76a1) itemoff 16275 itemsize 8
+> 		subvol_id 5
 > 
+> v4.19.1 mkfs (incorrect one), no kernel mount:
+>   uuid tree key (UUID_TREE ROOT_ITEM 0)
+>   leaf 30507008 items 2 free space 16061 generation 4 owner UUID_TREE
+>   leaf 30507008 flags 0x1(WRITTEN) backref revision 1
+>   fs uuid 162f5333-9b5d-4217-877c-ddaeaa79398e
+>   chunk uuid 7bc2c5c6-a6d2-4eec-a513-142b549c6541
+> 	item 0 key (256 INODE_ITEM 0) itemoff 16123 itemsize 160
+> 		generation 3 transid 0 size 0 nbytes 16384
+> 		block group 0 mode 40755 links 1 uid 0 gid 0 rdev 0
+> 		sequence 0 flags 0x0(none)
+> 	item 1 key (256 INODE_REF 256) itemoff 16111 itemsize 12
+> 		index 0 namelen 2 name: ..
+> 
+> This patchset will fix it by populuating uuid tree properly:
+> (NOTE: due to tree-checker, kernel doesn't accept empty uuid tree, so we
+>  can only fix it by populating uuid tree correctly)
+> 
+> w/ this patchset, no kernel mount:
+>   uuid tree key (UUID_TREE ROOT_ITEM 0)
+>   leaf 30507008 items 1 free space 16250 generation 4 owner UUID_TREE
+>   leaf 30507008 flags 0x1(WRITTEN) backref revision 1
+>   fs uuid ae53079e-dbbc-409b-a565-5326c7b27731
+>   chunk uuid b5fb1bea-f20d-4af1-80f8-6ca3f0038d67
+> 	item 0 key (0x334ba6b032d89c07 UUID_KEY_SUBVOL 0x86cde09cb78bcca0) itemoff 16275 itemsize 8
+> 		subvol_id 5
+> 
+> For kernel, except tree-checker needs an non-empty uuid tree, both all
+> above behavior won't cause problem, but it's always better to keep a
+> good standardized behavior.
+> 
+> Furthermore, to avoid such problem from happening again, rename the
+> function create_tree() to create_empty_tree() and create_inode_tree(),
+> without an @root parameter to avoid such problem.
+> 
+> Fixes: 2a496a5b8b74 ("btrfs-progs: mkfs: precreate the uuid tree")
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
 > ---
->  disk-io.c | 78 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
->  1 file changed, 78 insertions(+)
+>  disk-io.c     |   4 ++
+>  mkfs/common.c | 103 ++++++++++++++++++++++++++++++++++++++++++++++++++
+>  mkfs/common.h |   3 ++
+>  mkfs/main.c   |  36 +-----------------
+>  4 files changed, 112 insertions(+), 34 deletions(-)
 > 
 > diff --git a/disk-io.c b/disk-io.c
-> index 133835a4d063..f28a6b526391 100644
+> index 5fafa144c0d3..2cb7f2097fc9 100644
 > --- a/disk-io.c
 > +++ b/disk-io.c
-> @@ -1621,6 +1621,83 @@ write_err:
->  	return ret;
+> @@ -694,6 +694,8 @@ void btrfs_free_fs_info(struct btrfs_fs_info *fs_info)
+>  {
+>  	if (fs_info->quota_root)
+>  		free(fs_info->quota_root);
+> +	if (fs_info->uuid_root)
+> +		free(fs_info->uuid_root);
+>  
+>  	free(fs_info->tree_root);
+>  	free(fs_info->extent_root);
+> @@ -964,6 +966,8 @@ void btrfs_release_all_roots(struct btrfs_fs_info *fs_info)
+>  		free_extent_buffer(fs_info->log_root_tree->node);
+>  	if (fs_info->chunk_root)
+>  		free_extent_buffer(fs_info->chunk_root->node);
+> +	if (fs_info->uuid_root)
+> +		free_extent_buffer(fs_info->uuid_root->node);
+>  }
+>  
+>  static void free_map_lookup(struct cache_extent *ce)
+> diff --git a/mkfs/common.c b/mkfs/common.c
+> index f7e3badcf2b9..1f5e1d03a6e3 100644
+> --- a/mkfs/common.c
+> +++ b/mkfs/common.c
+> @@ -23,6 +23,7 @@
+>  #include "disk-io.h"
+>  #include "volumes.h"
+>  #include "utils.h"
+> +#include "transaction.h"
+>  #include "mkfs/common.h"
+>  
+>  static u64 reference_root_table[] = {
+> @@ -822,4 +823,106 @@ int test_minimum_size(const char *file, u64 min_dev_size)
+>  	return 0;
 >  }
 >  
 > +/*
-> + * copy all the root pointers into the super backup array.
-> + * this will bump the backup pointer by one when it is
-> + * done
+> + * Create a tree with all its content copied from @source
+> + *
+> + * Caller must ensure @source only has one leaf.
 > + */
-> +static void backup_super_roots(struct btrfs_fs_info *info)
+> +static int __create_tree(struct btrfs_trans_handle *trans,
+> +			 struct btrfs_root *root, u64 objectid)
 > +{
-> +	struct btrfs_root_backup *root_backup;
-> +	int next_backup;
-> +	int last_backup;
+> +	struct btrfs_fs_info *fs_info = trans->fs_info;
+> +	struct btrfs_key location;
+> +	struct btrfs_root_item root_item;
+> +	struct extent_buffer *tmp;
+> +	u8 uuid[BTRFS_UUID_SIZE] = {0};
+> +	int ret;
 > +
-> +	last_backup = find_best_backup_root(info->super_copy);
+> +	ASSERT(btrfs_header_level(root->node) == 0);
+> +
+> +	ret = btrfs_copy_root(trans, root, root->node, &tmp, objectid);
+> +	if (ret)
+> +		return ret;
+> +
+> +	memcpy(&root_item, &root->root_item, sizeof(root_item));
+> +	btrfs_set_root_bytenr(&root_item, tmp->start);
+> +	btrfs_set_root_level(&root_item, btrfs_header_level(tmp));
+> +	btrfs_set_root_generation(&root_item, trans->transid);
+> +	/* clear uuid and o/ctime of source tree */
+> +	memcpy(root_item.uuid, uuid, BTRFS_UUID_SIZE);
+> +	btrfs_set_stack_timespec_sec(&root_item.otime, 0);
+> +	btrfs_set_stack_timespec_sec(&root_item.ctime, 0);
+> +	free_extent_buffer(tmp);
+> +
+> +	location.objectid = objectid;
+> +	location.type = BTRFS_ROOT_ITEM_KEY;
+> +	location.offset = 0;
+> +	ret = btrfs_insert_root(trans, fs_info->tree_root,
+> +				&location, &root_item);
+> +
+> +	return ret;
+> +}
+> +
+> +/*
+> + * Create an *EMPTY* tree
+> + *
+> + * Caller must ensure at the time of calling, csum tree is still empty
+> + */
+> +static int create_empty_tree(struct btrfs_trans_handle *trans, u64 objectid)
+> +{
+> +	struct btrfs_root *csum_root = trans->fs_info->csum_root;
+> +
+> +	ASSERT(btrfs_header_level(csum_root->node) == 0 &&
+> +	       btrfs_header_nritems(csum_root->node) == 0);
+> +	return __create_tree(trans, csum_root, objectid);
 
-Slightly offtopic: but find_best_backup_root only partially resembles
-it's kernel counterpart - find_newest_super_backup. And it's missing the
-code for handling wraparound. So in kernel space if the newest root is
-at index 3 and index 0 backup also has the same gen then we switch the
-index to 0, why is this needed? In any case I think
-'find_best_backup_root' in progs should be renamed to
-'find_newest_super_backup' and copied from kernel space.
+nit: IMO this approach (of using a tree as a prototype) is rather bogus
+since you exploit the fact that an arbitrary tree (in this case csum)
+*should* be empty and so you use it as the source for another empty
+tree. Analogically, further down you exploit the fact that the fs_tree
+has a default inode and copy that.
 
-> +	next_backup = (last_backup + 1) % BTRFS_NUM_BACKUP_ROOTS;
+I'd prefer it if every tree was created explicitly so that in the future
+when its layout might change we touch the respective function. This is
+not critical but it's something to think about.
 
-This logic is different than the kernel one which does:
-last_backup = (next_backup + BTRFS_NUM_BACKUP_ROOTS - 1) %
-                BTRFS_NUM_BACKUP_ROOTS;
-
-So in the kernel when info->backup_root_index == 0 then the newest
-backup root is going to be written at position 3, the next one in pos 1,
-the next in pos 2 and so on. OTOH in userspace we might potentially
-start writing at 1 (which doesn't seem problematic per se). So why the
-difference in logic?
-
-> +
-> +	/* just overwrite the last backup if we're at the same generation */
-> +	root_backup = info->super_copy->super_roots + last_backup;
-> +	if (btrfs_backup_tree_root_gen(root_backup) ==
-> +	    btrfs_header_generation(info->tree_root->node))
-> +		next_backup = last_backup;
-> +
-> +	root_backup = info->super_copy->super_roots + next_backup;
-> +
-> +	/*
-> +	 * make sure all of our padding and empty slots get zero filled
-> +	 * regardless of which ones we use today
-> +	 */
-> +	memset(root_backup, 0, sizeof(*root_backup));
-> +	btrfs_set_backup_tree_root(root_backup, info->tree_root->node->start);
-> +	btrfs_set_backup_tree_root_gen(root_backup,
-> +			       btrfs_header_generation(info->tree_root->node));
-> +	btrfs_set_backup_tree_root_level(root_backup,
-> +			       btrfs_header_level(info->tree_root->node));
-> +
-> +	btrfs_set_backup_chunk_root(root_backup, info->chunk_root->node->start);
-> +	btrfs_set_backup_chunk_root_gen(root_backup,
-> +			       btrfs_header_generation(info->chunk_root->node));
-> +	btrfs_set_backup_chunk_root_level(root_backup,
-> +			       btrfs_header_level(info->chunk_root->node));
-> +
-> +	btrfs_set_backup_extent_root(root_backup, info->extent_root->node->start);
-> +	btrfs_set_backup_extent_root_gen(root_backup,
-> +			       btrfs_header_generation(info->extent_root->node));
-> +	btrfs_set_backup_extent_root_level(root_backup,
-> +			       btrfs_header_level(info->extent_root->node));
-> +	/*
-> +	 * we might commit during log recovery, which happens before we set
-> +	 * the fs_root.  Make sure it is valid before we fill it in.
-> +	 */
-> +	if (info->fs_root && info->fs_root->node) {
-> +		btrfs_set_backup_fs_root(root_backup,
-> +					 info->fs_root->node->start);
-> +		btrfs_set_backup_fs_root_gen(root_backup,
-> +			       btrfs_header_generation(info->fs_root->node));
-> +		btrfs_set_backup_fs_root_level(root_backup,
-> +			       btrfs_header_level(info->fs_root->node));
-> +	}
-> +
-> +	btrfs_set_backup_dev_root(root_backup, info->dev_root->node->start);
-> +	btrfs_set_backup_dev_root_gen(root_backup,
-> +			       btrfs_header_generation(info->dev_root->node));
-> +	btrfs_set_backup_dev_root_level(root_backup,
-> +				       btrfs_header_level(info->dev_root->node));
-> +
-> +	btrfs_set_backup_csum_root(root_backup, info->csum_root->node->start);
-> +	btrfs_set_backup_csum_root_gen(root_backup,
-> +			       btrfs_header_generation(info->csum_root->node));
-> +	btrfs_set_backup_csum_root_level(root_backup,
-> +			       btrfs_header_level(info->csum_root->node));
-> +
-> +	btrfs_set_backup_total_bytes(root_backup,
-> +			     btrfs_super_total_bytes(info->super_copy));
-> +	btrfs_set_backup_bytes_used(root_backup,
-> +			     btrfs_super_bytes_used(info->super_copy));
-> +	btrfs_set_backup_num_devices(root_backup,
-> +			     btrfs_super_num_devices(info->super_copy));
-> +};
-> +
->  int write_all_supers(struct btrfs_fs_info *fs_info)
->  {
->  	struct list_head *head = &fs_info->fs_devices->devices;
-> @@ -1630,6 +1707,7 @@ int write_all_supers(struct btrfs_fs_info *fs_info)
->  	int ret;
->  	u64 flags;
+> +}
 >  
-> +	backup_super_roots(fs_info);
->  	sb = fs_info->super_copy;
->  	dev_item = &sb->dev_item;
->  	list_for_each_entry(dev, head, dev_list) {
+> +/*
+> + * Create a tree containing an root inode
+> + *
+> + * Caller must ensure at the time of calling, fs tree only contains 2 items
+> + * (one for INODE_ITEM and one for INODE_REF)
+> + */
+> +int create_inode_tree(struct btrfs_trans_handle *trans, u64 objectid)
+
+This function is really misnamed, since it's creating the
+DATA_RELOC_TREE, yet it's called create_inode_tree. Why not simply
+create_data_reloc_tree or are you planning on using this function more
+than once?
+
+> +{
+> +	struct btrfs_root *fs_root = trans->fs_info->fs_root;
+> +
+> +	ASSERT(btrfs_header_level(fs_root->node) == 0 &&
+> +	       btrfs_header_nritems(fs_root->node) == 2);
+> +	return __create_tree(trans, fs_root, objectid);
+> +}
+> +
+> +int create_uuid_tree(struct btrfs_trans_handle *trans)
+> +{
+> +	struct btrfs_fs_info *fs_info = trans->fs_info;
+> +	struct btrfs_root *uuid_root = fs_info->uuid_root;
+> +	struct btrfs_key key;
+> +	int ret;
+> +
+> +	if (!uuid_root) {
+
+Isn't this always true,  so the conditional here is redundant?
+
+> +		ret = create_empty_tree(trans, BTRFS_UUID_TREE_OBJECTID);
+> +		if (ret < 0) {
+> +			errno = -ret;
+> +			error("failed to create uuid root: %m");
+> +			return ret;
+> +		}
+> +		key.objectid = BTRFS_UUID_TREE_OBJECTID;
+> +		key.type = BTRFS_ROOT_ITEM_KEY;
+> +		key.offset = 0;
+> +		uuid_root = btrfs_read_fs_root_no_cache(fs_info, &key);
+> +		if (IS_ERR(uuid_root)) {
+> +			errno = -PTR_ERR(uuid_root);
+> +			error("failed to read uuid root: %m");
+> +			return PTR_ERR(uuid_root);
+> +		}
+> +		fs_info->uuid_root = uuid_root;
+> +	}
+> +	ret = btrfs_uuid_tree_add(trans, fs_info->fs_root->root_item.uuid,
+> +				  BTRFS_UUID_KEY_SUBVOL,
+> +				  fs_info->fs_root->root_key.objectid);
+> +	if (ret < 0) {
+> +		errno = -ret;
+> +		error("failed to add uuid tree entry for fs root: %m");
+> +	}
+> +	return ret;
+> +}
+> diff --git a/mkfs/common.h b/mkfs/common.h
+> index 28912906d0a9..adb5d561c38d 100644
+> --- a/mkfs/common.h
+> +++ b/mkfs/common.h
+> @@ -75,4 +75,7 @@ int test_num_disk_vs_raid(u64 metadata_profile, u64 data_profile,
+>  int test_status_for_mkfs(const char *file, bool force_overwrite);
+>  int test_dev_for_mkfs(const char *file, int force_overwrite);
+>  
+> +int create_uuid_tree(struct btrfs_trans_handle *trans);
+> +int create_inode_tree(struct btrfs_trans_handle *trans, u64 objectid);
+> +
+>  #endif
+> diff --git a/mkfs/main.c b/mkfs/main.c
+> index b6748f7fe853..ea3d1ae80e5e 100644
+> --- a/mkfs/main.c
+> +++ b/mkfs/main.c
+> @@ -309,38 +309,6 @@ static int create_raid_groups(struct btrfs_trans_handle *trans,
+>  	return ret;
+>  }
+>  
+> -static int create_tree(struct btrfs_trans_handle *trans,
+> -			struct btrfs_root *root, u64 objectid)
+> -{
+> -	struct btrfs_key location;
+> -	struct btrfs_root_item root_item;
+> -	struct extent_buffer *tmp;
+> -	u8 uuid[BTRFS_UUID_SIZE] = {0};
+> -	int ret;
+> -
+> -	ret = btrfs_copy_root(trans, root, root->node, &tmp, objectid);
+> -	if (ret)
+> -		return ret;
+> -
+> -	memcpy(&root_item, &root->root_item, sizeof(root_item));
+> -	btrfs_set_root_bytenr(&root_item, tmp->start);
+> -	btrfs_set_root_level(&root_item, btrfs_header_level(tmp));
+> -	btrfs_set_root_generation(&root_item, trans->transid);
+> -	/* clear uuid and o/ctime of source tree */
+> -	memcpy(root_item.uuid, uuid, BTRFS_UUID_SIZE);
+> -	btrfs_set_stack_timespec_sec(&root_item.otime, 0);
+> -	btrfs_set_stack_timespec_sec(&root_item.ctime, 0);
+> -	free_extent_buffer(tmp);
+> -
+> -	location.objectid = objectid;
+> -	location.type = BTRFS_ROOT_ITEM_KEY;
+> -	location.offset = 0;
+> -	ret = btrfs_insert_root(trans, root->fs_info->tree_root,
+> -				&location, &root_item);
+> -
+> -	return ret;
+> -}
+> -
+>  static void print_usage(int ret)
+>  {
+>  	printf("Usage: mkfs.btrfs [options] dev [ dev ... ]\n");
+> @@ -1203,13 +1171,13 @@ raid_groups:
+>  		goto out;
+>  	}
+>  
+> -	ret = create_tree(trans, root, BTRFS_DATA_RELOC_TREE_OBJECTID);
+> +	ret = create_inode_tree(trans, BTRFS_DATA_RELOC_TREE_OBJECTID);
+>  	if (ret) {
+>  		error("unable to create data reloc tree: %d", ret);
+>  		goto out;
+>  	}
+>  
+> -	ret = create_tree(trans, root, BTRFS_UUID_TREE_OBJECTID);
+> +	ret = create_uuid_tree(trans);
+>  	if (ret)
+>  		warning(
+>  	"unable to create uuid tree, will be created after mount: %d", ret);
 > 

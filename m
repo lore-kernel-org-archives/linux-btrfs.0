@@ -2,130 +2,270 @@ Return-Path: <SRS0=VtQK=PK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BC30CC43387
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 13:59:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8F72EC43387
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 15:27:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 816CC218CD
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 13:59:38 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="TsAkLI5i"
+	by mail.kernel.org (Postfix) with ESMTP id 5E710218CD
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Jan 2019 15:27:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729360AbfABN7g (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 2 Jan 2019 08:59:36 -0500
-Received: from mail-io1-f53.google.com ([209.85.166.53]:43399 "EHLO
-        mail-io1-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727827AbfABN7g (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Jan 2019 08:59:36 -0500
-Received: by mail-io1-f53.google.com with SMTP id b23so3618304ios.10
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Jan 2019 05:59:35 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=jCLpmvzD1DvFaJuHDkF47YbR2BuVeJT7AQFH0OOGCpg=;
-        b=TsAkLI5ityNfOVI2OxzdJFzeEOZe/kasgk0pMav1mQWdsCL4iv6/iGPoo0C8FTPZ8+
-         wpiC3NpJwf2A0WWmKrmd4tlCgGfGOuRgoqWorYK6Gfe36OWIHYO6hWNN1mS2/xhTSU6b
-         84kobGPCt2o9WWUoBNh/myBwCLNw3nyX2CKzunkjbtvIn/B/WayEbKH0NrtSyI0CWnRl
-         BzzlMcUpA5Kxt09u7UrS1FOfL/nOKx2Dl3x8FxoUroRYUllGgh/34qI2s+wU7kcRbhgs
-         sv2UxDt4dWjgkdUaGTsrnlqIEZtvkjF7lGP/3u+f3yjnLlow8r24zyWSVH6hHq3Lqvf/
-         tjIA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=jCLpmvzD1DvFaJuHDkF47YbR2BuVeJT7AQFH0OOGCpg=;
-        b=MwOrqpRsVdWJxYc60zSD7vxH7Rfm7cnavVXF9sI+CwnLTMIose9zrAlqoCJi5vYsTR
-         ZR3fZ8QI8LemcxuzPNn5zwhEtMpfJ61HxV1mLMmcSGdr4sfIvvx51eFZn9oS/gY0gRTr
-         jiqMf3+lPaMoHwtj0VhBlDslbdVbbytnoN1Y+4tXYx7OFeEYAw7FIPwTCpOTqLfX/OGJ
-         NPAAch+q0pn0lL0A3gyWeEdw6Vbj7smdSYk+rChmXEmv9PxDH2ql5nbrO0HqPAbuJ3GG
-         7HrlbBjoOH8WS1ZMXQVCa/aMoRNaluPEDgCnzzbwku0/oouL70/lBMpGnmj8Uc/UAwYi
-         GdQA==
-X-Gm-Message-State: AJcUukdG/IINamyXIWV6bNpjOHslKCIqOQwvhs/rQBdB4u0rAUDU4/II
-        illbnpojKgw+9mOpWLNp6WNMjz+IXIigxg==
-X-Google-Smtp-Source: ALg8bN5PGdFjlKiSp00IAjNoPz0lQ8YBJR3xWhrC6JDDRi160us1yLFS/Gwz9ZbQtsZrcGPrA7pZlg==
-X-Received: by 2002:a5e:c74d:: with SMTP id g13mr29770648iop.26.1546437574874;
-        Wed, 02 Jan 2019 05:59:34 -0800 (PST)
-Received: from [191.9.209.46] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
-        by smtp.gmail.com with ESMTPSA id x17sm23812267ioa.6.2019.01.02.05.59.32
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Wed, 02 Jan 2019 05:59:33 -0800 (PST)
-Subject: Re: compress-force not really forcing compression?
-To:     Adam Borowski <kilobyte@angband.pl>,
-        Paul Jones <paul@pauljones.id.au>
-Cc:     Nikolay Borisov <nborisov@suse.com>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        "devzero@web.de" <devzero@web.de>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <trinity-138fb9ef-e164-4c58-8ba8-04eaa9813254-1545234086993@3c-app-webde-bs26>
- <79977718-ac8f-3a62-529d-e9046c8066b2@gmx.com>
- <f527b243-4379-ec32-a6f2-3f04c72fb8d9@suse.com>
- <SYCPR01MB5086BDC3A10DC10383C12EFB9EBA0@SYCPR01MB5086.ausprd01.prod.outlook.com>
- <20181223061605.qrl5zsi36kpyltql@angband.pl>
-From:   "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <01b57072-9a85-76fd-ab9d-fc08f5b0e556@gmail.com>
-Date:   Wed, 2 Jan 2019 08:59:28 -0500
-User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
- Thunderbird/60.3.3
+        id S1729831AbfABP1Q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 2 Jan 2019 10:27:16 -0500
+Received: from mx2.suse.de ([195.135.220.15]:57846 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1729505AbfABP1Q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 2 Jan 2019 10:27:16 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 3657EAEAD;
+        Wed,  2 Jan 2019 15:27:13 +0000 (UTC)
+Subject: Re: [PATCH] btrfs-progs: Update backup roots when writing super
+ blocks
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20181225052845.26322-1-wqu@suse.com>
+ <d50be952-a062-5a44-c8f8-48b4077bb441@suse.com>
+ <e05d3d59-a6ad-b349-7025-5240b782c846@gmx.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <66087c64-e575-3a78-15d4-84cc3caeabe2@suse.com>
+Date:   Wed, 2 Jan 2019 17:27:12 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20181223061605.qrl5zsi36kpyltql@angband.pl>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <e05d3d59-a6ad-b349-7025-5240b782c846@gmx.com>
+Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 12/23/2018 1:16 AM, Adam Borowski wrote:
-> On Sun, Dec 23, 2018 at 12:24:02AM +0000, Paul Jones wrote:
->>> IMHO the more pertinent question is :
->>>
->>> If a file has portions which are not easily compressible does that imply all
->>> future writes are also incompressible. IMO no, so I think what will be prudent
->>> is remove FORCE_COMPRESS altogether and make the code act as if it's
->>> always on.
->>>
->>> Any opinions?
+
+
+On 2.01.19 г. 12:08 ч., Qu Wenruo wrote:
+> 
+> 
+> On 2019/1/2 下午4:57, Nikolay Borisov wrote:
 >>
 >>
->> That is a good idea.  If I turn on compression I would expect everything
->> to be compressed, except in cases where there is no size benefit.
+>> On 25.12.18 г. 7:28 ч., Qu Wenruo wrote:
+>>> The code is mostly ported from kernel with minimal change.
+>>>
+>>> Since btrfs-progs doesn't support replaying log, there is some code
+>>> unnecessary for btrfs-progs, but to keep the code the same, that
+>>> unnecessary code is kept as it.
+>>>
+>>> Now "btrfs check --repair" will update backup roots correctly.
+>>>
+>>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>>> ---
+>>>  disk-io.c | 78 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>>>  1 file changed, 78 insertions(+)
+>>>
+>>> diff --git a/disk-io.c b/disk-io.c
+>>> index 133835a4d063..f28a6b526391 100644
+>>> --- a/disk-io.c
+>>> +++ b/disk-io.c
+>>> @@ -1621,6 +1621,83 @@ write_err:
+>>>  	return ret;
+>>>  }
+>>>  
+>>> +/*
+>>> + * copy all the root pointers into the super backup array.
+>>> + * this will bump the backup pointer by one when it is
+>>> + * done
+>>> + */
+>>> +static void backup_super_roots(struct btrfs_fs_info *info)
+>>> +{
+>>> +	struct btrfs_root_backup *root_backup;
+>>> +	int next_backup;
+>>> +	int last_backup;
+>>> +
+>>> +	last_backup = find_best_backup_root(info->super_copy);
+>>
+>> Slightly offtopic: but find_best_backup_root only partially resembles
+>> it's kernel counterpart - find_newest_super_backup. And it's missing the
+>> code for handling wraparound. So in kernel space if the newest root is
+>> at index 3 and index 0 backup also has the same gen then we switch the
+>> index to 0, why is this needed?
 > 
-> I expect that the vast majority of files consist of blocks of similar
-> compressibility.  Thus, finding a block that fails to compress strongly
-> suggests other blocks are either incompressible as well or compress only
-> minimally.  Refusing to waste time, electricity and fragmentation in such
-> case is a good default, I think.
+> I'm not sure either.
 > 
-> But, if you believe this should be changed, there's an easy experiment you
-> can try: for all files on your filesystem, chop every file into 128KB pieces
-> and compress each of them with your chosen algorithm.  Noting the compressed
-> size of every block in a file that had at least one block fail to compress
-> would give us some data.
+> IIRC kernel shouldn't create two backup roots with the same gen.
 
-I would suggest looking at Windows DLL files installed as part of a Wine 
-setup as a potential candidate for this.  They tend to have very long 
-runs of null bytes scattered seemingly randomly throughout the file 
-(because hot patching, except you can't hot-patch DLL's reliably on 
-Windows) and use UTF-16 strings.  As a result, the actual machine code 
-generally doesn't compress well, but most of the rest of the file does. 
-Fixed-size preallocated VM disk images would be another good candidate, 
-just wipe the free space with zeroes from the VM before testing them.
+So I heard back from Chris, his original code could have created
+duplicates but since fed3b381145e ("Btrfs: do not backup tree roots when
+fsync") this is no longer the case. The overflow handling should have
+been removed as part of fed3b381145e but it didn't. So it makes sense to
+actually remove it in a future patch, perhaps when the progs and kernel
+versions are unified.
 
-Realistically though, I see a couple of issues with the default behavior:
-
-* There's no way for a regular user to figure out if a file actually is 
-transparently compressed or not.
-* Without editing the filesystem directly, there's no way to 
-preemptively set the bit in metadata that tells BTRFS to not try to 
-compress a file, and there's no way to reset it either.
-* The default behavior happens to be what `chattr +c` honors, which 
-leads to potentially unexpected behaviors some times (I, and most people 
-I know, would expect 'chattr +c' to behave like `compress-force`, not 
-`compress`).
+> 
+>> In any case I think
+>> 'find_best_backup_root' in progs should be renamed to
+>> 'find_newest_super_backup' and copied from kernel space.
+>>
+>>> +	next_backup = (last_backup + 1) % BTRFS_NUM_BACKUP_ROOTS;
+>>
+>> This logic is different than the kernel one which does:
+>> last_backup = (next_backup + BTRFS_NUM_BACKUP_ROOTS - 1) %
+>>                 BTRFS_NUM_BACKUP_ROOTS;
+>>
+>> So in the kernel when info->backup_root_index == 0 then the newest
+>> backup root is going to be written at position 3, the next one in pos 1,
+>> the next in pos 2 and so on. OTOH in userspace we might potentially
+>> start writing at 1 (which doesn't seem problematic per se). So why the
+>> difference in logic?
+> 
+> The logic is the same, for kernel it's 'last_backup' which should, and
+> is, going backward one slot.
+> 
+> And the next one is still written to next slot.
+> 
+> Just as the dump super shows:
+> $ btrfs ins dump-super -f /dev/data/btrfs | grep -A1 "backup "
+> 	backup 0:
+> 		backup_tree_root:	30818304	gen: 10	level: 0
+> --
+> 	backup 1:
+> 		backup_tree_root:	30621696	gen: 7	level: 0
+> --
+> 	backup 2:
+> 		backup_tree_root:	30703616	gen: 8	level: 0
+> --
+> 	backup 3:
+> 		backup_tree_root:	30785536	gen: 9	level: 0
+> 
+> So the logic should be the same.
+> 
+> Just simpler implementation in btrfs-progs, without
+> fs_info->backup_root_index.
+> 
+> Thanks,
+> Qu
+> 
+>>
+>>> +
+>>> +	/* just overwrite the last backup if we're at the same generation */
+>>> +	root_backup = info->super_copy->super_roots + last_backup;
+>>> +	if (btrfs_backup_tree_root_gen(root_backup) ==
+>>> +	    btrfs_header_generation(info->tree_root->node))
+>>> +		next_backup = last_backup;
+>>> +
+>>> +	root_backup = info->super_copy->super_roots + next_backup;
+>>> +
+>>> +	/*
+>>> +	 * make sure all of our padding and empty slots get zero filled
+>>> +	 * regardless of which ones we use today
+>>> +	 */
+>>> +	memset(root_backup, 0, sizeof(*root_backup));
+>>> +	btrfs_set_backup_tree_root(root_backup, info->tree_root->node->start);
+>>> +	btrfs_set_backup_tree_root_gen(root_backup,
+>>> +			       btrfs_header_generation(info->tree_root->node));
+>>> +	btrfs_set_backup_tree_root_level(root_backup,
+>>> +			       btrfs_header_level(info->tree_root->node));
+>>> +
+>>> +	btrfs_set_backup_chunk_root(root_backup, info->chunk_root->node->start);
+>>> +	btrfs_set_backup_chunk_root_gen(root_backup,
+>>> +			       btrfs_header_generation(info->chunk_root->node));
+>>> +	btrfs_set_backup_chunk_root_level(root_backup,
+>>> +			       btrfs_header_level(info->chunk_root->node));
+>>> +
+>>> +	btrfs_set_backup_extent_root(root_backup, info->extent_root->node->start);
+>>> +	btrfs_set_backup_extent_root_gen(root_backup,
+>>> +			       btrfs_header_generation(info->extent_root->node));
+>>> +	btrfs_set_backup_extent_root_level(root_backup,
+>>> +			       btrfs_header_level(info->extent_root->node));
+>>> +	/*
+>>> +	 * we might commit during log recovery, which happens before we set
+>>> +	 * the fs_root.  Make sure it is valid before we fill it in.
+>>> +	 */
+>>> +	if (info->fs_root && info->fs_root->node) {
+>>> +		btrfs_set_backup_fs_root(root_backup,
+>>> +					 info->fs_root->node->start);
+>>> +		btrfs_set_backup_fs_root_gen(root_backup,
+>>> +			       btrfs_header_generation(info->fs_root->node));
+>>> +		btrfs_set_backup_fs_root_level(root_backup,
+>>> +			       btrfs_header_level(info->fs_root->node));
+>>> +	}
+>>> +
+>>> +	btrfs_set_backup_dev_root(root_backup, info->dev_root->node->start);
+>>> +	btrfs_set_backup_dev_root_gen(root_backup,
+>>> +			       btrfs_header_generation(info->dev_root->node));
+>>> +	btrfs_set_backup_dev_root_level(root_backup,
+>>> +				       btrfs_header_level(info->dev_root->node));
+>>> +
+>>> +	btrfs_set_backup_csum_root(root_backup, info->csum_root->node->start);
+>>> +	btrfs_set_backup_csum_root_gen(root_backup,
+>>> +			       btrfs_header_generation(info->csum_root->node));
+>>> +	btrfs_set_backup_csum_root_level(root_backup,
+>>> +			       btrfs_header_level(info->csum_root->node));
+>>> +
+>>> +	btrfs_set_backup_total_bytes(root_backup,
+>>> +			     btrfs_super_total_bytes(info->super_copy));
+>>> +	btrfs_set_backup_bytes_used(root_backup,
+>>> +			     btrfs_super_bytes_used(info->super_copy));
+>>> +	btrfs_set_backup_num_devices(root_backup,
+>>> +			     btrfs_super_num_devices(info->super_copy));
+>>> +};
+>>> +
+>>>  int write_all_supers(struct btrfs_fs_info *fs_info)
+>>>  {
+>>>  	struct list_head *head = &fs_info->fs_devices->devices;
+>>> @@ -1630,6 +1707,7 @@ int write_all_supers(struct btrfs_fs_info *fs_info)
+>>>  	int ret;
+>>>  	u64 flags;
+>>>  
+>>> +	backup_super_roots(fs_info);
+>>>  	sb = fs_info->super_copy;
+>>>  	dev_item = &sb->dev_item;
+>>>  	list_for_each_entry(dev, head, dev_list) {
+>>>
+> 

@@ -2,92 +2,74 @@ Return-Path: <SRS0=cNHg=PL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DDFBDC43387
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Jan 2019 08:29:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6EC24C43387
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Jan 2019 08:50:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id AB13D2073D
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Jan 2019 08:29:59 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=virtall.com header.i=@virtall.com header.b="McogTato"
+	by mail.kernel.org (Postfix) with ESMTP id 3F0F520883
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Jan 2019 08:50:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730279AbfACI36 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 3 Jan 2019 03:29:58 -0500
-Received: from mail.virtall.com ([46.4.129.203]:36026 "EHLO mail.virtall.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728823AbfACI35 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 3 Jan 2019 03:29:57 -0500
-Received: from mail.virtall.com (localhost [127.0.0.1])
-        by mail.virtall.com (Postfix) with ESMTP id BDA86376D25;
-        Thu,  3 Jan 2019 08:29:54 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=virtall.com;
-        s=default; t=1546504195;
-        bh=vibHbgr4Imj2j4XebJ06LmQUcWCfGnh9QCK+H1RGA+s=;
-        h=Date:From:To:Cc:Subject:In-Reply-To:References;
-        b=McogTato77gie9u5l1BClNNzNuWpx+NzR820Z6RDoaeSzeR+Igdcx+aqk5k3zPv6c
-         dGQJ+/9lXngfZkpYatNoObUsoFxmuc+Bn8aSzmbzOesDvuygLQ2K6lqKAZ4sAsVxMR
-         yvBzZlHGoQxgOtXYrh2gnpS6cKUq5UpJGHiikd7MYW32SACK3Ayw29MbZNJ2ovIwOL
-         jIl15sAecJRnvB5gLrtV6cQB+aXDCRGTBq+7qFy9p2NUA3E7gyhEUtrQQdH+6WVcQs
-         a2vKm8RNxE4r2wiggDvtx9LgbL7d4FOyXXHI2vgwv9zobxQBtUn1OAm67pZPPXTWKl
-         ZJLrVjWXLyjUw==
-X-Fuglu-Suspect: 8f79a9742f2d4011ae6c26cbba727c5e
-X-Fuglu-Spamstatus: NO
-Received: from localhost (localhost [127.0.0.1]) (Authenticated sender: tch@virtall.com)
-        by mail.virtall.com (Postfix) with ESMTPSA;
-        Thu,  3 Jan 2019 08:29:54 +0000 (UTC)
-MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII;
- format=flowed
-Content-Transfer-Encoding: 7bit
-Date:   Thu, 03 Jan 2019 17:29:51 +0900
-From:   Tomasz Chmielewski <tch@virtall.com>
-To:     Andrea Gelmini <andrea.gelmini@gmail.com>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        b11g <b11g@protonmail.com>
-Subject: Re: BTRFS corruption: open_ctree failed
-In-Reply-To: <20190103082213.GA74697@glet>
-References: <155a0e09f60a0605802c459a6e119b36@virtall.com>
- <20190103072740.GA64625@glet> <b5df9ec049da6ecd9a4b3617d39d795f@virtall.com>
- <20190103082213.GA74697@glet>
-Message-ID: <ec02023516764c490fdb2fad5f409da5@virtall.com>
-X-Sender: tch@virtall.com
+        id S1729398AbfACIuJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 3 Jan 2019 03:50:09 -0500
+Received: from mx2.suse.de ([195.135.220.15]:60064 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1728617AbfACIuI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 3 Jan 2019 03:50:08 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 4ED72AF57
+        for <linux-btrfs@vger.kernel.org>; Thu,  3 Jan 2019 08:50:07 +0000 (UTC)
+From:   Nikolay Borisov <nborisov@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 1/7] btrfs: Remove inode argument from async_cow_submit
+Date:   Thu,  3 Jan 2019 10:49:59 +0200
+Message-Id: <20190103085005.32053-2-nborisov@suse.com>
+X-Mailer: git-send-email 2.17.1
+In-Reply-To: <20190103085005.32053-1-nborisov@suse.com>
+References: <20190103085005.32053-1-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 2019-01-03 17:22, Andrea Gelmini wrote:
-> On Thu, Jan 03, 2019 at 04:43:20PM +0900, Tomasz Chmielewski wrote:
->> > And it's not a default/usual configuration.
->> 
->> Still - it is a default configuration for some distributions. I.e. 
->> Ubuntu
->> "ppa" kernels[1] have this enabled by default (at least 4.19.x and 
->> 4.20.x).
-> 
-> a) he is not using Ubuntu;
-> b) I use this PPA;
-> c) if you look at the config, you see the default scheduler is not 
-> "none", also
->    the mq is compiled as module and - anyway - on release with the bug
-> you have to
->    force the kernel to use it with boot parameter.
+We already pass the async_cow struct that holds a reference to the
+inode. Exploit this fact and remove the extra inode argument. No
+functional changes.
 
-Hmmm, is it the case?
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/inode.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-# uname -r
-4.20.0-042000-generic
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 38c0f385a617..43baca50fba5 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -714,9 +714,9 @@ static void free_async_extent_pages(struct async_extent *async_extent)
+  * queued.  We walk all the async extents created by compress_file_range
+  * and send them down to the disk.
+  */
+-static noinline void submit_compressed_extents(struct inode *inode,
+-					      struct async_cow *async_cow)
++static noinline void submit_compressed_extents(struct async_cow *async_cow)
+ {
++	struct inode *inode = async_cow->inode;
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 	struct async_extent *async_extent;
+ 	u64 alloc_hint = 0;
+@@ -1167,7 +1167,7 @@ static noinline void async_cow_submit(struct btrfs_work *work)
+ 		cond_wake_up_nomb(&fs_info->async_submit_wait);
+ 
+ 	if (async_cow->inode)
+-		submit_compressed_extents(async_cow->inode, async_cow);
++		submit_compressed_extents(async_cow);
+ }
+ 
+ static noinline void async_cow_free(struct btrfs_work *work)
+-- 
+2.17.1
 
-# cat /sys/block/sda/queue/scheduler
-[none]
-
-# cat /sys/block/sdb/queue/scheduler
-[none]
-
-
-I could see filesystem corruption on every system using with PPA 4.19 
-lower than .8. Didn't do any kernel boot parameter changes when 
-upgrading from 4.18.

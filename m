@@ -6,62 +6,58 @@ X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 54E86C43387
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Jan 2019 14:37:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AAACDC43387
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Jan 2019 14:45:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2B0AA208E3
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Jan 2019 14:37:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 838982070D
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Jan 2019 14:45:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730136AbfACOhx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 3 Jan 2019 09:37:53 -0500
-Received: from mx2.suse.de ([195.135.220.15]:58088 "EHLO mx1.suse.de"
+        id S1726866AbfACOpD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 3 Jan 2019 09:45:03 -0500
+Received: from mx2.suse.de ([195.135.220.15]:59280 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727436AbfACOhw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 3 Jan 2019 09:37:52 -0500
+        id S1726044AbfACOpD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 3 Jan 2019 09:45:03 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 49E03AF69;
-        Thu,  3 Jan 2019 14:37:51 +0000 (UTC)
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 96B0EADFE
+        for <linux-btrfs@vger.kernel.org>; Thu,  3 Jan 2019 14:45:01 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 74372DA781; Thu,  3 Jan 2019 15:37:22 +0100 (CET)
-Date:   Thu, 3 Jan 2019 15:37:22 +0100
+        id C9EAFDA781; Thu,  3 Jan 2019 15:44:32 +0100 (CET)
+Date:   Thu, 3 Jan 2019 15:44:32 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH RESEND v12] btrfs: introduce feature to forget a btrfs
- device
-Message-ID: <20190103143722.GG23615@twin.jikos.cz>
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 6/7] btrfs: Replace open-coded maths with DIV_ROUND_UP
+Message-ID: <20190103144432.GH23615@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
+Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
         linux-btrfs@vger.kernel.org
-References: <1546408172-5193-1-git-send-email-anand.jain@oracle.com>
- <1546408172-5193-2-git-send-email-anand.jain@oracle.com>
- <20190102160022.GW23615@twin.jikos.cz>
- <ac8541d7-53e8-74c7-1c45-1cbbf86b8710@oracle.com>
+References: <20190103085005.32053-1-nborisov@suse.com>
+ <20190103085005.32053-7-nborisov@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <ac8541d7-53e8-74c7-1c45-1cbbf86b8710@oracle.com>
+In-Reply-To: <20190103085005.32053-7-nborisov@suse.com>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Jan 03, 2019 at 03:54:26PM +0800, Anand Jain wrote:
-> > I think this should reflect the status of the operation. The ioctl
-> > caller has no information about success/error. Eg. an invalid device
-> > path passed could return -ENOENT, 0 if it was released and 1 if not.
-> > 
-> > In case of all devices, it's probably ok to return 0.
-> 
-> OK. v13 will return error if the given device is not found,
-> and I find ENXIO is more suitable (instead of ENOENT).
-> If you disagree pls can you make the changes as in [1]
-> when integrating. I have tested with both.
+On Thu, Jan 03, 2019 at 10:50:04AM +0200, Nikolay Borisov wrote:
+> In a couple of places it's required to calculate the number of pages
+> given a start and end offsets. Currently this is opencoded, unify the
+> code base by replacing all such sites with the DIV_ROUND_UP macro. Also,
+> current open-coded sites were buggy in that they were adding
+> 'PAGE_SIZE', rather than 'PAGE_SIZE - 1'.
 
-ENXIO refers to device nodes, however for paths it should be ok to use
-ENOENT, same what would eg. stat return on the given device path.
+Didn't you find it strange that it's so consistently wrong? After a
+closer inspection, you'd find that the end of the range is inclusive. So
+the math is correct and your patch introduces a bug.
 
-The ENXIO is used for lseek and is documented as such, I'd rather stick
-to semantics of 'file' even though it's a path to a device.
+end - start + PAGE_SIZE = end + 1 - start + PAGE_SIZE - 1
+
+Check eg. writepage_delalloc how it sets up page_end.
+
+The correct use in DIV_ROUND_UP needs +1 adjustment.

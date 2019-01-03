@@ -2,171 +2,164 @@ Return-Path: <SRS0=cNHg=PL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.5 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.5 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5427CC43387
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Jan 2019 07:54:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2CFCDC43387
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Jan 2019 08:01:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 10EB92070C
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Jan 2019 07:54:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E814A20883
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Jan 2019 08:01:49 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="LHPH0UrB"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="lrBap+YR"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726191AbfACHye (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 3 Jan 2019 02:54:34 -0500
-Received: from userp2120.oracle.com ([156.151.31.85]:34988 "EHLO
+        id S1727308AbfACIBs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 3 Jan 2019 03:01:48 -0500
+Received: from userp2120.oracle.com ([156.151.31.85]:40752 "EHLO
         userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726112AbfACHye (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Jan 2019 02:54:34 -0500
+        with ESMTP id S1726799AbfACIBs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Jan 2019 03:01:48 -0500
 Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id x037nAVu114270;
-        Thu, 3 Jan 2019 07:54:29 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
- references : from : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=corp-2018-07-02;
- bh=YclNq9uCDPLWuP0IqpVG0nSFPgBqu17mV49sX76Kq0A=;
- b=LHPH0UrBKae8Kxk0eGEGQy41X2M/GqDiSmI/lOCcPfQmyuftEQycnc/NPZEfJaW1BIeA
- R/vCm4E1XDad2jmiC6M72r2z4UKOOGweUbiRhMoIhNUk/JlM6nRy98S7o0SJ9QxQgwzH
- kB3ZJhzSUGYdXIpX67J0cH0I4NwbewbBE9myLlbsWg8wDg0fEOz7Yr7SIfYV1apaMcEP
- OPtoUUKiSUFwdVAkH5hdtwZ/6V/RT9yF2jpvGcWJL4jjLXrgczuGQXTEfwcGVdstPnOz
- zFqRxAs+reB5nhE/VHFlsfQLh3rYob+MfIrBw8ZzhrySW8PVg8746y4JLXLSsoyBBYhA wA== 
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id x037xn91121271
+        for <linux-btrfs@vger.kernel.org>; Thu, 3 Jan 2019 08:01:47 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
+ date : message-id; s=corp-2018-07-02;
+ bh=pvU/oq4537sI9X3WRRrkWQmuM3j1zPJZwHC9vIPoe4M=;
+ b=lrBap+YRZRKkQHyRsONo4I8IS1Eodz9aNk6F/FhNde2s7DHQD8SjlYmuCkLEaYir8Cri
+ idkwRQZIIX2sjrv1ks4TwqS5Z0/B9SSMqXQUwxNozW9swAjmPPfhQ9qdTzJPYnME2bZg
+ CcZzDCmA3CQLpJcyaqO8fcp878oCQ7jznk51TcL17ln8gkEDBeoHXimiRhuG9W0fHDdt
+ JFtmymQjq40ZdKRoXoDUvSBloR4d7fOUYtoimTFY64JE1/3qm7ECH34ntNblphyfRsn5
+ P553yewvkSuENDyfNX7RGVLlzoKeXN98G4+nSdQyqhHvZIIyKMMcsS4Qs2SuFf34QnGD Mw== 
 Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by userp2120.oracle.com with ESMTP id 2pp1jr5mf9-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 03 Jan 2019 07:54:29 +0000
+        by userp2120.oracle.com with ESMTP id 2pp1jr5n5h-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Thu, 03 Jan 2019 08:01:47 +0000
 Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x037sTRt013133
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 3 Jan 2019 07:54:29 GMT
-Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x037sSTF007214;
-        Thu, 3 Jan 2019 07:54:29 GMT
-Received: from [10.190.142.77] (/192.188.170.109)
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x0381k7b000510
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Thu, 3 Jan 2019 08:01:46 GMT
+Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x0381kal010322
+        for <linux-btrfs@vger.kernel.org>; Thu, 3 Jan 2019 08:01:46 GMT
+Received: from tpasj.wifi.oracle.com (/192.188.170.109)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Wed, 02 Jan 2019 23:54:28 -0800
-Subject: Re: [PATCH RESEND v12] btrfs: introduce feature to forget a btrfs
- device
-To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <1546408172-5193-1-git-send-email-anand.jain@oracle.com>
- <1546408172-5193-2-git-send-email-anand.jain@oracle.com>
- <20190102160022.GW23615@twin.jikos.cz>
+        with ESMTP ; Thu, 03 Jan 2019 00:01:46 -0800
 From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <ac8541d7-53e8-74c7-1c45-1cbbf86b8710@oracle.com>
-Date:   Thu, 3 Jan 2019 15:54:26 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
- Thunderbird/52.9.1
-MIME-Version: 1.0
-In-Reply-To: <20190102160022.GW23615@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH v13] Add cli and ioctl to forget scanned device(s)
+Date:   Thu,  3 Jan 2019 16:01:36 +0800
+Message-Id: <1546502498-28070-1-git-send-email-anand.jain@oracle.com>
+X-Mailer: git-send-email 1.8.3.1
 X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9124 signatures=668680
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=2 malwarescore=0
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=3 malwarescore=0
  phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
  adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1810050000 definitions=main-1901030071
+ engine=8.0.1-1810050000 definitions=main-1901030072
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+v13:
+ Please ref individual patches.
 
+v12:
+  Fixed coding style - leave space between " : ".
 
-On 01/03/2019 12:00 AM, David Sterba wrote:
-> On Wed, Jan 02, 2019 at 01:49:31PM +0800, Anand Jain wrote:
->> Support for a new command 'btrfs dev forget [dev]' is proposed here
->> to undo the effects of 'btrfs dev scan [dev]'. For this purpose
->> this patch proposes to use ioctl #5 as it was empty.
->> 	IOW(BTRFS_IOCTL_MAGIC, 5, ..)
->> This patch adds new ioctl BTRFS_IOC_FORGET_DEV which can be sent from
->> the /dev/btrfs-control to forget one or all devices, (devices which are
->> not mounted) from the btrfs kernel.
->>
->> The argument it takes is struct btrfs_ioctl_vol_args, and ::name can be
->> set to specify the device path. And all unmounted devices can be removed
->> from the kernel if no device path is provided.
->>
->> Again, the devices are removed only if the relevant fsid aren't mounted.
->>
->> This new cli can provide..
->>   . Release of unwanted btrfs_fs_devices and btrfs_devices memory if the
->>     device is not going to be mounted.
->>   . Ability to mount the device in degraded mode when one of the other
->>     device is corrupted like in split brain raid1.
->>   . Running test cases which requires btrfs.ko-reload if the rootfs
->>     is btrfs.
->>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
->> ---
->> v11->v12: fix coding style add spacing before after ":".
->> v1->v11: Pls ref to the cover-letter. (sorry about that).
->>
->>   fs/btrfs/super.c           | 3 +++
->>   fs/btrfs/volumes.c         | 9 +++++++++
->>   fs/btrfs/volumes.h         | 1 +
->>   include/uapi/linux/btrfs.h | 2 ++
->>   4 files changed, 15 insertions(+)
->>
->> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
->> index d3c6bbc0aa3a..eba2966913ae 100644
->> --- a/fs/btrfs/super.c
->> +++ b/fs/btrfs/super.c
->> @@ -2247,6 +2247,9 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
->>   		ret = PTR_ERR_OR_ZERO(device);
->>   		mutex_unlock(&uuid_mutex);
->>   		break;
->> +	case BTRFS_IOC_FORGET_DEV:
->> +		ret = btrfs_forget_devices(vol->name);
->> +		break;
->>   	case BTRFS_IOC_DEVICES_READY:
->>   		mutex_lock(&uuid_mutex);
->>   		device = btrfs_scan_one_device(vol->name, FMODE_READ,
->> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->> index 8e36cbb355df..48415a9edd46 100644
->> --- a/fs/btrfs/volumes.c
->> +++ b/fs/btrfs/volumes.c
->> @@ -1397,6 +1397,15 @@ static int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
->>   	return 0;
->>   }
->>   
->> +int btrfs_forget_devices(const char *path)
->> +{
->> +	mutex_lock(&uuid_mutex);
->> +	btrfs_free_stale_devices(strlen(path) ? path : NULL, NULL);
->> +	mutex_unlock(&uuid_mutex);
->> +
->> +	return 0;
-> 
-> I think this should reflect the status of the operation. The ioctl
-> caller has no information about success/error. Eg. an invalid device
-> path passed could return -ENOENT, 0 if it was released and 1 if not.
-> 
-> In case of all devices, it's probably ok to return 0.
+v11:
+ btrfs-progs: Bring the code into the else part of if(forget).
+	      Use strerror to print the erorr instead of ret.
 
+v10:
+ Make btrfs-progs changes more readable.
+ With an effort to keep the known bug [1] as it is..
+  [1]
+   The cli 'btrfs device scan --all /dev/sdb' which should have scanned
+    only one device, ends up scanning all the devices and I am not trying
+    to fix this bug in this patch because..
+  . -d|--all is marked as deprecated, I hope -d option would go away
+  . For now some script might be using this bug as a feature, and fixing
+    this bug might lead to mount failure.
 
-OK. v13 will return error if the given device is not found,
-and I find ENXIO is more suitable (instead of ENOENT).
-If you disagree pls can you make the changes as in [1]
-when integrating. I have tested with both.
+v9:
+ Make forget as a btrfs device scan option.
+ Use forget in the fstests, now you can run fstests with btrfs as rootfs
+  which helps to exercise the uuid_mutex lock.
 
---------
+v8:
+ Change log update in the kernel patch.
+
+v7:
+ Use struct btrfs_ioctl_vol_args (instead of struct
+  btrfs_ioctl_vol_args_v2) as its inline with other ioctl
+  btrfs-control
+ The CLI usage/features remains same. However internally the ioctl flag
+  is not required to delete all the unmounted devices. Instead leave
+  btrfs_ioctl_vol_args::name NULL.
+
+v6:
+ Use the changed fn name btrfs_free_stale_devices().
+
+ Change in title:
+ Old v5:
+ Cover-letter:
+  [PATCH v5] Add cli and ioctl to ignore a scanned device
+ Kernel:
+  [PATCH v5] btrfs: introduce feature to ignore a btrfs device
+ Progs:
+  [PATCH v5] btrfs-progs: add 'btrfs device ignore' cli
+
+v5:
+  Adds feature to delete all stale devices
+  Reuses btrfs_free_stale_devices() fn and so depends on the
+    patch-set [1] in the ML.
+  Uses struct btrfs_ioctl_vol_args_v2 instead of
+    struct btrfs_ioctl_vol_args as arg
+  Does the device path matching instead of btrfs_device matching
+    (we won't delete the mounted device as btrfs_free_stale_devices()
+    checks for it)
+v4:
+  No change. But as the ML thread may be confusing, so resend.
+v3:
+  No change. Send to correct ML.
+v2:
+  Accepts review from Nikolay, details are in the specific patch.
+  Patch 1/2 is renamed from
+    [PATCH 1/2] btrfs: refactor btrfs_free_stale_device() to get device list delete
+  to
+    [PATCH 1/2] btrfs: add function to device list delete
+
+Adds cli and ioctl to forget a scanned device or forget all stale
+devices in the kernel.
+
+Anand Jain (1):
+  btrfs: introduce feature to forget a btrfs device
+
+ fs/btrfs/super.c           | 3 +++
+ fs/btrfs/volumes.c         | 9 +++++++++
+ fs/btrfs/volumes.h         | 1 +
+ include/uapi/linux/btrfs.h | 2 ++
+ 4 files changed, 15 insertions(+)
+
+Anand Jain (1):
+  btrfs-progs: add cli to forget one or all scanned devices
+
+ cmds-device.c | 63 ++++++++++++++++++++++++++++++++++++++++++++++++++---------
+ ioctl.h       |  2 ++
+ 2 files changed, 56 insertions(+), 9 deletions(-)
+
 [1]
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 2ab42bfe5d3c..e04784c64a98 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -763,7 +763,7 @@ static int btrfs_free_stale_devices(const char *path,
-         int ret;
+Anand Jain (1):
+  fstests: btrfs use forget if not reload
 
-         if (path)
--               ret = -ENXIO;
-+               ret = -ENOENT;
-         else
-                 ret = 0;
-----------------
+ common/btrfs    | 20 ++++++++++++++++++++
+ tests/btrfs/124 |  6 +++---
+ tests/btrfs/125 |  6 +++---
+ tests/btrfs/154 |  6 +++---
+ tests/btrfs/164 |  4 ++--
+ 5 files changed, 31 insertions(+), 11 deletions(-)
 
-Thanks, Anand
+-- 
+1.8.3.1

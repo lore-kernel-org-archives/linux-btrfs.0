@@ -2,95 +2,123 @@ Return-Path: <SRS0=RNif=PM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
-	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.9 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4609CC43387
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 77534C43612
 	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Jan 2019 13:25:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DF52921872
-	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Jan 2019 13:25:25 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=virtall.com header.i=@virtall.com header.b="PY33YCzG"
+	by mail.kernel.org (Postfix) with ESMTP id 3D53A21874
+	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Jan 2019 13:25:26 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1546608326;
+	bh=9GJC9Is4E7F/+Qn5rONzv9AFHdgVCETsJdbrtMzH7DQ=;
+	h=Date:From:To:Cc:Subject:List-ID:From;
+	b=Rto8kIpxmdt9AecdWAWqKlbUQUqY683Bh+4rzvKiRLJdoygp1vSffQXCKfuDGS4U4
+	 xxpEbJRkSiZso9msbS//QFZNUUG7+3KZ2odsVOuBlgJyTduN7uTTf+S1cHJ//oOuSY
+	 3jbZ8/m2y3+7a5s7AAlYpwPqbCH1AkgwEwZEhaE4=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727879AbfADNZY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 4 Jan 2019 08:25:24 -0500
-Received: from mail.virtall.com ([46.4.129.203]:39658 "EHLO mail.virtall.com"
+        id S1727889AbfADNZZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 4 Jan 2019 08:25:25 -0500
+Received: from mail.kernel.org ([198.145.29.99]:50390 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725913AbfADNZY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1726282AbfADNZY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Fri, 4 Jan 2019 08:25:24 -0500
-Received: from mail.virtall.com (localhost [127.0.0.1])
-        by mail.virtall.com (Postfix) with ESMTP id D665E39321C
-        for <linux-btrfs@vger.kernel.org>; Fri,  4 Jan 2019 13:25:19 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=virtall.com;
-        s=default; t=1546608321;
-        bh=QOJA3w+cW7G80nWBpRCKYSnB//9Y9ZdvhvYD7WPomGE=;
-        h=Date:From:To:Subject;
-        b=PY33YCzGoQqxADD1luZG/pQFPyx807nitzzRFCX3EX9GfiRJNcvlYpO5cntH1HeTE
-         xeDkzWGgpALUXGgH/eFXqO0b22iRWL5IzfIjl3jwvzH5DCN0KMSiFa/lwMQP/vusuC
-         ei7F6+EDw+i6XiNoh53YOKsZsa/hJMdwfTrlNQoLrQgeugjoH7JXhl1MgzNBbd9NmE
-         bjfR4v1w2HslzRrY/6rZRmPNT27fZde7d7khfT9KdvIT8JrxpD4ukxvVx5tajd5FIU
-         imWi+PlLlMNbqW4ew9XOnqIpMExD7palK4itrLWlC6PCVAhjuBzA3axLfb9cMhL0Bz
-         rJDH1lydx9uuA==
-X-Fuglu-Suspect: 332b6a7aa1aa4fe0bfe4203fab035156
-X-Fuglu-Spamstatus: NO
-Received: from localhost (localhost [127.0.0.1]) (Authenticated sender: tch@virtall.com)
-        by mail.virtall.com (Postfix) with ESMTPSA
-        for <linux-btrfs@vger.kernel.org>; Fri,  4 Jan 2019 13:25:19 +0000 (UTC)
+Received: from localhost (5356596B.cm-6-7b.dynamic.ziggo.nl [83.86.89.107])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 4A27B21871;
+        Fri,  4 Jan 2019 13:25:23 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1546608323;
+        bh=9GJC9Is4E7F/+Qn5rONzv9AFHdgVCETsJdbrtMzH7DQ=;
+        h=Date:From:To:Cc:Subject:From;
+        b=Ae1Ki+Oph1u5X3PrGvFdWj8Y1orP+4+TWOf0rmKsJsRAbLeab3ZjVV3efLx5G8ibC
+         E76hTcm8y/T3LkGxMga7AbfNgOfjQnBgk7dc5L9lEHKCcshH8Pgytug5xegEZXkDfO
+         6vHCK7IF7CLLcocccnsZnHKpUICB8A7fkzZi10BM=
+Date:   Fri, 4 Jan 2019 14:25:20 +0100
+From:   Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: no need to check return value of debugfs_create
+ functions
+Message-ID: <20190104132520.GA22613@kroah.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
- format=flowed
-Content-Transfer-Encoding: 8bit
-Date:   Fri, 04 Jan 2019 22:25:18 +0900
-From:   Tomasz Chmielewski <tch@virtall.com>
-To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: dedicated metadata drives?
-Message-ID: <fcdfebdcb0e8d5fd291d08f844274212@virtall.com>
-X-Sender: tch@virtall.com
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+User-Agent: Mutt/1.11.1 (2018-12-01)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-According to btrfs wiki, some patches have been submitted to support 
-metadata on different devices than data (i.e. metadata on SSD, data on 
-HDD):
+When calling debugfs functions, there is no need to ever check the
+return value.  The function can work or not, but the code logic should
+never do something different based on this.
+
+Cc: Chris Mason <clm@fb.com>
+Cc: Josef Bacik <josef@toxicpanda.com>
+Cc: David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ fs/btrfs/sysfs.c | 10 ++--------
+ 1 file changed, 2 insertions(+), 8 deletions(-)
+
+Meta-comment, why is there a btrfs debugfs directory at all?  All you
+have here is a single "test" file that doesn't do anything except expose
+a variable that never changes.  What is this directory and single file
+for?  Can I just delete the whole thing?
 
 
-https://btrfs.wiki.kernel.org/index.php/Project_ideas#Dedicated_metadata_drives
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 5a5930e3d32b..38cbb2076d6c 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -905,12 +905,10 @@ void btrfs_sysfs_feature_update(struct btrfs_fs_info *fs_info,
+ 	ret = sysfs_create_group(fsid_kobj, &btrfs_feature_attr_group);
+ }
+ 
+-static int btrfs_init_debugfs(void)
++static void btrfs_init_debugfs(void)
+ {
+ #ifdef CONFIG_DEBUG_FS
+ 	btrfs_debugfs_root_dentry = debugfs_create_dir("btrfs", NULL);
+-	if (!btrfs_debugfs_root_dentry)
+-		return -ENOMEM;
+ 
+ 	/*
+ 	 * Example code, how to export data through debugfs.
+@@ -924,7 +922,6 @@ static int btrfs_init_debugfs(void)
+ #endif
+ 
+ #endif
+-	return 0;
+ }
+ 
+ int __init btrfs_init_sysfs(void)
+@@ -935,9 +932,7 @@ int __init btrfs_init_sysfs(void)
+ 	if (!btrfs_kset)
+ 		return -ENOMEM;
+ 
+-	ret = btrfs_init_debugfs();
+-	if (ret)
+-		goto out1;
++	btrfs_init_debugfs();
+ 
+ 	init_feature_attrs();
+ 	ret = sysfs_create_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
+@@ -954,7 +949,6 @@ int __init btrfs_init_sysfs(void)
+ 	sysfs_remove_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
+ out2:
+ 	debugfs_remove_recursive(btrfs_debugfs_root_dentry);
+-out1:
+ 	kset_unregister(btrfs_kset);
+ 
+ 	return ret;
+-- 
+2.20.1
 
-    Dedicated metadata drives
-
-    Not claimed — submitted — Not in kernel yet
-
-    We're able to split data and metadata IO very easily. Metadata tends 
-to be dominated by seeks and for many applications it makes sense to put 
-the metadata onto faster SSDs.
-
-
-
-
-This article (almost 2.5 years old) claims one company is already using 
-either these patches or something similar:
-
-https://lwn.net/Articles/698090/
-
-    August 24, 2016
-
-    To combat that, he has a set of patches to automatically put the 
-Btrfs metadata on SSDs. The block layer provides information on whether 
-the storage is rotational; for now, his patch assumes that if
-    it is not rotational then it is fast. The patch has made a huge 
-difference in the latencies and requires less flash storage (e.g. 450GB 
-for 40TB filesystem) for Facebook's file workload that
-    consists of a wide variety of file sizes.
-
-
-
-Do these patches exist anywhere? I couldn't find them in the list 
-archive.
-
-
-
-Tomasz

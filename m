@@ -2,178 +2,179 @@ Return-Path: <SRS0=RNif=PM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
-	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.5 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E6671C43387
-	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Jan 2019 04:32:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 359E0C43387
+	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Jan 2019 05:26:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A78802070D
-	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Jan 2019 04:32:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id F28972070D
+	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Jan 2019 05:26:58 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="YnICo6o1"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726227AbfADEcB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 3 Jan 2019 23:32:01 -0500
-Received: from mout.gmx.net ([212.227.17.22]:37463 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726069AbfADEcB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 3 Jan 2019 23:32:01 -0500
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx103
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0Lu7ty-1hLO8Y45rS-011Ulx; Fri, 04
- Jan 2019 05:31:58 +0100
-Subject: Re: Unrecoverable btrfs corruption (backref bytes do not match extent
- backref)
-To:     Chris Murphy <lists@colorremedies.com>
-Cc:     Nazar Mokrynskyi <nazar@mokrynskyi.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <73e828f0-057c-830e-a6b2-570dccbdf484@mokrynskyi.com>
- <CAJCQCtTJEc8q8hrBG_HRvm1vWQvs5KgcFUKfvXPjxTNZSjd-Sg@mail.gmail.com>
- <aca3ce08-2cc6-9ace-ec3f-a9d963b4dab8@gmx.com>
- <CAJCQCtSjaWDCz9rc9_xzQMB+Xa1Ff3CqZA=hWnX=N6E2tshBrQ@mail.gmail.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <94c4f848-ba6b-2ad2-b956-997b33fa0778@gmx.com>
-Date:   Fri, 4 Jan 2019 12:31:52 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.3.3
+        id S1726464AbfADF06 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 4 Jan 2019 00:26:58 -0500
+Received: from userp2120.oracle.com ([156.151.31.85]:38406 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726308AbfADF05 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Jan 2019 00:26:57 -0500
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id x045O56X096505;
+        Fri, 4 Jan 2019 05:26:53 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
+ references : cc : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2018-07-02;
+ bh=jKEK0bZAFmdFcwCsYhdJ5xqsTAvTlsLWSgsJwx79uNY=;
+ b=YnICo6o1sR9EA2LglAOYFDy+GJQAFgulNsUHHtUKgfbCj+hh1xv51SrgMbEeHZF6SECk
+ ppUx4hDccVlXErM5jbYeSPrlZ1cg3J7x7lnxdOvudmrev8DRHOC84rSu9v9bjMINfgrW
+ sWwBkFwj0UP9e345iqPv17Gj2bkp+iud2zZf1DYomsFhvB6yo2+U9m2uQtIAhH+tbAzd
+ 4Ni1u9Yfx1eTp4+RLT25mdqBENYDxuAG5eHxYQ8ROYDPqRr6ulD+7L69MSWWGj/GQbS+
+ hkCCuOsECPv2re/O8q/EbOy1Oqe6zzQx5TP/SYo9Eer3AhfqA4gpOnDmYmEo/NGf+zQx /w== 
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by userp2120.oracle.com with ESMTP id 2pp1jrabvm-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Fri, 04 Jan 2019 05:26:53 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x045QrWs008740
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Fri, 4 Jan 2019 05:26:53 GMT
+Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x045Qqhj006849;
+        Fri, 4 Jan 2019 05:26:53 GMT
+Received: from [192.168.1.145] (/116.87.143.221)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Thu, 03 Jan 2019 21:26:52 -0800
+Subject: Re: [PATCH v13] btrfs: introduce feature to forget a btrfs device
+To:     dsterba@suse.cz
+References: <1546502498-28070-1-git-send-email-anand.jain@oracle.com>
+ <1546502498-28070-2-git-send-email-anand.jain@oracle.com>
+ <20190103152426.GI23615@twin.jikos.cz>
+Cc:     linux-btrfs@vger.kernel.org
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <1fb23edf-d63d-a060-be99-2f93ef946d06@oracle.com>
+Date:   Fri, 4 Jan 2019 13:26:51 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
+ Thunderbird/52.9.1
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSjaWDCz9rc9_xzQMB+Xa1Ff3CqZA=hWnX=N6E2tshBrQ@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="DiMEfwHzK6YzP7F4yX21l5IUmiApVjbe9"
-X-Provags-ID: V03:K1:8GDhkpZMautMjQjHfnGhE8UbWB+MBbJ+J7Q3aujDcBpqz7Z3Fke
- l6WrdnIej6YNneMwZyK7/jEPzFxXJq8Xve1OWGgXtsE7SxczFw4Gl4wYrk9VCPtisr2bsTA
- CNlD5LAjWut+6XSVJPV9Lwg6Re0Ls6S/L/jIKD3Op9Zogxg+zyK7iNeUxcmOgukOKW+d6/e
- bZOnSpVjISTXP6x1isNxA==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:bJc1Gz/j70k=:adtrwLmR0TzDvw75y8SNsw
- JZKlOujqbBfmY1myQa68Ucinf2RFdePMdxm33AkJKQBnM/ZnYcEVdc0chxcA4BXFD2aGgXGrZ
- KBsIe6U4AEwxECCMZ/ON8FY9k8XbfePuFHBPEGJzxaHFFOylPtqGXtMR5hFtrrxvKsO2/DYDj
- JeggharAks4106P0NbsizEmkm8iCTxwOWVu1tG8U1lBKsWNfvHlgKU1HO/MaSDaZ0rE2LH5bO
- 6ZsNPhIV1WWQhFt6BdTzgdJwFr8JXzB6JbloS2Wc9N5WB5erinaqrCEb/m9T/qF3G+LEpkcx4
- UhkK2H/PRvOsSnvhLpdaSoZeU2GDoEcznUL2S+OaH9Zqj9S5USQloPoOaEeRCHYtU+8UzIE7p
- ff/dyOF3omXGept8d9oHKTyrTGjH4YLiGZ3j4HiFxsScr8azjkdWkC+f2WZST3Z+6X1enHSO+
- EnaeA1qj1wAM0TFUe7yNkFaQYJCfqEB05yzw1EwIAgp4LJWcd8RGUxvPPPksLuYr1N5GKrCUg
- GurlO+VEfVbgXSloodZNOXhEztdfZgc6UkJ2yFACov8fi5xGHlAuLy862DpXKuxS4XEhYBTHn
- b2znqpBUAAz3x7doWg7XC9QhbIFYQUzGa7Zci9PgVk4DRsihSbha6f+2FOhixJpuXc6CaPHHk
- BZtP1tBOmzHQVKIjoCy2UjTk9oiujElbGvd/Y689NmMc698VRdKOESA2LqlcuL5F6b2GPdkZR
- iHIIOIswZvvRZXHaHHnjLNYar02JscBWPb7KmfvhaPt3AQ61yNbo0z/8M+oS0BNcRm5A7wREU
- +boMs1ObgQ18NSqc/xLJceNPxaZawqVQwnOJUBJxc+g3JItORJz8SFVutYvGvyJALlbTHgCYz
- k7iNYJQScHIn4BI4u/26LOajfqvlrtIdEHj+ktXQJ/d31WVHCQ2v533mNO1Tou
+In-Reply-To: <20190103152426.GI23615@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9125 signatures=668680
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=3 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1810050000 definitions=main-1901040047
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---DiMEfwHzK6YzP7F4yX21l5IUmiApVjbe9
-Content-Type: multipart/mixed; boundary="ENP8H5X6HOnxj8dxyKVND5wvBsgQ6VTto";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Nazar Mokrynskyi <nazar@mokrynskyi.com>,
- linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <94c4f848-ba6b-2ad2-b956-997b33fa0778@gmx.com>
-Subject: Re: Unrecoverable btrfs corruption (backref bytes do not match extent
- backref)
-References: <73e828f0-057c-830e-a6b2-570dccbdf484@mokrynskyi.com>
- <CAJCQCtTJEc8q8hrBG_HRvm1vWQvs5KgcFUKfvXPjxTNZSjd-Sg@mail.gmail.com>
- <aca3ce08-2cc6-9ace-ec3f-a9d963b4dab8@gmx.com>
- <CAJCQCtSjaWDCz9rc9_xzQMB+Xa1Ff3CqZA=hWnX=N6E2tshBrQ@mail.gmail.com>
-In-Reply-To: <CAJCQCtSjaWDCz9rc9_xzQMB+Xa1Ff3CqZA=hWnX=N6E2tshBrQ@mail.gmail.com>
-
---ENP8H5X6HOnxj8dxyKVND5wvBsgQ6VTto
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
 
-
-On 2019/1/4 =E4=B8=8A=E5=8D=8811:43, Chris Murphy wrote:
-> On Thu, Jan 3, 2019 at 6:32 PM Qu Wenruo <quwenruo.btrfs@gmx.com> wrote=
-:
+On 01/03/2019 11:24 PM, David Sterba wrote:
+> On Thu, Jan 03, 2019 at 04:01:37PM +0800, Anand Jain wrote:
+>> Support for a new command 'btrfs dev forget [dev]' is proposed here
+>> to undo the effects of 'btrfs dev scan [dev]'. For this purpose
+>> this patch proposes to use ioctl #5 as it was empty.
+>> 	IOW(BTRFS_IOCTL_MAGIC, 5, ..)
+>> This patch adds new ioctl BTRFS_IOC_FORGET_DEV which can be sent from
+>> the /dev/btrfs-control to forget one or all devices, (devices which are
+>> not mounted) from the btrfs kernel.
 >>
+>> The argument it takes is struct btrfs_ioctl_vol_args, and ::name can be
+>> set to specify the device path. And all unmounted devices can be removed
+>> from the kernel if no device path is provided.
 >>
+>> Again, the devices are removed only if the relevant fsid aren't mounted.
 >>
->> On 2019/1/4 =E4=B8=8A=E5=8D=889:15, Chris Murphy wrote:
->>> If you use btrfs-image -ss option, there won't be any sensitive
->>> information included. Files are hashed. Some short name files or dirs=
-
->>> can't be hashed (you'll see a warning) and those are replaced with
->>> random garbage instead. There is only metadata with the image, no use=
-r
->>> data.
+>> This new cli can provide..
+>>   . Release of unwanted btrfs_fs_devices and btrfs_devices memory if the
+>>     device is not going to be mounted.
+>>   . Ability to mount the device in degraded mode when one of the other
+>>     device is corrupted like in split brain raid1.
+>>   . Running test cases which requires btrfs.ko-reload if the rootfs
+>>     is btrfs.
 >>
->> Please don't advice -ss for btrfs-image. It's super slow and will easi=
-ly
->> cause tons of noise when running btrfs check on it.
->=20
-> I thought in recent btrfs-progs that -ss was quite a bit faster. The
-> last time I used it I don't think it was much slower than -s. Anyway I
-> don't have a preference between hash or garbage, but I don't think
-> it's realistic for users to give out filenames in images. So is -s OK?
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+>> ---
+>> v12->v13:
+>>    btrfs.ko returns error on failing to find the given device.
+>>    For no argument (btrfs device scan --forget) if there is
+>>    no device to forget then it shall just return success.
+>> v11->v12: fix coding style add spacing before after ":".
+>> v1->v11: Pls ref to the cover-letter. (sorry about that).
+>>
+>>   fs/btrfs/super.c           |  3 +++
+>>   fs/btrfs/volumes.c         | 55 +++++++++++++++++++++++++++++++++++-----------
+>>   fs/btrfs/volumes.h         |  1 +
+>>   include/uapi/linux/btrfs.h |  2 ++
+>>   4 files changed, 48 insertions(+), 13 deletions(-)
+>>
+>> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+>> index 33cc9aba9c94..a4e8beec0fc5 100644
+>> --- a/fs/btrfs/super.c
+>> +++ b/fs/btrfs/super.c
+>> @@ -2247,6 +2247,9 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
+>>   		ret = PTR_ERR_OR_ZERO(device);
+>>   		mutex_unlock(&uuid_mutex);
+>>   		break;
+>> +	case BTRFS_IOC_FORGET_DEV:
+>> +		ret = btrfs_forget_devices(vol->name);
+>> +		break;
+>>   	case BTRFS_IOC_DEVICES_READY:
+>>   		mutex_lock(&uuid_mutex);
+>>   		device = btrfs_scan_one_device(vol->name, FMODE_READ,
+>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>> index 2576b1a379c9..2ab42bfe5d3c 100644
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -734,6 +734,19 @@ static void pending_bios_fn(struct btrfs_work *work)
+>>   	run_scheduled_bios(device);
+>>   }
+>>   
+>> +static bool device_path_matched(const char *path, struct btrfs_device *device)
+>> +{
+>> +	int found;
+>> +
+>> +	rcu_read_lock();
+>> +	found = strcmp(rcu_str_deref(device->name), path);
+>> +	rcu_read_unlock();
+>> +
+>> +	if (!found)
+>> +		return true;
+>> +	return false;
+>> +}
+>> +
+>>   /*
+>>    *  Search and remove all stale (devices which are not mounted) devices.
+>>    *  When both inputs are NULL, it will search and release all stale devices.
+>> @@ -742,44 +755,47 @@ static void pending_bios_fn(struct btrfs_work *work)
+>>    *  skip_dev:	Optional. Will skip this device when searching for the stale
+>>    *		devices.
+>>    */
+>> -static void btrfs_free_stale_devices(const char *path,
+>> +static int btrfs_free_stale_devices(const char *path,
+>>   				     struct btrfs_device *skip_device)
+>>   {
+>>   	struct btrfs_fs_devices *fs_devices, *tmp_fs_devices;
+>>   	struct btrfs_device *device, *tmp_device;
+>> +	int ret;
+>> +
+>> +	if (path)
+>> +		ret = -ENXIO;
+>> +	else
+>> +		ret = 0;
+> 
+> Can you please split this change to another patch? It's a preparatory
+> work for the new ioctl. The return value meaning should be also
+> documented in the function comment.
+> 
 
-For -s/-ss the problem is, btrfs check will report tons of hash
-mismatch, and recent kernel will even refuse to mount due to enhanced
-dir item hash check.
+Pls find v14. I have also use -ENOENT instead of -ENXIO and documented 
+the return value in the function header.
 
-The extra problem of -ss is, it can't ensure all filenames to have a
-conflict hash, so it's not that much different from -s.
-
-
-For User don't want to give any filenames, then don't give any files name=
-s.
-We could find a way to get needed info just using btrfs ins dump-tree,
-especially for this case where only one error is reported.
-
-Thanks,
-Qu
-
->=20
->=20
->=20
-
-
---ENP8H5X6HOnxj8dxyKVND5wvBsgQ6VTto--
-
---DiMEfwHzK6YzP7F4yX21l5IUmiApVjbe9
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlwu4bgACgkQwj2R86El
-/qg0Dgf/cREKP2i2A1rDAt35P5SaCNbCMiidiR15GfJNddcuCjnenuXBMbmiEsNv
-kNtY9yOGqvznelqSJVEtLWEJV0qNZq7uA97kmDthAVqx8FsSNd4UouOnSGdMUsjy
-h3KZYfb3DTiXzc4TnECSsvR2+kjKaMMaMrFHTX6Ln9/A08m3+5y+a9myk/APmTgy
-kImcfcqMnYCUMBN0NxcnAWrbwl2br7NZqSta81Cw4FVXRTUQApJRtQ20HFDzx7NI
-tgF3RnLTQshDTHweiUmwhjuseLwlNLBbxSdnYDOPij0X3yXvRO3xfX1Olds5ACLn
-cFKkjaUr6GxDigiLOrdOu57mbMo4ow==
-=APt4
------END PGP SIGNATURE-----
-
---DiMEfwHzK6YzP7F4yX21l5IUmiApVjbe9--

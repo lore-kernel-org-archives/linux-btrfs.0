@@ -2,169 +2,200 @@ Return-Path: <SRS0=RNif=PM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-11.5 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 985AAC43613
-	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Jan 2019 05:33:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 88F3CC43387
+	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Jan 2019 07:05:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6A26121872
-	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Jan 2019 05:33:18 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="olaJpfxZ"
+	by mail.kernel.org (Postfix) with ESMTP id 513AC2070D
+	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Jan 2019 07:05:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726607AbfADFcJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 4 Jan 2019 00:32:09 -0500
-Received: from userp2130.oracle.com ([156.151.31.86]:57904 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726508AbfADFcI (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Jan 2019 00:32:08 -0500
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id x045SbKR140401
-        for <linux-btrfs@vger.kernel.org>; Fri, 4 Jan 2019 05:32:07 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
- date : message-id : in-reply-to : references; s=corp-2018-07-02;
- bh=CsUE/xq2aY4bpZpLthODmWbBIvIknX3j4ql0mtwzHtg=;
- b=olaJpfxZYKLMXhFY82SNVmkY60ImVPraHeH9M31q/N9B8fWkBm2DhaA7bqzGPqhTcEpb
- Zv1vaTeOzHrbxh5JcD1VxJMc2VuZoNiyXGlMseIe4DWeV6Q6pcIqeXldGo37qHVkIklv
- Q2fDuQ/Z6gi0TxswLRyozL+lWvtY10dRzgSFP3oXZejvLwlcG+a4W8UA+jeNa9G9IGoO
- 7pBcYRHY0SqmuyjCY5iBbmFydrVH0CaOAIP9y5SiixCqGUFyxpWEZYO9pedfKVy7uEwU
- yRfLqTIbDF0ZlDeu+bDg5WbrTme6PTmgXqxe/5YDSX2XLZcKxraZrELwkLOgyjnj8lUg Qw== 
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by userp2130.oracle.com with ESMTP id 2pp0bu2fqt-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 04 Jan 2019 05:32:06 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id x045W1b4000701
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 4 Jan 2019 05:32:01 GMT
-Received: from abhmp0015.oracle.com (abhmp0015.oracle.com [141.146.116.21])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x045W1Oj004345
-        for <linux-btrfs@vger.kernel.org>; Fri, 4 Jan 2019 05:32:01 GMT
-Received: from tpasj.localdomain (/116.87.143.221)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 03 Jan 2019 21:32:00 -0800
-From:   Anand Jain <anand.jain@oracle.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2 v14] btrfs: introduce feature to forget a btrfs device
-Date:   Fri,  4 Jan 2019 13:31:54 +0800
-Message-Id: <1546579914-14971-4-git-send-email-anand.jain@oracle.com>
-X-Mailer: git-send-email 1.8.3.1
-In-Reply-To: <1546579914-14971-1-git-send-email-anand.jain@oracle.com>
-References: <1546579914-14971-1-git-send-email-anand.jain@oracle.com>
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9125 signatures=668680
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=3 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1810050000 definitions=main-1901040048
+        id S1726169AbfADHFE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 4 Jan 2019 02:05:04 -0500
+Received: from mx2.suse.de ([195.135.220.15]:50822 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725913AbfADHFD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 4 Jan 2019 02:05:03 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id D6A91AC91
+        for <linux-btrfs@vger.kernel.org>; Fri,  4 Jan 2019 07:05:01 +0000 (UTC)
+Subject: Re: [PATCH 1/1] btrfs-progs: btrfstune: print seeding status
+To:     David Disseldorp <ddiss@suse.de>, linux-btrfs@vger.kernel.org
+References: <20190103232239.11931-1-ddiss@suse.de>
+ <20190103232239.11931-2-ddiss@suse.de>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <5e76f1f9-27aa-c89c-861a-9d6a9f197482@suse.com>
+Date:   Fri, 4 Jan 2019 09:05:00 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
+MIME-Version: 1.0
+In-Reply-To: <20190103232239.11931-2-ddiss@suse.de>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Support for a new command 'btrfs dev forget [dev]' is proposed here
-to undo the effects of 'btrfs dev scan [dev]'. For this purpose
-this patch proposes to use ioctl #5 as it was empty.
-	IOW(BTRFS_IOCTL_MAGIC, 5, ..)
-This patch adds new ioctl BTRFS_IOC_FORGET_DEV which can be sent from
-the /dev/btrfs-control to forget one or all devices, (devices which are
-not mounted) from the btrfs kernel.
 
-The argument it takes is struct btrfs_ioctl_vol_args, and ::name can be
-set to specify the device path. And all unmounted devices can be removed
-from the kernel if no device path is provided.
 
-Again, the devices are removed only if the relevant fsid aren't mounted.
+On 4.01.19 г. 1:22 ч., David Disseldorp wrote:
+> btrfstune -s <dev> prints "Seeding flag is currently [un]set", based on
+> whether or not BTRFS_SUPER_FLAG_SEEDING is enabled for the given device.
+> 
+> Signed-off-by: David Disseldorp <ddiss@suse.de>
 
-This new cli can provide..
- . Release of unwanted btrfs_fs_devices and btrfs_devices memory if the
-   device is not going to be mounted.
- . Ability to mount the device in degraded mode when one of the other
-   device is corrupted like in split brain raid1.
- . Running test cases which requires btrfs.ko-reload if the rootfs
-   is btrfs.
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-v13->v14:
- Now the changes related to refactor of btrfs_free_stale_devices() is
- moved to a new patch.
-v12->v13:  
-  btrfs.ko returns error on failing to find the given device.
-  For no argument (btrfs device scan --forget) if there is
-  no device to forget then it shall just return success.
-v11->v12: fix coding style add spacing before after ":".
-v1->v11: Pls ref to the cover-letter. (sorry about that).
-
- fs/btrfs/super.c           |  3 +++
- fs/btrfs/volumes.c         | 11 +++++++++++
- fs/btrfs/volumes.h         |  1 +
- include/uapi/linux/btrfs.h |  2 ++
- 4 files changed, 17 insertions(+)
-
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 33cc9aba9c94..a4e8beec0fc5 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -2247,6 +2247,9 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
- 		ret = PTR_ERR_OR_ZERO(device);
- 		mutex_unlock(&uuid_mutex);
- 		break;
-+	case BTRFS_IOC_FORGET_DEV:
-+		ret = btrfs_forget_devices(vol->name);
-+		break;
- 	case BTRFS_IOC_DEVICES_READY:
- 		mutex_lock(&uuid_mutex);
- 		device = btrfs_scan_one_device(vol->name, FMODE_READ,
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index d8ac63e3666d..cec329f64ac0 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1473,6 +1473,17 @@ static int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
- 	return 0;
- }
- 
-+int btrfs_forget_devices(const char *path)
-+{
-+	int ret;
-+
-+	mutex_lock(&uuid_mutex);
-+	ret = btrfs_free_stale_devices(strlen(path) ? path : NULL, NULL);
-+	mutex_unlock(&uuid_mutex);
-+
-+	return ret;
-+}
-+
- /*
-  * Look for a btrfs signature on a device. This may be called out of the mount path
-  * and we are not allowed to call set_blocksize during the scan. The superblock
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index ed806649a473..1e73257e55fb 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -416,6 +416,7 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
- 		       fmode_t flags, void *holder);
- struct btrfs_device *btrfs_scan_one_device(const char *path,
- 					   fmode_t flags, void *holder);
-+int btrfs_forget_devices(const char *path);
- int btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
- void btrfs_free_extra_devids(struct btrfs_fs_devices *fs_devices, int step);
- void btrfs_assign_next_active_device(struct btrfs_device *device,
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index e0763bc4158e..c195896d478f 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -837,6 +837,8 @@ enum btrfs_err_code {
- 				   struct btrfs_ioctl_vol_args)
- #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
- 				   struct btrfs_ioctl_vol_args)
-+#define BTRFS_IOC_FORGET_DEV _IOW(BTRFS_IOCTL_MAGIC, 5, \
-+				   struct btrfs_ioctl_vol_args)
- /* trans start and trans end are dangerous, and only for
-  * use by applications that know how to avoid the
-  * resulting deadlocks
--- 
-1.8.3.1
-
+btrfs inspect-internal dump-super already supports showing seeding, why
+do we need btrfstune support for that as well? Also the way you've
+phrased is a bit misleading, since checking the superflag doesn't mean
+seeding for a particular _device_ is enabled but that the filesystem
+itself is set as seeding.
+> ---
+>  Documentation/btrfstune.asciidoc |  3 +++
+>  btrfstune.c                      | 29 +++++++++++++++++++++++++++--
+>  2 files changed, 30 insertions(+), 2 deletions(-)
+> 
+> diff --git a/Documentation/btrfstune.asciidoc b/Documentation/btrfstune.asciidoc
+> index 27100964..992da95d 100644
+> --- a/Documentation/btrfstune.asciidoc
+> +++ b/Documentation/btrfstune.asciidoc
+> @@ -30,6 +30,9 @@ Enable seeding on a given device. Value 1 will enable seeding, 0 will disable it
+>  A seeding filesystem is forced to be mounted read-only. A new device can be added
+>  to the filesystem and will capture all writes keeping the seeding device intact.
+>  
+> +-s::
+> +Print whether or not seeding is enabled for a given device.
+> +
+>  -r::
+>  (since kernel: 3.7)
+>  +
+> diff --git a/btrfstune.c b/btrfstune.c
+> index 1e378ba1..603242b7 100644
+> --- a/btrfstune.c
+> +++ b/btrfstune.c
+> @@ -73,6 +73,15 @@ static int update_seeding_flag(struct btrfs_root *root, int set_flag)
+>  	return ret;
+>  }
+>  
+> +static void check_seeding_flag(struct btrfs_root *root)
+> +{
+> +	struct btrfs_super_block *disk_super = root->fs_info->super_copy;
+> +	u64 super_flags = btrfs_super_flags(disk_super);
+> +
+> +	printf("Seeding flag is currently %sset\n",
+> +	       (super_flags & BTRFS_SUPER_FLAG_SEEDING ? "" : "un"));
+> +}
+> +
+>  static int set_super_incompat_flags(struct btrfs_root *root, u64 flags)
+>  {
+>  	struct btrfs_trans_handle *trans;
+> @@ -374,6 +383,7 @@ static void print_usage(void)
+>  {
+>  	printf("usage: btrfstune [options] device\n");
+>  	printf("\t-S value\tpositive value will enable seeding, zero to disable, negative is not allowed\n");
+> +	printf("\t-s \t\tcheck whether seeding is enabled\n");
+>  	printf("\t-r \t\tenable extended inode refs\n");
+>  	printf("\t-x \t\tenable skinny metadata extent refs\n");
+>  	printf("\t-n \t\tenable no-holes feature (more efficient sparse file representation)\n");
+> @@ -390,6 +400,7 @@ int main(int argc, char *argv[])
+>  	int total = 0;
+>  	int seeding_flag = 0;
+>  	u64 seeding_value = 0;
+> +	int check_seeding = 0;
+>  	int random_fsid = 0;
+>  	char *new_fsid_str = NULL;
+>  	int ret;
+> @@ -401,7 +412,7 @@ int main(int argc, char *argv[])
+>  			{ "help", no_argument, NULL, GETOPT_VAL_HELP},
+>  			{ NULL, 0, NULL, 0 }
+>  		};
+> -		int c = getopt_long(argc, argv, "S:rxfuU:n", long_options, NULL);
+> +		int c = getopt_long(argc, argv, "S:srxfuU:n", long_options, NULL);
+>  
+>  		if (c < 0)
+>  			break;
+> @@ -410,6 +421,9 @@ int main(int argc, char *argv[])
+>  			seeding_flag = 1;
+>  			seeding_value = arg_strtou64(optarg);
+>  			break;
+> +		case 's':
+> +			check_seeding = 1;
+> +			break;
+>  		case 'r':
+>  			super_flags |= BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF;
+>  			break;
+> @@ -448,7 +462,12 @@ int main(int argc, char *argv[])
+>  		error("random fsid can't be used with specified fsid");
+>  		return 1;
+>  	}
+> -	if (!super_flags && !seeding_flag && !(random_fsid || new_fsid_str)) {
+> +	if (seeding_flag && check_seeding) {
+> +		error("check seeding can't be used alongside set seeding");
+> +		return 1;
+> +	}
+> +	if (!super_flags && !seeding_flag && !check_seeding &&
+> +	    !(random_fsid || new_fsid_str)) {
+>  		error("at least one option should be specified");
+>  		print_usage();
+>  		return 1;
+> @@ -512,6 +531,12 @@ int main(int argc, char *argv[])
+>  		total++;
+>  	}
+>  
+> +	if (check_seeding) {
+> +		check_seeding_flag(root);
+> +		success++;
+> +		total++;
+> +	}
+> +
+>  	if (super_flags) {
+>  		ret = set_super_incompat_flags(root, super_flags);
+>  		if (!ret)
+> 

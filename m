@@ -2,108 +2,121 @@ Return-Path: <SRS0=vb8r=PN=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.5 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 98439C43387
-	for <linux-btrfs@archiver.kernel.org>; Sat,  5 Jan 2019 06:27:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 769FDC43387
+	for <linux-btrfs@archiver.kernel.org>; Sat,  5 Jan 2019 12:31:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 632B521871
-	for <linux-btrfs@archiver.kernel.org>; Sat,  5 Jan 2019 06:27:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 308C32070D
+	for <linux-btrfs@archiver.kernel.org>; Sat,  5 Jan 2019 12:31:39 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="U2Y5EMiq"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="LVCvjop8"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726137AbfAEGRp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 5 Jan 2019 01:17:45 -0500
-Received: from userp2120.oracle.com ([156.151.31.85]:35204 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726102AbfAEGRp (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Jan 2019 01:17:45 -0500
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id x056H9Kc175885;
-        Sat, 5 Jan 2019 06:17:41 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
- references : from : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=corp-2018-07-02;
- bh=c6Jo/DwfRY9aCRIIl1AuAafbRriIHQEJuk9C1bOUMo4=;
- b=U2Y5EMiqmGdzocbriS6QZ1IHVxL6nPBbPnZSNvyngmRjgQcmdjjKZs9g3hjLKWf1VV/n
- o3YrkJgvDJ+qxjkKkf04lZl3NpmAGfHuhONOUqf9KHRYxwOnLWEnu4pzdSrVI2B77PXN
- iDBz1cOdKqhmf0NvEyvPbPWRM+X6Ugbsv6pVtMzyzPTHi29LxbakwQbcvQQQu2Tecsev
- VdpkPrBnNwmRJi/7Qfr79THy1cSj7c/+weraBFYy+cgbm2jwFwBkoQz2VVi5nMPwsMZ3
- 6GippIN0tNDUsmmir6Sp7CYqJAalvpkKVKm99waPvq+Pg5b6zi1NyUrsUKpNkwUPFXyK JQ== 
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by userp2120.oracle.com with ESMTP id 2ptn7qg4tw-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Sat, 05 Jan 2019 06:17:41 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x056HZ46015697
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Sat, 5 Jan 2019 06:17:35 GMT
-Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x056HZt3030985;
-        Sat, 5 Jan 2019 06:17:35 GMT
-Received: from [192.168.1.145] (/116.87.143.221)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Fri, 04 Jan 2019 22:17:35 -0800
-Subject: Re: [PATCH 2/7] btrfs: Remove isize local variable in
- compress_file_range
-To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-References: <20190103085005.32053-1-nborisov@suse.com>
- <20190103085005.32053-3-nborisov@suse.com>
-From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <4a305171-3be6-c085-001a-0f98521499b8@oracle.com>
-Date:   Sat, 5 Jan 2019 14:17:38 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
- Thunderbird/52.9.1
+        id S1726203AbfAEMbi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 5 Jan 2019 07:31:38 -0500
+Received: from mail-wr1-f66.google.com ([209.85.221.66]:40701 "EHLO
+        mail-wr1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726100AbfAEMbh (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Jan 2019 07:31:37 -0500
+Received: by mail-wr1-f66.google.com with SMTP id p4so38806423wrt.7
+        for <linux-btrfs@vger.kernel.org>; Sat, 05 Jan 2019 04:31:36 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=KStxCLGCmIXg5Rp5qYzLB5mt5nTbDZUdfhEsCVUIQgE=;
+        b=LVCvjop8Pwv8bTSnM2CXCN547UpaDknDZ+t0WA/MsX+aGuV628gZOPUXeNN5btD6Rx
+         nIE9weUbv0/FxxUaOqVdx+AiN7NKQ20rannHiZAWpZHDgwRCLeXxxsJm4WsUO6/tczbJ
+         Qic7jKmH32hMHU6jMOtR9W//xZDLVEdTw727JigvnkPPXo5U+RkCL0zkTg7adMJXbABB
+         cEOiZOjY/rb+NKdMIT0fMig8xwCzga5KJ565Y13EAw7IySIiUZIhNh+qK3fVsxzFzwAr
+         9o3b0MWcRDTcnhRk2ejiKwFZUY+DNLmBu7tH5KPc/2FgWcY7Tldxz5fM8rcWscOprRNn
+         eUHg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=KStxCLGCmIXg5Rp5qYzLB5mt5nTbDZUdfhEsCVUIQgE=;
+        b=SEA75OhJRsPCa0vDv7O2BMldOfytcYM8fWZNuE8EsZzcqVo5uV4sf8GbdyQotbE1OC
+         FUrmqnTx9MgXjw3zktcSc1xoDF+YJI6MOxEL3ZCxO5Yrim0yvRi/Ds0RQCbRSSv1wOnV
+         zF1Rlc8PsM1HQcIZJ/NU7cPi/K30OxkOs8RiCYUiVTm+y5uypzOU3DXrPabPRDr9h0Wn
+         BWHU+Ay43sa2amCTkeuXWSdxzbtmTpo78YZtJbC0S4S1S3BpV3NUfKZnENsLvGbnyJS3
+         jV8wTNPy1jIvLEfRptZUGJTfvAyInkBcwhBomNdgizseS1JoawGY4KDJtoK/nB4+3Muh
+         eLWQ==
+X-Gm-Message-State: AJcUukfjciBGxSQCDqbhVnw01MdS5kxO/Eog3eTMTVGLnhBGDkjDu18t
+        QsphDVwmd0Jha/pPHQH+1JUfqxqj
+X-Google-Smtp-Source: ALg8bN7moDe4cVqUrGooMz4bx7+02wkN74qcXhrGr1WmsRw0YDUmVUrXemNRjt6/hdy0rHpX8myg5A==
+X-Received: by 2002:adf:ec83:: with SMTP id z3mr47522030wrn.264.1546691495602;
+        Sat, 05 Jan 2019 04:31:35 -0800 (PST)
+Received: from exnet.gdb.it ([5.90.3.93])
+        by smtp.gmail.com with ESMTPSA id e16sm54208103wrn.72.2019.01.05.04.31.34
+        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
+        Sat, 05 Jan 2019 04:31:34 -0800 (PST)
+From:   Giuseppe Della Bianca <giusdbg@gmail.com>
+To:     Jeff Mahoney <jeffm@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [COMMAND HANGS] The command 'btrfs subvolume sync -s 2 xyz' can hangs.
+Date:   Sat, 05 Jan 2019 13:30:50 +0100
+Message-ID: <2971657.kkKnYu9ILp@exnet.gdb.it>
+In-Reply-To: <067ee226-4636-4ede-1ce7-2bedcc5b4507@suse.com>
+References: <2543962.HIiRWmuHEy@exnet.gdb.it> <2282965.574ZSNQ4d8@exnet.gdb.it> <067ee226-4636-4ede-1ce7-2bedcc5b4507@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <20190103085005.32053-3-nborisov@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9126 signatures=668680
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1810050000 definitions=main-1901050054
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+In data venerd=EC 4 gennaio 2019 21:34:03 CET, Jeff Mahoney ha scritto:
+]zac[
+> >=20
+> > root     17133 17127  0 17:17 ?        00:00:00 btrfs subvolume sync -s=
+ 2
+> > /
+> > tmp/tmp.p9SiQ1GnpV
+> >=20
+> > cat /proc/17133/stack
+> > [<0>] hrtimer_nanosleep+0xce/0x1e0
+> > [<0>] __x64_sys_nanosleep+0x77/0xa0
+> > [<0>] do_syscall_64+0x5b/0x160
+> > [<0>] entry_SYSCALL_64_after_hwframe+0x44/0xa9
+> > [<0>] 0xffffffffffffffff
+>=20
+> Ok, so this is it just sleeping between tree searches.
+]zac[
+> This part is actually important since we see below that we're searching
+> for bytenr 76428623872 which, if present, would be in the cut portion of
+> your log.
+]zac[
+
+If you want, I can send you the full log (very long).
+=46rom what you wrote below it seems to me that you do not need it
+
+]zac]
+>=20
+> This is the more important part.  The file system has gone read-only due
+> to a missing extent backref.  This is corruption.
+
+Yes, but this is an autocorruption of btrfs, which occurred (it seems to me=
+),=20
+during a cleanup after a deleting of a snapshoot of an operating system=20
+installation (perhaps interrupted by an umount).
+
+> It also means that the subvolume is never going to disappear during this
+> mount and 'btrfs subvol sync' will wait forever.
+]zac[
+
+In my opinion this is bad.
+
+The infinite wait occurs during the execution of a backup script, so I will=
+=20
+have to find a bypass even for this problem (the sync was a patch to anothe=
+r=20
+autocorruption problem).
+
+Gdb
 
 
-On 01/03/2019 04:50 PM, Nikolay Borisov wrote:
-> It's used only once so just inline the call to i_size_read.
-> 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
-
-> ---
->   fs/btrfs/inode.c | 3 +--
->   1 file changed, 1 insertion(+), 2 deletions(-)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 43baca50fba5..97ad494d0b3c 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -453,7 +453,6 @@ static noinline void compress_file_range(struct inode *inode,
->   	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
->   	u64 blocksize = fs_info->sectorsize;
->   	u64 actual_end;
-> -	u64 isize = i_size_read(inode);
->   	int ret = 0;
->   	struct page **pages = NULL;
->   	unsigned long nr_pages;
-> @@ -467,7 +466,7 @@ static noinline void compress_file_range(struct inode *inode,
->   	inode_should_defrag(BTRFS_I(inode), start, end, end - start + 1,
->   			SZ_16K);
->   
-> -	actual_end = min_t(u64, isize, end + 1);
-> +	actual_end = min_t(u64, i_size_read(inode), end + 1);
->   again:
->   	will_compress = 0;
->   	nr_pages = (end >> PAGE_SHIFT) - (start >> PAGE_SHIFT) + 1;
-> 

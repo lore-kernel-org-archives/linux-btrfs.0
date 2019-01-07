@@ -6,58 +6,78 @@ X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7CB7AC43387
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 17:59:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2E6D5C43387
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 18:46:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 537EF2085A
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 17:59:39 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id F1A732054F
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 18:46:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727058AbfAGR7i (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 7 Jan 2019 12:59:38 -0500
-Received: from mx2.suse.de ([195.135.220.15]:44270 "EHLO mx1.suse.de"
+        id S1727446AbfAGSqs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 7 Jan 2019 13:46:48 -0500
+Received: from mx2.suse.de ([195.135.220.15]:52598 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726589AbfAGR7h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 7 Jan 2019 12:59:37 -0500
+        id S1727364AbfAGSqr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 7 Jan 2019 13:46:47 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id C6ADFAD38
-        for <linux-btrfs@vger.kernel.org>; Mon,  7 Jan 2019 17:59:36 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 12B1BACA8
+        for <linux-btrfs@vger.kernel.org>; Mon,  7 Jan 2019 18:46:46 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 445CDDA7E8; Mon,  7 Jan 2019 18:59:06 +0100 (CET)
-Date:   Mon, 7 Jan 2019 18:59:06 +0100
+        id 5AD89DA7E8; Mon,  7 Jan 2019 19:46:14 +0100 (CET)
+Date:   Mon, 7 Jan 2019 19:46:14 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/7] More misc fixes
-Message-ID: <20190107175905.GA23615@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+To:     Johannes Thumshirn <jthumshirn@suse.de>
+Cc:     Nikolay Borisov <nborisov@suse.com>, dsterba@suse.cz,
         linux-btrfs@vger.kernel.org
-References: <20190103085005.32053-1-nborisov@suse.com>
+Subject: Re: [PATCH 3/4] btrfs: Refactor retval handling of
+ btrfs_lookup_file_extent in btrfs_get_extent
+Message-ID: <20190107184613.GB23615@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Johannes Thumshirn <jthumshirn@suse.de>,
+        Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+References: <20181217083602.10166-1-nborisov@suse.com>
+ <20181217083602.10166-4-nborisov@suse.com>
+ <20190102170553.GA23615@twin.jikos.cz>
+ <a5015ce3-e241-d1d2-4894-2a03bb117f4a@suse.com>
+ <003128f5-23cd-e8bd-2e82-5f2894596c97@suse.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <20190103085005.32053-1-nborisov@suse.com>
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <003128f5-23cd-e8bd-2e82-5f2894596c97@suse.de>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Jan 03, 2019 at 10:49:58AM +0200, Nikolay Borisov wrote:
-> Here is an assortment of fixes, mainly around the async (compressed) cow path. 
-> Just removes some redundant arguments/local variables, makes shrink_delalloc a
-> bit more readable by simplifying variable usage and giving more appropriate names. 
-> Also documents the ->inode null check in async_cow_submit and cleans up open-coded
-> usage of DIV_ROUND_UP. No functional changes to any of the patches. 
+On Mon, Jan 07, 2019 at 04:22:01PM +0100, Johannes Thumshirn wrote:
+> On 02/01/2019 18:43, Nikolay Borisov wrote:
+> > On 2.01.19 г. 19:05 ч., David Sterba wrote:
+> >> This is repeating code and could be simplified ... to the original code.
+> > 
+> > It does and this is intentional. What I've  strived to do is make the
+> > idea of the code obvious and not try to reduce the total line of code.
+> > It is a massive improvement given the code which modifies extent_end
+> > triggers only in case ret is > 0. I discussed this with Johannes and he
+> > agreed with my assessment.
+> > 
+> >> I'm not sure this patch is an improvement.
 > 
-> Nikolay Borisov (7):
->   btrfs: Remove inode argument from async_cow_submit
->   btrfs: Remove isize local variable in compress_file_range
->   btrfs: Use ihold instead of igrab in cow_file_range_async
->   btrfs: Remove WARN_ON in btrfs_alloc_delalloc_work
->   btrfs: Document logic in async_cow_submit
->   btrfs: Replace open-coded maths with DIV_ROUND_UP
->   btrfs: Refactor shrink_delalloc
+> I think it really helps when trying to understand the code.
+> 
+> This is why the patch was created in the first place, I asked Nik about
+> something and we went over the code together.
 
-All but 6/7 applied, the one still needs to be clarified.
+I've tried to read the new version again with fresh eyes and still don't
+see any improvement in readability. Not that the whole function is easy
+to follow, quite the opposite, but I'd rather see continued refactoring
+that untangles the gotos.
+
+The return codes of btrfs_lookup_file_extent follow the common
+btrfs_search_slot pattern < 0 error, 0 found, > 0 not found. And in the
+last case there's an adjustment needed. Read the item type, check and
+branch if necessary. No surprises there.
+
+The amount of duplicated code is also not something trivial like
+a variable asisgnment, there are arguments passed etc.

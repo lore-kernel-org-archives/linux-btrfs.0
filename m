@@ -7,27 +7,28 @@ X-Spam-Status: No, score=-6.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
 	MENTIONS_GIT_HOSTING,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 19DF4C43387
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 06:52:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 65DDEC43387
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 06:53:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DA63E2085A
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 06:52:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2E54C2085A
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 06:53:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726425AbfAGGwI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 7 Jan 2019 01:52:08 -0500
-Received: from mout.gmx.net ([212.227.17.22]:41983 "EHLO mout.gmx.net"
+        id S1726285AbfAGGxV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 7 Jan 2019 01:53:21 -0500
+Received: from mout.gmx.net ([212.227.17.20]:41323 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725777AbfAGGwI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 7 Jan 2019 01:52:08 -0500
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx102
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0MFAaV-1gV4uF3npr-00GHjg; Mon, 07
- Jan 2019 07:51:58 +0100
+        id S1725778AbfAGGxU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 7 Jan 2019 01:53:20 -0500
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx103
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0Lp3Qu-1hC8d109IK-00erYZ; Mon, 07
+ Jan 2019 07:53:12 +0100
 Subject: Re: [PATCH 0/4] btrfs-progs: check: Add repair support for mismatch
  dir item hash
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
         David Sterba <dsterba@suse.cz>
 References: <20181025074449.32469-1-wqu@suse.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+ <40066cc8-e631-2ceb-6dc3-01795778a2fd@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
@@ -53,131 +54,143 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <40066cc8-e631-2ceb-6dc3-01795778a2fd@gmx.com>
-Date:   Mon, 7 Jan 2019 14:51:50 +0800
+Message-ID: <74d1406c-57f9-84d3-ef65-595ddfc72d88@gmx.com>
+Date:   Mon, 7 Jan 2019 14:53:03 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.3.3
 MIME-Version: 1.0
-In-Reply-To: <20181025074449.32469-1-wqu@suse.com>
+In-Reply-To: <40066cc8-e631-2ceb-6dc3-01795778a2fd@gmx.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="yAlC7nt6c8fBTcRlMiq5BOZhjdkkY33Zz"
-X-Provags-ID: V03:K1:sWIX6TorTyDTYp0q0lI8WRAXEGvrImIKHlkP2j4kRKR53miqYKp
- u9NYy7TORf1w8khx3vuFb4D1SHWBihp4clPIdPUTt2z/XXzFxqb9rA8/8UbAhbTBd/4rE3x
- HtqOKh5P+/IONf8KqQfPziZ0bhyn7FrtxYC8CD9OOTkrPLtNp1+AEtWpxPP5JPxGaWoKOrt
- d2PIcOk+5uaGYfMGiiOgg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:7FrGSTE8BV4=:dXPKuGXdKUXGPz8Cfyvld6
- VsVchr3V7wrhfxhXdnlzHdw5iFGWt3TWXXpUkZskujzSUflWKi7E/Yr587DMlT4lIsWiCWR5q
- 3JmL1S/YGJ0Srsl3gmKBmYBfkS83Jbwr5oha1nVtrcRI5+BbrKbiZdl/YATkjR1Dy2fVeUuAE
- pbZvN9BXthRIWDU9LIRrDFcfJv5wrbPu6pWAJqr6p3Uq16nL57i4gl8vfmzSRZ4L4JzFwlXQa
- K7hUKfPbWX/It0brOuMHznAVWjLPpJEQm7ufQ2UTHD2SxIS5jy1t36bdQRX0ktFjaQ+uBmcGx
- 5V1lP9Mxv+5EHnE7YvEfk1Qb/tZgg0w+NdXjiWVFkGfsUP+NX1TIoh2Peli1NMuq8vBjK9fiO
- P0jh+dDKPrJ+pCaaSWTZsAw6ADrQ8g95KxBVIMdhAFgwT6vuZaqZNB0HUsd0LFDvfVQr3sxfx
- kIFipEdxAbzUtP9Q9B8RD8izvDBqzHSm3dJA1aMtSaE6nBaOZm5ySSFlPnw2ZfNC+1yh/ohGK
- P7GfR1ARjnA7cb6ApNHG/rfFooGyHOINh8HyhdO74HabloPJjA3sarK9lQT8k/kNCXd8YhGJz
- 4x0AJlVBkqqkUaKbR5DwU//aiaiZxMA7mjIhFkNMpnXDygVlyl2rlsOls+AwFbNsJoyxd5/0E
- 5v+ImKVNtaSJa90KcK0uyhndoco4jZuyfzlAZjWGYhRx+CtBS2noBjuIjxIsY8Yymp7t34OBZ
- buwJBwuG90UDksEiANpxv1SaVzDXxUuFTLGzmrigKSbbNpCYjl+vbI8Y6jyiLC9HXlv79jOLh
- mkqhMR7KFci0hZvtKWIA9CwOMHubD/sI/EF4wBYEjVD6l94/XkLol7Nt51mTp2/9As4ytvhL/
- ASFyVtOYxbrVjobJfKmb9wylzJwhqZRd0gp86g6FQ+IZfoKz9PrZXTvgP7Xouj
+ boundary="Pp5vOSnFThGZpYAAllu0V5Z2BjnC20NWP"
+X-Provags-ID: V03:K1:e6QAyUbwKl5TdkiRLHWF6X/niaFEIruSFS6KfEE3ykuyXZ4h5wj
+ Ent2guiNKquogf6Xu8tPuYxJkCAV4wVSk/u/jWG7sadU1YYWozRr4wUYOCwmeam3l2GCfyz
+ y625uJk9B0Rc1q67Ji/qCuV1ZU3aktzq7vAo0iLXVgiecCQuB6FIOT0cBYP2jFfU+nTHqwj
+ v1ZmwvqhYxfGUN9Euo6zA==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:xIwv9Xg07fI=:sCfZ3udzIqj37dXEOri72N
+ dQpWh4mQkacA4WzYWMW84Lyb1FLVSy4xJ6M8VBFOwwzPdbxlT2zP/pwj8gm9LQSLQ/0xP5SpR
+ XAESEypHM1SwSgA/yGl2SZnRjJj2KLhWrxkAZuEeKX2vjvSG4ksSW1DKhF3aLmuz4dyvG1ldf
+ jreQidE549XG4WWRNHB1sacfwgd/Ax5I6/MbguETO8rgNEN/IGwcWA40txyaRHBPQpL43d0Q9
+ F8f5906CRonCRdfvu2oG7TaZE0jStKjqX+BgFiYGjZEAa0KEyC++0+X8nYwyhThJmqosbfzwO
+ QgDnNfqAngR7xdRyyicQ1+PqV1v5H8AwRr4VLE4ANHj7TA8nlEnG+SNWY+wZbqCLV9ggBxz1x
+ iRXpxWu8+/LRayWYcry5HYoHNWTjBnopf/PsAH6gvJlRt9/YF4RRoi4G5vh841yJgtLoiOgb6
+ vG9TbMMycaSm5W9DYxgRe3omsgJDzcHonX8oo12A4ay/uFx87kGbyRqR86ThlkeQMW1J5YLDn
+ h+W+uEXp92089mtFrohUL1oW9adGlB3T9LfQ3XMOS81J208okSp7HyMm56UvifP5n831TzLSZ
+ sHXPWASd+v0Viacst8F01UUC3bmrXAikjfMqeHqK2HmxXQOpE691k+CHpC1aCm5i17+Xv+Sy3
+ iQ1r6pedldxRETnzE4vjUUB6/twKakI0V7j6DHQbHWEK1xqMbwSznsXBS6rQobMml9mQWMpcC
+ Mg0YNO9HzBrl9BQiekqX5b2+pAcgVgGer8aZl/8USuSs49xUoYmjsZYwjb+J3TbnHBuXf7rE/
+ 2qmxMky50GtW39e2ODKG05eoYpaDiT1jOjVkrpj4smjtQuN8n7C8j4h7MWi5GAzexzxvtfMao
+ bPzfrNR+v9A55TCmLosiuxwhNLjjKKTdwwdEZwQEyvbktm8qD7On+OdCSROjGQ
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---yAlC7nt6c8fBTcRlMiq5BOZhjdkkY33Zz
-Content-Type: multipart/mixed; boundary="xGdObWPJObGAwsYriQEI8VsZe400vJ8du";
+--Pp5vOSnFThGZpYAAllu0V5Z2BjnC20NWP
+Content-Type: multipart/mixed; boundary="CEbZYoGKcav2TXbaJbF1vvH9N7lZ3vk2S";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
  David Sterba <dsterba@suse.cz>
-Message-ID: <40066cc8-e631-2ceb-6dc3-01795778a2fd@gmx.com>
+Message-ID: <74d1406c-57f9-84d3-ef65-595ddfc72d88@gmx.com>
 Subject: Re: [PATCH 0/4] btrfs-progs: check: Add repair support for mismatch
  dir item hash
 References: <20181025074449.32469-1-wqu@suse.com>
-In-Reply-To: <20181025074449.32469-1-wqu@suse.com>
+ <40066cc8-e631-2ceb-6dc3-01795778a2fd@gmx.com>
+In-Reply-To: <40066cc8-e631-2ceb-6dc3-01795778a2fd@gmx.com>
 
---xGdObWPJObGAwsYriQEI8VsZe400vJ8du
+--CEbZYoGKcav2TXbaJbF1vvH9N7lZ3vk2S
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
-Hi David,
 
-Would you please consider merging this patchset?
 
-There are at least 2 user reporting latest kernel tree checker refuse to
-mount their fs, and this patch is needed to allow btrfs-progs to fix the =
-fs.
+On 2019/1/7 =E4=B8=8B=E5=8D=882:51, Qu Wenruo wrote:
+> Hi David,
+>=20
+> Would you please consider merging this patchset?
+
+My fault, already in devel branch.
 
 Thanks,
 Qu
 
-On 2018/10/25 =E4=B8=8B=E5=8D=883:44, Qu Wenruo wrote:
-> This patchset can be fetched from github:
-> https://github.com/adam900710/btrfs-progs/tree/repair_bad_dir_item_hash=
+>=20
+> There are at least 2 user reporting latest kernel tree checker refuse t=
+o
+> mount their fs, and this patch is needed to allow btrfs-progs to fix th=
+e fs.
+>=20
+> Thanks,
+> Qu
+>=20
+> On 2018/10/25 =E4=B8=8B=E5=8D=883:44, Qu Wenruo wrote:
+>> This patchset can be fetched from github:
+>> https://github.com/adam900710/btrfs-progs/tree/repair_bad_dir_item_has=
+h
+>>
+>> This is still based on the latest stable v4.17.1 branch (which is alre=
+ady a
+>> little old now)
+>>
+>> We have report from suse bugzilla where user report latest kernel refu=
+se
+>> to mount the fs.
+>>
+>> The problem turns out to be that some old kernel (around Jan 2017) has=
+ a
+>> bug that could leads to corrupted dir item with mismatch hash.
+>>
+>> This patchset will allow btrfs check --repair to repair such problem.
+>>
+>> Qu Wenruo (4):
+>>   btrfs-progs: lowmem check: Add ability to repair dir item with
+>>     mismatch hash
+>>   btrfs-progs: original check: Use mismatch_dir_hash_record to record
+>>     bad dir items
+>>   btrfs-progs: original check: Add ability to repair dir item with
+>>     invalid hash
+>>   btrfs-progs: fsck-tests: Make 026-bad-dir-item-name test case to
+>>     verify if btrfs-check can also repair it
+>>
+>>  check/main.c                                  | 121 +++++++++++++++++=
+-
+>>  check/mode-common.c                           |  51 ++++++++
+>>  check/mode-common.h                           |   5 +-
+>>  check/mode-lowmem.c                           |  46 ++++++-
+>>  check/mode-lowmem.h                           |   1 +
+>>  check/mode-original.h                         |  14 ++
+>>  ctree.h                                       |   3 +
+>>  dir-item.c                                    |   6 +-
+>>  .../026-bad-dir-item-name/description.txt     |  41 ++++++
+>>  .../fsck-tests/026-bad-dir-item-name/test.sh  |  13 --
+>>  10 files changed, 272 insertions(+), 29 deletions(-)
+>>  create mode 100644 tests/fsck-tests/026-bad-dir-item-name/description=
+=2Etxt
+>>  delete mode 100755 tests/fsck-tests/026-bad-dir-item-name/test.sh
+>>
+>=20
 
->=20
-> This is still based on the latest stable v4.17.1 branch (which is alrea=
-dy a
-> little old now)
->=20
-> We have report from suse bugzilla where user report latest kernel refus=
-e
-> to mount the fs.
->=20
-> The problem turns out to be that some old kernel (around Jan 2017) has =
-a
-> bug that could leads to corrupted dir item with mismatch hash.
->=20
-> This patchset will allow btrfs check --repair to repair such problem.
->=20
-> Qu Wenruo (4):
->   btrfs-progs: lowmem check: Add ability to repair dir item with
->     mismatch hash
->   btrfs-progs: original check: Use mismatch_dir_hash_record to record
->     bad dir items
->   btrfs-progs: original check: Add ability to repair dir item with
->     invalid hash
->   btrfs-progs: fsck-tests: Make 026-bad-dir-item-name test case to
->     verify if btrfs-check can also repair it
->=20
->  check/main.c                                  | 121 +++++++++++++++++-=
 
->  check/mode-common.c                           |  51 ++++++++
->  check/mode-common.h                           |   5 +-
->  check/mode-lowmem.c                           |  46 ++++++-
->  check/mode-lowmem.h                           |   1 +
->  check/mode-original.h                         |  14 ++
->  ctree.h                                       |   3 +
->  dir-item.c                                    |   6 +-
->  .../026-bad-dir-item-name/description.txt     |  41 ++++++
->  .../fsck-tests/026-bad-dir-item-name/test.sh  |  13 --
->  10 files changed, 272 insertions(+), 29 deletions(-)
->  create mode 100644 tests/fsck-tests/026-bad-dir-item-name/description.=
-txt
->  delete mode 100755 tests/fsck-tests/026-bad-dir-item-name/test.sh
->=20
+--CEbZYoGKcav2TXbaJbF1vvH9N7lZ3vk2S--
 
-
---xGdObWPJObGAwsYriQEI8VsZe400vJ8du--
-
---yAlC7nt6c8fBTcRlMiq5BOZhjdkkY33Zz
+--Pp5vOSnFThGZpYAAllu0V5Z2BjnC20NWP
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlwy9wYACgkQwj2R86El
-/qiPRQf+J7tGH+LaGZjRK78Cs6xizfTtIyU4rx08dkzV7RLb3gKs/AfOuWmQkoX0
-08vwYK/iuL4MBLxpFfUdE4MeC4hqdzXLQ/3esofXCBkiJYcc5jcH3biBiLsg+0+3
-juF6HcCL1NIaRVcUYdKIMmCq1n/BPEZpvv7YKCFf3Rkd7PER07CVdvR7GJzyZb8z
-F92/UJIO4w3UnC2UiotrEZ50/xwJUWzeRS2L21fb9rR6G+iKeoP3AvoUZc/Gj4nJ
-pWfn3TlKr0mM1VF3gYVg/vXjhIvewm4Lg7X5GNzjZsFF12lCjJ73GSAwBjobBogL
-E1dWuA6w/hQ7SSsRMvo4oDcOPLBcKw==
-=hEJ1
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlwy908ACgkQwj2R86El
+/qia3Af/ayL39rWQ7gEYLMKdyCRGXGfEXrjQNRF1lQoCkHsiJ+Cy1isHvt3pmxZ7
+z4EmFYfxdIaIWXHGgTp41aeTwTciA9RV39VKIcKBFCFxQE829CSALcyhsQA6/Tl3
+1Ccghs6QfPFh1pXh0qFcYya20Ah9pSW/2Mpz5FQtoyhJ9+GJajc2Fcibn5i4CiTj
+zbHqAwlhpgbKVei5o14YbPlPP+x7rerGAnTSF/yHiqccsvTXj6cdLx4vxyrvmcPQ
+l+xLeSVPWm8+LOZC9EgNjiy3NnDdmBa75XrUXWEc51EXeHmcTiJ9MUkjKLa6OOZj
+TGtEyZnndgmP2DpSNiXdTipfMbXVPw==
+=KQp6
 -----END PGP SIGNATURE-----
 
---yAlC7nt6c8fBTcRlMiq5BOZhjdkkY33Zz--
+--Pp5vOSnFThGZpYAAllu0V5Z2BjnC20NWP--

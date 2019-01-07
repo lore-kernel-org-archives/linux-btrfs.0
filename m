@@ -2,77 +2,137 @@ Return-Path: <SRS0=zk84=PP=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1B84FC43387
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 15:35:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0D7E6C43387
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 16:27:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id AD0C0206C0
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 15:35:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CF2DF2089F
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 16:27:56 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="kisAHxwI"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729912AbfAGPf2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 7 Jan 2019 10:35:28 -0500
-Received: from mx2.suse.de ([195.135.220.15]:43140 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726873AbfAGPf2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 7 Jan 2019 10:35:28 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 2AC73AFAF;
-        Mon,  7 Jan 2019 15:35:27 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 9BF77DA7E8; Mon,  7 Jan 2019 16:34:56 +0100 (CET)
-Date:   Mon, 7 Jan 2019 16:34:56 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Johannes Thumshirn <jthumshirn@suse.de>
-Cc:     dsterba@suse.cz, Dmitriy Gorokh <dmitriy.gorokh@gmail.com>,
-        linux-btrfs@vger.kernel.org, Ming Lei <ming.lei@redhat.com>
-Subject: Re: [PATCH v2] btrfs: raid56: data corruption on a device removal
-Message-ID: <20190107153456.GW23615@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Johannes Thumshirn <jthumshirn@suse.de>,
-        Dmitriy Gorokh <dmitriy.gorokh@gmail.com>,
-        linux-btrfs@vger.kernel.org, Ming Lei <ming.lei@redhat.com>
-References: <66F8D435-4E51-4761-B6CF-BA96F4BC5986@wdc.com>
- <CANYdAbLNAxoAXcxuC+ugpdhsCpTbh0zVjY3T5rtOcpVufnmWRA@mail.gmail.com>
- <20190104164943.GU23615@twin.jikos.cz>
- <0a356978-4d95-7597-b71a-d502e94c2461@suse.de>
+        id S1730423AbfAGQ1z (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 7 Jan 2019 11:27:55 -0500
+Received: from mail-vk1-f195.google.com ([209.85.221.195]:34867 "EHLO
+        mail-vk1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1730399AbfAGQ1y (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Jan 2019 11:27:54 -0500
+Received: by mail-vk1-f195.google.com with SMTP id b18so215991vke.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Jan 2019 08:27:53 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
+         :subject:to:cc:content-transfer-encoding;
+        bh=ItOe6+jVfR5qHSrMXUtCGUBjUAsUCiKOpQJwmTWjw6c=;
+        b=kisAHxwI2V/sp5i6Rr7+jyRh1LSppbkw7rH7X1PpMD4X9iqoxFsvQbN4ZmnyM/zC6M
+         EhS+eGy6p4X/mX+16ZXVfnEYqlzVAetGE5K1jJ+VctjBGFdZYajgM/m9tzN2Tl/eWKRs
+         qxwIiAQbqKXa0xEMTPgz//VNeTozpwR5gGaZKbvTNjoEyhipG30ihG+EBjiGUStJs0uG
+         kB1tH6gMM7ZQUTV4fAU69AY4gpIVJA4IwpBvdywuCjmftxWpmY2ZR3/z2el3YQObSrOl
+         FqZ3Wz8RDY5PFLgdjBA3J+DslmsOS/sYJsX4mcxzxRdG3OQ+VulIPGIW3nvWEsmc6hPu
+         SR4w==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
+         :from:date:message-id:subject:to:cc:content-transfer-encoding;
+        bh=ItOe6+jVfR5qHSrMXUtCGUBjUAsUCiKOpQJwmTWjw6c=;
+        b=ShpkXYiwEFsvM5ZvdsBQvcj/fSHe2NEiPTtptgR+978dHN+gKxtKcNVPO5UHaaI4DN
+         9EUf2Tot0hgrPwjdnVALa6mBN8R69XKq2w4S06XaStqQcHbJVZD3KPw3ASme2xXcBh95
+         wvh0BnTB+bsekr2OVdP7R+ZrZkKDAhGdwp+XNNvg8di0lzPVtdT5N2b7+4iO2djtCwXx
+         NZGx/tPFlPLRnzSKYjaiqGmGQgmX0anQRqHGjfPA3Jds+XoLOIxyiQKt4oip/gkg+Cli
+         8ldduK5r8BeFeaUmwqXdMfTsj4NYwg/6RV2VqDMp/QHw703diTkuqz+1FRUFaJn8mmi7
+         A7XQ==
+X-Gm-Message-State: AJcUukee12xxvwzlJAs39OLPgcF44zQZqEcHtHQMfl8Hx7NeomuEMVdW
+        FzaAqCAcUTW421KEGF5paaykkNxkyV5eT0SMlFrAGdvv
+X-Google-Smtp-Source: ALg8bN76DTMUUZQyJ3FcxEH9rYY/8FfGlf/AM6Gukv9/RP+cNxKeYbGSRnSZ3Xu9GVPQarVzabhr36YysKMY8Pd7o60=
+X-Received: by 2002:a1f:80d3:: with SMTP id b202mr22097703vkd.23.1546878473308;
+ Mon, 07 Jan 2019 08:27:53 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <0a356978-4d95-7597-b71a-d502e94c2461@suse.de>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+References: <20181005094555.31177-1-wqu@suse.com> <20181005094555.31177-3-wqu@suse.com>
+In-Reply-To: <20181005094555.31177-3-wqu@suse.com>
+Reply-To: fdmanana@gmail.com
+From:   Filipe Manana <fdmanana@gmail.com>
+Date:   Mon, 7 Jan 2019 16:27:41 +0000
+Message-ID: <CAL3q7H4-YsT4n663XNTzFa9hUnmRWUPzgvovP-GcYnkA6cKHWw@mail.gmail.com>
+Subject: Re: [PATCH v2 2/2] btrfs: volumes: Make sure no dev extent is beyond
+ device boundary
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Jan 07, 2019 at 12:03:43PM +0100, Johannes Thumshirn wrote:
-> >> + /*
-> >> +  * Since the failed bio can return partial data, bi_sector might be
-> >> +  * incremented by that value. We need to revert it back to the
-> >> +  * state before the bio was submitted.
-> >> +  */
-> >> + physical -= bio->bi_iter.bi_done;
-> > 
-> > The bi_done member has been removed in recent block layer changes
-> > commit 7759eb23fd9808a2e4498cf36a798ed65cde78ae ("block: remove
-> > bio_rewind_iter()"). I wonder what kind of block-magic do we need to do
-> > as the iterators seem to be local and there's nothing available in the
-> > call chain leading to find_bio_stripe. Johannes, any ideas?
-> 
-> Right, what we could do here is go the same way Ming did in
-> 7759eb23fd980 ("block: remove bio_rewind_iter()") and save a bvec_iter
-> somewhere before submission and then see if we returned partial data,
-> but this somehow feels wrong to me (at least to do in btrfs code instead
-> of the block layer).
+On Fri, Oct 5, 2018 at 10:46 AM Qu Wenruo <wqu@suse.com> wrote:
+>
+> Add extra dev extent end check against device boundary.
+>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/volumes.c | 17 +++++++++++++++++
+>  1 file changed, 17 insertions(+)
+>
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index bf0b2c16847a..bc3ac4715694 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -7371,6 +7371,7 @@ static int verify_one_dev_extent(struct btrfs_fs_in=
+fo *fs_info,
+>         struct extent_map_tree *em_tree =3D &fs_info->mapping_tree.map_tr=
+ee;
+>         struct extent_map *em;
+>         struct map_lookup *map;
+> +       struct btrfs_device *dev;
+>         u64 stripe_len;
+>         bool found =3D false;
+>         int ret =3D 0;
+> @@ -7420,6 +7421,22 @@ static int verify_one_dev_extent(struct btrfs_fs_i=
+nfo *fs_info,
+>                         physical_offset, devid);
+>                 ret =3D -EUCLEAN;
+>         }
+> +
+> +       /* Make sure no dev extent is beyond device bondary */
+> +       dev =3D btrfs_find_device(fs_info, devid, NULL, NULL);
 
-> Ming can we resurrect ->bi_done, or do you have a different suggestion
-> for finding about partial written bios?
+Qu,
 
-I don't think bi_done can be resurrected
-(https://marc.info/?l=linux-block&m=153549921116441&w=2) but I still am
-not sure that saving the iterator is the right thing (or at least how to
-do that right, not that the whole idea is wrong).
+This breaks use cases including seed devices. In those cases we need
+to find a device by ID and FSID (not not return the first device we
+find with a specific ID, ignoring the FSID).
+Fstest btrfs/163 now fails in 5.0-rc1 because of this change.
+
+Thanks.
+
+> +       if (!dev) {
+> +               btrfs_err(fs_info, "failed to find devid %llu", devid);
+> +               ret =3D -EUCLEAN;
+> +               goto out;
+> +       }
+> +       if (physical_offset + physical_len > dev->disk_total_bytes) {
+> +               btrfs_err(fs_info,
+> +"dev extent devid %llu physical offset %llu len %llu is beyond device bo=
+undary %llu",
+> +                         devid, physical_offset, physical_len,
+> +                         dev->disk_total_bytes);
+> +               ret =3D -EUCLEAN;
+> +               goto out;
+> +       }
+>  out:
+>         free_extent_map(em);
+>         return ret;
+> --
+> 2.19.0
+>
+
+
+--=20
+Filipe David Manana,
+
+=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
+ right.=E2=80=9D

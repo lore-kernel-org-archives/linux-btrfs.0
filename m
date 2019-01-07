@@ -6,27 +6,27 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CBD33C43614
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 05:42:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 484EDC4363B
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 05:42:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9C4E920854
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 05:42:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 177E72087F
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 05:42:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726419AbfAGFmJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 7 Jan 2019 00:42:09 -0500
-Received: from mx2.suse.de ([195.135.220.15]:52636 "EHLO mx1.suse.de"
+        id S1726445AbfAGFmR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 7 Jan 2019 00:42:17 -0500
+Received: from mx2.suse.de ([195.135.220.15]:52722 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725300AbfAGFmJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 7 Jan 2019 00:42:09 -0500
+        id S1725300AbfAGFmR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 7 Jan 2019 00:42:17 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 86A16AD81
-        for <linux-btrfs@vger.kernel.org>; Mon,  7 Jan 2019 05:42:06 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id C8A74AD4C
+        for <linux-btrfs@vger.kernel.org>; Mon,  7 Jan 2019 05:42:15 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v3.1 3/7] btrfs: relocation: Delay reloc tree deletion after merge_reloc_roots()
-Date:   Mon,  7 Jan 2019 13:41:47 +0800
-Message-Id: <20190107054151.18662-4-wqu@suse.com>
+Subject: [PATCH v3.1 6/7] btrfs: qgroup: Use delayed subtree rescan for balance
+Date:   Mon,  7 Jan 2019 13:41:50 +0800
+Message-Id: <20190107054151.18662-7-wqu@suse.com>
 X-Mailer: git-send-email 2.20.1
 In-Reply-To: <20190107054151.18662-1-wqu@suse.com>
 References: <20190107054151.18662-1-wqu@suse.com>
@@ -37,256 +37,229 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Relocation code will drop btrfs_root::reloc_root as soon as
-merge_reloc_root() finishes.
+Before this patch, qgroup code trace the whole subtree of file and reloc
+trees unconditionally.
 
-However later qgroup code will need to access btrfs_root::reloc_root
-after merge_reloc_root() for delayed subtree rescan.
+This makes qgroup numbers consistent, but it could cause tons of
+unnecessary extent trace, which cause a lot of overhead.
 
-So alter the timming of resetting btrfs_root:::reloc_root, make it
-happens after transaction commit.
+However for subtree swap of balance, since both subtree contains the
+same content and tree structures, just swap them won't change qgroup
+numbers.
 
-With this patch, we will introduce a new btrfs_root::state,
-BTRFS_ROOT_DEAD_RELOC_TREE, to info part of btrfs_root::reloc_tree user
-that although btrfs_root::reloc_tree is still non-NULL, but still it's
-not used any more.
+It's the race window between subtree swap and transaction commit could
+cause qgroup number change.
 
-The lifespan of btrfs_root::reloc tree will become:
-          Old behavior            |              New
-------------------------------------------------------------------------
-btrfs_init_reloc_root()      ---  | btrfs_init_reloc_root()      ---
-  set reloc_root              |   |   set reloc_root              |
-                              |   |                               |
-                              |   |                               |
-merge_reloc_root()            |   | merge_reloc_root()            |
-|- btrfs_update_reloc_root() ---  | |- btrfs_update_reloc_root() -+-
-     clear btrfs_root::reloc_root |      set ROOT_DEAD_RELOC_TREE |
-                                  |      record root into dirty   |
-                                  |      roots rbtree             |
-                                  |                               |
-                                  | reloc_block_group() Or        |
-                                  | btrfs_recover_relocation()    |
-                                  | | After transaction commit    |
-                                  | |- clean_dirty_root()        ---
-                                  |     clear btrfs_root::reloc_root
+This patch will delay the qgroup subtree scan until CoW happens for the
+subtree root.
 
-During ROOT_DEAD_RELOC_TREE set lifespan, the only user of
-btrfs_root::reloc_tree should be qgroup.
+So if there is no other operations for the fs, balance won't cause extra
+qgroup overhead. (best case scenario)
+And depends on the workload, most of the subtree scan can still be
+avoided.
 
-And to co-operate this, also delayed btrfs_drop_snapshot() call on reloc
-tree, btrfs_drop_snapshot() call will also be delayed to
-clean_dirty_root().
+Only for worst case scenario, it will fall back to old subtree swap
+overhead. (scan all swapped subtrees)
+
+[[Benchmark]]
+Hardware:
+	VM 4G vRAM, 8 vCPUs,
+	disk is using 'unsafe' cache mode,
+	backing device is SAMSUNG 850 evo SSD.
+	Host has 16G ram.
+
+Mkfs parameter:
+	--nodesize 4K (To bump up tree size)
+
+Initial subvolume contents:
+	4G data copied from /usr and /lib.
+	(With enough regular small files)
+
+Snapshots:
+	16 snapshots of the original subvolume.
+	each snapshot has 3 random files modified.
+
+balance parameter:
+	-m
+
+So the content should be pretty similar to a real world root fs layout.
+
+And after file system population, there is no other activity, so it
+should be the best case scenario.
+
+                     | v4.20-rc1            | w/ patchset    | diff
+-----------------------------------------------------------------------
+relocated extents    | 22615                | 22457          | -0.1%
+qgroup dirty extents | 163457               | 121606         | -25.6%
+time (sys)           | 22.884s              | 18.842s        | -17.6%
+time (real)          | 27.724s              | 22.884s        | -17.5%
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/ctree.h      |   1 +
- fs/btrfs/relocation.c | 125 ++++++++++++++++++++++++++++++++++++------
- 2 files changed, 109 insertions(+), 17 deletions(-)
+ fs/btrfs/ctree.c      |  8 ++++
+ fs/btrfs/qgroup.c     | 87 +++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/qgroup.h     |  2 +
+ fs/btrfs/relocation.c | 14 +++----
+ 4 files changed, 102 insertions(+), 9 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 0a68cf7032f5..a669fa1bda7b 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1195,6 +1195,7 @@ enum {
- 	BTRFS_ROOT_MULTI_LOG_TASKS,
- 	BTRFS_ROOT_DIRTY,
- 	BTRFS_ROOT_DELETING,
-+	BTRFS_ROOT_DEAD_RELOC_TREE,
- };
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index d92462fe66c8..ed28aa7c5f5c 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -13,6 +13,7 @@
+ #include "print-tree.h"
+ #include "locking.h"
+ #include "volumes.h"
++#include "qgroup.h"
  
- /*
+ static int split_node(struct btrfs_trans_handle *trans, struct btrfs_root
+ 		      *root, struct btrfs_path *path, int level);
+@@ -1465,6 +1466,13 @@ noinline int btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 		btrfs_set_lock_blocking(parent);
+ 	btrfs_set_lock_blocking(buf);
+ 
++	/*
++	 * Before CoWing this block for later modification, check if it's
++	 * the subtree root and do the delayed subtree trace if needed.
++	 *
++	 * Also We don't care about the error, as it's handled internally.
++	 */
++	btrfs_qgroup_trace_subtree_after_cow(trans, root, buf);
+ 	ret = __btrfs_cow_block(trans, root, buf, parent,
+ 				 parent_slot, cow_ret, search_start, 0);
+ 
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index cb45640b05d1..4aedf17b7e55 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -3927,3 +3927,90 @@ int btrfs_qgroup_add_swapped_blocks(struct btrfs_trans_handle *trans,
+ 			BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
+ 	return ret;
+ }
++
++/*
++ * Check if the tree block is a subtree root, and if so do the needed
++ * delayed subtree trace for qgroup.
++ *
++ * This is called during btrfs_cow_block().
++ */
++int btrfs_qgroup_trace_subtree_after_cow(struct btrfs_trans_handle *trans,
++		struct btrfs_root *root, struct extent_buffer *file_eb)
++{
++	struct btrfs_fs_info *fs_info = root->fs_info;
++	struct btrfs_qgroup_swapped_blocks *blocks = &root->swapped_blocks;
++	struct btrfs_qgroup_swapped_block *block;
++	struct extent_buffer *reloc_eb = NULL;
++	struct rb_node *n;
++	bool found = false;
++	bool swapped = false;
++	int level = btrfs_header_level(file_eb);
++	int ret = 0;
++	int i;
++
++	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags))
++		return 0;
++	if (!is_fstree(root->root_key.objectid) || !root->reloc_root)
++		return 0;
++
++	spin_lock(&blocks->lock);
++	if (!blocks->swapped) {
++		spin_unlock(&blocks->lock);
++		goto out;
++	}
++	n = blocks->blocks[level].rb_node;
++
++	while (n) {
++		block = rb_entry(n, struct btrfs_qgroup_swapped_block, node);
++		if (block->file_bytenr < file_eb->start)
++			n = n->rb_left;
++		else if (block->file_bytenr > file_eb->start)
++			n = n->rb_right;
++		else {
++			found = true;
++			break;
++		}
++	}
++	if (!found) {
++		spin_unlock(&blocks->lock);
++		goto out;
++	}
++	/* Found one, remove it from @blocks first and update blocks->swapped */
++	rb_erase(&block->node, &blocks->blocks[level]);
++	for (i = 0; i < BTRFS_MAX_LEVEL; i++) {
++		if (RB_EMPTY_ROOT(&blocks->blocks[i])) {
++			swapped = true;
++			break;
++		}
++	}
++	blocks->swapped = swapped;
++	spin_unlock(&blocks->lock);
++
++	/* Read out reloc subtree root */
++	reloc_eb = read_tree_block(fs_info, block->reloc_bytenr,
++				   block->reloc_generation, block->level,
++				   &block->first_key);
++	if (IS_ERR(reloc_eb)) {
++		ret = PTR_ERR(file_eb);
++		reloc_eb = NULL;
++		goto free_out;
++	}
++	if (!extent_buffer_uptodate(reloc_eb)) {
++		ret = -EIO;
++		goto free_out;
++	}
++
++	ret = qgroup_trace_subtree_swap(trans, reloc_eb, file_eb,
++			block->last_snapshot, block->trace_leaf);
++free_out:
++	kfree(block);
++	free_extent_buffer(reloc_eb);
++out:
++	if (ret < 0) {
++		btrfs_err_rl(fs_info,
++			     "failed to account subtree at bytenr %llu: %d",
++			     file_eb->start, ret);
++		fs_info->qgroup_flags |= BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
++	}
++	return ret;
++}
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index b190997ea7cd..285b70ed4c75 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -400,4 +400,6 @@ int btrfs_qgroup_add_swapped_blocks(struct btrfs_trans_handle *trans,
+ 		struct extent_buffer *file_parent, int file_slot,
+ 		struct extent_buffer *reloc_parent, int reloc_slot,
+ 		u64 last_snapshot);
++int btrfs_qgroup_trace_subtree_after_cow(struct btrfs_trans_handle *trans,
++		struct btrfs_root *root, struct extent_buffer *eb);
+ #endif
 diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 272b287f8cf0..8109c28c2ecc 100644
+index 9b8a15e90ab0..8fa51b2a4a5e 100644
 --- a/fs/btrfs/relocation.c
 +++ b/fs/btrfs/relocation.c
-@@ -143,6 +143,20 @@ struct file_extent_cluster {
- 	unsigned int nr;
- };
- 
-+/*
-+ * Helper structure to keep record of a file tree whose reloc
-+ * root needs to be cleaned up.
-+ *
-+ * Since reloc_control is used less frequently than btrfs_root, this should
-+ * prevent us to add another structure in btrfs_root.
-+ */
-+struct dirty_source_root {
-+	struct rb_node node;
-+
-+	/* Root must be file tree */
-+	struct btrfs_root *root;
-+};
-+
- struct reloc_control {
- 	/* block group to relocate */
- 	struct btrfs_block_group_cache *block_group;
-@@ -172,6 +186,9 @@ struct reloc_control {
- 	u64 search_start;
- 	u64 extents_found;
- 
-+	/* dirty source roots, whose reloc root needs to be cleaned up */
-+	struct rb_root dirty_roots;
-+
- 	unsigned int stage:8;
- 	unsigned int create_reloc_tree:1;
- 	unsigned int merge_reloc_tree:1;
-@@ -1467,15 +1484,17 @@ int btrfs_update_reloc_root(struct btrfs_trans_handle *trans,
- 	struct btrfs_root_item *root_item;
- 	int ret;
- 
--	if (!root->reloc_root)
-+	if (test_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &root->state) ||
-+	    !root->reloc_root)
- 		goto out;
- 
- 	reloc_root = root->reloc_root;
- 	root_item = &reloc_root->root_item;
- 
-+	/* root->reloc_root will stay until current relocation finished */
- 	if (fs_info->reloc_ctl->merge_reloc_tree &&
- 	    btrfs_root_refs(root_item) == 0) {
--		root->reloc_root = NULL;
-+		set_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &root->state);
- 		__del_reloc_root(reloc_root);
- 	}
- 
-@@ -2120,6 +2139,84 @@ static int find_next_key(struct btrfs_path *path, int level,
- 	return 1;
- }
- 
-+/*
-+ * Helper to insert current root into reloc_control::dirty_roots
-+ */
-+static int insert_dirty_root(struct btrfs_trans_handle *trans,
-+			     struct reloc_control *rc,
-+			     struct btrfs_root *root)
-+{
-+	struct rb_node **p = &rc->dirty_roots.rb_node;
-+	struct rb_node *parent = NULL;
-+	struct dirty_source_root *entry;
-+	struct btrfs_root *reloc_root = root->reloc_root;
-+	struct btrfs_root_item *reloc_root_item;
-+	u64 root_objectid = root->root_key.objectid;
-+
-+	/* @root must be a file tree root*/
-+	ASSERT(root_objectid != BTRFS_TREE_RELOC_OBJECTID);
-+	ASSERT(reloc_root);
-+
-+	reloc_root_item = &reloc_root->root_item;
-+	memset(&reloc_root_item->drop_progress, 0,
-+		sizeof(reloc_root_item->drop_progress));
-+	reloc_root_item->drop_level = 0;
-+	btrfs_set_root_refs(reloc_root_item, 0);
-+	btrfs_update_reloc_root(trans, root);
-+
-+	/* We're at relocation route, not writeback route, GFP_KERNEL is OK */
-+	entry = kmalloc(sizeof(*entry), GFP_KERNEL);
-+	if (!entry)
-+		return -ENOMEM;
-+	btrfs_grab_fs_root(root);
-+	entry->root = root;
-+	while (*p) {
-+		struct dirty_source_root *cur_entry;
-+
-+		parent = *p;
-+		cur_entry = rb_entry(parent, struct dirty_source_root, node);
-+
-+		if (root_objectid < cur_entry->root->root_key.objectid)
-+			p = &(*p)->rb_left;
-+		else if (root_objectid > cur_entry->root->root_key.objectid)
-+			p = &(*p)->rb_right;
-+		else {
-+			/* This root is already dirtied */
-+			btrfs_put_fs_root(root);
-+			kfree(entry);
-+			return 0;
-+		}
-+	}
-+	rb_link_node(&entry->node, parent, p);
-+	rb_insert_color(&entry->node, &rc->dirty_roots);
-+	return 0;
-+}
-+
-+static int clean_dirty_root(struct reloc_control *rc)
-+{
-+	struct dirty_source_root *entry;
-+	struct dirty_source_root *next;
-+	int err = 0;
-+	int ret;
-+
-+	rbtree_postorder_for_each_entry_safe(entry, next, &rc->dirty_roots,
-+					     node) {
-+		struct btrfs_root *reloc_root = entry->root->reloc_root;
-+
-+		clear_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &entry->root->state);
-+		entry->root->reloc_root = NULL;
-+		if (reloc_root) {
-+			ret = btrfs_drop_snapshot(reloc_root, NULL, 0, 1);
-+			if (ret < 0 && !err)
-+				err = ret;
-+		}
-+		btrfs_put_fs_root(entry->root);
-+		kfree(entry);
-+	}
-+	rc->dirty_roots = RB_ROOT;
-+	return err;
-+}
-+
- /*
-  * merge the relocated tree blocks in reloc tree with corresponding
-  * fs tree.
-@@ -2259,13 +2356,8 @@ static noinline_for_stack int merge_reloc_root(struct reloc_control *rc,
- out:
- 	btrfs_free_path(path);
- 
--	if (err == 0) {
--		memset(&root_item->drop_progress, 0,
--		       sizeof(root_item->drop_progress));
--		root_item->drop_level = 0;
--		btrfs_set_root_refs(root_item, 0);
--		btrfs_update_reloc_root(trans, root);
--	}
-+	if (err == 0)
-+		err = insert_dirty_root(trans, rc, root);
- 
- 	if (trans)
- 		btrfs_end_transaction_throttle(trans);
-@@ -2410,14 +2502,6 @@ void merge_reloc_roots(struct reloc_control *rc)
- 		} else {
- 			list_del_init(&reloc_root->root_list);
- 		}
+@@ -1904,16 +1904,12 @@ int replace_path(struct btrfs_trans_handle *trans, struct reloc_control *rc,
+ 		 *    If not traced, we will leak data numbers
+ 		 * 2) Fs subtree
+ 		 *    If not traced, we will double count old data
+-		 *    and tree block numbers, if current trans doesn't free
+-		 *    data reloc tree inode.
++		 *
++		 * We don't scan the subtree right now, but only record
++		 * the swapped tree blocks.
++		 * The real subtree rescan is delayed until we have new
++		 * CoW on the subtree root node before transaction commit.
+ 		 */
+-		ret = btrfs_qgroup_trace_subtree_swap(trans, rc->block_group,
+-				parent, slot, path->nodes[level],
+-				path->slots[level], last_snapshot);
+-		if (ret < 0)
+-			break;
 -
--		ret = btrfs_drop_snapshot(reloc_root, rc->block_rsv, 0, 1);
--		if (ret < 0) {
--			if (list_empty(&reloc_root->root_list))
--				list_add_tail(&reloc_root->root_list,
--					      &reloc_roots);
--			goto out;
--		}
- 	}
- 
- 	if (found) {
-@@ -4079,6 +4163,9 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
- 		goto out_free;
- 	}
- 	btrfs_commit_transaction(trans);
-+	ret = clean_dirty_root(rc);
-+	if (ret < 0 && !err)
-+		err = ret;
- out_free:
- 	btrfs_free_block_rsv(fs_info, rc->block_rsv);
- 	btrfs_free_path(path);
-@@ -4468,6 +4555,10 @@ int btrfs_recover_relocation(struct btrfs_root *root)
- 		goto out_free;
- 	}
- 	err = btrfs_commit_transaction(trans);
-+
-+	ret = clean_dirty_root(rc);
-+	if (ret < 0 && !err)
-+		err = ret;
- out_free:
- 	kfree(rc);
- out:
+-		btrfs_node_key_to_cpu(parent, &first_key, slot);
+ 		ret = btrfs_qgroup_add_swapped_blocks(trans, dest,
+ 				rc->block_group, parent, slot,
+ 				path->nodes[level], path->slots[level],
 -- 
 2.20.1
 

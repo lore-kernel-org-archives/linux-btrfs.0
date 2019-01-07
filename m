@@ -2,185 +2,163 @@ Return-Path: <SRS0=zk84=PP=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 04530C43387
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 00:11:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 80A90C43387
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 05:42:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BC07E2085A
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 00:11:26 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2B1CA20854
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 05:42:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726106AbfAFX41 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 6 Jan 2019 18:56:27 -0500
-Received: from mout.gmx.net ([212.227.15.15]:54441 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726075AbfAFX41 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 6 Jan 2019 18:56:27 -0500
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx002
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0MXZw6-1glKNE3Ksg-00WVOC; Mon, 07
- Jan 2019 00:55:59 +0100
-Subject: Re: [COMMAND HANGS] The command 'btrfs subvolume sync -s 2 xyz' can
- hangs.
-To:     Giuseppe Della Bianca <giusdbg@gmail.com>
-Cc:     Jeff Mahoney <jeffm@suse.com>, linux-btrfs@vger.kernel.org
-References: <2543962.HIiRWmuHEy@exnet.gdb.it>
- <2971657.kkKnYu9ILp@exnet.gdb.it>
- <dc635a98-32cc-4f84-2319-82ef651d3f49@gmx.com>
- <2025891.FNXETDMuRi@exnet.gdb.it>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <f441516a-7704-4e20-100f-ddd046b61be3@gmx.com>
-Date:   Mon, 7 Jan 2019 07:55:53 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.3.3
+        id S1725771AbfAGFl7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 7 Jan 2019 00:41:59 -0500
+Received: from mx2.suse.de ([195.135.220.15]:52598 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725300AbfAGFl7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 7 Jan 2019 00:41:59 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id EC23AAD4C
+        for <linux-btrfs@vger.kernel.org>; Mon,  7 Jan 2019 05:41:56 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH v3.1 0/7] btrfs: qgroup: Delay subtree scan to reduce overhead
+Date:   Mon,  7 Jan 2019 13:41:44 +0800
+Message-Id: <20190107054151.18662-1-wqu@suse.com>
+X-Mailer: git-send-email 2.20.1
 MIME-Version: 1.0
-In-Reply-To: <2025891.FNXETDMuRi@exnet.gdb.it>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="VFvJq3egEvwfz6YZd5et7LIeXfMvQiwPi"
-X-Provags-ID: V03:K1:9DLoJslOF08hGLrSXaowR48/w0mBbF7Sd3guO+YZeVywjKZ4WQr
- IyPIwjBwILozTU3X0EOUU9mqjY1teE3qZmxb9Mv7/5M1aR7yvHP/1x9xLzUpemElG2icwk7
- Y7pOwsaIT/a+1VJBJwQtbHFwjWP1etC9cFSAnS6Eo+f41nb8vOaZs8cW03JuT+Uk16+ZNHX
- LAlLQL73TLhV+zDRxtuvA==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:XN5V3Za6ZWo=:rBvuFsSU/+5d17mP08YTPP
- t8hz2BGdiovxVAD5XWTXG22VYmFFVaFXni6J0OTLxMrd/ZYUt5HOnJiYdKJ+ENa74ZzyJgcan
- NyINVoxV7K6rrEC4/wHVJuJHQ3oryuTxZBmjHbaCVjqfKkE/W8yKzRMAeirOeQ39XauQUBNIo
- UpQvaFN0RWDg7V2jFbHlFMw9teM4k6tdS1UzO6euEKeattpYv2+72+fj8t6mWNC/qcJPxXHyx
- aRQ7auUgkG5ZMS/nRKh6dJduwaq9E8/FAVPcE2uYYSGG3WbO5Os357JbJ0GgDyYyqrymZPscN
- DehWkVf1urbM43oCjLIYTh3LMJ14HY47BaM96AxO+lK1hpsCWaZqCcTczsSFb2RcwA6mOA4hK
- z+Wkvya47iPY/2eTQLlWIEIZLoJTbZx59T11AJcbQ2Ly0mkAL2uAmzgNJX7eh81EiVQa5kWYn
- cFISmQS3adpweFzT/BV+5ujxZVCVF5XhiA2dGuGLwh4XBCsMxnVHeZtg1A6VnI4JORh/TUiCo
- JZqFEWjhf/cPUfXzuBXL7lPI2+oK2WTu35DUxRgY59h9QMvMgButO1muS5MtlbyRnhaYBzBVU
- u1jiG2s+4Hjxa5vzBrZvswTkJXgofjBwO63MXnzb08dPAJnl0Q5sarKX+2Zh0HAAoQSn1nNOE
- EhXQHr47uoKZp0lyyjSfW1e1CrSFoDlolm9IkBbODg21pLDSlJzxXsut9wJpLYJa92PJ01orj
- X49H48IN6p5RLuMfO8n7VfzLWD1cUFjMF2VrBlF1JYUf5UIzqIYCmEGjAZWnYoFDiVquCmzyD
- +HB8O/hm/B1ZUhGubqu9OMtLwdKR8zIj0WyPvWCuWkqVknHp8wgHCo8Xdy5WsuQyvqaplqWEF
- 8AUDLu6dXHQGY4Gta/wHwm41hzsV6iuomSOxNMdHSCClpy1eNgCwNsTlzMRvez
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---VFvJq3egEvwfz6YZd5et7LIeXfMvQiwPi
-Content-Type: multipart/mixed; boundary="i9HiJBWyi9h9SkC9vC9dL1b8OvrfHV9hl";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Giuseppe Della Bianca <giusdbg@gmail.com>
-Cc: Jeff Mahoney <jeffm@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <f441516a-7704-4e20-100f-ddd046b61be3@gmx.com>
-Subject: Re: [COMMAND HANGS] The command 'btrfs subvolume sync -s 2 xyz' can
- hangs.
-References: <2543962.HIiRWmuHEy@exnet.gdb.it>
- <2971657.kkKnYu9ILp@exnet.gdb.it>
- <dc635a98-32cc-4f84-2319-82ef651d3f49@gmx.com>
- <2025891.FNXETDMuRi@exnet.gdb.it>
-In-Reply-To: <2025891.FNXETDMuRi@exnet.gdb.it>
+This patchset can be fetched from github:
+https://github.com/adam900710/linux/tree/qgroup_delayed_subtree
 
---i9HiJBWyi9h9SkC9vC9dL1b8OvrfHV9hl
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Which is based on v5.0-rc1.
 
+This patch address the heavy load subtree scan, but delaying it until
+we're going to modify the swapped tree block.
 
+The overall workflow is:
 
-On 2019/1/7 =E4=B8=8A=E5=8D=881:57, Giuseppe Della Bianca wrote:
-> In data domenica 6 gennaio 2019 15:12:38 CET, Qu Wenruo ha scritto:
-> ]zac[
->> Do you have a full history of the kernel versions?
->=20
-> I believe from version 4.13.9 to 4.17.7 .
-> Today I updated everything to fedora 29, kernel 4.19.10 .
->=20
->> I'm not sure when the corruption happened.
->> It's completely possible that some old kernel caused the corruption bu=
-t
->> not exposed until now.
->=20
-> I am quite convinced that it happens during the snapshot delete and the=
-=20
-> subsequent cleanup.
-> And maybe even the umount is part of the problem.
+1) Record the subtree root block get swapped.
 
-No, I mean the corruption which finally results the hang was there for a
-long time.
+   During subtree swap:
+   O = Old tree blocks
+   N = New tree blocks
+         reloc tree                         file tree X
+            Root                               Root
+           /    \                             /    \
+         NA     OB                          OA      OB
+       /  |     |  \                      /  |      |  \
+     NC  ND     OE  OF                   OC  OD     OE  OF
 
-It's relatively common that extent tree get corrupted before and some
-unfortunately operation touching the corrupted extent tree triggered
-some user affecting error.
+  In these case, NA and OA is going to be swapped, record (NA, OA) into
+  file tree X.
 
->=20
->> Also, would you please run "btrfs check --readonly" on the fs?
->> It should show all corruption.
->>
->> And if "btrfs check" shows no corruption, then it's completely a bug i=
-n
->> that given kernel (and even current kernel).
->=20
-> btrfs check reported various corruptions and fixed them.
+2) After subtree swap.
+         reloc tree                         file tree X
+            Root                               Root
+           /    \                             /    \
+         OA     OB                          NA      OB
+       /  |     |  \                      /  |      |  \
+     OC  OD     OE  OF                   NC  ND     OE  OF
 
-Please paste the output if possible.
+3a) CoW happens for OB
+    If we are going to CoW tree block OB, we check OB's bytenr against
+    tree X's swapped_blocks structure.
+    It doesn't fit any one, nothing will happen.
 
-Thanks,
-Qu
+3b) CoW happens for NA
+    Check NA's bytenr against tree X's swapped_blocks, and get a hit.
+    Then we do subtree scan on both subtree OA and NA.
+    Resulting 6 tree blocks to be scanned (OA, OC, OD, NA, NC, ND).
 
-> A this time it seems that the filesystem works fine (it's the first tim=
-e it=20
-> does not have to be redone from scratch).
->=20
->> Thanks,
->> Qu
->=20
-> No, thanks to you for your work.
->=20
-> Gdb
->=20
->=20
+    Then no matter what we do to file tree X, qgroup numbers will
+    still be correct.
+    Then NA's record get removed from X's swapped_blocks.
 
+4)  Transaction commit
+    Any record in X's swapped_blocks get removed, since there is no
+    modification to swapped subtrees, no need to trigger heavy qgroup
+    subtree rescan for them.
 
---i9HiJBWyi9h9SkC9vC9dL1b8OvrfHV9hl--
+[[Benchmark]]
+Hardware:
+	VM 4G vRAM, 8 vCPUs,
+	disk is using 'unsafe' cache mode,
+	backing device is SAMSUNG 850 evo SSD.
+	Host has 16G ram.
 
---VFvJq3egEvwfz6YZd5et7LIeXfMvQiwPi
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+Mkfs parameter:
+	--nodesize 4K (To bump up tree size)
 
------BEGIN PGP SIGNATURE-----
+Initial subvolume contents:
+	4G data copied from /usr and /lib.
+	(With enough regular small files)
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlwylYkACgkQwj2R86El
-/qgUKwf/YZfwCWjNv/OvQhA+KEVww4jkfYgJOrlEVfjqkulpO1mGo233ytnrHqh6
-ZYVnABdfeqH1O24+jTGeKnGoWXMj/5viAUKghefJ4WIcvejR+IAROXaCKtCGXxL/
-mzZapfsebncRSn489t/MibqY+4uetWzPSWEs4CYDv9FAuIxB+Dn/tLlXr+xp7AZw
-O9LvPzBtdEeAid3jYjiaG73g0EcEq4UuzcSOnF+4BJEG0lKwduI6z91oBg6xJm66
-AF141kv2UrSTZ7T1R33pu4PGrLEHXRCr7HlP/yXYZnCcoEW583T1G0MwEtc45uN/
-RykZmqMNWP5B0j0HQos75IGRcWpKUQ==
-=G21R
------END PGP SIGNATURE-----
+Snapshots:
+	16 snapshots of the original subvolume.
+	each snapshot has 3 random files modified.
 
---VFvJq3egEvwfz6YZd5et7LIeXfMvQiwPi--
+balance parameter:
+	-m
+
+So the content should be pretty similar to a real world root fs layout.
+
+And after file system population, there is no other activity, so it
+should be the best case scenario.
+
+                     | v4.20-rc1            | w/ patchset    | diff
+-----------------------------------------------------------------------
+relocated extents    | 22615                | 22457          | -0.1%
+qgroup dirty extents | 163457               | 121606         | -25.6%
+time (sys)           | 22.884s              | 18.842s        | -17.6%
+time (real)          | 27.724s              | 22.884s        | -17.5%
+
+changelog:
+v2:
+- Rebase to v4.20-rc1.
+- Instead commit transaction after each reloc tree merge, delay it until
+  merge_reloc_roots() finishes.
+- This provides a more natural behavior, and reduce the unnecessary
+  transaction commits.
+v3:
+- Fix backref walk deadlock by not triggering it at all.
+  This also removes the need for @exec_post refactor and replace the
+  patch to allow @old_root unpopulated.
+- Include the patch that fixes the unexpected data rsv free.
+v3.1:
+- Rebased to v4.20-rc1.
+  Minor conflicts with some cleanup code.
+
+Qu Wenruo (7):
+  btrfs: qgroup: Move reserved data account from btrfs_delayed_ref_head
+    to btrfs_qgroup_extent_record
+  btrfs: qgroup: Don't trigger backref walk at delayed ref insert time
+  btrfs: relocation: Delay reloc tree deletion after merge_reloc_roots()
+  btrfs: qgroup: Refactor btrfs_qgroup_trace_subtree_swap()
+  btrfs: qgroup: Introduce per-root swapped blocks infrastructure
+  btrfs: qgroup: Use delayed subtree rescan for balance
+  btrfs: qgroup: Cleanup old subtree swap code
+
+ fs/btrfs/ctree.c             |   8 +
+ fs/btrfs/ctree.h             |  15 ++
+ fs/btrfs/delayed-ref.c       |  39 +---
+ fs/btrfs/delayed-ref.h       |  11 --
+ fs/btrfs/disk-io.c           |   1 +
+ fs/btrfs/extent-tree.c       |   3 -
+ fs/btrfs/qgroup.c            | 355 ++++++++++++++++++++++++-----------
+ fs/btrfs/qgroup.h            | 157 +++++++++++-----
+ fs/btrfs/relocation.c        | 140 +++++++++++---
+ fs/btrfs/transaction.c       |   1 +
+ include/trace/events/btrfs.h |  29 ---
+ 11 files changed, 510 insertions(+), 249 deletions(-)
+
+-- 
+2.20.1
+

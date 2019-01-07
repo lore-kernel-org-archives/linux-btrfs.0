@@ -2,170 +2,108 @@ Return-Path: <SRS0=zk84=PP=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8C0D6C43387
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 11:03:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 20B6AC43387
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 12:55:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4DE8D2147C
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 11:03:46 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E306D20651
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 12:55:50 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="bMlqOOwX"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726927AbfAGLDp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 7 Jan 2019 06:03:45 -0500
-Received: from mx2.suse.de ([195.135.220.15]:42918 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726665AbfAGLDo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 7 Jan 2019 06:03:44 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 64346ADBB;
-        Mon,  7 Jan 2019 11:03:43 +0000 (UTC)
-Subject: Re: [PATCH v2] btrfs: raid56: data corruption on a device removal
-To:     dsterba@suse.cz, Dmitriy Gorokh <dmitriy.gorokh@gmail.com>,
-        linux-btrfs@vger.kernel.org
-References: <66F8D435-4E51-4761-B6CF-BA96F4BC5986@wdc.com>
- <CANYdAbLNAxoAXcxuC+ugpdhsCpTbh0zVjY3T5rtOcpVufnmWRA@mail.gmail.com>
- <20190104164943.GU23615@twin.jikos.cz>
-Cc:     Ming Lei <ming.lei@redhat.com>
-From:   Johannes Thumshirn <jthumshirn@suse.de>
-Openpgp: preference=signencrypt
-Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <0a356978-4d95-7597-b71a-d502e94c2461@suse.de>
-Date:   Mon, 7 Jan 2019 12:03:43 +0100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+        id S1729044AbfAGMzt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 7 Jan 2019 07:55:49 -0500
+Received: from mail-ed1-f47.google.com ([209.85.208.47]:39905 "EHLO
+        mail-ed1-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727022AbfAGMzs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Jan 2019 07:55:48 -0500
+Received: by mail-ed1-f47.google.com with SMTP id b14so770939edt.6
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Jan 2019 04:55:47 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=YD6dg7fYQ8e+K9Mtolw/+biY5+NmuyilxzX8vWR7nHY=;
+        b=bMlqOOwXo60epkFDm4GzW8FiKsxJY9CvisJvw9sxDl0s5Rnt7/G6eSRALOQyeo5xcN
+         3rkjJp5KXa+xaw/iuOWqzgCgSAX3u624cmqT+rAQGy5nftzEK130IeBNC+bQrVlzcI/A
+         YnNHygrfZMOpwbHpufOMjkmkpJMDuItv4tb8GpDzGr8ATBeY+KwWpCHN50wEiGTFX5Kg
+         Ltt+UdpNG85kC7QXhFp65ZzaqDIHvFF1rItty08vcYL5/fJInUYh6tng1sbyE8QXaP+K
+         5BS7nDiEcvyaHjXgmIN8mBviamUFEDi++EvwHBT5Ll75L/iIaibt8mhY/K0jhy5x77pH
+         AdgQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=YD6dg7fYQ8e+K9Mtolw/+biY5+NmuyilxzX8vWR7nHY=;
+        b=lNUt6Tin1JQswNBJ1Xv0EJ0cOpPgioKpwC/MBCX7e+LY+Z/uXWOZNtj307s/1J1wNL
+         8bIgULQrOeziFTKfekw7QCtK2piqRPpMr3Az6xsZdipC27GWryBkR7rQet45DnF9AUNT
+         DWmq0XXr8VRfX7V4w4tEw+u5OYURwqOVhQ4Y5wrd7GmufgFZAeXY8B3OBbcXZZYCSH0w
+         CKij8SA7i2qdF8BIIEcdZbdOljsBl+8TMmj/J5bwrrg2YvWJ4ebzqml706y9Ci+bUpP1
+         N1KH1MpyrBqvwyietQFQiCCmtZmdM7SZJyy+6XWW9MW7qDAQQ2+4RK/HIGjeRELvpHzF
+         CyRQ==
+X-Gm-Message-State: AA+aEWYO24NG+mkmdxY01lctEKQnta+XRAbJis8A2mny641Wa7Y4xvt8
+        4TeKx2vntMxt36XiSMXux1r3sL1PY5ie+sK6ULdOh3wv
+X-Google-Smtp-Source: AFSGD/W9th7hRPaUAZR2pwTUV9hBben3WYIyMkMGxIB+kmFAQFmU/V9/6brsAdr6W/y57q0i0qTWM5l21ihVY1aRoMg=
+X-Received: by 2002:a17:906:92d1:: with SMTP id d17-v6mr46648881ejx.96.1546865747027;
+ Mon, 07 Jan 2019 04:55:47 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20190104164943.GU23615@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+References: <2543962.HIiRWmuHEy@exnet.gdb.it> <2971657.kkKnYu9ILp@exnet.gdb.it>
+ <dc635a98-32cc-4f84-2319-82ef651d3f49@gmx.com> <2025891.FNXETDMuRi@exnet.gdb.it>
+ <f441516a-7704-4e20-100f-ddd046b61be3@gmx.com> <CAO6awePqby834dBSgLx5r6onmD9HhGWAfN4bno0zK6pU0QjrEQ@mail.gmail.com>
+In-Reply-To: <CAO6awePqby834dBSgLx5r6onmD9HhGWAfN4bno0zK6pU0QjrEQ@mail.gmail.com>
+From:   gius db <giusdbg@gmail.com>
+Date:   Mon, 7 Jan 2019 13:55:43 +0100
+Message-ID: <CAO6aweNy006hbwEVCuoQ_cSRKP-QRX2UWji6D-E8gkxH8tbm7w@mail.gmail.com>
+Subject: Fwd: [COMMAND HANGS] The command 'btrfs subvolume sync -s 2 xyz' can hangs.
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[+Cc Ming and full quote for reference]
+Il giorno lun 7 gen 2019 alle ore 00:56 Qu Wenruo
+<quwenruo.btrfs@gmx.com> ha scritto:
+]zac[
+> > I am quite convinced that it happens during the snapshot delete and the
+> > subsequent cleanup.
+> > And maybe even the umount is part of the problem.
+>
+> No, I mean the corruption which finally results the hang was there for a
+> long time.
+>
+> It's relatively common that extent tree get corrupted before and some
+> unfortunately operation touching the corrupted extent tree triggered
+> some user affecting error.
 
-On 04/01/2019 17:49, David Sterba wrote:
-> On Fri, Dec 14, 2018 at 08:48:50PM +0300, Dmitriy Gorokh wrote:
->> RAID5 or RAID6 filesystem might get corrupted in the following scenario:
->>
->> 1. Create 4 disks RAID6 filesystem
->> 2. Preallocate 16 10Gb files
->> 3. Run fio: 'fio --name=testload --directory=./ --size=10G
->> --numjobs=16 --bs=64k --iodepth=64 --rw=randrw --verify=sha256
->> --time_based --runtime=3600’
->> 4. After few minutes pull out two drives: 'echo 1 >
->> /sys/block/sdc/device/delete ;  echo 1 > /sys/block/sdd/device/delete’
->>
->> About 5 of 10 times the test is run, it led to a silent data
->> corruption of a random stripe, resulting in ‘IO Error’ and ‘csum
->> failed’ messages while trying to read the affected file. It usually
->> affects only small portion of the files.
->>
->> It is possible that few bios which were being processed during the
->> drives removal, contained non zero bio->bi_iter.bi_done field despite
->> of EIO bi_status. bi_sector field was also increased from original one
->> by that 'bi_done' value. Looks like this is a quite rare condition.
->> Subsequently, in the raid_rmw_end_io handler that failed bio can be
->> translated to a wrong stripe number and fail wrong rbio.
->>
->> Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
->> Signed-off-by: Dmitriy Gorokh <dmitriy.gorokh@wdc.com>
->> ---
->>  fs/btrfs/raid56.c | 6 ++++++
->>  1 file changed, 6 insertions(+)
->>
->> diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
->> index 3c8093757497..cd2038315feb 100644
->> --- a/fs/btrfs/raid56.c
->> +++ b/fs/btrfs/raid56.c
->> @@ -1451,6 +1451,12 @@ static int find_bio_stripe(struct btrfs_raid_bio *rbio,
->>   struct btrfs_bio_stripe *stripe;
->>
->>   physical <<= 9;
->> + /*
->> +  * Since the failed bio can return partial data, bi_sector might be
->> +  * incremented by that value. We need to revert it back to the
->> +  * state before the bio was submitted.
->> +  */
->> + physical -= bio->bi_iter.bi_done;
-> 
-> The bi_done member has been removed in recent block layer changes
-> commit 7759eb23fd9808a2e4498cf36a798ed65cde78ae ("block: remove
-> bio_rewind_iter()"). I wonder what kind of block-magic do we need to do
-> as the iterators seem to be local and there's nothing available in the
-> call chain leading to find_bio_stripe. Johannes, any ideas?
+Yes, I understand, but the use of filesytem is very specific.
 
-Right, what we could do here is go the same way Ming did in
-7759eb23fd980 ("block: remove bio_rewind_iter()") and save a bvec_iter
-somewhere before submission and then see if we returned partial data,
-but this somehow feels wrong to me (at least to do in btrfs code instead
-of the block layer).
+This filesystem and others that have had problems with corruption, are
+used only as backups.
+So the only operations that are performed are snapshot receive,
+snapshot create, snapshot delete.
+After the operations are finished, the filesystem is unmounted.
 
-Ming can we resurrect ->bi_done, or do you have a different suggestion
-for finding about partial written bios?
+It may just be a coincidence, but the problems of corruptions have
+occurred very often after a snapshoot delete.
 
--- 
-Johannes Thumshirn                            SUSE Labs Filesystems
-jthumshirn@suse.de                                +49 911 74053 689
-SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
-GF: Felix Imendörffer, Jane Smithard, Graham Norton
-HRB 21284 (AG Nürnberg)
-Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850
+The other filesystems that are used in a generic way (operating
+system, warehouse and data processing, snapshot creating etc.), have
+never given problems.
+
+]zac[
+> >
+> > btrfs check reported various corruptions and fixed them.
+>
+> Please paste the output if possible.
+]zac[
+
+Sorry, I didn't think to save the btrfs check messages.
+
+
+Gdb

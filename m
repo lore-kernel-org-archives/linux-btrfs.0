@@ -6,27 +6,28 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 03731C43613
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 05:42:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A145FC43444
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 05:42:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C81A12087F
+	by mail.kernel.org (Postfix) with ESMTP id 7A50320881
 	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Jan 2019 05:42:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726427AbfAGFmL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 7 Jan 2019 00:42:11 -0500
-Received: from mx2.suse.de ([195.135.220.15]:52650 "EHLO mx1.suse.de"
+        id S1726287AbfAGFmH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 7 Jan 2019 00:42:07 -0500
+Received: from mx2.suse.de ([195.135.220.15]:52626 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725300AbfAGFmL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 7 Jan 2019 00:42:11 -0500
+        id S1725300AbfAGFmG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 7 Jan 2019 00:42:06 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 5E787AD4C
-        for <linux-btrfs@vger.kernel.org>; Mon,  7 Jan 2019 05:42:09 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id B6E5FAD4C
+        for <linux-btrfs@vger.kernel.org>; Mon,  7 Jan 2019 05:42:03 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v3.1 4/7] btrfs: qgroup: Refactor btrfs_qgroup_trace_subtree_swap()
-Date:   Mon,  7 Jan 2019 13:41:48 +0800
-Message-Id: <20190107054151.18662-5-wqu@suse.com>
+Cc:     David Sterba <dsterba@suse.cz>, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v3.1 2/7] btrfs: qgroup: Don't trigger backref walk at delayed ref insert time
+Date:   Mon,  7 Jan 2019 13:41:46 +0800
+Message-Id: <20190107054151.18662-3-wqu@suse.com>
 X-Mailer: git-send-email 2.20.1
 In-Reply-To: <20190107054151.18662-1-wqu@suse.com>
 References: <20190107054151.18662-1-wqu@suse.com>
@@ -37,133 +38,309 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Refactor btrfs_qgroup_trace_subtree_swap() into
-qgroup_trace_subtree_swap(), which only needs two extent buffer and some
-other bool to control the behavior.
+[BUG]
+Since fb235dc06fac ("btrfs: qgroup: Move half of the qgroup accounting
+time out of commit trans"), kernel may lockup with quota enabled.
 
-This provides the basis for later delayed subtree scan work.
+There is one backref trace triggered by snapshot dropping along with
+write operation in the source subvolume.
+The example can be stably reproduced.
 
+  btrfs-cleaner   D    0  4062      2 0x80000000
+  Call Trace:
+   schedule+0x32/0x90
+   btrfs_tree_read_lock+0x93/0x130 [btrfs]
+   find_parent_nodes+0x29b/0x1170 [btrfs]
+   btrfs_find_all_roots_safe+0xa8/0x120 [btrfs]
+   btrfs_find_all_roots+0x57/0x70 [btrfs]
+   btrfs_qgroup_trace_extent_post+0x37/0x70 [btrfs]
+   btrfs_qgroup_trace_leaf_items+0x10b/0x140 [btrfs]
+   btrfs_qgroup_trace_subtree+0xc8/0xe0 [btrfs]
+   do_walk_down+0x541/0x5e3 [btrfs]
+   walk_down_tree+0xab/0xe7 [btrfs]
+   btrfs_drop_snapshot+0x356/0x71a [btrfs]
+   btrfs_clean_one_deleted_snapshot+0xb8/0xf0 [btrfs]
+   cleaner_kthread+0x12b/0x160 [btrfs]
+   kthread+0x112/0x130
+   ret_from_fork+0x27/0x50
+
+[CAUSE]
+When dropping snapshots with qgroup enabled, we will trigger backref
+walk.
+
+However such backref walk at that timing is pretty dangerous, as if one
+of the parent nodes get WRITE locked by other thread, we could cause a
+dead lock.
+
+For example:
+
+           FS 260     FS 261 (Dropped)
+            node A        node B
+           /      \      /      \
+       node C      node D      node E
+      /   \         /  \        /     \
+  leaf F|leaf G|leaf H|leaf I|leaf J|leaf K
+
+The lock sequence would be:
+
+      Thread A (cleaner)             |       Thread B (other writer)
+-----------------------------------------------------------------------
+write_lock(B)                        |
+write_lock(D)                        |
+^^^ called by walk_down_tree()       |
+                                     |       write_lock(A)
+                                     |       write_lock(D) << Stall
+read_lock(H) << for backref walk     |
+read_lock(D) << lock owner is        |
+                the same thread A    |
+                so read lock is OK   |
+read_lock(A) << Stall                |
+
+So thread A hold write lock D, and needs read lock A to unlock.
+While thread B holds write lock A, while needs lock D to unlock.
+
+This will cause a dead lock.
+
+This is not only limited to snapshot dropping case.
+As the backref walk, even only happens on commit trees, is breaking the
+normal top-down locking order, makes it deadlock prone.
+
+[FIX]
+The solution is not to trigger backref walk with any write lock hold.
+This means we can't do backref walk at delayed ref insert time.
+
+So this patch will mostly revert commit fb235dc06fac ("btrfs: qgroup:
+Move half of the qgroup accounting time out of commit trans").
+
+Reported-by: David Sterba <dsterba@suse.cz>
+Reported-by: Filipe Manana <fdmanana@suse.com>
+Fixes: fb235dc06fac ("btrfs: qgroup: Move half of the qgroup accounting time out of commit trans")
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/qgroup.c | 78 ++++++++++++++++++++++++++++++++++-------------
- 1 file changed, 57 insertions(+), 21 deletions(-)
+ fs/btrfs/delayed-ref.c | 24 ++++--------------------
+ fs/btrfs/qgroup.c      | 39 +++------------------------------------
+ fs/btrfs/qgroup.h      | 30 ++----------------------------
+ 3 files changed, 9 insertions(+), 84 deletions(-)
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index ba30adac88a7..8fe6ebe9aef8 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1994,6 +1994,60 @@ static int qgroup_trace_new_subtree_blocks(struct btrfs_trans_handle* trans,
- 	return ret;
- }
- 
-+static int qgroup_trace_subtree_swap(struct btrfs_trans_handle *trans,
-+				struct extent_buffer *src_eb,
-+				struct extent_buffer *dst_eb,
-+				u64 last_snapshot, bool trace_leaf)
-+{
-+	struct btrfs_fs_info *fs_info = trans->fs_info;
-+	struct btrfs_path *dst_path = NULL;
-+	int level;
-+	int ret;
-+
-+	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags))
-+		return 0;
-+
-+	/* Wrong parameter order */
-+	if (btrfs_header_generation(src_eb) > btrfs_header_generation(dst_eb)) {
-+		btrfs_err_rl(fs_info,
-+		"%s: bad parameter order, src_gen=%llu dst_gen=%llu", __func__,
-+			     btrfs_header_generation(src_eb),
-+			     btrfs_header_generation(dst_eb));
-+		return -EUCLEAN;
-+	}
-+
-+	if (!extent_buffer_uptodate(src_eb) ||
-+	    !extent_buffer_uptodate(dst_eb)) {
-+		ret = -EINVAL;
-+		goto out;
-+	}
-+
-+	level = btrfs_header_level(dst_eb);
-+	dst_path = btrfs_alloc_path();
-+	if (!dst_path) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+	/* For dst_path */
-+	extent_buffer_get(dst_eb);
-+	dst_path->nodes[level] = dst_eb;
-+	dst_path->slots[level] = 0;
-+	dst_path->locks[level] = 0;
-+
-+	/* Do the generation aware breadth-first search */
-+	ret = qgroup_trace_new_subtree_blocks(trans, src_eb, dst_path, level,
-+					      level, last_snapshot, trace_leaf);
-+	if (ret < 0)
-+		goto out;
-+	ret = 0;
-+
-+out:
-+	btrfs_free_path(dst_path);
-+	if (ret < 0)
-+		fs_info->qgroup_flags |= BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
-+	return ret;
-+}
-+
- /*
-  * Inform qgroup to trace subtree swap used in balance.
-  *
-@@ -2019,14 +2073,12 @@ int btrfs_qgroup_trace_subtree_swap(struct btrfs_trans_handle *trans,
- 				u64 last_snapshot)
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index 7d2a413df90d..ed42a8305f50 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -625,12 +625,10 @@ static noinline struct btrfs_delayed_ref_head *
+ add_delayed_ref_head(struct btrfs_trans_handle *trans,
+ 		     struct btrfs_delayed_ref_head *head_ref,
+ 		     struct btrfs_qgroup_extent_record *qrecord,
+-		     int action, int *qrecord_inserted_ret,
+-		     int *old_ref_mod, int *new_ref_mod)
++		     int action, int *old_ref_mod, int *new_ref_mod)
  {
- 	struct btrfs_fs_info *fs_info = trans->fs_info;
--	struct btrfs_path *dst_path = NULL;
- 	struct btrfs_key first_key;
- 	struct extent_buffer *src_eb = NULL;
- 	struct extent_buffer *dst_eb = NULL;
- 	bool trace_leaf = false;
- 	u64 child_gen;
- 	u64 child_bytenr;
--	int level;
- 	int ret;
+ 	struct btrfs_delayed_ref_head *existing;
+ 	struct btrfs_delayed_ref_root *delayed_refs;
+-	int qrecord_inserted = 0;
  
- 	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags))
-@@ -2077,22 +2129,9 @@ int btrfs_qgroup_trace_subtree_swap(struct btrfs_trans_handle *trans,
- 		goto out;
+ 	delayed_refs = &trans->transaction->delayed_refs;
+ 
+@@ -639,8 +637,6 @@ add_delayed_ref_head(struct btrfs_trans_handle *trans,
+ 		if (btrfs_qgroup_trace_extent_nolock(trans->fs_info,
+ 					delayed_refs, qrecord))
+ 			kfree(qrecord);
+-		else
+-			qrecord_inserted = 1;
  	}
  
--	level = btrfs_header_level(dst_eb);
--	dst_path = btrfs_alloc_path();
--	if (!dst_path) {
--		ret = -ENOMEM;
--		goto out;
--	}
+ 	trace_add_delayed_ref_head(trans->fs_info, head_ref, action);
+@@ -670,8 +666,6 @@ add_delayed_ref_head(struct btrfs_trans_handle *trans,
+ 		atomic_inc(&delayed_refs->num_entries);
+ 		trans->delayed_ref_updates++;
+ 	}
+-	if (qrecord_inserted_ret)
+-		*qrecord_inserted_ret = qrecord_inserted;
+ 	if (new_ref_mod)
+ 		*new_ref_mod = head_ref->total_ref_mod;
+ 
+@@ -745,7 +739,6 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
+ 	struct btrfs_delayed_ref_head *head_ref;
+ 	struct btrfs_delayed_ref_root *delayed_refs;
+ 	struct btrfs_qgroup_extent_record *record = NULL;
+-	int qrecord_inserted;
+ 	bool is_system = (ref_root == BTRFS_CHUNK_TREE_OBJECTID);
+ 	int ret;
+ 	u8 ref_type;
+@@ -794,8 +787,7 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
+ 	 * the spin lock
+ 	 */
+ 	head_ref = add_delayed_ref_head(trans, head_ref, record,
+-					action, &qrecord_inserted,
+-					old_ref_mod, new_ref_mod);
++					action, old_ref_mod, new_ref_mod);
+ 
+ 	ret = insert_delayed_ref(trans, delayed_refs, head_ref, &ref->node);
+ 	spin_unlock(&delayed_refs->lock);
+@@ -812,9 +804,6 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
+ 	if (ret > 0)
+ 		kmem_cache_free(btrfs_delayed_tree_ref_cachep, ref);
+ 
+-	if (qrecord_inserted)
+-		btrfs_qgroup_trace_extent_post(fs_info, record);
 -
--	/* For dst_path */
--	extent_buffer_get(dst_eb);
--	dst_path->nodes[level] = dst_eb;
--	dst_path->slots[level] = 0;
--	dst_path->locks[level] = 0;
--
--	/* Do the generation-aware breadth-first search */
--	ret = qgroup_trace_new_subtree_blocks(trans, src_eb, dst_path, level,
--					      level, last_snapshot, trace_leaf);
-+	/* Do the generation aware breadth-first search */
-+	ret = qgroup_trace_subtree_swap(trans, src_eb, dst_eb, last_snapshot,
-+					trace_leaf);
- 	if (ret < 0)
- 		goto out;
- 	ret = 0;
-@@ -2100,9 +2139,6 @@ int btrfs_qgroup_trace_subtree_swap(struct btrfs_trans_handle *trans,
- out:
- 	free_extent_buffer(src_eb);
- 	free_extent_buffer(dst_eb);
--	btrfs_free_path(dst_path);
--	if (ret < 0)
--		fs_info->qgroup_flags |= BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
- 	return ret;
+ 	return 0;
  }
  
+@@ -832,7 +821,6 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
+ 	struct btrfs_delayed_ref_head *head_ref;
+ 	struct btrfs_delayed_ref_root *delayed_refs;
+ 	struct btrfs_qgroup_extent_record *record = NULL;
+-	int qrecord_inserted;
+ 	int ret;
+ 	u8 ref_type;
+ 
+@@ -881,8 +869,7 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
+ 	 * the spin lock
+ 	 */
+ 	head_ref = add_delayed_ref_head(trans, head_ref, record,
+-					action, &qrecord_inserted,
+-					old_ref_mod, new_ref_mod);
++					action, old_ref_mod, new_ref_mod);
+ 
+ 	ret = insert_delayed_ref(trans, delayed_refs, head_ref, &ref->node);
+ 	spin_unlock(&delayed_refs->lock);
+@@ -899,9 +886,6 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
+ 	if (ret > 0)
+ 		kmem_cache_free(btrfs_delayed_data_ref_cachep, ref);
+ 
+-
+-	if (qrecord_inserted)
+-		return btrfs_qgroup_trace_extent_post(fs_info, record);
+ 	return 0;
+ }
+ 
+@@ -926,7 +910,7 @@ int btrfs_add_delayed_extent_op(struct btrfs_fs_info *fs_info,
+ 	spin_lock(&delayed_refs->lock);
+ 
+ 	add_delayed_ref_head(trans, head_ref, NULL, BTRFS_UPDATE_DELAYED_HEAD,
+-			     NULL, NULL, NULL);
++			     NULL, NULL);
+ 
+ 	spin_unlock(&delayed_refs->lock);
+ 
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index f214b490d80c..ba30adac88a7 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1565,33 +1565,6 @@ int btrfs_qgroup_trace_extent_nolock(struct btrfs_fs_info *fs_info,
+ 	return 0;
+ }
+ 
+-int btrfs_qgroup_trace_extent_post(struct btrfs_fs_info *fs_info,
+-				   struct btrfs_qgroup_extent_record *qrecord)
+-{
+-	struct ulist *old_root;
+-	u64 bytenr = qrecord->bytenr;
+-	int ret;
+-
+-	ret = btrfs_find_all_roots(NULL, fs_info, bytenr, 0, &old_root, false);
+-	if (ret < 0) {
+-		fs_info->qgroup_flags |= BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
+-		btrfs_warn(fs_info,
+-"error accounting new delayed refs extent (err code: %d), quota inconsistent",
+-			ret);
+-		return 0;
+-	}
+-
+-	/*
+-	 * Here we don't need to get the lock of
+-	 * trans->transaction->delayed_refs, since inserted qrecord won't
+-	 * be deleted, only qrecord->node may be modified (new qrecord insert)
+-	 *
+-	 * So modifying qrecord->old_roots is safe here
+-	 */
+-	qrecord->old_roots = old_root;
+-	return 0;
+-}
+-
+ int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans, u64 bytenr,
+ 			      u64 num_bytes, gfp_t gfp_flag)
+ {
+@@ -1615,11 +1588,9 @@ int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans, u64 bytenr,
+ 	spin_lock(&delayed_refs->lock);
+ 	ret = btrfs_qgroup_trace_extent_nolock(fs_info, delayed_refs, record);
+ 	spin_unlock(&delayed_refs->lock);
+-	if (ret > 0) {
++	if (ret > 0)
+ 		kfree(record);
+-		return 0;
+-	}
+-	return btrfs_qgroup_trace_extent_post(fs_info, record);
++	return 0;
+ }
+ 
+ int btrfs_qgroup_trace_leaf_items(struct btrfs_trans_handle *trans,
+@@ -2569,11 +2540,7 @@ int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans)
+ 		trace_btrfs_qgroup_account_extents(fs_info, record);
+ 
+ 		if (!ret) {
+-			/*
+-			 * Old roots should be searched when inserting qgroup
+-			 * extent record
+-			 */
+-			if (WARN_ON(!record->old_roots)) {
++			if (!record->old_roots) {
+ 				/* Search commit root to find old_roots */
+ 				ret = btrfs_find_all_roots(NULL, fs_info,
+ 						record->bytenr, 0,
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index d4fae53969d4..226956f0bd73 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -174,8 +174,7 @@ struct btrfs_delayed_extent_op;
+  * Inform qgroup to trace one dirty extent, its info is recorded in @record.
+  * So qgroup can account it at transaction committing time.
+  *
+- * No lock version, caller must acquire delayed ref lock and allocated memory,
+- * then call btrfs_qgroup_trace_extent_post() after exiting lock context.
++ * No lock version, caller must acquire delayed ref lock and allocate memory,
+  *
+  * Return 0 for success insert
+  * Return >0 for existing record, caller can free @record safely.
+@@ -186,37 +185,12 @@ int btrfs_qgroup_trace_extent_nolock(
+ 		struct btrfs_delayed_ref_root *delayed_refs,
+ 		struct btrfs_qgroup_extent_record *record);
+ 
+-/*
+- * Post handler after qgroup_trace_extent_nolock().
+- *
+- * NOTE: Current qgroup does the expensive backref walk at transaction
+- * committing time with TRANS_STATE_COMMIT_DOING, this blocks incoming
+- * new transaction.
+- * This is designed to allow btrfs_find_all_roots() to get correct new_roots
+- * result.
+- *
+- * However for old_roots there is no need to do backref walk at that time,
+- * since we search commit roots to walk backref and result will always be
+- * correct.
+- *
+- * Due to the nature of no lock version, we can't do backref there.
+- * So we must call btrfs_qgroup_trace_extent_post() after exiting
+- * spinlock context.
+- *
+- * TODO: If we can fix and prove btrfs_find_all_roots() can get correct result
+- * using current root, then we can move all expensive backref walk out of
+- * transaction committing, but not now as qgroup accounting will be wrong again.
+- */
+-int btrfs_qgroup_trace_extent_post(struct btrfs_fs_info *fs_info,
+-				   struct btrfs_qgroup_extent_record *qrecord);
+-
+ /*
+  * Inform qgroup to trace one dirty extent, specified by @bytenr and
+  * @num_bytes.
+  * So qgroup can account it at commit trans time.
+  *
+- * Better encapsulated version, with memory allocation and backref walk for
+- * commit roots.
++ * Better encapsulated version, with memory allocation
+  * So this can sleep.
+  *
+  * Return 0 if the operation is done.
 -- 
 2.20.1
 

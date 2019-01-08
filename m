@@ -7,44 +7,45 @@ X-Spam-Status: No, score=-13.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CDEFCC43444
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Jan 2019 20:03:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 19BF4C43612
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Jan 2019 20:03:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9B93F20660
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Jan 2019 20:03:31 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CD98820827
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Jan 2019 20:03:35 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1546977811;
-	bh=YGY7k4S2cG7uMSu/EBpXR4QRd34/KE2tWRxnOP64u/k=;
+	s=default; t=1546977815;
+	bh=nv6A0KI3Ex7MTJsyYVsRAqFnTj5BI3eAyG5r3BuIiIs=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=1MOMk3USemwf0RXenSoLJhaUaYWu8IB5/S4PJ/cYsCHmUiQd58ZlucWcLrv/+t05k
-	 +K+ywXtB/WF9s01QS5iVcaf4FSTMv7iCRYe4TOYvBV79fX3EPZccroMcUaAEcTvONA
-	 zESW71ZgdnMzqI56NJzreyqDQTRU/lpEXwTis+8I=
+	b=XnkjCpwynWGXADh/puMKOshFOTQRH4bcUy2I0/RwGYHjiLphzF4p1nlWHuzfHxugT
+	 4nWOLFlNw1tfcjkUKcgcvzZEJdqi21llpe4UsvsHB2+s37GRP7hGRd7/70wY3DHq1P
+	 cxK+osK30U1xpw8OXVe3u0XobmOgf0P2e0ay6TgQ=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730139AbfAHT2n (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Jan 2019 14:28:43 -0500
-Received: from mail.kernel.org ([198.145.29.99]:35706 "EHLO mail.kernel.org"
+        id S1730123AbfAHT2l (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Jan 2019 14:28:41 -0500
+Received: from mail.kernel.org ([198.145.29.99]:35774 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730102AbfAHT2i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 8 Jan 2019 14:28:38 -0500
+        id S1730116AbfAHT2j (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 8 Jan 2019 14:28:39 -0500
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 5F33320827;
-        Tue,  8 Jan 2019 19:28:36 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 67633217D9;
+        Tue,  8 Jan 2019 19:28:38 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1546975717;
-        bh=YGY7k4S2cG7uMSu/EBpXR4QRd34/KE2tWRxnOP64u/k=;
+        s=default; t=1546975719;
+        bh=nv6A0KI3Ex7MTJsyYVsRAqFnTj5BI3eAyG5r3BuIiIs=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=kcvHv1pn0r09m2HHER3jcxA4l6Go97Z2HPoYJzwsU8gxWUJi38aP1KQQaStwCaK7w
-         J7qa3jtb8UipRwM8/XuYcMgLSNlpbj6O3KPzyqLFSA5XqVMPjFyNeAfZSO31Z+Kju0
-         Tuje9H8ciFo2z4P6Vp4vObbIdVVSBjIUzFY2qm2c=
+        b=lwqy4DklT7bUiSlAh59ZQI2nlnXes3KCXbslzWDEat8MN4OSA28G7Y7sKXmEfOH8r
+         4xpljsVM6OJN3GbNsV77orBGo06HIYmNT7OStrNq6x0kmjDJMzvNgWoXGye6V/4qbF
+         cSDkssFiMTBheFDBisXe1/f83w2V0HvkzDmbnCrU=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Filipe Manana <fdmanana@suse.com>, David Sterba <dsterba@suse.com>,
+Cc:     Johannes Thumshirn <jthumshirn@suse.de>,
+        David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.20 074/117] Btrfs: fix deadlock when enabling quotas due to concurrent snapshot creation
-Date:   Tue,  8 Jan 2019 14:25:42 -0500
-Message-Id: <20190108192628.121270-74-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 4.20 076/117] btrfs: improve error handling of btrfs_add_link
+Date:   Tue,  8 Jan 2019 14:25:44 -0500
+Message-Id: <20190108192628.121270-76-sashal@kernel.org>
 X-Mailer: git-send-email 2.19.1
 In-Reply-To: <20190108192628.121270-1-sashal@kernel.org>
 References: <20190108192628.121270-1-sashal@kernel.org>
@@ -56,134 +57,56 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+From: Johannes Thumshirn <jthumshirn@suse.de>
 
-[ Upstream commit 9a6f209e36500efac51528132a3e3083586eda5f ]
+[ Upstream commit 1690dd41e0cb1dade80850ed8a3eb0121b96d22f ]
 
-If the quota enable and snapshot creation ioctls are called concurrently
-we can get into a deadlock where the task enabling quotas will deadlock
-on the fs_info->qgroup_ioctl_lock mutex because it attempts to lock it
-twice, or the task creating a snapshot tries to commit the transaction
-while the task enabling quota waits for the former task to commit the
-transaction while holding the mutex. The following time diagrams show how
-both cases happen.
+In the error handling block, err holds the return value of either
+btrfs_del_root_ref() or btrfs_del_inode_ref() but it hasn't been checked
+since it's introduction with commit fe66a05a0679 (Btrfs: improve error
+handling for btrfs_insert_dir_item callers) in 2012.
 
-First scenario:
+If the error handling in the error handling fails, there's not much left
+to do and the abort either happened earlier in the callees or is
+necessary here.
 
-           CPU 0                                    CPU 1
+So if one of btrfs_del_root_ref() or btrfs_del_inode_ref() failed, abort
+the transaction, but still return the original code of the failure
+stored in 'ret' as this will be reported to the user.
 
- btrfs_ioctl()
-  btrfs_ioctl_quota_ctl()
-   btrfs_quota_enable()
-    mutex_lock(fs_info->qgroup_ioctl_lock)
-    btrfs_start_transaction()
-
-                                             btrfs_ioctl()
-                                              btrfs_ioctl_snap_create_v2
-                                               create_snapshot()
-                                                --> adds snapshot to the
-                                                    list pending_snapshots
-                                                    of the current
-                                                    transaction
-
-    btrfs_commit_transaction()
-     create_pending_snapshots()
-       create_pending_snapshot()
-        qgroup_account_snapshot()
-         btrfs_qgroup_inherit()
-	   mutex_lock(fs_info->qgroup_ioctl_lock)
-	    --> deadlock, mutex already locked
-	        by this task at
-		btrfs_quota_enable()
-
-Second scenario:
-
-           CPU 0                                    CPU 1
-
- btrfs_ioctl()
-  btrfs_ioctl_quota_ctl()
-   btrfs_quota_enable()
-    mutex_lock(fs_info->qgroup_ioctl_lock)
-    btrfs_start_transaction()
-
-                                             btrfs_ioctl()
-                                              btrfs_ioctl_snap_create_v2
-                                               create_snapshot()
-                                                --> adds snapshot to the
-                                                    list pending_snapshots
-                                                    of the current
-                                                    transaction
-
-                                                btrfs_commit_transaction()
-                                                 --> waits for task at
-                                                     CPU 0 to release
-                                                     its transaction
-                                                     handle
-
-    btrfs_commit_transaction()
-     --> sees another task started
-         the transaction commit first
-     --> releases its transaction
-         handle
-     --> waits for the transaction
-         commit to be completed by
-         the task at CPU 1
-
-                                                 create_pending_snapshot()
-                                                  qgroup_account_snapshot()
-                                                   btrfs_qgroup_inherit()
-                                                    mutex_lock(fs_info->qgroup_ioctl_lock)
-                                                     --> deadlock, task at CPU 0
-                                                         has the mutex locked but
-                                                         it is waiting for us to
-                                                         finish the transaction
-                                                         commit
-
-So fix this by setting the quota enabled flag in fs_info after committing
-the transaction at btrfs_quota_enable(). This ends up serializing quota
-enable and snapshot creation as if the snapshot creation happened just
-before the quota enable request. The quota rescan task, scheduled after
-committing the transaction in btrfs_quote_enable(), will do the accounting.
-
-Fixes: 6426c7ad697d ("btrfs: qgroup: Fix qgroup accounting when creating snapshot")
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/qgroup.c | 14 ++++++++++----
- 1 file changed, 10 insertions(+), 4 deletions(-)
+ fs/btrfs/inode.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index f70825af6438..9e419f6878c5 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1013,16 +1013,22 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info)
- 		btrfs_abort_transaction(trans, ret);
- 		goto out_free_path;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 9ea4c6f0352f..ff9268a60eaf 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6406,14 +6406,19 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
+ 		err = btrfs_del_root_ref(trans, key.objectid,
+ 					 root->root_key.objectid, parent_ino,
+ 					 &local_index, name, name_len);
+-
++		if (err)
++			btrfs_abort_transaction(trans, err);
+ 	} else if (add_backref) {
+ 		u64 local_index;
+ 		int err;
+ 
+ 		err = btrfs_del_inode_ref(trans, root, name, name_len,
+ 					  ino, parent_ino, &local_index);
++		if (err)
++			btrfs_abort_transaction(trans, err);
  	}
--	spin_lock(&fs_info->qgroup_lock);
--	fs_info->quota_root = quota_root;
--	set_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags);
--	spin_unlock(&fs_info->qgroup_lock);
- 
- 	ret = btrfs_commit_transaction(trans);
- 	trans = NULL;
- 	if (ret)
- 		goto out_free_path;
- 
-+	/*
-+	 * Set quota enabled flag after committing the transaction, to avoid
-+	 * deadlocks on fs_info->qgroup_ioctl_lock with concurrent snapshot
-+	 * creation.
-+	 */
-+	spin_lock(&fs_info->qgroup_lock);
-+	fs_info->quota_root = quota_root;
-+	set_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags);
-+	spin_unlock(&fs_info->qgroup_lock);
 +
- 	ret = qgroup_rescan_init(fs_info, 0, 1);
- 	if (!ret) {
- 	        qgroup_rescan_zero_tracking(fs_info);
++	/* Return the original error code */
+ 	return ret;
+ }
+ 
 -- 
 2.19.1
 

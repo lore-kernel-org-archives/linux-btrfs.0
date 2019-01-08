@@ -7,42 +7,42 @@ X-Spam-Status: No, score=-13.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7E82EC43387
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Jan 2019 11:43:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2BD88C43387
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Jan 2019 11:43:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 45B95206B7
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Jan 2019 11:43:00 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D9D19206B7
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Jan 2019 11:43:12 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1546947780;
-	bh=V/0dnC6ujnFGcWWg1R5Hvnc+kTBkC0xF3q9lJN0duOA=;
+	s=default; t=1546947793;
+	bh=BaAWNy44Ue9kKhbdasAm5gkesSwMxJ32hdk5hkOARKg=;
 	h=From:To:Subject:Date:List-ID:From;
-	b=mRO6Q81dFy2yQE/iX/ZPgkZZB4V/XHcQBUZI/3qNjCb7Lqn2aPauSKJAdQV2pMN5P
-	 6YRoc8l7ZWaGTMPXIA4jUtaMzW4tqfbUPEGEdK5+JwJw6/EJKNNaGToCfGiRsSa/0Y
-	 4g500oOj6jZACyrNIs5uv5W7JGlWfUvrpe76OCXc=
+	b=amy20gxV9d71an35ESJAd4JQQU/anBHxD6STb/v9o0irb3gTrMMqFAFQfxMCmrbKc
+	 Mx/j+9AppDq75R7xvd1SxZztRK5Gakl1TcHsPQFfRMp6wfF6JXwUQpJ0zF0F84vBmn
+	 IQTmalRq/XUkHko1QkN/Ob/M9bQjnTMj1IOB3M8U=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728269AbfAHLm7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Jan 2019 06:42:59 -0500
-Received: from mail.kernel.org ([198.145.29.99]:49634 "EHLO mail.kernel.org"
+        id S1728756AbfAHLnL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Jan 2019 06:43:11 -0500
+Received: from mail.kernel.org ([198.145.29.99]:49826 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727107AbfAHLm6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 8 Jan 2019 06:42:58 -0500
+        id S1727701AbfAHLnL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 8 Jan 2019 06:43:11 -0500
 Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 67291206B7
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Jan 2019 11:42:56 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 5499E206B7
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Jan 2019 11:43:09 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1546947776;
-        bh=V/0dnC6ujnFGcWWg1R5Hvnc+kTBkC0xF3q9lJN0duOA=;
+        s=default; t=1546947789;
+        bh=BaAWNy44Ue9kKhbdasAm5gkesSwMxJ32hdk5hkOARKg=;
         h=From:To:Subject:Date:From;
-        b=oEfqgdzbHdbY9pUKopp0XaoUI2hUx1mXu6uWMZ3yePFvIFbJhbdglr3yu9lMxgmaj
-         6+aidOM1Tf86lOQOyfzsv/qLQHrO1IH0ciYCl3ts6IJLdIbQ1cP6IVvbA6d5hwbCPU
-         3Ahrts5teN4vJOXTALLPWWTbEzkzHGuA7V0RBrVg=
+        b=aKlM7oTojd/MVUA/Q0Owg99+Qx4/6o+9BiP2ouDbMuSdWgXvK4kLekkWj9ZghaTi+
+         EyfDwj66dLwE/GxH2dhBrVyRwUEvObCyQdVSvgvs5pjncR+mg9yn/LfBjw03uUpZsO
+         9YqPl5xtbqhV2Mb0iJ3SYsktJDnZuYo2kGPckqmM=
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix race between cloning range ending at eof and writeback
-Date:   Tue,  8 Jan 2019 11:42:54 +0000
-Message-Id: <20190108114254.3296-1-fdmanana@kernel.org>
+Subject: [PATCH] Btrfs: fix race between reflink/dedupe and relocation
+Date:   Tue,  8 Jan 2019 11:43:07 +0000
+Message-Id: <20190108114307.3509-1-fdmanana@kernel.org>
 X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
@@ -53,49 +53,59 @@ From: Filipe Manana <fdmanana@suse.com>
 
 The recent rework that makes btrfs' remap_file_range operation use the
 generic helper generic_remap_file_range_prep() introduced a race between
-writeback and cloning a range that covers the eof extent of the source
-file into a destination offset that is greater then the same file's size.
+relocation and reflinking (for both cloning and deduplication) the file
+extents between the source and destination inodes.
 
-This happens because we now wait for writeback to complete before doing
-the truncation of the eof block, while previously we did the truncation
-and then waited for writeback to complete. This leads to a race between
-writeback of the truncated block and cloning the file extents in the
-source range, because we copy each file extent item we find in the fs
-root into a buffer, then release the path and then increment the reference
-count for the extent referred in that file extent item we copied, which
-can no longer exist if writeback of the truncated eof block completes
-after we copied the file extent item into the buffer and before we
-incremented the reference count. This is illustrated by the following
-diagram:
+This happens because we no longer lock the source range anymore, and we do
+not lock it anymore because we wait for direct IO writes and writeback to
+complete early on the code path right after locking the inodes, which
+guarantees no other file operations interfere with the reflinking. However
+there is one exception which is relocation, since it replaces the byte
+number of file extents items in the fs tree after locking the range the
+file extent items represent. This is a problem because after finding each
+file extent to clone in the fs tree, the reflink process copies the file
+extent item into a local buffer, releases the search path, inserts new
+file extent items in the destination range and then increments the
+reference count for the extent mentioned in the file extent item that it
+previously copied to the buffer. If right after copying the file extent
+item into the buffer and releasing the path the relocation process
+updates the file extent item to point to the new extent, the reflink
+process ends up creating a delayed reference to increment the reference
+count of the old extent, for which the relocation process already created
+a delayed reference to drop it. This results in failure to run delayed
+references because we will attempt to increment the count of a reference
+that was already dropped. This is illustrated by the following diagram:
 
         CPU 1                                       CPU 2
 
+                                        relocation is running
+
   btrfs_clone_files()
-    btrfs_cont_expand()
-      btrfs_truncate_block()
-         --> zeroes part of the
-             page containg eof,
-             marking it for
-            delalloc
 
     btrfs_clone()
       --> finds extent item
-          covering eof,
-          points to extent
+          in source range
+          point to extent
           at bytenr X
       --> copies it into a
           local buffer
       --> releases path
 
-                                        writeback starts
-
-                                        btrfs_finish_ordered_io()
-                                          insert_reserved_file_extent()
-                                            __btrfs_drop_extents()
-                                              --> creates delayed
-                                                  reference to drop
-                                                  the extent at
-                                                  bytenr X
+                                        replace_file_extents()
+                                          --> successfully locks the
+                                              range represented by
+                                              the file extent item
+                                          --> replaces disk_bytenr
+                                              field in the file
+                                              extent item with some
+                                              other value Y
+                                          --> creates delayed reference
+                                              to increment reference
+                                              count for extent at
+                                              bytenr Y
+                                          --> creates delayed reference
+                                              to drop the extent at
+                                              bytenr X
 
       --> starts transaction
       --> creates delayed
@@ -174,44 +184,80 @@ an -EIO error and a trace like the following is produced:
 [ 4382.623855] BTRFS: error (device sdc) in btrfs_run_delayed_refs:2981: errno=-5 IO failure
 [ 4382.624295] BTRFS info (device sdc): forced readonly
 
-Fix this by waiting for writeback to complete after truncating the eof
-block.
+Fix this by locking the source range before searching for the file extent
+items in the fs tree, since the relocation process will try to lock the
+range a file extent item represents before updating it with the new extent
+location.
 
 Fixes: 34a28e3d7753 ("Btrfs: use generic_remap_file_range_prep() for cloning and deduplication")
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/ioctl.c | 15 +++++++++++++++
- 1 file changed, 15 insertions(+)
+ fs/btrfs/ioctl.c | 34 ++++++++++++++++++++++++++++------
+ 1 file changed, 28 insertions(+), 6 deletions(-)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index fab9443f6a42..d0da86ac53bf 100644
+index 0db60bfee99a..996a26befc1d 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -3905,9 +3905,24 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
- 		len = ALIGN(src->i_size, bs) - off;
+@@ -3221,6 +3221,26 @@ static void btrfs_double_inode_lock(struct inode *inode1, struct inode *inode2)
+ 	inode_lock_nested(inode2, I_MUTEX_CHILD);
+ }
  
- 	if (destoff > inode->i_size) {
-+		const u64 wb_start = ALIGN_DOWN(inode->i_size, bs);
++static void btrfs_double_extent_unlock(struct inode *inode1, u64 loff1,
++				       struct inode *inode2, u64 loff2, u64 len)
++{
++	unlock_extent(&BTRFS_I(inode1)->io_tree, loff1, loff1 + len - 1);
++	unlock_extent(&BTRFS_I(inode2)->io_tree, loff2, loff2 + len - 1);
++}
 +
- 		ret = btrfs_cont_expand(inode, inode->i_size, destoff);
- 		if (ret)
- 			return ret;
-+		/*
-+		 * We may have truncated the last block if the inode's size is
-+		 * not sector size aligned, so we need to wait for writeback to
-+		 * complete before proceeding further, otherwise we can race
-+		 * with cloning and attempt to increment a reference to an
-+		 * extent that no longer exists (writeback completed right after
-+		 * we found the previous extent covering eof and before we
-+		 * attempted to increment its reference count).
-+		 */
-+		ret = btrfs_wait_ordered_range(inode, wb_start,
-+					       destoff - wb_start);
-+		if (ret)
-+			return ret;
++static void btrfs_double_extent_lock(struct inode *inode1, u64 loff1,
++				     struct inode *inode2, u64 loff2, u64 len)
++{
++	if (inode1 < inode2) {
++		swap(inode1, inode2);
++		swap(loff1, loff2);
++	} else if (inode1 == inode2 && loff2 < loff1) {
++		swap(loff1, loff2);
++	}
++	lock_extent(&BTRFS_I(inode1)->io_tree, loff1, loff1 + len - 1);
++	lock_extent(&BTRFS_I(inode2)->io_tree, loff2, loff2 + len - 1);
++}
++
+ static int btrfs_extent_same_range(struct inode *src, u64 loff, u64 olen,
+ 				   struct inode *dst, u64 dst_loff)
+ {
+@@ -3242,11 +3262,12 @@ static int btrfs_extent_same_range(struct inode *src, u64 loff, u64 olen,
+ 		return -EINVAL;
+ 
+ 	/*
+-	 * Lock destination range to serialize with concurrent readpages().
++	 * Lock destination range to serialize with concurrent readpages() and
++	 * source range to serialize with relocation.
+ 	 */
+-	lock_extent(&BTRFS_I(dst)->io_tree, dst_loff, dst_loff + len - 1);
++	btrfs_double_extent_lock(src, loff, dst, dst_loff, len);
+ 	ret = btrfs_clone(src, dst, loff, olen, len, dst_loff, 1);
+-	unlock_extent(&BTRFS_I(dst)->io_tree, dst_loff, dst_loff + len - 1);
++	btrfs_double_extent_unlock(src, loff, dst, dst_loff, len);
+ 
+ 	return ret;
+ }
+@@ -3926,11 +3947,12 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
  	}
  
  	/*
+-	 * Lock destination range to serialize with concurrent readpages().
++	 * Lock destination range to serialize with concurrent readpages() and
++	 * source range to serialize with relocation.
+ 	 */
+-	lock_extent(&BTRFS_I(inode)->io_tree, destoff, destoff + len - 1);
++	btrfs_double_extent_lock(src, off, inode, destoff, len);
+ 	ret = btrfs_clone(src, inode, off, olen, len, destoff, 0);
+-	unlock_extent(&BTRFS_I(inode)->io_tree, destoff, destoff + len - 1);
++	btrfs_double_extent_unlock(src, off, inode, destoff, len);
+ 	/*
+ 	 * Truncate page cache pages so that future reads will see the cloned
+ 	 * data immediately and not the previous data.
 -- 
 2.11.0
 

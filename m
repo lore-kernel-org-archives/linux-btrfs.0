@@ -7,45 +7,44 @@ X-Spam-Status: No, score=-13.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C68AC43387
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Jan 2019 20:03:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EA8E4C43387
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Jan 2019 20:04:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2086620660
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Jan 2019 20:03:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B968020660
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Jan 2019 20:04:07 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1546977837;
-	bh=5eDphu6pTMunqA/sjV04CEEbuvBM7nlS78pe+f1hFdE=;
+	s=default; t=1546977847;
+	bh=+ATXady5nrhFLTGFR0i892+XcNKTFyUr89UpfA9SR7Y=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=xSiz4uBoCW2jX0QxcPa/bhpYJgq07O+CNLSxShJpUPylBawEXb/MNjfRPEgOPszSI
-	 5t8Msx7iC1P9i6r62Ddaq2F7MsWmZCc+cNEHatR/NN8RnGxyepvfu5rRomJW6BNJ+o
-	 SkFzL1WIyK/1m5L7V7nSutUoSCsGwfLZ28TnWeSA=
+	b=pRJQdR/n6ZmMnR5Z4EyppansbZ/muJNvo/2fVuh8XMXEf9HdkVx6bMxLwAGvfyGxy
+	 IssXXEkySmzAhCf5WKd2bVtMui46oGHHNZRoRxcfNGMjJvJeLCl3Hwck50sFhGUoC9
+	 zTnM0AQxJqOgEqeVq98pyNUyH/Ls6PI/Wrf6O1Nc=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730746AbfAHUDp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Jan 2019 15:03:45 -0500
-Received: from mail.kernel.org ([198.145.29.99]:35682 "EHLO mail.kernel.org"
+        id S1730773AbfAHUEB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Jan 2019 15:04:01 -0500
+Received: from mail.kernel.org ([198.145.29.99]:35656 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730095AbfAHT2h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 8 Jan 2019 14:28:37 -0500
+        id S1730077AbfAHT2f (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 8 Jan 2019 14:28:35 -0500
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 5D93920665;
-        Tue,  8 Jan 2019 19:28:35 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 579662070B;
+        Tue,  8 Jan 2019 19:28:33 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1546975716;
-        bh=5eDphu6pTMunqA/sjV04CEEbuvBM7nlS78pe+f1hFdE=;
+        s=default; t=1546975714;
+        bh=+ATXady5nrhFLTGFR0i892+XcNKTFyUr89UpfA9SR7Y=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=xSkm76MEi5t5wedQJ5Bn5S0DKgY5pDDtWZlCADPoIReh3/CIVcF+D68H3dBIIZ+w/
-         vwvV6L7wE6USRclPT8HUsm9hH+c+GoyUPNLkaxnIxHb9yTOKrCXhJRfSh3X8Lt/zwg
-         lLuKBQvKx3utBNj7layCH65l8OQdW+4sZmZxXMO8=
+        b=grGbbQGOvkrMZkeC6Jp2AxipDfDotuHrfqAE59tQuA1Z6zp5k+MXy5a5nAlswIIJz
+         6Oqkzqt/vamBdtC2MfHwa6XtEfvFS0rhkZdzkEWjLsNoMoYPJKLV7H+/OYJ+jKNwcx
+         9jbMOViFKw8ellw0lpVsIN38w9hvXzTxgPmt3Vxc=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Anand Jain <anand.jain@oracle.com>,
-        David Sterba <dsterba@suse.com>,
+Cc:     Qu Wenruo <wqu@suse.com>, David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.20 073/117] btrfs: fix use-after-free due to race between replace start and cancel
-Date:   Tue,  8 Jan 2019 14:25:41 -0500
-Message-Id: <20190108192628.121270-73-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 4.20 071/117] btrfs: volumes: Make sure there is no overlap of dev extents at mount time
+Date:   Tue,  8 Jan 2019 14:25:39 -0500
+Message-Id: <20190108192628.121270-71-sashal@kernel.org>
 X-Mailer: git-send-email 2.19.1
 In-Reply-To: <20190108192628.121270-1-sashal@kernel.org>
 References: <20190108192628.121270-1-sashal@kernel.org>
@@ -57,175 +56,148 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Anand Jain <anand.jain@oracle.com>
+From: Qu Wenruo <wqu@suse.com>
 
-[ Upstream commit d189dd70e2556181732598956d808ea53cc8774e ]
+[ Upstream commit 5eb193812a42dc49331f25137a38dfef9612d3e4 ]
 
-The device replace cancel thread can race with the replace start thread
-and if fs_info::scrubs_running is not yet set, btrfs_scrub_cancel() will
-fail to stop the scrub thread.
+Enhance btrfs_verify_dev_extents() to remember previous checked dev
+extents, so it can verify no dev extents can overlap.
 
-The scrub thread continues with the scrub for replace which then will
-try to write to the target device and which is already freed by the
-cancel thread.
+Analysis from Hans:
 
-scrub_setup_ctx() warns as tgtdev is NULL.
+"Imagine allocating a DATA|DUP chunk.
 
-  struct scrub_ctx *scrub_setup_ctx(struct btrfs_device *dev, int is_dev_replace)
-  {
-  ...
-	  if (is_dev_replace) {
-		  WARN_ON(!fs_info->dev_replace.tgtdev);  <===
-		  sctx->pages_per_wr_bio = SCRUB_PAGES_PER_WR_BIO;
-		  sctx->wr_tgtdev = fs_info->dev_replace.tgtdev;
-		  sctx->flush_all_writes = false;
-	  }
+ In the chunk allocator, we first set...
+   max_stripe_size = SZ_1G;
+   max_chunk_size = BTRFS_MAX_DATA_CHUNK_SIZE
+ ... which is 10GiB.
 
-  [ 6724.497655] BTRFS info (device sdb): dev_replace from /dev/sdb (devid 1) to /dev/sdc started
-  [ 6753.945017] BTRFS info (device sdb): dev_replace from /dev/sdb (devid 1) to /dev/sdc canceled
-  [ 6852.426700] WARNING: CPU: 0 PID: 4494 at fs/btrfs/scrub.c:622 scrub_setup_ctx.isra.19+0x220/0x230 [btrfs]
-  ...
-  [ 6852.428928] RIP: 0010:scrub_setup_ctx.isra.19+0x220/0x230 [btrfs]
-  ...
-  [ 6852.432970] Call Trace:
-  [ 6852.433202]  btrfs_scrub_dev+0x19b/0x5c0 [btrfs]
-  [ 6852.433471]  btrfs_dev_replace_start+0x48c/0x6a0 [btrfs]
-  [ 6852.433800]  btrfs_dev_replace_by_ioctl+0x3a/0x60 [btrfs]
-  [ 6852.434097]  btrfs_ioctl+0x2476/0x2d20 [btrfs]
-  [ 6852.434365]  ? do_sigaction+0x7d/0x1e0
-  [ 6852.434623]  do_vfs_ioctl+0xa9/0x6c0
-  [ 6852.434865]  ? syscall_trace_enter+0x1c8/0x310
-  [ 6852.435124]  ? syscall_trace_enter+0x1c8/0x310
-  [ 6852.435387]  ksys_ioctl+0x60/0x90
-  [ 6852.435663]  __x64_sys_ioctl+0x16/0x20
-  [ 6852.435907]  do_syscall_64+0x50/0x180
-  [ 6852.436150]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+ Then...
+   /* we don't want a chunk larger than 10% of writeable space */
+   max_chunk_size = min(div_factor(fs_devices->total_rw_bytes, 1),
+       		 max_chunk_size);
 
-Further, as the replace thread enters scrub_write_page_to_dev_replace()
-without the target device it panics:
+ Imagine we only have one 7880MiB block device in this filesystem. Now
+ max_chunk_size is down to 788MiB.
 
-  static int scrub_add_page_to_wr_bio(struct scrub_ctx *sctx,
-				      struct scrub_page *spage)
-  {
-  ...
-	bio_set_dev(bio, sbio->dev->bdev); <======
+ The next step in the code is to search for max_stripe_size * dev_stripes
+ amount of free space on the device, which is in our example 1GiB * 2 =
+ 2GiB. Imagine the device has exactly 1578MiB free in one contiguous
+ piece. This amount of bytes will be put in devices_info[ndevs - 1].max_avail
 
-  [ 6929.715145] BUG: unable to handle kernel NULL pointer dereference at 00000000000000a0
-  ..
-  [ 6929.717106] Workqueue: btrfs-scrub btrfs_scrub_helper [btrfs]
-  [ 6929.717420] RIP: 0010:scrub_write_page_to_dev_replace+0xb4/0x260
-  [btrfs]
-  ..
-  [ 6929.721430] Call Trace:
-  [ 6929.721663]  scrub_write_block_to_dev_replace+0x3f/0x60 [btrfs]
-  [ 6929.721975]  scrub_bio_end_io_worker+0x1af/0x490 [btrfs]
-  [ 6929.722277]  normal_work_helper+0xf0/0x4c0 [btrfs]
-  [ 6929.722552]  process_one_work+0x1f4/0x520
-  [ 6929.722805]  ? process_one_work+0x16e/0x520
-  [ 6929.723063]  worker_thread+0x46/0x3d0
-  [ 6929.723313]  kthread+0xf8/0x130
-  [ 6929.723544]  ? process_one_work+0x520/0x520
-  [ 6929.723800]  ? kthread_delayed_work_timer_fn+0x80/0x80
-  [ 6929.724081]  ret_from_fork+0x3a/0x50
+ Next we recalculate the stripe_size (which is actually the device extent
+ length), based on the actual maximum amount of available raw disk space:
+   stripe_size = div_u64(devices_info[ndevs - 1].max_avail, dev_stripes);
 
-Fix this by letting the btrfs_dev_replace_finishing() to do the job of
-cleaning after the cancel, including freeing of the target device.
-btrfs_dev_replace_finishing() is called when btrfs_scub_dev() returns
-along with the scrub return status.
+ stripe_size is now 789MiB
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
+ Next we do...
+   data_stripes = num_stripes / ncopies
+ ...where data_stripes ends up as 1, because num_stripes is 2 (the amount
+ of device extents we're going to have), and DUP has ncopies 2.
+
+ Next there's a check...
+   if (stripe_size * data_stripes > max_chunk_size)
+ ...which matches because 789MiB * 1 > 788MiB.
+
+ We go into the if code, and next is...
+   stripe_size = div_u64(max_chunk_size, data_stripes);
+ ...which resets stripe_size to max_chunk_size: 788MiB
+
+ Next is a fun one...
+   /* bump the answer up to a 16MB boundary */
+   stripe_size = round_up(stripe_size, SZ_16M);
+ ...which changes stripe_size from 788MiB to 800MiB.
+
+ We're not done changing stripe_size yet...
+   /* But don't go higher than the limits we found while searching
+    * for free extents
+    */
+   stripe_size = min(devices_info[ndevs - 1].max_avail,
+       	      stripe_size);
+
+ This is bad. max_avail is twice the stripe_size (we need to fit 2 device
+ extents on the same device for DUP).
+
+ The result here is that 800MiB < 1578MiB, so it's unchanged. However,
+ the resulting DUP chunk will need 1600MiB disk space, which isn't there,
+ and the second dev_extent might extend into the next thing (next
+ dev_extent? end of device?) for 22MiB.
+
+ The last shown line of code relies on a situation where there's twice
+ the value of stripe_size present as value for the variable stripe_size
+ when it's DUP. This was actually the case before commit 92e222df7b
+ "btrfs: alloc_chunk: fix DUP stripe size handling", from which I quote:
+   "[...] in the meantime there's a check to see if the stripe_size does
+ not exceed max_chunk_size. Since during this check stripe_size is twice
+ the amount as intended, the check will reduce the stripe_size to
+ max_chunk_size if the actual correct to be used stripe_size is more than
+ half the amount of max_chunk_size."
+
+ In the previous version of the code, the 16MiB alignment (why is this
+ done, by the way?) would result in a 50% chance that it would actually
+ do an 8MiB alignment for the individual dev_extents, since it was
+ operating on double the size. Does this matter?
+
+ Does it matter that stripe_size can be set to anything which is not
+ 16MiB aligned because of the amount of remaining available disk space
+ which is just taken?
+
+ What is the main purpose of this round_up?
+
+ The most straightforward thing to do seems something like...
+   stripe_size = min(
+       div_u64(devices_info[ndevs - 1].max_avail, dev_stripes),
+       stripe_size
+   )
+ ..just putting half of the max_avail into stripe_size."
+
+Link: https://lore.kernel.org/linux-btrfs/b3461a38-e5f8-f41d-c67c-2efac8129054@mendix.com/
+Reported-by: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+[ add analysis from report ]
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/dev-replace.c | 63 +++++++++++++++++++++++++++---------------
- 1 file changed, 41 insertions(+), 22 deletions(-)
+ fs/btrfs/volumes.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 2aa48aecc52b..f6e9bf9f9a69 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -797,39 +797,58 @@ int btrfs_dev_replace_cancel(struct btrfs_fs_info *fs_info)
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_CANCELED:
- 		result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NOT_STARTED;
- 		btrfs_dev_replace_write_unlock(dev_replace);
--		goto leave;
-+		break;
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED:
-+		result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR;
-+		tgt_device = dev_replace->tgtdev;
-+		src_device = dev_replace->srcdev;
-+		btrfs_dev_replace_write_unlock(dev_replace);
-+		btrfs_scrub_cancel(fs_info);
-+		/* btrfs_dev_replace_finishing() will handle the cleanup part */
-+		btrfs_info_in_rcu(fs_info,
-+			"dev_replace from %s (devid %llu) to %s canceled",
-+			btrfs_dev_name(src_device), src_device->devid,
-+			btrfs_dev_name(tgt_device));
-+		break;
- 	case BTRFS_IOCTL_DEV_REPLACE_STATE_SUSPENDED:
-+		/*
-+		 * Scrub doing the replace isn't running so we need to do the
-+		 * cleanup step of btrfs_dev_replace_finishing() here
-+		 */
- 		result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR;
- 		tgt_device = dev_replace->tgtdev;
- 		src_device = dev_replace->srcdev;
- 		dev_replace->tgtdev = NULL;
- 		dev_replace->srcdev = NULL;
--		break;
--	}
--	dev_replace->replace_state = BTRFS_IOCTL_DEV_REPLACE_STATE_CANCELED;
--	dev_replace->time_stopped = ktime_get_real_seconds();
--	dev_replace->item_needs_writeback = 1;
--	btrfs_dev_replace_write_unlock(dev_replace);
--	btrfs_scrub_cancel(fs_info);
-+		dev_replace->replace_state =
-+				BTRFS_IOCTL_DEV_REPLACE_STATE_CANCELED;
-+		dev_replace->time_stopped = ktime_get_real_seconds();
-+		dev_replace->item_needs_writeback = 1;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index f435d397019e..a567ee0bf060 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -7478,6 +7478,8 @@ int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info)
+ 	struct btrfs_path *path;
+ 	struct btrfs_root *root = fs_info->dev_root;
+ 	struct btrfs_key key;
++	u64 prev_devid = 0;
++	u64 prev_dev_ext_end = 0;
+ 	int ret = 0;
  
--	trans = btrfs_start_transaction(root, 0);
--	if (IS_ERR(trans)) {
--		mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
--		return PTR_ERR(trans);
--	}
--	ret = btrfs_commit_transaction(trans);
--	WARN_ON(ret);
-+		btrfs_dev_replace_write_unlock(dev_replace);
+ 	key.objectid = 1;
+@@ -7522,10 +7524,22 @@ int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info)
+ 		chunk_offset = btrfs_dev_extent_chunk_offset(leaf, dext);
+ 		physical_len = btrfs_dev_extent_length(leaf, dext);
  
--	btrfs_info_in_rcu(fs_info,
--		"dev_replace from %s (devid %llu) to %s canceled",
--		btrfs_dev_name(src_device), src_device->devid,
--		btrfs_dev_name(tgt_device));
-+		btrfs_scrub_cancel(fs_info);
-+
-+		trans = btrfs_start_transaction(root, 0);
-+		if (IS_ERR(trans)) {
-+			mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
-+			return PTR_ERR(trans);
++		/* Check if this dev extent overlaps with the previous one */
++		if (devid == prev_devid && physical_offset < prev_dev_ext_end) {
++			btrfs_err(fs_info,
++"dev extent devid %llu physical offset %llu overlap with previous dev extent end %llu",
++				  devid, physical_offset, prev_dev_ext_end);
++			ret = -EUCLEAN;
++			goto out;
 +		}
-+		ret = btrfs_commit_transaction(trans);
-+		WARN_ON(ret);
- 
--	if (tgt_device)
--		btrfs_destroy_dev_replace_tgtdev(tgt_device);
-+		btrfs_info_in_rcu(fs_info,
-+		"suspended dev_replace from %s (devid %llu) to %s canceled",
-+			btrfs_dev_name(src_device), src_device->devid,
-+			btrfs_dev_name(tgt_device));
 +
-+		if (tgt_device)
-+			btrfs_destroy_dev_replace_tgtdev(tgt_device);
-+		break;
-+	default:
-+		result = -EINVAL;
-+	}
- 
--leave:
- 	mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
- 	return result;
- }
+ 		ret = verify_one_dev_extent(fs_info, chunk_offset, devid,
+ 					    physical_offset, physical_len);
+ 		if (ret < 0)
+ 			goto out;
++		prev_devid = devid;
++		prev_dev_ext_end = physical_offset + physical_len;
++
+ 		ret = btrfs_next_item(root, path);
+ 		if (ret < 0)
+ 			goto out;
 -- 
 2.19.1
 

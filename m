@@ -2,142 +2,109 @@ Return-Path: <SRS0=Si37=PQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-11.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 84267C43387
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Jan 2019 11:51:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 53367C43387
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Jan 2019 12:15:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 518F0206B7
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Jan 2019 11:51:25 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1546948285;
-	bh=o+Pe7aylEIQgTn7+YP4GzLfnUqawTIiaENu6gEniO00=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc:List-ID:From;
-	b=Y0cC0GLbFDJAU5xmRoxYuZUUTnNoHVNh1ZahWz+dBqDLp436tJiA1eaPdXCWZsVdw
-	 YQLyip/4n3aMy8mGutL1qT0WFPrI8SMXO87x0D71eSSTMAM2Xu/o5OQn4CP9gV7wvh
-	 Qk/80ipR4vYwUT9nSH04Lxu9q+bUBUgS/gJX+zDI=
+	by mail.kernel.org (Postfix) with ESMTP id 1E5BC206B7
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Jan 2019 12:15:00 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="mMtoG/jX"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728186AbfAHLvY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Jan 2019 06:51:24 -0500
-Received: from mail.kernel.org ([198.145.29.99]:58576 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727107AbfAHLvX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 8 Jan 2019 06:51:23 -0500
-Received: from mail-vs1-f52.google.com (mail-vs1-f52.google.com [209.85.217.52])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 4B1102087F
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Jan 2019 11:51:22 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1546948282;
-        bh=o+Pe7aylEIQgTn7+YP4GzLfnUqawTIiaENu6gEniO00=;
-        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-        b=dILVNB0TQPwxp3o9e5dxVNb1+lV1Uc/Az1dVxp/iQzlN1ohfsz4i+RqPfR+fhN7YT
-         rOdnnbEsR6453K6kRPogmqUZOGO7RAMHC3/VQ10CiYpL20X91CirUfH2F0Lfc4IlHu
-         R3g+/HFvpfn+TpNTcBHVjMyDdNDDx/u8AFfTWTnY=
-Received: by mail-vs1-f52.google.com with SMTP id x28so2233437vsh.12
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Jan 2019 03:51:22 -0800 (PST)
-X-Gm-Message-State: AJcUukfgiEK5/8yNpnh5sYntmzMLT2c3LJjKD+1PITpsGfbrCwu8nNVP
-        xsbRz5EiYBVwv3ORd7emqKUQM572cJVpmSoxsGc=
-X-Google-Smtp-Source: ALg8bN4kgueXySRILuodhdC7gowPsDd9qHZJN+eWTOSHlFCu7SuLk6zxkIc6EE2k0iyhAZuUtU89M5B8Tn0Bq4qyOgk=
-X-Received: by 2002:a67:3b1b:: with SMTP id i27mr584114vsa.14.1546948281446;
- Tue, 08 Jan 2019 03:51:21 -0800 (PST)
+        id S1728825AbfAHMO7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Jan 2019 07:14:59 -0500
+Received: from mail-ed1-f68.google.com ([209.85.208.68]:43734 "EHLO
+        mail-ed1-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728652AbfAHMO6 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Jan 2019 07:14:58 -0500
+Received: by mail-ed1-f68.google.com with SMTP id f9so3959873eds.10
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Jan 2019 04:14:57 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=1DnkBwdjZAY0I8+Yku6l8djtc1T+Q2KUbirNoO1D73o=;
+        b=mMtoG/jXWbMsQtRgmE8lsM1pq2Y+5nA2rbP0MomiMuZkWtB/9E7wqsZVvfMviyUY4Y
+         yo0hRT5wgpKYxmHZqpZiBYYDEtVJ3+yueRVRftdhfteuNvPipWA4kLQVgdeAnH7eFg76
+         dasfsahk4dhwEZmyC1fzPbU6BRndwx6q3MFzJ82P8pU763rmzvXI7FTw38tIfzbsYjQi
+         ZcVpaZT1LX7RAb21prva5jCKdra0R38eLIMhZMsFkD4ta1xt1VK9xlbMwwuc90RzSujL
+         Zvy0CHgj5Z96ePOv89mzPsNj2j/Bc1mVE8/TYk0si1hcNDl5VkICQ2BXBjPLPaw7ejMK
+         ckuw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=1DnkBwdjZAY0I8+Yku6l8djtc1T+Q2KUbirNoO1D73o=;
+        b=KNES9uWE425NqobQ2Vey4E9fhpP0M2AkLb0vNwMAuRLpD4O41nOkERzLMGXYGMKaaA
+         /RIBg36ib3tdo1vtAaNpLGfFAJdHT7qNyHYRzsMS1iSFbLYgXOMdAzrXUvo6hoAwWmHF
+         hhyxnV3qaCeSE1eWo9JkG0fF8f4LHb1YpYv5RBFHn0bIPKIzXJvW3XumFVtEeW/K05Cn
+         xxj8T7SebyxnC+x296J04KarpMRZgebuzDDnvfrWNj3oCdqxawcFqS0uNsBl7FCnlQtM
+         Rfnc6mMtjDmNIHTa6cQ5GRkpg44yi6ufjT8fJmbNJFYuK+iNWOnxuoQ+wkd2MH7GFxJC
+         SdvQ==
+X-Gm-Message-State: AJcUukcamS6Kl5VW8Uf5rCzJygXCdN3rt4K4tpw1kMwl/f6qKOLsQQkz
+        69gxPbjau3WIKZgRKHAzLE75oDPj1e+IEyiap0U=
+X-Google-Smtp-Source: ALg8bN44IHay+MmQ/hiz7dW6rGP8zxJGV9A6UUa+GGezod5S4aMSWuWGbIMVdzqx0ie6zI74ZOaUSP0vHaE+WDz4F4A=
+X-Received: by 2002:a50:9ac4:: with SMTP id p62mr1883236edb.179.1546949696754;
+ Tue, 08 Jan 2019 04:14:56 -0800 (PST)
 MIME-Version: 1.0
-References: <20181213211725.14832-1-fdmanana@kernel.org>
-In-Reply-To: <20181213211725.14832-1-fdmanana@kernel.org>
-From:   Filipe Manana <fdmanana@kernel.org>
-Date:   Tue, 8 Jan 2019 11:51:10 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H4YhQOe3Hq0nbZ15D_HMesQszGFD1FeV_At9oGG3yLE0A@mail.gmail.com>
-Message-ID: <CAL3q7H4YhQOe3Hq0nbZ15D_HMesQszGFD1FeV_At9oGG3yLE0A@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: avoid deadlock with memory reclaim due to
- allocation of devices
-To:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc:     David Sterba <dsterba@suse.com>
+References: <2543962.HIiRWmuHEy@exnet.gdb.it> <3834bc23-03bf-f6e4-dd56-2cf028469a82@suse.com>
+ <2282965.574ZSNQ4d8@exnet.gdb.it> <CAL3q7H6XWfo1HwRrV0BDVOhQJ3=8R7qd6qoZAQrTNimEYZFh8A@mail.gmail.com>
+In-Reply-To: <CAL3q7H6XWfo1HwRrV0BDVOhQJ3=8R7qd6qoZAQrTNimEYZFh8A@mail.gmail.com>
+From:   gius db <giusdbg@gmail.com>
+Date:   Tue, 8 Jan 2019 13:14:54 +0100
+Message-ID: <CAO6aweODMWZrsmBKvZQp0sgjQq4ZaBhJM04jEu7YpSbvvfyjDQ@mail.gmail.com>
+Subject: Re: [COMMAND HANGS] The command 'btrfs subvolume sync -s 2 xyz' can hangs.
+To:     fdmanana@gmail.com
+Cc:     Jeff Mahoney <jeffm@suse.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Dec 13, 2018 at 9:18 PM <fdmanana@kernel.org> wrote:
->
-> From: Filipe Manana <fdmanana@suse.com>
->
-> Several places allocate a device while holding the device list mutex. This
-> can result in a deadlock if reclaim happens because the device, and its
-> flush bio, are allocated using GFP_KERNEL mode (by __alloc_device() which
-> is used by btrfs_alloc_device()). A transaction commit, which reclaim can
-> trigger, needs to lock the device list mutex in its critical section, done
-> at btrfs_update_commit_device_size().
->
-> Some of these places are device_list_add(), which ends up being called
-> through the device scan ioctl, and btrfs_close_one_device(), which ends up
-> being called through the device remove ioctl.
->
-> Since all the places that add elements to the list of resized devices (the
-> device grow and shrink functions) only lock the chunk mutex before adding
-> a device to the list, drop the need to acquire the device list mutex from
-> btrfs_update_commit_device_size(), which is the only other place that uses
-> this list and it already locks the chunk mutex.
->
-> Fixes: 78f2c9e6dbb14 ("btrfs: device add and remove: use GFP_KERNEL")
-> Fixes: e0ae999414238 ("btrfs: preallocate device flush bio")
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Il giorno mar 8 gen 2019 alle ore 00:11 Filipe Manana
+<fdmanana@gmail.com> ha scritto:
 
-Ping.
+]zac[
+> > [ 1558.056931] Call Trace:
+> > [ 1558.057011]  __btrfs_run_delayed_refs+0x216/0x10b0 [btrfs]
+> > [ 1558.057011]  ? btrfs_free_tree_block+0x82/0x2c0 [btrfs]
+> > [ 1558.057011]  btrfs_run_delayed_refs+0x78/0x180 [btrfs]
+> > [ 1558.057011]  btrfs_should_end_transaction+0x3e/0x60 [btrfs]
+> > [ 1558.057011]  btrfs_drop_snapshot+0x3cf/0x820 [btrfs]
+> > [ 1558.057011]  ? btree_submit_bio_start+0x20/0x20 [btrfs]
+> > [ 1558.057011]  btrfs_clean_one_deleted_snapshot+0xba/0xe0 [btrfs]
+> > [ 1558.057011]  cleaner_kthread+0x129/0x160 [btrfs]
+> > [ 1558.057011]  kthread+0x112/0x130
+> > [ 1558.057011]  ? kthread_create_worker_on_cpu+0x70/0x70
+> > [ 1558.057011]  ret_from_fork+0x35/0x40
+> > [ 1558.057011] Code: 10 48 8b 40 50 f0 48 0f ba a8 30 23 00 00 02 0f 92 c0 41
+> > 59 84 c0 0f 85 cc a4 09 00 44 89 ee 48 c7 c7 98 9e 75 c0 e8 58 33 a0 e7 <0f>
+> > 0b e9 b6 a4 09 00 48 89 df e8 bf 0c ff ff 49 8b 74 24 28 4d
+> > [ 1558.057011] ---[ end trace c4eefd1fdc016ceb ]---
+> > [ 1558.057734] BTRFS: error (device sda3) in __btrfs_free_extent:7007:
+> > errno=-2 No such entry
+> > [ 1558.057742] BTRFS info (device sda3): forced readonly
+> > [ 1558.057757] BTRFS: error (device sda3) in btrfs_run_delayed_refs:3076:
+> > errno=-2 No such entry
 
-> ---
->  fs/btrfs/volumes.c | 8 ++------
->  fs/btrfs/volumes.h | 1 +
->  2 files changed, 3 insertions(+), 6 deletions(-)
+> Very recently, a fix for this went into kernel 5.0-rc1:
 >
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index c872adfc939e..74c4ed29e36e 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -176,7 +176,8 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
->   * chunk_mutex
->   * -----------
->   * protects chunks, adding or removing during allocation, trim or when a new
-> - * device is added/removed
-> + * device is added/removed, and the list of resized devices at struct
-> + * btrfs_fs_info::fs_devices::resized_devices
->   *
->   * cleaner_mutex
->   * -------------
-> @@ -7298,10 +7299,6 @@ void btrfs_update_commit_device_size(struct btrfs_fs_info *fs_info)
->         struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
->         struct btrfs_device *curr, *next;
->
-> -       if (list_empty(&fs_devices->resized_devices))
-> -               return;
-> -
-> -       mutex_lock(&fs_devices->device_list_mutex);
->         mutex_lock(&fs_info->chunk_mutex);
->         list_for_each_entry_safe(curr, next, &fs_devices->resized_devices,
->                                  resized_list) {
-> @@ -7309,7 +7306,6 @@ void btrfs_update_commit_device_size(struct btrfs_fs_info *fs_info)
->                 curr->commit_total_bytes = curr->disk_total_bytes;
->         }
->         mutex_unlock(&fs_info->chunk_mutex);
-> -       mutex_unlock(&fs_devices->device_list_mutex);
->  }
->
->  /* Must be invoked during the transaction commit */
-> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-> index aefce895e994..362574b9c37a 100644
-> --- a/fs/btrfs/volumes.h
-> +++ b/fs/btrfs/volumes.h
-> @@ -229,6 +229,7 @@ struct btrfs_fs_devices {
->         struct mutex device_list_mutex;
->         struct list_head devices;
->
-> +       /* protected by struct btrfs_fs_info::chunk_mutex */
->         struct list_head resized_devices;
->         /* devices not currently being allocated */
->         struct list_head alloc_list;
-> --
-> 2.11.0
->
+> https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=0568e82dbe2510fc1fa664f58e5c997d3f1e649e
+]zac[
+
+Thanks for the answer.
+
+If I understand correctly the problem is caused by the concurrence of
+the cleanup process (which is started a few seconds after the end of
+the snapshot deletion) with the other operations on the filesystem.
+
+It matches what I seem to have noticed (problem that occurs after a
+snapshot deletion, occurs randomly due to a race condition, etc..).
+
+P.S. I suppose the 4.x.x kernel will not be corrected.

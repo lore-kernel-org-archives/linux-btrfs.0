@@ -2,88 +2,85 @@ Return-Path: <SRS0=Si37=PQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2313AC43387
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Jan 2019 07:44:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E5AC1C43387
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Jan 2019 07:47:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id F22C720700
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Jan 2019 07:43:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B48B82183F
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Jan 2019 07:47:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727701AbfAHHn7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Jan 2019 02:43:59 -0500
-Received: from mx2.suse.de ([195.135.220.15]:38112 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727295AbfAHHn6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 8 Jan 2019 02:43:58 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id C9D64AE47
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Jan 2019 07:43:56 +0000 (UTC)
-Subject: Re: [PATCH 3/4] btrfs: Refactor retval handling of
- btrfs_lookup_file_extent in btrfs_get_extent
-To:     dsterba@suse.cz, Johannes Thumshirn <jthumshirn@suse.de>,
+        id S1727672AbfAHHr1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Jan 2019 02:47:27 -0500
+Received: from mout.gmx.net ([212.227.15.18]:54797 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727473AbfAHHr1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 8 Jan 2019 02:47:27 -0500
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx002
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0MNHqL-1geqAZ17rl-006urO; Tue, 08
+ Jan 2019 08:47:19 +0100
+Subject: Re: [PATCH] btrfs: Remove impossible condition from mergable_maps
+To:     Nikolay Borisov <nborisov@suse.com>, dsterba@suse.cz,
         linux-btrfs@vger.kernel.org
-References: <20181217083602.10166-1-nborisov@suse.com>
- <20181217083602.10166-4-nborisov@suse.com>
- <20190102170553.GA23615@twin.jikos.cz>
- <a5015ce3-e241-d1d2-4894-2a03bb117f4a@suse.com>
- <003128f5-23cd-e8bd-2e82-5f2894596c97@suse.de>
- <20190107184613.GB23615@twin.jikos.cz>
-From:   Nikolay Borisov <nborisov@suse.com>
+References: <20181218131002.12480-1-nborisov@suse.com>
+ <20190107191019.GD23615@twin.jikos.cz>
+ <29983e2d-b525-5b9f-0f37-eb06614cc454@suse.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <0ea43625-e55e-24d0-4a8e-44f1799b48a6@suse.com>
-Date:   Tue, 8 Jan 2019 09:43:55 +0200
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <88996f56-2740-c3be-1a5c-72a7f40af1f8@gmx.com>
+Date:   Tue, 8 Jan 2019 15:47:13 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+ Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <20190107184613.GB23615@twin.jikos.cz>
+In-Reply-To: <29983e2d-b525-5b9f-0f37-eb06614cc454@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
+X-Provags-ID: V03:K1:iV6SiNsRcRfY/E/m2nTAg94ATRMFJTvyNnYFd5upN/6h9GwQaIG
+ DKBoKe5JRnvzmpGEGDnsu8gxqbRFH1qfxGlpTFJkaw0qWmkPyaxNq64Y93tXM57EAaobCmD
+ o3inCjnY8xh8TPsmtjljRz8ylrFVbs2Astv9zb8ZHqcg3Hd76tVVgUN9qvBvwMMILOPmNrY
+ nk14IOeX3wquOkUzxXIsA==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:t0QUZBUe15U=:/qkI858AAobmuzAQAMThlc
+ 7Lwwb6TS0ReJLjeBIur4w5/CDdh2aeZkhpQkhi1BK0AQkDRv3HuNSLYnmsxnSIHbOhbCaVcLk
+ buT5FJ6eeL0E7UEufxByunfp251qK/1ZM9vUqHBUCFng5T7MSONnOR0cFvBTu3rsBqW56U7Pn
+ EjhzpjF5Seut3dvdH8rFZfeLF9EMJkABlM38EK34Wjtu5a/sRvphR7JtiwmsYtkQv7r5a6X07
+ BUyJnxQcHolfb8+trsNGxKvgsST25CXp0VyRUYnxHGZOz/Y9hKCz/SB5WS30tFCOeWp44o+4o
+ TbEr7N2ZZBU7XvBcWi7oWfubhPTZVbKDZ6R1ApirlmExjPHVKm+ErNwMRytxua6DSD6xfyBz1
+ f56HzQyRX778DUjhESkAUoOPyVmMxi4eNiafPmncs4Ni/9tI5OZuAJdKYL25YlAPjmzXAoUXF
+ FfVLVzeUFk3zsPyfAI6QQOjM9tNC9LexP4VROo/L5BBlw3/tLByCqom32A5DF/balPOyGD2pP
+ TRpjp96xMGBCGupgjl33LA3nC7GdyVcr/Y4nYEvdtFm3FXEC380ByyD961UJA74j7rFV0ZHW0
+ 1O8/JtOuDx7dIxdX0Y+pa+bdg2BGETrRcixm3hoMl1k7Sb3D6I4M2JaeMnVVPh3AbWBGkgQre
+ QTo02LANKod2oIiMN8Sk14pQE+8jtTOGNfmeT/goA0zeirku2GvtMjP6fkAoPvYtXz2XJ9/o7
+ hlHVH1CNCYi0tmnoUiBAuWpyss3o6WVswf3KVQggAPqkrqkZ4SQqN9N4VKC8Gu6B/bp+pKCAc
+ zoTVVZvv/N2UP4S4W9OTMvJrH/Hm9u3vDRFDll0AkZ/wXDB6eCP5yrI0fItXuQUj1/5yKEbgy
+ 932GmwwObwPSJEosh6KwxQHeS0gtV0AxHDO7IozB2TCq9jdFWSvoaFe9cv43OTOVHv3Zn1pxK
+ 78K48+wN3yw==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -91,45 +88,32 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 7.01.19 г. 20:46 ч., David Sterba wrote:
-> On Mon, Jan 07, 2019 at 04:22:01PM +0100, Johannes Thumshirn wrote:
->> On 02/01/2019 18:43, Nikolay Borisov wrote:
->>> On 2.01.19 г. 19:05 ч., David Sterba wrote:
->>>> This is repeating code and could be simplified ... to the original code.
->>>
->>> It does and this is intentional. What I've  strived to do is make the
->>> idea of the code obvious and not try to reduce the total line of code.
->>> It is a massive improvement given the code which modifies extent_end
->>> triggers only in case ret is > 0. I discussed this with Johannes and he
->>> agreed with my assessment.
->>>
->>>> I'm not sure this patch is an improvement.
+On 2019/1/8 下午3:30, Nikolay Borisov wrote:
+> 
+> 
+> On 7.01.19 г. 21:10 ч., David Sterba wrote:
+>> On Tue, Dec 18, 2018 at 03:10:02PM +0200, Nikolay Borisov wrote:
+>>> We can never have extents marked as EXTENT_MAP_DELALLOC since this
+>>> value is only ever used by btrfs_get_extent_fiemap. In this case the
+>>> extent map is created by btrfs_get_extent_fiemap and is never really
+>>> published, this flag is used to return the corresponding userspace one.
+>>> Considering this, it's pointless having a check for EXTENT_MAP_DELALLOC
+>>> in mergable_maps. Just remove it.
 >>
->> I think it really helps when trying to understand the code.
+>> An assert would be good and a comment at EXTENT_MAP_DELALLOC definition
+>> repeating what's in the changelog. Otherwise ok.
+> 
+> Do we really need the assert though, it's plainly obvious
+> EXTENT_MAP_DELALLOC is only set in a single function?
+
+IMHO ASSERT() is not for now, but for the future.
+Later on maybe some modification would change when and who sets DELALLOC
+bit.
+(And that's why there are a lot of seemingly stupid ASSERT(), it won't
+hurt anyway).
+
+Thanks,
+Qu
+
+> 
 >>
->> This is why the patch was created in the first place, I asked Nik about
->> something and we went over the code together.
-> 
-> I've tried to read the new version again with fresh eyes and still don't
-> see any improvement in readability. Not that the whole function is easy
-> to follow, quite the opposite, but I'd rather see continued refactoring
-> that untangles the gotos.
-> 
-> The return codes of btrfs_lookup_file_extent follow the common
-> btrfs_search_slot pattern < 0 error, 0 found, > 0 not found. And in the
-> last case there's an adjustment needed. Read the item type, check and
-> branch if necessary. No surprises there.
-
-Actually there is a surprise, this surprise is due to the fact that it's
-not explicitly clear the adjustments happens when > 0 is returned. With
-my patch it's clear which code gets executed only  when the respective
-extent item wasn't found.
-
-> 
-> The amount of duplicated code is also not something trivial like
-> a variable asisgnment, there are arguments passed etc.
-
-The amount of duplication are 3 lines of linear code, I think this is
-just being overly nitpicky given the (IMO) upside of this change.
-
-> 

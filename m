@@ -2,118 +2,152 @@ Return-Path: <SRS0=Si37=PQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E5AC1C43387
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Jan 2019 07:47:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9B6C7C43387
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Jan 2019 11:17:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B48B82183F
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Jan 2019 07:47:28 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 634BA20850
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Jan 2019 11:17:05 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Pvt9IA2A"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727672AbfAHHr1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Jan 2019 02:47:27 -0500
-Received: from mout.gmx.net ([212.227.15.18]:54797 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727473AbfAHHr1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 8 Jan 2019 02:47:27 -0500
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx002
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0MNHqL-1geqAZ17rl-006urO; Tue, 08
- Jan 2019 08:47:19 +0100
-Subject: Re: [PATCH] btrfs: Remove impossible condition from mergable_maps
-To:     Nikolay Borisov <nborisov@suse.com>, dsterba@suse.cz,
-        linux-btrfs@vger.kernel.org
-References: <20181218131002.12480-1-nborisov@suse.com>
- <20190107191019.GD23615@twin.jikos.cz>
- <29983e2d-b525-5b9f-0f37-eb06614cc454@suse.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <88996f56-2740-c3be-1a5c-72a7f40af1f8@gmx.com>
-Date:   Tue, 8 Jan 2019 15:47:13 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.4.0
+        id S1727701AbfAHLRD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Jan 2019 06:17:03 -0500
+Received: from mail-vs1-f67.google.com ([209.85.217.67]:43317 "EHLO
+        mail-vs1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727295AbfAHLRD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Jan 2019 06:17:03 -0500
+Received: by mail-vs1-f67.google.com with SMTP id x1so2198406vsc.10
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Jan 2019 03:17:02 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
+         :subject:to:cc:content-transfer-encoding;
+        bh=rW8gHumgRLDDDe958btNvq/gzgu5i0g+fEqKUe8pXT8=;
+        b=Pvt9IA2Af+vcqqHhDAr7cyjlXCQfrCntlj1Xah5C1evLZ+J3/b9SxLkM7EwZ/XbP5+
+         Z1zSSuXGnwAhbOuFqcgrcwJCkr9ly+SiG/mGkRanzMO77wk/TUW8XWJaist4gpZADezY
+         sQW28rpHCbK9OiXWVoQOiEod+kn6caXRgGWX4IIFARpePR2MtmFFQ6hQpPpyDleLRcE8
+         894JU3wdtElYd1luCZc9rZdyCOpmrRrlM5Z/dJgcBkE8egoWTSCCav4A3cXHPru7cfk9
+         aAmMZDW3IgNGjuD1Sgo5PeuYdGOH/nhp1Z5IprnHbosCPUA6/e2VsC6v6pgfY7w6pSiK
+         KN9w==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
+         :from:date:message-id:subject:to:cc:content-transfer-encoding;
+        bh=rW8gHumgRLDDDe958btNvq/gzgu5i0g+fEqKUe8pXT8=;
+        b=StGfVIRAfTI5nSIpl7cZt23DgoyM0ZQalEOvEWMukLbwyIqZSPHmWxPOPj2BVkIy7k
+         EcTkgYH0Njjz7FdbFULk3uAckCRqW96KutEncPeQTExX2pIMezvqJKEqxjhGKi+QZwUu
+         1wyQ1fF3AX0N1pgOGnLdQmkFfvXTGxz49PocBzdhmOfo1+kKcUKWlhhEpzT/nkCPj+I/
+         BwmtrXQaPa2yot46Y/rMfloL359htocXlrfE341Cwlz6DuktqyMP6qKObBZxTuECkK7/
+         qcepYEup4o67ZPmAB0YPBoVhOa3HhFEUji7w+x86xpbxyMh4b8BTR5BeyxrWCK7Fi3QA
+         /sAg==
+X-Gm-Message-State: AJcUukeUYOHLsQCJjp9CKflmDOJPFD3IwmNYQaieXrGD+tY2+wrsdo3D
+        ktGonSq+5uBuUoEhlIowXgWwHFhjl0FKmfEmRSg=
+X-Google-Smtp-Source: ALg8bN50ZjVq4EwINLDxn31V6LmzYqAXtVYXRddNaiD62K38UKQ6cx1Etlxmyl/CHE06HOW9vc+Pkk593m4fzV/7aj8=
+X-Received: by 2002:a67:3b1b:: with SMTP id i27mr542974vsa.14.1546946221966;
+ Tue, 08 Jan 2019 03:17:01 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <29983e2d-b525-5b9f-0f37-eb06614cc454@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
-X-Provags-ID: V03:K1:iV6SiNsRcRfY/E/m2nTAg94ATRMFJTvyNnYFd5upN/6h9GwQaIG
- DKBoKe5JRnvzmpGEGDnsu8gxqbRFH1qfxGlpTFJkaw0qWmkPyaxNq64Y93tXM57EAaobCmD
- o3inCjnY8xh8TPsmtjljRz8ylrFVbs2Astv9zb8ZHqcg3Hd76tVVgUN9qvBvwMMILOPmNrY
- nk14IOeX3wquOkUzxXIsA==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:t0QUZBUe15U=:/qkI858AAobmuzAQAMThlc
- 7Lwwb6TS0ReJLjeBIur4w5/CDdh2aeZkhpQkhi1BK0AQkDRv3HuNSLYnmsxnSIHbOhbCaVcLk
- buT5FJ6eeL0E7UEufxByunfp251qK/1ZM9vUqHBUCFng5T7MSONnOR0cFvBTu3rsBqW56U7Pn
- EjhzpjF5Seut3dvdH8rFZfeLF9EMJkABlM38EK34Wjtu5a/sRvphR7JtiwmsYtkQv7r5a6X07
- BUyJnxQcHolfb8+trsNGxKvgsST25CXp0VyRUYnxHGZOz/Y9hKCz/SB5WS30tFCOeWp44o+4o
- TbEr7N2ZZBU7XvBcWi7oWfubhPTZVbKDZ6R1ApirlmExjPHVKm+ErNwMRytxua6DSD6xfyBz1
- f56HzQyRX778DUjhESkAUoOPyVmMxi4eNiafPmncs4Ni/9tI5OZuAJdKYL25YlAPjmzXAoUXF
- FfVLVzeUFk3zsPyfAI6QQOjM9tNC9LexP4VROo/L5BBlw3/tLByCqom32A5DF/balPOyGD2pP
- TRpjp96xMGBCGupgjl33LA3nC7GdyVcr/Y4nYEvdtFm3FXEC380ByyD961UJA74j7rFV0ZHW0
- 1O8/JtOuDx7dIxdX0Y+pa+bdg2BGETrRcixm3hoMl1k7Sb3D6I4M2JaeMnVVPh3AbWBGkgQre
- QTo02LANKod2oIiMN8Sk14pQE+8jtTOGNfmeT/goA0zeirku2GvtMjP6fkAoPvYtXz2XJ9/o7
- hlHVH1CNCYi0tmnoUiBAuWpyss3o6WVswf3KVQggAPqkrqkZ4SQqN9N4VKC8Gu6B/bp+pKCAc
- zoTVVZvv/N2UP4S4W9OTMvJrH/Hm9u3vDRFDll0AkZ/wXDB6eCP5yrI0fItXuQUj1/5yKEbgy
- 932GmwwObwPSJEosh6KwxQHeS0gtV0AxHDO7IozB2TCq9jdFWSvoaFe9cv43OTOVHv3Zn1pxK
- 78K48+wN3yw==
+References: <20190108060818.9517-1-wqu@suse.com>
+In-Reply-To: <20190108060818.9517-1-wqu@suse.com>
+Reply-To: fdmanana@gmail.com
+From:   Filipe Manana <fdmanana@gmail.com>
+Date:   Tue, 8 Jan 2019 11:16:50 +0000
+Message-ID: <CAL3q7H74TjWQ=kj6V_j9mOJJB45vHpXhAXo__FjB-H+f70tOsg@mail.gmail.com>
+Subject: Re: [For 5.0-rc PATCH] btrfs: Use real device structure to verify dev extent
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Filipe Manana <fdmanana@suse.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Tue, Jan 8, 2019 at 6:11 AM Qu Wenruo <wqu@suse.com> wrote:
+>
+> [BUG]
+> Linux v5.0-rc1 will fail fstests/btrfs/163 with the following kernel
+> message:
+>
+>   BTRFS error (device dm-6): dev extent devid 1 physical offset 13631488 =
+len 8388608 is beyond device boundary 0
+>   BTRFS error (device dm-6): failed to verify dev extents against chunks:=
+ -117
+>   BTRFS error (device dm-6): open_ctree failed
+>
+> [CAUSE]
+> Commit cf90d884b347 ("btrfs: Introduce mount time chunk <-> dev extent
+> mapping check") introduced strict check on dev extents.
+>
+> We use btrfs_find_device() with dev uuid and fs uuid set to NULL, and
+> only dependent on @devid to find the real device.
+>
+> For seed devices, we call clone_fs_devices() in open_seed_devices() to
+> allow us search seed devices directly.
+>
+> However clone_fs_devices() just populates devices with devid and dev
+> uuid, without populating other essential members, like disk_total_bytes.
+>
+> This makes any device returned by btrfs_find_device(fs_info, devid,
+> NULL, NULL) is just a dummy, with 0 disk_total_bytes, and any dev
+> extents on the seed device will not pass the device boundary check.
+>
+> [FIX]
+> This patch will try to verify the device returned by btrfs_find_device()
+> and if it's a dummy then re-search in seed devices.
+>
+> Reported-by: Filipe Manana <fdmanana@suse.com>
+> Fixes: cf90d884b347 ("btrfs: Introduce mount time chunk <-> dev extent ma=
+pping check")
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/volumes.c | 12 ++++++++++++
+>  1 file changed, 12 insertions(+)
+>
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 2576b1a379c9..3e4f8f88353e 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -7825,6 +7825,18 @@ static int verify_one_dev_extent(struct btrfs_fs_i=
+nfo *fs_info,
+>                 ret =3D -EUCLEAN;
+>                 goto out;
+>         }
+> +
+> +       /* It's possible this device is a dummy for seed device */
+> +       if (dev->disk_total_bytes =3D=3D 0) {
+> +               dev =3D find_device(fs_info->fs_devices->seed, devid, NUL=
+L);
+> +               if (!dev) {
+> +                       btrfs_err(fs_info, "failed to find seed devid %ll=
+u",
+> +                                 devid);
+> +                       ret =3D -EUCLEAN;
+> +                       goto out;
+> +               }
+> +       }
+
+Why just not pass the FSID (can be taken from fs_info->super_copy) to
+the previous call to btrfs_find_device()?
+It's a lot simpler.
+
+> +
+>         if (physical_offset + physical_len > dev->disk_total_bytes) {
+>                 btrfs_err(fs_info,
+>  "dev extent devid %llu physical offset %llu len %llu is beyond device bo=
+undary %llu",
+> --
+> 2.20.1
+>
 
 
-On 2019/1/8 下午3:30, Nikolay Borisov wrote:
-> 
-> 
-> On 7.01.19 г. 21:10 ч., David Sterba wrote:
->> On Tue, Dec 18, 2018 at 03:10:02PM +0200, Nikolay Borisov wrote:
->>> We can never have extents marked as EXTENT_MAP_DELALLOC since this
->>> value is only ever used by btrfs_get_extent_fiemap. In this case the
->>> extent map is created by btrfs_get_extent_fiemap and is never really
->>> published, this flag is used to return the corresponding userspace one.
->>> Considering this, it's pointless having a check for EXTENT_MAP_DELALLOC
->>> in mergable_maps. Just remove it.
->>
->> An assert would be good and a comment at EXTENT_MAP_DELALLOC definition
->> repeating what's in the changelog. Otherwise ok.
-> 
-> Do we really need the assert though, it's plainly obvious
-> EXTENT_MAP_DELALLOC is only set in a single function?
+--=20
+Filipe David Manana,
 
-IMHO ASSERT() is not for now, but for the future.
-Later on maybe some modification would change when and who sets DELALLOC
-bit.
-(And that's why there are a lot of seemingly stupid ASSERT(), it won't
-hurt anyway).
-
-Thanks,
-Qu
-
-> 
->>
+=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
+ right.=E2=80=9D

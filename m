@@ -2,116 +2,159 @@ Return-Path: <SRS0=3FID=PR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
-	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D333C43387
-	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Jan 2019 02:39:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D921DC43387
+	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Jan 2019 06:24:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 104FA20883
-	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Jan 2019 02:39:17 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=oakvillepondscapes.onmicrosoft.com header.i=@oakvillepondscapes.onmicrosoft.com header.b="goVpEWWq"
+	by mail.kernel.org (Postfix) with ESMTP id B0D3B20821
+	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Jan 2019 06:24:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729371AbfAICjQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Jan 2019 21:39:16 -0500
-Received: from mail-eopbgr1360081.outbound.protection.outlook.com ([40.107.136.81]:2304
-        "EHLO AUS01-ME1-obe.outbound.protection.outlook.com"
+        id S1729779AbfAIGY3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 9 Jan 2019 01:24:29 -0500
+Received: from mx2.suse.de ([195.135.220.15]:38856 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727917AbfAICjP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 8 Jan 2019 21:39:15 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=oakvillepondscapes.onmicrosoft.com; s=selector1-pauljones-id-au;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=qbz+fxWZolrvXrL00rssUUHmnEDNJgz3gZqmAxvIqkQ=;
- b=goVpEWWqaP8YPkKnFQdNPLkjVDvjekrNN6Ism2Eghk5CkI+2ufxrgbFtN+Y0H2toyy5eLJTSabLbsCWeYkIFMdlZWxaM6xKWVTOKAoUFvn295S1RfwUmmCgY5FXbL2TBPkdU+jkNeBVZjyfEPM8/c4ZdWzQVLJtbTUdZh5Kkv8A=
-Received: from SYCPR01MB5086.ausprd01.prod.outlook.com (20.178.187.213) by
- SYCPR01MB4352.ausprd01.prod.outlook.com (20.178.184.148) with Microsoft SMTP
- Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.20.1516.14; Wed, 9 Jan 2019 02:39:10 +0000
-Received: from SYCPR01MB5086.ausprd01.prod.outlook.com
- ([fe80::cdcb:2679:f49f:bf0b]) by SYCPR01MB5086.ausprd01.prod.outlook.com
- ([fe80::cdcb:2679:f49f:bf0b%5]) with mapi id 15.20.1495.011; Wed, 9 Jan 2019
- 02:39:10 +0000
-From:   Paul Jones <paul@pauljones.id.au>
-To:     Tomasz Chmielewski <tch@virtall.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: RE: dedicated metadata drives?
-Thread-Topic: dedicated metadata drives?
-Thread-Index: AQHUpDD1VK4Y/J2aKUuzOTyeNgSz4qWmP8fQ
-Date:   Wed, 9 Jan 2019 02:39:10 +0000
-Message-ID: <SYCPR01MB5086891E71B5CDBDED74CBD19E8B0@SYCPR01MB5086.ausprd01.prod.outlook.com>
-References: <fcdfebdcb0e8d5fd291d08f844274212@virtall.com>
-In-Reply-To: <fcdfebdcb0e8d5fd291d08f844274212@virtall.com>
-Accept-Language: en-AU, en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-authentication-results: spf=none (sender IP is )
- smtp.mailfrom=paul@pauljones.id.au; 
-x-originating-ip: [220.244.158.242]
-x-ms-publictraffictype: Email
-x-microsoft-exchange-diagnostics: 1;SYCPR01MB4352;6:MMR121+WW/3HGHJAgpS9f8MI3FWVRptUumQ1P/Qn+jdsokFzV9Oru2joNW8OsFfKOTYtP6FYTdQSFWcPZ2tWYjAHJ6AUehlbR+U1xqqOH1tuRRf6fFAWJIX3vvN3R6aNKGeFDdUqY7vhnqsWz5oF5BiRKRLMLmF16CNvkYuk08kX1+I0+8AU3DK3zWC4+sjjIPMQmCMKleAP2ECe5s5PGCevE/l1a9dVImvH56hV7QC6GNMdHT8oTb/qIPc3OjhCxywoHVOuIMEI2OtDV3GU9tguwh6xgouz+ZFlpKPPtbXgeS447C88T0eCvhALPqEcLTVLJthNBrNCvlTpk9awHg23ekBWqg2ot86Q3HOhII0UpYWJLHY/6qYdRlplBqDUFsImT0kKLEnEttzFtKXjofgaWWRoKV1zsq3iv7KsfzMFoYkraAYDf4yLh+29PFQxjLJCDx7qI6uvPhk3P6W22g==;5:LVmUxe2ctNX7aSbqhDxEreskBmjypVvYXBkF99sUjWrCPfaR3CoPUBOE1Jqi8nSStn7TZzQKnkdSYVnhK2vL/CYFz1RYoSeGsprX/EYe9e5L3tnjSUPwWIOxy39Evr4FECQ69KAKjcHOaFDbWTBW7oFEbi19vElkJeivwvhu6Rdjt7lOLLbRobe3DMHv2vapUf4BWs+NZhcLat04YULoaQ==;7:EXqA3Illxef47lir/btsQ+eBazANFVCdmSs1jwc3Z8l0gmn3lK2KS8T0b3eB/YptRvsxYWLIWPf5IE/aaqMwUZb0AebkKFMmpaue7xnBw9+tmmmwb7n1ryZvXCcRZ0Rho4suYYqI42EBsykAwg247A==
-x-ms-exchange-antispam-srfa-diagnostics: SOS;
-x-ms-office365-filtering-correlation-id: ebeffe08-4f96-45f0-5e30-08d675dba286
-x-microsoft-antispam: BCL:0;PCL:0;RULEID:(2390118)(7020095)(4652040)(7021145)(8989299)(4534185)(7022145)(4603075)(4627221)(201702281549075)(8990200)(7048125)(7024125)(7027125)(7023125)(5600109)(711020)(2017052603328)(7153060)(7193020);SRVR:SYCPR01MB4352;
-x-ms-traffictypediagnostic: SYCPR01MB4352:
-x-microsoft-antispam-prvs: <SYCPR01MB4352AE9599446C4D15BAD9C09E8B0@SYCPR01MB4352.ausprd01.prod.outlook.com>
-x-exchange-antispam-report-cfa-test: BCL:0;PCL:0;RULEID:(3230021)(908002)(999002)(5005026)(6040522)(8220060)(2401047)(8121501046)(3002001)(3231475)(944501520)(52105112)(93006095)(93001095)(10201501046)(6041310)(2016111802025)(20161123558120)(20161123560045)(20161123562045)(20161123564045)(6043046)(201708071742011)(7699051)(76991095);SRVR:SYCPR01MB4352;BCL:0;PCL:0;RULEID:;SRVR:SYCPR01MB4352;
-x-forefront-prvs: 0912297777
-x-forefront-antispam-report: SFV:NSPM;SFS:(10009020)(376002)(39830400003)(346002)(136003)(366004)(396003)(189003)(199004)(13464003)(81166006)(55016002)(476003)(11346002)(8676002)(74482002)(81156014)(6436002)(53546011)(6506007)(76176011)(86362001)(7696005)(105586002)(14444005)(256004)(16799955002)(305945005)(106356001)(110136005)(3480700005)(229853002)(316002)(446003)(25786009)(8936002)(71200400001)(71190400001)(2906002)(33656002)(74316002)(99286004)(97736004)(508600001)(6306002)(9686003)(5660300001)(6246003)(966005)(3846002)(6116002)(26005)(186003)(102836004)(486006)(66066001)(7736002)(14454004)(53936002)(68736007)(7116003)(347745004);DIR:OUT;SFP:1101;SCL:1;SRVR:SYCPR01MB4352;H:SYCPR01MB5086.ausprd01.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;MX:1;A:1;
-received-spf: None (protection.outlook.com: pauljones.id.au does not designate
- permitted sender hosts)
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam-message-info: 13PF1a8MalHOxJNm7FthI9K8bjG9Ie/2EJZcKiIRH5kCFbfZgLyRJzlnk/GOwMiMoKt0BzEUFMTxXfe9PM64J7eOMQzcf6JeCmo0pFyQp/DcaFteds2H76ScKPWpuarCYBF1DDdAT/SvMpFU5uDG/LiIfsC1RA4m4O4NWCm/SjKK9W0e6coATU8bUGVy97kTFABt6RGSAbVLpe5xrC5F/FYinKhmT6aEhMkHQWqnHwRNmzI9EfAoaRXQaqk9xlNtYbEZrX9nDm24CMj8HucCinVuZlo4BBmHcr8GKcve1J8CM4PZjMckPlkJbiiLbSYK
-spamdiagnosticoutput: 1:99
-spamdiagnosticmetadata: NSPM
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+        id S1729687AbfAIGY3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 9 Jan 2019 01:24:29 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id DDE3EAE10;
+        Wed,  9 Jan 2019 06:24:27 +0000 (UTC)
+Subject: Re: applications hang on a btrfs spanning two partitions
+To:     Florian Stecker <m19@florianstecker.de>,
+        linux-btrfs@vger.kernel.org
+References: <418d4647-8c67-2481-68f1-1e722460c3de@florianstecker.de>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <51f6646b-ca38-9b34-7061-8ab5227f00ae@suse.com>
+Date:   Wed, 9 Jan 2019 08:24:26 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-X-OriginatorOrg: pauljones.id.au
-X-MS-Exchange-CrossTenant-Network-Message-Id: ebeffe08-4f96-45f0-5e30-08d675dba286
-X-MS-Exchange-CrossTenant-originalarrivaltime: 09 Jan 2019 02:39:10.3555
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: 8f216723-e13f-4cce-b84c-58d8f16a0082
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: SYCPR01MB4352
+In-Reply-To: <418d4647-8c67-2481-68f1-1e722460c3de@florianstecker.de>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-PiAtLS0tLU9yaWdpbmFsIE1lc3NhZ2UtLS0tLQ0KPiBGcm9tOiBsaW51eC1idHJmcy1vd25lckB2
-Z2VyLmtlcm5lbC5vcmcgPGxpbnV4LWJ0cmZzLQ0KPiBvd25lckB2Z2VyLmtlcm5lbC5vcmc+IE9u
-IEJlaGFsZiBPZiBUb21hc3ogQ2htaWVsZXdza2kNCj4gU2VudDogU2F0dXJkYXksIDUgSmFudWFy
-eSAyMDE5IDEyOjI1IEFNDQo+IFRvOiBCdHJmcyBCVFJGUyA8bGludXgtYnRyZnNAdmdlci5rZXJu
-ZWwub3JnPg0KPiBTdWJqZWN0OiBkZWRpY2F0ZWQgbWV0YWRhdGEgZHJpdmVzPw0KPiANCj4gQWNj
-b3JkaW5nIHRvIGJ0cmZzIHdpa2ksIHNvbWUgcGF0Y2hlcyBoYXZlIGJlZW4gc3VibWl0dGVkIHRv
-IHN1cHBvcnQNCj4gbWV0YWRhdGEgb24gZGlmZmVyZW50IGRldmljZXMgdGhhbiBkYXRhIChpLmUu
-IG1ldGFkYXRhIG9uIFNTRCwgZGF0YSBvbg0KPiBIREQpOg0KPiANCj4gDQo+IGh0dHBzOi8vYnRy
-ZnMud2lraS5rZXJuZWwub3JnL2luZGV4LnBocC9Qcm9qZWN0X2lkZWFzI0RlZGljYXRlZF9tZXRh
-ZGF0YQ0KPiBfZHJpdmVzDQo+IA0KPiAgICAgRGVkaWNhdGVkIG1ldGFkYXRhIGRyaXZlcw0KPiAN
-Cj4gICAgIE5vdCBjbGFpbWVkIOKAlCBzdWJtaXR0ZWQg4oCUIE5vdCBpbiBrZXJuZWwgeWV0DQo+
-IA0KPiAgICAgV2UncmUgYWJsZSB0byBzcGxpdCBkYXRhIGFuZCBtZXRhZGF0YSBJTyB2ZXJ5IGVh
-c2lseS4gTWV0YWRhdGEgdGVuZHMgdG8gYmUNCj4gZG9taW5hdGVkIGJ5IHNlZWtzIGFuZCBmb3Ig
-bWFueSBhcHBsaWNhdGlvbnMgaXQgbWFrZXMgc2Vuc2UgdG8gcHV0IHRoZQ0KPiBtZXRhZGF0YSBv
-bnRvIGZhc3RlciBTU0RzLg0KPiANCj4gDQo+IA0KPiANCj4gVGhpcyBhcnRpY2xlIChhbG1vc3Qg
-Mi41IHllYXJzIG9sZCkgY2xhaW1zIG9uZSBjb21wYW55IGlzIGFscmVhZHkgdXNpbmcgZWl0aGVy
-DQo+IHRoZXNlIHBhdGNoZXMgb3Igc29tZXRoaW5nIHNpbWlsYXI6DQo+IA0KPiBodHRwczovL2x3
-bi5uZXQvQXJ0aWNsZXMvNjk4MDkwLw0KPiANCj4gICAgIEF1Z3VzdCAyNCwgMjAxNg0KPiANCj4g
-ICAgIFRvIGNvbWJhdCB0aGF0LCBoZSBoYXMgYSBzZXQgb2YgcGF0Y2hlcyB0byBhdXRvbWF0aWNh
-bGx5IHB1dCB0aGUgQnRyZnMNCj4gbWV0YWRhdGEgb24gU1NEcy4gVGhlIGJsb2NrIGxheWVyIHBy
-b3ZpZGVzIGluZm9ybWF0aW9uIG9uIHdoZXRoZXIgdGhlDQo+IHN0b3JhZ2UgaXMgcm90YXRpb25h
-bDsgZm9yIG5vdywgaGlzIHBhdGNoIGFzc3VtZXMgdGhhdCBpZg0KPiAgICAgaXQgaXMgbm90IHJv
-dGF0aW9uYWwgdGhlbiBpdCBpcyBmYXN0LiBUaGUgcGF0Y2ggaGFzIG1hZGUgYSBodWdlIGRpZmZl
-cmVuY2UgaW4NCj4gdGhlIGxhdGVuY2llcyBhbmQgcmVxdWlyZXMgbGVzcyBmbGFzaCBzdG9yYWdl
-IChlLmcuIDQ1MEdCIGZvciA0MFRCIGZpbGVzeXN0ZW0pDQo+IGZvciBGYWNlYm9vaydzIGZpbGUg
-d29ya2xvYWQgdGhhdA0KPiAgICAgY29uc2lzdHMgb2YgYSB3aWRlIHZhcmlldHkgb2YgZmlsZSBz
-aXplcy4NCj4gDQo+IA0KPiANCj4gRG8gdGhlc2UgcGF0Y2hlcyBleGlzdCBhbnl3aGVyZT8gSSBj
-b3VsZG4ndCBmaW5kIHRoZW0gaW4gdGhlIGxpc3QgYXJjaGl2ZS4NCg0KSSBtYW5hZ2VkIHRvIGZp
-bmQgdGhpcyBzdWdnZXN0aW9uIGFib3V0IGhvdyBpdCBjb3VsZCBiZSBkb25lOg0KaHR0cHM6Ly9w
-YXRjaHdvcmsua2VybmVsLm9yZy9wYXRjaC85NTU2OTczLw0KDQpJIHdvdWxkIGxvdmUgdG8gdXNl
-IHRoaXMgZmVhdHVyZSBhcyB3ZWxsLiBNeSBjdXJyZW50IHNldHVwIHVzZXMgYnRyZnMgb24gbHZt
-IHdpdGggY2FjaGluZyBlbmFibGVkLCBidXQgSSB3b3VsZCBwcmVmZXIgYSBzaW1wbGVyIHNldHVw
-Lg0KDQpQYXVsLg0K
+
+
+On 8.01.19 г. 21:38 ч., Florian Stecker wrote:
+> Hi everyone,
+> 
+> I extended the btrfs volume on my laptop by adding a second partition to
+> it which lies on the same SSD (using btrfs device add). Since I did
+> this, all kinds of applications regularly hang for up to 30 seconds. It
+> seems they are stuck in the fdatasync syscall. For example:
+> 
+> $ strace -tt -T gajim 2>&1 | grep fdatasync
+> [...]
+> 11:36:31.112200 fdatasync(25)           = 0 <0.006958>
+> 11:36:32.147525 fdatasync(25)           = 0 <0.008138>
+> 11:36:32.156882 fdatasync(25)           = 0 <0.006866>
+> 11:36:32.165979 fdatasync(25)           = 0 <0.011797>
+> 11:36:32.178867 fdatasync(25)           = 0 <23.636614>
+> 11:36:55.827726 fdatasync(25)           = 0 <0.009595>
+> 11:36:55.838702 fdatasync(25)           = 0 <0.007261>
+> 11:36:55.850440 fdatasync(25)           = 0 <0.006807>
+> 11:36:55.858168 fdatasync(25)           = 0 <0.006767>
+> [...]
+> 
+> File descriptor 25 here points to a file which is just ~90KB, so it
+> really shouldn't take that long.
+> 
+> Removing the second partition again resolves the problem. Does anyone
+> know this issue? Is it related to btrfs? Or am I just doing something
+> wrong?
+> 
+> Best,
+> Florian
+> 
+> Some more info:
+> 
+> $ btrfs device usage /
+> /dev/sda2, ID: 2
+>    Device size:            52.16GiB
+>    Device slack:              0.00B
+>    Data,single:             1.00GiB
+>    Unallocated:            51.16GiB
+> 
+> /dev/sda8, ID: 1
+>    Device size:           174.92GiB
+>    Device slack:              0.00B
+>    Data,single:           168.91GiB
+>    Metadata,single:         3.01GiB
+>    System,single:           4.00MiB
+>    Unallocated:             3.00GiB
+> 
+> $ fdisk -l /dev/sda
+> Disk /dev/sda: 238.5 GiB, 256060514304 bytes, 500118192 sectors
+> Disk model: SAMSUNG SSD PM87
+> Units: sectors of 1 * 512 = 512 bytes
+> Sector size (logical/physical): 512 bytes / 512 bytes
+> I/O size (minimum/optimal): 512 bytes / 512 bytes
+> Disklabel type: gpt
+> Disk identifier: A48B5A25-AA84-4D3F-90DD-E8A4991BDF03
+> 
+> Device         Start       End   Sectors   Size Type
+> /dev/sda1       2048   1026047   1024000   500M EFI System
+> /dev/sda2    1026048 110422015 109395968  52.2G Linux filesystem
+> /dev/sda8  110422016 477263871 366841856 174.9G Linux filesystem
+> /dev/sda9  477263872 481458175   4194304     2G Linux swap
+> 
+> $ uname -a
+> Linux dell 4.20.0-arch1-1-ARCH #1 SMP PREEMPT Mon Dec 24 03:00:40 UTC
+> 2018 x86_64 GNU/Linux
+
+Provide output of echo w > /proc/sysrq-trigger when the hang occurs
+otherwise it's hard to figure what's going on.
+
+
+> 
+> 

@@ -2,130 +2,91 @@ Return-Path: <SRS0=3FID=PR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 79906C43387
-	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Jan 2019 15:26:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1FE02C43387
+	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Jan 2019 17:21:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 514E1206BA
-	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Jan 2019 15:26:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E4AFF20660
+	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Jan 2019 17:21:00 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="gi12nxpn"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732275AbfAIP0Y (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 9 Jan 2019 10:26:24 -0500
-Received: from mx2.suse.de ([195.135.220.15]:43816 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1730871AbfAIP0X (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 9 Jan 2019 10:26:23 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 3A234AEDC
-        for <linux-btrfs@vger.kernel.org>; Wed,  9 Jan 2019 15:26:22 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 52084DA7E8; Wed,  9 Jan 2019 16:25:51 +0100 (CET)
-From:   David Sterba <dsterba@suse.com>
+        id S1726850AbfAIRU7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 9 Jan 2019 12:20:59 -0500
+Received: from mail-ed1-f49.google.com ([209.85.208.49]:45950 "EHLO
+        mail-ed1-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726574AbfAIRU7 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Jan 2019 12:20:59 -0500
+Received: by mail-ed1-f49.google.com with SMTP id d39so7908144edb.12
+        for <linux-btrfs@vger.kernel.org>; Wed, 09 Jan 2019 09:20:57 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=subject:from:to:references:message-id:date:user-agent:mime-version
+         :in-reply-to:content-transfer-encoding:content-language;
+        bh=FKiLf3nu99O67yBAAN1B34Wm+P+pCJsl8LdRcmEUsIs=;
+        b=gi12nxpnIxzwxXINkBhDIEP3PJK7CCjypP0t70HEMoo7ScxzRMUVAiFlvzFVOibPGb
+         IqyDI6vtN8mn0Gh3F+4eifXqd+cg6U1tOEjJo+8lpTyv+zJ9TPNDeNhDKFet7c3reoI2
+         RMLG2cKtUh2i+mOzAd9N3tTGS2OKrs8yu74vk0tU0SXuwJfh+NrDkSZy8fGEuzx6fPRD
+         WSE05/bOCcJyU1FKqBCFU1dYhAwlqyI5WH2rnmkVKvz12SWhR+9aeqfeO82IMBYjSY53
+         zf71Pi3XtmzeKVR5vRtD/kVHArMcaVoo4H6PZuSSlv9uAaz4BR+GnvamEor7nKFI7GHx
+         /3wA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:from:to:references:message-id:date
+         :user-agent:mime-version:in-reply-to:content-transfer-encoding
+         :content-language;
+        bh=FKiLf3nu99O67yBAAN1B34Wm+P+pCJsl8LdRcmEUsIs=;
+        b=JUylUS6mLBaiERlwTOMKRYCAUTYIjrX5hHLXQQ6wq+eqAaXmrvoURQz6Wno9VhTwsw
+         4VzsBZ35LFD8eZhMiO1WYx6IAZLVSzlMPE7c9kFrsVgO8Urs2U4Avb30ftSmsQmYYtBI
+         Fgj+6VxGri9aseW4VkQtgeN1NrpJYhR+Msyb0LfV8S8iK1GikZbKIgIISDrkzpLiBgve
+         lftAc0vEau+4iDkiwNQIweDEz3lHXuFxStV2/Orc+R0ePHmriao3MZS89SKI8nBcEUJ+
+         S8G0mghYPqFj/NHiduVq0Z84dQ7FgtM/wqxBtkygZCtvhkluJlAtQflS9Iz40TSByMfC
+         edLQ==
+X-Gm-Message-State: AJcUukf9MggpqCy6W++koKQg/PRntVlwdYrfZTk5HGbGHFOxhRbTOdnR
+        96bcsm/chBU3cPb9YUHGgafUep0d
+X-Google-Smtp-Source: ALg8bN6beLzV7Pjuck5lq38QuFqEAJvwMSIWCJ4yZ3sdQSesFOqfzmVe2eupMOfy3ZOe+MJIvHTWYA==
+X-Received: by 2002:a17:906:7cd0:: with SMTP id h16-v6mr5934108ejp.207.1547054456995;
+        Wed, 09 Jan 2019 09:20:56 -0800 (PST)
+Received: from [172.26.1.3] (085083086107.dynamic.telenor.dk. [85.83.86.107])
+        by smtp.googlemail.com with ESMTPSA id j8sm1213402ede.55.2019.01.09.09.20.55
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Wed, 09 Jan 2019 09:20:56 -0800 (PST)
+Subject: Re: Balance of Raid1 pool, does not balance properly.
+From:   Karsten Vinding <karstenvinding@gmail.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] Revert "btrfs: balance dirty metadata pages in btrfs_finish_ordered_io"
-Date:   Wed,  9 Jan 2019 16:25:51 +0100
-Message-Id: <20190109152551.3568-1-dsterba@suse.com>
-X-Mailer: git-send-email 2.20.1
+References: <cbffc26e-a57f-e1ad-284c-a54431c4e2f1@gmail.com>
+Message-ID: <64cf0762-bd59-3d77-8aca-94622233767f@gmail.com>
+Date:   Wed, 9 Jan 2019 18:20:55 +0100
+User-Agent: Mozilla/5.0 (Windows NT 6.0; WOW64; rv:60.0) Gecko/20100101
+ Thunderbird/60.3.2
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <cbffc26e-a57f-e1ad-284c-a54431c4e2f1@gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 7bit
+Content-Language: da
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This reverts commit e73e81b6d0114d4a303205a952ab2e87c44bd279.
+Just a short answer.
 
-This patch causes a few problems:
+I didn't use the replace command.
 
-- adds latency to btrfs_finish_ordered_io
-- as btrfs_finish_ordered_io is used for free space cache, generating
-  more work from btrfs_btree_balance_dirty_nodelay could end up in the
-  same workque, effectively deadlocking
+I added the new drive to the pool / array, and checked that it was 
+registered.
+Following that I removed the 1TB drive with "btrfs device delete <drive>".
 
-12260 kworker/u96:16+btrfs-freespace-write D
-[<0>] balance_dirty_pages+0x6e6/0x7ad
-[<0>] balance_dirty_pages_ratelimited+0x6bb/0xa90
-[<0>] btrfs_finish_ordered_io+0x3da/0x770
-[<0>] normal_work_helper+0x1c5/0x5a0
-[<0>] process_one_work+0x1ee/0x5a0
-[<0>] worker_thread+0x46/0x3d0
-[<0>] kthread+0xf5/0x130
-[<0>] ret_from_fork+0x24/0x30
-[<0>] 0xffffffffffffffff
+As far as I know this should avoid the need to resize the new drive.
 
-Transaction commit will wait on the freespace cache:
+"btrfs fi us" shows all the space as available. The drive shows 1.7TB as 
+unallocated.
 
-838 btrfs-transacti D
-[<0>] btrfs_start_ordered_extent+0x154/0x1e0
-[<0>] btrfs_wait_ordered_range+0xbd/0x110
-[<0>] __btrfs_wait_cache_io+0x49/0x1a0
-[<0>] btrfs_write_dirty_block_groups+0x10b/0x3b0
-[<0>] commit_cowonly_roots+0x215/0x2b0
-[<0>] btrfs_commit_transaction+0x37e/0x910
-[<0>] transaction_kthread+0x14d/0x180
-[<0>] kthread+0xf5/0x130
-[<0>] ret_from_fork+0x24/0x30
-[<0>] 0xffffffffffffffff
-
-And then writepages ends up waiting on transaction commit:
-
-9520 kworker/u96:13+flush-btrfs-1 D
-[<0>] wait_current_trans+0xac/0xe0
-[<0>] start_transaction+0x21b/0x4b0
-[<0>] cow_file_range_inline+0x10b/0x6b0
-[<0>] cow_file_range.isra.69+0x329/0x4a0
-[<0>] run_delalloc_range+0x105/0x3c0
-[<0>] writepage_delalloc+0x119/0x180
-[<0>] __extent_writepage+0x10c/0x390
-[<0>] extent_write_cache_pages+0x26f/0x3d0
-[<0>] extent_writepages+0x4f/0x80
-[<0>] do_writepages+0x17/0x60
-[<0>] __writeback_single_inode+0x59/0x690
-[<0>] writeback_sb_inodes+0x291/0x4e0
-[<0>] __writeback_inodes_wb+0x87/0xb0
-[<0>] wb_writeback+0x3bb/0x500
-[<0>] wb_workfn+0x40d/0x610
-[<0>] process_one_work+0x1ee/0x5a0
-[<0>] worker_thread+0x1e0/0x3d0
-[<0>] kthread+0xf5/0x130
-[<0>] ret_from_fork+0x24/0x30
-[<0>] 0xffffffffffffffff
-
-Eventually, we have every process in the system waiting on
-balance_dirty_pages(), and nobody is able to make progress on page
-writeback.
-
-The original patch tried to fix an OOM condition, that happened on 4.4 but no
-success reproducing that on later kernels (4.19 and 4.20). This is more likely
-a problem in OOM itself.
-
-Link: https://lore.kernel.org/linux-btrfs/20180528054821.9092-1-ethanlien@synology.com/
-Reported-by: Chris Mason <clm@fb.com>
-CC: stable@vger.kernel.org # 4.18+
-CC: ethanlien <ethanlien@synology.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/inode.c | 3 ---
- 1 file changed, 3 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 39c9585fe2a9..78205fb56a88 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3138,9 +3138,6 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
- 	/* once for the tree */
- 	btrfs_put_ordered_extent(ordered_extent);
- 
--	/* Try to release some metadata so we don't get an OOM but don't wait */
--	btrfs_btree_balance_dirty_nodelay(fs_info);
--
- 	return ret;
- }
- 
--- 
-2.20.1
-
+I have started moving some data of the array to give btrfs some more 
+room to move, and will follow what happens when I try a new balance 
+later on.

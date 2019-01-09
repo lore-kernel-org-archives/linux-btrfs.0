@@ -1,176 +1,241 @@
-Return-Path: <SRS0=Si37=PQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=3FID=PR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=unavailable autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ACAE5C43387
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Jan 2019 23:52:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 90AFFC43387
+	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Jan 2019 00:05:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6668D2084D
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Jan 2019 23:52:14 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=MendixTechnologyBV.onmicrosoft.com header.i=@MendixTechnologyBV.onmicrosoft.com header.b="BwNbtGlS"
+	by mail.kernel.org (Postfix) with ESMTP id 594B120821
+	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Jan 2019 00:05:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728955AbfAHXwJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Jan 2019 18:52:09 -0500
-Received: from mail-eopbgr40080.outbound.protection.outlook.com ([40.107.4.80]:53104
-        "EHLO EUR03-DB5-obe.outbound.protection.outlook.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727829AbfAHXwI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 8 Jan 2019 18:52:08 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=MendixTechnologyBV.onmicrosoft.com; s=selector1-mendix-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=RYUd72hajPkdr/WCY/0fCgh36c3zd85ZUUPgTTbg4tM=;
- b=BwNbtGlSM04zZVEH5HgVmftIEY7RX2+GyFRL7kTy/ZmPb6Jv54FckL9u/bQZhmwfmVQyBqt4T/Ahx9/PskUN8eOcEzbDszHPyZYxBv3y1PZtYqiFXqbkgT0bAJoBALAbm19NEuW5vQ0dwVBDyYxejcjRfUGCEfsXlHUMuTXhKns=
-Received: from DB6PR0601MB2568.eurprd06.prod.outlook.com (10.168.81.137) by
- DB6PR0601MB2198.eurprd06.prod.outlook.com (10.168.57.139) with Microsoft SMTP
- Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.20.1495.9; Tue, 8 Jan 2019 23:52:02 +0000
-Received: from DB6PR0601MB2568.eurprd06.prod.outlook.com
- ([fe80::64c9:15d8:9c7b:92c3]) by DB6PR0601MB2568.eurprd06.prod.outlook.com
- ([fe80::64c9:15d8:9c7b:92c3%6]) with mapi id 15.20.1495.011; Tue, 8 Jan 2019
- 23:52:02 +0000
-From:   Hans van Kranenburg <Hans.van.Kranenburg@mendix.com>
-To:     Sasha Levin <sashal@kernel.org>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        "stable@vger.kernel.org" <stable@vger.kernel.org>
-CC:     David Sterba <dsterba@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH AUTOSEL 4.20 072/117] btrfs: alloc_chunk: fix more DUP
- stripe size handling
-Thread-Topic: [PATCH AUTOSEL 4.20 072/117] btrfs: alloc_chunk: fix more DUP
- stripe size handling
-Thread-Index: AQHUp4hbmz1G2p+3LUilnjxye6F3E6WmCzoA
-Date:   Tue, 8 Jan 2019 23:52:02 +0000
-Message-ID: <783ccf1f-65df-d388-079c-9449d4319c27@mendix.com>
-References: <20190108192628.121270-1-sashal@kernel.org>
- <20190108192628.121270-72-sashal@kernel.org>
-In-Reply-To: <20190108192628.121270-72-sashal@kernel.org>
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-user-agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.3.0
-x-originating-ip: [2001:980:4a41:fb::12]
-x-clientproxiedby: AM6P191CA0038.EURP191.PROD.OUTLOOK.COM
- (2603:10a6:209:7f::15) To DB6PR0601MB2568.eurprd06.prod.outlook.com
- (2603:10a6:4:6d::9)
-authentication-results: spf=none (sender IP is )
- smtp.mailfrom=Hans.van.Kranenburg@mendix.com; 
-x-ms-exchange-messagesentrepresentingtype: 1
-x-ms-publictraffictype: Email
-x-microsoft-exchange-diagnostics: 1;DB6PR0601MB2198;6:fKRIFsN21GeNi+LSurkSSUGJP5T9RSXSyRfY/I61YLHtmJgbpVyuC+fHHpNRmLp+zWa/IQeUPwe3HHLWvrpv/7vTNt3abR9HoFVWBhpOK6b/N8LD7AcHFJ7w/0wlu3bluCw3Ku7ckIZeP+IYzeVBuxknI6Nps7WD88jKA69ppt1C2EKs5FjQuNio2K0Dqb/soIr41u48WAo+gpIpOCz5tir+c7Lj1qb9f1QN9YOw5CR7Phh863rcU6vMkqrtI1OJW6dTBJNbW5ujP+bDGlL6AON+tY0Sak+okTKsb86vgH8moxmnHCMmbyYWeqqDfLrBXnYNqpdH6byV1BkauptJINQzOMnaQbolhXtBeFj3nrY8IHII6rk9JVRyGHaomw74l8gAR/jfPaRra2RVn9YwxGaH4pCvC/JTor7HzF+CZn+3/THSlDDejS/jPkxckCfiM9BUn6JZ2N5hcpMsBwzcUw==;5:/enspifNe+Cz7ui0n3Y0zeLzxrdPmo6anLenRWPjya+liKYLz1RJXVm0n+oLy368KXZCSnJORUK6jGgjkXh3vnGzGGI8D5Gk6BI/WJ983pvNBeeG0aWOX37yBRpgQq+nQQMd1YeRWWwk2mvvt/57ntCahetMK0B4mOulBIcau7OxeDdqm0qRJzLowUfgDmygpxE5kARUj5U1dbaiE5jfIw==;7:eCcWudciYyahAyztkxhCYqU7kIbtJJIrfaDaVc6G+dbf2s8qODE6ufNkep5S7cOgYGwR2x3C1HQgvnaSSqRgjkTiOo9D2JFaVnxQDs8GihFBCvTi8QL8me0z5JzVLu4+5spe4x8fBt0bzGpzjpV1Kw==
-x-ms-office365-filtering-correlation-id: 0b7c3e55-117d-49dc-2724-08d675c448f9
-x-microsoft-antispam: BCL:0;PCL:0;RULEID:(2390118)(7020095)(4652040)(8989299)(4534185)(4627221)(201703031133081)(201702281549075)(8990200)(5600109)(711020)(2017052603328)(7153060)(7193020);SRVR:DB6PR0601MB2198;
-x-ms-traffictypediagnostic: DB6PR0601MB2198:
-x-microsoft-antispam-prvs: <DB6PR0601MB2198580AE338D412233C00F6D48A0@DB6PR0601MB2198.eurprd06.prod.outlook.com>
-x-exchange-antispam-report-cfa-test: BCL:0;PCL:0;RULEID:(8211001083)(3230021)(908002)(999002)(5005026)(6040522)(8220060)(2401047)(8121501046)(93006095)(93001095)(3231475)(944501520)(52105112)(3002001)(10201501046)(6041310)(20161123564045)(20161123558120)(20161123560045)(20161123562045)(201703131423095)(201702281528075)(20161123555045)(201703061421075)(201703061406153)(201708071742011)(7699051)(76991095);SRVR:DB6PR0601MB2198;BCL:0;PCL:0;RULEID:;SRVR:DB6PR0601MB2198;
-x-forefront-prvs: 0911D5CE78
-x-forefront-antispam-report: SFV:NSPM;SFS:(10009020)(376002)(366004)(396003)(136003)(346002)(39850400004)(199004)(189003)(31696002)(36756003)(2201001)(97736004)(7736002)(446003)(31686004)(86362001)(575784001)(105586002)(14444005)(6512007)(11346002)(46003)(229853002)(486006)(53936002)(106356001)(476003)(54906003)(110136005)(2616005)(6506007)(76176011)(386003)(6246003)(2501003)(64126003)(186003)(102836004)(217873002)(256004)(58126008)(316002)(53546011)(65806001)(25786009)(52116002)(65956001)(71190400001)(72206003)(4326008)(14454004)(71200400001)(65826007)(8676002)(6486002)(99286004)(6116002)(68736007)(478600001)(81156014)(2906002)(5660300001)(8936002)(305945005)(81166006)(6436002);DIR:OUT;SFP:1101;SCL:1;SRVR:DB6PR0601MB2198;H:DB6PR0601MB2568.eurprd06.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;A:1;MX:3;
-received-spf: None (protection.outlook.com: mendix.com does not designate
- permitted sender hosts)
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam-message-info: mPeE/H84snbsz+ECA8QbfX/jeXEPtgXLobKA1XcGOdDeqCm5hoGQ0yedbCsUEgErgHPc7v+CW3I6BRMHbj6DSz46+MW+KH2POqSZucohV6/xEFOHXip9Q7EL1OBIJ1P6GCHxPyOHhm80KQMBVhAWckgLlfRn5WTVdnyb7+01/wer6HCKC8Hvs+PkdVhk3ZzCp6paMHp5h+nMgmUyBA6NY7qgOtSwET7YCNMPbhuFSKvni5gtogzyBgf99XsclBCZkUsW4OwzG90ODfyXaDpiVxDWE0bBuewPMhcm7MJIwlhQF2LEonwMtqXc25xxSlIz
-spamdiagnosticoutput: 1:99
-spamdiagnosticmetadata: NSPM
-Content-Type: text/plain; charset="utf-8"
-Content-ID: <41D2C526786D6F4FBDEC35C816727343@eurprd06.prod.outlook.com>
-Content-Transfer-Encoding: base64
+        id S1729192AbfAIAFq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Jan 2019 19:05:46 -0500
+Received: from mout.gmx.net ([212.227.15.15]:58889 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1728113AbfAIAFq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 8 Jan 2019 19:05:46 -0500
+Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx001
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0LZzKf-1h8LO42m45-00loSj; Wed, 09
+ Jan 2019 01:05:42 +0100
+Subject: Re: Nasty corruption on large array, ideas welcome
+To:     Thiago Ramon <thiagoramon@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CAO1Y9wrAzSxGx+LYMPswzN4BbMNs__v7+y=BTZRBAW2bRN5Q1w@mail.gmail.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <a6270ef1-c914-e142-448c-7e7a388f221f@gmx.com>
+Date:   Wed, 9 Jan 2019 08:05:38 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.4.0
 MIME-Version: 1.0
-X-OriginatorOrg: mendix.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 0b7c3e55-117d-49dc-2724-08d675c448f9
-X-MS-Exchange-CrossTenant-originalarrivaltime: 08 Jan 2019 23:52:01.5331
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: b4e3c78d-8e3b-46d8-bc56-5540da23ba4d
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: DB6PR0601MB2198
+In-Reply-To: <CAO1Y9wrAzSxGx+LYMPswzN4BbMNs__v7+y=BTZRBAW2bRN5Q1w@mail.gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="LKt54Aj4xFp2iL8pKGhJSmWeqxOxH4it8"
+X-Provags-ID: V03:K1:DLRiDagnmZNIzcCEmubQ80RNzunddqNBDgnDpxtHAUa4tC7Izoj
+ ES5SOpRCWosaXytqtxjphB9/4p8gZfLs05JmOKBvEcuEWf5083O+YWvK5UseqjgW2CL6quE
+ 1hjlad+PCZBJkbmv2ZbxNRIztS7xbnv9GLemZUloGzT9BoOH8WqRmxnpVPmg2ztFfN7t6dL
+ 0pBH3whXoUQGgfiJdr0Cg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:3w5TtMXLwDU=:0OSkWW1/BLXR/DWxM9WJgt
+ S7MNyiL5dWvP5/SyvJHbrbNc8kUcDiVHCjXcrrG/rB2NStBdnjoFhNG0gaVoSz/wnANg4rBOa
+ 6dStCUgILyc+wW9GYfsMQ9cyuRdWFW9NcObLlqHk7l0WxtXGobp8lvDA7F9uOSMDBz7hlIfZn
+ GG6PrOqp+rN5Ni3qO6w2iGCDci5EaxQztho3TDo24Js4JR+MYh7y7UbCC7spMk+uJfmWKp20K
+ 5tATfqSSWYyiHDcNp8yLZk6Zv0YF4/rRS2WZSOAL0fo3x6/gtPCyFHUVXoV6KUehOipNJu4k2
+ v9BxmQ9DCpAsxM24TE7Bbivxx7nvu9f3EmrGKa7WPoJuOSywuimbe0fQpxsuYALcYpGVzxEKy
+ bbNfymwa0sSR44QJ0PvYspDLjWgpNoq3546K0cHY3TA4IoOWPd/7H5Kfl85RVFgP1GdNBmd3F
+ SVjQd9uQ7IgMjneHQ1OymvtSD4QHwOTJjdAk1RtccQzS3K9YgQENCl4i85HN2e1qFq9/NKamO
+ kpe178UQZf0sZfvoeBkjP9DjQG+tpjrBpDymTMh6w5nWdVOhpuKSTmkQ5ley6ZwN4XMaFYmJP
+ moDAZk0A/CrdJhZZgTTcjXVI5G9rZ8PpnBIGgyp2Cf0TFPq7wV5iSkJgsN3BtPI1NX3wRdI78
+ mJ/rJHeBHwu54anGoTZoU49rUkEO9LglUv7Q4JyHGryinC3o5X1I4YShCTYw+/ErjyDHYkmNi
+ VMDEPPksWZGUQAc+vT08Ngym7WDRGAfGLSMtzd8NtXATai9dAku9kU05Lpw2EAEcvaLR4Xbg9
+ 4IBP+bStxYMlp20Vc9L4gsRHv9x9ry+ZvK09oNGc7uMJpTWJw/uebCTeVvhuK0F5rRtp+6jgy
+ rB1FIBJYkDg/52TtKNgcGVyX1BwrhR7xY2nHT9r3haBajXSLkoHUPVBwuFL9el
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-SGkgU2FzaGEsDQoNCk9uIDEvOC8xOSA4OjI1IFBNLCBTYXNoYSBMZXZpbiB3cm90ZToNCj4gRnJv
-bTogSGFucyB2YW4gS3JhbmVuYnVyZyA8aGFucy52YW4ua3JhbmVuYnVyZ0BtZW5kaXguY29tPg0K
-PiANCj4gWyBVcHN0cmVhbSBjb21taXQgYmFmOTIxMTRjN2U2ZGQ2MTI0YWEzZDUwNmU0YmM0YjY5
-NGRhM2JjMyBdDQo+IA0KPiBDb21taXQgOTJlMjIyZGY3YiAiYnRyZnM6IGFsbG9jX2NodW5rOiBm
-aXggRFVQIHN0cmlwZSBzaXplIGhhbmRsaW5nIg0KPiBmaXhlZCBjYWxjdWxhdGluZyB0aGUgc3Ry
-aXBlX3NpemUgZm9yIGEgbmV3IERVUCBjaHVuay4NCg0KVGhhdCBvbmUgYWxzbyBlbmRlZCB1cCBh
-czoNCg0KNC4xNC1zdGFibGUNCjAxMzZiZDcyMzhiMmNiODIzODQyNmFmNDE4M2VkMGIwMjE2NWMz
-ZjkNCg0KNC45LXN0YWJsZQ0KODg5MGJhZTAzZjRkYmExYzIyOTJlNTQ0NTY4MmI1NTZhZjRlOGYx
-Yg0KDQo0LjQtc3RhYmxlDQo5N2MzZTQ2ZWY1Mzc0ODI3ODI4NmZjMDlkY2MzMGIxMzhkNjY3N2M0
-DQoNCjMuMTYuNTctcmMxDQpmNjhmNDYyODRhMTk5ZjY4MzdjMWQ1Yjk0YTZhZTk3OWEyY2M0NjNj
-DQoNCldoaWxlIGhpdHRpbmcgdGhlIGZhaWx1cmUgY29uZGl0aW9uIHdpdGhvdXQgYWRkaW5nICJj
-cmFmdGluZyIgc3RlcHMgdG8NCm1ha2UgaXQgZXhhY3RseSBtYXRjaCB0aGUgc2NlbmFyaW8gaXMg
-dW5saWtlbHksIGl0IG1pZ2h0IGJlIGdvb2QgaWYgd2UNCmp1c3QgZ28gYWxsIHRoZSB3YXkgYmFj
-ayB3aXRoIHRoaXMgcmVncmVzc2lvbiBmaXg/DQoNClRoYW5rcywNCkhhbnMNCg0KPiBIb3dldmVy
-LCB0aGUgc2FtZSBjYWxjdWxhdGlvbiByZWFwcGVhcnMgYSBiaXQgbGF0ZXIsIGFuZCB0aGF0IG9u
-ZSB3YXMNCj4gbm90IGNoYW5nZWQgeWV0LiBUaGUgcmVzdWx0aW5nIGJ1ZyB0aGF0IGlzIGV4cG9z
-ZWQgaXMgdGhhdCB0aGUgbmV3bHkNCj4gYWxsb2NhdGVkIGRldmljZSBleHRlbnRzICgnc3RyaXBl
-cycpIGNhbiBoYXZlIGEgZmV3IE1pQiBvdmVybGFwIHdpdGggdGhlDQo+IG5leHQgdGhpbmcgc3Rv
-cmVkIGFmdGVyIHRoZW0sIHdoaWNoIGlzIGFub3RoZXIgZGV2aWNlIGV4dGVudCBvciB0aGUgZW5k
-DQo+IG9mIHRoZSBkaXNrLg0KPiANCj4gVGhlIHNjZW5hcmlvIGluIHdoaWNoIHRoaXMgY2FuIGhh
-cHBlbiBpczoNCj4gKiBUaGUgYmxvY2sgZGV2aWNlIGZvciB0aGUgZmlsZXN5c3RlbSBpcyBsZXNz
-IHRoYW4gMTBHaUIgaW4gc2l6ZS4NCj4gKiBUaGUgYW1vdW50IG9mIGNvbnRpZ3VvdXMgZnJlZSB1
-bmFsbG9jYXRlZCBkaXNrIHNwYWNlIGNob3NlbiB0byB1c2UgZm9yDQo+ICAgY2h1bmsgYWxsb2Nh
-dGlvbiBpcyAyMCUgb2YgdGhlIHRvdGFsIGRldmljZSBzaXplLCBvciBhIGZldyBNaUIgbW9yZSBv
-cg0KPiAgIGxlc3MuDQo+IA0KPiBBbiBleGFtcGxlOg0KPiAtIFRoZSBmaWxlc3lzdGVtIGRldmlj
-ZSBpcyA3ODgwTWlCIChtYXhfY2h1bmtfc2l6ZSBnZXRzIHNldCB0byA3ODhNaUIpDQo+IC0gVGhl
-cmUncyAxNTc4TWlCIHVuYWxsb2NhdGVkIHJhdyBkaXNrIHNwYWNlIGxlZnQgaW4gb25lIGNvbnRp
-Z3VvdXMNCj4gICBwaWVjZS4NCj4gDQo+IEluIHRoaXMgY2FzZSBzdHJpcGVfc2l6ZSBpcyBmaXJz
-dCBjYWxjdWxhdGVkIGFzIDc4OU1pQiwgKGhhbGYgb2YNCj4gMTU3OE1pQikuDQo+IA0KPiBTaW5j
-ZSA3ODlNaUIgKHN0cmlwZV9zaXplICogZGF0YV9zdHJpcGVzKSA+IDc4OE1pQiAobWF4X2NodW5r
-X3NpemUpLCB3ZQ0KPiBlbnRlciB0aGUgaWYgYmxvY2suIE5vdyBzdHJpcGVfc2l6ZSB2YWx1ZSBp
-cyBpbW1lZGlhdGVseSBvdmVyd3JpdHRlbg0KPiB3aGlsZSBjYWxjdWxhdGluZyBhbiBhZGp1c3Rl
-ZCB2YWx1ZSBiYXNlZCBvbiBtYXhfY2h1bmtfc2l6ZSwgd2hpY2ggZW5kcw0KPiB1cCBhcyA3ODhN
-aUIuDQo+IA0KPiBOZXh0LCB0aGUgdmFsdWUgaXMgcm91bmRlZCB1cCB0byBhIDE2TWlCIGJvdW5k
-YXJ5LCA4MDBNaUIsIHdoaWNoIGlzDQo+IGFjdHVhbGx5IG1vcmUgdGhhbiB0aGUgdmFsdWUgd2Ug
-aGFkIGJlZm9yZS4gSG93ZXZlciwgdGhlIGxhc3QgY29tcGFyaXNvbg0KPiBmYWlscyB0byBkZXRl
-Y3QgdGhpcywgYmVjYXVzZSBpdCdzIGNvbXBhcmluZyB0aGUgdmFsdWUgd2l0aCB0aGUgdG90YWwN
-Cj4gYW1vdW50IG9mIGZyZWUgc3BhY2UsIHdoaWNoIGlzIGFib3V0IHR3aWNlIHRoZSBzaXplIG9m
-IHN0cmlwZV9zaXplLg0KPiANCj4gSW4gdGhlIGV4YW1wbGUgYWJvdmUsIHRoaXMgbWVhbnMgdGhh
-dCB0aGUgcmVzdWx0aW5nIHJhdyBkaXNrIHNwYWNlIGJlaW5nDQo+IGFsbG9jYXRlZCBpcyAxNjAw
-TWlCLCB3aGlsZSBvbmx5IGEgZ2FwIG9mIDE1NzhNaUIgaGFzIGJlZW4gZm91bmQuIFRoZQ0KPiBz
-ZWNvbmQgZGV2aWNlIGV4dGVudCBvYmplY3QgZm9yIHRoaXMgRFVQIGNodW5rIHdpbGwgb3Zlcmxh
-cCBmb3IgMjJNaUINCj4gd2l0aCB3aGF0ZXZlciBjb21lcyBuZXh0Lg0KPiANCj4gVGhlIHVuZGVy
-bHlpbmcgcHJvYmxlbSBoZXJlIGlzIHRoYXQgdGhlIHN0cmlwZV9zaXplIGlzIHJldXNlZCBhbGwg
-dGhlDQo+IHRpbWUgZm9yIGRpZmZlcmVudCB0aGluZ3MuIFNvLCB3aGVuIGVudGVyaW5nIHRoZSBj
-b2RlIGluIHRoZSBpZiBibG9jaywNCj4gc3RyaXBlX3NpemUgaXMgaW1tZWRpYXRlbHkgb3Zlcndy
-aXR0ZW4gd2l0aCBzb21ldGhpbmcgZWxzZS4gSWYgbGF0ZXIgd2UNCj4gZGVjaWRlIHdlIHdhbnQg
-dG8gaGF2ZSB0aGUgcHJldmlvdXMgdmFsdWUgYmFjaywgdGhlbiB0aGUgbG9naWMgdG8NCj4gY29t
-cHV0ZSBpdCB3YXMgY29weSBwYXN0ZWQgaW4gYWdhaW4uDQo+IA0KPiBXaXRoIHRoaXMgY2hhbmdl
-LCB0aGUgdmFsdWUgaW4gc3RyaXBlX3NpemUgaXMgbm90IHVubmVjZXNzYXJpbHkNCj4gZGVzdHJv
-eWVkLCBzbyB0aGUgZHVwbGljYXRlZCBjYWxjdWxhdGlvbiBpcyBub3QgbmVlZGVkIGFueSBtb3Jl
-Lg0KPiANCj4gU2lnbmVkLW9mZi1ieTogSGFucyB2YW4gS3JhbmVuYnVyZyA8aGFucy52YW4ua3Jh
-bmVuYnVyZ0BtZW5kaXguY29tPg0KPiBTaWduZWQtb2ZmLWJ5OiBEYXZpZCBTdGVyYmEgPGRzdGVy
-YmFAc3VzZS5jb20+DQo+IFNpZ25lZC1vZmYtYnk6IFNhc2hhIExldmluIDxzYXNoYWxAa2VybmVs
-Lm9yZz4NCj4gLS0tDQo+ICBmcy9idHJmcy92b2x1bWVzLmMgfCAxNiArKysrKysrLS0tLS0tLS0t
-DQo+ICAxIGZpbGUgY2hhbmdlZCwgNyBpbnNlcnRpb25zKCspLCA5IGRlbGV0aW9ucygtKQ0KPiAN
-Cj4gZGlmZiAtLWdpdCBhL2ZzL2J0cmZzL3ZvbHVtZXMuYyBiL2ZzL2J0cmZzL3ZvbHVtZXMuYw0K
-PiBpbmRleCBhNTY3ZWUwYmYwNjAuLjE3OTdhODJlYjdkZiAxMDA2NDQNCj4gLS0tIGEvZnMvYnRy
-ZnMvdm9sdW1lcy5jDQo+ICsrKyBiL2ZzL2J0cmZzL3ZvbHVtZXMuYw0KPiBAQCAtNDc2OCwxOSAr
-NDc2OCwxNyBAQCBzdGF0aWMgaW50IF9fYnRyZnNfYWxsb2NfY2h1bmsoc3RydWN0IGJ0cmZzX3Ry
-YW5zX2hhbmRsZSAqdHJhbnMsDQo+ICAJLyoNCj4gIAkgKiBVc2UgdGhlIG51bWJlciBvZiBkYXRh
-IHN0cmlwZXMgdG8gZmlndXJlIG91dCBob3cgYmlnIHRoaXMgY2h1bmsNCj4gIAkgKiBpcyByZWFs
-bHkgZ29pbmcgdG8gYmUgaW4gdGVybXMgb2YgbG9naWNhbCBhZGRyZXNzIHNwYWNlLA0KPiAtCSAq
-IGFuZCBjb21wYXJlIHRoYXQgYW5zd2VyIHdpdGggdGhlIG1heCBjaHVuayBzaXplDQo+ICsJICog
-YW5kIGNvbXBhcmUgdGhhdCBhbnN3ZXIgd2l0aCB0aGUgbWF4IGNodW5rIHNpemUuIElmIGl0J3Mg
-aGlnaGVyLA0KPiArCSAqIHdlIHRyeSB0byByZWR1Y2Ugc3RyaXBlX3NpemUuDQo+ICAJICovDQo+
-ICAJaWYgKHN0cmlwZV9zaXplICogZGF0YV9zdHJpcGVzID4gbWF4X2NodW5rX3NpemUpIHsNCj4g
-LQkJc3RyaXBlX3NpemUgPSBkaXZfdTY0KG1heF9jaHVua19zaXplLCBkYXRhX3N0cmlwZXMpOw0K
-PiAtDQo+IC0JCS8qIGJ1bXAgdGhlIGFuc3dlciB1cCB0byBhIDE2TUIgYm91bmRhcnkgKi8NCj4g
-LQkJc3RyaXBlX3NpemUgPSByb3VuZF91cChzdHJpcGVfc2l6ZSwgU1pfMTZNKTsNCj4gLQ0KPiAg
-CQkvKg0KPiAtCQkgKiBCdXQgZG9uJ3QgZ28gaGlnaGVyIHRoYW4gdGhlIGxpbWl0cyB3ZSBmb3Vu
-ZCB3aGlsZSBzZWFyY2hpbmcNCj4gLQkJICogZm9yIGZyZWUgZXh0ZW50cw0KPiArCQkgKiBSZWR1
-Y2Ugc3RyaXBlX3NpemUsIHJvdW5kIGl0IHVwIHRvIGEgMTZNQiBib3VuZGFyeSBhZ2FpbiBhbmQN
-Cj4gKwkJICogdGhlbiB1c2UgaXQsIHVubGVzcyBpdCBlbmRzIHVwIGJlaW5nIGV2ZW4gYmlnZ2Vy
-IHRoYW4gdGhlDQo+ICsJCSAqIHByZXZpb3VzIHZhbHVlIHdlIGhhZCBhbHJlYWR5Lg0KPiAgCQkg
-Ki8NCj4gLQkJc3RyaXBlX3NpemUgPSBtaW4oZGV2aWNlc19pbmZvW25kZXZzIC0gMV0ubWF4X2F2
-YWlsLA0KPiArCQlzdHJpcGVfc2l6ZSA9IG1pbihyb3VuZF91cChkaXZfdTY0KG1heF9jaHVua19z
-aXplLA0KPiArCQkJCQkJICAgZGF0YV9zdHJpcGVzKSwgU1pfMTZNKSwNCj4gIAkJCQkgIHN0cmlw
-ZV9zaXplKTsNCj4gIAl9DQo+ICANCj4NCg==
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--LKt54Aj4xFp2iL8pKGhJSmWeqxOxH4it8
+Content-Type: multipart/mixed; boundary="jb2GW5XQBQYQBjdomPR18wN8DooLU3OKR";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Thiago Ramon <thiagoramon@gmail.com>, linux-btrfs@vger.kernel.org
+Message-ID: <a6270ef1-c914-e142-448c-7e7a388f221f@gmx.com>
+Subject: Re: Nasty corruption on large array, ideas welcome
+References: <CAO1Y9wrAzSxGx+LYMPswzN4BbMNs__v7+y=BTZRBAW2bRN5Q1w@mail.gmail.com>
+In-Reply-To: <CAO1Y9wrAzSxGx+LYMPswzN4BbMNs__v7+y=BTZRBAW2bRN5Q1w@mail.gmail.com>
+
+--jb2GW5XQBQYQBjdomPR18wN8DooLU3OKR
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+
+
+
+On 2019/1/9 =E4=B8=8A=E5=8D=883:33, Thiago Ramon wrote:
+> I have a pretty complicated setup here, so first a general description:=
+
+> 8 HDs: 4x5TB, 2x4TB, 2x8TB
+>=20
+> Each disk is a LVM PV containing a BCACHE backing device, which then
+> contains the BTRFS disks. All the drives then were in writeback mode
+> on a SSD BCACHE cache partition (terrible setup, I know, but without
+> the caching the system was getting too slow to use).
+>=20
+> I had all my data, metadata and system blocks on RAID1, but as I'm
+> running out of space, and the new kernels are getting better RAID5/6
+> support recently, I've finally decided to migrate to RAID6 and was
+> starting it off with the metadata.
+>=20
+>=20
+> It was running well (I was already expecting it to be slow, so no
+> problem there), but I had to spend some days away from the machine.
+> Due to an air conditioning failure, the room temperature went pretty
+> high and one of the disks decided to die (apparently only
+> temporarily). BCACHE couldn't write to the backing device anymore, so
+> it ejected all drives and let them cope with it by themselves. I've
+> caught the trouble some 12h later, still away, and shut down anything
+> accessing the disks until I could be physically there to handle the
+> issue.
+>=20
+> After I got back and got the temperature down to acceptable levels,
+> I've checked the failed drive, which seems to be working well after
+> getting re-inserted, but it's of course out of date with the rest of
+> the drives. But apparently the rest got some corruption as well when
+> they got ejected from the cache, and I'm getting some errors I haven't
+> been able to handle.
+>=20
+> I've gone through the steps here that helped me before when having
+> complicated crashes on this system, but this time it wasn't enough,
+> and I'll need some advice from people who know the BTRFS internals
+> better than me to get this back running. I have around 20TB of data in
+> the drives, so copying the data out is the last resort, as I'd prefer
+> to let most of it die than to buy a few disks to fit all of that.
+>=20
+>=20
+> Now on to the errors:
+>=20
+> I've tried both with the "failed" drive in (which gives me additional
+> transid errors) and without it.
+>=20
+> Trying to mount with it gives me:
+> [Jan 7 20:18] BTRFS info (device bcache0): enabling auto defrag
+> [ +0.000010] BTRFS info (device bcache0): disk space caching is enabled=
+
+> [ +0.671411] BTRFS error (device bcache0): parent transid verify
+> failed on 77292724051968 wanted > 1499510 found 1499467
+> [ +0.005950] BTRFS critical (device bcache0): corrupt leaf: root=3D2
+> block=3D77292724051968 slot=3D2, bad key order, prev (39029522223104 16=
+8
+> 212992) current (39029521915904 168 16384)
+
+Heavily corrupted extent tree.
+
+And there is a very good experimental patch for you:
+https://patchwork.kernel.org/patch/10738583/
+
+Then go mount with "skip_bg,ro" mount option.
+
+Please note this can only help you to salvage data (kernel version of
+btrfs-store).
+
+AFAIK, the corruption may affect fs trees too, so be aware of corrupted
+data.
+
+Thanks,
+Qu
+
+
+> [ +0.000378] BTRFS error (device bcache0): failed to read block groups:=
+ -5
+> [ +0.022884] BTRFS error (device bcache0): open_ctree failed
+>=20
+> Trying without the disk (and -o degraded) gives me:
+> [Jan 8 12:51] BTRFS info (device bcache1): enabling auto defrag
+> [ +0.000002] BTRFS info (device bcache1): allowing degraded mounts
+> [ +0.000002] BTRFS warning (device bcache1): 'recovery' is deprecated,
+> use 'usebackuproot' instead
+> [ +0.000000] BTRFS info (device bcache1): trying to use backup root at
+> mount time[ +0.000002] BTRFS info (device bcache1): disabling disk
+> space caching
+> [ +0.000001] BTRFS info (device bcache1): force clearing of disk cache
+> [ +0.001334] BTRFS warning (device bcache1): devid 2 uuid
+> 27f87964-1b9a-466c-ac18-b47c0d2faa1c is missing
+> [ +1.049591] BTRFS critical (device bcache1): corrupt leaf: root=3D2
+> block=3D77291982323712 slot=3D0, unexpected item end, have 685883288
+> expect 3995
+> [ +0.000739] BTRFS error (device bcache1): failed to read block groups:=
+ -5
+> [ +0.017842] BTRFS error (device bcache1): open_ctree failed
+>=20
+> btrfs check output (without drive):
+> warning, device 2 is missing
+> checksum verify failed on 77088164081664 found 715B4470 wanted 580444F6=
+
+> checksum verify failed on 77088164081664 found 98775719 wanted FA63AD42=
+
+> checksum verify failed on 77088164081664 found 98775719 wanted FA63AD42=
+
+> bytenr mismatch, want=3D77088164081664, have=3D274663271295232
+> Couldn't read chunk tree
+> ERROR: cannot open file system
+>=20
+> I've already tried super-recover, zero-log and chunk-recover without
+> any results, and check with --repair fails the same way as without.
+>=20
+> So, any ideas? I'll be happy to run experiments and grab more logs if
+> anyone wants more details.
+>=20
+>=20
+> And thanks for any suggestions.
+>=20
+
+
+--jb2GW5XQBQYQBjdomPR18wN8DooLU3OKR--
+
+--LKt54Aj4xFp2iL8pKGhJSmWeqxOxH4it8
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlw1OtIACgkQwj2R86El
+/qgN+wf/baNBOqiU+TtCJ13Rysp1fvIAeK+lmaG4hDk/YdJp5nmuKNZN1DDmire9
+qXXvXmGrnp92C/Hqw0dDR2zmekmuFpiS5yk3r9rRGWPDMMq+7DbMC7I0FAXH4lek
+NOLQntdgH26ByWuwJ75L149PZ6XEC7F0ofREztSAA4eHSlwCvVkpoCeKqkriqlTB
+LyYe5AxJwC1/zEjpIAKxNrW/FMOypEyMIlzHspLZz3GGaTS3AA4eEdILlrS9kPEK
+6sypxdAmdHxEPzZLRb9XJTqpYLbq0dauFxKGbIrHuumLlq2nPioMnCzupGdGxkX1
+D9G9dGtUrIOnqxlSk8o4ul5fYaXCUQ==
+=/9vV
+-----END PGP SIGNATURE-----
+
+--LKt54Aj4xFp2iL8pKGhJSmWeqxOxH4it8--

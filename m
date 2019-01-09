@@ -2,91 +2,114 @@ Return-Path: <SRS0=3FID=PR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1FE02C43387
-	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Jan 2019 17:21:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 70B21C43387
+	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Jan 2019 18:27:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E4AFF20660
-	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Jan 2019 17:21:00 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="gi12nxpn"
+	by mail.kernel.org (Postfix) with ESMTP id 3ADE220665
+	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Jan 2019 18:27:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726850AbfAIRU7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 9 Jan 2019 12:20:59 -0500
-Received: from mail-ed1-f49.google.com ([209.85.208.49]:45950 "EHLO
-        mail-ed1-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726574AbfAIRU7 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Jan 2019 12:20:59 -0500
-Received: by mail-ed1-f49.google.com with SMTP id d39so7908144edb.12
-        for <linux-btrfs@vger.kernel.org>; Wed, 09 Jan 2019 09:20:57 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=subject:from:to:references:message-id:date:user-agent:mime-version
-         :in-reply-to:content-transfer-encoding:content-language;
-        bh=FKiLf3nu99O67yBAAN1B34Wm+P+pCJsl8LdRcmEUsIs=;
-        b=gi12nxpnIxzwxXINkBhDIEP3PJK7CCjypP0t70HEMoo7ScxzRMUVAiFlvzFVOibPGb
-         IqyDI6vtN8mn0Gh3F+4eifXqd+cg6U1tOEjJo+8lpTyv+zJ9TPNDeNhDKFet7c3reoI2
-         RMLG2cKtUh2i+mOzAd9N3tTGS2OKrs8yu74vk0tU0SXuwJfh+NrDkSZy8fGEuzx6fPRD
-         WSE05/bOCcJyU1FKqBCFU1dYhAwlqyI5WH2rnmkVKvz12SWhR+9aeqfeO82IMBYjSY53
-         zf71Pi3XtmzeKVR5vRtD/kVHArMcaVoo4H6PZuSSlv9uAaz4BR+GnvamEor7nKFI7GHx
-         /3wA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:from:to:references:message-id:date
-         :user-agent:mime-version:in-reply-to:content-transfer-encoding
-         :content-language;
-        bh=FKiLf3nu99O67yBAAN1B34Wm+P+pCJsl8LdRcmEUsIs=;
-        b=JUylUS6mLBaiERlwTOMKRYCAUTYIjrX5hHLXQQ6wq+eqAaXmrvoURQz6Wno9VhTwsw
-         4VzsBZ35LFD8eZhMiO1WYx6IAZLVSzlMPE7c9kFrsVgO8Urs2U4Avb30ftSmsQmYYtBI
-         Fgj+6VxGri9aseW4VkQtgeN1NrpJYhR+Msyb0LfV8S8iK1GikZbKIgIISDrkzpLiBgve
-         lftAc0vEau+4iDkiwNQIweDEz3lHXuFxStV2/Orc+R0ePHmriao3MZS89SKI8nBcEUJ+
-         S8G0mghYPqFj/NHiduVq0Z84dQ7FgtM/wqxBtkygZCtvhkluJlAtQflS9Iz40TSByMfC
-         edLQ==
-X-Gm-Message-State: AJcUukf9MggpqCy6W++koKQg/PRntVlwdYrfZTk5HGbGHFOxhRbTOdnR
-        96bcsm/chBU3cPb9YUHGgafUep0d
-X-Google-Smtp-Source: ALg8bN6beLzV7Pjuck5lq38QuFqEAJvwMSIWCJ4yZ3sdQSesFOqfzmVe2eupMOfy3ZOe+MJIvHTWYA==
-X-Received: by 2002:a17:906:7cd0:: with SMTP id h16-v6mr5934108ejp.207.1547054456995;
-        Wed, 09 Jan 2019 09:20:56 -0800 (PST)
-Received: from [172.26.1.3] (085083086107.dynamic.telenor.dk. [85.83.86.107])
-        by smtp.googlemail.com with ESMTPSA id j8sm1213402ede.55.2019.01.09.09.20.55
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Wed, 09 Jan 2019 09:20:56 -0800 (PST)
-Subject: Re: Balance of Raid1 pool, does not balance properly.
-From:   Karsten Vinding <karstenvinding@gmail.com>
-To:     linux-btrfs@vger.kernel.org
-References: <cbffc26e-a57f-e1ad-284c-a54431c4e2f1@gmail.com>
-Message-ID: <64cf0762-bd59-3d77-8aca-94622233767f@gmail.com>
-Date:   Wed, 9 Jan 2019 18:20:55 +0100
-User-Agent: Mozilla/5.0 (Windows NT 6.0; WOW64; rv:60.0) Gecko/20100101
- Thunderbird/60.3.2
+        id S1726847AbfAIS10 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 9 Jan 2019 13:27:26 -0500
+Received: from mx2.suse.de ([195.135.220.15]:51490 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726754AbfAIS10 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 9 Jan 2019 13:27:26 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id DE07DAE3F;
+        Wed,  9 Jan 2019 18:27:24 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id E2A5CDA7E8; Wed,  9 Jan 2019 19:26:53 +0100 (CET)
+Date:   Wed, 9 Jan 2019 19:26:53 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     fdmanana@kernel.org
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: avoid deadlock with memory reclaim due to
+ allocation of devices
+Message-ID: <20190109182653.GN23615@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
+        linux-btrfs@vger.kernel.org
+References: <20181213211725.14832-1-fdmanana@kernel.org>
 MIME-Version: 1.0
-In-Reply-To: <cbffc26e-a57f-e1ad-284c-a54431c4e2f1@gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: 7bit
-Content-Language: da
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20181213211725.14832-1-fdmanana@kernel.org>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Just a short answer.
+On Thu, Dec 13, 2018 at 09:17:25PM +0000, fdmanana@kernel.org wrote:
+> -	if (list_empty(&fs_devices->resized_devices))
+> -		return;
+> -
+> -	mutex_lock(&fs_devices->device_list_mutex);
+>  	mutex_lock(&fs_info->chunk_mutex);
+>  	list_for_each_entry_safe(curr, next, &fs_devices->resized_devices,
+>  				 resized_list) {
+> @@ -7309,7 +7306,6 @@ void btrfs_update_commit_device_size(struct btrfs_fs_info *fs_info)
+>  		curr->commit_total_bytes = curr->disk_total_bytes;
 
-I didn't use the replace command.
+I'm not sure about removing the device_list_mutex that's said to protect
+the commit_total_bytes (comment in struct btrfs_device).
 
-I added the new drive to the pool / array, and checked that it was 
-registered.
-Following that I removed the 1TB drive with "btrfs device delete <drive>".
+Otherwise the logic is ok, the double lock could happen as you describe.
 
-As far as I know this should avoid the need to resize the new drive.
+btrfs_update_commit_device_size is called from btrfs_commit_transaction,
+at the same time as commit_bytes_used. The latter is handled in a
+similar way in btrfs_update_commit_device_bytes_used, but does not take
+the device_list_mutex.
 
-"btrfs fi us" shows all the space as available. The drive shows 1.7TB as 
-unallocated.
+commit_total_bytes is checked several times (eg. in write_dev_supers) to
+see if writing the superblock copy is still within the device range.
 
-I have started moving some data of the array to give btrfs some more 
-room to move, and will follow what happens when I try a new balance 
-later on.
+So, without the protected change, it's theoretically possible that a
+stale value is used for the test and the superblock is either written
+though it should not, and the other way around.
+
+This would require a resize racing at the time of the check. Grow and
+shrink seem to take chunk_mutex while adjusting all the total/size
+values, but it's not actually easy to follow as sometimes there are
+helpers like btrfs_device_set_total_bytes used and sometimes it's direct
+access.
+
+That the device_list_mutex can be safely dropped probably follows from
+the simple fact that btrfs_update_commit_device_bytes_used is called
+before write_dev_supers in the same context.
+
+But this sounds too simple, given that there are locks taken and
+released and btrfs_write_and_wait_transaction called between.
+
+Referencing this code:
+
+2201         btrfs_update_commit_device_size(fs_info);
+2202         btrfs_update_commit_device_bytes_used(cur_trans);
+2203
+2204         clear_bit(BTRFS_FS_LOG1_ERR, &fs_info->flags);
+2205         clear_bit(BTRFS_FS_LOG2_ERR, &fs_info->flags);
+2206
+2207         btrfs_trans_release_chunk_metadata(trans);
+2208
+2209         spin_lock(&fs_info->trans_lock);
+2210         cur_trans->state = TRANS_STATE_UNBLOCKED;
+2211         fs_info->running_transaction = NULL;
+2212         spin_unlock(&fs_info->trans_lock);
+2213         mutex_unlock(&fs_info->reloc_mutex);
+2214
+2215         wake_up(&fs_info->transaction_wait);
+2216
+2217         ret = btrfs_write_and_wait_transaction(trans);
+2218         if (ret) {
+2219                 btrfs_handle_fs_error(fs_info, ret,
+2220                                       "Error while writing out transaction");
+2221                 mutex_unlock(&fs_info->tree_log_mutex);
+2222                 goto scrub_continue;
+2223         }
+2224
+2225         ret = write_all_supers(fs_info, 0);

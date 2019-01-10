@@ -2,179 +2,93 @@ Return-Path: <SRS0=+rOy=PS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C3372C43387
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Jan 2019 18:16:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 27A6DC43387
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Jan 2019 18:21:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9DA5C20675
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Jan 2019 18:16:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id ED36E20675
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Jan 2019 18:21:36 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="n/NFGltH"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730999AbfAJSQ5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 10 Jan 2019 13:16:57 -0500
-Received: from mga11.intel.com ([192.55.52.93]:53397 "EHLO mga11.intel.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729882AbfAJSQ5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 Jan 2019 13:16:57 -0500
-X-Amp-Result: SKIPPED(no attachment in message)
-X-Amp-File-Uploaded: False
-Received: from orsmga003.jf.intel.com ([10.7.209.27])
-  by fmsmga102.fm.intel.com with ESMTP/TLS/DHE-RSA-AES256-GCM-SHA384; 10 Jan 2019 10:16:57 -0800
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="5.56,462,1539673200"; 
-   d="scan'208";a="117129265"
-Received: from black.fi.intel.com ([10.237.72.28])
-  by orsmga003.jf.intel.com with ESMTP; 10 Jan 2019 10:16:54 -0800
-Received: by black.fi.intel.com (Postfix, from userid 1003)
-        id A6B6DF7; Thu, 10 Jan 2019 20:16:53 +0200 (EET)
-From:   Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
-        Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org, Christoph Hellwig <hch@lst.de>
-Cc:     Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-Subject: [PATCH v1] Btrfs: Switch to use new generic UUID API
-Date:   Thu, 10 Jan 2019 20:16:53 +0200
-Message-Id: <20190110181653.66048-1-andriy.shevchenko@linux.intel.com>
-X-Mailer: git-send-email 2.20.1
+        id S1731074AbfAJSVf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 10 Jan 2019 13:21:35 -0500
+Received: from mail-ed1-f45.google.com ([209.85.208.45]:45165 "EHLO
+        mail-ed1-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1731005AbfAJSVe (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 10 Jan 2019 13:21:34 -0500
+Received: by mail-ed1-f45.google.com with SMTP id d39so10955699edb.12
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Jan 2019 10:21:32 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-transfer-encoding:content-language;
+        bh=oXAEJ7f7DX/Lc7Kk1dj4iTpxYp7yNyMwRjzUByez3rk=;
+        b=n/NFGltHBY0IsmTlXCfHGpesI9bwycawtOigsnYwCdE03L2lYeLFMouqxYyTjqexUU
+         rzl5w6aRH27nb25h1/5Xaa7zlYFeihY+0WSeo6m5HzxSXApmnRbq+6APDy0XWkDel5O0
+         dr44/AmyeJO+J4hk/3XOYMXa7queNyML+/IvZ/PnKJu8ZGynYJH2+rchwLw05Q6WhIpv
+         vmpdq9Odk9BQJ7vtyxGOCEzqu6xaKpxZdWYjR35nOG4Vc+d+1KcmNfzMn7aTq/5SwLvr
+         xvAfetXBRSSVDSYfnTY3aA/Y0O5L+Uqb0bJ8uKf8ykdZrxxmD0jbAAmje6PH1WpYbpAz
+         HOhg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-transfer-encoding
+         :content-language;
+        bh=oXAEJ7f7DX/Lc7Kk1dj4iTpxYp7yNyMwRjzUByez3rk=;
+        b=YvdtS7uXYqadn9YH2Y5Xox9JGjkrpdYnHBGW7sb9xspK5e2KkRPM3Iz/Jn9eGbyH6B
+         4vPuwMURrNmv8H6QeRZ0xmuDoy15AHz6bjAmvX7xhfmrkBge3q65W2GT8HonOWOdSPML
+         MRfs3MepC9p/DKsSR9qIIKI6Zefg3zpp2qWnfbLqjbr6FxHOIjz5mivwvxrAdc981qwc
+         gM1+ZUpQ5WhUgKiSsbijF5PfyL4dGsCcA0qQ4YubBjTPjaHuXFPXcS35hV/3mp38H840
+         4zPjGQh9p1042pAVJChmFMOMmBslbWI4pydLIg9E3igoIHh2BC7yndWfxTzajEF/1eAs
+         dlmA==
+X-Gm-Message-State: AJcUukc8+Q7kmLgjutMaZ99XzIpSi81yYj64nGWWmSHhA5rHBRPUbeFT
+        HYOYMH+ApWFt6fVjMyQOjG4pH3SC
+X-Google-Smtp-Source: ALg8bN5wV19kFfbYQ3iX+zIfahEXx8dEyQpUyyDxaQo1fpSJw7et1hSRVfEdIf00A41FeGlnvCUoMQ==
+X-Received: by 2002:a50:a458:: with SMTP id v24mr10569575edb.241.1547144491297;
+        Thu, 10 Jan 2019 10:21:31 -0800 (PST)
+Received: from [172.26.1.3] (085083086107.dynamic.telenor.dk. [85.83.86.107])
+        by smtp.googlemail.com with ESMTPSA id g20sm1697342edr.47.2019.01.10.10.21.29
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Thu, 10 Jan 2019 10:21:30 -0800 (PST)
+Subject: Re: Balance of Raid1 pool, does not balance properly.
+To:     Peter Becker <floyd.net@gmail.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <cbffc26e-a57f-e1ad-284c-a54431c4e2f1@gmail.com>
+ <64cf0762-bd59-3d77-8aca-94622233767f@gmail.com>
+ <CAEtw4r1we4ctoTwvExFWwc1WFgtBJXYXOizNZrrzqyBGbHCv-A@mail.gmail.com>
+From:   Karsten Vinding <karstenvinding@gmail.com>
+Message-ID: <24856b7a-e4ca-bf12-f70b-7f016142e6b2@gmail.com>
+Date:   Thu, 10 Jan 2019 19:21:27 +0100
+User-Agent: Mozilla/5.0 (Windows NT 6.0; WOW64; rv:60.0) Gecko/20100101
+ Thunderbird/60.3.2
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <CAEtw4r1we4ctoTwvExFWwc1WFgtBJXYXOizNZrrzqyBGbHCv-A@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 7bit
+Content-Language: da
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There are new types and helpers that are supposed to be used in new code.
+Thanks for the answer.
 
-As a preparation to get rid of legacy types and API functions do
-the conversion here.
+I had already tried "
 
-Signed-off-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
----
-- not tested on actual FS
- fs/btrfs/disk-io.c     |  6 +++---
- fs/btrfs/ioctl.c       | 12 ++----------
- fs/btrfs/root-tree.c   |  4 +---
- fs/btrfs/transaction.c |  7 +++----
- 4 files changed, 9 insertions(+), 20 deletions(-)
+btrfs balance start -musage=75 -dusage=75 /mnt
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index e0ad52804c26..f618661f5fa4 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1259,7 +1259,6 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
- 	struct btrfs_root *root;
- 	struct btrfs_key key;
- 	int ret = 0;
--	uuid_le uuid = NULL_UUID_LE;
- 
- 	root = btrfs_alloc_root(fs_info, GFP_KERNEL);
- 	if (!root)
-@@ -1293,8 +1292,9 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
- 	btrfs_set_root_last_snapshot(&root->root_item, 0);
- 	btrfs_set_root_dirid(&root->root_item, 0);
- 	if (is_fstree(objectid))
--		uuid_le_gen(&uuid);
--	memcpy(root->root_item.uuid, uuid.b, BTRFS_UUID_SIZE);
-+		guid_gen((guid_t *)&root->root_item.uuid);
-+	else
-+		guid_copy((guid_t *)&root->root_item.uuid, &guid_null);
- 	root->root_item.drop_level = 0;
- 
- 	key.objectid = objectid;
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 9c8e1734429c..a40bf7ea9393 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -541,13 +541,7 @@ static noinline int btrfs_ioctl_fitrim(struct file *file, void __user *arg)
- 
- int btrfs_is_empty_uuid(u8 *uuid)
- {
--	int i;
--
--	for (i = 0; i < BTRFS_UUID_SIZE; i++) {
--		if (uuid[i])
--			return 0;
--	}
--	return 1;
-+	return guid_is_null((guid_t *)uuid);
- }
- 
- static noinline int create_subvol(struct inode *dir,
-@@ -572,7 +566,6 @@ static noinline int create_subvol(struct inode *dir,
- 	u64 objectid;
- 	u64 new_dirid = BTRFS_FIRST_FREE_OBJECTID;
- 	u64 index = 0;
--	uuid_le new_uuid;
- 
- 	root_item = kzalloc(sizeof(*root_item), GFP_KERNEL);
- 	if (!root_item)
-@@ -642,8 +635,7 @@ static noinline int create_subvol(struct inode *dir,
- 
- 	btrfs_set_root_generation_v2(root_item,
- 			btrfs_root_generation(root_item));
--	uuid_le_gen(&new_uuid);
--	memcpy(root_item->uuid, new_uuid.b, BTRFS_UUID_SIZE);
-+	guid_gen((guid_t *)&root_item->uuid);
- 	btrfs_set_stack_timespec_sec(&root_item->otime, cur_time.tv_sec);
- 	btrfs_set_stack_timespec_nsec(&root_item->otime, cur_time.tv_nsec);
- 	root_item->ctime = root_item->otime;
-diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
-index 65bda0682928..b797792d66bf 100644
---- a/fs/btrfs/root-tree.c
-+++ b/fs/btrfs/root-tree.c
-@@ -20,7 +20,6 @@
- static void btrfs_read_root_item(struct extent_buffer *eb, int slot,
- 				struct btrfs_root_item *item)
- {
--	uuid_le uuid;
- 	int len;
- 	int need_reset = 0;
- 
-@@ -42,8 +41,7 @@ static void btrfs_read_root_item(struct extent_buffer *eb, int slot,
- 			sizeof(*item) - offsetof(struct btrfs_root_item,
- 					generation_v2));
- 
--		uuid_le_gen(&uuid);
--		memcpy(item->uuid, uuid.b, BTRFS_UUID_SIZE);
-+		guid_gen((guid_t *)&item->uuid);
- 	}
- }
- 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 127fa1535f58..394120c9c1f3 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1422,7 +1422,6 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	u64 index = 0;
- 	u64 objectid;
- 	u64 root_flags;
--	uuid_le new_uuid;
- 
- 	ASSERT(pending->path);
- 	path = pending->path;
-@@ -1515,8 +1514,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 
- 	btrfs_set_root_generation_v2(new_root_item,
- 			trans->transid);
--	uuid_le_gen(&new_uuid);
--	memcpy(new_root_item->uuid, new_uuid.b, BTRFS_UUID_SIZE);
-+	guid_gen((guid_t *)&new_root_item->uuid);
- 	memcpy(new_root_item->parent_uuid, root->root_item.uuid,
- 			BTRFS_UUID_SIZE);
- 	if (!(root_flags & BTRFS_ROOT_SUBVOL_RDONLY)) {
-@@ -1627,7 +1625,8 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 		btrfs_abort_transaction(trans, ret);
- 		goto fail;
- 	}
--	ret = btrfs_uuid_tree_add(trans, new_uuid.b, BTRFS_UUID_KEY_SUBVOL,
-+	ret = btrfs_uuid_tree_add(trans, new_root_item->uuid,
-+				  BTRFS_UUID_KEY_SUBVOL,
- 				  objectid);
- 	if (ret) {
- 		btrfs_abort_transaction(trans, ret);
--- 
-2.20.1
+It only reallocated 3 blocks.
+
+But after I had moved some data, I ran it with 90, and it realocated a lot more.
+
+I have a new balance running, and this time it seems to be doing its job. At least data is distributed more evenly across disks.
+
+Its not done yet, but its looking fine.
+
 

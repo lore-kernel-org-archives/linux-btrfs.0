@@ -2,180 +2,145 @@ Return-Path: <SRS0=hHgh=PT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 074C1C43387
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jan 2019 11:07:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A33E9C43387
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jan 2019 12:29:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D40F22177B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jan 2019 11:07:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 22F872133F
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jan 2019 12:29:47 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=protonmail.com header.i=@protonmail.com header.b="SqOf40IO"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731063AbfAKLGE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 11 Jan 2019 06:06:04 -0500
-Received: from mx1.redhat.com ([209.132.183.28]:52316 "EHLO mx1.redhat.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725267AbfAKLGD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 Jan 2019 06:06:03 -0500
-Received: from smtp.corp.redhat.com (int-mx03.intmail.prod.int.phx2.redhat.com [10.5.11.13])
-        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
-        (No client certificate requested)
-        by mx1.redhat.com (Postfix) with ESMTPS id D317FE3281;
-        Fri, 11 Jan 2019 11:06:01 +0000 (UTC)
-Received: from localhost (ovpn-8-28.pek2.redhat.com [10.72.8.28])
-        by smtp.corp.redhat.com (Postfix) with ESMTP id 949DC60603;
-        Fri, 11 Jan 2019 11:05:47 +0000 (UTC)
-From:   Ming Lei <ming.lei@redhat.com>
-To:     Jens Axboe <axboe@kernel.dk>
-Cc:     linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-mm@kvack.org, Theodore Ts'o <tytso@mit.edu>,
-        Omar Sandoval <osandov@fb.com>,
-        Sagi Grimberg <sagi@grimberg.me>,
-        Dave Chinner <dchinner@redhat.com>,
-        Kent Overstreet <kent.overstreet@gmail.com>,
-        Mike Snitzer <snitzer@redhat.com>, dm-devel@redhat.com,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        linux-fsdevel@vger.kernel.org, linux-raid@vger.kernel.org,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        "Darrick J . Wong" <darrick.wong@oracle.com>,
-        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
-        Christoph Hellwig <hch@lst.de>, linux-ext4@vger.kernel.org,
-        Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
-        Boaz Harrosh <ooo@electrozaur.com>,
-        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com,
-        Ming Lei <ming.lei@redhat.com>
-Subject: [PATCH V13 15/19] block: enable multipage bvecs
-Date:   Fri, 11 Jan 2019 19:01:23 +0800
-Message-Id: <20190111110127.21664-16-ming.lei@redhat.com>
-In-Reply-To: <20190111110127.21664-1-ming.lei@redhat.com>
-References: <20190111110127.21664-1-ming.lei@redhat.com>
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.13
-X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.39]); Fri, 11 Jan 2019 11:06:02 +0000 (UTC)
+        id S1732362AbfAKM3p (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 11 Jan 2019 07:29:45 -0500
+Received: from mail-40135.protonmail.ch ([185.70.40.135]:12264 "EHLO
+        mail-40135.protonmail.ch" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1732359AbfAKM3p (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 11 Jan 2019 07:29:45 -0500
+Date:   Fri, 11 Jan 2019 12:29:40 +0000
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=protonmail.com;
+        s=default; t=1547209781;
+        bh=6wgLdK2flZGsURnqBnfquN5vAVRkn5MEulS0rEd4wAk=;
+        h=Date:To:From:Reply-To:Subject:In-Reply-To:References:Feedback-ID:
+         From;
+        b=SqOf40IO4mpbilNR6KldZBThtrGwwfNy0VFFrGymYWAKPden89iCpeyln1Ulp2oAQ
+         0gJrMPRmpY8MHIZ2Ez9VLoY3OEWzcsZ61jzIAWCRZWVRx1rf2FdTVMrm3nh5fZmWZq
+         knj1EQnN87kW7NClDUFavOUlh7uCJXs3BGZep+hE=
+To:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From:   b11g <b11g@protonmail.com>
+Reply-To: b11g <b11g@protonmail.com>
+Subject: Re: BTRFS corruption: open_ctree failed
+Message-ID: <j8LS7-Iz6uOg8fN_yZD_mcUT3J1jCHsk9nU18LpSGGcHDHVTHk6s8u5HFNAuB6lfcjzwtWD2o6awwLqY6-GQmOBBeJ6ZUiiybgohZUxJlwg=@protonmail.com>
+In-Reply-To: <DID7NmLoqB1WBZ8Vo7rEMlL9cLWv7Bz9F04MkQYOLfZJyl04O44IUiFKdC_Tl4iSvHGLxpbwDwD9cHJ33t-Hkv8PKF0wmm7201RABA2kRAY=@protonmail.com>
+References: <DID7NmLoqB1WBZ8Vo7rEMlL9cLWv7Bz9F04MkQYOLfZJyl04O44IUiFKdC_Tl4iSvHGLxpbwDwD9cHJ33t-Hkv8PKF0wmm7201RABA2kRAY=@protonmail.com>
+Feedback-ID: lUBa-WV0uAwkWs2PxUY-pUV2q6-Zuux_EqKTuYphP-Kxh3RnAJZOoHLvsXpeqqAZQFobD_IfHjSMoVPhuYTmhg==:Ext:ProtonMail
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This patch pulls the trigger for multi-page bvecs.
+Follow up: the issue was a faulty DIMM module. For some strange coincidence=
+, only the space allocated to disk caches appeared to be corrupted - with t=
+he rest of the system working flawlessly most of the time.
 
-Reviewed-by: Omar Sandoval <osandov@fb.com>
-Signed-off-by: Ming Lei <ming.lei@redhat.com>
----
- block/bio.c         | 22 +++++++++++++++-------
- fs/iomap.c          |  4 ++--
- fs/xfs/xfs_aops.c   |  4 ++--
- include/linux/bio.h |  2 +-
- 4 files changed, 20 insertions(+), 12 deletions(-)
+I would guess that BTRFS tried to self-heal based on the cached data, ultim=
+ately corrupting the file system behind salvation?
 
-diff --git a/block/bio.c b/block/bio.c
-index 968b12fea564..83a2dfa417ca 100644
---- a/block/bio.c
-+++ b/block/bio.c
-@@ -753,6 +753,8 @@ EXPORT_SYMBOL(bio_add_pc_page);
-  * @page: page to add
-  * @len: length of the data to add
-  * @off: offset of the data in @page
-+ * @same_page: if %true only merge if the new data is in the same physical
-+ *		page as the last segment of the bio.
-  *
-  * Try to add the data at @page + @off to the last bvec of @bio.  This is a
-  * a useful optimisation for file systems with a block size smaller than the
-@@ -761,19 +763,25 @@ EXPORT_SYMBOL(bio_add_pc_page);
-  * Return %true on success or %false on failure.
-  */
- bool __bio_try_merge_page(struct bio *bio, struct page *page,
--		unsigned int len, unsigned int off)
-+		unsigned int len, unsigned int off, bool same_page)
- {
- 	if (WARN_ON_ONCE(bio_flagged(bio, BIO_CLONED)))
- 		return false;
- 
- 	if (bio->bi_vcnt > 0) {
- 		struct bio_vec *bv = &bio->bi_io_vec[bio->bi_vcnt - 1];
-+		phys_addr_t vec_end_addr = page_to_phys(bv->bv_page) +
-+			bv->bv_offset + bv->bv_len - 1;
-+		phys_addr_t page_addr = page_to_phys(page);
- 
--		if (page == bv->bv_page && off == bv->bv_offset + bv->bv_len) {
--			bv->bv_len += len;
--			bio->bi_iter.bi_size += len;
--			return true;
--		}
-+		if (vec_end_addr + 1 != page_addr + off)
-+			return false;
-+		if (same_page && (vec_end_addr & PAGE_MASK) != page_addr)
-+			return false;
-+
-+		bv->bv_len += len;
-+		bio->bi_iter.bi_size += len;
-+		return true;
- 	}
- 	return false;
- }
-@@ -819,7 +827,7 @@ EXPORT_SYMBOL_GPL(__bio_add_page);
- int bio_add_page(struct bio *bio, struct page *page,
- 		 unsigned int len, unsigned int offset)
- {
--	if (!__bio_try_merge_page(bio, page, len, offset)) {
-+	if (!__bio_try_merge_page(bio, page, len, offset, false)) {
- 		if (bio_full(bio))
- 			return 0;
- 		__bio_add_page(bio, page, len, offset);
-diff --git a/fs/iomap.c b/fs/iomap.c
-index af736acd9006..0c350e658b7f 100644
---- a/fs/iomap.c
-+++ b/fs/iomap.c
-@@ -318,7 +318,7 @@ iomap_readpage_actor(struct inode *inode, loff_t pos, loff_t length, void *data,
- 	 */
- 	sector = iomap_sector(iomap, pos);
- 	if (ctx->bio && bio_end_sector(ctx->bio) == sector) {
--		if (__bio_try_merge_page(ctx->bio, page, plen, poff))
-+		if (__bio_try_merge_page(ctx->bio, page, plen, poff, true))
- 			goto done;
- 		is_contig = true;
- 	}
-@@ -349,7 +349,7 @@ iomap_readpage_actor(struct inode *inode, loff_t pos, loff_t length, void *data,
- 		ctx->bio->bi_end_io = iomap_read_end_io;
- 	}
- 
--	__bio_add_page(ctx->bio, page, plen, poff);
-+	bio_add_page(ctx->bio, page, plen, poff);
- done:
- 	/*
- 	 * Move the caller beyond our range so that it keeps making progress.
-diff --git a/fs/xfs/xfs_aops.c b/fs/xfs/xfs_aops.c
-index 1f1829e506e8..b9fd44168f61 100644
---- a/fs/xfs/xfs_aops.c
-+++ b/fs/xfs/xfs_aops.c
-@@ -616,12 +616,12 @@ xfs_add_to_ioend(
- 				bdev, sector);
- 	}
- 
--	if (!__bio_try_merge_page(wpc->ioend->io_bio, page, len, poff)) {
-+	if (!__bio_try_merge_page(wpc->ioend->io_bio, page, len, poff, true)) {
- 		if (iop)
- 			atomic_inc(&iop->write_count);
- 		if (bio_full(wpc->ioend->io_bio))
- 			xfs_chain_bio(wpc->ioend, wbc, bdev, sector);
--		__bio_add_page(wpc->ioend->io_bio, page, len, poff);
-+		bio_add_page(wpc->ioend->io_bio, page, len, poff);
- 	}
- 
- 	wpc->ioend->io_size += len;
-diff --git a/include/linux/bio.h b/include/linux/bio.h
-index c5231e5c7e85..1ece9f30294b 100644
---- a/include/linux/bio.h
-+++ b/include/linux/bio.h
-@@ -441,7 +441,7 @@ extern int bio_add_page(struct bio *, struct page *, unsigned int,unsigned int);
- extern int bio_add_pc_page(struct request_queue *, struct bio *, struct page *,
- 			   unsigned int, unsigned int);
- bool __bio_try_merge_page(struct bio *bio, struct page *page,
--		unsigned int len, unsigned int off);
-+		unsigned int len, unsigned int off, bool same_page);
- void __bio_add_page(struct bio *bio, struct page *page,
- 		unsigned int len, unsigned int off);
- int bio_iov_iter_get_pages(struct bio *bio, struct iov_iter *iter);
--- 
-2.9.5
+If anyone gets here with similar problems - memtest your ram before doing a=
+nything!
+
+-b11g
+
+
+=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90 Original Me=
+ssage =E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90
+On Thursday, 3 January 2019 01:26, b11g <b11g@protonmail.com> wrote:
+
+> Hi all,
+>
+> I have several BTRFS success-stories, and I've been an happy user for qui=
+te a long time now. I was therefore surprised to face a BTRFS corruption on=
+ a system I'd just installed.
+>
+> I use NixOS, unstable branch (linux kernel 4.19.12). The system runs on a=
+ SSD with an ext4 boot partition, a simple btrfs root with some subvolumes,=
+ and some swap space only used for hibernation. I was working on my server =
+as normal when I noticed all of my BTRFS subvolumes had been remounted ro. =
+After a short time, I started getting various IO errors ("bus error" by jou=
+rnalctl, "I/O error" by ls etc.). I halted the system (hard reboot), at the=
+ reboot the BTRFS partition would not mount. I suspected the corruption to =
+be disk-related, but smartctl does not show any warning for the disk, and t=
+he ext4 partition seems healthy.
+>
+> Those are the kernel messages logged when I attempt to mount the partitio=
+n:
+> Jan 02 23:39:38 nixos kernel: BTRFS warning (device sdd2): sdd2 checksum =
+verify failed on <L> wanted <A> found <B> level 0
+> Jan 02 23:39:38 nixos kernel: BTRFS error (device sdd2): failed to read b=
+lock groups: -5
+> Jan 02 23:39:38 nixos systemd[1]: Started Cleanup of Temporary Directorie=
+s.
+> Jan 02 23:39:38 nixos kernel: BTRFS error (device sdd2): open_ctree faile=
+d
+>
+> Some queries for the error code I got lead me to those two recent threads=
+:
+> https://www.spinics.net/lists/linux-btrfs/msg84973.html
+> https://www.spinics.net/lists/linux-btrfs/msg83833.html
+>
+> Using btrfs-progs-4.15.1, "btrfs restore /dev/sdd2 /tmp/" fails with:
+> checksum verify failed on <N> found <A> wanted <B>
+> checksum verify failed on <N> found <A> wanted <B>
+> Csum didn't match
+> Could not open root, trying backup super
+> checksum verify failed on <N> found <A> wanted <B>
+> checksum verify failed on <N> found <A> wanted <B>
+> Csum didn't match
+> Could not open root, trying backup super
+> ERROR: superblock bytenr <X> is larger than device size <Y>
+> Could not open root, trying backup super
+>
+> Using btrfs-progs-4.19.1, "btrfs restore /dev/sdd2 /tmp/" succeeds with s=
+ome exceptions:
+> We have looped trying to restore files in /@/nix/store too many times to =
+be making progress, stopping
+>
+> I do not have much time for debugging the issue and I did not lose import=
+ant data, so I tried a couple of commands suggested on the threads and in t=
+he docs (without fully understanding them):
+>
+> "btrfs rescue zero-log /dev/sdd2":
+> checksum verify failed on <N> found <A> wanted <B>
+> checksum verify failed on <N> found <A> wanted <B>
+> Csum didn't match
+> ERROR: could not open ctree
+>
+> "btrfs check --repair /dev/sdd2" (I know, I was not supposed to run this =
+one):
+> Opening filesystem to check...
+> checksum verify failed on <N> found <A> wanted <B>
+> checksum verify failed on <N> found <A> wanted <B>
+> Csum didn't match
+> ERROR: could not open ctree
+>
+> Same for "btrfs check --init-csum-tree /dev/sdd2".
+>
+> I expect to wipe the disk and do a clean start in the following days, I j=
+ust wanted to report this in the hope it helps in the development (sorry fo=
+r the redaction). If you need more information, I'll be glad to help as I c=
+an!
+>
+> Thank you for your work,
+> Cheers,
+>
+> -   b11g
+
 

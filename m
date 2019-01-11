@@ -2,112 +2,210 @@ Return-Path: <SRS0=hHgh=PT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-11.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2540EC43444
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jan 2019 03:44:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 61924C43387
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jan 2019 05:01:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E88C720872
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jan 2019 03:44:14 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="oUu9Z+xx"
+	by mail.kernel.org (Postfix) with ESMTP id 39A0820874
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jan 2019 05:01:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728591AbfAKDoN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 10 Jan 2019 22:44:13 -0500
-Received: from userp2120.oracle.com ([156.151.31.85]:37846 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726531AbfAKDoM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 Jan 2019 22:44:12 -0500
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id x0B3d6LR063493;
-        Fri, 11 Jan 2019 03:43:44 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : from : to :
- references : message-id : date : mime-version : in-reply-to : content-type
- : content-transfer-encoding; s=corp-2018-07-02;
- bh=aQqWrs1LuxpnEDu61JzI0BYWR59CAsPvLevs5hfm+Nk=;
- b=oUu9Z+xxnEZRyhIPG0tcRyEP0yI1w+T5UOc40Iy63bey2vCsdN/TqUvDrRXaKqz4wFn0
- K2sRbNR3THpCC9chY7VuvFckCWROjp6ZpBEdfdOkiV+Psz2NC+01HtnZaRXo038S6qZ+
- I5vJm4RIeGqPNThej8FvVSAmb+ixdWcydStXomi8U8DqSwSEtEh1S8EJhdQ8g+dXTzgn
- DyZAod0H/QRf0HM6mYG0l/jc07Xuyz3Gk5EQkOSIG7bZddXp/XoDPjotMvbkfHlxUGnX
- jEecbUsRDNclXgo1MWh1XpWwOas30AkepCAP1jTw6afH8Qf46tWDygNZzA5DppXacvn3 bQ== 
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by userp2120.oracle.com with ESMTP id 2ptn7rah8v-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Fri, 11 Jan 2019 03:43:43 +0000
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x0B3hgRi017399
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Fri, 11 Jan 2019 03:43:43 GMT
-Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x0B3hg79014927;
-        Fri, 11 Jan 2019 03:43:42 GMT
-Received: from [10.190.142.77] (/192.188.170.109)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 10 Jan 2019 19:43:42 -0800
-Subject: Re: [PATCH v2] btrfs: add kernel scrub log messages
-From:   Anand Jain <anand.jain@oracle.com>
-To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
-References: <1546503460-3183-1-git-send-email-anand.jain@oracle.com>
-Message-ID: <26425a7b-c854-9b32-15ff-ff535cff4a14@oracle.com>
-Date:   Fri, 11 Jan 2019 11:43:28 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
- Thunderbird/52.9.1
+        id S1725774AbfAKFB5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 11 Jan 2019 00:01:57 -0500
+Received: from mx2.suse.de ([195.135.220.15]:42008 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725298AbfAKFB5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 11 Jan 2019 00:01:57 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id CFEEEAEEC;
+        Fri, 11 Jan 2019 05:01:54 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
+Subject: [PATCH v2 2/2] fstests: btrfs: Introduce stress test for deadlock between snapshot delete and other read-write operations
+Date:   Fri, 11 Jan 2019 13:01:51 +0800
+Message-Id: <20190111050151.982-1-wqu@suse.com>
+X-Mailer: git-send-email 2.20.1
 MIME-Version: 1.0
-In-Reply-To: <1546503460-3183-1-git-send-email-anand.jain@oracle.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9132 signatures=668680
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1810050000 definitions=main-1901110028
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Commit fb235dc06fac ("btrfs: qgroup: Move half of the qgroup accounting
+time out of commit trans") could cause ABBA deadlock between backref
+lookup with write lock hold (subvolume deletion) and other read/write
+operations.
 
+It's going to be fixed by "btrfs: qgroup: Don't trigger backref walk at
+delayed ref insert time".
 
-On 01/03/2019 04:17 PM, Anand Jain wrote:
-> scrub kernel messages helps debug and audit, add them to the log.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+This test will generate pwrite background workload, along with
+constant subvolume creation and deletion to trigger the bug.
 
-Ping.
+It needs some time to generate enough files to bump the tree height to
+trigger the bug.
+In my test environment, with 'unsafe' cache mode for the VM, it triggers
+the bug at around 70~90 seconds. So I leave the default runtime to 120s
+to make sure the bug will be triggered.
 
-Thanks.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+changelog:
+v2:
+- Commit message grammar fix.
+- Remove unnecessary comment about how the bug is triggered.
+- Use better signal handle to avoid -EBUSY at umount.
+---
+ tests/btrfs/179     | 116 ++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/179.out |   2 +
+ tests/btrfs/group   |   1 +
+ 3 files changed, 119 insertions(+)
+ create mode 100755 tests/btrfs/179
+ create mode 100644 tests/btrfs/179.out
 
-> ---
-> v1->v2: fix btrfs_info, using string directly. Add spacing.
->   fs/btrfs/scrub.c | 5 +++++
->   1 file changed, 5 insertions(+)
-> 
-> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-> index 6dcd36d7b849..aadafc3e52c7 100644
-> --- a/fs/btrfs/scrub.c
-> +++ b/fs/btrfs/scrub.c
-> @@ -3903,6 +3903,7 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
->   	 */
->   	nofs_flag = memalloc_nofs_save();
->   	if (!is_dev_replace) {
-> +		btrfs_info(fs_info, "scrub: devid %llu started", devid);
->   		/*
->   		 * by holding device list mutex, we can
->   		 * kick off writing super in log tree sync.
-> @@ -3925,6 +3926,10 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
->   	if (progress)
->   		memcpy(progress, &sctx->stat, sizeof(*progress));
->   
-> +	if (!is_dev_replace)
-> +		btrfs_info(fs_info, "scrub: devid %llu %s:%d",
-> +			devid, ret ? "not finished" : "finished", ret);
-> +
->   	mutex_lock(&fs_info->scrub_lock);
->   	dev->scrub_ctx = NULL;
->   	scrub_workers_put(fs_info);
-> 
+diff --git a/tests/btrfs/179 b/tests/btrfs/179
+new file mode 100755
+index 000000000000..4a24ea419a7e
+--- /dev/null
++++ b/tests/btrfs/179
+@@ -0,0 +1,116 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (C) 2019 SUSE Linux Products GmbH. All Rights Reserved.
++#
++# FS QA Test 179
++#
++# Test if btrfs will lockup at subvolume deletion when qgroups are enabled.
++#
++# This bug is going to be fixed by a patch for the kernel titled
++# "btrfs: qgroup: Don't trigger backref walk at delayed ref insert time".
++#
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++
++# real QA test starts here
++
++# Modify as appropriate.
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++
++# default sleep interval
++sleep_time=1
++
++# stress test runtime
++runtime=120
++
++_scratch_mkfs > /dev/null 2>&1
++_scratch_mount
++
++mkdir -p "$SCRATCH_MNT/snapshots"
++$BTRFS_UTIL_PROG subvolume create "$SCRATCH_MNT/src" > /dev/null
++$BTRFS_UTIL_PROG quota enable "$SCRATCH_MNT" > /dev/null
++$BTRFS_UTIL_PROG quota rescan -w "$SCRATCH_MNT" > /dev/null
++
++fill_workload()
++{
++	trap "wait; exit" SIGTERM
++	local i=0
++	while true; do
++		_pwrite_byte 0xcd 0 8K "$SCRATCH_MNT/src/large_$i" > /dev/null
++		_pwrite_byte 0xcd 0 2K "$SCRATCH_MNT/src/inline_$i" > /dev/null
++
++		# Randomly remove some files for every 5 loop
++		if [ $(( $i % 5 )) -eq 0 ]; then
++			victim=$(ls "$SCRATCH_MNT/src" | sort -R | head -n1)
++			rm "$SCRATCH_MNT/src/$victim"
++		fi
++		i=$((i + 1))
++	done
++}
++
++snapshot_workload()
++{
++	trap "wait; exit" SIGTERM
++	local i=0
++	while true; do
++		sleep $sleep_time
++		$BTRFS_UTIL_PROG subvolume snapshot "$SCRATCH_MNT/src" \
++			"$SCRATCH_MNT/snapshots/$i" > /dev/null
++		i=$((i + 1))
++	done
++}
++
++delete_workload()
++{
++	trap "wait; exit" SIGTERM
++	while true; do
++		sleep $((sleep_time * 2))
++		victim=$(ls "$SCRATCH_MNT/snapshots" | sort -R | head -n1)
++		$BTRFS_UTIL_PROG subvolume delete \
++			"$SCRATCH_MNT/snapshots/$victim" > /dev/null
++	done
++}
++
++fill_workload &
++fill_pid=$!
++
++sleep $((sleep_time * 2))
++snapshot_workload &
++snapshot_pid=$!
++delete_workload &
++delete_pid=$!
++
++sleep $runtime
++kill $fill_pid
++wait $fill_pid
++kill $snapshot_pid
++wait $snapshot_pid
++kill $delete_pid
++wait $delete_pid
++
++# success, all done
++echo "Silence is golden"
++
++status=0
++exit
+diff --git a/tests/btrfs/179.out b/tests/btrfs/179.out
+new file mode 100644
+index 000000000000..cb9eba3d34b1
+--- /dev/null
++++ b/tests/btrfs/179.out
+@@ -0,0 +1,2 @@
++QA output created by 179
++Silence is golden
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 04c0254aa4bf..46dd3c9523c2 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -181,3 +181,4 @@
+ 176 auto quick swap volume
+ 177 auto quick swap balance
+ 178 auto quick send
++179 auto qgroup dangerous
+-- 
+2.20.1
+

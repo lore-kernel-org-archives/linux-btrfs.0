@@ -2,265 +2,338 @@ Return-Path: <SRS0=hHgh=PT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,URIBL_BLOCKED
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B5EBBC43387
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jan 2019 10:38:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3911AC43387
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jan 2019 11:02:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 66D322177B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jan 2019 10:38:11 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="RlWq3wfj"
+	by mail.kernel.org (Postfix) with ESMTP id 09B7C21783
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jan 2019 11:02:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730835AbfAKKiL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 11 Jan 2019 05:38:11 -0500
-Received: from mail-vs1-f66.google.com ([209.85.217.66]:43543 "EHLO
-        mail-vs1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729173AbfAKKiK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 Jan 2019 05:38:10 -0500
-Received: by mail-vs1-f66.google.com with SMTP id x1so8892994vsc.10;
-        Fri, 11 Jan 2019 02:38:08 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
-         :subject:to:cc:content-transfer-encoding;
-        bh=vFl7fuFZSjd24vwRqqfAk64m2cw96FcwCj6HHwIBcAc=;
-        b=RlWq3wfjrg1KtyI0/hUrtqNVvcshDxGGjNxucZz3LNTTl7r1tKZwGBB1FF+QiqTnov
-         UG3XaBc37PITh1L/nExBaS+2qVV8sqaX3kDSB6PLy2iFdUKWZR/zZm8RPrXbdyfY50Kx
-         fEVxUQv22lGcyvh2YCOhqlQddVMXLjrZRhPuVigm/aR9XPj13AjaA7Rqo9GMhx9JIX+a
-         u8CXMOESbhBxGqwYpCgbuXJrBkKJvN3HtPYnIbu3c1R1RCDuyLdExnkngbZ2G0sLlv+W
-         i+5jKOertufXH372sAsjTF9kO+omP2sEN9yJsQabr9KHR5hqQHGzSqWbNs7K5YHowHJe
-         Sd6w==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
-         :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=vFl7fuFZSjd24vwRqqfAk64m2cw96FcwCj6HHwIBcAc=;
-        b=RmL2P5IVJrfB8mjmCdd4q3Xx8UdoXxmx59zv1Kw0lqRnxrc8TKqLzM8JAeYPZGgPBj
-         3zjCRukaG3jLV6Giak0rlizxXQxwq4mAmLDnucY8u+86efCndXi/9Nn8TTWyxYXCX2if
-         be8Dcf/oZOXASuaixvTqIhCDprHelAqj+4QMVo6cMq/W1UxVmzdche3T8qpLut7PU8SB
-         4tnTApmLTn8jKu9CE7jW9Qe9s0oOHCWrnyrIzJIASb+XX9VNkG920BhCzv+pkwZVK4jO
-         DtACj7gx06s3ZQgLrw8XZkHNTkbiKK3gpVrp1GFiIrRzfmcmCCjHySqLskB2GjqooLbg
-         Xpaw==
-X-Gm-Message-State: AJcUukdBzsZTNo3rL5TAOAJteXCVaHezI0r4jlHzx5/g0lzLtkW62Icj
-        79qO/RNYjw348Y99sMGhiwYtcAxWAIGwGCDPCUh0PQ==
-X-Google-Smtp-Source: ALg8bN5qobjc8En2NcPWubY3w4rZ/ciKxsiW/1jNWnP6xgk2BnGC7e8janBA6cWMvj6u/zUkRtGjK4Y02FXvfcMTvhg=
-X-Received: by 2002:a67:c806:: with SMTP id u6mr5775646vsk.206.1547203088258;
- Fri, 11 Jan 2019 02:38:08 -0800 (PST)
-MIME-Version: 1.0
-References: <20190111050151.982-1-wqu@suse.com>
-In-Reply-To: <20190111050151.982-1-wqu@suse.com>
-Reply-To: fdmanana@gmail.com
-From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Fri, 11 Jan 2019 10:37:57 +0000
-Message-ID: <CAL3q7H6a__fmUhaWvMsgAtOGF2wGkTBgHNDo_zMBuJZ4AdgUQQ@mail.gmail.com>
-Subject: Re: [PATCH v2 2/2] fstests: btrfs: Introduce stress test for deadlock
- between snapshot delete and other read-write operations
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>,
-        fstests <fstests@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+        id S1731102AbfAKLB6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 11 Jan 2019 06:01:58 -0500
+Received: from mx1.redhat.com ([209.132.183.28]:55948 "EHLO mx1.redhat.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1729905AbfAKLB6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 11 Jan 2019 06:01:58 -0500
+Received: from smtp.corp.redhat.com (int-mx05.intmail.prod.int.phx2.redhat.com [10.5.11.15])
+        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mx1.redhat.com (Postfix) with ESMTPS id 89B738E688;
+        Fri, 11 Jan 2019 11:01:56 +0000 (UTC)
+Received: from localhost (ovpn-8-28.pek2.redhat.com [10.72.8.28])
+        by smtp.corp.redhat.com (Postfix) with ESMTP id CE6795D6AA;
+        Fri, 11 Jan 2019 11:01:33 +0000 (UTC)
+From:   Ming Lei <ming.lei@redhat.com>
+To:     Jens Axboe <axboe@kernel.dk>
+Cc:     linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-mm@kvack.org, Theodore Ts'o <tytso@mit.edu>,
+        Omar Sandoval <osandov@fb.com>,
+        Sagi Grimberg <sagi@grimberg.me>,
+        Dave Chinner <dchinner@redhat.com>,
+        Kent Overstreet <kent.overstreet@gmail.com>,
+        Mike Snitzer <snitzer@redhat.com>, dm-devel@redhat.com,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        linux-fsdevel@vger.kernel.org, linux-raid@vger.kernel.org,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
+        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
+        Christoph Hellwig <hch@lst.de>, linux-ext4@vger.kernel.org,
+        Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
+        Boaz Harrosh <ooo@electrozaur.com>,
+        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com,
+        Ming Lei <ming.lei@redhat.com>
+Subject: [PATCH V13 00/19] block: support multi-page bvec 
+Date:   Fri, 11 Jan 2019 19:01:08 +0800
+Message-Id: <20190111110127.21664-1-ming.lei@redhat.com>
+X-Scanned-By: MIMEDefang 2.79 on 10.5.11.15
+X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.25]); Fri, 11 Jan 2019 11:01:57 +0000 (UTC)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Jan 11, 2019 at 5:38 AM Qu Wenruo <wqu@suse.com> wrote:
->
-> Commit fb235dc06fac ("btrfs: qgroup: Move half of the qgroup accounting
-> time out of commit trans") could cause ABBA deadlock between backref
-> lookup with write lock hold (subvolume deletion) and other read/write
-> operations.
->
-> It's going to be fixed by "btrfs: qgroup: Don't trigger backref walk at
-> delayed ref insert time".
->
-> This test will generate pwrite background workload, along with
-> constant subvolume creation and deletion to trigger the bug.
->
-> It needs some time to generate enough files to bump the tree height to
-> trigger the bug.
-> In my test environment, with 'unsafe' cache mode for the VM, it triggers
-> the bug at around 70~90 seconds. So I leave the default runtime to 120s
-> to make sure the bug will be triggered.
->
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+Hi,
 
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+This patchset brings multi-page bvec into block layer:
 
-Thanks.
+1) what is multi-page bvec?
 
-> ---
-> changelog:
-> v2:
-> - Commit message grammar fix.
-> - Remove unnecessary comment about how the bug is triggered.
-> - Use better signal handle to avoid -EBUSY at umount.
-> ---
->  tests/btrfs/179     | 116 ++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/179.out |   2 +
->  tests/btrfs/group   |   1 +
->  3 files changed, 119 insertions(+)
->  create mode 100755 tests/btrfs/179
->  create mode 100644 tests/btrfs/179.out
->
-> diff --git a/tests/btrfs/179 b/tests/btrfs/179
-> new file mode 100755
-> index 000000000000..4a24ea419a7e
-> --- /dev/null
-> +++ b/tests/btrfs/179
-> @@ -0,0 +1,116 @@
-> +#! /bin/bash
-> +# SPDX-License-Identifier: GPL-2.0
-> +# Copyright (C) 2019 SUSE Linux Products GmbH. All Rights Reserved.
-> +#
-> +# FS QA Test 179
-> +#
-> +# Test if btrfs will lockup at subvolume deletion when qgroups are enabl=
-ed.
-> +#
-> +# This bug is going to be fixed by a patch for the kernel titled
-> +# "btrfs: qgroup: Don't trigger backref walk at delayed ref insert time"=
-.
-> +#
-> +seq=3D`basename $0`
-> +seqres=3D$RESULT_DIR/$seq
-> +echo "QA output created by $seq"
-> +
-> +here=3D`pwd`
-> +tmp=3D/tmp/$$
-> +status=3D1       # failure is the default!
-> +trap "_cleanup; exit \$status" 0 1 2 3 15
-> +
-> +_cleanup()
-> +{
-> +       cd /
-> +       rm -f $tmp.*
-> +}
-> +
-> +# get standard environment, filters and checks
-> +. ./common/rc
-> +. ./common/filter
-> +
-> +# remove previous $seqres.full before test
-> +rm -f $seqres.full
-> +
-> +# real QA test starts here
-> +
-> +# Modify as appropriate.
-> +_supported_fs btrfs
-> +_supported_os Linux
-> +_require_scratch
-> +
-> +# default sleep interval
-> +sleep_time=3D1
-> +
-> +# stress test runtime
-> +runtime=3D120
-> +
-> +_scratch_mkfs > /dev/null 2>&1
-> +_scratch_mount
-> +
-> +mkdir -p "$SCRATCH_MNT/snapshots"
-> +$BTRFS_UTIL_PROG subvolume create "$SCRATCH_MNT/src" > /dev/null
-> +$BTRFS_UTIL_PROG quota enable "$SCRATCH_MNT" > /dev/null
-> +$BTRFS_UTIL_PROG quota rescan -w "$SCRATCH_MNT" > /dev/null
-> +
-> +fill_workload()
-> +{
-> +       trap "wait; exit" SIGTERM
-> +       local i=3D0
-> +       while true; do
-> +               _pwrite_byte 0xcd 0 8K "$SCRATCH_MNT/src/large_$i" > /dev=
-/null
-> +               _pwrite_byte 0xcd 0 2K "$SCRATCH_MNT/src/inline_$i" > /de=
-v/null
-> +
-> +               # Randomly remove some files for every 5 loop
-> +               if [ $(( $i % 5 )) -eq 0 ]; then
-> +                       victim=3D$(ls "$SCRATCH_MNT/src" | sort -R | head=
- -n1)
-> +                       rm "$SCRATCH_MNT/src/$victim"
-> +               fi
-> +               i=3D$((i + 1))
-> +       done
-> +}
-> +
-> +snapshot_workload()
-> +{
-> +       trap "wait; exit" SIGTERM
-> +       local i=3D0
-> +       while true; do
-> +               sleep $sleep_time
-> +               $BTRFS_UTIL_PROG subvolume snapshot "$SCRATCH_MNT/src" \
-> +                       "$SCRATCH_MNT/snapshots/$i" > /dev/null
-> +               i=3D$((i + 1))
-> +       done
-> +}
-> +
-> +delete_workload()
-> +{
-> +       trap "wait; exit" SIGTERM
-> +       while true; do
-> +               sleep $((sleep_time * 2))
-> +               victim=3D$(ls "$SCRATCH_MNT/snapshots" | sort -R | head -=
-n1)
-> +               $BTRFS_UTIL_PROG subvolume delete \
-> +                       "$SCRATCH_MNT/snapshots/$victim" > /dev/null
-> +       done
-> +}
-> +
-> +fill_workload &
-> +fill_pid=3D$!
-> +
-> +sleep $((sleep_time * 2))
-> +snapshot_workload &
-> +snapshot_pid=3D$!
-> +delete_workload &
-> +delete_pid=3D$!
-> +
-> +sleep $runtime
-> +kill $fill_pid
-> +wait $fill_pid
-> +kill $snapshot_pid
-> +wait $snapshot_pid
-> +kill $delete_pid
-> +wait $delete_pid
-> +
-> +# success, all done
-> +echo "Silence is golden"
-> +
-> +status=3D0
-> +exit
-> diff --git a/tests/btrfs/179.out b/tests/btrfs/179.out
-> new file mode 100644
-> index 000000000000..cb9eba3d34b1
-> --- /dev/null
-> +++ b/tests/btrfs/179.out
-> @@ -0,0 +1,2 @@
-> +QA output created by 179
-> +Silence is golden
-> diff --git a/tests/btrfs/group b/tests/btrfs/group
-> index 04c0254aa4bf..46dd3c9523c2 100644
-> --- a/tests/btrfs/group
-> +++ b/tests/btrfs/group
-> @@ -181,3 +181,4 @@
->  176 auto quick swap volume
->  177 auto quick swap balance
->  178 auto quick send
-> +179 auto qgroup dangerous
-> --
-> 2.20.1
->
+Multipage bvecs means that one 'struct bio_bvec' can hold multiple pages
+which are physically contiguous instead of one single page used in linux
+kernel for long time.
+
+2) why is multi-page bvec introduced?
+
+Kent proposed the idea[1] first. 
+
+As system's RAM becomes much bigger than before, and huge page, transparent
+huge page and memory compaction are widely used, it is a bit easy now
+to see physically contiguous pages from fs in I/O. On the other hand, from
+block layer's view, it isn't necessary to store intermediate pages into bvec,
+and it is enough to just store the physicallly contiguous 'segment' in each
+io vector.
+
+Also huge pages are being brought to filesystem and swap [2][6], we can
+do IO on a hugepage each time[3], which requires that one bio can transfer
+at least one huge page one time. Turns out it isn't flexiable to change
+BIO_MAX_PAGES simply[3][5]. Multipage bvec can fit in this case very well.
+As we saw, if CONFIG_THP_SWAP is enabled, BIO_MAX_PAGES can be configured
+as much bigger, such as 512, which requires at least two 4K pages for holding
+the bvec table.
+
+With multi-page bvec:
+
+- Inside block layer, both bio splitting and sg map can become more
+efficient than before by just traversing the physically contiguous
+'segment' instead of each page.
+
+- segment handling in block layer can be improved much in future since it
+should be quite easy to convert multipage bvec into segment easily. For
+example, we might just store segment in each bvec directly in future.
+
+- bio size can be increased and it should improve some high-bandwidth IO
+case in theory[4].
+
+- there is opportunity in future to improve memory footprint of bvecs. 
+
+3) how is multi-page bvec implemented in this patchset?
+
+Patch 1 ~ 4 parpares for supporting multi-page bvec. 
+
+Patches 5 ~ 15 implement multipage bvec in block layer:
+
+	- put all tricks into bvec/bio/rq iterators, and as far as
+	drivers and fs use these standard iterators, they are happy
+	with multipage bvec
+
+	- introduce bio_for_each_bvec() to iterate over multipage bvec for splitting
+	bio and mapping sg
+
+	- keep current bio_for_each_segment*() to itereate over singlepage bvec and
+	make sure current users won't be broken; especailly, convert to this
+	new helper prototype in single patch 21 given it is bascially a mechanism
+	conversion
+
+	- deal with iomap & xfs's sub-pagesize io vec in patch 13
+
+	- enalbe multipage bvec in patch 14 
+
+Patch 16 redefines BIO_MAX_PAGES as 256.
+
+Patch 17 documents usages of bio iterator helpers.
+
+Patch 18~19 kills NO_SG_MERGE.
+
+These patches can be found in the following git tree:
+
+	git:  https://github.com/ming1/linux.git  for-4.21-block-mp-bvec-V12
+
+Lots of test(blktest, xfstests, ltp io, ...) have been run with this patchset,
+and not see regression.
+
+Thanks Christoph for reviewing the early version and providing very good
+suggestions, such as: introduce bio_init_with_vec_table(), remove another
+unnecessary helpers for cleanup and so on.
+
+Thanks Chritoph and Omar for reviewing V10/V11/V12, and provides lots of
+helpful comments.
+
+V13:
+	- rebase on v5.0-rc2
+	- address Omar's comment on patch 1 of V12 by using V11's approach
+	- rename one local vairable in patch 15 as suggested by Christoph
+
+V12:
+	- deal with non-cluster by max segment size & segment boundary limit
+	- rename bvec helper's name
+	- revert new change on bvec_iter_advance() in V11
+	- introduce rq_for_each_bvec()
+	- use simpler check on enalbing multi-page bvec
+	- fix Document change
+
+V11:
+	- address most of reviews from Omar and christoph
+	- rename mp_bvec_* as segment_* helpers
+	- remove 'mp' parameter from bvec_iter_advance() and related helpers
+	- cleanup patch on bvec_split_segs() and blk_bio_segment_split(),
+	  remove unnecessary checks
+	- simplify bvec_last_segment()
+	- drop bio_pages_all()
+	- introduce dedicated functions/file for handling non-cluser bio for
+	avoiding checking queue cluster before adding page to bio
+	- introduce bio_try_merge_segment() for simplifying iomap/xfs page
+	  accounting code
+	- Fix Document change
+
+V10:
+	- no any code change, just add more guys and list into patch's CC list,
+	as suggested by Christoph and Dave Chinner
+V9:
+	- fix regression on iomap's sub-pagesize io vec, covered by patch 13
+V8:
+	- remove prepare patches which all are merged to linus tree
+	- rebase on for-4.21/block
+	- address comments on V7
+	- add patches of killing NO_SG_MERGE
+
+V7:
+	- include Christoph and Mike's bio_clone_bioset() patches, which is
+	  actually prepare patches for multipage bvec
+	- address Christoph's comments
+
+V6:
+	- avoid to introduce lots of renaming, follow Jen's suggestion of
+	using the name of chunk for multipage io vector
+	- include Christoph's three prepare patches
+	- decrease stack usage for using bio_for_each_chunk_segment_all()
+	- address Kent's comment
+
+V5:
+	- remove some of prepare patches, which have been merged already
+	- add bio_clone_seg_bioset() to fix DM's bio clone, which
+	is introduced by 18a25da84354c6b (dm: ensure bio submission follows
+	a depth-first tree walk)
+	- rebase on the latest block for-v4.18
+
+V4:
+	- rename bio_for_each_segment*() as bio_for_each_page*(), rename
+	bio_segments() as bio_pages(), rename rq_for_each_segment() as
+	rq_for_each_pages(), because these helpers never return real
+	segment, and they always return single page bvec
+	
+	- introducing segment_for_each_page_all()
+
+	- introduce new bio_for_each_segment*()/rq_for_each_segment()/bio_segments()
+	for returning real multipage segment
+
+	- rewrite segment_last_page()
+
+	- rename bvec iterator helper as suggested by Christoph
+
+	- replace comment with applying bio helpers as suggested by Christoph
+
+	- document usage of bio iterator helpers
+
+	- redefine BIO_MAX_PAGES as 256 to make the biggest bvec table
+	accommodated in 4K page
+
+	- move bio_alloc_pages() into bcache as suggested by Christoph
+
+V3:
+	- rebase on v4.13-rc3 with for-next of block tree
+	- run more xfstests: xfs/ext4 over NVMe, Sata, DM(linear),
+	MD(raid1), and not see regressions triggered
+	- add Reviewed-by on some btrfs patches
+	- remove two MD patches because both are merged to linus tree
+	  already
+
+V2:
+	- bvec table direct access in raid has been cleaned, so NO_MP
+	flag is dropped
+	- rebase on recent Neil Brown's change on bio and bounce code
+	- reorganize the patchset
+
+V1:
+	- against v4.10-rc1 and some cleanup in V0 are in -linus already
+	- handle queue_virt_boundary() in mp bvec change and make NVMe happy
+	- further BTRFS cleanup
+	- remove QUEUE_FLAG_SPLIT_MP
+	- rename for two new helpers of bio_for_each_segment_all()
+	- fix bounce convertion
+	- address comments in V0
+
+[1], http://marc.info/?l=linux-kernel&m=141680246629547&w=2
+[2], https://patchwork.kernel.org/patch/9451523/
+[3], http://marc.info/?t=147735447100001&r=1&w=2
+[4], http://marc.info/?l=linux-mm&m=147745525801433&w=2
+[5], http://marc.info/?t=149569484500007&r=1&w=2
+[6], http://marc.info/?t=149820215300004&r=1&w=2
 
 
---=20
-Filipe David Manana,
 
-=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
- right.=E2=80=9D
+
+Christoph Hellwig (1):
+  btrfs: look at bi_size for repair decisions
+
+Ming Lei (18):
+  block: don't use bio->bi_vcnt to figure out segment number
+  block: remove bvec_iter_rewind()
+  block: rename bvec helpers
+  block: introduce multi-page bvec helpers
+  block: introduce bio_for_each_bvec() and rq_for_each_bvec()
+  block: use bio_for_each_bvec() to compute multi-page bvec count
+  block: use bio_for_each_bvec() to map sg
+  block: introduce bvec_last_segment()
+  fs/buffer.c: use bvec iterator to truncate the bio
+  btrfs: use bvec_last_segment to get bio's last page
+  block: loop: pass multi-page bvec to iov_iter
+  bcache: avoid to use bio_for_each_segment_all() in
+    bch_bio_alloc_pages()
+  block: allow bio_for_each_segment_all() to iterate over multi-page
+    bvec
+  block: enable multipage bvecs
+  block: always define BIO_MAX_PAGES as 256
+  block: document usage of bio iterator helpers
+  block: kill QUEUE_FLAG_NO_SG_MERGE
+  block: kill BLK_MQ_F_SG_MERGE
+
+ .clang-format                     |   2 +-
+ Documentation/block/biovecs.txt   |  25 +++++
+ block/bio.c                       |  49 ++++++---
+ block/blk-merge.c                 | 206 +++++++++++++++++++++++++-------------
+ block/blk-mq-debugfs.c            |   2 -
+ block/blk-mq.c                    |   3 -
+ block/bounce.c                    |   6 +-
+ drivers/block/loop.c              |  22 ++--
+ drivers/block/nbd.c               |   2 +-
+ drivers/block/rbd.c               |   2 +-
+ drivers/block/skd_main.c          |   1 -
+ drivers/block/xen-blkfront.c      |   2 +-
+ drivers/md/bcache/btree.c         |   3 +-
+ drivers/md/bcache/util.c          |   6 +-
+ drivers/md/dm-crypt.c             |   3 +-
+ drivers/md/dm-integrity.c         |   2 +-
+ drivers/md/dm-io.c                |   4 +-
+ drivers/md/dm-rq.c                |   2 +-
+ drivers/md/dm-table.c             |  13 ---
+ drivers/md/raid1.c                |   3 +-
+ drivers/mmc/core/queue.c          |   3 +-
+ drivers/nvdimm/blk.c              |   4 +-
+ drivers/nvdimm/btt.c              |   4 +-
+ drivers/scsi/scsi_lib.c           |   2 +-
+ drivers/staging/erofs/data.c      |   3 +-
+ drivers/staging/erofs/unzip_vle.c |   3 +-
+ fs/block_dev.c                    |   6 +-
+ fs/btrfs/compression.c            |   3 +-
+ fs/btrfs/disk-io.c                |   3 +-
+ fs/btrfs/extent_io.c              |  16 +--
+ fs/btrfs/inode.c                  |   6 +-
+ fs/btrfs/raid56.c                 |   3 +-
+ fs/buffer.c                       |   5 +-
+ fs/crypto/bio.c                   |   3 +-
+ fs/direct-io.c                    |   4 +-
+ fs/exofs/ore.c                    |   3 +-
+ fs/exofs/ore_raid.c               |   3 +-
+ fs/ext4/page-io.c                 |   3 +-
+ fs/ext4/readpage.c                |   3 +-
+ fs/f2fs/data.c                    |   9 +-
+ fs/gfs2/lops.c                    |   6 +-
+ fs/gfs2/meta_io.c                 |   3 +-
+ fs/iomap.c                        |  10 +-
+ fs/mpage.c                        |   3 +-
+ fs/xfs/xfs_aops.c                 |   9 +-
+ include/linux/bio.h               |  47 +++++----
+ include/linux/blk-mq.h            |   1 -
+ include/linux/blkdev.h            |   5 +-
+ include/linux/bvec.h              | 104 ++++++++++++++-----
+ include/linux/ceph/messenger.h    |   2 +-
+ lib/iov_iter.c                    |   2 +-
+ net/ceph/messenger.c              |  14 +--
+ 52 files changed, 419 insertions(+), 234 deletions(-)
+
+-- 
+2.9.5
+

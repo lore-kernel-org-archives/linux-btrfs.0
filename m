@@ -2,210 +2,136 @@ Return-Path: <SRS0=hHgh=PT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 61924C43387
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jan 2019 05:01:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1B22FC43387
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jan 2019 08:08:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 39A0820874
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jan 2019 05:01:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id EAB192064C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jan 2019 08:08:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725774AbfAKFB5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 11 Jan 2019 00:01:57 -0500
-Received: from mx2.suse.de ([195.135.220.15]:42008 "EHLO mx1.suse.de"
+        id S1729031AbfAKIIa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 11 Jan 2019 03:08:30 -0500
+Received: from mx2.suse.de ([195.135.220.15]:35882 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725298AbfAKFB5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 Jan 2019 00:01:57 -0500
+        id S1725601AbfAKII3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 11 Jan 2019 03:08:29 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id CFEEEAEEC;
-        Fri, 11 Jan 2019 05:01:54 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
-Subject: [PATCH v2 2/2] fstests: btrfs: Introduce stress test for deadlock between snapshot delete and other read-write operations
-Date:   Fri, 11 Jan 2019 13:01:51 +0800
-Message-Id: <20190111050151.982-1-wqu@suse.com>
-X-Mailer: git-send-email 2.20.1
+        by mx1.suse.de (Postfix) with ESMTP id A2DE8ADE3;
+        Fri, 11 Jan 2019 08:08:27 +0000 (UTC)
+Subject: Re: [PATCH v2] btrfs: raid56: data corruption on a device removal
+From:   Johannes Thumshirn <jthumshirn@suse.de>
+To:     dsterba@suse.cz, Dmitriy Gorokh <dmitriy.gorokh@gmail.com>,
+        linux-btrfs@vger.kernel.org, Ming Lei <ming.lei@redhat.com>
+References: <66F8D435-4E51-4761-B6CF-BA96F4BC5986@wdc.com>
+ <CANYdAbLNAxoAXcxuC+ugpdhsCpTbh0zVjY3T5rtOcpVufnmWRA@mail.gmail.com>
+ <20190104164943.GU23615@twin.jikos.cz>
+ <0a356978-4d95-7597-b71a-d502e94c2461@suse.de>
+ <20190107153456.GW23615@twin.jikos.cz>
+ <be8f867e-deee-ccbd-65c5-e4140fdf7b8c@suse.de>
+Openpgp: preference=signencrypt
+Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <7e1204a4-ed81-7989-f479-f1ee9d0dfd64@suse.de>
+Date:   Fri, 11 Jan 2019 09:08:27 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
+In-Reply-To: <be8f867e-deee-ccbd-65c5-e4140fdf7b8c@suse.de>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Commit fb235dc06fac ("btrfs: qgroup: Move half of the qgroup accounting
-time out of commit trans") could cause ABBA deadlock between backref
-lookup with write lock hold (subvolume deletion) and other read/write
-operations.
+On 10/01/2019 17:49, Johannes Thumshirn wrote:
+> Right, but we're looking for the number of already completed bytes to
+> rewind here, so from bvec.h's docs it is bi_bvec_done.
+> 
+> Dmitriy can you see if this works for you:
+> 
+> diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+> index e74455eb42f9..2d0e2eec5413 100644
+> --- a/fs/btrfs/raid56.c
+> +++ b/fs/btrfs/raid56.c
+> @@ -1350,6 +1350,7 @@ static int find_bio_stripe(struct btrfs_raid_bio
+> *rbio,
+>         struct btrfs_bio_stripe *stripe;
+> 
+>         physical <<= 9;
+> +       physical -= bio->bi_iter.bi_bvec_done;
 
-It's going to be fixed by "btrfs: qgroup: Don't trigger backref walk at
-delayed ref insert time".
+OK talked to Hannes about this issue, he says the only way is to save
+the iterator state before submitting the bio.
 
-This test will generate pwrite background workload, along with
-constant subvolume creation and deletion to trigger the bug.
+So the above is bogus too.
 
-It needs some time to generate enough files to bump the tree height to
-trigger the bug.
-In my test environment, with 'unsafe' cache mode for the VM, it triggers
-the bug at around 70~90 seconds. So I leave the default runtime to 120s
-to make sure the bug will be triggered.
+This also is what Kent said in
+https://marc.info/?l=linux-block&m=153549921116441&w=2
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-changelog:
-v2:
-- Commit message grammar fix.
-- Remove unnecessary comment about how the bug is triggered.
-- Use better signal handle to avoid -EBUSY at umount.
----
- tests/btrfs/179     | 116 ++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/179.out |   2 +
- tests/btrfs/group   |   1 +
- 3 files changed, 119 insertions(+)
- create mode 100755 tests/btrfs/179
- create mode 100644 tests/btrfs/179.out
 
-diff --git a/tests/btrfs/179 b/tests/btrfs/179
-new file mode 100755
-index 000000000000..4a24ea419a7e
---- /dev/null
-+++ b/tests/btrfs/179
-@@ -0,0 +1,116 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (C) 2019 SUSE Linux Products GmbH. All Rights Reserved.
-+#
-+# FS QA Test 179
-+#
-+# Test if btrfs will lockup at subvolume deletion when qgroups are enabled.
-+#
-+# This bug is going to be fixed by a patch for the kernel titled
-+# "btrfs: qgroup: Don't trigger backref walk at delayed ref insert time".
-+#
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# remove previous $seqres.full before test
-+rm -f $seqres.full
-+
-+# real QA test starts here
-+
-+# Modify as appropriate.
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+
-+# default sleep interval
-+sleep_time=1
-+
-+# stress test runtime
-+runtime=120
-+
-+_scratch_mkfs > /dev/null 2>&1
-+_scratch_mount
-+
-+mkdir -p "$SCRATCH_MNT/snapshots"
-+$BTRFS_UTIL_PROG subvolume create "$SCRATCH_MNT/src" > /dev/null
-+$BTRFS_UTIL_PROG quota enable "$SCRATCH_MNT" > /dev/null
-+$BTRFS_UTIL_PROG quota rescan -w "$SCRATCH_MNT" > /dev/null
-+
-+fill_workload()
-+{
-+	trap "wait; exit" SIGTERM
-+	local i=0
-+	while true; do
-+		_pwrite_byte 0xcd 0 8K "$SCRATCH_MNT/src/large_$i" > /dev/null
-+		_pwrite_byte 0xcd 0 2K "$SCRATCH_MNT/src/inline_$i" > /dev/null
-+
-+		# Randomly remove some files for every 5 loop
-+		if [ $(( $i % 5 )) -eq 0 ]; then
-+			victim=$(ls "$SCRATCH_MNT/src" | sort -R | head -n1)
-+			rm "$SCRATCH_MNT/src/$victim"
-+		fi
-+		i=$((i + 1))
-+	done
-+}
-+
-+snapshot_workload()
-+{
-+	trap "wait; exit" SIGTERM
-+	local i=0
-+	while true; do
-+		sleep $sleep_time
-+		$BTRFS_UTIL_PROG subvolume snapshot "$SCRATCH_MNT/src" \
-+			"$SCRATCH_MNT/snapshots/$i" > /dev/null
-+		i=$((i + 1))
-+	done
-+}
-+
-+delete_workload()
-+{
-+	trap "wait; exit" SIGTERM
-+	while true; do
-+		sleep $((sleep_time * 2))
-+		victim=$(ls "$SCRATCH_MNT/snapshots" | sort -R | head -n1)
-+		$BTRFS_UTIL_PROG subvolume delete \
-+			"$SCRATCH_MNT/snapshots/$victim" > /dev/null
-+	done
-+}
-+
-+fill_workload &
-+fill_pid=$!
-+
-+sleep $((sleep_time * 2))
-+snapshot_workload &
-+snapshot_pid=$!
-+delete_workload &
-+delete_pid=$!
-+
-+sleep $runtime
-+kill $fill_pid
-+wait $fill_pid
-+kill $snapshot_pid
-+wait $snapshot_pid
-+kill $delete_pid
-+wait $delete_pid
-+
-+# success, all done
-+echo "Silence is golden"
-+
-+status=0
-+exit
-diff --git a/tests/btrfs/179.out b/tests/btrfs/179.out
-new file mode 100644
-index 000000000000..cb9eba3d34b1
---- /dev/null
-+++ b/tests/btrfs/179.out
-@@ -0,0 +1,2 @@
-+QA output created by 179
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 04c0254aa4bf..46dd3c9523c2 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -181,3 +181,4 @@
- 176 auto quick swap volume
- 177 auto quick swap balance
- 178 auto quick send
-+179 auto qgroup dangerous
 -- 
-2.20.1
-
+Johannes Thumshirn                            SUSE Labs Filesystems
+jthumshirn@suse.de                                +49 911 74053 689
+SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
+GF: Felix Imendörffer, Jane Smithard, Graham Norton
+HRB 21284 (AG Nürnberg)
+Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850

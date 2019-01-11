@@ -2,80 +2,104 @@ Return-Path: <SRS0=hHgh=PT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.1 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D4DA5C43387
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jan 2019 15:21:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 92152C43387
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jan 2019 15:21:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A35B220675
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jan 2019 15:21:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 63E4F20675
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jan 2019 15:21:11 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="DcbvWmBE"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="K9b0ezpf"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730251AbfAKPVI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 11 Jan 2019 10:21:08 -0500
-Received: from mail-qk1-f172.google.com ([209.85.222.172]:43660 "EHLO
-        mail-qk1-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727821AbfAKPVI (ORCPT
+        id S1731143AbfAKPVK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 11 Jan 2019 10:21:10 -0500
+Received: from mail-qk1-f193.google.com ([209.85.222.193]:36510 "EHLO
+        mail-qk1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727821AbfAKPVJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 Jan 2019 10:21:08 -0500
-Received: by mail-qk1-f172.google.com with SMTP id z18so6700994qkj.10
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 Jan 2019 07:21:07 -0800 (PST)
+        Fri, 11 Jan 2019 10:21:09 -0500
+Received: by mail-qk1-f193.google.com with SMTP id o125so6716448qkf.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 Jan 2019 07:21:09 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id;
-        bh=2/6ol2inuIb3c0nCcO+qg1oQ9oUW6ihPFAUnrG4yywo=;
-        b=DcbvWmBEg7GWHnE3eOkIdAv0R2qsyuSLNyhHFxAS3SHZIlkX3MH/T2AUnUPIW8paiO
-         vbNQdmVpQn5aktGFjZYfNbQeqZd4Z9K7iUaiIOdNVMfpCUl+RXw0Id0XqUDxnS9OEqEe
-         9s8BoVxna9kpbIGm6uRylkNGrZtA0Qqnr5qzNXDUlpG6FkSMoJv5ORLGql3/3svoGQjw
-         ClTor+xSUQC5PvE44I1vllYzsOI29p0+Nd0rHt4YQG5YbcdaAGwqOZ9SIDbAsgcT85Q9
-         aWHoQu85E/eBW4GRdiZ7piphNPiN5uQ9VcNCjlABbSdqsqDA8r3/IVtkyNz9a8vqXLJz
-         /4+Q==
+        h=from:to:subject:date:message-id:in-reply-to:references;
+        bh=N45SWvepwcroEPnphEt+dLodfsACU/p3srtHQgF6qi4=;
+        b=K9b0ezpfviPiMF9CQEWVfp7Bgvof66OOoTF9Z/MoYvejLFjFGa85KZx/jmjE4f8ofY
+         HiAmko6NfKVnckdOrj2Zbvfo6V48Tg2eJlDuabILdSHXHB1WRNPd+qnva9DAqO25/dAv
+         asT1HW+ywJXZM09s1F1lePlwqnKSF+W1xgKbMRcdJDLyi0BiIZ7ck6qbaz92L1KtXNJG
+         8nEolBMwfkrwI7INONaRhvhWWWzAUp+ub6RpV4tcRgljnL8pxCXV6gH4rhxyIZEc9ndl
+         PBAfy8qiM8gPI0+ZdjkJlaNflkSooNfGx2iWTRb+1NSh37GCPKK6NcWyA8nRMX6FpMKM
+         INQw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id;
-        bh=2/6ol2inuIb3c0nCcO+qg1oQ9oUW6ihPFAUnrG4yywo=;
-        b=egsNQW/FkehYLwlo/K3o/g7CgDs2vn0Vt2b7y9A0cQWoVSEA++BAJKg8/l/m05frKx
-         5aG901rwrQkFls/ygyktIfbnBUbICSW9JYp9J1gddAwZXSvF+qOa7s5WK6mNpOtEPark
-         TVVa5MAWy07mPOuDKJHmn8WXFiHczNIFFQ1kvyl3MQPKuemZWsZf/YxHC8C2nKZ1H/Jc
-         Z4rG4leQRcCdku3x2Jn/6YsVYLbGm42ZlrSuD+B6RbZ0+hAi8lvQzWSzx63DuwGcIY1H
-         80jB/0wazODbQuA+xzubqkyozCbAr5vxIzGYViM09WngzJ3AY4ll0Be0CY3yn7G8/o8W
-         cKdg==
-X-Gm-Message-State: AJcUukfMGHAkok80zo/8pzo7IJRs/ejZKZwl7KR+RvcYqJxeBqNF76cD
-        UemCJDCz74ALjJqsoXq/6yAwKB9f+eI=
-X-Google-Smtp-Source: ALg8bN7L4ZmkxKAs0uSf3c6Sv69GVNsKoQXqMENPWSFWZJXMY4oOk3UWRhS+7InftDZJq0TURGUZbQ==
-X-Received: by 2002:a37:1a1c:: with SMTP id a28mr13082619qka.99.1547220066504;
-        Fri, 11 Jan 2019 07:21:06 -0800 (PST)
+        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
+         :references;
+        bh=N45SWvepwcroEPnphEt+dLodfsACU/p3srtHQgF6qi4=;
+        b=gyw0Geyh1hBYlV/F+0ZiR52txvN8VdXkTFaaaIbYLVxmHHc71ejRKvOWo1AnXrMxxm
+         rgEpVzDtKpQEminQoyYFGzlvWZPLgIQ8/UJNxyZWhU5PS0DUmFjuK6U+t6Gadr7ejVqW
+         6s7DNP3TsqF8hM+FkF+G5+yWf+oRIaWGlS5azXdxQzhtXtupjIMEf0hSZ3iY7c70FYBI
+         2YEZtAouJsnaRqJfhP0MOWlUmMifxf2Gw1gfjuAC6IoApHOInLVEVEGfqCN2JNpUuNxJ
+         XpRh1mHesN3GQNgwhntTOMMhx6kkxpp0h01TTrCL0j4LRXtOkFkNCbRfzdBRZDlTIgHW
+         fmAA==
+X-Gm-Message-State: AJcUukfipyUsJqryiwCCq9f5aJwPjKbyoJ1Sh+gHesxXXPKvQw+a5U6U
+        tju3sqWVLXpcjLHoN89nVq7D20XdXoA=
+X-Google-Smtp-Source: ALg8bN6ogrHeFAEK6Ny5olSrx5lu9JLjNzz1PlpjVlzX6Uc2zw5hrnKL5oFZWUFnd8uO7xzDaTWECw==
+X-Received: by 2002:a37:96c2:: with SMTP id y185mr12728016qkd.239.1547220068250;
+        Fri, 11 Jan 2019 07:21:08 -0800 (PST)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id n72sm44090815qki.26.2019.01.11.07.21.05
+        by smtp.gmail.com with ESMTPSA id w34sm46564659qtj.27.2019.01.11.07.21.07
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Fri, 11 Jan 2019 07:21:05 -0800 (PST)
+        Fri, 11 Jan 2019 07:21:07 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 0/3][V3] Delayed iput fixes
-Date:   Fri, 11 Jan 2019 10:21:00 -0500
-Message-Id: <20190111152103.17001-1-josef@toxicpanda.com>
+Subject: [PATCH 1/3] btrfs: run delayed iputs before committing
+Date:   Fri, 11 Jan 2019 10:21:01 -0500
+Message-Id: <20190111152103.17001-2-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.14.3
+In-Reply-To: <20190111152103.17001-1-josef@toxicpanda.com>
+References: <20190111152103.17001-1-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-v1->v2:
-- only wakeup if the cleaner isn't currently doing work.
-- re-arranged some stuff for running delayed iputs during flushint.
-- removed the open code wakeup in the waitqueue patch.
+Delayed iputs means we can have final iputs of deleted inodes in the
+queue, which could potentially generate a lot of pinned space that could
+be free'd.  So before we decide to commit the transaction for ENOPSC
+reasons, run the delayed iputs so that any potential space is free'd up.
+If there is and we freed enough we can then commit the transaction and
+potentially be able to make our reservation.
 
--- Original message --
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+Reviewed-by: Omar Sandoval <osandov@fb.com>
+---
+ fs/btrfs/extent-tree.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-Here are some delayed iput fixes.  Delayed iputs can hold reservations for a
-while and there's no real good way to make sure they were gone for good, which
-means we could early enospc when in reality if we had just waited for the iput
-we would have had plenty of space.  So fix this up by making us wait for delayed
-iputs when deciding if we need to commit for enospc flushing, and then cleanup
-and rework how we run delayed iputs to make it more straightforward to wait on
-them and make sure we're all done using them.  Thanks,
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 8dfddfd3f315..0127d272cd2a 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4953,6 +4953,15 @@ static void flush_space(struct btrfs_fs_info *fs_info,
+ 			ret = 0;
+ 		break;
+ 	case COMMIT_TRANS:
++		/*
++		 * If we have pending delayed iputs then we could free up a
++		 * bunch of pinned space, so make sure we run the iputs before
++		 * we do our pinned bytes check below.
++		 */
++		mutex_lock(&fs_info->cleaner_delayed_iput_mutex);
++		btrfs_run_delayed_iputs(fs_info);
++		mutex_unlock(&fs_info->cleaner_delayed_iput_mutex);
++
+ 		ret = may_commit_transaction(fs_info, space_info);
+ 		break;
+ 	default:
+-- 
+2.14.3
 
-Josef

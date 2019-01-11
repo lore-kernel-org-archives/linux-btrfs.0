@@ -6,26 +6,26 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 48B7AC43387
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jan 2019 11:07:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F0A61C43444
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jan 2019 11:07:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2107D2177B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jan 2019 11:07:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BD1AD2177B
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jan 2019 11:07:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731991AbfAKLGL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 11 Jan 2019 06:06:11 -0500
-Received: from mx1.redhat.com ([209.132.183.28]:44744 "EHLO mx1.redhat.com"
+        id S1731364AbfAKLGH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 11 Jan 2019 06:06:07 -0500
+Received: from mx1.redhat.com ([209.132.183.28]:58296 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1731513AbfAKLGJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 Jan 2019 06:06:09 -0500
-Received: from smtp.corp.redhat.com (int-mx02.intmail.prod.int.phx2.redhat.com [10.5.11.12])
+        id S1725267AbfAKLGG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 11 Jan 2019 06:06:06 -0500
+Received: from smtp.corp.redhat.com (int-mx08.intmail.prod.int.phx2.redhat.com [10.5.11.23])
         (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
         (No client certificate requested)
-        by mx1.redhat.com (Postfix) with ESMTPS id 9E464144194;
-        Fri, 11 Jan 2019 11:06:08 +0000 (UTC)
+        by mx1.redhat.com (Postfix) with ESMTPS id 74A71C0C8CF2;
+        Fri, 11 Jan 2019 11:06:05 +0000 (UTC)
 Received: from localhost (ovpn-8-28.pek2.redhat.com [10.72.8.28])
-        by smtp.corp.redhat.com (Postfix) with ESMTP id C618A6B460;
-        Fri, 11 Jan 2019 11:06:07 +0000 (UTC)
+        by smtp.corp.redhat.com (Postfix) with ESMTP id 77C0827CB2;
+        Fri, 11 Jan 2019 11:06:04 +0000 (UTC)
 From:   Ming Lei <ming.lei@redhat.com>
 To:     Jens Axboe <axboe@kernel.dk>
 Cc:     linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
@@ -45,62 +45,52 @@ Cc:     linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
         Boaz Harrosh <ooo@electrozaur.com>,
         Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com,
         Ming Lei <ming.lei@redhat.com>
-Subject: [PATCH V13 17/19] block: document usage of bio iterator helpers
-Date:   Fri, 11 Jan 2019 19:01:25 +0800
-Message-Id: <20190111110127.21664-18-ming.lei@redhat.com>
+Subject: [PATCH V13 16/19] block: always define BIO_MAX_PAGES as 256
+Date:   Fri, 11 Jan 2019 19:01:24 +0800
+Message-Id: <20190111110127.21664-17-ming.lei@redhat.com>
 In-Reply-To: <20190111110127.21664-1-ming.lei@redhat.com>
 References: <20190111110127.21664-1-ming.lei@redhat.com>
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.12
-X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.38]); Fri, 11 Jan 2019 11:06:08 +0000 (UTC)
+X-Scanned-By: MIMEDefang 2.84 on 10.5.11.23
+X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.31]); Fri, 11 Jan 2019 11:06:05 +0000 (UTC)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Now multi-page bvec is supported, some helpers may return page by
-page, meantime some may return segment by segment, this patch
-documents the usage.
+Now multi-page bvec can cover CONFIG_THP_SWAP, so we don't need to
+increase BIO_MAX_PAGES for it.
 
-Reviewed-by: Christoph Hellwig <hch@lst.de>
+CONFIG_THP_SWAP needs to split one THP into normal pages and adds
+them all to one bio. With multipage-bvec, it just takes one bvec to
+hold them all.
+
 Reviewed-by: Omar Sandoval <osandov@fb.com>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
 Signed-off-by: Ming Lei <ming.lei@redhat.com>
 ---
- Documentation/block/biovecs.txt | 25 +++++++++++++++++++++++++
- 1 file changed, 25 insertions(+)
+ include/linux/bio.h | 8 --------
+ 1 file changed, 8 deletions(-)
 
-diff --git a/Documentation/block/biovecs.txt b/Documentation/block/biovecs.txt
-index 25689584e6e0..ce6eccaf5df7 100644
---- a/Documentation/block/biovecs.txt
-+++ b/Documentation/block/biovecs.txt
-@@ -117,3 +117,28 @@ Other implications:
-    size limitations and the limitations of the underlying devices. Thus
-    there's no need to define ->merge_bvec_fn() callbacks for individual block
-    drivers.
-+
-+Usage of helpers:
-+=================
-+
-+* The following helpers whose names have the suffix of "_all" can only be used
-+on non-BIO_CLONED bio. They are usually used by filesystem code. Drivers
-+shouldn't use them because the bio may have been split before it reached the
-+driver.
-+
-+	bio_for_each_segment_all()
-+	bio_first_bvec_all()
-+	bio_first_page_all()
-+	bio_last_bvec_all()
-+
-+* The following helpers iterate over single-page segment. The passed 'struct
-+bio_vec' will contain a single-page IO vector during the iteration
-+
-+	bio_for_each_segment()
-+	bio_for_each_segment_all()
-+
-+* The following helpers iterate over multi-page bvec. The passed 'struct
-+bio_vec' will contain a multi-page IO vector during the iteration
-+
-+	bio_for_each_bvec()
-+	rq_for_each_bvec()
+diff --git a/include/linux/bio.h b/include/linux/bio.h
+index 1ece9f30294b..54ef81f11f83 100644
+--- a/include/linux/bio.h
++++ b/include/linux/bio.h
+@@ -34,15 +34,7 @@
+ #define BIO_BUG_ON
+ #endif
+ 
+-#ifdef CONFIG_THP_SWAP
+-#if HPAGE_PMD_NR > 256
+-#define BIO_MAX_PAGES		HPAGE_PMD_NR
+-#else
+ #define BIO_MAX_PAGES		256
+-#endif
+-#else
+-#define BIO_MAX_PAGES		256
+-#endif
+ 
+ #define bio_prio(bio)			(bio)->bi_ioprio
+ #define bio_set_prio(bio, prio)		((bio)->bi_ioprio = prio)
 -- 
 2.9.5
 

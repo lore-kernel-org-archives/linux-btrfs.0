@@ -2,143 +2,72 @@ Return-Path: <SRS0=WqnK=PU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
-	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9C539C43387
-	for <linux-btrfs@archiver.kernel.org>; Sat, 12 Jan 2019 02:12:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9F506C43387
+	for <linux-btrfs@archiver.kernel.org>; Sat, 12 Jan 2019 05:12:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5803920872
-	for <linux-btrfs@archiver.kernel.org>; Sat, 12 Jan 2019 02:12:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5E7A420663
+	for <linux-btrfs@archiver.kernel.org>; Sat, 12 Jan 2019 05:12:59 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="M6OLX2bP"
+	dkim=fail reason="key not found in DNS" (0-bit key) header.d=dewatrust.org header.i=@dewatrust.org header.b="PO4IUw8O"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726460AbfALCMv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 11 Jan 2019 21:12:51 -0500
-Received: from mail-lf1-f65.google.com ([209.85.167.65]:37153 "EHLO
-        mail-lf1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726227AbfALCMv (ORCPT
+        id S1725819AbfALFH4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 12 Jan 2019 00:07:56 -0500
+Received: from vps3.brandsmarketeer.com ([185.109.169.37]:50332 "EHLO
+        vps3.brandsmarketeer.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725791AbfALFHz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 Jan 2019 21:12:51 -0500
-Received: by mail-lf1-f65.google.com with SMTP id y11so12158635lfj.4
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 Jan 2019 18:12:49 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc:content-transfer-encoding;
-        bh=KxfOf6sy3zLqKhPgokc2wLpPb80gLFZq2HWoYotuUEY=;
-        b=M6OLX2bPNHVQpPw0rKVPTYfOQflzgKM6DIqgPVgXnIdHbuI1a0ZKvcJhjCimv4JUK9
-         af6WHGMpI9u55SejJZW9i1wvrk9vUf+Bs8eV5Ixszo3lZpd/q1nzPX/Z/kLsoI9sT1eE
-         Ynvk85a/G4UCTsJRvNxWZL5ifftEkpItGgDrc3PRdLkvnJg+xYSNtuzy1zB5Iyo05m0k
-         88HL0PtJmYg2jxkW5RS5vGlUJl6q82BDj4SfyIHi28MpDBuy0n0nYyeCo//7+VoGAmwU
-         vDFvnJwA29092Ulfaf09dN1EmyrDbA902IM24zPmOHuNyPWo90I4crfeva0gIQK7VULr
-         /2Ug==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc:content-transfer-encoding;
-        bh=KxfOf6sy3zLqKhPgokc2wLpPb80gLFZq2HWoYotuUEY=;
-        b=MICbJ78eghRpiXn+98VaTRoE8Et+4FxNigHrb1790ziZJNbatuCMLqGqEXRfAXNDFF
-         XEN1Q9/Uaa98DsN2oHtERRJR22S20hpGA9kaBJlovQzDJYdfADU7bypddu1hso0tb+Zj
-         PwlUnUpWImJJpR6mvFdIb2gl5JlCkEOvMqfSDh/xJ8m2RqZ7JsNjWL2qICAScZCf1p26
-         w7tUo/MrjoIGYPzYGawWHrwV32va23YzMv2Kp14yamk9jiQkVouGVxSbdz6lQbriTLKy
-         O7BpIFKSVFvNf1LflkswYShLU2SkpLzGIohJXyThfaSzFT6s9EYJt/3rnPkLKuR3imJG
-         xRJQ==
-X-Gm-Message-State: AJcUukcTRMcv+beNh1/fgQ8MzswfOf+drsB26GPEowujUkF0KsVyx6VX
-        c6QLnF7dn8if86cZAeXTMHXLD+4uoWLIhtZOzpzxPLZ1
-X-Google-Smtp-Source: ALg8bN5LXdeni5u3qb7hA5pHp6IEkSSGMVgf0KDsFJ46G5s0n1HO94YJaQjtbOEX0IWmXiMDv4sVxQiwJ38tgmEKjXs=
-X-Received: by 2002:a19:a40f:: with SMTP id q15mr6874353lfc.4.1547259168903;
- Fri, 11 Jan 2019 18:12:48 -0800 (PST)
+        Sat, 12 Jan 2019 00:07:55 -0500
+X-Greylist: delayed 3600 seconds by postgrey-1.27 at vger.kernel.org; Sat, 12 Jan 2019 00:07:55 EST
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=dewatrust.org; s=default; h=Content-Transfer-Encoding:Content-Type:
+        MIME-Version:Message-ID:Reply-To:From:Date:Subject:To:Sender:Cc:Content-ID:
+        Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
+        :Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
+        List-Subscribe:List-Post:List-Owner:List-Archive;
+        bh=JqwbYqiR3cVVf2TRLQpBs3EEMWlucW5NjCSJFhMLShQ=; b=PO4IUw8OY1+X2pKcC0kQBMA2Gw
+        cM5U7c+uvgsx9W+hvPf3+GX0gqovFvs0/Q8W7NAGN1Po1AkSgszBJafr+4uxJRR+gc1nV1NYuCIa1
+        6c2bbA5tzGOkbrfGGN3r1Hrk+HyvGZ4GO68im2BukfZprfKt23+8Jm6/biwUD+heh49stagi84pqP
+        xsB4OEIBa8BCP5GH9SFJIeAZKUdFmJQxZXJckdFrbe2m9EliFOkZEz/U39ahjWhOOlnV2u+HpkJ8X
+        ftPKd3NO3NtYlVINFuZlB0BhgTR/LLZ/eQagAuejsr09ZhSRjDd1EWz0clCWGf2FcVrmOUjPtuBJM
+        U4IhkIsg==;
+Received: from s0903dew by vps3.brandsmarketeer.com with local (Exim 4.91)
+        (envelope-from <dev@edatabase.biz>)
+        id 1gi9ji-0001nX-8L
+        for linux-btrfs@vger.kernel.org; Sat, 12 Jan 2019 08:13:26 +0500
+To:     linux-btrfs@vger.kernel.org
+Subject: =?utf-8?Q?Copy_of:_Hei=D0=93=D1=9Fe_und_saftige_Frauen_in_Ihrer_Stadt_wol?=  =?utf-8?Q?len_Sex?=
+X-PHP-Script: dewatrust.org/index.php/en/platon-contact-us for 185.17.149.163
+X-PHP-Originating-Script: 1019:class.phpmailer.php
+Date:   Sat, 12 Jan 2019 03:13:26 +0000
+From:   AIE <dev@edatabase.biz>
+Reply-To: Edgarquabs <linux-btrfs@vger.kernel.org>
+Message-ID: <61e17377d07804c11d77af4f4a3de190@dewatrust.org>
 MIME-Version: 1.0
-References: <418d4647-8c67-2481-68f1-1e722460c3de@florianstecker.de>
- <51f6646b-ca38-9b34-7061-8ab5227f00ae@suse.com> <2d2ac67d-3cf5-d147-f57b-785dc633821d@florianstecker.de>
- <936b36f0-bd50-3ce1-5045-69a3604d4bfd@suse.com> <7b4fa64b-e981-52c5-4597-40b5ea2df5b3@florianstecker.de>
-In-Reply-To: <7b4fa64b-e981-52c5-4597-40b5ea2df5b3@florianstecker.de>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Fri, 11 Jan 2019 19:12:36 -0700
-Message-ID: <CAJCQCtQF0DU+yAH33iSXu2NBk7TCWCUZ4STC2TExW3+dJpK-Hw@mail.gmail.com>
-Subject: Re: applications hang on a btrfs spanning two partitions
-To:     Florian Stecker <m19@florianstecker.de>
-Cc:     Nikolay Borisov <nborisov@suse.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
+X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
+X-AntiAbuse: Primary Hostname - vps3.brandsmarketeer.com
+X-AntiAbuse: Original Domain - vger.kernel.org
+X-AntiAbuse: Originator/Caller UID/GID - [1019 993] / [47 12]
+X-AntiAbuse: Sender Address Domain - edatabase.biz
+X-Get-Message-Sender-Via: vps3.brandsmarketeer.com: authenticated_id: s0903dew/only user confirmed/virtual account not confirmed
+X-Authenticated-Sender: vps3.brandsmarketeer.com: s0903dew
+X-Source: 
+X-Source-Args: 
+X-Source-Dir: 
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jan 9, 2019 at 1:10 PM Florian Stecker <m19@florianstecker.de> wrot=
-e:
->
->
->
-> On 1/9/19 11:03 AM, Nikolay Borisov wrote:
-> >
-> >
-> > On 9.01.19 =D0=B3. 11:16 =D1=87., Florian Stecker wrote:
-> >>>
-> >>> Provide output of echo w > /proc/sysrq-trigger when the hang occurs
-> >>> otherwise it's hard to figure what's going on.
-> >>>
-> >>
-> >> Here's one, again in gajim. This time, fdatasync() took "only" 2 secon=
-ds:
-> >>
-> >> [42481.243491] sysrq: SysRq : Show Blocked State
-> >> [42481.243494]   task                        PC stack   pid father
-> >> [42481.243566] gajim           D    0 15778  15774 0x00000083
-> >> [42481.243569] Call Trace:
-> >> [42481.243575]  ? __schedule+0x29b/0x8b0
-> >> [42481.243576]  ? bit_wait+0x50/0x50
-> >> [42481.243578]  schedule+0x32/0x90
-> >> [42481.243580]  io_schedule+0x12/0x40
-> >> [42481.243582]  bit_wait_io+0xd/0x50
-> >> [42481.243583]  __wait_on_bit+0x6c/0x80
-> >> [42481.243585]  out_of_line_wait_on_bit+0x91/0xb0
-> >> [42481.243587]  ? init_wait_var_entry+0x40/0x40
-> >> [42481.243605]  write_all_supers+0x418/0xa70 [btrfs]
-> >> [42481.243622]  btrfs_sync_log+0x695/0x910 [btrfs]
-> >> [42481.243625]  ? _raw_spin_lock_irqsave+0x25/0x50
-> >> [42481.243641]  ? btrfs_log_dentry_safe+0x54/0x70 [btrfs]
-> >> [42481.243655]  btrfs_sync_file+0x3a9/0x3d0 [btrfs]
-> >> [42481.243659]  do_fsync+0x38/0x70
-> >> [42481.243661]  __x64_sys_fdatasync+0x13/0x20
-> >> [42481.243663]  do_syscall_64+0x5b/0x170
-> >> [42481.243666]  entry_SYSCALL_64_after_hwframe+0x44/0xa9
-> >> [42481.243667] RIP: 0033:0x7fd4022f873f
-> >> [42481.243671] Code: Bad RIP value.
-> >> [42481.243672] RSP: 002b:00007ffd3710a300 EFLAGS: 00000293 ORIG_RAX:
-> >> 000000000000004b
-> >> [42481.243674] RAX: ffffffffffffffda RBX: 0000000000000019 RCX:
-> >> 00007fd4022f873f
-> >> [42481.243675] RDX: 0000000000000000 RSI: 0000000000000002 RDI:
-> >> 0000000000000019
-> >> [42481.243675] RBP: 0000000000000000 R08: 000055d8d8649f68 R09:
-> >> 00007ffd3710a320
-> >> [42481.243676] R10: 0000000000013000 R11: 0000000000000293 R12:
-> >> 0000000000000000
-> >> [42481.243677] R13: 0000000000000000 R14: 000055d8d8363fa0 R15:
-> >> 000055d8d8613040
-> >
-> > This shows that IO was send to disk to write the supper blocks followin=
-g
-> > an fsync and it's waiting for IO to finish. This seems like a problem i=
-n
-> > the storage layer, i.e IOs being stuck. Check your dmesg for any error.
-> There are no IO errors in dmesg. Also, I never had any problems with
-> this disk, SMART reports nothing, and also btrfs dev stats and btrfs
-> scrub say everything's ok.
+This is a copy of the following message you sent to DEWA TRUST Karachi via DEWA TRUST Associations.
 
-What do you get for:
-mount | grep btrfs
-btrfs insp dump-s -f /dev/sda8
+This is an enquiry email via http://dewatrust.org/ from:
+Edgarquabs <linux-btrfs@vger.kernel.org>
 
-I ran in this same configuration for a long time, maybe 5 months, and
-never ran into this problem. But it was with much older kernel,
-perhaps circa 4.8 era.
+HeiГџe und saftige Frauen in Ihrer Stadt wollen Sex: https://tinyurl.com/sexywomaninyourcity64184
 
-
---=20
-Chris Murphy

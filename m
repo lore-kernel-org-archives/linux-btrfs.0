@@ -7,43 +7,43 @@ X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 82EE6C43387
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Jan 2019 13:30:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EFA21C43387
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Jan 2019 13:31:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 54508206B7
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Jan 2019 13:30:40 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BE7C5206B7
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Jan 2019 13:31:40 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1547472640;
-	bh=4gB7XwOMACJCe52+XR2rZsNt8DKp1imswRYIghkN48I=;
+	s=default; t=1547472700;
+	bh=1IgkYnH4NoPBt1CFSxWMIPgb+d8cbnUnbUnanGk77hY=;
 	h=From:To:Cc:Subject:Date:List-ID:From;
-	b=olJm3xXg6SEXe2PNCMwx7yCPx63Cqs7RXKPSIa9Is/c7O8tv0PmvUpJTKeEi33oBF
-	 CxtBD4/PyLsPqgjCjUGTHIOn1SgR8wvVMkR24mg/pBD8MVRXaUSQy+qczBaFiOEm7l
-	 OIHwr5j+LHD3I9TVmIpPkWY7p6i/pb4A9d6gbf2I=
+	b=2E5AldRbFdsFaMhy33jxG2Ir/aeUAdPqWQzZrYVOJ3GAK7JM0SASFk70NHjV04jSa
+	 MvyquR8zEnW28BdHm3uX6QFjAJYrB5QF2oFv6ujayO6u8CmengIsQUo8sG8A2g9s9s
+	 1iVAFkmHrwbABvLQScj7zjHSC1fB1/G2hcc74hj0=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726664AbfANNaj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 14 Jan 2019 08:30:39 -0500
-Received: from mail.kernel.org ([198.145.29.99]:58356 "EHLO mail.kernel.org"
+        id S1726579AbfANNbj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 14 Jan 2019 08:31:39 -0500
+Received: from mail.kernel.org ([198.145.29.99]:58838 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726538AbfANNaj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Jan 2019 08:30:39 -0500
+        id S1726467AbfANNbj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 Jan 2019 08:31:39 -0500
 Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 7958120651;
-        Mon, 14 Jan 2019 13:30:37 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 2EEBE20651;
+        Mon, 14 Jan 2019 13:31:38 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1547472638;
-        bh=4gB7XwOMACJCe52+XR2rZsNt8DKp1imswRYIghkN48I=;
+        s=default; t=1547472699;
+        bh=1IgkYnH4NoPBt1CFSxWMIPgb+d8cbnUnbUnanGk77hY=;
         h=From:To:Cc:Subject:Date:From;
-        b=nlSRV2kaf7P9YXkd57cX5MxQYmZeEA+7jDZs8S3wiVfzTOPRrsAEbUNoTg81IIB9T
-         sJB7B7VUHpsAHUAbcyRW4GaBWBSxc0J66uYkkp92L3zIgLExkTfkdYtfDsbo8FtKvx
-         IXilWsvcGcBkHlF9vZ5Md3H7O4YXsLH7/jovQQRA=
+        b=KaZqizlyegcdvuXuytcjStthytD6QPNFDp2RFSj7y73YhrzgAxn+HSei2ccpznzwI
+         iG73fxxnWcp273v7lt0Bq37p62CE+rVHH40rco0QoiIOJvpa6zszlPQDy9AlQZBLe4
+         30sEtYRgY4sy4o96z43AGh+0ANnWlVVcsKCG1wGY=
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
 Cc:     ddis@suse.com, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 1/3] Btrfs-progs: fix mount point detection due to partial prefix match
-Date:   Mon, 14 Jan 2019 13:30:24 +0000
-Message-Id: <20190114133024.18320-1-fdmanana@kernel.org>
+Subject: [PATCH 2/3] Btrfs-progs: add missing error handling in find_mount_root()
+Date:   Mon, 14 Jan 2019 13:31:34 +0000
+Message-Id: <20190114133134.18374-1-fdmanana@kernel.org>
 X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
@@ -52,65 +52,49 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-When attempting to find the mount point of a path we can end up returning
-an incorrect mount point. This happens because we consider a mount point
-valid for the given path even if it matches only partially the patch.
-Consider the following example, which makes btrfs receive fail:
+The strdup() function can fail, in which case it returns NULL and sets
+errno [1]. Therefore add the missing error check after calling strdup()
+at find_mount_root().
 
-  $ truncate -s 1G disk1
-  $ truncate -s 1G disk2
+[1] - http://man7.org/linux/man-pages/man3/strdup.3p.html
 
-  $ losetup /dev/loop1 disk1
-  $ losetup /dev/loop2 disk2
-
-  $ mkfs.btrfs -f /dev/loop1
-  $ mkfs.btrfs -f /dev/loop2
-
-  $ mount /dev/loop1 /mnt
-  $ mkdir /mnt/ddis
-  $ mkdir /mnt/ddis-not-a-mount
-  $ mount /dev/loop2 /mnt/ddis
-
-  $ echo "some data" > /mnt/ddis/file
-  $ btrfs subvolume snapshot -r /mnt/ddis /mnt/ddis/snap
-
-  $ btrfs send -f /tmp/send.data /mnt/ddis/snap
-  $ btrfs receive -f /tmp/send.data /mnt/ddis-not-a-mount
-  At subvol snap
-  ERROR: chown  failed: No such file or directory
-
-In that example btrfs receive passes the path "/mnt/ddis-not-a-mount" to
-find_mount_root() which picks "/mnt/ddis" as the mount point instead of
-"/mnt". The wrong decision happens because "/mnt/ddis" is the longest
-string found that is a prefix of "/mnt/ddis-not-a-mount", however it
-shouldn't be considered valid because what follows the substring "ddis"
-in the given path is not a path separator ("/") nor the null character
-('\0'). So fix find_mount_root() to check for the presence of a path
-separator or a null byte character after if finds a mount point string
-that matches the given path.
-
-A test case will follow soon in a separate patch.
-
-Reported-by: David Disseldorp <ddis@suse.com>
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- utils.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ utils.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
 
 diff --git a/utils.c b/utils.c
-index 3a4bc92a..6616630b 100644
+index 6616630b..3bc6bc3b 100644
 --- a/utils.c
 +++ b/utils.c
-@@ -2064,7 +2064,8 @@ int find_mount_root(const char *path, char **mount_root)
- 
- 	while ((ent = getmntent(mnttab))) {
- 		len = strlen(ent->mnt_dir);
--		if (strncmp(ent->mnt_dir, path, len) == 0) {
-+		if (strncmp(ent->mnt_dir, path, len) == 0 &&
-+		    (path[len] == '/' || path[len] == '\0')) {
- 			/* match found and use the latest match */
- 			if (longest_matchlen <= len) {
+@@ -2048,7 +2048,7 @@ int find_mount_root(const char *path, char **mount_root)
+ 	int fd;
+ 	struct mntent *ent;
+ 	int len;
+-	int ret;
++	int ret = 0;
+ 	int not_btrfs = 1;
+ 	int longest_matchlen = 0;
+ 	char *longest_match = NULL;
+@@ -2071,12 +2071,18 @@ int find_mount_root(const char *path, char **mount_root)
  				free(longest_match);
+ 				longest_matchlen = len;
+ 				longest_match = strdup(ent->mnt_dir);
++				if (!longest_match) {
++					ret = -errno;
++					break;
++				}
+ 				not_btrfs = strcmp(ent->mnt_type, "btrfs");
+ 			}
+ 		}
+ 	}
+ 	endmntent(mnttab);
+ 
++	if (ret)
++		return ret;
+ 	if (!longest_match)
+ 		return -ENOENT;
+ 	if (not_btrfs) {
 -- 
 2.11.0
 

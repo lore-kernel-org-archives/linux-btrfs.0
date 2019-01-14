@@ -2,68 +2,66 @@ Return-Path: <SRS0=huBW=PW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.5 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
-	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 78DA4C43387
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Jan 2019 13:52:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C9CDFC43444
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Jan 2019 13:59:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 45A91206B7
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Jan 2019 13:52:11 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1547473931;
-	bh=q6wULXGR31/5T5zFPPEA2IWr3p87lk3w+qzDj1Ft27E=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:List-ID:From;
-	b=f4DrQfCBJf3Wi/59UsADgCXlVfOM0TGj7jpJQ/noAP0EsFfx+r8sOyKmi787hdLTL
-	 /q/qircX1yRF3+YGqWt+BrEFJFRl7p8sDwbQfTHDqH2T4mwAePJNwGYeyNACm/6UHr
-	 CGa9uffqGl5mEnIscaHXM5PffFFmEs6aizYgxhLQ=
+	by mail.kernel.org (Postfix) with ESMTP id A527920873
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Jan 2019 13:59:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726812AbfANNwK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 14 Jan 2019 08:52:10 -0500
-Received: from mail.kernel.org ([198.145.29.99]:45866 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726653AbfANNwJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Jan 2019 08:52:09 -0500
-Received: from localhost (unknown [178.227.249.135])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id A1373208E4;
-        Mon, 14 Jan 2019 13:52:08 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1547473929;
-        bh=q6wULXGR31/5T5zFPPEA2IWr3p87lk3w+qzDj1Ft27E=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=hGtKafMsV3loBM4t8sbTpLz1bbielnOgAZluomHawhrttZe4PHR50laqYyw9+R7YV
-         rXRUHLI9bfP5DTgLRYTPfpN0TG2UU/b/oEmZ1iZLAygnFfQnXggMh9Fs1rd15aX1zY
-         3wveq4W9fEmcNLqQHYLDBjQpOI7BhP/qpOVGjsXc=
-Date:   Mon, 14 Jan 2019 14:50:52 +0100
-From:   Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-To:     Ben Hutchings <ben.hutchings@codethink.co.uk>
-Cc:     Sasha Levin <Alexander.Levin@microsoft.com>,
-        stable <stable@vger.kernel.org>, linux-btrfs@vger.kernel.org
-Subject: Re: Security fixes for 4.4 - btrfs
-Message-ID: <20190114135052.GA11079@kroah.com>
-References: <1547218151.3229.73.camel@codethink.co.uk>
+        id S1726600AbfANN7q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 14 Jan 2019 08:59:46 -0500
+Received: from mx2.suse.de ([195.135.220.15]:51186 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726515AbfANN7q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 Jan 2019 08:59:46 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 7EBD7AC95;
+        Mon, 14 Jan 2019 13:59:44 +0000 (UTC)
+Date:   Mon, 14 Jan 2019 14:59:44 +0100
+From:   David Disseldorp <ddiss@suse.de>
+To:     fdmanana@kernel.org
+Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: Re: [PATCH 1/3] Btrfs-progs: fix mount point detection due to
+ partial prefix match
+Message-ID: <20190114145944.609d56b6@suse.de>
+In-Reply-To: <20190114133024.18320-1-fdmanana@kernel.org>
+References: <20190114133024.18320-1-fdmanana@kernel.org>
+X-Mailer: Claws Mail 3.13.2 (GTK+ 2.24.31; x86_64-suse-linux-gnu)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <1547218151.3229.73.camel@codethink.co.uk>
-User-Agent: Mutt/1.11.2 (2019-01-07)
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Jan 11, 2019 at 02:49:11PM +0000, Ben Hutchings wrote:
-> I've backported fixes for several security issues involving filesystem
-> validation in btrfs.  All of these are already fixed in the later
-> stable branches.
+On Mon, 14 Jan 2019 13:30:24 +0000, fdmanana@kernel.org wrote:
+
+> From: Filipe Manana <fdmanana@suse.com>
 > 
-> I tested with the reproducers where available.  I also checked for
-> regressions with xfstests and didn't find any (but many tests fail with
-> or without these changes).
+> When attempting to find the mount point of a path we can end up returning
+> an incorrect mount point. This happens because we consider a mount point
+> valid for the given path even if it matches only partially the patch.
 
-Many thanks for all of these, now queued up.
+s/patch/path/? "...even if it only partially matches" might be a bit
+clearer.
 
-greg k-h
+> diff --git a/utils.c b/utils.c
+> index 3a4bc92a..6616630b 100644
+> --- a/utils.c
+> +++ b/utils.c
+> @@ -2064,7 +2064,8 @@ int find_mount_root(const char *path, char **mount_root)
+>  
+>  	while ((ent = getmntent(mnttab))) {
+>  		len = strlen(ent->mnt_dir);
+> -		if (strncmp(ent->mnt_dir, path, len) == 0) {
+> +		if (strncmp(ent->mnt_dir, path, len) == 0 &&
+> +		    (path[len] == '/' || path[len] == '\0')) {
+
+Looks good and works for me.
+Reviewed-by: David Disseldorp <ddiss@suse.de>

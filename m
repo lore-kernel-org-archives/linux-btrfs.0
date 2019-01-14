@@ -6,31 +6,31 @@ X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 82CE5C43387
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Jan 2019 17:11:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D60E4C43387
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Jan 2019 17:21:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5E0012070B
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Jan 2019 17:11:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A5B7C2070B
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Jan 2019 17:21:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726865AbfANRLq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 14 Jan 2019 12:11:46 -0500
-Received: from mx2.suse.de ([195.135.220.15]:58004 "EHLO mx1.suse.de"
+        id S1726809AbfANRVh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 14 Jan 2019 12:21:37 -0500
+Received: from mx2.suse.de ([195.135.220.15]:59338 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726643AbfANRLq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Jan 2019 12:11:46 -0500
+        id S1726673AbfANRVg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 Jan 2019 12:21:36 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 124B7AE7F
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Jan 2019 17:11:45 +0000 (UTC)
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 71D45AEB4
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Jan 2019 17:21:35 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id C9ECFDA847; Mon, 14 Jan 2019 18:11:16 +0100 (CET)
-Date:   Mon, 14 Jan 2019 18:11:16 +0100
+        id 35961DA847; Mon, 14 Jan 2019 18:21:07 +0100 (CET)
+Date:   Mon, 14 Jan 2019 18:21:07 +0100
 From:   David Sterba <dsterba@suse.cz>
 To:     Qu Wenruo <wqu@suse.com>
 Cc:     linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH v3.1 3/7] btrfs: relocation: Delay reloc tree deletion
  after merge_reloc_roots()
-Message-ID: <20190114171116.GD2900@twin.jikos.cz>
+Message-ID: <20190114172107.GE2900@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
@@ -53,16 +53,15 @@ On Mon, Jan 07, 2019 at 01:41:47PM +0800, Qu Wenruo wrote:
 > + *
 > + * Since reloc_control is used less frequently than btrfs_root, this should
 > + * prevent us to add another structure in btrfs_root.
+> + */
+> +struct dirty_source_root {
+> +	struct rb_node node;
+> +
+> +	/* Root must be file tree */
 
-The alternative is to keep that in btrfs_root and avoid all allocations
-that also remove one failure possibility. The overall root structure
-size is over 1K already and roots get allocated from the generic slabs,
-so quite possible from the 2K slab anyway. A few more bytes will not be
-that expensive though the number of uses of the data would be very low.
+The naming starts here and is used in the following patches too: the
+naming is IMO confusing, here it's still ok but variables like
+'file_bytenr' or 'file_parent' sound weird in context of relocation.
 
-Memory failures are ok for restartable operations and at the beginning
-of the operation. Imagine that relocation fails with ENOMEM after hours
-of shuffling data just before it is about to finish.
-
-I think in another patch you add 128 bytes to btrfs_root anyway, so some
-kind of memory consumption increas will happen anyway.
+The file tree is the subvolume right, or would it be confusing in
+another way?

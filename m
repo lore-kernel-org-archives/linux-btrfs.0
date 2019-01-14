@@ -2,99 +2,132 @@ Return-Path: <SRS0=huBW=PW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 947D1C43387
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Jan 2019 13:06:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0E466C43387
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Jan 2019 13:13:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5667D20657
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Jan 2019 13:06:31 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=virtall.com header.i=@virtall.com header.b="DA55ZZXj"
+	by mail.kernel.org (Postfix) with ESMTP id D946D20659
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Jan 2019 13:13:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726586AbfANNGa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 14 Jan 2019 08:06:30 -0500
-Received: from mail.virtall.com ([46.4.129.203]:55298 "EHLO mail.virtall.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726449AbfANNGa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Jan 2019 08:06:30 -0500
-Received: from mail.virtall.com (localhost [127.0.0.1])
-        by mail.virtall.com (Postfix) with ESMTP id 333BB496F82;
-        Mon, 14 Jan 2019 13:06:27 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=virtall.com;
-        s=default; t=1547471188;
-        bh=qo6O7EKpn8FLpJN4zGciF5ARrzN27BUrPAaNvBqng5I=;
-        h=Date:From:To:Cc:Subject:In-Reply-To:References;
-        b=DA55ZZXjmY8w+WQeGX5Tx/OvTBEq6drZzKJhW8ytltNCYPWoyTBi7boynd9gLWMkA
-         uK8mpHJFmY+QUuhbYw5Seo9SbN1Ld/MOXS+wn38VAHVHcDjhMXtOAbuuLvVTVInnSs
-         46Aiu564fIYg5NeF0pDKVP0/ogoMBoYv2ccRuNn0tG+gfPCu2Avl2/SZ4jA1FYlWQu
-         o3Jf/RcKhXo12dbzCL4pHsoVGKfR/n7RfjCQcUlcgoByyvvDSi4xKmmo4ODW6vyooR
-         IgX9P4o7VManAXy5lLdQd1ti1F5eUsUJjqOZzEVvd+L93nJR2Z+pzGnr69B/+5aK0s
-         LR2PJmdgKzwnw==
-X-Fuglu-Suspect: a4ec1b38cfd343559e42730434e5822e
-X-Fuglu-Spamstatus: NO
-Received: from localhost (localhost [127.0.0.1]) (Authenticated sender: tch@virtall.com)
-        by mail.virtall.com (Postfix) with ESMTPSA;
-        Mon, 14 Jan 2019 13:06:27 +0000 (UTC)
+        id S1726549AbfANNNt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 14 Jan 2019 08:13:49 -0500
+Received: from aquinas.techsquare.com ([75.125.237.226]:46951 "EHLO
+        techsquare.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1726533AbfANNNt (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 Jan 2019 08:13:49 -0500
+Received: from sb by techsquare.com with local (Exim 4.71)
+        (envelope-from <sb@techsquare.com>)
+        id 1gj23k-0006sJ-KO; Mon, 14 Jan 2019 08:13:44 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
- format=flowed
-Content-Transfer-Encoding: 8bit
-Date:   Mon, 14 Jan 2019 22:06:26 +0900
-From:   Tomasz Chmielewski <tch@virtall.com>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [REGRESSION] Super slow balance in v5.0-rc1
-In-Reply-To: <2c1782e8-b68a-4992-84e8-adeef34ca688@gmx.com>
-References: <7c6234aaeaf813400da5ff1e68f8c898@virtall.com>
- <2c1782e8-b68a-4992-84e8-adeef34ca688@gmx.com>
-Message-ID: <0b0e3f49ebec07edcb9ac4dafd3afa55@virtall.com>
-X-Sender: tch@virtall.com
+Content-Type: text/plain; charset=iso-2022-jp
+Content-Transfer-Encoding: 7bit
+Message-ID: <23612.35592.599043.773332@techsquare.com>
+Date:   Mon, 14 Jan 2019 08:13:44 -0500
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     "Scott E. Blomquist" <sb@techsquare.com>, Jojo <jojo@automatix.de>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: btrfs hang on nfs?
+In-Reply-To: <89a8a3a1-07bc-6cdc-1278-b9649f2b477e@suse.com>
+References: <23605.54017.819143.292441@techsquare.com>
+        <6d8d3b43-dc73-42b8-7c70-2fb8a3b0d98c@automatix.de>
+        <23605.63394.330818.203495@techsquare.com>
+        <23607.12444.740949.683554@techsquare.com>
+        <f95b63e3-9da5-ea60-3b4c-fbdf223f439c@suse.com>
+        <23607.13250.659000.140295@techsquare.com>
+        <23612.30105.728099.63687@techsquare.com>
+        <89a8a3a1-07bc-6cdc-1278-b9649f2b477e@suse.com>
+X-Mailer: VM 8.0.13 under 23.1.1 (x86_64-pc-linux-gnu)
+From:   "Scott E. Blomquist" <sb@techsquare.com>
+X-SA-Exim-Connect-IP: <locally generated>
+X-SA-Exim-Mail-From: sb@techsquare.com
+X-SA-Exim-Scanned: No (on techsquare.com); SAEximRunCond expanded to false
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 2019-01-14 21:34, Qu Wenruo wrote:
-> On 2019/1/14 下午7:47, Tomasz Chmielewski wrote:
->>> When rebasing my qgroup + balance optimization patches, I found one 
->>> very
->>> obvious performance regression for balance.
->>> 
->>> For normal 4G subvolume, 16 snapshots, balance workload, v4.20 kernel
->>> only takes 3s to relocate a metadata block group, while for v5.0-rc1, 
->>> I
->>> don't really know how it will take as it hasn't finished yet.
->> 
->> Are you sure it's v5.0-rc1 regression, not earlier?
-> 
-> At least for what I'm describing, yes. v5.0-rc1 introduced bug, and
-> already pinned down.
-> 
-> So I'm afraid you're hitting another different bug.
-> 
->> 
->> I'm trying to do a metadata-only balance from RAID-5 to RAID-1, with
->> 4.19.8.
->> 
->> It was going relatively "normal", until it got stuck and showing no
->> progress.
->> 
->> I've canceled the balance, upgraded to 4.20, started the balance 
->> again.> For straight 11 days, it rewrote terabytes of data on the 
->> disks, with no
->> progress at all.> Also, 4.19.8 had a balance interrupted because of 
->> "out
->> of space", despite we have terabytes free.
->> 
->> Metadata RAID-5 usage stays at 4.12GiB for the past 11 days (and a few
->> more days with 4.19.8).
-> 
-> Are you using qgroup? Which is another huge cause of slow balance.
 
-No, no qgroups.
+Nikolay Borisov writes:
+ > 
+ > On 14.01.19 $B'T(B. 13:42 $B'i(B., Scott E. Blomquist wrote:
+ > > 
+ <snip>
+ > > 
+ > > The file system hung again below is the sysrq output
+ > > 
+ > > Linux kanlabfs 4.19.13-custom #1 SMP Wed Jan 9 08:36:50 EST 2019 x86_64 x86_64 x86_64 GNU/Linux
+ > > 
+ > > btrfs-progs v4.19.1 
+ > > 
+ > > # btrfs fi df /export/
+ > > Data, single: total=79.61TiB, used=79.61TiB
+ > > System, single: total=36.00MiB, used=8.31MiB
+ > > Metadata, single: total=192.01GiB, used=190.19GiB
+ > > GlobalReserve, single: total=512.00MiB, used=0.00B
+ > 
+ > So this btrfs is hosted on your local machine but it is exported via
+ > NFS, correct?
 
-# btrfs quota rescan /data
-ERROR: quota rescan failed: Invalid argument
+Correct and via samba also
+
+ > > 
+ > > #  btrfs fi show
+ > > Label: '/export'  uuid: 8f92c2e4-86fe-48cb-b2d3-bc36da765f02
+ > >         Total devices 3 FS bytes used 79.79TiB
+ > >         devid    1 size 47.30TiB used 43.58TiB path /dev/sda1
+ > >         devid    2 size 21.83TiB used 18.11TiB path /dev/sdb1
+ > >         devid    3 size 21.83TiB used 18.11TiB path /dev/sdc1
+ > 
+ > What kind of disks are those, presumably spinning rust due to their size
+ > but what model/make?
+ > 
+
+3 x raid 6 on a LSI MegaRAID SAS 9271-8i
+
+ > > [Mon Jan 14 06:24:26 2019] sysrq: SysRq : Show Blocked State
+ > 
+ > <snip>
+ > 
+ > > [Mon Jan 14 06:24:26 2019] btrfs-transacti D    0  6808      2 0x80000000
+ > > [Mon Jan 14 06:24:26 2019] Call Trace:
+ > > [Mon Jan 14 06:24:26 2019]  ? __schedule+0x2ea/0x870
+ > > [Mon Jan 14 06:24:26 2019]  schedule+0x32/0x80
+ > > [Mon Jan 14 06:24:26 2019]  btrfs_start_ordered_extent+0xca/0x100 [btrfs]
+ > > [Mon Jan 14 06:24:26 2019]  ? wait_woken+0x80/0x80
+ > > [Mon Jan 14 06:24:26 2019]  btrfs_wait_ordered_range+0xbd/0x110 [btrfs]
+ > > [Mon Jan 14 06:24:26 2019]  __btrfs_wait_cache_io+0x49/0x1a0 [btrfs]
+ > > [Mon Jan 14 06:24:26 2019]  btrfs_write_dirty_block_groups+0xed/0x360 [btrfs]
+ > > [Mon Jan 14 06:24:26 2019]  ? btrfs_run_delayed_refs+0x8b/0x1d0 [btrfs]
+ > > [Mon Jan 14 06:24:26 2019]  commit_cowonly_roots+0x1ed/0x280 [btrfs]
+ > > [Mon Jan 14 06:24:26 2019]  btrfs_commit_transaction+0x36e/0x8d0 [btrfs]
+ > > [Mon Jan 14 06:24:26 2019]  ? start_transaction+0x9b/0x3f0 [btrfs]
+ > > [Mon Jan 14 06:24:26 2019]  transaction_kthread+0x14d/0x180 [btrfs]
+ > > [Mon Jan 14 06:24:26 2019]  kthread+0xf8/0x130
+ > > [Mon Jan 14 06:24:26 2019]  ? btrfs_cleanup_transaction+0x530/0x530 [btrfs]
+ > > [Mon Jan 14 06:24:26 2019]  ? kthread_bind+0x10/0x10
+ > > [Mon Jan 14 06:24:26 2019]  ret_from_fork+0x35/0x40
+ > 
+ > So the transaction is being committed as a result of that
+ > btrfs_start_ordered_extent, which flushes data to disk. Since you've
+ > compiled your kernel can you run the following command from the kernel's
+ > source:
+ > 
+ > ./scripts/faddr2line  vmlinux  btrfs_start_ordered_extent+0xca/0x100
+ > 
+ > 'vmlinux' should be the kernel executable with debug info that results
+ > from compiling the kernel. I want to figure out which line exactly
+ > btrfs_start_ordered_extent+0xca/0x100 resolves to.
+
+ <snip>
+
+I'll have to rebuild the kernel with debug symbols.  Do I have to be
+booted into the kernel for that command to be useful?
+
+Cheers and Thanks,
+
+sb. Scott Blomquist
+
+

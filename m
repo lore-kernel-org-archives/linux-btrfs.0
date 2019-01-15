@@ -2,175 +2,89 @@ Return-Path: <SRS0=dEEl=PX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A8A9BC43387
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 08:16:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7A771C43612
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 08:36:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7E18920859
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 08:16:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4824C2063F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 08:36:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728468AbfAOIQt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 15 Jan 2019 03:16:49 -0500
-Received: from mx2.suse.de ([195.135.220.15]:47996 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728448AbfAOIQt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Jan 2019 03:16:49 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 5B72BAFD3
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Jan 2019 08:16:47 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
+        id S1728351AbfAOIgE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 15 Jan 2019 03:36:04 -0500
+Received: from [195.159.176.226] ([195.159.176.226]:44494 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1728345AbfAOIgE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 15 Jan 2019 03:36:04 -0500
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane.org>)
+        id 1gjKAM-0007fn-BZ
+        for linux-btrfs@vger.kernel.org; Tue, 15 Jan 2019 09:33:46 +0100
+X-Injected-Via-Gmane: http://gmane.org/
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 7/7] btrfs: qgroup: Cleanup old subtree swap code
-Date:   Tue, 15 Jan 2019 16:16:04 +0800
-Message-Id: <20190115081604.785-8-wqu@suse.com>
-X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20190115081604.785-1-wqu@suse.com>
-References: <20190115081604.785-1-wqu@suse.com>
-MIME-Version: 1.0
+From:   Duncan <1i5t5.duncan@cox.net>
+Subject: Re: applications hang on a btrfs spanning two partitions
+Date:   Tue, 15 Jan 2019 08:33:40 +0000 (UTC)
+Message-ID: <pan$cd3b7$50e825ef$b5f86324$c489b494@cox.net>
+References: <418d4647-8c67-2481-68f1-1e722460c3de@florianstecker.de>
+        <aeaf4b99-a9d5-6335-67f3-e7f851e50b32@florianstecker.de>
+        <pan$4ced2$4d8a896d$78f71764$55651a6d@cox.net> <2486006.dzvMEKkTBt@thetick>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
+X-Complaints-To: usenet@blaine.gmane.org
+User-Agent: Pan/0.146 (Hic habitat felicitas; edad96df2)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Since it's replaced by new delayed subtree swap code, remove the
-original code.
+Marc Joliet posted on Mon, 14 Jan 2019 12:35:05 +0100 as excerpted:
 
-The cleanup is small since most of its core function is still used by
-delayed subtree swap trace.
+> Am Montag, 14. Januar 2019, 06:49:58 CET schrieb Duncan:
+> [...]
+>> Unless you have a known reason not to[1], running noatime with btrfs
+>> instead of the kernel-default relatime is strongly recommended,
+>> especially if you use btrfs snapshotting on the filesystem.
+> [...]
+> 
+> The one reason I decided to remove noatime from my systems' mount
+> options is because I use systemd-tmpfiles to clean up cache directories,
+> for which it is necessary to leave atime intact (since caches are often
+> Write Once Read Many).
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/qgroup.c | 94 -----------------------------------------------
- fs/btrfs/qgroup.h |  6 ---
- 2 files changed, 100 deletions(-)
+Thanks for the reply.  I hadn't really thought of that use, but it makes 
+sense...
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 7aaf2ee9c244..284df1101a5c 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2048,100 +2048,6 @@ static int qgroup_trace_subtree_swap(struct btrfs_trans_handle *trans,
- 	return ret;
- }
- 
--/*
-- * Inform qgroup to trace subtree swap used in balance.
-- *
-- * Unlike btrfs_qgroup_trace_subtree(), this function will only trace
-- * new tree blocks whose generation is equal to (or larger than) @last_snapshot.
-- *
-- * Will go down the tree block pointed by @dst_eb (pointed by @dst_parent and
-- * @dst_slot), and find any tree blocks whose generation is at @last_snapshot,
-- * and then go down @src_eb (pointed by @src_parent and @src_slot) to find
-- * the counterpart of the tree block, then mark both tree blocks as qgroup dirty,
-- * and skip all tree blocks whose generation is smaller than last_snapshot.
-- *
-- * This would skip tons of tree blocks of original btrfs_qgroup_trace_subtree(),
-- * which could be the cause of very slow balance if the file tree is large.
-- *
-- * @src_parent, @src_slot: pointer to src (file tree) eb.
-- * @dst_parent, @dst_slot: pointer to dst (reloc tree) eb.
-- */
--int btrfs_qgroup_trace_subtree_swap(struct btrfs_trans_handle *trans,
--				struct btrfs_block_group_cache *bg_cache,
--				struct extent_buffer *src_parent, int src_slot,
--				struct extent_buffer *dst_parent, int dst_slot,
--				u64 last_snapshot)
--{
--	struct btrfs_fs_info *fs_info = trans->fs_info;
--	struct btrfs_key first_key;
--	struct extent_buffer *src_eb = NULL;
--	struct extent_buffer *dst_eb = NULL;
--	bool trace_leaf = false;
--	u64 child_gen;
--	u64 child_bytenr;
--	int ret;
--
--	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags))
--		return 0;
--
--	/* Check parameter order */
--	if (btrfs_node_ptr_generation(src_parent, src_slot) >
--	    btrfs_node_ptr_generation(dst_parent, dst_slot)) {
--		btrfs_err_rl(fs_info,
--		"%s: bad parameter order, src_gen=%llu dst_gen=%llu", __func__,
--			btrfs_node_ptr_generation(src_parent, src_slot),
--			btrfs_node_ptr_generation(dst_parent, dst_slot));
--		return -EUCLEAN;
--	}
--
--	/*
--	 * Only trace leaf if we're relocating data block groups, this could
--	 * reduce tons of data extents tracing for meta/sys bg relocation.
--	 */
--	if (bg_cache->flags & BTRFS_BLOCK_GROUP_DATA)
--		trace_leaf = true;
--	/* Read out real @src_eb, pointed by @src_parent and @src_slot */
--	child_bytenr = btrfs_node_blockptr(src_parent, src_slot);
--	child_gen = btrfs_node_ptr_generation(src_parent, src_slot);
--	btrfs_node_key_to_cpu(src_parent, &first_key, src_slot);
--
--	src_eb = read_tree_block(fs_info, child_bytenr, child_gen,
--			btrfs_header_level(src_parent) - 1, &first_key);
--	if (IS_ERR(src_eb)) {
--		ret = PTR_ERR(src_eb);
--		goto out;
--	}
--
--	/* Read out real @dst_eb, pointed by @src_parent and @src_slot */
--	child_bytenr = btrfs_node_blockptr(dst_parent, dst_slot);
--	child_gen = btrfs_node_ptr_generation(dst_parent, dst_slot);
--	btrfs_node_key_to_cpu(dst_parent, &first_key, dst_slot);
--
--	dst_eb = read_tree_block(fs_info, child_bytenr, child_gen,
--			btrfs_header_level(dst_parent) - 1, &first_key);
--	if (IS_ERR(dst_eb)) {
--		ret = PTR_ERR(dst_eb);
--		goto out;
--	}
--
--	if (!extent_buffer_uptodate(src_eb) || !extent_buffer_uptodate(dst_eb)) {
--		ret = -EINVAL;
--		goto out;
--	}
--
--	/* Do the generation aware breadth-first search */
--	ret = qgroup_trace_subtree_swap(trans, src_eb, dst_eb, last_snapshot,
--					trace_leaf);
--	if (ret < 0)
--		goto out;
--	ret = 0;
--
--out:
--	free_extent_buffer(src_eb);
--	free_extent_buffer(dst_eb);
--	return ret;
--}
--
- int btrfs_qgroup_trace_subtree(struct btrfs_trans_handle *trans,
- 			       struct extent_buffer *root_eb,
- 			       u64 root_gen, int root_level)
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index 9c69f20f7c0d..ff96f5678de5 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -301,12 +301,6 @@ int btrfs_qgroup_trace_leaf_items(struct btrfs_trans_handle *trans,
- int btrfs_qgroup_trace_subtree(struct btrfs_trans_handle *trans,
- 			       struct extent_buffer *root_eb,
- 			       u64 root_gen, int root_level);
--
--int btrfs_qgroup_trace_subtree_swap(struct btrfs_trans_handle *trans,
--				struct btrfs_block_group_cache *bg_cache,
--				struct extent_buffer *src_parent, int src_slot,
--				struct extent_buffer *dst_parent, int dst_slot,
--				u64 last_snapshot);
- int btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans, u64 bytenr,
- 				u64 num_bytes, struct ulist *old_roots,
- 				struct ulist *new_roots);
+FWIW systemd here too, but I suppose it depends on what's being cached 
+and particularly on the expense of recreation of cached data.  I actually 
+have many of my caches (user/browser caches, etc) on tmpfs and reboot 
+several times a week, so much of the cached data is only trivially cached 
+as it's trivial to recreate/redownload.
+
+OTOH, running gentoo, my ccache and binpkg cache are seriously CPU-cycle 
+expensive to recreate, so you can bet those are _not_ tmpfs, but OTTH, 
+they're not managed by systemd-tmpfiles either.  (Ccache manages its own 
+cache and together with the source-tarballs cache and git-managed repo 
+trees along with binpkgs, I have a dedicated packages btrfs containing 
+all of them, so I eclean binpkgs and distfiles whenever the 24-gigs space 
+(48-gig total, 24-gig each on pair-device btrfs raid1) gets too close to 
+full, then btrfs balance with -dusage= to reclaim partial chunks to 
+unallocated.)
+
+Anyway, if you're not regularly snapshotting, relatime is reasonably 
+fine, tho I'd still keep the atime effects in mind and switch to noatime 
+if you end up in a recovery situation that requires writable mounting.  
+(Losing a device in btrfs raid1 and mounting writable in ordered to 
+replace it and rebalance comes to mind as one example of a writable-mount 
+recovery scenario where noatime until full replace/rebalance/scrub 
+completion would prevent unnecessary writes until the raid1 is safely 
+complete and scrub-verified again.)
+
 -- 
-2.20.1
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

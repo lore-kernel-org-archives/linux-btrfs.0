@@ -6,27 +6,27 @@ X-Spam-Status: No, score=-1.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
 	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A5BD0C43387
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 00:45:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DA42EC43387
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 00:55:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7CC4E20659
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 00:45:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B290120659
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 00:55:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727520AbfAOApO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 14 Jan 2019 19:45:14 -0500
-Received: from mout.gmx.net ([212.227.17.21]:33239 "EHLO mout.gmx.net"
+        id S1727547AbfAOAzH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 14 Jan 2019 19:55:07 -0500
+Received: from mout.gmx.net ([212.227.17.21]:44477 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727389AbfAOApO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Jan 2019 19:45:14 -0500
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx103
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0LpKY5-1hCmNO0kWT-00f7Bo; Tue, 15
- Jan 2019 01:45:04 +0100
+        id S1727455AbfAOAzH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 Jan 2019 19:55:07 -0500
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx102
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0LcmN9-1h8sW32Zfz-00k6Fj; Tue, 15
+ Jan 2019 01:54:38 +0100
 Subject: Re: [PATCH v3.1 3/7] btrfs: relocation: Delay reloc tree deletion
  after merge_reloc_roots()
 To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
 References: <20190107054151.18662-1-wqu@suse.com>
- <20190107054151.18662-4-wqu@suse.com> <20190114171116.GD2900@twin.jikos.cz>
+ <20190107054151.18662-4-wqu@suse.com> <20190114172107.GE2900@twin.jikos.cz>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -53,59 +53,59 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <1bbf2ba2-b259-78a0-e911-f749356f24ac@gmx.com>
-Date:   Tue, 15 Jan 2019 08:44:54 +0800
+Message-ID: <8b353e42-90b3-235f-b172-6f0cb55b2feb@gmx.com>
+Date:   Tue, 15 Jan 2019 08:54:27 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <20190114171116.GD2900@twin.jikos.cz>
+In-Reply-To: <20190114172107.GE2900@twin.jikos.cz>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="048swt3phtriHYN0Hv8F4mDUore9rj0Uk"
-X-Provags-ID: V03:K1:XfSNXEK0DBnKJPBHs26L1N7wSFqPz/1EiW6hYRnPu2IFMCzDS9E
- VK5hpGePE4lsT5yZcjyCZxR8HudhBTsAEF+tvle/IMpz8zawKDJZyG0U00hXFGtsd9/QfSj
- +IpHdeFtsoWLtrj6ILLjSRUBHj6W8cHTD0pN/FleES99vnvdiby/RPCG7L+wD0C4o+DF+AE
- r3vL0HYfUGxoo63Pl7xVg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:fDhferHx0dY=:I3ojm13tsDirNarAFPwlkW
- 1V1/ftePh/S0b/z83xKeE68F0fuC8oixY8QORHrA8hDfVoEqQgeXZ7p7DfzuVAdLO7CkpdxGK
- QQs0+R0VCVWY6r+yCyaDTsPl7gHfRfQI/1I/Un1bmgLZXpOV+3c1Zh4gsC7PsNkNs+vqpfPln
- L+nFRyxWdfBO6Nn2UtDC5XcICYas8KELBPvUq0L9rmnenHwJHxJqzK14ymObsPzVSSJVbtPnC
- MvSVlBBaRZDa4GoIs8KFDRgxEi9gizhMUD8vHr5YcIQdvb47TqHyTKf7aHh8iYZyq+RYKIRGP
- r/lYxEeijAckOgMqMCYTtYcC7FToY7Kpbl5dBFc82C6bQAm77pJae1jpIUfZrAbOH2Fue1+Q6
- adUtnMYTomZKgf2dJ/FrcvfAJ3hsqUfBfshOEJQv84Sn7+RrVpERCmJVCDR0iNLdkoeQZmzSQ
- 8wCuzD3fd/VZmEUeL3JHS5dR0YZXMxv7jSSBHUoGZ56Mku06aHstYRHZlPzsPprwM7CWih2j/
- DRD85deYR4NUvs11oqHWg+sYz2Ff4dgRzYdcVO7C1zwcH2UiDYu/wcRLjWKRWL8qUd9LLrr1c
- oUqPJU1lLo7japqXrdSjSSmS1F4d69Jqq1gCPaIbx6RaKA8hFvzPtsGKKUhYWC1BuKq6poeFl
- Kryn0tuSNweYtTy2Otz5IGt4DRLzfnhjgJam0wp4gcDHR+PbzcreyV+kSix+nmpth0etOASkt
- ZMEEm3CQWeho3yDJlR6PWPU33DXGfNE8J+6fXtKEQ13ozDNIUayIX+EgQCu1tFtqPSUXFC/XP
- zQdFFrrwtajvLl5mpkW/Nv/+4HgbdNaRh+X1Ks8XPbMxbXcqgV0giCPGN05/VEkQjcTIepgKH
- dU+v6AP+vUuotl4DIRZxauCKmWW8p0treTm9OmUQ8pIYYFEwJrOpiOfZOlGw1I
+ boundary="BQi2a3K9kLeIjz9KwRb3ujZwj12Bw7j9N"
+X-Provags-ID: V03:K1:dQbiwauh+C2ZkF3xWHclTU6eS+IDrk7V1CA6ccHCUjX8C3sLvYw
+ Accnc6rqn93socZ6Wc4so0h3h826wAztf6w9eWuCuJ/lJOGftsNe7GnMpIYAMu8O6EncKid
+ DFJtFQTzhDooN+zM5nWK7KwF89lWtMOl8VDga/n1K1UZ+8d3EU3UdiagUk1hYZP8yyLDbpd
+ CGEFcUc8WO1bx+fIiJbKw==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:Mfwnc6gA3c8=:FYuZ9Z4o2XGbq4pGe2vj3O
+ g9QYuAI0LR20DfYnZ2o7eoLDcvmU/SQkr/zqouG41816gmKLDkyv2sGs2Ubi4fF4k1rAgRWfD
+ Hv8QBMFTKzlzXP+Asom+Jj4WZFHrVEiTQvRaKSyLd9y8vJ4Rqu4Knyc5bzxVSNgOiTFH3fUz7
+ bWEdY3NQc2jydE3uhSY3xeJMGqRg2EIJf1OJJ9ROgUxXOi5+ulo6lCbfrXi+GE0EIviwbyINE
+ xfnObPqWkhEztDN/tvEB35UzFLHry/uxeNRaVpq5SDODbV74YgyGy3YlAbKI9KPHd2FuHcAf4
+ 7McQrg6SsHTrc5pM5tH5lk1AlnQehLpt4zla2deJjBKz8MUtpp8jGIIj+8T42L+wyNTGlC/ih
+ aS22Vl+4Cl0FYzgW2ajox9RdC7eMfGbXTSywsyn61MHCvRsN8wsaU72Q5+82+DaiMqx8a1szg
+ 1XdNxQBjLp3Xp5EuG4KIsIYFUWpUJIjTciVfM2bY3CvdLI0q/DY7ZNff8NiwQXH3Twuz+XtJJ
+ SDQfb/qckJarR8IUwVCuD1kSKa6cl9237UwQ992H/j449gxjK24gHkYvesaTjn1nMK6+MPvJj
+ INC3Hq7D2KPMwh8MGOdSiUpHcGue8QmN2l4MQUL/ovcD68GPYQ6HOGtzludCyQwR65n2Hyx6T
+ M513qOyL4PEf2dQ7xG+1tRZ07wYldkzZqcbYoja1GfNQJ6h1TvsGd+LhQA1lGWiYCD+lPQERN
+ olXn3ahLJHHk1nXjNPlH60rGwXKS2lINTLZLyRVMaWLk1IXODNyNGwk2hgzU0zJHb2sInb621
+ xf8r1XFq/iYgD1kDSeCK+PDg4kKR6kyJN2FkawTfsDzAdcCQzLH2dvu79hvIqGHXbsqEWL6/e
+ Hz7XyviG+BuZg6yp8t5vO6/TmOroukXI0SlIwKdro9n394TiUkcc3MDQYcCrB9
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---048swt3phtriHYN0Hv8F4mDUore9rj0Uk
-Content-Type: multipart/mixed; boundary="kTdRTBYXHashRhx2iFDvAKe7sxWelvRnc";
+--BQi2a3K9kLeIjz9KwRb3ujZwj12Bw7j9N
+Content-Type: multipart/mixed; boundary="3FLF4cUPm2QmZHnOYVKWyuuuyrVCwBXLt";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <1bbf2ba2-b259-78a0-e911-f749356f24ac@gmx.com>
+Message-ID: <8b353e42-90b3-235f-b172-6f0cb55b2feb@gmx.com>
 Subject: Re: [PATCH v3.1 3/7] btrfs: relocation: Delay reloc tree deletion
  after merge_reloc_roots()
 References: <20190107054151.18662-1-wqu@suse.com>
- <20190107054151.18662-4-wqu@suse.com> <20190114171116.GD2900@twin.jikos.cz>
-In-Reply-To: <20190114171116.GD2900@twin.jikos.cz>
+ <20190107054151.18662-4-wqu@suse.com> <20190114172107.GE2900@twin.jikos.cz>
+In-Reply-To: <20190114172107.GE2900@twin.jikos.cz>
 
---kTdRTBYXHashRhx2iFDvAKe7sxWelvRnc
+--3FLF4cUPm2QmZHnOYVKWyuuuyrVCwBXLt
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2019/1/15 =E4=B8=8A=E5=8D=881:11, David Sterba wrote:
+On 2019/1/15 =E4=B8=8A=E5=8D=881:21, David Sterba wrote:
 > On Mon, Jan 07, 2019 at 01:41:47PM +0800, Qu Wenruo wrote:
 >> +/*
 >> + * Helper structure to keep record of a file tree whose reloc
@@ -114,49 +114,54 @@ On 2019/1/15 =E4=B8=8A=E5=8D=881:11, David Sterba wrote:
 >> + * Since reloc_control is used less frequently than btrfs_root, this =
 should
 >> + * prevent us to add another structure in btrfs_root.
+>> + */
+>> +struct dirty_source_root {
+>> +	struct rb_node node;
+>> +
+>> +	/* Root must be file tree */
 >=20
-> The alternative is to keep that in btrfs_root and avoid all allocations=
+> The naming starts here and is used in the following patches too: the
+> naming is IMO confusing, here it's still ok but variables like
+> 'file_bytenr' or 'file_parent' sound weird in context of relocation.
 
-> that also remove one failure possibility. The overall root structure
-> size is over 1K already and roots get allocated from the generic slabs,=
+'file_bytenr' and 'file_parent' are introduced in the 5th patch.
 
-> so quite possible from the 2K slab anyway. A few more bytes will not be=
+My main concern of using traditional naming like 'source/destination'
+is, for swapped blocks, source/destination needs extra context to
+determine which is which.
 
-> that expensive though the number of uses of the data would be very low.=
+So I tend to use naming which shows directly to which tree the block
+belongs.
 
 >=20
-> Memory failures are ok for restartable operations and at the beginning
-> of the operation. Imagine that relocation fails with ENOMEM after hours=
-
-> of shuffling data just before it is about to finish.
+> The file tree is the subvolume right, or would it be confusing in
+> another way?
 >=20
-> I think in another patch you add 128 bytes to btrfs_root anyway, so som=
-e
-> kind of memory consumption increas will happen anyway.
+So did you mean use something like 'subv_bytenr' and 'subv_generation'?
 
-Indeed, I'll just use a list_head in btrfs_root to record this.
+I'm OK for this naming.
 
 Thanks,
 Qu
 
 
---kTdRTBYXHashRhx2iFDvAKe7sxWelvRnc--
+--3FLF4cUPm2QmZHnOYVKWyuuuyrVCwBXLt--
 
---048swt3phtriHYN0Hv8F4mDUore9rj0Uk
+--BQi2a3K9kLeIjz9KwRb3ujZwj12Bw7j9N
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlw9LQYACgkQwj2R86El
-/qis+Qf5AesobPVCQD0As8RNpqvhheTrSms5wv7kXRsg6Y4TlCeaObMEYEWtBmaD
-f0tn8d2f96Tvf982ZxlSmLUIWyqr6ughz3utTQrChMxCbnyt/7yyUD+HGbBOrnRX
-15dtKm35leU5soLKyLgsQDokQyFsS/PxDznxA1fT9if+vIz3JbOEHFuy5uaVFlH1
-83JO4Rvk2iNYzmkQ1LsCFM5DVXOwln6pBMYPS2Eiki/tLX1E1RrxbdizlWL+r3Ba
-Hm6a6jf4BTOfK+BJAVopvW2SUiQ/NuxtFzW9qvNy7Jq11PqNPc2lKFxN22NjpLx5
-UQsHyJWSPE+lb7YKJ05mcEYsmhz1gA==
-=6YIt
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlw9L0MACgkQwj2R86El
+/qicDQgAq3VrwGvDNJh7EN1/nYzId9J/rSvg4PiaXo873RCYdbn97ZY7ofOvj9Dj
+R0FHAT2iaSIxAQj2jNnMH5aRDjX0LgxftDMbPN1eTR56vUK/LgrgZRJ+BASGHZnw
+Nrz6sTwzKKNd6sN90Zx8krUZRwfAAHkgwWQI4NANRtwzmBnoLDf6qXs7diNu9r36
+hJ0Wa6BJIIK1EA5Eb/N8ZqzWRUnId+bCw/sbC2ZiK5atQhENorHCIEWssRWwp+5f
+HTZdoIOKB46iODdq1zFtXKCjblf4BfeYkkHWzVY9HcEX2ZsLT8IKAxeeO4t/tf9X
+VID3oxh5UZbbxoZMrwMlZk9ZzyZ3jQ==
+=AdGJ
 -----END PGP SIGNATURE-----
 
---048swt3phtriHYN0Hv8F4mDUore9rj0Uk--
+--BQi2a3K9kLeIjz9KwRb3ujZwj12Bw7j9N--

@@ -2,189 +2,345 @@ Return-Path: <SRS0=dEEl=PX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2E8CBC43387
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 89C55C43612
 	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 08:16:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id F041520859
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 08:16:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 572AD20859
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 08:16:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728451AbfAOIQZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1728453AbfAOIQZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Tue, 15 Jan 2019 03:16:25 -0500
-Received: from mx2.suse.de ([195.135.220.15]:47654 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:47668 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726022AbfAOIQY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Jan 2019 03:16:24 -0500
+        id S1728448AbfAOIQZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 15 Jan 2019 03:16:25 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B3F9CAF0C;
-        Tue, 15 Jan 2019 08:16:22 +0000 (UTC)
-Subject: Re: btrfs hang on nfs?
-To:     "Scott E. Blomquist" <sb@techsquare.com>
-Cc:     Jojo <jojo@automatix.de>, linux-btrfs@vger.kernel.org
-References: <23605.54017.819143.292441@techsquare.com>
- <6d8d3b43-dc73-42b8-7c70-2fb8a3b0d98c@automatix.de>
- <23605.63394.330818.203495@techsquare.com>
- <23607.12444.740949.683554@techsquare.com>
- <f95b63e3-9da5-ea60-3b4c-fbdf223f439c@suse.com>
- <23607.13250.659000.140295@techsquare.com>
- <23612.30105.728099.63687@techsquare.com>
- <89a8a3a1-07bc-6cdc-1278-b9649f2b477e@suse.com>
- <23612.35592.599043.773332@techsquare.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <c7b86349-4fea-e727-f912-03b5fb123ddd@suse.com>
-Date:   Tue, 15 Jan 2019 10:16:19 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id E573BAFAE
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Jan 2019 08:16:23 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     David Sterba <dsterba@suse.cz>, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v4 2/7] btrfs: qgroup: Don't trigger backref walk at delayed ref insert time
+Date:   Tue, 15 Jan 2019 16:15:59 +0800
+Message-Id: <20190115081604.785-3-wqu@suse.com>
+X-Mailer: git-send-email 2.20.1
+In-Reply-To: <20190115081604.785-1-wqu@suse.com>
+References: <20190115081604.785-1-wqu@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <23612.35592.599043.773332@techsquare.com>
-Content-Type: text/plain; charset=iso-2022-jp
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+[BUG]
+Since fb235dc06fac ("btrfs: qgroup: Move half of the qgroup accounting
+time out of commit trans"), kernel may lockup with quota enabled.
 
+There is one backref trace triggered by snapshot dropping along with
+write operation in the source subvolume.
+The example can be stably reproduced.
 
-On 14.01.19 г. 15:13 ч., Scott E. Blomquist wrote:
-> 
-> Nikolay Borisov writes:
->  > 
->  > On 14.01.19 г. 13:42 ч., Scott E. Blomquist wrote:
->  > > 
->  <snip>
->  > > 
->  > > The file system hung again below is the sysrq output
->  > > 
->  > > Linux kanlabfs 4.19.13-custom #1 SMP Wed Jan 9 08:36:50 EST 2019 x86_64 x86_64 x86_64 GNU/Linux
->  > > 
->  > > btrfs-progs v4.19.1 
->  > > 
->  > > # btrfs fi df /export/
->  > > Data, single: total=79.61TiB, used=79.61TiB
->  > > System, single: total=36.00MiB, used=8.31MiB
->  > > Metadata, single: total=192.01GiB, used=190.19GiB
->  > > GlobalReserve, single: total=512.00MiB, used=0.00B
->  > 
->  > So this btrfs is hosted on your local machine but it is exported via
->  > NFS, correct?
-> 
-> Correct and via samba also
-> 
->  > > 
->  > > #  btrfs fi show
->  > > Label: '/export'  uuid: 8f92c2e4-86fe-48cb-b2d3-bc36da765f02
->  > >         Total devices 3 FS bytes used 79.79TiB
->  > >         devid    1 size 47.30TiB used 43.58TiB path /dev/sda1
->  > >         devid    2 size 21.83TiB used 18.11TiB path /dev/sdb1
->  > >         devid    3 size 21.83TiB used 18.11TiB path /dev/sdc1
->  > 
->  > What kind of disks are those, presumably spinning rust due to their size
->  > but what model/make?
->  > 
-> 
-> 3 x raid 6 on a LSI MegaRAID SAS 9271-8i
-> 
->  > > [Mon Jan 14 06:24:26 2019] sysrq: SysRq : Show Blocked State
->  > 
->  > <snip>
->  > 
->  > > [Mon Jan 14 06:24:26 2019] btrfs-transacti D    0  6808      2 0x80000000
->  > > [Mon Jan 14 06:24:26 2019] Call Trace:
->  > > [Mon Jan 14 06:24:26 2019]  ? __schedule+0x2ea/0x870
->  > > [Mon Jan 14 06:24:26 2019]  schedule+0x32/0x80
->  > > [Mon Jan 14 06:24:26 2019]  btrfs_start_ordered_extent+0xca/0x100 [btrfs]
->  > > [Mon Jan 14 06:24:26 2019]  ? wait_woken+0x80/0x80
->  > > [Mon Jan 14 06:24:26 2019]  btrfs_wait_ordered_range+0xbd/0x110 [btrfs]
->  > > [Mon Jan 14 06:24:26 2019]  __btrfs_wait_cache_io+0x49/0x1a0 [btrfs]
->  > > [Mon Jan 14 06:24:26 2019]  btrfs_write_dirty_block_groups+0xed/0x360 [btrfs]
->  > > [Mon Jan 14 06:24:26 2019]  ? btrfs_run_delayed_refs+0x8b/0x1d0 [btrfs]
->  > > [Mon Jan 14 06:24:26 2019]  commit_cowonly_roots+0x1ed/0x280 [btrfs]
->  > > [Mon Jan 14 06:24:26 2019]  btrfs_commit_transaction+0x36e/0x8d0 [btrfs]
->  > > [Mon Jan 14 06:24:26 2019]  ? start_transaction+0x9b/0x3f0 [btrfs]
->  > > [Mon Jan 14 06:24:26 2019]  transaction_kthread+0x14d/0x180 [btrfs]
->  > > [Mon Jan 14 06:24:26 2019]  kthread+0xf8/0x130
->  > > [Mon Jan 14 06:24:26 2019]  ? btrfs_cleanup_transaction+0x530/0x530 [btrfs]
->  > > [Mon Jan 14 06:24:26 2019]  ? kthread_bind+0x10/0x10
->  > > [Mon Jan 14 06:24:26 2019]  ret_from_fork+0x35/0x40
->  > 
->  > So the transaction is being committed as a result of that
->  > btrfs_start_ordered_extent, which flushes data to disk. Since you've
->  > compiled your kernel can you run the following command from the kernel's
->  > source:
->  > 
->  > ./scripts/faddr2line  vmlinux  btrfs_start_ordered_extent+0xca/0x100
->  > 
->  > 'vmlinux' should be the kernel executable with debug info that results
->  > from compiling the kernel. I want to figure out which line exactly
->  > btrfs_start_ordered_extent+0xca/0x100 resolves to.
-> 
->  <snip>
-> 
-> I'll have to rebuild the kernel with debug symbols.  Do I have to be
-> booted into the kernel for that command to be useful?
+  btrfs-cleaner   D    0  4062      2 0x80000000
+  Call Trace:
+   schedule+0x32/0x90
+   btrfs_tree_read_lock+0x93/0x130 [btrfs]
+   find_parent_nodes+0x29b/0x1170 [btrfs]
+   btrfs_find_all_roots_safe+0xa8/0x120 [btrfs]
+   btrfs_find_all_roots+0x57/0x70 [btrfs]
+   btrfs_qgroup_trace_extent_post+0x37/0x70 [btrfs]
+   btrfs_qgroup_trace_leaf_items+0x10b/0x140 [btrfs]
+   btrfs_qgroup_trace_subtree+0xc8/0xe0 [btrfs]
+   do_walk_down+0x541/0x5e3 [btrfs]
+   walk_down_tree+0xab/0xe7 [btrfs]
+   btrfs_drop_snapshot+0x356/0x71a [btrfs]
+   btrfs_clean_one_deleted_snapshot+0xb8/0xf0 [btrfs]
+   cleaner_kthread+0x12b/0x160 [btrfs]
+   kthread+0x112/0x130
+   ret_from_fork+0x27/0x50
 
-Actually I think you are hitting the issue fixed by the following patch: 
-https://github.com/kdave/btrfs-devel/commit/db0d10b02620b83ee592f6fc023ae146d72c5f65
+[CAUSE]
+When dropping snapshots with qgroup enabled, we will trigger backref
+walk.
 
+However such backref walk at that timing is pretty dangerous, as if one
+of the parent nodes get WRITE locked by other thread, we could cause a
+dead lock.
 
-The patch went into 4.18, yet your initial report said the hang occurs on 4.17. Could you try running 4.19 with e73e81b6d011 ("btrfs: balance dirty metadata pages in btrfs_finish_ordered_io")
-reverted. 
+For example:
 
+           FS 260     FS 261 (Dropped)
+            node A        node B
+           /      \      /      \
+       node C      node D      node E
+      /   \         /  \        /     \
+  leaf F|leaf G|leaf H|leaf I|leaf J|leaf K
 
+The lock sequence would be:
 
-> 
-> Cheers and Thanks,
-> 
-> sb. Scott Blomquist
-> 
-> 
-> 
+      Thread A (cleaner)             |       Thread B (other writer)
+-----------------------------------------------------------------------
+write_lock(B)                        |
+write_lock(D)                        |
+^^^ called by walk_down_tree()       |
+                                     |       write_lock(A)
+                                     |       write_lock(D) << Stall
+read_lock(H) << for backref walk     |
+read_lock(D) << lock owner is        |
+                the same thread A    |
+                so read lock is OK   |
+read_lock(A) << Stall                |
+
+So thread A hold write lock D, and needs read lock A to unlock.
+While thread B holds write lock A, while needs lock D to unlock.
+
+This will cause a dead lock.
+
+This is not only limited to snapshot dropping case.
+As the backref walk, even only happens on commit trees, is breaking the
+normal top-down locking order, makes it deadlock prone.
+
+[FIX]
+The solution is not to trigger backref walk with any write lock hold.
+This means we can't do backref walk at delayed ref insert time.
+
+So this patch will mostly revert commit fb235dc06fac ("btrfs: qgroup:
+Move half of the qgroup accounting time out of commit trans").
+
+Reported-by: David Sterba <dsterba@suse.cz>
+Reported-by: Filipe Manana <fdmanana@suse.com>
+Fixes: fb235dc06fac ("btrfs: qgroup: Move half of the qgroup accounting time out of commit trans")
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/delayed-ref.c | 24 ++++--------------------
+ fs/btrfs/qgroup.c      | 39 +++------------------------------------
+ fs/btrfs/qgroup.h      | 30 ++----------------------------
+ 3 files changed, 9 insertions(+), 84 deletions(-)
+
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index 7d2a413df90d..ed42a8305f50 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -625,12 +625,10 @@ static noinline struct btrfs_delayed_ref_head *
+ add_delayed_ref_head(struct btrfs_trans_handle *trans,
+ 		     struct btrfs_delayed_ref_head *head_ref,
+ 		     struct btrfs_qgroup_extent_record *qrecord,
+-		     int action, int *qrecord_inserted_ret,
+-		     int *old_ref_mod, int *new_ref_mod)
++		     int action, int *old_ref_mod, int *new_ref_mod)
+ {
+ 	struct btrfs_delayed_ref_head *existing;
+ 	struct btrfs_delayed_ref_root *delayed_refs;
+-	int qrecord_inserted = 0;
+ 
+ 	delayed_refs = &trans->transaction->delayed_refs;
+ 
+@@ -639,8 +637,6 @@ add_delayed_ref_head(struct btrfs_trans_handle *trans,
+ 		if (btrfs_qgroup_trace_extent_nolock(trans->fs_info,
+ 					delayed_refs, qrecord))
+ 			kfree(qrecord);
+-		else
+-			qrecord_inserted = 1;
+ 	}
+ 
+ 	trace_add_delayed_ref_head(trans->fs_info, head_ref, action);
+@@ -670,8 +666,6 @@ add_delayed_ref_head(struct btrfs_trans_handle *trans,
+ 		atomic_inc(&delayed_refs->num_entries);
+ 		trans->delayed_ref_updates++;
+ 	}
+-	if (qrecord_inserted_ret)
+-		*qrecord_inserted_ret = qrecord_inserted;
+ 	if (new_ref_mod)
+ 		*new_ref_mod = head_ref->total_ref_mod;
+ 
+@@ -745,7 +739,6 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
+ 	struct btrfs_delayed_ref_head *head_ref;
+ 	struct btrfs_delayed_ref_root *delayed_refs;
+ 	struct btrfs_qgroup_extent_record *record = NULL;
+-	int qrecord_inserted;
+ 	bool is_system = (ref_root == BTRFS_CHUNK_TREE_OBJECTID);
+ 	int ret;
+ 	u8 ref_type;
+@@ -794,8 +787,7 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
+ 	 * the spin lock
+ 	 */
+ 	head_ref = add_delayed_ref_head(trans, head_ref, record,
+-					action, &qrecord_inserted,
+-					old_ref_mod, new_ref_mod);
++					action, old_ref_mod, new_ref_mod);
+ 
+ 	ret = insert_delayed_ref(trans, delayed_refs, head_ref, &ref->node);
+ 	spin_unlock(&delayed_refs->lock);
+@@ -812,9 +804,6 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
+ 	if (ret > 0)
+ 		kmem_cache_free(btrfs_delayed_tree_ref_cachep, ref);
+ 
+-	if (qrecord_inserted)
+-		btrfs_qgroup_trace_extent_post(fs_info, record);
+-
+ 	return 0;
+ }
+ 
+@@ -832,7 +821,6 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
+ 	struct btrfs_delayed_ref_head *head_ref;
+ 	struct btrfs_delayed_ref_root *delayed_refs;
+ 	struct btrfs_qgroup_extent_record *record = NULL;
+-	int qrecord_inserted;
+ 	int ret;
+ 	u8 ref_type;
+ 
+@@ -881,8 +869,7 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
+ 	 * the spin lock
+ 	 */
+ 	head_ref = add_delayed_ref_head(trans, head_ref, record,
+-					action, &qrecord_inserted,
+-					old_ref_mod, new_ref_mod);
++					action, old_ref_mod, new_ref_mod);
+ 
+ 	ret = insert_delayed_ref(trans, delayed_refs, head_ref, &ref->node);
+ 	spin_unlock(&delayed_refs->lock);
+@@ -899,9 +886,6 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
+ 	if (ret > 0)
+ 		kmem_cache_free(btrfs_delayed_data_ref_cachep, ref);
+ 
+-
+-	if (qrecord_inserted)
+-		return btrfs_qgroup_trace_extent_post(fs_info, record);
+ 	return 0;
+ }
+ 
+@@ -926,7 +910,7 @@ int btrfs_add_delayed_extent_op(struct btrfs_fs_info *fs_info,
+ 	spin_lock(&delayed_refs->lock);
+ 
+ 	add_delayed_ref_head(trans, head_ref, NULL, BTRFS_UPDATE_DELAYED_HEAD,
+-			     NULL, NULL, NULL);
++			     NULL, NULL);
+ 
+ 	spin_unlock(&delayed_refs->lock);
+ 
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index f214b490d80c..ba30adac88a7 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1565,33 +1565,6 @@ int btrfs_qgroup_trace_extent_nolock(struct btrfs_fs_info *fs_info,
+ 	return 0;
+ }
+ 
+-int btrfs_qgroup_trace_extent_post(struct btrfs_fs_info *fs_info,
+-				   struct btrfs_qgroup_extent_record *qrecord)
+-{
+-	struct ulist *old_root;
+-	u64 bytenr = qrecord->bytenr;
+-	int ret;
+-
+-	ret = btrfs_find_all_roots(NULL, fs_info, bytenr, 0, &old_root, false);
+-	if (ret < 0) {
+-		fs_info->qgroup_flags |= BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
+-		btrfs_warn(fs_info,
+-"error accounting new delayed refs extent (err code: %d), quota inconsistent",
+-			ret);
+-		return 0;
+-	}
+-
+-	/*
+-	 * Here we don't need to get the lock of
+-	 * trans->transaction->delayed_refs, since inserted qrecord won't
+-	 * be deleted, only qrecord->node may be modified (new qrecord insert)
+-	 *
+-	 * So modifying qrecord->old_roots is safe here
+-	 */
+-	qrecord->old_roots = old_root;
+-	return 0;
+-}
+-
+ int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans, u64 bytenr,
+ 			      u64 num_bytes, gfp_t gfp_flag)
+ {
+@@ -1615,11 +1588,9 @@ int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans, u64 bytenr,
+ 	spin_lock(&delayed_refs->lock);
+ 	ret = btrfs_qgroup_trace_extent_nolock(fs_info, delayed_refs, record);
+ 	spin_unlock(&delayed_refs->lock);
+-	if (ret > 0) {
++	if (ret > 0)
+ 		kfree(record);
+-		return 0;
+-	}
+-	return btrfs_qgroup_trace_extent_post(fs_info, record);
++	return 0;
+ }
+ 
+ int btrfs_qgroup_trace_leaf_items(struct btrfs_trans_handle *trans,
+@@ -2569,11 +2540,7 @@ int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans)
+ 		trace_btrfs_qgroup_account_extents(fs_info, record);
+ 
+ 		if (!ret) {
+-			/*
+-			 * Old roots should be searched when inserting qgroup
+-			 * extent record
+-			 */
+-			if (WARN_ON(!record->old_roots)) {
++			if (!record->old_roots) {
+ 				/* Search commit root to find old_roots */
+ 				ret = btrfs_find_all_roots(NULL, fs_info,
+ 						record->bytenr, 0,
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index d4fae53969d4..226956f0bd73 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -174,8 +174,7 @@ struct btrfs_delayed_extent_op;
+  * Inform qgroup to trace one dirty extent, its info is recorded in @record.
+  * So qgroup can account it at transaction committing time.
+  *
+- * No lock version, caller must acquire delayed ref lock and allocated memory,
+- * then call btrfs_qgroup_trace_extent_post() after exiting lock context.
++ * No lock version, caller must acquire delayed ref lock and allocate memory,
+  *
+  * Return 0 for success insert
+  * Return >0 for existing record, caller can free @record safely.
+@@ -186,37 +185,12 @@ int btrfs_qgroup_trace_extent_nolock(
+ 		struct btrfs_delayed_ref_root *delayed_refs,
+ 		struct btrfs_qgroup_extent_record *record);
+ 
+-/*
+- * Post handler after qgroup_trace_extent_nolock().
+- *
+- * NOTE: Current qgroup does the expensive backref walk at transaction
+- * committing time with TRANS_STATE_COMMIT_DOING, this blocks incoming
+- * new transaction.
+- * This is designed to allow btrfs_find_all_roots() to get correct new_roots
+- * result.
+- *
+- * However for old_roots there is no need to do backref walk at that time,
+- * since we search commit roots to walk backref and result will always be
+- * correct.
+- *
+- * Due to the nature of no lock version, we can't do backref there.
+- * So we must call btrfs_qgroup_trace_extent_post() after exiting
+- * spinlock context.
+- *
+- * TODO: If we can fix and prove btrfs_find_all_roots() can get correct result
+- * using current root, then we can move all expensive backref walk out of
+- * transaction committing, but not now as qgroup accounting will be wrong again.
+- */
+-int btrfs_qgroup_trace_extent_post(struct btrfs_fs_info *fs_info,
+-				   struct btrfs_qgroup_extent_record *qrecord);
+-
+ /*
+  * Inform qgroup to trace one dirty extent, specified by @bytenr and
+  * @num_bytes.
+  * So qgroup can account it at commit trans time.
+  *
+- * Better encapsulated version, with memory allocation and backref walk for
+- * commit roots.
++ * Better encapsulated version, with memory allocation
+  * So this can sleep.
+  *
+  * Return 0 if the operation is done.
+-- 
+2.20.1
+

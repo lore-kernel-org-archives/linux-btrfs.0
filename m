@@ -2,166 +2,183 @@ Return-Path: <SRS0=dEEl=PX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_PASS autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DA42EC43387
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 00:55:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9CE96C43387
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 03:45:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B290120659
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 00:55:08 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6CA8D20859
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 03:45:10 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel-dk.20150623.gappssmtp.com header.i=@kernel-dk.20150623.gappssmtp.com header.b="G/lpLBsq"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727547AbfAOAzH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 14 Jan 2019 19:55:07 -0500
-Received: from mout.gmx.net ([212.227.17.21]:44477 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727455AbfAOAzH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Jan 2019 19:55:07 -0500
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx102
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0LcmN9-1h8sW32Zfz-00k6Fj; Tue, 15
- Jan 2019 01:54:38 +0100
-Subject: Re: [PATCH v3.1 3/7] btrfs: relocation: Delay reloc tree deletion
- after merge_reloc_roots()
-To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20190107054151.18662-1-wqu@suse.com>
- <20190107054151.18662-4-wqu@suse.com> <20190114172107.GE2900@twin.jikos.cz>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <8b353e42-90b3-235f-b172-6f0cb55b2feb@gmx.com>
-Date:   Tue, 15 Jan 2019 08:54:27 +0800
+        id S1728035AbfAODpE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 14 Jan 2019 22:45:04 -0500
+Received: from mail-pl1-f193.google.com ([209.85.214.193]:46412 "EHLO
+        mail-pl1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728007AbfAODpE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 Jan 2019 22:45:04 -0500
+Received: by mail-pl1-f193.google.com with SMTP id t13so610251ply.13
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Jan 2019 19:45:03 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=kernel-dk.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=JgSlqc6nlGoNjXQeGb5wA3jDIxX1QCLJM2o4CbLmhgM=;
+        b=G/lpLBsqVhUl7c0qjPyfLig1mTn5h+wVHd8tPdPmkgbn56m+sNQDjqLhPndxTDNbF+
+         C8HKFU+N/MvKnoi5sOh3lIYPGBRwr9sBaPwctKm5CZq4quVBA/kGx30M08BlZN6IwFUX
+         0lcVIgAxUaGJkKkZ/5o6DgJo9u3xBQ/LsJc+BZk4GV3z8ZKxU57XynZ7q3kCKLM8SoU0
+         pDNd6rsE53Sftzh8vBkTELhp4eHrQvOaYVkmqmfh1GZZMph1kIM0i6dgUptJR0k4cYnq
+         BoWepXaHfSvErZT9ibW0Wj3uK3M7KTqpXa+Mxg2u61HtBMmqKeI8Qs1nehPA3PiSx+FM
+         WIXQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=JgSlqc6nlGoNjXQeGb5wA3jDIxX1QCLJM2o4CbLmhgM=;
+        b=FTJQXgdYHnNiX8m2vgubS7xuDFHcpsGx0XfOTfH5a8tJCYX3UxGvh34XKeFkJYjbzn
+         SrfK+oMJHawh0hNhF0IpdjrckZwOBmS/2hvf1dBptWs1SWnVIP9HEfWIqIvb/isEzufU
+         KfgkW48hbkJxRXzoYPiCjpNbjTCkwoEfma5CHzsRbhVXhih2jvg8lz+5zJvVV6+oXyP6
+         sdoLgWo+YaCuqW7sYWIM/06M/Zdw57PD3yg69jD2ztK4BoMKZdDh2KV0/+Z0c8uDccEx
+         KYvKXwXXxo2/zVMWQ3cmgcLV9lyvN1KUGxrTnd70l+eO5JI3nMS95+xPFZ8lr0wv/2uR
+         aX/A==
+X-Gm-Message-State: AJcUukeJjkOSFIWcPOu2FiMuJTit3LVFKfr+CpWY5L991d6RI5LGNbYi
+        egsZcPEmYRgifKyEUK9/wVRBGA==
+X-Google-Smtp-Source: ALg8bN5teNbXhSCJO9tQ0AQE99WfUNUrtoThv9dSlItrMG/o7uRqGRYe+xX3MznvZx3JJf4lAux2KA==
+X-Received: by 2002:a17:902:7d82:: with SMTP id a2mr1952138plm.163.1547523903354;
+        Mon, 14 Jan 2019 19:45:03 -0800 (PST)
+Received: from [192.168.1.121] (66.29.188.166.static.utbb.net. [66.29.188.166])
+        by smtp.gmail.com with ESMTPSA id b7sm2553305pfa.52.2019.01.14.19.45.00
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Mon, 14 Jan 2019 19:45:02 -0800 (PST)
+Subject: Re: [PATCH V13 00/19] block: support multi-page bvec
+To:     Ming Lei <ming.lei@redhat.com>
+Cc:     linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-mm@kvack.org, Theodore Ts'o <tytso@mit.edu>,
+        Omar Sandoval <osandov@fb.com>,
+        Sagi Grimberg <sagi@grimberg.me>,
+        Dave Chinner <dchinner@redhat.com>,
+        Kent Overstreet <kent.overstreet@gmail.com>,
+        Mike Snitzer <snitzer@redhat.com>, dm-devel@redhat.com,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        linux-fsdevel@vger.kernel.org, linux-raid@vger.kernel.org,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
+        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
+        Christoph Hellwig <hch@lst.de>, linux-ext4@vger.kernel.org,
+        Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
+        Boaz Harrosh <ooo@electrozaur.com>,
+        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
+References: <20190111110127.21664-1-ming.lei@redhat.com>
+From:   Jens Axboe <axboe@kernel.dk>
+Message-ID: <49d610a4-0c2b-f7e7-6505-9dde59343b75@kernel.dk>
+Date:   Mon, 14 Jan 2019 20:44:59 -0700
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.4.0
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20190114172107.GE2900@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="BQi2a3K9kLeIjz9KwRb3ujZwj12Bw7j9N"
-X-Provags-ID: V03:K1:dQbiwauh+C2ZkF3xWHclTU6eS+IDrk7V1CA6ccHCUjX8C3sLvYw
- Accnc6rqn93socZ6Wc4so0h3h826wAztf6w9eWuCuJ/lJOGftsNe7GnMpIYAMu8O6EncKid
- DFJtFQTzhDooN+zM5nWK7KwF89lWtMOl8VDga/n1K1UZ+8d3EU3UdiagUk1hYZP8yyLDbpd
- CGEFcUc8WO1bx+fIiJbKw==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:Mfwnc6gA3c8=:FYuZ9Z4o2XGbq4pGe2vj3O
- g9QYuAI0LR20DfYnZ2o7eoLDcvmU/SQkr/zqouG41816gmKLDkyv2sGs2Ubi4fF4k1rAgRWfD
- Hv8QBMFTKzlzXP+Asom+Jj4WZFHrVEiTQvRaKSyLd9y8vJ4Rqu4Knyc5bzxVSNgOiTFH3fUz7
- bWEdY3NQc2jydE3uhSY3xeJMGqRg2EIJf1OJJ9ROgUxXOi5+ulo6lCbfrXi+GE0EIviwbyINE
- xfnObPqWkhEztDN/tvEB35UzFLHry/uxeNRaVpq5SDODbV74YgyGy3YlAbKI9KPHd2FuHcAf4
- 7McQrg6SsHTrc5pM5tH5lk1AlnQehLpt4zla2deJjBKz8MUtpp8jGIIj+8T42L+wyNTGlC/ih
- aS22Vl+4Cl0FYzgW2ajox9RdC7eMfGbXTSywsyn61MHCvRsN8wsaU72Q5+82+DaiMqx8a1szg
- 1XdNxQBjLp3Xp5EuG4KIsIYFUWpUJIjTciVfM2bY3CvdLI0q/DY7ZNff8NiwQXH3Twuz+XtJJ
- SDQfb/qckJarR8IUwVCuD1kSKa6cl9237UwQ992H/j449gxjK24gHkYvesaTjn1nMK6+MPvJj
- INC3Hq7D2KPMwh8MGOdSiUpHcGue8QmN2l4MQUL/ovcD68GPYQ6HOGtzludCyQwR65n2Hyx6T
- M513qOyL4PEf2dQ7xG+1tRZ07wYldkzZqcbYoja1GfNQJ6h1TvsGd+LhQA1lGWiYCD+lPQERN
- olXn3ahLJHHk1nXjNPlH60rGwXKS2lINTLZLyRVMaWLk1IXODNyNGwk2hgzU0zJHb2sInb621
- xf8r1XFq/iYgD1kDSeCK+PDg4kKR6kyJN2FkawTfsDzAdcCQzLH2dvu79hvIqGHXbsqEWL6/e
- Hz7XyviG+BuZg6yp8t5vO6/TmOroukXI0SlIwKdro9n394TiUkcc3MDQYcCrB9
+In-Reply-To: <20190111110127.21664-1-ming.lei@redhat.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---BQi2a3K9kLeIjz9KwRb3ujZwj12Bw7j9N
-Content-Type: multipart/mixed; boundary="3FLF4cUPm2QmZHnOYVKWyuuuyrVCwBXLt";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <8b353e42-90b3-235f-b172-6f0cb55b2feb@gmx.com>
-Subject: Re: [PATCH v3.1 3/7] btrfs: relocation: Delay reloc tree deletion
- after merge_reloc_roots()
-References: <20190107054151.18662-1-wqu@suse.com>
- <20190107054151.18662-4-wqu@suse.com> <20190114172107.GE2900@twin.jikos.cz>
-In-Reply-To: <20190114172107.GE2900@twin.jikos.cz>
+On 1/11/19 4:01 AM, Ming Lei wrote:
+> Hi,
+> 
+> This patchset brings multi-page bvec into block layer:
+> 
+> 1) what is multi-page bvec?
+> 
+> Multipage bvecs means that one 'struct bio_bvec' can hold multiple pages
+> which are physically contiguous instead of one single page used in linux
+> kernel for long time.
+> 
+> 2) why is multi-page bvec introduced?
+> 
+> Kent proposed the idea[1] first. 
+> 
+> As system's RAM becomes much bigger than before, and huge page, transparent
+> huge page and memory compaction are widely used, it is a bit easy now
+> to see physically contiguous pages from fs in I/O. On the other hand, from
+> block layer's view, it isn't necessary to store intermediate pages into bvec,
+> and it is enough to just store the physicallly contiguous 'segment' in each
+> io vector.
+> 
+> Also huge pages are being brought to filesystem and swap [2][6], we can
+> do IO on a hugepage each time[3], which requires that one bio can transfer
+> at least one huge page one time. Turns out it isn't flexiable to change
+> BIO_MAX_PAGES simply[3][5]. Multipage bvec can fit in this case very well.
+> As we saw, if CONFIG_THP_SWAP is enabled, BIO_MAX_PAGES can be configured
+> as much bigger, such as 512, which requires at least two 4K pages for holding
+> the bvec table.
+> 
+> With multi-page bvec:
+> 
+> - Inside block layer, both bio splitting and sg map can become more
+> efficient than before by just traversing the physically contiguous
+> 'segment' instead of each page.
+> 
+> - segment handling in block layer can be improved much in future since it
+> should be quite easy to convert multipage bvec into segment easily. For
+> example, we might just store segment in each bvec directly in future.
+> 
+> - bio size can be increased and it should improve some high-bandwidth IO
+> case in theory[4].
+> 
+> - there is opportunity in future to improve memory footprint of bvecs. 
+> 
+> 3) how is multi-page bvec implemented in this patchset?
+> 
+> Patch 1 ~ 4 parpares for supporting multi-page bvec. 
+> 
+> Patches 5 ~ 15 implement multipage bvec in block layer:
+> 
+> 	- put all tricks into bvec/bio/rq iterators, and as far as
+> 	drivers and fs use these standard iterators, they are happy
+> 	with multipage bvec
+> 
+> 	- introduce bio_for_each_bvec() to iterate over multipage bvec for splitting
+> 	bio and mapping sg
+> 
+> 	- keep current bio_for_each_segment*() to itereate over singlepage bvec and
+> 	make sure current users won't be broken; especailly, convert to this
+> 	new helper prototype in single patch 21 given it is bascially a mechanism
+> 	conversion
+> 
+> 	- deal with iomap & xfs's sub-pagesize io vec in patch 13
+> 
+> 	- enalbe multipage bvec in patch 14 
+> 
+> Patch 16 redefines BIO_MAX_PAGES as 256.
+> 
+> Patch 17 documents usages of bio iterator helpers.
+> 
+> Patch 18~19 kills NO_SG_MERGE.
+> 
+> These patches can be found in the following git tree:
+> 
+> 	git:  https://github.com/ming1/linux.git  for-4.21-block-mp-bvec-V12
+> 
+> Lots of test(blktest, xfstests, ltp io, ...) have been run with this patchset,
+> and not see regression.
+> 
+> Thanks Christoph for reviewing the early version and providing very good
+> suggestions, such as: introduce bio_init_with_vec_table(), remove another
+> unnecessary helpers for cleanup and so on.
+> 
+> Thanks Chritoph and Omar for reviewing V10/V11/V12, and provides lots of
+> helpful comments.
 
---3FLF4cUPm2QmZHnOYVKWyuuuyrVCwBXLt
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Thanks for persisting in this endeavor, Ming, I've applied this for 5.1.
 
+-- 
+Jens Axboe
 
-
-On 2019/1/15 =E4=B8=8A=E5=8D=881:21, David Sterba wrote:
-> On Mon, Jan 07, 2019 at 01:41:47PM +0800, Qu Wenruo wrote:
->> +/*
->> + * Helper structure to keep record of a file tree whose reloc
->> + * root needs to be cleaned up.
->> + *
->> + * Since reloc_control is used less frequently than btrfs_root, this =
-should
->> + * prevent us to add another structure in btrfs_root.
->> + */
->> +struct dirty_source_root {
->> +	struct rb_node node;
->> +
->> +	/* Root must be file tree */
->=20
-> The naming starts here and is used in the following patches too: the
-> naming is IMO confusing, here it's still ok but variables like
-> 'file_bytenr' or 'file_parent' sound weird in context of relocation.
-
-'file_bytenr' and 'file_parent' are introduced in the 5th patch.
-
-My main concern of using traditional naming like 'source/destination'
-is, for swapped blocks, source/destination needs extra context to
-determine which is which.
-
-So I tend to use naming which shows directly to which tree the block
-belongs.
-
->=20
-> The file tree is the subvolume right, or would it be confusing in
-> another way?
->=20
-So did you mean use something like 'subv_bytenr' and 'subv_generation'?
-
-I'm OK for this naming.
-
-Thanks,
-Qu
-
-
---3FLF4cUPm2QmZHnOYVKWyuuuyrVCwBXLt--
-
---BQi2a3K9kLeIjz9KwRb3ujZwj12Bw7j9N
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlw9L0MACgkQwj2R86El
-/qicDQgAq3VrwGvDNJh7EN1/nYzId9J/rSvg4PiaXo873RCYdbn97ZY7ofOvj9Dj
-R0FHAT2iaSIxAQj2jNnMH5aRDjX0LgxftDMbPN1eTR56vUK/LgrgZRJ+BASGHZnw
-Nrz6sTwzKKNd6sN90Zx8krUZRwfAAHkgwWQI4NANRtwzmBnoLDf6qXs7diNu9r36
-hJ0Wa6BJIIK1EA5Eb/N8ZqzWRUnId+bCw/sbC2ZiK5atQhENorHCIEWssRWwp+5f
-HTZdoIOKB46iODdq1zFtXKCjblf4BfeYkkHWzVY9HcEX2ZsLT8IKAxeeO4t/tf9X
-VID3oxh5UZbbxoZMrwMlZk9ZzyZ3jQ==
-=AdGJ
------END PGP SIGNATURE-----
-
---BQi2a3K9kLeIjz9KwRb3ujZwj12Bw7j9N--

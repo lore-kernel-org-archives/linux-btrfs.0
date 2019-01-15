@@ -2,158 +2,87 @@ Return-Path: <SRS0=dEEl=PX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_PASS,USER_AGENT_NEOMUTT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6047DC43387
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 17:03:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9C723C43387
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 17:26:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 36F7F20645
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 17:03:55 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5541A20859
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 17:26:31 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="WFb/3Nbs"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732401AbfAORDy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 15 Jan 2019 12:03:54 -0500
-Received: from wp158.webpack.hosteurope.de ([80.237.132.165]:55834 "EHLO
-        wp158.webpack.hosteurope.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1732214AbfAORDx (ORCPT
+        id S2388292AbfAOR0a (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 15 Jan 2019 12:26:30 -0500
+Received: from mail-yb1-f195.google.com ([209.85.219.195]:33424 "EHLO
+        mail-yb1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2388275AbfAOR0a (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Jan 2019 12:03:53 -0500
-X-Greylist: delayed 1842 seconds by postgrey-1.27 at vger.kernel.org; Tue, 15 Jan 2019 12:03:52 EST
-Received: from ip5b41acd8.dynamic.kabel-deutschland.de ([91.65.172.216] helo=[192.168.0.31]); authenticated
-        by wp158.webpack.hosteurope.de running ExIM with esmtpsa (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128)
-        id 1gjReG-0003nw-PE; Tue, 15 Jan 2019 17:33:08 +0100
-To:     linux-btrfs@vger.kernel.org
-From:   Christian Schneider <christian@ch-sc.de>
-Subject: issue mounting volume
-Message-ID: <6760df5e-a757-56a0-d8c9-3f172458fc65@ch-sc.de>
-Date:   Tue, 15 Jan 2019 17:33:09 +0100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.4.0
+        Tue, 15 Jan 2019 12:26:30 -0500
+Received: by mail-yb1-f195.google.com with SMTP id o73so1375677ybc.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Jan 2019 09:26:29 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to:user-agent;
+        bh=W3chvmWM25O1I5FF5x/hdwX6+hC6ejDLHmrf7sX+dNI=;
+        b=WFb/3NbsYRXNTIUHVC+92fIvcRgIyh61cGCXUNLeqfop0cn20rJtfpBxsIYOMds77E
+         a2ipCs8M1jzwfitR0Gs1G13YY10fnjjnkKFALgk1F0aL2qt5zTru/0dliMcf96ZuK2s8
+         Eckh5cdP6LdS/3QLxMBfU9fBCiZuGILVgiZqKNxeXzBWlizl5MxK3E0bZRRuPHDZRMv2
+         TKRxF3ClbozS34fTKtAU9aLhgkbS+a6mt0I2rfG2wqgAtCgADYwiwlrxigX1Hy8waN4+
+         L7AsqOIGrTXuP7YkRR22oTeefEK0B2w0B3cvHDmjPpUJd3wFRB2lf3eFrfW42tuMR7/e
+         f8VQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to:user-agent;
+        bh=W3chvmWM25O1I5FF5x/hdwX6+hC6ejDLHmrf7sX+dNI=;
+        b=PSTB3731H+oPt5k6tAHlFhG7P9jWs4Xh5lO7Fi/YRQASVvkx/pSVGGlxYTKEPoqj5h
+         uEg1Qr3LrZxB3Ir0wJ9MYSJtRXNCUh9xW/cnLftmZprw7cilVyuUVqhqiYRzSnv7Z/al
+         uweTo4NpEFRvfbgsazCqa7DMonmWjmpyQqnK3P98stZyMwayK0mLuh3n+8xWTD27ToCW
+         ZGcC2o1KpY0KMJzIXZP5qmNSO3WCrc2Jb6XbRqLTXnRWC49xdMoxq5KTvESQWXXO3+2l
+         //a5PXKyp8KSpKDpcZ5+GeEY+PdCO+p9Vxz07niKhlI9Mf3E45g3acK+QZpU4VBpRTwy
+         +0Hw==
+X-Gm-Message-State: AJcUukdDhB5PA21b3rEZ24s7TwECjkcqAfF3vAiNy/vO+1eMd7gk4f0X
+        GiW+Q4WFepuCV3U6FMMQk2VYVCBsc7E=
+X-Google-Smtp-Source: ALg8bN4hdWTRDxV696RQTmH715VjzosSHzUaIC9Eq+MmM45fxAZ1+4MTrU0ZtaDclUQ+vpjyC9c+ZQ==
+X-Received: by 2002:a5b:cd0:: with SMTP id e16mr4006800ybr.2.1547573189107;
+        Tue, 15 Jan 2019 09:26:29 -0800 (PST)
+Received: from localhost ([2620:10d:c091:180::1:d708])
+        by smtp.gmail.com with ESMTPSA id n133sm1375372ywb.55.2019.01.15.09.26.27
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Tue, 15 Jan 2019 09:26:28 -0800 (PST)
+Date:   Tue, 15 Jan 2019 12:26:26 -0500
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v4 0/7] btrfs: qgroup: Delay subtree scan to reduce
+ overhead
+Message-ID: <20190115172625.pgblt26vzmdnsv5w@macbook-pro-91.dhcp.thefacebook.com>
+References: <20190115081604.785-1-wqu@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: de-DE
-Content-Transfer-Encoding: 7bit
-X-bounce-key: webpack.hosteurope.de;christian@ch-sc.de;1547571832;193fbc6c;
-X-HE-SMSGID: 1gjReG-0003nw-PE
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190115081604.785-1-wqu@suse.com>
+User-Agent: NeoMutt/20180716
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Tue, Jan 15, 2019 at 04:15:57PM +0800, Qu Wenruo wrote:
+> This patchset can be fetched from github:
+> https://github.com/adam900710/linux/tree/qgroup_delayed_subtree
+> 
+> Which is based on v5.0-rc1.
+> 
 
-Hello all, after a power failure I have issues mounting a btrfs volume:
+I've been testing these patches hoping to get rid of the qgroup deadlock that
+these patches are supposed to fix, but instead they make the box completely
+unusable with 100% cpu usage for minutes at a time at every transaction commit.
+Thanks,
 
-  mount /dev/md42
-mount: /home: wrong fs type, bad option, bad superblock on /dev/md42, 
-missing codepage or helper program, or other error
-
-dmesg
-[...]
-[ 4322.061000] BTRFS info (device md42): use lzo compression, level 0
-[ 4322.061004] BTRFS info (device md42): disk space caching is enabled
-[ 4322.061005] BTRFS info (device md42): has skinny extents
-[ 4323.016007] BTRFS error (device md42): parent transid verify failed 
-on 448888832 wanted 68773 found 68768
-[ 4323.025656] BTRFS error (device md42): parent transid verify failed 
-on 448888832 wanted 68773 found 68771
-[ 4323.025665] BTRFS error (device md42): failed to read block groups: -5
-[ 4323.036088] BTRFS error (device md42): open_ctree failed
-
-adding -o ro,usebackuproot doesn't change anything, same mount error, 
-same error messages in dmesg.
-
-Also tried btrfs check with this error.
-btrfs check /dev/md42
-Opening filesystem to check...
-parent transid verify failed on 448888832 wanted 68773 found 68768
-parent transid verify failed on 448888832 wanted 68773 found 68768
-parent transid verify failed on 448888832 wanted 68773 found 68771
-parent transid verify failed on 448888832 wanted 68773 found 68771
-Ignoring transid failure
-leaf parent key incorrect 448888832
-ERROR: cannot open file system
-
-I also tried btrfs-find-root with this result:
-btrfs-find-root /dev/md42
-parent transid verify failed on 448888832 wanted 68773 found 68768
-parent transid verify failed on 448888832 wanted 68773 found 68768
-parent transid verify failed on 448888832 wanted 68773 found 68771
-parent transid verify failed on 448888832 wanted 68773 found 68771
-Ignoring transid failure
-leaf parent key incorrect 448888832
-Superblock thinks the generation is 68921
-Superblock thinks the level is 1
-Found tree root at 629129216 gen 68921 level 1
-Well block 625803264(gen: 68917 level: 1) seems good, but 
-generation/level doesn't match, want gen: 68921 level: 1
-Well block 602259456(gen: 68899 level: 1) seems good, but 
-generation/level doesn't match, want gen: 68921 level: 1
-Well block 600997888(gen: 68898 level: 1) seems good, but 
-generation/level doesn't match, want gen: 68921 level: 1
-Well block 581926912(gen: 68885 level: 1) seems good, but 
-generation/level doesn't match, want gen: 68921 level: 1
-Well block 582320128(gen: 68884 level: 1) seems good, but 
-generation/level doesn't match, want gen: 68921 level: 1
-Well block 578306048(gen: 68882 level: 1) seems good, but 
-generation/level doesn't match, want gen: 68921 level: 1
-Well block 577339392(gen: 68881 level: 1) seems good, but 
-generation/level doesn't match, want gen: 68921 level: 1
-Well block 575225856(gen: 68880 level: 1) seems good, but 
-generation/level doesn't match, want gen: 68921 level: 1
-Well block 574341120(gen: 68879 level: 1) seems good, but 
-generation/level doesn't match, want gen: 68921 level: 1
-Well block 574947328(gen: 68878 level: 1) seems good, but 
-generation/level doesn't match, want gen: 68921 level: 1
-Well block 572555264(gen: 68877 level: 1) seems good, but 
-generation/level doesn't match, want gen: 68921 level: 1
-Well block 571179008(gen: 68876 level: 1) seems good, but 
-generation/level doesn't match, want gen: 68921 level: 1
-Well block 569393152(gen: 68875 level: 1) seems good, but 
-generation/level doesn't match, want gen: 68921 level: 1
-Well block 568164352(gen: 68874 level: 1) seems good, but 
-generation/level doesn't match, want gen: 68921 level: 1
-Well block 566050816(gen: 68873 level: 1) seems good, but 
-generation/level doesn't match, want gen: 68921 level: 1
-Well block 565002240(gen: 68872 level: 1) seems good, but 
-generation/level doesn't match, want gen: 68921 level: 1
-Well block 563920896(gen: 68871 level: 1) seems good, but 
-generation/level doesn't match, want gen: 68921 level: 1
-Well block 564346880(gen: 68870 level: 1) seems good, but 
-generation/level doesn't match, want gen: 68921 level: 1
-Well block 561446912(gen: 68869 level: 1) seems good, but 
-generation/level doesn't match, want gen: 68921 level: 1
-Well block 560267264(gen: 68868 level: 1) seems good, but 
-generation/level doesn't match, want gen: 68921 level: 1
-Well block 560545792(gen: 68867 level: 1) seems good, but 
-generation/level doesn't match, want gen: 68921 level: 1
-Well block 557858816(gen: 68866 level: 1) seems good, but 
-generation/level doesn't match, want gen: 68921 level: 1
-Well block 556924928(gen: 68865 level: 1) seems good, but 
-generation/level doesn't match, want gen: 68921 level: 1
-[...]
-
-The last line repeats with different block numbers with decreasing gen 
-and level sometimes 0.
-
-A simple
-btrfs filesystem show /dev/md42
-Label: none  uuid: 8c6746f0-944a-45c5-90f3-622724d15998
-         Total devices 1 FS bytes used 1.63TiB
-         devid    1 size 7.26TiB used 1.90TiB path /dev/md42
-
-for me, seems to be ok.
-
-Is there something I could try to recover from this?
-Any help is welcome, as it happened during backup creation, and the 
-backup volume suffers from the same issue.
-
-Additional info of system:
-uname -a
-uname -a
-Linux jane 4.19.6-gentoo #1 SMP PREEMPT Sat Dec 15 13:26:24 CET 2018 
-x86_64 Intel(R) Core(TM) i7-4785T CPU @ 2.20GHz GenuineIntel GNU/Linux
-
-btrfs --version
-btrfs-progs v4.19.1
-
-BR, Christian
+Josef

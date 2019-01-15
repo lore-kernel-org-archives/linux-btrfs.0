@@ -2,82 +2,158 @@ Return-Path: <SRS0=dEEl=PX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,URIBL_BLOCKED autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 52D8CC43387
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 15:17:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6047DC43387
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 17:03:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1DD8D204FD
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 15:17:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 36F7F20645
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 17:03:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730712AbfAOPRI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 15 Jan 2019 10:17:08 -0500
-Received: from relay1-d.mail.gandi.net ([217.70.183.193]:41919 "EHLO
-        relay1-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726077AbfAOPRH (ORCPT
+        id S1732401AbfAORDy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 15 Jan 2019 12:03:54 -0500
+Received: from wp158.webpack.hosteurope.de ([80.237.132.165]:55834 "EHLO
+        wp158.webpack.hosteurope.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1732214AbfAORDx (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Jan 2019 10:17:07 -0500
-X-Originating-IP: 217.233.237.245
-Received: from localhost (pD9E9EDF5.dip0.t-ipconnect.de [217.233.237.245])
-        (Authenticated sender: leonard@lausen.nl)
-        by relay1-d.mail.gandi.net (Postfix) with ESMTPSA id 26FE9240018;
-        Tue, 15 Jan 2019 15:17:04 +0000 (UTC)
-From:   Leonard Lausen <leonard@lausen.nl>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS critical corrupt leaf bad key order
-In-Reply-To: <3a74079a-7e13-9368-93fb-0c25a10450e0@gmx.com>
-References: <87d0oyw46b.fsf@lausen.nl> <ddda9d3e-7d63-755c-d421-0e3828059d78@gmx.com> <3a74079a-7e13-9368-93fb-0c25a10450e0@gmx.com>
-Date:   Tue, 15 Jan 2019 15:17:03 +0000
-Message-ID: <87sgxurlw0.fsf@lausen.nl>
+        Tue, 15 Jan 2019 12:03:53 -0500
+X-Greylist: delayed 1842 seconds by postgrey-1.27 at vger.kernel.org; Tue, 15 Jan 2019 12:03:52 EST
+Received: from ip5b41acd8.dynamic.kabel-deutschland.de ([91.65.172.216] helo=[192.168.0.31]); authenticated
+        by wp158.webpack.hosteurope.de running ExIM with esmtpsa (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128)
+        id 1gjReG-0003nw-PE; Tue, 15 Jan 2019 17:33:08 +0100
+To:     linux-btrfs@vger.kernel.org
+From:   Christian Schneider <christian@ch-sc.de>
+Subject: issue mounting volume
+Message-ID: <6760df5e-a757-56a0-d8c9-3f172458fc65@ch-sc.de>
+Date:   Tue, 15 Jan 2019 17:33:09 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.4.0
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: de-DE
+Content-Transfer-Encoding: 7bit
+X-bounce-key: webpack.hosteurope.de;christian@ch-sc.de;1547571832;193fbc6c;
+X-HE-SMSGID: 1gjReG-0003nw-PE
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Qu Wenruo <quwenruo.btrfs@gmx.com> writes:
->> I'm working on the fix.
->> Please make sure there is no write into the fs (just in case, since the
->> fs should be RO).
->
-> Here it is:
-> https://github.com/adam900710/btrfs-progs/tree/dirty_fix_for_leonard_lausen
->
-> You need to git checkout the branch, and then compile.
-> (No need to install)
->
-> Then inside the directory, execute:
-> # ./btrfs-corrupt-block -X <device>
->
-> It will try to locate the corrupted leaf using the dump-tree result.
-> If it doesn't find the corrupted leaf or the content isn't expected, it
-> will just exit without writing anything.
 
-Thanks Qu for the quick fix! After running some BIOS system check to
-verify that there is no persistent hardware problem, your fix resolved
-the corruption issue. According to btrfs check there are no remaining
-issues and the system booted up fine.
+Hello all, after a power failure I have issues mounting a btrfs volume:
 
-  root@archiso ~/btrfs-progs (git)-[dirty_fix_for_leonard_lausen] # ./btrfs check -p --readonly /dev/mapper/vg1-root
-  Opening filesystem to check...
-  Checking filesystem on /dev/mapper/vg1-root
-  UUID: ea519c2e-3571-46f8-905a-99c824327caa
-  [1/7] checking root items                      (0:00:24 elapsed, 7398633 items checked)
-  [2/7] checking extents                         (0:03:07 elapsed, 578278 items checked)
-  [3/7] checking free space cache                (0:00:13 elapsed, 814 items checked)
-  [4/7] checking fs roots                        (0:07:07 elapsed, 464005 items checked)
-  [5/7] checking csums (without verifying data)  (0:00:19 elapsed, 1827711 items checked)
-  [6/7] checking root refs                       (0:00:00 elapsed, 277 items checked)
-  [7/7] checking quota groups skipped (not enabled on this FS)
-  found 848209637510 bytes used, no error found
-  total csum bytes: 785717792
-  total tree bytes: 9469886464
-  total fs tree bytes: 7635271680
-  total extent tree bytes: 848330752
-  btree space waste bytes: 1936310259
-  file data blocks allocated: 5230984867840
-   referenced 1031230742528
-  ./btrfs check -p --readonly /dev/mapper/vg1-root  374.85s user 45.16s system 62% cpu 11:11.17 total
+  mount /dev/md42
+mount: /home: wrong fs type, bad option, bad superblock on /dev/md42, 
+missing codepage or helper program, or other error
+
+dmesg
+[...]
+[ 4322.061000] BTRFS info (device md42): use lzo compression, level 0
+[ 4322.061004] BTRFS info (device md42): disk space caching is enabled
+[ 4322.061005] BTRFS info (device md42): has skinny extents
+[ 4323.016007] BTRFS error (device md42): parent transid verify failed 
+on 448888832 wanted 68773 found 68768
+[ 4323.025656] BTRFS error (device md42): parent transid verify failed 
+on 448888832 wanted 68773 found 68771
+[ 4323.025665] BTRFS error (device md42): failed to read block groups: -5
+[ 4323.036088] BTRFS error (device md42): open_ctree failed
+
+adding -o ro,usebackuproot doesn't change anything, same mount error, 
+same error messages in dmesg.
+
+Also tried btrfs check with this error.
+btrfs check /dev/md42
+Opening filesystem to check...
+parent transid verify failed on 448888832 wanted 68773 found 68768
+parent transid verify failed on 448888832 wanted 68773 found 68768
+parent transid verify failed on 448888832 wanted 68773 found 68771
+parent transid verify failed on 448888832 wanted 68773 found 68771
+Ignoring transid failure
+leaf parent key incorrect 448888832
+ERROR: cannot open file system
+
+I also tried btrfs-find-root with this result:
+btrfs-find-root /dev/md42
+parent transid verify failed on 448888832 wanted 68773 found 68768
+parent transid verify failed on 448888832 wanted 68773 found 68768
+parent transid verify failed on 448888832 wanted 68773 found 68771
+parent transid verify failed on 448888832 wanted 68773 found 68771
+Ignoring transid failure
+leaf parent key incorrect 448888832
+Superblock thinks the generation is 68921
+Superblock thinks the level is 1
+Found tree root at 629129216 gen 68921 level 1
+Well block 625803264(gen: 68917 level: 1) seems good, but 
+generation/level doesn't match, want gen: 68921 level: 1
+Well block 602259456(gen: 68899 level: 1) seems good, but 
+generation/level doesn't match, want gen: 68921 level: 1
+Well block 600997888(gen: 68898 level: 1) seems good, but 
+generation/level doesn't match, want gen: 68921 level: 1
+Well block 581926912(gen: 68885 level: 1) seems good, but 
+generation/level doesn't match, want gen: 68921 level: 1
+Well block 582320128(gen: 68884 level: 1) seems good, but 
+generation/level doesn't match, want gen: 68921 level: 1
+Well block 578306048(gen: 68882 level: 1) seems good, but 
+generation/level doesn't match, want gen: 68921 level: 1
+Well block 577339392(gen: 68881 level: 1) seems good, but 
+generation/level doesn't match, want gen: 68921 level: 1
+Well block 575225856(gen: 68880 level: 1) seems good, but 
+generation/level doesn't match, want gen: 68921 level: 1
+Well block 574341120(gen: 68879 level: 1) seems good, but 
+generation/level doesn't match, want gen: 68921 level: 1
+Well block 574947328(gen: 68878 level: 1) seems good, but 
+generation/level doesn't match, want gen: 68921 level: 1
+Well block 572555264(gen: 68877 level: 1) seems good, but 
+generation/level doesn't match, want gen: 68921 level: 1
+Well block 571179008(gen: 68876 level: 1) seems good, but 
+generation/level doesn't match, want gen: 68921 level: 1
+Well block 569393152(gen: 68875 level: 1) seems good, but 
+generation/level doesn't match, want gen: 68921 level: 1
+Well block 568164352(gen: 68874 level: 1) seems good, but 
+generation/level doesn't match, want gen: 68921 level: 1
+Well block 566050816(gen: 68873 level: 1) seems good, but 
+generation/level doesn't match, want gen: 68921 level: 1
+Well block 565002240(gen: 68872 level: 1) seems good, but 
+generation/level doesn't match, want gen: 68921 level: 1
+Well block 563920896(gen: 68871 level: 1) seems good, but 
+generation/level doesn't match, want gen: 68921 level: 1
+Well block 564346880(gen: 68870 level: 1) seems good, but 
+generation/level doesn't match, want gen: 68921 level: 1
+Well block 561446912(gen: 68869 level: 1) seems good, but 
+generation/level doesn't match, want gen: 68921 level: 1
+Well block 560267264(gen: 68868 level: 1) seems good, but 
+generation/level doesn't match, want gen: 68921 level: 1
+Well block 560545792(gen: 68867 level: 1) seems good, but 
+generation/level doesn't match, want gen: 68921 level: 1
+Well block 557858816(gen: 68866 level: 1) seems good, but 
+generation/level doesn't match, want gen: 68921 level: 1
+Well block 556924928(gen: 68865 level: 1) seems good, but 
+generation/level doesn't match, want gen: 68921 level: 1
+[...]
+
+The last line repeats with different block numbers with decreasing gen 
+and level sometimes 0.
+
+A simple
+btrfs filesystem show /dev/md42
+Label: none  uuid: 8c6746f0-944a-45c5-90f3-622724d15998
+         Total devices 1 FS bytes used 1.63TiB
+         devid    1 size 7.26TiB used 1.90TiB path /dev/md42
+
+for me, seems to be ok.
+
+Is there something I could try to recover from this?
+Any help is welcome, as it happened during backup creation, and the 
+backup volume suffers from the same issue.
+
+Additional info of system:
+uname -a
+uname -a
+Linux jane 4.19.6-gentoo #1 SMP PREEMPT Sat Dec 15 13:26:24 CET 2018 
+x86_64 Intel(R) Core(TM) i7-4785T CPU @ 2.20GHz GenuineIntel GNU/Linux
+
+btrfs --version
+btrfs-progs v4.19.1
+
+BR, Christian

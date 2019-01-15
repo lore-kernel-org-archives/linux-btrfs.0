@@ -2,105 +2,67 @@ Return-Path: <SRS0=dEEl=PX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 62CE7C43387
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 17:43:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2E3B4C43387
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 17:58:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 30A3A20645
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 17:43:18 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 084D320657
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 17:58:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730685AbfAORnR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 15 Jan 2019 12:43:17 -0500
-Received: from mx2.suse.de ([195.135.220.15]:56564 "EHLO mx1.suse.de"
+        id S2388563AbfAOR6m (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 15 Jan 2019 12:58:42 -0500
+Received: from mx2.suse.de ([195.135.220.15]:58860 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728025AbfAORnR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Jan 2019 12:43:17 -0500
+        id S1727667AbfAOR6m (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 15 Jan 2019 12:58:42 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B8D68AD56;
-        Tue, 15 Jan 2019 17:43:15 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id D2B97AF52;
+        Tue, 15 Jan 2019 17:58:40 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 2ECA3DA83D; Tue, 15 Jan 2019 18:42:47 +0100 (CET)
-Date:   Tue, 15 Jan 2019 18:42:47 +0100
+        id 20DDBDA83D; Tue, 15 Jan 2019 18:58:12 +0100 (CET)
+Date:   Tue, 15 Jan 2019 18:58:12 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 07/13] btrfs-progs: Fix Wmaybe-uninitialized warning
-Message-ID: <20190115174247.GM2900@twin.jikos.cz>
+To:     Andrea Gelmini <andrea.gelmini@gelma.net>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Proposal for more detail in scrub doc
+Message-ID: <20190115175811.GN2900@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20181205064018.27755-1-wqu@suse.com>
- <20181205064018.27755-8-wqu@suse.com>
- <20181205134005.GB3905@twin.jikos.cz>
- <926908c6-14c0-5c10-7ce2-de4b810e702b@gmx.com>
+Mail-Followup-To: dsterba@suse.cz,
+        Andrea Gelmini <andrea.gelmini@gelma.net>,
+        linux-btrfs@vger.kernel.org
+References: <20181127141437.24744-1-andrea.gelmini@gelma.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <926908c6-14c0-5c10-7ce2-de4b810e702b@gmx.com>
+In-Reply-To: <20181127141437.24744-1-andrea.gelmini@gelma.net>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Dec 05, 2018 at 10:03:30PM +0800, Qu Wenruo wrote:
+On Tue, Nov 27, 2018 at 03:14:37PM +0100, Andrea Gelmini wrote:
+> Wise words from Qu:
+> https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg82557.html
+> ---
+>  Documentation/btrfs-scrub.asciidoc | 3 ++-
+>  1 file changed, 2 insertions(+), 1 deletion(-)
 > 
-> 
-> On 2018/12/5 下午9:40, David Sterba wrote:
-> > On Wed, Dec 05, 2018 at 02:40:12PM +0800, Qu Wenruo wrote:
-> >> GCC 8.2.1 will report the following warning with "make W=1":
-> >>
-> >>   ctree.c: In function 'btrfs_next_sibling_tree_block':
-> >>   ctree.c:2990:21: warning: 'slot' may be used uninitialized in this function [-Wmaybe-uninitialized]
-> >>     path->slots[level] = slot;
-> >>     ~~~~~~~~~~~~~~~~~~~^~~~~~
-> >>
-> >> The culprit is the following code:
-> >>
-> >> 	int slot;		<< Not initialized
-> >> 	int level = path->lowest_level + 1;
-> >>  	BUG_ON(path->lowest_level + 1 >= BTRFS_MAX_LEVEL);
-> >>  	while(level < BTRFS_MAX_LEVEL) {
-> >> 		slot = path->slots[level] + 1;
-> >> 		^^^^^^ but we initialize @slot here.
-> >> 		...
-> >> 	}
-> >> 	path->slots[level] = slot;
-> >>
-> >> It's possible that compiler doesn't get enough hint for BUG_ON() on
-> >> lowest_level + 1 >= BTRFS_MAX_LEVEL case.
-> >>
-> >> Fix it by using a do {} while() loop other than while() {} loop, to
-> >> ensure we will run the loop for at least once.
-> > 
-> > I was hoping that we can actually add the hint to BUG_ON so the code
-> > does not continue if the condition is true.
-> > 
-> I checked that method, but I'm not that confident about things like:
-> 
-> bugon_trace()
-> {
-> 	if (!val)
-> 		return;
-> 	__bugon_trace();
-> }
-> 
-> __attribute__ ((noreturn))
-> static inline void __bugon_trace();
-> 
-> This is as simple as just one extra function call, but the original
-> problem is just one more function call before hitting abort().
-> 
-> So I just give up screwing up things I'm not comfort enough to tweaking.
-> 
-> The current do {} while() loop is the most direct solution, if gcc one
-> day still gives such warning then I could say some harsh word then.
+> diff --git a/Documentation/btrfs-scrub.asciidoc b/Documentation/btrfs-scrub.asciidoc
+> index 4c49269..1fc085c 100644
+> --- a/Documentation/btrfs-scrub.asciidoc
+> +++ b/Documentation/btrfs-scrub.asciidoc
+> @@ -16,7 +16,8 @@ and metadata blocks from all devices and verify checksums. Automatically repair
+>  corrupted blocks if there's a correct copy available.
+>  
+>  NOTE: Scrub is not a filesystem checker (fsck) and does not verify nor repair
+> -structural damage in the filesystem.
+> +structural damage in the filesystem. It only checks csum of data and tree blocks,
+> +it doesn't ensure the content of tree blocks are OK.
 
-I was not able to make it work properly, patch applied so we rid of the
-warning. Thanks.
+Thanks for the suggestion, I've enhanced the note in the docs so it
+fills in the details you've been missing.

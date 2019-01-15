@@ -2,87 +2,75 @@ Return-Path: <SRS0=dEEl=PX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_PASS,USER_AGENT_NEOMUTT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9C723C43387
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 17:26:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6ED61C43444
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 17:27:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5541A20859
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 17:26:31 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="WFb/3Nbs"
+	by mail.kernel.org (Postfix) with ESMTP id 3DD0A20651
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Jan 2019 17:27:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388292AbfAOR0a (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 15 Jan 2019 12:26:30 -0500
-Received: from mail-yb1-f195.google.com ([209.85.219.195]:33424 "EHLO
-        mail-yb1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2388275AbfAOR0a (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Jan 2019 12:26:30 -0500
-Received: by mail-yb1-f195.google.com with SMTP id o73so1375677ybc.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Jan 2019 09:26:29 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to:user-agent;
-        bh=W3chvmWM25O1I5FF5x/hdwX6+hC6ejDLHmrf7sX+dNI=;
-        b=WFb/3NbsYRXNTIUHVC+92fIvcRgIyh61cGCXUNLeqfop0cn20rJtfpBxsIYOMds77E
-         a2ipCs8M1jzwfitR0Gs1G13YY10fnjjnkKFALgk1F0aL2qt5zTru/0dliMcf96ZuK2s8
-         Eckh5cdP6LdS/3QLxMBfU9fBCiZuGILVgiZqKNxeXzBWlizl5MxK3E0bZRRuPHDZRMv2
-         TKRxF3ClbozS34fTKtAU9aLhgkbS+a6mt0I2rfG2wqgAtCgADYwiwlrxigX1Hy8waN4+
-         L7AsqOIGrTXuP7YkRR22oTeefEK0B2w0B3cvHDmjPpUJd3wFRB2lf3eFrfW42tuMR7/e
-         f8VQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to:user-agent;
-        bh=W3chvmWM25O1I5FF5x/hdwX6+hC6ejDLHmrf7sX+dNI=;
-        b=PSTB3731H+oPt5k6tAHlFhG7P9jWs4Xh5lO7Fi/YRQASVvkx/pSVGGlxYTKEPoqj5h
-         uEg1Qr3LrZxB3Ir0wJ9MYSJtRXNCUh9xW/cnLftmZprw7cilVyuUVqhqiYRzSnv7Z/al
-         uweTo4NpEFRvfbgsazCqa7DMonmWjmpyQqnK3P98stZyMwayK0mLuh3n+8xWTD27ToCW
-         ZGcC2o1KpY0KMJzIXZP5qmNSO3WCrc2Jb6XbRqLTXnRWC49xdMoxq5KTvESQWXXO3+2l
-         //a5PXKyp8KSpKDpcZ5+GeEY+PdCO+p9Vxz07niKhlI9Mf3E45g3acK+QZpU4VBpRTwy
-         +0Hw==
-X-Gm-Message-State: AJcUukdDhB5PA21b3rEZ24s7TwECjkcqAfF3vAiNy/vO+1eMd7gk4f0X
-        GiW+Q4WFepuCV3U6FMMQk2VYVCBsc7E=
-X-Google-Smtp-Source: ALg8bN4hdWTRDxV696RQTmH715VjzosSHzUaIC9Eq+MmM45fxAZ1+4MTrU0ZtaDclUQ+vpjyC9c+ZQ==
-X-Received: by 2002:a5b:cd0:: with SMTP id e16mr4006800ybr.2.1547573189107;
-        Tue, 15 Jan 2019 09:26:29 -0800 (PST)
-Received: from localhost ([2620:10d:c091:180::1:d708])
-        by smtp.gmail.com with ESMTPSA id n133sm1375372ywb.55.2019.01.15.09.26.27
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 15 Jan 2019 09:26:28 -0800 (PST)
-Date:   Tue, 15 Jan 2019 12:26:26 -0500
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v4 0/7] btrfs: qgroup: Delay subtree scan to reduce
- overhead
-Message-ID: <20190115172625.pgblt26vzmdnsv5w@macbook-pro-91.dhcp.thefacebook.com>
-References: <20190115081604.785-1-wqu@suse.com>
+        id S2388331AbfAOR1M (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 15 Jan 2019 12:27:12 -0500
+Received: from mx2.suse.de ([195.135.220.15]:53982 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1730575AbfAOR1M (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 15 Jan 2019 12:27:12 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 5CB77AD14;
+        Tue, 15 Jan 2019 17:27:11 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id C594FDA83D; Tue, 15 Jan 2019 18:26:42 +0100 (CET)
+Date:   Tue, 15 Jan 2019 18:26:42 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Filipe Manana <fdmanana@kernel.org>
+Cc:     David Disseldorp <ddiss@suse.de>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Filipe Manana <fdmanana@suse.com>
+Subject: Re: [PATCH 3/3] Btrfs-progs: add test for receive
+Message-ID: <20190115172642.GI2900@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Filipe Manana <fdmanana@kernel.org>,
+        David Disseldorp <ddiss@suse.de>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Filipe Manana <fdmanana@suse.com>
+References: <20190114133146.18424-1-fdmanana@kernel.org>
+ <20190114150817.394e4f7d@suse.de>
+ <CAL3q7H6cHf8U4pqPDNEA=g_kC_gOhccyE0a1CaS8N3QxdDSCWg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190115081604.785-1-wqu@suse.com>
-User-Agent: NeoMutt/20180716
+In-Reply-To: <CAL3q7H6cHf8U4pqPDNEA=g_kC_gOhccyE0a1CaS8N3QxdDSCWg@mail.gmail.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Jan 15, 2019 at 04:15:57PM +0800, Qu Wenruo wrote:
-> This patchset can be fetched from github:
-> https://github.com/adam900710/linux/tree/qgroup_delayed_subtree
+On Mon, Jan 14, 2019 at 02:11:17PM +0000, Filipe Manana wrote:
+> On Mon, Jan 14, 2019 at 2:08 PM David Disseldorp <ddiss@suse.de> wrote:
+> >
+> > On Mon, 14 Jan 2019 13:31:46 +0000, fdmanana@kernel.org wrote:
+> >
+> > > From: Filipe Manana <fdmanana@suse.com>
+> > >
+> > > Add a test for a scenario that used to fail due to find_mount_root()
+> > > incorrectly determining the mount point for the receive path due to the
+> > > fact that a different mount point with a path that is a prefix of the
+> > > receive path exists.
+> > >
+> > > This is fixed by a recent patch titled:
+> > >
+> > >   "Btrfs-progs: fix mount point detection due to partial prefix match"
+> > >
+> > > Reported-by: David Disseldorp <ddis@suse.com>
+> >
+> > My address has an extra 's' (ddiss). This also applies to PATCH 1/3.
 > 
-> Which is based on v5.0-rc1.
-> 
+> Ops.
+> David can probably correct that when he picks the patch, otherwise
 
-I've been testing these patches hoping to get rid of the qgroup deadlock that
-these patches are supposed to fix, but instead they make the box completely
-unusable with 100% cpu usage for minutes at a time at every transaction commit.
-Thanks,
-
-Josef
+All fixed and applied, thanks.

@@ -4,65 +4,66 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6FD17C43387
-	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Jan 2019 01:13:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6DC82C43387
+	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Jan 2019 01:15:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2951C20657
-	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Jan 2019 01:13:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2D6D920657
+	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Jan 2019 01:15:20 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=googlemail.com header.i=@googlemail.com header.b="s62ljoAV"
+	dkim=pass (2048-bit key) header.d=googlemail.com header.i=@googlemail.com header.b="miRQAq5X"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727186AbfAPBNo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 15 Jan 2019 20:13:44 -0500
-Received: from mail-ed1-f52.google.com ([209.85.208.52]:33344 "EHLO
-        mail-ed1-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727183AbfAPBNo (ORCPT
+        id S1727189AbfAPBPT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 15 Jan 2019 20:15:19 -0500
+Received: from mail-ed1-f67.google.com ([209.85.208.67]:45205 "EHLO
+        mail-ed1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727135AbfAPBPS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Jan 2019 20:13:44 -0500
-Received: by mail-ed1-f52.google.com with SMTP id p6so4155610eds.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Jan 2019 17:13:42 -0800 (PST)
+        Tue, 15 Jan 2019 20:15:18 -0500
+Received: by mail-ed1-f67.google.com with SMTP id d39so4075412edb.12
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Jan 2019 17:15:17 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=googlemail.com; s=20161025;
         h=subject:to:references:cc:from:openpgp:autocrypt:message-id:date
          :user-agent:mime-version:in-reply-to:content-language
          :content-transfer-encoding;
-        bh=kV2necA3ojhTq0/2ZkSHXFWovuJluyySWu9yO56VIV0=;
-        b=s62ljoAVm0R5HZtfEOWfprpLwzMLBjOeCGTdcgVTJ+3/VPC2CJ6S2q094AOPrlABAO
-         9/DpMLDrPmgV7q2u9TWVRGMbtwa/LeZiBD9ZShlYDSXcNHQr63nE3rZ1qkmdi6UApDoP
-         CS+LwtvUUJYCdr4vZjzVCRv7YU5feh4dEJInipl5njsrjgDlZIlil3GseKjykdaSXh0O
-         kIAee26uwDGdCEuXaZuGDQRDEUqLl8xS3CZ9o1ybLqoK8fbh3+wNgdyJV979YtzriZZu
-         nHN+AO4+NHRDWRVvYCLdBa4VGEaGFRYT7j8917nFAtBdDBuOMftuyKisQepeCUkpaI/i
-         dQVg==
+        bh=AJKzNU9GJQS6ActxhoEV1fsCqgJcxAYZh2VqzIK/SVU=;
+        b=miRQAq5XQR0DkQEfOltJfcPH8z3tzZYmcShLC8ecXnUOsJOdGVm/iBFoRH0sEOvxnB
+         w3c09HOdsEIuAeJt4oL8him+w3gLe7rDFp9jxm7KUky4ml2boUoZwxcafPQhvVdyTgsH
+         QcyGTcUEcnvIAFqmNVwdxPR4hf5fOIVLYfKw/b9KxASJPI9o4r4GyKulNhqNwlTKM1u0
+         /4LhaiABUP91Ih6kWct8/1/al8s3TDPfQ0QjfaK0Uf45FOisfDQKBjmILqpBgJNFAVbl
+         2eSTywz9dwn6fN4JOhyH9I3osH7eyTYJcOicKJB3SozBDRjHRLSWJS+umj8HYT1AfzHp
+         nJ8w==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:subject:to:references:cc:from:openpgp:autocrypt
          :message-id:date:user-agent:mime-version:in-reply-to
          :content-language:content-transfer-encoding;
-        bh=kV2necA3ojhTq0/2ZkSHXFWovuJluyySWu9yO56VIV0=;
-        b=LzwADMq8g3fLx0429GUohWEJP1XjH9R/Ilfb15sLnO8qpF9XSgPosvHhmfnrUCzw/B
-         jOIErut2+n6yGN+v9NoQ9Vj6Fsf7oH+ZoSELgVvnuLaprt7xOCJk8SUkaiZdI8/1Sk3w
-         RewVbupF9FwhED8Y1ttZpfEoClVBRpG40+KvR9g12fbS2a6UEnwMiUBT99EvHbVDV1od
-         ovli3ck1rt5Qhv48WojEweGNdVh9wnQ+FLv9H1BghF4360Sb8ksirpzUhXKjQqV4Llgo
-         Z2fX7+ASEYfDVg5dGtYq3KL1UbDVuY8mAJCCXQ+2foBXIs7akGYyPyIVkTKrvRPUIRlM
-         NBug==
-X-Gm-Message-State: AJcUukdlLRSFova5zMEoP1qb8FtIV/ENByeD1/CsGRL9q4kFZ7Pedmmj
-        eB5TmG4Qff66lmgC+yF1a9Xvv2Dq
-X-Google-Smtp-Source: ALg8bN7Q9PLESsksZABW1e4FwS430E5OdgKoslaCV8/TcpomsntP2l+HEvx04rip4txX9ztWqpOp3Q==
-X-Received: by 2002:a50:e691:: with SMTP id z17mr5261742edm.275.1547601221028;
-        Tue, 15 Jan 2019 17:13:41 -0800 (PST)
+        bh=AJKzNU9GJQS6ActxhoEV1fsCqgJcxAYZh2VqzIK/SVU=;
+        b=OiOfT+/a/lOjlHU5X8qxRiUSGzBofW9Fw7NX/n12pLREiAljPPHaXp8uWducPmQOkQ
+         8BhcXPS0mz5LrZa94vo9GiHx5tsf2bM6lXenJbW1cTFNKLl2L4kFTLm7hPnNA9xe7/0o
+         geE1ZgRZ5xIJoaUyQS7U2SxHl3dVbSahH01MGJ5zgkpAtrGd5jmGLyBCNQn7z5NUuUrP
+         pXceKWPMhBrO6nUn06V+JwsA3trRv3M3a9Ii8O3XOeUV1qBDq5zoG7liTO+NC83RwOsi
+         vXYAEq91cIlcmnZJRcIilsou7fLycWQOO8trlzrF4r2UnJt2A5E8Z/tIYxor6OhvDaHA
+         9ZEg==
+X-Gm-Message-State: AJcUukdraJT6FG04seFyfEmEYYVVJ7KUCVpqaPtEBQlhaj8ag2jJyH66
+        1rVWU+v9U2lrNDhrA7P37jX5lny+
+X-Google-Smtp-Source: ALg8bN47QCxBQhCYQr/OUEIoTY6vbUV1MVm2St2Vc9V1S1txVIFXLARUalFt8E5EY2LBaYcSx9wmFQ==
+X-Received: by 2002:a50:ccdd:: with SMTP id b29mr5437856edj.102.1547601316027;
+        Tue, 15 Jan 2019 17:15:16 -0800 (PST)
 Received: from ?IPv6:2a01:5c0:e088:2f20:fa16:54ff:fe84:9770? ([2a01:5c0:e088:2f20:fa16:54ff:fe84:9770])
-        by smtp.googlemail.com with ESMTPSA id c23-v6sm2936455ejb.62.2019.01.15.17.13.40
+        by smtp.googlemail.com with ESMTPSA id p7-v6sm3027292ejx.27.2019.01.15.17.15.15
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 15 Jan 2019 17:13:40 -0800 (PST)
+        Tue, 15 Jan 2019 17:15:15 -0800 (PST)
 Subject: Re: btrfs goes read-only when btrfs-cleaner runs
-To:     Chris Murphy <lists@colorremedies.com>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>
+To:     Chris Murphy <lists@colorremedies.com>
 References: <16012349-e490-6659-8e94-2d4c57c2c3a6@googlemail.com>
  <CAJCQCtSFxdRVeEv_G-ka3oenaR2e=HwNJ0ni3Fxn=pV_XDKDyA@mail.gmail.com>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+ <CAJCQCtTzUHw5COdsEjskAHWJhAiiyOBtAxT0f7cf6oeziQ=1gg@mail.gmail.com>
+Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 From:   Oliver Freyermuth <o.freyermuth@googlemail.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=o.freyermuth@googlemail.com; prefer-encrypt=mutual; keydata=
@@ -108,12 +109,12 @@ Autocrypt: addr=o.freyermuth@googlemail.com; prefer-encrypt=mutual; keydata=
  8GIuPyYGiK/w2UUbReRmQ8f1osl6yFplOdvhLLwVyV/miiCYC2RSx1+aUq3kJAr627iOPDBP
  SVyF8iLJoK9BFHqSrbuGQh5ewEy6gxZMVO8v4D/4nt/vzj5DpmzyqKr58uECqjztoEwXPY+V
  KB7t2CoZv5xo0STm
-Message-ID: <5a42a4d8-0c4d-ab6f-c085-cd9d3aae6614@googlemail.com>
-Date:   Wed, 16 Jan 2019 02:13:39 +0100
+Message-ID: <f642447b-ef93-4763-6539-7b53d8bfa350@googlemail.com>
+Date:   Wed, 16 Jan 2019 02:15:14 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSFxdRVeEv_G-ka3oenaR2e=HwNJ0ni3Fxn=pV_XDKDyA@mail.gmail.com>
+In-Reply-To: <CAJCQCtTzUHw5COdsEjskAHWJhAiiyOBtAxT0f7cf6oeziQ=1gg@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-GB
 Content-Transfer-Encoding: 7bit
@@ -122,71 +123,47 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Thanks for the reply!
-
-Am 16.01.19 um 01:41 schrieb Chris Murphy:
-> The relevant error messages are:
+Am 16.01.19 um 02:11 schrieb Chris Murphy:
+> On Tue, Jan 15, 2019 at 5:41 PM Chris Murphy <lists@colorremedies.com> wrote:
+>>
+>> The relevant error messages are:
+>>
+>> unable to find ref byte
+>> errno=-2 No such entry
+>>
+>> Somehow a reference byte has been corrupted and inserted into multiple
+>> locations in the tree and it's not repairable: i.e. neither a correct
+>> value can be inferred from other available information, nor do the
+>> tools have a good way to just trim out the item that contains bad key
+>> pointers - part of the problem with just cutting out the bad parts is
+>> it's not clear the problem is made even worse or how far the
+>> corruption extends.
+>>
+>> What's further troubling though is the idea that this corruption might
+>> have propagated to a separate volume via snapshot send receive. Either
+>> of the file systems might still be useful for a developer, it seems to
+>> me important to have some kind of check to make sure it's not possible
+>> for corruption to propagate in this manner.
+>>
+>> In the meantime, I think it's a good idea to do a memory test. There's
+>> some information in the archives about how to do this in a more
+>> reliable way than just memtest86 type tests, but if you can run even a
+>> memtest86 over a weekend it might confirm there's a memory problem.
+>> Unfortunately a pass doesn't necessarily mean there aren't rare
+>> transient problems.
 > 
-> unable to find ref byte
-> errno=-2 No such entry
+> Also, this could be related...
 > 
-> Somehow a reference byte has been corrupted and inserted into multiple
-> locations in the tree and it's not repairable: i.e. neither a correct
-> value can be inferred from other available information, nor do the
-> tools have a good way to just trim out the item that contains bad key
-> pointers - part of the problem with just cutting out the bad parts is
-> it's not clear the problem is made even worse or how far the
-> corruption extends.
+> [ 4368.361487] CPU: 0 PID: 23915 Comm: kworker/u16:11 Tainted: P
+>  W  O      4.20.1-gentoo #1
 > 
-> What's further troubling though is the idea that this corruption might
-> have propagated to a separate volume via snapshot send receive. Either
-> of the file systems might still be useful for a developer, it seems to
-> me important to have some kind of check to make sure it's not possible
-> for corruption to propagate in this manner.
+> Do you know why it's tainted? Looks like an out of tree proprietary
+> module. And also there has been a previous kernel warning but that
+> part of the dmesg isn't included. It's not possible to absolutely
+> exclude an out of tree kernel from being a source of memory
+> corruption, but it makes it a possible suspect and therefore it makes
+> tracking down the source of the problem harder.
 > 
-> In the meantime, I think it's a good idea to do a memory test. There's
-> some information in the archives about how to do this in a more
-> reliable way than just memtest86 type tests, but if you can run even a
-> memtest86 over a weekend it might confirm there's a memory problem.
-> Unfortunately a pass doesn't necessarily mean there aren't rare
-> transient problems.
 
-There are some things which do not quote match up for a broken-memory explanation,
-unless my understanding is wrong. 
-
-I'll try to explain more concisely:
-- The broken file system is on an external USB drive (SMR sadly!) and 
-  was used as backup target for btrfs send of snapshots. 
-- The machine sending data there does not have a corrupted filesystem. 
-  It scrubs perfectly fine. The disk was only connected to that machine for backups, 
-  from time to time. 
-- To salvage data from the broken FS, I have now mounted it read-only (to prevent btrfs-cleaner from kicking in)
-  and sent all snapshots (via btrbk archive) to a fresh filesystem (on a non-SMR disk). 
-  For the read-only-mounted broken filesystem, no corruption error was shown in syslog. 
-  Checking the new filesystem which has received all snapshots with "btrfs check --readonly",
-  no corruption is visible. 
-  So I must deduce the corruption was not part of a snapshot which was sent - which would mean
-  the corruption is only part of a subvolume pending cleanup by btrfs-cleaner. 
-
-So the only way corruption could have crept in from the machine's memory would have been
-during actual send / receive. Also, since sending from the corrupted FS worked, I presume this corruption
-only affects subvolumes marked for deletion, which can't be deleted due to the corruption. 
-
-It *might* have happened that during the reboot after the kernel upgrade (after which the corruption appeared), 
-the disk did not properly unmount (while btrfs-cleaner was running). Unmounting that SMR disk while deferred
-activities are going on may take many minutes, and something may have timeouted during shutdown. 
-I can't exclude this, and since after the reboot, btrfs-cleaner continued, that's indeed pretty likely. 
-
-Is an interrupted btrfs-cleaner execution a possible explanation for this issue? 
-This would also explain why the re-sent snapshots all seem fine. 
-
-The filesystem itself has 1.2 TB with personal content. If there is a way to extract just the important bits for the developers
-and remove anything about the actual content, of course I can do that. 
-
-Cheers,
-	Oliver
-
-> 
-> 
-> Chris Murphy
-> 
+nvidia-drivers, sadly. Nouveau fails with the hardware I have, and it's rare enough
+nobody with enough experience has stepped up to make it work well :-(. 

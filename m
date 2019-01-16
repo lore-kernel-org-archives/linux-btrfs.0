@@ -2,97 +2,136 @@ Return-Path: <SRS0=HC3m=PY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+X-Spam-Status: No, score=-9.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2A344C43387
-	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Jan 2019 15:36:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DFA88C43387
+	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Jan 2019 16:01:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EB79020675
-	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Jan 2019 15:36:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A12FC205C9
+	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Jan 2019 16:01:02 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="UI8zmaDP"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2387934AbfAPPg5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 16 Jan 2019 10:36:57 -0500
-Received: from frost.carfax.org.uk ([85.119.82.111]:39205 "EHLO
-        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731060AbfAPPg5 (ORCPT
+        id S2404665AbfAPQBB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 16 Jan 2019 11:01:01 -0500
+Received: from mail-qt1-f194.google.com ([209.85.160.194]:34211 "EHLO
+        mail-qt1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726967AbfAPQBB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Jan 2019 10:36:57 -0500
-Received: from hrm by frost.carfax.org.uk with local (Exim 4.80)
-        (envelope-from <hrm@carfax.org.uk>)
-        id 1gjnFP-00014Y-AN; Wed, 16 Jan 2019 15:36:55 +0000
-Date:   Wed, 16 Jan 2019 15:36:55 +0000
-From:   Hugo Mills <hugo@carfax.org.uk>
-To:     Stefan K <shadow_7@gmx.net>
-Cc:     Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: roadmap for btrfs
-Message-ID: <20190116153655.GK5134@carfax.org.uk>
-Mail-Followup-To: Hugo Mills <hugo@carfax.org.uk>,
-        Stefan K <shadow_7@gmx.net>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>
-References: <2488171.qjqVUjIhQd@t460-skr>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="ibq+fG+Ci5ONsaof"
-Content-Disposition: inline
-In-Reply-To: <2488171.qjqVUjIhQd@t460-skr>
-X-GPG-Fingerprint: DD84 D558 9D81 DDEE 930D  2054 585E 1475 E2AB 1DE4
-X-GPG-Key: E2AB1DE4
-X-Parrot: It is no more. It has joined the choir invisible.
-X-IRC-Nicks: darksatanic darkersatanic darkling darkthing
-User-Agent: Mutt/1.5.21 (2010-09-15)
+        Wed, 16 Jan 2019 11:01:01 -0500
+Received: by mail-qt1-f194.google.com with SMTP id r14so7741337qtp.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Jan 2019 08:01:00 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=from:to:subject:date:message-id;
+        bh=EPbZ8/cENnl4w46HD8KaDVKzMV4CWLMPEgTA2PYUj4I=;
+        b=UI8zmaDPUx5iSoPJTzosjYuSaJqkEq/f33FafbE+34QWRE2c33yNC2JVqmKidIcpLT
+         yHO+pnWOi5zpNGj6KXOYqyC3QF7wxfQdPba3SyZvkvohaZIfKPdrFx/7FkMqT0Qm6XGs
+         ANyGcjq+yazcpE48cHR0XIxIN+xPS2Fwl1ymygP7ZiRuA/XyXiU9dTEmfbakRF9TVmHx
+         Xl/+ImfnE9fF6pcKTiZPTFl0hLG+as0lJ47BYVtzjq4PMmYzztBy4Pbh10PXUOGffLnU
+         JgzzVRxH7CuyrxtZg1l6XCsmc8GZw/4EjOcvWWfoDxQxaHO/QRlvHEMfn6/mRjYFSG+x
+         YhMw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:subject:date:message-id;
+        bh=EPbZ8/cENnl4w46HD8KaDVKzMV4CWLMPEgTA2PYUj4I=;
+        b=f8XXi6ElaEUtAGFbaTbBDv13EPknKm0vOO+EM2D2j8hDZhDkkRk1kn4L0DV+rXI/DT
+         6E5+Urvo1Wm2UD1+N8LHWXsHhKRXvW3yFvwh/kG6CDn19woYjPM35+4w8O7pOenFoeEC
+         XBOZ5EPt27Jo+SHDMBTVF0r1oz4taXTN/2DwqrNUSzYLRryPnHFhxEdQWujm3fThjHg4
+         vKbBXQmZ/mAqOWv0E2b9sosuiPyDSy1cFRphr6DcOGOUatKShEjHKbQrOeWHu4SYjyDV
+         xsa8SVA0ki9avTdSrHz8Pne1aixkKDpSIDMcO9qqgrJ3G66WpDnPgQFb3b92jYFvkXI2
+         9duw==
+X-Gm-Message-State: AJcUukeArj35rsY+Iv+X+IosxKm45TkTkCl+6d42yqVN1fwHkGEaLekw
+        qmgIWRSIeUwf/mY6e926pq4aV45wyyY=
+X-Google-Smtp-Source: ALg8bN7hIdgIcD/o5DXDRtWpsLc5bz2JAgxQVT39nlYCuQ7NhHUsvL/0zsY/uWqNWAyUn20w04G0ow==
+X-Received: by 2002:aed:22ba:: with SMTP id p55mr7423787qtc.137.1547654459786;
+        Wed, 16 Jan 2019 08:00:59 -0800 (PST)
+Received: from localhost ([107.15.81.208])
+        by smtp.gmail.com with ESMTPSA id k132sm43191054qke.36.2019.01.16.08.00.58
+        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
+        Wed, 16 Jan 2019 08:00:58 -0800 (PST)
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: [PATCH] btrfs: honor path->skip_locking in backref code
+Date:   Wed, 16 Jan 2019 11:00:57 -0500
+Message-Id: <20190116160057.22040-1-josef@toxicpanda.com>
+X-Mailer: git-send-email 2.14.3
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+qgroups will do the old roots lookup at delayed ref time, which could be
+while walking down the extent root while running a delayed ref.  This
+should be fine, except we specifically lock eb's in the backref walking
+code irrespective of path->skip_locking, which deadlocks the system.
+Fix up the backref code to honor path->skip_locking, nobody will be
+modifying the commit_root when we're searching so it's completely safe
+to do.  Thanks,
 
---ibq+fG+Ci5ONsaof
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ fs/btrfs/backref.c | 16 ++++++++++------
+ 1 file changed, 10 insertions(+), 6 deletions(-)
 
-   Hi, Stefan,
-
-On Wed, Jan 16, 2019 at 04:34:15PM +0100, Stefan K wrote:
-> Hello,
-> 
-> does exist an roadmap or something like "what do first/next"?
-> I saw the project ideas[1] and there are a lot of intersting things in it (like read/write caches, per subvolumes mount options, block devices, etc), but there is no plan or an order of ideas. Did btrfs has something like that?
-
-   No, there's no such thing. There's not even a concrete list of
-what's currently being worked on, or what people are planning on doing
-next. We tried it a while ago, but there was no good way to keep it up
-to date.
-
-   Hugo.
-
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index 78556447e1d5..973e8251b1bf 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -712,7 +712,7 @@ static int resolve_indirect_refs(struct btrfs_fs_info *fs_info,
+  * read tree blocks and add keys where required.
+  */
+ static int add_missing_keys(struct btrfs_fs_info *fs_info,
+-			    struct preftrees *preftrees)
++			    struct preftrees *preftrees, bool lock)
+ {
+ 	struct prelim_ref *ref;
+ 	struct extent_buffer *eb;
+@@ -737,12 +737,14 @@ static int add_missing_keys(struct btrfs_fs_info *fs_info,
+ 			free_extent_buffer(eb);
+ 			return -EIO;
+ 		}
+-		btrfs_tree_read_lock(eb);
++		if (lock)
++			btrfs_tree_read_lock(eb);
+ 		if (btrfs_header_level(eb) == 0)
+ 			btrfs_item_key_to_cpu(eb, &ref->key_for_search, 0);
+ 		else
+ 			btrfs_node_key_to_cpu(eb, &ref->key_for_search, 0);
+-		btrfs_tree_read_unlock(eb);
++		if (lock)
++			btrfs_tree_read_unlock(eb);
+ 		free_extent_buffer(eb);
+ 		prelim_ref_insert(fs_info, &preftrees->indirect, ref, NULL);
+ 		cond_resched();
+@@ -1227,7 +1229,7 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
+ 
+ 	btrfs_release_path(path);
+ 
+-	ret = add_missing_keys(fs_info, &preftrees);
++	ret = add_missing_keys(fs_info, &preftrees, path->skip_locking == 0);
+ 	if (ret)
+ 		goto out;
+ 
+@@ -1288,11 +1290,13 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
+ 					ret = -EIO;
+ 					goto out;
+ 				}
+-				btrfs_tree_read_lock(eb);
++				if (!path->skip_locking)
++					btrfs_tree_read_lock(eb);
+ 				btrfs_set_lock_blocking_rw(eb, BTRFS_READ_LOCK);
+ 				ret = find_extent_in_eb(eb, bytenr,
+ 							*extent_item_pos, &eie, ignore_offset);
+-				btrfs_tree_read_unlock_blocking(eb);
++				if (!path->skip_locking)
++					btrfs_tree_read_unlock_blocking(eb);
+ 				free_extent_buffer(eb);
+ 				if (ret < 0)
+ 					goto out;
 -- 
-Hugo Mills             | Anyone using a computer to generate random numbers
-hugo@... carfax.org.uk | is, of course, in a state of sin.
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |                                       Jon von Neumann
+2.14.3
 
---ibq+fG+Ci5ONsaof
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJcP0+WAAoJEFheFHXiqx3k+VcP/19kJvVGMxn18SLUC5PUQO9T
-o54d4lne/sZovvH3r6p7y3JnW9Lm+XRDVAxiiYp3oK9AhPX8nHXq5XUD4NySJAlq
-31/mujwXJDY/Rl+ApvgaKpNyTIygRzCtOLXYi1mgB/vC9UyZH4S+rYqqNFxRx4I6
-pX1RRLp31ASF4jBQVW+GjVWYbrDNOxIR6ROCfakUbuetx0J2lSI2cVwZchco22zS
-JOrzgyhUeKhUaCT+DGD8hsawt4JX/J/nF+9eDEBZ9lvQrGFGQxvtZdyihkGaW8kx
-AbEKLPfVitSdnAs8tAuSpYcmtcvKHoi319/lfczIeNA4x+cqa+m8sf6Wa6Yj4Yj4
-ASPdjsjIk3F1nIa/g2Y0PVrBRRBVRLuQ7vqRdQKuNktf24w5WTlEKEuQstCvpx57
-/gSsRKkHmRWmJljkjIzc628q96hnmf5Z8sg2plKCIXyW6HhuMv2X66acCfOirAxA
-feyKkmMHdg98181nPPWHMAgPzm9labY252sTSjRsezfWlL+WPkXZdTzSVOhj9gzX
-IVnF7OXidNmE2K/zHDpxfFk1CwPlhvByHr7rdm9bWZ1pewWGvy8sseBNHvDWzP5h
-/NXYyzskbY1slhj796tVXVMKPyyIqNerB0uqSmOu2UVRNXrJD6q+ma50LTlZ+fV2
-cVByoqhbnVbC0/+5DtT8
-=TLIu
------END PGP SIGNATURE-----
-
---ibq+fG+Ci5ONsaof--

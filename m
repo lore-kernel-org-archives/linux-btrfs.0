@@ -2,84 +2,102 @@ Return-Path: <SRS0=HC3m=PY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6F973C43387
-	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Jan 2019 14:36:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B051AC43444
+	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Jan 2019 14:42:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4846E20675
-	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Jan 2019 14:36:28 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7E75520657
+	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Jan 2019 14:42:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2393668AbfAPOg1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 16 Jan 2019 09:36:27 -0500
-Received: from mout.gmx.net ([212.227.15.19]:41607 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2387533AbfAPOg1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Jan 2019 09:36:27 -0500
-Received: from t460-skr.localnet ([194.94.224.254]) by mail.gmx.com (mrgmx001
- [212.227.17.190]) with ESMTPSA (Nemesis) id 0LiDKt-1h58t02MUd-00nUlh for
- <linux-btrfs@vger.kernel.org>; Wed, 16 Jan 2019 15:36:25 +0100
-From:   Stefan K <shadow_7@gmx.net>
-To:     Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: question about creating a raid10
-Date:   Wed, 16 Jan 2019 15:36:25 +0100
-Message-ID: <3318002.5e9V1lv8s4@t460-skr>
-User-Agent: KMail/5.2.3 (Linux/4.9.0-8-amd64; KDE/5.28.0; x86_64; ; )
+        id S2404639AbfAPOmL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 16 Jan 2019 09:42:11 -0500
+Received: from frost.carfax.org.uk ([85.119.82.111]:39083 "EHLO
+        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2393688AbfAPOmK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 16 Jan 2019 09:42:10 -0500
+Received: from hrm by frost.carfax.org.uk with local (Exim 4.80)
+        (envelope-from <hrm@carfax.org.uk>)
+        id 1gjmOO-0000lD-7a; Wed, 16 Jan 2019 14:42:08 +0000
+Date:   Wed, 16 Jan 2019 14:42:08 +0000
+From:   Hugo Mills <hugo@carfax.org.uk>
+To:     Stefan K <shadow_7@gmx.net>
+Cc:     Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: question about creating a raid10
+Message-ID: <20190116144208.GI5134@carfax.org.uk>
+Mail-Followup-To: Hugo Mills <hugo@carfax.org.uk>,
+        Stefan K <shadow_7@gmx.net>,
+        Linux Btrfs <linux-btrfs@vger.kernel.org>
+References: <3318002.5e9V1lv8s4@t460-skr>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/plain; charset="us-ascii"
-X-Provags-ID: V03:K1:auBAbw/uvA+N+5+szDxzhQyfNJmPM4DoVpHdlR107QklmYYXGiN
- 3mtMI28zsIjRDXjf5qtJ5/3qDtechIPLqb7yrXkRZoZK7O0Bbscch95cZXEQnoVtkaNrhEG
- mNXC5ZV8dyXCXabHvggqeUmMa2cOsUsCpbnbyXBD6jBZpNy+2C2VlTXGV/9AEnfaFfvVzie
- DXcS7xf80jiQD4n8iMwPA==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:Xblq91n+iHk=:cnR4KMFHdjo+yTdW/i70ST
- il1S/9ex7w0cJCOCen2u//ZtIJpUPNjS3sfmjk9c0vQ+3LkoEwMww0oLlc7iLafL9Tw5x6h0j
- Evj6q/ZUcmwoVlIjLagipqEWupNwIbCqlj432IMEaWcbKzr2ALNkwkH01CmKL1oTFhI31SojX
- W/OGVXAP7JH506rmDclLaG4VM2LGlimczjQ9AeGLj1kelsDHEo9rn7Uw3UU51lDoMbq1cbNf1
- mcPx0dCJS4T2s6v5NhzNdH3x8lNBs9go1zAFW386kgUPSxIMrakFz1unOTWqro2fi4WGqoMuC
- qhulsinW+nr5R67EAmUuSFGh+6e3Xo/39KlF7jQ9mtykGDdYBVluiS6njd24hNKnyoFqo6mxP
- Lxik+yp620tKw55kpNqkajG0M3NJYmQyZi7giff/I8WY8A1RRvN6GfNhUy92M+365J96ggCVZ
- 1UQd8bSxt5+BFu6yAAsHpM0lb+yWtlY4Cnb/NYRiCAbN8922NZ6DP34O0XMJYE+39tTuwRnaO
- euLBwDksaMVMjj2L9XZb9SU99LMV2l1Qq/QkEBUM95goeSNIp3qn+1jt4GJESaK/ipxs00qPS
- AkXV4jWBNxkZXPBX87c16KyUAf9bVOlWv2uUd1aa+QrGhAx8QVDsw1ochOPbRGsa6fEjQ2rgb
- HtPxU6EMguMbOGTaNonwh3xwbSFiQbsvrnkeTn3UdcXeRp7z0cRCDRA5QS8jwenykXhjiWjW1
- MpZGwE8aYLYaGn3FLUBT4y6VXoq0hnpBAOBxqG+i+uTA4Vk3DAxkmPxQti8grEtM0qkDKMPoO
- MOCNQsnsSyWZB/kCCrrIcVQEOX7eqcaPRMQ+uotkmnzOP5KenO8d+19qpbd0EU3XQM7nCCgI6
- ZnnNZJ5iUDjlObRcMool3uU/NRLa4AiUeHtDytYavLaY29lOMAcbc8DBLVguJfiZQsaepttY2
- QMjY61INvlQ==
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="YrQNB5Deg1WGKZi3"
+Content-Disposition: inline
+In-Reply-To: <3318002.5e9V1lv8s4@t460-skr>
+X-GPG-Fingerprint: DD84 D558 9D81 DDEE 930D  2054 585E 1475 E2AB 1DE4
+X-GPG-Key: E2AB1DE4
+X-Parrot: It is no more. It has joined the choir invisible.
+X-IRC-Nicks: darksatanic darkersatanic darkling darkthing
+User-Agent: Mutt/1.5.21 (2010-09-15)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
 
-if I create a raid10 it looks like that:
-mkfs.btrfs -m raid10 -d raid10 /dev/sdb /dev/sdc /dev/sdd /dev/sde
+--YrQNB5Deg1WGKZi3
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-but if I've different jbods and I want that every mirror of a raid10 is on a different jbod how can I archive that? in zfs it looks like that:
-zpool create -o ashift=12 nc_storage mirror j1d03-hdd j2d03-hdd mirror j1d04-hdd j2d04-hdd
+On Wed, Jan 16, 2019 at 03:36:25PM +0100, Stefan K wrote:
+> Hello,
+>=20
+> if I create a raid10 it looks like that:
+> mkfs.btrfs -m raid10 -d raid10 /dev/sdb /dev/sdc /dev/sdd /dev/sde
+>=20
+> but if I've different jbods and I want that every mirror of a raid10 is o=
+n a different jbod how can I archive that? in zfs it looks like that:
+[snip]
+> how can I be sure that is btrfs the same?
 
-zpool status
-[sudo] password for skrueger:                                                                                                                                                                                                                                                                                                
-  pool: nc_storage                                                                                                                                                                                                                                                                                                           
- state: ONLINE                                                                                                                                                                                                                                                                                                               
-  scan: scrub repaired 0B in 1h23m with 0 errors on Tue Jan 15 05:38:54 2019                                                                                                                                                                                                                                                 
-config:                                                                                                                                                                                                                                                                                                                      
-                                                                                                                                                                                                                                                                                                                             
-        NAME           STATE     READ WRITE CKSUM                                                                                                                                                                                                                                                                            
-        nc_storage     ONLINE       0     0     0                                                                                                                                                                                                                                                                            
-          mirror-0     ONLINE       0     0     0                                                                                                                                                                                                                                                                            
-            j1d03-hdd  ONLINE       0     0     0                                                                                                                                                                                                                                                                            
-            j2d03-hdd  ONLINE       0     0     0                                                                                                                                                                                                                                                                            
-          mirror-1     ONLINE       0     0     0                                                                                                                                                                                                                                                                            
-            j1d04-hdd  ONLINE       0     0     0                                                                                                                                                                                                                                                                            
-            j2d04-hdd  ONLINE       0     0     0 
+   I'm afraid you can't. It would take modifications of the chunk
+allocator to achieve this (and you'd also need to store the metadata
+somewhere as to which devices were in which failure domain).
 
+   Hugo.
 
-how can I be sure that is btrfs the same?
+--=20
+Hugo Mills             | "It was half way to Rivendell when the drugs began
+hugo@... carfax.org.uk | to take hold"
+http://carfax.org.uk/  |                                      Hunter S Tolk=
+ien
+PGP: E2AB1DE4          |                        Fear and Loathing in Barad =
+D=FBr
 
-best regards 
-Stefan
+--YrQNB5Deg1WGKZi3
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJcP0K/AAoJEFheFHXiqx3kNcgP/ibIeXlnSQyuZx1B6KiIQfUh
+JOQsKVWRvBowP5zA1L/pqqBqztWVKApXJk9T57TupN0TEH6sHOk0TtVE+SQDdl48
+zGaRZtfORUf4S1c9D2ccrlOD6lJjvrRBZoXFDcEZ1x5ljcaMU4WOE/F0xwz86KXU
++QripjFaeyqLIxBH7bcAKf2+/5bMwOKTi0wxrQQJztr9f/nIQ3CSn3/M9nlohuXT
+F1YAz9tC3KxSVYhft3hYHNgIJm4vrKe9CvqfoPoUlFI1kPhLqAZ2sauqXRjE5Tbp
+fhpAj+groYQPtH/9zwAM4nElaXoMiVVYDa4gMtzlMOEau063CZCznNfydvdeSnS0
+dL3toBsOA8Q95QM8aNogGdCnhRbitOVmf3ML+1xAxVBUKxzK+6yURy8m2il7QpOA
+UrQO0YXwdXy7+qlLcT2JE2j5uNZvY4ThVGok7njIx+xZzCVBhJ6rmnZRYrGfJOlK
+5T0GASabfXkY0cGrdNdyWKrxTJAl2N9+rfXibimkk7L/T0dmZBFLMKmJJ6X0DqkH
+EfPLEFvw1rVmtENGj8eVsOBWlWcvjVMbXPdAH/WSzW2+xSvM6o+HNQm4cmKKGEyg
+80CiZPqr6qn9UeMYyrLcAJjiVCl3elpH6pAAmwdP/o+zQ/Oa1MMc8EMzElvNBSaX
+RwBGA8JZVWmbqqG38F8w
+=2yB5
+-----END PGP SIGNATURE-----
+
+--YrQNB5Deg1WGKZi3--

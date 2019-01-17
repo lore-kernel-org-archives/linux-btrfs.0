@@ -2,69 +2,105 @@ Return-Path: <SRS0=cccy=PZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A6745C43444
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 14:30:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B7CA6C43612
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 14:38:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 73077205C9
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 14:30:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 81A2A20851
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 14:38:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727350AbfAQOa5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 17 Jan 2019 09:30:57 -0500
-Received: from mx2.suse.de ([195.135.220.15]:56768 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725878AbfAQOa5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Jan 2019 09:30:57 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id F34F1AF64;
-        Thu, 17 Jan 2019 14:30:55 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 21E2FDA83D; Thu, 17 Jan 2019 15:30:22 +0100 (CET)
-Date:   Thu, 17 Jan 2019 15:30:21 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-Subject: Re: [PATCH] btrfs: honor path->skip_locking in backref code
-Message-ID: <20190117143021.GR2900@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-References: <20190116160057.22040-1-josef@toxicpanda.com>
- <ef892414-ea36-271b-35f5-b4f753ff7bea@gmx.com>
+        id S1727444AbfAQOig (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 17 Jan 2019 09:38:36 -0500
+Received: from wp158.webpack.hosteurope.de ([80.237.132.165]:53774 "EHLO
+        wp158.webpack.hosteurope.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1727322AbfAQOig (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 17 Jan 2019 09:38:36 -0500
+Received: from ip5b41acd8.dynamic.kabel-deutschland.de ([91.65.172.216] helo=[192.168.0.31]); authenticated
+        by wp158.webpack.hosteurope.de running ExIM with esmtpsa (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128)
+        id 1gk8oU-0003NA-DS; Thu, 17 Jan 2019 15:38:34 +0100
+Subject: Re: issue mounting volume
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+References: <6760df5e-a757-56a0-d8c9-3f172458fc65@ch-sc.de>
+ <06650972-ba8c-0b5a-f1ee-09656e0bf649@gmx.com>
+ <3e1fd623-651e-9f48-0a79-2d1194b3d42d@ch-sc.de>
+ <bd849a01-708d-2d4a-2f50-50b6967edf6c@gmx.com>
+ <2c7c5f67-94f7-c9c7-4d9f-a76ef5dc81d0@ch-sc.de>
+ <6c33c8a0-2dd0-c43f-3ddc-5f24ed609a43@gmx.com>
+From:   Christian Schneider <christian@ch-sc.de>
+Message-ID: <28c98f6d-9fa6-8463-99bc-a42aecc15bfe@ch-sc.de>
+Date:   Thu, 17 Jan 2019 15:38:35 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.4.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
+In-Reply-To: <6c33c8a0-2dd0-c43f-3ddc-5f24ed609a43@gmx.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: de-DE
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <ef892414-ea36-271b-35f5-b4f753ff7bea@gmx.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+X-bounce-key: webpack.hosteurope.de;christian@ch-sc.de;1547735915;b75e44db;
+X-HE-SMSGID: 1gk8oU-0003NA-DS
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Jan 17, 2019 at 09:04:13AM +0800, Qu Wenruo wrote:
-> 
-> 
-> On 2019/1/17 上午12:00, Josef Bacik wrote:
-> > qgroups will do the old roots lookup at delayed ref time, which could be
-> > while walking down the extent root while running a delayed ref.  This
-> > should be fine, except we specifically lock eb's in the backref walking
-> > code irrespective of path->skip_locking, which deadlocks the system.
-> > Fix up the backref code to honor path->skip_locking, nobody will be
-> > modifying the commit_root when we're searching so it's completely safe
-> > to do.  Thanks,
-> > 
-> > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-> 
-> Reviewed-by: Qu Wenruo <wqu@suse.com>
+May I ask for a little technical details, about what happened/was wrong? 
+I don't know really anything about internal btrfs stuff, but would like 
+to gain a little insight. Also, if there is a explanation online, where 
+you can point me to would be nice.
+BR, CHristian
 
-What can we use from https://patchwork.kernel.org/patch/10725371/ to
-add to the changelog? Is the deadlock caused by fb235dc06fac? The fix
-applies to stable 4.19+ directly and to 4.14 with context fixups.
-Thanks.
+Am 17.01.19 um 15:12 schrieb Qu Wenruo:
+> 
+> 
+> On 2019/1/17 下午9:54, Christian Schneider wrote:
+>>>>
+>>>> Do you know, which kernel is needed as base for the patch? Can I apply
+>>>> it to 4.19 or do I need more recent? If you don't know, I can just try
+>>>> it out.
+>>>
+>>> My base is v5.0-rc1.
+>>>
+>>> Although I think there shouldn't be too many conflicts for older kernels.
+>>>
+>> I could apply the patch on 4.19, but compilation failed. So I went
+>> straight to master, where it worked, and I could even mount the fs now.
+>>
+>> Your patch also has a positive impact on free space:
+>>
+>>   df -h /home
+>> Filesystem      Size  Used Avail Use% Mounted on
+>> /dev/md42       7.3T  1.9T  1.8P   1% /home
+>>
+>> 1.8PB available space should be enough for the next few years :D
+>>
+>> Thank you very much so far!!!
+>>
+>> So, for further steps: As far as I understood, no possibility to repair
+>> the fs?
+> 
+> Unfortunately, no possibility.
+> 
+> The corruption of extent tree is pretty nasty.
+> Your metadata CoW is completely broken.
+> It really doesn't make much sense to repair, and I don't really believe
+> the repaired result could be any good.
+> 
+>> I just get the data I can and create it new?
+> 
+> Yep.
+> 
+> And just a general tip, for any unexpected power loss, do a btrfs check
+> --readonly before doing RW mount.
+> 
+> It would help us to detect and locate possible cause of any corruption
+> before it cause more damage.
+> 
+> Thanks,
+> Qu
+> 
+>>
+>> BR, CHristian
+> 

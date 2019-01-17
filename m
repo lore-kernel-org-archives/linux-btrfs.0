@@ -6,25 +6,25 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 98E20C43387
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 16:16:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C0C1AC43387
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 16:17:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6E57420652
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 16:16:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9ABCE20652
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 16:17:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729185AbfAQQQ6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 17 Jan 2019 11:16:58 -0500
-Received: from mx2.suse.de ([195.135.220.15]:48784 "EHLO mx1.suse.de"
+        id S1728756AbfAQQRW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 17 Jan 2019 11:17:22 -0500
+Received: from mx2.suse.de ([195.135.220.15]:48886 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728747AbfAQQQ5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Jan 2019 11:16:57 -0500
+        id S1728727AbfAQQRW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 17 Jan 2019 11:17:22 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id F334BAE92
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Jan 2019 16:16:55 +0000 (UTC)
-Subject: Re: [PATCH] btrfs: remove unused workqueue helpers
+        by mx1.suse.de (Postfix) with ESMTP id 5BF03AEC0
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Jan 2019 16:17:20 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: simplify workqueue name when allocating
 To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-References: <20190117161512.24101-1-dsterba@suse.com>
+References: <20190117161518.24199-1-dsterba@suse.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -69,12 +69,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <45b805ff-b86c-de43-a6e5-31c6e3c73d52@suse.com>
-Date:   Thu, 17 Jan 2019 18:16:55 +0200
+Message-ID: <fd9b9c45-817d-7175-f699-74a26202e83a@suse.com>
+Date:   Thu, 17 Jan 2019 18:17:19 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20190117161512.24101-1-dsterba@suse.com>
+In-Reply-To: <20190117161518.24199-1-dsterba@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -86,53 +86,37 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 17.01.19 г. 18:15 ч., David Sterba wrote:
-> The _owner helpers havent' been used since its introduction in
-> cb001095ca705dcd95 ("btrfs: plumb fs_info into btrfs_work"), there are
-> no external users of the private wq::fs_info pointer.
+> The workqueue name is constructed from a format string but the prefix
+> does not need to be set by %s.
 > 
 > Signed-off-by: David Sterba <dsterba@suse.com>
 
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
 > ---
->  fs/btrfs/async-thread.c | 12 ------------
->  fs/btrfs/async-thread.h |  2 --
->  2 files changed, 14 deletions(-)
+>  fs/btrfs/async-thread.c | 10 ++++------
+>  1 file changed, 4 insertions(+), 6 deletions(-)
 > 
 > diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
-> index d522494698fa..44a7942f0457 100644
+> index 44a7942f0457..92dfc70f9511 100644
 > --- a/fs/btrfs/async-thread.c
 > +++ b/fs/btrfs/async-thread.c
-> @@ -61,18 +61,6 @@ noinline_for_stack void btrfs_##name(struct work_struct *arg)		\
->  	normal_work_helper(work);					\
->  }
+> @@ -127,13 +127,11 @@ __btrfs_alloc_workqueue(struct btrfs_fs_info *fs_info, const char *name,
+>  	}
 >  
-> -struct btrfs_fs_info *
-> -btrfs_workqueue_owner(const struct __btrfs_workqueue *wq)
-> -{
-> -	return wq->fs_info;
-> -}
-> -
-> -struct btrfs_fs_info *
-> -btrfs_work_owner(const struct btrfs_work *work)
-> -{
-> -	return work->wq->fs_info;
-> -}
-> -
->  bool btrfs_workqueue_normal_congested(const struct btrfs_workqueue *wq)
->  {
->  	/*
-> diff --git a/fs/btrfs/async-thread.h b/fs/btrfs/async-thread.h
-> index 7861c9feba5f..3aceb2e6373a 100644
-> --- a/fs/btrfs/async-thread.h
-> +++ b/fs/btrfs/async-thread.h
-> @@ -70,8 +70,6 @@ void btrfs_queue_work(struct btrfs_workqueue *wq,
->  void btrfs_destroy_workqueue(struct btrfs_workqueue *wq);
->  void btrfs_workqueue_set_max(struct btrfs_workqueue *wq, int max);
->  void btrfs_set_work_high_priority(struct btrfs_work *work);
-> -struct btrfs_fs_info *btrfs_work_owner(const struct btrfs_work *work);
-> -struct btrfs_fs_info *btrfs_workqueue_owner(const struct __btrfs_workqueue *wq);
->  bool btrfs_workqueue_normal_congested(const struct btrfs_workqueue *wq);
->  
->  #endif
+>  	if (flags & WQ_HIGHPRI)
+> -		ret->normal_wq = alloc_workqueue("%s-%s-high", flags,
+> -						 ret->current_active, "btrfs",
+> -						 name);
+> +		ret->normal_wq = alloc_workqueue("btrfs-%s-high", flags,
+> +						 ret->current_active, name);
+>  	else
+> -		ret->normal_wq = alloc_workqueue("%s-%s", flags,
+> -						 ret->current_active, "btrfs",
+> -						 name);
+> +		ret->normal_wq = alloc_workqueue("btrfs-%s", flags,
+> +						 ret->current_active, name);
+>  	if (!ret->normal_wq) {
+>  		kfree(ret);
+>  		return NULL;
 > 

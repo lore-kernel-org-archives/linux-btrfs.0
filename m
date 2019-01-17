@@ -2,212 +2,167 @@ Return-Path: <SRS0=cccy=PZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DBCF2C43387
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 00:51:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 81817C43387
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 00:59:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A5E2A20657
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 00:51:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 24AAB20651
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 00:59:45 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=oakvillepondscapes.onmicrosoft.com header.i=@oakvillepondscapes.onmicrosoft.com header.b="crnjQs5W"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726204AbfAQAvF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 16 Jan 2019 19:51:05 -0500
-Received: from mout.gmx.net ([212.227.17.21]:47445 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725874AbfAQAvF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Jan 2019 19:51:05 -0500
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx101
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0MHbpA-1gge6q35w4-003PC0; Thu, 17
- Jan 2019 01:51:01 +0100
-Subject: Re: issue mounting volume
-To:     Christian Schneider <christian@ch-sc.de>,
-        linux-btrfs@vger.kernel.org
-References: <6760df5e-a757-56a0-d8c9-3f172458fc65@ch-sc.de>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <06650972-ba8c-0b5a-f1ee-09656e0bf649@gmx.com>
-Date:   Thu, 17 Jan 2019 08:50:57 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.4.0
+        id S1727081AbfAQA7o (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 16 Jan 2019 19:59:44 -0500
+Received: from mail-eopbgr1360089.outbound.protection.outlook.com ([40.107.136.89]:57312
+        "EHLO AUS01-ME1-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725888AbfAQA7n (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 16 Jan 2019 19:59:43 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=oakvillepondscapes.onmicrosoft.com; s=selector1-pauljones-id-au;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=+OBAteytWIdadp+MhW+4flGjZpnlg6oad5A2AGOMYHA=;
+ b=crnjQs5WZS9bJahNVByoBA/1R2hYdZPRlwM9D7bGkql3Mzz/va10mgCSkj8NyKFEW0ZDtmJuzShAkvu7NzvSWNpdssK3A5xLTDI6bAIz2TtBbd9kOdBEB3x0znjdhcSZILc3HNXYxA5zvk3iQOYeYUsBDRIC4HxjV8ko32jJSzo=
+Received: from SYCPR01MB5086.ausprd01.prod.outlook.com (20.178.187.213) by
+ SYCPR01MB4350.ausprd01.prod.outlook.com (20.178.184.146) with Microsoft SMTP
+ Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.20.1516.15; Thu, 17 Jan 2019 00:59:36 +0000
+Received: from SYCPR01MB5086.ausprd01.prod.outlook.com
+ ([fe80::fd62:60f5:fb4c:b9ad]) by SYCPR01MB5086.ausprd01.prod.outlook.com
+ ([fe80::fd62:60f5:fb4c:b9ad%4]) with mapi id 15.20.1537.018; Thu, 17 Jan 2019
+ 00:59:36 +0000
+From:   Paul Jones <paul@pauljones.id.au>
+To:     Chris Murphy <lists@colorremedies.com>, Stefan K <shadow_7@gmx.net>
+CC:     Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: RE: question about creating a raid10
+Thread-Topic: question about creating a raid10
+Thread-Index: AQHUrajfQ36HNFLNdEqRLwy3zOso/qWx9/4AgAAEewCAADcBAIAAbtUg
+Date:   Thu, 17 Jan 2019 00:59:36 +0000
+Message-ID: <SYCPR01MB508689223503BF48EE70D2739E830@SYCPR01MB5086.ausprd01.prod.outlook.com>
+References: <3318002.5e9V1lv8s4@t460-skr>
+ <20190116144208.GI5134@carfax.org.uk> <1980543.jviTh1pdNs@t460-skr>
+ <CAJCQCtTErRwS5Omb4Asob3sYx8Svt4yV8V5so7fcs+2BX8t3Gg@mail.gmail.com>
+In-Reply-To: <CAJCQCtTErRwS5Omb4Asob3sYx8Svt4yV8V5so7fcs+2BX8t3Gg@mail.gmail.com>
+Accept-Language: en-AU, en-US
+Content-Language: en-US
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+authentication-results: spf=none (sender IP is )
+ smtp.mailfrom=paul@pauljones.id.au; 
+x-originating-ip: [203.213.76.204]
+x-ms-publictraffictype: Email
+x-microsoft-exchange-diagnostics: 1;SYCPR01MB4350;6:wjUUKR9vfFOvGeyx9EB01HlqgALLajxwxYimwmoN3Lt/OpmbOK2LC0K0R4c2fIRNv0w7riCt6vrRxA3NOaiJ+1Y2DEJQLKoBZ+2k4fG91g0NNvzkx4N3sBVo9ZqQFQYMrvkMZCeNWClgOBIegOIS6qEa/RPK9F1blfZjA+8sSJE74jV9SLMsAy07ULSU8XOrOUcKUeNOmLVJuxx9ioG4EGll7fpJrzMoRk+W51bD56WZWY5ZM3qFbgRU4u3LTsUmAUw3EijzOKLTquENfua1w8enxaONvwnzlLZG4K7NgJRAEFgbO/KtO2s36HXz89XDUiF+MWUEmHwZkV6+pq67kaS7ZwE2eCqIhsO2yIz4VC/jBKDtXXcixhyom1q/AskxqR+6ZZDp+retH97oqCj0XcCZSjXPi3tNQw5u7xc+NbgotpqCu7sJbTlpMBJ4gUk3wLYOfhHx8XU4RgVJbEMxoQ==;5:KoqiCkJicO7XsYjurU1ZFHNKadHf2VHh2FToooFM0x/sWit02xOFxEWqM29xfGrAK6cXDnlKnzH6rPHIOd7NeN5aOknzT6EpJqMYf9xdvwvdRJ0ME0aXbAnS/S1+J+30PWBcdft2LtE6rVGpPpdsnUtYHo0nvfxEWMU4kI+Df3Xc89NdqFxrV/8BuWttOzlwMl27u3cnZ5Me2IAISqy4Aw==;7:FobfxVva/nt4iHHS18qsb09/WHK7tk1vbmIPHd5/tMsTtk1iAnUyUaUt1xUNK7n+D+WOClmjkS0Vfjx8klPOtTmtKdvPhexXg0WeqKJt10dNX/qZruSowV9bTVF+u7p5EB6TPOhN7sUWq6aHKNDkLw==
+x-ms-exchange-antispam-srfa-diagnostics: SOS;
+x-ms-office365-filtering-correlation-id: 87423cfc-c46a-492b-129f-08d67c170d1c
+x-microsoft-antispam: BCL:0;PCL:0;RULEID:(2390118)(7020095)(4652040)(7021145)(8989299)(4534185)(7022145)(4603075)(4627221)(201702281549075)(8990200)(7048125)(7024125)(7027125)(7023125)(5600109)(711020)(2017052603328)(7153060)(7193020);SRVR:SYCPR01MB4350;
+x-ms-traffictypediagnostic: SYCPR01MB4350:
+x-microsoft-antispam-prvs: <SYCPR01MB43509261A17A75F5175E4F929E830@SYCPR01MB4350.ausprd01.prod.outlook.com>
+x-forefront-prvs: 0920602B08
+x-forefront-antispam-report: SFV:NSPM;SFS:(10009020)(39830400003)(376002)(346002)(136003)(366004)(396003)(13464003)(199004)(189003)(5660300001)(6436002)(71200400001)(81156014)(71190400001)(8676002)(26005)(486006)(3846002)(66066001)(81166006)(186003)(99286004)(102836004)(55016002)(93886005)(8936002)(229853002)(446003)(476003)(11346002)(53546011)(74482002)(6506007)(7696005)(76176011)(86362001)(9686003)(256004)(6246003)(316002)(110136005)(45080400002)(97736004)(68736007)(14454004)(4326008)(508600001)(25786009)(33656002)(105586002)(14444005)(2906002)(6116002)(305945005)(53936002)(7736002)(106356001)(74316002);DIR:OUT;SFP:1101;SCL:1;SRVR:SYCPR01MB4350;H:SYCPR01MB5086.ausprd01.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;A:1;MX:1;
+received-spf: None (protection.outlook.com: pauljones.id.au does not designate
+ permitted sender hosts)
+x-ms-exchange-senderadcheck: 1
+x-microsoft-antispam-message-info: Yi4CFUNjSZoYBhQ6rxj9qVubu4FJtFNJy9LfgUS5UhK53MtxVO4h9kkKaLk6mrFFMdaZSuR2n1SLA6nHKbX27VeNR5cnn6ULrHWuozlMiJqYj/2Rol/+KHVtktcP8NTx4KRAn3GCfauvf9vizysaApldHfu4c8qGp8PtV8uhgn4NENf0fbJJJ/x06dPaq7oSv90dzfsymt5Da+7Jo3sjcGLlC3MIOjw5XFdb1Tx/Eh9UX88XfXdPhesTij/YRPJVPHrzF83ZTVTu0aSDgHaaJ9tIaqhHb5Fyh2DSbS74rtt8Sf0nSTAur+umX7fjEyQ5WS07CsL+vLVbZZAnNoe8i6GnDdkaXkrPRTwvUK97VWqJS+UL/rpLKOpy2939gVHYb11LjEbdJfAHLIFLPv3wHkiMc5oO2H8zvT20uChs8Vw=
+spamdiagnosticoutput: 1:99
+spamdiagnosticmetadata: NSPM
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 MIME-Version: 1.0
-In-Reply-To: <6760df5e-a757-56a0-d8c9-3f172458fc65@ch-sc.de>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="vd1haEZFibRRQ35YDVh4TuW2WaoY14OvZ"
-X-Provags-ID: V03:K1:uMGNi0q8tnfTb6oaXMnmXWLZH5/ZdP/D41bK0ceMtIQsuqNtyAi
- Day//4lw9IrT737Npms0FeemhopGruqJg20vMmtlGtXxvB6u5g+fn+mHDgjyURGAl7TQ4QE
- VBsMQVphrmfGaneUG+xF6TiVtkP8DG67ss8tQW2EFCRwSS23XCQR9+/fgi0b5/M5POlB2f6
- C3S8GxgTk+xxPh/oyRtYA==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:f63nIc4r2Rs=:pd1PYp2B214yJac9pKv8Sm
- M5SQvFGSoZZnFFwzflisITbox2Hy/9kvmeFJ9jKl2Rk2gLedGGxGf2chXzA3CI/VIVqdwQeST
- mtnav5BdivRAtYHLeEOUTouMahj/kZ1rUifUBHK/dt0lSwg+V7crhbLTijCF7DTa5Z8rlwaj7
- +uoJeKLR3pBM8Sz3lVTteu3mFHEqW7Dzxt40EfzXNfCqdfd+iRjdGkBZxBJu8tf8FsH8p5Vq/
- AGsqK9qDiYCVromAt38DbBg1ig+9e+4KEO1CDE6XCjTNO/Te1TvHR/Yy8IZXL8LNQy9arxQil
- hhg/dEqXBQEhhtsD94sRO9TBHDwleNkH/lojn9/DKFoyRYfvqAXbp0SWASc+Iv4vHehQs+0OY
- wMdic9d2AoVQ/QQnIF0f4s0ZLuKZq8q0H6d1CU32q/O1wX37Upo4L68OcI+IAh9Si5gw1/xrf
- EQaxfZWo3H1MXYWU6Crq/kPJAybaA+0K7ZSPM+11qK5/UB43yQ0wLJbdWbzPGCuWGLXSHSEz8
- x5nz61i+ssPV+vlWYqeDTeuXPMBq8y6h9obMrtsOr/Ah3BCtHJrsgraODxAE/KxA9isrwnNRl
- ZDY+bfubAFxfl9vwVM7q0tiA56WrEKgsYLx/+cq8PbuFH2znS5IIJTLJEKWNlRbD0A9hqpcsT
- IVSKdACZ8oB1PHmxqkcFQgTOCVRpqUWLuJeVtuU6VI3fpqFobJ/cDE1MTafEl1xkprQOpD+A6
- RG3JHdoL5m0GaKwy9dbw2/JtuUMZoliZhfKSGf8WC7KzzLpqpLsDq2yC8g2QAKBZOgveIvp+3
- uMU960qYjFzA7REc2kZy0Hn2Ru2+M7cDkRoDUe96+Oz1IIFT4WjMcAegWmZAkCQiJiF+4c9Bd
- eLSD8Pxamer52NfAcZBGip6a+zLCsElcsHiZxgCI6r6LkHj55yl/UdEEm710xz
+X-OriginatorOrg: pauljones.id.au
+X-MS-Exchange-CrossTenant-Network-Message-Id: 87423cfc-c46a-492b-129f-08d67c170d1c
+X-MS-Exchange-CrossTenant-originalarrivaltime: 17 Jan 2019 00:59:36.4758
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: 8f216723-e13f-4cce-b84c-58d8f16a0082
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: SYCPR01MB4350
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---vd1haEZFibRRQ35YDVh4TuW2WaoY14OvZ
-Content-Type: multipart/mixed; boundary="cwWosdbii7ZCMLTJQkMqIMxCI6K3agYVU";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Christian Schneider <christian@ch-sc.de>, linux-btrfs@vger.kernel.org
-Message-ID: <06650972-ba8c-0b5a-f1ee-09656e0bf649@gmx.com>
-Subject: Re: issue mounting volume
-References: <6760df5e-a757-56a0-d8c9-3f172458fc65@ch-sc.de>
-In-Reply-To: <6760df5e-a757-56a0-d8c9-3f172458fc65@ch-sc.de>
-
---cwWosdbii7ZCMLTJQkMqIMxCI6K3agYVU
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-
-
-
-On 2019/1/16 =E4=B8=8A=E5=8D=8812:33, Christian Schneider wrote:
->=20
-> Hello all, after a power failure I have issues mounting a btrfs volume:=
-
->=20
-> =C2=A0mount /dev/md42
-> mount: /home: wrong fs type, bad option, bad superblock on /dev/md42,
-> missing codepage or helper program, or other error
->=20
-> dmesg
-> [...]
-> [ 4322.061000] BTRFS info (device md42): use lzo compression, level 0
-> [ 4322.061004] BTRFS info (device md42): disk space caching is enabled
-> [ 4322.061005] BTRFS info (device md42): has skinny extents
-> [ 4323.016007] BTRFS error (device md42): parent transid verify failed
-> on 448888832 wanted 68773 found 68768
-> [ 4323.025656] BTRFS error (device md42): parent transid verify failed
-> on 448888832 wanted 68773 found 68771
-
-Transid error, and furthermore, two copies are pointing to different leav=
-es.
-
-So in short conclusion, your fs is screwed up.
-
-You could try this patch:
-https://patchwork.kernel.org/patch/10738583/
-
-Then mount with "ro,skip_bg" mount options.
-
-Or go btrfs-restore.
-
-> [ 4323.025665] BTRFS error (device md42): failed to read block groups: =
--5
-> [ 4323.036088] BTRFS error (device md42): open_ctree failed
->=20
-> adding -o ro,usebackuproot doesn't change anything, same mount error,
-> same error messages in dmesg.
->=20
-> Also tried btrfs check with this error.
-> btrfs check /dev/md42
-> Opening filesystem to check...
-> parent transid verify failed on 448888832 wanted 68773 found 68768
-> parent transid verify failed on 448888832 wanted 68773 found 68768
-> parent transid verify failed on 448888832 wanted 68773 found 68771
-> parent transid verify failed on 448888832 wanted 68773 found 68771
-> Ignoring transid failure
-> leaf parent key incorrect 448888832
-> ERROR: cannot open file system
-<snip>
-> [...]
->=20
-> The last line repeats with different block numbers with decreasing gen
-> and level sometimes 0.
->=20
-> A simple
-> btrfs filesystem show /dev/md42
-> Label: none=C2=A0 uuid: 8c6746f0-944a-45c5-90f3-622724d15998
-> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 Total devices 1 FS bytes use=
-d 1.63TiB
-> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 devid=C2=A0=C2=A0=C2=A0 1 si=
-ze 7.26TiB used 1.90TiB path /dev/md42
->=20
-> for me, seems to be ok.
->=20
-> Is there something I could try to recover from this?
-> Any help is welcome, as it happened during backup creation, and the
-> backup volume suffers from the same issue.
->=20
-> Additional info of system:
-> uname -a
-> uname -a
-> Linux jane 4.19.6-gentoo #1 SMP PREEMPT Sat Dec 15 13:26:24 CET 2018
-> x86_64 Intel(R) Core(TM) i7-4785T CPU @ 2.20GHz GenuineIntel GNU/Linux
-
-I'm more interested in the history of the fs.
-
-Did the fs get created/modified by some older kernel?
-Especially considering you're using Gentoo, and every kernel update
-needs time consuming compile, it may be caused by some older kernel.
-
-Thanks,
-Qu
-
->=20
-> btrfs --version
-> btrfs-progs v4.19.1
->=20
-> BR, Christian
-
-
---cwWosdbii7ZCMLTJQkMqIMxCI6K3agYVU--
-
---vd1haEZFibRRQ35YDVh4TuW2WaoY14OvZ
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlw/0XEACgkQwj2R86El
-/qgoDQf/c05hXhKWSmaoGcxcA6vRn6qqm6ES2FgilSCuoMEN18eTlEcxnoGHkR3S
-PUJX5WS2jFo6kMOW38y5PfHm2xu/iMQGLbQmOYSEBplLt8oYlQqsXBM2YqUDG5pE
-QRqh+vZ17kB9pV+eZMMR58TzsZqPrjToovSYPKx/lkKTckdPRPs8Ag+asjiinXty
-rB+tDHo91wHFMlkcpt+/Flxfy7XxJjfVmSL8ddUVxG7EoxbooXypTyvmbSTS6cUv
-GjneL7jnMQOZr9iURWb6oZuJym0+y3D4DrWrlr598kvw11eoIAwZq630uDNbAdXq
-FSE9Jl5Egp5BujL5KSU0v9kvpWCYZg==
-=g0JK
------END PGP SIGNATURE-----
-
---vd1haEZFibRRQ35YDVh4TuW2WaoY14OvZ--
+PiAtLS0tLU9yaWdpbmFsIE1lc3NhZ2UtLS0tLQ0KPiBGcm9tOiBsaW51eC1idHJmcy1vd25lckB2
+Z2VyLmtlcm5lbC5vcmcgPGxpbnV4LWJ0cmZzLQ0KPiBvd25lckB2Z2VyLmtlcm5lbC5vcmc+IE9u
+IEJlaGFsZiBPZiBDaHJpcyBNdXJwaHkNCj4gU2VudDogVGh1cnNkYXksIDE3IEphbnVhcnkgMjAx
+OSA1OjE1IEFNDQo+IFRvOiBTdGVmYW4gSyA8c2hhZG93XzdAZ214Lm5ldD4NCj4gQ2M6IExpbnV4
+IEJ0cmZzIDxsaW51eC1idHJmc0B2Z2VyLmtlcm5lbC5vcmc+DQo+IFN1YmplY3Q6IFJlOiBxdWVz
+dGlvbiBhYm91dCBjcmVhdGluZyBhIHJhaWQxMA0KPiANCj4gT24gV2VkLCBKYW4gMTYsIDIwMTkg
+YXQgNzo1OCBBTSBTdGVmYW4gSyA8c2hhZG93XzdAZ214Lm5ldD4gd3JvdGU6DQo+ID4NCj4gPiAg
+OigNCj4gPiB0aGF0IG1lYW5zIHdoZW4gb25lIGpib2QgZmFpbCBpdHMgdGhlcmUgaXMgbm8gZ3Vh
+cmFudGVlIHRoYXQgaXQgd29ya3MNCj4gPiBmaW5lPyBsaWtlIGluIHpmcz8gd2VsbCB0aGF0IHN1
+Y2tzIERpZG4ndCBhbnlvbmUgdGhpbmsgdG8gcHJvZ3JhbSBpdCB0aGF0IHdheT8NCj4gDQo+IFRo
+ZSBtaXJyb3JpbmcgaXMgYSBmdW5jdGlvbiBvZiB0aGUgYmxvY2sgZ3JvdXAsIG5vdCB0aGUgYmxv
+Y2sgZGV2aWNlLg0KPiBBbmQgeWVzIHRoYXQncyBwYXJ0IG9mIHRoZSBpbnRlbnRpb25hbCBkZXNp
+Z24gYW5kIHdoeSBpdCdzIHNvIGZsZXhpYmxlLiBBIHJlYWwNCj4gcmFpZDEwIGlzbid0IGFzIGZs
+ZXhpYmxlLCBzbyB0byBlbmZvcmNlIHRoZSBhbGxvY2F0aW9uIG9mIHNwZWNpZmljIGJsb2NrIGdy
+b3VwDQo+IHN0cmlwZXMgdG8gc3BlY2lmaWMgYmxvY2sgZGV2aWNlcyB3b3VsZCBhZGQgY29tcGxl
+eGl0eSB0byB0aGUgYWxsb2NhdG9yIHdoaWxlDQo+IHJlZHVjaW5nIGZsZXhpYmlsaXR5LiBJdCdz
+IG5vdCBpbXBvc3NpYmxlLCBpdCdkIGp1c3QgY29tZSB3aXRoIGNhdmVhdHMgbGlrZSBubw0KPiB0
+aHJlZSBkZXZpY2UNCj4gcmFpZDEwIGxpa2Ugbm93OyBhbmQgeW91J2QgaGF2ZSB0byBmaWd1cmUg
+b3V0IHdoYXQgdG8gZG8gaWYgdGhlIHVzZXIgYWRkcyBvbmUNCj4gbmV3IGRldmljZSBpbnN0ZWFk
+IG9mIHR3byBhdCBhIHRpbWUsIGFuZCB3aGF0IGlmIGFueSBuZXcgZGV2aWNlIGlzbid0IHRoZQ0K
+PiBzYW1lIHNpemUgYXMgZXhpc3RpbmcgZGV2aWNlcyBvciBpZiB5b3UgYWRkIHR3byBkZXZpY2Vz
+IHRoYXQgYXJlbid0IHRoZSBzYW1lDQo+IHNpemUuIERvIHlvdSByZWZ1c2UgdG8gYWRkIHN1Y2gg
+ZGV2aWNlcz8NCj4gV2hhdCBsaW1pdGF0aW9ucyBkbyB3ZSBydW4gaW50byB3aGVuIHJlYmFsYW5j
+aW5nPyBJdCdzIHdheSBtb3JlDQo+IGNvbXBsaWNhdGVkLg0KPiANCj4gQnRyZnMgcmFpZDEwIHJl
+YWxseSBzaG91bGQgbm90IGJlIGNhbGxlZCByYWlkMTAuIEl0IHNldHMgdXAgdGhlIHdyb25nIHVz
+ZXINCj4gZXhwZWN0YXRpb24gZW50aXJlbHkuIEl0J3MgbW9yZSBsaWtlIHJhaWQwKzEsIGV4Y2Vw
+dCBldmVuIHRoYXQgaXMgZGVjZXB0aXZlDQo+IGJlY2F1c2UgaW4gdGhlb3J5IGEgbGVnaXQgcmFp
+ZDArMSB5b3UgY2FuIGxvc2UgbXVsdGlwbGUgZHJpdmVzIG9uIG9uZSBzaWRlIG9mDQo+IHRoZSBt
+aXJyb3IgKGJ1dCBub3QgYm90aCk7IGJ1dCB3aXRoIEJ0cmZzIHJhaWQxMCB5b3UgcmVhbGx5IGNh
+bid0IGxvc2UgbW9yZQ0KPiB0aGFuIG9uZSBkcml2ZS4gQW5kIHRoZXJlZm9yZSBpdCBkb2VzIG5v
+dCBzY2FsZS4gVGhlIHByb2JhYmlsaXR5IG9mIGRvd250aW1lDQo+IGluY3JlYXNlcyBhcyBkcml2
+ZXMgYXJlIGFkZGVkOyB3aGVyZWFzIHdpdGggYSByZWFsIHJhaWQxMCBkb3dudGltZSBkb2Vzbid0
+DQo+IGNoYW5nZS4NCj4gDQo+IEluIHlvdXIgY2FzZSB5b3UncmUgYmV0dGVyIG9mZiB3aXRoIHJh
+aWQwJ2luZyB0aGUgdHdvIGRyaXZlcyBpbiBlYWNoIGVuY2xvc3VyZQ0KPiAod2hldGhlciBpdCdz
+IGEgZmVhdHVyZSBvZiB0aGUgZW5jbG9zdXJlIG9yIGRvaW5nIGl0IHdpdGggbWRhZG0gb3IgTFZN
+KS4gQW5kDQo+IHRoZW4gdXNpbmcgQnRyZnMgcmFpZDEgb24gdG9wIG9mIHRoZSByZXN1bHRpbmcg
+dmlydHVhbCBibG9jayBkZXZpY2VzLiBPciBkbw0KPiBtZGFkbS9MVk0gcmFpZDEwLCBhbmQgZm9y
+bWF0IGl0IEJ0cmZzLiBPciB5ZWFoLCB1c2UgWkZTLg0KDQoNCldoYXQgSSd2ZSBkb25lIGlzIGNy
+ZWF0ZSBzZXBhcmF0ZSBsdm0gdm9sdW1lcyBhbmQgZ3JvdXBzLCBhbmQgYXNzaWduZWQgdGhlIGx2
+bSBncm91cHMgdG8gc2VwYXJhdGUgcGh5c2ljYWwgc3RvcmFnZSBzbyBJIGRvbid0IGFjY2lkZW50
+bHkgZ2V0IHR3byBidHJmcyBtaXJyb3JzIG9uIHRoZSBzYW1lIGRldmljZS4NCkl0J3MgYSBiaXQg
+Y29tcGxpY2F0ZWQgKGVzcGVjaWFsbHkgc2luY2UgSSdtIHVzaW5nIGNhY2hpbmcgd2l0aCBsdm0p
+IGJ1dCBpdCB3b3JrcyB2ZXJ5IHdlbGwuDQoNCnZtLXNlcnZlciB+ICMgbHZzDQogIExWICAgICAg
+ICBWRyBBdHRyICAgICAgIExTaXplICBQb29sICAgICAgICAgICAgICBPcmlnaW4gICAgICAgICAg
+ICBEYXRhJSAgTWV0YSUgIE1vdmUgTG9nIENweSVTeW5jIENvbnZlcnQNCiAgYmFja3VwLWEgIGEg
+IEN3aS1hb0MtLS0gPDIuNzN0IFtjYWNoZS1iYWNrdXAtYV0gIFtiYWNrdXAtYV9jb3JpZ10gIDk5
+Ljk5ICAyNC42MyAgICAgICAgICAgMC4wMA0KICBsdm9sMCAgICAgYSAgLXdpLWEtLS0tLSA0NC4w
+MG0NCiAgbHZvbDEgICAgIGEgIC13aS1hLS0tLS0gNDQuMDBtDQogIHN0b3JhZ2UtYSBhICBDd2kt
+YW9DLS0tIDwzLjY0dCBbY2FjaGUtc3RvcmFnZS1hXSBbc3RvcmFnZS1hX2NvcmlnXSA5OS45OCAg
+MjQuNzYgICAgICAgICAgIDAuMDANCiAgYmFja3VwLWIgIGIgIEN3aS1hb0MtLS0gPDIuNzN0IFtj
+YWNoZS1iYWNrdXAtYl0gIFtiYWNrdXAtYl9jb3JpZ10gIDk5Ljk5ICAyNC43NSAgICAgICAgICAg
+MC4wMA0KICBzdG9yYWdlLWIgYiAgQ3dpLWFvQy0tLSA8My42NHQgW2NhY2hlLXN0b3JhZ2UtYl0g
+W3N0b3JhZ2UtYl9jb3JpZ10gOTkuOTkgIDI0LjY2ICAgICAgICAgICAwLjAwDQogIHN0b3JhZ2Ut
+YyBjICAtd2ktYS0tLS0tIDwzLjY0dA0KDQp2bS1zZXJ2ZXIgfiAjIHZncw0KICBWRyAjUFYgI0xW
+ICNTTiBBdHRyICAgVlNpemUgIFZGcmVlDQogIGEgICAgMyAgIDQgICAwIHd6LS1uLSAgNi43MHQg
+ICAgMA0KICBiICAgIDMgICAyICAgMCB3ei0tbi0gIDYuNzB0IDguMDBtDQogIGMgICAgMSAgIDEg
+ICAwIHd6LS1uLSA8My42NHQgICAgMA0KDQp2bS1zZXJ2ZXIgfiAjIHB2cw0KICBQViAgICAgICAg
+IFZHIEZtdCAgQXR0ciBQU2l6ZSAgICBQRnJlZQ0KICAvZGV2L3NkYTQgIGEgIGx2bTIgYS0tICA8
+MzQyLjAwZyAgICAwDQogIC9kZXYvc2RiNCAgYiAgbHZtMiBhLS0gIDwzNDIuMDBnIDguMDBtDQog
+IC9kZXYvc2RjMSAgYSAgbHZtMiBhLS0gICAgPDIuNzN0ICAgIDANCiAgL2Rldi9zZGQxICBiICBs
+dm0yIGEtLSAgICA8Mi43M3QgICAgMA0KICAvZGV2L3NkZjEgIGEgIGx2bTIgYS0tICAgIDwzLjY0
+dCAgICAwDQogIC9kZXYvc2RoMSAgYyAgbHZtMiBhLS0gICAgPDMuNjR0ICAgIDANCiAgL2Rldi9z
+ZGkxICBiICBsdm0yIGEtLSAgICA8My42NHQgICAgMA0KDQp2bS1zZXJ2ZXIgfiAjIGJ0cmZzIGZp
+IHNoDQpMYWJlbDogJ1Jvb3QnICB1dWlkOiA1OGQyN2RiZC03YzFlLTRlZjctOGQ0My1lOTNkZjE1
+MzdiMDgNCiAgICAgICAgVG90YWwgZGV2aWNlcyAyIEZTIGJ5dGVzIHVzZWQgNTUuMjZHaUINCiAg
+ICAgICAgZGV2aWQgICAxMyBzaXplIDEwMC4wMEdpQiB1c2VkIDY1LjAzR2lCIHBhdGggL2Rldi9z
+ZGIxDQogICAgICAgIGRldmlkICAgMTQgc2l6ZSAxMDAuMDBHaUIgdXNlZCA2NS4wM0dpQiBwYXRo
+IC9kZXYvc2RhMQ0KDQpMYWJlbDogJ0Jvb3QnICB1dWlkOiA4ZjYzY2QwMy02N2IyLTQ3Y2QtODVj
+ZS1jYTM1NTc2OWMxMjMNCiAgICAgICAgVG90YWwgZGV2aWNlcyAyIEZTIGJ5dGVzIHVzZWQgNjYu
+MTFNaUINCiAgICAgICAgZGV2aWQgICAgMSBzaXplIDEuMDBHaUIgdXNlZCAzNTYuMDBNaUIgcGF0
+aCAvZGV2L3NkYjYNCiAgICAgICAgZGV2aWQgICAgMiBzaXplIDEuMDBHaUIgdXNlZCAwLjAwQiBw
+YXRoIC9kZXYvc2RhNg0KDQpMYWJlbDogJ1N0b3JhZ2UnICB1dWlkOiAxNDM4ZmRjNS04YjJhLTQ3
+YjMtOGE1Yi1lYjc0Y2RlM2RmNDINCiAgICAgICAgVG90YWwgZGV2aWNlcyA0IEZTIGJ5dGVzIHVz
+ZWQgMi44NVRpQg0KICAgICAgICBkZXZpZCAgICAxIHNpemUgMy42MVRpQiB1c2VkIDMuMTlUaUIg
+cGF0aCAvZGV2L21hcHBlci9iLXN0b3JhZ2UtLWINCiAgICAgICAgZGV2aWQgICAgMiBzaXplIDMu
+NDJUaUIgdXNlZCAzLjAyVGlCIHBhdGggL2Rldi9tYXBwZXIvYS1zdG9yYWdlLS1hDQogICAgICAg
+IGRldmlkICAgIDMgc2l6ZSAyNzkuNDBHaUIgdXNlZCAxNzMuMDBHaUIgcGF0aCAvZGV2L3NkZzEN
+CiAgICAgICAgZGV2aWQgICAgNCBzaXplIDI3OS40MEdpQiB1c2VkIDE3Mi4wMEdpQiBwYXRoIC9k
+ZXYvc2RlMQ0KDQpMYWJlbDogJ0JhY2t1cCcgIHV1aWQ6IDIxZTU5ZDY2LTNlODgtNGZjOS04MDZm
+LTY5YmRlNThiZTZhMw0KICAgICAgICBUb3RhbCBkZXZpY2VzIDIgRlMgYnl0ZXMgdXNlZCAxLjMx
+VGlCDQogICAgICAgIGRldmlkICAgIDEgc2l6ZSAyLjczVGlCIHVzZWQgMS4zMVRpQiBwYXRoIC9k
+ZXYvbWFwcGVyL2EtYmFja3VwLS1hDQogICAgICAgIGRldmlkICAgIDIgc2l6ZSAyLjczVGlCIHVz
+ZWQgMS4zMVRpQiBwYXRoIC9kZXYvbWFwcGVyL2ItYmFja3VwLS1iDQoNCg==

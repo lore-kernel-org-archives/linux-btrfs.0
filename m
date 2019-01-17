@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BB87BC43387
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 13:14:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3141AC43387
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 13:22:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8ADA620652
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 13:14:23 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 084E720652
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 13:22:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726002AbfAQNOW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 17 Jan 2019 08:14:22 -0500
-Received: from mx2.suse.de ([195.135.220.15]:43516 "EHLO mx1.suse.de"
+        id S1727931AbfAQNWa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 17 Jan 2019 08:22:30 -0500
+Received: from mx2.suse.de ([195.135.220.15]:44924 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725933AbfAQNOV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Jan 2019 08:14:21 -0500
+        id S1726018AbfAQNWa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 17 Jan 2019 08:22:30 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B181FAC5B
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Jan 2019 13:14:19 +0000 (UTC)
-Subject: Re: [PATCH v2 1/5] btrfs: Always output error message when key/level
- verification fails
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 7F550AE47
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Jan 2019 13:22:28 +0000 (UTC)
+Subject: Re: [PATCH v2 2/5] btrfs: extent_io: Kill the forward declaration of
+ flush_write_bio()
 To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
 References: <20190117101528.8675-1-wqu@suse.com>
- <20190117101528.8675-2-wqu@suse.com>
+ <20190117101528.8675-3-wqu@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -85,12 +85,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <80247a76-7a61-da01-7453-234e9d897f0b@suse.de>
-Date:   Thu, 17 Jan 2019 14:14:19 +0100
+Message-ID: <bddb93de-5ab8-7fdd-7bfe-bbabb9066fd5@suse.de>
+Date:   Thu, 17 Jan 2019 14:22:28 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20190117101528.8675-2-wqu@suse.com>
+In-Reply-To: <20190117101528.8675-3-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -99,51 +99,8 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 17/01/2019 11:15, Qu Wenruo wrote:
-> @@ -449,9 +449,10 @@ static int verify_level_key(struct btrfs_fs_info *fs_info,
->  		btrfs_item_key_to_cpu(eb, &found_key, 0);
->  	ret = btrfs_comp_cpu_keys(first_key, &found_key);
->  
-> -#ifdef CONFIG_BTRFS_DEBUG
->  	if (ret) {
-> +#ifdef CONFIG_BTRFS_DEBUG
->  		WARN_ON(1);
-> +#endif
->  		btrfs_err(fs_info,
->  "tree first key mismatch detected, bytenr=%llu parent_transid=%llu key expected=(%llu,%u,%llu) has=(%llu,%u,%llu)",
->  			  eb->start, parent_transid, first_key->objectid,
-> @@ -459,7 +460,6 @@ static int verify_level_key(struct btrfs_fs_info *fs_info,
->  			  found_key.objectid, found_key.type,
->  			  found_key.offset);
->  	}
-> -#endif
->  	return ret;
->  }
-
-
-Hmm I think the resulting code looks a bit odd now, doesn't it?
-if (ret) {
-#ifdef CONFIG_BTRFS_DEBUG
-		WARN_ON(1);
-#endif
-
-	btrfs_err(fs_info,
-
-
-Why not something like:
-if (ret) {
-	if (IS_ENABLED(CONFIG_BTRFS_DEBUG))
-		WARN_ON(1);
-	
-	btrfs_err(fs_info,
-
-Or even hide the if (IS_ENABLED(CONFIG_BTRFS_DEBUG)) WARN_ON(1); in a macro
-#define BTRFS_DEBUG_WARN_ON(x) do { 		\
-	if (IS_ENABLED(CONFIG_BTRFS_DEBUG)) 	\
-		WARN_ON((x));			\
-} while(0)
-
-
+Looks good,
+Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems
 jthumshirn@suse.de                                +49 911 74053 689

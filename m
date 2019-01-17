@@ -2,31 +2,35 @@ Return-Path: <SRS0=cccy=PZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E9A6CC43387
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 14:38:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7F33EC43387
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 14:54:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C49D9205C9
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 14:38:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4DEA120856
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 14:54:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727506AbfAQOin (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 17 Jan 2019 09:38:43 -0500
-Received: from mout.gmx.net ([212.227.15.15]:33515 "EHLO mout.gmx.net"
+        id S1727874AbfAQOyP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 17 Jan 2019 09:54:15 -0500
+Received: from mout.gmx.net ([212.227.15.18]:36947 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727322AbfAQOin (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Jan 2019 09:38:43 -0500
+        id S1727725AbfAQOyO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 17 Jan 2019 09:54:14 -0500
 Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx003
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0LqRKT-1hNrHk0aCP-00e3n1; Thu, 17
- Jan 2019 15:38:34 +0100
-Subject: Re: [PATCH] btrfs: honor path->skip_locking in backref code
-To:     dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com
-References: <20190116160057.22040-1-josef@toxicpanda.com>
- <ef892414-ea36-271b-35f5-b4f753ff7bea@gmx.com>
- <20190117143021.GR2900@twin.jikos.cz>
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0MGSgq-1gxMTR3zcW-00DJqE; Thu, 17
+ Jan 2019 15:54:11 +0100
+Subject: Re: issue mounting volume
+To:     Christian Schneider <christian@ch-sc.de>,
+        linux-btrfs@vger.kernel.org
+References: <6760df5e-a757-56a0-d8c9-3f172458fc65@ch-sc.de>
+ <06650972-ba8c-0b5a-f1ee-09656e0bf649@gmx.com>
+ <3e1fd623-651e-9f48-0a79-2d1194b3d42d@ch-sc.de>
+ <bd849a01-708d-2d4a-2f50-50b6967edf6c@gmx.com>
+ <2c7c5f67-94f7-c9c7-4d9f-a76ef5dc81d0@ch-sc.de>
+ <6c33c8a0-2dd0-c43f-3ddc-5f24ed609a43@gmx.com>
+ <28c98f6d-9fa6-8463-99bc-a42aecc15bfe@ch-sc.de>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -53,115 +57,202 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <3ce5bb05-5005-62f7-5174-4c7f3ebd7f8c@gmx.com>
-Date:   Thu, 17 Jan 2019 22:38:26 +0800
+Message-ID: <54befcbc-4590-e377-f26d-99f170a5c6b2@gmx.com>
+Date:   Thu, 17 Jan 2019 22:54:04 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <20190117143021.GR2900@twin.jikos.cz>
+In-Reply-To: <28c98f6d-9fa6-8463-99bc-a42aecc15bfe@ch-sc.de>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="Q9JglhzwVTEYBRoUo0Q9twzU0rM1KZQb4"
-X-Provags-ID: V03:K1:tyU92UckPQY4LE8mQiSWtrUEAnv1SEV5cIipCMHBMMSrgiNJPmi
- xOQ+28mDPUh7wbGLFHQ8CT6k/K7GI7CYw0i7eV8Lge5aA7pukf3qQGmHQh3qfSi8B3AeC05
- uTMoA3RaUKAJiST9VUmqXBJPUe+TJKsU82g3oQrYIXyPysZ3pBOKhojbNB0C0u0F9I7ppjX
- 0SGuU0WQ7U+eh6+gX4sLw==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:sWNVrOVzvg8=:rMR+jK59RSiGxuyODtwtIO
- ofkCWsPb7FNfgTnzvkMPKiMfHGGlV4fRYrQPthPY8+HWOUJqHMT/07Xlir8aQD3mk7OGBJC7j
- URqI0kTQdfOSpdUefqebVA7Vd53qkAcBdGg2TcqDZtirJHBo4SaFcoOYecKKU5m1XVEUjLqoY
- a463Jcizo3d4ec36TKrD+EoZn8AvqoHbyK6xjRGaTml7Xz4KaBCaKvhxuN3mjSOqwNxtWBw3y
- sw9B63tLLRoLsy+xER0pyFUGpcxhBpuNVd8SPHIUIAQKP/bXLHSdQPwVgSHblIcCMFbjZWqdH
- 0ZmBzOcEgpEpWt/pKlEePEkaqS1079uHxA6jeJMCQcHqYWl+LzXzRXZjTVKerOh26B22WgKaM
- 3X6AZrUuf+iGHsVMjw2p0EnwVelSLadTRi7+aWFLPOJH08FjgPaQE4Cnss5U1kqizukFNWK9D
- R+13lm752flFm8qxCK+llcCX/NILRx9bIV0sblY0mOeuPcLmbM6ucGTN/bmj+vpYRngrL55a7
- RJEQ6TZlrEkSnmKQSae02bXOv/WcPW63kx7dWt3AYVgaJ2vwhYD2iwf0XTs6/A++yPlukl01Y
- EcJf73+xIq98gKSOBQQ3lNsUZoH9t0G/QyHW1N94L99nhhBGOrFcHqG9NyXr4xe6/4qp14mrR
- dhwHzabZYWLZfVUpMgxdyxxLJ4K4tkMOF1HWPRYORw5wWS2ty9K2vmK9VMflUCsEb5F6GYnOK
- kYTeWB3vpbxSEgRsXziPca2g1MDOlAjSODzRK6HyYv5EYOUP0hGg//5HXx8UEYDsPwBKOtu1w
- JraGaUQBWVjlfbq4135At+qJ0qnAPMqeVrvH38hnRhExaQc9OqOqhqLPO2LQkzwagUkCNUBj+
- XjdFgTAjCf3l+9m2Ac1DUXCQ+ygWTIHiqqC4qiH8W8Oeq6Vc8dkPb/h6Lf73l6
+ boundary="9przBR9Hr8eRG1vlxMvRsLRGPm4bhjQPG"
+X-Provags-ID: V03:K1:isj6aSCRMVmBv7e1sGMmbqpKnmixnGV27RYtnsu00d+wqELkCpX
+ 8HaVSuGmS63aZReCFBcuJovrTorYaxgHIIXiT8nCtIn8twYdW5U+FsumgGnnCtGXmVS6BjU
+ fnGd7JSzRIrBTxWUD6XVj0hHNqdhTPL/gyd86K2hkyGEAcdeqrBcJoeiqQ3sW5rkiwTJoaY
+ aaglQvCCiqV03LJUutlTg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:342ODBZr+Qo=:Mvu+Lvp5KeKk/KC1Xioz0A
+ I1mnm1INt9Um2AUyShnUslV8VEi3dJOiVjL6gs2rzjNmyXuNmCJ1Bd1bCH0LOjxEX6gLkgm3s
+ NnTJsgAU6OoGBxJT+G/I2e1yRruEgr6+M0qyC5B9t4kRgF8r/abDhDhJrWUHyNFwlUOFN5bsS
+ btoaEKXTafBVQbUDRFdQ8taJkMI+DztsGbwR1F2WMdkxzU8RPKDFd37c4A4nJ5PSCDB7xPIOB
+ UAJodFHEzds+aa3iCnXRWPbd39w5NRclSnz3m2Xmz07qwtNTL2QPsl78w02fvYArExkYCDEMp
+ aQxNWIj6RbH7zZ0mdhNHKvXbcHnLu+IICqLKfQS5rkkmmcmlpf52ZZFg3SUV29wy8ljmCIUbK
+ wA5g5tLkmYKP36vtaV7uLdgM77YAd2+0RjJb39fO2gEqNxb+2oucch9k483s++eSPujmNt99w
+ VK2JItCzUxdr+7rzq9O7OVVH0uRke4FF2ov9dhg4LY0djJmaP1DfUf4NikCe1tY6RB9Q60czL
+ kFAysvp9ja00ShqMNAsAXTaByONVQUd3rpoGDblQAdIJVI1eUquibTKUiOeqdpLKMz0QqZ7u6
+ NIiOLMkRaJr2zRjH2f5306/utcNqsk/C4/vtvZxhIrTdCy3rVOMPQP88gWRrcFpO84I0Zzduj
+ OTvjVAL7gdN7cvZGuMoZZBPVZ7wQSB/J0fQ0Mvcu1bCdj39GRLVJWTnT0CNNvUGE73cF5R2Nu
+ ebnWfOiD9Mro7/LQwk6WjBATGBNv3mVBdyypCFX6TmFd11c5IFxO5qEywY4CcBg6uiO+sVutY
+ H0M+igQEM1pZ+FVI+pQEMzHcJ9mgAya70KJfx4QP6arl76U6Z/zUqZNQ0mkdCM/UvVnqe1+m7
+ nPEs0/SJoZcYJOkpuBF+VqZUaGTBxf7y6KsM5PaSDttIkRe9+Mut46GM0g8FeY
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---Q9JglhzwVTEYBRoUo0Q9twzU0rM1KZQb4
-Content-Type: multipart/mixed; boundary="W3shcZRP0FhhCvQdsTbHbNw156DdK5TEv";
+--9przBR9Hr8eRG1vlxMvRsLRGPm4bhjQPG
+Content-Type: multipart/mixed; boundary="mF8Rj7PlLKvZJNUxzhxfzCazzd9owRSwb";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
- linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Message-ID: <3ce5bb05-5005-62f7-5174-4c7f3ebd7f8c@gmx.com>
-Subject: Re: [PATCH] btrfs: honor path->skip_locking in backref code
-References: <20190116160057.22040-1-josef@toxicpanda.com>
- <ef892414-ea36-271b-35f5-b4f753ff7bea@gmx.com>
- <20190117143021.GR2900@twin.jikos.cz>
-In-Reply-To: <20190117143021.GR2900@twin.jikos.cz>
+To: Christian Schneider <christian@ch-sc.de>, linux-btrfs@vger.kernel.org
+Message-ID: <54befcbc-4590-e377-f26d-99f170a5c6b2@gmx.com>
+Subject: Re: issue mounting volume
+References: <6760df5e-a757-56a0-d8c9-3f172458fc65@ch-sc.de>
+ <06650972-ba8c-0b5a-f1ee-09656e0bf649@gmx.com>
+ <3e1fd623-651e-9f48-0a79-2d1194b3d42d@ch-sc.de>
+ <bd849a01-708d-2d4a-2f50-50b6967edf6c@gmx.com>
+ <2c7c5f67-94f7-c9c7-4d9f-a76ef5dc81d0@ch-sc.de>
+ <6c33c8a0-2dd0-c43f-3ddc-5f24ed609a43@gmx.com>
+ <28c98f6d-9fa6-8463-99bc-a42aecc15bfe@ch-sc.de>
+In-Reply-To: <28c98f6d-9fa6-8463-99bc-a42aecc15bfe@ch-sc.de>
 
---W3shcZRP0FhhCvQdsTbHbNw156DdK5TEv
+--mF8Rj7PlLKvZJNUxzhxfzCazzd9owRSwb
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2019/1/17 =E4=B8=8B=E5=8D=8810:30, David Sterba wrote:
-> On Thu, Jan 17, 2019 at 09:04:13AM +0800, Qu Wenruo wrote:
->>
->>
->> On 2019/1/17 =E4=B8=8A=E5=8D=8812:00, Josef Bacik wrote:
->>> qgroups will do the old roots lookup at delayed ref time, which could=
- be
->>> while walking down the extent root while running a delayed ref.  This=
+On 2019/1/17 =E4=B8=8B=E5=8D=8810:38, Christian Schneider wrote:
+> May I ask for a little technical details, about what happened/was wrong=
+?
 
->>> should be fine, except we specifically lock eb's in the backref walki=
-ng
->>> code irrespective of path->skip_locking, which deadlocks the system.
->>> Fix up the backref code to honor path->skip_locking, nobody will be
->>> modifying the commit_root when we're searching so it's completely saf=
-e
->>> to do.  Thanks,
->>>
->>> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
->>
->> Reviewed-by: Qu Wenruo <wqu@suse.com>
->=20
-> What can we use from https://patchwork.kernel.org/patch/10725371/ to
-> add to the changelog? Is the deadlock caused by fb235dc06fac?
+(This may be pretty similar to what I explained before)
 
-The error and cause part should be the same.
+parent transid verify failed on 448888832 wanted 68773 found 68768
+parent transid verify failed on 448888832 wanted 68773 found 68771
 
-Just Josef's is much better than my patch.
+These two lines are the root cause.
 
-Only the [FIX] part needs some update.
+Your tree block at 448888832 doesn't has the transid its parent expects.
 
-Thanks
+Normally this means either
+a) One tree block overwrites an existing tree block
+   This means btrfs metadata CoW is screwed up completely.
+   Possible causes are bad free space cache/tree or corrupted extent
+   tree.
+   (Thus metadata backup profile like DUP/RAID1/RAID10/RAID5/6 provides
+    no help at all)
+
+b) The tree block at 448888832 is heavily damaged
+   Normally this means the generation should be some garbage, but not
+   for your case.
+
+So a) should be your case.
+
+But unlike normal a) case, your two metadata copies points to 2
+different tree blocks, as the generation is completely different.
+
+So this looks like there is a power loss happened after one metadata
+copy written.
+
+And since the powerloss happened, one of the 3 generations should be the
+problem.
+
+My guess is, the last transaction 68773 who is writting the parent of
+448888832 is causing the problem.
+But that doesn't explain everything, especially why one copy differs
+from the other.
+
+So I'm saying your fs may be totally corrupted, but as long as no power
+loss happen, the seed of destruction doesn't grow.
+
+But when power loss happens, the already screwed-up extent tree/space
+cache/space tree could destroy the full fs, as btrfs is way too
+dependent on metadata CoW to protect itself, and if the basis of
+metadata CoW is screwed up, nothing you can do but salvaging your data.
+
+Thanks,
 Qu
 
-> The fix
-> applies to stable 4.19+ directly and to 4.14 with context fixups.
-> Thanks.
+> I don't know really anything about internal btrfs stuff, but would like=
+
+> to gain a little insight. Also, if there is a explanation online, where=
+
+> you can point me to would be nice.
+> BR, CHristian
 >=20
+> Am 17.01.19 um 15:12 schrieb Qu Wenruo:
+>>
+>>
+>> On 2019/1/17 =E4=B8=8B=E5=8D=889:54, Christian Schneider wrote:
+>>>>>
+>>>>> Do you know, which kernel is needed as base for the patch? Can I ap=
+ply
+>>>>> it to 4.19 or do I need more recent? If you don't know, I can just =
+try
+>>>>> it out.
+>>>>
+>>>> My base is v5.0-rc1.
+>>>>
+>>>> Although I think there shouldn't be too many conflicts for older
+>>>> kernels.
+>>>>
+>>> I could apply the patch on 4.19, but compilation failed. So I went
+>>> straight to master, where it worked, and I could even mount the fs no=
+w.
+>>>
+>>> Your patch also has a positive impact on free space:
+>>>
+>>> =C2=A0=C2=A0df -h /home
+>>> Filesystem=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 Size=C2=A0 Used Avail Use% M=
+ounted on
+>>> /dev/md42=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 7.3T=C2=A0 1.9T=C2=A0 1=
+=2E8P=C2=A0=C2=A0 1% /home
+>>>
+>>> 1.8PB available space should be enough for the next few years :D
+>>>
+>>> Thank you very much so far!!!
+>>>
+>>> So, for further steps: As far as I understood, no possibility to repa=
+ir
+>>> the fs?
+>>
+>> Unfortunately, no possibility.
+>>
+>> The corruption of extent tree is pretty nasty.
+>> Your metadata CoW is completely broken.
+>> It really doesn't make much sense to repair, and I don't really believ=
+e
+>> the repaired result could be any good.
+>>
+>>> I just get the data I can and create it new?
+>>
+>> Yep.
+>>
+>> And just a general tip, for any unexpected power loss, do a btrfs chec=
+k
+>> --readonly before doing RW mount.
+>>
+>> It would help us to detect and locate possible cause of any corruption=
+
+>> before it cause more damage.
+>>
+>> Thanks,
+>> Qu
+>>
+>>>
+>>> BR, CHristian
+>>
 
 
---W3shcZRP0FhhCvQdsTbHbNw156DdK5TEv--
+--mF8Rj7PlLKvZJNUxzhxfzCazzd9owRSwb--
 
---Q9JglhzwVTEYBRoUo0Q9twzU0rM1KZQb4
+--9przBR9Hr8eRG1vlxMvRsLRGPm4bhjQPG
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxAk2IACgkQwj2R86El
-/qhycQf/UXVk0pQCuyD32yghhGE4MyAU4mPPN5y5HHutRm6u/T4sKiNVpqvAmhhy
-NqW6wi+lGU3103ZVUYS8xsAmp3bwd1Iln22Ld3YFoRTKgDoONpcY4z6BfodyGJCg
-Aj3vtgPGdw6b7z2/2TfEqWq3h+wqnHBQRPMpMnT8tnx5DbhsH9/LbFSzpN96SLS4
-vM0SW/eQZ+Uacqfok3BOudArkuPgTYGCPSALhUba7kMiKh7dEf9Fk33tMMg7vmJv
-8N33Zpuvd/d/yWCPnesph9AkyDorCjHiQxKn5hIlhJ91cEyiNbWHJdPojGGHgDTc
-/HgMvH2++yE2z3gBuADLYkaZuq3gYQ==
-=NfIS
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxAlwwACgkQwj2R86El
+/qitCgf+L0k19JeMGznfQWnZBlilrNLdvOIVRx3du1WNUCvW+23FRb51sFUxuj7L
+GxP3Y56jxdbrDbsEzDITaF8tpLdx06UUOSBNJUysNFIv8QLJUqieCsqUC/PpIwSk
+EYr9BZIEb+g7GPQY/BOMXPBRkVUzhh8Ox4VWo7DorbCw5h5B7DoyCrgDlgLJ99zz
+1UCzojTOtoc0oZmOMIEOXhdG4qo/pdo7165BXhRhKb0O+VG8lX9fmhyGdu6ocSDl
+4fCjAeq3l7dgb2kyuQoTQ5seoe01Wq1Bn8UfDE7YF3vVeqaezy7faLRjqcFjDPAx
+TBxXepAXj0O8iG52R6KiMuAIFWj8xA==
+=zzBq
 -----END PGP SIGNATURE-----
 
---Q9JglhzwVTEYBRoUo0Q9twzU0rM1KZQb4--
+--9przBR9Hr8eRG1vlxMvRsLRGPm4bhjQPG--

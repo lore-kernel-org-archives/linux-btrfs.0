@@ -2,124 +2,152 @@ Return-Path: <SRS0=cccy=PZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 25945C43387
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 12:33:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BB87BC43387
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 13:14:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E6C9D20657
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 12:33:08 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Cx78Th8F"
+	by mail.kernel.org (Postfix) with ESMTP id 8ADA620652
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 13:14:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727291AbfAQMdH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 17 Jan 2019 07:33:07 -0500
-Received: from mail-io1-f44.google.com ([209.85.166.44]:45850 "EHLO
-        mail-io1-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725928AbfAQMdH (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Jan 2019 07:33:07 -0500
-Received: by mail-io1-f44.google.com with SMTP id c2so7618593iom.12
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Jan 2019 04:33:06 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=ruoOUfupTrpPpWCIOZcSMC//+agArE035fEgtb/8Lfo=;
-        b=Cx78Th8FkyHKsA2H3aOl6sjYCD8wcXFlcIcAmq2cx/WGbHLjuTThOSSXmSN2EtHsyK
-         KQBumDYMd6x0QymvaIakX3BL6R66yvBrOPRC1lh2dm98FTBDHgGeTVkUikXIhcd5MiN+
-         dQ1Ctrt76kwiCRAuXF6J1fgjNTZ+UeMfaacg+3SCZ1aZz2E/D+OF0KQ7HkHs186/zr51
-         Ey/1MWqd5koK6t9kCJH0+1zp8DK+g9hrJ31Qx0dqeWYtvdSkoqFUc0+ewQraXrBkfG84
-         j/vqgqWh4SJOWdqb6OOya4OtLPXz0omEWfMCD4/U+pyf0kG0qiwA+slMFjM9YAXvSk6A
-         XgkQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=ruoOUfupTrpPpWCIOZcSMC//+agArE035fEgtb/8Lfo=;
-        b=pFKoM46OG5Meb8UX+wu5ThacT15+Kf2zkAm4Qul8xcCulVGTac0MBm7nKbC0WiQZhY
-         Dq5Oi04hAinJm7bR2PXjF08PvYoOpyXHWYxSUpFWUEqgoMwqVOdVjSVJAlIiTpVHPfbM
-         0/abwMvzcN5NatumnBi0YtJfqy19dQzcLc6bl9QTv9Z3eWOi2U1IJBcuJalUDArbQDOJ
-         X7HSY4gXhUuwC6y+6VU/NKIoqcvVyAnaIyIa2Kxr4ielPX3fKwTkY+TR13hB0Ds8z2bY
-         hDR/F9oQfn6OopSVkDUTaMp2ZZazNHjywuf7+9LGEbbiDCHIyt+0bQdw0ykhceeP1VOe
-         WV3w==
-X-Gm-Message-State: AJcUukcKwCW5c/OzP/R7xZXun8pgMxCkmfLXQ1cacxZQtnj5NRH6dRTg
-        AQpsA2RYVwyV5ntGpT9PjK8O4MYZPr8=
-X-Google-Smtp-Source: ALg8bN7ARw4ZFIwji4ll3syCMps193g1pjrq0h4df4Xd+8KprEWHr/Dyfs4VEw2CLwzt5C3ym5AFAA==
-X-Received: by 2002:a6b:b706:: with SMTP id h6mr7108452iof.295.1547728385485;
-        Thu, 17 Jan 2019 04:33:05 -0800 (PST)
-Received: from [191.9.209.46] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
-        by smtp.gmail.com with ESMTPSA id y8sm596469ita.5.2019.01.17.04.33.04
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 17 Jan 2019 04:33:04 -0800 (PST)
-Subject: Re: question about creating a raid10
-To:     Stefan K <shadow_7@gmx.net>
-Cc:     Chris Murphy <lists@colorremedies.com>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>
-References: <3318002.5e9V1lv8s4@t460-skr>
- <20190116144208.GI5134@carfax.org.uk> <1980543.jviTh1pdNs@t460-skr>
- <CAJCQCtTErRwS5Omb4Asob3sYx8Svt4yV8V5so7fcs+2BX8t3Gg@mail.gmail.com>
-From:   "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <bbbb9a66-54a9-f8d0-4b9c-351cdb6529f7@gmail.com>
-Date:   Thu, 17 Jan 2019 07:33:01 -0500
-User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
- Thunderbird/60.4.0
+        id S1726002AbfAQNOW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 17 Jan 2019 08:14:22 -0500
+Received: from mx2.suse.de ([195.135.220.15]:43516 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725933AbfAQNOV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 17 Jan 2019 08:14:21 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay1.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id B181FAC5B
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Jan 2019 13:14:19 +0000 (UTC)
+Subject: Re: [PATCH v2 1/5] btrfs: Always output error message when key/level
+ verification fails
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+References: <20190117101528.8675-1-wqu@suse.com>
+ <20190117101528.8675-2-wqu@suse.com>
+From:   Johannes Thumshirn <jthumshirn@suse.de>
+Openpgp: preference=signencrypt
+Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <80247a76-7a61-da01-7453-234e9d897f0b@suse.de>
+Date:   Thu, 17 Jan 2019 14:14:19 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTErRwS5Omb4Asob3sYx8Svt4yV8V5so7fcs+2BX8t3Gg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20190117101528.8675-2-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 2019-01-16 13:15, Chris Murphy wrote:
-> On Wed, Jan 16, 2019 at 7:58 AM Stefan K <shadow_7@gmx.net> wrote:
->>
->>   :(
->> that means when one jbod fail its there is no guarantee that it works fine? like in zfs? well that sucks
->> Didn't anyone think to program it that way?
-> 
-> The mirroring is a function of the block group, not the block device.
-> And yes that's part of the intentional design and why it's so
-> flexible. A real raid10 isn't as flexible, so to enforce the
-> allocation of specific block group stripes to specific block devices
-> would add complexity to the allocator while reducing flexibility. It's
-> not impossible, it'd just come with caveats like no three device
-> raid10 like now; and you'd have to figure out what to do if the user
-> adds one new device instead of two at a time, and what if any new
-> device isn't the same size as existing devices or if you add two
-> devices that aren't the same size. Do you refuse to add such devices?
-> What limitations do we run into when rebalancing? It's way more
-> complicated.
-> 
-> Btrfs raid10 really should not be called raid10. It sets up the wrong
-> user expectation entirely. It's more like raid0+1, except even that is
-> deceptive because in theory a legit raid0+1 you can lose multiple
-> drives on one side of the mirror (but not both); but with Btrfs raid10
-> you really can't lose more than one drive. And therefore it does not
-> scale. The probability of downtime increases as drives are added;
-> whereas with a real raid10 downtime doesn't change.
-> 
-> In your case you're better off with raid0'ing the two drives in each
-> enclosure (whether it's a feature of the enclosure or doing it with
-> mdadm or LVM). And then using Btrfs raid1 on top of the resulting
-> virtual block devices. Or do mdadm/LVM raid10, and format it Btrfs. Or
-> yeah, use ZFS.
-I was about to recommend the same BTRFS raid1 on top of MD or LVM RAID0 
-approach myself.  Not only will it get you as close as possible with 
-BTRFS to the ZFS configuration you posted, it will also net you slightly 
-better performance than BTRFS in raid10 mode.
+On 17/01/2019 11:15, Qu Wenruo wrote:
+> @@ -449,9 +449,10 @@ static int verify_level_key(struct btrfs_fs_info *fs_info,
+>  		btrfs_item_key_to_cpu(eb, &found_key, 0);
+>  	ret = btrfs_comp_cpu_keys(first_key, &found_key);
+>  
+> -#ifdef CONFIG_BTRFS_DEBUG
+>  	if (ret) {
+> +#ifdef CONFIG_BTRFS_DEBUG
+>  		WARN_ON(1);
+> +#endif
+>  		btrfs_err(fs_info,
+>  "tree first key mismatch detected, bytenr=%llu parent_transid=%llu key expected=(%llu,%u,%llu) has=(%llu,%u,%llu)",
+>  			  eb->start, parent_transid, first_key->objectid,
+> @@ -459,7 +460,6 @@ static int verify_level_key(struct btrfs_fs_info *fs_info,
+>  			  found_key.objectid, found_key.type,
+>  			  found_key.offset);
+>  	}
+> -#endif
+>  	return ret;
+>  }
 
-Realistically, it's not perfect (if you lose one of the JBOD arrays, you 
-have to rebuild that array completely and then replace the higher-level 
-device in BTRFS, instead of just replacing the disk at the lower level), 
-but the same approach can be extrapolated to cover a wide variety of 
-configurations in terms of required failure domains, and I can attest to 
-the fact that it works (I've used this configuration a lot myself, but 
-mostly for performance reasons, not reliability).
+
+Hmm I think the resulting code looks a bit odd now, doesn't it?
+if (ret) {
+#ifdef CONFIG_BTRFS_DEBUG
+		WARN_ON(1);
+#endif
+
+	btrfs_err(fs_info,
+
+
+Why not something like:
+if (ret) {
+	if (IS_ENABLED(CONFIG_BTRFS_DEBUG))
+		WARN_ON(1);
+	
+	btrfs_err(fs_info,
+
+Or even hide the if (IS_ENABLED(CONFIG_BTRFS_DEBUG)) WARN_ON(1); in a macro
+#define BTRFS_DEBUG_WARN_ON(x) do { 		\
+	if (IS_ENABLED(CONFIG_BTRFS_DEBUG)) 	\
+		WARN_ON((x));			\
+} while(0)
+
+
+-- 
+Johannes Thumshirn                            SUSE Labs Filesystems
+jthumshirn@suse.de                                +49 911 74053 689
+SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
+GF: Felix Imendörffer, Jane Smithard, Graham Norton
+HRB 21284 (AG Nürnberg)
+Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850

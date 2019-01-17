@@ -2,174 +2,209 @@ Return-Path: <SRS0=cccy=PZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 07D83C43387
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 01:03:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A1FF8C43387
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 01:04:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B7DEB20651
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 01:03:47 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=googlemail.com header.i=@googlemail.com header.b="R27mOXqd"
+	by mail.kernel.org (Postfix) with ESMTP id 6E79C20651
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 01:04:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727190AbfAQBDq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 16 Jan 2019 20:03:46 -0500
-Received: from mail-wr1-f65.google.com ([209.85.221.65]:42883 "EHLO
-        mail-wr1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727081AbfAQBDq (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Jan 2019 20:03:46 -0500
-Received: by mail-wr1-f65.google.com with SMTP id q18so9075898wrx.9
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Jan 2019 17:03:44 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=googlemail.com; s=20161025;
-        h=subject:to:references:cc:from:openpgp:autocrypt:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=KnPBU4z1tcBTVxZSzvuD53ngHvkdFZA3Gum2fC8nxTQ=;
-        b=R27mOXqdH6W6M1dqMysEL5YbLfZ33yHyXkyJCUAFDezLOz+7mtTdEsVUSEZjTuFwSh
-         A7bczGH7SSPDYgzShAz/hIX0FE2Jq7nl3PyfSVzU506CmSCCsHRl85FiDN9uTnRKlwU2
-         BftNygJqH2cBDtajs+9C5RGhhRP5rpTVqb/OchUp/uWPAGTiEz/0dETtfW3pzU+wg1Hp
-         YmOaegtCRqB56SjzAuM+oyxMtqZTgiI8qFjdv02p99QgF2OQN6WsckgvWYN39DraMxII
-         bkLqV4cdWZrW2oM+pjaqgtwH9efV+4DpDKkWw6XZuA2QbpV1fa4nB+d29SM9RETncfEg
-         z/4A==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:cc:from:openpgp:autocrypt
-         :message-id:date:user-agent:mime-version:in-reply-to
-         :content-language:content-transfer-encoding;
-        bh=KnPBU4z1tcBTVxZSzvuD53ngHvkdFZA3Gum2fC8nxTQ=;
-        b=PG1e9rwUmsW6waDi++MgyMSCiAgLM9J6/Tv8kFIl5iBvonNnuygYzQoBNXKr0Gl+Gq
-         FJZOxy5bGY2ztvxXcC/Qd5PxIvVueUG2llA+q2pLZJj4xDyg3dgPWLmSJC2VOh96cRzp
-         PwTLZMqcGWviQHK7P6UZ4PLNFtn99ECOFP0AMT2P+9NwrJOpjOv/VkXk55PjNTO23EMQ
-         x8/MaWJB8PG7+jwCz4f9CZHw5DPbUPh5sPV3j8b59yrhl0Hg5IrGmCMrU0YiIlHw3GEy
-         chrG9WC/De3wucTcsuJ2o+7B5vAStyU/YdCDrERs+az0Y6NadxV9qPdc38V92dk7bQzo
-         B7zA==
-X-Gm-Message-State: AJcUukeVbelGv0d6wbmxdAteunOps9SvogkalB5BVLIbejmrPljYDAjW
-        fqKOJeK9aa8/UzvyrkAbJbA6tueR
-X-Google-Smtp-Source: ALg8bN6vOe4A/3ZUYTKoCR5kCKMHUFWjlgXiwgHf6b7jGjalKtwPCrl94sNyz3mvoOsr+zjjoRnHMw==
-X-Received: by 2002:a5d:6647:: with SMTP id f7mr9661953wrw.225.1547687023423;
-        Wed, 16 Jan 2019 17:03:43 -0800 (PST)
-Received: from ?IPv6:2a01:5c0:e088:2f20:c870:68ee:5563:780b? ([2a01:5c0:e088:2f20:c870:68ee:5563:780b])
-        by smtp.googlemail.com with ESMTPSA id v1sm112318908wrw.90.2019.01.16.17.03.42
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Wed, 16 Jan 2019 17:03:42 -0800 (PST)
-Subject: Re: btrfs goes read-only when btrfs-cleaner runs
-To:     Chris Murphy <lists@colorremedies.com>
-References: <16012349-e490-6659-8e94-2d4c57c2c3a6@googlemail.com>
- <2dba4f49-2be5-694b-2676-0fa75a250e2d@googlemail.com>
- <45de3cc0-b8b5-9e33-fbba-d02505583d2b@googlemail.com>
- <45b6077b-11d2-2db9-ddc5-85743507ba4d@suse.com>
- <54453a7f-abb1-209a-63f1-b93599ba72e1@googlemail.com>
- <CAJCQCtQOfKko2n1SQO8mLHRCGN0zswCWNey9ykMFKE8tZgCSaQ@mail.gmail.com>
-Cc:     Nikolay Borisov <nborisov@suse.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From:   Oliver Freyermuth <o.freyermuth@googlemail.com>
+        id S1727337AbfAQBE3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 16 Jan 2019 20:04:29 -0500
+Received: from mout.gmx.net ([212.227.17.21]:57293 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727306AbfAQBE2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 16 Jan 2019 20:04:28 -0500
+Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx102
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0MXEs5-1gmuGZ0iFZ-00WIFL; Thu, 17
+ Jan 2019 02:04:23 +0100
+Subject: Re: [PATCH] btrfs: honor path->skip_locking in backref code
+To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+References: <20190116160057.22040-1-josef@toxicpanda.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=o.freyermuth@googlemail.com; prefer-encrypt=mutual; keydata=
- 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
- KB7t2CoZv5xo0STm
-Message-ID: <e3a89985-1e1f-351f-207b-b6c2424cdd23@googlemail.com>
-Date:   Thu, 17 Jan 2019 02:03:41 +0100
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <ef892414-ea36-271b-35f5-b4f753ff7bea@gmx.com>
+Date:   Thu, 17 Jan 2019 09:04:13 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQOfKko2n1SQO8mLHRCGN0zswCWNey9ykMFKE8tZgCSaQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-GB
-Content-Transfer-Encoding: 7bit
+In-Reply-To: <20190116160057.22040-1-josef@toxicpanda.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="QwfvdjAeH33yycBPa9TdDCRho370ejvvd"
+X-Provags-ID: V03:K1:aCkjS5Tl2vKCfbP7uzT4l3UYQq4Xs9ednA8E4XqIXZeOuFxCnSO
+ UBb6I0ujRUEgNY1F71lqzWm/94s/9YtoR5+FGjaNUWDGe6OhJQYe+2djEtOCyBLzlQW9SaP
+ RKYU4i+hq+ohdUIz2Bnn32CefMgdvOrlhfzEx6ZCpnD4m/la4mliPfKMObOEQXXBWyEu366
+ 4Klm0HjlWLRH3p3REhpHA==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:2z5ft4BfOoY=:b8lLa2T/7OkXFYUVsA2oQo
+ 5lYSz+X6qA5LR+J4qNsW7GvbdTBrXdYDpz56/KdTxa5xrgNTcNILH3/twQ3hi48+2wRvTEFXm
+ ApwD7MhdQI3gQ16Fd2mmUUGpkFLOqSXH3Njleo40f8Z1kF+nT4ZhGdEAa1d0l7lrRSL2GQjBN
+ UsteAPuHXsdhwJvgC4n/jxO5h9oa/76HGVohEGijRFsmIhDm4kHMD8wz+vM+C691nH71LZtDp
+ /jU4ssM9Ppm+dROy8vpi5XfBFtHdMhFU254SVzNf7HvYqeFDwCxdwhLbuLBK81Wg7Cjnak7nq
+ DIo/skccHhJy+L/zAuqDaGwWrqCkHJVV40g/BDC0b4UQe0jreZNWoO+4nActJQtQIl7omi480
+ +vyOkKNzrJQrUAeyuvKbIAcV6e2PZAUg2ZHKbQb0dN8HUjRfA6NZYTU+NsJpSwN8K+tlnoouS
+ SAyEAU2xAXE0NoZ3M8GWs/H891TC4wTdMvYySnCqD6VQILeEonJzQBWFrTC9dICwpKbMN8pLT
+ UUfkDkt+pPQCGndoTeEmGePKUYPVFYaVkA9CkRbRem4sxGGuKQBM2H5pi1TMzoHg6gHBKoqHJ
+ kWAnQKIqDtxsRnEy46Dr0mnQXDPzm7iwyPviojiqs25XL/a/EqXB8zo3SMGwC9ixT+O2uZLAT
+ fnWzP0H/aTUby1rvrEwsV6NuYfupBZ5ru2zU8kE+1+uM5GoluFeYVChp6YkJ4TiCBSUsjIDk5
+ J1PIdNtqeIqTnE1QgzUFcWp9yZWdSYuVDLpZtStVY6dn5EG6ND8u2eGNjdZFznP2Dy/U3buV8
+ Xc33yzVLmyDuVR2FPjI0fWyvy0ACT7RmzF9SieYSa+/cLCLmypT0zwcBW8groOHYTFfd7AYum
+ WlwF5VmRz+M8DJZ+Bujlew3qVti/C2/HGdr+B2eF2L+KiPrE3ZcGvII5aCFo2E
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Am 17.01.19 um 01:28 schrieb Chris Murphy:
-> On Wed, Jan 16, 2019 at 12:40 PM Oliver Freyermuth
-> <o.freyermuth@googlemail.com> wrote:
->> Since repair did already run (and did not really help, but segfaults after trying some things) I guess the volume is hosed now anyways.
->> It's still sad there is no clear explanation for the corruption - I still believe it *might* have been unmounted hard while btrfs-cleaner was running, though,
->> but I would hope that can not lead to a non-recoverable state (especially if "only" deleted / to-be-deleted subvolumes are affected).
-> 
-> Well in theory no, even cleaning is predicated on COW. So what should
-> be true is the trees are pruned and written into a new location, and
-> only once that succeeds is a new super written. Of course, a
-> complicating factor is the tree walking is expensive, likely not all
-> of it can fit in memory at one time, and the new pruned tree isn't all
-> written out at once either; and then another complicating factor is if
-> any new files are being created at the same time. You don't want all
-> new writes to be held up until the cleaning is done.
-> 
-> But if there's no hardware fault or transient power problem or failure
-> at the time, then all of this should eventually complete successful
-> and in the proper order. That it didn't, suggests a bug. The problem
-> is where. Btrfs bug? Some other kernel bug? Hardware, including
-> firmware, bug?
-> 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--QwfvdjAeH33yycBPa9TdDCRho370ejvvd
+Content-Type: multipart/mixed; boundary="9iXzfZiVvKQy85bIYS51gDuLVb4LLSyse";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+ kernel-team@fb.com
+Message-ID: <ef892414-ea36-271b-35f5-b4f753ff7bea@gmx.com>
+Subject: Re: [PATCH] btrfs: honor path->skip_locking in backref code
+References: <20190116160057.22040-1-josef@toxicpanda.com>
+In-Reply-To: <20190116160057.22040-1-josef@toxicpanda.com>
 
-Thanks for the explanation, getting a better understanding of the expected
-behaviour is really appreciated! 
+--9iXzfZiVvKQy85bIYS51gDuLVb4LLSyse
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-I would even add the disk controller's firmware to the list of potential causes - it's an SMR disk 
-(sadly, fully device managed) which does _a lot_ of data shuffling, 
-sometimes slowing down to something like
-300 kB/s especially when btrfs-clean runs and does a lot of random access. 
-I have learnt my lesson never to do random writes on device-managed SMR again, 
-but use them as write-once media. 
 
-In case anybody thinks that providing metadata of the image or 
-extracting more details from it helps to at least exclude / identify a btrfs bug, please tell me.
-Otherwise I'll purge it in a few days, I have salvaged all data I wanted. 
 
-Excluding everything else is complex. I know the pain, since I have already (almost) lost one
-and corrupted another BTRFS volume due to the infamous r8169 bug which has affected
-hundreds of thousands of machines (and still affects those with old kernels!):
-https://github.com/torvalds/linux/commit/a78e93661c5fd30b9e1dee464b2f62f966883ef7
-It took me years to finally invest enough time to identify the cause of that corruption,
-since memtests could never show it and I had to actually trigger
-it from user space by reading network statistics (and only then, a userspace memtest could see it). 
+On 2019/1/17 =E4=B8=8A=E5=8D=8812:00, Josef Bacik wrote:
+> qgroups will do the old roots lookup at delayed ref time, which could b=
+e
+> while walking down the extent root while running a delayed ref.  This
+> should be fine, except we specifically lock eb's in the backref walking=
 
-Cheers,
-	Oliver
+> code irrespective of path->skip_locking, which deadlocks the system.
+> Fix up the backref code to honor path->skip_locking, nobody will be
+> modifying the commit_root when we're searching so it's completely safe
+> to do.  Thanks,
+>=20
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+Thanks,
+Qu
+
+> ---
+>  fs/btrfs/backref.c | 16 ++++++++++------
+>  1 file changed, 10 insertions(+), 6 deletions(-)
+>=20
+> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+> index 78556447e1d5..973e8251b1bf 100644
+> --- a/fs/btrfs/backref.c
+> +++ b/fs/btrfs/backref.c
+> @@ -712,7 +712,7 @@ static int resolve_indirect_refs(struct btrfs_fs_in=
+fo *fs_info,
+>   * read tree blocks and add keys where required.
+>   */
+>  static int add_missing_keys(struct btrfs_fs_info *fs_info,
+> -			    struct preftrees *preftrees)
+> +			    struct preftrees *preftrees, bool lock)
+>  {
+>  	struct prelim_ref *ref;
+>  	struct extent_buffer *eb;
+> @@ -737,12 +737,14 @@ static int add_missing_keys(struct btrfs_fs_info =
+*fs_info,
+>  			free_extent_buffer(eb);
+>  			return -EIO;
+>  		}
+> -		btrfs_tree_read_lock(eb);
+> +		if (lock)
+> +			btrfs_tree_read_lock(eb);
+>  		if (btrfs_header_level(eb) =3D=3D 0)
+>  			btrfs_item_key_to_cpu(eb, &ref->key_for_search, 0);
+>  		else
+>  			btrfs_node_key_to_cpu(eb, &ref->key_for_search, 0);
+> -		btrfs_tree_read_unlock(eb);
+> +		if (lock)
+> +			btrfs_tree_read_unlock(eb);
+>  		free_extent_buffer(eb);
+>  		prelim_ref_insert(fs_info, &preftrees->indirect, ref, NULL);
+>  		cond_resched();
+> @@ -1227,7 +1229,7 @@ static int find_parent_nodes(struct btrfs_trans_h=
+andle *trans,
+> =20
+>  	btrfs_release_path(path);
+> =20
+> -	ret =3D add_missing_keys(fs_info, &preftrees);
+> +	ret =3D add_missing_keys(fs_info, &preftrees, path->skip_locking =3D=3D=
+ 0);
+>  	if (ret)
+>  		goto out;
+> =20
+> @@ -1288,11 +1290,13 @@ static int find_parent_nodes(struct btrfs_trans=
+_handle *trans,
+>  					ret =3D -EIO;
+>  					goto out;
+>  				}
+> -				btrfs_tree_read_lock(eb);
+> +				if (!path->skip_locking)
+> +					btrfs_tree_read_lock(eb);
+>  				btrfs_set_lock_blocking_rw(eb, BTRFS_READ_LOCK);
+>  				ret =3D find_extent_in_eb(eb, bytenr,
+>  							*extent_item_pos, &eie, ignore_offset);
+> -				btrfs_tree_read_unlock_blocking(eb);
+> +				if (!path->skip_locking)
+> +					btrfs_tree_read_unlock_blocking(eb);
+>  				free_extent_buffer(eb);
+>  				if (ret < 0)
+>  					goto out;
+>=20
+
+
+--9iXzfZiVvKQy85bIYS51gDuLVb4LLSyse--
+
+--QwfvdjAeH33yycBPa9TdDCRho370ejvvd
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlw/1I0ACgkQwj2R86El
+/qgQHgf+LugO3ffsiUJ95E4X16gnUSvBougdCjfY2Fiw7FLvEm1lGENE1Bciz6ks
+7AWLWHXH3Jxh6bVr5IiP9yj7appfRWODl1gh+AXCkhK2Sf8vDt7i7kMDU6xcWn/r
+1+7XFJqvSEqMRJ6bbW+o2AcHYvyYi/+jvYIg2ETdbflVCQl1mWiXImZ+LKloECdC
+W4LnJWs1vDhBqibEVXjlRXfNHsE5F1yXwDZsGZzqXZO/b4u5BJJxKQ+jzJURIZQZ
+eR2QMvCWpDIIs7LEyzi1RBeeuLEpxkQmZOoVV6Yz8Tn1RxwCzo9j4/c2lIOTqSv8
+ofupXsrRRsNyYZw6iTPVUWpOSDLuRA==
+=UoRx
+-----END PGP SIGNATURE-----
+
+--QwfvdjAeH33yycBPa9TdDCRho370ejvvd--

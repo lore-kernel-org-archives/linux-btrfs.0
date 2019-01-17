@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E3704C43387
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 16:15:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 59703C43387
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 16:15:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A9BD320652
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 16:15:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 32C8B20855
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 16:15:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728934AbfAQQPr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 17 Jan 2019 11:15:47 -0500
-Received: from mx2.suse.de ([195.135.220.15]:48426 "EHLO mx1.suse.de"
+        id S1728971AbfAQQP4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 17 Jan 2019 11:15:56 -0500
+Received: from mx2.suse.de ([195.135.220.15]:48482 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728947AbfAQQPn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Jan 2019 11:15:43 -0500
+        id S1728598AbfAQQPw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 17 Jan 2019 11:15:52 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 65BB7ACB1
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Jan 2019 16:15:42 +0000 (UTC)
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id A796EACB1
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Jan 2019 16:15:51 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id D1EF0DA83D; Thu, 17 Jan 2019 17:15:12 +0100 (CET)
+        id 5E734DA83D; Thu, 17 Jan 2019 17:15:22 +0100 (CET)
 From:   David Sterba <dsterba@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: remove unused workqueue helpers
-Date:   Thu, 17 Jan 2019 17:15:12 +0100
-Message-Id: <20190117161512.24101-1-dsterba@suse.com>
+Subject: [PATCH] btrfs: simplify workqueue name when allocating
+Date:   Thu, 17 Jan 2019 17:15:18 +0100
+Message-Id: <20190117161518.24199-1-dsterba@suse.com>
 X-Mailer: git-send-email 2.20.1
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
@@ -38,52 +38,36 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The _owner helpers havent' been used since its introduction in
-cb001095ca705dcd95 ("btrfs: plumb fs_info into btrfs_work"), there are
-no external users of the private wq::fs_info pointer.
+The workqueue name is constructed from a format string but the prefix
+does not need to be set by %s.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/async-thread.c | 12 ------------
- fs/btrfs/async-thread.h |  2 --
- 2 files changed, 14 deletions(-)
+ fs/btrfs/async-thread.c | 10 ++++------
+ 1 file changed, 4 insertions(+), 6 deletions(-)
 
 diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
-index d522494698fa..44a7942f0457 100644
+index 44a7942f0457..92dfc70f9511 100644
 --- a/fs/btrfs/async-thread.c
 +++ b/fs/btrfs/async-thread.c
-@@ -61,18 +61,6 @@ noinline_for_stack void btrfs_##name(struct work_struct *arg)		\
- 	normal_work_helper(work);					\
- }
+@@ -127,13 +127,11 @@ __btrfs_alloc_workqueue(struct btrfs_fs_info *fs_info, const char *name,
+ 	}
  
--struct btrfs_fs_info *
--btrfs_workqueue_owner(const struct __btrfs_workqueue *wq)
--{
--	return wq->fs_info;
--}
--
--struct btrfs_fs_info *
--btrfs_work_owner(const struct btrfs_work *work)
--{
--	return work->wq->fs_info;
--}
--
- bool btrfs_workqueue_normal_congested(const struct btrfs_workqueue *wq)
- {
- 	/*
-diff --git a/fs/btrfs/async-thread.h b/fs/btrfs/async-thread.h
-index 7861c9feba5f..3aceb2e6373a 100644
---- a/fs/btrfs/async-thread.h
-+++ b/fs/btrfs/async-thread.h
-@@ -70,8 +70,6 @@ void btrfs_queue_work(struct btrfs_workqueue *wq,
- void btrfs_destroy_workqueue(struct btrfs_workqueue *wq);
- void btrfs_workqueue_set_max(struct btrfs_workqueue *wq, int max);
- void btrfs_set_work_high_priority(struct btrfs_work *work);
--struct btrfs_fs_info *btrfs_work_owner(const struct btrfs_work *work);
--struct btrfs_fs_info *btrfs_workqueue_owner(const struct __btrfs_workqueue *wq);
- bool btrfs_workqueue_normal_congested(const struct btrfs_workqueue *wq);
- 
- #endif
+ 	if (flags & WQ_HIGHPRI)
+-		ret->normal_wq = alloc_workqueue("%s-%s-high", flags,
+-						 ret->current_active, "btrfs",
+-						 name);
++		ret->normal_wq = alloc_workqueue("btrfs-%s-high", flags,
++						 ret->current_active, name);
+ 	else
+-		ret->normal_wq = alloc_workqueue("%s-%s", flags,
+-						 ret->current_active, "btrfs",
+-						 name);
++		ret->normal_wq = alloc_workqueue("btrfs-%s", flags,
++						 ret->current_active, name);
+ 	if (!ret->normal_wq) {
+ 		kfree(ret);
+ 		return NULL;
 -- 
 2.20.1
 

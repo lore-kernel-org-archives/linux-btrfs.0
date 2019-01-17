@@ -3,30 +3,30 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CA799C43387
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 07:50:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 128B0C43387
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 08:22:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9F28F20856
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 07:50:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DB1FD20657
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 08:22:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727375AbfAQHu6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 17 Jan 2019 02:50:58 -0500
-Received: from mx2.suse.de ([195.135.220.15]:55258 "EHLO mx1.suse.de"
+        id S1730476AbfAQIWW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 17 Jan 2019 03:22:22 -0500
+Received: from mx2.suse.de ([195.135.220.15]:60882 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727197AbfAQHu6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Jan 2019 02:50:58 -0500
+        id S1727004AbfAQIWW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 17 Jan 2019 03:22:22 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 73287AEC8
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Jan 2019 07:50:56 +0000 (UTC)
-Subject: Re: [PATCH 2/5] btrfs: extent_io: Kill the forward declaration of
+        by mx1.suse.de (Postfix) with ESMTP id BBEC4AEE5
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Jan 2019 08:22:20 +0000 (UTC)
+Subject: Re: [PATCH 3/5] btrfs: extent_io: Kill the BUG_ON() in
  flush_write_bio()
 To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20190117074855.24818-1-wqu@suse.com>
- <20190117074855.24818-3-wqu@suse.com>
+ <20190117074855.24818-4-wqu@suse.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -71,12 +71,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <d7924224-801c-3304-c161-c94c7cf870f0@suse.com>
-Date:   Thu, 17 Jan 2019 09:50:55 +0200
+Message-ID: <9a8c3273-9ae3-9df5-33c3-f3f1e665a172@suse.com>
+Date:   Thu, 17 Jan 2019 10:22:14 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20190117074855.24818-3-wqu@suse.com>
+In-Reply-To: <20190117074855.24818-4-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -88,112 +88,82 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 17.01.19 г. 9:48 ч., Qu Wenruo wrote:
-> There is no need to forward declare flush_write_bio(), as it only
-> depends on submit_one_bio().
+> This BUG_ON() is really just a crappy way to workaround the _must_check
+> attribute of submit_one_bio().
 > 
-> Both of them are pretty small, just move them to kill the forward
-> declaration.
+> Now kill the BUG_ON() and allow flush_write_bio() to return error
+> number.
+> 
+> Also add _must_check attribute to flush_write_bio(), and modify all
+> callers to handle the possible error returned.
 > 
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
-
-I'm very much in favor of killing forward declarations for static
-functions.
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
 > ---
->  fs/btrfs/extent_io.c | 66 +++++++++++++++++++++-----------------------
->  1 file changed, 32 insertions(+), 34 deletions(-)
+>  fs/btrfs/extent_io.c | 64 +++++++++++++++++++++++++++++++-------------
+>  1 file changed, 46 insertions(+), 18 deletions(-)
 > 
 > diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 52abe4082680..8a2335713a2d 100644
+> index 8a2335713a2d..a773bc46badc 100644
 > --- a/fs/btrfs/extent_io.c
 > +++ b/fs/btrfs/extent_io.c
-> @@ -147,7 +147,38 @@ static int add_extent_changeset(struct extent_state *state, unsigned bits,
->  	return ret;
->  }
->  
-> -static void flush_write_bio(struct extent_page_data *epd);
-> +static int __must_check submit_one_bio(struct bio *bio, int mirror_num,
-> +				       unsigned long bio_flags)
-> +{
-> +	blk_status_t ret = 0;
-> +	struct bio_vec *bvec = bio_last_bvec_all(bio);
-> +	struct page *page = bvec->bv_page;
-> +	struct extent_io_tree *tree = bio->bi_private;
-> +	u64 start;
-> +
-> +	start = page_offset(page) + bvec->bv_offset;
-> +
-> +	bio->bi_private = NULL;
-> +
-> +	if (tree->ops)
-> +		ret = tree->ops->submit_bio_hook(tree->private_data, bio,
-> +					   mirror_num, bio_flags, start);
-> +	else
-> +		btrfsic_submit_bio(bio);
-> +
-> +	return blk_status_to_errno(ret);
-> +}
-> +
-> +static void flush_write_bio(struct extent_page_data *epd)
-> +{
-> +	if (epd->bio) {
-> +		int ret;
-> +
-> +		ret = submit_one_bio(epd->bio, 0, 0);
-> +		BUG_ON(ret < 0); /* -ENOMEM */
-> +		epd->bio = NULL;
-> +	}
-> +}
->  
->  int __init extent_io_init(void)
->  {
-> @@ -2692,28 +2723,6 @@ struct bio *btrfs_bio_clone_partial(struct bio *orig, int offset, int size)
->  	return bio;
->  }
->  
-> -static int __must_check submit_one_bio(struct bio *bio, int mirror_num,
-> -				       unsigned long bio_flags)
-> -{
-> -	blk_status_t ret = 0;
-> -	struct bio_vec *bvec = bio_last_bvec_all(bio);
-> -	struct page *page = bvec->bv_page;
-> -	struct extent_io_tree *tree = bio->bi_private;
-> -	u64 start;
-> -
-> -	start = page_offset(page) + bvec->bv_offset;
-> -
-> -	bio->bi_private = NULL;
-> -
-> -	if (tree->ops)
-> -		ret = tree->ops->submit_bio_hook(tree->private_data, bio,
-> -					   mirror_num, bio_flags, start);
-> -	else
-> -		btrfsic_submit_bio(bio);
-> -
-> -	return blk_status_to_errno(ret);
-> -}
-> -
->  /*
->   * @opf:	bio REQ_OP_* and REQ_* flags as one value
->   * @tree:	tree so we can call our merge_bio hook
-> @@ -4007,17 +4016,6 @@ static int extent_write_cache_pages(struct address_space *mapping,
->  	return ret;
+> @@ -169,15 +169,15 @@ static int __must_check submit_one_bio(struct bio *bio, int mirror_num,
+>  	return blk_status_to_errno(ret);
 >  }
 >  
 > -static void flush_write_bio(struct extent_page_data *epd)
-> -{
+> +static int __must_check flush_write_bio(struct extent_page_data *epd)
+>  {
 > -	if (epd->bio) {
 > -		int ret;
-> -
-> -		ret = submit_one_bio(epd->bio, 0, 0);
+> +	int ret = 0;
+>  
+> +	if (epd->bio) {
+>  		ret = submit_one_bio(epd->bio, 0, 0);
 > -		BUG_ON(ret < 0); /* -ENOMEM */
-> -		epd->bio = NULL;
-> -	}
-> -}
-> -
->  int extent_write_full_page(struct page *page, struct writeback_control *wbc)
->  {
->  	int ret;
-> 
+>  		epd->bio = NULL;
+>  	}
+> +	return ret;
+>  }
+>  
+>  int __init extent_io_init(void)
+> @@ -3509,8 +3509,10 @@ lock_extent_buffer_for_io(struct extent_buffer *eb,
+>  	int ret = 0;
+>  
+>  	if (!btrfs_try_tree_write_lock(eb)) {
+> +		ret = flush_write_bio(epd);
+> +		if (ret < 0)
+> +			return ret;
+>  		flush = 1;
+> -		flush_write_bio(epd);
+>  		btrfs_tree_lock(eb);
+>  	}
+>  
+> @@ -3519,7 +3521,9 @@ lock_extent_buffer_for_io(struct extent_buffer *eb,
+>  		if (!epd->sync_io)
+>  			return 0;
+>  		if (!flush) {
+> -			flush_write_bio(epd);
+> +			ret = flush_write_bio(epd);
+> +			if (ret < 0)
+> +				return ret;
+>  			flush = 1;
+>  		}
+>  		while (1) {
+> @@ -3560,7 +3564,9 @@ lock_extent_buffer_for_io(struct extent_buffer *eb,
+>  
+>  		if (!trylock_page(p)) {
+>  			if (!flush) {
+> -				flush_write_bio(epd);
+> +				ret = flush_write_bio(epd);
+> +				if (ret < 0)
+> +					return ret;
+
+Can't you end up with partially locked pages here? Are you sure that
+flush_write_bio will ALWAYS be executed when i = 0? If that\'s the case
+then I think an assert(i == 0) is in order there.
+
+>  				flush = 1;
+>  			}
+>  			lock_page(p);
+
+<snip>

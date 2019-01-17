@@ -2,79 +2,93 @@ Return-Path: <SRS0=cccy=PZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C0C1AC43387
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 16:17:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 84F17C43387
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 19:17:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9ABCE20652
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 16:17:23 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4E19F20657
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jan 2019 19:17:48 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="gTc6EXnB"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728756AbfAQQRW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 17 Jan 2019 11:17:22 -0500
-Received: from mx2.suse.de ([195.135.220.15]:48886 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728727AbfAQQRW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Jan 2019 11:17:22 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 5BF03AEC0
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Jan 2019 16:17:20 +0000 (UTC)
-Subject: Re: [PATCH] btrfs: simplify workqueue name when allocating
-To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-References: <20190117161518.24199-1-dsterba@suse.com>
-From:   Nikolay Borisov <nborisov@suse.com>
+        id S1727528AbfAQTRr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 17 Jan 2019 14:17:47 -0500
+Received: from mail-lj1-f174.google.com ([209.85.208.174]:35417 "EHLO
+        mail-lj1-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725944AbfAQTRr (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 17 Jan 2019 14:17:47 -0500
+Received: by mail-lj1-f174.google.com with SMTP id x85-v6so9570570ljb.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Jan 2019 11:17:46 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=subject:to:cc:references:from:openpgp:autocrypt:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=nOQlFeynQwBMySSNv0yBn4gLzdQ7V7BIXwhO+tl9spg=;
+        b=gTc6EXnBHlFBUT0SZR1AxtKrzyTiHuM8/n0v4NYPauAvXiyaE9+xrTkHl4ItZb/GCc
+         0xfmczrNp7auY2XWWThsIomTD1ZbZx/6+3JZPNN+kWyyBePZmB3u/xsL4FLK9fG+5gUE
+         Bqbbv+lESXcWaPI7zKatCRzHKE5d2wSYOZ84Vfk/bjlmhez6RaaAnES3pYLug2DJtLfg
+         o19CmKv4NMhhByFXLjqqJC1bPvCsuXUb92DX+vF415aaUAKohz2XOx0kemNAVfqD+QZI
+         q/vwDbPGRwelGtf0q3RI7eI5CN3LExwaCntRQBklbqwtwtKCoCAqNXsCmeq0wDO3A26D
+         7OOg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:cc:references:from:openpgp:autocrypt
+         :message-id:date:user-agent:mime-version:in-reply-to
+         :content-language:content-transfer-encoding;
+        bh=nOQlFeynQwBMySSNv0yBn4gLzdQ7V7BIXwhO+tl9spg=;
+        b=mvtQH5JjacvuyYgoOfSIJXtzB0tWv42ZzKnzGYz3jZ0f7Pr4ytykAFD3570OYlLnT+
+         tHlJ1JC6K+vRbgQ6IUY7e5HvwIs5VIZ9K/MwwMb6yptB4dFkuNud8rnhsIiL5665VL5H
+         r+X5u6+KYNa18NQsmjSL44zbBrm4OOJDcS6tHE3rnDWn4P8jZDiybZcnor4EmwbA2t3r
+         CSRP1qizpYLhEvhyGgShARQX9O8l0N83hLLb+SwKAytW7qag3PZr/O1DgDvvL98xF1iG
+         02TIzlr9KldNVAqf5MNVaIQVU/X3d0olnyxStnmIEb7b4bXZNJzck3PqTPsFmFRs7QTr
+         YWVw==
+X-Gm-Message-State: AJcUukcjFMfYQ3g/PkLYadD16PX6WZ9wuxUSuMNDA1rHP3Npef+zDXE0
+        gwa6c6we50a8zpQAkr5UrMqtRSMrAjs=
+X-Google-Smtp-Source: ALg8bN495/za/i5t5jtQqmNIl706gnicXx0cZHFAcILx4/2rCJHcEsbxwyR6FJqUcutfuSP1NXnwBg==
+X-Received: by 2002:a2e:2c02:: with SMTP id s2-v6mr10681761ljs.118.1547752664928;
+        Thu, 17 Jan 2019 11:17:44 -0800 (PST)
+Received: from [192.168.1.4] ([109.252.90.29])
+        by smtp.gmail.com with ESMTPSA id z6sm437357lfd.50.2019.01.17.11.17.43
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Thu, 17 Jan 2019 11:17:44 -0800 (PST)
+Subject: Re: question about creating a raid10
+To:     Chris Murphy <lists@colorremedies.com>, Stefan K <shadow_7@gmx.net>
+Cc:     Linux Btrfs <linux-btrfs@vger.kernel.org>
+References: <3318002.5e9V1lv8s4@t460-skr>
+ <20190116144208.GI5134@carfax.org.uk> <1980543.jviTh1pdNs@t460-skr>
+ <CAJCQCtTErRwS5Omb4Asob3sYx8Svt4yV8V5so7fcs+2BX8t3Gg@mail.gmail.com>
+From:   Andrei Borzenkov <arvidjaar@gmail.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <fd9b9c45-817d-7175-f699-74a26202e83a@suse.com>
-Date:   Thu, 17 Jan 2019 18:17:19 +0200
+Autocrypt: addr=arvidjaar@gmail.com; prefer-encrypt=mutual; keydata=
+ xsDiBDxiRwwRBAC3CN9wdwpVEqUGmSoqF8tWVIT4P/bLCSZLkinSZ2drsblKpdG7x+guxwts
+ +LgI8qjf/q5Lah1TwOqzDvjHYJ1wbBauxZ03nDzSLUhD4Ms1IsqlIwyTLumQs4vcQdvLxjFs
+ G70aDglgUSBogtaIEsiYZXl4X0j3L9fVstuz4/wXtwCg1cN/yv/eBC0tkcM1nsJXQrC5Ay8D
+ /1aA5qPticLBpmEBxqkf0EMHuzyrFlqVw1tUjZ+Ep2LMlem8malPvfdZKEZ71W1a/XbRn8FE
+ SOp0tUa5GwdoDXgEp1CJUn+WLurR0KPDf01E4j/PHHAoABgrqcOTcIVoNpv2gNiBySVsNGzF
+ XTeY/Yd6vQclkqjBYONGN3r9R8bWA/0Y1j4XK61qjowRk3Iy8sBggM3PmmNRUJYgroerpcAr
+ 2byz6wTsb3U7OzUZ1Llgisk5Qum0RN77m3I37FXlIhCmSEY7KZVzGNW3blugLHcfw/HuCB7R
+ 1w5qiLWKK6eCQHL+BZwiU8hX3dtTq9d7WhRW5nsVPEaPqudQfMSi/Ux1kc0mQW5kcmVpIEJv
+ cnplbmtvdiA8YXJ2aWRqYWFyQGdtYWlsLmNvbT7CZQQTEQIAJQIbAwYLCQgHAwIGFQgCCQoL
+ BBYCAwECHgECF4AFAliWAiQCGQEACgkQR6LMutpd94wFGwCeNuQnMDxve/Fo3EvYIkAOn+zE
+ 21cAnRCQTXd1hTgcRHfpArEd/Rcb5+SczsBNBDxiRyQQBACQtME33UHfFOCApLki4kLFrIw1
+ 5A5asua10jm5It+hxzI9jDR9/bNEKDTKSciHnM7aRUggLwTt+6CXkMy8an+tVqGL/MvDc4/R
+ KKlZxj39xP7wVXdt8y1ciY4ZqqZf3tmmSN9DlLcZJIOT82DaJZuvr7UJ7rLzBFbAUh4yRKaN
+ nwADBwQAjNvMr/KBcGsV/UvxZSm/mdpvUPtcw9qmbxCrqFQoB6TmoZ7F6wp/rL3TkQ5UElPR
+ gsG12+Dk9GgRhnnxTHCFgN1qTiZNX4YIFpNrd0au3W/Xko79L0c4/49ten5OrFI/psx53fhY
+ vLYfkJnc62h8hiNeM6kqYa/x0BEddu92ZG7CRgQYEQIABgUCPGJHJAAKCRBHosy62l33jMhd
+ AJ48P7WDvKLQQ5MKnn2D/TI337uA/gCgn5mnvm4SBctbhaSBgckRmgSxfwQ=
+Message-ID: <6c54fec6-065c-3a50-9bf8-499866cb4e9b@gmail.com>
+Date:   Thu, 17 Jan 2019 22:17:43 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20190117161518.24199-1-dsterba@suse.com>
+In-Reply-To: <CAJCQCtTErRwS5Omb4Asob3sYx8Svt4yV8V5so7fcs+2BX8t3Gg@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -83,40 +97,13 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 17.01.19 г. 18:15 ч., David Sterba wrote:
-> The workqueue name is constructed from a format string but the prefix
-> does not need to be set by %s.
+16.01.2019 21:15, Chris Murphy пишет:
 > 
-> Signed-off-by: David Sterba <dsterba@suse.com>
+> Btrfs raid10 really should not be called raid10. It sets up the wrong
+> user expectation entirely. It's more like raid0+1,
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
-> ---
->  fs/btrfs/async-thread.c | 10 ++++------
->  1 file changed, 4 insertions(+), 6 deletions(-)
-> 
-> diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
-> index 44a7942f0457..92dfc70f9511 100644
-> --- a/fs/btrfs/async-thread.c
-> +++ b/fs/btrfs/async-thread.c
-> @@ -127,13 +127,11 @@ __btrfs_alloc_workqueue(struct btrfs_fs_info *fs_info, const char *name,
->  	}
->  
->  	if (flags & WQ_HIGHPRI)
-> -		ret->normal_wq = alloc_workqueue("%s-%s-high", flags,
-> -						 ret->current_active, "btrfs",
-> -						 name);
-> +		ret->normal_wq = alloc_workqueue("btrfs-%s-high", flags,
-> +						 ret->current_active, name);
->  	else
-> -		ret->normal_wq = alloc_workqueue("%s-%s", flags,
-> -						 ret->current_active, "btrfs",
-> -						 name);
-> +		ret->normal_wq = alloc_workqueue("btrfs-%s", flags,
-> +						 ret->current_active, name);
->  	if (!ret->normal_wq) {
->  		kfree(ret);
->  		return NULL;
-> 
+It is actually more like RAID-1E which is supported by some hardware
+RAID HBA. The difference is that RAID-1E is usually using strict
+sequential block placement algorithm and assumes disks of equal size,
+while btrfs raid10 is more flexible in selecting where next mirror pair
+is allocated.

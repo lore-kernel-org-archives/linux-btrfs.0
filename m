@@ -2,32 +2,35 @@ Return-Path: <SRS0=o3FP=P2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C06ECC43387
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EA249C43612
 	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Jan 2019 02:20:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 946DB20873
-	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Jan 2019 02:20:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B7FB020883
+	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Jan 2019 02:20:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727081AbfARCUB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 17 Jan 2019 21:20:01 -0500
-Received: from mx2.suse.de ([195.135.220.15]:46856 "EHLO mx1.suse.de"
+        id S1727091AbfARCUE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 17 Jan 2019 21:20:04 -0500
+Received: from mx2.suse.de ([195.135.220.15]:46868 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726329AbfARCUB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Jan 2019 21:20:01 -0500
+        id S1726329AbfARCUD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 17 Jan 2019 21:20:03 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 4B347AD54
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Jan 2019 02:20:00 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 9B807AD54
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Jan 2019 02:20:02 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 0/5] btrfs: Enhancement to tree block validation
-Date:   Fri, 18 Jan 2019 10:19:51 +0800
-Message-Id: <20190118021956.22949-1-wqu@suse.com>
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH v3 1/5] btrfs: Always output error message when key/level verification fails
+Date:   Fri, 18 Jan 2019 10:19:52 +0800
+Message-Id: <20190118021956.22949-2-wqu@suse.com>
 X-Mailer: git-send-email 2.20.1
+In-Reply-To: <20190118021956.22949-1-wqu@suse.com>
+References: <20190118021956.22949-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -35,51 +38,60 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Patchset can be fetched from github:
-https://github.com/adam900710/linux/tree/write_time_tree_checker
-Which is based on v5.0-rc1 tag.
+We have internal report of strange transaction abort due to EUCLEAN
+without any error message.
 
-This patchset has the following two features:
-- Tree block validation output enhancement
-  * Output validation failure timing (write time or read time)
-  * Always output tree block level/key mismatch error message
-    This part is already submitted and reviewed.
+Since error message inside verify_level_key() is only enabled for
+CONFIG_BTRFS_DEBUG, the error message won't output for most distro.
 
-- Write time tree block validation check
-  To catch memory corruption either from hardware or kernel.
-  Example output would be:
+This patch will make the error message mandatory, so when problem
+happens we know what's causing the problem.
 
-    BTRFS critical (device dm-3): corrupt leaf: root=2 block=1350630375424 slot=68, bad key order, prev (10510212874240 169 0) current (1714119868416 169 0)
-    BTRFS error (device dm-3): write time tree block corruption detected
-    BTRFS critical (device dm-3): corrupt leaf: root=2 block=1350630375424 slot=68, bad key order, prev (10510212874240 169 0) current (1714119868416 169 0)
-    BTRFS error (device dm-3): write time tree block corruption detected
-    BTRFS: error (device dm-3) in btrfs_commit_transaction:2220: errno=-5 IO failure (Error while writing out transaction)
-    BTRFS info (device dm-3): forced readonly
-    BTRFS warning (device dm-3): Skipping commit of aborted transaction.
-    BTRFS: error (device dm-3) in cleanup_transaction:1839: errno=-5 IO failure
-    BTRFS info (device dm-3): delayed_refs has NO entry
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/disk-io.c | 10 ++++------
+ 1 file changed, 4 insertions(+), 6 deletions(-)
 
-Changelog:
-v2:
-- Unlock locked pages in lock_extent_buffer_for_io() for error handling.
-- Added Reviewed-by tags.
-
-v3:
-- Remove duplicated error message.
-- Use IS_ENABLED() macro to replace #ifdef.
-- Added Reviewed-by tags.
-
-Qu Wenruo (5):
-  btrfs: Always output error message when key/level verification fails
-  btrfs: extent_io: Kill the forward declaration of flush_write_bio()
-  btrfs: extent_io: Kill the BUG_ON() in flush_write_bio()
-  btrfs: disk-io: Show the timing of corrupted tree block explicitly
-  btrfs: Do mandatory tree block check before submitting bio
-
- fs/btrfs/disk-io.c   |  21 +++++--
- fs/btrfs/extent_io.c | 135 +++++++++++++++++++++++++++----------------
- 2 files changed, 101 insertions(+), 55 deletions(-)
-
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 8da2f380d3c0..794d5bb7fe33 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -423,12 +423,11 @@ static int verify_level_key(struct btrfs_fs_info *fs_info,
+ 
+ 	found_level = btrfs_header_level(eb);
+ 	if (found_level != level) {
+-#ifdef CONFIG_BTRFS_DEBUG
+-		WARN_ON(1);
++		WARN(IS_ENABLED(CONFIG_BTRFS_DEBUG),
++		     KERN_ERR "BTRFS: tree level check failed\n");
+ 		btrfs_err(fs_info,
+ "tree level mismatch detected, bytenr=%llu level expected=%u has=%u",
+ 			  eb->start, level, found_level);
+-#endif
+ 		return -EIO;
+ 	}
+ 
+@@ -449,9 +448,9 @@ static int verify_level_key(struct btrfs_fs_info *fs_info,
+ 		btrfs_item_key_to_cpu(eb, &found_key, 0);
+ 	ret = btrfs_comp_cpu_keys(first_key, &found_key);
+ 
+-#ifdef CONFIG_BTRFS_DEBUG
+ 	if (ret) {
+-		WARN_ON(1);
++		WARN(IS_ENABLED(CONFIG_BTRFS_DEBUG),
++		     KERN_ERR "BTRFS: tree first key check failed\n");
+ 		btrfs_err(fs_info,
+ "tree first key mismatch detected, bytenr=%llu parent_transid=%llu key expected=(%llu,%u,%llu) has=(%llu,%u,%llu)",
+ 			  eb->start, parent_transid, first_key->objectid,
+@@ -459,7 +458,6 @@ static int verify_level_key(struct btrfs_fs_info *fs_info,
+ 			  found_key.objectid, found_key.type,
+ 			  found_key.offset);
+ 	}
+-#endif
+ 	return ret;
+ }
+ 
 -- 
 2.20.1
 

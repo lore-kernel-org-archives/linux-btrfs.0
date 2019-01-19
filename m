@@ -1,205 +1,87 @@
-Return-Path: <SRS0=o3FP=P2=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=mgXs=P3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
+	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3C400C5AE5E
-	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Jan 2019 23:10:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 96B97C5AE5E
+	for <linux-btrfs@archiver.kernel.org>; Sat, 19 Jan 2019 02:12:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CC5D820652
-	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Jan 2019 23:10:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5064A2086D
+	for <linux-btrfs@archiver.kernel.org>; Sat, 19 Jan 2019 02:12:37 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=MendixTechnologyBV.onmicrosoft.com header.i=@MendixTechnologyBV.onmicrosoft.com header.b="N7RmesLP"
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="ExvIDvTv"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729954AbfARXKJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 18 Jan 2019 18:10:09 -0500
-Received: from mail-eopbgr40060.outbound.protection.outlook.com ([40.107.4.60]:40096
-        "EHLO EUR03-DB5-obe.outbound.protection.outlook.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729780AbfARXKI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Jan 2019 18:10:08 -0500
+        id S1729670AbfASCMg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 18 Jan 2019 21:12:36 -0500
+Received: from mail-lj1-f178.google.com ([209.85.208.178]:46757 "EHLO
+        mail-lj1-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729109AbfASCMf (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 18 Jan 2019 21:12:35 -0500
+Received: by mail-lj1-f178.google.com with SMTP id v15-v6so13149118ljh.13
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Jan 2019 18:12:34 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=MendixTechnologyBV.onmicrosoft.com; s=selector1-mendix-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=I6IMACpQ54+o8P9FuqmRsn7wP8aq0O++k7DGWwA39qI=;
- b=N7RmesLPfByWRFU2e6JrEkIFBN6yomk4OTR491SVIBTkqGzNUuQ377qFjW8xSa1HpgQ4i0tgTAktWxTEZ0oD6YuE9dlUKJ5T9esc1l5MAM1A4btBiWNcLrr21PaJ4VQrkc32xB/Qq2ZK3+ox8K9c4mNOnpePctguhpSIp+bJdbQ=
-Received: from AM6PR06MB4215.eurprd06.prod.outlook.com (20.177.38.80) by
- AM6PR06MB6051.eurprd06.prod.outlook.com (20.177.189.220) with Microsoft SMTP
- Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.20.1537.24; Fri, 18 Jan 2019 23:10:00 +0000
-Received: from AM6PR06MB4215.eurprd06.prod.outlook.com
- ([fe80::8128:490e:1346:19ee]) by AM6PR06MB4215.eurprd06.prod.outlook.com
- ([fe80::8128:490e:1346:19ee%2]) with mapi id 15.20.1516.019; Fri, 18 Jan 2019
- 23:10:00 +0000
-From:   Hans van Kranenburg <Hans.van.Kranenburg@mendix.com>
-To:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: python-btrfs v10
-Thread-Topic: python-btrfs v10
-Thread-Index: AQHUr4LwJYfPUSkxR0qaabNKOeRQuQ==
-Date:   Fri, 18 Jan 2019 23:10:00 +0000
-Message-ID: <6f56791f-6dc8-44a9-21b2-634c21b7b101@mendix.com>
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-user-agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.3.0
-x-originating-ip: [2001:980:4a41:fb::12]
-x-clientproxiedby: AM5PR06CA0012.eurprd06.prod.outlook.com
- (2603:10a6:206:2::25) To AM6PR06MB4215.eurprd06.prod.outlook.com
- (2603:10a6:20b:19::16)
-authentication-results: spf=none (sender IP is )
- smtp.mailfrom=Hans.van.Kranenburg@mendix.com; 
-x-ms-exchange-messagesentrepresentingtype: 1
-x-ms-publictraffictype: Email
-x-microsoft-exchange-diagnostics: 1;AM6PR06MB6051;6:FRPLOS4+Ca17Rk0ggmNfZXZYeKswISrP1EK87BMcAbydub/IsSI1PbmvSyJdrBA35S9nDUwyXCXXcSXnYq+++yV32l7r0w11aUfoeL3YCU+oYtdtCC91xaW7jya/RTk/2WkrNcHxWP6oI3h5bhY0E06rBS2lUJbvIb7WYChqlqRSU3j9QRJbr/JPOoEPy8uXOtYE7RCmlcgUinIdfnVnB2p6Zw6fQd66ny/VTpTP684ipZB1TpqrRkqXzzIYzgwm8MHXM4f/anuZ58nHZz822MP5vBPL/BBHAwObdnwNPfmlEl+ui6xmm6qfu35rTQa5Xor6LI3/vopz8MrYMn92Goimbq7na+scV+ktpOMhhib+dwFj3PRlnR5MIxgE786Qg4kb+FqaVwkphWQYNCqFs4cdrxbMmscsppggDvv3o8Oed5vO6AVN9+/tDEnlE0D0gD6UUSo6SJ+VyJ/pfRehuQ==;5:C4CUP/DoKi5MyHAUPM5L3+6v5XTuEwX78kx8iFz6xNa2M7dw6Rc84kWXaX/mL/3u/96npMEDGiB5tVKeonua96auoESUWZn31Ubx0ztmtsxYJpvLAbGqUp/Xpio3RcG5HZOM/lTmICyaNk612f5wBHsrv5DR48ontwXpFNbXl8eyRDpC69P3sWGx+kdvF+wDjSxoWTcZpnpaZhR4fwkJcQ==;7:7Y5qO8eqFwSxncSpBOa01CMyILco6eWcYnseA20aqDcGkeMFuMZ+ZpSR9KqO+WTdbVRfKaJvornB2OPo9Qbl8Y8fZdSSAuHZrEpWDcEAnd/+SNz622qiVd9cP1irPHaIOd8ufVRiX65/HSJ8rAsihA==
-x-ms-office365-filtering-correlation-id: 2dddd26c-cc37-4a34-0224-08d67d9a125b
-x-microsoft-antispam: BCL:0;PCL:0;RULEID:(2390118)(7020095)(4652040)(8989299)(4534185)(4627221)(201703031133081)(201702281549075)(8990200)(5600109)(711020)(2017052603328)(7153060)(7193020);SRVR:AM6PR06MB6051;
-x-ms-traffictypediagnostic: AM6PR06MB6051:
-x-microsoft-antispam-prvs: <AM6PR06MB605191B8A5ABA72A1A606848D49C0@AM6PR06MB6051.eurprd06.prod.outlook.com>
-x-forefront-prvs: 0921D55E4F
-x-forefront-antispam-report: SFV:NSPM;SFS:(10009020)(366004)(396003)(39850400004)(346002)(376002)(136003)(51444003)(189003)(199004)(305945005)(6306002)(386003)(52116002)(71190400001)(97736004)(53936002)(2616005)(478600001)(102836004)(6506007)(6512007)(476003)(316002)(2906002)(99286004)(2351001)(71200400001)(46003)(14454004)(6916009)(36756003)(86362001)(58126008)(186003)(7736002)(72206003)(966005)(31696002)(65826007)(2501003)(25786009)(6116002)(6436002)(106356001)(8936002)(5024004)(64126003)(5660300001)(256004)(14444005)(81156014)(81166006)(105586002)(8676002)(5640700003)(486006)(65956001)(31686004)(68736007)(6486002)(65806001);DIR:OUT;SFP:1101;SCL:1;SRVR:AM6PR06MB6051;H:AM6PR06MB4215.eurprd06.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;MX:1;A:1;
-received-spf: None (protection.outlook.com: mendix.com does not designate
- permitted sender hosts)
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam-message-info: EsZ/Dajko2i6F/EZ0xRqIOZbtLotqiu00lgXFQt3ZK4FnWx8pKkEBlWDCFsG7virGPjFJ51ORzfqra+xQ99XiBqxojbdZl5osSzlbMFSOTwi+0nXvjYbXQRJ7IZIyo/GWE23oH71Edd8jzURtfBlCj2qks+s2cGdP/GKwt4ZZM2hlAynVHlJrJylCQ42gmZ4a7EufJLCQ3SbAdIS2+mFaWYLmfafrpgOeB6Yk5IgSy4qjLx/ORSITNLK3yYsoZ8LTjgESHv9cdnKK1e5Ttqyq9Xfn6iaUUgQ4eNGmPXQOkahd8ftBHeqQ6PXeNWoancGajPv63iNE+Rg6grt/dmrrL0vc2mqoDZFG+Lz6hG2EQIqLX+VwXdNoY2urgGiyq7W5/4F+y8X7iV0f6rl5TwdBjuTBuZqsUGJbzVwdgTJr0I=
-spamdiagnosticoutput: 1:99
-spamdiagnosticmetadata: NSPM
-Content-Type: text/plain; charset="utf-8"
-Content-ID: <F2A6A92E09A7DC43B11E8F125ED39DBE@eurprd06.prod.outlook.com>
-Content-Transfer-Encoding: base64
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=8KfvN9lfxCFYO5FQPV8BqjWj8qDh0q0S8G06zK9mz+4=;
+        b=ExvIDvTvBb3pqYHzfCLAXsoScMJtuxnMN7r7L0a1KgKYUOSw6iFGzgqGnz3LCA8nf3
+         Gv/MmLNcTC9EDdWny9oChTTtW796QPU8WlTNsbNou998oQghodfd2TM2Q+UJQHnoOpDp
+         uco5+Ju/9ElWNO5zljDcbpozjuSnvTIlcvU+f08/GFrbfF5G3a7ugyA5J3vl6bjeWcOn
+         hYx2+SRW702EuPOAogsOH1YprcH4T5j+cKvjT76gkO1IhXUmtkZG2MDpWsmwwznKh7cg
+         9kwHrtTK5ChaWDDKuJmRP9mLBk/EF1/ZEiWC20GlHlKQFRU+6aDB71RcVLXH+waraToi
+         mzLQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=8KfvN9lfxCFYO5FQPV8BqjWj8qDh0q0S8G06zK9mz+4=;
+        b=epTcnbtUFUyyzmSZju0TTs0bNiX17vwi2zMwSjIQE1qnxhh168gGEetBai70rW+cM6
+         +oopkC4nOtDrEYDyL41cMy4SZDyvmqBUr0PkSBKkd8UzJ2PLEzWmA/sKdkUGBOSgRr5c
+         NCPZXnmU9rB2ZKjeudOMHgTAn3zZoQ9nHE+30ibQqprwW64p4f9/NQLzW8qqKW0pmONa
+         ddSDxujthUbpiqXzVA5l4gKk61JKCMgntpF7ynA1/UDXey1HV7G1vwtUluShAEyA0COz
+         iNiHuVN5dQ7YXMRBb8XdDb2IHT43IGppNW27GiJ0GOc9/giDzfpapvchAqci2I8ANNkX
+         CE2A==
+X-Gm-Message-State: AJcUukcNmZHL5JV5hFRcfudify0RIT/G0gXm34Rx41Z3TdCX9yo9JA8H
+        woCnhrYpkEyHSiM0cFoO25EP2Ho/S1hFlIZUAcP0WCQm
+X-Google-Smtp-Source: ALg8bN6v9RJ5kxjhcJR1RfcnFWABQpQ8AL9aCTv2PjBn7XVCo51uPvuEDyk3mCnNM7od6s/vZmdiLqbdVSMW2415r4w=
+X-Received: by 2002:a2e:2e1a:: with SMTP id u26-v6mr14654816lju.8.1547863953362;
+ Fri, 18 Jan 2019 18:12:33 -0800 (PST)
 MIME-Version: 1.0
-X-OriginatorOrg: mendix.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 2dddd26c-cc37-4a34-0224-08d67d9a125b
-X-MS-Exchange-CrossTenant-originalarrivaltime: 18 Jan 2019 23:10:00.5293
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: b4e3c78d-8e3b-46d8-bc56-5540da23ba4d
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: AM6PR06MB6051
+References: <80ef8767a6a5fc0477559732cf18ecb8@virtall.com>
+In-Reply-To: <80ef8767a6a5fc0477559732cf18ecb8@virtall.com>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Fri, 18 Jan 2019 19:12:21 -0700
+Message-ID: <CAJCQCtS+xi-zN4UxMoULUkUrxOQZ74RdYZ8ivFjY6PDFzd5FdQ@mail.gmail.com>
+Subject: Re: question about creating a raid10
+To:     Tomasz Chmielewski <tch@virtall.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-SSBqdXN0IHRhZ2dlZCB2MTAgb2YgdGhlIHB5dGhvbiBidHJmcyBsaWJyYXJ5Lg0KDQpodHRwczov
-L2dpdGh1Yi5jb20va25vcnJpZS9weXRob24tYnRyZnMvDQoNClNvbWV3aGVyZSBpbiB0aGUgbmV4
-dCBkYXlzIEknbGwgdXBkYXRlIHB5cGkgYW5kIHdpbGwgcHJlcGFyZSBkZWJpYW4NCnBhY2thZ2Vz
-IGZvciB1bnN0YWJsZSBhbmQgc3RyZXRjaC1iYWNrcG9ydHMuDQoNCk5vdGU6IEkgd2lsbCBiZSBj
-b252ZXJ0aW5nIHRoZSBicmFuY2hlcyBpbiBnaXQgZm9yIGRlYmlhbiBwYWNrYWdpbmcgdG8NCnRo
-ZSBERVAxNCBzdGFuZGFyZCwgYWxzbyBzZWUNCmh0dHBzOi8vZ2l0aHViLmNvbS9rbm9ycmllL3B5
-dGhvbi1idHJmcy9pc3N1ZXMvMTQNCg0KLS0tLSA+OCAtLS0tDQoNCkhlcmUncyB0aGUgc3VtbWFy
-eSBvZiBjaGFuZ2VzIChmcm9tIENIQU5HRVMpOg0KDQpweXRob24tYnRyZnMgdjEwLCBKYW4gMTgs
-IDIwMTkNCiAgKiBTd2l0Y2ggdG8gTEdQTC0zLjAgbGljZW5zZS4NCiAgKiBBZGQgcmVmZXJlbmNl
-IGRvY3VtZW50YXRpb24gdG8gYWxsIGNvZGUsIHVzaW5nIHNwaGlueCBhdXRvZG9jLiBBbg0KICAg
-IG9ubGluZSB2ZXJzaW9uIG9mIHRoZSByZXN1bHQgaW4gaHRtbCBmb3JtYXQgaXMgYXZhaWxhYmxl
-IGF0Og0KICAgIGh0dHBzOi8vcHl0aG9uLWJ0cmZzLnJlYWR0aGVkb2NzLmlvL2VuL2xhdGVzdC9i
-dHJmcy5odG1sDQogICogQWxsIHBhcnRzIG9mIHRoZSBjb2RlIHRoYXQgYXJlIGNvdmVyZWQgYnkg
-cmVmZXJlbmNlIGRvY3VtZW50YXRpb24NCiAgICBhcmUgbm93IGNvbnNpZGVyZWQgdG8gYmUgdGhl
-IHB1YmxpYyBBUEkgb2YgdGhlIGxpYnJhcnkuIEVmZm9ydCB3aWxsDQogICAgYmUgZG9uZSB0byBu
-b3QgYnJlYWsgdGhpcyBBUEkgaW4gdGhlIGZ1dHVyZS4NCiAgKiBUaGUgRmlsZVN5c3RlbSBjbGFz
-cyBub3cgcHJvdmlkZXMgYSBjb250ZXh0IG1hbmFnZXIsIHRvIGhlbHAgcHJldmVudA0KICAgIGxl
-YWtpbmcgdGhlIG9wZW4gZmlsZSBkZXNjcmlwdG9yIHVzZWQgaW50ZXJuYWxseS4NCiAgKiBUaGUg
-bW91bnRlZF9maWxlc3lzdGVtcyBmdW5jdGlvbiBpbiBidHJmcy51dGlscyBtb2R1bGUgaGFzIGJl
-ZW4NCiAgICByZXBsYWNlZCBieSBtb3VudGVkX2ZpbGVzeXN0ZW1fcGF0aHMuIEl0IGlzIHRoZSBy
-ZXNwb25zaWJpbGl0eSBvZg0KICAgIHRoZSBjYWxsZXIgdG8gY3JlYXRlIHRoZSBGaWxlU3lzdGVt
-IG9iamVjdHMgZm9yIHRoZXNlIHBhdGhzIGFuZCB1c2UNCiAgICB0aGUgbmV3IGNvbnRleHQgbWFu
-YWdlciB3aGlsZSBkb2luZyBkby4NCiAgKiBBZGQgdGhlIGZzX3VzYWdlIG1vZHVsZSwgY29udGFp
-bmluZyB0aGUgRnNVc2FnZSBjbGFzcywgcHJvdmlkaW5nDQogICAgZGV0YWlsZWQgdXNhZ2UgcmVw
-b3J0aW5nIGZvciBhIGZpbGVzeXN0ZW0uIFRoaXMgY29kZSByZXBsYWNlcyBvbGQNCiAgICBzaW1p
-bGFyIGZ1bmN0aW9ucywgd2hpY2ggd2VyZSBpbmNvbXBsZXRlIGFuZCBidWdneS4NCiAgKiBBZG9w
-dCBtdW5pbiBhbmQgbmFnaW9zIHBsdWdpbnMgdG8gdXNlIHRoZSBuZXcgRnNVc2FnZSBvYmplY3Qu
-DQogICogSU9DVExzOiBJT0NfU1lOQywgRklERURVUEVSQU5HRSwgSU9DX0dFVF9GRUFUVVJFUw0K
-ICAqIERhdGEgc3RydWN0dXJlczogRnJlZVNwYWNlSW5mbywgRnJlZVNwYWNlRXh0ZW50LCBGcmVl
-U3BhY2VCaXRtYXAuDQogICogSW50cm9kdWNlIEl0ZW1Ob3RGb3VuZEVycm9yLCBjdXJyZW50bHkg
-b25seSByYWlzZWQgYnkgdGhlIGJsb2NrDQogICAgZ3JvdXAgbG9va3VwIGZ1bmN0aW9uIGluIEZp
-bGVTeXN0ZW0uIEl0IGluaGVyaXRzIGZyb20gSW5kZXhFcnJvciBmb3INCiAgICBiYWNrd2FyZHMg
-Y29tcGF0aWJpbGl0eS4NCiAgKiBNYW55IHNtYWxsIGNoYW5nZXMgdG8gaW1wcm92ZSB0aGUgb2Jq
-ZWN0IHByZXR0eSBwcmludGVyLg0KICAqIEZpeGVzOg0KICAgIC0gQnkgZGVmYXVsdCB0aGUgbWF4
-aW11bSBhbW91bnQgb2YgaXRlbXMgZ2VuZXJhdGVkIGJ5IGEgc2luZ2xlIGNhbGwNCiAgICAgIHRv
-IHNlYXJjaCBvciBzZWFyY2hfdjIgd291bGQgYmUgbGltaXRlZCB0byAyXjMyLTEuIEZpeCB0aGlz
-LCBzbw0KICAgICAgaXQncyB1bmxpbWl0ZWQuIFRoZSBzZWFyY2ggZnVuY3Rpb25zIHJldHVybiBh
-biBpdGVyYXRvciBhbmQgY2FsbA0KICAgICAgdGhlIHNlYXJjaCBpb2N0bCBvZiB0aGUgbGludXgg
-a2VybmVsIG11bHRpcGxlIHRpbWVzIGludGVybmFsbHkuDQogICogRXhhbXBsZXMgYWRkZWQ6DQog
-ICAgLSBBIG5ldyBzaG93X3VzYWdlLCB3aGljaCBzaG93cyBpbmZvcm1hdGlvbiBmcm9tIHRoZSBu
-ZXcgdXNhZ2UNCiAgICAgIHJlcG9ydGluZy4NCiAgICAtIHNwYWNlX2NhbGN1bGF0b3I6IE9mZmxp
-bmUgdXNhYmxlIHNwYWNlIGNhbGN1bGF0b3IsIGJhc2VkIG9uIGRpc2sNCiAgICAgIHNpemVzIGFu
-ZCBwcm9maWxlcyBwcm92aWRlZCBvbiB0aGUgY29tbWFuZCBsaW5lLg0KICAgIC0gZmlsZV9kZWR1
-cGVfcmFuZ2U6IEV4YW1wbGUgYWJvdXQgdXNpbmcgdGhlIGRlZHVwbGljYXRpb24gaW9jdGwuDQoN
-Ci0tLS0gPjggLS0tLQ0KDQpNeSBmYXZvdXJpdGUgb25lIGZvciB0aGlzIHJlbGVhc2UgaXMgdGhl
-IG5ldyBkZXRhaWxlZCB1c2FnZSByZXBvcnRpbmcuDQoNCkJ5IHVzaW5nIGFuIGFsZ29yaXRobSB0
-aGF0IGlzIGJhc2VkIG9uIHRoZSBiZWhhdmlvdXIgb2YgdGhlIGNodW5rDQphbGxvY2F0b3IgaW4g
-a2VybmVsIGNvZGUgaXQgc2ltdWxhdGVzIHdoYXQgd291bGQgaGFwcGVuIGlmIHRoZSByZXN0IG9m
-DQphbGwgYXZhaWxhYmxlIHVuYWxsb2NhdGVkIHJhdyBkaXNrIHNwYWNlIGZvciB0aGUgZmlsZXN5
-c3RlbSB3b3VsZCBiZQ0KdXNlZCB1cCBieSBuZXdseSB3cml0dGVuIGRhdGEuIFdoaWxlIGRvaW5n
-IHNvLCBpdCB0YWtlcyB0aGUgY3VycmVudA0KdXNhZ2UgcGF0dGVybiBvZiB0aGUgZmlsZXN5c3Rl
-bSBpbnRvIGFjY291bnQgKGRhdGEgdnMgbWV0YWRhdGEgcmF0aW8pLg0KDQpodHRwczovL2dpdGh1
-Yi5jb20va25vcnJpZS9weXRob24tYnRyZnMvY29tbWl0LzQxZjdmM2NhOGYzMjU2NmNmMjE4Mjk0
-OWMzNzI0Mjk1ZTM3NzZmYzgNCg0KQWZ0ZXIgcnVubmluZyB0aGUgc2ltdWxhdGlvbiBvZiB0aGUg
-Y2h1bmsgYWxsb2NhdG9yIGFsZ29yaXRobSwgdGhlcmUNCm1pZ2h0IHN0aWxsIGJlIHVuYWxsb2Nh
-dGVkIHJhdyBkaXNrIHNwYWNlIGxlZnQgd2hlbiBubyBmdXJ0aGVyIGNodW5rDQphbGxvY2F0aW9u
-cyB1c2luZyB0aGUgY3VycmVudCB0YXJnZXQgcHJvZmlsZXMgZm9yIGRhdGEgYW5kIG1ldGFkYXRh
-IGFyZQ0KcG9zc2libGUuIFRoZXNlIGFtb3VudHMgb2YgInVuYWxsb2NhdGFibGUiIHJhdyBkaXNr
-IHNwYWNlIGFyZSBhbHNvDQphdmFpbGFibGUgaW4gdGhlIHJlcG9ydC4NCg0KTW9yZW92ZXIsIHdo
-ZW4gcmUtcnVubmluZyB0aGUgc2FtZSBzaW11bGF0aW9uLCB1c2luZyB0aGUgY3VycmVudCB1c2Fn
-ZQ0KcGF0dGVybiwgYW5kIHN0YXJ0aW5nIHdpdGggYWxsIGF2YWlsYWJsZSBkaXNrIHNwYWNlIGFz
-IHVuYWxsb2NhdGVkLCB3ZQ0KY2FuIGZpZ3VyZSBvdXQgdGhlIGFtb3VudHMgb2YgcmF3IGRpc2sg
-c3BhY2UgdGhhdCB3b3VsZCBiZSB1bmFsbG9jYXRhYmxlDQp3aGVuIGNvbnZlcnRpbmcgYWxsIGRh
-dGEgdG8gdGhlIHRhcmdldCBwcm9maWxlcywgd2hpbGUgdGFraW5nIGludG8NCmFjY291bnQgdGhh
-dCB0aGVyZSBtaWdodCBiZSBkaWZmZXJlbnQgc2l6ZWQgYXR0YWNoZWQgYmxvY2sgZGV2aWNlcw0K
-c3BvaWxpbmcgdGhlIGZ1bi4NCg0KQnkgY29tYmluaW5nIGJvdGggb2YgdGhvc2UgcmVzdWx0cywg
-aXQncyBwb3NzaWJsZSB0byByZXBvcnQgdGhlIGFtb3VudA0Kb2YgdW5hbGxvY2F0YWJsZSByYXcg
-ZGlzayBzcGFjZSB0aGF0IGNvdWxkIGJlICJyZWNsYWltZWQiIGZvciB1c2Ugd2hlbg0KZG9pbmcg
-YnRyZnMgYmFsYW5jZSB0byByZXdyaXRlIGRhdGEuDQoNCkFuZCBpZiB5b3VyIGhlYWQgaXMgbm90
-IHlldCBzcGlubmluZyByaWdodCBub3csIGJ5IGNvbWJpbmluZyBhbGwgb2YNCnRoYXQsIGl0J3Mg
-cXVpdGUgZWFzeSB0byBwcmVkaWN0IGlmIGEgYnRyZnMgYmFsYW5jZSBjb252ZXJ0IHdpbGwgaGF2
-ZQ0KYW55IGNoYW5jZSBvZiBjb21wbGV0aW9uLiBKdXN0IHdhdGNoIG91dHB1dCBvZiB0aGUgbmV3
-IHNob3dfdXNhZ2UucHkNCmV4YW1wbGUsIG9yIHVzZSB5b3VyIG93biBjb2JibGVkIHVwIHNjcmlw
-dCB0aGF0IGRvZXMgdGhpbmdzIHdpdGgNCmF0dHJpYnV0ZXMgb2YgeW91ciBmcy51c2FnZSgpIHRv
-IGZvbGxvdyBwcm9ncmVzcy4NCg0KVGhlIGNvZGUgd29ya3MgZm9yIGFsbCBjdXJyZW50bHkgaW1w
-bGVtZW50ZWQgYmxvY2sgZ3JvdXAgcHJvZmlsZXMgaW4gYnRyZnMuDQoNCkJ1dCBpdCdzIHB5dGhv
-biwgc28gaXNuJ3QgdGhpcyB2ZXJ5IHNsb3c/IEkgaGF2ZSBhIDcyVGlCIGJ0cmZzDQpmaWxlc3lz
-dGVtIGhlcmUgd2l0aCBhYm91dCA2OWsgYmxvY2sgZ3JvdXBzLCBhbmQgY3Jhd2xpbmcgdGhyb3Vn
-aCB0aGUNCndob2xlIGNodW5rIHRyZWUgd2hpbGUgcmV0cmlldmluZyBpdCBmcm9tIHRoZSBrZXJu
-ZWwsIGFzIHdlbGwgYXMgZG9pbmcNCmJvdGggdGhlIGNodW5rIGFsbG9jYXRvciBzaW11bGF0aW9u
-cyBmb3IgcmVtYWluaW5nIHVuYWxsb2NhdGVkIHNwYWNlIGFuZA0KZm9yIGEgZnVsbHkgZW1wdHkg
-ZmlsZXN5c3RlbSB0YWtlcyB0d28gYW5kIGEgaGFsdmUgc2Vjb25kcyBpbiB0b3RhbC4gSQ0KdGhp
-bmsgdGhhdCBpc24ndCBiYWQuDQoNCi0tLS0gPjggLS0tLQ0KDQpTbywgaXQgaGFzIGJlZW4gbW9y
-ZSB0aGFuIGEgeWVhci4uLiBXaGF0IGhhcHBlbmVkPyBXZWxsLCBhdCBmaXJzdCBJDQpzdGFydGVk
-IHdyaXRpbmcgdHV0b3JpYWwgc3R5bGUgZG9jdW1lbnRhdGlvbi4gSXQgY2FuIGJlIHNlZW4gaW4g
-c3RpbGwNCmhpZ2hseSBXSVAgc3RhdGUgYXQNCmh0dHBzOi8vZ2l0aHViLmNvbS9rbm9ycmllL3B5
-dGhvbi1idHJmcy9ibG9iL3R1dG9yaWFsL3R1dG9yaWFsL1JFQURNRS5tZA0KDQpXaGlsZSBkb2lu
-ZyBzbywgSSByYW4gaW50byBhIGJ1ZywgYW5kIGFub3RoZXIgb25lLi4uIEFuZCBhIGxvdCBvZiB0
-aGluZ3MNCnRoYXQganVzdCBkaWRuJ3Qgd29yayBmb3IgUkFJRDAvNS82IHlldC4NCg0KVGhlbiBJ
-IHN0YXJ0ZWQgZml4aW5nIHRoYXQgYnkgd3JpdGluZyB0aGUgbmV3IHVzYWdlIHJlcG9ydGluZyBj
-b2RlLiBXaGVuDQp0aGlzIGdvdCBpbnRvIHNoYXBlLCBJIHJlYWxpemVkIHRoYXQgbm9vbmUgZWxz
-ZSB0aGFuIG15c2VsZiB3b3VsZCBldmVyDQpiZSBhYmxlIHRvIHVzZSBhbGwgb2YgdGhhdCB3aXRo
-b3V0IHByb3BlciByZWZlcmVuY2UgZG9jdW1lbnRhdGlvbiBhYm91dA0KYWxsIG9iamVjdHMgYW5k
-IGF0dHJpYnV0ZXMuDQoNClNvLCBJIHN0YXJ0ZWQgd3JpdGluZyByZWZlcmVuY2UgZG9jdW1lbnRh
-dGlvbiBmb3IgaXQsIGFuZCB0aGVuIGZvciB0aGUNCnJlc3Qgb2YgdGhlIGNvZGUuIFdoaWxlIGRv
-aW5nIHNvLCBJIHdlbnQgb3ZlciBhbGwgb2YgdGhlIGNvZGUgaW4gdGhlDQpsaWJyYXJ5IGFnYWlu
-LCBhbmQgZml4ZWQgYSBodWdlIGFtb3VudCBvZiBzbWFsbCBpc3N1ZXMuDQoNCkFuZCwgSSdtIGhh
-cHB5IHdpdGggdGhlIGVuZCByZXN1bHQuIDopIEkgdGhpbmsgdGhlIHJlZmVyZW5jZSBkb2NzIHdp
-bGwNCmhlbHAgdXNlcnMgYSBsb3QgdG8gZmluZCBvdXQgd2hhdCBjYW4gYmUgZG9uZSB1c2luZyB0
-aGUgbGlicmFyeSwgYW5kDQpoYXZlIGEgZnVuIHRpbWUgZXhwbG9yaW5nLg0KDQotLS0tID44IC0t
-LS0NCg0KRnV0dXJlIHdvcmsgKG9yIFJTTiBhbmQgU0lZSCk6DQoNCjEpIFRoZXJlIGhhcyBiZWVu
-IGEgcmVwZWF0ZWQgcXVlc3Rpb24gdG8gcHJvbW90ZSBzb21lIG9mIHRoZSB0aGluZ3MgdGhhdA0K
-YXJlIGluIGV4YW1wbGVzLyB0byBwcm9ncmFtcyB0aGF0IHdpbGwgYmUgcHV0IGluIC91c3IvYmlu
-LiBUaGVyZSBhcmUNCnF1aXRlIGEgYnVuY2ggb2YgdGhpbmdzIHRoYXQgYXJlIHZlcnkgdXNlZnVs
-IGZvciBlbmQgdXNlcnMuIEkgd2lsbCBzdGFydA0KYSBzZXBhcmF0ZSBkaXNjdXNzaW9uIGFib3V0
-IHRoaXMgUlNOIG9uIHRoaXMgbWFpbGluZyBsaXN0LiBJdCB3aWxsDQpyZXF1aXJlIGltcHJvdmlu
-ZyBjb21tYW5kIGxpbmUgYXJndW1lbnQgaGFuZGxpbmcsIHdyaXRpbmcgbWFuIHBhZ2VzIGFuZA0K
-SSBkb24ndCBrbm93IGlmIHRoZSBidHJmcyB0ZWFtIHdvdWxkIGxpa2UgbWUgdG8gc3RhcnQgcG9s
-bHV0aW5nIHRoZQ0KYnRyZnMtKiB0YWIgc3BhY2UgYWdhaW4gYWZ0ZXIgdGhleSd2ZSB0cmllZCB0
-byBnZXQgcmlkIG9mIGFsbCBvZiB0aG9zZQ0KYnRyZnMtKiBjb21tYW5kcy4NCg0KVGhpcyBpcyB0
-aGUgdmVyeSBmaXJzdCB0aGluZyBJIHdhbnQgdG8gd29yayBvbiBub3cuDQoNCjIpIFR1dG9yaWFs
-IHN0eWxlIGRvY3VtZW50YXRpb24uDQoNCkkgd2lsbCBtb3ZlIHRoZSBjdXJyZW50IHdvcmsgb24g
-dHV0b3JpYWwgc3R5bGUgZG9jdW1lbnRhdGlvbiBhcw0KcmVmZXJlbmNlZCBhYm92ZSBpbnRvIHRo
-ZSBzcGhpbnggc3R1ZmYsIHNvIEkgY2FuIGNyb3NzIHJlZmVyZW5jZQ0KZXZlcnl0aGluZy4gTm8g
-RVRBLCBzaW5jZSB0aGlzIGlzIGp1c3QgbXkgaG9iYnkgcHJvamVjdC4gO10NCg0KSGF2ZSBmdW4s
-IGFuZCBkb24ndCBoZXNpdGF0ZSB0byB0YWxrIHRvIG1lIG9uIElSQyAoS25vcnJpZSkgb3IgZW1h
-aWwgbWUNCmlmIHlvdSBydW4gaW50byBwcm9ibGVtcyB1c2luZyBhbGwgb2YgdGhpcy4gby8NCg0K
-LS0NCkhhbnMgdmFuIEtyYW5lbmJ1cmcNCg==
+On Thu, Jan 17, 2019 at 4:28 PM Tomasz Chmielewski <tch@virtall.com> wrote:
+>
+> > It is actually more like RAID-1E which is supported by some hardware
+> > RAID HBA. The difference is that RAID-1E is usually using strict
+> > sequential block placement algorithm and assumes disks of equal size,
+> > while btrfs raid10 is more flexible in selecting where next mirror pair
+> > is allocated.
+>
+> s/flexible/random/
+>
+> In sense, with btrfs, you can't really choose where the blocks are
+> allocated, that's not really the definition of "flexible"?
+
+Depends on perspective, if you don't care where they go but you care
+about being able to add a single arbitrary sized drive or two or
+three, you can grow a Btrfs raid10 volume. You can't do that with
+conventional raid10.
+
+-- 
+Chris Murphy

@@ -2,36 +2,45 @@ Return-Path: <SRS0=mgXs=P3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8366DC61CE4
-	for <linux-btrfs@archiver.kernel.org>; Sat, 19 Jan 2019 14:54:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 35832C61CE4
+	for <linux-btrfs@archiver.kernel.org>; Sat, 19 Jan 2019 17:02:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4FAB220883
-	for <linux-btrfs@archiver.kernel.org>; Sat, 19 Jan 2019 14:54:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 06DBB2084F
+	for <linux-btrfs@archiver.kernel.org>; Sat, 19 Jan 2019 17:02:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728211AbfASOyw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 19 Jan 2019 09:54:52 -0500
-Received: from mx2.suse.de ([195.135.220.15]:55450 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728185AbfASOyw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 19 Jan 2019 09:54:52 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay1.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 44E19ADE2
-        for <linux-btrfs@vger.kernel.org>; Sat, 19 Jan 2019 14:54:50 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 4390FDA83C; Sat, 19 Jan 2019 15:54:20 +0100 (CET)
-From:   David Sterba <dsterba@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: Btrfs progs release 4.20
-Date:   Sat, 19 Jan 2019 15:54:20 +0100
-Message-Id: <20190119145420.13410-1-dsterba@suse.com>
-X-Mailer: git-send-email 2.20.1
+        id S1728425AbfASRCL convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 19 Jan 2019 12:02:11 -0500
+Received: from mx23lb.world4you.com ([81.19.149.133]:33394 "EHLO
+        mx23lb.world4you.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726679AbfASRCK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 19 Jan 2019 12:02:10 -0500
+X-Greylist: delayed 3307 seconds by postgrey-1.27 at vger.kernel.org; Sat, 19 Jan 2019 12:02:10 EST
+Received: from [213.147.188.16] (helo=robbe)
+        by mx23lb.world4you.com with esmtpa (Exim 4.91)
+        (envelope-from <hans@hanswkraus.com>)
+        id 1gkt9B-0004X1-ME
+        for linux-btrfs@vger.kernel.org; Sat, 19 Jan 2019 17:07:02 +0100
+Received: from [192.168.4.139] (unknown [192.168.4.139])
+        by robbe (Postfix) with ESMTPS id 02BAF3424FD
+        for <linux-btrfs@vger.kernel.org>; Sat, 19 Jan 2019 17:07:01 +0100 (CET)
+To:     Linux Btrfs <linux-btrfs@vger.kernel.org>
+From:   Hans Kraus <hans@hanswkraus.com>
+Subject: RAID 6 stable?
+Message-ID: <c41a1da0-9986-413d-6b22-4183188fd8aa@hanswkraus.com>
+Date:   Sat, 19 Jan 2019 17:07:01 +0100
+User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
+ Thunderbird/60.4.0
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 8BIT
+X-Antivirus: Avast (VPS 190119-2, 19.01.2019), Outbound message
+X-Antivirus-Status: Clean
+X-AV-Do-Run: Yes
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -39,114 +48,27 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 Hi,
 
-btrfs-progs version 4.20 have been released.
+after a posting in the linux-btrfs mailing list I stumbled across
+<https://btrfs.wiki.kernel.org/index.php/Project_ideas#Raid5.2F6>.
 
-Changes:
-  * new feature: metadata uuid
-    * lightweight change of UUID without rewriting all metadata
-      (incompatible change)
-    * done by btrfstune -m/-M
-    * needs kernel support, 5.0+
-  * image:
-    * fix blockgroups when restoring from multi-device image
-    * only enlarge result image if it's a regular file
-  * check
-    * more device extent checks and fixes
-    * can repair dir item with mismatched hash
-  * mkfs: uuid tree created with proper contents
-  * fix mount point detection due to partial prefix match
-  * other:
-    * new tests
-    * libbtrfsutil: fix tests if kernel lacks support for new subvolume ioctls
-    * build fixes
-    * doc fixes
+Does that mean that BTRFS RAID6 is free of known errors and ready for
+deployment on data servers?
 
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+If not: is there an estimation (time-wise) when RAID6 is ready?
 
-Shortlog:
+The background of my question: I have to rebuild my samba server which
+ran out of storage. I'm using currently efs4 on top of mdadm RAID6.
+I would prefer to rebuild it with BTRFS. I can postpone that rebuild
+for some months.
 
-Anand Jain (1):
-      btrfs-progs: handle balance and replace concurrency
+A second question: the ZFS docu recommends very strongly to use ECC
+memory on machines with ZFS RAID-Zn. Holds these arguments true for
+BTRFS as well?
 
-Andrea Gelmini (1):
-      btrfs-progs: docs: update scrub docs
+Kind regards,
+Hans
 
-David Disseldorp (1):
-      btrfs-progs: docs: fix balance -f grammar
+---
+Diese E-Mail wurde von Avast Antivirus-Software auf Viren geprüft.
+https://www.avast.com/antivirus
 
-David Sterba (11):
-      btrfs-progs: docs: enhance subvol show documentation and help
-      btrfs-progs: tests: speed up fsck/037 free space tree test
-      btrfs-progs: docs: add bootloader support to section 5
-      btrfs-progs: docs: add metadata_uuid description to sect. 5
-      btrfs-progs: docs: update system limits texts in sect. 5
-      btrfs-progs: docs: add swapfile support description to sect. 5
-      btrfs-progs: shared: rename ulist_fini to ulist_release
-      btrfs-progs: docs: btrfstune: sort options alphabetically
-      btrfs-progs: docs: document btrfstune -m/-M
-      btrfs-progs: btrfstune: update help string
-      btrfs-progs: tests: add option coverage for btrfstune
-
-Filipe Manana (3):
-      Btrfs-progs: fix mount point detection due to partial prefix match
-      Btrfs-progs: add missing error handling in find_mount_root()
-      Btrfs-progs: add test for receive
-
-Jeff Mahoney (1):
-      btrfs-progs: fix stray error message in check
-
-Johannes Thumshirn (1):
-      btrfs-progs: build: provide etags make target
-
-Nikolay Borisov (6):
-      btrfs-progs: Add support for metadata_uuid field
-      btrfs-progs: btrfstune: Add support for changing the metadata uuid
-      btrfs-progs: Remove fsid/metdata_uuid fields from fs_info
-      btrfs-progs: Remove btrfs_fs_info::new_fsid
-      btrfs-progs: Directly pass root to change_devices_uuid
-      btrfs-progs: tests: Add tests for changing fsid feature
-
-Omar Sandoval (1):
-      libbtrfsutil: fix unprivileged tests if kernel lacks support
-
-Qu Wenruo (33):
-      btrfs-progs: fsck-tests: Move reloc tree images to 020-extent-ref-cases
-      btrfs-progs: image: Refactor fixup_devices() to fixup_chunks_and_devices()
-      btrfs-progs: image: Fix block group item flags when restoring multi-device image to single device
-      btrfs-progs: volumes: Refactor btrfs_alloc_dev_extent() into two functions
-      btrfs-progs: image: Remove all existing dev extents for later rebuild
-      btrfs-progs: misc-tests/021: Do extra btrfs check before mounting
-      btrfs-progs: Makefile.extrawarn: Import cc-disable-warning
-      btrfs-progs: Makefile.extrawarn: Don't warn on sign compare
-      btrfs-progs: Fix -Wimplicit-fallthrough warning
-      btrfs-progs: Fix -Wsuggest-attribute=format warning
-      btrfs-progs: Fix -Wtype-limits warning
-      btrfs-progs: Fix -Wmaybe-uninitialized warning
-      btrfs-progs: Move btrfs_check_nodesize to fsfeatures.c to fix missing-prototypes warning
-      btrfs-progs: Introduce rescue.h to resolve missing-prototypes for chunk and super rescue
-      btrfs-progs: Add utils.h include to solve missing-prototypes warning
-      btrfs-progs: free-space-tree: Remove unused function
-      btrfs-progs: Fix Wempty-body warning
-      btrfs-progs: image: Use correct device size when restoring
-      btrfs-progs: image: Only enlarge result image if it's a regular file
-      btrfs-progs: check: lowmem: Add check for overlapping dev extents
-      btrfs-progs: check: orig: Add ability to detect bad dev extents
-      btrfs-progs: check: lowmem: Add dev_item check for used bytes and total bytes
-      btrfs-progs: check: orig: Add dev_item check for used bytes and total bytes
-      btrfs-progs: tests: Add test image for dev extents beyond device boundary
-      btrfs-progs: check: lowmem: Add ability to repair dir item with mismatched hash
-      btrfs-progs: check: orig: Use mismatch_dir_hash_record to record bad dir items
-      btrfs-progs: check: orig: Add ability to repair dir item with invalid hash
-      btrfs-progs: tests: check: Make 026-bad-dir-item-name verify if btrfs-check can also repair
-      btrfs-progs: Export btrfs_create_tree() and move it to disk-io.c
-      btrfs-progs: mkfs: Create data reloc tree from scratch
-      btrfs-progs: uuid: Port kernel btrfs_uuid_tree_lookup()
-      btrfs-progs: uuid: Port btrfs_uuid_tree_add() function
-      btrfs-progs: Create uuid tree with proper contents
-
-Su Yanjun (1):
-      btrfs-progs: silence build warning caused by gcc 8 '-Wformat-truncation'
-
-Su Yue (1):
-      btrfs-progs: trivial fix of line break in repair_inode_nbytes_lowmem()

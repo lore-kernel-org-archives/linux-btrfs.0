@@ -2,197 +2,195 @@ Return-Path: <SRS0=2FmH=P5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 53411C282DB
-	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Jan 2019 07:43:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4BD80C282DB
+	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Jan 2019 08:09:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2B60B2084A
-	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Jan 2019 07:43:51 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1DEFC20823
+	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Jan 2019 08:09:42 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=philpotter-co-uk.20150623.gappssmtp.com header.i=@philpotter-co-uk.20150623.gappssmtp.com header.b="gBi9DYrx"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728901AbfAUHnu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 21 Jan 2019 02:43:50 -0500
-Received: from mx2.suse.de ([195.135.220.15]:59916 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728477AbfAUHnt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 Jan 2019 02:43:49 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id C9FB2ACB5
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Jan 2019 06:27:24 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 2/3] btrfs: Introduce "rescue=" mount option
-Date:   Mon, 21 Jan 2019 14:27:17 +0800
-Message-Id: <20190121062718.8063-3-wqu@suse.com>
-X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20190121062718.8063-1-wqu@suse.com>
-References: <20190121062718.8063-1-wqu@suse.com>
+        id S1728239AbfAUIJl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 21 Jan 2019 03:09:41 -0500
+Received: from mail-wr1-f65.google.com ([209.85.221.65]:41073 "EHLO
+        mail-wr1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728155AbfAUIJk (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 21 Jan 2019 03:09:40 -0500
+Received: by mail-wr1-f65.google.com with SMTP id x10so22087579wrs.8
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Jan 2019 00:09:38 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=philpotter-co-uk.20150623.gappssmtp.com; s=20150623;
+        h=date:from:to:cc:subject:message-id:mime-version:content-disposition
+         :user-agent;
+        bh=GYYBAmt096plwKM4npCEoqzw+1f6RWraXYbWmzNbVRE=;
+        b=gBi9DYrxmXflRgupowchKydz2b7Ix7jx4swBsupzu2uoTbG9VPBw+8WBR4dWIz5pkT
+         VhF1ayZE0Px5aVNDDmMhGlPwl1SuVlknAHX5KENIxhzfmqZcuvBsIPrE+MscHFaKqdzu
+         OpvaV37pbXtH7m59wzMLlZ5OAGF13PUn0Ryx+OlGzMBUry10j8vVxTQKwEUbt8E0bH8z
+         l4vJ3pWZqCNo/4JZoB+UEIaJJ773TRfxgqiJpqlv8agtp6IZtTkIlWoH1aoK/w1q17JG
+         Huyba9L6kQXP96q8j1sjTfNxM2Suy9YSGpUIvuOxiU5jj7GnoGefU4xlKWXLyBV92l+k
+         hUlQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:mime-version
+         :content-disposition:user-agent;
+        bh=GYYBAmt096plwKM4npCEoqzw+1f6RWraXYbWmzNbVRE=;
+        b=kJAceFUZj3D+FHIQTPAmgnDk5RMkp2GraKRVoIzR79E5u8hPcStZrC5m+qTzhraTdB
+         0ntrWUQZzJh7F66jWhKZnYV7s+uokTxDvRCi9Vl4Zvl7DGdvpMhWlGMlUw6csdlRzr3f
+         eT5spbaiDFr0Y/Mw1/T3Y+wfGiWFj5s4JmkWzkCaVEx9ODIqzbiI01vGf6/hGLcAZ2Gi
+         o+5SEhDZD8Dpq00Tl2f9nIaYTlABWXVASyV+mur1j2ZUhJtQbwR5m+JC5AbJi9Tatb1q
+         J4ISzBKwDmbnCPK1xHns6l7ClxzXV6e6tJrLJbDCLFncotNwsO+W4ux+M/l7UMkRBKSL
+         HASg==
+X-Gm-Message-State: AJcUukdMKV6g7yTDPzFP5SXxQBW9XgGAKUbECYKQO4CHr12UF5anzMDC
+        kzxgseQweSmPfNzZcvxY429BUZsbB2g+sTXs
+X-Google-Smtp-Source: ALg8bN74eRO422skWUOvWaoMEsk+GM8vcysh0Fl3hCKbJSL4zmdrJ9G2kwMpk2qsRORCq5yTP3k/0A==
+X-Received: by 2002:adf:f504:: with SMTP id q4mr26510775wro.321.1548032081347;
+        Sun, 20 Jan 2019 16:54:41 -0800 (PST)
+Received: from pathfinder ([90.222.17.17])
+        by smtp.gmail.com with ESMTPSA id o5sm29062574wrw.46.2019.01.20.16.54.40
+        (version=TLS1_3 cipher=AEAD-AES256-GCM-SHA384 bits=256/256);
+        Sun, 20 Jan 2019 16:54:40 -0800 (PST)
+Date:   Mon, 21 Jan 2019 00:54:39 +0000
+From:   Phillip Potter <phil@philpotter.co.uk>
+To:     clm@fb.com
+Cc:     amir73il@gmail.com, viro@zeniv.linux.org.uk, jbacik@fb.com,
+        dsterba@suse.com, linux-fsdevel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+Subject: [RFC][PATCH v5 09/09] btrfs: use common file type conversion
+Message-ID: <20190121005439.GA32379@pathfinder>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This patch introduces a new "rescue=" mount option for all those mount
-options for data recovery.
+Deduplicate the btrfs file type conversion implementation - file systems
+that use the same file types as defined by POSIX do not need to define
+their own versions and can use the common helper functions decared in
+fs_types.h and implemented in fs_types.c
 
-Different rescue sub options are seperated by ':'.
-(The original plan is to use ';', but ';' needs to be escaped/quoted,
-or it will be interpreted by bash)
-
-The following mount options are converted to "rescue=", old mount
-options are deprecated but still available for compatibility purpose:
-
-- usebackuproot
-  Now it's "rescue=use_backup_root"
-
-- nologreplay
-  Now it's "rescue=no_log_replay"
-
-The new underscore is here to make the option more readable and make
-spell check happier.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Acked-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Amir Goldstein <amir73il@gmail.com>
+Signed-off-by: Phillip Potter <phil@philpotter.co.uk>
+Reviewed-by: Jan Kara <jack@suse.cz>
 ---
- fs/btrfs/super.c | 65 +++++++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 62 insertions(+), 3 deletions(-)
+ fs/btrfs/btrfs_inode.h          |  2 --
+ fs/btrfs/delayed-inode.c        |  2 +-
+ fs/btrfs/inode.c                | 32 +++++++++++++++-----------------
+ include/uapi/linux/btrfs_tree.h |  2 ++
+ 4 files changed, 18 insertions(+), 20 deletions(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 6a08f23e5600..0fb251e7bf5b 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -310,7 +310,6 @@ enum {
- 	Opt_datasum, Opt_nodatasum,
- 	Opt_defrag, Opt_nodefrag,
- 	Opt_discard, Opt_nodiscard,
--	Opt_nologreplay,
- 	Opt_ratio,
- 	Opt_rescan_uuid_tree,
- 	Opt_skip_balance,
-@@ -323,7 +322,6 @@ enum {
- 	Opt_subvolid,
- 	Opt_thread_pool,
- 	Opt_treelog, Opt_notreelog,
--	Opt_usebackuproot,
- 	Opt_user_subvol_rm_allowed,
- 
- 	/* Deprecated options */
-@@ -341,6 +339,8 @@ enum {
- #ifdef CONFIG_BTRFS_FS_REF_VERIFY
- 	Opt_ref_verify,
- #endif
-+	/* Rescue options */
-+	Opt_rescue, Opt_usebackuproot, Opt_nologreplay,
- 	Opt_err,
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 6f5d07415dab..b16c13d51be0 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -203,8 +203,6 @@ struct btrfs_inode {
+ 	struct inode vfs_inode;
  };
  
-@@ -401,6 +401,7 @@ static const match_table_t tokens = {
- 	{Opt_check_integrity_print_mask, "check_int_print_mask=%u"},
- 	{Opt_enospc_debug, "enospc_debug"},
- 	{Opt_noenospc_debug, "noenospc_debug"},
-+	{Opt_rescue, "rescue=%s"},
- #ifdef CONFIG_BTRFS_DEBUG
- 	{Opt_fragment_data, "fragment=data"},
- 	{Opt_fragment_metadata, "fragment=metadata"},
-@@ -412,6 +413,55 @@ static const match_table_t tokens = {
- 	{Opt_err, NULL},
- };
+-extern unsigned char btrfs_filetype_table[];
+-
+ static inline struct btrfs_inode *BTRFS_I(const struct inode *inode)
+ {
+ 	return container_of(inode, struct btrfs_inode, vfs_inode);
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index c669f250d4a0..e61947f5eb76 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -1692,7 +1692,7 @@ int btrfs_readdir_delayed_dir_index(struct dir_context *ctx,
+ 		name = (char *)(di + 1);
+ 		name_len = btrfs_stack_dir_name_len(di);
  
-+static const match_table_t rescue_tokens = {
-+	{Opt_usebackuproot, "use_backup_root"},
-+	{Opt_nologreplay, "no_log_replay"},
-+	{Opt_err, NULL},
-+};
-+
-+static int parse_rescue_options(struct btrfs_fs_info *info, const char *options)
-+{
-+	char *opts;
-+	char *orig;
-+	char *p;
-+	substring_t args[MAX_OPT_ARGS];
-+	int ret = 0;
-+
-+	opts = kstrdup(options, GFP_KERNEL);
-+	if (!opts)
-+		return -ENOMEM;
-+	orig = opts;
-+
-+	while ((p = strsep(&opts, ":")) != NULL) {
-+		int token;
-+
-+		if (!*p)
-+			continue;
-+		token = match_token(p, rescue_tokens, args);
-+		switch (token){
-+		case Opt_usebackuproot:
-+			btrfs_info(info,
-+				   "trying to use backup root at mount time");
-+			btrfs_set_opt(info->mount_opt, USEBACKUPROOT);
-+			break;
-+		case Opt_nologreplay:
-+			btrfs_set_and_info(info, NOLOGREPLAY,
-+					   "disabling log replay at mount time");
-+			break;
-+		case Opt_err:
-+			btrfs_info(info, "unrecognized rescue option '%s'", p);
-+			ret = -EINVAL;
-+			goto out;
-+		default:
-+			break;
-+		}
-+
-+	}
-+out:
-+	kfree(orig);
-+	return ret;
-+}
-+
+-		d_type = btrfs_filetype_table[di->type];
++		d_type = fs_ftype_to_dtype(di->type);
+ 		btrfs_disk_key_to_cpu(&location, &di->location);
+ 
+ 		over = !dir_emit(ctx, name, name_len,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 43eb4535319d..f6ea1cbafd45 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -73,17 +73,6 @@ struct kmem_cache *btrfs_trans_handle_cachep;
+ struct kmem_cache *btrfs_path_cachep;
+ struct kmem_cache *btrfs_free_space_cachep;
+ 
+-#define S_SHIFT 12
+-static const unsigned char btrfs_type_by_mode[S_IFMT >> S_SHIFT] = {
+-	[S_IFREG >> S_SHIFT]	= BTRFS_FT_REG_FILE,
+-	[S_IFDIR >> S_SHIFT]	= BTRFS_FT_DIR,
+-	[S_IFCHR >> S_SHIFT]	= BTRFS_FT_CHRDEV,
+-	[S_IFBLK >> S_SHIFT]	= BTRFS_FT_BLKDEV,
+-	[S_IFIFO >> S_SHIFT]	= BTRFS_FT_FIFO,
+-	[S_IFSOCK >> S_SHIFT]	= BTRFS_FT_SOCK,
+-	[S_IFLNK >> S_SHIFT]	= BTRFS_FT_SYMLINK,
+-};
+-
+ static int btrfs_setsize(struct inode *inode, struct iattr *attr);
+ static int btrfs_truncate(struct inode *inode, bool skip_writeback);
+ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent);
+@@ -5746,10 +5735,6 @@ static struct dentry *btrfs_lookup(struct inode *dir, struct dentry *dentry,
+ 	return d_splice_alias(inode, dentry);
+ }
+ 
+-unsigned char btrfs_filetype_table[] = {
+-	DT_UNKNOWN, DT_REG, DT_DIR, DT_CHR, DT_BLK, DT_FIFO, DT_SOCK, DT_LNK
+-};
+-
  /*
-  * Regular mount options parser.  Everything that is needed only when
-  * reading in a new superblock is parsed here.
-@@ -661,6 +711,8 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
- 					     "enabling tree log");
- 			break;
- 		case Opt_nologreplay:
-+			btrfs_warn(info,
-+	"'nologreplay' is deprecated, use 'rescue=no_log_replay' instead");
- 			btrfs_set_and_info(info, NOLOGREPLAY,
- 					   "disabling log replay at mount time");
- 			break;
-@@ -749,6 +801,8 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
- 					     "disabling auto defrag");
- 			break;
- 		case Opt_usebackuproot:
-+			btrfs_warn(info,
-+	"'usebackuproot' is deprecated, use 'rescue=use_backup_root' instead");
- 			btrfs_info(info,
- 				   "trying to use backup root at mount time");
- 			btrfs_set_opt(info->mount_opt, USEBACKUPROOT);
-@@ -835,6 +889,11 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
- 			btrfs_set_opt(info->mount_opt, REF_VERIFY);
- 			break;
- #endif
-+		case Opt_rescue:
-+			ret = parse_rescue_options(info, args[0].from);
-+			if (ret < 0)
-+				goto out;
-+			break;
- 		case Opt_err:
- 			btrfs_info(info, "unrecognized mount option '%s'", p);
- 			ret = -EINVAL;
-@@ -1301,7 +1360,7 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
- 	if (btrfs_test_opt(info, NOTREELOG))
- 		seq_puts(seq, ",notreelog");
- 	if (btrfs_test_opt(info, NOLOGREPLAY))
--		seq_puts(seq, ",nologreplay");
-+		seq_puts(seq, ",rescue=no_log_replay");
- 	if (btrfs_test_opt(info, FLUSHONCOMMIT))
- 		seq_puts(seq, ",flushoncommit");
- 	if (btrfs_test_opt(info, DISCARD))
+  * All this infrastructure exists because dir_emit can fault, and we are holding
+  * the tree lock when doing readdir.  For now just allocate a buffer and copy
+@@ -5888,7 +5873,7 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
+ 		name_ptr = (char *)(entry + 1);
+ 		read_extent_buffer(leaf, name_ptr, (unsigned long)(di + 1),
+ 				   name_len);
+-		put_unaligned(btrfs_filetype_table[btrfs_dir_type(leaf, di)],
++		put_unaligned(fs_ftype_to_dtype(btrfs_dir_type(leaf, di)),
+ 				&entry->type);
+ 		btrfs_dir_item_key_to_cpu(leaf, di, &location);
+ 		put_unaligned(location.objectid, &entry->ino);
+@@ -6293,7 +6278,20 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+ 
+ static inline u8 btrfs_inode_type(struct inode *inode)
+ {
+-	return btrfs_type_by_mode[(inode->i_mode & S_IFMT) >> S_SHIFT];
++	/*
++	 * compile-time asserts that generic FT_* types still match
++	 * BTRFS_FT_* types
++	 */
++	BUILD_BUG_ON(BTRFS_FT_UNKNOWN != FT_UNKNOWN);
++	BUILD_BUG_ON(BTRFS_FT_REG_FILE != FT_REG_FILE);
++	BUILD_BUG_ON(BTRFS_FT_DIR != FT_DIR);
++	BUILD_BUG_ON(BTRFS_FT_CHRDEV != FT_CHRDEV);
++	BUILD_BUG_ON(BTRFS_FT_BLKDEV != FT_BLKDEV);
++	BUILD_BUG_ON(BTRFS_FT_FIFO != FT_FIFO);
++	BUILD_BUG_ON(BTRFS_FT_SOCK != FT_SOCK);
++	BUILD_BUG_ON(BTRFS_FT_SYMLINK != FT_SYMLINK);
++
++	return fs_umode_to_ftype(inode->i_mode);
+ }
+ 
+ /*
+diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
+index e974f4bb5378..421239b98db2 100644
+--- a/include/uapi/linux/btrfs_tree.h
++++ b/include/uapi/linux/btrfs_tree.h
+@@ -307,6 +307,8 @@
+  *
+  * Used by:
+  * struct btrfs_dir_item.type
++ *
++ * Values 0..7 must match common file type values in fs_types.h.
+  */
+ #define BTRFS_FT_UNKNOWN	0
+ #define BTRFS_FT_REG_FILE	1
 -- 
 2.20.1
 

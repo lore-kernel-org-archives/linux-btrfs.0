@@ -1,68 +1,110 @@
-Return-Path: <SRS0=8/Zd=P4=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=2FmH=P5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 952DFC26641
-	for <linux-btrfs@archiver.kernel.org>; Sun, 20 Jan 2019 18:40:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 39EE4C282DB
+	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Jan 2019 07:35:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6232C2084F
-	for <linux-btrfs@archiver.kernel.org>; Sun, 20 Jan 2019 18:40:30 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1548009630;
-	bh=h0HVpnmOMn3YnQY8dWg2vJ6cf80ypMKGu3f9fU5ANVg=;
-	h=Subject:From:In-Reply-To:References:Date:To:Cc:List-ID:From;
-	b=falQpawzEo7cBm8YU+fP22vX3EmN56ubS30RrxnM7s8P6JDsOldgOfnaJHcRTiesF
-	 zfqHn7oJ+7Wd36XZx7fMU5YfjvdRO/ZqISxw67bRk2iLaLm3YReg7bEeK+o1VFyBnM
-	 8DlUADun5/HjNtqTKioUHl8tZOXOZNFEBA/UthJ0=
+	by mail.kernel.org (Postfix) with ESMTP id 090DA20989
+	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Jan 2019 07:35:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727794AbfATSkY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 20 Jan 2019 13:40:24 -0500
-Received: from mail.kernel.org ([198.145.29.99]:39628 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727630AbfATSkC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 20 Jan 2019 13:40:02 -0500
-Subject: Re: [GIT PULL] Btrfs fixes for 5.0-rc3
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1548009602;
-        bh=h0HVpnmOMn3YnQY8dWg2vJ6cf80ypMKGu3f9fU5ANVg=;
-        h=From:In-Reply-To:References:Date:To:Cc:From;
-        b=gyp58XMFbroZ3ChXBUKr6fVNOjD4Bn1OtF9EBu4gMwaH3V3ctIQg2/74o2xlqQWrZ
-         YQ0uX7Bg6vaZ++U+yZJwTaPVQCxvXXxTXe8zrcv3W4Y4+Vzg1ZHsk7ahHdheHl+NCx
-         Hct/sGuOOPEb6XkpX6m32Y1TO/kqsYJQZhAc5Duw=
-From:   pr-tracker-bot@kernel.org
-In-Reply-To: <cover.1547998923.git.dsterba@suse.com>
-References: <cover.1547998923.git.dsterba@suse.com>
-X-PR-Tracked-List-Id: <linux-kernel.vger.kernel.org>
-X-PR-Tracked-Message-Id: <cover.1547998923.git.dsterba@suse.com>
-X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.0-rc2-tag
-X-PR-Tracked-Commit-Id: fd340d0f68cc87badfc9efcb226f23a5428826a0
-X-PR-Merge-Tree: torvalds/linux.git
-X-PR-Merge-Refname: refs/heads/master
-X-PR-Merge-Commit-Id: 1be969f4682b0aa1995e46fba51502de55f15ce8
-Message-Id: <154800960227.15983.1928682040558514514.pr-tracker-bot@kernel.org>
-Date:   Sun, 20 Jan 2019 18:40:02 +0000
-To:     David Sterba <dsterba@suse.com>
-Cc:     torvalds@linux-foundation.org, David Sterba <dsterba@suse.com>,
-        clm@fb.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
+        id S1728069AbfAUHfU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 21 Jan 2019 02:35:20 -0500
+Received: from mx2.suse.de ([195.135.220.15]:58258 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1728470AbfAUHfT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 21 Jan 2019 02:35:19 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 404CFACD2
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Jan 2019 07:35:18 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 0/3] btrfs: Introduce new rescue= mount options
+Date:   Mon, 21 Jan 2019 15:35:09 +0800
+Message-Id: <20190121073512.17675-1-wqu@suse.com>
+X-Mailer: git-send-email 2.20.1
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The pull request you sent on Sun, 20 Jan 2019 16:51:29 +0100:
+This patchset can be fetched from github:
+https://github.com/adam900710/linux/tree/rescue_options
 
-> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.0-rc2-tag
+There are quite some btrfs extent tree corruption report in the mail
+list.
+Since btrfs will do mount time block group item search, one corrupted
+leaf containing block group item will prevent the whole fs to be
+mounted.
 
-has been merged into torvalds/linux.git:
-https://git.kernel.org/torvalds/c/1be969f4682b0aa1995e46fba51502de55f15ce8
+This patchset will try to address the problem by introducing a new mount
+option, "rescue=skip_bg", as a last-resort rescue.
+Of course this option will have a lot of restriction to prevent further
+screwing up the fs, including:
+- Permanent RO
+  No remount rw is allowed
 
-Thank you!
+- No dirty log
+  Either clean the log or use rescue=no_log_replay mount option
+
+This "rescue=skip_bg" has some advantage compared to user space tool
+like "btrfs-restore":
+- Unified recovery tool
+  User can use any tool they're familiar with, as long as the kernel
+  doesn't panic.
+
+- More info for subvolume.
+  "btrfs subv list" can word now!
+
+
+Although, move the following mount options to "rescue=" mount option:
+- nologreplay
+  to rescue=no_log_replay
+
+- usebackuproot
+  to rescue=use_backup_root
+
+Old options are still available for compatibility purpose, but they are
+deprecated in favor of new 'rescue=' super option.
+
+Also different rescue sub options can be separated by ':', like:
+"rescue=no_log_replay:skip_bg:use_backup_root".
+
+The separation character is chosen by:
+- No conflicts with existing character
+  Especially no conflict with ','.
+
+- No extra escaping/quota
+  Original plan is ';', but since it'll be interpreted by bash, it's
+  changed to current ':'.
+
+Changelog:
+v2:
+- Introduce 'rescue=' super option.
+- Rename original 'usebackuproot' and 'nologreplay'.
+  It at least makes my vim spell check happier.
+- Remove 'recovery' mount option.
+  As its successor is now deprecated, not need to keep the predecessor.
+
+Qu Wenruo (3):
+  btrfs: Remove "recovery" mount option
+  btrfs: Introduce "rescue=" mount option
+  btrfs: Introduce new mount option to skip block group items scan
+
+ fs/btrfs/ctree.h       |  1 +
+ fs/btrfs/disk-io.c     | 29 +++++++++++--
+ fs/btrfs/extent-tree.c | 59 ++++++++++++++++++++++++++
+ fs/btrfs/super.c       | 96 ++++++++++++++++++++++++++++++++++++------
+ fs/btrfs/volumes.c     |  7 +++
+ 5 files changed, 176 insertions(+), 16 deletions(-)
 
 -- 
-Deet-doot-dot, I am a bot.
-https://korg.wiki.kernel.org/userdoc/prtracker
+2.20.1
+

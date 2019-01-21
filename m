@@ -2,97 +2,172 @@ Return-Path: <SRS0=2FmH=P5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=unavailable autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 80136C282F6
-	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Jan 2019 09:43:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 76EF6C7113B
+	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Jan 2019 12:25:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5489E2085A
-	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Jan 2019 09:43:40 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4DA182084A
+	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Jan 2019 12:25:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728299AbfAUJn1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 21 Jan 2019 04:43:27 -0500
-Received: from mail-pf1-f195.google.com ([209.85.210.195]:36464 "EHLO
-        mail-pf1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726872AbfAUJnZ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 Jan 2019 04:43:25 -0500
-Received: by mail-pf1-f195.google.com with SMTP id b85so9885740pfc.3;
-        Mon, 21 Jan 2019 01:43:24 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=ctU1IKwGbIHB/qxu9fzPzOndQlgD5hRgjY4uIUshvTY=;
-        b=ZK+UNms6mWgpgYjstaV6ModqemMUmQxaMqmV75D1o0PWBNhJ1ERHGGBTg05ZaCgJ1z
-         PPWFV/dVoSiGzmWP0syRm0T+UT00+K66DhbfI80VhqDokvLpAMT+40s8LHYAeKj5Dlwb
-         RR2xmxUmnl45nZVuH0dvvPyLQ6nTUpjetwyNH8w6rTniN+bD8dGM1Mkf30t6d1UCXdcG
-         b/2Vsx/XL7yP7IOPi6/a0qBSb9tEVLGXQGxFdRVRrs23Hyg8ZpjLX7zC0blpxqTvgD53
-         5W60hYH3cqML5PuhrQrJr0l/5hpiPDhNescn+1qH+xweircgonV5DhJbmpdLNiVaMlyQ
-         FEZg==
-X-Gm-Message-State: AJcUukdE5XGmtUfansUIM42/82WAyX9/ByrDfNORjQyGxuP5EJ4Bwv/E
-        IEbW5diaW8azqW4naizolXs=
-X-Google-Smtp-Source: ALg8bN6P7/Ncr76xD/uxTtsl2LRvnNdrOYt8IlcTvDVHidHRO2no14YHVCiCcwzatwkiVv+sBDrECA==
-X-Received: by 2002:a62:5b83:: with SMTP id p125mr29320606pfb.116.1548063803783;
-        Mon, 21 Jan 2019 01:43:23 -0800 (PST)
-Received: from ?IPv6:2601:647:4800:973f:749d:e9f0:491e:d7d5? ([2601:647:4800:973f:749d:e9f0:491e:d7d5])
-        by smtp.gmail.com with ESMTPSA id m198sm21820819pga.10.2019.01.21.01.43.22
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Mon, 21 Jan 2019 01:43:23 -0800 (PST)
-Subject: Re: [PATCH V14 00/18] block: support multi-page bvec
-To:     Ming Lei <ming.lei@redhat.com>, Jens Axboe <axboe@kernel.dk>
-Cc:     linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-mm@kvack.org, Theodore Ts'o <tytso@mit.edu>,
-        Omar Sandoval <osandov@fb.com>,
-        Dave Chinner <dchinner@redhat.com>,
-        Kent Overstreet <kent.overstreet@gmail.com>,
-        Mike Snitzer <snitzer@redhat.com>, dm-devel@redhat.com,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        linux-fsdevel@vger.kernel.org, linux-raid@vger.kernel.org,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        "Darrick J . Wong" <darrick.wong@oracle.com>,
-        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
-        Christoph Hellwig <hch@lst.de>, linux-ext4@vger.kernel.org,
-        Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
-        Boaz Harrosh <ooo@electrozaur.com>,
-        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
-References: <20190121081805.32727-1-ming.lei@redhat.com>
-From:   Sagi Grimberg <sagi@grimberg.me>
-Message-ID: <61dfaa1e-e7bf-75f1-410b-ed32f97d0782@grimberg.me>
-Date:   Mon, 21 Jan 2019 01:43:21 -0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+        id S1728457AbfAUMZu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 21 Jan 2019 07:25:50 -0500
+Received: from bang.steev.me.uk ([81.2.120.65]:56807 "EHLO smtp.steev.me.uk"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727926AbfAUMZu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 21 Jan 2019 07:25:50 -0500
+X-Greylist: delayed 1777 seconds by postgrey-1.27 at vger.kernel.org; Mon, 21 Jan 2019 07:25:50 EST
+Received: from localhost ([::1] helo=webmail.steev.me.uk)
+        by smtp.steev.me.uk with esmtp (Exim 4.91)
+        id 1glYBY-0001mE-6N
+        for linux-btrfs@vger.kernel.org; Mon, 21 Jan 2019 11:56:12 +0000
 MIME-Version: 1.0
-In-Reply-To: <20190121081805.32727-1-ming.lei@redhat.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
 Content-Transfer-Encoding: 7bit
+Date:   Mon, 21 Jan 2019 11:56:12 +0000
+From:   Steven Davies <btrfs-list@steev.me.uk>
+To:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 2/3] btrfs: add read_mirror_policy parameter devid
+In-Reply-To: <20180516100359.7752-3-anand.jain@oracle.com>
+References: <20180516100359.7752-1-anand.jain@oracle.com>
+ <20180516100359.7752-3-anand.jain@oracle.com>
+Message-ID: <443d1af2948306c1f776baaa227272ae@steev.me.uk>
+X-Sender: btrfs-list@steev.me.uk
+User-Agent: Roundcube Webmail/1.3.8
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On 2018-05-16 11:03, Anand Jain wrote:
 
-> V14:
-> 	- drop patch(patch 4 in V13) for renaming bvec helpers, as suggested by Jens
-> 	- use mp_bvec_* as multi-page bvec helper name
-> 	- fix one build issue, which is caused by missing one converion of
-> 	bio_for_each_segment_all in fs/gfs2
-> 	- fix one 32bit ARCH specific issue caused by segment boundary mask
-> 	overflow
+Going back to an old patchset I was testing this weekend:
 
-Hey Ming,
+> Adds the mount option:
+>   mount -o read_mirror_policy=<devid>
+> 
+> To set the devid of the device which should be used for read. That
+> means all the normal reads will go to that particular device only.
+> 
+> This also helps testing and gives a better control for the test
+> scripts including mount context reads.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Tested-By: Steven Davies <btrfs-list@steev.me.uk>
 
-So is nvme-tcp also affected here? The only point where I see nvme-tcp
-can be affected is when initializing a bvec iter using bio_segments() as
-everywhere else we use iters which should transparently work..
+> ---
+>  fs/btrfs/super.c   | 21 +++++++++++++++++++++
+>  fs/btrfs/volumes.c | 10 ++++++++++
+>  fs/btrfs/volumes.h |  2 ++
+>  3 files changed, 33 insertions(+)
+> 
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 21eff0ac1e4f..7ddecf4178a6 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -852,6 +852,27 @@ int btrfs_parse_options(struct btrfs_fs_info
+> *info, char *options,
+>  					BTRFS_READ_MIRROR_BY_PID;
+>  				break;
+>  			}
+> +
+> +			intarg = 0;
+> +			if (match_int(&args[0], &intarg) == 0) {
+> +				struct btrfs_device *device;
+> +
+> +				device = btrfs_find_device(info, intarg,
+> +							   NULL, NULL);
+> +				if (!device) {
+> +					btrfs_err(info,
+> +					  "read_mirror_policy: invalid devid %d",
+> +					  intarg);
+> +					ret = -EINVAL;
+> +					goto out;
+> +				}
+> +				info->read_mirror_policy =
+> +						BTRFS_READ_MIRROR_BY_DEV;
+> +				set_bit(BTRFS_DEV_STATE_READ_MIRROR,
+> +					&device->dev_state);
 
-I see that loop was converted, does it mean that nvme-tcp needs to
-call something like?
---
-	bio_for_each_mp_bvec(bv, bio, iter)
-		nr_bvecs++;
---
+Not an expert, but might this be overwritten with another state? e.g. 
+BTRFS_DEV_STATE_REPLACE_TGT. The device would then lose its READ_MIRROR 
+flag and the fs would always use the first device for reading.
+
+> +				break;
+> +			}
+
+I noticed that it's possible to pass this option multiple times at 
+mount, which sets multiple devices as read mirrors. While that doesn't 
+do anything harmful, the code below will only use the first device. It 
+may be worth at least mentioning this in documentation.
+
+> +
+>  			ret = -EINVAL;
+>  			goto out;
+>  		case Opt_err:
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 64dba5c4cf33..3a9c3804ff17 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -5220,6 +5220,16 @@ static int find_live_mirror(struct
+> btrfs_fs_info *fs_info,
+>  		num_stripes = map->num_stripes;
+> 
+>  	switch(fs_info->read_mirror_policy) {
+> +	case BTRFS_READ_MIRROR_BY_DEV:
+> +		preferred_mirror = first;
+> +		if (test_bit(BTRFS_DEV_STATE_READ_MIRROR,
+> +			     &map->stripes[preferred_mirror].dev->dev_state))
+> +			break;
+> +		if (test_bit(BTRFS_DEV_STATE_READ_MIRROR,
+> +			     &map->stripes[++preferred_mirror].dev->dev_state))
+> +			break;
+> +		preferred_mirror = first;
+
+Why set preferred_mirror again? The only effect of re-setting it will be 
+to use the lowest devid (1) rather than the highest (2). Is there any 
+difference? Either way it should never happen, because the above code 
+traps it (except when the BTRFS_DEV_STATE_READ_MIRROR flag has been 
+changed as mentioned above).
+
+ From Goffredo's comment[1] on Timofey's similar effect patch, if it 
+becomes possible to have more mirrors in a RAID1/RAID10 fs then this 
+code will need to be updated to test dev_state for more than two 
+devices. Would it be sensible to implement this as a for loop straight 
+away?
+
+> +		break;
+>  	case BTRFS_READ_MIRROR_DEFAULT:
+>  	case BTRFS_READ_MIRROR_BY_PID:
+>  	default:
+> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+> index 953df9925832..55b2eebbf183 100644
+> --- a/fs/btrfs/volumes.h
+> +++ b/fs/btrfs/volumes.h
+> @@ -37,6 +37,7 @@ struct btrfs_pending_bios {
+>  enum btrfs_read_mirror_type {
+>  	BTRFS_READ_MIRROR_DEFAULT,
+>  	BTRFS_READ_MIRROR_BY_PID,
+> +	BTRFS_READ_MIRROR_BY_DEV,
+>  };
+> 
+>  #define BTRFS_DEV_STATE_WRITEABLE	(0)
+> @@ -44,6 +45,7 @@ enum btrfs_read_mirror_type {
+>  #define BTRFS_DEV_STATE_MISSING		(2)
+>  #define BTRFS_DEV_STATE_REPLACE_TGT	(3)
+>  #define BTRFS_DEV_STATE_FLUSH_SENT	(4)
+> +#define BTRFS_DEV_STATE_READ_MIRROR	(5)
+> 
+>  struct btrfs_device {
+>  	struct list_head dev_list;
+
+Happy to add Tested-By on patch 1/3 too, but I haven't looked at 3/3 
+yet.
+
+[1]: https://patchwork.kernel.org/patch/10678531/#22315779
+
+-- 
+Steven Davies

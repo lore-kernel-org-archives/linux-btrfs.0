@@ -6,27 +6,27 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 86D1EC282DE
-	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Jan 2019 07:35:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A8147C282DB
+	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Jan 2019 07:35:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 589ED20989
-	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Jan 2019 07:35:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 85DCC20989
+	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Jan 2019 07:35:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728721AbfAUHfV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 21 Jan 2019 02:35:21 -0500
-Received: from mx2.suse.de ([195.135.220.15]:58306 "EHLO mx1.suse.de"
+        id S1728511AbfAUHfY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 21 Jan 2019 02:35:24 -0500
+Received: from mx2.suse.de ([195.135.220.15]:58360 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728710AbfAUHfU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 Jan 2019 02:35:20 -0500
+        id S1728476AbfAUHfX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 21 Jan 2019 02:35:23 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id E1A16AD6F
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Jan 2019 07:35:19 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id B655FAD6F
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Jan 2019 07:35:21 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 1/3] btrfs: Remove "recovery" mount option
-Date:   Mon, 21 Jan 2019 15:35:10 +0800
-Message-Id: <20190121073512.17675-2-wqu@suse.com>
+Subject: [PATCH v2 2/3] btrfs: Introduce "rescue=" mount option
+Date:   Mon, 21 Jan 2019 15:35:11 +0800
+Message-Id: <20190121073512.17675-3-wqu@suse.com>
 X-Mailer: git-send-email 2.20.1
 In-Reply-To: <20190121073512.17675-1-wqu@suse.com>
 References: <20190121073512.17675-1-wqu@suse.com>
@@ -37,73 +37,162 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Commit 8dcddfa048de ("btrfs: Introduce new mount option usebackuproot to
-replace recovery") deprecates "recovery" mount option in 2016, and it
-has been 3 years, it should be OK to remove "recovery" mount option.
+This patch introduces a new "rescue=" mount option for all those mount
+options for data recovery.
 
-As we're even going to deprecate the successor, "usebackuproot" mount
-option, there isn't really much need to keep the original option.
+Different rescue sub options are seperated by ':'.
+(The original plan is to use ';', but ';' needs to be escaped/quoted,
+or it will be interpreted by bash)
+
+The following mount options are converted to "rescue=", old mount
+options are deprecated but still available for compatibility purpose:
+
+- usebackuproot
+  Now it's "rescue=use_backup_root"
+
+- nologreplay
+  Now it's "rescue=no_log_replay"
+
+The new underscore is here to make the option more readable and make
+spell check happier.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/super.c | 9 ---------
- 1 file changed, 9 deletions(-)
+ fs/btrfs/super.c | 65 +++++++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 62 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index c5586ffd1426..6a08f23e5600 100644
+index 6a08f23e5600..0fb251e7bf5b 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -311,7 +311,6 @@ enum {
+@@ -310,7 +310,6 @@ enum {
+ 	Opt_datasum, Opt_nodatasum,
  	Opt_defrag, Opt_nodefrag,
  	Opt_discard, Opt_nodiscard,
- 	Opt_nologreplay,
--	Opt_norecovery,
+-	Opt_nologreplay,
  	Opt_ratio,
  	Opt_rescan_uuid_tree,
  	Opt_skip_balance,
-@@ -329,7 +328,6 @@ enum {
+@@ -323,7 +322,6 @@ enum {
+ 	Opt_subvolid,
+ 	Opt_thread_pool,
+ 	Opt_treelog, Opt_notreelog,
+-	Opt_usebackuproot,
+ 	Opt_user_subvol_rm_allowed,
  
  	/* Deprecated options */
- 	Opt_alloc_start,
--	Opt_recovery,
- 	Opt_subvolrootid,
+@@ -341,6 +339,8 @@ enum {
+ #ifdef CONFIG_BTRFS_FS_REF_VERIFY
+ 	Opt_ref_verify,
+ #endif
++	/* Rescue options */
++	Opt_rescue, Opt_usebackuproot, Opt_nologreplay,
+ 	Opt_err,
+ };
  
- 	/* Debugging options */
-@@ -374,7 +372,6 @@ static const match_table_t tokens = {
- 	{Opt_discard, "discard"},
- 	{Opt_nodiscard, "nodiscard"},
- 	{Opt_nologreplay, "nologreplay"},
--	{Opt_norecovery, "norecovery"},
- 	{Opt_ratio, "metadata_ratio=%u"},
- 	{Opt_rescan_uuid_tree, "rescan_uuid_tree"},
- 	{Opt_skip_balance, "skip_balance"},
-@@ -396,7 +393,6 @@ static const match_table_t tokens = {
+@@ -401,6 +401,7 @@ static const match_table_t tokens = {
+ 	{Opt_check_integrity_print_mask, "check_int_print_mask=%u"},
+ 	{Opt_enospc_debug, "enospc_debug"},
+ 	{Opt_noenospc_debug, "noenospc_debug"},
++	{Opt_rescue, "rescue=%s"},
+ #ifdef CONFIG_BTRFS_DEBUG
+ 	{Opt_fragment_data, "fragment=data"},
+ 	{Opt_fragment_metadata, "fragment=metadata"},
+@@ -412,6 +413,55 @@ static const match_table_t tokens = {
+ 	{Opt_err, NULL},
+ };
  
- 	/* Deprecated options */
- 	{Opt_alloc_start, "alloc_start=%s"},
--	{Opt_recovery, "recovery"},
- 	{Opt_subvolrootid, "subvolrootid=%d"},
- 
- 	/* Debugging options */
-@@ -664,7 +660,6 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
- 			btrfs_clear_and_info(info, NOTREELOG,
++static const match_table_t rescue_tokens = {
++	{Opt_usebackuproot, "use_backup_root"},
++	{Opt_nologreplay, "no_log_replay"},
++	{Opt_err, NULL},
++};
++
++static int parse_rescue_options(struct btrfs_fs_info *info, const char *options)
++{
++	char *opts;
++	char *orig;
++	char *p;
++	substring_t args[MAX_OPT_ARGS];
++	int ret = 0;
++
++	opts = kstrdup(options, GFP_KERNEL);
++	if (!opts)
++		return -ENOMEM;
++	orig = opts;
++
++	while ((p = strsep(&opts, ":")) != NULL) {
++		int token;
++
++		if (!*p)
++			continue;
++		token = match_token(p, rescue_tokens, args);
++		switch (token){
++		case Opt_usebackuproot:
++			btrfs_info(info,
++				   "trying to use backup root at mount time");
++			btrfs_set_opt(info->mount_opt, USEBACKUPROOT);
++			break;
++		case Opt_nologreplay:
++			btrfs_set_and_info(info, NOLOGREPLAY,
++					   "disabling log replay at mount time");
++			break;
++		case Opt_err:
++			btrfs_info(info, "unrecognized rescue option '%s'", p);
++			ret = -EINVAL;
++			goto out;
++		default:
++			break;
++		}
++
++	}
++out:
++	kfree(orig);
++	return ret;
++}
++
+ /*
+  * Regular mount options parser.  Everything that is needed only when
+  * reading in a new superblock is parsed here.
+@@ -661,6 +711,8 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
  					     "enabling tree log");
  			break;
--		case Opt_norecovery:
  		case Opt_nologreplay:
++			btrfs_warn(info,
++	"'nologreplay' is deprecated, use 'rescue=no_log_replay' instead");
  			btrfs_set_and_info(info, NOLOGREPLAY,
  					   "disabling log replay at mount time");
-@@ -753,10 +748,6 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
- 			btrfs_clear_and_info(info, AUTO_DEFRAG,
+ 			break;
+@@ -749,6 +801,8 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
  					     "disabling auto defrag");
  			break;
--		case Opt_recovery:
--			btrfs_warn(info,
--				   "'recovery' is deprecated, use 'usebackuproot' instead");
--			/* fall through */
  		case Opt_usebackuproot:
++			btrfs_warn(info,
++	"'usebackuproot' is deprecated, use 'rescue=use_backup_root' instead");
  			btrfs_info(info,
  				   "trying to use backup root at mount time");
+ 			btrfs_set_opt(info->mount_opt, USEBACKUPROOT);
+@@ -835,6 +889,11 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+ 			btrfs_set_opt(info->mount_opt, REF_VERIFY);
+ 			break;
+ #endif
++		case Opt_rescue:
++			ret = parse_rescue_options(info, args[0].from);
++			if (ret < 0)
++				goto out;
++			break;
+ 		case Opt_err:
+ 			btrfs_info(info, "unrecognized mount option '%s'", p);
+ 			ret = -EINVAL;
+@@ -1301,7 +1360,7 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+ 	if (btrfs_test_opt(info, NOTREELOG))
+ 		seq_puts(seq, ",notreelog");
+ 	if (btrfs_test_opt(info, NOLOGREPLAY))
+-		seq_puts(seq, ",nologreplay");
++		seq_puts(seq, ",rescue=no_log_replay");
+ 	if (btrfs_test_opt(info, FLUSHONCOMMIT))
+ 		seq_puts(seq, ",flushoncommit");
+ 	if (btrfs_test_opt(info, DISCARD))
 -- 
 2.20.1
 

@@ -2,128 +2,126 @@ Return-Path: <SRS0=kIOr=P6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A9BC7C282C4
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Jan 2019 14:28:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E11F7C282C3
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Jan 2019 15:10:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8501E21721
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Jan 2019 14:28:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 878EE20879
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Jan 2019 15:10:08 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=virtall.com header.i=@virtall.com header.b="ZOW8DbLZ"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728655AbfAVO2z (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 22 Jan 2019 09:28:55 -0500
-Received: from bang.steev.me.uk ([81.2.120.65]:59271 "EHLO smtp.steev.me.uk"
+        id S1729213AbfAVPKH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 22 Jan 2019 10:10:07 -0500
+Received: from mail.virtall.com ([46.4.129.203]:36932 "EHLO mail.virtall.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728615AbfAVO2z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Jan 2019 09:28:55 -0500
-Received: from localhost ([::1] helo=webmail.steev.me.uk)
-        by smtp.steev.me.uk with esmtp (Exim 4.91)
-        id 1glx2r-00058u-C4; Tue, 22 Jan 2019 14:28:53 +0000
+        id S1728959AbfAVPKH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 Jan 2019 10:10:07 -0500
+Received: from mail.virtall.com (localhost [127.0.0.1])
+        by mail.virtall.com (Postfix) with ESMTP id E838758D5AF
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Jan 2019 15:10:01 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=virtall.com;
+        s=default; t=1548169804;
+        bh=f5upkb1Nq096W0nAWRp3u6b/mjIgk4aS6yqh+XV+oUk=;
+        h=Date:From:To:Subject;
+        b=ZOW8DbLZSHlxz/XacuMXD9x6XIEFGgLi64oIdWyuDAlIsO6XqCEhsheuJrGCtTtm+
+         FoQOpchjrLc9rPXgf4FFduAKbiCWdLmAV+vGta/C0win/FldcMTZ9T82rfG5XvjOty
+         A92dMPLClGqbmwCgolLWGmqBEdeFaOczvIk1s8x+4y/LFiMRAlglzDeyBc6Svl1J6z
+         BVVpv0/FQGrCQR7KEWHpIgDXJiZ2eBRXo8yY+B42dKjQgD1O9Ksya7Y/6Kgn79CzVr
+         BFB/3ZbsNWbhUryurfdbUP5FdD4AgwqaeI9mRLe6SPnRufKG3ffhMyIe1UifhzWqPH
+         TLFrK6aSoLAcg==
+X-Fuglu-Suspect: 4feb3ddb409c4826b657503f0c3a6810
+X-Fuglu-Spamstatus: NO
+Received: from localhost (localhost [127.0.0.1]) (Authenticated sender: tch@virtall.com)
+        by mail.virtall.com (Postfix) with ESMTPSA
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Jan 2019 15:10:01 +0000 (UTC)
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8;
  format=flowed
-Content-Transfer-Encoding: 8bit
-Date:   Tue, 22 Jan 2019 14:28:53 +0000
-From:   Steven Davies <btrfs-list@steev.me.uk>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 2/3] btrfs: add read_mirror_policy parameter devid
-In-Reply-To: <24ea40ca-5216-fbe4-2b4b-64da7d8a89fa@oracle.com>
-References: <20180516100359.7752-1-anand.jain@oracle.com>
- <20180516100359.7752-3-anand.jain@oracle.com>
- <443d1af2948306c1f776baaa227272ae@steev.me.uk>
- <24ea40ca-5216-fbe4-2b4b-64da7d8a89fa@oracle.com>
-Message-ID: <5e35fc5da89e1722caf261f89679d039@steev.me.uk>
-X-Sender: btrfs-list@steev.me.uk
-User-Agent: Roundcube Webmail/1.3.8
+Content-Transfer-Encoding: 7bit
+Date:   Wed, 23 Jan 2019 00:09:58 +0900
+From:   Tomasz Chmielewski <tch@virtall.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: 2 enospc errors during balance, with some 20+ TB free space
+Message-ID: <24531c3802606e0a3bdfc4737697dcb1@virtall.com>
+X-Sender: tch@virtall.com
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 2019-01-22 13:43, Anand Jain wrote:
-> On 01/21/2019 07:56 PM, Steven Davies wrote:
->> On 2018-05-16 11:03, Anand Jain wrote:
+Tried to run metadata-only balance a btrfs filesystem with RAID-10 
+metadata to RAID-1 metadata, it failed with "No space left on device".
+Seriously, 20 TB of free disk space is not enough to convert some 25 GB 
+of metadata to a different format? O_o
 
->>> +                break;
->>> +            }
->> 
->> I noticed that it's possible to pass this option multiple times at 
->> mount, which sets multiple devices as read mirrors. While that doesn't 
->> do anything harmful, the code below will only use the first device. It 
->> may be worth at least mentioning this in documentation.
-> 
->  There were few feedback if read_mirror_policy should be a mount
->  option or a sysfs or a property. IMO property is better as it would
->  be persistent. In sysfs and mount-option, the user or a config file
->  has to remember. Will fix.
+Kernel is 4.18.20.
 
-I agree. Would/could this be set at mkfs time? It would then be similar 
-to how mdadm's --write-mostly is set up.
 
->>> +
->>>              ret = -EINVAL;
->>>              goto out;
->>>          case Opt_err:
->>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->>> index 64dba5c4cf33..3a9c3804ff17 100644
->>> --- a/fs/btrfs/volumes.c
->>> +++ b/fs/btrfs/volumes.c
->>> @@ -5220,6 +5220,16 @@ static int find_live_mirror(struct
->>> btrfs_fs_info *fs_info,
->>>          num_stripes = map->num_stripes;
->>> 
->>>      switch(fs_info->read_mirror_policy) {
->>> +    case BTRFS_READ_MIRROR_BY_DEV:
->>> +        preferred_mirror = first;
->>> +        if (test_bit(BTRFS_DEV_STATE_READ_MIRROR,
->>> +                 &map->stripes[preferred_mirror].dev->dev_state))
->>> +            break;
->>> +        if (test_bit(BTRFS_DEV_STATE_READ_MIRROR,
->>> +                 &map->stripes[++preferred_mirror].dev->dev_state)) 
->>> <--[*]
->>> +            break;
->>> +        preferred_mirror = first;
->> 
->> Why set preferred_mirror again? The only effect of re-setting it will 
->> be to use the lowest devid (1) rather than the highest (2). Is there 
->> any difference? Either way it should never happen, because the above 
->> code traps it (except when the BTRFS_DEV_STATE_READ_MIRROR flag has 
->> been changed as mentioned above).
-> 
->  Code at [*] above does ++preferred_mirror. So the following
->    preferred_mirror = first;
->  is not redundant.
+# time btrfs balance start -mconvert=raid1 /data
+ERROR: error during balancing '/data': No space left on device
+There may be more info in syslog - try dmesg | tail
 
-Yes, but preferred_mirror will be first + num_stripes; meaning that 
-without that line the last stripe is preferred and with it the first 
-stripe is preferred. It only changes the fallback case from reading from 
-devid 2 to devid 1, which barely matters. Perhaps it would be even 
-better to fall back to pid % num_stripes in this case anyway?
+real    663m37.901s
+user    0m0.000s
+sys     6m36.804s
 
->>  From Goffredo's comment[1] on Timofey's similar effect patch, if it 
->> becomes possible to have more mirrors in a RAID1/RAID10 fs then this 
->> code will need to be updated to test dev_state for more than two 
->> devices. Would it be sensible to implement this as a for loop straight 
->> away?
-> 
->  Right. A loop is better, will add.
 
-Thinking more about this, if it becomes possible to have more than two 
-devices in a RAID1 or part-RAID10 then do we also need to consider that 
-there may be more than one READ_MIRROR drive? e.g. slow+fast+fast drives 
-in a RAID1 with this approach would result in all chunks being read from 
-the first drive with READ_MIRROR set if both chunks are on the fast 
-drives. This is where Timofey's queue length patch in [1] would become 
-useful - in any case, that is an existing problem and probably deserving 
-of an entirely new patch.
+In dmesg:
 
->> [1]: https://patchwork.kernel.org/patch/10678531/#22315779
-> 
-> 
->  Thanks,
-> Anand.
+[4020028.680326] BTRFS info (device sda2): found 62605 extents
+[4020093.430147] BTRFS info (device sda2): relocating block group 
+4778521264128 flags system|raid10
+[4020286.363882] BTRFS info (device sda2): found 35 extents
+[4020292.904640] BTRFS info (device sda2): 2 enospc errors during 
+balance
 
-Steve
+
+# btrfs fi usage /data
+WARNING: RAID56 detected, not implemented
+Overall:
+     Device size:                  35.80TiB
+     Device allocated:             48.06GiB
+     Device unallocated:           35.75TiB
+     Device missing:                  0.00B
+     Used:                         33.61GiB
+     Free (estimated):                0.00B      (min: 8.00EiB)
+     Data ratio:                       0.00
+     Metadata ratio:                   2.00
+     Global reserve:              512.00MiB      (used: 0.00B)
+
+Data,RAID5: Size:6.71TiB, Used:6.33TiB
+    /dev/sda2       2.24TiB
+    /dev/sdb2       2.24TiB
+    /dev/sdc2       2.24TiB
+    /dev/sdd2       2.24TiB
+
+Metadata,RAID1: Size:22.00GiB, Used:14.92GiB
+    /dev/sda2      11.00GiB
+    /dev/sdb2      11.00GiB
+    /dev/sdc2      11.00GiB
+    /dev/sdd2      11.00GiB
+
+Metadata,RAID10: Size:2.00GiB, Used:1.88GiB
+    /dev/sda2       1.00GiB
+    /dev/sdb2       1.00GiB
+    /dev/sdc2       1.00GiB
+    /dev/sdd2       1.00GiB
+
+System,RAID1: Size:32.00MiB, Used:592.00KiB
+    /dev/sdb2      32.00MiB
+    /dev/sdc2      32.00MiB
+
+Unallocated:
+    /dev/sda2       6.70TiB
+    /dev/sdb2       6.70TiB
+    /dev/sdc2       6.70TiB
+    /dev/sdd2       6.70TiB
+
+
+# df -h /data
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda2        36T  6.4T   28T  19% /data

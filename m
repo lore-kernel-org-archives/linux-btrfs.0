@@ -2,180 +2,170 @@ Return-Path: <SRS0=kIOr=P6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
-	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DF4FDC282C3
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Jan 2019 04:54:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 590D2C282C3
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Jan 2019 06:07:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A6BF820861
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Jan 2019 04:54:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C52DB20870
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Jan 2019 06:07:56 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="ccg2b9h6"
+	dkim=pass (2048-bit key) header.d=georgianit.com header.i=@georgianit.com header.b="bhiYs8dx";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="BsnhheOC"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726920AbfAVEye (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 21 Jan 2019 23:54:34 -0500
-Received: from mail-lf1-f44.google.com ([209.85.167.44]:39431 "EHLO
-        mail-lf1-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726872AbfAVEye (ORCPT
+        id S1726029AbfAVGHz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 22 Jan 2019 01:07:55 -0500
+Received: from out5-smtp.messagingengine.com ([66.111.4.29]:56853 "EHLO
+        out5-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1725862AbfAVGHz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 Jan 2019 23:54:34 -0500
-Received: by mail-lf1-f44.google.com with SMTP id n18so17073715lfh.6
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Jan 2019 20:54:32 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc:content-transfer-encoding;
-        bh=CYznHYxl+A2o3FehfC2M6S/ZZC4D0h8N2abcj/POc6g=;
-        b=ccg2b9h68cvC+l7rBJtlDdG2kJPvJpukMD85LfoSTs/Lvz/QMAPOoYl6MHIuLLpriA
-         8765hpeLws4t1Wk6mXYzShBtbMO6SRcwi5d93RjkBDKcYQKooLYVcIE725vpx++VBtez
-         U4ce8W8aO7UBYFUIaHNbOEPW+4zk0sgsZfVZCMpaHlTuJ+rTgPvJ3jnGuEFYXB4FhXQK
-         7KnSrRNb/B50EqhUOrwNZ2lmIfnr1DfsgwUCfkK8dCErewXGcjtj6OLvs2MQCDO/pP1n
-         vr+Y6UsdPqP+KCha/qPEyniDZS+V9IQNm8rfgm2gRoSHQ+MAF4vlqE5kvNVj06jnVhsJ
-         UwNA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc:content-transfer-encoding;
-        bh=CYznHYxl+A2o3FehfC2M6S/ZZC4D0h8N2abcj/POc6g=;
-        b=FcowmoKEJEqnwi4BSugt7pZJxjtUenhsugE/Iqdw2B4j/FUJnVO2RBajVdK0z3EIcO
-         HlpQXQonObRFD+JqhuYy3ay6rKYcPt2tGl1QCBef9Sum7iDyQ+f279Bi0sEog9UTMEpC
-         C/W0yNLSePHOwXFJBXI8gjypAfN3Rt6JbF4C6ucQ/784DICbO2VIUqZIbTldyMOmN2zo
-         WkSCvYcwnN+Y/oMLj5LC9q1nkwyWFQ1mbToYZl2TPF7FjrRvsUxomofObcboiIYtcG0K
-         jn8v4iL85zMDsOT4te9Umuzfhkw4x5yP7IGnz2yj2LPI9y+S9G73Q9915nwPUacMN8cV
-         5bVg==
-X-Gm-Message-State: AJcUukcCDmrMdkqKpaAKkN/ERgsul+JegeCcGeYbS9DcA4Z3Rvr/SMWl
-        ow0lEtW4nDx988kjziwvxfovbs0RMj1jDiqCHqUq7PC1zBk=
-X-Google-Smtp-Source: ALg8bN4Wu5HZ01dmvhc41/LV5UOqA8O1953yswnSRklcqfsOSJl0ClJ8ScLx1qbKrUEUGejSDxTqo63VLWskna9UjyY=
-X-Received: by 2002:a19:e01e:: with SMTP id x30mr19094731lfg.89.1548132871327;
- Mon, 21 Jan 2019 20:54:31 -0800 (PST)
-MIME-Version: 1.0
-References: <110c46c8-6fe9-84ea-0f4e-8269fd8000ed@netspace.net.au> <CAJCQCtSOBcK=MXLUFVZk6YCrFx60UEH7PgOtPYbcRkfjG0XDyQ@mail.gmail.com>
-In-Reply-To: <CAJCQCtSOBcK=MXLUFVZk6YCrFx60UEH7PgOtPYbcRkfjG0XDyQ@mail.gmail.com>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Mon, 21 Jan 2019 21:54:19 -0700
-Message-ID: <CAJCQCtScPtJ=agTJbunPG9GT4hQg5VQWMOEM_JAyLseNKraqNw@mail.gmail.com>
+        Tue, 22 Jan 2019 01:07:55 -0500
+X-Greylist: delayed 460 seconds by postgrey-1.27 at vger.kernel.org; Tue, 22 Jan 2019 01:07:54 EST
+Received: from compute2.internal (compute2.nyi.internal [10.202.2.42])
+        by mailout.nyi.internal (Postfix) with ESMTP id 66716210F5;
+        Tue, 22 Jan 2019 01:00:14 -0500 (EST)
+Received: from mailfrontend1 ([10.202.2.162])
+  by compute2.internal (MEProxy); Tue, 22 Jan 2019 01:00:14 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=georgianit.com;
+         h=from:subject:to:references:cc:message-id:date:mime-version
+        :in-reply-to:content-type; s=fm2; bh=jVT/3d0oKzbqkiNOL/gPezJ1FlJ
+        ra6bzqiIcrnF+bFc=; b=bhiYs8dxejhowj1Moa1VNpOyZgKIOiHOAPIa/RFaVur
+        9lo476fDFVJ+d7n2nc98sm00nwpxsyjzRZ7gMRUoyTlpDOJ5p4QhSa8RYGhYQjBJ
+        2ifk3+3xE9SsGNp8+U6dOiFBUzcSfoLzH4dULs9icOXOTcBT8022wtKy/5VsrZQl
+        tuvdxqVvp/AyxxlHraV5jKnBL53wAqTRigfzrKrV1q/gZipRBAHV6VxYh9n2MPON
+        mUlM08yIMiMR7YH2UvGu0gU7+WXBEiBf2GArDorD+AJj+SxyMgtW3sTTI3wlvNTi
+        rftW7igauMRK15/2FTgcnf7tpvODa+W+2sXxkEuKrEA==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:content-type:date:from:in-reply-to
+        :message-id:mime-version:references:subject:to:x-me-proxy
+        :x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; bh=jVT/3d
+        0oKzbqkiNOL/gPezJ1FlJra6bzqiIcrnF+bFc=; b=BsnhheOCZxgyDeg9dWkV+P
+        C6XovhctpTRqU/cbFGZ2NRzN+Q1/uxxRWD6mzZXcF6DRI7I0py4vwXh+BVHoE7jp
+        YBOfdQ427oPgelRjO0slLmnXn22cY25KuRUH6sqBNAhk5H1HctTpP2ijW+biVF3t
+        4KG6rZv4RToY/mb+BdnCYQUokib121l0Ke1rsc5DKOC7g8lve8oh108Wz4V0liqT
+        doSuL6zFsOKMDBCQzO5Q+rYjWLHWvnqvbqsG6lvucsUdwIqCgn6QJKQPaNTl8X9L
+        UfNEtrwwlr98TMc2KYp4elouSW83weLXgouCOuAf8L6PnAIjXznUGS39mfqPi3Fw
+        ==
+X-ME-Sender: <xms:brFGXO053hvppV0PSWRsXfALuLUiVl8zOyefBvpDQoO5DRxTum3VUA>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedtledrheejgdeludcutefuodetggdotefrodftvf
+    curfhrohhfihhlvgemucfhrghsthforghilhdpqfhuthenuceurghilhhouhhtmecufedt
+    tdenucenucfjughrpefhuffvfhfkffgfgggjtgesghdtrefotdefjeenucfhrhhomheptf
+    gvmhhiucfirghuvhhinhcuoehrvghmihesghgvohhrghhirghnihhtrdgtohhmqeenucfk
+    phepudefhedrvdefrddvgeeirddufedunecurfgrrhgrmhepmhgrihhlfhhrohhmpehrvg
+    hmihesghgvohhrghhirghnihhtrdgtohhmnecuvehluhhsthgvrhfuihiivgeptd
+X-ME-Proxy: <xmx:brFGXDhSbqbpx1ZwWaQOE05SRKkf21NglmgCbo-yRiW88ZKIVq_VOw>
+    <xmx:brFGXHEXHHZfFfs4M7JWsnzh2-1_1IQ8vMjZxMQ1Q833qCb3Vaj7Pw>
+    <xmx:brFGXHUyaLCblxpp98Q4KYMoB2Y0JcquYIyo6edeuylMev7Hq-WJVA>
+    <xmx:brFGXL5ef9xz1tDcoaBpynFCd4RWyrqv_rVBwA3AG1BSP-Uqdq3ONg>
+Received: from [10.0.0.6] (135-23-246-131.cpe.pppoe.ca [135.23.246.131])
+        by mail.messagingengine.com (Postfix) with ESMTPA id EECC1E40D1;
+        Tue, 22 Jan 2019 01:00:13 -0500 (EST)
+From:   Remi Gauvin <remi@georgianit.com>
 Subject: Re: Incremental receive completes succesfully despite missing files
-To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Cc:     Dennis K <dennisk@netspace.net.au>,
-        Andrei Borzenkov <arvidjaar@gmail.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+To:     Chris Murphy <lists@colorremedies.com>
+References: <110c46c8-6fe9-84ea-0f4e-8269fd8000ed@netspace.net.au>
+ <CAJCQCtSOBcK=MXLUFVZk6YCrFx60UEH7PgOtPYbcRkfjG0XDyQ@mail.gmail.com>
+ <CAJCQCtScPtJ=agTJbunPG9GT4hQg5VQWMOEM_JAyLseNKraqNw@mail.gmail.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Openpgp: preference=signencrypt
+Autocrypt: addr=remi@georgianit.com; prefer-encrypt=mutual;
+ keydata= mQENBFogjcYBCADvI0pxdYyVkEUAIzT6HwYnZ5CAy2czT87Si5mqk4wL4Ulupwfv9TLzaj3R
+ CUgHPNpFsp1n/nKKyOq1ZmE6w5YKx4I8/o9tRl+vjnJr2otfS7XizBaVV7UwziODikOimmT+
+ sGNfYGcjdJ+CC567g9aAECbvnyxNlncTyUPUdmazOKhmzB4IvG8+M2u+C4c9nVkX2ucf3OuF
+ t/qmeRaF8+nlkCMtAdIVh0F7HBYJzvYG3EPiKbGmbOody3OM55113uEzyw39k8WHRhhaKhi6
+ 8QY9nKCPVhRFzk6wUHJa2EKbKxqeFcFzZ1ok7l7vrX3/OBk2dGOAoOJ4UX+ozAtrMqCBABEB
+ AAG0IVJlbWkgR2F1dmluIDxyZW1pQGdlb3JnaWFuaXQuY29tPokBPgQTAQIAKAUCWiCNxgIb
+ IwUJCWYBgAYLCQgHAwIGFQgCCQoLBBYCAwECHgECF4AACgkQ71Of8kdFam2V1Qf9Fs6LSx1i
+ OoVgOzjWwiI06vJrZznjmtbJkcm/Of5onITZnB4h+tbqEyaMYYsEIk1r4oFMfKB7SDpQbADj
+ 9CI2EbpygwZa24Oqv4gWEzb4c7mSJuLKTnrhmwCOtdeDQXO/uu6BZPkazDAaKHUM6XqNEVvt
+ WHBaGioaV4dGxzjXALQDpLc4vDreSl9nwlTorwJR9t6u5BlDcdh3VOuYlgXjI4pCk+cihgtY
+ k3KZo/El1fWFYmtSTq7m/JPpKZyb77cbzf2AbkxJuLgg9o0iVAg81LjElznI0R5UbYrJcJeh
+ Jo4rvXKFYQ1qFwno1jlSXejsFA5F3FQzJe1JUAu2HlYqRrkBDQRaII3GAQgAo0Y6FX84QsDp
+ R8kFEqMhpkjeVQpbwYhqBgIFJT5cBMQpZsHmnOgpYU0Jo8P3owHUFu569g6j4+wSubbh2+bt
+ WL0QoFZcng0a2/j3qH98g9lAn8ZgohxavmwYINt7b+LEeDoBvq0s/0ZeXx47MOmbjROq8L/g
+ QOYbIWoJLO2emyxmVo1Fg00FKkbuCEgJPW8U/7VX4EFYaIhPQv/K3mpnyWXIq5lviiMCHzxE
+ jzBh/35DTLwymDdmtzWgcu1rzZ6j2s+4bTxE8mYXd4l2Xonn7v448gwvQmZJ8EPplO/pWe9F
+ oISyiNxZnQNCVEO9lManKPFphfVHqJ1WEtYMiLxTkQARAQABiQElBBgBAgAPBQJaII3GAhsM
+ BQkJZgGAAAoJEO9Tn/JHRWptnn0H+gOtkumwlKcad2PqLFXCt2SzVJm5rHuYZhPPq4GCdMbz
+ XwuCEPXDoECFVXeiXngJmrL8+tLxvUhxUMdXtyYSPusnmFgj/EnCjQdFMLdvgvXI/wF5qj0/
+ r6NKJWtx3/+OSLW0E9J/gLfimIc3OF49E3S1c35Wj+4Okx9Tpwor7Tw8KwBVbdZA6TyQF08N
+ phFkhgnTK6gl2XqIHaoxPKhI9pKU5oPkg2eI27OICZrpTCppaSh3SGUp0EHPkZuhVfIxg4vF
+ nato30VZr+RMHtPtx813VZ/kzj+2pC/DrwZOtqFeaqJfCi6JSik3vX9BQd9GL4mxytQBZKXz
+ SY9JJa155sI=
+Message-ID: <f3075aa9-d475-43cb-45eb-e02acb1d2868@georgianit.com>
+Date:   Tue, 22 Jan 2019 01:00:13 -0500
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
+MIME-Version: 1.0
+In-Reply-To: <CAJCQCtScPtJ=agTJbunPG9GT4hQg5VQWMOEM_JAyLseNKraqNw@mail.gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="TSsCDyyFjMkb1rXAMTDcbgAOIvQLiRlzq"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Jan 21, 2019 at 3:23 PM Chris Murphy <lists@colorremedies.com> wrot=
-e:
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--TSsCDyyFjMkb1rXAMTDcbgAOIvQLiRlzq
+Content-Type: multipart/mixed; boundary="KPQcvlH29AAb8MAyTlLTEDRwG2dWrY2Ja";
+ protected-headers="v1"
+From: Remi Gauvin <remi@georgianit.com>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <f3075aa9-d475-43cb-45eb-e02acb1d2868@georgianit.com>
+Subject: Re: Incremental receive completes succesfully despite missing files
+References: <110c46c8-6fe9-84ea-0f4e-8269fd8000ed@netspace.net.au>
+ <CAJCQCtSOBcK=MXLUFVZk6YCrFx60UEH7PgOtPYbcRkfjG0XDyQ@mail.gmail.com>
+ <CAJCQCtScPtJ=agTJbunPG9GT4hQg5VQWMOEM_JAyLseNKraqNw@mail.gmail.com>
+In-Reply-To: <CAJCQCtScPtJ=agTJbunPG9GT4hQg5VQWMOEM_JAyLseNKraqNw@mail.gmail.com>
 
+--KPQcvlH29AAb8MAyTlLTEDRwG2dWrY2Ja
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-
-> If <parent> has a UUID of 54321, I expect that <subvol> must have
-> Parent UUID of 54321, or the send command should fail.
-
-OK I think the following is a reproducible bug.
-
-# btrfs sub create 1
-# btrfs sub create 2
-# touch 1/one
-# touch 2/two
-# btrfs sub snap -r 1 1.ro1
-# btrfs sub snap -r 2 2.ro1
-# touch 1/oneone
-# touch 2/twotwo
-# btrfs sub snap -r 1 1.ro2
-# btrfs sub snap -r 2 2.ro2
-# btrfs send 1.ro1 | ssh chris@fnuc.local "sudo btrfs receive /srv/scratch/=
-"
-At subvol 1.ro1
-At subvol 1.ro1
-# btrfs send 2.ro1 | ssh chris@fnuc.local "sudo btrfs receive /srv/scratch/=
-"
-At subvol 2.ro1
-At subvol 2.ro1
-# btrfs send -p 1.ro1 2.ro2 | ssh chris@fnuc.local "sudo btrfs receive
-/srv/scratch/"
-At subvol 2.ro2
-At snapshot 2.ro2
+On 2019-01-21 11:54 p.m., Chris Murphy wrote:
 #
-
-I expect the last command to fail because 1.ro1 is not the parent of
-2.ro2. The command completes, and 2.ro2 is on the destination, and at
-least in this simple example it contains the expected files. However
-'btrfs show' indicates that the "parent UUID" of 2.ro2 is the "UUID"
-of 1.ro1, which is definitely wrong. So it's a legit bug, not just a
-cosmetic problem due to lack of error checking.
-
-$ ls -l 1.ro1
-total 0
--rw-rw-r--. 1 chris chris 0 Jan 21 21:41 one
-$ ls -l 2.ro1
-total 0
--rw-rw-r--. 1 chris chris 0 Jan 21 21:41 two
-$ ls -l 2.ro2
-total 0
--rw-rw-r--. 1 chris chris 0 Jan 21 21:41 two
--rw-rw-r--. 1 chris chris 0 Jan 21 21:41 twotwo
-$
+>=20
+> I expect the last command to fail because 1.ro1 is not the parent of
+> 2.ro2. The command completes, and 2.ro2 is on the destination, and at
+> least in this simple example it contains the expected files. However
+> 'btrfs show' indicates that the "parent UUID" of 2.ro2 is the "UUID"
+> of 1.ro1, which is definitely wrong. So it's a legit bug, not just a
+> cosmetic problem due to lack of error checking.
+>
 
 
- =EE=82=A2 fnuc.local =EE=82=B0 chris =EE=82=B0 / =EE=82=B1 srv =EE=82=B1 s=
-cratch =EE=82=B0 sudo btrfs sub show 1.ro1
-scratch/1.ro1
-    Name:             1.ro1
-    UUID:             eb0bb290-3f7d-d34d-94c3-1ed9da96f2fa
-    Parent UUID:         -
-    Received UUID:         b965a4b6-e77d-714b-af0e-83e15e734fd5
-    Creation time:         2019-01-21 21:43:04 -0700
-    Subvolume ID:         3107
-    Generation:         25788
-    Gen at creation:     25782
-    Parent ID:         2039
-    Top level ID:         2039
-    Flags:             readonly
-    Snapshot(s):
-                scratch/2.ro2
- =EE=82=A2 fnuc.local =EE=82=B0 chris =EE=82=B0 / =EE=82=B1 srv =EE=82=B1 s=
-cratch =EE=82=B0 sudo btrfs sub show 1.ro2
-ERROR: cannot find real path for '1.ro2': No such file or directory
- =EE=82=A2 fnuc.local =EE=82=B0 chris =EE=82=B0 / =EE=82=B1 srv =EE=82=B1 s=
-cratch =EE=82=B0 sudo btrfs sub show 2.ro1
-scratch/2.ro1
-    Name:             2.ro1
-    UUID:             ce0d762a-d4ea-6448-aa71-1573d70fe60e
-    Parent UUID:         -
-    Received UUID:         d382f4f9-23c9-394e-852d-ecbe9a95fa75
-    Creation time:         2019-01-21 21:43:15 -0700
-    Subvolume ID:         3108
-    Generation:         25786
-    Gen at creation:     25785
-    Parent ID:         2039
-    Top level ID:         2039
-    Flags:             readonly
-    Snapshot(s):
- =EE=82=A2 fnuc.local =EE=82=B0 chris =EE=82=B0 / =EE=82=B1 srv =EE=82=B1 s=
-cratch =EE=82=B0 sudo btrfs sub show 2.ro2
-scratch/2.ro2
-    Name:             2.ro2
-    UUID:             165a4a66-0600-3b49-80aa-edae8fd850d9
-    Parent UUID:         eb0bb290-3f7d-d34d-94c3-1ed9da96f2fa
-    Received UUID:         b8343d21-882f-bf47-ac61-b59e53b126a4
-    Creation time:         2019-01-21 21:43:38 -0700
-    Subvolume ID:         3109
-    Generation:         25789
-    Gen at creation:     25788
-    Parent ID:         2039
-    Top level ID:         2039
-    Flags:             readonly
-    Snapshot(s):
- =EE=82=A2 fnuc.local =EE=82=B0 chris =EE=82=B0 / =EE=82=B1 srv =EE=82=B1 s=
-cratch =EE=82=B0
+This is, as far as I understand, exactly how it's *supposed* to work, at
+least, as documented.  The only relationship needed between a "parent"
+snapshot, and the snapshot you're sending, is that the parent already
+exists on the destination.  Your example would be completely
+counter-productive, since there is no data shared between the two, but
+perfectly legitimate.  1.ro1 is the parent of 2.ro2 because *you
+explicitly told it to*.
 
 
 
+--KPQcvlH29AAb8MAyTlLTEDRwG2dWrY2Ja--
 
+--TSsCDyyFjMkb1rXAMTDcbgAOIvQLiRlzq
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
---=20
-Chris Murphy
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQEcBAEBCAAGBQJcRrFtAAoJEO9Tn/JHRWptUQQIALrhMpS17U/NonHL0xnOIAYl
+TGP8ZvNvVDU0hLcUbRoQOGYoQ8aLwQXQfi6S+vkCGei6kuZcBP7N+gBbNNypB/cM
+D89Ocn1psscgEVAYL18nI8PXRFaWgCAAiYLyTZng29YxDRLV9el4YXgEKFh8PNse
+pah13QeJe7ND+p8CXr2hz34rGV/uF9ddYZ4Hi+Hjs4wGTFZLg32rJ+yOt90CoMgY
+UaTjsvn7KOp06z7IrpP7A0p+e0EgJIQlN3R0iOb7OIkVs+PmvQ4Xo8MsY5F1RRB4
+nGgVTouzCfZ3Elvrya7qbPclMz4wkQTCz6Rc8AjcQlZ+3PYwcWZFFAtl+ILyHxs=
+=FVQ8
+-----END PGP SIGNATURE-----
+
+--TSsCDyyFjMkb1rXAMTDcbgAOIvQLiRlzq--

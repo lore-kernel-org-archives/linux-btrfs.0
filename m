@@ -2,92 +2,90 @@ Return-Path: <SRS0=kIOr=P6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
+	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DF876C37124
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Jan 2019 02:02:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DA6E2C282C7
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Jan 2019 04:36:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B474720870
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Jan 2019 02:02:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7CCC4217D8
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Jan 2019 04:36:56 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="u7XwR7PJ"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726821AbfAVCCJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 21 Jan 2019 21:02:09 -0500
-Received: from mx1.redhat.com ([209.132.183.28]:57730 "EHLO mx1.redhat.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726601AbfAVCCI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 Jan 2019 21:02:08 -0500
-Received: from smtp.corp.redhat.com (int-mx05.intmail.prod.int.phx2.redhat.com [10.5.11.15])
-        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
-        (No client certificate requested)
-        by mx1.redhat.com (Postfix) with ESMTPS id D1A6BD2EE5;
-        Tue, 22 Jan 2019 02:02:07 +0000 (UTC)
-Received: from ming.t460p (ovpn-8-25.pek2.redhat.com [10.72.8.25])
-        by smtp.corp.redhat.com (Postfix) with ESMTPS id 6D6F65D736;
-        Tue, 22 Jan 2019 02:01:37 +0000 (UTC)
-Date:   Tue, 22 Jan 2019 10:01:30 +0800
-From:   Ming Lei <ming.lei@redhat.com>
-To:     Sagi Grimberg <sagi@grimberg.me>
-Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
-        Theodore Ts'o <tytso@mit.edu>, Omar Sandoval <osandov@fb.com>,
-        Dave Chinner <dchinner@redhat.com>,
-        Kent Overstreet <kent.overstreet@gmail.com>,
-        Mike Snitzer <snitzer@redhat.com>, dm-devel@redhat.com,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        linux-fsdevel@vger.kernel.org, linux-raid@vger.kernel.org,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        "Darrick J . Wong" <darrick.wong@oracle.com>,
-        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
-        Christoph Hellwig <hch@lst.de>, linux-ext4@vger.kernel.org,
-        Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
-        Boaz Harrosh <ooo@electrozaur.com>,
-        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
-Subject: Re: [PATCH V14 00/18] block: support multi-page bvec
-Message-ID: <20190122020128.GB2490@ming.t460p>
-References: <20190121081805.32727-1-ming.lei@redhat.com>
- <61dfaa1e-e7bf-75f1-410b-ed32f97d0782@grimberg.me>
+        id S1726906AbfAVEgq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 21 Jan 2019 23:36:46 -0500
+Received: from mail-lf1-f47.google.com ([209.85.167.47]:46516 "EHLO
+        mail-lf1-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726853AbfAVEgq (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 21 Jan 2019 23:36:46 -0500
+Received: by mail-lf1-f47.google.com with SMTP id y14so17026029lfg.13
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Jan 2019 20:36:45 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=Q0tCVhsfpTSFQE0tz3Q2NMvau/TiflnjuIPfOX3z9kU=;
+        b=u7XwR7PJsu/kDQSfpawPUxdw5eIcfeVENeqlf5oSYf8l/15bfrY4AteQs0gKNQrR75
+         v71mh4tRoeMB3b6SfvNHo78aKmOZYdhg4+f4kUNldz8i0bxVhCFrfpC5LmgP9d+jw9DC
+         LpNWUdSRzutZB1CsFthHDHY9InEMQ6/NZ1TRrwrbpY+oK24zFcCSUwjdC+AHNy4e5xq/
+         pl/A/xnHVwy65FI+fQzMfYoqUfiC80YstI0IPjTRPsWsYU09EeKCVCWqYALx0+WmLzfP
+         t3bKKVdFSIf47i2YAshffm2sbH7NQJkTA14tBXHbt3B66i3NrnidoPfrh2xu2R2kBNWl
+         dixQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=Q0tCVhsfpTSFQE0tz3Q2NMvau/TiflnjuIPfOX3z9kU=;
+        b=CuxxYeOBN7JYaUVTxBNlS+DdksioCdV9Ay15b+f2a/sr7iQnXQe0VE7xPZn8XnKNL4
+         6wrpJsrfqGCvWLIHF3ymf7WtVRQqtoQGlM+4sqTRZW2niS/76V1x6Luker5yVLGBWCai
+         qEDi467xSsmlOfFeerga0B71QgB75IJxQraC7m2bG7NVCk4JbhAiiBa4EC44eKiAu2bj
+         7mU/KtA9INYZyzBmUq4j//hs/yoS4DkvSOctvyuTka4uBJpVQURu0BwsSNRW80MtIAP5
+         5/GeOcVlWzzzUqpcqtfTQ+L0MYtcNMfx5RtzrvSxDp+grV3+jvCcROSu+W6qKgfix0Hc
+         Kimg==
+X-Gm-Message-State: AJcUukeFzwpBmhZhgVltbwJu24LQcVPlCNPWYPbNG+wQcJyWkh+V936x
+        9OZPjHpd1tWuIOi3mrk7L+XlSCsPnym2XUvAwlcgTJnO
+X-Google-Smtp-Source: ALg8bN4A22AFo1kfLuLWkoU12rX0RjMyTp/CUQGdR4dSaqZtmJLGZlzVM/g7/wyneZLKYTA0iNm8hSIR73o3+X0LobM=
+X-Received: by 2002:a19:e01e:: with SMTP id x30mr19074558lfg.89.1548131803687;
+ Mon, 21 Jan 2019 20:36:43 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <61dfaa1e-e7bf-75f1-410b-ed32f97d0782@grimberg.me>
-User-Agent: Mutt/1.9.1 (2017-09-22)
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.15
-X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.38]); Tue, 22 Jan 2019 02:02:08 +0000 (UTC)
+References: <110c46c8-6fe9-84ea-0f4e-8269fd8000ed@netspace.net.au> <CAJCQCtSOBcK=MXLUFVZk6YCrFx60UEH7PgOtPYbcRkfjG0XDyQ@mail.gmail.com>
+In-Reply-To: <CAJCQCtSOBcK=MXLUFVZk6YCrFx60UEH7PgOtPYbcRkfjG0XDyQ@mail.gmail.com>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Mon, 21 Jan 2019 21:36:32 -0700
+Message-ID: <CAJCQCtSik1toy+w91_x8V9y=nEcox_JQcT=F=dz4OCYZy76rSQ@mail.gmail.com>
+Subject: Re: Incremental receive completes succesfully despite missing files
+To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Cc:     Dennis K <dennisk@netspace.net.au>,
+        Andrei Borzenkov <arvidjaar@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Jan 21, 2019 at 01:43:21AM -0800, Sagi Grimberg wrote:
-> 
-> > V14:
-> > 	- drop patch(patch 4 in V13) for renaming bvec helpers, as suggested by Jens
-> > 	- use mp_bvec_* as multi-page bvec helper name
-> > 	- fix one build issue, which is caused by missing one converion of
-> > 	bio_for_each_segment_all in fs/gfs2
-> > 	- fix one 32bit ARCH specific issue caused by segment boundary mask
-> > 	overflow
-> 
-> Hey Ming,
-> 
-> So is nvme-tcp also affected here? The only point where I see nvme-tcp
-> can be affected is when initializing a bvec iter using bio_segments() as
-> everywhere else we use iters which should transparently work..
-> 
-> I see that loop was converted, does it mean that nvme-tcp needs to
-> call something like?
-> --
-> 	bio_for_each_mp_bvec(bv, bio, iter)
-> 		nr_bvecs++;
+On Mon, Jan 21, 2019 at 3:23 PM Chris Murphy <lists@colorremedies.com> wrote:
 
-bio_for_each_segment()/bio_segments() still works, just not as efficient
-as bio_for_each_mp_bvec() given each multi-page bvec(very similar with scatterlist)
-is returned in each loop.
+> I literally never use the 'property set' feature to set ro and unset
+> ro because I think it's dangerous.
 
-I don't look at nvme-tcp code yet. But if nvme-tcp supports this way,
-it can benefit from bio_for_each_mp_bvec().
+Also, there is a distinction between 'btrfs snapshot -r' and 'btrfs
+property set ro true' - the former creates a snapshot. The later
+creates a read only subvolume. They aren't the same thing. If you try
+both methods and then point 'btrfs sub show' to each original
+subvolume, you will see only the snapshot is tracked as a snapshot,
+and only a snaphot properly has its own unique UUID as well as a
+referencing parent UUID.
 
-Thanks,
-Ming
+That is why your workflow is failing. Not that 'property set' is
+somehow broken; I consider it dangerous to combine a snapshotting
+workflow with one that depends on unsetting the ro flag on a snapshot,
+where you make changes to that snapshot outside the snapshotting
+regimen. Doing so makes that subvolume/snapshot totally invalid as
+either a parent or source for send/receive.
+
+
+-- 
+Chris Murphy

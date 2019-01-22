@@ -2,229 +2,266 @@ Return-Path: <SRS0=kIOr=P6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 97D5CC282C3
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Jan 2019 23:08:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 79C3CC282C3
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Jan 2019 23:28:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 63D3921726
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Jan 2019 23:08:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 228C1217D4
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Jan 2019 23:28:30 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="HITuRVnG"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726867AbfAVXII (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 22 Jan 2019 18:08:08 -0500
-Received: from mout.gmx.net ([212.227.15.15]:54459 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726604AbfAVXII (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Jan 2019 18:08:08 -0500
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx001
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0LnPSg-1hQ7Wu31mI-00hfV8; Wed, 23
- Jan 2019 00:07:55 +0100
-Subject: Re: [PATCH v4 5/7] btrfs: qgroup: Introduce per-root swapped blocks
- infrastructure
-To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20190115081604.785-1-wqu@suse.com>
- <20190115081604.785-6-wqu@suse.com> <20190122165554.GO2900@twin.jikos.cz>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <507b96ec-86b1-6c23-2d16-b6b67b2f5920@gmx.com>
-Date:   Wed, 23 Jan 2019 07:07:50 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.4.0
+        id S1726783AbfAVX23 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 22 Jan 2019 18:28:29 -0500
+Received: from mail-pf1-f194.google.com ([209.85.210.194]:44544 "EHLO
+        mail-pf1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725925AbfAVX23 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 Jan 2019 18:28:29 -0500
+Received: by mail-pf1-f194.google.com with SMTP id u6so140084pfh.11
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Jan 2019 15:28:28 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=34r3ymgbXnjrgoFj9NQhe+n1szrR6Hn40qH7dnArWfU=;
+        b=HITuRVnGYXb6ZtnVloI0el0Q3lPmW7Yfh/iCdcE7xQEBOIWhwOuU33Z5kqLoXW6l3y
+         Qw5UIrImLSe4Q/MONAjeq12KJMC3MxLuACcB6G+N/NDpIM4wb1X6YdFWQW5ubfbYqNAt
+         9/+EHjg+LZSgB+PxQTzyg/mSq45seEetCJuOrlJDQH6Ks+In1l3QMtTUb2VHI8jRrm9Y
+         XlTl0SY5bau05ezAHy6cYodxf+TGn7eU8BYO92of7EBzEaMxBo3HPTUsWPIW3LenoWbg
+         Obhz9UkW6NrC497FjqO52kOjjyllPMM+40Sk38NaUj1KNnBrHk6VinJUa0sYuG19nKDB
+         1gsQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=34r3ymgbXnjrgoFj9NQhe+n1szrR6Hn40qH7dnArWfU=;
+        b=dHB96gwc/zUOm56+p2Zh+DSvXLMbEExEImUkcEemy9EIHtNjszaikWIj7WB/ensXLx
+         97PQ55txqXB4ywRr3Hre4JH8fvfl03zQ7mjNQWIeb3GUjpZcpouJlh4BUJT9qx06B+S0
+         v17JPRNcCY0eV03m3qBF2dvF0DaV7qj4AYHG3T/EJDy9yiAitLP/6YoncW7ey+0+2d6f
+         ykaKG6whNXtCsQUCbCTF5iWtm9pTxEaPoUf2gyIYDOnYwd0qkTvijFGV1AGSlEVkpI59
+         fLefXGOHGzYpPtiJ0HUZuh3WBwozyhidPK+m6o2jrgp5mEDYw0qhaeuYK+qLI+sF7Sxe
+         fl1g==
+X-Gm-Message-State: AJcUukczj4Ptg86RuGIvQXL08sMl4Ara6rabwFTceYd2xvtla4Bt/zC7
+        mX35D0b+IqbQJG6QoE9mUxn795+L9PejIl2E2hQ=
+X-Google-Smtp-Source: ALg8bN4WXqq/2nBPhvias29lZPZaVGyuowz1JHPI0NWTejABa8o6N+s3kPPovNlK3Gu4ZqFxP5zEY2UQ+pENRHrA7IY=
+X-Received: by 2002:a63:5c41:: with SMTP id n1mr32575475pgm.1.1548199707700;
+ Tue, 22 Jan 2019 15:28:27 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20190122165554.GO2900@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="iyQ8y9CbIJIJbjKG9yAxfcwGVabdo7IVN"
-X-Provags-ID: V03:K1:JFVyME0s3EBoQZZonzBg06DQzFgOQrg7Iv0gmvPSaOQYenrXDwR
- WYRDVRtKWfRn3vB8Cdwn0l4xJOIr3fXkRue/VBYfLGodSf+gequdkf+4RTlKQVUGbTPm8ji
- lMpjdJSPlPEXebCovZWSOTgruY36SbdenbLNCvPnqXFlLjHq0yDP9siUCnzpUeXS3ayJihS
- +O814pMW9GirozJyRuWOw==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:yvRSdKSdCB4=:2KhtajK7SsfC7qCAbbWxKB
- ffYy8y6w4tZ2sk3ONmNksUiiLU7kIodygLDbJG/vPO9WnySzEcOlPq/zHRdsfb69od5CfjcfD
- +T8OTUgb1UmyCur9ifoS35o1cGKI2uJAHJE1VTt/szzFm2bf5Tzpb7MzyxYfJ3f/kVr/0AWxE
- IAKdIlMc1mMufZ6eCV7UO6ZgyR3XBulvy3Czr0YmhZIQIWN6LA8RpKx9evuBEygfm9hwQYquf
- 6XFERIKrRxJ0rvyZtYa/rWimwmjDRkRp7Sq0JOqt9ai6t6UCFH0KwrzN2mU2BG6CpPyrSnIXD
- I5EwGC7IpPXAB+6NCbq33x+B0lMeDQ0HVbMKp8vieoftdwbLsh5ExE+hqVex30XXuINjDWHC/
- 0M7Wg3egpRXEJMK/IblRDc1RmsyH97KZzCQoNlFz/RpSuKzHx+dvCspQGPXq5W7Vxo/rFfAAo
- E3yZji3WfxPINZC+uFMWJIw2I8KhqNEAiWfa4i3m46kd1Sr/68wkk9l1cF/ZTiX7GGaraHd1p
- Ftjun2os6zMdrdgMxLRGiuYZoBrY0exledxW7kH+wFzFpkh/z4lrA+kQUQdVSLeYhFE9sVj+6
- GizgFRbFRzwqHQ4nKMsSGhZpqDpQOP43fS1wxoLKWXlMt3ZyyMxVnEJT1i1tWjA7985zEACVo
- KInGKWgyJmhNaMbQ1fhYUQPMoeMb9+X/Jhw0E/02+MBsn2RvOHXwVCI/FMSMNw3klzbg96cOY
- P4ZGgEdQFgxdGYy+P1Ki+LX/Q9BsssNbKIzSrG4R1T11X39bvd9nNwcTsC18EizL9mnNcruui
- R/0LG41HRDYi9D17cXCF7ZEynkAWproPgK7L9GwJouExPPEvNuxPhKSkghwlFZxBO0A/YDpN4
- 1oNm6/jXYhqPmfLMJVyGqlwttCw5War8w+PJch3li4WArXBPebJMPZyCiFwiH9
+References: <CAO1Y9wrAzSxGx+LYMPswzN4BbMNs__v7+y=BTZRBAW2bRN5Q1w@mail.gmail.com>
+ <a6270ef1-c914-e142-448c-7e7a388f221f@gmx.com> <CAO1Y9wpZ2B-Uik3+zyQQdu4HvjM5RzNoPcv+Hcz1io7e5+D9MQ@mail.gmail.com>
+ <CAO1Y9woOf8U7F60=N6oCCA_XKT72ZL-d9roQgG+OdJN8HpraFA@mail.gmail.com> <CAJCQCtRJSmyNqi7mDCQzPyMG=xqdtKuxppOAZz3WftCkBUTVOw@mail.gmail.com>
+In-Reply-To: <CAJCQCtRJSmyNqi7mDCQzPyMG=xqdtKuxppOAZz3WftCkBUTVOw@mail.gmail.com>
+From:   Thiago Ramon <thiagoramon@gmail.com>
+Date:   Tue, 22 Jan 2019 21:28:16 -0200
+Message-ID: <CAO1Y9woAF5mY3J2w8hjvBMxuJLf1qqY8b2R=Zjq+apu33oWX+A@mail.gmail.com>
+Subject: Re: Nasty corruption on large array, ideas welcome
+To:     Chris Murphy <lists@colorremedies.com>
+Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---iyQ8y9CbIJIJbjKG9yAxfcwGVabdo7IVN
-Content-Type: multipart/mixed; boundary="DZXFwZzssW5aBqdh4FvHhfmYD2A16ROcz";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <507b96ec-86b1-6c23-2d16-b6b67b2f5920@gmx.com>
-Subject: Re: [PATCH v4 5/7] btrfs: qgroup: Introduce per-root swapped blocks
- infrastructure
-References: <20190115081604.785-1-wqu@suse.com>
- <20190115081604.785-6-wqu@suse.com> <20190122165554.GO2900@twin.jikos.cz>
-In-Reply-To: <20190122165554.GO2900@twin.jikos.cz>
+On Tue, Jan 22, 2019 at 6:43 PM Chris Murphy <lists@colorremedies.com> wrote:
+>
+> On Tue, Jan 22, 2019 at 9:41 AM Thiago Ramon <thiagoramon@gmail.com> wrote:
+> >
+> > Back again with pretty much the same problem, but now without a
+> > reasonable cause:
+> > I've bought a couple new 8TB disks, recovered everything I needed from
+> > my previously damaged FS to a new BTRFS on those 2 drives (single copy
+> > mode), double-checked if everything was fine, then wipefs'd the old
+> > disks and added the ones that didn't have any issues previously to the
+> > new array and rebalanced to RAID6.
+> > Everything was running fine through the weekend and I was about 50%
+> > done when today:
+> > [  +7.733525] BTRFS info (device bcache0): relocating block group
+> > 8358036766720 flags data
+> > [Jan22 09:20] BTRFS warning (device bcache0): bcache0 checksum verify
+> > failed on 31288448499712 wanted A3746F78 found 44D6AEB0 level 1
+> > [  +0.460086] BTRFS info (device bcache0): read error corrected: ino 0
+> > off 31288448499712 (dev /dev/bcache4 sector 7401171296)
+> > [  +0.000199] BTRFS info (device bcache0): read error corrected: ino 0
+> > off 31288448503808 (dev /dev/bcache4 sector 7401171304)
+> > [  +0.000181] BTRFS info (device bcache0): read error corrected: ino 0
+> > off 31288448507904 (dev /dev/bcache4 sector 7401171312)
+> > [  +0.000158] BTRFS info (device bcache0): read error corrected: ino 0
+> > off 31288448512000 (dev /dev/bcache4 sector 7401171320)
+>
+> This is corruption being detected and corrected on those listed
+> sectors. As this is a bcache device, it's a virtual sector so it's
+> hard to tell if it's coming from bcache itself, or the cache device,
+> or the backing device.
+>
+I was using bcache in writeback mode with my old FS, but I've learned
+THAT lesson the hard way. This one was just using writearound, unless
+bcache REALLY screwed it up I find it hard that it's the source of the
+corruption. There were no read or write errors from bcache since the
+time the new array went up, and each bcache* device is just a thin
+layer over a whole raw disk now.
 
---DZXFwZzssW5aBqdh4FvHhfmYD2A16ROcz
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+>
+> > [Jan22 09:21] BTRFS info (device bcache0): found 2050 extents
+> > [  +8.055456] BTRFS info (device bcache0): found 2050 extents
+> > [Jan22 09:22] BTRFS info (device bcache0): found 2050 extents
+> > [  +0.846627] BTRFS info (device bcache0): relocating block group
+> > 8356963024896 flags data
+> > [Jan22 09:23] BTRFS info (device bcache0): found 2052 extents
+> > [  +6.983072] BTRFS info (device bcache0): found 2052 extents
+> > [  +0.844419] BTRFS info (device bcache0): relocating block group
+> > 8355889283072 flags data
+> > [ +33.906101] BTRFS info (device bcache0): found 2058 extents
+> > [  +4.664570] BTRFS info (device bcache0): found 2058 extents
+> > [Jan22 09:24] BTRFS info (device bcache0): relocating block group
+> > 8354815541248 flags data
+> > [Jan22 09:25] BTRFS info (device bcache0): found 2057 extents
+> > [ +17.650586] BTRFS error (device bcache0): parent transid verify
+> > failed on 31288448466944 wanted 135681 found 135575
+>
+>
+> Over 100 generations have passed, and yet it's only finding stale data
+> on the desired btrfs byte nr (in btrfs linear space) so it might be
+> extent tree corruption again.
+>
+> It's not possible from the available information to do anything but
+> speculate how that much data is being lost or somehow being
+> overwritten.
+>
+>
+> > [  +0.088917] BTRFS error (device bcache0): parent transid verify
+> > failed on 31288448466944 wanted 135681 found 135575
+> > [  +0.001381] BTRFS error (device bcache0): parent transid verify
+> > failed on 31288448466944 wanted 135681 found 135575
+> > [  +0.003555] BTRFS error (device bcache0): parent transid verify
+> > failed on 31288448466944 wanted 135681 found 135575
+> > [  +0.005478] BTRFS error (device bcache0): parent transid verify
+> > failed on 31288448466944 wanted 135681 found 135575
+> > [  +0.003953] BTRFS error (device bcache0): parent transid verify
+> > failed on 31288448466944 wanted 135681 found 135575
+> > [  +0.000917] BTRFS: error (device bcache0) in
+> > btrfs_run_delayed_refs:3013: errno=-5 IO failure
+> > [  +0.000017] BTRFS: error (device bcache0) in
+> > btrfs_drop_snapshot:9463: errno=-5 IO failure
+>
+> And -5 I/O error is not a Btrfs error either, it's the detection of an
+> IO error from the underlying block device, whether real or virtual.
+>
+Couldn't figure the source of the -5 either, no kernel logs from
+anything byt BTRFS complaining about it. After I umounted the array,
+it didn't shown up anymore, and I was able to remount the array with
+the skip_bg patch.
 
+>
+>
+> > [  +0.000895] BTRFS info (device bcache0): forced readonly
+> > [  +0.000902] BTRFS: error (device bcache0) in merge_reloc_roots:2429:
+> > errno=-5 IO failure
+> > [  +0.000387] BTRFS info (device bcache0): balance: ended with status: -30
+> >
+> > Couldn't check anything even in RO mode scrub or btrfs check, when I
+> > unmounted the array I got a few kernel stack traces:
+> > [Jan22 13:58] WARNING: CPU: 3 PID: 9711 at fs/btrfs/extent-tree.c:5986
+> > btrfs_free_block_groups+0x395/0x3b0 [btrfs]
+> > [  +0.000032] CPU: 3 PID: 9711 Comm: umount Not tainted
+> > 4.20.0-042000-generic #201812232030
+> > [  +0.000001] Hardware name: Gigabyte Technology Co., Ltd. To be
+> > filled by O.E.M./H61M-DS2H, BIOS F6 12/14/2012
+> > [  +0.000014] RIP: 0010:btrfs_free_block_groups+0x395/0x3b0 [btrfs]
+> > [  +0.000002] Code: 01 00 00 00 0f 84 a0 fe ff ff 0f 0b 48 83 bb d0 01
+> > 00 00 00 0f 84 9e fe ff ff 0f 0b 48 83 bb 08 0$
+> >  00 00 00 0f 84 9c fe ff ff <0f> 0b 48 83 bb 00 02 00 00 00 0f 84 9a
+> > fe ff ff 0f 0b e9 93 fe ff
+> > [  +0.000001] RSP: 0018:ffffa3c1c2997d88 EFLAGS: 00010206
+> > [  +0.000001] RAX: 0000000020000000 RBX: ffff924aae380000 RCX:
+> > 0000000000000000
+> > [  +0.000001] RDX: ffffffffe0000000 RSI: ffff924b85970600 RDI:
+> > ffff924b85970600
+> > [  +0.000001] RBP: ffffa3c1c2997db8 R08: 0000000020000000 R09:
+> > ffff924b859706a8
+> > [  +0.000000] R10: 0000000000000002 R11: ffff924b973a1c04 R12:
+> > ffff924aae380080
+> > [  +0.000001] R13: ffff924b8dfe8400 R14: ffff924aae380090 R15:
+> > 0000000000000000
+> > [  +0.000002] FS:  00007f1bd1076080(0000) GS:ffff924b97380000(0000)
+> > knlGS:0000000000000000
+> > [  +0.000001] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> > [  +0.000000] CR2: 0000562d2eb13c10 CR3: 0000000156910006 CR4:
+> > 00000000001606e0
+> > [  +0.000001] Call Trace:
+> > [  +0.000018]  close_ctree+0x143/0x2e0 [btrfs]
+> > [  +0.000012]  btrfs_put_super+0x15/0x20 [btrfs]
+> > [  +0.000004]  generic_shutdown_super+0x72/0x110
+> > [  +0.000001]  kill_anon_super+0x18/0x30
+> > [  +0.000012]  btrfs_kill_super+0x16/0xa0 [btrfs]
+> > [  +0.000002]  deactivate_locked_super+0x3a/0x80
+> > [  +0.000001]  deactivate_super+0x51/0x60
+> > [  +0.000003]  cleanup_mnt+0x3f/0x80
+> > [  +0.000001]  __cleanup_mnt+0x12/0x20
+> > [  +0.000002]  task_work_run+0x9d/0xc0
+> > [  +0.000002]  exit_to_usermode_loop+0xf2/0x100
+> > [  +0.000002]  do_syscall_64+0xda/0x110
+> > [  +0.000003]  entry_SYSCALL_64_after_hwframe+0x44/0xa9
+> > [  +0.000001] RIP: 0033:0x7f1bd14bae27
+> > [  +0.000001] Code: 90 0c 00 f7 d8 64 89 01 48 83 c8 ff c3 66 0f 1f 44
+> > 00 00 31 f6 e9 09 00 00 00 66 0f 1f 84 00 00 00
+> >  00 00 b8 a6 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 8b 0d 39
+> > 90 0c 00 f7 d8 64 89 01 48
+> > [  +0.000001] RSP: 002b:00007ffdb15a75a8 EFLAGS: 00000246 ORIG_RAX:
+> > 00000000000000a6
+> > [  +0.000002] RAX: 0000000000000000 RBX: 000055df329eda40 RCX:
+> > 00007f1bd14bae27
+> > [  +0.000000] RDX: 0000000000000001 RSI: 0000000000000000 RDI:
+> > 000055df329edc20
+> > [  +0.000001] RBP: 0000000000000000 R08: 000055df329eea70 R09:
+> > 00000000ffffffff
+> > [  +0.000001] R10: 000000000000000b R11: 0000000000000246 R12:
+> > 000055df329edc20
+> > [  +0.000001] R13: 00007f1bd15e18c4 R14: 0000000000000000 R15:
+> > 00007ffdb15a7818
+> >
+> > Now I'm back in a very similar situation as before, btrfs check gets me:
+> > Opening filesystem to check...
+> > checksum verify failed on 24707469082624 found 451E87BF wanted
+> > A1FD3A09
+> > checksum verify failed on 24707469082624 found 2C2AEBE0 wanted
+> > D6652D6A
+> > checksum verify failed on 24707469082624 found 2C2AEBE0 wanted
+> > D6652D6A
+> > bad tree block 24707469082624, bytenr mismatch, want=24707469082624,
+> > have=231524568072192
+> > Couldn't read tree root
+> > ERROR: cannot open file system
+> >
+> > I could do it all again, but first, what can be wrong here? This array
+> > was working for some 4 years until it went bad a few weeks ago, and
+> > now the FS got badly corrupted again without any warnings. Any
+> > suggestions? Bad RAM, SAS controller going bad, some weirdly behaving
+> > disk? I need to figure out what can be failing before I try another
+> > recovery.
+>
+> I think it's specifically storage stack related. I think you'd have
+> more varied and weird problems if it were memory corruption, but
+> that's speculation on my part.
 
-
-On 2019/1/23 =E4=B8=8A=E5=8D=8812:55, David Sterba wrote:
-> On Tue, Jan 15, 2019 at 04:16:02PM +0800, Qu Wenruo wrote:
-<snip>
->> +
->> +	block =3D kmalloc(sizeof(*block), GFP_NOFS);
->> +	if (!block) {
->> +		ret =3D -ENOMEM;
->=20
-> This goes to 'out' that marks quota as inconsistent, is this
-> intentional?
-
-Yes
-
-> Ie. if this function does not succed for whatever reason,
-> the quotas are indeed inconsistent.
-
-If we hit this ENOMEM case, although it's possible later CoW doesn't
-touch this subtree, it's also possible later CoW touches this and make
-qgroup numbers inconsistent.
-
-So we should mark qgroup inconsistent for the possibility of
-inconsistent qgroup numbers.
-
-[snip]
->=20
->> +	while (*p) {
->> +		struct btrfs_qgroup_swapped_block *entry;
->> +
->> +		parent =3D *p;
->> +		entry =3D rb_entry(parent, struct btrfs_qgroup_swapped_block,
->> +				 node);
->> +
->> +		if (entry->subv_bytenr < block->subv_bytenr)
->> +			p =3D &(*p)->rb_left;
->> +		else if (entry->subv_bytenr > block->subv_bytenr)
->> +			p =3D &(*p)->rb_right;
->> +		else {
->=20
-> I've pointed out missing { } around if/else if/else statemtents in patc=
-h
-> 1, would be good if you fix all patches.
-
-Sorry, it's sometimes hard to apply the same comment to older branches.
-Normally I'll pay more attention for newly written code, but it's not
-that easy to spot older code.
-
->=20
->> +			if (entry->subv_generation !=3D block->subv_generation ||
->> +			    entry->reloc_bytenr !=3D block->reloc_bytenr ||
->> +			    entry->reloc_generation !=3D
->> +			    block->reloc_generation) {
->> +				WARN_ON_ONCE(1);
->=20
-> This would need some explanation why you want to see the warning.
-
-The case here is, I don't want to populate the whole dmesg with tons of
-possible backtrace from this call sites, but I still hope user to report
-such error.
-
-So I choose _ONCE() to inform user to report the error, as I don't
-really see it's possible.
-
-> _ONCE
-> is for the whole lifetime of the module but I think you'd be interested=
-
-> on a per-filesystem basis. If this is meant for developers it should go=
-
-> under DEBUG, but otherwise I don't see what would this warning bring to=
-
-> the users.
-
-OK, I'll put it under DEBUG and change from ONCE to regular WARN_ON().
-
-[snip]
->> =20
->> +/*
->> + * Special performance hack for balance.
->=20
-> Is it really a hack? Hack sounds cool, but isn't it just an optimizatio=
-n?
-
-It's optimization indeed.
-(But hack sounds really cool).
-
-
->> =20
->> +struct btrfs_qgroup_swapped_block {
->> +	struct rb_node node;
->> +
->> +	bool trace_leaf;
->> +	int level;
->=20
-> Please reorder that so int goes before bool, othewise this adds
-> unnecessary padding.
-
-Can we make compiler to do this work?
-
-Thanks,
-Qu
-
-[snip]
-
-
---DZXFwZzssW5aBqdh4FvHhfmYD2A16ROcz--
-
---iyQ8y9CbIJIJbjKG9yAxfcwGVabdo7IVN
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxHokYACgkQwj2R86El
-/qj5FQf9H/ZewNlUdeAiTQDUW1F8rskw62oWDJqwq3M4kEj7YQ7z/xhf9lPjKyqN
-y9fgB1S+C9DfIGj5rPeDBGKQXvHoE3z6ILU4GouOovvG7BIb9/gZR5iEtrRcGluy
-5gmiQPUfWVW0Q7zCaiMabUcyudlpKWz2vBkhiwjK89yTsauoiV0eP1F6h1IrKhNb
-//DF0l7Rt3eCX7iDhQtHnoi/EphvwT6hncUsQn0mStxkAn7Gtx5uWPfuHbV8aV8b
-UBg7G5AjgO/pUHM/4XlYcn/CCsee6TYQavn4uPMvpwtgzfvD8e/i/50SGGKGqsSC
-C5lFysjNtQbt6hLnPwD6z+EgxdPKFg==
-=aKlF
------END PGP SIGNATURE-----
-
---iyQ8y9CbIJIJbjKG9yAxfcwGVabdo7IVN--
+I've done a quick memory test with stressapptest and it was fine, so
+if it's the memory it's something very localized.
+>
+> I'd honestly simplify the layout and not use bcache at all, only use
+> Btrfs directly on the whole drives, although I think it's reasonably
+> simple to use dmcrypt if needed/desired. But it's still better for
+> troubleshooting to make the storage stack as simple as possible.
+> Without more debugging information from all the layers, it's hard to
+> tell which layer to blame without just using the big stick called
+> process of elimination.
+>
+> Maybe Qu has some ideas based on the call trace though - I can't parse it.
+>
+> --
+> Chris Murphy

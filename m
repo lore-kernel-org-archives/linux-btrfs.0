@@ -2,207 +2,395 @@ Return-Path: <SRS0=kIOr=P6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 40BD0C282C3
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Jan 2019 16:41:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E694EC282C3
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Jan 2019 16:56:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 06E522085A
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Jan 2019 16:41:04 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Di+HpYpj"
+	by mail.kernel.org (Postfix) with ESMTP id A86A921726
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Jan 2019 16:56:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729696AbfAVQlC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 22 Jan 2019 11:41:02 -0500
-Received: from mail-pl1-f196.google.com ([209.85.214.196]:42886 "EHLO
-        mail-pl1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729690AbfAVQlB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Jan 2019 11:41:01 -0500
-Received: by mail-pl1-f196.google.com with SMTP id y1so11726641plp.9
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Jan 2019 08:41:01 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=TeMI//UyjQYI5lohwMsSdiYqlebns7XaJ8xdcHjS1FU=;
-        b=Di+HpYpjiS66V5mEaEiBdXbu/UB8fVsQDBud89OevIWecPoecFLnBqT0ELIQsPHRx9
-         JJ7OkV3TKPQt5xEXoaQgBbWFboj6A1DlKHMjTPHMunR1uZoFTm1/Kc9fzqUph1cVdHcD
-         SQTgyhakpiyoKVYdaPOXrxU6YfsMIvVlWgNuOmYPde7zYCPk84oRSUxhqFjEtSYMhwrI
-         /elkGNdK46Sqo0XMsVDpZTzEYzQTBHpIPIEi1GbJXXRMaKi5RBbhxvvMdLmve1ZiQKEn
-         zQj0ubtzYfVMPWJcTqJcHZJ++eGvJ1jzKyDmn+Vt0rPWICxlwzt+NqsgJZQbleRTDxq1
-         h9Dw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=TeMI//UyjQYI5lohwMsSdiYqlebns7XaJ8xdcHjS1FU=;
-        b=od4/KdkxsyEgyr6zyymADUq3J1ht7I6fRVM63bL5qoM+Ov4P64SKzCclpHRz8WWiGQ
-         FL4esZutZdypJWaJnb1/uat91UfQwGdS7t/DcbV9dEGQgO/1ko9smJfW5gemOHAWgeMH
-         DVm5Y3J0PLzdXlHX9ywscB5vGESq6jsjxoHZzMBVnUEKDPMR15p7lGPWYJaEje/XiiFi
-         EeN6klToiSc0dhPBWo3ecUrFwDRsB4+ZXTrQ5MyRF1PyQWtCj/8rhiSsjzXzXJdxfbZx
-         XTPUZjFo+fH8jwrIb57xrHfTUdXh+YzPkL2/eIeWn5Drz+ceaP2FpWeV1/JHA9eQWUpn
-         sMYA==
-X-Gm-Message-State: AJcUukfcP657QTyKALwTjAiZ4e98pY7n4Pc8l24et44vORriy0qqVeFT
-        Ca9CY3VCngcnNPtX+KE81TnyjnyPrsrgWwvPq1926H/4
-X-Google-Smtp-Source: ALg8bN5yonuLwzmiKMiaP/E/lM7M4VjzQdwGDd8P7mvTxf8TyOKTqprFjto17CE1iWtEjkKS3cML0fPHsWW+lB/v7aw=
-X-Received: by 2002:a17:902:d01:: with SMTP id 1mr35369628plu.127.1548175260517;
- Tue, 22 Jan 2019 08:41:00 -0800 (PST)
-MIME-Version: 1.0
-References: <CAO1Y9wrAzSxGx+LYMPswzN4BbMNs__v7+y=BTZRBAW2bRN5Q1w@mail.gmail.com>
- <a6270ef1-c914-e142-448c-7e7a388f221f@gmx.com> <CAO1Y9wpZ2B-Uik3+zyQQdu4HvjM5RzNoPcv+Hcz1io7e5+D9MQ@mail.gmail.com>
-In-Reply-To: <CAO1Y9wpZ2B-Uik3+zyQQdu4HvjM5RzNoPcv+Hcz1io7e5+D9MQ@mail.gmail.com>
-From:   Thiago Ramon <thiagoramon@gmail.com>
-Date:   Tue, 22 Jan 2019 14:41:09 -0200
-Message-ID: <CAO1Y9woOf8U7F60=N6oCCA_XKT72ZL-d9roQgG+OdJN8HpraFA@mail.gmail.com>
-Subject: Re: Nasty corruption on large array, ideas welcome
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+        id S1729479AbfAVQ4g (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 22 Jan 2019 11:56:36 -0500
+Received: from mx2.suse.de ([195.135.220.15]:48760 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1729460AbfAVQ4g (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 Jan 2019 11:56:36 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 17E8FB0B1
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Jan 2019 16:56:34 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id C0363DA84A; Tue, 22 Jan 2019 17:55:57 +0100 (CET)
+Date:   Tue, 22 Jan 2019 17:55:55 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <wqu@suse.com>
 Cc:     linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Subject: Re: [PATCH v4 5/7] btrfs: qgroup: Introduce per-root swapped blocks
+ infrastructure
+Message-ID: <20190122165554.GO2900@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20190115081604.785-1-wqu@suse.com>
+ <20190115081604.785-6-wqu@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190115081604.785-6-wqu@suse.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Back again with pretty much the same problem, but now without a
-reasonable cause:
-I've bought a couple new 8TB disks, recovered everything I needed from
-my previously damaged FS to a new BTRFS on those 2 drives (single copy
-mode), double-checked if everything was fine, then wipefs'd the old
-disks and added the ones that didn't have any issues previously to the
-new array and rebalanced to RAID6.
-Everything was running fine through the weekend and I was about 50%
-done when today:
-[  +7.733525] BTRFS info (device bcache0): relocating block group
-8358036766720 flags data
-[Jan22 09:20] BTRFS warning (device bcache0): bcache0 checksum verify
-failed on 31288448499712 wanted A3746F78 found 44D6AEB0 level 1
-[  +0.460086] BTRFS info (device bcache0): read error corrected: ino 0
-off 31288448499712 (dev /dev/bcache4 sector 7401171296)
-[  +0.000199] BTRFS info (device bcache0): read error corrected: ino 0
-off 31288448503808 (dev /dev/bcache4 sector 7401171304)
-[  +0.000181] BTRFS info (device bcache0): read error corrected: ino 0
-off 31288448507904 (dev /dev/bcache4 sector 7401171312)
-[  +0.000158] BTRFS info (device bcache0): read error corrected: ino 0
-off 31288448512000 (dev /dev/bcache4 sector 7401171320)
-[Jan22 09:21] BTRFS info (device bcache0): found 2050 extents
-[  +8.055456] BTRFS info (device bcache0): found 2050 extents
-[Jan22 09:22] BTRFS info (device bcache0): found 2050 extents
-[  +0.846627] BTRFS info (device bcache0): relocating block group
-8356963024896 flags data
-[Jan22 09:23] BTRFS info (device bcache0): found 2052 extents
-[  +6.983072] BTRFS info (device bcache0): found 2052 extents
-[  +0.844419] BTRFS info (device bcache0): relocating block group
-8355889283072 flags data
-[ +33.906101] BTRFS info (device bcache0): found 2058 extents
-[  +4.664570] BTRFS info (device bcache0): found 2058 extents
-[Jan22 09:24] BTRFS info (device bcache0): relocating block group
-8354815541248 flags data
-[Jan22 09:25] BTRFS info (device bcache0): found 2057 extents
-[ +17.650586] BTRFS error (device bcache0): parent transid verify
-failed on 31288448466944 wanted 135681 found 135575
-[  +0.088917] BTRFS error (device bcache0): parent transid verify
-failed on 31288448466944 wanted 135681 found 135575
-[  +0.001381] BTRFS error (device bcache0): parent transid verify
-failed on 31288448466944 wanted 135681 found 135575
-[  +0.003555] BTRFS error (device bcache0): parent transid verify
-failed on 31288448466944 wanted 135681 found 135575
-[  +0.005478] BTRFS error (device bcache0): parent transid verify
-failed on 31288448466944 wanted 135681 found 135575
-[  +0.003953] BTRFS error (device bcache0): parent transid verify
-failed on 31288448466944 wanted 135681 found 135575
-[  +0.000917] BTRFS: error (device bcache0) in
-btrfs_run_delayed_refs:3013: errno=-5 IO failure
-[  +0.000017] BTRFS: error (device bcache0) in
-btrfs_drop_snapshot:9463: errno=-5 IO failure
-[  +0.000895] BTRFS info (device bcache0): forced readonly
-[  +0.000902] BTRFS: error (device bcache0) in merge_reloc_roots:2429:
-errno=-5 IO failure
-[  +0.000387] BTRFS info (device bcache0): balance: ended with status: -30
+On Tue, Jan 15, 2019 at 04:16:02PM +0800, Qu Wenruo wrote:
+> +/*
+> + * Record swapped tree blocks of a file/subvolume tree for delayed subtree
+> + * trace code. For detail check comment in fs/btrfs/qgroup.c.
+> + */
+> +struct btrfs_qgroup_swapped_blocks {
+> +	spinlock_t lock;
+> +	struct rb_root blocks[BTRFS_MAX_LEVEL];
+> +	/* RM_EMPTY_ROOT() of above blocks[] */
+> +	bool swapped;
 
-Couldn't check anything even in RO mode scrub or btrfs check, when I
-unmounted the array I got a few kernel stack traces:
-[Jan22 13:58] WARNING: CPU: 3 PID: 9711 at fs/btrfs/extent-tree.c:5986
-btrfs_free_block_groups+0x395/0x3b0 [btrfs]
-[  +0.000032] CPU: 3 PID: 9711 Comm: umount Not tainted
-4.20.0-042000-generic #201812232030
-[  +0.000001] Hardware name: Gigabyte Technology Co., Ltd. To be
-filled by O.E.M./H61M-DS2H, BIOS F6 12/14/2012
-[  +0.000014] RIP: 0010:btrfs_free_block_groups+0x395/0x3b0 [btrfs]
-[  +0.000002] Code: 01 00 00 00 0f 84 a0 fe ff ff 0f 0b 48 83 bb d0 01
-00 00 00 0f 84 9e fe ff ff 0f 0b 48 83 bb 08 0$
- 00 00 00 0f 84 9c fe ff ff <0f> 0b 48 83 bb 00 02 00 00 00 0f 84 9a
-fe ff ff 0f 0b e9 93 fe ff
-[  +0.000001] RSP: 0018:ffffa3c1c2997d88 EFLAGS: 00010206
-[  +0.000001] RAX: 0000000020000000 RBX: ffff924aae380000 RCX:
-0000000000000000
-[  +0.000001] RDX: ffffffffe0000000 RSI: ffff924b85970600 RDI:
-ffff924b85970600
-[  +0.000001] RBP: ffffa3c1c2997db8 R08: 0000000020000000 R09:
-ffff924b859706a8
-[  +0.000000] R10: 0000000000000002 R11: ffff924b973a1c04 R12:
-ffff924aae380080
-[  +0.000001] R13: ffff924b8dfe8400 R14: ffff924aae380090 R15:
-0000000000000000
-[  +0.000002] FS:  00007f1bd1076080(0000) GS:ffff924b97380000(0000)
-knlGS:0000000000000000
-[  +0.000001] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[  +0.000000] CR2: 0000562d2eb13c10 CR3: 0000000156910006 CR4:
-00000000001606e0
-[  +0.000001] Call Trace:
-[  +0.000018]  close_ctree+0x143/0x2e0 [btrfs]
-[  +0.000012]  btrfs_put_super+0x15/0x20 [btrfs]
-[  +0.000004]  generic_shutdown_super+0x72/0x110
-[  +0.000001]  kill_anon_super+0x18/0x30
-[  +0.000012]  btrfs_kill_super+0x16/0xa0 [btrfs]
-[  +0.000002]  deactivate_locked_super+0x3a/0x80
-[  +0.000001]  deactivate_super+0x51/0x60
-[  +0.000003]  cleanup_mnt+0x3f/0x80
-[  +0.000001]  __cleanup_mnt+0x12/0x20
-[  +0.000002]  task_work_run+0x9d/0xc0
-[  +0.000002]  exit_to_usermode_loop+0xf2/0x100
-[  +0.000002]  do_syscall_64+0xda/0x110
-[  +0.000003]  entry_SYSCALL_64_after_hwframe+0x44/0xa9
-[  +0.000001] RIP: 0033:0x7f1bd14bae27
-[  +0.000001] Code: 90 0c 00 f7 d8 64 89 01 48 83 c8 ff c3 66 0f 1f 44
-00 00 31 f6 e9 09 00 00 00 66 0f 1f 84 00 00 00
- 00 00 b8 a6 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 8b 0d 39
-90 0c 00 f7 d8 64 89 01 48
-[  +0.000001] RSP: 002b:00007ffdb15a75a8 EFLAGS: 00000246 ORIG_RAX:
-00000000000000a6
-[  +0.000002] RAX: 0000000000000000 RBX: 000055df329eda40 RCX:
-00007f1bd14bae27
-[  +0.000000] RDX: 0000000000000001 RSI: 0000000000000000 RDI:
-000055df329edc20
-[  +0.000001] RBP: 0000000000000000 R08: 000055df329eea70 R09:
-00000000ffffffff
-[  +0.000001] R10: 000000000000000b R11: 0000000000000246 R12:
-000055df329edc20
-[  +0.000001] R13: 00007f1bd15e18c4 R14: 0000000000000000 R15:
-00007ffdb15a7818
+Reordering 'swapped' after the lock will save at least 8 bytes of the
+structure size due to padding.
 
-Now I'm back in a very similar situation as before, btrfs check gets me:
-Opening filesystem to check...
-checksum verify failed on 24707469082624 found 451E87BF wanted
-A1FD3A09
-checksum verify failed on 24707469082624 found 2C2AEBE0 wanted
-D6652D6A
-checksum verify failed on 24707469082624 found 2C2AEBE0 wanted
-D6652D6A
-bad tree block 24707469082624, bytenr mismatch, want=24707469082624,
-have=231524568072192
-Couldn't read tree root
-ERROR: cannot open file system
+> +};
+> +
+>  /*
+>   * in ram representation of the tree.  extent_root is used for all allocations
+>   * and for the extent tree extent_root root.
+> @@ -1339,6 +1350,9 @@ struct btrfs_root {
+>  	/* Number of active swapfiles */
+>  	atomic_t nr_swapfiles;
+>  
+> +	/* Record pairs of swapped blocks for qgroup */
+> +	struct btrfs_qgroup_swapped_blocks swapped_blocks;
+> +
+>  #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+>  	u64 alloc_bytenr;
+>  #endif
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index bfefa1de0455..31b2facdfc1e 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -1219,6 +1219,7 @@ static void __setup_root(struct btrfs_root *root, struct btrfs_fs_info *fs_info,
+>  	root->anon_dev = 0;
+>  
+>  	spin_lock_init(&root->root_item_lock);
+> +	btrfs_qgroup_init_swapped_blocks(&root->swapped_blocks);
+>  }
+>  
+>  static struct btrfs_root *btrfs_alloc_root(struct btrfs_fs_info *fs_info,
+> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+> index 8fe6ebe9aef8..001830328960 100644
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -3797,3 +3797,133 @@ void btrfs_qgroup_check_reserved_leak(struct inode *inode)
+>  	}
+>  	extent_changeset_release(&changeset);
+>  }
+> +
+> +/*
+> + * Delete all swapped blocks record of @root.
+> + * Every record here means we skipped a full subtree scan for qgroup.
+> + *
+> + * Get called when commit one transaction.
+> + */
+> +void btrfs_qgroup_clean_swapped_blocks(struct btrfs_root *root)
+> +{
+> +	struct btrfs_qgroup_swapped_blocks *swapped_blocks;
+> +	int i;
+> +
+> +	swapped_blocks = &root->swapped_blocks;
+> +
+> +	spin_lock(&swapped_blocks->lock);
+> +	if (!swapped_blocks->swapped)
+> +		goto out;
+> +	for (i = 0; i < BTRFS_MAX_LEVEL; i++) {
+> +		struct rb_root *cur_root = &swapped_blocks->blocks[i];
+> +		struct btrfs_qgroup_swapped_block *entry;
+> +		struct btrfs_qgroup_swapped_block *next;
+> +
+> +		rbtree_postorder_for_each_entry_safe(entry, next, cur_root,
+> +						     node)
+> +			kfree(entry);
+> +		swapped_blocks->blocks[i] = RB_ROOT;
+> +	}
+> +	swapped_blocks->swapped = false;
+> +out:
+> +	spin_unlock(&swapped_blocks->lock);
+> +}
+> +
+> +/*
+> + * Adding subtree roots record into @subv_root.
+> + *
+> + * @subv_root:		tree root of the subvolume tree get swapped
+> + * @bg:			block group under balance
+> + * @subv_parent/slot:	pointer to the subtree root in file tree
+> + * @reloc_parent/slot:	pointer to the subtree root in reloc tree
+> + *			BOTH POINTERS ARE BEFORE TREE SWAP
+> + * @last_snapshot:	last snapshot generation of the file tree
+> + */
+> +int btrfs_qgroup_add_swapped_blocks(struct btrfs_trans_handle *trans,
+> +		struct btrfs_root *subv_root,
+> +		struct btrfs_block_group_cache *bg,
+> +		struct extent_buffer *subv_parent, int subv_slot,
+> +		struct extent_buffer *reloc_parent, int reloc_slot,
+> +		u64 last_snapshot)
+> +{
+> +	int level = btrfs_header_level(subv_parent) - 1;
+> +	struct btrfs_qgroup_swapped_blocks *blocks = &subv_root->swapped_blocks;
+> +	struct btrfs_fs_info *fs_info = subv_root->fs_info;
+> +	struct btrfs_qgroup_swapped_block *block;
+> +	struct rb_node **p = &blocks->blocks[level].rb_node;
 
-I could do it all again, but first, what can be wrong here? This array
-was working for some 4 years until it went bad a few weeks ago, and
-now the FS got badly corrupted again without any warnings. Any
-suggestions? Bad RAM, SAS controller going bad, some weirdly behaving
-disk? I need to figure out what can be failing before I try another
-recovery.
+Please rename 'p' to somethign that's not single letter and move the
+initialization before the block that uses it.
 
-Thanks for any help,
-Thiago Ramon
+> +	struct rb_node *parent = NULL;
+> +	int ret = 0;
+> +
+> +	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags))
+> +		return 0;
+> +
+> +	if (btrfs_node_ptr_generation(subv_parent, subv_slot) >
+> +		btrfs_node_ptr_generation(reloc_parent, reloc_slot)) {
+> +		btrfs_err_rl(fs_info,
+> +		"%s: bad parameter order, subv_gen=%llu reloc_gen=%llu",
+> +			__func__,
+> +			btrfs_node_ptr_generation(subv_parent, subv_slot),
+> +			btrfs_node_ptr_generation(reloc_parent, reloc_slot));
+> +		return -EUCLEAN;
+> +	}
+> +
+> +	block = kmalloc(sizeof(*block), GFP_NOFS);
+> +	if (!block) {
+> +		ret = -ENOMEM;
+
+This goes to 'out' that marks quota as inconsistent, is this
+intentional? Ie. if this function does not succed for whatever reason,
+the quotas are indeed inconsistent.
+
+> +		goto out;
+> +	}
+> +
+> +	/*
+> +	 * @reloc_parent/slot is still *BEFORE* swap, while @block is going to
+> +	 * record the bytenr *AFTER* swap, so we do the swap here.
+
+You don't need to *EMPHASIZE* that much
+
+> +	 */
+> +	block->subv_bytenr = btrfs_node_blockptr(reloc_parent, reloc_slot);
+> +	block->subv_generation = btrfs_node_ptr_generation(reloc_parent,
+> +							   reloc_slot);
+> +	block->reloc_bytenr = btrfs_node_blockptr(subv_parent, subv_slot);
+> +	block->reloc_generation = btrfs_node_ptr_generation(subv_parent,
+> +							    subv_slot);
+> +	block->last_snapshot = last_snapshot;
+> +	block->level = level;
+> +	if (bg->flags & BTRFS_BLOCK_GROUP_DATA)
+> +		block->trace_leaf = true;
+> +	else
+> +		block->trace_leaf = false;
+> +	btrfs_node_key_to_cpu(reloc_parent, &block->first_key, reloc_slot);
+> +
+> +	/* Insert @block into @blocks */
+> +	spin_lock(&blocks->lock);
+
+The initialization of p would go here
+
+> +	while (*p) {
+> +		struct btrfs_qgroup_swapped_block *entry;
+> +
+> +		parent = *p;
+> +		entry = rb_entry(parent, struct btrfs_qgroup_swapped_block,
+> +				 node);
+> +
+> +		if (entry->subv_bytenr < block->subv_bytenr)
+> +			p = &(*p)->rb_left;
+> +		else if (entry->subv_bytenr > block->subv_bytenr)
+> +			p = &(*p)->rb_right;
+> +		else {
+
+I've pointed out missing { } around if/else if/else statemtents in patch
+1, would be good if you fix all patches.
+
+> +			if (entry->subv_generation != block->subv_generation ||
+> +			    entry->reloc_bytenr != block->reloc_bytenr ||
+> +			    entry->reloc_generation !=
+> +			    block->reloc_generation) {
+> +				WARN_ON_ONCE(1);
+
+This would need some explanation why you want to see the warning. _ONCE
+is for the whole lifetime of the module but I think you'd be interested
+on a per-filesystem basis. If this is meant for developers it should go
+under DEBUG, but otherwise I don't see what would this warning bring to
+the users.
+
+> +				ret = -EEXIST;
+> +			}
+> +			kfree(block);
+> +			goto out_unlock;
+> +		}
+> +	}
+> +	rb_link_node(&block->node, parent, p);
+> +	rb_insert_color(&block->node, &blocks->blocks[level]);
+> +	blocks->swapped = true;
+> +out_unlock:
+> +	spin_unlock(&blocks->lock);
+> +out:
+> +	if (ret < 0)
+> +		fs_info->qgroup_flags |=
+> +			BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
+> +	return ret;
+> +}
+> diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+> index 226956f0bd73..93d7f0998f03 100644
+> --- a/fs/btrfs/qgroup.h
+> +++ b/fs/btrfs/qgroup.h
+> @@ -6,6 +6,8 @@
+>  #ifndef BTRFS_QGROUP_H
+>  #define BTRFS_QGROUP_H
+>  
+> +#include <linux/spinlock.h>
+> +#include <linux/rbtree.h>
+>  #include "ulist.h"
+>  #include "delayed-ref.h"
+>  
+> @@ -37,6 +39,66 @@
+>   *    Normally at qgroup rescan and transaction commit time.
+>   */
+>  
+> +/*
+> + * Special performance hack for balance.
+
+Is it really a hack? Hack sounds cool, but isn't it just an optimization?
+
+> + *
+> + * For balance, we need to swap subtree of file and reloc tree.
+> + * In theory, we need to trace all subtree blocks of both file and reloc tree,
+> + * since their owner has changed during such swap.
+> + *
+> + * However since balance has ensured that both subtrees are containing the
+> + * same contents and have the same tree structures, such swap won't cause
+> + * qgroup number change.
+> + *
+> + * But there is a race window between subtree swap and transaction commit,
+> + * during that window, if we increase/decrease tree level or merge/split tree
+> + * blocks, we still needs to trace original subtrees.
+> + *
+> + * So for balance, we use a delayed subtree trace, whose workflow is:
+> + *
+> + * 1) Record the subtree root block get swapped.
+> + *
+> + *    During subtree swap:
+> + *    O = Old tree blocks
+> + *    N = New tree blocks
+> + *          reloc tree                         file tree X
+> + *             Root                               Root
+> + *            /    \                             /    \
+> + *          NA     OB                          OA      OB
+> + *        /  |     |  \                      /  |      |  \
+> + *      NC  ND     OE  OF                   OC  OD     OE  OF
+> + *
+> + *   In these case, NA and OA is going to be swapped, record (NA, OA) into
+> + *   file tree X.
+> + *
+> + * 2) After subtree swap.
+> + *          reloc tree                         file tree X
+> + *             Root                               Root
+> + *            /    \                             /    \
+> + *          OA     OB                          NA      OB
+> + *        /  |     |  \                      /  |      |  \
+> + *      OC  OD     OE  OF                   NC  ND     OE  OF
+> + *
+> + * 3a) CoW happens for OB
+> + *     If we are going to CoW tree block OB, we check OB's bytenr against
+> + *     tree X's swapped_blocks structure.
+> + *     It doesn't fit any one, nothing will happen.
+> + *
+> + * 3b) CoW happens for NA
+> + *     Check NA's bytenr against tree X's swapped_blocks, and get a hit.
+> + *     Then we do subtree scan on both subtree OA and NA.
+> + *     Resulting 6 tree blocks to be scanned (OA, OC, OD, NA, NC, ND).
+> + *
+> + *     Then no matter what we do to file tree X, qgroup numbers will
+> + *     still be correct.
+> + *     Then NA's record get removed from X's swapped_blocks.
+> + *
+> + * 4)  Transaction commit
+> + *     Any record in X's swapped_blocks get removed, since there is no
+> + *     modification to swapped subtrees, no need to trigger heavy qgroup
+> + *     subtree rescan for them.
+> + */
+> +
+>  /*
+>   * Record a dirty extent, and info qgroup to update quota on it
+>   * TODO: Use kmem cache to alloc it.
+> @@ -59,6 +121,24 @@ struct btrfs_qgroup_extent_record {
+>  	struct ulist *old_roots;
+>  };
+>  
+> +struct btrfs_qgroup_swapped_block {
+> +	struct rb_node node;
+> +
+> +	bool trace_leaf;
+> +	int level;
+
+Please reorder that so int goes before bool, othewise this adds
+unnecessary padding.
+
+> +
+> +	/* bytenr/generation of the tree block in subvolume tree after swap */
+> +	u64 subv_bytenr;
+> +	u64 subv_generation;
+> +
+> +	/* bytenr/generation of the tree block in reloc tree after swap */
+> +	u64 reloc_bytenr;
+> +	u64 reloc_generation;
+> +
+> +	u64 last_snapshot;
+> +	struct btrfs_key first_key;
+> +};
+> +
+>  /*
+>   * Qgroup reservation types:
+>   *
+> @@ -301,4 +381,23 @@ void btrfs_qgroup_convert_reserved_meta(struct btrfs_root *root, int num_bytes);
+>  
+>  void btrfs_qgroup_check_reserved_leak(struct inode *inode);
+>  
+> +/* btrfs_qgroup_swapped_blocks related functions */
+> +static inline void btrfs_qgroup_init_swapped_blocks(
+
+'inline' is not needed for a function that's called infrequently and
+only from one location, an normal exported function would be ok.
+
+> +		struct btrfs_qgroup_swapped_blocks *swapped_blocks)
+> +{
+> +	int i;
+> +
+> +	spin_lock_init(&swapped_blocks->lock);
+> +	for (i = 0; i < BTRFS_MAX_LEVEL; i++)
+> +		swapped_blocks->blocks[i] = RB_ROOT;
+> +	swapped_blocks->swapped = false;
+> +}
+> +
+> +void btrfs_qgroup_clean_swapped_blocks(struct btrfs_root *root);
+> +int btrfs_qgroup_add_swapped_blocks(struct btrfs_trans_handle *trans,
+> +		struct btrfs_root *subv_root,
+> +		struct btrfs_block_group_cache *bg,
+> +		struct extent_buffer *subv_parent, int subv_slot,
+> +		struct extent_buffer *reloc_parent, int reloc_slot,
+> +		u64 last_snapshot);
+
+Please keep an empty line before the final #endif
+
+>  #endif

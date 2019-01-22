@@ -2,183 +2,88 @@ Return-Path: <SRS0=kIOr=P6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6DA96C282C3
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Jan 2019 17:29:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B6081C282C3
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Jan 2019 17:39:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3A0D821019
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Jan 2019 17:29:34 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="JPgE1V0F"
+	by mail.kernel.org (Postfix) with ESMTP id 9277B21019
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Jan 2019 17:39:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726035AbfAVR3d (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 22 Jan 2019 12:29:33 -0500
-Received: from mail-ua1-f67.google.com ([209.85.222.67]:39719 "EHLO
-        mail-ua1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725899AbfAVR3c (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Jan 2019 12:29:32 -0500
-Received: by mail-ua1-f67.google.com with SMTP id c12so8340929uas.6
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Jan 2019 09:29:32 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
-         :subject:to:cc:content-transfer-encoding;
-        bh=kRaQxBcGoTIEs/Wj925P9Ot2RnqXyAer8hkn2t2uBt8=;
-        b=JPgE1V0FWW6dVE4fC3eHUDmZb5YsPIZqZ0ivB0easXRoBEOxfPAZTyx6tVINFUUICT
-         WXQUVYKywtyQc40JdPthPw2B0hde7H9bSs1iqg4ndzHN+jBI3vrlE7ih68CWddOZGgBo
-         CKZkhzu1eGIREkoSt9KGm1qjsiQIkgTLO0l7mbjRPJy9S4U+SsBj9F7kDzPzB3wGy5O8
-         yfYxJTIvI0AOMB8yd7IgE0CK4ub4RWKLcjCNgJWceceYZVig1A98jf1FF7RA50wNloCw
-         bDzsbVfpE2M0y/y+0rEwldY0YthduQkY+KmHfEvU+MdPsCF/L6xAWtWzICmky2fVbiGk
-         KmvQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
-         :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=kRaQxBcGoTIEs/Wj925P9Ot2RnqXyAer8hkn2t2uBt8=;
-        b=OAjRDmFDNDQ6XFJrNHyHtVOVqWQWyl5d2pm3Zr7GthQlqs/Z8njoN9r4ZRlyyh6JJl
-         L47Q14sWGnriD1czOA3TmnaBeqiMkrq9AQGNimEWhGKFtlUghhs/+oZ5tRBw3BBg/Spv
-         qL5/VLS23/sd/o/HuWQqxsfn65i790bestn1HbMsgAtxhIm6+i84CmlUyqZr4+UWbrWJ
-         rxrzbCHmeH2JqncolOXRVOD6PHr/OpQ7VEBg/DD++uIVR4OLqZ25C2mJ8FQZegbyZxWO
-         5P8vhokJ8s7XrxiwhdaEMzOkF99gAoUha2D9nScNhnjtD1553zA5Qw9nN7iLmPjUiasY
-         +vpQ==
-X-Gm-Message-State: AJcUukcAbNaWRLB277iMeEkKv9jfSnuMAI+wyUNlcBt20x09Syr0FFM0
-        gS/m5DEEFG2nSXWa83IaqSnP5BYaDn2wF1ts3c8=
-X-Google-Smtp-Source: ALg8bN7sISQQqlxJWNr6RKuoSsRht1UCGWi411fJRQxBtJ5048IdY36JP38RdeEokbzX44z+Fpos4gXl7Txi+HjxorI=
-X-Received: by 2002:ab0:3259:: with SMTP id r25mr13280107uan.108.1548178171592;
- Tue, 22 Jan 2019 09:29:31 -0800 (PST)
+        id S1725924AbfAVRjc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 22 Jan 2019 12:39:32 -0500
+Received: from mx2.suse.de ([195.135.220.15]:54772 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725916AbfAVRjc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 Jan 2019 12:39:32 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 107A9B0C0
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Jan 2019 17:39:31 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 375BBDA84A; Tue, 22 Jan 2019 18:38:57 +0100 (CET)
+Date:   Tue, 22 Jan 2019 18:38:56 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3 3/5] btrfs: extent_io: Kill the BUG_ON() in
+ flush_write_bio()
+Message-ID: <20190122173856.GQ2900@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20190118021956.22949-1-wqu@suse.com>
+ <20190118021956.22949-4-wqu@suse.com>
 MIME-Version: 1.0
-References: <CAJtFHURMDnM9EMAeLE4yr-UbWHa=o8M0=Yvm-MZp8ixWykfxFw@mail.gmail.com>
- <CAL3q7H4HsGMLS5mjTLSugQ-YoF-M24Fy6eCEAF9=04g_=A=jFA@mail.gmail.com>
- <CAJtFHUR8G927m1bx3UEgps9-dxPbZh+j4JTvzAn-yqcKRMLfTg@mail.gmail.com> <CAJtFHUSKxDBwCzp71m=E6grxAkzfsaZO7P0paGn_L-MibDpeZw@mail.gmail.com>
-In-Reply-To: <CAJtFHUSKxDBwCzp71m=E6grxAkzfsaZO7P0paGn_L-MibDpeZw@mail.gmail.com>
-Reply-To: fdmanana@gmail.com
-From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Tue, 22 Jan 2019 17:29:20 +0000
-Message-ID: <CAL3q7H4yx8MW4S8seryupj5dhV-uWYWbp7gDP1UaSmj1D+hh4A@mail.gmail.com>
-Subject: Re: btrfs receive deadlock and questions
-To:     Eli V <eliventer@gmail.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190118021956.22949-4-wqu@suse.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Jan 22, 2019 at 5:20 PM Eli V <eliventer@gmail.com> wrote:
->
-> On Tue, Jan 22, 2019 at 11:03 AM Eli V <eliventer@gmail.com> wrote:
-> >
-> > On Tue, Jan 22, 2019 at 10:42 AM Filipe Manana <fdmanana@gmail.com> wro=
-te:
-> > >
-> > > On Tue, Jan 22, 2019 at 3:26 PM Eli V <eliventer@gmail.com> wrote:
-> > > >
-> > > > I seem to have it a deadlock trying out btrfs send & receive. Now I
-> > > > haven't used btrfs send & receive much, so don't have much experien=
-ce
-> > > > with them. Anyways, bug report and stack traces:
-> > > > https://bugzilla.kernel.org/show_bug.cgi?id=3D202383
-> > >
-> > > This is the same you reported at:
-> > > https://bugzilla.kernel.org/show_bug.cgi?id=3D199753
-> > >
-> > > It just happens through a different path, unrelated to send/receive.
-> > > You are running a 4.19.16 kernel, which doesn't have the fix [1]:
-> > >
-> > > $ git tag --contains 5ce555578e0919237fa4bda92b4670e2dd176f85
-> > > v4.20
-> > > v4.20-rc1
-> > > v4.20-rc2
-> > > v4.20-rc3
-> > > v4.20-rc4
-> > > v4.20-rc5
-> > > v4.20-rc6
-> > > v4.20-rc7
-> > > v4.20.1
-> > > v4.20.2
-> > > v4.20.3
-> > > v5.0-rc1
-> > > v5.0-rc2
-> > > v5.0-rc3
-> > >
-> > > All the deadlock problems you reported are fixed by [1] and [2].
-> > > The second, related to the free space tree, is very recent and only o=
-n 5.0-rcs:
-> > >
-> > > $ git tag --contains a6d8654d885d7d79a3fb82da64eaa489ca332a82
-> > > v5.0-rc2
-> > > v5.0-rc3
-> > >
-> > > [1] https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.gi=
-t/commit/?id=3D5ce555578e0919237fa4bda92b4670e2dd176f85
-> > > [2] https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.gi=
-t/commit/?id=3Da6d8654d885d7d79a3fb82da64eaa489ca332a82
-> > >
->
-> Hmm, as far as I can tell these are both already in 4.19.16, according
-> to the linux-stable git repo as:
->
-> d7068618ae1fbb80fc16bd7c58798e208a696483
-> ea9c846f54dbf03da159a1b7566aa95e9bf1674b
->
-> So I guess that would mean the btrfs receive deadlock i.e. kernel
-> bugzilla 202383, isn't fixed by these commits.
+On Fri, Jan 18, 2019 at 10:19:54AM +0800, Qu Wenruo wrote:
+> This BUG_ON() is really just a crappy way to workaround the _must_check
+> attribute of submit_one_bio().
+> 
+> Now kill the BUG_ON() and allow flush_write_bio() to return error
+> number.
+> 
+> Also add _must_check attribute to flush_write_bio(), and modify all
+> callers to handle the possible error returned.
 
-So there are a few different paths that lead to the same deadlock and
-I missed them before.
-I'll got those fixed in the next few days.
+Can you please spit that to several steps:
 
-Btw, it's not related to send/receive at all, it can happen from anywhere.
+1. handle errors in submit_one_bio or pass it to the callers
+   ie. drop the BUG_ON and move it to all callers
 
-Thanks for the report.
+2. in all callers do
+   ret = flush_write_bio(...)
+   BUG_ON(ret)
 
->
->
-> >
-> > Sounds good, thanks for the links. I thought the stack traces looked
-> > different, thus the 2 different reports. I guess no further info is
-> > needed from the hung tasks and I can start killing it and figuring out
-> > how to resume the process.
-> >
-> >
-> > > >
-> > > > Seems like the receive is hung as well as several kworkers. It's ab=
-out
-> > > > 1.2TB into a 9TB or so transfer onto a brand new pretty empty fs. T=
-his
-> > > > is just a btrfs send snapshot, not an incremental. That was suppose=
-d
-> > > > to come next. If this was an rsync based backup I'd just kill the
-> > > > rsync process and restart it, not sure if there's a way to restart =
-a
-> > > > btrfs send receive, or if I'd have to delete the partially created
-> > > > snapshot on the destination and restart the send. I guess I could j=
-ust
-> > > > use rsync to finish the copy of the initial snapshot as well before
-> > > > using send | receive for the incrementals. Thoughts and options wou=
-ld
-> > > > be appreciated, thanks.
-> > > >
-> > > > -Eli
-> > >
-> > >
-> > >
-> > > --
-> > > Filipe David Manana,
-> > >
-> > > =E2=80=9CWhether you think you can, or you think you can't =E2=80=94 =
-you're right.=E2=80=9D
+So now it's one level up in the call chain and up to all callers to
+handle the errors properly. The code is equivalent to the previous
+state, though there are more BUG_ONs.
 
+3. one patch per function that handles errors of flush_write_bio, ie.
+   actual replacement of BUG_ON with if (ret < 0) etc
 
+As there are several different functions, each has own things to clean
+up and it's easier to review them one by one. Sometimes it's necessary
+to check more callers and keeping multiple contexts in mind at once does
+not work very well.
 
---=20
-Filipe David Manana,
+Counting all the affected functions:
 
-=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
- right.=E2=80=9D
+lock_extent_buffer_for_io(struct extent_buffer *eb,
+btree_write_cache_pages(struct address_space *mapping,
+extent_write_cache_pages(struct address_space *mapping,
+extent_write_full_page(struct page *page, struct writeback_control *wbc)
+extent_write_locked_range(struct inode *inode, u64 start, u64 end,
+extent_writepages(struct address_space *mapping,
+
+the 3rd point would produce 6 patches.

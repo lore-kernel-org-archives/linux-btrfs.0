@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E13A5C282C2
-	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jan 2019 07:15:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D4557C282C0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jan 2019 07:15:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A40B221019
-	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jan 2019 07:15:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A106B21019
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jan 2019 07:15:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726158AbfAWHP2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 23 Jan 2019 02:15:28 -0500
-Received: from mx2.suse.de ([195.135.220.15]:47334 "EHLO mx1.suse.de"
+        id S1726647AbfAWHPg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 23 Jan 2019 02:15:36 -0500
+Received: from mx2.suse.de ([195.135.220.15]:47380 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725950AbfAWHP2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Jan 2019 02:15:28 -0500
+        id S1726435AbfAWHPg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 23 Jan 2019 02:15:36 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 84E21B088
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Jan 2019 07:15:26 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 68007B06D
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Jan 2019 07:15:33 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     dsterba@suse.cz
-Subject: [Patch v5 1/7] btrfs: qgroup: Move reserved data account from btrfs_delayed_ref_head to btrfs_qgroup_extent_record
-Date:   Wed, 23 Jan 2019 15:15:12 +0800
-Message-Id: <20190123071518.2528-2-wqu@suse.com>
+Subject: [Patch v5 3/7] btrfs: relocation: Delay reloc tree deletion after merge_reloc_roots()
+Date:   Wed, 23 Jan 2019 15:15:14 +0800
+Message-Id: <20190123071518.2528-4-wqu@suse.com>
 X-Mailer: git-send-email 2.20.1
 In-Reply-To: <20190123071518.2528-1-wqu@suse.com>
 References: <20190123071518.2528-1-wqu@suse.com>
@@ -38,323 +38,253 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[BUG]
-Btrfs/139 will fail with a pretty high possibility if the testing
-machine (VM) only has 2G ram.
+Relocation code will drop btrfs_root::reloc_root as soon as
+merge_reloc_root() finishes.
 
-Resulting the final write success while it should fail due to EDQUOT,
-and the result fs will has quota exceeding the limit by 16K.
+However later qgroup code will need to access btrfs_root::reloc_root
+after merge_reloc_root() for delayed subtree rescan.
 
-The simplified reproducer will be: (needs a 2G ram VM)
+So alter the timming of resetting btrfs_root:::reloc_root, make it
+happens after transaction commit.
 
-  mkfs.btrfs -f $dev
-  mount $dev $mnt
+With this patch, we will introduce a new btrfs_root::state,
+BTRFS_ROOT_DEAD_RELOC_TREE, to info part of btrfs_root::reloc_tree user
+that although btrfs_root::reloc_tree is still non-NULL, but still it's
+not used any more.
 
-  btrfs subv create $mnt/subv
-  btrfs quota enable $mnt
-  btrfs quota rescan -w $mnt
-  btrfs qgroup limit -e 1G $mnt/subv
+The lifespan of btrfs_root::reloc tree will become:
+          Old behavior            |              New
+------------------------------------------------------------------------
+btrfs_init_reloc_root()      ---  | btrfs_init_reloc_root()      ---
+  set reloc_root              |   |   set reloc_root              |
+                              |   |                               |
+                              |   |                               |
+merge_reloc_root()            |   | merge_reloc_root()            |
+|- btrfs_update_reloc_root() ---  | |- btrfs_update_reloc_root() -+-
+     clear btrfs_root::reloc_root |      set ROOT_DEAD_RELOC_TREE |
+                                  |      record root into dirty   |
+                                  |      roots rbtree             |
+                                  |                               |
+                                  | reloc_block_group() Or        |
+                                  | btrfs_recover_relocation()    |
+                                  | | After transaction commit    |
+                                  | |- clean_dirty_subvols()     ---
+                                  |     clear btrfs_root::reloc_root
 
-  for i in $(seq -w  1 8); do
-  	xfs_io -f -c "pwrite 0 128M" $mnt/subv/file_$i > /dev/null
-  	echo "file $i written" > /dev/kmsg
-  done
-  sync
-  btrfs qgroup show -pcre --raw $mnt
+During ROOT_DEAD_RELOC_TREE set lifespan, the only user of
+btrfs_root::reloc_tree should be qgroup.
 
-The last pwrite will not trigger EDQUOT and final qgroup show will show
-something like:
+Since reloc root needs a longer life-span, this patch will also delay
+btrfs_drop_snapshot() call.
+Now btrfs_drop_snapshot() is called in clean_dirty_subvols().
 
-  qgroupid         rfer         excl     max_rfer     max_excl parent  child
-  --------         ----         ----     --------     -------- ------  -----
-  0/5             16384        16384         none         none ---     ---
-  0/256      1073758208   1073758208         none   1073741824 ---     ---
+This patch will increase the size of btrfs_root by 16 bytes.
 
-And 1073758208 is larger than
-  > 1073741824.
-
-[CAUSE]
-It's a bug in btrfs qgroup data reserved space management.
-
-For quota limit, we must ensure that:
-  reserved (data + metadata) + rfer/excl <= limit
-
-Since rfer/excl is only updated at transaction commmit time, reserved
-space needs to be taken special care.
-
-One important part of reserved space is data, and for a new data extent
-written to disk, we still need to take the reserved space until
-rfer/excl numbers get update.
-
-Originally when an ordered extent finishes, we migrate the reserved
-qgroup data space from extent_io tree to delayed ref head of the data
-extent, expecting delayed ref will only be cleaned up at commit
-transaction time.
-
-However for small RAM machine, due to memory pressure dirty pages can be
-flushed back to disk without committing a transaction.
-
-The  related events will be something like:
-
-  BTRFS info (device dm-3): has skinny extents
-  file 1 written
-  btrfs_finish_ordered_io: ino=258 ordered offset=0 len=54947840
-  btrfs_finish_ordered_io: ino=258 ordered offset=54947840 len=5636096
-  btrfs_finish_ordered_io: ino=258 ordered offset=61153280 len=57344
-  btrfs_finish_ordered_io: ino=258 ordered offset=61210624 len=8192
-  btrfs_finish_ordered_io: ino=258 ordered offset=60583936 len=569344
-  cleanup_ref_head: num_bytes=54947840
-  cleanup_ref_head: num_bytes=5636096
-  cleanup_ref_head: num_bytes=569344
-  cleanup_ref_head: num_bytes=57344
-  cleanup_ref_head: num_bytes=8192
-  ^^^^^^^^^^^^^^^^ This will free qgroup data reserved space
-  file 2 written
-  ...
-  file 8 written
-  cleanup_ref_head: num_bytes=8192
-  ...
-  btrfs_commit_transaction  <<< the only transaction committed during
-				the test
-
-When file 2 is written, we have already freed 128M reserved qgroup data
-space for ino 258. Thus later write won't trigger EDQUOT.
-
-This allows us to write more data beyond qgroup limit.
-
-In my 2G ram VM, it could reach about 1.2G before hitting EDQUOT.
-
-[FIX]
-By moving reserved qgroup data space from btrfs_delayed_ref_head to
-btrfs_qgroup_extent_record, we can ensure that reserved qgroup data
-space won't be freed half way before commit transaction, thus fix the
-problem.
-
-Fixes: f64d5ca86821 ("btrfs: delayed_ref: Add new function to record reserved space into delayed ref")
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/delayed-ref.c       | 15 ++++-----------
- fs/btrfs/delayed-ref.h       | 11 -----------
- fs/btrfs/extent-tree.c       |  3 ---
- fs/btrfs/qgroup.c            | 19 +++++++++++++++----
- fs/btrfs/qgroup.h            | 20 +++++++++++---------
- include/trace/events/btrfs.h | 29 -----------------------------
- 6 files changed, 30 insertions(+), 67 deletions(-)
+ fs/btrfs/ctree.h      | 15 ++++++++
+ fs/btrfs/disk-io.c    |  1 +
+ fs/btrfs/relocation.c | 86 ++++++++++++++++++++++++++++++++++---------
+ 3 files changed, 85 insertions(+), 17 deletions(-)
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index cad36c99a483..7d2a413df90d 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -602,17 +602,14 @@ static void init_delayed_ref_head(struct btrfs_delayed_ref_head *head_ref,
- 	RB_CLEAR_NODE(&head_ref->href_node);
- 	head_ref->processing = 0;
- 	head_ref->total_ref_mod = count_mod;
--	head_ref->qgroup_reserved = 0;
--	head_ref->qgroup_ref_root = 0;
- 	spin_lock_init(&head_ref->lock);
- 	mutex_init(&head_ref->mutex);
- 
- 	if (qrecord) {
- 		if (ref_root && reserved) {
--			head_ref->qgroup_ref_root = ref_root;
--			head_ref->qgroup_reserved = reserved;
-+			qrecord->data_rsv = reserved;
-+			qrecord->data_rsv_refroot = ref_root;
- 		}
--
- 		qrecord->bytenr = bytenr;
- 		qrecord->num_bytes = num_bytes;
- 		qrecord->old_roots = NULL;
-@@ -651,10 +648,6 @@ add_delayed_ref_head(struct btrfs_trans_handle *trans,
- 	existing = htree_insert(&delayed_refs->href_root,
- 				&head_ref->href_node);
- 	if (existing) {
--		WARN_ON(qrecord && head_ref->qgroup_ref_root
--			&& head_ref->qgroup_reserved
--			&& existing->qgroup_ref_root
--			&& existing->qgroup_reserved);
- 		update_existing_head_ref(trans, existing, head_ref,
- 					 old_ref_mod);
- 		/*
-@@ -770,7 +763,7 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
- 
- 	if (test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags) &&
- 	    is_fstree(ref_root)) {
--		record = kmalloc(sizeof(*record), GFP_NOFS);
-+		record = kzalloc(sizeof(*record), GFP_NOFS);
- 		if (!record) {
- 			kmem_cache_free(btrfs_delayed_tree_ref_cachep, ref);
- 			kmem_cache_free(btrfs_delayed_ref_head_cachep, head_ref);
-@@ -867,7 +860,7 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
- 
- 	if (test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags) &&
- 	    is_fstree(ref_root)) {
--		record = kmalloc(sizeof(*record), GFP_NOFS);
-+		record = kzalloc(sizeof(*record), GFP_NOFS);
- 		if (!record) {
- 			kmem_cache_free(btrfs_delayed_data_ref_cachep, ref);
- 			kmem_cache_free(btrfs_delayed_ref_head_cachep,
-diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
-index d2af974f68a1..70606da440aa 100644
---- a/fs/btrfs/delayed-ref.h
-+++ b/fs/btrfs/delayed-ref.h
-@@ -102,17 +102,6 @@ struct btrfs_delayed_ref_head {
- 	 */
- 	int ref_mod;
- 
--	/*
--	 * For qgroup reserved space freeing.
--	 *
--	 * ref_root and reserved will be recorded after
--	 * BTRFS_ADD_DELAYED_EXTENT is called.
--	 * And will be used to free reserved qgroup space at
--	 * run_delayed_refs() time.
--	 */
--	u64 qgroup_ref_root;
--	u64 qgroup_reserved;
--
- 	/*
- 	 * when a new extent is allocated, it is just reserved in memory
- 	 * The actual extent isn't inserted into the extent allocation tree
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index b15afeae16df..208335a2aa29 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2494,9 +2494,6 @@ static void cleanup_ref_head_accounting(struct btrfs_trans_handle *trans,
- 		}
- 	}
- 
--	/* Also free its reserved qgroup space */
--	btrfs_qgroup_free_delayed_ref(fs_info, head->qgroup_ref_root,
--				      head->qgroup_reserved);
- 	btrfs_delayed_refs_rsv_release(fs_info, nr_items);
- }
- 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 4e473a998219..f214b490d80c 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1546,12 +1546,18 @@ int btrfs_qgroup_trace_extent_nolock(struct btrfs_fs_info *fs_info,
- 		parent_node = *p;
- 		entry = rb_entry(parent_node, struct btrfs_qgroup_extent_record,
- 				 node);
--		if (bytenr < entry->bytenr)
-+		if (bytenr < entry->bytenr) {
- 			p = &(*p)->rb_left;
--		else if (bytenr > entry->bytenr)
-+		} else if (bytenr > entry->bytenr) {
- 			p = &(*p)->rb_right;
--		else
-+		} else {
-+			if (record->data_rsv && !entry->data_rsv) {
-+				entry->data_rsv = record->data_rsv;
-+				entry->data_rsv_refroot =
-+					record->data_rsv_refroot;
-+			}
- 			return 1;
-+		}
- 	}
- 
- 	rb_link_node(&record->node, parent_node, p);
-@@ -1597,7 +1603,7 @@ int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans, u64 bytenr,
- 	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags)
- 	    || bytenr == 0 || num_bytes == 0)
- 		return 0;
--	record = kmalloc(sizeof(*record), gfp_flag);
-+	record = kzalloc(sizeof(*record), gfp_flag);
- 	if (!record)
- 		return -ENOMEM;
- 
-@@ -2576,6 +2582,11 @@ int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans)
- 					goto cleanup;
- 			}
- 
-+			/* Free the reserved data space */
-+			btrfs_qgroup_free_refroot(fs_info,
-+					record->data_rsv_refroot,
-+					record->data_rsv,
-+					BTRFS_QGROUP_RSV_DATA);
- 			/*
- 			 * Use SEQ_LAST as time_seq to do special search, which
- 			 * doesn't lock tree or delayed_refs and search current
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index 20c6bd5fa701..d4fae53969d4 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -45,6 +45,17 @@ struct btrfs_qgroup_extent_record {
- 	struct rb_node node;
- 	u64 bytenr;
- 	u64 num_bytes;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 0a68cf7032f5..865ce9531d96 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1195,6 +1195,13 @@ enum {
+ 	BTRFS_ROOT_MULTI_LOG_TASKS,
+ 	BTRFS_ROOT_DIRTY,
+ 	BTRFS_ROOT_DELETING,
 +
 +	/*
-+	 * For qgroup reserved data space freeing.
++	 * Reloc tree is orphan, only kept here for qgroup delayed subtree scan
 +	 *
-+	 * @data_rsv_refroot and @data_rsv will be recorded after
-+	 * BTRFS_ADD_DELAYED_EXTENT is called.
-+	 * And will be used to free reserved qgroup space at
-+	 * transaction commit time.
++	 * Set for the subvolume tree owning the reloc tree.
 +	 */
-+	u32 data_rsv;		/* reserved data space needs to be freed */
-+	u64 data_rsv_refroot;	/* which root the reserved data belongs to */
- 	struct ulist *old_roots;
++	BTRFS_ROOT_DEAD_RELOC_TREE,
  };
  
-@@ -252,15 +263,6 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,
- void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
- 			       u64 ref_root, u64 num_bytes,
- 			       enum btrfs_qgroup_rsv_type type);
--static inline void btrfs_qgroup_free_delayed_ref(struct btrfs_fs_info *fs_info,
--						 u64 ref_root, u64 num_bytes)
--{
--	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags))
--		return;
--	trace_btrfs_qgroup_free_delayed_ref(fs_info, ref_root, num_bytes);
--	btrfs_qgroup_free_refroot(fs_info, ref_root, num_bytes,
--				  BTRFS_QGROUP_RSV_DATA);
--}
+ /*
+@@ -1307,6 +1314,14 @@ struct btrfs_root {
+ 	struct list_head ordered_root;
+ 	u64 nr_ordered_extents;
  
- #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
- int btrfs_verify_qgroup_counts(struct btrfs_fs_info *fs_info, u64 qgroupid,
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index 2887503e4d12..43d3ee1a6544 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -1512,35 +1512,6 @@ DEFINE_EVENT(btrfs__qgroup_rsv_data, btrfs_qgroup_release_data,
- 	TP_ARGS(inode, start, len, reserved, op)
- );
++	/*
++	 * Not empty if this subvolume root has gone through tree block swap
++	 * (relocation)
++	 *
++	 * Will be used by reloc_control::dirty_subvol_roots.
++	 */
++	struct list_head reloc_dirty_list;
++
+ 	/*
+ 	 * Number of currently running SEND ioctls to prevent
+ 	 * manipulation with the read-only status via SUBVOL_SETFLAGS
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 8da2f380d3c0..bfefa1de0455 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1175,6 +1175,7 @@ static void __setup_root(struct btrfs_root *root, struct btrfs_fs_info *fs_info,
+ 	INIT_LIST_HEAD(&root->delalloc_root);
+ 	INIT_LIST_HEAD(&root->ordered_extents);
+ 	INIT_LIST_HEAD(&root->ordered_root);
++	INIT_LIST_HEAD(&root->reloc_dirty_list);
+ 	INIT_LIST_HEAD(&root->logged_list[0]);
+ 	INIT_LIST_HEAD(&root->logged_list[1]);
+ 	spin_lock_init(&root->inode_lock);
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 272b287f8cf0..70a3e1170e8a 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -162,6 +162,8 @@ struct reloc_control {
+ 	struct mapping_tree reloc_root_tree;
+ 	/* list of reloc trees */
+ 	struct list_head reloc_roots;
++	/* list of subvolume trees who get relocated */
++	struct list_head dirty_subvol_roots;
+ 	/* size of metadata reservation for merging reloc trees */
+ 	u64 merging_rsv_size;
+ 	/* size of relocated tree nodes */
+@@ -1467,15 +1469,17 @@ int btrfs_update_reloc_root(struct btrfs_trans_handle *trans,
+ 	struct btrfs_root_item *root_item;
+ 	int ret;
  
--DECLARE_EVENT_CLASS(btrfs__qgroup_delayed_ref,
+-	if (!root->reloc_root)
++	if (test_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &root->state) ||
++	    !root->reloc_root)
+ 		goto out;
+ 
+ 	reloc_root = root->reloc_root;
+ 	root_item = &reloc_root->root_item;
+ 
++	/* root->reloc_root will stay until current relocation finished */
+ 	if (fs_info->reloc_ctl->merge_reloc_tree &&
+ 	    btrfs_root_refs(root_item) == 0) {
+-		root->reloc_root = NULL;
++		set_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &root->state);
+ 		__del_reloc_root(reloc_root);
+ 	}
+ 
+@@ -2120,6 +2124,59 @@ static int find_next_key(struct btrfs_path *path, int level,
+ 	return 1;
+ }
+ 
++/*
++ * Helper to insert current subvolume into reloc_control::dirty_subvol_roots
++ */
++static void insert_dirty_subvol(struct btrfs_trans_handle *trans,
++				struct reloc_control *rc,
++				struct btrfs_root *root)
++{
++	struct btrfs_root *reloc_root = root->reloc_root;
++	struct btrfs_root_item *reloc_root_item;
++	u64 root_objectid = root->root_key.objectid;
++
++	/* @root must be a subvolume tree root with a valid reloc tree */
++	ASSERT(root_objectid != BTRFS_TREE_RELOC_OBJECTID);
++	ASSERT(reloc_root);
++
++	reloc_root_item = &reloc_root->root_item;
++	memset(&reloc_root_item->drop_progress, 0,
++		sizeof(reloc_root_item->drop_progress));
++	reloc_root_item->drop_level = 0;
++	btrfs_set_root_refs(reloc_root_item, 0);
++	btrfs_update_reloc_root(trans, root);
++
++	if (list_empty(&root->reloc_dirty_list)) {
++		btrfs_grab_fs_root(root);
++		list_add_tail(&root->reloc_dirty_list, &rc->dirty_subvol_roots);
++	}
++	return;
++}
++
++static int clean_dirty_subvols(struct reloc_control *rc)
++{
++	struct btrfs_root *root;
++	struct btrfs_root *next;
++	int ret = 0;
++	int tmp_ret;
++
++	list_for_each_entry_safe(root, next, &rc->dirty_subvol_roots,
++				 reloc_dirty_list) {
++		struct btrfs_root *reloc_root = root->reloc_root;
++
++		clear_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &root->state);
++		list_del_init(&root->reloc_dirty_list);
++		root->reloc_root = NULL;
++		if (reloc_root) {
++			tmp_ret = btrfs_drop_snapshot(reloc_root, NULL, 0, 1);
++			if (tmp_ret < 0 && !ret)
++				ret = tmp_ret;
++		}
++		btrfs_put_fs_root(root);
++	}
++	return ret;
++}
++
+ /*
+  * merge the relocated tree blocks in reloc tree with corresponding
+  * fs tree.
+@@ -2259,13 +2316,8 @@ static noinline_for_stack int merge_reloc_root(struct reloc_control *rc,
+ out:
+ 	btrfs_free_path(path);
+ 
+-	if (err == 0) {
+-		memset(&root_item->drop_progress, 0,
+-		       sizeof(root_item->drop_progress));
+-		root_item->drop_level = 0;
+-		btrfs_set_root_refs(root_item, 0);
+-		btrfs_update_reloc_root(trans, root);
+-	}
++	if (err == 0)
++		insert_dirty_subvol(trans, rc, root);
+ 
+ 	if (trans)
+ 		btrfs_end_transaction_throttle(trans);
+@@ -2410,14 +2462,6 @@ void merge_reloc_roots(struct reloc_control *rc)
+ 		} else {
+ 			list_del_init(&reloc_root->root_list);
+ 		}
 -
--	TP_PROTO(const struct btrfs_fs_info *fs_info,
--		 u64 ref_root, u64 reserved),
--
--	TP_ARGS(fs_info, ref_root, reserved),
--
--	TP_STRUCT__entry_btrfs(
--		__field(	u64,		ref_root	)
--		__field(	u64,		reserved	)
--	),
--
--	TP_fast_assign_btrfs(fs_info,
--		__entry->ref_root	= ref_root;
--		__entry->reserved	= reserved;
--	),
--
--	TP_printk_btrfs("root=%llu reserved=%llu op=free",
--		  __entry->ref_root, __entry->reserved)
--);
--
--DEFINE_EVENT(btrfs__qgroup_delayed_ref, btrfs_qgroup_free_delayed_ref,
--
--	TP_PROTO(const struct btrfs_fs_info *fs_info,
--		 u64 ref_root, u64 reserved),
--
--	TP_ARGS(fs_info, ref_root, reserved)
--);
--
- DECLARE_EVENT_CLASS(btrfs_qgroup_extent,
- 	TP_PROTO(const struct btrfs_fs_info *fs_info,
- 		 const struct btrfs_qgroup_extent_record *rec),
+-		ret = btrfs_drop_snapshot(reloc_root, rc->block_rsv, 0, 1);
+-		if (ret < 0) {
+-			if (list_empty(&reloc_root->root_list))
+-				list_add_tail(&reloc_root->root_list,
+-					      &reloc_roots);
+-			goto out;
+-		}
+ 	}
+ 
+ 	if (found) {
+@@ -4079,6 +4123,9 @@ static noinline_for_stack int relocate_block_group(struct reloc_control *rc)
+ 		goto out_free;
+ 	}
+ 	btrfs_commit_transaction(trans);
++	ret = clean_dirty_subvols(rc);
++	if (ret < 0 && !err)
++		err = ret;
+ out_free:
+ 	btrfs_free_block_rsv(fs_info, rc->block_rsv);
+ 	btrfs_free_path(path);
+@@ -4173,6 +4220,7 @@ static struct reloc_control *alloc_reloc_control(void)
+ 		return NULL;
+ 
+ 	INIT_LIST_HEAD(&rc->reloc_roots);
++	INIT_LIST_HEAD(&rc->dirty_subvol_roots);
+ 	backref_cache_init(&rc->backref_cache);
+ 	mapping_tree_init(&rc->reloc_root_tree);
+ 	extent_io_tree_init(&rc->processed_blocks, NULL);
+@@ -4468,6 +4516,10 @@ int btrfs_recover_relocation(struct btrfs_root *root)
+ 		goto out_free;
+ 	}
+ 	err = btrfs_commit_transaction(trans);
++
++	ret = clean_dirty_subvols(rc);
++	if (ret < 0 && !err)
++		err = ret;
+ out_free:
+ 	kfree(rc);
+ out:
 -- 
 2.20.1
 

@@ -2,103 +2,114 @@ Return-Path: <SRS0=0sRS=P7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A2726C282C0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jan 2019 13:51:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6EC8AC282C0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jan 2019 13:53:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 75CCE2184B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jan 2019 13:51:55 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 38ABC2184B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jan 2019 13:53:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726200AbfAWNvy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 23 Jan 2019 08:51:54 -0500
-Received: from mx2.suse.de ([195.135.220.15]:52880 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726178AbfAWNvy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Jan 2019 08:51:54 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 04D69AF6A;
-        Wed, 23 Jan 2019 13:51:52 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 8CC36DA6F5; Wed, 23 Jan 2019 14:51:20 +0100 (CET)
-Date:   Wed, 23 Jan 2019 14:51:20 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH] btrfs: honor path->skip_locking in backref code
-Message-ID: <20190123135120.GT2900@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com
-References: <20190116160057.22040-1-josef@toxicpanda.com>
+        id S1726202AbfAWNxF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 23 Jan 2019 08:53:05 -0500
+Received: from icp-osb-irony-out5.external.iinet.net.au ([203.59.1.221]:21340
+        "EHLO icp-osb-irony-out5.external.iinet.net.au" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726122AbfAWNxF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 23 Jan 2019 08:53:05 -0500
+X-IronPort-Anti-Spam-Filtered: true
+X-IronPort-Anti-Spam-Result: =?us-ascii?q?A2CqBAC1cEhc/1rB77ZjGwEBAQEDAQE?=
+ =?us-ascii?q?BBwMBAQGBZYIEgTEEMyeEAYh5jHEIJTUBg0yVfDgBhDoEAgKCeyM4EgEDAQE?=
+ =?us-ascii?q?BAQEBAm0ohUoBAQEBAgEjMyMQCw4KAgImAgI5HgYNBgIBAYMegXoHrBmBL4V?=
+ =?us-ascii?q?DhG2BC4tNgUA/gTgMZH1QLogKgjUiApBVkVEJgjOLd4NwHoFnJoV0gk+HSJ0?=
+ =?us-ascii?q?LIYFWTR8ZgyeCJxeOMi4wgQMBh0sGgkcBAQ?=
+X-IPAS-Result: =?us-ascii?q?A2CqBAC1cEhc/1rB77ZjGwEBAQEDAQEBBwMBAQGBZYIEg?=
+ =?us-ascii?q?TEEMyeEAYh5jHEIJTUBg0yVfDgBhDoEAgKCeyM4EgEDAQEBAQEBAm0ohUoBA?=
+ =?us-ascii?q?QEBAgEjMyMQCw4KAgImAgI5HgYNBgIBAYMegXoHrBmBL4VDhG2BC4tNgUA/g?=
+ =?us-ascii?q?TgMZH1QLogKgjUiApBVkVEJgjOLd4NwHoFnJoV0gk+HSJ0LIYFWTR8ZgyeCJ?=
+ =?us-ascii?q?xeOMi4wgQMBh0sGgkcBAQ?=
+X-IronPort-AV: E=Sophos;i="5.56,511,1539619200"; 
+   d="scan'208";a="197725655"
+Received: from 182-239-193-90.ip.adam.com.au (HELO Nostromo.Underworld) ([182.239.193.90])
+  by icp-osb-irony-out5.iinet.net.au with ESMTP; 23 Jan 2019 21:53:01 +0800
+Subject: Re: Incremental receive completes succesfully despite missing files
+To:     Andrei Borzenkov <arvidjaar@gmail.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <110c46c8-6fe9-84ea-0f4e-8269fd8000ed@netspace.net.au>
+ <CAJCQCtSOBcK=MXLUFVZk6YCrFx60UEH7PgOtPYbcRkfjG0XDyQ@mail.gmail.com>
+ <3cfb98e1-92d4-150c-445c-9357cec9adca@netspace.net.au>
+ <CAA91j0VSd=uC7ROT2+JsRszzAXWz+ti-Kf3hyw+aVS03sdn95g@mail.gmail.com>
+From:   Dennis Katsonis <dennisk@netspace.net.au>
+Openpgp: preference=signencrypt
+Message-ID: <b36e4ef6-6f07-1430-45a0-df9d44d472fe@netspace.net.au>
+Date:   Thu, 24 Jan 2019 00:52:58 +1100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.4.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190116160057.22040-1-josef@toxicpanda.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+In-Reply-To: <CAA91j0VSd=uC7ROT2+JsRszzAXWz+ti-Kf3hyw+aVS03sdn95g@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-AU
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jan 16, 2019 at 11:00:57AM -0500, Josef Bacik wrote:
-> qgroups will do the old roots lookup at delayed ref time, which could be
-> while walking down the extent root while running a delayed ref.  This
-> should be fine, except we specifically lock eb's in the backref walking
-> code irrespective of path->skip_locking, which deadlocks the system.
-> Fix up the backref code to honor path->skip_locking, nobody will be
-> modifying the commit_root when we're searching so it's completely safe
-> to do.  Thanks,
+On 1/23/19 10:25 PM, Andrei Borzenkov wrote:
+> On Wed, Jan 23, 2019 at 1:45 PM Dennis Katsonis <dennisk@netspace.net.au> wrote:
+>> I think my previous e-mail did not go through.  Basically, if it is
+>> assumed that a btrfs-receive operation will result in a subvolume which
+>> matches the source file for file, then this assumption or expectation
+>> won't be met if one deletes files from the subvolume at the receiving
+>> end which is going to be referred to as the parent.
+>>
 > 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> This is oxymoron. btrfs send/receive apply to read-only subvolumes.
+> You are not able to modify them. 
 
-So this explodes at btrfs/007, I had the patch in a separate branch out of
-misc-next and for-next and did not notice that, the functional tests passed but
-fstests do not.
 
-[   90.693679] kernel BUG at fs/btrfs/locking.c:286!
-[   90.694914] invalid opcode: 0000 [#1] PREEMPT SMP
-[   90.696152] CPU: 2 PID: 22976 Comm: btrfs Not tainted 4.20.0-rc7-default+ #419
-[   90.698100] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.11.2-0-gf9626cc-prebuilt.qemu-project.org 04/01/2014
-[   90.700893] RIP: 0010:btrfs_assert_tree_read_locked.part.2+0x5/0x10 [btrfs]
-[   90.706111] RSP: 0018:ffffa1b046447840 EFLAGS: 00010246
-[   90.707035] RAX: 0000000000000000 RBX: 0000000000000000 RCX: 0000000000000000
-[   90.707987] RDX: 0000000069fc7000 RSI: 0000000000000002 RDI: ffff91c73784f480
-[   90.709962] RBP: 0000000000000000 R08: 0000000000000000 R09: 0000000000000001
-[   90.711894] R10: ffff91c73ffc6000 R11: 0000000001a7f1c0 R12: ffff91c723d8dc60
-[   90.713543] R13: ffff91c73784f480 R14: 0000000000000001 R15: ffff91c723d8daa8
-[   90.715023] FS:  00007fdedfe778c0(0000) GS:ffff91c73d800000(0000) knlGS:0000000000000000
-[   90.717170] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[   90.718176] CR2: 00007fdedf58ae38 CR3: 0000000073d09000 CR4: 00000000000006e0
-[   90.719112] Call Trace:
-[   90.720810]  btrfs_set_lock_blocking_rw+0x9d/0xb0 [btrfs]
-[   90.722187]  find_parent_nodes+0xaf5/0xf30 [btrfs]
-[   90.723102]  ? __find_iref+0xc0/0xc0 [btrfs]
-[   90.723798]  iterate_extent_inodes+0xf6/0x320 [btrfs]
-[   90.724574]  ? btrfs_get_token_64+0x103/0x120 [btrfs]
-[   90.725700]  ? kvm_sched_clock_read+0x5/0x10
-[   90.726688]  ? sched_clock+0x5/0x10
-[   90.727695]  ? process_extent+0x503/0x1210 [btrfs]
-[   90.728899]  process_extent+0x503/0x1210 [btrfs]
-[   90.729910]  ? __record_deleted_ref+0x20/0x20 [btrfs]
-[   90.731130]  changed_cb+0xb9e/0x1060 [btrfs]
-[   90.732105]  send_subvol+0x4a0/0x580 [btrfs]
-[   90.733142]  btrfs_ioctl_send+0x7c4/0xb20 [btrfs]
-[   90.734188]  ? sched_clock_cpu+0xc/0xc0
-[   90.735076]  ? _copy_from_user+0x63/0x90
-[   90.736004]  _btrfs_ioctl_send+0xdd/0x110 [btrfs]
-[   90.737077]  ? __lock_is_held+0x5a/0xa0
-[   90.737962]  btrfs_ioctl+0xcd3/0x2f10 [btrfs]
-[   90.738931]  ? __lock_acquire+0x263/0xf10
-[   90.740025]  ? lockdep_hardirqs_on+0xe8/0x180
-[   90.741082]  ? do_vfs_ioctl+0xa2/0x6d0
-[   90.742077]  do_vfs_ioctl+0xa2/0x6d0
-[   90.743151]  ? __fget+0x109/0x1e0
-[   90.744117]  ksys_ioctl+0x3a/0x70
-[   90.744988]  __x64_sys_ioctl+0x16/0x20
-[   90.746035]  do_syscall_64+0x54/0x180
-[   90.746997]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
-[   90.748090] RIP: 0033:0x7fdedf67daa7
+> 
+>> This can happen inadvertently,
+> 
+> It cannot. You do not inadvertently make subvolume read-write. 
+It's not the individual steps which happen inadvertently, its that
+particular workflow which can happen (i.e.; someone decides to play
+around with a replicated snapshot, and flips the ro bit to do so).  Any
+subsequent children sent later won't be true replicates on the receiving
+end.
+
+They would have to either make a habit of not flipping that ro bit at
+all (there is nothing to say don't do it, and there are valid reasons to
+do so) or anticipate they may need that subvolume as a parent anytime in
+the future and that parents must be the same on both ends (there is
+nothing which states that parents have to be identical on both ends for
+btrfs-receive to operate).  If they do modify ANY subvolume created by
+btrfs-receive, they must remember in the future somehow never to use
+them as parents.
+
+BTRFS allows an ad-hoc, unstructured approach to managing snapshots and
+replication, but the cost I suppose is there are more corner cases and
+more potential for users to use the system in a manner which differs
+from the devs.
+
+
+> 
+> That said, better if btrfs did not allow flipping read-only bit in the
+> first place.
+> 
+>> or even through filesystem corruption
+>> (which I experienced).
+>>
+> 
+> And if corruption happened after applying changes? End result in the
+> same. Of course it would be perfect if btrfs could notice and warn
+> you, I just do not see how it can realistically be implemented.
+>If the tools can't prevent it, the documentation should, and should also
+ideally describe the mode of failure (i.e., if the subvolumes are
+different, btrfs-receive won't necessarily fail, but can produce a
+subvolume which is not identical to that sent.
+
+At the moment, one must infer that the statement that clones must be
+identical at both ends.

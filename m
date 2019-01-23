@@ -1,153 +1,343 @@
-Return-Path: <SRS0=kIOr=P6=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=0sRS=P7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 106D5C282C3
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Jan 2019 23:46:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 58681C282C0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jan 2019 05:28:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D24FF217D6
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Jan 2019 23:46:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 11294217D4
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jan 2019 05:28:37 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="5q9da7iT"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726849AbfAVXq3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 22 Jan 2019 18:46:29 -0500
-Received: from mout.gmx.net ([212.227.15.18]:52239 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726814AbfAVXq2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Jan 2019 18:46:28 -0500
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx003
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0LcBin-1hSXup19Mr-00jXNK; Wed, 23
- Jan 2019 00:46:27 +0100
-Subject: Re: Do btrfs provide filesystem debugger?
-To:     Matthew Friday <lkmfriday@gmail.com>, linux-btrfs@vger.kernel.org
-References: <CANmnzbMpBsE5dcmc9_mHOTB9tUY7enWxicRCbmTwpZ2HuDOhaw@mail.gmail.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <94fb82b7-1395-7fad-5d95-87a9d96927f8@gmx.com>
-Date:   Wed, 23 Jan 2019 07:46:23 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.4.0
+        id S1726203AbfAWF2g (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 23 Jan 2019 00:28:36 -0500
+Received: from userp2120.oracle.com ([156.151.31.85]:45166 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725899AbfAWF2g (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 23 Jan 2019 00:28:36 -0500
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id x0N5SV8m037869;
+        Wed, 23 Jan 2019 05:28:31 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : from : to :
+ references : message-id : date : mime-version : in-reply-to : content-type
+ : content-transfer-encoding; s=corp-2018-07-02;
+ bh=XT78oG8kcXayh4rorp1vzAZbyhfRmazjK5I2uVVr/2s=;
+ b=5q9da7iTaPU7Fm7b5j2dIX8aoNp9QAdvgHgEGY+UTKHI8gKrF/AU3vsGZr7DRqpCgBMZ
+ 6cRdlymdxtBHPtk5FD4mpIpDzUMy/Zb5z6a1kgTe1HraaijpVpmuC4btznolC98ZJneR
+ bBmx5RvBFyXGrUIusK5ZG2ey+2skNmZ7PFSq8IZpdplzD1ZGP0yt3yYuweHGD6yBBz7Q
+ hhJjWALNVP8ZKNUvtp/DHSQ/oBAyd/imPganPfEkU6RzbIvs04EsZ7Yw/cBlTJCC8ZMD
+ UXcGV5ep54yhMR31g3Yua2CtL0yURHB/pRJvomTxkjXUA8BexcsD9UDF7iVq6Iik6WkZ eA== 
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by userp2120.oracle.com with ESMTP id 2q3vhrqgwk-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 23 Jan 2019 05:28:31 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x0N5STTc031502
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 23 Jan 2019 05:28:30 GMT
+Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x0N5STLN031870;
+        Wed, 23 Jan 2019 05:28:29 GMT
+Received: from [10.190.142.77] (/192.188.170.109)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Tue, 22 Jan 2019 21:28:29 -0800
+Subject: Re: [PATCH 5/6 v2] btrfs: merge btrfs_find_device() and find_device()
+From:   Anand Jain <anand.jain@oracle.com>
+To:     linux-btrfs@vger.kernel.org, dsterba@suse.cz
+References: <1547739153-6916-6-git-send-email-anand.jain@oracle.com>
+ <1547880535-29710-1-git-send-email-anand.jain@oracle.com>
+Message-ID: <f1554171-01ee-05f2-136a-7732f6ea678a@oracle.com>
+Date:   Wed, 23 Jan 2019 13:28:26 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
+ Thunderbird/52.9.1
 MIME-Version: 1.0
-In-Reply-To: <CANmnzbMpBsE5dcmc9_mHOTB9tUY7enWxicRCbmTwpZ2HuDOhaw@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="uAtAelTMd14qXqZtoEyXwd3np1zYvGd31"
-X-Provags-ID: V03:K1:nKP45VBrUn6AEXcifNAWBbUIoAhMIAsXw96RYmd/E5zIIT6FSy2
- rYraFLNT+pZLTMoW+MIE/CANUAjC9XZRLDpwRHlR89lG5DEnourAoWbFKhI3l4OS5B4fBra
- r3bg+hJxbDmSYR1yx3Va6ZEhUZWKPtQ0dC0/jgsKjFc9n8NEEMO5hDLWoQntjkAVRqKIcwn
- r6GDCxxB9G+uAo0PDaGdg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:vACLZFLLFy8=:CnlOH2bEEzfbw+KqNnlxbY
- uITXvKK5ppABdGAWbI7an3gsLxOUy5Q5mynmFMMq9XjBdhCULJBGQytX/fBwy2tFNLqxSK0Gd
- Qb8oT4RL87kmqMhWSPF+/ffqS+vqUdGuY9B7GB4U9G9tZJJWVUZyL3by79CXo3fmQudOZ8X34
- PHP7d7uZCyn+7Qv1DEF4b/Aq9sqK1JlLpVosN+FMLI0yxxcn6yWWWC9e924/PMkRiC5gb1fRJ
- ZgX7LqMwWCjP2cfnJAagowpMiHCcqAy0WvBIFwJcdPq1hw9rKineQQw6qbEVxbBSxwAaUiPYe
- JkDSSF0EZcqk9NHLRMOpuxq7OmC0mN8Z3oJB5kwK1t31Wk9rSVl8ny0rstPUWxvl+feyMXRxD
- tPmJDwUqh0VNRno9GmJTk7GHKkEp7fN1Cyui9Ngur0EUXt2UCGgItqTDWa1j339sK26xa75l8
- 90vZZGeXY8eVL5NuSBLyMVpzQbBjCc7o04RHe/3v1kWX9r0gBDZ8cC/dw5HcMxIwp6+yu9JJj
- u47Dwvvoi9Gs7eaS2BJENl/IPYpcOfq/Es8QfJGQQxRKNpSkLSAloMzubkgpq4ml6pW1ykpuV
- snGF9z0FvUH0bOSG8oreMRD+Z2q5P4vWnBgeltenPgWBChLEkgGrkA+f5yosUCu5tZ0XoR+63
- C43O4cSVAd09zu3jeSZroQCCvdTAutsrpB1qvCUyE+5+Njf/sAIA33A9hElLYataL0GkYZfQ8
- nGc2NqoQaTGqR+Qng2bDcGyS3vB+t8qeRP5mI0SlEQ+9O+CSYvn/+wZpmqxWBVuRt4etk0EqD
- nKtDTNaI629FXpsD3rgUFSV1D7EcZAJCBUhVKV0R4W2e47R8FtWDuiUKeivzkgqDH1LnxOeWN
- Y10cLFklrXRoMAYL7FmWs1FxmddZiRhoCZAJ2GU+YtIFXLm+xhZ5fUKRMX3q/Y
+In-Reply-To: <1547880535-29710-1-git-send-email-anand.jain@oracle.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9144 signatures=668682
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=2 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1810050000 definitions=main-1901230043
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---uAtAelTMd14qXqZtoEyXwd3np1zYvGd31
-Content-Type: multipart/mixed; boundary="knwK0fpFMYb4pyYhRC4OeUESpRfRmGdb2";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Matthew Friday <lkmfriday@gmail.com>, linux-btrfs@vger.kernel.org
-Message-ID: <94fb82b7-1395-7fad-5d95-87a9d96927f8@gmx.com>
-Subject: Re: Do btrfs provide filesystem debugger?
-References: <CANmnzbMpBsE5dcmc9_mHOTB9tUY7enWxicRCbmTwpZ2HuDOhaw@mail.gmail.com>
-In-Reply-To: <CANmnzbMpBsE5dcmc9_mHOTB9tUY7enWxicRCbmTwpZ2HuDOhaw@mail.gmail.com>
-
---knwK0fpFMYb4pyYhRC4OeUESpRfRmGdb2
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
 
+On 01/19/2019 02:48 PM, Anand Jain wrote:
+> Both btrfs_find_device() and find_device() does the same things expect
+> that latter function is not keen in seed device in the scan-context. So
+> merge them.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
-On 2019/1/23 =E4=B8=8A=E5=8D=887:41, Matthew Friday wrote:
-> Hi all,
->=20
-> I recently started learning BTRFS internals, and one think that I
-> cannot find is filesystem debugger to browse on disk data structures
-> (like xfs_db or ext debugfs).
+    A gentle ping.
 
-You need "btrfs inspect dump-tree" and "btrfs inspect dump-super"
+Thanks, Anand
 
-> Do BTRFS provide similar way to navigate on disk structures? I can see
-> the btrfs-debug-tree utility which provide whole tree of the
-> informations, is this something that can be then perhaps parsed in
-> easy way to view the internal structures?
-
-It's already all the internal structures.
-
-Unlike other fs, btrfs uses a generic way to organize all its info, as
-btrfs btree.
-
-So dump tree provides everything you need, from inode and dentry info to
-all internal data like allocation and csum data.
-
-Thanks,
-Qu
-
->=20
-> Many Thanks
-> Matt
->=20
-
-
---knwK0fpFMYb4pyYhRC4OeUESpRfRmGdb2--
-
---uAtAelTMd14qXqZtoEyXwd3np1zYvGd31
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxHq08ACgkQwj2R86El
-/qhlvAf/e9r7Flggx8Snl3/jO3uFOH9sSL7KLGP/8Uu8AEpdE9R2LaP+ex0QOQrv
-c3hbgrINwXJ7TN/m+LslfsYjJCcFtT588+DHyTauh/HYZsEGk3wjIaLJWreUG74a
-sRZ5L7r/CrwqiCmha1CQhD90EZn3m/Y4GWb3IjjDH2il7hbp5vjFEDQEuHT5p+1v
-uYUQ38ZRIONRdG5vZqObk/w6voqbWXYGqQaCU51uCyhEDCX2x5PC95/rbe11uG1x
-O6SyGIYEDCGMplBiJ9BVoFEvP/AM6ffia0ToNSLoxvLFfyGVSvwx/mzxaM+L/4ed
-v5kdeIUyOhs4nQAkuWpnlsIIAkI/0w==
-=psnS
------END PGP SIGNATURE-----
-
---uAtAelTMd14qXqZtoEyXwd3np1zYvGd31--
+> ---
+> v2: use bool instead of int.
+>      use positive meaning instead of negative.
+>      conflict fix: due to 1b3922a8bc7 in misc-next.
+> 
+> 	if (dev->disk_total_bytes == 0) {
+> -		dev = find_device(fs_info->fs_devices->seed, devid, NULL);
+> +		dev = btrfs_find_device(fs_info->fs_devices->seed, devid, NULL,
+> +					NULL, false);
+>   fs/btrfs/dev-replace.c |  4 +--
+>   fs/btrfs/ioctl.c       |  4 +--
+>   fs/btrfs/scrub.c       |  4 +--
+>   fs/btrfs/volumes.c     | 73 +++++++++++++++++++++++++-------------------------
+>   fs/btrfs/volumes.h     |  3 ++-
+>   5 files changed, 44 insertions(+), 44 deletions(-)
+> 
+> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+> index 6f0fe3623381..975cbf011593 100644
+> --- a/fs/btrfs/dev-replace.c
+> +++ b/fs/btrfs/dev-replace.c
+> @@ -112,10 +112,10 @@ int btrfs_init_dev_replace(struct btrfs_fs_info *fs_info)
+>   	case BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED:
+>   	case BTRFS_IOCTL_DEV_REPLACE_STATE_SUSPENDED:
+>   		dev_replace->srcdev = btrfs_find_device(fs_info->fs_devices,
+> -							src_devid, NULL, NULL);
+> +							src_devid, NULL, NULL, true);
+>   		dev_replace->tgtdev = btrfs_find_device(fs_info->fs_devices,
+>   							BTRFS_DEV_REPLACE_DEVID,
+> -							NULL, NULL);
+> +							NULL, NULL, true);
+>   		/*
+>   		 * allow 'btrfs dev replace_cancel' if src/tgt device is
+>   		 * missing
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index fd5f97aeb35c..3f9d7be30bf4 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -1642,7 +1642,7 @@ static noinline int btrfs_ioctl_resize(struct file *file,
+>   		btrfs_info(fs_info, "resizing devid %llu", devid);
+>   	}
+>   
+> -	device = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL);
+> +	device = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL, true);
+>   	if (!device) {
+>   		btrfs_info(fs_info, "resizer unable to find device %llu",
+>   			   devid);
+> @@ -3179,7 +3179,7 @@ static long btrfs_ioctl_dev_info(struct btrfs_fs_info *fs_info,
+>   
+>   	rcu_read_lock();
+>   	dev = btrfs_find_device(fs_info->fs_devices, di_args->devid, s_uuid,
+> -				NULL);
+> +				NULL, true);
+>   
+>   	if (!dev) {
+>   		ret = -ENODEV;
+> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+> index 72044efc610a..b320910c6740 100644
+> --- a/fs/btrfs/scrub.c
+> +++ b/fs/btrfs/scrub.c
+> @@ -3835,7 +3835,7 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+>   		return PTR_ERR(sctx);
+>   
+>   	mutex_lock(&fs_info->fs_devices->device_list_mutex);
+> -	dev = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL);
+> +	dev = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL, true);
+>   	if (!dev || (test_bit(BTRFS_DEV_STATE_MISSING, &dev->dev_state) &&
+>   		     !is_dev_replace)) {
+>   		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+> @@ -4012,7 +4012,7 @@ int btrfs_scrub_progress(struct btrfs_fs_info *fs_info, u64 devid,
+>   	struct scrub_ctx *sctx = NULL;
+>   
+>   	mutex_lock(&fs_info->fs_devices->device_list_mutex);
+> -	dev = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL);
+> +	dev = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL, true);
+>   	if (dev)
+>   		sctx = dev->scrub_ctx;
+>   	if (sctx)
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 5b37044503c0..df1a077aeb80 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -415,27 +415,6 @@ static struct btrfs_device *__alloc_device(void)
+>   	return dev;
+>   }
+>   
+> -/*
+> - * Find a device specified by @devid or @uuid in the list of @fs_devices, or
+> - * return NULL.
+> - *
+> - * If devid and uuid are both specified, the match must be exact, otherwise
+> - * only devid is used.
+> - */
+> -static struct btrfs_device *find_device(struct btrfs_fs_devices *fs_devices,
+> -		u64 devid, const u8 *uuid)
+> -{
+> -	struct btrfs_device *dev;
+> -
+> -	list_for_each_entry(dev, &fs_devices->devices, dev_list) {
+> -		if (dev->devid == devid &&
+> -		    (!uuid || !memcmp(dev->uuid, uuid, BTRFS_UUID_SIZE))) {
+> -			return dev;
+> -		}
+> -	}
+> -	return NULL;
+> -}
+> -
+>   static noinline struct btrfs_fs_devices *find_fsid(
+>   		const u8 *fsid, const u8 *metadata_fsid)
+>   {
+> @@ -990,8 +969,9 @@ static noinline struct btrfs_device *device_list_add(const char *path,
+>   		device = NULL;
+>   	} else {
+>   		mutex_lock(&fs_devices->device_list_mutex);
+> -		device = find_device(fs_devices, devid,
+> -				disk_super->dev_item.uuid);
+> +		device = btrfs_find_device(fs_devices, devid,
+> +					   disk_super->dev_item.uuid, NULL,
+> +					   false);
+>   
+>   		/*
+>   		 * If this disk has been pulled into an fs devices created by
+> @@ -2419,10 +2399,10 @@ static struct btrfs_device *btrfs_find_device_by_path(
+>   	dev_uuid = disk_super->dev_item.uuid;
+>   	if (btrfs_fs_incompat(fs_info, METADATA_UUID))
+>   		device = btrfs_find_device(fs_info->fs_devices, devid, dev_uuid,
+> -					   disk_super->metadata_uuid);
+> +					   disk_super->metadata_uuid, true);
+>   	else
+>   		device = btrfs_find_device(fs_info->fs_devices, devid, dev_uuid,
+> -					   disk_super->fsid);
+> +					   disk_super->fsid, true);
+>   
+>   	brelse(bh);
+>   	if (!device)
+> @@ -2442,7 +2422,7 @@ struct btrfs_device *btrfs_find_device_by_devspec(
+>   
+>   	if (devid) {
+>   		device = btrfs_find_device(fs_info->fs_devices, devid, NULL,
+> -					   NULL);
+> +					   NULL, true);
+>   		if (!device)
+>   			return ERR_PTR(-ENOENT);
+>   		return device;
+> @@ -2584,7 +2564,7 @@ static int btrfs_finish_sprout(struct btrfs_trans_handle *trans,
+>   		read_extent_buffer(leaf, fs_uuid, btrfs_device_fsid(dev_item),
+>   				   BTRFS_FSID_SIZE);
+>   		device = btrfs_find_device(fs_info->fs_devices, devid, dev_uuid,
+> -					   fs_uuid);
+> +					   fs_uuid, true);
+>   		BUG_ON(!device); /* Logic error */
+>   
+>   		if (device->fs_devices->seeding) {
+> @@ -6637,19 +6617,36 @@ blk_status_t btrfs_map_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
+>   	return BLK_STS_OK;
+>   }
+>   
+> +/*
+> + * Find a device specified by @devid or @uuid in the list of @fs_devices, or
+> + * return NULL.
+> + *
+> + * If devid and uuid are both specified, the match must be exact, otherwise
+> + * only devid is used.
+> + *
+> + * If seed is true, traverse through the seed devices.
+> + */
+>   struct btrfs_device *btrfs_find_device(struct btrfs_fs_devices *fs_devices,
+> -				       u64 devid, u8 *uuid, u8 *fsid)
+> +				       u64 devid, u8 *uuid, u8 *fsid,
+> +				       bool seed)
+>   {
+>   	struct btrfs_device *device;
+>   
+>   	while (fs_devices) {
+>   		if (!fsid ||
+>   		    !memcmp(fs_devices->metadata_uuid, fsid, BTRFS_FSID_SIZE)) {
+> -			device = find_device(fs_devices, devid, uuid);
+> -			if (device)
+> -				return device;
+> +			list_for_each_entry(device, &fs_devices->devices,
+> +					    dev_list) {
+> +				if (device->devid == devid && (!uuid ||
+> +				    !memcmp(device->uuid, uuid,
+> +				    BTRFS_UUID_SIZE)))
+> +					return device;
+> +			}
+>   		}
+> -		fs_devices = fs_devices->seed;
+> +		if (seed)
+> +			fs_devices = fs_devices->seed;
+> +		else
+> +			return NULL;
+>   	}
+>   	return NULL;
+>   }
+> @@ -6895,7 +6892,7 @@ static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
+>   				   btrfs_stripe_dev_uuid_nr(chunk, i),
+>   				   BTRFS_UUID_SIZE);
+>   		map->stripes[i].dev = btrfs_find_device(fs_info->fs_devices,
+> -							devid, uuid, NULL);
+> +							devid, uuid, NULL, true);
+>   		if (!map->stripes[i].dev &&
+>   		    !btrfs_test_opt(fs_info, DEGRADED)) {
+>   			free_extent_map(em);
+> @@ -7035,7 +7032,7 @@ static int read_one_dev(struct btrfs_fs_info *fs_info,
+>   	}
+>   
+>   	device = btrfs_find_device(fs_info->fs_devices, devid, dev_uuid,
+> -				   fs_uuid);
+> +				   fs_uuid, true);
+>   	if (!device) {
+>   		if (!btrfs_test_opt(fs_info, DEGRADED)) {
+>   			btrfs_report_missing_device(fs_info, devid,
+> @@ -7625,7 +7622,8 @@ int btrfs_get_dev_stats(struct btrfs_fs_info *fs_info,
+>   	int i;
+>   
+>   	mutex_lock(&fs_devices->device_list_mutex);
+> -	dev = btrfs_find_device(fs_info->fs_devices, stats->devid, NULL, NULL);
+> +	dev = btrfs_find_device(fs_info->fs_devices, stats->devid, NULL, NULL,
+> +				true);
+>   	mutex_unlock(&fs_devices->device_list_mutex);
+>   
+>   	if (!dev) {
+> @@ -7839,7 +7837,7 @@ static int verify_one_dev_extent(struct btrfs_fs_info *fs_info,
+>   	}
+>   
+>   	/* Make sure no dev extent is beyond device bondary */
+> -	dev = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL);
+> +	dev = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL, true);
+>   	if (!dev) {
+>   		btrfs_err(fs_info, "failed to find devid %llu", devid);
+>   		ret = -EUCLEAN;
+> @@ -7848,7 +7846,8 @@ static int verify_one_dev_extent(struct btrfs_fs_info *fs_info,
+>   
+>   	/* It's possible this device is a dummy for seed device */
+>   	if (dev->disk_total_bytes == 0) {
+> -		dev = find_device(fs_info->fs_devices->seed, devid, NULL);
+> +		dev = btrfs_find_device(fs_info->fs_devices->seed, devid, NULL,
+> +					NULL, false);
+>   		if (!dev) {
+>   			btrfs_err(fs_info, "failed to find seed devid %llu",
+>   				  devid);
+> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+> index 46ee8eafdc92..c8ddcf4ae1f2 100644
+> --- a/fs/btrfs/volumes.h
+> +++ b/fs/btrfs/volumes.h
+> @@ -435,7 +435,8 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info,
+>   int btrfs_grow_device(struct btrfs_trans_handle *trans,
+>   		      struct btrfs_device *device, u64 new_size);
+>   struct btrfs_device *btrfs_find_device(struct btrfs_fs_devices *fs_devices,
+> -				       u64 devid, u8 *uuid, u8 *fsid);
+> +				       u64 devid, u8 *uuid, u8 *fsid,
+> +				       bool seed);
+>   int btrfs_shrink_device(struct btrfs_device *device, u64 new_size);
+>   int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *path);
+>   int btrfs_balance(struct btrfs_fs_info *fs_info,
+> 

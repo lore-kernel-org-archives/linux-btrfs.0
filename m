@@ -2,31 +2,31 @@ Return-Path: <SRS0=0sRS=P7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A4C8DC282C0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jan 2019 05:44:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6E370C282C0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jan 2019 06:01:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7432F21019
-	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jan 2019 05:44:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 35E5B21726
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jan 2019 06:01:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725972AbfAWFoK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 23 Jan 2019 00:44:10 -0500
-Received: from mout.gmx.net ([212.227.17.22]:57605 "EHLO mout.gmx.net"
+        id S1726000AbfAWGBW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 23 Jan 2019 01:01:22 -0500
+Received: from mout.gmx.net ([212.227.17.20]:46199 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725899AbfAWFoJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Jan 2019 00:44:09 -0500
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx103
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0MIuft-1go64N0wsD-002VEN; Wed, 23
- Jan 2019 06:43:59 +0100
-Subject: Re: [PATCH v4 0/7] btrfs: qgroup: Delay subtree scan to reduce
- overhead
+        id S1725972AbfAWGBW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 23 Jan 2019 01:01:22 -0500
+Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx101
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0M4CB5-1h4oVn10ux-00roVT; Wed, 23
+ Jan 2019 07:01:13 +0100
+Subject: Re: [PATCH v4 3/7] btrfs: relocation: Delay reloc tree deletion after
+ merge_reloc_roots()
 To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
 References: <20190115081604.785-1-wqu@suse.com>
- <20190122162807.GL2900@twin.jikos.cz>
+ <20190115081604.785-4-wqu@suse.com> <20190122163258.GM2900@twin.jikos.cz>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -53,115 +53,127 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <1d057f36-71fb-d02f-551b-cdf596f87c21@gmx.com>
-Date:   Wed, 23 Jan 2019 13:43:53 +0800
+Message-ID: <62862a9b-561a-aa72-794c-b9fe89a81e56@gmx.com>
+Date:   Wed, 23 Jan 2019 14:01:07 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <20190122162807.GL2900@twin.jikos.cz>
+In-Reply-To: <20190122163258.GM2900@twin.jikos.cz>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="A12NkStjEFeQbGUNBQVwhtjH5CQNGuqWt"
-X-Provags-ID: V03:K1:aYktn5N8NuWFG8VuR+Bej1Uf+ycqas6m+WZqSnl9E4e2IAXNnP5
- I4Ar0pCjZ3q7jBLDaoHI85xFFAsJnIRwbc3AW+0TMJlt3yFNagzk2yKassr/7cYYIg5M6LL
- PvICIJibfSfIkU2y6DKPXzB+Ukz2z/j1HXUj8E3lHAOwrTd8G3QcL1sLgfCMx8KErn981h0
- 9c5GTLLT9PzmX21PB6dKQ==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:BgEEr4So6mU=:4Mtwevako7mSXDlh/VuhL1
- m9Z3Htv9XwTDBsL1Pa/ih1k9PSTEPnDy9fZChaPDMmGi6R9RJwXSoEJYgpLiOtrrw01tlvlhc
- 5bwpCRzV14Yc6A2oya1N0qQxjbgZyqunxPX2ePnr+cJOlG36ye27rCp6LGTabagvbvvVVnNDn
- snpdzNd2rfJI8RUxV1S5mPv+3QOnzdTnMKiYVc2s28m1TU/VnlJW2VA9pXFKRje7bmzeHyv3e
- q6VuudprY+IFAt1wago5iihg8tQ0UsnpvjgWtpPXUjKeuW634FbwMEVd3GPxaq+C18GIZhIZk
- 3qcyL7e6ogXeIccxyF14s9mTxg9KCYCcSsS5zGMGchh8YnUR9Ai1bWBkbLWuEEf2h5yNWkTAG
- lzmIaGWbxFA1bpm1YXd9XIZILuTbKhM/WC8981y6f5LBz7KQgOyYCgONyMk0iX51kPYv7a0va
- bnyCxnJi3LW9buNNdPUO5hjk/NHAzm6eAnJYlpfBL7TzeJVKNWRuSFPVf4wPj/VS/F5FuKOQB
- OauaUD5oGeSYZQnR+RdP4q8rUeAph6pv3F+Yg4yw3btAnjv4L4pBO+kW1rVHX3WbQaeNjmfF4
- sCZNRQJWgBAgHk5CKyR49vDMfssec3LjC5PA10NH628ga3+8xcmzKi0UEP4oleecxcUSUeJmD
- XftxbmY3qYt6F/laD+l0GH+crqAseOcoN/7LOvCkEbl2yZp5VucD4N4v934DeKyAbfS11CPZO
- q2lD7JN2m9DZ7OpSioSIMopenkVZRhsib4MY3en/6NFGh5bTZM9OIeIAEIA8xVbdHFzdSPz67
- SblJM5SkupfaKiba1KD9a7b0A3hcaPDjBnNyh3gLEp3Z8lySoMXqHY7uNSSpIfspf8pPJ5RCt
- rXdVNM6daVbWzahzZCPbj/cdSwEghHEZmFI0uPVihd7CnSM1N1bZcccYo8R9an
+ boundary="3nkQpI7QwlmEkegpZkI3f8VAsWOP9IrUW"
+X-Provags-ID: V03:K1:172vP3ofc37pcJcTTtZ5mpH02a8/W9cXb9mdM34qw+Xv8hzG8tD
+ Q9fTY54frF2fw8xC6+r9LhDTc1FjNdKXNKbVTPYw9ic8b6QzDbRloZCF1J4R9e7LxNLqHXj
+ JN1zmvCoexjafjeeUKJpOqYd15AEEfOoPaW1DzZmmob9AQS1MBkL2qbl8U2lq3FevOYijs7
+ 456AdzakyxJljS3m8xXyg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:Uci9Nfn1OnM=:CyrqKnmxtFVtHjwxitONpp
+ TxmP0dg/zVNVVAxlo4nZgPzScx/F/pHZGrS+5ByU1wnQFWnoAt4QuVYh/eu2ou8L6krh/gjdQ
+ roUJ97HEWNYCe761Orb1MVyVSUH1Pls4UK/FQPpe+NytUoP8YUS5QF/tAMdNE/4rLLQ5yJUBD
+ nYOAeJtzS8pJNL21hynaTY+WMpfMGRf8A6+YYAHTN9bnIboWfwk7SlHlNDn7+hLr4+DwzxDAM
+ F4eQgeIkU2FsAk78i+U7YmKq6CoAS4SBVe4QMxhWptUQrNKPdbBaWdF8ex+3J+ecem+2+axlb
+ fURim2JiwZIebeJMMaCR0Sdm4MTLJ2+3lW/qkgvitmxRbSzsoGh4PhMcBl5/G1Mne35a9HEzo
+ gTejsw6MC3zqnAHk022OT1uVkQGBQHsik1rf3GZz0pbkwm8d+euJEMLcL9W/jJQNToM/yI7f7
+ q3KnZizfOjPpiWtB8ersM52UcRt/6MeE3rwiq5tL0jjx1588qohlyGsFHPv1zNzgt6W4Bxar5
+ SqF+E5CgFJ3lWp7MxaN/ore5aKauLt1AutQ+U9fCpKIvcf/cSr/GTaPTUVaTg4ZvvmCpBUv3Z
+ WYsOukzQj1ZMJELL1WFxIeO1Z1IxlS6Y3xhmQvNa3OxkrDNWK8xKsnZAgvK9e4ZPNrzRNvRFT
+ tSobSB27GuMqaK/dGHGffgT63128HN0jtI6J3n5Z8H+sWosFHIly0Ad4el3gg9SDSKamlzHnw
+ UcphNug43WjAuBm7TpucYVXxpWfXFui6JtcN1EwS+uBd2+33tlf66U/gsosEHoCtoF6+wWior
+ Vy/vWTSiQ/FHxulZySn9fFJTKvBhWzjiuhT1d6p1/D/Hn6o9LdT/M5GzriC9T1S8Xa0k+Ghwq
+ 1uJkKVMapQ4Ls1a+pKSH2MW9FbQHMvWVdTN/sDN60qOgVVBR+DG6GumA8qOPJs
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---A12NkStjEFeQbGUNBQVwhtjH5CQNGuqWt
-Content-Type: multipart/mixed; boundary="1ighRLhnTV5ZUpQhhLCim1Twfhj7TQscq";
+--3nkQpI7QwlmEkegpZkI3f8VAsWOP9IrUW
+Content-Type: multipart/mixed; boundary="30jdb3iUHGm8wCjkrvsd9ynsq7wRR4HG8";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <1d057f36-71fb-d02f-551b-cdf596f87c21@gmx.com>
-Subject: Re: [PATCH v4 0/7] btrfs: qgroup: Delay subtree scan to reduce
- overhead
+Message-ID: <62862a9b-561a-aa72-794c-b9fe89a81e56@gmx.com>
+Subject: Re: [PATCH v4 3/7] btrfs: relocation: Delay reloc tree deletion after
+ merge_reloc_roots()
 References: <20190115081604.785-1-wqu@suse.com>
- <20190122162807.GL2900@twin.jikos.cz>
-In-Reply-To: <20190122162807.GL2900@twin.jikos.cz>
+ <20190115081604.785-4-wqu@suse.com> <20190122163258.GM2900@twin.jikos.cz>
+In-Reply-To: <20190122163258.GM2900@twin.jikos.cz>
 
---1ighRLhnTV5ZUpQhhLCim1Twfhj7TQscq
+--30jdb3iUHGm8wCjkrvsd9ynsq7wRR4HG8
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2019/1/23 =E4=B8=8A=E5=8D=8812:28, David Sterba wrote:
-> On Tue, Jan 15, 2019 at 04:15:57PM +0800, Qu Wenruo wrote:
->> This patchset can be fetched from github:
->> https://github.com/adam900710/linux/tree/qgroup_delayed_subtree
+On 2019/1/23 =E4=B8=8A=E5=8D=8812:32, David Sterba wrote:
+> On Tue, Jan 15, 2019 at 04:16:00PM +0800, Qu Wenruo wrote:
+>> And to co-operate this, also delayed btrfs_drop_snapshot() call on rel=
+oc
+>> tree, btrfs_drop_snapshot() call will also be delayed to
+>> clean_dirty_subvs().
+>=20
+> Can you please rephrase this paragraph?
+>=20
+>> This patch will increase the size of btrfs_root by 16 bytes.
 >>
->> Which is based on v5.0-rc1.
->>
->> This patch address the heavy load subtree scan, but delaying it until
->> we're going to modify the swapped tree block.
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
 >=20
-> I'd like to merge this patchset, the overall logic is fine but I've
-> found lots of coding style issues, too many to fix them just myself.
+>> +static int clean_dirty_subvs(struct reloc_control *rc)
+>> +{
+>> +	struct btrfs_root *root;
+>> +	struct btrfs_root *next;
+>> +	int err =3D 0;
+>> +	int ret;
+>> +
+>> +	list_for_each_entry_safe(root, next, &rc->dirty_subv_roots,
+>> +				 reloc_dirty_list) {
+>> +		struct btrfs_root *reloc_root =3D root->reloc_root;
+>> +
+>> +		clear_bit(BTRFS_ROOT_DEAD_RELOC_TREE, &root->state);
+>> +		list_del_init(&root->reloc_dirty_list);
+>> +		root->reloc_root =3D NULL;
+>> +		if (reloc_root) {
+>> +			ret =3D btrfs_drop_snapshot(reloc_root, NULL, 0, 1);
+>> +			if (ret < 0 && !err)
+>> +				err =3D ret;
+>> +		}
+>> +		btrfs_put_fs_root(root);
+>> +	}
+>> +	return err;
 >=20
->> v4:
->> - Renaming members from "file_*" to "subv_*".
->>   Members like "file_bytenr" is pretty confusing, renaming it to
->>   "subv_bytenr" avoid the confusion.
->=20
-> The naming change is incomplete, there are many more references to 'fil=
-e
-> tree' in comments and changelogs, the naming should be unified
-> everywhere. Also I'd prefer to use 'subvol' though it's a bit longer
-> than 'subv', the former seems to be the most common form.
+> Please dont use the err/ret style but 'ret' that matches function retur=
+n
+> type and for the temporary return values ret2 etc.
 
-I have to admit this 'subv' naming is completely my bad.
+For this policy, the primary objective is to avoid the confusion between
+err and ret, right?
 
-I tend to keep the naming as long as the original 'file' so no format
-change is needed at all.
-But it turns out that trick doesn't work at all.
-
-I'll get rid of the bad behavior.
+Then I'd prefer tmp_ret over ret2, although it's just a personal taste.
 
 Thanks,
 Qu
 
 >=20
-> I'll comment the patches with the rest.
->=20
+>> +}
 
 
---1ighRLhnTV5ZUpQhhLCim1Twfhj7TQscq--
+--30jdb3iUHGm8wCjkrvsd9ynsq7wRR4HG8--
 
---A12NkStjEFeQbGUNBQVwhtjH5CQNGuqWt
+--3nkQpI7QwlmEkegpZkI3f8VAsWOP9IrUW
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxH/xkACgkQwj2R86El
-/qiDgwf/SOZDLsIyqzd+GTQuN9prCe12+ul/HpfbdnSJBMo4AyW6Dw/qTxNk0PPW
-wzWQVy8UskL9Pys48gnwYUR45vfm29wKCWO4Ij0wjm+laOQ3woKGEQcdtzFmSZ5E
-huwlffUqiqUmYo7utM8QaWLEnBPnWg4n1pGNdxS+iOF53oRlCDvdf69vraFBlmZV
-hsyt4hfp4BBsBqP0hhHT9Nr1tXnE8Bcvuk6KHy0vyodnbCUS1iuSskeHM9CW2F25
-GKlEBks3YRmX37UBu7G+U4SO/clgFpo+uDjMxXot1bhyY/Ht957KhI72klSuAnqi
-Gqf0QT+rtznuSxyW3PdnhEHWnxUaAw==
-=FwIe
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxIAyMACgkQwj2R86El
+/qiVNQf9E1b1H9gmXAgW9uu7kDja5qAFxvXceyGdn7Z1FBbRCOHbgwvZP4abV3aa
+Rc54GowVacIIe5SoySD4P5bVaEGFKvUXeC+AscjBsKTqb1CWUewkpMj86IQVCUkR
+2OHfCdJ0/sK3VqRqrEiXRazZLAzdGJNmDNrDgeehDGsEbBg9o5MlBzhovaXnNxOK
+/0VKZ3I3QjiOWf8c/M0V0p5Ru7d+d5TADqyaeKhOHPcRBWGr39NQAJfTlopE1clj
+JXK39paM6h+Lp8e54WIPfU4VAbbFZ6yyz4KjQQ+JJocOinTgWHl3w3qIbnCDdH2a
+UfrJdG2RD1kuCpG1tkdZZgGOLDtODA==
+=5F+V
 -----END PGP SIGNATURE-----
 
---A12NkStjEFeQbGUNBQVwhtjH5CQNGuqWt--
+--3nkQpI7QwlmEkegpZkI3f8VAsWOP9IrUW--

@@ -6,30 +6,28 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 29537C282C0
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C0C38C282C5
 	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jan 2019 07:15:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0195321019
+	by mail.kernel.org (Postfix) with ESMTP id 982C021019
 	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jan 2019 07:15:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726349AbfAWHPd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 23 Jan 2019 02:15:33 -0500
-Received: from mx2.suse.de ([195.135.220.15]:47352 "EHLO mx1.suse.de"
+        id S1726682AbfAWHPj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 23 Jan 2019 02:15:39 -0500
+Received: from mx2.suse.de ([195.135.220.15]:47404 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725950AbfAWHPd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Jan 2019 02:15:33 -0500
+        id S1726611AbfAWHPi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 23 Jan 2019 02:15:38 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id E1757B08A;
-        Wed, 23 Jan 2019 07:15:30 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 449C5B088
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Jan 2019 07:15:36 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
-        stable@vger.kernel.org, David Sterba <dsterba@suse.com>,
-        Filipe Manana <fdmanana@suse.com>
-Subject: [Patch v5 2/7] btrfs: honor path->skip_locking in backref code
-Date:   Wed, 23 Jan 2019 15:15:13 +0800
-Message-Id: <20190123071518.2528-3-wqu@suse.com>
+Cc:     dsterba@suse.cz
+Subject: [Patch v5 4/7] btrfs: qgroup: Refactor btrfs_qgroup_trace_subtree_swap()
+Date:   Wed, 23 Jan 2019 15:15:15 +0800
+Message-Id: <20190123071518.2528-5-wqu@suse.com>
 X-Mailer: git-send-email 2.20.1
 In-Reply-To: <20190123071518.2528-1-wqu@suse.com>
 References: <20190123071518.2528-1-wqu@suse.com>
@@ -40,149 +38,133 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Josef Bacik <josef@toxicpanda.com>
+Refactor btrfs_qgroup_trace_subtree_swap() into
+qgroup_trace_subtree_swap(), which only needs two extent buffer and some
+other bool to control the behavior.
 
-Qgroups will do the old roots lookup at delayed ref time, which could be
-while walking down the extent root while running a delayed ref.  This
-should be fine, except we specifically lock eb's in the backref walking
-code irrespective of path->skip_locking, which deadlocks the system.
-Fix up the backref code to honor path->skip_locking, nobody will be
-modifying the commit_root when we're searching so it's completely safe
-to do.
+This provides the basis for later delayed subtree scan work.
 
-This happens Since fb235dc06fac ("btrfs: qgroup: Move half of the qgroup
-accounting time out of commit trans"), kernel may lockup with quota
-enabled.
-
-There is one backref trace triggered by snapshot dropping along with
-write operation in the source subvolume.  The example can be reliably
-reproduced:
-
-  btrfs-cleaner   D    0  4062      2 0x80000000
-  Call Trace:
-   schedule+0x32/0x90
-   btrfs_tree_read_lock+0x93/0x130 [btrfs]
-   find_parent_nodes+0x29b/0x1170 [btrfs]
-   btrfs_find_all_roots_safe+0xa8/0x120 [btrfs]
-   btrfs_find_all_roots+0x57/0x70 [btrfs]
-   btrfs_qgroup_trace_extent_post+0x37/0x70 [btrfs]
-   btrfs_qgroup_trace_leaf_items+0x10b/0x140 [btrfs]
-   btrfs_qgroup_trace_subtree+0xc8/0xe0 [btrfs]
-   do_walk_down+0x541/0x5e3 [btrfs]
-   walk_down_tree+0xab/0xe7 [btrfs]
-   btrfs_drop_snapshot+0x356/0x71a [btrfs]
-   btrfs_clean_one_deleted_snapshot+0xb8/0xf0 [btrfs]
-   cleaner_kthread+0x12b/0x160 [btrfs]
-   kthread+0x112/0x130
-   ret_from_fork+0x27/0x50
-
-When dropping snapshots with qgroup enabled, we will trigger backref
-walk.
-
-However such backref walk at that timing is pretty dangerous, as if one
-of the parent nodes get WRITE locked by other thread, we could cause a
-dead lock.
-
-For example:
-
-           FS 260     FS 261 (Dropped)
-            node A        node B
-           /      \      /      \
-       node C      node D      node E
-      /   \         /  \        /     \
-  leaf F|leaf G|leaf H|leaf I|leaf J|leaf K
-
-The lock sequence would be:
-
-      Thread A (cleaner)             |       Thread B (other writer)
------------------------------------------------------------------------
-write_lock(B)                        |
-write_lock(D)                        |
-^^^ called by walk_down_tree()       |
-                                     |       write_lock(A)
-                                     |       write_lock(D) << Stall
-read_lock(H) << for backref walk     |
-read_lock(D) << lock owner is        |
-                the same thread A    |
-                so read lock is OK   |
-read_lock(A) << Stall                |
-
-So thread A hold write lock D, and needs read lock A to unlock.
-While thread B holds write lock A, while needs lock D to unlock.
-
-This will cause a deadlock.
-
-This is not only limited to snapshot dropping case.
-As the backref walk, even only happens on commit trees, is breaking the
-normal top-down locking order, makes it deadlock prone.
-
-Fixes: fb235dc06fac ("btrfs: qgroup: Move half of the qgroup accounting time out of commit trans")
-CC: stable@vger.kernel.org # 4.19+
-Reported-and-tested-by: David Sterba <dsterba@suse.com>
-Reported-by: Filipe Manana <fdmanana@suse.com>
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-[ copy logs and deadlock analysis from Qu's patch ]
-Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/backref.c | 16 ++++++++++------
- 1 file changed, 10 insertions(+), 6 deletions(-)
+ fs/btrfs/qgroup.c | 78 ++++++++++++++++++++++++++++++++++-------------
+ 1 file changed, 57 insertions(+), 21 deletions(-)
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 78556447e1d5..973e8251b1bf 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -712,7 +712,7 @@ static int resolve_indirect_refs(struct btrfs_fs_info *fs_info,
-  * read tree blocks and add keys where required.
-  */
- static int add_missing_keys(struct btrfs_fs_info *fs_info,
--			    struct preftrees *preftrees)
-+			    struct preftrees *preftrees, bool lock)
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index f214b490d80c..565bb661210f 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -2023,6 +2023,60 @@ static int qgroup_trace_new_subtree_blocks(struct btrfs_trans_handle* trans,
+ 	return ret;
+ }
+ 
++static int qgroup_trace_subtree_swap(struct btrfs_trans_handle *trans,
++				struct extent_buffer *src_eb,
++				struct extent_buffer *dst_eb,
++				u64 last_snapshot, bool trace_leaf)
++{
++	struct btrfs_fs_info *fs_info = trans->fs_info;
++	struct btrfs_path *dst_path = NULL;
++	int level;
++	int ret;
++
++	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags))
++		return 0;
++
++	/* Wrong parameter order */
++	if (btrfs_header_generation(src_eb) > btrfs_header_generation(dst_eb)) {
++		btrfs_err_rl(fs_info,
++		"%s: bad parameter order, src_gen=%llu dst_gen=%llu", __func__,
++			     btrfs_header_generation(src_eb),
++			     btrfs_header_generation(dst_eb));
++		return -EUCLEAN;
++	}
++
++	if (!extent_buffer_uptodate(src_eb) ||
++	    !extent_buffer_uptodate(dst_eb)) {
++		ret = -EIO;
++		goto out;
++	}
++
++	level = btrfs_header_level(dst_eb);
++	dst_path = btrfs_alloc_path();
++	if (!dst_path) {
++		ret = -ENOMEM;
++		goto out;
++	}
++	/* For dst_path */
++	extent_buffer_get(dst_eb);
++	dst_path->nodes[level] = dst_eb;
++	dst_path->slots[level] = 0;
++	dst_path->locks[level] = 0;
++
++	/* Do the generation aware breadth-first search */
++	ret = qgroup_trace_new_subtree_blocks(trans, src_eb, dst_path, level,
++					      level, last_snapshot, trace_leaf);
++	if (ret < 0)
++		goto out;
++	ret = 0;
++
++out:
++	btrfs_free_path(dst_path);
++	if (ret < 0)
++		fs_info->qgroup_flags |= BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
++	return ret;
++}
++
+ /*
+  * Inform qgroup to trace subtree swap used in balance.
+  *
+@@ -2048,14 +2102,12 @@ int btrfs_qgroup_trace_subtree_swap(struct btrfs_trans_handle *trans,
+ 				u64 last_snapshot)
  {
- 	struct prelim_ref *ref;
- 	struct extent_buffer *eb;
-@@ -737,12 +737,14 @@ static int add_missing_keys(struct btrfs_fs_info *fs_info,
- 			free_extent_buffer(eb);
- 			return -EIO;
- 		}
--		btrfs_tree_read_lock(eb);
-+		if (lock)
-+			btrfs_tree_read_lock(eb);
- 		if (btrfs_header_level(eb) == 0)
- 			btrfs_item_key_to_cpu(eb, &ref->key_for_search, 0);
- 		else
- 			btrfs_node_key_to_cpu(eb, &ref->key_for_search, 0);
--		btrfs_tree_read_unlock(eb);
-+		if (lock)
-+			btrfs_tree_read_unlock(eb);
- 		free_extent_buffer(eb);
- 		prelim_ref_insert(fs_info, &preftrees->indirect, ref, NULL);
- 		cond_resched();
-@@ -1227,7 +1229,7 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
+ 	struct btrfs_fs_info *fs_info = trans->fs_info;
+-	struct btrfs_path *dst_path = NULL;
+ 	struct btrfs_key first_key;
+ 	struct extent_buffer *src_eb = NULL;
+ 	struct extent_buffer *dst_eb = NULL;
+ 	bool trace_leaf = false;
+ 	u64 child_gen;
+ 	u64 child_bytenr;
+-	int level;
+ 	int ret;
  
- 	btrfs_release_path(path);
- 
--	ret = add_missing_keys(fs_info, &preftrees);
-+	ret = add_missing_keys(fs_info, &preftrees, path->skip_locking == 0);
- 	if (ret)
+ 	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags))
+@@ -2106,22 +2158,9 @@ int btrfs_qgroup_trace_subtree_swap(struct btrfs_trans_handle *trans,
  		goto out;
+ 	}
  
-@@ -1288,11 +1290,13 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
- 					ret = -EIO;
- 					goto out;
- 				}
--				btrfs_tree_read_lock(eb);
-+				if (!path->skip_locking)
-+					btrfs_tree_read_lock(eb);
- 				btrfs_set_lock_blocking_rw(eb, BTRFS_READ_LOCK);
- 				ret = find_extent_in_eb(eb, bytenr,
- 							*extent_item_pos, &eie, ignore_offset);
--				btrfs_tree_read_unlock_blocking(eb);
-+				if (!path->skip_locking)
-+					btrfs_tree_read_unlock_blocking(eb);
- 				free_extent_buffer(eb);
- 				if (ret < 0)
- 					goto out;
+-	level = btrfs_header_level(dst_eb);
+-	dst_path = btrfs_alloc_path();
+-	if (!dst_path) {
+-		ret = -ENOMEM;
+-		goto out;
+-	}
+-
+-	/* For dst_path */
+-	extent_buffer_get(dst_eb);
+-	dst_path->nodes[level] = dst_eb;
+-	dst_path->slots[level] = 0;
+-	dst_path->locks[level] = 0;
+-
+-	/* Do the generation-aware breadth-first search */
+-	ret = qgroup_trace_new_subtree_blocks(trans, src_eb, dst_path, level,
+-					      level, last_snapshot, trace_leaf);
++	/* Do the generation aware breadth-first search */
++	ret = qgroup_trace_subtree_swap(trans, src_eb, dst_eb, last_snapshot,
++					trace_leaf);
+ 	if (ret < 0)
+ 		goto out;
+ 	ret = 0;
+@@ -2129,9 +2168,6 @@ int btrfs_qgroup_trace_subtree_swap(struct btrfs_trans_handle *trans,
+ out:
+ 	free_extent_buffer(src_eb);
+ 	free_extent_buffer(dst_eb);
+-	btrfs_free_path(dst_path);
+-	if (ret < 0)
+-		fs_info->qgroup_flags |= BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
+ 	return ret;
+ }
+ 
 -- 
 2.20.1
 

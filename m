@@ -2,114 +2,95 @@ Return-Path: <SRS0=0sRS=P7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-3.7 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_MUTT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6EC8AC282C0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jan 2019 13:53:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4318DC282C0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jan 2019 14:37:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 38ABC2184B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jan 2019 13:53:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 098E7217D4
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jan 2019 14:37:39 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1548254259;
+	bh=hcpv+fxe0oQ8iM8Kl4aiogpTMvxmAnW+WTp1TpW5C7w=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:List-ID:From;
+	b=Mc11c2p3jW4r3VSNQ5KnsCYXVnV62MCbp32UmmKlQ3PCWKDofJwiySZgHK2esSBgh
+	 5ratc9hCFid1VXSGZa59i9/6V+TnnlvY1yR2kBwmNr1HRyFDfN7miSabzRqL00GEX5
+	 OJn14/wQIwx/fpl8PDN9dUX5Din37iYnSOzxyfO4=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726202AbfAWNxF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 23 Jan 2019 08:53:05 -0500
-Received: from icp-osb-irony-out5.external.iinet.net.au ([203.59.1.221]:21340
-        "EHLO icp-osb-irony-out5.external.iinet.net.au" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726122AbfAWNxF (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Jan 2019 08:53:05 -0500
-X-IronPort-Anti-Spam-Filtered: true
-X-IronPort-Anti-Spam-Result: =?us-ascii?q?A2CqBAC1cEhc/1rB77ZjGwEBAQEDAQE?=
- =?us-ascii?q?BBwMBAQGBZYIEgTEEMyeEAYh5jHEIJTUBg0yVfDgBhDoEAgKCeyM4EgEDAQE?=
- =?us-ascii?q?BAQEBAm0ohUoBAQEBAgEjMyMQCw4KAgImAgI5HgYNBgIBAYMegXoHrBmBL4V?=
- =?us-ascii?q?DhG2BC4tNgUA/gTgMZH1QLogKgjUiApBVkVEJgjOLd4NwHoFnJoV0gk+HSJ0?=
- =?us-ascii?q?LIYFWTR8ZgyeCJxeOMi4wgQMBh0sGgkcBAQ?=
-X-IPAS-Result: =?us-ascii?q?A2CqBAC1cEhc/1rB77ZjGwEBAQEDAQEBBwMBAQGBZYIEg?=
- =?us-ascii?q?TEEMyeEAYh5jHEIJTUBg0yVfDgBhDoEAgKCeyM4EgEDAQEBAQEBAm0ohUoBA?=
- =?us-ascii?q?QEBAgEjMyMQCw4KAgImAgI5HgYNBgIBAYMegXoHrBmBL4VDhG2BC4tNgUA/g?=
- =?us-ascii?q?TgMZH1QLogKgjUiApBVkVEJgjOLd4NwHoFnJoV0gk+HSJ0LIYFWTR8ZgyeCJ?=
- =?us-ascii?q?xeOMi4wgQMBh0sGgkcBAQ?=
-X-IronPort-AV: E=Sophos;i="5.56,511,1539619200"; 
-   d="scan'208";a="197725655"
-Received: from 182-239-193-90.ip.adam.com.au (HELO Nostromo.Underworld) ([182.239.193.90])
-  by icp-osb-irony-out5.iinet.net.au with ESMTP; 23 Jan 2019 21:53:01 +0800
-Subject: Re: Incremental receive completes succesfully despite missing files
-To:     Andrei Borzenkov <arvidjaar@gmail.com>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <110c46c8-6fe9-84ea-0f4e-8269fd8000ed@netspace.net.au>
- <CAJCQCtSOBcK=MXLUFVZk6YCrFx60UEH7PgOtPYbcRkfjG0XDyQ@mail.gmail.com>
- <3cfb98e1-92d4-150c-445c-9357cec9adca@netspace.net.au>
- <CAA91j0VSd=uC7ROT2+JsRszzAXWz+ti-Kf3hyw+aVS03sdn95g@mail.gmail.com>
-From:   Dennis Katsonis <dennisk@netspace.net.au>
-Openpgp: preference=signencrypt
-Message-ID: <b36e4ef6-6f07-1430-45a0-df9d44d472fe@netspace.net.au>
-Date:   Thu, 24 Jan 2019 00:52:58 +1100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.4.0
+        id S1726832AbfAWOhe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 23 Jan 2019 09:37:34 -0500
+Received: from mail.kernel.org ([198.145.29.99]:53344 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726218AbfAWOhe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 23 Jan 2019 09:37:34 -0500
+Received: from localhost (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 116472085A;
+        Wed, 23 Jan 2019 14:37:32 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1548254253;
+        bh=hcpv+fxe0oQ8iM8Kl4aiogpTMvxmAnW+WTp1TpW5C7w=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=1BP6nq6wMVtzuTuOW2e0zEWlhwJhwqSL5MrWc7Tmk/nRRCeoHyRWhE+gvwuolN0Lr
+         pSSDCymnF6w6u1DL3F91MEfSIYNOwqclVW0qDmCX6S7y5wC81a9j2Ad4a5TfRMfK3f
+         iXjAmjR1DwGoYyY1Jd7XWma+fk287IzlkJsot+cw=
+Date:   Wed, 23 Jan 2019 09:37:32 -0500
+From:   Sasha Levin <sashal@kernel.org>
+To:     Hans van Kranenburg <Hans.van.Kranenburg@mendix.com>
+Cc:     "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        "stable@vger.kernel.org" <stable@vger.kernel.org>,
+        David Sterba <dsterba@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH AUTOSEL 4.20 072/117] btrfs: alloc_chunk: fix more DUP
+ stripe size handling
+Message-ID: <20190123143732.GL202535@sasha-vm>
+References: <20190108192628.121270-1-sashal@kernel.org>
+ <20190108192628.121270-72-sashal@kernel.org>
+ <783ccf1f-65df-d388-079c-9449d4319c27@mendix.com>
 MIME-Version: 1.0
-In-Reply-To: <CAA91j0VSd=uC7ROT2+JsRszzAXWz+ti-Kf3hyw+aVS03sdn95g@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-AU
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Disposition: inline
+In-Reply-To: <783ccf1f-65df-d388-079c-9449d4319c27@mendix.com>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 1/23/19 10:25 PM, Andrei Borzenkov wrote:
-> On Wed, Jan 23, 2019 at 1:45 PM Dennis Katsonis <dennisk@netspace.net.au> wrote:
->> I think my previous e-mail did not go through.  Basically, if it is
->> assumed that a btrfs-receive operation will result in a subvolume which
->> matches the source file for file, then this assumption or expectation
->> won't be met if one deletes files from the subvolume at the receiving
->> end which is going to be referred to as the parent.
+On Tue, Jan 08, 2019 at 11:52:02PM +0000, Hans van Kranenburg wrote:
+>Hi Sasha,
+>
+>On 1/8/19 8:25 PM, Sasha Levin wrote:
+>> From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
 >>
-> 
-> This is oxymoron. btrfs send/receive apply to read-only subvolumes.
-> You are not able to modify them. 
-
-
-> 
->> This can happen inadvertently,
-> 
-> It cannot. You do not inadvertently make subvolume read-write. 
-It's not the individual steps which happen inadvertently, its that
-particular workflow which can happen (i.e.; someone decides to play
-around with a replicated snapshot, and flips the ro bit to do so).  Any
-subsequent children sent later won't be true replicates on the receiving
-end.
-
-They would have to either make a habit of not flipping that ro bit at
-all (there is nothing to say don't do it, and there are valid reasons to
-do so) or anticipate they may need that subvolume as a parent anytime in
-the future and that parents must be the same on both ends (there is
-nothing which states that parents have to be identical on both ends for
-btrfs-receive to operate).  If they do modify ANY subvolume created by
-btrfs-receive, they must remember in the future somehow never to use
-them as parents.
-
-BTRFS allows an ad-hoc, unstructured approach to managing snapshots and
-replication, but the cost I suppose is there are more corner cases and
-more potential for users to use the system in a manner which differs
-from the devs.
-
-
-> 
-> That said, better if btrfs did not allow flipping read-only bit in the
-> first place.
-> 
->> or even through filesystem corruption
->> (which I experienced).
+>> [ Upstream commit baf92114c7e6dd6124aa3d506e4bc4b694da3bc3 ]
 >>
-> 
-> And if corruption happened after applying changes? End result in the
-> same. Of course it would be perfect if btrfs could notice and warn
-> you, I just do not see how it can realistically be implemented.
->If the tools can't prevent it, the documentation should, and should also
-ideally describe the mode of failure (i.e., if the subvolumes are
-different, btrfs-receive won't necessarily fail, but can produce a
-subvolume which is not identical to that sent.
+>> Commit 92e222df7b "btrfs: alloc_chunk: fix DUP stripe size handling"
+>> fixed calculating the stripe_size for a new DUP chunk.
+>
+>That one also ended up as:
+>
+>4.14-stable
+>0136bd7238b2cb8238426af4183ed0b02165c3f9
+>
+>4.9-stable
+>8890bae03f4dba1c2292e5445682b556af4e8f1b
+>
+>4.4-stable
+>97c3e46ef53748278286fc09dcc30b138d6677c4
+>
+>3.16.57-rc1
+>f68f46284a199f6837c1d5b94a6ae979a2cc463c
+>
+>While hitting the failure condition without adding "crafting" steps to
+>make it exactly match the scenario is unlikely, it might be good if we
+>just go all the way back with this regression fix?
 
-At the moment, one must infer that the statement that clones must be
-identical at both ends.
+What do you mean with "all the way back"?
+
+--
+Thanks,
+Sasha

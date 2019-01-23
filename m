@@ -2,122 +2,103 @@ Return-Path: <SRS0=0sRS=P7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.0 required=3.0
-	tests=HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SIGNED_OFF_BY,SPF_PASS autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 226CBC282C2
-	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jan 2019 13:06:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A2726C282C0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jan 2019 13:51:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D92E721848
-	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jan 2019 13:06:39 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 75CCE2184B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jan 2019 13:51:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726251AbfAWNGf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 23 Jan 2019 08:06:35 -0500
-Received: from mx2.suse.de ([195.135.220.15]:45182 "EHLO mx1.suse.de"
+        id S1726200AbfAWNvy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 23 Jan 2019 08:51:54 -0500
+Received: from mx2.suse.de ([195.135.220.15]:52880 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726168AbfAWNGe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Jan 2019 08:06:34 -0500
+        id S1726178AbfAWNvy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 23 Jan 2019 08:51:54 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D51BBADE2;
-        Wed, 23 Jan 2019 13:06:32 +0000 (UTC)
-Subject: Re: [PATCH] [PATCH] btrfs: remove unused wariable 'num_pages'
-To:     Matthew Friday <lkmfriday@gmail.com>, dsterba@suse.com
-Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-References: <20190122225943.7976-1-lkmfriday@gmail.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <abb1d537-74e8-e5e0-9283-317ecb0f20b2@suse.com>
-Date:   Wed, 23 Jan 2019 15:06:31 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+        by mx1.suse.de (Postfix) with ESMTP id 04D69AF6A;
+        Wed, 23 Jan 2019 13:51:52 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 8CC36DA6F5; Wed, 23 Jan 2019 14:51:20 +0100 (CET)
+Date:   Wed, 23 Jan 2019 14:51:20 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH] btrfs: honor path->skip_locking in backref code
+Message-ID: <20190123135120.GT2900@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs@vger.kernel.org, kernel-team@fb.com
+References: <20190116160057.22040-1-josef@toxicpanda.com>
 MIME-Version: 1.0
-In-Reply-To: <20190122225943.7976-1-lkmfriday@gmail.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190116160057.22040-1-josef@toxicpanda.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 23.01.19 г. 0:59 ч., Matthew Friday wrote:
-> Signed-off-by: Matthew Friday <lkmfriday@gmail.com>
-
-It seems you are using an outdated version of the code. When sending new
-code always base it on misc-next branch from
-https://github.com/kdave/btrfs-devel
-
-> ---
->  fs/btrfs/ioctl.c | 3 ---
->  1 file changed, 3 deletions(-)
+On Wed, Jan 16, 2019 at 11:00:57AM -0500, Josef Bacik wrote:
+> qgroups will do the old roots lookup at delayed ref time, which could be
+> while walking down the extent root while running a delayed ref.  This
+> should be fine, except we specifically lock eb's in the backref walking
+> code irrespective of path->skip_locking, which deadlocks the system.
+> Fix up the backref code to honor path->skip_locking, nobody will be
+> modifying the commit_root when we're searching so it's completely safe
+> to do.  Thanks,
 > 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 9c8e1734429c..6243f734c0cd 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -3278,7 +3278,6 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
->  			     struct inode *dst, u64 dst_loff)
->  {
->  	int ret;
-> -	int num_pages = PAGE_ALIGN(BTRFS_MAX_DEDUPE_LEN) >> PAGE_SHIFT;
->  	u64 i, tail_len, chunk_count;
->  
->  	/* don't make the dst file partly checksummed */
-> @@ -3291,8 +3290,6 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
->  
->  	tail_len = olen % BTRFS_MAX_DEDUPE_LEN;
->  	chunk_count = div_u64(olen, BTRFS_MAX_DEDUPE_LEN);
-> -	if (chunk_count == 0)
-> -		num_pages = PAGE_ALIGN(tail_len) >> PAGE_SHIFT;
->  
->  	for (i = 0; i < chunk_count; i++) {
->  		ret = btrfs_extent_same_range(src, loff, BTRFS_MAX_DEDUPE_LEN,
-> 
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+
+So this explodes at btrfs/007, I had the patch in a separate branch out of
+misc-next and for-next and did not notice that, the functional tests passed but
+fstests do not.
+
+[   90.693679] kernel BUG at fs/btrfs/locking.c:286!
+[   90.694914] invalid opcode: 0000 [#1] PREEMPT SMP
+[   90.696152] CPU: 2 PID: 22976 Comm: btrfs Not tainted 4.20.0-rc7-default+ #419
+[   90.698100] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.11.2-0-gf9626cc-prebuilt.qemu-project.org 04/01/2014
+[   90.700893] RIP: 0010:btrfs_assert_tree_read_locked.part.2+0x5/0x10 [btrfs]
+[   90.706111] RSP: 0018:ffffa1b046447840 EFLAGS: 00010246
+[   90.707035] RAX: 0000000000000000 RBX: 0000000000000000 RCX: 0000000000000000
+[   90.707987] RDX: 0000000069fc7000 RSI: 0000000000000002 RDI: ffff91c73784f480
+[   90.709962] RBP: 0000000000000000 R08: 0000000000000000 R09: 0000000000000001
+[   90.711894] R10: ffff91c73ffc6000 R11: 0000000001a7f1c0 R12: ffff91c723d8dc60
+[   90.713543] R13: ffff91c73784f480 R14: 0000000000000001 R15: ffff91c723d8daa8
+[   90.715023] FS:  00007fdedfe778c0(0000) GS:ffff91c73d800000(0000) knlGS:0000000000000000
+[   90.717170] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[   90.718176] CR2: 00007fdedf58ae38 CR3: 0000000073d09000 CR4: 00000000000006e0
+[   90.719112] Call Trace:
+[   90.720810]  btrfs_set_lock_blocking_rw+0x9d/0xb0 [btrfs]
+[   90.722187]  find_parent_nodes+0xaf5/0xf30 [btrfs]
+[   90.723102]  ? __find_iref+0xc0/0xc0 [btrfs]
+[   90.723798]  iterate_extent_inodes+0xf6/0x320 [btrfs]
+[   90.724574]  ? btrfs_get_token_64+0x103/0x120 [btrfs]
+[   90.725700]  ? kvm_sched_clock_read+0x5/0x10
+[   90.726688]  ? sched_clock+0x5/0x10
+[   90.727695]  ? process_extent+0x503/0x1210 [btrfs]
+[   90.728899]  process_extent+0x503/0x1210 [btrfs]
+[   90.729910]  ? __record_deleted_ref+0x20/0x20 [btrfs]
+[   90.731130]  changed_cb+0xb9e/0x1060 [btrfs]
+[   90.732105]  send_subvol+0x4a0/0x580 [btrfs]
+[   90.733142]  btrfs_ioctl_send+0x7c4/0xb20 [btrfs]
+[   90.734188]  ? sched_clock_cpu+0xc/0xc0
+[   90.735076]  ? _copy_from_user+0x63/0x90
+[   90.736004]  _btrfs_ioctl_send+0xdd/0x110 [btrfs]
+[   90.737077]  ? __lock_is_held+0x5a/0xa0
+[   90.737962]  btrfs_ioctl+0xcd3/0x2f10 [btrfs]
+[   90.738931]  ? __lock_acquire+0x263/0xf10
+[   90.740025]  ? lockdep_hardirqs_on+0xe8/0x180
+[   90.741082]  ? do_vfs_ioctl+0xa2/0x6d0
+[   90.742077]  do_vfs_ioctl+0xa2/0x6d0
+[   90.743151]  ? __fget+0x109/0x1e0
+[   90.744117]  ksys_ioctl+0x3a/0x70
+[   90.744988]  __x64_sys_ioctl+0x16/0x20
+[   90.746035]  do_syscall_64+0x54/0x180
+[   90.746997]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+[   90.748090] RIP: 0033:0x7fdedf67daa7

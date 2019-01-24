@@ -6,26 +6,26 @@ X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 963CAC282C3
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Jan 2019 09:07:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8CB28C282C3
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Jan 2019 09:08:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 70AB420854
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Jan 2019 09:07:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 66BD520854
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Jan 2019 09:08:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727578AbfAXJHe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 24 Jan 2019 04:07:34 -0500
-Received: from mx2.suse.de ([195.135.220.15]:38122 "EHLO mx1.suse.de"
+        id S1727287AbfAXJIG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 24 Jan 2019 04:08:06 -0500
+Received: from mx2.suse.de ([195.135.220.15]:38200 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726997AbfAXJHe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 24 Jan 2019 04:07:34 -0500
+        id S1727209AbfAXJIG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 24 Jan 2019 04:08:06 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 3E370AEFF
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Jan 2019 09:07:32 +0000 (UTC)
-Subject: Re: [PATCH 4/6] btrfs: open code now trivial btrfs_set_lock_blocking
+        by mx1.suse.de (Postfix) with ESMTP id 5904CAEFF
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 Jan 2019 09:08:04 +0000 (UTC)
+Subject: Re: [PATCH 5/6] btrfs: simplify waiting loop in btrfs_tree_lock
 To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 References: <cover.1548264220.git.dsterba@suse.com>
- <f8c3e8f5766a5eb1a6b9dcd766ef6d606b324ba0.1548264220.git.dsterba@suse.com>
+ <cc392a65b45fc90672c8e1ebf5f81cc96254a964.1548264220.git.dsterba@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -83,12 +83,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <88b59d0d-66e8-ec4c-bfa2-fd6d04a70a33@suse.de>
-Date:   Thu, 24 Jan 2019 10:07:32 +0100
+Message-ID: <fa83a3e9-f291-2213-c51f-6d33d4e46426@suse.de>
+Date:   Thu, 24 Jan 2019 10:08:04 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <f8c3e8f5766a5eb1a6b9dcd766ef6d606b324ba0.1548264220.git.dsterba@suse.com>
+In-Reply-To: <cc392a65b45fc90672c8e1ebf5f81cc96254a964.1548264220.git.dsterba@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit

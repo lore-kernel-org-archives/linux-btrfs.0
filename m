@@ -2,104 +2,85 @@ Return-Path: <SRS0=zIKm=QA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,USER_AGENT_MUTT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D865BC282C5
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Jan 2019 14:31:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3281FC282C3
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Jan 2019 15:21:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9A0CC2184B
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Jan 2019 14:31:48 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="xmdzh4F/"
+	by mail.kernel.org (Postfix) with ESMTP id 0CF402184C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Jan 2019 15:21:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728330AbfAXObs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 24 Jan 2019 09:31:48 -0500
-Received: from mail-qt1-f193.google.com ([209.85.160.193]:40081 "EHLO
-        mail-qt1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727755AbfAXObq (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 24 Jan 2019 09:31:46 -0500
-Received: by mail-qt1-f193.google.com with SMTP id k12so6699280qtf.7
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Jan 2019 06:31:46 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id;
-        bh=tbOY02J6JXBGaov9lGo0MEoRv50vZchl0Df7Zt6b3rE=;
-        b=xmdzh4F/+JU3nUrQDgckrDuICsLb16TeyJVnC7OKD1AD5EzyqDcPvF3URljMf4EFRy
-         rcNPC3g/ptlMSQX8TN0PjnEYoprMCvyteG4Y5j68dPfiOZb6+n5wilanyZ+/RIVGLq7/
-         gdi2nUTqcJ8L2aakxA/adYl54MrBKR0GvIV79XX5hdiSy3DBDvZOa1gQFOUECCtmIMZx
-         Kt87OT+5ZqLU42Y6EgomV6V5zq3wrQrgOGVhlme4uGEq6dciRlzgOKuDkSttdwR4S4AQ
-         rpDdsiqVHYU7wAy7FnQGu99+VuE9vf/7X00wCYXsIyCA/f/8kZcn30seSj29IpPLO/pH
-         X90w==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id;
-        bh=tbOY02J6JXBGaov9lGo0MEoRv50vZchl0Df7Zt6b3rE=;
-        b=kmuvh1RQXpnfrKnY5tqoAUKwN5TLD/Bqrzuo4BaD24Ed+5GrblFtObZKR5j0IDGX9R
-         scJvvMpxXBr+Q5QU8VRggHgLU1i5k+SHvA0vpwi78nV2LBNwJ2NTleGOZeN5j9d/Gsq/
-         C3iYrKXygwowICx5+5aj/CZ4/WBci236J0svBEkNepbT7qCYAi+tY0btqFVmHFFmF4NW
-         DGpfeYbTOA7gP0sQTiZ/gPS0w53+4zFRn8gqivQURFUZoSuaGcGrFYbf6wxVoPxsOkOT
-         l03G5jFqQSufRsaaTK/N6O72WvdiWn+wVtNX6IL+op4chNexmT0e/q3Mz80KyLBHyHgt
-         S06g==
-X-Gm-Message-State: AJcUuke5Se7X9BRxBxeWotUi0xE+YhZQmAqfbaG1dudKU36qZxJmc3K1
-        ZpLDW7AzMRmzjowMozC81VlhhxI1ZaY=
-X-Google-Smtp-Source: ALg8bN5vxz5Hq2Y2oqJi4ml3lSjg8+uBEDwlasZOE6g0bnWsPrVDxKpobRiFIOFFkG8+60zsDKBI+g==
-X-Received: by 2002:a0c:9961:: with SMTP id i30mr6173853qvd.229.1548340305294;
-        Thu, 24 Jan 2019 06:31:45 -0800 (PST)
-Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id b134sm55911714qkg.78.2019.01.24.06.31.44
-        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Thu, 24 Jan 2019 06:31:44 -0800 (PST)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH] btrfs: don't end the transaction for delayed refs in throttle
-Date:   Thu, 24 Jan 2019 09:31:43 -0500
-Message-Id: <20190124143143.8838-1-josef@toxicpanda.com>
-X-Mailer: git-send-email 2.14.3
+        id S1727943AbfAXPVD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 24 Jan 2019 10:21:03 -0500
+Received: from mx2.suse.de ([195.135.220.15]:51432 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727562AbfAXPVD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 24 Jan 2019 10:21:03 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 1EBFCAF03;
+        Thu, 24 Jan 2019 15:21:02 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id EABB4DA6F5; Thu, 24 Jan 2019 16:20:29 +0100 (CET)
+Date:   Thu, 24 Jan 2019 16:20:29 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3 0/5] btrfs: Enhancement to tree block validation
+Message-ID: <20190124152029.GX2900@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20190118021956.22949-1-wqu@suse.com>
+ <20190123171635.GU2900@twin.jikos.cz>
+ <0feee626-6d73-ba40-2e31-112ae5337f8d@gmx.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <0feee626-6d73-ba40-2e31-112ae5337f8d@gmx.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Previously callers to btrfs_end_transaction_throttle() would commit the
-transaction if there wasn't enough delayed refs space.  This happens in
-relocation, and if the fs is relatively empty we'll run out of delayed
-refs space basically immediately, so we'll just be stuck in this loop of
-committing the transaction over and over again.
+On Thu, Jan 24, 2019 at 11:04:47AM +0800, Qu Wenruo wrote:
+> 
+> 
+> On 2019/1/24 上午1:16, David Sterba wrote:
+> > On Fri, Jan 18, 2019 at 10:19:51AM +0800, Qu Wenruo wrote:
+> >> Patchset can be fetched from github:
+> >> https://github.com/adam900710/linux/tree/write_time_tree_checker
+> >> Which is based on v5.0-rc1 tag.
+> >>
+> >> This patchset has the following two features:
+> >> - Tree block validation output enhancement
+> >>   * Output validation failure timing (write time or read time)
+> >>   * Always output tree block level/key mismatch error message
+> >>     This part is already submitted and reviewed.
+> >>
+> >> - Write time tree block validation check
+> >>   To catch memory corruption either from hardware or kernel.
+> >>   Example output would be:
+> >>
+> >>     BTRFS critical (device dm-3): corrupt leaf: root=2 block=1350630375424 slot=68, bad key order, prev (10510212874240 169 0) current (1714119868416 169 0)
+> >>     BTRFS error (device dm-3): write time tree block corruption detected
+> >>     BTRFS critical (device dm-3): corrupt leaf: root=2 block=1350630375424 slot=68, bad key order, prev (10510212874240 169 0) current (1714119868416 169 0)
+> >>     BTRFS error (device dm-3): write time tree block corruption detected
+> >>     BTRFS: error (device dm-3) in btrfs_commit_transaction:2220: errno=-5 IO failure (Error while writing out transaction)
+> >>     BTRFS info (device dm-3): forced readonly
+> >>     BTRFS warning (device dm-3): Skipping commit of aborted transaction.
+> >>     BTRFS: error (device dm-3) in cleanup_transaction:1839: errno=-5 IO failure
+> >>     BTRFS info (device dm-3): delayed_refs has NO entry
+> > 
+> > Two tests complain:
+> 
+> Any info about the reproducibility and VM/hardware info? Especially for
+> the VM ram size.
 
-This code existed because we didn't have a good feedback mechanism for
-running delayed refs, but with the delayed refs rsv we do now.  Delete
-this throttling code and let the btrfs_start_transaction() in relocation
-deal with putting pressure on the delayed refs infrastructure.  With
-this patch we no longer take 5 minutes to balance a metadata only fs.
-
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/transaction.c | 8 --------
- 1 file changed, 8 deletions(-)
-
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 22b0dacae003..ef98b3cd30db 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -851,14 +851,6 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
- 
- 	btrfs_trans_release_chunk_metadata(trans);
- 
--	if (lock && should_end_transaction(trans) &&
--	    READ_ONCE(cur_trans->state) == TRANS_STATE_RUNNING) {
--		spin_lock(&info->trans_lock);
--		if (cur_trans->state == TRANS_STATE_RUNNING)
--			cur_trans->state = TRANS_STATE_BLOCKED;
--		spin_unlock(&info->trans_lock);
--	}
--
- 	if (lock && READ_ONCE(cur_trans->state) == TRANS_STATE_BLOCKED) {
- 		if (throttle)
- 			return btrfs_commit_transaction(trans);
--- 
-2.14.3
-
+2G ram with 4 cpus, this was first run of the patchset so I can't say
+how reliable it is yet.

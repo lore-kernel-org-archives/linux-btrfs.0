@@ -2,179 +2,150 @@ Return-Path: <SRS0=zIKm=QA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D60F6C282C3
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Jan 2019 10:40:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0C53BC282C3
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Jan 2019 13:37:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A469821872
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Jan 2019 10:40:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CFB81218A2
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Jan 2019 13:37:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726365AbfAXKkP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 24 Jan 2019 05:40:15 -0500
-Received: from icp-osb-irony-out6.external.iinet.net.au ([203.59.1.106]:60135
-        "EHLO icp-osb-irony-out6.external.iinet.net.au" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726012AbfAXKkP (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 24 Jan 2019 05:40:15 -0500
-X-IronPort-Anti-Spam-Filtered: true
-X-IronPort-Anti-Spam-Result: =?us-ascii?q?A2B5AAC2lElc/1rB77ZkGgEBAQEBAgE?=
- =?us-ascii?q?BAQEHAgEBAQGBZYIEZk8zJ4QBiHmMcwglNQGDTJQZgWcyBgGEOgQCAoJ/Izg?=
- =?us-ascii?q?SAQMBAQEBAQECbRwMhUoBAQEBAgEjBAsBIxwHBQsLGAICFQIPAgI5DREGAQw?=
- =?us-ascii?q?GAgEBgx4BgXkHEKtVfDOELgGBFIRtBYELi02BQD+BOAxkfVAuhEoEARIBCHI?=
- =?us-ascii?q?DgiuCNSICoiwJDYIohHWHBYNwHoFpJoV0glCHS4oLhSKNZSFlcWwZO4JsE4I?=
- =?us-ascii?q?UF4hfhVMuMAGBAgGHWQ8XgicBAQ?=
-X-IPAS-Result: =?us-ascii?q?A2B5AAC2lElc/1rB77ZkGgEBAQEBAgEBAQEHAgEBAQGBZ?=
- =?us-ascii?q?YIEZk8zJ4QBiHmMcwglNQGDTJQZgWcyBgGEOgQCAoJ/IzgSAQMBAQEBAQECb?=
- =?us-ascii?q?RwMhUoBAQEBAgEjBAsBIxwHBQsLGAICFQIPAgI5DREGAQwGAgEBgx4BgXkHE?=
- =?us-ascii?q?KtVfDOELgGBFIRtBYELi02BQD+BOAxkfVAuhEoEARIBCHIDgiuCNSICoiwJD?=
- =?us-ascii?q?YIohHWHBYNwHoFpJoV0glCHS4oLhSKNZSFlcWwZO4JsE4IUF4hfhVMuMAGBA?=
- =?us-ascii?q?gGHWQ8XgicBAQ?=
-X-IronPort-AV: E=Sophos;i="5.56,515,1539619200"; 
-   d="scan'208";a="134677227"
-Received: from 182-239-193-90.ip.adam.com.au (HELO Oberon.Underworld) ([182.239.193.90])
-  by icp-osb-irony-out6.iinet.net.au with ESMTP; 24 Jan 2019 18:40:10 +0800
-Subject: Re: Incremental receive completes succesfully despite missing files
-To:     Hans van Kranenburg <Hans.van.Kranenburg@mendix.com>,
-        Nikolay Borisov <nborisov@suse.com>,
-        Andrei Borzenkov <arvidjaar@gmail.com>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.cz>
-References: <110c46c8-6fe9-84ea-0f4e-8269fd8000ed@netspace.net.au>
- <CAJCQCtSOBcK=MXLUFVZk6YCrFx60UEH7PgOtPYbcRkfjG0XDyQ@mail.gmail.com>
- <3cfb98e1-92d4-150c-445c-9357cec9adca@netspace.net.au>
- <CAA91j0VSd=uC7ROT2+JsRszzAXWz+ti-Kf3hyw+aVS03sdn95g@mail.gmail.com>
- <8e5c7ee5-4507-66d2-6642-2e37ff11b897@mendix.com>
- <f191c52b-740f-f432-1307-dbb8f4010f66@suse.com>
- <f2d23645-ebd4-3799-bad8-2050764375bc@mendix.com>
-From:   Dennis K <dennisk@netspace.net.au>
+        id S1728030AbfAXNhN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 24 Jan 2019 08:37:13 -0500
+Received: from mout.gmx.net ([212.227.17.21]:55657 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727562AbfAXNhN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 24 Jan 2019 08:37:13 -0500
+Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx101
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0MIQlv-1glp2Z2n1T-004G1A; Thu, 24
+ Jan 2019 14:37:02 +0100
+Subject: Re: [Patch v5 0/7] btrfs: qgroup: Delay subtree scan to reduce
+ overhead
+To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20190123071518.2528-1-wqu@suse.com>
+ <20190123174736.GW2900@twin.jikos.cz>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
-Message-ID: <d44d7535-7590-662e-ddd0-e095cb5156a4@netspace.net.au>
-Date:   Thu, 24 Jan 2019 21:40:51 +1100
-User-Agent: Mozilla/5.0 (X11; Linux i686; rv:60.0) Gecko/20100101
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <69c99dd1-8a1a-eaf9-57cf-3445906fe966@gmx.com>
+Date:   Thu, 24 Jan 2019 21:36:53 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <f2d23645-ebd4-3799-bad8-2050764375bc@mendix.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20190123174736.GW2900@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="SMlPtQYFfvo2UJc4oaVsvewHWUd08Seg7"
+X-Provags-ID: V03:K1:BmaBmymEkSMqwwcDRklx36YfGcDaBVuWlx3b7qF6QRPv2poK8NU
+ 4YrrjMgtFRlI594DkvFhW+fNNItPn5nG9R4VXfONwICGBaRIdf5D0pjsVarnMVuQmzWUyCM
+ stTagBHoUji/zg+1dUXSL9MIoqebH/UTxULhORsrFnctjWnAryt50U2bcho6k7RYEqHiL4A
+ WUzqX+JZBJeDnqLa9zcrA==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:kub72tv9Xlc=:uf8JyFnx5UOiNqKnfaYtKW
+ VC3NQAtN22zQNJypKCG9o764z8j5W1WjpcM7pwVS4WuByWcM1OWklsT497XFIdJZqFZWKrzmz
+ ceBLr9dVI3jMHiiNfZOaLSgMsVAnYlWYJXGOzlu/8eaHjeE7eLM08gRZhYQac4M+UlNQnlt+8
+ Bcak4NPqMGug52P37IIwziEdNr4mGSG+nOon3NsMSfAtpZ18LnylYIlfBy8xryHziCeJtw4l/
+ 4P2wlBRrGxbrKrrKQom+Ed9ucaKCQHZkh/EumfaCt3yKPVm8dGqWbrT/vFVS0mGlB7OGlN1qk
+ 1u5lt0KA/B6Zbunkg0Tv9eieSOnAjVhLzL/GsWw0JYTmadiM9OdVzw3U0Q7J7TvbQ21T+6cDT
+ mGRDpeJ29pJ3m4mslAzlBzXA8Rnv4DgNRMxUKjvXxiuNOZOh/+gucJ4fwEs8+VugjZ3iJX9SN
+ KPFT3EIeo5rPaZfbIixO926iI4CLSYEDOgCzswIWpolfpGgtCWsibeWaIR3j8+an5Pu1L3rpy
+ XfrEpZ2O85U4Ab8N4fdDL/YDXJpS/rmWuhxyo4zVnuVt+2OWjX1HaYmPXPkjFfJdOldv8fZ/I
+ 2DpJQ9xNc9dpUJSIPjToQ2mzqqZXjbk1W7uOcViHhQRTT09YxnAo4VEPbdoGhWikastzPXHYm
+ 4+0vSMNrHxr/anf7ioeNrtqap7StQB3Le2PTV3PVCatm/b8SEn5g0BwBU7d/Rx8Ji9s09Gzsb
+ j3UgSAR4yuRJczBILF24Tm0OMZzo/su8yPqByfA4trQ51kCl7p9tMGeU3mbW91LzfGAsR/UbB
+ TyB+VOTicy2e608QqHaMc+f7SyCelXiTOdkKAyDL2KfsUBd4+OQysGMD6sBAyddeU1x1WbHGi
+ fnXv9weCWXYKJ8bWmNLpYSW4YyRhSa8kTDyg7/Hjc7cSazL6FEjFJNQAaZKh9x
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--SMlPtQYFfvo2UJc4oaVsvewHWUd08Seg7
+Content-Type: multipart/mixed; boundary="Ak4BNbmqZfOHlKHLfFoCfBOFnIkFet6RP";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <69c99dd1-8a1a-eaf9-57cf-3445906fe966@gmx.com>
+Subject: Re: [Patch v5 0/7] btrfs: qgroup: Delay subtree scan to reduce
+ overhead
+References: <20190123071518.2528-1-wqu@suse.com>
+ <20190123174736.GW2900@twin.jikos.cz>
+In-Reply-To: <20190123174736.GW2900@twin.jikos.cz>
 
-
-On 24/1/19 3:23 am, Hans van Kranenburg wrote:
-> On 1/23/19 4:32 PM, Nikolay Borisov wrote:
->>
->>
->> On 23.01.19 г. 17:25 ч., Hans van Kranenburg wrote:
->>> On 1/23/19 12:25 PM, Andrei Borzenkov wrote:
->>>> On Wed, Jan 23, 2019 at 1:45 PM Dennis Katsonis <dennisk@netspace.net.au> wrote:
->>>>> I think my previous e-mail did not go through.  Basically, if it is
->>>>> assumed that a btrfs-receive operation will result in a subvolume which
->>>>> matches the source file for file, then this assumption or expectation
->>>>> won't be met if one deletes files from the subvolume at the receiving
->>>>> end which is going to be referred to as the parent. 
->>>>>
->>>>
->>>> This is oxymoron. btrfs send/receive apply to read-only subvolumes.
->>>> You are not able to modify them. As soon as you remove read-only bit,
->>>> you are fully responsible for consequences.
->>>>
->>>>> This can happen inadvertently,
->>>>
->>>> It cannot. You do not inadvertently make subvolume read-write. And if
->>>> you do, you are expected to know what you are doing.
->>>>
->>>> That said, better if btrfs did not allow flipping read-only bit in the
->>>> first place.
->>>
->>> +100
->>>
->>> But then only disallow if the subvol has a value in the received_uuid
->>> field, I'd say.
->>>
->>> And the tooling could display a nice error message, telling the user to
->>> make a rw snapshot of the received subvol instead, which will have an
->>> empty received_uuid field again.
->>>
->>> ERROR: subvolume is a received subvolume, which cannot be made read-write
->>> ERROR: suggestion; make a read-write snapshot of it instead
->>>
->>> Setting something ro manually (e.g. to prevent accidental deletion of a
->>> static set of data) is still also a use case.
->>
->> I had a patch which when the ro bit is flipped on a snapshot, then it's
->> parent snapshot uuid etc is deleted. Because at that point it cannot be
->> guaranteed that there is any relationship between paren<->snapshot. Ie:
->>
->> https://lore.kernel.org/linux-btrfs/1520847020-8049-1-git-send-email-nborisov@suse.com/
->>
->> has anyone tried it?
-> 
-> Oh, it seems that one never got any reply.
-> 
-> When looking at it from an end user perspective, I'd much more like to
-> have it explicitly tell me I'm doing something stupid, refuse and
-> educate me than obeying and adding more implicit behaviour that I cannot
-> revert any more myself.
-> 
-It was the new user I had primarily in mind.  Btrfs is the default for
-OpenSUSE, and may become the default for more distros.  Thats a lot of
-new users, unaware of the vaguaries of COW filesystems who first learn
-how to use the tools to solve their problems, before they learn the
-"gotchas".
-
-The fact is, this thread is the first time I've seen explicitly written
-that parents must be the same at receiving and sending ends, or else
-btrfs-send/receive will produce a subvolume which differs from the source.
-
-A user could from the descriptions of how send/receive formats its data
-strea, and from interpreting "clone sources" in a manner contrary to how
-its used in the man page and the mention of incrementals, conclude that
-send/receive is sensitive to changes at the receiving side, but its far,
-far more likely that they will start using feature like send/receive and
-setting snapshots to ro before they delve into how it works its magic.
-Anyway, rsync sends incremental change, and its ability to replicate a
-directory tree isn't predicated on the files present at the receiving
-end being the same as the last time it was run...
+--Ak4BNbmqZfOHlKHLfFoCfBOFnIkFet6RP
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
 
+On 2019/1/24 =E4=B8=8A=E5=8D=881:47, David Sterba wrote:
+> On Wed, Jan 23, 2019 at 03:15:11PM +0800, Qu Wenruo wrote:
+>> v5:
+>> - Use Josef's superior qgroup deadlock fix.
+>>   No performance regression now.
+>=20
+> Does this pass fstests on your side? Namely if test btrfs/007 does not
+> crash,
+> https://lore.kernel.org/linux-btrfs/20190123135120.GT2900@twin.jikos.cz=
+/
+>
 
-> E.g. I'm a new btrfs user, I just sent this 1TiB of data for the first
-> time, and now I'm of course curious and trying more things out.
-> 
-> Trying setting rw ('ooh! that works') and then quickly setting ro back
-> will destroy the send/receive relationship without mentioning anything
-> to the user, and in combination with subsequent cryptic errors from
-> incremental send/receive ("cannot find parent subvolume" or something)
-> it will end up with smashing keyboards and throwing computers out of the
-> window.
-> 
-> After asking on IRC and providing output of btrfs sub list etc the user
-> is told that that subvol was never received because it doesn't have a
-> received_uuid, and then someone asks "did you turn it rw at some
-> point?". Now the user remembers, "yes, I was experimenting and I didn't
-> see an error or warning", and is then told to resend the 1TiB of data.
-> "But it's there already!" Now someone comes up with a snippet of python
-> code to reset the received_uuid with the ioctl, and...
-> 
-> :D
-> 
->>>>> or even through filesystem corruption
->>>>> (which I experienced).
->>>>>
->>>>
->>>> And if corruption happened after applying changes? End result in the
->>>> same. Of course it would be perfect if btrfs could notice and warn
->>>> you, I just do not see how it can realistically be implemented.
->>>>
->>>
->>>
-> 
-> 
+BTW, I will drop the 1st and the 2nd (this) patch from next push.
+
+The 1st patch is completely independent from the delayed subtree, so is
+the 2nd patch.
+
+For the deadlock or possible performance regression caused by my
+original fix, it's unrelated to delayed subtree scan anyway.
+
+Thanks,
+Qu
+
+
+--Ak4BNbmqZfOHlKHLfFoCfBOFnIkFet6RP--
+
+--SMlPtQYFfvo2UJc4oaVsvewHWUd08Seg7
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxJv3UACgkQwj2R86El
+/qjubQf+LQh/EylTu5ZVTajCBMhE+tn9KWWvXNV8ni2WCzi0LB2pQYrwFC9Wu8BI
+DJDpoj64ziOYjo4dgwDmzTQ6WHTu4eB3OYsMj3zEcIGCQrawoHQjeD4YKcdxSp72
+6Q6LcmjglAQXHOxYGfjBCEckCiLG71T5jd3MySLUWkp9jgwUuYoZA944gWSFAF8u
+DZGjXd8oVpWrFCCK34aYxLf8pDbWUrKhVaqq5znEqBV98MrdM8+BmZb7BTKGJNmS
+PMeihN7BsliFuD/hnDA/VO9r+YlcvZs2wN4z9TT8Y6A4YPqCmhB0hUywVO5OZBtX
+MJ5yC9629FcdPValRb4MBOylo3pmhQ==
+=Z/Qj
+-----END PGP SIGNATURE-----
+
+--SMlPtQYFfvo2UJc4oaVsvewHWUd08Seg7--

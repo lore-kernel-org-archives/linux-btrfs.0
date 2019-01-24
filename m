@@ -3,92 +3,60 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 21710C282C3
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Jan 2019 09:09:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D60F6C282C3
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Jan 2019 10:40:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EEB0720855
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Jan 2019 09:09:00 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A469821872
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Jan 2019 10:40:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727515AbfAXJI7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 24 Jan 2019 04:08:59 -0500
-Received: from mx2.suse.de ([195.135.220.15]:38256 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726880AbfAXJI7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 24 Jan 2019 04:08:59 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 20150AFB2
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Jan 2019 09:08:57 +0000 (UTC)
-Subject: Re: [PATCH 6/6] btrfs: merge btrfs_set_lock_blocking_rw with it's
- caller
-To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-References: <cover.1548264220.git.dsterba@suse.com>
- <5c85a32651721e9905f41c14dac4c084a9dd2517.1548264220.git.dsterba@suse.com>
-From:   Johannes Thumshirn <jthumshirn@suse.de>
+        id S1726365AbfAXKkP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 24 Jan 2019 05:40:15 -0500
+Received: from icp-osb-irony-out6.external.iinet.net.au ([203.59.1.106]:60135
+        "EHLO icp-osb-irony-out6.external.iinet.net.au" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726012AbfAXKkP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 24 Jan 2019 05:40:15 -0500
+X-IronPort-Anti-Spam-Filtered: true
+X-IronPort-Anti-Spam-Result: =?us-ascii?q?A2B5AAC2lElc/1rB77ZkGgEBAQEBAgE?=
+ =?us-ascii?q?BAQEHAgEBAQGBZYIEZk8zJ4QBiHmMcwglNQGDTJQZgWcyBgGEOgQCAoJ/Izg?=
+ =?us-ascii?q?SAQMBAQEBAQECbRwMhUoBAQEBAgEjBAsBIxwHBQsLGAICFQIPAgI5DREGAQw?=
+ =?us-ascii?q?GAgEBgx4BgXkHEKtVfDOELgGBFIRtBYELi02BQD+BOAxkfVAuhEoEARIBCHI?=
+ =?us-ascii?q?DgiuCNSICoiwJDYIohHWHBYNwHoFpJoV0glCHS4oLhSKNZSFlcWwZO4JsE4I?=
+ =?us-ascii?q?UF4hfhVMuMAGBAgGHWQ8XgicBAQ?=
+X-IPAS-Result: =?us-ascii?q?A2B5AAC2lElc/1rB77ZkGgEBAQEBAgEBAQEHAgEBAQGBZ?=
+ =?us-ascii?q?YIEZk8zJ4QBiHmMcwglNQGDTJQZgWcyBgGEOgQCAoJ/IzgSAQMBAQEBAQECb?=
+ =?us-ascii?q?RwMhUoBAQEBAgEjBAsBIxwHBQsLGAICFQIPAgI5DREGAQwGAgEBgx4BgXkHE?=
+ =?us-ascii?q?KtVfDOELgGBFIRtBYELi02BQD+BOAxkfVAuhEoEARIBCHIDgiuCNSICoiwJD?=
+ =?us-ascii?q?YIohHWHBYNwHoFpJoV0glCHS4oLhSKNZSFlcWwZO4JsE4IUF4hfhVMuMAGBA?=
+ =?us-ascii?q?gGHWQ8XgicBAQ?=
+X-IronPort-AV: E=Sophos;i="5.56,515,1539619200"; 
+   d="scan'208";a="134677227"
+Received: from 182-239-193-90.ip.adam.com.au (HELO Oberon.Underworld) ([182.239.193.90])
+  by icp-osb-irony-out6.iinet.net.au with ESMTP; 24 Jan 2019 18:40:10 +0800
+Subject: Re: Incremental receive completes succesfully despite missing files
+To:     Hans van Kranenburg <Hans.van.Kranenburg@mendix.com>,
+        Nikolay Borisov <nborisov@suse.com>,
+        Andrei Borzenkov <arvidjaar@gmail.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        David Sterba <dsterba@suse.cz>
+References: <110c46c8-6fe9-84ea-0f4e-8269fd8000ed@netspace.net.au>
+ <CAJCQCtSOBcK=MXLUFVZk6YCrFx60UEH7PgOtPYbcRkfjG0XDyQ@mail.gmail.com>
+ <3cfb98e1-92d4-150c-445c-9357cec9adca@netspace.net.au>
+ <CAA91j0VSd=uC7ROT2+JsRszzAXWz+ti-Kf3hyw+aVS03sdn95g@mail.gmail.com>
+ <8e5c7ee5-4507-66d2-6642-2e37ff11b897@mendix.com>
+ <f191c52b-740f-f432-1307-dbb8f4010f66@suse.com>
+ <f2d23645-ebd4-3799-bad8-2050764375bc@mendix.com>
+From:   Dennis K <dennisk@netspace.net.au>
 Openpgp: preference=signencrypt
-Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <c9184380-73ad-1cf3-f78f-28386870b304@suse.de>
-Date:   Thu, 24 Jan 2019 10:08:56 +0100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+Message-ID: <d44d7535-7590-662e-ddd0-e095cb5156a4@netspace.net.au>
+Date:   Thu, 24 Jan 2019 21:40:51 +1100
+User-Agent: Mozilla/5.0 (X11; Linux i686; rv:60.0) Gecko/20100101
+ Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <5c85a32651721e9905f41c14dac4c084a9dd2517.1548264220.git.dsterba@suse.com>
+In-Reply-To: <f2d23645-ebd4-3799-bad8-2050764375bc@mendix.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -97,12 +65,116 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Looks good,
-Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
--- 
-Johannes Thumshirn                            SUSE Labs Filesystems
-jthumshirn@suse.de                                +49 911 74053 689
-SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
-GF: Felix Imendörffer, Jane Smithard, Graham Norton
-HRB 21284 (AG Nürnberg)
-Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850
+
+
+On 24/1/19 3:23 am, Hans van Kranenburg wrote:
+> On 1/23/19 4:32 PM, Nikolay Borisov wrote:
+>>
+>>
+>> On 23.01.19 г. 17:25 ч., Hans van Kranenburg wrote:
+>>> On 1/23/19 12:25 PM, Andrei Borzenkov wrote:
+>>>> On Wed, Jan 23, 2019 at 1:45 PM Dennis Katsonis <dennisk@netspace.net.au> wrote:
+>>>>> I think my previous e-mail did not go through.  Basically, if it is
+>>>>> assumed that a btrfs-receive operation will result in a subvolume which
+>>>>> matches the source file for file, then this assumption or expectation
+>>>>> won't be met if one deletes files from the subvolume at the receiving
+>>>>> end which is going to be referred to as the parent. 
+>>>>>
+>>>>
+>>>> This is oxymoron. btrfs send/receive apply to read-only subvolumes.
+>>>> You are not able to modify them. As soon as you remove read-only bit,
+>>>> you are fully responsible for consequences.
+>>>>
+>>>>> This can happen inadvertently,
+>>>>
+>>>> It cannot. You do not inadvertently make subvolume read-write. And if
+>>>> you do, you are expected to know what you are doing.
+>>>>
+>>>> That said, better if btrfs did not allow flipping read-only bit in the
+>>>> first place.
+>>>
+>>> +100
+>>>
+>>> But then only disallow if the subvol has a value in the received_uuid
+>>> field, I'd say.
+>>>
+>>> And the tooling could display a nice error message, telling the user to
+>>> make a rw snapshot of the received subvol instead, which will have an
+>>> empty received_uuid field again.
+>>>
+>>> ERROR: subvolume is a received subvolume, which cannot be made read-write
+>>> ERROR: suggestion; make a read-write snapshot of it instead
+>>>
+>>> Setting something ro manually (e.g. to prevent accidental deletion of a
+>>> static set of data) is still also a use case.
+>>
+>> I had a patch which when the ro bit is flipped on a snapshot, then it's
+>> parent snapshot uuid etc is deleted. Because at that point it cannot be
+>> guaranteed that there is any relationship between paren<->snapshot. Ie:
+>>
+>> https://lore.kernel.org/linux-btrfs/1520847020-8049-1-git-send-email-nborisov@suse.com/
+>>
+>> has anyone tried it?
+> 
+> Oh, it seems that one never got any reply.
+> 
+> When looking at it from an end user perspective, I'd much more like to
+> have it explicitly tell me I'm doing something stupid, refuse and
+> educate me than obeying and adding more implicit behaviour that I cannot
+> revert any more myself.
+> 
+It was the new user I had primarily in mind.  Btrfs is the default for
+OpenSUSE, and may become the default for more distros.  Thats a lot of
+new users, unaware of the vaguaries of COW filesystems who first learn
+how to use the tools to solve their problems, before they learn the
+"gotchas".
+
+The fact is, this thread is the first time I've seen explicitly written
+that parents must be the same at receiving and sending ends, or else
+btrfs-send/receive will produce a subvolume which differs from the source.
+
+A user could from the descriptions of how send/receive formats its data
+strea, and from interpreting "clone sources" in a manner contrary to how
+its used in the man page and the mention of incrementals, conclude that
+send/receive is sensitive to changes at the receiving side, but its far,
+far more likely that they will start using feature like send/receive and
+setting snapshots to ro before they delve into how it works its magic.
+Anyway, rsync sends incremental change, and its ability to replicate a
+directory tree isn't predicated on the files present at the receiving
+end being the same as the last time it was run...
+
+
+
+
+> E.g. I'm a new btrfs user, I just sent this 1TiB of data for the first
+> time, and now I'm of course curious and trying more things out.
+> 
+> Trying setting rw ('ooh! that works') and then quickly setting ro back
+> will destroy the send/receive relationship without mentioning anything
+> to the user, and in combination with subsequent cryptic errors from
+> incremental send/receive ("cannot find parent subvolume" or something)
+> it will end up with smashing keyboards and throwing computers out of the
+> window.
+> 
+> After asking on IRC and providing output of btrfs sub list etc the user
+> is told that that subvol was never received because it doesn't have a
+> received_uuid, and then someone asks "did you turn it rw at some
+> point?". Now the user remembers, "yes, I was experimenting and I didn't
+> see an error or warning", and is then told to resend the 1TiB of data.
+> "But it's there already!" Now someone comes up with a snippet of python
+> code to reset the received_uuid with the ioctl, and...
+> 
+> :D
+> 
+>>>>> or even through filesystem corruption
+>>>>> (which I experienced).
+>>>>>
+>>>>
+>>>> And if corruption happened after applying changes? End result in the
+>>>> same. Of course it would be perfect if btrfs could notice and warn
+>>>> you, I just do not see how it can realistically be implemented.
+>>>>
+>>>
+>>>
+> 
+> 

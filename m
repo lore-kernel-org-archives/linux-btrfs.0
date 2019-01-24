@@ -2,84 +2,101 @@ Return-Path: <SRS0=zIKm=QA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7A2C3C282C0
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Jan 2019 00:08:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CB2CBC282C0
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Jan 2019 03:05:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3BE68218A1
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Jan 2019 00:08:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 92D1C218A1
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Jan 2019 03:05:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726235AbfAXAIh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 23 Jan 2019 19:08:37 -0500
-Received: from mx2.suse.de ([195.135.220.15]:60818 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726168AbfAXAIh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Jan 2019 19:08:37 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 3BFFAAFB8
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Jan 2019 00:08:35 +0000 (UTC)
+        id S1727126AbfAXDFE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 23 Jan 2019 22:05:04 -0500
+Received: from mout.gmx.net ([212.227.15.19]:39435 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726997AbfAXDFD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 23 Jan 2019 22:05:03 -0500
+Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx003
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0M4WNA-1h7cdc2sfc-00yfIE; Thu, 24
+ Jan 2019 04:04:53 +0100
 Subject: Re: [PATCH v3 0/5] btrfs: Enhancement to tree block validation
 To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
 References: <20190118021956.22949-1-wqu@suse.com>
  <20190123171635.GU2900@twin.jikos.cz>
-From:   Qu Wenruo <wqu@suse.de>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=wqu@suse.de; prefer-encrypt=mutual; keydata=
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
  8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
  1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
  9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
  gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0F1F1IFdlbnJ1byA8d3F1QHN1c2UuZGU+iQFUBBMBCAA+AhsDBQsJCAcCBhUICQoLAgQW
- AgMBAh4BAheAFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlnVgp0FCQlmAm4ACgkQwj2R86El
- /qilmgf/cUq9kFQo577ku5gc6rFpVg68ublBwjYpwjw0b//xo+Wo1wm+RRbUGs+djSZAqw12
- D4F3r0mBTI7abUCNWAbFkYZSAIFVi0DMkjypIVS7PSaEt04rM9VBTToE+YqU6WENeJ57R2p2
- +hI0wZrBwxObdsdaOtxWtsp3bmhIbdqxSKrtXuRawy4KnQYcLuGzOce9okdlbAE0W3KHm1gQ
- oNAe6FX8nC9qo14m8LqEbThYH+qj4iCMlN8HIfbSx4F3e7nHZ+UAMW+E/lnMRkIB9Df+JyVd
- /NlXzIjZAggcWsqpx6D4wyAuexKWkiGQeUeArUNihAwXjmyqWPGmjVyIh+oC6LkBDQRZ1YGv
- AQgAqlPrYeBLMv3PAZ75YhQIwH6c4SNcB++hQ9TCT5gIQNw51+SQzkXIGgmzxMIS49cZcE4K
- Xk/kHw5hieQeQZa60BWVRNXwoRI4ib8okgDuMkD5Kz1WEyO149+BZ7HD4/yK0VFJGuvDJR8T
- 7RZwB69uVSLjkuNZZmCmDcDzS0c/SJOg5nkxt1iTtgUETb1wNKV6yR9XzRkrEW/qShChyrS9
- fNN8e9c0MQsC4fsyz9Ylx1TOY/IF/c6rqYoEEfwnpdlz0uOM1nA1vK+wdKtXluCa79MdfaeD
- /dt76Kp/o6CAKLLcjU1Iwnkq1HSrYfY3HZWpvV9g84gPwxwxX0uXquHxLwARAQABiQE8BBgB
- CAAmFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlnVga8CGwwFCQPCZwAACgkQwj2R86El/qgN
- 8Qf+M0vM2Idwm5txZZSs+/kSgcPxEwYmxUinnUJGyc0ZWYQXPl0cBetZon9El0naijGzNWvf
- HxIPB+ZFehk6Otgc78p1a3/xck/s1myFRLrmbbTJNoFiyL25ljcq0J8z5Zp4yuABL2RiLdaZ
- Pt/jfwjBHwGR+QKp6dD2qMrUWf9b7TFzYDMZXzZ2/eoIgtyjEelNBPrIgOFe24iKMjaGjd97
- fJuRcBMHdhUAxvXQF1oRtd83JvYJ5OtwTd8MgkEfl+fo7HwWkuHbzc70L4fFKv2BowqFdaHy
- mId1ijGPGr46tuZ5a4cw/zbaPYx6fJ4sK9tSv/6V1QPNUdqml6hm6pfs6A==
-Message-ID: <cc945559-a965-d1d7-6c3f-c91169496be6@suse.de>
-Date:   Thu, 24 Jan 2019 08:08:31 +0800
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <0feee626-6d73-ba40-2e31-112ae5337f8d@gmx.com>
+Date:   Thu, 24 Jan 2019 11:04:47 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.4.0
 MIME-Version: 1.0
 In-Reply-To: <20190123171635.GU2900@twin.jikos.cz>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="Z2MvhbgoGFbQkCCr8M1zN4YUb7t6TatSi"
+ boundary="eeEWT8LNFHgmGzG0nXZPyD59BZMupgSAp"
+X-Provags-ID: V03:K1:h7iHqBMT2MGB9oifo7DDI5c1Lyw0bOhwwKtNCWqZcKNHz6A9SuY
+ H7t1pI1DBcYp5S18fMAWoyx45Qqq6uqaDa99JJp/I6dZIuO+IU5HBCdcuewRnriP6eYFWir
+ ytMgzT5nCmYA2XVTwmrvMxplIv5fKGyLqll0lfCeFDNKN7yoZZ35QdcolNrqAXSI59OOcOi
+ ul/u8vNXZslyBW5lNWSYQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:Dow29NZvwPI=:uH25TmGBAHmF4yCIcQ63sN
+ GRK7Q4w2Y+QtYqinI9eteTwRfXdpxAStgGMAxcZfwCIybd2+eaWb6eoo6VEG8WzPrCwfFBXEN
+ idgXUuyNNaJV1HoP/QeFNevRcwWcjVVfepOi6n3B5j/bRQecxnvgBubPra4R2MP7sL1XMLmAT
+ c38nAH9M13OR36uyLca+bOCge+0CWkHHTzzS2CvwGmEt8lp7I104S7WhQaSx1iXI731Dy46gm
+ u5W13W2OccfR/jX1QE6bExsVZAyQyJl16Tw8Hxymw08BpH8ymdE5+N/Wf5AO6EAwqJRvAoEBR
+ FyMOWw0B4SondmuLjAojlW5EfrKZ02M7O5ZkWoHCEZIhQyKuClRy2WOczvYDjNHmklB2q1nV+
+ eRa5R7FomUXMKdn2VeRRQ5gggdyNTF4qq024uWjRpqY3glf+oSaJV6amxKprtgbsHi2oHRczM
+ IqWSZiI55UBDUHykSyeVq/v10yclDjfy8QVH5FZfz3cfiRGJot/5R33Q/MFZUjvo1u54gqI9r
+ xpMc/ZU8izx6QUuCEIsSCk7DyzQEBcR3GUYvaARX5QB0Vc+FFVN9t0nocQejSg0zbgniswJ77
+ YCjC3QLIOY//EfHs0Y2hNECuE46OwOk+oogVzVHpegiCNYHnxlimGu2bPkn0nQ0V0UJ+ZC/90
+ HPzK230c4AxPpME0rBVmvajmwec64xKmVIOORjeUq/P7WhS/UMN7rhHyJsrLe1thVBkQiY8VN
+ JDWV3OP1460ZoYkMUGIxXzflIZ0n4zmKarjatQnsTpZ2Ab3Jip7csZWAmC3eNF+Ee6e//JFeA
+ lS19uqeKxMPyPPCEJyk+vXxy7kVc+LXiqj+uXxNwjzgh/iPYACdiDAnzZT1Ftfy/gYNwjjAiq
+ Lm5Wc6BCwzzhxLRkROr+zVpM+tTPv3Ci+2BbNg275JWtRzWcD4NXzv5gowhrYO
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---Z2MvhbgoGFbQkCCr8M1zN4YUb7t6TatSi
-Content-Type: multipart/mixed; boundary="AS2UWXIq9HQV20MzhwosL82O1XJHFIxRN";
+--eeEWT8LNFHgmGzG0nXZPyD59BZMupgSAp
+Content-Type: multipart/mixed; boundary="Q9ohf4skP8RTteGO6oadepMmPLjbnMh2A";
  protected-headers="v1"
-From: Qu Wenruo <wqu@suse.de>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <cc945559-a965-d1d7-6c3f-c91169496be6@suse.de>
+Message-ID: <0feee626-6d73-ba40-2e31-112ae5337f8d@gmx.com>
 Subject: Re: [PATCH v3 0/5] btrfs: Enhancement to tree block validation
 References: <20190118021956.22949-1-wqu@suse.com>
  <20190123171635.GU2900@twin.jikos.cz>
 In-Reply-To: <20190123171635.GU2900@twin.jikos.cz>
 
---AS2UWXIq9HQV20MzhwosL82O1XJHFIxRN
+--Q9ohf4skP8RTteGO6oadepMmPLjbnMh2A
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
@@ -122,6 +139,15 @@ n.
 >>     BTRFS info (device dm-3): delayed_refs has NO entry
 >=20
 > Two tests complain:
+
+Any info about the reproducibility and VM/hardware info? Especially for
+the VM ram size.
+
+I have looped these two test cases for 32 times, still no triggering.
+
+Thanks,
+Qu
+
 >=20
 > btrfs/139
 > [ 7064.718943] run fstests btrfs/139 at 2019-01-23 15:56:29
@@ -143,17 +169,6 @@ k=3D31653888 slot=3D0, invalid nritems, have 0 should not be 0 for non-ro=
 ot leaf
 > [ 7075.363155] BTRFS error (device vdb): write time tree block corrupti=
 on detected
-
-This looks strange.
-
-In commit transaction time, we should be able to get correct csum root
-node, but it obviously still didn't detect it correctly.
-
-I'll address it.
-
-Thanks,
-Qu
-
 > [ 7077.578167] BTRFS: error (device vdb) in btrfs_commit_transaction:22=
 20: errno=3D-5 IO failure (Error while writing out transaction)
 > [ 7077.583615] BTRFS info (device vdb): forced readonly
@@ -211,23 +226,23 @@ ts//generic/344.out.bad'  to see the entire diff)
 >=20
 
 
---AS2UWXIq9HQV20MzhwosL82O1XJHFIxRN--
+--Q9ohf4skP8RTteGO6oadepMmPLjbnMh2A--
 
---Z2MvhbgoGFbQkCCr8M1zN4YUb7t6TatSi
+--eeEWT8LNFHgmGzG0nXZPyD59BZMupgSAp
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxJAf8ACgkQwj2R86El
-/qiu6Qf/TBo89ZDqsd6Y67UGKmBcktK++JqBnISvH+2oW7W7117ZMB8rspomxh8x
-7ki0OzkSWd95xX+7e8Rv7z5Vm0a2FkqD710DG7byJ0kYiQQ+9EqrWYKsvmDsb1Y9
-EUo0+YHZEJrYnXMFN/wjVeusF/h30uOv6/wZiCMrgDSS1gxMkVYyj8p+C+JqjWIO
-BrEKUaWoo8PYAfz20UI4MZOzrk9OxCTzvQCP9O13DH21mrnUjQFb6g24h7NNLz/J
-O4/SLJ2kLZ2/NxO27R4j55EP0JiOhGizSY34XKYoMs4BJzGIs4mjyCn2O4g3Ln+m
-dkOPYDSco0DDWxbaXe9/M3GHEdbmbg==
-=ohY9
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxJK08ACgkQwj2R86El
+/qhUrAf/SYorXYfe2HJJdnj0f+fFel/JvUPPZjIXiGpiCGHVWX+AnT6rYFHlPfMb
+Gqe9R7Tfeg1YEvLNQ4kVvntghx8FXV4KUDwr4t46k0UzZKL90uu/A6CP4b2Z2jpL
+t2xCpNmKHGrXumU2pHwM20AWcsKhzCoWMahOgV/Aju+rLdpmu07aysUgwFgNT94w
+kmrhluS+UUbOditKMb5NxaTu/Fyf2/GCdarIg7QO0Ct+g4vX1b0J9tCBnY6L4NoL
+c+ztNQYcDj8RisQUvIDx/P9ePLzGdR1WJD2/QIBRAacrxlVJUuPzeHcsnACExoQl
+rdF57aregYQivavByzpCmycvLGN8qw==
+=/enR
 -----END PGP SIGNATURE-----
 
---Z2MvhbgoGFbQkCCr8M1zN4YUb7t6TatSi--
+--eeEWT8LNFHgmGzG0nXZPyD59BZMupgSAp--

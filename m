@@ -2,200 +2,207 @@ Return-Path: <SRS0=6jfg=QB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A9850C282C0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Jan 2019 18:58:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CBAA3C282C0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Jan 2019 20:45:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 83936218B0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Jan 2019 18:58:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8B3FD207E0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Jan 2019 20:45:33 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="uXHEji8R"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726257AbfAYS6P (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 25 Jan 2019 13:58:15 -0500
-Received: from mx2.suse.de ([195.135.220.15]:35476 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726024AbfAYS6O (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Jan 2019 13:58:14 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 7A205AC95;
-        Fri, 25 Jan 2019 18:58:12 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id DFD97DA6F5; Fri, 25 Jan 2019 19:57:38 +0100 (CET)
-Date:   Fri, 25 Jan 2019 19:57:38 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org, fstests@vger.kernel.org,
-        josef@toxicpanda.com
-Subject: Re: [PATCH RFC] fstests: btrfs: Test if balance takes too long time
- or return -ENOSPC unexpected
-Message-ID: <20190125185738.GD2900@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org, fstests@vger.kernel.org,
-        josef@toxicpanda.com
-References: <20190114082043.31220-1-wqu@suse.com>
+        id S1728236AbfAYUpc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 25 Jan 2019 15:45:32 -0500
+Received: from mail-wr1-f66.google.com ([209.85.221.66]:40933 "EHLO
+        mail-wr1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725778AbfAYUpb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 25 Jan 2019 15:45:31 -0500
+Received: by mail-wr1-f66.google.com with SMTP id p4so11697334wrt.7
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Jan 2019 12:45:30 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=subject:to:references:from:message-id:date:user-agent:mime-version
+         :in-reply-to:content-transfer-encoding:content-language;
+        bh=OEX6Duhc14MQui1VnCbdSd2vdXeuL/610/7RlbaN+pI=;
+        b=uXHEji8RR8IsRX6GD+XbxFo+yPUC2Ccaa6qMudRp22hkg5Tbm3QylCqze3bDg7bfSi
+         yf7DDV6/y25jEmjUgt0cyUr63zlFjsfXoS6un/+ovqq7gNqu5XzXAj3r1e76XxCUS9U7
+         gaPchaSo3GXzusSLSj2tjFtD1hV9rp0Nn4WWFirW244m9eiTT8sJf66zyTwy8+yD2f4c
+         rHFqRaymW9Tz+1OoL09kvyVlTpMW9j+pCRVhBXmHPf9dUQs83wQGIwjA49bVkMKhhBtR
+         UKlY/bt1RV2bnLKkTCJmVPrFhClnlW1NnZbFehJkRInBZF5zBEW5YZXtQnLQCIjAb/94
+         uNNw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-transfer-encoding
+         :content-language;
+        bh=OEX6Duhc14MQui1VnCbdSd2vdXeuL/610/7RlbaN+pI=;
+        b=Hy82jR8Ef5ptA2SYFtAySjID4X1niDl/TmjhGSHzOMSbV0s4ba+05U4Uv9kA5S7YVQ
+         V6HatIiCOq1Bm6thPO0GCdYWrXF7qesBeUhUi0AoRxTu9eCMKTE7nCPFqE07lZ6XSKag
+         nC6tPCb9NextNlqNoGLysG0DfvGShaCLVhaJ0fPQRs44fqf0ZGJTvIgrMqMtmwe81kkw
+         dVVNMH812SliZ2we5LKG13VslOlfgf4A7F8uacQhUOXSgLtDYC1G/lNrSIDz/QE/864s
+         P6yB1K1lN2xqJn03RLfA73aBcSqJ5SJ4uzuCqYay4H67M2wVnUCBmpV0F75bE+LA3PiX
+         oRcA==
+X-Gm-Message-State: AJcUukd29K/+eGxHxAot/mQwrdLakJdEdFrd6Wq8yuh8f9TFCPlIjAjW
+        wjs/ajufCS2ZbcQ47ghGP1GVOPgi
+X-Google-Smtp-Source: ALg8bN7hYnp2KRoj05nsEYcO/R9a0tfTo5QR+qiANijU0w4bWgHIfBmyUn35MYkBu14DSymc9RXFSw==
+X-Received: by 2002:adf:92a4:: with SMTP id 33mr12804391wrn.11.1548449128962;
+        Fri, 25 Jan 2019 12:45:28 -0800 (PST)
+Received: from [192.168.254.12] (ip5b4244e9.dynamic.kabel-deutschland.de. [91.66.68.233])
+        by smtp.googlemail.com with ESMTPSA id y12sm38331206wmi.7.2019.01.25.12.45.27
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Fri, 25 Jan 2019 12:45:27 -0800 (PST)
+Subject: Re: Retrieving CSUM-Tree
+To:     Hans van Kranenburg <Hans.van.Kranenburg@mendix.com>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <4472aad4-86cb-7ce2-6055-1ff8d6955969@gmail.com>
+ <a0e58490-8610-2b86-751f-772625fdf0ca@gmx.com>
+ <91b98362-9019-3199-990d-072466b1b455@gmail.com>
+ <dd3a0062-ada9-ee2c-95f1-6376514e8c9b@mendix.com>
+From:   Tobias Reinhard <trtracer@gmail.com>
+Message-ID: <e56eccf6-7c6e-3601-5068-95d700c60351@gmail.com>
+Date:   Fri, 25 Jan 2019 21:45:24 +0100
+User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
+ Thunderbird/60.3.3
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190114082043.31220-1-wqu@suse.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+In-Reply-To: <dd3a0062-ada9-ee2c-95f1-6376514e8c9b@mendix.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 8bit
+Content-Language: en-GB
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Jan 14, 2019 at 04:20:43PM +0800, Qu Wenruo wrote:
-> Kernel commit 64403612b73a ("btrfs: rework
-> btrfs_check_space_for_delayed_refs") is introducing a regression for
-> btrfs balance performance.
-> 
-> Originally, the workload used in the test case only takes seconds for
-> balance on v4.20 while now it takes over 400 seconds for balance.
-> 
-> During that 400 seconds balance, it commits over 2000 transactions just
-> for nothing, compare to original several transactions.
-> 
-> Add test cases to detect such regression.
+Am 25.01.2019 um 19:05 schrieb Hans van Kranenburg:
+> On 1/25/19 5:59 PM, Tobias Reinhard wrote:
+>> Am 13.01.2019 um 12:02 schrieb Qu Wenruo:
+>>> On 2019/1/13 下午6:19, Tobias Reinhard wrote:
+>>>> Hi,
+>>>>
+>>>> I want to read the complete CSUM-Tree from userspace. I tried it via the
+>>>> ioctl. This is what the code looks like:
+>>>>
+>>>> struct btrfs_sv2_args sv2_args;
+>>>> int fd = open(filename, O_RDONLY);
+>>>> sv2_args.key.tree_id = BTRFS_CSUM_TREE_OBJECTID;
+>>>> sv2_args.key.min_objectid = 0;
+>>>> sv2_args.key.max_objectid = -1;
+>>>> sv2_args.key.min_offset = 0;
+>>>> sv2_args.key.max_offset = -1;
+>>>> sv2_args.key.min_transid = 0;
+>>>> sv2_args.key.max_transid = -1;
+>>>> sv2_args.key.min_type = BTRFS_CSUM_ITEM_KEY;
+>>>> sv2_args.key.max_type = BTRFS_CSUM_ITEM_KEY;
+>>>> sv2_args.key.nr_items = -1;
+>>>> sv2_args.buf_size = sizeof(sv2_args.buf);
+>>>> ioctl(fd, BTRFS_IOC_TREE_SEARCH_V2, &sv2_args);
+>>>>
+>>>> But the device is not small and I hit the limit of the
+>>>> btrfs_sv2_args.buf which seems to be 16 MB.
+>>>>
+>>>> How can I get the *complete* CSUM-Tree?
+>>>>
+>>>> Limiting to offset does not work (My first idea was to do it this way
+>>>> and get it in chunks).
+>>> That's strange.
+>>>
+>>> Are you still using 0~-1 objectid and 0~-1 type, just last_offset~-1?
+>>>
+>>> Have tried searching using the following parameters?
+>>> min_objectid = max_objectid = BTRFS_EXTENT_CSUM_OBJECTID
+>>> min_type = max_type = BTRFS_CSUM_ITEM_KEY;
+>>> min_offset = last_found_csum_offset
+>>> max_offset = -1
+>> Sorry for my late response.
+>>
+>> If I set
+>>
+>> min_objectid = max_objectid = BTRFS_EXTENT_CSUM_OBJECTID
+>>
+>> I don't get anything. I have to set it to max=-1 (min doesn't matter).
+>>
+>> And in that I case, min_offset and max_offset doesn't matter - I always
+>> get the same result. I can even use "wrong" filters like min=1000 max=500.
+> First, it's important to understand how all these min/max values play
+> together:
+>
+> https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/uapi/linux/btrfs.h#n441
+>
+> So, you define a single start key, and a single end key, and then you
+> get everything that's in between (including the end value).
+>
+> So, this...
+>
+> sv2_args.key.min_objectid = 0;
+> sv2_args.key.max_objectid = -1;
+> sv2_args.key.min_offset = 0;
+> sv2_args.key.max_offset = -1;
+> sv2_args.key.min_transid = 0;
+> sv2_args.key.max_transid = -1;
+> sv2_args.key.min_type = BTRFS_CSUM_ITEM_KEY;
+> sv2_args.key.max_type = BTRFS_CSUM_ITEM_KEY;
+>
+> ...translates to:
+>
+> min key: (0, CSUM_ITEM_KEY, 0)
+> max key: (18446744073709551615, CSUM_ITEM_KEY, 18446744073709551615)
+>
+> Since the keys end up being just a single 136 bit number, it makes no
+> sense to do anything with the middle field, if the first field, objectid
+> is not the same in both start and end key. The search space is linear,
+> not 3 dimensional. The invidual min/max values for objectid, type and
+> offset cannot be used to filter the result, they only define the
+> endpoints of an interval.
+>
+> Since all csum items have the same objectid number anyway, the second
+> suggestion is fine, and gives you this start and end:
+>
+> min key: (EXTENT_CSUM_OBJECTID, CSUM_ITEM_KEY, 0)
+> max key: (EXTENT_CSUM_OBJECTID, CSUM_ITEM_KEY, 18446744073709551615)
+>
+> Works for me (here in python, but using same ioctl):
+>
+> -$ cat show_csum_keys.py
+> #!/usr/bin/python3
+>
+> import btrfs
+> from btrfs.ctree import Key, CSUM_TREE_OBJECTID, \
+>          EXTENT_CSUM_OBJECTID, EXTENT_CSUM_KEY
+>
+> with btrfs.FileSystem('/mnt/tutorial') as fs:
+>      min_key = Key(EXTENT_CSUM_OBJECTID, EXTENT_CSUM_KEY, 0)
+>      max_key = Key(EXTENT_CSUM_OBJECTID, EXTENT_CSUM_KEY + 1, 0) - 1
+>      print("Searching from {} to {}".format(min_key, max_key))
+>      for header, data in btrfs.ioctl.search_v2(fs.fd, CSUM_TREE_OBJECTID,
+>                                                min_key, max_key):
+>          print(Key(header.objectid, header.type, header.offset))
+>
+> -# ./show_csum_keys.py
+> Searching from (EXTENT_CSUM EXTENT_CSUM 0) to (EXTENT_CSUM EXTENT_CSUM -1)
+> (EXTENT_CSUM EXTENT_CSUM 5700059136)
+> (EXTENT_CSUM EXTENT_CSUM 5700321280)
+> (EXTENT_CSUM EXTENT_CSUM 5700583424)
+> (EXTENT_CSUM EXTENT_CSUM 5700845568)
+> (EXTENT_CSUM EXTENT_CSUM 5701107712)
+> (EXTENT_CSUM EXTENT_CSUM 5704646656)
+> (EXTENT_CSUM EXTENT_CSUM 5705039872)
+> (EXTENT_CSUM EXTENT_CSUM 5706350592)
+> [...]
+>
+Reading your example, I noticed my mistake.
 
-How do you detect that the test regressed, other than comparing the
-runtime recorded between runs of the testsuite? I don't actually know
-how this could be done inside the script, as there can't be a fixed
-number of seconds to compare with. The run time depends on the
-underlying storage.
+I took  BTRFS_CSUM_ITEM_KEY  instead of BTRFS_EXTENT_CSUM_KEY for the 
+type, doh.
 
-I takes 14 seconds on a physical machine on a rotational disk and 9
-seconds on a SSD.
+Now, it seems to works.
 
-Other than the, I've used this test to validate the fix, for that
+Thanks!
 
-Tested-by: David Sterba <dsterba@suse.com>
+Tobias
 
-It would be good to have the test in the testsuite so possibly some
-large timeout can be set and the test will print a message, this should
-catch attention at least and let us decide.
-
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
-> Extra note:
-> In fact, without the snapshots created in the test case, it would return
-> -ENOSPC even we have enough unallocated space.
-> ---
->  tests/btrfs/180     | 80 +++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/180.out |  2 ++
->  tests/btrfs/group   |  1 +
->  3 files changed, 83 insertions(+)
->  create mode 100755 tests/btrfs/180
->  create mode 100644 tests/btrfs/180.out
-> 
-> diff --git a/tests/btrfs/180 b/tests/btrfs/180
-> new file mode 100755
-> index 00000000..534fea01
-> --- /dev/null
-> +++ b/tests/btrfs/180
-> @@ -0,0 +1,80 @@
-> +#! /bin/bash
-> +# SPDX-License-Identifier: GPL-2.0
-> +# Copyright (C) 2019 SUSE Linux Products GmbH. All Rights Reserved.
-> +#
-> +# FS QA Test 180
-> +#
-> +# Test if metadata balance would take forever to finish or return ENOSPC even
-> +# there there are tons of space.
-> +#
-> +# This is regression caused by upstream commit 64403612b73a
-> +# ("btrfs: rework btrfs_check_space_for_delayed_refs")
-> +#
-> +seq=`basename $0`
-> +seqres=$RESULT_DIR/$seq
-> +echo "QA output created by $seq"
-> +
-> +here=`pwd`
-> +tmp=/tmp/$$
-> +status=1	# failure is the default!
-> +trap "_cleanup; exit \$status" 0 1 2 3 15
-> +
-> +_cleanup()
-> +{
-> +	cd /
-> +	rm -f $tmp.*
-> +}
-> +
-> +# get standard environment, filters and checks
-> +. ./common/rc
-> +. ./common/filter
-> +
-> +# remove previous $seqres.full before test
-> +rm -f $seqres.full
-> +
-> +# real QA test starts here
-> +
-> +# Modify as appropriate.
-> +_supported_fs btrfs
-> +_supported_os Linux
-> +_require_scratch
-> +_require_xfs_io_command falloc
-> +
-> +i=0
-> +loop=16384
-> +
-> +_scratch_mkfs > /dev/null 2>&1
-> +_scratch_mount
-> +
-> +$BTRFS_UTIL_PROG subvolume create "$SCRATCH_MNT/src" > /dev/null
-> +
-> +while [ $i -le $loop ]; do
-> +	# Use small file to create inline extent
-> +	_pwrite_byte 0x00 0 2K "$SCRATCH_MNT/src/inline_$i" > /dev/null
-> +	#$XFS_IO_PROG -f -c "falloc 0 4K" "$SCRATCH_MNT/src/regular_$i" > /dev/null
-
-You can delete the commented command
-
-> +	i=$((i + 1))
-> +done
-> +
-> +# Create enough snapshots so at space reservation part of relocation, we could
-> +# generate enough space pressure
-> +for i in $(seq -w 0 16); do
-> +	$BTRFS_UTIL_PROG subvolume snapshot "$SCRATCH_MNT/src" \
-> +		"$SCRATCH_MNT/snapshot_$i" > /dev/null
-> +	# touch random files to create some new tree blocks
-> +	for j in $(seq -w 0 16); do
-> +		victim="$(ls $SCRATCH_MNT/snapshot_$i | sort -R | head -n1)"
-> +		touch "$SCRATCH_MNT/snapshot_$i/$victim"
-> +	done
-> +done
-> +
-> +# Balancing metadata shouldn't be too time consuming, as the amount of metadata
-> +# is less than 8M, thus normally it should finish very quick.
-> +#
-> +# However with that offending commit, it will take forever to finish or return
-> +# ENOSPC after a long wait.
-> +$BTRFS_UTIL_PROG balance start -m "$SCRATCH_MNT" > /dev/null
-> +
-> +echo "Silence is golden"
-> +# success, all done
-> +status=0
-> +exit
-> diff --git a/tests/btrfs/180.out b/tests/btrfs/180.out
-> new file mode 100644
-> index 00000000..50aba766
-> --- /dev/null
-> +++ b/tests/btrfs/180.out
-> @@ -0,0 +1,2 @@
-> +QA output created by 180
-> +Silence is golden
-> diff --git a/tests/btrfs/group b/tests/btrfs/group
-> index 46dd3c95..e724968b 100644
-> --- a/tests/btrfs/group
-> +++ b/tests/btrfs/group
-> @@ -182,3 +182,4 @@
->  177 auto quick swap balance
->  178 auto quick send
->  179 auto qgroup dangerous
-> +180 auto balance dangerous
-
-I don't think it falls to the dangerous category, it does not crash the
-machine, only that the test could take long.

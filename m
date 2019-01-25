@@ -2,166 +2,200 @@ Return-Path: <SRS0=6jfg=QB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C5DE0C282C0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Jan 2019 18:05:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A9850C282C0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Jan 2019 18:58:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7847F218B0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Jan 2019 18:05:29 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=MendixTechnologyBV.onmicrosoft.com header.i=@MendixTechnologyBV.onmicrosoft.com header.b="asLquAu4"
+	by mail.kernel.org (Postfix) with ESMTP id 83936218B0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Jan 2019 18:58:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726362AbfAYSF2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 25 Jan 2019 13:05:28 -0500
-Received: from mail-eopbgr70082.outbound.protection.outlook.com ([40.107.7.82]:38285
-        "EHLO EUR04-HE1-obe.outbound.protection.outlook.com"
+        id S1726257AbfAYS6P (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 25 Jan 2019 13:58:15 -0500
+Received: from mx2.suse.de ([195.135.220.15]:35476 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726329AbfAYSF2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Jan 2019 13:05:28 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=MendixTechnologyBV.onmicrosoft.com; s=selector1-mendix-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=NCOvLag12UmU00adS5Fk7JVgEVLbdbsHk/AjbraeKWk=;
- b=asLquAu4VKNCNDhzPqlgPc8B9T2xFL83P44MYqz0KMuONsXlnYJGeWL8ZPJISLWyi+KOgBx6BZ1juT9+i8zHcFGA41MEZCjnXKgeDE/Lk1u1PNhTCiD8Ba60QHx0NsY1FPYG1g4C4ZMN222ftj/hilB2OAk+u2MpxXToBmEJI1I=
-Received: from HE1PR0602MB3626.eurprd06.prod.outlook.com (52.133.5.141) by
- HE1PR0602MB3417.eurprd06.prod.outlook.com (52.133.4.32) with Microsoft SMTP
- Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.20.1537.31; Fri, 25 Jan 2019 18:05:08 +0000
-Received: from HE1PR0602MB3626.eurprd06.prod.outlook.com
- ([fe80::b4b2:baa:af13:df44]) by HE1PR0602MB3626.eurprd06.prod.outlook.com
- ([fe80::b4b2:baa:af13:df44%3]) with mapi id 15.20.1558.016; Fri, 25 Jan 2019
- 18:05:08 +0000
-From:   Hans van Kranenburg <Hans.van.Kranenburg@mendix.com>
-To:     Tobias Reinhard <trtracer@gmail.com>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Retrieving CSUM-Tree
-Thread-Topic: Retrieving CSUM-Tree
-Thread-Index: AQHUtM9tYudcdYIpnE+iNYcoNOeoT6XAR2EA
-Date:   Fri, 25 Jan 2019 18:05:08 +0000
-Message-ID: <dd3a0062-ada9-ee2c-95f1-6376514e8c9b@mendix.com>
-References: <4472aad4-86cb-7ce2-6055-1ff8d6955969@gmail.com>
- <a0e58490-8610-2b86-751f-772625fdf0ca@gmx.com>
- <91b98362-9019-3199-990d-072466b1b455@gmail.com>
-In-Reply-To: <91b98362-9019-3199-990d-072466b1b455@gmail.com>
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-user-agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.3.0
-x-originating-ip: [2001:980:4a41:fb::12]
-x-clientproxiedby: AM5PR0201CA0022.eurprd02.prod.outlook.com
- (2603:10a6:203:3d::32) To HE1PR0602MB3626.eurprd06.prod.outlook.com
- (2603:10a6:7:8b::13)
-authentication-results: spf=none (sender IP is )
- smtp.mailfrom=Hans.van.Kranenburg@mendix.com; 
-x-ms-exchange-messagesentrepresentingtype: 1
-x-ms-publictraffictype: Email
-x-microsoft-exchange-diagnostics: 1;HE1PR0602MB3417;6:EKSbg+064o/xQh35O+FrWMahfaUMas2HFsePiArHGz7xFe6oKc4jFamzKC2biLCIK1xw71HQv/MwWiUUjH4WqoUBCWMizCVH8x7jmcwydHpYPo5Wrmwq9JJQ0qPxu2/vroWEGhfq50yVzrk4xSmjyaMp1jeeC95UXTh2cThh5CU4CTMw3vlr4vK8mPYqUnSMpjcrBLCVpI84/wGNQV2Nfu3vkStBCu0cUy9UHDT3PQtnEMvrpANOzRH6X6WSIRoLkxHBQPLY79M18sHTU5rcDI/VSbTBZLRJTQ6a90jX+yhsbNWpts0K2C7lIk+o1LZ3oTywqm2/W81gre7cVkF2ocv/Oyux4zUJ5sFLj2QIhvDgrpMNJl11DueEAZB5mk8xcc2YlzVZ4NPnAvojhk5G+p/0zqw8uSt3MuhSokg93H9hALwjuPAIQ+3D/L296nzg5eHQU0OGDvBje1e0dg3zvA==;5:aW289l7MihJWhAFGw0qpLyYxWvfDuBamzhcGfxPndR25PqHCbwGjEDmfb0ikTcuNY5W7nlKUROHABgAWqHKvuoYrk+0KsYbn3anMOoRDXZGx5RHIkx7R5i0fIbtSu85C9p3Af3JYZBQ2kLuG8LNUJvd8QF47bh+UamGDQtjnAWIjbiR6oMek9xra3QGBcELha4ARJlLhD/BdxA2FY510jA==;7:H9uIQENO9wRGfX5lHNmnbud7h5bxr5hNqeHz3Q8cu8F6Sazqs5Gdnn1L0z4+v/oCTW2W7pjyBoZGZu3odx2BOBJAKX0cvwUD9MBS5zEAVm0nK3E1yl11ENYntQagB0M75syfRLFjRQIoIWCwLw987g==
-x-ms-office365-filtering-correlation-id: 4b181016-9d65-428b-303b-08d682efa401
-x-microsoft-antispam: BCL:0;PCL:0;RULEID:(2390118)(7020095)(4652040)(8989299)(4534185)(4627221)(201703031133081)(201702281549075)(8990200)(5600110)(711020)(4605077)(2017052603328)(7153060)(7193020);SRVR:HE1PR0602MB3417;
-x-ms-traffictypediagnostic: HE1PR0602MB3417:
-x-microsoft-antispam-prvs: <HE1PR0602MB34174BB2B7226257F1FB07FAD49B0@HE1PR0602MB3417.eurprd06.prod.outlook.com>
-x-forefront-prvs: 0928072091
-x-forefront-antispam-report: SFV:NSPM;SFS:(10009020)(136003)(366004)(346002)(39850400004)(376002)(396003)(189003)(52314003)(199004)(6116002)(105586002)(71190400001)(71200400001)(106356001)(256004)(36756003)(65826007)(31686004)(65806001)(14444005)(31696002)(316002)(3480700005)(58126008)(110136005)(64126003)(86362001)(486006)(2501003)(6486002)(81166006)(81156014)(966005)(14454004)(97736004)(186003)(52116002)(25786009)(6246003)(305945005)(229853002)(8676002)(11346002)(476003)(446003)(46003)(72206003)(386003)(53546011)(7736002)(6506007)(99286004)(2616005)(6512007)(2906002)(6306002)(65956001)(478600001)(8936002)(76176011)(53936002)(68736007)(6436002)(39060400002)(102836004);DIR:OUT;SFP:1101;SCL:1;SRVR:HE1PR0602MB3417;H:HE1PR0602MB3626.eurprd06.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;MX:1;A:1;
-received-spf: None (protection.outlook.com: mendix.com does not designate
- permitted sender hosts)
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam-message-info: DQ/ldp5POVGsBkrw0utsiOjpRHAw9SJsG7ndnTh/Nq4BaXOAxV9IsvQpxBU25yI34ziFILR37adFNP6LBGKTLmJICGvMW0BzYrl0rJLc/4Hj0Ei8IakLknHwToZ+hI/1G/iwh0Z/xTL3NEtK/XakiewEBIzqlAU2msYvmNWEIv5HbAJDbQmNboJ2lB8v9+ybFzPwHGbRBSsA72DDKof4c6U37XDyazEDOlZF+uJO1RVMZVDyIE97juco+iVv572iRcfwX0gHL81n4b9EDFQk+Se94BmYoAICd11g6AGdVtKSV87GHPegpRAqO6EHgIx9hN1L6diV7B5S4yIE1w7Ux9IaBr7QnBmBVmvGOiZBP4BE1smGb5a0b6ekkJzDZlvGz3f2sO/bwWQ4E0piWAYuBDPVAvR2xSnpuoZ8UmUbjVY=
-Content-Type: text/plain; charset="utf-8"
-Content-ID: <C0668EE878D430418F244422ECA4BF42@eurprd06.prod.outlook.com>
-Content-Transfer-Encoding: base64
+        id S1726024AbfAYS6O (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 25 Jan 2019 13:58:14 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 7A205AC95;
+        Fri, 25 Jan 2019 18:58:12 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id DFD97DA6F5; Fri, 25 Jan 2019 19:57:38 +0100 (CET)
+Date:   Fri, 25 Jan 2019 19:57:38 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org, fstests@vger.kernel.org,
+        josef@toxicpanda.com
+Subject: Re: [PATCH RFC] fstests: btrfs: Test if balance takes too long time
+ or return -ENOSPC unexpected
+Message-ID: <20190125185738.GD2900@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org, fstests@vger.kernel.org,
+        josef@toxicpanda.com
+References: <20190114082043.31220-1-wqu@suse.com>
 MIME-Version: 1.0
-X-OriginatorOrg: mendix.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 4b181016-9d65-428b-303b-08d682efa401
-X-MS-Exchange-CrossTenant-originalarrivaltime: 25 Jan 2019 18:05:07.6089
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: b4e3c78d-8e3b-46d8-bc56-5540da23ba4d
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: HE1PR0602MB3417
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190114082043.31220-1-wqu@suse.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-T24gMS8yNS8xOSA1OjU5IFBNLCBUb2JpYXMgUmVpbmhhcmQgd3JvdGU6DQo+IEFtIDEzLjAxLjIw
-MTkgdW0gMTI6MDIgc2NocmllYiBRdSBXZW5ydW86DQo+Pg0KPj4gT24gMjAxOS8xLzEzIOS4i+WN
-iDY6MTksIFRvYmlhcyBSZWluaGFyZCB3cm90ZToNCj4+PiBIaSwNCj4+Pg0KPj4+IEkgd2FudCB0
-byByZWFkIHRoZSBjb21wbGV0ZSBDU1VNLVRyZWUgZnJvbSB1c2Vyc3BhY2UuIEkgdHJpZWQgaXQg
-dmlhIHRoZQ0KPj4+IGlvY3RsLiBUaGlzIGlzIHdoYXQgdGhlIGNvZGUgbG9va3MgbGlrZToNCj4+
-Pg0KPj4+IHN0cnVjdCBidHJmc19zdjJfYXJncyBzdjJfYXJnczsNCj4+PiBpbnQgZmQgPSBvcGVu
-KGZpbGVuYW1lLCBPX1JET05MWSk7DQo+Pj4gc3YyX2FyZ3Mua2V5LnRyZWVfaWQgPSBCVFJGU19D
-U1VNX1RSRUVfT0JKRUNUSUQ7DQo+Pj4gc3YyX2FyZ3Mua2V5Lm1pbl9vYmplY3RpZCA9IDA7DQo+
-Pj4gc3YyX2FyZ3Mua2V5Lm1heF9vYmplY3RpZCA9IC0xOw0KPj4+IHN2Ml9hcmdzLmtleS5taW5f
-b2Zmc2V0ID0gMDsNCj4+PiBzdjJfYXJncy5rZXkubWF4X29mZnNldCA9IC0xOw0KPj4+IHN2Ml9h
-cmdzLmtleS5taW5fdHJhbnNpZCA9IDA7DQo+Pj4gc3YyX2FyZ3Mua2V5Lm1heF90cmFuc2lkID0g
-LTE7DQo+Pj4gc3YyX2FyZ3Mua2V5Lm1pbl90eXBlID0gQlRSRlNfQ1NVTV9JVEVNX0tFWTsNCj4+
-PiBzdjJfYXJncy5rZXkubWF4X3R5cGUgPSBCVFJGU19DU1VNX0lURU1fS0VZOw0KPj4+IHN2Ml9h
-cmdzLmtleS5ucl9pdGVtcyA9IC0xOw0KPj4+IHN2Ml9hcmdzLmJ1Zl9zaXplID0gc2l6ZW9mKHN2
-Ml9hcmdzLmJ1Zik7DQo+Pj4gaW9jdGwoZmQsIEJUUkZTX0lPQ19UUkVFX1NFQVJDSF9WMiwgJnN2
-Ml9hcmdzKTsNCj4+Pg0KPj4+IEJ1dCB0aGUgZGV2aWNlIGlzIG5vdCBzbWFsbCBhbmQgSSBoaXQg
-dGhlIGxpbWl0IG9mIHRoZQ0KPj4+IGJ0cmZzX3N2Ml9hcmdzLmJ1ZiB3aGljaCBzZWVtcyB0byBi
-ZSAxNiBNQi4NCj4+Pg0KPj4+IEhvdyBjYW4gSSBnZXQgdGhlICpjb21wbGV0ZSogQ1NVTS1UcmVl
-Pw0KPj4+DQo+Pj4gTGltaXRpbmcgdG8gb2Zmc2V0IGRvZXMgbm90IHdvcmsgKE15IGZpcnN0IGlk
-ZWEgd2FzIHRvIGRvIGl0IHRoaXMgd2F5DQo+Pj4gYW5kIGdldCBpdCBpbiBjaHVua3MpLg0KPj4g
-VGhhdCdzIHN0cmFuZ2UuDQo+Pg0KPj4gQXJlIHlvdSBzdGlsbCB1c2luZyAwfi0xIG9iamVjdGlk
-IGFuZCAwfi0xIHR5cGUsIGp1c3QgbGFzdF9vZmZzZXR+LTE/DQo+Pg0KPj4gSGF2ZSB0cmllZCBz
-ZWFyY2hpbmcgdXNpbmcgdGhlIGZvbGxvd2luZyBwYXJhbWV0ZXJzPw0KPj4gbWluX29iamVjdGlk
-ID0gbWF4X29iamVjdGlkID0gQlRSRlNfRVhURU5UX0NTVU1fT0JKRUNUSUQNCj4+IG1pbl90eXBl
-ID0gbWF4X3R5cGUgPSBCVFJGU19DU1VNX0lURU1fS0VZOw0KPj4gbWluX29mZnNldCA9IGxhc3Rf
-Zm91bmRfY3N1bV9vZmZzZXQNCj4+IG1heF9vZmZzZXQgPSAtMQ0KPiANCj4gU29ycnkgZm9yIG15
-IGxhdGUgcmVzcG9uc2UuDQo+IA0KPiBJZiBJIHNldA0KPiANCj4gbWluX29iamVjdGlkID0gbWF4
-X29iamVjdGlkID0gQlRSRlNfRVhURU5UX0NTVU1fT0JKRUNUSUQNCj4gDQo+IEkgZG9uJ3QgZ2V0
-IGFueXRoaW5nLiBJIGhhdmUgdG8gc2V0IGl0IHRvIG1heD0tMSAobWluIGRvZXNuJ3QgbWF0dGVy
-KS4NCj4gDQo+IEFuZCBpbiB0aGF0IEkgY2FzZSwgbWluX29mZnNldCBhbmQgbWF4X29mZnNldCBk
-b2Vzbid0IG1hdHRlciAtIEkgYWx3YXlzDQo+IGdldCB0aGUgc2FtZSByZXN1bHQuIEkgY2FuIGV2
-ZW4gdXNlICJ3cm9uZyIgZmlsdGVycyBsaWtlIG1pbj0xMDAwIG1heD01MDAuDQoNCkZpcnN0LCBp
-dCdzIGltcG9ydGFudCB0byB1bmRlcnN0YW5kIGhvdyBhbGwgdGhlc2UgbWluL21heCB2YWx1ZXMg
-cGxheQ0KdG9nZXRoZXI6DQoNCmh0dHBzOi8vZ2l0Lmtlcm5lbC5vcmcvcHViL3NjbS9saW51eC9r
-ZXJuZWwvZ2l0L3RvcnZhbGRzL2xpbnV4LmdpdC90cmVlL2luY2x1ZGUvdWFwaS9saW51eC9idHJm
-cy5oI240NDENCg0KU28sIHlvdSBkZWZpbmUgYSBzaW5nbGUgc3RhcnQga2V5LCBhbmQgYSBzaW5n
-bGUgZW5kIGtleSwgYW5kIHRoZW4geW91DQpnZXQgZXZlcnl0aGluZyB0aGF0J3MgaW4gYmV0d2Vl
-biAoaW5jbHVkaW5nIHRoZSBlbmQgdmFsdWUpLg0KDQpTbywgdGhpcy4uLg0KDQpzdjJfYXJncy5r
-ZXkubWluX29iamVjdGlkID0gMDsNCnN2Ml9hcmdzLmtleS5tYXhfb2JqZWN0aWQgPSAtMTsNCnN2
-Ml9hcmdzLmtleS5taW5fb2Zmc2V0ID0gMDsNCnN2Ml9hcmdzLmtleS5tYXhfb2Zmc2V0ID0gLTE7
-DQpzdjJfYXJncy5rZXkubWluX3RyYW5zaWQgPSAwOw0Kc3YyX2FyZ3Mua2V5Lm1heF90cmFuc2lk
-ID0gLTE7DQpzdjJfYXJncy5rZXkubWluX3R5cGUgPSBCVFJGU19DU1VNX0lURU1fS0VZOw0Kc3Yy
-X2FyZ3Mua2V5Lm1heF90eXBlID0gQlRSRlNfQ1NVTV9JVEVNX0tFWTsNCg0KLi4udHJhbnNsYXRl
-cyB0bzoNCg0KbWluIGtleTogKDAsIENTVU1fSVRFTV9LRVksIDApDQptYXgga2V5OiAoMTg0NDY3
-NDQwNzM3MDk1NTE2MTUsIENTVU1fSVRFTV9LRVksIDE4NDQ2NzQ0MDczNzA5NTUxNjE1KQ0KDQpT
-aW5jZSB0aGUga2V5cyBlbmQgdXAgYmVpbmcganVzdCBhIHNpbmdsZSAxMzYgYml0IG51bWJlciwg
-aXQgbWFrZXMgbm8NCnNlbnNlIHRvIGRvIGFueXRoaW5nIHdpdGggdGhlIG1pZGRsZSBmaWVsZCwg
-aWYgdGhlIGZpcnN0IGZpZWxkLCBvYmplY3RpZA0KaXMgbm90IHRoZSBzYW1lIGluIGJvdGggc3Rh
-cnQgYW5kIGVuZCBrZXkuIFRoZSBzZWFyY2ggc3BhY2UgaXMgbGluZWFyLA0Kbm90IDMgZGltZW5z
-aW9uYWwuIFRoZSBpbnZpZHVhbCBtaW4vbWF4IHZhbHVlcyBmb3Igb2JqZWN0aWQsIHR5cGUgYW5k
-DQpvZmZzZXQgY2Fubm90IGJlIHVzZWQgdG8gZmlsdGVyIHRoZSByZXN1bHQsIHRoZXkgb25seSBk
-ZWZpbmUgdGhlDQplbmRwb2ludHMgb2YgYW4gaW50ZXJ2YWwuDQoNClNpbmNlIGFsbCBjc3VtIGl0
-ZW1zIGhhdmUgdGhlIHNhbWUgb2JqZWN0aWQgbnVtYmVyIGFueXdheSwgdGhlIHNlY29uZA0Kc3Vn
-Z2VzdGlvbiBpcyBmaW5lLCBhbmQgZ2l2ZXMgeW91IHRoaXMgc3RhcnQgYW5kIGVuZDoNCg0KbWlu
-IGtleTogKEVYVEVOVF9DU1VNX09CSkVDVElELCBDU1VNX0lURU1fS0VZLCAwKQ0KbWF4IGtleTog
-KEVYVEVOVF9DU1VNX09CSkVDVElELCBDU1VNX0lURU1fS0VZLCAxODQ0Njc0NDA3MzcwOTU1MTYx
-NSkNCg0KV29ya3MgZm9yIG1lIChoZXJlIGluIHB5dGhvbiwgYnV0IHVzaW5nIHNhbWUgaW9jdGwp
-Og0KDQotJCBjYXQgc2hvd19jc3VtX2tleXMucHkNCiMhL3Vzci9iaW4vcHl0aG9uMw0KDQppbXBv
-cnQgYnRyZnMNCmZyb20gYnRyZnMuY3RyZWUgaW1wb3J0IEtleSwgQ1NVTV9UUkVFX09CSkVDVElE
-LCBcDQogICAgICAgIEVYVEVOVF9DU1VNX09CSkVDVElELCBFWFRFTlRfQ1NVTV9LRVkNCg0Kd2l0
-aCBidHJmcy5GaWxlU3lzdGVtKCcvbW50L3R1dG9yaWFsJykgYXMgZnM6DQogICAgbWluX2tleSA9
-IEtleShFWFRFTlRfQ1NVTV9PQkpFQ1RJRCwgRVhURU5UX0NTVU1fS0VZLCAwKQ0KICAgIG1heF9r
-ZXkgPSBLZXkoRVhURU5UX0NTVU1fT0JKRUNUSUQsIEVYVEVOVF9DU1VNX0tFWSArIDEsIDApIC0g
-MQ0KICAgIHByaW50KCJTZWFyY2hpbmcgZnJvbSB7fSB0byB7fSIuZm9ybWF0KG1pbl9rZXksIG1h
-eF9rZXkpKQ0KICAgIGZvciBoZWFkZXIsIGRhdGEgaW4gYnRyZnMuaW9jdGwuc2VhcmNoX3YyKGZz
-LmZkLCBDU1VNX1RSRUVfT0JKRUNUSUQsDQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgbWluX2tleSwgbWF4X2tleSk6DQogICAgICAgIHByaW50KEtleShoZWFk
-ZXIub2JqZWN0aWQsIGhlYWRlci50eXBlLCBoZWFkZXIub2Zmc2V0KSkNCg0KLSMgLi9zaG93X2Nz
-dW1fa2V5cy5weQ0KU2VhcmNoaW5nIGZyb20gKEVYVEVOVF9DU1VNIEVYVEVOVF9DU1VNIDApIHRv
-IChFWFRFTlRfQ1NVTSBFWFRFTlRfQ1NVTSAtMSkNCihFWFRFTlRfQ1NVTSBFWFRFTlRfQ1NVTSA1
-NzAwMDU5MTM2KQ0KKEVYVEVOVF9DU1VNIEVYVEVOVF9DU1VNIDU3MDAzMjEyODApDQooRVhURU5U
-X0NTVU0gRVhURU5UX0NTVU0gNTcwMDU4MzQyNCkNCihFWFRFTlRfQ1NVTSBFWFRFTlRfQ1NVTSA1
-NzAwODQ1NTY4KQ0KKEVYVEVOVF9DU1VNIEVYVEVOVF9DU1VNIDU3MDExMDc3MTIpDQooRVhURU5U
-X0NTVU0gRVhURU5UX0NTVU0gNTcwNDY0NjY1NikNCihFWFRFTlRfQ1NVTSBFWFRFTlRfQ1NVTSA1
-NzA1MDM5ODcyKQ0KKEVYVEVOVF9DU1VNIEVYVEVOVF9DU1VNIDU3MDYzNTA1OTIpDQpbLi4uXQ0K
-DQotLSANCkhhbnMgdmFuIEtyYW5lbmJ1cmcNCg==
+On Mon, Jan 14, 2019 at 04:20:43PM +0800, Qu Wenruo wrote:
+> Kernel commit 64403612b73a ("btrfs: rework
+> btrfs_check_space_for_delayed_refs") is introducing a regression for
+> btrfs balance performance.
+> 
+> Originally, the workload used in the test case only takes seconds for
+> balance on v4.20 while now it takes over 400 seconds for balance.
+> 
+> During that 400 seconds balance, it commits over 2000 transactions just
+> for nothing, compare to original several transactions.
+> 
+> Add test cases to detect such regression.
+
+How do you detect that the test regressed, other than comparing the
+runtime recorded between runs of the testsuite? I don't actually know
+how this could be done inside the script, as there can't be a fixed
+number of seconds to compare with. The run time depends on the
+underlying storage.
+
+I takes 14 seconds on a physical machine on a rotational disk and 9
+seconds on a SSD.
+
+Other than the, I've used this test to validate the fix, for that
+
+Tested-by: David Sterba <dsterba@suse.com>
+
+It would be good to have the test in the testsuite so possibly some
+large timeout can be set and the test will print a message, this should
+catch attention at least and let us decide.
+
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+> Extra note:
+> In fact, without the snapshots created in the test case, it would return
+> -ENOSPC even we have enough unallocated space.
+> ---
+>  tests/btrfs/180     | 80 +++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/180.out |  2 ++
+>  tests/btrfs/group   |  1 +
+>  3 files changed, 83 insertions(+)
+>  create mode 100755 tests/btrfs/180
+>  create mode 100644 tests/btrfs/180.out
+> 
+> diff --git a/tests/btrfs/180 b/tests/btrfs/180
+> new file mode 100755
+> index 00000000..534fea01
+> --- /dev/null
+> +++ b/tests/btrfs/180
+> @@ -0,0 +1,80 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (C) 2019 SUSE Linux Products GmbH. All Rights Reserved.
+> +#
+> +# FS QA Test 180
+> +#
+> +# Test if metadata balance would take forever to finish or return ENOSPC even
+> +# there there are tons of space.
+> +#
+> +# This is regression caused by upstream commit 64403612b73a
+> +# ("btrfs: rework btrfs_check_space_for_delayed_refs")
+> +#
+> +seq=`basename $0`
+> +seqres=$RESULT_DIR/$seq
+> +echo "QA output created by $seq"
+> +
+> +here=`pwd`
+> +tmp=/tmp/$$
+> +status=1	# failure is the default!
+> +trap "_cleanup; exit \$status" 0 1 2 3 15
+> +
+> +_cleanup()
+> +{
+> +	cd /
+> +	rm -f $tmp.*
+> +}
+> +
+> +# get standard environment, filters and checks
+> +. ./common/rc
+> +. ./common/filter
+> +
+> +# remove previous $seqres.full before test
+> +rm -f $seqres.full
+> +
+> +# real QA test starts here
+> +
+> +# Modify as appropriate.
+> +_supported_fs btrfs
+> +_supported_os Linux
+> +_require_scratch
+> +_require_xfs_io_command falloc
+> +
+> +i=0
+> +loop=16384
+> +
+> +_scratch_mkfs > /dev/null 2>&1
+> +_scratch_mount
+> +
+> +$BTRFS_UTIL_PROG subvolume create "$SCRATCH_MNT/src" > /dev/null
+> +
+> +while [ $i -le $loop ]; do
+> +	# Use small file to create inline extent
+> +	_pwrite_byte 0x00 0 2K "$SCRATCH_MNT/src/inline_$i" > /dev/null
+> +	#$XFS_IO_PROG -f -c "falloc 0 4K" "$SCRATCH_MNT/src/regular_$i" > /dev/null
+
+You can delete the commented command
+
+> +	i=$((i + 1))
+> +done
+> +
+> +# Create enough snapshots so at space reservation part of relocation, we could
+> +# generate enough space pressure
+> +for i in $(seq -w 0 16); do
+> +	$BTRFS_UTIL_PROG subvolume snapshot "$SCRATCH_MNT/src" \
+> +		"$SCRATCH_MNT/snapshot_$i" > /dev/null
+> +	# touch random files to create some new tree blocks
+> +	for j in $(seq -w 0 16); do
+> +		victim="$(ls $SCRATCH_MNT/snapshot_$i | sort -R | head -n1)"
+> +		touch "$SCRATCH_MNT/snapshot_$i/$victim"
+> +	done
+> +done
+> +
+> +# Balancing metadata shouldn't be too time consuming, as the amount of metadata
+> +# is less than 8M, thus normally it should finish very quick.
+> +#
+> +# However with that offending commit, it will take forever to finish or return
+> +# ENOSPC after a long wait.
+> +$BTRFS_UTIL_PROG balance start -m "$SCRATCH_MNT" > /dev/null
+> +
+> +echo "Silence is golden"
+> +# success, all done
+> +status=0
+> +exit
+> diff --git a/tests/btrfs/180.out b/tests/btrfs/180.out
+> new file mode 100644
+> index 00000000..50aba766
+> --- /dev/null
+> +++ b/tests/btrfs/180.out
+> @@ -0,0 +1,2 @@
+> +QA output created by 180
+> +Silence is golden
+> diff --git a/tests/btrfs/group b/tests/btrfs/group
+> index 46dd3c95..e724968b 100644
+> --- a/tests/btrfs/group
+> +++ b/tests/btrfs/group
+> @@ -182,3 +182,4 @@
+>  177 auto quick swap balance
+>  178 auto quick send
+>  179 auto qgroup dangerous
+> +180 auto balance dangerous
+
+I don't think it falls to the dangerous category, it does not crash the
+machine, only that the test could take long.

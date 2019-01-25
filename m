@@ -2,146 +2,130 @@ Return-Path: <SRS0=6jfg=QB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D52FAC282C0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Jan 2019 16:17:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EC136C282C0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Jan 2019 17:00:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id AF15F20844
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Jan 2019 16:17:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B7735218A2
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Jan 2019 17:00:03 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="HHtLy17I"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726798AbfAYQRe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 25 Jan 2019 11:17:34 -0500
-Received: from mx2.suse.de ([195.135.220.15]:60814 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726800AbfAYQRe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Jan 2019 11:17:34 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 8A0CEAF4C
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Jan 2019 16:17:32 +0000 (UTC)
-Subject: Re: [PATCH] btrfs: Handle ENOMEM gracefully in cow_file_range_async
-To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org, wqu@suse.com,
-        fdmanana@suse.com
-References: <20190109144303.31847-1-nborisov@suse.com>
- <20190125150545.GC2900@twin.jikos.cz>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <70e0c58e-4669-a244-28ed-702ba4fd805d@suse.com>
-Date:   Fri, 25 Jan 2019 18:17:31 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+        id S1726364AbfAYRAC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 25 Jan 2019 12:00:02 -0500
+Received: from mail-ed1-f50.google.com ([209.85.208.50]:40324 "EHLO
+        mail-ed1-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726108AbfAYRAC (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 25 Jan 2019 12:00:02 -0500
+Received: by mail-ed1-f50.google.com with SMTP id g22so7900316edr.7
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Jan 2019 09:00:01 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=subject:to:references:from:message-id:date:user-agent:mime-version
+         :in-reply-to:content-transfer-encoding:content-language;
+        bh=Q8f5vKZYlSq6ol8YBvQnEnFA8SHVbG8+Uir0uryJqj0=;
+        b=HHtLy17IVdfAMDkCq7BBq9neXAsHLyTkHBAAXaTJwvrm2/3jnBm+snFeqW8fy3SUWB
+         aOoFefhcpRPsirQB6jqlKdgH4Sh+QJnbgLlK3LUHiwzy4oG93gsELvc3f4LFyRiGYyrt
+         zH1cID+IshvGzPiMvC4/rWaYlvUByFSYVpMPNvVpod8UZ8maPDqfRqIg8qZwl0vvZ4IX
+         586Et3V/Y200lhpY1RpAplZhlPwF5k9Ww2j3xWCYhdbMLmlQDqQrzTJStSn0No70WFoE
+         hZTmSbXinCFtrwJozKecoxnEHj6hgqdZyJCw63QWCZpcTMIyL1J7fmqkF6/68GyWmhYk
+         hwXA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-transfer-encoding
+         :content-language;
+        bh=Q8f5vKZYlSq6ol8YBvQnEnFA8SHVbG8+Uir0uryJqj0=;
+        b=SmerILFSqe44K+0B5jKcy8sY9ZoXmfDYyiFCuTV8US7TR9iV5swPQx967XAwJyLhxI
+         ylH7PBUUBZr4eWXy8WyCo13M3YmX6cH4o923HLE5KDlfGaLK5lSyRKG09MjiJzvGZgP+
+         Ich8r0Uoq2eH2xLwkalxi4w7RS3Hi6yzTZcP0SGQJF/ug6IgEL/oQPpNRaQrcwAK0wJt
+         Fvqa0aDHPo0hPEtg7lxhkh9yw15WqSmASezTR6ODLmsQ797pYKwJX6fWxm214polLX4S
+         HRqMY9Tv7eXsW/NfULB6ZN5ymaDAj45eRPaxm0/gNzezAj34v5wJiSxbT/55X5xyVMuX
+         aXyg==
+X-Gm-Message-State: AJcUukdz/uqsA3HzIRdZkj6/4griOP6/9Fw9FWo/afVhGNWFPsfe1INK
+        tgQfnKDzaO5n4O4Hfiy5MfGoWfMo
+X-Google-Smtp-Source: ALg8bN7ob3TgahkA7XTCdiieRs13IasOVhsKcNlX/15f7H6YCOJ/1cXKiXGusDV8T2uMCVD79AppaA==
+X-Received: by 2002:a17:906:9a2:: with SMTP id q2-v6mr10140098eje.247.1548435599950;
+        Fri, 25 Jan 2019 08:59:59 -0800 (PST)
+Received: from [192.168.254.12] (ip5b4244e9.dynamic.kabel-deutschland.de. [91.66.68.233])
+        by smtp.googlemail.com with ESMTPSA id x38sm12123416edx.24.2019.01.25.08.59.58
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Fri, 25 Jan 2019 08:59:58 -0800 (PST)
+Subject: Re: Retrieving CSUM-Tree
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <4472aad4-86cb-7ce2-6055-1ff8d6955969@gmail.com>
+ <a0e58490-8610-2b86-751f-772625fdf0ca@gmx.com>
+From:   Tobias Reinhard <trtracer@gmail.com>
+Message-ID: <91b98362-9019-3199-990d-072466b1b455@gmail.com>
+Date:   Fri, 25 Jan 2019 17:59:55 +0100
+User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
+ Thunderbird/60.3.3
 MIME-Version: 1.0
-In-Reply-To: <20190125150545.GC2900@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
+In-Reply-To: <a0e58490-8610-2b86-751f-772625fdf0ca@gmx.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: 8bit
+Content-Language: en-GB
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 25.01.19 г. 17:05 ч., David Sterba wrote:
-> On Wed, Jan 09, 2019 at 04:43:03PM +0200, Nikolay Borisov wrote:
->> If we run out of memory during delalloc filling in compress case btrfs
->> is going to BUG_ON. This is unnecessary since the higher levels code
->> (btrfs_run_delalloc_range and its callers) gracefully handle error
->> condtions and error out the page being submittede. Let's be a model
->> kernel citizen and no panic the machine due to ENOMEM and instead fail
->> the IO.
+Am 13.01.2019 um 12:02 schrieb Qu Wenruo:
+>
+> On 2019/1/13 下午6:19, Tobias Reinhard wrote:
+>> Hi,
 >>
->> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
->> ---
->>  fs/btrfs/inode.c | 3 ++-
->>  1 file changed, 2 insertions(+), 1 deletion(-)
+>> I want to read the complete CSUM-Tree from userspace. I tried it via the
+>> ioctl. This is what the code looks like:
 >>
->> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
->> index cde51ace68b5..b4b2d7f8a98b 100644
->> --- a/fs/btrfs/inode.c
->> +++ b/fs/btrfs/inode.c
->> @@ -1197,7 +1197,8 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
->>  			 1, 0, NULL);
->>  	while (start < end) {
->>  		async_cow = kmalloc(sizeof(*async_cow), GFP_NOFS);
->> -		BUG_ON(!async_cow); /* -ENOMEM */
->> +		if (!async_cow)
->> +			return -ENOMEM;
-> 
-> The error handling here is very simple and breaks the usual rule that
-> all functions must clean up after themselves before returning to the
-> caller.
-> 
-> This is async submission so it can be expected to do deferred cleanup,
-> but this cannot be easily seen from the function and should be better
-> documented.
-> 
-> What happens with the inode reference (igrab), what happens with all
-> work queued until now, or extent range state bits.
-> 
-> It's true that btrfs_run_delalloc_range does error handling, though it
-> does that from 4 different types of conditions (nocow, prealloc,
-> compression and async). I'd really like to see explained that there's
-> nothing left and cause surprises later. The memory allocation failures
-> are almost never tested so we have to be sure we understand the error
-> handling code flow. I can't say I do after reading your changelog and
-> the correctness proof is left as an exercise.
+>> struct btrfs_sv2_args sv2_args;
+>> int fd = open(filename, O_RDONLY);
+>> sv2_args.key.tree_id = BTRFS_CSUM_TREE_OBJECTID;
+>> sv2_args.key.min_objectid = 0;
+>> sv2_args.key.max_objectid = -1;
+>> sv2_args.key.min_offset = 0;
+>> sv2_args.key.max_offset = -1;
+>> sv2_args.key.min_transid = 0;
+>> sv2_args.key.max_transid = -1;
+>> sv2_args.key.min_type = BTRFS_CSUM_ITEM_KEY;
+>> sv2_args.key.max_type = BTRFS_CSUM_ITEM_KEY;
+>> sv2_args.key.nr_items = -1;
+>> sv2_args.buf_size = sizeof(sv2_args.buf);
+>> ioctl(fd, BTRFS_IOC_TREE_SEARCH_V2, &sv2_args);
+>>
+>> But the device is not small and I hit the limit of the
+>> btrfs_sv2_args.buf which seems to be 16 MB.
+>>
+>> How can I get the *complete* CSUM-Tree?
+>>
+>> Limiting to offset does not work (My first idea was to do it this way
+>> and get it in chunks).
+> That's strange.
+>
+> Are you still using 0~-1 objectid and 0~-1 type, just last_offset~-1?
+>
+> Have tried searching using the following parameters?
+> min_objectid = max_objectid = BTRFS_EXTENT_CSUM_OBJECTID
+> min_type = max_type = BTRFS_CSUM_ITEM_KEY;
+> min_offset = last_found_csum_offset
+> max_offset = -1
 
-Good point, looking at the body of the loop in case of INODE_NOCOMPRESS
-&& !FORCE_COMPRESS the loop is going to be executed only once. Otherwise
-it will be split into 512k chunks. So I wonder if it will be better if
-the if/else branch in the middle of the loop is hoisted out of it. So at
-the beginning we can calculate whether the loop is going to be executed
-just once or shall we just allocate an array of async_cow's with length
-(end - start) / 512.
+Sorry for my late response.
 
-> 
-> The error handling was brought by 524272607e882d04 "btrfs: Handle
-> delalloc error correctly to avoid ordered extent hang", so there's a
-> remote chance to cause lockups when the state is not cleaned up.
-> 
+If I set
+
+min_objectid = max_objectid = BTRFS_EXTENT_CSUM_OBJECTID
+
+I don't get anything. I have to set it to max=-1 (min doesn't matter).
+
+And in that I case, min_offset and max_offset doesn't matter - I always 
+get the same result. I can even use "wrong" filters like min=1000 max=500.
+
+Tobias
+

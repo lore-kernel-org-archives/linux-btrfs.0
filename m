@@ -2,80 +2,108 @@ Return-Path: <SRS0=6jfg=QB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3F9A4C282C0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Jan 2019 08:19:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C6330C282C2
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Jan 2019 09:02:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0B4C821919
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Jan 2019 08:19:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9E934217D7
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Jan 2019 09:02:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728434AbfAYIT5 convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 25 Jan 2019 03:19:57 -0500
-Received: from mout.gmx.net ([212.227.17.20]:45925 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726669AbfAYIT4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Jan 2019 03:19:56 -0500
-Received: from t460-skr.localnet ([194.94.224.254]) by mail.gmx.com (mrgmx103
- [212.227.17.168]) with ESMTPSA (Nemesis) id 0M0yaB-1h2xzo1iLH-00v9u0 for
- <linux-btrfs@vger.kernel.org>; Fri, 25 Jan 2019 09:19:55 +0100
-From:   Stefan K <shadow_7@gmx.net>
-To:     linux-btrfs@vger.kernel.org
-Subject: Re: kernel calltraces with btrfs and bonnie++
-Date:   Fri, 25 Jan 2019 09:19:54 +0100
-Message-ID: <23825602.kAPb5FHEL9@t460-skr>
-User-Agent: KMail/5.2.3 (Linux/4.9.0-8-amd64; KDE/5.28.0; x86_64; ; )
-In-Reply-To: <f3c5d32f-1af5-a73d-0980-b4464fe3cdfe@gmx.com>
-References: <4998841.JdUrKLmerL@t460-skr> <14209521.serUsG5bZP@t460-skr> <f3c5d32f-1af5-a73d-0980-b4464fe3cdfe@gmx.com>
+        id S1728310AbfAYJCi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 25 Jan 2019 04:02:38 -0500
+Received: from mx2.suse.de ([195.135.220.15]:54194 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726520AbfAYJCh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 25 Jan 2019 04:02:37 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id BF270AF3C
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Jan 2019 09:02:35 +0000 (UTC)
+Subject: Re: [PATCH v4 01/12] btrfs: Always output error message when
+ key/level verification fails
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+References: <20190125050925.30754-1-wqu@suse.com>
+ <20190125050925.30754-2-wqu@suse.com>
+From:   Johannes Thumshirn <jthumshirn@suse.de>
+Openpgp: preference=signencrypt
+Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <3e9ed631-732d-8287-0708-266ece57a921@suse.de>
+Date:   Fri, 25 Jan 2019 10:02:35 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8BIT
-Content-Type: text/plain; charset="UTF-8"
-X-Provags-ID: V03:K1:r6Tbzdy8zoCDeXduvJ562l9mObDvfHdqUvJRcGR+R2r1q91EcyL
- wsy8zDp0pSsow/fxdF6Jof5cO0Yins7MvdJY/DMwfSOgnQRCN+FPKctJNvNwlcPY6gbg9rC
- EmvF/kWZubCVtM3Jwf1baB1VOFb+impUrcRykhknd7eukNhVXoipaM+TPmvPpFoePY/0orr
- KduORizkbhJDihXZTyKaw==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:QCxD4UgYVSE=:VDTeWxVm0pks+4NR1/8yI9
- I2PCS4LilrfH3tqsPxmjq169E0xqmuNY3icfil/mh6Lh7PTgkGSYp6QgoM9razPUHowIY72V3
- yaiEYptG2e+ujkgl04ERHD7Dz/L1brGNn6TZUQOG5ubqwWq9a8jshUZFr1D+tomBK+22m0ZfM
- 73eGWhw5wz02LprtYFX6GYGjVxrFC2/thFYnYcSmLOebFHZJ1NHitVblxll1+NjIUXLmcfxXC
- OXqMiIWb57h0kThD36rw964IQG6WRV0y0jJb/ckS+aOkV9/i5ADnZnDygzKEF8PwoznwsxKZF
- JzZdCL8pvFx/UXNsvKJm9oultfePJh5thH7d/IfM2ORnd2oC7MS+TVmRj1tmsg4p09XHqDx9J
- 5OD9SMVXdRB+zfw8jOI9ZUE8FKABfKQKm73E9QLNOXOBE4CF5MyXkW0xYMYvlgxBiwcslC9Ih
- xMSTYb3BgjNmCePW8TS7ETqoXXzVTZVRH7HjbpOwXBv/gBdXuxZ00hzFy+Ox6+cy8VRDpB9JS
- Rdv2UsYQfl/bJeQExNClwZfJCTdMMWXOeiGGHCnrcukhQjHDPqws426veSbiIhoTvoX03+s9L
- 76ZMM2dEk6mXabsz4ptkpIa9nMb7Rr6qbXN8nd293VTeGYYPLn0NCQA++W7qVKCVu9/qKF7xi
- WJ1kyP1hmfW3Cv7xCthnunq1rafp3pmipJvBdPgQO2WfvTRYJwaKl/QX34ch2pJlHZzPkAx3a
- w+MCzEJFgHAa6+jRmnth/iT9l5c2Q1ZoGQVYlpVarxnthQuV38dzP+mH4Yl9bLImEyMWRQ8IF
- ZROFQBmAmBSk/00TcHAs5tYo3+lZhVd3cDVl3l7wLWFE7F53ze49/hse+ClcCk/5NEs8/bN3t
- mzcaYRwj+Noeh6eHbls2gnYh1Dhq0R0lPMrj7sS9ZzAKkx2O798ytNEEs9eRLjMRnHW6ryS+1
- UxrFwxHelVg==
+In-Reply-To: <20190125050925.30754-2-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-so a simple
-btrfs fi resize -4k /
-do that trick?
-
-
-
-On Friday, January 25, 2019 3:51:12 PM CET Qu Wenruo wrote:
-> 
-> On 2019/1/25 下午3:44, Stefan K wrote:
-> > since it is my /-root FS its not possible to do that online?
-> > 
-> > 
-> 
-> 
-> >> You could resize the fs by -4K and it should make the warning disappear.
-> And since you have 2 devices, you need to resize each partition by -4K.
-> 
-> Thanks,
-> Qu
-> 
-> 
-
+Looks good,
+Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
+-- 
+Johannes Thumshirn                            SUSE Labs Filesystems
+jthumshirn@suse.de                                +49 911 74053 689
+SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
+GF: Felix Imendörffer, Jane Smithard, Graham Norton
+HRB 21284 (AG Nürnberg)
+Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850

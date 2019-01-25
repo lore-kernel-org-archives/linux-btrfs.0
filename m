@@ -2,184 +2,109 @@ Return-Path: <SRS0=6jfg=QB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EDCEAC282C0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Jan 2019 20:49:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A3E4C282C0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Jan 2019 21:27:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9CB6B217D4
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Jan 2019 20:49:32 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=MendixTechnologyBV.onmicrosoft.com header.i=@MendixTechnologyBV.onmicrosoft.com header.b="oTviUs23"
+	by mail.kernel.org (Postfix) with ESMTP id 5E2AD217D4
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Jan 2019 21:27:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728975AbfAYUtb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 25 Jan 2019 15:49:31 -0500
-Received: from mail-eopbgr20040.outbound.protection.outlook.com ([40.107.2.40]:53971
-        "EHLO EUR02-VE1-obe.outbound.protection.outlook.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726179AbfAYUtb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Jan 2019 15:49:31 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=MendixTechnologyBV.onmicrosoft.com; s=selector1-mendix-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=bi9td+ggXMG/BZrEclLHkLWTxYNk9WOOMfY3iQazZ+Y=;
- b=oTviUs23qvJ/xkzcslQE2UWowWxunG1imMBbV+gCQOB9vIZT72GpQ3khY5JnvCz1VNJSHJkWQzJRPKy9t/ufBXkMKJVY8z+DjkPL4blcCDfdK4Cecw9u5X9b4IJTOyKbIDcFTBWihiPmMIEhmQn4nXY/BVAGgu6GeWyZ3VMv4cg=
-Received: from HE1PR0602MB3626.eurprd06.prod.outlook.com (52.133.5.141) by
- HE1PR0602MB2793.eurprd06.prod.outlook.com (10.175.31.17) with Microsoft SMTP
- Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.20.1558.21; Fri, 25 Jan 2019 20:49:24 +0000
-Received: from HE1PR0602MB3626.eurprd06.prod.outlook.com
- ([fe80::b4b2:baa:af13:df44]) by HE1PR0602MB3626.eurprd06.prod.outlook.com
- ([fe80::b4b2:baa:af13:df44%3]) with mapi id 15.20.1558.016; Fri, 25 Jan 2019
- 20:49:24 +0000
-From:   Hans van Kranenburg <Hans.van.Kranenburg@mendix.com>
-To:     Tobias Reinhard <trtracer@gmail.com>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Retrieving CSUM-Tree
-Thread-Topic: Retrieving CSUM-Tree
-Thread-Index: AQHUtM9tYudcdYIpnE+iNYcoNOeoT6XAWCUAgAAcBgCAAAEcAA==
-Date:   Fri, 25 Jan 2019 20:49:24 +0000
-Message-ID: <29e7b71e-ba07-2b25-3474-1352ee38677b@mendix.com>
+        id S1726335AbfAYV1g (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 25 Jan 2019 16:27:36 -0500
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:36228 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726179AbfAYV1f (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 25 Jan 2019 16:27:35 -0500
+X-Greylist: delayed 312 seconds by postgrey-1.27 at vger.kernel.org; Fri, 25 Jan 2019 16:27:35 EST
+Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
+        id 541211DCD3F; Fri, 25 Jan 2019 16:22:22 -0500 (EST)
+Date:   Fri, 25 Jan 2019 16:22:22 -0500
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To:     Tobias Reinhard <trtracer@gmail.com>
+Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Retrieving
+Message-ID: <20190125212222.GA9995@hungrycats.org>
 References: <4472aad4-86cb-7ce2-6055-1ff8d6955969@gmail.com>
- <a0e58490-8610-2b86-751f-772625fdf0ca@gmx.com>
- <91b98362-9019-3199-990d-072466b1b455@gmail.com>
- <dd3a0062-ada9-ee2c-95f1-6376514e8c9b@mendix.com>
- <e56eccf6-7c6e-3601-5068-95d700c60351@gmail.com>
-In-Reply-To: <e56eccf6-7c6e-3601-5068-95d700c60351@gmail.com>
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-user-agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.3.0
-x-originating-ip: [2001:980:4a41:fb::12]
-x-clientproxiedby: AM5PR0202CA0003.eurprd02.prod.outlook.com
- (2603:10a6:203:69::13) To HE1PR0602MB3626.eurprd06.prod.outlook.com
- (2603:10a6:7:8b::13)
-authentication-results: spf=none (sender IP is )
- smtp.mailfrom=Hans.van.Kranenburg@mendix.com; 
-x-ms-exchange-messagesentrepresentingtype: 1
-x-ms-publictraffictype: Email
-x-microsoft-exchange-diagnostics: 1;HE1PR0602MB2793;6:xLyROqx+oezufkR7/G/2+Ths0TOJGf87qdXv8y8wwLA/NZqosbJ5JzfNFFmk6724j7AxWTvwDbKulhGMcgNYYPDGgnsbSdCz9znEvkOK2ntBzenVXnVLEpEDqn7vSJ4Ng3zhOUsjGJM2Q2l+LveB2Sl03ehnIHDTE9Me6EKkcCAWhslaRbNWPTsrDhaAhRL37px2ERpX2/MMdB0yxlAwkh1r1kzqQ6uP6A4Q60bfQAUCkTXGFxfOO3M6dGJhhk2g8ch18bEIZDT4gIUJX7nqfhGnlJr7QyxxnpGK486K/WmDeMaKtjNxShOy1rDLmHh09b7l/UFJow/QYu+R60QUVT62XDdsx+h0KcDOKU2vHNAaUaOUFOQKF8VoTwGtdzQuBlW+tYQjPn/4+XEYUfwWvfC+P/XXYcxPN4UDiJ7uewhSbY0KAG2O3oCBxt4FkSWFIVGgn0tc2mpNphPlQiGXwg==;5:w3e43MONMV2etyo+RDmHApD9tEHUQPkAri1MHaxQlCSwtZmuv5A0r2vkdYZ0yGbLyFZGw+U3HPhMeYn25VwhBR3fgpJ37tDJ5YgftJX/hZSZXQ8VZNrIrPk+VqDMOspsDIqwvTW4FDZCrzZF4EBNCI31Xfdfxg2asp6y0PNbkwpK4cTG9jH8SMvdJqcIOZc4yMD9qRq9LGwjI13RDnGuUQ==;7:MkTSZAas/XoxhXoPPPqznJfir5ssT7hkiNdk7z0JbFwoycbZZk9VXaDnBIchhGxHaRKyeiHlvaxAdoNqoZE5dh6FPUpK3fy+YaAkJLmLI8ywe5oUAqmbSsPWZIPAkIKShTGaZOrnvya4fv+PAVWkCA==
-x-ms-office365-filtering-correlation-id: da2ee6f5-94f4-41bd-6984-08d6830696ac
-x-microsoft-antispam: BCL:0;PCL:0;RULEID:(2390118)(7020095)(4652040)(8989299)(4534185)(4627221)(201703031133081)(201702281549075)(8990200)(5600110)(711020)(4605077)(2017052603328)(7153060)(7193020);SRVR:HE1PR0602MB2793;
-x-ms-traffictypediagnostic: HE1PR0602MB2793:
-x-microsoft-antispam-prvs: <HE1PR0602MB27936BDE5D7F6C5ED356F627D49B0@HE1PR0602MB2793.eurprd06.prod.outlook.com>
-x-forefront-prvs: 0928072091
-x-forefront-antispam-report: SFV:NSPM;SFS:(10009020)(39850400004)(366004)(346002)(396003)(136003)(376002)(52314003)(189003)(199004)(7736002)(71190400001)(305945005)(71200400001)(8936002)(65956001)(65826007)(52116002)(486006)(65806001)(99286004)(102836004)(186003)(6306002)(58126008)(53546011)(25786009)(316002)(6506007)(2501003)(36756003)(76176011)(81156014)(81166006)(8676002)(110136005)(478600001)(386003)(6512007)(14454004)(14444005)(446003)(106356001)(256004)(229853002)(72206003)(53936002)(6116002)(11346002)(105586002)(64126003)(68736007)(31686004)(476003)(97736004)(93886005)(6246003)(2906002)(3480700005)(2616005)(86362001)(6486002)(966005)(46003)(6436002)(31696002)(39060400002)(15398625002);DIR:OUT;SFP:1101;SCL:1;SRVR:HE1PR0602MB2793;H:HE1PR0602MB3626.eurprd06.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;MX:1;A:1;
-received-spf: None (protection.outlook.com: mendix.com does not designate
- permitted sender hosts)
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam-message-info: 6LUY2OzpOPK4PvM2LDHfvVb+2dF0k8LMCBCAVVPgoFqz3znfWqK9CRCZplz10XcukXKV+zmrFbHRv0apjEjnTYLAt+uKXgKLNQB5znO7ZPgR1ybGBXjdxL3XElK8lC0i4sy0XhYvNuo4ac3aalVU/dC6jVBPtp8sc0Xcc0pRQ46Frxaza4jR6OimdABOClm4kBDveC8iD0Qv7O42U8trTacb7IrxIlFwzBC3OC3ymWovB//vuhD2U8joWUtTzgyyszKGW+GhOPvI+p/yMEo+HK57jspuA3/cyCjWYjkSVCMFVqFMJVUIZcSNI/bOJ/k4JnBcRWVYLriM1GZFlHi8ySUEtYFr0Pc+Kp4JpLCGcTQ5Hb7E2Ah+5+dR5yzNjmrHxC/vu+OHus7JTgdzT3aS5WybQvjseYAEESj5ryvT398=
-Content-Type: text/plain; charset="utf-8"
-Content-ID: <7765E11830D1794E886A8F63F6EA76BB@eurprd06.prod.outlook.com>
-Content-Transfer-Encoding: base64
 MIME-Version: 1.0
-X-OriginatorOrg: mendix.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: da2ee6f5-94f4-41bd-6984-08d6830696ac
-X-MS-Exchange-CrossTenant-originalarrivaltime: 25 Jan 2019 20:49:23.7302
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: b4e3c78d-8e3b-46d8-bc56-5540da23ba4d
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: HE1PR0602MB2793
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="sdtB3X0nJg68CQEu"
+Content-Disposition: inline
+In-Reply-To: <4472aad4-86cb-7ce2-6055-1ff8d6955969@gmail.com>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-T24gMS8yNS8xOSA5OjQ1IFBNLCBUb2JpYXMgUmVpbmhhcmQgd3JvdGU6DQo+IEFtIDI1LjAxLjIw
-MTkgdW0gMTk6MDUgc2NocmllYiBIYW5zIHZhbiBLcmFuZW5idXJnOg0KPj4gT24gMS8yNS8xOSA1
-OjU5IFBNLCBUb2JpYXMgUmVpbmhhcmQgd3JvdGU6DQo+Pj4gQW0gMTMuMDEuMjAxOSB1bSAxMjow
-MiBzY2hyaWViIFF1IFdlbnJ1bzoNCj4+Pj4gT24gMjAxOS8xLzEzIOS4i+WNiDY6MTksIFRvYmlh
-cyBSZWluaGFyZCB3cm90ZToNCj4+Pj4+IEhpLA0KPj4+Pj4NCj4+Pj4+IEkgd2FudCB0byByZWFk
-IHRoZSBjb21wbGV0ZSBDU1VNLVRyZWUgZnJvbSB1c2Vyc3BhY2UuIEkgdHJpZWQgaXQNCj4+Pj4+
-IHZpYSB0aGUNCj4+Pj4+IGlvY3RsLiBUaGlzIGlzIHdoYXQgdGhlIGNvZGUgbG9va3MgbGlrZToN
-Cj4+Pj4+DQo+Pj4+PiBzdHJ1Y3QgYnRyZnNfc3YyX2FyZ3Mgc3YyX2FyZ3M7DQo+Pj4+PiBpbnQg
-ZmQgPSBvcGVuKGZpbGVuYW1lLCBPX1JET05MWSk7DQo+Pj4+PiBzdjJfYXJncy5rZXkudHJlZV9p
-ZCA9IEJUUkZTX0NTVU1fVFJFRV9PQkpFQ1RJRDsNCj4+Pj4+IHN2Ml9hcmdzLmtleS5taW5fb2Jq
-ZWN0aWQgPSAwOw0KPj4+Pj4gc3YyX2FyZ3Mua2V5Lm1heF9vYmplY3RpZCA9IC0xOw0KPj4+Pj4g
-c3YyX2FyZ3Mua2V5Lm1pbl9vZmZzZXQgPSAwOw0KPj4+Pj4gc3YyX2FyZ3Mua2V5Lm1heF9vZmZz
-ZXQgPSAtMTsNCj4+Pj4+IHN2Ml9hcmdzLmtleS5taW5fdHJhbnNpZCA9IDA7DQo+Pj4+PiBzdjJf
-YXJncy5rZXkubWF4X3RyYW5zaWQgPSAtMTsNCj4+Pj4+IHN2Ml9hcmdzLmtleS5taW5fdHlwZSA9
-IEJUUkZTX0NTVU1fSVRFTV9LRVk7DQo+Pj4+PiBzdjJfYXJncy5rZXkubWF4X3R5cGUgPSBCVFJG
-U19DU1VNX0lURU1fS0VZOw0KPj4+Pj4gc3YyX2FyZ3Mua2V5Lm5yX2l0ZW1zID0gLTE7DQo+Pj4+
-PiBzdjJfYXJncy5idWZfc2l6ZSA9IHNpemVvZihzdjJfYXJncy5idWYpOw0KPj4+Pj4gaW9jdGwo
-ZmQsIEJUUkZTX0lPQ19UUkVFX1NFQVJDSF9WMiwgJnN2Ml9hcmdzKTsNCj4+Pj4+DQo+Pj4+PiBC
-dXQgdGhlIGRldmljZSBpcyBub3Qgc21hbGwgYW5kIEkgaGl0IHRoZSBsaW1pdCBvZiB0aGUNCj4+
-Pj4+IGJ0cmZzX3N2Ml9hcmdzLmJ1ZiB3aGljaCBzZWVtcyB0byBiZSAxNiBNQi4NCj4+Pj4+DQo+
-Pj4+PiBIb3cgY2FuIEkgZ2V0IHRoZSAqY29tcGxldGUqIENTVU0tVHJlZT8NCj4+Pj4+DQo+Pj4+
-PiBMaW1pdGluZyB0byBvZmZzZXQgZG9lcyBub3Qgd29yayAoTXkgZmlyc3QgaWRlYSB3YXMgdG8g
-ZG8gaXQgdGhpcyB3YXkNCj4+Pj4+IGFuZCBnZXQgaXQgaW4gY2h1bmtzKS4NCj4+Pj4gVGhhdCdz
-IHN0cmFuZ2UuDQo+Pj4+DQo+Pj4+IEFyZSB5b3Ugc3RpbGwgdXNpbmcgMH4tMSBvYmplY3RpZCBh
-bmQgMH4tMSB0eXBlLCBqdXN0IGxhc3Rfb2Zmc2V0fi0xPw0KPj4+Pg0KPj4+PiBIYXZlIHRyaWVk
-IHNlYXJjaGluZyB1c2luZyB0aGUgZm9sbG93aW5nIHBhcmFtZXRlcnM/DQo+Pj4+IG1pbl9vYmpl
-Y3RpZCA9IG1heF9vYmplY3RpZCA9IEJUUkZTX0VYVEVOVF9DU1VNX09CSkVDVElEDQo+Pj4+IG1p
-bl90eXBlID0gbWF4X3R5cGUgPSBCVFJGU19DU1VNX0lURU1fS0VZOw0KPj4+PiBtaW5fb2Zmc2V0
-ID0gbGFzdF9mb3VuZF9jc3VtX29mZnNldA0KPj4+PiBtYXhfb2Zmc2V0ID0gLTENCj4+PiBTb3Jy
-eSBmb3IgbXkgbGF0ZSByZXNwb25zZS4NCj4+Pg0KPj4+IElmIEkgc2V0DQo+Pj4NCj4+PiBtaW5f
-b2JqZWN0aWQgPSBtYXhfb2JqZWN0aWQgPSBCVFJGU19FWFRFTlRfQ1NVTV9PQkpFQ1RJRA0KPj4+
-DQo+Pj4gSSBkb24ndCBnZXQgYW55dGhpbmcuIEkgaGF2ZSB0byBzZXQgaXQgdG8gbWF4PS0xICht
-aW4gZG9lc24ndCBtYXR0ZXIpLg0KPj4+DQo+Pj4gQW5kIGluIHRoYXQgSSBjYXNlLCBtaW5fb2Zm
-c2V0IGFuZCBtYXhfb2Zmc2V0IGRvZXNuJ3QgbWF0dGVyIC0gSSBhbHdheXMNCj4+PiBnZXQgdGhl
-IHNhbWUgcmVzdWx0LiBJIGNhbiBldmVuIHVzZSAid3JvbmciIGZpbHRlcnMgbGlrZSBtaW49MTAw
-MA0KPj4+IG1heD01MDAuDQo+PiBGaXJzdCwgaXQncyBpbXBvcnRhbnQgdG8gdW5kZXJzdGFuZCBo
-b3cgYWxsIHRoZXNlIG1pbi9tYXggdmFsdWVzIHBsYXkNCj4+IHRvZ2V0aGVyOg0KPj4NCj4+IGh0
-dHBzOi8vZ2l0Lmtlcm5lbC5vcmcvcHViL3NjbS9saW51eC9rZXJuZWwvZ2l0L3RvcnZhbGRzL2xp
-bnV4LmdpdC90cmVlL2luY2x1ZGUvdWFwaS9saW51eC9idHJmcy5oI240NDENCj4+DQo+Pg0KPj4g
-U28sIHlvdSBkZWZpbmUgYSBzaW5nbGUgc3RhcnQga2V5LCBhbmQgYSBzaW5nbGUgZW5kIGtleSwg
-YW5kIHRoZW4geW91DQo+PiBnZXQgZXZlcnl0aGluZyB0aGF0J3MgaW4gYmV0d2VlbiAoaW5jbHVk
-aW5nIHRoZSBlbmQgdmFsdWUpLg0KPj4NCj4+IFNvLCB0aGlzLi4uDQo+Pg0KPj4gc3YyX2FyZ3Mu
-a2V5Lm1pbl9vYmplY3RpZCA9IDA7DQo+PiBzdjJfYXJncy5rZXkubWF4X29iamVjdGlkID0gLTE7
-DQo+PiBzdjJfYXJncy5rZXkubWluX29mZnNldCA9IDA7DQo+PiBzdjJfYXJncy5rZXkubWF4X29m
-ZnNldCA9IC0xOw0KPj4gc3YyX2FyZ3Mua2V5Lm1pbl90cmFuc2lkID0gMDsNCj4+IHN2Ml9hcmdz
-LmtleS5tYXhfdHJhbnNpZCA9IC0xOw0KPj4gc3YyX2FyZ3Mua2V5Lm1pbl90eXBlID0gQlRSRlNf
-Q1NVTV9JVEVNX0tFWTsNCj4+IHN2Ml9hcmdzLmtleS5tYXhfdHlwZSA9IEJUUkZTX0NTVU1fSVRF
-TV9LRVk7DQo+Pg0KPj4gLi4udHJhbnNsYXRlcyB0bzoNCj4+DQo+PiBtaW4ga2V5OiAoMCwgQ1NV
-TV9JVEVNX0tFWSwgMCkNCj4+IG1heCBrZXk6ICgxODQ0Njc0NDA3MzcwOTU1MTYxNSwgQ1NVTV9J
-VEVNX0tFWSwgMTg0NDY3NDQwNzM3MDk1NTE2MTUpDQo+Pg0KPj4gU2luY2UgdGhlIGtleXMgZW5k
-IHVwIGJlaW5nIGp1c3QgYSBzaW5nbGUgMTM2IGJpdCBudW1iZXIsIGl0IG1ha2VzIG5vDQo+PiBz
-ZW5zZSB0byBkbyBhbnl0aGluZyB3aXRoIHRoZSBtaWRkbGUgZmllbGQsIGlmIHRoZSBmaXJzdCBm
-aWVsZCwgb2JqZWN0aWQNCj4+IGlzIG5vdCB0aGUgc2FtZSBpbiBib3RoIHN0YXJ0IGFuZCBlbmQg
-a2V5LiBUaGUgc2VhcmNoIHNwYWNlIGlzIGxpbmVhciwNCj4+IG5vdCAzIGRpbWVuc2lvbmFsLiBU
-aGUgaW52aWR1YWwgbWluL21heCB2YWx1ZXMgZm9yIG9iamVjdGlkLCB0eXBlIGFuZA0KPj4gb2Zm
-c2V0IGNhbm5vdCBiZSB1c2VkIHRvIGZpbHRlciB0aGUgcmVzdWx0LCB0aGV5IG9ubHkgZGVmaW5l
-IHRoZQ0KPj4gZW5kcG9pbnRzIG9mIGFuIGludGVydmFsLg0KPj4NCj4+IFNpbmNlIGFsbCBjc3Vt
-IGl0ZW1zIGhhdmUgdGhlIHNhbWUgb2JqZWN0aWQgbnVtYmVyIGFueXdheSwgdGhlIHNlY29uZA0K
-Pj4gc3VnZ2VzdGlvbiBpcyBmaW5lLCBhbmQgZ2l2ZXMgeW91IHRoaXMgc3RhcnQgYW5kIGVuZDoN
-Cj4+DQo+PiBtaW4ga2V5OiAoRVhURU5UX0NTVU1fT0JKRUNUSUQsIENTVU1fSVRFTV9LRVksIDAp
-DQo+PiBtYXgga2V5OiAoRVhURU5UX0NTVU1fT0JKRUNUSUQsIENTVU1fSVRFTV9LRVksIDE4NDQ2
-NzQ0MDczNzA5NTUxNjE1KQ0KPj4NCj4+IFdvcmtzIGZvciBtZSAoaGVyZSBpbiBweXRob24sIGJ1
-dCB1c2luZyBzYW1lIGlvY3RsKToNCj4+DQo+PiAtJCBjYXQgc2hvd19jc3VtX2tleXMucHkNCj4+
-ICMhL3Vzci9iaW4vcHl0aG9uMw0KPj4NCj4+IGltcG9ydCBidHJmcw0KPj4gZnJvbSBidHJmcy5j
-dHJlZSBpbXBvcnQgS2V5LCBDU1VNX1RSRUVfT0JKRUNUSUQsIFwNCj4+IMKgwqDCoMKgwqDCoMKg
-wqAgRVhURU5UX0NTVU1fT0JKRUNUSUQsIEVYVEVOVF9DU1VNX0tFWQ0KPj4NCj4+IHdpdGggYnRy
-ZnMuRmlsZVN5c3RlbSgnL21udC90dXRvcmlhbCcpIGFzIGZzOg0KPj4gwqDCoMKgwqAgbWluX2tl
-eSA9IEtleShFWFRFTlRfQ1NVTV9PQkpFQ1RJRCwgRVhURU5UX0NTVU1fS0VZLCAwKQ0KPj4gwqDC
-oMKgwqAgbWF4X2tleSA9IEtleShFWFRFTlRfQ1NVTV9PQkpFQ1RJRCwgRVhURU5UX0NTVU1fS0VZ
-ICsgMSwgMCkgLSAxDQo+PiDCoMKgwqDCoCBwcmludCgiU2VhcmNoaW5nIGZyb20ge30gdG8ge30i
-LmZvcm1hdChtaW5fa2V5LCBtYXhfa2V5KSkNCj4+IMKgwqDCoMKgIGZvciBoZWFkZXIsIGRhdGEg
-aW4gYnRyZnMuaW9jdGwuc2VhcmNoX3YyKGZzLmZkLCBDU1VNX1RSRUVfT0JKRUNUSUQsDQo+PiDC
-oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCBtaW5fa2V5LCBtYXhfa2V5KToNCj4+
-IMKgwqDCoMKgwqDCoMKgwqAgcHJpbnQoS2V5KGhlYWRlci5vYmplY3RpZCwgaGVhZGVyLnR5cGUs
-IGhlYWRlci5vZmZzZXQpKQ0KPj4NCj4+IC0jIC4vc2hvd19jc3VtX2tleXMucHkNCj4+IFNlYXJj
-aGluZyBmcm9tIChFWFRFTlRfQ1NVTSBFWFRFTlRfQ1NVTSAwKSB0byAoRVhURU5UX0NTVU0gRVhU
-RU5UX0NTVU0NCj4+IC0xKQ0KPj4gKEVYVEVOVF9DU1VNIEVYVEVOVF9DU1VNIDU3MDAwNTkxMzYp
-DQo+PiAoRVhURU5UX0NTVU0gRVhURU5UX0NTVU0gNTcwMDMyMTI4MCkNCj4+IChFWFRFTlRfQ1NV
-TSBFWFRFTlRfQ1NVTSA1NzAwNTgzNDI0KQ0KPj4gKEVYVEVOVF9DU1VNIEVYVEVOVF9DU1VNIDU3
-MDA4NDU1NjgpDQo+PiAoRVhURU5UX0NTVU0gRVhURU5UX0NTVU0gNTcwMTEwNzcxMikNCj4+IChF
-WFRFTlRfQ1NVTSBFWFRFTlRfQ1NVTSA1NzA0NjQ2NjU2KQ0KPj4gKEVYVEVOVF9DU1VNIEVYVEVO
-VF9DU1VNIDU3MDUwMzk4NzIpDQo+PiAoRVhURU5UX0NTVU0gRVhURU5UX0NTVU0gNTcwNjM1MDU5
-MikNCj4+IFsuLi5dDQo+Pg0KPiBSZWFkaW5nIHlvdXIgZXhhbXBsZSwgSSBub3RpY2VkIG15IG1p
-c3Rha2UuDQo+IA0KPiBJIHRvb2vCoCBCVFJGU19DU1VNX0lURU1fS0VZwqAgaW5zdGVhZCBvZiBC
-VFJGU19FWFRFTlRfQ1NVTV9LRVkgZm9yIHRoZQ0KPiB0eXBlLMKgZG9oLg0KPiANCj4gTm93LCBp
-dCBzZWVtcyB0byB3b3Jrcy4NCg0KSGFoISBXZWxsIGRvbmUuIEkgYWxzbyBkaWRuJ3Qgc3BvdCB0
-aGF0LiA6KQ0KDQpQcm9iYWJseSB0b28gbXVjaCBDU1VNIGRhbmNpbmcgYmVmb3JlIG91ciBleWVz
-Li4uIFdhaXQgdW50aWwgeW91IHN0YXJ0DQp1bnBhY2tpbmcgdGhlIHNlYXJjaCByZXN1bHRzLCB3
-aWxsIG9ubHkgZ2V0IHdvcnNlLi4uDQoNCmh0dHBzOi8vcmVhY3Rpb25naWZzLm1lL3dwLWNvbnRl
-bnQvdXBsb2Fkcy8yMDE0LzA2L3JlYWRpbmctaWtlYS1pbnRydWN0aW9ucy1iaWctbGVib3dza2kt
-Y29uZnVzZWQuZ2lmDQoNCi0tIA0KSGFucyB2YW4gS3JhbmVuYnVyZw0K
+
+--sdtB3X0nJg68CQEu
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+On Sun, Jan 13, 2019 at 11:19:04AM +0100, Tobias Reinhard wrote:
+> I want to read the complete CSUM-Tree from userspace. I tried it via the
+> ioctl. This is what the code looks like:
+>=20
+> struct btrfs_sv2_args sv2_args;
+> int fd =3D open(filename, O_RDONLY);
+> sv2_args.key.tree_id =3D BTRFS_CSUM_TREE_OBJECTID;
+> sv2_args.key.min_objectid =3D 0;
+> sv2_args.key.max_objectid =3D -1;
+> sv2_args.key.min_offset =3D 0;
+> sv2_args.key.max_offset =3D -1;
+> sv2_args.key.min_transid =3D 0;
+> sv2_args.key.max_transid =3D -1;
+> sv2_args.key.min_type =3D BTRFS_CSUM_ITEM_KEY;
+> sv2_args.key.max_type =3D BTRFS_CSUM_ITEM_KEY;
+> sv2_args.key.nr_items =3D -1;
+> sv2_args.buf_size =3D sizeof(sv2_args.buf);
+> ioctl(fd, BTRFS_IOC_TREE_SEARCH_V2, &sv2_args);
+>=20
+> But the device is not small and I hit the limit of the btrfs_sv2_args.buf
+> which seems to be 16 MB.
+>=20
+> How can I get the *complete* CSUM-Tree?
+>=20
+> Limiting to offset does not work (My first idea was to do it this way and
+> get it in chunks).
+
+The search key is (objectid, BTRFS_CSUM_ITEM_KEY, offset) and the key is
+treated as a single 136-bit integer for filtering and sorting purposes.
+According to key order:
+
+	(123, BTRFS_CSUM_ITEM_KEY, 456) < (124, BTRFS_CSUM_ITEM_KEY, 234)
+
+You must iterate by objectid (the extent bytenr), key, and offset (the
+length of the csum data).  In many btrfs trees you will get extra data
+in the search results with different type fields which you will have
+to discard.
+
+> Limiting to a single transid does not work as well because even one trans=
+id
+> is larger than the limit.
+>=20
+> Kernel is 4.15.
+>=20
+> Any help would be appreciated.
+>=20
+> Best Regards
+>=20
+> Tobias
+>=20
+
+--sdtB3X0nJg68CQEu
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCXEt+CwAKCRCB+YsaVrMb
+nAp5AKCe6p2oWdiWFv/VJsknNoa+pS31+QCgmqcEczXVOMDQhxzu4ycG+zkisWI=
+=8NUy
+-----END PGP SIGNATURE-----
+
+--sdtB3X0nJg68CQEu--

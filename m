@@ -7,43 +7,42 @@ X-Spam-Status: No, score=-10.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D2111C282C0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Jan 2019 11:46:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9A02EC282C0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Jan 2019 11:48:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 95F14218E2
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Jan 2019 11:46:31 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 60EFB218CD
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Jan 2019 11:48:58 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1548416791;
-	bh=hEmHoTgAGwbr3lOvWOYczS/wFWn9ysTCj5jIcsJTKbc=;
-	h=From:To:Cc:Subject:Date:List-ID:From;
-	b=RS1+F/J4vpBQWj5xD0tNYXMROCvS8NoH+t2GqroOCAQSBn8+v4CnEYJ4wowimeHKs
-	 NlW52NSq0QhI30I3IGbKYGa72+Yyc5iH81P22DrIVJyxxjWpGLhO3pvPMWiFNh+iJ/
-	 26r68JZZcy4gTratsc3+Ojo+KdMCZytVs7SvqzQc=
+	s=default; t=1548416938;
+	bh=IXeUjFq6CkkQDzL5hPGcArfTAwXj6JXIqjn/kXxkyLE=;
+	h=From:To:Subject:Date:List-ID:From;
+	b=MYwJdd137qfBB5LZuhYEF9WQymX6PRs4j15wbOzgUm2phh/7XwoF0/Lkio18jBH7p
+	 InO/CI4LhQG3iZzkZTodltbhVTIiVUJZEzlP7M2B0CCgnlZBICaU7/lnzdteR3P/Jc
+	 02i554Cng5Omm2eLeWWXHOuTPzLsfXuaN29kRbWU=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728035AbfAYLqb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 25 Jan 2019 06:46:31 -0500
-Received: from mail.kernel.org ([198.145.29.99]:53934 "EHLO mail.kernel.org"
+        id S1726381AbfAYLs5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 25 Jan 2019 06:48:57 -0500
+Received: from mail.kernel.org ([198.145.29.99]:54680 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726026AbfAYLqa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Jan 2019 06:46:30 -0500
+        id S1726122AbfAYLs5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 25 Jan 2019 06:48:57 -0500
 Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 45F33218CD;
-        Fri, 25 Jan 2019 11:46:29 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id E006E218CD
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Jan 2019 11:48:54 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1548416790;
-        bh=hEmHoTgAGwbr3lOvWOYczS/wFWn9ysTCj5jIcsJTKbc=;
-        h=From:To:Cc:Subject:Date:From;
-        b=TeJ35SaoblVHn5LVgZRs1u4rwSRNhHWK0tTH+idJy4pgZed5/hR2rAeKcovkH2tBp
-         oMH6FBAJyeQKx3TteTgr4JWaURgUylOFUbaByl7SAZZKvwFpeNv12XYklRdvwGFzqj
-         +gSRWuloAIHek2Sd2+OjgXKXByAMg2PjA12RocH4=
+        s=default; t=1548416935;
+        bh=IXeUjFq6CkkQDzL5hPGcArfTAwXj6JXIqjn/kXxkyLE=;
+        h=From:To:Subject:Date:From;
+        b=SvaOi5FmoZ8yikn7VpX4dYOF1n65RLv5zlSqH+pKZEl5DUDdFZkAg/M93eNhVf+iO
+         pQ17kHO/+DhaTRhD0evQ1xycj0NtsdsnjWJPG9bZ7vzi2YfK1Lw80tkGswjnFRx4Ea
+         AvJF7sLDmkeMSpvxkAC8PDcmRrvWM4SfkL//2Wng=
 From:   fdmanana@kernel.org
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 2/2] fstests: btrfs/081, fix killing of reader loop subshell
-Date:   Fri, 25 Jan 2019 11:46:24 +0000
-Message-Id: <20190125114624.4004-1-fdmanana@kernel.org>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix deadlock when allocating tree block during leaf/node split
+Date:   Fri, 25 Jan 2019 11:48:51 +0000
+Message-Id: <20190125114851.4065-1-fdmanana@kernel.org>
 X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
@@ -52,53 +51,192 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-The test creates a subshell that keeps running the 'cat' command against a
-test file in an infinite loop, and after it kills the subshell it unmounts
-the filesystem, after which point any 'cat' subcommand that runs after or
-at that time will fail resulting in an unexpected golden output:
+When splitting a leaf or node from one of the trees that are modified when
+flushing pending block groups (extent, chunk, device and free space trees),
+we need to allocate a new tree block, which in turn can result in the need
+to allocate a new block group. After allocating the new block group we may
+need to flush new block groups that were previously allocated during the
+course of the current transaction, which is what may cause a deadlock due
+to attempts to write lock twice the same leaf or node, as when splitting
+a leaf or node we are holding a write lock on it and its parent node.
 
-  $ ./check btrfs/081
-  btrfs/081 3s ... - output mismatch (see /home/fdmanana/git/hub/xfstests/results//btrfs/081.out.bad)
-      --- tests/btrfs/081.out	2018-09-16 21:30:48.501104179 +0100
-      +++ /home/fdmanana/git/hub/xfstests/results//btrfs/081.out.bad	2019-01-24 20:36:18.989746185 +0000
-      @@ -206,5 +206,6 @@
-       Verifying file digests after cloning
-       14968c092c68e32fa35e776392d14523  SCRATCH_MNT/foo
-       14968c092c68e32fa35e776392d14523  SCRATCH_MNT/bar
-      +cat: /mnt/scratch/bar: No such file or directory
-       Verifying target file digest after umount + mount
-       14968c092c68e32fa35e776392d14523  SCRATCH_MNT/bar
-      ...
-      (Run 'diff -u /home/fdmanana/git/hub/xfstests/tests/btrfs/081.out /home/fdmanana/git/hub/xfstests/results//btrfs/081.out.bad'  to see the entire diff)
-  Ran: btrfs/081
-  Failures: btrfs/081
-  Failed 1 of 1 tests
+The same type of deadlock can also happen when increasing the tree's
+height, since we are holding a lock on the existing root while allocating
+the tree block to use as the new root node.
 
-Fix that by adding a proper trap to the reader loop function so that the
-subshell waits for executed 'cat' commands when it receives SIGTERM.
+An example trace when the deadlock happens during the leaf split path is:
 
+  [27175.293054] CPU: 0 PID: 3005 Comm: kworker/u17:6 Tainted: G        W         4.19.16 #1
+  [27175.293942] Hardware name: Penguin Computing Relion 1900/MD90-FS0-ZB-XX, BIOS R15 06/25/2018
+  [27175.294846] Workqueue: btrfs-extent-refs btrfs_extent_refs_helper [btrfs]
+  (...)
+  [27175.298384] RSP: 0018:ffffab2087107758 EFLAGS: 00010246
+  [27175.299269] RAX: 0000000000000bbd RBX: ffff9fadc7141c48 RCX: 0000000000000001
+  [27175.300155] RDX: 0000000000000001 RSI: 0000000000000002 RDI: ffff9fadc7141c48
+  [27175.301023] RBP: 0000000000000001 R08: ffff9faeb6ac1040 R09: ffff9fa9c0000000
+  [27175.301887] R10: 0000000000000000 R11: 0000000000000040 R12: ffff9fb21aac8000
+  [27175.302743] R13: ffff9fb1a64d6a20 R14: 0000000000000001 R15: ffff9fb1a64d6a18
+  [27175.303601] FS:  0000000000000000(0000) GS:ffff9fb21fa00000(0000) knlGS:0000000000000000
+  [27175.304468] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+  [27175.305339] CR2: 00007fdc8743ead8 CR3: 0000000763e0a006 CR4: 00000000003606f0
+  [27175.306220] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+  [27175.307087] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+  [27175.307940] Call Trace:
+  [27175.308802]  btrfs_search_slot+0x779/0x9a0 [btrfs]
+  [27175.309669]  ? update_space_info+0xba/0xe0 [btrfs]
+  [27175.310534]  btrfs_insert_empty_items+0x67/0xc0 [btrfs]
+  [27175.311397]  btrfs_insert_item+0x60/0xd0 [btrfs]
+  [27175.312253]  btrfs_create_pending_block_groups+0xee/0x210 [btrfs]
+  [27175.313116]  do_chunk_alloc+0x25f/0x300 [btrfs]
+  [27175.313984]  find_free_extent+0x706/0x10d0 [btrfs]
+  [27175.314855]  btrfs_reserve_extent+0x9b/0x1d0 [btrfs]
+  [27175.315707]  btrfs_alloc_tree_block+0x100/0x5b0 [btrfs]
+  [27175.316548]  split_leaf+0x130/0x610 [btrfs]
+  [27175.317390]  btrfs_search_slot+0x94d/0x9a0 [btrfs]
+  [27175.318235]  btrfs_insert_empty_items+0x67/0xc0 [btrfs]
+  [27175.319087]  alloc_reserved_file_extent+0x84/0x2c0 [btrfs]
+  [27175.319938]  __btrfs_run_delayed_refs+0x596/0x1150 [btrfs]
+  [27175.320792]  btrfs_run_delayed_refs+0xed/0x1b0 [btrfs]
+  [27175.321643]  delayed_ref_async_start+0x81/0x90 [btrfs]
+  [27175.322491]  normal_work_helper+0xd0/0x320 [btrfs]
+  [27175.323328]  ? move_linked_works+0x6e/0xa0
+  [27175.324160]  process_one_work+0x191/0x370
+  [27175.324976]  worker_thread+0x4f/0x3b0
+  [27175.325763]  kthread+0xf8/0x130
+  [27175.326531]  ? rescuer_thread+0x320/0x320
+  [27175.327284]  ? kthread_create_worker_on_cpu+0x50/0x50
+  [27175.328027]  ret_from_fork+0x35/0x40
+  [27175.328741] ---[ end trace 300a1b9f0ac30e26 ]---
+
+Fix this by preventing the flushing of new blocks groups when splitting a
+leaf/node and when inserting a new root node for one of the trees modified
+by the flushing operation, similar to what is done when COWing a node/leaf
+from on of these trees.
+
+Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=202383
+Reported-by: Eli V <eliventer@gmail.com>
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- tests/btrfs/081 | 6 ++++++
- 1 file changed, 6 insertions(+)
+ fs/btrfs/ctree.c | 78 ++++++++++++++++++++++++++++++++++++--------------------
+ 1 file changed, 50 insertions(+), 28 deletions(-)
 
-diff --git a/tests/btrfs/081 b/tests/btrfs/081
-index 7e83525f..726a370f 100755
---- a/tests/btrfs/081
-+++ b/tests/btrfs/081
-@@ -69,6 +69,12 @@ create_target_file()
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index f64aad613727..5a6c39b44c84 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -968,6 +968,48 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
+ 	return 0;
+ }
  
- reader_loop()
- {
-+	# Wait for any running 'cat' subcommand before exitting so that after
-+	# the test kills the reader loop subshell it does not fail with an
-+	# error message from a 'cat' subcommand due to the test file being
-+	# temporarily unavailable due to the scratch fs unmount operation.
-+	trap "wait; exit" SIGTERM
++static struct extent_buffer *alloc_tree_block_no_bg_flush(
++					  struct btrfs_trans_handle *trans,
++					  struct btrfs_root *root,
++					  u64 parent_start,
++					  const struct btrfs_disk_key *disk_key,
++					  int level,
++					  u64 hint,
++					  u64 empty_size)
++{
++	struct btrfs_fs_info *fs_info = root->fs_info;
++	struct extent_buffer *ret;
 +
- 	local name=$1
++	/*
++	 * If we are COWing a node/leaf from the extent, chunk, device or free
++	 * space trees, make sure that we do not finish block group creation of
++	 * pending block groups. We do this to avoid a deadlock.
++	 * COWing can result in allocation of a new chunk, and flushing pending
++	 * block groups (btrfs_create_pending_block_groups()) can be triggered
++	 * when finishing allocation of a new chunk. Creation of a pending block
++	 * group modifies the extent, chunk, device and free space trees,
++	 * therefore we could deadlock with ourselves since we are holding a
++	 * lock on an extent buffer that btrfs_create_pending_block_groups() may
++	 * try to COW later.
++	 * For similar reasons, we also need to delay flushing pending block
++	 * groups when splitting a leaf or node, from one of those trees, since
++	 * we are holding a write lock on it and its parent or when inserting a
++	 * new root node for one of those trees.
++	 */
++	if (root == fs_info->extent_root ||
++	    root == fs_info->chunk_root ||
++	    root == fs_info->dev_root ||
++	    root == fs_info->free_space_root)
++		trans->can_flush_pending_bgs = false;
++
++	ret = btrfs_alloc_tree_block(trans, root, parent_start,
++				     root->root_key.objectid, disk_key, level,
++				     hint, empty_size);
++	trans->can_flush_pending_bgs = true;
++
++	return ret;
++}
++
+ /*
+  * does the dirty work in cow of a single block.  The parent block (if
+  * supplied) is updated to point to the new cow copy.  The new buffer is marked
+@@ -1015,28 +1057,8 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 	if ((root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID) && parent)
+ 		parent_start = parent->start;
  
- 	while true; do
+-	/*
+-	 * If we are COWing a node/leaf from the extent, chunk, device or free
+-	 * space trees, make sure that we do not finish block group creation of
+-	 * pending block groups. We do this to avoid a deadlock.
+-	 * COWing can result in allocation of a new chunk, and flushing pending
+-	 * block groups (btrfs_create_pending_block_groups()) can be triggered
+-	 * when finishing allocation of a new chunk. Creation of a pending block
+-	 * group modifies the extent, chunk, device and free space trees,
+-	 * therefore we could deadlock with ourselves since we are holding a
+-	 * lock on an extent buffer that btrfs_create_pending_block_groups() may
+-	 * try to COW later.
+-	 */
+-	if (root == fs_info->extent_root ||
+-	    root == fs_info->chunk_root ||
+-	    root == fs_info->dev_root ||
+-	    root == fs_info->free_space_root)
+-		trans->can_flush_pending_bgs = false;
+-
+-	cow = btrfs_alloc_tree_block(trans, root, parent_start,
+-			root->root_key.objectid, &disk_key, level,
+-			search_start, empty_size);
+-	trans->can_flush_pending_bgs = true;
++	cow = alloc_tree_block_no_bg_flush(trans, root, parent_start, &disk_key,
++					   level, search_start, empty_size);
+ 	if (IS_ERR(cow))
+ 		return PTR_ERR(cow);
+ 
+@@ -3345,8 +3367,8 @@ static noinline int insert_new_root(struct btrfs_trans_handle *trans,
+ 	else
+ 		btrfs_node_key(lower, &lower_key, 0);
+ 
+-	c = btrfs_alloc_tree_block(trans, root, 0, root->root_key.objectid,
+-				   &lower_key, level, root->node->start, 0);
++	c = alloc_tree_block_no_bg_flush(trans, root, 0, &lower_key, level,
++					 root->node->start, 0);
+ 	if (IS_ERR(c))
+ 		return PTR_ERR(c);
+ 
+@@ -3475,8 +3497,8 @@ static noinline int split_node(struct btrfs_trans_handle *trans,
+ 	mid = (c_nritems + 1) / 2;
+ 	btrfs_node_key(c, &disk_key, mid);
+ 
+-	split = btrfs_alloc_tree_block(trans, root, 0, root->root_key.objectid,
+-			&disk_key, level, c->start, 0);
++	split = alloc_tree_block_no_bg_flush(trans, root, 0, &disk_key, level,
++					     c->start, 0);
+ 	if (IS_ERR(split))
+ 		return PTR_ERR(split);
+ 
+@@ -4260,8 +4282,8 @@ static noinline int split_leaf(struct btrfs_trans_handle *trans,
+ 	else
+ 		btrfs_item_key(l, &disk_key, mid);
+ 
+-	right = btrfs_alloc_tree_block(trans, root, 0, root->root_key.objectid,
+-			&disk_key, 0, l->start, 0);
++	right = alloc_tree_block_no_bg_flush(trans, root, 0, &disk_key, 0,
++					     l->start, 0);
+ 	if (IS_ERR(right))
+ 		return PTR_ERR(right);
+ 
 -- 
 2.11.0
 

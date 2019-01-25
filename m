@@ -1,4 +1,4 @@
-Return-Path: <SRS0=zIKm=QA=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=6jfg=QB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
@@ -6,143 +6,64 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 42EECC282C3
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Jan 2019 23:55:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 99AB8C282C3
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Jan 2019 01:44:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0FA462146E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Jan 2019 23:55:33 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6EA77218CD
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Jan 2019 01:44:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726173AbfAXXzc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 24 Jan 2019 18:55:32 -0500
-Received: from mx2.suse.de ([195.135.220.15]:47288 "EHLO mx1.suse.de"
+        id S1728265AbfAYBol (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 24 Jan 2019 20:44:41 -0500
+Received: from szxga05-in.huawei.com ([45.249.212.191]:2748 "EHLO huawei.com"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726015AbfAXXzc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 24 Jan 2019 18:55:32 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id BBEB1AD6C
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Jan 2019 23:55:30 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: qgroup: Make qgroup async transaction commit more aggressive
-Date:   Fri, 25 Jan 2019 07:55:27 +0800
-Message-Id: <20190124235527.5563-1-wqu@suse.com>
-X-Mailer: git-send-email 2.20.1
+        id S1727983AbfAYBol (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 24 Jan 2019 20:44:41 -0500
+Received: from DGGEMS404-HUB.china.huawei.com (unknown [172.30.72.60])
+        by Forcepoint Email with ESMTP id 68B7E8303B2C5798143E;
+        Fri, 25 Jan 2019 09:44:39 +0800 (CST)
+Received: from localhost.localdomain.localdomain (10.175.113.25) by
+ DGGEMS404-HUB.china.huawei.com (10.3.19.204) with Microsoft SMTP Server id
+ 14.3.408.0; Fri, 25 Jan 2019 09:44:30 +0800
+From:   YueHaibing <yuehaibing@huawei.com>
+To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>
+CC:     YueHaibing <yuehaibing@huawei.com>, <linux-btrfs@vger.kernel.org>,
+        <kernel-janitors@vger.kernel.org>
+Subject: [PATCH -next] btrfs: qgroup: Fix inconsistent IS_ERR and PTR_ERR
+Date:   Fri, 25 Jan 2019 01:50:09 +0000
+Message-ID: <1548381009-80383-1-git-send-email-yuehaibing@huawei.com>
+X-Mailer: git-send-email 1.8.3.1
+Content-Type: text/plain; charset="ISO-8859-1"
+Content-Transfer-Encoding: 7bit
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+X-Originating-IP: [10.175.113.25]
+X-CFilter-Loop: Reflected
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[BUG]
-Btrfs qgroup will still hit EDQUOT under the following case:
+Change the call to PTR_ERR to access the value just tested by IS_ERR.
 
-  #!/bin/bash
-
-  dev=/dev/test/test
-  mnt=/mnt/btrfs
-  umount $mnt &> /dev/null
-  umount $dev &> /dev/null
-
-  mkfs.btrfs -f $dev
-  mount $dev $mnt -o nospace_cache
-
-  btrfs subv create $mnt/subv
-  btrfs quota enable $mnt
-  btrfs quota rescan -w $mnt
-  btrfs qgroup limit -e 1G $mnt/subv
-
-  fallocate -l 900M $mnt/subv/padding
-  sync
-
-  rm $mnt/subv/padding
-
-  # Hit EDQUOT
-  xfs_io -f -c "pwrite 0 512M" $mnt/subv/real_file
-
-[CAUSE]
-Since commit a514d63882c3 ("btrfs: qgroup: Commit transaction in advance
-to reduce early EDQUOT"), btrfs is not forced to commit transaction to
-reclaim more quota space.
-
-Instead, we just check pertrans metadata reservation against some
-threshold and try to do asynchronously transaction commit.
-
-However in above case, the pertrans metadata reservation is pretty small
-thus it will never trigger asynchronous transaction commit.
-
-[FIX]
-Instead of only accounting pertrans metadata reservation, we calculate
-how much free space we have, and if there isn't much free space left,
-commit transaction asynchronously to try to free some space.
-
-This may slow down the fs when we have less than 32M free qgroup space,
-but should reduce a lot of false EDQUOT, so the cost should be
-acceptable.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Fixes: 2b35a512e9cf ("btrfs: qgroup: Use delayed subtree rescan for balance")
+Signed-off-by: YueHaibing <yuehaibing@huawei.com>
 ---
- fs/btrfs/qgroup.c | 29 ++++++++++++++++-------------
- 1 file changed, 16 insertions(+), 13 deletions(-)
+ fs/btrfs/qgroup.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 4e473a998219..f0b7425bf289 100644
+index 8559ed9..16d7ec8 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
-@@ -2843,15 +2843,15 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,
-  * Two limits to commit transaction in advance.
-  *
-  * For RATIO, it will be 1/RATIO of the remaining limit
-- * (excluding data and prealloc meta) as threshold.
-+ * as threshold.
-  * For SIZE, it will be in byte unit as threshold.
-  */
--#define QGROUP_PERTRANS_RATIO		32
--#define QGROUP_PERTRANS_SIZE		SZ_32M
-+#define QGROUP_FREE_RATIO		32
-+#define QGROUP_FREE_SIZE		SZ_32M
- static bool qgroup_check_limits(struct btrfs_fs_info *fs_info,
- 				const struct btrfs_qgroup *qg, u64 num_bytes)
- {
--	u64 limit;
-+	u64 free;
- 	u64 threshold;
- 
- 	if ((qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_RFER) &&
-@@ -2870,20 +2870,23 @@ static bool qgroup_check_limits(struct btrfs_fs_info *fs_info,
- 	 */
- 	if ((qg->lim_flags & (BTRFS_QGROUP_LIMIT_MAX_RFER |
- 			      BTRFS_QGROUP_LIMIT_MAX_EXCL))) {
--		if (qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_EXCL)
--			limit = qg->max_excl;
--		else
--			limit = qg->max_rfer;
--		threshold = (limit - qg->rsv.values[BTRFS_QGROUP_RSV_DATA] -
--			    qg->rsv.values[BTRFS_QGROUP_RSV_META_PREALLOC]) /
--			    QGROUP_PERTRANS_RATIO;
--		threshold = min_t(u64, threshold, QGROUP_PERTRANS_SIZE);
-+		if (qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_EXCL) {
-+			free = (qg->max_excl - qgroup_rsv_total(qg) -
-+				     qg->excl);
-+			threshold = min_t(u64, qg->max_excl / QGROUP_FREE_RATIO,
-+					  QGROUP_FREE_SIZE);
-+		} else {
-+			free = (qg->max_rfer - qgroup_rsv_total(qg) -
-+				     qg->rfer);
-+			threshold = min_t(u64, qg->max_rfer / QGROUP_FREE_RATIO,
-+					  QGROUP_FREE_SIZE);
-+		}
- 
- 		/*
- 		 * Use transaction_kthread to commit transaction, so we no
- 		 * longer need to bother nested transaction nor lock context.
- 		 */
--		if (qg->rsv.values[BTRFS_QGROUP_RSV_META_PERTRANS] > threshold)
-+		if (free < threshold)
- 			btrfs_commit_transaction_locksafe(fs_info);
+@@ -3931,7 +3931,7 @@ int btrfs_qgroup_trace_subtree_after_cow(struct btrfs_trans_handle *trans,
+ 				   block->reloc_generation, block->level,
+ 				   &block->first_key);
+ 	if (IS_ERR(reloc_eb)) {
+-		ret = PTR_ERR(subv_eb);
++		ret = PTR_ERR(reloc_eb);
+ 		reloc_eb = NULL;
+ 		goto free_out;
  	}
- 
--- 
-2.20.1
+
+
 

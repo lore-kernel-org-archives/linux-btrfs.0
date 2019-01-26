@@ -6,25 +6,25 @@ X-Spam-Status: No, score=-0.2 required=3.0 tests=DATE_IN_PAST_12_24,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 42B24C282C7
-	for <linux-btrfs@archiver.kernel.org>; Sat, 26 Jan 2019 21:12:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 31F18C282C7
+	for <linux-btrfs@archiver.kernel.org>; Sat, 26 Jan 2019 22:56:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 171692133D
-	for <linux-btrfs@archiver.kernel.org>; Sat, 26 Jan 2019 21:12:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 06C5A218CD
+	for <linux-btrfs@archiver.kernel.org>; Sat, 26 Jan 2019 22:56:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726413AbfAZVMX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 26 Jan 2019 16:12:23 -0500
-Received: from rtw117.rackrabbit.com ([185.53.170.117]:40336 "EHLO
+        id S1726367AbfAZW4j (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 26 Jan 2019 17:56:39 -0500
+Received: from rtw117.rackrabbit.com ([185.53.170.117]:52464 "EHLO
         loghomestore.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1726400AbfAZVMW (ORCPT
+        with ESMTP id S1726180AbfAZW4j (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 26 Jan 2019 16:12:22 -0500
-X-Greylist: delayed 21632 seconds by postgrey-1.27 at vger.kernel.org; Sat, 26 Jan 2019 16:12:21 EST
+        Sat, 26 Jan 2019 17:56:39 -0500
+X-Greylist: delayed 22234 seconds by postgrey-1.27 at vger.kernel.org; Sat, 26 Jan 2019 17:56:38 EST
 To:     linux-btrfs@vger.kernel.org
 Subject: Data entry service and data processing services
-Message-ID: <03917831847398cb1a10b9776714068c@vecteezy.com>
-Date:   Sat, 26 Jan 2019 08:29:51 +0100
-From:   "Linda" <jafenetanse@mail.fr>
+Message-ID: <aa1ba32ee2f4db3f3dfbc7bc834f5500@artisticrealism.com>
+Date:   Sat, 26 Jan 2019 10:12:30 +0100
+From:   "Linda" <jafensstanse@mail.fr>
 Reply-To: huhansto@sina.com
 MIME-Version: 1.0
 Content-Type: text/plain; format=flowed; charset="UTF-8"

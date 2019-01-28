@@ -2,207 +2,106 @@ Return-Path: <SRS0=GbvB=QE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4C798C282C8
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jan 2019 06:22:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A373AC282CD
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jan 2019 11:47:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 23ADF2147A
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jan 2019 06:22:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 70AE421741
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jan 2019 11:47:11 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="MwB/vVwF"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726626AbfA1GW6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 28 Jan 2019 01:22:58 -0500
-Received: from mx2.suse.de ([195.135.220.15]:37688 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726150AbfA1GW6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Jan 2019 01:22:58 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id E5C94AF18;
-        Mon, 28 Jan 2019 06:22:55 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     fstests@vger.kernel.org
-Subject: [PATCH] btrfs: Test if btrfs will commit too many transaction for balance
-Date:   Mon, 28 Jan 2019 14:22:49 +0800
-Message-Id: <20190128062249.22242-1-wqu@suse.com>
-X-Mailer: git-send-email 2.20.1
+        id S1726805AbfA1LrK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 28 Jan 2019 06:47:10 -0500
+Received: from aserp2130.oracle.com ([141.146.126.79]:35628 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726661AbfA1LrJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 28 Jan 2019 06:47:09 -0500
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id x0SBikqw188983;
+        Mon, 28 Jan 2019 11:47:05 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to : cc :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2018-07-02;
+ bh=sSbhKmamCPbST2baz6RM5WHYfFuOpDRgc0XvVRFL0GM=;
+ b=MwB/vVwFqbZS8uq/sQeCKpudM1aH54SdlGSk1xRy8KuAoRC9MNE9+oNP+oCLFfu/R1dk
+ E/m4rSKTmisDaQwVzpAJPG98bZvBp+KfCVHf+UaYcIjrPL8ZTyNtnENdw85HNB5r9jYP
+ bbnGSCo5z9Kk9yI59hmtpd/gl+bzs3hW8ovnLApgQZpxJSh4yLNzCQWbwkYRaGkE9xrx
+ AryqOSpcK0Kd4BiBKjdfLHGCiIuhfkXX+WvCRZcp0vkCjzjl7Xa2SOCwmPoEpM4ZfuHA
+ /DOzD06w6HBg8PJbhrmlEyAzcTHBV43JGNwPTm0ELTvJvyFNTTBgs15ZRn8QCU+xiUg+ 0g== 
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by aserp2130.oracle.com with ESMTP id 2q8d2dwt4x-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Mon, 28 Jan 2019 11:47:05 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x0SBkx2J020740
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Mon, 28 Jan 2019 11:46:59 GMT
+Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x0SBkwA7017643;
+        Mon, 28 Jan 2019 11:46:58 GMT
+Received: from [10.190.142.77] (/192.188.170.109)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Mon, 28 Jan 2019 03:46:58 -0800
+Subject: Re: [PATCH] btrfs: oops in device_list_add()
+To:     Al Viro <viro@zeniv.linux.org.uk>, linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+References: <20190127045755.GH2217@ZenIV.linux.org.uk>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <4b2ff563-c3c4-843b-f0d4-f1527465be20@oracle.com>
+Date:   Mon, 28 Jan 2019 19:47:00 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.3.0
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20190127045755.GH2217@ZenIV.linux.org.uk>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9149 signatures=668682
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1810050000 definitions=main-1901280096
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Kernel commit 64403612b73a ("btrfs: rework
-btrfs_check_space_for_delayed_refs") is introducing a regression for
-btrfs balance performance.
 
-Since that commit will cause btrfs to commit transaction for nothing
-during transaction, it will slow balance dramatically even we only need
-to relocate several megabytes.
 
-This test case will catch the problem by using super block generation as
-failure criteria.
-For small chunk relocated, we will commit 6 transaction for each block
-group, and the test case should only have 2 block groups, it should only
-commit 12 transactions.
+On 1/27/19 12:58 PM, Al Viro wrote:
+> 	alloc_fs_devices() can return ERR_PTR(-ENOMEM), so
+> dereferencing its result before the check for IS_ERR() is
+> a bad idea...
+> 
+> Fixes: d1a63002829a4
+> Signed-off-by: Al Viro <viro@zeniv.linux.org.uk>
 
-This test case will use 120 as the threshold to detect the failure.
+  nice catch.
+  Reviewed-by: Anand Jain <anand.jain@oracle.com>
 
-And in my test environment, with kernel fix btrfs committed 14
-transactions and finished in 6s.
-While without the fix btrfs committed 1734 transactions and takes 25s to
-finish.
-
-So the test case should be more than enough to detect the regression,
-while still keep the runtime small enough for failure.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- tests/btrfs/181     | 111 ++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/181.out |   2 +
- tests/btrfs/group   |   1 +
- 3 files changed, 114 insertions(+)
- create mode 100755 tests/btrfs/181
- create mode 100644 tests/btrfs/181.out
-
-diff --git a/tests/btrfs/181 b/tests/btrfs/181
-new file mode 100755
-index 00000000..052cdba9
---- /dev/null
-+++ b/tests/btrfs/181
-@@ -0,0 +1,111 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (C) 2019 SUSE Linux Products GmbH. All Rights Reserved.
-+#
-+# FS QA Test 181
-+#
-+# Test if btrfs will commit too many transactions for nothing and cause
-+# performance regression during balance.
-+#
-+# This bug is going to be fixed by a patch for kenerl title
-+# "btrfs: don't end the transaction for delayed refs in throttle"
-+#
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# remove previous $seqres.full before test
-+rm -f $seqres.full
-+
-+# real QA test starts here
-+
-+# Modify as appropriate.
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+_require_btrfs_command inspect-internal dump-super
-+
-+_scratch_mkfs > /dev/null
-+
-+# Need to use inline file extents to bump up tree size
-+_scratch_mount -o max_inline=2048
-+
-+nr_files=1024
-+nr_snapshots=8
-+
-+get_super_gen()
-+{
-+	$BTRFS_UTIL_PROG inspect dump-super "$SCRATCH_DEV" | grep ^generation |\
-+		awk '{print $2}'
-+}
-+
-+$BTRFS_UTIL_PROG subv create "$SCRATCH_MNT/subvol" > /dev/null
-+
-+# Create some small files to bump tree size
-+for ((i = 0; i < $nr_files; i++)) do
-+	_pwrite_byte 0xcd 0 2K "$SCRATCH_MNT/subvol/file_$i" > /dev/null
-+done
-+
-+# Work around ENOSPC error
-+#
-+# Without these snapshots, btrfs balance will just return ENOSPC even
-+# we have enough unallocated space.
-+for ((i = 0; i < $nr_snapshots; i++)) do
-+	$BTRFS_UTIL_PROG subv snapshot "$SCRATCH_MNT/subvol" \
-+		"$SCRATCH_MNT/snapshots_$i" > /dev/null
-+done
-+
-+# Commit the fs so we can get a stable super generation
-+sync
-+
-+before_gen=$(get_super_gen)
-+if [ -z $before_gen ]; then
-+	_fail "failed to get super block genreation"
-+fi
-+
-+$BTRFS_UTIL_PROG balance start -m "$SCRATCH_MNT" > /dev/null
-+
-+after_gen=$(get_super_gen)
-+
-+# Since the fs is pretty small, we should have only 1 small metadata chunk and
-+# one tiny system chunk.
-+# Relocating such small chunks only need 6 commits for each, thus 12 commits for
-+# 2 chunks.
-+# Here we use 10x the theoretic value as threshold.
-+theoretic_gen=$(( 6 * 2 ))
-+threshold_gen=$(( 10 * $theoretic_gen ))
-+if [ $(( $after_gen - $before_gen )) -gt 120 ]; then
-+	echo "balance committed too many transactions"
-+	echo "super generation before balance: ${before_gen}"
-+	echo "super generation after balance:  ${after_gen}"
-+	echo "super generation difference:     $((after_gen - before_gen))"
-+	echo "theoretic generation difference: ${theoretic_gen}"
-+	echo "threshold generation difference: ${threshold_gen}"
-+fi
-+
-+echo "super generation before balance: ${before_gen}" >> $seqres.full
-+echo "super generation after balance:  ${after_gen}" >> $seqres.full
-+echo "super generation difference:     $((after_gen - before_gen))" >> $seqres.full
-+echo "theoretic generation difference: ${theoretic_gen}" >> $seqres.full
-+echo "threshold generation difference: ${threshold_gen}" >> $seqres.full
-+
-+# success, all done
-+echo "Silence is golden"
-+
-+status=0
-+exit
-diff --git a/tests/btrfs/181.out b/tests/btrfs/181.out
-new file mode 100644
-index 00000000..a5a93be6
---- /dev/null
-+++ b/tests/btrfs/181.out
-@@ -0,0 +1,2 @@
-+QA output created by 181
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 03eb62f9..0db485cb 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -183,3 +183,4 @@
- 178 auto quick send
- 179 auto qgroup dangerous
- 180 auto quick qgroup limit
-+181 auto quick balance
--- 
-2.18.0
-
+> ---
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 85149f27644d..72adc5643bde 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -955,11 +955,11 @@ static noinline struct btrfs_device *device_list_add(const char *path,
+>   		else
+>   			fs_devices = alloc_fs_devices(disk_super->fsid, NULL);
+>   
+> -		fs_devices->fsid_change = fsid_change_in_progress;
+> -
+>   		if (IS_ERR(fs_devices))
+>   			return ERR_CAST(fs_devices);
+>   
+> +		fs_devices->fsid_change = fsid_change_in_progress;
+> +
+>   		mutex_lock(&fs_devices->device_list_mutex);
+>   		list_add(&fs_devices->fs_list, &fs_uuids);
+>   
+> 

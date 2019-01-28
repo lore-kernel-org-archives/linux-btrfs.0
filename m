@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C846AC282CC
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jan 2019 02:04:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4C798C282C8
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jan 2019 06:22:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A014F2148E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jan 2019 02:04:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 23ADF2147A
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jan 2019 06:22:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726604AbfA1CET (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 27 Jan 2019 21:04:19 -0500
-Received: from mx2.suse.de ([195.135.220.15]:48794 "EHLO mx1.suse.de"
+        id S1726626AbfA1GW6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 28 Jan 2019 01:22:58 -0500
+Received: from mx2.suse.de ([195.135.220.15]:37688 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726517AbfA1CET (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 27 Jan 2019 21:04:19 -0500
+        id S1726150AbfA1GW6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 28 Jan 2019 01:22:58 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id DAC8FAEA1;
-        Mon, 28 Jan 2019 02:04:17 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id E5C94AF18;
+        Mon, 28 Jan 2019 06:22:55 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     fstests@vger.kernel.org
-Subject: [PATCH] btrfs: Test if btrfs hits EDQUOT without trying to reclaim some space
-Date:   Mon, 28 Jan 2019 10:04:13 +0800
-Message-Id: <20190128020413.16243-1-wqu@suse.com>
+Subject: [PATCH] btrfs: Test if btrfs will commit too many transaction for balance
+Date:   Mon, 28 Jan 2019 14:22:49 +0800
+Message-Id: <20190128062249.22242-1-wqu@suse.com>
 X-Mailer: git-send-email 2.20.1
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
@@ -36,56 +36,56 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Commit a514d63882c3 ("btrfs: qgroup: Commit transaction in advance to reduce
-early EDQUOT") is no longer forcing transaction commit to reclaim space,
-and only commits transaction asynchronously in advance to address it.
+Kernel commit 64403612b73a ("btrfs: rework
+btrfs_check_space_for_delayed_refs") is introducing a regression for
+btrfs balance performance.
 
-However the criteria used in async transaction commit is not
-comprehensive, thus it doesn't reclaim space automatically.
+Since that commit will cause btrfs to commit transaction for nothing
+during transaction, it will slow balance dramatically even we only need
+to relocate several megabytes.
 
-This test case will check the behavior by:
-1) Falloc a large padding file
-   This file will take 90% of the qgroup limit
+This test case will catch the problem by using super block generation as
+failure criteria.
+For small chunk relocated, we will commit 6 transaction for each block
+group, and the test case should only have 2 block groups, it should only
+commit 12 transactions.
 
-2) Sync the fs
-   To reflect the qgroup changes
+This test case will use 120 as the threshold to detect the failure.
 
-3) Delete the file
-   Qgroup won't reclaim the space until transaction committed.
+And in my test environment, with kernel fix btrfs committed 14
+transactions and finished in 6s.
+While without the fix btrfs committed 1734 transactions and takes 25s to
+finish.
 
-4) Try to write a file
-   If kernel not fixed, qgroup will not automatically commit transaction
-   to reclaim the freed space and hit EDQUOT.
-
-This bug is going to be fxied by a patch for kernel titled
-"btrfs: qgroup: Make qgroup async transaction commit more aggressive".
+So the test case should be more than enough to detect the regression,
+while still keep the runtime small enough for failure.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- tests/btrfs/180     | 62 +++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/180.out |  3 +++
- tests/btrfs/group   |  1 +
- 3 files changed, 66 insertions(+)
- create mode 100755 tests/btrfs/180
- create mode 100644 tests/btrfs/180.out
+ tests/btrfs/181     | 111 ++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/181.out |   2 +
+ tests/btrfs/group   |   1 +
+ 3 files changed, 114 insertions(+)
+ create mode 100755 tests/btrfs/181
+ create mode 100644 tests/btrfs/181.out
 
-diff --git a/tests/btrfs/180 b/tests/btrfs/180
+diff --git a/tests/btrfs/181 b/tests/btrfs/181
 new file mode 100755
-index 00000000..df876310
+index 00000000..052cdba9
 --- /dev/null
-+++ b/tests/btrfs/180
-@@ -0,0 +1,62 @@
++++ b/tests/btrfs/181
+@@ -0,0 +1,111 @@
 +#! /bin/bash
 +# SPDX-License-Identifier: GPL-2.0
 +# Copyright (C) 2019 SUSE Linux Products GmbH. All Rights Reserved.
 +#
-+# FS QA Test 180
++# FS QA Test 181
 +#
-+# Test if btrfs hits EDQUOT without reclaim already freed extents when quota
-+# is enabled.
++# Test if btrfs will commit too many transactions for nothing and cause
++# performance regression during balance.
 +#
-+# This bug is going to be fxied by a patch for kernel titled
-+# "btrfs: qgroup: Make qgroup async transaction commit more aggressive"
++# This bug is going to be fixed by a patch for kenerl title
++# "btrfs: don't end the transaction for delayed refs in throttle"
 +#
 +seq=`basename $0`
 +seqres=$RESULT_DIR/$seq
@@ -115,46 +115,94 @@ index 00000000..df876310
 +_supported_fs btrfs
 +_supported_os Linux
 +_require_scratch
-+_require_xfs_io_command falloc
++_require_btrfs_command inspect-internal dump-super
 +
 +_scratch_mkfs > /dev/null
-+_scratch_mount
 +
-+$BTRFS_UTIL_PROG quota enable "$SCRATCH_MNT" > /dev/null
-+$BTRFS_UTIL_PROG quota rescan -w "$SCRATCH_MNT" > /dev/null
-+$BTRFS_UTIL_PROG qgroup limit -e 1G "$SCRATCH_MNT"
++# Need to use inline file extents to bump up tree size
++_scratch_mount -o max_inline=2048
 +
-+$XFS_IO_PROG -f -c "falloc 0 900M" "$SCRATCH_MNT/padding" | _filter_xfs_io
++nr_files=1024
++nr_snapshots=8
 +
-+# Commit transaction to reflect the quota usage
++get_super_gen()
++{
++	$BTRFS_UTIL_PROG inspect dump-super "$SCRATCH_DEV" | grep ^generation |\
++		awk '{print $2}'
++}
++
++$BTRFS_UTIL_PROG subv create "$SCRATCH_MNT/subvol" > /dev/null
++
++# Create some small files to bump tree size
++for ((i = 0; i < $nr_files; i++)) do
++	_pwrite_byte 0xcd 0 2K "$SCRATCH_MNT/subvol/file_$i" > /dev/null
++done
++
++# Work around ENOSPC error
++#
++# Without these snapshots, btrfs balance will just return ENOSPC even
++# we have enough unallocated space.
++for ((i = 0; i < $nr_snapshots; i++)) do
++	$BTRFS_UTIL_PROG subv snapshot "$SCRATCH_MNT/subvol" \
++		"$SCRATCH_MNT/snapshots_$i" > /dev/null
++done
++
++# Commit the fs so we can get a stable super generation
 +sync
 +
-+rm "$SCRATCH_MNT/padding"
++before_gen=$(get_super_gen)
++if [ -z $before_gen ]; then
++	_fail "failed to get super block genreation"
++fi
 +
-+# Without the kernel fix, this will trigger EDQUOT.
-+_pwrite_byte 0xcd 0 512M "$SCRATCH_MNT/real_file" | _filter_xfs_io
++$BTRFS_UTIL_PROG balance start -m "$SCRATCH_MNT" > /dev/null
++
++after_gen=$(get_super_gen)
++
++# Since the fs is pretty small, we should have only 1 small metadata chunk and
++# one tiny system chunk.
++# Relocating such small chunks only need 6 commits for each, thus 12 commits for
++# 2 chunks.
++# Here we use 10x the theoretic value as threshold.
++theoretic_gen=$(( 6 * 2 ))
++threshold_gen=$(( 10 * $theoretic_gen ))
++if [ $(( $after_gen - $before_gen )) -gt 120 ]; then
++	echo "balance committed too many transactions"
++	echo "super generation before balance: ${before_gen}"
++	echo "super generation after balance:  ${after_gen}"
++	echo "super generation difference:     $((after_gen - before_gen))"
++	echo "theoretic generation difference: ${theoretic_gen}"
++	echo "threshold generation difference: ${threshold_gen}"
++fi
++
++echo "super generation before balance: ${before_gen}" >> $seqres.full
++echo "super generation after balance:  ${after_gen}" >> $seqres.full
++echo "super generation difference:     $((after_gen - before_gen))" >> $seqres.full
++echo "theoretic generation difference: ${theoretic_gen}" >> $seqres.full
++echo "threshold generation difference: ${threshold_gen}" >> $seqres.full
 +
 +# success, all done
++echo "Silence is golden"
++
 +status=0
 +exit
-diff --git a/tests/btrfs/180.out b/tests/btrfs/180.out
+diff --git a/tests/btrfs/181.out b/tests/btrfs/181.out
 new file mode 100644
-index 00000000..17187477
+index 00000000..a5a93be6
 --- /dev/null
-+++ b/tests/btrfs/180.out
-@@ -0,0 +1,3 @@
-+QA output created by 180
-+wrote 536870912/536870912 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++++ b/tests/btrfs/181.out
+@@ -0,0 +1,2 @@
++QA output created by 181
++Silence is golden
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 46dd3c95..03eb62f9 100644
+index 03eb62f9..0db485cb 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -182,3 +182,4 @@
- 177 auto quick swap balance
+@@ -183,3 +183,4 @@
  178 auto quick send
  179 auto qgroup dangerous
-+180 auto quick qgroup limit
+ 180 auto quick qgroup limit
++181 auto quick balance
 -- 
 2.18.0
 

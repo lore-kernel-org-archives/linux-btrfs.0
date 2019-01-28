@@ -4,48 +4,46 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+	SPF_PASS,USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 01347C282CF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jan 2019 17:39:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 66C34C282CF
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jan 2019 17:39:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C33D62147A
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jan 2019 17:39:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2D3102147A
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jan 2019 17:39:52 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1548697188;
-	bh=G9G4MRo0jcjHDoaE5InwXDCT90yr9HlgL/nc7BX8xf0=;
+	s=default; t=1548697192;
+	bh=L72q0sXFpHqz3P0a9KMLYZwWjigbUy86A70gzUvyUb0=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=1PNBCoFPYn5/6A/1LHMVK6KrdRRGocrXaH8tL4L4VzwUaG/1n6K2zE0V3VJ4D+mdp
-	 CQlgWQY9ScM59df3ryd7/Nm3LxC/DahvhaUVE7d2QLwLx27b3B7Eb4YfiWyoZitgaw
-	 LvFfwOViYW7/dIUBpFOGaxtvdahMKemzmjk3btJI=
+	b=YtXcyiffQvZHok3xB9RXfMJx5A2fPn+7sbLwlb+t82/l4e9A2y7k1YkhVVCRwimZK
+	 4zLfRkZNT2HeR+pLzjxG4PCrWOmot0kKj4zuT1xBt1UjP9fzYe7aixFpPjUlIzCsVc
+	 vQxmuIc2z0jtI+WyQ+bGqqGHkIxeQQtxCIIbe26w=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729403AbfA1PxH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1729392AbfA1PxH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Mon, 28 Jan 2019 10:53:07 -0500
-Received: from mail.kernel.org ([198.145.29.99]:39498 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.99]:39532 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727128AbfA1PxE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Jan 2019 10:53:04 -0500
+        id S1727444AbfA1PxH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 28 Jan 2019 10:53:07 -0500
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 9C55B2175B;
-        Mon, 28 Jan 2019 15:53:01 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 7B35720880;
+        Mon, 28 Jan 2019 15:53:04 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1548690783;
-        bh=G9G4MRo0jcjHDoaE5InwXDCT90yr9HlgL/nc7BX8xf0=;
+        s=default; t=1548690786;
+        bh=L72q0sXFpHqz3P0a9KMLYZwWjigbUy86A70gzUvyUb0=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=Q00KulP/yGVniBH3bq8h5vLRQHGQ69RlQOzYos4J5BDKYVO4XUNwecOtC17eYjp1Y
-         UWBhtEqmcbyGaQUq/FUvqzX9UC76f7LBNMs+56RbBygKO+eqy+8uPbZTRgC1iO7rXp
-         ypdMwQpJDyKWTxnVBqHulZ7GjjpHA+GmJh7iV4WU=
+        b=KvEWkDn6AlSqnnOiuAfuQ4qXT+5ZWR5TnmrC4kIrX/BNMeHyabkJMNEhd9edkI8vb
+         ueGRVpCbQkOUpQJhuq7UsYzbmOMqDCytD0oqGvlQJMZr7gQT8C39AoMAqE6l+hNc2Q
+         58sN9FdzmZxx53Ot8vwz+Q1IZVjy/MeO9Up3xEMw=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Anand Jain <anand.jain@oracle.com>,
-        David Sterba <dsterba@suse.com>,
-        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.20 191/304] btrfs: harden agaist duplicate fsid on scanned devices
-Date:   Mon, 28 Jan 2019 10:41:48 -0500
-Message-Id: <20190128154341.47195-191-sashal@kernel.org>
+Cc:     David Sterba <dsterba@suse.com>, Sasha Levin <sashal@kernel.org>,
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 4.20 192/304] btrfs: reada: reorder dev-replace locks before radix tree preload
+Date:   Mon, 28 Jan 2019 10:41:49 -0500
+Message-Id: <20190128154341.47195-192-sashal@kernel.org>
 X-Mailer: git-send-email 2.19.1
 In-Reply-To: <20190128154341.47195-1-sashal@kernel.org>
 References: <20190128154341.47195-1-sashal@kernel.org>
@@ -57,116 +55,62 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Anand Jain <anand.jain@oracle.com>
+From: David Sterba <dsterba@suse.com>
 
-[ Upstream commit a9261d4125c97ce8624e9941b75dee1b43ad5df9 ]
+[ Upstream commit ceb21a8db48559fd0809e03c4df9eb37743d9170 ]
 
-It's not that impossible to imagine that a device OR a btrfs image is
-copied just by using the dd or the cp command. Which in case both the
-copies of the btrfs will have the same fsid. If on the system with
-automount enabled, the copied FS gets scanned.
+The device-replace read lock is going to use rw semaphore in followup
+commits. The semaphore might sleep which is not possible in the radix
+tree preload section. The lock nesting is now:
 
-We have a known bug in btrfs, that we let the device path be changed
-after the device has been mounted. So using this loop hole the new
-copied device would appears as if its mounted immediately after it's
-been copied.
+* device replace
+  * radix tree preload
+    * readahead spinlock
 
-For example:
-
-Initially.. /dev/mmcblk0p4 is mounted as /
-
-  $ lsblk
-  NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
-  mmcblk0     179:0    0 29.2G  0 disk
-  |-mmcblk0p4 179:4    0    4G  0 part /
-  |-mmcblk0p2 179:2    0  500M  0 part /boot
-  |-mmcblk0p3 179:3    0  256M  0 part [SWAP]
-  `-mmcblk0p1 179:1    0  256M  0 part /boot/efi
-
-  $ btrfs fi show
-     Label: none  uuid: 07892354-ddaa-4443-90ea-f76a06accaba
-     Total devices 1 FS bytes used 1.40GiB
-     devid    1 size 4.00GiB used 3.00GiB path /dev/mmcblk0p4
-
-Copy mmcblk0 to sda
-
-  $ dd if=/dev/mmcblk0 of=/dev/sda
-
-And immediately after the copy completes the change in the device
-superblock is notified which the automount scans using btrfs device scan
-and the new device sda becomes the mounted root device.
-
-  $ lsblk
-  NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
-  sda           8:0    1 14.9G  0 disk
-  |-sda4        8:4    1    4G  0 part /
-  |-sda2        8:2    1  500M  0 part
-  |-sda3        8:3    1  256M  0 part
-  `-sda1        8:1    1  256M  0 part
-  mmcblk0     179:0    0 29.2G  0 disk
-  |-mmcblk0p4 179:4    0    4G  0 part
-  |-mmcblk0p2 179:2    0  500M  0 part /boot
-  |-mmcblk0p3 179:3    0  256M  0 part [SWAP]
-  `-mmcblk0p1 179:1    0  256M  0 part /boot/efi
-
-  $ btrfs fi show /
-    Label: none  uuid: 07892354-ddaa-4443-90ea-f76a06accaba
-    Total devices 1 FS bytes used 1.40GiB
-    devid    1 size 4.00GiB used 3.00GiB path /dev/sda4
-
-The bug is quite nasty that you can't either unmount /dev/sda4 or
-/dev/mmcblk0p4. And the problem does not get solved until you take sda
-out of the system on to another system to change its fsid using the
-'btrfstune -u' command.
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/volumes.c | 29 +++++++++++++++++++++++++++++
- 1 file changed, 29 insertions(+)
+ fs/btrfs/reada.c | 12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index ea5fa9df9405..6f09f6032db3 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -850,6 +850,35 @@ static noinline struct btrfs_device *device_list_add(const char *path,
- 			return ERR_PTR(-EEXIST);
- 		}
+diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
+index dec14b739b10..6f81f3e88b6d 100644
+--- a/fs/btrfs/reada.c
++++ b/fs/btrfs/reada.c
+@@ -376,26 +376,28 @@ static struct reada_extent *reada_find_extent(struct btrfs_fs_info *fs_info,
+ 		goto error;
+ 	}
  
-+		/*
-+		 * We are going to replace the device path for a given devid,
-+		 * make sure it's the same device if the device is mounted
-+		 */
-+		if (device->bdev) {
-+			struct block_device *path_bdev;
-+
-+			path_bdev = lookup_bdev(path);
-+			if (IS_ERR(path_bdev)) {
-+				mutex_unlock(&fs_devices->device_list_mutex);
-+				return ERR_CAST(path_bdev);
-+			}
-+
-+			if (device->bdev != path_bdev) {
-+				bdput(path_bdev);
-+				mutex_unlock(&fs_devices->device_list_mutex);
-+				btrfs_warn_in_rcu(device->fs_info,
-+			"duplicate device fsid:devid for %pU:%llu old:%s new:%s",
-+					disk_super->fsid, devid,
-+					rcu_str_deref(device->name), path);
-+				return ERR_PTR(-EEXIST);
-+			}
-+			bdput(path_bdev);
-+			btrfs_info_in_rcu(device->fs_info,
-+				"device fsid %pU devid %llu moved old:%s new:%s",
-+				disk_super->fsid, devid,
-+				rcu_str_deref(device->name), path);
-+		}
-+
- 		name = rcu_string_strdup(path, GFP_NOFS);
- 		if (!name) {
- 			mutex_unlock(&fs_devices->device_list_mutex);
++	/* Insert extent in reada tree + all per-device trees, all or nothing */
++	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
+ 	ret = radix_tree_preload(GFP_KERNEL);
+-	if (ret)
++	if (ret) {
++		btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
+ 		goto error;
++	}
+ 
+-	/* insert extent in reada_tree + all per-device trees, all or nothing */
+-	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
+ 	spin_lock(&fs_info->reada_lock);
+ 	ret = radix_tree_insert(&fs_info->reada_tree, index, re);
+ 	if (ret == -EEXIST) {
+ 		re_exist = radix_tree_lookup(&fs_info->reada_tree, index);
+ 		re_exist->refcnt++;
+ 		spin_unlock(&fs_info->reada_lock);
+-		btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
+ 		radix_tree_preload_end();
++		btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
+ 		goto error;
+ 	}
+ 	if (ret) {
+ 		spin_unlock(&fs_info->reada_lock);
+-		btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
+ 		radix_tree_preload_end();
++		btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
+ 		goto error;
+ 	}
+ 	radix_tree_preload_end();
 -- 
 2.19.1
 

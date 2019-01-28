@@ -2,115 +2,59 @@ Return-Path: <SRS0=GbvB=QE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 66C34C282CF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jan 2019 17:39:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B640EC282C8
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jan 2019 18:16:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2D3102147A
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jan 2019 17:39:52 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1548697192;
-	bh=L72q0sXFpHqz3P0a9KMLYZwWjigbUy86A70gzUvyUb0=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=YtXcyiffQvZHok3xB9RXfMJx5A2fPn+7sbLwlb+t82/l4e9A2y7k1YkhVVCRwimZK
-	 4zLfRkZNT2HeR+pLzjxG4PCrWOmot0kKj4zuT1xBt1UjP9fzYe7aixFpPjUlIzCsVc
-	 vQxmuIc2z0jtI+WyQ+bGqqGHkIxeQQtxCIIbe26w=
+	by mail.kernel.org (Postfix) with ESMTP id 8D83220882
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jan 2019 18:16:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729392AbfA1PxH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 28 Jan 2019 10:53:07 -0500
-Received: from mail.kernel.org ([198.145.29.99]:39532 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727444AbfA1PxH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Jan 2019 10:53:07 -0500
-Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 7B35720880;
-        Mon, 28 Jan 2019 15:53:04 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1548690786;
-        bh=L72q0sXFpHqz3P0a9KMLYZwWjigbUy86A70gzUvyUb0=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=KvEWkDn6AlSqnnOiuAfuQ4qXT+5ZWR5TnmrC4kIrX/BNMeHyabkJMNEhd9edkI8vb
-         ueGRVpCbQkOUpQJhuq7UsYzbmOMqDCytD0oqGvlQJMZr7gQT8C39AoMAqE6l+hNc2Q
-         58sN9FdzmZxx53Ot8vwz+Q1IZVjy/MeO9Up3xEMw=
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     David Sterba <dsterba@suse.com>, Sasha Levin <sashal@kernel.org>,
+        id S1727051AbfA1SQY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 28 Jan 2019 13:16:24 -0500
+Received: from mx2.suse.de ([195.135.220.15]:51676 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726995AbfA1SQY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 28 Jan 2019 13:16:24 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id F267DAF9B
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Jan 2019 18:16:22 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 5775CDA78C; Mon, 28 Jan 2019 19:15:44 +0100 (CET)
+Date:   Mon, 28 Jan 2019 19:15:43 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [Patch v5 0/7] btrfs: qgroup: Delay subtree scan to reduce
+ overhead
+Message-ID: <20190128181543.GI2900@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.20 192/304] btrfs: reada: reorder dev-replace locks before radix tree preload
-Date:   Mon, 28 Jan 2019 10:41:49 -0500
-Message-Id: <20190128154341.47195-192-sashal@kernel.org>
-X-Mailer: git-send-email 2.19.1
-In-Reply-To: <20190128154341.47195-1-sashal@kernel.org>
-References: <20190128154341.47195-1-sashal@kernel.org>
+References: <20190123071518.2528-1-wqu@suse.com>
 MIME-Version: 1.0
-X-Patchwork-Hint: Ignore
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190123071518.2528-1-wqu@suse.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: David Sterba <dsterba@suse.com>
+On Wed, Jan 23, 2019 at 03:15:11PM +0800, Qu Wenruo wrote:
+> Qu Wenruo (6):
+>   btrfs: relocation: Delay reloc tree deletion after merge_reloc_roots()
+>   btrfs: qgroup: Refactor btrfs_qgroup_trace_subtree_swap()
+>   btrfs: qgroup: Introduce per-root swapped blocks infrastructure
+>   btrfs: qgroup: Use delayed subtree rescan for balance
+>   btrfs: qgroup: Cleanup old subtree swap code
 
-[ Upstream commit ceb21a8db48559fd0809e03c4df9eb37743d9170 ]
+The above patches have been merged to misc-next, with a few small
+updates to changelogs, comments or coding style that I found during the
+last pass. Any updates please send as incremental patches, thanks.
 
-The device-replace read lock is going to use rw semaphore in followup
-commits. The semaphore might sleep which is not possible in the radix
-tree preload section. The lock nesting is now:
-
-* device replace
-  * radix tree preload
-    * readahead spinlock
-
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/reada.c | 12 +++++++-----
- 1 file changed, 7 insertions(+), 5 deletions(-)
-
-diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-index dec14b739b10..6f81f3e88b6d 100644
---- a/fs/btrfs/reada.c
-+++ b/fs/btrfs/reada.c
-@@ -376,26 +376,28 @@ static struct reada_extent *reada_find_extent(struct btrfs_fs_info *fs_info,
- 		goto error;
- 	}
- 
-+	/* Insert extent in reada tree + all per-device trees, all or nothing */
-+	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
- 	ret = radix_tree_preload(GFP_KERNEL);
--	if (ret)
-+	if (ret) {
-+		btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
- 		goto error;
-+	}
- 
--	/* insert extent in reada_tree + all per-device trees, all or nothing */
--	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
- 	spin_lock(&fs_info->reada_lock);
- 	ret = radix_tree_insert(&fs_info->reada_tree, index, re);
- 	if (ret == -EEXIST) {
- 		re_exist = radix_tree_lookup(&fs_info->reada_tree, index);
- 		re_exist->refcnt++;
- 		spin_unlock(&fs_info->reada_lock);
--		btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
- 		radix_tree_preload_end();
-+		btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
- 		goto error;
- 	}
- 	if (ret) {
- 		spin_unlock(&fs_info->reada_lock);
--		btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
- 		radix_tree_preload_end();
-+		btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
- 		goto error;
- 	}
- 	radix_tree_preload_end();
--- 
-2.19.1
-
+I've folded the IS_ERR/PTR_ERR(subvol_eb) fix too.

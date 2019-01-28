@@ -1,119 +1,169 @@
-Return-Path: <SRS0=hMu+=QD=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=GbvB=QE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+X-Spam-Status: No, score=-1.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 24EFBC282CA
-	for <linux-btrfs@archiver.kernel.org>; Sun, 27 Jan 2019 13:05:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 411FEC282CA
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jan 2019 00:52:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E7760214C6
-	for <linux-btrfs@archiver.kernel.org>; Sun, 27 Jan 2019 13:05:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1156E20880
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jan 2019 00:52:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726511AbfA0M7Z (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 27 Jan 2019 07:59:25 -0500
-Received: from mx2.suse.de ([195.135.220.15]:42880 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726453AbfA0M7Z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 27 Jan 2019 07:59:25 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 4AC3DAC32;
-        Sun, 27 Jan 2019 12:59:23 +0000 (UTC)
-Subject: Re: [PATCH] btrfs: oops in device_list_add()
-To:     Al Viro <viro@zeniv.linux.org.uk>, linux-btrfs@vger.kernel.org
-References: <20190127045755.GH2217@ZenIV.linux.org.uk>
-From:   Nikolay Borisov <nborisov@suse.com>
+        id S1726566AbfA1Awg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 27 Jan 2019 19:52:36 -0500
+Received: from mout.gmx.net ([212.227.15.15]:49059 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726520AbfA1Awf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 27 Jan 2019 19:52:35 -0500
+Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx001
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0M7pDs-1h9yHg1DNI-00vMep; Mon, 28
+ Jan 2019 01:52:33 +0100
+Subject: Re: RAID56 Warning on "multiple serious data-loss bugs"
+To:     DanglingPointer <danglingpointerexception@gmail.com>,
+        linux-btrfs@vger.kernel.org
+References: <5d7f63b2-d340-7c3a-679b-26e97ac258a6@gmail.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <9ac3e2ca-72ad-0812-3dff-4a8057ea2b75@suse.com>
-Date:   Sun, 27 Jan 2019 14:59:21 +0200
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <59a60289-1130-27b4-960b-9014fc8d68e8@gmx.com>
+Date:   Mon, 28 Jan 2019 08:52:29 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+ Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <20190127045755.GH2217@ZenIV.linux.org.uk>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <5d7f63b2-d340-7c3a-679b-26e97ac258a6@gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="FxsVs7vomKvRsvFQWJsTzRfetOaZ0jUyz"
+X-Provags-ID: V03:K1:Rrx8A363mOkVLfjlqezewG1EG+EBK4+RpLDARppl3BLkmsAakTB
+ bhI5xrK/8aJ7W7JF8EqXDlU7+1/0CeMs4HkolJMEJs6rF8p5lBgVwrRc4V4eL9ARpU561Ck
+ 9I3Wq9bllrMzTeHE4ek3iYJXqTyPrMU5SqAsCgMTmRuvkxCFBTvd4sR8wFOHmeJxy0lsThI
+ RZ7znCv11FI19ewsYCysQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:nLS20B4RMoE=:3/QxIrLjfsYorXm4FdNERg
+ OL2JTpm/c8NaPWLl2XfpSoC+ziu0wJvrUzsk/lq1582ZQ3vZLg2hVW6HjoWrPnlMKF4zS1xOf
+ rnXZIfRMN6HtMe5+0obpu3VfnP/N4xVQ/vMBxAZlvjiUeZJZA7ThdxtUkOhB8JOhKdyvuKGWZ
+ I6UxinHj9CAyt3W3B64uhUTt7NRiawgwT2/QaHLCjtpYPTROGGiE50w6uFjSNt39WPh4DRNO6
+ 516P1Eupe3MW8hinqrh34YggpquFV4cBsNXvhLZpYyKg1Bgnz7i5+4wPikIL0VGJ6BITsNnz3
+ 7KpE+EJ8fIoSvvx7+OPUxQEtf1m7/SyN/mvsjOU0pmLi5E9ExjYMQ2f4bWCA07E+0+mJFy/a7
+ hdsNPCOyCo6WDgq2q7GrenMZOkIHYo5oreLGo9yFfFjkquh5fjjMNCQVg+EEWhxIj+45aQOpA
+ SM2i5FRbJT3xbjHr+V5e8x3/N936KjQjng9d9CQshXiQbNEqqnWpM4vA/EbA5ZTUglgAXvWPu
+ eWaG+24L8HCg025HZ/up07JzKEOAV+lq4ag75VF8PPxaGG4JBB7aWPYN8EhMa4TdS4E/nA21m
+ iu9vaP9LGiJek3s7Prz40CYA9xYvtU5QP5z3KlJnrjOU9/VVUpsY/WNeuYTi5y1kJkcd7dy4C
+ EYBF9VPm/GBsmXlgOODAjRezr2AAd99qNutSerIilxA6DK1Rvf5WYDspmU7p+U6iDtDk+btgk
+ Fw0Ltku+znnvvWxuX7L7L3R24PBpn89I1P2u0w+ovnV/clLXs1cuYqdhom2MkT7dFL0nTG1AU
+ F8aU/ELv6jWKzlGit7zUBeNoAfSC+m93mww0PqVlLVfIg/0LTlijFkdPJQEEjf8LcpiKsXJmk
+ YTq90l5vd7QSBAaw/3LDTwh2cja6rvbgOjI9qWfz1QdfR3v19Acqi6+BpJ0NhC
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--FxsVs7vomKvRsvFQWJsTzRfetOaZ0jUyz
+Content-Type: multipart/mixed; boundary="VRfKD5OZN0hoARZ3l23kmBT5EoMdpNXWI";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: DanglingPointer <danglingpointerexception@gmail.com>,
+ linux-btrfs@vger.kernel.org
+Message-ID: <59a60289-1130-27b4-960b-9014fc8d68e8@gmx.com>
+Subject: Re: RAID56 Warning on "multiple serious data-loss bugs"
+References: <5d7f63b2-d340-7c3a-679b-26e97ac258a6@gmail.com>
+In-Reply-To: <5d7f63b2-d340-7c3a-679b-26e97ac258a6@gmail.com>
+
+--VRfKD5OZN0hoARZ3l23kmBT5EoMdpNXWI
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-On 27.01.19 г. 6:58 ч., Al Viro wrote:
-> 	alloc_fs_devices() can return ERR_PTR(-ENOMEM), so
-> dereferencing its result before the check for IS_ERR() is
-> a bad idea...
-> 
-> Fixes: d1a63002829a4
-> Signed-off-by: Al Viro <viro@zeniv.linux.org.uk>
 
-Thought this was already fixed, doh...
+On 2019/1/26 =E4=B8=8B=E5=8D=887:45, DanglingPointer wrote:
+>=20
+>=20
+> Hi All,
+>=20
+> For clarity for the masses, what are the "multiple serious data-loss
+> bugs" as mentioned in the btrfs wiki?
+> The bullet points on this page:
+> https://btrfs.wiki.kernel.org/index.php/RAID56
+> don't enumerate the bugs.=C2=A0 Not even in a high level.=C2=A0 If anyt=
+hing what
+> can be closest to a bug or issue or "resilience use-case missing" would=
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+> be the first point on that page.
+>=20
+> "Parity may be inconsistent after a crash (the "write hole"). The
+> problem born when after "an unclean shutdown" a disk failure happens.
+> But these are *two* distinct failures. These together break the BTRFS
+> raid5 redundancy. If you run a scrub process after "an unclean shutdown=
+"
+> (with no disk failure in between) those data which match their checksum=
 
-> ---
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 85149f27644d..72adc5643bde 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -955,11 +955,11 @@ static noinline struct btrfs_device *device_list_add(const char *path,
->  		else
->  			fs_devices = alloc_fs_devices(disk_super->fsid, NULL);
->  
-> -		fs_devices->fsid_change = fsid_change_in_progress;
-> -
->  		if (IS_ERR(fs_devices))
->  			return ERR_CAST(fs_devices);
->  
-> +		fs_devices->fsid_change = fsid_change_in_progress;
-> +
->  		mutex_lock(&fs_devices->device_list_mutex);
->  		list_add(&fs_devices->fs_list, &fs_uuids);
->  
-> 
+> can still be read out while the mismatched data are lost forever."
+>=20
+> So in a nutshell; "What are the multiple serious data-loss bugs?".
+
+There used to be two, like scrub racing (minor), and screwing up good
+copy when doing recovery (major).
+
+Although these two should already be fixed.
+
+So for current upstream kernel, there should be no major problem despite
+write hole.
+
+Thanks,
+Qu
+
+> If
+> there aren't any, perhaps updating the wiki should be considered for
+> something less the "dramatic" .
+>=20
+>=20
+>=20
+
+
+--VRfKD5OZN0hoARZ3l23kmBT5EoMdpNXWI--
+
+--FxsVs7vomKvRsvFQWJsTzRfetOaZ0jUyz
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxOUk0ACgkQwj2R86El
+/qj5sQgAqoCN+MLzSTRdCxoxQdXnL1bJk35+OdSu/Y4jUr/S5IJ5IDcaGqLUJmZc
+jLrNqbIMYL8MmXZ+e0+UoqfdeZ4JBMuJaPfj7grUVdLtb4Dl6dBuLoWkfwJ8BB1h
+RsvrgBThAnVvqbsomhamwcPshscFyIi3OKuNSMJpRdn3lIvQ7yBppm1S5WTzw/f5
+1dsyTigkcyqSgsAZ3BuS9sXf9r22Ac8w/zyVoPZv5e9q8uUa18Y8MRGHk0Xwd2B8
+bhP14u7cIrhCnAbvBgcp2K2HK9cTUajzIvOPmaeqtyj9aUiqyvEjyFIOU/DDqdpb
+TQP6tkMp2++ttKeKNegr3xOxM4uKew==
+=XxR9
+-----END PGP SIGNATURE-----
+
+--FxsVs7vomKvRsvFQWJsTzRfetOaZ0jUyz--

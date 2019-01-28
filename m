@@ -3,137 +3,193 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6B4E8C282CD
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jan 2019 22:07:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 68D11C282CD
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jan 2019 22:52:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 370962175B
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jan 2019 22:07:51 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 11B2F2175B
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jan 2019 22:52:17 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="OfUZgDrh"
+	dkim=pass (2048-bit key) header.d=georgianit.com header.i=@georgianit.com header.b="C8xelVif";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="vOW+VBuB"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727967AbfA1WHu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 28 Jan 2019 17:07:50 -0500
-Received: from mail-pl1-f194.google.com ([209.85.214.194]:44563 "EHLO
-        mail-pl1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726766AbfA1WHu (ORCPT
+        id S1726713AbfA1WwQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 28 Jan 2019 17:52:16 -0500
+Received: from out5-smtp.messagingengine.com ([66.111.4.29]:33741 "EHLO
+        out5-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726678AbfA1WwP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Jan 2019 17:07:50 -0500
-Received: by mail-pl1-f194.google.com with SMTP id e11so8353629plt.11
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Jan 2019 14:07:49 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=subject:to:references:from:message-id:date:user-agent:mime-version
-         :in-reply-to:content-transfer-encoding:content-language;
-        bh=tIV35eEoJbKztnGy1QELF47nhcJq/ISDswi9X2drePg=;
-        b=OfUZgDrhY1opiRkcuPXZrxE49R6BMXIupw5OCVfniMRs92+YSSGEKFaxJvG3tjpQUs
-         qE8fXoVLKQ8yxZLwVBrL3nEIeIrtnaA2AOEV5IZT0+q3+qFJSUWprADZXkBH84SV1/sO
-         UosdxJqH+c7guBN/yBw9LfZ9oZh56fhXhSnBsxpSlu3p/VHoujMPDexHoovmKBWjtzQx
-         e/SRg2hSeTZLI7AvYNXhytRZY3qy0V0IBhf5D0Cl/1Ru0yHA9y1OocRQcHMFt3X7hVT6
-         F3ztmlUNCq2U5d9kF5+gcN5e8OierpjAYqzQSFQ4sCxyz1ZShxXdTuuAZasXn9t1rP3c
-         k2mA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-transfer-encoding
-         :content-language;
-        bh=tIV35eEoJbKztnGy1QELF47nhcJq/ISDswi9X2drePg=;
-        b=ozbKKa2j/5kb5UCx7XHdNbu0EVJec21gSSjZ4GvhbaAF7i3Kawculq5DxZ9A+Z9Mou
-         /zEdU4KwOts9+61p9JL8OnKD+SZBPdYwbbpBwSh2EfTGlKc/5JxBBX2TZpI4o9ntw1bg
-         loWfZLzSKgEk7QT20sM0QCrGCvh+KylqE/lUaf7YuCreKtw9tR2PXN4OZAmQS2eShnaJ
-         ZUl4+LYKaEDoUbse+ZIpV6uodkG5v7RFOvskiaWNe9UsbHJPDYBr4Fkh43B1f/mnUSgW
-         1uPDc3pv69hljcLdCkxPi975ZNpBBEtusrY2gpK9/17BvaPOI+znHfP8oPyedT+5+ZID
-         3Bpg==
-X-Gm-Message-State: AJcUukcrX8sIavTlFFaNlp9xpmOoAEEOGT+faftR6VX3sJcwcU50FSmB
-        SwGUmHUpcv9wqvRwjqKB6U3h7TN2
-X-Google-Smtp-Source: ALg8bN76TsBf3lKhUd5/9hnsodywrpJHqnihF24l9bU+eLrTo7lDu4l8m6U8u3PqWDMmaCINlcAXUg==
-X-Received: by 2002:a17:902:b18b:: with SMTP id s11mr23334565plr.56.1548713268976;
-        Mon, 28 Jan 2019 14:07:48 -0800 (PST)
-Received: from [192.168.178.53] (14-201-16-168.static.tpgi.com.au. [14.201.16.168])
-        by smtp.gmail.com with ESMTPSA id i193sm96461651pgc.22.2019.01.28.14.07.46
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Mon, 28 Jan 2019 14:07:48 -0800 (PST)
+        Mon, 28 Jan 2019 17:52:15 -0500
+Received: from compute2.internal (compute2.nyi.internal [10.202.2.42])
+        by mailout.nyi.internal (Postfix) with ESMTP id ADE9C22E09;
+        Mon, 28 Jan 2019 17:52:14 -0500 (EST)
+Received: from mailfrontend2 ([10.202.2.163])
+  by compute2.internal (MEProxy); Mon, 28 Jan 2019 17:52:14 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=georgianit.com;
+         h=subject:to:references:from:message-id:date:mime-version
+        :in-reply-to:content-type; s=fm2; bh=BGuQU72jZ41nY4MW3965KaEVtnW
+        /mgTWhgvGO6bRRYA=; b=C8xelVifweuT13d97fGcko+wXfhzwpyF6Dp1Ny9/XU5
+        XNGKaNr1tmVlmxTtaysqyrgHjcNTWZlr5p+OBpGOvLsH5t8m67gsVWA3fC2FUAaG
+        WQ0iRGI3JK9xGUvPvGK3f9lvPzGqCIXnmfbN6l4dYl+QDDqfRX07SwRjPCy380CO
+        2K7wYxESruOi1hWbhzQNVWH5SzQcP6mRtYVE69THM8abpucFUVNklo97/zG/QSCM
+        7/Fp0EaUVHxhRY2GorfP+uGKVU4t5dzGoda5wZ69i494r72FeGX9CpzyH2u0wpiP
+        grvpODWaWcFYc8glyNQ0IO5V3aEkIlk8hhTFq5eNi+Q==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=content-type:date:from:in-reply-to
+        :message-id:mime-version:references:subject:to:x-me-proxy
+        :x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; bh=BGuQU7
+        2jZ41nY4MW3965KaEVtnW/mgTWhgvGO6bRRYA=; b=vOW+VBuBLqCQL8wuJpQ9D6
+        ZnOuF/9IqkXBcn4FjIqwNDy5VOY0q9Dz4EcT8c6B1CaO1+Fo37F1DsXJXbtdKfv/
+        sfoLPxRKpSMYzDcy+m6zFs6gMDaPe6yI/zxjBQxO0/lUt1p172KXzzNhjOejg2ZD
+        8DiO6t9z5R8qMXnOnuO5Y91gNu1hZwazOB1fcJk6GWVaslqXO7RP6Fl/4Q/W90Wr
+        VGc1h5YKhgTRieiYwegTQLvv64nbThXbhjfKkNlcje4lFg/XVPjEesMeaLggsIze
+        RK2OR0NINfkusIc+gGOr2A9us1m2Q4iQzvXQJuU15mrl9+HqvqN7HlS+cUjLR2FQ
+        ==
+X-ME-Sender: <xms:nodPXGswIIeWZLTF0aHTQ6O7-9_2Vb0uurJhL2iN-LWz2LK64FuIeA>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedtledrjedugddtfecutefuodetggdotefrodftvf
+    curfhrohhfihhlvgemucfhrghsthforghilhdpqfhuthenuceurghilhhouhhtmecufedt
+    tdenucenucfjughrpefuvfhfhffkffgfgggjtgesghdtrefotdefjeenucfhrhhomheptf
+    gvmhhiucfirghuvhhinhcuoehrvghmihesghgvohhrghhirghnihhtrdgtohhmqeenucfk
+    phepudefhedrvdefrddvgeeirddufedunecurfgrrhgrmhepmhgrihhlfhhrohhmpehrvg
+    hmihesghgvohhrghhirghnihhtrdgtohhmnecuvehluhhsthgvrhfuihiivgeptd
+X-ME-Proxy: <xmx:nodPXDrQSqOunqh9i2Xm4vTFRbVb9zp9Ccjx3U_ectttcTPWY23sEg>
+    <xmx:nodPXNWG4Yh3IgF9MJOWHydsyyd_6x6vyUAAMWvhiKnVAZc_FdfEUg>
+    <xmx:nodPXL1M_ksb53E4yuEX_uzWzRmDCAcpWiI7E0QSAdNTh_uCitUQjA>
+    <xmx:nodPXHtxIFaET9L88VEvm8ddzyRWBtPC2ALAJt1Av8yo5emiVtXCNg>
+Received: from [10.0.0.6] (135-23-246-131.cpe.pppoe.ca [135.23.246.131])
+        by mail.messagingengine.com (Postfix) with ESMTPA id E1A1A100BA;
+        Mon, 28 Jan 2019 17:52:13 -0500 (EST)
 Subject: Re: RAID56 Warning on "multiple serious data-loss bugs"
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+To:     DanglingPointer <danglingpointerexception@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
 References: <5d7f63b2-d340-7c3a-679b-26e97ac258a6@gmail.com>
  <59a60289-1130-27b4-960b-9014fc8d68e8@gmx.com>
-From:   DanglingPointer <danglingpointerexception@gmail.com>
-Message-ID: <a18f2081-cf5d-d914-bb16-dba51c949c30@gmail.com>
-Date:   Tue, 29 Jan 2019 09:07:44 +1100
+ <a18f2081-cf5d-d914-bb16-dba51c949c30@gmail.com>
+From:   Remi Gauvin <remi@georgianit.com>
+Openpgp: url=http://www.georgianit.com/pgp/Remi%20Gauvin%20remi%40georgianit.com%20(0xEF539FF247456A6D)%20pub.asc
+Autocrypt: addr=remi@georgianit.com; prefer-encrypt=mutual;
+ keydata= mQENBFogjcYBCADvI0pxdYyVkEUAIzT6HwYnZ5CAy2czT87Si5mqk4wL4Ulupwfv9TLzaj3R
+ CUgHPNpFsp1n/nKKyOq1ZmE6w5YKx4I8/o9tRl+vjnJr2otfS7XizBaVV7UwziODikOimmT+
+ sGNfYGcjdJ+CC567g9aAECbvnyxNlncTyUPUdmazOKhmzB4IvG8+M2u+C4c9nVkX2ucf3OuF
+ t/qmeRaF8+nlkCMtAdIVh0F7HBYJzvYG3EPiKbGmbOody3OM55113uEzyw39k8WHRhhaKhi6
+ 8QY9nKCPVhRFzk6wUHJa2EKbKxqeFcFzZ1ok7l7vrX3/OBk2dGOAoOJ4UX+ozAtrMqCBABEB
+ AAG0IVJlbWkgR2F1dmluIDxyZW1pQGdlb3JnaWFuaXQuY29tPokBPgQTAQIAKAUCWiCNxgIb
+ IwUJCWYBgAYLCQgHAwIGFQgCCQoLBBYCAwECHgECF4AACgkQ71Of8kdFam2V1Qf9Fs6LSx1i
+ OoVgOzjWwiI06vJrZznjmtbJkcm/Of5onITZnB4h+tbqEyaMYYsEIk1r4oFMfKB7SDpQbADj
+ 9CI2EbpygwZa24Oqv4gWEzb4c7mSJuLKTnrhmwCOtdeDQXO/uu6BZPkazDAaKHUM6XqNEVvt
+ WHBaGioaV4dGxzjXALQDpLc4vDreSl9nwlTorwJR9t6u5BlDcdh3VOuYlgXjI4pCk+cihgtY
+ k3KZo/El1fWFYmtSTq7m/JPpKZyb77cbzf2AbkxJuLgg9o0iVAg81LjElznI0R5UbYrJcJeh
+ Jo4rvXKFYQ1qFwno1jlSXejsFA5F3FQzJe1JUAu2HlYqRrkBDQRaII3GAQgAo0Y6FX84QsDp
+ R8kFEqMhpkjeVQpbwYhqBgIFJT5cBMQpZsHmnOgpYU0Jo8P3owHUFu569g6j4+wSubbh2+bt
+ WL0QoFZcng0a2/j3qH98g9lAn8ZgohxavmwYINt7b+LEeDoBvq0s/0ZeXx47MOmbjROq8L/g
+ QOYbIWoJLO2emyxmVo1Fg00FKkbuCEgJPW8U/7VX4EFYaIhPQv/K3mpnyWXIq5lviiMCHzxE
+ jzBh/35DTLwymDdmtzWgcu1rzZ6j2s+4bTxE8mYXd4l2Xonn7v448gwvQmZJ8EPplO/pWe9F
+ oISyiNxZnQNCVEO9lManKPFphfVHqJ1WEtYMiLxTkQARAQABiQElBBgBAgAPBQJaII3GAhsM
+ BQkJZgGAAAoJEO9Tn/JHRWptnn0H+gOtkumwlKcad2PqLFXCt2SzVJm5rHuYZhPPq4GCdMbz
+ XwuCEPXDoECFVXeiXngJmrL8+tLxvUhxUMdXtyYSPusnmFgj/EnCjQdFMLdvgvXI/wF5qj0/
+ r6NKJWtx3/+OSLW0E9J/gLfimIc3OF49E3S1c35Wj+4Okx9Tpwor7Tw8KwBVbdZA6TyQF08N
+ phFkhgnTK6gl2XqIHaoxPKhI9pKU5oPkg2eI27OICZrpTCppaSh3SGUp0EHPkZuhVfIxg4vF
+ nato30VZr+RMHtPtx813VZ/kzj+2pC/DrwZOtqFeaqJfCi6JSik3vX9BQd9GL4mxytQBZKXz
+ SY9JJa155sI=
+Message-ID: <36be9ca6-4aa0-f00a-c1b4-a59026a1909e@georgianit.com>
+Date:   Mon, 28 Jan 2019 17:52:12 -0500
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.4.0
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <59a60289-1130-27b4-960b-9014fc8d68e8@gmx.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: 8bit
-Content-Language: en-AU
+In-Reply-To: <a18f2081-cf5d-d914-bb16-dba51c949c30@gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="p37UGJ1tmo6xPqd8ewHJ7IQrSlolm7zAo"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Thanks Qu!
-I thought as much from following the mailing list and your great work 
-over the years!
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--p37UGJ1tmo6xPqd8ewHJ7IQrSlolm7zAo
+Content-Type: multipart/mixed; boundary="2zQHlpFtqJsyGUi9fcYZKxCcV2di0LVyl";
+ protected-headers="v1"
+From: Remi Gauvin <remi@georgianit.com>
+To: DanglingPointer <danglingpointerexception@gmail.com>,
+ linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <36be9ca6-4aa0-f00a-c1b4-a59026a1909e@georgianit.com>
+Subject: Re: RAID56 Warning on "multiple serious data-loss bugs"
+References: <5d7f63b2-d340-7c3a-679b-26e97ac258a6@gmail.com>
+ <59a60289-1130-27b4-960b-9014fc8d68e8@gmx.com>
+ <a18f2081-cf5d-d914-bb16-dba51c949c30@gmail.com>
+In-Reply-To: <a18f2081-cf5d-d914-bb16-dba51c949c30@gmail.com>
 
-Would it be possible to get the wiki updated to reflect the current 
-"real" status?
+--2zQHlpFtqJsyGUi9fcYZKxCcV2di0LVyl
+Content-Type: multipart/mixed;
+ boundary="------------15111E03EAA2EA5A11590F16"
+Content-Language: en-US
 
- From Qu's statement and perspective, there's no difference to other 
-non-BTRFS software RAID56's out there that are marked as stable (except 
-ZFS).
-Also there are no "multiple serious data-loss bugs".
-Please do consider my proposal as it will decrease the amount of 
-incorrect paranoia that exists in the community.
-As long as the Wiki properly mentions the current state with the options 
-for mitigation; like backup power and perhaps RAID1 for metadata or 
-anything else you believe as appropriate.
+This is a multi-part message in MIME format.
+--------------15111E03EAA2EA5A11590F16
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+On 2019-01-28 5:07 p.m., DanglingPointer wrote:
+
+> From Qu's statement and perspective, there's no difference to other
+> non-BTRFS software RAID56's out there that are marked as stable (except=
+
+> ZFS).
+> Also there are no "multiple serious data-loss bugs".
+> Please do consider my proposal as it will decrease the amount of
+> incorrect paranoia that exists in the community.
+> As long as the Wiki properly mentions the current state with the option=
+s
+> for mitigation; like backup power and perhaps RAID1 for metadata or
+> anything else you believe as appropriate.
+
+Should implement some way to automatically scrub on unclean shutdown.
+BTRFS is the only (to my knowlege) Raid implementation that will not
+automatically detect an unclean shutdown and fix the affected parity
+blocks, (either by some form of write journal/write intent map, or full
+resync.)
 
 
-Thanks,
 
-DP
+--------------15111E03EAA2EA5A11590F16
+Content-Type: text/x-vcard; charset=utf-8;
+ name="remi.vcf"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: attachment;
+ filename="remi.vcf"
+
+begin:vcard
+fn:Remi Gauvin
+n:Gauvin;Remi
+org:Georgian Infotech
+adr:;;3-51 Sykes St. N.;Meaford;ON;N4L 1X3;Canada
+email;internet:remi@georgianit.com
+tel;work:226-256-1545
+version:2.1
+end:vcard
 
 
-On 28/1/19 11:52 am, Qu Wenruo wrote:
->
-> On 2019/1/26 下午7:45, DanglingPointer wrote:
->>
->> Hi All,
->>
->> For clarity for the masses, what are the "multiple serious data-loss
->> bugs" as mentioned in the btrfs wiki?
->> The bullet points on this page:
->> https://btrfs.wiki.kernel.org/index.php/RAID56
->> don't enumerate the bugs.  Not even in a high level.  If anything what
->> can be closest to a bug or issue or "resilience use-case missing" would
->> be the first point on that page.
->>
->> "Parity may be inconsistent after a crash (the "write hole"). The
->> problem born when after "an unclean shutdown" a disk failure happens.
->> But these are *two* distinct failures. These together break the BTRFS
->> raid5 redundancy. If you run a scrub process after "an unclean shutdown"
->> (with no disk failure in between) those data which match their checksum
->> can still be read out while the mismatched data are lost forever."
->>
->> So in a nutshell; "What are the multiple serious data-loss bugs?".
-> There used to be two, like scrub racing (minor), and screwing up good
-> copy when doing recovery (major).
->
-> Although these two should already be fixed.
->
-> So for current upstream kernel, there should be no major problem despite
-> write hole.
->
-> Thanks,
-> Qu
->
->> If
->> there aren't any, perhaps updating the wiki should be considered for
->> something less the "dramatic" .
->>
->>
->>
+--------------15111E03EAA2EA5A11590F16--
+
+--2zQHlpFtqJsyGUi9fcYZKxCcV2di0LVyl--
+
+--p37UGJ1tmo6xPqd8ewHJ7IQrSlolm7zAo
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQEcBAEBCAAGBQJcT4ecAAoJEO9Tn/JHRWptXasIAKsBEWxQBxR9jht3cCYHhb+L
+SK3vPC0lXtrWeYNrRvvv81MS0Jn590Ub3rQ16DbnWpNjD8iIk/nSk6FmEPZGDSpO
+4Kuv8yYKGoH+8UcU0jYoUwDp17iaIeHhc1lds2Ehuc1kPdYLpXaQPV+3I73VMn2p
+ftjURPJ/EVENG4sTeWxYCF5ZAfe4OPlO0okwk/7TS0WDT7ExklRWnUxxxG+lKH50
+2YbOsUAsOTkfl5PFbh4ew/HVOejDpGQf4AH5uPcw579unX1KEECGk1fAtVWf5gRI
+gmArzz+iSX1544Cvlu9/5scuPJxAt9OQVCVT7OqS5YVcvLssU+cqFTmKyI+I7BE=
+=phcV
+-----END PGP SIGNATURE-----
+
+--p37UGJ1tmo6xPqd8ewHJ7IQrSlolm7zAo--

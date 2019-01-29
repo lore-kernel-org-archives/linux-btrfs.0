@@ -2,151 +2,218 @@ Return-Path: <SRS0=91MX=QF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIMWL_WL_MED,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 09DE4C169C4
-	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Jan 2019 19:55:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8EA6DC169C4
+	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Jan 2019 21:12:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A034C2084C
-	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Jan 2019 19:55:33 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 43FF720881
+	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Jan 2019 21:12:45 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="Al/2TE4h"
+	dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b="RPL0/nwQ";
+	dkim=pass (1024-bit key) header.d=fb.onmicrosoft.com header.i=@fb.onmicrosoft.com header.b="RI726lk2"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729341AbfA2Tzc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 29 Jan 2019 14:55:32 -0500
-Received: from smtp-32.italiaonline.it ([213.209.10.32]:40815 "EHLO libero.it"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726984AbfA2Tzc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 Jan 2019 14:55:32 -0500
-X-Greylist: delayed 488 seconds by postgrey-1.27 at vger.kernel.org; Tue, 29 Jan 2019 14:55:29 EST
-Received: from venice.bhome ([94.38.145.70])
-        by smtp-32.iol.local with ESMTPA
-        id oZLqgOB5kMwWBoZLqg4F79; Tue, 29 Jan 2019 20:47:19 +0100
-x-libjamoibt: 1601
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
-        t=1548791239; bh=JJMolTMS8f1OyGF4DiebjbHo3W/psB6goX8nW2nV1u4=;
-        h=Reply-To:Subject:To:Cc:References:From:Date:In-Reply-To;
-        b=Al/2TE4hgHg4fRH2RSCy2F6QWnjGWNbUACsww0AYbs6YFd+wDhjFEer4A4llJHZ29
-         xK1oORxY0x1mhLQC62uVZht3dMIrjFrxSwfrUq4KrQL5K1SoDyXkQtuGiBihfvwyD3
-         MtXzxzfKHTlepNPYOxKky0KF5baBavzUNveQK7VfeuyNcgGW1NHe8eTsz6XqXraM1V
-         Wx4PXUPKdnaZBompQmubYHccZaJZjjUn6AAAPX2j0forgF4Qj4vIEq6vDP/Mb7Butl
-         qJ6F0i662C8kcG0DDIovne0Klz10t44ozAUqv4kYE+j71WAtMOkDMsiJ6SnVMBkGFk
-         JsfxVLnauEkZg==
-X-CNFS-Analysis: v=2.3 cv=c6h6vi1l c=1 sm=1 tr=0
- a=iMf660l5wNhVPkRQRjbP0g==:117 a=iMf660l5wNhVPkRQRjbP0g==:17
- a=IkcTkHD0fZMA:10 a=4jqkTvAoAAAA:8 a=9r0XvWVT7kJZ7IYm-1MA:9 a=QEXdDO2ut3YA:10
- a=Hh_HAVYRK2TLt7S9I1XE:22
-Reply-To: kreijack@inwind.it
-Subject: Re: RAID56 Warning on "multiple serious data-loss bugs"
-To:     Chris Murphy <lists@colorremedies.com>,
-        Remi Gauvin <remi@georgianit.com>
-Cc:     DanglingPointer <danglingpointerexception@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <5d7f63b2-d340-7c3a-679b-26e97ac258a6@gmail.com>
- <59a60289-1130-27b4-960b-9014fc8d68e8@gmx.com>
- <a18f2081-cf5d-d914-bb16-dba51c949c30@gmail.com>
- <36be9ca6-4aa0-f00a-c1b4-a59026a1909e@georgianit.com>
- <CAJCQCtQ=mGdZ+90uR68hwqFcZaNP8xQwKXkpO395xB+KBXRkxA@mail.gmail.com>
-From:   Goffredo Baroncelli <kreijack@libero.it>
-Openpgp: preference=signencrypt
-Autocrypt: addr=kreijack@libero.it; keydata=
- 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
-Message-ID: <80f46e68-4cda-3a22-385b-0ab0a47b079a@libero.it>
-Date:   Tue, 29 Jan 2019 20:47:17 +0100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.4.0
-MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQ=mGdZ+90uR68hwqFcZaNP8xQwKXkpO395xB+KBXRkxA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+        id S1729242AbfA2VMi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 29 Jan 2019 16:12:38 -0500
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:53118 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1727488AbfA2VMi (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 29 Jan 2019 16:12:38 -0500
+Received: from pps.filterd (m0089730.ppops.net [127.0.0.1])
+        by m0089730.ppops.net (8.16.0.27/8.16.0.27) with SMTP id x0TLBG9G025576;
+        Tue, 29 Jan 2019 13:12:26 -0800
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
+ : date : message-id : references : in-reply-to : content-type : content-id
+ : content-transfer-encoding : mime-version; s=facebook;
+ bh=NvwcP7TdZSXzkC4gRHwV8X4W1fGq6IDrqTFjKRmkDTo=;
+ b=RPL0/nwQNttb6kqnUhAzEpf+7Qh84s+0tNDPZWz6bJ39ENmjVFzPcvuG1s74mBprBcwa
+ FlNk4ZJYfjrZ8D6o64N6y43xVE7SpxXYtAyta8HEYNquPMv+iHCB6nQx0v7NdLFseQGp
+ UcZCGJKVHHJFvrZtssaN7ito+9VSCrt28Jc= 
+Received: from maileast.thefacebook.com ([199.201.65.23])
+        by m0089730.ppops.net with ESMTP id 2qavg00exp-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-SHA384 bits=256 verify=NOT);
+        Tue, 29 Jan 2019 13:12:26 -0800
+Received: from frc-hub02.TheFacebook.com (2620:10d:c021:18::172) by
+ frc-hub03.TheFacebook.com (2620:10d:c021:18::173) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id
+ 15.1.1531.3; Tue, 29 Jan 2019 13:12:24 -0800
+Received: from NAM05-CO1-obe.outbound.protection.outlook.com (192.168.183.28)
+ by o365-in.thefacebook.com (192.168.177.72) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id 15.1.1531.3
+ via Frontend Transport; Tue, 29 Jan 2019 13:12:24 -0800
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.onmicrosoft.com;
+ s=selector1-fb-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=NvwcP7TdZSXzkC4gRHwV8X4W1fGq6IDrqTFjKRmkDTo=;
+ b=RI726lk2aR5nbln5f3MV6sUTxIwiAnfVjxyIs6Oi63X7dm01bMebtzRTuK9Sdm62x1N2HJq/qC4g88Ij7KUWD4zbekNg2AAh1qZSQ8NT5NnU8oy3btOJxjrnPbG+AN8Bsp4ezYRWRPZvKUz3ncN0/7DkkcdxlHSQgXhY/IasrmE=
+Received: from MW2PR1501MB1993.namprd15.prod.outlook.com (52.132.149.157) by
+ MW2SPR01MB0009.namprd15.prod.outlook.com (52.132.185.15) with Microsoft SMTP
+ Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.20.1580.16; Tue, 29 Jan 2019 21:12:23 +0000
+Received: from MW2PR1501MB1993.namprd15.prod.outlook.com
+ ([fe80::65d7:840e:9b19:747d]) by MW2PR1501MB1993.namprd15.prod.outlook.com
+ ([fe80::65d7:840e:9b19:747d%5]) with mapi id 15.20.1558.023; Tue, 29 Jan 2019
+ 21:12:23 +0000
+From:   Nick Terrell <terrelln@fb.com>
+To:     David Sterba <dsterba@suse.cz>
+CC:     Dennis Zhou <dennis@kernel.org>, David Sterba <dsterba@suse.com>,
+        "Josef Bacik" <josef@toxicpanda.com>, Chris Mason <clm@fb.com>,
+        Omar Sandoval <osandov@osandov.com>,
+        Kernel Team <Kernel-team@fb.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Subject: Re: [PATCH 00/11] btrfs: add zstd compression level support
+Thread-Topic: [PATCH 00/11] btrfs: add zstd compression level support
+Thread-Index: AQHUt0/0+Y4AP8N6sEuUaQngOd1KuaXGfq8AgABBVoA=
+Date:   Tue, 29 Jan 2019 21:12:22 +0000
+Message-ID: <0C87F2F4-43E6-482E-9A44-0151DE312AD7@fb.com>
+References: <20190128212437.11597-1-dennis@kernel.org>
+ <20190129171830.GP2900@twin.jikos.cz>
+In-Reply-To: <20190129171830.GP2900@twin.jikos.cz>
+Accept-Language: en-US
 Content-Language: en-US
-Content-Transfer-Encoding: 8bit
-X-CMAE-Envelope: MS4wfC6+q3eRr9gs6dZpsMHbVyipec5v7gGbLh9RkUgMUWnLHQELRK5tfcprJAC8eRzOxwnl1xnzku3tYq0OZypn3MhUjfnMpDeecEkuQTNcktzD5TUbWmJ7
- c7rhsIOtVdKgzVGPxcyvlekCa9eKrocV1aGjsigV50yXqPe9cLcif0owBW/i2D97ADKtx2kuxbNVy9YA/lXF7NYGBjCi2bKkZz84kdOkTgA7/2osFwrJX2Eg
- OFDAkLuIWarzLoUyax5w89fnWsTp6mqvxYq+br7HnHIHrKOfrDotZmdyfAGz2yBY
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+x-originating-ip: [2620:10d:c090:200::5:e138]
+x-ms-publictraffictype: Email
+x-microsoft-exchange-diagnostics: 1;MW2SPR01MB0009;20:DnZwvECOxM6GTdLuojvdUzT9DJFVogMd3jI/RT5s36epfLPsYZNssdCFWbjb+cAezFHGu59Lsfvo1VSFkIZ3eDMBa8jmy4zdd0ZVooLq4uyKnkoZB9sSWELGzCL2d6JHongyzoEVF3JELZ++X72KvAn98jjs+I2KTTc2SGL0PjE=
+x-ms-office365-filtering-correlation-id: 06d2aa86-a2c6-46be-aa34-08d6862e764e
+x-microsoft-antispam: BCL:0;PCL:0;RULEID:(2390118)(7020095)(4652040)(8989299)(4534185)(4627221)(201703031133081)(201702281549075)(8990200)(5600110)(711020)(4605077)(2017052603328)(7153060)(7193020);SRVR:MW2SPR01MB0009;
+x-ms-traffictypediagnostic: MW2SPR01MB0009:
+x-microsoft-antispam-prvs: <MW2SPR01MB0009BC22F10A202F72AA3F15AB970@MW2SPR01MB0009.namprd15.prod.outlook.com>
+x-forefront-prvs: 093290AD39
+x-forefront-antispam-report: SFV:NSPM;SFS:(10019020)(376002)(346002)(136003)(396003)(39860400002)(366004)(199004)(189003)(53546011)(83716004)(6916009)(6506007)(71190400001)(71200400001)(76176011)(99286004)(2906002)(102836004)(97736004)(316002)(2616005)(476003)(6486002)(486006)(11346002)(229853002)(7736002)(305945005)(446003)(6436002)(81156014)(8676002)(81166006)(6512007)(8936002)(68736007)(14454004)(478600001)(36756003)(186003)(86362001)(106356001)(46003)(14444005)(54906003)(6116002)(53936002)(256004)(82746002)(4326008)(105586002)(25786009)(6246003)(33656002);DIR:OUT;SFP:1102;SCL:1;SRVR:MW2SPR01MB0009;H:MW2PR1501MB1993.namprd15.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;A:1;MX:1;
+received-spf: None (protection.outlook.com: fb.com does not designate
+ permitted sender hosts)
+x-ms-exchange-senderadcheck: 1
+x-microsoft-antispam-message-info: gdVrlHB2dSu3yU+cNMsfFayJZF9170nzI5AjB+lrxZN/yT31GikawnUlkZhzJlrkDNr3KdbOA+oVBWeagkpij8H6k+mq8JJNGApd7R/CAdpOcVZCy//uU/92pJABfqQvL81+dW+Hj6Bkvmh7YJONgUcP38lcBmhn1fkudtxVqqEVFMRDWKNBHsPmaPSCS2AI4ZDvPVGH8JTm0wSjOBDpFL1bNrnfUFYmBXIKfymztG3VdtxQ8nlpVryCsOTTuM1PJMCPhScnb0mvf5y5M6aEnMjBu8N7DgFaPwmXBdwGXHTUZIdqJUIzsgZWGu6SiHudyaU2tsBKwSU11VvLZl+VEeEuGKI/6lPWaQRZVLlHdcdSWuV0ZhSNcaZ7k7cXZltjWhC0Lg9mos1fwvn39LNhEVWS0gn/QSTYuHqpaa1YDyw=
+Content-Type: text/plain; charset="us-ascii"
+Content-ID: <5B446B84C3BAAD4381071DFBF625C593@namprd15.prod.outlook.com>
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+X-MS-Exchange-CrossTenant-Network-Message-Id: 06d2aa86-a2c6-46be-aa34-08d6862e764e
+X-MS-Exchange-CrossTenant-originalarrivaltime: 29 Jan 2019 21:12:22.9247
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: 8ae927fe-1255-47a7-a2af-5f3a069daaa2
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: MW2SPR01MB0009
+X-OriginatorOrg: fb.com
+X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10434:,, definitions=2019-01-29_16:,,
+ signatures=0
+X-Proofpoint-Spam-Reason: safe
+X-FB-Internal: Safe
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 29/01/2019 20.02, Chris Murphy wrote:
-> On Mon, Jan 28, 2019 at 3:52 PM Remi Gauvin <remi@georgianit.com> wrote:
->>
->> On 2019-01-28 5:07 p.m., DanglingPointer wrote:
->>
->>> From Qu's statement and perspective, there's no difference to other
->>> non-BTRFS software RAID56's out there that are marked as stable (except
->>> ZFS).
->>> Also there are no "multiple serious data-loss bugs".
->>> Please do consider my proposal as it will decrease the amount of
->>> incorrect paranoia that exists in the community.
->>> As long as the Wiki properly mentions the current state with the options
->>> for mitigation; like backup power and perhaps RAID1 for metadata or
->>> anything else you believe as appropriate.
->>
->> Should implement some way to automatically scrub on unclean shutdown.
->> BTRFS is the only (to my knowlege) Raid implementation that will not
->> automatically detect an unclean shutdown and fix the affected parity
->> blocks, (either by some form of write journal/write intent map, or full
->> resync.)
-> 
-> There's no dirty bit set on mount, and thus no dirty bit to unset on
-> clean mount, from which to infer a dirty unmount if it's present at
-> the next mount.
-
-It would be sufficient to use the log, which BTRFS already has. During each transaction, when an area is touched by a rwm cycle, it has to tracked in the log.
-In case of unclean shutdown, it is already implemented a way to replay the log. So it would be sufficient to track a scrub of these area as "log replay".
-
-Of course I am talking as not a BTRFS developers, so the reality could be more complex: e.g. I don't know how it would be easy to raise a scrub process on per area basis.
-
-BR
-G.Baroncelli
 
 
+> On Jan 29, 2019, at 9:18 AM, David Sterba <dsterba@suse.cz> wrote:
+>=20
+> On Mon, Jan 28, 2019 at 04:24:26PM -0500, Dennis Zhou wrote:
+>> As mentioned above, a requirement that differs zstd from zlib is that
+>> higher levels of compression require more memory. To manage this, each
+>> compression level has its own queue of workspaces. A global LRU is used
+>> to help with reclaim. To guarantee forward progress, a max level
+>> workspace is preallocated and hidden from the LRU.
+>=20
+> Here I'd like to bring up what was mentioned in previous iteration, the
+> workspace sizes.
+>=20
+> Level   Compression Memory
+> 1       0.8 MB
+> 2       1.0 MB
+> 3       1.3 MB
+> 4       0.9 MB
+> 5       1.4 MB
+> 6       1.5 MB
+> 7       1.4 MB
+> 8       1.8 MB
+> 9       1.8 MB
+> 10      1.8 MB
+> 11      1.8 MB
+> 12      1.8 MB
+> 13      2.3 MB
+> 14      2.6 MB
+> 15      2.6 MB
+>=20
+> and decompression needs memory of level 1. The sizes can be grouped
+> together to say 3 sizes, I'm not sure that we'd really need 15 distinct
+> workspaces. The reclaim mechanism helps, but I'd rather keep a smaller
+> number of workspaces that covers average use.
+>=20
+> Default level is 3, that's 1.3 MiB, that also covers level 1, 2 and 4.
+> For 5 to 12 it's 1.8 and the rest is 2.6 MiB.
+>=20
+>> btrfs filesystem 10 times and then read back after dropping the caches.
+>> The btrfs filesystem was on an SSD.
+>>=20
+>> Level   Ratio   Compression (MB/s)  Decompression (MB/s)
+>> 1       2.658        438.47                910.51
+>> 2       2.744        364.86                886.55
+>> 3       2.801        336.33                828.41
+>> 4       2.858        286.71                886.55
+>> 5       2.916        212.77                556.84
+>> 6       2.363        119.82                990.85
+>> 7       3.000        154.06                849.30
+>> 8       3.011        159.54                875.03
+>> 9       3.025        100.51                940.15
+>> 10      3.033        118.97                616.26
+>> 11      3.036         94.19                802.11
+>> 12      3.037         73.45                931.49
+>> 13      3.041         55.17                835.26
+>> 14      3.087         44.70                716.78
+>> 15      3.126         37.30                878.84
+>=20
+> From my casual user's perspective, I'd use the level 1 for speed, 7 for
+> better ratio and 15 for the best compression. Anything else does not
+> look good, though the results would vary based on the data set. I
+> assume that the silesia corpus serves as a good approximation of the
+> worst case average.
+>
+> The levels 7-14 strike particularly obvious pattern: same ratio but the
+> speed gets worse with each level. Taking the default level into account,
+> (my) recommended levels would be 1, 3, 7, 15.
 
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Silesia is used because it is a standard corpus, and I'd call it about aver=
+age,
+but there is a lot of variance and extreme edge case data. The intermediate
+strategies will change in effectiveness on different types of data. For exa=
+mple,
+the lower levels are generally more effective on text, and you want slightl=
+y
+higher levels for non-text data, because they can find shorter matches.
+
+Upstream zstd also shifts around its levels, and the memory usage of each
+level from time-to-time, and I am going to update zstd in the kernel in thi=
+s
+next year, since we are slowing down development. The shifts will be small
+though.
+
+It could make sense to map the levels into size classes, since that could
+reduce memory spikes, at the cost of higher stead-state memory usage.
+I'm not familiar with the machinery used in these patches, so I can't actua=
+lly
+say much. I would probably use levels 1, 3, 7 (after it is made monotonic),
+12, and 15. You might skip 7, but leave 12.
+
+> I went through the patches, looks mostly ok, I don't like the
+> indirections but at the moment it's an implementation detail as I'd like
+> to agree on the overall approach first.
+>=20
+> We might need a few revisions or cleanup rounds to converge to an
+> efficient solution, the advantage here is that it's all in-memory and
+> without compatibility concerns once the level support for zstd is in and
+> works.
+>=20
+> For that reason, I'm not opposed to the current version of the patchset.
+> Given the time in development schedule, it's really close to code
+> freeze, but the functionality has a narrow scope so I'm tentatively
+> counting with it for 5.1.
+

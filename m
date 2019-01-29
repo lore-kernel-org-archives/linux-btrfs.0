@@ -7,115 +7,201 @@ X-Spam-Status: No, score=-8.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_PASS,USER_AGENT_MUTT autolearn=unavailable autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B4574C282C7
-	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Jan 2019 22:43:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6BE0CC169C4
+	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Jan 2019 22:51:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7CA512175B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Jan 2019 22:43:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 295402147A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Jan 2019 22:51:01 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1548801825;
-	bh=HFxu0VFGNX5lKIGQAnvvklfeALH0M4AhEbyocQeNKOM=;
+	s=default; t=1548802261;
+	bh=t74ythkHaPEfDQr6kBkrw9aIN/r/JpkyyZkAWrsmwKk=;
 	h=Date:From:To:Cc:Subject:References:In-Reply-To:List-ID:From;
-	b=iMat6yFFCI3SEujT7OqYmjg8iuQrH0Zw16bAF/SL43NiqGTKuqs0kCiqxoNgvCA8a
-	 nRTGKaiD1y8JgFrNADhFbm/Nyh8eTNAro+VtmFyYPSAZzPJPpq2AwncHYxYJhjWDse
-	 djB+urfmyXagmorctEs0p9lbamnPVVFY05ZnmghM=
+	b=niiTNXhttzm6ssyjLqE1Goz4y7dxTh5M5RUpEN/w1NEq3vobgVtkc3zsaiay/gnMW
+	 NPS1WpWQjA7QZw++sNY9h4LGwBG1q7jbOYQKUKGH1BmTO9Ao1PZp1mYE7x7sWSvJPV
+	 Ak+X6u1qVzvoDDCx6X8BUxSRdgReXZOxsg5iZfX4=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729530AbfA2Wne (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 29 Jan 2019 17:43:34 -0500
-Received: from mail-yw1-f65.google.com ([209.85.161.65]:45490 "EHLO
-        mail-yw1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727332AbfA2Wne (ORCPT
+        id S1729763AbfA2Wuz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 29 Jan 2019 17:50:55 -0500
+Received: from mail-yb1-f194.google.com ([209.85.219.194]:34929 "EHLO
+        mail-yb1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729663AbfA2Wuz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 Jan 2019 17:43:34 -0500
-Received: by mail-yw1-f65.google.com with SMTP id d190so8854970ywd.12;
-        Tue, 29 Jan 2019 14:43:33 -0800 (PST)
+        Tue, 29 Jan 2019 17:50:55 -0500
+Received: by mail-yb1-f194.google.com with SMTP id 64so4458725ybs.2;
+        Tue, 29 Jan 2019 14:50:54 -0800 (PST)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:date:from:to:cc:subject:message-id:references
          :mime-version:content-disposition:content-transfer-encoding
          :in-reply-to:user-agent;
-        bh=fEJbE/ywGzh83Tzyph5e5xJGrSMLJvMydLxy61aXPL8=;
-        b=Ib+bzy3R70eEUbilZmjTRMu/GkUisHTrQISmEuV82TfrIqL4yaxLqwO7v8kVbTUCD0
-         7tQKw0lvaIfg9NnmuUc56tUNkr/UuzIaaQP1WOdXLaxUvrpnfL5hfEpqMmJTQ8mTVSiw
-         ODgAuAnYeBTK1X9PFIS9bK8q87BqjDO3KA7rNsCAoLl5xkn6C91YMMhgmZFc5ZuoQw6Y
-         wD2BXcvaY3opope2gydw5pihDK2lptNwR5P4xZrb1QF+/dxmZ5TGRdShdWXN7kRrhioX
-         +0ZKc9I/gH8xkJ3IMgsoQOY5D4WOM8kRD+6agHZ11+b3zilLzkfKD2M46odhUeB7p7bi
-         e55w==
-X-Gm-Message-State: AJcUukdIKGQ4yNdf0q4ekUp5KEJmJeAGePAe6deXnwc8ysJ7WPHA9JC/
-        BaGClPYHmx3NOPhXrZFkN4M=
-X-Google-Smtp-Source: ALg8bN5z2FBpz3se6uUaNzMZImf5j+//jVqfvS7tPhukQIlW7npmZuraofxJgoJRjy9bteaFfMyvGA==
-X-Received: by 2002:a0d:d586:: with SMTP id x128mr27137899ywd.346.1548801813467;
-        Tue, 29 Jan 2019 14:43:33 -0800 (PST)
+        bh=Bt5uAXlGEh+xbxNa64Wd7TBVok43VzmctHEcR2md1oo=;
+        b=AYgQnxy4MN1Fx4mVIC87F+8CwJSP14bQqx6y3ypiJJFPDX+g3FMMFn7jUlUqMwUoUB
+         zL8CWe5TqCcEGP7BEi9N6lfb7HAUyvwtzmfxe7luin3JvjJJ4xMcc6REXmUZpmIqXMTE
+         vvmdSXNB8deW+ZWlMmbGLR+qNpUVAmAzSfkjtuC8xtyBrmso8pVF4S41fgDH6aRUPkne
+         FzMnr8kkZtWVjgOInnMbdSlp25YtK6ihU5U2IZvqEynCktmtf13ks0CQ1uZg7Wj3x6pQ
+         k7NO+Xk8yyaqYqyHRe5teQPebvgl8eoP00gEHOxpvkd8gCkgkzlYllkh/BC+itj2JIjP
+         cMpw==
+X-Gm-Message-State: AHQUAubU3jpJ9LNf0MBR+JR1h82knm9MqTVMs8dzA2Dvqd01IOL17g8f
+        ygRegU9jIY1Sjbo3kt6G/RQ=
+X-Google-Smtp-Source: AHgI3IaEOqVjWMMRL8m90yY3y3dxAWqRxFZP4/AqU/+S+n1j43cGFebFlAoR8ZzdeDSf58AoFT6s5A==
+X-Received: by 2002:a25:d2cb:: with SMTP id j194mr11170654ybg.516.1548802253831;
+        Tue, 29 Jan 2019 14:50:53 -0800 (PST)
 Received: from dennisz-mbp.dhcp.thefacebook.com ([2620:10d:c091:200::5:f5f4])
-        by smtp.gmail.com with ESMTPSA id n16sm18540726ywn.31.2019.01.29.14.43.32
+        by smtp.gmail.com with ESMTPSA id s35sm42704056ywa.19.2019.01.29.14.50.52
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 29 Jan 2019 14:43:32 -0800 (PST)
-Date:   Tue, 29 Jan 2019 17:43:30 -0500
+        Tue, 29 Jan 2019 14:50:52 -0800 (PST)
+Date:   Tue, 29 Jan 2019 17:50:50 -0500
 From:   Dennis Zhou <dennis@kernel.org>
 To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     Dennis Zhou <dennis@kernel.org>, David Sterba <dsterba@suse.com>,
+Cc:     David Sterba <dsterba@suse.com>,
         Josef Bacik <josef@toxicpanda.com>, Chris Mason <clm@fb.com>,
         Omar Sandoval <osandov@osandov.com>,
         Nick Terrell <terrelln@fb.com>, kernel-team@fb.com,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 03/11] btrfs: manage heuristic workspace as index 0
-Message-ID: <20190129224330.GA87266@dennisz-mbp.dhcp.thefacebook.com>
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Omar Sandoval <osandov@fb.com>
+Subject: Re: [PATCH 11/11] btrfs: add zstd compression level support
+Message-ID: <20190129225050.GB87266@dennisz-mbp.dhcp.thefacebook.com>
 References: <20190128212437.11597-1-dennis@kernel.org>
- <20190128212437.11597-4-dennis@kernel.org>
- <4bc26773-da13-3730-afda-78d672f348bc@suse.com>
+ <20190128212437.11597-12-dennis@kernel.org>
+ <c92b0233-5406-42a8-4444-a5ab503f726f@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <4bc26773-da13-3730-afda-78d672f348bc@suse.com>
+In-Reply-To: <c92b0233-5406-42a8-4444-a5ab503f726f@suse.com>
 User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Jan 29, 2019 at 09:53:33AM +0200, Nikolay Borisov wrote:
+On Tue, Jan 29, 2019 at 09:25:54AM +0200, Nikolay Borisov wrote:
 > 
 > 
 > On 28.01.19 г. 23:24 ч., Dennis Zhou wrote:
-> > While the heuristic workspaces aren't really compression workspaces,
-> > they use the same interface for managing them. So rather than branching,
-> > let's just handle them once again as the index 0 compression type.
+> > Zstd compression requires different amounts of memory for each level of
+> > compression. The prior patches implemented indirection to allow for each
+> > compression type to manage their workspaces independently. This patch
+> > uses this indirection to implement compression level support for zstd.
+> > 
+> > As mentioned above, a requirement that differs zstd from zlib is that
+> > higher levels of compression require more memory. To manage this, each
+> > compression level has its own queue of workspaces. A global LRU is used
+> > to help with reclaim. To guarantee forward progress, a max level
+> > workspace is preallocated and hidden from the LRU.
+> > 
+> > When getting a workspace, it uses a bitmap to identify the levels that
+> > are populated and scans up. If it finds a workspace that is greater than
+> > it, it uses it, but does not update the last_used time and the
+> > corresponding place in the LRU. This provides a mechanism to decrease
+> > memory utilization as we only keep around workspaces that are sized
+> > appropriately for the in use compression levels.
+> > 
+> > By knowing which compression levels have available workspaces, we can
+> > recycle rather than always create new workspaces as well as take
+> > advantage of the preallocated max level for forward progress. If we hit
+> > memory pressure, we sleep on the max level workspace. We continue to
+> > rescan in case we can use a smaller workspace, but eventually should be
+> > able to obtain the max level workspace or allocate one again should
+> > memory pressure subside. The memory requirement for decompression is the
+> > same as level 1, and therefore can use any of available workspace.
+> > 
+> > The number of workspaces is bound by an upper limit of the workqueue's
+> > limit which currently is 2 (percpu limit). Second, a reclaim timer is
+> > used to free inactive/improperly sized workspaces. The reclaim timer is
+> > set to 67s to avoid colliding with transaction commit (every 30s) and
+> > attempts to reclaim any unused workspace older than 45s.
+> > 
+> > Repeating the experiment from v2 [1], the Silesia corpus was copied to a
+> > btrfs filesystem 10 times and then read back after dropping the caches.
+> > The btrfs filesystem was on an SSD.
+> > 
+> > Level   Ratio   Compression (MB/s)  Decompression (MB/s)
+> > 1       2.658        438.47                910.51
+> > 2       2.744        364.86                886.55
+> > 3       2.801        336.33                828.41
+> > 4       2.858        286.71                886.55
+> > 5       2.916        212.77                556.84
+> > 6       2.363        119.82                990.85
+> > 7       3.000        154.06                849.30
+> > 8       3.011        159.54                875.03
+> > 9       3.025        100.51                940.15
+> > 10      3.033        118.97                616.26
+> > 11      3.036         94.19                802.11
+> > 12      3.037         73.45                931.49
+> > 13      3.041         55.17                835.26
+> > 14      3.087         44.70                716.78
+> > 15      3.126         37.30                878.84
+> > 
+> > [1] https://lore.kernel.org/linux-btrfs/20181031181108.289340-1-terrelln@fb.com/
 > > 
 > > Signed-off-by: Dennis Zhou <dennis@kernel.org>
-> 
-> Reviewed-by: Nikolay Borisov <nborisov@suse.com> albeit one minor nit
-> below.
+> > Cc: Nick Terrell <terrelln@fb.com>
+> > Cc: Omar Sandoval <osandov@fb.com>
 > > ---
-> >  fs/btrfs/compression.c  | 107 +++++++++++-----------------------------
-> >  fs/btrfs/compression.h  |   3 +-
-> >  fs/btrfs/ioctl.c        |   2 +-
-> >  fs/btrfs/tree-checker.c |   4 +-
-> >  4 files changed, 33 insertions(+), 83 deletions(-)
+> >  fs/btrfs/super.c |   6 +-
+> >  fs/btrfs/zstd.c  | 229 +++++++++++++++++++++++++++++++++++++++++++++--
+> >  2 files changed, 226 insertions(+), 9 deletions(-)
 > > 
-> > diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-> > index aced261984e2..bda7e8d2cbc7 100644
-> > --- a/fs/btrfs/compression.c
-> > +++ b/fs/btrfs/compression.c
-> > @@ -37,6 +37,8 @@ const char* btrfs_compress_type2str(enum btrfs_compression_type type)
-> >  	case BTRFS_COMPRESS_ZSTD:
-> >  	case BTRFS_COMPRESS_NONE:
-> >  		return btrfs_compress_types[type];
-> > +	default:
-> > +		return NULL;
-> 
-> nit: With this change...
-> 
-> >  	}
+> > diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> > index b28dff207383..0ecc513cb56c 100644
+> > --- a/fs/btrfs/super.c
+> > +++ b/fs/btrfs/super.c
+> > @@ -544,9 +544,13 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+> >  				btrfs_clear_opt(info->mount_opt, NODATASUM);
+> >  				btrfs_set_fs_incompat(info, COMPRESS_LZO);
+> >  				no_compress = 0;
+> > -			} else if (strcmp(args[0].from, "zstd") == 0) {
+> > +			} else if (strncmp(args[0].from, "zstd", 4) == 0) {
+> >  				compress_type = "zstd";
+> >  				info->compress_type = BTRFS_COMPRESS_ZSTD;
+> > +				info->compress_level =
+> > +					btrfs_compress_str2level(
+> > +							 BTRFS_COMPRESS_ZSTD,
+> > +							 args[0].from + 4);
+> >  				btrfs_set_opt(info->mount_opt, COMPRESS);
+> >  				btrfs_clear_opt(info->mount_opt, NODATACOW);
+> >  				btrfs_clear_opt(info->mount_opt, NODATASUM);
+> > diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
+> > index a951d4fe77f7..ce9b466c197f 100644
+> > --- a/fs/btrfs/zstd.c
+> > +++ b/fs/btrfs/zstd.c
+> > @@ -6,20 +6,27 @@
+> >   */
 > >  
-> >  	return NULL;
+> >  #include <linux/bio.h>
+> > +#include <linux/bitmap.h>
+> >  #include <linux/err.h>
+> >  #include <linux/init.h>
+> >  #include <linux/kernel.h>
+> >  #include <linux/mm.h>
+> > +#include <linux/sched/mm.h>
+> >  #include <linux/pagemap.h>
+> >  #include <linux/refcount.h>
+> >  #include <linux/sched.h>
+> >  #include <linux/slab.h>
+> >  #include <linux/zstd.h>
+> >  #include "compression.h"
+> > +#include "ctree.h"
+> >  
+> >  #define ZSTD_BTRFS_MAX_WINDOWLOG 17
+> >  #define ZSTD_BTRFS_MAX_INPUT (1 << ZSTD_BTRFS_MAX_WINDOWLOG)
+> >  #define ZSTD_BTRFS_DEFAULT_LEVEL 3
+> > +#define ZSTD_BTRFS_MAX_LEVEL 15
+> > +#define ZSTD_BTRFS_RECLAIM_NS (45 * NSEC_PER_SEC)
+> > +/* 67s to avoid clashing with transaction commit (every 30s) */
+> > +#define ZSTD_BTRFS_RECLAIM_JIFFIES (67 * HZ)
 > 
-> This becomes redundant. I doubt the compiler will issue a warning since
-> it should be clever enough to figure we will never exit the switch()
-> construct.
+> This is valid provided that transaction commit time is not overriden by
+> Opt_commit_interval. If it is such a problem to not clash with trans
+> commit maybe this should be calculated upon mount?
 > 
 
-Ah yes. I've removed it for v2.
+Because the workspace managers are initialized once and shared,
+different mounts can have different Opt_commit_interval settings. I
+don't think it's particularly problematic to clash with trans commit,
+it's kind of nice to have the offset to in the majority of cases not run
+into this.
 
 Thanks,
 Dennis

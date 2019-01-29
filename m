@@ -6,27 +6,28 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BECB5C169C4
-	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Jan 2019 06:57:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A668FC169C4
+	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Jan 2019 07:19:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 882AD2148E
-	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Jan 2019 06:57:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7EC3A2147A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Jan 2019 07:19:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725747AbfA2G5o (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 29 Jan 2019 01:57:44 -0500
-Received: from mx2.suse.de ([195.135.220.15]:38444 "EHLO mx1.suse.de"
+        id S1726462AbfA2HTF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 29 Jan 2019 02:19:05 -0500
+Received: from mx2.suse.de ([195.135.220.15]:41384 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725267AbfA2G5o (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 Jan 2019 01:57:44 -0500
+        id S1725446AbfA2HTF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 29 Jan 2019 02:19:05 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 0625AAB48
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Jan 2019 06:57:43 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 6B0CCAD5D;
+        Tue, 29 Jan 2019 07:19:03 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: balance: Sync the fs before balancing metadata chunks
-Date:   Tue, 29 Jan 2019 14:57:39 +0800
-Message-Id: <20190129065739.31707-1-wqu@suse.com>
+Cc:     fstests@vger.kernel.org
+Subject: [PATCH v2] btrfs: Test if btrfs will commit too many transaction for balance
+Date:   Tue, 29 Jan 2019 15:18:57 +0800
+Message-Id: <20190129071857.32473-1-wqu@suse.com>
 X-Mailer: git-send-email 2.20.1
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
@@ -35,86 +36,172 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[BUG]
-Btrfs will report false ENOSPC balancing metadata chunk.
-The following script can easily reproduce it:
+Kernel commit 64403612b73a ("btrfs: rework
+btrfs_check_space_for_delayed_refs") is introducing a regression for
+btrfs balance performance.
 
-  #!/bin/bash
-  dev=/dev/test/test
-  mnt=/mnt/btrfs
+Since that commit will cause btrfs to commit transaction for nothing
+during transaction, it will slow balance dramatically even we only need
+to relocate several megabytes.
 
-  umount $dev &> /dev/null
-  umount $mnt &> /dev/null
-  mkfs.btrfs -f $dev
+This test case will catch the problem by using super block generation as
+failure criteria.
+For small chunk relocated, we will commit 6 transaction for each block
+group, and the test case should only have 2 block groups, it should only
+commit 12 transactions.
 
-  mount $dev $mnt
-  btrfs subv create $mnt/subv
-  for ((i = 0; i < 1024; i++)) do
-  	xfs_io -f -c "pwrite 0 4k" $mnt/subv/file_$i > /dev/null
-  done
-  btrfs balance start -m $mnt
+This test case will use 120 as the threshold to detect the failure.
 
-[CAUSE]
-It's metadata space_info::bytes_may_use causing the problem.
-For above case, we need to reserve enough metadata space for all the
-created small files.
+And in my test environment, with kernel fix btrfs committed 14
+transactions and finished in 6s.
+While without the fix btrfs committed 1734 transactions and takes 25s to
+finish.
 
-[FIX]
-The most straightforward is to sync the fs before balancing metadata
-chunks.
-
-We could enhance the kernel bytes_may_use calculation, but I doubt about
-the complexity.
-So I take the easy fix to reduce the false ENOSPC reports.
+So the test case should be more than enough to detect the regression,
+while still keep the runtime small enough for failure.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- cmds-balance.c | 18 ++++++++++++++++++
- 1 file changed, 18 insertions(+)
+changelog:
+v2:
+- Remove the unnecessary workaround for ENOSPC balance
+  Since we know the cause of that false ENOSPC error, a simple sync
+  would be enough to take care of the problem
 
-diff --git a/cmds-balance.c b/cmds-balance.c
-index 15dc385e..a617a1d2 100644
---- a/cmds-balance.c
-+++ b/cmds-balance.c
-@@ -24,6 +24,7 @@
- #include <sys/stat.h>
- #include <fcntl.h>
- #include <errno.h>
-+#include <btrfsutil.h>
- 
- #include "kerncompat.h"
- #include "ctree.h"
-@@ -32,6 +33,7 @@
- 
- #include "commands.h"
- #include "utils.h"
-+#include "utils.h"
- #include "help.h"
- 
- static const char * const balance_cmd_group_usage[] = {
-@@ -455,6 +457,22 @@ static int do_balance(const char *path, struct btrfs_ioctl_balance_args *args,
- 		printf("\nStarting balance without any filters.\n");
- 	}
- 
-+	/*
-+	 * There may be many over-reserved space for metadata block groups,
-+	 * especially for inlined file extents.
-+	 *
-+	 * Do a sync here will free those over-reserved space and hugely
-+	 * reduce the possibility of some false ENOSPC
-+	 */
-+	if (args->flags & BTRFS_BALANCE_METADATA) {
-+		ret = btrfs_util_sync(path);
-+		if (ret) {
-+			error("failed to sync the fs before balance: %m");
-+			ret = -errno;
-+			goto out;
-+		}
-+	}
+- Remove unnecessary mount option of max_inline
+  The same reason above.
+---
+ tests/btrfs/181     | 101 ++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/181.out |   2 +
+ tests/btrfs/group   |   1 +
+ 3 files changed, 104 insertions(+)
+ create mode 100755 tests/btrfs/181
+ create mode 100644 tests/btrfs/181.out
+
+diff --git a/tests/btrfs/181 b/tests/btrfs/181
+new file mode 100755
+index 00000000..869cb15f
+--- /dev/null
++++ b/tests/btrfs/181
+@@ -0,0 +1,101 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (C) 2019 SUSE Linux Products GmbH. All Rights Reserved.
++#
++# FS QA Test 181
++#
++# Test if btrfs will commit too many transactions for nothing and cause
++# performance regression during balance.
++#
++# This bug is going to be fixed by a patch for kenerl title
++# "btrfs: don't end the transaction for delayed refs in throttle"
++#
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
 +
- 	ret = ioctl(fd, BTRFS_IOC_BALANCE_V2, args);
- 	if (ret < 0) {
- 		/*
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++
++# real QA test starts here
++
++# Modify as appropriate.
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_require_btrfs_command inspect-internal dump-super
++
++_scratch_mkfs > /dev/null
++
++_scratch_mount
++
++nr_files=1024
++nr_snapshots=8
++
++get_super_gen()
++{
++	$BTRFS_UTIL_PROG inspect dump-super "$SCRATCH_DEV" | grep ^generation |\
++		awk '{print $2}'
++}
++
++$BTRFS_UTIL_PROG subv create "$SCRATCH_MNT/subvol" > /dev/null
++
++# Create some small files to take up enough metadata reserved space 
++for ((i = 0; i < $nr_files; i++)) do
++	_pwrite_byte 0xcd 0 1K "$SCRATCH_MNT/subvol/file_$i" > /dev/null
++done
++
++# Commit the fs so we can get a stable super generation
++sync
++
++before_gen=$(get_super_gen)
++if [ -z $before_gen ]; then
++	_fail "failed to get super block genreation"
++fi
++
++$BTRFS_UTIL_PROG balance start -m "$SCRATCH_MNT" > /dev/null
++
++after_gen=$(get_super_gen)
++
++# Since the fs is pretty small, we should have only 1 small metadata chunk and
++# one tiny system chunk.
++# Relocating such small chunks only need 6 commits for each, thus 12 commits for
++# 2 chunks.
++# Here we use 10x the theoretic value as threshold.
++theoretic_gen=$(( 6 * 2 ))
++threshold_gen=$(( 10 * $theoretic_gen ))
++if [ $(( $after_gen - $before_gen )) -gt 120 ]; then
++	echo "balance committed too many transactions"
++	echo "super generation before balance: ${before_gen}"
++	echo "super generation after balance:  ${after_gen}"
++	echo "super generation difference:     $((after_gen - before_gen))"
++	echo "theoretic generation difference: ${theoretic_gen}"
++	echo "threshold generation difference: ${threshold_gen}"
++fi
++
++echo "super generation before balance: ${before_gen}" >> $seqres.full
++echo "super generation after balance:  ${after_gen}" >> $seqres.full
++echo "super generation difference:     $((after_gen - before_gen))" >> $seqres.full
++echo "theoretic generation difference: ${theoretic_gen}" >> $seqres.full
++echo "threshold generation difference: ${threshold_gen}" >> $seqres.full
++
++# success, all done
++echo "Silence is golden"
++
++status=0
++exit
+diff --git a/tests/btrfs/181.out b/tests/btrfs/181.out
+new file mode 100644
+index 00000000..a5a93be6
+--- /dev/null
++++ b/tests/btrfs/181.out
+@@ -0,0 +1,2 @@
++QA output created by 181
++Silence is golden
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 03eb62f9..0db485cb 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -183,3 +183,4 @@
+ 178 auto quick send
+ 179 auto qgroup dangerous
+ 180 auto quick qgroup limit
++181 auto quick balance
 -- 
 2.18.0
 

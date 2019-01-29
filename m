@@ -2,28 +2,27 @@ Return-Path: <SRS0=91MX=QF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 56B70C282D0
-	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Jan 2019 08:15:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A9620C282C7
+	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Jan 2019 08:22:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 22D29217F5
-	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Jan 2019 08:15:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 81F902175B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Jan 2019 08:22:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727181AbfA2IPi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 29 Jan 2019 03:15:38 -0500
-Received: from mx2.suse.de ([195.135.220.15]:47940 "EHLO mx1.suse.de"
+        id S1725794AbfA2IWi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 29 Jan 2019 03:22:38 -0500
+Received: from mx2.suse.de ([195.135.220.15]:48680 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725468AbfA2IPi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 Jan 2019 03:15:38 -0500
+        id S1725298AbfA2IWh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 29 Jan 2019 03:22:37 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id DB206AF3D;
-        Tue, 29 Jan 2019 08:15:36 +0000 (UTC)
-Subject: Re: [PATCH 10/11] btrfs: zstd use the passed through level instead of
- default
+        by mx1.suse.de (Postfix) with ESMTP id 912C2AF6C;
+        Tue, 29 Jan 2019 08:22:35 +0000 (UTC)
+Subject: Re: [PATCH 07/11] btrfs: move to fn pointers for get/put workspaces
 To:     Dennis Zhou <dennis@kernel.org>, David Sterba <dsterba@suse.com>,
         Josef Bacik <josef@toxicpanda.com>, Chris Mason <clm@fb.com>,
         Omar Sandoval <osandov@osandov.com>,
@@ -31,7 +30,7 @@ To:     Dennis Zhou <dennis@kernel.org>, David Sterba <dsterba@suse.com>,
 Cc:     kernel-team@fb.com, linux-btrfs@vger.kernel.org,
         linux-kernel@vger.kernel.org
 References: <20190128212437.11597-1-dennis@kernel.org>
- <20190128212437.11597-11-dennis@kernel.org>
+ <20190128212437.11597-8-dennis@kernel.org>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -76,12 +75,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <f33c11a8-3079-2655-7720-ca2172f614f0@suse.com>
-Date:   Tue, 29 Jan 2019 10:15:35 +0200
+Message-ID: <6f9b4be7-0ce8-bd62-c90d-f3f537528b7a@suse.com>
+Date:   Tue, 29 Jan 2019 10:22:34 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20190128212437.11597-11-dennis@kernel.org>
+In-Reply-To: <20190128212437.11597-8-dennis@kernel.org>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -93,78 +92,22 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 28.01.19 г. 23:24 ч., Dennis Zhou wrote:
-> Zstd currently only supports the default level of compression. This
-> patch switches to using the level passed in for btrfs zstd
-> configuration.
-> 
-> Zstd workspaces now keep track of the requested level as this can differ
-> from the size of the workspace.
+> The previous patch added generic helpers for get_workspace() and
+> put_workspace(). Now, we can migrate ownership of the workspace_manager
+> to be in the compression type code as the compression code itself
+> doesn't care beyond being able to get a workspace. The init/cleanup
+> and get/put methods are abstracted so each compression algorithm can
+> decide how they want to manage their workspaces.
 > 
 > Signed-off-by: Dennis Zhou <dennis@kernel.org>
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+TBH I can't really see the value in this patch. IMO it doesn't make the
+code more readable, on the contrary, you create algorithm-specific
+wrappers over the generic function, where the sole specialization is in
+the arguments passed to the generic functions. You introduce 4 more
+function pointers and this affects performance negatively (albeit can't
+say to what extent) due to spectre mitigations (retpolines).
 
-> ---
->  fs/btrfs/zstd.c | 19 +++++++++++++------
->  1 file changed, 13 insertions(+), 6 deletions(-)
-> 
-> diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
-> index 43f3be755b8c..a951d4fe77f7 100644
-> --- a/fs/btrfs/zstd.c
-> +++ b/fs/btrfs/zstd.c
-> @@ -21,10 +21,10 @@
->  #define ZSTD_BTRFS_MAX_INPUT (1 << ZSTD_BTRFS_MAX_WINDOWLOG)
->  #define ZSTD_BTRFS_DEFAULT_LEVEL 3
->  
-> -static ZSTD_parameters zstd_get_btrfs_parameters(size_t src_len)
-> +static ZSTD_parameters zstd_get_btrfs_parameters(unsigned int level,
-> +						 size_t src_len)
->  {
-> -	ZSTD_parameters params = ZSTD_getParams(ZSTD_BTRFS_DEFAULT_LEVEL,
-> -						src_len, 0);
-> +	ZSTD_parameters params = ZSTD_getParams(level, src_len, 0);
->  
->  	if (params.cParams.windowLog > ZSTD_BTRFS_MAX_WINDOWLOG)
->  		params.cParams.windowLog = ZSTD_BTRFS_MAX_WINDOWLOG;
-> @@ -36,6 +36,7 @@ struct workspace {
->  	void *mem;
->  	size_t size;
->  	char *buf;
-> +	unsigned int req_level;
->  	struct list_head list;
->  	ZSTD_inBuffer in_buf;
->  	ZSTD_outBuffer out_buf;
-> @@ -55,7 +56,12 @@ static void zstd_cleanup_workspace_manager(void)
->  
->  static struct list_head *zstd_get_workspace(unsigned int level)
->  {
-> -	return btrfs_get_workspace(&wsm, level);
-> +	struct list_head *ws = btrfs_get_workspace(&wsm, level);
-> +	struct workspace *workspace = list_entry(ws, struct workspace, list);
-> +
-> +	workspace->req_level = level;
-> +
-> +	return ws;
->  }
->  
->  static void zstd_put_workspace(struct list_head *ws)
-> @@ -75,7 +81,7 @@ static void zstd_free_workspace(struct list_head *ws)
->  static struct list_head *zstd_alloc_workspace(unsigned int level)
->  {
->  	ZSTD_parameters params =
-> -			zstd_get_btrfs_parameters(ZSTD_BTRFS_MAX_INPUT);
-> +			zstd_get_btrfs_parameters(level, ZSTD_BTRFS_MAX_INPUT);
->  	struct workspace *workspace;
->  
->  	workspace = kzalloc(sizeof(*workspace), GFP_KERNEL);
-> @@ -117,7 +123,8 @@ static int zstd_compress_pages(struct list_head *ws,
->  	unsigned long len = *total_out;
->  	const unsigned long nr_dest_pages = *out_pages;
->  	unsigned long max_out = nr_dest_pages * PAGE_SIZE;
-> -	ZSTD_parameters params = zstd_get_btrfs_parameters(len);
-> +	ZSTD_parameters params = zstd_get_btrfs_parameters(workspace->req_level,
-> +							   len);
->  
->  	*out_pages = 0;
->  	*total_out = 0;
-> 
+I also read the follow up patches with the hopes of seeing how the code
+becomes cleaner to no avail. At this point I'm really not in favor of
+this particular patch.

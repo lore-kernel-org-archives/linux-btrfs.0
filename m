@@ -2,27 +2,28 @@ Return-Path: <SRS0=91MX=QF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6165FC169C4
-	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Jan 2019 07:54:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B7AA2C169C4
+	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Jan 2019 07:58:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2CD41207E0
-	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Jan 2019 07:54:28 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8ED1D214DA
+	for <linux-btrfs@archiver.kernel.org>; Tue, 29 Jan 2019 07:58:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727120AbfA2HyX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 29 Jan 2019 02:54:23 -0500
-Received: from mx2.suse.de ([195.135.220.15]:45084 "EHLO mx1.suse.de"
+        id S1727042AbfA2H6f (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 29 Jan 2019 02:58:35 -0500
+Received: from mx2.suse.de ([195.135.220.15]:45470 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725294AbfA2HyX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 Jan 2019 02:54:23 -0500
+        id S1726341AbfA2H6e (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 29 Jan 2019 02:58:34 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 1DFCAAC17;
-        Tue, 29 Jan 2019 07:54:21 +0000 (UTC)
-Subject: Re: [PATCH 04/11] btrfs: unify compression ops with workspace_manager
+        by mx1.suse.de (Postfix) with ESMTP id B9782AD47;
+        Tue, 29 Jan 2019 07:58:32 +0000 (UTC)
+Subject: Re: [PATCH 05/11] btrfs: add helper methods for workspace manager
+ init and cleanup
 To:     Dennis Zhou <dennis@kernel.org>, David Sterba <dsterba@suse.com>,
         Josef Bacik <josef@toxicpanda.com>, Chris Mason <clm@fb.com>,
         Omar Sandoval <osandov@osandov.com>,
@@ -30,7 +31,7 @@ To:     Dennis Zhou <dennis@kernel.org>, David Sterba <dsterba@suse.com>,
 Cc:     kernel-team@fb.com, linux-btrfs@vger.kernel.org,
         linux-kernel@vger.kernel.org
 References: <20190128212437.11597-1-dennis@kernel.org>
- <20190128212437.11597-5-dennis@kernel.org>
+ <20190128212437.11597-6-dennis@kernel.org>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -75,12 +76,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <415fbefb-1a69-5b80-02c4-aab8b204375c@suse.com>
-Date:   Tue, 29 Jan 2019 09:54:20 +0200
+Message-ID: <7247c05b-89c9-32cf-128e-f02cafa6dd3c@suse.com>
+Date:   Tue, 29 Jan 2019 09:58:31 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20190128212437.11597-5-dennis@kernel.org>
+In-Reply-To: <20190128212437.11597-6-dennis@kernel.org>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -92,73 +93,12 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 28.01.19 г. 23:24 ч., Dennis Zhou wrote:
-> Make the workspace_manager own the interface operations rather than
-> managing index-paired arrays for the workspace_manager and compression
-> operations.
+> Workspace manager init and cleanup code is open coded inside a for loop
+> over the compression types. This forces each compression type to rely on
+> the same workspace manager implementation. This patch creates helper
+> methods that will be the generic implementation for btrfs workspace
+> management.
 > 
 > Signed-off-by: Dennis Zhou <dennis@kernel.org>
 
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
-> ---
->  fs/btrfs/compression.c | 11 +++++++----
->  1 file changed, 7 insertions(+), 4 deletions(-)
-> 
-> diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-> index bda7e8d2cbc7..b7e986e16640 100644
-> --- a/fs/btrfs/compression.c
-> +++ b/fs/btrfs/compression.c
-> @@ -777,6 +777,7 @@ const struct btrfs_compress_op btrfs_heuristic_compress = {
->  };
->  
->  struct workspace_manager {
-> +	const struct btrfs_compress_op *ops;
->  	struct list_head idle_ws;
->  	spinlock_t ws_lock;
->  	/* Number of free workspaces */
-> @@ -802,6 +803,8 @@ void __init btrfs_init_compress(void)
->  	int i;
->  
->  	for (i = 0; i < BTRFS_COMPRESS_TYPES; i++) {
-> +		wsm[i].ops = btrfs_compress_op[i];
-> +
->  		INIT_LIST_HEAD(&wsm[i].idle_ws);
->  		spin_lock_init(&wsm[i].ws_lock);
->  		atomic_set(&wsm[i].total_ws, 0);
-> @@ -811,7 +814,7 @@ void __init btrfs_init_compress(void)
->  		 * Preallocate one workspace for each compression type so
->  		 * we can guarantee forward progress in the worst case
->  		 */
-> -		workspace = btrfs_compress_op[i]->alloc_workspace();
-> +		workspace = wsm[i].ops->alloc_workspace();
->  		if (IS_ERR(workspace)) {
->  			pr_warn("BTRFS: cannot preallocate compression workspace, will try later\n");
->  		} else {
-> @@ -874,7 +877,7 @@ static struct list_head *find_workspace(int type)
->  	 * context of btrfs_compress_bio/btrfs_compress_pages
->  	 */
->  	nofs_flag = memalloc_nofs_save();
-> -	workspace = btrfs_compress_op[type]->alloc_workspace();
-> +	workspace = wsm[type].ops->alloc_workspace();
->  	memalloc_nofs_restore(nofs_flag);
->  
->  	if (IS_ERR(workspace)) {
-> @@ -932,7 +935,7 @@ static void free_workspace(int type, struct list_head *workspace)
->  	}
->  	spin_unlock(ws_lock);
->  
-> -	btrfs_compress_op[type]->free_workspace(workspace);
-> +	wsm[type].ops->free_workspace(workspace);
->  	atomic_dec(total_ws);
->  wake:
->  	cond_wake_up(ws_wait);
-> @@ -950,7 +953,7 @@ static void free_workspaces(void)
->  		while (!list_empty(&wsm[i].idle_ws)) {
->  			workspace = wsm[i].idle_ws.next;
->  			list_del(workspace);
-> -			btrfs_compress_op[i]->free_workspace(workspace);
-> +			wsm[i].ops->free_workspace(workspace);
->  			atomic_dec(&wsm[i].total_ws);
->  		}
->  	}
-> 

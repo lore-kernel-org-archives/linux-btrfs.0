@@ -2,116 +2,191 @@ Return-Path: <SRS0=cBAG=QG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5CFC5C282D7
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 17:21:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CEE71C282D8
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 17:41:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3523520855
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 17:21:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A401220870
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 17:41:09 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1548870069;
+	bh=kLeCMFkJDg9mVo+BtDArRIhUYwtH6Gc2iYyageuWe9M=;
+	h=Date:From:To:Subject:References:In-Reply-To:List-ID:From;
+	b=s1XaHaYoens5QURfqjcPnA5QMB4jaR1ETk1DsnHJxozf53V7i3pkKZ0J2FMAz+CmQ
+	 1JU7QZBc5+npsDemzaUgnA+yJJxtRcxVxXwGB/kc4DQIxOYG3IJrjkv13GnCuZQ680
+	 EqsfQQg6iEu8HhzQHqE0GsudDOpx3Xo2e/YLQL8k=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730113AbfA3RVz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 30 Jan 2019 12:21:55 -0500
-Received: from mx2.suse.de ([195.135.220.15]:41382 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726230AbfA3RVy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Jan 2019 12:21:54 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id CB3D4AD3C;
-        Wed, 30 Jan 2019 17:21:52 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 8BC94DA78C; Wed, 30 Jan 2019 18:21:18 +0100 (CET)
-Date:   Wed, 30 Jan 2019 18:21:18 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     fdmanana@kernel.org
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix deadlock when allocating tree block during
- leaf/node split
-Message-ID: <20190130172118.GZ2900@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
-        linux-btrfs@vger.kernel.org
-References: <20190125114851.4065-1-fdmanana@kernel.org>
+        id S1732578AbfA3RlF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 30 Jan 2019 12:41:05 -0500
+Received: from mail-yb1-f194.google.com ([209.85.219.194]:36749 "EHLO
+        mail-yb1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1732435AbfA3RlE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 30 Jan 2019 12:41:04 -0500
+Received: by mail-yb1-f194.google.com with SMTP id 64so160719ybf.3;
+        Wed, 30 Jan 2019 09:41:04 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to:user-agent;
+        bh=JThjyZDeCLp0R438GZcdflfLKEcxqLnVsc0bIb5lJrY=;
+        b=MNwUxDHWf1oTlxoGBfmim743ET7wkjDqCJclrkeMzAy+2Y5YXr+nDwwzLgCrakZ2TJ
+         zQAsKd2w/7w1rWxzKXfSTSqwqeft2Qgj1khH0i+Lk1X4RUNFBb0wiBhWQyaODxG9Rlao
+         1hHNMGvAqOrTs/SbVZ6Ss0ACz9+fZ6IYTjt6/iTMOnaDTvBg78UxI9jdeQtHHOgXuSkx
+         24nEdW4OdXaQING8zPGbEAQ089TDKsmGlWZDzBHgG6XrZtzx/miwVT0OurtbepZXAJTJ
+         AFtHOe1f+aCfDhFlUd1Iw5MiFSsQULiyUAy2qCGu18/fS72gPZg1K+c2PXEkgra8iyT/
+         yCUg==
+X-Gm-Message-State: AHQUAub/YHoUS/sUdb2iaalLxSosyxzYY+ScxlNUaJ+zoK6fdRvPBbuu
+        U2pHtj6yBzZuZA8wdiKXVySzwM2e7Gg=
+X-Google-Smtp-Source: AHgI3IZDtbxVYdxCdrM6E8GlTPj0CpmrzxuIoBKqWkzyXDOCY/AV1l8ZIrxOkmukksfEsIJNnzt3lA==
+X-Received: by 2002:a25:7284:: with SMTP id n126mr6981954ybc.504.1548870063238;
+        Wed, 30 Jan 2019 09:41:03 -0800 (PST)
+Received: from dennisz-mbp ([2620:10d:c091:200::5:f3d1])
+        by smtp.gmail.com with ESMTPSA id l6sm651421ywf.61.2019.01.30.09.41.01
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Wed, 30 Jan 2019 09:41:02 -0800 (PST)
+Date:   Wed, 30 Jan 2019 12:40:59 -0500
+From:   Dennis Zhou <dennis@kernel.org>
+To:     dsterba@suse.cz, Dennis Zhou <dennis@kernel.org>,
+        David Sterba <dsterba@suse.com>,
+        Josef Bacik <josef@toxicpanda.com>, Chris Mason <clm@fb.com>,
+        Omar Sandoval <osandov@osandov.com>,
+        Nick Terrell <terrelln@fb.com>, kernel-team@fb.com,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH 00/11] btrfs: add zstd compression level support
+Message-ID: <20190130174059.GA18660@dennisz-mbp>
+References: <20190128212437.11597-1-dennis@kernel.org>
+ <20190129171830.GP2900@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190125114851.4065-1-fdmanana@kernel.org>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+In-Reply-To: <20190129171830.GP2900@twin.jikos.cz>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Jan 25, 2019 at 11:48:51AM +0000, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> When splitting a leaf or node from one of the trees that are modified when
-> flushing pending block groups (extent, chunk, device and free space trees),
-> we need to allocate a new tree block, which in turn can result in the need
-> to allocate a new block group. After allocating the new block group we may
-> need to flush new block groups that were previously allocated during the
-> course of the current transaction, which is what may cause a deadlock due
-> to attempts to write lock twice the same leaf or node, as when splitting
-> a leaf or node we are holding a write lock on it and its parent node.
-> 
-> The same type of deadlock can also happen when increasing the tree's
-> height, since we are holding a lock on the existing root while allocating
-> the tree block to use as the new root node.
-> 
-> An example trace when the deadlock happens during the leaf split path is:
-> 
->   [27175.293054] CPU: 0 PID: 3005 Comm: kworker/u17:6 Tainted: G        W         4.19.16 #1
->   [27175.293942] Hardware name: Penguin Computing Relion 1900/MD90-FS0-ZB-XX, BIOS R15 06/25/2018
->   [27175.294846] Workqueue: btrfs-extent-refs btrfs_extent_refs_helper [btrfs]
->   (...)
->   [27175.298384] RSP: 0018:ffffab2087107758 EFLAGS: 00010246
->   [27175.299269] RAX: 0000000000000bbd RBX: ffff9fadc7141c48 RCX: 0000000000000001
->   [27175.300155] RDX: 0000000000000001 RSI: 0000000000000002 RDI: ffff9fadc7141c48
->   [27175.301023] RBP: 0000000000000001 R08: ffff9faeb6ac1040 R09: ffff9fa9c0000000
->   [27175.301887] R10: 0000000000000000 R11: 0000000000000040 R12: ffff9fb21aac8000
->   [27175.302743] R13: ffff9fb1a64d6a20 R14: 0000000000000001 R15: ffff9fb1a64d6a18
->   [27175.303601] FS:  0000000000000000(0000) GS:ffff9fb21fa00000(0000) knlGS:0000000000000000
->   [27175.304468] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
->   [27175.305339] CR2: 00007fdc8743ead8 CR3: 0000000763e0a006 CR4: 00000000003606f0
->   [27175.306220] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
->   [27175.307087] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
->   [27175.307940] Call Trace:
->   [27175.308802]  btrfs_search_slot+0x779/0x9a0 [btrfs]
->   [27175.309669]  ? update_space_info+0xba/0xe0 [btrfs]
->   [27175.310534]  btrfs_insert_empty_items+0x67/0xc0 [btrfs]
->   [27175.311397]  btrfs_insert_item+0x60/0xd0 [btrfs]
->   [27175.312253]  btrfs_create_pending_block_groups+0xee/0x210 [btrfs]
->   [27175.313116]  do_chunk_alloc+0x25f/0x300 [btrfs]
->   [27175.313984]  find_free_extent+0x706/0x10d0 [btrfs]
->   [27175.314855]  btrfs_reserve_extent+0x9b/0x1d0 [btrfs]
->   [27175.315707]  btrfs_alloc_tree_block+0x100/0x5b0 [btrfs]
->   [27175.316548]  split_leaf+0x130/0x610 [btrfs]
->   [27175.317390]  btrfs_search_slot+0x94d/0x9a0 [btrfs]
->   [27175.318235]  btrfs_insert_empty_items+0x67/0xc0 [btrfs]
->   [27175.319087]  alloc_reserved_file_extent+0x84/0x2c0 [btrfs]
->   [27175.319938]  __btrfs_run_delayed_refs+0x596/0x1150 [btrfs]
->   [27175.320792]  btrfs_run_delayed_refs+0xed/0x1b0 [btrfs]
->   [27175.321643]  delayed_ref_async_start+0x81/0x90 [btrfs]
->   [27175.322491]  normal_work_helper+0xd0/0x320 [btrfs]
->   [27175.323328]  ? move_linked_works+0x6e/0xa0
->   [27175.324160]  process_one_work+0x191/0x370
->   [27175.324976]  worker_thread+0x4f/0x3b0
->   [27175.325763]  kthread+0xf8/0x130
->   [27175.326531]  ? rescuer_thread+0x320/0x320
->   [27175.327284]  ? kthread_create_worker_on_cpu+0x50/0x50
->   [27175.328027]  ret_from_fork+0x35/0x40
->   [27175.328741] ---[ end trace 300a1b9f0ac30e26 ]---
-> 
-> Fix this by preventing the flushing of new blocks groups when splitting a
-> leaf/node and when inserting a new root node for one of the trees modified
-> by the flushing operation, similar to what is done when COWing a node/leaf
-> from on of these trees.
-> 
-> Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=202383
-> Reported-by: Eli V <eliventer@gmail.com>
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Hi David,
 
-Added to 5.0-rc queue, thanks.
+On Tue, Jan 29, 2019 at 06:18:30PM +0100, David Sterba wrote:
+> On Mon, Jan 28, 2019 at 04:24:26PM -0500, Dennis Zhou wrote:
+> > As mentioned above, a requirement that differs zstd from zlib is that
+> > higher levels of compression require more memory. To manage this, each
+> > compression level has its own queue of workspaces. A global LRU is used
+> > to help with reclaim. To guarantee forward progress, a max level
+> > workspace is preallocated and hidden from the LRU.
+> 
+> Here I'd like to bring up what was mentioned in previous iteration, the
+> workspace sizes.
+> 
+> Level   Compression Memory
+> 1       0.8 MB
+> 2       1.0 MB
+> 3       1.3 MB
+> 4       0.9 MB
+> 5       1.4 MB
+> 6       1.5 MB
+> 7       1.4 MB
+> 8       1.8 MB
+> 9       1.8 MB
+> 10      1.8 MB
+> 11      1.8 MB
+> 12      1.8 MB
+> 13      2.3 MB
+> 14      2.6 MB
+> 15      2.6 MB
+> 
+> and decompression needs memory of level 1. The sizes can be grouped
+> together to say 3 sizes, I'm not sure that we'd really need 15 distinct
+> workspaces. The reclaim mechanism helps, but I'd rather keep a smaller
+> number of workspaces that covers average use.
+> 
+> Default level is 3, that's 1.3 MiB, that also covers level 1, 2 and 4.
+> For 5 to 12 it's 1.8 and the rest is 2.6 MiB.
+> 
+
+I realize the current implementation doesn't have a monotonic memory
+requirement guarantee. I've added that, and below is updated memory
+requirements per level. I've updated the commit to include this too.
+
+Level     Memory (KB)
+1            780 
+2           1004
+3           1260
+4           1260
+5           1388
+6           1516
+7           1516
+8           1772
+9           1772
+10          1772
+11          1772
+12          1772
+13          2284
+14          2547
+15          2547
+
+> > btrfs filesystem 10 times and then read back after dropping the caches.
+> > The btrfs filesystem was on an SSD.
+> > 
+> > Level   Ratio   Compression (MB/s)  Decompression (MB/s)
+> > 1       2.658        438.47                910.51
+> > 2       2.744        364.86                886.55
+> > 3       2.801        336.33                828.41
+> > 4       2.858        286.71                886.55
+> > 5       2.916        212.77                556.84
+> > 6       2.363        119.82                990.85
+> > 7       3.000        154.06                849.30
+> > 8       3.011        159.54                875.03
+> > 9       3.025        100.51                940.15
+> > 10      3.033        118.97                616.26
+> > 11      3.036         94.19                802.11
+> > 12      3.037         73.45                931.49
+> > 13      3.041         55.17                835.26
+> > 14      3.087         44.70                716.78
+> > 15      3.126         37.30                878.84
+> 
+> From my casual user's perspective, I'd use the level 1 for speed, 7 for
+> better ratio and 15 for the best compression. Anything else does not
+> look good, though the results would vary based on the data set. I
+> assume that the silesia corpus serves as a good approximation of the
+> worst case average.
+> 
+> The levels 7-14 strike particularly obvious pattern: same ratio but the
+> speed gets worse with each level. Taking the default level into account,
+> (my) recommended levels would be 1, 3, 7, 15.
+> 
+
+I do see why we want to limit the number of levels as the memory
+requirements do kind of bucket themselves. But, this means when zstd
+gets updated, we'd have to reevaluate the compression levels btrfs
+supports. I'm not sure it's a great idea to have that dependency.
+I imagine we could offer some level of guidance, but it really would be
+up to the user to figure out what works best for them.
+
+The reclaim mechanism only keeps workspaces around if they are being
+used by the appropriate level. So, the memory overhead is actively used
+memory and if not, it is reclaimed after at most ~2 minutes later. I
+also scan up before allocating a workspace, so that should help limit
+the number of workspaces in circulation.
+
+> I went through the patches, looks mostly ok, I don't like the
+> indirections but at the moment it's an implementation detail as I'd like
+> to agree on the overall approach first.
+> 
+> We might need a few revisions or cleanup rounds to converge to an
+> efficient solution, the advantage here is that it's all in-memory and
+> without compatibility concerns once the level support for zstd is in and
+> works.
+> 
+> For that reason, I'm not opposed to the current version of the patchset.
+> Given the time in development schedule, it's really close to code
+> freeze, but the functionality has a narrow scope so I'm tentatively
+> counting with it for 5.1.
+
+Thanks,
+Dennis

@@ -2,67 +2,76 @@ Return-Path: <SRS0=cBAG=QG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 75CF6C282D7
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 15:19:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5F508C282D7
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 15:32:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4780120989
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 15:19:51 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 38B0B205C9
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 15:32:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730399AbfA3PTu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 30 Jan 2019 10:19:50 -0500
-Received: from mx2.suse.de ([195.135.220.15]:43932 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727765AbfA3PTt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Jan 2019 10:19:49 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A51D8B01C
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Jan 2019 15:19:48 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id B044BDA78C; Wed, 30 Jan 2019 16:19:14 +0100 (CET)
-Date:   Wed, 30 Jan 2019 16:19:14 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v4 04/12] btrfs: extent_io: Move the BUG_ON() in
- flush_write_bio() one level up
-Message-ID: <20190130151914.GU2900@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20190125050925.30754-1-wqu@suse.com>
- <20190125050925.30754-5-wqu@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190125050925.30754-5-wqu@suse.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+        id S1729716AbfA3PcC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 30 Jan 2019 10:32:02 -0500
+Received: from mailgw-02.dd24.net ([193.46.215.43]:51136 "EHLO
+        mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729203AbfA3PcC (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 30 Jan 2019 10:32:02 -0500
+X-Greylist: delayed 350 seconds by postgrey-1.27 at vger.kernel.org; Wed, 30 Jan 2019 10:32:01 EST
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.26])
+        by mailgw-02.dd24.net (Postfix) with ESMTP id 9876B5FD28;
+        Wed, 30 Jan 2019 15:26:10 +0000 (UTC)
+X-Virus-Scanned: Debian amavisd-new at
+        mailpolicy-01.live.igb.homer.key-systems.net
+Received: from smtp.dd24.net ([192.168.1.36])
+        by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
+        with ESMTP id dFt5iKMUbQsQ; Wed, 30 Jan 2019 15:26:09 +0000 (UTC)
+Received: from gar-nb-etp23.garching.physik.uni-muenchen.de (unknown [141.84.41.132])
+        (using TLSv1.2 with cipher DHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by smtp.dd24.net (Postfix) with ESMTPSA;
+        Wed, 30 Jan 2019 15:26:08 +0000 (UTC)
+Message-ID: <6ce96b57897acb62101dd213f8127ffeb981ee90.camel@scientia.net>
+Subject: Re: dm-integrity + mdadm + btrfs = no journal?
+From:   Christoph Anton Mitterer <calestyo@scientia.net>
+To:     "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Hans van Kranenburg <Hans.van.Kranenburg@mendix.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Date:   Wed, 30 Jan 2019 16:26:08 +0100
+In-Reply-To: <5c11b6a4-de3d-2ba0-c5c6-65ea04cd0245@gmail.com>
+References: <2a321782-d258-1ef3-8d25-149b8e24e819@mendix.com>
+         <5c11b6a4-de3d-2ba0-c5c6-65ea04cd0245@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+User-Agent: Evolution 3.30.4-1 
+Mime-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Jan 25, 2019 at 01:09:17PM +0800, Qu Wenruo wrote:
-> +static int __must_check flush_write_bio(struct extent_page_data *epd)
->  {
-> -	if (epd->bio) {
-> -		int ret;
-> +	int ret = 0;
->  
-> +	if (epd->bio) {
->  		ret = submit_one_bio(epd->bio, 0, 0);
-> -		BUG_ON(ret < 0); /* -ENOMEM */
->  		epd->bio = NULL;
+On Wed, 2019-01-30 at 07:58 -0500, Austin S. Hemmelgarn wrote:
+> Running dm-integrity without a journal is roughly equivalent to
+> using 
+> the nobarrier mount option (the journal is used to provide the same 
+> guarantees that barriers do).  IOW, don't do this unless you are
+> willing 
+> to lose the whole volume.
 
-I'm not sure if resetting epd->bio to NULL is all that needs to be done
-here. With the BUG_ON the error case never happens so if all goes fine
-it's also ok to set it to NULL and continue. But the callers might need
-to send the flush again.
+That sounds a bit strange to me.
 
-It's not easy to trace the bio here, it's set indirectly in
-submit_extent_page, submit_one_bio is another indirection, switching by
-type and sometimes bio_endio is called in case of an error.
+My understanding was that the idea of being able to disable the journal
+of dm-integrity was just to avoid any double work, if equivalent
+guarantees are already given by higher levels.
+
+If btrfs is by itself already safe (by using barriers), then I'd have
+expected that not transaction is committed, unless it got through all
+lower layers... so either everything works well on the dm-integrity
+base (and thus no journal is needed)... or it fails there... but then
+btrfs would already safe by it's own means (barriers + CoW)?
+
+
+Cheers,
+Chris.
+

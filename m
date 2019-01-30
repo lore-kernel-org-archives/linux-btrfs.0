@@ -2,51 +2,116 @@ Return-Path: <SRS0=cBAG=QG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D2770C282D7
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 17:14:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5CFC5C282D7
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 17:21:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id AE9FC2087F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 17:14:32 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3523520855
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 17:21:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732103AbfA3ROb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 30 Jan 2019 12:14:31 -0500
-Received: from mx2.suse.de ([195.135.220.15]:39694 "EHLO mx1.suse.de"
+        id S1730113AbfA3RVz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 30 Jan 2019 12:21:55 -0500
+Received: from mx2.suse.de ([195.135.220.15]:41382 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1731801AbfA3ROb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Jan 2019 12:14:31 -0500
+        id S1726230AbfA3RVy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 30 Jan 2019 12:21:54 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 2D6BDAC91
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Jan 2019 17:14:30 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id CB3D4AD3C;
+        Wed, 30 Jan 2019 17:21:52 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 9FB05DA78C; Wed, 30 Jan 2019 18:13:55 +0100 (CET)
-Date:   Wed, 30 Jan 2019 18:13:55 +0100
+        id 8BC94DA78C; Wed, 30 Jan 2019 18:21:18 +0100 (CET)
+Date:   Wed, 30 Jan 2019 18:21:18 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
+To:     fdmanana@kernel.org
 Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Output ENOSPC debug info in inc_block_group_ro()
-Message-ID: <20190130171354.GY2900@twin.jikos.cz>
+Subject: Re: [PATCH] Btrfs: fix deadlock when allocating tree block during
+ leaf/node split
+Message-ID: <20190130172118.GZ2900@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
         linux-btrfs@vger.kernel.org
-References: <20190130050751.31766-1-wqu@suse.com>
+References: <20190125114851.4065-1-fdmanana@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190130050751.31766-1-wqu@suse.com>
+In-Reply-To: <20190125114851.4065-1-fdmanana@kernel.org>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jan 30, 2019 at 01:07:51PM +0800, Qu Wenruo wrote:
-> Since inc_block_group_ro() would return -ENOSPC, outputting debug info
-> for enospc_debug mount option would be helpful to debug some balance
-> false ENOSPC report.
+On Fri, Jan 25, 2019 at 11:48:51AM +0000, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> When splitting a leaf or node from one of the trees that are modified when
+> flushing pending block groups (extent, chunk, device and free space trees),
+> we need to allocate a new tree block, which in turn can result in the need
+> to allocate a new block group. After allocating the new block group we may
+> need to flush new block groups that were previously allocated during the
+> course of the current transaction, which is what may cause a deadlock due
+> to attempts to write lock twice the same leaf or node, as when splitting
+> a leaf or node we are holding a write lock on it and its parent node.
+> 
+> The same type of deadlock can also happen when increasing the tree's
+> height, since we are holding a lock on the existing root while allocating
+> the tree block to use as the new root node.
+> 
+> An example trace when the deadlock happens during the leaf split path is:
+> 
+>   [27175.293054] CPU: 0 PID: 3005 Comm: kworker/u17:6 Tainted: G        W         4.19.16 #1
+>   [27175.293942] Hardware name: Penguin Computing Relion 1900/MD90-FS0-ZB-XX, BIOS R15 06/25/2018
+>   [27175.294846] Workqueue: btrfs-extent-refs btrfs_extent_refs_helper [btrfs]
+>   (...)
+>   [27175.298384] RSP: 0018:ffffab2087107758 EFLAGS: 00010246
+>   [27175.299269] RAX: 0000000000000bbd RBX: ffff9fadc7141c48 RCX: 0000000000000001
+>   [27175.300155] RDX: 0000000000000001 RSI: 0000000000000002 RDI: ffff9fadc7141c48
+>   [27175.301023] RBP: 0000000000000001 R08: ffff9faeb6ac1040 R09: ffff9fa9c0000000
+>   [27175.301887] R10: 0000000000000000 R11: 0000000000000040 R12: ffff9fb21aac8000
+>   [27175.302743] R13: ffff9fb1a64d6a20 R14: 0000000000000001 R15: ffff9fb1a64d6a18
+>   [27175.303601] FS:  0000000000000000(0000) GS:ffff9fb21fa00000(0000) knlGS:0000000000000000
+>   [27175.304468] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+>   [27175.305339] CR2: 00007fdc8743ead8 CR3: 0000000763e0a006 CR4: 00000000003606f0
+>   [27175.306220] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+>   [27175.307087] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+>   [27175.307940] Call Trace:
+>   [27175.308802]  btrfs_search_slot+0x779/0x9a0 [btrfs]
+>   [27175.309669]  ? update_space_info+0xba/0xe0 [btrfs]
+>   [27175.310534]  btrfs_insert_empty_items+0x67/0xc0 [btrfs]
+>   [27175.311397]  btrfs_insert_item+0x60/0xd0 [btrfs]
+>   [27175.312253]  btrfs_create_pending_block_groups+0xee/0x210 [btrfs]
+>   [27175.313116]  do_chunk_alloc+0x25f/0x300 [btrfs]
+>   [27175.313984]  find_free_extent+0x706/0x10d0 [btrfs]
+>   [27175.314855]  btrfs_reserve_extent+0x9b/0x1d0 [btrfs]
+>   [27175.315707]  btrfs_alloc_tree_block+0x100/0x5b0 [btrfs]
+>   [27175.316548]  split_leaf+0x130/0x610 [btrfs]
+>   [27175.317390]  btrfs_search_slot+0x94d/0x9a0 [btrfs]
+>   [27175.318235]  btrfs_insert_empty_items+0x67/0xc0 [btrfs]
+>   [27175.319087]  alloc_reserved_file_extent+0x84/0x2c0 [btrfs]
+>   [27175.319938]  __btrfs_run_delayed_refs+0x596/0x1150 [btrfs]
+>   [27175.320792]  btrfs_run_delayed_refs+0xed/0x1b0 [btrfs]
+>   [27175.321643]  delayed_ref_async_start+0x81/0x90 [btrfs]
+>   [27175.322491]  normal_work_helper+0xd0/0x320 [btrfs]
+>   [27175.323328]  ? move_linked_works+0x6e/0xa0
+>   [27175.324160]  process_one_work+0x191/0x370
+>   [27175.324976]  worker_thread+0x4f/0x3b0
+>   [27175.325763]  kthread+0xf8/0x130
+>   [27175.326531]  ? rescuer_thread+0x320/0x320
+>   [27175.327284]  ? kthread_create_worker_on_cpu+0x50/0x50
+>   [27175.328027]  ret_from_fork+0x35/0x40
+>   [27175.328741] ---[ end trace 300a1b9f0ac30e26 ]---
+> 
+> Fix this by preventing the flushing of new blocks groups when splitting a
+> leaf/node and when inserting a new root node for one of the trees modified
+> by the flushing operation, similar to what is done when COWing a node/leaf
+> from on of these trees.
+> 
+> Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=202383
+> Reported-by: Eli V <eliventer@gmail.com>
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-Sure, added to misc-next.
+Added to 5.0-rc queue, thanks.

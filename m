@@ -2,175 +2,136 @@ Return-Path: <SRS0=cBAG=QG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4C098C282D7
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 09:14:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D5A6FC282D7
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 12:58:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1E28F2082F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 09:14:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A4BED2175B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 12:58:07 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="DCCXYkPP"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730463AbfA3JOC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 30 Jan 2019 04:14:02 -0500
-Received: from mx2.suse.de ([195.135.220.15]:43912 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726452AbfA3JOC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Jan 2019 04:14:02 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 68677AC5F
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Jan 2019 09:14:00 +0000 (UTC)
-Subject: Re: [PATCH 1/2] btrfs: Don't search devid for every
- verify_one_dev_extent() call
-To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20190130074000.16638-1-wqu@suse.com>
- <20190130074000.16638-2-wqu@suse.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- mQINBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
- T7g+RbfPFlmQp+EwFWOtABXlKC54zgSf+uulGwx5JAUFVUIRBmnHOYi/lUiE0yhpnb1KCA7f
- u/W+DkwGerXqhhe9TvQoGwgCKNfzFPZoM+gZrm+kWv03QLUCr210n4cwaCPJ0Nr9Z3c582xc
- bCUVbsjt7BN0CFa2BByulrx5xD9sDAYIqfLCcZetAqsTRGxM7LD0kh5WlKzOeAXj5r8DOrU2
- GdZS33uKZI/kZJZVytSmZpswDsKhnGzRN1BANGP8sC+WD4eRXajOmNh2HL4P+meO1TlM3GLl
- EQd2shHFY0qjEo7wxKZI1RyZZ5AgJnSmehrPCyuIyVY210CbMaIKHUIsTqRgY5GaNME24w7h
- TyyVCy2qAM8fLJ4Vw5bycM/u5xfWm7gyTb9V1TkZ3o1MTrEsrcqFiRrBY94Rs0oQkZvunqia
- c+NprYSaOG1Cta14o94eMH271Kka/reEwSZkC7T+o9hZ4zi2CcLcY0DXj0qdId7vUKSJjEep
- c++s8ncFekh1MPhkOgNj8pk17OAESanmDwksmzh1j12lgA5lTFPrJeRNu6/isC2zyZhTwMWs
- k3LkcTa8ZXxh0RfWAqgx/ogKPk4ZxOXQEZetkEyTFghbRH2BIwARAQABtCNOaWtvbGF5IEJv
- cmlzb3YgPG5ib3Jpc292QHN1c2UuY29tPokCOAQTAQIAIgUCWIo48QIbAwYLCQgHAwIGFQgC
- CQoLBBYCAwECHgECF4AACgkQcb6CRuU/KFc0eg/9GLD3wTQz9iZHMFbjiqTCitD7B6dTLV1C
- ddZVlC8Hm/TophPts1bWZORAmYIihHHI1EIF19+bfIr46pvfTu0yFrJDLOADMDH+Ufzsfy2v
- HSqqWV/nOSWGXzh8bgg/ncLwrIdEwBQBN9SDS6aqsglagvwFD91UCg/TshLlRxD5BOnuzfzI
- Leyx2c6YmH7Oa1R4MX9Jo79SaKwdHt2yRN3SochVtxCyafDlZsE/efp21pMiaK1HoCOZTBp5
- VzrIP85GATh18pN7YR9CuPxxN0V6IzT7IlhS4Jgj0NXh6vi1DlmKspr+FOevu4RVXqqcNTSS
- E2rycB2v6cttH21UUdu/0FtMBKh+rv8+yD49FxMYnTi1jwVzr208vDdRU2v7Ij/TxYt/v4O8
- V+jNRKy5Fevca/1xroQBICXsNoFLr10X5IjmhAhqIH8Atpz/89ItS3+HWuE4BHB6RRLM0gy8
- T7rN6ja+KegOGikp/VTwBlszhvfLhyoyjXI44Tf3oLSFM+8+qG3B7MNBHOt60CQlMkq0fGXd
- mm4xENl/SSeHsiomdveeq7cNGpHi6i6ntZK33XJLwvyf00PD7tip/GUj0Dic/ZUsoPSTF/mG
- EpuQiUZs8X2xjK/AS/l3wa4Kz2tlcOKSKpIpna7V1+CMNkNzaCOlbv7QwprAerKYywPCoOSC
- 7P25Ag0EWIoHPgEQAMiUqvRBZNvPvki34O/dcTodvLSyOmK/MMBDrzN8Cnk302XfnGlW/YAQ
- csMWISKKSpStc6tmD+2Y0z9WjyRqFr3EGfH1RXSv9Z1vmfPzU42jsdZn667UxrRcVQXUgoKg
- QYx055Q2FdUeaZSaivoIBD9WtJq/66UPXRRr4H/+Y5FaUZx+gWNGmBT6a0S/GQnHb9g3nonD
- jmDKGw+YO4P6aEMxyy3k9PstaoiyBXnzQASzdOi39BgWQuZfIQjN0aW+Dm8kOAfT5i/yk59h
- VV6v3NLHBjHVw9kHli3jwvsizIX9X2W8tb1SefaVxqvqO1132AO8V9CbE1DcVT8fzICvGi42
- FoV/k0QOGwq+LmLf0t04Q0csEl+h69ZcqeBSQcIMm/Ir+NorfCr6HjrB6lW7giBkQl6hhomn
- l1mtDP6MTdbyYzEiBFcwQD4terc7S/8ELRRybWQHQp7sxQM/Lnuhs77MgY/e6c5AVWnMKd/z
- MKm4ru7A8+8gdHeydrRQSWDaVbfy3Hup0Ia76J9FaolnjB8YLUOJPdhI2vbvNCQ2ipxw3Y3c
- KhVIpGYqwdvFIiz0Fej7wnJICIrpJs/+XLQHyqcmERn3s/iWwBpeogrx2Lf8AGezqnv9woq7
- OSoWlwXDJiUdaqPEB/HmGfqoRRN20jx+OOvuaBMPAPb+aKJyle8zABEBAAGJAh8EGAECAAkF
- AliKBz4CGwwACgkQcb6CRuU/KFdacg/+M3V3Ti9JYZEiIyVhqs+yHb6NMI1R0kkAmzsGQ1jU
- zSQUz9AVMR6T7v2fIETTT/f5Oout0+Hi9cY8uLpk8CWno9V9eR/B7Ifs2pAA8lh2nW43FFwp
- IDiSuDbH6oTLmiGCB206IvSuaQCp1fed8U6yuqGFcnf0ZpJm/sILG2ECdFK9RYnMIaeqlNQm
- iZicBY2lmlYFBEaMXHoy+K7nbOuizPWdUKoKHq+tmZ3iA+qL5s6Qlm4trH28/fPpFuOmgP8P
- K+7LpYLNSl1oQUr+WlqilPAuLcCo5Vdl7M7VFLMq4xxY/dY99aZx0ZJQYFx0w/6UkbDdFLzN
- upT7NIN68lZRucImffiWyN7CjH23X3Tni8bS9ubo7OON68NbPz1YIaYaHmnVQCjDyDXkQoKC
- R82Vf9mf5slj0Vlpf+/Wpsv/TH8X32ajva37oEQTkWNMsDxyw3aPSps6MaMafcN7k60y2Wk/
- TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
- RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
- 5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <3320eb74-a67e-2b71-ca09-6986a559f45b@suse.com>
-Date:   Wed, 30 Jan 2019 11:13:59 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+        id S1730109AbfA3M6G (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 30 Jan 2019 07:58:06 -0500
+Received: from mail-it1-f179.google.com ([209.85.166.179]:40856 "EHLO
+        mail-it1-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725851AbfA3M6G (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 30 Jan 2019 07:58:06 -0500
+Received: by mail-it1-f179.google.com with SMTP id h193so10287323ita.5
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Jan 2019 04:58:05 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=subject:to:references:from:message-id:date:user-agent:mime-version
+         :in-reply-to:content-language:content-transfer-encoding;
+        bh=cyFyOmZTP84540e3jYhA5i02OJr9SgDFZcNDFE0Lw14=;
+        b=DCCXYkPPNn8bP+RMRjkmqE8ONHtBEYZIe5YEq8ORd0M9DR3NlalXUKhTKZ6XM/xmxX
+         mAWHdFFqiqRUUaQzJ3Ug/s2SFX7FhrHzPeZiMTt2KzK7k9H6GvEDiibaT+WI/b2acqcH
+         7jmSfpCHMsra2eJf0DN4rPPX6nEsI25wdMM4K23P7+zInacZ1A1bWfGEQ0dhqIunD+Zh
+         oFmqThXNXZLRx0VXCY7iqCIASV6hL863Xq+rxBM2c4/paEAJHSYW57qAMB4lx0ZcPFyx
+         uWvi0DeX6q+uwWIwiNY2r+0k8BFtzCT/+maT1q8qrqTYw5Y0zFPpf5CSYvyuH+cWvzIS
+         ZUlw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=cyFyOmZTP84540e3jYhA5i02OJr9SgDFZcNDFE0Lw14=;
+        b=E0efrdR3ecPWsBTfSZOGeeHEollSiBT1pZ2Rdfo9jIFCBtxTCs6JmhvmsUabZ9tup+
+         eodfXrWN5vF8flmWh8bONFqJkQsO4rVoPTNRBviB5KlkMtta6RhZ7xzOVr48ihdtKQ2j
+         IB6rgomTBA7MJ6Oubf8nR50HgWqpAxsogSKs0hW6/apXh4FsDYX5d0MDTfmIRdcGwfPq
+         jOdECU6HnSQ8m6Bcw6KpRashYWdsgTMFzldmFrUyYux3VeeqBT+ChIeGqDfgCFPkMQ5y
+         nLiAKAgytLO38d0bkRG+qDAtwli+h3c07+xE8aZNFReqc2CqU9aAsBMVa2wB5DOUoTla
+         YtDA==
+X-Gm-Message-State: AJcUukeStW4is57wF1TqkFUEwOc0DeIl6WueyH7xiU890Z52PzsLvK9y
+        e0FZAik202VUNtOKs4TeNp7L1jsFP1A=
+X-Google-Smtp-Source: ALg8bN5YUX0L+YmZpMMt3GKOrM8A63h3xarijoOLuqAnULHdRPBGE9q0nwRaycTLBge//duuD3qQ0A==
+X-Received: by 2002:a24:a141:: with SMTP id n1mr11521211iti.31.1548853084232;
+        Wed, 30 Jan 2019 04:58:04 -0800 (PST)
+Received: from [191.9.209.46] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.gmail.com with ESMTPSA id d128sm686715iof.37.2019.01.30.04.58.02
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Wed, 30 Jan 2019 04:58:03 -0800 (PST)
+Subject: Re: dm-integrity + mdadm + btrfs = no journal?
+To:     Hans van Kranenburg <Hans.van.Kranenburg@mendix.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <2a321782-d258-1ef3-8d25-149b8e24e819@mendix.com>
+From:   "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <5c11b6a4-de3d-2ba0-c5c6-65ea04cd0245@gmail.com>
+Date:   Wed, 30 Jan 2019 07:58:00 -0500
+User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
+ Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <20190130074000.16638-2-wqu@suse.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <2a321782-d258-1ef3-8d25-149b8e24e819@mendix.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 30.01.19 г. 9:39 ч., Qu Wenruo wrote:
-> verify_one_dev_extent() will call btrfs_find_device() for each dev
-> extent, this waste some CPU time just searching the devices list.
+On 2019-01-29 18:15, Hans van Kranenburg wrote:
+> Hi,
 > 
-> Move the search one level up, into the btrfs_verify_dev_extents(), so
-> for each device we only call btrfs_find_device() once.
+> Thought experiment time...
 > 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-
-Seems the sane thing to do, so:
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
-> ---
->  fs/btrfs/volumes.c | 26 ++++++++++++++++----------
->  1 file changed, 16 insertions(+), 10 deletions(-)
+> I have an HP z820 workstation here (with ECC memory, yay!) and 4x250G
+> 10k SAS disks (and some spare disks). It's donated hardware, and I'm
+> going to use it to replace the current server in the office of a
+> non-profit organization (so it's not work stuff this time).
 > 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 2576b1a379c9..8e932d7d2fe6 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -7761,13 +7761,14 @@ static u64 calc_stripe_length(u64 type, u64 chunk_len, int num_stripes)
->  }
->  
->  static int verify_one_dev_extent(struct btrfs_fs_info *fs_info,
-> -				 u64 chunk_offset, u64 devid,
-> -				 u64 physical_offset, u64 physical_len)
-> +				 struct btrfs_device *dev,
-> +				 u64 chunk_offset, u64 physical_offset,
-> +				 u64 physical_len)
->  {
->  	struct extent_map_tree *em_tree = &fs_info->mapping_tree.map_tree;
->  	struct extent_map *em;
->  	struct map_lookup *map;
-> -	struct btrfs_device *dev;
-> +	u64 devid = dev->devid;
->  	u64 stripe_len;
->  	bool found = false;
->  	int ret = 0;
-> @@ -7819,12 +7820,6 @@ static int verify_one_dev_extent(struct btrfs_fs_info *fs_info,
->  	}
->  
->  	/* Make sure no dev extent is beyond device bondary */
-> -	dev = btrfs_find_device(fs_info, devid, NULL, NULL);
-> -	if (!dev) {
-> -		btrfs_err(fs_info, "failed to find devid %llu", devid);
-> -		ret = -EUCLEAN;
-> -		goto out;
-> -	}
->  	if (physical_offset + physical_len > dev->disk_total_bytes) {
->  		btrfs_err(fs_info,
->  "dev extent devid %llu physical offset %llu len %llu is beyond device boundary %llu",
-> @@ -7874,6 +7869,7 @@ int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info)
->  {
->  	struct btrfs_path *path;
->  	struct btrfs_root *root = fs_info->dev_root;
-> +	struct btrfs_device *device = NULL;
->  	struct btrfs_key key;
->  	u64 prev_devid = 0;
->  	u64 prev_dev_ext_end = 0;
-> @@ -7917,6 +7913,16 @@ int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info)
->  		devid = key.objectid;
->  		physical_offset = key.offset;
->  
-> +		if (!device || devid != device->devid) {
-> +			device = btrfs_find_device(fs_info, devid, NULL, NULL);
-> +			if (!device) {
-> +				btrfs_err(fs_info, "failed to find devid %llu",
-> +					  devid);
-> +				ret = -EUCLEAN;
-> +				goto out;
-> +			}
-> +		}
-> +
->  		dext = btrfs_item_ptr(leaf, slot, struct btrfs_dev_extent);
->  		chunk_offset = btrfs_dev_extent_chunk_offset(leaf, dext);
->  		physical_len = btrfs_dev_extent_length(leaf, dext);
-> @@ -7930,7 +7936,7 @@ int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info)
->  			goto out;
->  		}
->  
-> -		ret = verify_one_dev_extent(fs_info, chunk_offset, devid,
-> +		ret = verify_one_dev_extent(fs_info, device, chunk_offset,
->  					    physical_offset, physical_len);
->  		if (ret < 0)
->  			goto out;
+> The machine is going to run Debian/Xen and a few virtual machines
+> (current one also does, but the hardware is now really starting to fall
+> apart).
 > 
+> I have been thinking a bit how to (re)organize disk storage in this
+> scenario.
+> 
+> 1. Let's use btrfs everywhere. \:D/
+> 2. For running Xen virtual machines, I prefer block devices on LVM. No
+> image files, no btrfs-on-btrfs etc...
+> 3. Oh, and there's also 1 MS Windows VM that will be in the mix.
+> 
+> Obviously I can't start using multi-device btrfs in each and every
+> virtual machine (a big pile of horror when one disk dies or starts
+> misbehaving).
+> 
+> So, what I was thinking of is:
+> 
+> * Use dm-integrity on partitions on the individual disks
+> * Use mdadm RAID10 on top (which is then able to repair bitrot)
+> * Use LVM on top
+> * Etc...
+> 
+> For all of the filesystems, I would be doing backups to a remote
+> location outside of the building with send/receive.
+> 
+> The Windows VM will be an image file on a btrfs filesystem in the Xen
+> dom0. It's idle most of the time, and I think cow+autodefrag can easily
+> handle it. I'd like to be able to take snapshots of it which can be sent
+> to a remote location.
+I would suggest against this.  NTFS is a pathologically bad case even 
+when using it from inside Linux and leaving it almost completely idle. 
+When used from Windows, it has horrible performance and trashes 
+performance of _all_ other VM images on the same disk.
+
+Also, just in general, I've only seen at best mediocre results from 
+using BTRFS for VM image storage when using Xen.  I'm not sure exactly 
+why, but I think it has something to do with how the Xen block backend 
+access the filesystem.
+> 
+> Now, to finally throw in the big question: If I use btrfs everywhere,
+> can I run dm-integrity without a journal?
+> 
+> As far as I can reason about.. I could. As long as there's no 'nocow'
+> happening, the only thing that needs to happen correctly is superblock
+> writes, right?
+Running dm-integrity without a journal is roughly equivalent to using 
+the nobarrier mount option (the journal is used to provide the same 
+guarantees that barriers do).  IOW, don't do this unless you are willing 
+to lose the whole volume.

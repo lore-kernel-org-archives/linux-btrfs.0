@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 51555C282D7
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 74427C282D9
 	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 14:51:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2C00420882
+	by mail.kernel.org (Postfix) with ESMTP id 4EE3F20989
 	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 14:51:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731448AbfA3OvJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1731437AbfA3OvJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Wed, 30 Jan 2019 09:51:09 -0500
-Received: from mx2.suse.de ([195.135.220.15]:38122 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:38124 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1731409AbfA3OvH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1731408AbfA3OvH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 30 Jan 2019 09:51:07 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id AB0C1B0BA
+        by mx1.suse.de (Postfix) with ESMTP id EBBB6B0C4
         for <linux-btrfs@vger.kernel.org>; Wed, 30 Jan 2019 14:51:05 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     jeffm@suse.com, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 05/15] btrfs: Handle pending/pinned chunks before blockgroup relocation during device shrink
-Date:   Wed, 30 Jan 2019 16:50:52 +0200
-Message-Id: <20190130145102.4708-6-nborisov@suse.com>
+Subject: [PATCH 06/15] btrfs: Rename and export clear_btree_io_tree
+Date:   Wed, 30 Jan 2019 16:50:53 +0200
+Message-Id: <20190130145102.4708-7-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20190130145102.4708-1-nborisov@suse.com>
 References: <20190130145102.4708-1-nborisov@suse.com>
@@ -36,114 +36,145 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-During device shrink pinned/pending chunks (i.e those which have been
-deleted/created respectively, in the current transaction and haven't
-touched disk) need to be accounted when doing device shrink. Presently
-this happens after the main relocation loop in btrfs_shrink_device,
-which could lead to making another go in the body of the function.
-
-Since there is no hard requirement to perform pinned/pending chunks
-handling after the relocation loop, move the code before it. This leads
-to simplifying the code flow around - i.e no need to use 'goto again'.
+This function is going to be used to clear out the device extent
+allocation information. Give it a more generic name and export it. This
+is in preparation to replacing the pending/pinned chunk lists with an
+extent tree. No functional changes.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/volumes.c | 54 ++++++++++++++++++----------------------------
- 1 file changed, 21 insertions(+), 33 deletions(-)
+ fs/btrfs/extent_io.c   | 28 ++++++++++++++++++++++++++++
+ fs/btrfs/extent_io.h   |  1 +
+ fs/btrfs/transaction.c | 37 ++++---------------------------------
+ 3 files changed, 33 insertions(+), 33 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 4f645e1b5539..be91432697ab 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4712,15 +4712,15 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 	int slot;
- 	int failed = 0;
- 	bool retried = false;
--	bool checked_pending_chunks = false;
- 	struct extent_buffer *l;
- 	struct btrfs_key key;
- 	struct btrfs_super_block *super_copy = fs_info->super_copy;
- 	u64 old_total = btrfs_super_total_bytes(super_copy);
- 	u64 old_size = btrfs_device_get_total_bytes(device);
- 	u64 diff;
-+	u64 start;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 01f596d42f59..ab1c81a1918e 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -210,6 +210,34 @@ void extent_io_tree_init(struct extent_io_tree *tree,
+ 	tree->private_data = private_data;
+ }
  
--	new_size = round_down(new_size, fs_info->sectorsize);
-+	start = new_size = round_down(new_size, fs_info->sectorsize);
- 	diff = round_down(old_size - new_size, fs_info->sectorsize);
- 
- 	if (test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state))
-@@ -4732,6 +4732,10 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 
- 	path->reada = READA_BACK;
- 
-+	trans = btrfs_start_transaction(root, 0);
-+	if (IS_ERR(trans))
-+		return PTR_ERR(trans);
-+
- 	mutex_lock(&fs_info->chunk_mutex);
- 
- 	btrfs_device_set_total_bytes(device, new_size);
-@@ -4739,7 +4743,21 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 		device->fs_devices->total_rw_bytes -= diff;
- 		atomic64_sub(diff, &fs_info->free_chunk_space);
- 	}
--	mutex_unlock(&fs_info->chunk_mutex);
-+
++void extent_io_tree_release(struct extent_io_tree *tree)
++{
++	spin_lock(&tree->lock);
 +	/*
-+	 * Once the device's size has been set to the new size, ensure all
-+	 * in-memory chunks are synced to disk so that the loop below sees them
-+	 * and relocates them accordingly.
++	 * Do a single barrier for the waitqueue_active check here, the state
++	 * of the waitqueue should not change once clear_btree_io_tree is
++	 * called.
 +	 */
-+	if (contains_pending_extent(trans->transaction, device, &start, diff)) {
-+		mutex_unlock(&fs_info->chunk_mutex);
-+		ret = btrfs_commit_transaction(trans);
-+		if (ret)
-+			goto done;
-+	} else {
-+		mutex_unlock(&fs_info->chunk_mutex);
-+		btrfs_end_transaction(trans);
++	smp_mb();
++	while (!RB_EMPTY_ROOT(&tree->state)) {
++		struct rb_node *node;
++		struct extent_state *state;
++
++		node = rb_first(&tree->state);
++		state = rb_entry(node, struct extent_state, rb_node);
++		rb_erase(&state->rb_node, &tree->state);
++		RB_CLEAR_NODE(&state->rb_node);
++		/*
++		 * btree io trees aren't supposed to have tasks waiting for
++		 * changes in the flags of extent states ever.
++		 */
++		ASSERT(!waitqueue_active(&state->wq));
++		free_extent_state(state);
++
++		cond_resched_lock(&tree->lock);
 +	}
++	spin_unlock(&tree->lock);
++}
+ static struct extent_state *alloc_extent_state(gfp_t mask)
+ {
+ 	struct extent_state *state;
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 08749e0b9c32..d7beb2b3bc7d 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -240,6 +240,7 @@ typedef struct extent_map *(get_extent_t)(struct btrfs_inode *inode,
+ 					  int create);
  
- again:
- 	key.objectid = device->devid;
-@@ -4830,36 +4848,6 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
+ void extent_io_tree_init(struct extent_io_tree *tree, void *private_data);
++void extent_io_tree_release(struct extent_io_tree *tree);
+ int try_release_extent_mapping(struct page *page, gfp_t mask);
+ int try_release_extent_buffer(struct page *page);
+ int lock_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 8d340957f7d6..0f5c8d9b50d7 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -80,35 +80,6 @@ void btrfs_put_transaction(struct btrfs_transaction *transaction)
+ 	}
+ }
+ 
+-static void clear_btree_io_tree(struct extent_io_tree *tree)
+-{
+-	spin_lock(&tree->lock);
+-	/*
+-	 * Do a single barrier for the waitqueue_active check here, the state
+-	 * of the waitqueue should not change once clear_btree_io_tree is
+-	 * called.
+-	 */
+-	smp_mb();
+-	while (!RB_EMPTY_ROOT(&tree->state)) {
+-		struct rb_node *node;
+-		struct extent_state *state;
+-
+-		node = rb_first(&tree->state);
+-		state = rb_entry(node, struct extent_state, rb_node);
+-		rb_erase(&state->rb_node, &tree->state);
+-		RB_CLEAR_NODE(&state->rb_node);
+-		/*
+-		 * btree io trees aren't supposed to have tasks waiting for
+-		 * changes in the flags of extent states ever.
+-		 */
+-		ASSERT(!waitqueue_active(&state->wq));
+-		free_extent_state(state);
+-
+-		cond_resched_lock(&tree->lock);
+-	}
+-	spin_unlock(&tree->lock);
+-}
+-
+ static noinline void switch_commit_roots(struct btrfs_transaction *trans)
+ {
+ 	struct btrfs_fs_info *fs_info = trans->fs_info;
+@@ -122,7 +93,7 @@ static noinline void switch_commit_roots(struct btrfs_transaction *trans)
+ 		root->commit_root = btrfs_root_node(root);
+ 		if (is_fstree(root->root_key.objectid))
+ 			btrfs_unpin_free_ino(root);
+-		clear_btree_io_tree(&root->dirty_log_pages);
++		extent_io_tree_release(&root->dirty_log_pages);
  	}
  
- 	mutex_lock(&fs_info->chunk_mutex);
--
--	/*
--	 * We checked in the above loop all device extents that were already in
--	 * the device tree. However before we have updated the device's
--	 * total_bytes to the new size, we might have had chunk allocations that
--	 * have not complete yet (new block groups attached to transaction
--	 * handles), and therefore their device extents were not yet in the
--	 * device tree and we missed them in the loop above. So if we have any
--	 * pending chunk using a device extent that overlaps the device range
--	 * that we can not use anymore, commit the current transaction and
--	 * repeat the search on the device tree - this way we guarantee we will
--	 * not have chunks using device extents that end beyond 'new_size'.
--	 */
--	if (!checked_pending_chunks) {
--		u64 start = new_size;
--		u64 len = old_size - new_size;
--
--		if (contains_pending_extent(trans->transaction, device,
--					    &start, len)) {
--			mutex_unlock(&fs_info->chunk_mutex);
--			checked_pending_chunks = true;
--			failed = 0;
--			retried = false;
--			ret = btrfs_commit_transaction(trans);
--			if (ret)
--				goto done;
--			goto again;
--		}
--	}
--
- 	btrfs_device_set_disk_total_bytes(device, new_size);
- 	if (list_empty(&device->post_commit_list))
- 		list_add_tail(&device->post_commit_list,
+ 	/* We can free old roots now. */
+@@ -938,7 +909,7 @@ int btrfs_write_marked_extents(struct btrfs_fs_info *fs_info,
+ 		 * superblock that points to btree nodes/leafs for which
+ 		 * writeback hasn't finished yet (and without errors).
+ 		 * We cleanup any entries left in the io tree when committing
+-		 * the transaction (through clear_btree_io_tree()).
++		 * the transaction (through extent_io_tree_release()).
+ 		 */
+ 		if (err == -ENOMEM) {
+ 			err = 0;
+@@ -983,7 +954,7 @@ static int __btrfs_wait_marked_extents(struct btrfs_fs_info *fs_info,
+ 		 * left in the io tree. For a log commit, we don't remove them
+ 		 * after committing the log because the tree can be accessed
+ 		 * concurrently - we do it only at transaction commit time when
+-		 * it's safe to do it (through clear_btree_io_tree()).
++		 * it's safe to do it (through extent_io_tree_release()).
+ 		 */
+ 		err = clear_extent_bit(dirty_pages, start, end,
+ 				       EXTENT_NEED_WAIT, 0, 0, &cached_state);
+@@ -1061,7 +1032,7 @@ static int btrfs_write_and_wait_transaction(struct btrfs_trans_handle *trans)
+ 	blk_finish_plug(&plug);
+ 	ret2 = btrfs_wait_extents(fs_info, dirty_pages);
+ 
+-	clear_btree_io_tree(&trans->transaction->dirty_pages);
++	extent_io_tree_release(&trans->transaction->dirty_pages);
+ 
+ 	if (ret)
+ 		return ret;
 -- 
 2.17.1
 

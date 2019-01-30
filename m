@@ -2,85 +2,141 @@ Return-Path: <SRS0=cBAG=QG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 377E3C282D7
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 14:08:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B928CC282D7
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 14:50:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0A7C1218A4
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 14:08:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 920C320882
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 14:50:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731018AbfA3OIh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 30 Jan 2019 09:08:37 -0500
-Received: from mx2.suse.de ([195.135.220.15]:57142 "EHLO mx1.suse.de"
+        id S1731341AbfA3Oui (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 30 Jan 2019 09:50:38 -0500
+Received: from mx2.suse.de ([195.135.220.15]:38026 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729203AbfA3OIg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Jan 2019 09:08:36 -0500
+        id S1725828AbfA3Oui (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 30 Jan 2019 09:50:38 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 256C0ADE6;
-        Wed, 30 Jan 2019 14:08:35 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id D15C1DA78C; Wed, 30 Jan 2019 15:07:59 +0100 (CET)
-Date:   Wed, 30 Jan 2019 15:07:58 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v4 1/3] btrfs: scrub: fix circular locking dependency
- warning
-Message-ID: <20190130140758.GR2900@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
-        linux-btrfs@vger.kernel.org
-References: <1548830702-14676-1-git-send-email-anand.jain@oracle.com>
- <1548830702-14676-2-git-send-email-anand.jain@oracle.com>
+        by mx1.suse.de (Postfix) with ESMTP id 3E2C0B06A;
+        Wed, 30 Jan 2019 14:50:36 +0000 (UTC)
+Subject: Re: [PATCH] fs/btrfs: On error always free subvol_name in btrfs_mount
+To:     "Eric W. Biederman" <ebiederm@xmission.com>,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>
+Cc:     linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
+References: <87lg32p7y3.fsf@xmission.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <0d1a123a-b4e6-24d1-7dbe-9edc78bcf70b@suse.com>
+Date:   Wed, 30 Jan 2019 16:50:34 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <1548830702-14676-2-git-send-email-anand.jain@oracle.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+In-Reply-To: <87lg32p7y3.fsf@xmission.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jan 30, 2019 at 02:45:00PM +0800, Anand Jain wrote:
-> v3->v4: Fix list corruption as reported by btrfs/073 by David.
->            [1]
->            https://patchwork.kernel.org/patch/10705741/
-> 	Which I was able to reproduce with an instrumented kernel but not with
-> 	btrfs/073.
->         In v3 patch, it releases the fs_info::scrub_lock to destroy the work queue
-> 	which raced with new scrub requests, overwriting the scrub workers
-> 	pointers. So in v4, it kills the function scrub_workers_put(), and
-> 	performs the destroy_workqueue in two stages, with worker pointers
-> 	copied locally.
 
-> @@ -3932,9 +3925,16 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+
+On 30.01.19 г. 15:54 ч., Eric W. Biederman wrote:
+> 
+> The subvol_name is allocated in btrfs_parse_subvol_options and is
+> consumed and freed in mount_subvol.  Add a free to the error paths that
+> don't call mount_subvol so that it is guaranteed that subvol_name is
+> freed when an error happens.
+
+
+Good catch,
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
+> 
+> Fixes: 312c89fbca06 ("btrfs: cleanup btrfs_mount() using btrfs_mount_root()")
+> Cc: stable@vger.kernel.org
+> Cc: Chris Mason <clm@fb.com>
+> Cc: Josef Bacik <josef@toxicpanda.com>
+> Cc: David Sterba <dsterba@suse.com>
+> Cc: linux-btrfs@vger.kernel.org
+> Signed-off-by: "Eric W. Biederman" <ebiederm@xmission.com>
+> ---
+>  fs/btrfs/super.c | 3 +++
+>  1 file changed, 3 insertions(+)
+> 
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index c5586ffd1426..0a3f122dd61f 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -1621,6 +1621,7 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+>  				flags | SB_RDONLY, device_name, data);
+>  			if (IS_ERR(mnt_root)) {
+>  				root = ERR_CAST(mnt_root);
+> +				kfree(subvol_name);
+>  				goto out;
+>  			}
 >  
->  	mutex_lock(&fs_info->scrub_lock);
->  	dev->scrub_ctx = NULL;
-> -	scrub_workers_put(fs_info);
-> +	if (--fs_info->scrub_workers_refcnt == 0) {
-> +		scrub_workers = fs_info->scrub_workers;
-> +		scrub_wr_comp = fs_info->scrub_wr_completion_workers;
-> +		scrub_parity = fs_info->scrub_parity_workers;
-> +	}
->  	mutex_unlock(&fs_info->scrub_lock);
+> @@ -1630,12 +1631,14 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+>  			if (error < 0) {
+>  				root = ERR_PTR(error);
+>  				mntput(mnt_root);
+> +				kfree(subvol_name);
+>  				goto out;
+>  			}
+>  		}
+>  	}
+>  	if (IS_ERR(mnt_root)) {
+>  		root = ERR_CAST(mnt_root);
+> +		kfree(subvol_name);
+>  		goto out;
+>  	}
 >  
-> +	btrfs_destroy_workqueue(scrub_workers);
-> +	btrfs_destroy_workqueue(scrub_wr_comp);
-> +	btrfs_destroy_workqueue(scrub_parity);
-
-https://lore.kernel.org/linux-btrfs/1543554924-17397-2-git-send-email-anand.jain@oracle.com/
-
-Comparing to the previous version, it's almost the same I think. If
-scrub_workers_get races between the unlock and destroy_workers, anything
-that uses fs_info->scrub_wokers will soon use freed memory.
-
-The difference is that the worker pointers are read from fs_info under a
-lock but are still used outside. I haven't tested this version but from
-the analysis of previous crash, I don't see how v4 is supposed to be
-better.
+> 

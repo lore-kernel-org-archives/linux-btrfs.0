@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 553C5C282D8
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 14:51:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CB4FFC282D7
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 14:51:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 26D0820882
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 14:51:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A78CE20882
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 14:51:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731458AbfA3OvK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 30 Jan 2019 09:51:10 -0500
-Received: from mx2.suse.de ([195.135.220.15]:38130 "EHLO mx1.suse.de"
+        id S1731461AbfA3OvM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 30 Jan 2019 09:51:12 -0500
+Received: from mx2.suse.de ([195.135.220.15]:38158 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1731436AbfA3OvI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Jan 2019 09:51:08 -0500
+        id S1731439AbfA3OvK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 30 Jan 2019 09:51:10 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 82C19B0B2
+        by mx1.suse.de (Postfix) with ESMTP id CF16CB06A
         for <linux-btrfs@vger.kernel.org>; Wed, 30 Jan 2019 14:51:07 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     jeffm@suse.com, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 11/15] btrfs: Factor out in_range macro
-Date:   Wed, 30 Jan 2019 16:50:58 +0200
-Message-Id: <20190130145102.4708-12-nborisov@suse.com>
+Subject: [PATCH 12/15] btrfs: Optimize unallocated chunks discard
+Date:   Wed, 30 Jan 2019 16:50:59 +0200
+Message-Id: <20190130145102.4708-13-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20190130145102.4708-1-nborisov@suse.com>
 References: <20190130145102.4708-1-nborisov@suse.com>
@@ -36,53 +36,137 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is used in more than one places so let's factor it out in ctree.h.
-No functional changes.
+Currently unallocated chunks are always trimmed. For example
+2 consecutive trims on large storage would trim freespace twice
+irrespective of whether the space was actually allocated or not between
+those trims.
+
+Optimise this behavior by exploiting the newly introduced alloc_state
+tree of btrfs_device. A new CHUNK_TRIMMED bit is used to mark
+those unallocated chunks which have been trimmed and have not been
+allocated afterwards. On chunk allocation the respective underlying devices'
+physical space will have its CHUNK_TRIMMED flag cleared. This avoids
+submitting discards for space which hasn't been changed since the last
+time discard was issued.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/ctree.h       | 2 ++
- fs/btrfs/extent-tree.c | 1 -
- fs/btrfs/volumes.c     | 1 -
- 3 files changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/extent-tree.c | 57 +++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/extent_io.h   |  8 +++++-
+ fs/btrfs/extent_map.c  |  4 ++-
+ 3 files changed, 66 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index a08791dc5cc2..648c3504ffcc 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3779,6 +3779,8 @@ static inline int btrfs_defrag_cancelled(struct btrfs_fs_info *fs_info)
- 	return signal_pending(current);
- }
- 
-+#define in_range(b, first, len) ((b) >= (first) && (b) < (first) + (len))
-+
- /* Sanity test specific functions */
- #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
- void btrfs_test_inode_set_ops(struct inode *inode);
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 86e6d19871f9..610bed028511 100644
+index 610bed028511..f5005ef39f98 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -1905,7 +1905,6 @@ static int remove_extent_backref(struct btrfs_trans_handle *trans,
- 	return ret;
+@@ -11127,6 +11127,54 @@ int btrfs_error_unpin_extent_range(struct btrfs_fs_info *fs_info,
+ 	return unpin_extent_range(fs_info, start, end, false);
  }
  
--#define in_range(b, first, len)        ((b) >= (first) && (b) < (first) + (len))
- static int btrfs_issue_discard(struct block_device *bdev, u64 start, u64 len,
- 			       u64 *discarded_bytes)
- {
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index cb01d40993dd..0657ad510664 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1505,7 +1505,6 @@ struct btrfs_device *btrfs_scan_one_device(const char *path, fmode_t flags,
-  * Tries to find a chunk that intersects [start, start +len] range and when one
-  * such is found, records the end of it in *start
-  */
--#define in_range(b, first, len)        ((b) >= (first) && (b) < (first) + (len))
- static bool contains_pending_extent(struct btrfs_device *device, u64 *start,
- 				    u64 len)
- {
++static bool should_skip_trim(struct btrfs_device *device, u64 *start, u64 *len)
++{
++	u64 trimmed_start = 0, trimmed_end = 0;
++	u64 end = *start + *len - 1;
++
++	if (!find_first_extent_bit(&device->alloc_state, *start, &trimmed_start,
++				   &trimmed_end, CHUNK_TRIMMED, NULL)) {
++		u64 trimmed_len = trimmed_end - trimmed_start + 1;
++
++		if (*start < trimmed_start) {
++			if (in_range(end, trimmed_start, trimmed_len) ||
++			    end > trimmed_end) {
++				/*
++				 * start|------|end
++				 *      ts|--|trimmed_len
++				 *      OR
++				 * start|-----|end
++				 *      ts|-----|trimmed_len
++				 */
++				*len = trimmed_start - *start;
++				return false;
++			} else if (end < trimmed_start) {
++				/*
++				 * start|------|end
++				 *             ts|--|trimmed_len
++				 */
++				return false;
++			}
++		} else if (in_range(*start, trimmed_start, trimmed_len)) {
++			if (in_range(end, trimmed_start, trimmed_len)) {
++				/*
++				 * start|------|end
++				 *  ts|----------|trimmed_len
++				 */
++				return true;
++			} else {
++				/*
++				 * start|-----------|end
++				 *  ts|----------|trimmed_len
++				 */
++				*start = trimmed_end + 1;
++				*len = end - *start + 1;
++				return false;
++			}
++		}
++	}
++	return false;
++}
+ /*
+  * It used to be that old block groups would be left around forever.
+  * Iterating over them would be enough to trim unused space.  Since we
+@@ -11197,7 +11245,14 @@ static int btrfs_trim_free_extents(struct btrfs_device *device,
+ 		start = max(range->start, start);
+ 		len = min(range->len, len);
+ 
+-		ret = btrfs_issue_discard(device->bdev, start, len, &bytes);
++		if (!should_skip_trim(device, &start, &len)) {
++			ret = btrfs_issue_discard(device->bdev, start, len,
++						  &bytes);
++			if (!ret)
++				set_extent_bits(&device->alloc_state, start,
++						start + bytes - 1,
++						CHUNK_TRIMMED);
++		}
+ 		mutex_unlock(&fs_info->chunk_mutex);
+ 
+ 		if (ret)
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index d4227e40c8ee..d238efd628cf 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -30,8 +30,14 @@
+ #define EXTENT_CTLBITS		(EXTENT_DO_ACCOUNTING)
+ 
+ 
+-/* Redefined bits above which are used only in the device allocation tree */
++/*
++ * Redefined bits above which are used only in the device allocation tree,
++ * shouldn't be using EXTENT_IOBITS(EXTENT_LOCKED/EXTENT_WRITEBACK) /
++ * EXTENT_BOUNDARY / EXTENT_CLEAR_META_RESV / EXTENT_CLEAR_DATA_RESV because
++ * they have special meaning to the bit manipulation functions
++ */
+ #define CHUNK_ALLOCATED EXTENT_DIRTY
++#define CHUNK_TRIMMED   EXTENT_DEFRAG
+ 
+ /*
+  * flags for bio submission. The high bits indicate the compression
+diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+index 0820f6fcf3a6..9e8c0904f623 100644
+--- a/fs/btrfs/extent_map.c
++++ b/fs/btrfs/extent_map.c
+@@ -389,8 +389,10 @@ int add_extent_mapping(struct extent_map_tree *tree,
+ 		goto out;
+ 
+ 	setup_extent_mapping(tree, em, modified);
+-	if (test_bit(EXTENT_FLAG_FS_MAPPING, &em->flags))
++	if (test_bit(EXTENT_FLAG_FS_MAPPING, &em->flags)) {
+ 		extent_map_device_set_bits(em, CHUNK_ALLOCATED);
++		extent_map_device_clear_bits(em, CHUNK_TRIMMED);
++	}
+ out:
+ 	return ret;
+ }
 -- 
 2.17.1
 

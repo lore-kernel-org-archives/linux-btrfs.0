@@ -2,531 +2,125 @@ Return-Path: <SRS0=cBAG=QG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8CCB3C282D8
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 14:51:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2C7E9C282D7
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 14:51:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 556A620882
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 14:51:20 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 08CD320882
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 14:51:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731468AbfA3OvT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 30 Jan 2019 09:51:19 -0500
-Received: from mx2.suse.de ([195.135.220.15]:38142 "EHLO mx1.suse.de"
+        id S1731407AbfA3OvG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 30 Jan 2019 09:51:06 -0500
+Received: from mx2.suse.de ([195.135.220.15]:38088 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1731427AbfA3OvJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Jan 2019 09:51:09 -0500
+        id S1730093AbfA3OvG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 30 Jan 2019 09:51:06 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id E321CB07B
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Jan 2019 14:51:06 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 2EDEFB079
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Jan 2019 14:51:04 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     jeffm@suse.com, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 09/15] btrfs: replace pending/pinned chunks lists with io tree
-Date:   Wed, 30 Jan 2019 16:50:56 +0200
-Message-Id: <20190130145102.4708-10-nborisov@suse.com>
+Subject: [PATCH 00/15] Improvements to fitrim 
+Date:   Wed, 30 Jan 2019 16:50:47 +0200
+Message-Id: <20190130145102.4708-1-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
-In-Reply-To: <20190130145102.4708-1-nborisov@suse.com>
-References: <20190130145102.4708-1-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Jeff Mahoney <jeffm@suse.com>
+Here's a series that spruces up btrfs' trim implementation. The main goal is to 
+optimise trim of freespace so that when a range is trimmed once and not allocated, 
+subsequent trims will skip it, thus improving performance. 
 
-The pending chunks list contains chunks that are allocated in the
-current transaction but haven't been created yet. The pinned chunks
-list contains chunks that are being released in the current transaction.
-Both describe chunks that are not reflected on disk as in use but are
-unavailable just the same.
+First 3 patches are misc cleanups which are mostly independent. Of them, perhaps
+the first one is the most important since it adds support for FITRIM ranges and 
+is likely stable material. Currently btrfs will entirely ignore range options 
+of the FITRIM ioctl. 
 
-The pending chunks list is anchored by the transaction handle, which
-means that we need to hold a reference to a transaction when working
-with the list.
+Patch 4 is from Jeff and it simplifies management of resized_devices/pending_chunks
+lists. Apart from a nice cleanup it's a prep patch for further removal of 
+pinned/pending chunks lists
 
-We use these lists to ensure that we don't end up discarding chunks
-that are allocated or released in the current transaction.  What we r
+Patch 5 is a self-contained cleanup that resulted from me investigating how 
+contains_pending_extent is being used. The gist is that the check for pending
+extents can be done before the main shrink loop in btrfs_shrink_device. This
+makes the code more linear. 
 
-The way we use them is by iterating over both lists to perform
-comparisons on the stripes they describe for each device. This is
-backwards and requires that we keep a transaction handle open while
-we're trimming.
+Patches 6/7/8 small, self-explanatory, prep patches for removal of pinned/pending
+chunk lists. 
 
-This patchset adds an extent_io_tree to btrfs_device that maintains
-the allocation state of the device.  Extents are set dirty when
-chunks are first allocated -- when the extent maps are added to the
-mapping tree. They're cleared when last removed -- when the extent
-maps are removed from the mapping tree. This matches the lifespan
-of the pending and pinned chunks list and allows us to do trims
-on unallocated space safely without pinning the transaction for what
-may be a lengthy operation. We can also use this io tree to mark
-which chunks have already been trimmed so we don't repeat the operation.
+Patch 9 replaces the now-reduced scope of pending/pinned chunks with an 
+extent_io_tree. The patch was initially developed by Jeff and I just finished 
+his work by fixing several bugs. Those were mainly around memory allocation 
+contexts and locking.
 
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/ctree.h            |  6 ---
- fs/btrfs/disk-io.c          | 11 -----
- fs/btrfs/extent-tree.c      | 28 -----------
- fs/btrfs/extent_io.c        |  2 +-
- fs/btrfs/extent_io.h        |  6 ++-
- fs/btrfs/extent_map.c       | 36 ++++++++++++++
- fs/btrfs/extent_map.h       |  1 -
- fs/btrfs/free-space-cache.c |  4 --
- fs/btrfs/transaction.c      |  9 ----
- fs/btrfs/transaction.h      |  1 -
- fs/btrfs/volumes.c          | 96 +++++++++++++------------------------
- fs/btrfs/volumes.h          |  2 +
- 12 files changed, 76 insertions(+), 126 deletions(-)
+Patches 10/11 perform refactoring which is enabled by the previous patch. Mainly, 
+simplifying find_free_dev_extent and no longer requiring a transaction be held 
+open during trim. This is already a performance improvement in and of itself. 
+Though find_free_dev_extent_start is still used that is the device tree is being
+read.
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index fecc64d8e285..a08791dc5cc2 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1148,12 +1148,6 @@ struct btrfs_fs_info {
- 	struct mutex unused_bg_unpin_mutex;
- 	struct mutex delete_unused_bgs_mutex;
- 
--	/*
--	 * Chunks that can't be freed yet (under a trim/discard operation)
--	 * and will be latter freed. Protected by fs_info->chunk_mutex.
--	 */
--	struct list_head pinned_chunks;
--
- 	/* Cached block sizes */
- 	u32 nodesize;
- 	u32 sectorsize;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 25dab68070dc..8ef7b8f9e4be 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2774,8 +2774,6 @@ int open_ctree(struct super_block *sb,
- 	init_waitqueue_head(&fs_info->transaction_blocked_wait);
- 	init_waitqueue_head(&fs_info->async_submit_wait);
- 
--	INIT_LIST_HEAD(&fs_info->pinned_chunks);
--
- 	/* Usable values until the real ones are cached from the superblock */
- 	fs_info->nodesize = 4096;
- 	fs_info->sectorsize = 4096;
-@@ -4050,15 +4048,6 @@ void close_ctree(struct btrfs_fs_info *fs_info)
- 
- 	btrfs_free_stripe_hash_table(fs_info);
- 	btrfs_free_ref_cache(fs_info);
--
--	while (!list_empty(&fs_info->pinned_chunks)) {
--		struct extent_map *em;
--
--		em = list_first_entry(&fs_info->pinned_chunks,
--				      struct extent_map, list);
--		list_del_init(&em->list);
--		free_extent_map(em);
--	}
- }
- 
- int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid,
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 79d0bc813a72..a5613fe35b90 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -10824,10 +10824,6 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 	memcpy(&key, &block_group->key, sizeof(key));
- 
- 	mutex_lock(&fs_info->chunk_mutex);
--	if (!list_empty(&em->list)) {
--		/* We're in the transaction->pending_chunks list. */
--		free_extent_map(em);
--	}
- 	spin_lock(&block_group->lock);
- 	block_group->removed = 1;
- 	/*
-@@ -10854,25 +10850,6 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 	 * the transaction commit has completed.
- 	 */
- 	remove_em = (atomic_read(&block_group->trimming) == 0);
--	/*
--	 * Make sure a trimmer task always sees the em in the pinned_chunks list
--	 * if it sees block_group->removed == 1 (needs to lock block_group->lock
--	 * before checking block_group->removed).
--	 */
--	if (!remove_em) {
--		/*
--		 * Our em might be in trans->transaction->pending_chunks which
--		 * is protected by fs_info->chunk_mutex ([lock|unlock]_chunks),
--		 * and so is the fs_info->pinned_chunks list.
--		 *
--		 * So at this point we must be holding the chunk_mutex to avoid
--		 * any races with chunk allocation (more specifically at
--		 * volumes.c:contains_pending_extent()), to ensure it always
--		 * sees the em, either in the pending_chunks list or in the
--		 * pinned_chunks list.
--		 */
--		list_move_tail(&em->list, &fs_info->pinned_chunks);
--	}
- 	spin_unlock(&block_group->lock);
- 
- 	if (remove_em) {
-@@ -10880,11 +10857,6 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 
- 		em_tree = &fs_info->mapping_tree.map_tree;
- 		write_lock(&em_tree->lock);
--		/*
--		 * The em might be in the pending_chunks list, so make sure the
--		 * chunk mutex is locked, since remove_extent_mapping() will
--		 * delete us from that list.
--		 */
- 		remove_extent_mapping(em_tree, em);
- 		write_unlock(&em_tree->lock);
- 		/* once for the tree */
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index ab1c81a1918e..e788d4aa53d1 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -860,7 +860,7 @@ static void cache_state(struct extent_state *state,
-  * [start, end] is inclusive This takes the tree lock.
-  */
- 
--static int __must_check
-+int __must_check
- __set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 		 unsigned bits, unsigned exclusive_bits,
- 		 u64 *failed_start, struct extent_state **cached_state,
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index af7e00a3678c..d4227e40c8ee 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -314,7 +314,11 @@ int set_record_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
- int set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 		   unsigned bits, u64 *failed_start,
- 		   struct extent_state **cached_state, gfp_t mask);
--
-+int
-+__set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
-+		 unsigned bits, unsigned exclusive_bits,
-+		 u64 *failed_start, struct extent_state **cached_state,
-+		 gfp_t mask, struct extent_changeset *changeset);
- static inline int set_extent_bits(struct extent_io_tree *tree, u64 start,
- 		u64 end, unsigned bits)
- {
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index 928f729c55ba..0820f6fcf3a6 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -4,6 +4,7 @@
- #include <linux/slab.h>
- #include <linux/spinlock.h>
- #include "ctree.h"
-+#include "volumes.h"
- #include "extent_map.h"
- #include "compression.h"
- 
-@@ -336,6 +337,37 @@ static inline void setup_extent_mapping(struct extent_map_tree *tree,
- 	else
- 		try_merge_map(tree, em);
- }
-+static void extent_map_device_set_bits(struct extent_map *em, unsigned bits)
-+{
-+	struct map_lookup *map = em->map_lookup;
-+	u64 stripe_size = em->orig_block_len;
-+	int i;
-+
-+	for (i = 0; i < map->num_stripes; i++) {
-+		struct btrfs_bio_stripe *stripe = &map->stripes[i];
-+		struct btrfs_device *device = stripe->dev;
-+
-+		__set_extent_bit(&device->alloc_state, stripe->physical,
-+				 stripe->physical + stripe_size - 1, bits,
-+				 0, NULL, NULL, GFP_NOWAIT, NULL);
-+	}
-+}
-+
-+static void extent_map_device_clear_bits(struct extent_map *em, unsigned bits)
-+{
-+	struct map_lookup *map = em->map_lookup;
-+	u64 stripe_size = em->orig_block_len;
-+	int i;
-+
-+	for (i = 0; i < map->num_stripes; i++) {
-+		struct btrfs_bio_stripe *stripe = &map->stripes[i];
-+		struct btrfs_device *device = stripe->dev;
-+
-+		__clear_extent_bit(&device->alloc_state, stripe->physical,
-+				   stripe->physical + stripe_size - 1, bits,
-+				   0, 0, NULL, GFP_NOWAIT, NULL);
-+	}
-+}
- 
- /**
-  * add_extent_mapping - add new extent map to the extent tree
-@@ -357,6 +389,8 @@ int add_extent_mapping(struct extent_map_tree *tree,
- 		goto out;
- 
- 	setup_extent_mapping(tree, em, modified);
-+	if (test_bit(EXTENT_FLAG_FS_MAPPING, &em->flags))
-+		extent_map_device_set_bits(em, CHUNK_ALLOCATED);
- out:
- 	return ret;
- }
-@@ -438,6 +472,8 @@ void remove_extent_mapping(struct extent_map_tree *tree, struct extent_map *em)
- 	rb_erase_cached(&em->rb_node, &tree->map);
- 	if (!test_bit(EXTENT_FLAG_LOGGING, &em->flags))
- 		list_del_init(&em->list);
-+	if (test_bit(EXTENT_FLAG_FS_MAPPING, &em->flags))
-+		extent_map_device_clear_bits(em, CHUNK_ALLOCATED);
- 	RB_CLEAR_NODE(&em->rb_node);
- }
- 
-diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
-index 473f039fcd7c..72b46833f236 100644
---- a/fs/btrfs/extent_map.h
-+++ b/fs/btrfs/extent_map.h
-@@ -91,7 +91,6 @@ void replace_extent_mapping(struct extent_map_tree *tree,
- 			    struct extent_map *cur,
- 			    struct extent_map *new,
- 			    int modified);
--
- struct extent_map *alloc_extent_map(void);
- void free_extent_map(struct extent_map *em);
- int __init extent_map_init(void);
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 74aa552f4793..207fb50dcc7a 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -3366,10 +3366,6 @@ void btrfs_put_block_group_trimming(struct btrfs_block_group_cache *block_group)
- 		em = lookup_extent_mapping(em_tree, block_group->key.objectid,
- 					   1);
- 		BUG_ON(!em); /* logic error, can't happen */
--		/*
--		 * remove_extent_mapping() will delete us from the pinned_chunks
--		 * list, which is protected by the chunk mutex.
--		 */
- 		remove_extent_mapping(em_tree, em);
- 		write_unlock(&em_tree->lock);
- 		mutex_unlock(&fs_info->chunk_mutex);
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 0f5c8d9b50d7..32af91b0a132 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -50,14 +50,6 @@ void btrfs_put_transaction(struct btrfs_transaction *transaction)
- 			btrfs_err(transaction->fs_info,
- 				  "pending csums is %llu",
- 				  transaction->delayed_refs.pending_csums);
--		while (!list_empty(&transaction->pending_chunks)) {
--			struct extent_map *em;
--
--			em = list_first_entry(&transaction->pending_chunks,
--					      struct extent_map, list);
--			list_del_init(&em->list);
--			free_extent_map(em);
--		}
- 		/*
- 		 * If any block groups are found in ->deleted_bgs then it's
- 		 * because the transaction was aborted and a commit did not
-@@ -234,7 +226,6 @@ static noinline int join_transaction(struct btrfs_fs_info *fs_info,
- 	spin_lock_init(&cur_trans->delayed_refs.lock);
- 
- 	INIT_LIST_HEAD(&cur_trans->pending_snapshots);
--	INIT_LIST_HEAD(&cur_trans->pending_chunks);
- 	INIT_LIST_HEAD(&cur_trans->dev_update_list);
- 	INIT_LIST_HEAD(&cur_trans->switch_commits);
- 	INIT_LIST_HEAD(&cur_trans->dirty_bgs);
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index e0a04fa4de66..134d1a0bd92f 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -51,7 +51,6 @@ struct btrfs_transaction {
- 	wait_queue_head_t writer_wait;
- 	wait_queue_head_t commit_wait;
- 	struct list_head pending_snapshots;
--	struct list_head pending_chunks;
- 	struct list_head dev_update_list;
- 	struct list_head switch_commits;
- 	struct list_head dirty_bgs;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index e678cad34bd3..25a3c1bdfc99 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -335,6 +335,8 @@ void btrfs_free_device(struct btrfs_device *device)
- {
- 	BUG_ON(!list_empty(&device->post_commit_list));
- 	rcu_string_free(device->name);
-+	if (!in_softirq())
-+		extent_io_tree_release(&device->alloc_state);
- 	bio_put(device->flush_bio);
- 	kfree(device);
- }
-@@ -411,6 +413,7 @@ static struct btrfs_device *__alloc_device(void)
- 	btrfs_device_data_ordered_init(dev);
- 	INIT_RADIX_TREE(&dev->reada_zones, GFP_NOFS & ~__GFP_DIRECT_RECLAIM);
- 	INIT_RADIX_TREE(&dev->reada_extents, GFP_NOFS & ~__GFP_DIRECT_RECLAIM);
-+	extent_io_tree_init(&dev->alloc_state, NULL);
- 
- 	return dev;
- }
-@@ -1270,6 +1273,9 @@ static void btrfs_close_one_device(struct btrfs_device *device)
- 	if (test_bit(BTRFS_DEV_STATE_MISSING, &device->dev_state))
- 		fs_devices->missing_devices--;
- 
-+	/* Remove alloc state now since it cannot be done in RCU context */
-+	extent_io_tree_release(&device->alloc_state);
-+
- 	btrfs_close_bdev(device);
- 
- 	new_device = btrfs_alloc_device(NULL, &device->devid,
-@@ -1495,58 +1501,29 @@ struct btrfs_device *btrfs_scan_one_device(const char *path, fmode_t flags,
- 	return device;
- }
- 
--static int contains_pending_extent(struct btrfs_transaction *transaction,
--				   struct btrfs_device *device,
--				   u64 *start, u64 len)
--{
--	struct btrfs_fs_info *fs_info = device->fs_info;
--	struct extent_map *em;
--	struct list_head *search_list = &fs_info->pinned_chunks;
--	int ret = 0;
--	u64 physical_start = *start;
--
--	if (transaction)
--		search_list = &transaction->pending_chunks;
--again:
--	list_for_each_entry(em, search_list, list) {
--		struct map_lookup *map;
--		int i;
--
--		map = em->map_lookup;
--		for (i = 0; i < map->num_stripes; i++) {
--			u64 end;
--
--			if (map->stripes[i].dev != device)
--				continue;
--			if (map->stripes[i].physical >= physical_start + len ||
--			    map->stripes[i].physical + em->orig_block_len <=
--			    physical_start)
--				continue;
--			/*
--			 * Make sure that while processing the pinned list we do
--			 * not override our *start with a lower value, because
--			 * we can have pinned chunks that fall within this
--			 * device hole and that have lower physical addresses
--			 * than the pending chunks we processed before. If we
--			 * do not take this special care we can end up getting
--			 * 2 pending chunks that start at the same physical
--			 * device offsets because the end offset of a pinned
--			 * chunk can be equal to the start offset of some
--			 * pending chunk.
--			 */
--			end = map->stripes[i].physical + em->orig_block_len;
--			if (end > *start) {
--				*start = end;
--				ret = 1;
--			}
-+/*
-+ * Tries to find a chunk that intersects [start, start +len] range and when one
-+ * such is found, records the end of it in *start
-+ */
-+#define in_range(b, first, len)        ((b) >= (first) && (b) < (first) + (len))
-+static bool contains_pending_extent(struct btrfs_device *device, u64 *start,
-+				    u64 len)
-+{
-+	u64 physical_start, physical_end;
-+	lockdep_assert_held(&device->fs_info->chunk_mutex);
-+
-+	if (!find_first_extent_bit(&device->alloc_state, *start,
-+				   &physical_start, &physical_end,
-+				   CHUNK_ALLOCATED, NULL)) {
-+
-+		if (in_range(physical_start, *start, len) ||
-+		    in_range(*start, physical_start,
-+			     physical_end - physical_start)) {
-+			*start = physical_end + 1;
-+			return true;
- 		}
- 	}
--	if (search_list != &fs_info->pinned_chunks) {
--		search_list = &fs_info->pinned_chunks;
--		goto again;
--	}
--
--	return ret;
-+	return false;
- }
- 
- 
-@@ -1657,15 +1634,12 @@ int find_free_dev_extent_start(struct btrfs_transaction *transaction,
- 			 * Have to check before we set max_hole_start, otherwise
- 			 * we could end up sending back this offset anyway.
- 			 */
--			if (contains_pending_extent(transaction, device,
--						    &search_start,
-+			if (contains_pending_extent(device, &search_start,
- 						    hole_size)) {
--				if (key.offset >= search_start) {
-+				if (key.offset >= search_start)
- 					hole_size = key.offset - search_start;
--				} else {
--					WARN_ON_ONCE(1);
-+				else
- 					hole_size = 0;
--				}
- 			}
- 
- 			if (hole_size > max_hole_size) {
-@@ -1706,8 +1680,7 @@ int find_free_dev_extent_start(struct btrfs_transaction *transaction,
- 	if (search_end > search_start) {
- 		hole_size = search_end - search_start;
- 
--		if (contains_pending_extent(transaction, device, &search_start,
--					    hole_size)) {
-+		if (contains_pending_extent(device, &search_start, hole_size)) {
- 			btrfs_release_path(path);
- 			goto again;
- 		}
-@@ -4749,7 +4722,7 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 	 * in-memory chunks are synced to disk so that the loop below sees them
- 	 * and relocates them accordingly.
- 	 */
--	if (contains_pending_extent(trans->transaction, device, &start, diff)) {
-+	if (contains_pending_extent(device, &start, diff)) {
- 		mutex_unlock(&fs_info->chunk_mutex);
- 		ret = btrfs_commit_transaction(trans);
- 		if (ret)
-@@ -5191,9 +5164,6 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 		free_extent_map(em);
- 		goto error;
- 	}
--
--	list_add_tail(&em->list, &trans->transaction->pending_chunks);
--	refcount_inc(&em->refs);
- 	write_unlock(&em_tree->lock);
- 
- 	ret = btrfs_make_block_group(trans, 0, type, start, chunk_size);
-@@ -5226,8 +5196,6 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	free_extent_map(em);
- 	/* One for the tree reference */
- 	free_extent_map(em);
--	/* One for the pending_chunks list reference */
--	free_extent_map(em);
- error:
- 	kfree(devices_info);
- 	return ret;
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index b61935286e17..8fbeba92025d 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -134,6 +134,8 @@ struct btrfs_device {
- 	/* Counter to record the change of device stats */
- 	atomic_t dev_stats_ccnt;
- 	atomic_t dev_stat_values[BTRFS_DEV_STAT_VALUES_MAX];
-+
-+	struct extent_io_tree alloc_state;
- };
- 
- /*
+Patch 12 makes trimming code smarter by recording which trange has been trimmed 
+and avoid trimming when possible - i.e a range has been trimmed and subsequently 
+not allocated. 
+
+Patch 13 minor quality-of-life patch, self-explanatory
+
+Patch 14/15 switch btrfs_trim_free_extents to using an entirely in-memory 
+datastructure when looking for ranges to trim. The idea is this should be faster
+than working with the device tree. In practice, though, I'm not entirely sure 
+since :
+
+1. We still have to hold the chunk_mutex
+2. I suspect that the device tree will be more or less cached in memory. 
+
+Review of the series is welcome, I'd also urge people to pay attention  when 
+reviewing code responsible for calculating trim ranges. An error there could
+lead to data loss if allocated space is trimmed. I have manually tested the 
+ranged trim support to ensure this won't happen but one can never get enough 
+testing :). Also, this series survived multiple xfstest runs. 
+
+Jeff Mahoney (2):
+  btrfs: combine device update operations during transaction commit
+  btrfs: replace pending/pinned chunks lists with io tree
+
+Nikolay Borisov (13):
+  btrfs: Honour FITRIM range constraints during free space trim
+  btrfs: Make WARN_ON in a canonical form
+  btrfs: Remove  EXTENT_FIRST_DELALLOC bit
+  btrfs: Handle pending/pinned chunks before blockgroup relocation
+    during device shrink
+  btrfs: Rename and export clear_btree_io_tree
+  btrfs: Populate ->orig_block_len during read_one_chunk
+  btrfs: Introduce new bits for device allocation tree
+  btrfs: Remove 'trans' argument from find_free_dev_extent(_start)
+  btrfs: Factor out in_range macro
+  btrfs: Optimize unallocated chunks discard
+  btrfs: Fix gross misnaming
+  btrfs: Implement find_first_clear_extent_bit
+  btrfs: Switch btrfs_trim_free_extents to find_first_clear_extent_bit
+
+ fs/btrfs/ctree.h            |   8 +-
+ fs/btrfs/dev-replace.c      |   2 +-
+ fs/btrfs/disk-io.c          |  20 ++-
+ fs/btrfs/extent-tree.c      | 107 +++++---------
+ fs/btrfs/extent_io.c        | 126 ++++++++++++++--
+ fs/btrfs/extent_io.h        |  34 +++--
+ fs/btrfs/extent_map.c       |  38 +++++
+ fs/btrfs/extent_map.h       |   1 -
+ fs/btrfs/free-space-cache.c |   4 -
+ fs/btrfs/transaction.c      |  53 ++-----
+ fs/btrfs/transaction.h      |   2 +-
+ fs/btrfs/volumes.c          | 277 ++++++++++++++----------------------
+ fs/btrfs/volumes.h          |  23 ++-
+ 13 files changed, 354 insertions(+), 341 deletions(-)
+
 -- 
 2.17.1
 

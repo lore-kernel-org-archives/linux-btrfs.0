@@ -2,155 +2,122 @@ Return-Path: <SRS0=cBAG=QG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3D0F7C169C4
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 01:02:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A435FC169C4
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 01:41:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E977520844
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 01:02:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6C3C621473
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jan 2019 01:41:33 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="Qr1dqOT2"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="CC6Pbz1A"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727360AbfA3BC5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 29 Jan 2019 20:02:57 -0500
-Received: from mail-lj1-f169.google.com ([209.85.208.169]:37408 "EHLO
-        mail-lj1-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726693AbfA3BC5 (ORCPT
+        id S1727729AbfA3Blc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 29 Jan 2019 20:41:32 -0500
+Received: from mail-pf1-f178.google.com ([209.85.210.178]:45723 "EHLO
+        mail-pf1-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727640AbfA3Blc (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 Jan 2019 20:02:57 -0500
-Received: by mail-lj1-f169.google.com with SMTP id t18-v6so19230398ljd.4
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Jan 2019 17:02:55 -0800 (PST)
+        Tue, 29 Jan 2019 20:41:32 -0500
+Received: by mail-pf1-f178.google.com with SMTP id g62so10593042pfd.12
+        for <linux-btrfs@vger.kernel.org>; Tue, 29 Jan 2019 17:41:31 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=gUwhbVzHMYc1fmo7FM9tqD2ZDCLQxqXwAjs7L+ph+pU=;
-        b=Qr1dqOT2wzY3qo8/XSoreei9WS4LZkj+QQeBh7Az36LuyKjS0ZDexxyHOrjYkhslt5
-         me2DXhM8qpbYOd7kRhbKkygMnKf3fOW9GSeclkJf35UxAkbQJqe4FEdCgGF6K1XZfGP+
-         TBwLbCpE9zRWgTgftgKk198Gt6RZXf4jB/Iq0AN756Jp5ArWLJ4bC/hG0y8miwsJQ9gD
-         0KI8LLvSEcs9aS1L+1i77/t8rvcfIs2Lv191O7YHuK7udsj2KP3ehCQGMeUJm33ZpFqE
-         pw4LTs//6W+KARK3Gpt0POxLV1a2eO27NU0/ggrE4L/RzR+vzTsnedB0i4+vvHFa3uM5
-         pMdg==
+        d=gmail.com; s=20161025;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-transfer-encoding:content-language;
+        bh=8rjIJwakH+T4vvqNAn0HE6YOgUCqkGfyzmK585IKX3A=;
+        b=CC6Pbz1A/KlzSxaeWiW92TYQQxqMtnd9wpJg/fWveBtrmR27Xp41fUoYB2eVxTErdQ
+         KZvGENmpLDybzspro9m6uBxSkDL7qGb3HKMdDqILSIfDLsaEawePDHxYHn8Ubv9EzNzG
+         TwxurRTiic5EZwO85fk9suO/B703W8uOhZgzu7Z7/EyMBBEEx9UPRoYmSUxMfw3jyc1A
+         rUiXQejur54KUUHUK+IyBNCBpNNSK3QDLfWxjove3kyELU/0mdrtzNpkWLpOAcBiXD79
+         EBCc5VXcsvS0Cpa+/sn4Dc0JmB94hm7sLtg78Db3NY3VSZi9Q3BuYkdkO8vfK/m5rFZq
+         15Cw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=gUwhbVzHMYc1fmo7FM9tqD2ZDCLQxqXwAjs7L+ph+pU=;
-        b=uKDlGuFBe3gEyOkiTxBHz70bY43lRL9LJQzJvB1Rn70d7xD9qFrjOzLRghcLLwA/VL
-         hn0r6pkrnBnjyuJtZWubg35MD2OJ1Jibbf5uq2zPydagpERF1G1DhIJhfxYXxzJBP9rt
-         Drg93o+3yHvRRwK4YYgFDOZPmygYhTRUnlDl5/vGcOggbJxujMG+Jj7ZBuMmOPHVf/nW
-         QJYOFBG8fhwzs3N6c27q8UQRrlpq9EQt7tJ/txxIQNQPv9nmq39Ngpf9REzjbOevffIK
-         JALh+CsOqYusYrj5hnbHQ/3jTd9irMFs1mQKDQMTcpMshjqvMRQx+rmTWUvgpMu8hcgL
-         GvJA==
-X-Gm-Message-State: AJcUukdqX8aMYRqP1rBspz1bsABo6oiylT69z32qpnskoW/XWP0N6Y8F
-        3dIWbblsd3vENG8i6lmIfmrC+6q4vassMxgJ5WJDlajRWtw=
-X-Google-Smtp-Source: ALg8bN6OrvRKWMnJDUhvTxRBdPjPobO+VNQjqiHWOqzBuAcAaxuVOT9QyLUdHMwuZbCJ50oC4kbndFWwQhsMtiy1sD4=
-X-Received: by 2002:a2e:a289:: with SMTP id k9-v6mr21931243lja.24.1548810175017;
- Tue, 29 Jan 2019 17:02:55 -0800 (PST)
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-transfer-encoding
+         :content-language;
+        bh=8rjIJwakH+T4vvqNAn0HE6YOgUCqkGfyzmK585IKX3A=;
+        b=Z5t2JRb7ZCp3EZzmT0DTPeYrj5GN5vJyw/Pjn4YPB077uehw84sQJuoFIhbHiXp1dR
+         hhUMCnORAPlgNNSLKvehuVBHGHu9iwo4WNUyItnWNJfqSDxGvpMxJmXO0pHBqPClXIDh
+         W9TsOyu11exTqnt0PjVVAlqw7Wnwvs28gQ4XpkYaD5z6zhwbaP+X5gUYsG38Enlzmooh
+         R+T11T615b2soB+hqCoaQrcM7sVn5jVS+yG32NWEPDGJ7wIyZIVsr9zbs/KDPaQvYuXw
+         ylLJeiuze7OiS1OEQ4oLtAuK1YpVQCAiZR6ZNJbYdr+DSslc/7IAfpTf8iaVgfZypOzx
+         ROQA==
+X-Gm-Message-State: AHQUAuZvN7UOcfjABtnlFpNSl8PVu1OuBNIMUGuneyjbfU3cBGuoIJD0
+        Bfrt8BVN/mr8b5ZuHxL+PNg=
+X-Google-Smtp-Source: AHgI3IY97kDW5gz2Or2aP7fKMc2DWbd6H1wp2EkrLZ4Axzq3sgen8iNNvj/SY2hIC3N+x/6ardt6Cw==
+X-Received: by 2002:a62:22c9:: with SMTP id p70mr41743pfj.114.1548812491500;
+        Tue, 29 Jan 2019 17:41:31 -0800 (PST)
+Received: from [192.168.178.53] (14-201-16-168.static.tpgi.com.au. [14.201.16.168])
+        by smtp.gmail.com with ESMTPSA id b10sm54967pfj.183.2019.01.29.17.41.29
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Tue, 29 Jan 2019 17:41:31 -0800 (PST)
+Subject: Re: RAID56 Warning on "multiple serious data-loss bugs"
+To:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc:     kreijack@inwind.it, Chris Murphy <lists@colorremedies.com>,
+        Remi Gauvin <remi@georgianit.com>
+References: <5d7f63b2-d340-7c3a-679b-26e97ac258a6@gmail.com>
+ <59a60289-1130-27b4-960b-9014fc8d68e8@gmx.com>
+ <a18f2081-cf5d-d914-bb16-dba51c949c30@gmail.com>
+ <36be9ca6-4aa0-f00a-c1b4-a59026a1909e@georgianit.com>
+ <CAJCQCtQ=mGdZ+90uR68hwqFcZaNP8xQwKXkpO395xB+KBXRkxA@mail.gmail.com>
+ <80f46e68-4cda-3a22-385b-0ab0a47b079a@libero.it>
+From:   DanglingPointer <danglingpointerexception@gmail.com>
+Message-ID: <d3de555c-3e44-533d-5ae2-88a5abaf0401@gmail.com>
+Date:   Wed, 30 Jan 2019 12:41:27 +1100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.4.0
 MIME-Version: 1.0
-References: <2a321782-d258-1ef3-8d25-149b8e24e819@mendix.com>
-In-Reply-To: <2a321782-d258-1ef3-8d25-149b8e24e819@mendix.com>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Tue, 29 Jan 2019 18:02:43 -0700
-Message-ID: <CAJCQCtS0oSOxEg_zr5RhDZD8122Qk76_GD=+vDQMjXbMYYMDRw@mail.gmail.com>
-Subject: Re: dm-integrity + mdadm + btrfs = no journal?
-To:     Hans van Kranenburg <Hans.van.Kranenburg@mendix.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <80f46e68-4cda-3a22-385b-0ab0a47b079a@libero.it>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 8bit
+Content-Language: en-AU
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Jan 29, 2019 at 4:15 PM Hans van Kranenburg
-<Hans.van.Kranenburg@mendix.com> wrote:
->
-> Hi,
->
-> Thought experiment time...
->
-> I have an HP z820 workstation here (with ECC memory, yay!) and 4x250G
-> 10k SAS disks (and some spare disks). It's donated hardware, and I'm
-> going to use it to replace the current server in the office of a
-> non-profit organization (so it's not work stuff this time).
->
-> The machine is going to run Debian/Xen and a few virtual machines
-> (current one also does, but the hardware is now really starting to fall
-> apart).
->
-> I have been thinking a bit how to (re)organize disk storage in this
-> scenario.
->
-> 1. Let's use btrfs everywhere. \:D/
-> 2. For running Xen virtual machines, I prefer block devices on LVM. No
-> image files, no btrfs-on-btrfs etc...
-> 3. Oh, and there's also 1 MS Windows VM that will be in the mix.
->
-> Obviously I can't start using multi-device btrfs in each and every
-> virtual machine (a big pile of horror when one disk dies or starts
-> misbehaving).
->
-> So, what I was thinking of is:
->
-> * Use dm-integrity on partitions on the individual disks
-> * Use mdadm RAID10 on top (which is then able to repair bitrot)
-> * Use LVM on top
-> * Etc...
->
-> For all of the filesystems, I would be doing backups to a remote
-> location outside of the building with send/receive.
->
-> The Windows VM will be an image file on a btrfs filesystem in the Xen
-> dom0. It's idle most of the time, and I think cow+autodefrag can easily
-> handle it. I'd like to be able to take snapshots of it which can be sent
-> to a remote location.
+Going back to my original email, would the BTRFS wiki admins consider a 
+better more reflective update of the RAID56 status page?
 
-I'd consider thinp LV's for VM's. They are way more efficient for
-snapshots than thickp (conventional) LVM snapshots. There is no
-command to compute, send/receive only the LVM extents that are changed
-though.  And this includes for NTFS. In effect, you can shrink any LV
-without literally shrinking it, you just need to execute fstrim on the
-mounted volume (you can use discard mount option from inside each VM;
-or enable fstrim.timer), and this will cause unused LVM logical
-extents to be returned to the thin pool, which can then be used by any
-other LV that draws from that pool.
-
-It's been a couple years since I tested NTFS in a Raw file on Btrfs
-but at that time it was just pathological and I gave up. It was so
-slow. Btrfs on Raw image on Btrfs was way faster. You could also
-consider XFS on LVM or plain partition, with a qcow2 file as backing.
-Snapshots are supported by creating a new image that points to another
-as a backing file. And you can easily backup these snapshots as they
-are discrete files.
+It still states "multiple serious data-loss bugs" which as Qu Wenruo has 
+already clarified is not the case.  The only "bug" left is the write 
+hole edge-case problem.
 
 
-> Now, to finally throw in the big question: If I use btrfs everywhere,
-> can I run dm-integrity without a journal?
-
-The documentation says if you run without a journal, dm-integrity is
-no longer crash safe, i.e. it's no longer atomic operation. That to me
-is the whole point of dm-integrity so I wouldn't do it even if I'm
-using Btrfs on top.
-
-
+On 30/1/19 6:47 am, Goffredo Baroncelli wrote:
+> On 29/01/2019 20.02, Chris Murphy wrote:
+>> On Mon, Jan 28, 2019 at 3:52 PM Remi Gauvin <remi@georgianit.com> wrote:
+>>> On 2019-01-28 5:07 p.m., DanglingPointer wrote:
+>>>
+>>>>  From Qu's statement and perspective, there's no difference to other
+>>>> non-BTRFS software RAID56's out there that are marked as stable (except
+>>>> ZFS).
+>>>> Also there are no "multiple serious data-loss bugs".
+>>>> Please do consider my proposal as it will decrease the amount of
+>>>> incorrect paranoia that exists in the community.
+>>>> As long as the Wiki properly mentions the current state with the options
+>>>> for mitigation; like backup power and perhaps RAID1 for metadata or
+>>>> anything else you believe as appropriate.
+>>> Should implement some way to automatically scrub on unclean shutdown.
+>>> BTRFS is the only (to my knowlege) Raid implementation that will not
+>>> automatically detect an unclean shutdown and fix the affected parity
+>>> blocks, (either by some form of write journal/write intent map, or full
+>>> resync.)
+>> There's no dirty bit set on mount, and thus no dirty bit to unset on
+>> clean mount, from which to infer a dirty unmount if it's present at
+>> the next mount.
+> It would be sufficient to use the log, which BTRFS already has. During each transaction, when an area is touched by a rwm cycle, it has to tracked in the log.
+> In case of unclean shutdown, it is already implemented a way to replay the log. So it would be sufficient to track a scrub of these area as "log replay".
 >
-> As far as I can reason about.. I could. As long as there's no 'nocow'
-> happening, the only thing that needs to happen correctly is superblock
-> writes, right?
-
-Metadata is always cow. There is a nodatacow mount option but that
-doesn't affect metadata. But in either case the whole point of having
-dm-integrity in place is to have a Linux block device layer that tells
-you if there has been some kind of storage stack corruption; to make
-silent corruption visible. And that's not as effective if it's
-possible to get such corruption in the course of a crash or power
-failure of some kind. It might be useful to ask on @linux-integrity
-list.
-
-http://vger.kernel.org/vger-lists.html#linux-integrity
-
--- 
-Chris Murphy
+> Of course I am talking as not a BTRFS developers, so the reality could be more complex: e.g. I don't know how it would be easy to raise a scrub process on per area basis.
+>
+> BR
+> G.Baroncelli
+>
+>
+>

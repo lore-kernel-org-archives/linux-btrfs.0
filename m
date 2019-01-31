@@ -2,128 +2,100 @@ Return-Path: <SRS0=M3t6=QH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT
+X-Spam-Status: No, score=-2.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4C48AC169C4
-	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Jan 2019 16:11:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3B2BBC169C4
+	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Jan 2019 16:17:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 25B122085B
-	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Jan 2019 16:11:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0C0DD2085B
+	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Jan 2019 16:17:34 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1548951454;
+	bh=LCfa1J8YYG+ivrS0LOxsO11ZbFdQIy5fYkzykCHZU8k=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:List-ID:From;
+	b=NPOS8Tf9uI8wKh+qBInNhTmYz6KzjxYVThUJYZxK6m+99rYy0zClpGLvwhF28r/Ps
+	 UbNC3dJWWRMfgZ6fR6mwC09/EP6pUSSPrs8g4rhBIeIYteNxCqTWlBsHOP1csqtZ9A
+	 B/Jgq9p11b9eHvPLw6S15UjsLXC88XwTsbkVbYZM=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388068AbfAaQK5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 31 Jan 2019 11:10:57 -0500
-Received: from mx2.suse.de ([195.135.220.15]:55648 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726355AbfAaQK5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 31 Jan 2019 11:10:57 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 73637B04E;
-        Thu, 31 Jan 2019 16:10:54 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 0B9EADA7D6; Thu, 31 Jan 2019 17:10:19 +0100 (CET)
-Date:   Thu, 31 Jan 2019 17:10:19 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Dennis Zhou <dennis@kernel.org>
-Cc:     David Sterba <dsterba@suse.com>,
+        id S2388241AbfAaQR2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 31 Jan 2019 11:17:28 -0500
+Received: from mail-yw1-f68.google.com ([209.85.161.68]:42672 "EHLO
+        mail-yw1-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2388155AbfAaQR2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 31 Jan 2019 11:17:28 -0500
+Received: by mail-yw1-f68.google.com with SMTP id x2so1471783ywc.9;
+        Thu, 31 Jan 2019 08:17:27 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to:user-agent;
+        bh=XkwLXcoRkVmgZPav9GtqCHyR/6Nz/q92jkOChgvBD2k=;
+        b=L3iLjIbVbwFRaHukD53iUWOTuEaiUyVjOJ6r7gMQzQ+kv4ePOgfR846Iwfxgtpq5av
+         AUIm4Y01r+A2jj4fe37uLSlq6uslp9SpY6q0dRxKlsXMC77H1PsJQwncd4cw97QENRCn
+         bTQTVXKswZ+lB/MgAmwkIHWWuyHa6TyjYji1EaAi0C+dnYH25VJsh4aVWJeMKYG4Am/D
+         wuXIDYqmBC+Oxs385isSo11A9rsjhMdTkWNabkxdJ9orkUT/bv8ceBZCIkb7EWhtgo3p
+         0yeY849XHoHhQLJdmM8Naze9sCXNnoJ62OqQ8qq48Ko2pI67h19lOkwlO33NfeVn3gA1
+         5nuQ==
+X-Gm-Message-State: AJcUukeKplxDxO8AG/PkUcJ8qTNfyEXV6sc7M1P//3tDFncn+iXgHbvQ
+        uy8C0SpjT33/o47Jn7zYECk=
+X-Google-Smtp-Source: ALg8bN6no8Bwmutzs2k8DfLEB/yGQuY0A5wmnExAAXe9YLMMQPINU61wmhjafg3499IShkUIsboalQ==
+X-Received: by 2002:a81:d303:: with SMTP id y3mr34241577ywi.502.1548951447420;
+        Thu, 31 Jan 2019 08:17:27 -0800 (PST)
+Received: from dennisz-mbp ([2620:10d:c091:200::6:84c2])
+        by smtp.gmail.com with ESMTPSA id o14sm3425503ywo.52.2019.01.31.08.17.26
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Thu, 31 Jan 2019 08:17:26 -0800 (PST)
+Date:   Thu, 31 Jan 2019 11:17:24 -0500
+From:   Dennis Zhou <dennis@kernel.org>
+To:     David Sterba <dsterba@suse.cz>
+Cc:     Dennis Zhou <dennis@kernel.org>, David Sterba <dsterba@suse.com>,
         Josef Bacik <josef@toxicpanda.com>, Chris Mason <clm@fb.com>,
         Omar Sandoval <osandov@osandov.com>,
         Nick Terrell <terrelln@fb.com>, kernel-team@fb.com,
         linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 03/11] btrfs: manage heuristic workspace as index 0
-Message-ID: <20190131161019.GL2900@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Dennis Zhou <dennis@kernel.org>,
-        David Sterba <dsterba@suse.com>, Josef Bacik <josef@toxicpanda.com>,
-        Chris Mason <clm@fb.com>, Omar Sandoval <osandov@osandov.com>,
-        Nick Terrell <terrelln@fb.com>, kernel-team@fb.com,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH 01/11] btrfs: add macros for compression type and level
+Message-ID: <20190131161724.GA93554@dennisz-mbp>
 References: <20190128212437.11597-1-dennis@kernel.org>
- <20190128212437.11597-4-dennis@kernel.org>
+ <20190128212437.11597-2-dennis@kernel.org>
+ <20190131160010.GK2900@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190128212437.11597-4-dennis@kernel.org>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+In-Reply-To: <20190131160010.GK2900@twin.jikos.cz>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Jan 28, 2019 at 04:24:29PM -0500, Dennis Zhou wrote:
-> While the heuristic workspaces aren't really compression workspaces,
-> they use the same interface for managing them. So rather than branching,
-> let's just handle them once again as the index 0 compression type.
+On Thu, Jan 31, 2019 at 05:00:10PM +0100, David Sterba wrote:
+> On Mon, Jan 28, 2019 at 04:24:27PM -0500, Dennis Zhou wrote:
+> > It is very easy to miss places that rely on a certain bitshifting for
+> > decyphering the type_level overloading. Make macros handle this instead.
 > 
-> Signed-off-by: Dennis Zhou <dennis@kernel.org>
-> +const struct btrfs_compress_op btrfs_heuristic_compress = {
-> +	.alloc_workspace = alloc_heuristic_ws,
-> +	.free_workspace = free_heuristic_ws,
-> +};
->  struct workspace_manager {
->  	struct list_head idle_ws;
->  	spinlock_t ws_lock;
-> @@ -782,9 +789,8 @@ struct workspace_manager {
->  
->  static struct workspace_manager wsm[BTRFS_COMPRESS_TYPES];
+> This encoding was a simple way to introduce the combined type and level
+> for zlib and it could certainly be improved. Either we'll use helpers
+> like you suggest or add a new structure that contains type and level as
+> members. That way we'd see where the level still matters and where the
+> just the type is ok.
+> 
+> I haven't checked how much intrusive this would be, so that's for later
+> consideration. Some indirection can be removed for the .set_level
+> callbacks as it does not necessarily need to be a function so I'm
+> expecting that the code around that would be touched anyway.
 
-This deserves a comment that the 0th workspace is for the heuristics.
+The only user of type_level is btrfs_compress_pages(). I do make an
+extra call to .set_level() there just to be safe, but that can be taken
+out as it should be correctly set from when we mounted.
 
-> --- a/fs/btrfs/compression.h
-> +++ b/fs/btrfs/compression.h
-> @@ -97,7 +97,7 @@ enum btrfs_compression_type {
->  	BTRFS_COMPRESS_ZLIB  = 1,
->  	BTRFS_COMPRESS_LZO   = 2,
->  	BTRFS_COMPRESS_ZSTD  = 3,
-> -	BTRFS_COMPRESS_TYPES = 3,
-> +	BTRFS_COMPRESS_TYPES = 4,
+I envisioned .set_level() to be called when setting the compression
+level of the mount. This can be used in the same place if we were to add
+per-file compression levels too. I mention later, but an important part
+of .set_level() is to repurpose the meaning of 0 from meaning use the
+default to meaning use any workspace available.
 
-And here too, as there are only 3 compressors but 4 types as value of
-the enum. Or rename BTRFS_COMPRESS_TYPES if you find a better name.
-
->  };
->  
->  struct btrfs_compress_op {
-> @@ -125,6 +125,7 @@ struct btrfs_compress_op {
->  	void (*set_level)(struct list_head *ws, unsigned int type);
->  };
->  
-> +extern const struct btrfs_compress_op btrfs_heuristic_compress;
->  extern const struct btrfs_compress_op btrfs_zlib_compress;
->  extern const struct btrfs_compress_op btrfs_lzo_compress;
->  extern const struct btrfs_compress_op btrfs_zstd_compress;
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 9c8e1734429c..20081465a451 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -1410,7 +1410,7 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
->  		return -EINVAL;
->  
->  	if (do_compress) {
-> -		if (range->compress_type > BTRFS_COMPRESS_TYPES)
-> +		if (range->compress_type >= BTRFS_COMPRESS_TYPES)
->  			return -EINVAL;
->  		if (range->compress_type)
->  			compress_type = range->compress_type;
-> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-> index a62e1e837a89..c88e146d8e99 100644
-> --- a/fs/btrfs/tree-checker.c
-> +++ b/fs/btrfs/tree-checker.c
-> @@ -133,9 +133,9 @@ static int check_extent_data_item(struct btrfs_fs_info *fs_info,
->  	 * Support for new compression/encryption must introduce incompat flag,
->  	 * and must be caught in open_ctree().
->  	 */
-> -	if (btrfs_file_extent_compression(leaf, fi) > BTRFS_COMPRESS_TYPES) {
-> +	if (btrfs_file_extent_compression(leaf, fi) >= BTRFS_COMPRESS_TYPES) {
->  		file_extent_err(fs_info, leaf, slot,
-> -	"invalid compression for file extent, have %u expect range [0, %u]",
-> +	"invalid compression for file extent, have %u expect range [0, %u)",
->  			btrfs_file_extent_compression(leaf, fi),
->  			BTRFS_COMPRESS_TYPES);
-
-This might become a bit confusing, the message is updated to say [0, 4)
-but I'm not sure this is commonly understood that 4 does not belong
-there. Either do -1 or define a new enum that contains the maximum
-number so BTRFS_COMPRESS_TYPES is not overloaded.
+Thanks,
+Dennis

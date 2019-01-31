@@ -2,31 +2,31 @@ Return-Path: <SRS0=M3t6=QH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.9 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.9 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BFE9CC282D7
-	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Jan 2019 00:46:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2A209C282D7
+	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Jan 2019 02:38:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8B60320857
-	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Jan 2019 00:46:18 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D02F92084C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Jan 2019 02:38:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727773AbfAaAqR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 30 Jan 2019 19:46:17 -0500
-Received: from mout.gmx.net ([212.227.15.15]:58619 "EHLO mout.gmx.net"
+        id S1726193AbfAaCiO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 30 Jan 2019 21:38:14 -0500
+Received: from mout.gmx.net ([212.227.15.18]:38207 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725768AbfAaAqQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Jan 2019 19:46:16 -0500
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx002
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0LrvWY-1hIGVI3YhK-013few; Thu, 31
- Jan 2019 01:45:47 +0100
-Subject: Re: [PATCH v4 04/12] btrfs: extent_io: Move the BUG_ON() in
- flush_write_bio() one level up
-To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20190125050925.30754-1-wqu@suse.com>
- <20190125050925.30754-5-wqu@suse.com> <20190130151914.GU2900@twin.jikos.cz>
+        id S1725535AbfAaCiO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 30 Jan 2019 21:38:14 -0500
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx001
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0LslCb-1hI09u39zN-012Gh6; Thu, 31
+ Jan 2019 03:38:08 +0100
+Subject: Re: [PATCH RFC 2/2] btrfs: Introduce free dev extent hint to speed up
+ chunk allocation
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20190130074000.16638-1-wqu@suse.com>
+ <20190130074000.16638-3-wqu@suse.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -53,111 +53,294 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <3893155e-d3c3-5fd0-6f61-ae067d341d81@gmx.com>
-Date:   Thu, 31 Jan 2019 08:45:42 +0800
+Message-ID: <8a785ed2-80ef-e30b-5a63-6556f744eaf6@gmx.com>
+Date:   Thu, 31 Jan 2019 10:38:03 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <20190130151914.GU2900@twin.jikos.cz>
+In-Reply-To: <20190130074000.16638-3-wqu@suse.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="6oo4ewj2dfFOeB04YLZwUGj59Sw06j8cO"
-X-Provags-ID: V03:K1:YP1dTfJc7lFewVN4AlysUqq6d+jXsPpEkM3qXp/pVGRdsbve/i/
- JZMz9f10R502PvJ7S3hxZT9tVuKYKtskyhy/T/hgyv6rj8tCVQbsBTKhiCad77akhGc5qrI
- iKQsvyQ3M2cH0FdAfCEu4naV+we9i1LtdPdJ2w+3qOveEKBxGdnM2vBx4PNFNq5SS9eueFt
- IYOfrQ+f8ee1oCD5hxFqQ==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:9P5DjA56WuA=:Dx+MOZcCsP1FLL45+sXGY8
- NhTaz9nz2DqJIWEsktYCm33uch2a/wM4+iAATFrwGrZMWHpHCiVVuUVM8P4PF/m6r03IYm5Xy
- YmNZMZlVvzYs0gZQmJRz4CcABzuWRmgHQcSbB5wPTNdfqZ649VPlvULdJfPJdviCFPliTWefR
- 7tiVsOWoxkeC0AOOLrGD/wenI7vi/b9/bP+tu8Vz/srcII2y9ZbS6+9LBpvEBHmCGIK8s9Flh
- nRUSM+N3PxS6GiZhEK8Gu7v/0H40zIc8ZxLWxtNI2YHAr77MLdOe2RUWI1giJV8zZUQIWQKyL
- E+JwGgMNq/O1oV8XCBDc2jA9sRBQoexJIHyCquJ/P4/hR20YWoo0mVFCSl9sz6MBY8otDPl40
- FOy0ILyODk9lKTi1LXlNEqme3t/5f6j0aCPaaxeIBMJxYC0YgORNUO0+GTyONdL+FF2snvOpV
- HMM7YyQP9hPboZFtvd2UTNFPus7ZvOZzGCOowW/r6bYV71s3I2ZdIAKakShg2MdzCBs1lgj0z
- +D6MRkfiec7rO4JZdH90QP89+E9+2BeAQU1JhnxLKBIO8kceLb1YBveUzYq1iG19j4kSuORPP
- i5tmA19YENFYTpfALB0LIvjAJwZZrjdZURwZVYrVAT86zjOtq8MsB/geu1yoU8X7Pz3aYxtuW
- 6C+1eDper7Yd1LiYckKuG0j+Wf3fKyetlRrccP4wjc0ienATBnnmHXlmb3z8DsdYTNs6SD66W
- JdS9XAyNBk3y3LjHlnUsjnHGy9VGI6YQhRTfnqZQo29imgLc7nX7u6DrspkRf796ahv20IA5n
- iUNxI9HczitYhdboSCv6aKWwWgA1x0v8v+596V3qLcio/VuFcddJUWKCZeiKErfU9ZhiK600C
- DtJAFIQu9aEm954pjpEJvqGd58pIMqvP3WZ6ySUeVC6iVPb0y1gsgexWJfPNWQ
+ boundary="m3C8wp2Q33vmMq2S3caKlLnrLuvoDzEzd"
+X-Provags-ID: V03:K1:W7/2ozGJ5Nb2QAYp8sEDL6gKC4JhbqT28l25cq7ggNXzfUz5YSn
+ T7x+0P1VO900sckuUzULL1NepOZyRJAiWSxaozT3xjA4cOUxEsaPsc5W7T6S0o79Hr9p6KI
+ KK6NLvREn0642pz0AEp/Ta01X2cCdPVlKbywsd4VnjQL1oRqPRauT7M4fanuYIFu9JR7iaH
+ yKkcF9iGnszNKF0qUa9IQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:cGTQnWufMNQ=:OGEma6TIebxpCnXWC8HLIS
+ /1iO4zjPu3v5LGRurL1MOpkbRnw00//qdfa8dFtnjEcgVDsxovSboMm8obwRxdQ7XN+ep8kzF
+ 3PQLnM9tNmFlvMuQfDN2i3x30LwbKYyi7hnES329FoPFGMLhdSEpWn0vOsyVP9tG6qSixFNNS
+ AU5K9PDHiA5RJic/nYrj9KYnBEHzQmwNoKBO1ZT0T515GChc89o498uQZWYLNJEE5zLDrJp3w
+ 7iJG3KdgXg4AgxDk0PguMTsHxi8jb9f3x1WhbRFu9QSwKluVnkOtKUWrXOYMSJl6iKGFqMfJj
+ qIeDvAOcsAMpJU7ij9rCtey4S0kWuoC9YaO2miG/YwiB5Rn3221OOeXikMinyydekRl9yU7Yj
+ wAxajpiVoHe6/pJYxpVqOsaVQogfI0oQgotCnNwl7FR88pLc7f6HspjcoTzk+hD32JevMTHAN
+ Ns9p+JEq0Z29TP6XCcpsxCu2UxyyDclvTQC1ApIc/ItfUPBTGNMvZGDPum+h5uh7ZPGbAXkEy
+ FX2rm5p7Y6ITSSoE4vG6/GkVeJuaNTskO+DMPJeUSwEDIlMBDip6NNlc/z9mj1ZNC+5BK2ln3
+ zlgZ29c8jrfRCg6dRMu6tqNTUkfCOsQzEs/yhjcGA1LOA07wAZUUZUmvhy1Jgbn8sUXGmo4+a
+ TDxHRAuioHCUxWDEay71JniVV4Gv67geDlmVPBvNqTY6OCWsxOHNdqQYbeyPn2+GfAzfMeHKk
+ 3zHY7pA+exzJYZ2L1JZ59zHUzR+6LBBVpkmKdm8zITJ5zxBluTALeCRlwgg3txsAq87ndkl7d
+ Qmh0W790E/TGxa/Zg1Ej70I2nmmchavujefcBCWTpmdt+QdeCR376zaI4gUjfYnYHw2DazbzP
+ aBc4PR2HL78pjUmsy7RabKJ/XC+3piSazXLoD95eh4O5gNjUi8pjg7NKRZwScR
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---6oo4ewj2dfFOeB04YLZwUGj59Sw06j8cO
-Content-Type: multipart/mixed; boundary="9eLmOjusWYLXRR8teahvesbJG74s86t31";
+--m3C8wp2Q33vmMq2S3caKlLnrLuvoDzEzd
+Content-Type: multipart/mixed; boundary="htbkmMMovmUgBHsWsHG3BcsFOtXemQORa";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <3893155e-d3c3-5fd0-6f61-ae067d341d81@gmx.com>
-Subject: Re: [PATCH v4 04/12] btrfs: extent_io: Move the BUG_ON() in
- flush_write_bio() one level up
-References: <20190125050925.30754-1-wqu@suse.com>
- <20190125050925.30754-5-wqu@suse.com> <20190130151914.GU2900@twin.jikos.cz>
-In-Reply-To: <20190130151914.GU2900@twin.jikos.cz>
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <8a785ed2-80ef-e30b-5a63-6556f744eaf6@gmx.com>
+Subject: Re: [PATCH RFC 2/2] btrfs: Introduce free dev extent hint to speed up
+ chunk allocation
+References: <20190130074000.16638-1-wqu@suse.com>
+ <20190130074000.16638-3-wqu@suse.com>
+In-Reply-To: <20190130074000.16638-3-wqu@suse.com>
 
---9eLmOjusWYLXRR8teahvesbJG74s86t31
+--htbkmMMovmUgBHsWsHG3BcsFOtXemQORa
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
-
-
-On 2019/1/30 =E4=B8=8B=E5=8D=8811:19, David Sterba wrote:
-> On Fri, Jan 25, 2019 at 01:09:17PM +0800, Qu Wenruo wrote:
->> +static int __must_check flush_write_bio(struct extent_page_data *epd)=
-
->>  {
->> -	if (epd->bio) {
->> -		int ret;
->> +	int ret =3D 0;
->> =20
->> +	if (epd->bio) {
->>  		ret =3D submit_one_bio(epd->bio, 0, 0);
->> -		BUG_ON(ret < 0); /* -ENOMEM */
->>  		epd->bio =3D NULL;
+> [ENHANCEMENT]
+> This patch will introduce btrfs_device::hint_free_dev_extent member to
+> give some hint for chunk allocator to find free dev extents.
 >=20
-> I'm not sure if resetting epd->bio to NULL is all that needs to be done=
+> The hint itself is pretty simple, only tells where the first free slot
+> could possibly be.
+>=20
+> It is not 100% correct, unlike free space cache, but since
+> find_free_dev_extent_start() is already robust enough to handle
+> search_hint, so there is not need to introduce a complex and fancy free=
 
-> here. With the BUG_ON the error case never happens so if all goes fine
-> it's also ok to set it to NULL and continue. But the callers might need=
+> dev extent cache.
+>=20
+> With this patch, allocating 4G on a 4T filled fs will be way more
+> faster:
+>=20
+>       v5.0-rc1   |   patched      |    function
+> ---------------------------------------------------------------------
+>  7)              | 7)             |  __btrfs_alloc_chunk [btrfs]() {
+>  7) ! 152.496 us | 7)   7.885 us  |    find_free_dev_extent_start [btrf=
+s]();
+>  7) ! 185.488 us | 7) + 36.649 us |  }
+>  7)              | 7)             |  __btrfs_alloc_chunk [btrfs]() {
+>  7) ! 132.889 us | 7)   2.454 us  |    find_free_dev_extent_start [btrf=
+s]();
+>  7) ! 152.115 us | 7) + 24.145 us |  }
+>  7)              | 7)             |  __btrfs_alloc_chunk [btrfs]() {
+>  7) ! 127.689 us | 7)   2.245 us  |    find_free_dev_extent_start [btrf=
+s]();
+>  7) ! 146.595 us | 7) + 19.376 us |  }
+>  7)              | 7)             |  __btrfs_alloc_chunk [btrfs]() {
+>  7) ! 126.657 us | 7)   2.174 us  |    find_free_dev_extent_start [btrf=
+s]();
+>  7) ! 144.521 us | 7) + 16.321 us |  }
 
-> to send the flush again.
+For anyone who is interesting in unrealistic workload, without this
+patch, fallocating a 1PiB file TiB by TiB will take 5+ hours!!
 
-If flush_write_bio() get called again on the failed one, it will just
-get skipped as  epd->bio is NULL, submit_one_bio() will not be triggered.=
+With this patch, it's just going to take around 15~20min.
 
+Anyway, we're still far from customer oriented 1PiB HDDs, so that's not
+something we need to bother yet.
 
 Thanks,
 Qu
 
 >=20
-> It's not easy to trace the bio here, it's set indirectly in
-> submit_extent_page, submit_one_bio is another indirection, switching by=
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/volumes.c | 23 +++++++++++++++---
+>  fs/btrfs/volumes.h | 58 ++++++++++++++++++++++++++++++++++++++++++++++=
 
-> type and sometimes bio_endio is called in case of an error.
+>  2 files changed, 78 insertions(+), 3 deletions(-)
+>=20
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 8e932d7d2fe6..cc15bf70dc72 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -411,6 +411,7 @@ static struct btrfs_device *__alloc_device(void)
+>  	btrfs_device_data_ordered_init(dev);
+>  	INIT_RADIX_TREE(&dev->reada_zones, GFP_NOFS & ~__GFP_DIRECT_RECLAIM);=
+
+>  	INIT_RADIX_TREE(&dev->reada_extents, GFP_NOFS & ~__GFP_DIRECT_RECLAIM=
+);
+> +	dev->hint_free_dev_extent =3D (u64)-1;
+> =20
+>  	return dev;
+>  }
+> @@ -1741,9 +1742,9 @@ int find_free_dev_extent(struct btrfs_trans_handl=
+e *trans,
+>  			 struct btrfs_device *device, u64 num_bytes,
+>  			 u64 *start, u64 *len)
+>  {
+> -	/* FIXME use last free of some kind */
+> -	return find_free_dev_extent_start(trans->transaction, device,
+> -					  num_bytes, 0, start, len);
+> +	return find_free_dev_extent_start(trans->transaction, device, num_byt=
+es,
+> +					  device->hint_free_dev_extent, start,
+> +					  len);
+>  }
+> =20
+>  static int btrfs_free_dev_extent(struct btrfs_trans_handle *trans,
+> @@ -1799,6 +1800,7 @@ static int btrfs_free_dev_extent(struct btrfs_tra=
+ns_handle *trans,
+>  				      "Failed to remove dev extent item");
+>  	} else {
+>  		set_bit(BTRFS_TRANS_HAVE_FREE_BGS, &trans->transaction->flags);
+> +		btrfs_device_hint_add_free(device, key.offset, *dev_extent_len);
+>  	}
+>  out:
+>  	btrfs_free_path(path);
+> @@ -1841,6 +1843,7 @@ static int btrfs_alloc_dev_extent(struct btrfs_tr=
+ans_handle *trans,
+>  	btrfs_set_dev_extent_chunk_offset(leaf, extent, chunk_offset);
+> =20
+>  	btrfs_set_dev_extent_length(leaf, extent, num_bytes);
+> +	btrfs_device_hint_del_free(device, key.offset, num_bytes);
+>  	btrfs_mark_buffer_dirty(leaf);
+>  out:
+>  	btrfs_free_path(path);
+> @@ -7913,6 +7916,14 @@ int btrfs_verify_dev_extents(struct btrfs_fs_inf=
+o *fs_info)
+>  		devid =3D key.objectid;
+>  		physical_offset =3D key.offset;
+> =20
+> +		/*
+> +		 * previous device verification is done, update its free dev
+> +		 * extent hint
+> +		 */
+> +		if (device && devid !=3D device->devid)
+> +			btrfs_device_hint_add_free(device, prev_dev_ext_end,
+> +				device->disk_total_bytes - prev_dev_ext_end);
+> +
+>  		if (!device || devid !=3D device->devid) {
+>  			device =3D btrfs_find_device(fs_info, devid, NULL, NULL);
+>  			if (!device) {
+> @@ -7940,6 +7951,10 @@ int btrfs_verify_dev_extents(struct btrfs_fs_inf=
+o *fs_info)
+>  					    physical_offset, physical_len);
+>  		if (ret < 0)
+>  			goto out;
+> +
+> +		btrfs_device_hint_add_free(device, prev_dev_ext_end,
+> +				physical_offset - prev_dev_ext_end);
+> +
+>  		prev_devid =3D devid;
+>  		prev_dev_ext_end =3D physical_offset + physical_len;
+> =20
+> @@ -7951,6 +7966,8 @@ int btrfs_verify_dev_extents(struct btrfs_fs_info=
+ *fs_info)
+>  			break;
+>  		}
+>  	}
+> +	btrfs_device_hint_add_free(device, prev_dev_ext_end,
+> +			device->disk_total_bytes - prev_dev_ext_end);
+> =20
+>  	/* Ensure all chunks have corresponding dev extents */
+>  	ret =3D verify_chunk_dev_extent_mapping(fs_info);
+> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+> index ed806649a473..00f7ef72466f 100644
+> --- a/fs/btrfs/volumes.h
+> +++ b/fs/btrfs/volumes.h
+> @@ -108,6 +108,14 @@ struct btrfs_device {
+> =20
+>  	/* bytes used on the current transaction */
+>  	u64 commit_bytes_used;
+> +
+> +	/*
+> +	 * hint about where the first possible free dev extent is.
+> +	 *
+> +	 * u64(-1) means no hint.
+> +	 */
+> +	u64 hint_free_dev_extent;
+> +
+>  	/*
+>  	 * used to manage the device which is resized
+>  	 *
+> @@ -569,4 +577,54 @@ bool btrfs_check_rw_degradable(struct btrfs_fs_inf=
+o *fs_info,
+>  int btrfs_bg_type_to_factor(u64 flags);
+>  int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info);
+> =20
+> +static inline void btrfs_device_hint_add_free(struct btrfs_device *dev=
+,
+> +					      u64 start, u64 len)
+> +{
+> +	if (dev->disk_total_bytes =3D=3D 0 || start + len > dev->disk_total_b=
+ytes)
+> +		return;
+> +	if (len < SZ_16M)
+> +		return;
+> +	if (start > dev->hint_free_dev_extent)
+> +		return;
+> +	dev->hint_free_dev_extent =3D start;
+> +}
+> +
+> +static inline void btrfs_device_hint_del_free(struct btrfs_device *dev=
+,
+> +					      u64 start, u64 len)
+> +{
+> +	u64 free_hint =3D dev->hint_free_dev_extent;
+> +
+> +	if (dev->disk_total_bytes =3D=3D 0 || start + len > dev->disk_total_b=
+ytes)
+> +		return;
+> +	/*
+> +	 * |<- to be removed ->|
+> +	 * 			| free hint
+> +	 * Not affecting free hint
+> +	 */
+> +	if (start + len <=3D free_hint)
+> +		return;
+> +	/*
+> +	 * |<- to be removed ->|
+> +	 * 		| free hint
+> +	 * Or
+> +	 * 	|<- to be removed ->|
+> +	 * | free hint
+> +	 * |<-->| Less than 16M
+> +	 *
+> +	 * Move the hint to the range end
+> +	 */
+> +	if ((start <=3D free_hint && start + len > free_hint) ||
+> +	    (start > free_hint && free_hint - start < SZ_16M)) {
+> +		dev->hint_free_dev_extent =3D start + len;
+> +		return;
+> +	}
+> +
+> +	/*
+> +	 * 			|<- to be removed ->|
+> +	 * | free hint
+> +	 *
+> +	 * We still have larger than 16M free space, no need to update
+> +	 * free hint
+> +	 */
+> +}
+>  #endif
 >=20
 
 
---9eLmOjusWYLXRR8teahvesbJG74s86t31--
+--htbkmMMovmUgBHsWsHG3BcsFOtXemQORa--
 
---6oo4ewj2dfFOeB04YLZwUGj59Sw06j8cO
+--m3C8wp2Q33vmMq2S3caKlLnrLuvoDzEzd
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxSRTYACgkQwj2R86El
-/qjerwf/Wp0CaDdzNO1p6ak2+Aq24wBl/N6PbgRsXko5q9sboc14jE7f4kstRjrV
-XxCN43avbgxFAt5bgJUktp4kYupaEynjSpQrYh7MmYGWf6HUc6rmnHDr3IlsDePF
-Uhw4VUD8ONhiRygl4Er7aaQpMSGQu//IMDp+yzPaJo5x/Z0fNTTPF/aDzGPN0IO8
-M7g4lRow5gTkIKwIO7UalXLstnAADeHBD/ADQkcXqo4VaUu5WwHgOauWJnJhpkHS
-XlyE0T6YMhgbeZTJ3mUhEjekKMB98eKqEmpe5Cpao0l4a1mz2zDc1AIXJ3MZY5LC
-N3s6Kr7MW3YDkQ3IKnCVquBen+W8/Q==
-=Lo6d
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxSX4wACgkQwj2R86El
+/qht4ggApDvvEzF6UIsxDhok/hhu8E19Gpg635Y1lG2Nlkm9tPfXe421X9ry5/Qd
+TyDayDnmKfYmbhvApNXBJSXzkVLy+K/XmL58DrhGfoRYGSr6cYCUce/hz0wp9XdL
+eAdaEnDrVuNAf77VO1q66R7oSnt+el/aSfZyHTGegNJgfyfRBnoI4eRcCn+LU717
+i3Yny3awj2FnR2nNoPXDNII27tSAX6oEtTtxlHqYtoY7r3ZnAtXObhNQ5e1x0FFY
+vI9fOkDqz6JgQf/IooQ0IJTX0YFo9Pk9oSmnMpf55CeaWTtO94ylwtvtrOf0ZsRW
+STEBGZMJ8GM1ZoInT9xPX0zcWai5JA==
+=zsxI
 -----END PGP SIGNATURE-----
 
---6oo4ewj2dfFOeB04YLZwUGj59Sw06j8cO--
+--m3C8wp2Q33vmMq2S3caKlLnrLuvoDzEzd--

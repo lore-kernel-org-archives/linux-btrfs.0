@@ -2,115 +2,91 @@ Return-Path: <SRS0=M3t6=QH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 380A8C169C4
-	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Jan 2019 14:06:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 38FF4C169C4
+	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Jan 2019 14:20:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 09FF420869
-	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Jan 2019 14:06:44 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="NIVM4qXN"
+	by mail.kernel.org (Postfix) with ESMTP id 079AD218AC
+	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Jan 2019 14:20:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1733009AbfAaOGn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 31 Jan 2019 09:06:43 -0500
-Received: from mail-io1-f52.google.com ([209.85.166.52]:35404 "EHLO
-        mail-io1-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727452AbfAaOGm (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 31 Jan 2019 09:06:42 -0500
-Received: by mail-io1-f52.google.com with SMTP id f4so2728263ion.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 31 Jan 2019 06:06:42 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=subject:to:references:from:message-id:date:user-agent:mime-version
-         :in-reply-to:content-language:content-transfer-encoding;
-        bh=XCXOqZXa6zd07RPieVSrkV2ty9WZeGtnzM5AxCKyxsY=;
-        b=NIVM4qXNrlzi2nrzhqFFlXGZ+WJssmI5pl8cG+RstEsBPSbsI+GBmIGgasHgfBku8L
-         6L8uopPGiBidD5CtlsCz/ynSzoXkTgLxSWf/Azryy4jnfoCXhfB+vCrsuKSzT40Z6sgK
-         WKOYAqf0RxgIlSSwvEvvx7IzjhcH5Pzqz8d+uP7RYFrjLRY/QRx2XWpmsA2msrFg66N2
-         hXGrjOZkP5OZF4OB9jcKKm+c9wmJnbCKaMNdVIro5ljHDnjtF80dFCFPXK15HcYsuiTM
-         FJ6TZQmALg5IA/+yR2r4FKz9b809YArJPO6E9mBvsOtIdPBn+OJYd7qR04NIga/CSslt
-         bfzA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=XCXOqZXa6zd07RPieVSrkV2ty9WZeGtnzM5AxCKyxsY=;
-        b=VOeLUP+RmMBnjfTXJdMQN4OLXFuypmlH6IXaFQnYMjrTIe0f+vUxmHvL2+1+it3StI
-         8mFuvU3Kk641eyfg24hRdSbTElj6lA0qwfyoZltCkcgdKPJGpHh32tDo7TcbLIGKwJ5L
-         MaBb0mahhLN3EWKJB/FQNvRq/sV9KqW93Bh5JT3Hj6RPwfrqZQr2o1w1F+LxzA2G9eOq
-         4QcC014ZO0Ogj0hzpy8Et48vJPmwq/B5aS14juwt6b4r+16xHNry1MN98ik1ZjZUdYGA
-         TSA5H3HudeVYUZyMumMkJTFDgyLvR1k1Cl55FbtEsUZET+XwQiVIXuwNE5wfe0wojWGN
-         Q0kg==
-X-Gm-Message-State: AHQUAuYJdady9+v+sbiDpCBE3OMxWU6KMPCccNjeXytGYuVu5ZdZ5CZv
-        YfWZGOK/SOoqSiKuunr6Z+4rXS+4kEA=
-X-Google-Smtp-Source: AHgI3IZfm5KZpTMRejZM7lpCQTcyJ2CE2gdeuQU6dRK5Gtdnk2qWu0GBkXK1bN+gQcgF1SIlFkv8qA==
-X-Received: by 2002:a5d:9650:: with SMTP id d16mr3134328ios.289.1548943601014;
-        Thu, 31 Jan 2019 06:06:41 -0800 (PST)
-Received: from [191.9.209.46] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
-        by smtp.gmail.com with ESMTPSA id x79sm3102088ita.34.2019.01.31.06.06.40
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 31 Jan 2019 06:06:40 -0800 (PST)
-Subject: Re: File alteration events?
-To:     Ronald Schaten <ronald@schatenseite.de>,
+        id S1727464AbfAaOUq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 31 Jan 2019 09:20:46 -0500
+Received: from mx2.suse.de ([195.135.220.15]:34828 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727237AbfAaOUp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 31 Jan 2019 09:20:45 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 97845AF95;
+        Thu, 31 Jan 2019 14:20:44 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 73082DA918; Thu, 31 Jan 2019 15:20:05 +0100 (CET)
+Date:   Thu, 31 Jan 2019 15:20:05 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     Nikolay Borisov <nborisov@suse.com>, dsterba@suse.cz,
+        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v4 03/12] btrfs: disk-io: Show the timing of corrupted
+ tree block explicitly
+Message-ID: <20190131142005.GE2900@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
-References: <20190131123832.yqhp4fqavv6xjdif@shell.intra.scheunentor.de>
-From:   "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <d3a7b5d2-9281-16bc-2c87-18cf371985c1@gmail.com>
-Date:   Thu, 31 Jan 2019 09:06:36 -0500
-User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.0
+References: <20190125050925.30754-1-wqu@suse.com>
+ <20190125050925.30754-4-wqu@suse.com>
+ <20190130145719.GS2900@twin.jikos.cz>
+ <2c22a5e9-41d0-d62a-ad88-5be3da59e441@suse.com>
+ <0d1caf58-8015-2fdb-d75d-60870b13312c@gmx.com>
 MIME-Version: 1.0
-In-Reply-To: <20190131123832.yqhp4fqavv6xjdif@shell.intra.scheunentor.de>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <0d1caf58-8015-2fdb-d75d-60870b13312c@gmx.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 2019-01-31 07:38, Ronald Schaten wrote:
-> Hello everybody...
+On Thu, Jan 31, 2019 at 08:03:36AM +0800, Qu Wenruo wrote:
+> On 2019/1/30 下午10:59, Nikolay Borisov wrote:
+> > On 30.01.19 г. 16:57 ч., David Sterba wrote:
+> >> On Fri, Jan 25, 2019 at 01:09:16PM +0800, Qu Wenruo wrote:
+> >>> Just add one extra line to show when the corruption is detected.
+> >>> Currently only read time detection is possible.
+> >>>
+> >>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> >>> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+> >>> ---
+> >>>  fs/btrfs/disk-io.c | 2 ++
+> >>>  1 file changed, 2 insertions(+)
+> >>>
+> >>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> >>> index 794d5bb7fe33..426e9f450f70 100644
+> >>> --- a/fs/btrfs/disk-io.c
+> >>> +++ b/fs/btrfs/disk-io.c
+> >>> @@ -658,6 +658,8 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
+> >>>  
+> >>>  	if (!ret)
+> >>>  		set_extent_buffer_uptodate(eb);
+> >>> +	else
+> >>> +		btrfs_err(fs_info, "read time tree block corrupted detected");
+> >>
+> >> I'm not sure the 'read time' is clear enoug, my suggestion is to use
+> >> 'post-read' (and pre-write analogicaly). What do you think?
+> > 
+> > 
+> > How about "error during tree block reading" or "error reading treeblock"?
 > 
-> This is my first mail to this list, and -- as much as I'd like to be --
-> I'm not a kernel developer. So please forgive me if this isn't the right
-> place for questions like this. I'm thankful for any pointer into the
-> right direction.
+> Nikolay's suggestion looks more straightforward to me.
 > 
+> +1 for his idea.
 > 
-> The question:
-> 
-> I'm looking for a solution to track file changes on a fairly large
-> filesystem. Many thousands of directories, millions of files.
-> 
-> The volume is shared to other computers, changes can come from different
-> sources (NFS, Samba, local access...). So I think the kernel or the
-> filesystem itself are the definitive source of information.
-> 
-> Does BTRFS have any mechanism that could be used to track every event?
-> Or do you happen to know if the kernel does?
-> 
-> 
-> What I tried till now:
-> 
-> - inotify: Doesn't work for a full volume, just for single inodes.
-> 
-> - fanotify: That's almost the solution, but I need to see rename and
->    delete events, too.
-> 
-> - btrfs subvolume find-new: As far as I know that only finds changes
->    between snapshots. I need something a little more real-timey, and I
->    have to know if the file has been changed once or several times.
-> 
-> 
-BTRFS does not, anything like this is going to be in the VFS layer.
+> The 'post-read' still could confuse end-user IMHO.
 
-Given what you've said above, I'd suggest asking the VFS developers 
-about the possibility of getting rename and delete events in fanotify, 
-as that's likely to be the best option long-term.
+The idea is to distinguish if the error was because the block can't be
+read or because the data it contains are wrong.

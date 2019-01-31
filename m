@@ -3,32 +3,32 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 26B68C169C4
-	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Jan 2019 15:38:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B0689C169C4
+	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Jan 2019 15:41:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id F29622081B
-	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Jan 2019 15:38:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 88F0E218D3
+	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Jan 2019 15:41:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732584AbfAaPiv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 31 Jan 2019 10:38:51 -0500
-Received: from mx2.suse.de ([195.135.220.15]:50228 "EHLO mx1.suse.de"
+        id S1732631AbfAaPls (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 31 Jan 2019 10:41:48 -0500
+Received: from mx2.suse.de ([195.135.220.15]:50928 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1731033AbfAaPiv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 31 Jan 2019 10:38:51 -0500
+        id S1726060AbfAaPls (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 31 Jan 2019 10:41:48 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A82BFAD5D
-        for <linux-btrfs@vger.kernel.org>; Thu, 31 Jan 2019 15:38:49 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 7EBE8AE5C
+        for <linux-btrfs@vger.kernel.org>; Thu, 31 Jan 2019 15:41:46 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     dsterba@suse.cz, jeffm@suse.com,
         Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2] btrfs: Switch btrfs_trim_free_extents to find_first_clear_extent_bit
-Date:   Thu, 31 Jan 2019 17:38:48 +0200
-Message-Id: <20190131153848.9108-1-nborisov@suse.com>
+Subject: [PATCH v3] btrfs: Switch btrfs_trim_free_extents to find_first_clear_extent_bit
+Date:   Thu, 31 Jan 2019 17:41:43 +0200
+Message-Id: <20190131154143.11411-1-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20190130145102.4708-16-nborisov@suse.com>
 References: <20190130145102.4708-16-nborisov@suse.com>
@@ -49,18 +49,18 @@ oups.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
-
+V3: 
+ * Switch to using max_t to avoid build warning
 V2: 
- Explicitly ensure that the offset of the passed range is at least 1mb. This 
- mimics the behavior of the chunk allocator where the first megabyte of every 
- device is never touched. This ensures we are not screwing up with any bootloaders
- that might occupy the first megabyte. 
-
+ * Explicitly ensure that the offset of the passed range is at least 1mb. This 
+   mimics the behavior of the chunk allocator where the first megabyte of every 
+   device is never touched. This ensures we are not screwing up with any bootloaders
+   that might occupy the first megabyte. 
  fs/btrfs/extent-tree.c | 87 ++++++++++++------------------------------
  1 file changed, 24 insertions(+), 63 deletions(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index f5005ef39f98..23bda5d58d9f 100644
+index f5005ef39f98..04c5bd555177 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
 @@ -11127,54 +11127,6 @@ int btrfs_error_unpin_extent_range(struct btrfs_fs_info *fs_info,
@@ -123,7 +123,7 @@ index f5005ef39f98..23bda5d58d9f 100644
  				   struct fstrim_range *range, u64 *trimmed)
  {
 -	u64 start = range->start, len = 0;
-+	u64 start = max(range->start, SZ_1M), len = 0, end = 0;
++	u64 start = max_t(u64, range->start, SZ_1M), len = 0, end = 0;
  	int ret;
  
  	*trimmed = 0;

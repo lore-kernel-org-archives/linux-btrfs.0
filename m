@@ -2,33 +2,31 @@ Return-Path: <SRS0=M3t6=QH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.9 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-0.9 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0347FC282D7
-	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Jan 2019 00:03:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BFE9CC282D7
+	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Jan 2019 00:46:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B27DD20823
-	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Jan 2019 00:03:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8B60320857
+	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Jan 2019 00:46:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726783AbfAaADv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 30 Jan 2019 19:03:51 -0500
-Received: from mout.gmx.net ([212.227.15.18]:59169 "EHLO mout.gmx.net"
+        id S1727773AbfAaAqR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 30 Jan 2019 19:46:17 -0500
+Received: from mout.gmx.net ([212.227.15.15]:58619 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725768AbfAaADv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Jan 2019 19:03:51 -0500
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx001
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0MAQXq-1gzOtj290M-00BerI; Thu, 31
- Jan 2019 01:03:42 +0100
-Subject: Re: [PATCH v4 03/12] btrfs: disk-io: Show the timing of corrupted
- tree block explicitly
-To:     Nikolay Borisov <nborisov@suse.com>, dsterba@suse.cz,
-        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+        id S1725768AbfAaAqQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 30 Jan 2019 19:46:16 -0500
+Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx002
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0LrvWY-1hIGVI3YhK-013few; Thu, 31
+ Jan 2019 01:45:47 +0100
+Subject: Re: [PATCH v4 04/12] btrfs: extent_io: Move the BUG_ON() in
+ flush_write_bio() one level up
+To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
 References: <20190125050925.30754-1-wqu@suse.com>
- <20190125050925.30754-4-wqu@suse.com> <20190130145719.GS2900@twin.jikos.cz>
- <2c22a5e9-41d0-d62a-ad88-5be3da59e441@suse.com>
+ <20190125050925.30754-5-wqu@suse.com> <20190130151914.GU2900@twin.jikos.cz>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -55,80 +53,111 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <0d1caf58-8015-2fdb-d75d-60870b13312c@gmx.com>
-Date:   Thu, 31 Jan 2019 08:03:36 +0800
+Message-ID: <3893155e-d3c3-5fd0-6f61-ae067d341d81@gmx.com>
+Date:   Thu, 31 Jan 2019 08:45:42 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <2c22a5e9-41d0-d62a-ad88-5be3da59e441@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
-X-Provags-ID: V03:K1:aMjSTRlzPLa9IHF6rgmVL/JToKRc6E2npcI+LGOgaklU8DRs8Q4
- DWqvT/NpM2ZOkRn7X4ZBd8LgL/XOwx8obo+3zURHeu2cn0oFqX+/nfkpUjQeXA1LfrqU12B
- lKv+2kUH/nIF5ajkQ5jtmtwfGWqRnnhAP4Ntk34RG3DBqSaVKl9Db1ekgWRcofWQ9p5mAOX
- WCfWDP3vtKwbybW/sravg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:wdD9sxI0M9s=:4X7UXoxpVnloDnvK3jpSdH
- MI9/NoSGL0SWaAnD5uRf/jGRcCGysxFLQpcrqksTdqmBuJasl6R9dSBIv34DMhd45HGBNOHAx
- ydz4h916QbHI9sYlukZDT9RVqwR49OnZh1CizZdlzhA9BuxtaT9jLvvAmPv2DfM3DXEyEuu9h
- mDzukIlORaa3fLHHo1HN8RjICDxY/f6VdvUqR/PJyweEwZN/shQbHxlQZ+UUSE4xWOY6erx7N
- 2tr+IB+AAj/+INlLEhzHLkeRMrUHQgUdHd2JIkrZjsAn9uNFUBWUXLx0+o7LDjs1p7/mFDbU2
- ipsYqg58MCkoObWv0jwuOLsjYBtUV6cR0tV70fIfkrbnb53AwcZnN5oq7FY97L5rm+NnGy+Ua
- CKrT4Wn7xzgWG57EMOWMsYFo8e1Zm2PZBOM8HtaUyrQfI+49ot6EyHdbw3gg1fWKpusvxYjVA
- gvIOH7DPAkps4rmjee+MwtV5KD++SFcudjSQ6BOIqEiVNVgivuOAQNLd4uCPe3DCxiOVDB4GJ
- wa6WuWUazzFDOlLxwMpPnOWSr4+fOZTgYPbBKPNP6KvOMmU2V7q/0HLGse80SxLWR01x1B7Uh
- wyhBYgdHo1t41Mcbs+YYZzRIP0NMs2xSdq4MpJjwqJthJW+Qd6N029KjKuuvW0jai5FNc6R7J
- 2Nn/x0MD3RhVkBgAnAUA8wwyObGbrfzUpP9Bliap2F++7HcbugNoXtOwz3d+1tPZzPKVtH9pC
- k42jqeNCc3Sp05solWDNm0Eu2N/beBQ9bkvNfmVv914hApkh7IHo7/FGW+jEX3AFkwbeWXkhi
- s4/Pg5TS1Pw9EJ65tLfWFa7kWT+X2ARB9vePcv+4Eu5i7BLhDaRyNGrbSo7QW7Tp+YjSkNnI6
- 3/dbN2+IeNKbPQoL6S6+nZmPzLiocOK09jdcUzmotkIEUkXnJvfmkkcN8xvLRBANCxdbbsdVo
- vnE3F3swtrw==
+In-Reply-To: <20190130151914.GU2900@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="6oo4ewj2dfFOeB04YLZwUGj59Sw06j8cO"
+X-Provags-ID: V03:K1:YP1dTfJc7lFewVN4AlysUqq6d+jXsPpEkM3qXp/pVGRdsbve/i/
+ JZMz9f10R502PvJ7S3hxZT9tVuKYKtskyhy/T/hgyv6rj8tCVQbsBTKhiCad77akhGc5qrI
+ iKQsvyQ3M2cH0FdAfCEu4naV+we9i1LtdPdJ2w+3qOveEKBxGdnM2vBx4PNFNq5SS9eueFt
+ IYOfrQ+f8ee1oCD5hxFqQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:9P5DjA56WuA=:Dx+MOZcCsP1FLL45+sXGY8
+ NhTaz9nz2DqJIWEsktYCm33uch2a/wM4+iAATFrwGrZMWHpHCiVVuUVM8P4PF/m6r03IYm5Xy
+ YmNZMZlVvzYs0gZQmJRz4CcABzuWRmgHQcSbB5wPTNdfqZ649VPlvULdJfPJdviCFPliTWefR
+ 7tiVsOWoxkeC0AOOLrGD/wenI7vi/b9/bP+tu8Vz/srcII2y9ZbS6+9LBpvEBHmCGIK8s9Flh
+ nRUSM+N3PxS6GiZhEK8Gu7v/0H40zIc8ZxLWxtNI2YHAr77MLdOe2RUWI1giJV8zZUQIWQKyL
+ E+JwGgMNq/O1oV8XCBDc2jA9sRBQoexJIHyCquJ/P4/hR20YWoo0mVFCSl9sz6MBY8otDPl40
+ FOy0ILyODk9lKTi1LXlNEqme3t/5f6j0aCPaaxeIBMJxYC0YgORNUO0+GTyONdL+FF2snvOpV
+ HMM7YyQP9hPboZFtvd2UTNFPus7ZvOZzGCOowW/r6bYV71s3I2ZdIAKakShg2MdzCBs1lgj0z
+ +D6MRkfiec7rO4JZdH90QP89+E9+2BeAQU1JhnxLKBIO8kceLb1YBveUzYq1iG19j4kSuORPP
+ i5tmA19YENFYTpfALB0LIvjAJwZZrjdZURwZVYrVAT86zjOtq8MsB/geu1yoU8X7Pz3aYxtuW
+ 6C+1eDper7Yd1LiYckKuG0j+Wf3fKyetlRrccP4wjc0ienATBnnmHXlmb3z8DsdYTNs6SD66W
+ JdS9XAyNBk3y3LjHlnUsjnHGy9VGI6YQhRTfnqZQo29imgLc7nX7u6DrspkRf796ahv20IA5n
+ iUNxI9HczitYhdboSCv6aKWwWgA1x0v8v+596V3qLcio/VuFcddJUWKCZeiKErfU9ZhiK600C
+ DtJAFIQu9aEm954pjpEJvqGd58pIMqvP3WZ6ySUeVC6iVPb0y1gsgexWJfPNWQ
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--6oo4ewj2dfFOeB04YLZwUGj59Sw06j8cO
+Content-Type: multipart/mixed; boundary="9eLmOjusWYLXRR8teahvesbJG74s86t31";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <3893155e-d3c3-5fd0-6f61-ae067d341d81@gmx.com>
+Subject: Re: [PATCH v4 04/12] btrfs: extent_io: Move the BUG_ON() in
+ flush_write_bio() one level up
+References: <20190125050925.30754-1-wqu@suse.com>
+ <20190125050925.30754-5-wqu@suse.com> <20190130151914.GU2900@twin.jikos.cz>
+In-Reply-To: <20190130151914.GU2900@twin.jikos.cz>
+
+--9eLmOjusWYLXRR8teahvesbJG74s86t31
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-On 2019/1/30 下午10:59, Nikolay Borisov wrote:
-> 
-> 
-> On 30.01.19 г. 16:57 ч., David Sterba wrote:
->> On Fri, Jan 25, 2019 at 01:09:16PM +0800, Qu Wenruo wrote:
->>> Just add one extra line to show when the corruption is detected.
->>> Currently only read time detection is possible.
->>>
->>> Signed-off-by: Qu Wenruo <wqu@suse.com>
->>> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
->>> ---
->>>  fs/btrfs/disk-io.c | 2 ++
->>>  1 file changed, 2 insertions(+)
->>>
->>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->>> index 794d5bb7fe33..426e9f450f70 100644
->>> --- a/fs/btrfs/disk-io.c
->>> +++ b/fs/btrfs/disk-io.c
->>> @@ -658,6 +658,8 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
->>>  
->>>  	if (!ret)
->>>  		set_extent_buffer_uptodate(eb);
->>> +	else
->>> +		btrfs_err(fs_info, "read time tree block corrupted detected");
->>
->> I'm not sure the 'read time' is clear enoug, my suggestion is to use
->> 'post-read' (and pre-write analogicaly). What do you think?
-> 
-> 
-> How about "error during tree block reading" or "error reading treeblock"?
 
-Nikolay's suggestion looks more straightforward to me.
+On 2019/1/30 =E4=B8=8B=E5=8D=8811:19, David Sterba wrote:
+> On Fri, Jan 25, 2019 at 01:09:17PM +0800, Qu Wenruo wrote:
+>> +static int __must_check flush_write_bio(struct extent_page_data *epd)=
 
-+1 for his idea.
+>>  {
+>> -	if (epd->bio) {
+>> -		int ret;
+>> +	int ret =3D 0;
+>> =20
+>> +	if (epd->bio) {
+>>  		ret =3D submit_one_bio(epd->bio, 0, 0);
+>> -		BUG_ON(ret < 0); /* -ENOMEM */
+>>  		epd->bio =3D NULL;
+>=20
+> I'm not sure if resetting epd->bio to NULL is all that needs to be done=
 
-The 'post-read' still could confuse end-user IMHO.
+> here. With the BUG_ON the error case never happens so if all goes fine
+> it's also ok to set it to NULL and continue. But the callers might need=
+
+> to send the flush again.
+
+If flush_write_bio() get called again on the failed one, it will just
+get skipped as  epd->bio is NULL, submit_one_bio() will not be triggered.=
+
 
 Thanks,
 Qu
 
-> 
->>
+>=20
+> It's not easy to trace the bio here, it's set indirectly in
+> submit_extent_page, submit_one_bio is another indirection, switching by=
+
+> type and sometimes bio_endio is called in case of an error.
+>=20
+
+
+--9eLmOjusWYLXRR8teahvesbJG74s86t31--
+
+--6oo4ewj2dfFOeB04YLZwUGj59Sw06j8cO
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxSRTYACgkQwj2R86El
+/qjerwf/Wp0CaDdzNO1p6ak2+Aq24wBl/N6PbgRsXko5q9sboc14jE7f4kstRjrV
+XxCN43avbgxFAt5bgJUktp4kYupaEynjSpQrYh7MmYGWf6HUc6rmnHDr3IlsDePF
+Uhw4VUD8ONhiRygl4Er7aaQpMSGQu//IMDp+yzPaJo5x/Z0fNTTPF/aDzGPN0IO8
+M7g4lRow5gTkIKwIO7UalXLstnAADeHBD/ADQkcXqo4VaUu5WwHgOauWJnJhpkHS
+XlyE0T6YMhgbeZTJ3mUhEjekKMB98eKqEmpe5Cpao0l4a1mz2zDc1AIXJ3MZY5LC
+N3s6Kr7MW3YDkQ3IKnCVquBen+W8/Q==
+=Lo6d
+-----END PGP SIGNATURE-----
+
+--6oo4ewj2dfFOeB04YLZwUGj59Sw06j8cO--

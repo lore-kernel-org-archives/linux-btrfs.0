@@ -4,86 +4,112 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 881A3C169C4
-	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Jan 2019 21:45:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1B411C169C4
+	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Jan 2019 22:33:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 534B220869
-	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Jan 2019 21:45:32 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E667520881
+	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Jan 2019 22:33:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728833AbfAaVpb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 31 Jan 2019 16:45:31 -0500
-Received: from mx2.suse.de ([195.135.220.15]:32970 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726233AbfAaVpa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 31 Jan 2019 16:45:30 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 81039AECD
-        for <linux-btrfs@vger.kernel.org>; Thu, 31 Jan 2019 21:45:27 +0000 (UTC)
-Subject: Re: [PATCH 01/15] btrfs: Honour FITRIM range constraints during free
- space trim
-To:     Jeff Mahoney <jeffm@suse.com>, dsterba@suse.cz,
-        linux-btrfs@vger.kernel.org
-References: <20190130145102.4708-1-nborisov@suse.com>
- <20190130145102.4708-2-nborisov@suse.com>
- <20190131152135.GG2900@twin.jikos.cz>
- <ef5b4561-8337-a28a-4419-98e8f1e20e73@suse.com>
- <5fd4c23c-3716-50bf-256f-1078243169da@suse.com>
-From:   Nikolay Borisov <nborisov@suse.com>
+        id S1727962AbfAaWdZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 31 Jan 2019 17:33:25 -0500
+Received: from gateway34.websitewelcome.com ([192.185.148.164]:31370 "EHLO
+        gateway34.websitewelcome.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726172AbfAaWdZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 31 Jan 2019 17:33:25 -0500
+X-Greylist: delayed 1369 seconds by postgrey-1.27 at vger.kernel.org; Thu, 31 Jan 2019 17:33:24 EST
+Received: from cm10.websitewelcome.com (cm10.websitewelcome.com [100.42.49.4])
+        by gateway34.websitewelcome.com (Postfix) with ESMTP id F22DB51D81
+        for <linux-btrfs@vger.kernel.org>; Thu, 31 Jan 2019 16:09:35 -0600 (CST)
+Received: from gator4166.hostgator.com ([108.167.133.22])
+        by cmsmtp with SMTP
+        id pKWdgLkAP2PzOpKWdgtx52; Thu, 31 Jan 2019 16:09:35 -0600
+X-Authority-Reason: nr=8
+Received: from [189.250.82.227] (port=47950 helo=[192.168.1.76])
+        by gator4166.hostgator.com with esmtpsa (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
+        (Exim 4.91)
+        (envelope-from <gustavo@embeddedor.com>)
+        id 1gpKWd-0021BD-Fe; Thu, 31 Jan 2019 16:09:35 -0600
+Subject: Re: [PATCH] btrfs: qgroup: Fix inconsistent IS_ERR and PTR_ERR
+To:     dsterba@suse.cz, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+References: <20190131023016.GA3413@embeddedor>
+ <20190131114926.GA2900@twin.jikos.cz>
+From:   "Gustavo A. R. Silva" <gustavo@embeddedor.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <a0a93777-f02e-cc73-6bcd-61116247ea8b@suse.com>
-Date:   Thu, 31 Jan 2019 23:45:25 +0200
+Autocrypt: addr=gustavo@embeddedor.com; keydata=
+ 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
+ VtSixD1uOgytAP7RWS474w==
+Message-ID: <56a9b4fa-7a5a-a8b0-d1d0-b8de217de9ce@embeddedor.com>
+Date:   Thu, 31 Jan 2019 16:09:33 -0600
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <5fd4c23c-3716-50bf-256f-1078243169da@suse.com>
+In-Reply-To: <20190131114926.GA2900@twin.jikos.cz>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
+X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
+X-AntiAbuse: Primary Hostname - gator4166.hostgator.com
+X-AntiAbuse: Original Domain - vger.kernel.org
+X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
+X-AntiAbuse: Sender Address Domain - embeddedor.com
+X-BWhitelist: no
+X-Source-IP: 189.250.82.227
+X-Source-L: No
+X-Exim-ID: 1gpKWd-0021BD-Fe
+X-Source: 
+X-Source-Args: 
+X-Source-Dir: 
+X-Source-Sender: ([192.168.1.76]) [189.250.82.227]:47950
+X-Source-Auth: gustavo@embeddedor.com
+X-Email-Count: 6
+X-Source-Cap: Z3V6aWRpbmU7Z3V6aWRpbmU7Z2F0b3I0MTY2Lmhvc3RnYXRvci5jb20=
+X-Local-Domain: yes
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -91,134 +117,37 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 31.01.19 г. 21:30 ч., Jeff Mahoney wrote:
-> On 1/31/19 10:35 AM, Nikolay Borisov wrote:
+On 1/31/19 5:49 AM, David Sterba wrote:
+> On Wed, Jan 30, 2019 at 08:30:16PM -0600, Gustavo A. R. Silva wrote:
+>> Fix inconsistent IS_ERR and PTR_ERR in btrfs_qgroup_trace_subtree_after_cow
 >>
+>> The proper pointer to be passed as argument is reloc_eb.
 >>
->> On 31.01.19 г. 17:21 ч., David Sterba wrote:
->>> On Wed, Jan 30, 2019 at 04:50:48PM +0200, Nikolay Borisov wrote:
->>>> Up until know trimming the freespace was done irrespective of what the
->>>> arguments of the FITRIM ioctl were. For example fstrim's -o/-l arguments
->>>> will be entirely ignored. Fix it by correctly handling those paramter.
->>>> This requires breaking if the found freespace extent is after the end
->>>> of the passed range as well as completing trim after trimming
->>>> fstrim_range::len bytes.
->>>
->>> How does this work with with multipe-device filesystems? The fstrim
->>> range would apply to all of them. Which does make some sense, though
->>> might be unexpected as this does not happen for other filesystems.
+>> This bug was detected with the help of Coccinelle.
 >>
->> Well FITRIM doesn't have support for multiple device so it's to the
->> discretion of the fs how exactly this is implemented. And this is indeed
->> the way things work currently.
+>> Fixes: 2b35a512e9cf ("btrfs: qgroup: Use delayed subtree rescan for balance")
+>> Signed-off-by: Gustavo A. R. Silva <gustavo@embeddedor.com>
+>> ---
+>>  fs/btrfs/qgroup.c | 2 +-
+>>  1 file changed, 1 insertion(+), 1 deletion(-)
 >>
->>>
->>> The FITRIM range is in the physical coordinates, so eg. the taking the
->>> maximum size of all devices and iterating over that by 1GiB steps would
->>> go though the whole filesystem. Something to put to the changelog and
->>> documentation.
->>
->> I don't follow, trimming would just trim the physical range as passed by
->> fstrim -o/-l options. That 1gb value is not hardcoded anywhere. If
->> someone wants to trim all of the freespace (which is what the majority
->> of the user do) then they can run FITRIM with 0 for offset and -1 for
->> length.
+>> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+>> index 8559ed92d708..16d7ec8e4a06 100644
+>> --- a/fs/btrfs/qgroup.c
+>> +++ b/fs/btrfs/qgroup.c
+>> @@ -3931,7 +3931,7 @@ int btrfs_qgroup_trace_subtree_after_cow(struct btrfs_trans_handle *trans,
+>>  				   block->reloc_generation, block->level,
+>>  				   &block->first_key);
+>>  	if (IS_ERR(reloc_eb)) {
+>> -		ret = PTR_ERR(subv_eb);
+>> +		ret = PTR_ERR(reloc_eb);
 > 
-> But what does physical range mean in this context?  The address space
-> presented to the user and which FITRIM operates on is the logical
-> address space that the extent tree uses.  For allocated chunks, there's
-> a mapping to physical devices.  It can have holes in it.  What does it
-> mean when that offset/length hits a hole?
+> Thanks, this was reported and fixed but the change has not propagated to
+> for-next yet.
+> 
 
-Physical in this context mean the actual space on the disk themselves.
-This really has repercussion when trimming freespace. So for example when
+Great. Good to know it is fixed now.
 
-fstrim -o 50m -l 20g is run this means that all space between 50m and
-20g in the block groups (logical free space) will be trimmed.
-Additionally, the physical (that is the space on the actual devices)
-will also be trimmed. I don't think we can avoid this.
-
-> 
-> I'm okay with (0,-1) referring to all the space on all devices.  That
-> seems obvious enough.  Perhaps for bounded trims, it only applies to the
-> parts within the range that are allocated?
-> 
-> -Jeff
-> 
-> 
->>>> Fixes: 499f377f49f0 ("btrfs: iterate over unused chunk space in FITRIM")
->>>> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
->>>> ---
->>>>  fs/btrfs/extent-tree.c | 25 +++++++++++++++++++------
->>>>  1 file changed, 19 insertions(+), 6 deletions(-)
->>>>
->>>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
->>>> index 1fdba38761f7..fc3f6acc3c9b 100644
->>>> --- a/fs/btrfs/extent-tree.c
->>>> +++ b/fs/btrfs/extent-tree.c
->>>> @@ -11190,9 +11190,9 @@ int btrfs_error_unpin_extent_range(struct btrfs_fs_info *fs_info,
->>>>   * held back allocations.
->>>>   */
->>>>  static int btrfs_trim_free_extents(struct btrfs_device *device,
->>>> -				   u64 minlen, u64 *trimmed)
->>>> +				   struct fstrim_range *range, u64 *trimmed)
->>>>  {
->>>> -	u64 start = 0, len = 0;
->>>> +	u64 start = range->start, len = 0;
->>>>  	int ret;
->>>>  
->>>>  	*trimmed = 0;
->>>> @@ -11235,8 +11235,8 @@ static int btrfs_trim_free_extents(struct btrfs_device *device,
->>>>  		if (!trans)
->>>>  			up_read(&fs_info->commit_root_sem);
->>>>  
->>>> -		ret = find_free_dev_extent_start(trans, device, minlen, start,
->>>> -						 &start, &len);
->>>> +		ret = find_free_dev_extent_start(trans, device, range->minlen,
->>>> +						 start, &start, &len);
->>>>  		if (trans) {
->>>>  			up_read(&fs_info->commit_root_sem);
->>>>  			btrfs_put_transaction(trans);
->>>> @@ -11249,6 +11249,16 @@ static int btrfs_trim_free_extents(struct btrfs_device *device,
->>>>  			break;
->>>>  		}
->>>>  
->>>> +		/* If we are out of the passed range break */
->>>> +		if (start > range->start + range->len - 1) {
->>>> +			mutex_unlock(&fs_info->chunk_mutex);
->>>> +			ret = 0;
->>>> +			break;
->>>> +		}
->>>> +
->>>> +		start = max(range->start, start);
->>>> +		len = min(range->len, len);
->>>> +
->>>>  		ret = btrfs_issue_discard(device->bdev, start, len, &bytes);
->>>>  		mutex_unlock(&fs_info->chunk_mutex);
->>>>  
->>>> @@ -11258,6 +11268,10 @@ static int btrfs_trim_free_extents(struct btrfs_device *device,
->>>>  		start += len;
->>>>  		*trimmed += bytes;
->>>>  
->>>> +		/* We've trimmed enough */
->>>> +		if (*trimmed >= range->len)
->>>> +			break;
->>>> +
->>>>  		if (fatal_signal_pending(current)) {
->>>>  			ret = -ERESTARTSYS;
->>>>  			break;
->>>> @@ -11341,8 +11355,7 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
->>>>  	mutex_lock(&fs_info->fs_devices->device_list_mutex);
->>>>  	devices = &fs_info->fs_devices->devices;
->>>>  	list_for_each_entry(device, devices, dev_list) {
->>>> -		ret = btrfs_trim_free_extents(device, range->minlen,
->>>> -					      &group_trimmed);
->>>> +		ret = btrfs_trim_free_extents(device, range, &group_trimmed);
->>>>  		if (ret) {
->>>>  			dev_failed++;
->>>>  			dev_ret = ret;
->>>> -- 
->>>> 2.17.1
->>
-> 
-> 
+Thanks
+--
+Gustavo

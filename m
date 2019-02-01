@@ -2,64 +2,66 @@ Return-Path: <SRS0=NsLk=QI=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5DC8AC282D8
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Feb 2019 13:41:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6A22BC282D8
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Feb 2019 14:50:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 34B0B21872
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Feb 2019 13:41:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 43FCA20870
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Feb 2019 14:50:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730081AbfBANle (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 1 Feb 2019 08:41:34 -0500
-Received: from mx2.suse.de ([195.135.220.15]:41510 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727008AbfBANld (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 1 Feb 2019 08:41:33 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 6E080AE06
-        for <linux-btrfs@vger.kernel.org>; Fri,  1 Feb 2019 13:41:32 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id ABDC7DA7D6; Fri,  1 Feb 2019 14:40:57 +0100 (CET)
-Date:   Fri, 1 Feb 2019 14:40:57 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: Use a single tab for 'leafsize
- (deprecated)' row
-Message-ID: <20190201134057.GO2900@suse.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20190201132021.14794-1-nborisov@suse.com>
+        id S1729558AbfBAOt7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 1 Feb 2019 09:49:59 -0500
+Received: from edealinfo.com ([67.214.189.226]:35021 "EHLO lightningrod.com"
+        rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1728880AbfBAOt7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 1 Feb 2019 09:49:59 -0500
+X-Greylist: delayed 337 seconds by postgrey-1.27 at vger.kernel.org; Fri, 01 Feb 2019 09:49:58 EST
+To:     linux-btrfs@vger.kernel.org
+Subject: Did you send it?
+Message-ID: <1d6775fb162948510611c5e47ff19c2d@curballure.com>
+Date:   Fri, 01 Feb 2019 13:53:26 +0100
+From:   "Heather" <trepagnai@verizon.net>
+Reply-To: fantecan@sina.com
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190201132021.14794-1-nborisov@suse.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+Content-Type: text/plain; format=flowed; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Feb 01, 2019 at 03:20:21PM +0200, Nikolay Borisov wrote:
-> Since this row is longer than the rest it's enough to use a single tab
-> character to delimig the value from caption. Without this patch
-> output looked like:
-> 
-> nodesize		16384
-> leafsize (deprecated)		16384
-> 
-> With it:
-> 
-> nodesize		16384
-> leafsize (deprecated)	16384
-> 
-> No functional changes just making the output a bit neater.
-> 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+Do you need to change anything for your photos? we can help you for that.
 
-Applied, thanks.
+We can do deep etching or masking, or even clipping path for your photos,
+If you need retouching, just let us know.
+
+Hopefully to start something for you soon.
+
+Thanks,
+Heather
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Ingolstadt
+
+
+Beckum
+

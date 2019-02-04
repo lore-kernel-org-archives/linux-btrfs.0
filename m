@@ -2,32 +2,32 @@ Return-Path: <SRS0=6ZPf=QL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2E427C282C4
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Feb 2019 13:25:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 31E0EC282C4
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Feb 2019 13:29:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EC3CD2082F
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Feb 2019 13:25:28 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0ACEE2081B
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Feb 2019 13:29:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727950AbfBDNZ1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 4 Feb 2019 08:25:27 -0500
-Received: from mx2.suse.de ([195.135.220.15]:53756 "EHLO mx1.suse.de"
+        id S1731303AbfBDN35 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 4 Feb 2019 08:29:57 -0500
+Received: from mx2.suse.de ([195.135.220.15]:55192 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727062AbfBDNZ1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 4 Feb 2019 08:25:27 -0500
+        id S1730021AbfBDN35 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 4 Feb 2019 08:29:57 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 3D849AF96
-        for <linux-btrfs@vger.kernel.org>; Mon,  4 Feb 2019 13:25:25 +0000 (UTC)
-Subject: Re: [PATCH 04/15] btrfs: combine device update operations during
- transaction commit
+        by mx1.suse.de (Postfix) with ESMTP id B9056AECF
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Feb 2019 13:29:55 +0000 (UTC)
+Subject: Re: [PATCH 05/15] btrfs: Handle pending/pinned chunks before
+ blockgroup relocation during device shrink
 To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 Cc:     jeffm@suse.com
 References: <20190130145102.4708-1-nborisov@suse.com>
- <20190130145102.4708-5-nborisov@suse.com>
+ <20190130145102.4708-6-nborisov@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -85,12 +85,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <c305907c-be57-5ba5-2166-69de521d9111@suse.de>
-Date:   Mon, 4 Feb 2019 14:25:25 +0100
+Message-ID: <eafd7a7a-90f5-9478-dbc3-3b90bb94d6aa@suse.de>
+Date:   Mon, 4 Feb 2019 14:29:55 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20190130145102.4708-5-nborisov@suse.com>
+In-Reply-To: <20190130145102.4708-6-nborisov@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -99,30 +99,8 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 30/01/2019 15:50, Nikolay Borisov wrote:
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 888d72dda794..25dab68070dc 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -4498,6 +4498,15 @@ void btrfs_cleanup_one_transaction(struct btrfs_transaction *cur_trans,
->  	ASSERT(list_empty(&cur_trans->dirty_bgs));
->  	ASSERT(list_empty(&cur_trans->io_bgs));
->  
-> +	while (!list_empty(&cur_trans->dev_update_list)) {
-> +		struct btrfs_device *dev;
-> +
-> +		dev = list_first_entry(&cur_trans->dev_update_list,
-> +				       struct btrfs_device,
-> +				       post_commit_list);
-> +		list_del_init(&dev->post_commit_list);
-> +	}
-> +
-
-Why not?
-
-	list_for_each_entry_safe(dev, next, &cur_trans->dev_update_list,
-				 post_commit_list)
-		list_del_init(&dev->post_commit_list);
+Looks good to me,
+Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
 
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems

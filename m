@@ -6,28 +6,27 @@ X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 31E0EC282C4
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Feb 2019 13:29:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E463EC282C4
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Feb 2019 13:31:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0ACEE2081B
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Feb 2019 13:29:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BC5352081B
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Feb 2019 13:31:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731303AbfBDN35 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 4 Feb 2019 08:29:57 -0500
-Received: from mx2.suse.de ([195.135.220.15]:55192 "EHLO mx1.suse.de"
+        id S1729407AbfBDNbc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 4 Feb 2019 08:31:32 -0500
+Received: from mx2.suse.de ([195.135.220.15]:55354 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1730021AbfBDN35 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 4 Feb 2019 08:29:57 -0500
+        id S1726610AbfBDNbc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 4 Feb 2019 08:31:32 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B9056AECF
-        for <linux-btrfs@vger.kernel.org>; Mon,  4 Feb 2019 13:29:55 +0000 (UTC)
-Subject: Re: [PATCH 05/15] btrfs: Handle pending/pinned chunks before
- blockgroup relocation during device shrink
+        by mx1.suse.de (Postfix) with ESMTP id A2716AF96
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Feb 2019 13:31:30 +0000 (UTC)
+Subject: Re: [PATCH 06/15] btrfs: Rename and export clear_btree_io_tree
 To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 Cc:     jeffm@suse.com
 References: <20190130145102.4708-1-nborisov@suse.com>
- <20190130145102.4708-6-nborisov@suse.com>
+ <20190130145102.4708-7-nborisov@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -85,12 +84,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <eafd7a7a-90f5-9478-dbc3-3b90bb94d6aa@suse.de>
-Date:   Mon, 4 Feb 2019 14:29:55 +0100
+Message-ID: <2d7217f2-42d6-8b41-c760-6648956764b2@suse.de>
+Date:   Mon, 4 Feb 2019 14:31:30 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20190130145102.4708-6-nborisov@suse.com>
+In-Reply-To: <20190130145102.4708-7-nborisov@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -99,9 +98,8 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Looks good to me,
-Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
-
+Looks good,
+Reviewed-by: Johannes Thumshirn <jtumshirn@suse.de>
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems
 jthumshirn@suse.de                                +49 911 74053 689

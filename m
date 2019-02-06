@@ -2,100 +2,258 @@ Return-Path: <SRS0=hiUa=QN=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 93F42C169C4
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 20:46:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 87B5FC169C4
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 20:46:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 508B0217F9
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 20:46:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4A16D217F9
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 20:46:23 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="RTXuAmEC"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="ZoEnVU3B"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726610AbfBFUqT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 6 Feb 2019 15:46:19 -0500
-Received: from mail-qt1-f195.google.com ([209.85.160.195]:35331 "EHLO
-        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726561AbfBFUqT (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Feb 2019 15:46:19 -0500
-Received: by mail-qt1-f195.google.com with SMTP id v11so9556830qtc.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Feb 2019 12:46:18 -0800 (PST)
+        id S1726649AbfBFUqW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 6 Feb 2019 15:46:22 -0500
+Received: from mail-qt1-f193.google.com ([209.85.160.193]:41543 "EHLO
+        mail-qt1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726547AbfBFUqV (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Feb 2019 15:46:21 -0500
+Received: by mail-qt1-f193.google.com with SMTP id b15so9492899qto.8
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Feb 2019 12:46:20 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id;
-        bh=UJw9r7elGpR9pPhmGMak4yG3MUgz21XDNU4bYTx5nRA=;
-        b=RTXuAmECPrgTEvbVlxkrtXWfk1BV1TMNF1twxRkJHsxmGEFwS2Di2HX1G7ygNu033Q
-         rsdpkk+2yflOjXnOD2FTfcrFmm3zr+jEq5UGmhfsVIq/a4m8hPxXvqx/XrUkffMWHfea
-         IPlvLRNnGqVVBlLpOjnQGrnlVJwSv5J7CLaSvmSW+GqPoSdZRBiUctVx0+oxjyB3vWn4
-         qaOIpb5lNGys2Y0lG0YFNXBJz8EFCC0WVEycb/DshzlyBBkeFlj5QLcRnDSclBECYAOi
-         jiujYhnaOi7cakeE4Bk+SoS+6c53kCMr+uqEs9LAXWq4P50jQEnVahKXK64+8gpm8QtL
-         MTMQ==
+        h=from:to:subject:date:message-id:in-reply-to:references;
+        bh=+uJ36d3FUvH3EKB+rEziWansbKY0nnwHLlb7XGqZ0pM=;
+        b=ZoEnVU3B51UjOiJXpZ29GetFR+oh28dn5D2TOh7yEjUGwm8non/tMaonOCw1PKwj+Z
+         1/06JCwoTxegDDVtz5GOlQdSvIbV1doBwvP14/hA4+w8CIwhZcQIaUUJ+MA13eUs5Tbb
+         jT45ZKrQ7pe8kRhxJGTgHCGbgZoCi96iL8faRvfkEaCZ6jvbV+hzoXK65Q2zs7UgWbCI
+         T/H/9CUEq6SJ7fOAz/6Zm4g6bADDJl6x4BosvLubMUO2Ln+9DB6YxKH63H43JwP6l9Bd
+         j2Gc7rvDmQNusd6yuuIcKTBrGMkECeD4O9CjLIKTjYkANSNngMh04GE6ql/tZXjJpSg1
+         +ypw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id;
-        bh=UJw9r7elGpR9pPhmGMak4yG3MUgz21XDNU4bYTx5nRA=;
-        b=frTXY83rM3AI9vohTseSu5i1JXZtdir06Pu7k5wDjJ3tvhmE5JZ7hXQlTqcocbL7VU
-         MMxSlJtmB17vppdO0fE7Ma/H2eX1yALbrf0fbH8aPWVfCd6wuQ16JfMpEKk0Lg+VQ824
-         c6S5e79Lgh+x8THDFHLF5Kcys9ZlcnNeEZKyzMfPEhAB7m8bpSxE0K0K+wJnOjde9WCN
-         xAfz8PfDwpf5r05rGQ2I/9PiYSSXJaGsc6fPC8sGlnH67TacQb1bo/90xydMYlFvuI9l
-         CPiYq0m8wELohXFUpt0fT03uLVhm37lKCG8+JjjL1J3Jb8y46TMkEa3sKjTEV0nOQ7ZX
-         ZW+A==
-X-Gm-Message-State: AHQUAuamQDN+QkmIWWBq3kjffP+QyMwd9VDFkeDydp3cUjlSjvqN4Tny
-        jJEfzI145U3RUNe1KkcSLje4WBWHj7U=
-X-Google-Smtp-Source: AHgI3Ia5rmUv5IdvcM+usogcX9HKJPkK1WcxJRTH26LQzULRnehw6tXKexkGdtqGhVUgP4HuYemNjg==
-X-Received: by 2002:aed:34e6:: with SMTP id x93mr9448515qtd.156.1549485978083;
-        Wed, 06 Feb 2019 12:46:18 -0800 (PST)
+        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
+         :references;
+        bh=+uJ36d3FUvH3EKB+rEziWansbKY0nnwHLlb7XGqZ0pM=;
+        b=r+MaDfP55CJSIYgFXRjbtWI071NbdoqzdNKQ04tj0e4yBmQGdGLXdrweCR5+hOYY5D
+         zv59xTBU5KlRQI0RelbkxjGzIu7oKdDOVUfj2kK7YYmWpGLOSXa1OKYfttoZB1eQYWjQ
+         ZVRvqmzMJs8zCzkGb1Z76oC7ZaPve1nY9cqtZFGFqq0yBkTo5Ch1wUJU2msV1NWsUTX5
+         TOBIbgo2W/9rFAVaOA1GsDD1nLUKwVoLhqf1Pg1xnhiCspCoPP0GaK67zKrU/sSAjGnX
+         GzRYus4nGAk2TmtwDW0Qdz1pfxWGZA1roQ/35lJxSfFuoOmNY51ZHJawzdIhqskpMi2y
+         WXXA==
+X-Gm-Message-State: AHQUAubUrTVVDMx0ejTJOBRxG4I0c6QTmvpGxEcS7SdhVpUr2wcn5As4
+        IkHRDNx5Hmpwkd8bON5xifQyFEJV+uk=
+X-Google-Smtp-Source: AHgI3IZaDhuGSRebai5TjXUfN7VdraYKad22c4TEyXv7dsl93d3geplwyweK1ljdoujspDHcXL/mJA==
+X-Received: by 2002:a0c:e8cc:: with SMTP id m12mr9605366qvo.186.1549485979843;
+        Wed, 06 Feb 2019 12:46:19 -0800 (PST)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id b77sm12733924qka.5.2019.02.06.12.46.17
+        by smtp.gmail.com with ESMTPSA id b77sm12734012qka.5.2019.02.06.12.46.18
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Wed, 06 Feb 2019 12:46:17 -0800 (PST)
+        Wed, 06 Feb 2019 12:46:19 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 0/2] Fix missing reference aborts when resuming snapshot delete
-Date:   Wed,  6 Feb 2019 15:46:13 -0500
-Message-Id: <20190206204615.5862-1-josef@toxicpanda.com>
+Subject: [PATCH 1/2] btrfs: check for refs on snapshot delete resume
+Date:   Wed,  6 Feb 2019 15:46:14 -0500
+Message-Id: <20190206204615.5862-2-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.14.3
+In-Reply-To: <20190206204615.5862-1-josef@toxicpanda.com>
+References: <20190206204615.5862-1-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-With my delayed refs rsv patches in place we started hitting issues in our build
-servers that do a lot of snapshot deletions.  Turns out there was a bug in
-btrfs_end_transaction_throttle() that caused it to basically always commit the
-transaction, which uncovered this particular bug.
+There's a bug in snapshot deletion where we won't update the
+drop_progress key if we're in the UPDATE_BACKREF stage.  This is a
+problem because we could drop refs for blocks we know don't belong to
+ours.  If we crash or umount at the right time we could experience
+messages such as the following when snapshot deletion resumes
 
-The gory details are in the change logs for both patches, but generally speaking
-it's a problem with how we update our root_item->drop_progress key.  We will
-skip updating it some times even though we will have dropped references to
-blocks.  If we crash or unmount at these times we will start at a point earlier
-in our delete than we should be and try to free blocks that we already freed,
-thus ending up with a transaction abort because we couldn't find the extent
-reference.
+ BTRFS error (device dm-3): unable to find ref byte nr 66797568 parent 0 root 258  owner 1 offset 0
+ ------------[ cut here ]------------
+ WARNING: CPU: 3 PID: 16052 at fs/btrfs/extent-tree.c:7108 __btrfs_free_extent.isra.78+0x62c/0xb30 [btrfs]
+ CPU: 3 PID: 16052 Comm: umount Tainted: G        W  OE     5.0.0-rc4+ #147
+ Hardware name: To Be Filled By O.E.M. To Be Filled By O.E.M./890FX Deluxe5, BIOS P1.40 05/03/2011
+ RIP: 0010:__btrfs_free_extent.isra.78+0x62c/0xb30 [btrfs]
+ Code: 45 90 48 8b 40 50 f0 48 0f ba a8 98 1a 00 00 02 0f 92 c0 84 c0 5e 75 14 8b b5 7c ff ff ff 48 c7 c7 08 a7 b6 a0 e8 04 d0 63 e0 <0f> 0b 48 8b 7d 90 b9 fe ff ff ff ba c4 1b 00 00 48 c7 c6 a0 dd b5
+ RSP: 0018:ffffc90005cd7b18 EFLAGS: 00010286
+ RAX: 0000000000000000 RBX: 0000000000000001 RCX: 0000000000000000
+ RDX: ffff88842fade680 RSI: ffff88842fad6b18 RDI: ffff88842fad6b18
+ RBP: ffffc90005cd7bc8 R08: 0000000000000000 R09: 0000000000000001
+ R10: 0000000000000001 R11: ffffffff822696b8 R12: 0000000003fb4000
+ R13: 0000000000000001 R14: 0000000000000102 R15: ffff88819c9d67e0
+ FS:  00007f08bb138fc0(0000) GS:ffff88842fac0000(0000) knlGS:0000000000000000
+ CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+ CR2: 00007f8f5d861ea0 CR3: 00000003e99fe000 CR4: 00000000000006e0
+ Call Trace:
+ ? _raw_spin_unlock+0x27/0x40
+ ? btrfs_merge_delayed_refs+0x356/0x3e0 [btrfs]
+ __btrfs_run_delayed_refs+0x75a/0x13c0 [btrfs]
+ ? join_transaction+0x2b/0x460 [btrfs]
+ btrfs_run_delayed_refs+0xf3/0x1c0 [btrfs]
+ btrfs_commit_transaction+0x52/0xa50 [btrfs]
+ ? start_transaction+0xa6/0x510 [btrfs]
+ btrfs_sync_fs+0x79/0x1c0 [btrfs]
+ sync_filesystem+0x70/0x90
+ generic_shutdown_super+0x27/0x120
+ kill_anon_super+0x12/0x30
+ btrfs_kill_super+0x16/0xa0 [btrfs]
+ deactivate_locked_super+0x43/0x70
+ deactivate_super+0x40/0x60
+ cleanup_mnt+0x3f/0x80
+ __cleanup_mnt+0x12/0x20
+ task_work_run+0x8b/0xc0
+ exit_to_usermode_loop+0xce/0xd0
+ do_syscall_64+0x20b/0x210
+ entry_SYSCALL_64_after_hwframe+0x49/0xbe
 
-There are 2 patches, 1 patch to deal with already broken file systems, and 1
-patch to keep this problem from happening in the first place.
+To fix this simply mark dead roots we read from disk as DEAD and then
+set the walk_control->restarted flag so we know we have a restarted
+deletion.  From here whenever we try to drop refs for blocks we check to
+verify our ref is set on them, and if it is not we skip it.  Once we
+find a ref that is set we unset walk_control->restarted since the tree
+should be in a normal state from then on, and any problems we run into
+from there are different issues.  I tested this with an existing broken
+fs and my reproducer that creates a broken fs and it fixed both file
+systems.
 
-The steps to reproduce this easily are sort of tricky, I had to add a couple of
-debug patches to the kernel in order to make it easy, basically I just needed to
-make sure we did actually commit the transaction every time we finished a
-walk_down_tree/walk_up_tree combo.
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ fs/btrfs/ctree.h       |  1 +
+ fs/btrfs/extent-tree.c | 48 +++++++++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/root-tree.c   |  8 ++++++--
+ 3 files changed, 54 insertions(+), 3 deletions(-)
 
-The reproducer
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 9306925b6790..3d0bf91e1941 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1207,6 +1207,7 @@ enum {
+ 	 * Set for the subvolume tree owning the reloc tree.
+ 	 */
+ 	BTRFS_ROOT_DEAD_RELOC_TREE,
++	BTRFS_ROOT_DEAD_TREE,
+ };
+ 
+ /*
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index a53a2b9d49e9..f40d6086c947 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -8772,6 +8772,7 @@ struct walk_control {
+ 	int keep_locks;
+ 	int reada_slot;
+ 	int reada_count;
++	int restarted;
+ };
+ 
+ #define DROP_REFERENCE	1
+@@ -8934,6 +8935,33 @@ static noinline int walk_down_proc(struct btrfs_trans_handle *trans,
+ 	return 0;
+ }
+ 
++/*
++ * This is used to verify a ref exists for this root to deal with a bug where we
++ * would have a drop_progress key that hadn't been updated properly.
++ */
++static int check_ref_exists(struct btrfs_trans_handle *trans,
++			    struct btrfs_root *root, u64 bytenr, u64 parent,
++			    int level)
++{
++	struct btrfs_path *path;
++	struct btrfs_extent_inline_ref *iref;
++	int ret;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	ret = lookup_extent_backref(trans, path, &iref, bytenr,
++				    root->fs_info->nodesize, parent,
++				    root->root_key.objectid, level, 0);
++	btrfs_free_path(path);
++	if (ret == -ENOENT)
++		return 0;
++	if (ret < 0)
++		return ret;
++	return 1;
++}
++
+ /*
+  * helper to process tree block pointer.
+  *
+@@ -9088,6 +9116,23 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
+ 			parent = 0;
+ 		}
+ 
++		/*
++		 * If we had a drop_progress we need to verify the refs are set
++		 * as expected.  If we find our ref then we know that from here
++		 * on out everything should be correct, and we can clear the
++		 * ->restarted flag.
++		 */
++		if (wc->restarted) {
++			ret = check_ref_exists(trans, root, bytenr, parent,
++					       level - 1);
++			if (ret < 0)
++				goto out_unlock;
++			if (ret == 0)
++				goto no_delete;
++			ret = 0;
++			wc->restarted = 0;
++		}
++
+ 		/*
+ 		 * Reloc tree doesn't contribute to qgroup numbers, and we have
+ 		 * already accounted them at merge time (replace_path),
+@@ -9109,7 +9154,7 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
+ 		if (ret)
+ 			goto out_unlock;
+ 	}
+-
++no_delete:
+ 	*lookup_info = 1;
+ 	ret = 1;
+ 
+@@ -9426,6 +9471,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
+ 		}
+ 	}
+ 
++	wc->restarted = test_bit(BTRFS_ROOT_DEAD_TREE, &root->state);
+ 	wc->level = level;
+ 	wc->shared_level = -1;
+ 	wc->stage = DROP_REFERENCE;
+diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
+index 65bda0682928..02d1a57af78b 100644
+--- a/fs/btrfs/root-tree.c
++++ b/fs/btrfs/root-tree.c
+@@ -263,8 +263,10 @@ int btrfs_find_orphan_roots(struct btrfs_fs_info *fs_info)
+ 		if (root) {
+ 			WARN_ON(!test_bit(BTRFS_ROOT_ORPHAN_ITEM_INSERTED,
+ 					  &root->state));
+-			if (btrfs_root_refs(&root->root_item) == 0)
++			if (btrfs_root_refs(&root->root_item) == 0) {
++				set_bit(BTRFS_ROOT_DEAD_TREE, &root->state);
+ 				btrfs_add_dead_root(root);
++			}
+ 			continue;
+ 		}
+ 
+@@ -310,8 +312,10 @@ int btrfs_find_orphan_roots(struct btrfs_fs_info *fs_info)
+ 			break;
+ 		}
+ 
+-		if (btrfs_root_refs(&root->root_item) == 0)
++		if (btrfs_root_refs(&root->root_item) == 0) {
++			set_bit(BTRFS_ROOT_DEAD_TREE, &root->state);
+ 			btrfs_add_dead_root(root);
++		}
+ 	}
+ 
+ 	btrfs_free_path(path);
+-- 
+2.14.3
 
-1) Creates a base subvolume.
-2) Creates 100k files in the subvolume.
-3) Snapshots the base subvolume (snap1).
-4) Touches files 5000-6000 in snap1.
-5) Snapshots snap1 (snap2).
-6) Deletes snap1.
-
-I do this with dm-log-writes, and then replay to every FUA in the log and fsck
-the fs.  Without these patches this falls over pretty quickly.  With just the
-first patch we can mount the fs at the point that the fsck fails and it cleans
-everything up properly.  With both patches applied the fsck never fails and
-we're golden.  Thanks,
-
-Josef

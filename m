@@ -4,60 +4,60 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 87B5FC169C4
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 20:46:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 27D08C282C2
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 20:46:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4A16D217F9
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 20:46:23 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E7EBA217F9
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 20:46:24 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="ZoEnVU3B"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="w2KmYaDP"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726649AbfBFUqW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 6 Feb 2019 15:46:22 -0500
-Received: from mail-qt1-f193.google.com ([209.85.160.193]:41543 "EHLO
-        mail-qt1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726547AbfBFUqV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Feb 2019 15:46:21 -0500
-Received: by mail-qt1-f193.google.com with SMTP id b15so9492899qto.8
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Feb 2019 12:46:20 -0800 (PST)
+        id S1726547AbfBFUqY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 6 Feb 2019 15:46:24 -0500
+Received: from mail-qt1-f196.google.com ([209.85.160.196]:33594 "EHLO
+        mail-qt1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726001AbfBFUqX (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Feb 2019 15:46:23 -0500
+Received: by mail-qt1-f196.google.com with SMTP id l11so9571415qtp.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Feb 2019 12:46:22 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references;
-        bh=+uJ36d3FUvH3EKB+rEziWansbKY0nnwHLlb7XGqZ0pM=;
-        b=ZoEnVU3B51UjOiJXpZ29GetFR+oh28dn5D2TOh7yEjUGwm8non/tMaonOCw1PKwj+Z
-         1/06JCwoTxegDDVtz5GOlQdSvIbV1doBwvP14/hA4+w8CIwhZcQIaUUJ+MA13eUs5Tbb
-         jT45ZKrQ7pe8kRhxJGTgHCGbgZoCi96iL8faRvfkEaCZ6jvbV+hzoXK65Q2zs7UgWbCI
-         T/H/9CUEq6SJ7fOAz/6Zm4g6bADDJl6x4BosvLubMUO2Ln+9DB6YxKH63H43JwP6l9Bd
-         j2Gc7rvDmQNusd6yuuIcKTBrGMkECeD4O9CjLIKTjYkANSNngMh04GE6ql/tZXjJpSg1
-         +ypw==
+        bh=MvygrytBItGCUCr8/3gIF0MVxHAT3tEFvJD9erNds7M=;
+        b=w2KmYaDP+8LT8X9YLCIBr6Eswg+laFyFA+BROSSh9zS5lh7j4kVH7Aajg+TvLBMjfF
+         2LIfB9dH0l7Jh1FxlGGFcRjz1sIakBNOnmgpwiZfwsePTlEFzbOENOjJGrDgbO/vlD3c
+         arIqlDl4KOq//2BHrHFvAN2vYVDR94n/fO76cg1UQAoe8Z0trMvsaVutw5hMpQb4deED
+         SwSlrn6DjneNRfewXMr0/bXRGfNNctV5HpzXSJcMNjl9VLKluuV/3w90AqKCNmGvIGWV
+         YFVNa8pL0YrP0Ud6adLqS3OuBlG+NQxDtx4Ha4xW8NSGweqZOg7LHDeeFUeySG3TLrdN
+         KvYA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references;
-        bh=+uJ36d3FUvH3EKB+rEziWansbKY0nnwHLlb7XGqZ0pM=;
-        b=r+MaDfP55CJSIYgFXRjbtWI071NbdoqzdNKQ04tj0e4yBmQGdGLXdrweCR5+hOYY5D
-         zv59xTBU5KlRQI0RelbkxjGzIu7oKdDOVUfj2kK7YYmWpGLOSXa1OKYfttoZB1eQYWjQ
-         ZVRvqmzMJs8zCzkGb1Z76oC7ZaPve1nY9cqtZFGFqq0yBkTo5Ch1wUJU2msV1NWsUTX5
-         TOBIbgo2W/9rFAVaOA1GsDD1nLUKwVoLhqf1Pg1xnhiCspCoPP0GaK67zKrU/sSAjGnX
-         GzRYus4nGAk2TmtwDW0Qdz1pfxWGZA1roQ/35lJxSfFuoOmNY51ZHJawzdIhqskpMi2y
-         WXXA==
-X-Gm-Message-State: AHQUAubUrTVVDMx0ejTJOBRxG4I0c6QTmvpGxEcS7SdhVpUr2wcn5As4
-        IkHRDNx5Hmpwkd8bON5xifQyFEJV+uk=
-X-Google-Smtp-Source: AHgI3IZaDhuGSRebai5TjXUfN7VdraYKad22c4TEyXv7dsl93d3geplwyweK1ljdoujspDHcXL/mJA==
-X-Received: by 2002:a0c:e8cc:: with SMTP id m12mr9605366qvo.186.1549485979843;
-        Wed, 06 Feb 2019 12:46:19 -0800 (PST)
+        bh=MvygrytBItGCUCr8/3gIF0MVxHAT3tEFvJD9erNds7M=;
+        b=YMtZcxf/VeQWWM1uwvxgRn1Qqre1NW+Rxj/9cescLKfcZktAcICuPug/OLVHolpWYU
+         SVVX8SNCoD85Ce+OPFdUK0bFkHJY7FnFuTkcWj9ctj7bdfkV6sZAFUad6SJmQ7LV10p7
+         j3ufQmMwkt2gZ8oD1cgCGJHUmnntVdCC1bPE5IMCDtqWft4oZWMcwCKpD2xrzhF3NAi3
+         ekapRriV8hM0AFhw2iw8fliX50iq8N+G5nBwAjzSI23JlditJbhqdxRkI0NnwnSt2+gQ
+         ny4+BmgoxwEasVEWL+OzBX0yV95zOzS7t1/63lI6sxq1u2/B7Qe+rcQrLDrs0E1++TYf
+         w6uQ==
+X-Gm-Message-State: AHQUAub+cdYWomoAN06WDND7dGLkjZkAjkWHnoaWTn4BeTd+D+dKWGXW
+        6Ln+J8uaBxV6by8Y8EJogO6jx/i0PAE=
+X-Google-Smtp-Source: AHgI3IYzbtOtGh7q0Y2O573lkbPcjo6mV44MIbX7BnwLVbjbopkURkY/8Y48YOblCwSuKbs//bY57Q==
+X-Received: by 2002:ac8:257b:: with SMTP id 56mr9063474qtn.209.1549485981843;
+        Wed, 06 Feb 2019 12:46:21 -0800 (PST)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id b77sm12734012qka.5.2019.02.06.12.46.18
+        by smtp.gmail.com with ESMTPSA id q2sm14446425qkc.68.2019.02.06.12.46.20
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Wed, 06 Feb 2019 12:46:19 -0800 (PST)
+        Wed, 06 Feb 2019 12:46:20 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 1/2] btrfs: check for refs on snapshot delete resume
-Date:   Wed,  6 Feb 2019 15:46:14 -0500
-Message-Id: <20190206204615.5862-2-josef@toxicpanda.com>
+Subject: [PATCH 2/2] btrfs: save drop_progress if we drop refs at all
+Date:   Wed,  6 Feb 2019 15:46:15 -0500
+Message-Id: <20190206204615.5862-3-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.14.3
 In-Reply-To: <20190206204615.5862-1-josef@toxicpanda.com>
 References: <20190206204615.5862-1-josef@toxicpanda.com>
@@ -66,194 +66,128 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There's a bug in snapshot deletion where we won't update the
-drop_progress key if we're in the UPDATE_BACKREF stage.  This is a
-problem because we could drop refs for blocks we know don't belong to
-ours.  If we crash or umount at the right time we could experience
-messages such as the following when snapshot deletion resumes
+Previously we only updated the drop_progress key if we were in the
+DROP_REFERENCE stage of snapshot deletion.  This is because the
+UPDATE_BACKREF stage checks the flags of the blocks it's converting to
+FULL_BACKREF, so if we go over a block we processed before it doesn't
+matter, we just don't do anything.
 
- BTRFS error (device dm-3): unable to find ref byte nr 66797568 parent 0 root 258  owner 1 offset 0
- ------------[ cut here ]------------
- WARNING: CPU: 3 PID: 16052 at fs/btrfs/extent-tree.c:7108 __btrfs_free_extent.isra.78+0x62c/0xb30 [btrfs]
- CPU: 3 PID: 16052 Comm: umount Tainted: G        W  OE     5.0.0-rc4+ #147
- Hardware name: To Be Filled By O.E.M. To Be Filled By O.E.M./890FX Deluxe5, BIOS P1.40 05/03/2011
- RIP: 0010:__btrfs_free_extent.isra.78+0x62c/0xb30 [btrfs]
- Code: 45 90 48 8b 40 50 f0 48 0f ba a8 98 1a 00 00 02 0f 92 c0 84 c0 5e 75 14 8b b5 7c ff ff ff 48 c7 c7 08 a7 b6 a0 e8 04 d0 63 e0 <0f> 0b 48 8b 7d 90 b9 fe ff ff ff ba c4 1b 00 00 48 c7 c6 a0 dd b5
- RSP: 0018:ffffc90005cd7b18 EFLAGS: 00010286
- RAX: 0000000000000000 RBX: 0000000000000001 RCX: 0000000000000000
- RDX: ffff88842fade680 RSI: ffff88842fad6b18 RDI: ffff88842fad6b18
- RBP: ffffc90005cd7bc8 R08: 0000000000000000 R09: 0000000000000001
- R10: 0000000000000001 R11: ffffffff822696b8 R12: 0000000003fb4000
- R13: 0000000000000001 R14: 0000000000000102 R15: ffff88819c9d67e0
- FS:  00007f08bb138fc0(0000) GS:ffff88842fac0000(0000) knlGS:0000000000000000
- CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
- CR2: 00007f8f5d861ea0 CR3: 00000003e99fe000 CR4: 00000000000006e0
- Call Trace:
- ? _raw_spin_unlock+0x27/0x40
- ? btrfs_merge_delayed_refs+0x356/0x3e0 [btrfs]
- __btrfs_run_delayed_refs+0x75a/0x13c0 [btrfs]
- ? join_transaction+0x2b/0x460 [btrfs]
- btrfs_run_delayed_refs+0xf3/0x1c0 [btrfs]
- btrfs_commit_transaction+0x52/0xa50 [btrfs]
- ? start_transaction+0xa6/0x510 [btrfs]
- btrfs_sync_fs+0x79/0x1c0 [btrfs]
- sync_filesystem+0x70/0x90
- generic_shutdown_super+0x27/0x120
- kill_anon_super+0x12/0x30
- btrfs_kill_super+0x16/0xa0 [btrfs]
- deactivate_locked_super+0x43/0x70
- deactivate_super+0x40/0x60
- cleanup_mnt+0x3f/0x80
- __cleanup_mnt+0x12/0x20
- task_work_run+0x8b/0xc0
- exit_to_usermode_loop+0xce/0xd0
- do_syscall_64+0x20b/0x210
- entry_SYSCALL_64_after_hwframe+0x49/0xbe
+The problem is in do_walk_down() we will go ahead and drop the roots
+reference to any blocks that we know we won't need to walk into.
 
-To fix this simply mark dead roots we read from disk as DEAD and then
-set the walk_control->restarted flag so we know we have a restarted
-deletion.  From here whenever we try to drop refs for blocks we check to
-verify our ref is set on them, and if it is not we skip it.  Once we
-find a ref that is set we unset walk_control->restarted since the tree
-should be in a normal state from then on, and any problems we run into
-from there are different issues.  I tested this with an existing broken
-fs and my reproducer that creates a broken fs and it fixed both file
-systems.
+Given subvolume A and snapshot B.  The root of B points to all of the
+nodes that belong to A, so all of those nodes have a refcnt > 1.  If B
+did not modify those blocks it'll hit this condition in do_walk_down
+
+if (!wc->update_ref ||
+    generation <= root->root_key.offset)
+	goto skip;
+
+and in "goto skip" we simply do a btrfs_free_extent() for that bytenr
+that we point at.
+
+Now assume we modified some data in B, and then took a snapshot of B and
+call it C.  C points to all the nodes in B, making every node the root
+of B points to have a refcnt > 1.  This assumes the root level is 2 or
+higher.
+
+We delete snapshot B, which does the above work in do_walk_down,
+free'ing our ref for nodes we share with A that we didn't modify.  Now
+we hit a node we _did_ modify, thus we own.  We need to walk down into
+this node and we set wc->stage == UPDATE_BACKREF.  We walk down to level
+0 which we also own because we modified data.  We can't walk any further
+down and thus now need to walk up and start the next part of the
+deletion.  Now walk_up_proc is supposed to put us back into
+DROP_REFERENCE, but there's an exception to this
+
+if (level < wc->shared_level)
+	goto out;
+
+we are at level == 0, and our shared_level == 1.  We skip out of this
+one and go up to level 1.  Since path->slots[1] < nritems we
+path->slots[1]++ and break out of walk_up_tree to stop our transaction
+and loop back around.  Now in btrfs_drop_snapshot we have this snippet
+
+if (wc->stage == DROP_REFERENCE) {
+	level = wc->level;
+	btrfs_node_key(path->nodes[level],
+		       &root_item->drop_progress,
+		       path->slots[level]);
+	root_item->drop_level = level;
+}
+
+our stage == UPDATE_BACKREF still, so we don't update the drop_progress
+key.  This is a problem because we would have done btrfs_free_extent()
+for the nodes leading up to our current position.  If we crash or
+unmount here and go to remount we'll start over where we were before and
+try to free our ref for blocks we've already freed, and thus abort()
+out.
+
+Fix this by keeping track of the last place we dropped a reference for
+our block in do_walk_down.  Then if wc->stage == UPDATE_BACKREF we know
+we'll start over from a place we meant to, and otherwise things continue
+to work as they did before.
+
+I have a complicated reproducer for this problem, without this patch
+we'll fail to fsck the fs when replaying the log writes log.  With this
+patch we can replay the whole log without any fsck or mount failures.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ctree.h       |  1 +
- fs/btrfs/extent-tree.c | 48 +++++++++++++++++++++++++++++++++++++++++++++++-
- fs/btrfs/root-tree.c   |  8 ++++++--
- 3 files changed, 54 insertions(+), 3 deletions(-)
+ fs/btrfs/extent-tree.c | 26 ++++++++++++++++++++------
+ 1 file changed, 20 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 9306925b6790..3d0bf91e1941 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1207,6 +1207,7 @@ enum {
- 	 * Set for the subvolume tree owning the reloc tree.
- 	 */
- 	BTRFS_ROOT_DEAD_RELOC_TREE,
-+	BTRFS_ROOT_DEAD_TREE,
- };
- 
- /*
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index a53a2b9d49e9..f40d6086c947 100644
+index f40d6086c947..53fd4626660c 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -8772,6 +8772,7 @@ struct walk_control {
- 	int keep_locks;
- 	int reada_slot;
- 	int reada_count;
-+	int restarted;
- };
- 
- #define DROP_REFERENCE	1
-@@ -8934,6 +8935,33 @@ static noinline int walk_down_proc(struct btrfs_trans_handle *trans,
- 	return 0;
- }
- 
-+/*
-+ * This is used to verify a ref exists for this root to deal with a bug where we
-+ * would have a drop_progress key that hadn't been updated properly.
-+ */
-+static int check_ref_exists(struct btrfs_trans_handle *trans,
-+			    struct btrfs_root *root, u64 bytenr, u64 parent,
-+			    int level)
-+{
-+	struct btrfs_path *path;
-+	struct btrfs_extent_inline_ref *iref;
-+	int ret;
-+
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	ret = lookup_extent_backref(trans, path, &iref, bytenr,
-+				    root->fs_info->nodesize, parent,
-+				    root->root_key.objectid, level, 0);
-+	btrfs_free_path(path);
-+	if (ret == -ENOENT)
-+		return 0;
-+	if (ret < 0)
-+		return ret;
-+	return 1;
-+}
-+
- /*
-  * helper to process tree block pointer.
-  *
-@@ -9088,6 +9116,23 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
- 			parent = 0;
+@@ -8765,6 +8765,8 @@ struct walk_control {
+ 	u64 refs[BTRFS_MAX_LEVEL];
+ 	u64 flags[BTRFS_MAX_LEVEL];
+ 	struct btrfs_key update_progress;
++	struct btrfs_key drop_progress;
++	int drop_level;
+ 	int stage;
+ 	int level;
+ 	int shared_level;
+@@ -9148,6 +9150,16 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
+ 					     ret);
+ 			}
  		}
- 
++
 +		/*
-+		 * If we had a drop_progress we need to verify the refs are set
-+		 * as expected.  If we find our ref then we know that from here
-+		 * on out everything should be correct, and we can clear the
-+		 * ->restarted flag.
++		 * We need to update the next key in our walk control so we can
++		 * update the drop_progress key accordingly.  We don't care if
++		 * find_next_key doesn't find a key because that means we're at
++		 * the end and are going to clean up now.
 +		 */
-+		if (wc->restarted) {
-+			ret = check_ref_exists(trans, root, bytenr, parent,
-+					       level - 1);
-+			if (ret < 0)
-+				goto out_unlock;
-+			if (ret == 0)
-+				goto no_delete;
-+			ret = 0;
-+			wc->restarted = 0;
-+		}
++		wc->drop_level = level;
++		find_next_key(path, level, &wc->drop_progress);
 +
- 		/*
- 		 * Reloc tree doesn't contribute to qgroup numbers, and we have
- 		 * already accounted them at merge time (replace_path),
-@@ -9109,7 +9154,7 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
- 		if (ret)
- 			goto out_unlock;
- 	}
--
-+no_delete:
- 	*lookup_info = 1;
- 	ret = 1;
- 
-@@ -9426,6 +9471,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
- 		}
- 	}
- 
-+	wc->restarted = test_bit(BTRFS_ROOT_DEAD_TREE, &root->state);
- 	wc->level = level;
- 	wc->shared_level = -1;
- 	wc->stage = DROP_REFERENCE;
-diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
-index 65bda0682928..02d1a57af78b 100644
---- a/fs/btrfs/root-tree.c
-+++ b/fs/btrfs/root-tree.c
-@@ -263,8 +263,10 @@ int btrfs_find_orphan_roots(struct btrfs_fs_info *fs_info)
- 		if (root) {
- 			WARN_ON(!test_bit(BTRFS_ROOT_ORPHAN_ITEM_INSERTED,
- 					  &root->state));
--			if (btrfs_root_refs(&root->root_item) == 0)
-+			if (btrfs_root_refs(&root->root_item) == 0) {
-+				set_bit(BTRFS_ROOT_DEAD_TREE, &root->state);
- 				btrfs_add_dead_root(root);
-+			}
- 			continue;
+ 		ret = btrfs_free_extent(trans, root, bytenr, fs_info->nodesize,
+ 					parent, root->root_key.objectid,
+ 					level - 1, 0);
+@@ -9499,12 +9511,14 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
  		}
  
-@@ -310,8 +312,10 @@ int btrfs_find_orphan_roots(struct btrfs_fs_info *fs_info)
- 			break;
- 		}
- 
--		if (btrfs_root_refs(&root->root_item) == 0)
-+		if (btrfs_root_refs(&root->root_item) == 0) {
-+			set_bit(BTRFS_ROOT_DEAD_TREE, &root->state);
- 			btrfs_add_dead_root(root);
+ 		if (wc->stage == DROP_REFERENCE) {
+-			level = wc->level;
+-			btrfs_node_key(path->nodes[level],
+-				       &root_item->drop_progress,
+-				       path->slots[level]);
+-			root_item->drop_level = level;
+-		}
++			wc->drop_level = wc->level;
++			btrfs_node_key_to_cpu(path->nodes[wc->drop_level],
++					      &wc->drop_progress,
++					      path->slots[wc->drop_level]);
 +		}
- 	}
++		btrfs_cpu_key_to_disk(&root_item->drop_progress,
++				      &wc->drop_progress);
++		root_item->drop_level = wc->drop_level;
  
- 	btrfs_free_path(path);
+ 		BUG_ON(wc->level == 0);
+ 		if (btrfs_should_end_transaction(trans) ||
 -- 
 2.14.3
 

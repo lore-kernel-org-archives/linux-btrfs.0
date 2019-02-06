@@ -3,74 +3,80 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=unavailable
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6B6C3C169C4
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 15:16:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 12188C282D7
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 15:28:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 49A052080D
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 15:16:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DF05C2073F
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 15:28:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731311AbfBFPQa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 6 Feb 2019 10:16:30 -0500
-Received: from mx2.suse.de ([195.135.220.15]:48872 "EHLO mx1.suse.de"
+        id S1729988AbfBFP2m (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 6 Feb 2019 10:28:42 -0500
+Received: from mx2.suse.de ([195.135.220.15]:50748 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729189AbfBFPQa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 6 Feb 2019 10:16:30 -0500
+        id S1728658AbfBFP2m (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 6 Feb 2019 10:28:42 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id EE282B65A;
-        Wed,  6 Feb 2019 15:16:28 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 281E6AB48;
+        Wed,  6 Feb 2019 15:28:41 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 304F1DA823; Wed,  6 Feb 2019 16:15:52 +0100 (CET)
-Date:   Wed, 6 Feb 2019 16:15:52 +0100
+        id 94C67DA823; Wed,  6 Feb 2019 16:28:04 +0100 (CET)
+Date:   Wed, 6 Feb 2019 16:28:04 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Dennis Zhou <dennis@kernel.org>
-Cc:     David Sterba <dsterba@suse.cz>, David Sterba <dsterba@suse.com>,
-        Josef Bacik <josef@toxicpanda.com>, Chris Mason <clm@fb.com>,
-        Omar Sandoval <osandov@osandov.com>,
-        Nick Terrell <terrelln@fb.com>,
-        Nikolay Borisov <nborisov@suse.com>, kernel-team@fb.com,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v2 00/12] btrfs: add zstd compression level support
-Message-ID: <20190206151551.GB2900@twin.jikos.cz>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v14] Add cli and ioctl to forget scanned device(s)
+Message-ID: <20190206152804.GC2900@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Dennis Zhou <dennis@kernel.org>,
-        David Sterba <dsterba@suse.com>, Josef Bacik <josef@toxicpanda.com>,
-        Chris Mason <clm@fb.com>, Omar Sandoval <osandov@osandov.com>,
-        Nick Terrell <terrelln@fb.com>, Nikolay Borisov <nborisov@suse.com>,
-        kernel-team@fb.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-References: <20190204202008.51652-1-dennis@kernel.org>
- <20190205145753.GR2900@twin.jikos.cz>
- <20190205160302.GA89375@dennisz-mbp>
- <20190205162733.GT2900@suse.cz>
- <20190205163012.GB89375@dennisz-mbp>
- <20190205165113.GU2900@suse.cz>
- <20190205170749.GV2900@suse.cz>
- <20190205182748.GY2900@twin.jikos.cz>
- <20190205183027.GA17870@dennisz-mbp.dhcp.thefacebook.com>
- <20190205204848.GA39186@dennisz-mbp.dhcp.thefacebook.com>
+Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
+        linux-btrfs@vger.kernel.org
+References: <1546579914-14971-1-git-send-email-anand.jain@oracle.com>
+ <20190107172816.GX23615@twin.jikos.cz>
+ <f7446cbe-0003-0539-fff6-70cd8ea28ba5@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190205204848.GA39186@dennisz-mbp.dhcp.thefacebook.com>
+In-Reply-To: <f7446cbe-0003-0539-fff6-70cd8ea28ba5@oracle.com>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Feb 05, 2019 at 03:48:48PM -0500, Dennis Zhou wrote:
-> > Ok great! I'm going to add a v2 for 0012 to add taking the spin_lock
-> > just to be safe in cleanup. I should have that ready in a few minutes.
-> > 
+On Tue, Jan 08, 2019 at 01:16:14PM +0800, Anand Jain wrote:
 > 
-> Before I run v3, are there any other concerns (pending the changes I
-> made to address the mentioned make sense)?
+> 
+> On 01/08/2019 01:28 AM, David Sterba wrote:
+> > On Fri, Jan 04, 2019 at 01:31:51PM +0800, Anand Jain wrote:
+> >> Adds cli and ioctl to forget a scanned device or forget all stale
+> >> devices in the kernel.
+> > 
+> > I've read my comments to previous postings and I suggested to add more
+> > ways how to specify the device, eg. by uuid or fsid:devid. Have you
+> > considered that?
+> 
+>   Right I responded [1],
+> 
+>    [1]
+>    https://www.spinics.net/lists/linux-btrfs/msg81059.html
+> 
+>   basically.. I like uuid|fsid:devid idea but,
+>   - we also need to add the ability to list out uuid|fsid:devid which
+>   are already scanned, such as [2] (in ml since 2015).
+> 
+>    [2]
+>    https://patchwork.kernel.org/patch/7362881/
 
-You don't needs to do full v3 resend, either new version of the
-individual patches or incremental changes that can be squashed to the
-patch. I'm about to move the patchset from topic branch to misc-next so
-incrementals work better now as there aren't big updates expected.
+That would be nice to have but is a bigger task than this ioctl.
+
+>   Further, its better to be consistent with other cli too..
+>   As of now, 'btrfs device delete' supports only <path|devid> we need
+>   to add uuid.
+
+Yeah, the changes to support the enhanced syntax would need to be done
+for all commands.
+
+The /dev/path should be sufficient for now.

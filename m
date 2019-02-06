@@ -2,159 +2,139 @@ Return-Path: <SRS0=hiUa=QN=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0EE72C169C4
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 20:49:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C75E4C169C4
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 22:13:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CB82D217F9
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 20:49:28 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 96300218D9
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 22:13:58 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="wBM8Bjll"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="3M6thdmr"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726561AbfBFUt1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 6 Feb 2019 15:49:27 -0500
-Received: from mail-qt1-f196.google.com ([209.85.160.196]:39516 "EHLO
-        mail-qt1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726001AbfBFUt1 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Feb 2019 15:49:27 -0500
-Received: by mail-qt1-f196.google.com with SMTP id o6so3161268qtk.6
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Feb 2019 12:49:26 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id;
-        bh=oTjsSJ0wFTxeIeYHeHnRwNlz072yHETcbZ0gKsNKoJQ=;
-        b=wBM8Bjll2dJvKoCRVJ+v5e9dz9my6t6GD6YE7laUL8nlhbLm9hULiodOI4R7i2MfgS
-         M9CneY9UcaDMrAewG/8EN9X5rsjNJH9BxL9ZpycIsY9dxpeC82pXQAoGRGNwQUkWWFyw
-         5wbsCT1pftXiQHTL1sa1vpaExYbq5OW3MwlYdDF5HQFo5+pzctFpBX9iSLeY/uYe1mLK
-         akE50Uui3ERwxEa2tQq7ANUw8RC0QyhszkY+3tvXXE0dRUWz2SHGsCREmG00JjWr52ma
-         CDoTXNDhflgMIYZet4+82deE8uCXG6b5cJDfHoi86d+Bephx4TDUcd2eUiA1T5liAOUB
-         r3nA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id;
-        bh=oTjsSJ0wFTxeIeYHeHnRwNlz072yHETcbZ0gKsNKoJQ=;
-        b=KLSERwY599kydEeltYcDdWJ/V5r1ITuoEtyJYEBYzCrsdp9iQqnGf+bcylj1yF+BiE
-         wEdKwL95kjqQ6+D29IMQclrqilpJmtsLcLkUM53vyRz0u2tIb+5SYe8UlADnc54yBk1k
-         fxnTIB3h7bqpdHgFguAuhltIOIcdcHoWEC2mMQlvTXiW4uij1WX/Gx8Pum7sdwSyzq2p
-         Xj7yIArO+2fOvRUmEr9sNWyeOGa0Mej4C+D107dr3S4N2HioYdqUdw4Xf0lV93Ls8N0b
-         U6bakp5IaJeKQSVgPwM9hvAJFiQy8nN3OWChhxwY/PQHUCVAIv0MneWpiSpxM3kKHvao
-         HvZg==
-X-Gm-Message-State: AHQUAuZsNpNtfyLynpYod9y5alVmY1O4hBrbbB85KFYMiC+hlkanTQIx
-        zyEH4iIsRry7H2tcaWw6NDhzhpJQMiI=
-X-Google-Smtp-Source: AHgI3IaH/rUaxLh47n2CRz4SqLWHkuu2FSgsSiqW2YJip9IBUX0tO9pd3lRmb64ae6sxPBYwcjZy0g==
-X-Received: by 2002:ac8:78a:: with SMTP id l10mr9338965qth.365.1549486166146;
-        Wed, 06 Feb 2019 12:49:26 -0800 (PST)
-Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id c202sm24225360qkb.19.2019.02.06.12.49.25
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Wed, 06 Feb 2019 12:49:25 -0800 (PST)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: deal with drop_progress properly in fsck
-Date:   Wed,  6 Feb 2019 15:49:24 -0500
-Message-Id: <20190206204924.6096-1-josef@toxicpanda.com>
-X-Mailer: git-send-email 2.14.3
+        id S1726230AbfBFWN5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 6 Feb 2019 17:13:57 -0500
+Received: from userp2120.oracle.com ([156.151.31.85]:41514 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725928AbfBFWN5 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Feb 2019 17:13:57 -0500
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x16MDo5t033747;
+        Wed, 6 Feb 2019 22:13:50 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2018-07-02;
+ bh=9Xl0kkqNSv+LMdXuc/VZaK91Bbg7chOQEkooTfYoWV0=;
+ b=3M6thdmru/YXmgfdYuwPyup9SD9WHJKfD3ynEOgk/lAccAhSieya21OsogRjlcV+PkOx
+ GquP7C0xKU3cVV/pzbPKONvlhV1XwI2+7oXqHpmeFPlndVciXhjcpoE8MmF18RG3SiXF
+ sAFnK2AAX5Qh+YoJNP267BjHyKohPRhT/Kc2mZFWNuu/GdQcHFjlnZYuLgfPOEIarGLx
+ i24iTTZc6741ARVFMOMyyO+Ipy1/x6K8GhyU0sOtLEDJr3eIKvIHUJxOCf+ze7fOydcR
+ YvF+vBR13pHub9AtplXvxZ+IP78Lo8ynx/ORH0RIL6SseOq0ggtf8Oukree1Ct1s9aWC 2g== 
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by userp2120.oracle.com with ESMTP id 2qd98nbt4k-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 06 Feb 2019 22:13:50 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id x16MDlvs007707
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 6 Feb 2019 22:13:47 GMT
+Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x16MDlTJ025035;
+        Wed, 6 Feb 2019 22:13:47 GMT
+Received: from [192.168.1.145] (/116.87.143.221)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Wed, 06 Feb 2019 14:13:47 -0800
+Subject: Re: [PATCH v14] Add cli and ioctl to forget scanned device(s)
+To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <1546579914-14971-1-git-send-email-anand.jain@oracle.com>
+ <20190206153326.GD2900@twin.jikos.cz>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <1b208c60-c207-67b7-c59d-26bfa46ac991@oracle.com>
+Date:   Thu, 7 Feb 2019 06:13:32 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.4.0
+MIME-Version: 1.0
+In-Reply-To: <20190206153326.GD2900@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9159 signatures=668682
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=2 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1902060167
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-While testing snapshot deletion with dm-log-writes I saw that I was
-failing the fsck sometimes when the fs was actually in the correct
-state.  This is because we only skip blocks on the same level of
-root_item->drop_level.  If the drop_level < the root level then we could
-very well walk into nodes that we wouldn't actually walk into on fs
-mount, because the drop_progress is further ahead in the slot of the
-root.  Instead only process the slots of the nodes that are above the
-drop_progress key.  With this patch in place we no longer improperly
-fail to check fs'es that have a drop_progress set with a drop_level <
-root level.
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- check/main.c | 19 ++++++++++++++++---
- ctree.c      |  6 +++---
- ctree.h      |  2 ++
- 3 files changed, 21 insertions(+), 6 deletions(-)
 
-diff --git a/check/main.c b/check/main.c
-index 7547209c5604..89f0ce75e13d 100644
---- a/check/main.c
-+++ b/check/main.c
-@@ -6325,15 +6325,28 @@ static int run_next_block(struct btrfs_root *root,
- 		int level;
- 
- 		level = btrfs_header_level(buf);
--		for (i = 0; i < nritems; i++) {
-+		i = 0;
-+
-+		/*
-+		 * If we have a drop key we need to not walk down any slots we
-+		 * would have ignored when mounting the fs.  These blocks are
-+		 * technically unreferenced and don't need to be worried about.
-+		 */
-+		if (ri != NULL && ri->drop_level && level > ri->drop_level) {
-+			ret = btrfs_bin_search(buf, &ri->drop_key, level, &i);
-+			if (ret && i > 0)
-+				i--;
-+		}
-+
-+		for (; i < nritems; i++) {
- 			struct extent_record tmpl;
- 
- 			ptr = btrfs_node_blockptr(buf, i);
- 			size = root->fs_info->nodesize;
- 			btrfs_node_key_to_cpu(buf, &key, i);
- 			if (ri != NULL) {
--				if ((level == ri->drop_level)
--				    && is_dropped_key(&key, &ri->drop_key)) {
-+				if ((level == ri->drop_level) &&
-+				    is_dropped_key(&key, &ri->drop_key)) {
- 					continue;
- 				}
- 			}
-diff --git a/ctree.c b/ctree.c
-index 7cb3f8451542..a086d59d6a1c 100644
---- a/ctree.c
-+++ b/ctree.c
-@@ -638,8 +638,8 @@ static int generic_bin_search(struct extent_buffer *eb, unsigned long p,
-  * simple bin_search frontend that does the right thing for
-  * leaves vs nodes
-  */
--static int bin_search(struct extent_buffer *eb, const struct btrfs_key *key,
--		      int level, int *slot)
-+int btrfs_bin_search(struct extent_buffer *eb, const struct btrfs_key *key,
-+		     int level, int *slot)
- {
- 	if (level == 0)
- 		return generic_bin_search(eb,
-@@ -1172,7 +1172,7 @@ again:
- 		ret = check_block(root, p, level);
- 		if (ret)
- 			return -1;
--		ret = bin_search(b, key, level, &slot);
-+		ret = btrfs_bin_search(b, key, level, &slot);
- 		if (level != 0) {
- 			if (ret && slot > 0)
- 				slot -= 1;
-diff --git a/ctree.h b/ctree.h
-index abc20e283fdc..f31a680eb473 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -2616,6 +2616,8 @@ int btrfs_search_slot_for_read(struct btrfs_root *root,
-                                const struct btrfs_key *key,
-                                struct btrfs_path *p, int find_higher,
-                                int return_any);
-+int btrfs_bin_search(struct extent_buffer *eb, const struct btrfs_key *key,
-+		     int level, int *slot);
- int btrfs_find_item(struct btrfs_root *fs_root, struct btrfs_path *found_path,
- 		u64 iobjectid, u64 ioff, u8 key_type,
- 		struct btrfs_key *found_key);
--- 
-2.14.3
+On 2/6/19 11:33 PM, David Sterba wrote:
+> On Fri, Jan 04, 2019 at 01:31:51PM +0800, Anand Jain wrote:
+>> Adds cli and ioctl to forget a scanned device or forget all stale
+>> devices in the kernel.
+>>
+>> Anand Jain (2):
+>>    btrfs: refactor btrfs_free_stale_devices() to get return value
+>>    btrfs: introduce feature to forget a btrfs device
+> 
+> The 2nd patch has been added to misc-next too, I've updated the
+> changelog a bit.
 
+Thanks.
+
+> The usecase here is quite small so I don't think we've
+> missed something crucial on the kernel side. 
+
+
+> The userspace part can
+> provide some convenience shortcuts like --forget-all 
+
+The --forget is already equivalent to --forget-all. For example..
+
+# btrfs dev scan /dev/sdb
+Scanning for Btrfs filesystems in '/dev/sdb'
+# btrfs dev scan --forget /dev/sdb
+# btrfs dev scan
+Scanning for Btrfs filesystems
+# btrfs dev scan --forget
+# echo $?
+0
+# btrfs dev scan --forget /dev/sdb
+ERROR: Can't forget '/dev/sdb': No such file or directory
+# echo $?
+1
+#
+
+ > or specifying by
+ > filesystem id where the translation would happen internally, but the
+ > ioctl would cover that. Thanks.
+
+Looks like that seeks the complete enhancement to scan cli.
+
+IMO we could add..
+
+  #btrfs dev scan --show
+
+  For which looks like we need to enhance existing ioctl
+  BTRFS_IOC_FS_INFO and BTRFS_IOC_DEV_INFO so that it works
+  through btrfs-control.
+  Which means 'btrfs fi show' can also show the scanned devices from
+  the kernel, probably we should just add flags to the output to indicate
+  if the fsid-device is mounted.
+
+  OR a wrapper around the sysfs fs-dev tree implementation will suffice
+  as well.
+
+further, (fsid translation happens internally)
+
+  #btrfs dev scan <fsid>
+  #btrfs dev scan --forget <fsid>
+
+In general, agree use case is limited.
+
+Thanks, Anand

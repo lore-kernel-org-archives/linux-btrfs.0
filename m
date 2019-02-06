@@ -2,108 +2,115 @@ Return-Path: <SRS0=hiUa=QN=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.5 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FORGED_MUA_MOZILLA,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
+	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B1EC8C282CB
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 00:36:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BDD30C169C4
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 14:26:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2992A2183E
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 00:36:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7E15320844
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 14:26:30 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=urbackup.org header.i=@urbackup.org header.b="bOYIZawc";
-	dkim=pass (1024-bit key) header.d=amazonses.com header.i=@amazonses.com header.b="pvgC+yNt"
+	dkim=pass (2048-bit key) header.d=zadara-com.20150623.gappssmtp.com header.i=@zadara-com.20150623.gappssmtp.com header.b="qlJQdnZg"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727406AbfBFAgV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 5 Feb 2019 19:36:21 -0500
-Received: from a4-1.smtp-out.eu-west-1.amazonses.com ([54.240.4.1]:43286 "EHLO
-        a4-1.smtp-out.eu-west-1.amazonses.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1727165AbfBFAgU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 5 Feb 2019 19:36:20 -0500
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/simple;
-        s=vbsgq4olmwpaxkmtpgfbbmccllr2wq3g; d=urbackup.org; t=1549413378;
-        h=Subject:To:Cc:References:From:Message-ID:Date:MIME-Version:In-Reply-To:Content-Type:Content-Transfer-Encoding;
-        bh=mu0rKYkqgvsjzuqaXxlcJNiP02HasUCeytZ+VGrNH/8=;
-        b=bOYIZawci/JcWdBzjj3MbOQ9ZMjJt2DHDo3otC6AppdLkUQloac0r8InjhEUfW6Z
-        UDmOrkpYv93uJjaenZITUxxma3GpnYUPQg2F2db5Niq174Ukyiwx4FfOWs8+t1x5M6z
-        TwFPSctKvQjjzlfH2EHbWJ1zt2jyJagetqE+ao1Y=
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/simple;
-        s=uku4taia5b5tsbglxyj6zym32efj7xqv; d=amazonses.com; t=1549413378;
-        h=Subject:To:Cc:References:From:Message-ID:Date:MIME-Version:In-Reply-To:Content-Type:Content-Transfer-Encoding:Feedback-ID;
-        bh=mu0rKYkqgvsjzuqaXxlcJNiP02HasUCeytZ+VGrNH/8=;
-        b=pvgC+yNte8uOezQZhlOpDlGWwlnD7JYkY4px346V+TMwzdBmlC7q7fQ5qSkm8saL
-        zYxvL0ztQGaeLaG5ZROmDArmGsjDUHqZtP+IJjeU2hP98NY/1rh9QH9TaWktaVJ6jQD
-        11T6wMwmfVa+RjpILQ5qvR+E4BqtMOffdrwPOfDY=
-Subject: Re: New hang (Re: Kernel traces), sysreq+w output
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        "Stephen R. van den Berg" <srb@cuci.nl>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAJCQCtRva5ZrF2pq93pb0_be7P+CE+0no-nJeQTXtEaq-LpfVQ@mail.gmail.com>
- <20181212072614.GA9188@cuci.nl>
- <CAJCQCtSCcM0YTtp0f1i=FmrFigsfJEsr+Excwm=YHx4_wN49gg@mail.gmail.com>
- <20181228092036.GA30363@cuci.nl>
- <9b81647b-66c2-9870-161f-084b7d41af9c@gmx.com>
- <20181228134006.GA13717@cuci.nl>
- <e816d264-839b-a2b0-9787-755a6ac2d103@gmx.com>
- <20181228150016.GB13717@cuci.nl> <20190123155046.GA8995@cuci.nl>
- <20190125080137.GA27316@cuci.nl> <20190205221802.GA30715@cuci.nl>
- <db1081bb-d8c4-0ad4-104f-e22d5acce3b4@gmx.com>
-From:   Martin Raiber <martin@urbackup.org>
-Message-ID: <01020168c03beaab-004038b6-b18d-4b70-9803-4a9e51f73d36-000000@eu-west-1.amazonses.com>
-Date:   Wed, 6 Feb 2019 00:36:18 +0000
-User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.0
+        id S1728984AbfBFO03 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 6 Feb 2019 09:26:29 -0500
+Received: from mail-pg1-f196.google.com ([209.85.215.196]:35350 "EHLO
+        mail-pg1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725928AbfBFO03 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Feb 2019 09:26:29 -0500
+Received: by mail-pg1-f196.google.com with SMTP id s198so2963504pgs.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Feb 2019 06:26:28 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=zadara-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=7teqC4jF23iWU75y8Hv96ZnFrGD8heMEDeJ77FPh+gU=;
+        b=qlJQdnZgObYXUZAKzw5lwcM38+ZwEefOl2ubUyxGSS9YfkplOur3H6feDHcAo8hlu6
+         cjP9CmNKu5qE8iNBxmJwXtqx0mBVy1YYCtrCroNKolcUZ2ZqBdICS1EPC8cmbAyaK4JM
+         AEBwmqa579yXoQhKpKcMv2u5zjumUbprHM3DZ9ZPSzt52EY/SXMySQKpZJcqTQUgJvjQ
+         EHQKXCVxtuzahTz8FGKpijEkxNbWTLNT7ygT5QkO2b51PJUFdEn/MzFQs3f/dvx7Zl7y
+         8GZjLNOPXQg7c2GD2c9aOGbLLO8qV33cYcn5jJzicvEg54kUDoVlUkAaw5+z6bCMTLYr
+         sUVQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=7teqC4jF23iWU75y8Hv96ZnFrGD8heMEDeJ77FPh+gU=;
+        b=JJrgkRndECeOBqNctuEKVk32Orzu0XbxjMUrwH/Qy9ryrYTaZUWXaT6rQx8p3vnTwP
+         UWjtCzdbKd06zUmKghnWZVcIK+MGnK/wSZB4QFsdvmhjPOBk2Ae2xOEjPyOkvjmaa7SX
+         Bu/DZuqSWsbZHRrIMxVxcETcEES8atlufQw7qNPGP8G/9287yGOEMgcyiTNiMsjLsc6b
+         xxbj2Mi6eCFiD5G4tRaGpz3cjIute6/BAs0Kqw7g1J7iivmqNsMLu5EJSFrkEzWTjF4s
+         XOnQkaGR3bcC4OjsuGtszZ6KNZIYoU6KoAghnDjKDlsYBxYUP1c8sS8XdYD1ZLUeUFeE
+         ywDA==
+X-Gm-Message-State: AHQUAuZFqopHhSc6WstmnOJ7OJBbZammt28G+n3xMHz8BnUSB2Jfd87I
+        Aw2+yaoP7GJH12PEer6PN9HO/6C0LjIRtcFAdo1dTQ==
+X-Google-Smtp-Source: AHgI3Ibo5KPHo0+6wia6jvqEBhtdoZ9YO9z94SUgSZzFbbhfv3c0w5zy8iFQZay16byt8TgizPDCLeoHzyARyqsubCk=
+X-Received: by 2002:a63:6f0d:: with SMTP id k13mr9829763pgc.42.1549463188209;
+ Wed, 06 Feb 2019 06:26:28 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <db1081bb-d8c4-0ad4-104f-e22d5acce3b4@gmx.com>
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: 8bit
-X-SES-Outgoing: 2019.02.06-54.240.4.1
-Feedback-ID: 1.eu-west-1.zKMZH6MF2g3oUhhjaE2f3oQ8IBjABPbvixQzV8APwT0=:AmazonSES
+References: <1534346817-9108-1-git-send-email-nborisov@suse.com> <20181106143024.GC24115@twin.jikos.cz>
+In-Reply-To: <20181106143024.GC24115@twin.jikos.cz>
+From:   Alex Lyakas <alex@zadara.com>
+Date:   Wed, 6 Feb 2019 16:26:15 +0200
+Message-ID: <CAOcd+r3CzY2w94Y--9Nb+Fawv_JGFLnK3AgZdYWjNOsKth_aeQ@mail.gmail.com>
+Subject: Re: [PATCH 0/7] eb reference count cleanups
+To:     David Sterba <dsterba@suse.cz>, Nikolay Borisov <nborisov@suse.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>, robbieko@synology.com
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 06.02.2019 01:22 Qu Wenruo wrote:
-> On 2019/2/6 上午6:18, Stephen R. van den Berg wrote:
->> Are these Sysreq+w dumps not usable?
->>
-> Sorry for the late reply.
+Hi Nikolay, David,
+
+Isn't patch 5 (btrfs: Remove extra reference count bumps in
+btrfs_compare_trees) fixing a memory leak, and hence should be tagged
+as "stable"? I am specifically interested in 4.14.x.
+
+The comment says "remove redundant calls to extent_buffer_get since
+they don't really add any value". But with the extra ref-count, the
+extent buffer will not be properly freed and will cause a memory leak,
+won't it?
+
+Thanks,
+Alex.
+
+
+
+On Tue, Nov 6, 2018 at 4:30 PM David Sterba <dsterba@suse.cz> wrote:
 >
-> The hang looks pretty strange, and doesn't really look like previous
-> deadlock caused by tree block locking.
-> But some strange behavior about metadata dirty pages:
+> On Wed, Aug 15, 2018 at 06:26:50PM +0300, Nikolay Borisov wrote:
+> > Here is a series which simplifies the way eb are used in EXTENT_BUFFER_UNMAPPED
+> > context. The end goal was to remove the special "if we have ref count of 2 and
+> > EXTENT_BUFFER_UNMAPPED flag then act as if this is the last ref and free the
+> > buffer" case. To enable this the first 6 patches modify call sites which
+> > needlessly bump the reference count.
+> >
+> > Patch 1 & 2 remove some btree locking when we are operating on unmapped extent
+> > buffers. Each patch's changelog explains why this is safe to do .
+> >
+> > Patch 3,4,5 and 6 remove redundant calls to extent_buffer_get since they don't
+> > really add any value. In all 3 cases having a reference count of 1 is sufficient
+> > for the eb to be freed via btrfs_release_path.
+> >
+> > Patch 7 removes the special handling of EXTENT_BUFFER_UNMAPPED flag in
+> > free_extent_buffer. Also adjust the selftest code to account for this change
+> > by calling one extra time free_extent_buffer. Also document which references
+> > are being dropped. All in all this shouldn't have any functional bearing.
+> >
+> > This was tested with multiple full xfstest runs as well as unloading the btrfs
+> > module after each one to trigger the leak check and ensure no eb's are leaked.
+> > I've also run it through btrfs' selftests multiple times with no problems.
+> >
+> > With this set applied EXTENT_BUFFER_UNMAPPED seems to be relevant only for
+> > selftest which leads me to believe it can be removed altogether. I will
+> > investigate this next but in the meantime this series should be good to go.
 >
-> This looks like to be the cause of the problem.
->
-> kworker/u16:1   D    0 19178      2 0x80000000
-> Workqueue: btrfs-endio-write btrfs_endio_write_helper
-> Call Trace:
->  ? __schedule+0x4db/0x524
->  ? schedule+0x60/0x71
->  ? schedule_timeout+0xb2/0xec
->  ? __next_timer_interrupt+0xae/0xae
->  ? io_schedule_timeout+0x1b/0x3d
->  ? balance_dirty_pages+0x7a7/0x861
->  ? usleep_range+0x7e/0x7e
->  ? schedule+0x60/0x71
->  ? schedule_timeout+0x32/0xec
->  ? balance_dirty_pages_ratelimited+0x204/0x225
->  ? btrfs_finish_ordered_io+0x584/0x5ac
->  ? normal_work_helper+0xfe/0x243
->  ? process_one_work+0x18d/0x271
->  ? rescuer_thread+0x278/0x278
->  ? worker_thread+0x194/0x23f
->  ? kthread+0xeb/0xf0
->  ? kthread_associate_blkcg+0x86/0x86
->  ? ret_from_fork+0x35/0x40
->
-> But I'm not familiar with balance_dirty_pages part, thus can't provide
-> much details about this.
-That balance_dirty_pages call was removed with the latest stable kernels
-(
-https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit/fs/btrfs?h=linux-4.20.y&id=480c6fb23eb80e88eba7e4603304710ee7a9416f
-).
+> Besides the 8/7 patch, the rest was in for-next for a long time so I'm
+> merging that to misc-next, targeting 4.21. I'll do one last pass
+> thhrough fstests with the full set and then upddate and push the branch
+> so there might be some delay before it appears in the public repo.
+> Thanks for the cleanup.

@@ -2,99 +2,158 @@ Return-Path: <SRS0=hiUa=QN=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4531DC169C4
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 16:51:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 780B7C169C4
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 18:21:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1629E20821
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 16:51:36 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1549471896;
-	bh=BgDvxrz5bhbb5BvXsaDThEcuS23Bq22puoxAED0igWA=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:List-ID:From;
-	b=NC9jQtxReFnhdKt8v0Rj9n1qldl+olkEMVV8vmwwIZyQlPqZlxiGDcVzctHc99blm
-	 7xkmjdorxPhBLyytMstPKWnNRKZcP4XgjhLXVWLB6Exp7X9d/Q7BSxtjB1UVjha0u0
-	 lnKjhY1QbdtFG2I2Va2umEy00FaGJ4XvtNc16Gy4=
+	by mail.kernel.org (Postfix) with ESMTP id 50E7220823
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 18:21:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731429AbfBFQva (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 6 Feb 2019 11:51:30 -0500
-Received: from mail-yw1-f68.google.com ([209.85.161.68]:38384 "EHLO
-        mail-yw1-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726732AbfBFQva (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Feb 2019 11:51:30 -0500
-Received: by mail-yw1-f68.google.com with SMTP id d190so3405415ywb.5;
-        Wed, 06 Feb 2019 08:51:29 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to:user-agent;
-        bh=USacBrj2u4EhLgSqyuB7qP8mekNzXh+/fRWY15jDSas=;
-        b=KroIbaTobChKWgksHaNjY2Trwws5HSdEYpKil0cDVNZV28aPCAYb7d4aSpWnMnXkes
-         wr6q2F21zfD/q+8ivz67MDIoTGboUGtZ94AApmpKxY3tIpd7mjY9SjKS75zaz4RPkNra
-         qmFzbPt/S1yhN1MeMmZzDiGr00YlxdRWRelXRI3u0nlbETNXlZ1AW7T6zwxeeZWgOzPK
-         xTo2jTrlrP/pUTIYNhuTe/J5tljj0GZoUoTV9jziiHis4qFnLc/vgtE0Je777Iu61bSx
-         dcsLVEP/Z4EjLcavM88ZaS3m28z3R+f9+WsblWnXpMFOp2HvQAFa7GIsesevpbBvscKT
-         pORA==
-X-Gm-Message-State: AHQUAuYvGHwfo/2I5W+tl1mApT8dyF71fR+Asr6RNp6yvCzJIx3I4voG
-        n+mKNNQzFwq8Pl7PwXtrJDQ=
-X-Google-Smtp-Source: AHgI3IYiHSiBf6A3ZrHqgQNeA6dU3l9dBRSZyYMNyIVoS1qSSD00caRbrySWKObDR9NdoxUKIA0Oyg==
-X-Received: by 2002:a81:5886:: with SMTP id m128mr8155598ywb.254.1549471889615;
-        Wed, 06 Feb 2019 08:51:29 -0800 (PST)
-Received: from dennisz-mbp.dhcp.thefacebook.com ([2620:10d:c091:200::6:c448])
-        by smtp.gmail.com with ESMTPSA id l7sm2618565ywk.24.2019.02.06.08.51.28
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Wed, 06 Feb 2019 08:51:28 -0800 (PST)
-Date:   Wed, 6 Feb 2019 11:51:26 -0500
-From:   Dennis Zhou <dennis@kernel.org>
-To:     David Sterba <dsterba@suse.cz>
-Cc:     Dennis Zhou <dennis@kernel.org>, David Sterba <dsterba@suse.com>,
-        Josef Bacik <josef@toxicpanda.com>, Chris Mason <clm@fb.com>,
-        Omar Sandoval <osandov@osandov.com>,
-        Nick Terrell <terrelln@fb.com>,
-        Nikolay Borisov <nborisov@suse.com>, kernel-team@fb.com,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v2 00/12] btrfs: add zstd compression level support
-Message-ID: <20190206165126.GA73810@dennisz-mbp.dhcp.thefacebook.com>
-References: <20190205145753.GR2900@twin.jikos.cz>
- <20190205160302.GA89375@dennisz-mbp>
- <20190205162733.GT2900@suse.cz>
- <20190205163012.GB89375@dennisz-mbp>
- <20190205165113.GU2900@suse.cz>
- <20190205170749.GV2900@suse.cz>
- <20190205182748.GY2900@twin.jikos.cz>
- <20190205183027.GA17870@dennisz-mbp.dhcp.thefacebook.com>
- <20190205204848.GA39186@dennisz-mbp.dhcp.thefacebook.com>
- <20190206151551.GB2900@twin.jikos.cz>
+        id S1728120AbfBFSVD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 6 Feb 2019 13:21:03 -0500
+Received: from mx2.suse.de ([195.135.220.15]:52490 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727129AbfBFSVD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 6 Feb 2019 13:21:03 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 47312B6F4;
+        Wed,  6 Feb 2019 18:21:01 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 4C674DA823; Wed,  6 Feb 2019 19:20:21 +0100 (CET)
+Date:   Wed, 6 Feb 2019 19:20:20 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+Subject: Re: [PATCH 6/8] btrfs: loop in inode_rsv_refill
+Message-ID: <20190206182020.GF2900@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+References: <20181203152459.21630-1-josef@toxicpanda.com>
+ <20181203152459.21630-7-josef@toxicpanda.com>
+ <6a7a6a50-9a58-032e-e62a-c551b257b0ac@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <20190206151551.GB2900@twin.jikos.cz>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <6a7a6a50-9a58-032e-e62a-c551b257b0ac@suse.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Feb 06, 2019 at 04:15:52PM +0100, David Sterba wrote:
-> On Tue, Feb 05, 2019 at 03:48:48PM -0500, Dennis Zhou wrote:
-> > > Ok great! I'm going to add a v2 for 0012 to add taking the spin_lock
-> > > just to be safe in cleanup. I should have that ready in a few minutes.
-> > > 
-> > 
-> > Before I run v3, are there any other concerns (pending the changes I
-> > made to address the mentioned make sense)?
+On Wed, Dec 12, 2018 at 06:01:57PM +0200, Nikolay Borisov wrote:
 > 
-> You don't needs to do full v3 resend, either new version of the
-> individual patches or incremental changes that can be squashed to the
-> patch. I'm about to move the patchset from topic branch to misc-next so
-> incrementals work better now as there aren't big updates expected.
+> 
+> On 3.12.18 г. 17:24 ч., Josef Bacik wrote:
+> > With severe fragmentation we can end up with our inode rsv size being
+> > huge during writeout, which would cause us to need to make very large
+> > metadata reservations.  However we may not actually need that much once
+> 
+> The sentence beginning with "However" needs more information, why might
+> we not need that much once writeout is complete?
 
-Ok great! I just sent a v2 of 0009 and v3 of 00012 which include the
-changes for warning on incorrect input and level out of bounds. I did
-forget to take out the "Re:" though.. whoops.
+Updated in changelog
 
-Thanks,
-Dennis
+> > writeout is complete.  So instead try to make our reservation, and if we
+> > couldn't make it re-calculate our new reservation size and try again.
+> 
+> Why do you think that recalculating the requested bytes will be
+> different the 2nd time ?
+
+Partly answered in the comment in the code
+
+> 
+> > If our reservation size doesn't change between tries then we know we are
+> > actually out of space and can error out.
+> > 
+> > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> > ---
+> >  fs/btrfs/extent-tree.c | 58 +++++++++++++++++++++++++++++++++++++-------------
+> >  1 file changed, 43 insertions(+), 15 deletions(-)
+> > 
+> > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> > index 0ee77a98f867..0e1a499035ac 100644
+> > --- a/fs/btrfs/extent-tree.c
+> > +++ b/fs/btrfs/extent-tree.c
+> > @@ -5787,6 +5787,21 @@ int btrfs_block_rsv_refill(struct btrfs_root *root,
+> >  	return ret;
+> >  }
+> >  
+> > +static inline void __get_refill_bytes(struct btrfs_block_rsv *block_rsv,
+> > +				      u64 *metadata_bytes, u64 *qgroup_bytes)
+> 
+> This function needs a better name. Something like calc_required_bytes or
+> calc_refill_bytes
+
+renamed to calc_refill_bytes
+
+> 
+> > +{
+> > +	*metadata_bytes = 0;
+> > +	*qgroup_bytes = 0;
+> > +
+> > +	spin_lock(&block_rsv->lock);
+> > +	if (block_rsv->reserved < block_rsv->size)
+> > +		*metadata_bytes = block_rsv->size - block_rsv->reserved;
+> > +	if (block_rsv->qgroup_rsv_reserved < block_rsv->qgroup_rsv_size)
+> > +		*qgroup_bytes = block_rsv->qgroup_rsv_size -
+> > +			block_rsv->qgroup_rsv_reserved;
+> > +	spin_unlock(&block_rsv->lock);
+> > +}
+> > +
+> >  /**
+> >   * btrfs_inode_rsv_refill - refill the inode block rsv.
+> >   * @inode - the inode we are refilling.
+> > @@ -5802,25 +5817,39 @@ static int btrfs_inode_rsv_refill(struct btrfs_inode *inode,
+> >  {
+> >  	struct btrfs_root *root = inode->root;
+> >  	struct btrfs_block_rsv *block_rsv = &inode->block_rsv;
+> > -	u64 num_bytes = 0;
+> > +	u64 num_bytes = 0, last = 0;
+> >  	u64 qgroup_num_bytes = 0;
+> >  	int ret = -ENOSPC;
+> >  
+> > -	spin_lock(&block_rsv->lock);
+> > -	if (block_rsv->reserved < block_rsv->size)
+> > -		num_bytes = block_rsv->size - block_rsv->reserved;
+> > -	if (block_rsv->qgroup_rsv_reserved < block_rsv->qgroup_rsv_size)
+> > -		qgroup_num_bytes = block_rsv->qgroup_rsv_size -
+> > -				   block_rsv->qgroup_rsv_reserved;
+> > -	spin_unlock(&block_rsv->lock);
+> > -
+> > +	__get_refill_bytes(block_rsv, &num_bytes, &qgroup_num_bytes);
+> >  	if (num_bytes == 0)
+> >  		return 0;
+> >  
+> > -	ret = btrfs_qgroup_reserve_meta_prealloc(root, qgroup_num_bytes, true);
+> > -	if (ret)
+> > -		return ret;
+> > -	ret = reserve_metadata_bytes(root, block_rsv, num_bytes, flush);
+> > +	do {
+> > +		ret = btrfs_qgroup_reserve_meta_prealloc(root, qgroup_num_bytes, true);
+> > +		if (ret)
+> > +			return ret;
+> > +		ret = reserve_metadata_bytes(root, block_rsv, num_bytes, flush);
+> > +		if (ret) {
+> > +			btrfs_qgroup_free_meta_prealloc(root, qgroup_num_bytes);
+> > +			last = num_bytes;
+> > +			/*
+> > +			 * If we are fragmented we can end up with a lot of
+> > +			 * outstanding extents which will make our size be much
+> > +			 * larger than our reserved amount.  If we happen to
+> > +			 * try to do a reservation here that may result in us
+> > +			 * trying to do a pretty hefty reservation, which we may
+> > +			 * not need once delalloc flushing happens.  If this is
+> 
+> The "If we happen" sentence needs to be reworded because it's -ENOPARSE.
+> Perhaps one of the "to do a reservation" should go away?
+
+Reworded

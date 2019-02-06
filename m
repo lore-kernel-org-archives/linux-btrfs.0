@@ -7,187 +7,154 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 27D08C282C2
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 20:46:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0EE72C169C4
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 20:49:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E7EBA217F9
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 20:46:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CB82D217F9
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Feb 2019 20:49:28 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="w2KmYaDP"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="wBM8Bjll"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726547AbfBFUqY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 6 Feb 2019 15:46:24 -0500
-Received: from mail-qt1-f196.google.com ([209.85.160.196]:33594 "EHLO
+        id S1726561AbfBFUt1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 6 Feb 2019 15:49:27 -0500
+Received: from mail-qt1-f196.google.com ([209.85.160.196]:39516 "EHLO
         mail-qt1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726001AbfBFUqX (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Feb 2019 15:46:23 -0500
-Received: by mail-qt1-f196.google.com with SMTP id l11so9571415qtp.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Feb 2019 12:46:22 -0800 (PST)
+        with ESMTP id S1726001AbfBFUt1 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Feb 2019 15:49:27 -0500
+Received: by mail-qt1-f196.google.com with SMTP id o6so3161268qtk.6
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Feb 2019 12:49:26 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references;
-        bh=MvygrytBItGCUCr8/3gIF0MVxHAT3tEFvJD9erNds7M=;
-        b=w2KmYaDP+8LT8X9YLCIBr6Eswg+laFyFA+BROSSh9zS5lh7j4kVH7Aajg+TvLBMjfF
-         2LIfB9dH0l7Jh1FxlGGFcRjz1sIakBNOnmgpwiZfwsePTlEFzbOENOjJGrDgbO/vlD3c
-         arIqlDl4KOq//2BHrHFvAN2vYVDR94n/fO76cg1UQAoe8Z0trMvsaVutw5hMpQb4deED
-         SwSlrn6DjneNRfewXMr0/bXRGfNNctV5HpzXSJcMNjl9VLKluuV/3w90AqKCNmGvIGWV
-         YFVNa8pL0YrP0Ud6adLqS3OuBlG+NQxDtx4Ha4xW8NSGweqZOg7LHDeeFUeySG3TLrdN
-         KvYA==
+        h=from:to:subject:date:message-id;
+        bh=oTjsSJ0wFTxeIeYHeHnRwNlz072yHETcbZ0gKsNKoJQ=;
+        b=wBM8Bjll2dJvKoCRVJ+v5e9dz9my6t6GD6YE7laUL8nlhbLm9hULiodOI4R7i2MfgS
+         M9CneY9UcaDMrAewG/8EN9X5rsjNJH9BxL9ZpycIsY9dxpeC82pXQAoGRGNwQUkWWFyw
+         5wbsCT1pftXiQHTL1sa1vpaExYbq5OW3MwlYdDF5HQFo5+pzctFpBX9iSLeY/uYe1mLK
+         akE50Uui3ERwxEa2tQq7ANUw8RC0QyhszkY+3tvXXE0dRUWz2SHGsCREmG00JjWr52ma
+         CDoTXNDhflgMIYZet4+82deE8uCXG6b5cJDfHoi86d+Bephx4TDUcd2eUiA1T5liAOUB
+         r3nA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
-         :references;
-        bh=MvygrytBItGCUCr8/3gIF0MVxHAT3tEFvJD9erNds7M=;
-        b=YMtZcxf/VeQWWM1uwvxgRn1Qqre1NW+Rxj/9cescLKfcZktAcICuPug/OLVHolpWYU
-         SVVX8SNCoD85Ce+OPFdUK0bFkHJY7FnFuTkcWj9ctj7bdfkV6sZAFUad6SJmQ7LV10p7
-         j3ufQmMwkt2gZ8oD1cgCGJHUmnntVdCC1bPE5IMCDtqWft4oZWMcwCKpD2xrzhF3NAi3
-         ekapRriV8hM0AFhw2iw8fliX50iq8N+G5nBwAjzSI23JlditJbhqdxRkI0NnwnSt2+gQ
-         ny4+BmgoxwEasVEWL+OzBX0yV95zOzS7t1/63lI6sxq1u2/B7Qe+rcQrLDrs0E1++TYf
-         w6uQ==
-X-Gm-Message-State: AHQUAub+cdYWomoAN06WDND7dGLkjZkAjkWHnoaWTn4BeTd+D+dKWGXW
-        6Ln+J8uaBxV6by8Y8EJogO6jx/i0PAE=
-X-Google-Smtp-Source: AHgI3IYzbtOtGh7q0Y2O573lkbPcjo6mV44MIbX7BnwLVbjbopkURkY/8Y48YOblCwSuKbs//bY57Q==
-X-Received: by 2002:ac8:257b:: with SMTP id 56mr9063474qtn.209.1549485981843;
-        Wed, 06 Feb 2019 12:46:21 -0800 (PST)
+        h=x-gm-message-state:from:to:subject:date:message-id;
+        bh=oTjsSJ0wFTxeIeYHeHnRwNlz072yHETcbZ0gKsNKoJQ=;
+        b=KLSERwY599kydEeltYcDdWJ/V5r1ITuoEtyJYEBYzCrsdp9iQqnGf+bcylj1yF+BiE
+         wEdKwL95kjqQ6+D29IMQclrqilpJmtsLcLkUM53vyRz0u2tIb+5SYe8UlADnc54yBk1k
+         fxnTIB3h7bqpdHgFguAuhltIOIcdcHoWEC2mMQlvTXiW4uij1WX/Gx8Pum7sdwSyzq2p
+         Xj7yIArO+2fOvRUmEr9sNWyeOGa0Mej4C+D107dr3S4N2HioYdqUdw4Xf0lV93Ls8N0b
+         U6bakp5IaJeKQSVgPwM9hvAJFiQy8nN3OWChhxwY/PQHUCVAIv0MneWpiSpxM3kKHvao
+         HvZg==
+X-Gm-Message-State: AHQUAuZsNpNtfyLynpYod9y5alVmY1O4hBrbbB85KFYMiC+hlkanTQIx
+        zyEH4iIsRry7H2tcaWw6NDhzhpJQMiI=
+X-Google-Smtp-Source: AHgI3IaH/rUaxLh47n2CRz4SqLWHkuu2FSgsSiqW2YJip9IBUX0tO9pd3lRmb64ae6sxPBYwcjZy0g==
+X-Received: by 2002:ac8:78a:: with SMTP id l10mr9338965qth.365.1549486166146;
+        Wed, 06 Feb 2019 12:49:26 -0800 (PST)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id q2sm14446425qkc.68.2019.02.06.12.46.20
+        by smtp.gmail.com with ESMTPSA id c202sm24225360qkb.19.2019.02.06.12.49.25
+        for <linux-btrfs@vger.kernel.org>
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Wed, 06 Feb 2019 12:46:20 -0800 (PST)
+        Wed, 06 Feb 2019 12:49:25 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 2/2] btrfs: save drop_progress if we drop refs at all
-Date:   Wed,  6 Feb 2019 15:46:15 -0500
-Message-Id: <20190206204615.5862-3-josef@toxicpanda.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: deal with drop_progress properly in fsck
+Date:   Wed,  6 Feb 2019 15:49:24 -0500
+Message-Id: <20190206204924.6096-1-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.14.3
-In-Reply-To: <20190206204615.5862-1-josef@toxicpanda.com>
-References: <20190206204615.5862-1-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Previously we only updated the drop_progress key if we were in the
-DROP_REFERENCE stage of snapshot deletion.  This is because the
-UPDATE_BACKREF stage checks the flags of the blocks it's converting to
-FULL_BACKREF, so if we go over a block we processed before it doesn't
-matter, we just don't do anything.
-
-The problem is in do_walk_down() we will go ahead and drop the roots
-reference to any blocks that we know we won't need to walk into.
-
-Given subvolume A and snapshot B.  The root of B points to all of the
-nodes that belong to A, so all of those nodes have a refcnt > 1.  If B
-did not modify those blocks it'll hit this condition in do_walk_down
-
-if (!wc->update_ref ||
-    generation <= root->root_key.offset)
-	goto skip;
-
-and in "goto skip" we simply do a btrfs_free_extent() for that bytenr
-that we point at.
-
-Now assume we modified some data in B, and then took a snapshot of B and
-call it C.  C points to all the nodes in B, making every node the root
-of B points to have a refcnt > 1.  This assumes the root level is 2 or
-higher.
-
-We delete snapshot B, which does the above work in do_walk_down,
-free'ing our ref for nodes we share with A that we didn't modify.  Now
-we hit a node we _did_ modify, thus we own.  We need to walk down into
-this node and we set wc->stage == UPDATE_BACKREF.  We walk down to level
-0 which we also own because we modified data.  We can't walk any further
-down and thus now need to walk up and start the next part of the
-deletion.  Now walk_up_proc is supposed to put us back into
-DROP_REFERENCE, but there's an exception to this
-
-if (level < wc->shared_level)
-	goto out;
-
-we are at level == 0, and our shared_level == 1.  We skip out of this
-one and go up to level 1.  Since path->slots[1] < nritems we
-path->slots[1]++ and break out of walk_up_tree to stop our transaction
-and loop back around.  Now in btrfs_drop_snapshot we have this snippet
-
-if (wc->stage == DROP_REFERENCE) {
-	level = wc->level;
-	btrfs_node_key(path->nodes[level],
-		       &root_item->drop_progress,
-		       path->slots[level]);
-	root_item->drop_level = level;
-}
-
-our stage == UPDATE_BACKREF still, so we don't update the drop_progress
-key.  This is a problem because we would have done btrfs_free_extent()
-for the nodes leading up to our current position.  If we crash or
-unmount here and go to remount we'll start over where we were before and
-try to free our ref for blocks we've already freed, and thus abort()
-out.
-
-Fix this by keeping track of the last place we dropped a reference for
-our block in do_walk_down.  Then if wc->stage == UPDATE_BACKREF we know
-we'll start over from a place we meant to, and otherwise things continue
-to work as they did before.
-
-I have a complicated reproducer for this problem, without this patch
-we'll fail to fsck the fs when replaying the log writes log.  With this
-patch we can replay the whole log without any fsck or mount failures.
+While testing snapshot deletion with dm-log-writes I saw that I was
+failing the fsck sometimes when the fs was actually in the correct
+state.  This is because we only skip blocks on the same level of
+root_item->drop_level.  If the drop_level < the root level then we could
+very well walk into nodes that we wouldn't actually walk into on fs
+mount, because the drop_progress is further ahead in the slot of the
+root.  Instead only process the slots of the nodes that are above the
+drop_progress key.  With this patch in place we no longer improperly
+fail to check fs'es that have a drop_progress set with a drop_level <
+root level.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/extent-tree.c | 26 ++++++++++++++++++++------
- 1 file changed, 20 insertions(+), 6 deletions(-)
+ check/main.c | 19 ++++++++++++++++---
+ ctree.c      |  6 +++---
+ ctree.h      |  2 ++
+ 3 files changed, 21 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index f40d6086c947..53fd4626660c 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -8765,6 +8765,8 @@ struct walk_control {
- 	u64 refs[BTRFS_MAX_LEVEL];
- 	u64 flags[BTRFS_MAX_LEVEL];
- 	struct btrfs_key update_progress;
-+	struct btrfs_key drop_progress;
-+	int drop_level;
- 	int stage;
- 	int level;
- 	int shared_level;
-@@ -9148,6 +9150,16 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
- 					     ret);
- 			}
- 		}
+diff --git a/check/main.c b/check/main.c
+index 7547209c5604..89f0ce75e13d 100644
+--- a/check/main.c
++++ b/check/main.c
+@@ -6325,15 +6325,28 @@ static int run_next_block(struct btrfs_root *root,
+ 		int level;
+ 
+ 		level = btrfs_header_level(buf);
+-		for (i = 0; i < nritems; i++) {
++		i = 0;
 +
 +		/*
-+		 * We need to update the next key in our walk control so we can
-+		 * update the drop_progress key accordingly.  We don't care if
-+		 * find_next_key doesn't find a key because that means we're at
-+		 * the end and are going to clean up now.
++		 * If we have a drop key we need to not walk down any slots we
++		 * would have ignored when mounting the fs.  These blocks are
++		 * technically unreferenced and don't need to be worried about.
 +		 */
-+		wc->drop_level = level;
-+		find_next_key(path, level, &wc->drop_progress);
-+
- 		ret = btrfs_free_extent(trans, root, bytenr, fs_info->nodesize,
- 					parent, root->root_key.objectid,
- 					level - 1, 0);
-@@ -9499,12 +9511,14 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
- 		}
- 
- 		if (wc->stage == DROP_REFERENCE) {
--			level = wc->level;
--			btrfs_node_key(path->nodes[level],
--				       &root_item->drop_progress,
--				       path->slots[level]);
--			root_item->drop_level = level;
--		}
-+			wc->drop_level = wc->level;
-+			btrfs_node_key_to_cpu(path->nodes[wc->drop_level],
-+					      &wc->drop_progress,
-+					      path->slots[wc->drop_level]);
++		if (ri != NULL && ri->drop_level && level > ri->drop_level) {
++			ret = btrfs_bin_search(buf, &ri->drop_key, level, &i);
++			if (ret && i > 0)
++				i--;
 +		}
-+		btrfs_cpu_key_to_disk(&root_item->drop_progress,
-+				      &wc->drop_progress);
-+		root_item->drop_level = wc->drop_level;
++
++		for (; i < nritems; i++) {
+ 			struct extent_record tmpl;
  
- 		BUG_ON(wc->level == 0);
- 		if (btrfs_should_end_transaction(trans) ||
+ 			ptr = btrfs_node_blockptr(buf, i);
+ 			size = root->fs_info->nodesize;
+ 			btrfs_node_key_to_cpu(buf, &key, i);
+ 			if (ri != NULL) {
+-				if ((level == ri->drop_level)
+-				    && is_dropped_key(&key, &ri->drop_key)) {
++				if ((level == ri->drop_level) &&
++				    is_dropped_key(&key, &ri->drop_key)) {
+ 					continue;
+ 				}
+ 			}
+diff --git a/ctree.c b/ctree.c
+index 7cb3f8451542..a086d59d6a1c 100644
+--- a/ctree.c
++++ b/ctree.c
+@@ -638,8 +638,8 @@ static int generic_bin_search(struct extent_buffer *eb, unsigned long p,
+  * simple bin_search frontend that does the right thing for
+  * leaves vs nodes
+  */
+-static int bin_search(struct extent_buffer *eb, const struct btrfs_key *key,
+-		      int level, int *slot)
++int btrfs_bin_search(struct extent_buffer *eb, const struct btrfs_key *key,
++		     int level, int *slot)
+ {
+ 	if (level == 0)
+ 		return generic_bin_search(eb,
+@@ -1172,7 +1172,7 @@ again:
+ 		ret = check_block(root, p, level);
+ 		if (ret)
+ 			return -1;
+-		ret = bin_search(b, key, level, &slot);
++		ret = btrfs_bin_search(b, key, level, &slot);
+ 		if (level != 0) {
+ 			if (ret && slot > 0)
+ 				slot -= 1;
+diff --git a/ctree.h b/ctree.h
+index abc20e283fdc..f31a680eb473 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -2616,6 +2616,8 @@ int btrfs_search_slot_for_read(struct btrfs_root *root,
+                                const struct btrfs_key *key,
+                                struct btrfs_path *p, int find_higher,
+                                int return_any);
++int btrfs_bin_search(struct extent_buffer *eb, const struct btrfs_key *key,
++		     int level, int *slot);
+ int btrfs_find_item(struct btrfs_root *fs_root, struct btrfs_path *found_path,
+ 		u64 iobjectid, u64 ioff, u8 key_type,
+ 		struct btrfs_key *found_key);
 -- 
 2.14.3
 

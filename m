@@ -2,89 +2,102 @@ Return-Path: <SRS0=taZz=QO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F17A6C282C4
-	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Feb 2019 17:15:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BEDA2C282C2
+	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Feb 2019 17:28:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B20AD2173B
-	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Feb 2019 17:15:53 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="li2O7iAM"
+	by mail.kernel.org (Postfix) with ESMTP id 983A6218D3
+	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Feb 2019 17:28:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726622AbfBGRPw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 7 Feb 2019 12:15:52 -0500
-Received: from mail-lj1-f175.google.com ([209.85.208.175]:38209 "EHLO
-        mail-lj1-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726512AbfBGRPw (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Feb 2019 12:15:52 -0500
-Received: by mail-lj1-f175.google.com with SMTP id c19-v6so537164lja.5
-        for <linux-btrfs@vger.kernel.org>; Thu, 07 Feb 2019 09:15:50 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=hvivMthskfnGzB6zLgUlRlptCkd4npQ24HiX6GGFISg=;
-        b=li2O7iAMBmkgqyQetBZ0jAapdUN0tZFSmP3Zjtubhmts5WexDjDN4CNx9AlT/dmdnV
-         rJKDVxtJnG6YhF0I8nwTSBV12CVf54Eof/ANmbOuyxPSEJ2zgsn3s5AwBPrLdzSP6XmP
-         D84sPRvfF4ns4C6dmX7s70Z6wWeiH4eZb/hibU8BmX7p5OG3xlDV+cqnquKYwnOAizw1
-         1fOsmKhAUY6eIVHHzv9hG4MfmoCwI/CJrcTdqTYwSi2iETz4IG9lJ2zXc4QwYWfCHyUO
-         W3PVKj7TeiBhRv8716eq80vVHRnzGDOq5acHWUc9GDJHhXsgN+uBkid5w3rDt+tjKEM1
-         kpvQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=hvivMthskfnGzB6zLgUlRlptCkd4npQ24HiX6GGFISg=;
-        b=ZKKaE/0ZmrQny69Cc16nd7rBrVt/R9hmLFQQuevLPZ5apHnFp5De/cqRHllFvHKKuT
-         PB4rvAnagi+n5AfQnuNZcc2PMYLnWvFI/TE3YSzU6zhOub8n4PAwK0J1WFc1Ld3r4Lz6
-         bHVQ26RVO6gS3SDK9tHlaeQ2x55Iq6Exi1qc1naM5FT376qMNrcnm7/fU58IIYoNz9kL
-         0ij5oHvGz2PC59rH7zbyKYz6EGGK4daB3gA3CyoFk7Cf30dKpzF1PeXuxwIbite0xHbj
-         GR/66qVoCLdOOYZeGmRcIR8vWe7xGQLRsq1K67+S0DdbleLwWDpBDK4bFEOfxbSHDo5p
-         bkrw==
-X-Gm-Message-State: AHQUAuaIu9by7usnWFfaFhl0I3rEOdFAdZs6V3GMX2nLOwblwrdYGLGS
-        KWSjosxBpM3vhzS8UVvicpimp5O4JRTZS+ikFa8iYA==
-X-Google-Smtp-Source: AHgI3IZ+9g02prAcrVOrYIxAVfISZmSXvEWpHirEbWe0BBMAIBCmi+9PzrdhVnT+2N6UcBOMv9kyXo5wJ8Mh4s3OfJ4=
-X-Received: by 2002:a2e:8719:: with SMTP id m25-v6mr11427092lji.121.1549559750011;
- Thu, 07 Feb 2019 09:15:50 -0800 (PST)
+        id S1726614AbfBGR2O (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 7 Feb 2019 12:28:14 -0500
+Received: from mx2.suse.de ([195.135.220.15]:45920 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726401AbfBGR2O (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 7 Feb 2019 12:28:14 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 19242AD60;
+        Thu,  7 Feb 2019 17:28:13 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 09B66DA83D; Thu,  7 Feb 2019 18:27:35 +0100 (CET)
+Date:   Thu, 7 Feb 2019 18:27:35 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v4 03/12] btrfs: disk-io: Show the timing of corrupted
+ tree block explicitly
+Message-ID: <20190207172735.GK2900@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20190125050925.30754-1-wqu@suse.com>
+ <20190125050925.30754-4-wqu@suse.com>
+ <20190130145719.GS2900@twin.jikos.cz>
+ <2c22a5e9-41d0-d62a-ad88-5be3da59e441@suse.com>
+ <0d1caf58-8015-2fdb-d75d-60870b13312c@gmx.com>
+ <20190131142005.GE2900@twin.jikos.cz>
+ <34f0be81-b35a-df67-3b12-5ff47ed1d3db@suse.com>
 MIME-Version: 1.0
-References: <33679024.u47WPbL97D@t460-skr> <92ae78af-1e43-319d-29ce-f8a04a08f7c5@mendix.com>
- <2159107.RxXdQBBoNF@t460-skr>
-In-Reply-To: <2159107.RxXdQBBoNF@t460-skr>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Thu, 7 Feb 2019 10:15:38 -0700
-Message-ID: <CAJCQCtRuUBfhXQGr29hmOU1mW1wU2jSvr+dun72NAw3O28=cyA@mail.gmail.com>
-Subject: Re: btrfs as / filesystem in RAID1
-To:     Stefan K <shadow_7@gmx.net>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <34f0be81-b35a-df67-3b12-5ff47ed1d3db@suse.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Feb 7, 2019 at 4:04 AM Stefan K <shadow_7@gmx.net> wrote:
->
-> Thanks, with degraded  as kernel parameter and also ind the fstab it works like expected
-> That should be the normal behaviour, cause a server must be up and running, and I don't care about a device loss, thats why I use a RAID1.
+On Thu, Jan 31, 2019 at 04:22:23PM +0200, Nikolay Borisov wrote:
+> 
+> 
+> On 31.01.19 г. 16:20 ч., David Sterba wrote:
+> > On Thu, Jan 31, 2019 at 08:03:36AM +0800, Qu Wenruo wrote:
+> >> On 2019/1/30 下午10:59, Nikolay Borisov wrote:
+> >>> On 30.01.19 г. 16:57 ч., David Sterba wrote:
+> >>>> On Fri, Jan 25, 2019 at 01:09:16PM +0800, Qu Wenruo wrote:
+> >>>>> Just add one extra line to show when the corruption is detected.
+> >>>>> Currently only read time detection is possible.
+> >>>>>
+> >>>>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> >>>>> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+> >>>>> ---
+> >>>>>  fs/btrfs/disk-io.c | 2 ++
+> >>>>>  1 file changed, 2 insertions(+)
+> >>>>>
+> >>>>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> >>>>> index 794d5bb7fe33..426e9f450f70 100644
+> >>>>> --- a/fs/btrfs/disk-io.c
+> >>>>> +++ b/fs/btrfs/disk-io.c
+> >>>>> @@ -658,6 +658,8 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
+> >>>>>  
+> >>>>>  	if (!ret)
+> >>>>>  		set_extent_buffer_uptodate(eb);
+> >>>>> +	else
+> >>>>> +		btrfs_err(fs_info, "read time tree block corrupted detected");
+> >>>>
+> >>>> I'm not sure the 'read time' is clear enoug, my suggestion is to use
+> >>>> 'post-read' (and pre-write analogicaly). What do you think?
+> >>>
+> >>>
+> >>> How about "error during tree block reading" or "error reading treeblock"?
+> >>
+> >> Nikolay's suggestion looks more straightforward to me.
+> >>
+> >> +1 for his idea.
+> >>
+> >> The 'post-read' still could confuse end-user IMHO.
+> > 
+> > The idea is to distinguish if the error was because the block can't be
+> > read or because the data it contains are wrong.
+> 
+> In this case we can say "Read corrupted block"
 
-You managed to completely ignore all the warnings associated with
-doing this, and then conclude that it's a good idea to subject normal
-users to possible data loss or corruption...
-
-> So please change the normal behavior
-
-In the case of no device loss, but device delay, with 'degraded' set
-in fstab you risk a non-deterministic degraded mount. And there is no
-automatic balance (sync) after recovering from a degraded mount. And
-as far as I know there's no automatic transition from degraded to
-normal operation upon later discovery of a previously missing device.
-It's just begging for data loss. That's why it's not the default.
-That's why it's not recommended.
-
-
-
---
-Chris Murphy
+That's IMHO not better, so I'll stick with the first version 'read time'
+and 'write time'.

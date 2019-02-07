@@ -2,85 +2,89 @@ Return-Path: <SRS0=taZz=QO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,USER_AGENT_MUTT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D9A36C282C2
-	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Feb 2019 17:00:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F17A6C282C4
+	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Feb 2019 17:15:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B520221872
-	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Feb 2019 17:00:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B20AD2173B
+	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Feb 2019 17:15:53 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="li2O7iAM"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726651AbfBGRAF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 7 Feb 2019 12:00:05 -0500
-Received: from mx2.suse.de ([195.135.220.15]:41522 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726196AbfBGRAF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 7 Feb 2019 12:00:05 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id C500DB15C;
-        Thu,  7 Feb 2019 17:00:03 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 458ACDA83D; Thu,  7 Feb 2019 17:59:26 +0100 (CET)
-Date:   Thu, 7 Feb 2019 17:59:26 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Dennis Zhou <dennis@kernel.org>
-Cc:     David Sterba <dsterba@suse.com>,
-        Josef Bacik <josef@toxicpanda.com>, Chris Mason <clm@fb.com>,
-        Omar Sandoval <osandov@osandov.com>,
-        Nick Terrell <terrelln@fb.com>,
-        Nikolay Borisov <nborisov@suse.com>, kernel-team@fb.com,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v2 00/12] btrfs: add zstd compression level support
-Message-ID: <20190207165925.GJ2900@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Dennis Zhou <dennis@kernel.org>,
-        David Sterba <dsterba@suse.com>, Josef Bacik <josef@toxicpanda.com>,
-        Chris Mason <clm@fb.com>, Omar Sandoval <osandov@osandov.com>,
-        Nick Terrell <terrelln@fb.com>, Nikolay Borisov <nborisov@suse.com>,
-        kernel-team@fb.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-References: <20190204202008.51652-1-dennis@kernel.org>
+        id S1726622AbfBGRPw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 7 Feb 2019 12:15:52 -0500
+Received: from mail-lj1-f175.google.com ([209.85.208.175]:38209 "EHLO
+        mail-lj1-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726512AbfBGRPw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Feb 2019 12:15:52 -0500
+Received: by mail-lj1-f175.google.com with SMTP id c19-v6so537164lja.5
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 Feb 2019 09:15:50 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=hvivMthskfnGzB6zLgUlRlptCkd4npQ24HiX6GGFISg=;
+        b=li2O7iAMBmkgqyQetBZ0jAapdUN0tZFSmP3Zjtubhmts5WexDjDN4CNx9AlT/dmdnV
+         rJKDVxtJnG6YhF0I8nwTSBV12CVf54Eof/ANmbOuyxPSEJ2zgsn3s5AwBPrLdzSP6XmP
+         D84sPRvfF4ns4C6dmX7s70Z6wWeiH4eZb/hibU8BmX7p5OG3xlDV+cqnquKYwnOAizw1
+         1fOsmKhAUY6eIVHHzv9hG4MfmoCwI/CJrcTdqTYwSi2iETz4IG9lJ2zXc4QwYWfCHyUO
+         W3PVKj7TeiBhRv8716eq80vVHRnzGDOq5acHWUc9GDJHhXsgN+uBkid5w3rDt+tjKEM1
+         kpvQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=hvivMthskfnGzB6zLgUlRlptCkd4npQ24HiX6GGFISg=;
+        b=ZKKaE/0ZmrQny69Cc16nd7rBrVt/R9hmLFQQuevLPZ5apHnFp5De/cqRHllFvHKKuT
+         PB4rvAnagi+n5AfQnuNZcc2PMYLnWvFI/TE3YSzU6zhOub8n4PAwK0J1WFc1Ld3r4Lz6
+         bHVQ26RVO6gS3SDK9tHlaeQ2x55Iq6Exi1qc1naM5FT376qMNrcnm7/fU58IIYoNz9kL
+         0ij5oHvGz2PC59rH7zbyKYz6EGGK4daB3gA3CyoFk7Cf30dKpzF1PeXuxwIbite0xHbj
+         GR/66qVoCLdOOYZeGmRcIR8vWe7xGQLRsq1K67+S0DdbleLwWDpBDK4bFEOfxbSHDo5p
+         bkrw==
+X-Gm-Message-State: AHQUAuaIu9by7usnWFfaFhl0I3rEOdFAdZs6V3GMX2nLOwblwrdYGLGS
+        KWSjosxBpM3vhzS8UVvicpimp5O4JRTZS+ikFa8iYA==
+X-Google-Smtp-Source: AHgI3IZ+9g02prAcrVOrYIxAVfISZmSXvEWpHirEbWe0BBMAIBCmi+9PzrdhVnT+2N6UcBOMv9kyXo5wJ8Mh4s3OfJ4=
+X-Received: by 2002:a2e:8719:: with SMTP id m25-v6mr11427092lji.121.1549559750011;
+ Thu, 07 Feb 2019 09:15:50 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190204202008.51652-1-dennis@kernel.org>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+References: <33679024.u47WPbL97D@t460-skr> <92ae78af-1e43-319d-29ce-f8a04a08f7c5@mendix.com>
+ <2159107.RxXdQBBoNF@t460-skr>
+In-Reply-To: <2159107.RxXdQBBoNF@t460-skr>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Thu, 7 Feb 2019 10:15:38 -0700
+Message-ID: <CAJCQCtRuUBfhXQGr29hmOU1mW1wU2jSvr+dun72NAw3O28=cyA@mail.gmail.com>
+Subject: Re: btrfs as / filesystem in RAID1
+To:     Stefan K <shadow_7@gmx.net>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Feb 04, 2019 at 03:19:56PM -0500, Dennis Zhou wrote:
-> Dennis Zhou (12):
->   btrfs: add helpers for compression type and level
->   btrfs: rename workspaces_list to workspace_manager
->   btrfs: manage heuristic workspace as index 0
->   btrfs: unify compression ops with workspace_manager
->   btrfs: add helper methods for workspace manager init and cleanup
->   btrfs: add compression interface in (get/put)_workspace()
->   btrfs: move to fn pointers for get/put workspaces
->   btrfs: plumb level through the compression interface
->   btrfs: change set_level() to bound the level passed in
->   btrfs: zstd use the passed through level instead of default
->   btrfs: make zstd memory requirements monotonic
->   btrfs: add zstd compression level support
+On Thu, Feb 7, 2019 at 4:04 AM Stefan K <shadow_7@gmx.net> wrote:
+>
+> Thanks, with degraded  as kernel parameter and also ind the fstab it works like expected
+> That should be the normal behaviour, cause a server must be up and running, and I don't care about a device loss, thats why I use a RAID1.
 
-The patchset has been added to msic-next, scheduled for 5.1. I've left
-out the changes to warn on wrong level, so currently it falls back to
-the default. I don't want to make a last minute change of that sort, so
-this needs to go as a separate patch.
+You managed to completely ignore all the warnings associated with
+doing this, and then conclude that it's a good idea to subject normal
+users to possible data loss or corruption...
 
-I also did a last pass through all patches and made some trivial changes
-like reformatting comments or minor style updates, nothing functional.
-The inter-branch diff can be found at
-https://github.com/kdave/btrfs-devel/compare/ext/dzhou/compr-workspaces-v2..kdave:ext/dzhou/compr-workspaces
+> So please change the normal behavior
 
-The feature should be ready to use, though as mentioned before some fine
-tuning might be necessary to make the memory requirements more
-efficient. The code could be simplified or cleaned up now that there are
-3 compressors, at this point stabilization fixes are preferred.
+In the case of no device loss, but device delay, with 'degraded' set
+in fstab you risk a non-deterministic degraded mount. And there is no
+automatic balance (sync) after recovering from a degraded mount. And
+as far as I know there's no automatic transition from degraded to
+normal operation upon later discovery of a previously missing device.
+It's just begging for data loss. That's why it's not the default.
+That's why it's not recommended.
 
-Thanks.
+
+
+--
+Chris Murphy

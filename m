@@ -2,267 +2,116 @@ Return-Path: <SRS0=hLti=QP=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EB47FC282DC
-	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Feb 2019 07:02:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A2FA4C282CB
+	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Feb 2019 07:07:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id AFA6921919
-	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Feb 2019 07:02:58 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="TDnVrN8E"
+	by mail.kernel.org (Postfix) with ESMTP id 7D12C21917
+	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Feb 2019 07:07:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727138AbfBHHCx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 8 Feb 2019 02:02:53 -0500
-Received: from userp2120.oracle.com ([156.151.31.85]:54342 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726004AbfBHHCx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Feb 2019 02:02:53 -0500
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x186x4Hj163398
-        for <linux-btrfs@vger.kernel.org>; Fri, 8 Feb 2019 07:02:51 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
- date : message-id : in-reply-to : references; s=corp-2018-07-02;
- bh=Q4R7ARNDsY4GvQRxP4VdACcKcTHUhMGmOdNisFi9ue0=;
- b=TDnVrN8EQ0w2DEy/gMLvEw83BWUYhdZbIHsfflSzGjhMY71pjMXKSJfSEJmCqzVPCbJ1
- 8YFUeSammmjlTCNo0ZO06VU4OAyK8Cc0UhwHdi8fiL7VLnPNxQjyBmqcgEqqRa6LQn1o
- kvXlSBXctHUfcg2bktHYyGF5HdykAlei/Z57SYW+uenx49s4hlPiyDbxfdF4gPwrk78j
- 2MvevDH/dizSSbVsNe1sLerjBtrJ0Epow6W1yspIK7PYBFTm3ughGKugW/hwiihPHE4U
- LrBvo3U4y43AGH5Ra59JMqHXWLqwJbAE7VWj+sQMCZl2W5xhf+NQ+7/SKaQ6hAXjeUdL eA== 
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by userp2120.oracle.com with ESMTP id 2qd98njy4u-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 08 Feb 2019 07:02:51 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x1872oqc029351
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 8 Feb 2019 07:02:50 GMT
-Received: from abhmp0002.oracle.com (abhmp0002.oracle.com [141.146.116.8])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x1872oAu021509
-        for <linux-btrfs@vger.kernel.org>; Fri, 8 Feb 2019 07:02:50 GMT
-Received: from tpasj.sg.oracle.com (/10.186.49.135)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 07 Feb 2019 23:02:50 -0800
-From:   Anand Jain <anand.jain@oracle.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/5] btrfs: reorg functions to drop forward declaration
-Date:   Fri,  8 Feb 2019 15:02:33 +0800
-Message-Id: <1549609355-11053-4-git-send-email-anand.jain@oracle.com>
-X-Mailer: git-send-email 1.8.3.1
-In-Reply-To: <1549609355-11053-1-git-send-email-anand.jain@oracle.com>
+        id S1727218AbfBHHHW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 8 Feb 2019 02:07:22 -0500
+Received: from mx2.suse.de ([195.135.220.15]:52778 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727216AbfBHHHU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 8 Feb 2019 02:07:20 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 7FA54AF1F;
+        Fri,  8 Feb 2019 07:07:18 +0000 (UTC)
+Subject: Re: [PATCH 1/5] btrfs: fix comment its device list mutex not volume
+ lock
+To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
 References: <1549609355-11053-1-git-send-email-anand.jain@oracle.com>
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9160 signatures=668682
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
- suspectscore=1 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
- lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
- definitions=main-1902080051
+ <1549609355-11053-2-git-send-email-anand.jain@oracle.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <b4404ffe-12f8-0f3f-672d-4eb23291b710@suse.com>
+Date:   Fri, 8 Feb 2019 09:07:17 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
+MIME-Version: 1.0
+In-Reply-To: <1549609355-11053-2-git-send-email-anand.jain@oracle.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-In preparation to drop forward declaration of the functions,
-prop_compression_validate(), prop_compression_apply() and
-prop_compression_extract(). Move prop_handlers[], btrfs_props_init()
-prop_compression_validate(), prop_compression_apply() and
-prop_compression_extract() appropriately with in the file. No functional
-changes.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/props.c | 157 ++++++++++++++++++++++++++++---------------------------
- 1 file changed, 79 insertions(+), 78 deletions(-)
 
-diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-index 4525a2a4d1cd..6f52e3d21012 100644
---- a/fs/btrfs/props.c
-+++ b/fs/btrfs/props.c
-@@ -29,30 +29,6 @@ static int prop_compression_apply(struct inode *inode,
- 				  size_t len);
- static const char *prop_compression_extract(struct inode *inode);
- 
--static struct prop_handler prop_handlers[] = {
--	{
--		.xattr_name = XATTR_BTRFS_PREFIX "compression",
--		.validate = prop_compression_validate,
--		.apply = prop_compression_apply,
--		.extract = prop_compression_extract,
--		.inheritable = 1
--	},
--};
--
--void __init btrfs_props_init(void)
--{
--	int i;
--
--	hash_init(prop_handlers_ht);
--
--	for (i = 0; i < ARRAY_SIZE(prop_handlers); i++) {
--		struct prop_handler *p = &prop_handlers[i];
--		u64 h = btrfs_name_hash(p->xattr_name, strlen(p->xattr_name));
--
--		hash_add(prop_handlers_ht, &p->node, h);
--	}
--}
--
- static const struct hlist_head *find_prop_handlers_by_hash(const u64 hash)
- {
- 	struct hlist_head *h;
-@@ -271,6 +247,78 @@ int btrfs_load_inode_props(struct inode *inode, struct btrfs_path *path)
- 	return ret;
- }
- 
-+static int prop_compression_validate(const char *value, size_t len)
-+{
-+	if (!value)
-+		return 0;
-+
-+	if (!strncmp("lzo", value, len))
-+		return 0;
-+	else if (!strncmp("zlib", value, len))
-+		return 0;
-+	else if (!strncmp("zstd", value, len))
-+		return 0;
-+
-+	return -EINVAL;
-+}
-+
-+static int prop_compression_apply(struct inode *inode, const char *value,
-+				  size_t len)
-+{
-+	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-+	int type;
-+
-+	if (len == 0) {
-+		BTRFS_I(inode)->flags |= BTRFS_INODE_NOCOMPRESS;
-+		BTRFS_I(inode)->flags &= ~BTRFS_INODE_COMPRESS;
-+		BTRFS_I(inode)->prop_compress = BTRFS_COMPRESS_NONE;
-+
-+		return 0;
-+	}
-+
-+	if (!strncmp("lzo", value, 3)) {
-+		type = BTRFS_COMPRESS_LZO;
-+		btrfs_set_fs_incompat(fs_info, COMPRESS_LZO);
-+	} else if (!strncmp("zlib", value, 4)) {
-+		type = BTRFS_COMPRESS_ZLIB;
-+	} else if (!strncmp("zstd", value, len)) {
-+		type = BTRFS_COMPRESS_ZSTD;
-+		btrfs_set_fs_incompat(fs_info, COMPRESS_ZSTD);
-+	} else {
-+		return -EINVAL;
-+	}
-+
-+	BTRFS_I(inode)->flags &= ~BTRFS_INODE_NOCOMPRESS;
-+	BTRFS_I(inode)->flags |= BTRFS_INODE_COMPRESS;
-+	BTRFS_I(inode)->prop_compress = type;
-+
-+	return 0;
-+}
-+
-+static const char *prop_compression_extract(struct inode *inode)
-+{
-+	switch (BTRFS_I(inode)->prop_compress) {
-+	case BTRFS_COMPRESS_ZLIB:
-+	case BTRFS_COMPRESS_LZO:
-+	case BTRFS_COMPRESS_ZSTD:
-+		return btrfs_compress_type2str(BTRFS_I(inode)->prop_compress);
-+	default:
-+		break;
-+	}
-+
-+	return NULL;
-+}
-+
-+static struct prop_handler prop_handlers[] = {
-+	{
-+		.xattr_name = XATTR_BTRFS_PREFIX "compression",
-+		.validate = prop_compression_validate,
-+		.apply = prop_compression_apply,
-+		.extract = prop_compression_extract,
-+		.inheritable = 1
-+	},
-+};
-+
- static int inherit_props(struct btrfs_trans_handle *trans,
- 			 struct inode *inode,
- 			 struct inode *parent)
-@@ -352,64 +400,17 @@ int btrfs_subvol_inherit_props(struct btrfs_trans_handle *trans,
- 	return ret;
- }
- 
--static int prop_compression_validate(const char *value, size_t len)
--{
--	if (!strncmp("lzo", value, len))
--		return 0;
--	else if (!strncmp("zlib", value, len))
--		return 0;
--	else if (!strncmp("zstd", value, len))
--		return 0;
--
--	return -EINVAL;
--}
--
--static int prop_compression_apply(struct inode *inode,
--				  const char *value,
--				  size_t len)
-+void __init btrfs_props_init(void)
- {
--	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
--	int type;
--
--	if (len == 0) {
--		BTRFS_I(inode)->flags |= BTRFS_INODE_NOCOMPRESS;
--		BTRFS_I(inode)->flags &= ~BTRFS_INODE_COMPRESS;
--		BTRFS_I(inode)->prop_compress = BTRFS_COMPRESS_NONE;
--
--		return 0;
--	}
--
--	if (!strncmp("lzo", value, 3)) {
--		type = BTRFS_COMPRESS_LZO;
--		btrfs_set_fs_incompat(fs_info, COMPRESS_LZO);
--	} else if (!strncmp("zlib", value, 4)) {
--		type = BTRFS_COMPRESS_ZLIB;
--	} else if (!strncmp("zstd", value, len)) {
--		type = BTRFS_COMPRESS_ZSTD;
--		btrfs_set_fs_incompat(fs_info, COMPRESS_ZSTD);
--	} else {
--		return -EINVAL;
--	}
-+	int i;
- 
--	BTRFS_I(inode)->flags &= ~BTRFS_INODE_NOCOMPRESS;
--	BTRFS_I(inode)->flags |= BTRFS_INODE_COMPRESS;
--	BTRFS_I(inode)->prop_compress = type;
-+	hash_init(prop_handlers_ht);
- 
--	return 0;
--}
-+	for (i = 0; i < ARRAY_SIZE(prop_handlers); i++) {
-+		struct prop_handler *p = &prop_handlers[i];
-+		u64 h = btrfs_name_hash(p->xattr_name, strlen(p->xattr_name));
- 
--static const char *prop_compression_extract(struct inode *inode)
--{
--	switch (BTRFS_I(inode)->prop_compress) {
--	case BTRFS_COMPRESS_ZLIB:
--	case BTRFS_COMPRESS_LZO:
--	case BTRFS_COMPRESS_ZSTD:
--		return btrfs_compress_type2str(BTRFS_I(inode)->prop_compress);
--	default:
--		break;
-+		hash_add(prop_handlers_ht, &p->node, h);
- 	}
--
--	return NULL;
- }
- 
--
--- 
-1.8.3.1
+On 8.02.19 г. 9:02 ч., Anand Jain wrote:
+> We have killed volume mutex (commit: dccdb07bc996
+> btrfs: kill btrfs_fs_info::volume_mutex) update comment. This a trival one
+> seems to have escaped.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+>  fs/btrfs/volumes.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index fe122e6099ae..8160749cd9ba 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -1129,7 +1129,7 @@ static struct btrfs_fs_devices *clone_fs_devices(struct btrfs_fs_devices *orig)
+>  	mutex_lock(&orig->device_list_mutex);
+>  	fs_devices->total_devices = orig->total_devices;
+>  
+> -	/* We have held the volume lock, it is safe to get the devices. */
+> +	/* We have held the device_list_mutex, it is safe to get the devices. */
 
+I'd rather have the comment replaced with lockdep_assert_held it's a lot
+more eloquent.
+
+>  	list_for_each_entry(orig_dev, &orig->devices, dev_list) {
+>  		struct rcu_string *name;
+>  
+> 

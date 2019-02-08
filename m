@@ -2,73 +2,86 @@ Return-Path: <SRS0=hLti=QP=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BDDA0C169C4
-	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Feb 2019 07:17:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A3DBBC169C4
+	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Feb 2019 07:19:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8B6F92147C
-	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Feb 2019 07:17:17 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="03cr1eym"
+	by mail.kernel.org (Postfix) with ESMTP id 747412147C
+	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Feb 2019 07:19:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726892AbfBHHRQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 8 Feb 2019 02:17:16 -0500
-Received: from userp2130.oracle.com ([156.151.31.86]:57488 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726063AbfBHHRQ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Feb 2019 02:17:16 -0500
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x187DM0i171516;
-        Fri, 8 Feb 2019 07:16:49 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
- references : from : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=corp-2018-07-02;
- bh=H8rBnWyma0oq5Wf6mmM/K9N+7lDyXxw0IgE3REU+qJM=;
- b=03cr1eymCPK9ChUmlpsBlywsXaVyZU4xzAnhI35oY4XQ9HKTjiNSxtAvLLWm4Rp71tPZ
- badiUlAPS+uBLlN5b1uLm/SGUn+LU46UnfjA3GDkmx/HtYLQlbqv2O5ZDRaxhA4Tc8CS
- SHnBuj06v2/zQmDqnVApJEhpB1CmcXva1wnKz92GhqrIRJMq8azxlxPS4VlUNrQ67j4q
- 7+hAShzom52Wc2glv0wzmo0T/4jcHu66Bnf9ryx7SPLnWeOej/s9P8mV7VxqON7OvOVc
- 1nPUwn7zTqditah/HGQHbCrx+0TZOrSiKbLvCAExuLTG+JwMwdhVEt1NcI62b6MVb8+3 Ow== 
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by userp2130.oracle.com with ESMTP id 2qd9aru0g0-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Fri, 08 Feb 2019 07:16:49 +0000
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x187GnBo013626
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Fri, 8 Feb 2019 07:16:49 GMT
-Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x187Gn80008037;
-        Fri, 8 Feb 2019 07:16:49 GMT
-Received: from [10.190.142.77] (/192.188.170.109)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 07 Feb 2019 23:16:48 -0800
+        id S1726115AbfBHHTy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 8 Feb 2019 02:19:54 -0500
+Received: from mx2.suse.de ([195.135.220.15]:54504 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726004AbfBHHTy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 8 Feb 2019 02:19:54 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 231F7ADE3;
+        Fri,  8 Feb 2019 07:19:52 +0000 (UTC)
 Subject: Re: [PATCH 1/5] btrfs: fix comment its device list mutex not volume
  lock
-To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
 References: <1549609355-11053-1-git-send-email-anand.jain@oracle.com>
  <1549609355-11053-2-git-send-email-anand.jain@oracle.com>
  <b4404ffe-12f8-0f3f-672d-4eb23291b710@suse.com>
-From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <ffce7d69-8072-99fd-e489-6751cf50928f@oracle.com>
-Date:   Fri, 8 Feb 2019 15:16:36 +0800
+ <ffce7d69-8072-99fd-e489-6751cf50928f@oracle.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <8bcd64cd-051e-f2b7-8687-b52303d8ad0f@suse.com>
+Date:   Fri, 8 Feb 2019 09:19:51 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.4.0
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <b4404ffe-12f8-0f3f-672d-4eb23291b710@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <ffce7d69-8072-99fd-e489-6751cf50928f@oracle.com>
+Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9160 signatures=668682
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
- suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1011
- lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
- definitions=main-1902080053
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -76,42 +89,52 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 2/8/19 3:07 PM, Nikolay Borisov wrote:
+On 8.02.19 г. 9:16 ч., Anand Jain wrote:
 > 
 > 
-> On 8.02.19 г. 9:02 ч., Anand Jain wrote:
->> We have killed volume mutex (commit: dccdb07bc996
->> btrfs: kill btrfs_fs_info::volume_mutex) update comment. This a trival one
->> seems to have escaped.
+> On 2/8/19 3:07 PM, Nikolay Borisov wrote:
 >>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->> ---
->>   fs/btrfs/volumes.c | 2 +-
->>   1 file changed, 1 insertion(+), 1 deletion(-)
 >>
->> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->> index fe122e6099ae..8160749cd9ba 100644
->> --- a/fs/btrfs/volumes.c
->> +++ b/fs/btrfs/volumes.c
->> @@ -1129,7 +1129,7 @@ static struct btrfs_fs_devices *clone_fs_devices(struct btrfs_fs_devices *orig)
->>   	mutex_lock(&orig->device_list_mutex);
->>   	fs_devices->total_devices = orig->total_devices;
->>   
->> -	/* We have held the volume lock, it is safe to get the devices. */
->> +	/* We have held the device_list_mutex, it is safe to get the devices. */
+>> On 8.02.19 г. 9:02 ч., Anand Jain wrote:
+>>> We have killed volume mutex (commit: dccdb07bc996
+>>> btrfs: kill btrfs_fs_info::volume_mutex) update comment. This a
+>>> trival one
+>>> seems to have escaped.
+>>>
+>>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>>> ---
+>>>   fs/btrfs/volumes.c | 2 +-
+>>>   1 file changed, 1 insertion(+), 1 deletion(-)
+>>>
+>>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>>> index fe122e6099ae..8160749cd9ba 100644
+>>> --- a/fs/btrfs/volumes.c
+>>> +++ b/fs/btrfs/volumes.c
+>>> @@ -1129,7 +1129,7 @@ static struct btrfs_fs_devices
+>>> *clone_fs_devices(struct btrfs_fs_devices *orig)
+>>>       mutex_lock(&orig->device_list_mutex);
+>>>       fs_devices->total_devices = orig->total_devices;
+>>>   -    /* We have held the volume lock, it is safe to get the
+>>> devices. */
+>>> +    /* We have held the device_list_mutex, it is safe to get the
+>>> devices. */
+>>
+>> I'd rather have the comment replaced with lockdep_assert_held it's a lot
+>> more eloquent.
 > 
-> I'd rather have the comment replaced with lockdep_assert_held it's a lot
-> more eloquent.
+>   I agree if we don't acquire the required lock in the same function,
+>   but here, we call the required mutex_lock(&orig->device_list_mutex);
+>   just three lines above in the same function.
+> 
+>   Where do we need the lockdep_assert_held()?
 
-   I agree if we don't acquire the required lock in the same function,
-   but here, we call the required mutex_lock(&orig->device_list_mutex);
-   just three lines above in the same function.
+You are right I missed that. In that case I'd say just remove the
+comment it should be obvious what's happening.
 
-   Where do we need the lockdep_assert_held()?
-
--Anand
-
->>   	list_for_each_entry(orig_dev, &orig->devices, dev_list) {
->>   		struct rcu_string *name;
->>   
->>
+> 
+> -Anand
+> 
+>>>       list_for_each_entry(orig_dev, &orig->devices, dev_list) {
+>>>           struct rcu_string *name;
+>>>  
+> 

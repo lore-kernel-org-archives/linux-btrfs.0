@@ -6,26 +6,26 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5B4D9C169C4
-	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Feb 2019 07:09:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7AAA5C169C4
+	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Feb 2019 07:09:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 298DE21917
-	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Feb 2019 07:09:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 519A321917
+	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Feb 2019 07:09:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726832AbfBHHJK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 8 Feb 2019 02:09:10 -0500
-Received: from mx2.suse.de ([195.135.220.15]:52864 "EHLO mx1.suse.de"
+        id S1726934AbfBHHJ1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 8 Feb 2019 02:09:27 -0500
+Received: from mx2.suse.de ([195.135.220.15]:52878 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726004AbfBHHJK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 8 Feb 2019 02:09:10 -0500
+        id S1726004AbfBHHJ1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 8 Feb 2019 02:09:27 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 1FDF6AEB1;
-        Fri,  8 Feb 2019 07:09:08 +0000 (UTC)
-Subject: Re: [PATCH 5/5] btrfs: trivial, fix c coding style
+        by mx1.suse.de (Postfix) with ESMTP id 459A9AEB1;
+        Fri,  8 Feb 2019 07:09:25 +0000 (UTC)
+Subject: Re: [PATCH 4/5] btrfs: drop redundant forward declaration in props.c
 To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
 References: <1549609355-11053-1-git-send-email-anand.jain@oracle.com>
- <1549609355-11053-6-git-send-email-anand.jain@oracle.com>
+ <1549609355-11053-5-git-send-email-anand.jain@oracle.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -70,12 +70,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <4282b9c9-5596-e51f-1005-f728a2f4aa01@suse.com>
-Date:   Fri, 8 Feb 2019 09:09:07 +0200
+Message-ID: <f688eea5-bd4c-39b2-426a-1a853df214a2@suse.com>
+Date:   Fri, 8 Feb 2019 09:09:24 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <1549609355-11053-6-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1549609355-11053-5-git-send-email-anand.jain@oracle.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -87,55 +87,33 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 8.02.19 г. 9:02 ч., Anand Jain wrote:
+> Drop forward declaration of the functions,
+> prop_compression_validate(), prop_compression_apply() and
+> prop_compression_extract().
+> 
 > Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
 > ---
->  fs/btrfs/props.c | 16 ++++++----------
->  1 file changed, 6 insertions(+), 10 deletions(-)
+>  fs/btrfs/props.c | 6 ------
+>  1 file changed, 6 deletions(-)
 > 
 > diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-> index 77a03076b18e..3c15f19bfd2f 100644
+> index 6f52e3d21012..77a03076b18e 100644
 > --- a/fs/btrfs/props.c
 > +++ b/fs/btrfs/props.c
-> @@ -70,8 +70,8 @@ int btrfs_set_prop(struct btrfs_trans_handle *trans, struct inode *inode,
->  		return -EINVAL;
+> @@ -23,12 +23,6 @@ struct prop_handler {
+>  	int inheritable;
+>  };
 >  
->  	if (value_len == 0) {
-> -		ret = btrfs_setxattr(trans, inode, handler->xattr_name,
-> -				       NULL, 0, flags);
-> +		ret = btrfs_setxattr(trans, inode, handler->xattr_name, NULL, 0,
-> +				     flags);
->  		if (ret)
->  			return ret;
->  
-> @@ -101,12 +101,10 @@ int btrfs_set_prop(struct btrfs_trans_handle *trans, struct inode *inode,
->  }
->  
->  static int iterate_object_props(struct btrfs_root *root,
-> -				struct btrfs_path *path,
-> -				u64 objectid,
-> +				struct btrfs_path *path, u64 objectid,
->  				void (*iterator)(void *,
->  						 const struct prop_handler *,
-> -						 const char *,
-> -						 size_t),
-> +						 const char *, size_t),
->  				void *ctx)
+> -static int prop_compression_validate(const char *value, size_t len);
+> -static int prop_compression_apply(struct inode *inode,
+> -				  const char *value,
+> -				  size_t len);
+> -static const char *prop_compression_extract(struct inode *inode);
+> -
+>  static const struct hlist_head *find_prop_handlers_by_hash(const u64 hash)
 >  {
->  	int ret;
-> @@ -211,10 +209,8 @@ static int iterate_object_props(struct btrfs_root *root,
->  	return ret;
->  }
->  
-> -static void inode_prop_iterator(void *ctx,
-> -				const struct prop_handler *handler,
-> -				const char *value,
-> -				size_t len)
-> +static void inode_prop_iterator(void *ctx, const struct prop_handler *handler,
-> +				const char *value, size_t len)
->  {
->  	struct inode *inode = ctx;
->  	struct btrfs_root *root = BTRFS_I(inode)->root;
+>  	struct hlist_head *h;
 > 

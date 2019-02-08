@@ -2,65 +2,106 @@ Return-Path: <SRS0=hLti=QP=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9EB7BC169C4
-	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Feb 2019 16:09:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8B03FC169C4
+	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Feb 2019 16:56:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5E43020821
-	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Feb 2019 16:09:01 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4ACB120863
+	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Feb 2019 16:56:34 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="aDox3tQi"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727106AbfBHQJA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 8 Feb 2019 11:09:00 -0500
-Received: from mx2.suse.de ([195.135.220.15]:41058 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726524AbfBHQJA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 8 Feb 2019 11:09:00 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D75DEACEA;
-        Fri,  8 Feb 2019 16:08:58 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id C9A76DA83D; Fri,  8 Feb 2019 17:08:18 +0100 (CET)
-Date:   Fri, 8 Feb 2019 17:08:17 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH 0/8][V2] Enospc cleanups and fixeS
-Message-ID: <20190208160817.GP2900@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com
-References: <20181203152459.21630-1-josef@toxicpanda.com>
+        id S1727553AbfBHQ4d (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 8 Feb 2019 11:56:33 -0500
+Received: from mail-lj1-f181.google.com ([209.85.208.181]:40884 "EHLO
+        mail-lj1-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726522AbfBHQ4c (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Feb 2019 11:56:32 -0500
+Received: by mail-lj1-f181.google.com with SMTP id z25-v6so3564208ljk.7
+        for <linux-btrfs@vger.kernel.org>; Fri, 08 Feb 2019 08:56:31 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to;
+        bh=tQqNSqYBSZDfL3Xx+fCaTA/smJYIMHuYlyK6e1di4F8=;
+        b=aDox3tQi6OYUuCf/iiBNBjJD/9xvfSQBDItU32U7X7lcWlaPp4ZEoiWhDbviiB/41j
+         j/2MHjC6cUlakbEDBQz0OU5yI5MgtArBexmMpy9iFG/XIuEojeuUSG+p4KU54OPwp+Qa
+         VCgD4Sg9MJA83LPu3/ydfaWqIojv4jEMNhvYPUIcxQaAnh1K++zsG3gBGiWximtCeKqY
+         5JD0Xn7uUANQIP79LvEKx9ly9hZfb4x2hZfbvZSVzQlsoT6/zPrh50Mld65k/AIpZeO7
+         DndRragX5n6FXb4Q2cHq5wXZ8ExOkY/4Ej5MWt0Je7yOZbqeoJ7ccxI8PWR9Sw8xTDU1
+         aXBg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to;
+        bh=tQqNSqYBSZDfL3Xx+fCaTA/smJYIMHuYlyK6e1di4F8=;
+        b=aL464omccG6Ny6uJhad1fYPq7K/xgyBbLzVLWU0APgvDPJ0lh6kU6EnsAndcoF99Mz
+         mHd1vTUVWkjq1ZXeBMGoFxO9ae2v95BFfqTgLzWpTQ357Z3n2G09MDJpHm3Z+a5ikJ3+
+         +8T+Hx4Tt5baZzBJSd00PQPZ5Urx/0QHe3gSxwF2ovkRRBHQIwIwtC6+m8pOrj1JJBGW
+         4FvGp3H47ltOCcsQcNXIpz7a2ZkFSxHrydX6K+AKncgwWxLeQ4FyFDZXZ6CmfSJ1TD7A
+         q20L3UTntArmgRSowwf9GK6sfEAo6vSxtNisKxl47sMiGcx7gDJzpmGHQ0vhEQea9Zv9
+         dgdQ==
+X-Gm-Message-State: AHQUAuaiQ0CfVDxIhjKO/0WvEzv7OHVPS4fhvC5ci2x2K+okn4ABWfyV
+        CZNmY/eoAViTFbf3/vOJORR4JypWh6yJTQjsjwuzmnjM
+X-Google-Smtp-Source: AHgI3IYOE0ZcF6Vn3ysLmCHWcboQ/soc+AZeXoVNG3K3ZebVevdJW7HbhzkUDj0KRnCR05I0iJGO2vdb4BIDbBUcS6w=
+X-Received: by 2002:a2e:9a09:: with SMTP id o9-v6mr6078508lji.132.1549644989738;
+ Fri, 08 Feb 2019 08:56:29 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20181203152459.21630-1-josef@toxicpanda.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+References: <33679024.u47WPbL97D@t460-skr> <f4f899e3-0d1b-2f82-54cd-3552e186db6a@dirtcellar.net>
+ <c8708ebd-c6c2-6916-6da2-5b415c0585e4@gmail.com> <30996181.4P3RU5RJzb@t460-skr>
+In-Reply-To: <30996181.4P3RU5RJzb@t460-skr>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Fri, 8 Feb 2019 09:56:17 -0700
+Message-ID: <CAJCQCtSzUWfG98K1sBSszieqcCLYXMSVQzeoNKfx4BW-rfKrcQ@mail.gmail.com>
+Subject: Re: btrfs as / filesystem in RAID1
+To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Dec 03, 2018 at 10:24:51AM -0500, Josef Bacik wrote:
-> v1->v2:
-> - addressed comments from reviewers.
-> - fixed a bug in patch 6 that was introduced because of changes to upstream.
-> 
-> -- Original message --
-> 
-> The delayed refs rsv patches exposed a bunch of issues in our enospc
-> infrastructure that needed to be addressed.  These aren't really one coherent
-> group, but they are all around flushing and reservations.
-> may_commit_transaction() needed to be updated a little bit, and we needed to add
-> a new state to force chunk allocation if things got dicey.  Also because we can
-> end up needed to reserve a whole bunch of extra space for outstanding delayed
-> refs we needed to add the ability to only ENOSPC tickets that were too big to
-> satisfy, instead of failing all of the tickets.  There's also a fix in here for
-> one of the corner cases where we didn't quite have enough space reserved for the
-> delayed refs we were generating during evict().  Thanks,
+On Fri, Feb 8, 2019 at 12:15 AM Stefan K <shadow_7@gmx.net> wrote:
+>
+> > * Normal desktop users _never_ look at the log files or boot info, and
+> > rarely run monitoring programs, so they as a general rule won't notice
+> > until it's already too late.  BTRFS isn't just a server filesystem, so
+> > it needs to be safe for regular users too.
+> I guess a normal desktop user wouldn't create a RAID1 nor other RAID-things, right? So an admin take care of a RAID and monitor it (it doesn't matter if it a hardwareraid, mdraid, zfs raid or what ever)
+> and degraded works only with RAID-things, its not relevant for single-disk usage, right?
 
-The patchset has been added to misc-next, I've updated the changelogs
-and addressed the feedback from Nikolay.
+The point is that persistently setting the degraded mount option as a
+boot param has a chance of causing a degraded mount even if your array
+is not degraded.
+
+Also, there is no such thing as transitioning from normal mount to
+degraded mount. If a device fails, the array is not strictly degraded,
+it's a normal mount with a huge amount of kernel errors being
+generated by Btrfs due to the bad/missing device. I'm pretty sure
+there are unmerged patches add something like the concept of an md
+faulty device, but I'm not sure what the logic is, but my
+understanding is they're not well enough tested yet (?) for them to
+get merged.
+
+If your system log is directed to write to this same volume, that
+causes even more errors due to additional failing writes, which then
+have to be logged. So now you're depending on kernel printk rate
+limiting being set well below the water line to make sure Btrfs errors
+don't cause so much disk contention that the system gets stuck (not
+difficult if sysroot is a hard drive).
+
+>
+> > Also, LVM and MD have the exact same issue, it's just not as significant
+> > because they re-add and re-sync missing devices automatically when they
+> > reappear, which makes such split-brain scenarios much less likely.
+> why does btrfs don't do that?
+
+It's a fair question but the simplest answer is, features don't grow
+on trees, they're written by developers and no one has yet done that
+work.
+
+
+--
+Chris Murphy

@@ -7,140 +7,131 @@ X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1A96CC282C4
-	for <linux-btrfs@archiver.kernel.org>; Sat,  9 Feb 2019 15:57:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9A717C282C4
+	for <linux-btrfs@archiver.kernel.org>; Sat,  9 Feb 2019 19:43:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CFA05218D2
-	for <linux-btrfs@archiver.kernel.org>; Sat,  9 Feb 2019 15:57:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 683B120844
+	for <linux-btrfs@archiver.kernel.org>; Sat,  9 Feb 2019 19:43:17 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="pKOGeHvu"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="dMeC2xUt"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726985AbfBIP54 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 9 Feb 2019 10:57:56 -0500
-Received: from mail-wm1-f49.google.com ([209.85.128.49]:54943 "EHLO
-        mail-wm1-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726894AbfBIP54 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Feb 2019 10:57:56 -0500
-Received: by mail-wm1-f49.google.com with SMTP id a62so8925966wmh.4
-        for <linux-btrfs@vger.kernel.org>; Sat, 09 Feb 2019 07:57:53 -0800 (PST)
+        id S1727447AbfBITnQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 9 Feb 2019 14:43:16 -0500
+Received: from mail-ot1-f66.google.com ([209.85.210.66]:45680 "EHLO
+        mail-ot1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727175AbfBITnP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Feb 2019 14:43:15 -0500
+Received: by mail-ot1-f66.google.com with SMTP id 32so11398474ota.12
+        for <linux-btrfs@vger.kernel.org>; Sat, 09 Feb 2019 11:43:15 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
-        h=subject:to:references:cc:from:openpgp:autocrypt:message-id:date
-         :user-agent:mime-version:in-reply-to:content-transfer-encoding
-         :content-language;
-        bh=A17Kf3r9YT/pj0nMVPx6ayDGqzeP4LYbacsAdYP2RvQ=;
-        b=pKOGeHvuexFqylAhy3zI7l9dhssaxGYqCqp/uOtS0dYN6ELgleZbEgUbH/0GQansIa
-         ujxxp5hA02ssbNqAz4ebSd5Q45MFmlLpP6LUW3gXdqi/DvOpuKq3VJ+8jSrIYI5Z02zk
-         vw/Tg6xcxRYio6FmuREReYcL5k/+G5/G2QjuR0MRuHxlGBQd5DHTNbJyqTEV6ZpWj9jC
-         irtZm7alGpZe6EJHerZUdxTyojKmw7B0BLNnInQPGyZMPAhUTocO3HaopCen1uA1BQbM
-         M2c2/njVC4MKrxojtSRflY7GJ+jchCeE5gk8Sakeh+ZDCaxcRaqykkgRHZoVpVEfZoUd
-         r8zw==
+        h=mime-version:from:date:message-id:subject:to;
+        bh=kLWnKJctSaZ/FDGu9ZnM00Shi5wfTFqQNK9hpFAcIew=;
+        b=dMeC2xUtBs4+hsTGSXhho2pkVufqni3NJ1YUr+H7ydGb1QSYGV7W4jcMYLLqAuTnMM
+         pHMdzvCf77Vgbgv/us9GGdxId/3RClApwWoE+GmoQSRPmERtPJVUHS4SbqoyJBhQFW11
+         f/paGh0X9MK44IjzjkfA95V/Rwq9F8+yZvb6xF26AX3WGmsHZnagtQGLrA9LOJM0m36r
+         vW+gRgmPLd++RUvRbWt7btbKpR4y6pMsa7RHjD+IGWKD/Duc9GwVfYVOU0LxgxyDnuc+
+         HAkKpcZU2NyE5kHh4k4TvTIoOM6pdHrBiePvJMlD+9bIukl6w3f8LlaLYTIH1pH6NC05
+         6ntQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:cc:from:openpgp:autocrypt
-         :message-id:date:user-agent:mime-version:in-reply-to
-         :content-transfer-encoding:content-language;
-        bh=A17Kf3r9YT/pj0nMVPx6ayDGqzeP4LYbacsAdYP2RvQ=;
-        b=YRFbeT7M+AHi0zoB3Pn+sdsjSDQpzIBuOZFhexGqhX5FuRRPRyYx+yMTfOvnoFRRks
-         j7lTGRzs4tGRGtL5sKd3bMB6aecAHOrsnDqEo8XNPifksUFyWEAe+AsjL33B8hdcTXBc
-         53V63aF58C7+Bx9+eWCZNEBKBWCe+x+6wXDxBnzotpIHE3z6MBLcOELWLycAzBnLWUpK
-         onyyLQiLADzXVd4kBbHumbKNhWDtCxmPJFjs0i5FIJQ7ry1Ded0PChmLimhQZ2SwE8s1
-         Xv/juLva7pAIF9v9y641gaK7sY3uMqUpsUcHRkjSVM9gMzPmePT3JLOPdoXYOb7Q3a55
-         NeCA==
-X-Gm-Message-State: AHQUAuaejuOUSXbXrfasNvXUgMrU+JJULgm5UKmSz8PxoCmwmebYWTvX
-        ZvMbxSh50+ciEWFCbaZyNQ==
-X-Google-Smtp-Source: AHgI3IatTQ8Y2/ttUPgrVZFEeRnXeJEjTOCMQHUj1Efg4e9ve/qCRyN4sx9SWZF5chV6B5lVoCqh4Q==
-X-Received: by 2002:adf:fb0d:: with SMTP id c13mr4429491wrr.285.1549727873019;
-        Sat, 09 Feb 2019 07:57:53 -0800 (PST)
-Received: from [192.168.178.53] (ip2505f80d.dynamic.kabel-deutschland.de. [37.5.248.13])
-        by smtp.googlemail.com with ESMTPSA id y24sm9962094wma.0.2019.02.09.07.57.51
-        (version=TLS1_3 cipher=AEAD-AES128-GCM-SHA256 bits=128/128);
-        Sat, 09 Feb 2019 07:57:52 -0800 (PST)
-Subject: Re: Cannot 'mount -o degraded /dev/replacement' after a replace
-To:     Andrei Borzenkov <arvidjaar@gmail.com>, linux-btrfs@vger.kernel.org
-References: <2efee604-e44c-b00b-2ea8-d13ebc8c6355@gmail.com>
- <5441dc9d-a552-e77e-f74d-fe6ef702d400@gmx.com>
- <57d3a28d-bf6e-7f89-3a2d-ebcb90fc6e32@gmail.com>
- <0680cf0a-5a03-086f-d3f7-3317655401f0@gmail.com>
-Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-From:   =?UTF-8?Q?Jakob_Sch=c3=b6ttl?= <jschoett@gmail.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=jschoett@gmail.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <969d659b-bce1-7a72-6e50-6981dae56a94@gmail.com>
-Date:   Sat, 9 Feb 2019 16:57:51 +0100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.0
+        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
+        bh=kLWnKJctSaZ/FDGu9ZnM00Shi5wfTFqQNK9hpFAcIew=;
+        b=pC0e6oa2BOvAG/nt9icpbWsftbJoUbYFavjzdBQmgDSxtu7h581g57jyErt2RmdSb7
+         GMgXay4FhMhexKLt+XJjV5yXaSlxOKTEcJtcpBsHgAIvJfpqElwD0aNkDdCGURJ6/b32
+         UMhXhfceAaQhonQgu6EKyP8gQrTbfZXipCnLlK69VEqSe2X5vxegk86qdXzmrpB8JCqx
+         GzPcSMtRO8SoDZosJ804D+di91qRm3tj0gqvS7vvk2VE+X19DGwgY0Va0TJROmAzYL27
+         thPTURA9JgXY+WU6oBuLsERMDiG/bSuYvEg983CC8rWN8odyvMYEbHwRG6WInAuVIml4
+         SzVA==
+X-Gm-Message-State: AHQUAuaRbOcK3X6W41er5YhJeCtSENkAl8Xl77zaJINThij+rJ7SYI+0
+        bECllNKDKvd3yHa0oUdP+GE/r1L+5xHFDeXcRv1cOvFA
+X-Google-Smtp-Source: AHgI3IbaMUVj3zEzYRt8DT3RHsHlsHL54ZlNYmoug6kXGmqGpj6mIy6i1c7f8Q71sLvNd9MC/dn7dQ6ktl3Rw1NKNSo=
+X-Received: by 2002:a9d:aa9:: with SMTP id 38mr20799484otq.255.1549741394564;
+ Sat, 09 Feb 2019 11:43:14 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <0680cf0a-5a03-086f-d3f7-3317655401f0@gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-Content-Language: de-DE
+From:   Rosen Penev <rosenp@gmail.com>
+Date:   Sat, 9 Feb 2019 11:43:03 -0800
+Message-ID: <CAKxU2N-Voa2XTo3SS6S0r85zzgaWsAAkU3=L82z=0WCdOfyfzA@mail.gmail.com>
+Subject: Filesystem corruption under big endian MIPS
+To:     linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+I'm getting this error every time I mount and use my drive
 
-Am 09.02.19 um 16:32 schrieb Andrei Borzenkov:
-> Running
->
-> btrfs balance start -f -ssoft,convert=3Draid1 -dsoft,convert=3Draid1
-> -msoft,convert=3Draid1 /mnt
->
-> fixes it. I am not sure whether btrfs is expected to do it automaticall=
-y
-> as of now.
+[63046.831194] sd 0:0:0:0: [sda] 1953525167 512-byte logical blocks:
+(1.00 TB/932 GiB)
+[63047.049574] sd 0:0:0:0: [sda] Write Protect is off
+[63047.054515] sd 0:0:0:0: [sda] Mode Sense: 4f 00 00 00
+[63047.060695] sd 0:0:0:0: [sda] Write cache: enabled, read cache:
+enabled, doesn't support DPO or FUA
+[63047.104844] sd 0:0:0:0: [sda] Attached SCSI disk
+[63047.143149] BTRFS info (device sda): disk space caching is enabled
+[63047.149467] BTRFS info (device sda): has skinny extents
+[63047.307663] BTRFS info (device sda): checking UUID tree
+[63077.308608] BTRFS error (device sda): tree block 20971520 owner 3
+already locked by pid=5693, extent tree corruption detected
+[63077.320308] ------------[ cut here ]------------
+[63077.325291] WARNING: CPU: 0 PID: 5693 at fs/btrfs/volumes.c:2792
+btrfs_remove_chunk+0x4c8/0xa6c [btrfs]
+[63077.334888] BTRFS: Transaction aborted (error -135)
+[63077.339842] Modules linked in: ath9k ath9k_common pppoe ppp_async
+iptable_nat ipt_MASQUERADE ath9k_hw ath10k_pci ath10k_core ath
+xt_state xt_nat xt_conntrack xt_REDIRECT xt_FLOWOFFLOAD pppox
+ppp_generic nf_nat_ipv4 nf_nat nf_flow_table_hw nf_flow_table
+nf_conntrack_rtcache nf_conntrack mac80211 ipt_REJECT cfg80211 xt_time
+xt_tcpudp xt_multiport xt_mark xt_mac xt_limit xt_comment xt_TCPMSS
+xt_LOG wireguard slhc nf_reject_ipv4 nf_log_ipv4 nf_defrag_ipv6
+nf_defrag_ipv4 lzo iptable_mangle iptable_filter ip_tables crc_ccitt
+compat ledtrig_usbport ip6t_REJECT nf_reject_ipv6 nf_log_ipv6
+nf_log_common ip6table_mangle ip6table_filter ip6_tables x_tables
+msdos ip6_udp_tunnel udp_tunnel sit tunnel4 ip_tunnel vfat fat cifs
+nls_utf8 nls_iso8859_1 nls_cp437 sha256_generic md5 md4 hmac ecb
+des_generic crypto_acompress
+[63077.412357]  usb_storage ehci_platform sd_mod scsi_mod ehci_hcd
+gpio_button_hotplug f2fs ext4 jbd2 mbcache btrfs zstd_decompress
+zstd_compress zlib_inflate zlib_deflate xxhash xor raid6_pq
+lzo_decompress lzo_compress libcrc32c usbcore nls_base usb_common
+crc16 aead crypto_null crc32c_generic cryptomgr crc32_generic
+crypto_hash
+[63077.442011] CPU: 0 PID: 5693 Comm: btrfs-cleaner Not tainted 4.19.19 #0
+[63077.448832] Stack : 00000000 86848688 87f9e0a0 800b1758 00000000
+00000000 00000000 9c5b991a
+[63077.457325]         8052f41c 8689bce4 80560000 8055ba27 804fefe8
+00000001 8689bc88 9c5b991a
+[63077.465880]         00000000 00000000 806e0000 00006460 00000000
+00000000 00000008 00000000
+[63077.474390]         00000135 a2000000 00000134 00000000 80560000
+00000000 872ec7c0 872746b4
+[63077.482950]         00000009 00000ae8 00000000 86848688 00000002
+80298f44 00000000 806b0000
+[63077.491460]         ...
+[63077.493943] Call Trace:
+[63077.496481] [<8006b1e8>] show_stack+0x68/0x128
+[63077.501021] [<80081d34>] __warn+0xe4/0x118
+[63077.505177] [<80081da8>] warn_slowpath_fmt+0x40/0x64
+[63077.510407] [<872746b4>] btrfs_remove_chunk+0x4c8/0xa6c [btrfs]
+[63077.516632] [<87228720>] btrfs_delete_unused_bgs+0x420/0x430 [btrfs]
+[63077.523421] [<87232020>] btree_get_extent+0xac4/0x22ec [btrfs]
+[63077.529693] [<87231f30>] btree_get_extent+0x9d4/0x22ec [btrfs]
+[63077.535757] ---[ end trace c60950f6e49f8b83 ]---
+[63077.540484] BTRFS: error (device sda) in btrfs_remove_chunk:2792:
+errno=-135 unknown
+[63077.548465] BTRFS info (device sda): forced readonly
 
-This fix seems to work for me, too. Output was:
- > Done, had to relocate 5 out of 8 chunks
+After the panic, the drive becomes unmountable, even on little endian machines.
 
-Tested without any subvolumes or data.
+[62211.705357] BTRFS: device label Archive devid 1 transid 49152 /dev/sdg
+[62211.720858] BTRFS info (device sdg): disk space caching is enabled
+[62211.733227] BTRFS info (device sdg): has skinny extents
+[62212.262099] BTRFS error (device sdg): parent transid verify failed
+on 998424576 wanted 49152 found 49153
+[62212.292076] BTRFS error (device sdg): parent transid verify failed
+on 998424576 wanted 49152 found 49153
+[62212.310992] BTRFS error (device sdg): failed to read block groups: -5
+[62212.452527] BTRFS error (device sdg): open_ctree failed
 
+I restored using btrfs check --init-extent-tree but same issue happens.

@@ -2,273 +2,119 @@ Return-Path: <SRS0=H1hn=QQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_MUTT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A5345C4151A
-	for <linux-btrfs@archiver.kernel.org>; Sat,  9 Feb 2019 05:27:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3032CC282C4
+	for <linux-btrfs@archiver.kernel.org>; Sat,  9 Feb 2019 09:03:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7988D21903
-	for <linux-btrfs@archiver.kernel.org>; Sat,  9 Feb 2019 05:27:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E086820818
+	for <linux-btrfs@archiver.kernel.org>; Sat,  9 Feb 2019 09:03:13 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="Bg7HyUMK"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726268AbfBIFYr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 9 Feb 2019 00:24:47 -0500
-Received: from mx2.suse.de ([195.135.220.15]:60246 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725919AbfBIFYq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 9 Feb 2019 00:24:46 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 575A7AFC0
-        for <linux-btrfs@vger.kernel.org>; Sat,  9 Feb 2019 05:24:45 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 2/2] btrfs: Introduce free dev extent hint to speed up chunk allocation
-Date:   Sat,  9 Feb 2019 13:24:37 +0800
-Message-Id: <20190209052437.24020-3-wqu@suse.com>
-X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20190209052437.24020-1-wqu@suse.com>
-References: <20190209052437.24020-1-wqu@suse.com>
+        id S1726821AbfBIJDM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 9 Feb 2019 04:03:12 -0500
+Received: from aserp2130.oracle.com ([141.146.126.79]:39904 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726047AbfBIJDM (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Feb 2019 04:03:12 -0500
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x198wuKf141946;
+        Sat, 9 Feb 2019 09:03:05 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
+ : subject : message-id : mime-version : content-type; s=corp-2018-07-02;
+ bh=pGzFb2T9oc8FjADOewKOYMJZA5aptGaxlIz/RMw+NQs=;
+ b=Bg7HyUMK2edEYDFG0DXqgovdrivnBq3FQxAZj39Go8iRJbJJX7U7xWW4u5KNan+X/xx2
+ YtL8BmOv/G3Vp5YkFAR/1AyDTEARfXZgG5TaHWMNQnM+rgssWRBj2RZ1rwelWBKx5Iwb
+ iywN7+T2XhnEKOZSZfLOXG8MVtcA747zub4aNTxj1t5vebIfvGcJJY37/yWV08Lho2Vp
+ gShxNxtStlx7VudHA377yMcl63R2wmLtVdcSavHlbFoxyLMuw4I/oiC1GbisIYsYavUn
+ qukxnxFPFSQLduYOwhpafN84U7TA6Pi9SsygLm7Go6e7PoKdiiIyRk2pevk8RXFbNeUH Rg== 
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+        by aserp2130.oracle.com with ESMTP id 2qhre507ya-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Sat, 09 Feb 2019 09:03:04 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id x19933GM002712
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Sat, 9 Feb 2019 09:03:04 GMT
+Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x19933Wh032742;
+        Sat, 9 Feb 2019 09:03:03 GMT
+Received: from kadam (/197.157.0.32)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Sat, 09 Feb 2019 01:03:02 -0800
+Date:   Sat, 9 Feb 2019 12:02:55 +0300
+From:   Dan Carpenter <dan.carpenter@oracle.com>
+To:     Chris Mason <clm@fb.com>, Jeff Mahoney <jeffm@suse.com>
+Cc:     Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        kernel-janitors@vger.kernel.org
+Subject: [PATCH] btrfs: Silence a static checker locking warning
+Message-ID: <20190209090254.GC4865@kadam>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+X-Mailer: git-send-email haha only kidding
+User-Agent: Mutt/1.9.4 (2018-02-28)
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9161 signatures=668683
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=2 phishscore=0 bulkscore=0 spamscore=0 clxscore=1011
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1902090067
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[PROBLEM]
-When allocating a 4G file, falloc() call is slower and slower if the fs
-is more and more filled.
+Back in the day, before commit 0b246afa62b0 ("btrfs: root->fs_info
+cleanup, add fs_info convenience variables") then we used to take
+different locks.  But now it's just one lock and the static checkers
+think we can call down_read(&fs_info->subvol_sem); twice in a row which
+would lead to a deadlock.
 
-This is going to be super obvious when doing some crazy test.
-E.g. fallocating a 1PiB file TiB by TiB.
-The first 16T only takes 10 seconds to finish while the last 16TiB can
-take over 15min to finish, making the total time of fallocating 1PiB to
-astonishing 5 hours.
+That code is several years old now so presumably both (old_ino ==
+BTRFS_FIRST_FREE_OBJECTID) and (new_ino == BTRFS_FIRST_FREE_OBJECTID)
+conditions can't be true at the same time or the bug would have showed
+up in testing.  I have re-written the code though to make it cleaner and
+to silence the static checkers.
 
-[CAUSE]
-When allocating new dev extents for a chunk, btrfs doesn't have any free
-dev extent cache, thus it can only search device tree to find free slot.
-
-However it always search from device offset 0, and if there are a lot of
-dev extents already allocated, such search will be super time consuming.
-
-The following is function execution time for __btrfs_alloc_chunk()
-and find_free_dev_extent_start(), one is allocating 4G on an empty fs,
-the other one is allocating 4G on a 4T used fs.
-      empty fs   |   4T used fs    |    function
------------------------------------------------------------------------
- 4)              | 7)              |  __btrfs_alloc_chunk [btrfs]() {
- 4)   4.839 us   | 7) ! 152.496 us |    find_free_dev_extent_start [btrfs]()
- 4) + 64.692 us  | 7) ! 185.488 us |  }
- 4)              | 7)              |  __btrfs_alloc_chunk [btrfs]() {
- 4) + 12.844 us  | 7) ! 132.889 us |    find_free_dev_extent_start [btrfs]()
- 4) ! 131.877 us | 7) ! 152.115 us |  }
- 4)              | 7)              |  __btrfs_alloc_chunk [btrfs]() {
- 4)   2.375 us   | 7) ! 127.689 us |    find_free_dev_extent_start [btrfs]()
- 4) + 16.992 us  | 7) ! 146.595 us |  }
- 4)              | 7)              |  __btrfs_alloc_chunk [btrfs]() {
- 4)   2.144 us   | 7) ! 126.657 us |    find_free_dev_extent_start [btrfs]()
- 4) + 16.280 us  | 7) ! 144.521 us |  }
-
-It's pretty ovbious that find_free_free_dev_extent_start() takes over
-20x more time for 4TB used fs, causing chunk allocation much slower.
-
-[ENHANCEMENT]
-This patch will introduce btrfs_device::hint_free_dev_extent member to
-give some hint for chunk allocator to find free dev extents.
-
-The hint itself is pretty simple, only tells where the first free slot
-could possibly be.
-
-It is not 100% correct, unlike free space cache, but since
-find_free_dev_extent_start() is already robust enough to handle
-search_hint, so there is not need to introduce a complex and fancy free
-dev extent cache.
-
-With this patch, allocating 4G on a 4T filled fs will be way more
-faster:
-
-      v5.0-rc1   |   patched      |    function
----------------------------------------------------------------------
- 7)              | 7)             |  __btrfs_alloc_chunk [btrfs]() {
- 7) ! 152.496 us | 7)   7.885 us  |    find_free_dev_extent_start [btrfs]();
- 7) ! 185.488 us | 7) + 36.649 us |  }
- 7)              | 7)             |  __btrfs_alloc_chunk [btrfs]() {
- 7) ! 132.889 us | 7)   2.454 us  |    find_free_dev_extent_start [btrfs]();
- 7) ! 152.115 us | 7) + 24.145 us |  }
- 7)              | 7)             |  __btrfs_alloc_chunk [btrfs]() {
- 7) ! 127.689 us | 7)   2.245 us  |    find_free_dev_extent_start [btrfs]();
- 7) ! 146.595 us | 7) + 19.376 us |  }
- 7)              | 7)             |  __btrfs_alloc_chunk [btrfs]() {
- 7) ! 126.657 us | 7)   2.174 us  |    find_free_dev_extent_start [btrfs]();
- 7) ! 144.521 us | 7) + 16.321 us |  }
-
-And for the crazy 1PiB fallocate, now it takes 15~20min other than 5
-hours.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
 ---
- fs/btrfs/volumes.c | 28 +++++++++++++++++++---
- fs/btrfs/volumes.h | 58 ++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 83 insertions(+), 3 deletions(-)
+ fs/btrfs/inode.c | 10 ++++------
+ 1 file changed, 4 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index bae03111273e..a225101582c1 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -411,6 +411,7 @@ static struct btrfs_device *__alloc_device(void)
- 	btrfs_device_data_ordered_init(dev);
- 	INIT_RADIX_TREE(&dev->reada_zones, GFP_NOFS & ~__GFP_DIRECT_RECLAIM);
- 	INIT_RADIX_TREE(&dev->reada_extents, GFP_NOFS & ~__GFP_DIRECT_RECLAIM);
-+	dev->hint_free_dev_extent = (u64)-1;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 9b0e3e2d589c..039a12f51cd7 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -9423,9 +9423,8 @@ static int btrfs_rename_exchange(struct inode *old_dir,
+ 	btrfs_init_log_ctx(&ctx_dest, new_inode);
  
- 	return dev;
- }
-@@ -1746,9 +1747,14 @@ int find_free_dev_extent(struct btrfs_trans_handle *trans,
- 			 struct btrfs_device *device, u64 num_bytes,
- 			 u64 *start, u64 *len)
- {
--	/* FIXME use last free of some kind */
--	return find_free_dev_extent_start(trans->transaction, device,
--					  num_bytes, 0, start, len);
-+	u64 search_hint;
-+
-+	if (device->hint_free_dev_extent == (u64)-1)
-+		search_hint = 0;
-+	else
-+		search_hint = device->hint_free_dev_extent;
-+	return find_free_dev_extent_start(trans->transaction, device, num_bytes,
-+					  search_hint, start, len);
- }
+ 	/* close the race window with snapshot create/destroy ioctl */
+-	if (old_ino == BTRFS_FIRST_FREE_OBJECTID)
+-		down_read(&fs_info->subvol_sem);
+-	if (new_ino == BTRFS_FIRST_FREE_OBJECTID)
++	if (old_ino == BTRFS_FIRST_FREE_OBJECTID ||
++	    new_ino == BTRFS_FIRST_FREE_OBJECTID)
+ 		down_read(&fs_info->subvol_sem);
  
- static int btrfs_free_dev_extent(struct btrfs_trans_handle *trans,
-@@ -1804,6 +1810,7 @@ static int btrfs_free_dev_extent(struct btrfs_trans_handle *trans,
- 				      "Failed to remove dev extent item");
- 	} else {
- 		set_bit(BTRFS_TRANS_HAVE_FREE_BGS, &trans->transaction->flags);
-+		btrfs_device_hint_add_free(device, key.offset, *dev_extent_len);
- 	}
- out:
- 	btrfs_free_path(path);
-@@ -1846,6 +1853,7 @@ static int btrfs_alloc_dev_extent(struct btrfs_trans_handle *trans,
- 	btrfs_set_dev_extent_chunk_offset(leaf, extent, chunk_offset);
- 
- 	btrfs_set_dev_extent_length(leaf, extent, num_bytes);
-+	btrfs_device_hint_del_free(device, key.offset, num_bytes);
- 	btrfs_mark_buffer_dirty(leaf);
- out:
- 	btrfs_free_path(path);
-@@ -7936,6 +7944,14 @@ int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info)
- 		devid = key.objectid;
- 		physical_offset = key.offset;
- 
-+		/*
-+		 * previous device verification is done, update its free dev
-+		 * extent hint
-+		 */
-+		if (device && devid != device->devid)
-+			btrfs_device_hint_add_free(device, prev_dev_ext_end,
-+				device->disk_total_bytes - prev_dev_ext_end);
-+
- 		if (!device || devid != device->devid) {
- 			device = btrfs_find_device(fs_info->fs_devices, devid,
- 						   NULL, NULL, true);
-@@ -7964,6 +7980,10 @@ int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info)
- 					    physical_offset, physical_len);
- 		if (ret < 0)
- 			goto out;
-+
-+		btrfs_device_hint_add_free(device, prev_dev_ext_end,
-+				physical_offset - prev_dev_ext_end);
-+
- 		prev_devid = devid;
- 		prev_dev_ext_end = physical_offset + physical_len;
- 
-@@ -7975,6 +7995,8 @@ int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info)
- 			break;
- 		}
- 	}
-+	btrfs_device_hint_add_free(device, prev_dev_ext_end,
-+			device->disk_total_bytes - prev_dev_ext_end);
- 
- 	/* Ensure all chunks have corresponding dev extents */
- 	ret = verify_chunk_dev_extent_mapping(fs_info);
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 3ad9d58d1b66..31f1e5f8d23a 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -108,6 +108,14 @@ struct btrfs_device {
- 
- 	/* bytes used on the current transaction */
- 	u64 commit_bytes_used;
-+
-+	/*
-+	 * hint about where the first possible free dev extent is.
-+	 *
-+	 * u64(-1) means no hint.
-+	 */
-+	u64 hint_free_dev_extent;
-+
  	/*
- 	 * used to manage the device which is resized
- 	 *
-@@ -570,4 +578,54 @@ bool btrfs_check_rw_degradable(struct btrfs_fs_info *fs_info,
- int btrfs_bg_type_to_factor(u64 flags);
- int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info);
+@@ -9644,9 +9643,8 @@ static int btrfs_rename_exchange(struct inode *old_dir,
+ 		ret = ret ? ret : ret2;
+ 	}
+ out_notrans:
+-	if (new_ino == BTRFS_FIRST_FREE_OBJECTID)
+-		up_read(&fs_info->subvol_sem);
+-	if (old_ino == BTRFS_FIRST_FREE_OBJECTID)
++	if (new_ino == BTRFS_FIRST_FREE_OBJECTID ||
++	    old_ino == BTRFS_FIRST_FREE_OBJECTID)
+ 		up_read(&fs_info->subvol_sem);
  
-+static inline void btrfs_device_hint_add_free(struct btrfs_device *dev,
-+					      u64 start, u64 len)
-+{
-+	if (dev->disk_total_bytes == 0 || start + len > dev->disk_total_bytes)
-+		return;
-+	if (len < SZ_16M)
-+		return;
-+	if (start > dev->hint_free_dev_extent)
-+		return;
-+	dev->hint_free_dev_extent = start;
-+}
-+
-+static inline void btrfs_device_hint_del_free(struct btrfs_device *dev,
-+					      u64 start, u64 len)
-+{
-+	u64 free_hint = dev->hint_free_dev_extent;
-+
-+	if (dev->disk_total_bytes == 0 || start + len > dev->disk_total_bytes)
-+		return;
-+	/*
-+	 * |<- to be removed ->|
-+	 * 			| free hint
-+	 * Not affecting free hint
-+	 */
-+	if (start + len <= free_hint)
-+		return;
-+	/*
-+	 * |<- to be removed ->|
-+	 * 		| free hint
-+	 * Or
-+	 * 	|<- to be removed ->|
-+	 * | free hint
-+	 * |<-->| Less than 16M
-+	 *
-+	 * Move the hint to the range end
-+	 */
-+	if ((start <= free_hint && start + len > free_hint) ||
-+	    (start > free_hint && free_hint - start < SZ_16M)) {
-+		dev->hint_free_dev_extent = start + len;
-+		return;
-+	}
-+
-+	/*
-+	 * 			|<- to be removed ->|
-+	 * | free hint
-+	 *
-+	 * We still have larger than 16M free space, no need to update
-+	 * free hint
-+	 */
-+}
- #endif
+ 	return ret;
 -- 
-2.20.1
+2.17.1
 

@@ -2,224 +2,223 @@ Return-Path: <SRS0=H1hn=QQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+X-Spam-Status: No, score=-0.9 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DDA4CC282C4
-	for <linux-btrfs@archiver.kernel.org>; Sat,  9 Feb 2019 12:13:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 599D9C282C4
+	for <linux-btrfs@archiver.kernel.org>; Sat,  9 Feb 2019 12:16:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8D78E20863
-	for <linux-btrfs@archiver.kernel.org>; Sat,  9 Feb 2019 12:13:51 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=dirtcellar.net header.i=@dirtcellar.net header.b="dErYjDcc"
+	by mail.kernel.org (Postfix) with ESMTP id 26C6B20863
+	for <linux-btrfs@archiver.kernel.org>; Sat,  9 Feb 2019 12:16:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726741AbfBIMNu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 9 Feb 2019 07:13:50 -0500
-Received: from smtp.domeneshop.no ([194.63.252.55]:35861 "EHLO
-        smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726703AbfBIMNt (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Feb 2019 07:13:49 -0500
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=dirtcellar.net; s=ds201810;
-        h=Content-Transfer-Encoding:Content-Type:In-Reply-To:MIME-Version:Date:Message-ID:From:References:To:Subject:Reply-To; bh=AJ5NCZljd+L0Nh+d8ueo6H7nDjemtH4POyFLMIjO4eQ=;
-        b=dErYjDcc61fsZ8tHvVFR4efM9mhiAk1xfCjJtRwyIGiWAq8qagjVKEx62D01wq6mP5kIb8QQRHyOIatN/QoW5S8shF/JKukdCAS2IQwbYtMA9LLk8ZAjF5BVB7SVRuJSHTO0cJWkn5alNV4t+QuNO/UCJZr0xVH74H8rr2K9D/zq/ZyPM3U//vgNG3e9+deITJsyBpXQ6OjTwO1zTkQhcjBLzQt8KFftebC5FrknfkSmmeCj7aW1Ws+4bARnhy/uiT1A9ZYa11ayo9abNAcERe+iHgK9wuCqwoo32CRPoF8bUQiEEQ9E0jUeP2TM/Zb4WAIizgSSDv37pYiJ/KZy+g==;
-Received: from 0.79-161-197.customer.lyse.net ([79.161.197.0]:3107 helo=[10.0.0.10])
-        by smtp.domeneshop.no with esmtpsa (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128)
-        (Exim 4.84_2)
-        (envelope-from <waxhead@dirtcellar.net>)
-        id 1gsRVx-0003s4-Gy; Sat, 09 Feb 2019 13:13:45 +0100
-Reply-To: waxhead@dirtcellar.net
-Subject: Re: btrfs as / filesystem in RAID1
-To:     "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Stefan K <shadow_7@gmx.net>, linux-btrfs@vger.kernel.org
-References: <33679024.u47WPbL97D@t460-skr>
- <92ae78af-1e43-319d-29ce-f8a04a08f7c5@mendix.com>
- <2159107.RxXdQBBoNF@t460-skr>
- <b08e9876-3493-1a14-5152-e2fa0a2c24a3@gmail.com>
- <f4f899e3-0d1b-2f82-54cd-3552e186db6a@dirtcellar.net>
- <c8708ebd-c6c2-6916-6da2-5b415c0585e4@gmail.com>
- <c7ef67c6-a38b-a632-fc5d-b839940c2877@dirtcellar.net>
- <f41063e8-b9b1-f929-7954-8a96e673bd2e@gmail.com>
-From:   waxhead <waxhead@dirtcellar.net>
-Message-ID: <f67c6a69-4fc8-e33a-543e-9b97adf54438@dirtcellar.net>
-Date:   Sat, 9 Feb 2019 13:13:44 +0100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101
- Firefox/52.0 SeaMonkey/2.49.4
+        id S1726894AbfBIMQU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 9 Feb 2019 07:16:20 -0500
+Received: from mout.gmx.net ([212.227.17.22]:36359 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726703AbfBIMQT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 9 Feb 2019 07:16:19 -0500
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx101
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0MfzEP-1gVZ7K3yIX-00NTiJ; Sat, 09
+ Feb 2019 13:16:16 +0100
+Subject: Re: Cannot 'mount -o degraded /dev/replacement' after a replace
+To:     =?UTF-8?Q?Jakob_Sch=c3=b6ttl?= <jschoett@gmail.com>,
+        linux-btrfs@vger.kernel.org
+References: <2efee604-e44c-b00b-2ea8-d13ebc8c6355@gmail.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <5441dc9d-a552-e77e-f74d-fe6ef702d400@gmx.com>
+Date:   Sat, 9 Feb 2019 20:16:12 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.5.0
 MIME-Version: 1.0
-In-Reply-To: <f41063e8-b9b1-f929-7954-8a96e673bd2e@gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <2efee604-e44c-b00b-2ea8-d13ebc8c6355@gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="3JVEzO07EazwOAMQ2VwloS7nzQ4rdAPoZ"
+X-Provags-ID: V03:K1:vR9xyFZfuL3810aXGa7INT+1xRmrxk/6cpJoTNt0DWyRQFbI1fd
+ sR8j8OvY1eWiT/+Q449y3GFoxwClm7wwg5Rwu6WWS2m24uEH1fK4CvMeuh6cOI6cLjs44VN
+ wAtP+gxoXNKilZru8xKOBlAJoKo8eNHoQ4Ak9a815KLDA95ZsUU6vzm4YCVLaVabA52x3Un
+ E84xGs+UuOqDScexu838Q==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:2olx1cFSzkY=:YRu72ckHSuP7U9/I3JtE7P
+ UbLo3OJ6/t/uxHdFZoHq4WOu+CWAMHjQ3pyRW8qA7Ilh3EsD95QJxyjyaA5wYlm8fvUC/Yjj/
+ GS/T87uNXaNLWU2jd3maLDrPTLFFLDWGf6dTzsEuXLkNb4x51EKVaV5caIhOfuMpRXovBNyeZ
+ DRpb3kK2mX0yS3kFGuMy4Lkoba3yxZeLL0Z6QqsLbZJ4Y/sRnhlOZwcOYezZFyGfE2dvXFW+B
+ rkeNJ5SYiuOio5MTfltyZrmG4TtfvLPprP4whauganLkqqt6NHb9qUk6DhxsrVXULMZxcSKy0
+ Gvseh4LdgrHcF5Gn7/UCkOp0VGs2hAqhzS8cJW0eou+2SsBYAFoahR9xtMiZqdeqp0i/bhs2O
+ PfEBm+K8ryGiA7MOMMdMRRHpeyGDiDHJhOWnHqyasNsib2splfB7pc2baB8nLl2Bsvsue7YCK
+ Mrfr+4Gt6qQnwMpNiVHMybvY+4QgiYfEpZMwNVA3FY2ZZ4nvovenjLH9CvT4j9CzsvdDYCNxQ
+ H9NS85U9mAYLlxGVlqARE84cJ+eTTXAfj1/2pE1psHlJxV3nAw0nLXEqcpu+QZKcEIuDTsu5Q
+ Y3kF7PL+W5z4a6ygGWQ6JG4B+0fzjk7gPA5HSr69NjsiGujbyO9CblbpZhQbSqRdhOfIC2hhz
+ DNY3hyr8pB2nafP2YFoDO4R2/rC9LTSOuFRjKmNMqd/+nskQZxtwdNWmWiSHLQ+owZYiOeiuk
+ Ovv1va9/RBoI6/7tWRCcmmnEBq9boXnHPBOO9XWMLgBk/sT13jxH5tGs7ykCBzSkO8jomF8UN
+ QWRgy7s/dgjhLW5DDMNSoC68FjtUPeSk8ujwVIhmpZ1MTZ3fTi/RApjVyQbyZQPHP6ksFdKCz
+ mkb2VQt88UkrG4Y8Pmz4Y8JTPW1oXLxvAiXfkRsYbOy6QWdO9oisXQNCClClcF
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--3JVEzO07EazwOAMQ2VwloS7nzQ4rdAPoZ
+Content-Type: multipart/mixed; boundary="AC0uvjwxeQFqzFTkNggmCBdNUGLE5Mz64";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: =?UTF-8?Q?Jakob_Sch=c3=b6ttl?= <jschoett@gmail.com>,
+ linux-btrfs@vger.kernel.org
+Message-ID: <5441dc9d-a552-e77e-f74d-fe6ef702d400@gmx.com>
+Subject: Re: Cannot 'mount -o degraded /dev/replacement' after a replace
+References: <2efee604-e44c-b00b-2ea8-d13ebc8c6355@gmail.com>
+In-Reply-To: <2efee604-e44c-b00b-2ea8-d13ebc8c6355@gmail.com>
+
+--AC0uvjwxeQFqzFTkNggmCBdNUGLE5Mz64
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-Austin S. Hemmelgarn wrote:
-> On 2019-02-08 13:10, waxhead wrote:
->> Austin S. Hemmelgarn wrote:
->>> On 2019-02-07 13:53, waxhead wrote:
->>>>
->>>>
->>>> Austin S. Hemmelgarn wrote:
->>>
->> So why do BTRFS hurry to mount itself even if devices are missing? and 
->> if BTRFS still can mount , why whould it blindly accept a non-existing 
->> disk to take part of the pool?!
-> It doesn't unless you tell it to., and that behavior is exactly what I'm 
-> arguing against making the default here.
-Understood, but that is not quite what I meant - let me rephrase...
-If BTRFS still can't mount, why would it blindly accept a previously 
-non-existing disk to take part of the pool?! E.g. if you have "disk" A+B 
-and suddenly at one boot B is not there. Now you have only A and one 
-would think that A should register that B has been missing. Now on the 
-next boot you have AB , in which case B is likely to have diverged from 
-A since A has been mounted without B present - so even if both devices 
-are present why would btrfs blindly accept that both A+B are good to go 
-even if it should be perfectly possible to register in A that B was 
-gone. And if you have B without A it should be the same story right?
 
->>
->>> Realistically, we can only safely recover from divergence correctly 
->>> if we can prove that all devices are true prior states of the current 
->>> highest generation, which is not currently possible to do reliably 
->>> because of how BTRFS operates.
->>>
->> So what you are saying is that the generation number does not 
->> represent a true frozen state of the filesystem at that point?
-> It does _only_ for those devices which were present at the time of the 
-> commit that incremented it.
-> 
-So in other words devices that are not present can easily be marked / 
-defined as such at a later time?
+On 2019/2/9 =E4=B8=8B=E5=8D=886:36, Jakob Sch=C3=B6ttl wrote:
+> Hi,
+>=20
+> I've setup a RAID1 with two disks (disk1 and disk2) and I'm testing the=
 
-> As an example (don't do this with any BTRFS volume you care about, it 
-> will break it), take a BTRFS volume with two devices configured for 
-> raid1.  Mount the volume with only one of the devices present, issue a 
-> single write to it, then unmounted it.  Now do the same with only the 
-> other device.  Both devices should show the same generation number right 
-> now (but it should be one higher than when you started), but the 
-> generation number on each device refers to a different volume state.
->>
->>> Also, LVM and MD have the exact same issue, it's just not as 
->>> significant because they re-add and re-sync missing devices 
->>> automatically when they reappear, which makes such split-brain 
->>> scenarios much less likely.
->> Which means marking the entire device as invalid, then re-adding it 
->> from scratch more or less...
-> Actually, it doesn't.
-> 
-> For LVM and MD, they track what regions of the remaining device have 
-> changed, and sync only those regions when the missing device comes back.
-> 
-For MD , if you have the bitmap enabled yes...
+> btrfs replace command.
+>=20
+> After replacing disk2 with disk3, I can only mount
+> (a) disk1 or disk3 (if both disk are plugged) and
+> (b) the original disk1 (degraded, if disk3 is unplugged).
+>=20
+> I cannot mount the replacement disk3 if disk1 is unplugged.
 
-> For BTRFS, the same thing happens implicitly because of the COW 
-> structure, and you can manually reproduce similar behavior to LVM or MD 
-> by scrubbing the volume and then using balance with the 'soft' filter to 
-> ensure all the chunks are the correct type.
-> 
-Understood.
+Sounds like there is one single chunk on disk1, which caused the problem.=
 
->> Why does systemd concern itself about what devices btrfs consist of. 
->> Please educate me, I am curious.
-> For the same reason that it concerns itself with what devices make up a 
-> LVM volume or an MD array.  In essence, it comes down to a couple of 
-> specific things:
-> 
-> * It is almost always preferable to delay boot-up while waiting for a 
-> missing device to reappear than it is to start using a volume that 
-> depends on it while it's missing.  The overall impact on the system from 
-> taking a few seconds longer to boot is generally less than the impact of 
-> having to resync the device when it reappears while the system is still 
-> booting up.
-> 
-> * Systemd allows mounts to not block the system booting while still 
-> allowing certain services to depend on those mounts being active.  This 
-> is extremely useful for remote management reasons, and is actually 
-> supported by most service managers these days.  Systemd extends this all 
-> the way down the storage stack though, which is even more useful, 
-> because it lets disk failures properly cascade up the storage stack and 
-> translate into the volumes they were part of showing up as degraded (or 
-> getting unmounted if you choose to configure it that way).
-Ok, not sure I still understand how/why systemd knows what devices are 
-part of btrfs (or md or lvm for that matter). I'll try to research this 
-a bit - thanks for the info!
 
->>
->>> IOW, there's a special case with systemd that makes even mounting 
->>> BTRFS volumes that have missing devices degraded not work.
->> Well I use systemd on Debian and have not had that issue. In what 
->> situation does this fail?
-> At one point, if you tried to manually mount a volume that systemd did 
-> not see all the constituent devices present for, it would get unmounted 
-> almost instantly by systemd itself.  This may not be the case anymore, 
-> or it may have been how the distros I've used with systemd on them 
-> happened to behave, but either way it's a pain in the arse when you want 
-> to fix a BTRFS volume.
-I can see that, but from my "toying around" with btrfs I have not run 
-into any issues while mounting degraded.
+>=20
+>> mount: /mnt: wrong fs type, bad option, bad superblock on /dev/loop3,
+> missing codepage or helper program, or other error.
 
->>
->>>>
->>>>> * Given that new kernels still don't properly generate half-raid1 
->>>>> chunks when a device is missing in a two-device raid1 setup, 
->>>>> there's a very real possibility that users will have trouble 
->>>>> recovering filesystems with old recovery media (IOW, any recovery 
->>>>> environment running a kernel before 4.14 will not mount the volume 
->>>>> correctly).
->>>> Sometimes you have to break a few eggs to make an omelette right? If 
->>>> people want to recover their data they should have backups, and if 
->>>> they are really interested in recovering their data (and don't have 
->>>> backups) then they will probably find this on the web by searching 
->>>> anyway...
->>> Backups aren't the type of recovery I'm talking about.  I'm talking 
->>> about people booting to things like SystemRescueCD to fix system 
->>> configuration or do offline maintenance without having to nuke the 
->>> system and restore from backups.  Such recovery environments often 
->>> don't get updated for a _long_ time, and such usage is not atypical 
->>> as a first step in trying to fix a broken system in situations where 
->>> downtime really is a serious issue.
->> I would say that if downtime is such a serious issue you have a 
->> failover and a working tested backup.
-> Generally yes, but restoring a volume completely from scratch is almost 
-> always going to take longer than just fixing what's broken unless it's 
-> _really_ broken.  Would you really want to nuke a system and rebuild it 
-> from scratch just because you accidentally pulled out the wrong disk 
-> when hot-swapping drives to rebuild an array?
-Absolutely not , but in this case I would not even want to use a rescue 
-disk in the first place.
+dmesg please.
 
->>>>
->>>>> * You shouldn't be mounting writable and degraded for any reason 
->>>>> other than fixing the volume (or converting it to a single profile 
->>>>> until you can fix it), even aside from the other issues.
->>>>
->>>> Well in my opinion the degraded mount option is counter intuitive. 
->>>> Unless otherwise asked for the system should mount and work as long 
->>>> as it can guarantee the data can be read and written somehow 
->>>> (regardless if any redundancy guarantee is not met). If the user is 
->>>> willing to accept more or less risk they should configure it!
->>> Again, BTRFS mounting degraded is significantly riskier than LVM or 
->>> MD doing the same thing.  Most users don't properly research things 
->>> (When's the last time you did a complete cost/benefit analysis before 
->>> deciding to use a particular piece of software on a system?), and 
->>> would not know they were taking on significantly higher risk by using 
->>> BTRFS without configuring it to behave safely until it actually 
->>> caused them problems, at which point most people would then complain 
->>> about the resulting data loss instead of trying to figure out why it 
->>> happened and prevent it in the first place.  I don't know about you, 
->>> but I for one would rather BTRFS have a reputation for being 
->>> over-aggressively safe by default than risking users data by default.
->> Well I don't do cost/benefit analysis since I run free software. I do 
->> however try my best to ensure that whatever software I install don't 
->> cause more drawbacks than benefits.
-> Which is essentially a CBA.  The cost doesn't have to equate to money, 
-> it could be time, or even limitations in what you can do with the system.
-> 
->> I would also like for BTRFS to be over-aggressively safe, but I also 
->> want it to be over-aggressively always running or even limping if that 
->> is what it needs to do.
-> And you can have it do that, we just prefer not to by default.
-Got it!
+And btrfs-progs version please.
+
+Maybe mkfs is too old to leave SINGLE profile chunks on the original fs.
+
+And you could verify the chunk mapping by executing 'btrfs ins dump-tree
+-t chunk <device>' and paste the output.
+
+Thanks,
+Qu
+
+>=20
+> What I expect is that both disk1 and disk3 are fully valid and working
+> after a replace.
+>=20
+> Steps to reproduce:
+>=20
+> =C2=A0 dd if=3D/dev/zero of=3D/vdisk1 bs=3D1024 count=3D300000
+> =C2=A0 losetup /dev/loop1 /vdisk1
+> =C2=A0 dd if=3D/dev/zero of=3D/vdisk2 bs=3D1024 count=3D300000
+> =C2=A0 losetup /dev/loop2 /vdisk2
+> =C2=A0 dd if=3D/dev/zero of=3D/vdisk3 bs=3D1024 count=3D300000
+> =C2=A0 # losetup /dev/loop3 /vdisk3=C2=A0=C2=A0=C2=A0 # don't plug this=
+ device yet
+>=20
+> Create RAID1 file system:
+>=20
+> =C2=A0 mkfs.btrfs -L datavol -m raid1 -d raid1 /dev/loop1 /dev/loop2
+>=20
+> Unplug device 2 to simulate a defect:
+>=20
+> =C2=A0 losetup -d /dev/loop2
+>=20
+> Plug device 3:
+>=20
+> =C2=A0 losetup /dev/loop3 /vdisk3
+>=20
+> Replace device 2 with device 3:
+>=20
+> =C2=A0 mount -o degraded /dev/loop1 /mnt
+> =C2=A0 btrfs filesystem show=C2=A0=C2=A0 # to get devid of device 2
+> =C2=A0 btrfs replace start -Br 2 /dev/loop3 /mnt
+> =C2=A0 btrfs replace status /mnt=C2=A0=C2=A0 # check success
+> =C2=A0 umount /mnt
+>=20
+> Unplug the original device 1 to see if device 3 has really replaced
+> device 2:
+>=20
+> =C2=A0 losetup -d /dev/loop1
+> =C2=A0 mount -o degraded /dev/loop3 /mnt
+>=20
+> The mount fails with this error:
+>=20
+>> mount: /mnt: wrong fs type, bad option, bad superblock on /dev/loop3,
+> missing codepage or helper program, or other error.
+>=20
+> In this situation, btrfs device scan does not change anything and btrfs=
+
+> filesystem show shows:
+>=20
+>> warning, device 1 is missing
+>> warning, device 1 is missing
+>> warning, device 1 is missing
+>> warning, device 1 is missing
+>> bad tree block 198180864, bytenr mismatch, want=3D198180864, have=3D0
+>> ERROR: cannot read chunk root
+>> Label: 'datavol'=C2=A0 uuid: 640e45d3-e741-4a78-a24e-2d8a41c6b8c3
+>> =C2=A0=C2=A0=C2=A0 Total devices 2 FS bytes used 128.00KiB
+>> =C2=A0=C2=A0=C2=A0 devid=C2=A0=C2=A0=C2=A0 2 size 292.97MiB used 104.0=
+0MiB path /dev/loop3
+>> =C2=A0=C2=A0=C2=A0 *** Some devices missing
+>=20
+> Is this a known problem? Can you reproduce it? Am I doing something wro=
+ng?
+>=20
+> Regards, Jakob
+>=20
+
+
+--AC0uvjwxeQFqzFTkNggmCBdNUGLE5Mz64--
+
+--3JVEzO07EazwOAMQ2VwloS7nzQ4rdAPoZ
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxexI0ACgkQwj2R86El
+/qiWGwf6A3wibmp3iXQ4hD0e6DyWxmj1JPPE3JdMMu/CMEI1GS95GiVjYFOZSWi2
+LS6NUkB52lQHW5s7bsmUWFpHH6fgWF4S3fR7g8XUlikzKeCv2gyI4z+QNf5hmYj5
+tgCJCMwYjCLktYx2k6RI8cHrC6sVMFaB138Ouant0p0ty3wpZVT5NHr0JJOLG9zM
+Gs2sVOmUHgRUaz73AjSV4AQSE3/b3rU6Yxz/SjX7Egojiw+O748kzDgR4HhR9J2v
+LmVH8r9QhMGo/x4kZBED/o/vhbb2li4hsQKXm7kMbHhnXa2gvR+Qw/JydtkyEOe8
+5zZttO8R/CzdFNATGzne9RwcuEKm9Q==
+=/etQ
+-----END PGP SIGNATURE-----
+
+--3JVEzO07EazwOAMQ2VwloS7nzQ4rdAPoZ--

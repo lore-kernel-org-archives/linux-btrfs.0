@@ -7,102 +7,140 @@ X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6D5EDC282C4
-	for <linux-btrfs@archiver.kernel.org>; Sat,  9 Feb 2019 15:36:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1A96CC282C4
+	for <linux-btrfs@archiver.kernel.org>; Sat,  9 Feb 2019 15:57:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 27AF821773
-	for <linux-btrfs@archiver.kernel.org>; Sat,  9 Feb 2019 15:36:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CFA05218D2
+	for <linux-btrfs@archiver.kernel.org>; Sat,  9 Feb 2019 15:57:57 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="sIC2/HgG"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="pKOGeHvu"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726898AbfBIPgm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 9 Feb 2019 10:36:42 -0500
-Received: from mail-lj1-f171.google.com ([209.85.208.171]:33357 "EHLO
-        mail-lj1-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726741AbfBIPgl (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Feb 2019 10:36:41 -0500
-Received: by mail-lj1-f171.google.com with SMTP id f24-v6so5482218ljk.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 09 Feb 2019 07:36:40 -0800 (PST)
+        id S1726985AbfBIP54 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 9 Feb 2019 10:57:56 -0500
+Received: from mail-wm1-f49.google.com ([209.85.128.49]:54943 "EHLO
+        mail-wm1-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726894AbfBIP54 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Feb 2019 10:57:56 -0500
+Received: by mail-wm1-f49.google.com with SMTP id a62so8925966wmh.4
+        for <linux-btrfs@vger.kernel.org>; Sat, 09 Feb 2019 07:57:53 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
-        h=subject:to:references:from:openpgp:autocrypt:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=mKHYB2+fpN9vEarh6ZbNY3YX4tRD5/t4EYV5C0nCFww=;
-        b=sIC2/HgGqKk722FnxTt1+R4QUnV8HYXKTIBXPgde0Bmw+d+LPGuNalmdBWrfA4pj2o
-         gMN0fvlvXwr66UJpmx+TaFJDwZwyddEWThlx+oRgUen06YYYVAHchLyO4o0RrxW33XrD
-         Utbb0HPaPycmbT5U1dIZ6C+jL0QSFOEzzvYhs/qfLd4bPEZYeBEInJdjDQXrSROWNjeh
-         nzhAHKH4CK0CaXyqEzMltDKyaq5FfS8X/9prBKiQN0i3LJp/sYmIe0rwPgqo/H4c8c76
-         vPT30eccYgrcDhF2j3QTBM70YrbCirR2LbXGgnvhIYCTpQ6V5vkDNbnk6rEVAiWfHpzX
-         P+2A==
+        h=subject:to:references:cc:from:openpgp:autocrypt:message-id:date
+         :user-agent:mime-version:in-reply-to:content-transfer-encoding
+         :content-language;
+        bh=A17Kf3r9YT/pj0nMVPx6ayDGqzeP4LYbacsAdYP2RvQ=;
+        b=pKOGeHvuexFqylAhy3zI7l9dhssaxGYqCqp/uOtS0dYN6ELgleZbEgUbH/0GQansIa
+         ujxxp5hA02ssbNqAz4ebSd5Q45MFmlLpP6LUW3gXdqi/DvOpuKq3VJ+8jSrIYI5Z02zk
+         vw/Tg6xcxRYio6FmuREReYcL5k/+G5/G2QjuR0MRuHxlGBQd5DHTNbJyqTEV6ZpWj9jC
+         irtZm7alGpZe6EJHerZUdxTyojKmw7B0BLNnInQPGyZMPAhUTocO3HaopCen1uA1BQbM
+         M2c2/njVC4MKrxojtSRflY7GJ+jchCeE5gk8Sakeh+ZDCaxcRaqykkgRHZoVpVEfZoUd
+         r8zw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:openpgp:autocrypt
+        h=x-gm-message-state:subject:to:references:cc:from:openpgp:autocrypt
          :message-id:date:user-agent:mime-version:in-reply-to
-         :content-language:content-transfer-encoding;
-        bh=mKHYB2+fpN9vEarh6ZbNY3YX4tRD5/t4EYV5C0nCFww=;
-        b=qubEqn4hhHkQMCfbVSoHchhwAUmnWb15L5GH3gZCuSg9F41DGqfaXpXq1XuQuUv113
-         Xxx8tmFxrejWKyzOfKka0skL5uJMOWTMIn/srlmlLx/4zHu99IBOxyMTklc29fxMxE/5
-         2J+bWKOMAtcjl0wR9N8z5pSumIKfpu5rdLdFu4GhMwr926v6ETHS5EHqBQB3WLrGvdyn
-         HCgA9TNRdBL0AmcnpyXKU2srWhSltEEkgMkUTQ9JGm5JUAJce2Gy5JCbVyP631GKzjRN
-         oEkC5lE7h+wE8roRpFI5k9EhYBor0o32l/5P6/IK3F/F8Gk8U7hQRqHdu3GPrNCu6Jom
-         cvng==
-X-Gm-Message-State: AHQUAuYjvME4InMZoqVJ9LOv7fpDNPdEGjFB/AWd6L1j88G2ii9ENcox
-        NwRt0KYhuU0jH9LLnHzD2OAuH8b3
-X-Google-Smtp-Source: AHgI3IbogK59DjR40XModcMOAKV/vmyndwrWbl56GEPG/oSgEZvo/Lj2I2t2rUaip30B1vS+QTqdxg==
-X-Received: by 2002:a2e:6109:: with SMTP id v9-v6mr16505180ljb.126.1549726599477;
-        Sat, 09 Feb 2019 07:36:39 -0800 (PST)
-Received: from [192.168.1.4] (109-252-90-29.nat.spd-mgts.ru. [109.252.90.29])
-        by smtp.gmail.com with ESMTPSA id m21sm1130669lfl.97.2019.02.09.07.36.38
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Sat, 09 Feb 2019 07:36:38 -0800 (PST)
+         :content-transfer-encoding:content-language;
+        bh=A17Kf3r9YT/pj0nMVPx6ayDGqzeP4LYbacsAdYP2RvQ=;
+        b=YRFbeT7M+AHi0zoB3Pn+sdsjSDQpzIBuOZFhexGqhX5FuRRPRyYx+yMTfOvnoFRRks
+         j7lTGRzs4tGRGtL5sKd3bMB6aecAHOrsnDqEo8XNPifksUFyWEAe+AsjL33B8hdcTXBc
+         53V63aF58C7+Bx9+eWCZNEBKBWCe+x+6wXDxBnzotpIHE3z6MBLcOELWLycAzBnLWUpK
+         onyyLQiLADzXVd4kBbHumbKNhWDtCxmPJFjs0i5FIJQ7ry1Ded0PChmLimhQZ2SwE8s1
+         Xv/juLva7pAIF9v9y641gaK7sY3uMqUpsUcHRkjSVM9gMzPmePT3JLOPdoXYOb7Q3a55
+         NeCA==
+X-Gm-Message-State: AHQUAuaejuOUSXbXrfasNvXUgMrU+JJULgm5UKmSz8PxoCmwmebYWTvX
+        ZvMbxSh50+ciEWFCbaZyNQ==
+X-Google-Smtp-Source: AHgI3IatTQ8Y2/ttUPgrVZFEeRnXeJEjTOCMQHUj1Efg4e9ve/qCRyN4sx9SWZF5chV6B5lVoCqh4Q==
+X-Received: by 2002:adf:fb0d:: with SMTP id c13mr4429491wrr.285.1549727873019;
+        Sat, 09 Feb 2019 07:57:53 -0800 (PST)
+Received: from [192.168.178.53] (ip2505f80d.dynamic.kabel-deutschland.de. [37.5.248.13])
+        by smtp.googlemail.com with ESMTPSA id y24sm9962094wma.0.2019.02.09.07.57.51
+        (version=TLS1_3 cipher=AEAD-AES128-GCM-SHA256 bits=128/128);
+        Sat, 09 Feb 2019 07:57:52 -0800 (PST)
 Subject: Re: Cannot 'mount -o degraded /dev/replacement' after a replace
-To:     =?UTF-8?Q?Jakob_Sch=c3=b6ttl?= <jschoett@gmail.com>,
-        linux-btrfs@vger.kernel.org
+To:     Andrei Borzenkov <arvidjaar@gmail.com>, linux-btrfs@vger.kernel.org
 References: <2efee604-e44c-b00b-2ea8-d13ebc8c6355@gmail.com>
-From:   Andrei Borzenkov <arvidjaar@gmail.com>
+ <5441dc9d-a552-e77e-f74d-fe6ef702d400@gmx.com>
+ <57d3a28d-bf6e-7f89-3a2d-ebcb90fc6e32@gmail.com>
+ <0680cf0a-5a03-086f-d3f7-3317655401f0@gmail.com>
+Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+From:   =?UTF-8?Q?Jakob_Sch=c3=b6ttl?= <jschoett@gmail.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=arvidjaar@gmail.com; prefer-encrypt=mutual; keydata=
- xsDiBDxiRwwRBAC3CN9wdwpVEqUGmSoqF8tWVIT4P/bLCSZLkinSZ2drsblKpdG7x+guxwts
- +LgI8qjf/q5Lah1TwOqzDvjHYJ1wbBauxZ03nDzSLUhD4Ms1IsqlIwyTLumQs4vcQdvLxjFs
- G70aDglgUSBogtaIEsiYZXl4X0j3L9fVstuz4/wXtwCg1cN/yv/eBC0tkcM1nsJXQrC5Ay8D
- /1aA5qPticLBpmEBxqkf0EMHuzyrFlqVw1tUjZ+Ep2LMlem8malPvfdZKEZ71W1a/XbRn8FE
- SOp0tUa5GwdoDXgEp1CJUn+WLurR0KPDf01E4j/PHHAoABgrqcOTcIVoNpv2gNiBySVsNGzF
- XTeY/Yd6vQclkqjBYONGN3r9R8bWA/0Y1j4XK61qjowRk3Iy8sBggM3PmmNRUJYgroerpcAr
- 2byz6wTsb3U7OzUZ1Llgisk5Qum0RN77m3I37FXlIhCmSEY7KZVzGNW3blugLHcfw/HuCB7R
- 1w5qiLWKK6eCQHL+BZwiU8hX3dtTq9d7WhRW5nsVPEaPqudQfMSi/Ux1kc0mQW5kcmVpIEJv
- cnplbmtvdiA8YXJ2aWRqYWFyQGdtYWlsLmNvbT7CZQQTEQIAJQIbAwYLCQgHAwIGFQgCCQoL
- BBYCAwECHgECF4AFAliWAiQCGQEACgkQR6LMutpd94wFGwCeNuQnMDxve/Fo3EvYIkAOn+zE
- 21cAnRCQTXd1hTgcRHfpArEd/Rcb5+SczsBNBDxiRyQQBACQtME33UHfFOCApLki4kLFrIw1
- 5A5asua10jm5It+hxzI9jDR9/bNEKDTKSciHnM7aRUggLwTt+6CXkMy8an+tVqGL/MvDc4/R
- KKlZxj39xP7wVXdt8y1ciY4ZqqZf3tmmSN9DlLcZJIOT82DaJZuvr7UJ7rLzBFbAUh4yRKaN
- nwADBwQAjNvMr/KBcGsV/UvxZSm/mdpvUPtcw9qmbxCrqFQoB6TmoZ7F6wp/rL3TkQ5UElPR
- gsG12+Dk9GgRhnnxTHCFgN1qTiZNX4YIFpNrd0au3W/Xko79L0c4/49ten5OrFI/psx53fhY
- vLYfkJnc62h8hiNeM6kqYa/x0BEddu92ZG7CRgQYEQIABgUCPGJHJAAKCRBHosy62l33jMhd
- AJ48P7WDvKLQQ5MKnn2D/TI337uA/gCgn5mnvm4SBctbhaSBgckRmgSxfwQ=
-Message-ID: <b89f4970-c750-81d9-5eec-44a0ff14c4e1@gmail.com>
-Date:   Sat, 9 Feb 2019 18:36:37 +0300
+Autocrypt: addr=jschoett@gmail.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <969d659b-bce1-7a72-6e50-6981dae56a94@gmail.com>
+Date:   Sat, 9 Feb 2019 16:57:51 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.4.0
+ Thunderbird/60.5.0
 MIME-Version: 1.0
-In-Reply-To: <2efee604-e44c-b00b-2ea8-d13ebc8c6355@gmail.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <0680cf0a-5a03-086f-d3f7-3317655401f0@gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+Content-Language: de-DE
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-09.02.2019 13:36, Jakob Schöttl пишет:
->   btrfs filesystem show   # to get devid of device 2
 
-Funny because for me it just says "Some devices missing" without giving
-exact device id. May be has been fixed in recent versions but for a long
-time it really annoyed me.
+Am 09.02.19 um 16:32 schrieb Andrei Borzenkov:
+> Running
+>
+> btrfs balance start -f -ssoft,convert=3Draid1 -dsoft,convert=3Draid1
+> -msoft,convert=3Draid1 /mnt
+>
+> fixes it. I am not sure whether btrfs is expected to do it automaticall=
+y
+> as of now.
 
-OK, when I just unplug device it does not say it - but it also does not
-say *which* device is missing, it happily continues to show old device
-names at the time of mount, be they actually present or not.
+This fix seems to work for me, too. Output was:
+ > Done, had to relocate 5 out of 8 chunks
 
-I always wondered how users are supposed to know which device to replace.
+Tested without any subvolumes or data.
+

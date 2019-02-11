@@ -6,27 +6,27 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6ED37C169C4
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Feb 2019 13:00:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5DE36C169C4
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Feb 2019 13:04:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 33960218D8
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Feb 2019 13:00:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 15121218D8
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Feb 2019 13:04:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727522AbfBKNAy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Feb 2019 08:00:54 -0500
-Received: from mx2.suse.de ([195.135.220.15]:38724 "EHLO mx1.suse.de"
+        id S1727440AbfBKNEl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Feb 2019 08:04:41 -0500
+Received: from mx2.suse.de ([195.135.220.15]:39620 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726025AbfBKNAy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Feb 2019 08:00:54 -0500
+        id S1727182AbfBKNEl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 11 Feb 2019 08:04:41 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 936DAAECD
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Feb 2019 13:00:51 +0000 (UTC)
-Subject: Re: [PATCH v3 5/9] btrfs: ref-verify: Use btrfs_ref to refactor
- btrfs_ref_tree_mod()
+        by mx1.suse.de (Postfix) with ESMTP id 54B43AF58
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Feb 2019 13:04:39 +0000 (UTC)
+Subject: Re: [PATCH v3 7/9] btrfs: extent-tree: Use btrfs_ref to refactor
+ btrfs_inc_extent_ref()
 To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20190211051653.3167-1-wqu@suse.com>
- <20190211051653.3167-6-wqu@suse.com>
+ <20190211051653.3167-8-wqu@suse.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -71,12 +71,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <774bc156-2d63-117f-a490-56c58587c554@suse.com>
-Date:   Mon, 11 Feb 2019 15:00:50 +0200
+Message-ID: <15a41104-eb91-2a90-3237-0234da65c260@suse.com>
+Date:   Mon, 11 Feb 2019 15:04:38 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <20190211051653.3167-6-wqu@suse.com>
+In-Reply-To: <20190211051653.3167-8-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -88,250 +88,383 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 11.02.19 г. 7:16 ч., Qu Wenruo wrote:
-> It's a perfect match for btrfs_ref_tree_mod() to use btrfs_ref, as
-> btrfs_ref describes a metadata/data reference update comprehensively.
-> 
-> Now we have one less function use confusing owner/level trick.
+> Now we don't need to play the dirty game of reusing @owner for tree block
+> level.
 > 
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
+
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
+
 > ---
->  fs/btrfs/extent-tree.c | 27 +++++++--------------
->  fs/btrfs/ref-verify.c  | 53 ++++++++++++++++++++++++------------------
->  fs/btrfs/ref-verify.h  | 10 ++++----
->  3 files changed, 42 insertions(+), 48 deletions(-)
+>  fs/btrfs/ctree.h       |  5 ++--
+>  fs/btrfs/extent-tree.c | 57 ++++++++++++++++++++++++------------------
+>  fs/btrfs/file.c        | 17 +++++++++----
+>  fs/btrfs/inode.c       | 10 +++++---
+>  fs/btrfs/ioctl.c       | 15 ++++++-----
+>  fs/btrfs/relocation.c  | 42 ++++++++++++++++++++-----------
+>  fs/btrfs/tree-log.c    | 11 +++++---
+>  7 files changed, 96 insertions(+), 61 deletions(-)
 > 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 9306925b6790..cd90f7cbc8f2 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -41,6 +41,7 @@ extern struct kmem_cache *btrfs_bit_radix_cachep;
+>  extern struct kmem_cache *btrfs_path_cachep;
+>  extern struct kmem_cache *btrfs_free_space_cachep;
+>  struct btrfs_ordered_sum;
+> +struct btrfs_ref;
+>  
+>  #define BTRFS_MAGIC 0x4D5F53665248425FULL /* ascii _BHRfS_M, no null */
+>  
+> @@ -2755,9 +2756,7 @@ int btrfs_free_and_pin_reserved_extent(struct btrfs_fs_info *fs_info,
+>  void btrfs_prepare_extent_commit(struct btrfs_fs_info *fs_info);
+>  int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans);
+>  int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+> -			 struct btrfs_root *root,
+> -			 u64 bytenr, u64 num_bytes, u64 parent,
+> -			 u64 root_objectid, u64 owner, u64 offset);
+> +			 struct btrfs_ref *generic_ref);
+>  
+>  int btrfs_start_dirty_block_groups(struct btrfs_trans_handle *trans);
+>  int btrfs_write_dirty_block_groups(struct btrfs_trans_handle *trans,
 > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 36516b33d07f..fea552f92a2c 100644
+> index 5419266d3e5d..d08186ec6410 100644
 > --- a/fs/btrfs/extent-tree.c
 > +++ b/fs/btrfs/extent-tree.c
-> @@ -2055,9 +2055,6 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
->  	BUG_ON(owner < BTRFS_FIRST_FREE_OBJECTID &&
->  	       root_objectid == BTRFS_TREE_LOG_OBJECTID);
+> @@ -2044,35 +2044,28 @@ int btrfs_discard_extent(struct btrfs_fs_info *fs_info, u64 bytenr,
 >  
-> -	btrfs_ref_tree_mod(root, bytenr, num_bytes, parent, root_objectid,
-> -			   owner, offset, BTRFS_ADD_DELAYED_REF);
-> -
->  	btrfs_init_generic_ref(&generic_ref, BTRFS_ADD_DELAYED_REF, bytenr,
->  			       num_bytes, parent);
->  	generic_ref.real_root = root->root_key.objectid;
-> @@ -2071,6 +2068,8 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
->  						 &old_ref_mod, &new_ref_mod);
->  	}
->  
-> +	btrfs_ref_tree_mod(fs_info, &generic_ref);
-> +
->  	if (ret == 0 && old_ref_mod < 0 && new_ref_mod >= 0) {
->  		bool metadata = owner < BTRFS_FIRST_FREE_OBJECTID;
->  
-> @@ -7289,10 +7288,7 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
->  	if (root->root_key.objectid != BTRFS_TREE_LOG_OBJECTID) {
->  		int old_ref_mod, new_ref_mod;
->  
-> -		btrfs_ref_tree_mod(root, buf->start, buf->len, parent,
-> -				   root->root_key.objectid,
-> -				   btrfs_header_level(buf), 0,
-> -				   BTRFS_DROP_DELAYED_REF);
-> +		btrfs_ref_tree_mod(fs_info, &generic_ref);
->  		ret = btrfs_add_delayed_tree_ref(trans, &generic_ref, NULL,
->  						 &old_ref_mod, &new_ref_mod);
->  		BUG_ON(ret); /* -ENOMEM */
-> @@ -7353,11 +7349,6 @@ int btrfs_free_extent(struct btrfs_trans_handle *trans,
->  	if (btrfs_is_testing(fs_info))
->  		return 0;
->  
-> -	if (root_objectid != BTRFS_TREE_LOG_OBJECTID)
-> -		btrfs_ref_tree_mod(root, bytenr, num_bytes, parent,
-> -				   root_objectid, owner, offset,
-> -				   BTRFS_DROP_DELAYED_REF);
-> -
->  	btrfs_init_generic_ref(&generic_ref, BTRFS_DROP_DELAYED_REF, bytenr,
->  			       num_bytes, parent);
->  	generic_ref.real_root = root->root_key.objectid;
-> @@ -7381,6 +7372,9 @@ int btrfs_free_extent(struct btrfs_trans_handle *trans,
->  						 &old_ref_mod, &new_ref_mod);
->  	}
->  
-> +	if (root_objectid != BTRFS_TREE_LOG_OBJECTID)
-> +		btrfs_ref_tree_mod(fs_info, &generic_ref);
-> +
->  	if (ret == 0 && old_ref_mod >= 0 && new_ref_mod < 0) {
->  		bool metadata = owner < BTRFS_FIRST_FREE_OBJECTID;
->  
-> @@ -8490,13 +8484,10 @@ int btrfs_alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
->  
->  	BUG_ON(root->root_key.objectid == BTRFS_TREE_LOG_OBJECTID);
->  
-> -	btrfs_ref_tree_mod(root, ins->objectid, ins->offset, 0,
-> -			   root->root_key.objectid, owner, offset,
-> -			   BTRFS_ADD_DELAYED_EXTENT);
-> -
->  	btrfs_init_generic_ref(&generic_ref, BTRFS_ADD_DELAYED_EXTENT,
->  			       ins->objectid, ins->offset, 0);
->  	btrfs_init_data_ref(&generic_ref, root->root_key.objectid, owner, offset);
-> +	btrfs_ref_tree_mod(root->fs_info, &generic_ref);
->  	ret = btrfs_add_delayed_data_ref(trans, &generic_ref,
->  					 ram_bytes, NULL, NULL);
->  	return ret;
-> @@ -8745,13 +8736,11 @@ struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
->  		extent_op->is_data = false;
->  		extent_op->level = level;
->  
-> -		btrfs_ref_tree_mod(root, ins.objectid, ins.offset, parent,
-> -				   root_objectid, level, 0,
-> -				   BTRFS_ADD_DELAYED_EXTENT);
->  		btrfs_init_generic_ref(&generic_ref, BTRFS_ADD_DELAYED_EXTENT,
->  				       ins.objectid, ins.offset, parent);
->  		generic_ref.real_root = root->root_key.objectid;
->  		btrfs_init_tree_ref(&generic_ref, level, root_objectid);
-> +		btrfs_ref_tree_mod(fs_info, &generic_ref);
->  		ret = btrfs_add_delayed_tree_ref(trans, &generic_ref,
->  						 extent_op, NULL, NULL);
->  		if (ret)
-> diff --git a/fs/btrfs/ref-verify.c b/fs/btrfs/ref-verify.c
-> index d09b6cdb785a..4a0f6289ef17 100644
-> --- a/fs/btrfs/ref-verify.c
-> +++ b/fs/btrfs/ref-verify.c
-> @@ -670,36 +670,43 @@ static void dump_block_entry(struct btrfs_fs_info *fs_info,
->  
->  /*
->   * btrfs_ref_tree_mod: called when we modify a ref for a bytenr
-> - * @root: the root we are making this modification from.
-> - * @bytenr: the bytenr we are modifying.
-> - * @num_bytes: number of bytes.
-> - * @parent: the parent bytenr.
-> - * @ref_root: the original root owner of the bytenr.
-> - * @owner: level in the case of metadata, inode in the case of data.
-> - * @offset: 0 for metadata, file offset for data.
-> - * @action: the action that we are doing, this is the same as the delayed ref
-> - *	action.
->   *
->   * This will add an action item to the given bytenr and do sanity checks to make
->   * sure we haven't messed something up.  If we are making a new allocation and
->   * this block entry has history we will delete all previous actions as long as
->   * our sanity checks pass as they are no longer needed.
->   */
-> -int btrfs_ref_tree_mod(struct btrfs_root *root, u64 bytenr, u64 num_bytes,
-> -		       u64 parent, u64 ref_root, u64 owner, u64 offset,
-> -		       int action)
-> +int btrfs_ref_tree_mod(struct btrfs_fs_info *fs_info,
-> +		       struct btrfs_ref *generic_ref)
+>  /* Can return -ENOMEM */
+>  int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+> -			 struct btrfs_root *root,
+> -			 u64 bytenr, u64 num_bytes, u64 parent,
+> -			 u64 root_objectid, u64 owner, u64 offset)
+> +			 struct btrfs_ref *generic_ref)
 >  {
 > -	struct btrfs_fs_info *fs_info = root->fs_info;
->  	struct ref_entry *ref = NULL, *exist;
->  	struct ref_action *ra = NULL;
->  	struct block_entry *be = NULL;
->  	struct root_entry *re = NULL;
-> +	int action = generic_ref->action;
+> -	struct btrfs_ref generic_ref = { 0 };
+> +	struct btrfs_fs_info *fs_info = trans->fs_info;
+>  	int old_ref_mod, new_ref_mod;
+>  	int ret;
+>  
+> -	BUG_ON(owner < BTRFS_FIRST_FREE_OBJECTID &&
+> -	       root_objectid == BTRFS_TREE_LOG_OBJECTID);
+> +	ASSERT(generic_ref->type != BTRFS_REF_NOT_SET &&
+> +	       generic_ref->action);
+> +	BUG_ON(generic_ref->type == BTRFS_REF_METADATA &&
+> +	       generic_ref->tree_ref.root == BTRFS_TREE_LOG_OBJECTID);
+>  
+> -	btrfs_init_generic_ref(&generic_ref, BTRFS_ADD_DELAYED_REF, bytenr,
+> -			       num_bytes, parent);
+> -	generic_ref.real_root = root->root_key.objectid;
+> -	if (owner < BTRFS_FIRST_FREE_OBJECTID) {
+> -		btrfs_init_tree_ref(&generic_ref, (int)owner, root_objectid);
+> -		ret = btrfs_add_delayed_tree_ref(trans, &generic_ref,
+> +	if (generic_ref->type == BTRFS_REF_METADATA)
+> +		ret = btrfs_add_delayed_tree_ref(trans, generic_ref,
+>  				NULL, &old_ref_mod, &new_ref_mod);
+> -	} else {
+> -		btrfs_init_data_ref(&generic_ref, root_objectid, owner, offset);
+> -		ret = btrfs_add_delayed_data_ref(trans, &generic_ref, 0,
+> +	else
+> +		ret = btrfs_add_delayed_data_ref(trans, generic_ref, 0,
+>  						 &old_ref_mod, &new_ref_mod);
+> -	}
+>  
+> -	btrfs_ref_tree_mod(fs_info, &generic_ref);
+> +	btrfs_ref_tree_mod(fs_info, generic_ref);
+>  
+>  	if (ret == 0 && old_ref_mod < 0 && new_ref_mod >= 0)
+> -		add_pinned_bytes(fs_info, &generic_ref);
+> +		add_pinned_bytes(fs_info, generic_ref);
+>  
+>  	return ret;
+>  }
+> @@ -3246,7 +3239,10 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
+>  	u32 nritems;
+>  	struct btrfs_key key;
+>  	struct btrfs_file_extent_item *fi;
+> +	struct btrfs_ref generic_ref = { 0 };
+> +	bool for_reloc = btrfs_header_flag(buf, BTRFS_HEADER_FLAG_RELOC);
+>  	int i;
+> +	int action;
+>  	int level;
 >  	int ret = 0;
-> -	bool metadata = owner < BTRFS_FIRST_FREE_OBJECTID;
-> +	bool metadata;
-> +	u64 bytenr = generic_ref->bytenr;
-> +	u64 num_bytes = generic_ref->len;
-> +	u64 parent = generic_ref->parent;
-> +	u64 ref_root;
-> +	u64 owner;
-> +	u64 offset;
 >  
-> -	if (!btrfs_test_opt(root->fs_info, REF_VERIFY))
-> +	if (!btrfs_test_opt(fs_info, REF_VERIFY))
->  		return 0;
+> @@ -3264,6 +3260,10 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
+>  		parent = buf->start;
+>  	else
+>  		parent = 0;
+> +	if (inc)
+> +		action = BTRFS_ADD_DELAYED_REF;
+> +	else
+> +		action = BTRFS_DROP_DELAYED_REF;
 >  
-> +	if (generic_ref->type == BTRFS_REF_METADATA) {
-> +		ref_root = generic_ref->tree_ref.root;
-> +		owner = generic_ref->tree_ref.level;
-> +		offset = 0;
-> +	} else {
-> +		ref_root = generic_ref->data_ref.ref_root;
-> +		owner = generic_ref->data_ref.ino;
-> +		offset = generic_ref->data_ref.offset;
-> +	}
-> +	metadata = owner < BTRFS_FIRST_FREE_OBJECTID;
+>  	for (i = 0; i < nritems; i++) {
+>  		if (level == 0) {
+> @@ -3281,10 +3281,14 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
+>  
+>  			num_bytes = btrfs_file_extent_disk_num_bytes(buf, fi);
+>  			key.offset -= btrfs_file_extent_offset(buf, fi);
+> +			btrfs_init_generic_ref(&generic_ref, action, bytenr,
+> +					       num_bytes, parent);
+> +			generic_ref.real_root = root->root_key.objectid;
+> +			btrfs_init_data_ref(&generic_ref, ref_root, key.objectid,
+> +					    key.offset);
+> +			generic_ref.skip_qgroup = for_reloc;
+>  			if (inc)
+> -				ret = btrfs_inc_extent_ref(trans, root, bytenr,
+> -						num_bytes, parent, ref_root,
+> -						key.objectid, key.offset);
+> +				ret = btrfs_inc_extent_ref(trans, &generic_ref);
+>  			else
+>  				ret = btrfs_free_extent(trans, root, bytenr,
+>  						num_bytes, parent, ref_root,
+> @@ -3294,10 +3298,13 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
+>  		} else {
+>  			bytenr = btrfs_node_blockptr(buf, i);
+>  			num_bytes = fs_info->nodesize;
+> +			btrfs_init_generic_ref(&generic_ref, action, bytenr,
+> +					       num_bytes, parent);
+> +			generic_ref.real_root = root->root_key.objectid;
+> +			btrfs_init_tree_ref(&generic_ref, level - 1, ref_root);
+> +			generic_ref.skip_qgroup = for_reloc;
+>  			if (inc)
+> -				ret = btrfs_inc_extent_ref(trans, root, bytenr,
+> -						num_bytes, parent, ref_root,
+> -						level - 1, 0);
+> +				ret = btrfs_inc_extent_ref(trans, &generic_ref);
+>  			else
+>  				ret = btrfs_free_extent(trans, root, bytenr,
+>  						num_bytes, parent, ref_root,
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index 34fe8a58b0e9..2aba5980f522 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -754,6 +754,7 @@ int __btrfs_drop_extents(struct btrfs_trans_handle *trans,
+>  	struct btrfs_fs_info *fs_info = root->fs_info;
+>  	struct extent_buffer *leaf;
+>  	struct btrfs_file_extent_item *fi;
+> +	struct btrfs_ref ref = { 0 };
+>  	struct btrfs_key key;
+>  	struct btrfs_key new_key;
+>  	u64 ino = btrfs_ino(BTRFS_I(inode));
+> @@ -909,11 +910,14 @@ int __btrfs_drop_extents(struct btrfs_trans_handle *trans,
+>  			btrfs_mark_buffer_dirty(leaf);
+>  
+>  			if (update_refs && disk_bytenr > 0) {
+> -				ret = btrfs_inc_extent_ref(trans, root,
+> -						disk_bytenr, num_bytes, 0,
+> +				btrfs_init_generic_ref(&ref,
+> +						BTRFS_ADD_DELAYED_REF,
+> +						disk_bytenr, num_bytes, 0);
+> +				btrfs_init_data_ref(&ref,
+>  						root->root_key.objectid,
+>  						new_key.objectid,
+>  						start - extent_offset);
+> +				ret = btrfs_inc_extent_ref(trans, &ref);
+>  				BUG_ON(ret); /* -ENOMEM */
+>  			}
+>  			key.offset = start;
+> @@ -1142,6 +1146,7 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
+>  	struct extent_buffer *leaf;
+>  	struct btrfs_path *path;
+>  	struct btrfs_file_extent_item *fi;
+> +	struct btrfs_ref ref = { 0 };
+>  	struct btrfs_key key;
+>  	struct btrfs_key new_key;
+>  	u64 bytenr;
+> @@ -1287,9 +1292,11 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
+>  						extent_end - split);
+>  		btrfs_mark_buffer_dirty(leaf);
+>  
+> -		ret = btrfs_inc_extent_ref(trans, root, bytenr, num_bytes,
+> -					   0, root->root_key.objectid,
+> -					   ino, orig_offset);
+> +		btrfs_init_generic_ref(&ref, BTRFS_ADD_DELAYED_REF, bytenr,
+> +				       num_bytes, 0);
+> +		btrfs_init_data_ref(&ref, root->root_key.objectid, ino,
+> +				    orig_offset);
+> +		ret = btrfs_inc_extent_ref(trans, &ref);
+>  		if (ret) {
+>  			btrfs_abort_transaction(trans, ret);
+>  			goto out;
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 3f180b857e20..95535ba375f8 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -2531,6 +2531,7 @@ static noinline int relink_extent_backref(struct btrfs_path *path,
+>  	struct btrfs_file_extent_item *item;
+>  	struct btrfs_ordered_extent *ordered;
+>  	struct btrfs_trans_handle *trans;
+> +	struct btrfs_ref ref = { 0 };
+>  	struct btrfs_root *root;
+>  	struct btrfs_key key;
+>  	struct extent_buffer *leaf;
+> @@ -2701,10 +2702,11 @@ static noinline int relink_extent_backref(struct btrfs_path *path,
+>  	inode_add_bytes(inode, len);
+>  	btrfs_release_path(path);
+>  
+> -	ret = btrfs_inc_extent_ref(trans, root, new->bytenr,
+> -			new->disk_len, 0,
+> -			backref->root_id, backref->inum,
+> -			new->file_pos);	/* start - extent_offset */
+> +	btrfs_init_generic_ref(&ref, BTRFS_ADD_DELAYED_REF, new->bytenr,
+> +			       new->disk_len, 0);
+> +	btrfs_init_data_ref(&ref, backref->root_id, backref->inum,
+> +			    new->file_pos);  /* start - extent_offset */
+> +	ret = btrfs_inc_extent_ref(trans, &ref);
+>  	if (ret) {
+>  		btrfs_abort_transaction(trans, ret);
+>  		goto out_free_path;
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 3f9d7be30bf4..f5d49a92f53c 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -3755,13 +3755,16 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
+>  								datal);
+>  
+>  				if (disko) {
+> +					struct btrfs_ref ref = { 0 };
+>  					inode_add_bytes(inode, datal);
+> -					ret = btrfs_inc_extent_ref(trans,
+> -							root,
+> -							disko, diskl, 0,
+> -							root->root_key.objectid,
+> -							btrfs_ino(BTRFS_I(inode)),
+> -							new_key.offset - datao);
+> +					btrfs_init_generic_ref(&ref,
+> +						BTRFS_ADD_DELAYED_REF, disko,
+> +						diskl, 0);
+> +					btrfs_init_data_ref(&ref,
+> +						root->root_key.objectid,
+> +						btrfs_ino(BTRFS_I(inode)),
+> +						new_key.offset - datao);
+> +					ret = btrfs_inc_extent_ref(trans, &ref);
+>  					if (ret) {
+>  						btrfs_abort_transaction(trans,
+>  									ret);
+> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+> index 70b85a593b7b..b82d532d8e5e 100644
+> --- a/fs/btrfs/relocation.c
+> +++ b/fs/btrfs/relocation.c
+> @@ -1643,6 +1643,8 @@ int replace_file_extents(struct btrfs_trans_handle *trans,
+>  
+>  	nritems = btrfs_header_nritems(leaf);
+>  	for (i = 0; i < nritems; i++) {
+> +		struct btrfs_ref ref = { 0 };
 > +
->  	ref = kzalloc(sizeof(struct ref_entry), GFP_NOFS);
->  	ra = kmalloc(sizeof(struct ref_action), GFP_NOFS);
->  	if (!ra || !ref) {
-> @@ -732,7 +739,7 @@ int btrfs_ref_tree_mod(struct btrfs_root *root, u64 bytenr, u64 num_bytes,
+>  		cond_resched();
+>  		btrfs_item_key_to_cpu(leaf, &key, i);
+>  		if (key.type != BTRFS_EXTENT_DATA_KEY)
+> @@ -1703,10 +1705,12 @@ int replace_file_extents(struct btrfs_trans_handle *trans,
+>  		dirty = 1;
 >  
->  	INIT_LIST_HEAD(&ra->list);
->  	ra->action = action;
-> -	ra->root = root->root_key.objectid;
-> +	ra->root = generic_ref->real_root;
+>  		key.offset -= btrfs_file_extent_offset(leaf, fi);
+> -		ret = btrfs_inc_extent_ref(trans, root, new_bytenr,
+> -					   num_bytes, parent,
+> -					   btrfs_header_owner(leaf),
+> -					   key.objectid, key.offset);
+> +		btrfs_init_generic_ref(&ref, BTRFS_ADD_DELAYED_REF, new_bytenr,
+> +				       num_bytes, parent);
+> +		ref.real_root = root->root_key.objectid;
+> +		btrfs_init_data_ref(&ref, btrfs_header_owner(leaf),
+> +				    key.objectid, key.offset);
+> +		ret = btrfs_inc_extent_ref(trans, &ref);
+>  		if (ret) {
+>  			btrfs_abort_transaction(trans, ret);
+>  			break;
+> @@ -1756,6 +1760,7 @@ int replace_path(struct btrfs_trans_handle *trans, struct reloc_control *rc,
+>  	struct btrfs_fs_info *fs_info = dest->fs_info;
+>  	struct extent_buffer *eb;
+>  	struct extent_buffer *parent;
+> +	struct btrfs_ref ref = { 0 };
+>  	struct btrfs_key key;
+>  	u64 old_bytenr;
+>  	u64 new_bytenr;
+> @@ -1914,13 +1919,17 @@ int replace_path(struct btrfs_trans_handle *trans, struct reloc_control *rc,
+>  					      path->slots[level], old_ptr_gen);
+>  		btrfs_mark_buffer_dirty(path->nodes[level]);
 >  
->  	/*
->  	 * This is an allocation, preallocate the block_entry in case we haven't
-> @@ -745,7 +752,7 @@ int btrfs_ref_tree_mod(struct btrfs_root *root, u64 bytenr, u64 num_bytes,
->  		 * is and the new root objectid, so let's not treat the passed
->  		 * in root as if it really has a ref for this bytenr.
->  		 */
-> -		be = add_block_entry(root->fs_info, bytenr, num_bytes, ref_root);
-> +		be = add_block_entry(fs_info, bytenr, num_bytes, ref_root);
->  		if (IS_ERR(be)) {
->  			kfree(ra);
->  			ret = PTR_ERR(be);
-> @@ -787,13 +794,13 @@ int btrfs_ref_tree_mod(struct btrfs_root *root, u64 bytenr, u64 num_bytes,
->  			 * one we want to lookup below when we modify the
->  			 * re->num_refs.
->  			 */
-> -			ref_root = root->root_key.objectid;
-> -			re->root_objectid = root->root_key.objectid;
-> +			ref_root = generic_ref->real_root;
-> +			re->root_objectid = generic_ref->real_root;
->  			re->num_refs = 0;
->  		}
+> -		ret = btrfs_inc_extent_ref(trans, src, old_bytenr,
+> -					blocksize, path->nodes[level]->start,
+> -					src->root_key.objectid, level - 1, 0);
+> +		btrfs_init_generic_ref(&ref, BTRFS_ADD_DELAYED_REF, old_bytenr,
+> +				       blocksize, path->nodes[level]->start);
+> +		ref.skip_qgroup = true;
+> +		btrfs_init_tree_ref(&ref, level - 1, src->root_key.objectid);
+> +		ret = btrfs_inc_extent_ref(trans, &ref);
+>  		BUG_ON(ret);
+> -		ret = btrfs_inc_extent_ref(trans, dest, new_bytenr,
+> -					blocksize, 0, dest->root_key.objectid,
+> -					level - 1, 0);
+> +		btrfs_init_generic_ref(&ref, BTRFS_ADD_DELAYED_REF, new_bytenr,
+> +				       blocksize, 0);
+> +		ref.skip_qgroup = true;
+> +		btrfs_init_tree_ref(&ref, level - 1, dest->root_key.objectid);
+> +		ret = btrfs_inc_extent_ref(trans, &ref);
+>  		BUG_ON(ret);
 >  
-> -		spin_lock(&root->fs_info->ref_verify_lock);
-> -		be = lookup_block_entry(&root->fs_info->block_tree, bytenr);
-> +		spin_lock(&fs_info->ref_verify_lock);
-> +		be = lookup_block_entry(&fs_info->block_tree, bytenr);
->  		if (!be) {
->  			btrfs_err(fs_info,
->  "trying to do action %d to bytenr %llu num_bytes %llu but there is no existing entry!",
-> @@ -862,7 +869,7 @@ int btrfs_ref_tree_mod(struct btrfs_root *root, u64 bytenr, u64 num_bytes,
->  			 * didn't think of some other corner case.
->  			 */
->  			btrfs_err(fs_info, "failed to find root %llu for %llu",
-> -				  root->root_key.objectid, be->bytenr);
-> +				  generic_ref->real_root, be->bytenr);
->  			dump_block_entry(fs_info, be);
->  			dump_ref_action(fs_info, ra);
->  			kfree(ra);
-> @@ -881,7 +888,7 @@ int btrfs_ref_tree_mod(struct btrfs_root *root, u64 bytenr, u64 num_bytes,
->  	list_add_tail(&ra->list, &be->actions);
->  	ret = 0;
->  out_unlock:
-> -	spin_unlock(&root->fs_info->ref_verify_lock);
-> +	spin_unlock(&fs_info->ref_verify_lock);
->  out:
->  	if (ret)
->  		btrfs_clear_opt(fs_info->mount_opt, REF_VERIFY);
-> diff --git a/fs/btrfs/ref-verify.h b/fs/btrfs/ref-verify.h
-> index b7d2a4edfdb7..855de37719b5 100644
-> --- a/fs/btrfs/ref-verify.h
-> +++ b/fs/btrfs/ref-verify.h
-> @@ -9,9 +9,8 @@
->  #ifdef CONFIG_BTRFS_FS_REF_VERIFY
->  int btrfs_build_ref_tree(struct btrfs_fs_info *fs_info);
->  void btrfs_free_ref_cache(struct btrfs_fs_info *fs_info);
-> -int btrfs_ref_tree_mod(struct btrfs_root *root, u64 bytenr, u64 num_bytes,
-> -		       u64 parent, u64 ref_root, u64 owner, u64 offset,
-> -		       int action);
-> +int btrfs_ref_tree_mod(struct btrfs_fs_info *fs_info,
-> +		       struct btrfs_ref *generic_ref);
->  void btrfs_free_ref_tree_range(struct btrfs_fs_info *fs_info, u64 start,
->  			       u64 len);
+>  		ret = btrfs_free_extent(trans, src, new_bytenr, blocksize,
+> @@ -2719,6 +2728,7 @@ static int do_relocation(struct btrfs_trans_handle *trans,
+>  	rc->backref_cache.path[node->level] = node;
+>  	list_for_each_entry(edge, &node->upper, list[LOWER]) {
+>  		struct btrfs_key first_key;
+> +		struct btrfs_ref ref = { 0 };
 >  
-> @@ -30,9 +29,8 @@ static inline void btrfs_free_ref_cache(struct btrfs_fs_info *fs_info)
->  {
->  }
+>  		cond_resched();
 >  
-> -static inline int btrfs_ref_tree_mod(struct btrfs_root *root, u64 bytenr,
-> -				     u64 num_bytes, u64 parent, u64 ref_root,
-> -				     u64 owner, u64 offset, int action)
-> +static inline int btrfs_ref_tree_mod(struct btrfs_fs_info *fs_info,
-> +		       struct btrfs_ref *generic_ref)
->  {
->  	return 0;
->  }
+> @@ -2816,11 +2826,13 @@ static int do_relocation(struct btrfs_trans_handle *trans,
+>  						      trans->transid);
+>  			btrfs_mark_buffer_dirty(upper->eb);
+>  
+> -			ret = btrfs_inc_extent_ref(trans, root,
+> -						node->eb->start, blocksize,
+> -						upper->eb->start,
+> -						btrfs_header_owner(upper->eb),
+> -						node->level, 0);
+> +			btrfs_init_generic_ref(&ref, BTRFS_ADD_DELAYED_REF,
+> +					       node->eb->start, blocksize,
+> +					       upper->eb->start);
+> +			ref.real_root = root->root_key.objectid;
+> +			btrfs_init_tree_ref(&ref, node->level,
+> +					    btrfs_header_owner(upper->eb));
+> +			ret = btrfs_inc_extent_ref(trans, &ref);
+>  			BUG_ON(ret);
+>  
+>  			ret = btrfs_drop_subtree(trans, root, eb, upper->eb);
+> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+> index 1a69a45ae926..2e62f275ae5b 100644
+> --- a/fs/btrfs/tree-log.c
+> +++ b/fs/btrfs/tree-log.c
+> @@ -693,9 +693,11 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
+>  			goto out;
+>  
+>  		if (ins.objectid > 0) {
+> +			struct btrfs_ref ref = { 0 };
+>  			u64 csum_start;
+>  			u64 csum_end;
+>  			LIST_HEAD(ordered_sums);
+> +
+>  			/*
+>  			 * is this extent already allocated in the extent
+>  			 * allocation tree?  If so, just add a reference
+> @@ -703,10 +705,13 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
+>  			ret = btrfs_lookup_data_extent(fs_info, ins.objectid,
+>  						ins.offset);
+>  			if (ret == 0) {
+> -				ret = btrfs_inc_extent_ref(trans, root,
+> -						ins.objectid, ins.offset,
+> -						0, root->root_key.objectid,
+> +				btrfs_init_generic_ref(&ref,
+> +						BTRFS_ADD_DELAYED_REF,
+> +						ins.objectid, ins.offset, 0);
+> +				btrfs_init_data_ref(&ref,
+> +						root->root_key.objectid,
+>  						key->objectid, offset);
+> +				ret = btrfs_inc_extent_ref(trans, &ref);
+>  				if (ret)
+>  					goto out;
+>  			} else {
 > 

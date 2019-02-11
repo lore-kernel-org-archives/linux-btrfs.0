@@ -3,80 +3,63 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 589FFC169C4
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Feb 2019 13:06:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E1085C169C4
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Feb 2019 13:23:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1D7CD20818
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Feb 2019 13:06:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A7E09218A6
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Feb 2019 13:23:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727420AbfBKNF5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Feb 2019 08:05:57 -0500
-Received: from mx2.suse.de ([195.135.220.15]:39738 "EHLO mx1.suse.de"
+        id S1727884AbfBKNXn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Feb 2019 08:23:43 -0500
+Received: from mx2.suse.de ([195.135.220.15]:43238 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727182AbfBKNF5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Feb 2019 08:05:57 -0500
+        id S1727383AbfBKNXm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 11 Feb 2019 08:23:42 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id E9C5EAECD
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Feb 2019 13:05:53 +0000 (UTC)
-Subject: Re: [PATCH v3 8/9] btrfs: extent-tree: Use btrfs_ref to refactor
- btrfs_free_extent()
-To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+        by mx1.suse.de (Postfix) with ESMTP id 29A6EAED6
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Feb 2019 13:23:41 +0000 (UTC)
+Subject: Re: [PATCH v3 1/9] btrfs: delayed-ref: Introduce better documented
+ delayed ref structures
+To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 References: <20190211051653.3167-1-wqu@suse.com>
- <20190211051653.3167-9-wqu@suse.com>
-From:   Nikolay Borisov <nborisov@suse.com>
+ <20190211051653.3167-2-wqu@suse.com>
+ <216f4acf-faf9-6ca3-c9f2-68a9eaa763fa@suse.com>
+From:   Qu Wenruo <wqu@suse.de>
 Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <f8c23577-038f-c1c1-0c61-48f9b4e354af@suse.com>
-Date:   Mon, 11 Feb 2019 15:05:53 +0200
+Autocrypt: addr=wqu@suse.de; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0F1F1IFdlbnJ1byA8d3F1QHN1c2UuZGU+iQFUBBMBCAA+AhsDBQsJCAcCBhUICQoLAgQW
+ AgMBAh4BAheAFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlnVgp0FCQlmAm4ACgkQwj2R86El
+ /qilmgf/cUq9kFQo577ku5gc6rFpVg68ublBwjYpwjw0b//xo+Wo1wm+RRbUGs+djSZAqw12
+ D4F3r0mBTI7abUCNWAbFkYZSAIFVi0DMkjypIVS7PSaEt04rM9VBTToE+YqU6WENeJ57R2p2
+ +hI0wZrBwxObdsdaOtxWtsp3bmhIbdqxSKrtXuRawy4KnQYcLuGzOce9okdlbAE0W3KHm1gQ
+ oNAe6FX8nC9qo14m8LqEbThYH+qj4iCMlN8HIfbSx4F3e7nHZ+UAMW+E/lnMRkIB9Df+JyVd
+ /NlXzIjZAggcWsqpx6D4wyAuexKWkiGQeUeArUNihAwXjmyqWPGmjVyIh+oC6LkBDQRZ1YGv
+ AQgAqlPrYeBLMv3PAZ75YhQIwH6c4SNcB++hQ9TCT5gIQNw51+SQzkXIGgmzxMIS49cZcE4K
+ Xk/kHw5hieQeQZa60BWVRNXwoRI4ib8okgDuMkD5Kz1WEyO149+BZ7HD4/yK0VFJGuvDJR8T
+ 7RZwB69uVSLjkuNZZmCmDcDzS0c/SJOg5nkxt1iTtgUETb1wNKV6yR9XzRkrEW/qShChyrS9
+ fNN8e9c0MQsC4fsyz9Ylx1TOY/IF/c6rqYoEEfwnpdlz0uOM1nA1vK+wdKtXluCa79MdfaeD
+ /dt76Kp/o6CAKLLcjU1Iwnkq1HSrYfY3HZWpvV9g84gPwxwxX0uXquHxLwARAQABiQE8BBgB
+ CAAmFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlnVga8CGwwFCQPCZwAACgkQwj2R86El/qgN
+ 8Qf+M0vM2Idwm5txZZSs+/kSgcPxEwYmxUinnUJGyc0ZWYQXPl0cBetZon9El0naijGzNWvf
+ HxIPB+ZFehk6Otgc78p1a3/xck/s1myFRLrmbbTJNoFiyL25ljcq0J8z5Zp4yuABL2RiLdaZ
+ Pt/jfwjBHwGR+QKp6dD2qMrUWf9b7TFzYDMZXzZ2/eoIgtyjEelNBPrIgOFe24iKMjaGjd97
+ fJuRcBMHdhUAxvXQF1oRtd83JvYJ5OtwTd8MgkEfl+fo7HwWkuHbzc70L4fFKv2BowqFdaHy
+ mId1ijGPGr46tuZ5a4cw/zbaPYx6fJ4sK9tSv/6V1QPNUdqml6hm6pfs6A==
+Message-ID: <77f7ed38-aca5-f799-08eb-e8a3100fe57c@suse.de>
+Date:   Mon, 11 Feb 2019 21:23:34 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
+ Thunderbird/60.5.0
 MIME-Version: 1.0
-In-Reply-To: <20190211051653.3167-9-wqu@suse.com>
+In-Reply-To: <216f4acf-faf9-6ca3-c9f2-68a9eaa763fa@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -87,275 +70,276 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 11.02.19 г. 7:16 ч., Qu Wenruo wrote:
-> Similar to btrfs_inc_extent_ref(), just use btrfs_ref to replace the
-> long parameter list and the confusing @owner parameter.
+On 2019/2/11 下午8:55, Nikolay Borisov wrote:
 > 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
-
-> ---
->  fs/btrfs/ctree.h       |  5 +---
->  fs/btrfs/extent-tree.c | 52 +++++++++++++++++++-----------------------
->  fs/btrfs/file.c        | 22 ++++++++++--------
->  fs/btrfs/inode.c       | 13 +++++++----
->  fs/btrfs/relocation.c  | 25 ++++++++++++--------
->  5 files changed, 61 insertions(+), 56 deletions(-)
 > 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index cd90f7cbc8f2..84a20abd0811 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -2744,10 +2744,7 @@ int btrfs_set_disk_extent_flags(struct btrfs_trans_handle *trans,
->  				struct btrfs_fs_info *fs_info,
->  				u64 bytenr, u64 num_bytes, u64 flags,
->  				int level, int is_data);
-> -int btrfs_free_extent(struct btrfs_trans_handle *trans,
-> -		      struct btrfs_root *root,
-> -		      u64 bytenr, u64 num_bytes, u64 parent, u64 root_objectid,
-> -		      u64 owner, u64 offset);
-> +int btrfs_free_extent(struct btrfs_trans_handle *trans, struct btrfs_ref *ref);
->  
->  int btrfs_free_reserved_extent(struct btrfs_fs_info *fs_info,
->  			       u64 start, u64 len, int delalloc);
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index d08186ec6410..e2f34a8f5e91 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -3290,9 +3290,7 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
->  			if (inc)
->  				ret = btrfs_inc_extent_ref(trans, &generic_ref);
->  			else
-> -				ret = btrfs_free_extent(trans, root, bytenr,
-> -						num_bytes, parent, ref_root,
-> -						key.objectid, key.offset);
-> +				ret = btrfs_free_extent(trans, &generic_ref);
->  			if (ret)
->  				goto fail;
->  		} else {
-> @@ -3306,9 +3304,7 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
->  			if (inc)
->  				ret = btrfs_inc_extent_ref(trans, &generic_ref);
->  			else
-> -				ret = btrfs_free_extent(trans, root, bytenr,
-> -						num_bytes, parent, ref_root,
-> -						level - 1, 0);
-> +				ret = btrfs_free_extent(trans, &generic_ref);
->  			if (ret)
->  				goto fail;
->  		}
-> @@ -7340,47 +7336,43 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
->  }
->  
->  /* Can return -ENOMEM */
-> -int btrfs_free_extent(struct btrfs_trans_handle *trans,
-> -		      struct btrfs_root *root,
-> -		      u64 bytenr, u64 num_bytes, u64 parent, u64 root_objectid,
-> -		      u64 owner, u64 offset)
-> +int btrfs_free_extent(struct btrfs_trans_handle *trans, struct btrfs_ref *ref)
->  {
-> -	struct btrfs_fs_info *fs_info = root->fs_info;
-> -	struct btrfs_ref generic_ref = { 0 };
-> +	struct btrfs_fs_info *fs_info = trans->fs_info;
->  	int old_ref_mod, new_ref_mod;
->  	int ret;
->  
->  	if (btrfs_is_testing(fs_info))
->  		return 0;
->  
-> -	btrfs_init_generic_ref(&generic_ref, BTRFS_DROP_DELAYED_REF, bytenr,
-> -			       num_bytes, parent);
-> -	generic_ref.real_root = root->root_key.objectid;
->  	/*
->  	 * tree log blocks never actually go into the extent allocation
->  	 * tree, just update pinning info and exit early.
->  	 */
-> -	if (root_objectid == BTRFS_TREE_LOG_OBJECTID) {
-> -		WARN_ON(owner >= BTRFS_FIRST_FREE_OBJECTID);
-> +	if ((ref->type == BTRFS_REF_METADATA &&
-> +	     ref->tree_ref.root == BTRFS_TREE_LOG_OBJECTID) ||
-> +	    (ref->type == BTRFS_REF_DATA &&
-> +	     ref->data_ref.ref_root == BTRFS_TREE_LOG_OBJECTID)) {
->  		/* unlocks the pinned mutex */
-> -		btrfs_pin_extent(fs_info, bytenr, num_bytes, 1);
-> +		btrfs_pin_extent(fs_info, ref->bytenr, ref->len, 1);
->  		old_ref_mod = new_ref_mod = 0;
->  		ret = 0;
-> -	} else if (owner < BTRFS_FIRST_FREE_OBJECTID) {
-> -		btrfs_init_tree_ref(&generic_ref, (int)owner, root_objectid);
-> -		ret = btrfs_add_delayed_tree_ref(trans, &generic_ref, NULL,
-> +	} else if (ref->type == BTRFS_REF_METADATA) {
-> +		ret = btrfs_add_delayed_tree_ref(trans, ref, NULL,
->  						 &old_ref_mod, &new_ref_mod);
->  	} else {
-> -		btrfs_init_data_ref(&generic_ref, root_objectid, owner, offset);
-> -		ret = btrfs_add_delayed_data_ref(trans, &generic_ref, 0,
-> +		ret = btrfs_add_delayed_data_ref(trans, ref, 0,
->  						 &old_ref_mod, &new_ref_mod);
->  	}
->  
-> -	if (root_objectid != BTRFS_TREE_LOG_OBJECTID)
-> -		btrfs_ref_tree_mod(fs_info, &generic_ref);
-> +	if (!((ref->type == BTRFS_REF_METADATA &&
-> +	       ref->tree_ref.root == BTRFS_TREE_LOG_OBJECTID) ||
-> +	      (ref->type == BTRFS_REF_DATA &&
-> +	       ref->data_ref.ref_root == BTRFS_TREE_LOG_OBJECTID)))
-> +		btrfs_ref_tree_mod(fs_info, ref);
->  
->  	if (ret == 0 && old_ref_mod >= 0 && new_ref_mod < 0)
-> -		add_pinned_bytes(fs_info, &generic_ref);
-> +		add_pinned_bytes(fs_info, ref);
->  
->  	return ret;
->  }
-> @@ -8957,6 +8949,7 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
->  	u64 parent;
->  	struct btrfs_key key;
->  	struct btrfs_key first_key;
-> +	struct btrfs_ref ref = { 0 };
->  	struct extent_buffer *next;
->  	int level = wc->level;
->  	int reada = 0;
-> @@ -9102,9 +9095,10 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
->  					     ret);
->  			}
->  		}
-> -		ret = btrfs_free_extent(trans, root, bytenr, fs_info->nodesize,
-> -					parent, root->root_key.objectid,
-> -					level - 1, 0);
-> +		btrfs_init_generic_ref(&ref, BTRFS_DROP_DELAYED_REF, bytenr,
-> +				       fs_info->nodesize, parent);
-> +		btrfs_init_tree_ref(&ref, level - 1, root->root_key.objectid);
-> +		ret = btrfs_free_extent(trans, &ref);
->  		if (ret)
->  			goto out_unlock;
->  	}
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index 2aba5980f522..f032f123be53 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -997,11 +997,14 @@ int __btrfs_drop_extents(struct btrfs_trans_handle *trans,
->  				extent_end = ALIGN(extent_end,
->  						   fs_info->sectorsize);
->  			} else if (update_refs && disk_bytenr > 0) {
-> -				ret = btrfs_free_extent(trans, root,
-> -						disk_bytenr, num_bytes, 0,
-> +				btrfs_init_generic_ref(&ref,
-> +						BTRFS_DROP_DELAYED_REF,
-> +						disk_bytenr, num_bytes, 0);
-> +				btrfs_init_data_ref(&ref,
->  						root->root_key.objectid,
-> -						key.objectid, key.offset -
-> -						extent_offset);
-> +						key.objectid,
-> +						key.offset - extent_offset);
-> +				ret = btrfs_free_extent(trans, &ref);
->  				BUG_ON(ret); /* -ENOMEM */
->  				inode_sub_bytes(inode,
->  						extent_end - key.offset);
-> @@ -1318,6 +1321,9 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
->  
->  	other_start = end;
->  	other_end = 0;
-> +	btrfs_init_generic_ref(&ref, BTRFS_DROP_DELAYED_REF, bytenr,
-> +			       num_bytes, 0);
-> +	btrfs_init_data_ref(&ref, root->root_key.objectid, ino, orig_offset);
->  	if (extent_mergeable(leaf, path->slots[0] + 1,
->  			     ino, bytenr, orig_offset,
->  			     &other_start, &other_end)) {
-> @@ -1328,9 +1334,7 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
->  		extent_end = other_end;
->  		del_slot = path->slots[0] + 1;
->  		del_nr++;
-> -		ret = btrfs_free_extent(trans, root, bytenr, num_bytes,
-> -					0, root->root_key.objectid,
-> -					ino, orig_offset);
-> +		ret = btrfs_free_extent(trans, &ref);
->  		if (ret) {
->  			btrfs_abort_transaction(trans, ret);
->  			goto out;
-> @@ -1348,9 +1352,7 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
->  		key.offset = other_start;
->  		del_slot = path->slots[0];
->  		del_nr++;
-> -		ret = btrfs_free_extent(trans, root, bytenr, num_bytes,
-> -					0, root->root_key.objectid,
-> -					ino, orig_offset);
-> +		ret = btrfs_free_extent(trans, &ref);
->  		if (ret) {
->  			btrfs_abort_transaction(trans, ret);
->  			goto out;
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 95535ba375f8..bc01584791fd 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -4720,12 +4720,17 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
->  		if (found_extent &&
->  		    (test_bit(BTRFS_ROOT_REF_COWS, &root->state) ||
->  		     root == fs_info->tree_root)) {
-> +			struct btrfs_ref ref = { 0 };
-> +
->  			btrfs_set_path_blocking(path);
->  			bytes_deleted += extent_num_bytes;
-> -			ret = btrfs_free_extent(trans, root, extent_start,
-> -						extent_num_bytes, 0,
-> -						btrfs_header_owner(leaf),
-> -						ino, extent_offset);
-> +
-> +			btrfs_init_generic_ref(&ref, BTRFS_DROP_DELAYED_REF,
-> +					extent_start, extent_num_bytes, 0);
-> +			ref.real_root = root->root_key.objectid;
-> +			btrfs_init_data_ref(&ref, btrfs_header_owner(leaf),
-> +					ino, extent_offset);
-> +			ret = btrfs_free_extent(trans, &ref);
->  			if (ret) {
->  				btrfs_abort_transaction(trans, ret);
->  				break;
-> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index b82d532d8e5e..3b93a4585b70 100644
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -1716,9 +1716,12 @@ int replace_file_extents(struct btrfs_trans_handle *trans,
->  			break;
->  		}
->  
-> -		ret = btrfs_free_extent(trans, root, bytenr, num_bytes,
-> -					parent, btrfs_header_owner(leaf),
-> -					key.objectid, key.offset);
-> +		btrfs_init_generic_ref(&ref, BTRFS_DROP_DELAYED_REF, bytenr,
-> +				       num_bytes, parent);
-> +		ref.real_root = root->root_key.objectid;
-> +		btrfs_init_data_ref(&ref, btrfs_header_owner(leaf),
-> +				    key.objectid, key.offset);
-> +		ret = btrfs_free_extent(trans, &ref);
->  		if (ret) {
->  			btrfs_abort_transaction(trans, ret);
->  			break;
-> @@ -1932,14 +1935,18 @@ int replace_path(struct btrfs_trans_handle *trans, struct reloc_control *rc,
->  		ret = btrfs_inc_extent_ref(trans, &ref);
->  		BUG_ON(ret);
->  
-> -		ret = btrfs_free_extent(trans, src, new_bytenr, blocksize,
-> -					path->nodes[level]->start,
-> -					src->root_key.objectid, level - 1, 0);
-> +		btrfs_init_generic_ref(&ref, BTRFS_DROP_DELAYED_REF, new_bytenr,
-> +				       blocksize, path->nodes[level]->start);
-> +		btrfs_init_tree_ref(&ref, level - 1, src->root_key.objectid);
-> +		ref.skip_qgroup = true;
-> +		ret = btrfs_free_extent(trans, &ref);
->  		BUG_ON(ret);
->  
-> -		ret = btrfs_free_extent(trans, dest, old_bytenr, blocksize,
-> -					0, dest->root_key.objectid, level - 1,
-> -					0);
-> +		btrfs_init_generic_ref(&ref, BTRFS_DROP_DELAYED_REF, old_bytenr,
-> +				       blocksize, 0);
-> +		btrfs_init_tree_ref(&ref, level - 1, dest->root_key.objectid);
-> +		ref.skip_qgroup = true;
-> +		ret = btrfs_free_extent(trans, &ref);
->  		BUG_ON(ret);
->  
->  		btrfs_unlock_up_safe(path, 0);
+> On 11.02.19 г. 7:16 ч., Qu Wenruo wrote:
+>> Current delayed ref interface has several problems:
+>> - Longer and longer parameter lists
+>>   bytenr
+>>   num_bytes
+>>   parent
+>>   ---------- so far so good
+>>   ref_root
+>>   owner
+>>   offset
+>>   ---------- I don't feel good now
+>>
+>> - Different interpretation for the same parameter
+>>   Above @owner for data ref is inode number (u64),
+>>   while for tree ref, it's level (int).
+>>
+>>   They are even in different size range.
+>>   For level we only need 0~8, while for ino it's
+>>   BTRFS_FIRST_FREE_OBJECTID~BTRFS_LAST_FREE_OBJECTID.
+>>
+>>   And @offset doesn't even makes sense for tree ref.
+>>
+>>   Such parameter reuse may look clever as an hidden union, but it
+>>   destroys code readability.
+>>
+>> To solve both problems, we introduce a new structure, btrfs_ref to solve
+>> them:
+>>
+>> - Structure instead of long parameter list
+>>   This makes later expansion easier, and better documented.
+>>
+>> - Use btrfs_ref::type to distinguish data and tree ref
+>>
+>> - Use proper union to store data/tree ref specific structures.
+>>
+>> - Use separate functions to fill data/tree ref data, with a common generic
+>>   function to fill common bytenr/num_bytes members.
+>>
+>> All parameters will find its place in btrfs_ref, and an extra member,
+>> @real_root, inspired by ref-verify code, is newly introduced for later
+>> qgroup code, to record which tree is triggered this extent modification.
+>>
+>> This patch doesn't touch any code, but provides the basis for incoming
+>> refactors.
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>>  fs/btrfs/delayed-ref.h | 116 +++++++++++++++++++++++++++++++++++++++++
+>>  1 file changed, 116 insertions(+)
+>>
+>> diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+>> index d2af974f68a1..24addc5163bc 100644
+>> --- a/fs/btrfs/delayed-ref.h
+>> +++ b/fs/btrfs/delayed-ref.h
+>> @@ -187,6 +187,90 @@ struct btrfs_delayed_ref_root {
+>>  	u64 qgroup_to_skip;
+>>  };
+>>  
+>> +enum btrfs_ref_type {
+>> +	BTRFS_REF_NOT_SET,
+>> +	BTRFS_REF_DATA,
+>> +	BTRFS_REF_METADATA,
+>> +	BTRFS_REF_LAST,
+>> +};
+>> +
+>> +struct btrfs_data_ref {
+>> +	/* For EXTENT_DATA_REF */
+>> +
+>> +	/* Root who refers to this data extent */
+> nit: s/who/which/
+>> +	u64 ref_root;
+>> +
+>> +	/* Inode who refers to this data extent */
+> nit: DITTO
+>> +	u64 ino;
+>> +
+>> +	/*
+>> +	 * file_offset - extent_offset
+>> +	 *
+>> +	 * file_offset is the key.offset of the EXTENT_DATA key.
+>> +	 * extent_offset is btrfs_file_extent_offset() of the EXTENT_DATA data.
+>> +	 */
 > 
+> This needs rewording since it's rather cryptic now.
+
+It's cryptic due to the EXTENT_ITEM design from the very beginning.
+I'm all ears to improve this description.
+
+> Looking at the dev
+> docs and the description for 'offset' field in btrfs_file_extent_item I
+> can sort of deduce that this field will only be different than null if
+> this reference is for an extent which is shared between 2 snapshots.
+
+Don't forget reflink and data CoW.
+
+Like this:
+
+	item 6 key (257 EXTENT_DATA 0) itemoff 15813 itemsize 53
+		generation 6 type 1 (regular)
+		extent data disk byte 13631488 nr 1048576
+		extent data offset 0 nr 4096 ram 1048576
+	item 7 key (257 EXTENT_DATA 4096) itemoff 15760 itemsize 53
+		generation 7 type 1 (regular)
+		extent data disk byte 14680064 nr 4096
+		extent data offset 0 nr 4096 ram 4096
+	item 8 key (257 EXTENT_DATA 8192) itemoff 15707 itemsize 53
+		generation 6 type 1 (regular)
+		extent data disk byte 13631488 nr 1048576
+		extent data offset 8192 nr 1040384 ram 1048576
+
+EXTENT_DATA items at 0 and 8K offset are original from one larger
+extent, EXTENT_DATA item at 4K offset is newly written one.
+
+But the current design makes EXTENT_ITEM inline data backref pretty clean:
+
+        item 0 key (13631488 EXTENT_ITEM 1048576) itemoff 16230 itemsize 53
+                refs 2 gen 6 flags DATA
+                extent data backref root FS_TREE objectid 257 offset 0
+count 2
+
+No need for an extra inline data backref, just increase the original
+count from 1 to 2.
+> 
+> So if file foo is shared between two snapshots, has 1 extent and in
+> snapshot2 this extent is partially changed then I'd expect extent_offset
+> to point to the start in the original (unchanged extent), correct?
+
+As long as there is some new DATA_EXTENT pointing to the original
+unchanged extent, then yes, the 'offset' will change.
+
+Just like the EXTENT_DATA at 8K offset above.
+
+> 
+>> +	u64 offset;
+>> +};
+>> +
+>> +struct btrfs_tree_ref {
+>> +	/*
+>> +	 * Level of this tree block
+>> +	 *
+>> +	 * Shared for skinny (TREE_BLOCK_REF) and normal tree ref.
+> 
+> This sentence is also not very clear? You mean this level applies to
+> tree block refs (irrespective of whether they are shared or normal tree
+> block refs)?
+
+This is for any keyed or inlined tree ref who uses skinny metadata
+(level stored in key.offset, the common case now) or non-skinny
+EXTENT_ITEM who uses btrfs_tree_block_info like:
+
+	item 7 key (30507008 EXTENT_ITEM 16384) itemoff 15956 itemsize 51
+		refs 1 gen 4 flags TREE_BLOCK
+		tree block key (0 UNKNOWN.0 0) level 0 <<< here.
+		tree block backref root UUID_TREE
+
+
+It's possible for extent tree to not include above cases, like the
+following case:
+        item 1 key (12648448 EXTENT_ITEM 16384) itemoff 16235 itemsize 24
+                refs 9 gen 7 flags TREE_BLOCK
+        item 2 key (12648448 SHARED_BLOCK_REF 4481024) itemoff 3461
+itemsize 0
+                shared block backref
+
+So I'm not sure how to describe such case clearly.
+
+Thanks,
+Qu
+
+> 
+>> +	 */
+>> +	int level;
+>> +
+>> +	/*
+>> +	 * Root who refers to this tree block.
+> 
+> nit:s/who/which
+> 
+>> +	 *
+>> +	 * For TREE_BLOCK_REF (skinny metadata, either inline or keyed)
+>> +	 */
+>> +	u64 root;
+>> +
+>> +	/* For non-skinny metadata, no special member needed */
+>> +};
+>> +
+>> +struct btrfs_ref {
+>> +	enum btrfs_ref_type type;
+>> +	int action;
+>> +
+>> +	/*
+>> +	 * Only use parent pointers as backref (SHARED_BLOCK_REF or
+>> +	 * SHARED_DATA_REF) for this extent and its children.
+>> +	 * Set for reloc trees.
+>> +	 */
+>> +	bool only_backreferences:1;
+>> +
+>> +	/*
+>> +	 * Whether this extent should go through qgroup record.
+>> +	 *
+>> +	 * Normally false, but for certain case like delayed subtree scan,
+>> +	 * setting this flag can hugely reduce qgroup overhead.
+>> +	 */
+>> +	bool skip_qgroup:1;
+>> +
+>> +	/*
+>> +	 * Optional. To which root this modification is for.
+>> +	 * Mostly used for qgroup optimization.
+>> +	 *
+>> +	 * When unset, data/tree ref init code will populate it.
+>> +	 * In certain case, we're modifying reference for a different root.
+>> +	 * E.g. Cow fs tree blocks for balance.
+>> +	 * In that case, tree_ref::root will be fs tree, but we're doing this
+>> +	 * for reloc tree, then we should set @real_root to reloc tree.
+>> +	 */
+>> +	u64 real_root;
+>> +	u64 bytenr;
+>> +	u64 len;
+>> +
+>> +	/* Bytenr of the parent tree block */
+>> +	u64 parent;
+>> +	union {
+>> +		struct btrfs_data_ref data_ref;
+>> +		struct btrfs_tree_ref tree_ref;
+>> +	};
+>> +};
+>> +
+>>  extern struct kmem_cache *btrfs_delayed_ref_head_cachep;
+>>  extern struct kmem_cache *btrfs_delayed_tree_ref_cachep;
+>>  extern struct kmem_cache *btrfs_delayed_data_ref_cachep;
+>> @@ -195,6 +279,38 @@ extern struct kmem_cache *btrfs_delayed_extent_op_cachep;
+>>  int __init btrfs_delayed_ref_init(void);
+>>  void __cold btrfs_delayed_ref_exit(void);
+>>  
+>> +static inline void btrfs_init_generic_ref(struct btrfs_ref *generic_ref,
+>> +				int action, u64 bytenr, u64 len, u64 parent)
+>> +{
+>> +	generic_ref->action = action;
+>> +	generic_ref->bytenr = bytenr;
+>> +	generic_ref->len = len;
+>> +	generic_ref->parent = parent;
+>> +}
+>> +
+>> +static inline void btrfs_init_tree_ref(struct btrfs_ref *generic_ref,
+>> +				int level, u64 root)
+>> +{
+>> +	/* If @real_root not set, use @root as fallback */
+>> +	if (!generic_ref->real_root)
+>> +		generic_ref->real_root = root;
+>> +	generic_ref->tree_ref.level = level;
+>> +	generic_ref->tree_ref.root = root;
+>> +	generic_ref->type = BTRFS_REF_METADATA;
+>> +}
+>> +
+>> +static inline void btrfs_init_data_ref(struct btrfs_ref *generic_ref,
+>> +				u64 ref_root, u64 ino, u64 offset)
+>> +{
+>> +	/* If @real_root not set, use @root as fallback */
+>> +	if (!generic_ref->real_root)
+>> +		generic_ref->real_root = ref_root;
+>> +	generic_ref->data_ref.ref_root = ref_root;
+>> +	generic_ref->data_ref.ino = ino;
+>> +	generic_ref->data_ref.offset = offset;
+>> +	generic_ref->type = BTRFS_REF_DATA;
+>> +}
+>> +
+>>  static inline struct btrfs_delayed_extent_op *
+>>  btrfs_alloc_delayed_extent_op(void)
+>>  {
+>>

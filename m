@@ -2,148 +2,144 @@ Return-Path: <SRS0=aenA=QS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CD18FC169C4
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Feb 2019 08:35:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1E2FDC169C4
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Feb 2019 08:38:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A61CF20863
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Feb 2019 08:35:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DEC1320863
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Feb 2019 08:38:34 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="4QmMhOpu"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727124AbfBKIfR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Feb 2019 03:35:17 -0500
-Received: from mx2.suse.de ([195.135.220.15]:41500 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726955AbfBKIfQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Feb 2019 03:35:16 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id C3DB6AD60
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Feb 2019 08:35:14 +0000 (UTC)
-From:   Nikolay Borisov <nborisov@suse.com>
+        id S1727083AbfBKIid (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Feb 2019 03:38:33 -0500
+Received: from userp2130.oracle.com ([156.151.31.86]:41048 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726358AbfBKIid (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 11 Feb 2019 03:38:33 -0500
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x1B8YMTm117101
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Feb 2019 08:38:31 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
+ date : message-id : in-reply-to : references; s=corp-2018-07-02;
+ bh=dUGQiFSJ4HUQmWLyS4Rj9Ndoox9+iEEMnTuTtTUjbfI=;
+ b=4QmMhOpu0JWcVLp/oqHWXL0EeppitsKpem3bnYXN+PHv3+Z3YfnpS/3rVsnGklfzGtxV
+ zxWg5EcTDL+/8ohjc0JXXAbPF7zVF8Xjy6KOcbsknZwhPLq3KDwVeuNPRNhNOzyAuXJO
+ 2OckK6Ho2gA8nY+9Ef2PnA0wWSEsYWU6ngVVAG9VSVy+eQ+kLG1Brbvkb66/kAS6gBlc
+ hy+liFjKS2viU6g1pU1XAWf6AQUSu7HaiRsSZjgnp9QcKY/Aey4YnUctfZ/IdPOsEsxt
+ PptwR+yyH3L0hhdLhT/1ZKva9VVJfCvNjVEmw3/qSljDUNnjubg+cahH4UM94oE52uYI ww== 
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by userp2130.oracle.com with ESMTP id 2qhrek49ya-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Feb 2019 08:38:31 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x1B8cUx8004465
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Feb 2019 08:38:30 GMT
+Received: from abhmp0022.oracle.com (abhmp0022.oracle.com [141.146.116.28])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x1B8cUwi016102
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Feb 2019 08:38:30 GMT
+Received: from tpasj.localdomain (/183.90.37.91)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Mon, 11 Feb 2019 00:38:30 -0800
+From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2 03/12] btrfs: Handle pending/pinned chunks before blockgroup relocation during device shrink
-Date:   Mon, 11 Feb 2019 10:35:01 +0200
-Message-Id: <20190211083510.27591-4-nborisov@suse.com>
-X-Mailer: git-send-email 2.17.1
-In-Reply-To: <20190211083510.27591-1-nborisov@suse.com>
-References: <20190211083510.27591-1-nborisov@suse.com>
+Subject: [PATCH v5 3/3] btrfs: scrub: convert scrub_workers_refcnt to refcount_t
+Date:   Mon, 11 Feb 2019 16:38:19 +0800
+Message-Id: <1549874299-15799-1-git-send-email-anand.jain@oracle.com>
+X-Mailer: git-send-email 1.8.3.1
+In-Reply-To: <1548830702-14676-1-git-send-email-anand.jain@oracle.com>
+References: <1548830702-14676-1-git-send-email-anand.jain@oracle.com>
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9163 signatures=668683
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=1 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1902110067
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-During device shrink pinned/pending chunks (i.e those which have been
-deleted/created respectively, in the current transaction and haven't
-touched disk) need to be accounted when doing device shrink. Presently
-this happens after the main relocation loop in btrfs_shrink_device,
-which could lead to making another go in the body of the function.
+Use the refcount_t for fs_info::scrub_workers_refcnt instead of int.
 
-Since there is no hard requirement to perform pinned/pending chunks
-handling after the relocation loop, move the code before it. This leads
-to simplifying the code flow around - i.e no need to use 'goto again'.
-
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/volumes.c | 54 ++++++++++++++++++----------------------------
- 1 file changed, 21 insertions(+), 33 deletions(-)
+v5: Fix refcount validation warning.
+    Use refcount_set() instead of refcount_inc() when count is 0.
+v4: born
+ fs/btrfs/ctree.h   |  2 +-
+ fs/btrfs/disk-io.c |  2 +-
+ fs/btrfs/scrub.c   | 10 +++++++---
+ 3 files changed, 9 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 2d763f944298..f0d91b1fda1c 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4722,15 +4722,15 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 	int slot;
- 	int failed = 0;
- 	bool retried = false;
--	bool checked_pending_chunks = false;
- 	struct extent_buffer *l;
- 	struct btrfs_key key;
- 	struct btrfs_super_block *super_copy = fs_info->super_copy;
- 	u64 old_total = btrfs_super_total_bytes(super_copy);
- 	u64 old_size = btrfs_device_get_total_bytes(device);
- 	u64 diff;
-+	u64 start;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 2399f56d8a54..d53fb37aaed0 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1074,7 +1074,7 @@ struct btrfs_fs_info {
+ 	atomic_t scrubs_paused;
+ 	atomic_t scrub_cancel_req;
+ 	wait_queue_head_t scrub_pause_wait;
+-	int scrub_workers_refcnt;
++	refcount_t scrub_workers_refcnt;
+ 	struct btrfs_workqueue *scrub_workers;
+ 	struct btrfs_workqueue *scrub_wr_completion_workers;
+ 	struct btrfs_workqueue *scrub_nocow_workers;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 4047867473e1..76701b21ab77 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2111,7 +2111,7 @@ static void btrfs_init_scrub(struct btrfs_fs_info *fs_info)
+ 	atomic_set(&fs_info->scrubs_paused, 0);
+ 	atomic_set(&fs_info->scrub_cancel_req, 0);
+ 	init_waitqueue_head(&fs_info->scrub_pause_wait);
+-	fs_info->scrub_workers_refcnt = 0;
++	refcount_set(&fs_info->scrub_workers_refcnt, 0);
+ }
  
--	new_size = round_down(new_size, fs_info->sectorsize);
-+	start = new_size = round_down(new_size, fs_info->sectorsize);
- 	diff = round_down(old_size - new_size, fs_info->sectorsize);
+ static void btrfs_init_balance(struct btrfs_fs_info *fs_info)
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 17925af759ae..bf2294798b6c 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -3743,7 +3743,7 @@ static noinline_for_stack int scrub_workers_get(struct btrfs_fs_info *fs_info,
  
- 	if (test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state))
-@@ -4742,6 +4742,10 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
+ 	lockdep_assert_held(&fs_info->scrub_lock);
  
- 	path->reada = READA_BACK;
- 
-+	trans = btrfs_start_transaction(root, 0);
-+	if (IS_ERR(trans))
-+		return PTR_ERR(trans);
+-	if (fs_info->scrub_workers_refcnt == 0) {
++	if (refcount_read(&fs_info->scrub_workers_refcnt) == 0) {
+ 		fs_info->scrub_workers = btrfs_alloc_workqueue(fs_info, "scrub",
+ 				flags, is_dev_replace ? 1 : max_active, 4);
+ 		if (!fs_info->scrub_workers)
+@@ -3760,8 +3760,12 @@ static noinline_for_stack int scrub_workers_get(struct btrfs_fs_info *fs_info,
+ 					      max_active, 2);
+ 		if (!fs_info->scrub_parity_workers)
+ 			goto fail_scrub_parity_workers;
 +
- 	mutex_lock(&fs_info->chunk_mutex);
- 
- 	btrfs_device_set_total_bytes(device, new_size);
-@@ -4749,7 +4753,21 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 		device->fs_devices->total_rw_bytes -= diff;
- 		atomic64_sub(diff, &fs_info->free_chunk_space);
- 	}
--	mutex_unlock(&fs_info->chunk_mutex);
-+
-+	/*
-+	 * Once the device's size has been set to the new size, ensure all
-+	 * in-memory chunks are synced to disk so that the loop below sees them
-+	 * and relocates them accordingly.
-+	 */
-+	if (contains_pending_extent(trans->transaction, device, &start, diff)) {
-+		mutex_unlock(&fs_info->chunk_mutex);
-+		ret = btrfs_commit_transaction(trans);
-+		if (ret)
-+			goto done;
++		refcount_set(&fs_info->scrub_workers_refcnt, 1);
 +	} else {
-+		mutex_unlock(&fs_info->chunk_mutex);
-+		btrfs_end_transaction(trans);
-+	}
- 
- again:
- 	key.objectid = device->devid;
-@@ -4840,36 +4858,6 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
++		refcount_inc(&fs_info->scrub_workers_refcnt);
  	}
+-	++fs_info->scrub_workers_refcnt;
++
+ 	return 0;
  
- 	mutex_lock(&fs_info->chunk_mutex);
--
--	/*
--	 * We checked in the above loop all device extents that were already in
--	 * the device tree. However before we have updated the device's
--	 * total_bytes to the new size, we might have had chunk allocations that
--	 * have not complete yet (new block groups attached to transaction
--	 * handles), and therefore their device extents were not yet in the
--	 * device tree and we missed them in the loop above. So if we have any
--	 * pending chunk using a device extent that overlaps the device range
--	 * that we can not use anymore, commit the current transaction and
--	 * repeat the search on the device tree - this way we guarantee we will
--	 * not have chunks using device extents that end beyond 'new_size'.
--	 */
--	if (!checked_pending_chunks) {
--		u64 start = new_size;
--		u64 len = old_size - new_size;
--
--		if (contains_pending_extent(trans->transaction, device,
--					    &start, len)) {
--			mutex_unlock(&fs_info->chunk_mutex);
--			checked_pending_chunks = true;
--			failed = 0;
--			retried = false;
--			ret = btrfs_commit_transaction(trans);
--			if (ret)
--				goto done;
--			goto again;
--		}
--	}
--
- 	btrfs_device_set_disk_total_bytes(device, new_size);
- 	if (list_empty(&device->post_commit_list))
- 		list_add_tail(&device->post_commit_list,
+ fail_scrub_parity_workers:
+@@ -3927,7 +3931,7 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+ 
+ 	mutex_lock(&fs_info->scrub_lock);
+ 	dev->scrub_ctx = NULL;
+-	if (--fs_info->scrub_workers_refcnt == 0) {
++	if (refcount_dec_and_test(&fs_info->scrub_workers_refcnt)) {
+ 		scrub_workers = fs_info->scrub_workers;
+ 		scrub_wr_comp = fs_info->scrub_wr_completion_workers;
+ 		scrub_parity = fs_info->scrub_parity_workers;
 -- 
-2.17.1
+1.8.3.1
 

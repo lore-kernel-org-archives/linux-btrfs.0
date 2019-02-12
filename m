@@ -2,293 +2,213 @@ Return-Path: <SRS0=Udpi=QT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BF602C169C4
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 03:16:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 97F1FC282D7
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 05:07:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 375202083E
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 03:16:22 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=seblu.net header.i=@seblu.net header.b="CoPrdA6I"
+	by mail.kernel.org (Postfix) with ESMTP id 649C321855
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 05:07:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727209AbfBLDQV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Feb 2019 22:16:21 -0500
-Received: from mail.seblu.net ([212.129.28.29]:54764 "EHLO mail.seblu.net"
+        id S1726126AbfBLFHc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 12 Feb 2019 00:07:32 -0500
+Received: from mout.gmx.net ([212.227.15.18]:44385 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726699AbfBLDQU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Feb 2019 22:16:20 -0500
-Received: from localhost (localhost [IPv6:::1])
-        by mail.seblu.net (Postfix) with ESMTP id CBEBB52FB6F2
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Feb 2019 04:16:18 +0100 (CET)
-Received: from mail.seblu.net ([IPv6:::1])
-        by localhost (mail.seblu.net [IPv6:::1]) (amavisd-new, port 10032)
-        with ESMTP id j-mEeTMa3Hz9 for <linux-btrfs@vger.kernel.org>;
-        Tue, 12 Feb 2019 04:16:18 +0100 (CET)
-Received: from localhost (localhost [IPv6:::1])
-        by mail.seblu.net (Postfix) with ESMTP id 42C2D52FBA34
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Feb 2019 04:16:18 +0100 (CET)
-DKIM-Filter: OpenDKIM Filter v2.10.3 mail.seblu.net 42C2D52FBA34
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=seblu.net; s=pipa;
-        t=1549941378; bh=x/I/5GIfaT1SrxO9C+utGBCTMHtTGZkYbZdekNSQO5Q=;
-        h=Message-ID:From:To:Date:Mime-Version;
-        b=CoPrdA6Ibt0Uijy+tZvYsIMDIImex/NTW2lrBhYIfU3y/+GfZhtzbZMc7pS1u9+fc
-         2Yhl57+6GmXpR8RcEPKHSPRfitzXjW3O4YU7vNYbc+2dTImp+Tl7zZle9YN5QP1+H1
-         VvcOjAoiJ467gzelo87i7JF/sa6+Xr7ccG5CXTRjnIprktp3V12xSH+Ae+QPcJXcGn
-         3OZv66kUKFvjugronk4yKDDbnyOedjK/CCtzPMPv0XvVm6jVjNIUfkc0L5iOflLE0E
-         oe4SzMpwa5oLhIUhO4azH254Q8iwPMc5e4U1HEGzu2UfKJgKpiOQBhiG0/7hQfEiHw
-         iNSv+R9mqElmw==
-X-Virus-Scanned: amavisd-new at seblu.net
-Received: from mail.seblu.net ([IPv6:::1])
-        by localhost (mail.seblu.net [IPv6:::1]) (amavisd-new, port 10026)
-        with ESMTP id FQWi7UrMISFn for <linux-btrfs@vger.kernel.org>;
-        Tue, 12 Feb 2019 04:16:18 +0100 (CET)
-Received: from dolores (amontsouris-684-1-71-1.w90-87.abo.wanadoo.fr [90.87.54.1])
-        by mail.seblu.net (Postfix) with ESMTPSA id 248A552FB6F2
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Feb 2019 04:16:18 +0100 (CET)
-Message-ID: <7ef0e91501a04cd4c5e0d942db638a0b50ef3ec3.camel@seblu.net>
-Subject: Corrupted filesystem, looking for guidance
-From:   =?ISO-8859-1?Q?S=E9bastien?= Luttringer <seblu@seblu.net>
-To:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Date:   Tue, 12 Feb 2019 04:16:17 +0100
-Content-Type: text/plain; charset="UTF-8"
-X-Mailer: Evolution 3.28.5 
-Mime-Version: 1.0
-Content-Transfer-Encoding: quoted-printable
+        id S1725909AbfBLFHb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 12 Feb 2019 00:07:31 -0500
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx002
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0LuPYt-1h39Jr0iXv-011jvP; Tue, 12
+ Feb 2019 06:07:25 +0100
+Subject: Re: [PATCH] btrfs: honor path->skip_locking in backref code
+To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+References: <20190116160057.22040-1-josef@toxicpanda.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <2bdd075d-2c56-611b-c0a0-4126d27daec5@gmx.com>
+Date:   Tue, 12 Feb 2019 13:07:19 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.5.0
+MIME-Version: 1.0
+In-Reply-To: <20190116160057.22040-1-josef@toxicpanda.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="U0PMUGMXfNUnUoJjqxiYn7TiYGegy98HW"
+X-Provags-ID: V03:K1:sqXbDAB6sDD5vKuWeouqv/zQeR0itnEy4ywtN4m8OMURl7KceK4
+ xbaPv8wDibIO/u//3zTUYGep39LkVufCfX964XgZ46w7aL+EU5+4xi7+EHmdo4PD10C9cG8
+ ovl09nG+HdWpfaLMLT1hqFwfWv++sbC/f5B+6nbRG8WWtCG5G1ipRc0/Jt/sEEJ8wNe+9Z4
+ 7qZnjIsZYol+7gewHsqdw==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:ooCODiwd9tE=:O1XTloQwWp1MAN3dKnrpqR
+ tW88QQJ2ArqqiUN3YqChuwQsItMAVDLK+ygHKilo4+l0ryKJfKoc+shP9u5JnrigXcVguA+iX
+ cXGxbGqvxGIdfEewTrkJInVUig5b6RulOkih8srRrSWiQQjUWEl/R+JO8eDwCF26/JRYd061h
+ k1vdSNsWjykfbGYIpa55kS2VVKN67DxJwB0tlx3tpFj8gmp/wsiGPch8N8RyZAGIUxFgEN9DH
+ WoIlkJF0ELbv6rQpAb/C3meSKO9CzzWD4sUhN3QoUXkEzx42jOzWcvzUX4ceVOBRrHO11QxrO
+ quapcxjdGzTYoU93An2AOio4SAreP7AeWRZQfyxh2Iq5ydP997IVuV/l43PELb9UFJTdNoM3S
+ mmzcbdseYAbWB8W7EH/QNZP2d8Z35D0A5xk2eBGZ9i8snzQxaVnxxAJe39n+wG4d+EGzh/NPe
+ L6Qw5v/plNQtLf5pbS32bonrrVutG34M33ZpZXrtiuI2CDlHqBYPB2Tee1fYRBipmodeUVGss
+ MO8ewu7KPqZUXtqkCiyjeYYjHMD8J9zZHO/gffOOPK/9BOYZEBO8uA9h3b2llcVTcEZgEXS03
+ 4lFEa5OvF5Y1SKvz4kiCYkBhgv6ts3ZlKr5fQUZfaLF7gJWEFBH43WWi99lOtKKUYlYrBRmUJ
+ u0FOmZ3oH0irq4QMy4mPFlvFr7Mn1we5Y5iZRPcTaLwru47Hz8aseW4mB15E2ZQWou7Hbb/hR
+ pGg2yNS+RYum5VhZEOhzp0GT+FAZE+BWzU3UteHOEoKo6HZoomdhIxIKntsYGeYdiP3nO+tH8
+ 9Y9na/8lDc7IEJdc551xJMyWsLthjyaCdTPU414OFeN2elfLzmWIAusJxKOKqNGwTWrSvSCK/
+ qUc1+MDOeo0SbTB/Z6X8OAFe3W5tIKlfUtG5Ahe6siELhfzkLGP2rZ9VpNsrFb
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--U0PMUGMXfNUnUoJjqxiYn7TiYGegy98HW
+Content-Type: multipart/mixed; boundary="gQflmb8b6RW88jfK5uFfBf5chmyFTiM09";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+ kernel-team@fb.com
+Message-ID: <2bdd075d-2c56-611b-c0a0-4126d27daec5@gmx.com>
+Subject: Re: [PATCH] btrfs: honor path->skip_locking in backref code
+References: <20190116160057.22040-1-josef@toxicpanda.com>
+In-Reply-To: <20190116160057.22040-1-josef@toxicpanda.com>
 
-The context is a BTRFS filesystem on top of an md device (raid5 on 6 disk=
-s).
-System is an Arch Linux and the kernel was a vanilla 4.20.2.
-
-# btrfs fi us /home
-Overall:
-    Device size:                  27.29TiB
-    Device allocated:              5.01TiB
-    Device unallocated:           22.28TiB
-    Device missing:                  0.00B
-    Used:                          5.00TiB
-    Free (estimated):             22.28TiB      (min: 22.28TiB)
-    Data ratio:                       1.00
-    Metadata ratio:                   1.00
-    Global reserve:              512.00MiB      (used: 0.00B)
-
-Data,single: Size:4.95TiB, Used:4.95TiB
-   /dev/md127      4.95TiB
-
-Metadata,single: Size:61.01GiB, Used:57.72GiB
-   /dev/md127     61.01GiB
-
-System,single: Size:36.00MiB, Used:560.00KiB
-   /dev/md127     36.00MiB
-
-Unallocated:
-   /dev/md127     22.28TiB
-
-I'm not able to find the root cause of the btrfs corruption. All disks lo=
-oks
-healthy (selftest ok, no error logged), no kernel trace of link failure o=
-r
-something.
-I run a check on the md layer, and 2 mismatch was discovered:
-Feb 11 04:02:35 kernel: md127: mismatch sector in range 490387096-4903871=
-04
-Feb 11 04:31:14 kernel: md127: mismatch sector in range 1024770720-102477=
-0728
-I run a repair (resync) but mismatch are still around after. =F0=9F=98=B1
-
-The first BTRFS warning was:
-Feb 07 11:27:57 kernel: BTRFS warning (device md127): md127 checksum veri=
-fy
-failed on 4140883394560 wanted 7B4B0431 found B809FBEE level 0
+--gQflmb8b6RW88jfK5uFfBf5chmyFTiM09
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-After that, the userland process crashed. Few days ago, I run it again. I=
-t
-crashes again but filesystem become read-only
 
-Feb 10 01:07:02 kernel: BTRFS warning (device md127): md127 checksum veri=
-fy
-failed on 4140883394560 wanted 7B4B0431 found B809FBEE level 0
-Feb 10 01:07:03 kernel: BTRFS error (device md127): error loading props f=
-or ino
-9930722 (root 5): -5
-Feb 10 01:07:03 kernel: BTRFS error (device md127): error loading props f=
-or ino
-9930722 (root 5): -5
-Feb 10 01:07:03 kernel: BTRFS warning (device md127): md127 checksum veri=
-fy
-failed on 4140883394560 wanted 7B4B0431 found B809FBEE level 0
-Feb 10 01:07:03 kernel: BTRFS warning (device md127): md127 checksum veri=
-fy
-failed on 4140883394560 wanted 7B4B0431 found B809FBEE level 0
-Feb 10 01:07:03 kernel: BTRFS warning (device md127): md127 checksum veri=
-fy
-failed on 4140883394560 wanted 7B4B0431 found B809FBEE level 0
-Feb 10 01:07:03 kernel: BTRFS warning (device md127): md127 checksum veri=
-fy
-failed on 4140883394560 wanted 7B4B0431 found B809FBEE level 0
-Feb 10 01:07:03 kernel: BTRFS warning (device md127): md127 checksum veri=
-fy
-failed on 4140883394560 wanted 7B4B0431 found B809FBEE level 0
-Feb 10 01:07:03 kernel: BTRFS warning (device md127): md127 checksum veri=
-fy
-failed on 4140883394560 wanted 7B4B0431 found B809FBEE level 0
-Feb 10 01:07:03 kernel: BTRFS warning (device md127): md127 checksum veri=
-fy
-failed on 4140883394560 wanted 7B4B0431 found B809FBEE level 0
-Feb 10 01:07:03 kernel: BTRFS warning (device md127): md127 checksum veri=
-fy
-failed on 4140883394560 wanted 7B4B0431 found B809FBEE level 0
-Feb 10 03:16:24 kernel: BTRFS warning (device md127): md127 checksum veri=
-fy
-failed on 4140883394560 wanted 7B4B0431 found B809FBEE level 0
-Feb 10 03:16:28 kernel: BTRFS warning (device md127): md127 checksum veri=
-fy
-failed on 4140883394560 wanted 7B4B0431 found B809FBEE level 0
-Feb 10 03:27:34 kernel: BTRFS warning (device md127): md127 checksum veri=
-fy
-failed on 4140883394560 wanted 7B4B0431 found B809FBEE level 0
-Feb 10 03:27:40 kernel: BTRFS warning (device md127): md127 checksum veri=
-fy
-failed on 4140883394560 wanted 7B4B0431 found B809FBEE level 0
-Feb 10 05:59:34 kernel: BTRFS warning (device md127): md127 checksum veri=
-fy
-failed on 4140883394560 wanted 7B4B0431 found B809FBEE level 0
-Feb 10 05:59:34 kernel: BTRFS error (device md127): error loading props f=
-or ino
-9930722 (root 5): -5
-Feb 10 05:59:34 kernel: BTRFS warning (device md127): md127 checksum veri=
-fy
-failed on 4140883394560 wanted 7B4B0431 found B809FBEE level 0
-Feb 10 05:59:34 kernel: BTRFS info (device md127): failed to delete refer=
-ence
-to fImage%252057(1).jpg, inode 9930722 parent 58718826
-Feb 10 05:59:34 kernel: BTRFS: error (device md127) in
-__btrfs_unlink_inode:3971: errno=3D-5 IO failure
-Feb 10 05:59:34 kernel: BTRFS info (device md127): forced readonly
+On 2019/1/17 =E4=B8=8A=E5=8D=8812:00, Josef Bacik wrote:
+> qgroups will do the old roots lookup at delayed ref time, which could b=
+e
+> while walking down the extent root while running a delayed ref.  This
+> should be fine, except we specifically lock eb's in the backref walking=
 
-The btrfs check report:
+> code irrespective of path->skip_locking, which deadlocks the system.
+> Fix up the backref code to honor path->skip_locking, nobody will be
+> modifying the commit_root when we're searching so it's completely safe
+> to do.  Thanks,
+>=20
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> ---
+>  fs/btrfs/backref.c | 16 ++++++++++------
+>  1 file changed, 10 insertions(+), 6 deletions(-)
+>=20
+> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+> index 78556447e1d5..973e8251b1bf 100644
+> --- a/fs/btrfs/backref.c
+> +++ b/fs/btrfs/backref.c
+> @@ -712,7 +712,7 @@ static int resolve_indirect_refs(struct btrfs_fs_in=
+fo *fs_info,
+>   * read tree blocks and add keys where required.
+>   */
+>  static int add_missing_keys(struct btrfs_fs_info *fs_info,
+> -			    struct preftrees *preftrees)
+> +			    struct preftrees *preftrees, bool lock)
+>  {
+>  	struct prelim_ref *ref;
+>  	struct extent_buffer *eb;
+> @@ -737,12 +737,14 @@ static int add_missing_keys(struct btrfs_fs_info =
+*fs_info,
+>  			free_extent_buffer(eb);
+>  			return -EIO;
+>  		}
+> -		btrfs_tree_read_lock(eb);
+> +		if (lock)
+> +			btrfs_tree_read_lock(eb);
+>  		if (btrfs_header_level(eb) =3D=3D 0)
+>  			btrfs_item_key_to_cpu(eb, &ref->key_for_search, 0);
+>  		else
+>  			btrfs_node_key_to_cpu(eb, &ref->key_for_search, 0);
+> -		btrfs_tree_read_unlock(eb);
+> +		if (lock)
+> +			btrfs_tree_read_unlock(eb);
+>  		free_extent_buffer(eb);
+>  		prelim_ref_insert(fs_info, &preftrees->indirect, ref, NULL);
+>  		cond_resched();
+> @@ -1227,7 +1229,7 @@ static int find_parent_nodes(struct btrfs_trans_h=
+andle *trans,
+> =20
+>  	btrfs_release_path(path);
+> =20
+> -	ret =3D add_missing_keys(fs_info, &preftrees);
+> +	ret =3D add_missing_keys(fs_info, &preftrees, path->skip_locking =3D=3D=
+ 0);
+>  	if (ret)
+>  		goto out;
+> =20
+> @@ -1288,11 +1290,13 @@ static int find_parent_nodes(struct btrfs_trans=
+_handle *trans,
+>  					ret =3D -EIO;
+>  					goto out;
+>  				}
+> -				btrfs_tree_read_lock(eb);
+> +				if (!path->skip_locking)
+> +					btrfs_tree_read_lock(eb);
+>  				btrfs_set_lock_blocking_rw(eb, BTRFS_READ_LOCK);
 
-# btrfs check -p /dev/md127
-Opening filesystem to check...
-Checking filesystem on /dev/md127
-UUID: 64403592-5a24-4851-bda2-ce4b3844c168
-[1/7] checking root items                      (0:10:21 elapsed, 10056723=
- items
-checked)
-[2/7] checking extents                         (0:04:59 elapsed, 155136 i=
-tems
-checked)
-checksum verify failed on 4140883394560 found B809FBEE wanted 7B4B043109 =
-items
-checked)
-checksum verify failed on 4140883394560 found B809FBEE wanted 7B4B0431
-Csum didn't match
-ref mismatch on [2622304964608 28672] extent item 1, found 0sed, 3783066 =
-items
-checked)
-checksum verify failed on 4140883394560 found B809FBEE wanted 7B4B0431
-checksum verify failed on 4140883394560 found B809FBEE wanted 7B4B0431
-Csum didn't match
-incorrect local backref count on 2622304964608 root 5 owner 9930722 offse=
-t 0
-found 0 wanted 1 back 0x55d61387cd40
-backref disk bytenr does not match extent record, bytenr=3D2622304964608,=
- ref
-bytenr=3D0
-backpointer mismatch on [2622304964608 28672]
-owner ref check failed [2622304964608 28672]
-ref mismatch on [2622304993280 262144] extent item 1, found 0
-checksum verify failed on 4140883394560 found B809FBEE wanted 7B4B0431
-checksum verify failed on 4140883394560 found B809FBEE wanted 7B4B0431
-Csum didn't match
-incorrect local backref count on 2622304993280 root 5 owner 9930724 offse=
-t 0
-found 0 wanted 1 back 0x55d61387ce70
-backref disk bytenr does not match extent record, bytenr=3D2622304993280,=
- ref
-bytenr=3D0
-backpointer mismatch on [2622304993280 262144]
-owner ref check failed [2622304993280 262144]
-ref mismatch on [2622305255424 4096] extent item 1, found 0
-checksum verify failed on 4140883394560 found B809FBEE wanted 7B4B0431
-checksum verify failed on 4140883394560 found B809FBEE wanted 7B4B0431
-Csum didn't match
-incorrect local backref count on 2622305255424 root 5 owner 9930727 offse=
-t 0
-found 0 wanted 1 back 0x55d61387cfa0
-backref disk bytenr does not match extent record, bytenr=3D2622305255424,=
- ref
-bytenr=3D0
-backpointer mismatch on [2622305255424 4096]
-owner ref check failed [2622305255424 4096]
-ref mismatch on [2622305259520 8192] extent item 1, found 0
-checksum verify failed on 4140883394560 found B809FBEE wanted 7B4B0431
-checksum verify failed on 4140883394560 found B809FBEE wanted 7B4B0431
-Csum didn't match
-incorrect local backref count on 2622305259520 root 5 owner 9930731 offse=
-t 0
-found 0 wanted 1 back 0x55d61387d0d0
-backref disk bytenr does not match extent record, bytenr=3D2622305259520,=
- ref
-bytenr=3D0
-backpointer mismatch on [2622305259520 8192]
-owner ref check failed [2622305259520 8192]
-ref mismatch on [2622305267712 188416] extent item 1, found 0
-checksum verify failed on 4140883394560 found B809FBEE wanted 7B4B0431
-checksum verify failed on 4140883394560 found B809FBEE wanted 7B4B0431
-Csum didn't match
-incorrect local backref count on 2622305267712 root 5 owner 9930733 offse=
-t 0
-found 0 wanted 1 back 0x55d61387d200
-backref disk bytenr does not match extent record, bytenr=3D2622305267712,=
- ref
-bytenr=3D0
-backpointer mismatch on [2622305267712 188416]
-owner ref check failed [2622305267712 188416]
-ref mismatch on [2622305456128 4096] extent item 1, found 0
-checksum verify failed on 4140883394560 found B809FBEE wanted 7B4B0431
-checksum verify failed on 4140883394560 found B809FBEE wanted 7B4B0431
-Csum didn't match
-incorrect local backref count on 2622305456128 root 5 owner 9930734 offse=
-t 0
-found 0 wanted 1 back 0x55d61387d330
-backref disk bytenr does not match extent record, bytenr=3D2622305456128,=
- ref
-bytenr=3D0
-backpointer mismatch on [2622305456128 4096]
-owner ref check failed [2622305456128 4096]
-owner ref check failed [4140883394560 16384]
-[2/7] checking extents                         (0:31:38 elapsed, 3783074 =
-items
-checked)
-ERROR: errors found in extent allocation tree or chunk allocation
-[3/7] checking free space cache                (0:03:58 elapsed, 5135 ite=
-ms
-checked)
-[4/7] checking fs roots                        (1:02:53 elapsed, 139654 i=
-tems
-checked)
+This btrfs_set_lock_blocking_rw() or the btrfs_set_lock_blocking_read()
+in latest misc-next call need @eb to be read locked first.
 
-I tried to mount the filesystem with nodatasum but I was not able to dele=
-te the
-suspected wrong directory. FS was remounted RO.
-btrfs inspect-internal logical-resolve and btrfs inspect-internal inode-r=
-esolve=20
-are not able to resolve logical and inode path from the above errors.
+So this line should also be in the (!path->skip_locking) branch, and
+such modification solves the BUG_ON() caused by btrfs/007.
 
-How could I save my filesystem? Should I try --repair or --init-csum-tree=
-?
+Thanks,
+Qu
 
-Regards,
+>  				ret =3D find_extent_in_eb(eb, bytenr,
+>  							*extent_item_pos, &eie, ignore_offset);
+> -				btrfs_tree_read_unlock_blocking(eb);
+> +				if (!path->skip_locking)
+> +					btrfs_tree_read_unlock_blocking(eb);
+>  				free_extent_buffer(eb);
+>  				if (ret < 0)
+>  					goto out;
+>=20
 
-S=C3=A9bastien "Seblu" Luttringer
 
+--gQflmb8b6RW88jfK5uFfBf5chmyFTiM09--
+
+--U0PMUGMXfNUnUoJjqxiYn7TiYGegy98HW
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxiVIcACgkQwj2R86El
+/qhMzAf9H5kTZD5SmMkkYq9wWni0zK/xPoL/csZ8XW3wpJA+ekf2UWnNoadGpoSt
+ZhFODrjd72MHtUK7Tau3bVG0pRtAovpMFImOxwaERUkgb/5TaL7gJNwoFH1rbPQN
+pQ6PTrZfa4d2b/K5wJPLq8ppliiv3UQHFs39gXHc5NtkEK5w6arJUVP2iK49YnNU
+0Gx8rWpQrgsf3FauOf8FsMUpqvwrPK/ZqnxntCfjGXozhE411n+AYYzRSkkoR85B
+wzQBMqNAyYP//O5qOnY4ijVOhhNNQRlY5AttuQkrCRC4v8C4K6GRxjTKrP9LC6SY
+N6nUuOFu53A6uCo65j7i25imuYZKYQ==
+=n9hS
+-----END PGP SIGNATURE-----
+
+--U0PMUGMXfNUnUoJjqxiYn7TiYGegy98HW--

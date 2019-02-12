@@ -2,388 +2,192 @@ Return-Path: <SRS0=Udpi=QT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9C7A8C282C4
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 18:14:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7A71AC282C4
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 18:43:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6234E222C0
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 18:14:39 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3F86A2190B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 18:43:11 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="NlBsyAfV"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729292AbfBLSOi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 12 Feb 2019 13:14:38 -0500
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:45178 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1726855AbfBLSOi (ORCPT
+        id S1731999AbfBLSnK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 12 Feb 2019 13:43:10 -0500
+Received: from mail-lf1-f67.google.com ([209.85.167.67]:38002 "EHLO
+        mail-lf1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727469AbfBLSnJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Feb 2019 13:14:38 -0500
-Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
-        id 6C8FA218DD3; Tue, 12 Feb 2019 13:13:28 -0500 (EST)
-Date:   Tue, 12 Feb 2019 13:13:28 -0500
-From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To:     Filipe Manana <fdmanana@gmail.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Reproducer for "compressed data + hole data corruption bug, 2018
- edition" still works on 4.20.7
-Message-ID: <20190212181328.GB23918@hungrycats.org>
-References: <20180823031125.GE13528@hungrycats.org>
- <20190212030838.GB9995@hungrycats.org>
- <CAL3q7H7T_NX=D8qimRC55g8V-p0k-ygUiW-K5bxF02r-6XT6Rg@mail.gmail.com>
- <20190212165916.GA23918@hungrycats.org>
- <CAL3q7H6eTTw-iTHiQLcJHa5iRRspWxQpfyTQRU1SmcxBqXSppg@mail.gmail.com>
+        Tue, 12 Feb 2019 13:43:09 -0500
+Received: by mail-lf1-f67.google.com with SMTP id n15so2827126lfe.5
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Feb 2019 10:43:07 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=subject:to:references:from:openpgp:autocrypt:message-id:date
+         :user-agent:mime-version:in-reply-to;
+        bh=XpDHGYvt1L3FCqb7h/BqEskXVgQ3BkPB/+0A0fehUIA=;
+        b=NlBsyAfVztFsZXpG3mxCrXrE/aYB2tmkpnKEpZ9y2oIZjL29392ZXY8B7oIie/tdif
+         zoM0bK7GHeAc/ObioLuyF9BKQHbgRjsp/TztNS6XR5Sc2l+G3qY9mGQJW/I/w/D70M78
+         WStXOZUMZItV/kVfRz5Go58K1cxA6qxsPp5UO3F1K3ZYr5gimWp6eccwl/BNUjORHPJ5
+         RjMS+Qobn/IHbgoHwdeMSjOfZrNLaGdf6S05vah6y6HLWgqjLNzMdZXXNeKQsnyuOyxi
+         TEY5mnn2EegxgP1KFRYnnpQMionkNKtkBMr+8d+JYZ2V0+j4uRiAMoBamscLaHVLjt9f
+         DmZg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:references:from:openpgp:autocrypt
+         :message-id:date:user-agent:mime-version:in-reply-to;
+        bh=XpDHGYvt1L3FCqb7h/BqEskXVgQ3BkPB/+0A0fehUIA=;
+        b=PTJ/8Kbk2EQzMNtjG5DHO/1uahdASea0c0wjrBjIoBmLCRBGZs/s+mDZ7RYomH8ooY
+         JUjSJ6dTbxY1p/8lhznUQGiDV04VjiFXGLqe4RAbOJglCAjXSzU+OrMj7tPd3r/YtGQ6
+         rQv4YK7Fn1Tr96trDPsg6g3F05mMp5fKI/BiN0trJ/r9TMn2Qwz+pT41Zq86/IiKGPk5
+         xABj88PFxZ0WJV4VUF9RtCjcGeo70j8kZ6NNC7Fiv2JKGOyhMiHcASYgr9UH17oFmKnK
+         jFgAwEhd7Io/qnruSWItffmK8FBgGbsxJJKzedaUZENs+RIBFrVO3texTHp6MT3xj53F
+         Z9Hw==
+X-Gm-Message-State: AHQUAuZzspMj7pEn9+GrgDKSOPSjC9bhK3UGEzYkS+o8RP0dMPCOIU+d
+        f00Cznnck7vFHeP1wPp6z8gLF6i+Nmc=
+X-Google-Smtp-Source: AHgI3IbdS9w5ws9RD3r8XsIDilh1OGMOoUPOrw8jXs3mylkqvVcIKxqN54tD24eSHCT/uCSgxy5GQw==
+X-Received: by 2002:a19:c20f:: with SMTP id l15mr3225413lfc.76.1549996986589;
+        Tue, 12 Feb 2019 10:43:06 -0800 (PST)
+Received: from [192.168.1.4] (109-252-90-29.nat.spd-mgts.ru. [109.252.90.29])
+        by smtp.gmail.com with ESMTPSA id i15sm770209ljb.48.2019.02.12.10.43.05
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Tue, 12 Feb 2019 10:43:05 -0800 (PST)
+Subject: Re: [PATCH RFC] btrfs: Don't create SINGLE or DUP chunks for degraded
+ rw mount
+To:     Qu Wenruo <wqu@suse.de>, Remi Gauvin <remi@georgianit.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <20190212070319.30619-1-wqu@suse.com>
+ <aabbd673-fdc0-77dd-7e1e-1b5d1ed12bff@georgianit.com>
+ <964481b6-e761-8d0d-3ef1-cbe19dbfae9e@suse.de>
+ <79f33db2-f39c-6bd6-4697-d9d9f6a704f1@georgianit.com>
+ <d5ad9e15-a572-2819-c39f-43d4c0ff2832@suse.de>
+From:   Andrei Borzenkov <arvidjaar@gmail.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=arvidjaar@gmail.com; prefer-encrypt=mutual; keydata=
+ xsDiBDxiRwwRBAC3CN9wdwpVEqUGmSoqF8tWVIT4P/bLCSZLkinSZ2drsblKpdG7x+guxwts
+ +LgI8qjf/q5Lah1TwOqzDvjHYJ1wbBauxZ03nDzSLUhD4Ms1IsqlIwyTLumQs4vcQdvLxjFs
+ G70aDglgUSBogtaIEsiYZXl4X0j3L9fVstuz4/wXtwCg1cN/yv/eBC0tkcM1nsJXQrC5Ay8D
+ /1aA5qPticLBpmEBxqkf0EMHuzyrFlqVw1tUjZ+Ep2LMlem8malPvfdZKEZ71W1a/XbRn8FE
+ SOp0tUa5GwdoDXgEp1CJUn+WLurR0KPDf01E4j/PHHAoABgrqcOTcIVoNpv2gNiBySVsNGzF
+ XTeY/Yd6vQclkqjBYONGN3r9R8bWA/0Y1j4XK61qjowRk3Iy8sBggM3PmmNRUJYgroerpcAr
+ 2byz6wTsb3U7OzUZ1Llgisk5Qum0RN77m3I37FXlIhCmSEY7KZVzGNW3blugLHcfw/HuCB7R
+ 1w5qiLWKK6eCQHL+BZwiU8hX3dtTq9d7WhRW5nsVPEaPqudQfMSi/Ux1kc0mQW5kcmVpIEJv
+ cnplbmtvdiA8YXJ2aWRqYWFyQGdtYWlsLmNvbT7CZQQTEQIAJQIbAwYLCQgHAwIGFQgCCQoL
+ BBYCAwECHgECF4AFAliWAiQCGQEACgkQR6LMutpd94wFGwCeNuQnMDxve/Fo3EvYIkAOn+zE
+ 21cAnRCQTXd1hTgcRHfpArEd/Rcb5+SczsBNBDxiRyQQBACQtME33UHfFOCApLki4kLFrIw1
+ 5A5asua10jm5It+hxzI9jDR9/bNEKDTKSciHnM7aRUggLwTt+6CXkMy8an+tVqGL/MvDc4/R
+ KKlZxj39xP7wVXdt8y1ciY4ZqqZf3tmmSN9DlLcZJIOT82DaJZuvr7UJ7rLzBFbAUh4yRKaN
+ nwADBwQAjNvMr/KBcGsV/UvxZSm/mdpvUPtcw9qmbxCrqFQoB6TmoZ7F6wp/rL3TkQ5UElPR
+ gsG12+Dk9GgRhnnxTHCFgN1qTiZNX4YIFpNrd0au3W/Xko79L0c4/49ten5OrFI/psx53fhY
+ vLYfkJnc62h8hiNeM6kqYa/x0BEddu92ZG7CRgQYEQIABgUCPGJHJAAKCRBHosy62l33jMhd
+ AJ48P7WDvKLQQ5MKnn2D/TI337uA/gCgn5mnvm4SBctbhaSBgckRmgSxfwQ=
+Message-ID: <d1093c59-f432-b2b6-ca53-e46414c945a6@gmail.com>
+Date:   Tue, 12 Feb 2019 21:42:58 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.4.0
 MIME-Version: 1.0
+In-Reply-To: <d5ad9e15-a572-2819-c39f-43d4c0ff2832@suse.de>
 Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="v9Ux+11Zm5mwPlX6"
-Content-Disposition: inline
-In-Reply-To: <CAL3q7H6eTTw-iTHiQLcJHa5iRRspWxQpfyTQRU1SmcxBqXSppg@mail.gmail.com>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+ protocol="application/pgp-signature";
+ boundary="zEy18yFQblSt4UfQe5jQpNNiFdD59mZNM"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--zEy18yFQblSt4UfQe5jQpNNiFdD59mZNM
+Content-Type: multipart/mixed; boundary="W7DU2IssqjKCeKS0vGsIOJCswSgN4vsfD";
+ protected-headers="v1"
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+To: Qu Wenruo <wqu@suse.de>, Remi Gauvin <remi@georgianit.com>,
+ linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <d1093c59-f432-b2b6-ca53-e46414c945a6@gmail.com>
+Subject: Re: [PATCH RFC] btrfs: Don't create SINGLE or DUP chunks for degraded
+ rw mount
+References: <20190212070319.30619-1-wqu@suse.com>
+ <aabbd673-fdc0-77dd-7e1e-1b5d1ed12bff@georgianit.com>
+ <964481b6-e761-8d0d-3ef1-cbe19dbfae9e@suse.de>
+ <79f33db2-f39c-6bd6-4697-d9d9f6a704f1@georgianit.com>
+ <d5ad9e15-a572-2819-c39f-43d4c0ff2832@suse.de>
+In-Reply-To: <d5ad9e15-a572-2819-c39f-43d4c0ff2832@suse.de>
 
---v9Ux+11Zm5mwPlX6
+--W7DU2IssqjKCeKS0vGsIOJCswSgN4vsfD
 Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
+Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
-On Tue, Feb 12, 2019 at 05:56:24PM +0000, Filipe Manana wrote:
-> On Tue, Feb 12, 2019 at 5:01 PM Zygo Blaxell
-> <ce3g8jdj@umail.furryterror.org> wrote:
-> >
-> > On Tue, Feb 12, 2019 at 03:35:37PM +0000, Filipe Manana wrote:
-> > > On Tue, Feb 12, 2019 at 3:11 AM Zygo Blaxell
-> > > <ce3g8jdj@umail.furryterror.org> wrote:
-> > > >
-> > > > Still reproducible on 4.20.7.
-> > >
-> > > I tried your reproducer when you first reported it, on different
-> > > machines with different kernel versions.
-> >
-> > That would have been useful to know last August...  :-/
-> >
-> > > Never managed to reproduce it, nor see anything obviously wrong in
-> > > relevant code paths.
-> >
-> > I built a fresh VM running Debian stretch and
-> > reproduced the issue immediately.  Mount options are
-> > "rw,noatime,compress=3Dzlib,space_cache,subvolid=3D5,subvol=3D/".  Kern=
-el is
-> > Debian's "4.9.0-8-amd64" but the bug is old enough that kernel version
-> > probably doesn't matter.
-> >
-> > I don't have any configuration that can't reproduce this issue, so I do=
-n't
-> > know how to help you.  I've tested AMD and Intel CPUs, VM, baremetal,
-> > hardware ranging in age from 0 to 9 years.  Locally built kernels from
-> > 4.1 to 4.20 and the stock Debian kernel (4.9).  SSDs and spinning rust.
-> > All of these reproduce the issue immediately--wrong sha1sum appears in
-> > the first 10 loops.
-> >
-> > What is your test environment?  I can try that here.
->=20
-> Debian unstable, all qemu vms, 4 cpus 4G to 8G ram iirc.=20
-
-I have several environments like that...
-
-> Always built from source kernels.
-
-=2E..that could be a relevant difference.  Have you tried a stock
-Debian kernel?
-
-> I have tested this when you reported it for 1 to 2 weeks in 2 or 3 vms
-> that kept running the test in an infinite loop during those weeks.
-> Don't recall what were the kernel versions (whatever was the latest at
-> the time), but that shouldn't matter according to what you say.
-
-That's an extremely long time compared to the rate of occurrence
-of this bug.  It should appear in only a few seconds of testing.
-Some data-hole-data patterns reproduce much slower (change the position
-of "block 0" lines in the setup script), but "slower" is minutes,
-not machine-months.
-
-Is your filesystem compressed?  Does compsize show the test
-file 'am' is compressed during the test?  Is the sha1sum you get
-6926a34e0ab3e0a023e8ea85a650f5b4217acab4?  Does the sha1sum change
-when a second process reads the file while the sha1sum/drop_caches loop
-is running?
-
-> > > >
-> > > > The behavior is slightly different on current kernels (4.20.7, 4.14=
-=2E96)
-> > > > which makes the problem a bit more difficult to detect.
-> > > >
-> > > >         # repro-hole-corruption-test
-> > > >         i: 91, status: 0, bytes_deduped: 131072
-> > > >         i: 92, status: 0, bytes_deduped: 131072
-> > > >         i: 93, status: 0, bytes_deduped: 131072
-> > > >         i: 94, status: 0, bytes_deduped: 131072
-> > > >         i: 95, status: 0, bytes_deduped: 131072
-> > > >         i: 96, status: 0, bytes_deduped: 131072
-> > > >         i: 97, status: 0, bytes_deduped: 131072
-> > > >         i: 98, status: 0, bytes_deduped: 131072
-> > > >         i: 99, status: 0, bytes_deduped: 131072
-> > > >         13107200 total bytes deduped in this operation
-> > > >         am: 4.8 MiB (4964352 bytes) converted to sparse holes.
-> > > >         94a8acd3e1f6e14272f3262a8aa73ab6b25c9ce8 am
-> > > >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > >
-> > > > The sha1sum seems stable after the first drop_caches--until a second
-> > > > process tries to read the test file:
-> > > >
-> > > >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > >         # cat am > /dev/null              (in another shell)
-> > > >         19294e695272c42edb89ceee24bb08c13473140a am
-> > > >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > >
-> > > > On Wed, Aug 22, 2018 at 11:11:25PM -0400, Zygo Blaxell wrote:
-> > > > > This is a repro script for a btrfs bug that causes corrupted data=
- reads
-> > > > > when reading a mix of compressed extents and holes.  The bug is
-> > > > > reproducible on at least kernels v4.1..v4.18.
-> > > > >
-> > > > > Some more observations and background follow, but first here is t=
-he
-> > > > > script and some sample output:
-> > > > >
-> > > > >       root@rescue:/test# cat repro-hole-corruption-test
-> > > > >       #!/bin/bash
-> > > > >
-> > > > >       # Write a 4096 byte block of something
-> > > > >       block () { head -c 4096 /dev/zero | tr '\0' "\\$1"; }
-> > > > >
-> > > > >       # Here is some test data with holes in it:
-> > > > >       for y in $(seq 0 100); do
-> > > > >               for x in 0 1; do
-> > > > >                       block 0;
-> > > > >                       block 21;
-> > > > >                       block 0;
-> > > > >                       block 22;
-> > > > >                       block 0;
-> > > > >                       block 0;
-> > > > >                       block 43;
-> > > > >                       block 44;
-> > > > >                       block 0;
-> > > > >                       block 0;
-> > > > >                       block 61;
-> > > > >                       block 62;
-> > > > >                       block 63;
-> > > > >                       block 64;
-> > > > >                       block 65;
-> > > > >                       block 66;
-> > > > >               done
-> > > > >       done > am
-> > > > >       sync
-> > > > >
-> > > > >       # Now replace those 101 distinct extents with 101 reference=
-s to the first extent
-> > > > >       btrfs-extent-same 131072 $(for x in $(seq 0 100); do echo a=
-m $((x * 131072)); done) 2>&1 | tail
-> > > > >
-> > > > >       # Punch holes into the extent refs
-> > > > >       fallocate -v -d am
-> > > > >
-> > > > >       # Do some other stuff on the machine while this runs, and w=
-atch the sha1sums change!
-> > > > >       while :; do echo $(sha1sum am); sysctl -q vm.drop_caches=3D=
-{1,2,3}; sleep 1; done
-> > > > >
-> > > > >       root@rescue:/test# ./repro-hole-corruption-test
-> > > > >       i: 91, status: 0, bytes_deduped: 131072
-> > > > >       i: 92, status: 0, bytes_deduped: 131072
-> > > > >       i: 93, status: 0, bytes_deduped: 131072
-> > > > >       i: 94, status: 0, bytes_deduped: 131072
-> > > > >       i: 95, status: 0, bytes_deduped: 131072
-> > > > >       i: 96, status: 0, bytes_deduped: 131072
-> > > > >       i: 97, status: 0, bytes_deduped: 131072
-> > > > >       i: 98, status: 0, bytes_deduped: 131072
-> > > > >       i: 99, status: 0, bytes_deduped: 131072
-> > > > >       13107200 total bytes deduped in this operation
-> > > > >       am: 4.8 MiB (4964352 bytes) converted to sparse holes.
-> > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > >       072a152355788c767b97e4e4c0e4567720988b84 am
-> > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > >       bf00d862c6ad436a1be2be606a8ab88d22166b89 am
-> > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > >       0d44cdf030fb149e103cfdc164da3da2b7474c17 am
-> > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > >       60831f0e7ffe4b49722612c18685c09f4583b1df am
-> > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > >       a19662b294a3ccdf35dbb18fdd72c62018526d7d am
-> > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > >       ^C
-> > > > >
-> > > > > Corruption occurs most often when there is a sequence like this i=
-n a file:
-> > > > >
-> > > > >       ref 1: hole
-> > > > >       ref 2: extent A, offset 0
-> > > > >       ref 3: hole
-> > > > >       ref 4: extent A, offset 8192
-> > > > >
-> > > > > This scenario typically arises due to hole-punching or deduplicat=
-ion.
-> > > > > Hole-punching replaces one extent ref with two references to the =
-same
-> > > > > extent with a hole between them, so:
-> > > > >
-> > > > >       ref 1:  extent A, offset 0, length 16384
-> > > > >
-> > > > > becomes:
-> > > > >
-> > > > >       ref 1:  extent A, offset 0, length 4096
-> > > > >       ref 2:  hole, length 8192
-> > > > >       ref 3:  extent A, offset 12288, length 4096
-> > > > >
-> > > > > Deduplication replaces two distinct extent refs surrounding a hol=
-e with
-> > > > > two references to one of the duplicate extents, turning this:
-> > > > >
-> > > > >       ref 1:  extent A, offset 0, length 4096
-> > > > >       ref 2:  hole, length 8192
-> > > > >       ref 3:  extent B, offset 0, length 4096
-> > > > >
-> > > > > into this:
-> > > > >
-> > > > >       ref 1:  extent A, offset 0, length 4096
-> > > > >       ref 2:  hole, length 8192
-> > > > >       ref 3:  extent A, offset 0, length 4096
-> > > > >
-> > > > > Compression is required (zlib, zstd, or lzo) for corruption to oc=
-cur.
-> > > > > I am not able to reproduce the issue with an uncompressed extent =
-nor
-> > > > > have I observed any such corruption in the wild.
-> > > > >
-> > > > > The presence or absence of the no-holes filesystem feature has no=
- effect.
-> > > > >
-> > > > > Ordinary writes can lead to pairs of extent references to the sam=
-e extent
-> > > > > separated by a reference to a different extent; however, in this =
-case
-> > > > > there is data to be read from a real extent, instead of pages tha=
-t have
-> > > > > to be zero filled from a hole.  If ordinary non-hole writes could=
- trigger
-> > > > > this bug, every page-oriented database engine would be crashing a=
-ll the
-> > > > > time on btrfs with compression enabled, and it's unlikely that wo=
-uld not
-> > > > > have been noticed between 2015 and now.  An ordinary write that s=
-plits
-> > > > > an extent ref would look like this:
-> > > > >
-> > > > >       ref 1:  extent A, offset 0, length 4096
-> > > > >       ref 2:  extent C, offset 0, length 8192
-> > > > >       ref 3:  extent A, offset 12288, length 4096
-> > > > >
-> > > > > Sparse writes can lead to pairs of extent references surrounding =
-a hole;
-> > > > > however, in this case the extent references will point to differe=
-nt
-> > > > > extents, avoiding the bug.  If a sparse write could trigger the b=
-ug,
-> > > > > the rsync -S option and qemu/kvm 'raw' disk image files (among ma=
-ny
-> > > > > other tools that produce sparse files) would be unusable, and it's
-> > > > > unlikely that would not have been noticed between 2015 and now ei=
-ther.
-> > > > > Sparse writes look like this:
-> > > > >
-> > > > >       ref 1:  extent A, offset 0, length 4096
-> > > > >       ref 2:  hole, length 8192
-> > > > >       ref 3:  extent B, offset 0, length 4096
-> > > > >
-> > > > > The pattern or timing of read() calls seems to be relevant.  It i=
-s very
-> > > > > hard to see the corruption when reading files with 'hd', but 'cat=
- | hd'
-> > > > > will see the corruption just fine.  Similar problems exist with '=
-cmp'
-> > > > > but not 'sha1sum'.  Two processes reading the same file at the sa=
-me time
-> > > > > seem to trigger the corruption very frequently.
-> > > > >
-> > > > > Some patterns of holes and data produce corruption faster than ot=
-hers.
-> > > > > The pattern generated by the script above is based on instances of
-> > > > > corruption I've found in the wild, and has a much better repro ra=
-te than
-> > > > > random holes.
-> > > > >
-> > > > > The corruption occurs during reads, after csum verification and b=
-efore
-> > > > > decompression, so btrfs detects no csum failures.  The data on di=
-sk
-> > > > > seems to be OK and could be read correctly once the kernel bug is=
- fixed.
-> > > > > Repeated reads do eventually return correct data, but there is no=
- way
-> > > > > for userspace to distinguish between corrupt and correct data rel=
-iably.
-> > > > >
-> > > > > The corrupted data is usually data replaced by a hole or a copy o=
-f other
-> > > > > blocks in the same extent.
-> > > > >
-> > > > > The behavior is similar to some earlier bugs related to holes and
-> > > > > Compressed data in btrfs, but it's new and not fixed yet--hence,
-> > > > > "2018 edition."
-> > > >
-> > > >
-> > >
-> > >
-> > > --
-> > > Filipe David Manana,
-> > >
-> > > =E2=80=9CWhether you think you can, or you think you can't =E2=80=94 =
-you're right.=E2=80=9D
-> > >
+12.02.2019 10:47, Qu Wenruo =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
 >=20
 >=20
+> On 2019/2/12 =E4=B8=8B=E5=8D=883:43, Remi Gauvin wrote:
+>> On 2019-02-12 2:22 a.m., Qu Wenruo wrote:
+>>
+>>>> Does this mean you would rely on scrub/CSUM to repair the missing da=
+ta
+>>>> if device is restored?
+>>>
+>>> Yes, just as btrfs usually does.
+>>>
+>>
+>> I don't really understand the implications of the problems with mounti=
+ng
+>> fs when single/dup data chunk are allocated on raid1,
 >=20
-> --=20
-> Filipe David Manana,
+> Consider this use case:
 >=20
-> =E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you'=
-re right.=E2=80=9D
+> One btrfs with 2 devices, RAID1 for data and metadata.
+>=20
+> One day devid 2 got failure, and before replacement arrives, user can
+> only use devid 1 alone. (Maybe that's the root fs).
+>=20
+> Then new disk arrived, user replaced the missing device, caused SINGLE
+> or DUP chunks on devid 1, and more importantly, some metadata/data is
+> already in DUP/SINGLE chunks.
+>=20
+> Then some days later, devid 1 get failure too, now user is unable to
+> mount the fs degraded RW any more, since SINGLE/DUP chunks are all on
+> devid 1, and no way to replace devid 1.
 >=20
 
---v9Ux+11Zm5mwPlX6
+But if I understand what happens after your patch correctly, replacement
+device still does not contain valid data until someone does scrub. So in
+either case manual step is required to restore full redundancy.
+
+Or does "btrfs replace" restore content on replacement device automatical=
+ly?
+
+> Thanks,
+> Qu
+>=20
+>> but I would think
+>> that would actually be a preferable situation than filling a drive wit=
+h
+>> 'data' we know is completely bogus... converting single/dup data to ra=
+id
+>> should be much faster than tripping on CSUM errors, and less prone to
+>> missed errors?
+>>
+>>
+>=20
+
+
+
+--W7DU2IssqjKCeKS0vGsIOJCswSgN4vsfD--
+
+--zEy18yFQblSt4UfQe5jQpNNiFdD59mZNM
 Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCXGMMxAAKCRCB+YsaVrMb
-nJ7WAKCP94JrzGjRhgeI2WsU7aTZVtLmgwCeIkNMI1p9TAR5/tttq1Vqc5Dij9I=
-=IKKz
+iF0EARECAB0WIQTsPDUXSW5c6iqbJulHosy62l33jAUCXGMTuAAKCRBHosy62l33
+jF9DAKCwu4eQm0YJOxS4/c3fN0HOnfMorACgkcJeY8JqJPQLt7Or7gbAhjdV1so=
+=Rmfl
 -----END PGP SIGNATURE-----
 
---v9Ux+11Zm5mwPlX6--
+--zEy18yFQblSt4UfQe5jQpNNiFdD59mZNM--

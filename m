@@ -4,54 +4,54 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8E15AC282CE
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 02:19:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EF09DC169C4
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 02:19:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5C70E21B18
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 02:19:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B528C21B18
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 02:19:13 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="Q7Jbs0iu"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="WfAx8gsu"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727660AbfBLCTK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Feb 2019 21:19:10 -0500
-Received: from userp2130.oracle.com ([156.151.31.86]:37708 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727265AbfBLCTK (ORCPT
+        id S1727686AbfBLCTM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Feb 2019 21:19:12 -0500
+Received: from aserp2130.oracle.com ([141.146.126.79]:45900 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727265AbfBLCTM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Feb 2019 21:19:10 -0500
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x1C2J8Tf026821
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Feb 2019 02:19:08 GMT
+        Mon, 11 Feb 2019 21:19:12 -0500
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x1C2J14h034782
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Feb 2019 02:19:10 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
  date : message-id : in-reply-to : references; s=corp-2018-07-02;
- bh=dMrprD0YDRArK19Oxq03j6SG/rygroTuug9GYdzzJX4=;
- b=Q7Jbs0iuRpg9GKYEeIlizSFtKl3cqdoDmfvXSyQzcHDlruDBfpKNxgKoj6Nob5R+OdRA
- MjeRSsx6pabL0uVP61j4s9HN6qqMdeylFbnkWgA+R+6GStkGqI7UAwQxWdxBiFC6k6Oi
- okBhypNdnlZvcP2LWFRN6uy84fyAmL4L6rmR91DAhS5vP6UDTXigS8ZxD1D4tEiHZ1uX
- BsH3tXz4CMoIdFXuvAByRk5qpGF1ZR0z/1/OK3F3g0tHYcEELd/LpBtW+d2S8NV2Zdur
- TGXTJc9DTvAfcLsoJGERwnPyrDzeMYJoDZyYWF2mX/r3xt7UO1+kIxJJFRpE0uj38rYw +g== 
+ bh=xlGpTZOI2b19ONlQT6KZqHxF5UoWt3vSSSaakUZoYNg=;
+ b=WfAx8gsu3Dd804oGR3Th1Fg/SOQADUXqk7pMPp+D6/fA1XVbquYHzxapMcmENrVKfAa5
+ +cX17IWA0AnsA9vnzTyGau0YQNXvyc/iyWVvWhfDz/9bIONjFGpa5rIG2webj/4Fa+5J
+ 7QwPQOdlH5gcs+HJE6mdBcOi0SWtrWtGYOWXJyd92MqDURLSnMW6eZxYhcAIPgoyup6I
+ Q4IzyVamSX7rLopSWO2PwZB8UljpIp5g6rTW0Bz6NlrqbGeWSWqj9mi4WZc+YMxRBrWm
+ BrO2e5QpBoT83lVvhSuCG0SpNkQpnG3AiPyWy3EAiORcKTtGJ89anM+c0XYuVHAqgmCb FQ== 
 Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by userp2130.oracle.com with ESMTP id 2qhrek99pr-1
+        by aserp2130.oracle.com with ESMTP id 2qhre598x6-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Feb 2019 02:19:08 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id x1C2J3kt005946
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Feb 2019 02:19:10 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id x1C2J44k006018
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Feb 2019 02:19:03 GMT
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Feb 2019 02:19:04 GMT
 Received: from abhmp0017.oracle.com (abhmp0017.oracle.com [141.146.116.23])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x1C2J3dX000598
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Feb 2019 02:19:03 GMT
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x1C2J464022651
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Feb 2019 02:19:04 GMT
 Received: from tpasj.localdomain (/183.90.37.91)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 11 Feb 2019 18:19:02 -0800
+        with ESMTP ; Mon, 11 Feb 2019 18:19:04 -0800
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 1/3] btrfs: kill __btrfs_set_prop()
-Date:   Tue, 12 Feb 2019 10:18:49 +0800
-Message-Id: <1549937931-15339-2-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH v3 2/3] btrfs: drop redundant forward declaration in props.c
+Date:   Tue, 12 Feb 2019 10:18:50 +0800
+Message-Id: <1549937931-15339-3-git-send-email-anand.jain@oracle.com>
 X-Mailer: git-send-email 1.8.3.1
 In-Reply-To: <1549937931-15339-1-git-send-email-anand.jain@oracle.com>
 References: <1549937931-15339-1-git-send-email-anand.jain@oracle.com>
@@ -66,133 +66,213 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-btrfs_set_prop() is a redirect to __btrfs_set_prop() with the
-transaction handler equal to NULL. And __btrfs_set_prop() inturn diectly
-uses trans to do_setxattr() which when trans is NULL creates a transaction.
-
-Instead rename __btrfs_set_prop() to btrfs_set_prop(), and update the
-caller with NULL argument.
+Drop forward declaration of the functions,
+prop_compression_validate(), prop_compression_apply() and
+prop_compression_extract(). By moving prop_handlers[], btrfs_props_init()
+prop_compression_validate(), prop_compression_apply() and
+prop_compression_extract() appropriately within the file. No functional
+changes.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
-v3: none
+v3: merge with 2/5 and 3/5 as in v1
 v2: none
+ fs/btrfs/props.c | 163 +++++++++++++++++++++++++++----------------------------
+ 1 file changed, 79 insertions(+), 84 deletions(-)
 
- fs/btrfs/ioctl.c | 10 ++++++----
- fs/btrfs/props.c | 22 +++++-----------------
- fs/btrfs/props.h |  6 ++----
- fs/btrfs/xattr.c |  2 +-
- 4 files changed, 14 insertions(+), 26 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 3f9d7be30bf4..5a4ed2f66e09 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -284,7 +284,8 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 		binode->flags &= ~BTRFS_INODE_COMPRESS;
- 		binode->flags |= BTRFS_INODE_NOCOMPRESS;
- 
--		ret = btrfs_set_prop(inode, "btrfs.compression", NULL, 0, 0);
-+		ret = btrfs_set_prop(NULL, inode, "btrfs.compression", NULL, 0,
-+				     0);
- 		if (ret && ret != -ENODATA)
- 			goto out_drop;
- 	} else if (fsflags & FS_COMPR_FL) {
-@@ -302,13 +303,14 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 		if (!comp || comp[0] == 0)
- 			comp = btrfs_compress_type2str(BTRFS_COMPRESS_ZLIB);
- 
--		ret = btrfs_set_prop(inode, "btrfs.compression",
--				     comp, strlen(comp), 0);
-+		ret = btrfs_set_prop(NULL, inode, "btrfs.compression", comp,
-+				     strlen(comp), 0);
- 		if (ret)
- 			goto out_drop;
- 
- 	} else {
--		ret = btrfs_set_prop(inode, "btrfs.compression", NULL, 0, 0);
-+		ret = btrfs_set_prop(NULL, inode, "btrfs.compression", NULL, 0,
-+				     0);
- 		if (ret && ret != -ENODATA)
- 			goto out_drop;
- 		binode->flags &= ~(BTRFS_INODE_COMPRESS | BTRFS_INODE_NOCOMPRESS);
 diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-index dc6140013ae8..4525a2a4d1cd 100644
+index 4525a2a4d1cd..77a03076b18e 100644
 --- a/fs/btrfs/props.c
 +++ b/fs/btrfs/props.c
-@@ -85,12 +85,9 @@ static const struct hlist_head *find_prop_handlers_by_hash(const u64 hash)
- 	return NULL;
- }
+@@ -23,36 +23,6 @@ struct prop_handler {
+ 	int inheritable;
+ };
  
--static int __btrfs_set_prop(struct btrfs_trans_handle *trans,
--			    struct inode *inode,
--			    const char *name,
--			    const char *value,
--			    size_t value_len,
--			    int flags)
-+int btrfs_set_prop(struct btrfs_trans_handle *trans, struct inode *inode,
-+		   const char *name, const char *value, size_t value_len,
-+		   int flags)
- {
- 	const struct prop_handler *handler;
- 	int ret;
-@@ -133,15 +130,6 @@ static int __btrfs_set_prop(struct btrfs_trans_handle *trans,
- 	return 0;
- }
- 
--int btrfs_set_prop(struct inode *inode,
--		   const char *name,
--		   const char *value,
--		   size_t value_len,
--		   int flags)
+-static int prop_compression_validate(const char *value, size_t len);
+-static int prop_compression_apply(struct inode *inode,
+-				  const char *value,
+-				  size_t len);
+-static const char *prop_compression_extract(struct inode *inode);
+-
+-static struct prop_handler prop_handlers[] = {
+-	{
+-		.xattr_name = XATTR_BTRFS_PREFIX "compression",
+-		.validate = prop_compression_validate,
+-		.apply = prop_compression_apply,
+-		.extract = prop_compression_extract,
+-		.inheritable = 1
+-	},
+-};
+-
+-void __init btrfs_props_init(void)
 -{
--	return __btrfs_set_prop(NULL, inode, name, value, value_len, flags);
+-	int i;
+-
+-	hash_init(prop_handlers_ht);
+-
+-	for (i = 0; i < ARRAY_SIZE(prop_handlers); i++) {
+-		struct prop_handler *p = &prop_handlers[i];
+-		u64 h = btrfs_name_hash(p->xattr_name, strlen(p->xattr_name));
+-
+-		hash_add(prop_handlers_ht, &p->node, h);
+-	}
 -}
 -
- static int iterate_object_props(struct btrfs_root *root,
- 				struct btrfs_path *path,
- 				u64 objectid,
-@@ -313,8 +301,8 @@ static int inherit_props(struct btrfs_trans_handle *trans,
- 					  num_bytes, BTRFS_RESERVE_NO_FLUSH);
- 		if (ret)
- 			goto out;
--		ret = __btrfs_set_prop(trans, inode, h->xattr_name,
--				       value, strlen(value), 0);
-+		ret = btrfs_set_prop(trans, inode, h->xattr_name, value,
-+				     strlen(value), 0);
- 		btrfs_block_rsv_release(fs_info, trans->block_rsv, num_bytes);
- 		if (ret)
- 			goto out;
-diff --git a/fs/btrfs/props.h b/fs/btrfs/props.h
-index 618815b4f9d5..9dbdae47cf27 100644
---- a/fs/btrfs/props.h
-+++ b/fs/btrfs/props.h
-@@ -10,10 +10,8 @@
- 
- void __init btrfs_props_init(void);
- 
--int btrfs_set_prop(struct inode *inode,
--		   const char *name,
--		   const char *value,
--		   size_t value_len,
-+int btrfs_set_prop(struct btrfs_trans_handle *trans, struct inode *inode,
-+		   const char *name, const char *value, size_t value_len,
- 		   int flags);
- 
- int btrfs_load_inode_props(struct inode *inode, struct btrfs_path *path);
-diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
-index f141b45ce349..499bb79ba135 100644
---- a/fs/btrfs/xattr.c
-+++ b/fs/btrfs/xattr.c
-@@ -379,7 +379,7 @@ static int btrfs_xattr_handler_set_prop(const struct xattr_handler *handler,
- 					size_t size, int flags)
+ static const struct hlist_head *find_prop_handlers_by_hash(const u64 hash)
  {
- 	name = xattr_full_name(handler, name);
--	return btrfs_set_prop(inode, name, value, size, flags);
-+	return btrfs_set_prop(NULL, inode, name, value, size, flags);
+ 	struct hlist_head *h;
+@@ -271,6 +241,78 @@ int btrfs_load_inode_props(struct inode *inode, struct btrfs_path *path)
+ 	return ret;
  }
  
- static const struct xattr_handler btrfs_security_xattr_handler = {
++static int prop_compression_validate(const char *value, size_t len)
++{
++	if (!value)
++		return 0;
++
++	if (!strncmp("lzo", value, len))
++		return 0;
++	else if (!strncmp("zlib", value, len))
++		return 0;
++	else if (!strncmp("zstd", value, len))
++		return 0;
++
++	return -EINVAL;
++}
++
++static int prop_compression_apply(struct inode *inode, const char *value,
++				  size_t len)
++{
++	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
++	int type;
++
++	if (len == 0) {
++		BTRFS_I(inode)->flags |= BTRFS_INODE_NOCOMPRESS;
++		BTRFS_I(inode)->flags &= ~BTRFS_INODE_COMPRESS;
++		BTRFS_I(inode)->prop_compress = BTRFS_COMPRESS_NONE;
++
++		return 0;
++	}
++
++	if (!strncmp("lzo", value, 3)) {
++		type = BTRFS_COMPRESS_LZO;
++		btrfs_set_fs_incompat(fs_info, COMPRESS_LZO);
++	} else if (!strncmp("zlib", value, 4)) {
++		type = BTRFS_COMPRESS_ZLIB;
++	} else if (!strncmp("zstd", value, len)) {
++		type = BTRFS_COMPRESS_ZSTD;
++		btrfs_set_fs_incompat(fs_info, COMPRESS_ZSTD);
++	} else {
++		return -EINVAL;
++	}
++
++	BTRFS_I(inode)->flags &= ~BTRFS_INODE_NOCOMPRESS;
++	BTRFS_I(inode)->flags |= BTRFS_INODE_COMPRESS;
++	BTRFS_I(inode)->prop_compress = type;
++
++	return 0;
++}
++
++static const char *prop_compression_extract(struct inode *inode)
++{
++	switch (BTRFS_I(inode)->prop_compress) {
++	case BTRFS_COMPRESS_ZLIB:
++	case BTRFS_COMPRESS_LZO:
++	case BTRFS_COMPRESS_ZSTD:
++		return btrfs_compress_type2str(BTRFS_I(inode)->prop_compress);
++	default:
++		break;
++	}
++
++	return NULL;
++}
++
++static struct prop_handler prop_handlers[] = {
++	{
++		.xattr_name = XATTR_BTRFS_PREFIX "compression",
++		.validate = prop_compression_validate,
++		.apply = prop_compression_apply,
++		.extract = prop_compression_extract,
++		.inheritable = 1
++	},
++};
++
+ static int inherit_props(struct btrfs_trans_handle *trans,
+ 			 struct inode *inode,
+ 			 struct inode *parent)
+@@ -352,64 +394,17 @@ int btrfs_subvol_inherit_props(struct btrfs_trans_handle *trans,
+ 	return ret;
+ }
+ 
+-static int prop_compression_validate(const char *value, size_t len)
+-{
+-	if (!strncmp("lzo", value, len))
+-		return 0;
+-	else if (!strncmp("zlib", value, len))
+-		return 0;
+-	else if (!strncmp("zstd", value, len))
+-		return 0;
+-
+-	return -EINVAL;
+-}
+-
+-static int prop_compression_apply(struct inode *inode,
+-				  const char *value,
+-				  size_t len)
++void __init btrfs_props_init(void)
+ {
+-	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+-	int type;
+-
+-	if (len == 0) {
+-		BTRFS_I(inode)->flags |= BTRFS_INODE_NOCOMPRESS;
+-		BTRFS_I(inode)->flags &= ~BTRFS_INODE_COMPRESS;
+-		BTRFS_I(inode)->prop_compress = BTRFS_COMPRESS_NONE;
+-
+-		return 0;
+-	}
+-
+-	if (!strncmp("lzo", value, 3)) {
+-		type = BTRFS_COMPRESS_LZO;
+-		btrfs_set_fs_incompat(fs_info, COMPRESS_LZO);
+-	} else if (!strncmp("zlib", value, 4)) {
+-		type = BTRFS_COMPRESS_ZLIB;
+-	} else if (!strncmp("zstd", value, len)) {
+-		type = BTRFS_COMPRESS_ZSTD;
+-		btrfs_set_fs_incompat(fs_info, COMPRESS_ZSTD);
+-	} else {
+-		return -EINVAL;
+-	}
++	int i;
+ 
+-	BTRFS_I(inode)->flags &= ~BTRFS_INODE_NOCOMPRESS;
+-	BTRFS_I(inode)->flags |= BTRFS_INODE_COMPRESS;
+-	BTRFS_I(inode)->prop_compress = type;
++	hash_init(prop_handlers_ht);
+ 
+-	return 0;
+-}
++	for (i = 0; i < ARRAY_SIZE(prop_handlers); i++) {
++		struct prop_handler *p = &prop_handlers[i];
++		u64 h = btrfs_name_hash(p->xattr_name, strlen(p->xattr_name));
+ 
+-static const char *prop_compression_extract(struct inode *inode)
+-{
+-	switch (BTRFS_I(inode)->prop_compress) {
+-	case BTRFS_COMPRESS_ZLIB:
+-	case BTRFS_COMPRESS_LZO:
+-	case BTRFS_COMPRESS_ZSTD:
+-		return btrfs_compress_type2str(BTRFS_I(inode)->prop_compress);
+-	default:
+-		break;
++		hash_add(prop_handlers_ht, &p->node, h);
+ 	}
+-
+-	return NULL;
+ }
+ 
+-
 -- 
 1.8.3.1
 

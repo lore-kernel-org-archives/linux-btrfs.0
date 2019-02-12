@@ -2,187 +2,182 @@ Return-Path: <SRS0=Udpi=QT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A4B2FC282C4
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 07:03:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 19F7AC282C4
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 07:20:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7487921773
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 07:03:27 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C1EC72184A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 07:20:56 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=georgianit.com header.i=@georgianit.com header.b="HJvkdX4o";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="oKUR3Go+"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726844AbfBLHD0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 12 Feb 2019 02:03:26 -0500
-Received: from mx2.suse.de ([195.135.220.15]:60330 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726059AbfBLHDZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Feb 2019 02:03:25 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id E08B8B03F;
-        Tue, 12 Feb 2019 07:03:23 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     =?UTF-8?q?Jakob=20Sch=C3=B6ttl?= <jschoett@gmail.com>
-Subject: [PATCH RFC] btrfs: Don't create SINGLE or DUP chunks for degraded rw mount
-Date:   Tue, 12 Feb 2019 15:03:19 +0800
-Message-Id: <20190212070319.30619-1-wqu@suse.com>
-X-Mailer: git-send-email 2.20.1
+        id S1727497AbfBLHUz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 12 Feb 2019 02:20:55 -0500
+Received: from out2-smtp.messagingengine.com ([66.111.4.26]:35669 "EHLO
+        out2-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1725936AbfBLHUz (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 12 Feb 2019 02:20:55 -0500
+Received: from compute2.internal (compute2.nyi.internal [10.202.2.42])
+        by mailout.nyi.internal (Postfix) with ESMTP id D73DB2315F;
+        Tue, 12 Feb 2019 02:20:53 -0500 (EST)
+Received: from mailfrontend1 ([10.202.2.162])
+  by compute2.internal (MEProxy); Tue, 12 Feb 2019 02:20:53 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=georgianit.com;
+         h=subject:to:references:from:message-id:date:mime-version
+        :in-reply-to:content-type; s=fm2; bh=BUTxAxLnP/pkA5zaufjOZ0Wyg2L
+        Xj1ke7yv4yI0Bk4I=; b=HJvkdX4oH/rcltzHqZTXpl153Ebf+ftnOpXWaBoN3p1
+        ocqINhKHv3weD0ZdP8vsOV+9bhwdj7BxK7AT0YnwgQDL0tILSW6axNQdZpH7OhUr
+        r+nQMz7P2H6zQvZZzinJwE3nzfvJNxLk0rAw5p3Cr+XedNtq6XpiVXDSmuuUOrO/
+        aVJ0H+lH6WfPQr3czCIjFv81MH0xqBSHLSLLu7RClpIWDoz7qUC18ejUWl41iaxF
+        44UobC+O037CuBOMkq+9RGZDjsPRMQ2MJSKBr/0p2P01atfaSpsefOCcT6r7xlIc
+        eePrVqsJH+m3johjJ1IInzQlN+JW+P9RTrqzldgy/dw==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=content-type:date:from:in-reply-to
+        :message-id:mime-version:references:subject:to:x-me-proxy
+        :x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; bh=BUTxAx
+        LnP/pkA5zaufjOZ0Wyg2LXj1ke7yv4yI0Bk4I=; b=oKUR3Go+oRwWteI8VrqWGK
+        O+VwtNCShLWBXuGHGxPEUR1ar11XyVstbLDJIs6DFQtN7i1cOHjut+62NPKnSDEh
+        VKpD5SgHm21EJQs/4VJSgkcw9ME7XsPdlCeJo+9S03gWgKnDUzpexrDVpp3022pG
+        tP0AlqjiTKZSMeVG6fnysZkumQh0M6t7IH3bRL/GbJNexKA8rUt2dIes+kaANcp0
+        0xRFv9kouCgyNE6E2yAenS+6fTh8tnvLfqHOhWoQq9TwZcoH/fJ4sOPEGI0aCiSr
+        iNuy9JWxTgET03Pze+GmHnJreukg9ltXMjq01l5zVs4mH0GmnQou2ow5bMi9srcA
+        ==
+X-ME-Sender: <xms:1XNiXI_gTe58cmYLldBGgtFVkS94SnymekMmo2RMS2ktC4rpW87YpQ>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedtledruddttddguddtjecutefuodetggdotefrod
+    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpqfhuthenuceurghilhhouhhtmecu
+    fedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmnecujfgurhepuffvfhfhkf
+    fffgggjggtsehgtderofdtfeejnecuhfhrohhmpeftvghmihcuifgruhhvihhnuceorhgv
+    mhhisehgvghorhhgihgrnhhithdrtghomheqnecukfhppedufeehrddvfedrvdegiedrud
+    efudenucfrrghrrghmpehmrghilhhfrhhomheprhgvmhhisehgvghorhhgihgrnhhithdr
+    tghomhenucevlhhushhtvghrufhiiigvpedt
+X-ME-Proxy: <xmx:1XNiXHBfJgi1JSMm-Mms1QxkReJGJwLTfht0-nvSE3nzUv7QacbaXg>
+    <xmx:1XNiXEC44f7j0W2xdFSK1-tzTDEO2edVc1ElTniUdYzufWgrLNvGrw>
+    <xmx:1XNiXFyUoQtHz2cOxfOx0i80csAjIrV5OE9nnjS4bXdSHs2DQXF0gQ>
+    <xmx:1XNiXDPKF_oBB9dnhrSz_Xl8A_anr6genNpIxlq7By9bzBg6Juv7hw>
+Received: from [10.0.0.6] (135-23-246-131.cpe.pppoe.ca [135.23.246.131])
+        by mail.messagingengine.com (Postfix) with ESMTPA id DE456E4652;
+        Tue, 12 Feb 2019 02:20:52 -0500 (EST)
+Subject: Re: [PATCH RFC] btrfs: Don't create SINGLE or DUP chunks for degraded
+ rw mount
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20190212070319.30619-1-wqu@suse.com>
+From:   Remi Gauvin <remi@georgianit.com>
+Openpgp: url=http://www.georgianit.com/pgp/Remi%20Gauvin%20remi%40georgianit.com%20(0xEF539FF247456A6D)%20pub.asc
+Autocrypt: addr=remi@georgianit.com; prefer-encrypt=mutual;
+ keydata= mQENBFogjcYBCADvI0pxdYyVkEUAIzT6HwYnZ5CAy2czT87Si5mqk4wL4Ulupwfv9TLzaj3R
+ CUgHPNpFsp1n/nKKyOq1ZmE6w5YKx4I8/o9tRl+vjnJr2otfS7XizBaVV7UwziODikOimmT+
+ sGNfYGcjdJ+CC567g9aAECbvnyxNlncTyUPUdmazOKhmzB4IvG8+M2u+C4c9nVkX2ucf3OuF
+ t/qmeRaF8+nlkCMtAdIVh0F7HBYJzvYG3EPiKbGmbOody3OM55113uEzyw39k8WHRhhaKhi6
+ 8QY9nKCPVhRFzk6wUHJa2EKbKxqeFcFzZ1ok7l7vrX3/OBk2dGOAoOJ4UX+ozAtrMqCBABEB
+ AAG0IVJlbWkgR2F1dmluIDxyZW1pQGdlb3JnaWFuaXQuY29tPokBPgQTAQIAKAUCWiCNxgIb
+ IwUJCWYBgAYLCQgHAwIGFQgCCQoLBBYCAwECHgECF4AACgkQ71Of8kdFam2V1Qf9Fs6LSx1i
+ OoVgOzjWwiI06vJrZznjmtbJkcm/Of5onITZnB4h+tbqEyaMYYsEIk1r4oFMfKB7SDpQbADj
+ 9CI2EbpygwZa24Oqv4gWEzb4c7mSJuLKTnrhmwCOtdeDQXO/uu6BZPkazDAaKHUM6XqNEVvt
+ WHBaGioaV4dGxzjXALQDpLc4vDreSl9nwlTorwJR9t6u5BlDcdh3VOuYlgXjI4pCk+cihgtY
+ k3KZo/El1fWFYmtSTq7m/JPpKZyb77cbzf2AbkxJuLgg9o0iVAg81LjElznI0R5UbYrJcJeh
+ Jo4rvXKFYQ1qFwno1jlSXejsFA5F3FQzJe1JUAu2HlYqRrkBDQRaII3GAQgAo0Y6FX84QsDp
+ R8kFEqMhpkjeVQpbwYhqBgIFJT5cBMQpZsHmnOgpYU0Jo8P3owHUFu569g6j4+wSubbh2+bt
+ WL0QoFZcng0a2/j3qH98g9lAn8ZgohxavmwYINt7b+LEeDoBvq0s/0ZeXx47MOmbjROq8L/g
+ QOYbIWoJLO2emyxmVo1Fg00FKkbuCEgJPW8U/7VX4EFYaIhPQv/K3mpnyWXIq5lviiMCHzxE
+ jzBh/35DTLwymDdmtzWgcu1rzZ6j2s+4bTxE8mYXd4l2Xonn7v448gwvQmZJ8EPplO/pWe9F
+ oISyiNxZnQNCVEO9lManKPFphfVHqJ1WEtYMiLxTkQARAQABiQElBBgBAgAPBQJaII3GAhsM
+ BQkJZgGAAAoJEO9Tn/JHRWptnn0H+gOtkumwlKcad2PqLFXCt2SzVJm5rHuYZhPPq4GCdMbz
+ XwuCEPXDoECFVXeiXngJmrL8+tLxvUhxUMdXtyYSPusnmFgj/EnCjQdFMLdvgvXI/wF5qj0/
+ r6NKJWtx3/+OSLW0E9J/gLfimIc3OF49E3S1c35Wj+4Okx9Tpwor7Tw8KwBVbdZA6TyQF08N
+ phFkhgnTK6gl2XqIHaoxPKhI9pKU5oPkg2eI27OICZrpTCppaSh3SGUp0EHPkZuhVfIxg4vF
+ nato30VZr+RMHtPtx813VZ/kzj+2pC/DrwZOtqFeaqJfCi6JSik3vX9BQd9GL4mxytQBZKXz
+ SY9JJa155sI=
+Message-ID: <aabbd673-fdc0-77dd-7e1e-1b5d1ed12bff@georgianit.com>
+Date:   Tue, 12 Feb 2019 02:20:51 -0500
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20190212070319.30619-1-wqu@suse.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="3U3kNy3vWnxRdbc9hBmCp8V7XUkD5nKuI"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[PROBLEM]
-The following script can easily create unnecessary SINGLE or DUP chunks:
-  #!/bin/bash
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--3U3kNy3vWnxRdbc9hBmCp8V7XUkD5nKuI
+Content-Type: multipart/mixed; boundary="F2vmnEQjRy8MxqWQPQmxbRCRDHZqCZ4oD";
+ protected-headers="v1"
+From: Remi Gauvin <remi@georgianit.com>
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <aabbd673-fdc0-77dd-7e1e-1b5d1ed12bff@georgianit.com>
+Subject: Re: [PATCH RFC] btrfs: Don't create SINGLE or DUP chunks for degraded
+ rw mount
+References: <20190212070319.30619-1-wqu@suse.com>
+In-Reply-To: <20190212070319.30619-1-wqu@suse.com>
 
-  dev1="/dev/test/scratch1"
-  dev2="/dev/test/scratch2"
-  dev3="/dev/test/scratch3"
-  mnt="/mnt/btrfs"
+--F2vmnEQjRy8MxqWQPQmxbRCRDHZqCZ4oD
+Content-Type: multipart/mixed;
+ boundary="------------B0853D179C1176DB813CCBDF"
+Content-Language: en-US
 
-  umount $dev1 $dev2 $dev3 $mnt &> /dev/null
+This is a multi-part message in MIME format.
+--------------B0853D179C1176DB813CCBDF
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-  mkfs.btrfs -f $dev1 $dev2 -d raid1 -m raid1
+On 2019-02-12 2:03 a.m., Qu Wenruo wrote:
 
-  mount $dev1 $mnt
-  umount $dev1
+> So we only need to consider missing devices as writable, and calculate
+> our chunk allocation profile with missing devices too.
+>=20
+> Then every thing should work as expected, without annoying SINGLE/DUP
+> chunks blocking later degraded mount.
+>=20
+>
 
-  wipefs -fa $dev2
+Does this mean you would rely on scrub/CSUM to repair the missing data
+if device is restored?
 
-  mount $dev1 -o degraded $mnt
-  btrfs replace start -Bf 2 $dev3 $mnt
-  umount $dev1
-  btrfs ins dump-tree -t chunk $dev1
+--------------B0853D179C1176DB813CCBDF
+Content-Type: text/x-vcard; charset=utf-8;
+ name="remi.vcf"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: attachment;
+ filename="remi.vcf"
 
-With the following chunks in chunk tree:
-  leaf 3016753152 items 11 free space 14900 generation 9 owner CHUNK_TREE
-  leaf 3016753152 flags 0x1(WRITTEN) backref revision 1
-  fs uuid 7c5fc730-5c16-4a2b-ad39-c26e85951426
-  chunk uuid 1c64265b-253e-411e-b164-b935a45d474b
-  	item 0 key (DEV_ITEMS DEV_ITEM 1) itemoff 16185 itemsize 98
-  	item 1 key (DEV_ITEMS DEV_ITEM 2) itemoff 16087 itemsize 98
-  	item 2 key (FIRST_CHUNK_TREE CHUNK_ITEM 22020096) itemoff 15975 itemsize 112
-  		length 8388608 owner 2 stripe_len 65536 type SYSTEM|RAID1
-  		...
-  	item 3 key (FIRST_CHUNK_TREE CHUNK_ITEM 30408704) itemoff 15863 itemsize 112
-  		length 1073741824 owner 2 stripe_len 65536 type METADATA|RAID1
-  	item 4 key (FIRST_CHUNK_TREE CHUNK_ITEM 1104150528) itemoff 15751 itemsize 112
-  		length 1073741824 owner 2 stripe_len 65536 type DATA|RAID1
-  	item 5 key (FIRST_CHUNK_TREE CHUNK_ITEM 2177892352) itemoff 15671 itemsize 80
-  		length 268435456 owner 2 stripe_len 65536 type METADATA
-  							       ^^^ SINGLE
-  	item 6 key (FIRST_CHUNK_TREE CHUNK_ITEM 2446327808) itemoff 15591 itemsize 80
-  		length 33554432 owner 2 stripe_len 65536 type SYSTEM
-  							      ^^^ SINGLE
-  	item 7 key (FIRST_CHUNK_TREE CHUNK_ITEM 2479882240) itemoff 15511 itemsize 80
-  		length 536870912 owner 2 stripe_len 65536 type DATA
-  							       ^^^ SINGLE
-  	item 8 key (FIRST_CHUNK_TREE CHUNK_ITEM 3016753152) itemoff 15399 itemsize 112
-  		length 33554432 owner 2 stripe_len 65536 type SYSTEM|DUP
-  							      ^^^ DUP
-  	item 9 key (FIRST_CHUNK_TREE CHUNK_ITEM 3050307584) itemoff 15287 itemsize 112
-  		length 268435456 owner 2 stripe_len 65536 type METADATA|DUP
-  							       ^^^ DUP
-  	item 10 key (FIRST_CHUNK_TREE CHUNK_ITEM 3318743040) itemoff 15175 itemsize 112
-  		length 536870912 owner 2 stripe_len 65536 type DATA|DUP
-  							       ^^^ DUP
+begin:vcard
+fn:Remi Gauvin
+n:Gauvin;Remi
+org:Georgian Infotech
+adr:;;3-51 Sykes St. N.;Meaford;ON;N4L 1X3;Canada
+email;internet:remi@georgianit.com
+tel;work:226-256-1545
+version:2.1
+end:vcard
 
-[CAUSE]
-When degraded mounted, no matter whether we're mounting RW or RO,
-missing devices are never considered RW, as we're acting as we only have
-one rw device.
 
-So any write to the degraded fs will cause btrfs to create new SINGLE or
-DUP chunks to restore newly written data.
+--------------B0853D179C1176DB813CCBDF--
 
-[FIX]
-At mount time, btrfs has already done chunk level degradation check,
-thus we can write to degraded chunks without problem.
+--F2vmnEQjRy8MxqWQPQmxbRCRDHZqCZ4oD--
 
-So we only need to consider missing devices as writable, and calculate
-our chunk allocation profile with missing devices too.
+--3U3kNy3vWnxRdbc9hBmCp8V7XUkD5nKuI
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
-Then every thing should work as expected, without annoying SINGLE/DUP
-chunks blocking later degraded mount.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
 
-With fix applied, the above replace will result the following chunk
-layout instead:
-leaf 22036480 items 5 free space 15626 generation 5 owner CHUNK_TREE
-leaf 22036480 flags 0x1(WRITTEN) backref revision 1
-fs uuid 7b825e77-e694-4474-9bfe-7bd7565fde0e
-chunk uuid 2c2d9e94-a819-4479-8f16-ab529c0a4f62
-	item 0 key (DEV_ITEMS DEV_ITEM 1) itemoff 16185 itemsize 98
-	item 1 key (DEV_ITEMS DEV_ITEM 2) itemoff 16087 itemsize 98
-	item 2 key (FIRST_CHUNK_TREE CHUNK_ITEM 22020096) itemoff 15975 itemsize 112
-		length 8388608 owner 2 stripe_len 65536 type SYSTEM|RAID1
-	item 3 key (FIRST_CHUNK_TREE CHUNK_ITEM 30408704) itemoff 15863 itemsize 112
-		length 1073741824 owner 2 stripe_len 65536 type METADATA|RAID1
-	item 4 key (FIRST_CHUNK_TREE CHUNK_ITEM 1104150528) itemoff 15751 itemsize 112
-		length 1073741824 owner 2 stripe_len 65536 type DATA|RAID1
+iQEcBAEBCAAGBQJcYnPTAAoJEO9Tn/JHRWptXY0IAIfa2lL8QUtZaWE8NyJiRK9P
+3xOF4RQV9NUjuDrgtH93dq58pTNB48k+UiTAv/7NSqX0n3Nud2N/YfXPbBu05Icp
+i6Ae1EAxVc2K5AbuJK0aYm2y7ALs6nw7qcQxF8kUxuT5Etteu2AqWYcPGWs7Wuo1
+lgpsK/tc93I+LUtW2z5Z54QDX4W+7Ndu7Mn1Hd1JWfv6sTU/XQlNxcgJuEv3Ymsb
+mvzxOSQO5esIvCGvuvOGNQ+uWvAfqEU588AGF32Po2N8q1ioCIZjRBxR2byrFhXC
++suLCOEIvQthwhU3It4E0TP8XpIGuWVja7ykjs0yrn3MdHjrKAXj5ToQkEdmido=
+=9Imv
+-----END PGP SIGNATURE-----
 
-Reported-by: Jakob Schöttl <jschoett@gmail.com>
-Cc: Jakob Schöttl <jschoett@gmail.com>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/extent-tree.c | 13 +++++++++++++
- fs/btrfs/volumes.c     |  7 +++++++
- 2 files changed, 20 insertions(+)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 0dde0cbc1622..bf691ecb6c70 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4081,6 +4081,13 @@ static u64 btrfs_reduce_alloc_profile(struct btrfs_fs_info *fs_info, u64 flags)
- 	u64 raid_type;
- 	u64 allowed = 0;
- 
-+	/*
-+	 * For degraded mount, still count missing devices as rw devices
-+	 * to avoid alloc SINGLE/DUP chunks
-+	 */
-+	if (btrfs_test_opt(fs_info, DEGRADED))
-+		num_devices += fs_info->fs_devices->missing_devices;
-+
- 	/*
- 	 * see if restripe for this chunk_type is in progress, if so
- 	 * try to reduce to the target profile
-@@ -9626,6 +9633,12 @@ static u64 update_block_group_flags(struct btrfs_fs_info *fs_info, u64 flags)
- 		return extended_to_chunk(stripped);
- 
- 	num_devices = fs_info->fs_devices->rw_devices;
-+	/*
-+	 * For degraded mount, still count missing devices as rw devices
-+	 * to avoid alloc SINGLE/DUP chunks
-+	 */
-+	if (btrfs_test_opt(fs_info, DEGRADED))
-+		num_devices += fs_info->fs_devices->missing_devices;
- 
- 	stripped = BTRFS_BLOCK_GROUP_RAID0 |
- 		BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6 |
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 03f223aa7194..8e8b3581877f 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6660,6 +6660,13 @@ static struct btrfs_device *add_missing_dev(struct btrfs_fs_devices *fs_devices,
- 	set_bit(BTRFS_DEV_STATE_MISSING, &device->dev_state);
- 	fs_devices->missing_devices++;
- 
-+	/*
-+	 * For degraded mount, still count missing devices as writable to
-+	 * avoid unnecessary SINGLE/DUP chunks
-+	 */
-+	if (btrfs_test_opt(fs_devices->fs_info, DEGRADED))
-+		set_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
-+
- 	return device;
- }
- 
--- 
-2.20.1
-
+--3U3kNy3vWnxRdbc9hBmCp8V7XUkD5nKuI--

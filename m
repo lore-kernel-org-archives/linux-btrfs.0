@@ -3,187 +3,327 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4B9ABC282C4
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 16:46:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6225BC282C4
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 17:01:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1A17B217D9
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 16:46:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2423E2084D
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 17:01:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730744AbfBLQqK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 12 Feb 2019 11:46:10 -0500
-Received: from mx2.suse.de ([195.135.220.15]:40968 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728035AbfBLQqK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Feb 2019 11:46:10 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id C444FAF76;
-        Tue, 12 Feb 2019 16:46:08 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 32BDCDA84E; Tue, 12 Feb 2019 17:45:25 +0100 (CET)
-Date:   Tue, 12 Feb 2019 17:45:23 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v4 1/3] btrfs: scrub: fix circular locking dependency
- warning
-Message-ID: <20190212164522.GE2900@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
-        linux-btrfs@vger.kernel.org
-References: <1548830702-14676-1-git-send-email-anand.jain@oracle.com>
- <1548830702-14676-2-git-send-email-anand.jain@oracle.com>
+        id S1729617AbfBLRBL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 12 Feb 2019 12:01:11 -0500
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:46096 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1725916AbfBLRBK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 12 Feb 2019 12:01:10 -0500
+Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
+        id 450CF2189A2; Tue, 12 Feb 2019 12:01:08 -0500 (EST)
+Date:   Tue, 12 Feb 2019 12:01:03 -0500
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To:     Filipe Manana <fdmanana@gmail.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Reproducer for "compressed data + hole data corruption bug, 2018
+ edition" still works on 4.20.7
+Message-ID: <20190212165916.GA23918@hungrycats.org>
+References: <20180823031125.GE13528@hungrycats.org>
+ <20190212030838.GB9995@hungrycats.org>
+ <CAL3q7H7T_NX=D8qimRC55g8V-p0k-ygUiW-K5bxF02r-6XT6Rg@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="a8Wt8u1KmwUX3Y2C"
 Content-Disposition: inline
-In-Reply-To: <1548830702-14676-2-git-send-email-anand.jain@oracle.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+In-Reply-To: <CAL3q7H7T_NX=D8qimRC55g8V-p0k-ygUiW-K5bxF02r-6XT6Rg@mail.gmail.com>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jan 30, 2019 at 02:45:00PM +0800, Anand Jain wrote:
-> Circular locking dependency check reports warning[1], that's because
-> the btrfs_scrub_dev() calls the stack #0 below with, the
-> fs_info::scrub_lock held. The test case leading to this warning..
-> 
->   mkfs.btrfs -fq /dev/sdb && mount /dev/sdb /btrfs
->   btrfs scrub start -B /btrfs
-> 
-> In fact we have fs_info::scrub_workers_refcnt to tack if the init and
-> destroy of the scrub workers are needed. So once we have incremented
-> and decremented the fs_info::scrub_workers_refcnt value in the thread,
-> its ok to drop the scrub_lock, and then actually do the
-> btrfs_destroy_workqueue() part. So this patch drops the scrub_lock
-> before calling btrfs_destroy_workqueue().
-> 
-> [1]
-> [   76.146826] ======================================================
-> [   76.147086] WARNING: possible circular locking dependency detected
-> [   76.147316] 4.20.0-rc3+ #41 Not tainted
-> [   76.147489] ------------------------------------------------------
-> [   76.147722] btrfs/4065 is trying to acquire lock:
-> [   76.147984] 0000000038593bc0 ((wq_completion)"%s-%s""btrfs",
-> name){+.+.}, at: flush_workqueue+0x70/0x4d0
-> [   76.148337]
-> but task is already holding lock:
-> [   76.148594] 0000000062392ab7 (&fs_info->scrub_lock){+.+.}, at:
-> btrfs_scrub_dev+0x316/0x5d0 [btrfs]
-> [   76.148909]
-> which lock already depends on the new lock.
-> 
-> [   76.149191]
-> the existing dependency chain (in reverse order) is:
-> [   76.149446]
-> -> #3 (&fs_info->scrub_lock){+.+.}:
-> [   76.149707]        btrfs_scrub_dev+0x11f/0x5d0 [btrfs]
-> [   76.149924]        btrfs_ioctl+0x1ac3/0x2d80 [btrfs]
-> [   76.150216]        do_vfs_ioctl+0xa9/0x6d0
-> [   76.150468]        ksys_ioctl+0x60/0x90
-> [   76.150716]        __x64_sys_ioctl+0x16/0x20
-> [   76.150911]        do_syscall_64+0x50/0x180
-> [   76.151182]        entry_SYSCALL_64_after_hwframe+0x49/0xbe
-> [   76.151469]
-> -> #2 (&fs_devs->device_list_mutex){+.+.}:
-> [   76.151851]        reada_start_machine_worker+0xca/0x3f0 [btrfs]
-> [   76.152195]        normal_work_helper+0xf0/0x4c0 [btrfs]
-> [   76.152489]        process_one_work+0x1f4/0x520
-> [   76.152751]        worker_thread+0x46/0x3d0
-> [   76.153715]        kthread+0xf8/0x130
-> [   76.153912]        ret_from_fork+0x3a/0x50
-> [   76.154178]
-> -> #1 ((work_completion)(&work->normal_work)){+.+.}:
-> [   76.154575]        worker_thread+0x46/0x3d0
-> [   76.154828]        kthread+0xf8/0x130
-> [   76.155108]        ret_from_fork+0x3a/0x50
-> [   76.155357]
-> -> #0 ((wq_completion)"%s-%s""btrfs", name){+.+.}:
-> [   76.155751]        flush_workqueue+0x9a/0x4d0
-> [   76.155911]        drain_workqueue+0xca/0x1a0
-> [   76.156182]        destroy_workqueue+0x17/0x230
-> [   76.156455]        btrfs_destroy_workqueue+0x5d/0x1c0 [btrfs]
-> [   76.156756]        scrub_workers_put+0x2e/0x60 [btrfs]
-> [   76.156931]        btrfs_scrub_dev+0x329/0x5d0 [btrfs]
-> [   76.157219]        btrfs_ioctl+0x1ac3/0x2d80 [btrfs]
-> [   76.157491]        do_vfs_ioctl+0xa9/0x6d0
-> [   76.157742]        ksys_ioctl+0x60/0x90
-> [   76.157910]        __x64_sys_ioctl+0x16/0x20
-> [   76.158177]        do_syscall_64+0x50/0x180
-> [   76.158429]        entry_SYSCALL_64_after_hwframe+0x49/0xbe
-> [   76.158716]
-> other info that might help us debug this:
-> 
-> [   76.158908] Chain exists of:
->   (wq_completion)"%s-%s""btrfs", name --> &fs_devs->device_list_mutex
-> --> &fs_info->scrub_lock
-> 
-> [   76.159629]  Possible unsafe locking scenario:
-> 
-> [   76.160607]        CPU0                    CPU1
-> [   76.160934]        ----                    ----
-> [   76.161210]   lock(&fs_info->scrub_lock);
-> [   76.161458]
-> lock(&fs_devs->device_list_mutex);
-> [   76.161805]
-> lock(&fs_info->scrub_lock);
-> [   76.161909]   lock((wq_completion)"%s-%s""btrfs", name);
-> [   76.162201]
->  *** DEADLOCK ***
 
-Please next time make sure the log messages are copied without
-whitespace damage. In many cases it's easy to glue the lines together,
-but specially the above locking scenario needs to be exact as the
-indentaion matters.
+--a8Wt8u1KmwUX3Y2C
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-I'll replace the whole report with the one in my logs as it does not
-have the device_list_mutex in the locking chain. This would be confusing
-as the problem with device_list_mutex was fixed already.
+On Tue, Feb 12, 2019 at 03:35:37PM +0000, Filipe Manana wrote:
+> On Tue, Feb 12, 2019 at 3:11 AM Zygo Blaxell
+> <ce3g8jdj@umail.furryterror.org> wrote:
+> >
+> > Still reproducible on 4.20.7.
+>=20
+> I tried your reproducer when you first reported it, on different
+> machines with different kernel versions.
 
-> 
-> [   76.162627] 2 locks held by btrfs/4065:
-> [   76.162897]  #0: 00000000bef2775b (sb_writers#12){.+.+}, at:
-> mnt_want_write_file+0x24/0x50
-> [   76.163335]  #1: 0000000062392ab7 (&fs_info->scrub_lock){+.+.}, at:
-> btrfs_scrub_dev+0x316/0x5d0 [btrfs]
-> [   76.163796]
-> stack backtrace:
-> [   76.163911] CPU: 1 PID: 4065 Comm: btrfs Not tainted 4.20.0-rc3+ #41
-> [   76.164228] Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS
-> VirtualBox 12/01/2006
-> [   76.164646] Call Trace:
-> [   76.164872]  dump_stack+0x5e/0x8b
-> [   76.165128]  print_circular_bug.isra.37+0x1f1/0x1fe
-> [   76.165398]  __lock_acquire+0x14aa/0x1620
-> [   76.165652]  lock_acquire+0xb0/0x190
-> [   76.165910]  ? flush_workqueue+0x70/0x4d0
-> [   76.166175]  flush_workqueue+0x9a/0x4d0
-> [   76.166420]  ? flush_workqueue+0x70/0x4d0
-> [   76.166671]  ? drain_workqueue+0x52/0x1a0
-> [   76.166911]  drain_workqueue+0xca/0x1a0
-> [   76.167167]  destroy_workqueue+0x17/0x230
-> [   76.167428]  btrfs_destroy_workqueue+0x5d/0x1c0 [btrfs]
-> [   76.167720]  scrub_workers_put+0x2e/0x60 [btrfs]
-> [   76.168233]  btrfs_scrub_dev+0x329/0x5d0 [btrfs]
-> [   76.168504]  ? __sb_start_write+0x121/0x1b0
-> [   76.168759]  ? mnt_want_write_file+0x24/0x50
-> [   76.169654]  btrfs_ioctl+0x1ac3/0x2d80 [btrfs]
-> [   76.169934]  ? find_held_lock+0x2d/0x90
-> [   76.170204]  ? find_held_lock+0x2d/0x90
-> [   76.170450]  do_vfs_ioctl+0xa9/0x6d0
-> [   76.170690]  ? __fget+0x101/0x1f0
-> [   76.170910]  ? __fget+0x5/0x1f0
-> [   76.171157]  ksys_ioctl+0x60/0x90
-> [   76.171391]  __x64_sys_ioctl+0x16/0x20
-> [   76.171634]  do_syscall_64+0x50/0x180
-> [   76.171892]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
-> [   76.172186] RIP: 0033:0x7f61d422e567
-> [   76.172425] Code: 44 00 00 48 8b 05 29 09 2d 00 64 c7 00 26 00 00 00
-> 48 c7 c0 ff ff ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 b8 10 00 00 00 0f
-> 05 <48> 3d 01 f0 ff ff 73 01 c3 48 8b 0d f9 08 2d 00 f7 d8 64 89 01 48
+That would have been useful to know last August...  :-/
 
-This like can be ommitted from the log unless we really want to decode
-the instructions.
+> Never managed to reproduce it, nor see anything obviously wrong in
+> relevant code paths.
+
+I built a fresh VM running Debian stretch and
+reproduced the issue immediately.  Mount options are
+"rw,noatime,compress=3Dzlib,space_cache,subvolid=3D5,subvol=3D/".  Kernel is
+Debian's "4.9.0-8-amd64" but the bug is old enough that kernel version
+probably doesn't matter.
+
+I don't have any configuration that can't reproduce this issue, so I don't
+know how to help you.  I've tested AMD and Intel CPUs, VM, baremetal,
+hardware ranging in age from 0 to 9 years.  Locally built kernels from
+4.1 to 4.20 and the stock Debian kernel (4.9).  SSDs and spinning rust.
+All of these reproduce the issue immediately--wrong sha1sum appears in
+the first 10 loops.
+
+What is your test environment?  I can try that here.
+
+> >
+> > The behavior is slightly different on current kernels (4.20.7, 4.14.96)
+> > which makes the problem a bit more difficult to detect.
+> >
+> >         # repro-hole-corruption-test
+> >         i: 91, status: 0, bytes_deduped: 131072
+> >         i: 92, status: 0, bytes_deduped: 131072
+> >         i: 93, status: 0, bytes_deduped: 131072
+> >         i: 94, status: 0, bytes_deduped: 131072
+> >         i: 95, status: 0, bytes_deduped: 131072
+> >         i: 96, status: 0, bytes_deduped: 131072
+> >         i: 97, status: 0, bytes_deduped: 131072
+> >         i: 98, status: 0, bytes_deduped: 131072
+> >         i: 99, status: 0, bytes_deduped: 131072
+> >         13107200 total bytes deduped in this operation
+> >         am: 4.8 MiB (4964352 bytes) converted to sparse holes.
+> >         94a8acd3e1f6e14272f3262a8aa73ab6b25c9ce8 am
+> >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> >
+> > The sha1sum seems stable after the first drop_caches--until a second
+> > process tries to read the test file:
+> >
+> >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> >         # cat am > /dev/null              (in another shell)
+> >         19294e695272c42edb89ceee24bb08c13473140a am
+> >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> >
+> > On Wed, Aug 22, 2018 at 11:11:25PM -0400, Zygo Blaxell wrote:
+> > > This is a repro script for a btrfs bug that causes corrupted data rea=
+ds
+> > > when reading a mix of compressed extents and holes.  The bug is
+> > > reproducible on at least kernels v4.1..v4.18.
+> > >
+> > > Some more observations and background follow, but first here is the
+> > > script and some sample output:
+> > >
+> > >       root@rescue:/test# cat repro-hole-corruption-test
+> > >       #!/bin/bash
+> > >
+> > >       # Write a 4096 byte block of something
+> > >       block () { head -c 4096 /dev/zero | tr '\0' "\\$1"; }
+> > >
+> > >       # Here is some test data with holes in it:
+> > >       for y in $(seq 0 100); do
+> > >               for x in 0 1; do
+> > >                       block 0;
+> > >                       block 21;
+> > >                       block 0;
+> > >                       block 22;
+> > >                       block 0;
+> > >                       block 0;
+> > >                       block 43;
+> > >                       block 44;
+> > >                       block 0;
+> > >                       block 0;
+> > >                       block 61;
+> > >                       block 62;
+> > >                       block 63;
+> > >                       block 64;
+> > >                       block 65;
+> > >                       block 66;
+> > >               done
+> > >       done > am
+> > >       sync
+> > >
+> > >       # Now replace those 101 distinct extents with 101 references to=
+ the first extent
+> > >       btrfs-extent-same 131072 $(for x in $(seq 0 100); do echo am $(=
+(x * 131072)); done) 2>&1 | tail
+> > >
+> > >       # Punch holes into the extent refs
+> > >       fallocate -v -d am
+> > >
+> > >       # Do some other stuff on the machine while this runs, and watch=
+ the sha1sums change!
+> > >       while :; do echo $(sha1sum am); sysctl -q vm.drop_caches=3D{1,2=
+,3}; sleep 1; done
+> > >
+> > >       root@rescue:/test# ./repro-hole-corruption-test
+> > >       i: 91, status: 0, bytes_deduped: 131072
+> > >       i: 92, status: 0, bytes_deduped: 131072
+> > >       i: 93, status: 0, bytes_deduped: 131072
+> > >       i: 94, status: 0, bytes_deduped: 131072
+> > >       i: 95, status: 0, bytes_deduped: 131072
+> > >       i: 96, status: 0, bytes_deduped: 131072
+> > >       i: 97, status: 0, bytes_deduped: 131072
+> > >       i: 98, status: 0, bytes_deduped: 131072
+> > >       i: 99, status: 0, bytes_deduped: 131072
+> > >       13107200 total bytes deduped in this operation
+> > >       am: 4.8 MiB (4964352 bytes) converted to sparse holes.
+> > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> > >       072a152355788c767b97e4e4c0e4567720988b84 am
+> > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> > >       bf00d862c6ad436a1be2be606a8ab88d22166b89 am
+> > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> > >       0d44cdf030fb149e103cfdc164da3da2b7474c17 am
+> > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> > >       60831f0e7ffe4b49722612c18685c09f4583b1df am
+> > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> > >       a19662b294a3ccdf35dbb18fdd72c62018526d7d am
+> > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
+> > >       ^C
+> > >
+> > > Corruption occurs most often when there is a sequence like this in a =
+file:
+> > >
+> > >       ref 1: hole
+> > >       ref 2: extent A, offset 0
+> > >       ref 3: hole
+> > >       ref 4: extent A, offset 8192
+> > >
+> > > This scenario typically arises due to hole-punching or deduplication.
+> > > Hole-punching replaces one extent ref with two references to the same
+> > > extent with a hole between them, so:
+> > >
+> > >       ref 1:  extent A, offset 0, length 16384
+> > >
+> > > becomes:
+> > >
+> > >       ref 1:  extent A, offset 0, length 4096
+> > >       ref 2:  hole, length 8192
+> > >       ref 3:  extent A, offset 12288, length 4096
+> > >
+> > > Deduplication replaces two distinct extent refs surrounding a hole wi=
+th
+> > > two references to one of the duplicate extents, turning this:
+> > >
+> > >       ref 1:  extent A, offset 0, length 4096
+> > >       ref 2:  hole, length 8192
+> > >       ref 3:  extent B, offset 0, length 4096
+> > >
+> > > into this:
+> > >
+> > >       ref 1:  extent A, offset 0, length 4096
+> > >       ref 2:  hole, length 8192
+> > >       ref 3:  extent A, offset 0, length 4096
+> > >
+> > > Compression is required (zlib, zstd, or lzo) for corruption to occur.
+> > > I am not able to reproduce the issue with an uncompressed extent nor
+> > > have I observed any such corruption in the wild.
+> > >
+> > > The presence or absence of the no-holes filesystem feature has no eff=
+ect.
+> > >
+> > > Ordinary writes can lead to pairs of extent references to the same ex=
+tent
+> > > separated by a reference to a different extent; however, in this case
+> > > there is data to be read from a real extent, instead of pages that ha=
+ve
+> > > to be zero filled from a hole.  If ordinary non-hole writes could tri=
+gger
+> > > this bug, every page-oriented database engine would be crashing all t=
+he
+> > > time on btrfs with compression enabled, and it's unlikely that would =
+not
+> > > have been noticed between 2015 and now.  An ordinary write that splits
+> > > an extent ref would look like this:
+> > >
+> > >       ref 1:  extent A, offset 0, length 4096
+> > >       ref 2:  extent C, offset 0, length 8192
+> > >       ref 3:  extent A, offset 12288, length 4096
+> > >
+> > > Sparse writes can lead to pairs of extent references surrounding a ho=
+le;
+> > > however, in this case the extent references will point to different
+> > > extents, avoiding the bug.  If a sparse write could trigger the bug,
+> > > the rsync -S option and qemu/kvm 'raw' disk image files (among many
+> > > other tools that produce sparse files) would be unusable, and it's
+> > > unlikely that would not have been noticed between 2015 and now either.
+> > > Sparse writes look like this:
+> > >
+> > >       ref 1:  extent A, offset 0, length 4096
+> > >       ref 2:  hole, length 8192
+> > >       ref 3:  extent B, offset 0, length 4096
+> > >
+> > > The pattern or timing of read() calls seems to be relevant.  It is ve=
+ry
+> > > hard to see the corruption when reading files with 'hd', but 'cat | h=
+d'
+> > > will see the corruption just fine.  Similar problems exist with 'cmp'
+> > > but not 'sha1sum'.  Two processes reading the same file at the same t=
+ime
+> > > seem to trigger the corruption very frequently.
+> > >
+> > > Some patterns of holes and data produce corruption faster than others.
+> > > The pattern generated by the script above is based on instances of
+> > > corruption I've found in the wild, and has a much better repro rate t=
+han
+> > > random holes.
+> > >
+> > > The corruption occurs during reads, after csum verification and before
+> > > decompression, so btrfs detects no csum failures.  The data on disk
+> > > seems to be OK and could be read correctly once the kernel bug is fix=
+ed.
+> > > Repeated reads do eventually return correct data, but there is no way
+> > > for userspace to distinguish between corrupt and correct data reliabl=
+y.
+> > >
+> > > The corrupted data is usually data replaced by a hole or a copy of ot=
+her
+> > > blocks in the same extent.
+> > >
+> > > The behavior is similar to some earlier bugs related to holes and
+> > > Compressed data in btrfs, but it's new and not fixed yet--hence,
+> > > "2018 edition."
+> >
+> >
+>=20
+>=20
+> --=20
+> Filipe David Manana,
+>=20
+> =E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you'=
+re right.=E2=80=9D
+>=20
+
+--a8Wt8u1KmwUX3Y2C
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCXGL7UAAKCRCB+YsaVrMb
+nOYXAJ9tKZOj4PhQ+ZP7DPlwpkHBrVSs2wCgq1iOBNqjOrjzbyUpcbVaiB392LI=
+=ykI2
+-----END PGP SIGNATURE-----
+
+--a8Wt8u1KmwUX3Y2C--

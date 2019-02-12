@@ -2,30 +2,30 @@ Return-Path: <SRS0=Udpi=QT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+X-Spam-Status: No, score=-4.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
 	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 97F1FC282D7
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 05:07:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 874E6C282C4
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 05:14:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 649C321855
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 05:07:33 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 520FD217FA
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 05:14:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726126AbfBLFHc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 12 Feb 2019 00:07:32 -0500
-Received: from mout.gmx.net ([212.227.15.18]:44385 "EHLO mout.gmx.net"
+        id S1726026AbfBLFOR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 12 Feb 2019 00:14:17 -0500
+Received: from mout.gmx.net ([212.227.15.19]:60775 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725909AbfBLFHb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Feb 2019 00:07:31 -0500
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx002
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0LuPYt-1h39Jr0iXv-011jvP; Tue, 12
- Feb 2019 06:07:25 +0100
-Subject: Re: [PATCH] btrfs: honor path->skip_locking in backref code
-To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-References: <20190116160057.22040-1-josef@toxicpanda.com>
+        id S1725909AbfBLFOQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 12 Feb 2019 00:14:16 -0500
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx003
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0MNIAz-1h0I9p0hYn-006vmo; Tue, 12
+ Feb 2019 06:14:09 +0100
+Subject: Re: [PATCH v2 2/2] fstests: btrfs: Introduce stress test for deadlock
+ between snapshot delete and other read-write operations
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+        fstests@vger.kernel.org
+References: <20190111050151.982-1-wqu@suse.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -52,163 +52,221 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <2bdd075d-2c56-611b-c0a0-4126d27daec5@gmx.com>
-Date:   Tue, 12 Feb 2019 13:07:19 +0800
+Message-ID: <bd51a34e-0d80-0e89-36cd-6256c77067ab@gmx.com>
+Date:   Tue, 12 Feb 2019 13:14:02 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.5.0
 MIME-Version: 1.0
-In-Reply-To: <20190116160057.22040-1-josef@toxicpanda.com>
+In-Reply-To: <20190111050151.982-1-wqu@suse.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="U0PMUGMXfNUnUoJjqxiYn7TiYGegy98HW"
-X-Provags-ID: V03:K1:sqXbDAB6sDD5vKuWeouqv/zQeR0itnEy4ywtN4m8OMURl7KceK4
- xbaPv8wDibIO/u//3zTUYGep39LkVufCfX964XgZ46w7aL+EU5+4xi7+EHmdo4PD10C9cG8
- ovl09nG+HdWpfaLMLT1hqFwfWv++sbC/f5B+6nbRG8WWtCG5G1ipRc0/Jt/sEEJ8wNe+9Z4
- 7qZnjIsZYol+7gewHsqdw==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:ooCODiwd9tE=:O1XTloQwWp1MAN3dKnrpqR
- tW88QQJ2ArqqiUN3YqChuwQsItMAVDLK+ygHKilo4+l0ryKJfKoc+shP9u5JnrigXcVguA+iX
- cXGxbGqvxGIdfEewTrkJInVUig5b6RulOkih8srRrSWiQQjUWEl/R+JO8eDwCF26/JRYd061h
- k1vdSNsWjykfbGYIpa55kS2VVKN67DxJwB0tlx3tpFj8gmp/wsiGPch8N8RyZAGIUxFgEN9DH
- WoIlkJF0ELbv6rQpAb/C3meSKO9CzzWD4sUhN3QoUXkEzx42jOzWcvzUX4ceVOBRrHO11QxrO
- quapcxjdGzTYoU93An2AOio4SAreP7AeWRZQfyxh2Iq5ydP997IVuV/l43PELb9UFJTdNoM3S
- mmzcbdseYAbWB8W7EH/QNZP2d8Z35D0A5xk2eBGZ9i8snzQxaVnxxAJe39n+wG4d+EGzh/NPe
- L6Qw5v/plNQtLf5pbS32bonrrVutG34M33ZpZXrtiuI2CDlHqBYPB2Tee1fYRBipmodeUVGss
- MO8ewu7KPqZUXtqkCiyjeYYjHMD8J9zZHO/gffOOPK/9BOYZEBO8uA9h3b2llcVTcEZgEXS03
- 4lFEa5OvF5Y1SKvz4kiCYkBhgv6ts3ZlKr5fQUZfaLF7gJWEFBH43WWi99lOtKKUYlYrBRmUJ
- u0FOmZ3oH0irq4QMy4mPFlvFr7Mn1we5Y5iZRPcTaLwru47Hz8aseW4mB15E2ZQWou7Hbb/hR
- pGg2yNS+RYum5VhZEOhzp0GT+FAZE+BWzU3UteHOEoKo6HZoomdhIxIKntsYGeYdiP3nO+tH8
- 9Y9na/8lDc7IEJdc551xJMyWsLthjyaCdTPU414OFeN2elfLzmWIAusJxKOKqNGwTWrSvSCK/
- qUc1+MDOeo0SbTB/Z6X8OAFe3W5tIKlfUtG5Ahe6siELhfzkLGP2rZ9VpNsrFb
+ boundary="LJ9UnL0qn6DAFhjE1rnPeyP9K9As3mS52"
+X-Provags-ID: V03:K1:AXkT5tDEQKmi+1AdirBwBDLwJLm6hDIrJ9U8QNGhjSXf/cS+Wvj
+ ee6JcnoXO35ohiK7ULqWjqEdxtKvhAMLZq+c14Vz2TGOD8glC7sdx+/BXaO6SyEHY8WW3JR
+ TfbnSwtqXKKVDHlrbbOxbFrO8r4TO3a37e925dNCoyEk+lBKbYOtaHKxNXkDk+sX7I5pyPX
+ lV4ZUiPpbaMN3b7aoKtuQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:bL4KMc9ePZs=:L8Tem6dUMr8wEKv9BZHV/6
+ cGoUga4D6m9RBYs/wiixGbsLWh2JKHPhom4NbC0oPJNtpRdwLS2+NCPGU9bELjmyVecsQaM8W
+ MZEecQ8moQiSIr7gOw0j4sTy5ZO6VRwQl3on4UQl/ZlB0eO02koK3ZJyNpI8LFXulbZ9/SjRQ
+ E+aLWH9iiYqoKQQn5B4wnzqxzy9vqQgHVIkhsG2ufiLbPBZ3xuPKfVBNyr2vhqKWQLJAlAYad
+ xdq54sO3y18bgfaq0T7qRK2kpynuNX/GeDvw20xP91vK+qVzwqyYYpb+KfOKqrChD1TEOYWMA
+ RUUeAso6yYISJjMHqov85J/c1wNUvRfStVKCe7aZXHXlj0iGKah4MBUxng0QcGyD4ruIqOQif
+ QgW+0Mv5mH3+64amRftmpk1bGDs7fMeNDA56qPVtxMRrJgsxFRgYydexTE/JkmPANozotox9r
+ EvgOVi6CmeLv3QhUwjczwjuqzAeH+EPt1/Yb1GKpZht0r2lTs1ZBumDEjKV9Tc3TcSNCVRl7V
+ 5/Vt5y29Xkq7RyIJsNsi0w16lZqSMzv46sgkHgem4geMitUKJ81pmkfUJQ3GPdlLi9VoeqKkO
+ 4C2YTPTX9xod/TQsuS+rX7QXoqdrMoT0Iy6shYmoiONoOyTJG7qjCsrJEMOr1q3Pacc4uUqvf
+ NiQASBQLYmJv4KZZ6aa1f5hw1zyhySbuSTQQD+JNmhqu1SqIVGTLzlTPRYaFYWoW7WwoQIEAz
+ dPfyJpX2F9a7RzjJU2yTesF2DLuSFAApJMPL7x6HkzhNlFB7CN+M//oTzjB87zsDlN5z1gw6S
+ 27JM2KZDfNE/Mme/sIYAydSHlAFEQ309NdJ7wEJZPgvlSQCiKHmEuwO+P4wJ2uNnI+LfIwm4l
+ CqPy9nztqvoIFRTioGctqiwH4g//14yNYQvkaxGFcUnO7gECWLWeH9uAveRsQ9
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---U0PMUGMXfNUnUoJjqxiYn7TiYGegy98HW
-Content-Type: multipart/mixed; boundary="gQflmb8b6RW88jfK5uFfBf5chmyFTiM09";
+--LJ9UnL0qn6DAFhjE1rnPeyP9K9As3mS52
+Content-Type: multipart/mixed; boundary="QLIxW8TzNEsBG8VbJJIALFeiDYuDWh1wT";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
- kernel-team@fb.com
-Message-ID: <2bdd075d-2c56-611b-c0a0-4126d27daec5@gmx.com>
-Subject: Re: [PATCH] btrfs: honor path->skip_locking in backref code
-References: <20190116160057.22040-1-josef@toxicpanda.com>
-In-Reply-To: <20190116160057.22040-1-josef@toxicpanda.com>
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+ fstests@vger.kernel.org
+Message-ID: <bd51a34e-0d80-0e89-36cd-6256c77067ab@gmx.com>
+Subject: Re: [PATCH v2 2/2] fstests: btrfs: Introduce stress test for deadlock
+ between snapshot delete and other read-write operations
+References: <20190111050151.982-1-wqu@suse.com>
+In-Reply-To: <20190111050151.982-1-wqu@suse.com>
 
---gQflmb8b6RW88jfK5uFfBf5chmyFTiM09
+--QLIxW8TzNEsBG8VbJJIALFeiDYuDWh1wT
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2019/1/17 =E4=B8=8A=E5=8D=8812:00, Josef Bacik wrote:
-> qgroups will do the old roots lookup at delayed ref time, which could b=
-e
-> while walking down the extent root while running a delayed ref.  This
-> should be fine, except we specifically lock eb's in the backref walking=
+On 2019/1/11 =E4=B8=8B=E5=8D=881:01, Qu Wenruo wrote:
+[snip]
+> +# FS QA Test 179
+> +#
+> +# Test if btrfs will lockup at subvolume deletion when qgroups are ena=
+bled.
+> +#
+> +# This bug is going to be fixed by a patch for the kernel titled
+> +# "btrfs: qgroup: Don't trigger backref walk at delayed ref insert tim=
+e".
 
-> code irrespective of path->skip_locking, which deadlocks the system.
-> Fix up the backref code to honor path->skip_locking, nobody will be
-> modifying the commit_root when we're searching so it's completely safe
-> to do.  Thanks,
->=20
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-> ---
->  fs/btrfs/backref.c | 16 ++++++++++------
->  1 file changed, 10 insertions(+), 6 deletions(-)
->=20
-> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-> index 78556447e1d5..973e8251b1bf 100644
-> --- a/fs/btrfs/backref.c
-> +++ b/fs/btrfs/backref.c
-> @@ -712,7 +712,7 @@ static int resolve_indirect_refs(struct btrfs_fs_in=
-fo *fs_info,
->   * read tree blocks and add keys where required.
->   */
->  static int add_missing_keys(struct btrfs_fs_info *fs_info,
-> -			    struct preftrees *preftrees)
-> +			    struct preftrees *preftrees, bool lock)
->  {
->  	struct prelim_ref *ref;
->  	struct extent_buffer *eb;
-> @@ -737,12 +737,14 @@ static int add_missing_keys(struct btrfs_fs_info =
-*fs_info,
->  			free_extent_buffer(eb);
->  			return -EIO;
->  		}
-> -		btrfs_tree_read_lock(eb);
-> +		if (lock)
-> +			btrfs_tree_read_lock(eb);
->  		if (btrfs_header_level(eb) =3D=3D 0)
->  			btrfs_item_key_to_cpu(eb, &ref->key_for_search, 0);
->  		else
->  			btrfs_node_key_to_cpu(eb, &ref->key_for_search, 0);
-> -		btrfs_tree_read_unlock(eb);
-> +		if (lock)
-> +			btrfs_tree_read_unlock(eb);
->  		free_extent_buffer(eb);
->  		prelim_ref_insert(fs_info, &preftrees->indirect, ref, NULL);
->  		cond_resched();
-> @@ -1227,7 +1229,7 @@ static int find_parent_nodes(struct btrfs_trans_h=
-andle *trans,
-> =20
->  	btrfs_release_path(path);
-> =20
-> -	ret =3D add_missing_keys(fs_info, &preftrees);
-> +	ret =3D add_missing_keys(fs_info, &preftrees, path->skip_locking =3D=3D=
- 0);
->  	if (ret)
->  		goto out;
-> =20
-> @@ -1288,11 +1290,13 @@ static int find_parent_nodes(struct btrfs_trans=
-_handle *trans,
->  					ret =3D -EIO;
->  					goto out;
->  				}
-> -				btrfs_tree_read_lock(eb);
-> +				if (!path->skip_locking)
-> +					btrfs_tree_read_lock(eb);
->  				btrfs_set_lock_blocking_rw(eb, BTRFS_READ_LOCK);
+Although the test case is already merged, btrfs community is going to
+use a much better fix than this.
 
-This btrfs_set_lock_blocking_rw() or the btrfs_set_lock_blocking_read()
-in latest misc-next call need @eb to be read locked first.
-
-So this line should also be in the (!path->skip_locking) branch, and
-such modification solves the BUG_ON() caused by btrfs/007.
+Should I update the patch in this test case after the fix get merged
+upstream?
 
 Thanks,
 Qu
 
->  				ret =3D find_extent_in_eb(eb, bytenr,
->  							*extent_item_pos, &eie, ignore_offset);
-> -				btrfs_tree_read_unlock_blocking(eb);
-> +				if (!path->skip_locking)
-> +					btrfs_tree_read_unlock_blocking(eb);
->  				free_extent_buffer(eb);
->  				if (ret < 0)
->  					goto out;
+> +#
+> +seq=3D`basename $0`
+> +seqres=3D$RESULT_DIR/$seq
+> +echo "QA output created by $seq"
+> +
+> +here=3D`pwd`
+> +tmp=3D/tmp/$$
+> +status=3D1	# failure is the default!
+> +trap "_cleanup; exit \$status" 0 1 2 3 15
+> +
+> +_cleanup()
+> +{
+> +	cd /
+> +	rm -f $tmp.*
+> +}
+> +
+> +# get standard environment, filters and checks
+> +. ./common/rc
+> +. ./common/filter
+> +
+> +# remove previous $seqres.full before test
+> +rm -f $seqres.full
+> +
+> +# real QA test starts here
+> +
+> +# Modify as appropriate.
+> +_supported_fs btrfs
+> +_supported_os Linux
+> +_require_scratch
+> +
+> +# default sleep interval
+> +sleep_time=3D1
+> +
+> +# stress test runtime
+> +runtime=3D120
+> +
+> +_scratch_mkfs > /dev/null 2>&1
+> +_scratch_mount
+> +
+> +mkdir -p "$SCRATCH_MNT/snapshots"
+> +$BTRFS_UTIL_PROG subvolume create "$SCRATCH_MNT/src" > /dev/null
+> +$BTRFS_UTIL_PROG quota enable "$SCRATCH_MNT" > /dev/null
+> +$BTRFS_UTIL_PROG quota rescan -w "$SCRATCH_MNT" > /dev/null
+> +
+> +fill_workload()
+> +{
+> +	trap "wait; exit" SIGTERM
+> +	local i=3D0
+> +	while true; do
+> +		_pwrite_byte 0xcd 0 8K "$SCRATCH_MNT/src/large_$i" > /dev/null
+> +		_pwrite_byte 0xcd 0 2K "$SCRATCH_MNT/src/inline_$i" > /dev/null
+> +
+> +		# Randomly remove some files for every 5 loop
+> +		if [ $(( $i % 5 )) -eq 0 ]; then
+> +			victim=3D$(ls "$SCRATCH_MNT/src" | sort -R | head -n1)
+> +			rm "$SCRATCH_MNT/src/$victim"
+> +		fi
+> +		i=3D$((i + 1))
+> +	done
+> +}
+> +
+> +snapshot_workload()
+> +{
+> +	trap "wait; exit" SIGTERM
+> +	local i=3D0
+> +	while true; do
+> +		sleep $sleep_time
+> +		$BTRFS_UTIL_PROG subvolume snapshot "$SCRATCH_MNT/src" \
+> +			"$SCRATCH_MNT/snapshots/$i" > /dev/null
+> +		i=3D$((i + 1))
+> +	done
+> +}
+> +
+> +delete_workload()
+> +{
+> +	trap "wait; exit" SIGTERM
+> +	while true; do
+> +		sleep $((sleep_time * 2))
+> +		victim=3D$(ls "$SCRATCH_MNT/snapshots" | sort -R | head -n1)
+> +		$BTRFS_UTIL_PROG subvolume delete \
+> +			"$SCRATCH_MNT/snapshots/$victim" > /dev/null
+> +	done
+> +}
+> +
+> +fill_workload &
+> +fill_pid=3D$!
+> +
+> +sleep $((sleep_time * 2))
+> +snapshot_workload &
+> +snapshot_pid=3D$!
+> +delete_workload &
+> +delete_pid=3D$!
+> +
+> +sleep $runtime
+> +kill $fill_pid
+> +wait $fill_pid
+> +kill $snapshot_pid
+> +wait $snapshot_pid
+> +kill $delete_pid
+> +wait $delete_pid
+> +
+> +# success, all done
+> +echo "Silence is golden"
+> +
+> +status=3D0
+> +exit
+> diff --git a/tests/btrfs/179.out b/tests/btrfs/179.out
+> new file mode 100644
+> index 000000000000..cb9eba3d34b1
+> --- /dev/null
+> +++ b/tests/btrfs/179.out
+> @@ -0,0 +1,2 @@
+> +QA output created by 179
+> +Silence is golden
+> diff --git a/tests/btrfs/group b/tests/btrfs/group
+> index 04c0254aa4bf..46dd3c9523c2 100644
+> --- a/tests/btrfs/group
+> +++ b/tests/btrfs/group
+> @@ -181,3 +181,4 @@
+>  176 auto quick swap volume
+>  177 auto quick swap balance
+>  178 auto quick send
+> +179 auto qgroup dangerous
 >=20
 
 
---gQflmb8b6RW88jfK5uFfBf5chmyFTiM09--
+--QLIxW8TzNEsBG8VbJJIALFeiDYuDWh1wT--
 
---U0PMUGMXfNUnUoJjqxiYn7TiYGegy98HW
+--LJ9UnL0qn6DAFhjE1rnPeyP9K9As3mS52
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxiVIcACgkQwj2R86El
-/qhMzAf9H5kTZD5SmMkkYq9wWni0zK/xPoL/csZ8XW3wpJA+ekf2UWnNoadGpoSt
-ZhFODrjd72MHtUK7Tau3bVG0pRtAovpMFImOxwaERUkgb/5TaL7gJNwoFH1rbPQN
-pQ6PTrZfa4d2b/K5wJPLq8ppliiv3UQHFs39gXHc5NtkEK5w6arJUVP2iK49YnNU
-0Gx8rWpQrgsf3FauOf8FsMUpqvwrPK/ZqnxntCfjGXozhE411n+AYYzRSkkoR85B
-wzQBMqNAyYP//O5qOnY4ijVOhhNNQRlY5AttuQkrCRC4v8C4K6GRxjTKrP9LC6SY
-N6nUuOFu53A6uCo65j7i25imuYZKYQ==
-=n9hS
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxiVhoACgkQwj2R86El
+/qhqHQf9GAet+YICcPUI4omZXsV0eRoEQGwUiku2ds371XcGqP5ckaOkH1bBYyLY
+D65+wrW1a1HSBlI0poZFc2p8wA/BGcDMOAv+j8Dr67Sx2oSw+kJKNFl958vsQUjz
+6TL3tmb461I6U2KEQwbyRBH892f6XXzf/lDa1WEpydKEd5MAygnzwiCH1Q1SQF6L
+/jShdnlFMgxXY/wOtAf0K5p1EFecra4tvhQbcRmToGpscsAGrghyf7DB6fpLppFj
+HwvFS/OW0P/YgkscQXJMTcKubLBg97G/eoyOfrLBeu/bWRaZjx+9BlyjozALdxwJ
+ZGm/YkUuYGj8WK16rclyte5Tbms3Iw==
+=dgxw
 -----END PGP SIGNATURE-----
 
---U0PMUGMXfNUnUoJjqxiYn7TiYGegy98HW--
+--LJ9UnL0qn6DAFhjE1rnPeyP9K9As3mS52--

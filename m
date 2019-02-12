@@ -2,263 +2,187 @@ Return-Path: <SRS0=Udpi=QT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
-	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 96929C282CA
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 06:51:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A4B2FC282C4
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 07:03:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 595832184A
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 06:51:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7487921773
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Feb 2019 07:03:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727622AbfBLGvS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 12 Feb 2019 01:51:18 -0500
-Received: from mout.gmx.net ([212.227.15.18]:50077 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727392AbfBLGvR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Feb 2019 01:51:17 -0500
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx002
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0Ld0jY-1hJwyM2Lp2-00i9Gg; Tue, 12
- Feb 2019 07:51:11 +0100
-Subject: Re: corruption with multi-device btrfs + single bcache, won't mount
-To:     Steve Leung <sjleung@shaw.ca>
-Cc:     linux-btrfs@vger.kernel.org
-References: <1690578645.233565651.1549781791550.JavaMail.zimbra@shaw.ca>
- <e8219111-4e0d-65f4-ac06-627cebaac94a@gmx.com>
- <902519958.253211268.1549952537314.JavaMail.zimbra@shaw.ca>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <a399c4ab-7eef-a763-e91a-cb009a72090c@gmx.com>
-Date:   Tue, 12 Feb 2019 14:51:06 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.0
+        id S1726844AbfBLHD0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 12 Feb 2019 02:03:26 -0500
+Received: from mx2.suse.de ([195.135.220.15]:60330 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726059AbfBLHDZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 12 Feb 2019 02:03:25 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id E08B8B03F;
+        Tue, 12 Feb 2019 07:03:23 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     =?UTF-8?q?Jakob=20Sch=C3=B6ttl?= <jschoett@gmail.com>
+Subject: [PATCH RFC] btrfs: Don't create SINGLE or DUP chunks for degraded rw mount
+Date:   Tue, 12 Feb 2019 15:03:19 +0800
+Message-Id: <20190212070319.30619-1-wqu@suse.com>
+X-Mailer: git-send-email 2.20.1
 MIME-Version: 1.0
-In-Reply-To: <902519958.253211268.1549952537314.JavaMail.zimbra@shaw.ca>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="VWJPfs4FYusV8cHH63voGkcJ5Qn5B3iJr"
-X-Provags-ID: V03:K1:ujRfZ/MAlMcWz5fkW5T05e+cV/miyJzEwNonENYdB9nGo0PljfS
- jouFxNszVQZ+qHOTmg67z8jjx8bJ4ZW7xGt6/AVNo08sfCNj4HmkohC/k8l948sUoxV1LUs
- effkRFfjJElrt40EOyfqMxaAyP0L+rUveXA+9ICngfJwEIBSMiJ+Vre75tbQLA38qywzJOm
- fy7JKyG6P3jIeTbHcJV/A==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:rrOoINRn5pk=:QkIwrFlOMM1HYz+DvO1ePp
- z/ZaMzMwVcmUNQT1+36OXtV8ZiC7jCzZ+K2z9o/LyCuNMGEngGdTT/pfXzOaEky08+rFpZ8sw
- LCKVocl0gsj05VNLnAg5yM/LI3U+f7eWFHXFJzBb7021avnA3m3TMkVjh7YeaBKisu8mFNAgF
- Csf5LksYxSJ3kLvP5FEsHVhm8lIF+LtiKPmCdJ/dsTm26C0+IzFnDYaZQOTUloSKa8WdVmNS3
- Bh7An01y81qEIwUeZg3/p7ipRvCeggdZRbWYclggV0pVSUlytmlYftnRGyX7WTTopscunJmyj
- /ag2APRsRVyAqMxKZE7z6PMrhgUmSvYgHs3LEwvLACVg5Pc2J8CRUzCGRvya8SQf5BSM3R3RO
- 9EXiuYmVxkkrGWCWiX3Y5XhhUiHBqdIxQwDdrhahkJdXuN7nRzejxhDSvMzm0h23PAugVklRT
- 7fb7fwoURsSWNIZu0fQtiXceG88N6KhtWyK+fLFEUBbyAJIR5XbMi7sl2641P1nljfxb3vWG1
- 0WrtaMsK3OTs1ZSl/g9kDQ9eEjm5oGUe0RWqYkrJYetl3LUpucrXXvB5D3x0yld7qgx9asP0M
- HOKdRGOwM5Xv+Aoli9l5grIRP2ln+3tN3fwquaxV71ENijUWtY8XsXdvJMcDPotOnVuK6UzdH
- vEj+plI0ki/9Xy10H4AfRU0KyT7hwOR1U9bYt1xKBxWedOoF7BItP+k23fRDo7Nhb2bRrjYri
- yNYM52lkIWH3uEf4yFK9d0/tuDyosP8AdhfnXs7mwdkBPhweTaPMJ/T1G5Zm+PGoM7GobVr/G
- w/VxPF53KOZVDQrhvGEqST4jM9K9nWAkx0KEF+tP82gyssxWjRoqzbS3oZ83NfPjwkJp52iK0
- UVYtq3VJZzXh3iSpHboBU+McMtbf9P6sf6S3qY3tcHsXSOQkGRsoAUYNDWsT4Z
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---VWJPfs4FYusV8cHH63voGkcJ5Qn5B3iJr
-Content-Type: multipart/mixed; boundary="VCPkFKFR8c6u0kDxMnu8hbFBJGrPsYooS";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Steve Leung <sjleung@shaw.ca>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <a399c4ab-7eef-a763-e91a-cb009a72090c@gmx.com>
-Subject: Re: corruption with multi-device btrfs + single bcache, won't mount
-References: <1690578645.233565651.1549781791550.JavaMail.zimbra@shaw.ca>
- <e8219111-4e0d-65f4-ac06-627cebaac94a@gmx.com>
- <902519958.253211268.1549952537314.JavaMail.zimbra@shaw.ca>
-In-Reply-To: <902519958.253211268.1549952537314.JavaMail.zimbra@shaw.ca>
+[PROBLEM]
+The following script can easily create unnecessary SINGLE or DUP chunks:
+  #!/bin/bash
 
---VCPkFKFR8c6u0kDxMnu8hbFBJGrPsYooS
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+  dev1="/dev/test/scratch1"
+  dev2="/dev/test/scratch2"
+  dev3="/dev/test/scratch3"
+  mnt="/mnt/btrfs"
 
+  umount $dev1 $dev2 $dev3 $mnt &> /dev/null
 
+  mkfs.btrfs -f $dev1 $dev2 -d raid1 -m raid1
 
-On 2019/2/12 =E4=B8=8B=E5=8D=882:22, Steve Leung wrote:
->=20
->=20
-> ----- Original Message -----
->> From: "Qu Wenruo" <quwenruo.btrfs@gmx.com>
->> To: "STEVE LEUNG" <sjleung@shaw.ca>, linux-btrfs@vger.kernel.org
->> Sent: Sunday, February 10, 2019 6:52:23 AM
->> Subject: Re: corruption with multi-device btrfs + single bcache, won't=
- mount
->=20
->> ----- Original Message -----
->> From: "Qu Wenruo" <quwenruo.btrfs@gmx.com>
->> On 2019/2/10 =E4=B8=8B=E5=8D=882:56, STEVE LEUNG wrote:
->>> Hi all,
->>>
->>> I decided to try something a bit crazy, and try multi-device raid1 bt=
-rfs on
->>> top of dm-crypt and bcache.  That is:
->>>
->>>   btrfs -> dm-crypt -> bcache -> physical disks
->>>
->>> I have a single cache device in front of 4 disks.  Maybe this wasn't
->>> that good of an idea, because the filesystem went read-only a few
->>> days after setting it up, and now it won't mount.  I'd been running
->>> btrfs on top of 4 dm-crypt-ed disks for some time without any
->>> problems, and only added bcache (taking one device out at a time,
->>> converting it over, adding it back) recently.
->>>
->>> This was on Arch Linux x86-64, kernel 4.20.1.
->>>
->>> dmesg from a mount attempt (using -o usebackuproot,nospace_cache,clea=
-r_cache):
->>>
->>>   [  267.355024] BTRFS info (device dm-5): trying to use backup root =
-at mount time
->>>   [  267.355027] BTRFS info (device dm-5): force clearing of disk cac=
-he
->>>   [  267.355030] BTRFS info (device dm-5): disabling disk space cachi=
-ng
->>>   [  267.355032] BTRFS info (device dm-5): has skinny extents
->>>   [  271.446808] BTRFS error (device dm-5): parent transid verify fai=
-led on
->>>   13069706166272 wanted 4196588 found 4196585
->>>   [  271.447485] BTRFS error (device dm-5): parent transid verify fai=
-led on
->>>   13069706166272 wanted 4196588 found 4196585
->>
->> When this happens, there is no good way to completely recover (btrfs
->> check pass after the recovery) the fs.
->>
->> We should enhance btrfs-progs to handle it, but it will take some time=
-=2E
->>
->>>   [  271.447491] BTRFS error (device dm-5): failed to read block grou=
-ps: -5
->>>   [  271.455868] BTRFS error (device dm-5): open_ctree failed
->>>
->>> btrfs check:
->>>
->>>   parent transid verify failed on 13069706166272 wanted 4196588 found=
- 4196585
->>>   parent transid verify failed on 13069706166272 wanted 4196588 found=
- 4196585
->>>   parent transid verify failed on 13069706166272 wanted 4196588 found=
- 4196585
->>>   parent transid verify failed on 13069706166272 wanted 4196588 found=
- 4196585
->>>   Ignoring transid failure
->>>   ERROR: child eb corrupted: parent bytenr=3D13069708722176 item=3D7 =
-parent level=3D2
->>>   child level=3D0
->>>   ERROR: cannot open file system
->>>
->>> Any simple fix for the filesystem?  It'd be nice to recover the data
->>> that's hopefully still intact.  I have some backups that I can dust
->>> off if it really comes down to it, but it's more convenient to
->>> recover the data in-place.
->>
->> However there is a patch to address this kinda "common" corruption sce=
-nario.
->>
->> https://lwn.net/Articles/777265/
->>
->> In that patchset, there is a new rescue=3Dbg_skip mount option (needs =
-to
->> be used with ro), which should allow you to access whatever you still
->> have from the fs.
->>
->> From other reporters, such corruption is mainly related to extent tree=
-,
->> thus data damage should be pretty small.
->=20
-> Ok I think I spoke too soon.  Some files are recoverable, but many
-> cannot be read.  Userspace gets back an I/O error, and the kernel log
-> reports similar parent transid verify failed errors, with what seem
-> to be similar generation numbers to what I saw in my original mount
-> error.
->=20
-> i.e. wants 4196588, found something that's off by usually 2 or 3.
-> Occasionally there's one that's off by about 1300.
+  mount $dev1 $mnt
+  umount $dev1
 
-That's more or less expected for such transid corruption.
-The fs is already screwed up.
+  wipefs -fa $dev2
 
-The lowest generation you found during all these error message could be
-when the first corruption happens.
-(And it may date back to very old days)
+  mount $dev1 -o degraded $mnt
+  btrfs replace start -Bf 2 $dev3 $mnt
+  umount $dev1
+  btrfs ins dump-tree -t chunk $dev1
 
->=20
-> There are multiple snapshots on this filesystem (going back a few
-> days), and the same file in each snapshot seems to be equally
-> affected, even if the file hasn't changed in many months.>
-> Metadata seems to be intact - I can stat every file in one of the
-> snapshots and I don't get any errors back.
->=20
-> Any other ideas?  It kind of seems like "btrfs restore" would be
-> suitable here, but it sounds like it would need to be taught about
-> rescue=3Dbg_skip first.
+With the following chunks in chunk tree:
+  leaf 3016753152 items 11 free space 14900 generation 9 owner CHUNK_TREE
+  leaf 3016753152 flags 0x1(WRITTEN) backref revision 1
+  fs uuid 7c5fc730-5c16-4a2b-ad39-c26e85951426
+  chunk uuid 1c64265b-253e-411e-b164-b935a45d474b
+  	item 0 key (DEV_ITEMS DEV_ITEM 1) itemoff 16185 itemsize 98
+  	item 1 key (DEV_ITEMS DEV_ITEM 2) itemoff 16087 itemsize 98
+  	item 2 key (FIRST_CHUNK_TREE CHUNK_ITEM 22020096) itemoff 15975 itemsize 112
+  		length 8388608 owner 2 stripe_len 65536 type SYSTEM|RAID1
+  		...
+  	item 3 key (FIRST_CHUNK_TREE CHUNK_ITEM 30408704) itemoff 15863 itemsize 112
+  		length 1073741824 owner 2 stripe_len 65536 type METADATA|RAID1
+  	item 4 key (FIRST_CHUNK_TREE CHUNK_ITEM 1104150528) itemoff 15751 itemsize 112
+  		length 1073741824 owner 2 stripe_len 65536 type DATA|RAID1
+  	item 5 key (FIRST_CHUNK_TREE CHUNK_ITEM 2177892352) itemoff 15671 itemsize 80
+  		length 268435456 owner 2 stripe_len 65536 type METADATA
+  							       ^^^ SINGLE
+  	item 6 key (FIRST_CHUNK_TREE CHUNK_ITEM 2446327808) itemoff 15591 itemsize 80
+  		length 33554432 owner 2 stripe_len 65536 type SYSTEM
+  							      ^^^ SINGLE
+  	item 7 key (FIRST_CHUNK_TREE CHUNK_ITEM 2479882240) itemoff 15511 itemsize 80
+  		length 536870912 owner 2 stripe_len 65536 type DATA
+  							       ^^^ SINGLE
+  	item 8 key (FIRST_CHUNK_TREE CHUNK_ITEM 3016753152) itemoff 15399 itemsize 112
+  		length 33554432 owner 2 stripe_len 65536 type SYSTEM|DUP
+  							      ^^^ DUP
+  	item 9 key (FIRST_CHUNK_TREE CHUNK_ITEM 3050307584) itemoff 15287 itemsize 112
+  		length 268435456 owner 2 stripe_len 65536 type METADATA|DUP
+  							       ^^^ DUP
+  	item 10 key (FIRST_CHUNK_TREE CHUNK_ITEM 3318743040) itemoff 15175 itemsize 112
+  		length 536870912 owner 2 stripe_len 65536 type DATA|DUP
+  							       ^^^ DUP
 
-Since v4.16.1, btrfs-restore should be OK to ignore extent tree
-completely, thus you can try btrfs-restore.
+[CAUSE]
+When degraded mounted, no matter whether we're mounting RW or RO,
+missing devices are never considered RW, as we're acting as we only have
+one rw device.
 
-Btrfs-restore may be a little better, since it can ignore csum errors
-completely.
+So any write to the degraded fs will cause btrfs to create new SINGLE or
+DUP chunks to restore newly written data.
 
-Thanks,
-Qu
+[FIX]
+At mount time, btrfs has already done chunk level degradation check,
+thus we can write to degraded chunks without problem.
 
->=20
-> Thanks for all the help.  Even a partial recovery is a lot better
-> than what I was facing before.
->=20
-> Steve
->=20
+So we only need to consider missing devices as writable, and calculate
+our chunk allocation profile with missing devices too.
 
+Then every thing should work as expected, without annoying SINGLE/DUP
+chunks blocking later degraded mount.
 
---VCPkFKFR8c6u0kDxMnu8hbFBJGrPsYooS--
+With fix applied, the above replace will result the following chunk
+layout instead:
+leaf 22036480 items 5 free space 15626 generation 5 owner CHUNK_TREE
+leaf 22036480 flags 0x1(WRITTEN) backref revision 1
+fs uuid 7b825e77-e694-4474-9bfe-7bd7565fde0e
+chunk uuid 2c2d9e94-a819-4479-8f16-ab529c0a4f62
+	item 0 key (DEV_ITEMS DEV_ITEM 1) itemoff 16185 itemsize 98
+	item 1 key (DEV_ITEMS DEV_ITEM 2) itemoff 16087 itemsize 98
+	item 2 key (FIRST_CHUNK_TREE CHUNK_ITEM 22020096) itemoff 15975 itemsize 112
+		length 8388608 owner 2 stripe_len 65536 type SYSTEM|RAID1
+	item 3 key (FIRST_CHUNK_TREE CHUNK_ITEM 30408704) itemoff 15863 itemsize 112
+		length 1073741824 owner 2 stripe_len 65536 type METADATA|RAID1
+	item 4 key (FIRST_CHUNK_TREE CHUNK_ITEM 1104150528) itemoff 15751 itemsize 112
+		length 1073741824 owner 2 stripe_len 65536 type DATA|RAID1
 
---VWJPfs4FYusV8cHH63voGkcJ5Qn5B3iJr
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+Reported-by: Jakob Schöttl <jschoett@gmail.com>
+Cc: Jakob Schöttl <jschoett@gmail.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/extent-tree.c | 13 +++++++++++++
+ fs/btrfs/volumes.c     |  7 +++++++
+ 2 files changed, 20 insertions(+)
 
------BEGIN PGP SIGNATURE-----
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 0dde0cbc1622..bf691ecb6c70 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4081,6 +4081,13 @@ static u64 btrfs_reduce_alloc_profile(struct btrfs_fs_info *fs_info, u64 flags)
+ 	u64 raid_type;
+ 	u64 allowed = 0;
+ 
++	/*
++	 * For degraded mount, still count missing devices as rw devices
++	 * to avoid alloc SINGLE/DUP chunks
++	 */
++	if (btrfs_test_opt(fs_info, DEGRADED))
++		num_devices += fs_info->fs_devices->missing_devices;
++
+ 	/*
+ 	 * see if restripe for this chunk_type is in progress, if so
+ 	 * try to reduce to the target profile
+@@ -9626,6 +9633,12 @@ static u64 update_block_group_flags(struct btrfs_fs_info *fs_info, u64 flags)
+ 		return extended_to_chunk(stripped);
+ 
+ 	num_devices = fs_info->fs_devices->rw_devices;
++	/*
++	 * For degraded mount, still count missing devices as rw devices
++	 * to avoid alloc SINGLE/DUP chunks
++	 */
++	if (btrfs_test_opt(fs_info, DEGRADED))
++		num_devices += fs_info->fs_devices->missing_devices;
+ 
+ 	stripped = BTRFS_BLOCK_GROUP_RAID0 |
+ 		BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6 |
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 03f223aa7194..8e8b3581877f 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6660,6 +6660,13 @@ static struct btrfs_device *add_missing_dev(struct btrfs_fs_devices *fs_devices,
+ 	set_bit(BTRFS_DEV_STATE_MISSING, &device->dev_state);
+ 	fs_devices->missing_devices++;
+ 
++	/*
++	 * For degraded mount, still count missing devices as writable to
++	 * avoid unnecessary SINGLE/DUP chunks
++	 */
++	if (btrfs_test_opt(fs_devices->fs_info, DEGRADED))
++		set_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
++
+ 	return device;
+ }
+ 
+-- 
+2.20.1
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxibNoACgkQwj2R86El
-/qiFygf9GfmRbY+KqF5V5UTq0PR/Bi/UMUH/biMkANvAYE08st4jZ223zzsp6SkP
-KJ7Umv2V7KDCcGDILh3+kS1Vhaho2thdFf8WMDGFSgzga3w1O9wsf0L8LcnctyqY
-EO74EFauiWLiiyzIUiCSrpb5NsywVXiwLCDf4+Rb2P2oQ5ft6LK7+oRoB2JgHs27
-1egj9aXfREmrQ3Ppnw8BM0SRyDYq3VSye/makXDE9NUXT5jW1kSDDVOe+p/xd5fi
-GEygWY1KWjn222iO1Xm5qxXzIQNrdIIf8+A4YkVwKaBxGabuw2SDnlQu3NLz8XY6
-n7ppDR46lFfZ7pw0cWfEpIxvffYX8A==
-=WrVa
------END PGP SIGNATURE-----
-
---VWJPfs4FYusV8cHH63voGkcJ5Qn5B3iJr--

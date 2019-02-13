@@ -2,189 +2,180 @@ Return-Path: <SRS0=8r0n=QU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 55BA7C282C4
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Feb 2019 00:44:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B77D4C282C4
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Feb 2019 02:49:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 26459218D3
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Feb 2019 00:44:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 833F421934
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Feb 2019 02:49:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730382AbfBMAoM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 12 Feb 2019 19:44:12 -0500
-Received: from mx2.suse.de ([195.135.220.15]:60966 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727871AbfBMAoM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Feb 2019 19:44:12 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 69C0AABB1;
-        Wed, 13 Feb 2019 00:44:10 +0000 (UTC)
-Subject: Re: [PATCH RFC] btrfs: Don't create SINGLE or DUP chunks for degraded
- rw mount
-To:     Andrei Borzenkov <arvidjaar@gmail.com>,
-        Remi Gauvin <remi@georgianit.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <20190212070319.30619-1-wqu@suse.com>
- <aabbd673-fdc0-77dd-7e1e-1b5d1ed12bff@georgianit.com>
- <964481b6-e761-8d0d-3ef1-cbe19dbfae9e@suse.de>
- <79f33db2-f39c-6bd6-4697-d9d9f6a704f1@georgianit.com>
- <d5ad9e15-a572-2819-c39f-43d4c0ff2832@suse.de>
- <d1093c59-f432-b2b6-ca53-e46414c945a6@gmail.com>
-From:   Qu Wenruo <wqu@suse.de>
-Openpgp: preference=signencrypt
-Autocrypt: addr=wqu@suse.de; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0F1F1IFdlbnJ1byA8d3F1QHN1c2UuZGU+iQFUBBMBCAA+AhsDBQsJCAcCBhUICQoLAgQW
- AgMBAh4BAheAFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlnVgp0FCQlmAm4ACgkQwj2R86El
- /qilmgf/cUq9kFQo577ku5gc6rFpVg68ublBwjYpwjw0b//xo+Wo1wm+RRbUGs+djSZAqw12
- D4F3r0mBTI7abUCNWAbFkYZSAIFVi0DMkjypIVS7PSaEt04rM9VBTToE+YqU6WENeJ57R2p2
- +hI0wZrBwxObdsdaOtxWtsp3bmhIbdqxSKrtXuRawy4KnQYcLuGzOce9okdlbAE0W3KHm1gQ
- oNAe6FX8nC9qo14m8LqEbThYH+qj4iCMlN8HIfbSx4F3e7nHZ+UAMW+E/lnMRkIB9Df+JyVd
- /NlXzIjZAggcWsqpx6D4wyAuexKWkiGQeUeArUNihAwXjmyqWPGmjVyIh+oC6LkBDQRZ1YGv
- AQgAqlPrYeBLMv3PAZ75YhQIwH6c4SNcB++hQ9TCT5gIQNw51+SQzkXIGgmzxMIS49cZcE4K
- Xk/kHw5hieQeQZa60BWVRNXwoRI4ib8okgDuMkD5Kz1WEyO149+BZ7HD4/yK0VFJGuvDJR8T
- 7RZwB69uVSLjkuNZZmCmDcDzS0c/SJOg5nkxt1iTtgUETb1wNKV6yR9XzRkrEW/qShChyrS9
- fNN8e9c0MQsC4fsyz9Ylx1TOY/IF/c6rqYoEEfwnpdlz0uOM1nA1vK+wdKtXluCa79MdfaeD
- /dt76Kp/o6CAKLLcjU1Iwnkq1HSrYfY3HZWpvV9g84gPwxwxX0uXquHxLwARAQABiQE8BBgB
- CAAmFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlnVga8CGwwFCQPCZwAACgkQwj2R86El/qgN
- 8Qf+M0vM2Idwm5txZZSs+/kSgcPxEwYmxUinnUJGyc0ZWYQXPl0cBetZon9El0naijGzNWvf
- HxIPB+ZFehk6Otgc78p1a3/xck/s1myFRLrmbbTJNoFiyL25ljcq0J8z5Zp4yuABL2RiLdaZ
- Pt/jfwjBHwGR+QKp6dD2qMrUWf9b7TFzYDMZXzZ2/eoIgtyjEelNBPrIgOFe24iKMjaGjd97
- fJuRcBMHdhUAxvXQF1oRtd83JvYJ5OtwTd8MgkEfl+fo7HwWkuHbzc70L4fFKv2BowqFdaHy
- mId1ijGPGr46tuZ5a4cw/zbaPYx6fJ4sK9tSv/6V1QPNUdqml6hm6pfs6A==
-Message-ID: <eb285e0c-adb8-95b8-c366-2f5806116c0c@suse.de>
-Date:   Wed, 13 Feb 2019 08:44:06 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.0
+        id S2389779AbfBMCtS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 12 Feb 2019 21:49:18 -0500
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:46900 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2389048AbfBMCtQ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 12 Feb 2019 21:49:16 -0500
+Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
+        id 95924219BEB; Tue, 12 Feb 2019 21:46:45 -0500 (EST)
+Date:   Tue, 12 Feb 2019 21:46:12 -0500
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To:     Chris Murphy <lists@colorremedies.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Reproducer for "compressed data + hole data corruption bug, 2018
+ edition" still works on 4.20.7
+Message-ID: <20190213024219.GD23918@hungrycats.org>
+References: <20180823031125.GE13528@hungrycats.org>
+ <20190212030838.GB9995@hungrycats.org>
+ <CAL3q7H7T_NX=D8qimRC55g8V-p0k-ygUiW-K5bxF02r-6XT6Rg@mail.gmail.com>
+ <20190212165916.GA23918@hungrycats.org>
+ <b7d76392-6414-804f-c383-a43dc2d81c1c@gmail.com>
+ <CAJCQCtT1K4RY+_nmcWZdzHVSno-ijHZYLfJz4vu-irN4p+ZYxA@mail.gmail.com>
+ <20190212221107.GC23918@hungrycats.org>
+ <CAJCQCtQcU0CvVf-NGt3ZHZo773meYeW3UVyPS6iP+2C_Kd-jZQ@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <d1093c59-f432-b2b6-ca53-e46414c945a6@gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="ImBpPgUNLytd4NASEN1HCqJagGf2JganM"
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="Hf61M2y+wYpnELGG"
+Content-Disposition: inline
+In-Reply-To: <CAJCQCtQcU0CvVf-NGt3ZHZo773meYeW3UVyPS6iP+2C_Kd-jZQ@mail.gmail.com>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---ImBpPgUNLytd4NASEN1HCqJagGf2JganM
-Content-Type: multipart/mixed; boundary="zOEL0bzln7fq7K27zrtFhoGKWNgwqN6PK";
- protected-headers="v1"
-From: Qu Wenruo <wqu@suse.de>
-To: Andrei Borzenkov <arvidjaar@gmail.com>, Remi Gauvin
- <remi@georgianit.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <eb285e0c-adb8-95b8-c366-2f5806116c0c@suse.de>
-Subject: Re: [PATCH RFC] btrfs: Don't create SINGLE or DUP chunks for degraded
- rw mount
-References: <20190212070319.30619-1-wqu@suse.com>
- <aabbd673-fdc0-77dd-7e1e-1b5d1ed12bff@georgianit.com>
- <964481b6-e761-8d0d-3ef1-cbe19dbfae9e@suse.de>
- <79f33db2-f39c-6bd6-4697-d9d9f6a704f1@georgianit.com>
- <d5ad9e15-a572-2819-c39f-43d4c0ff2832@suse.de>
- <d1093c59-f432-b2b6-ca53-e46414c945a6@gmail.com>
-In-Reply-To: <d1093c59-f432-b2b6-ca53-e46414c945a6@gmail.com>
 
---zOEL0bzln7fq7K27zrtFhoGKWNgwqN6PK
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
+--Hf61M2y+wYpnELGG
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
 
+On Tue, Feb 12, 2019 at 03:53:53PM -0700, Chris Murphy wrote:
+> And yet the file is delivered to user space, despite the changes, as
+> if it's immune to checksum computation or matching. The data is
+> clearly difference so how is it bypassing checksumming? Data csums are
+> based on original uncompressed data, correct? So any holes are zeros,
+> there are still csums for those holes?
 
+csums in btrfs protect data blocks.  Holes are the absence of data blocks,
+so there are no csums for holes.
 
-On 2019/2/13 =E4=B8=8A=E5=8D=882:42, Andrei Borzenkov wrote:
-> 12.02.2019 10:47, Qu Wenruo =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
->>
->>
->> On 2019/2/12 =E4=B8=8B=E5=8D=883:43, Remi Gauvin wrote:
->>> On 2019-02-12 2:22 a.m., Qu Wenruo wrote:
->>>
->>>>> Does this mean you would rely on scrub/CSUM to repair the missing d=
-ata
->>>>> if device is restored?
->>>>
->>>> Yes, just as btrfs usually does.
->>>>
->>>
->>> I don't really understand the implications of the problems with mount=
-ing
->>> fs when single/dup data chunk are allocated on raid1,
->>
->> Consider this use case:
->>
->> One btrfs with 2 devices, RAID1 for data and metadata.
->>
->> One day devid 2 got failure, and before replacement arrives, user can
->> only use devid 1 alone. (Maybe that's the root fs).
->>
->> Then new disk arrived, user replaced the missing device, caused SINGLE=
+There are no csums for extent references either--only csums on the extent
+data that is referenced.  Since this bug affects processing of extent
+refs, it must occur long after all the csums are verified.
 
->> or DUP chunks on devid 1, and more importantly, some metadata/data is
->> already in DUP/SINGLE chunks.
->>
->> Then some days later, devid 1 get failure too, now user is unable to
->> mount the fs degraded RW any more, since SINGLE/DUP chunks are all on
->> devid 1, and no way to replace devid 1.
->>
+> > I'm not sure how the zlib library is involved--sha1sum doesn't use one.
+> >
+> > > And then what happens if you do the exact same test but change to zstd
+> > > or lzo? No error? Strictly zlib?
+> >
+> > Same errors on all three btrfs compression algorithms (as mentioned in
+> > the original post from August 2018).
 >=20
-> But if I understand what happens after your patch correctly, replacemen=
-t
-> device still does not contain valid data until someone does scrub.
+> Obviously there is a pattern. It's not random. I just don't know what
+> it looks like.=20
 
-Nope. That's incorrect.
+Without knowing the root cause I can only speculate, but it does seem to
+be random, just very heavily biased to some outcomes.  It will produce
+more distinct sha1sum values the longer you run it, especially if there
+is other activity on the system to perturb the kernel a bit.  If you make
+the test file bigger you can have more combinations of outputs.
 
-We still go through normal device replace routine, which will copy data
-from degraded chunks to new device.
+I also note that since the big batch of btrfs bug fixes that landed
+near 4.14.80, the variation between runs seems to be a lot less than
+with earlier kernels; however, the full range of random output values
+(i.e. which extents of the file disappear) still seems to be possible, it
+just takes longer to get distinct values.  I'm not sure that information
+helps to form a theory of how the bug operates.
 
-Thanks,
-Qu
+> I use compression, for years now, mostly zstd lately
+> and a mix of lzo and zlib before that, but never any errors or
+> corruptions. But I also never use holes, no punched holes, and rarely
+> use fallocated files which I guess isn't quite the same thing as hole
+> punching.
 
-> So in
-> either case manual step is required to restore full redundancy.
+I covered this in August.  The original thread was:
+
+	https://www.spinics.net/lists/linux-btrfs/msg81293.html
+
+TL;DR you won't see this problem unless you have a single compressed
+extent that is split by a hole--an artifact that can only be produced by
+punching holes, cloning, or dedupe.  The cases users are most likely to
+encounter are dedupe and hole-punching--I don't know of any applications
+in real-world use that do cloning the right way to trigger this problem.
+
+Also, you haven't mentioned whether you've successfully reproduced this
+yourself yet (or not).
+
+> So the bug you're reproducing is for sure 100% not on the media
+> itself, it's somehow transiently being interpreted differently roughly
+> 1 in 10 reads, but with a pattern. What about scrub? Do you get errors
+> every 1 in 10 scrubs? Or how does it manifest? No scrub errors?
+
+No errors in scrub--nor should there be.  The data is correct on disk,
+and it can be read reliably if you don't use the kernel btrfs code to
+read it through extent refs (scrub reads the data items directly, so
+scrub never looks at data through extent refs).
+
+btrfs just drops some of the data when reading it to userspace.
+
+> I know very little about what parts of the kernel a file system
+> depends on outside of its own code (e.g. page cache) but I wonder if
+> there's something outside of Btrfs that's the source but it never gets
+> triggered because no other file systems use compression. Huh - what
+> file system uses compression *and* hole punching? squashfs? Is sparse
+> file support different than hole punching?
+
+Traditional sparse file support leaves blocks in a file unallocated until
+they are written to, i.e. you do something like:
+
+	write(64K)
+	seek(80K)
+	write(48K)
+
+and you get a 16K hole between two extents (or contiguous block ranges
+if your filesystem doesn't have a formal extent concept per se):
+
+	data(64k)
+	hole(16k)
+	data(48k)
+
+Traditional POSIX sparse files don't have any way to release any extents
+in the middle of a file without changing the length of the file.  You can
+fill in the holes with data later, but you can't delete existing data and
+replace it with holes.  If you want to punch holes in a file, you used to
+do it by making a copy of the file, omitting any of the data blocks that
+contained all zero, then renaming the copy over the original file.
+
+The hole punch operation adds the capability to delete existing data
+in place, e.g. you can say "punch a hole at 24K, length 8K" and the
+filesystem will look like:
+
+	data(24k) (originally part of first 64K extent)
+	hole(8k)
+	data(32k) (originally part of first 64K extent)
+	hole(16k)
+	data(48k)
+
+On btrfs, the first 32k and 24k chunks of the file are both references
+to pieces of the original 64k extent, which is not modified on disk,
+but 8K of it is no longer accessible.
+
+> --=20
+> Chris Murphy
 >=20
-> Or does "btrfs replace" restore content on replacement device automatic=
-ally?
->=20
->> Thanks,
->> Qu
->>
->>> but I would think
->>> that would actually be a preferable situation than filling a drive wi=
-th
->>> 'data' we know is completely bogus... converting single/dup data to r=
-aid
->>> should be much faster than tripping on CSUM errors, and less prone to=
 
->>> missed errors?
->>>
->>>
->>
->=20
->=20
-
-
---zOEL0bzln7fq7K27zrtFhoGKWNgwqN6PK--
-
---ImBpPgUNLytd4NASEN1HCqJagGf2JganM
+--Hf61M2y+wYpnELGG
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxjaFYACgkQwj2R86El
-/qgSWAgAk4CI/y5I8mjOZbhh+MRGL+05TGWn0ZQnaVsuAU9zlD/WhWOZbFuZhMtj
-ccE3ygs7QqCaal+W6zJ9KxUu346MbY9CaQa8FtSa3EjcWd/bjnLUThEgjnjBvdzu
-Kv5YoMJ75b4/upJs2QbgDrBYW4hJwswo9JHNdrUVsL6mUYtagMHn32R+mlatFGXE
-kKP2TczqJTY0MHiAFXseB14gxeZWK+/wSpZXfDQSgOiW4iYdso+Vv+cF0aP33WMg
-kip4iKkTbFposnr3Rf9ljZy+DJbERHOtGiLDU2QvDy1e45bMWsyiLNKcqIZqQP5Z
-ASopWhWXJyhk8TRZl2y0LPvEQ3MCXA==
-=JkLH
+iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCXGOEAwAKCRCB+YsaVrMb
+nH5WAJ48TpLwEwYfIB9vrWBanckAA/al9ACg58J/q8mNhtskPRqgFIZXK6hlpeU=
+=FJDB
 -----END PGP SIGNATURE-----
 
---ImBpPgUNLytd4NASEN1HCqJagGf2JganM--
+--Hf61M2y+wYpnELGG--

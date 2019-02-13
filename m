@@ -5,65 +5,62 @@ X-Spam-Level:
 X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED autolearn=unavailable autolearn_force=no version=3.4.0
+	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EBD19C282CE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Feb 2019 12:31:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7D8EFC282C2
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Feb 2019 12:37:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BA1B1222B5
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Feb 2019 12:31:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 34573222B2
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Feb 2019 12:37:47 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="BiDHXu3q"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="E5Yce1k6"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2404089AbfBMMbX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 13 Feb 2019 07:31:23 -0500
-Received: from mail-vk1-f193.google.com ([209.85.221.193]:33046 "EHLO
-        mail-vk1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2404083AbfBMMbX (ORCPT
+        id S1730369AbfBMMhq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 13 Feb 2019 07:37:46 -0500
+Received: from mail-vk1-f195.google.com ([209.85.221.195]:33204 "EHLO
+        mail-vk1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726418AbfBMMhp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Feb 2019 07:31:23 -0500
-Received: by mail-vk1-f193.google.com with SMTP id d201so502364vka.0;
-        Wed, 13 Feb 2019 04:31:19 -0800 (PST)
+        Wed, 13 Feb 2019 07:37:45 -0500
+Received: by mail-vk1-f195.google.com with SMTP id d201so506360vka.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Feb 2019 04:37:43 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=mime-version:references:in-reply-to:reply-to:from:date:message-id
          :subject:to:cc:content-transfer-encoding;
-        bh=QV2tUAgyrDeYmy94x/RDFgL9dLUAuPKh4gAaDhnSKeU=;
-        b=BiDHXu3q44Hl2+rPRbVP7tkbgMnnXmkd0HwA4AknfkexB/FxWYofYvaihxI4CMAo6X
-         NwtBAMSKWIRMTFeR5Im+jHw0P+z2qtZUWUN6mdjjAxGfI9K3qay5fu5VsVJxBQ/dvGUb
-         hrcQ5k6+iPXMCxJgaMfm4SAUahY/LcwjNsdxPcT+HUBmzdQzGJBDqP/9qFpRsq/7OLJD
-         4aTRXw06d8bbmZkh8WfvNwHmy8krys5A7HfBuZO7rYoch2pVnyG3NV1DvAHJtMZm/5Ml
-         vVNQtiKjzbaNbKZy+K3Rd/yNnBiEBu0ZmtL7aKEor1ZBTPbdstWqff13nI8kMQMqGWOP
-         /37A==
+        bh=BfoSVszTsv4qkgNuw6GoxrQJmvVmEkMcXkcRZWWSLVA=;
+        b=E5Yce1k6MkpYhnuY9+3i/wNGzY181iUg8rcjIeh5TzIEVAyXJU74hSTvRGmKVPuDzh
+         fIHmz/+VIg5Q4sS15mnOqSvd4HVFdhbw2w2YB7qkqJ4TvVaMSylRYPRM5/XNy8MMgVO2
+         HKwA8kW/hJV8h4fegCAZLpB+DPLVZUpm1ziVvhx5HEgJaIdBGLXVuZ8ER2axnM8xsAUE
+         6hkIykdHACDu2P/PcDA3hDM1hmjiAjj2pf2cbYQoCMA3mzRcAAu+s/KTGXMXHbOqVAbO
+         ZaghgzumfXTxXw7llFy+bIYrz45VK+MEh7pUNvW9tpp5dXkdDwdV6JJ182IUzcttaSST
+         k+Mg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
          :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=QV2tUAgyrDeYmy94x/RDFgL9dLUAuPKh4gAaDhnSKeU=;
-        b=OrUnIq1wKOlk920X+LX21dkgtUmMCtQ+++UidL6yKjduEye84pjNfLAa+9HYOHtc3I
-         7vfLJj5izzpVLuKCBn1ZXnkcc+ZLfUlf993VBd1OPvYU6oXKcgfxXkNdI2iDUVJ2H1bo
-         eBWlUTLTKnCEpm0uLB8iO2spKbbjLDIjgufX7HtYAUR+vOycWNfkchZdJxbMJaUoGLqL
-         o0eDVyEYuHSSMnlu/TMMxYSSihj4dxuFV4bAeRGsd9MZaySuu1CNSs3LaxvTaIfqmf1J
-         IPU5jod/gcWUiUju9r3GpORtSjArJ5yf26qMfMcyiQCv1i5EVxtjCwCzARAbr9BIE7qJ
-         eiqw==
-X-Gm-Message-State: AHQUAuZ4wYU3ESZTKQ8c+bmd+uR9QZXmXA3DHFTjOH6bPhOeeKl25Sja
-        53DB65sB5AFTfTgxN67+Vk+nmo5WUtCvqN/B1jYLkg==
-X-Google-Smtp-Source: AHgI3IbtgAYujksfyM0/fhTN7uln/ttWzQZhcRYevqxn/Z4NZ7mDwOx0g/O3rESoNNUD7Rmqh4sNGF4AagUvcBlz1wc=
-X-Received: by 2002:a1f:d005:: with SMTP id h5mr106477vkg.4.1550061079052;
- Wed, 13 Feb 2019 04:31:19 -0800 (PST)
+        bh=BfoSVszTsv4qkgNuw6GoxrQJmvVmEkMcXkcRZWWSLVA=;
+        b=ONpTgqcQdaUIxza9ssSu/ArA0JfnDX4xOPFr1A563hcGgsi5XpSYy3FooBfxPI4Efo
+         7hozW05F7EX1MZ+5yZFdiGK5PvlaEhEOsID4tN0vbF6fgScvtkLf5BvCtCm9CsdAwWNh
+         pCho/HTA3tiFCOOriOl89boNihXdtETxpnnQ1axhF9dsp8x0zH4wtzCAHwE+EIqIbGMd
+         whH8t5ZkZ99fitTLTL216xVKAx7wM/xBxTFvFuqMhn9dfrgW6+pCXUCgLIFan1yP5ng0
+         xXxYflff6EAajeshis6stNTDMTfQwCiA0avZt5aWeOuicuxQIDJXDth2kXnW3hQjGmwO
+         1RYg==
+X-Gm-Message-State: AHQUAuZeoY+nPkrAhIradt/kWYgcRxQG6DOLbGZL1QEMavv/CejdLfyy
+        XrdRVAXrhO8ZlbGkUO02LddxlJJWu/ehvpEYwIo=
+X-Google-Smtp-Source: AHgI3Ibm53pIxhWc6X8JCQysaZISKn948kt8VwuJreXTeWa9iALGGDHtQiG75BkHUp9zVMvHhcruJlQOTQ51Wnq3lLM=
+X-Received: by 2002:a1f:2542:: with SMTP id l63mr91581vkl.81.1550061463112;
+ Wed, 13 Feb 2019 04:37:43 -0800 (PST)
 MIME-Version: 1.0
-References: <20190213062704.25121-1-wqu@suse.com>
-In-Reply-To: <20190213062704.25121-1-wqu@suse.com>
+References: <20190207165426.15866-1-josef@toxicpanda.com> <20190207165426.15866-2-josef@toxicpanda.com>
+In-Reply-To: <20190207165426.15866-2-josef@toxicpanda.com>
 Reply-To: fdmanana@gmail.com
 From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Wed, 13 Feb 2019 12:31:07 +0000
-Message-ID: <CAL3q7H78vZiG+miY7Eb+Jh1_CyOYTkVuWzzK6_JW-Wqv19q-Uw@mail.gmail.com>
-Subject: Re: [PATCH v2] btrfs: honor path->skip_locking in backref code
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Josef Bacik <josef@toxicpanda.com>, stable@vger.kernel.org,
-        David Sterba <dsterba@suse.com>,
-        Filipe Manana <fdmanana@suse.com>
+Date:   Wed, 13 Feb 2019 12:37:32 +0000
+Message-ID: <CAL3q7H4MxjY0U-uawtmg+1DhAtCgB=zXDELB4JtRXivC9r=Zzg@mail.gmail.com>
+Subject: Re: [PATCH 1/2] btrfs: reserve space for inheriting properties
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>, kernel-team@fb.com
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -71,178 +68,260 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Feb 13, 2019 at 11:33 AM Qu Wenruo <wqu@suse.com> wrote:
+On Thu, Feb 7, 2019 at 4:57 PM Josef Bacik <josef@toxicpanda.com> wrote:
 >
-> From: Josef Bacik <josef@toxicpanda.com>
+> We've been seeing errors on our build servers related to failing to
+> inherit inode properties.  This is because we do not pre-reserve space
+> for them, instead trying to reserve space with NO_FLUSH at inheritance
+> time.  NO_FLUSH can transiently fail, but we'll still complain.  It's
+> just an extra credit, so simply add that to the places that call
+> btrfs_new_inode and call it good enough.
 >
-> Qgroups will do the old roots lookup at delayed ref time, which could be
-> while walking down the extent root while running a delayed ref.  This
-> should be fine, except we specifically lock eb's in the backref walking
-> code irrespective of path->skip_locking, which deadlocks the system.
-> Fix up the backref code to honor path->skip_locking, nobody will be
-> modifying the commit_root when we're searching so it's completely safe
-> to do.
->
-> This happens Since fb235dc06fac ("btrfs: qgroup: Move half of the qgroup
-> accounting time out of commit trans"), kernel may lockup with quota
-> enabled.
->
-> There is one backref trace triggered by snapshot dropping along with
-> write operation in the source subvolume.  The example can be reliably
-> reproduced:
->
->   btrfs-cleaner   D    0  4062      2 0x80000000
->   Call Trace:
->    schedule+0x32/0x90
->    btrfs_tree_read_lock+0x93/0x130 [btrfs]
->    find_parent_nodes+0x29b/0x1170 [btrfs]
->    btrfs_find_all_roots_safe+0xa8/0x120 [btrfs]
->    btrfs_find_all_roots+0x57/0x70 [btrfs]
->    btrfs_qgroup_trace_extent_post+0x37/0x70 [btrfs]
->    btrfs_qgroup_trace_leaf_items+0x10b/0x140 [btrfs]
->    btrfs_qgroup_trace_subtree+0xc8/0xe0 [btrfs]
->    do_walk_down+0x541/0x5e3 [btrfs]
->    walk_down_tree+0xab/0xe7 [btrfs]
->    btrfs_drop_snapshot+0x356/0x71a [btrfs]
->    btrfs_clean_one_deleted_snapshot+0xb8/0xf0 [btrfs]
->    cleaner_kthread+0x12b/0x160 [btrfs]
->    kthread+0x112/0x130
->    ret_from_fork+0x27/0x50
->
-> When dropping snapshots with qgroup enabled, we will trigger backref
-> walk.
->
-> However such backref walk at that timing is pretty dangerous, as if one
-> of the parent nodes get WRITE locked by other thread, we could cause a
-> dead lock.
->
-> For example:
->
->            FS 260     FS 261 (Dropped)
->             node A        node B
->            /      \      /      \
->        node C      node D      node E
->       /   \         /  \        /     \
->   leaf F|leaf G|leaf H|leaf I|leaf J|leaf K
->
-> The lock sequence would be:
->
->       Thread A (cleaner)             |       Thread B (other writer)
-> -----------------------------------------------------------------------
-> write_lock(B)                        |
-> write_lock(D)                        |
-> ^^^ called by walk_down_tree()       |
->                                      |       write_lock(A)
->                                      |       write_lock(D) << Stall
-> read_lock(H) << for backref walk     |
-> read_lock(D) << lock owner is        |
->                 the same thread A    |
->                 so read lock is OK   |
-> read_lock(A) << Stall                |
->
-> So thread A hold write lock D, and needs read lock A to unlock.
-> While thread B holds write lock A, while needs lock D to unlock.
->
-> This will cause a deadlock.
->
-> This is not only limited to snapshot dropping case.
-> As the backref walk, even only happens on commit trees, is breaking the
-> normal top-down locking order, makes it deadlock prone.
->
-> Fixes: fb235dc06fac ("btrfs: qgroup: Move half of the qgroup accounting t=
-ime out of commit trans")
-> CC: stable@vger.kernel.org # 4.19+
-> Reported-and-tested-by: David Sterba <dsterba@suse.com>
-> Reported-by: Filipe Manana <fdmanana@suse.com>
-> Reviewed-by: Qu Wenruo <wqu@suse.com>
 > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-> [ copy logs and deadlock analysis from Qu's patch ]
-> [ rebase to latest branch and fix lock assert bug ]
-> Signed-off-by: David Sterba <dsterba@suse.com>
 
 Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-Looks good.
+Loogs good, thanks. Just one minor comment about using bitwise left
+shift instead of direct multiplication by 2.
 
 > ---
-> changelog:
-> v2:
-> - Rebased to latest misc-next branch.
-> - Fix a lock assert by moving btrfs_set_lock_blocking_read() into the
->   same branch of btrfs_tree_read_lock().
-> ---
->  fs/btrfs/backref.c | 19 ++++++++++++-------
->  1 file changed, 12 insertions(+), 7 deletions(-)
+>  fs/btrfs/inode.c | 78 ++++++++++++++++++++++----------------------------=
+------
+>  fs/btrfs/ioctl.c | 27 ++++++++++++--------
+>  2 files changed, 46 insertions(+), 59 deletions(-)
 >
-> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-> index 136454dbb4af..6e647520b65a 100644
-> --- a/fs/btrfs/backref.c
-> +++ b/fs/btrfs/backref.c
-> @@ -712,7 +712,7 @@ static int resolve_indirect_refs(struct btrfs_fs_info=
- *fs_info,
->   * read tree blocks and add keys where required.
->   */
->  static int add_missing_keys(struct btrfs_fs_info *fs_info,
-> -                           struct preftrees *preftrees)
-> +                           struct preftrees *preftrees, bool lock)
->  {
->         struct prelim_ref *ref;
->         struct extent_buffer *eb;
-> @@ -737,12 +737,14 @@ static int add_missing_keys(struct btrfs_fs_info *f=
-s_info,
->                         free_extent_buffer(eb);
->                         return -EIO;
->                 }
-> -               btrfs_tree_read_lock(eb);
-> +               if (lock)
-> +                       btrfs_tree_read_lock(eb);
->                 if (btrfs_header_level(eb) =3D=3D 0)
->                         btrfs_item_key_to_cpu(eb, &ref->key_for_search, 0=
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 6126de9b8b9c..0da4a9d6d9fe 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -59,6 +59,14 @@ struct btrfs_dio_data {
+>         int overwrite;
+>  };
+>
+> +/*
+> + * 2 for inode item and ref
+> + * 2 for dir items
+> + * 1 for xattr if selinux is on
+> + * 1 for inherited properties
+> + */
+> +#define BTRFS_NEW_INODE_ITEMS 6
+> +
+>  static const struct inode_operations btrfs_dir_inode_operations;
+>  static const struct inode_operations btrfs_symlink_inode_operations;
+>  static const struct inode_operations btrfs_dir_ro_inode_operations;
+> @@ -6479,12 +6487,7 @@ static int btrfs_mknod(struct inode *dir, struct d=
+entry *dentry,
+>         u64 objectid;
+>         u64 index =3D 0;
+>
+> -       /*
+> -        * 2 for inode item and ref
+> -        * 2 for dir items
+> -        * 1 for xattr if selinux is on
+> -        */
+> -       trans =3D btrfs_start_transaction(root, 5);
+> +       trans =3D btrfs_start_transaction(root, BTRFS_NEW_INODE_ITEMS);
+>         if (IS_ERR(trans))
+>                 return PTR_ERR(trans);
+>
+> @@ -6543,12 +6546,7 @@ static int btrfs_create(struct inode *dir, struct =
+dentry *dentry,
+>         u64 objectid;
+>         u64 index =3D 0;
+>
+> -       /*
+> -        * 2 for inode item and ref
+> -        * 2 for dir items
+> -        * 1 for xattr if selinux is on
+> -        */
+> -       trans =3D btrfs_start_transaction(root, 5);
+> +       trans =3D btrfs_start_transaction(root, BTRFS_NEW_INODE_ITEMS);
+>         if (IS_ERR(trans))
+>                 return PTR_ERR(trans);
+>
+> @@ -6695,12 +6693,7 @@ static int btrfs_mkdir(struct inode *dir, struct d=
+entry *dentry, umode_t mode)
+>         u64 objectid =3D 0;
+>         u64 index =3D 0;
+>
+> -       /*
+> -        * 2 items for inode and ref
+> -        * 2 items for dir items
+> -        * 1 for xattr if selinux is on
+> -        */
+> -       trans =3D btrfs_start_transaction(root, 5);
+> +       trans =3D btrfs_start_transaction(root, BTRFS_NEW_INODE_ITEMS);
+>         if (IS_ERR(trans))
+>                 return PTR_ERR(trans);
+>
+> @@ -9428,14 +9421,11 @@ static int btrfs_rename_exchange(struct inode *ol=
+d_dir,
+>                 down_read(&fs_info->subvol_sem);
+>
+>         /*
+> -        * We want to reserve the absolute worst case amount of items.  S=
+o if
+> -        * both inodes are subvols and we need to unlink them then that w=
+ould
+> -        * require 4 item modifications, but if they are both normal inod=
+es it
+> -        * would require 5 item modifications, so we'll assume their norm=
+al
+> -        * inodes.  So 5 * 2 is 10, plus 2 for the new links, so 12 total=
+ items
+> -        * should cover the worst case number of items we'll modify.
+> +        * The same math from btrfs_rename applies here, except we need a=
+n extra
+> +        * 2 items for the new links.
+>          */
+> -       trans =3D btrfs_start_transaction(root, 12);
+> +       trans =3D btrfs_start_transaction(root,
+> +                                       (BTRFS_NEW_INODE_ITEMS << 1) + 2)=
+;
+>         if (IS_ERR(trans)) {
+>                 ret =3D PTR_ERR(trans);
+>                 goto out_notrans;
+> @@ -9768,19 +9758,19 @@ static int btrfs_rename(struct inode *old_dir, st=
+ruct dentry *old_dentry,
+>         if (old_ino =3D=3D BTRFS_FIRST_FREE_OBJECTID)
+>                 down_read(&fs_info->subvol_sem);
+>         /*
+> -        * We want to reserve the absolute worst case amount of items.  S=
+o if
+> -        * both inodes are subvols and we need to unlink them then that w=
+ould
+> -        * require 4 item modifications, but if they are both normal inod=
+es it
+> -        * would require 5 item modifications, so we'll assume they are n=
+ormal
+> -        * inodes.  So 5 * 2 is 10, plus 1 for the new link, so 11 total =
+items
+> -        * should cover the worst case number of items we'll modify.
+> -        * If our rename has the whiteout flag, we need more 5 units for =
+the
+> -        * new inode (1 inode item, 1 inode ref, 2 dir items and 1 xattr =
+item
+> -        * when selinux is enabled).
+> +        * We want to reserve the absolute worst case amount of items.  S=
+ubvol
+> +        * inodes don't have an inode item to worry about and don't have =
+a
+> +        * selinux attr, so we use the BTRFS_NEW_INODE_ITEMS counter for =
+how
+> +        * much it costs per inode to modify.  Worse case we'll have to m=
+ess
+> +        * with 2 inodes, so 2 x BTRFS_NEW_INODE_ITEMS, and then we need =
+an
+> +        * extra reservation for the new link.
+> +        *
+> +        * If our rename has the whiteout flag we need a full new inode w=
+hich
+> +        * means another set of BTRFS_NEW_INODE_ITEMS.
+>          */
+> -       trans_num_items =3D 11;
+> +       trans_num_items =3D (BTRFS_NEW_INODE_ITEMS << 1) + 1;
+
+Could be made more obvious by multiplying by 2 instead of bitwise left shif=
+t.
+
+>         if (flags & RENAME_WHITEOUT)
+> -               trans_num_items +=3D 5;
+> +               trans_num_items +=3D BTRFS_NEW_INODE_ITEMS;
+>         trans =3D btrfs_start_transaction(root, trans_num_items);
+>         if (IS_ERR(trans)) {
+>                 ret =3D PTR_ERR(trans);
+> @@ -10149,14 +10139,8 @@ static int btrfs_symlink(struct inode *dir, stru=
+ct dentry *dentry,
+>         if (name_len > BTRFS_MAX_INLINE_DATA_SIZE(fs_info))
+>                 return -ENAMETOOLONG;
+>
+> -       /*
+> -        * 2 items for inode item and ref
+> -        * 2 items for dir items
+> -        * 1 item for updating parent inode item
+> -        * 1 item for the inline extent item
+> -        * 1 item for xattr if selinux is on
+> -        */
+> -       trans =3D btrfs_start_transaction(root, 7);
+> +       /* 1 item for the inline extent item */
+> +       trans =3D btrfs_start_transaction(root, BTRFS_NEW_INODE_ITEMS + 1=
 );
->                 else
->                         btrfs_node_key_to_cpu(eb, &ref->key_for_search, 0=
+>         if (IS_ERR(trans))
+>                 return PTR_ERR(trans);
+>
+> @@ -10427,10 +10411,8 @@ static int btrfs_tmpfile(struct inode *dir, stru=
+ct dentry *dentry, umode_t mode)
+>         u64 index;
+>         int ret =3D 0;
+>
+> -       /*
+> -        * 5 units required for adding orphan entry
+> -        */
+> -       trans =3D btrfs_start_transaction(root, 5);
+> +       /* 1 unit required for adding orphan entry */
+> +       trans =3D btrfs_start_transaction(root, BTRFS_NEW_INODE_ITEMS + 1=
 );
-> -               btrfs_tree_read_unlock(eb);
-> +               if (lock)
-> +                       btrfs_tree_read_unlock(eb);
->                 free_extent_buffer(eb);
->                 prelim_ref_insert(fs_info, &preftrees->indirect, ref, NUL=
-L);
->                 cond_resched();
-> @@ -1227,7 +1229,7 @@ static int find_parent_nodes(struct btrfs_trans_han=
-dle *trans,
+>         if (IS_ERR(trans))
+>                 return PTR_ERR(trans);
 >
->         btrfs_release_path(path);
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index f38a659c918c..21f8ab2d8570 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -83,6 +83,17 @@ struct btrfs_ioctl_send_args_32 {
+>                                struct btrfs_ioctl_send_args_32)
+>  #endif
 >
-> -       ret =3D add_missing_keys(fs_info, &preftrees);
-> +       ret =3D add_missing_keys(fs_info, &preftrees, path->skip_locking =
-=3D=3D 0);
+> +/*
+> + * 1 - parent dir inode
+> + * 2 - dir entries
+> + * 1 - root item
+> + * 2 - root ref/backref
+> + * 1 - root of snapshot
+> + * 1 - UUID item
+> + * 1 - properties
+> + */
+> +#define BTRFS_NEW_ROOT_ITEMS 9
+> +
+>  static int btrfs_clone(struct inode *src, struct inode *inode,
+>                        u64 off, u64 olen, u64 olen_aligned, u64 destoff,
+>                        int no_time_update);
+> @@ -596,7 +607,8 @@ static noinline int create_subvol(struct inode *dir,
+>          * The same as the snapshot creation, please see the comment
+>          * of create_snapshot().
+>          */
+> -       ret =3D btrfs_subvolume_reserve_metadata(root, &block_rsv, 8, fal=
+se);
+> +       ret =3D btrfs_subvolume_reserve_metadata(root, &block_rsv,
+> +                                              BTRFS_NEW_ROOT_ITEMS, fals=
+e);
 >         if (ret)
->                 goto out;
+>                 goto fail_free;
 >
-> @@ -1288,11 +1290,14 @@ static int find_parent_nodes(struct btrfs_trans_h=
-andle *trans,
->                                         ret =3D -EIO;
->                                         goto out;
->                                 }
-> -                               btrfs_tree_read_lock(eb);
-> -                               btrfs_set_lock_blocking_read(eb);
-> +                               if (!path->skip_locking) {
-> +                                       btrfs_tree_read_lock(eb);
-> +                                       btrfs_set_lock_blocking_read(eb);
-> +                               }
->                                 ret =3D find_extent_in_eb(eb, bytenr,
->                                                         *extent_item_pos,=
- &eie, ignore_offset);
-> -                               btrfs_tree_read_unlock_blocking(eb);
-> +                               if (!path->skip_locking)
-> +                                       btrfs_tree_read_unlock_blocking(e=
-b);
->                                 free_extent_buffer(eb);
->                                 if (ret < 0)
->                                         goto out;
+> @@ -804,17 +816,10 @@ static int create_snapshot(struct btrfs_root *root,=
+ struct inode *dir,
+>
+>         btrfs_init_block_rsv(&pending_snapshot->block_rsv,
+>                              BTRFS_BLOCK_RSV_TEMP);
+> -       /*
+> -        * 1 - parent dir inode
+> -        * 2 - dir entries
+> -        * 1 - root item
+> -        * 2 - root ref/backref
+> -        * 1 - root of snapshot
+> -        * 1 - UUID item
+> -        */
+> +
+>         ret =3D btrfs_subvolume_reserve_metadata(BTRFS_I(dir)->root,
+> -                                       &pending_snapshot->block_rsv, 8,
+> -                                       false);
+> +                                       &pending_snapshot->block_rsv,
+> +                                       BTRFS_NEW_ROOT_ITEMS, false);
+>         if (ret)
+>                 goto dec_and_free;
+>
 > --
-> 2.18.0
+> 2.14.3
 >
 
 

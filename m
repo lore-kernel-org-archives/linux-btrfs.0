@@ -2,67 +2,67 @@ Return-Path: <SRS0=zIgm=QV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.2 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+X-Spam-Status: No, score=-9.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,UNWANTED_LANGUAGE_BODY,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5AEF3C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 10:01:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 857CEC43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 10:01:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2A95B222A1
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 10:01:32 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 562C6222A1
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 10:01:33 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="flSeOV67"
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="usaAmZed"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2438140AbfBNKBF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 14 Feb 2019 05:01:05 -0500
-Received: from mail-pl1-f193.google.com ([209.85.214.193]:38270 "EHLO
-        mail-pl1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2438126AbfBNKBD (ORCPT
+        id S2438151AbfBNKBc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 14 Feb 2019 05:01:32 -0500
+Received: from mail-pg1-f193.google.com ([209.85.215.193]:37002 "EHLO
+        mail-pg1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2438134AbfBNKBF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Feb 2019 05:01:03 -0500
-Received: by mail-pl1-f193.google.com with SMTP id e5so2904916plb.5
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Feb 2019 02:01:02 -0800 (PST)
+        Thu, 14 Feb 2019 05:01:05 -0500
+Received: by mail-pg1-f193.google.com with SMTP id q206so2819564pgq.4
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Feb 2019 02:01:04 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=z1iJdJ3ICufViigzY8ArSNJ8k4Y0JN5jmw8hA8KfmFU=;
-        b=flSeOV67kqykhRwclnrfrqoGKGW89REoU5Hj3g1pDXyBpBurQb2WVbHnHGfaabPXdH
-         eKSDz9iBLVBH6TXcJNKLXZJap0/h8DRGo8G/gzkD0GUDf8FD/etzCzTTEqkkXDFXIdJc
-         hjVZm9tfRGvQNK419c1V7l8hrPfdXq3wlRMPwfjeufOh/yml3DSYcVPBc2pga/OkMVfF
-         nM5e+JjSOCkBu/xCvjduIggPnLBWzR8qLBjq2dQ2IyilRt/iJvogtDrMC9sgrgvNMDFE
-         490OtH/PMfgJUxT3sDxj3fMVRc2qOHjshCd52BoIM5c8zvZnS82pGDv5tLy8rBbHrWD1
-         IQIQ==
+        bh=IqdSQkcumnBYhLQAnydEDsb1lAsWO+oD/FDDiPGvmEE=;
+        b=usaAmZedAV+G4MMMkgGPc8S28KpQ++l9qQmbxyRM15MIgyq61pe2WF0wQdkEMDo5nH
+         iKWh2WrcoAl6wZ6ERj72OMFr1YD0Wr2wM4HPxT/wzzqFoLQzAgdAB6FKvYj2dxEzINjw
+         N4Cv0xGqzBMYp4G3vzyyY66JoIJEoOCTCZtwaMFmV+MFHuCP+UzKJCq/Tbul625qjjvn
+         xXdzJeyEyRKbXV36HUJtBmgF/6F8lfpicQ9u1cVJMagXEpBHqAxFl7b2omFkpQgnGX81
+         25cJ8stplZONWlWNtfajsyQl4bJ1sDihwNYSpvXfiAHrvgJNNhDbliQZoNeAWgU0DIc+
+         d/oQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=z1iJdJ3ICufViigzY8ArSNJ8k4Y0JN5jmw8hA8KfmFU=;
-        b=gMZ1NgSdEwqW9Rjd9CS/zlwpFiaMSnY1ElbUDUe+MgwBnKjqSVf6nKnWF9dedCVYRT
-         MqFZGrSqK2klDu7s87SRPoOv3mYIs8kK61fNxVNe8D0XP2Ir/1oXqgGYv7WSvbM8l94L
-         K+OIPRHZGFkwdtsQeX0Ob1lYiM+kGdAi3GprCrHcr+3qsbis1JwRGNIcDJBBDqhp3j3i
-         +3TE0LEz1mUuCVN2LuAxZ6ho456+xq4oW/F6Pw81SaZk0UzP5w6w6n/YfGN4JudYnLc3
-         fpiV20r7Fn7kDLIjVnqJz/0gCxZgZMQR41y86+RYHAj91UfJ3NxyNl+WyanctVhVwmL6
-         QwLw==
-X-Gm-Message-State: AHQUAuazoFmkfWUf6uq+qKKmB9HwaYrstroIsHgtgB+5yxqtTo4N0HT5
-        xGJNjQFZefB9eT3NqBK7dEFqwQ==
-X-Google-Smtp-Source: AHgI3Ibyqg3SB+jzXjDULbQ1xxmVIWOPdoCIOX55ghDRePdqF29R1HktJeP2hFm85ktvyjbG1CXwlw==
-X-Received: by 2002:a17:902:31a4:: with SMTP id x33mr3169876plb.198.1550138462471;
-        Thu, 14 Feb 2019 02:01:02 -0800 (PST)
+        bh=IqdSQkcumnBYhLQAnydEDsb1lAsWO+oD/FDDiPGvmEE=;
+        b=jogiXMZIDd4NlxjRluOnt1t450CHrKdyIfKYdJptKBydJmfCC/SoaNBS6LLOPv00xN
+         jL8fxq43YjisMB+GaZzuRcwBkQGliYcOPm0fN6vFZAKOTRjWniFufbrRqB1Mz+4K/CjM
+         UH19dBjBN12V8ISOr3moHDjplo2ZAHP9JnPwlPPVSV1Mf8mFTtSB5tWv/MJS3wAmcbq5
+         2doINnUo8T9rNG3ZBrDVnLzxD0bEpaz7PpJa4FrIykhHSrgH5Xpx4A4RwsQsdMdGqn+n
+         ManykCcI53QEyT81Wk55yUOACXeTuuPMaAdDGu4KRBA0xQ1Vo0ae/82GGKKU89LeeLAT
+         2VPg==
+X-Gm-Message-State: AHQUAuZ/YOcBPqesDoKbNmChoMfHuOZg3RL69nakBQIkqaN34EDcTlGU
+        dg4aoKZqh/4x1x8ljxyv6H0/0w==
+X-Google-Smtp-Source: AHgI3Ib+xTdCQe6JlYsBbZpBuVD1MoJoHbkkyFc1cudFBlwMPakWlfu2ZUCo3JTBKeF8E9jagBZ9Iw==
+X-Received: by 2002:a63:4b60:: with SMTP id k32mr2950896pgl.186.1550138464181;
+        Thu, 14 Feb 2019 02:01:04 -0800 (PST)
 Received: from vader.thefacebook.com ([2620:10d:c090:180::1:5849])
-        by smtp.gmail.com with ESMTPSA id i184sm2686952pfc.41.2019.02.14.02.01.01
+        by smtp.gmail.com with ESMTPSA id i184sm2686952pfc.41.2019.02.14.02.01.02
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 14 Feb 2019 02:01:01 -0800 (PST)
+        Thu, 14 Feb 2019 02:01:03 -0800 (PST)
 From:   Omar Sandoval <osandov@osandov.com>
 To:     linux-fsdevel@vger.kernel.org, Al Viro <viro@zeniv.linux.org.uk>
 Cc:     kernel-team@fb.com, linux-api@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
         linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org
-Subject: [RFC PATCH 3/6] Btrfs: add support for setting btime
-Date:   Thu, 14 Feb 2019 02:00:10 -0800
-Message-Id: <60b83d5151d3c80bf73bb257b971aeb66120d4d5.1550136164.git.osandov@fb.com>
+Subject: [RFC PATCH 4/6] ext4: add support for setting btime
+Date:   Thu, 14 Feb 2019 02:00:11 -0800
+Message-Id: <d78386ac6b970bcca531d1d87ae568bef92252be.1550136164.git.osandov@fb.com>
 X-Mailer: git-send-email 2.20.1
 In-Reply-To: <cover.1550136164.git.osandov@fb.com>
 References: <cover.1550136164.git.osandov@fb.com>
@@ -75,50 +75,78 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Omar Sandoval <osandov@fb.com>
 
-The Btrfs inode format has always included btime (under the name otime),
-so setting it is trivial.
+The ext4 inode format includes btime (under the name crtime) if the
+inode is large enough (256 bytes).
 
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/inode.c | 2 ++
- fs/btrfs/super.c | 4 ++--
- 2 files changed, 4 insertions(+), 2 deletions(-)
+ fs/ext4/inode.c | 15 +++++++++++++--
+ fs/ext4/super.c |  2 +-
+ 2 files changed, 14 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 5c349667c761..49ad777d8057 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5153,6 +5153,8 @@ static int btrfs_setattr(struct dentry *dentry, struct iattr *attr)
+diff --git a/fs/ext4/inode.c b/fs/ext4/inode.c
+index 34d7e0703cc6..7f4f83ef539d 100644
+--- a/fs/ext4/inode.c
++++ b/fs/ext4/inode.c
+@@ -5489,6 +5489,13 @@ static void ext4_wait_for_tail_page_commit(struct inode *inode)
+ 	}
+ }
  
- 	if (attr->ia_valid) {
++static bool ext4_inode_has_crtime(struct inode *inode)
++{
++	struct ext4_inode *raw_inode;
++
++	return EXT4_FITS_IN_INODE(raw_inode, EXT4_I(inode), i_crtime);
++}
++
+ /*
+  * ext4_setattr()
+  *
+@@ -5520,6 +5527,9 @@ int ext4_setattr(struct dentry *dentry, struct iattr *attr)
+ 	int orphan = 0;
+ 	const unsigned int ia_valid = attr->ia_valid;
+ 
++	if ((ia_valid & ATTR_BTIME) && !ext4_inode_has_crtime(inode))
++		return -EOPNOTSUPP;
++
+ 	if (unlikely(ext4_forced_shutdown(EXT4_SB(inode->i_sb))))
+ 		return -EIO;
+ 
+@@ -5671,6 +5681,8 @@ int ext4_setattr(struct dentry *dentry, struct iattr *attr)
+ 
+ 	if (!error) {
  		setattr_copy(inode, attr);
-+		if (attr->ia_valid & ATTR_BTIME)
-+			BTRFS_I(inode)->i_otime = attr->ia_btime;
- 		inode_inc_iversion(inode);
- 		err = btrfs_dirty_inode(inode);
++		if (ia_valid & ATTR_BTIME)
++			EXT4_I(inode)->i_crtime = attr->ia_btime;
+ 		mark_inode_dirty(inode);
+ 	}
  
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 0a3f122dd61f..2af368cad2aa 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -2140,7 +2140,7 @@ static struct file_system_type btrfs_fs_type = {
- 	.name		= "btrfs",
- 	.mount		= btrfs_mount,
- 	.kill_sb	= btrfs_kill_super,
--	.fs_flags	= FS_REQUIRES_DEV | FS_BINARY_MOUNTDATA,
-+	.fs_flags	= FS_REQUIRES_DEV | FS_BINARY_MOUNTDATA | FS_HAS_BTIME,
+@@ -5695,11 +5707,10 @@ int ext4_getattr(const struct path *path, struct kstat *stat,
+ 		 u32 request_mask, unsigned int query_flags)
+ {
+ 	struct inode *inode = d_inode(path->dentry);
+-	struct ext4_inode *raw_inode;
+ 	struct ext4_inode_info *ei = EXT4_I(inode);
+ 	unsigned int flags;
+ 
+-	if (EXT4_FITS_IN_INODE(raw_inode, ei, i_crtime)) {
++	if (ext4_inode_has_crtime(inode)) {
+ 		stat->result_mask |= STATX_BTIME;
+ 		stat->btime.tv_sec = ei->i_crtime.tv_sec;
+ 		stat->btime.tv_nsec = ei->i_crtime.tv_nsec;
+diff --git a/fs/ext4/super.c b/fs/ext4/super.c
+index fb12d3c17c1b..cdd3975de130 100644
+--- a/fs/ext4/super.c
++++ b/fs/ext4/super.c
+@@ -5976,7 +5976,7 @@ static struct file_system_type ext4_fs_type = {
+ 	.name		= "ext4",
+ 	.mount		= ext4_mount,
+ 	.kill_sb	= kill_block_super,
+-	.fs_flags	= FS_REQUIRES_DEV,
++	.fs_flags	= FS_REQUIRES_DEV | FS_HAS_BTIME,
  };
+ MODULE_ALIAS_FS("ext4");
  
- static struct file_system_type btrfs_root_fs_type = {
-@@ -2148,7 +2148,7 @@ static struct file_system_type btrfs_root_fs_type = {
- 	.name		= "btrfs",
- 	.mount		= btrfs_mount_root,
- 	.kill_sb	= btrfs_kill_super,
--	.fs_flags	= FS_REQUIRES_DEV | FS_BINARY_MOUNTDATA,
-+	.fs_flags	= FS_REQUIRES_DEV | FS_BINARY_MOUNTDATA | FS_HAS_BTIME,
- };
- 
- MODULE_ALIAS_FS("btrfs");
 -- 
 2.20.1
 

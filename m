@@ -4,65 +4,65 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
+	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 616F1C4360F
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 10:01:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 33DEAC43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 10:01:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2FD19222A1
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 10:01:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0394B222A1
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 10:01:21 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="dIvXE9h0"
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="ifdVfFk0"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2438177AbfBNKBQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 14 Feb 2019 05:01:16 -0500
-Received: from mail-pf1-f194.google.com ([209.85.210.194]:43719 "EHLO
-        mail-pf1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2438161AbfBNKBN (ORCPT
+        id S2438182AbfBNKBU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 14 Feb 2019 05:01:20 -0500
+Received: from mail-pg1-f194.google.com ([209.85.215.194]:43530 "EHLO
+        mail-pg1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2438159AbfBNKBK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Feb 2019 05:01:13 -0500
-Received: by mail-pf1-f194.google.com with SMTP id q17so2837624pfh.10
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Feb 2019 02:01:12 -0800 (PST)
+        Thu, 14 Feb 2019 05:01:10 -0500
+Received: by mail-pg1-f194.google.com with SMTP id v28so2804044pgk.10
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Feb 2019 02:01:09 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=/zlJMQVShzJL9k1uGmTZzqfsPZnaTknAh/i9pkCAsy4=;
-        b=dIvXE9h0N0Wd3Td0GE339/VChq1N0CIZ1uionCe/SPLS1PbzR9f6SK5wdW6s6X7VZz
-         25gaDoZM4cK2531I1SsAxO9Yq7hNvXPEbQCC8zHufjfEcWTE8hVvCbWKFGa/tWTOJzgD
-         NKIDgmGYeAuvMiTJYnJgd2d2zUoNd9gQAWoj/0Qss21ZPbgJwMfUI87n/91CtYaLVPBV
-         rhIwEzXUs8rdVQos+PZVhf2eFw8fU60YlornbozjACLJzSOGD0zVOHKdBcxFj+c9IDtf
-         ufG55FGueD3JfbVpi2hNOF16JU6dZLzkWAfgNFN3vRTcG9DQhZRFApFTaNq/woZsnrXL
-         3SWQ==
+        bh=V1G1bYaq+Km34RtW+askrdx+tkF2tFwueJG4dIbkPeU=;
+        b=ifdVfFk0kW/IIFB8WwdV72Z5zOa+dcqSXcayZEKzpjOldBkQtPG1dDGADxg7jRHanq
+         lqtuH6c3Ts3p6Pw00eubcFHxMZ1LVcx2dtxQWTJ3PEPQ0fsnsvn7hVeMxPjiTHpXhjI/
+         lHRli2E/l7df8XeZytTiC73YTJKLizSkB+RLKQlM6lXI8jtqAt9g/jZb/zrAMGebK58K
+         ulj6ICONDTdHq4S5eLU/nw7h1wpfwpjqmTlbjSzuRFyEtFc50jWRdr+9u7wUiZu6Gb+L
+         CvgUt/mpWsuK8cjMmOfCD6R4BAAcWMEpNktr7ZtmajNLsKcyni7oZep2kZB4x3v7Um/r
+         OwaA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=/zlJMQVShzJL9k1uGmTZzqfsPZnaTknAh/i9pkCAsy4=;
-        b=ktpd04g3Y1InkatlVNiyUaML/XsJzWvWZyImvdNTUSucAqOe9nDGIq2DHjvQDuO/eD
-         JluDQMchPZ4U8kqypSfSHHbOSHmW82ZehizCPI32Qw8kpPexJwFU8Ts1CikVwim0ngel
-         0n3CzATMdsxhULGchHE8tOKF6zzPjjU1LqcbY8k1Z0Fv6/xR9Z5vATcaqFxmTZ6DMqWE
-         f8vm5Il0r8mL7e/HIRM+4bs/k5ERgHQakmG9o83ExN0Cznk602wchcGGAof3eByK02ku
-         YO0nUBiK/zrPdk/+YmenDOD4mYGvfZjJDy2Bq8g0/OYBHbu28EAjfZwjOudjszSFVG0a
-         BXBA==
-X-Gm-Message-State: AHQUAuZuj3kVZkBFe2tTMMOz3x36BqJgZS+RPeo1cLAESIZp+bQ2AkEy
-        cGS0ogYW9WlKh1oazcjHLvMS7g==
-X-Google-Smtp-Source: AHgI3IaoJoQ7v0RWU/FxKUBpUH++Bh+NK6gVEVHdFAhRL/3vNVOxPJkKlHtZWDXsogFQG78EfoG2CQ==
-X-Received: by 2002:a65:46cf:: with SMTP id n15mr2975477pgr.187.1550138471684;
-        Thu, 14 Feb 2019 02:01:11 -0800 (PST)
+        bh=V1G1bYaq+Km34RtW+askrdx+tkF2tFwueJG4dIbkPeU=;
+        b=knmunug9L2fcie8obOIavlq4+OoJihfJzE1of2f1/zfLhZmXgkx98MuFQl27GkXoDZ
+         2g/kcb20LuB67l2lEpILT1Yv1kj67xIT3+i041fOJUAfCzkmplKW0sk53c3N8byQYBvX
+         WBie/gmNDlU5pSMhTHr6o7vvqUcLCceUngqHpO3XTVG0IH2prbxQ6VI2crId0jGXG/Em
+         tsYIiXC1lKlkVjereXycys/Gu9UblvFERElwAkdnHMso8WOrzO7F3T4X3Ne49On57oGV
+         bgteFnvQ3VhhYTujrPaIvGXAS0/jxKtJ9O8plHxAD3Ngk97bzeKH1Q9ReUQwjeW0evXs
+         Ihtg==
+X-Gm-Message-State: AHQUAub7EO03yvtLPpgq/C8x2KAhXCosJ4uosEWmW0O7TG4BCGz4ytfu
+        nr6AQTm0exD9PKxHuzFNWuU/GQ==
+X-Google-Smtp-Source: AHgI3IZIAJ2VnYK3yffJToNRbYzNLIRAyaxiNDlheljliI94feBaBjQoFhYs3ER9wmq+6PXudHZ08g==
+X-Received: by 2002:a65:4101:: with SMTP id w1mr2941529pgp.257.1550138469062;
+        Thu, 14 Feb 2019 02:01:09 -0800 (PST)
 Received: from vader.thefacebook.com ([2620:10d:c090:180::1:5849])
-        by smtp.gmail.com with ESMTPSA id i184sm2686952pfc.41.2019.02.14.02.01.10
+        by smtp.gmail.com with ESMTPSA id i184sm2686952pfc.41.2019.02.14.02.01.07
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 14 Feb 2019 02:01:10 -0800 (PST)
+        Thu, 14 Feb 2019 02:01:08 -0800 (PST)
 From:   Omar Sandoval <osandov@osandov.com>
 To:     linux-fsdevel@vger.kernel.org, Al Viro <viro@zeniv.linux.org.uk>
 Cc:     kernel-team@fb.com, linux-api@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
         linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org
-Subject: [PATCH] xfs_io: add AT_UTIME_BTIME support
-Date:   Thu, 14 Feb 2019 02:00:16 -0800
-Message-Id: <347edcff487b59d56844f51eb74a42220fac64c9.1550138137.git.osandov@fb.com>
+Subject: [PATCH] generic: add a test for AT_UTIME_BTIME
+Date:   Thu, 14 Feb 2019 02:00:14 -0800
+Message-Id: <c0d9cb0b181db011a3068fb96bb85e732f508b73.1550138186.git.osandov@fb.com>
 X-Mailer: git-send-email 2.20.1
 In-Reply-To: <cover.1550136164.git.osandov@fb.com>
 References: <cover.1550136164.git.osandov@fb.com>
@@ -75,122 +75,143 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Omar Sandoval <osandov@fb.com>
 
-In order to test updating btime, make the utimes command optionally take
-the btime timestamp.
+Test that on filesystems supporting btime, the timestamp is updated as
+expected.
 
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- io/utimes.c       | 41 +++++++++++++++++++++++++++++++----------
- man/man8/xfs_io.8 |  5 +++--
- 2 files changed, 34 insertions(+), 12 deletions(-)
+ common/rc             | 14 ++++++++++
+ tests/generic/526     | 64 +++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/526.out | 14 ++++++++++
+ tests/generic/group   |  1 +
+ 4 files changed, 93 insertions(+)
+ create mode 100755 tests/generic/526
+ create mode 100644 tests/generic/526.out
 
-diff --git a/io/utimes.c b/io/utimes.c
-index 40117472..72ce68f3 100644
---- a/io/utimes.c
-+++ b/io/utimes.c
-@@ -4,11 +4,18 @@
-  * All Rights Reserved.
-  */
- 
-+#include <fcntl.h>
-+#include <sys/syscall.h>
-+
- #include "command.h"
- #include "input.h"
- #include "init.h"
- #include "io.h"
- 
-+#ifndef AT_UTIME_BTIME
-+#define AT_UTIME_BTIME 0x8000
-+#endif
-+
- static cmdinfo_t utimes_cmd;
- 
- static void
-@@ -16,9 +23,10 @@ utimes_help(void)
- {
- 	printf(_(
- "\n"
--" Update file atime and mtime of the current file with nansecond precision.\n"
-+" Update file atime, mtime, and optionally btime of the current file with\n"
-+" nansecond precision.\n"
- "\n"
--" Usage: utimes atime_sec atime_nsec mtime_sec mtime_nsec.\n"
-+" Usage: utimes atime_sec atime_nsec mtime_sec mtime_nsec [btime_sec btime_nsec]\n"
- " *_sec: Seconds elapsed since 1970-01-01 00:00:00 UTC.\n"
- " *_nsec: Nanoseconds since the corresponding *_sec.\n"
- "\n"));
-@@ -29,9 +37,13 @@ utimes_f(
- 	int		argc,
- 	char		**argv)
- {
--	struct timespec t[2];
-+	struct timespec t[3];
-+	int flags = 0;
- 	int result;
- 
-+	if (argc == 6)
-+		return command_usage(&utimes_cmd);
-+
- 	/* Get the timestamps */
- 	result = timespec_from_string(argv[1], argv[2], &t[0]);
- 	if (result) {
-@@ -43,13 +55,22 @@ utimes_f(
- 		fprintf(stderr, "Bad value for mtime\n");
- 		return 0;
- 	}
--
--	/* Call futimens to update time. */
--	if (futimens(file->fd, t)) {
--		perror("futimens");
--		return 0;
-+	if (argc == 7) {
-+		result = timespec_from_string(argv[5], argv[6], &t[2]);
-+		if (result) {
-+			fprintf(stderr, "Bad value for btime\n");
-+			return 0;
-+		}
-+		flags |= AT_UTIME_BTIME;
- 	}
- 
-+	/*
-+	 * Use syscall() because the glibc wrapper for utimensat() disallows a
-+	 * NULL pathname.
-+	 */
-+	if (syscall(SYS_utimensat, file->fd, NULL, t, flags))
-+		perror("utimensat");
-+
- 	return 0;
+diff --git a/common/rc b/common/rc
+index b8ed1776..d2f43a21 100644
+--- a/common/rc
++++ b/common/rc
+@@ -3843,6 +3843,20 @@ _require_btime()
+ 	rm -f $TEST_DIR/test_creation_time
  }
  
-@@ -59,9 +80,9 @@ utimes_init(void)
- 	utimes_cmd.name = "utimes";
- 	utimes_cmd.cfunc = utimes_f;
- 	utimes_cmd.argmin = 4;
--	utimes_cmd.argmax = 4;
-+	utimes_cmd.argmax = 6;
- 	utimes_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK;
--	utimes_cmd.args = _("atime_sec atime_nsec mtime_sec mtime_nsec");
-+	utimes_cmd.args = _("atime_sec atime_nsec mtime_sec mtime_nsec [btime_sec btime_nsec]");
- 	utimes_cmd.oneline = _("Update file times of the current file");
- 	utimes_cmd.help = utimes_help;
- 
-diff --git a/man/man8/xfs_io.8 b/man/man8/xfs_io.8
-index fbf50df5..dbf8098b 100644
---- a/man/man8/xfs_io.8
-+++ b/man/man8/xfs_io.8
-@@ -827,8 +827,9 @@ verbose output will be printed.
- .RE
- .PD
- .TP
--.BI utimes " atime_sec atime_nsec mtime_sec mtime_nsec"
--The utimes command changes the atime and mtime of the current file.
-+.BI utimes " atime_sec atime_nsec mtime_sec mtime_nsec [btime_sec btime_nsec]"
-+The utimes command changes the atime, mtime, and optionally btime of the
-+current file.
- sec uses UNIX timestamp notation and is the seconds elapsed since
- 1970-01-01 00:00:00 UTC.
- nsec is the nanoseconds since the sec. This value needs to be in
++_require_utime_btime()
++{
++	_require_btime
++	_require_xfs_io_command utimes
++	testio=`$XFS_IO_PROG -f -c "utimes 0 0 0 0 0 0" "$TEST_DIR/$$.xfs_io" 2>&1`
++	echo $testio | grep -q "expected 4 arguments" && \
++		_notrun "xfs_io utimes btime support is missing"
++	echo $testio | grep -q "Operation not supported" && \
++		_notrun "updating inode creation time not supported by this filesystem"
++	echo $testio | grep -q "Invalid" && \
++		_notrun "updating inode creation time not supported by this kernel"
++	rm -f $testfile > /dev/null 2>&1
++}
++
+ _require_scratch_btime()
+ {
+ 	_require_scratch
+diff --git a/tests/generic/526 b/tests/generic/526
+new file mode 100755
+index 00000000..c2e47a27
+--- /dev/null
++++ b/tests/generic/526
+@@ -0,0 +1,64 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (c) 2019 Omar Sandoval.  All Rights Reserved.
++#
++# FS QA Test 526
++#
++# Test basic AT_UTIME_BTIME functionality.
++#
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++	rm -f "$TEST_DIR/$$"
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++_supported_fs generic
++_supported_os Linux
++_require_test
++_require_utime_btime
++
++SEC=683153828
++UTIME_NOW=$(((1 << 30) - 1))
++UTIME_OMIT=$(((1 << 30) - 2))
++
++touch "$TEST_DIR/$$"
++
++echo "Set btime"
++$XFS_IO_PROG -c "utimes 0 $UTIME_OMIT 0 $UTIME_OMIT $SEC 0" "$TEST_DIR/$$"
++$XFS_IO_PROG -c 'statx -r' "$TEST_DIR/$$" | grep btime
++
++echo "Set atime and mtime"
++$XFS_IO_PROG -c "utimes 0 $UTIME_NOW 0 $UTIME_NOW" "$TEST_DIR/$$"
++$XFS_IO_PROG -c 'statx -r' "$TEST_DIR/$$" | grep btime
++
++echo "Omit btime"
++$XFS_IO_PROG -c "utimes 0 $UTIME_NOW 0 $UTIME_NOW 0 $UTIME_OMIT" "$TEST_DIR/$$"
++$XFS_IO_PROG -c 'statx -r' "$TEST_DIR/$$" | grep btime
++
++echo "Cycle mount"
++_test_cycle_mount
++$XFS_IO_PROG -c 'statx -r' "$TEST_DIR/$$" | grep btime
++
++echo "Set btime to now"
++$XFS_IO_PROG -c "utimes 0 $UTIME_OMIT 0 $UTIME_OMIT 0 $UTIME_NOW" "$TEST_DIR/$$"
++# The timestamp changed, so this shouldn't output anything.
++$XFS_IO_PROG -c 'statx -r' "$TEST_DIR/$$" | grep -w "$SEC"
++
++status=0
++exit
+diff --git a/tests/generic/526.out b/tests/generic/526.out
+new file mode 100644
+index 00000000..f9ec18e9
+--- /dev/null
++++ b/tests/generic/526.out
+@@ -0,0 +1,14 @@
++QA output created by 526
++Set btime
++stat.btime.tv_sec = 683153828
++stat.btime.tv_nsec = 0
++Set atime and mtime
++stat.btime.tv_sec = 683153828
++stat.btime.tv_nsec = 0
++Omit btime
++stat.btime.tv_sec = 683153828
++stat.btime.tv_nsec = 0
++Cycle mount
++stat.btime.tv_sec = 683153828
++stat.btime.tv_nsec = 0
++Set btime to now
+diff --git a/tests/generic/group b/tests/generic/group
+index cfd003d3..2e0203fc 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -528,3 +528,4 @@
+ 523 auto quick attr
+ 524 auto quick
+ 525 auto quick rw
++526 auto quick
 -- 
 2.20.1
 

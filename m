@@ -7,62 +7,62 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 857CEC43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 10:01:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B0E7BC43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 10:01:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 562C6222A1
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 10:01:33 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7BB47222A1
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 10:01:35 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="usaAmZed"
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="IC+Wyo0I"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2438151AbfBNKBc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 14 Feb 2019 05:01:32 -0500
-Received: from mail-pg1-f193.google.com ([209.85.215.193]:37002 "EHLO
-        mail-pg1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2438134AbfBNKBF (ORCPT
+        id S2438130AbfBNKBD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 14 Feb 2019 05:01:03 -0500
+Received: from mail-pf1-f196.google.com ([209.85.210.196]:45759 "EHLO
+        mail-pf1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2437890AbfBNKBC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Feb 2019 05:01:05 -0500
-Received: by mail-pg1-f193.google.com with SMTP id q206so2819564pgq.4
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Feb 2019 02:01:04 -0800 (PST)
+        Thu, 14 Feb 2019 05:01:02 -0500
+Received: by mail-pf1-f196.google.com with SMTP id j3so2832876pfi.12
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Feb 2019 02:01:01 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=IqdSQkcumnBYhLQAnydEDsb1lAsWO+oD/FDDiPGvmEE=;
-        b=usaAmZedAV+G4MMMkgGPc8S28KpQ++l9qQmbxyRM15MIgyq61pe2WF0wQdkEMDo5nH
-         iKWh2WrcoAl6wZ6ERj72OMFr1YD0Wr2wM4HPxT/wzzqFoLQzAgdAB6FKvYj2dxEzINjw
-         N4Cv0xGqzBMYp4G3vzyyY66JoIJEoOCTCZtwaMFmV+MFHuCP+UzKJCq/Tbul625qjjvn
-         xXdzJeyEyRKbXV36HUJtBmgF/6F8lfpicQ9u1cVJMagXEpBHqAxFl7b2omFkpQgnGX81
-         25cJ8stplZONWlWNtfajsyQl4bJ1sDihwNYSpvXfiAHrvgJNNhDbliQZoNeAWgU0DIc+
-         d/oQ==
+        bh=TLQAdFNP+15JxlBI58SJ2nT9uYeBUgqzimf4OUiFWJc=;
+        b=IC+Wyo0IblsVFiSxEyjsJ8rnNo4ZvFfbYe60h5J4MsnrTKmn8TyLuRtQ1Z6Zmk3yFI
+         gDz8YNGyAeIFrwstdiGIgatkfHW2AtUZmiTLOGV2q1w0VKJtY/gRJV52e1m+udXWip14
+         vWOSbmdzrkLF6EIpA1ydbJesfE14v7+vsr8KYdMPYrf8lYB0xvW6vkmXi7TSeIkfiLbk
+         0775oHCg06HBHFqHWSN1RW8gr1ORZ/mCSAVcYy0mWBFlVDpUUTCsGG42Rw7c0eC32YjI
+         65RA51epvsDCsYUs0entnyQCn6es1hjZ/KnnR8kQR1VFRU/WnYs3k95VuN9a05T1GEJm
+         mVpg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=IqdSQkcumnBYhLQAnydEDsb1lAsWO+oD/FDDiPGvmEE=;
-        b=jogiXMZIDd4NlxjRluOnt1t450CHrKdyIfKYdJptKBydJmfCC/SoaNBS6LLOPv00xN
-         jL8fxq43YjisMB+GaZzuRcwBkQGliYcOPm0fN6vFZAKOTRjWniFufbrRqB1Mz+4K/CjM
-         UH19dBjBN12V8ISOr3moHDjplo2ZAHP9JnPwlPPVSV1Mf8mFTtSB5tWv/MJS3wAmcbq5
-         2doINnUo8T9rNG3ZBrDVnLzxD0bEpaz7PpJa4FrIykhHSrgH5Xpx4A4RwsQsdMdGqn+n
-         ManykCcI53QEyT81Wk55yUOACXeTuuPMaAdDGu4KRBA0xQ1Vo0ae/82GGKKU89LeeLAT
-         2VPg==
-X-Gm-Message-State: AHQUAuZ/YOcBPqesDoKbNmChoMfHuOZg3RL69nakBQIkqaN34EDcTlGU
-        dg4aoKZqh/4x1x8ljxyv6H0/0w==
-X-Google-Smtp-Source: AHgI3Ib+xTdCQe6JlYsBbZpBuVD1MoJoHbkkyFc1cudFBlwMPakWlfu2ZUCo3JTBKeF8E9jagBZ9Iw==
-X-Received: by 2002:a63:4b60:: with SMTP id k32mr2950896pgl.186.1550138464181;
-        Thu, 14 Feb 2019 02:01:04 -0800 (PST)
+        bh=TLQAdFNP+15JxlBI58SJ2nT9uYeBUgqzimf4OUiFWJc=;
+        b=tjDFoQnLdH7Dq5rrJ98gMCAanxXjggZ6lEhGL867tsGmQj67VxwLhPQZlrC7MxWY6U
+         yQGdhhIpWuTBJH1YgmWveRl61bkIwkgGKxg58pnBFJb4jSrdcXJvlnvog6Hn9Ne38ruT
+         Zn5YpaBZq1vAS2faP+KRaq61NRbBF4dlY0R0MC9qAlj5FFbyAYajxqEidQj/mI3aTtju
+         cAtGg64xPOC2kuuW9HjBx7GEtlH2f3sgXJ/M8Ot6Vax8vPFjrMOPtkQYnnWFmXfT6af2
+         uli2xZSVVF6m9C0rAA1AYhGVgHVu5YMYJdVdpTlGZbTSHOC58dS8sMFU8PKVQx35Rt3X
+         ofQw==
+X-Gm-Message-State: AHQUAuZSZwAD5xpdLHwNeQxPadWbQuira98yeyp3AV+gDtancR+7QrM8
+        qedotwOG0OWnyjvkNvFI3CL8Rw==
+X-Google-Smtp-Source: AHgI3IaIZF8cQSfl1R7Zn9umrjvXrfwkmwtV4dKUogKICaSr3GY9IdmWyNzAWtPOpu9FRk7Pxl9Bog==
+X-Received: by 2002:a63:4e1d:: with SMTP id c29mr2961796pgb.433.1550138461256;
+        Thu, 14 Feb 2019 02:01:01 -0800 (PST)
 Received: from vader.thefacebook.com ([2620:10d:c090:180::1:5849])
-        by smtp.gmail.com with ESMTPSA id i184sm2686952pfc.41.2019.02.14.02.01.02
+        by smtp.gmail.com with ESMTPSA id i184sm2686952pfc.41.2019.02.14.02.01.00
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 14 Feb 2019 02:01:03 -0800 (PST)
+        Thu, 14 Feb 2019 02:01:00 -0800 (PST)
 From:   Omar Sandoval <osandov@osandov.com>
 To:     linux-fsdevel@vger.kernel.org, Al Viro <viro@zeniv.linux.org.uk>
 Cc:     kernel-team@fb.com, linux-api@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
         linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org
-Subject: [RFC PATCH 4/6] ext4: add support for setting btime
-Date:   Thu, 14 Feb 2019 02:00:11 -0800
-Message-Id: <d78386ac6b970bcca531d1d87ae568bef92252be.1550136164.git.osandov@fb.com>
+Subject: [RFC PATCH 2/6] fs: add AT_UTIME_BTIME for utimensat()
+Date:   Thu, 14 Feb 2019 02:00:09 -0800
+Message-Id: <383aea1b93edf69d4f96a898ef4878881867d33e.1550136164.git.osandov@fb.com>
 X-Mailer: git-send-email 2.20.1
 In-Reply-To: <cover.1550136164.git.osandov@fb.com>
 References: <cover.1550136164.git.osandov@fb.com>
@@ -75,78 +75,183 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Omar Sandoval <osandov@fb.com>
 
-The ext4 inode format includes btime (under the name crtime) if the
-inode is large enough (256 bytes).
+Now that we have a btime iattr, use it to allow updating btime from
+utimensat(). We do so by adding a new AT_UTIME_BTIME flag. Iff this flag
+is given, the btime is set to times[2] (unless times is NULL, in which
+case the current time is used).
 
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/ext4/inode.c | 15 +++++++++++++--
- fs/ext4/super.c |  2 +-
- 2 files changed, 14 insertions(+), 3 deletions(-)
+ fs/utimes.c                | 86 +++++++++++++++++++++++---------------
+ include/uapi/linux/fcntl.h |  2 +
+ 2 files changed, 55 insertions(+), 33 deletions(-)
 
-diff --git a/fs/ext4/inode.c b/fs/ext4/inode.c
-index 34d7e0703cc6..7f4f83ef539d 100644
---- a/fs/ext4/inode.c
-+++ b/fs/ext4/inode.c
-@@ -5489,6 +5489,13 @@ static void ext4_wait_for_tail_page_commit(struct inode *inode)
- 	}
+diff --git a/fs/utimes.c b/fs/utimes.c
+index bdcf2daf39c1..cb9fe77e5f91 100644
+--- a/fs/utimes.c
++++ b/fs/utimes.c
+@@ -16,7 +16,20 @@ static bool nsec_valid(long nsec)
+ 	return nsec >= 0 && nsec <= 999999999;
  }
  
-+static bool ext4_inode_has_crtime(struct inode *inode)
+-static int utimes_common(const struct path *path, struct timespec64 *times)
++static void init_time_attr(struct iattr *newattrs, struct timespec64 *time_attr,
++			   struct timespec64 time, unsigned int attr,
++			   unsigned int attr_set)
 +{
-+	struct ext4_inode *raw_inode;
-+
-+	return EXT4_FITS_IN_INODE(raw_inode, EXT4_I(inode), i_crtime);
++	if (time.tv_nsec == UTIME_OMIT) {
++		newattrs->ia_valid &= ~attr;
++	} else {
++		*time_attr = time;
++		newattrs->ia_valid |= attr_set;
++	}
 +}
 +
- /*
-  * ext4_setattr()
-  *
-@@ -5520,6 +5527,9 @@ int ext4_setattr(struct dentry *dentry, struct iattr *attr)
- 	int orphan = 0;
- 	const unsigned int ia_valid = attr->ia_valid;
++static int utimes_common(const struct path *path, struct timespec64 *times,
++			 bool btime)
+ {
+ 	int error;
+ 	struct iattr newattrs;
+@@ -28,25 +41,21 @@ static int utimes_common(const struct path *path, struct timespec64 *times)
+ 		goto out;
  
-+	if ((ia_valid & ATTR_BTIME) && !ext4_inode_has_crtime(inode))
-+		return -EOPNOTSUPP;
-+
- 	if (unlikely(ext4_forced_shutdown(EXT4_SB(inode->i_sb))))
- 		return -EIO;
+ 	if (times && times[0].tv_nsec == UTIME_NOW &&
+-		     times[1].tv_nsec == UTIME_NOW)
++	    times[1].tv_nsec == UTIME_NOW &&
++	    (!btime || times[2].tv_nsec == UTIME_NOW))
+ 		times = NULL;
  
-@@ -5671,6 +5681,8 @@ int ext4_setattr(struct dentry *dentry, struct iattr *attr)
+ 	newattrs.ia_valid = ATTR_CTIME | ATTR_MTIME | ATTR_ATIME;
++	if (btime)
++		newattrs.ia_valid |= ATTR_BTIME;
+ 	if (times) {
+-		if (times[0].tv_nsec == UTIME_OMIT)
+-			newattrs.ia_valid &= ~ATTR_ATIME;
+-		else if (times[0].tv_nsec != UTIME_NOW) {
+-			newattrs.ia_atime.tv_sec = times[0].tv_sec;
+-			newattrs.ia_atime.tv_nsec = times[0].tv_nsec;
+-			newattrs.ia_valid |= ATTR_ATIME_SET;
+-		}
+-
+-		if (times[1].tv_nsec == UTIME_OMIT)
+-			newattrs.ia_valid &= ~ATTR_MTIME;
+-		else if (times[1].tv_nsec != UTIME_NOW) {
+-			newattrs.ia_mtime.tv_sec = times[1].tv_sec;
+-			newattrs.ia_mtime.tv_nsec = times[1].tv_nsec;
+-			newattrs.ia_valid |= ATTR_MTIME_SET;
++		init_time_attr(&newattrs, &newattrs.ia_atime, times[0],
++			       ATTR_ATIME, ATTR_ATIME_SET);
++		init_time_attr(&newattrs, &newattrs.ia_mtime, times[1],
++			       ATTR_MTIME, ATTR_MTIME_SET);
++		if (btime) {
++			init_time_attr(&newattrs, &newattrs.ia_btime, times[2],
++				       ATTR_BTIME, ATTR_BTIME_SET);
+ 		}
+ 		/*
+ 		 * Tell setattr_prepare(), that this is an explicit time
+@@ -90,14 +99,16 @@ static int utimes_common(const struct path *path, struct timespec64 *times)
+ long do_utimes(int dfd, const char __user *filename, struct timespec64 *times,
+ 	       int flags)
+ {
++	bool btime = flags & AT_UTIME_BTIME;
+ 	int error = -EINVAL;
  
- 	if (!error) {
- 		setattr_copy(inode, attr);
-+		if (ia_valid & ATTR_BTIME)
-+			EXT4_I(inode)->i_crtime = attr->ia_btime;
- 		mark_inode_dirty(inode);
+ 	if (times && (!nsec_valid(times[0].tv_nsec) ||
+-		      !nsec_valid(times[1].tv_nsec))) {
++		      !nsec_valid(times[1].tv_nsec) ||
++		      (btime && !nsec_valid(times[2].tv_nsec)))) {
+ 		goto out;
  	}
  
-@@ -5695,11 +5707,10 @@ int ext4_getattr(const struct path *path, struct kstat *stat,
- 		 u32 request_mask, unsigned int query_flags)
+-	if (flags & ~AT_SYMLINK_NOFOLLOW)
++	if (flags & ~(AT_SYMLINK_NOFOLLOW | AT_UTIME_BTIME))
+ 		goto out;
+ 
+ 	if (filename == NULL && dfd != AT_FDCWD) {
+@@ -111,7 +122,7 @@ long do_utimes(int dfd, const char __user *filename, struct timespec64 *times,
+ 		if (!f.file)
+ 			goto out;
+ 
+-		error = utimes_common(&f.file->f_path, times);
++		error = utimes_common(&f.file->f_path, times, btime);
+ 		fdput(f);
+ 	} else {
+ 		struct path path;
+@@ -124,7 +135,7 @@ long do_utimes(int dfd, const char __user *filename, struct timespec64 *times,
+ 		if (error)
+ 			goto out;
+ 
+-		error = utimes_common(&path, times);
++		error = utimes_common(&path, times, btime);
+ 		path_put(&path);
+ 		if (retry_estale(error, lookup_flags)) {
+ 			lookup_flags |= LOOKUP_REVAL;
+@@ -139,16 +150,20 @@ long do_utimes(int dfd, const char __user *filename, struct timespec64 *times,
+ SYSCALL_DEFINE4(utimensat, int, dfd, const char __user *, filename,
+ 		struct __kernel_timespec __user *, utimes, int, flags)
  {
- 	struct inode *inode = d_inode(path->dentry);
--	struct ext4_inode *raw_inode;
- 	struct ext4_inode_info *ei = EXT4_I(inode);
- 	unsigned int flags;
+-	struct timespec64 tstimes[2];
++	struct timespec64 tstimes[3];
  
--	if (EXT4_FITS_IN_INODE(raw_inode, ei, i_crtime)) {
-+	if (ext4_inode_has_crtime(inode)) {
- 		stat->result_mask |= STATX_BTIME;
- 		stat->btime.tv_sec = ei->i_crtime.tv_sec;
- 		stat->btime.tv_nsec = ei->i_crtime.tv_nsec;
-diff --git a/fs/ext4/super.c b/fs/ext4/super.c
-index fb12d3c17c1b..cdd3975de130 100644
---- a/fs/ext4/super.c
-+++ b/fs/ext4/super.c
-@@ -5976,7 +5976,7 @@ static struct file_system_type ext4_fs_type = {
- 	.name		= "ext4",
- 	.mount		= ext4_mount,
- 	.kill_sb	= kill_block_super,
--	.fs_flags	= FS_REQUIRES_DEV,
-+	.fs_flags	= FS_REQUIRES_DEV | FS_HAS_BTIME,
- };
- MODULE_ALIAS_FS("ext4");
+ 	if (utimes) {
+-		if ((get_timespec64(&tstimes[0], &utimes[0]) ||
+-			get_timespec64(&tstimes[1], &utimes[1])))
+-			return -EFAULT;
+-
++		int i, n = (flags & AT_UTIME_BTIME) ? 3 : 2;
++		bool all_omit = true;
++
++		for (i = 0; i < n; i++) {
++			if (get_timespec64(&tstimes[i], &utimes[i]))
++				return -EFAULT;
++			if (tstimes[i].tv_nsec != UTIME_OMIT)
++				all_omit = false;
++		}
+ 		/* Nothing to do, we must not even check the path.  */
+-		if (tstimes[0].tv_nsec == UTIME_OMIT &&
+-		    tstimes[1].tv_nsec == UTIME_OMIT)
++		if (all_omit)
+ 			return 0;
+ 	}
  
+@@ -242,14 +257,19 @@ COMPAT_SYSCALL_DEFINE2(utime, const char __user *, filename,
+ 
+ COMPAT_SYSCALL_DEFINE4(utimensat, unsigned int, dfd, const char __user *, filename, struct old_timespec32 __user *, t, int, flags)
+ {
+-	struct timespec64 tv[2];
++	struct timespec64 tv[3];
+ 
+ 	if  (t) {
+-		if (get_old_timespec32(&tv[0], &t[0]) ||
+-		    get_old_timespec32(&tv[1], &t[1]))
+-			return -EFAULT;
+-
+-		if (tv[0].tv_nsec == UTIME_OMIT && tv[1].tv_nsec == UTIME_OMIT)
++		int i, n = (flags & AT_UTIME_BTIME) ? 3 : 2;
++		bool all_omit = true;
++
++		for (i = 0; i < n; i++) {
++			if (get_old_timespec32(&tv[i], &t[i]))
++				return -EFAULT;
++			if (tv[i].tv_nsec != UTIME_OMIT)
++				all_omit = false;
++		}
++		if (all_omit)
+ 			return 0;
+ 	}
+ 	return do_utimes(dfd, filename, t ? tv : NULL, flags);
+diff --git a/include/uapi/linux/fcntl.h b/include/uapi/linux/fcntl.h
+index 6448cdd9a350..fc5b02439697 100644
+--- a/include/uapi/linux/fcntl.h
++++ b/include/uapi/linux/fcntl.h
+@@ -90,5 +90,7 @@
+ #define AT_STATX_FORCE_SYNC	0x2000	/* - Force the attributes to be sync'd with the server */
+ #define AT_STATX_DONT_SYNC	0x4000	/* - Don't sync attributes with the server */
+ 
++#define AT_UTIME_BTIME		0x8000	/* Also update file creation time */
++
+ 
+ #endif /* _UAPI_LINUX_FCNTL_H */
 -- 
 2.20.1
 

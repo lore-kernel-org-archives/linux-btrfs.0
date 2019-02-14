@@ -7,62 +7,62 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 33DEAC43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 10:01:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AFB7AC43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 10:01:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0394B222A1
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 10:01:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7E255222A1
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 10:01:30 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="ifdVfFk0"
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="y9Yaj6Wc"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2438182AbfBNKBU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 14 Feb 2019 05:01:20 -0500
-Received: from mail-pg1-f194.google.com ([209.85.215.194]:43530 "EHLO
-        mail-pg1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2438159AbfBNKBK (ORCPT
+        id S2438186AbfBNKBW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 14 Feb 2019 05:01:22 -0500
+Received: from mail-pf1-f194.google.com ([209.85.210.194]:43709 "EHLO
+        mail-pf1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2438150AbfBNKBI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Feb 2019 05:01:10 -0500
-Received: by mail-pg1-f194.google.com with SMTP id v28so2804044pgk.10
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Feb 2019 02:01:09 -0800 (PST)
+        Thu, 14 Feb 2019 05:01:08 -0500
+Received: by mail-pf1-f194.google.com with SMTP id q17so2837497pfh.10
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Feb 2019 02:01:07 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=V1G1bYaq+Km34RtW+askrdx+tkF2tFwueJG4dIbkPeU=;
-        b=ifdVfFk0kW/IIFB8WwdV72Z5zOa+dcqSXcayZEKzpjOldBkQtPG1dDGADxg7jRHanq
-         lqtuH6c3Ts3p6Pw00eubcFHxMZ1LVcx2dtxQWTJ3PEPQ0fsnsvn7hVeMxPjiTHpXhjI/
-         lHRli2E/l7df8XeZytTiC73YTJKLizSkB+RLKQlM6lXI8jtqAt9g/jZb/zrAMGebK58K
-         ulj6ICONDTdHq4S5eLU/nw7h1wpfwpjqmTlbjSzuRFyEtFc50jWRdr+9u7wUiZu6Gb+L
-         CvgUt/mpWsuK8cjMmOfCD6R4BAAcWMEpNktr7ZtmajNLsKcyni7oZep2kZB4x3v7Um/r
-         OwaA==
+        bh=fTk0FyiVC4C7S5X6h/HN++rzsGBLDjcJTciO7DC+crI=;
+        b=y9Yaj6WcgjusayyYM5Aorfv4cGv5yMWbdVWmHpG76OC/LcK0upaLsLOdU4ca14Oxtg
+         /jEZ2O/z/AMEwRW/68k8ycysACwXQAlb4kVmZuSxEsQgq+TttJ12uFsenUy1oofinIJW
+         584qHI+fSFc2N24PJM5KIksg154F4i734W6DTOUNfJWDRXh2qRl3fGt+xorIOhy0mTAK
+         KBFkVC5Q62yIjyY5D3jNfPtp3Hn9jNL1E9psK50mdleOqVB7v8Tv0ew1yokCP2ZoiFlp
+         Y35OyQFRmzmMw2hZbJBT6uNdwI64QHZisy2cTvIHKv/EAXiHshp5yYfPiCBQAkwusb4D
+         Rgag==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=V1G1bYaq+Km34RtW+askrdx+tkF2tFwueJG4dIbkPeU=;
-        b=knmunug9L2fcie8obOIavlq4+OoJihfJzE1of2f1/zfLhZmXgkx98MuFQl27GkXoDZ
-         2g/kcb20LuB67l2lEpILT1Yv1kj67xIT3+i041fOJUAfCzkmplKW0sk53c3N8byQYBvX
-         WBie/gmNDlU5pSMhTHr6o7vvqUcLCceUngqHpO3XTVG0IH2prbxQ6VI2crId0jGXG/Em
-         tsYIiXC1lKlkVjereXycys/Gu9UblvFERElwAkdnHMso8WOrzO7F3T4X3Ne49On57oGV
-         bgteFnvQ3VhhYTujrPaIvGXAS0/jxKtJ9O8plHxAD3Ngk97bzeKH1Q9ReUQwjeW0evXs
-         Ihtg==
-X-Gm-Message-State: AHQUAub7EO03yvtLPpgq/C8x2KAhXCosJ4uosEWmW0O7TG4BCGz4ytfu
-        nr6AQTm0exD9PKxHuzFNWuU/GQ==
-X-Google-Smtp-Source: AHgI3IZIAJ2VnYK3yffJToNRbYzNLIRAyaxiNDlheljliI94feBaBjQoFhYs3ER9wmq+6PXudHZ08g==
-X-Received: by 2002:a65:4101:: with SMTP id w1mr2941529pgp.257.1550138469062;
-        Thu, 14 Feb 2019 02:01:09 -0800 (PST)
+        bh=fTk0FyiVC4C7S5X6h/HN++rzsGBLDjcJTciO7DC+crI=;
+        b=ROS2zh356xFRk/o9S6jLqPwjTDQnwFnczp2kCtoEQqgehYaJNibB54P4851U7XIC7S
+         JK8XLKQ35L8cuWBdEv/x5o0SYFqD7Nfmhl5AxtTHDHjVrvwdVATwwGdKCf0JmAFV+1n5
+         y/U4eJYp8dfYxvL2gYW/b+HaEtC1tGRC9FexN2dnLkOrNAkjORhg17LIAvXBsu6F6vA5
+         pessPCpjkOw61nAEquTjobA/DKp4QZklduN0nKkcmBtSwAEVmxPCYWL7gQqyHu2Ou/jr
+         3MNEJwb/6F76cxTfELvYeUETtqz3sLnlMPmOzCJ9RBEct5NyjbOSVS/iuIFVpdW43U6J
+         KA7g==
+X-Gm-Message-State: AHQUAubz6Gey9Pb681R7yB/PhLUFEj9H1d0hy3T09+sATc84O4pZ6DfP
+        zTXaJd/eX62vVTBToMzxp7m6AA==
+X-Google-Smtp-Source: AHgI3IZx8Umv7Vjiiq1lW+1CsCbGd8SRwLIkK8mTGw+gp3D0GueHp0jnouvmQm42uVNCErrgJd9ZWg==
+X-Received: by 2002:a63:2a86:: with SMTP id q128mr2978793pgq.424.1550138467024;
+        Thu, 14 Feb 2019 02:01:07 -0800 (PST)
 Received: from vader.thefacebook.com ([2620:10d:c090:180::1:5849])
-        by smtp.gmail.com with ESMTPSA id i184sm2686952pfc.41.2019.02.14.02.01.07
+        by smtp.gmail.com with ESMTPSA id i184sm2686952pfc.41.2019.02.14.02.01.05
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 14 Feb 2019 02:01:08 -0800 (PST)
+        Thu, 14 Feb 2019 02:01:06 -0800 (PST)
 From:   Omar Sandoval <osandov@osandov.com>
 To:     linux-fsdevel@vger.kernel.org, Al Viro <viro@zeniv.linux.org.uk>
 Cc:     kernel-team@fb.com, linux-api@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
         linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org
-Subject: [PATCH] generic: add a test for AT_UTIME_BTIME
-Date:   Thu, 14 Feb 2019 02:00:14 -0800
-Message-Id: <c0d9cb0b181db011a3068fb96bb85e732f508b73.1550138186.git.osandov@fb.com>
+Subject: [RFC PATCH 6/6] xfs: add support for setting btime
+Date:   Thu, 14 Feb 2019 02:00:13 -0800
+Message-Id: <853e0dbdcd881e7dae13ada9dbb5924f6f5c4d9c.1550136164.git.osandov@fb.com>
 X-Mailer: git-send-email 2.20.1
 In-Reply-To: <cover.1550136164.git.osandov@fb.com>
 References: <cover.1550136164.git.osandov@fb.com>
@@ -75,143 +75,93 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Omar Sandoval <osandov@fb.com>
 
-Test that on filesystems supporting btime, the timestamp is updated as
-expected.
+The XFS inode format includes btime (under the name crtime) in inode
+version 3. Also update the comments in libxfs to reflect that di_crtime
+can now change.
 
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- common/rc             | 14 ++++++++++
- tests/generic/526     | 64 +++++++++++++++++++++++++++++++++++++++++++
- tests/generic/526.out | 14 ++++++++++
- tests/generic/group   |  1 +
- 4 files changed, 93 insertions(+)
- create mode 100755 tests/generic/526
- create mode 100644 tests/generic/526.out
+ fs/xfs/libxfs/xfs_format.h     |  2 +-
+ fs/xfs/libxfs/xfs_log_format.h |  2 +-
+ fs/xfs/xfs_iops.c              | 11 +++++++++--
+ fs/xfs/xfs_super.c             |  2 +-
+ 4 files changed, 12 insertions(+), 5 deletions(-)
 
-diff --git a/common/rc b/common/rc
-index b8ed1776..d2f43a21 100644
---- a/common/rc
-+++ b/common/rc
-@@ -3843,6 +3843,20 @@ _require_btime()
- 	rm -f $TEST_DIR/test_creation_time
+diff --git a/fs/xfs/libxfs/xfs_format.h b/fs/xfs/libxfs/xfs_format.h
+index 9bb3c48843ec..ff6cb860ae77 100644
+--- a/fs/xfs/libxfs/xfs_format.h
++++ b/fs/xfs/libxfs/xfs_format.h
+@@ -884,9 +884,9 @@ typedef struct xfs_dinode {
+ 	__be64		di_flags2;	/* more random flags */
+ 	__be32		di_cowextsize;	/* basic cow extent size for file */
+ 	__u8		di_pad2[12];	/* more padding for future expansion */
++	xfs_timestamp_t	di_crtime;	/* time created */
+ 
+ 	/* fields only written to during inode creation */
+-	xfs_timestamp_t	di_crtime;	/* time created */
+ 	__be64		di_ino;		/* inode number */
+ 	uuid_t		di_uuid;	/* UUID of the filesystem */
+ 
+diff --git a/fs/xfs/libxfs/xfs_log_format.h b/fs/xfs/libxfs/xfs_log_format.h
+index e5f97c69b320..5cb35b3db870 100644
+--- a/fs/xfs/libxfs/xfs_log_format.h
++++ b/fs/xfs/libxfs/xfs_log_format.h
+@@ -415,9 +415,9 @@ struct xfs_log_dinode {
+ 	uint64_t	di_flags2;	/* more random flags */
+ 	uint32_t	di_cowextsize;	/* basic cow extent size for file */
+ 	uint8_t		di_pad2[12];	/* more padding for future expansion */
++	xfs_ictimestamp_t di_crtime;	/* time created */
+ 
+ 	/* fields only written to during inode creation */
+-	xfs_ictimestamp_t di_crtime;	/* time created */
+ 	xfs_ino_t	di_ino;		/* inode number */
+ 	uuid_t		di_uuid;	/* UUID of the filesystem */
+ 
+diff --git a/fs/xfs/xfs_iops.c b/fs/xfs/xfs_iops.c
+index f48ffd7a8d3e..20570f61ffeb 100644
+--- a/fs/xfs/xfs_iops.c
++++ b/fs/xfs/xfs_iops.c
+@@ -582,6 +582,10 @@ xfs_setattr_time(
+ 		inode->i_ctime = iattr->ia_ctime;
+ 	if (iattr->ia_valid & ATTR_MTIME)
+ 		inode->i_mtime = iattr->ia_mtime;
++	if (iattr->ia_valid & ATTR_BTIME) {
++		ip->i_d.di_crtime.t_sec = iattr->ia_btime.tv_sec;
++		ip->i_d.di_crtime.t_nsec = iattr->ia_btime.tv_nsec;
++	}
  }
  
-+_require_utime_btime()
-+{
-+	_require_btime
-+	_require_xfs_io_command utimes
-+	testio=`$XFS_IO_PROG -f -c "utimes 0 0 0 0 0 0" "$TEST_DIR/$$.xfs_io" 2>&1`
-+	echo $testio | grep -q "expected 4 arguments" && \
-+		_notrun "xfs_io utimes btime support is missing"
-+	echo $testio | grep -q "Operation not supported" && \
-+		_notrun "updating inode creation time not supported by this filesystem"
-+	echo $testio | grep -q "Invalid" && \
-+		_notrun "updating inode creation time not supported by this kernel"
-+	rm -f $testfile > /dev/null 2>&1
-+}
-+
- _require_scratch_btime()
+ static int
+@@ -1025,11 +1029,14 @@ xfs_vn_setattr(
+ 	struct dentry		*dentry,
+ 	struct iattr		*iattr)
  {
- 	_require_scratch
-diff --git a/tests/generic/526 b/tests/generic/526
-new file mode 100755
-index 00000000..c2e47a27
---- /dev/null
-+++ b/tests/generic/526
-@@ -0,0 +1,64 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2019 Omar Sandoval.  All Rights Reserved.
-+#
-+# FS QA Test 526
-+#
-+# Test basic AT_UTIME_BTIME functionality.
-+#
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
++	struct inode		*inode = d_inode(dentry);
++	struct xfs_inode	*ip = XFS_I(inode);
+ 	int			error;
+ 
++	if ((iattr->ia_valid & ATTR_BTIME) && ip->i_d.di_version != 3)
++		return -EOPNOTSUPP;
 +
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+	rm -f "$TEST_DIR/$$"
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# remove previous $seqres.full before test
-+rm -f $seqres.full
-+_supported_fs generic
-+_supported_os Linux
-+_require_test
-+_require_utime_btime
-+
-+SEC=683153828
-+UTIME_NOW=$(((1 << 30) - 1))
-+UTIME_OMIT=$(((1 << 30) - 2))
-+
-+touch "$TEST_DIR/$$"
-+
-+echo "Set btime"
-+$XFS_IO_PROG -c "utimes 0 $UTIME_OMIT 0 $UTIME_OMIT $SEC 0" "$TEST_DIR/$$"
-+$XFS_IO_PROG -c 'statx -r' "$TEST_DIR/$$" | grep btime
-+
-+echo "Set atime and mtime"
-+$XFS_IO_PROG -c "utimes 0 $UTIME_NOW 0 $UTIME_NOW" "$TEST_DIR/$$"
-+$XFS_IO_PROG -c 'statx -r' "$TEST_DIR/$$" | grep btime
-+
-+echo "Omit btime"
-+$XFS_IO_PROG -c "utimes 0 $UTIME_NOW 0 $UTIME_NOW 0 $UTIME_OMIT" "$TEST_DIR/$$"
-+$XFS_IO_PROG -c 'statx -r' "$TEST_DIR/$$" | grep btime
-+
-+echo "Cycle mount"
-+_test_cycle_mount
-+$XFS_IO_PROG -c 'statx -r' "$TEST_DIR/$$" | grep btime
-+
-+echo "Set btime to now"
-+$XFS_IO_PROG -c "utimes 0 $UTIME_OMIT 0 $UTIME_OMIT 0 $UTIME_NOW" "$TEST_DIR/$$"
-+# The timestamp changed, so this shouldn't output anything.
-+$XFS_IO_PROG -c 'statx -r' "$TEST_DIR/$$" | grep -w "$SEC"
-+
-+status=0
-+exit
-diff --git a/tests/generic/526.out b/tests/generic/526.out
-new file mode 100644
-index 00000000..f9ec18e9
---- /dev/null
-+++ b/tests/generic/526.out
-@@ -0,0 +1,14 @@
-+QA output created by 526
-+Set btime
-+stat.btime.tv_sec = 683153828
-+stat.btime.tv_nsec = 0
-+Set atime and mtime
-+stat.btime.tv_sec = 683153828
-+stat.btime.tv_nsec = 0
-+Omit btime
-+stat.btime.tv_sec = 683153828
-+stat.btime.tv_nsec = 0
-+Cycle mount
-+stat.btime.tv_sec = 683153828
-+stat.btime.tv_nsec = 0
-+Set btime to now
-diff --git a/tests/generic/group b/tests/generic/group
-index cfd003d3..2e0203fc 100644
---- a/tests/generic/group
-+++ b/tests/generic/group
-@@ -528,3 +528,4 @@
- 523 auto quick attr
- 524 auto quick
- 525 auto quick rw
-+526 auto quick
+ 	if (iattr->ia_valid & ATTR_SIZE) {
+-		struct inode		*inode = d_inode(dentry);
+-		struct xfs_inode	*ip = XFS_I(inode);
+ 		uint			iolock;
+ 
+ 		xfs_ilock(ip, XFS_MMAPLOCK_EXCL);
+diff --git a/fs/xfs/xfs_super.c b/fs/xfs/xfs_super.c
+index c9097cb0b955..54df86bc634b 100644
+--- a/fs/xfs/xfs_super.c
++++ b/fs/xfs/xfs_super.c
+@@ -1860,7 +1860,7 @@ static struct file_system_type xfs_fs_type = {
+ 	.name			= "xfs",
+ 	.mount			= xfs_fs_mount,
+ 	.kill_sb		= kill_block_super,
+-	.fs_flags		= FS_REQUIRES_DEV,
++	.fs_flags		= FS_REQUIRES_DEV | FS_HAS_BTIME,
+ };
+ MODULE_ALIAS_FS("xfs");
+ 
 -- 
 2.20.1
 

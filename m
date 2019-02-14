@@ -2,192 +2,134 @@ Return-Path: <SRS0=zIgm=QV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9AB41C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 15:18:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AADF4C43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 16:21:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 68147222D7
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 15:18:47 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1550157527;
-	bh=/NzQUm/6/j4Jzm15sIwwj8v0NsWqah1ECbIzXcmmu+8=;
-	h=From:To:Cc:Subject:Date:List-ID:From;
-	b=WS/5AhAK6yuExAkh7Do34xBCJWwQLqtOgse0gmvsqoJwny3u+YKZmyk1qqc+zXcIR
-	 A0puYwrnWYTMoaCyj9JKO+VuzmzMm6cczsJPa07XoPmI19sWy/m9znzqH7M6XtQNV7
-	 2M32mPpv1NN4JUF4a8QK4vyPOxxOtyqHk8W8BSS8=
+	by mail.kernel.org (Postfix) with ESMTP id 7A7D820823
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 16:21:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2395326AbfBNPSq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 14 Feb 2019 10:18:46 -0500
-Received: from mail.kernel.org ([198.145.29.99]:51274 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2390720AbfBNPSq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Feb 2019 10:18:46 -0500
-Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 33248222C9;
-        Thu, 14 Feb 2019 15:18:44 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1550157525;
-        bh=/NzQUm/6/j4Jzm15sIwwj8v0NsWqah1ECbIzXcmmu+8=;
-        h=From:To:Cc:Subject:Date:From;
-        b=FVUy+sM4gmvHChXrTxlfEysE3YHfh/2rcAs0ZqcFRGWHvYyvrWKFaeG6JDRUg0ao6
-         IETY4uOiIDuiT/tWjuPhEylTbWM5KfwQ2MjYJLmDdySpyo+8qFIqc6tnzhToOTW1j7
-         6GZkdzHjVTMtMxgImjZAmywTzVJkxXK9pnJp11Z8=
-From:   fdmanana@kernel.org
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] fstests: btrfs, test for corruption when reading compressed files
-Date:   Thu, 14 Feb 2019 15:18:39 +0000
-Message-Id: <20190214151839.23619-1-fdmanana@kernel.org>
-X-Mailer: git-send-email 2.11.0
+        id S2502710AbfBNQV6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 14 Feb 2019 11:21:58 -0500
+Received: from mx2.suse.de ([195.135.220.15]:41642 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S2502708AbfBNQV5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 14 Feb 2019 11:21:57 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 5ECA2AE58;
+        Thu, 14 Feb 2019 16:21:55 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: ensure that a DUP block group has exactly two
+ stripes
+To:     Hans van Kranenburg <Hans.van.Kranenburg@mendix.com>,
+        David Sterba <dsterba@suse.com>
+Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
+        Liu Bo <obuil.liubo@gmail.com>
+References: <20190213142602.20436-1-jthumshirn@suse.de>
+ <cbc103a1-3558-fac1-a45b-dcaf5d4d72ea@mendix.com>
+From:   Johannes Thumshirn <jthumshirn@suse.de>
+Openpgp: preference=signencrypt
+Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <01219372-4533-fb72-44fd-b2882c0614f6@suse.de>
+Date:   Thu, 14 Feb 2019 17:21:54 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
+MIME-Version: 1.0
+In-Reply-To: <cbc103a1-3558-fac1-a45b-dcaf5d4d72ea@mendix.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+On 13/02/2019 15:32, Hans van Kranenburg wrote:
+[...]
 
-Regression test for read corruption of compressed and shared extents after
-punching holes into a file. The same extent is shared by the same file in
-consecutive ranges (without other extents in between).
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -6794,7 +6794,7 @@ static int btrfs_check_chunk_valid(struct btrfs_fs_info *fs_info,
+>>  	    (type & BTRFS_BLOCK_GROUP_RAID1 && num_stripes < 1) ||
+>>  	    (type & BTRFS_BLOCK_GROUP_RAID5 && num_stripes < 2) ||
+>>  	    (type & BTRFS_BLOCK_GROUP_RAID6 && num_stripes < 3) ||
+>> -	    (type & BTRFS_BLOCK_GROUP_DUP && num_stripes > 2) ||
+>> +	    (type & BTRFS_BLOCK_GROUP_DUP && num_stripes != 2) ||
+>>  	    ((type & BTRFS_BLOCK_GROUP_PROFILE_MASK) == 0 &&
+>>  	     num_stripes != 1)) {
+>>  		btrfs_err(fs_info,
+>>
+> 
+> It looks like the RAID1 check has a similar problem. Shouldn't that
+> check also be != 2 ?
 
-This is motivated by a bug recently found in btrfs for which there is a
-patch for the linux kernel titled:
+So looking at the code again I think num_stripes == 1 for RAID1 will
+result in the same division by 0 in calc_stripe_length().
 
-  "Btrfs: fix corruption reading shared and compressed extents after hole
-   punching"
+I'll send a patch for RAID1 as well unless David speaks up and says he
+wants it amended in this one.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- tests/btrfs/183     | 76 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/183.out | 21 +++++++++++++++
- tests/btrfs/group   |  1 +
- 3 files changed, 98 insertions(+)
- create mode 100755 tests/btrfs/183
- create mode 100644 tests/btrfs/183.out
-
-diff --git a/tests/btrfs/183 b/tests/btrfs/183
-new file mode 100755
-index 00000000..ddd83c2d
---- /dev/null
-+++ b/tests/btrfs/183
-@@ -0,0 +1,76 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (C) 2019 SUSE Linux Products GmbH. All Rights Reserved.
-+#
-+# FSQA Test No. 183
-+#
-+# Regression test for read corruption of compressed and shared extents after
-+# punching holes into a file.
-+#
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch_reflink
-+_require_xfs_io_command "fpunch"
-+
-+rm -f $seqres.full
-+
-+_scratch_mkfs >>$seqres.full 2>&1
-+_scratch_mount "-o compress"
-+
-+# Create a file with 3 consecutive compressed extents, each corresponds to 128Kb
-+# of data (uncompressed size) and each is stored on disk as a 4Kb extent
-+# (compressed size, regardless of compression algorithm used).
-+# Each extent starts with 4Kb of zeroes, while the remaining bytes all have a
-+# value of 0xff.
-+$XFS_IO_PROG -f -c "pwrite -S 0xff 0 384K" \
-+	     -c "pwrite -S 0x00 0 4K" \
-+	     -c "pwrite -S 0x00 128K 4K" \
-+	     -c "pwrite -S 0x00 256K 4K" \
-+	     $SCRATCH_MNT/foobar | _filter_xfs_io
-+
-+echo "File digest after initial creation:"
-+md5sum $SCRATCH_MNT/foobar | _filter_scratch
-+
-+# Clone the first extent into offsets 128K and 256K.
-+$XFS_IO_PROG -c "reflink $SCRATCH_MNT/foobar 0 128K 128K" \
-+	     -c "reflink $SCRATCH_MNT/foobar 0 256K 128K" \
-+	     $SCRATCH_MNT/foobar | _filter_xfs_io
-+
-+echo "File digest after reflinking:"
-+md5sum $SCRATCH_MNT/foobar | _filter_scratch
-+
-+# Punch holes into the regions that are already full of zeroes.
-+$XFS_IO_PROG -c "fpunch 0 4K" \
-+	     -c "fpunch 128K 4K" \
-+	     -c "fpunch 256K 4K" \
-+	     $SCRATCH_MNT/foobar
-+
-+echo "File digest after punching holes:"
-+md5sum $SCRATCH_MNT/foobar | _filter_scratch
-+
-+echo 1 > /proc/sys/vm/drop_caches
-+
-+echo "File digest after dropping page cache:"
-+md5sum $SCRATCH_MNT/foobar | _filter_scratch
-+
-+status=0
-+exit
-diff --git a/tests/btrfs/183.out b/tests/btrfs/183.out
-new file mode 100644
-index 00000000..36fe3ba8
---- /dev/null
-+++ b/tests/btrfs/183.out
-@@ -0,0 +1,21 @@
-+QA output created by 183
-+wrote 393216/393216 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 4096/4096 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 4096/4096 bytes at offset 131072
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 4096/4096 bytes at offset 262144
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+File digest after initial creation:
-+5a0888d80d7ab1fd31c229f83a3bbcc8  SCRATCH_MNT/foobar
-+linked 131072/131072 bytes at offset 131072
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+linked 131072/131072 bytes at offset 262144
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+File digest after reflinking:
-+5a0888d80d7ab1fd31c229f83a3bbcc8  SCRATCH_MNT/foobar
-+File digest after punching holes:
-+5a0888d80d7ab1fd31c229f83a3bbcc8  SCRATCH_MNT/foobar
-+File digest after dropping page cache:
-+5a0888d80d7ab1fd31c229f83a3bbcc8  SCRATCH_MNT/foobar
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index e32c84e4..d1eeb90a 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -185,3 +185,4 @@
- 180 auto quick qgroup limit
- 181 auto quick balance
- 182 auto quick balance
-+183 auto quick clone compress punch
+Thanks,
+	Johannes
 -- 
-2.11.0
-
+Johannes Thumshirn                            SUSE Labs Filesystems
+jthumshirn@suse.de                                +49 911 74053 689
+SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
+GF: Felix Imendörffer, Jane Smithard, Graham Norton
+HRB 21284 (AG Nürnberg)
+Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850

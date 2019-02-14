@@ -2,424 +2,339 @@ Return-Path: <SRS0=zIgm=QV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4A757C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 05:01:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0204EC43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 08:06:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 02888222C9
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 05:01:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A7DEB222A1
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 08:06:19 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="ZkooTvPe"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726435AbfBNFBI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 14 Feb 2019 00:01:08 -0500
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:41242 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725781AbfBNFBG (ORCPT
+        id S2391948AbfBNIGS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 14 Feb 2019 03:06:18 -0500
+Received: from mail-lj1-f172.google.com ([209.85.208.172]:39739 "EHLO
+        mail-lj1-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1733268AbfBNIGR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Feb 2019 00:01:06 -0500
-Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
-        id C35E321CC4B; Thu, 14 Feb 2019 00:00:54 -0500 (EST)
-Date:   Thu, 14 Feb 2019 00:00:54 -0500
-From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To:     Filipe Manana <fdmanana@gmail.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Reproducer for "compressed data + hole data corruption bug, 2018
- edition" still works on 4.20.7
-Message-ID: <20190214050043.GE23918@hungrycats.org>
-References: <20180823031125.GE13528@hungrycats.org>
- <20190212030838.GB9995@hungrycats.org>
- <CAL3q7H7T_NX=D8qimRC55g8V-p0k-ygUiW-K5bxF02r-6XT6Rg@mail.gmail.com>
- <20190212165916.GA23918@hungrycats.org>
- <CAL3q7H6eTTw-iTHiQLcJHa5iRRspWxQpfyTQRU1SmcxBqXSppg@mail.gmail.com>
- <20190212181328.GB23918@hungrycats.org>
- <CAL3q7H4k=N=0Cv8hYAZkfTfaG8XJgG1KzT5mA_4XnutxGFc8DA@mail.gmail.com>
- <CAL3q7H6YShEBKDTDZ7_qBoLDMgihP_8NYee_60-LUqd6sF5xZQ@mail.gmail.com>
- <CAL3q7H6WSe_C7_+D0x1_Z+KdK=k+iM-t2J4pQSO32ZsY4AEZ=Q@mail.gmail.com>
+        Thu, 14 Feb 2019 03:06:17 -0500
+Received: by mail-lj1-f172.google.com with SMTP id g80so4398944ljg.6
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Feb 2019 00:06:15 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to;
+        bh=2DYcWZ93o7UsUdLBpGE6lQz8hlJU0lsGWQYSkueGlk0=;
+        b=ZkooTvPedHCRnoN9rWyoeAmNOLn/H/jbHPw1DLPqWB8ffWNMI5dyZPFmwW/8OwqH3B
+         T0JscCFvK0+eC6zGr7js7jdoA9OPLjETv9owMYT+dC7LiwC6qKKFRh76F7s4Apmx2G/F
+         HDZzyJufkSzaB4p1/AAU/PCD5XXEqjz+7xwWXDK0HK9+1s3lCUA/b+DKpFP5QBs3gOHX
+         qmClHYn7urdvpwCzbq1WsBqsXvK2SX+o4GDWHeQkgVnyxINKJZjPpC2QKTtB5K77coLg
+         fPtJ0UkUSWpqKc7Su6M7s2sbtGsyuUk/r6kBRePGJf9+lQ/GcvjGanX3llbdggMNK/P4
+         xKXw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to;
+        bh=2DYcWZ93o7UsUdLBpGE6lQz8hlJU0lsGWQYSkueGlk0=;
+        b=rzNH+4bW/yv7kHvuPRsgmloHPkkLLf8oGxsehPr4fTQQrnmb0mKM5IGTvOieu4yZn6
+         vOcEJh588K2Ve34VsW/lievGUQrZvGW9Cl2iW3Wx3DKjDchYFMvkTzNp/5+SbqjR0IH8
+         dsRUy/CEe94tqagdqccrOzSOXzSRTrI8OiDGNkCSvqCgxKHyxwXvtuU6ERX4WVkqHEes
+         pUSa3GEYtqAGuUKTZSk1Fis428rkTz3v8OPiEafFZC9GYFAYgOLVO9ZqKbU0i2kRdUbv
+         C1C0I04mJe6x9wgu1DnK/5pZG0qdie2RHVcCV22BC1JfX31gwDNPvxGkc0oxir3bbzvL
+         GtyQ==
+X-Gm-Message-State: AHQUAuYC55danExpW5GZ7P5vpwYvXV52fDC66K25PcMitaMj+LEc0Ddb
+        DZTWfJ9MX8GCfTrRtG4iBZPDIkPXlBZFada472sCHqXLjzI=
+X-Google-Smtp-Source: AHgI3IZvUb8fQzm6BGXYck2KTUgFrtrFwzpNmr7OwfoHtPeEhQGQDUJCLPSS20Xxwj8NFGShWkiUkRzwod29cTO00SU=
+X-Received: by 2002:a2e:3308:: with SMTP id d8-v6mr1458050ljc.38.1550131573875;
+ Thu, 14 Feb 2019 00:06:13 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="2qXFWqzzG3v1+95a"
-Content-Disposition: inline
-In-Reply-To: <CAL3q7H6WSe_C7_+D0x1_Z+KdK=k+iM-t2J4pQSO32ZsY4AEZ=Q@mail.gmail.com>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+References: <CAJCQCtRDuss2vTYCA=W6ifXOyLkD-WzSS5ytfruAbWrDOoFx2w@mail.gmail.com>
+In-Reply-To: <CAJCQCtRDuss2vTYCA=W6ifXOyLkD-WzSS5ytfruAbWrDOoFx2w@mail.gmail.com>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Thu, 14 Feb 2019 01:06:02 -0700
+Message-ID: <CAJCQCtTAiLK8rcs+MtzkSAGRwmSDvZN52XaMyemCH4O_4VQ1zQ@mail.gmail.com>
+Subject: Re: circular lock warning at: btrfs_record_root_in_trans, kernel 5.0.0-0.rc4+
+To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: multipart/mixed; boundary="000000000000d137e80581d621aa"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+--000000000000d137e80581d621aa
+Content-Type: text/plain; charset="UTF-8"
 
---2qXFWqzzG3v1+95a
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+I'm still running into this with 5.0.0-rc6 and sssd. I'm not sure what
+the issue is but it often does prevent sssd from starting up, so
+that's not good.
 
-On Thu, Feb 14, 2019 at 01:22:49AM +0000, Filipe Manana wrote:
-> On Wed, Feb 13, 2019 at 6:14 PM Filipe Manana <fdmanana@gmail.com> wrote:
-> > On Wed, Feb 13, 2019 at 5:36 PM Filipe Manana <fdmanana@gmail.com> wrot=
-e:
-[...]
-> > > Tried it today and I got it reproduced (different vm, but still debian
-> > > and kernel built from source).
-> > > Not sure what was different last time. Yes, I had compression enabled.
-> > >
-> > > I'll look into it.
-> >
-> > So the problem is caused by hole punching. The script can be reduced
-> > to the following:
-> >
-> > https://friendpaste.com/22t4OdktHQTl0aMGxckc86
-> >
-> > file size: 384K am
-> > digests after file creation:   7c8349cc657fbe61af53fbc5cfacae6e9a402e83=
-  am
-> > digests after file creation 2: 7c8349cc657fbe61af53fbc5cfacae6e9a402e83=
-  am
-> > 262144 total bytes deduped in this operation
-> > digests after dedupe:          7c8349cc657fbe61af53fbc5cfacae6e9a402e83=
-  am
-> > digests after dedupe 2:        7c8349cc657fbe61af53fbc5cfacae6e9a402e83=
-  am
-> > am: 24 KiB (24576 bytes) converted to sparse holes.
-> > digests after hole punching:   7c8349cc657fbe61af53fbc5cfacae6e9a402e83=
-  am
-> > digests after hole punching 2: 5a357b64f4004ea38dbc7058c64a5678668420da=
-  am
-> >
-> > So hole punching is screwing things, and only after dropping the page
-> > cache we can see the bug.
-> > I'll send a fix likely tomorrow.
->=20
-> So it turns out it's a problem in the read of compressed extents part,
-> a variant of a bug I found back in 2015:
->=20
-> https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit=
-/?id=3D005efedf2c7d0a270ffbe28d8997b03844f3e3e7
->=20
-> The following one liner fixes it:
-> https://friendpaste.com/22t4OdktHQTl0aMGxcWLj3
->=20
-> While you test it there (if you want/can), I'll write a change log and
-> a proper test case for fstests and submit them later.
+https://bugzilla.redhat.com/show_bug.cgi?id=1677163
 
-Works here (and produces the correct sha1sum, which turns out to be
-dae78e303edfb8b8ad64ecae01dc1bf233770cfd).
+--000000000000d137e80581d621aa
+Content-Type: text/plain; charset="US-ASCII"; name="circularlockwarn5.0.0-rc6.txt"
+Content-Disposition: attachment; filename="circularlockwarn5.0.0-rc6.txt"
+Content-Transfer-Encoding: base64
+Content-ID: <f_js4c99zb0>
+X-Attachment-Id: f_js4c99zb0
 
-Nice work!
-
-> Thanks!
-> >
-> > >
-> > > >
-> > > > > > > >
-> > > > > > > > The behavior is slightly different on current kernels (4.20=
-=2E7, 4.14.96)
-> > > > > > > > which makes the problem a bit more difficult to detect.
-> > > > > > > >
-> > > > > > > >         # repro-hole-corruption-test
-> > > > > > > >         i: 91, status: 0, bytes_deduped: 131072
-> > > > > > > >         i: 92, status: 0, bytes_deduped: 131072
-> > > > > > > >         i: 93, status: 0, bytes_deduped: 131072
-> > > > > > > >         i: 94, status: 0, bytes_deduped: 131072
-> > > > > > > >         i: 95, status: 0, bytes_deduped: 131072
-> > > > > > > >         i: 96, status: 0, bytes_deduped: 131072
-> > > > > > > >         i: 97, status: 0, bytes_deduped: 131072
-> > > > > > > >         i: 98, status: 0, bytes_deduped: 131072
-> > > > > > > >         i: 99, status: 0, bytes_deduped: 131072
-> > > > > > > >         13107200 total bytes deduped in this operation
-> > > > > > > >         am: 4.8 MiB (4964352 bytes) converted to sparse hol=
-es.
-> > > > > > > >         94a8acd3e1f6e14272f3262a8aa73ab6b25c9ce8 am
-> > > > > > > >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > >
-> > > > > > > > The sha1sum seems stable after the first drop_caches--until=
- a second
-> > > > > > > > process tries to read the test file:
-> > > > > > > >
-> > > > > > > >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > >         # cat am > /dev/null              (in another shell)
-> > > > > > > >         19294e695272c42edb89ceee24bb08c13473140a am
-> > > > > > > >         6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > >
-> > > > > > > > On Wed, Aug 22, 2018 at 11:11:25PM -0400, Zygo Blaxell wrot=
-e:
-> > > > > > > > > This is a repro script for a btrfs bug that causes corrup=
-ted data reads
-> > > > > > > > > when reading a mix of compressed extents and holes.  The =
-bug is
-> > > > > > > > > reproducible on at least kernels v4.1..v4.18.
-> > > > > > > > >
-> > > > > > > > > Some more observations and background follow, but first h=
-ere is the
-> > > > > > > > > script and some sample output:
-> > > > > > > > >
-> > > > > > > > >       root@rescue:/test# cat repro-hole-corruption-test
-> > > > > > > > >       #!/bin/bash
-> > > > > > > > >
-> > > > > > > > >       # Write a 4096 byte block of something
-> > > > > > > > >       block () { head -c 4096 /dev/zero | tr '\0' "\\$1";=
- }
-> > > > > > > > >
-> > > > > > > > >       # Here is some test data with holes in it:
-> > > > > > > > >       for y in $(seq 0 100); do
-> > > > > > > > >               for x in 0 1; do
-> > > > > > > > >                       block 0;
-> > > > > > > > >                       block 21;
-> > > > > > > > >                       block 0;
-> > > > > > > > >                       block 22;
-> > > > > > > > >                       block 0;
-> > > > > > > > >                       block 0;
-> > > > > > > > >                       block 43;
-> > > > > > > > >                       block 44;
-> > > > > > > > >                       block 0;
-> > > > > > > > >                       block 0;
-> > > > > > > > >                       block 61;
-> > > > > > > > >                       block 62;
-> > > > > > > > >                       block 63;
-> > > > > > > > >                       block 64;
-> > > > > > > > >                       block 65;
-> > > > > > > > >                       block 66;
-> > > > > > > > >               done
-> > > > > > > > >       done > am
-> > > > > > > > >       sync
-> > > > > > > > >
-> > > > > > > > >       # Now replace those 101 distinct extents with 101 r=
-eferences to the first extent
-> > > > > > > > >       btrfs-extent-same 131072 $(for x in $(seq 0 100); d=
-o echo am $((x * 131072)); done) 2>&1 | tail
-> > > > > > > > >
-> > > > > > > > >       # Punch holes into the extent refs
-> > > > > > > > >       fallocate -v -d am
-> > > > > > > > >
-> > > > > > > > >       # Do some other stuff on the machine while this run=
-s, and watch the sha1sums change!
-> > > > > > > > >       while :; do echo $(sha1sum am); sysctl -q vm.drop_c=
-aches=3D{1,2,3}; sleep 1; done
-> > > > > > > > >
-> > > > > > > > >       root@rescue:/test# ./repro-hole-corruption-test
-> > > > > > > > >       i: 91, status: 0, bytes_deduped: 131072
-> > > > > > > > >       i: 92, status: 0, bytes_deduped: 131072
-> > > > > > > > >       i: 93, status: 0, bytes_deduped: 131072
-> > > > > > > > >       i: 94, status: 0, bytes_deduped: 131072
-> > > > > > > > >       i: 95, status: 0, bytes_deduped: 131072
-> > > > > > > > >       i: 96, status: 0, bytes_deduped: 131072
-> > > > > > > > >       i: 97, status: 0, bytes_deduped: 131072
-> > > > > > > > >       i: 98, status: 0, bytes_deduped: 131072
-> > > > > > > > >       i: 99, status: 0, bytes_deduped: 131072
-> > > > > > > > >       13107200 total bytes deduped in this operation
-> > > > > > > > >       am: 4.8 MiB (4964352 bytes) converted to sparse hol=
-es.
-> > > > > > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > > >       072a152355788c767b97e4e4c0e4567720988b84 am
-> > > > > > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > > >       bf00d862c6ad436a1be2be606a8ab88d22166b89 am
-> > > > > > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > > >       0d44cdf030fb149e103cfdc164da3da2b7474c17 am
-> > > > > > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > > >       60831f0e7ffe4b49722612c18685c09f4583b1df am
-> > > > > > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > > >       a19662b294a3ccdf35dbb18fdd72c62018526d7d am
-> > > > > > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > > >       6926a34e0ab3e0a023e8ea85a650f5b4217acab4 am
-> > > > > > > > >       ^C
-> > > > > > > > >
-> > > > > > > > > Corruption occurs most often when there is a sequence lik=
-e this in a file:
-> > > > > > > > >
-> > > > > > > > >       ref 1: hole
-> > > > > > > > >       ref 2: extent A, offset 0
-> > > > > > > > >       ref 3: hole
-> > > > > > > > >       ref 4: extent A, offset 8192
-> > > > > > > > >
-> > > > > > > > > This scenario typically arises due to hole-punching or de=
-duplication.
-> > > > > > > > > Hole-punching replaces one extent ref with two references=
- to the same
-> > > > > > > > > extent with a hole between them, so:
-> > > > > > > > >
-> > > > > > > > >       ref 1:  extent A, offset 0, length 16384
-> > > > > > > > >
-> > > > > > > > > becomes:
-> > > > > > > > >
-> > > > > > > > >       ref 1:  extent A, offset 0, length 4096
-> > > > > > > > >       ref 2:  hole, length 8192
-> > > > > > > > >       ref 3:  extent A, offset 12288, length 4096
-> > > > > > > > >
-> > > > > > > > > Deduplication replaces two distinct extent refs surroundi=
-ng a hole with
-> > > > > > > > > two references to one of the duplicate extents, turning t=
-his:
-> > > > > > > > >
-> > > > > > > > >       ref 1:  extent A, offset 0, length 4096
-> > > > > > > > >       ref 2:  hole, length 8192
-> > > > > > > > >       ref 3:  extent B, offset 0, length 4096
-> > > > > > > > >
-> > > > > > > > > into this:
-> > > > > > > > >
-> > > > > > > > >       ref 1:  extent A, offset 0, length 4096
-> > > > > > > > >       ref 2:  hole, length 8192
-> > > > > > > > >       ref 3:  extent A, offset 0, length 4096
-> > > > > > > > >
-> > > > > > > > > Compression is required (zlib, zstd, or lzo) for corrupti=
-on to occur.
-> > > > > > > > > I am not able to reproduce the issue with an uncompressed=
- extent nor
-> > > > > > > > > have I observed any such corruption in the wild.
-> > > > > > > > >
-> > > > > > > > > The presence or absence of the no-holes filesystem featur=
-e has no effect.
-> > > > > > > > >
-> > > > > > > > > Ordinary writes can lead to pairs of extent references to=
- the same extent
-> > > > > > > > > separated by a reference to a different extent; however, =
-in this case
-> > > > > > > > > there is data to be read from a real extent, instead of p=
-ages that have
-> > > > > > > > > to be zero filled from a hole.  If ordinary non-hole writ=
-es could trigger
-> > > > > > > > > this bug, every page-oriented database engine would be cr=
-ashing all the
-> > > > > > > > > time on btrfs with compression enabled, and it's unlikely=
- that would not
-> > > > > > > > > have been noticed between 2015 and now.  An ordinary writ=
-e that splits
-> > > > > > > > > an extent ref would look like this:
-> > > > > > > > >
-> > > > > > > > >       ref 1:  extent A, offset 0, length 4096
-> > > > > > > > >       ref 2:  extent C, offset 0, length 8192
-> > > > > > > > >       ref 3:  extent A, offset 12288, length 4096
-> > > > > > > > >
-> > > > > > > > > Sparse writes can lead to pairs of extent references surr=
-ounding a hole;
-> > > > > > > > > however, in this case the extent references will point to=
- different
-> > > > > > > > > extents, avoiding the bug.  If a sparse write could trigg=
-er the bug,
-> > > > > > > > > the rsync -S option and qemu/kvm 'raw' disk image files (=
-among many
-> > > > > > > > > other tools that produce sparse files) would be unusable,=
- and it's
-> > > > > > > > > unlikely that would not have been noticed between 2015 an=
-d now either.
-> > > > > > > > > Sparse writes look like this:
-> > > > > > > > >
-> > > > > > > > >       ref 1:  extent A, offset 0, length 4096
-> > > > > > > > >       ref 2:  hole, length 8192
-> > > > > > > > >       ref 3:  extent B, offset 0, length 4096
-> > > > > > > > >
-> > > > > > > > > The pattern or timing of read() calls seems to be relevan=
-t.  It is very
-> > > > > > > > > hard to see the corruption when reading files with 'hd', =
-but 'cat | hd'
-> > > > > > > > > will see the corruption just fine.  Similar problems exis=
-t with 'cmp'
-> > > > > > > > > but not 'sha1sum'.  Two processes reading the same file a=
-t the same time
-> > > > > > > > > seem to trigger the corruption very frequently.
-> > > > > > > > >
-> > > > > > > > > Some patterns of holes and data produce corruption faster=
- than others.
-> > > > > > > > > The pattern generated by the script above is based on ins=
-tances of
-> > > > > > > > > corruption I've found in the wild, and has a much better =
-repro rate than
-> > > > > > > > > random holes.
-> > > > > > > > >
-> > > > > > > > > The corruption occurs during reads, after csum verificati=
-on and before
-> > > > > > > > > decompression, so btrfs detects no csum failures.  The da=
-ta on disk
-> > > > > > > > > seems to be OK and could be read correctly once the kerne=
-l bug is fixed.
-> > > > > > > > > Repeated reads do eventually return correct data, but the=
-re is no way
-> > > > > > > > > for userspace to distinguish between corrupt and correct =
-data reliably.
-> > > > > > > > >
-> > > > > > > > > The corrupted data is usually data replaced by a hole or =
-a copy of other
-> > > > > > > > > blocks in the same extent.
-> > > > > > > > >
-> > > > > > > > > The behavior is similar to some earlier bugs related to h=
-oles and
-> > > > > > > > > Compressed data in btrfs, but it's new and not fixed yet-=
--hence,
-> > > > > > > > > "2018 edition."
-> > > > > > > >
-> > > > > > > >
-> > > > > > >
-> > > > > > >
-> > > > > > > --
-> > > > > > > Filipe David Manana,
-> > > > > > >
-> > > > > > > =E2=80=9CWhether you think you can, or you think you can't =
-=E2=80=94 you're right.=E2=80=9D
-> > > > > > >
-> > > > >
-> > > > >
-> > > > >
-> > > > > --
-> > > > > Filipe David Manana,
-> > > > >
-> > > > > =E2=80=9CWhether you think you can, or you think you can't =E2=80=
-=94 you're right.=E2=80=9D
-> > > > >
-> > >
-> > >
-> > >
-> > > --
-> > > Filipe David Manana,
-> > >
-> > > =E2=80=9CWhether you think you can, or you think you can't =E2=80=94 =
-you're right.=E2=80=9D
-> >
-> >
-> >
-> > --
-> > Filipe David Manana,
-> >
-> > =E2=80=9CWhether you think you can, or you think you can't =E2=80=94 yo=
-u're right.=E2=80=9D
->=20
->=20
->=20
-> --=20
-> Filipe David Manana,
->=20
-> =E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you'=
-re right.=E2=80=9D
->=20
-
---2qXFWqzzG3v1+95a
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCXGT16gAKCRCB+YsaVrMb
-nOJ3AKC8vYM+beZWAkjU9q0gU2QiyAmF9QCfR/VONthRF0ou4M/YnZzy69WNhYc=
-=s24z
------END PGP SIGNATURE-----
-
---2qXFWqzzG3v1+95a--
+WyAgIDUzLjMxMzIzMF0gbG9jYWxob3N0LmxvY2FsZG9tYWluIHBvbGtpdGRbNzIxXTogU3RhcnRl
+ZCBwb2xraXRkIHZlcnNpb24gMC4xMTUKWyAgIDUzLjQ2MDk1N10gbG9jYWxob3N0LmxvY2FsZG9t
+YWluIGtlcm5lbDogClsgICA1My40NjEwMDJdIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBrZXJuZWw6
+ID09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQpb
+ICAgNTMuNDYxMDU2XSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiBXQVJOSU5HOiBwb3Nz
+aWJsZSBjaXJjdWxhciBsb2NraW5nIGRlcGVuZGVuY3kgZGV0ZWN0ZWQKWyAgIDUzLjQ2MTExMF0g
+bG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDogNS4wLjAtMC5yYzYuZ2l0MC4xLmZjMzAueDg2
+XzY0ICMxIE5vdCB0YWludGVkClsgICA1My40NjExNTVdIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBr
+ZXJuZWw6IC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLQpbICAgNTMuNDYxMjA3XSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiBzc3NkLzcw
+MCBpcyB0cnlpbmcgdG8gYWNxdWlyZSBsb2NrOgpbICAgNTMuNDYxMjQ3XSBsb2NhbGhvc3QubG9j
+YWxkb21haW4ga2VybmVsOiAwMDAwMDAwMDg3ZDI4YzgyICgmZnNfaW5mby0+cmVsb2NfbXV0ZXgp
+eysuKy59LCBhdDogYnRyZnNfcmVjb3JkX3Jvb3RfaW5fdHJhbnMrMHg0NC8weDcwIFtidHJmc10K
+WyAgIDUzLjQ2MTM3OF0gbG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDogCiAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGJ1dCB0YXNrIGlzIGFscmVhZHkgaG9s
+ZGluZyBsb2NrOgpbICAgNTMuNDYxNDI2XSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiAw
+MDAwMDAwMDhiN2ZkOWEzICgmbW0tPm1tYXBfc2VtKXsrKysrfSwgYXQ6IHZtX21tYXBfcGdvZmYr
+MHhhZC8weDEyMApbICAgNTMuNDYxNDk0XSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiAK
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgd2hpY2ggbG9jayBh
+bHJlYWR5IGRlcGVuZHMgb24gdGhlIG5ldyBsb2NrLgpbICAgNTMuNDYxNTYxXSBsb2NhbGhvc3Qu
+bG9jYWxkb21haW4ga2VybmVsOiAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgdGhlIGV4aXN0aW5nIGRlcGVuZGVuY3kgY2hhaW4gKGluIHJldmVyc2Ugb3JkZXIp
+IGlzOgpbICAgNTMuNDYxNjIzXSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiAKICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgLT4gIzUgKCZtbS0+bW1hcF9z
+ZW0peysrKyt9OgpbICAgNTMuNDYxNjc0XSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiAg
+ICAgICAgX2NvcHlfZnJvbV91c2VyKzB4MWUvMHg5MApbICAgNTMuNDYxNzEzXSBsb2NhbGhvc3Qu
+bG9jYWxkb21haW4ga2VybmVsOiAgICAgICAgc2NzaV9jbWRfaW9jdGwrMHgyMTgvMHg0NDAKWyAg
+IDUzLjQ2MTc3N10gbG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDogICAgICAgIGNkcm9tX2lv
+Y3RsKzB4M2MvMHgxMDY4ClsgICA1My40NjE4MTddIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBrZXJu
+ZWw6ICAgICAgICBzcl9ibG9ja19pb2N0bCsweGEwLzB4ZDAKWyAgIDUzLjQ2MTg1NV0gbG9jYWxo
+b3N0LmxvY2FsZG9tYWluIGtlcm5lbDogICAgICAgIGJsa2Rldl9pb2N0bCsweDYxMS8weDliMApb
+ICAgNTMuNDYxODkyXSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiAgICAgICAgYmxvY2tf
+aW9jdGwrMHg0MS8weDUwClsgICA1My40NjE5NjZdIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBrZXJu
+ZWw6ICAgICAgICBkb192ZnNfaW9jdGwrMHg0MDgvMHg3NTAKWyAgIDUzLjQ2MjAwNV0gbG9jYWxo
+b3N0LmxvY2FsZG9tYWluIGtlcm5lbDogICAgICAgIGtzeXNfaW9jdGwrMHg1ZS8weDkwClsgICA1
+My40NjIwMzldIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBrZXJuZWw6ICAgICAgICBfX3g2NF9zeXNf
+aW9jdGwrMHgxNi8weDIwClsgICA1My40NjIwNzhdIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBrZXJu
+ZWw6ICAgICAgICBkb19zeXNjYWxsXzY0KzB4NWMvMHhhMApbICAgNTMuNDYyMTE1XSBsb2NhbGhv
+c3QubG9jYWxkb21haW4ga2VybmVsOiAgICAgICAgZW50cnlfU1lTQ0FMTF82NF9hZnRlcl9od2Zy
+YW1lKzB4NDkvMHhiZQpbICAgNTMuNDYyMTYzXSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVs
+OiAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgLT4gIzQgKHNy
+X211dGV4KXsrLisufToKWyAgIDUzLjQ2MjIxMF0gbG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5l
+bDogICAgICAgIHNyX2Jsb2NrX29wZW4rMHg4MS8weDEwMApbICAgNTMuNDYyMjQ3XSBsb2NhbGhv
+c3QubG9jYWxkb21haW4ga2VybmVsOiAgICAgICAgX19ibGtkZXZfZ2V0KzB4ZWQvMHg1OTAKWyAg
+IDUzLjQ2MjI4Ml0gbG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDogICAgICAgIGJsa2Rldl9n
+ZXQrMHg0YS8weDM4MApbICAgNTMuNDYzMzY5XSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVs
+OiAgICAgICAgZG9fZGVudHJ5X29wZW4rMHgxNDQvMHgzNzAKWyAgIDUzLjQ2NDQ3NV0gbG9jYWxo
+b3N0LmxvY2FsZG9tYWluIGtlcm5lbDogICAgICAgIHBhdGhfb3BlbmF0KzB4NGU5LzB4Y2IwClsg
+ICA1My40NjU2MDNdIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBrZXJuZWw6ICAgICAgICBkb19maWxw
+X29wZW4rMHg5MS8weDEwMApbICAgNTMuNDY2NzUyXSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2Vy
+bmVsOiAgICAgICAgZG9fc3lzX29wZW4rMHgxODYvMHgyMzAKWyAgIDUzLjQ2NzkwOF0gbG9jYWxo
+b3N0LmxvY2FsZG9tYWluIGtlcm5lbDogICAgICAgIGRvX3N5c2NhbGxfNjQrMHg1Yy8weGEwClsg
+ICA1My40NjkxMjNdIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBrZXJuZWw6ICAgICAgICBlbnRyeV9T
+WVNDQUxMXzY0X2FmdGVyX2h3ZnJhbWUrMHg0OS8weGJlClsgICA1My40NzAzMjZdIGxvY2FsaG9z
+dC5sb2NhbGRvbWFpbiBrZXJuZWw6IAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAtPiAjMyAoJmJkZXYtPmJkX211dGV4KXsrLisufToKWyAgIDUzLjQ3Mjc3M10g
+bG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDogICAgICAgIF9fYmxrZGV2X2dldCsweDdhLzB4
+NTkwClsgICA1My40NzQwODRdIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBrZXJuZWw6ICAgICAgICBi
+bGtkZXZfZ2V0KzB4MjE0LzB4MzgwClsgICA1My40NzUzODJdIGxvY2FsaG9zdC5sb2NhbGRvbWFp
+biBrZXJuZWw6ICAgICAgICBibGtkZXZfZ2V0X2J5X3BhdGgrMHg0Ni8weDgwClsgICA1My40NzY3
+NDZdIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBrZXJuZWw6ICAgICAgICBidHJmc19nZXRfYmRldl9h
+bmRfc2IrMHgxYi8weGIwIFtidHJmc10KWyAgIDUzLjQ3ODE4MF0gbG9jYWxob3N0LmxvY2FsZG9t
+YWluIGtlcm5lbDogICAgICAgIG9wZW5fZnNfZGV2aWNlcysweDdhLzB4MmEwIFtidHJmc10KWyAg
+IDUzLjQ3OTYwNl0gbG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDogICAgICAgIGJ0cmZzX29w
+ZW5fZGV2aWNlcysweDkyLzB4YTAgW2J0cmZzXQpbICAgNTMuNDgxMDk3XSBsb2NhbGhvc3QubG9j
+YWxkb21haW4ga2VybmVsOiAgICAgICAgYnRyZnNfbW91bnRfcm9vdCsweDMwYi8weDY4MCBbYnRy
+ZnNdClsgICA1My40ODI1MThdIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBrZXJuZWw6ICAgICAgICBt
+b3VudF9mcysweDRjLzB4MTY3ClsgICA1My40ODM5NDVdIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBr
+ZXJuZWw6ICAgICAgICB2ZnNfa2Vybl9tb3VudC5wYXJ0LjArMHg0Yy8weDE2MApbICAgNTMuNDg1
+MzcxXSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiAgICAgICAgYnRyZnNfbW91bnQrMHgx
+NTUvMHg4ZTAgW2J0cmZzXQpbICAgNTMuNDg2NzM3XSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2Vy
+bmVsOiAgICAgICAgbW91bnRfZnMrMHg0Yy8weDE2NwpbICAgNTMuNDg4MTIwXSBsb2NhbGhvc3Qu
+bG9jYWxkb21haW4ga2VybmVsOiAgICAgICAgdmZzX2tlcm5fbW91bnQucGFydC4wKzB4NGMvMHgx
+NjAKWyAgIDUzLjQ4OTQ2M10gbG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDogICAgICAgIGRv
+X21vdW50KzB4MjJkLzB4ZGEwClsgICA1My40OTA3NjRdIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBr
+ZXJuZWw6ICAgICAgICBrc3lzX21vdW50KzB4N2UvMHhjMApbICAgNTMuNDkyMDQ0XSBsb2NhbGhv
+c3QubG9jYWxkb21haW4ga2VybmVsOiAgICAgICAgX194NjRfc3lzX21vdW50KzB4MjEvMHgzMApb
+ICAgNTMuNDkzMjkwXSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiAgICAgICAgZG9fc3lz
+Y2FsbF82NCsweDVjLzB4YTAKWyAgIDUzLjQ5NDUwNV0gbG9jYWxob3N0LmxvY2FsZG9tYWluIGtl
+cm5lbDogICAgICAgIGVudHJ5X1NZU0NBTExfNjRfYWZ0ZXJfaHdmcmFtZSsweDQ5LzB4YmUKWyAg
+IDUzLjQ5NTcxMF0gbG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDogCiAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC0+ICMyICgmZnNfZGV2cy0+ZGV2aWNlX2xp
+c3RfbXV0ZXgpeysuKy59OgpbICAgNTMuNDk4MTc5XSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2Vy
+bmVsOiAgICAgICAgYnRyZnNfcnVuX2Rldl9zdGF0cysweDQyLzB4M2QwIFtidHJmc10KWyAgIDUz
+LjQ5OTQ4N10gbG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDogICAgICAgIGNvbW1pdF9jb3dv
+bmx5X3Jvb3RzKzB4YjgvMHgzMTAgW2J0cmZzXQpbICAgNTMuNTAwNzg0XSBsb2NhbGhvc3QubG9j
+YWxkb21haW4ga2VybmVsOiAgICAgICAgYnRyZnNfY29tbWl0X3RyYW5zYWN0aW9uKzB4MzUzLzB4
+OWMwIFtidHJmc10KWyAgIDUzLjUwMjEwOF0gbG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDog
+ICAgICAgIGJ0cmZzX3N5bmNfZmlsZSsweDMyZC8weDQ2MCBbYnRyZnNdClsgICA1My41MDMzNDdd
+IGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBrZXJuZWw6ICAgICAgICBkb19mc3luYysweDM4LzB4NzAK
+WyAgIDUzLjUwNDU3NV0gbG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDogICAgICAgIF9feDY0
+X3N5c19mZGF0YXN5bmMrMHgxMy8weDIwClsgICA1My41MDU4MThdIGxvY2FsaG9zdC5sb2NhbGRv
+bWFpbiBrZXJuZWw6ICAgICAgICBkb19zeXNjYWxsXzY0KzB4NWMvMHhhMApbICAgNTMuNTA3MDk1
+XSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiAgICAgICAgZW50cnlfU1lTQ0FMTF82NF9h
+ZnRlcl9od2ZyYW1lKzB4NDkvMHhiZQpbICAgNTMuNTA4MzY2XSBsb2NhbGhvc3QubG9jYWxkb21h
+aW4ga2VybmVsOiAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+LT4gIzEgKCZmc19pbmZvLT50cmVlX2xvZ19tdXRleCl7Ky4rLn06ClsgICA1My41MTA5NThdIGxv
+Y2FsaG9zdC5sb2NhbGRvbWFpbiBrZXJuZWw6ICAgICAgICBidHJmc19jb21taXRfdHJhbnNhY3Rp
+b24rMHgyZjgvMHg5YzAgW2J0cmZzXQpbICAgNTMuNTEyMzE3XSBsb2NhbGhvc3QubG9jYWxkb21h
+aW4ga2VybmVsOiAgICAgICAgYnRyZnNfc3luY19maWxlKzB4MzJkLzB4NDYwIFtidHJmc10KWyAg
+IDUzLjUxMzYyOF0gbG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDogICAgICAgIGRvX2ZzeW5j
+KzB4MzgvMHg3MApbICAgNTMuNTE0OTgwXSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiAg
+ICAgICAgX194NjRfc3lzX2ZkYXRhc3luYysweDEzLzB4MjAKWyAgIDUzLjUxNjI5Nl0gbG9jYWxo
+b3N0LmxvY2FsZG9tYWluIGtlcm5lbDogICAgICAgIGRvX3N5c2NhbGxfNjQrMHg1Yy8weGEwClsg
+ICA1My41MTc2MDFdIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBrZXJuZWw6ICAgICAgICBlbnRyeV9T
+WVNDQUxMXzY0X2FmdGVyX2h3ZnJhbWUrMHg0OS8weGJlClsgICA1My41MTg5NTNdIGxvY2FsaG9z
+dC5sb2NhbGRvbWFpbiBrZXJuZWw6IAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAtPiAjMCAoJmZzX2luZm8tPnJlbG9jX211dGV4KXsrLisufToKWyAgIDUzLjUy
+MTU3MV0gbG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDogICAgICAgIF9fbXV0ZXhfbG9jaysw
+eDkyLzB4OTMwClsgICA1My41MjMwNjZdIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBrZXJuZWw6ICAg
+ICAgICBidHJmc19yZWNvcmRfcm9vdF9pbl90cmFucysweDQ0LzB4NzAgW2J0cmZzXQpbICAgNTMu
+NTI0NDg5XSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiAgICAgICAgc3RhcnRfdHJhbnNh
+Y3Rpb24rMHg5NS8weDRmMCBbYnRyZnNdClsgICA1My41MjU5NDldIGxvY2FsaG9zdC5sb2NhbGRv
+bWFpbiBrZXJuZWw6ICAgICAgICBidHJmc19kaXJ0eV9pbm9kZSsweDQ0LzB4ZDAgW2J0cmZzXQpb
+ICAgNTMuNTI3MzI0XSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiAgICAgICAgdG91Y2hf
+YXRpbWUrMHhiZS8weGUwClsgICA1My41Mjg3NTBdIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBrZXJu
+ZWw6ICAgICAgICBidHJmc19maWxlX21tYXArMHgzZi8weDYwIFtidHJmc10KWyAgIDUzLjUzMDE3
+OV0gbG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDogICAgICAgIG1tYXBfcmVnaW9uKzB4NDEw
+LzB4NjYwClsgICA1My41MzE1NzZdIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBrZXJuZWw6ICAgICAg
+ICBkb19tbWFwKzB4MzhjLzB4NTAwClsgICA1My41MzI5OTldIGxvY2FsaG9zdC5sb2NhbGRvbWFp
+biBrZXJuZWw6ICAgICAgICB2bV9tbWFwX3Bnb2ZmKzB4ZDcvMHgxMjAKWyAgIDUzLjUzNDM3M10g
+bG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDogICAgICAgIGtzeXNfbW1hcF9wZ29mZisweDE4
+YS8weDI0MApbICAgNTMuNTM1NzUwXSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiAgICAg
+ICAgZG9fc3lzY2FsbF82NCsweDVjLzB4YTAKWyAgIDUzLjUzNzE1OF0gbG9jYWxob3N0LmxvY2Fs
+ZG9tYWluIGtlcm5lbDogICAgICAgIGVudHJ5X1NZU0NBTExfNjRfYWZ0ZXJfaHdmcmFtZSsweDQ5
+LzB4YmUKWyAgIDUzLjUzODU0NF0gbG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDogCiAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIG90aGVyIGluZm8gdGhhdCBt
+aWdodCBoZWxwIHVzIGRlYnVnIHRoaXM6ClsgICA1My41NDI2ODVdIGxvY2FsaG9zdC5sb2NhbGRv
+bWFpbiBrZXJuZWw6IENoYWluIGV4aXN0cyBvZjoKICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAmZnNfaW5mby0+cmVsb2NfbXV0ZXggLS0+IHNyX211dGV4IC0t
+PiAmbW0tPm1tYXBfc2VtClsgICA1My41NDY4NTBdIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBrZXJu
+ZWw6ICBQb3NzaWJsZSB1bnNhZmUgbG9ja2luZyBzY2VuYXJpbzoKWyAgIDUzLjU0OTY0M10gbG9j
+YWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDogICAgICAgIENQVTAgICAgICAgICAgICAgICAgICAg
+IENQVTEKWyAgIDUzLjU1MTA2M10gbG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDogICAgICAg
+IC0tLS0gICAgICAgICAgICAgICAgICAgIC0tLS0KWyAgIDUzLjU1MjQzNl0gbG9jYWxob3N0Lmxv
+Y2FsZG9tYWluIGtlcm5lbDogICBsb2NrKCZtbS0+bW1hcF9zZW0pOwpbICAgNTMuNTUzNzk1XSBs
+b2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgbG9jayhzcl9tdXRleCk7ClsgICA1My41NTUyMjNdIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBr
+ZXJuZWw6ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBsb2NrKCZtbS0+bW1hcF9zZW0p
+OwpbICAgNTMuNTU2NjA3XSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiAgIGxvY2soJmZz
+X2luZm8tPnJlbG9jX211dGV4KTsKWyAgIDUzLjU1ODAyNV0gbG9jYWxob3N0LmxvY2FsZG9tYWlu
+IGtlcm5lbDogCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAq
+KiogREVBRExPQ0sgKioqClsgICA1My41NjIwNTddIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBrZXJu
+ZWw6IDMgbG9ja3MgaGVsZCBieSBzc3NkLzcwMDoKWyAgIDUzLjU2MzM4NF0gbG9jYWxob3N0Lmxv
+Y2FsZG9tYWluIGtlcm5lbDogICMwOiAwMDAwMDAwMDhiN2ZkOWEzICgmbW0tPm1tYXBfc2VtKXsr
+KysrfSwgYXQ6IHZtX21tYXBfcGdvZmYrMHhhZC8weDEyMApbICAgNTMuNTY0Nzc5XSBsb2NhbGhv
+c3QubG9jYWxkb21haW4ga2VybmVsOiAgIzE6IDAwMDAwMDAwYWYyNDQzMzEgKHNiX3dyaXRlcnMj
+MTQpey4rLit9LCBhdDogdG91Y2hfYXRpbWUrMHg2NC8weGUwClsgICA1My41NjYyMjJdIGxvY2Fs
+aG9zdC5sb2NhbGRvbWFpbiBrZXJuZWw6ICAjMjogMDAwMDAwMDAyZDNhM2M4OCAoc2JfaW50ZXJu
+YWwpey4rLit9LCBhdDogc3RhcnRfdHJhbnNhY3Rpb24rMHgzN2YvMHg0ZjAgW2J0cmZzXQpbICAg
+NTMuNTY3NzE1XSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiAKICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgc3RhY2sgYmFja3RyYWNlOgpbICAgNTMuNTcw
+NTA5XSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiBDUFU6IDAgUElEOiA3MDAgQ29tbTog
+c3NzZCBOb3QgdGFpbnRlZCA1LjAuMC0wLnJjNi5naXQwLjEuZmMzMC54ODZfNjQgIzEKWyAgIDUz
+LjU3MjAwNV0gbG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDogSGFyZHdhcmUgbmFtZTogUUVN
+VSBTdGFuZGFyZCBQQyAoaTQ0MEZYICsgUElJWCwgMTk5NiksIEJJT1MgMC4wLjAgMDIvMDYvMjAx
+NQpbICAgNTMuNTczNDg2XSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiBDYWxsIFRyYWNl
+OgpbICAgNTMuNTc1MDkzXSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiAgZHVtcF9zdGFj
+aysweDg1LzB4YzAKWyAgIDUzLjU3NjU5Nl0gbG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDog
+IHByaW50X2NpcmN1bGFyX2J1Zy5pc3JhLjAuY29sZCsweDE1Yy8weDE5NQpbICAgNTMuNTc4MTEy
+XSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiAgX19sb2NrX2FjcXVpcmUrMHgxMzRjLzB4
+MTY2MApbICAgNTMuNTc5NTgzXSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiAgPyBtYXJr
+X2hlbGRfbG9ja3MrMHg1Ny8weDgwClsgICA1My41ODEwODhdIGxvY2FsaG9zdC5sb2NhbGRvbWFp
+biBrZXJuZWw6ICA/IGxvY2tkZXBfaGFyZGlycXNfb24rMHhlZC8weDE4MApbICAgNTMuNTgyNTYz
+XSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiAgbG9ja19hY3F1aXJlKzB4YTIvMHgxYjAK
+WyAgIDUzLjU4NDExM10gbG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDogID8gYnRyZnNfcmVj
+b3JkX3Jvb3RfaW5fdHJhbnMrMHg0NC8weDcwIFtidHJmc10KWyAgIDUzLjU4NTY1MV0gbG9jYWxo
+b3N0LmxvY2FsZG9tYWluIGtlcm5lbDogID8gYnRyZnNfcmVjb3JkX3Jvb3RfaW5fdHJhbnMrMHg0
+NC8weDcwIFtidHJmc10KWyAgIDUzLjU4NzE0OF0gbG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5l
+bDogIF9fbXV0ZXhfbG9jaysweDkyLzB4OTMwClsgICA1My41ODg2NDhdIGxvY2FsaG9zdC5sb2Nh
+bGRvbWFpbiBrZXJuZWw6ICA/IGJ0cmZzX3JlY29yZF9yb290X2luX3RyYW5zKzB4NDQvMHg3MCBb
+YnRyZnNdClsgICA1My41OTAxNjNdIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBrZXJuZWw6ICA/IHJj
+dV9yZWFkX2xvY2tfc2NoZWRfaGVsZCsweDZiLzB4ODAKWyAgIDUzLjU5MTY3Nl0gbG9jYWxob3N0
+LmxvY2FsZG9tYWluIGtlcm5lbDogID8gYnRyZnNfcmVjb3JkX3Jvb3RfaW5fdHJhbnMrMHg0NC8w
+eDcwIFtidHJmc10KWyAgIDUzLjU5MzE4OF0gbG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDog
+ID8gc2NoZWRfY2xvY2tfY3B1KzB4Yy8weGMwClsgICA1My41OTQ3MDRdIGxvY2FsaG9zdC5sb2Nh
+bGRvbWFpbiBrZXJuZWw6ICA/IGJ0cmZzX3JlY29yZF9yb290X2luX3RyYW5zKzB4NDQvMHg3MCBb
+YnRyZnNdClsgICA1My41OTYyNzZdIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBrZXJuZWw6ICBidHJm
+c19yZWNvcmRfcm9vdF9pbl90cmFucysweDQ0LzB4NzAgW2J0cmZzXQpbICAgNTMuNTk3ODE3XSBs
+b2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiAgc3RhcnRfdHJhbnNhY3Rpb24rMHg5NS8weDRm
+MCBbYnRyZnNdClsgICA1My41OTkzNTRdIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBrZXJuZWw6ICA/
+IGt0aW1lX2dldCsweDEyMC8weDEzMApbICAgNTMuNjAwODk3XSBsb2NhbGhvc3QubG9jYWxkb21h
+aW4ga2VybmVsOiAgYnRyZnNfZGlydHlfaW5vZGUrMHg0NC8weGQwIFtidHJmc10KWyAgIDUzLjYw
+MjQ1MF0gbG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDogIHRvdWNoX2F0aW1lKzB4YmUvMHhl
+MApbICAgNTMuNjA0MDU1XSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiAgYnRyZnNfZmls
+ZV9tbWFwKzB4M2YvMHg2MCBbYnRyZnNdClsgICA1My42MDU1ODRdIGxvY2FsaG9zdC5sb2NhbGRv
+bWFpbiBrZXJuZWw6ICBtbWFwX3JlZ2lvbisweDQxMC8weDY2MApbICAgNTMuNjA3MTI5XSBsb2Nh
+bGhvc3QubG9jYWxkb21haW4ga2VybmVsOiAgZG9fbW1hcCsweDM4Yy8weDUwMApbICAgNTMuNjA4
+NjM1XSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiAgdm1fbW1hcF9wZ29mZisweGQ3LzB4
+MTIwClsgICA1My42MTAxNTldIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBrZXJuZWw6ICBrc3lzX21t
+YXBfcGdvZmYrMHgxOGEvMHgyNDAKWyAgIDUzLjYxMTY0Nl0gbG9jYWxob3N0LmxvY2FsZG9tYWlu
+IGtlcm5lbDogID8gdHJhY2VfaGFyZGlycXNfb2ZmX3RodW5rKzB4MWEvMHgxYwpbICAgNTMuNjEz
+MTg4XSBsb2NhbGhvc3QubG9jYWxkb21haW4ga2VybmVsOiAgZG9fc3lzY2FsbF82NCsweDVjLzB4
+YTAKWyAgIDUzLjYxNDY3Nl0gbG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDogIGVudHJ5X1NZ
+U0NBTExfNjRfYWZ0ZXJfaHdmcmFtZSsweDQ5LzB4YmUKWyAgIDUzLjYxNjIwMV0gbG9jYWxob3N0
+LmxvY2FsZG9tYWluIGtlcm5lbDogUklQOiAwMDMzOjB4N2YzMDhiNDcyM2I2ClsgICA1My42MTc2
+ODhdIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBrZXJuZWw6IENvZGU6IDAwIDAwIDAwIDAwIGYzIDBm
+IDFlIGZhIDQxIGY3IGMxIGZmIDBmIDAwIDAwIDc1IDJiIDU1IDQ4IDg5IGZkIDUzIDg5IGNiIDQ4
+IDg1IGZmIDc0IDM3IDQxIDg5IGRhIDQ4IDg5IGVmIGI4IDA5IDAwIDAwIDAwIDA+ClsgICA1My42
+MjA5NThdIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBrZXJuZWw6IFJTUDogMDAyYjowMDAwN2ZmZjg5
+N2I4N2E4IEVGTEFHUzogMDAwMDAyNDYgT1JJR19SQVg6IDAwMDAwMDAwMDAwMDAwMDkKWyAgIDUz
+LjYyMjYzOV0gbG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDogUkFYOiBmZmZmZmZmZmZmZmZm
+ZmRhIFJCWDogMDAwMDAwMDAwMDAwMDAwMSBSQ1g6IDAwMDA3ZjMwOGI0NzIzYjYKWyAgIDUzLjYy
+NDM3MF0gbG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDogUkRYOiAwMDAwMDAwMDAwMDAwMDAz
+IFJTSTogMDAwMDAwMDAwMDEzYTAwMCBSREk6IDAwMDAwMDAwMDAwMDAwMDAKWyAgIDUzLjYyNjEx
+NF0gbG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDogUkJQOiAwMDAwMDAwMDAwMDAwMDAwIFIw
+ODogMDAwMDAwMDAwMDAwMDAwNSBSMDk6IDAwMDAwMDAwMDAwMDAwMDAKWyAgIDUzLjYyNzgxN10g
+bG9jYWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDogUjEwOiAwMDAwMDAwMDAwMDAwMDAxIFIxMTog
+MDAwMDAwMDAwMDAwMDI0NiBSMTI6IDAwMDAwMDAwMDAxM2EwMDAKWyAgIDUzLjYyOTUzMV0gbG9j
+YWxob3N0LmxvY2FsZG9tYWluIGtlcm5lbDogUjEzOiAwMDAwMDAwMDAwMTNhMDAxIFIxNDogMDAw
+MDAwMDAwMDAwMDAwMSBSMTU6IDAwMDA3ZmZmODk3Yjg5YjgKWyAgIDUzLjczNzkzNV0gbG9jYWxo
+b3N0LmxvY2FsZG9tYWluIHBvbGtpdGRbNzIxXTogTG9hZGluZyBydWxlcyBmcm9tIGRpcmVjdG9y
+eSAvZXRjL3BvbGtpdC0xL3J1bGVzLmQKWyAgIDUzLjc0MjkzMF0gbG9jYWxob3N0LmxvY2FsZG9t
+YWluIHBvbGtpdGRbNzIxXTogTG9hZGluZyBydWxlcyBmcm9tIGRpcmVjdG9yeSAvdXNyL3NoYXJl
+L3BvbGtpdC0xL3J1bGVzLmQKWyAgIDUzLjg5NDU5Nl0gbG9jYWxob3N0LmxvY2FsZG9tYWluIHBv
+bGtpdGRbNzIxXTogRmluaXNoZWQgbG9hZGluZywgY29tcGlsaW5nIGFuZCBleGVjdXRpbmcgMTIg
+cnVsZXMKWyAgIDUzLjg5OTM5Nl0gbG9jYWxob3N0LmxvY2FsZG9tYWluIGF1ZGl0WzFdOiBTRVJW
+SUNFX1NUQVJUIHBpZD0xIHVpZD0wIGF1aWQ9NDI5NDk2NzI5NSBzZXM9NDI5NDk2NzI5NSBzdWJq
+PXN5c3RlbV91OnN5c3RlbV9yOmluaXRfdDpzMCBtc2c9J3VuaXQ9cG9sa2l0IGNvbW09InN5c3Rl
+bWQiIGV4ZT4KWyAgIDUzLjg5OTcyMF0gbG9jYWxob3N0LmxvY2FsZG9tYWluIHN5c3RlbWRbMV06
+IFN0YXJ0ZWQgQXV0aG9yaXphdGlvbiBNYW5hZ2VyLgpbICAgNTMuOTA1ODU3XSBsb2NhbGhvc3Qu
+bG9jYWxkb21haW4gcG9sa2l0ZFs3MjFdOiBBY3F1aXJlZCB0aGUgbmFtZSBvcmcuZnJlZWRlc2t0
+b3AuUG9saWN5S2l0MSBvbiB0aGUgc3lzdGVtIGJ1cwpbICAgNTQuMDM1Nzg4XSBsb2NhbGhvc3Qu
+bG9jYWxkb21haW4gdWRpc2tzZFs2NzldOiBFcnJvciBwcm9iaW5nIGRldmljZTogRXJyb3Igc2Vu
+ZGluZyBBVEEgY29tbWFuZCBJREVOVElGWSBQQUNLRVQgREVWSUNFIHRvIC9kZXYvc3IwOiBVbmV4
+cGVjdGVkIHNlbnNlIGRhdGEgcmV0dXJuZWQ6CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgIDAwMDA6IDcwIDAwIDA1IDAwICAwMCAwMCAwMCAwYSAgMDAg
+NTggMDAgMDEgIDIxIDA0IDAwIDAwICAgIHAuLi4uLi4uLlguLiEuLi4KICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgMDAxMDogMDAgMDAgMDAgMDAgIDAw
+IDAwIDAwIDAwICAwMCAwMCAwMCAwMCAgMDAgMDAgMDAgMDAgICAgLi4uLi4uLi4uLi4uLi4uLgog
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGctaW8t
+ZXJyb3ItcXVhcmssIDApClsgICA1NC4wOTQyMDZdIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBzc3Nk
+WzcwMF06IFN0YXJ0aW5nIHVwClsgICA1NC4yMTY1NzddIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiB1
+ZGlza3NkWzY3OV06IEVycm9yIHByb2JpbmcgZGV2aWNlOiBFcnJvciBzZW5kaW5nIEFUQSBjb21t
+YW5kIElERU5USUZZIFBBQ0tFVCBERVZJQ0UgdG8gL2Rldi9zcjA6IFVuZXhwZWN0ZWQgc2Vuc2Ug
+ZGF0YSByZXR1cm5lZDoKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgMDAwMDogNzAgMDAgMDUgMDAgIDAwIDAwIDAwIDBhICAwMCA1OCAwMCAwMSAgMjEg
+MDQgMDAgMDAgICAgcC4uLi4uLi4uWC4uIS4uLgogICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAwMDEwOiAwMCAwMCAwMCAwMCAgMDAgMDAgMDAgMDAgIDAw
+IDAwIDAwIDAwICAwMCAwMCAwMCAwMCAgICAuLi4uLi4uLi4uLi4uLi4uCiAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoZy1pby1lcnJvci1xdWFyaywg
+MCkKWyAgIDU0LjMwODE3N10gbG9jYWxob3N0LmxvY2FsZG9tYWluIHN5c3RlbWRbMV06IFN0YXJ0
+ZWQgRGlzayBNYW5hZ2VyLgpbICAgNTQuMzEwMTkzXSBsb2NhbGhvc3QubG9jYWxkb21haW4gYXVk
+aXRbMV06IFNFUlZJQ0VfU1RBUlQgcGlkPTEgdWlkPTAgYXVpZD00Mjk0OTY3Mjk1IHNlcz00Mjk0
+OTY3Mjk1IHN1Ymo9c3lzdGVtX3U6c3lzdGVtX3I6aW5pdF90OnMwIG1zZz0ndW5pdD11ZGlza3My
+IGNvbW09InN5c3RlbWQiIGV4PgpbICAgNTQuMzEyMzI0XSBsb2NhbGhvc3QubG9jYWxkb21haW4g
+dWRpc2tzZFs2NzldOiBBY3F1aXJlZCB0aGUgbmFtZSBvcmcuZnJlZWRlc2t0b3AuVURpc2tzMiBv
+biB0aGUgc3lzdGVtIG1lc3NhZ2UgYnVzClsgICA1NC42OTcwNTJdIGxvY2FsaG9zdC5sb2NhbGRv
+bWFpbiBzeXN0ZW1kWzFdOiBzc3NkLnNlcnZpY2U6IE1haW4gcHJvY2VzcyBleGl0ZWQsIGNvZGU9
+ZXhpdGVkLCBzdGF0dXM9My9OT1RJTVBMRU1FTlRFRApbICAgNTQuNjk3NDk3XSBsb2NhbGhvc3Qu
+bG9jYWxkb21haW4gc3lzdGVtZFsxXTogc3NzZC5zZXJ2aWNlOiBGYWlsZWQgd2l0aCByZXN1bHQg
+J2V4aXQtY29kZScuClsgICA1NC43MDA1NDhdIGxvY2FsaG9zdC5sb2NhbGRvbWFpbiBzeXN0ZW1k
+WzFdOiBGYWlsZWQgdG8gc3RhcnQgU3lzdGVtIFNlY3VyaXR5IFNlcnZpY2VzIERhZW1vbi4KWyAg
+IDU0LjcwOTkyM10gbG9jYWxob3N0LmxvY2FsZG9tYWluIGF1ZGl0WzFdOiBTRVJWSUNFX1NUQVJU
+IHBpZD0xIHVpZD0wIGF1aWQ9NDI5NDk2NzI5NSBzZXM9NDI5NDk2NzI5NSBzdWJqPXN5c3RlbV91
+OnN5c3RlbV9yOmluaXRfdDpzMCBtc2c9J3VuaXQ9c3NzZCBjb21tPSJzeXN0ZW1kIiBleGU9Ij4K
+WyAgIDU0LjcxMTMzMF0gbG9jYWxob3N0LmxvY2FsZG9tYWluIHN5c3RlbWRbMV06IFJlYWNoZWQg
+dGFyZ2V0IFVzZXIgYW5kIEdyb3VwIE5hbWUgTG9va3Vwcy4KCg==
+--000000000000d137e80581d621aa--

@@ -2,102 +2,124 @@ Return-Path: <SRS0=zIgm=QV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-3.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A9B63C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 09:52:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 70B96C43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 10:01:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 79D26222A4
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 09:52:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3EB74222A1
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 10:01:01 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="qOgbgiv6"
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="U+ByeJBJ"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731021AbfBNJwk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 14 Feb 2019 04:52:40 -0500
-Received: from aserp2130.oracle.com ([141.146.126.79]:60454 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727937AbfBNJwj (ORCPT
+        id S2393093AbfBNKBA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 14 Feb 2019 05:01:00 -0500
+Received: from mail-pl1-f193.google.com ([209.85.214.193]:36879 "EHLO
+        mail-pl1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2393501AbfBNKA7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Feb 2019 04:52:39 -0500
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x1E9n2S6139001;
-        Thu, 14 Feb 2019 09:52:35 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
- references : from : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=corp-2018-07-02;
- bh=t60hihswHgyPTldc/eEn5og5TYF/Wx0p+lblJo+4xSk=;
- b=qOgbgiv6Wp6obSlAehhaKS9IbDa0WSu4T54wY3DxaEaBsQg/DMUMryKwyXJyE/Rx6ZbR
- gYiExNYaTsMKkuWWtO3svcP9mA6yjDdp8ixdJn5XVCBmq8BlvSIaTeKJcBCE5y4+LleN
- /hRO5EuFw5kp5K9cCAJSlF8j2j9DsXFtNtKEBIeoMqRDB+dFLFWgQRblEC5zT7AiqJje
- HTCkB0v/zJCa+8GHJo9HX57q7+7j2DjgjtWztAz+5E5HjGfn8AKVkadcBe51BrZuMjCx
- o4wUg4WojLzxQ378c7gJAuLwonntKP8bxI/w+6uKvmRefxGJs3Zi4LqjwhJ6YfhWtaAb eQ== 
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by aserp2130.oracle.com with ESMTP id 2qhre5pyvn-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 14 Feb 2019 09:52:35 +0000
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x1E9qYVf026696
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 14 Feb 2019 09:52:34 GMT
-Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x1E9qXPT016083;
-        Thu, 14 Feb 2019 09:52:33 GMT
-Received: from [172.20.10.2] (/157.45.219.136)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 14 Feb 2019 09:52:33 +0000
-Subject: Re: [PATCH] btrfs: scrub: remove unused nocow worker pointer
-To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-References: <20190212172314.15290-1-dsterba@suse.com>
-From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <b8755de1-6a83-85c5-31ca-ec74678257b6@oracle.com>
-Date:   Thu, 14 Feb 2019 17:52:25 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.4.0
+        Thu, 14 Feb 2019 05:00:59 -0500
+Received: by mail-pl1-f193.google.com with SMTP id b5so2910835plr.4
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Feb 2019 02:00:59 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=osandov-com.20150623.gappssmtp.com; s=20150623;
+        h=from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=Z2bkim4oALul+6F5qJgQ+hdQmsxKs2DCBYbBeQSsMyo=;
+        b=U+ByeJBJKkKv7wQl+AkPzcCp2gG51NQeFSKJVvv5ak3wd2wJUPHFc3XUH8knY+Smr1
+         MkN7O3zfIgH32rWH4NnPKCEdnvs8UcHHYMEW9Qv9AHJK04pclAndsmd8UgBNFIPYTE8s
+         4Ph8Qd1uuBdhUcR64OQWfhEZxjzSUOUdHXR17r+558uuaBOF4EIFM1XPn1lfuy3HDKsv
+         5Fa4tx4GIsUnuS0xLVEm30OxmLhtGKW1KO8bIKAqy+lwjXwm2W1qVdVMqWAIZ9oxiv0B
+         4KujB8yaxuR7RSEz8GAY8Stlm4HiPRoIQYtrH76FfFfWZGhmRNQtx/CIATZ2lzrXdFwR
+         Htnw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=Z2bkim4oALul+6F5qJgQ+hdQmsxKs2DCBYbBeQSsMyo=;
+        b=JxTqOU60ZNahuvYI4lDWSyS1rkCqS6yGDHgFxAex0rIEK1+tGa5C+UkYoKirDXygvC
+         yR7+Hd7/HFL6Tl6kEmaoCV40EF2OZVUoYsydD8bVPQmRiqD7lU5aC44dKn9nNPgVeXRt
+         mSUdDPv2AqVkoXyMErGyQMZYSxjopBlhNRNkDrlYr6+p3SYPdlQ9wNujSs7tKBJyTqGs
+         NGRRSw6O5TMw7IX2m0sF18hMtCnul/3e2b+5TIeI9ZxoLaodkg5P100ewHRablOttR8O
+         sevo86xrw+yqUha0fCiqTPW+qkNrzFs5ik2v6OD0CgsV2+RY+NWKLq//4bTv/T/pCAyi
+         NnkA==
+X-Gm-Message-State: AHQUAuagIUdA+zdMx3PSaHk7m+aPhTjJWKBKHcJ6Y4WeskcffI2OHkjj
+        5ulVh5+bscWc4e/5I7FArRy+0Q==
+X-Google-Smtp-Source: AHgI3IZ029eRAvLpKuBfBDOBD2fGCcZenX7szd7aNopMbnHOR619jQy9tKbWmQYngGXkmvpLlA0Rzw==
+X-Received: by 2002:a17:902:2dc3:: with SMTP id p61mr3206016plb.166.1550138458576;
+        Thu, 14 Feb 2019 02:00:58 -0800 (PST)
+Received: from vader.thefacebook.com ([2620:10d:c090:180::1:5849])
+        by smtp.gmail.com with ESMTPSA id i184sm2686952pfc.41.2019.02.14.02.00.57
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Thu, 14 Feb 2019 02:00:57 -0800 (PST)
+From:   Omar Sandoval <osandov@osandov.com>
+To:     linux-fsdevel@vger.kernel.org, Al Viro <viro@zeniv.linux.org.uk>
+Cc:     kernel-team@fb.com, linux-api@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org
+Subject: [RFC PATCH 0/6] Allow setting file birth time with utimensat()
+Date:   Thu, 14 Feb 2019 02:00:07 -0800
+Message-Id: <cover.1550136164.git.osandov@fb.com>
+X-Mailer: git-send-email 2.20.1
 MIME-Version: 1.0
-In-Reply-To: <20190212172314.15290-1-dsterba@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9166 signatures=668683
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
- suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
- lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
- definitions=main-1902140072
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+From: Omar Sandoval <osandov@fb.com>
 
+Hi,
 
-On 2/13/19 1:23 AM, David Sterba wrote:
-> The member btrfs_fs_info::scrub_nocow_workers is unused since the nocow
-> optimization was removed from scrub in 9bebe665c3e4 ("btrfs: scrub:
-> Remove unused copy_nocow_pages and its callchain").
-> 
-> Signed-off-by: David Sterba <dsterba@suse.com>
+Since statx was added in 4.11, userspace has had an interface for
+reading btime (file creation time), but no way to set it. This RFC patch
+series adds support for changing btime with utimensat(). Patch 1 adds
+the VFS infrastructure, patch 2 adds the support to utimensat() with a
+new flag, and the rest of the patches add filesystem support; I excluded
+CIFS for now because I don't have a CIFS setup to test it on.
 
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
+Updating btime is useful for at least a couple of use cases:
 
+- Backup/restore programs (my motivation for this feature is btrfs send)
+- File servers which interoperate with operating systems that allow
+  updating file creation time, including Mac OS [1] and Windows [2]
 
-> ---
->   fs/btrfs/ctree.h | 1 -
->   1 file changed, 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 9306925b6790..7f3826ca7c91 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -1078,7 +1078,6 @@ struct btrfs_fs_info {
->   	int scrub_workers_refcnt;
->   	struct btrfs_workqueue *scrub_workers;
->   	struct btrfs_workqueue *scrub_wr_completion_workers;
-> -	struct btrfs_workqueue *scrub_nocow_workers;
->   	struct btrfs_workqueue *scrub_parity_workers;
->   
->   #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
-> 
+I've also included a man page patch, xfs_io support, and an xfstest.
+
+Thoughts on the implementation or the interface?
+
+Thanks!
+
+1: https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/setattrlist.2.html
+2: https://docs.microsoft.com/en-us/windows/desktop/api/fileapi/nf-fileapi-setfiletime
+
+Omar Sandoval (6):
+  fs: add btime to struct iattr
+  fs: add AT_UTIME_BTIME for utimensat()
+  Btrfs: add support for setting btime
+  ext4: add support for setting btime
+  f2fs: add support for setting btime
+  xfs: add support for setting btime
+
+ fs/attr.c                      |  6 +++
+ fs/btrfs/inode.c               |  2 +
+ fs/btrfs/super.c               |  4 +-
+ fs/ext4/inode.c                | 15 +++++-
+ fs/ext4/super.c                |  2 +-
+ fs/f2fs/file.c                 | 19 ++++++--
+ fs/f2fs/super.c                |  2 +-
+ fs/utimes.c                    | 86 +++++++++++++++++++++-------------
+ fs/xfs/libxfs/xfs_format.h     |  2 +-
+ fs/xfs/libxfs/xfs_log_format.h |  2 +-
+ fs/xfs/xfs_iops.c              | 11 ++++-
+ fs/xfs/xfs_super.c             |  2 +-
+ include/linux/fs.h             |  4 ++
+ include/uapi/linux/fcntl.h     |  2 +
+ 14 files changed, 111 insertions(+), 48 deletions(-)
+
+-- 
+2.20.1
+

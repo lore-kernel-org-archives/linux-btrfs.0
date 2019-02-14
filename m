@@ -2,222 +2,161 @@ Return-Path: <SRS0=zIgm=QV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 04B5BC43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 14:30:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A61AC43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 15:17:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C5B8A2229F
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 14:30:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5ABAA222D7
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Feb 2019 15:17:27 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1550157447;
+	bh=97nTdyDm27SzkLYtCpPUcLWRq1Fj5T5xRAPsRj7srXc=;
+	h=From:To:Cc:Subject:Date:List-ID:From;
+	b=H4cM5tBBkujwddWowXteROobtcPjy+/Vmphq9ZNI6++AYM0ulYLkryOsGY2TYS0RH
+	 /y4m7yOEhqWg1jctsc1lZX8wLWQNBWrOrnHfVCriSW8showZdsfs0sEuqk45dg/zdG
+	 oYotU8kj2J5DU9Ii8L1S+CksaBFXHQ2u0jgg8658=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2439205AbfBNOal (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 14 Feb 2019 09:30:41 -0500
-Received: from mx2.suse.de ([195.135.220.15]:43304 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2436709AbfBNOaj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Feb 2019 09:30:39 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id E261DB03B;
-        Thu, 14 Feb 2019 14:30:35 +0000 (UTC)
-Subject: Re: [PATCH 1/4] btrfs: Refactor cow_file_range_async
+        id S2405022AbfBNPR0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 14 Feb 2019 10:17:26 -0500
+Received: from mail.kernel.org ([198.145.29.99]:50334 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S2393538AbfBNPR0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 14 Feb 2019 10:17:26 -0500
+Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 44B73222C9;
+        Thu, 14 Feb 2019 15:17:24 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1550157444;
+        bh=97nTdyDm27SzkLYtCpPUcLWRq1Fj5T5xRAPsRj7srXc=;
+        h=From:To:Cc:Subject:Date:From;
+        b=MtEVwzhaZdxg6Zb/rwaJMIBFh8UFZWRJAHlT+AlDwuKnYxXhjufiVD2x4fG+4N5qG
+         Hp5SqPvHlmWkHsQMgD4mCVhG0RrDVnAVkC34dF4DDtkJJ8VsrXFe2Mj+df0MPeXhkR
+         tQLJZzN3vXA0aONvBpKTHd3Q8FB51KF4b7nQN9cI=
+From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-References: <20190213155529.31500-1-nborisov@suse.com>
- <20190213155529.31500-2-nborisov@suse.com>
-Cc:     Josef Bacik <josef@toxicpanda.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <673f2523-c863-b298-971d-30fb0497e3f8@suse.com>
-Date:   Thu, 14 Feb 2019 16:30:34 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.2.1
-MIME-Version: 1.0
-In-Reply-To: <20190213155529.31500-2-nborisov@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Cc:     ce3g8jdj@umail.furryterror.org
+Subject: [PATCH] Btrfs: fix corruption reading shared and compressed extents after hole punching
+Date:   Thu, 14 Feb 2019 15:17:20 +0000
+Message-Id: <20190214151720.23563-1-fdmanana@kernel.org>
+X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+From: Filipe Manana <fdmanana@suse.com>
 
+In the past we had data corruption when reading compressed extents that
+are shared within the same file and they are consecutive, this got fixed
+by commit 005efedf2c7d0 ("Btrfs: fix read corruption of compressed and
+shared extents") and by commit 808f80b46790f ("Btrfs: update fix for read
+corruption of compressed and shared extents"). However there was a case
+that was missing in those fixes, which is when the shared and compressed
+extents are referenced with a non-zero offset. The following shell script
+creates a reproducer for this issue:
 
-On 13.02.19 г. 17:55 ч., Nikolay Borisov wrote:
-> This commit changes the implementation of cow_file_range_async in order
-> to get rid of the BUG_ON in the middle of the loop. Additionally it
-> reworks the inner loop in the hopes of making it more understandable.
-> 
-> Main change is that the number of chunks required to handle the given
-> range is calculated before going into the loop and the logic of the loop
-> just iterates the chunk count. Furthermore, the way memory is allocated
-> is reworked and now the code does a single kmalloc with enough space to
-> handle all chunks. Depending on whether compression is enabled or not
-> chunks are either 1 (in non-compress case) or the range divided by 512k.
-> 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> ---
->  fs/btrfs/inode.c | 75 +++++++++++++++++++++++++++++++-----------------
->  1 file changed, 49 insertions(+), 26 deletions(-)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 05bbfd02ea49..c2180f0a5f42 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -375,6 +375,7 @@ struct async_cow {
->  	unsigned int write_flags;
->  	struct list_head extents;
->  	struct btrfs_work work;
-> +	atomic_t *pending;
->  };
->  
->  static noinline int add_async_extent(struct async_cow *cow,
-> @@ -1181,7 +1182,12 @@ static noinline void async_cow_free(struct btrfs_work *work)
->  	async_cow = container_of(work, struct async_cow, work);
->  	if (async_cow->inode)
->  		btrfs_add_delayed_iput(async_cow->inode);
-> -	kfree(async_cow);
-> +	/*
-> +	 * Since the pointer to 'pending' is at the beginning of the array of
-> +	 * async_cow's, freeing it ensures the whole array has been freed.
-> +	 */
-> +	if (atomic_dec_and_test(async_cow->pending))
-> +		kfree(async_cow->pending);
->  }
->  
->  static int cow_file_range_async(struct inode *inode, struct page *locked_page,
-> @@ -1193,42 +1199,59 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
->  	struct async_cow *async_cow;
->  	unsigned long nr_pages;
->  	u64 cur_end;
-> +	u64 num_chunks = DIV_ROUND_UP(end - start, SZ_512K);
-> +	int i;
-> +	bool should_compress;
-> +	atomic_t *p;
-> +
->  
->  	clear_extent_bit(&BTRFS_I(inode)->io_tree, start, end, EXTENT_LOCKED,
->  			 1, 0, NULL);
+  #!/bin/bash
 
-In case of error I wonder shouldn't the cleared range really be within
-page_Start-page_end. Because subsequent pages which are being written
-back could follow this whole region?
+  mkfs.btrfs -f /dev/sdc &> /dev/null
+  mount -o compress /dev/sdc /mnt/sdc
 
-> -	while (start < end) {
-> -		async_cow = kmalloc(sizeof(*async_cow), GFP_NOFS);
-> -		BUG_ON(!async_cow); /* -ENOMEM */
-> -		/*
-> -		 * igrab is called higher up in the call chain, take only the
-> -		 * lightweight reference for the callback lifetime
-> -		 */
-> -		ihold(inode);
-> -		async_cow->inode = inode;
-> -		async_cow->fs_info = fs_info;
-> -		async_cow->locked_page = locked_page;
-> -		async_cow->start = start;
-> -		async_cow->write_flags = write_flags;
-> -
-> -		if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS &&
-> -		    !btrfs_test_opt(fs_info, FORCE_COMPRESS))
-> -			cur_end = end;
-> -		else
-> -			cur_end = min(end, start + SZ_512K - 1);
->  
-> -		async_cow->end = cur_end;
-> -		INIT_LIST_HEAD(&async_cow->extents);
-> +	if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS &&
-> +	    !btrfs_test_opt(fs_info, FORCE_COMPRESS)) {
-> +		num_chunks = 1;
-> +		should_compress = false;
-> +	} else {
-> +		should_compress = true;
-> +	}
-> +
-> +	/* Layout is [atomic_t][async_cow1][async_cowN].... */
-> +	async_cow = kmalloc(sizeof(atomic_t) + num_chunks*sizeof(*async_cow),
-> +			    GFP_NOFS);
-> +	if (!async_cow)
-> +		return -ENOMEM;
-> +
-> +	p = (atomic_t *)async_cow;
-> +	async_cow = (struct async_cow *)((char *)async_cow + sizeof(atomic_t));
-> +	atomic_set(p, num_chunks);
-> +
-> +	for (i = 0; i < num_chunks; i++) {
->  
-> -		btrfs_init_work(&async_cow->work,
-> +		if (should_compress)
-> +			cur_end = min(end, start + SZ_512K - 1);
-> +		else
-> +			cur_end = end;
-> +
-> +		ihold(inode);
-> +		async_cow[i].pending= p;
-> +		async_cow[i].inode = inode;
-> +		async_cow[i].start = start;
-> +		async_cow[i].end = cur_end;
-> +		async_cow[i].fs_info = fs_info;
-> +		async_cow[i].locked_page = locked_page;
-> +		async_cow[i].write_flags = write_flags;
-> +		INIT_LIST_HEAD(&async_cow[i].extents);
-> +
-> +		btrfs_init_work(&async_cow[i].work,
->  				btrfs_delalloc_helper,
->  				async_cow_start, async_cow_submit,
->  				async_cow_free);
->  
-> -		nr_pages = (cur_end - start + PAGE_SIZE) >>
-> -			PAGE_SHIFT;
-> +		nr_pages = DIV_ROUND_UP(cur_end - start, PAGE_SIZE);
->  		atomic_add(nr_pages, &fs_info->async_delalloc_pages);
->  
-> -		btrfs_queue_work(fs_info->delalloc_workers, &async_cow->work);
-> +		btrfs_queue_work(fs_info->delalloc_workers, &async_cow[i].work);
->  
->  		*nr_written += nr_pages;
->  		start = cur_end + 1;
-> 
+  # Create a file with 3 consecutive compressed extents, each has an
+  # uncompressed size of 128Kb and a compressed size of 4Kb.
+  for ((i = 1; i <= 3; i++)); do
+      head -c 4096 /dev/zero
+      for ((j = 1; j <= 31; j++)); do
+          head -c 4096 /dev/zero | tr '\0' "\377"
+      done
+  done > /mnt/sdc/foobar
+  sync
+
+  echo "Digest after file creation:   $(md5sum /mnt/sdc/foobar)"
+
+  # Clone the first extent into offsets 128K and 256K.
+  xfs_io -c "reflink /mnt/sdc/foobar 0 128K 128K" /mnt/sdc/foobar
+  xfs_io -c "reflink /mnt/sdc/foobar 0 256K 128K" /mnt/sdc/foobar
+  sync
+
+  echo "Digest after cloning:         $(md5sum /mnt/sdc/foobar)"
+
+  # Punch holes into the regions that are already full of zeroes.
+  xfs_io -c "fpunch 0 4K" /mnt/sdc/foobar
+  xfs_io -c "fpunch 128K 4K" /mnt/sdc/foobar
+  xfs_io -c "fpunch 256K 4K" /mnt/sdc/foobar
+  sync
+
+  echo "Digest after hole punching:   $(md5sum /mnt/sdc/foobar)"
+
+  echo "Dropping page cache..."
+  sysctl -q vm.drop_caches=1
+  echo "Digest after hole punching:   $(md5sum /mnt/sdc/foobar)"
+
+  umount /dev/sdc
+
+When running the script we get the following output:
+
+  Digest after file creation:   5a0888d80d7ab1fd31c229f83a3bbcc8  /mnt/sdc/foobar
+  linked 131072/131072 bytes at offset 131072
+  128 KiB, 1 ops; 0.0033 sec (36.960 MiB/sec and 295.6830 ops/sec)
+  linked 131072/131072 bytes at offset 262144
+  128 KiB, 1 ops; 0.0015 sec (78.567 MiB/sec and 628.5355 ops/sec)
+  Digest after cloning:         5a0888d80d7ab1fd31c229f83a3bbcc8  /mnt/sdc/foobar
+  Digest after hole punching:   5a0888d80d7ab1fd31c229f83a3bbcc8  /mnt/sdc/foobar
+  Dropping page cache...
+  Digest after hole punching:   fba694ae8664ed0c2e9ff8937e7f1484  /mnt/sdc/foobar
+
+This happens because after reading all the pages of the extent in the
+range from 128K to 256K for example, we read the hole at offset 256K
+and then when reading the page at offset 260K we don't submit the
+existing bio, which is responsible for filling all the page in the
+range 128K to 256K only, therefore adding the pages from range 260K
+to 384K to the existing bio and submitting it after iterating over the
+entire range. Once the bio completes, the uncompressed data fills only
+the pages in the range 128K to 256K because there's no more data read
+from disk, leaving the pages in the range 260K to 384K unfilled. It is
+just a slightly different variant of what was solved by commit
+005efedf2c7d0 ("Btrfs: fix read corruption of compressed and shared
+extents").
+
+Fix this by forcing a bio submit, during readpages(), whenever we find a
+compressed extent map for a page that is different from the extent map
+for the previous page or has a different starting offset (in case it's
+the same compressed extent), instead of the extent map's original start
+offset.
+
+A test case for fstests follows soon.
+
+Reported-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Tested-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Cc: stable@vger.kernel.org # 4.3+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/extent_io.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 52abe4082680..1bfb7207bbf0 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2985,11 +2985,11 @@ static int __do_readpage(struct extent_io_tree *tree,
+ 		 */
+ 		if (test_bit(EXTENT_FLAG_COMPRESSED, &em->flags) &&
+ 		    prev_em_start && *prev_em_start != (u64)-1 &&
+-		    *prev_em_start != em->orig_start)
++		    *prev_em_start != em->start)
+ 			force_bio_submit = true;
+ 
+ 		if (prev_em_start)
+-			*prev_em_start = em->orig_start;
++			*prev_em_start = em->start;
+ 
+ 		free_extent_map(em);
+ 		em = NULL;
+-- 
+2.11.0
+

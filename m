@@ -2,126 +2,185 @@ Return-Path: <SRS0=Dxhg=QW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D0609C43381
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Feb 2019 15:49:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A37E1C43381
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Feb 2019 15:49:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8C86A2081B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Feb 2019 15:49:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 73A2D2192D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Feb 2019 15:49:37 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=sd85.net header.i=@sd85.net header.b="g2RSDyud"
+	dkim=pass (2048-bit key) header.d=kernel-dk.20150623.gappssmtp.com header.i=@kernel-dk.20150623.gappssmtp.com header.b="h9OUIip/"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728159AbfBOPtB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 15 Feb 2019 10:49:01 -0500
-Received: from [142.93.181.243] ([142.93.181.243]:50950 "EHLO mail1.sd85.net"
-        rhost-flags-FAIL-FAIL-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726214AbfBOPtB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Feb 2019 10:49:01 -0500
-X-Greylist: delayed 471 seconds by postgrey-1.27 at vger.kernel.org; Fri, 15 Feb 2019 10:49:00 EST
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=sd85.net; s=mail1;
-        t=1550245269; bh=tu6TU/c+6EyUx7eyZdCktKWQJUdvogGLb1a5/+u1H0Q=;
-        h=To:From:Subject:Date:From;
-        b=g2RSDyudd/stkFcF6+wZKhgRAPf+9mkr5igQFZwt0zihg4CGXifttu5xeIudtAGjO
-         eKdE79Sw5swMLq2f8X7X9BFtqdc/obB58LVJhFYSnXrzIZMeUsDLIU/qwF0CXSZQps
-         hIk7qymcqO+w+94RZU0Pot4FXhb5qFtA/gNIYwMA1Jy5r1EwMALwhJBhYHlzXeB1FP
-         0y9E8kGoloNwmWp80lXe6++NWD5wpbwW8gP3KCb8MgwA0ld9f4FF/TM/+grpZNja7T
-         MLiyXAktXABYRwA1/X/AvF6us+67pmcSMQ4s+26bYLJ9otP/15ZW9RtjRgefY/ngTC
-         8xQGmBFa3/T4Q==
-To:     linux-btrfs@vger.kernel.org
-From:   Brian B <brian@sd85.net>
-Subject: Better distribution of RAID1 data?
-Openpgp: preference=signencrypt
-Autocrypt: addr=brian@sd85.net; prefer-encrypt=mutual; keydata=
- mQENBFjv4BEBCADyjthJzlzcuVxBt85raqXVSIoxTLabdZkT/KxfJub5Ly05/+1ByItgPMRk
- HYmYf3QK+dmaDYeBuNZfVmPWd33f6CHVc01h2NqL3CWgMZuRSzOMINlB25xm9XR6I5763NNU
- wWrvqNxDs5/T+/0suIObe3IB3FoKkfdCbSyls13a3TKgtUiLxBZdROJZPNsxtL6R9dpxP1uE
- 8DmmR07E9igqvfdKRbEyOev1LhYlDHvpKGys9JeYrYVPdeBMB1H11RvDnsdRKFeQQilGYr0k
- ZYSSJGjf0Q4HagIRw6kCgMiwD9HlwCHFKJsSCSiarumHjsWjcE9uHVZnn5yFjGpctffbABEB
- AAG0HkJyaWFuIEJhYmNvY2sgPGJyaWFuQHNkODUubmV0PokBPQQTAQoAJwUCWO/kpgIbAwUJ
- B4TOAAULCQgHAwUVCgkICwUWAwIBAAIeAQIXgAAKCRCrRF/6bTfxQUuECADnyT1nVB94ZGtY
- RkwV7w+ujV/rdmz8DcAxu5c87gJQvn6/bm8PULoD8nu149u45S7zXclEfVznl4qGQFw/pF73
- wJ0PHNsigsXYHi8oyg2YHqktXclH4104gunhSgvCF3eE6sadf1sPhv3y1vlwVyXIioKsQ4dH
- oftcTAoU5kQnNoNZORRaPnAZhXNhLpMa4T3Hi9t07drADFMn0i6vpreYk1/zwnBZQQvDRba9
- BWT47iotHYFW7uRhrbM7jyr6nie5ZeHaWI/2RNcRuGfxDLlMXETSiihYsEdnMXMZAR2XHR2J
- pmNHamrX95DWeHDsSt6EI1QOHxyYQyjCA3gu/mW5uQENBFjv4BEBCAC4L1Om/DhFjSozFWj8
- 8nbNFawBeAaDCIrzXmnRXO04mqApa+GF8TRVE2qUZJi0joukmuSQ3OhK7Hj+Wh5f99LT+LAa
- FtmNE2oGDlYBy83zePAyizQQ1NK2fCv+WNotFZMIo+NHjq5ua2XrCo/X5VytPUKNMgNabZuR
- sj2UEOW3K08i0ifJ4Kq5PJFi6wRhz+lukMRzAhNtumsoD4xTTunxPf7K16rv8ElbmOP7acL4
- /A+35fB8d+1e51aApr21Z0PKHsaQfkQOOVHYXFF0oIFAVRAajrvQ3kHK+cRDFDEn0q1yIH/v
- 82q9BfA4f4hPE1jZcnZ/7D4ceLUES2MpUrEbABEBAAGJASUEGAEKAA8FAljv4BECGwwFCQeE
- zgAACgkQq0Rf+m038UFMAgf+ISROpL6fo2kropyyg5is4MMGWyR9Z3DKRdSGcAAf71KA/XKj
- EA6tDjqO3MkIfuWFLjM9qivvECDHdIORGOuC4dzrou5BUv3W/2zoHABMsZzCNB4lcZwWVNYf
- pk7+JpRb+2d3Jh4O2TG3phOw1KND01dot7LQYBdk+yeHvMIoxG/XZrPfRYKEU8kFHgnugoqS
- 0TMGN23fMexcnbQ4ijBKYpfuKS1S5X2U81qQiQbVuq1oBTw43OXnaosNpJkSLee1VdrlCr8O
- 9NpCLZ24Jc6ZVch9xEQpIMpzLCSUpeH82nZuXPhPBhT0WpPWacZgSiVnCdMp3hbYnDdVBsbp
- /usESw==
-Message-ID: <db678e75-6f56-a247-adb9-c7cca4d63528@sd85.net>
-Date:   Fri, 15 Feb 2019 10:40:56 -0500
+        id S2387736AbfBOPtf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 15 Feb 2019 10:49:35 -0500
+Received: from mail-it1-f194.google.com ([209.85.166.194]:51608 "EHLO
+        mail-it1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1732029AbfBOPtf (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 15 Feb 2019 10:49:35 -0500
+Received: by mail-it1-f194.google.com with SMTP id y184so25126823itc.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Feb 2019 07:49:35 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=kernel-dk.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=gxvfq5TL/2HmGfmAumLfCM1Ftb4XqCEsXRfcSZF+1T0=;
+        b=h9OUIip/xw+IU3EFOgAuJ2mEtH+VQuLeB4N2O2e5L27iYvYrtP6ekFwJsYUVSR8Bs1
+         V392XnrQeNAUy7rzEK5X9RjrKX8vmLHjqRiG5HONgjRm2+fOgE6f7wJuvX6QtuzsWOdF
+         MfkNy1spvU8KVAOhzx2gB7lsHkND6yni833wB9wMTVzynMNMNsVhVjpfEHZ2/3qGsz9D
+         rXvPlMf1e6MpwVMTBVf+gHJWXTWyumwVlENzGzRya5qqopY95rsZqVKBmvI+tskX1FeI
+         khsRD7p9S2INbR0YIRanHv6C+VCXUUdEVjlIFSQ4S3sSSa7xj2Un1EU661Qgk61bbUHy
+         K1+Q==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=gxvfq5TL/2HmGfmAumLfCM1Ftb4XqCEsXRfcSZF+1T0=;
+        b=odNzBReyAYLLRCuMZ6S6i+T05Ts0Lz0FzeTz13JpZO+JubxwnTlrCoL4cTNNsRIdzn
+         /XKuffZ7LuSYIjUl29OymzKB3L2jmTLOWx8Dru9woA6vO2E94VoiBsbdORpllJpd3Y/J
+         5o9Gh5H61cO2uZRXtlSnpZvlQ+qmTSVfYKc48oHcH86W6W6XxG8GHO/+ynnETr+TddyJ
+         +V4cfUNoBDulIXGw5fPUXO1SXd9YFQNa0ttTmvhbtF4bTEoaRsnwautjYYvvauU3Mkcq
+         Su/+Wq7AvtUhfgBws2Yb+X64ELxrysmgvs+nCh2TYJ2Lw2F0OKLhHvXZi+GFPJ7U/HaW
+         3sJg==
+X-Gm-Message-State: AHQUAuYbftLFEHTr9YEDRF7vx6zIfcRhRqvSchks9pESgyRLgd7nYE2Q
+        uySOjTqtcCFD274mtaN3O141JA==
+X-Google-Smtp-Source: AHgI3IaV0Q9G5s5V1+OIQRz7sTqwSOWc1UGhJpRZNN56AkN2+6GPnd9+jvWg/bVCGoDtKm+mPdu3Pg==
+X-Received: by 2002:a02:984d:: with SMTP id x13mr4966711jaj.140.1550245774598;
+        Fri, 15 Feb 2019 07:49:34 -0800 (PST)
+Received: from [192.168.1.158] ([216.160.245.98])
+        by smtp.gmail.com with ESMTPSA id w186sm2639569itb.15.2019.02.15.07.49.32
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Fri, 15 Feb 2019 07:49:33 -0800 (PST)
+Subject: Re: [PATCH V15 00/18] block: support multi-page bvec
+To:     Ming Lei <ming.lei@redhat.com>
+Cc:     linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-mm@kvack.org, Theodore Ts'o <tytso@mit.edu>,
+        Omar Sandoval <osandov@fb.com>,
+        Sagi Grimberg <sagi@grimberg.me>,
+        Dave Chinner <dchinner@redhat.com>,
+        Kent Overstreet <kent.overstreet@gmail.com>,
+        Mike Snitzer <snitzer@redhat.com>, dm-devel@redhat.com,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        linux-fsdevel@vger.kernel.org, linux-raid@vger.kernel.org,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
+        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
+        Christoph Hellwig <hch@lst.de>, linux-ext4@vger.kernel.org,
+        Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
+        Boaz Harrosh <ooo@electrozaur.com>,
+        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com
+References: <20190215111324.30129-1-ming.lei@redhat.com>
+From:   Jens Axboe <axboe@kernel.dk>
+Message-ID: <c52b6a8b-d1d4-67ff-f81c-371d09cc6d5b@kernel.dk>
+Date:   Fri, 15 Feb 2019 08:49:31 -0700
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.4.0
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha512;
- protocol="application/pgp-signature";
- boundary="bf7XmRGiH28LkvdksibaIxGbAKVqfkj1j"
+In-Reply-To: <20190215111324.30129-1-ming.lei@redhat.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---bf7XmRGiH28LkvdksibaIxGbAKVqfkj1j
-Content-Type: multipart/mixed; boundary="ADGNqLAgNEGkEa0vrlt2ozOMAUm9d3Qpb";
- protected-headers="v1"
-From: Brian B <brian@sd85.net>
-To: linux-btrfs@vger.kernel.org
-Message-ID: <db678e75-6f56-a247-adb9-c7cca4d63528@sd85.net>
-Subject: Better distribution of RAID1 data?
+On 2/15/19 4:13 AM, Ming Lei wrote:
+> Hi,
+> 
+> This patchset brings multi-page bvec into block layer:
+> 
+> 1) what is multi-page bvec?
+> 
+> Multipage bvecs means that one 'struct bio_bvec' can hold multiple pages
+> which are physically contiguous instead of one single page used in linux
+> kernel for long time.
+> 
+> 2) why is multi-page bvec introduced?
+> 
+> Kent proposed the idea[1] first. 
+> 
+> As system's RAM becomes much bigger than before, and huge page, transparent
+> huge page and memory compaction are widely used, it is a bit easy now
+> to see physically contiguous pages from fs in I/O. On the other hand, from
+> block layer's view, it isn't necessary to store intermediate pages into bvec,
+> and it is enough to just store the physicallly contiguous 'segment' in each
+> io vector.
+> 
+> Also huge pages are being brought to filesystem and swap [2][6], we can
+> do IO on a hugepage each time[3], which requires that one bio can transfer
+> at least one huge page one time. Turns out it isn't flexiable to change
+> BIO_MAX_PAGES simply[3][5]. Multipage bvec can fit in this case very well.
+> As we saw, if CONFIG_THP_SWAP is enabled, BIO_MAX_PAGES can be configured
+> as much bigger, such as 512, which requires at least two 4K pages for holding
+> the bvec table.
+> 
+> With multi-page bvec:
+> 
+> - Inside block layer, both bio splitting and sg map can become more
+> efficient than before by just traversing the physically contiguous
+> 'segment' instead of each page.
+> 
+> - segment handling in block layer can be improved much in future since it
+> should be quite easy to convert multipage bvec into segment easily. For
+> example, we might just store segment in each bvec directly in future.
+> 
+> - bio size can be increased and it should improve some high-bandwidth IO
+> case in theory[4].
+> 
+> - there is opportunity in future to improve memory footprint of bvecs. 
+> 
+> 3) how is multi-page bvec implemented in this patchset?
+> 
+> Patch 1 ~ 3 parpares for supporting multi-page bvec. 
+> 
+> Patches 4 ~ 14 implement multipage bvec in block layer:
+> 
+> 	- put all tricks into bvec/bio/rq iterators, and as far as
+> 	drivers and fs use these standard iterators, they are happy
+> 	with multipage bvec
+> 
+> 	- introduce bio_for_each_bvec() to iterate over multipage bvec for splitting
+> 	bio and mapping sg
+> 
+> 	- keep current bio_for_each_segment*() to itereate over singlepage bvec and
+> 	make sure current users won't be broken; especailly, convert to this
+> 	new helper prototype in single patch 21 given it is bascially a mechanism
+> 	conversion
+> 
+> 	- deal with iomap & xfs's sub-pagesize io vec in patch 13
+> 
+> 	- enalbe multipage bvec in patch 14 
+> 
+> Patch 15 redefines BIO_MAX_PAGES as 256.
+> 
+> Patch 16 documents usages of bio iterator helpers.
+> 
+> Patch 17~18 kills NO_SG_MERGE.
+> 
+> These patches can be found in the following git tree:
+> 
+> 	git:  https://github.com/ming1/linux.git  v5.0-blk_mp_bvec_v14
+                                                                   ^^^
 
---ADGNqLAgNEGkEa0vrlt2ozOMAUm9d3Qpb
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
-Content-Language: en-US
+v15?
 
-It looks like the btrfs code currently uses the total space available on
-a disk to determine where it should place the two copies of a file in
-RAID1 mode.=C2=A0 Wouldn't it make more sense to use the _percentage_ of =
-free
-space instead of the number of free bytes?
+> Lots of test(blktest, xfstests, ltp io, ...) have been run with this patchset,
+> and not see regression.
+> 
+> Thanks Christoph for reviewing the early version and providing very good
+> suggestions, such as: introduce bio_init_with_vec_table(), remove another
+> unnecessary helpers for cleanup and so on.
+> 
+> Thanks Chritoph and Omar for reviewing V10/V11/V12, and provides lots of
+> helpful comments.
 
-For example, I have two disks in my array that are 8 TB, plus an
-assortment of 3,4, and 1 TB disks.=C2=A0 With the current allocation code=
-,
-btrfs will use my two 8 TB drives exclusively until I've written 4 TB of
-files, then it will start using the 4 TB disks, then eventually the 3,
-and finally the 1 TB disks.=C2=A0 If the code used a percentage figure
-instead, it would spread the allocations much more evenly across the
-drives, ideally spreading load and reducing drive wear.
+Applied, thanks Ming. Let's hope it sticks!
 
-Is there a reason this is done this way, or is it just something that
-hasn't had time for development?
+-- 
+Jens Axboe
 
-
-
---ADGNqLAgNEGkEa0vrlt2ozOMAUm9d3Qpb--
-
---bf7XmRGiH28LkvdksibaIxGbAKVqfkj1j
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCgAdFiEE1Fb9ER7X4mVjKS1rq0Rf+m038UEFAlxm3YgACgkQq0Rf+m03
-8UEN9Af/e+ITOeUlEWnZ6v/0v7vVC+A7se/liimuQP7wxXa/x6yB9uip0UW6Yt3o
-9+gk78VupHkgcygiUBKJ7SLGWRPaj3+IMoU1R8u2gPIapaOJNBmWna63p7j98trL
-TtQxRQbqWFizXjeh1h02KgsPvZFAaxODiQjzE1BXDPHCEB3ds0uKFge2092xxCiP
-PU26+KvgLLjO+6BqYNejca1CjnGW9vdo8Ydf14qJ17l71QRoUBGIAbNbsEpMTiAh
-NLvXo4fL9NKwqxoe4TCIeIHDrk4xalI2MQgrWhDsLbcUScTIo7X9MfP7Wxdsubim
-fhx0o61q1qAfSo44WH7JNGqOzTJs9Q==
-=WpE6
------END PGP SIGNATURE-----
-
---bf7XmRGiH28LkvdksibaIxGbAKVqfkj1j--

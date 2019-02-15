@@ -2,171 +2,68 @@ Return-Path: <SRS0=Dxhg=QW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EE7F3C43381
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Feb 2019 08:04:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 47A4DC10F02
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Feb 2019 09:57:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B989B206BB
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Feb 2019 08:04:34 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="iTwuZODZ"
+	by mail.kernel.org (Postfix) with ESMTP id 215BF21B1A
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Feb 2019 09:57:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2391071AbfBOIEY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 15 Feb 2019 03:04:24 -0500
-Received: from mail-yb1-f195.google.com ([209.85.219.195]:35623 "EHLO
-        mail-yb1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1732205AbfBOIEY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Feb 2019 03:04:24 -0500
-Received: by mail-yb1-f195.google.com with SMTP id v2so3481948ybm.2;
-        Fri, 15 Feb 2019 00:04:24 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=QuEfGz9b+yTPacvnfh/QMnf3j7UM3cHWmseR0aorNT0=;
-        b=iTwuZODZm/rOKVxYNUyD7WhyONkGHoFKvHJmU7KQQHd0OVhYrDsruvhfGPlzfQWG7d
-         +LhdlRPH0b3tYOAMqbilffCBDMxU5eztxCZaPrJbLzNokDIQxUvUtbg86I0sLJtkPR7o
-         VOrHSFY3YblvfYFJEYnLYjMCRkAXhEobe5kACtHAKixavdyqWYZacDFfwCgtB/N4/IcK
-         zfNUci1q3fNIzEgFayI+DNU2j8H0pqP20H424oIRwjqC24gbo0ogGEtWdpawpXfjAj1w
-         nxWq+N1u0WqkaL4TuPva8RtuFImC2B69xUzGCHeEUkPFdzi2hD5jVIOqCYp5KSBakC4G
-         c+sw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=QuEfGz9b+yTPacvnfh/QMnf3j7UM3cHWmseR0aorNT0=;
-        b=cN6g+nhVmCS9hSezxpGz+UfCugJchnRl8adnP8V3YO08mugl+D3SpX8Sx53NkKSSOC
-         XU+crZyDOAuq68lMTCIjLPoMBa9BjPRvjDr0XOUQ6yHeeGBj+c5NAbEa0uYfAH0pW6ca
-         vPvBnSXawkr8mhL3uGTrmjFRfX/ulrdN5Kzo2SoJB3zm8DV7xr9M3PYPAYWzuv7UhP0A
-         PocKjHPKziStKSo+OihH5ZicmDDOmte6QwTRIQlXBZRR5bkuzHNH3a6PJCStAUfFVbYP
-         FemvyuNCV/6qMZ8aprL4caZxdkvya+C6bMIX4h1la8THXIwnHJJ2rbXnNFdNMY/okv3P
-         fohA==
-X-Gm-Message-State: AHQUAuYmpWZInAgYT3vZLr/yIQzqZqbxdzmUXVWb/6FTSQDrVIX7vQtI
-        Vt6W1WNucgXHv+lXutvM/CCGH5AukiDVqO5qJV4=
-X-Google-Smtp-Source: AHgI3IbStHEFP2mPJIlWtmF4n/NoxAegtGV89PF4VxWaRToDnmSo0gKvywSNl1E5lM/gDGjkKC8HTPs6V3PZGp1+bd8=
-X-Received: by 2002:a25:9c09:: with SMTP id c9mr7114969ybo.462.1550217863552;
- Fri, 15 Feb 2019 00:04:23 -0800 (PST)
+        id S2405381AbfBOJ5O (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 15 Feb 2019 04:57:14 -0500
+Received: from mx2.suse.de ([195.135.220.15]:36444 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1733056AbfBOJ5N (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 15 Feb 2019 04:57:13 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 7936CAF76;
+        Fri, 15 Feb 2019 09:57:12 +0000 (UTC)
+Date:   Fri, 15 Feb 2019 10:57:12 +0100
+From:   Johannes Thumshirn <jthumshirn@suse.de>
+To:     lsf-pc@lists.linux-foundation.org
+Cc:     linux-block@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-nvdimm@lists.01.org, linux-btrfs@vger.kernel.org,
+        hare@suse.de
+Subject: [LSF/MM TOPIC] Software RAID Support for NV-DIMM
+Message-ID: <20190215095710.GA12279@linux-x5ow.site>
 MIME-Version: 1.0
-References: <20190214234908.GA6474@magnolia>
-In-Reply-To: <20190214234908.GA6474@magnolia>
-From:   Amir Goldstein <amir73il@gmail.com>
-Date:   Fri, 15 Feb 2019 10:04:12 +0200
-Message-ID: <CAOQ4uxho2AK7g-uhHykGaG6n+aqad-SaCTC6Z_EaA4Jn07tDSg@mail.gmail.com>
-Subject: Re: [PATCH] vfs: don't decrement i_nlink in d_tmpfile
-To:     "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        dsterba@suse.com, Al Viro <viro@zeniv.linux.org.uk>,
-        Jan Kara <jack@suse.com>, Theodore Tso <tytso@mit.edu>,
-        Andreas Dilger <adilger.kernel@dilger.ca>,
-        Jaegeuk Kim <jaegeuk@kernel.org>, yuchao0@huawei.com,
-        Hugh Dickins <hughd@google.com>,
-        Christoph Hellwig <hch@infradead.org>,
-        Richard Weinberger <richard@nod.at>,
-        Artem Bityutskiy <dedekind1@gmail.com>,
-        Adrian Hunter <adrian.hunter@intel.com>,
-        linux-xfs <linux-xfs@vger.kernel.org>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        Ext4 <linux-ext4@vger.kernel.org>,
-        linux-f2fs-devel@lists.sourceforge.net,
-        linux-mtd@lists.infradead.org, Linux MM <linux-mm@kvack.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Feb 15, 2019 at 4:23 AM Darrick J. Wong <darrick.wong@oracle.com> wrote:
->
-> From: Darrick J. Wong <darrick.wong@oracle.com>
->
-> d_tmpfile was introduced to instantiate an inode in the dentry cache as
-> a temporary file.  This helper decrements the inode's nlink count and
-> dirties the inode, presumably so that filesystems could call new_inode
-> to create a new inode with nlink == 1 and then call d_tmpfile which will
-> decrement nlink.
->
-> However, this doesn't play well with XFS, which needs to allocate,
-> initialize, and insert a tempfile inode on its unlinked list in a single
-> transaction.  In order to maintain referential integrity of the XFS
-> metadata, we cannot have an inode on the unlinked list with nlink >= 1.
->
-> XFS and btrfs hack around d_tmpfile's behavior by creating the inode
-> with nlink == 0 and then incrementing it just prior to calling
-> d_tmpfile, anticipating that it will be reset to 0.
->
-> Everywhere else outside of d_tmpfile, it appears that nlink updates and
-> persistence is the responsibility of individual filesystems.  Therefore,
-> move the nlink decrement out of d_tmpfile into the callers, and require
-> that callers only pass in inodes with nlink already set to 0.
->
-> Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
-> ---
->  fs/btrfs/inode.c  |    8 --------
->  fs/dcache.c       |    8 ++++++--
->  fs/ext2/namei.c   |    2 +-
->  fs/ext4/namei.c   |    1 +
->  fs/f2fs/namei.c   |    1 +
->  fs/minix/namei.c  |    2 +-
->  fs/ubifs/dir.c    |    1 +
->  fs/udf/namei.c    |    2 +-
->  fs/xfs/xfs_iops.c |   13 ++-----------
->  mm/shmem.c        |    1 +
->  10 files changed, 15 insertions(+), 24 deletions(-)
->
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 5c349667c761..bd189fc50f83 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -10382,14 +10382,6 @@ static int btrfs_tmpfile(struct inode *dir, struct dentry *dentry, umode_t mode)
->         if (ret)
->                 goto out;
->
-> -       /*
-> -        * We set number of links to 0 in btrfs_new_inode(), and here we set
-> -        * it to 1 because d_tmpfile() will issue a warning if the count is 0,
-> -        * through:
-> -        *
-> -        *    d_tmpfile() -> inode_dec_link_count() -> drop_nlink()
-> -        */
-> -       set_nlink(inode, 1);
->         d_tmpfile(dentry, inode);
->         unlock_new_inode(inode);
->         mark_inode_dirty(inode);
-> diff --git a/fs/dcache.c b/fs/dcache.c
-> index aac41adf4743..5fb4ecce2589 100644
-> --- a/fs/dcache.c
-> +++ b/fs/dcache.c
-> @@ -3042,12 +3042,16 @@ void d_genocide(struct dentry *parent)
->
->  EXPORT_SYMBOL(d_genocide);
->
-> +/*
-> + * Instantiate an inode in the dentry cache as a temporary file.  Callers must
-> + * ensure that @inode has a zero link count.
-> + */
->  void d_tmpfile(struct dentry *dentry, struct inode *inode)
->  {
-> -       inode_dec_link_count(inode);
->         BUG_ON(dentry->d_name.name != dentry->d_iname ||
->                 !hlist_unhashed(&dentry->d_u.d_alias) ||
-> -               !d_unlinked(dentry));
-> +               !d_unlinked(dentry) ||
-> +               inode->i_nlink != 0);
+(This is a joint proposal with Hannes Reinecke)
 
-You've just promoted i_nlink filesystem accounting error (which
-are not that rare) from WARN_ON() to BUG_ON(), not to mention
-Linus' objection to any use of BUG_ON() at all.
+Servers with NV-DIMM are slowly emerging in data centers but one key feature
+for reliability of these systems hasn't been addressed up to now, data
+redundancy.
 
-!hlist_unhashed is anyway checked again in d_instantiate().
-!d_unlinked is not a reason to break the machine.
-The name check is really not a reason to break the machine.
-Can probably make tmp name code conditional to WARN_ON().
+While it would be best to solve this issue in the memory controller of the CPU
+itself, I don't see this coming in the next few years. This puts us as the OS
+in the burden to create the redundant copies of data for the users.
 
-Thanks,
-Amir.
+If we leave of the DAX support Linux' software RAID implementations (MD,
+device-mapper and BTRFS RAID) do already work on top of pmem devices, but they
+are incompatible with DAX.
+
+In this session Hannes and I would like to discuss eventual ways how we as an
+operating system can mitigate these issues for our users.
+
+Byte,
+	Johannes
+
+-- 
+Johannes Thumshirn                            SUSE Labs Filesystems
+jthumshirn@suse.de                                +49 911 74053 689
+SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
+GF: Felix Imendörffer, Jane Smithard, Graham Norton
+HRB 21284 (AG Nürnberg)
+Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850

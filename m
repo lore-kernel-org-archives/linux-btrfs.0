@@ -6,28 +6,27 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AD61BC43381
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Feb 2019 10:51:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BBEEAC43381
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Feb 2019 10:51:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 84C5B21900
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Feb 2019 10:51:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9526821900
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Feb 2019 10:51:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2390200AbfBOKvL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 15 Feb 2019 05:51:11 -0500
-Received: from mx2.suse.de ([195.135.220.15]:54578 "EHLO mx1.suse.de"
+        id S2391885AbfBOKvN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 15 Feb 2019 05:51:13 -0500
+Received: from mx2.suse.de ([195.135.220.15]:54602 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2389255AbfBOKvL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Feb 2019 05:51:11 -0500
+        id S2389255AbfBOKvN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 15 Feb 2019 05:51:13 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 11B45AF6F
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Feb 2019 10:51:10 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 238D9AF6F
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Feb 2019 10:51:12 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH v5 07/12] btrfs: extent_io: Kill the dead branch in extent_write_cache_pages()
-Date:   Fri, 15 Feb 2019 18:50:39 +0800
-Message-Id: <20190215105044.17619-8-wqu@suse.com>
+Subject: [PATCH v5 08/12] btrfs: extent_io: Handle error better in extent_write_locked_range()
+Date:   Fri, 15 Feb 2019 18:50:40 +0800
+Message-Id: <20190215105044.17619-9-wqu@suse.com>
 X-Mailer: git-send-email 2.20.1
 In-Reply-To: <20190215105044.17619-1-wqu@suse.com>
 References: <20190215105044.17619-1-wqu@suse.com>
@@ -38,33 +37,41 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Since __extent_writepage() will no longer return >0 value,
-(ret == AOP_WRITEPAGE_ACTIVATE) will never be true.
-
-Kill that dead branch.
+Do proper cleanup if we hit any error in extent_write_locked_range(),
+and check the return value of flush_write_bio().
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
 ---
- fs/btrfs/extent_io.c | 5 -----
- 1 file changed, 5 deletions(-)
+ fs/btrfs/extent_io.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index b0bb4f0e15b9..aad417015fe2 100644
+index aad417015fe2..8ccbbaa6f45f 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -4007,11 +4007,6 @@ static int extent_write_cache_pages(struct address_space *mapping,
- 			}
+@@ -4075,7 +4075,6 @@ int extent_write_locked_range(struct inode *inode, u64 start, u64 end,
+ 			      int mode)
+ {
+ 	int ret = 0;
+-	int flush_ret;
+ 	struct address_space *mapping = inode->i_mapping;
+ 	struct extent_io_tree *tree = &BTRFS_I(inode)->io_tree;
+ 	struct page *page;
+@@ -4108,8 +4107,12 @@ int extent_write_locked_range(struct inode *inode, u64 start, u64 end,
+ 		start += PAGE_SIZE;
+ 	}
  
- 			ret = __extent_writepage(page, wbc, epd);
--
--			if (unlikely(ret == AOP_WRITEPAGE_ACTIVATE)) {
--				unlock_page(page);
--				ret = 0;
--			}
- 			if (ret < 0) {
- 				/*
- 				 * done_index is set past this page,
+-	flush_ret = flush_write_bio(&epd);
+-	BUG_ON(flush_ret < 0);
++	ASSERT(ret <= 0);
++	if (ret < 0) {
++		end_write_bio(&epd, ret);
++		return ret;
++	}
++	ret = flush_write_bio(&epd);
+ 	return ret;
+ }
+ 
 -- 
 2.20.1
 

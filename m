@@ -2,188 +2,341 @@ Return-Path: <SRS0=Dxhg=QW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,URIBL_BLOCKED
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 64516C43381
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Feb 2019 10:51:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C4FEEC43381
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Feb 2019 11:13:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 41C5721900
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Feb 2019 10:51:26 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 86FAE21B1A
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Feb 2019 11:13:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2405899AbfBOKvZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 15 Feb 2019 05:51:25 -0500
-Received: from mx2.suse.de ([195.135.220.15]:54732 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2405891AbfBOKvY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Feb 2019 05:51:24 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 01948AFA9;
-        Fri, 15 Feb 2019 10:51:22 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Leonard Lausen <leonard@lausen.nl>
-Subject: [PATCH v5 12/12] btrfs: Do mandatory tree block check before submitting bio
-Date:   Fri, 15 Feb 2019 18:50:44 +0800
-Message-Id: <20190215105044.17619-13-wqu@suse.com>
-X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20190215105044.17619-1-wqu@suse.com>
-References: <20190215105044.17619-1-wqu@suse.com>
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+        id S2394052AbfBOLNs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 15 Feb 2019 06:13:48 -0500
+Received: from mx1.redhat.com ([209.132.183.28]:59080 "EHLO mx1.redhat.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S2388520AbfBOLNs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 15 Feb 2019 06:13:48 -0500
+Received: from smtp.corp.redhat.com (int-mx05.intmail.prod.int.phx2.redhat.com [10.5.11.15])
+        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mx1.redhat.com (Postfix) with ESMTPS id 7826EC0D804C;
+        Fri, 15 Feb 2019 11:13:47 +0000 (UTC)
+Received: from localhost (ovpn-8-22.pek2.redhat.com [10.72.8.22])
+        by smtp.corp.redhat.com (Postfix) with ESMTP id DD6435D6A9;
+        Fri, 15 Feb 2019 11:13:33 +0000 (UTC)
+From:   Ming Lei <ming.lei@redhat.com>
+To:     Jens Axboe <axboe@kernel.dk>
+Cc:     linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-mm@kvack.org, Theodore Ts'o <tytso@mit.edu>,
+        Omar Sandoval <osandov@fb.com>,
+        Sagi Grimberg <sagi@grimberg.me>,
+        Dave Chinner <dchinner@redhat.com>,
+        Kent Overstreet <kent.overstreet@gmail.com>,
+        Mike Snitzer <snitzer@redhat.com>, dm-devel@redhat.com,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        linux-fsdevel@vger.kernel.org, linux-raid@vger.kernel.org,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
+        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
+        Christoph Hellwig <hch@lst.de>, linux-ext4@vger.kernel.org,
+        Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
+        Boaz Harrosh <ooo@electrozaur.com>,
+        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com,
+        Ming Lei <ming.lei@redhat.com>
+Subject: [PATCH V15 00/18] block: support multi-page bvec
+Date:   Fri, 15 Feb 2019 19:13:06 +0800
+Message-Id: <20190215111324.30129-1-ming.lei@redhat.com>
+X-Scanned-By: MIMEDefang 2.79 on 10.5.11.15
+X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.32]); Fri, 15 Feb 2019 11:13:48 +0000 (UTC)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There are at least 2 reports about memory bit flip sneaking into on-disk
-data.
+Hi,
 
-Currently we only have a relaxed check triggered at
-btrfs_mark_buffer_dirty() time, as it's not mandatory and only for
-CONFIG_BTRFS_FS_CHECK_INTEGRITY enabled build, it doesn't help user to
-detect such problem.
+This patchset brings multi-page bvec into block layer:
 
-This patch will address the hole by triggering comprehensive check on
-tree blocks before writing it back to disk.
+1) what is multi-page bvec?
 
-The design points are:
-- Timing of the check: Tree block write hook
-  This timing is chosen to reduce the overhead.
-  The comprehensive check should be as expensive as csum.
-  Doing full check at btrfs_mark_buffer_dirty() is too expensive for end
-  user.
+Multipage bvecs means that one 'struct bio_bvec' can hold multiple pages
+which are physically contiguous instead of one single page used in linux
+kernel for long time.
 
-- Loose empty leaf check
-  Originally for empty leaf, tree-checker will report error if it's not
-  a tree root.
-  The problem for such check at write time is:
-  * False alert for tree root created in current transaction
-    In that case, the commit root still needs to be written to disk.
-    And since current root can differ from commit root, then it will
-    cause false alert.
-    This happens for log tree.
+2) why is multi-page bvec introduced?
 
-  * False alert for relocated tree block
-    Relocated tree block can be written to disk due to memory pressure,
-    in that case an empty csum tree root can be written to disk and
-    cause false alert, since csum root node hasn't been updated.
+Kent proposed the idea[1] first. 
 
-  Although some more reliable empty leaf check is still kept as is.
-  Namely essential trees (e.g. extent, chunk) should never be empty.
+As system's RAM becomes much bigger than before, and huge page, transparent
+huge page and memory compaction are widely used, it is a bit easy now
+to see physically contiguous pages from fs in I/O. On the other hand, from
+block layer's view, it isn't necessary to store intermediate pages into bvec,
+and it is enough to just store the physicallly contiguous 'segment' in each
+io vector.
 
-The example error output will be something like:
-  BTRFS critical (device dm-3): corrupt leaf: root=2 block=1350630375424 slot=68, bad key order, prev (10510212874240 169 0) current (1714119868416 169 0)
-  BTRFS error (device dm-3): write time tree block corruption detected
-  BTRFS: error (device dm-3) in btrfs_commit_transaction:2220: errno=-5 IO failure (Error while writing out transaction)
-  BTRFS info (device dm-3): forced readonly
-  BTRFS warning (device dm-3): Skipping commit of aborted transaction.
-  BTRFS: error (device dm-3) in cleanup_transaction:1839: errno=-5 IO failure
-  BTRFS info (device dm-3): delayed_refs has NO entry
+Also huge pages are being brought to filesystem and swap [2][6], we can
+do IO on a hugepage each time[3], which requires that one bio can transfer
+at least one huge page one time. Turns out it isn't flexiable to change
+BIO_MAX_PAGES simply[3][5]. Multipage bvec can fit in this case very well.
+As we saw, if CONFIG_THP_SWAP is enabled, BIO_MAX_PAGES can be configured
+as much bigger, such as 512, which requires at least two 4K pages for holding
+the bvec table.
 
-Reported-by: Leonard Lausen <leonard@lausen.nl>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/disk-io.c      |  9 +++++++++
- fs/btrfs/tree-checker.c | 24 +++++++++++++++++++++---
- fs/btrfs/tree-checker.h |  8 ++++++++
- 3 files changed, 38 insertions(+), 3 deletions(-)
+With multi-page bvec:
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index eeddfd4137a2..b6712ceba753 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -313,6 +313,15 @@ static int csum_tree_block(struct btrfs_fs_info *fs_info,
- 			return -EUCLEAN;
- 		}
- 	} else {
-+		if (btrfs_header_level(buf))
-+			err = btrfs_check_node(fs_info, buf);
-+		else
-+			err = btrfs_check_leaf_write(fs_info, buf);
-+		if (err < 0) {
-+			btrfs_err(fs_info,
-+				  "write time tree block corruption detected");
-+			return err;
-+		}
- 		write_extent_buffer(buf, result, 0, csum_size);
- 	}
- 
-diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index a62e1e837a89..b8cdaf472031 100644
---- a/fs/btrfs/tree-checker.c
-+++ b/fs/btrfs/tree-checker.c
-@@ -477,7 +477,7 @@ static int check_leaf_item(struct btrfs_fs_info *fs_info,
- }
- 
- static int check_leaf(struct btrfs_fs_info *fs_info, struct extent_buffer *leaf,
--		      bool check_item_data)
-+		      bool check_item_data, bool check_empty_leaf)
- {
- 	/* No valid key type is 0, so all key should be larger than this key */
- 	struct btrfs_key prev_key = {0, 0, 0};
-@@ -516,6 +516,18 @@ static int check_leaf(struct btrfs_fs_info *fs_info, struct extent_buffer *leaf,
- 				    owner);
- 			return -EUCLEAN;
- 		}
-+
-+		/*
-+		 * Skip empty leaf check, mostly for write time tree block
-+		 *
-+		 * Such skip mostly happens for tree block write time, as
-+		 * we can't use @owner as accurate owner indicator.
-+		 * Case like balance and new tree block created for commit root
-+		 * can break owner check easily.
-+		 */
-+		if (!check_empty_leaf)
-+			return 0;
-+
- 		key.objectid = owner;
- 		key.type = BTRFS_ROOT_ITEM_KEY;
- 		key.offset = (u64)-1;
-@@ -636,13 +648,19 @@ static int check_leaf(struct btrfs_fs_info *fs_info, struct extent_buffer *leaf,
- int btrfs_check_leaf_full(struct btrfs_fs_info *fs_info,
- 			  struct extent_buffer *leaf)
- {
--	return check_leaf(fs_info, leaf, true);
-+	return check_leaf(fs_info, leaf, true, true);
- }
- 
- int btrfs_check_leaf_relaxed(struct btrfs_fs_info *fs_info,
- 			     struct extent_buffer *leaf)
- {
--	return check_leaf(fs_info, leaf, false);
-+	return check_leaf(fs_info, leaf, false, true);
-+}
-+
-+int btrfs_check_leaf_write(struct btrfs_fs_info *fs_info,
-+			   struct extent_buffer *leaf)
-+{
-+	return check_leaf(fs_info, leaf, false, false);
- }
- 
- int btrfs_check_node(struct btrfs_fs_info *fs_info, struct extent_buffer *node)
-diff --git a/fs/btrfs/tree-checker.h b/fs/btrfs/tree-checker.h
-index ff043275b784..6f8d1b627c53 100644
---- a/fs/btrfs/tree-checker.h
-+++ b/fs/btrfs/tree-checker.h
-@@ -23,6 +23,14 @@ int btrfs_check_leaf_full(struct btrfs_fs_info *fs_info,
-  */
- int btrfs_check_leaf_relaxed(struct btrfs_fs_info *fs_info,
- 			     struct extent_buffer *leaf);
-+
-+/*
-+ * Write time specific leaf checker.
-+ * Don't check if the empty leaf belongs to a tree root. Mostly for balance
-+ * and new tree created in current transaction.
-+ */
-+int btrfs_check_leaf_write(struct btrfs_fs_info *fs_info,
-+			   struct extent_buffer *leaf);
- int btrfs_check_node(struct btrfs_fs_info *fs_info, struct extent_buffer *node);
- 
- #endif
+- Inside block layer, both bio splitting and sg map can become more
+efficient than before by just traversing the physically contiguous
+'segment' instead of each page.
+
+- segment handling in block layer can be improved much in future since it
+should be quite easy to convert multipage bvec into segment easily. For
+example, we might just store segment in each bvec directly in future.
+
+- bio size can be increased and it should improve some high-bandwidth IO
+case in theory[4].
+
+- there is opportunity in future to improve memory footprint of bvecs. 
+
+3) how is multi-page bvec implemented in this patchset?
+
+Patch 1 ~ 3 parpares for supporting multi-page bvec. 
+
+Patches 4 ~ 14 implement multipage bvec in block layer:
+
+	- put all tricks into bvec/bio/rq iterators, and as far as
+	drivers and fs use these standard iterators, they are happy
+	with multipage bvec
+
+	- introduce bio_for_each_bvec() to iterate over multipage bvec for splitting
+	bio and mapping sg
+
+	- keep current bio_for_each_segment*() to itereate over singlepage bvec and
+	make sure current users won't be broken; especailly, convert to this
+	new helper prototype in single patch 21 given it is bascially a mechanism
+	conversion
+
+	- deal with iomap & xfs's sub-pagesize io vec in patch 13
+
+	- enalbe multipage bvec in patch 14 
+
+Patch 15 redefines BIO_MAX_PAGES as 256.
+
+Patch 16 documents usages of bio iterator helpers.
+
+Patch 17~18 kills NO_SG_MERGE.
+
+These patches can be found in the following git tree:
+
+	git:  https://github.com/ming1/linux.git  v5.0-blk_mp_bvec_v14
+
+Lots of test(blktest, xfstests, ltp io, ...) have been run with this patchset,
+and not see regression.
+
+Thanks Christoph for reviewing the early version and providing very good
+suggestions, such as: introduce bio_init_with_vec_table(), remove another
+unnecessary helpers for cleanup and so on.
+
+Thanks Chritoph and Omar for reviewing V10/V11/V12, and provides lots of
+helpful comments.
+
+V15:
+	- rename bio_for_each_mp_bvec/rq_for_each_mp_bvec as
+	  bio_for_each_bvec/rq_for_each_bvec, as suggested by Christoph,
+	  so the mp_bvec name is only used by bvec helpers
+
+V14:
+	- drop patch(patch 4 in V13) for renaming bvec helpers, as suggested by Jens
+	- use mp_bvec_* as multi-page bvec helper name
+	- fix one build issue, which is caused by missing one converion of
+	bio_for_each_segment_all in fs/gfs2
+	- fix one 32bit ARCH specific issue caused by segment boundary mask
+	overflow
+
+V13:
+	- rebase on v5.0-rc2
+	- address Omar's comment on patch 1 of V12 by using V11's approach
+	- rename one local vairable in patch 15 as suggested by Christoph
+
+V12:
+	- deal with non-cluster by max segment size & segment boundary limit
+	- rename bvec helper's name
+	- revert new change on bvec_iter_advance() in V11
+	- introduce rq_for_each_bvec()
+	- use simpler check on enalbing multi-page bvec
+	- fix Document change
+
+V11:
+	- address most of reviews from Omar and christoph
+	- rename mp_bvec_* as segment_* helpers
+	- remove 'mp' parameter from bvec_iter_advance() and related helpers
+	- cleanup patch on bvec_split_segs() and blk_bio_segment_split(),
+	  remove unnecessary checks
+	- simplify bvec_last_segment()
+	- drop bio_pages_all()
+	- introduce dedicated functions/file for handling non-cluser bio for
+	avoiding checking queue cluster before adding page to bio
+	- introduce bio_try_merge_segment() for simplifying iomap/xfs page
+	  accounting code
+	- Fix Document change
+
+V10:
+	- no any code change, just add more guys and list into patch's CC list,
+	as suggested by Christoph and Dave Chinner
+V9:
+	- fix regression on iomap's sub-pagesize io vec, covered by patch 13
+V8:
+	- remove prepare patches which all are merged to linus tree
+	- rebase on for-4.21/block
+	- address comments on V7
+	- add patches of killing NO_SG_MERGE
+
+V7:
+	- include Christoph and Mike's bio_clone_bioset() patches, which is
+	  actually prepare patches for multipage bvec
+	- address Christoph's comments
+
+V6:
+	- avoid to introduce lots of renaming, follow Jen's suggestion of
+	using the name of chunk for multipage io vector
+	- include Christoph's three prepare patches
+	- decrease stack usage for using bio_for_each_chunk_segment_all()
+	- address Kent's comment
+
+V5:
+	- remove some of prepare patches, which have been merged already
+	- add bio_clone_seg_bioset() to fix DM's bio clone, which
+	is introduced by 18a25da84354c6b (dm: ensure bio submission follows
+	a depth-first tree walk)
+	- rebase on the latest block for-v4.18
+
+V4:
+	- rename bio_for_each_segment*() as bio_for_each_page*(), rename
+	bio_segments() as bio_pages(), rename rq_for_each_segment() as
+	rq_for_each_pages(), because these helpers never return real
+	segment, and they always return single page bvec
+	
+	- introducing segment_for_each_page_all()
+
+	- introduce new bio_for_each_segment*()/rq_for_each_segment()/bio_segments()
+	for returning real multipage segment
+
+	- rewrite segment_last_page()
+
+	- rename bvec iterator helper as suggested by Christoph
+
+	- replace comment with applying bio helpers as suggested by Christoph
+
+	- document usage of bio iterator helpers
+
+	- redefine BIO_MAX_PAGES as 256 to make the biggest bvec table
+	accommodated in 4K page
+
+	- move bio_alloc_pages() into bcache as suggested by Christoph
+
+V3:
+	- rebase on v4.13-rc3 with for-next of block tree
+	- run more xfstests: xfs/ext4 over NVMe, Sata, DM(linear),
+	MD(raid1), and not see regressions triggered
+	- add Reviewed-by on some btrfs patches
+	- remove two MD patches because both are merged to linus tree
+	  already
+
+V2:
+	- bvec table direct access in raid has been cleaned, so NO_MP
+	flag is dropped
+	- rebase on recent Neil Brown's change on bio and bounce code
+	- reorganize the patchset
+
+V1:
+	- against v4.10-rc1 and some cleanup in V0 are in -linus already
+	- handle queue_virt_boundary() in mp bvec change and make NVMe happy
+	- further BTRFS cleanup
+	- remove QUEUE_FLAG_SPLIT_MP
+	- rename for two new helpers of bio_for_each_segment_all()
+	- fix bounce convertion
+	- address comments in V0
+
+[1], http://marc.info/?l=linux-kernel&m=141680246629547&w=2
+[2], https://patchwork.kernel.org/patch/9451523/
+[3], http://marc.info/?t=147735447100001&r=1&w=2
+[4], http://marc.info/?l=linux-mm&m=147745525801433&w=2
+[5], http://marc.info/?t=149569484500007&r=1&w=2
+[6], http://marc.info/?t=149820215300004&r=1&w=2
+
+
+
+Christoph Hellwig (1):
+  btrfs: look at bi_size for repair decisions
+
+Ming Lei (17):
+  block: don't use bio->bi_vcnt to figure out segment number
+  block: remove bvec_iter_rewind()
+  block: introduce multi-page bvec helpers
+  block: introduce bio_for_each_bvec() and rq_for_each_bvec()
+  block: use bio_for_each_bvec() to compute multi-page bvec count
+  block: use bio_for_each_bvec() to map sg
+  block: introduce mp_bvec_last_segment()
+  fs/buffer.c: use bvec iterator to truncate the bio
+  btrfs: use mp_bvec_last_segment to get bio's last page
+  block: loop: pass multi-page bvec to iov_iter
+  bcache: avoid to use bio_for_each_segment_all() in
+    bch_bio_alloc_pages()
+  block: allow bio_for_each_segment_all() to iterate over multi-page
+    bvec
+  block: enable multipage bvecs
+  block: always define BIO_MAX_PAGES as 256
+  block: document usage of bio iterator helpers
+  block: kill QUEUE_FLAG_NO_SG_MERGE
+  block: kill BLK_MQ_F_SG_MERGE
+
+ Documentation/block/biovecs.txt   |  25 +++++
+ block/bio.c                       |  49 ++++++---
+ block/blk-merge.c                 | 210 +++++++++++++++++++++++++-------------
+ block/blk-mq-debugfs.c            |   2 -
+ block/blk-mq.c                    |   3 -
+ block/bounce.c                    |   6 +-
+ drivers/block/loop.c              |  22 ++--
+ drivers/block/nbd.c               |   2 +-
+ drivers/block/rbd.c               |   2 +-
+ drivers/block/skd_main.c          |   1 -
+ drivers/block/xen-blkfront.c      |   2 +-
+ drivers/md/bcache/btree.c         |   3 +-
+ drivers/md/bcache/util.c          |   6 +-
+ drivers/md/dm-crypt.c             |   3 +-
+ drivers/md/dm-rq.c                |   2 +-
+ drivers/md/dm-table.c             |  13 ---
+ drivers/md/raid1.c                |   3 +-
+ drivers/mmc/core/queue.c          |   3 +-
+ drivers/scsi/scsi_lib.c           |   2 +-
+ drivers/staging/erofs/data.c      |   3 +-
+ drivers/staging/erofs/unzip_vle.c |   3 +-
+ fs/block_dev.c                    |   6 +-
+ fs/btrfs/compression.c            |   3 +-
+ fs/btrfs/disk-io.c                |   3 +-
+ fs/btrfs/extent_io.c              |  16 +--
+ fs/btrfs/inode.c                  |   6 +-
+ fs/btrfs/raid56.c                 |   3 +-
+ fs/buffer.c                       |   5 +-
+ fs/crypto/bio.c                   |   3 +-
+ fs/direct-io.c                    |   4 +-
+ fs/exofs/ore.c                    |   3 +-
+ fs/exofs/ore_raid.c               |   3 +-
+ fs/ext4/page-io.c                 |   3 +-
+ fs/ext4/readpage.c                |   3 +-
+ fs/f2fs/data.c                    |   9 +-
+ fs/gfs2/lops.c                    |   9 +-
+ fs/gfs2/meta_io.c                 |   3 +-
+ fs/iomap.c                        |  10 +-
+ fs/mpage.c                        |   3 +-
+ fs/xfs/xfs_aops.c                 |   9 +-
+ include/linux/bio.h               |  37 ++++---
+ include/linux/blk-mq.h            |   1 -
+ include/linux/blkdev.h            |   5 +-
+ include/linux/bvec.h              | 106 ++++++++++++++-----
+ 44 files changed, 404 insertions(+), 214 deletions(-)
+
 -- 
-2.20.1
+2.9.5
 

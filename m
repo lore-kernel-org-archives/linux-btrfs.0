@@ -2,173 +2,152 @@ Return-Path: <SRS0=Dxhg=QW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CEA7BC43381
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Feb 2019 17:45:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 861C3C10F02
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Feb 2019 18:00:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9F81121927
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Feb 2019 17:45:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4BF8921A4C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Feb 2019 18:00:04 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="szPwJ+JM"
+	dkim=pass (2048-bit key) header.d=kernel-dk.20150623.gappssmtp.com header.i=@kernel-dk.20150623.gappssmtp.com header.b="KMz4etZx"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728956AbfBORp5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 15 Feb 2019 12:45:57 -0500
-Received: from mail-lj1-f176.google.com ([209.85.208.176]:35758 "EHLO
-        mail-lj1-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726819AbfBORp5 (ORCPT
+        id S1730449AbfBOSAD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 15 Feb 2019 13:00:03 -0500
+Received: from mail-it1-f196.google.com ([209.85.166.196]:38671 "EHLO
+        mail-it1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1730331AbfBOR7w (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Feb 2019 12:45:57 -0500
-Received: by mail-lj1-f176.google.com with SMTP id j13-v6so9106492ljc.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Feb 2019 09:45:55 -0800 (PST)
+        Fri, 15 Feb 2019 12:59:52 -0500
+Received: by mail-it1-f196.google.com with SMTP id l66so15302276itg.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Feb 2019 09:59:51 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=subject:to:cc:references:from:openpgp:autocrypt:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=7T4FkPL2nb7dRLsfTVI8SInUfd5yU6Upcieyj2eCVF0=;
-        b=szPwJ+JMfVTAYIaHL6Pjkcg5DGK8OzgTFdNNSdB9xL771ORcHyocWnvdXC1/+tiF9C
-         0oy+JZfTV++O9MpUArirQbz3c/jEWnYvbW+eAc/9r9qRWPZN7aIXmSJQl+mOlhUT0aaz
-         gxwR8xMdI8DCwXpa58aXW3DyMELzbhKlYSifO6SO6bbcLOly1kDQUAUhXhvpjAgqsUJu
-         T9zMx/2nee2qngDVWlrHIwpJQHNSPJgLTlc/MivcAaaeQUfaXNLu671rPhe1EOLUdcYU
-         obgiSkSI4DoPGVN7yJJRZyRkDg09ZgYsTDn+zyoPPSFzedXECuaSXyoX3ojPqFfBjfkz
-         /niA==
+        d=kernel-dk.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=5Bgr0zj2aRmsmq9cmq2G6DDeTRau1JwWNabZdtGLuU8=;
+        b=KMz4etZxSVwp6ToDNVHa3UQ5ONXpp2fqM+/uuzn5Ym9qarUAL9M/eUOGtuee4TIrTa
+         ubCuGgOn1V8Py7fyrabLO5lRu7vcV+IDhbJ94eazYzeqeXYFWWDHttWOw+yQpiBOj1ir
+         dcFjII7LU/kMVttYP0gIeH5c1KoQHRZrKYfh3ZHvud2ojLZ3cx1ncCmK+/ompP2Ucv3z
+         RqAeHx62HuzzzrLZrkkC3mQbaifqXn7tG1FHgrYi/1RPiOdD9nLbTrDqGpbw/i6OLrR2
+         qy9Sj6sSUC5Fsxp86Toe1OSuHZYp1wmedRsen41kvhaIENqfCxh04YY76/7HUgTRKfsH
+         n3YQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:openpgp:autocrypt
-         :message-id:date:user-agent:mime-version:in-reply-to
-         :content-language:content-transfer-encoding;
-        bh=7T4FkPL2nb7dRLsfTVI8SInUfd5yU6Upcieyj2eCVF0=;
-        b=MGZ/Mb7gvvMZ71qBl9GM2o+uMeLSRDwVvJAIsM612l3D9oni/UVkiCJMrrIm55U+/P
-         XjE85NR2AStHhPhwSzEH4bgG/b/8l5jlWNIIh7XvSRyQiCtQdBEyehxvBQUWXc2FJLih
-         EShjE6gJ0Z2gak1CAN/2ow3Sc8oTkKFGSeblD3Wq9xwj3E5xQk6qXkhiE4J9r7NCdcov
-         0fSjimYvWfrGmTC5ykiIQJs74Da9GjyiYZnGMAH21S65NVAaGETuw/iK9M6R2xEFvz71
-         iJ3e5StbzStmqLoyh6QCCytBtEPgT1tB/pWNv5Ug4yTgKvgNFTURusljHrVT6YmuZ06r
-         V19A==
-X-Gm-Message-State: AHQUAuY+pVAVin+cEmTGgAsXloQITEmOQZ8Gp8vnaCxz/o0InEWDPaUj
-        ohFq2X0FJL4ju+LGX+ALCcMLqVLenhM=
-X-Google-Smtp-Source: AHgI3IZOgoslTWczlHAyOzbT+Snlzsdn7rWpjPNGzn4ackI2uBVKTJRLanuMaXkwDFzOrYt1w2526A==
-X-Received: by 2002:a2e:b1ca:: with SMTP id e10-v6mr6370482lja.16.1550252753914;
-        Fri, 15 Feb 2019 09:45:53 -0800 (PST)
-Received: from [192.168.1.4] (109-252-90-29.nat.spd-mgts.ru. [109.252.90.29])
-        by smtp.gmail.com with ESMTPSA id h85-v6sm1409468ljf.68.2019.02.15.09.45.52
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=5Bgr0zj2aRmsmq9cmq2G6DDeTRau1JwWNabZdtGLuU8=;
+        b=p/vlRH99jW8EB/JQQZ+2P5PBBEnCa5kvblvXNpeWRaIS4VLxSGaTVgC3O1b9rJBXzg
+         3KFboLTl4n1XL1CGCYyrUeJGCYRy3C4iRzkoDN8fPoDXMk6OoTX+xtQZE6xzQEd6gyzn
+         ZyuVHb4C3Qx3MY2MpWIAeGtSYyAfnTuwDk2iJqZI8kVvc54ptXas22Fw+o7dd0fizWxe
+         f8/dXIKsmAEmUrXN3bg4OXplSPRQR/XGs9kO3zqHj7LRPMDdkkKaPJqz5XlYMvmFixVO
+         NM6eRQWMz0ePiizcFaPv/9sgO0IkY9BWZ8IcoizSpqEbZGzOgw5eDyN2Rki9JHO4hRiA
+         kgxw==
+X-Gm-Message-State: AHQUAubTfh4dy0nBOPooKZ1FjChc6MsyWVSeiyUiKu7qTxzSAxTJ+hLG
+        E1zWohCFc3Zz5TIZcCSLhJzlJ8239JCF2Q==
+X-Google-Smtp-Source: AHgI3IbXlmYdrlCKnom68rsNd9Jn36YbM8bNEMGoKtZXICr/hlZrCiz2ntRDeSi7ie71hr+8xcfK8A==
+X-Received: by 2002:a02:c943:: with SMTP id u3mr5868722jao.96.1550253590448;
+        Fri, 15 Feb 2019 09:59:50 -0800 (PST)
+Received: from [192.168.1.158] ([216.160.245.98])
+        by smtp.gmail.com with ESMTPSA id b25sm2440259iot.10.2019.02.15.09.59.48
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Fri, 15 Feb 2019 09:45:52 -0800 (PST)
-Subject: Re: Btrfs send with parent different size depending on source of
- files.
-To:     Chris Murphy <lists@colorremedies.com>,
-        =?UTF-8?Q?Andr=c3=a9_Malm?= <admin@sheepa.org>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <b1c31d98-baaa-85c7-1101-65350e1b4f45@sheepa.org>
- <CAJCQCtQnNQeGsi=K+pgq1sa9t8GQO1yMNx=UcchGs79zM46cTg@mail.gmail.com>
-From:   Andrei Borzenkov <arvidjaar@gmail.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=arvidjaar@gmail.com; prefer-encrypt=mutual; keydata=
- xsDiBDxiRwwRBAC3CN9wdwpVEqUGmSoqF8tWVIT4P/bLCSZLkinSZ2drsblKpdG7x+guxwts
- +LgI8qjf/q5Lah1TwOqzDvjHYJ1wbBauxZ03nDzSLUhD4Ms1IsqlIwyTLumQs4vcQdvLxjFs
- G70aDglgUSBogtaIEsiYZXl4X0j3L9fVstuz4/wXtwCg1cN/yv/eBC0tkcM1nsJXQrC5Ay8D
- /1aA5qPticLBpmEBxqkf0EMHuzyrFlqVw1tUjZ+Ep2LMlem8malPvfdZKEZ71W1a/XbRn8FE
- SOp0tUa5GwdoDXgEp1CJUn+WLurR0KPDf01E4j/PHHAoABgrqcOTcIVoNpv2gNiBySVsNGzF
- XTeY/Yd6vQclkqjBYONGN3r9R8bWA/0Y1j4XK61qjowRk3Iy8sBggM3PmmNRUJYgroerpcAr
- 2byz6wTsb3U7OzUZ1Llgisk5Qum0RN77m3I37FXlIhCmSEY7KZVzGNW3blugLHcfw/HuCB7R
- 1w5qiLWKK6eCQHL+BZwiU8hX3dtTq9d7WhRW5nsVPEaPqudQfMSi/Ux1kc0mQW5kcmVpIEJv
- cnplbmtvdiA8YXJ2aWRqYWFyQGdtYWlsLmNvbT7CZQQTEQIAJQIbAwYLCQgHAwIGFQgCCQoL
- BBYCAwECHgECF4AFAliWAiQCGQEACgkQR6LMutpd94wFGwCeNuQnMDxve/Fo3EvYIkAOn+zE
- 21cAnRCQTXd1hTgcRHfpArEd/Rcb5+SczsBNBDxiRyQQBACQtME33UHfFOCApLki4kLFrIw1
- 5A5asua10jm5It+hxzI9jDR9/bNEKDTKSciHnM7aRUggLwTt+6CXkMy8an+tVqGL/MvDc4/R
- KKlZxj39xP7wVXdt8y1ciY4ZqqZf3tmmSN9DlLcZJIOT82DaJZuvr7UJ7rLzBFbAUh4yRKaN
- nwADBwQAjNvMr/KBcGsV/UvxZSm/mdpvUPtcw9qmbxCrqFQoB6TmoZ7F6wp/rL3TkQ5UElPR
- gsG12+Dk9GgRhnnxTHCFgN1qTiZNX4YIFpNrd0au3W/Xko79L0c4/49ten5OrFI/psx53fhY
- vLYfkJnc62h8hiNeM6kqYa/x0BEddu92ZG7CRgQYEQIABgUCPGJHJAAKCRBHosy62l33jMhd
- AJ48P7WDvKLQQ5MKnn2D/TI337uA/gCgn5mnvm4SBctbhaSBgckRmgSxfwQ=
-Message-ID: <1c6a1abb-1e6e-504a-b51c-0da580c49d66@gmail.com>
-Date:   Fri, 15 Feb 2019 20:45:52 +0300
+        Fri, 15 Feb 2019 09:59:49 -0800 (PST)
+Subject: Re: [dm-devel] [PATCH V15 00/18] block: support multi-page bvec
+To:     Bart Van Assche <bvanassche@acm.org>,
+        Ming Lei <ming.lei@redhat.com>
+Cc:     Mike Snitzer <snitzer@redhat.com>, linux-mm@kvack.org,
+        dm-devel@redhat.com, Christoph Hellwig <hch@lst.de>,
+        Sagi Grimberg <sagi@grimberg.me>,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
+        Omar Sandoval <osandov@fb.com>, cluster-devel@redhat.com,
+        linux-ext4@vger.kernel.org,
+        Kent Overstreet <kent.overstreet@gmail.com>,
+        Boaz Harrosh <ooo@electrozaur.com>,
+        Gao Xiang <gaoxiang25@huawei.com>, Coly Li <colyli@suse.de>,
+        linux-raid@vger.kernel.org, Bob Peterson <rpeterso@redhat.com>,
+        linux-bcache@vger.kernel.org,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        Dave Chinner <dchinner@redhat.com>,
+        David Sterba <dsterba@suse.com>, linux-block@vger.kernel.org,
+        Theodore Ts'o <tytso@mit.edu>, linux-kernel@vger.kernel.org,
+        linux-xfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+References: <20190215111324.30129-1-ming.lei@redhat.com>
+ <c52b6a8b-d1d4-67ff-f81c-371d09cc6d5b@kernel.dk>
+ <1550250855.31902.102.camel@acm.org>
+From:   Jens Axboe <axboe@kernel.dk>
+Message-ID: <18c711a9-ca13-885d-43cd-4d48e683a6a2@kernel.dk>
+Date:   Fri, 15 Feb 2019 10:59:47 -0700
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQnNQeGsi=K+pgq1sa9t8GQO1yMNx=UcchGs79zM46cTg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <1550250855.31902.102.camel@acm.org>
+Content-Type: text/plain; charset=UTF-8
 Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-15.02.2019 1:37, Chris Murphy пишет:
-> On Thu, Feb 14, 2019 at 4:37 AM André Malm <admin@sheepa.org> wrote:
+On 2/15/19 10:14 AM, Bart Van Assche wrote:
+> On Fri, 2019-02-15 at 08:49 -0700, Jens Axboe wrote:
+>> On 2/15/19 4:13 AM, Ming Lei wrote:
+>>> This patchset brings multi-page bvec into block layer:
 >>
->> Hello,
->>
->> I'm not sure this is the right forum to ask on but I'll try and if its
->> not I do apologize. I have also created a stack overflow question
->> without success (
->> https://stackoverflow.com/questions/54634703/btrfs-send-with-parent-different-size-depending-on-source-of-files
->> ) but ill paste the question here too. Thank you.
->>
->> What i'm trying to achieve is sending only the diff of the parent with
->> btrfs send -p
->>
->> Running this will produce a file 'out' with size 639 bytes, i.e only
->> diff sent.
->>
->> ====================================================
->>
->> btrfs subvolume create A
->> btrfs subvolume create B
->> mkdir A/dir
->>
->> dd if=/dev/urandom of=A/dir/server.jar bs=1024 count=40K
->> cp --reflink=always A/dir/server.jar B/server.jar
->>
->> btrfs subvolume snapshot -r A a
->> btrfs subvolume snapshot -r B b
->> btrfs send -p a b > out
+>> Applied, thanks Ming. Let's hope it sticks!
 > 
-> It doesn't work this way.
-
-It works exactly this way.
-
-> The snapshots a and b are not based on the
-> same underlying subvolume.
-
-So what? What prevents you from computing differences between two
-subvolumes? That is real question.
-
-> The gist is that you would keep changing A,
-> and take additional snapshots of A, such as a.1 a.2 a.3, and you can
-> do incremental send with 'btrfs send -p a.1 a.2' which describes the
-> difference between those two snapshots of A at their respective
-> moments in time. You could also do 'btrfs send -p a.2 a.3' or even
-> 'btrfs send -p a.1 a.3'
+> Hi Jens and Ming,
 > 
-
-That it is intended to be used this way does not mean it is restricted
-to this way technically. Whether it should have been restricted is
-another question.
-
-> But as there's no relationship between snapshots a and b, I consider
-> it a bug/missing error handling feature, that btrfs send doesn't fail
-> in this case. By using -p you're claiming there is a parent-child
-> relationship between a and b, but there plainly isn't.
+> Test nvmeof-mp/002 fails with Jens' for-next branch from this morning.
+> I have not yet tried to figure out which patch introduced the failure.
+> Anyway, this is what I see in the kernel log for test nvmeof-mp/002:
 > 
-
-No. By using "-p" you designate subvolume which must be used as base to
-apply differential (I explicitly does not use "incremental") stream on
-remote side. Nothing more. Whether it should have different semantic is
-subject to discussion, but it does not do what you wish it to do.
-
-> Read this:
-> https://btrfs.wiki.kernel.org/index.php/Incremental_Backup#Doing_it_by_hand.2C_step_by_step
+> [  475.611363] BUG: unable to handle kernel NULL pointer dereference at 0000000000000020
+> [  475.621188] #PF error: [normal kernel read fault]
+> [  475.623148] PGD 0 P4D 0  
+> [  475.624737] Oops: 0000 [#1] PREEMPT SMP KASAN
+> [  475.626628] CPU: 1 PID: 277 Comm: kworker/1:1H Tainted: G    B             5.0.0-rc6-dbg+ #1
+> [  475.630232] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.10.2-1 04/01/2014
+> [  475.633855] Workqueue: kblockd blk_mq_requeue_work
+> [  475.635777] RIP: 0010:__blk_recalc_rq_segments+0xbe/0x590
+> [  475.670948] Call Trace:
+> [  475.693515]  blk_recalc_rq_segments+0x2f/0x50
+> [  475.695081]  blk_insert_cloned_request+0xbb/0x1c0
+> [  475.701142]  dm_mq_queue_rq+0x3d1/0x770
+> [  475.707225]  blk_mq_dispatch_rq_list+0x5fc/0xb10
+> [  475.717137]  blk_mq_sched_dispatch_requests+0x256/0x300
+> [  475.721767]  __blk_mq_run_hw_queue+0xd6/0x180
+> [  475.725920]  __blk_mq_delay_run_hw_queue+0x25c/0x290
+> [  475.727480]  blk_mq_run_hw_queue+0x119/0x1b0
+> [  475.732019]  blk_mq_run_hw_queues+0x7b/0xa0
+> [  475.733468]  blk_mq_requeue_work+0x2cb/0x300
+> [  475.736473]  process_one_work+0x4f1/0xa40
+> [  475.739424]  worker_thread+0x67/0x5b0
+> [  475.741751]  kthread+0x1cf/0x1f0
+> [  475.746034]  ret_from_fork+0x24/0x30
 > 
-> Depending on your use case if you can describe it, might be tolerated
-> with some adjustments by using the -c clone option instead.
-> 
+> (gdb) list *(__blk_recalc_rq_segments+0xbe)
+> 0xffffffff816a152e is in __blk_recalc_rq_segments (block/blk-merge.c:366).
+> 361                                                  struct bio *bio)
+> 362     {
+> 363             struct bio_vec bv, bvprv = { NULL };
+> 364             int prev = 0;
+> 365             unsigned int seg_size, nr_phys_segs;
+> 366             unsigned front_seg_size = bio->bi_seg_front_size;
+> 367             struct bio *fbio, *bbio;
+> 368             struct bvec_iter iter;
+> 369
+> 370             if (!bio)
 
-The only difference is that "-c" in absence of explicit "-p" attempts to
-auto-detect the "best" "base" subvolume - but it selects between
-subvolumes given with "-c" options so "-c" with single subvolume is
-entirely equivalent to "-p".
+Just ran a few tests, and it also seems to cause about a 5% regression
+in per-core IOPS throughput. Prior to this work, I could get 1620K 4k
+rand read IOPS out of core, now I'm at ~1535K. The cycler stealer seems
+to be blk_queue_split() and blk_rq_map_sg().
+
+-- 
+Jens Axboe
+

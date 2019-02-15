@@ -6,67 +6,68 @@ X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 81286C43381
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Feb 2019 19:29:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BF410C43381
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Feb 2019 19:41:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 48FF9222A1
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Feb 2019 19:29:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 83A22222A1
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Feb 2019 19:41:42 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=georgianit.com header.i=@georgianit.com header.b="L72Q5XG3";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="cItpJjC7"
+	dkim=pass (2048-bit key) header.d=georgianit.com header.i=@georgianit.com header.b="oymxZj4T";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="YSHF6SlT"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730665AbfBOT34 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 15 Feb 2019 14:29:56 -0500
-Received: from wout2-smtp.messagingengine.com ([64.147.123.25]:41295 "EHLO
+        id S1731754AbfBOTll (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 15 Feb 2019 14:41:41 -0500
+Received: from wout2-smtp.messagingengine.com ([64.147.123.25]:41459 "EHLO
         wout2-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726010AbfBOT3z (ORCPT
+        by vger.kernel.org with ESMTP id S1729324AbfBOTlk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Feb 2019 14:29:55 -0500
+        Fri, 15 Feb 2019 14:41:40 -0500
 Received: from compute2.internal (compute2.nyi.internal [10.202.2.42])
-        by mailout.west.internal (Postfix) with ESMTP id 0E1DA329A;
-        Fri, 15 Feb 2019 14:29:53 -0500 (EST)
+        by mailout.west.internal (Postfix) with ESMTP id 35EBB32C6;
+        Fri, 15 Feb 2019 14:41:39 -0500 (EST)
 Received: from mailfrontend1 ([10.202.2.162])
-  by compute2.internal (MEProxy); Fri, 15 Feb 2019 14:29:54 -0500
+  by compute2.internal (MEProxy); Fri, 15 Feb 2019 14:41:39 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=georgianit.com;
-         h=subject:to:references:from:message-id:date:mime-version
-        :in-reply-to:content-type; s=fm2; bh=P5B8I61xbOVSK0GEr3ZGx984nh/
-        zxQFGDIKnEI0Bjco=; b=L72Q5XG33FQcTU8ybrrdvEFZaEcDrJJ/ZEazofgbsHE
-        rNwLeHPkRmHdoeugdrh+WCcPqZQ97C/sN6IkMeqwETSIkjWjlx9yhejF6uwJPmRF
-        7t7eswLIjc25IuYccYfhvnHbddOy4exUrZHayhpZC3klvTDOSFb0odnt1S4LE3aY
-        YQkNcRN2C2D0TwOjcAInlTJz5l+bPZUlt9P9MiSsZr6GEZKKO7zpw8+to1DD2Wj4
-        TWNIB7YuM1Pb50TzOz5kvAgEQHiSwR8V24D2a8T2Wh+MGOWmxmISMwEsOU6kzpmr
-        qFrSRJVn0ooxBqWDURWarcId6eldUwcDv0sYcwPqtMA==
+         h=subject:from:to:references:message-id:date:mime-version
+        :in-reply-to:content-type; s=fm2; bh=DGSYjYFucm673RJLpzx1oTMPrK3
+        9uCGwtmlRmK1oLAQ=; b=oymxZj4TV+sEWkbFIIUMfUEknSoSimkMqB6aPMXWZA9
+        AoLYh+vhsdDilxAuyRDH2EohY4t8PMqhNq2pn+HaubPdIxal4hMJU7LMrdtsHwI/
+        +24fu6MfsjagmHG6kO+mtK2WEDnwkg5rfY2HlzVKdPkP9DvjHz8zfHL3IkQhK7DY
+        AxCeCYmylYU9KMKG4/ZU8yvSHVGOKiTpZUf8wfZfrEePyfrPnKO3I0llE0Dn7XDV
+        V1XDh9h0r+hHBodNyUpDbWTZdA4a8aJIZVCghrIPoBeTkHchpQvNbo2SCK7XhAi9
+        y5gWox9K5FtbHDCKAbE4AJHuvDFSEfDcPsgC5ODFTXA==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
         messagingengine.com; h=content-type:date:from:in-reply-to
         :message-id:mime-version:references:subject:to:x-me-proxy
-        :x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; bh=P5B8I6
-        1xbOVSK0GEr3ZGx984nh/zxQFGDIKnEI0Bjco=; b=cItpJjC76pjjW2D7phf6KM
-        KIVm71zCWGhB/E/ZOSHP0YJ6a7NNA7635ZDnVzzeRCudTHiq7KIxoTXEtfP06OBH
-        5WNn06lSuEPWBy9zFg+OiB7imJquEb9m7vbYVQ4r8nouOGu0+8oRs/CyhxLBi4+Z
-        u11bP75lOAbQL8iVlCoWd8v169c2yVg4Mffyz5scIVFyFr9iNtbCgX4pSU7K5TBC
-        YC675md6U9qDti6fpfDjf8rLjySthsQKUy+ESwkkJWsF1cyRQh3mAndiXzNpYZuq
-        ZQJWf5T6Oa2G159J/PbLni3b9pk1pfPpv4L/y+zZ2eF4t+PGZR6ceM/Bk2Sj5Pew
+        :x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; bh=DGSYjY
+        Fucm673RJLpzx1oTMPrK39uCGwtmlRmK1oLAQ=; b=YSHF6SlTIQ57FwbfSAh3o/
+        YJQ3xVNW58nX9IjCzX+TWMgie5a+7v7S5r7LYRiJMeYEjAS0+VkZhjJc3o1JiOci
+        pVkJQDyCqpjxwS8lyLOXQzsEztNAKp1+p94sogphzeuoq9H0QU5Exw/i3KZLxIOz
+        fGpGqA/cUDgLdyUQTxc7T/9Mj4MAxUmEj0W7MsuUhpiDLHVDPbXElEQfKtuuF4oe
+        LvdqYrCKOFMd7Rv2F04uSkDP+IrO1QZbgH43hItnsc+rJIQ4Gb0bRQeeAx1cSudQ
+        8UNCLLIO0JJTKYZxgr8zNPSJAwXNHwKjCg7GxZ8hQ8FqLn+xM3YD6ASg3hHjtKlQ
         ==
-X-ME-Sender: <xms:MRNnXGteOF_T5zO-lFWyr-rUa3ARr2l2W8tMnCca8Y1_tL76boRvUg>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedtledruddtjedguddvhecutefuodetggdotefrod
+X-ME-Sender: <xms:8hVnXFLjfL2QUxKz-5-w9OFh7a5-QW0VUrxvsmWFe4ngDgTx3vj4kA>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedtledruddtjedguddvkecutefuodetggdotefrod
     ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpqfhuthenuceurghilhhouhhtmecu
-    fedttdenucenucfjughrpefuvfhfhffkffgfgggjtgesghdtrefotdefjeenucfhrhhomh
+    fedttdenucenucfjughrpefuhffvfhfkffgfgggjtgesghdtrefotdefjeenucfhrhhomh
     eptfgvmhhiucfirghuvhhinhcuoehrvghmihesghgvohhrghhirghnihhtrdgtohhmqeen
     ucfkphepudefhedrvdefrddvgeeirddufedunecurfgrrhgrmhepmhgrihhlfhhrohhmpe
     hrvghmihesghgvohhrghhirghnihhtrdgtohhmnecuvehluhhsthgvrhfuihiivgeptd
-X-ME-Proxy: <xmx:MRNnXClcFTIzvDeio1bZ2QDsSWqHeyPpIY_eI9yKmiTQqiXfNxTaLQ>
-    <xmx:MRNnXEHqSMvPeIoPqfXzmCkSQ9_Z3zTkK-bf--T_MLAKT4tfbCq2hw>
-    <xmx:MRNnXJ_Gr_ssx0Tliw1O-pcYpRIr8pihlzkT8CC3mCfwdCzSP8Oj9A>
-    <xmx:MRNnXLNkVh0rUOQ7_f8kVjsb63wgM1NP29KePgRi3PFbpxMqk9YCHA>
+X-ME-Proxy: <xmx:8hVnXCXJI8v2ox7DhJZBWYb3ALCEnzfU1CUuiYT4ih0QquM5wGoALw>
+    <xmx:8hVnXOLMyg2Ga2-rB3iQSXuNLHkSHHLrpQtgdT2YlEBFlN7SLdu-pw>
+    <xmx:8hVnXPzLD2z8EY2ZW75sPs3i4KnFMTsYj6HyYpTXYz_RbbTvojNmKA>
+    <xmx:8hVnXHmL2t8A9f5xhY3JmVRVKNZVXpXK-mtKJ4QYfYrdOZPPtmoVrQ>
 Received: from [10.0.0.6] (135-23-246-131.cpe.pppoe.ca [135.23.246.131])
-        by mail.messagingengine.com (Postfix) with ESMTPA id 5EECAE4649;
-        Fri, 15 Feb 2019 14:29:52 -0500 (EST)
+        by mail.messagingengine.com (Postfix) with ESMTPA id E5B80E409D;
+        Fri, 15 Feb 2019 14:41:37 -0500 (EST)
 Subject: Re: Btrfs send with parent different size depending on source of
  files.
+From:   Remi Gauvin <remi@georgianit.com>
 To:     =?UTF-8?Q?Andr=c3=a9_Malm?= <admin@sheepa.org>,
         linux-btrfs@vger.kernel.org
 References: <b1c31d98-baaa-85c7-1101-65350e1b4f45@sheepa.org>
-From:   Remi Gauvin <remi@georgianit.com>
+ <681b0522-12ba-9da8-a143-019711e68260@georgianit.com>
 Openpgp: url=http://www.georgianit.com/pgp/Remi%20Gauvin%20remi%40georgianit.com%20(0xEF539FF247456A6D)%20pub.asc
 Autocrypt: addr=remi@georgianit.com; prefer-encrypt=mutual;
  keydata= mQENBFogjcYBCADvI0pxdYyVkEUAIzT6HwYnZ5CAy2czT87Si5mqk4wL4Ulupwfv9TLzaj3R
@@ -92,67 +93,59 @@ Autocrypt: addr=remi@georgianit.com; prefer-encrypt=mutual;
  phFkhgnTK6gl2XqIHaoxPKhI9pKU5oPkg2eI27OICZrpTCppaSh3SGUp0EHPkZuhVfIxg4vF
  nato30VZr+RMHtPtx813VZ/kzj+2pC/DrwZOtqFeaqJfCi6JSik3vX9BQd9GL4mxytQBZKXz
  SY9JJa155sI=
-Message-ID: <681b0522-12ba-9da8-a143-019711e68260@georgianit.com>
-Date:   Fri, 15 Feb 2019 14:29:51 -0500
+Message-ID: <1d54f22f-1303-76b6-7ddb-1566a75d3e8c@georgianit.com>
+Date:   Fri, 15 Feb 2019 14:41:37 -0500
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <b1c31d98-baaa-85c7-1101-65350e1b4f45@sheepa.org>
+In-Reply-To: <681b0522-12ba-9da8-a143-019711e68260@georgianit.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="7jRUdPOlm2upj5nxEAIpWE1CZ34CAEB6k"
+ boundary="JN3dx9Dhw11oNTf8eCmJQURt1TDkRcSn2"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---7jRUdPOlm2upj5nxEAIpWE1CZ34CAEB6k
-Content-Type: multipart/mixed; boundary="hhD908glHWtP67cf8i7q8T1jEvQODpD90";
+--JN3dx9Dhw11oNTf8eCmJQURt1TDkRcSn2
+Content-Type: multipart/mixed; boundary="zLclh82GpkK31dI7S3j6MGVQ4fEouk0LQ";
  protected-headers="v1"
 From: Remi Gauvin <remi@georgianit.com>
 To: =?UTF-8?Q?Andr=c3=a9_Malm?= <admin@sheepa.org>,
  linux-btrfs@vger.kernel.org
-Message-ID: <681b0522-12ba-9da8-a143-019711e68260@georgianit.com>
+Message-ID: <1d54f22f-1303-76b6-7ddb-1566a75d3e8c@georgianit.com>
 Subject: Re: Btrfs send with parent different size depending on source of
  files.
 References: <b1c31d98-baaa-85c7-1101-65350e1b4f45@sheepa.org>
-In-Reply-To: <b1c31d98-baaa-85c7-1101-65350e1b4f45@sheepa.org>
+ <681b0522-12ba-9da8-a143-019711e68260@georgianit.com>
+In-Reply-To: <681b0522-12ba-9da8-a143-019711e68260@georgianit.com>
 
---hhD908glHWtP67cf8i7q8T1jEvQODpD90
+--zLclh82GpkK31dI7S3j6MGVQ4fEouk0LQ
 Content-Type: multipart/mixed;
- boundary="------------D06C3DA30618E3E52A2FD064"
+ boundary="------------2B021123AFF130060D1915C0"
 Content-Language: en-US
 
 This is a multi-part message in MIME format.
---------------D06C3DA30618E3E52A2FD064
+--------------2B021123AFF130060D1915C0
 Content-Type: text/plain; charset=utf-8
 Content-Transfer-Encoding: quoted-printable
 
-On 2019-02-14 6:37 a.m., Andr=C3=A9 Malm wrote:
+On 2019-02-15 2:29 p.m., Remi Gauvin wrote:
 
 >=20
+> How often does this happen?  Did you just happen to stumble on the one
+> file in the Universe that does this with server.jar?  Or was there are =
+a
+> wider context?
 >=20
-> The 'out' file is 34M, which is the full size.
->=20
-> What causes this?
->=20
 
-Just to narrow it down, the fault is the contents of the server.jar
-file, not how it was created.
-
-If I upload a urandom server.jar file to my own website, then download
-it with wget as described, btrfs send creates a properly small diff
-
-However, if I upload the actual server.jar file to the same URL, then
-repeat the process, I again get a 34MB out
-
-How often does this happen?  Did you just happen to stumble on the one
-file in the Universe that does this with server.jar?  Or was there are a
-wider context?
+I just tried with a random epub file, and again get the full size out,
+so it's a complete mystery to me why a file filled with random bytes work=
+s.
 
 
---------------D06C3DA30618E3E52A2FD064
+--------------2B021123AFF130060D1915C0
 Content-Type: text/x-vcard; charset=utf-8;
  name="remi.vcf"
 Content-Transfer-Encoding: quoted-printable
@@ -170,11 +163,11 @@ version:2.1
 end:vcard
 
 
---------------D06C3DA30618E3E52A2FD064--
+--------------2B021123AFF130060D1915C0--
 
---hhD908glHWtP67cf8i7q8T1jEvQODpD90--
+--zLclh82GpkK31dI7S3j6MGVQ4fEouk0LQ--
 
---7jRUdPOlm2upj5nxEAIpWE1CZ34CAEB6k
+--JN3dx9Dhw11oNTf8eCmJQURt1TDkRcSn2
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
@@ -182,13 +175,13 @@ Content-Disposition: attachment; filename="signature.asc"
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2
 
-iQEcBAEBCAAGBQJcZxMvAAoJEO9Tn/JHRWptMSUH/1NAtgQkGVPKdCmYZDuzFCH6
-RIHexBjDe5dK4XiOKceN0JZqcLghw+8/SRwYJzhH8PclZtOVRI03HwMTYH1JBD/h
-XrOZBi5oGa4bljE8AEXavajTbZ7LgkXJqe42LgulUEE5TPaUg2/4XjxuxoxMYHbP
-AeLt/UDy3S7yEt8mR3W4UiTEeEl/wetH62cn5hawkoGc6Gv8wBuoiStF0QrxvWR9
-8wcjveIvFgQ9vxKNGej55G7/LhBIiVoeMWVYSiwFwVmTDcWfmgh3RigCniJ7sbbS
-04hIoVON0D2W5IM9F2B5UcKPzJLpiGMkjFXQfKRlsQGzYH5LI6vIozV/m7+6JDg=
-=pclJ
+iQEcBAEBCAAGBQJcZxXxAAoJEO9Tn/JHRWptPEIIAINRXEjkSiAwPjdninpowuTY
+/en7zX8IRp+Nto4+hYLct4pZH7pfEjNZOjru+yNBVeRorxzSrnoJYAv4EaqaMUFu
+qtX2eun6PiZCWHDeES8FCNLL6NaGa48MlMtOEz0OUGut7cUxjv/XmzvrE3H3EEb/
+ue6Cf5dw9FI3OPsc7OPZnUW1f2SPpSspIP5yALN/4gnjQFCfBByHdBgy2UEYVuPs
+ErjaqBLmFQmscRG0rRqousbwU5UMStB2U3Zbzv3Q6o9+i7H3OrjzvSMQ5Upb75Yv
+Dw6tYvFsHYF6STFmQfFZNsizD50kNnIlUbGxRGkEhQp2Sj9GxhH7ShrEKVi/Dds=
+=Wloz
 -----END PGP SIGNATURE-----
 
---7jRUdPOlm2upj5nxEAIpWE1CZ34CAEB6k--
+--JN3dx9Dhw11oNTf8eCmJQURt1TDkRcSn2--

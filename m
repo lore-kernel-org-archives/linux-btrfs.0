@@ -4,64 +4,66 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-0.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 52499C10F00
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8F125C4151A
 	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Feb 2019 20:13:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 20213222DD
+	by mail.kernel.org (Postfix) with ESMTP id 4CA3A21B69
 	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Feb 2019 20:13:31 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="XnGZYpsr"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="aQ2if1J2"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1733028AbfBPUIO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 16 Feb 2019 15:08:14 -0500
-Received: from mail-lj1-f178.google.com ([209.85.208.178]:44801 "EHLO
-        mail-lj1-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727270AbfBPUIO (ORCPT
+        id S1732895AbfBPUKZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 16 Feb 2019 15:10:25 -0500
+Received: from mail-lf1-f49.google.com ([209.85.167.49]:41185 "EHLO
+        mail-lf1-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727270AbfBPUKZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 16 Feb 2019 15:08:14 -0500
-Received: by mail-lj1-f178.google.com with SMTP id q128so11119942ljb.11
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 Feb 2019 12:08:13 -0800 (PST)
+        Sat, 16 Feb 2019 15:10:25 -0500
+Received: by mail-lf1-f49.google.com with SMTP id e27so9586206lfj.8
+        for <linux-btrfs@vger.kernel.org>; Sat, 16 Feb 2019 12:10:23 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=subject:to:references:from:openpgp:autocrypt:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=ZOxZ49sx3l+UuQeI+YkdJMZsx+/Tra12T/X988M546M=;
-        b=XnGZYpsrhx/rLx8lWj1kYbPRSGSNy5hLAOAwzZn9WiSReELGCQBDTSdnIEK8v3TKa0
-         tPtUqCl0ABzrT9tqAuxjLJPR7h8NQAQJIQ1Tl85CogM4dAVkMm2UcKbyKiYoI1/mr8SI
-         +pHgOztOcl4vBLI5YCtImfp2461/uXT5ZsUZ0YMfGPtr+LKLBcyXtVpwPKoK7n7EXHnA
-         w5/mWjL18Uv9M8sS2rBpkwjLAZIG6EppfoDEWZesXYFWRzq5/MawcmyAYYHOOQZu46bm
-         Vcsf7htjIEcbpmcoij0YJ95bmh2VdXgSew1iPdt5jengj6ARHzcydtu1aKtedUQE5BIV
-         H1Aw==
+         :user-agent:mime-version:in-reply-to;
+        bh=DMM3r8QRMaPgV0XWeKSFKk2V59MVEQGOeexNJqUbHfI=;
+        b=aQ2if1J2iUoVj6FM2Kv5YbJwKY9cWBbAurNbjrSpYt1r8B+F1Uh8M9uvtmwDXm0MeZ
+         GnoJX2dq6FVthBKqBUqXuvOZWbce8DYFp83laSqs7rgMbwcG0TygquhO6ovE9XND306a
+         TYeF/K9eOyQqM6Ioxr4A0e5ZXketMdHK9CWDUcyqRyujpFuCrKmKBspVSgLp452edpeP
+         tinorJciEWOubIXrGp2cXB5s3UmesXc/WF1TAZ4hb1P+TsadruAq4x+fMXxv0rF76URS
+         uCqeqoBoBuPcY6ef4lJonkKTf22X3CfO902drbSmk1idwnxChzd2ZpTBYITjCQVgcbfy
+         ijXQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:subject:to:references:from:openpgp:autocrypt
-         :message-id:date:user-agent:mime-version:in-reply-to
-         :content-language:content-transfer-encoding;
-        bh=ZOxZ49sx3l+UuQeI+YkdJMZsx+/Tra12T/X988M546M=;
-        b=VRPctWfdPQH09zIJHIwJqca6K86kV9t7nfTHXLCdiYDPIaLIEzSj8Ijv5gkw3IyKE+
-         o8WzxlpQvPqKV3uNWhrgRiUYOgGxC4YAfyv1BfXrkuiG9asgs01ggf2KSdWjU6uCcLRk
-         sVDAk/eu8kxGxPj8I6Oi2utqg0OcQuC5q2d+LYyq6XGff62tlEwQKHXYhfEWRPhBL2wW
-         Oco5x6hTzNmnyzK9HgT3UIU3Fve5jTLK43mElmgyRRC6XvhrL47ISml5TRbeyBs1vh9K
-         sbXFHc8xjBAK1V9/6t0o1q839RSPgmE0jib1l6YYsV8ComajlbvLklYqir/pn4rRbmha
-         sC+w==
-X-Gm-Message-State: AHQUAua1/6t5QHbdZ8bcVKVrT0fW/kF+et/5+Pkmhhpl4kBvBrh2g4YG
-        gTC6MxpZ3mcE0Pn/P6wAWgR3sTk8
-X-Google-Smtp-Source: AHgI3Iapv5mljCiI7GLVsDuYCVd3SGAtPqPUU40bHh4r2KUSo3RCPXxdai1DNPE12kcw3+DTsnh8Rg==
-X-Received: by 2002:a2e:2d4:: with SMTP id y81-v6mr9377152lje.62.1550347691588;
-        Sat, 16 Feb 2019 12:08:11 -0800 (PST)
+         :message-id:date:user-agent:mime-version:in-reply-to;
+        bh=DMM3r8QRMaPgV0XWeKSFKk2V59MVEQGOeexNJqUbHfI=;
+        b=Osc91FP4oEsX91tevTRgK1dd2qvgqsyHYqtDskTPnx+yJPzPn10tc5WKEw2h24ZzEM
+         RnCpMPs/TDRPxS5EVO9Ge3C78bbrs7JgEGoko7DgmXM273hzcS1vgBKL0AsXOAR7URu+
+         AzoZ0DH17JxHorrPEObqS4wYTaIsv3eQOfABG49ROkMGSqZ+xGRN5RMyBPzT98wP5Z7q
+         kLqApWSZ1PPivBNCCwvwtPCmXWiwaLo6xk3x6x6OOAV2fNZeJZUSgXxljXL6kKpaBi6Z
+         D9KbDYvh41YDw+sog1xp2V1G0R9dtgYCh7ug2jfVxoMhRSQ1OcmV3s46EdMYBQIAQvLp
+         /2xg==
+X-Gm-Message-State: AHQUAubaWEV1UBmN4KCFT+6wtx1GWTsAqCsAknrQ2L9yKKrMiz8w/IsF
+        xR+18hEo/yi402g0xQA0vumuAjU7
+X-Google-Smtp-Source: AHgI3Ibv268UD/txkl7/feOuiOs6qosB16laDdCGIGpschZviG9tMiGrzrF1+IuWOo5DD76zLTDppQ==
+X-Received: by 2002:a19:915d:: with SMTP id y29mr9179531lfj.92.1550347822274;
+        Sat, 16 Feb 2019 12:10:22 -0800 (PST)
 Received: from [192.168.1.4] (109-252-90-29.nat.spd-mgts.ru. [109.252.90.29])
-        by smtp.gmail.com with ESMTPSA id b191sm2417930lfd.56.2019.02.16.12.08.10
+        by smtp.gmail.com with ESMTPSA id o191sm938099lff.30.2019.02.16.12.10.20
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Sat, 16 Feb 2019 12:08:10 -0800 (PST)
+        Sat, 16 Feb 2019 12:10:21 -0800 (PST)
 Subject: Re: Btrfs send with parent different size depending on source of
  files.
-To:     =?UTF-8?Q?Andr=c3=a9_Malm?= <admin@sheepa.org>,
-        linux-btrfs@vger.kernel.org
+To:     Remi Gauvin <remi@georgianit.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
 References: <b1c31d98-baaa-85c7-1101-65350e1b4f45@sheepa.org>
+ <CAJCQCtQnNQeGsi=K+pgq1sa9t8GQO1yMNx=UcchGs79zM46cTg@mail.gmail.com>
+ <d8a2685c-1844-fd01-de2b-00425458df2a@georgianit.com>
+ <CAJCQCtRTOcCttXm_pP5nnxnfn86ApgPxSPu81ffvQGBTNPKZ+g@mail.gmail.com>
+ <ee16ad81-2e27-ff71-91dc-ea25cb7da924@georgianit.com>
 From:   Andrei Borzenkov <arvidjaar@gmail.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=arvidjaar@gmail.com; prefer-encrypt=mutual; keydata=
@@ -82,83 +84,72 @@ Autocrypt: addr=arvidjaar@gmail.com; prefer-encrypt=mutual; keydata=
  gsG12+Dk9GgRhnnxTHCFgN1qTiZNX4YIFpNrd0au3W/Xko79L0c4/49ten5OrFI/psx53fhY
  vLYfkJnc62h8hiNeM6kqYa/x0BEddu92ZG7CRgQYEQIABgUCPGJHJAAKCRBHosy62l33jMhd
  AJ48P7WDvKLQQ5MKnn2D/TI337uA/gCgn5mnvm4SBctbhaSBgckRmgSxfwQ=
-Message-ID: <6a6cd7a7-ffaf-bb74-1c94-bfb1ad7fb335@gmail.com>
-Date:   Sat, 16 Feb 2019 23:08:09 +0300
+Message-ID: <90bc7ef7-e187-6612-8f31-aa311ca04aee@gmail.com>
+Date:   Sat, 16 Feb 2019 23:10:15 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <b1c31d98-baaa-85c7-1101-65350e1b4f45@sheepa.org>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <ee16ad81-2e27-ff71-91dc-ea25cb7da924@georgianit.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="eI4IntnAPw1tVf4Ikfj98b7ulVfwTISep"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-14.02.2019 14:37, André Malm пишет:
-> Hello,
-> 
-> I'm not sure this is the right forum to ask on but I'll try and if its
-> not I do apologize. I have also created a stack overflow question
-> without success (
-> https://stackoverflow.com/questions/54634703/btrfs-send-with-parent-different-size-depending-on-source-of-files
-> ) but ill paste the question here too. Thank you.
-> 
-> What i'm trying to achieve is sending only the diff of the parent with
-> btrfs send -p
-> 
-> Running this will produce a file 'out' with size 639 bytes, i.e only
-> diff sent.
-> 
-> ====================================================
-> 
-> btrfs subvolume create A
-> btrfs subvolume create B
-> mkdir A/dir
-> 
-> dd if=/dev/urandom of=A/dir/server.jar bs=1024 count=40K
-> cp --reflink=always A/dir/server.jar B/server.jar
-> 
-> btrfs subvolume snapshot -r A a
-> btrfs subvolume snapshot -r B b
-> btrfs send -p a b > out
-> 
-> ====================================================
-> 
-> However if I change the dd command to wget like this:
-> 
-> ====================================================
-> 
-> btrfs subvolume create A
-> btrfs subvolume create B
-> mkdir A/dir
-> 
-> wget -O A/dir/server.jar
-> https://launcher.mojang.com/v1/objects/20c069d373e77265aaeeedb733f7051e294325a3/server.jar
-> 
-> cp --reflink=always A/dir/server.jar B/server.jar
-> 
-> btrfs subvolume snapshot -r A a
-> btrfs subvolume snapshot -r B b
-> btrfs send -p a b > out
-> 
-> ====================================================
-> 
-> 
-> The 'out' file is 34M, which is the full size.
-> 
-> What causes this?
-> 
-> 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--eI4IntnAPw1tVf4Ikfj98b7ulVfwTISep
+Content-Type: multipart/mixed; boundary="xlPfJPo95kzRBG2j8VaPLNiMHD5mcalD0";
+ protected-headers="v1"
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+To: Remi Gauvin <remi@georgianit.com>,
+ linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <90bc7ef7-e187-6612-8f31-aa311ca04aee@gmail.com>
+Subject: Re: Btrfs send with parent different size depending on source of
+ files.
+References: <b1c31d98-baaa-85c7-1101-65350e1b4f45@sheepa.org>
+ <CAJCQCtQnNQeGsi=K+pgq1sa9t8GQO1yMNx=UcchGs79zM46cTg@mail.gmail.com>
+ <d8a2685c-1844-fd01-de2b-00425458df2a@georgianit.com>
+ <CAJCQCtRTOcCttXm_pP5nnxnfn86ApgPxSPu81ffvQGBTNPKZ+g@mail.gmail.com>
+ <ee16ad81-2e27-ff71-91dc-ea25cb7da924@georgianit.com>
+In-Reply-To: <ee16ad81-2e27-ff71-91dc-ea25cb7da924@georgianit.com>
 
-File size of "real" server.jar is not exact multiple of btrfs block size
-(4096) which causes the last extent to be "incomplete". btrfs won't
-clone extent in this case. You can trivially reproduce it by using the
-same size in the first case (although exact extent distribution may be
-different of course, in the worst case you get single extent which is
-sent in full):
+--xlPfJPo95kzRBG2j8VaPLNiMHD5mcalD0
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+
+15.02.2019 21:56, Remi Gauvin =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
+> On 2019-02-15 1:38 p.m., Chris Murphy wrote:
+>>
+>> Well I'd say maybe use -vvv and --no-data instead of -f and see what
+>> it's doing. It sounds like the former has no payload, just difference
+>> information, and the latter has a payload. I don't know why.
+>>
+>>
+>=20
+>=20
+> Both have all the payload they need to re-create the subvolumes.  The
+> first one correctly CoW's the file from subvolume a.. the second one
+> stuffs it in the output... Why is indeed the question.
+>=20
+
+The last extent is incomplete which causes btrfs to not attempt cloning.
 
 
+--xlPfJPo95kzRBG2j8VaPLNiMHD5mcalD0--
 
-dd if=/dev/urandom of=A/dir/server.jar bs=1024 count=34625
+--eI4IntnAPw1tVf4Ikfj98b7ulVfwTISep
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iF0EARECAB0WIQTsPDUXSW5c6iqbJulHosy62l33jAUCXGhuJwAKCRBHosy62l33
+jL9gAJ9ebqqefi6UR/dCXXAoKbFMLb4G1wCgvboJvMhKxAPDgTjADeOJAxClJd4=
+=Ix2O
+-----END PGP SIGNATURE-----
+
+--eI4IntnAPw1tVf4Ikfj98b7ulVfwTISep--

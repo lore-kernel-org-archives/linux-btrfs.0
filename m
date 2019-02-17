@@ -2,181 +2,192 @@ Return-Path: <SRS0=daUN=QY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C64CBC43381
-	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Feb 2019 01:57:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9E55CC43381
+	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Feb 2019 03:11:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 95EBA21874
-	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Feb 2019 01:57:46 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4C1D021B69
+	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Feb 2019 03:11:31 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=dilger-ca.20150623.gappssmtp.com header.i=@dilger-ca.20150623.gappssmtp.com header.b="0oiNyj5y"
+	dkim=pass (2048-bit key) header.d=georgianit.com header.i=@georgianit.com header.b="p0IA+4tW";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="Jd8r0VbN"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727590AbfBQB5p (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 16 Feb 2019 20:57:45 -0500
-Received: from mail-it1-f196.google.com ([209.85.166.196]:40214 "EHLO
-        mail-it1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726220AbfBQB5p (ORCPT
+        id S1727814AbfBQDLa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 16 Feb 2019 22:11:30 -0500
+Received: from out2-smtp.messagingengine.com ([66.111.4.26]:40637 "EHLO
+        out2-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1727063AbfBQDLa (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 16 Feb 2019 20:57:45 -0500
-Received: by mail-it1-f196.google.com with SMTP id i2so33136485ite.5
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 Feb 2019 17:57:44 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=dilger-ca.20150623.gappssmtp.com; s=20150623;
-        h=from:message-id:mime-version:subject:date:in-reply-to:cc:to
-         :references;
-        bh=0oi8tg3xmPdJ3QxEJLuquxqNvfILu8oMWgTcsH30WKs=;
-        b=0oiNyj5ytuc10PzdJA2j4Do5IRrw7cgCxqYHPsgnPxD3YDVuFWUdWapbRJe4TyH7Jd
-         q6Rp1ILG3844W7okmKbUtfeVX1l4FC0P0g/aWsyhyUio/FuxoQxjOkzjQfitzVnNJO5f
-         q77HVyepSqt5eVow7PPWTNGdobVkDl8aHF2+gILgSZivJdFztnKOUi5DWMGd2G+Dj5JO
-         X5abruzbrs0HFuvXTgRtGMIWPlILfT0dA87/KCrDJ9wcFdfULE/IacVmIWdMWZYsMQ5v
-         E5qxn766jKlPOtmPkpAhsr+bQVC5JFVgep3JiDcq8ZlIhPZQtezS6nU8vk4/VfushMKL
-         4caw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:message-id:mime-version:subject:date
-         :in-reply-to:cc:to:references;
-        bh=0oi8tg3xmPdJ3QxEJLuquxqNvfILu8oMWgTcsH30WKs=;
-        b=LQZjSRR5ZyDSPNWbwShClAhees7gGQJY4tX7CM8kn7YpwQ0Jj6jrV2vsHhn8utRsgL
-         lIyslO8+c2FnOMwzEQcVAGEgPuvaQ7vznBsQ7qjXdK4GhlzzLvOJMv1RoxDhZN23jMGY
-         K9BoBotL/Q+RoIPBAQYZe9PgNGOlagXIRgcfnNgJdXFYyQPpUTJFPWm0ILZMvcmssVgI
-         FlTnIiA1Zs09EeY5NN9cpchyakktOI/EXKM6C88IC8wiTvr8mXI+cvUx+3p2B8PmbZnp
-         598el/P0yP2Bz8QOuJfcTe41aOk9C30jTmtlZrWnP409TxbA4ASKPx+ImTWEdG8VsvIW
-         cqqA==
-X-Gm-Message-State: AHQUAua4f+BkdD1YPg0+66klGIGFNcoXuU6Zmfkoon4XYiOvbORtEBBZ
-        0qf8dSOk5f43t6vbyepj4WMwfw==
-X-Google-Smtp-Source: AHgI3IZcpuX9sZT4gaFfaSvRlvbR9MC4ugElCHWiDMmxah9+7AHCPU7XC6h+uWySu4aJI1PT3LVRBQ==
-X-Received: by 2002:a24:1cce:: with SMTP id c197mr8317185itc.81.1550368663801;
-        Sat, 16 Feb 2019 17:57:43 -0800 (PST)
-Received: from cabot.frontierlocal.net ([47.158.158.91])
-        by smtp.gmail.com with ESMTPSA id r11sm4043381iog.46.2019.02.16.17.57.41
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Sat, 16 Feb 2019 17:57:42 -0800 (PST)
-From:   Andreas Dilger <adilger@dilger.ca>
-Message-Id: <72A04438-5991-4A60-8AAB-021A41DE6711@dilger.ca>
-Content-Type: multipart/signed;
- boundary="Apple-Mail=_2BFC7822-8AA0-4845-B9EA-99BE13F0AA9D";
- protocol="application/pgp-signature"; micalg=pgp-sha256
-Mime-Version: 1.0 (Mac OS X Mail 10.3 \(3273\))
-Subject: Re: [RFC PATCH 0/6] Allow setting file birth time with utimensat()
-Date:   Sat, 16 Feb 2019 18:57:45 -0700
-In-Reply-To: <20190215065947.GG9819@vader>
-Cc:     Dave Chinner <david@fromorbit.com>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        Al Viro <viro@zeniv.linux.org.uk>, kernel-team@fb.com,
-        Linux API <linux-api@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
-        linux-xfs@vger.kernel.org, Theodore Ts'o <tytso@mit.edu>,
-        Jaegeuk Kim <jaegeuk@kernel.org>,
-        Steve French <sfrench@samba.org>
-To:     Omar Sandoval <osandov@osandov.com>
-References: <cover.1550136164.git.osandov@fb.com>
- <20190214220626.GV14116@dastard> <20190214231429.GE9819@vader>
- <20190215001657.GY14116@dastard> <20190215065947.GG9819@vader>
-X-Mailer: Apple Mail (2.3273)
+        Sat, 16 Feb 2019 22:11:30 -0500
+Received: from compute2.internal (compute2.nyi.internal [10.202.2.42])
+        by mailout.nyi.internal (Postfix) with ESMTP id B9C0620F5C
+        for <linux-btrfs@vger.kernel.org>; Sat, 16 Feb 2019 22:11:28 -0500 (EST)
+Received: from mailfrontend1 ([10.202.2.162])
+  by compute2.internal (MEProxy); Sat, 16 Feb 2019 22:11:28 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=georgianit.com;
+         h=subject:to:references:from:message-id:date:mime-version
+        :in-reply-to:content-type; s=fm2; bh=CC5nKrVHAkfQKlq8liD6Da9Xizn
+        Rm6d93DwFAAiUChk=; b=p0IA+4tWIZMf3R0gBvh8VebKNoA5WRPIlHWsl3WMCBp
+        P081W0Bz+EWde6tQlgxkF7A3BkBXjSaGCAW55zz9thvLpNoFpCHJrFZ582WfBHl6
+        aWJmAJ9J7C6UT+HlABu8BeVq0Sb4N7rKqW5I9sm855y2LhsaAg+xTAXuBU3X1Z/6
+        JY8RGoWfcumvSrtbJ/ysSAe5i098wwNIC44fu7burRUv3zNi8HZklSAiLOTCusY9
+        NVqkT4GjlYl+PRdGcmjlpDTDoH4nVn2y+v0UfuUzAp23EV9ZkOpw4AvLJPhKGzjJ
+        hG7EM2nknviVhsS3c8gQIqp74NKg3+9TufUZM+t2HJQ==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=content-type:date:from:in-reply-to
+        :message-id:mime-version:references:subject:to:x-me-proxy
+        :x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; bh=CC5nKr
+        VHAkfQKlq8liD6Da9XiznRm6d93DwFAAiUChk=; b=Jd8r0VbN46NEhu6bMtMp/1
+        D7mEEp7/GpuaNLD/Cz4MqMPXD+UfpwqwEEZOI7X6AU0VqPVXCtJVcLI5iPiP/ZH2
+        wjIWjEzOQb2j9u1f9JA9axXKNl2aMj7ne2E/wWIrBymmq2kF0n7IJmBt4InGS1ba
+        egKmq1HgpZjXrHoieLGSedxgPz2b6PVx1Qb1wzsBeHi2Pfhz/YKZ18V7GisnCOa/
+        9DpIv7MU9SM9gQHNp42KraZgyu2rsIOkr2CAKL4llN5HKr8vIE0spHrzBWtI/Rgx
+        Z1V6k+utdUpsE9VRcG43O+hK47+zKVLt6y3MTM7avqh5C6zZ0QiAsYjShpbk/9xw
+        ==
+X-ME-Sender: <xms:4NBoXL5NwmWXl3KvNjqTW5Wf-rbT3__IB9jkTFtC8wWmH2zeL3h88A>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedtledruddutddgheegucetufdoteggodetrfdotf
+    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfquhhtnecuuegrihhlohhuthemucef
+    tddtnecunecujfgurhepuffvfhfhkffffgggjggtsehgtderofdtfeejnecuhfhrohhmpe
+    ftvghmihcuifgruhhvihhnuceorhgvmhhisehgvghorhhgihgrnhhithdrtghomheqnecu
+    kfhppedufeehrddvfedrvdegiedrudefudenucfrrghrrghmpehmrghilhhfrhhomheprh
+    gvmhhisehgvghorhhgihgrnhhithdrtghomhenucevlhhushhtvghrufhiiigvpedt
+X-ME-Proxy: <xmx:4NBoXJ1Lgj6i0sQ4mkuNbwadCdQlsIXDm93eV6HLwIUKTf2oR2K16Q>
+    <xmx:4NBoXEYrvSULT4blAjYP-jPZk4JjhlqnhVRAJbdVVKuOJxiaaOWyQw>
+    <xmx:4NBoXJADiXpRBf-RCJ7bAPsc7YPEa0id2SOiaoQfrM1eMwuD5ycTng>
+    <xmx:4NBoXCFiAWfp3j76_aE-lyoQw8AwX_-K0KvQj00uQOvnbtWauKNp2g>
+Received: from [10.0.0.6] (135-23-246-131.cpe.pppoe.ca [135.23.246.131])
+        by mail.messagingengine.com (Postfix) with ESMTPA id 1A486E4068
+        for <linux-btrfs@vger.kernel.org>; Sat, 16 Feb 2019 22:11:28 -0500 (EST)
+Subject: Re: Btrfs send with parent different size depending on source of
+ files.
+To:     linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <b1c31d98-baaa-85c7-1101-65350e1b4f45@sheepa.org>
+ <6a6cd7a7-ffaf-bb74-1c94-bfb1ad7fb335@gmail.com>
+From:   Remi Gauvin <remi@georgianit.com>
+Openpgp: url=http://www.georgianit.com/pgp/Remi%20Gauvin%20remi%40georgianit.com%20(0xEF539FF247456A6D)%20pub.asc
+Autocrypt: addr=remi@georgianit.com; prefer-encrypt=mutual;
+ keydata= mQENBFogjcYBCADvI0pxdYyVkEUAIzT6HwYnZ5CAy2czT87Si5mqk4wL4Ulupwfv9TLzaj3R
+ CUgHPNpFsp1n/nKKyOq1ZmE6w5YKx4I8/o9tRl+vjnJr2otfS7XizBaVV7UwziODikOimmT+
+ sGNfYGcjdJ+CC567g9aAECbvnyxNlncTyUPUdmazOKhmzB4IvG8+M2u+C4c9nVkX2ucf3OuF
+ t/qmeRaF8+nlkCMtAdIVh0F7HBYJzvYG3EPiKbGmbOody3OM55113uEzyw39k8WHRhhaKhi6
+ 8QY9nKCPVhRFzk6wUHJa2EKbKxqeFcFzZ1ok7l7vrX3/OBk2dGOAoOJ4UX+ozAtrMqCBABEB
+ AAG0IVJlbWkgR2F1dmluIDxyZW1pQGdlb3JnaWFuaXQuY29tPokBPgQTAQIAKAUCWiCNxgIb
+ IwUJCWYBgAYLCQgHAwIGFQgCCQoLBBYCAwECHgECF4AACgkQ71Of8kdFam2V1Qf9Fs6LSx1i
+ OoVgOzjWwiI06vJrZznjmtbJkcm/Of5onITZnB4h+tbqEyaMYYsEIk1r4oFMfKB7SDpQbADj
+ 9CI2EbpygwZa24Oqv4gWEzb4c7mSJuLKTnrhmwCOtdeDQXO/uu6BZPkazDAaKHUM6XqNEVvt
+ WHBaGioaV4dGxzjXALQDpLc4vDreSl9nwlTorwJR9t6u5BlDcdh3VOuYlgXjI4pCk+cihgtY
+ k3KZo/El1fWFYmtSTq7m/JPpKZyb77cbzf2AbkxJuLgg9o0iVAg81LjElznI0R5UbYrJcJeh
+ Jo4rvXKFYQ1qFwno1jlSXejsFA5F3FQzJe1JUAu2HlYqRrkBDQRaII3GAQgAo0Y6FX84QsDp
+ R8kFEqMhpkjeVQpbwYhqBgIFJT5cBMQpZsHmnOgpYU0Jo8P3owHUFu569g6j4+wSubbh2+bt
+ WL0QoFZcng0a2/j3qH98g9lAn8ZgohxavmwYINt7b+LEeDoBvq0s/0ZeXx47MOmbjROq8L/g
+ QOYbIWoJLO2emyxmVo1Fg00FKkbuCEgJPW8U/7VX4EFYaIhPQv/K3mpnyWXIq5lviiMCHzxE
+ jzBh/35DTLwymDdmtzWgcu1rzZ6j2s+4bTxE8mYXd4l2Xonn7v448gwvQmZJ8EPplO/pWe9F
+ oISyiNxZnQNCVEO9lManKPFphfVHqJ1WEtYMiLxTkQARAQABiQElBBgBAgAPBQJaII3GAhsM
+ BQkJZgGAAAoJEO9Tn/JHRWptnn0H+gOtkumwlKcad2PqLFXCt2SzVJm5rHuYZhPPq4GCdMbz
+ XwuCEPXDoECFVXeiXngJmrL8+tLxvUhxUMdXtyYSPusnmFgj/EnCjQdFMLdvgvXI/wF5qj0/
+ r6NKJWtx3/+OSLW0E9J/gLfimIc3OF49E3S1c35Wj+4Okx9Tpwor7Tw8KwBVbdZA6TyQF08N
+ phFkhgnTK6gl2XqIHaoxPKhI9pKU5oPkg2eI27OICZrpTCppaSh3SGUp0EHPkZuhVfIxg4vF
+ nato30VZr+RMHtPtx813VZ/kzj+2pC/DrwZOtqFeaqJfCi6JSik3vX9BQd9GL4mxytQBZKXz
+ SY9JJa155sI=
+Message-ID: <d216fc94-dba2-031f-a16a-94dadd462866@georgianit.com>
+Date:   Sat, 16 Feb 2019 22:11:27 -0500
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
+MIME-Version: 1.0
+In-Reply-To: <6a6cd7a7-ffaf-bb74-1c94-bfb1ad7fb335@gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="SXNvTcgGo2UtgxLOtjBCBDKUo5jmFWei6"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--SXNvTcgGo2UtgxLOtjBCBDKUo5jmFWei6
+Content-Type: multipart/mixed; boundary="Xaqe9S2KUAAxZZlXTUSULx5FVbM8qHefw";
+ protected-headers="v1"
+From: Remi Gauvin <remi@georgianit.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <d216fc94-dba2-031f-a16a-94dadd462866@georgianit.com>
+Subject: Re: Btrfs send with parent different size depending on source of
+ files.
+References: <b1c31d98-baaa-85c7-1101-65350e1b4f45@sheepa.org>
+ <6a6cd7a7-ffaf-bb74-1c94-bfb1ad7fb335@gmail.com>
+In-Reply-To: <6a6cd7a7-ffaf-bb74-1c94-bfb1ad7fb335@gmail.com>
 
---Apple-Mail=_2BFC7822-8AA0-4845-B9EA-99BE13F0AA9D
+--Xaqe9S2KUAAxZZlXTUSULx5FVbM8qHefw
+Content-Type: multipart/mixed;
+ boundary="------------92893C5E0559C090C5C229FA"
+Content-Language: en-US
+
+This is a multi-part message in MIME format.
+--------------92893C5E0559C090C5C229FA
+Content-Type: text/plain; charset=utf-8
 Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain;
-	charset=us-ascii
 
-On Feb 14, 2019, at 11:59 PM, Omar Sandoval <osandov@osandov.com> wrote:
+On 2019-02-16 3:08 p.m., Andrei Borzenkov wrote:
+
 >=20
-> On Fri, Feb 15, 2019 at 11:16:57AM +1100, Dave Chinner wrote:
->> On Thu, Feb 14, 2019 at 03:14:29PM -0800, Omar Sandoval wrote:
->>> I see a few options, none of which are particularly nice:
->>>=20
->>> 1. Filesystems like XFS could choose not to support setting btime =
-even
->>>   if they support reading it.
->>> 2. XFS could add a second, writeable btime which is used for
->>>   statx/utimes when available (it would fit in di_pad2...).
->>> 3. We could add a btime_writable sysctl/mount option/mkfs option.
->>=20
->> 4. create time remains a read-only field, and btrfs grows its own
->> special interface to twiddle it in btrfs-recv if it really is
->> necessary.
+> File size of "real" server.jar is not exact multiple of btrfs block siz=
+e
+> (4096) which causes the last extent to be "incomplete". btrfs won't
+> clone extent in this case. You can trivially reproduce it by using the
+> same size in the first case (although exact extent distribution may be
+> different of course, in the worst case you get single extent which is
+> sent in full):
 >=20
-> I'm curious to hear what the ext4/f2fs/CIFS developers think. If no =
-one
-> else wants btime to be mutable, then I might as well make it
-> Btrfs-specific. That is, assuming we reach consensus on the Btrfs side
-> that btrfs receive should set btime.
 >=20
->> I'm still not convinced that even backup/restore should be doing =
-this,
->> because there's so much other metadata that is unique even on
->> restored files that it doesn't really make any sense to me to lie
->> about it being created in the past....
 >=20
-> I suppose it depends on how you interpret btime: if it's strictly
-> filesystem metadata, then it makes sense that it should be immutable; =
-if
-> it's metadata for the user's own purposes, then we should allow =
-setting
-> it.
+> dd if=3D/dev/urandom of=3DA/dir/server.jar bs=3D1024 count=3D34625
+>=20
 
-My personal preference is that crtime/btime be read-only information =
-that
-tells when the file itself was created in this filesystem, not some =
-added
-metadata that is managed by userspace.  There have been many times when
-I've needed to know when a file was _actually_ created in the =
-filesystem,
-not what mtime/ctime report.
-
-While it may be a bit of a stretch to call this "forensic evidence", =
-making
-it hard to change from except via total root compromise by a skilled =
-hacker
-is very useful.
-
-If this were to go in (which I'm not in favour of), then there would =
-need to
-be a CONFIG and/or runtime knob to turn it off (or better to only turn =
-it on),
-similar to how FIPS and other security options can only go in one =
-direction.
-
-Cheers, Andreas
+Thank you.  I thought I had tested one where I changed the file size,
+(by  altering the bs,) but I must have inadvertently created a file that
+still divided by 4096, (or it got split into a second extent).
 
 
 
-
-
-
---Apple-Mail=_2BFC7822-8AA0-4845-B9EA-99BE13F0AA9D
-Content-Transfer-Encoding: 7bit
+--------------92893C5E0559C090C5C229FA
+Content-Type: text/x-vcard; charset=utf-8;
+ name="remi.vcf"
+Content-Transfer-Encoding: quoted-printable
 Content-Disposition: attachment;
-	filename=signature.asc
-Content-Type: application/pgp-signature;
-	name=signature.asc
-Content-Description: Message signed with OpenPGP
+ filename="remi.vcf"
+
+begin:vcard
+fn:Remi Gauvin
+n:Gauvin;Remi
+org:Georgian Infotech
+adr:;;3-51 Sykes St. N.;Meaford;ON;N4L 1X3;Canada
+email;internet:remi@georgianit.com
+tel;work:226-256-1545
+version:2.1
+end:vcard
+
+
+--------------92893C5E0559C090C5C229FA--
+
+--Xaqe9S2KUAAxZZlXTUSULx5FVbM8qHefw--
+
+--SXNvTcgGo2UtgxLOtjBCBDKUo5jmFWei6
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
-Comment: GPGTools - http://gpgtools.org
+Version: GnuPG v2
 
-iQIzBAEBCAAdFiEEDb73u6ZejP5ZMprvcqXauRfMH+AFAlxov5oACgkQcqXauRfM
-H+AyPhAAlbb/G73XdA0bWoKFVbnhMxf3ry5kn2FiSnjF8tUNsvWQWLgGwtKDS7LA
-NjAzkZUaYLVVVkxP0Re9XyYNinbPdoyIsgQdjb+6x/Gc14lkP94bXzqQ8xBBC8rA
-uBB/n7GsNj0FsU/osl/TBsQ4pPiQvTZk6Yq5hoJ51eTMk7SnCUQfgtMICtCaRkGX
-edOfzbky+1RpJgu4NfwUlodFqJiNZ05st+gSjCoxcTXrejdhb+itIm7Pi0YIg3Rv
-DuTcg5V1jkmeBwK7ZrocfGjBVG/+zxHvHhNucae2TWQ7EHxA1Qo+zdUu9Vw6U2sk
-vKFYYK1Lb12St25MpTpP3UkO1yHypEjGSniMBWgKH8dZSXIPS3dWL5rsvKWdSP3/
-jjcSXLYQaOQUrCaHkKX/ZyBw/tRM44ZpyTSE1N1YJcrsKvEPb4tSVa6+sydZHWJH
-aWTie3vLN7se0GoYJKtngRzlFxpLHZelMZEGWBeFk4+cMK4kw+7HcoqCa4RnGn9T
-gGJr0YTZfskzYwXYyJDeLIOxSi530C+6rgXooLXKcMWsq5qUy/wFWK22WG75Rqa5
-CuJmPHVy3avbipdjRyGbX1nVPIce9Lr77O9dmEF3qAXZyyEKsNq4LKvt2usKfToU
-1aJq6evQLDDIORopZSxYd/lGAgQLBM6RDMB16jwwa/8se1J1dak=
-=Nx1H
+iQEcBAEBCAAGBQJcaNDfAAoJEO9Tn/JHRWptKXkIAKp5JwTrHFq7ThnXjlJxdunS
+phvmPLGdh3kLcJS81NWS1pX4evP6VPKLUhmFUTXEGcNHaQ+wgH+VbU6BoIMm9y3H
+KcdMMHq9puVwfpyQkYY/lJb9dTuf+02ba8xROxA6zmLkf52TYq2FC2gRiFexcmtQ
+fxMin36g0e2xP+9y7laLeqFDX2vZYC4kuuPSj1hhS+K0GLFUdPq/q31gfNOGgGm4
+Q9JPstJLW69OzMr/Cmg3d8OCxnrf9fJcfFXZSRhpanVf3CY26zr4zLWks2dttLv9
+ATSSW5e7S9kNe5n/Bh6InmtdqVWQcalCoe2ytvmD1UTFcoVcVaON5flc5mgX1bM=
+=33s0
 -----END PGP SIGNATURE-----
 
---Apple-Mail=_2BFC7822-8AA0-4845-B9EA-99BE13F0AA9D--
+--SXNvTcgGo2UtgxLOtjBCBDKUo5jmFWei6--

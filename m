@@ -6,28 +6,27 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E644DC10F07
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 05:28:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 719BCC43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 05:28:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BFE30218D8
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 05:28:23 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4AE99218D8
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 05:28:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727612AbfBRF2V (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 18 Feb 2019 00:28:21 -0500
-Received: from mx2.suse.de ([195.135.220.15]:55972 "EHLO mx1.suse.de"
+        id S1727404AbfBRF2U (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 18 Feb 2019 00:28:20 -0500
+Received: from mx2.suse.de ([195.135.220.15]:55948 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727271AbfBRF2V (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Feb 2019 00:28:21 -0500
+        id S1725766AbfBRF2O (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Feb 2019 00:28:14 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 12CDEAEDB;
-        Mon, 18 Feb 2019 05:28:19 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 5DADAAEDB
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Feb 2019 05:28:13 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     Leonard Lausen <leonard@lausen.nl>
-Subject: [PATCH v5.1 12/12] btrfs: Do mandatory tree block check before submitting bio
-Date:   Mon, 18 Feb 2019 13:27:53 +0800
-Message-Id: <20190218052753.24138-13-wqu@suse.com>
+Subject: [PATCH v5.1 09/12] btrfs: extent_io: Kill the BUG_ON() in lock_extent_buffer_for_io()
+Date:   Mon, 18 Feb 2019 13:27:50 +0800
+Message-Id: <20190218052753.24138-10-wqu@suse.com>
 X-Mailer: git-send-email 2.20.1
 In-Reply-To: <20190218052753.24138-1-wqu@suse.com>
 References: <20190218052753.24138-1-wqu@suse.com>
@@ -38,153 +37,91 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There are at least 2 reports about memory bit flip sneaking into on-disk
-data.
+This function needs some extra check on locked pages and eb.
 
-Currently we only have a relaxed check triggered at
-btrfs_mark_buffer_dirty() time, as it's not mandatory and only for
-CONFIG_BTRFS_FS_CHECK_INTEGRITY enabled build, it doesn't help user to
-detect such problem.
+For error handling we need to unlock locked pages and the eb.
 
-This patch will address the hole by triggering comprehensive check on
-tree blocks before writing it back to disk.
+Also add comment for possible return values of lock_extent_buffer_for_io().
 
-The design points are:
-- Timing of the check: Tree block write hook
-  This timing is chosen to reduce the overhead.
-  The comprehensive check should be as expensive as csum.
-  Doing full check at btrfs_mark_buffer_dirty() is too expensive for end
-  user.
+There is a rare >0 return value branch, where all pages get locked
+while write bio is not flushed.
 
-- Loose empty leaf check
-  Originally for empty leaf, tree-checker will report error if it's not
-  a tree root.
-  The problem for such check at write time is:
-  * False alert for tree root created in current transaction
-    In that case, the commit root still needs to be written to disk.
-    And since current root can differ from commit root, then it will
-    cause false alert.
-    This happens for log tree.
+Thankfully it's handled by the only caller, btree_write_cache_pages(),
+as later write_one_eb() call will trigger submit_one_bio().
+So there shouldn't be any problem.
 
-  * False alert for relocated tree block
-    Relocated tree block can be written to disk due to memory pressure,
-    in that case an empty csum tree root can be written to disk and
-    cause false alert, since csum root node hasn't been updated.
-
-  Although some more reliable empty leaf check is still kept as is.
-  Namely essential trees (e.g. extent, chunk) should never be empty.
-
-The example error output will be something like:
-  BTRFS critical (device dm-3): corrupt leaf: root=2 block=1350630375424 slot=68, bad key order, prev (10510212874240 169 0) current (1714119868416 169 0)
-  BTRFS error (device dm-3): block=1350630375424 write time tree block corruption detected
-  BTRFS: error (device dm-3) in btrfs_commit_transaction:2220: errno=-5 IO failure (Error while writing out transaction)
-  BTRFS info (device dm-3): forced readonly
-  BTRFS warning (device dm-3): Skipping commit of aborted transaction.
-  BTRFS: error (device dm-3) in cleanup_transaction:1839: errno=-5 IO failure
-  BTRFS info (device dm-3): delayed_refs has NO entry
-
-Reported-by: Leonard Lausen <leonard@lausen.nl>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/disk-io.c      | 10 ++++++++++
- fs/btrfs/tree-checker.c | 24 +++++++++++++++++++++---
- fs/btrfs/tree-checker.h |  8 ++++++++
- 3 files changed, 39 insertions(+), 3 deletions(-)
+ fs/btrfs/extent_io.c | 25 ++++++++++++++++++++-----
+ 1 file changed, 20 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 6052ab508f84..fff789f8db63 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -313,6 +313,16 @@ static int csum_tree_block(struct btrfs_fs_info *fs_info,
- 			return -EUCLEAN;
- 		}
- 	} else {
-+		if (btrfs_header_level(buf))
-+			err = btrfs_check_node(fs_info, buf);
-+		else
-+			err = btrfs_check_leaf_write(fs_info, buf);
-+		if (err < 0) {
-+			btrfs_err(fs_info,
-+			"block=%llu write time tree block corruption detected",
-+				  buf->start);
-+			return err;
-+		}
- 		write_extent_buffer(buf, result, 0, csum_size);
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 8ccbbaa6f45f..1572e892ec7b 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3526,19 +3526,25 @@ void wait_on_extent_buffer_writeback(struct extent_buffer *eb)
+ 		       TASK_UNINTERRUPTIBLE);
+ }
+ 
++/*
++ * Return 0 if nothing went wrong, its pages get locked and submitted.
++ * Return >0 is mostly the same as 0, except bio is not submitted.
++ * Return <0 if something went wrong, no page get locked.
++ */
+ static noinline_for_stack int
+ lock_extent_buffer_for_io(struct extent_buffer *eb,
+ 			  struct btrfs_fs_info *fs_info,
+ 			  struct extent_page_data *epd)
+ {
+-	int i, num_pages;
++	int i, num_pages, failed_page_nr;
+ 	int flush = 0;
+ 	int ret = 0;
+ 
+ 	if (!btrfs_try_tree_write_lock(eb)) {
+-		flush = 1;
+ 		ret = flush_write_bio(epd);
+-		BUG_ON(ret < 0);
++		if (ret < 0)
++			return ret;
++		flush = 1;
+ 		btrfs_tree_lock(eb);
  	}
  
-diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index a62e1e837a89..b8cdaf472031 100644
---- a/fs/btrfs/tree-checker.c
-+++ b/fs/btrfs/tree-checker.c
-@@ -477,7 +477,7 @@ static int check_leaf_item(struct btrfs_fs_info *fs_info,
- }
- 
- static int check_leaf(struct btrfs_fs_info *fs_info, struct extent_buffer *leaf,
--		      bool check_item_data)
-+		      bool check_item_data, bool check_empty_leaf)
- {
- 	/* No valid key type is 0, so all key should be larger than this key */
- 	struct btrfs_key prev_key = {0, 0, 0};
-@@ -516,6 +516,18 @@ static int check_leaf(struct btrfs_fs_info *fs_info, struct extent_buffer *leaf,
- 				    owner);
- 			return -EUCLEAN;
+@@ -3548,7 +3554,8 @@ lock_extent_buffer_for_io(struct extent_buffer *eb,
+ 			return 0;
+ 		if (!flush) {
+ 			ret = flush_write_bio(epd);
+-			BUG_ON(ret < 0);
++			if (ret < 0)
++				return ret;
+ 			flush = 1;
  		}
-+
-+		/*
-+		 * Skip empty leaf check, mostly for write time tree block
-+		 *
-+		 * Such skip mostly happens for tree block write time, as
-+		 * we can't use @owner as accurate owner indicator.
-+		 * Case like balance and new tree block created for commit root
-+		 * can break owner check easily.
-+		 */
-+		if (!check_empty_leaf)
-+			return 0;
-+
- 		key.objectid = owner;
- 		key.type = BTRFS_ROOT_ITEM_KEY;
- 		key.offset = (u64)-1;
-@@ -636,13 +648,19 @@ static int check_leaf(struct btrfs_fs_info *fs_info, struct extent_buffer *leaf,
- int btrfs_check_leaf_full(struct btrfs_fs_info *fs_info,
- 			  struct extent_buffer *leaf)
- {
--	return check_leaf(fs_info, leaf, true);
-+	return check_leaf(fs_info, leaf, true, true);
+ 		while (1) {
+@@ -3590,7 +3597,10 @@ lock_extent_buffer_for_io(struct extent_buffer *eb,
+ 		if (!trylock_page(p)) {
+ 			if (!flush) {
+ 				ret = flush_write_bio(epd);
+-				BUG_ON(ret < 0);
++				if (ret < 0) {
++					failed_page_nr = i;
++					goto err_unlock;
++				}
+ 				flush = 1;
+ 			}
+ 			lock_page(p);
+@@ -3598,6 +3608,11 @@ lock_extent_buffer_for_io(struct extent_buffer *eb,
+ 	}
+ 
+ 	return ret;
++err_unlock:
++	/* Unlock these already locked pages */
++	for (i = 0; i < failed_page_nr; i++)
++		unlock_page(eb->pages[i]);
++	return ret;
  }
  
- int btrfs_check_leaf_relaxed(struct btrfs_fs_info *fs_info,
- 			     struct extent_buffer *leaf)
- {
--	return check_leaf(fs_info, leaf, false);
-+	return check_leaf(fs_info, leaf, false, true);
-+}
-+
-+int btrfs_check_leaf_write(struct btrfs_fs_info *fs_info,
-+			   struct extent_buffer *leaf)
-+{
-+	return check_leaf(fs_info, leaf, false, false);
- }
- 
- int btrfs_check_node(struct btrfs_fs_info *fs_info, struct extent_buffer *node)
-diff --git a/fs/btrfs/tree-checker.h b/fs/btrfs/tree-checker.h
-index ff043275b784..6f8d1b627c53 100644
---- a/fs/btrfs/tree-checker.h
-+++ b/fs/btrfs/tree-checker.h
-@@ -23,6 +23,14 @@ int btrfs_check_leaf_full(struct btrfs_fs_info *fs_info,
-  */
- int btrfs_check_leaf_relaxed(struct btrfs_fs_info *fs_info,
- 			     struct extent_buffer *leaf);
-+
-+/*
-+ * Write time specific leaf checker.
-+ * Don't check if the empty leaf belongs to a tree root. Mostly for balance
-+ * and new tree created in current transaction.
-+ */
-+int btrfs_check_leaf_write(struct btrfs_fs_info *fs_info,
-+			   struct extent_buffer *leaf);
- int btrfs_check_node(struct btrfs_fs_info *fs_info, struct extent_buffer *node);
- 
- #endif
+ static void end_extent_buffer_writeback(struct extent_buffer *eb)
 -- 
 2.20.1
 

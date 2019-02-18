@@ -6,131 +6,107 @@ X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ED399C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 21:22:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DA7DCC43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 21:31:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B9E5521738
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 21:22:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9BC722084D
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 21:31:12 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="P//DqNwC"
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="NLOD4FTh"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730584AbfBRVW4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 18 Feb 2019 16:22:56 -0500
-Received: from mail-lf1-f67.google.com ([209.85.167.67]:43240 "EHLO
-        mail-lf1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729382AbfBRVW4 (ORCPT
+        id S1730638AbfBRVbL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 18 Feb 2019 16:31:11 -0500
+Received: from mail-lf1-f47.google.com ([209.85.167.47]:41409 "EHLO
+        mail-lf1-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726955AbfBRVbL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Feb 2019 16:22:56 -0500
-Received: by mail-lf1-f67.google.com with SMTP id j1so13338648lfb.10
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Feb 2019 13:22:55 -0800 (PST)
+        Mon, 18 Feb 2019 16:31:11 -0500
+Received: by mail-lf1-f47.google.com with SMTP id e27so13353334lfj.8
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Feb 2019 13:31:10 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
         h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc:content-transfer-encoding;
-        bh=230Af2f2pAicrOcqupJbfKEhMD0axVo4gCKJYKEvIEI=;
-        b=P//DqNwC1ojbQqWxzbZlLvQ+QHYSUz41kxWNdopZgaQMhWQJer2PjquW7bm1DerffR
-         UjY9hu12VKxnc3sCZ+jbCybxMlVGDFBbhk5JqxbFF6BajqcE6ElrZm72wsK1ewWt1FbW
-         hEg3r4oYdjmJco90bh1fIZOzmfcQy4DTTFFVHXMbMQE9D1wfJ0H+jZdKlAiOESSdDbZb
-         3fz2ZAfxYTf5jeszgBBmBl+2vB8OhcW9G19SFv1oKJb+KlDpQQY4zDM0N65yXGxooDYV
-         4sXBFxENwHinRfFVOg1XsNhvn44L4gKqFBAaEUP8RIcfp73OoEBwRw1+yVlMfvT59+G+
-         +Img==
+         :cc;
+        bh=kRwjGGf9u2hoXxlOObpPGJPK+1SL2nmRIDPAUQrWJOQ=;
+        b=NLOD4FThtrC0RasQ3Ya1QDZJN+JXnKXpnDHZeE4khKXGPllnZm6zUJWv6L2vMR7zRP
+         +aIxE7Bqlw3zGZsdYbUDwgkeV+N+NkHphU3fZVC2xtD58swWQhwcFI3v1Sh5cpDxUycM
+         Q/sceizQZiZHTbvsce5sO989ZEH0U6EKUoBWAZXrzHxIWBMQ5zrHLYJuvDRwcIpIQFj2
+         hcVjlO7uvLMIlOStw0Q7UXkGZ3HNEuWsCScvr0j9hg8KVP6/oPU57V+FG0mVkkTN2I1c
+         7Vx+bzFOd0Gw/loaI7/+5IGMZtucC6mWBNADMkjAuu2AfraEJ1D3PzLi5phR7WhejMSV
+         KiXQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc:content-transfer-encoding;
-        bh=230Af2f2pAicrOcqupJbfKEhMD0axVo4gCKJYKEvIEI=;
-        b=cE5s14RcHMCyVseztvbfx+CwFU7+ap8zKhGu337IiWj4Pr2LYGUtpgOYiBGBiwqK1E
-         cRSeUs03W5ggbfceBXHGFrfulrBY06IcQCzpHyRlDqPFJ6MWWjIwHY9/4jMh79nvSqCK
-         94DcwrW4+Ov6DomKbTBA0QPralAtKl28V9Iz0utgnoMsrAJRfdodErX7SwU0NpjQNxqg
-         x/Nhz+c0uFutXARBToTMhNw6earQ7reYPUy6xLKQy2vJ0ECYA0Dx2iliaqEmk+27mn0C
-         roFQWXpd5mSUWxtac8q8vgBl7qS17gOGGTmVse1Tyb8kAhlUlXn7IRxjuAWDFbCUfwH4
-         w2Pw==
-X-Gm-Message-State: AHQUAuZEL6kfhmBrChC1fVWz4zfDCPG5Cae3cnzGpZ8/JD2XnfCXAzgb
-        d6CJT+07InJv8YYR90pUoFn1IyJlVruYzMH6BGK/pcDq4B4=
-X-Google-Smtp-Source: AHgI3Ib2lvYRmlFgxhNaREclC9gV/+HqpPDf/aN2ZQfXesPrirENwIX9TXk8z3dE1TQkWXWkB7NDNjXdJ/px75LrJTI=
-X-Received: by 2002:ac2:4116:: with SMTP id b22mr14818884lfi.19.1550524974405;
- Mon, 18 Feb 2019 13:22:54 -0800 (PST)
+         :message-id:subject:to:cc;
+        bh=kRwjGGf9u2hoXxlOObpPGJPK+1SL2nmRIDPAUQrWJOQ=;
+        b=Ti+tVStl/8z60SUcCMAnWwcNJlE0eby4AzB/+q4cLvGmzhcOqYrU8pQCsy3nIX/1di
+         EDed8CBqk1wynpFDqDRAElvs1TNQj7W5WpVV26MgEo7Yr8yInfurlPG+qIrIwLn5s24U
+         eIan9Hh+x4o+BfC7WLqXhRTeQi4THN7tYBhaaWd8vCrndTM1M5QSmTZ8b6/1qOC8uKQD
+         j6NXACyPQWYCPivk3Q4sob1oJVUzMdvJif7TUa12CNSRKNAwlQQC5qIsxvB5YzNnVWtY
+         2zk5urOgXw4htGBIjo92/kYF8bVQE7cyrmZYOVF5h8OfK5Dz7k73pYB3zPfSBYkxypsu
+         tjZQ==
+X-Gm-Message-State: AHQUAubDGJ3SKfs32S6+2NS093BJBjSr8KvZRnYKjyxI6nrv7JG2IVAh
+        trbJHNzOygbncqA9+I/mzmkPB4y+u/lunuSzGxi64UTf
+X-Google-Smtp-Source: AHgI3IYRiPkwoutzr9Ksxh4cplDPafhNeLWdoDVRnqPA2Ip5WQzdnJ+K2zacw8YhGV3yjSzFsmQFvlHJW8THnN5wQP4=
+X-Received: by 2002:ac2:4194:: with SMTP id z20mr14556847lfh.74.1550525469039;
+ Mon, 18 Feb 2019 13:31:09 -0800 (PST)
 MIME-Version: 1.0
-References: <b1c31d98-baaa-85c7-1101-65350e1b4f45@sheepa.org>
- <6a6cd7a7-ffaf-bb74-1c94-bfb1ad7fb335@gmail.com> <d216fc94-dba2-031f-a16a-94dadd462866@georgianit.com>
- <40efb627-911f-1cae-c3d2-f2353eaab99c@sheepa.org> <CAJCQCtSE++nn=mVEpKt3vgpnDXXnooD2zg6aUJ6DdkphVDHQkg@mail.gmail.com>
- <47ac7b0a-269c-5580-fb3b-2504111901cf@sheepa.org>
-In-Reply-To: <47ac7b0a-269c-5580-fb3b-2504111901cf@sheepa.org>
+References: <CAAD7_rAwZR6j=SgZOCx3C8dRM=BUZJVHDzSmj5rWB21HyWtqSg@mail.gmail.com>
+In-Reply-To: <CAAD7_rAwZR6j=SgZOCx3C8dRM=BUZJVHDzSmj5rWB21HyWtqSg@mail.gmail.com>
 From:   Chris Murphy <lists@colorremedies.com>
-Date:   Mon, 18 Feb 2019 14:22:42 -0700
-Message-ID: <CAJCQCtT8Z47UQnRo1zDfpCB6e7cSPOzYFkR55_9ASTW=oBPTZA@mail.gmail.com>
-Subject: Re: Btrfs send with parent different size depending on source of files.
-To:     =?UTF-8?Q?Andr=C3=A9_Malm?= <admin@sheepa.org>
-Cc:     Chris Murphy <lists@colorremedies.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
+Date:   Mon, 18 Feb 2019 14:30:57 -0700
+Message-ID: <CAJCQCtQ=1JLtd2BMeZu_=ydi+C=-2ao-ZtJwKWmi4TM=aA1FAA@mail.gmail.com>
+Subject: Re: raid 1 filesystem corruption
+To:     Rudolf Kastl <che666@gmail.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Feb 18, 2019 at 12:58 PM Andr=C3=A9 Malm <admin@sheepa.org> wrote:
+On Mon, Feb 18, 2019 at 2:19 PM Rudolf Kastl <che666@gmail.com> wrote:
+>
+> Any hints on how to recover is greatly appreciated.
+>
+> uname -a:
+> Linux localhost-live 4.18.16-300.fc29.x86_64 #1 SMP Sat Oct 20
+> 23:24:08 UTC 2018 x86_64 x86_64 x86_64 GNU/Linux
+>
+> btrfs --version:
+> btrfs-progs v4.17.1
+>
+> dmesg:
+> [   46.918149] BTRFS info (device sda2): disk space caching is enabled
+> [   46.918151] BTRFS info (device sda2): has skinny extents
+> [  147.509999] rfkill: input handler enabled
+> [  150.657962] BTRFS warning (device sda2): failed to resume balance: -4
+> [  151.541975] BTRFS error (device sda2): open_ctree failed
+> [  159.209490] rfkill: input handler disabled
+> [  290.624978] BTRFS info (device sda2): disk space caching is enabled
+> [  290.624981] BTRFS info (device sda2): has skinny extents
+> [  294.350986] BTRFS info (device sda2): checking UUID tree
+> [  294.350994] BTRFS info (device sda2): balance: resuming
+> [  297.425043] BTRFS info (device sda2): relocating block group
+> 1075919716352 flags metadata|raid1
+> [  342.046679] IPv6: ADDRCONF(NETDEV_UP): wlp3s0: link is not ready
+> [  429.588813] WARNING: CPU: 5 PID: 155 at fs/btrfs/extent-tree.c:1680
 
-> Basically what I'm trying to achieve is having a "reference" / "master"
-> btrfs subvolume where i add / edit / remove files continuously. From
-> where i can cp --reflink=3Dalways some of those files to new "child"
-> subvolumes as needed. As long as the files are still in the master
-> subvolume I'll only send the diff of the data. The plan is to have this
-> master subvolume across multiple remote machines (synced with rsync or
-> perhaps btrfs send / receive) and being able to update / change it as
-> needed but always only sending the diffs of the child subvolumes. Maybe
-> this is a bit optimistic.
-
-I'm not sure what you get out of this method that depends on reflink
-rather than just making read only snapshots.
-
-Why don't you create subvolume A as the master, read-write. And once
-it's in the "master state" you want, just snapshot it:
-
-btrfs sub snap -r A A.20190218-master
-
-And now continue to make changes to A subvolume, and on whatever
-schedule you want:
-
-btrfs sub snap -r A A.20190218-1412
-btrfs sub snap -r A A.20190218-1850
-btrfs sub snap -r A A.20190219-0920
-
-And now you can "compare" the difference to master at anytime:
-
-btrfs send -p A.20190218-master A.20190218-1850 -f output (or pipe to recei=
-ve)
-
-*shrug* I'm just not understanding what your use case gains out of
-doing a refink copy to another subvolume rather than just make a read
-only snapshot.
-
-Is it that subvolume A must accept changes, but itself cannot be the
-"master"? And you're selectively reflink copying files from A to B
-such that B is the only "master"? That's fine but then I'd say you
-don't need any A snapshots, you need B snapshots where:
-
-btrfs sub snap -r B B.20190218-master
-btrfs sub snap -r B B.20190219-0920
-btrfs send -p B.20190218-master B.20190219-0920 -f output (or pipe to recei=
-ve)
-
-And so on...
-
-Anyway, my point isn't that you're doing it wrong. I'm jut not
-understanding the advantage of doing it the way you're doing it; and
-it should be clear by now that most people on the list aren't using
-'btrfs send' to compute the difference between two otherwise unrelated
-subvolumes.
-
-Part of this *might* be because of how ZFS snapshots work, and Btrfs
-users maybe just adopted the same logic due in large part to more
-limitations on the ZFS implementation: snapshots are always read only,
-incremental send is only done between snapshots of the same dataset,
-datasets can't be deleted  until all snapshots are deleted, there are
-no reflinks, and no doubt some things I'm forgetting.
+[snip]
 
 
---=20
+> [  429.589101] BTRFS: error (device sda2) in
+> btrfs_run_delayed_refs:3057: errno=-5 IO failure
+
+This suggests an underlying block layer problem, IO error happened
+outside of Btrfs I think. Do you have the complete dmesg?
+
+Also useful:
+
+'smartctl -x' for both drives
+'smartctl -l sct erc' for both drives
+'cat /sys/block/sdX/device/timeout' for both drives
+
+
+-- 
 Chris Murphy

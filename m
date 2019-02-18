@@ -2,120 +2,103 @@ Return-Path: <SRS0=oOJ3=QZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5BC97C10F01
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 18:28:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2F91AC43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 19:58:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2E4F521773
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 18:28:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CB75C21773
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 19:58:52 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=intel-com.20150623.gappssmtp.com header.i=@intel-com.20150623.gappssmtp.com header.b="tMokctLG"
+	dkim=pass (1024-bit key) header.d=sheepa.org header.i=admin@sheepa.org header.b="bkZhG50n"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732465AbfBRS2C (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 18 Feb 2019 13:28:02 -0500
-Received: from mail-ot1-f65.google.com ([209.85.210.65]:41001 "EHLO
-        mail-ot1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731340AbfBRS2C (ORCPT
+        id S1726316AbfBRT6v (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 18 Feb 2019 14:58:51 -0500
+Received: from sender-of-o52.zoho.eu ([185.20.209.248]:21383 "EHLO
+        sender-of-o52.zoho.eu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725308AbfBRT6v (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Feb 2019 13:28:02 -0500
-Received: by mail-ot1-f65.google.com with SMTP id t7so13475934otk.8
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Feb 2019 10:28:01 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=intel-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=61A4/pXAOuL1qD1InScuL+ZQsJ2daF8hYngPLbv7POY=;
-        b=tMokctLGcpHhqNR/e/NSsxfB6B5p5c5imJypXFqVXPxj7LDrmVG1wKTTIiXPbsDTb6
-         IC0n1WClX0z8Y/wo/W/m7eAxOJ9LdIqJRmPJx+sSGsQ1uqUrfnq86t8Z+VL6rLnUY7uq
-         Z5hRen8gddZOi5AdNeahDrTlOTBnoOy5TJz54i3/NSjYwnlIvzCX6BXU2zUX6pW1D++m
-         WNWJHeHZOWwRl9FKPFQXW9lQ1b7Y2TdmCVNxSznJt2e31Yd3AJrFdUmj0jQa60vVVv0S
-         vqZuFmRKP5dqEmAg38rPXvEEU6GsfiyP/aCSDkO2Dqtp/iRyUA75SlzmGalM0l1gjdGQ
-         OOKw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=61A4/pXAOuL1qD1InScuL+ZQsJ2daF8hYngPLbv7POY=;
-        b=H2dUoZi+Hpwi90xcd3Qe3/wHu2LGxJjC9RO3wUZANsOvM7VdG6zTapm4evj8v68PTx
-         3ZOg5oH8MDyNu++a6cCykk5jR6n36V9LtFKR/x5JpLiN/MV/2w9dGObBKf12Kj6JsJW6
-         d/4GW6tMIS6fGqPZWcymlA7bM9dhZTdulmEG5gdI6b/vWNhlI1eFS4VttDwCD920Icf/
-         Bkkja7z9ukTQY1q34uVClOYfWDORmicMydqf7JFGc5YQUQe2jEkl/dP08aWJxofK06Ns
-         gsC1z7+GfywD2e2nlR+Ki+hLbxCYpz/u+X1l4nxpbM++9035htftTbSo6AJQPEbyBUqN
-         8KQw==
-X-Gm-Message-State: AHQUAua7C1DeAzVbtgmokocUVN5XfTUM94nxP+llVSyDU0j0LxvQGevZ
-        vLqFC9aQMsM0k1A6ydVjqBupffQK8DCpMixOqmb4iw==
-X-Google-Smtp-Source: AHgI3IbkIgHd4N9gDtQiSpFZ73fHij9/1mD20PmrL889XoDapAta8tZ+YygnfWt8BdNz8yPa/i17b1XZW6ywlIC8Gxk=
-X-Received: by 2002:aca:3906:: with SMTP id g6mr86101oia.149.1550514481035;
- Mon, 18 Feb 2019 10:28:01 -0800 (PST)
+        Mon, 18 Feb 2019 14:58:51 -0500
+ARC-Seal: i=1; a=rsa-sha256; t=1550519926; cv=none; 
+        d=zoho.eu; s=zohoarc; 
+        b=QNBYCM7Cxu4dxv4744CipBnMfs1dnbHepRJUCAMuuG7LpGUvNbAIhXLguhlU9PBXtN7kWS5wf73Olg9t7W882psRD9AIzs+9PzPdXBJucEh2PK58QOtxsLaOoxVr0kFcuO3Y5fdcEnSyiZE5Olw/8gF5e4uTi2STLF9T/wxqIOM=
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=zoho.eu; s=zohoarc; 
+        t=1550519926; h=Content-Type:Content-Transfer-Encoding:Cc:Date:From:In-Reply-To:MIME-Version:Message-ID:References:Subject:To:ARC-Authentication-Results; 
+        bh=qCukKfzJhCENWKfBqIy0bJv7Bg6u56vFABwFvS4PcXE=; 
+        b=BbAN7bJSPb6DITKqof+8ROo4FPGEOyqOsPGeVP2mEbWXwYQIYyUeYQtU3r3JnjUYKirlaz+m31vZ3yl89kInJ8mplW37U60ss2HxOCFhlr8FaCLd2/Xkz+ryj+eKgqedBuBY3T/IowBeI/8yayrSTDtUHodj4kA5qV8oJ2f3I2o=
+ARC-Authentication-Results: i=1; mx.zoho.eu;
+        dkim=pass  header.i=sheepa.org;
+        spf=pass  smtp.mailfrom=admin@sheepa.org;
+        dmarc=pass header.from=<admin@sheepa.org> header.from=<admin@sheepa.org>
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; t=1550519926;
+        s=mail; d=sheepa.org; i=admin@sheepa.org;
+        h=Subject:To:Cc:References:From:Message-ID:Date:MIME-Version:In-Reply-To:Content-Type:Content-Transfer-Encoding;
+        l=1839; bh=qCukKfzJhCENWKfBqIy0bJv7Bg6u56vFABwFvS4PcXE=;
+        b=bkZhG50n0RYpw6undGUBPPVwAyUbOfWuc7zW97rXGw1YHTy0s3xgJGCUuWo1F12d
+        zmXqJuClRulTtPBtoesfv+sL4GDuBs+go2LwXkz8pMInetEWuqBBtt+FEsds1NKJINY
+        BPoadslQwoASH/aAPqpfBmHJYIWyx67kVLnj0l+o=
+Received: from [192.168.0.4] (c83-248-74-133.bredband.comhem.se [83.248.74.133]) by mx.zoho.eu
+        with SMTPS id 1550519924976567.3650358143249; Mon, 18 Feb 2019 20:58:44 +0100 (CET)
+Subject: Re: Btrfs send with parent different size depending on source of
+ files.
+To:     Chris Murphy <lists@colorremedies.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <b1c31d98-baaa-85c7-1101-65350e1b4f45@sheepa.org>
+ <6a6cd7a7-ffaf-bb74-1c94-bfb1ad7fb335@gmail.com>
+ <d216fc94-dba2-031f-a16a-94dadd462866@georgianit.com>
+ <40efb627-911f-1cae-c3d2-f2353eaab99c@sheepa.org>
+ <CAJCQCtSE++nn=mVEpKt3vgpnDXXnooD2zg6aUJ6DdkphVDHQkg@mail.gmail.com>
+From:   =?UTF-8?Q?Andr=c3=a9_Malm?= <admin@sheepa.org>
+Message-ID: <47ac7b0a-269c-5580-fb3b-2504111901cf@sheepa.org>
+Date:   Mon, 18 Feb 2019 20:58:44 +0100
+User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
+ Thunderbird/60.5.0
 MIME-Version: 1.0
-References: <20190215095710.GA12279@linux-x5ow.site> <20190216053133.GT20493@dastard>
- <20190216053957.GU20493@dastard> <66c6ad91-9e8c-a01b-d0c0-ce04e628db67@suse.de>
-In-Reply-To: <66c6ad91-9e8c-a01b-d0c0-ce04e628db67@suse.de>
-From:   Dan Williams <dan.j.williams@intel.com>
-Date:   Mon, 18 Feb 2019 10:27:49 -0800
-Message-ID: <CAPcyv4gYvf923G62uFhuW+tKwY2cdQ=1xqCudqkmQqRN5W0b-g@mail.gmail.com>
-Subject: Re: [LSF/MM TOPIC] Software RAID Support for NV-DIMM
-To:     Johannes Thumshirn <jthumshirn@suse.de>
-Cc:     Dave Chinner <david@fromorbit.com>,
-        linux-nvdimm <linux-nvdimm@lists.01.org>,
-        linux-block@vger.kernel.org, Hannes Reinecke <hare@suse.de>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        lsf-pc@lists.linux-foundation.org, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <CAJCQCtSE++nn=mVEpKt3vgpnDXXnooD2zg6aUJ6DdkphVDHQkg@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+Content-Language: en-US
+X-ZohoMailClient: External
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Feb 18, 2019 at 2:50 AM Johannes Thumshirn <jthumshirn@suse.de> wrote:
->
-> On 16/02/2019 06:39, Dave Chinner wrote:
-> [..]
->
-> >> We've supported this since mid 2018 and commit ba23cba9b3bd ("fs:
-> >> allow per-device dax status checking for filesystems"). That is,
-> >> we can have DAX on the XFS RT device indepently of the data device.
-> >>
-> >> That is, you set up pmem in three segments - two small identical
-> >> segments start get mirrored with RAID1 as the data device, and
-> >> the remainder as a block device that is dax capable set up as the
-> >> XFS realtime device. Set the RTINHERIT bit on the root directory at
-> >> mkfs time ("-d rtinherit=1") and then all the data goes to the DAX
-> >> capable realtime device, and all the metadata goes to the software
-> >> raided pmem block devices that aren't DAX capable.
-> >>
-> >> Problem already solved, yes?
-> >
-> > Sorry, this was meant to be a reply to Dan's email commenting about
-> > some people needing mirrored metadata, not the parent that was
-> > talking about whole device RAID...
-> >
-> > i.e. mirrored metadata w/ FS-DAX for data should already be a solved
-> > problem...
->
-> Trying to answer you both.
->
-> But deferring the data redundancy to the application sounds like a no-go
-> to me, sorry. We don't do that for "traditional" block storage (SCSI,
-> NVMe, you name it). Some applications might already be able to handle it
-> but definitively not all. I don't see your random DBMS like MariaDB or
-> Postgres already doing data duplication over interleave sets of NV-DIMMs.
+What causes the extent to be incomplete? And can I avoid it? I tried=20
+with my example but with wget with a larger file (1G) and the diff=20
+produces was only 60MB which indicates that it "mostly" works.
 
-Oh, definitely agreed. I was just saying for the subset of
-applications that *do* perform application level redundancy the lack
-of metadata redundancy was a liability.
+Basically what I'm trying to achieve is having a "reference" / "master"=20
+btrfs subvolume where i add / edit / remove files continuously. From=20
+where i can cp --reflink=3Dalways some of those files to new "child"=20
+subvolumes as needed. As long as the files are still in the master=20
+subvolume I'll only send the diff of the data. The plan is to have this=20
+master subvolume across multiple remote machines (synced with rsync or=20
+perhaps btrfs send / receive) and being able to update / change it as=20
+needed but always only sending the diffs of the child subvolumes. Maybe=20
+this is a bit optimistic.
 
-> And if you carve out a bit of your pmem space into an own namespace for
-> the metadata (did I understand you right here?) you still have the
-> problem that all data written to the DIMMs is interleaved in an
-> interleave set, if I understand it correctly.
+On 2019-02-18 19:06, Chris Murphy wrote:
+> On Mon, Feb 18, 2019 at 6:05 AM Andr=C3=A9 Malm <admin@sheepa.org> wrote:
+>> So the takeaway from this is that btrfs send doesn't work this way, I
+>> can't copy a file with reflink=3Dalways and expect it to be diffed
+>> correctly as in a parent-child situation or?
+> Sorry about the confusion, Andr=C3=A9. What you're doing isn't described =
+or
+> explained in existing documentation: man page, wiki, or list archive,
+> it's only explained in this thread. So, all I can say is it's going to
+> take some testing on your part and possibly documentation and example
+> improvements, for this alternative usage.
 >
-> So if one DIMM in your interleave set goes bad, you're lost anyways.
+> At the moment, based on Andrei's explanation and example, what you're
+> trying to do is valid. He also explained why you're seeing different
+> results in send stream output in your dd vs wget example: it's the
+> files themselves not the application.
+>
+> "The last extent is incomplete which causes btrfs to not attempt cloning.=
+"
+>
 
-Yes, if you want to be able to survive the loss of a single-DIMM then
-you need to disable interleaving and RAID across the DIMMs. However,
-once you do that, dax for data can't work by definition, but RAID for
-metadata would work.
+

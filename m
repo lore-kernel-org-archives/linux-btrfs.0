@@ -2,148 +2,135 @@ Return-Path: <SRS0=oOJ3=QZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C7B8DC43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 07:49:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A9EDC43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 09:01:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9A263218C3
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 07:49:46 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5775E218AD
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 09:01:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728894AbfBRHtl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 18 Feb 2019 02:49:41 -0500
-Received: from mx1.redhat.com ([209.132.183.28]:53296 "EHLO mx1.redhat.com"
+        id S1729320AbfBRJBm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 18 Feb 2019 04:01:42 -0500
+Received: from mout.gmx.net ([212.227.15.15]:36479 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725881AbfBRHtk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Feb 2019 02:49:40 -0500
-Received: from smtp.corp.redhat.com (int-mx03.intmail.prod.int.phx2.redhat.com [10.5.11.13])
-        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
-        (No client certificate requested)
-        by mx1.redhat.com (Postfix) with ESMTPS id 50FDE36887;
-        Mon, 18 Feb 2019 07:49:39 +0000 (UTC)
-Received: from ming.t460p (ovpn-8-22.pek2.redhat.com [10.72.8.22])
-        by smtp.corp.redhat.com (Postfix) with ESMTPS id 01D95608C7;
-        Mon, 18 Feb 2019 07:49:12 +0000 (UTC)
-Date:   Mon, 18 Feb 2019 15:49:08 +0800
-From:   Ming Lei <ming.lei@redhat.com>
-To:     Jens Axboe <axboe@kernel.dk>
-Cc:     Bart Van Assche <bvanassche@acm.org>,
-        Mike Snitzer <snitzer@redhat.com>, linux-mm@kvack.org,
-        dm-devel@redhat.com, Christoph Hellwig <hch@lst.de>,
-        Sagi Grimberg <sagi@grimberg.me>,
-        "Darrick J . Wong" <darrick.wong@oracle.com>,
-        Omar Sandoval <osandov@fb.com>, cluster-devel@redhat.com,
-        linux-ext4@vger.kernel.org,
-        Kent Overstreet <kent.overstreet@gmail.com>,
-        Boaz Harrosh <ooo@electrozaur.com>,
-        Gao Xiang <gaoxiang25@huawei.com>, Coly Li <colyli@suse.de>,
-        linux-raid@vger.kernel.org, Bob Peterson <rpeterso@redhat.com>,
-        linux-bcache@vger.kernel.org,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        Dave Chinner <dchinner@redhat.com>,
-        David Sterba <dsterba@suse.com>, linux-block@vger.kernel.org,
-        Theodore Ts'o <tytso@mit.edu>, linux-kernel@vger.kernel.org,
-        linux-xfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [dm-devel] [PATCH V15 00/18] block: support multi-page bvec
-Message-ID: <20190218074907.GA806@ming.t460p>
-References: <20190215111324.30129-1-ming.lei@redhat.com>
- <c52b6a8b-d1d4-67ff-f81c-371d09cc6d5b@kernel.dk>
- <1550250855.31902.102.camel@acm.org>
- <18c711a9-ca13-885d-43cd-4d48e683a6a2@kernel.dk>
- <20190217131332.GC7296@ming.t460p>
+        id S1727570AbfBRJBm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Feb 2019 04:01:42 -0500
+Received: from t460-skr.localnet ([194.94.224.254]) by mail.gmx.com (mrgmx002
+ [212.227.17.190]) with ESMTPSA (Nemesis) id 0MH0SI-1gqeqf0ahu-00DpdD for
+ <linux-btrfs@vger.kernel.org>; Mon, 18 Feb 2019 10:01:39 +0100
+From:   Stefan K <shadow_7@gmx.net>
+To:     linux-btrfs@vger.kernel.org
+Reply-To: linux-btrfs@vger.kernel.org
+Subject: raid1 mount as read only
+Date:   Mon, 18 Feb 2019 10:01:38 +0100
+Message-ID: <1788794.QoebbjtCvL@t460-skr>
+User-Agent: KMail/5.2.3 (Linux/4.9.0-8-amd64; KDE/5.28.0; x86_64; ; )
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190217131332.GC7296@ming.t460p>
-User-Agent: Mutt/1.9.1 (2017-09-22)
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.13
-X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.30]); Mon, 18 Feb 2019 07:49:40 +0000 (UTC)
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
+X-Provags-ID: V03:K1:S4G9Pt79NARvb1Y6fp/7aEEKhlflff/HGoj/Ige6+RplDetLj8U
+ Tc1EXOBYfBZ+NcQ8Uexj1ozjZz7PJMuEOGCqe75dwMZlZAdV0cwImP8ZYvg0IJ4lC+6c0+J
+ Fq9tYv4WVGxnF5Wr8QOVsrOKB59ACxEvAhMmdkc+QgYCUTfd9HqYQNDnNPAtaV4HFoNgRgg
+ XHmsSWiDrTxawKmFPd+3g==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:8isWJRbRbqU=:d7qYTq6mMmqm0mdaeBkcKM
+ 8IbTRqtgJUhWJn7srGKP/E9He7zxH7OcBzCn1NlnXS3/m2zBGdyey0MrmLsUFbPusjH8oP1fI
+ UMXulFGQjUzYYr9x3GJkviFYKkgAi70zxTMhtreXjvIkk+plGe2EnTl0qUulL2ly/Y+2lEIET
+ KTzD9yjyoCmaT4XXH4ADpT9oYnDuMO1ncefeq7e7CKnhOiYKazMzNpvyrHUL+YUuiETjnF5Ba
+ 1mNxj8TngN/tLJg+hTGf4y2IUElN5jn/kyomaSgqZLNuMQHwylrB3mup+LJXNARjADmT20NA9
+ 8xmcsiD8jOxevf4Njye+0W5oGqPqrGr9nDLidFOVypBnT+Ds5nqb0eitas5lTGcBjBB/aFX3E
+ DO2dPxSveIf+ot/L1EJjhoba0gyXIGrYcYJxQA9eJCIaNu0DwOmp7LrPZko/jU2HgDGnY39yj
+ z1bjqY3Bbq9UsjCYcMzqSAE6CA13N5oHyC7cdDB4IJS1QTlxpK5hHwMAa9LbB4U+zSTyKdydi
+ TZlyr2KE8xCDmSQEGbPKGr7e9EGQ6mgnDPNPG+BLa2HhfNBq/6yRM39ayrP4c4EvIAimnf4Al
+ 3YGOc1DGK82wqY38RWJd9w/n7CU4xoc7wqTCBSA8RuCQfO/xcEbvFv4DjDMWwQm3xu1ROzgFI
+ kgbl/3WbUmivxPh5KLatw8RKSx/T5daDU2Xtq8WB7ft9RQSt5PL++TvTYr555UiNQSex/xDUj
+ IMk2YxZZJuWYUZQM38Hsv3kzEuwVJ4RPFgp/BKjJOJo+kjzv4aVSm8BKeN0dn/5/dSjjt2109
+ vIc3i6szJRrdZRkdukuAhvCEbvp967cwIiMFumHWRryhU6I+75DrMfAoML/H1srvdvp5Xp49k
+ OgbvZ9qPIwru3liKg9PBdRUE4aODRh/kAw09A/Rp44g4n2GDEGAzVKDE5apthlLRSJq+liMsx
+ K0d4PCn4QuA==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sun, Feb 17, 2019 at 09:13:32PM +0800, Ming Lei wrote:
-> On Fri, Feb 15, 2019 at 10:59:47AM -0700, Jens Axboe wrote:
-> > On 2/15/19 10:14 AM, Bart Van Assche wrote:
-> > > On Fri, 2019-02-15 at 08:49 -0700, Jens Axboe wrote:
-> > >> On 2/15/19 4:13 AM, Ming Lei wrote:
-> > >>> This patchset brings multi-page bvec into block layer:
-> > >>
-> > >> Applied, thanks Ming. Let's hope it sticks!
-> > > 
-> > > Hi Jens and Ming,
-> > > 
-> > > Test nvmeof-mp/002 fails with Jens' for-next branch from this morning.
-> > > I have not yet tried to figure out which patch introduced the failure.
-> > > Anyway, this is what I see in the kernel log for test nvmeof-mp/002:
-> > > 
-> > > [  475.611363] BUG: unable to handle kernel NULL pointer dereference at 0000000000000020
-> > > [  475.621188] #PF error: [normal kernel read fault]
-> > > [  475.623148] PGD 0 P4D 0  
-> > > [  475.624737] Oops: 0000 [#1] PREEMPT SMP KASAN
-> > > [  475.626628] CPU: 1 PID: 277 Comm: kworker/1:1H Tainted: G    B             5.0.0-rc6-dbg+ #1
-> > > [  475.630232] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.10.2-1 04/01/2014
-> > > [  475.633855] Workqueue: kblockd blk_mq_requeue_work
-> > > [  475.635777] RIP: 0010:__blk_recalc_rq_segments+0xbe/0x590
-> > > [  475.670948] Call Trace:
-> > > [  475.693515]  blk_recalc_rq_segments+0x2f/0x50
-> > > [  475.695081]  blk_insert_cloned_request+0xbb/0x1c0
-> > > [  475.701142]  dm_mq_queue_rq+0x3d1/0x770
-> > > [  475.707225]  blk_mq_dispatch_rq_list+0x5fc/0xb10
-> > > [  475.717137]  blk_mq_sched_dispatch_requests+0x256/0x300
-> > > [  475.721767]  __blk_mq_run_hw_queue+0xd6/0x180
-> > > [  475.725920]  __blk_mq_delay_run_hw_queue+0x25c/0x290
-> > > [  475.727480]  blk_mq_run_hw_queue+0x119/0x1b0
-> > > [  475.732019]  blk_mq_run_hw_queues+0x7b/0xa0
-> > > [  475.733468]  blk_mq_requeue_work+0x2cb/0x300
-> > > [  475.736473]  process_one_work+0x4f1/0xa40
-> > > [  475.739424]  worker_thread+0x67/0x5b0
-> > > [  475.741751]  kthread+0x1cf/0x1f0
-> > > [  475.746034]  ret_from_fork+0x24/0x30
-> > > 
-> > > (gdb) list *(__blk_recalc_rq_segments+0xbe)
-> > > 0xffffffff816a152e is in __blk_recalc_rq_segments (block/blk-merge.c:366).
-> > > 361                                                  struct bio *bio)
-> > > 362     {
-> > > 363             struct bio_vec bv, bvprv = { NULL };
-> > > 364             int prev = 0;
-> > > 365             unsigned int seg_size, nr_phys_segs;
-> > > 366             unsigned front_seg_size = bio->bi_seg_front_size;
-> > > 367             struct bio *fbio, *bbio;
-> > > 368             struct bvec_iter iter;
-> > > 369
-> > > 370             if (!bio)
-> > 
-> > Just ran a few tests, and it also seems to cause about a 5% regression
-> > in per-core IOPS throughput. Prior to this work, I could get 1620K 4k
-> > rand read IOPS out of core, now I'm at ~1535K. The cycler stealer seems
-> > to be blk_queue_split() and blk_rq_map_sg().
-> 
-> Could you share us your test setting?
-> 
-> I will run null_blk first and see if it can be reproduced.
+Hello,
 
-Looks this performance drop isn't reproduced on null_blk with the following
-setting by me:
+I've played a little bit with raid1:
+my steps was:
+1. create a raid1 with btrfs (add device; balance start -mconvert=raid1 -dconvert=raid1 /)
+2.  after finishing, i shutdown the server and remove a device and start it again,
+3. it works (i used degraded options in fstab)
+4. I shutdown the server, add the 'old' device, start it and run a btrfs balance
+5. until here everything is fine
+6. I shutdown the server, remove the other harddisk, and start it, 
+7. it works
+8. I shutdown the server, add the 'old' device, start it and try a btrfs balance
+9. but now the FS is mounted as read only
 
-- modprobe null_blk nr_devices=4 submit_queues=48
-- test machine : dual socket, two NUMA nodes, 24cores/socket
-- fio script:
-fio --direct=1 --size=128G --bsrange=4k-4k --runtime=40 --numjobs=48 --ioengine=libaio --iodepth=64 --group_reporting=1 --filename=/dev/nullb0 --name=randread --rw=randread
+I got the following messages in dmesg:
+[    6.401740] BTRFS: device fsid b997e926-ab95-46d0-a9be-da52aa09203d devid 1 transid 3570 /dev/sda1
+[    6.403079] BTRFS info (device sda1): allowing degraded mounts
+[    6.403084] BTRFS info (device sda1): disk space caching is enabled
+[    6.403086] BTRFS info (device sda1): has skinny extents
+[    6.405878] BTRFS warning (device sda1): devid 2 uuid 09a7c9f6-9a13-4852-bca6-2d9120f388d4 missing
+[    6.409108] BTRFS info (device sda1): detected SSD devices, enabling SSD mode
 
-result: 10.7M IOPS(base kernel), 10.6M IOPS(patched kernel)
+[    6.652411] BTRFS info (device sda1): allowing degraded mounts
+[    6.652414] BTRFS info (device sda1): disk space caching is enabled
+[    6.652416] BTRFS warning (device sda1): too many missing devices, writeable remount is not allowed
 
-And if 'bs' is increased to 256k, 512k, 1024k, IOPS improvement can be ~8%
-with multi-page bvec patches in above test.
+but all devices are available:
+btrfs fi sh
+Label: none  uuid: b997e926-ab95-46d0-a9be-da52aa09203d
+        Total devices 2 FS bytes used 895.41MiB
+        devid    1 size 223.57GiB used 4.06GiB path /dev/sda1
+        devid    2 size 223.57GiB used 2.00GiB path /dev/sdb1
 
-BTW, there isn't cost added to bio_for_each_bvec(), so blk_queue_split() and
-blk_rq_map_sg() should be fine. However, bio_for_each_segment_all()
-may not be quick as before.
+mount | grep btrfs
+/dev/sda1 on / type btrfs (ro,relatime,degraded,ssd,space_cache,subvolid=5,subvol=/)
+
+If I try to remount it via, I got the following in dmesg:
+mount -o remount,rw b997e926-ab95-46d0-a9be-da52aa09203d /
+[  320.048563] BTRFS info (device sda1): disk space caching is enabled
+[  356.200552] BTRFS: error (device sda1) in write_all_supers:3752: errno=-5 IO failure (errors while submitting device barriers.)
+[  356.200628] BTRFS info (device sda1): forced readonly
+[  356.200632] BTRFS warning (device sda1): Skipping commit of aborted transaction.
+[  356.200633] ------------[ cut here ]------------
+[  356.200677] WARNING: CPU: 0 PID: 1914 at /build/linux-EbeuWA/linux-4.9.130/fs/btrfs/transaction.c:1850 cleanup_transaction+0x1f3/0x2e0 [btrfs]
+[  356.200678] BTRFS: Transaction aborted (error -5)
+[  356.200679] Modules linked in: intel_rapl skx_edac edac_core x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel kvm irqbypass crct10dif_pclmul crc32_pclmul ghash_clmulni_intel mgag200 ttm drm_kms_helper intel_uncore sg drm dcdbas mei_me i2c_algo_bit intel_rapl_perf pcspkr joydev iTCO_wdt lpc_ich iTCO_vendor_support mfd_core shpchp mei evdev ipmi_si ipmi_msghandler acpi_power_meter button ip_tables x_tables autofs4 ses enclosure scsi_transport_sas sd_mod hid_generic usbhid hid btrfs crc32c_generic xor raid6_pq crc32c_intel aesni_intel aes_x86_64 glue_helper lrw gf128mul ablk_helper cryptd ahci xhci_pci libahci tg3 xhci_hcd ptp megaraid_sas libata pps_core i2c_i801 usbcore bnxt_en i2c_smbus libphy scsi_mod usb_common
+[  356.200764] CPU: 0 PID: 1914 Comm: btrfs-transacti Not tainted 4.9.0-8-amd64 #1 Debian 4.9.130-2
+[  356.200766] Hardware name: Dell Inc. PowerEdge R840/08XR9M, BIOS 1.2.4 10/18/2018
+[  356.200768]  0000000000000000 ffffffff9ef33d74 ffffb9535d70fd50 0000000000000000
+[  356.200774]  ffffffff9ec7a59e ffff8ea977b261f8 ffffb9535d70fda8 ffff8e9971cdd500
+[  356.200778]  00000000fffffffb ffff8ea97114c980 0000000000000000 ffffffff9ec7a61f
+[  356.200783] Call Trace:
+[  356.200796]  [<ffffffff9ef33d74>] ? dump_stack+0x5c/0x78
+[  356.200801]  [<ffffffff9ec7a59e>] ? __warn+0xbe/0xe0
+[  356.200803]  [<ffffffff9ec7a61f>] ? warn_slowpath_fmt+0x5f/0x80
+[  356.200828]  [<ffffffffc04ac423>] ? cleanup_transaction+0x1f3/0x2e0 [btrfs]
+[  356.200835]  [<ffffffff9ecbd210>] ? prepare_to_wait_event+0xf0/0xf0
+[  356.200858]  [<ffffffffc04ade78>] ? btrfs_commit_transaction+0x298/0xa10 [btrfs]
+[  356.200879]  [<ffffffffc04ae686>] ? start_transaction+0x96/0x480 [btrfs]
+[  356.200900]  [<ffffffffc04a8a8c>] ? transaction_kthread+0x1dc/0x200 [btrfs]
+[  356.200919]  [<ffffffffc04a88b0>] ? btrfs_cleanup_transaction+0x580/0x580 [btrfs]
+[  356.200926]  [<ffffffff9ec9a569>] ? kthread+0xd9/0xf0
+[  356.200933]  [<ffffffff9f2190a4>] ? __switch_to_asm+0x34/0x70
+[  356.200937]  [<ffffffff9ec9a490>] ? kthread_park+0x60/0x60
+[  356.200941]  [<ffffffff9f219137>] ? ret_from_fork+0x57/0x70
+[  356.200943] ---[ end trace 17ece06f94583f5a ]---
+[  356.200946] BTRFS: error (device sda1) in cleanup_transaction:1850: errno=-5 IO failure
+[  356.200997] BTRFS info (device sda1): delayed_refs has NO entry
 
 
-Thanks,
-Ming
+My question is whats happen and how can I fix this?
+
+uname -a
+Linux yamazaki-06 4.9.0-8-amd64 #1 SMP Debian 4.9.130-2 (2018-10-27) x86_64 GNU/Linux
+
+btrfs version
+btrfs-progs v4.7.3
+
+

@@ -6,84 +6,89 @@ X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
 	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3265DC43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 23:23:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 66B67C43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 23:49:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E3C5D2177E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 23:23:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3364720818
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 23:49:21 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="W98hPq2H"
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="IdlUEL82"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728544AbfBRXXm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 18 Feb 2019 18:23:42 -0500
-Received: from mail-lj1-f180.google.com ([209.85.208.180]:46645 "EHLO
-        mail-lj1-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727464AbfBRXXm (ORCPT
+        id S1730994AbfBRXtU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 18 Feb 2019 18:49:20 -0500
+Received: from mail-lj1-f178.google.com ([209.85.208.178]:36581 "EHLO
+        mail-lj1-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729925AbfBRXtT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Feb 2019 18:23:42 -0500
-Received: by mail-lj1-f180.google.com with SMTP id v16so15772097ljg.13
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Feb 2019 15:23:40 -0800 (PST)
+        Mon, 18 Feb 2019 18:49:19 -0500
+Received: by mail-lj1-f178.google.com with SMTP id g11-v6so15870432ljk.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Feb 2019 15:49:18 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to;
-        bh=4mGqOy7coXPnM8wXB9XFmwV47OoJ/opMOPxy5OC+ocY=;
-        b=W98hPq2HdziDA5M1V57zw7oWnEywPtVekfm8fwA89ImodyOi7mEYdY5+Kwp3yzPW73
-         EkdjJ5m0oissh/1AI5/D4qyr/6/7Fj2Q0mICpN6kuZRylGAqd5i1Ka8zlIjx2vBkvvjg
-         oGGwBtm1xL5fHC4/MvE3KWkwoBOGRc80FAtEpStrCk138ihTXLXpe5jAgpw24RSPxdK+
-         jiGApB4HjgCxt6auwlJ5F4fBRJjdP+EfLgeZ9BDXUTT+bdpZ1eFyKdqNpxeQW09FXrE2
-         0wP7qNuhel1iqCBkhVByWX7uMW4Uwp1+mh0Wl8zTb79fy8H8pTuevli009uKmkEa3owL
-         fyxA==
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc:content-transfer-encoding;
+        bh=Z/ePA3tdKPqoc/CEx6BCuzJqF+Rthatxr+V91D0ibko=;
+        b=IdlUEL82pbqn1656MQ9L/uWjWsMhbansNgG2xzMD4Qdg9mWXLo2IjgoW9GaFnYGJAl
+         qJiQaQlvliS45LGXyudX5ZO8KfnNM8o7Pb9PDk4u6kw/5u0Xrf/3/Gs2wwDRiT/WrREo
+         O7q+hDKBx2L/Tdw/0191dGIThR5GwXq4ygc0SFFDTbyVu46lr5BGTKfT8ceqJ5TYQqpl
+         4A6+W1qeNt88Y5jvoKLbqxU1UpAltY6cTGgtoD5j+WwV2j8ASRxWJXGbl7b347rdegyL
+         FpEVUQQgAwXhkQKwe54+OnJGjxz3qq5SJoWQkaXaA2EfKj0UO1nPHLmuZyVCZMgzRmG7
+         pZsg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to;
-        bh=4mGqOy7coXPnM8wXB9XFmwV47OoJ/opMOPxy5OC+ocY=;
-        b=JvEpJrc+PRTRQbRaRPSIGUYZ+tySgD6sT/FxWRsLAGH7p6gyWDrx7RSB2oClrCF0W9
-         2mya5/8rkw3MTJgcL6ZL8OzJBlbpR+dtqoEmy0TKcwzgU50ukuk8o2dZenR616WTS82f
-         Fchdo9f6pLOhM1iFy4wH9eji2lDChruQmOiiYsEB9xwjv6oAIsQgBuE8HYxODkmPVRIi
-         JbOPd/Lrp9+Y9gOqjAfgXk6NNLNdKa0H+XfyHX7+OMAiVzol/JFkatNjuemXMOjoAgja
-         MRf/X07IdiOlc1sSj8GsadiqGf+hyxng4hJhGsQ3945KQokzpTB0jnmyOMgrNdjRN/rT
-         8/iw==
-X-Gm-Message-State: AHQUAubqsdJ21fzZoi32vHnmDfa5J7vpVxgoX2ocUI/wJR06v10I/Wy6
-        OXJsH4uueMefvPYgxt1VgTehisLdHamPwu0tYBkBx27qVog=
-X-Google-Smtp-Source: AHgI3IbUIJqts9BwYMKgpU5p78rMmoRG8OY1Ft2GPqnynO8gxyQOunGt2GnR9UYq7sxncy7OMAjmzORJ0qOP0wRDD58=
-X-Received: by 2002:a2e:870c:: with SMTP id m12mr1007380lji.24.1550532219158;
- Mon, 18 Feb 2019 15:23:39 -0800 (PST)
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=Z/ePA3tdKPqoc/CEx6BCuzJqF+Rthatxr+V91D0ibko=;
+        b=NoZ1zW0qdtFsWo9VS4jmxf2PuUW+lX+oVDgJhqQTTQziJT6vkrkaZnsxPqGOsD11dw
+         b2UXF86AiFVsLgGYyUCcK3tYROcu0jsveXDScqM88/FvaCt9rG7idEemQFPPFvFFVddl
+         vY22F9p47v3FI2Ghf3wTzrpZ60qpL7gJngBAlUKnJMZjqbX4URJnRUhqdBjuX114oaqo
+         FmRvdku9l59tzKWjDCKzy5dzBXxPlhA2u66RQ6IPI6u6+cumL/JqRIsVdTC99bdbArYn
+         btaTFIgQ8kbUdgRx5/xQR0C5B0HW+bg6EYRxTLBFkweU6VKjW5qLCIe+rbXTyGx9O3Nj
+         N0Zw==
+X-Gm-Message-State: AHQUAuZJsfoKoNYCZH6X//kINmNziygtakxNJ7GJXGsHBVNtu8cl0c+p
+        D0Klwg3Vo0uzkBl6rKhDuZCjBrhhwttwS1vMEA2rQjmV
+X-Google-Smtp-Source: AHgI3IacZbUBYU8/+aQFDqc9hl98/GbEC/ZS3CrIdLIaMvM3UgFQdmiEmV2iCh3ojjSp5xsM8wwUl/lsz769P2gYHzE=
+X-Received: by 2002:a2e:2419:: with SMTP id k25mr4526833ljk.38.1550533757657;
+ Mon, 18 Feb 2019 15:49:17 -0800 (PST)
 MIME-Version: 1.0
-References: <CAAD7_rAwZR6j=SgZOCx3C8dRM=BUZJVHDzSmj5rWB21HyWtqSg@mail.gmail.com>
- <CAJCQCtQ=1JLtd2BMeZu_=ydi+C=-2ao-ZtJwKWmi4TM=aA1FAA@mail.gmail.com>
- <CAAD7_rBSYJ_Srcsuf--0YMXW3xd3SVdECzmH=BroOwu9YTnTjg@mail.gmail.com>
- <CAJCQCtQknb1qDusDY-iS2n_u5ywqFD4N-nKXBEJs0czEZS3b2w@mail.gmail.com>
- <CAAD7_rArVnFS=s53x2aWR==VYi6eS-OOYvBihxhOickxCxfNOg@mail.gmail.com> <CAAD7_rAk=iArkpSHeTRv7uv1tFz5nEh2qGEb7nixujLXcmhxxw@mail.gmail.com>
-In-Reply-To: <CAAD7_rAk=iArkpSHeTRv7uv1tFz5nEh2qGEb7nixujLXcmhxxw@mail.gmail.com>
+References: <b1c31d98-baaa-85c7-1101-65350e1b4f45@sheepa.org>
+ <6a6cd7a7-ffaf-bb74-1c94-bfb1ad7fb335@gmail.com> <d216fc94-dba2-031f-a16a-94dadd462866@georgianit.com>
+ <40efb627-911f-1cae-c3d2-f2353eaab99c@sheepa.org> <CAJCQCtSE++nn=mVEpKt3vgpnDXXnooD2zg6aUJ6DdkphVDHQkg@mail.gmail.com>
+ <47ac7b0a-269c-5580-fb3b-2504111901cf@sheepa.org> <CAJCQCtT8Z47UQnRo1zDfpCB6e7cSPOzYFkR55_9ASTW=oBPTZA@mail.gmail.com>
+ <d84709a7-1029-3e07-95ee-2ae646e39bd0@sheepa.org> <CAJCQCtRLU=Cv9Lg75Vc4KO18N0y4hvoCuo9WV+rbKg2DTb+o7A@mail.gmail.com>
+ <a870ee41-983a-5786-eb14-4513de4da875@sheepa.org>
+In-Reply-To: <a870ee41-983a-5786-eb14-4513de4da875@sheepa.org>
 From:   Chris Murphy <lists@colorremedies.com>
-Date:   Mon, 18 Feb 2019 16:23:27 -0700
-Message-ID: <CAJCQCtSc8dF6K8GGCp+kxXYj1PjpJ4qpcabFzYUx02JaVQK_ng@mail.gmail.com>
-Subject: Re: raid 1 filesystem corruption
-To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date:   Mon, 18 Feb 2019 16:49:05 -0700
+Message-ID: <CAJCQCtRvxpai3Cs+588T+QjYJbJSs2NE=nzkZ90FY41M9peXog@mail.gmail.com>
+Subject: Re: Btrfs send with parent different size depending on source of files.
+To:     =?UTF-8?Q?Andr=C3=A9_Malm?= <admin@sheepa.org>
+Cc:     Chris Murphy <lists@colorremedies.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-> Am Mo., 18. Feb. 2019 um 23:35 Uhr schrieb Rudolf Kastl <che666@gmail.com>:
-> >
-> > I tried a btrfs check --repair on sda2:
+On Mon, Feb 18, 2019 at 3:58 PM Andr=C3=A9 Malm <admin@sheepa.org> wrote:
+>
+> Ok, but I don't want to keep old snapshots of the child volumes. Only
+> the latest and then diffing it in regards to the master. Would that be
+> possible?
 
-OK I think this is a risky decision, hopefully it works out though.
+In order to do an incremental send/receive you need to have the -p
+snapshot on both source and destination file systems. You can delete
+snapshots older than that.
 
-a. There's corruption and IO error we don't understand the source of
-yet. Repairs can make problems much worse if the source of corruption
-happens during repair.
+I still don't understand why you're diffing in regards to master. It's
+going to be inherently inefficient because you've said a large amount
+of the contents of master aren't important; but by using it as the -p
+reference snapshot, you're asking send to do a comparison that
+includes a lot of metadata you don't care about. It's more efficient
+to diff the incremental snapshots of the changing state of
+"childofmaster" subvolume.
 
-b. from the 'man btrfs check' page
-           Warning
-           Do not use --repair unless you are advised to do so by a
-developer or an experienced user, and then only after having accepted
-that no fsck successfully repair all types of filesystem corruption.
-Eg. some other software or hardware bugs can fatally damage a volume.
-
-
--- 
+--=20
 Chris Murphy

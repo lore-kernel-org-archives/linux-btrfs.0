@@ -7,101 +7,87 @@ X-Spam-Status: No, score=-0.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7935EC43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 00:07:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 43430C43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 01:33:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 406E72184E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 00:07:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 07C4121773
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 01:33:48 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="g/EDSec4"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="jXbH6UEx"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727834AbfBRAHX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 17 Feb 2019 19:07:23 -0500
-Received: from mail-yb1-f176.google.com ([209.85.219.176]:41331 "EHLO
-        mail-yb1-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726304AbfBRAHX (ORCPT
+        id S1727451AbfBRBdr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 17 Feb 2019 20:33:47 -0500
+Received: from mail-it1-f175.google.com ([209.85.166.175]:53693 "EHLO
+        mail-it1-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726281AbfBRBdq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 17 Feb 2019 19:07:23 -0500
-Received: by mail-yb1-f176.google.com with SMTP id 18so4485998ybf.8
-        for <linux-btrfs@vger.kernel.org>; Sun, 17 Feb 2019 16:07:22 -0800 (PST)
+        Sun, 17 Feb 2019 20:33:46 -0500
+Received: by mail-it1-f175.google.com with SMTP id x131so36356288itc.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 17 Feb 2019 17:33:46 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
-        h=from:to:subject:date:message-id:mime-version
-         :content-transfer-encoding:thread-index:content-language;
-        bh=8RciC6vgF3KwZrNGGIyhEg+26xc6ShuZT1tGqHW3Q1M=;
-        b=g/EDSec4+jvkH4/17RLnQLnVb9K0uaSAy9An3PEt/ERH5lRS4gI+cmixyXPx9zuDyT
-         AUzUgBcf1Z7A42o6RqBE4dDwKYet+PNSDxDaQJaIPzdgX5/K18ERcsxH/Vtf9XHPVBXu
-         zLchMBvm7x6OJS3tZHkLh5ttfgBtb3S8WkUKy8p51Ms6Eipyc9g4HtV3ijhrzB0g04J5
-         6/VkADv9OuFoXNCYiToD9B3SeSXMnbdnnW2TYF7Rk+Pqu+uPbupBN5v2yOhgCjU7Ufbt
-         NOny3XR5yXNfpX3xlWOIcPZj4rKTdJHrO255EfoHE4KNqoG3pcKeEcA+5KPmV7FrMIOQ
-         HQpA==
+        h=mime-version:from:date:message-id:subject:to;
+        bh=sJ/JDEpo1pVHYMexjCZ2qMJcNhY6xrK2N/RU0PvdjdY=;
+        b=jXbH6UExB0vmPeZt02rgt0KkDG+ctqplIH1g0jwr5QjWBVcPRo+PjZ5pkUS4FuFLfE
+         ECsfA9kULkPftruz15RNCaAKkZgIRSwBZNxUSnpLLKHof/raRuYIJdy6atmg9VwXT3l4
+         y3n4GEi7NR0lRxas9Lwzn6AZunucLsF68oJvG35dEGpRCvM1Tl+Hc2LLsNszPEzEBjnE
+         tL//krKvYFhndWN9rN+PHF6d6CVpFfHxbDim34acJ63b9KKVYuymrm3QW+DHcZ/H2vVY
+         I1GcyU9pvq9AHkNkQtKG7exbAU40FeCBn7QL8M2WVsi9PqkHambpmSwd9n4VgtKtg+5n
+         cOBQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
-         :content-transfer-encoding:thread-index:content-language;
-        bh=8RciC6vgF3KwZrNGGIyhEg+26xc6ShuZT1tGqHW3Q1M=;
-        b=U2d3dAN+6L1MMexZ2kaYN/2GmZ4uYK2QHVdRRDM9mac0zZAbIaFsULD7W4wmJeOk4R
-         qU8vUS8iEMlvrglH9un9iU2h8kG0gXfQh9CiUaRFOIivQMC/PmscRH5KgVWLFqgKCciM
-         BoJOP9Bt8ZiQYdt6XP1qI83Ut84QKmAQJJXYlWvw0K9lWnNRBaEwK2sPgKRZsxgVY1Sn
-         UdAlQL19Ai5xjkgReFhvPHnqnFL9GzdcuC/ZLcmvE/XZna4OixX/Wbc2MxUlUrN6EYUx
-         U1oCFTyg2kE59H3TswcPgs+gbi3MXQh2A6cw5/gjl+jW07fDrhB9h22SNJvLp7+Z4+Cf
-         8vaA==
-X-Gm-Message-State: AHQUAuZadjBecWCBhxUZA65llURjwApB3dj3uY/CB3SXGuJ9EIlYeYCn
-        AWwhoLu5PBhWpY34kGUEqhtrqFl6
-X-Google-Smtp-Source: AHgI3IZfFWdzhkl4pev+gCu+OWEN1HM3w9BpjLts91oCWxQPtt+PzM4/pwQmWdnVP/M3Ssc4rQwsKw==
-X-Received: by 2002:a25:b06:: with SMTP id 6mr17234980ybl.355.1550448441974;
-        Sun, 17 Feb 2019 16:07:21 -0800 (PST)
-Received: from CarlosLaptop ([149.149.2.213])
-        by smtp.gmail.com with ESMTPSA id c68sm4806828ywd.52.2019.02.17.16.07.21
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Sun, 17 Feb 2019 16:07:21 -0800 (PST)
-From:   "Carlos Medrano" <crlsmedrano99@gmail.com>
-To:     <linux-btrfs@vger.kernel.org>
-Subject: Subvolume ID 5 Showing Deleted
-Date:   Sun, 17 Feb 2019 16:07:18 -0800
-Message-ID: <020801d4c71d$eb30cd10$c1926730$@gmail.com>
+        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
+        bh=sJ/JDEpo1pVHYMexjCZ2qMJcNhY6xrK2N/RU0PvdjdY=;
+        b=I8Xf8wL45lCxGmm/mD+pyCelEDY1+RkXkyk5VP96+7fMVEK1h3WQDCfxQ7F7LpGnCC
+         Y1jgQL3N72RahHVMerifJRbBB2AXnaqxV8h+U/BYZrObLsXL/diPLsUvmu7/c/KKC9d2
+         6KBP8wJbncK2+FsB95gizZ/atvs+ubsNt2y7NGYRE1iuHwyjW8cFZSJrKu24ggvxyW3X
+         kAQKmJX0nUB7KD411tVEOtHgIjUAvncOMoNvug2UtcHTGy5EhDKO6OtEzIaxVBaAm2XA
+         dEkfPbaoFK2StdhaMY/BKRLSKe+pFXfnOKUaFl7N0aPCmtsql7vx2PH1genUc+Umn9ev
+         h+8g==
+X-Gm-Message-State: AHQUAuZGPIW4l70cW8GXJR9gff+t3QQkhACdYPTcpIKlV0veVCG0j9H6
+        xhCYrMjCwGiIZ8KDTIV4RACL0NjtEgwk1jUjraWUoN7A
+X-Google-Smtp-Source: AHgI3Ia8ZLIYR8KPbcDyapD9HLb/u+IxXTzs/bgL2Ra6u+kILQ5lEkSLossvP8Adj1woOsRMsh3X2NOrAaxGqNkT6uw=
+X-Received: by 2002:a24:1d4a:: with SMTP id 71mr9751313itj.62.1550453625552;
+ Sun, 17 Feb 2019 17:33:45 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain;
-        charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-X-Mailer: Microsoft Outlook 16.0
-Thread-Index: AdTHGr2a6oIPNZbbRYiQIYJi0NjJrQ==
-Content-Language: en-us
+From:   nstgc379@gmail.com
+Date:   Sun, 17 Feb 2019 20:33:34 -0500
+Message-ID: <CAMOGTQm-xnYjetpQ6jzDL6Do4PZQwpHL0W_fGTzcWmW+4Npadg@mail.gmail.com>
+Subject: Errors after kernel panic not addressed during scrub or fsck.
+To:     linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Greetings Mailing List,
+Hello,
 
-Is it normal for btrfs subvolume list -d to show id 5 as deleted? E.g.
+I have an issue that I first experienced a few years back which was
+never resolved. The timing was really bad so I just scrapped the
+effected volume and made another, but I'd like to actually fix it now.
 
-[crlsmdrn@server001 ~]$ sudo btrfs subvol list -d /
-ID 5 gen 707098 top level 0 path DELETED 
-[crlsmdrn@server001 ~]$
+My system went down as the result of what I assume to be a kernel
+panic. After rebooting I ran `dmesg |grep BTRFS` and found two lines
+which concerned me.
 
-Some background information:
+    [    9.493064] BTRFS info (device sde3): bdev /dev/sde3 errs: wr
+432, rd 0, flush 4, corrupt 8, gen 3
+    [    3.086233] BTRFS info (device sde1): bdev /dev/sde1 errs: wr
+5711892, rd 14399372, flush 104, corrupt 467, gen 2
 
-This is a home server running 2 10 tb disks in a btrfs RAID 1 configuration
-that is used for backups/file storage. A few weeks ago, I deleted a lot of
-snapshots. While they were deleting, I disabled quotas because they were
-taking a while to delete (btrfs-cleaner was running in the background with
-96% CPU usage). Even after disabling quotas, btrfs-cleaner was still running
-in the background.
+I then scrubbed the effected volumes (both RAID1s), but no errors were
+found. I've gotten messages like that before, and scrub normally
+identifies that there are errors and fixes them. I then also tried
+running `btrfs check --readonly` on the devices, but again the test
+showed everything was okay.
 
-Yesterday, a storm nocked out a powerline in my neighborhood, causing the
-computer to reboot. When booting back up, I started a scrub operation, and
-it completed with no errors. When checking the deleted subvolumes list, the
-only 1 there was id 5.
+Admittedly everything seems to be working.
 
-If ID 5 is the root, why would it show deleted?
-Uname -a shows Linux server001.carlos1001.com 4.19.9-1.el7.elrepo.x86_64 #1
-SMP Thu Dec 13 10:52:03 EST 2018 x86_64 x86_64 x86_64 GNU/Linux
-
-Let me know if I should provide more information.
-
-Thanks,
-
-Carlos
-
+$ uname -r
+4.20.7-arch1-1-ARCH
+$ btrfs --version
+btrfs-progs v4.20.1
+I don't have any journal logs as a result of the crash. `dmesg -l err`
+doesn't show anything out of the ordinary (complaints about not using
+ECC memory).

@@ -6,29 +6,29 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 378F6C4360F
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 59E38C4151A
 	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 05:28:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1127C218D8
+	by mail.kernel.org (Postfix) with ESMTP id 32EEF218EA
 	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 05:28:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726368AbfBRF2B (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 18 Feb 2019 00:28:01 -0500
-Received: from mx2.suse.de ([195.135.220.15]:55868 "EHLO mx1.suse.de"
+        id S1726426AbfBRF2E (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 18 Feb 2019 00:28:04 -0500
+Received: from mx2.suse.de ([195.135.220.15]:55874 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726341AbfBRF2B (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Feb 2019 00:28:01 -0500
+        id S1726341AbfBRF2D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Feb 2019 00:28:03 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 6D425AEDB
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Feb 2019 05:28:00 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id B3C12AEDB
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Feb 2019 05:28:02 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>,
         Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH v5.1 02/12] btrfs: extent_io: Kill the forward declaration of flush_write_bio()
-Date:   Mon, 18 Feb 2019 13:27:43 +0800
-Message-Id: <20190218052753.24138-3-wqu@suse.com>
+Subject: [PATCH v5.1 03/12] btrfs: disk-io: Show the timing of corrupted tree block explicitly
+Date:   Mon, 18 Feb 2019 13:27:44 +0800
+Message-Id: <20190218052753.24138-4-wqu@suse.com>
 X-Mailer: git-send-email 2.20.1
 In-Reply-To: <20190218052753.24138-1-wqu@suse.com>
 References: <20190218052753.24138-1-wqu@suse.com>
@@ -39,110 +39,39 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There is no need to forward declare flush_write_bio(), as it only
-depends on submit_one_bio().
+Just add one extra line to show when the corruption is detected.
+Currently only read time detection is possible.
 
-Both of them are pretty small, just move them to kill the forward
-declaration.
+The planned distinguish line would be:
+  read time:
+    <detail report>
+    block=XXXXX read time tree block corruption detected
+
+  write time:
+    <detail report>
+    block=XXXXX write time tree block corruption detected
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
 ---
- fs/btrfs/extent_io.c | 66 +++++++++++++++++++++-----------------------
- 1 file changed, 32 insertions(+), 34 deletions(-)
+ fs/btrfs/disk-io.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 52abe4082680..8a2335713a2d 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -147,7 +147,38 @@ static int add_extent_changeset(struct extent_state *state, unsigned bits,
- 	return ret;
- }
- 
--static void flush_write_bio(struct extent_page_data *epd);
-+static int __must_check submit_one_bio(struct bio *bio, int mirror_num,
-+				       unsigned long bio_flags)
-+{
-+	blk_status_t ret = 0;
-+	struct bio_vec *bvec = bio_last_bvec_all(bio);
-+	struct page *page = bvec->bv_page;
-+	struct extent_io_tree *tree = bio->bi_private;
-+	u64 start;
-+
-+	start = page_offset(page) + bvec->bv_offset;
-+
-+	bio->bi_private = NULL;
-+
-+	if (tree->ops)
-+		ret = tree->ops->submit_bio_hook(tree->private_data, bio,
-+					   mirror_num, bio_flags, start);
-+	else
-+		btrfsic_submit_bio(bio);
-+
-+	return blk_status_to_errno(ret);
-+}
-+
-+static void flush_write_bio(struct extent_page_data *epd)
-+{
-+	if (epd->bio) {
-+		int ret;
-+
-+		ret = submit_one_bio(epd->bio, 0, 0);
-+		BUG_ON(ret < 0); /* -ENOMEM */
-+		epd->bio = NULL;
-+	}
-+}
- 
- int __init extent_io_init(void)
- {
-@@ -2692,28 +2723,6 @@ struct bio *btrfs_bio_clone_partial(struct bio *orig, int offset, int size)
- 	return bio;
- }
- 
--static int __must_check submit_one_bio(struct bio *bio, int mirror_num,
--				       unsigned long bio_flags)
--{
--	blk_status_t ret = 0;
--	struct bio_vec *bvec = bio_last_bvec_all(bio);
--	struct page *page = bvec->bv_page;
--	struct extent_io_tree *tree = bio->bi_private;
--	u64 start;
--
--	start = page_offset(page) + bvec->bv_offset;
--
--	bio->bi_private = NULL;
--
--	if (tree->ops)
--		ret = tree->ops->submit_bio_hook(tree->private_data, bio,
--					   mirror_num, bio_flags, start);
--	else
--		btrfsic_submit_bio(bio);
--
--	return blk_status_to_errno(ret);
--}
--
- /*
-  * @opf:	bio REQ_OP_* and REQ_* flags as one value
-  * @tree:	tree so we can call our merge_bio hook
-@@ -4007,17 +4016,6 @@ static int extent_write_cache_pages(struct address_space *mapping,
- 	return ret;
- }
- 
--static void flush_write_bio(struct extent_page_data *epd)
--{
--	if (epd->bio) {
--		int ret;
--
--		ret = submit_one_bio(epd->bio, 0, 0);
--		BUG_ON(ret < 0); /* -ENOMEM */
--		epd->bio = NULL;
--	}
--}
--
- int extent_write_full_page(struct page *page, struct writeback_control *wbc)
- {
- 	int ret;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 794d5bb7fe33..6052ab508f84 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -671,6 +671,9 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
+ 		 */
+ 		atomic_inc(&eb->io_pages);
+ 		clear_extent_buffer_uptodate(eb);
++		btrfs_err(fs_info,
++			  "block=%llu read time tree block corruption detected",
++			  eb->start);
+ 	}
+ 	free_extent_buffer(eb);
+ out:
 -- 
 2.20.1
 

@@ -6,24 +6,25 @@ X-Spam-Status: No, score=-0.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
 	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C89DAC43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 01:51:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4411CC43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 01:59:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 97CC0218D3
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 01:51:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 12700218A6
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 01:59:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728196AbfBRBvv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 17 Feb 2019 20:51:51 -0500
-Received: from mout.gmx.net ([212.227.15.18]:54581 "EHLO mout.gmx.net"
+        id S1727897AbfBRB7p (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 17 Feb 2019 20:59:45 -0500
+Received: from mout.gmx.net ([212.227.15.18]:36705 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727486AbfBRBvv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 17 Feb 2019 20:51:51 -0500
+        id S1727398AbfBRB7p (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 17 Feb 2019 20:59:45 -0500
 Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx003
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0MGjfl-1grTTm2kZF-00DVcs; Mon, 18
- Feb 2019 02:51:48 +0100
-Subject: Re: Errors after kernel panic not addressed during scrub or fsck.
-To:     nstgc379@gmail.com, linux-btrfs@vger.kernel.org
-References: <CAMOGTQm-xnYjetpQ6jzDL6Do4PZQwpHL0W_fGTzcWmW+4Npadg@mail.gmail.com>
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0LoEPJ-1hXLoV176H-00gEVv; Mon, 18
+ Feb 2019 02:59:43 +0100
+Subject: Re: Subvolume ID 5 Showing Deleted
+To:     Carlos Medrano <crlsmedrano99@gmail.com>,
+        linux-btrfs@vger.kernel.org
+References: <020801d4c71d$eb30cd10$c1926730$@gmail.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -50,124 +51,94 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <02144936-a3f7-3d1a-cdd5-601337c50884@gmx.com>
-Date:   Mon, 18 Feb 2019 09:51:44 +0800
+Message-ID: <faa2ab00-3673-870e-9867-617c4d9733a2@gmx.com>
+Date:   Mon, 18 Feb 2019 09:59:38 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.5.0
 MIME-Version: 1.0
-In-Reply-To: <CAMOGTQm-xnYjetpQ6jzDL6Do4PZQwpHL0W_fGTzcWmW+4Npadg@mail.gmail.com>
+In-Reply-To: <020801d4c71d$eb30cd10$c1926730$@gmail.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="gtCbdb0RN3nDir7lNmOnbGN595BvnDcHQ"
-X-Provags-ID: V03:K1:RDpp5fsZ86M1UCzzQH6rJO7pkF3nEvRbTSTaPTTLrp1BwXhNlpE
- BFvSu1LWEJCms6MjD+flaAfj6IhOmFbAbsGrHHYnQIaxs5E9SeNSIUB1DGwo9yvGnziX/t5
- XXOjkZlKcM/bf1xfVQgPtXBGcLrDnqCaQzqDMdrSLIuO+vtn2eeqH1PdhPq1OvwfK4Phf7B
- GbE+8y/SvK6YTAbqiMj8g==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:efKFSMJiSk0=:WmN0xHxeq72pa204pYlfxf
- g3w0QJX6pmYstSQS+hOSzMB4+aQjVo1LtahFeLwML2T6oKtEWfWDkMb0GK/6yZR9L1cpY8X6h
- MMuZoiCHJAsggvzI38jFATGrNVO0z5OrgOaL0Pm9uo5uzWzikES/HIgqin8fgfMwuO6Zpr90N
- wfk+DKDOfMWvojZLmJmhSOHJd6fLB99LviUJEdtbkA30SLCrUnBDz73yKWjwn5SCtMV5FLVFG
- U+DXwYBIniViPTGG8kJau9/dR/LVSrdRMWwxcvEuR0ieXN4p0dOmKgQj6S/t1C/dF0H3dxAOi
- iojQH33+eR+UMzVRzmn+BcyLa2wXvZeQ2opBZdVnnws0NJAyzFaNMZ1FAtom1m2L+fm2QJpOt
- mFkt3OSgQaRYsfxTdesyZte5R59m2kWrcnOmSEEfAWm2fstqkbZ3qkAMOgEavuoia+XjFbogb
- qVsATXDgr9fmSY9gjYC+U8NYeuDqRdxEFCTz+aZZM1oaaV/DjwgL50cShuydVYroA6D1nuRvz
- fZumco5baro1johazoQibG5b/3EC4SiWY/K6JRHWI1iMZe9dtnBSbGbuJt7U9Kv2arxlL6xZJ
- FMxpkfsoWgRHE5BXiZI7/gbPV8vvzCXYgBFlzn0JIG+EchLNYtwwJjFTy9XDHqLVdFQWkIhjN
- XYt8GeBdht8E4jS5cxdfG/gaMn531k9MQ24Sfifwoym2NlUAV6nqB+NO5kKBlTYmrkwXjmoLW
- pMq3sIr4JBdgO14t5S7ERMbCZr12r5XAkgSrixwGNNKhww+QjX57oS6dwBUd9/WNhPfqCr0md
- rvgprJRLNZhp+uZS6amY79aK9wqIMhZfxW8EbZ0gDJNogRgDeTEPRRnDWuygNllXpZXrzwxr3
- 2C6N+c+gnt7d3gEn6xo7G5tV/fcUOytWmZFx6N4o+Mos076jaMWUzQ2LkRAeGu
+ boundary="JbstRHQ3Msj7o4to1SiLc1HaYkjRFUGdF"
+X-Provags-ID: V03:K1:JpEBxqT+3H/IVFo3aW7EYbTVcci7hu5ldSo4CuDXsa+R2llEb2n
+ ihPUfVmscdryzXT0X3ifS4mopcvfJUPP5+GP42yTw10SksBUxs52k/niUoMBVNxQGgN0ep8
+ 0fNA26wrWspjwfyB2xSedQxDKeZvn0i+ahAWtlMsiOP9AIZM4c+mHhBxsvtRRKzqQ9oU9Jv
+ OQ2uH6reWc7IYBBs0NB0g==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:GUatJo9J8CE=:M2lquwf1VAwv1246W4Hqj/
+ 07uZt1BtHo+yq35MvEK4PRwfsNn6EARGur7edOBgX43F2Gi/LUsCmQPGEG9+Cn1jgpTu9qOUp
+ Xrf0ZbIkugaK8vvp2+XPAPBcuArQKQ9XVFtGP9jseoM/UFnzLoBMnO1IcitjkjTOzGDTdMv+V
+ Lqp7CbqOGi6Qe6Nx8WyTRRswys7BTM37NdLUGuS7MOYyBUBxAO3gRZNhF/lPZYV0xsryAf33h
+ jaWFIDS1/ogfEiNtUpfqVnKLNQBE5Q6Z6ammkqBYEhP5Wg/tup6MkRU6DsPGJt62CyzCFW5Op
+ dWVs0xk62drQ7MdUIIQUFlF/jhjzTY3kqbXVQbBxmrWzQr0LXcbDveHI56c6rnzDsSvJubEYF
+ dbgk25c1CBybPqz0gnP/e32E0p51wSu8Subp0P0qYUvpWWPRNHuksogtQ5xeYtPiz3jqOAZMF
+ Hx2o8Zx3fgZ2AVVqv0330W56fbn0XA8XTBqzyqgL5CsKCNlJ50fPFZz06DGl2w8BU025Dy6Z+
+ UCSnRmoIcrXju0HR6/ONzv7CjuKKWBk3fE6xHivEB+PC9UMaFWwQgCo+W6N3OLiZqNtBYg2J6
+ J2KIoGz6jRUXSqy0F753v/RL3l9kP/ycOr+jpoe3fblKv/DAMv0Q5Vc2/zvDpVeSSSYaIB5Uu
+ j90YEMT2gVtd99JW8PhNw6kOMF7Rpr/vRSavKVeHr/8LIvQoEKe1aedhnRR9tKEp8H3te630A
+ oLOgME3tvOr4nGXuwl9Z2JEihEHpmE1Rkj0aOZ0NKTTarNC8gzbS3mWDpuV6bk2/bQyxaMSTi
+ c/9XCuIZwzrVyqwLm5bnBGYeiA9504x4om1R9bY7DdXlXcqqHuX4a81GAxNq7ZLIocWWAq/DT
+ FC0KdNuV+k3KwRbw57iUmtALRd4uAGsKZv8x2M573JF2tN1cGxf+sajIsDuWI+
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---gtCbdb0RN3nDir7lNmOnbGN595BvnDcHQ
-Content-Type: multipart/mixed; boundary="34TfCPpPFt84vEHGtmCqjyefW3eYtCF1a";
+--JbstRHQ3Msj7o4to1SiLc1HaYkjRFUGdF
+Content-Type: multipart/mixed; boundary="GlN2XnQ4GUF8P82EWDAMbHTG8AiBQHV8n";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: nstgc379@gmail.com, linux-btrfs@vger.kernel.org
-Message-ID: <02144936-a3f7-3d1a-cdd5-601337c50884@gmx.com>
-Subject: Re: Errors after kernel panic not addressed during scrub or fsck.
-References: <CAMOGTQm-xnYjetpQ6jzDL6Do4PZQwpHL0W_fGTzcWmW+4Npadg@mail.gmail.com>
-In-Reply-To: <CAMOGTQm-xnYjetpQ6jzDL6Do4PZQwpHL0W_fGTzcWmW+4Npadg@mail.gmail.com>
+To: Carlos Medrano <crlsmedrano99@gmail.com>, linux-btrfs@vger.kernel.org
+Message-ID: <faa2ab00-3673-870e-9867-617c4d9733a2@gmx.com>
+Subject: Re: Subvolume ID 5 Showing Deleted
+References: <020801d4c71d$eb30cd10$c1926730$@gmail.com>
+In-Reply-To: <020801d4c71d$eb30cd10$c1926730$@gmail.com>
 
---34TfCPpPFt84vEHGtmCqjyefW3eYtCF1a
+--GlN2XnQ4GUF8P82EWDAMbHTG8AiBQHV8n
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2019/2/18 =E4=B8=8A=E5=8D=889:33, nstgc379@gmail.com wrote:
-> Hello,
+On 2019/2/18 =E4=B8=8A=E5=8D=888:07, Carlos Medrano wrote:
+> Greetings Mailing List,
 >=20
-> I have an issue that I first experienced a few years back which was
-> never resolved. The timing was really bad so I just scrapped the
-> effected volume and made another, but I'd like to actually fix it now.
+> Is it normal for btrfs subvolume list -d to show id 5 as deleted? E.g.
 >=20
-> My system went down as the result of what I assume to be a kernel
-> panic. After rebooting I ran `dmesg |grep BTRFS` and found two lines
-> which concerned me.
->=20
->     [    9.493064] BTRFS info (device sde3): bdev /dev/sde3 errs: wr
-> 432, rd 0, flush 4, corrupt 8, gen 3
->     [    3.086233] BTRFS info (device sde1): bdev /dev/sde1 errs: wr
-> 5711892, rd 14399372, flush 104, corrupt 467, gen 2
+> [crlsmdrn@server001 ~]$ sudo btrfs subvol list -d /
+> ID 5 gen 707098 top level 0 path DELETED
 
-That's from old statistics.
-You could reset the statistics by "btrfs status -z" and then check if
-the stats increase again.
+This is fixed by commit f4a82d9e6754 ("btrfs-progs: subvol list: don't
+list FS_TREE as deleted").
+It's included in v4.14.
 
-But considering there are so many read/write errors, I really recommend
-to check if there is something wrong with the devices (at least check
-the SMART info).
-
->=20
-> I then scrubbed the effected volumes (both RAID1s), but no errors were
-> found. I've gotten messages like that before, and scrub normally
-> identifies that there are errors and fixes them. I then also tried
-> running `btrfs check --readonly` on the devices, but again the test
-> showed everything was okay.
-
-"btrfs check" by default only checks metadata, and since you're using
-RAID1, it's possible that btrfs check only check the first copy of
-metadata if nothing went wrong.
+Considering you're using RHEL7 or its variant, it may be possible that
+the distro is not providing latest btrfs-progs. You may need to compile
+btrfs-progs from source or grab btrfs-progs rpm from other repos.
 
 Thanks,
 Qu
 
->=20
-> Admittedly everything seems to be working.
->=20
-> $ uname -r
-> 4.20.7-arch1-1-ARCH
-> $ btrfs --version
-> btrfs-progs v4.20.1
-> I don't have any journal logs as a result of the crash. `dmesg -l err`
-> doesn't show anything out of the ordinary (complaints about not using
-> ECC memory).
->=20
 
 
---34TfCPpPFt84vEHGtmCqjyefW3eYtCF1a--
+--GlN2XnQ4GUF8P82EWDAMbHTG8AiBQHV8n--
 
---gtCbdb0RN3nDir7lNmOnbGN595BvnDcHQ
+--JbstRHQ3Msj7o4to1SiLc1HaYkjRFUGdF
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxqD7AACgkQwj2R86El
-/qgSeQf/elatuf2v5z6oO8zPxZK20kN6RO3EygfzDqOsPw/g897X/lz4CvA4QwqV
-RrI/QTwpl2PHsZ/D5pn63KxtYQb9CI8jsiY/72un0tQ67RuC6Vnj8fLCnKzUndIr
-uQQUg3Gl3JZMHgs0ZAE9Uws45hy7Uui7eiFjZyrZP7paUdQrZ1nBjWOFqy9SSE0o
-RIfWehyLA6oDHRSlWnq+licMiwyu9qoxY7J1KpplifNT3QkIJQxLQHSmh50ukR7i
-NQRgVxG7Vzv2mx5AJaAYA5SEQzEwCAGGZKbD6DhoLQfEGOgZifzDxq2lSpTAXLet
-/eY1ioou9XqPCwzl5U6yqX+dt1VkYg==
-=cHJ4
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxqEYoACgkQwj2R86El
+/qhaogf/dTKTBkgOsB4fZ7W9pemlExhU3omOPxsvMzsjR7rbOhlcq+HvlZEL7+Mf
+agPQn0lRE1I0TTYc/E+tXAKK0maLaJ6YlfdKqx6QajqFfnqNbm4x8pij96jV607O
+GSvOFGAvanrlM/Ts0roQS91c+N8xXQv5ttWfj7Q63tzhYEFJvo00pCAZAyyw27/q
+8AAYxIew5iMV5KWSLoNVb6VWnaCLjLBUu770JlKdj2Lwqti1535BNF3D+bC8Vz5S
+bOrI7gn1XfBo8osE5sNOCwR8bUnIrrxdVgT3Jc05BHCYGHhgXVNf4VHO5S92wrAE
+L5jK46aMPcqV8hAB+xZJUAkWAFKwUg==
+=Voxd
 -----END PGP SIGNATURE-----
 
---gtCbdb0RN3nDir7lNmOnbGN595BvnDcHQ--
+--JbstRHQ3Msj7o4to1SiLc1HaYkjRFUGdF--

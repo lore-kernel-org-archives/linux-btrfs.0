@@ -2,168 +2,160 @@ Return-Path: <SRS0=oOJ3=QZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 47F3DC4360F
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 09:55:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 076B3C43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 09:55:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 01996218AD
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 09:55:07 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=MendixTechnologyBV.onmicrosoft.com header.i=@MendixTechnologyBV.onmicrosoft.com header.b="cPCxt650"
+	by mail.kernel.org (Postfix) with ESMTP id CC0C1218AD
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 09:55:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728744AbfBRJzF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 18 Feb 2019 04:55:05 -0500
-Received: from mail-eopbgr150041.outbound.protection.outlook.com ([40.107.15.41]:46848
-        "EHLO EUR01-DB5-obe.outbound.protection.outlook.com"
+        id S1729467AbfBRJzv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 18 Feb 2019 04:55:51 -0500
+Received: from mx2.suse.de ([195.135.220.15]:34198 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725989AbfBRJzF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Feb 2019 04:55:05 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=MendixTechnologyBV.onmicrosoft.com; s=selector1-mendix-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=zP+g9lCuz0TYHGQwwRJuHbNIxKySzuflrv8onWmOYEA=;
- b=cPCxt650F9nfDj8Yre7KCe0ABE/ZXBAvRDg9YHFqJMNwQjF9TIeOiuWDTSdcWmSKQkmbtw7Ki8elwwdGYS0VSFpzPPEIBBiVeCXDdJRy3hswJLwiU7mhkySl0Y/GZeNG7qcqjdKufwmgadVb+3683Dui5mO+KgoqiwUGaOoAqmE=
-Received: from DB7PR06MB5767.eurprd06.prod.outlook.com (20.177.193.208) by
- DB7PR06MB5340.eurprd06.prod.outlook.com (20.178.46.160) with Microsoft SMTP
- Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.20.1601.22; Mon, 18 Feb 2019 09:55:01 +0000
-Received: from DB7PR06MB5767.eurprd06.prod.outlook.com
- ([fe80::c575:c4a8:1776:a21e]) by DB7PR06MB5767.eurprd06.prod.outlook.com
- ([fe80::c575:c4a8:1776:a21e%4]) with mapi id 15.20.1622.018; Mon, 18 Feb 2019
- 09:55:01 +0000
-From:   Hans van Kranenburg <Hans.van.Kranenburg@mendix.com>
-To:     Johannes Thumshirn <jthumshirn@suse.de>,
-        David Sterba <dsterba@suse.com>
-CC:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
-        Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
-        Liu Bo <obuil.liubo@gmail.com>
+        id S1728954AbfBRJzu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Feb 2019 04:55:50 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 859FCABE3;
+        Mon, 18 Feb 2019 09:55:48 +0000 (UTC)
 Subject: Re: [PATCH v2] btrfs: ensure that a DUP or RAID1 block group has
  exactly two stripes
-Thread-Topic: [PATCH v2] btrfs: ensure that a DUP or RAID1 block group has
- exactly two stripes
-Thread-Index: AQHUx28qoP5RMjMGsUaVfr170zFPAaXlUSaA
-Date:   Mon, 18 Feb 2019 09:55:01 +0000
-Message-ID: <adbf2ddb-be6b-25c7-b74e-a337c97d12bd@mendix.com>
+To:     Hans van Kranenburg <Hans.van.Kranenburg@mendix.com>,
+        David Sterba <dsterba@suse.com>
+Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
+        Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
+        Liu Bo <obuil.liubo@gmail.com>
 References: <20190218094850.13512-1-jthumshirn@suse.de>
-In-Reply-To: <20190218094850.13512-1-jthumshirn@suse.de>
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-user-agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ <adbf2ddb-be6b-25c7-b74e-a337c97d12bd@mendix.com>
+From:   Johannes Thumshirn <jthumshirn@suse.de>
+Openpgp: preference=signencrypt
+Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <210585b9-99e9-1548-f2b1-66445ab179bb@suse.de>
+Date:   Mon, 18 Feb 2019 10:55:48 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.3.0
-x-originating-ip: [2001:980:4a41:fb::12]
-x-clientproxiedby: AM6PR02CA0016.eurprd02.prod.outlook.com
- (2603:10a6:20b:6e::29) To DB7PR06MB5767.eurprd06.prod.outlook.com
- (2603:10a6:10:5f::16)
-authentication-results: spf=none (sender IP is )
- smtp.mailfrom=Hans.van.Kranenburg@mendix.com; 
-x-ms-exchange-messagesentrepresentingtype: 1
-x-ms-publictraffictype: Email
-x-ms-office365-filtering-correlation-id: eb50d990-b72b-4c80-47e1-08d6958725fc
-x-microsoft-antispam: BCL:0;PCL:0;RULEID:(2390118)(7020095)(4652040)(8989299)(4534185)(4627221)(201703031133081)(201702281549075)(8990200)(5600110)(711020)(4605104)(2017052603328)(7153060)(7193020);SRVR:DB7PR06MB5340;
-x-ms-traffictypediagnostic: DB7PR06MB5340:
-x-microsoft-exchange-diagnostics: =?utf-8?B?MTtEQjdQUjA2TUI1MzQwOzIzOjZTbFZQMTJPcytsUEQvbzZJcnhoaW12OUxC?=
- =?utf-8?B?YkVvaUprcFhVMFpkc2ZJWHBsZHM3K3hmaEVqMnozd1NPS0tTMkJtU2Z3L3da?=
- =?utf-8?B?WWxWeitVSHZPV1dXZWY5OUp4T1JZUHdQTVRVdVJ2bVNocC9aaDczV3lhS0NJ?=
- =?utf-8?B?RGc2V2t2eHhUVHNGbmtxZ3pNeXVia21TZ3UzMGdod1JYbjBDWG42ZFdvMkgz?=
- =?utf-8?B?TlpYU3JCYnNPMEliaW52ZjJGMk14N3Y1eFU3YmtiOWV4TnBkUU91SzVQbGl1?=
- =?utf-8?B?bzYyZzRXWnhjYXo5ZGZSSFFiZmdhY0xHaStSTTc5em92dDErTWdoQjB0cWZF?=
- =?utf-8?B?NkJCU3hUUGlEVmdRMC9oSW5vUzFzYkh2RlF6SDdyZUxEUi8rREhDZVZJQ3pU?=
- =?utf-8?B?QlBVVnA5Mmd5dGw4UXJnTUtiaXc1OWFzcFVqY2VFR3VJVVZZWXpmSUZ3VVFr?=
- =?utf-8?B?elJ3QnlwZHdMVEg0OGpOc09MYmgvaWVrZUxtVTQ4ZHFnTHIwT0s5WFdTZkZP?=
- =?utf-8?B?UFdJVlNjMVFkdUVXU1pkTWlUdXI3eTZpV0FsNlovTHFyVldBbGdyRGhCQUJu?=
- =?utf-8?B?Y1dSMFVrVW8xZHBtbUIrQ1g1TmxRRzgzUWdGOHRCSXJ6UkpzclJDQVpYUVJD?=
- =?utf-8?B?VFZaWGZvNndjbGlpem1BRXQ4eTJKZE9DZDVqVnZER2J3Q3dWSmpuTlcxL2JF?=
- =?utf-8?B?NFkybjYvUmt4cTBZYVZGYmt6OU90d0JuYVFoaU1vT2E2QVBVS1o2ZDA2dXNk?=
- =?utf-8?B?ZE83UWorYlg2SEFIRHJTb2Y5QisyMlZFQVV2NEp6S2ROTjhUY2JqR0hwYjA0?=
- =?utf-8?B?dFZpeGpYQ3VaeHAxSTNkVkppajNwS2JjYWZBQzdsVXRJTi80YzVYOEM4cm5L?=
- =?utf-8?B?Mm9QVDRYWUFmdU5OSVlZU1BHdXFWS1pQK2lqNTVtd0tNTUpQUENJM3BNS0E5?=
- =?utf-8?B?bDZnK0crK3JKQVdrSWFnN1lyWjNDYmVSRk1FajdDYkpaUitZbHVDQWJweE9V?=
- =?utf-8?B?aUNLRDFCV3RINHluOURCdTBKQlRuc3pYMFZER2NrTGFuV29Hd244R21uVTUx?=
- =?utf-8?B?eEl3OCtxQm9wem1VU210Mk5mOEFXSXNtaHZXaWNTVDZZMEFlN1J5Q09ROEo4?=
- =?utf-8?B?bFdRRm1yTktZUGR5cHlhY0xvdCtNdHBTazhNU0c3b1JvajAyYWk0dks4UXhD?=
- =?utf-8?B?TysrdEgxRVNkNXB4anYyMnJLM1duVlhwVjg4Z3IvNE5vUFljcFlwWHF6MmlD?=
- =?utf-8?B?K0lBazF5TEpFMWRDNW4wanFWV0U4dm93a3h3QURDK2FBNHNsdWwwVzFSZGI2?=
- =?utf-8?B?clAzVnBQZTdwUUwrM3V2dUhLNEJ4OTN6UTFBTFdRR2svOGhRZ1l1b0JsSWZt?=
- =?utf-8?B?eUhmbERYSThrdXYrSTdDR25YemZsV1ZXZlRvZ0FkWmY3cWIrM0pmOGxCbVdh?=
- =?utf-8?B?YmhwQXBRTTBINjdTZlBQSWRrQ0psYTMxQ0xFME9SYnJvSjJuRUxQTC9IT3lN?=
- =?utf-8?B?aWVJaVNIK3pjV1lSR2p2aW1nOWYrUE0vajd1V2xUVE1rcEhrcW9IQmh3SVgx?=
- =?utf-8?B?UlNkNHBxdlBPWkZwSTVVY0xXZVJPYVdBV0R1cWdHK0UxblFMcDdxb0p3WXNV?=
- =?utf-8?B?aTNZYXFjRDdPYWNlTTJPWnZNR1VyWnFZZjVVbzRSWWhSL1hScjV2bHo3ZnpP?=
- =?utf-8?B?SWdBaDVVb1N0YTVJVCtKMGVrY0Z3NEhaZFJQd2ozSmp2bmJuTnA3T0YrKzdR?=
- =?utf-8?B?SWNMYjNmb0svQ0tqK09xdjIycUJhakdYZmY3LzJuT3M4S1ZCK2Q4czdoK2JW?=
- =?utf-8?B?T1RyMmpRVVB4K3JEeXozMWl2T0Ric21qL3NrbEcvOUhENnAxVWJTMlNqTDRB?=
- =?utf-8?B?dmE3QTNJcE1hOVRuSUlzc0k1RGVjVDh0ZkU3MFZRN3NSNVNDbDExZVlWbmNt?=
- =?utf-8?B?Y3Zqd29NTkxFaUpoQ3A2c2hkd1FnVFN3WHRqbUk1aS9WdjNWTWxtYTk0azVs?=
- =?utf-8?Q?3ePVHM?=
-x-microsoft-antispam-prvs: <DB7PR06MB534068FFD94A1643ED1E0403D4630@DB7PR06MB5340.eurprd06.prod.outlook.com>
-x-forefront-prvs: 09525C61DB
-x-forefront-antispam-report: SFV:NSPM;SFS:(10009020)(979002)(39850400004)(376002)(346002)(366004)(136003)(396003)(199004)(189003)(386003)(6512007)(31686004)(110136005)(5660300002)(71200400001)(316002)(58126008)(54906003)(31696002)(7736002)(65956001)(6506007)(99286004)(65806001)(2616005)(8936002)(8676002)(6486002)(81166006)(65826007)(229853002)(11346002)(305945005)(76176011)(86362001)(6436002)(186003)(68736007)(36756003)(52116002)(81156014)(14454004)(478600001)(476003)(53936002)(4326008)(256004)(446003)(102836004)(25786009)(105586002)(72206003)(97736004)(53546011)(71190400001)(46003)(64126003)(6246003)(6116002)(486006)(106356001)(2906002)(969003)(989001)(999001)(1009001)(1019001);DIR:OUT;SFP:1101;SCL:1;SRVR:DB7PR06MB5340;H:DB7PR06MB5767.eurprd06.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;A:1;MX:1;
-received-spf: None (protection.outlook.com: mendix.com does not designate
- permitted sender hosts)
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam-message-info: ICii7qmxJLgm2DI4LmupKdDagnkRfpUozZ0keCx8as9My9khUw40JgiCOjnGFdMQRvW2tw9B3dAi9suDBmXhXWlEJ53opaSSqfEykwUxBuLlAdP7T+yE1WAZdwjgOUhiNidpV7s2SZMrhcuRbodjGfdDl4sz7llE5Ee1J+aPM/sk52qFZKeFFPZ/4RyxCueXYf+QiuEMUHFe+A1tdUd2qn+gIIfSDR8GPy6LGgFVrhzoe0Vmk/aBzJVpqiB2I2strA58BjmJBjVgpIgHEYuZBfEIFWn3UKP0xbnUMCzbDZL7Z0vbke7erq/Fdk75r4ZsUMLV9C3zz0dXfmF8moE+V+vvpAKlPKfJbyYJpRgZuJ48Pv62op/xUg807ItbqERwRfemZ281Gju0LjwG32c5Fyij3tHFuIvgObzlQ1wmKJU=
-Content-Type: text/plain; charset="utf-8"
-Content-ID: <0712DFBC39E03E45BDF56BA4F2CBCA43@eurprd06.prod.outlook.com>
-Content-Transfer-Encoding: base64
 MIME-Version: 1.0
-X-OriginatorOrg: mendix.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: eb50d990-b72b-4c80-47e1-08d6958725fc
-X-MS-Exchange-CrossTenant-originalarrivaltime: 18 Feb 2019 09:55:00.5965
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-id: b4e3c78d-8e3b-46d8-bc56-5540da23ba4d
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: DB7PR06MB5340
+In-Reply-To: <adbf2ddb-be6b-25c7-b74e-a337c97d12bd@mendix.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-T24gMi8xOC8xOSAxMDo0OCBBTSwgSm9oYW5uZXMgVGh1bXNoaXJuIHdyb3RlOg0KPiBXZSByZWNl
-bnRseSBoYWQgYSBjdXN0b21lciBpc3N1ZSB3aXRoIGEgY29ycnVwdGVkIGZpbGVzeXN0ZW0uIFdo
-ZW4gdHJ5aW5nDQo+IHRvIG1vdW50IHRoaXMgaW1hZ2UgYnRyZnMgcGFuaWNrZWQgd2l0aCBhIGRp
-dmlzaW9uIGJ5IHplcm8gaW4NCj4gY2FsY19zdHJpcGVfbGVuZ3RoKCkuDQo+IA0KPiBUaGUgY29y
-cnVwdCBjaHVuayBoYWQgYSAnbnVtX3N0cmlwZXMnIHZhbHVlIG9mIDEuIGNhbGNfc3RyaXBlX2xl
-bmd0aCgpDQo+IHRha2VzIHRoaXMgdmFsdWUgYW5kIGRpdmlkZXMgaXQgYnkgdGhlIG51bWJlciBv
-ZiBjb3BpZXMgdGhlIFJBSUQgcHJvZmlsZSBpcw0KPiBleHBlY3RlZCB0byBoYXZlIHRvIGNhbGN1
-bGF0ZSB0aGUgYW1vdW50IG9mIGRhdGEgc3RyaXBlcy4gQXMgYSBEVVAgcHJvZmlsZQ0KPiBpcyBl
-eHBlY3RlZCB0byBoYXZlIDIgY29waWVzIHRoaXMgZGl2aXNpb24gcmVzdWx0ZWQgaW4gMS8yID0g
-MC4gTGF0ZXIgdGhlbg0KPiB0aGUgJ2RhdGFfc3RyaXBlcycgdmFyaWFibGUgaXMgdXNlZCBhcyBh
-IGRpdmlzb3IgaW4gdGhlIHN0cmlwZSBsZW5ndGgNCj4gY2FsY3VsYXRpb24gd2hpY2ggcmVzdWx0
-cyBpbiBhIGRpdmlzaW9uIGJ5IDAgYW5kIHRodXMgYSBrZXJuZWwgcGFuaWMuDQo+IA0KPiBXaGVu
-IGVuY291bnRlcmluZyBhIGZpbGVzeXN0ZW0gd2l0aCBhIERVUCBibG9jayBncm91cCBhbmQgYSAn
-bnVtX3N0cmlwZXMnDQo+IHZhbHVlIHVuZXF1YWwgdG8gMiwgcmVmdXNlIG1vdW50aW5nIGFzIHRo
-ZSBpbWFnZSBpcyBjb3JydXB0ZWQgYW5kIHdpbGwgbGVhZA0KPiB0byB1bmV4cGVjdGVkIGJlaGF2
-aW91ci4NCj4gDQo+IENvZGUgaW5zcGVjdGlvbiBzaG93ZWQgYSBSQUlEMSBibG9jayBncm91cCBo
-YXMgdGhlIHNhbWUgaXNzdWVzLg0KPiANCj4gRml4ZXM6IGUwNmNkM2RkN2NlYSAoIkJ0cmZzOiBh
-ZGQgdmFsaWRhZHRpb24gY2hlY2tzIGZvciBjaHVuayBsb2FkaW5nIikNCj4gQ2M6IExpdSBCbyA8
-b2J1aWwubGl1Ym9AZ21haWwuY29tPg0KPiBSZXZpZXdlZC1ieTogUXUgV2VucnVvIDx3cXVAc3Vz
-ZS5jb20+DQo+IFJldmlld2VkLWJ5OiBOaWtvbGF5IEJvcmlzb3YgPG5ib3Jpc292QHN1c2UuY29t
-Pg0KPiBTaWduZWQtb2ZmLWJ5OiBKb2hhbm5lcyBUaHVtc2hpcm4gPGp0aHVtc2hpcm5Ac3VzZS5k
-ZT4NCj4gLS0tDQo+IENoYW5nZXMgdG8gdjE6DQo+IC0gQWxzbyBhZGQgdGhlIGNoZWNrIGZvciBS
-QUlEMSAoSGFucykNCj4gLS0tDQo+ICBmcy9idHJmcy92b2x1bWVzLmMgfCA0ICsrLS0NCj4gIDEg
-ZmlsZSBjaGFuZ2VkLCAyIGluc2VydGlvbnMoKyksIDIgZGVsZXRpb25zKC0pDQo+IA0KPiBkaWZm
-IC0tZ2l0IGEvZnMvYnRyZnMvdm9sdW1lcy5jIGIvZnMvYnRyZnMvdm9sdW1lcy5jDQo+IGluZGV4
-IDAzZjIyM2FhNzE5NC4uYTRkMTJhZGEwNTY1IDEwMDY0NA0KPiAtLS0gYS9mcy9idHJmcy92b2x1
-bWVzLmMNCj4gKysrIGIvZnMvYnRyZnMvdm9sdW1lcy5jDQo+IEBAIC02NzkxLDEwICs2NzkxLDEw
-IEBAIHN0YXRpYyBpbnQgYnRyZnNfY2hlY2tfY2h1bmtfdmFsaWQoc3RydWN0IGJ0cmZzX2ZzX2lu
-Zm8gKmZzX2luZm8sDQo+ICAJfQ0KPiAgDQo+ICAJaWYgKCh0eXBlICYgQlRSRlNfQkxPQ0tfR1JP
-VVBfUkFJRDEwICYmIHN1Yl9zdHJpcGVzICE9IDIpIHx8DQo+IC0JICAgICh0eXBlICYgQlRSRlNf
-QkxPQ0tfR1JPVVBfUkFJRDEgJiYgbnVtX3N0cmlwZXMgPCAxKSB8fA0KPiArCSAgICAodHlwZSAm
-IEJUUkZTX0JMT0NLX0dST1VQX1JBSUQxICYmIG51bV9zdHJpcGVzICE9IDEpIHx8DQoNCkkgdGhp
-bmsgeW91IG1lYW50ICE9IDIgaGVyZS4gSXQncyBqdXN0IGxpa2UgRFVQLCBidXQgd2l0aCB0aGUg
-dHdvIG9mDQp0aGVtIG9uIGRpZmZlcmVudCBkZXZpY2VzIGluc3RlYWQgb2YgdGhlIHNhbWUuDQoN
-Cj4gIAkgICAgKHR5cGUgJiBCVFJGU19CTE9DS19HUk9VUF9SQUlENSAmJiBudW1fc3RyaXBlcyA8
-IDIpIHx8DQo+ICAJICAgICh0eXBlICYgQlRSRlNfQkxPQ0tfR1JPVVBfUkFJRDYgJiYgbnVtX3N0
-cmlwZXMgPCAzKSB8fA0KPiAtCSAgICAodHlwZSAmIEJUUkZTX0JMT0NLX0dST1VQX0RVUCAmJiBu
-dW1fc3RyaXBlcyA+IDIpIHx8DQo+ICsJICAgICh0eXBlICYgQlRSRlNfQkxPQ0tfR1JPVVBfRFVQ
-ICYmIG51bV9zdHJpcGVzICE9IDIpIHx8DQo+ICAJICAgICgodHlwZSAmIEJUUkZTX0JMT0NLX0dS
-T1VQX1BST0ZJTEVfTUFTSykgPT0gMCAmJg0KPiAgCSAgICAgbnVtX3N0cmlwZXMgIT0gMSkpIHsN
-Cj4gIAkJYnRyZnNfZXJyKGZzX2luZm8sDQo+IA0KDQpUaGFua3MsDQoNCi0tIA0KSGFucyB2YW4g
-S3JhbmVuYnVyZw0K
+On 18/02/2019 10:55, Hans van Kranenburg wrote:
+> On 2/18/19 10:48 AM, Johannes Thumshirn wrote:
+>> We recently had a customer issue with a corrupted filesystem. When trying
+>> to mount this image btrfs panicked with a division by zero in
+>> calc_stripe_length().
+>>
+>> The corrupt chunk had a 'num_stripes' value of 1. calc_stripe_length()
+>> takes this value and divides it by the number of copies the RAID profile is
+>> expected to have to calculate the amount of data stripes. As a DUP profile
+>> is expected to have 2 copies this division resulted in 1/2 = 0. Later then
+>> the 'data_stripes' variable is used as a divisor in the stripe length
+>> calculation which results in a division by 0 and thus a kernel panic.
+>>
+>> When encountering a filesystem with a DUP block group and a 'num_stripes'
+>> value unequal to 2, refuse mounting as the image is corrupted and will lead
+>> to unexpected behaviour.
+>>
+>> Code inspection showed a RAID1 block group has the same issues.
+>>
+>> Fixes: e06cd3dd7cea ("Btrfs: add validadtion checks for chunk loading")
+>> Cc: Liu Bo <obuil.liubo@gmail.com>
+>> Reviewed-by: Qu Wenruo <wqu@suse.com>
+>> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+>> Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+>> ---
+>> Changes to v1:
+>> - Also add the check for RAID1 (Hans)
+>> ---
+>>  fs/btrfs/volumes.c | 4 ++--
+>>  1 file changed, 2 insertions(+), 2 deletions(-)
+>>
+>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>> index 03f223aa7194..a4d12ada0565 100644
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -6791,10 +6791,10 @@ static int btrfs_check_chunk_valid(struct btrfs_fs_info *fs_info,
+>>  	}
+>>  
+>>  	if ((type & BTRFS_BLOCK_GROUP_RAID10 && sub_stripes != 2) ||
+>> -	    (type & BTRFS_BLOCK_GROUP_RAID1 && num_stripes < 1) ||
+>> +	    (type & BTRFS_BLOCK_GROUP_RAID1 && num_stripes != 1) ||
+> 
+> I think you meant != 2 here. It's just like DUP, but with the two of
+> them on different devices instead of the same.
+
+Ah damn, thanks.
+
+
+
+
+-- 
+Johannes Thumshirn                            SUSE Labs Filesystems
+jthumshirn@suse.de                                +49 911 74053 689
+SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
+GF: Felix Imendörffer, Jane Smithard, Graham Norton
+HRB 21284 (AG Nürnberg)
+Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850

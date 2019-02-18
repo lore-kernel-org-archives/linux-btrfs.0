@@ -2,135 +2,247 @@ Return-Path: <SRS0=oOJ3=QZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A9EDC43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 09:01:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4F00FC43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 09:26:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5775E218AD
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 09:01:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1F90E20838
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 09:26:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729320AbfBRJBm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 18 Feb 2019 04:01:42 -0500
-Received: from mout.gmx.net ([212.227.15.15]:36479 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727570AbfBRJBm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Feb 2019 04:01:42 -0500
-Received: from t460-skr.localnet ([194.94.224.254]) by mail.gmx.com (mrgmx002
- [212.227.17.190]) with ESMTPSA (Nemesis) id 0MH0SI-1gqeqf0ahu-00DpdD for
- <linux-btrfs@vger.kernel.org>; Mon, 18 Feb 2019 10:01:39 +0100
-From:   Stefan K <shadow_7@gmx.net>
-To:     linux-btrfs@vger.kernel.org
-Reply-To: linux-btrfs@vger.kernel.org
-Subject: raid1 mount as read only
-Date:   Mon, 18 Feb 2019 10:01:38 +0100
-Message-ID: <1788794.QoebbjtCvL@t460-skr>
-User-Agent: KMail/5.2.3 (Linux/4.9.0-8-amd64; KDE/5.28.0; x86_64; ; )
+        id S1728869AbfBRJ02 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 18 Feb 2019 04:26:28 -0500
+Received: from mx2.suse.de ([195.135.220.15]:57268 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1728447AbfBRJ01 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Feb 2019 04:26:27 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 9D312AEDF;
+        Mon, 18 Feb 2019 09:26:25 +0000 (UTC)
+Subject: Re: [PATCH v5.1 12/12] btrfs: Do mandatory tree block check before
+ submitting bio
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Cc:     Leonard Lausen <leonard@lausen.nl>
+References: <20190218052753.24138-1-wqu@suse.com>
+ <20190218052753.24138-13-wqu@suse.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ mQINBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
+ T7g+RbfPFlmQp+EwFWOtABXlKC54zgSf+uulGwx5JAUFVUIRBmnHOYi/lUiE0yhpnb1KCA7f
+ u/W+DkwGerXqhhe9TvQoGwgCKNfzFPZoM+gZrm+kWv03QLUCr210n4cwaCPJ0Nr9Z3c582xc
+ bCUVbsjt7BN0CFa2BByulrx5xD9sDAYIqfLCcZetAqsTRGxM7LD0kh5WlKzOeAXj5r8DOrU2
+ GdZS33uKZI/kZJZVytSmZpswDsKhnGzRN1BANGP8sC+WD4eRXajOmNh2HL4P+meO1TlM3GLl
+ EQd2shHFY0qjEo7wxKZI1RyZZ5AgJnSmehrPCyuIyVY210CbMaIKHUIsTqRgY5GaNME24w7h
+ TyyVCy2qAM8fLJ4Vw5bycM/u5xfWm7gyTb9V1TkZ3o1MTrEsrcqFiRrBY94Rs0oQkZvunqia
+ c+NprYSaOG1Cta14o94eMH271Kka/reEwSZkC7T+o9hZ4zi2CcLcY0DXj0qdId7vUKSJjEep
+ c++s8ncFekh1MPhkOgNj8pk17OAESanmDwksmzh1j12lgA5lTFPrJeRNu6/isC2zyZhTwMWs
+ k3LkcTa8ZXxh0RfWAqgx/ogKPk4ZxOXQEZetkEyTFghbRH2BIwARAQABtCNOaWtvbGF5IEJv
+ cmlzb3YgPG5ib3Jpc292QHN1c2UuY29tPokCOAQTAQIAIgUCWIo48QIbAwYLCQgHAwIGFQgC
+ CQoLBBYCAwECHgECF4AACgkQcb6CRuU/KFc0eg/9GLD3wTQz9iZHMFbjiqTCitD7B6dTLV1C
+ ddZVlC8Hm/TophPts1bWZORAmYIihHHI1EIF19+bfIr46pvfTu0yFrJDLOADMDH+Ufzsfy2v
+ HSqqWV/nOSWGXzh8bgg/ncLwrIdEwBQBN9SDS6aqsglagvwFD91UCg/TshLlRxD5BOnuzfzI
+ Leyx2c6YmH7Oa1R4MX9Jo79SaKwdHt2yRN3SochVtxCyafDlZsE/efp21pMiaK1HoCOZTBp5
+ VzrIP85GATh18pN7YR9CuPxxN0V6IzT7IlhS4Jgj0NXh6vi1DlmKspr+FOevu4RVXqqcNTSS
+ E2rycB2v6cttH21UUdu/0FtMBKh+rv8+yD49FxMYnTi1jwVzr208vDdRU2v7Ij/TxYt/v4O8
+ V+jNRKy5Fevca/1xroQBICXsNoFLr10X5IjmhAhqIH8Atpz/89ItS3+HWuE4BHB6RRLM0gy8
+ T7rN6ja+KegOGikp/VTwBlszhvfLhyoyjXI44Tf3oLSFM+8+qG3B7MNBHOt60CQlMkq0fGXd
+ mm4xENl/SSeHsiomdveeq7cNGpHi6i6ntZK33XJLwvyf00PD7tip/GUj0Dic/ZUsoPSTF/mG
+ EpuQiUZs8X2xjK/AS/l3wa4Kz2tlcOKSKpIpna7V1+CMNkNzaCOlbv7QwprAerKYywPCoOSC
+ 7P25Ag0EWIoHPgEQAMiUqvRBZNvPvki34O/dcTodvLSyOmK/MMBDrzN8Cnk302XfnGlW/YAQ
+ csMWISKKSpStc6tmD+2Y0z9WjyRqFr3EGfH1RXSv9Z1vmfPzU42jsdZn667UxrRcVQXUgoKg
+ QYx055Q2FdUeaZSaivoIBD9WtJq/66UPXRRr4H/+Y5FaUZx+gWNGmBT6a0S/GQnHb9g3nonD
+ jmDKGw+YO4P6aEMxyy3k9PstaoiyBXnzQASzdOi39BgWQuZfIQjN0aW+Dm8kOAfT5i/yk59h
+ VV6v3NLHBjHVw9kHli3jwvsizIX9X2W8tb1SefaVxqvqO1132AO8V9CbE1DcVT8fzICvGi42
+ FoV/k0QOGwq+LmLf0t04Q0csEl+h69ZcqeBSQcIMm/Ir+NorfCr6HjrB6lW7giBkQl6hhomn
+ l1mtDP6MTdbyYzEiBFcwQD4terc7S/8ELRRybWQHQp7sxQM/Lnuhs77MgY/e6c5AVWnMKd/z
+ MKm4ru7A8+8gdHeydrRQSWDaVbfy3Hup0Ia76J9FaolnjB8YLUOJPdhI2vbvNCQ2ipxw3Y3c
+ KhVIpGYqwdvFIiz0Fej7wnJICIrpJs/+XLQHyqcmERn3s/iWwBpeogrx2Lf8AGezqnv9woq7
+ OSoWlwXDJiUdaqPEB/HmGfqoRRN20jx+OOvuaBMPAPb+aKJyle8zABEBAAGJAh8EGAECAAkF
+ AliKBz4CGwwACgkQcb6CRuU/KFdacg/+M3V3Ti9JYZEiIyVhqs+yHb6NMI1R0kkAmzsGQ1jU
+ zSQUz9AVMR6T7v2fIETTT/f5Oout0+Hi9cY8uLpk8CWno9V9eR/B7Ifs2pAA8lh2nW43FFwp
+ IDiSuDbH6oTLmiGCB206IvSuaQCp1fed8U6yuqGFcnf0ZpJm/sILG2ECdFK9RYnMIaeqlNQm
+ iZicBY2lmlYFBEaMXHoy+K7nbOuizPWdUKoKHq+tmZ3iA+qL5s6Qlm4trH28/fPpFuOmgP8P
+ K+7LpYLNSl1oQUr+WlqilPAuLcCo5Vdl7M7VFLMq4xxY/dY99aZx0ZJQYFx0w/6UkbDdFLzN
+ upT7NIN68lZRucImffiWyN7CjH23X3Tni8bS9ubo7OON68NbPz1YIaYaHmnVQCjDyDXkQoKC
+ R82Vf9mf5slj0Vlpf+/Wpsv/TH8X32ajva37oEQTkWNMsDxyw3aPSps6MaMafcN7k60y2Wk/
+ TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
+ RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
+ 5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
+Message-ID: <7a0248d2-754d-e352-796b-df41f9fbce53@suse.com>
+Date:   Mon, 18 Feb 2019 11:26:24 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.4.0
 MIME-Version: 1.0
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/plain; charset="us-ascii"
-X-Provags-ID: V03:K1:S4G9Pt79NARvb1Y6fp/7aEEKhlflff/HGoj/Ige6+RplDetLj8U
- Tc1EXOBYfBZ+NcQ8Uexj1ozjZz7PJMuEOGCqe75dwMZlZAdV0cwImP8ZYvg0IJ4lC+6c0+J
- Fq9tYv4WVGxnF5Wr8QOVsrOKB59ACxEvAhMmdkc+QgYCUTfd9HqYQNDnNPAtaV4HFoNgRgg
- XHmsSWiDrTxawKmFPd+3g==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:8isWJRbRbqU=:d7qYTq6mMmqm0mdaeBkcKM
- 8IbTRqtgJUhWJn7srGKP/E9He7zxH7OcBzCn1NlnXS3/m2zBGdyey0MrmLsUFbPusjH8oP1fI
- UMXulFGQjUzYYr9x3GJkviFYKkgAi70zxTMhtreXjvIkk+plGe2EnTl0qUulL2ly/Y+2lEIET
- KTzD9yjyoCmaT4XXH4ADpT9oYnDuMO1ncefeq7e7CKnhOiYKazMzNpvyrHUL+YUuiETjnF5Ba
- 1mNxj8TngN/tLJg+hTGf4y2IUElN5jn/kyomaSgqZLNuMQHwylrB3mup+LJXNARjADmT20NA9
- 8xmcsiD8jOxevf4Njye+0W5oGqPqrGr9nDLidFOVypBnT+Ds5nqb0eitas5lTGcBjBB/aFX3E
- DO2dPxSveIf+ot/L1EJjhoba0gyXIGrYcYJxQA9eJCIaNu0DwOmp7LrPZko/jU2HgDGnY39yj
- z1bjqY3Bbq9UsjCYcMzqSAE6CA13N5oHyC7cdDB4IJS1QTlxpK5hHwMAa9LbB4U+zSTyKdydi
- TZlyr2KE8xCDmSQEGbPKGr7e9EGQ6mgnDPNPG+BLa2HhfNBq/6yRM39ayrP4c4EvIAimnf4Al
- 3YGOc1DGK82wqY38RWJd9w/n7CU4xoc7wqTCBSA8RuCQfO/xcEbvFv4DjDMWwQm3xu1ROzgFI
- kgbl/3WbUmivxPh5KLatw8RKSx/T5daDU2Xtq8WB7ft9RQSt5PL++TvTYr555UiNQSex/xDUj
- IMk2YxZZJuWYUZQM38Hsv3kzEuwVJ4RPFgp/BKjJOJo+kjzv4aVSm8BKeN0dn/5/dSjjt2109
- vIc3i6szJRrdZRkdukuAhvCEbvp967cwIiMFumHWRryhU6I+75DrMfAoML/H1srvdvp5Xp49k
- OgbvZ9qPIwru3liKg9PBdRUE4aODRh/kAw09A/Rp44g4n2GDEGAzVKDE5apthlLRSJq+liMsx
- K0d4PCn4QuA==
+In-Reply-To: <20190218052753.24138-13-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
-
-I've played a little bit with raid1:
-my steps was:
-1. create a raid1 with btrfs (add device; balance start -mconvert=raid1 -dconvert=raid1 /)
-2.  after finishing, i shutdown the server and remove a device and start it again,
-3. it works (i used degraded options in fstab)
-4. I shutdown the server, add the 'old' device, start it and run a btrfs balance
-5. until here everything is fine
-6. I shutdown the server, remove the other harddisk, and start it, 
-7. it works
-8. I shutdown the server, add the 'old' device, start it and try a btrfs balance
-9. but now the FS is mounted as read only
-
-I got the following messages in dmesg:
-[    6.401740] BTRFS: device fsid b997e926-ab95-46d0-a9be-da52aa09203d devid 1 transid 3570 /dev/sda1
-[    6.403079] BTRFS info (device sda1): allowing degraded mounts
-[    6.403084] BTRFS info (device sda1): disk space caching is enabled
-[    6.403086] BTRFS info (device sda1): has skinny extents
-[    6.405878] BTRFS warning (device sda1): devid 2 uuid 09a7c9f6-9a13-4852-bca6-2d9120f388d4 missing
-[    6.409108] BTRFS info (device sda1): detected SSD devices, enabling SSD mode
-
-[    6.652411] BTRFS info (device sda1): allowing degraded mounts
-[    6.652414] BTRFS info (device sda1): disk space caching is enabled
-[    6.652416] BTRFS warning (device sda1): too many missing devices, writeable remount is not allowed
-
-but all devices are available:
-btrfs fi sh
-Label: none  uuid: b997e926-ab95-46d0-a9be-da52aa09203d
-        Total devices 2 FS bytes used 895.41MiB
-        devid    1 size 223.57GiB used 4.06GiB path /dev/sda1
-        devid    2 size 223.57GiB used 2.00GiB path /dev/sdb1
-
-mount | grep btrfs
-/dev/sda1 on / type btrfs (ro,relatime,degraded,ssd,space_cache,subvolid=5,subvol=/)
-
-If I try to remount it via, I got the following in dmesg:
-mount -o remount,rw b997e926-ab95-46d0-a9be-da52aa09203d /
-[  320.048563] BTRFS info (device sda1): disk space caching is enabled
-[  356.200552] BTRFS: error (device sda1) in write_all_supers:3752: errno=-5 IO failure (errors while submitting device barriers.)
-[  356.200628] BTRFS info (device sda1): forced readonly
-[  356.200632] BTRFS warning (device sda1): Skipping commit of aborted transaction.
-[  356.200633] ------------[ cut here ]------------
-[  356.200677] WARNING: CPU: 0 PID: 1914 at /build/linux-EbeuWA/linux-4.9.130/fs/btrfs/transaction.c:1850 cleanup_transaction+0x1f3/0x2e0 [btrfs]
-[  356.200678] BTRFS: Transaction aborted (error -5)
-[  356.200679] Modules linked in: intel_rapl skx_edac edac_core x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel kvm irqbypass crct10dif_pclmul crc32_pclmul ghash_clmulni_intel mgag200 ttm drm_kms_helper intel_uncore sg drm dcdbas mei_me i2c_algo_bit intel_rapl_perf pcspkr joydev iTCO_wdt lpc_ich iTCO_vendor_support mfd_core shpchp mei evdev ipmi_si ipmi_msghandler acpi_power_meter button ip_tables x_tables autofs4 ses enclosure scsi_transport_sas sd_mod hid_generic usbhid hid btrfs crc32c_generic xor raid6_pq crc32c_intel aesni_intel aes_x86_64 glue_helper lrw gf128mul ablk_helper cryptd ahci xhci_pci libahci tg3 xhci_hcd ptp megaraid_sas libata pps_core i2c_i801 usbcore bnxt_en i2c_smbus libphy scsi_mod usb_common
-[  356.200764] CPU: 0 PID: 1914 Comm: btrfs-transacti Not tainted 4.9.0-8-amd64 #1 Debian 4.9.130-2
-[  356.200766] Hardware name: Dell Inc. PowerEdge R840/08XR9M, BIOS 1.2.4 10/18/2018
-[  356.200768]  0000000000000000 ffffffff9ef33d74 ffffb9535d70fd50 0000000000000000
-[  356.200774]  ffffffff9ec7a59e ffff8ea977b261f8 ffffb9535d70fda8 ffff8e9971cdd500
-[  356.200778]  00000000fffffffb ffff8ea97114c980 0000000000000000 ffffffff9ec7a61f
-[  356.200783] Call Trace:
-[  356.200796]  [<ffffffff9ef33d74>] ? dump_stack+0x5c/0x78
-[  356.200801]  [<ffffffff9ec7a59e>] ? __warn+0xbe/0xe0
-[  356.200803]  [<ffffffff9ec7a61f>] ? warn_slowpath_fmt+0x5f/0x80
-[  356.200828]  [<ffffffffc04ac423>] ? cleanup_transaction+0x1f3/0x2e0 [btrfs]
-[  356.200835]  [<ffffffff9ecbd210>] ? prepare_to_wait_event+0xf0/0xf0
-[  356.200858]  [<ffffffffc04ade78>] ? btrfs_commit_transaction+0x298/0xa10 [btrfs]
-[  356.200879]  [<ffffffffc04ae686>] ? start_transaction+0x96/0x480 [btrfs]
-[  356.200900]  [<ffffffffc04a8a8c>] ? transaction_kthread+0x1dc/0x200 [btrfs]
-[  356.200919]  [<ffffffffc04a88b0>] ? btrfs_cleanup_transaction+0x580/0x580 [btrfs]
-[  356.200926]  [<ffffffff9ec9a569>] ? kthread+0xd9/0xf0
-[  356.200933]  [<ffffffff9f2190a4>] ? __switch_to_asm+0x34/0x70
-[  356.200937]  [<ffffffff9ec9a490>] ? kthread_park+0x60/0x60
-[  356.200941]  [<ffffffff9f219137>] ? ret_from_fork+0x57/0x70
-[  356.200943] ---[ end trace 17ece06f94583f5a ]---
-[  356.200946] BTRFS: error (device sda1) in cleanup_transaction:1850: errno=-5 IO failure
-[  356.200997] BTRFS info (device sda1): delayed_refs has NO entry
 
 
-My question is whats happen and how can I fix this?
+On 18.02.19 г. 7:27 ч., Qu Wenruo wrote:
+> There are at least 2 reports about memory bit flip sneaking into on-disk
+> data.
+> 
+> Currently we only have a relaxed check triggered at
+> btrfs_mark_buffer_dirty() time, as it's not mandatory and only for
+> CONFIG_BTRFS_FS_CHECK_INTEGRITY enabled build, it doesn't help user to
+> detect such problem.
+> 
+> This patch will address the hole by triggering comprehensive check on
+> tree blocks before writing it back to disk.
+> 
+> The design points are:
+> - Timing of the check: Tree block write hook
+>   This timing is chosen to reduce the overhead.
+>   The comprehensive check should be as expensive as csum.
+>   Doing full check at btrfs_mark_buffer_dirty() is too expensive for end
+>   user.
+> 
+> - Loose empty leaf check
+>   Originally for empty leaf, tree-checker will report error if it's not
+>   a tree root.
+>   The problem for such check at write time is:
+>   * False alert for tree root created in current transaction
+>     In that case, the commit root still needs to be written to disk.
+>     And since current root can differ from commit root, then it will
+>     cause false alert.
+>     This happens for log tree.
+> 
+>   * False alert for relocated tree block
+>     Relocated tree block can be written to disk due to memory pressure,
+>     in that case an empty csum tree root can be written to disk and
+>     cause false alert, since csum root node hasn't been updated.
+> 
+>   Although some more reliable empty leaf check is still kept as is.
+>   Namely essential trees (e.g. extent, chunk) should never be empty.
+> 
+> The example error output will be something like:
+>   BTRFS critical (device dm-3): corrupt leaf: root=2 block=1350630375424 slot=68, bad key order, prev (10510212874240 169 0) current (1714119868416 169 0)
+>   BTRFS error (device dm-3): block=1350630375424 write time tree block corruption detected
+>   BTRFS: error (device dm-3) in btrfs_commit_transaction:2220: errno=-5 IO failure (Error while writing out transaction)
+>   BTRFS info (device dm-3): forced readonly
+>   BTRFS warning (device dm-3): Skipping commit of aborted transaction.
+>   BTRFS: error (device dm-3) in cleanup_transaction:1839: errno=-5 IO failure
+>   BTRFS info (device dm-3): delayed_refs has NO entry
+> 
+> Reported-by: Leonard Lausen <leonard@lausen.nl>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/disk-io.c      | 10 ++++++++++
+>  fs/btrfs/tree-checker.c | 24 +++++++++++++++++++++---
+>  fs/btrfs/tree-checker.h |  8 ++++++++
+>  3 files changed, 39 insertions(+), 3 deletions(-)
+> 
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 6052ab508f84..fff789f8db63 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -313,6 +313,16 @@ static int csum_tree_block(struct btrfs_fs_info *fs_info,
+>  			return -EUCLEAN;
+>  		}
+>  	} else {
+> +		if (btrfs_header_level(buf))
+> +			err = btrfs_check_node(fs_info, buf);
+> +		else
+> +			err = btrfs_check_leaf_write(fs_info, buf);
+> +		if (err < 0) {
+> +			btrfs_err(fs_info,
+> +			"block=%llu write time tree block corruption detected",
+> +				  buf->start);
+> +			return err;
+> +		}
 
-uname -a
-Linux yamazaki-06 4.9.0-8-amd64 #1 SMP Debian 4.9.130-2 (2018-10-27) x86_64 GNU/Linux
+This code should be moved in csum_dirty_buffer. Currently there is
+pending cleanups in csum_tree_block and the final if there will be
+removed and respective read/write code factored out in
+csum_dirty_buffer/btree_readpage_end_io_hook.
 
-btrfs version
-btrfs-progs v4.7.3
+Eventually csum_tree_block's sole purpose should be to calculate the
+checksum and nothing more.
 
-
+>  		write_extent_buffer(buf, result, 0, csum_size);
+>  	}
+>  
+> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+> index a62e1e837a89..b8cdaf472031 100644
+> --- a/fs/btrfs/tree-checker.c
+> +++ b/fs/btrfs/tree-checker.c
+> @@ -477,7 +477,7 @@ static int check_leaf_item(struct btrfs_fs_info *fs_info,
+>  }
+>  
+>  static int check_leaf(struct btrfs_fs_info *fs_info, struct extent_buffer *leaf,
+> -		      bool check_item_data)
+> +		      bool check_item_data, bool check_empty_leaf)
+>  {
+>  	/* No valid key type is 0, so all key should be larger than this key */
+>  	struct btrfs_key prev_key = {0, 0, 0};
+> @@ -516,6 +516,18 @@ static int check_leaf(struct btrfs_fs_info *fs_info, struct extent_buffer *leaf,
+>  				    owner);
+>  			return -EUCLEAN;
+>  		}
+> +
+> +		/*
+> +		 * Skip empty leaf check, mostly for write time tree block
+> +		 *
+> +		 * Such skip mostly happens for tree block write time, as
+> +		 * we can't use @owner as accurate owner indicator.
+> +		 * Case like balance and new tree block created for commit root
+> +		 * can break owner check easily.
+> +		 */
+> +		if (!check_empty_leaf)
+> +			return 0;
+> +
+>  		key.objectid = owner;
+>  		key.type = BTRFS_ROOT_ITEM_KEY;
+>  		key.offset = (u64)-1;
+> @@ -636,13 +648,19 @@ static int check_leaf(struct btrfs_fs_info *fs_info, struct extent_buffer *leaf,
+>  int btrfs_check_leaf_full(struct btrfs_fs_info *fs_info,
+>  			  struct extent_buffer *leaf)
+>  {
+> -	return check_leaf(fs_info, leaf, true);
+> +	return check_leaf(fs_info, leaf, true, true);
+>  }
+>  
+>  int btrfs_check_leaf_relaxed(struct btrfs_fs_info *fs_info,
+>  			     struct extent_buffer *leaf)
+>  {
+> -	return check_leaf(fs_info, leaf, false);
+> +	return check_leaf(fs_info, leaf, false, true);
+> +}
+> +
+> +int btrfs_check_leaf_write(struct btrfs_fs_info *fs_info,
+> +			   struct extent_buffer *leaf)
+> +{
+> +	return check_leaf(fs_info, leaf, false, false);
+>  }
+>  
+>  int btrfs_check_node(struct btrfs_fs_info *fs_info, struct extent_buffer *node)
+> diff --git a/fs/btrfs/tree-checker.h b/fs/btrfs/tree-checker.h
+> index ff043275b784..6f8d1b627c53 100644
+> --- a/fs/btrfs/tree-checker.h
+> +++ b/fs/btrfs/tree-checker.h
+> @@ -23,6 +23,14 @@ int btrfs_check_leaf_full(struct btrfs_fs_info *fs_info,
+>   */
+>  int btrfs_check_leaf_relaxed(struct btrfs_fs_info *fs_info,
+>  			     struct extent_buffer *leaf);
+> +
+> +/*
+> + * Write time specific leaf checker.
+> + * Don't check if the empty leaf belongs to a tree root. Mostly for balance
+> + * and new tree created in current transaction.
+> + */
+> +int btrfs_check_leaf_write(struct btrfs_fs_info *fs_info,
+> +			   struct extent_buffer *leaf);
+>  int btrfs_check_node(struct btrfs_fs_info *fs_info, struct extent_buffer *node);
+>  
+>  #endif
+> 

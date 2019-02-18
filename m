@@ -2,79 +2,149 @@ Return-Path: <SRS0=oOJ3=QZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 97130C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 10:38:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 56A52C10F01
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 10:50:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 51D0E2173C
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 10:38:05 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=zadara-com.20150623.gappssmtp.com header.i=@zadara-com.20150623.gappssmtp.com header.b="VIyAEsac"
+	by mail.kernel.org (Postfix) with ESMTP id 325522176F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Feb 2019 10:50:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728107AbfBRKiE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 18 Feb 2019 05:38:04 -0500
-Received: from mail-it1-f169.google.com ([209.85.166.169]:52324 "EHLO
-        mail-it1-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727004AbfBRKiD (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Feb 2019 05:38:03 -0500
-Received: by mail-it1-f169.google.com with SMTP id r11so40031618itc.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Feb 2019 02:38:03 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=zadara-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=jt/kXkL1VpZpIFsfX+ZKv/KSU1MRa/q6L8k0zUw6/Uc=;
-        b=VIyAEsacocX8KceJNW3YBb/WiEzQtLUWuknl8KdaRByxbwmRPQvFIv2TcwpZZh2VMn
-         Mlib7IhFcfNLfBYdxpF7/YU+vmJ9P1mVdoH3hmDm1SOjxz7oPoaLQV2hRfA84yYcrjfJ
-         3AIWKcYH3o18iftnQ42rbXYpmOXyJQ3YW1X+dsf6P5vAN7JVmtO6REsvM1eKGW2VKtxf
-         oVfKZRqh0u/xnrjMEiIIplcGuRK3GVNN10+A0txs+7UMHP3yNklAch8rar0iaLs2gQyB
-         /vICfyHSzzTYZ3/ZQVypzewLTJF8HuyjUcMf4FgBx+Ptb7DKXYNML4NacQ3gx3T/rUxs
-         eDsA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=jt/kXkL1VpZpIFsfX+ZKv/KSU1MRa/q6L8k0zUw6/Uc=;
-        b=UmLPkitNB6zCJj3ky7d3J5JBsw0eZRB/++1d6wIi9SAJg+HQvSejn146XIA4RVb/nJ
-         4MFuGInYZfsrDMbjw4i1Beic39uqhDgt249ogixZGFn07Q2wsn1JHTBpng/OZdUQezQJ
-         367D6KvasqPWqTiO/HJHrDaEKCtGmBdo8LAKT+uut37VdH5IKN9IipdqTbBDVHMOTZRU
-         0Em5G2fh+rgx059DKhDzaMwg6qEuT/FMNSnUfPOPMsWxKrFwP2CxsYFHUGYuTVtsoX5Z
-         waHW5p/zmLwQ+LlLySAZlxlWR+4nsPT1zXdbuetpdfE4ZgHB4FCCX/rihtdLmzm1qzB8
-         yBuA==
-X-Gm-Message-State: AHQUAuZxGBSJWTLTj+3wK3V4w+N8y1yM56WxBQyYtKxY0GW3Y+4D64bi
-        y+tFB6DseQOh/GBkcXjTzTkMI9apP2cQ0+oRuPtrkSlz
-X-Google-Smtp-Source: AHgI3IZE+y9SWd20QvK1M3pjpWQgt1dFfTk2cw4Jxd+gWa9hk51CyPb13xGWuchulcqA2JOjGC+0RZOAPMdgEesP3jY=
-X-Received: by 2002:a24:3dc8:: with SMTP id n191mr10188674itn.29.1550486282760;
- Mon, 18 Feb 2019 02:38:02 -0800 (PST)
+        id S1730089AbfBRKuX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 18 Feb 2019 05:50:23 -0500
+Received: from mx2.suse.de ([195.135.220.15]:43348 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1728258AbfBRKuW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Feb 2019 05:50:22 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id C0A41AFF0;
+        Mon, 18 Feb 2019 10:50:20 +0000 (UTC)
+Subject: Re: [LSF/MM TOPIC] Software RAID Support for NV-DIMM
+To:     Dave Chinner <david@fromorbit.com>
+Cc:     lsf-pc@lists.linux-foundation.org, linux-block@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-nvdimm@lists.01.org,
+        linux-btrfs@vger.kernel.org, hare@suse.de
+References: <20190215095710.GA12279@linux-x5ow.site>
+ <20190216053133.GT20493@dastard> <20190216053957.GU20493@dastard>
+From:   Johannes Thumshirn <jthumshirn@suse.de>
+Openpgp: preference=signencrypt
+Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <66c6ad91-9e8c-a01b-d0c0-ce04e628db67@suse.de>
+Date:   Mon, 18 Feb 2019 11:50:19 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.3.0
 MIME-Version: 1.0
-References: <cover.1511980478.git.dsterba@suse.com>
-In-Reply-To: <cover.1511980478.git.dsterba@suse.com>
-From:   Alex Lyakas <alex@zadara.com>
-Date:   Mon, 18 Feb 2019 12:37:49 +0200
-Message-ID: <CAOcd+r2vJfDQcF+zqZStHMiz4PYw1irsvHYK=PjUJ5nYuUffug@mail.gmail.com>
-Subject: Re: [GIT PULL] Btrfs fixes for 4.15-rc2
-To:     David Sterba <dsterba@suse.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <20190216053957.GU20493@dastard>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi David,
+On 16/02/2019 06:39, Dave Chinner wrote:
+[..]
 
->   Btrfs: incremental send, fix wrong unlink path after renaming file (2017-11-28 17:15:30 +0100)
->
-> ----------------------------------------------------------------
-> David Sterba (2):
->       btrfs: add missing device::flush_bio puts
-Is there a reason that this one should not be tagged as "stable"? At
-least the missing bio_put in  free_fs_devices is not an error case,
-and would happen every time.
+>> We've supported this since mid 2018 and commit ba23cba9b3bd ("fs:
+>> allow per-device dax status checking for filesystems"). That is,
+>> we can have DAX on the XFS RT device indepently of the data device.
+>>
+>> That is, you set up pmem in three segments - two small identical
+>> segments start get mirrored with RAID1 as the data device, and
+>> the remainder as a block device that is dax capable set up as the
+>> XFS realtime device. Set the RTINHERIT bit on the root directory at
+>> mkfs time ("-d rtinherit=1") and then all the data goes to the DAX
+>> capable realtime device, and all the metadata goes to the software
+>> raided pmem block devices that aren't DAX capable.
+>>
+>> Problem already solved, yes?
+> 
+> Sorry, this was meant to be a reply to Dan's email commenting about
+> some people needing mirrored metadata, not the parent that was
+> talking about whole device RAID...
+> 
+> i.e. mirrored metadata w/ FS-DAX for data should already be a solved
+> problem...
 
-Thanks,
-Alex.
+Trying to answer you both.
+
+But deferring the data redundancy to the application sounds like a no-go
+to me, sorry. We don't do that for "traditional" block storage (SCSI,
+NVMe, you name it). Some applications might already be able to handle it
+but definitively not all. I don't see your random DBMS like MariaDB or
+Postgres already doing data duplication over interleave sets of NV-DIMMs.
+
+And if you carve out a bit of your pmem space into an own namespace for
+the metadata (did I understand you right here?) you still have the
+problem that all data written to the DIMMs is interleaved in an
+interleave set, if I understand it correctly.
+
+So if one DIMM in your interleave set goes bad, you're lost anyways.
+
+Byte,
+	Johannes
+-- 
+Johannes Thumshirn                            SUSE Labs Filesystems
+jthumshirn@suse.de                                +49 911 74053 689
+SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
+GF: Felix Imendörffer, Jane Smithard, Graham Norton
+HRB 21284 (AG Nürnberg)
+Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850

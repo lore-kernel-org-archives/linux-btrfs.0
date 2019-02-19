@@ -2,85 +2,121 @@ Return-Path: <SRS0=T+sm=Q2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B67ECC43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 04:28:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 12F07C43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 05:45:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 887842147A
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 04:28:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DD973217D9
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 05:45:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726573AbfBSE2X (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 18 Feb 2019 23:28:23 -0500
-Received: from ipmail01.adl2.internode.on.net ([150.101.137.133]:64413 "EHLO
-        ipmail01.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1725497AbfBSE2X (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Feb 2019 23:28:23 -0500
-Received: from ppp59-167-129-252.static.internode.on.net (HELO dastard) ([59.167.129.252])
-  by ipmail01.adl2.internode.on.net with ESMTP; 19 Feb 2019 14:58:19 +1030
-Received: from dave by dastard with local (Exim 4.80)
-        (envelope-from <david@fromorbit.com>)
-        id 1gvx11-0004Qa-1P; Tue, 19 Feb 2019 15:28:19 +1100
-Date:   Tue, 19 Feb 2019 15:28:19 +1100
-From:   Dave Chinner <david@fromorbit.com>
-To:     Matthew Wilcox <willy@infradead.org>
-Cc:     Andy Lutomirski <luto@kernel.org>,
-        Adam Borowski <kilobyte@angband.pl>,
-        Boaz Harrosh <openosd@gmail.com>,
-        Omar Sandoval <osandov@osandov.com>,
-        Linux FS Devel <linux-fsdevel@vger.kernel.org>,
-        Al Viro <viro@zeniv.linux.org.uk>,
-        kernel-team <kernel-team@fb.com>,
-        Linux API <linux-api@vger.kernel.org>,
-        Linux btrfs Developers List <linux-btrfs@vger.kernel.org>,
-        Ext4 Developers List <linux-ext4@vger.kernel.org>,
-        linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org
-Subject: Re: [RFC PATCH 0/6] Allow setting file birth time with utimensat()
-Message-ID: <20190219042818.GH14116@dastard>
-References: <cover.1550136164.git.osandov@fb.com>
- <20190214220626.GV14116@dastard>
- <6a9dc05a-0445-d0ab-0140-1de4fee7ba9b@gmail.com>
- <20190217175450.psaesabv3vlzvjv4@angband.pl>
- <CALCETrWsCUTSbvwemKHB=8=pO4fwK2qD0boFEd4puBDkpb3F9g@mail.gmail.com>
- <20190219040447.GX12668@bombadil.infradead.org>
+        id S1725765AbfBSFpT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Feb 2019 00:45:19 -0500
+Received: from mx2.suse.de ([195.135.220.15]:44820 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725730AbfBSFpT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Feb 2019 00:45:19 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 16B14AEDB;
+        Tue, 19 Feb 2019 05:45:17 +0000 (UTC)
+Subject: Re: [PATCH] fs/btrfs: init csum_list before possible free
+To:     Dan Robertson <dan@dlrobertson.com>, linux-btrfs@vger.kernel.org
+References: <20190219025643.20382-1-dan@dlrobertson.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <4f91c93c-72c0-546b-b90e-664129107791@suse.com>
+Date:   Tue, 19 Feb 2019 07:45:15 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.4.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190219040447.GX12668@bombadil.infradead.org>
-User-Agent: Mutt/1.5.21 (2010-09-15)
+In-Reply-To: <20190219025643.20382-1-dan@dlrobertson.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Feb 18, 2019 at 08:04:47PM -0800, Matthew Wilcox wrote:
-> On Sun, Feb 17, 2019 at 12:40:09PM -0800, Andy Lutomirski wrote:
-> > So I'm highly in favor of this patch.  If XFS wants to disallow
-> > writing the birth time, fine, but I think that behavior should be
-> > overridable.
+
+
+On 19.02.19 г. 4:56 ч., Dan Robertson wrote:
+> The scrub_ctx csum_list member must be initialized before
+> scrub_free_ctx is called. If the csum_list is not initialized
+> beforehand, the list_empty call in scrub_free_csums will result
+> in a null deref.
 > 
-> Please, no.  We need to have consistent behaviour between at least
-> Linux local filesystems.  Not "Chris thinks this is a good idea,
-> while Dave and Ted think its a bad idea, so btrfs supports it and
-> XFS and ext4 disallow it".
+> Signed-off-by: Dan Robertson <dan@dlrobertson.com>
 
-And, quite frankly, this is the entire reason xattrs exist. i.e.
-so that generic file attributes can be stored persitently without
-each individual having to support them in their on-disk format.
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
-I wish people would stop trying to implement stuff like this in
-filesystem code and instead added it to the VFS and stored it in VFS
-defined system xattrs so that it is common across all filesystems.
-It also means that backup applications can preserve them during file
-copies without really even being aware of their meaning, simply by
-copying all the xattrs on the file...
-
-Cheers,
-
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+> ---
+>  fs/btrfs/scrub.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+> index 6dcd36d7b849..1e08ad1fe2aa 100644
+> --- a/fs/btrfs/scrub.c
+> +++ b/fs/btrfs/scrub.c
+> @@ -584,6 +584,7 @@ static noinline_for_stack struct scrub_ctx *scrub_setup_ctx(
+>  	sctx->pages_per_rd_bio = SCRUB_PAGES_PER_RD_BIO;
+>  	sctx->curr = -1;
+>  	sctx->fs_info = fs_info;
+> +	INIT_LIST_HEAD(&sctx->csum_list);
+>  	for (i = 0; i < SCRUB_BIOS_PER_SCTX; ++i) {
+>  		struct scrub_bio *sbio;
+>  
+> @@ -608,7 +609,6 @@ static noinline_for_stack struct scrub_ctx *scrub_setup_ctx(
+>  	atomic_set(&sctx->workers_pending, 0);
+>  	atomic_set(&sctx->cancel_req, 0);
+>  	sctx->csum_size = btrfs_super_csum_size(fs_info->super_copy);
+> -	INIT_LIST_HEAD(&sctx->csum_list);
+>  
+>  	spin_lock_init(&sctx->list_lock);
+>  	spin_lock_init(&sctx->stat_lock);
+> 

@@ -2,144 +2,229 @@ Return-Path: <SRS0=T+sm=Q2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
-	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 19FAEC43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 00:28:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B5E31C43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 00:54:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D06092086D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 00:28:36 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=sheepa.org header.i=admin@sheepa.org header.b="X14Qc4jR"
+	by mail.kernel.org (Postfix) with ESMTP id 7FE6421773
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 00:54:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732273AbfBSA2f (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 18 Feb 2019 19:28:35 -0500
-Received: from sender-of-o52.zoho.eu ([185.20.209.248]:21414 "EHLO
-        sender-of-o52.zoho.eu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1732183AbfBSA2f (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Feb 2019 19:28:35 -0500
-ARC-Seal: i=1; a=rsa-sha256; t=1550536110; cv=none; 
-        d=zoho.eu; s=zohoarc; 
-        b=P97/+eLSGCAS9S8Nwugq/JO4VBK+vOJ4amh1HR7B51FkSxVV1bRZDShhf9TIRNQ7N2ybo+7dRUOaIsiE7oj9Y+nraktcFU20HBSBZSYJiG7ghL7nFoW2VKfChH0TLKhAUvmx5LFkzRP1sD4cG3cq3dBLTraUwAng+JHCPasCS5I=
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=zoho.eu; s=zohoarc; 
-        t=1550536110; h=Content-Type:Content-Transfer-Encoding:Cc:Date:From:In-Reply-To:MIME-Version:Message-ID:References:Subject:To:ARC-Authentication-Results; 
-        bh=TBgOb7UeF+jsRq/cTBNwMwgBsMDFySeI6XMYeYUScgE=; 
-        b=Ky50J8uQ5d/BwGFYXunyTJMlUsqp5C6CTyIo48d22aM51KMVw/8K81uSMUYUnq+HMf67YScXz2Qcy4Ai2PJFdcDnvhRMCTk0szMD33Vjbo0kFxVsAOQ4MH0n1+M2yxTGCigp03rBJB41jYp44iRPAhoEcy8rKwZuGSNL176//9U=
-ARC-Authentication-Results: i=1; mx.zoho.eu;
-        dkim=pass  header.i=sheepa.org;
-        spf=pass  smtp.mailfrom=admin@sheepa.org;
-        dmarc=pass header.from=<admin@sheepa.org> header.from=<admin@sheepa.org>
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; t=1550536110;
-        s=mail; d=sheepa.org; i=admin@sheepa.org;
-        h=Subject:To:Cc:References:From:Message-ID:Date:MIME-Version:In-Reply-To:Content-Type:Content-Transfer-Encoding;
-        l=3549; bh=TBgOb7UeF+jsRq/cTBNwMwgBsMDFySeI6XMYeYUScgE=;
-        b=X14Qc4jR5vlkY04AyMmK0MYDEooj+xs6OYkPvTqBNPoLg3OfLsan3j2/YJd0TyNd
-        yCImuSWeei/h47z+equXd5rHuH8RSTDemHpRTL3lBhZUfmR5x81mSN5j9eyBvuhFNXz
-        uNoSqa8AURfzkvDFxUr6zryjkClh324bmwih1EUw=
-Received: from [192.168.0.4] (c83-248-74-133.bredband.comhem.se [83.248.74.133]) by mx.zoho.eu
-        with SMTPS id 1550536108760857.0409694351324; Tue, 19 Feb 2019 01:28:28 +0100 (CET)
-Subject: Re: Btrfs send with parent different size depending on source of
- files.
-To:     Chris Murphy <lists@colorremedies.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <b1c31d98-baaa-85c7-1101-65350e1b4f45@sheepa.org>
- <6a6cd7a7-ffaf-bb74-1c94-bfb1ad7fb335@gmail.com>
- <d216fc94-dba2-031f-a16a-94dadd462866@georgianit.com>
- <40efb627-911f-1cae-c3d2-f2353eaab99c@sheepa.org>
- <CAJCQCtSE++nn=mVEpKt3vgpnDXXnooD2zg6aUJ6DdkphVDHQkg@mail.gmail.com>
- <47ac7b0a-269c-5580-fb3b-2504111901cf@sheepa.org>
- <CAJCQCtT8Z47UQnRo1zDfpCB6e7cSPOzYFkR55_9ASTW=oBPTZA@mail.gmail.com>
- <d84709a7-1029-3e07-95ee-2ae646e39bd0@sheepa.org>
- <CAJCQCtRLU=Cv9Lg75Vc4KO18N0y4hvoCuo9WV+rbKg2DTb+o7A@mail.gmail.com>
- <a870ee41-983a-5786-eb14-4513de4da875@sheepa.org>
- <CAJCQCtRvxpai3Cs+588T+QjYJbJSs2NE=nzkZ90FY41M9peXog@mail.gmail.com>
- <fec70b89-90ee-20b9-d47a-ae1be31361fc@sheepa.org>
- <CAJCQCtSc=T=Umg4bz2M6o1bZin7Y967827Jrfkeh=nCPLy6dGQ@mail.gmail.com>
-From:   =?UTF-8?Q?Andr=c3=a9_Malm?= <admin@sheepa.org>
-Message-ID: <c1fc8b54-9cf6-f191-57ba-7621edefd139@sheepa.org>
-Date:   Tue, 19 Feb 2019 01:28:28 +0100
-User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
+        id S1732518AbfBSAyH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 18 Feb 2019 19:54:07 -0500
+Received: from mout.gmx.net ([212.227.17.22]:50799 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726175AbfBSAyG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Feb 2019 19:54:06 -0500
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx102
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0MATlG-1gkO8i2Rv0-00Bevm; Tue, 19
+ Feb 2019 01:54:01 +0100
+Subject: Re: [PATCH 2/2] Btrfs: report and handle error on unexpected first
+ key on extent buffer
+To:     fdmanana@kernel.org, linux-btrfs@vger.kernel.org
+References: <20190218165826.23549-1-fdmanana@kernel.org>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <a79f6d14-88bd-5a58-a508-8683428ad12f@gmx.com>
+Date:   Tue, 19 Feb 2019 08:53:53 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.5.0
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSc=T=Umg4bz2M6o1bZin7Y967827Jrfkeh=nCPLy6dGQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-Content-Language: en-US
-X-ZohoMailClient: External
+In-Reply-To: <20190218165826.23549-1-fdmanana@kernel.org>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="b9sndWf12NMGupe57KZEG8wg8Jyx2jHvi"
+X-Provags-ID: V03:K1:3stC1lwOtGk8kItnpjqaa9SQE6KZDO4/KxZutPx9j3YYOStWBNp
+ Drj6cCbw/+mCbBBmNKWb8VW4UEF/KA/7wpQozdtOIV8Hs1emvt4Gn4EZhek92+wRTG+sdJg
+ xlmFEMwGDccgt+NTv2eEygpiFen3IpPGaNwY030xutbRzJiFpLJ9shwpdt9QV4uN5C3bBie
+ DBtGKCruKHZlouRy/9BWA==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:JFFhyJdjxUo=:9TmWIS+Os/bc5Igl9UfJVA
+ i/Sv1vvRAfDL2C8BIKf9RHU3JCzcpF6UnNqMZWxBPtSv+IB3QNB7pDbMfY2FIoOhzyla4X1No
+ SdqAGRtEmmriBwqhRcRTgYM9Z6q026gFoY3PqThXQklm4H8lLVYkquJFrSJDR9xHKJZdPojM+
+ 5PwhA1j9UsC0jDPlmMAZwPAp96OUBJPkjvR1+gBrnfra82Q7nuwKqhsO7FTtZp+kutlOlGC+D
+ fjBmUYj0w2iWVUwJeZ3ykBhziMkzqLFyb9sXTsj99DBwOLGQqXirUhjELEjn9Zihc+YRmnoMi
+ cbGfL25u1dec/0LUP7IFHnBRaqCPXPWIcscynHO/RWd24tzvDNeR0AOaJp7HmDLWe2Ni/gxQV
+ qMa9wnKDq74RBBdLy5IbIOQ7EIDYvsQQenEwc4y9sDGGJtp1f6zPJ3R9lvUU8hV8clsObCLX4
+ cNasX1ptDmWIOeDpHEgteWqTvMEmHSXXSGh0gHmnaWvDcZAhZIZPe7+tZajDrcOiFzXbFHrA9
+ r5yNZIRqFmqBeNF0vssv73MKwpTir9v7puNGdNkNwwYAITPqp+7ZbLp1Nj9LCe0uzfsAfvgcm
+ 3lvk+4xL7V4+MFgVeF2TO6IyzENa5Zu32nFXV5sXkAuWuvKm9d30uv2QNUxucmdXJpizM/1e/
+ kH12VCQ0fzNj/+qRdJO/JR/d8/kP0nFRlTErLnTtONMmdgxhlJiyrxWrdy7pUYjJ6Y+35hxhJ
+ rpN1JlOIhqudMKDl6NvTX5OAzFsOOsmpZAUe2GWqYdof065hdFBrKxhwnPSI9+8ZycOWOSo53
+ +muo17yeDmkyAv6mUUEeJkOQnMb9A3XJluFmRUeYilIN1f+R8gHp1HsXPQ/vxX0errZkkqrzt
+ C6YYNquzuZz/Wsqm+4kQa6+pWrwB3Gm4ZVDCPe8e7aXhIkw5fYPrNgrFkTO7/4
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Rsync is probably i bad idea yes. I could btrfs send -p the changed=20
-"new" master subvolume and then delete the old master subvolume and then=20
-reference the new master subvolume when transferring it later on i guess?
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--b9sndWf12NMGupe57KZEG8wg8Jyx2jHvi
+Content-Type: multipart/mixed; boundary="xPcPHWQxNidRjBsNwfwErZP86fs4rGOLT";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
+Message-ID: <a79f6d14-88bd-5a58-a508-8683428ad12f@gmx.com>
+Subject: Re: [PATCH 2/2] Btrfs: report and handle error on unexpected first
+ key on extent buffer
+References: <20190218165826.23549-1-fdmanana@kernel.org>
+In-Reply-To: <20190218165826.23549-1-fdmanana@kernel.org>
 
-I'll explain the problem I'm trying to solve abit better;
-
-Say i have a program that will run in multiple instances. The program=20
-requires a dataset of large files to run (say 20GB). The dataset will be=20
-updated over time, i.e parts of them changes. These changes should only=20
-apply to new instances for the program. The program will also generate=20
-new data (both new files and also changing data in the the shared=20
-dataset) that is unique to the instance of the child subvolume. Finally=20
-I need to transfer the program together with its generated data to=20
-another remote machine to continue it's processing there. What i want to=20
-achieve is avoid having to transfer the entire dataset when only small=20
-parts of it is changed by the program. I also want to avoid having to=20
-duplicate copies of the data on the remote machine.
-
-On 2019-02-19 01:16, Chris Murphy wrote:
-> On Mon, Feb 18, 2019 at 4:58 PM Andr=C3=A9 Malm <admin@sheepa.org> wrote:
->> I assume i would have to use rsync (with --inplace possibly) to keep the
->> master volume in sync between machines?
-> Why?
->
-> You previously said you didn't want to do that:
-> " if I change / remove, say 10 GB worth of data from the
-> master subvolume unrelated to the child subvolume I don't want those
-> gigabytes sent down the wire with btrfs send as they are unrelated. "
->
-> So instead of sending those changes with send you're going to send the
-> changes with rsync which is even more inefficient?
->
->> Say for example I have a (large) file on master, on machine A, I cp
->> reflink it to a child subvolume. I then send -p child subvolume to
->> remote machine B (which already have the master volume).
-> 1. The master snapshots must be identical snapshots on source and
-> destination; it must have been replicated using send/receive or
-> receive will complain.
-> 2. I don't know what "send -p child subvolume to remove" means because
-> -p option means two snapshots must be included and I don't know what
-> two snapshots you're planning on using, so I can't answer the
-> question.
->
->> Then i change
->> parts of the file on the master of machine A. I then rsync (?) the
->> master volume so its the same across the machines. Can I then later send
->> -p the child volume, either back to the original machine (A) or to a 3rd
->> machine (C) given that the master volumes are synced?
-> rsync'd subvolumes across volumes aren't consistent identical by btrfs
-> receive. I expect they can't be used for incremental send/receive.
-> What you're trying to achieve, big picture, isn't clear. You're
-> describing it in terms of send/receive and confusing it with rsync. I
-> don't understand what rsync has to do with this.
->
-> You realize if you merely move a large file within a subvolume, and
-> then you using rsync to a remote system, it will delete the original
-> file and then sync over the nework that same data to the new location?
-> Rsync has no idea how to just move files around. Btrfs send-receive
-> does.
->
->> About the efficiency I'm not planning to remove large amounts of data
->> that is used by child subvolumes (although some will be updated). But
->> given the unpredictability of what files will be used by child
->> subvolumes i might remove large unused amounts of data.
-> OK?
->
->
+--xPcPHWQxNidRjBsNwfwErZP86fs4rGOLT
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
+
+On 2019/2/19 =E4=B8=8A=E5=8D=8812:58, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+>=20
+> When there is a kind of corruption in an extent buffer such that its fi=
+rst
+> key does not match the key at the respective parent slot, one of two th=
+ings
+> happens:
+
+Isn't that handled by read_tree_block() already?
+
+Thanks,
+Qu
+
+>=20
+> 1) When assertions are enabled, we effectively hit a BUG_ON() which
+>    requires rebooting the machine later. This also does not tell any
+>    information about which extent buffer is affected, from which root,
+>    the expected and found keys, etc.
+>=20
+> 2) When assertions are disabled, we just ignore the mismatch and assume=
+
+>    everything is ok, which can potentially lead to all sorts of unexpec=
+ted
+>    problems later after a tree search (in the worst case, could lead to=
+
+>    further silent corruption).
+>=20
+> So improve this by always checking if the first key of an extent buffer=
+ is
+> what it's supposed to be, when doing a key search at key_search(), and
+> report and return an appropriate error. The overhead is just comparing =
+one
+> key, which is minimal and is anyway just done in a special case where w=
+e
+> skip the more expensive binary search (the binary search in the parent
+> node returned 0, exact key match).
+>=20
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  fs/btrfs/ctree.c | 38 +++++++++++++++++---------------------
+>  1 file changed, 17 insertions(+), 21 deletions(-)
+>=20
+> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> index 5b9f602fb9e2..a0bd0278208d 100644
+> --- a/fs/btrfs/ctree.c
+> +++ b/fs/btrfs/ctree.c
+> @@ -2529,35 +2529,31 @@ setup_nodes_for_search(struct btrfs_trans_handl=
+e *trans,
+>  	return ret;
+>  }
+> =20
+> -static void key_search_validate(struct extent_buffer *b,
+> -				const struct btrfs_key *key,
+> -				int level)
+> -{
+> -#ifdef CONFIG_BTRFS_ASSERT
+> -	struct btrfs_disk_key disk_key;
+> -
+> -	btrfs_cpu_key_to_disk(&disk_key, key);
+> -
+> -	if (level =3D=3D 0)
+> -		ASSERT(!memcmp_extent_buffer(b, &disk_key,
+> -		    offsetof(struct btrfs_leaf, items[0].key),
+> -		    sizeof(disk_key)));
+> -	else
+> -		ASSERT(!memcmp_extent_buffer(b, &disk_key,
+> -		    offsetof(struct btrfs_node, ptrs[0].key),
+> -		    sizeof(disk_key)));
+> -#endif
+> -}
+> -
+>  static int key_search(struct extent_buffer *b, const struct btrfs_key =
+*key,
+>  		      int level, int *prev_cmp, int *slot)
+>  {
+> +	struct btrfs_key found_key;
+> +
+>  	if (*prev_cmp !=3D 0) {
+>  		*prev_cmp =3D btrfs_bin_search(b, key, level, slot);
+>  		return *prev_cmp;
+>  	}
+> =20
+> -	key_search_validate(b, key, level);
+> +	if (level =3D=3D 0)
+> +		btrfs_item_key_to_cpu(b, &found_key, 0);
+> +	else
+> +		btrfs_node_key_to_cpu(b, &found_key, 0);
+> +
+> +	if (btrfs_comp_cpu_keys(&found_key, key) !=3D 0) {
+> +		btrfs_crit(b->fs_info,
+> +"unexpected first key for extent buffer: bytenr=3D%llu level=3D%d root=
+=3D%llu expected key=3D(%llu %u %llu) found key=3D(%llu %u %llu)",
+> +			   btrfs_header_bytenr(b), level, btrfs_header_owner(b),
+> +			   key->objectid, key->type, key->offset,
+> +			   found_key.objectid, found_key.type,
+> +			   found_key.offset);
+> +		return -EUCLEAN;
+> +	}
+> +
+>  	*slot =3D 0;
+> =20
+>  	return 0;
+>=20
+
+
+--xPcPHWQxNidRjBsNwfwErZP86fs4rGOLT--
+
+--b9sndWf12NMGupe57KZEG8wg8Jyx2jHvi
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxrU6EACgkQwj2R86El
+/qiVDQf+NKSYBWjTr634y8MJHhNBwAReoZCnhulc52ITjujTe606wLoubCmPIwCG
+GDrCAMpg9OT0+gziXSkki+t5zZ2kzD3EetCS0/tb/VlEozaGEbEOdDuYtG2JQ2YP
+Hqm3pp9rkAKFpymsjucMGbqGn7J0zVRCO/g9XvMSvXfLmwl6rBO/N0Jk+mbt4Ry1
+42mFRbX51ytiKmsX49pkQ57y/JjNkHB4Su4WnfxPhMW15b/hMMIaf3t2unKHH5K+
+Fgn2yDarZ/3gjLkumIGnjv2jSlmJtM2pTrXfdkujoCxbc7bfvic4hhL+1BnqRAnw
+dWxndv6TInc3Ghgqtcb7JtLE/al08g==
+=n/SG
+-----END PGP SIGNATURE-----
+
+--b9sndWf12NMGupe57KZEG8wg8Jyx2jHvi--

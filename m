@@ -2,225 +2,222 @@ Return-Path: <SRS0=T+sm=Q2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9CC6BC43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 12:00:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 169D6C43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 12:04:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6AAC3208E4
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 12:00:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CE998208E4
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 12:04:28 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1550577868;
+	bh=g/6tPboaRx1QwFNmU74qxUyfDs/yyRsflHnX2RrWIAk=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc:List-ID:From;
+	b=IpdJN0KYqNVR3uBRNDAhUJQ6FzlLEc3VlKLeFEXxk0qvL5uuOSpGxtX4HOqPPMhOn
+	 6pC/eJMxQKX6AgWo9XAtXEZbc8HrJKN8qYzIT1rF/56LxBIo8Mfa6MeZ+dkr4fimAc
+	 59ccO4MwJyy0D19RoD9LloFQvccaL7ojHfEm55AE=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728532AbfBSMAf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 19 Feb 2019 07:00:35 -0500
-Received: from mx2.suse.de ([195.135.220.15]:40578 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728517AbfBSMAe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Feb 2019 07:00:34 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id BC53BAFA8
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Feb 2019 12:00:31 +0000 (UTC)
-Subject: Re: [PATCH v2] btrfs: factor our read/write stage off
- csum_tree_block() into its callers
-To:     Johannes Thumshirn <jthumshirn@suse.de>,
-        David Sterba <dsterba@suse.com>
-Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
-        Qu Wenruo <wqu@suse.com>
-References: <20190219105829.19849-1-jthumshirn@suse.de>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <b143da86-813d-12fe-0bd9-27e005f56366@suse.com>
-Date:   Tue, 19 Feb 2019 14:00:30 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.4.0
+        id S1726817AbfBSME2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Feb 2019 07:04:28 -0500
+Received: from mail.kernel.org ([198.145.29.99]:35028 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725772AbfBSME2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Feb 2019 07:04:28 -0500
+Received: from mail-vk1-f181.google.com (mail-vk1-f181.google.com [209.85.221.181])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 013412177E;
+        Tue, 19 Feb 2019 12:04:27 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1550577867;
+        bh=g/6tPboaRx1QwFNmU74qxUyfDs/yyRsflHnX2RrWIAk=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=LwDsbdkp/bJwelt9ei71PDATeo5BxF30PtgW5UqIpE7cAqdP9Pd6cDJhxznmml273
+         lBwFKLc33M57FPcqlwaJT1iwU8n07MuxZv3mcGD/O7c5DaoyjtQw9M/q8sbQz/QPQq
+         NJGcyXr3psSgMRDvtfy/njJnvjkm3tRY5bxUMz48=
+Received: by mail-vk1-f181.google.com with SMTP id l62so2260334vkh.0;
+        Tue, 19 Feb 2019 04:04:26 -0800 (PST)
+X-Gm-Message-State: AHQUAualcAxxIlNXr8YVH4G/byazwUZxh2z0ae4M3rIrHtMZ5lJ+pCdI
+        1Rl4XVQYY9R39mBwyTNwMlDbqzBWEdoBWfNjQqo=
+X-Google-Smtp-Source: AHgI3IapvdI9fGFa09Mh2hzUReL1F92Nqds+qKjq6YmpMMPtNsybZ4ZUFC7LUhf9LRQqhQ3LpEaF1xt+6sjd3rSXapI=
+X-Received: by 2002:a1f:7f10:: with SMTP id o16mr4824064vki.31.1550577865920;
+ Tue, 19 Feb 2019 04:04:25 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20190219105829.19849-1-jthumshirn@suse.de>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+References: <20190212180807.26368-1-fdmanana@kernel.org> <1ef915e7-2c1e-872f-4686-0a636d822ddd@huawei.com>
+In-Reply-To: <1ef915e7-2c1e-872f-4686-0a636d822ddd@huawei.com>
+From:   Filipe Manana <fdmanana@kernel.org>
+Date:   Tue, 19 Feb 2019 12:04:14 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H6ExsyQbyEW1j7Sr=a2k0YibWqQqT+sVOPRainO9pzRBQ@mail.gmail.com>
+Message-ID: <CAL3q7H6ExsyQbyEW1j7Sr=a2k0YibWqQqT+sVOPRainO9pzRBQ@mail.gmail.com>
+Subject: Re: [PATCH 1/2] fstests: generic, test fsync after succession of file renames
+To:     Chao Yu <yuchao0@huawei.com>
+Cc:     fstests <fstests@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Filipe Manana <fdmanana@suse.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Tue, Feb 19, 2019 at 1:29 AM Chao Yu <yuchao0@huawei.com> wrote:
+>
+> On 2019/2/13 2:08, fdmanana@kernel.org wrote:
+> > From: Filipe Manana <fdmanana@suse.com>
+> >
+> > Test that after a combination of file renames, linking and creating a new
+> > file with the old name of a renamed file, if we fsync the new file, after
+> > a power failure we are able to mount the filesystem and all file names
+> > correspond to the correct inodes.
+> >
+> > This test is motivated by a bug found in btrfs which is fixed by a patch
+> > for the linux kernel titled:
+> >
+> >   "Btrfs: fix fsync after succession of renames of different files"
+> >
+> > The test passes on ext4, xfs and patched btrfs, however at least in a
+> > 5.0-rc5 linux kernel, it fails on f2fs.
+>
+> We have introduced one additional mount option to handle that case:
+>
+> fsync_mode=%s
+>
+> Control the policy of fsync. Currently supports "posix",
+> "strict", and "nobarrier". In "posix" mode, which is
+> default, fsync will follow POSIX semantics and does a
+> light operation to improve the filesystem performance.
+> In "strict" mode, fsync will be heavy and behaves in line
+> with xfs, ext4 and btrfs, where xfstest generic/342 will
+> pass, but the performance will regress. "nobarrier" is
+> based on "posix", but doesn't issue flush command for
+> non-atomic files likewise "nobarrier" mount option.
+>
+> I've tested for confirmation, it passed both tests 526/527 on f2fs once I
+> changed mount option from default to fsync_mode=strict.
+>
+> Filipe, could you please check that?
 
+Thanks. I wasn't aware of that mount option.
+Btw, it seems complicated for a user to know which option to use for
+that mount option,
+even if it's very well documented, as it's unlikely the user is aware
+of what all applications
+in the system do and expect (or make the strict mode the default).
 
-On 19.02.19 г. 12:58 ч., Johannes Thumshirn wrote:
-> Currently csum_tree_block() does two things, first it as it's name
-> suggests it calculates the checksum for a tree-block. But it also writes
-> this checksum to disk or reads an extent_buffer from disk and compares the
-> checksum with the calculated checksum, depending on the verify argument.
-> 
-> Furthermore one of the two callers passes in '1' for the verify argument,
-> the other one passes in '0'.
-> 
-> For clarity and less layering violations, factor out the second stage in
-> csum_tree_block()'s callers.
-> 
-> Suggested-by: Nikolay Borisov <nborisov@suse.com>
-> Reviewed-by: Qu Wenruo <wqu@suse.com>
-> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-> Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
-> 
-> ---
-> Changes to v1:
-> - return error from csum_tree_buffer() in csum_dirty_buffer() instead of
->   EUCLEAN (Nikolay)
-> ---
->  fs/btrfs/disk-io.c | 53 +++++++++++++++++++++++++++++------------------------
->  1 file changed, 29 insertions(+), 24 deletions(-)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 5216e7b3f9ad..56f5fe732be5 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -263,12 +263,9 @@ void btrfs_csum_final(u32 crc, u8 *result)
->   * compute the csum for a btree block, and either verify it or write it
->   * into the csum field of the block.
->   */
-> -static int csum_tree_block(struct btrfs_fs_info *fs_info,
-> -			   struct extent_buffer *buf,
-> -			   int verify)
-> +static int csum_tree_block(struct extent_buffer *buf,
-> +			   u8 *result)
->  {
-> -	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
-> -	char result[BTRFS_CSUM_SIZE];
->  	unsigned long len;
->  	unsigned long cur_len;
->  	unsigned long offset = BTRFS_CSUM_SIZE;
-> @@ -300,23 +297,6 @@ static int csum_tree_block(struct btrfs_fs_info *fs_info,
->  
->  	btrfs_csum_final(crc, result);
->  
-> -	if (verify) {
-> -		if (memcmp_extent_buffer(buf, result, 0, csum_size)) {
-> -			u32 val;
-> -			u32 found = 0;
-> -			memcpy(&found, result, csum_size);
-> -
-> -			read_extent_buffer(buf, &val, 0, csum_size);
-> -			btrfs_warn_rl(fs_info,
-> -				"%s checksum verify failed on %llu wanted %X found %X level %d",
-> -				fs_info->sb->s_id, buf->start,
-> -				val, found, btrfs_header_level(buf));
-> -			return -EUCLEAN;
-> -		}
-> -	} else {
-> -		write_extent_buffer(buf, result, 0, csum_size);
-> -	}
-> -
->  	return 0;
->  }
->  
-> @@ -533,7 +513,10 @@ static int csum_dirty_buffer(struct btrfs_fs_info *fs_info, struct page *page)
->  {
->  	u64 start = page_offset(page);
->  	u64 found_start;
-> +	u8 result[BTRFS_CSUM_SIZE];
-> +	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
->  	struct extent_buffer *eb;
-> +	int ret = 0;
->  
->  	eb = (struct extent_buffer *)page->private;
->  	if (page != eb->pages[0])
-> @@ -552,7 +535,12 @@ static int csum_dirty_buffer(struct btrfs_fs_info *fs_info, struct page *page)
->  	ASSERT(memcmp_extent_buffer(eb, fs_info->fs_devices->metadata_uuid,
->  			btrfs_header_fsid(), BTRFS_FSID_SIZE) == 0);
->  
-> -	return csum_tree_block(fs_info, eb, 0);
-> +	ret = csum_tree_block(eb, result);
-> +	if (WARN_ON(ret))
-> +		return ret;
+Thanks.
 
-You are not handling the case where csum-tree_block returns a positive
-number. It should be translated to a negative value.
-
-> +
-> +	write_extent_buffer(eb, result, 0, csum_size);
-> +	return ret;
->  }
->  
->  static int check_tree_block_fsid(struct btrfs_fs_info *fs_info,
-> @@ -595,7 +583,9 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
->  	struct extent_buffer *eb;
->  	struct btrfs_root *root = BTRFS_I(page->mapping->host)->root;
->  	struct btrfs_fs_info *fs_info = root->fs_info;
-> +	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
->  	int ret = 0;
-> +	char result[BTRFS_CSUM_SIZE];
->  	int reads_done;
->  
->  	if (!page->private)
-> @@ -642,10 +632,25 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
->  	btrfs_set_buffer_lockdep_class(btrfs_header_owner(eb),
->  				       eb, found_level);
->  
-> -	ret = csum_tree_block(fs_info, eb, 1);
-> +	ret = csum_tree_block(eb, result);
->  	if (ret)
->  		goto err;
->  
-> +	if (memcmp_extent_buffer(eb, result, 0, csum_size)) {
-> +		u32 val;
-> +		u32 found = 0;
-> +
-> +		memcpy(&found, result, csum_size);
-> +
-> +		read_extent_buffer(eb, &val, 0, csum_size);
-> +		btrfs_warn_rl(fs_info,
-> +			      "%s checksum verify failed on %llu wanted %x found %x level %d",
-> +			      fs_info->sb->s_id, eb->start,
-> +			      val, found, btrfs_header_level(eb));
-> +		ret = -EUCLEAN;
-> +		goto err;
-> +	}
-> +
->  	/*
->  	 * If this is a leaf block and it is corrupt, set the corrupt bit so
->  	 * that we don't try and read the other copies of this block, just
-> 
+>
+> Thanks,
+>
+> >
+> > Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> > ---
+> >  tests/generic/526     | 72 +++++++++++++++++++++++++++++++++++++++++++++++++++
+> >  tests/generic/526.out |  5 ++++
+> >  tests/generic/group   |  1 +
+> >  3 files changed, 78 insertions(+)
+> >  create mode 100755 tests/generic/526
+> >  create mode 100644 tests/generic/526.out
+> >
+> > diff --git a/tests/generic/526 b/tests/generic/526
+> > new file mode 100755
+> > index 00000000..d0b51f87
+> > --- /dev/null
+> > +++ b/tests/generic/526
+> > @@ -0,0 +1,72 @@
+> > +#! /bin/bash
+> > +# SPDX-License-Identifier: GPL-2.0
+> > +# Copyright (C) 2018 SUSE Linux Products GmbH. All Rights Reserved.
+> > +#
+> > +# FS QA Test No. 526
+> > +#
+> > +# Test that after a combination of file renames, linking and creating a new file
+> > +# with the old name of a renamed file, if we fsync the new file, after a power
+> > +# failure we are able to mount the filesystem and all file names correspond to
+> > +# the correct inodes.
+> > +#
+> > +seq=`basename $0`
+> > +seqres=$RESULT_DIR/$seq
+> > +echo "QA output created by $seq"
+> > +tmp=/tmp/$$
+> > +status=1     # failure is the default!
+> > +trap "_cleanup; exit \$status" 0 1 2 3 15
+> > +
+> > +_cleanup()
+> > +{
+> > +     _cleanup_flakey
+> > +     cd /
+> > +     rm -f $tmp.*
+> > +}
+> > +
+> > +# get standard environment, filters and checks
+> > +. ./common/rc
+> > +. ./common/filter
+> > +. ./common/dmflakey
+> > +
+> > +# real QA test starts here
+> > +_supported_fs generic
+> > +_supported_os Linux
+> > +_require_scratch
+> > +_require_dm_target flakey
+> > +
+> > +rm -f $seqres.full
+> > +
+> > +_scratch_mkfs >>$seqres.full 2>&1
+> > +_require_metadata_journaling $SCRATCH_DEV
+> > +_init_flakey
+> > +_mount_flakey
+> > +
+> > +mkdir $SCRATCH_MNT/testdir
+> > +echo -n "foo" > $SCRATCH_MNT/testdir/fname1
+> > +echo -n "hello" > $SCRATCH_MNT/testdir/fname2
+> > +
+> > +# Make sure everything done so far is durably persisted.
+> > +sync
+> > +
+> > +# Rename and link files such that one new name corresponds to the name of
+> > +# another renamed file and one new file has the old name of one of the renamed
+> > +# files. Then fsync only the new file.
+> > +mv $SCRATCH_MNT/testdir/fname1 $SCRATCH_MNT/testdir/fname3
+> > +mv $SCRATCH_MNT/testdir/fname2 $SCRATCH_MNT/testdir/fname4
+> > +ln $SCRATCH_MNT/testdir/fname3 $SCRATCH_MNT/testdir/fname2
+> > +echo -n "bar" > $SCRATCH_MNT/testdir/fname1
+> > +$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir/fname1
+> > +
+> > +# Simulate a power failure and mount the filesystem to check that all file names
+> > +# exist and correspond to the correct inodes.
+> > +_flakey_drop_and_remount
+> > +
+> > +echo "File fname1 data after power failure: $(cat $SCRATCH_MNT/testdir/fname1)"
+> > +echo "File fname2 data after power failure: $(cat $SCRATCH_MNT/testdir/fname2)"
+> > +echo "File fname3 data after power failure: $(cat $SCRATCH_MNT/testdir/fname3)"
+> > +echo "File fname4 data after power failure: $(cat $SCRATCH_MNT/testdir/fname4)"
+> > +
+> > +_unmount_flakey
+> > +
+> > +status=0
+> > +exit
+> > diff --git a/tests/generic/526.out b/tests/generic/526.out
+> > new file mode 100644
+> > index 00000000..83979d28
+> > --- /dev/null
+> > +++ b/tests/generic/526.out
+> > @@ -0,0 +1,5 @@
+> > +QA output created by 526
+> > +File fname1 data after power failure: bar
+> > +File fname2 data after power failure: foo
+> > +File fname3 data after power failure: foo
+> > +File fname4 data after power failure: hello
+> > diff --git a/tests/generic/group b/tests/generic/group
+> > index cfd003d3..492a5875 100644
+> > --- a/tests/generic/group
+> > +++ b/tests/generic/group
+> > @@ -528,3 +528,4 @@
+> >  523 auto quick attr
+> >  524 auto quick
+> >  525 auto quick rw
+> > +526 auto quick log
+> >
+>

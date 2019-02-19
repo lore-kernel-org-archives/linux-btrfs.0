@@ -2,150 +2,107 @@ Return-Path: <SRS0=T+sm=Q2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E944EC43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 07:33:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 153EBC43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 07:40:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B5022217D9
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 07:33:39 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="eVW5YuXZ"
+	by mail.kernel.org (Postfix) with ESMTP id E1FFC20645
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 07:40:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725797AbfBSHdi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 19 Feb 2019 02:33:38 -0500
-Received: from mail-lf1-f66.google.com ([209.85.167.66]:34338 "EHLO
-        mail-lf1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725775AbfBSHdi (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Feb 2019 02:33:38 -0500
-Received: by mail-lf1-f66.google.com with SMTP id u21so14181980lfu.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Feb 2019 23:33:36 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=Klc4W1sWbcTfK2fcxELcJwaCwG7R3+bmWeED+HA3KcY=;
-        b=eVW5YuXZZ0oIC1EVAklg7nJZyjoCUbWMIGf2n8mB4D6hy8M6gbQ8vgeWlJze4b4VPc
-         9i5E28sTFlDUwQ5Gw/kv+RiSFuF6XSFoRmsXZy7h6B1rUc8C/Cbv1bR2V52XDEJQVQBq
-         ID4c25egjRnDPDtjRDobey261cIwcBgo6ZNQnJcfJJ5978RnrXUGTfzpz76weIwYWrAg
-         WUPAu3qFHQCDqRfJCTJLp7t1bNFjdxdZqbHi5jQtku0KKx9P7yOzAxgWq2IMTnH91a4M
-         HYFCa3a9SI7iIFMi9BjIuJPMlQCObxGFsZDadtKt1hBq3L6QZtS3N9Eyqi4MVByrHzAw
-         g4fQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=Klc4W1sWbcTfK2fcxELcJwaCwG7R3+bmWeED+HA3KcY=;
-        b=dH+ci69rVUKwRIzCzoYRGhWaUbTmJVPcbaT8881JZ2ZT0uuh/IcKWB4XyV1lXaq8U/
-         cCtyDf1JOmuGG5Jg9wBI1SSWob8C9HLbH9GvxmscPYMIo6sHEwYu2BkC1P0Q+g8eXW9N
-         wNXhk0ID16xA+2ZDKp3zdYBROeLFvLj+lxVcTXiEiES2EjXbulMjKMjBjiCXnuDiDfE2
-         8R1f1Qu8GGFFdKEIIT7TPDUrFu6XXL3DWmkyFS9T+ougGGeUWNNg7oxQD1P7EHY1gK9Z
-         n0HTPm6sLBJYNEOnHDUoAMZfpIzRlPNqRoWWEZTmUqvcdUhWONLdUiXNybgDuAyrv9sf
-         eWUg==
-X-Gm-Message-State: AHQUAuYQ+QSK+4cZbh2LBbND9hHvNWx7mHjG97xlXRClwxhyknly5JWG
-        T6CIlA+ipuvcEQ2kEze6+G4UNQLskMxJ2d39L3Q=
-X-Google-Smtp-Source: AHgI3Ia1K/dVCw7mfoLh5BJWhd8RkqJyT5/eTsqFErKTMVgBu9GNQ0G9wHlZXxt8uGsBSa6VTyQ8DfiX8qBd4awFJOQ=
-X-Received: by 2002:a19:f204:: with SMTP id q4mr16878164lfh.133.1550561615686;
- Mon, 18 Feb 2019 23:33:35 -0800 (PST)
-MIME-Version: 1.0
-References: <210585b9-99e9-1548-f2b1-66445ab179bb@suse.de> <20190218102837.15219-1-jthumshirn@suse.de>
-In-Reply-To: <20190218102837.15219-1-jthumshirn@suse.de>
-From:   Peter Becker <floyd.net@gmail.com>
-Date:   Tue, 19 Feb 2019 08:33:23 +0100
-Message-ID: <CAEtw4r2tHWRNSOP6OiAfBHPdGpwZsckL9KOd3vkogDAk+gsz8Q@mail.gmail.com>
+        id S1725772AbfBSHkH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Feb 2019 02:40:07 -0500
+Received: from mx2.suse.de ([195.135.220.15]:55494 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725730AbfBSHkH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Feb 2019 02:40:07 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 46B34AFDA;
+        Tue, 19 Feb 2019 07:40:05 +0000 (UTC)
 Subject: Re: [PATCH v2.1] btrfs: ensure that a DUP or RAID1 block group has
  exactly two stripes
-To:     Johannes Thumshirn <jthumshirn@suse.de>
+To:     Peter Becker <floyd.net@gmail.com>,
+        Johannes Thumshirn <jthumshirn@suse.de>
 Cc:     David Sterba <dsterba@suse.com>,
         Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
-        Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
+        Qu Wenruo <wqu@suse.com>,
         Hans van Kranenburg <Hans.van.Kranenburg@mendix.com>,
         Liu Bo <obuil.liubo@gmail.com>
-Content-Type: text/plain; charset="UTF-8"
+References: <210585b9-99e9-1548-f2b1-66445ab179bb@suse.de>
+ <20190218102837.15219-1-jthumshirn@suse.de>
+ <CAEtw4r2tHWRNSOP6OiAfBHPdGpwZsckL9KOd3vkogDAk+gsz8Q@mail.gmail.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <11c4b140-bbb8-66b1-a6c5-fb7ae3577abc@suse.com>
+Date:   Tue, 19 Feb 2019 09:40:03 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.4.0
+MIME-Version: 1.0
+In-Reply-To: <CAEtw4r2tHWRNSOP6OiAfBHPdGpwZsckL9KOd3vkogDAk+gsz8Q@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I would prefer "< 2" .. in both cases (RAID1 and DUP) because this
-allow us to implement N-Copy RAID1 in the future.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 03f223aa7194..9024eee889b9 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6791,10 +6791,10 @@ static int btrfs_check_chunk_valid(struct
-btrfs_fs_info *fs_info,
-        }
 
-        if ((type & BTRFS_BLOCK_GROUP_RAID10 && sub_stripes != 2) ||
--           (type & BTRFS_BLOCK_GROUP_RAID1 && num_stripes < 1) ||
-+           (type & BTRFS_BLOCK_GROUP_RAID1 && num_stripes < 2) ||
+On 19.02.19 г. 9:33 ч., Peter Becker wrote:
+> I would prefer "< 2" .. in both cases (RAID1 and DUP) because this
+> allow us to implement N-Copy RAID1 in the future.
 
-            (type & BTRFS_BLOCK_GROUP_RAID5 && num_stripes < 2) ||
-            (type & BTRFS_BLOCK_GROUP_RAID6 && num_stripes < 3) ||
--           (type & BTRFS_BLOCK_GROUP_DUP && num_stripes > 2) ||
-+           (type & BTRFS_BLOCK_GROUP_DUP && num_stripes < 2) ||
+NAK
 
-            ((type & BTRFS_BLOCK_GROUP_PROFILE_MASK) == 0 &&
-             num_stripes != 1)) {
-                btrfs_err(fs_info,
+When/if N-Copy raid1 patches land then they can modify the code and it
+will be visible from the commit message why it's < 2. For now we only
+support ordinary raid1, hence the code should do just enough to support
+the current design. Even now there are artifacts of similar "future
+proofing" for patches that never landed i.e dedupe stuff and pointless
+args to extent_clear_unlock_delalloc and some other functions.
 
-Am Mo., 18. Feb. 2019 um 12:24 Uhr schrieb Johannes Thumshirn
-<jthumshirn@suse.de>:
->
-> We recently had a customer issue with a corrupted filesystem. When trying
-> to mount this image btrfs panicked with a division by zero in
-> calc_stripe_length().
->
-> The corrupt chunk had a 'num_stripes' value of 1. calc_stripe_length()
-> takes this value and divides it by the number of copies the RAID profile is
-> expected to have to calculate the amount of data stripes. As a DUP profile
-> is expected to have 2 copies this division resulted in 1/2 = 0. Later then
-> the 'data_stripes' variable is used as a divisor in the stripe length
-> calculation which results in a division by 0 and thus a kernel panic.
->
-> When encountering a filesystem with a DUP block group and a 'num_stripes'
-> value unequal to 2, refuse mounting as the image is corrupted and will lead
-> to unexpected behaviour.
->
-> Code inspection showed a RAID1 block group has the same issues.
->
-> Fixes: e06cd3dd7cea ("Btrfs: add validadtion checks for chunk loading")
-> Cc: Liu Bo <obuil.liubo@gmail.com>
-> Reviewed-by: Qu Wenruo <wqu@suse.com>
-> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-> Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
-> ---
-> Changes to v2:
-> - Really use 2 stripes not 1 (Hans)
-> Changes to v1:
-> - Also add the check for RAID1 (Hans)
-> ---
->  fs/btrfs/volumes.c | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
->
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 03f223aa7194..9024eee889b9 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -6791,10 +6791,10 @@ static int btrfs_check_chunk_valid(struct btrfs_fs_info *fs_info,
->         }
->
->         if ((type & BTRFS_BLOCK_GROUP_RAID10 && sub_stripes != 2) ||
-> -           (type & BTRFS_BLOCK_GROUP_RAID1 && num_stripes < 1) ||
-> +           (type & BTRFS_BLOCK_GROUP_RAID1 && num_stripes != 2) ||
->             (type & BTRFS_BLOCK_GROUP_RAID5 && num_stripes < 2) ||
->             (type & BTRFS_BLOCK_GROUP_RAID6 && num_stripes < 3) ||
-> -           (type & BTRFS_BLOCK_GROUP_DUP && num_stripes > 2) ||
-> +           (type & BTRFS_BLOCK_GROUP_DUP && num_stripes != 2) ||
->             ((type & BTRFS_BLOCK_GROUP_PROFILE_MASK) == 0 &&
->              num_stripes != 1)) {
->                 btrfs_err(fs_info,
-> --
-> 2.16.4
->

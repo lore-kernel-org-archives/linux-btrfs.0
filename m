@@ -2,219 +2,132 @@ Return-Path: <SRS0=T+sm=Q2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9B97CC43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 09:32:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3E5FCC43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 10:04:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 65BDB21738
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 09:32:31 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 136502146F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 10:04:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726330AbfBSJca (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 19 Feb 2019 04:32:30 -0500
-Received: from mout.gmx.net ([212.227.17.21]:43755 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725794AbfBSJc3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Feb 2019 04:32:29 -0500
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx101
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0M1jKo-1hAfFw2vGM-00th5g; Tue, 19
- Feb 2019 10:31:56 +0100
+        id S1727023AbfBSKE3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Feb 2019 05:04:29 -0500
+Received: from mx2.suse.de ([195.135.220.15]:50454 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726548AbfBSKE2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Feb 2019 05:04:28 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id BD82EABA1
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Feb 2019 10:04:26 +0000 (UTC)
 Subject: Re: [PATCH] btrfs: factor our read/write stage off csum_tree_block()
  into its callers
-To:     Johannes Thumshirn <jthumshirn@suse.de>,
+To:     Nikolay Borisov <nborisov@suse.com>,
         David Sterba <dsterba@suse.com>
-Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
-        Nikolay Borisov <nborisov@suse.com>
+Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
 References: <20190219090202.9715-1-jthumshirn@suse.de>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+ <da7e4116-7933-956f-44b5-dae0c3f6bcd5@suse.com>
+From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <65c038e3-f228-52f0-ebc4-5414d5ccddad@gmx.com>
-Date:   Tue, 19 Feb 2019 17:31:47 +0800
+Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <dded079d-939c-73f9-3647-587091636ba1@suse.de>
+Date:   Tue, 19 Feb 2019 11:04:26 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.0
+ Thunderbird/60.3.0
 MIME-Version: 1.0
-In-Reply-To: <20190219090202.9715-1-jthumshirn@suse.de>
+In-Reply-To: <da7e4116-7933-956f-44b5-dae0c3f6bcd5@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
-X-Provags-ID: V03:K1:pfnH7HviOM65MxU/52CKF1qxTDFEw5hUphP1EHNOorek34ZGyhN
- Lqw7RbNnOv2AIs/luZrmiKY/HxPYcuKlu+K6RDbNX7bl7f6SvsoG633pD4mW31xTp9lLeQh
- su0UUzMrHOcpxH9wPoPopFwUoy9c+JVvnz8KUV74QISEkLg06oktuZFDNo5aLakYU6rNBE7
- HrwSfko8MOpTmdoGU+Dbg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:aIs19JRokjU=:9jlySa/R7ei/ZfIE5jnxuI
- BkgIwBHN8YPQOWI9D4YLGY+5g6EvX2QOyFnSlk3dDtw8Kf5TQYxgIiEglCqxP+9xrEeI+hiCX
- SPzVU6IEY7fAC3yYlfWKsKyu7xN8vdWsL2KX4q5Jn76wonrZwfc66p41PjtxnKIHK4FLg85Bx
- WDoH0ICNGVGyUW64htvQodLZNCAjZxdnAE/eagS32smWOnvhsdbMFg3OygrF6fXEorWrIpBPS
- DHMy41aUFrukOPEV7L5GU6TuJUdth/V2Iw46A9rKECBVJn7y3mKQMEAnxZcbJUprBU+VHNZmh
- nuPzxklR787u+V/KFFBFVtxuEj4X1yDmmHcKQApvnxfHD8X/u4mxdK/hR7Vap3hqLeC+6+W7r
- e8jMtAA6eXBWUiBhy71SUlu2nldlBFcnQB+PJ3umgzWxQUnJyHylsPWqXQ/jwdNUgVfA7fkFo
- PYMxp6DuKb7PVJRC1v3N79lTAWsNVrF61ONkwmjJZ6nXsbbxGUFWr9q/LJhT/0KXeX3wH/KF8
- me022z2HYYHgeUSqC/3aXvM82iAGqGvQ8XCWcyn4p+7naCYd9bm+zbB2522Xw+ii1Kr50eH71
- Cqsjj6KbDTKLg5rBsinhB/g8eparPZ+pr1C7ql/B1NqmVsuVdb9fyQ7HOIiz51JcVxtFFWF1V
- 6i2m+2ZNbk/WTYr0C7B2/ay3Vf+e+8Du9uebsBN5Zq4/GVVIPs7Xr5jKK3BLvSCLhKrms5La8
- As2oXphU9zTh+63W6mZ5g2WS0ncD+uFe8mjN/yt8pW+MeLXcIyBvzbFcbsoTBo98Yv3STgPGz
- pg5jP+XjE9FMWHL9/WBYFIJ470X/trylhSJuKaBQXWsvtXwUy7vZT4X+VLHl+kaoZNV8gciKg
- MLHrjd2blnKC7vA0Xrq2h54iDPCWFeX18i02zXk0luNFAU7GSWI8rMxAhocAJlf8J5/awQfSw
- fN8PkHKWU+Q==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 2019/2/19 下午5:02, Johannes Thumshirn wrote:
-> Currently csum_tree_block() does two things, first it as it's name
-> suggests it calculates the checksum for a tree-block. But it also writes
-> this checksum to disk or reads an extent_buffer from disk and compares the
-> checksum with the calculated checksum, depending on the verify argument.
+On 19/02/2019 10:31, Nikolay Borisov wrote:
+>>  
+>> -	return csum_tree_block(fs_info, eb, 0);
+>> +	if (WARN_ON(csum_tree_block(eb, result)))
+>> +		return -EUCLEAN;
 > 
-> Furthermore one of the two callers passes in '1' for the verify argument,
-> the other one passes in '0'.
+> I meant to discuss this with you yesterday but  the WARN_ON here could
+> trigger only if map_private_extent_buffer fails. And that could be only
+> due to two things:
 > 
-> For clarity and less layering violations, factor out the second stage in
-> csum_tree_block()'s callers.
+> 1. If we want to map more than the buffer's length
 > 
-> Suggested-by: Nikolay Borisov <nborisov@suse.com>
-> Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
-
-Looks good.
-
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-
-Thanks,
-Qu
-
-> ---
->  fs/btrfs/disk-io.c | 51 +++++++++++++++++++++++++++------------------------
->  1 file changed, 27 insertions(+), 24 deletions(-)
+> 2. If the item spans two pages.
 > 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 5216e7b3f9ad..5330123b0fe3 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -263,12 +263,9 @@ void btrfs_csum_final(u32 crc, u8 *result)
->   * compute the csum for a btree block, and either verify it or write it
->   * into the csum field of the block.
->   */
-> -static int csum_tree_block(struct btrfs_fs_info *fs_info,
-> -			   struct extent_buffer *buf,
-> -			   int verify)
-> +static int csum_tree_block(struct extent_buffer *buf,
-> +			   u8 *result)
->  {
-> -	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
-> -	char result[BTRFS_CSUM_SIZE];
->  	unsigned long len;
->  	unsigned long cur_len;
->  	unsigned long offset = BTRFS_CSUM_SIZE;
-> @@ -300,23 +297,6 @@ static int csum_tree_block(struct btrfs_fs_info *fs_info,
->  
->  	btrfs_csum_final(crc, result);
->  
-> -	if (verify) {
-> -		if (memcmp_extent_buffer(buf, result, 0, csum_size)) {
-> -			u32 val;
-> -			u32 found = 0;
-> -			memcpy(&found, result, csum_size);
-> -
-> -			read_extent_buffer(buf, &val, 0, csum_size);
-> -			btrfs_warn_rl(fs_info,
-> -				"%s checksum verify failed on %llu wanted %X found %X level %d",
-> -				fs_info->sb->s_id, buf->start,
-> -				val, found, btrfs_header_level(buf));
-> -			return -EUCLEAN;
-> -		}
-> -	} else {
-> -		write_extent_buffer(buf, result, 0, csum_size);
-> -	}
-> -
->  	return 0;
->  }
->  
-> @@ -533,6 +513,8 @@ static int csum_dirty_buffer(struct btrfs_fs_info *fs_info, struct page *page)
->  {
->  	u64 start = page_offset(page);
->  	u64 found_start;
-> +	u8 result[BTRFS_CSUM_SIZE];
-> +	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
->  	struct extent_buffer *eb;
->  
->  	eb = (struct extent_buffer *)page->private;
-> @@ -552,7 +534,11 @@ static int csum_dirty_buffer(struct btrfs_fs_info *fs_info, struct page *page)
->  	ASSERT(memcmp_extent_buffer(eb, fs_info->fs_devices->metadata_uuid,
->  			btrfs_header_fsid(), BTRFS_FSID_SIZE) == 0);
->  
-> -	return csum_tree_block(fs_info, eb, 0);
-> +	if (WARN_ON(csum_tree_block(eb, result)))
-> +		return -EUCLEAN;
-> +
-> +	write_extent_buffer(eb, result, 0, csum_size);
-> +	return 0;
->  }
->  
->  static int check_tree_block_fsid(struct btrfs_fs_info *fs_info,
-> @@ -595,7 +581,9 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
->  	struct extent_buffer *eb;
->  	struct btrfs_root *root = BTRFS_I(page->mapping->host)->root;
->  	struct btrfs_fs_info *fs_info = root->fs_info;
-> +	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
->  	int ret = 0;
-> +	char result[BTRFS_CSUM_SIZE];
->  	int reads_done;
->  
->  	if (!page->private)
-> @@ -642,10 +630,25 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
->  	btrfs_set_buffer_lockdep_class(btrfs_header_owner(eb),
->  				       eb, found_level);
->  
-> -	ret = csum_tree_block(fs_info, eb, 1);
-> +	ret = csum_tree_block(eb, result);
->  	if (ret)
->  		goto err;
->  
-> +	if (memcmp_extent_buffer(eb, result, 0, csum_size)) {
-> +		u32 val;
-> +		u32 found = 0;
-> +
-> +		memcpy(&found, result, csum_size);
-> +
-> +		read_extent_buffer(eb, &val, 0, csum_size);
-> +		btrfs_warn_rl(fs_info,
-> +			      "%s checksum verify failed on %llu wanted %x found %x level %d",
-> +			      fs_info->sb->s_id, eb->start,
-> +			      val, found, btrfs_header_level(eb));
-> +		ret = -EUCLEAN;
-> +		goto err;
-> +	}
-> +
->  	/*
->  	 * If this is a leaf block and it is corrupt, set the corrupt bit so
->  	 * that we don't try and read the other copies of this block, just
+> Initially I wondered whether WARN_ON is really appropriate but the more
+> I think about it the more I'm inclined to say yes. However, I wonder if
+> EUCLEAN is the correct error code and shouldn't it be, perhaps, -EINVAL
+>  (as returned from map_private_extent_buffer), that fits both with the
+> return code in case of invalid mapping length as well as item spanning
+> multiple pages. What are your thoughts?
 > 
+
+I choose -EUCLEAN as it is used in csum_dirty_buffer() before, but yes
+agreed, returning the error from csum_tree_block() would be better here.
+
+-- 
+Johannes Thumshirn                            SUSE Labs Filesystems
+jthumshirn@suse.de                                +49 911 74053 689
+SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
+GF: Felix Imendörffer, Jane Smithard, Graham Norton
+HRB 21284 (AG Nürnberg)
+Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850

@@ -2,132 +2,135 @@ Return-Path: <SRS0=T+sm=Q2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3E5FCC43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 10:04:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0E146C43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 10:54:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 136502146F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 10:04:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 91F7C21773
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 10:54:49 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (1024-bit key) header.d=cam.ac.uk header.i=@cam.ac.uk header.b="x2YcUmKX"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727023AbfBSKE3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 19 Feb 2019 05:04:29 -0500
-Received: from mx2.suse.de ([195.135.220.15]:50454 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726548AbfBSKE2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Feb 2019 05:04:28 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id BD82EABA1
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Feb 2019 10:04:26 +0000 (UTC)
-Subject: Re: [PATCH] btrfs: factor our read/write stage off csum_tree_block()
- into its callers
-To:     Nikolay Borisov <nborisov@suse.com>,
-        David Sterba <dsterba@suse.com>
-Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
-References: <20190219090202.9715-1-jthumshirn@suse.de>
- <da7e4116-7933-956f-44b5-dae0c3f6bcd5@suse.com>
-From:   Johannes Thumshirn <jthumshirn@suse.de>
-Openpgp: preference=signencrypt
-Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <dded079d-939c-73f9-3647-587091636ba1@suse.de>
-Date:   Tue, 19 Feb 2019 11:04:26 +0100
+        id S1726149AbfBSKys (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Feb 2019 05:54:48 -0500
+Received: from ppsw-32.csi.cam.ac.uk ([131.111.8.132]:37362 "EHLO
+        ppsw-32.csi.cam.ac.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725802AbfBSKys (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Feb 2019 05:54:48 -0500
+X-Greylist: delayed 1797 seconds by postgrey-1.27 at vger.kernel.org; Tue, 19 Feb 2019 05:54:48 EST
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=cam.ac.uk;
+         s=20180806.ppsw; h=Content-Transfer-Encoding:Content-Type:MIME-Version:Date:
+        Message-ID:Subject:From:To:Sender:Reply-To:Cc:Content-ID:Content-Description:
+        Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:
+        In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:List-Subscribe:
+        List-Post:List-Owner:List-Archive;
+        bh=1Umq5apIApfLmR0nIckXVLGhci/i1wrEbglkNxCPLIY=; b=x2YcUmKXepNifSKlzhYUYCbfdB
+        AbJyWLcxs0R7wvbHsSVlbCO3/B0bfWZayDQsWmJJfkWIIezD14HJeIGp/2DbifuoXFVrtXoL/ZEpk
+        zlqaIA7NM4AmMQrdd8j+/mdgciZc9n8vA7WY/e6c6BzHMOpvxDP9VKPtM6Q5jcxxigjc=;
+X-Cam-AntiVirus: no malware found
+X-Cam-ScannerInfo: http://help.uis.cam.ac.uk/email-scanner-virus
+Received: from casxb.ast.cam.ac.uk ([131.111.68.80]:33605)
+        by ppsw-32.csi.cam.ac.uk (ppsw.cam.ac.uk [131.111.8.138]:25)
+        with esmtps (TLSv1.2:DHE-RSA-AES256-GCM-SHA384:256)
+        id 1gw2a1-000UyM-33 (Exim 4.91) for linux-btrfs@vger.kernel.org
+        (return-path <rmj@ast.cam.ac.uk>); Tue, 19 Feb 2019 10:24:50 +0000
+Received: from xserv1.ast.cam.ac.uk (xserv1.ast.cam.ac.uk [131.111.69.235])
+        by casxb.ast.cam.ac.uk (8.15.1+Sun/8.15.1) with ESMTP id x1JAOnAO024828
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Feb 2019 10:24:49 GMT
+Received: from xpc16.ast.cam.ac.uk (xpc16.ast.cam.ac.uk [131.111.69.117])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        (Authenticated sender: rmj@xserv1.ast.cam.ac.uk)
+        by xserv1.ast.cam.ac.uk (Postfix) with ESMTPSA id 9AC1120164
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Feb 2019 10:24:49 +0000 (GMT)
+To:     linux-btrfs@vger.kernel.org
+From:   Roderick Johnstone <rmj@ast.cam.ac.uk>
+Subject: Broken filesystem
+Message-ID: <4d1be873-541a-96dd-0795-16a4fb2d4556@ast.cam.ac.uk>
+Date:   Tue, 19 Feb 2019 10:24:49 +0000
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.3.0
+ Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <da7e4116-7933-956f-44b5-dae0c3f6bcd5@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-GB
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 19/02/2019 10:31, Nikolay Borisov wrote:
->>  
->> -	return csum_tree_block(fs_info, eb, 0);
->> +	if (WARN_ON(csum_tree_block(eb, result)))
->> +		return -EUCLEAN;
-> 
-> I meant to discuss this with you yesterday but  the WARN_ON here could
-> trigger only if map_private_extent_buffer fails. And that could be only
-> due to two things:
-> 
-> 1. If we want to map more than the buffer's length
-> 
-> 2. If the item spans two pages.
-> 
-> Initially I wondered whether WARN_ON is really appropriate but the more
-> I think about it the more I'm inclined to say yes. However, I wonder if
-> EUCLEAN is the correct error code and shouldn't it be, perhaps, -EINVAL
->  (as returned from map_private_extent_buffer), that fits both with the
-> return code in case of invalid mapping length as well as item spanning
-> multiple pages. What are your thoughts?
-> 
+Hi
 
-I choose -EUCLEAN as it is used in csum_dirty_buffer() before, but yes
-agreed, returning the error from csum_tree_block() would be better here.
+This is on Fedora 28:
 
--- 
-Johannes Thumshirn                            SUSE Labs Filesystems
-jthumshirn@suse.de                                +49 911 74053 689
-SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
-GF: Felix Imendörffer, Jane Smithard, Graham Norton
-HRB 21284 (AG Nürnberg)
-Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850
+# uname -a
+Linux mysystem.mydomain 4.20.7-100.fc28.x86_64 #1 SMP Wed Feb 6 19:17:09 
+UTC 2019 x86_64 x86_64 x86_64 GNU/Linux
+
+# btrfs --version
+btrfs-progs v4.17.1
+
+#   btrfs fi show
+Label: none  uuid: 56d0171a-440d-47ff-ad0f-f7f97df31f7b
+         Total devices 1 FS bytes used 7.39TiB
+         devid    1 size 9.10TiB used 7.50TiB path /dev/md2
+
+
+My btrfs filesystem is in a bad state after a partial disk failure on 
+the md device (raid 6 array) the file system was on.
+
+One of the disks had bad blocks, but instead of being ejected from the 
+array, the array hung up. After rebooting to regain access and remove 
+the bad disk I am in the following situation:
+
+# mount -t btrfs -o compress-force=zlib,noatime /dev/md2 /mnt/rmj
+mount: /mnt/rmj: wrong fs type, bad option, bad superblock on /dev/md2, 
+missing codepage or helper program, or other error.
+# dmesg
+...
+   264.527647] BTRFS info (device md2): force zlib compression, level 3
+[  264.955360] BTRFS error (device md2): parent transid verify failed on 
+5568287064064 wanted 254988 found 94122
+[  264.964273] BTRFS error (device md2): open_ctree failed
+
+I can mount and access the filesystem with the usebackuproot option:
+
+# mount -t btrfs -o usebackuproot,compress-force=zlib,noatime /dev/md2 
+/mnt/rmj
+[  307.542761] BTRFS info (device md2): trying to use backup root at 
+mount time
+[  307.542768] BTRFS info (device md2): force zlib compression, level 3
+[  307.570897] BTRFS error (device md2): parent transid verify failed on 
+5568287064064 wanted 254988 found 94122
+[  307.570979] BTRFS error (device md2): parent transid verify failed on 
+5568287064064 wanted 254988 found 94122
+[  431.167149] BTRFS info (device md2): checking UUID tree
+
+But later after a umount there are these messages.
+
+# umount /mnt/rmj
+2205.778998] BTRFS error (device md2): parent transid verify failed on 
+5568276393984 wanted 254986 found 94117
+[ 2205.779008] BTRFS: error (device md2) in __btrfs_free_extent:6831: 
+errno=-5 IO failure
+[ 2205.779082] BTRFS info (device md2): forced readonly
+[ 2205.779087] BTRFS: error (device md2) in btrfs_run_delayed_refs:2978: 
+errno=-5 IO failure
+[ 2205.779192] BTRFS warning (device md2): btrfs_uuid_scan_kthread 
+failed -30
+
+and a subsequent mount without the userbackuproot fails in the same way 
+as before.
+
+I have a copy of the important directories, but would like to be able to 
+repair the filesystem if possible,
+
+Any advise around repairing the filesystem would be appreciated.
+
+Thanks.
+
+Roderick Johnstone

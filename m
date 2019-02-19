@@ -2,169 +2,180 @@ Return-Path: <SRS0=T+sm=Q2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C13BBC43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 10:58:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 038F0C43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 11:59:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 85B122146E
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 10:58:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C8866208E4
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 11:59:42 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1550577582;
+	bh=xpXSuD3cygbzWTyMu6mr5AFzniPniYJqO/VQJQ+Ruac=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc:List-ID:From;
+	b=WHuVEtXO954dlHCs2BrU5+Zr4LQOeGJ59Q1xAVNSUG2bFkRla9ba65JS6Oa8O3RtR
+	 ShEadyy85u3tcQS8unxAVTEFcLEAdItaL2REUnYKE9lXtBQgyhlHFwxP/GcuML+2e/
+	 HKU/hyM07U9a2vkZgAWPKzP4ZBt/Vmw9AwaPKNro=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725802AbfBSK6h (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 19 Feb 2019 05:58:37 -0500
-Received: from mx2.suse.de ([195.135.220.15]:59064 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725763AbfBSK6h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Feb 2019 05:58:37 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id C7C3DAFCF
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Feb 2019 10:58:34 +0000 (UTC)
-From:   Johannes Thumshirn <jthumshirn@suse.de>
-To:     David Sterba <dsterba@suse.com>
-Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
-        Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
-        Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH v2] btrfs: factor our read/write stage off csum_tree_block() into its callers
-Date:   Tue, 19 Feb 2019 11:58:29 +0100
-Message-Id: <20190219105829.19849-1-jthumshirn@suse.de>
-X-Mailer: git-send-email 2.16.4
+        id S1728280AbfBSL7l (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Feb 2019 06:59:41 -0500
+Received: from mail.kernel.org ([198.145.29.99]:33336 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727168AbfBSL7l (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Feb 2019 06:59:41 -0500
+Received: from mail-vs1-f43.google.com (mail-vs1-f43.google.com [209.85.217.43])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id E60E7208E4
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Feb 2019 11:59:39 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1550577580;
+        bh=xpXSuD3cygbzWTyMu6mr5AFzniPniYJqO/VQJQ+Ruac=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=NMk82NqzBiIzUDrx30rPsIHiYZ1wY2ddHRmltf4bvGzO0y7sSUZuNc0+flzy239l+
+         RTAy4XuV+VYtASRTf7LfL9AStoxWB/BnCBtnEZ79/nIhnZBfHdZzSWF4CvRoZIA6i1
+         B8rZVHn4FPfGVE9+6eUHpOBrJVi8fHHazTKzyOgY=
+Received: by mail-vs1-f43.google.com with SMTP id t13so11521756vsk.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Feb 2019 03:59:39 -0800 (PST)
+X-Gm-Message-State: AHQUAuYCUJBr7lBvbg00lE+v5e2DwKM6IMzE/cMm4wk2RZF4+LMT/w6H
+        H59GR1VVvximLOo0aA2Mkq4fmfqK580PxWFAwNc=
+X-Google-Smtp-Source: AHgI3IYL7JqAhhryUyATqSRd2SKxydbP45iQD3YvMWbqYCWwm8iwcKwcL0Dbp9B6orny5Ye7BMIwy8nkO4SGB+MM/ow=
+X-Received: by 2002:a67:8106:: with SMTP id c6mr12650387vsd.99.1550577579014;
+ Tue, 19 Feb 2019 03:59:39 -0800 (PST)
+MIME-Version: 1.0
+References: <20190218165826.23549-1-fdmanana@kernel.org> <a79f6d14-88bd-5a58-a508-8683428ad12f@gmx.com>
+In-Reply-To: <a79f6d14-88bd-5a58-a508-8683428ad12f@gmx.com>
+From:   Filipe Manana <fdmanana@kernel.org>
+Date:   Tue, 19 Feb 2019 11:59:28 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H4TVnHhd3vjZKt26SyQNxgZO94yfQLoBdWZumhLSQ43qg@mail.gmail.com>
+Message-ID: <CAL3q7H4TVnHhd3vjZKt26SyQNxgZO94yfQLoBdWZumhLSQ43qg@mail.gmail.com>
+Subject: Re: [PATCH 2/2] Btrfs: report and handle error on unexpected first
+ key on extent buffer
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Currently csum_tree_block() does two things, first it as it's name
-suggests it calculates the checksum for a tree-block. But it also writes
-this checksum to disk or reads an extent_buffer from disk and compares the
-checksum with the calculated checksum, depending on the verify argument.
+On Tue, Feb 19, 2019 at 12:54 AM Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+>
+>
+>
+> On 2019/2/19 =E4=B8=8A=E5=8D=8812:58, fdmanana@kernel.org wrote:
+> > From: Filipe Manana <fdmanana@suse.com>
+> >
+> > When there is a kind of corruption in an extent buffer such that its fi=
+rst
+> > key does not match the key at the respective parent slot, one of two th=
+ings
+> > happens:
+>
+> Isn't that handled by read_tree_block() already?
 
-Furthermore one of the two callers passes in '1' for the verify argument,
-the other one passes in '0'.
+It is, but only at the time we read a node/leaf from disk.
+By doing the check here we can actually catch other types of bugs and
+memory corruption.
 
-For clarity and less layering violations, factor out the second stage in
-csum_tree_block()'s callers.
+To be honest I missed that since this is motivated by a report on
+older kernel (SLE12 SP3).
+So I still find it useful to have due to the reason pointed above,
+however I'm not against simply removing the check from key_search().
 
-Suggested-by: Nikolay Borisov <nborisov@suse.com>
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
-
----
-Changes to v1:
-- return error from csum_tree_buffer() in csum_dirty_buffer() instead of
-  EUCLEAN (Nikolay)
----
- fs/btrfs/disk-io.c | 53 +++++++++++++++++++++++++++++------------------------
- 1 file changed, 29 insertions(+), 24 deletions(-)
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 5216e7b3f9ad..56f5fe732be5 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -263,12 +263,9 @@ void btrfs_csum_final(u32 crc, u8 *result)
-  * compute the csum for a btree block, and either verify it or write it
-  * into the csum field of the block.
-  */
--static int csum_tree_block(struct btrfs_fs_info *fs_info,
--			   struct extent_buffer *buf,
--			   int verify)
-+static int csum_tree_block(struct extent_buffer *buf,
-+			   u8 *result)
- {
--	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
--	char result[BTRFS_CSUM_SIZE];
- 	unsigned long len;
- 	unsigned long cur_len;
- 	unsigned long offset = BTRFS_CSUM_SIZE;
-@@ -300,23 +297,6 @@ static int csum_tree_block(struct btrfs_fs_info *fs_info,
- 
- 	btrfs_csum_final(crc, result);
- 
--	if (verify) {
--		if (memcmp_extent_buffer(buf, result, 0, csum_size)) {
--			u32 val;
--			u32 found = 0;
--			memcpy(&found, result, csum_size);
--
--			read_extent_buffer(buf, &val, 0, csum_size);
--			btrfs_warn_rl(fs_info,
--				"%s checksum verify failed on %llu wanted %X found %X level %d",
--				fs_info->sb->s_id, buf->start,
--				val, found, btrfs_header_level(buf));
--			return -EUCLEAN;
--		}
--	} else {
--		write_extent_buffer(buf, result, 0, csum_size);
--	}
--
- 	return 0;
- }
- 
-@@ -533,7 +513,10 @@ static int csum_dirty_buffer(struct btrfs_fs_info *fs_info, struct page *page)
- {
- 	u64 start = page_offset(page);
- 	u64 found_start;
-+	u8 result[BTRFS_CSUM_SIZE];
-+	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
- 	struct extent_buffer *eb;
-+	int ret = 0;
- 
- 	eb = (struct extent_buffer *)page->private;
- 	if (page != eb->pages[0])
-@@ -552,7 +535,12 @@ static int csum_dirty_buffer(struct btrfs_fs_info *fs_info, struct page *page)
- 	ASSERT(memcmp_extent_buffer(eb, fs_info->fs_devices->metadata_uuid,
- 			btrfs_header_fsid(), BTRFS_FSID_SIZE) == 0);
- 
--	return csum_tree_block(fs_info, eb, 0);
-+	ret = csum_tree_block(eb, result);
-+	if (WARN_ON(ret))
-+		return ret;
-+
-+	write_extent_buffer(eb, result, 0, csum_size);
-+	return ret;
- }
- 
- static int check_tree_block_fsid(struct btrfs_fs_info *fs_info,
-@@ -595,7 +583,9 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
- 	struct extent_buffer *eb;
- 	struct btrfs_root *root = BTRFS_I(page->mapping->host)->root;
- 	struct btrfs_fs_info *fs_info = root->fs_info;
-+	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
- 	int ret = 0;
-+	char result[BTRFS_CSUM_SIZE];
- 	int reads_done;
- 
- 	if (!page->private)
-@@ -642,10 +632,25 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
- 	btrfs_set_buffer_lockdep_class(btrfs_header_owner(eb),
- 				       eb, found_level);
- 
--	ret = csum_tree_block(fs_info, eb, 1);
-+	ret = csum_tree_block(eb, result);
- 	if (ret)
- 		goto err;
- 
-+	if (memcmp_extent_buffer(eb, result, 0, csum_size)) {
-+		u32 val;
-+		u32 found = 0;
-+
-+		memcpy(&found, result, csum_size);
-+
-+		read_extent_buffer(eb, &val, 0, csum_size);
-+		btrfs_warn_rl(fs_info,
-+			      "%s checksum verify failed on %llu wanted %x found %x level %d",
-+			      fs_info->sb->s_id, eb->start,
-+			      val, found, btrfs_header_level(eb));
-+		ret = -EUCLEAN;
-+		goto err;
-+	}
-+
- 	/*
- 	 * If this is a leaf block and it is corrupt, set the corrupt bit so
- 	 * that we don't try and read the other copies of this block, just
--- 
-2.16.4
-
+> Thanks,
+> Qu
+>
+> >
+> > 1) When assertions are enabled, we effectively hit a BUG_ON() which
+> >    requires rebooting the machine later. This also does not tell any
+> >    information about which extent buffer is affected, from which root,
+> >    the expected and found keys, etc.
+> >
+> > 2) When assertions are disabled, we just ignore the mismatch and assume
+> >    everything is ok, which can potentially lead to all sorts of unexpec=
+ted
+> >    problems later after a tree search (in the worst case, could lead to
+> >    further silent corruption).
+> >
+> > So improve this by always checking if the first key of an extent buffer=
+ is
+> > what it's supposed to be, when doing a key search at key_search(), and
+> > report and return an appropriate error. The overhead is just comparing =
+one
+> > key, which is minimal and is anyway just done in a special case where w=
+e
+> > skip the more expensive binary search (the binary search in the parent
+> > node returned 0, exact key match).
+> >
+> > Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> > ---
+> >  fs/btrfs/ctree.c | 38 +++++++++++++++++---------------------
+> >  1 file changed, 17 insertions(+), 21 deletions(-)
+> >
+> > diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> > index 5b9f602fb9e2..a0bd0278208d 100644
+> > --- a/fs/btrfs/ctree.c
+> > +++ b/fs/btrfs/ctree.c
+> > @@ -2529,35 +2529,31 @@ setup_nodes_for_search(struct btrfs_trans_handl=
+e *trans,
+> >       return ret;
+> >  }
+> >
+> > -static void key_search_validate(struct extent_buffer *b,
+> > -                             const struct btrfs_key *key,
+> > -                             int level)
+> > -{
+> > -#ifdef CONFIG_BTRFS_ASSERT
+> > -     struct btrfs_disk_key disk_key;
+> > -
+> > -     btrfs_cpu_key_to_disk(&disk_key, key);
+> > -
+> > -     if (level =3D=3D 0)
+> > -             ASSERT(!memcmp_extent_buffer(b, &disk_key,
+> > -                 offsetof(struct btrfs_leaf, items[0].key),
+> > -                 sizeof(disk_key)));
+> > -     else
+> > -             ASSERT(!memcmp_extent_buffer(b, &disk_key,
+> > -                 offsetof(struct btrfs_node, ptrs[0].key),
+> > -                 sizeof(disk_key)));
+> > -#endif
+> > -}
+> > -
+> >  static int key_search(struct extent_buffer *b, const struct btrfs_key =
+*key,
+> >                     int level, int *prev_cmp, int *slot)
+> >  {
+> > +     struct btrfs_key found_key;
+> > +
+> >       if (*prev_cmp !=3D 0) {
+> >               *prev_cmp =3D btrfs_bin_search(b, key, level, slot);
+> >               return *prev_cmp;
+> >       }
+> >
+> > -     key_search_validate(b, key, level);
+> > +     if (level =3D=3D 0)
+> > +             btrfs_item_key_to_cpu(b, &found_key, 0);
+> > +     else
+> > +             btrfs_node_key_to_cpu(b, &found_key, 0);
+> > +
+> > +     if (btrfs_comp_cpu_keys(&found_key, key) !=3D 0) {
+> > +             btrfs_crit(b->fs_info,
+> > +"unexpected first key for extent buffer: bytenr=3D%llu level=3D%d root=
+=3D%llu expected key=3D(%llu %u %llu) found key=3D(%llu %u %llu)",
+> > +                        btrfs_header_bytenr(b), level, btrfs_header_ow=
+ner(b),
+> > +                        key->objectid, key->type, key->offset,
+> > +                        found_key.objectid, found_key.type,
+> > +                        found_key.offset);
+> > +             return -EUCLEAN;
+> > +     }
+> > +
+> >       *slot =3D 0;
+> >
+> >       return 0;
+> >
+>

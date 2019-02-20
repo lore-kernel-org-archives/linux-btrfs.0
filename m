@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5E18FC43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Feb 2019 15:11:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1B980C10F0B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Feb 2019 15:11:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2C1882086D
+	by mail.kernel.org (Postfix) with ESMTP id E97592086D
 	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Feb 2019 15:11:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727270AbfBTPLu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1727278AbfBTPLu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Wed, 20 Feb 2019 10:11:50 -0500
-Received: from mx2.suse.de ([195.135.220.15]:55346 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:55322 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727184AbfBTPLs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1727106AbfBTPLs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 20 Feb 2019 10:11:48 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id CB921B678
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Feb 2019 15:11:46 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 9F8BBB679
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Feb 2019 15:11:45 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2 5/6] btrfs: Set iotree only once in submit_compressed_extents
-Date:   Wed, 20 Feb 2019 17:11:42 +0200
-Message-Id: <20190220151143.19057-6-nborisov@suse.com>
+Subject: [PATCH v2 1/6] btrfs: Refactor cow_file_range_async
+Date:   Wed, 20 Feb 2019 17:11:38 +0200
+Message-Id: <20190220151143.19057-2-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20190220151143.19057-1-nborisov@suse.com>
 References: <20190220151143.19057-1-nborisov@suse.com>
@@ -36,43 +36,142 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The inode never changes so it's sufficient to dereference it and get
-the iotree only once, before the execution of the main loop. No
-functional changes, only the size of the function is decreased:
+This commit changes the implementation of cow_file_range_async in order
+to get rid of the BUG_ON in the middle of the loop. Additionally it
+reworks the inner loop in the hopes of making it more understandable.
 
-add/remove: 0/0 grow/shrink: 0/1 up/down: 0/-44 (-44)
-Function                                     old     new   delta
-submit_compressed_extents                   1240    1196     -44
-Total: Before=88476, After=88432, chg -0.05%
+Main change is that the number of chunks required to handle the given
+range is calculated before going into the loop and the logic of the loop
+just iterates the chunk count. Furthermore, the way memory is allocated
+is reworked and now the code does a single kmalloc with enough space to
+handle all chunks. Depending on whether compression is enabled or not
+chunks are either 1 (in non-compress case) or the range divided by 512k.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/inode.c | 5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
+ fs/btrfs/inode.c | 84 +++++++++++++++++++++++++++++++++---------------
+ 1 file changed, 58 insertions(+), 26 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index c6ee1863cd20..06408a278200 100644
+index 05bbfd02ea49..546000779310 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -722,7 +722,7 @@ static noinline void submit_compressed_extents(struct async_cow *async_cow)
- 	struct btrfs_key ins;
- 	struct extent_map *em;
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
--	struct extent_io_tree *io_tree;
-+	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
- 	int ret = 0;
+@@ -375,6 +375,7 @@ struct async_cow {
+ 	unsigned int write_flags;
+ 	struct list_head extents;
+ 	struct btrfs_work work;
++	atomic_t *pending;
+ };
  
- again:
-@@ -730,9 +730,6 @@ static noinline void submit_compressed_extents(struct async_cow *async_cow)
- 		async_extent = list_entry(async_cow->extents.next,
- 					  struct async_extent, list);
- 		list_del(&async_extent->list);
+ static noinline int add_async_extent(struct async_cow *cow,
+@@ -1181,7 +1182,12 @@ static noinline void async_cow_free(struct btrfs_work *work)
+ 	async_cow = container_of(work, struct async_cow, work);
+ 	if (async_cow->inode)
+ 		btrfs_add_delayed_iput(async_cow->inode);
+-	kfree(async_cow);
++	/*
++	 * Since the pointer to 'pending' is at the beginning of the array of
++	 * async_cow's, freeing it ensures the whole array has been freed.
++	 */
++	if (atomic_dec_and_test(async_cow->pending))
++		kfree(async_cow->pending);
+ }
+ 
+ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
+@@ -1193,42 +1199,68 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
+ 	struct async_cow *async_cow;
+ 	unsigned long nr_pages;
+ 	u64 cur_end;
++	u64 num_chunks = DIV_ROUND_UP(end - start, SZ_512K);
++	int i;
++	bool should_compress;
++	atomic_t *p;
++
+ 
+ 	clear_extent_bit(&BTRFS_I(inode)->io_tree, start, end, EXTENT_LOCKED,
+ 			 1, 0, NULL);
+-	while (start < end) {
+-		async_cow = kmalloc(sizeof(*async_cow), GFP_NOFS);
+-		BUG_ON(!async_cow); /* -ENOMEM */
+-		/*
+-		 * igrab is called higher up in the call chain, take only the
+-		 * lightweight reference for the callback lifetime
+-		 */
+-		ihold(inode);
+-		async_cow->inode = inode;
+-		async_cow->fs_info = fs_info;
+-		async_cow->locked_page = locked_page;
+-		async_cow->start = start;
+-		async_cow->write_flags = write_flags;
 -
--		io_tree = &BTRFS_I(inode)->io_tree;
--
- retry:
- 		/* did the compression code fall back to uncompressed IO? */
- 		if (!async_extent->pages) {
+-		if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS &&
+-		    !btrfs_test_opt(fs_info, FORCE_COMPRESS))
+-			cur_end = end;
+-		else
+-			cur_end = min(end, start + SZ_512K - 1);
+ 
+-		async_cow->end = cur_end;
+-		INIT_LIST_HEAD(&async_cow->extents);
++	if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS &&
++	    !btrfs_test_opt(fs_info, FORCE_COMPRESS)) {
++		num_chunks = 1;
++		should_compress = false;
++	} else {
++		should_compress = true;
++	}
++
++	/* Layout is [atomic_t][async_cow1][async_cowN].... */
++	async_cow = kmalloc(sizeof(atomic_t) + num_chunks*sizeof(*async_cow),
++			    GFP_NOFS);
++	if (!async_cow) {
++		unsigned clear_bits = EXTENT_LOCKED | EXTENT_DELALLOC |
++			EXTENT_DELALLOC_NEW | EXTENT_DEFRAG |
++			EXTENT_DO_ACCOUNTING;
++		unsigned long page_ops = PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
++			PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK |
++			PAGE_SET_ERROR;
++		extent_clear_unlock_delalloc(inode, start, end, 0, locked_page,
++					     clear_bits, page_ops);
++		return -ENOMEM;
++	}
++
++	p = (atomic_t *)async_cow;
++	async_cow = (struct async_cow *)((char *)async_cow + sizeof(atomic_t));
++	atomic_set(p, num_chunks);
++
++	for (i = 0; i < num_chunks; i++) {
+ 
+-		btrfs_init_work(&async_cow->work,
++		if (should_compress)
++			cur_end = min(end, start + SZ_512K - 1);
++		else
++			cur_end = end;
++
++		ihold(inode);
++		async_cow[i].pending= p;
++		async_cow[i].inode = inode;
++		async_cow[i].start = start;
++		async_cow[i].end = cur_end;
++		async_cow[i].fs_info = fs_info;
++		async_cow[i].locked_page = locked_page;
++		async_cow[i].write_flags = write_flags;
++		INIT_LIST_HEAD(&async_cow[i].extents);
++
++		btrfs_init_work(&async_cow[i].work,
+ 				btrfs_delalloc_helper,
+ 				async_cow_start, async_cow_submit,
+ 				async_cow_free);
+ 
+-		nr_pages = (cur_end - start + PAGE_SIZE) >>
+-			PAGE_SHIFT;
++		nr_pages = DIV_ROUND_UP(cur_end - start, PAGE_SIZE);
+ 		atomic_add(nr_pages, &fs_info->async_delalloc_pages);
+ 
+-		btrfs_queue_work(fs_info->delalloc_workers, &async_cow->work);
++		btrfs_queue_work(fs_info->delalloc_workers, &async_cow[i].work);
+ 
+ 		*nr_written += nr_pages;
+ 		start = cur_end + 1;
 -- 
 2.17.1
 

@@ -2,130 +2,222 @@ Return-Path: <SRS0=IJ3x=Q3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=unavailable autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 30017C10F00
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Feb 2019 02:37:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 10300C43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Feb 2019 02:43:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id F1FDC21773
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Feb 2019 02:37:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DB5872146F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Feb 2019 02:43:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730114AbfBTChP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 19 Feb 2019 21:37:15 -0500
-Received: from mail-pl1-f196.google.com ([209.85.214.196]:33657 "EHLO
-        mail-pl1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729110AbfBTChO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Feb 2019 21:37:14 -0500
-Received: by mail-pl1-f196.google.com with SMTP id y10so11421095plp.0;
-        Tue, 19 Feb 2019 18:37:14 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=HP9Cnwm5mA4hdRo3xazu5Jsgd6Igy791Y/HWFPQ6N0k=;
-        b=pYuPKR/850BkZDEz1OKzSIrJ1mxKY0R7JuvXWRY6LOE/bM19IzSC39o2ViKqWz2LNX
-         eZeKASqVvPLZ/cSzU5prG6EKQqsTqquYutF+FxzS5EuZLvYBSqZymJVz/se0RtAbc50T
-         snL+MKx+V+qSgnIJx5Zx9ZnGLaJ2LssV9Yzddwrgjy4KK0vNZTy6Jt8bPIuVGQFiu9Gw
-         kDf8xNDyNX61FqcS5SeVOx3aBGuQSyIRsIggmZzSMndl180aseDGmXzmYTt1XVuDH38w
-         FKf26rNZTkazCUKaQ0Q1CW4nR++QbPpSAqN1TrAOAO2uLGEOm9+qM1owjlDw17hTXo3p
-         w6CA==
-X-Gm-Message-State: AHQUAuZbFhXcspwbCqW6gqlXPqxij8QxBc/sFe99C4+t55G6T54LQg7h
-        aPbumFdyMaukiFpVBSWHeQb1mdJ0NEg=
-X-Google-Smtp-Source: AHgI3IbH0x7YpgetqxgAAYLMYUJvhs0DuV+3/g3W/yGDT9cyuGtlfaHN5X8Oy5l+iGTZS0YQ6AYgzQ==
-X-Received: by 2002:a17:902:788d:: with SMTP id q13mr15744256pll.154.1550630233463;
-        Tue, 19 Feb 2019 18:37:13 -0800 (PST)
-Received: from asus.site ([2601:647:4000:5dd1:a41e:80b4:deb3:fb66])
-        by smtp.gmail.com with ESMTPSA id o5sm16857250pfi.118.2019.02.19.18.37.10
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 19 Feb 2019 18:37:12 -0800 (PST)
-Subject: Re: [dm-devel] [PATCH V15 00/18] block: support multi-page bvec
-To:     Ming Lei <ming.lei@redhat.com>
-Cc:     Jens Axboe <axboe@kernel.dk>, Mike Snitzer <snitzer@redhat.com>,
-        linux-mm@kvack.org, dm-devel@redhat.com,
-        Christoph Hellwig <hch@lst.de>,
-        Sagi Grimberg <sagi@grimberg.me>,
-        "Darrick J . Wong" <darrick.wong@oracle.com>,
-        Omar Sandoval <osandov@fb.com>, cluster-devel@redhat.com,
-        linux-ext4@vger.kernel.org,
-        Kent Overstreet <kent.overstreet@gmail.com>,
-        Boaz Harrosh <ooo@electrozaur.com>,
-        Gao Xiang <gaoxiang25@huawei.com>, Coly Li <colyli@suse.de>,
-        linux-raid@vger.kernel.org, Bob Peterson <rpeterso@redhat.com>,
-        linux-bcache@vger.kernel.org,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        Dave Chinner <dchinner@redhat.com>,
-        David Sterba <dsterba@suse.com>, linux-block@vger.kernel.org,
-        Theodore Ts'o <tytso@mit.edu>, linux-kernel@vger.kernel.org,
-        linux-xfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-References: <20190215111324.30129-1-ming.lei@redhat.com>
- <c52b6a8b-d1d4-67ff-f81c-371d09cc6d5b@kernel.dk>
- <1550250855.31902.102.camel@acm.org> <20190217131128.GB7296@ming.t460p>
- <1550593699.31902.115.camel@acm.org> <20190220011719.GA13035@ming.t460p>
-From:   Bart Van Assche <bvanassche@acm.org>
-Message-ID: <8253d52d-a77a-b008-1fbd-f2f0a794a022@acm.org>
-Date:   Tue, 19 Feb 2019 18:37:09 -0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.0
+        id S1730368AbfBTCnN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Feb 2019 21:43:13 -0500
+Received: from szxga04-in.huawei.com ([45.249.212.190]:3699 "EHLO huawei.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727264AbfBTCnN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Feb 2019 21:43:13 -0500
+Received: from DGGEMS403-HUB.china.huawei.com (unknown [172.30.72.58])
+        by Forcepoint Email with ESMTP id 8C8CA5E47E2880E02A6E;
+        Wed, 20 Feb 2019 10:43:10 +0800 (CST)
+Received: from [127.0.0.1] (10.134.22.195) by DGGEMS403-HUB.china.huawei.com
+ (10.3.19.203) with Microsoft SMTP Server id 14.3.408.0; Wed, 20 Feb 2019
+ 10:43:09 +0800
+Subject: Re: [PATCH 1/2] fstests: generic, test fsync after succession of file
+ renames
+To:     Filipe Manana <fdmanana@kernel.org>
+CC:     fstests <fstests@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Filipe Manana <fdmanana@suse.com>
+References: <20190212180807.26368-1-fdmanana@kernel.org>
+ <1ef915e7-2c1e-872f-4686-0a636d822ddd@huawei.com>
+ <CAL3q7H6ExsyQbyEW1j7Sr=a2k0YibWqQqT+sVOPRainO9pzRBQ@mail.gmail.com>
+From:   Chao Yu <yuchao0@huawei.com>
+Message-ID: <ca9c1958-95c3-1bd9-e544-58f280a3679d@huawei.com>
+Date:   Wed, 20 Feb 2019 10:43:14 +0800
+User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:52.0) Gecko/20100101
+ Thunderbird/52.9.1
 MIME-Version: 1.0
-In-Reply-To: <20190220011719.GA13035@ming.t460p>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CAL3q7H6ExsyQbyEW1j7Sr=a2k0YibWqQqT+sVOPRainO9pzRBQ@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
+X-Originating-IP: [10.134.22.195]
+X-CFilter-Loop: Reflected
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 2/19/19 5:17 PM, Ming Lei wrote:
-> On Tue, Feb 19, 2019 at 08:28:19AM -0800, Bart Van Assche wrote:
->> With this patch applied test nvmeof-mp/002 fails as follows:
+On 2019/2/19 20:04, Filipe Manana wrote:
+> On Tue, Feb 19, 2019 at 1:29 AM Chao Yu <yuchao0@huawei.com> wrote:
 >>
->> [  694.700400] kernel BUG at lib/sg_pool.c:103!
->> [  694.705932] invalid opcode: 0000 [#1] PREEMPT SMP KASAN
->> [  694.708297] CPU: 2 PID: 349 Comm: kworker/2:1H Tainted: G    B             5.0.0-rc6-dbg+ #2
->> [  694.711730] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.10.2-1 04/01/2014
->> [  694.715113] Workqueue: kblockd blk_mq_run_work_fn
->> [  694.716894] RIP: 0010:sg_alloc_table_chained+0xe5/0xf0
->> [  694.758222] Call Trace:
->> [  694.759645]  nvme_rdma_queue_rq+0x2aa/0xcc0 [nvme_rdma]
->> [  694.764915]  blk_mq_try_issue_directly+0x2a5/0x4b0
->> [  694.771779]  blk_insert_cloned_request+0x11e/0x1c0
->> [  694.778417]  dm_mq_queue_rq+0x3d1/0x770
->> [  694.793400]  blk_mq_dispatch_rq_list+0x5fc/0xb10
->> [  694.798386]  blk_mq_sched_dispatch_requests+0x2f7/0x300
->> [  694.803180]  __blk_mq_run_hw_queue+0xd6/0x180
->> [  694.808933]  blk_mq_run_work_fn+0x27/0x30
->> [  694.810315]  process_one_work+0x4f1/0xa40
->> [  694.813178]  worker_thread+0x67/0x5b0
->> [  694.814487]  kthread+0x1cf/0x1f0
->> [  694.819134]  ret_from_fork+0x24/0x30
+>> On 2019/2/13 2:08, fdmanana@kernel.org wrote:
+>>> From: Filipe Manana <fdmanana@suse.com>
+>>>
+>>> Test that after a combination of file renames, linking and creating a new
+>>> file with the old name of a renamed file, if we fsync the new file, after
+>>> a power failure we are able to mount the filesystem and all file names
+>>> correspond to the correct inodes.
+>>>
+>>> This test is motivated by a bug found in btrfs which is fixed by a patch
+>>> for the linux kernel titled:
+>>>
+>>>   "Btrfs: fix fsync after succession of renames of different files"
+>>>
+>>> The test passes on ext4, xfs and patched btrfs, however at least in a
+>>> 5.0-rc5 linux kernel, it fails on f2fs.
 >>
->> The code in sg_pool.c that triggers the BUG() statement is as follows:
+>> We have introduced one additional mount option to handle that case:
 >>
->> int sg_alloc_table_chained(struct sg_table *table, int nents,
->> 		struct scatterlist *first_chunk)
->> {
->> 	int ret;
+>> fsync_mode=%s
 >>
->> 	BUG_ON(!nents);
->> [ ... ]
+>> Control the policy of fsync. Currently supports "posix",
+>> "strict", and "nobarrier". In "posix" mode, which is
+>> default, fsync will follow POSIX semantics and does a
+>> light operation to improve the filesystem performance.
+>> In "strict" mode, fsync will be heavy and behaves in line
+>> with xfs, ext4 and btrfs, where xfstest generic/342 will
+>> pass, but the performance will regress. "nobarrier" is
+>> based on "posix", but doesn't issue flush command for
+>> non-atomic files likewise "nobarrier" mount option.
 >>
->> Bart.
+>> I've tested for confirmation, it passed both tests 526/527 on f2fs once I
+>> changed mount option from default to fsync_mode=strict.
+>>
+>> Filipe, could you please check that?
 > 
-> I can reproduce this issue("kernel BUG at lib/sg_pool.c:103") without mp-bvec patches,
-> so looks it isn't the fault of this patchset.
+> Thanks. I wasn't aware of that mount option.
+> Btw, it seems complicated for a user to know which option to use for
+> that mount option,
+> even if it's very well documented, as it's unlikely the user is aware
+> of what all applications
+> in the system do and expect (or make the strict mode the default).
 
-Thanks Ming for your feedback.
-
-Jens, I don't see that issue with kernel v5.0-rc6. Does that mean that 
-the sg_pool BUG() is a regression in your for-next branch that predates 
-Ming's multi-page bvec patch series?
+Yup, I'm not sure this is a real problem... since that as I know, there is
+no related issue reported in f2fs mailing list and products (at least
+Huawei's products).
 
 Thanks,
 
-Bart.
+> 
+> Thanks.
+> 
+>>
+>> Thanks,
+>>
+>>>
+>>> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+>>> ---
+>>>  tests/generic/526     | 72 +++++++++++++++++++++++++++++++++++++++++++++++++++
+>>>  tests/generic/526.out |  5 ++++
+>>>  tests/generic/group   |  1 +
+>>>  3 files changed, 78 insertions(+)
+>>>  create mode 100755 tests/generic/526
+>>>  create mode 100644 tests/generic/526.out
+>>>
+>>> diff --git a/tests/generic/526 b/tests/generic/526
+>>> new file mode 100755
+>>> index 00000000..d0b51f87
+>>> --- /dev/null
+>>> +++ b/tests/generic/526
+>>> @@ -0,0 +1,72 @@
+>>> +#! /bin/bash
+>>> +# SPDX-License-Identifier: GPL-2.0
+>>> +# Copyright (C) 2018 SUSE Linux Products GmbH. All Rights Reserved.
+>>> +#
+>>> +# FS QA Test No. 526
+>>> +#
+>>> +# Test that after a combination of file renames, linking and creating a new file
+>>> +# with the old name of a renamed file, if we fsync the new file, after a power
+>>> +# failure we are able to mount the filesystem and all file names correspond to
+>>> +# the correct inodes.
+>>> +#
+>>> +seq=`basename $0`
+>>> +seqres=$RESULT_DIR/$seq
+>>> +echo "QA output created by $seq"
+>>> +tmp=/tmp/$$
+>>> +status=1     # failure is the default!
+>>> +trap "_cleanup; exit \$status" 0 1 2 3 15
+>>> +
+>>> +_cleanup()
+>>> +{
+>>> +     _cleanup_flakey
+>>> +     cd /
+>>> +     rm -f $tmp.*
+>>> +}
+>>> +
+>>> +# get standard environment, filters and checks
+>>> +. ./common/rc
+>>> +. ./common/filter
+>>> +. ./common/dmflakey
+>>> +
+>>> +# real QA test starts here
+>>> +_supported_fs generic
+>>> +_supported_os Linux
+>>> +_require_scratch
+>>> +_require_dm_target flakey
+>>> +
+>>> +rm -f $seqres.full
+>>> +
+>>> +_scratch_mkfs >>$seqres.full 2>&1
+>>> +_require_metadata_journaling $SCRATCH_DEV
+>>> +_init_flakey
+>>> +_mount_flakey
+>>> +
+>>> +mkdir $SCRATCH_MNT/testdir
+>>> +echo -n "foo" > $SCRATCH_MNT/testdir/fname1
+>>> +echo -n "hello" > $SCRATCH_MNT/testdir/fname2
+>>> +
+>>> +# Make sure everything done so far is durably persisted.
+>>> +sync
+>>> +
+>>> +# Rename and link files such that one new name corresponds to the name of
+>>> +# another renamed file and one new file has the old name of one of the renamed
+>>> +# files. Then fsync only the new file.
+>>> +mv $SCRATCH_MNT/testdir/fname1 $SCRATCH_MNT/testdir/fname3
+>>> +mv $SCRATCH_MNT/testdir/fname2 $SCRATCH_MNT/testdir/fname4
+>>> +ln $SCRATCH_MNT/testdir/fname3 $SCRATCH_MNT/testdir/fname2
+>>> +echo -n "bar" > $SCRATCH_MNT/testdir/fname1
+>>> +$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir/fname1
+>>> +
+>>> +# Simulate a power failure and mount the filesystem to check that all file names
+>>> +# exist and correspond to the correct inodes.
+>>> +_flakey_drop_and_remount
+>>> +
+>>> +echo "File fname1 data after power failure: $(cat $SCRATCH_MNT/testdir/fname1)"
+>>> +echo "File fname2 data after power failure: $(cat $SCRATCH_MNT/testdir/fname2)"
+>>> +echo "File fname3 data after power failure: $(cat $SCRATCH_MNT/testdir/fname3)"
+>>> +echo "File fname4 data after power failure: $(cat $SCRATCH_MNT/testdir/fname4)"
+>>> +
+>>> +_unmount_flakey
+>>> +
+>>> +status=0
+>>> +exit
+>>> diff --git a/tests/generic/526.out b/tests/generic/526.out
+>>> new file mode 100644
+>>> index 00000000..83979d28
+>>> --- /dev/null
+>>> +++ b/tests/generic/526.out
+>>> @@ -0,0 +1,5 @@
+>>> +QA output created by 526
+>>> +File fname1 data after power failure: bar
+>>> +File fname2 data after power failure: foo
+>>> +File fname3 data after power failure: foo
+>>> +File fname4 data after power failure: hello
+>>> diff --git a/tests/generic/group b/tests/generic/group
+>>> index cfd003d3..492a5875 100644
+>>> --- a/tests/generic/group
+>>> +++ b/tests/generic/group
+>>> @@ -528,3 +528,4 @@
+>>>  523 auto quick attr
+>>>  524 auto quick
+>>>  525 auto quick rw
+>>> +526 auto quick log
+>>>
+>>
+> 
+> .
+> 
+

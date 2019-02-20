@@ -1,151 +1,136 @@
-Return-Path: <SRS0=T+sm=Q2=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=IJ3x=Q3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 385FDC43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 19:46:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BB5C6C10F00
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Feb 2019 01:17:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id ED8FF2146F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Feb 2019 19:46:09 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="AvUEoDjF"
+	by mail.kernel.org (Postfix) with ESMTP id 955B721773
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Feb 2019 01:17:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726342AbfBSTqJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 19 Feb 2019 14:46:09 -0500
-Received: from mail-it1-f171.google.com ([209.85.166.171]:37153 "EHLO
-        mail-it1-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725963AbfBSTqI (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Feb 2019 14:46:08 -0500
-Received: by mail-it1-f171.google.com with SMTP id z124so9269728itc.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Feb 2019 11:46:08 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:from:date:message-id:subject:to;
-        bh=kjTNBUrW7rqSPxD2uOQtxqPL+dGNC8rplyA7dSEcEto=;
-        b=AvUEoDjFD6GGYC8YaHvS0zCIS+XVr1e0Bpqckq6q49IxTRN0yhBJHpYk13+aN+pU9+
-         JaGArrCIYgfhdQ1ps/05a0sHXRMou1AeeGour0HGghOXjiBkwgQKjspYHBxcpTCN0wJ4
-         OItZnVpCNDJYfr9cHzIcbd03/PcfcQCmzbh/LU6LjldHpk+OtEeyMbkN7yt4s0VgBo1l
-         JyKwWAQ/BA6i/099M8Hl/ugCgkye6LXMnQJBSoJFsJJfIpfSV+pqOFjRi/yPepnr2Rlx
-         GSyKjf8XMgAmfnEe2adDCtGmKr4GxhLGKcd8uwj9Q91HItHIRe7tujGb2QiMjwLhMoWa
-         jqog==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
-        bh=kjTNBUrW7rqSPxD2uOQtxqPL+dGNC8rplyA7dSEcEto=;
-        b=kcYgYjikdG6In5zaB/2i2FvbMcYbKSeLUJoOK40mQaFFUTHu/b4WeY7gFT8s3kYjXy
-         EwbJQkL0+vklJjtFmPMjz6CLLemN/v4AagsaLpjjYk/+YU9Bec2ExzFP77Pauy8MlL42
-         Yg2E6nQauh/as2iA7r0gknnp/3NrUxHgKd5Zxh/im6XOEMG4SgYf8149su4u1aCIi1LX
-         DqzJvNlHuae5kEMBVZTfjtsbsUC1JTHHg+ESF3Arr/VL8Y5lAXgH9c5EvLI0gIUNdVjc
-         4L4kDCMwtSKBe+AoUyP4AW6J2p3+q4SqtSXWhieJFdtSQGIu6qWSkV/NY/hS5/Zv+B/E
-         PrPA==
-X-Gm-Message-State: AHQUAubL+cBo/lqFSvUb2ID7sM5LGyHU+WOgO/adVTO0+D/HMNEaTEpE
-        2CzFx2tOHm/fSAqJuCIZV8QixkEHWj534WRqeAE=
-X-Google-Smtp-Source: AHgI3IbOXG7BXW+kiIo79V4gO37wyiLpVTKQI5GBKG27QoI0PihOwh+B5+OwBMLFsY/E3FzSb2iJ9DDOK+OTnu+64zc=
-X-Received: by 2002:a6b:b5c7:: with SMTP id e190mr17307407iof.26.1550605567600;
- Tue, 19 Feb 2019 11:46:07 -0800 (PST)
+        id S1729435AbfBTBRu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Feb 2019 20:17:50 -0500
+Received: from mx1.redhat.com ([209.132.183.28]:36102 "EHLO mx1.redhat.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725616AbfBTBRt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Feb 2019 20:17:49 -0500
+Received: from smtp.corp.redhat.com (int-mx06.intmail.prod.int.phx2.redhat.com [10.5.11.16])
+        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mx1.redhat.com (Postfix) with ESMTPS id 14EB83D978;
+        Wed, 20 Feb 2019 01:17:48 +0000 (UTC)
+Received: from ming.t460p (ovpn-8-26.pek2.redhat.com [10.72.8.26])
+        by smtp.corp.redhat.com (Postfix) with ESMTPS id 86BC461B93;
+        Wed, 20 Feb 2019 01:17:25 +0000 (UTC)
+Date:   Wed, 20 Feb 2019 09:17:20 +0800
+From:   Ming Lei <ming.lei@redhat.com>
+To:     Bart Van Assche <bvanassche@acm.org>
+Cc:     Jens Axboe <axboe@kernel.dk>, Mike Snitzer <snitzer@redhat.com>,
+        linux-mm@kvack.org, dm-devel@redhat.com,
+        Christoph Hellwig <hch@lst.de>,
+        Sagi Grimberg <sagi@grimberg.me>,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
+        Omar Sandoval <osandov@fb.com>, cluster-devel@redhat.com,
+        linux-ext4@vger.kernel.org,
+        Kent Overstreet <kent.overstreet@gmail.com>,
+        Boaz Harrosh <ooo@electrozaur.com>,
+        Gao Xiang <gaoxiang25@huawei.com>, Coly Li <colyli@suse.de>,
+        linux-raid@vger.kernel.org, Bob Peterson <rpeterso@redhat.com>,
+        linux-bcache@vger.kernel.org,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        Dave Chinner <dchinner@redhat.com>,
+        David Sterba <dsterba@suse.com>, linux-block@vger.kernel.org,
+        Theodore Ts'o <tytso@mit.edu>, linux-kernel@vger.kernel.org,
+        linux-xfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [dm-devel] [PATCH V15 00/18] block: support multi-page bvec
+Message-ID: <20190220011719.GA13035@ming.t460p>
+References: <20190215111324.30129-1-ming.lei@redhat.com>
+ <c52b6a8b-d1d4-67ff-f81c-371d09cc6d5b@kernel.dk>
+ <1550250855.31902.102.camel@acm.org>
+ <20190217131128.GB7296@ming.t460p>
+ <1550593699.31902.115.camel@acm.org>
 MIME-Version: 1.0
-From:   Jesper Utoft <jesper.utoft@gmail.com>
-Date:   Tue, 19 Feb 2019 20:45:56 +0100
-Message-ID: <CAOna0f3MMZLxsOdT81z0dYDzikmzdmV=X73a-+k1jhdBT60AEQ@mail.gmail.com>
-Subject: Re: corrupt leaf: root=1 block=57567265079296 slot=83, bad key order
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org,
-        David Sterba <dsterba@suse.com>,
-        Hugo Mills <hugo@carfax.org.uk>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <1550593699.31902.115.camel@acm.org>
+User-Agent: Mutt/1.9.1 (2017-09-22)
+X-Scanned-By: MIMEDefang 2.79 on 10.5.11.16
+X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.30]); Wed, 20 Feb 2019 01:17:49 +0000 (UTC)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-> On Thu, Feb 14, 2019 at 08:25:26PM +0800, Qu Wenruo wrote:
->> On 2019/2/14 =E4=B8=8B=E5=8D=887:58, Jesper Utoft wrote:
->>> Hello Fellow BTRFS users.
->>>
->>> I have run into the bad key order issue.
->>> corrupt leaf: root=3D1 block=3D57567265079296 slot=3D83, bad key orde=
-r, prev
->>> (18446744073709551605 0 57707594776576) current (18446726481523507189=
+On Tue, Feb 19, 2019 at 08:28:19AM -0800, Bart Van Assche wrote:
+> On Sun, 2019-02-17 at 21:11 +0800, Ming Lei wrote:
+> > The following patch should fix this issue:
+> > 
+> > 
+> > diff --git a/block/blk-merge.c b/block/blk-merge.c
+> > index bed065904677..066b66430523 100644
+> > --- a/block/blk-merge.c
+> > +++ b/block/blk-merge.c
+> > @@ -363,13 +363,15 @@ static unsigned int __blk_recalc_rq_segments(struct request_queue *q,
+> >  	struct bio_vec bv, bvprv = { NULL };
+> >  	int prev = 0;
+> >  	unsigned int seg_size, nr_phys_segs;
+> > -	unsigned front_seg_size = bio->bi_seg_front_size;
+> > +	unsigned front_seg_size;
+> >  	struct bio *fbio, *bbio;
+> >  	struct bvec_iter iter;
+> >  
+> >  	if (!bio)
+> >  		return 0;
+> >  
+> > +	front_seg_size = bio->bi_seg_front_size;
+> > +
+> >  	switch (bio_op(bio)) {
+> >  	case REQ_OP_DISCARD:
+> >  	case REQ_OP_SECURE_ERASE:
+> 
+> Hi Ming,
+> 
+> With this patch applied test nvmeof-mp/002 fails as follows:
+> 
+> [  694.700400] kernel BUG at lib/sg_pool.c:103!
+> [  694.705932] invalid opcode: 0000 [#1] PREEMPT SMP KASAN
+> [  694.708297] CPU: 2 PID: 349 Comm: kworker/2:1H Tainted: G    B             5.0.0-rc6-dbg+ #2
+> [  694.711730] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.10.2-1 04/01/2014
+> [  694.715113] Workqueue: kblockd blk_mq_run_work_fn
+> [  694.716894] RIP: 0010:sg_alloc_table_chained+0xe5/0xf0
+> [  694.758222] Call Trace:
+> [  694.759645]  nvme_rdma_queue_rq+0x2aa/0xcc0 [nvme_rdma]
+> [  694.764915]  blk_mq_try_issue_directly+0x2a5/0x4b0
+> [  694.771779]  blk_insert_cloned_request+0x11e/0x1c0
+> [  694.778417]  dm_mq_queue_rq+0x3d1/0x770
+> [  694.793400]  blk_mq_dispatch_rq_list+0x5fc/0xb10
+> [  694.798386]  blk_mq_sched_dispatch_requests+0x2f7/0x300
+> [  694.803180]  __blk_mq_run_hw_queue+0xd6/0x180
+> [  694.808933]  blk_mq_run_work_fn+0x27/0x30
+> [  694.810315]  process_one_work+0x4f1/0xa40
+> [  694.813178]  worker_thread+0x67/0x5b0
+> [  694.814487]  kthread+0x1cf/0x1f0
+> [  694.819134]  ret_from_fork+0x24/0x30
+> 
+> The code in sg_pool.c that triggers the BUG() statement is as follows:
+> 
+> int sg_alloc_table_chained(struct sg_table *table, int nents,
+> 		struct scatterlist *first_chunk)
+> {
+> 	int ret;
+> 
+> 	BUG_ON(!nents);
+> [ ... ]
+> 
+> Bart.
 
->>> 0 57709742260224)
->>> The lines repeats over and over..
->>>
->>> I read a thread between Hugo Mills and Eric Wolf about a similar issu=
-e
->>> and i have gathered the same info.=20
->> Now we have all the needed info.
->>
->>>
->>> I understand that it probably is hardware related, i have been runnin=
-g
->>> memtest for 60h+ to see if i could reproduce it.
->>> I also tried to run btrfs check --recover but it did not help.
->>>
->>> My questions is if it can be fixed?
->>
->> Yes, but only manual patching is possible yet.
->=20
->    David: What needs to be done to get the bitflip-in-key patches
-> added to btrfs check? They've been lurking in some patch stack for
-> literally years, and would have dealt with this one easily.
+I can reproduce this issue("kernel BUG at lib/sg_pool.c:103") without mp-bvec patches,
+so looks it isn't the fault of this patchset.
 
-[snip]
-
->=20
-> [snip]
->> Thankfully, all keys around give us a pretty good idea what the origin=
-al
->> value should be: (FREE_SPACE UNTYPED 57709742260224).
->>
->> And for the raw value:
->> bad:  0xffffeffffffffff5
->> good: 0xfffffffffffffff5
->>             ^
->> e->f, one bit get flipped.
->> (UNTYPED is the same value for UNKNOWN.0, so don't worry about that).
->>
->> I have created a special branch for you:
->> https://github.com/adam900710/btrfs-progs/tree/dirty_fix
->>
->> Just compile that btrfs-progs, no need to install, then excute the
->> following command inside btrfs-progs directory:
->>
->> # ./btrfs-corrupt-block -X <device>
->=20
->    BUT, don't do it until you've found and replaced the bad RAM that
-> broke it in the first place.
-
-I got the code to build & ran as described above. I do not know if it
-worked and there were many other errors, or if it failed and just
-moved the issue elsewhere.
-In any case i had a few subvolumes with missing files so i have been
-send receiving the subvolumes i can, and cp'ed the ones that i could
-not.
-Now it's running in a new btrfs volume on a new disk. And i will
-probably use snapraid or a transfer of subvolumes between btrfs
-filesystems for "backup" instead of a raid 1. Which i expect would be
-a more sane approach anyway.
-
->=20
->> And your report just remind me to update the write time tree block
->> checker....
->=20
->    Looking forward to dealing with a whole new type of "btrfs is
-> broken!" complaints on IRC (followed by "can't I just let it carry on
-> regardless?"). ;)
-
-Thank you all for the very quick assistance. Especially for the "dirty
-fix" even though the volume was damaged too much to fix.
-
-I will save money for a new hardware setup with ecc ram, for now i
-will have to hope for the best, and keep taking regular backups.
-
-Thanks
-Jesper Utoft
-Ps: I'm not a member of the mailing list, so if you reply please do
-reply to me direcly as well.
+Thanks,
+Ming

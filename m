@@ -3,28 +3,30 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6FC6BC43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Feb 2019 15:25:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 043AEC43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Feb 2019 15:28:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 42F172086A
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Feb 2019 15:25:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D625520880
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Feb 2019 15:28:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727117AbfBTPZ2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 20 Feb 2019 10:25:28 -0500
-Received: from mx2.suse.de ([195.135.220.15]:57828 "EHLO mx1.suse.de"
+        id S1727126AbfBTP2B (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 20 Feb 2019 10:28:01 -0500
+Received: from mx2.suse.de ([195.135.220.15]:58590 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726423AbfBTPZ1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Feb 2019 10:25:27 -0500
+        id S1726013AbfBTP2A (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Feb 2019 10:28:00 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id C05ECB64A
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Feb 2019 15:25:25 +0000 (UTC)
-Subject: Re: [PATCH v2 2/6] btrfs: Remove fs_info from struct async_cow
+        by mx1.suse.de (Postfix) with ESMTP id 00889B676
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Feb 2019 15:27:59 +0000 (UTC)
+Subject: Re: [PATCH v2 3/6] btrfs: Make compress_file_range take only struct
+ async_cow
 To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 References: <20190220151143.19057-1-nborisov@suse.com>
- <20190220151143.19057-3-nborisov@suse.com>
+ <20190220151143.19057-4-nborisov@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -82,12 +84,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <587b0505-56b4-f128-0dc1-fc48a5ad2b48@suse.de>
-Date:   Wed, 20 Feb 2019 16:25:25 +0100
+Message-ID: <559c44a0-5b82-8fea-3d46-8f5d9e9bb2f3@suse.de>
+Date:   Wed, 20 Feb 2019 16:27:58 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.3.0
 MIME-Version: 1.0
-In-Reply-To: <20190220151143.19057-3-nborisov@suse.com>
+In-Reply-To: <20190220151143.19057-4-nborisov@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -96,26 +98,7 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 20/02/2019 16:11, Nikolay Borisov wrote:
-> We always pass an inode alongside async_cow. fs_info can be referenced
-> from this inode so it makes the explicit fs_info member in
-> struct async_cow redundant, remove it. No functional changes.
-
-[...]
-
-> @@ -1151,13 +1150,10 @@ static noinline void async_cow_start(struct btrfs_work *work)
->   */
->  static noinline void async_cow_submit(struct btrfs_work *work)
->  {
-> -	struct btrfs_fs_info *fs_info;
-> -	struct async_cow *async_cow;
-> +	struct async_cow *async_cow = container_of(work, struct async_cow, work);
-> +	struct btrfs_fs_info *fs_info = btrfs_work_owner(work);
->  	unsigned long nr_pages;
-
-Nit, in your changelog you write that fs_info can be retrieved from the
-inode that is passed with 'struct async_cow' but you're getting fs_info
-from the btrfs_work structure.
+Hmm "... and num_added" for the Subject?
 
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems

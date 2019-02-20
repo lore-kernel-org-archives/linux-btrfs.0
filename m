@@ -2,87 +2,97 @@ Return-Path: <SRS0=IJ3x=Q3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.7 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_MUTT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BDCFEC43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Feb 2019 12:18:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D972EC43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Feb 2019 12:34:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9876F2147A
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Feb 2019 12:18:40 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id AA5E420661
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Feb 2019 12:34:03 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="13NPIYWF"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727666AbfBTMSf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 20 Feb 2019 07:18:35 -0500
-Received: from szxga06-in.huawei.com ([45.249.212.32]:39398 "EHLO huawei.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726209AbfBTMSf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Feb 2019 07:18:35 -0500
-Received: from DGGEMS412-HUB.china.huawei.com (unknown [172.30.72.58])
-        by Forcepoint Email with ESMTP id 4AE3C6E181238EFBA108;
-        Wed, 20 Feb 2019 20:18:32 +0800 (CST)
-Received: from localhost.localdomain.localdomain (10.175.113.25) by
- DGGEMS412-HUB.china.huawei.com (10.3.19.212) with Microsoft SMTP Server id
- 14.3.408.0; Wed, 20 Feb 2019 20:18:22 +0800
-From:   YueHaibing <yuehaibing@huawei.com>
-To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>
-CC:     YueHaibing <yuehaibing@huawei.com>, <linux-btrfs@vger.kernel.org>,
-        <linux-kernel@vger.kernel.org>, <kernel-janitors@vger.kernel.org>,
-        "Dan Carpenter" <dan.carpenter@oracle.com>
-Subject: [PATCH v2 -next] btrfs: Remove unnecessary casts in btrfs_read_root_item
-Date:   Wed, 20 Feb 2019 12:32:02 +0000
-Message-ID: <20190220123202.43256-1-yuehaibing@huawei.com>
-X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20190220030840.188854-1-yuehaibing@huawei.com>
+        id S1727651AbfBTMd6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 20 Feb 2019 07:33:58 -0500
+Received: from userp2120.oracle.com ([156.151.31.85]:58684 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726396AbfBTMd5 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Feb 2019 07:33:57 -0500
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x1KCO2PR058765;
+        Wed, 20 Feb 2019 12:33:48 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
+ : subject : message-id : references : mime-version : content-type :
+ in-reply-to; s=corp-2018-07-02;
+ bh=wVYm6XkyT0OOxIk/A0v5XwxJUzwcVyzxzmVr812M/iA=;
+ b=13NPIYWFejCKD9JD+3Pigj2Bs4VeqZKkqo4OFPjSxys5dn7A9usSllUVrvPFAvCYYTI8
+ 2vM/iVpXtBGfJiHoPG9B8goZa1K/6caLq9hDzx7rWi1ypd19UJz7rytnQmQIHADYzx7r
+ GycWDm3QSI0RvpXHnIevsJUm41yQQRqazuJTG4//vi6s5n6KVmErHMlypgbK9w72N6Dp
+ RvjjOixDTxl1toggq0NRI9j0JAYmOBOk3XLpnxONymY3PkVNgfmcCQIKEo6PHVdzSZ0h
+ nVt7/xGmIxP8TjknhsDCuPeZJDx2hHcU28oGjRckUm5w9Puc5xVQVvM5CaebE15P7Nxq TA== 
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by userp2120.oracle.com with ESMTP id 2qpb5rh4pk-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 20 Feb 2019 12:33:48 +0000
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id x1KCXlTc007605
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 20 Feb 2019 12:33:47 GMT
+Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x1KCXlN5016134;
+        Wed, 20 Feb 2019 12:33:47 GMT
+Received: from kadam (/197.157.0.53)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Wed, 20 Feb 2019 04:33:46 -0800
+Date:   Wed, 20 Feb 2019 15:33:38 +0300
+From:   Dan Carpenter <dan.carpenter@oracle.com>
+To:     YueHaibing <yuehaibing@huawei.com>
+Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org
+Subject: Re: [PATCH v2 -next] btrfs: Remove unnecessary casts in
+ btrfs_read_root_item
+Message-ID: <20190220123338.GP17104@kadam>
 References: <20190220030840.188854-1-yuehaibing@huawei.com>
+ <20190220123202.43256-1-yuehaibing@huawei.com>
 MIME-Version: 1.0
-Content-Type:   text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7BIT
-X-Originating-IP: [10.175.113.25]
-X-CFilter-Loop: Reflected
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190220123202.43256-1-yuehaibing@huawei.com>
+User-Agent: Mutt/1.9.4 (2018-02-28)
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9172 signatures=668683
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1902200090
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There is a messy cast here:
-	min_t(int, len, (int)sizeof(*item)));
+On Wed, Feb 20, 2019 at 12:32:02PM +0000, YueHaibing wrote:
+> There is a messy cast here:
+> 	min_t(int, len, (int)sizeof(*item)));
+> 
+> min_t() should normally cast to unsigned.  It's not possible for
+> "len" to be negative, but if it were then we definitely
+> wouldn't want to pass negatives to read_extent_buffer().  Also there
+> is an extra cast.
+> 
+> This patch shouldn't affect runtime, it's just a clean up.
+> 
+> Suggested-by: Dan Carpenter <dan.carpenter@oracle.com>
 
-min_t() should normally cast to unsigned.  It's not possible for
-"len" to be negative, but if it were then we definitely
-wouldn't want to pass negatives to read_extent_buffer().  Also there
-is an extra cast.
+It wasn't really suggested by me...  But I do think it's the right
+thing.
 
-This patch shouldn't affect runtime, it's just a clean up.
+Reviewed-by: Dan Carpenter <dan.carpenter@oracle.com>
 
-Suggested-by: Dan Carpenter <dan.carpenter@oracle.com>
-Signed-off-by: YueHaibing <yuehaibing@huawei.com>
----
-v2: modify commit message as Dan suggested 
----
- fs/btrfs/root-tree.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
-index 02d1a57af78b..893d12fbfda0 100644
---- a/fs/btrfs/root-tree.c
-+++ b/fs/btrfs/root-tree.c
-@@ -21,12 +21,12 @@ static void btrfs_read_root_item(struct extent_buffer *eb, int slot,
- 				struct btrfs_root_item *item)
- {
- 	uuid_le uuid;
--	int len;
-+	u32 len;
- 	int need_reset = 0;
- 
- 	len = btrfs_item_size_nr(eb, slot);
- 	read_extent_buffer(eb, item, btrfs_item_ptr_offset(eb, slot),
--			min_t(int, len, (int)sizeof(*item)));
-+			   min_t(u32, len, sizeof(*item)));
- 	if (len < sizeof(*item))
- 		need_reset = 1;
- 	if (!need_reset && btrfs_root_generation(item)
-
-
+regards,
+dan carpenter
 

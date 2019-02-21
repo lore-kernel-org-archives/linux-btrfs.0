@@ -2,90 +2,93 @@ Return-Path: <SRS0=uD29=Q4=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0E197C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 20:26:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F3278C4360F
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 23:55:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D3B292080F
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 20:26:05 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1550780765;
-	bh=V/IEXmsuqvt9Na+MEFmN7P1mMYAkl9do3dB58LJe59U=;
-	h=From:To:Cc:Subject:Date:List-ID:From;
-	b=d00p78E8lHLkATLQUy8aKHZJ0bjN8xSibX8+onwMeJNEteCTYvH0/QbBJkJ8OkvoY
-	 G73igkxOLe2T4RqEvRx36H4p6uvu4SIbX5Gy/OcNFQj+iqt9JTvhnqwELE7FuWOW6w
-	 7PTM5p4c4YXSvhq4qySHCIIvqfdL3OEUPG87/7fg=
+	by mail.kernel.org (Postfix) with ESMTP id C1D6320684
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 23:55:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726825AbfBUU0B (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Feb 2019 15:26:01 -0500
-Received: from mail-yw1-f66.google.com ([209.85.161.66]:39745 "EHLO
-        mail-yw1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726075AbfBUU0B (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Feb 2019 15:26:01 -0500
-Received: by mail-yw1-f66.google.com with SMTP id f192so2481809ywh.6;
-        Thu, 21 Feb 2019 12:26:00 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id;
-        bh=KrijerxTyGVa0Sr/JiCT9Xom8mVGoOuXytTBdA4zzLc=;
-        b=DZeRQ1Cx7lSU4Ewf7c3n/VbPqOwguzYkWwq9jJP8WWr5192LlpWzYQkbsSJriptOoY
-         uvCYi/Ll680AWqmDZKiJWXBAleqLCOCxh7NwsL1fTmXIp2fJjk7D+gYQo79iayalLDaw
-         lI4M49V06cNbRJZcZsoNuGVW699Y09iKvwPTnVDeEyu1Zn6Wbl7lgLNJpE4CWxOiLEZS
-         9Q8BSVsh9wTevREaLjjOxtrmyAQW7bkvUIeDxNV5RyxpWNj1Q6XZ9/XkPfMO2h1YgZlV
-         e6tNf0MHk0JbUH0V0T6kwjx9xnBi0ugkqZ2pUq7MgV56wWhJpivR/xQO+AIQwfkps0wo
-         Eo4A==
-X-Gm-Message-State: AHQUAub4deBc1ZyHYDDtnpLjhfHJIeGidqnictDCQ3n/8tiR3uRq1QDP
-        kyWkRmPQWk8oiKYCMwZRR80=
-X-Google-Smtp-Source: AHgI3IYYriZGDkk14SK/cXRoYRHeOjBsovRy5vJNCDZWaxi4vahhSAGmn8xqGBA/6PCiKXFXGwz3vw==
-X-Received: by 2002:a81:6584:: with SMTP id z126mr369424ywb.216.1550780760256;
-        Thu, 21 Feb 2019 12:26:00 -0800 (PST)
-Received: from dennisz-mbp.thefacebook.com ([199.201.65.133])
-        by smtp.gmail.com with ESMTPSA id a4sm6570047ywa.14.2019.02.21.12.25.58
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
-        Thu, 21 Feb 2019 12:25:59 -0800 (PST)
-From:   Dennis Zhou <dennis@kernel.org>
-To:     David Sterba <dsterba@suse.com>,
-        Josef Bacik <josef@toxicpanda.com>, Chris Mason <clm@fb.com>,
-        Omar Sandoval <osandov@osandov.com>,
-        Nick Terrell <terrelln@fb.com>,
-        Nikolay Borisov <nborisov@suse.com>
-Cc:     kernel-team@fb.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, Dennis Zhou <dennis@kernel.org>
-Subject: [PATCH] btrfs: zstd ensure reclaim timer is properly cleaned up
-Date:   Thu, 21 Feb 2019 15:25:56 -0500
-Message-Id: <20190221202556.42447-1-dennis@kernel.org>
-X-Mailer: git-send-email 2.13.5
+        id S1726591AbfBUXzK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Feb 2019 18:55:10 -0500
+Received: from mx2.suse.de ([195.135.220.15]:52034 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726335AbfBUXzK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 21 Feb 2019 18:55:10 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 973B6AD76;
+        Thu, 21 Feb 2019 23:55:08 +0000 (UTC)
+Subject: Re: [LSF/MM TOPIC] More async operations for file systems - async
+ discard?
+To:     Keith Busch <keith.busch@intel.com>,
+        Ric Wheeler <ricwheeler@gmail.com>
+Cc:     Dave Chinner <david@fromorbit.com>,
+        lsf-pc@lists.linux-foundation.org,
+        linux-xfs <linux-xfs@vger.kernel.org>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        linux-ext4 <linux-ext4@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        linux-block@vger.kernel.org
+References: <92ab41f7-35bc-0f56-056f-ed88526b8ea4@gmail.com>
+ <20190217210948.GB14116@dastard>
+ <46540876-c222-0889-ddce-44815dcaad04@gmail.com>
+ <20190220234723.GA5999@localhost.localdomain>
+From:   Jeff Mahoney <jeffm@suse.com>
+Message-ID: <45c27fea-6d74-2adc-fe9d-e314ce4f3672@suse.com>
+Date:   Thu, 21 Feb 2019 18:55:05 -0500
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:65.0)
+ Gecko/20100101 Thunderbird/65.0
+MIME-Version: 1.0
+In-Reply-To: <20190220234723.GA5999@localhost.localdomain>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The timer function, zstd_reclaim_timer_fn(), reschedules itself under
-certain conditions. Switch to del_timer_sync() to ensure that the timer
-function hasn't rescheduled itself.
+On 2/20/19 6:47 PM, Keith Busch wrote:
+> On Sun, Feb 17, 2019 at 06:42:59PM -0500, Ric Wheeler wrote:
+>> I think the variability makes life really miserable for layers above it.
+>>
+>> Might be worth constructing some tooling that we can use to validate or
+>> shame vendors over - testing things like a full device discard, discard of
+>> fs block size and big chunks, discard against already discarded, etc.
+> 
+> With respect to fs block sizes, one thing making discards suck is that
+> many high capacity SSDs' physical page sizes are larger than the fs block
+> size, and a sub-page discard is worse than doing nothing.
+> 
+> We've discussed previously about supporting block size larger than
+> the system's page size, but it doesn't look like that's gone anywhere.
+> Maybe it's worth revisiting since it's really inefficient if you write
+> or discard at the smaller granularity.
 
-Signed-off-by: Dennis Zhou <dennis@kernel.org>
----
- fs/btrfs/zstd.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Isn't this addressing the problem at the wrong layer?  There are other
+efficiencies to be gained by larger block sizes, but better discard
+behavior is a side effect.  As Dave said, the major file systems already
+assemble contiguous extents as large we can can before sending them to
+discard.  The lower bound for that is the larger of minimum lengths
+passed by the user or provided by the block layer.  We've always been
+told "don't worry about what the internal block size is, that only
+matters to the FTL."  That's obviously not true, but when devices only
+report a 512 byte granularity, we believe them and will issue discard
+for the smallest size that makes sense for the file system regardless of
+whether it makes sense (internally) for the SSD.  That means 4k for
+pretty much anything except btrfs metadata nodes, which are 16k.
 
-diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
-index 3e418a3aeb11..62de9a211321 100644
---- a/fs/btrfs/zstd.c
-+++ b/fs/btrfs/zstd.c
-@@ -195,7 +195,7 @@ static void zstd_cleanup_workspace_manager(void)
- 	struct workspace *workspace;
- 	int i;
- 
--	del_timer(&wsm.timer);
-+	del_timer_sync(&wsm.timer);
- 
- 	for (i = 0; i < ZSTD_BTRFS_MAX_LEVEL; i++) {
- 		while (!list_empty(&wsm.idle_ws[i])) {
+So, I don't think changing the file system block size is the right
+approach.  It *may* bring benefits, but I think many of the same
+benefits can be gained by using the minimum-size option for fstrim and
+allowing the discard mount options to accept a minimum size as well.
+
+-Jeff
+
 -- 
-2.17.1
-
+Jeff Mahoney
+SUSE Labs

@@ -2,122 +2,187 @@ Return-Path: <SRS0=uD29=Q4=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3D0FBC43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 15:09:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8B729C43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 16:54:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1570C206B6
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 15:09:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 611A42083E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 16:54:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726359AbfBUPJF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Feb 2019 10:09:05 -0500
-Received: from mx2.suse.de ([195.135.220.15]:52664 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725858AbfBUPJE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Feb 2019 10:09:04 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D2838B637
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Feb 2019 15:09:02 +0000 (UTC)
-Subject: Re: [PATCH v3 1/6] btrfs: Refactor cow_file_range_async
-To:     Johannes Thumshirn <jthumshirn@suse.de>,
-        linux-btrfs@vger.kernel.org
-References: <20190221115717.5128-1-nborisov@suse.com>
- <20190221115717.5128-2-nborisov@suse.com>
- <aaaf4399-7acd-1726-c579-19a9285c337f@suse.de>
- <ca7d67fb-8f64-d6c5-97f1-cff2de91f411@suse.com>
- <49f1484a-e4c3-70cf-c443-708e916c4f90@suse.de>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <f5023c11-9fc2-6470-d04b-828b38880cea@suse.com>
-Date:   Thu, 21 Feb 2019 17:09:01 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.4.0
+        id S1728312AbfBUQyw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Feb 2019 11:54:52 -0500
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:46364 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726183AbfBUQyw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 21 Feb 2019 11:54:52 -0500
+Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
+        id EE8C622D706; Thu, 21 Feb 2019 11:54:50 -0500 (EST)
+Date:   Thu, 21 Feb 2019 11:54:50 -0500
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To:     Filipe Manana <fdmanana@kernel.org>
+Cc:     dsterba@suse.cz, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 3/4] Btrfs: check if destination root is read-only for
+ deduplication
+Message-ID: <20190221165326.GH9995@hungrycats.org>
+References: <20181212180559.15249-1-fdmanana@kernel.org>
+ <20181212180559.15249-4-fdmanana@kernel.org>
+ <20181213160740.GE23615@twin.jikos.cz>
+ <CAL3q7H7T4Nercz9ZYtq_2yjpiPVjUX8+1xuvxnqnaDsip0bmYw@mail.gmail.com>
+ <20190220164140.GF9995@hungrycats.org>
+ <CAL3q7H455MCpj_-5U=zUzD3Of7aLtG6R_tHdGhZ4Kj-393sWAg@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <49f1484a-e4c3-70cf-c443-708e916c4f90@suse.de>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="sDKAb4OeUBrWWL6P"
+Content-Disposition: inline
+In-Reply-To: <CAL3q7H455MCpj_-5U=zUzD3Of7aLtG6R_tHdGhZ4Kj-393sWAg@mail.gmail.com>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
+--sDKAb4OeUBrWWL6P
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-On 21.02.19 г. 17:07 ч., Johannes Thumshirn wrote:
-> On 21/02/2019 14:25, Nikolay Borisov wrote:
->>
->>
->> On 21.02.19 г. 15:15 ч., Johannes Thumshirn wrote:
->>> On 21/02/2019 12:57, Nikolay Borisov wrote:
->>>>  
->>>>  static int cow_file_range_async(struct inode *inode, struct page *locked_page,
->>>> @@ -1190,45 +1201,68 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
->>>>  				unsigned int write_flags)
->>>>  {
->>>>  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
->>>> -	struct async_cow *async_cow;
->>>> +	struct async_cow *ctx;
->>>> +	struct async_chunk *async_cow;
->>>
->>> In case you have to re-send the patch you could maybe rename the
->>> async_cow variable to async_chunk or sth like that. Would make the
->>> resulting code a little bit clearer but no strong opinions here.
->>
->> The reason I left it like that is to minimize the resulting diff.
-> 
-> Understood, but now we have a 'ctx' of type 'struct async_cow' and a
-> '*async_cow' of type 'struct asyn_chunk'. This is the type of code that
-> will make people go WTF when they read it in 3-4 cycles.
+On Wed, Feb 20, 2019 at 04:54:09PM +0000, Filipe Manana wrote:
+> On Wed, Feb 20, 2019 at 4:42 PM Zygo Blaxell
+> <ce3g8jdj@umail.furryterror.org> wrote:
+> >
+> > On Thu, Jan 31, 2019 at 04:39:22PM +0000, Filipe Manana wrote:
+> > > On Thu, Dec 13, 2018 at 4:08 PM David Sterba <dsterba@suse.cz> wrote:
+> > > >
+> > > > On Wed, Dec 12, 2018 at 06:05:58PM +0000, fdmanana@kernel.org wrote:
+> > > > > From: Filipe Manana <fdmanana@suse.com>
+> > > > >
+> > > > > Checking if the destination root is read-only was being performed=
+ only for
+> > > > > clone operations. Make deduplication check it as well, as it does=
+ not make
+> > > > > sense to not do it, even if it is an operation that does not chan=
+ge the
+> > > > > file contents (such as defrag for example, which checks first if =
+the root
+> > > > > is read-only).
+> > > >
+> > > > And this is also change in user-visible behaviour of dedupe, so this
+> > > > needs to be verified if it's not breaking existing tools.
+> > >
+> > > Have you had the chance to do such verification?
+> > >
+> > > This actually conflicts with send. Send does not expect a root/tree to
+> > > change, and with dedupe on read-only roots happening
+> > > in parallel with send is going to cause all sorts of unexpected and
+> > > undesired problems...
+> >
+> > This is a problem bees ran into.  There is a workaround in bees (called
+> > --workaround-btrfs-send) that avoids RO subvols as dedupe targets.
+> > As the name of the option implies, it works around problems in btrfs se=
+nd.
+> >
+> > This kernel change makes the workaround mandatory now, as the default
+> > case (without workaround) will fail on every RO subvol even if that
+> > behavior is desired by the user.  That breaks an important use case on
+> > the receiving side of sends--to dedupe the received subvols together
+> > while also protecting them against modification on the target system
+> > with the RO flag--and preserving that use case is why the send workarou=
+nd
+> > was optional (and not default) in bees.
+> >
+> > bees also won't handle the RO/RW/RO transition correctly, as it didn't
+> > seem like a sane thing to support at the time.  That is arguably someth=
+ing
+> > to be fixed in bees.
+> >
+> > > This is a problem introduced by dedupe ioctl when it landed, since
+> > > send existed for a longer time (when nothing else was
+> > > allowed to change read-only roots, including defrag).
+> >
+> > Is there a reason why incremental send can't simply be fixed?
+>=20
+> This is a problem that affects both incremental and non-incremental (full=
+) send.
+>=20
+> > As far
+> > as I can tell, send is failing because of a runtime check that seems to
+> > be too strict; however, I haven't tried removing that check to see if
+> > it fixes the problem in send, or just hides the next problem.
+>=20
+> The problem is send was designed with the idea that read-only roots
+> don't ever change.
 
-I also thought of that but then sometimes David has strange tastes re.
-code cleanups that add noise. If he is fine with doing the rename in
-this patch then I'm happy to do it and resend.
+Wait...don't ever change, or don't change while send is running?  If the
+only thing we have to do is prevent concurrent send and dedupe, then that
+might be much easier--and much less intrusive than breaking dedupe of
+all RO subvols.
 
-> 
-> 
+How does concurrent send and balance work now?  Maybe dedupe can use the
+same approach.
+
+> The failures that can happen are many and unpredictable, from
+> occasionally failing with some error, to invalid memory accesses, use
+> after free problems, etc.
+> Essentially all caused by races when the nodes/leafs from the
+> read-only tree change while send is running.
+>=20
+> I don't know what runtime check you are mentioning that is too strict.
+> You can definitely do dedupe on a read-only root and after it finishes
+> do a send (either full or incremental), and it will work.
+
+OK, after rereading https://github.com/Zygo/bees/issues/79 it's not
+clear to me whether the problem reported was "send fails while bees is
+running" or "send fails if bees is run between two incremental sends."
+I had concluded it was the latter, which would definitely be a send bug,
+but I can't find any statement to that effect from the bug reporter.
+
+If it's the former, then all we need is some way to prevent dedupe while
+sending on the same subvol.  Maybe send could set a flag (rwlock?) on the
+subvol data structure, and dedupe can check the flag, with this behavior:
+
+	- if dedupe is running while send starts, block the send until
+	the dedupe is finished
+
+	- if send is running when dedupe starts, reject the dedupe
+	with...EBUSY?
+
+Userspace dedupe could look for EBUSY and reschedule dedupe of the RO
+subvol later.
+
+Dedupe could block until the send is finished (similar to the way
+that subvol deletes block until balance is finished) but I'd prefer to
+have dedupe return immediately with an error so userspace can schedule
+something different to dedupe (similar to the way that multiple concurrent
+balances exclude each other).
+
+
+> >
+> > More details at:
+> >
+> >         https://github.com/Zygo/bees/issues/79#issuecomment-429039036
+> >
+> > > I understand it can break some applications, but adding other solution
+> > > such as preventing send and dedupe from running in parallel
+> > > (erroring out or block and wait for each other, etc) is going to be
+> > > really ugly. There's always the workaround for apps to set the
+> > > subvolume
+> > > to RW mode, do the dedupe, then switch it back to RO mode.
+> > >
+> > > Thanks.
+
+--sDKAb4OeUBrWWL6P
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCXG7XgwAKCRCB+YsaVrMb
+nEO6AJ4ziTC14ATmkvYrYyrlArVcawcxSwCfSrCAEHdHjFvkxWbDUmFrTJXKUk8=
+=OFH5
+-----END PGP SIGNATURE-----
+
+--sDKAb4OeUBrWWL6P--

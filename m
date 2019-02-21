@@ -5,26 +5,29 @@ X-Spam-Level:
 X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6CA71C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 13:07:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 55EFEC43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 13:08:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 36CF9207E0
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 13:07:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2C362207E0
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 13:08:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727859AbfBUNHw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Feb 2019 08:07:52 -0500
-Received: from mx2.suse.de ([195.135.220.15]:57972 "EHLO mx1.suse.de"
+        id S1726077AbfBUNIU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Feb 2019 08:08:20 -0500
+Received: from mx2.suse.de ([195.135.220.15]:57996 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726224AbfBUNHv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Feb 2019 08:07:51 -0500
+        id S1725385AbfBUNIU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 21 Feb 2019 08:08:20 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id C92E4AEA3
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Feb 2019 13:07:49 +0000 (UTC)
-Subject: Re: [PATCH v3 2/6] btrfs: Remove fs_info from struct async_chunk
+        by mx1.suse.de (Postfix) with ESMTP id 1F510AEA3
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Feb 2019 13:08:18 +0000 (UTC)
+Subject: Re: [PATCH v2 3/6] btrfs: Make compress_file_range take only struct
+ async_cow
 To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-References: <20190221115717.5128-1-nborisov@suse.com>
- <20190221115717.5128-3-nborisov@suse.com>
+References: <20190220151143.19057-1-nborisov@suse.com>
+ <20190220151143.19057-4-nborisov@suse.com>
+ <559c44a0-5b82-8fea-3d46-8f5d9e9bb2f3@suse.de>
+ <010a648e-4c75-39ff-8add-87c45a19a383@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -82,12 +85,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <41341b2c-737b-3a11-a0d4-b7787c3d4aed@suse.de>
-Date:   Thu, 21 Feb 2019 14:07:48 +0100
+Message-ID: <2616bf67-42e9-2aa2-9f42-1e2b44d30ca3@suse.de>
+Date:   Thu, 21 Feb 2019 14:08:16 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.3.0
 MIME-Version: 1.0
-In-Reply-To: <20190221115717.5128-3-nborisov@suse.com>
+In-Reply-To: <010a648e-4c75-39ff-8add-87c45a19a383@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -96,8 +99,18 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Looks good,
-Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
+On 21/02/2019 12:55, Nikolay Borisov wrote:
+> 
+> 
+> On 20.02.19 г. 17:27 ч., Johannes Thumshirn wrote:
+>> Hmm "... and num_added" for the Subject?
+> 
+> Nah, that's obvious, the focus here is instead of taking 4-5 more
+> arguments they are replaced with async_cow.
+> 
+
+Fair enough
+
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems
 jthumshirn@suse.de                                +49 911 74053 689

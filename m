@@ -2,246 +2,372 @@ Return-Path: <SRS0=uD29=Q4=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4733FC43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 04:49:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2EBE9C43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 08:19:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0FAC52147A
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 04:49:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E539F20818
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 08:19:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726369AbfBUEtf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 20 Feb 2019 23:49:35 -0500
-Received: from mout.gmx.net ([212.227.17.21]:39033 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725880AbfBUEtf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Feb 2019 23:49:35 -0500
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx103
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0M6zvN-1hI4Wo2obd-00wlI8; Thu, 21
- Feb 2019 05:49:28 +0100
-Subject: Re: [PATCH v5.1 00/12] btrfs: Enhancement to tree block validation
-To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20190218052753.24138-1-wqu@suse.com>
-Cc:     David Sterba <dsterba@suse.cz>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+        id S1727071AbfBUITw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Feb 2019 03:19:52 -0500
+Received: from mx2.suse.de ([195.135.220.15]:40382 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726594AbfBUITv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 21 Feb 2019 03:19:51 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 84562AD95;
+        Thu, 21 Feb 2019 08:19:49 +0000 (UTC)
+Subject: Re: [PATCH v2] shared/298: Wire btrfs support in get_free_sectors
+To:     guaneryu@gmail.com
+Cc:     dsterb@suse.cz, fstests@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+References: <20190208114404.13505-1-nborisov@suse.com>
+From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <06012a9c-d812-4c54-085f-ce5dba03a274@gmx.com>
-Date:   Thu, 21 Feb 2019 12:49:23 +0800
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <fd001b5e-5376-dbde-ae4a-82fac7aa98da@suse.com>
+Date:   Thu, 21 Feb 2019 10:19:48 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.0
+ Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <20190218052753.24138-1-wqu@suse.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="4UlMb6GDsRHQsVpljDjyCBEBhbYTFuR1V"
-X-Provags-ID: V03:K1:4LmI6TgpGa9BakHg3AmdsWNGAY0hrGP3z55oF8/UcilAN9HH9PC
- fezt9WWpBksLzGjx+6Kp0JRr496Bu9OSiTaUqpsUy4yXXl9dn3aXdQQPd6wiZh+17G4T4j/
- dUmujdRAeg2hWMEWSRq4O85cWWShL4VvsLp2o7MhmdXEoWMjfuB6/kE+RR67SYlXrIERWax
- Nv/P6ROacKcblTt7XlXPg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:QWDTkrCHne8=:GqobX+IYE4Cg7Y79mqRwdk
- 4mzDTB0xJsh0mnmkBvdWwmeTJJIEq+LhDqXlNbknT96EIk+ZjjqiYgoDZE+SBIgdc74CU63Ru
- 6gVs/CiHTGeJn7ey0O5UyXVLlqOv2cLxiKwvrrnPWK7bYYYWgBcIJvSmWjH0mTR2O7MkiGBOq
- ZxSiihd4SAWf5C89Ap6SQY6sa7PmRtUxsb8DJnf5eLUi7apuPLaG62cri7IIc2nZfyluXFfjv
- GDnj7m1G8xtuInOnsBtzyd3rZgMqo3YKcwMEtqTp2yvLaULREfo5aE1CK7Sq3SOcADCJR5vwE
- 3zyqpCmixPxDzgsnB6Uk3ZOV0P6I0PFbH1CpgkifEuqFhImJovvEyw24AAE2e6DH1K00zSiS5
- NaiaP4kQALwlZdLaoDctWqFNAswyEjMqcz1i0BDyajDBK33NaX7duMZNg53V4TcEC8w5Byq5o
- itPTBqkwevtPki8kTtbJOCuhXNEQk7xq5ZSOi2TPMk0r8ijq/1hH/4aj11Ko1cSXMR3E0GvUj
- YxzdE4mDdsRtQ3xMEvX5ydRFq/SNymy5Lklod9B8jWAkJ+RwtQoXOC8lJnVUMjnSAVu5+G7VA
- j/Pz9DcsWFaFant287zZCoxaoR4yA1v2CFLSh/wbtdPQbpu8hB6FRj74cjBEmqDrgWZzZjN2b
- 8UJfFZDyN55AP3ZoccxrdwthvQDIhNDu6s4u+nO8XVZ7pbF7UJT/9VAWQ3bSaWg+83O385TO1
- pGiPgHA5bhhuKnagNIuaGFnL05slMHw3G3xg8gCmPm4lmobSnrf3b2nfiQlzG8gGG2dFscT9Y
- ubSEoZdhnxK8h2XBaLwhaI1vki6shIwBV7rX6ID0+IO/x9Ro+U81Dcl8EwpgJ8NcT2tzf3D/8
- YUYD+hvgwcHEPu96VGrl9qScs0udvSQdoRq/FiSRbxtfUtoEyTpTNvzrWkLyUp
+In-Reply-To: <20190208114404.13505-1-nborisov@suse.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---4UlMb6GDsRHQsVpljDjyCBEBhbYTFuR1V
-Content-Type: multipart/mixed; boundary="QD0Ogzo4LqUJf7aAqxUQlF4XlrCRCCeNx";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>
-Message-ID: <06012a9c-d812-4c54-085f-ce5dba03a274@gmx.com>
-Subject: Re: [PATCH v5.1 00/12] btrfs: Enhancement to tree block validation
-References: <20190218052753.24138-1-wqu@suse.com>
-In-Reply-To: <20190218052753.24138-1-wqu@suse.com>
-
---QD0Ogzo4LqUJf7aAqxUQlF4XlrCRCCeNx
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
 
-
-On 2019/2/18 =E4=B8=8B=E5=8D=881:27, Qu Wenruo wrote:
-> Patchset can be fetched from github:
-> https://github.com/adam900710/linux/tree/write_time_tree_checker
-> Which is based on v5.0-rc1 tag.
-> Also there is no conflict rebasing the patchset to misc-next.
-
-Now the github branch rebased to v5.0-rc7 tag.
-
-And ran tests of btrfs auto group, no new regressions found.
-
-Git is clever enough in this rebase, so I bother mail bombing the mail
-list for another minor update.
-
-Thanks,
-Qu
-
->=20
-> This patchset has the following 3 features:
-> - Tree block validation output enhancement
->   * Output validation failure timing (write time or read time)
->   * Always output tree block level/key mismatch error message
->     This part is already submitted and reviewed.
->=20
-> - Write time tree block validation check
->   To catch memory corruption either from hardware or kernel.
->   Example output would be:
->=20
->     BTRFS critical (device dm-3): corrupt leaf: root=3D2 block=3D135063=
-0375424 slot=3D68, bad key order, prev (10510212874240 169 0) current (17=
-14119868416 169 0)
->     BTRFS error (device dm-3): block=3D1350630375424 write time tree bl=
-ock corruption detected
->     BTRFS: error (device dm-3) in btrfs_commit_transaction:2220: errno=3D=
--5 IO failure (Error while writing out transaction)
->     BTRFS info (device dm-3): forced readonly
->     BTRFS warning (device dm-3): Skipping commit of aborted transaction=
-=2E
->     BTRFS: error (device dm-3) in cleanup_transaction:1839: errno=3D-5 =
-IO failure
->     BTRFS info (device dm-3): delayed_refs has NO entry
->=20
-> - Better error handling before calling flush_write_bio()
->   One hidden reason of calling flush_write_bio() under all cases is,
->   flush_write_bio() will trigger endio function and endio function of
->   epd->bio will free the bio under all cases.
->   So we're in fact abusing flush_write_bio() as cleanup.
->=20
->   Since now flush_write_bio() has its own return value, we shouldn't ca=
-ll
->   flush_write_bio() no-brain, here we introduce proper cleanup helper,
->   end_write_bio(). Now we call flush_write_bio() like:
->               New                 |           Old
->   --------------------------------------------------------------
->   ret =3D do_some_evil(&epd);       | ret =3D do_some_evil(&epd);
->   if (ret < 0) {                  | flush_write_bio(&epd);
->   	end_write_bio(&epd, ret); | ^^^ submitting half-backed epd->bio?
->   	return ret;               | return ret;
->   }                               |
->   ret =3D flush_write_bio(&epd);    |
->   return ret;                     |
->=20
->   Above code should be more streamline for the error handling part.
->=20
-> Changelog:
-> v2:
-> - Unlock locked pages in lock_extent_buffer_for_io() for error handling=
-=2E
-> - Added Reviewed-by tags.
->=20
-> v3:
-> - Remove duplicated error message.
-> - Use IS_ENABLED() macro to replace #ifdef.
-> - Added Reviewed-by tags.
->=20
-> v4:
-> - Re-organized patch split
->   Now each BUG_ON() cleanup has its own patch
-> - Dig much further into the call sites to eliminate unexpected >0 retur=
-n
->   May be a little paranoid and abuse some ASSERT(), but it should be
->   much safer against further code change.
-> - Fix the false alert caused by balance and memory pressure
->   The fix it skip owner checker for non-essential tree at write time.
->   Since owner root can't always be reliable, either due to commit root
->   created in current transaction or balance + memory pressure.
->=20
-> v5:
-> - Do proper error-out handling other than relying on flush_write_bio()
->   to clean up.
->   This has a side effect that no Reviewed-by tags for modified patches.=
-
-> - New comment for why we don't need to do anything about ebp->bio when
->   submit_one_bio() fails.
-> - Add some Reviewed-by tag.
->=20
-> v5.1:
-> - Add "block=3D%llu " output for write/read time error line.
-> - Also output read time error message for fsid/start/level check.
->=20
-> Qu Wenruo (12):
->   btrfs: Always output error message when key/level verification fails
->   btrfs: extent_io: Kill the forward declaration of flush_write_bio()
->   btrfs: disk-io: Show the timing of corrupted tree block explicitly
->   btrfs: extent_io: Move the BUG_ON() in flush_write_bio() one level up=
-
->   btrfs: extent_io: Handle error better in extent_write_full_page()
->   btrfs: extent_io: Handle error better in btree_write_cache_pages()
->   btrfs: extent_io: Kill the dead branch in extent_write_cache_pages()
->   btrfs: extent_io: Handle error better in extent_write_locked_range()
->   btrfs: extent_io: Kill the BUG_ON() in lock_extent_buffer_for_io()
->   btrfs: extent_io: Kill the BUG_ON() in extent_write_cache_pages()
->   btrfs: extent_io: Handle error better in extent_writepages()
->   btrfs: Do mandatory tree block check before submitting bio
->=20
->  fs/btrfs/disk-io.c      |  23 ++++--
->  fs/btrfs/extent_io.c    | 168 ++++++++++++++++++++++++++++------------=
-
->  fs/btrfs/tree-checker.c |  24 +++++-
->  fs/btrfs/tree-checker.h |   8 ++
->  4 files changed, 164 insertions(+), 59 deletions(-)
->=20
+On 8.02.19 г. 13:44 ч., Nikolay Borisov wrote:
+> Add support for btrfs in shared/298. Achieve this by introducing 2
+> new awk scripts that parse relevant btrfs structures and print holes.
+> Additionally modify the test to create larger - 3gb filesystem in the
+> case of btrfs. This is needed so that distinct block groups are used
+> for data and metadata.
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
 
---QD0Ogzo4LqUJf7aAqxUQlF4XlrCRCCeNx--
+Ping, I would really like to get this ASAP to get coverage for btrfs.
 
---4UlMb6GDsRHQsVpljDjyCBEBhbYTFuR1V
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxuLdMACgkQwj2R86El
-/qh/DQf+K0zD+JUo3a/yKWdhIrrViIQa6aLJR92vsdYr0CjlZu3dB/cgnI0V1rLy
-p7nb9GOWUu/3qg0vtLddnyIkCz1fbSJkGg65vqfwRsS590/cRNCJ77BVcoo4hehZ
-MKIGwu4XHGuDABBV/BL4TRYXGUlNJlL/7J3PAlTR+tSZVRVhPJQKg8BWKeZgtHpw
-rfphopIFxqxvG4HzRjg4+f62hC6aSMOPFG8AEfH2p914ipczcka2qBbhJwR3Rvd4
-tPDAOSizkSB8iSwFw1g+CbM6Is4cq8WqtoFN8kqSmo+U+jS3ueFXdsU7ZtaSa8+h
-KT5XQNEMANssmtXLsrhdyy6mVdrofg==
-=sfG+
------END PGP SIGNATURE-----
-
---4UlMb6GDsRHQsVpljDjyCBEBhbYTFuR1V--
+> ---
+> 
+> V2: 
+>  * Changed the way args are passed to mkfs.btrfs to preserve existing 
+>  options, yet override data/metadata profile settings
+> 
+>  parse-dev-tree.awk    |  47 +++++++++++++++++++
+>  parse-extent-tree.awk | 125 ++++++++++++++++++++++++++++++++++++++++++++++++++
+>  tests/shared/298      |  36 +++++++++++++--
+>  3 files changed, 205 insertions(+), 3 deletions(-)
+>  create mode 100755 parse-dev-tree.awk
+>  create mode 100755 parse-extent-tree.awk
+> 
+> diff --git a/parse-dev-tree.awk b/parse-dev-tree.awk
+> new file mode 100755
+> index 000000000000..52f9c0aadc25
+> --- /dev/null
+> +++ b/parse-dev-tree.awk
+> @@ -0,0 +1,47 @@
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2019 Nikolay Borisov, SUSE LLC.  All Rights Reserved.
+> +#
+> +# Parses btrfs' device tree for holes, required parameters passed on command
+> +# line:
+> +#     * spb - how many bytes per sector, this is used so that the numbers 
+> +# 		returned by the script are in sectors.
+> +#	  * devsize - size of the device in bytes, used to output the final 
+> +# 		hole (if any)
+> +
+> +function get_extent_size(line,  tmp) {
+> +	split(line, tmp)
+> +	return tmp[6]
+> +}
+> +
+> +function get_extent_offset(line,  tmp) {
+> +	split(line, tmp)
+> +	gsub(/\)/,"", tmp[6])
+> +	return tmp[6]
+> +}
+> +
+> +BEGIN {
+> +	dev_extent_match="^.item [0-9]* key \\([0-9]* DEV_EXTENT [0-9]*\\).*"
+> +	dev_extent_len_match="^\\s*chunk_objectid [0-9]* chunk_offset [0-9]* length [0-9]*$"
+> +}
+> +
+> +{
+> +	if (match($0,dev_extent_match)) {
+> +		extent_offset = get_extent_offset($0)		
+> +		if (prev_extent_end) {
+> +			hole_size = extent_offset - prev_extent_end
+> +			if (hole_size > 0) {
+> +				print prev_extent_end / spb, int((extent_offset - 1) / spb)
+> +			}
+> +		} 
+> +	} else if (match($0, dev_extent_len_match)) {
+> +		extent_size = get_extent_size($0)
+> +		prev_extent_end = extent_offset + extent_size
+> +	}
+> +}
+> +
+> +END {
+> +	if (prev_extent_end) {
+> +		print prev_extent_end / spb, int((devsize - 1) / spb)
+> +	}
+> +}
+> +
+> diff --git a/parse-extent-tree.awk b/parse-extent-tree.awk
+> new file mode 100755
+> index 000000000000..01c61254cfef
+> --- /dev/null
+> +++ b/parse-extent-tree.awk
+> @@ -0,0 +1,125 @@
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2019 Nikolay Borisov, SUSE LLC.  All Rights Reserved.
+> +#
+> +# Parses btrfs' extent tree for holes, required parameters passed on command
+> +# line:
+> +#     * spb - how many bytes per sector, this is used so that the numbers 
+> +# 		returned by the script are in sectors.
+> +#	  * nodesize - size of metadata extents, used for internal calculations
+> +
+> +function get_extent_size(line,  tmp) {
+> +	if (line ~ data_match || line ~ bg_match) {
+> +		split(line, tmp)
+> +		gsub(/\)/,"", tmp[6])
+> +		return tmp[6]
+> +	} else if (line ~ metadata_match) {
+> +		return nodesize
+> +	}
+> +}
+> +
+> +function get_extent_offset(line,  tmp) {
+> +	split(line, tmp)
+> +	gsub(/\(/,"",tmp[4])
+> +	return tmp[4]
+> +}
+> +
+> +function print_array(         base_offset, bg_line)
+> +{
+> +	if (match(lines[0], bg_match)) {
+> +		#we don't have an extent at the beginning of of blockgroup, so we
+> +		#have a hole between blockgroup offset and first extent offset
+> +		bg_line = lines[0]
+> +		prev_size=0
+> +		prev_offset=get_extent_offset(bg_line)
+> +		delete lines[0]
+> +	} else {
+> +		#we have an extent at the beginning of block group, so initialize 
+> +		#the prev_* vars correctly
+> +		bg_line = lines[1]
+> +		prev_size = get_extent_size(lines[0])
+> +		prev_offset = get_extent_offset(lines[0])
+> +		delete lines[1]
+> +		delete lines[0]
+> +	}
+> +
+> +	bg_offset=get_extent_offset(bg_line)
+> +	bgend=bg_offset + get_extent_size(bg_line)
+> +
+> +	for (i in lines) {
+> +			cur_size = get_extent_size(lines[i])
+> +			cur_offset = get_extent_offset(lines[i])
+> +			if (cur_offset  != prev_offset + prev_size)
+> +				print int((prev_size + prev_offset) / spb), int((cur_offset-1) / spb)
+> +			prev_size = cur_size
+> +			prev_offset = cur_offset
+> +	}
+> +
+> +	print int((prev_size + prev_offset) / spb), int((bgend-1) / spb)
+> +	total_printed++
+> +	delete lines
+> +}
+> +
+> +BEGIN {
+> +	loi_match="^.item [0-9]* key \\([0-9]* (BLOCK_GROUP_ITEM|METADATA_ITEM|EXTENT_ITEM) [0-9]*\\).*"
+> +	metadata_match="^.item [0-9]* key \\([0-9]* METADATA_ITEM [0-9]*\\).*"
+> +	data_match="^.item [0-9]* key \\([0-9]* EXTENT_ITEM [0-9]*\\).*"
+> +	bg_match="^.item [0-9]* key \\([0-9]* BLOCK_GROUP_ITEM [0-9]*\\).*"
+> +	node_match="^node.*$"
+> +	leaf_match="^leaf [0-9]* flags"
+> +	line_count=0
+> +	total_printed=0
+> +	skip_lines=0
+> +}
+> +
+> +{
+> +	#skip lines not belonging to a leaf
+> +	if (match($0,node_match)) {
+> +		skip_lines=1
+> +	} else if (match($0, leaf_match)) {
+> +		skip_lines=0
+> +	}
+> +
+> +	if (!match($0,loi_match) || skip_lines == 1) next;
+> +
+> +	#we have a line of interest, we need to parse it. First check if there is
+> +	#anything in the array
+> +	if (line_count==0) {
+> +		lines[line_count++]=$0;
+> +	} else {
+> +		prev_line=lines[line_count-1]
+> +		split(prev_line, prev_line_fields)
+> +		prev_objectid=prev_line_fields[4]
+> +		objectid=$4
+> +
+> +		if (objectid == prev_objectid && match($0, bg_match)) {
+> +			if (total_printed>0) {
+> +				#We are adding a BG after we have added its first extent
+> +				#previously, consider this a record ending event and just print
+> +				#the array
+> +
+> +				delete lines[line_count-1]
+> +				print_array()
+> +				#we now start a new array with current and previous lines
+> +				line_count=0
+> +				lines[line_count++]=prev_line
+> +				lines[line_count++]=$0
+> +			} else {
+> +				#first 2 added lines are EXTENT and BG that match, in this case
+> +				#just add them
+> +				lines[line_count++]=$0
+> +				
+> +			}
+> +		} else if (match($0, bg_match)) {
+> +			#ordinary end of record
+> +			print_array()
+> +			line_count=0
+> +			lines[line_count++]=$0
+> +		} else {
+> +			lines[line_count++]=$0
+> +		}
+> +	}
+> +}
+> +
+> +END {
+> +	print_array()
+> +}
+> diff --git a/tests/shared/298 b/tests/shared/298
+> index e7b7b233de45..8c053aa34adb 100755
+> --- a/tests/shared/298
+> +++ b/tests/shared/298
+> @@ -15,14 +15,24 @@ trap "_cleanup; exit \$status" 0 1 2 3 15
+>  
+>  . ./common/rc
+>  
+> -_supported_fs ext4 xfs
+> +_supported_fs ext4 xfs btrfs
+>  _supported_os Linux
+>  _require_test
+>  _require_loop
+>  _require_fstrim
+>  _require_xfs_io_command "fiemap"
+> -_require_fs_space $TEST_DIR 307200
+> +if [ "$FSTYP" = "btrfs" ]; then
+> +	# 3g for btrfs to have distinct bgs
+> +	_require_fs_space $TEST_DIR 3145728
+> +	fssize=3000
+> +else
+> +	_require_fs_space $TEST_DIR 307200
+> +	fssize=300
+> +fi
+> +
+>  [ "$FSTYP" = "ext4" ] && _require_dumpe2fs
+> +[ "$FSTYP" = "btrfs" ] && _require_btrfs_command inspect-internal dump-super
+> +[ "$FSTYP" = "btrfs" ] && _require_btrfs_command inspect-internal dump-tree
+>  
+>  _cleanup()
+>  {
+> @@ -61,6 +71,25 @@ get_free_sectors()
+>  		 $AWK_PROG -v spb=$sectors_per_block -v agsize=$agsize \
+>  		'{ print spb * ($1 * agsize + $2), spb * ($1 * agsize + $2 + $3) - 1 }'
+>  	;;
+> +	btrfs)
+> +		local device_size=$($BTRFS_UTIL_PROG filesystem show --raw $loop_mnt 2>&1 \
+> +			| sed -n "s/^.*size \([0-9]*\).*$/\1/p")
+> +
+> +		local nodesize=$($BTRFS_UTIL_PROG inspect-internal dump-super $img_file  \
+> +			| sed -n 's/nodesize\s*\(.*\)/\1/p')
+> +
+> +		# Get holes within block groups
+> +		local btrfs_free=$($BTRFS_UTIL_PROG inspect-internal dump-tree -t extent $img_file \
+> +			| $AWK_PROG -v spb=512 -v nodesize=$nodesize -f parse-extent-tree.awk)
+> +
+> +		btrfs_free+="\n"
+> +
+> +		# Get holes within unallocated space on disk
+> +		btrfs_free+=$($BTRFS_UTIL_PROG inspect-internal dump-tree -t dev $img_file \
+> +			| $AWK_PROG -v spb=512 -v devsize=$device_size -f parse-dev-tree.awk)
+> +
+> +		echo -e "$btrfs_free"
+> +	;;
+>  	esac
+>  }
+>  
+> @@ -105,7 +134,7 @@ here=`pwd`
+>  tmp=`mktemp -d`
+>  
+>  img_file=$TEST_DIR/$$.fs
+> -dd if=/dev/zero of=$img_file bs=1M count=300 &> /dev/null
+> +dd if=/dev/zero of=$img_file bs=1M count=$fssize &> /dev/null
+>  
+>  loop_dev=$(_create_loop_device $img_file)
+>  loop_mnt=$tmp/loop_mnt
+> @@ -118,6 +147,7 @@ merged_sectors="$tmp/merged_free_sectors"
+>  mkdir $loop_mnt
+>  
+>  [ "$FSTYP" = "xfs" ] && MKFS_OPTIONS="-f $MKFS_OPTIONS"
+> +[ "$FSTYP" = "btrfs" ] && MKFS_OPTIONS="$MKFS_OPTIONS -f -dsingle -msingle"
+>  
+>  _mkfs_dev $loop_dev
+>  _mount $loop_dev $loop_mnt
+> 

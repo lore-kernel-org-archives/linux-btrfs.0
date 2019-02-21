@@ -2,90 +2,90 @@ Return-Path: <SRS0=uD29=Q4=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8E69DC4360F
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 20:08:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0E197C43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 20:26:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 65DBB20836
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 20:08:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D3B292080F
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 20:26:05 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1550780765;
+	bh=V/IEXmsuqvt9Na+MEFmN7P1mMYAkl9do3dB58LJe59U=;
+	h=From:To:Cc:Subject:Date:List-ID:From;
+	b=d00p78E8lHLkATLQUy8aKHZJ0bjN8xSibX8+onwMeJNEteCTYvH0/QbBJkJ8OkvoY
+	 G73igkxOLe2T4RqEvRx36H4p6uvu4SIbX5Gy/OcNFQj+iqt9JTvhnqwELE7FuWOW6w
+	 7PTM5p4c4YXSvhq4qySHCIIvqfdL3OEUPG87/7fg=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726381AbfBUUII (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Feb 2019 15:08:08 -0500
-Received: from ipmailnode02.adl6.internode.on.net ([150.101.137.148]:12196
-        "EHLO ipmailnode02.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726220AbfBUUIH (ORCPT
+        id S1726825AbfBUU0B (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Feb 2019 15:26:01 -0500
+Received: from mail-yw1-f66.google.com ([209.85.161.66]:39745 "EHLO
+        mail-yw1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726075AbfBUU0B (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Feb 2019 15:08:07 -0500
-Received: from ppp59-167-129-252.static.internode.on.net (HELO dastard) ([59.167.129.252])
-  by ipmail02.adl6.internode.on.net with ESMTP; 22 Feb 2019 06:38:03 +1030
-Received: from dave by dastard with local (Exim 4.80)
-        (envelope-from <david@fromorbit.com>)
-        id 1gwudW-0008Ll-U7; Fri, 22 Feb 2019 07:08:03 +1100
-Date:   Fri, 22 Feb 2019 07:08:02 +1100
-From:   Dave Chinner <david@fromorbit.com>
-To:     Keith Busch <keith.busch@intel.com>
-Cc:     Ric Wheeler <ricwheeler@gmail.com>,
-        lsf-pc@lists.linux-foundation.org,
-        linux-xfs <linux-xfs@vger.kernel.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        linux-ext4 <linux-ext4@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        linux-block@vger.kernel.org
-Subject: Re: [LSF/MM TOPIC] More async operations for file systems - async
- discard?
-Message-ID: <20190221200802.GJ14116@dastard>
-References: <92ab41f7-35bc-0f56-056f-ed88526b8ea4@gmail.com>
- <20190217210948.GB14116@dastard>
- <46540876-c222-0889-ddce-44815dcaad04@gmail.com>
- <20190220234723.GA5999@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190220234723.GA5999@localhost.localdomain>
-User-Agent: Mutt/1.5.21 (2010-09-15)
+        Thu, 21 Feb 2019 15:26:01 -0500
+Received: by mail-yw1-f66.google.com with SMTP id f192so2481809ywh.6;
+        Thu, 21 Feb 2019 12:26:00 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id;
+        bh=KrijerxTyGVa0Sr/JiCT9Xom8mVGoOuXytTBdA4zzLc=;
+        b=DZeRQ1Cx7lSU4Ewf7c3n/VbPqOwguzYkWwq9jJP8WWr5192LlpWzYQkbsSJriptOoY
+         uvCYi/Ll680AWqmDZKiJWXBAleqLCOCxh7NwsL1fTmXIp2fJjk7D+gYQo79iayalLDaw
+         lI4M49V06cNbRJZcZsoNuGVW699Y09iKvwPTnVDeEyu1Zn6Wbl7lgLNJpE4CWxOiLEZS
+         9Q8BSVsh9wTevREaLjjOxtrmyAQW7bkvUIeDxNV5RyxpWNj1Q6XZ9/XkPfMO2h1YgZlV
+         e6tNf0MHk0JbUH0V0T6kwjx9xnBi0ugkqZ2pUq7MgV56wWhJpivR/xQO+AIQwfkps0wo
+         Eo4A==
+X-Gm-Message-State: AHQUAub4deBc1ZyHYDDtnpLjhfHJIeGidqnictDCQ3n/8tiR3uRq1QDP
+        kyWkRmPQWk8oiKYCMwZRR80=
+X-Google-Smtp-Source: AHgI3IYYriZGDkk14SK/cXRoYRHeOjBsovRy5vJNCDZWaxi4vahhSAGmn8xqGBA/6PCiKXFXGwz3vw==
+X-Received: by 2002:a81:6584:: with SMTP id z126mr369424ywb.216.1550780760256;
+        Thu, 21 Feb 2019 12:26:00 -0800 (PST)
+Received: from dennisz-mbp.thefacebook.com ([199.201.65.133])
+        by smtp.gmail.com with ESMTPSA id a4sm6570047ywa.14.2019.02.21.12.25.58
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
+        Thu, 21 Feb 2019 12:25:59 -0800 (PST)
+From:   Dennis Zhou <dennis@kernel.org>
+To:     David Sterba <dsterba@suse.com>,
+        Josef Bacik <josef@toxicpanda.com>, Chris Mason <clm@fb.com>,
+        Omar Sandoval <osandov@osandov.com>,
+        Nick Terrell <terrelln@fb.com>,
+        Nikolay Borisov <nborisov@suse.com>
+Cc:     kernel-team@fb.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, Dennis Zhou <dennis@kernel.org>
+Subject: [PATCH] btrfs: zstd ensure reclaim timer is properly cleaned up
+Date:   Thu, 21 Feb 2019 15:25:56 -0500
+Message-Id: <20190221202556.42447-1-dennis@kernel.org>
+X-Mailer: git-send-email 2.13.5
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Feb 20, 2019 at 04:47:24PM -0700, Keith Busch wrote:
-> On Sun, Feb 17, 2019 at 06:42:59PM -0500, Ric Wheeler wrote:
-> > I think the variability makes life really miserable for layers above it.
-> > 
-> > Might be worth constructing some tooling that we can use to validate or
-> > shame vendors over - testing things like a full device discard, discard of
-> > fs block size and big chunks, discard against already discarded, etc.
-> 
-> With respect to fs block sizes, one thing making discards suck is that
-> many high capacity SSDs' physical page sizes are larger than the fs block
-> size, and a sub-page discard is worse than doing nothing.
-> 
-> We've discussed previously about supporting block size larger than
-> the system's page size, but it doesn't look like that's gone anywhere.
+The timer function, zstd_reclaim_timer_fn(), reschedules itself under
+certain conditions. Switch to del_timer_sync() to ensure that the timer
+function hasn't rescheduled itself.
 
-You mean in filesystems?  Work for XFS is in progress:
+Signed-off-by: Dennis Zhou <dennis@kernel.org>
+---
+ fs/btrfs/zstd.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-https://lwn.net/Articles/770975/
-
-But it's still only a maximum of 64k block size. Essentially, that's
-a hard limit backed into the on-disk format (similar to max sector
-size limits of 32k)
-
-> Maybe it's worth revisiting since it's really inefficient if you write
-> or discard at the smaller granularity.
-
-Filesystems discard extents these days, not individual blocks. If
-you free a 1MB file, they you are likely to get a 1MB discard. Or if
-you use fstrim, then it's free space extent sizes (on XFS can be
-hundred of GBs) and small free spaces can be ignored. So the
-filesystem block size is often not an issue at all...
-
-Cheers,
-
-Dave.
+diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
+index 3e418a3aeb11..62de9a211321 100644
+--- a/fs/btrfs/zstd.c
++++ b/fs/btrfs/zstd.c
+@@ -195,7 +195,7 @@ static void zstd_cleanup_workspace_manager(void)
+ 	struct workspace *workspace;
+ 	int i;
+ 
+-	del_timer(&wsm.timer);
++	del_timer_sync(&wsm.timer);
+ 
+ 	for (i = 0; i < ZSTD_BTRFS_MAX_LEVEL; i++) {
+ 		while (!list_empty(&wsm.idle_ws[i])) {
 -- 
-Dave Chinner
-david@fromorbit.com
+2.17.1
+

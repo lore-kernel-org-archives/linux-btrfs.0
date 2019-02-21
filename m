@@ -2,111 +2,113 @@ Return-Path: <SRS0=uD29=Q4=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+X-Spam-Status: No, score=-2.7 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_MUTT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 99378C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 13:25:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D7C27C43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 14:14:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 729552084D
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 13:25:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A60F42070B
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 14:14:00 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="cEjs0vFh"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727551AbfBUNZn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Feb 2019 08:25:43 -0500
-Received: from mx2.suse.de ([195.135.220.15]:60710 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725820AbfBUNZm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Feb 2019 08:25:42 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D51C7AD47
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Feb 2019 13:25:40 +0000 (UTC)
-Subject: Re: [PATCH v3 1/6] btrfs: Refactor cow_file_range_async
-To:     Johannes Thumshirn <jthumshirn@suse.de>,
-        linux-btrfs@vger.kernel.org
-References: <20190221115717.5128-1-nborisov@suse.com>
- <20190221115717.5128-2-nborisov@suse.com>
- <aaaf4399-7acd-1726-c579-19a9285c337f@suse.de>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <ca7d67fb-8f64-d6c5-97f1-cff2de91f411@suse.com>
-Date:   Thu, 21 Feb 2019 15:25:39 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.4.0
+        id S1726191AbfBUON7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Feb 2019 09:13:59 -0500
+Received: from aserp2130.oracle.com ([141.146.126.79]:59284 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725870AbfBUON7 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 21 Feb 2019 09:13:59 -0500
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x1LE9pL6151184;
+        Thu, 21 Feb 2019 14:13:55 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
+ : subject : message-id : mime-version : content-type; s=corp-2018-07-02;
+ bh=tLI02zzX5bHrmNXHbcbp0heITjnG8zF8FjIwLa+Dakw=;
+ b=cEjs0vFhrgVHJTRBFseBX35EmV9wYeOi/2EmeveY5xB91paeXyDNnfWcpu7fEUmMv3OH
+ btUWMLoEdxkCCsTyUs8ZUQUx4K70sEL8IRVecPV1eR4WEwVhqmr3noMnICBQ/okoKs3n
+ RvOIIPCko6uuxroOkj5vFrNBV5mcD1riXRLlgYbcHsBH689jHNcR6laBwtCFkhFxSsur
+ pb6oci4PAlJKSeJLkZNJ5FYG+Y9iEll/awvHfGLWr1IjB/QyjITp4pnLsXzOeVzmqduu
+ eSF0r2LpwkFTAeRHA801nRaqJ1+9H5OcIQyAeBm7wF5wnpkYaBySCqxJc764JeZ/P+js pA== 
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by aserp2130.oracle.com with ESMTP id 2qp81egc8r-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 21 Feb 2019 14:13:55 +0000
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id x1LEDs6d031628
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 21 Feb 2019 14:13:55 GMT
+Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x1LEDrGg012590;
+        Thu, 21 Feb 2019 14:13:54 GMT
+Received: from kadam (/197.157.34.176)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Thu, 21 Feb 2019 06:13:53 -0800
+Date:   Thu, 21 Feb 2019 17:13:47 +0300
+From:   Dan Carpenter <dan.carpenter@oracle.com>
+To:     wqu@suse.com
+Cc:     linux-btrfs@vger.kernel.org
+Subject: [bug report] btrfs: locking: Add extra check in
+ btrfs_init_new_buffer() to avoid deadlock
+Message-ID: <20190221141347.GA20330@kadam>
 MIME-Version: 1.0
-In-Reply-To: <aaaf4399-7acd-1726-c579-19a9285c337f@suse.de>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+User-Agent: Mutt/1.9.4 (2018-02-28)
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9173 signatures=668683
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=3 phishscore=0 bulkscore=0 spamscore=0 clxscore=1011
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=777 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1902210104
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+[ This one is not actually your fault.  It's the core code which is
+  confusing.  -dan ]
 
+Hello Qu Wenruo,
 
-On 21.02.19 г. 15:15 ч., Johannes Thumshirn wrote:
-> On 21/02/2019 12:57, Nikolay Borisov wrote:
->>  
->>  static int cow_file_range_async(struct inode *inode, struct page *locked_page,
->> @@ -1190,45 +1201,68 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
->>  				unsigned int write_flags)
->>  {
->>  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
->> -	struct async_cow *async_cow;
->> +	struct async_cow *ctx;
->> +	struct async_chunk *async_cow;
-> 
-> In case you have to re-send the patch you could maybe rename the
-> async_cow variable to async_chunk or sth like that. Would make the
-> resulting code a little bit clearer but no strong opinions here.
+The patch b72c3aba09a5: "btrfs: locking: Add extra check in
+btrfs_init_new_buffer() to avoid deadlock" from Aug 21, 2018, leads
+to the following static checker warning:
 
-The reason I left it like that is to minimize the resulting diff.
+	fs/btrfs/extent-tree.c:8556 btrfs_init_new_buffer()
+	warn: possible NULL dereference of 'buf'
 
-> 
-> Anyways,
-> Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
-> 
+fs/btrfs/extent-tree.c
+    8540 static struct extent_buffer *
+    8541 btrfs_init_new_buffer(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+    8542 		      u64 bytenr, int level, u64 owner)
+    8543 {
+    8544 	struct btrfs_fs_info *fs_info = root->fs_info;
+    8545 	struct extent_buffer *buf;
+    8546 
+    8547 	buf = btrfs_find_create_tree_block(fs_info, bytenr);
+
+The btrfs_find_create_tree_block() function either returns
+alloc_test_extent_buffer() which returns NULL on error or
+alloc_extent_buffer() which returns error pointers on error.  It
+confuses static checkers and me also.
+
+    8548 	if (IS_ERR(buf))
+    8549 		return buf;
+    8550 
+    8551 	/*
+    8552 	 * Extra safety check in case the extent tree is corrupted and extent
+    8553 	 * allocator chooses to use a tree block which is already used and
+    8554 	 * locked.
+    8555 	 */
+--> 8556 	if (buf->lock_owner == current->pid) {
+    8557 		btrfs_err_rl(fs_info,
+    8558 "tree block %llu owner %llu already locked by pid=%d, extent tree corruption detected",
+    8559 			buf->start, btrfs_header_owner(buf), current->pid);
+    8560 		free_extent_buffer(buf);
+
+regards,
+dan carpenter

@@ -6,26 +6,25 @@ X-Spam-Status: No, score=-5.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
 	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
 	MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 29DE9C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 00:38:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4733FC43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 04:49:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E2B902146E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 00:38:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0FAC52147A
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 04:49:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727032AbfBUAiC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 20 Feb 2019 19:38:02 -0500
-Received: from mout.gmx.net ([212.227.15.19]:48769 "EHLO mout.gmx.net"
+        id S1726369AbfBUEtf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 20 Feb 2019 23:49:35 -0500
+Received: from mout.gmx.net ([212.227.17.21]:39033 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726090AbfBUAiB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Feb 2019 19:38:01 -0500
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx002
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0MYfre-1gb2x538MM-00VTFT; Thu, 21
- Feb 2019 01:37:50 +0100
+        id S1725880AbfBUEtf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Feb 2019 23:49:35 -0500
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx103
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0M6zvN-1hI4Wo2obd-00wlI8; Thu, 21
+ Feb 2019 05:49:28 +0100
 Subject: Re: [PATCH v5.1 00/12] btrfs: Enhancement to tree block validation
-To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20190218052753.24138-1-wqu@suse.com>
- <20190220182544.GZ9874@twin.jikos.cz>
+Cc:     David Sterba <dsterba@suse.cz>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -52,206 +51,197 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <0f20234c-5fa7-8059-094d-b12e4e9963d0@gmx.com>
-Date:   Thu, 21 Feb 2019 08:37:40 +0800
+Message-ID: <06012a9c-d812-4c54-085f-ce5dba03a274@gmx.com>
+Date:   Thu, 21 Feb 2019 12:49:23 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.5.0
 MIME-Version: 1.0
-In-Reply-To: <20190220182544.GZ9874@twin.jikos.cz>
+In-Reply-To: <20190218052753.24138-1-wqu@suse.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="m2NjAFZ4wnZeMqYsg841hc63dk9jb0VB9"
-X-Provags-ID: V03:K1:1rR6E+CJUlyPSLgJkOhL8PBgxSoppKz1LM1V3zQwt7FpeJQ7crN
- G/bd16i4w5DeDJV7AxRksEjjN4YM+8YScGTclFKjIMm5Ly3tI11ESZPYWPvurCjlc0PqYid
- aFNyIzdF8B5o4eRmhBcyKQqTsIMa693S7jRM1hmEzgvRkjSXdkPuh2cMDg3zSGeBQSm5IAN
- JBNfWSG7dH6SqYcGHRlVQ==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:65FvOluEXdA=:KElGCbIyDhrwwOaEG4SFCk
- z0R687uGKL8uRtdycHnMEKdtu/DP5nkmZzUvg8hqB5Na+FGFxUaw+gflmOEYD4E2N0FRxnEZ/
- M98fjrchNho5E4wgO85cWKN/H+p8n14rjBWMTsuoh2RYhr5xLVsDmI1tOZlKdi/8rG5c6BUH6
- En7Az95L975HDzJtSTGPoP85g15nnomU8OlIE1xYVEQhkoSBCuF1I+5cOPIvtyyXB6UWyb2iG
- +iyJmXD1gYGUGBs2mWhSoLHIcwkwt6Hosu34gMGl8v6IP9VeqhSAqBmhJl8PKwlbxmgyTYXFQ
- yqEhplONWJ27aDLXdWfsUqSMC4TDh9aZBnJZUiZlyp9ImEZ7eal7/j1F3njPiUDNtDUygU+8T
- qR8API9NSKSgisYDdi/GKxRKlWyDbH8caiQQsAyyMISvzvEQ6PRPG3FxS9OqFPgJhBOrr3jnC
- E6ATEUcszTwOumyc8EGod6YtwpSY1nMTjKCciqQ12jWaNnuHXl2d9ziwTQVXikrdFaMIeMYvG
- 48vX5SjejHFqQtkTeASItguvjmk41u2k+5uUAC+sVjnbwgYfSP/t2OVS7YYaIjCDYsUxB09zE
- l3lVBszZ3BbDACb5ZN8S7a/kw5WhGX82kiB9vUaL0pO1Dyo199oi1r7NzJu6TH+k5VluDW5FM
- A06cdUwVy/8LRrXlb5shR0qqKWn+hytHVCajmkBIeIETjdQrmRWk/XZq2YjJnyR4X+BFXb7PG
- D6cSOumoWBP9dA3QnzdNFFdwExFIUoVBbRBlkhjSj9ZIWnx6aCkVLdQrkaIliRtTFAhqWB10j
- gaFO0NfLf5YKK2e4ko7TsIzQH1lGhXV95BPTwvG4EpcilfEGoGHd/mSU/d7hZPzNVs/Ic5wMB
- eTqVoYW5cjex633eLDNLnjHLU70Uhp0ekHw4cLoUqK6rYULz3MOmA3aQQp+BNF
+ boundary="4UlMb6GDsRHQsVpljDjyCBEBhbYTFuR1V"
+X-Provags-ID: V03:K1:4LmI6TgpGa9BakHg3AmdsWNGAY0hrGP3z55oF8/UcilAN9HH9PC
+ fezt9WWpBksLzGjx+6Kp0JRr496Bu9OSiTaUqpsUy4yXXl9dn3aXdQQPd6wiZh+17G4T4j/
+ dUmujdRAeg2hWMEWSRq4O85cWWShL4VvsLp2o7MhmdXEoWMjfuB6/kE+RR67SYlXrIERWax
+ Nv/P6ROacKcblTt7XlXPg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:QWDTkrCHne8=:GqobX+IYE4Cg7Y79mqRwdk
+ 4mzDTB0xJsh0mnmkBvdWwmeTJJIEq+LhDqXlNbknT96EIk+ZjjqiYgoDZE+SBIgdc74CU63Ru
+ 6gVs/CiHTGeJn7ey0O5UyXVLlqOv2cLxiKwvrrnPWK7bYYYWgBcIJvSmWjH0mTR2O7MkiGBOq
+ ZxSiihd4SAWf5C89Ap6SQY6sa7PmRtUxsb8DJnf5eLUi7apuPLaG62cri7IIc2nZfyluXFfjv
+ GDnj7m1G8xtuInOnsBtzyd3rZgMqo3YKcwMEtqTp2yvLaULREfo5aE1CK7Sq3SOcADCJR5vwE
+ 3zyqpCmixPxDzgsnB6Uk3ZOV0P6I0PFbH1CpgkifEuqFhImJovvEyw24AAE2e6DH1K00zSiS5
+ NaiaP4kQALwlZdLaoDctWqFNAswyEjMqcz1i0BDyajDBK33NaX7duMZNg53V4TcEC8w5Byq5o
+ itPTBqkwevtPki8kTtbJOCuhXNEQk7xq5ZSOi2TPMk0r8ijq/1hH/4aj11Ko1cSXMR3E0GvUj
+ YxzdE4mDdsRtQ3xMEvX5ydRFq/SNymy5Lklod9B8jWAkJ+RwtQoXOC8lJnVUMjnSAVu5+G7VA
+ j/Pz9DcsWFaFant287zZCoxaoR4yA1v2CFLSh/wbtdPQbpu8hB6FRj74cjBEmqDrgWZzZjN2b
+ 8UJfFZDyN55AP3ZoccxrdwthvQDIhNDu6s4u+nO8XVZ7pbF7UJT/9VAWQ3bSaWg+83O385TO1
+ pGiPgHA5bhhuKnagNIuaGFnL05slMHw3G3xg8gCmPm4lmobSnrf3b2nfiQlzG8gGG2dFscT9Y
+ ubSEoZdhnxK8h2XBaLwhaI1vki6shIwBV7rX6ID0+IO/x9Ro+U81Dcl8EwpgJ8NcT2tzf3D/8
+ YUYD+hvgwcHEPu96VGrl9qScs0udvSQdoRq/FiSRbxtfUtoEyTpTNvzrWkLyUp
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---m2NjAFZ4wnZeMqYsg841hc63dk9jb0VB9
-Content-Type: multipart/mixed; boundary="RqTPk8dy0nikWvuHEposXNAP85Swp1Nws";
+--4UlMb6GDsRHQsVpljDjyCBEBhbYTFuR1V
+Content-Type: multipart/mixed; boundary="QD0Ogzo4LqUJf7aAqxUQlF4XlrCRCCeNx";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <0f20234c-5fa7-8059-094d-b12e4e9963d0@gmx.com>
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>
+Message-ID: <06012a9c-d812-4c54-085f-ce5dba03a274@gmx.com>
 Subject: Re: [PATCH v5.1 00/12] btrfs: Enhancement to tree block validation
 References: <20190218052753.24138-1-wqu@suse.com>
- <20190220182544.GZ9874@twin.jikos.cz>
-In-Reply-To: <20190220182544.GZ9874@twin.jikos.cz>
+In-Reply-To: <20190218052753.24138-1-wqu@suse.com>
 
---RqTPk8dy0nikWvuHEposXNAP85Swp1Nws
+--QD0Ogzo4LqUJf7aAqxUQlF4XlrCRCCeNx
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2019/2/21 =E4=B8=8A=E5=8D=882:25, David Sterba wrote:
-> On Mon, Feb 18, 2019 at 01:27:41PM +0800, Qu Wenruo wrote:
->> Patchset can be fetched from github:
->> https://github.com/adam900710/linux/tree/write_time_tree_checker
->> Which is based on v5.0-rc1 tag.
->=20
-> Please base the patches on something new, a recent rc is fine (rc6 or
-> rc7 depends what you've tested).
+On 2019/2/18 =E4=B8=8B=E5=8D=881:27, Qu Wenruo wrote:
+> Patchset can be fetched from github:
+> https://github.com/adam900710/linux/tree/write_time_tree_checker
+> Which is based on v5.0-rc1 tag.
+> Also there is no conflict rebasing the patchset to misc-next.
 
-Any recommended workflow for different timing point?
-E.g. always rebase to latest rc?
+Now the github branch rebased to v5.0-rc7 tag.
 
-My current (and now is proven not proper) workflow is to stick with
--rc1, and cherry pick known fixes related to test.
-This provides a stable base run to spot regression caused by my patches.
+And ran tests of btrfs auto group, no new regressions found.
 
->=20
->> Also there is no conflict rebasing the patchset to misc-next.
->=20
-> The patches can apply on top of misc-next, but I've seen some hunks
-> applied with offset. While git is good, mismerges can still happen, so
-> if you do the rebase on your side it lowers the risk.
-
-No problem, I'll change the my workflow to more proper one.
-
->=20
->> This patchset has the following 3 features:
->> - Tree block validation output enhancement
->>   * Output validation failure timing (write time or read time)
->>   * Always output tree block level/key mismatch error message
->>     This part is already submitted and reviewed.
->>
->> - Write time tree block validation check
->>   To catch memory corruption either from hardware or kernel.
->>   Example output would be:
->>
->>     BTRFS critical (device dm-3): corrupt leaf: root=3D2 block=3D13506=
-30375424 slot=3D68, bad key order, prev (10510212874240 169 0) current (1=
-714119868416 169 0)
->>     BTRFS error (device dm-3): block=3D1350630375424 write time tree b=
-lock corruption detected
->>     BTRFS: error (device dm-3) in btrfs_commit_transaction:2220: errno=
-=3D-5 IO failure (Error while writing out transaction)
->>     BTRFS info (device dm-3): forced readonly
->>     BTRFS warning (device dm-3): Skipping commit of aborted transactio=
-n.
->>     BTRFS: error (device dm-3) in cleanup_transaction:1839: errno=3D-5=
- IO failure
->>     BTRFS info (device dm-3): delayed_refs has NO entry
->>
->> - Better error handling before calling flush_write_bio()
->>   One hidden reason of calling flush_write_bio() under all cases is,
->>   flush_write_bio() will trigger endio function and endio function of
->>   epd->bio will free the bio under all cases.
->>   So we're in fact abusing flush_write_bio() as cleanup.
->>
->>   Since now flush_write_bio() has its own return value, we shouldn't c=
-all
->>   flush_write_bio() no-brain, here we introduce proper cleanup helper,=
-
->>   end_write_bio(). Now we call flush_write_bio() like:
->>               New                 |           Old
->>   --------------------------------------------------------------
->>   ret =3D do_some_evil(&epd);       | ret =3D do_some_evil(&epd);
->>   if (ret < 0) {                  | flush_write_bio(&epd);
->>   	end_write_bio(&epd, ret); | ^^^ submitting half-backed epd->bio?
->>   	return ret;               | return ret;
->>   }                               |
->>   ret =3D flush_write_bio(&epd);    |
->>   return ret;                     |
->>
->>   Above code should be more streamline for the error handling part.
->>
->> Changelog:
->> v2:
->> - Unlock locked pages in lock_extent_buffer_for_io() for error handlin=
-g.
->> - Added Reviewed-by tags.
->>
->> v3:
->> - Remove duplicated error message.
->> - Use IS_ENABLED() macro to replace #ifdef.
->> - Added Reviewed-by tags.
->>
->> v4:
->> - Re-organized patch split
->>   Now each BUG_ON() cleanup has its own patch
->> - Dig much further into the call sites to eliminate unexpected >0 retu=
-rn
->>   May be a little paranoid and abuse some ASSERT(), but it should be
->>   much safer against further code change.
->> - Fix the false alert caused by balance and memory pressure
->>   The fix it skip owner checker for non-essential tree at write time.
->>   Since owner root can't always be reliable, either due to commit root=
-
->>   created in current transaction or balance + memory pressure.
->>
->> v5:
->> - Do proper error-out handling other than relying on flush_write_bio()=
-
->>   to clean up.
->>   This has a side effect that no Reviewed-by tags for modified patches=
-=2E
->> - New comment for why we don't need to do anything about ebp->bio when=
-
->>   submit_one_bio() fails.
->> - Add some Reviewed-by tag.
->>
->> v5.1:
->> - Add "block=3D%llu " output for write/read time error line.
->> - Also output read time error message for fsid/start/level check.
->=20
-> The patchset is in a good shape, I like the detailed changelogs and
-> example messages. I'll give it some more testing though merging to 5.1
-> does not seem to be feasible now but we'll see.
-
-I'm fine with v5.2.
-
-Just wonder if I need to rebase to v5.1-rc1 later on?
+Git is clever enough in this rebase, so I bother mail bombing the mail
+list for another minor update.
 
 Thanks,
 Qu
 
-> The improved error
-> handling is not really a feature so a late pull request could be ok for=
-
-> that.
 >=20
-> Thanks.
+> This patchset has the following 3 features:
+> - Tree block validation output enhancement
+>   * Output validation failure timing (write time or read time)
+>   * Always output tree block level/key mismatch error message
+>     This part is already submitted and reviewed.
+>=20
+> - Write time tree block validation check
+>   To catch memory corruption either from hardware or kernel.
+>   Example output would be:
+>=20
+>     BTRFS critical (device dm-3): corrupt leaf: root=3D2 block=3D135063=
+0375424 slot=3D68, bad key order, prev (10510212874240 169 0) current (17=
+14119868416 169 0)
+>     BTRFS error (device dm-3): block=3D1350630375424 write time tree bl=
+ock corruption detected
+>     BTRFS: error (device dm-3) in btrfs_commit_transaction:2220: errno=3D=
+-5 IO failure (Error while writing out transaction)
+>     BTRFS info (device dm-3): forced readonly
+>     BTRFS warning (device dm-3): Skipping commit of aborted transaction=
+=2E
+>     BTRFS: error (device dm-3) in cleanup_transaction:1839: errno=3D-5 =
+IO failure
+>     BTRFS info (device dm-3): delayed_refs has NO entry
+>=20
+> - Better error handling before calling flush_write_bio()
+>   One hidden reason of calling flush_write_bio() under all cases is,
+>   flush_write_bio() will trigger endio function and endio function of
+>   epd->bio will free the bio under all cases.
+>   So we're in fact abusing flush_write_bio() as cleanup.
+>=20
+>   Since now flush_write_bio() has its own return value, we shouldn't ca=
+ll
+>   flush_write_bio() no-brain, here we introduce proper cleanup helper,
+>   end_write_bio(). Now we call flush_write_bio() like:
+>               New                 |           Old
+>   --------------------------------------------------------------
+>   ret =3D do_some_evil(&epd);       | ret =3D do_some_evil(&epd);
+>   if (ret < 0) {                  | flush_write_bio(&epd);
+>   	end_write_bio(&epd, ret); | ^^^ submitting half-backed epd->bio?
+>   	return ret;               | return ret;
+>   }                               |
+>   ret =3D flush_write_bio(&epd);    |
+>   return ret;                     |
+>=20
+>   Above code should be more streamline for the error handling part.
+>=20
+> Changelog:
+> v2:
+> - Unlock locked pages in lock_extent_buffer_for_io() for error handling=
+=2E
+> - Added Reviewed-by tags.
+>=20
+> v3:
+> - Remove duplicated error message.
+> - Use IS_ENABLED() macro to replace #ifdef.
+> - Added Reviewed-by tags.
+>=20
+> v4:
+> - Re-organized patch split
+>   Now each BUG_ON() cleanup has its own patch
+> - Dig much further into the call sites to eliminate unexpected >0 retur=
+n
+>   May be a little paranoid and abuse some ASSERT(), but it should be
+>   much safer against further code change.
+> - Fix the false alert caused by balance and memory pressure
+>   The fix it skip owner checker for non-essential tree at write time.
+>   Since owner root can't always be reliable, either due to commit root
+>   created in current transaction or balance + memory pressure.
+>=20
+> v5:
+> - Do proper error-out handling other than relying on flush_write_bio()
+>   to clean up.
+>   This has a side effect that no Reviewed-by tags for modified patches.=
+
+> - New comment for why we don't need to do anything about ebp->bio when
+>   submit_one_bio() fails.
+> - Add some Reviewed-by tag.
+>=20
+> v5.1:
+> - Add "block=3D%llu " output for write/read time error line.
+> - Also output read time error message for fsid/start/level check.
+>=20
+> Qu Wenruo (12):
+>   btrfs: Always output error message when key/level verification fails
+>   btrfs: extent_io: Kill the forward declaration of flush_write_bio()
+>   btrfs: disk-io: Show the timing of corrupted tree block explicitly
+>   btrfs: extent_io: Move the BUG_ON() in flush_write_bio() one level up=
+
+>   btrfs: extent_io: Handle error better in extent_write_full_page()
+>   btrfs: extent_io: Handle error better in btree_write_cache_pages()
+>   btrfs: extent_io: Kill the dead branch in extent_write_cache_pages()
+>   btrfs: extent_io: Handle error better in extent_write_locked_range()
+>   btrfs: extent_io: Kill the BUG_ON() in lock_extent_buffer_for_io()
+>   btrfs: extent_io: Kill the BUG_ON() in extent_write_cache_pages()
+>   btrfs: extent_io: Handle error better in extent_writepages()
+>   btrfs: Do mandatory tree block check before submitting bio
+>=20
+>  fs/btrfs/disk-io.c      |  23 ++++--
+>  fs/btrfs/extent_io.c    | 168 ++++++++++++++++++++++++++++------------=
+
+>  fs/btrfs/tree-checker.c |  24 +++++-
+>  fs/btrfs/tree-checker.h |   8 ++
+>  4 files changed, 164 insertions(+), 59 deletions(-)
 >=20
 
 
---RqTPk8dy0nikWvuHEposXNAP85Swp1Nws--
+--QD0Ogzo4LqUJf7aAqxUQlF4XlrCRCCeNx--
 
---m2NjAFZ4wnZeMqYsg841hc63dk9jb0VB9
+--4UlMb6GDsRHQsVpljDjyCBEBhbYTFuR1V
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxt8tQACgkQwj2R86El
-/qiUNwgAo4BWbejfM2qIVT6Btqaq9vdDAGQVhY54zsXnHEmGU1CqnqEpkFUhgTgy
-ExUcaF2Z6q+uhkzGghxs/2DaxK+VvzjigKoAUbdL+NxxosT1SrUautcPVb0y1dZX
-VInremZKIOSg1NhgNjLXB7qBBK0fb37+cP+LLIm4QYO+VwzxFn4x6O/MoKqCn/0I
-yzLowrgM7MF/ry3DetIcTvrNUnn82T9vaLMg/noKv6Jd4pbPi64pH/zUk8+ZQtX4
-AFmS7AEw39pJlXBcHVahyvIx2LL68QVECBnWJtrNhE7UtcZHyQdt2p0uZcLnQ9hR
-9twG8lwXL07QDksSD7zWOC6nQyS59g==
-=Wcv8
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxuLdMACgkQwj2R86El
+/qh/DQf+K0zD+JUo3a/yKWdhIrrViIQa6aLJR92vsdYr0CjlZu3dB/cgnI0V1rLy
+p7nb9GOWUu/3qg0vtLddnyIkCz1fbSJkGg65vqfwRsS590/cRNCJ77BVcoo4hehZ
+MKIGwu4XHGuDABBV/BL4TRYXGUlNJlL/7J3PAlTR+tSZVRVhPJQKg8BWKeZgtHpw
+rfphopIFxqxvG4HzRjg4+f62hC6aSMOPFG8AEfH2p914ipczcka2qBbhJwR3Rvd4
+tPDAOSizkSB8iSwFw1g+CbM6Is4cq8WqtoFN8kqSmo+U+jS3ueFXdsU7ZtaSa8+h
+KT5XQNEMANssmtXLsrhdyy6mVdrofg==
+=sfG+
 -----END PGP SIGNATURE-----
 
---m2NjAFZ4wnZeMqYsg841hc63dk9jb0VB9--
+--4UlMb6GDsRHQsVpljDjyCBEBhbYTFuR1V--

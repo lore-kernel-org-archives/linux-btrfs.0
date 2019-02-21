@@ -2,172 +2,186 @@ Return-Path: <SRS0=uD29=Q4=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E5EF3C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 14:21:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 59E65C43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 14:25:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BBD30206A3
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 14:21:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2A8672075A
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 14:25:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725891AbfBUOVL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Feb 2019 09:21:11 -0500
-Received: from mx2.suse.de ([195.135.220.15]:42556 "EHLO mx1.suse.de"
+        id S1728000AbfBUOZi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Feb 2019 09:25:38 -0500
+Received: from mx2.suse.de ([195.135.220.15]:43494 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725820AbfBUOVL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Feb 2019 09:21:11 -0500
+        id S1725385AbfBUOZi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 21 Feb 2019 09:25:38 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 5F18DB183;
-        Thu, 21 Feb 2019 14:21:09 +0000 (UTC)
-Subject: Re: [bug report] btrfs: locking: Add extra check in
- btrfs_init_new_buffer() to avoid deadlock
-To:     Dan Carpenter <dan.carpenter@oracle.com>
-Cc:     linux-btrfs@vger.kernel.org
-References: <20190221141347.GA20330@kadam>
-From:   Qu Wenruo <wqu@suse.de>
+        by mx1.suse.de (Postfix) with ESMTP id C69C2AE0F
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Feb 2019 14:25:36 +0000 (UTC)
+Subject: Re: [RFC PATCH] btrfs: Introduce developer-oriented check to ensure
+ all tree blocks are written back before writing super blocks
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20190221082249.24187-1-wqu@suse.com>
+From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=wqu@suse.de; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0F1F1IFdlbnJ1byA8d3F1QHN1c2UuZGU+iQFUBBMBCAA+AhsDBQsJCAcCBhUICQoLAgQW
- AgMBAh4BAheAFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlnVgp0FCQlmAm4ACgkQwj2R86El
- /qilmgf/cUq9kFQo577ku5gc6rFpVg68ublBwjYpwjw0b//xo+Wo1wm+RRbUGs+djSZAqw12
- D4F3r0mBTI7abUCNWAbFkYZSAIFVi0DMkjypIVS7PSaEt04rM9VBTToE+YqU6WENeJ57R2p2
- +hI0wZrBwxObdsdaOtxWtsp3bmhIbdqxSKrtXuRawy4KnQYcLuGzOce9okdlbAE0W3KHm1gQ
- oNAe6FX8nC9qo14m8LqEbThYH+qj4iCMlN8HIfbSx4F3e7nHZ+UAMW+E/lnMRkIB9Df+JyVd
- /NlXzIjZAggcWsqpx6D4wyAuexKWkiGQeUeArUNihAwXjmyqWPGmjVyIh+oC6LkBDQRZ1YGv
- AQgAqlPrYeBLMv3PAZ75YhQIwH6c4SNcB++hQ9TCT5gIQNw51+SQzkXIGgmzxMIS49cZcE4K
- Xk/kHw5hieQeQZa60BWVRNXwoRI4ib8okgDuMkD5Kz1WEyO149+BZ7HD4/yK0VFJGuvDJR8T
- 7RZwB69uVSLjkuNZZmCmDcDzS0c/SJOg5nkxt1iTtgUETb1wNKV6yR9XzRkrEW/qShChyrS9
- fNN8e9c0MQsC4fsyz9Ylx1TOY/IF/c6rqYoEEfwnpdlz0uOM1nA1vK+wdKtXluCa79MdfaeD
- /dt76Kp/o6CAKLLcjU1Iwnkq1HSrYfY3HZWpvV9g84gPwxwxX0uXquHxLwARAQABiQE8BBgB
- CAAmFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlnVga8CGwwFCQPCZwAACgkQwj2R86El/qgN
- 8Qf+M0vM2Idwm5txZZSs+/kSgcPxEwYmxUinnUJGyc0ZWYQXPl0cBetZon9El0naijGzNWvf
- HxIPB+ZFehk6Otgc78p1a3/xck/s1myFRLrmbbTJNoFiyL25ljcq0J8z5Zp4yuABL2RiLdaZ
- Pt/jfwjBHwGR+QKp6dD2qMrUWf9b7TFzYDMZXzZ2/eoIgtyjEelNBPrIgOFe24iKMjaGjd97
- fJuRcBMHdhUAxvXQF1oRtd83JvYJ5OtwTd8MgkEfl+fo7HwWkuHbzc70L4fFKv2BowqFdaHy
- mId1ijGPGr46tuZ5a4cw/zbaPYx6fJ4sK9tSv/6V1QPNUdqml6hm6pfs6A==
-Message-ID: <cef05cfd-2fdd-3c27-39d2-15d35b61d64a@suse.de>
-Date:   Thu, 21 Feb 2019 22:21:03 +0800
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <c2aea5d2-5039-0243-6fd7-fed0880a0be0@suse.com>
+Date:   Thu, 21 Feb 2019 16:25:35 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.1
+ Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <20190221141347.GA20330@kadam>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="1GkfEK7Wx4qB9n2LAKCUdQWD376fPIf0B"
+In-Reply-To: <20190221082249.24187-1-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---1GkfEK7Wx4qB9n2LAKCUdQWD376fPIf0B
-Content-Type: multipart/mixed; boundary="OXKofnd9cBXyiE4L5BPSU9UJtwOG0PnbI";
- protected-headers="v1"
-From: Qu Wenruo <wqu@suse.de>
-To: Dan Carpenter <dan.carpenter@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <cef05cfd-2fdd-3c27-39d2-15d35b61d64a@suse.de>
-Subject: Re: [bug report] btrfs: locking: Add extra check in
- btrfs_init_new_buffer() to avoid deadlock
-References: <20190221141347.GA20330@kadam>
-In-Reply-To: <20190221141347.GA20330@kadam>
-
---OXKofnd9cBXyiE4L5BPSU9UJtwOG0PnbI
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
 
+On 21.02.19 г. 10:22 ч., Qu Wenruo wrote:
+> There are a lot of error reports complaining about transid error in the
+> mail list.
+> 
+> Under most case, the on-disk transid is lower than expected transid.
+> This may indicate that some tree blocks are not written back to disk
+> before writing super blocks.
+> 
+> This patch will add a safe net for developers, by calling
+> btrfs_write_and_wait_transaction() before setting transaction unblocked
+> and double check btree_inode and dirty_pages io_tree, to ensure no tree
+> blocks are still dirty or under writeback.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+> The reason for RFC is, I'm not sure why we currently call
+> btrfs_write_and_wait_transaction() after setting transaction UNBLOCKED.
+> 
+> It looks like an optimization, but I don't see much performance
+> difference during regression test.
+> 
+> I hope to move the call before we unblock transaction so we can do such
+> sanity check for all builds and hope to catch some clue of transid
+> error.
 
-On 2019/2/21 =E4=B8=8B=E5=8D=8810:13, Dan Carpenter wrote:
-> [ This one is not actually your fault.  It's the core code which is
->   confusing.  -dan ]
->=20
-> Hello Qu Wenruo,
->=20
-> The patch b72c3aba09a5: "btrfs: locking: Add extra check in
-> btrfs_init_new_buffer() to avoid deadlock" from Aug 21, 2018, leads
-> to the following static checker warning:
->=20
-> 	fs/btrfs/extent-tree.c:8556 btrfs_init_new_buffer()
-> 	warn: possible NULL dereference of 'buf'
->=20
-> fs/btrfs/extent-tree.c
->     8540 static struct extent_buffer *
->     8541 btrfs_init_new_buffer(struct btrfs_trans_handle *trans, struct=
- btrfs_root *root,
->     8542 		      u64 bytenr, int level, u64 owner)
->     8543 {
->     8544 	struct btrfs_fs_info *fs_info =3D root->fs_info;
->     8545 	struct extent_buffer *buf;
->     8546=20
->     8547 	buf =3D btrfs_find_create_tree_block(fs_info, bytenr);
->=20
-> The btrfs_find_create_tree_block() function either returns
-> alloc_test_extent_buffer() which returns NULL on error
+Even current code ensures that all allocated blocks in the current
+transaction (which is what all those EXTENT_DIRTY extents in the
+dirty_pages tree ) are written before the new superblocks are.
 
-You caught me!
+Slight offtopic: In fact instead of playing games with the flags and
+having an extent_io_tree called dirty_pages o_O it can be replaced with
+a simple linked list that holds all newly allocated buffers so writing
+all such buffers will result in simply iterating the list.
 
-Indeed that's a possible NULL return case.
+In any case this patch is buggy, see below on why
 
-The only good news is it shouldn't affect release build which normally
-doesn't enabled CONFIG_BTRFS_FS_RUN_SANITY_TESTS.
+> ---
+>  fs/btrfs/transaction.c | 38 ++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 38 insertions(+)
+> 
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index 4ec2b660d014..30b7ed0bf873 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -2213,6 +2213,44 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+>  
+>  	btrfs_trans_release_chunk_metadata(trans);
+>  
+> +	/* Last safenet or developer to catch any unwritten tree blocks */
+> +	if (IS_ENABLED(CONFIG_BTRFS_DEBUG)) {
+> +		u64 found_start = 0;
+> +		u64 found_end = 0;
+> +
+> +		ret = btrfs_write_and_wait_transaction(trans);
+> +		if (ret) {
+> +			btrfs_handle_fs_error(fs_info, ret,
+> +					      "Error while writing out transaction");
+> +			mutex_unlock(&fs_info->tree_log_mutex);
+> +			goto scrub_continue;
+> +		}
+> +
+> +		/* No dirty extent should exist in btree inode */
+> +		ret = test_range_bit(&trans->transaction->dirty_pages, 0,
+> +				(u64)-1, EXTENT_DIRTY | EXTENT_WRITEBACK,
 
-I'll fix it by unifying the return pointer.
+Why do you check EXTENT_WRITEBACK, AFAICS that flag is not currently
+used in the code and should perhahps be deleted? I don't see anything
+setting it, it's only being checked for (as part of EXTENT_IOBITS).
 
-Thanks for pointing this out,
-Qu
+Additionally this check is pointless because
+btrfs_write_and_wait_transaction calls clear_btree_io_tree which purges
+the tree.
 
-> or
-> alloc_extent_buffer() which returns error pointers on error.  It
-> confuses static checkers and me also.
->=20
->     8548 	if (IS_ERR(buf))
->     8549 		return buf;
->     8550=20
->     8551 	/*
->     8552 	 * Extra safety check in case the extent tree is corrupted an=
-d extent
->     8553 	 * allocator chooses to use a tree block which is already use=
-d and
->     8554 	 * locked.
->     8555 	 */
-> --> 8556 	if (buf->lock_owner =3D=3D current->pid) {
->     8557 		btrfs_err_rl(fs_info,
->     8558 "tree block %llu owner %llu already locked by pid=3D%d, extent=
- tree corruption detected",
->     8559 			buf->start, btrfs_header_owner(buf), current->pid);
->     8560 		free_extent_buffer(buf);
->=20
-> regards,
-> dan carpenter
->=20
-
-
---OXKofnd9cBXyiE4L5BPSU9UJtwOG0PnbI--
-
---1GkfEK7Wx4qB9n2LAKCUdQWD376fPIf0B
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxus88ACgkQwj2R86El
-/qjC0Qf+IuS1/sZ/HXBbyTmTsA5jjd+aYGz2q/r7vF1kNkA/CBzR4Rv7ivDeB23S
-i1ZOtjZn6wHnYHFgbQhMdjJkXu2moVWaV6t2kqTla29OAX1oCwslj3P6izg9doXz
-nU7dVSN9jNHlp99vgV8nkAR9Hog4FMEU2HDb6qOLV/JyyGTxgvUrNYe11+dlRrq1
-kmpofuURydlQLr9zLtT1uEJm7MTC+d8J3BiGdwSWva628/nCs3luJVIwHLyLiwn/
-Xb6ZwGx7XQRxvmJN+wuwIlIdUJ1yqdIUGTUxwmzjg/8GwQl9Ino+WHLjuZsvRsdy
-wv6MBeDOboS8ERRmFI/KwGs+Vva3CA==
-=GWLm
------END PGP SIGNATURE-----
-
---1GkfEK7Wx4qB9n2LAKCUdQWD376fPIf0B--
+> +				0, NULL);
+> +		if (ret > 0) {
+> +			WARN(1,
+> +		"dirty_pages not fully written back, start=%llu len=%llu\n",
+> +			     found_start, found_end + 1 - found_start);
+> +			ret = -EUCLEAN;
+> +			mutex_unlock(&fs_info->tree_log_mutex);
+> +			goto scrub_continue;
+> +		}
+> +		ret = test_range_bit(&BTRFS_I(fs_info->btree_inode)->io_tree, 0,
+> +				     (u64)-1, EXTENT_DIRTY | EXTENT_WRITEBACK,
+> +				     0, NULL);
+> +		if (ret > 0) {
+> +			WARN(1,
+> +		"btree io_tree not fully written back, start=%llu len=%llu\n",
+> +			     found_start, found_end + 1 - found_start);
+> +			ret = -EUCLEAN;
+> +			mutex_unlock(&fs_info->tree_log_mutex);
+> +			goto scrub_continue;
+> +		}
+> +	}
+> +
+>  	spin_lock(&fs_info->trans_lock);
+>  	cur_trans->state = TRANS_STATE_UNBLOCKED;
+>  	fs_info->running_transaction = NULL;
+> 

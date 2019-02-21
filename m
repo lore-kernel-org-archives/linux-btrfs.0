@@ -2,247 +2,94 @@ Return-Path: <SRS0=uD29=Q4=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=unavailable autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A7F31C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 11:42:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DA203C43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 11:55:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6EAD720855
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 11:42:37 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=samsung.com header.i=@samsung.com header.b="QuOqZVNN"
+	by mail.kernel.org (Postfix) with ESMTP id A94AB20880
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 11:55:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727547AbfBULma (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Feb 2019 06:42:30 -0500
-Received: from mailout1.w1.samsung.com ([210.118.77.11]:55929 "EHLO
-        mailout1.w1.samsung.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727505AbfBULm3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Feb 2019 06:42:29 -0500
-Received: from eucas1p1.samsung.com (unknown [182.198.249.206])
-        by mailout1.w1.samsung.com (KnoxPortal) with ESMTP id 20190221114226euoutp015c347dd654e46871fb05a5b70b11cfa0~FXlBxVh8R0617006170euoutp01K;
-        Thu, 21 Feb 2019 11:42:26 +0000 (GMT)
-DKIM-Filter: OpenDKIM Filter v2.11.0 mailout1.w1.samsung.com 20190221114226euoutp015c347dd654e46871fb05a5b70b11cfa0~FXlBxVh8R0617006170euoutp01K
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=samsung.com;
-        s=mail20170921; t=1550749346;
-        bh=RoEnKte5TbYxHXQobQyjxIfEG7a0L7Q1iSVqGo69ASY=;
-        h=Subject:To:Cc:From:Date:In-Reply-To:References:From;
-        b=QuOqZVNNKZGEOXbwE4+JghFksM1ldmAFTd6cuSkqXZ+T5F+RI1yQANBaLTCYPzJ9q
-         FnB5Cow1TuyLfwm4uyfC8fs/BJZQy7H0BEGj3JycMEdM4r96R+rr2n4iLqFD+LepEb
-         XHzP298CYg8Prj9CFypxivhQn1A3GI0hJ8AhakZc=
-Received: from eusmges1new.samsung.com (unknown [203.254.199.242]) by
-        eucas1p2.samsung.com (KnoxPortal) with ESMTP id
-        20190221114225eucas1p29780f79a3421d9c246da2593d5858e2f~FXlBWNReU0974909749eucas1p2W;
-        Thu, 21 Feb 2019 11:42:25 +0000 (GMT)
-Received: from eucas1p1.samsung.com ( [182.198.249.206]) by
-        eusmges1new.samsung.com (EUCPMTA) with SMTP id 56.28.04441.1AE8E6C5; Thu, 21
-        Feb 2019 11:42:25 +0000 (GMT)
-Received: from eusmtrp2.samsung.com (unknown [182.198.249.139]) by
-        eucas1p2.samsung.com (KnoxPortal) with ESMTPA id
-        20190221114224eucas1p24fb9b1d416ba709c4275cab3db276f0a~FXlAWWk862634926349eucas1p2E;
-        Thu, 21 Feb 2019 11:42:24 +0000 (GMT)
-Received: from eusmgms1.samsung.com (unknown [182.198.249.179]) by
-        eusmtrp2.samsung.com (KnoxPortal) with ESMTP id
-        20190221114224eusmtrp20c5a08142eb5d80dbe86dfadd96d8fc6~FXlAGTgF41150611506eusmtrp2v;
-        Thu, 21 Feb 2019 11:42:24 +0000 (GMT)
-X-AuditID: cbfec7f2-5e3ff70000001159-e6-5c6e8ea19df8
-Received: from eusmtip1.samsung.com ( [203.254.199.221]) by
-        eusmgms1.samsung.com (EUCPMTA) with SMTP id 1B.F4.04284.0AE8E6C5; Thu, 21
-        Feb 2019 11:42:24 +0000 (GMT)
-Received: from [106.116.147.30] (unknown [106.116.147.30]) by
-        eusmtip1.samsung.com (KnoxPortal) with ESMTPA id
-        20190221114223eusmtip129cbdd51698138069d8c0ab800ee596a~FXk_xKWxo2574125741eusmtip1u;
-        Thu, 21 Feb 2019 11:42:23 +0000 (GMT)
-Subject: Re: [PATCH V15 14/18] block: enable multipage bvecs
-To:     Ming Lei <ming.lei@redhat.com>
-Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
-        Theodore Ts'o <tytso@mit.edu>, Omar Sandoval <osandov@fb.com>,
-        Sagi Grimberg <sagi@grimberg.me>,
-        Dave Chinner <dchinner@redhat.com>,
-        Kent Overstreet <kent.overstreet@gmail.com>,
-        Mike Snitzer <snitzer@redhat.com>, dm-devel@redhat.com,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        linux-fsdevel@vger.kernel.org, linux-raid@vger.kernel.org,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        "Darrick J . Wong" <darrick.wong@oracle.com>,
-        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
-        Christoph Hellwig <hch@lst.de>, linux-ext4@vger.kernel.org,
-        Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
-        Boaz Harrosh <ooo@electrozaur.com>,
-        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com,
-        Ulf Hansson <ulf.hansson@linaro.org>,
-        "linux-mmc@vger.kernel.org" <linux-mmc@vger.kernel.org>,
-        'Linux Samsung SOC' <linux-samsung-soc@vger.kernel.org>,
-        Krzysztof Kozlowski <krzk@kernel.org>,
-        Adrian Hunter <adrian.hunter@intel.com>,
-        Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
-From:   Marek Szyprowski <m.szyprowski@samsung.com>
-Message-ID: <104e10f8-7aea-54ce-4fea-951768fa81c8@samsung.com>
-Date:   Thu, 21 Feb 2019 12:42:22 +0100
-User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:60.0) Gecko/20100101
-        Thunderbird/60.5.0
+        id S1726527AbfBULzK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Feb 2019 06:55:10 -0500
+Received: from mx2.suse.de ([195.135.220.15]:48148 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725820AbfBULzK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 21 Feb 2019 06:55:10 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id ADA05AD3B
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Feb 2019 11:55:07 +0000 (UTC)
+Subject: Re: [PATCH v2 3/6] btrfs: Make compress_file_range take only struct
+ async_cow
+To:     Johannes Thumshirn <jthumshirn@suse.de>,
+        linux-btrfs@vger.kernel.org
+References: <20190220151143.19057-1-nborisov@suse.com>
+ <20190220151143.19057-4-nborisov@suse.com>
+ <559c44a0-5b82-8fea-3d46-8f5d9e9bb2f3@suse.de>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <010a648e-4c75-39ff-8add-87c45a19a383@suse.com>
+Date:   Thu, 21 Feb 2019 13:55:06 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <20190221103856.GC12448@ming.t460p>
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <559c44a0-5b82-8fea-3d46-8f5d9e9bb2f3@suse.de>
+Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
-X-Brightmail-Tracker: H4sIAAAAAAAAA01Sf0xTVxjdfT/ue3TWPAuOG2EbNhEixh/EqXeRuc4sy52Jif/NIFE7fUEy
-        Wm1rdTjNKhVkHdHJtoAFVLLNMQqtICB2rQYodAVplVo3iW3mYAtoaqdCNpYNRvtg47/znfOd
-        fOckH08rHsJlfKH2sKjXqouUUMZ09E35V9ef0eav63dlYN9oE8S28FmIW6odLPbZRiCuOhng
-        cDh2jcWDj+o47H5Sw+Lbf56k8MR0iMXf2Xop7Ck5hgOBKxzu67hHYffwKjw00sDh8xceQOxy
-        +xgcdNZCHGmaYbFn5izApy86Aa4O3KCw8+9ODnd/bqbw2ONM3BMJMdhSUwqx/XGMwWUtkwCX
-        Vkxx2Nv8Hg7842VVy4l9opol58xPOHLdGuZIINLCkFOeKEu+co1TJDhoJK2Nn0DS+qySIw/u
-        uSD5/r4JkpJbvTR5+uswQ2I3QpCcaWsExNEWYnYk58ly94tFhUdE/dote2UHxu96mUPlmR82
-        O4eACVgyLCCJR8JrqNx3i7IAGa8QGgAK95dAaZgAyG7/Zm54DlDUH6bnLWPtDkYSvgXoh5sR
-        EBcUQgygrugrcZws5KJfLjcl+BRBicJhGxc30MI0j079MZUQoJCDLFELjGO5sAW1nRtl4pgR
-        VqDwyAAbx0uFfPSF38NJO0uQ77y0kySsQ89rRxOJaOFVZG6vmcOpaHj0YqIQEq4mIfPYQyDF
-        fhs1934KJZyMHnnbOAmno5nr8wYzQKerrZw0VADUXts559iMerx3ZiPxsydWIodzrUS/herd
-        jgSNhMXop+gSKcRiVNlRRUu0HJWXKaTtTGT12v8723V7iP4MKK0LqlkX1LEuqGP9/+4lwDSC
-        VNFo0BSIhhyteHSNQa0xGLUFa/Yd1LSC2ccfmPY+6wSTQ+93A4EHykXyKzs1+QpWfcRQrOkG
-        iKeVKfJthdp8hXy/uviYqD+4R28sEg3dII1nlKnyj174eZdCKFAfFj8QxUOifl6l+KRlJtBJ
-        YPG17LS6lGz/SLq/X5bep9jsfNH0Y2NlsCEynuX3bEq/8OXHqh161QDJaz+Rtdp19M0g2bp+
-        l1v31/a03GZwvF/1Tl3sZh7hbT2OraHkHH3f7g3bK1YUOes37mmdfGnfb29QOt3XG9/VLVet
-        0m0yZlX9vuj1YFnGttKnXYMvm5SM4YA6J5vWG9T/Al1y9Yb0AwAA
-X-Brightmail-Tracker: H4sIAAAAAAAAA02SbUxTVxiAc3o/263JtUB6YGbKTcRsusoFGS8Ldv5ZcsMPY7LELXwEG7hp
-        2WhrelsD/tgqTOcqQavJxMLExEgEyldFwA7Y1hVJJ1BXLcuIJVEgoSPAFE0kQRxQl/DvSd7n
-        eU9O8rKEZoVKYyssdslmMVTytIq8vz4a++h6vaU4s6M+FUKzXhraYxdo6GnooiDUPkPDldNh
-        BmLL/RSM//MTA0NLjRQ8eHVaAS/WoxS0to8oIFhzCsLhbgbu9U0qYGhqH0RmbjFw9dpjGgaH
-        QiQ89DfRMO19Q0HwzQUE3zf7ETSEhxXgXxtgIHC5VgHzCxnw+3SUBFfjGRo6F5ZJONvzEsGZ
-        ulUGRju+gPDrUepwutj5ooES3bVLjHjXE2PE8HQPKX4XXKTEG4Nxhfhw3CH62n6gRd/zS4z4
-        eHKQFn/+20mLNWMjhPhsbooUl4ejtFjf24bErt4oeTSpUJdvszrs0m6TVbYf4osEyNIJeaDL
-        OpinE7JzSz7JyuEP6PPLpcqKk5LtgP64zhR/NEqeOJdR1eGPICdy7XYhJYu5g3j+ThfpQipW
-        w91EuHPsPJkY7MShH51UgpPw2qSLTkiLCHu9T9DmIInLx09bvFuczPE4FmtnNiWCcyrx08bf
-        mEQxTuB/L8a3VtGcgF2Lm6uUrJrT41737NZzJLcHx2bubzgsm8IV4+gESig7cOhqQlFymXil
-        aZbYZILbi9euRd7yLlx7p/Eta/HUbLPiItJ4tuWebYlnW+LZllxHZBtKlhyy2WiWBZ1sMMsO
-        i1FXZjX70MbB9d1bvT2AIj2fBxDHIv5ddfeX5mINZTgpV5sDCLMEn6wuqLAUa9TlhupTks1a
-        anNUSnIA5Wz8zU2kpZRZN87XYi8VcoRcyBNys3OzPwZeqw5nVhdqOKPBLn0tSSck2/+dglWm
-        OdER0zvpYwWmBdYWPu7+6tz+YEX5o9dZJZ/te980kTGvarG0lMT7z+pLO84XDWt9Iyl3W43y
-        Ia3229JPjxa6V6vqUm/sPTa+Gqzu1rfuD3zDp1d6nkQG6nwP+jl3alKZ6i918+34RDx/SfXe
-        yh9/Nq3vnDMW9P3SPPdrTZV/6gNtq5InZZNB+JCwyYb/ADLNCNCGAwAA
-X-CMS-MailID: 20190221114224eucas1p24fb9b1d416ba709c4275cab3db276f0a
-X-Msg-Generator: CA
-Content-Type: text/plain; charset="utf-8"
-X-RootMTR: 20190221084301eucas1p11e8841a62b4b1da3cccca661b6f4c29d
-X-EPHeader: CA
-CMS-TYPE: 201P
-X-CMS-RootMailID: 20190221084301eucas1p11e8841a62b4b1da3cccca661b6f4c29d
-References: <20190215111324.30129-1-ming.lei@redhat.com>
-        <20190215111324.30129-15-ming.lei@redhat.com>
-        <CGME20190221084301eucas1p11e8841a62b4b1da3cccca661b6f4c29d@eucas1p1.samsung.com>
-        <6c9ae4de-c56f-a2b3-2542-da7d8b95601d@samsung.com>
-        <20190221095733.GA12448@ming.t460p>
-        <ba39138d-d65b-335d-d709-b95dbde1fd5c@samsung.com>
-        <20190221101618.GB12448@ming.t460p>
-        <9269fbbf-b5dd-6be1-682f-e791847ea00d@samsung.com>
-        <20190221103856.GC12448@ming.t460p>
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi Ming,
 
-On 2019-02-21 11:38, Ming Lei wrote:
-> On Thu, Feb 21, 2019 at 11:22:39AM +0100, Marek Szyprowski wrote:
->> On 2019-02-21 11:16, Ming Lei wrote:
->>> On Thu, Feb 21, 2019 at 11:08:19AM +0100, Marek Szyprowski wrote:
->>>> On 2019-02-21 10:57, Ming Lei wrote:
->>>>> On Thu, Feb 21, 2019 at 09:42:59AM +0100, Marek Szyprowski wrote:
->>>>>> On 2019-02-15 12:13, Ming Lei wrote:
->>>>>>> This patch pulls the trigger for multi-page bvecs.
->>>>>>>
->>>>>>> Reviewed-by: Omar Sandoval <osandov@fb.com>
->>>>>>> Signed-off-by: Ming Lei <ming.lei@redhat.com>
->>>>>> Since Linux next-20190218 I've observed problems with block layer on one
->>>>>> of my test devices (Odroid U3 with EXT4 rootfs on SD card). Bisecting
->>>>>> this issue led me to this change. This is also the first linux-next
->>>>>> release with this change merged. The issue is fully reproducible and can
->>>>>> be observed in the following kernel log:
->>>>>>
->>>>>> sdhci: Secure Digital Host Controller Interface driver
->>>>>> sdhci: Copyright(c) Pierre Ossman
->>>>>> s3c-sdhci 12530000.sdhci: clock source 2: mmc_busclk.2 (100000000 Hz)
->>>>>> s3c-sdhci 12530000.sdhci: Got CD GPIO
->>>>>> mmc0: SDHCI controller on samsung-hsmmc [12530000.sdhci] using ADMA
->>>>>> mmc0: new high speed SDHC card at address aaaa
->>>>>> mmcblk0: mmc0:aaaa SL16G 14.8 GiB
->>>>>>
->>>>>> ...
->>>>>>
->>>>>> EXT4-fs (mmcblk0p2): INFO: recovery required on readonly filesystem
->>>>>> EXT4-fs (mmcblk0p2): write access will be enabled during recovery
->>>>>> EXT4-fs (mmcblk0p2): recovery complete
->>>>>> EXT4-fs (mmcblk0p2): mounted filesystem with ordered data mode. Opts: (null)
->>>>>> VFS: Mounted root (ext4 filesystem) readonly on device 179:2.
->>>>>> devtmpfs: mounted
->>>>>> Freeing unused kernel memory: 1024K
->>>>>> hub 1-3:1.0: USB hub found
->>>>>> Run /sbin/init as init process
->>>>>> hub 1-3:1.0: 3 ports detected
->>>>>> *** stack smashing detected ***: <unknown> terminated
->>>>>> Kernel panic - not syncing: Attempted to kill init! exitcode=0x00000004
->>>>>> CPU: 1 PID: 1 Comm: init Not tainted 5.0.0-rc6-next-20190218 #1546
->>>>>> Hardware name: SAMSUNG EXYNOS (Flattened Device Tree)
->>>>>> [<c01118d0>] (unwind_backtrace) from [<c010d794>] (show_stack+0x10/0x14)
->>>>>> [<c010d794>] (show_stack) from [<c09ff8a4>] (dump_stack+0x90/0xc8)
->>>>>> [<c09ff8a4>] (dump_stack) from [<c0125944>] (panic+0xfc/0x304)
->>>>>> [<c0125944>] (panic) from [<c012bc98>] (do_exit+0xabc/0xc6c)
->>>>>> [<c012bc98>] (do_exit) from [<c012c100>] (do_group_exit+0x3c/0xbc)
->>>>>> [<c012c100>] (do_group_exit) from [<c0138908>] (get_signal+0x130/0xbf4)
->>>>>> [<c0138908>] (get_signal) from [<c010c7a0>] (do_work_pending+0x130/0x618)
->>>>>> [<c010c7a0>] (do_work_pending) from [<c0101034>]
->>>>>> (slow_work_pending+0xc/0x20)
->>>>>> Exception stack(0xe88c3fb0 to 0xe88c3ff8)
->>>>>> 3fa0:                                     00000000 bea7787c 00000005
->>>>>> b6e8d0b8
->>>>>> 3fc0: bea77a18 b6f92010 b6e8d0b8 00000001 b6e8d0c8 00000001 b6e8c000
->>>>>> bea77b60
->>>>>> 3fe0: 00000020 bea77998 ffffffff b6d52368 60000050 ffffffff
->>>>>> CPU3: stopping
->>>>>>
->>>>>> I would like to help debugging and fixing this issue, but I don't really
->>>>>> have idea where to start. Here are some more detailed information about
->>>>>> my test system:
->>>>>>
->>>>>> 1. Board: ARM 32bit Samsung Exynos4412-based Odroid U3 (device tree
->>>>>> source: arch/arm/boot/dts/exynos4412-odroidu3.dts)
->>>>>>
->>>>>> 2. Block device: MMC/SDHCI/SDHCI-S3C with SD card
->>>>>> (drivers/mmc/host/sdhci-s3c.c driver, sdhci_2 device node in the device
->>>>>> tree)
->>>>>>
->>>>>> 3. Rootfs: Ext4
->>>>>>
->>>>>> 4. Kernel config: arch/arm/configs/exynos_defconfig
->>>>>>
->>>>>> I can gather more logs if needed, just let me which kernel option to
->>>>>> enable. Reverting this commit on top of next-20190218 as well as current
->>>>>> linux-next (tested with next-20190221) fixes this issue and makes the
->>>>>> system bootable again.
->>>>> Could you test the patch in following link and see if it can make a difference?
->>>>>
->>>>> https://marc.info/?l=linux-aio&m=155070355614541&w=2
->>>> I've tested that patch, but it doesn't make any difference on the test
->>>> system. In the log I see no warning added by it.
->>> I guess it might be related with memory corruption, could you enable the
->>> following debug options and post the dmesg log?
->>>
->>> CONFIG_DEBUG_STACKOVERFLOW=y
->>> CONFIG_KASAN=y
->> It won't be that easy as none of the above options is available on ARM
->> 32bit. I will try to apply some ARM KASAN patches floating on the net
->> and let you know the result.
-> Hi Marek,
->
-> Could you test the following patch?
 
-Yes. Sadly, no change observed.
+On 20.02.19 г. 17:27 ч., Johannes Thumshirn wrote:
+> Hmm "... and num_added" for the Subject?
 
-Best regards
--- 
-Marek Szyprowski, PhD
-Samsung R&D Institute Poland
-
+Nah, that's obvious, the focus here is instead of taking 4-5 more
+arguments they are replaced with async_cow.

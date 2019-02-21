@@ -3,31 +3,29 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 55EFEC43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 13:08:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 81953C00319
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 13:15:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2C362207E0
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 13:08:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5B0942084D
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 13:15:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726077AbfBUNIU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Feb 2019 08:08:20 -0500
-Received: from mx2.suse.de ([195.135.220.15]:57996 "EHLO mx1.suse.de"
+        id S1725920AbfBUNPS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Feb 2019 08:15:18 -0500
+Received: from mx2.suse.de ([195.135.220.15]:59104 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725385AbfBUNIU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Feb 2019 08:08:20 -0500
+        id S1725385AbfBUNPR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 21 Feb 2019 08:15:17 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 1F510AEA3
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Feb 2019 13:08:18 +0000 (UTC)
-Subject: Re: [PATCH v2 3/6] btrfs: Make compress_file_range take only struct
- async_cow
+        by mx1.suse.de (Postfix) with ESMTP id C7296AD47
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Feb 2019 13:15:15 +0000 (UTC)
+Subject: Re: [PATCH v3 1/6] btrfs: Refactor cow_file_range_async
 To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-References: <20190220151143.19057-1-nborisov@suse.com>
- <20190220151143.19057-4-nborisov@suse.com>
- <559c44a0-5b82-8fea-3d46-8f5d9e9bb2f3@suse.de>
- <010a648e-4c75-39ff-8add-87c45a19a383@suse.com>
+References: <20190221115717.5128-1-nborisov@suse.com>
+ <20190221115717.5128-2-nborisov@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -85,12 +83,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <2616bf67-42e9-2aa2-9f42-1e2b44d30ca3@suse.de>
-Date:   Thu, 21 Feb 2019 14:08:16 +0100
+Message-ID: <aaaf4399-7acd-1726-c579-19a9285c337f@suse.de>
+Date:   Thu, 21 Feb 2019 14:15:15 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.3.0
 MIME-Version: 1.0
-In-Reply-To: <010a648e-4c75-39ff-8add-87c45a19a383@suse.com>
+In-Reply-To: <20190221115717.5128-2-nborisov@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -99,17 +97,23 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 21/02/2019 12:55, Nikolay Borisov wrote:
-> 
-> 
-> On 20.02.19 г. 17:27 ч., Johannes Thumshirn wrote:
->> Hmm "... and num_added" for the Subject?
-> 
-> Nah, that's obvious, the focus here is instead of taking 4-5 more
-> arguments they are replaced with async_cow.
-> 
+On 21/02/2019 12:57, Nikolay Borisov wrote:
+>  
+>  static int cow_file_range_async(struct inode *inode, struct page *locked_page,
+> @@ -1190,45 +1201,68 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
+>  				unsigned int write_flags)
+>  {
+>  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+> -	struct async_cow *async_cow;
+> +	struct async_cow *ctx;
+> +	struct async_chunk *async_cow;
 
-Fair enough
+In case you have to re-send the patch you could maybe rename the
+async_cow variable to async_chunk or sth like that. Would make the
+resulting code a little bit clearer but no strong opinions here.
+
+Anyways,
+Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
 
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems

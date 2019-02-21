@@ -3,30 +3,28 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6A4E9C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 13:07:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6CA71C43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 13:07:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 41910207E0
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 13:07:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 36CF9207E0
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 13:07:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725920AbfBUNHM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Feb 2019 08:07:12 -0500
-Received: from mx2.suse.de ([195.135.220.15]:57876 "EHLO mx1.suse.de"
+        id S1727859AbfBUNHw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Feb 2019 08:07:52 -0500
+Received: from mx2.suse.de ([195.135.220.15]:57972 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725820AbfBUNHL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Feb 2019 08:07:11 -0500
+        id S1726224AbfBUNHv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 21 Feb 2019 08:07:51 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id C77CAAEA3
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Feb 2019 13:07:09 +0000 (UTC)
-Subject: Re: [PATCH v3 3/6] btrfs: Make compress_file_range take only struct
- async_chunk
+        by mx1.suse.de (Postfix) with ESMTP id C92E4AEA3
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Feb 2019 13:07:49 +0000 (UTC)
+Subject: Re: [PATCH v3 2/6] btrfs: Remove fs_info from struct async_chunk
 To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 References: <20190221115717.5128-1-nborisov@suse.com>
- <20190221115717.5128-4-nborisov@suse.com>
+ <20190221115717.5128-3-nborisov@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -84,12 +82,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <2edc0ae5-af09-807a-33ee-4eed4793e136@suse.de>
-Date:   Thu, 21 Feb 2019 14:07:08 +0100
+Message-ID: <41341b2c-737b-3a11-a0d4-b7787c3d4aed@suse.de>
+Date:   Thu, 21 Feb 2019 14:07:48 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.3.0
 MIME-Version: 1.0
-In-Reply-To: <20190221115717.5128-4-nborisov@suse.com>
+In-Reply-To: <20190221115717.5128-3-nborisov@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit

@@ -2,194 +2,153 @@ Return-Path: <SRS0=uD29=Q4=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B1B11C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 09:03:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 92E28C4360F
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 09:58:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 73E5D206BA
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 09:03:57 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="brGrFKKP"
+	by mail.kernel.org (Postfix) with ESMTP id 6C19120880
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 09:58:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726350AbfBUJDz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Feb 2019 04:03:55 -0500
-Received: from aserp2130.oracle.com ([141.146.126.79]:48952 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726236AbfBUJDz (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Feb 2019 04:03:55 -0500
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x1L93i6A083137;
-        Thu, 21 Feb 2019 09:03:49 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
- references : from : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=corp-2018-07-02;
- bh=45oI+081Nkpae/Ae56N+x7xGmESgepT4GKwXvi3u+B8=;
- b=brGrFKKPP8HToTA5vt9I2symwd6UE40o8td/PHpgdNDpApUPpyQF5iiqPZ9x2zKi3axx
- 9ggvNXwWvUvRXwVnVHZFBqjY/H7jRHkBo8RoQxwW19GmH8hLHDATRGLUBro6UtgB4F2M
- pZhBhLOMCxf01Wn23rZhIxt/xQxPPQKDSQVnzUHu9lkuDXWhCBrBHWg8CI9js7I5hed2
- 7wrh4gYVBAqGW8epOmArPNFoK2QpZLi82837lh/tQWrNE2WA1JhYQgSuOGhfcWA45mWb
- qLFPi2kBWWbMWqJFG2sltNYzkTkQd8DnhEsjsIbcH8Aq7mhBUZMO7NYRRxKMctSojpOo dw== 
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by aserp2130.oracle.com with ESMTP id 2qp81eeru1-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 21 Feb 2019 09:03:49 +0000
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id x1L93mTd018857
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 21 Feb 2019 09:03:48 GMT
-Received: from abhmp0020.oracle.com (abhmp0020.oracle.com [141.146.116.26])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x1L93mMP028165;
-        Thu, 21 Feb 2019 09:03:48 GMT
-Received: from [172.20.10.2] (/157.49.213.142)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 21 Feb 2019 01:03:47 -0800
-Subject: Re: [PATCH v3 1/3] btrfs: kill __btrfs_set_prop()
-To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <1549937931-15339-1-git-send-email-anand.jain@oracle.com>
- <1549937931-15339-2-git-send-email-anand.jain@oracle.com>
- <20190220190020.GA9874@twin.jikos.cz>
-From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <01e83b68-cd54-26ae-f4d1-3702ae13bbca@oracle.com>
-Date:   Thu, 21 Feb 2019 17:03:37 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.0
+        id S1727923AbfBUJ6K (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Feb 2019 04:58:10 -0500
+Received: from mx1.redhat.com ([209.132.183.28]:51240 "EHLO mx1.redhat.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727486AbfBUJ6J (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 21 Feb 2019 04:58:09 -0500
+Received: from smtp.corp.redhat.com (int-mx03.intmail.prod.int.phx2.redhat.com [10.5.11.13])
+        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mx1.redhat.com (Postfix) with ESMTPS id 616343084298;
+        Thu, 21 Feb 2019 09:58:08 +0000 (UTC)
+Received: from ming.t460p (ovpn-8-27.pek2.redhat.com [10.72.8.27])
+        by smtp.corp.redhat.com (Postfix) with ESMTPS id A375960933;
+        Thu, 21 Feb 2019 09:57:39 +0000 (UTC)
+Date:   Thu, 21 Feb 2019 17:57:34 +0800
+From:   Ming Lei <ming.lei@redhat.com>
+To:     Marek Szyprowski <m.szyprowski@samsung.com>
+Cc:     Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
+        Theodore Ts'o <tytso@mit.edu>, Omar Sandoval <osandov@fb.com>,
+        Sagi Grimberg <sagi@grimberg.me>,
+        Dave Chinner <dchinner@redhat.com>,
+        Kent Overstreet <kent.overstreet@gmail.com>,
+        Mike Snitzer <snitzer@redhat.com>, dm-devel@redhat.com,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        linux-fsdevel@vger.kernel.org, linux-raid@vger.kernel.org,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
+        linux-xfs@vger.kernel.org, Gao Xiang <gaoxiang25@huawei.com>,
+        Christoph Hellwig <hch@lst.de>, linux-ext4@vger.kernel.org,
+        Coly Li <colyli@suse.de>, linux-bcache@vger.kernel.org,
+        Boaz Harrosh <ooo@electrozaur.com>,
+        Bob Peterson <rpeterso@redhat.com>, cluster-devel@redhat.com,
+        Ulf Hansson <ulf.hansson@linaro.org>,
+        "linux-mmc@vger.kernel.org" <linux-mmc@vger.kernel.org>,
+        'Linux Samsung SOC' <linux-samsung-soc@vger.kernel.org>,
+        Krzysztof Kozlowski <krzk@kernel.org>,
+        Adrian Hunter <adrian.hunter@intel.com>,
+        Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
+Subject: Re: [PATCH V15 14/18] block: enable multipage bvecs
+Message-ID: <20190221095733.GA12448@ming.t460p>
+References: <20190215111324.30129-1-ming.lei@redhat.com>
+ <20190215111324.30129-15-ming.lei@redhat.com>
+ <CGME20190221084301eucas1p11e8841a62b4b1da3cccca661b6f4c29d@eucas1p1.samsung.com>
+ <6c9ae4de-c56f-a2b3-2542-da7d8b95601d@samsung.com>
 MIME-Version: 1.0
-In-Reply-To: <20190220190020.GA9874@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9173 signatures=668683
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
- suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
- lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=842 adultscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
- definitions=main-1902210068
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <6c9ae4de-c56f-a2b3-2542-da7d8b95601d@samsung.com>
+User-Agent: Mutt/1.9.1 (2017-09-22)
+X-Scanned-By: MIMEDefang 2.79 on 10.5.11.13
+X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.40]); Thu, 21 Feb 2019 09:58:08 +0000 (UTC)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 2/21/19 3:00 AM, David Sterba wrote:
-> On Tue, Feb 12, 2019 at 10:18:49AM +0800, Anand Jain wrote:
->> btrfs_set_prop() is a redirect to __btrfs_set_prop() with the
->> transaction handler equal to NULL. And __btrfs_set_prop() inturn diectly
->> uses trans to do_setxattr() which when trans is NULL creates a transaction.
+On Thu, Feb 21, 2019 at 09:42:59AM +0100, Marek Szyprowski wrote:
+> Dear All,
 > 
-> That's right and I think that some of the callsites could actually pass
-> the existing transaction to btrfs_set_prop instead of relying on the
-> fallback behaviour.
+> On 2019-02-15 12:13, Ming Lei wrote:
+> > This patch pulls the trigger for multi-page bvecs.
+> >
+> > Reviewed-by: Omar Sandoval <osandov@fb.com>
+> > Signed-off-by: Ming Lei <ming.lei@redhat.com>
 > 
-> Also, the potential NULL as transaction handle is not a good thing from
-> the API point of view and I'd like to reduce that to minimum (there are
-> some justified cases).
+> Since Linux next-20190218 I've observed problems with block layer on one
+> of my test devices (Odroid U3 with EXT4 rootfs on SD card). Bisecting
+> this issue led me to this change. This is also the first linux-next
+> release with this change merged. The issue is fully reproducible and can
+> be observed in the following kernel log:
 > 
->> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->> index 3f9d7be30bf4..5a4ed2f66e09 100644
->> --- a/fs/btrfs/ioctl.c
->> +++ b/fs/btrfs/ioctl.c
->> @@ -284,7 +284,8 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
->>   		binode->flags &= ~BTRFS_INODE_COMPRESS;
->>   		binode->flags |= BTRFS_INODE_NOCOMPRESS;
->>   
->> -		ret = btrfs_set_prop(inode, "btrfs.compression", NULL, 0, 0);
->> +		ret = btrfs_set_prop(NULL, inode, "btrfs.compression", NULL, 0,
->> +				     0);
->>   		if (ret && ret != -ENODATA)
->>   			goto out_drop;
->>   	} else if (fsflags & FS_COMPR_FL) {
->> @@ -302,13 +303,14 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
->>   		if (!comp || comp[0] == 0)
->>   			comp = btrfs_compress_type2str(BTRFS_COMPRESS_ZLIB);
->>   
->> -		ret = btrfs_set_prop(inode, "btrfs.compression",
->> -				     comp, strlen(comp), 0);
->> +		ret = btrfs_set_prop(NULL, inode, "btrfs.compression", comp,
->> +				     strlen(comp), 0);
->>   		if (ret)
->>   			goto out_drop;
->>   
->>   	} else {
->> -		ret = btrfs_set_prop(inode, "btrfs.compression", NULL, 0, 0);
->> +		ret = btrfs_set_prop(NULL, inode, "btrfs.compression", NULL, 0,
->> +				     0);
->>   		if (ret && ret != -ENODATA)
->>   			goto out_drop;
->>   		binode->flags &= ~(BTRFS_INODE_COMPRESS | BTRFS_INODE_NOCOMPRESS);
+> sdhci: Secure Digital Host Controller Interface driver
+> sdhci: Copyright(c) Pierre Ossman
+> s3c-sdhci 12530000.sdhci: clock source 2: mmc_busclk.2 (100000000 Hz)
+> s3c-sdhci 12530000.sdhci: Got CD GPIO
+> mmc0: SDHCI controller on samsung-hsmmc [12530000.sdhci] using ADMA
+> mmc0: new high speed SDHC card at address aaaa
+> mmcblk0: mmc0:aaaa SL16G 14.8 GiB
 > 
-> When the if-else block ends, there's a new transaction started, this
-> seems unnecessary.
+> ...
 > 
->> diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
->> index dc6140013ae8..4525a2a4d1cd 100644
->> --- a/fs/btrfs/props.c
->> +++ b/fs/btrfs/props.c
->> @@ -85,12 +85,9 @@ static const struct hlist_head *find_prop_handlers_by_hash(const u64 hash)
->>   	return NULL;
->>   }
->>   
->> -static int __btrfs_set_prop(struct btrfs_trans_handle *trans,
->> -			    struct inode *inode,
->> -			    const char *name,
->> -			    const char *value,
->> -			    size_t value_len,
->> -			    int flags)
->> +int btrfs_set_prop(struct btrfs_trans_handle *trans, struct inode *inode,
->> +		   const char *name, const char *value, size_t value_len,
->> +		   int flags)
->>   {
->>   	const struct prop_handler *handler;
->>   	int ret;
->> @@ -133,15 +130,6 @@ static int __btrfs_set_prop(struct btrfs_trans_handle *trans,
->>   	return 0;
->>   }
->>   
->> -int btrfs_set_prop(struct inode *inode,
->> -		   const char *name,
->> -		   const char *value,
->> -		   size_t value_len,
->> -		   int flags)
->> -{
->> -	return __btrfs_set_prop(NULL, inode, name, value, value_len, flags);
+> EXT4-fs (mmcblk0p2): INFO: recovery required on readonly filesystem
+> EXT4-fs (mmcblk0p2): write access will be enabled during recovery
+> EXT4-fs (mmcblk0p2): recovery complete
+> EXT4-fs (mmcblk0p2): mounted filesystem with ordered data mode. Opts: (null)
+> VFS: Mounted root (ext4 filesystem) readonly on device 179:2.
+> devtmpfs: mounted
+> Freeing unused kernel memory: 1024K
+> hub 1-3:1.0: USB hub found
+> Run /sbin/init as init process
+> hub 1-3:1.0: 3 ports detected
+> *** stack smashing detected ***: <unknown> terminated
+> Kernel panic - not syncing: Attempted to kill init! exitcode=0x00000004
+> CPU: 1 PID: 1 Comm: init Not tainted 5.0.0-rc6-next-20190218 #1546
+> Hardware name: SAMSUNG EXYNOS (Flattened Device Tree)
+> [<c01118d0>] (unwind_backtrace) from [<c010d794>] (show_stack+0x10/0x14)
+> [<c010d794>] (show_stack) from [<c09ff8a4>] (dump_stack+0x90/0xc8)
+> [<c09ff8a4>] (dump_stack) from [<c0125944>] (panic+0xfc/0x304)
+> [<c0125944>] (panic) from [<c012bc98>] (do_exit+0xabc/0xc6c)
+> [<c012bc98>] (do_exit) from [<c012c100>] (do_group_exit+0x3c/0xbc)
+> [<c012c100>] (do_group_exit) from [<c0138908>] (get_signal+0x130/0xbf4)
+> [<c0138908>] (get_signal) from [<c010c7a0>] (do_work_pending+0x130/0x618)
+> [<c010c7a0>] (do_work_pending) from [<c0101034>]
+> (slow_work_pending+0xc/0x20)
+> Exception stack(0xe88c3fb0 to 0xe88c3ff8)
+> 3fa0:                                     00000000 bea7787c 00000005
+> b6e8d0b8
+> 3fc0: bea77a18 b6f92010 b6e8d0b8 00000001 b6e8d0c8 00000001 b6e8c000
+> bea77b60
+> 3fe0: 00000020 bea77998 ffffffff b6d52368 60000050 ffffffff
+> CPU3: stopping
 > 
-> I agree that one function would be better here, with defined semantics
-> of 'trans'.
+> I would like to help debugging and fixing this issue, but I don't really
+> have idea where to start. Here are some more detailed information about
+> my test system:
 > 
-> There are more cleanups around the properties, also in the xattr
-> handling functions. This patchset is a step in the right direction and I
-> think the cleanups could be more extensive.
+> 1. Board: ARM 32bit Samsung Exynos4412-based Odroid U3 (device tree
+> source: arch/arm/boot/dts/exynos4412-odroidu3.dts)
 > 
-> The idea for the xattr function:
+> 2. Block device: MMC/SDHCI/SDHCI-S3C with SD card
+> (drivers/mmc/host/sdhci-s3c.c driver, sdhci_2 device node in the device
+> tree)
 > 
-> - the VFS callbacks (like btrfs_xattr_handler_set_prop) will start the
->    transaction themselves and pass the handle to the prop function
+> 3. Rootfs: Ext4
+> 
+> 4. Kernel config: arch/arm/configs/exynos_defconfig
+> 
+> I can gather more logs if needed, just let me which kernel option to
+> enable. Reverting this commit on top of next-20190218 as well as current
+> linux-next (tested with next-20190221) fixes this issue and makes the
+> system bootable again.
 
-These vfs callbacks must handle the update inode part as well, which 
-btrfs_setxattr() skips if trans != NULL.
+Could you test the patch in following link and see if it can make a difference?
 
-----
-         inode_inc_iversion(inode);
-         inode->i_ctime = current_time(inode);
-         set_bit(BTRFS_INODE_COPY_EVERYTHING, 
-&BTRFS_I(inode)->runtime_flags);
-         ret = btrfs_update_inode(trans, root, inode);
-----
+https://marc.info/?l=linux-aio&m=155070355614541&w=2
 
-Will give a try.
-
-> - a xattr function that does not take a valid trans could be named like
->    btrfs_setxattr_notrans and will start the transaction, ie. lifting
->    that to the callers
-
-Yep. Also btrfs_set_props_notrans() and btrfs_set_acl_notrans().
-
-> - there's a maze of the xattr callbacks so assertions are needed
-
-ok.
-
-Thanks, Anand
+Thanks,
+Ming

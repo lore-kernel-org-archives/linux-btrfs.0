@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EC411C43381
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 10:17:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DF8F4C43381
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 10:17:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C48B020823
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 10:17:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B72F120878
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 10:17:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726711AbfBVKRF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Feb 2019 05:17:05 -0500
-Received: from mx2.suse.de ([195.135.220.15]:44708 "EHLO mx1.suse.de"
+        id S1726763AbfBVKRK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Feb 2019 05:17:10 -0500
+Received: from mx2.suse.de ([195.135.220.15]:44730 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726184AbfBVKRF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Feb 2019 05:17:05 -0500
+        id S1726184AbfBVKRK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 22 Feb 2019 05:17:10 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 654BCB15A;
-        Fri, 22 Feb 2019 10:17:04 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 99969B15A;
+        Fri, 22 Feb 2019 10:17:08 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     dan.carpenter@oracle.com
-Subject: [PATCH 4/5] btrfs: extent_io: Unify the return value of alloc_test_extent_buffer() with alloc_extent_buffer()
-Date:   Fri, 22 Feb 2019 18:16:43 +0800
-Message-Id: <20190222101645.4403-5-wqu@suse.com>
+Subject: [PATCH 5/5] btrfs: extent_io: Unify the return value of btrfs_clone_extent_buffer() with alloc_extent_buffer()
+Date:   Fri, 22 Feb 2019 18:16:44 +0800
+Message-Id: <20190222101645.4403-6-wqu@suse.com>
 X-Mailer: git-send-email 2.20.1
 In-Reply-To: <20190222101645.4403-1-wqu@suse.com>
 References: <20190222101645.4403-1-wqu@suse.com>
@@ -38,108 +38,141 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The function only get called in two locations:
-1) free-space-tree-tests.c
-2) qgroup-tests.c
-   These call sites are stubs.
+The direct callers are:
+1) qgroup_rescan_leaf()
+2) btrfs_compare_trees()
+   These two call sites are stubs.
 
-3) btrfs_find_create_tree_block()
-   Since all existing btrfs_find_create_tree_block() callers handles
-   the return value correctly, it's also a stub.
+3) tree_mod_log_rewind()
+4) get_old_root()
+   These two doesn't follow the name pattern *_extent_buffer(), thus we
+   don't need to unify their return value.
+   However for get_old_root(), all its eb assignment can no longer be
+   NULL, change its IS_ERR_OR_NULL() to IS_ERR().
 
-So all alloc_test_extent_buffer() callers should be covered by this
-patch.
+5) btrfs_search_slot_get_root()
+   This is a stub. The only caller has already handled the return value.
 
-Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
+This patch should cover all the call sites of
+btrfs_clone_extent_buffer().
+
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/extent_io.c                   | 21 +++++++++++----------
- fs/btrfs/tests/free-space-tree-tests.c |  3 ++-
- fs/btrfs/tests/qgroup-tests.c          |  3 ++-
- 3 files changed, 15 insertions(+), 12 deletions(-)
+ fs/btrfs/backref.c   |  8 ++++----
+ fs/btrfs/ctree.c     | 14 ++++++++------
+ fs/btrfs/extent_io.c |  4 ++--
+ fs/btrfs/qgroup.c    |  5 +++--
+ 4 files changed, 17 insertions(+), 14 deletions(-)
 
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index 78556447e1d5..b6e469a12011 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -2016,8 +2016,8 @@ static int iterate_inode_refs(u64 inum, struct btrfs_root *fs_root,
+ 		parent = found_key.offset;
+ 		slot = path->slots[0];
+ 		eb = btrfs_clone_extent_buffer(path->nodes[0]);
+-		if (!eb) {
+-			ret = -ENOMEM;
++		if (IS_ERR(eb)) {
++			ret = PTR_ERR(eb);
+ 			break;
+ 		}
+ 		btrfs_release_path(path);
+@@ -2075,8 +2075,8 @@ static int iterate_inode_extrefs(u64 inum, struct btrfs_root *fs_root,
+ 
+ 		slot = path->slots[0];
+ 		eb = btrfs_clone_extent_buffer(path->nodes[0]);
+-		if (!eb) {
+-			ret = -ENOMEM;
++		if (IS_ERR(eb)) {
++			ret = PTR_ERR(eb);
+ 			break;
+ 		}
+ 		btrfs_release_path(path);
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 3276b743f40a..ea7ff0012007 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1384,7 +1384,7 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
+ 		free_extent_buffer(eb_root);
+ 	}
+ 
+-	if (IS_ERR_OR_NULL(eb))
++	if (IS_ERR(eb))
+ 		return NULL;
+ 	btrfs_tree_read_lock(eb);
+ 	if (old_root) {
+@@ -2624,8 +2624,8 @@ static struct extent_buffer *btrfs_search_slot_get_root(struct btrfs_root *root,
+ 			down_read(&fs_info->commit_root_sem);
+ 			b = btrfs_clone_extent_buffer(root->commit_root);
+ 			up_read(&fs_info->commit_root_sem);
+-			if (!b)
+-				return ERR_PTR(-ENOMEM);
++			if (IS_ERR(b))
++				return b;
+ 
+ 		} else {
+ 			b = root->commit_root;
+@@ -5431,7 +5431,8 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
+ 			btrfs_clone_extent_buffer(left_root->commit_root);
+ 	if (!left_path->nodes[left_level]) {
+ 		up_read(&fs_info->commit_root_sem);
+-		ret = -ENOMEM;
++		ret = PTR_ERR(left_path->nodes[left_level]);
++		left_path->nodes[left_level] = NULL;
+ 		goto out;
+ 	}
+ 
+@@ -5439,9 +5440,10 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
+ 	right_root_level = right_level;
+ 	right_path->nodes[right_level] =
+ 			btrfs_clone_extent_buffer(right_root->commit_root);
+-	if (!right_path->nodes[right_level]) {
++	if (IS_ERR(right_path->nodes[right_level])) {
+ 		up_read(&fs_info->commit_root_sem);
+-		ret = -ENOMEM;
++		ret = PTR_ERR(right_path->nodes[right_level]);
++		right_path->nodes[right_level] = NULL;
+ 		goto out;
+ 	}
+ 	up_read(&fs_info->commit_root_sem);
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index f9c9da9b84a3..a19bd8bc3b32 100644
+index a19bd8bc3b32..dbdb649f1957 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -4863,6 +4863,7 @@ struct extent_buffer *find_extent_buffer(struct btrfs_fs_info *fs_info,
- }
+@@ -4713,13 +4713,13 @@ struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src)
  
- #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
-+/* Will either return valid pointer or PTR_ERR(), NEVER NULL pointer. */
- struct extent_buffer *alloc_test_extent_buffer(struct btrfs_fs_info *fs_info,
- 					u64 start)
- {
-@@ -4874,12 +4875,14 @@ struct extent_buffer *alloc_test_extent_buffer(struct btrfs_fs_info *fs_info,
- 		return eb;
- 	eb = alloc_dummy_extent_buffer(fs_info, start);
- 	if (IS_ERR(eb))
+ 	new = __alloc_extent_buffer(src->fs_info, src->start, src->len);
+ 	if (IS_ERR(new))
 -		return NULL;
-+		return eb;
- 	eb->fs_info = fs_info;
- again:
- 	ret = radix_tree_preload(GFP_NOFS);
--	if (ret)
--		goto free_eb;
-+	if (ret) {
-+		btrfs_release_extent_buffer(eb);
-+		return ERR_PTR(ret);
-+	}
- 	spin_lock(&fs_info->buffer_lock);
- 	ret = radix_tree_insert(&fs_info->buffer_radix,
- 				start >> PAGE_SHIFT, eb);
-@@ -4887,18 +4890,16 @@ struct extent_buffer *alloc_test_extent_buffer(struct btrfs_fs_info *fs_info,
- 	radix_tree_preload_end();
- 	if (ret == -EEXIST) {
- 		exists = find_extent_buffer(fs_info, start);
--		if (exists)
--			goto free_eb;
--		else
--			goto again;
-+		if (exists) {
-+			btrfs_release_extent_buffer(eb);
-+			return exists;
-+		}
-+		goto again;
++		return new;
+ 
+ 	for (i = 0; i < num_pages; i++) {
+ 		p = alloc_page(GFP_NOFS);
+ 		if (!p) {
+ 			btrfs_release_extent_buffer(new);
+-			return NULL;
++			return ERR_PTR(-ENOMEM);
+ 		}
+ 		attach_extent_buffer_page(new, p);
+ 		WARN_ON(PageDirty(p));
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 4e473a998219..ccfa992a10bf 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -3105,8 +3105,9 @@ static int qgroup_rescan_leaf(struct btrfs_trans_handle *trans,
+ 	fs_info->qgroup_rescan_progress.objectid = found.objectid + 1;
+ 
+ 	scratch_leaf = btrfs_clone_extent_buffer(path->nodes[0]);
+-	if (!scratch_leaf) {
+-		ret = -ENOMEM;
++	if (IS_ERR(scratch_leaf)) {
++		ret = PTR_ERR(scratch_leaf);
++		scratch_leaf = NULL;
+ 		mutex_unlock(&fs_info->qgroup_rescan_lock);
+ 		goto out;
  	}
- 	check_buffer_tree_ref(eb);
- 	set_bit(EXTENT_BUFFER_IN_TREE, &eb->bflags);
- 
- 	return eb;
--free_eb:
--	btrfs_release_extent_buffer(eb);
--	return exists;
- }
- #endif
- 
-diff --git a/fs/btrfs/tests/free-space-tree-tests.c b/fs/btrfs/tests/free-space-tree-tests.c
-index 89346da890cf..025fce63959a 100644
---- a/fs/btrfs/tests/free-space-tree-tests.c
-+++ b/fs/btrfs/tests/free-space-tree-tests.c
-@@ -462,7 +462,8 @@ static int run_test(test_func_t test_func, int bitmaps, u32 sectorsize,
- 	root->fs_info->tree_root = root;
- 
- 	root->node = alloc_test_extent_buffer(root->fs_info, nodesize);
--	if (!root->node) {
-+	if (IS_ERR(root->node)) {
-+		root->node = NULL;
- 		test_err("couldn't allocate dummy buffer");
- 		ret = -ENOMEM;
- 		goto out;
-diff --git a/fs/btrfs/tests/qgroup-tests.c b/fs/btrfs/tests/qgroup-tests.c
-index 412b910b04cc..536600eb4d9d 100644
---- a/fs/btrfs/tests/qgroup-tests.c
-+++ b/fs/btrfs/tests/qgroup-tests.c
-@@ -484,7 +484,8 @@ int btrfs_test_qgroups(u32 sectorsize, u32 nodesize)
- 	 * *cough*backref walking code*cough*
- 	 */
- 	root->node = alloc_test_extent_buffer(root->fs_info, nodesize);
--	if (!root->node) {
-+	if (IS_ERR(root->node)) {
-+		root->node = NULL;
- 		test_err("couldn't allocate dummy buffer");
- 		ret = -ENOMEM;
- 		goto out;
 -- 
 2.20.1
 

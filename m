@@ -2,84 +2,73 @@ Return-Path: <SRS0=GKQD=Q5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B695CC43381
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 12:17:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5A832C43381
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 12:47:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 84E5B2075A
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 12:17:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1B77F2070D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 12:47:16 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="dfJhmR87"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726787AbfBVMRw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Feb 2019 07:17:52 -0500
-Received: from mx2.suse.de ([195.135.220.15]:55812 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725942AbfBVMRw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Feb 2019 07:17:52 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 2C46CADC8;
-        Fri, 22 Feb 2019 12:17:48 +0000 (UTC)
-Subject: Re: [PATCH] btrfs: zstd ensure reclaim timer is properly cleaned up
-To:     Dennis Zhou <dennis@kernel.org>, David Sterba <dsterba@suse.com>,
-        Josef Bacik <josef@toxicpanda.com>, Chris Mason <clm@fb.com>,
-        Omar Sandoval <osandov@osandov.com>,
-        Nick Terrell <terrelln@fb.com>
-Cc:     kernel-team@fb.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-References: <20190221202556.42447-1-dennis@kernel.org>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <eb7df5c4-25fb-2d10-58a1-b3be7b37c2db@suse.com>
-Date:   Fri, 22 Feb 2019 14:17:41 +0200
+        id S1726324AbfBVMrP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Feb 2019 07:47:15 -0500
+Received: from mail-ed1-f65.google.com ([209.85.208.65]:45384 "EHLO
+        mail-ed1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726199AbfBVMrO (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 22 Feb 2019 07:47:14 -0500
+Received: by mail-ed1-f65.google.com with SMTP id d9so1622400edh.12
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2019 04:47:12 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=SpYaOHE6e+pPCap38VaUcdyVkBMoHtI/j387bdACpr0=;
+        b=dfJhmR87uhGZoTbGrtvd1FcUAZpjmdhm3Yg4u+/q5AHjrGqaRnYmSAjfX06cxarWoT
+         dF9d2Zv5QBTFyvRH8Kk37P/u6bvrds4suTWame3QKtZ2xrMWKBQWl9M8OZ8j2yQF4C8W
+         IKZ0If/FDqJZPWHZGkTu2enF3t6hrCTf5Qu4tif1ak/r2k8cvzEHJYRVZ0NipYaxzzog
+         MEcOafMZruGjEF1e787Y/6IHzspHOu/WQznCVaA+ucLbvV/PeJ9rxvkSwmOXoZsHbjOZ
+         Yo+0Tv4zOVLrMDjo1RMWwieItq3bxAo/sAyTXqFBkwT619OsVPfJx9f9eKBeXHsPV95E
+         xv6Q==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=SpYaOHE6e+pPCap38VaUcdyVkBMoHtI/j387bdACpr0=;
+        b=npqxAX/kHJYwYQs3TA5btKn61kHlg5zBBOJ36eH/O57zF+Bd7nGoUQYUcofEmAxN0L
+         m6ugNglkKXocBp2rKMtdkS8IKQSkesbiiqinNvsSSoCNXAC8bj54I1DdGrb4E5dr1sXd
+         r/jQX6H9I98r7zTkw0JQkpCojKyJRBrZ2+KIsX0hCLKYSR+fttONm5PnzugbpmBE3RBF
+         JAYbEu6/I+SXZ8JOWG1cqzNQyH7zZC6rtxEW6Znr/SrRYENuPa/woq9KVNedq+rocKI3
+         77AFfboxTNzLLoR97E9CCBixwnqWcSmaGoc/80bRwDdSELgu+ghi6DH8LF/dGh0N9dVR
+         kDOg==
+X-Gm-Message-State: AHQUAubagLIuP7NDGkQQCEIlnDQeZHULZt1YQUAjBT0OEYG9WOeDTd+7
+        5t6y4ZNiLkl1RjbGMIXSKD0=
+X-Google-Smtp-Source: AHgI3IauiGp0bCGIF4cgiCwEM5c6zS+Kjzi32PDjtx6QYJ0v+dM+/7fp+mg6Dqx4s769foTr6XSw5A==
+X-Received: by 2002:a50:b699:: with SMTP id d25mr3178878ede.110.1550839632144;
+        Fri, 22 Feb 2019 04:47:12 -0800 (PST)
+Received: from [10.20.1.223] (ivokamhome.ddns.nbis.net. [87.120.136.31])
+        by smtp.gmail.com with ESMTPSA id j6sm375391edd.43.2019.02.22.04.47.10
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Fri, 22 Feb 2019 04:47:10 -0800 (PST)
+Subject: Re: [PATCH 5/5] btrfs: extent_io: Unify the return value of
+ btrfs_clone_extent_buffer() with alloc_extent_buffer()
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Cc:     dan.carpenter@oracle.com
+References: <20190222101645.4403-1-wqu@suse.com>
+ <20190222101645.4403-6-wqu@suse.com>
+From:   Nikolay Borisov <n.borisov.lkml@gmail.com>
+Message-ID: <a0226a9c-d842-457d-240a-89d622476065@gmail.com>
+Date:   Fri, 22 Feb 2019 14:47:09 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <20190221202556.42447-1-dennis@kernel.org>
+In-Reply-To: <20190222101645.4403-6-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -90,36 +79,150 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 21.02.19 г. 22:25 ч., Dennis Zhou wrote:
-> The timer function, zstd_reclaim_timer_fn(), reschedules itself under
-> certain conditions. Switch to del_timer_sync() to ensure that the timer
-> function hasn't rescheduled itself.
-
-According to del_timer_sync it just waits for any concurrent invocation
-to finish. But it's responsibility of the caller to ensure the timer
-cannot really be restarted. It's not obvious how
-zstd_cleanup_workspace_manager ensures that the timer won't be restared.
-Looking at the timer function for it to not restart wsm.lru_list has to
-be empty. And seeing that workspace->lru_list is deleted afterwards I'm
-not sure this invariant holds.
-
+On 22.02.19 г. 12:16 ч., Qu Wenruo wrote:
+> The direct callers are:
+> 1) qgroup_rescan_leaf()
+> 2) btrfs_compare_trees()
+>    These two call sites are stubs.
 > 
-> Signed-off-by: Dennis Zhou <dennis@kernel.org>
+> 3) tree_mod_log_rewind()
+> 4) get_old_root()
+>    These two doesn't follow the name pattern *_extent_buffer(), thus we
+>    don't need to unify their return value.
+>    However for get_old_root(), all its eb assignment can no longer be
+>    NULL, change its IS_ERR_OR_NULL() to IS_ERR().
+> 
+> 5) btrfs_search_slot_get_root()
+>    This is a stub. The only caller has already handled the return value.
+> 
+> This patch should cover all the call sites of
+> btrfs_clone_extent_buffer().
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 > ---
->  fs/btrfs/zstd.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
+>  fs/btrfs/backref.c   |  8 ++++----
+>  fs/btrfs/ctree.c     | 14 ++++++++------
+>  fs/btrfs/extent_io.c |  4 ++--
+>  fs/btrfs/qgroup.c    |  5 +++--
+>  4 files changed, 17 insertions(+), 14 deletions(-)
 > 
-> diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
-> index 3e418a3aeb11..62de9a211321 100644
-> --- a/fs/btrfs/zstd.c
-> +++ b/fs/btrfs/zstd.c
-> @@ -195,7 +195,7 @@ static void zstd_cleanup_workspace_manager(void)
->  	struct workspace *workspace;
->  	int i;
+> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+> index 78556447e1d5..b6e469a12011 100644
+> --- a/fs/btrfs/backref.c
+> +++ b/fs/btrfs/backref.c
+> @@ -2016,8 +2016,8 @@ static int iterate_inode_refs(u64 inum, struct btrfs_root *fs_root,
+>  		parent = found_key.offset;
+>  		slot = path->slots[0];
+>  		eb = btrfs_clone_extent_buffer(path->nodes[0]);
+> -		if (!eb) {
+> -			ret = -ENOMEM;
+> +		if (IS_ERR(eb)) {
+> +			ret = PTR_ERR(eb);
+>  			break;
+>  		}
+>  		btrfs_release_path(path);
+> @@ -2075,8 +2075,8 @@ static int iterate_inode_extrefs(u64 inum, struct btrfs_root *fs_root,
 >  
-> -	del_timer(&wsm.timer);
-> +	del_timer_sync(&wsm.timer);
+>  		slot = path->slots[0];
+>  		eb = btrfs_clone_extent_buffer(path->nodes[0]);
+> -		if (!eb) {
+> -			ret = -ENOMEM;
+> +		if (IS_ERR(eb)) {
+> +			ret = PTR_ERR(eb);
+>  			break;
+>  		}
+>  		btrfs_release_path(path);
+> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> index 3276b743f40a..ea7ff0012007 100644
+> --- a/fs/btrfs/ctree.c
+> +++ b/fs/btrfs/ctree.c
+> @@ -1384,7 +1384,7 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
+>  		free_extent_buffer(eb_root);
+>  	}
 >  
->  	for (i = 0; i < ZSTD_BTRFS_MAX_LEVEL; i++) {
->  		while (!list_empty(&wsm.idle_ws[i])) {
+> -	if (IS_ERR_OR_NULL(eb))
+> +	if (IS_ERR(eb))
+>  		return NULL;
+>  	btrfs_tree_read_lock(eb);
+>  	if (old_root) {
+> @@ -2624,8 +2624,8 @@ static struct extent_buffer *btrfs_search_slot_get_root(struct btrfs_root *root,
+>  			down_read(&fs_info->commit_root_sem);
+>  			b = btrfs_clone_extent_buffer(root->commit_root);
+>  			up_read(&fs_info->commit_root_sem);
+> -			if (!b)
+> -				return ERR_PTR(-ENOMEM);
+> +			if (IS_ERR(b))
+> +				return b;
+>  
+>  		} else {
+>  			b = root->commit_root;
+> @@ -5431,7 +5431,8 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
+>  			btrfs_clone_extent_buffer(left_root->commit_root);
+>  	if (!left_path->nodes[left_level]) {
+>  		up_read(&fs_info->commit_root_sem);
+> -		ret = -ENOMEM;
+> +		ret = PTR_ERR(left_path->nodes[left_level]);
+> +		left_path->nodes[left_level] = NULL;
+
+If we go into this branch this means left_path->nodes[left_level] was
+NULL. PTR_ERR of NULL is, well, NULL and then you also set the
+left_level to NULL. This is pointless...
+
+>  		goto out;
+>  	}
+>  
+> @@ -5439,9 +5440,10 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
+>  	right_root_level = right_level;
+>  	right_path->nodes[right_level] =
+>  			btrfs_clone_extent_buffer(right_root->commit_root);
+> -	if (!right_path->nodes[right_level]) {
+> +	if (IS_ERR(right_path->nodes[right_level])) {
+
+And here you do change the check to IS_ERR but only for the right_Path
+and not left path this introduces asymmetry which makes code harder to
+comprehend.
+
+>  		up_read(&fs_info->commit_root_sem);
+> -		ret = -ENOMEM;
+> +		ret = PTR_ERR(right_path->nodes[right_level]);
+> +		right_path->nodes[right_level] = NULL;
+>  		goto out;
+>  	}
+>  	up_read(&fs_info->commit_root_sem);
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index a19bd8bc3b32..dbdb649f1957 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -4713,13 +4713,13 @@ struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src)
+>  
+>  	new = __alloc_extent_buffer(src->fs_info, src->start, src->len);
+>  	if (IS_ERR(new))
+> -		return NULL;
+> +		return new;
+>  
+>  	for (i = 0; i < num_pages; i++) {
+>  		p = alloc_page(GFP_NOFS);
+>  		if (!p) {
+>  			btrfs_release_extent_buffer(new);
+> -			return NULL;
+> +			return ERR_PTR(-ENOMEM);
+>  		}
+>  		attach_extent_buffer_page(new, p);
+>  		WARN_ON(PageDirty(p));
+> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+> index 4e473a998219..ccfa992a10bf 100644
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -3105,8 +3105,9 @@ static int qgroup_rescan_leaf(struct btrfs_trans_handle *trans,
+>  	fs_info->qgroup_rescan_progress.objectid = found.objectid + 1;
+>  
+>  	scratch_leaf = btrfs_clone_extent_buffer(path->nodes[0]);
+> -	if (!scratch_leaf) {
+> -		ret = -ENOMEM;
+> +	if (IS_ERR(scratch_leaf)) {
+> +		ret = PTR_ERR(scratch_leaf);
+> +		scratch_leaf = NULL;
+>  		mutex_unlock(&fs_info->qgroup_rescan_lock);
+>  		goto out;
+>  	}
 > 

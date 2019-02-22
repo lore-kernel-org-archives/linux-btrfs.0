@@ -2,151 +2,358 @@ Return-Path: <SRS0=GKQD=Q5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 86C0FC43381
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 07:27:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 85590C43381
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 10:04:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5AB7E20823
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 07:27:31 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 52D982075C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 10:04:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725906AbfBVH1a (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Feb 2019 02:27:30 -0500
-Received: from mout.gmx.net ([212.227.17.20]:58145 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725821AbfBVH1a (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Feb 2019 02:27:30 -0500
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx103
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0MTBfe-1gV4F73dn4-00S40G; Fri, 22
- Feb 2019 08:26:33 +0100
-Subject: Re: [PATCH] btrfs: Fix possible NULL pointer dereference in btrfs
- selftest
-To:     Dan Carpenter <dan.carpenter@oracle.com>, Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-References: <20190222005350.7535-1-wqu@suse.com> <20190222070022.GE1711@kadam>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <64279f3f-7223-cd5e-ad7b-4486ce104a6e@gmx.com>
-Date:   Fri, 22 Feb 2019 15:26:17 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.1
+        id S1726610AbfBVKEc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Feb 2019 05:04:32 -0500
+Received: from mx2.suse.de ([195.135.220.15]:42498 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725894AbfBVKEc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 22 Feb 2019 05:04:32 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 2C180AC66;
+        Fri, 22 Feb 2019 10:04:30 +0000 (UTC)
+From:   Nikolay Borisov <nborisov@suse.com>
+To:     fstests@vger.kernel.org
+Cc:     linux-btrfs@vger.kernel.org, guaneryu@gmail.com,
+        Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH v3] shared/298: Wire btrfs support in get_free_sectors
+Date:   Fri, 22 Feb 2019 12:04:25 +0200
+Message-Id: <20190222100425.22433-1-nborisov@suse.com>
+X-Mailer: git-send-email 2.17.1
 MIME-Version: 1.0
-In-Reply-To: <20190222070022.GE1711@kadam>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="kqym5Nw9y4B4sWKWUf204lGRwlI49XFdx"
-X-Provags-ID: V03:K1:YKek4pYQThzU32YRLL+9KklaleTW6Fd8yI33W/lhN/mrDq1Ronh
- vS8gRDs8Vl7YyA9+kQd0yw+j1LQTfQUxKmc9wsn0LUk/xj3wD81ZxD4/mS30RFGC3FyfJ9t
- 4wxe0VLigz9SvrzCrHr57Bdakaw0wRYi3Wy6IBQdHnKSXM6a/aJmMZAF1A63wBt9lnoodHq
- MkVgjwajOH8AW7nO0Pz/Q==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:M28suwljLSs=:t++Kd0K+17SNF/d+G7lol0
- Tbw+2UEkcZjTjisCMHECdx6ceHnaTThZkqy+RCK9f5+h6IZz2UeqhaW08eD5Qw9NhiN/n6DX7
- BVnLFBJIuM415+EEIa8D3f4VjMRwZILXLpAwgPd3itY1OTyt+sGn6RF5mrIY61yvCk0fu1TRZ
- DvcxLoXQcT6/Ro/SZcX08Vt56VaD7QAiWJzJG6H4PO9ai0i3PLmgyvzZJwAD4SDPCzwdxZa9s
- 5c0uXQYSFI1SCHzn/g7cj/KAitLuRy0Ub5JPpAxnWZOH7UwUjr0iBI0frgGwAhZZFb5aTwtld
- /n36sYJ+qbs1JwdVr7M9j4op1dHuFpRGD71jIccX7sOsdGy811vpDWFm+fA2ZBYnVXow/pNS9
- 8GxoNOHQs3UFPkrM2xO0xnYIlGMe0NLmmXXptgIZcTeK8wlyrmvh2LrTBmCJQlYrAJR8/cEvP
- D/DGGcvLRKJsJCSvObcl0iI+Nydg9bmHaxr/a5sJD153niDzw/ycYP9gLy8WsLUCYX0indovu
- 7cKv57g/Sq2bgsNheGQlkzZW5zzeQp3XoyXooVt0VNVKEHOchocB+Brnlo3rRC722qUJDp5af
- YnT+lsQwgNcGmWlzn+V1DTs7QTKkbu/gehccrWryrGUva6nUfnmCe5yUwfu5B/AU7k3PaVRK/
- fOHGs0r8k+7ig87YVtsG27RAWDdb1kOtcQ6QJOj7/NKD0mRPnClyTnvfZmlkx0ReixzjsiRjE
- IliPPiDoMX9ErDi3vDRpU8PjuEV3tabcemw2pFOQlcCzxJJQDpeBIrmA5WKZhdB/57B/2FMKP
- r1vOP8N2J8zveaiJeDT7Dt9no5HRf6qzVW0EjFAPwJ57Ao01+bFXos6n6It+HLu2RFccDmUFB
- Q5gPfj9tLvJMbWCdxiO8ekC9YOzkKOEghPeJKiqhBPskoWu2EhM21ywmk4Ty7+
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---kqym5Nw9y4B4sWKWUf204lGRwlI49XFdx
-Content-Type: multipart/mixed; boundary="MknpInfcAycvOyGOjgLn7bY382T4y8hlJ";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Dan Carpenter <dan.carpenter@oracle.com>, Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <64279f3f-7223-cd5e-ad7b-4486ce104a6e@gmx.com>
-Subject: Re: [PATCH] btrfs: Fix possible NULL pointer dereference in btrfs
- selftest
-References: <20190222005350.7535-1-wqu@suse.com> <20190222070022.GE1711@kadam>
-In-Reply-To: <20190222070022.GE1711@kadam>
+Add support for btrfs in shared/298. Achieve this by introducing 2
+new awk scripts that parse relevant btrfs structures and print holes.
+Additionally modify the test to create larger - 3gb filesystem in the
+case of btrfs. This is needed so that distinct block groups are used
+for data and metadata.
 
---MknpInfcAycvOyGOjgLn7bY382T4y8hlJ
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
 
+Changes since v2: 
 
+ * Moved files to src/ dir
+ * Rename spb parameter in both scripts to sectorsize
+ * Added comments for function
+ * Added spaces after every # of a comment
+ * Removed btrfs_Free variable from shared/298, now the awk scripts directly
+ print their output
 
-On 2019/2/22 =E4=B8=8B=E5=8D=883:00, Dan Carpenter wrote:
-> I'm sorry, I feel bad for passing this work on to you when you didn't
-> introduce the problems at all.
+ src/parse-dev-tree.awk    |  64 +++++++++++++++++++++
+ src/parse-extent-tree.awk | 144 ++++++++++++++++++++++++++++++++++++++++++++++
+ tests/shared/298          |  33 ++++++++++-
+ 3 files changed, 238 insertions(+), 3 deletions(-)
+ create mode 100755 src/parse-dev-tree.awk
+ create mode 100755 src/parse-extent-tree.awk
 
-No problem at all.
+diff --git a/src/parse-dev-tree.awk b/src/parse-dev-tree.awk
+new file mode 100755
+index 000000000000..9c98402cf66b
+--- /dev/null
++++ b/src/parse-dev-tree.awk
+@@ -0,0 +1,64 @@
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (c) 2019 Nikolay Borisov, SUSE LLC.  All Rights Reserved.
++#
++# Parses btrfs' device tree for holes. For example given the followin device extents:
++#	item 3 key (1 DEV_EXTENT 38797312) itemoff 16091 itemsize 48
++#		dev extent chunk_tree 3
++#		chunk_objectid 256 chunk_offset 30408704 length 1073741824
++#		chunk_tree_uuid b8c8f022-452b-4fc1-bf5c-b42d9fba613e
++#	item 4 key (1 DEV_EXTENT 1112539136) itemoff 16043 itemsize 48
++#		dev extent chunk_tree 3
++#		chunk_objectid 256 chunk_offset 30408704 length 1073741824
++#		chunk_tree_uuid b8c8f022-452b-4fc1-bf5c-b42d9fba613e
++#
++# The scripts will find out if there is a hole between 38797312+1073741824 and
++# the start offset of the next extent, in this case 1112539136 so no hole. But
++# if there was it would have printed the size of the hole.
++#
++# Following paramters must be set:
++#    * sectorsize - how many bytes per sector, used to convert script's output
++#    to sectors.
++#    * devsize - size of the device in bytes, used to output the final
++#    hole (if any)
++
++# Given a 'chunk_objectid 256 chunk_offset 22020096 length 8388608' line this
++# function returns 8388608
++function get_extent_size(line,  tmp) {
++	split(line, tmp)
++	return tmp[6]
++}
++
++# Given a '	item 3 key (1 DEV_EXTENT 38797312) itemoff 16091 itemsize 48' line
++# this function returns 38797312
++function get_extent_offset(line,  tmp) {
++	split(line, tmp)
++	gsub(/\)/,"", tmp[6])
++	return tmp[6]
++}
++
++BEGIN {
++	dev_extent_match="^.item [0-9]* key \\([0-9]* DEV_EXTENT [0-9]*\\).*"
++	dev_extent_len_match="^\\s*chunk_objectid [0-9]* chunk_offset [0-9]* length [0-9]*$"
++}
++
++{
++	if (match($0,dev_extent_match)) {
++		extent_offset = get_extent_offset($0)
++		if (prev_extent_end) {
++			hole_size = extent_offset - prev_extent_end
++			if (hole_size > 0) {
++				print prev_extent_end / sectorsize, int((extent_offset - 1) / sectorsize)
++			}
++		}
++	} else if (match($0, dev_extent_len_match)) {
++		extent_size = get_extent_size($0)
++		prev_extent_end = extent_offset + extent_size
++	}
++}
++
++END {
++	if (prev_extent_end) {
++		print prev_extent_end / sectorsize, int((devsize - 1) / sectorsize)
++	}
++}
++
+diff --git a/src/parse-extent-tree.awk b/src/parse-extent-tree.awk
+new file mode 100755
+index 000000000000..09fed61e5b71
+--- /dev/null
++++ b/src/parse-extent-tree.awk
+@@ -0,0 +1,144 @@
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (c) 2019 Nikolay Borisov, SUSE LLC.  All Rights Reserved.
++#
++# Parses btrfs' extent tree for holes. Holes are the ranges between 2 adjacent
++# extent blocks. For example if we have the following 2 metadata items in the
++# extent tree:
++#	item 6 key (30425088 METADATA_ITEM 0) itemoff 16019 itemsize 33
++#	item 7 key (30490624 METADATA_ITEM 0) itemoff 15986 itemsize 33
++#
++# There is a whole of 64k between then - 30490624−30425088 = 65536
++# Same logic applies for adjacent EXTENT_ITEMS.
++#
++# The script requires the following parameters passed on command line:
++#     * sectorsize - how many bytes per sector, used to convert the output of
++#     the script to sectors.
++#     * nodesize - size of metadata extents, used for internal calculations
++
++# Given an extent line "item 2 key (13672448 EXTENT_ITEM 65536) itemoff 16153 itemsize 53"
++# or "item 6 key (30425088 METADATA_ITEM 0) itemoff 16019 itemsize 33" returns
++# either 65536 (for data extents) or the fixes nodesize value for metadata
++# extents.
++function get_extent_size(line,  tmp) {
++	if (line ~ data_match || line ~ bg_match) {
++		split(line, tmp)
++		gsub(/\)/,"", tmp[6])
++		return tmp[6]
++	} else if (line ~ metadata_match) {
++		return nodesize
++	}
++}
++
++# given a 'item 2 key (13672448 EXTENT_ITEM 65536) itemoff 16153 itemsize 53' or
++# returns 13672448.
++function get_extent_offset(line,  tmp) {
++	split(line, tmp)
++	gsub(/\(/,"",tmp[4])
++	return tmp[4]
++}
++
++# This function parse all the extents belonging to a particular block group
++# which are accumulated in lines[] and calculates the offsets of the holes
++# part of this block group.
++#
++# base_offset and bg_line are local variables
++function print_array(         base_offset, bg_line)
++{
++	if (match(lines[0], bg_match)) {
++		# we don't have an extent at the beginning of of blockgroup, so we
++		# have a hole between blockgroup offset and first extent offset
++		bg_line = lines[0]
++		prev_size=0
++		prev_offset=get_extent_offset(bg_line)
++		delete lines[0]
++	} else {
++		# we have an extent at the beginning of block group, so initialize
++		# the prev_* vars correctly
++		bg_line = lines[1]
++		prev_size = get_extent_size(lines[0])
++		prev_offset = get_extent_offset(lines[0])
++		delete lines[1]
++		delete lines[0]
++	}
++
++	bg_offset=get_extent_offset(bg_line)
++	bgend=bg_offset + get_extent_size(bg_line)
++
++	for (i in lines) {
++			cur_size = get_extent_size(lines[i])
++			cur_offset = get_extent_offset(lines[i])
++			if (cur_offset  != prev_offset + prev_size)
++				print int((prev_size + prev_offset) / sectorsize), int((cur_offset-1) / sectorsize)
++			prev_size = cur_size
++			prev_offset = cur_offset
++	}
++
++	print int((prev_size + prev_offset) / sectorsize), int((bgend-1) / sectorsize)
++	total_printed++
++	delete lines
++}
++
++BEGIN {
++	loi_match="^.item [0-9]* key \\([0-9]* (BLOCK_GROUP_ITEM|METADATA_ITEM|EXTENT_ITEM) [0-9]*\\).*"
++	metadata_match="^.item [0-9]* key \\([0-9]* METADATA_ITEM [0-9]*\\).*"
++	data_match="^.item [0-9]* key \\([0-9]* EXTENT_ITEM [0-9]*\\).*"
++	bg_match="^.item [0-9]* key \\([0-9]* BLOCK_GROUP_ITEM [0-9]*\\).*"
++	node_match="^node.*$"
++	leaf_match="^leaf [0-9]* flags"
++	line_count=0
++	total_printed=0
++	skip_lines=0
++}
++
++{
++	# skip lines not belonging to a leaf
++	if (match($0,node_match)) {
++		skip_lines=1
++	} else if (match($0, leaf_match)) {
++		skip_lines=0
++	}
++
++	if (!match($0,loi_match) || skip_lines == 1) next;
++
++	# we have a line of interest, we need to parse it. First check if there is
++	# anything in the array
++	if (line_count==0) {
++		lines[line_count++]=$0;
++	} else {
++		prev_line=lines[line_count-1]
++		split(prev_line, prev_line_fields)
++		prev_objectid=prev_line_fields[4]
++		objectid=$4
++
++		if (objectid == prev_objectid && match($0, bg_match)) {
++			if (total_printed>0) {
++				# We are adding a BG after we have added its first extent
++				# previously, consider this a record ending event and just print
++				# the array
++
++				delete lines[line_count-1]
++				print_array()
++				# we now start a new array with current and previous lines
++				line_count=0
++				lines[line_count++]=prev_line
++				lines[line_count++]=$0
++			} else {
++				# first 2 added lines are EXTENT and BG that match, in this case
++				# just add them
++				lines[line_count++]=$0
++
++			}
++		} else if (match($0, bg_match)) {
++			# ordinary end of record
++			print_array()
++			line_count=0
++			lines[line_count++]=$0
++		} else {
++			lines[line_count++]=$0
++		}
++	}
++}
++
++END {
++	print_array()
++}
+diff --git a/tests/shared/298 b/tests/shared/298
+index e7b7b233de45..aafdc25f5575 100755
+--- a/tests/shared/298
++++ b/tests/shared/298
+@@ -15,14 +15,24 @@ trap "_cleanup; exit \$status" 0 1 2 3 15
+ 
+ . ./common/rc
+ 
+-_supported_fs ext4 xfs
++_supported_fs ext4 xfs btrfs
+ _supported_os Linux
+ _require_test
+ _require_loop
+ _require_fstrim
+ _require_xfs_io_command "fiemap"
+-_require_fs_space $TEST_DIR 307200
++if [ "$FSTYP" = "btrfs" ]; then
++	# 3g for btrfs to have distinct bgs
++	_require_fs_space $TEST_DIR 3145728
++	fssize=3000
++else
++	_require_fs_space $TEST_DIR 307200
++	fssize=300
++fi
++
+ [ "$FSTYP" = "ext4" ] && _require_dumpe2fs
++[ "$FSTYP" = "btrfs" ] && _require_btrfs_command inspect-internal dump-super
++[ "$FSTYP" = "btrfs" ] && _require_btrfs_command inspect-internal dump-tree
+ 
+ _cleanup()
+ {
+@@ -61,6 +71,22 @@ get_free_sectors()
+ 		 $AWK_PROG -v spb=$sectors_per_block -v agsize=$agsize \
+ 		'{ print spb * ($1 * agsize + $2), spb * ($1 * agsize + $2 + $3) - 1 }'
+ 	;;
++	btrfs)
++		local device_size=$($BTRFS_UTIL_PROG filesystem show --raw $loop_mnt 2>&1 \
++			| sed -n "s/^.*size \([0-9]*\).*$/\1/p")
++
++		local nodesize=$($BTRFS_UTIL_PROG inspect-internal dump-super $img_file  \
++			| sed -n 's/nodesize\s*\(.*\)/\1/p')
++
++		# Get holes within block groups
++		$BTRFS_UTIL_PROG inspect-internal dump-tree -t extent $img_file \
++			| $AWK_PROG -v sectorsize=512 -v nodesize=$nodesize -f $here/src/parse-extent-tree.awk
++
++		# Get holes within unallocated space on disk
++		$BTRFS_UTIL_PROG inspect-internal dump-tree -t dev $img_file \
++			| $AWK_PROG -v sectorsize=512 -v devsize=$device_size -f $here/src/parse-dev-tree.awk
++
++	;;
+ 	esac
+ }
+ 
+@@ -105,7 +131,7 @@ here=`pwd`
+ tmp=`mktemp -d`
+ 
+ img_file=$TEST_DIR/$$.fs
+-dd if=/dev/zero of=$img_file bs=1M count=300 &> /dev/null
++dd if=/dev/zero of=$img_file bs=1M count=$fssize &> /dev/null
+ 
+ loop_dev=$(_create_loop_device $img_file)
+ loop_mnt=$tmp/loop_mnt
+@@ -118,6 +144,7 @@ merged_sectors="$tmp/merged_free_sectors"
+ mkdir $loop_mnt
+ 
+ [ "$FSTYP" = "xfs" ] && MKFS_OPTIONS="-f $MKFS_OPTIONS"
++[ "$FSTYP" = "btrfs" ] && MKFS_OPTIONS="$MKFS_OPTIONS -f -dsingle -msingle"
+ 
+ _mkfs_dev $loop_dev
+ _mount $loop_dev $loop_mnt
+-- 
+2.7.4
 
-Who doesn't like to send out clean up patches?
-
->=20
-> I think you're doing to the right thing to change it all to error
-> pointers, and most of callers expect that but there are a couple that
-> need to be changed:  btrfs_test_qgroups() and run_test().
-Thanks for pointing them all.
-
-I'll double check the call chains in next version.
-
-Thanks,
-Qu
-
->=20
-> regards,
-> dan carpenter
->=20
->=20
-
-
---MknpInfcAycvOyGOjgLn7bY382T4y8hlJ--
-
---kqym5Nw9y4B4sWKWUf204lGRwlI49XFdx
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxvpBkACgkQwj2R86El
-/qjURQf+N3PWisQxgczD/d8YqrocJIWxq7I9zftquk6XFfGG66RhbFlNjNoddW8Z
-OfMVneD/7IdSGMwTOExqD9Nj40rRslqrH/4alH6KBy/LiWXbeDcRSv/QKHYO5o2O
-Pdiu0F9t0RNK4YsR/UYabqrxPCUJW7VixTfbRMv3RQJVJGj8N8EcIgqdGHftLMBJ
-WoMal5wx4Gms4HnSvmfVnnRkNqeg9SRk8+dONLw/RCvaiXVXse1hQwJJbgCuBvic
-iMyVS7Ewdzgn5t5yqNCle0OhTADFReGTpEpW2KyLs1DCoCm/qvT6zolkoS4U5usQ
-83zvGGOor0dJG3B909UkQIomsKTK0A==
-=PKgy
------END PGP SIGNATURE-----
-
---kqym5Nw9y4B4sWKWUf204lGRwlI49XFdx--

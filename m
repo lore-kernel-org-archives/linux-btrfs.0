@@ -2,92 +2,264 @@ Return-Path: <SRS0=GKQD=Q5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8F1BCC43381
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 18:04:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4EFD1C43381
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 18:12:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6CC582070D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 18:04:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 20904206B6
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 18:12:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727532AbfBVSEh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Feb 2019 13:04:37 -0500
-Received: from mx2.suse.de ([195.135.220.15]:37942 "EHLO mx1.suse.de"
+        id S1726690AbfBVSMY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Feb 2019 13:12:24 -0500
+Received: from mx2.suse.de ([195.135.220.15]:41016 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726833AbfBVSEg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Feb 2019 13:04:36 -0500
+        id S1726152AbfBVSMX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 22 Feb 2019 13:12:23 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id ADF40ADE1
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2019 18:04:35 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id D265EB164
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2019 18:12:20 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 29B3BDAA56; Fri, 22 Feb 2019 19:05:54 +0100 (CET)
-Date:   Fri, 22 Feb 2019 19:05:54 +0100
+        id 0ED40DAA56; Fri, 22 Feb 2019 19:13:42 +0100 (CET)
+Date:   Fri, 22 Feb 2019 19:13:42 +0100
 From:   David Sterba <dsterba@suse.cz>
 To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     Johannes Thumshirn <jthumshirn@suse.de>,
-        linux-btrfs@vger.kernel.org
+Cc:     linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH v3 1/6] btrfs: Refactor cow_file_range_async
-Message-ID: <20190222180553.GK9874@twin.jikos.cz>
+Message-ID: <20190222181342.GL9874@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        Johannes Thumshirn <jthumshirn@suse.de>,
         linux-btrfs@vger.kernel.org
 References: <20190221115717.5128-1-nborisov@suse.com>
  <20190221115717.5128-2-nborisov@suse.com>
- <aaaf4399-7acd-1726-c579-19a9285c337f@suse.de>
- <ca7d67fb-8f64-d6c5-97f1-cff2de91f411@suse.com>
- <49f1484a-e4c3-70cf-c443-708e916c4f90@suse.de>
- <f5023c11-9fc2-6470-d04b-828b38880cea@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <f5023c11-9fc2-6470-d04b-828b38880cea@suse.com>
+In-Reply-To: <20190221115717.5128-2-nborisov@suse.com>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Feb 21, 2019 at 05:09:01PM +0200, Nikolay Borisov wrote:
-> On 21.02.19 г. 17:07 ч., Johannes Thumshirn wrote:
-> > On 21/02/2019 14:25, Nikolay Borisov wrote:
-> >> On 21.02.19 г. 15:15 ч., Johannes Thumshirn wrote:
-> >>> On 21/02/2019 12:57, Nikolay Borisov wrote:
-> >>>>  
-> >>>>  static int cow_file_range_async(struct inode *inode, struct page *locked_page,
-> >>>> @@ -1190,45 +1201,68 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
-> >>>>  				unsigned int write_flags)
-> >>>>  {
-> >>>>  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-> >>>> -	struct async_cow *async_cow;
-> >>>> +	struct async_cow *ctx;
-> >>>> +	struct async_chunk *async_cow;
-> >>>
-> >>> In case you have to re-send the patch you could maybe rename the
-> >>> async_cow variable to async_chunk or sth like that. Would make the
-> >>> resulting code a little bit clearer but no strong opinions here.
-> >>
-> >> The reason I left it like that is to minimize the resulting diff.
-> > 
-> > Understood, but now we have a 'ctx' of type 'struct async_cow' and a
-> > '*async_cow' of type 'struct asyn_chunk'. This is the type of code that
-> > will make people go WTF when they read it in 3-4 cycles.
+On Thu, Feb 21, 2019 at 01:57:12PM +0200, Nikolay Borisov wrote:
+> This commit changes the implementation of cow_file_range_async in order
+> to get rid of the BUG_ON in the middle of the loop. Additionally it
+> reworks the inner loop in the hopes of making it more understandable.
 > 
-> I also thought of that but then sometimes David has strange tastes re.
-> code cleanups that add noise. If he is fine with doing the rename in
-> this patch then I'm happy to do it and resend.
+> The idea is to make async_cow be a top-level structured, shared
+> amongst all chunks being sent for compression. This allows to perform
+> one memory allocation at the beginning and gracefully fail the IO if
+> there isn't enough memory. Now, each chunk is going to be described
+> by an async_chunk struct. It's the responsibility of the final chunk
+> to actually free the memory.
 
-You must be joking, the naming you chose is quite confusing exactly as
-Johannes points out.
+Right, preallocation is the way to fix it. Please pick a more
+descriptive subject, that one is too generic.
 
-I'm not sure what noise patches or changes you mean. There are commits
-that just rename something for better readability or free the
-type/variable name for another purpose, similar what you do.
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  fs/btrfs/inode.c | 108 +++++++++++++++++++++++++++++++----------------
+>  1 file changed, 71 insertions(+), 37 deletions(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 05bbfd02ea49..0f82ea348164 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -366,7 +366,7 @@ struct async_extent {
+>  	struct list_head list;
+>  };
+>  
+> -struct async_cow {
+> +struct async_chunk {
+>  	struct inode *inode;
+>  	struct btrfs_fs_info *fs_info;
+>  	struct page *locked_page;
+> @@ -375,9 +375,15 @@ struct async_cow {
+>  	unsigned int write_flags;
+>  	struct list_head extents;
+>  	struct btrfs_work work;
+> +	atomic_t *pending;
+> +};
+> +
+> +struct async_cow {
+> +	atomic_t num_chunks; /* Number of chunks in flight */
+> +	struct async_chunk chunks[];
+>  };
+>  
+> -static noinline int add_async_extent(struct async_cow *cow,
+> +static noinline int add_async_extent(struct async_chunk *cow,
+>  				     u64 start, u64 ram_size,
+>  				     u64 compressed_size,
+>  				     struct page **pages,
+> @@ -447,7 +453,7 @@ static inline void inode_should_defrag(struct btrfs_inode *inode,
+>  static noinline void compress_file_range(struct inode *inode,
+>  					struct page *locked_page,
+>  					u64 start, u64 end,
+> -					struct async_cow *async_cow,
+> +					struct async_chunk *async_cow,
+>  					int *num_added)
+>  {
+>  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+> @@ -713,7 +719,7 @@ static void free_async_extent_pages(struct async_extent *async_extent)
+>   * queued.  We walk all the async extents created by compress_file_range
+>   * and send them down to the disk.
+>   */
+> -static noinline void submit_compressed_extents(struct async_cow *async_cow)
+> +static noinline void submit_compressed_extents(struct async_chunk *async_cow)
+>  {
+>  	struct inode *inode = async_cow->inode;
+>  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+> @@ -1132,9 +1138,9 @@ static noinline int cow_file_range(struct inode *inode,
+>   */
+>  static noinline void async_cow_start(struct btrfs_work *work)
+>  {
+> -	struct async_cow *async_cow;
+> +	struct async_chunk *async_cow;
+>  	int num_added = 0;
+> -	async_cow = container_of(work, struct async_cow, work);
+> +	async_cow = container_of(work, struct async_chunk, work);
+>  
+>  	compress_file_range(async_cow->inode, async_cow->locked_page,
+>  			    async_cow->start, async_cow->end, async_cow,
+> @@ -1151,10 +1157,10 @@ static noinline void async_cow_start(struct btrfs_work *work)
+>  static noinline void async_cow_submit(struct btrfs_work *work)
+>  {
+>  	struct btrfs_fs_info *fs_info;
+> -	struct async_cow *async_cow;
+> +	struct async_chunk *async_cow;
+>  	unsigned long nr_pages;
+>  
+> -	async_cow = container_of(work, struct async_cow, work);
+> +	async_cow = container_of(work, struct async_chunk, work);
+>  
+>  	fs_info = async_cow->fs_info;
+>  	nr_pages = (async_cow->end - async_cow->start + PAGE_SIZE) >>
+> @@ -1177,11 +1183,16 @@ static noinline void async_cow_submit(struct btrfs_work *work)
+>  
+>  static noinline void async_cow_free(struct btrfs_work *work)
+>  {
+> -	struct async_cow *async_cow;
+> -	async_cow = container_of(work, struct async_cow, work);
+> +	struct async_chunk *async_cow;
+> +	async_cow = container_of(work, struct async_chunk, work);
+>  	if (async_cow->inode)
+>  		btrfs_add_delayed_iput(async_cow->inode);
+> -	kfree(async_cow);
+> +	/*
+> +	 * Since the pointer to 'pending' is at the beginning of the array of
+> +	 * async_cow's, freeing it ensures the whole array has been freed.
+> +	 */
+> +	if (atomic_dec_and_test(async_cow->pending))
+> +		kfree(async_cow->pending);
+>  }
+>  
+>  static int cow_file_range_async(struct inode *inode, struct page *locked_page,
+> @@ -1190,45 +1201,68 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
+>  				unsigned int write_flags)
+>  {
+>  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+> -	struct async_cow *async_cow;
+> +	struct async_cow *ctx;
+> +	struct async_chunk *async_cow;
+>  	unsigned long nr_pages;
+>  	u64 cur_end;
+> +	u64 num_chunks = DIV_ROUND_UP(end - start, SZ_512K);
+> +	int i;
+> +	bool should_compress;
+>  
+>  	clear_extent_bit(&BTRFS_I(inode)->io_tree, start, end, EXTENT_LOCKED,
+>  			 1, 0, NULL);
+> -	while (start < end) {
+> -		async_cow = kmalloc(sizeof(*async_cow), GFP_NOFS);
+> -		BUG_ON(!async_cow); /* -ENOMEM */
+> -		/*
+> -		 * igrab is called higher up in the call chain, take only the
+> -		 * lightweight reference for the callback lifetime
+> -		 */
+> -		ihold(inode);
+> -		async_cow->inode = inode;
+> -		async_cow->fs_info = fs_info;
+> -		async_cow->locked_page = locked_page;
+> -		async_cow->start = start;
+> -		async_cow->write_flags = write_flags;
+> -
+> -		if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS &&
+> -		    !btrfs_test_opt(fs_info, FORCE_COMPRESS))
+> -			cur_end = end;
+> -		else
+> -			cur_end = min(end, start + SZ_512K - 1);
+>  
+> -		async_cow->end = cur_end;
+> -		INIT_LIST_HEAD(&async_cow->extents);
+> +	if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS &&
+> +	    !btrfs_test_opt(fs_info, FORCE_COMPRESS)) {
+> +		num_chunks = 1;
+> +		should_compress = false;
+> +	} else {
+> +		should_compress = true;
+> +	}
+> +
+> +	ctx = kmalloc(sizeof(struct async_cow) + num_chunks*sizeof(*async_cow),
+> +		      GFP_NOFS);
 
-Your concern about diff size is ok, though it should result in a
-separate patch doing just the rename and another patch using the new
-async_cow.
+There's a recently introduced macro for calculating the size of struct
+with a fixed header followed by array 'struct_size', please use it.
+
+> +	if (!ctx) {
+> +		unsigned clear_bits = EXTENT_LOCKED | EXTENT_DELALLOC |
+> +			EXTENT_DELALLOC_NEW | EXTENT_DEFRAG |
+> +			EXTENT_DO_ACCOUNTING;
+> +		unsigned long page_ops = PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
+> +			PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK |
+> +			PAGE_SET_ERROR;
+> +		extent_clear_unlock_delalloc(inode, start, end, 0, locked_page,
+> +					     clear_bits, page_ops);
+> +		return -ENOMEM;
+> +	}
+> +
+> +	async_cow = ctx->chunks;
+> +	atomic_set(&ctx->num_chunks, num_chunks);
+> +
+> +	for (i = 0; i < num_chunks; i++) {
+>  
+> -		btrfs_init_work(&async_cow->work,
+> +		if (should_compress)
+> +			cur_end = min(end, start + SZ_512K - 1);
+> +		else
+> +			cur_end = end;
+> +
+> +		ihold(inode);
+
+You should preserve the comment, the refactoring does not make it
+obsolete or wrong.
+
+> +		async_cow[i].pending= &ctx->num_chunks;
+> +		async_cow[i].inode = inode;
+> +		async_cow[i].start = start;
+> +		async_cow[i].end = cur_end;
+> +		async_cow[i].fs_info = fs_info;
+> +		async_cow[i].locked_page = locked_page;
+> +		async_cow[i].write_flags = write_flags;
+> +		INIT_LIST_HEAD(&async_cow[i].extents);
+> +
+> +		btrfs_init_work(&async_cow[i].work,
+>  				btrfs_delalloc_helper,
+>  				async_cow_start, async_cow_submit,
+>  				async_cow_free);
+>  
+> -		nr_pages = (cur_end - start + PAGE_SIZE) >>
+> -			PAGE_SHIFT;
+> +		nr_pages = DIV_ROUND_UP(cur_end - start, PAGE_SIZE);
+>  		atomic_add(nr_pages, &fs_info->async_delalloc_pages);
+>  
+> -		btrfs_queue_work(fs_info->delalloc_workers, &async_cow->work);
+> +		btrfs_queue_work(fs_info->delalloc_workers, &async_cow[i].work);
+>  
+>  		*nr_written += nr_pages;
+>  		start = cur_end + 1;
+> -- 
+> 2.17.1

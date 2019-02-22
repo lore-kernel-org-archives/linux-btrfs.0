@@ -2,79 +2,63 @@ Return-Path: <SRS0=GKQD=Q5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,USER_AGENT_MUTT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 37BABC43381
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 15:37:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 51F23C43381
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 15:55:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 123CA20700
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 15:37:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2E3702070B
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 15:55:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727261AbfBVPhd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Feb 2019 10:37:33 -0500
-Received: from mx2.suse.de ([195.135.220.15]:49818 "EHLO mx1.suse.de"
+        id S1727023AbfBVPzq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Feb 2019 10:55:46 -0500
+Received: from mx2.suse.de ([195.135.220.15]:58036 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725942AbfBVPhc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Feb 2019 10:37:32 -0500
+        id S1725887AbfBVPzp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 22 Feb 2019 10:55:45 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id C02CCADA9;
-        Fri, 22 Feb 2019 15:37:31 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id C21E2AE5C;
+        Fri, 22 Feb 2019 15:55:44 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 39245DAA56; Fri, 22 Feb 2019 16:38:52 +0100 (CET)
-Date:   Fri, 22 Feb 2019 16:38:52 +0100
+        id 8C1B3DAA56; Fri, 22 Feb 2019 16:57:03 +0100 (CET)
+Date:   Fri, 22 Feb 2019 16:57:02 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v5.1 00/12] btrfs: Enhancement to tree block validation
-Message-ID: <20190222153851.GH9874@twin.jikos.cz>
+To:     Dan Robertson <dan@dlrobertson.com>
+Cc:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] fs/btrfs: init csum_list before possible free
+Message-ID: <20190222155701.GI9874@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20190218052753.24138-1-wqu@suse.com>
- <20190220182544.GZ9874@twin.jikos.cz>
- <0f20234c-5fa7-8059-094d-b12e4e9963d0@gmx.com>
+Mail-Followup-To: dsterba@suse.cz, Dan Robertson <dan@dlrobertson.com>,
+        linux-btrfs@vger.kernel.org
+References: <20190219025643.20382-1-dan@dlrobertson.com>
+ <20190219163144.GR9874@twin.jikos.cz>
+ <20190221145723.GA25507@nessie>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <0f20234c-5fa7-8059-094d-b12e4e9963d0@gmx.com>
+In-Reply-To: <20190221145723.GA25507@nessie>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Feb 21, 2019 at 08:37:40AM +0800, Qu Wenruo wrote:
+On Thu, Feb 21, 2019 at 02:57:27PM +0000, Dan Robertson wrote:
+> > Thanks, it's been there since the first merge of scrub, but hard to hit.
 > 
+> Yeah, very hard to hit. Debated submitting a patch, but the fix seemed
+> simple enough, so figured I'd send one in.
 > 
-> On 2019/2/21 上午2:25, David Sterba wrote:
-> > On Mon, Feb 18, 2019 at 01:27:41PM +0800, Qu Wenruo wrote:
-> >> Patchset can be fetched from github:
-> >> https://github.com/adam900710/linux/tree/write_time_tree_checker
-> >> Which is based on v5.0-rc1 tag.
-> > 
-> > Please base the patches on something new, a recent rc is fine (rc6 or
-> > rc7 depends what you've tested).
-> 
-> Any recommended workflow for different timing point?
-> E.g. always rebase to latest rc?
+> Side note: I noticed most of the time ENOMEM is hit in fs/btrfs BUG or BUG_ON is
+> called. Would it be better (more in line with the fs/btrfs style) to call BUG or
+> BUG_ON e.g. BUG_ON(!sbio) instead of goto nomem at fs/btrfs/scrub.c:592?
 
-It depends on the phase of the development cycle, last released rc is a
-good default choice unless you have reasons not to use it. Think about
-it as "what does happen when this gets merged to the expected target
-branch?". If you send a fix for current master, then it's perfect to use
-the last rc in master, or base the patch on the branch that gets pulled
-there (eg. misc-4.20).
-
-> My current (and now is proven not proper) workflow is to stick with
-> -rc1, and cherry pick known fixes related to test.
-> This provides a stable base run to spot regression caused by my patches.
-
-You could use that as a reference point, but when the patches get
-merged, it's on a more recent codebase so it's better that you verify
-that it works on your side. The rc1 is not a very good base in general
-as there are so many changes in the whole kernel that need to stabilize.
+No, we want to get rid of the BUG_ONs as a poor substitute for error
+handling. The ENOMEM case is usually a hard one to fix so you still can
+see a lot of them, but there are places where it's simple enough to
+rollback and return ENOMEM up to the original caller. Scrub in this case
+is restartable and if scrub_setup_ctx fails, it's at the time of start
+and the user is properly notified.

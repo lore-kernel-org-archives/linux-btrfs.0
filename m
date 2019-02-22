@@ -2,117 +2,85 @@ Return-Path: <SRS0=GKQD=Q5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.7 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,USER_AGENT_MUTT autolearn=unavailable autolearn_force=no
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 947B3C43381
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 16:54:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DC207C43381
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 16:54:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 641C620700
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 16:54:08 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1550854448;
-	bh=CpNjY6St28RqGrcL0jl9NtWuqPoDilmjmD/38qF4Py8=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:List-ID:From;
-	b=lRp1OjKtHxBi7ymb5KJCMNXKiv+ajTP73Aq1GN59QcPyB++DeE3N4a0pQGZu09VE6
-	 UGgY9sJgz3x44oEQpOzrt7izvWFKIH55vH2MB0jhGtBodyk/m9eN9ZjOifJdcR8dMm
-	 +ddEgOxRfGl82pWls7wuHbqXW770seRHsFrkVwVQ=
+	by mail.kernel.org (Postfix) with ESMTP id AB0A120700
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 16:54:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726399AbfBVQyD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Feb 2019 11:54:03 -0500
-Received: from mail-yw1-f65.google.com ([209.85.161.65]:40218 "EHLO
-        mail-yw1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725942AbfBVQyD (ORCPT
+        id S1727023AbfBVQya (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Feb 2019 11:54:30 -0500
+Received: from sender-op-o12.zoho.com ([135.84.80.197]:17431 "EHLO
+        sender-op-o12.zoho.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725942AbfBVQya (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Feb 2019 11:54:03 -0500
-Received: by mail-yw1-f65.google.com with SMTP id c67so1067337ywa.7;
-        Fri, 22 Feb 2019 08:54:02 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:content-transfer-encoding
-         :in-reply-to:user-agent;
-        bh=kI5tGxDVTdGcYL9vJ2j2Cz6kTeDPn8/ovqZQNGlFT7g=;
-        b=TT1ByVQYKRHC2uU4yT02bUDmV5rnwOsz6rsjyqK08m/wb1PzyShZ1Jw+tlTGyq4eJR
-         0ICWjstDUjoZYouzmudmzSz7StmLOBF2kknmLXRtsjlMPOe4cti42UUsA4uwalxnFRb3
-         +GFFAsNMX0RG9cmhwhiNg5ZExX91QzwJ1bmnpRnYt/aLytaiUZQsFlVyIXpb5NIZfO9E
-         IKqm0QbZS2J8UKx42HYVpDn7aYP1vVbbnf0DCLFey7vnAv1Jy8MgCxhEtkFR98ggRBsn
-         tPafjZjaBfIKh6XTjLLYX1jkBU6Fchmh9Cjl4t7/scBsUlCCH9h7YhpFIukPcN7tMAUM
-         xDsw==
-X-Gm-Message-State: AHQUAubRM5WsBTpYGeb1ujbYrGrgDUw0fn2nkSesDT4fU0MFZNG5uhAa
-        BwIFgNKhSzkOLgbtKSludw/WQuMuQkc=
-X-Google-Smtp-Source: AHgI3IZsM47FGwnfrMnWYpfD7D5NkbNLsgWdZ5mUwQhorArUAimArjt/zVjaMCg2Rzy8OD2hjQ+R+g==
-X-Received: by 2002:a81:59d7:: with SMTP id n206mr3966473ywb.210.1550854442317;
-        Fri, 22 Feb 2019 08:54:02 -0800 (PST)
-Received: from dennisz-mbp ([2620:10d:c091:200::2:3f98])
-        by smtp.gmail.com with ESMTPSA id s186sm760762yws.13.2019.02.22.08.54.00
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Fri, 22 Feb 2019 08:54:00 -0800 (PST)
-Date:   Fri, 22 Feb 2019 11:53:57 -0500
-From:   Dennis Zhou <dennis@kernel.org>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     Dennis Zhou <dennis@kernel.org>, David Sterba <dsterba@suse.com>,
-        Josef Bacik <josef@toxicpanda.com>, Chris Mason <clm@fb.com>,
-        Omar Sandoval <osandov@osandov.com>,
-        Nick Terrell <terrelln@fb.com>, kernel-team@fb.com,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: zstd ensure reclaim timer is properly cleaned up
-Message-ID: <20190222165357.GA85619@dennisz-mbp>
-References: <20190221202556.42447-1-dennis@kernel.org>
- <eb7df5c4-25fb-2d10-58a1-b3be7b37c2db@suse.com>
+        Fri, 22 Feb 2019 11:54:30 -0500
+ARC-Seal: i=1; a=rsa-sha256; t=1550854465; cv=none; 
+        d=zoho.com; s=zohoarc; 
+        b=ULFwff7YqrY2XaKK+0Qt0Zyl1KjylUMnHJYsgO8KNOE3XIpJJ+q5fa2CI/oAPEcZ69OcXArikvqM3y5NxZS9LFlgTpIrnM90sZlC1JlzeAgH6fbyfPZrpDo1dj+ScMh8aH/iU2oaHgOjvwS8b3Y60NbCl2I2JvigHy+Op0jsLzk=
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=zoho.com; s=zohoarc; 
+        t=1550854465; h=Content-Type:Date:From:In-Reply-To:MIME-Version:Message-ID:References:Subject:To:ARC-Authentication-Results; 
+        bh=pu4CvrAsqYRoKOS7al00ukLR5hJQoe0ZdqOrrFY49/I=; 
+        b=BA/gdlIGBp7+pcFmyW7F8U33+soP0wvI25ho5TI5ME8AD414XtQTPLhum49wlYjyEIcdbMItt4DFi/+CDDVVS11b69k0sj2n0poehkKjvHuUZo8DkbOk6g0NBQOl72aikyGU1b3EWyNIt9srdPF7R4PHsPUR6uLbnv1722LT+Yg=
+ARC-Authentication-Results: i=1; mx.zoho.com;
+        dkim=pass  header.i=dlrobertson.com;
+        spf=pass  smtp.mailfrom=dan@dlrobertson.com;
+        dmarc=pass header.from=<dan@dlrobertson.com> header.from=<dan@dlrobertson.com>
+Received: from nessie (pool-100-15-144-194.washdc.fios.verizon.net [100.15.144.194]) by mx.zohomail.com
+        with SMTPS id 1550854463971691.5914578526114; Fri, 22 Feb 2019 08:54:23 -0800 (PST)
+Date:   Fri, 22 Feb 2019 16:45:34 +0000
+From:   Dan Robertson <dan@dlrobertson.com>
+To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] fs/btrfs: init csum_list before possible free
+Message-ID: <20190222164532.GA5443@nessie>
+References: <20190219025643.20382-1-dan@dlrobertson.com>
+ <20190219163144.GR9874@twin.jikos.cz>
+ <20190221145723.GA25507@nessie>
+ <20190222155701.GI9874@twin.jikos.cz>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: multipart/signed; micalg=pgp-sha256;
+        protocol="application/pgp-signature"; boundary="45Z9DzgjV8m4Oswq"
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <eb7df5c4-25fb-2d10-58a1-b3be7b37c2db@suse.com>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+In-Reply-To: <20190222155701.GI9874@twin.jikos.cz>
+User-Agent: Mutt/1.11.3 (2019-02-01)
+X-Zoho-Virus-Status: 1
+X-ZohoMailClient: External
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Feb 22, 2019 at 02:17:41PM +0200, Nikolay Borisov wrote:
-> 
-> 
-> On 21.02.19 г. 22:25 ч., Dennis Zhou wrote:
-> > The timer function, zstd_reclaim_timer_fn(), reschedules itself under
-> > certain conditions. Switch to del_timer_sync() to ensure that the timer
-> > function hasn't rescheduled itself.
-> 
-> According to del_timer_sync it just waits for any concurrent invocation
-> to finish. But it's responsibility of the caller to ensure the timer
-> cannot really be restarted. It's not obvious how
-> zstd_cleanup_workspace_manager ensures that the timer won't be restared.
-> Looking at the timer function for it to not restart wsm.lru_list has to
-> be empty. And seeing that workspace->lru_list is deleted afterwards I'm
-> not sure this invariant holds.
-> 
 
-Hmmm, I see. I misunderstood the invariant. I'll spin v2 and handle it
-another way.
+--45Z9DzgjV8m4Oswq
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Thanks,
-Dennis
+Got it. Thanks for the clarification.
 
-> > 
-> > Signed-off-by: Dennis Zhou <dennis@kernel.org>
-> > ---
-> >  fs/btrfs/zstd.c | 2 +-
-> >  1 file changed, 1 insertion(+), 1 deletion(-)
-> > 
-> > diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
-> > index 3e418a3aeb11..62de9a211321 100644
-> > --- a/fs/btrfs/zstd.c
-> > +++ b/fs/btrfs/zstd.c
-> > @@ -195,7 +195,7 @@ static void zstd_cleanup_workspace_manager(void)
-> >  	struct workspace *workspace;
-> >  	int i;
-> >  
-> > -	del_timer(&wsm.timer);
-> > +	del_timer_sync(&wsm.timer);
-> >  
-> >  	for (i = 0; i < ZSTD_BTRFS_MAX_LEVEL; i++) {
-> >  		while (!list_empty(&wsm.idle_ws[i])) {
-> > 
+--45Z9DzgjV8m4Oswq
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCAAdFiEEF5dO2RaKc5C+SCJ9RcSmUsR+QqUFAlxwJyoACgkQRcSmUsR+
+QqWLkBAAso77IF31PoI4NT+CxTorc2i+mJVoTpto6msf9pLq2k4HVcc0AQSAV7dK
+eI+2pAyN0AfW3i8TgLMlL0eEwQViFzER06ArkIDpjh+5bFA0EjRGHbetbvHxAU/2
+A/y4pu7G874SGXsCJSx3zgD4MnZ7ULTHPvV1owh0q4+C3FvgjMVJE7Nw6OT6s6Hx
+QDpi4J+h9v7ca+2EphqSpO3kqF9p5AonToHiG5i12LqGcfnTYnt2dMYJ2t3Crko2
+Di/U+qC7aDlYgJw/L4gNFngJVuTbnaehYu54efVZv2HrJR+etdz7FwqmnixaEPw+
+ah5AW/bm09Pw775bN58qo+yjd9NdGFmZEf+T0DURDAHfCKGbbxDx4qWwyQYk3Mm3
+7/qGVAbenrl22AomBaE4Mc+ctiCQPurtHhS+7efB16yuMRzSqYHMmGEdrNyXQ4zf
+TBF4Mr1Wb2pplbf7q+xMAflyo6xW1r9XcsYdBbZx4IXkNEhuS+YyveqDKMoPLtI2
+0FxDw33LuQgK0jY76UwFMWYZJL4O2DyL9ypE2wK2ivfUSTm1QjIlKKrApR7wXNFo
+tOIPyKVTXHX8ToGKTfbbryxdTMEIbPnVQjecjyhBTNuHt7JbL44sDbtymb6x+Np1
+w00xSyxJfFfir9mggnf9VHn+g+xANL80eaXaLMdV4ANDlQwtZeE=
+=gT/C
+-----END PGP SIGNATURE-----
+
+--45Z9DzgjV8m4Oswq--
+

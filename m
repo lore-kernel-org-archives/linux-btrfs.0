@@ -1,94 +1,107 @@
-Return-Path: <SRS0=uD29=Q4=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=GKQD=Q5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=unavailable autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F3278C4360F
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 23:55:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 82C2DC43381
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 00:53:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C1D6320684
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Feb 2019 23:55:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 55C8220661
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 00:53:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726591AbfBUXzK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Feb 2019 18:55:10 -0500
-Received: from mx2.suse.de ([195.135.220.15]:52034 "EHLO mx1.suse.de"
+        id S1726466AbfBVAx4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Feb 2019 19:53:56 -0500
+Received: from mx2.suse.de ([195.135.220.15]:59184 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726335AbfBUXzK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Feb 2019 18:55:10 -0500
+        id S1726250AbfBVAx4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 21 Feb 2019 19:53:56 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 973B6AD76;
-        Thu, 21 Feb 2019 23:55:08 +0000 (UTC)
-Subject: Re: [LSF/MM TOPIC] More async operations for file systems - async
- discard?
-To:     Keith Busch <keith.busch@intel.com>,
-        Ric Wheeler <ricwheeler@gmail.com>
-Cc:     Dave Chinner <david@fromorbit.com>,
-        lsf-pc@lists.linux-foundation.org,
-        linux-xfs <linux-xfs@vger.kernel.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        linux-ext4 <linux-ext4@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        linux-block@vger.kernel.org
-References: <92ab41f7-35bc-0f56-056f-ed88526b8ea4@gmail.com>
- <20190217210948.GB14116@dastard>
- <46540876-c222-0889-ddce-44815dcaad04@gmail.com>
- <20190220234723.GA5999@localhost.localdomain>
-From:   Jeff Mahoney <jeffm@suse.com>
-Message-ID: <45c27fea-6d74-2adc-fe9d-e314ce4f3672@suse.com>
-Date:   Thu, 21 Feb 2019 18:55:05 -0500
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:65.0)
- Gecko/20100101 Thunderbird/65.0
+        by mx1.suse.de (Postfix) with ESMTP id DF77BAC32;
+        Fri, 22 Feb 2019 00:53:54 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Dan Carpenter <dan.carpenter@oracle.com>
+Subject: [PATCH] btrfs: Fix possible NULL pointer dereference in btrfs selftest
+Date:   Fri, 22 Feb 2019 08:53:50 +0800
+Message-Id: <20190222005350.7535-1-wqu@suse.com>
+X-Mailer: git-send-email 2.20.1
 MIME-Version: 1.0
-In-Reply-To: <20190220234723.GA5999@localhost.localdomain>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 2/20/19 6:47 PM, Keith Busch wrote:
-> On Sun, Feb 17, 2019 at 06:42:59PM -0500, Ric Wheeler wrote:
->> I think the variability makes life really miserable for layers above it.
->>
->> Might be worth constructing some tooling that we can use to validate or
->> shame vendors over - testing things like a full device discard, discard of
->> fs block size and big chunks, discard against already discarded, etc.
-> 
-> With respect to fs block sizes, one thing making discards suck is that
-> many high capacity SSDs' physical page sizes are larger than the fs block
-> size, and a sub-page discard is worse than doing nothing.
-> 
-> We've discussed previously about supporting block size larger than
-> the system's page size, but it doesn't look like that's gone anywhere.
-> Maybe it's worth revisiting since it's really inefficient if you write
-> or discard at the smaller granularity.
+When CONFIG_BTRFS_FS_RUN_SANITY_TESTS is enabled, btrfs will run
+selftest at module load time.
 
-Isn't this addressing the problem at the wrong layer?  There are other
-efficiencies to be gained by larger block sizes, but better discard
-behavior is a side effect.  As Dave said, the major file systems already
-assemble contiguous extents as large we can can before sending them to
-discard.  The lower bound for that is the larger of minimum lengths
-passed by the user or provided by the block layer.  We've always been
-told "don't worry about what the internal block size is, that only
-matters to the FTL."  That's obviously not true, but when devices only
-report a 512 byte granularity, we believe them and will issue discard
-for the smallest size that makes sense for the file system regardless of
-whether it makes sense (internally) for the SSD.  That means 4k for
-pretty much anything except btrfs metadata nodes, which are 16k.
+During selftest, we allocate extent buffer using
+alloc_test_extent_buffer(), instead of alloc_test_extent_buffer().
 
-So, I don't think changing the file system block size is the right
-approach.  It *may* bring benefits, but I think many of the same
-benefits can be gained by using the minimum-size option for fstrim and
-allowing the discard mount options to accept a minimum size as well.
+The problem is, unlike alloc_extent_buffer(),
+alloc_test_extent_buffer() can return NULL pointer instead of error
+pointer, and callers all expect error pointer other than NULL pointer.
 
--Jeff
+So this could lead to NULL pointer dereference during selftest.
 
+Fix it by returning error pointer in alloc_test_extent_buffer().
+
+Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/extent_io.c | 20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 52abe4082680..a7db78f49fdb 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4862,12 +4862,14 @@ struct extent_buffer *alloc_test_extent_buffer(struct btrfs_fs_info *fs_info,
+ 		return eb;
+ 	eb = alloc_dummy_extent_buffer(fs_info, start);
+ 	if (!eb)
+-		return NULL;
++		return ERR_PTR(-ENOMEM);
+ 	eb->fs_info = fs_info;
+ again:
+ 	ret = radix_tree_preload(GFP_NOFS);
+-	if (ret)
+-		goto free_eb;
++	if (ret) {
++		btrfs_release_extent_buffer(eb);
++		return ERR_PTR(ret);
++	}
+ 	spin_lock(&fs_info->buffer_lock);
+ 	ret = radix_tree_insert(&fs_info->buffer_radix,
+ 				start >> PAGE_SHIFT, eb);
+@@ -4875,18 +4877,16 @@ struct extent_buffer *alloc_test_extent_buffer(struct btrfs_fs_info *fs_info,
+ 	radix_tree_preload_end();
+ 	if (ret == -EEXIST) {
+ 		exists = find_extent_buffer(fs_info, start);
+-		if (exists)
+-			goto free_eb;
+-		else
+-			goto again;
++		if (exists) {
++			btrfs_release_extent_buffer(eb);
++			return exists;
++		}
++		goto again;
+ 	}
+ 	check_buffer_tree_ref(eb);
+ 	set_bit(EXTENT_BUFFER_IN_TREE, &eb->bflags);
+ 
+ 	return eb;
+-free_eb:
+-	btrfs_release_extent_buffer(eb);
+-	return exists;
+ }
+ #endif
+ 
 -- 
-Jeff Mahoney
-SUSE Labs
+2.20.1
+

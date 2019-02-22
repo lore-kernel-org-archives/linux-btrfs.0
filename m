@@ -3,64 +3,67 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT autolearn=ham
-	autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 74DF1C43381
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 14:33:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 76F9EC43381
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 14:37:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4C8BB2075A
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 14:33:39 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 42BB32075A
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 14:37:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726360AbfBVOdi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Feb 2019 09:33:38 -0500
-Received: from mx2.suse.de ([195.135.220.15]:52684 "EHLO mx1.suse.de"
+        id S1727026AbfBVOhr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Feb 2019 09:37:47 -0500
+Received: from mx2.suse.de ([195.135.220.15]:55430 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726278AbfBVOdh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Feb 2019 09:33:37 -0500
+        id S1726376AbfBVOhr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 22 Feb 2019 09:37:47 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 0A66AADE1;
-        Fri, 22 Feb 2019 14:33:33 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id C622FAD05;
+        Fri, 22 Feb 2019 14:37:45 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id BC0B4DAA56; Fri, 22 Feb 2019 15:34:53 +0100 (CET)
-Date:   Fri, 22 Feb 2019 15:34:53 +0100
+        id 0901DDAA56; Fri, 22 Feb 2019 15:39:07 +0100 (CET)
+Date:   Fri, 22 Feb 2019 15:39:07 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     fdmanana@kernel.org
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: remove assertion when searching for a key in a
- node/leaf
-Message-ID: <20190222143453.GC9874@twin.jikos.cz>
+To:     YueHaibing <yuehaibing@huawei.com>
+Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org,
+        Dan Carpenter <dan.carpenter@oracle.com>
+Subject: Re: [PATCH v2 -next] btrfs: Remove unnecessary casts in
+ btrfs_read_root_item
+Message-ID: <20190222143907.GD9874@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
-        linux-btrfs@vger.kernel.org
-References: <20190220111143.15911-1-fdmanana@kernel.org>
+Mail-Followup-To: dsterba@suse.cz, YueHaibing <yuehaibing@huawei.com>,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org,
+        Dan Carpenter <dan.carpenter@oracle.com>
+References: <20190220030840.188854-1-yuehaibing@huawei.com>
+ <20190220123202.43256-1-yuehaibing@huawei.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190220111143.15911-1-fdmanana@kernel.org>
+In-Reply-To: <20190220123202.43256-1-yuehaibing@huawei.com>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Feb 20, 2019 at 11:11:43AM +0000, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
+On Wed, Feb 20, 2019 at 12:32:02PM +0000, YueHaibing wrote:
+> There is a messy cast here:
+> 	min_t(int, len, (int)sizeof(*item)));
 > 
-> At ctree.c:key_search(), the assertion that verifies the first key on a
-> child extent buffer corresponds to the key at a specific slot in the
-> parent has a disadvantage: we effectively hit a BUG_ON() which requires
-> rebooting the machine later. It also does not tell any information about
-> which extent buffer is affected, from which root, the expected and found
-> keys, etc.
+> min_t() should normally cast to unsigned.  It's not possible for
+> "len" to be negative, but if it were then we definitely
+> wouldn't want to pass negatives to read_extent_buffer().  Also there
+> is an extra cast.
 > 
-> However as of commit 581c1760415c48 ("btrfs: Validate child tree block's
-> level and first key"), that assertion is not needed since at the time we
-> read an extent buffer from disk we validate that its first key matches the
-> key, at the respective slot, in the parent extent buffer. Therefore just
-> remove the assertion at key_search().
+> This patch shouldn't affect runtime, it's just a clean up.
 > 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> Suggested-by: Dan Carpenter <dan.carpenter@oracle.com>
+> Signed-off-by: YueHaibing <yuehaibing@huawei.com>
 
-Added to misc-next, thanks.
+Applied, thanks.

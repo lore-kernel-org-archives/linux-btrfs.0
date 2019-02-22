@@ -2,254 +2,158 @@ Return-Path: <SRS0=GKQD=Q5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_PASS,UNPARSEABLE_RELAY autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E10C5C43381
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 13:32:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EB4BDC4360F
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 14:13:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B037D2075A
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 13:32:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B88A6206B7
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 14:13:29 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="PIx1tUCw"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726352AbfBVNcS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Feb 2019 08:32:18 -0500
-Received: from mx2.suse.de ([195.135.220.15]:54808 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726087AbfBVNcS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Feb 2019 08:32:18 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 9E918AF28;
-        Fri, 22 Feb 2019 13:32:11 +0000 (UTC)
-Subject: Re: [PATCH 0/5] Unify the return value of alloc/clone_extent_buffer()
-To:     Nikolay Borisov <n.borisov.lkml@gmail.com>,
-        linux-btrfs@vger.kernel.org
-Cc:     dan.carpenter@oracle.com
-References: <20190222101645.4403-1-wqu@suse.com>
- <b676a401-2eeb-f105-d363-742137a13ded@gmail.com>
- <b132529d-1246-4cb4-202a-37bf84e7ba43@suse.de>
- <7845f981-dbc3-6160-a329-33f0014ba973@gmail.com>
-From:   Qu Wenruo <wqu@suse.de>
-Openpgp: preference=signencrypt
-Autocrypt: addr=wqu@suse.de; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0F1F1IFdlbnJ1byA8d3F1QHN1c2UuZGU+iQFUBBMBCAA+AhsDBQsJCAcCBhUICQoLAgQW
- AgMBAh4BAheAFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlnVgp0FCQlmAm4ACgkQwj2R86El
- /qilmgf/cUq9kFQo577ku5gc6rFpVg68ublBwjYpwjw0b//xo+Wo1wm+RRbUGs+djSZAqw12
- D4F3r0mBTI7abUCNWAbFkYZSAIFVi0DMkjypIVS7PSaEt04rM9VBTToE+YqU6WENeJ57R2p2
- +hI0wZrBwxObdsdaOtxWtsp3bmhIbdqxSKrtXuRawy4KnQYcLuGzOce9okdlbAE0W3KHm1gQ
- oNAe6FX8nC9qo14m8LqEbThYH+qj4iCMlN8HIfbSx4F3e7nHZ+UAMW+E/lnMRkIB9Df+JyVd
- /NlXzIjZAggcWsqpx6D4wyAuexKWkiGQeUeArUNihAwXjmyqWPGmjVyIh+oC6LkBDQRZ1YGv
- AQgAqlPrYeBLMv3PAZ75YhQIwH6c4SNcB++hQ9TCT5gIQNw51+SQzkXIGgmzxMIS49cZcE4K
- Xk/kHw5hieQeQZa60BWVRNXwoRI4ib8okgDuMkD5Kz1WEyO149+BZ7HD4/yK0VFJGuvDJR8T
- 7RZwB69uVSLjkuNZZmCmDcDzS0c/SJOg5nkxt1iTtgUETb1wNKV6yR9XzRkrEW/qShChyrS9
- fNN8e9c0MQsC4fsyz9Ylx1TOY/IF/c6rqYoEEfwnpdlz0uOM1nA1vK+wdKtXluCa79MdfaeD
- /dt76Kp/o6CAKLLcjU1Iwnkq1HSrYfY3HZWpvV9g84gPwxwxX0uXquHxLwARAQABiQE8BBgB
- CAAmFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlnVga8CGwwFCQPCZwAACgkQwj2R86El/qgN
- 8Qf+M0vM2Idwm5txZZSs+/kSgcPxEwYmxUinnUJGyc0ZWYQXPl0cBetZon9El0naijGzNWvf
- HxIPB+ZFehk6Otgc78p1a3/xck/s1myFRLrmbbTJNoFiyL25ljcq0J8z5Zp4yuABL2RiLdaZ
- Pt/jfwjBHwGR+QKp6dD2qMrUWf9b7TFzYDMZXzZ2/eoIgtyjEelNBPrIgOFe24iKMjaGjd97
- fJuRcBMHdhUAxvXQF1oRtd83JvYJ5OtwTd8MgkEfl+fo7HwWkuHbzc70L4fFKv2BowqFdaHy
- mId1ijGPGr46tuZ5a4cw/zbaPYx6fJ4sK9tSv/6V1QPNUdqml6hm6pfs6A==
-Message-ID: <638c710d-8222-a241-cee2-a1f2440204a6@suse.de>
-Date:   Fri, 22 Feb 2019 21:32:02 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.1
+        id S1727069AbfBVON2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Feb 2019 09:13:28 -0500
+Received: from userp2120.oracle.com ([156.151.31.85]:49446 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726362AbfBVON2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 22 Feb 2019 09:13:28 -0500
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x1ME3oZL017205;
+        Fri, 22 Feb 2019 14:12:54 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=to : cc : subject :
+ from : references : date : in-reply-to : message-id : mime-version :
+ content-type; s=corp-2018-07-02;
+ bh=eSEnlAD8Ses7wRSS+VgOS5zr89VkEj4Sm8noepqIjNM=;
+ b=PIx1tUCwgb5/do+XIYK2Fk+kt9eLNPF+MPQYyyHQTYg+b0f6l48/9VxkoyBCY5dWhFFE
+ Iqt+oLAYmLVg41O49I+Q+3H9mMeNQGhmWLR5nVRUEsCOPXfLwPRriPSPsowFaGNszipq
+ lfu39Rmfg8/IkY65DHye+lYmGK0hvHO2NB/SlgwBMnUA3cObmiSZeOoDGiUCZgEIAzaK
+ cjmidY8y7fOHQQIO34EmfYcrF1yJ13WFlcEQcH7pfR0/h7DDbQT6eKmV/s70v6vV5S41
+ 9PpoA6HtzidL0jvkZIWdVlTS5Cki39H33m+VsJLurnR4WeksPa+mVtEBc37vi2XqvoIh wQ== 
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by userp2120.oracle.com with ESMTP id 2qpb5rybh7-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Fri, 22 Feb 2019 14:12:54 +0000
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x1MECmNk028826
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Fri, 22 Feb 2019 14:12:48 GMT
+Received: from abhmp0002.oracle.com (abhmp0002.oracle.com [141.146.116.8])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x1MEClAR017912;
+        Fri, 22 Feb 2019 14:12:47 GMT
+Received: from ca-mkp.ca.oracle.com (/10.159.214.123)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Fri, 22 Feb 2019 06:12:47 -0800
+To:     Roman Mamedov <rm@romanrm.net>
+Cc:     "Martin K. Petersen" <martin.petersen@oracle.com>,
+        Jeff Mahoney <jeffm@suse.com>,
+        Keith Busch <keith.busch@intel.com>,
+        Ric Wheeler <ricwheeler@gmail.com>,
+        Dave Chinner <david@fromorbit.com>,
+        lsf-pc@lists.linux-foundation.org,
+        linux-xfs <linux-xfs@vger.kernel.org>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        linux-ext4 <linux-ext4@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        linux-block@vger.kernel.org
+Subject: Re: [LSF/MM TOPIC] More async operations for file systems - async discard?
+From:   "Martin K. Petersen" <martin.petersen@oracle.com>
+Organization: Oracle Corporation
+References: <92ab41f7-35bc-0f56-056f-ed88526b8ea4@gmail.com>
+        <20190217210948.GB14116@dastard>
+        <46540876-c222-0889-ddce-44815dcaad04@gmail.com>
+        <20190220234723.GA5999@localhost.localdomain>
+        <45c27fea-6d74-2adc-fe9d-e314ce4f3672@suse.com>
+        <yq17edsil17.fsf@oracle.com> <20190222111532.4ead81dc@natsu>
+Date:   Fri, 22 Feb 2019 09:12:44 -0500
+In-Reply-To: <20190222111532.4ead81dc@natsu> (Roman Mamedov's message of "Fri,
+        22 Feb 2019 11:15:32 +0500")
+Message-ID: <yq136ofj4ir.fsf@oracle.com>
+User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/26.1 (gnu/linux)
 MIME-Version: 1.0
-In-Reply-To: <7845f981-dbc3-6160-a329-33f0014ba973@gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="pfWAW7nk498URBy7xN3YJ4gBGuULqgsbw"
+Content-Type: text/plain
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9174 signatures=668684
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1011
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1902220100
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---pfWAW7nk498URBy7xN3YJ4gBGuULqgsbw
-Content-Type: multipart/mixed; boundary="ccA3DecDQizgxAUZ7OUlBVhqpoKEpG79I";
- protected-headers="v1"
-From: Qu Wenruo <wqu@suse.de>
-To: Nikolay Borisov <n.borisov.lkml@gmail.com>, linux-btrfs@vger.kernel.org
-Cc: dan.carpenter@oracle.com
-Message-ID: <638c710d-8222-a241-cee2-a1f2440204a6@suse.de>
-Subject: Re: [PATCH 0/5] Unify the return value of alloc/clone_extent_buffer()
-References: <20190222101645.4403-1-wqu@suse.com>
- <b676a401-2eeb-f105-d363-742137a13ded@gmail.com>
- <b132529d-1246-4cb4-202a-37bf84e7ba43@suse.de>
- <7845f981-dbc3-6160-a329-33f0014ba973@gmail.com>
-In-Reply-To: <7845f981-dbc3-6160-a329-33f0014ba973@gmail.com>
 
---ccA3DecDQizgxAUZ7OUlBVhqpoKEpG79I
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Roman,
 
+>> Consequently, many of the modern devices that claim to support
+>> discard to make us software folks happy (or to satisfy a purchase
+>> order requirements) complete the commands without doing anything at
+>> all.  We're simply wasting queue slots.
+>
+> Any example of such devices? Let alone "many"? Where you would issue a
+> full-device blkdiscard, but then just read back old data.
 
+I obviously can't mention names or go into implementation details. But
+there are many drives out there that return old data. And that's
+perfectly within spec.
 
-On 2019/2/22 =E4=B8=8B=E5=8D=889:29, Nikolay Borisov wrote:
->=20
->=20
-> On 22.02.19 =D0=B3. 15:02 =D1=87., Qu Wenruo wrote:
->>
->>
->> On 2019/2/22 =E4=B8=8B=E5=8D=888:54, Nikolay Borisov wrote:
->>>
->>>
->>> On 22.02.19 =D0=B3. 12:16 =D1=87., Qu Wenruo wrote:
->>>> This patchset can be fetched from github:
->>>> https://github.com/adam900710/linux/tree/cleanup_alloc_extent_buffer=
+At least some of the pain in the industry in this department can be
+attributed to us Linux folks and RAID device vendors. We all wanted
+deterministic zeroes on completion of DSM TRIM, UNMAP, or DEALLOCATE.
+The device vendors weren't happy about that and we ended up with weasel
+language in the specs. This lead to the current libata whitelist mess
+for SATA SSDs and ongoing vendor implementation confusion in SCSI and
+NVMe devices.
 
->>>> Which is based on v5.0-rc7
->>>>
->>>> There are 5 extent buffer alloc functions in btrfs:
->>>> __alloc_extent_buffer();
->>>> alloc_extent_buffer();
->>>> __alloc_dummy_extent_buffer();
->>>> alloc_dummy_extent_buffer();
->>>> alloc_test_extent_buffer();
->>>>
->>>> However their return value is not unified for failure mode:
->>>> __alloc_extent_buffer()		Never fail
->>>> alloc_extent_buffer()		PTR_ERR()
->>>> __alloc_dummy_extent_buffer()	NULL
->>>
->>> This function can never return NULL, if __alloc_extent_buffer cannot
->>> fail then the only error this function returns is ERR_PTR(ENOMEM);
->>
->> Nope.
->>
->>         for (i =3D 0; i < num_pages; i++) {
->>                 eb->pages[i] =3D alloc_page(GFP_NOFS);
->>                 if (!eb->pages[i])
->>                         goto err; <<< Page alloc failure here
->>         }
->> ...
->> err:
->>         for (; i > 0; i--)
->>                 __free_page(eb->pages[i - 1]);
->>         __free_extent_buffer(eb);
->>         return NULL; << We got NULL.
->=20
-> Right, I was looking at the code AFTER having applied your patches. So =
-I
-> agree with yout. However, the ordering of your patches and the
-> changelogs make it rather hard to understand. What I'd suggest regardin=
-g
-> the changelogs is - forget about unification, just say what you are
-> doing, which is always ensuring that an error is returned from
-> __alloc_extent_buffer in one patch - this should involve both changes t=
-o
-> __alloc_extent_buffer as well as it's (in)direct callers. Then you do
-> the same for other function. Otherwise review is somewhat hindered.
+On the Linux side the problem was that we originally used discard for
+two distinct purposes: Clearing block ranges and deallocating block
+ranges. We cleaned that up a while back and now have BLKZEROOUT and
+BLKDISCARD. Those operations get translated to different operations
+depending on the device. We also cleaned up several of the
+inconsistencies in the SCSI and NVMe specs to facilitate making this
+distinction possible in the kernel.
 
-Makes sense.
+In the meantime the SSD vendors made great strides in refining their
+flash management. To the point where pretty much all enterprise device
+vendors will ask you not to issue discards. The benefits simply do not
+outweigh the costs.
 
-I'll reword and reorder the patches.
+If you have special workloads where write amplification is a major
+concern it may still be advantageous to do the discards and reduce WA
+and prolong drive life. However, these workloads are increasingly moving
+away from the classic LBA read/write model. Open Channel originally
+targeted this space. Right now work is underway on Zoned Namespaces and
+Key-Value command sets in NVMe.
 
-Thanks,
-Qu
+These curated application workload protocols are fundamental departures
+from the traditional way of accessing storage. And my postulate is that
+where tail latency and drive lifetime management is important, those new
+command sets offer much better bang for the buck. And they make the
+notion of discard completely moot. That's why I don't think it's going
+to be terribly important in the long term.
 
->=20
->> }
->>
->> For __alloc_dummy_extent_buffer, that's the only failure case.
->>
->> And I'm interested how did you get the PTR_ERR() case?
->>
->>>
->>>> alloc_dummy_extent_buffer()	NULL
->>> Same thing applies to this function
->>
->> Nope.
->>
->>>
->>>> alloc_test_extent_buffer()	NULL
->>>
->>> Same thing for this function, if we return exists then we must have
->>> found it by find_extent_buffer hence it cannot be null. Otherwise we
->>> return eb as allocated from alloc_dummy_extent_buffer. So how can nul=
-l
->>> be returned?
->>
->> And nope.
->>
->>>
->>> To me it really seems none of the function could return a NULL value,=
- no?
->>
->> Your misunderstand of __alloc_dummy_extent_buffer() makes the call cha=
-in
->> all wrong.
->>
->> Thanks,
->> Qu
->>
->>>
->>>>
->>>> This causes some wrapper function to have 2 failure modes, like
->>>> btrfs_find_create_tree_block() can return NULL or PTR_ERR(-ENOMEM) f=
-or
->>>> its failure.
->>>>
->>>> This inconsistent behavior is making static checker and reader crazy=
-=2E
->>>>
->>>> This patchset will unify the failure more of above 5 functions to
->>>> PTR_ERR().
->>>>
->>>> Qu Wenruo (5):
->>>>   btrfs: extent_io: Add comment about the return value of
->>>>     alloc_extent_buffer()
->>>>   btrfs: extent_io: Unify the return value of __alloc_extent_buffer(=
-)
->>>>     with alloc_extent_buffer()
->>>>   btrfs: extent_io: Unify the return value of
->>>>     alloc_dummy_extent_buffer() with alloc_extent_buffer()
->>>>   btrfs: extent_io: Unify the return value of alloc_test_extent_buff=
-er()
->>>>     with alloc_extent_buffer()
->>>>   btrfs: extent_io: Unify the return value of
->>>>     btrfs_clone_extent_buffer() with alloc_extent_buffer()
->>>>
->>>>  fs/btrfs/backref.c                     |  8 ++--
->>>>  fs/btrfs/ctree.c                       | 16 ++++----
->>>>  fs/btrfs/extent_io.c                   | 56 +++++++++++++++++------=
----
->>>>  fs/btrfs/qgroup.c                      |  5 ++-
->>>>  fs/btrfs/tests/extent-buffer-tests.c   |  6 ++-
->>>>  fs/btrfs/tests/extent-io-tests.c       |  4 +-
->>>>  fs/btrfs/tests/free-space-tree-tests.c |  3 +-
->>>>  fs/btrfs/tests/inode-tests.c           |  6 ++-
->>>>  fs/btrfs/tests/qgroup-tests.c          |  3 +-
->>>>  9 files changed, 68 insertions(+), 39 deletions(-)
->>>>
->>>
->>
+This leaves consumer devices and enterprise devices using the
+traditional LBA I/O model.
 
+For consumer devices I still think fstrim is a good compromise. Lack of
+queuing for DSM hurt us for a long time. And when it was finally added
+to the ATA command set, many device vendors got their implementations
+wrong. So it sucked for a lot longer than it should have. And of course
+FTL implementations differ.
 
---ccA3DecDQizgxAUZ7OUlBVhqpoKEpG79I--
+For enterprise devices we're still in the situation where vendors
+generally prefer for us not to use discard. I would love for the
+DEALLOCATE/WRITE ZEROES mess to be sorted out in their FTLs, but I have
+fairly low confidence that it's going to happen. Case in point: Despite
+a lot of leverage and purchasing power, the cloud industry has not been
+terribly successful in compelling the drive manufacturers to make
+DEALLOCATE perform well for typical application workloads. So I'm not
+holding my breath...
 
---pfWAW7nk498URBy7xN3YJ4gBGuULqgsbw
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxv+dIACgkQwj2R86El
-/qh6UAf6AqmScXIgs3rdRw9pj5zBnOcueZsVHG1pGo0GBk+MEQ2xKISU4Jf9xsmD
-XgA4F+qjFHnDMRsYkufziC7gwCn/SnP9qIMpp66h9Y7FfBInCBKGOGbiWGSZOXPs
-H2+pINB/qtz3vYx/Vs3Df7KMA6eHbhX9UQlNZrvzWUgQG7WemdhkG8AkKrxGDtea
-YeibFRNhpYGiTJ0PydFCyCOySY8Z9fUExZbYwZg9DqZf5BZuGze20V3ZK7kRfLEn
-VH9p9ZyGdDB7xXT8tFF8FfUjpbPEFEFu30AP0RiXf5n1qUWNXiXdV7RSlezJ/eI+
-L/w/7ZECMrrJwWjKzbAQzbJLuYSsnA==
-=8cSF
------END PGP SIGNATURE-----
-
---pfWAW7nk498URBy7xN3YJ4gBGuULqgsbw--
+-- 
+Martin K. Petersen	Oracle Linux Engineering

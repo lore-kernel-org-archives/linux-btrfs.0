@@ -2,91 +2,92 @@ Return-Path: <SRS0=GKQD=Q5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B154DC4360F
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 17:43:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8F1BCC43381
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 18:04:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7D03A20700
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 17:43:54 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="RbuE3z14"
+	by mail.kernel.org (Postfix) with ESMTP id 6CC582070D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 18:04:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727542AbfBVRnx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Feb 2019 12:43:53 -0500
-Received: from userp2120.oracle.com ([156.151.31.85]:53560 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727531AbfBVRnw (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Feb 2019 12:43:52 -0500
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x1MHOI8p195049
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2019 17:43:51 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
- date : message-id; s=corp-2018-07-02;
- bh=V2DM5yrcljvWClVGq1P4iR3WvzqsGWdfHJS0RNGgUTU=;
- b=RbuE3z14/tG2BFEXhrdETlMN1SjT3nSxfy8Y2KUiT/i4BPxu/M3dDdY00DgD7mFqo/Wh
- k0xlcGlSz6TbYnAaJzENa4cawyA2QIsG6Z/JrVHBeF7+H3brzz+UakeeZjWvDTb6M9PO
- ElvRjfTgNYOK4xuYSowK+eKaWoqjTf96tIF3hqOJXjanTRZLPDj955MAvTNaTurOQLa9
- qUWRSYEX0ECoYG+BjPPAlVeN7hJOSQxOwF+WOifDrNRdo7q88OjAi5tdsO1z1lmAcQ3B
- YpTFMKulh1dDdP2ym7xSqAZetpMZLq/xcI68PLNY5A/KjtyP31D0PUXTUjLmJ44AdxrW JQ== 
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by userp2120.oracle.com with ESMTP id 2qpb5s0gn5-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2019 17:43:51 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id x1MHhjn0019418
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2019 17:43:46 GMT
-Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x1MHhjEE018381
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2019 17:43:45 GMT
-Received: from tpasj.localdomain (/157.45.233.198)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Fri, 22 Feb 2019 09:43:45 -0800
-From:   Anand Jain <anand.jain@oracle.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH RESEND 1/2] btrfs-progs: check for no result before using results
-Date:   Sat, 23 Feb 2019 01:43:38 +0800
-Message-Id: <1550857419-10859-1-git-send-email-anand.jain@oracle.com>
-X-Mailer: git-send-email 1.8.3.1
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9175 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
- suspectscore=1 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
- lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
- definitions=main-1902220122
+        id S1727532AbfBVSEh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Feb 2019 13:04:37 -0500
+Received: from mx2.suse.de ([195.135.220.15]:37942 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726833AbfBVSEg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 22 Feb 2019 13:04:36 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id ADF40ADE1
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2019 18:04:35 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 29B3BDAA56; Fri, 22 Feb 2019 19:05:54 +0100 (CET)
+Date:   Fri, 22 Feb 2019 19:05:54 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     Johannes Thumshirn <jthumshirn@suse.de>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3 1/6] btrfs: Refactor cow_file_range_async
+Message-ID: <20190222180553.GK9874@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        Johannes Thumshirn <jthumshirn@suse.de>,
+        linux-btrfs@vger.kernel.org
+References: <20190221115717.5128-1-nborisov@suse.com>
+ <20190221115717.5128-2-nborisov@suse.com>
+ <aaaf4399-7acd-1726-c579-19a9285c337f@suse.de>
+ <ca7d67fb-8f64-d6c5-97f1-cff2de91f411@suse.com>
+ <49f1484a-e4c3-70cf-c443-708e916c4f90@suse.de>
+ <f5023c11-9fc2-6470-d04b-828b38880cea@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <f5023c11-9fc2-6470-d04b-828b38880cea@suse.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-User space understands the ioctl BTRFS_IOC_DEV_REPLACE command status
-using the struct btrfs_ioctl_dev_replace_args::result, and so userspace
-initializes this to BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_RESULT, so exclude
-this value in checking for the error.
+On Thu, Feb 21, 2019 at 05:09:01PM +0200, Nikolay Borisov wrote:
+> On 21.02.19 г. 17:07 ч., Johannes Thumshirn wrote:
+> > On 21/02/2019 14:25, Nikolay Borisov wrote:
+> >> On 21.02.19 г. 15:15 ч., Johannes Thumshirn wrote:
+> >>> On 21/02/2019 12:57, Nikolay Borisov wrote:
+> >>>>  
+> >>>>  static int cow_file_range_async(struct inode *inode, struct page *locked_page,
+> >>>> @@ -1190,45 +1201,68 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
+> >>>>  				unsigned int write_flags)
+> >>>>  {
+> >>>>  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+> >>>> -	struct async_cow *async_cow;
+> >>>> +	struct async_cow *ctx;
+> >>>> +	struct async_chunk *async_cow;
+> >>>
+> >>> In case you have to re-send the patch you could maybe rename the
+> >>> async_cow variable to async_chunk or sth like that. Would make the
+> >>> resulting code a little bit clearer but no strong opinions here.
+> >>
+> >> The reason I left it like that is to minimize the resulting diff.
+> > 
+> > Understood, but now we have a 'ctx' of type 'struct async_cow' and a
+> > '*async_cow' of type 'struct asyn_chunk'. This is the type of code that
+> > will make people go WTF when they read it in 3-4 cycles.
+> 
+> I also thought of that but then sometimes David has strange tastes re.
+> code cleanups that add noise. If he is fine with doing the rename in
+> this patch then I'm happy to do it and resend.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- cmds-replace.c | 2 ++
- 1 file changed, 2 insertions(+)
+You must be joking, the naming you chose is quite confusing exactly as
+Johannes points out.
 
-diff --git a/cmds-replace.c b/cmds-replace.c
-index b30e6c781e64..42de4de8c031 100644
---- a/cmds-replace.c
-+++ b/cmds-replace.c
-@@ -296,6 +296,8 @@ static int cmd_replace_start(int argc, char **argv)
- 		}
- 
- 		if (start_args.result !=
-+		    BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_RESULT &&
-+		    start_args.result !=
- 		    BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR) {
- 			error("ioctl(DEV_REPLACE_START) on '%s' returns error: %s",
- 				path,
--- 
-1.8.3.1
+I'm not sure what noise patches or changes you mean. There are commits
+that just rename something for better readability or free the
+type/variable name for another purpose, similar what you do.
 
+Your concern about diff size is ok, though it should result in a
+separate patch doing just the rename and another patch using the new
+async_cow.

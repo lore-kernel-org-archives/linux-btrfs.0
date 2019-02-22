@@ -2,264 +2,124 @@ Return-Path: <SRS0=GKQD=Q5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
+	USER_AGENT_MUTT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4EFD1C43381
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 18:12:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EEC31C4360F
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 19:00:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 20904206B6
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 18:12:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BE9E720657
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 19:00:53 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="KpqTWxgo"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726690AbfBVSMY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Feb 2019 13:12:24 -0500
-Received: from mx2.suse.de ([195.135.220.15]:41016 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726152AbfBVSMX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Feb 2019 13:12:23 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D265EB164
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2019 18:12:20 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 0ED40DAA56; Fri, 22 Feb 2019 19:13:42 +0100 (CET)
-Date:   Fri, 22 Feb 2019 19:13:42 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3 1/6] btrfs: Refactor cow_file_range_async
-Message-ID: <20190222181342.GL9874@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20190221115717.5128-1-nborisov@suse.com>
- <20190221115717.5128-2-nborisov@suse.com>
+        id S1726242AbfBVTAw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Feb 2019 14:00:52 -0500
+Received: from mail-pg1-f193.google.com ([209.85.215.193]:34723 "EHLO
+        mail-pg1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725767AbfBVTAw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 22 Feb 2019 14:00:52 -0500
+Received: by mail-pg1-f193.google.com with SMTP id i130so1542164pgd.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2019 11:00:51 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=osandov-com.20150623.gappssmtp.com; s=20150623;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to:user-agent;
+        bh=ymJzJ7z+dV3+GgEQWC93qEBh40t7leQbFirGbQdE5CI=;
+        b=KpqTWxgoSFD95CnCI1CWK4bg2BMxxjXO/GDwfXS8WZ3JqEfNidvUCQBSUrh+AskBiI
+         j2FnkYon1I6q2zdRLDHFo94pnbkNv7aJyTIhEcFDyA/hjVBQpi/pnxoRJfrPKdE974Y0
+         LfRHt+2e8oDfkMAd2dtcFDM+pbtZqMUDjTUqBnSyS6mlEcpMIg8yeQbso0dDe3lknubn
+         PhL3UIegW0qQz5eV1dr45JquVbvRchyvZm4BrzcCB7xjnAlkgGPXCwFulpTkB06WNXny
+         MEnZZMPZdI4/Zbt/bIURvNZqm0HHZIabq1+LrDzmkE66tE9rm+1Dl12F2g1JpSwRjggL
+         G5Qg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to:user-agent;
+        bh=ymJzJ7z+dV3+GgEQWC93qEBh40t7leQbFirGbQdE5CI=;
+        b=gBdIuF0+yEbG+SRe14V8DwSVFTRZNcFRNfvNCNE3puNds0rgxIWVeFxU315ouoc61P
+         XNwRgyuCdFS1NgYMXtc3ua6m0EpgXagxeHv49mOUaGqZ4THMECKbyS1OeIDy3c9cyuLS
+         27C96tnbWI4+7ez9dgvroOoMSd0H0aE9zo1lbj/oi6PdR83RnHhdDCS8NVroiFdXO8tz
+         +NChG5NiS6jvRUuNwRvOyJVwGhCcmrPW63QEIjKR6/vJVOmox5bYv18Z9+CFRF87prC1
+         zmN7cntC+Q+FIOMaJtai/IvpDDzzKVNSsvd3NKvy0KxJj9R7IPcqvB+Zr724xiFH61Aq
+         sH9w==
+X-Gm-Message-State: AHQUAuaKrlBmmO/Kz+WUyYEdLK3frHp9M9nP48aTu+bypMsspg4iMWGz
+        lA8Zn4XdSXCANOZOfiNFm81LPA==
+X-Google-Smtp-Source: AHgI3IaJJqUBAidGC37KsWht+KBqa6uQf19rMD0pFzEsmSpGcquD/vggikA2rNP+aTlKRw87BELkmw==
+X-Received: by 2002:a63:8441:: with SMTP id k62mr5058254pgd.219.1550862050988;
+        Fri, 22 Feb 2019 11:00:50 -0800 (PST)
+Received: from vader ([2620:10d:c090:200::4:eee8])
+        by smtp.gmail.com with ESMTPSA id n11sm2959392pff.32.2019.02.22.11.00.49
+        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
+        Fri, 22 Feb 2019 11:00:50 -0800 (PST)
+Date:   Fri, 22 Feb 2019 11:00:48 -0800
+From:   Omar Sandoval <osandov@osandov.com>
+To:     Dave Chinner <david@fromorbit.com>
+Cc:     Andreas Dilger <adilger@dilger.ca>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        Al Viro <viro@zeniv.linux.org.uk>, kernel-team@fb.com,
+        Linux API <linux-api@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+        linux-xfs@vger.kernel.org, Theodore Ts'o <tytso@mit.edu>,
+        Jaegeuk Kim <jaegeuk@kernel.org>,
+        Steve French <sfrench@samba.org>
+Subject: Re: [RFC PATCH 0/6] Allow setting file birth time with utimensat()
+Message-ID: <20190222190048.GA29624@vader>
+References: <cover.1550136164.git.osandov@fb.com>
+ <20190214220626.GV14116@dastard>
+ <20190214231429.GE9819@vader>
+ <20190215001657.GY14116@dastard>
+ <20190215065947.GG9819@vader>
+ <72A04438-5991-4A60-8AAB-021A41DE6711@dilger.ca>
+ <20190218221820.GF14116@dastard>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190221115717.5128-2-nborisov@suse.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+In-Reply-To: <20190218221820.GF14116@dastard>
+User-Agent: Mutt/1.11.3 (2019-02-01)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Feb 21, 2019 at 01:57:12PM +0200, Nikolay Borisov wrote:
-> This commit changes the implementation of cow_file_range_async in order
-> to get rid of the BUG_ON in the middle of the loop. Additionally it
-> reworks the inner loop in the hopes of making it more understandable.
+On Tue, Feb 19, 2019 at 09:18:20AM +1100, Dave Chinner wrote:
+> On Sat, Feb 16, 2019 at 06:57:45PM -0700, Andreas Dilger wrote:
+> > While it may be a bit of a stretch to call this "forensic evidence", making
 > 
-> The idea is to make async_cow be a top-level structured, shared
-> amongst all chunks being sent for compression. This allows to perform
-> one memory allocation at the beginning and gracefully fail the IO if
-> there isn't enough memory. Now, each chunk is going to be described
-> by an async_chunk struct. It's the responsibility of the final chunk
-> to actually free the memory.
-
-Right, preallocation is the way to fix it. Please pick a more
-descriptive subject, that one is too generic.
-
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> ---
->  fs/btrfs/inode.c | 108 +++++++++++++++++++++++++++++++----------------
->  1 file changed, 71 insertions(+), 37 deletions(-)
+> We do forensic analysis of corrupt filesystems looking for evidence
+> of what went wrong, not just looking for evidence of what happened
+> on systems that have been broken into.
 > 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 05bbfd02ea49..0f82ea348164 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -366,7 +366,7 @@ struct async_extent {
->  	struct list_head list;
->  };
->  
-> -struct async_cow {
-> +struct async_chunk {
->  	struct inode *inode;
->  	struct btrfs_fs_info *fs_info;
->  	struct page *locked_page;
-> @@ -375,9 +375,15 @@ struct async_cow {
->  	unsigned int write_flags;
->  	struct list_head extents;
->  	struct btrfs_work work;
-> +	atomic_t *pending;
-> +};
-> +
-> +struct async_cow {
-> +	atomic_t num_chunks; /* Number of chunks in flight */
-> +	struct async_chunk chunks[];
->  };
->  
-> -static noinline int add_async_extent(struct async_cow *cow,
-> +static noinline int add_async_extent(struct async_chunk *cow,
->  				     u64 start, u64 ram_size,
->  				     u64 compressed_size,
->  				     struct page **pages,
-> @@ -447,7 +453,7 @@ static inline void inode_should_defrag(struct btrfs_inode *inode,
->  static noinline void compress_file_range(struct inode *inode,
->  					struct page *locked_page,
->  					u64 start, u64 end,
-> -					struct async_cow *async_cow,
-> +					struct async_chunk *async_cow,
->  					int *num_added)
->  {
->  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-> @@ -713,7 +719,7 @@ static void free_async_extent_pages(struct async_extent *async_extent)
->   * queued.  We walk all the async extents created by compress_file_range
->   * and send them down to the disk.
->   */
-> -static noinline void submit_compressed_extents(struct async_cow *async_cow)
-> +static noinline void submit_compressed_extents(struct async_chunk *async_cow)
->  {
->  	struct inode *inode = async_cow->inode;
->  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-> @@ -1132,9 +1138,9 @@ static noinline int cow_file_range(struct inode *inode,
->   */
->  static noinline void async_cow_start(struct btrfs_work *work)
->  {
-> -	struct async_cow *async_cow;
-> +	struct async_chunk *async_cow;
->  	int num_added = 0;
-> -	async_cow = container_of(work, struct async_cow, work);
-> +	async_cow = container_of(work, struct async_chunk, work);
->  
->  	compress_file_range(async_cow->inode, async_cow->locked_page,
->  			    async_cow->start, async_cow->end, async_cow,
-> @@ -1151,10 +1157,10 @@ static noinline void async_cow_start(struct btrfs_work *work)
->  static noinline void async_cow_submit(struct btrfs_work *work)
->  {
->  	struct btrfs_fs_info *fs_info;
-> -	struct async_cow *async_cow;
-> +	struct async_chunk *async_cow;
->  	unsigned long nr_pages;
->  
-> -	async_cow = container_of(work, struct async_cow, work);
-> +	async_cow = container_of(work, struct async_chunk, work);
->  
->  	fs_info = async_cow->fs_info;
->  	nr_pages = (async_cow->end - async_cow->start + PAGE_SIZE) >>
-> @@ -1177,11 +1183,16 @@ static noinline void async_cow_submit(struct btrfs_work *work)
->  
->  static noinline void async_cow_free(struct btrfs_work *work)
->  {
-> -	struct async_cow *async_cow;
-> -	async_cow = container_of(work, struct async_cow, work);
-> +	struct async_chunk *async_cow;
-> +	async_cow = container_of(work, struct async_chunk, work);
->  	if (async_cow->inode)
->  		btrfs_add_delayed_iput(async_cow->inode);
-> -	kfree(async_cow);
-> +	/*
-> +	 * Since the pointer to 'pending' is at the beginning of the array of
-> +	 * async_cow's, freeing it ensures the whole array has been freed.
-> +	 */
-> +	if (atomic_dec_and_test(async_cow->pending))
-> +		kfree(async_cow->pending);
->  }
->  
->  static int cow_file_range_async(struct inode *inode, struct page *locked_page,
-> @@ -1190,45 +1201,68 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
->  				unsigned int write_flags)
->  {
->  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-> -	struct async_cow *async_cow;
-> +	struct async_cow *ctx;
-> +	struct async_chunk *async_cow;
->  	unsigned long nr_pages;
->  	u64 cur_end;
-> +	u64 num_chunks = DIV_ROUND_UP(end - start, SZ_512K);
-> +	int i;
-> +	bool should_compress;
->  
->  	clear_extent_bit(&BTRFS_I(inode)->io_tree, start, end, EXTENT_LOCKED,
->  			 1, 0, NULL);
-> -	while (start < end) {
-> -		async_cow = kmalloc(sizeof(*async_cow), GFP_NOFS);
-> -		BUG_ON(!async_cow); /* -ENOMEM */
-> -		/*
-> -		 * igrab is called higher up in the call chain, take only the
-> -		 * lightweight reference for the callback lifetime
-> -		 */
-> -		ihold(inode);
-> -		async_cow->inode = inode;
-> -		async_cow->fs_info = fs_info;
-> -		async_cow->locked_page = locked_page;
-> -		async_cow->start = start;
-> -		async_cow->write_flags = write_flags;
-> -
-> -		if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS &&
-> -		    !btrfs_test_opt(fs_info, FORCE_COMPRESS))
-> -			cur_end = end;
-> -		else
-> -			cur_end = min(end, start + SZ_512K - 1);
->  
-> -		async_cow->end = cur_end;
-> -		INIT_LIST_HEAD(&async_cow->extents);
-> +	if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS &&
-> +	    !btrfs_test_opt(fs_info, FORCE_COMPRESS)) {
-> +		num_chunks = 1;
-> +		should_compress = false;
-> +	} else {
-> +		should_compress = true;
-> +	}
-> +
-> +	ctx = kmalloc(sizeof(struct async_cow) + num_chunks*sizeof(*async_cow),
-> +		      GFP_NOFS);
+> > it hard to change from except via total root compromise by a skilled hacker
+> > is very useful.
+> 
+> *nod*.
+> 
+> > If this were to go in (which I'm not in favour of), then there would need to
+> > be a CONFIG and/or runtime knob to turn it off (or better to only turn it on),
+> > similar to how FIPS and other security options can only go in one direction.
+> 
+> The problem here is that "inode birth time" is being conflated with
+> "user document creation time". These two things are very different.
+> 
+> i.e. One is filesystem internal information and is not related to
+> when the original copy of the data in the file was created, the
+> other is user specified metadata that is related to the file data
+> contents and needs to travel with the data, not the filesystem.
+> 
+> IMO, trying to make one on-disk field hold two different types of
+> information defeats one or the other purpose, and nobody knows which
+> one the field stores for any given file.
+> 
+> I'd suggest that "authored date" should be a generic system xattr so
+> most filesystems support it, not just those that have a birth time
+> field on disk. Sure, modify it through utimesat() and expose it
+> through statx() (as authored time, not birth time), but store it a
+> system xattr rather than an internal filesystem metadata field that
+> requires was never intended to be user modifiable.
 
-There's a recently introduced macro for calculating the size of struct
-with a fixed header followed by array 'struct_size', please use it.
-
-> +	if (!ctx) {
-> +		unsigned clear_bits = EXTENT_LOCKED | EXTENT_DELALLOC |
-> +			EXTENT_DELALLOC_NEW | EXTENT_DEFRAG |
-> +			EXTENT_DO_ACCOUNTING;
-> +		unsigned long page_ops = PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
-> +			PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK |
-> +			PAGE_SET_ERROR;
-> +		extent_clear_unlock_delalloc(inode, start, end, 0, locked_page,
-> +					     clear_bits, page_ops);
-> +		return -ENOMEM;
-> +	}
-> +
-> +	async_cow = ctx->chunks;
-> +	atomic_set(&ctx->num_chunks, num_chunks);
-> +
-> +	for (i = 0; i < num_chunks; i++) {
->  
-> -		btrfs_init_work(&async_cow->work,
-> +		if (should_compress)
-> +			cur_end = min(end, start + SZ_512K - 1);
-> +		else
-> +			cur_end = end;
-> +
-> +		ihold(inode);
-
-You should preserve the comment, the refactoring does not make it
-obsolete or wrong.
-
-> +		async_cow[i].pending= &ctx->num_chunks;
-> +		async_cow[i].inode = inode;
-> +		async_cow[i].start = start;
-> +		async_cow[i].end = cur_end;
-> +		async_cow[i].fs_info = fs_info;
-> +		async_cow[i].locked_page = locked_page;
-> +		async_cow[i].write_flags = write_flags;
-> +		INIT_LIST_HEAD(&async_cow[i].extents);
-> +
-> +		btrfs_init_work(&async_cow[i].work,
->  				btrfs_delalloc_helper,
->  				async_cow_start, async_cow_submit,
->  				async_cow_free);
->  
-> -		nr_pages = (cur_end - start + PAGE_SIZE) >>
-> -			PAGE_SHIFT;
-> +		nr_pages = DIV_ROUND_UP(cur_end - start, PAGE_SIZE);
->  		atomic_add(nr_pages, &fs_info->async_delalloc_pages);
->  
-> -		btrfs_queue_work(fs_info->delalloc_workers, &async_cow->work);
-> +		btrfs_queue_work(fs_info->delalloc_workers, &async_cow[i].work);
->  
->  		*nr_written += nr_pages;
->  		start = cur_end + 1;
-> -- 
-> 2.17.1
+It seems that this is the general consensus, so I'll look into
+implementing this functionality as an xattr.

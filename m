@@ -2,143 +2,183 @@ Return-Path: <SRS0=GKQD=Q5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B8C4CC43381
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 12:54:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 32603C43381
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 13:02:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8B00F207E0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 12:54:49 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="pQp8ATKj"
+	by mail.kernel.org (Postfix) with ESMTP id 09E0C207E0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Feb 2019 13:02:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726540AbfBVMys (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Feb 2019 07:54:48 -0500
-Received: from mail-wr1-f67.google.com ([209.85.221.67]:34038 "EHLO
-        mail-wr1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727026AbfBVMyr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Feb 2019 07:54:47 -0500
-Received: by mail-wr1-f67.google.com with SMTP id f14so2291608wrg.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2019 04:54:47 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=1hszW+yPmr4JJJXr/d0fmouYiNc5JrovzWghepN1tDA=;
-        b=pQp8ATKjX+29lwmP0I3qUcftM+qVoRty7oN/kHBGuF9wh9Nb8tpg+4ShEPULv/nr8G
-         Ido2+r5rcLbQy28u8QBzskEacSxuDf+XXHG93V0l+fkz6dtiuTt/s+v/fa1SqVVQq7k0
-         FgCNPcCNGwdwGNYA0XxO40qq2rpT5zQ3O8RbDFPoHrTV920K8A3E5QpRZqSyR/Q9rKXr
-         1hZ4bSTE4UeaKZ2hGjax0p0Hf3CeJZfKovzYItBIUOwo9dThO8GiD+TqH3fiOAsnjKvf
-         xpDTtNXxsnR9AavsyTE/vJ2KaUNc6Nfcx69DYDqDB/Lp2JexHoeuYxobMwiC3f2y9Pkv
-         eItw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=1hszW+yPmr4JJJXr/d0fmouYiNc5JrovzWghepN1tDA=;
-        b=hluWrQgzAwMxyqHHdh4dLbErsHloMRZW0hl3O2qppNpzblr7C6nDbXkFuqFCGOa4NV
-         FJZWJWNxAVf3kPFWNhAOavKVCIVyIw/Hhv6PayA9IVIIH1cGIr3QhLMUC3BqCcdz9FwS
-         dmE7Tm2u4fdk0xNntEQqA5KUBX5YgqqahqphPGv/u9ixn1O71qrSmz1PPl32sWF/IP1D
-         4QpAftiVVuFpkVwK3aUFFh33sIYvxomPcf/lr5dFDS3iMfjc8IsTxgStZKsEbjzgfQtG
-         gEPSEeG7lynuBjCeWT3UKviqdTWsQiA3M/ZSX0nX3mKO4LKBLC7p41Wnud+nKmJJHtvH
-         Tk1A==
-X-Gm-Message-State: AHQUAuZQ/k/HHj2c+ANfEqMsZlq9X7HKvBc6amKBtO5zkBWRVyvlBLqu
-        ssb3Db7Z8DB1rUqc+giSgkI=
-X-Google-Smtp-Source: AHgI3IYTZWAMhF7c7DLdIh+F3Oj8A2RvlLK3mGGph+SuWjI2IhIJx0AGoaw74h8jr3JLNeujDIVDUw==
-X-Received: by 2002:adf:ed0f:: with SMTP id a15mr2884100wro.249.1550840086487;
-        Fri, 22 Feb 2019 04:54:46 -0800 (PST)
-Received: from [10.20.1.223] (ivokamhome.ddns.nbis.net. [87.120.136.31])
-        by smtp.gmail.com with ESMTPSA id a9sm722149wmm.10.2019.02.22.04.54.45
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Fri, 22 Feb 2019 04:54:45 -0800 (PST)
-Subject: Re: [PATCH 0/5] Unify the return value of alloc/clone_extent_buffer()
-To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Cc:     dan.carpenter@oracle.com
-References: <20190222101645.4403-1-wqu@suse.com>
-From:   Nikolay Borisov <n.borisov.lkml@gmail.com>
-Message-ID: <b676a401-2eeb-f105-d363-742137a13ded@gmail.com>
-Date:   Fri, 22 Feb 2019 14:54:36 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.4.0
+        id S1726542AbfBVNCj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Feb 2019 08:02:39 -0500
+Received: from mx2.suse.de ([195.135.220.15]:43784 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726199AbfBVNCj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 22 Feb 2019 08:02:39 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 6DDF0B114
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Feb 2019 13:02:33 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH v1.1 5/5] btrfs: extent_io: Unify the return value of btrfs_clone_extent_buffer() with alloc_extent_buffer()
+Date:   Fri, 22 Feb 2019 21:02:29 +0800
+Message-Id: <20190222130229.13231-1-wqu@suse.com>
+X-Mailer: git-send-email 2.20.1
+In-Reply-To: <20190222101645.4403-6-wqu@suse.com>
+References: <20190222101645.4403-6-wqu@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <20190222101645.4403-1-wqu@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+The direct callers are:
+1) qgroup_rescan_leaf()
+2) btrfs_compare_trees()
+   These two call sites are stubs.
 
+3) tree_mod_log_rewind()
+4) get_old_root()
+   These two doesn't follow the name pattern *_extent_buffer(), thus we
+   don't need to unify their return value.
+   However for get_old_root(), all its eb assignment can no longer be
+   NULL, change its IS_ERR_OR_NULL() to IS_ERR().
 
-On 22.02.19 г. 12:16 ч., Qu Wenruo wrote:
-> This patchset can be fetched from github:
-> https://github.com/adam900710/linux/tree/cleanup_alloc_extent_buffer
-> Which is based on v5.0-rc7
-> 
-> There are 5 extent buffer alloc functions in btrfs:
-> __alloc_extent_buffer();
-> alloc_extent_buffer();
-> __alloc_dummy_extent_buffer();
-> alloc_dummy_extent_buffer();
-> alloc_test_extent_buffer();
-> 
-> However their return value is not unified for failure mode:
-> __alloc_extent_buffer()		Never fail
-> alloc_extent_buffer()		PTR_ERR()
-> __alloc_dummy_extent_buffer()	NULL
+5) btrfs_search_slot_get_root()
+   This is a stub. The only caller has already handled the return value.
 
-This function can never return NULL, if __alloc_extent_buffer cannot
-fail then the only error this function returns is ERR_PTR(ENOMEM);
+This patch should cover all the call sites of
+btrfs_clone_extent_buffer().
 
-> alloc_dummy_extent_buffer()	NULL
-Same thing applies to this function
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+changelog
+v1.1:
+- Add a missing IS_ERR() check for left_path.
+---
+ fs/btrfs/backref.c   |  8 ++++----
+ fs/btrfs/ctree.c     | 16 +++++++++-------
+ fs/btrfs/extent_io.c |  4 ++--
+ fs/btrfs/qgroup.c    |  5 +++--
+ 4 files changed, 18 insertions(+), 15 deletions(-)
 
-> alloc_test_extent_buffer()	NULL
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index 78556447e1d5..b6e469a12011 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -2016,8 +2016,8 @@ static int iterate_inode_refs(u64 inum, struct btrfs_root *fs_root,
+ 		parent = found_key.offset;
+ 		slot = path->slots[0];
+ 		eb = btrfs_clone_extent_buffer(path->nodes[0]);
+-		if (!eb) {
+-			ret = -ENOMEM;
++		if (IS_ERR(eb)) {
++			ret = PTR_ERR(eb);
+ 			break;
+ 		}
+ 		btrfs_release_path(path);
+@@ -2075,8 +2075,8 @@ static int iterate_inode_extrefs(u64 inum, struct btrfs_root *fs_root,
+ 
+ 		slot = path->slots[0];
+ 		eb = btrfs_clone_extent_buffer(path->nodes[0]);
+-		if (!eb) {
+-			ret = -ENOMEM;
++		if (IS_ERR(eb)) {
++			ret = PTR_ERR(eb);
+ 			break;
+ 		}
+ 		btrfs_release_path(path);
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 3276b743f40a..ebd640f2ad86 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1384,7 +1384,7 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
+ 		free_extent_buffer(eb_root);
+ 	}
+ 
+-	if (IS_ERR_OR_NULL(eb))
++	if (IS_ERR(eb))
+ 		return NULL;
+ 	btrfs_tree_read_lock(eb);
+ 	if (old_root) {
+@@ -2624,8 +2624,8 @@ static struct extent_buffer *btrfs_search_slot_get_root(struct btrfs_root *root,
+ 			down_read(&fs_info->commit_root_sem);
+ 			b = btrfs_clone_extent_buffer(root->commit_root);
+ 			up_read(&fs_info->commit_root_sem);
+-			if (!b)
+-				return ERR_PTR(-ENOMEM);
++			if (IS_ERR(b))
++				return b;
+ 
+ 		} else {
+ 			b = root->commit_root;
+@@ -5429,9 +5429,10 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
+ 	left_root_level = left_level;
+ 	left_path->nodes[left_level] =
+ 			btrfs_clone_extent_buffer(left_root->commit_root);
+-	if (!left_path->nodes[left_level]) {
++	if (IS_ERR(left_path->nodes[left_level])) {
+ 		up_read(&fs_info->commit_root_sem);
+-		ret = -ENOMEM;
++		ret = PTR_ERR(left_path->nodes[left_level]);
++		left_path->nodes[left_level] = NULL;
+ 		goto out;
+ 	}
+ 
+@@ -5439,9 +5440,10 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
+ 	right_root_level = right_level;
+ 	right_path->nodes[right_level] =
+ 			btrfs_clone_extent_buffer(right_root->commit_root);
+-	if (!right_path->nodes[right_level]) {
++	if (IS_ERR(right_path->nodes[right_level])) {
+ 		up_read(&fs_info->commit_root_sem);
+-		ret = -ENOMEM;
++		ret = PTR_ERR(right_path->nodes[right_level]);
++		right_path->nodes[right_level] = NULL;
+ 		goto out;
+ 	}
+ 	up_read(&fs_info->commit_root_sem);
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index a19bd8bc3b32..dbdb649f1957 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4713,13 +4713,13 @@ struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src)
+ 
+ 	new = __alloc_extent_buffer(src->fs_info, src->start, src->len);
+ 	if (IS_ERR(new))
+-		return NULL;
++		return new;
+ 
+ 	for (i = 0; i < num_pages; i++) {
+ 		p = alloc_page(GFP_NOFS);
+ 		if (!p) {
+ 			btrfs_release_extent_buffer(new);
+-			return NULL;
++			return ERR_PTR(-ENOMEM);
+ 		}
+ 		attach_extent_buffer_page(new, p);
+ 		WARN_ON(PageDirty(p));
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 4e473a998219..ccfa992a10bf 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -3105,8 +3105,9 @@ static int qgroup_rescan_leaf(struct btrfs_trans_handle *trans,
+ 	fs_info->qgroup_rescan_progress.objectid = found.objectid + 1;
+ 
+ 	scratch_leaf = btrfs_clone_extent_buffer(path->nodes[0]);
+-	if (!scratch_leaf) {
+-		ret = -ENOMEM;
++	if (IS_ERR(scratch_leaf)) {
++		ret = PTR_ERR(scratch_leaf);
++		scratch_leaf = NULL;
+ 		mutex_unlock(&fs_info->qgroup_rescan_lock);
+ 		goto out;
+ 	}
+-- 
+2.20.1
 
-Same thing for this function, if we return exists then we must have
-found it by find_extent_buffer hence it cannot be null. Otherwise we
-return eb as allocated from alloc_dummy_extent_buffer. So how can null
-be returned?
-
-To me it really seems none of the function could return a NULL value, no?
-
-> 
-> This causes some wrapper function to have 2 failure modes, like
-> btrfs_find_create_tree_block() can return NULL or PTR_ERR(-ENOMEM) for
-> its failure.
-> 
-> This inconsistent behavior is making static checker and reader crazy.
-> 
-> This patchset will unify the failure more of above 5 functions to
-> PTR_ERR().
-> 
-> Qu Wenruo (5):
->   btrfs: extent_io: Add comment about the return value of
->     alloc_extent_buffer()
->   btrfs: extent_io: Unify the return value of __alloc_extent_buffer()
->     with alloc_extent_buffer()
->   btrfs: extent_io: Unify the return value of
->     alloc_dummy_extent_buffer() with alloc_extent_buffer()
->   btrfs: extent_io: Unify the return value of alloc_test_extent_buffer()
->     with alloc_extent_buffer()
->   btrfs: extent_io: Unify the return value of
->     btrfs_clone_extent_buffer() with alloc_extent_buffer()
-> 
->  fs/btrfs/backref.c                     |  8 ++--
->  fs/btrfs/ctree.c                       | 16 ++++----
->  fs/btrfs/extent_io.c                   | 56 +++++++++++++++++---------
->  fs/btrfs/qgroup.c                      |  5 ++-
->  fs/btrfs/tests/extent-buffer-tests.c   |  6 ++-
->  fs/btrfs/tests/extent-io-tests.c       |  4 +-
->  fs/btrfs/tests/free-space-tree-tests.c |  3 +-
->  fs/btrfs/tests/inode-tests.c           |  6 ++-
->  fs/btrfs/tests/qgroup-tests.c          |  3 +-
->  9 files changed, 68 insertions(+), 39 deletions(-)
-> 

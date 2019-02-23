@@ -5,60 +5,136 @@ X-Spam-Level:
 X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EE02FC43381
-	for <linux-btrfs@archiver.kernel.org>; Sat, 23 Feb 2019 22:10:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BB4FAC43381
+	for <linux-btrfs@archiver.kernel.org>; Sat, 23 Feb 2019 22:25:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B7CA9206B6
-	for <linux-btrfs@archiver.kernel.org>; Sat, 23 Feb 2019 22:10:39 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 83102206BA
+	for <linux-btrfs@archiver.kernel.org>; Sat, 23 Feb 2019 22:25:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726405AbfBWWKi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 23 Feb 2019 17:10:38 -0500
-Received: from mail-wm1-f66.google.com ([209.85.128.66]:38783 "EHLO
-        mail-wm1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726217AbfBWWKi (ORCPT
+        id S1726466AbfBWWZw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 23 Feb 2019 17:25:52 -0500
+Received: from syrinx.knorrie.org ([82.94.188.77]:39328 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726089AbfBWWZw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 23 Feb 2019 17:10:38 -0500
-Received: by mail-wm1-f66.google.com with SMTP id v26so4891491wmh.3
-        for <linux-btrfs@vger.kernel.org>; Sat, 23 Feb 2019 14:10:37 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
-        bh=RY6LX+W3dKeLe/PX+jhD5Ti5Xky3jZeydZVIVxS3zxs=;
-        b=VF5yu3NHdB6Ax4nYWAuF+mhoH/uQHT8cuV+5zHuefqiJNvTEjWAW5JbRrOnMDztxeL
-         /8ZwFPcni1Fkhk36SESmflkCsws1i1EclOyub2HhAHSeRKaJrDfPSgfmDGwy+sva+yUj
-         PXyAxqSiX5HjB1uSXgNfP333Ve5iQ32aslxh+QpTdcefFILQAbKiFkCiGleXAY83gElj
-         7rsJOylwY+KjpupiImJb+n4Syla8tWhjLvN2iMQ///LH/7bZjLDi4oSD2sAyCyXVxgz7
-         zU9Xet5X75xr2EW5UfkJGRY+dTtMdWGO++ban1vm1lOu9KlzTi5RWysuRjLnOIW2fGCG
-         CQHA==
-X-Gm-Message-State: AHQUAubWdVer5PIPyHARMPkNA8wqcsmkhZkzB7bMRkoEtGdMbqMEsEN5
-        1jmKuOHTTDRsdYkbYpAP0uDynsWVyWrC4vf1DZkePVQPr0U=
-X-Google-Smtp-Source: AHgI3IZB1SFXhcL0rirnlzuEJro+ekPUeLxM278mplNDJvoBnLoxlmieFWDHJAPwTOSqWne7/fTbIzpBbQ7K3w/LQ7Y=
-X-Received: by 2002:a1c:3d84:: with SMTP id k126mr6348369wma.60.1550959836452;
- Sat, 23 Feb 2019 14:10:36 -0800 (PST)
+        Sat, 23 Feb 2019 17:25:52 -0500
+X-Greylist: delayed 440 seconds by postgrey-1.27 at vger.kernel.org; Sat, 23 Feb 2019 17:25:50 EST
+Received: from [IPv6:2001:980:4a41:fb::12] (unknown [IPv6:2001:980:4a41:fb::12])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by syrinx.knorrie.org (Postfix) with ESMTPSA id D33C93AFF09E2;
+        Sat, 23 Feb 2019 23:18:28 +0100 (CET)
+Subject: Re: limits on number of snapshots
+To:     Ross Boylan <rossboylan@stanfordalumni.org>,
+        linux-btrfs@vger.kernel.org
+References: <CAK3NTRCvq17-OaaCPujreveURnyL7NzWP_XBm5FMu=czh9YxZQ@mail.gmail.com>
+From:   Hans van Kranenburg <hans@knorrie.org>
+Openpgp: preference=signencrypt
+Autocrypt: addr=hans@knorrie.org; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <970dff73-3501-327e-3c19-a0fe529889f5@knorrie.org>
+Date:   Sat, 23 Feb 2019 23:18:28 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.3.0
 MIME-Version: 1.0
-From:   Ross Boylan <rossboylan@stanfordalumni.org>
-Date:   Sat, 23 Feb 2019 14:10:25 -0800
-Message-ID: <CAK3NTRCvq17-OaaCPujreveURnyL7NzWP_XBm5FMu=czh9YxZQ@mail.gmail.com>
-Subject: limits on number of snapshots
-To:     linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <CAK3NTRCvq17-OaaCPujreveURnyL7NzWP_XBm5FMu=czh9YxZQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en_US
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Various sources (https://btrfs.wiki.kernel.org/index.php/Status,
-https://wiki.debian.org/Btrfs) warn that "too many" snapshots,
-possibly as few as 12, can degrade performance.  OTOH, Marc Merlin's
-talk identified snapshots as one of btrfs's killer features.  And the
-status page https://btrfs.wiki.kernel.org/index.php/Status doesn't
-note any performance issues with subvolumes/snaphshots.
+Hi,
 
-As a practical matter, do I need to limit the number of snapshots?
-Does it matter what kernel version I'm running?  I have a VM running
-4.0.9 and am looking to install Debian Buster which is 4.19 at the
-moment (4.18 on my first install).
+On 2/23/19 11:10 PM, Ross Boylan wrote:
+> Various sources (https://btrfs.wiki.kernel.org/index.php/Status,
+> https://wiki.debian.org/Btrfs) warn that "too many" snapshots,
+> possibly as few as 12, can degrade performance.  OTOH, Marc Merlin's
+> talk identified snapshots as one of btrfs's killer features.  And the
+> status page https://btrfs.wiki.kernel.org/index.php/Status doesn't
+> note any performance issues with subvolumes/snaphshots.
+> 
+> As a practical matter, do I need to limit the number of snapshots?
+> Does it matter what kernel version I'm running?  I have a VM running
+> 4.0.9 and am looking to install Debian Buster which is 4.19 at the
+> moment (4.18 on my first install).
 
-Thanks.  I'd appreciate if you'd cc me on replies.
+"It depends"... Here's an old similar mailing list thread about that:
 
-Ross Boylan
+https://lore.kernel.org/linux-btrfs/314a1441-9390-2e9c-50c0-07e3a6b103a9@mendix.com/
+
+Hans

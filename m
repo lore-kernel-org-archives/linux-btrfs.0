@@ -2,196 +2,174 @@ Return-Path: <SRS0=jbNX=Q6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CD42DC43381
-	for <linux-btrfs@archiver.kernel.org>; Sat, 23 Feb 2019 18:14:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 769ADC4360F
+	for <linux-btrfs@archiver.kernel.org>; Sat, 23 Feb 2019 18:32:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6B184206A3
-	for <linux-btrfs@archiver.kernel.org>; Sat, 23 Feb 2019 18:14:46 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 46CAF206B6
+	for <linux-btrfs@archiver.kernel.org>; Sat, 23 Feb 2019 18:32:24 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=seblu.net header.i=@seblu.net header.b="E3MkbAwU"
+	dkim=pass (2048-bit key) header.d=dilger-ca.20150623.gappssmtp.com header.i=@dilger-ca.20150623.gappssmtp.com header.b="1UqbDm98"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726440AbfBWSOo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 23 Feb 2019 13:14:44 -0500
-Received: from mail.seblu.net ([212.129.28.29]:50578 "EHLO mail.seblu.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725886AbfBWSOo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 23 Feb 2019 13:14:44 -0500
-Received: from localhost (localhost [IPv6:::1])
-        by mail.seblu.net (Postfix) with ESMTP id 5B3BE52FBE13;
-        Sat, 23 Feb 2019 19:14:41 +0100 (CET)
-Received: from mail.seblu.net ([IPv6:::1])
-        by localhost (mail.seblu.net [IPv6:::1]) (amavisd-new, port 10032)
-        with ESMTP id 5R2nLIHPMEXp; Sat, 23 Feb 2019 19:14:40 +0100 (CET)
-Received: from localhost (localhost [IPv6:::1])
-        by mail.seblu.net (Postfix) with ESMTP id D72A952FBE2A;
-        Sat, 23 Feb 2019 19:14:40 +0100 (CET)
-DKIM-Filter: OpenDKIM Filter v2.10.3 mail.seblu.net D72A952FBE2A
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=seblu.net; s=pipa;
-        t=1550945680; bh=TkXb9tvwLqSgvqFcbMDwCvfIQZlG0EHUswxzb5L5KAA=;
-        h=Message-ID:From:To:Date:Mime-Version;
-        b=E3MkbAwUZIBySHk+19wV9potTYxSyIydstgdiVJiL+OpCozwzYTUK6rC7byJfY1IX
-         6wHgRowMp+WuWXeLvRO0im245Opk3FJaCH9VuHpK5JTRq4Kdyq3Ygy3anAluP5wGVc
-         DhhrGgu3p/hA6EbztEWCBtq5EM6nVho8RgQIu3czGjB3uWNEg4+8CG2Ueomiy91uN/
-         DQudGOyh/fJVFVGl42OG+VF7FmwpWpWtuhA/Hnt4AAq+uKP2EdXIA215IT7X/gG4S1
-         jwhZVhcP0oKlu76LUGmONYaZqeOKLJ5yrrM7BcYMzwKMMov3btJNWMO6PVjiZ3G4Km
-         7CaD5LdZLmh2A==
-X-Virus-Scanned: amavisd-new at seblu.net
-Received: from mail.seblu.net ([IPv6:::1])
-        by localhost (mail.seblu.net [IPv6:::1]) (amavisd-new, port 10026)
-        with ESMTP id 8sio-Ay0wT9j; Sat, 23 Feb 2019 19:14:40 +0100 (CET)
-Received: from dolores (amontsouris-684-1-65-188.w90-87.abo.wanadoo.fr [90.87.48.188])
-        by mail.seblu.net (Postfix) with ESMTPSA id A719552FBE13;
-        Sat, 23 Feb 2019 19:14:40 +0100 (CET)
-Message-ID: <4fd5e655c49278cf5967b2774ab34e4a0571f722.camel@seblu.net>
-Subject: Re: Corrupted filesystem, looking for guidance
-From:   =?ISO-8859-1?Q?S=E9bastien?= Luttringer <seblu@seblu.net>
-To:     Chris Murphy <lists@colorremedies.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Date:   Sat, 23 Feb 2019 19:14:39 +0100
-In-Reply-To: <CAJCQCtTq8YLmti_tf0oNaSGn94qvGxs-mQeDdvxddE61L0Rjdg@mail.gmail.com>
-References: <7ef0e91501a04cd4c5e0d942db638a0b50ef3ec3.camel@seblu.net>
-         <CAJCQCtQ+b9y7fBXPPhB-gQrHAH-pCzau6nP1OabsC1GNqNnE1w@mail.gmail.com>
-         <91e2c9ef095eae21f9e88f7b5cf49102571dcba8.camel@seblu.net>
-         <CAJCQCtTq8YLmti_tf0oNaSGn94qvGxs-mQeDdvxddE61L0Rjdg@mail.gmail.com>
-Content-Type: multipart/signed; micalg="pgp-sha384";
-        protocol="application/pgp-signature"; boundary="=-7CZrHVBA6YEhrASSgTlP"
-X-Mailer: Evolution 3.28.5 
-Mime-Version: 1.0
+        id S1726326AbfBWScC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 23 Feb 2019 13:32:02 -0500
+Received: from mail-pl1-f196.google.com ([209.85.214.196]:39294 "EHLO
+        mail-pl1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725893AbfBWScB (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 23 Feb 2019 13:32:01 -0500
+Received: by mail-pl1-f196.google.com with SMTP id 101so2576853pld.6
+        for <linux-btrfs@vger.kernel.org>; Sat, 23 Feb 2019 10:32:01 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=dilger-ca.20150623.gappssmtp.com; s=20150623;
+        h=from:message-id:mime-version:subject:date:in-reply-to:cc:to
+         :references;
+        bh=33kht1tEiIljCUmsfuWNLk5Ou5i5ioTDW+nyE0225Rk=;
+        b=1UqbDm98olj35j5QUteKAm+t6P6o7jDMlyRGpYQmaWBq/gxM/taTASetTs33ULfRX8
+         tLJG0nhJJEDAPjFisOsqSqfCZasn2+oodKc6PFLNoO1RWCRrMsBKG3fPC4faYmFGQ6vN
+         r76acysjr6fifCbh5zDHxC0U9wPP8DO/l9+VI5kDw+L08+kZwef/6KdRjovUvdMcNOrq
+         Q42tjfrCFR3YM+GdLtZEuRbjyNd5ODQBXmetgDrqGu+jclsQ5/sGfL53lxWz74B1w9h0
+         ZY0EJBHkXnYO0/1fFJiEVJc8z6K3C8/v+jP4GCvrDHQp12murNa4vZFWwXaZdH/9Nm8W
+         lv4Q==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:message-id:mime-version:subject:date
+         :in-reply-to:cc:to:references;
+        bh=33kht1tEiIljCUmsfuWNLk5Ou5i5ioTDW+nyE0225Rk=;
+        b=rW3b6CtKj7gZ9KwLVIYwGHJIIKREFU7X2JujsSnDQYgJRq+8Lies79MphJt6XbvJxs
+         eXTfuI7HbciTyIrAAWUdctaXDWn0Gpfjy0VjjVXBSmWASDROtkDUSiUyunVljBpp2Kte
+         0canb9tyCJnQq2M+xPidh3ZWBeyjgjkclf8ZxmMAgU2EWUqZJjQvw3jyUEEGCdU4CZ2k
+         8RG6BfHBswWlV2RPKJ9CCo9VpkG31h0/fHUUQLi7wTf1u0CElzZLqGP6FFnADPi8NaSH
+         C1CBHQH6br5D5aT4CwyWBc2BJkd1BXnSr+zTmnpiRlOfjMoK6g0ULHABGPrBMukjd8Zg
+         MdQw==
+X-Gm-Message-State: AHQUAuaHnt91mqyoKofQt7YXBmo0IAYjFlz8HtBr3njaoCNW3j/6J+qT
+        2QcFJyE9Cv00LUQyebWLD3TDfA==
+X-Google-Smtp-Source: AHgI3IbiDvhz3GHdfeaIPpY8z9whimj0XRN3YEkTF0J895nuhWgMtfPgTKyqvsTChF6f2nwGby0JiA==
+X-Received: by 2002:a17:902:2a47:: with SMTP id i65mr10663623plb.237.1550946720693;
+        Sat, 23 Feb 2019 10:32:00 -0800 (PST)
+Received: from cabot.frontierlocal.net ([47.158.158.91])
+        by smtp.gmail.com with ESMTPSA id e9sm9359151pfh.42.2019.02.23.10.31.58
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Sat, 23 Feb 2019 10:31:59 -0800 (PST)
+From:   Andreas Dilger <adilger@dilger.ca>
+Message-Id: <80675DA8-062B-4A31-ACC9-449AC55D1847@dilger.ca>
+Content-Type: multipart/signed;
+ boundary="Apple-Mail=_87B4C2F2-8451-4D21-B0CF-FBF2A4C6CE5D";
+ protocol="application/pgp-signature"; micalg=pgp-sha256
+Mime-Version: 1.0 (Mac OS X Mail 10.3 \(3273\))
+Subject: Re: [RFC PATCH 0/6] Allow setting file birth time with utimensat()
+Date:   Sat, 23 Feb 2019 10:32:37 -0800
+In-Reply-To: <20190222190048.GA29624@vader>
+Cc:     Dave Chinner <david@fromorbit.com>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        Al Viro <viro@zeniv.linux.org.uk>, kernel-team@fb.com,
+        Linux API <linux-api@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Ext4 Developers List <linux-ext4@vger.kernel.org>,
+        linux-f2fs-devel@lists.sourceforge.net,
+        linux-xfs <linux-xfs@vger.kernel.org>,
+        Theodore Ts'o <tytso@mit.edu>,
+        Jaegeuk Kim <jaegeuk@kernel.org>,
+        Steve French <sfrench@samba.org>
+To:     Omar Sandoval <osandov@osandov.com>
+References: <cover.1550136164.git.osandov@fb.com>
+ <20190214220626.GV14116@dastard> <20190214231429.GE9819@vader>
+ <20190215001657.GY14116@dastard> <20190215065947.GG9819@vader>
+ <72A04438-5991-4A60-8AAB-021A41DE6711@dilger.ca>
+ <20190218221820.GF14116@dastard> <20190222190048.GA29624@vader>
+X-Mailer: Apple Mail (2.3273)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
---=-7CZrHVBA6YEhrASSgTlP
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-
-On Mon, 2019-02-18 at 14:06 -0700, Chris Murphy wrote:
-> No at worst what happens if SCSI command timer is reached before the
-> drive's SCT ERC timeout, is the kernel assumes the device is not
-> responding and does a link reset. That link reset obiterates the
-> entire command queue on SATA drives. And that means it's no longer
-> possible to determine what sector is having a problem; and therefore
-> not possible to fix it by overwriting that sector with good data. This
-> is a problem for Btrfs raid, as well as md and LVM.
-
-According to the Timeout Mismatch[1] kernel raid wiki:
-
-  Unfortunately, with desktop drives, they can take over two minutes to=20
-  give up, while the linux kernel will give up after 30 seconds. At which=
-=20
-  point, the RAID code recomputes the block and tries to write it back to=
-=20
-  the disk. The disk is still trying to read the data and fails to=20
-  respond, so the raid code assumes the drive is dead and kicks it from=20
-  the array. This is how a single error with these drives can easily kill=
-=20
-  an array.
-
-I get your point that at worst more than one drive can be kicked out, break=
-ing
-the whole raid.
-
-What I don't get is how this could end up to silent sector corruption or le=
-t
-accumulate bad sectors. A read timeout, a link reset will end up with an er=
-ror
-kick at minimum one drive from the array, forcing a full rebuild. No?
-
-I discovered that my SAS drives have no such timeout and they don't need an=
- ERC
-value to be defined. So, I updated my timeout to 180 when my drives are SAT=
-A
-and doesn't support ERC. Thanks a lot for making me discovering this.
-
-> *shrug* I'm not super familiar with all the mdadm features. It's
-> vaguely possible your md array is using the bad block mapping feature,
-> and perhaps that's related to this behavior. Something in my memory is
-> telling me that this isn't really the best feature to have enabled in
-> every use case; it's really strictly for continuing to use drives that
-> have all reserve sectors used up, which means bad sectors result in
-> write failures. The bad block mapping allows md to do its own
-> remapping so there won't be write failures in such a case.
-I didn't check if this log was empty. As this option is enabled by default,
-there is one per disk in my array.
-
-> You might check the archives about various memory testing strategies.
-> A simple hour long test often won't find the most pernicious memory
-> errors. At least do it over a weekend.
->=20
-> Quick search austin hemmelgarn memory test compile and I found this threa=
-d:
->=20
-I found it. I ran for 72 hours a variant with an Arch live system running a
-loop compiling a 4.20.10 kernel, and 4 memtest86+ running inside a qemu.
-No error so looks memory is ok.
-
-> If you do want to move to strictly Btrfs, I suggest raid5 for data but
-> use raid1 for metadata instead of raid5. Metadata raid 5 writes can't
-> really be assured to be atomic. Using raid1 metadata is less fragile.
-Make sense. Is raid10 suitable (atomic) option for metadata? Looks like
-performance are better than raid1?
-
-> No matter what, keep backups up to date, always be prepared to have to
-> use them. The main idea of any raid is to just give you some extra
-> uptime in the face of a failure. And the uptime is for your
-> applications.
-This server is my backup server. I don't plan to backup the backup dataset =
-on
-it, so if I loose it, I loose my backup history.
-
-> --repair should be safe but even in 4.20.1 tools you'll see the man
-> page says it's dangerous and you should ask on list before using it.
-Few month ago I was strongly advised to ask here before calling repair.
-Are you saying that it's no more useful?
-
-> Well at this point if you ran a those commands the file system is
-> different so you should refresh the thread by posting current normal
-> mount (no options) kernel messages; and also 'btrfs check' output
-> without repair; and also output from btrfs-debug-tree. If the problem
-> is simple enough and a dev has time it might be they get you a file
-> system specific patch to apply and it can be fixed. But it's really
-> important that you stop making changes to the file system in the
-> meantime. Just gather information. Be deliberate.
-It's a pity that there is yet no solution without involving a human. I'll n=
-ot
-request developer time which could be used to improve the filesystem. :)
-
-I'm going to start over. Thanks!
-
-Regards,
-
-[1]https://raid.wiki.kernel.org/index.php/Timeout_Mismatch
-
---=20
-S=C3=A9bastien "Seblu" Luttringer
-
---=-7CZrHVBA6YEhrASSgTlP
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
+--Apple-Mail=_87B4C2F2-8451-4D21-B0CF-FBF2A4C6CE5D
 Content-Transfer-Encoding: 7bit
+Content-Type: text/plain;
+	charset=us-ascii
+
+
+> On Feb 22, 2019, at 11:00 AM, Omar Sandoval <osandov@osandov.com> wrote:
+> 
+> On Tue, Feb 19, 2019 at 09:18:20AM +1100, Dave Chinner wrote:
+>> On Sat, Feb 16, 2019 at 06:57:45PM -0700, Andreas Dilger wrote:
+>>> While it may be a bit of a stretch to call this "forensic evidence",
+>> 
+>> We do forensic analysis of corrupt filesystems looking for evidence
+>> of what went wrong, not just looking for evidence of what happened
+>> on systems that have been broken into.
+>> 
+>>> making it hard to change from except via total root compromise by a
+>>> skilled hacker is very useful.
+>> 
+>> *nod*.
+>> 
+>>> If this were to go in (which I'm not in favour of), then there would
+>>> need to be a CONFIG and/or runtime knob to turn it off (or better to
+>>> only turn it on), similar to how FIPS and other security options can
+>>> only go in one direction.
+>> 
+>> The problem here is that "inode birth time" is being conflated with
+>> "user document creation time". These two things are very different.
+>> 
+>> i.e. One is filesystem internal information and is not related to
+>> when the original copy of the data in the file was created, the
+>> other is user specified metadata that is related to the file data
+>> contents and needs to travel with the data, not the filesystem.
+>> 
+>> IMO, trying to make one on-disk field hold two different types of
+>> information defeats one or the other purpose, and nobody knows which
+>> one the field stores for any given file.
+>> 
+>> I'd suggest that "authored date" should be a generic system xattr so
+>> most filesystems support it, not just those that have a birth time
+>> field on disk. Sure, modify it through utimesat() and expose it
+>> through statx() (as authored time, not birth time), but store it a
+>> system xattr rather than an internal filesystem metadata field that
+>> requires was never intended to be user modifiable.
+> 
+> It seems that this is the general consensus, so I'll look into
+> implementing this functionality as an xattr.
+
+I would recommend to look at how Samba is storing these attributes
+today, and do the same thing, maybe add support into GNU coreutils
+to handle this transparently.
+
+Cheers, Andreas
+
+
+
+
+
+
+--Apple-Mail=_87B4C2F2-8451-4D21-B0CF-FBF2A4C6CE5D
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+	filename=signature.asc
+Content-Type: application/pgp-signature;
+	name=signature.asc
+Content-Description: Message signed with OpenPGP
 
 -----BEGIN PGP SIGNATURE-----
+Comment: GPGTools - http://gpgtools.org
 
-iQIrBAABCQAdFiEEVyJOyaX8pvvJK7iqShr8NF6+GPgFAlxxjZAACgkQShr8NF6+
-GPhWvQ+8CdwbBC4H8bBhyX9ZreCHaWMuOEqJ46jNg7FLNYVaN5T89wmOS3qHtLR4
-q0MhLLf1Q87IMZO0hujSUrckKXfrH34NcFHcV+cgUpkpz4oUfoybNGbNAH1DrP7G
-Kbl3s72kcuBawJapOj3oVT2qSgp+SbqDNVPjK2XXA0CHqgXJxPmD2BaxFAQbUSo2
-EWiJ01dYLTUHeH5y8rleMLCwL8KpD/2dSm5D/fuCQq0qmx1QvksFD+E7AneMa4T7
-LSbZp2MqVZMyrbQ7/pTFS2MuEvEP9yoXqvqAtCRd1TsaUM3ZxxdgwSTj2HFgX9Cc
-BFfB4ssYNxPgeDWSYfMJ77AVVwCkM7zDIG9uHDbVGW9gr3005NRaimReoiywRS4Y
-ZARiQnuuOF549zo1xHwdSxh+2NDcms8eMuckCbHZFe2ArZ5Iou2Toaoo/CMBR0rp
-xe/TVDZYORqHWHyXn0m0VaOkviW4PxTqjYYFGVBs27n8DMDRZw1/UCS5vIg+XDaX
-v27tvCoIzXuJjomuTLAjYdzRsUuzrHQ4dMdpboPHzUjqk8JkoHNwy0DoMrwBDWVy
-mGqxeewvEl6MNhPJyghe0VoniAguHc9GRzexX2kT2lKj3J1p+8eilzMRAOEEfsji
-1Px8NXZB3YAJOmi0Dtrambp/ijPjX/WDVf2ocO+4
-=NV18
+iQIzBAEBCAAdFiEEDb73u6ZejP5ZMprvcqXauRfMH+AFAlxxkcUACgkQcqXauRfM
+H+C9Xw//X1n0jOmRTE6hBjU23kQZyxxsgJVPhG+wekrSO2IixYt9aKoeRWnL/Umq
+4o9LvCkUB0bs40X6kr+r8K/QfjJt9tKlUSxZ80F159ecEPfJAUO9ZOvjPOt1jeA3
+hlPoOwPziYNht90m8Sc9WpYN0qmtN1021rcU8hwBbaX31DBs6JEUj4MxO2Oo8XA/
+C+eiORtc6EBqsVUF38V8ln3b384C51//1WqG2/HMlWxbzNILK8jkV71slD7xb7Vj
+lkgHXcJKK8uDs+908XqNnjtn+qs2HpyJxQ4N46EIEE5PNStbDfSluBHTG7ME4TqH
+GB9ezg2wEh1cSjGsg3Vx4jFsKow+esxWAruZYlW36k1MmBucd1ALSSuJ6IfC2WrZ
+8iGnpUaLmLvlnlSKeIgv6nkZppYCbY9DHfZFmn5GoOtCDCZvi0QgFo17Nf/SifeD
+nP6lp8Mt9Jlymrpc8qTbxfM0e4cO2Zp9gPkzFKIwXrp4sMBBGcnC8+cHRKgIX56h
+M/cM49ApzP08XRSf9kClLnkEMOnMxEvf3kXySqd3yyqJnG5X9xotdiGNldQMTcnc
+Rq83fqRrMJShOIHwvqFnDmsqGOvPdWN56mBMEjKNbQ2Yj2OPybJMVaRcIURs0iLs
+A64oEE8lLjK+PdMkugInBhfu0gSxYVScA1r/CSBIgTKmp21LfTo=
+=UOd0
 -----END PGP SIGNATURE-----
 
---=-7CZrHVBA6YEhrASSgTlP--
-
+--Apple-Mail=_87B4C2F2-8451-4D21-B0CF-FBF2A4C6CE5D--

@@ -6,168 +6,62 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 040D0C43381
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7CA7DC10F00
 	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 13:24:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D11D720663
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 13:24:32 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 54C0920663
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 13:24:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727243AbfBYNYc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1727246AbfBYNYc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Mon, 25 Feb 2019 08:24:32 -0500
-Received: from mx2.suse.de ([195.135.220.15]:52230 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:52246 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726921AbfBYNYa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Feb 2019 08:24:30 -0500
+        id S1727224AbfBYNYb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Feb 2019 08:24:31 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B597CAF7B
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Feb 2019 13:24:28 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id E9736B014
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Feb 2019 13:24:29 +0000 (UTC)
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 To:     David Sterba <dsterba@suse.com>
 Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
         Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH v4 1/2] btrfs: factor our read/write stage off csum_tree_block() into its callers
-Date:   Mon, 25 Feb 2019 14:24:15 +0100
-Message-Id: <20190225132416.15840-1-jthumshirn@suse.de>
+Subject: [PATCH 2/2] btrfs: warn if extent buffer mapping crosses a page boundary in csum_tree_block
+Date:   Mon, 25 Feb 2019 14:24:16 +0100
+Message-Id: <20190225132416.15840-2-jthumshirn@suse.de>
 X-Mailer: git-send-email 2.16.4
+In-Reply-To: <20190225132416.15840-1-jthumshirn@suse.de>
+References: <20190225132416.15840-1-jthumshirn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Currently csum_tree_block() does two things, first it as it's name
-suggests it calculates the checksum for a tree-block. But it also writes
-this checksum to disk or reads an extent_buffer from disk and compares the
-checksum with the calculated checksum, depending on the verify argument.
+Since commit d2e174d5d3ee ("btrfs: document extent mapping assumptions in
+checksum") we have a comment in place why map_private_extent_buffer() 
+can't return 1 in the csum_tree_block() case.
 
-Furthermore one of the two callers passes in '1' for the verify argument,
-the other one passes in '0'.
+Make this a bit more explicit and WARN_ON() in case this this assumption
+breaks.
 
-For clarity and less layering violations, factor out the second stage in
-csum_tree_block()'s callers.
-
-Suggested-by: Nikolay Borisov <nborisov@suse.com>
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
-
 ---
-
-Changes to v3:
-- Move WARN_ON() from csum_dirty_buffer() into csum_tree_buffer()
-
-Changes to v2:
-- Directly return -EINVAL instead of EUCLEAN
-
-Changes to v1:
-- return error from csum_tree_buffer() in csum_dirty_buffer() instead of
-  EUCLEAN (Nikolay)
----
- fs/btrfs/disk-io.c | 51 +++++++++++++++++++++++++++------------------------
- 1 file changed, 27 insertions(+), 24 deletions(-)
+ fs/btrfs/disk-io.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 5216e7b3f9ad..8090e8f4ccc2 100644
+index 8090e8f4ccc2..21407252eb44 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -263,12 +263,9 @@ void btrfs_csum_final(u32 crc, u8 *result)
-  * compute the csum for a btree block, and either verify it or write it
-  * into the csum field of the block.
-  */
--static int csum_tree_block(struct btrfs_fs_info *fs_info,
--			   struct extent_buffer *buf,
--			   int verify)
-+static int csum_tree_block(struct extent_buffer *buf,
-+			   u8 *result)
- {
--	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
--	char result[BTRFS_CSUM_SIZE];
- 	unsigned long len;
- 	unsigned long cur_len;
- 	unsigned long offset = BTRFS_CSUM_SIZE;
-@@ -300,23 +297,6 @@ static int csum_tree_block(struct btrfs_fs_info *fs_info,
- 
- 	btrfs_csum_final(crc, result);
- 
--	if (verify) {
--		if (memcmp_extent_buffer(buf, result, 0, csum_size)) {
--			u32 val;
--			u32 found = 0;
--			memcpy(&found, result, csum_size);
--
--			read_extent_buffer(buf, &val, 0, csum_size);
--			btrfs_warn_rl(fs_info,
--				"%s checksum verify failed on %llu wanted %X found %X level %d",
--				fs_info->sb->s_id, buf->start,
--				val, found, btrfs_header_level(buf));
--			return -EUCLEAN;
--		}
--	} else {
--		write_extent_buffer(buf, result, 0, csum_size);
--	}
--
- 	return 0;
- }
- 
-@@ -533,6 +513,8 @@ static int csum_dirty_buffer(struct btrfs_fs_info *fs_info, struct page *page)
- {
- 	u64 start = page_offset(page);
- 	u64 found_start;
-+	u8 result[BTRFS_CSUM_SIZE];
-+	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
- 	struct extent_buffer *eb;
- 
- 	eb = (struct extent_buffer *)page->private;
-@@ -552,7 +534,11 @@ static int csum_dirty_buffer(struct btrfs_fs_info *fs_info, struct page *page)
- 	ASSERT(memcmp_extent_buffer(eb, fs_info->fs_devices->metadata_uuid,
- 			btrfs_header_fsid(), BTRFS_FSID_SIZE) == 0);
- 
--	return csum_tree_block(fs_info, eb, 0);
-+	if (csum_tree_block(eb, result))
-+		return -EINVAL;
-+
-+	write_extent_buffer(eb, result, 0, csum_size);
-+	return 0;
- }
- 
- static int check_tree_block_fsid(struct btrfs_fs_info *fs_info,
-@@ -595,7 +581,9 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
- 	struct extent_buffer *eb;
- 	struct btrfs_root *root = BTRFS_I(page->mapping->host)->root;
- 	struct btrfs_fs_info *fs_info = root->fs_info;
-+	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
- 	int ret = 0;
-+	char result[BTRFS_CSUM_SIZE];
- 	int reads_done;
- 
- 	if (!page->private)
-@@ -642,10 +630,25 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
- 	btrfs_set_buffer_lockdep_class(btrfs_header_owner(eb),
- 				       eb, found_level);
- 
--	ret = csum_tree_block(fs_info, eb, 1);
-+	ret = csum_tree_block(eb, result);
- 	if (ret)
- 		goto err;
- 
-+	if (memcmp_extent_buffer(eb, result, 0, csum_size)) {
-+		u32 val;
-+		u32 found = 0;
-+
-+		memcpy(&found, result, csum_size);
-+
-+		read_extent_buffer(eb, &val, 0, csum_size);
-+		btrfs_warn_rl(fs_info,
-+			      "%s checksum verify failed on %llu wanted %x found %x level %d",
-+			      fs_info->sb->s_id, eb->start,
-+			      val, found, btrfs_header_level(eb));
-+		ret = -EUCLEAN;
-+		goto err;
-+	}
-+
- 	/*
- 	 * If this is a leaf block and it is corrupt, set the corrupt bit so
- 	 * that we don't try and read the other copies of this block, just
+@@ -285,7 +285,7 @@ static int csum_tree_block(struct extent_buffer *buf,
+ 		 */
+ 		err = map_private_extent_buffer(buf, offset, 32,
+ 					&kaddr, &map_start, &map_len);
+-		if (err)
++		if (WARN_ON(err))
+ 			return err;
+ 		cur_len = min(len, map_len - (offset - map_start));
+ 		crc = btrfs_csum_data(kaddr + offset - map_start,
 -- 
 2.16.4
 

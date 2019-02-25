@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4AE44C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 18:56:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C299BC43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 18:56:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 264832087C
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 18:56:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 96A8E2087C
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 18:56:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726334AbfBYS4c (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Feb 2019 13:56:32 -0500
-Received: from mx2.suse.de ([195.135.220.15]:37026 "EHLO mx1.suse.de"
+        id S1726400AbfBYS4h (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Feb 2019 13:56:37 -0500
+Received: from mx2.suse.de ([195.135.220.15]:37040 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725842AbfBYS4c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Feb 2019 13:56:32 -0500
+        id S1725842AbfBYS4h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Feb 2019 13:56:37 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 125F6ACBA
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Feb 2019 18:56:31 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 78FE4ACCD
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Feb 2019 18:56:36 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 41311DA83C; Mon, 25 Feb 2019 19:57:48 +0100 (CET)
+        id CF312DA83C; Mon, 25 Feb 2019 19:57:57 +0100 (CET)
 From:   David Sterba <dsterba@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: scrub: return EAGAIN when fs is closing
-Date:   Mon, 25 Feb 2019 19:57:41 +0100
-Message-Id: <20190225185742.14989-1-dsterba@suse.com>
+Subject: [PATCH] btrfs: move ulist allocation out of transaction in quota enable
+Date:   Mon, 25 Feb 2019 19:55:44 +0100
+Message-Id: <20190225185544.14516-1-dsterba@suse.com>
 X-Mailer: git-send-email 2.20.1
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
@@ -38,28 +38,58 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The error code used here is wrong as it's not invalid to try to start
-scrub when umount has begun.  Returning EAGAIN is more user friendly as
-it's recoverable.
+The allocation happens with GFP_KERNEL after a transaction has been
+started, this can potentially cause deadlock if reclaim tries to get the
+memory by flushing filesystem data.
+
+The qgroup_ulist is not used during transaction start as the quotas are
+not yet enabled but to provide the same semantics, use a temporary
+variable and assign fs_info::qgroup_ulist as before.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/scrub.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/qgroup.c | 14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index a99588536c79..ed471ffbf115 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -3791,7 +3791,7 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
- 	struct btrfs_workqueue *scrub_parity = NULL;
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index c1cd5558a646..9e49d5e132b8 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -887,6 +887,7 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info)
+ 	struct btrfs_key found_key;
+ 	struct btrfs_qgroup *qgroup = NULL;
+ 	struct btrfs_trans_handle *trans = NULL;
++	struct ulist *tmp_ulist;
+ 	int ret = 0;
+ 	int slot;
  
- 	if (btrfs_fs_closing(fs_info))
--		return -EINVAL;
-+		return -EAGAIN;
+@@ -894,6 +895,12 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info)
+ 	if (fs_info->quota_root)
+ 		goto out;
  
- 	if (fs_info->nodesize > BTRFS_STRIPE_LEN) {
- 		/*
++	tmp_ulist = ulist_alloc(GFP_KERNEL);
++	if (!tmp_ulist) {
++		ret = -ENOMEM;
++		goto out;
++	}
++
+ 	/*
+ 	 * 1 for quota root item
+ 	 * 1 for BTRFS_QGROUP_STATUS item
+@@ -909,12 +916,7 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info)
+ 		goto out;
+ 	}
+ 
+-	fs_info->qgroup_ulist = ulist_alloc(GFP_KERNEL);
+-	if (!fs_info->qgroup_ulist) {
+-		ret = -ENOMEM;
+-		btrfs_abort_transaction(trans, ret);
+-		goto out;
+-	}
++	fs_info->qgroup_ulist = tmp_ulist;
+ 
+ 	/*
+ 	 * initially create the quota tree
 -- 
 2.20.1
 

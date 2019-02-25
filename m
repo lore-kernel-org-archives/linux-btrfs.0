@@ -2,154 +2,151 @@ Return-Path: <SRS0=5Bfi=RA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6D4EFC43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 13:10:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 17A19C43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 13:16:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 445E720842
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 13:10:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E4AAA20652
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 13:16:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726997AbfBYNKt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Feb 2019 08:10:49 -0500
-Received: from mout.gmx.net ([212.227.15.19]:57629 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726921AbfBYNKt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Feb 2019 08:10:49 -0500
-Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx003
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0LikE1-1haL0P246P-00cwVz; Mon, 25
- Feb 2019 14:10:41 +0100
+        id S1727119AbfBYNQj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Feb 2019 08:16:39 -0500
+Received: from syrinx.knorrie.org ([82.94.188.77]:35280 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727011AbfBYNQi (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Feb 2019 08:16:38 -0500
+Received: from [10.200.4.80] (unknown [85.146.242.35])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by syrinx.knorrie.org (Postfix) with ESMTPSA id BE05F3B3AE6D3;
+        Mon, 25 Feb 2019 14:16:36 +0100 (CET)
 Subject: Re: [PATCH 0/2] Use new incompat feature BG_TREE to hugely reduce
  mount time
-To:     Hans van Kranenburg <hans@knorrie.org>, Qu Wenruo <wqu@suse.com>,
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
 References: <20190102052945.16325-1-wqu@suse.com>
  <01eb72d8-73b2-049e-a6f4-37668742a2b8@knorrie.org>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+ <79f01a1d-97b3-d7c1-91b7-01b7830b3f18@gmx.com>
+From:   Hans van Kranenburg <hans@knorrie.org>
 Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <79f01a1d-97b3-d7c1-91b7-01b7830b3f18@gmx.com>
-Date:   Mon, 25 Feb 2019 21:10:35 +0800
+Autocrypt: addr=hans@knorrie.org; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <e2794bf1-4a0c-c9aa-eeb3-843c644dbf59@knorrie.org>
+Date:   Mon, 25 Feb 2019 14:16:36 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.1
+ Thunderbird/60.5.0
 MIME-Version: 1.0
-In-Reply-To: <01eb72d8-73b2-049e-a6f4-37668742a2b8@knorrie.org>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="BQyiejei2G5vjuRb0XrxaYdSfhGnYZeng"
-X-Provags-ID: V03:K1:bRrOZCul1rgiYhvZPPTdRBvevZbYe0sXpI+W7gSUNi/cZSrWm0w
- oaHRS1cqgYi7PpbJajrx+PtdVn0LeqHOE0hN2l8VRo2kTTZb18ZJ0l+71uZqyHhkWQ2Qpuq
- Vi62iIAK8DsgSjaBapr3Ewup0ZNjO9rBdz0o3NdjLYPhRZQV2hIKJJPIl7+0iFz/YUPOrIC
- +eKo8LPIvh+LQnGUQV5cQ==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:05IFI2PBAw4=:287LrtAU1DsjKJMnr6mDqx
- a6OdBJ5UkVlMQbRz54Dsiwt079tGecm2nYAatlqZY2O9ZPOjEUWg/y5TUsq9tDPCEzVEH75uI
- s4XEkqjqXPw+dmh423rfdTzNEdcVHsPl1pJc0biuOZCaAuinQOyAgueQqTZnFo+SqAuDIlH/T
- 28Es/3M6dVYCcK+DZU1Q4i1Q8/kkxI8+VnfDqnmjqlmjiUrLcapIPjPR0VmY7hya50H7IHkYs
- fTFx0Xy/FidKMI3kwVRXFQdPSgYJvulAdFUMlI7YWQb1qOc2rMea8XUgOw78oti/Z3OmXU2ld
- fYyLT6yrZ+dtnHdWvJAYIskQCzBemHM710scX4l1HjDeV8Lccmz2q5PJatcfvVlcQqiFewes9
- 4p3dy1H55PKE4zBjL0acbeL3ONs3I9h7K4UsBGL7FNl/ifb61ybWozQiZNf5h14ebxc25IswS
- nfh+dPtKLqat7Ma6SSbpCufcoQgFUM6bbE35pRWgUlTj16hxoDkkbNXvsgOQQ0PZZAj1stiWJ
- 724jLEN/IfTUAfdwLWGGSuoJQ1P94LIJ+6GaB9mQDVLAzniiPfZdmNwxJwPtJ4y2xMzrkyzzn
- OVSM6e6ipi3UdJLzkACbV/XA4YgttN+PKNcppnXnbpy4Jzd0+GHcpF4qI1UW1t3Th0ZH33q0l
- ddbTHSdtjgn2kjAsE6zI5sYGhlkZ9bXTt249qxSxXCbItTNX0TlXmJqn9r+B4uKEG/XadTN0+
- PxROyvFniZiMtXKEVlYKVW35MZVVDc8mlMxUCJ+vXVd1viW07ZeJJMA5iL2e+O8Gf6UQ9WMfM
- D1D55Ej6pbxfOOeQRa2Qghc3jeM5OCC2PBZqpWCzE9AcYvLLPNbFWmsSSCdoppB/QIAE8LoJj
- GLH7fuguBjXekWEAVLbUmdl8Dp4sB4jMfy2gcFrVHf58hBi7B/Nx/jwl1PZYEb
+In-Reply-To: <79f01a1d-97b3-d7c1-91b7-01b7830b3f18@gmx.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en_US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---BQyiejei2G5vjuRb0XrxaYdSfhGnYZeng
-Content-Type: multipart/mixed; boundary="jD7cL2XyeXlLOQgJaJZQQrMIlTnyXVl9c";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Hans van Kranenburg <hans@knorrie.org>, Qu Wenruo <wqu@suse.com>,
- linux-btrfs@vger.kernel.org
-Message-ID: <79f01a1d-97b3-d7c1-91b7-01b7830b3f18@gmx.com>
-Subject: Re: [PATCH 0/2] Use new incompat feature BG_TREE to hugely reduce
- mount time
-References: <20190102052945.16325-1-wqu@suse.com>
- <01eb72d8-73b2-049e-a6f4-37668742a2b8@knorrie.org>
-In-Reply-To: <01eb72d8-73b2-049e-a6f4-37668742a2b8@knorrie.org>
-
---jD7cL2XyeXlLOQgJaJZQQrMIlTnyXVl9c
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-
-
-
-On 2019/2/25 =E4=B8=8B=E5=8D=889:02, Hans van Kranenburg wrote:
-> Hi Qu,
->=20
-> On 1/2/19 6:29 AM, Qu Wenruo wrote:
->> This patchset can be fetched from:
->> https://github.com/adam900710/linux/tree/bg_tree
->> Which is based on v4.20-rc1 tag.
+On 2/25/19 2:10 PM, Qu Wenruo wrote:
+> 
+> 
+> On 2019/2/25 下午9:02, Hans van Kranenburg wrote:
+>> Hi Qu,
 >>
->> This patchset will hugely reduce mount time of large fs by putting all=
+>> On 1/2/19 6:29 AM, Qu Wenruo wrote:
+>>> This patchset can be fetched from:
+>>> https://github.com/adam900710/linux/tree/bg_tree
+>>> Which is based on v4.20-rc1 tag.
+>>>
+>>> This patchset will hugely reduce mount time of large fs by putting all
+>>> block group items into its own tree.
+>>
+>> I'm going to test this.
+>>
+>> Is there some specific command you'd like me to use to produce results
+>> for benchmarks?
+> 
+> Nope. If I provides some commands, those must be super beneficial for
+> BG_TREE.
 
->> block group items into its own tree.
->=20
-> I'm going to test this.
->=20
-> Is there some specific command you'd like me to use to produce results
-> for benchmarks?
+Ah, I meant, to produce output for the mount timings, like your 'ftrace
+function graph'.
 
-Nope. If I provides some commands, those must be super beneficial for
-BG_TREE.
+> So just use whatever you like, near real world use case would be more
+> appreciated.
 
-So just use whatever you like, near real world use case would be more
-appreciated.
-
-Thanks,
-Qu
-
-
---jD7cL2XyeXlLOQgJaJZQQrMIlTnyXVl9c--
-
---BQyiejei2G5vjuRb0XrxaYdSfhGnYZeng
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxz6UsACgkQwj2R86El
-/qjAxQf/cJc4sjioZB4pu6YEkNe/Tr0lN8TIjnioJUIoelvLvwPax/8V0ZP9pTJS
-0hMERtxyp4SBImJDbsRnU3FJVGIF+nzpfAVFZDzq4QtSRxyWz+AJNl+PO0NrVzhk
-bIKsrTTF/ybix2HcqDHa6dU5h6WnsJmDbzpis16iZi65z8hAR0zWZvLCxIdKgcGa
-w8W/bQ7zgNie4tO5hYGoYoCsJdhw8SocyfBQZlFaO2mLfaqqbAyGNIlaYXDcvkYc
-T56mTo5Ks8uuZbfYZSabrthy3QW5EM7RCXocq+lEcYScBRDpMh2W/FN6RBY/3CQd
-ogohjtOAQvL4yeFVHs+HQvv/0zse/Q==
-=kcP9
------END PGP SIGNATURE-----
-
---BQyiejei2G5vjuRb0XrxaYdSfhGnYZeng--
+Hans

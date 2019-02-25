@@ -2,142 +2,140 @@ Return-Path: <SRS0=5Bfi=RA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C90AEC10F00
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 19:08:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D3143C43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 19:09:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A9591213A2
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 19:08:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A8A042084D
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 19:09:16 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="XcKdmYUC"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726447AbfBYTIB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Feb 2019 14:08:01 -0500
-Received: from mx2.suse.de ([195.135.220.15]:39216 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726320AbfBYTIA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Feb 2019 14:08:00 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id AECC4AF7A
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Feb 2019 19:07:59 +0000 (UTC)
-From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 3/3] btrfs: Perform locking/unlocking in btrfs_remap_file_range()
-Date:   Mon, 25 Feb 2019 13:07:44 -0600
-Message-Id: <20190225190744.21664-3-rgoldwyn@suse.de>
-X-Mailer: git-send-email 2.16.4
-In-Reply-To: <20190225190744.21664-1-rgoldwyn@suse.de>
-References: <20190225190744.21664-1-rgoldwyn@suse.de>
+        id S1727013AbfBYTJP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Feb 2019 14:09:15 -0500
+Received: from mail-ua1-f68.google.com ([209.85.222.68]:45645 "EHLO
+        mail-ua1-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726727AbfBYTJP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Feb 2019 14:09:15 -0500
+Received: by mail-ua1-f68.google.com with SMTP id u1so8705745uae.12
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Feb 2019 11:09:14 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
+         :subject:to:cc:content-transfer-encoding;
+        bh=aHKEoD+sDU2NtWwKllshD99vb1/Zzw/t+l/SEZqVO4E=;
+        b=XcKdmYUCjKc40EXZY5LySHL4Igt5oNtT7vsOqF1tTru8jyJ4aMANe91sY/kf9qFzGA
+         oKXBrJvKcRfxZi7rkGKHjAosZyBX3kH29aRGwJXXthRUOJosw2KYJR2WoezKLtnybBfv
+         IododOoODR9vsau6Kty9rbpdXEQ5Krtm1BUrEutqOs3S1p51RM+2mbaAFaLgREaL+ncF
+         zVtZwY8oBzZYRrR9QFz9auVNbmELlIbERLM50AKeUA+pe1l6rsaoduuRwssQ7ysIV8dO
+         f5Wt8K445OvzquUBUQySF7ogXidSpq0adljnhi2FT3928JcMgCwBvH2RbhEPcs+ssRNB
+         S5Yg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
+         :from:date:message-id:subject:to:cc:content-transfer-encoding;
+        bh=aHKEoD+sDU2NtWwKllshD99vb1/Zzw/t+l/SEZqVO4E=;
+        b=iVxwxkwTDHnvXveJiv4WQiak1+leD4W69rH5D0p5AO9nHrStdGAzzgsFitv5RjMDFu
+         9WDoJLKrHr9MkSglvvFEx/4+H66saVC5uaem0qHVsz6ySYGDA12EfW8GHCTRfaYWxJdO
+         W20Z0NhaJGbDVfj6pEkcFQp+RhLxBw6emF4sjAWooHhNMWf3vf5q92TZUTpyXKD6yOVF
+         i/v0ijLlXmn4By3T8fjG4xrepIUl8yeVLkYpGVE23ul9A65FCOrx2WpQ/0EFZb7t6s7D
+         xjb8CTP+RDlEijQm8gNfudAC6G1vqC89KIvgQ4dU1YLvif2xwc03Aaq2OSE7govOduFq
+         Q8jw==
+X-Gm-Message-State: AHQUAuZvHIvgmDq9CBuAABgAfiv6FCaQfFC77veOONZl0rlKfTbne8wi
+        Me4ScOfjXkyB1+cPnVL1QVgpH6iSddQ+oC6CCJEg2A==
+X-Google-Smtp-Source: AHgI3IZ+q9vNMOve4d532UjmxMztqUSCtAhPZnpR8SgXKBH96gfDPRd7YNrZvcBa/LfxEKw0U5vz6ercymqHffi9vZk=
+X-Received: by 2002:a67:bc0e:: with SMTP id t14mr9472856vsn.206.1551121753898;
+ Mon, 25 Feb 2019 11:09:13 -0800 (PST)
+MIME-Version: 1.0
+References: <20190225185544.14516-1-dsterba@suse.com>
+In-Reply-To: <20190225185544.14516-1-dsterba@suse.com>
+Reply-To: fdmanana@gmail.com
+From:   Filipe Manana <fdmanana@gmail.com>
+Date:   Mon, 25 Feb 2019 19:09:02 +0000
+Message-ID: <CAL3q7H7L=183ndntoQLuUkPpmWgN1gmhS=vhiA23moP1Y7=0fQ@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: move ulist allocation out of transaction in quota enable
+To:     David Sterba <dsterba@suse.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+On Mon, Feb 25, 2019 at 6:58 PM David Sterba <dsterba@suse.com> wrote:
+>
+> The allocation happens with GFP_KERNEL after a transaction has been
+> started, this can potentially cause deadlock if reclaim tries to get the
+> memory by flushing filesystem data.
+>
+> The qgroup_ulist is not used during transaction start as the quotas are
+> not yet enabled but to provide the same semantics, use a temporary
+> variable and assign fs_info::qgroup_ulist as before.
+>
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> ---
+>  fs/btrfs/qgroup.c | 14 ++++++++------
+>  1 file changed, 8 insertions(+), 6 deletions(-)
+>
+> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+> index c1cd5558a646..9e49d5e132b8 100644
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -887,6 +887,7 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info)
+>         struct btrfs_key found_key;
+>         struct btrfs_qgroup *qgroup =3D NULL;
+>         struct btrfs_trans_handle *trans =3D NULL;
+> +       struct ulist *tmp_ulist;
+>         int ret =3D 0;
+>         int slot;
+>
+> @@ -894,6 +895,12 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info=
+)
+>         if (fs_info->quota_root)
+>                 goto out;
+>
+> +       tmp_ulist =3D ulist_alloc(GFP_KERNEL);
+> +       if (!tmp_ulist) {
+> +               ret =3D -ENOMEM;
+> +               goto out;
+> +       }
 
-Moves code to make it more readable, so as locking and unlocking is
-done in the same function.
+tmp_ulist needs to be freed if starting the transaction below fails.
 
-Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
----
- fs/btrfs/ioctl.c | 53 +++++++++++++++++++++--------------------------------
- 1 file changed, 21 insertions(+), 32 deletions(-)
+Other then that, looks good.
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 9c8e1734429c..f0ae1af91ff3 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3975,22 +3975,6 @@ static int btrfs_remap_file_range_prep(struct file *file_in, loff_t pos_in,
- 	u64 wb_len;
- 	int ret;
- 
--	if (!(remap_flags & REMAP_FILE_DEDUP)) {
--		struct btrfs_root *root_out = BTRFS_I(inode_out)->root;
--
--		if (btrfs_root_readonly(root_out))
--			return -EROFS;
--
--		if (file_in->f_path.mnt != file_out->f_path.mnt ||
--		    inode_in->i_sb != inode_out->i_sb)
--			return -EXDEV;
--	}
--
--	if (same_inode)
--		inode_lock(inode_in);
--	else
--		btrfs_double_inode_lock(inode_in, inode_out);
--
- 	/*
- 	 * Now that the inodes are locked, we need to start writeback ourselves
- 	 * and can not rely on the writeback from the VFS's generic helper
-@@ -4022,26 +4006,14 @@ static int btrfs_remap_file_range_prep(struct file *file_in, loff_t pos_in,
- 	ret = btrfs_wait_ordered_range(inode_in, ALIGN_DOWN(pos_in, bs),
- 				       wb_len);
- 	if (ret < 0)
--		goto out_unlock;
-+		return ret;
- 	ret = btrfs_wait_ordered_range(inode_out, ALIGN_DOWN(pos_out, bs),
- 				       wb_len);
- 	if (ret < 0)
--		goto out_unlock;
-+		return ret;
- 
--	ret = generic_remap_file_range_prep(file_in, pos_in, file_out, pos_out,
-+	return generic_remap_file_range_prep(file_in, pos_in, file_out, pos_out,
- 					    len, remap_flags);
--	if (ret < 0 || *len == 0)
--		goto out_unlock;
--
--	return 0;
--
-- out_unlock:
--	if (same_inode)
--		inode_unlock(inode_in);
--	else
--		btrfs_double_inode_unlock(inode_in, inode_out);
--
--	return ret;
- }
- 
- loff_t btrfs_remap_file_range(struct file *src_file, loff_t off,
-@@ -4056,16 +4028,33 @@ loff_t btrfs_remap_file_range(struct file *src_file, loff_t off,
- 	if (remap_flags & ~(REMAP_FILE_DEDUP | REMAP_FILE_ADVISORY))
- 		return -EINVAL;
- 
-+	if (!(remap_flags & REMAP_FILE_DEDUP)) {
-+		struct btrfs_root *root_out = BTRFS_I(dst_inode)->root;
-+
-+		if (btrfs_root_readonly(root_out))
-+			return -EROFS;
-+
-+		if (src_file->f_path.mnt != dst_file->f_path.mnt ||
-+		    src_inode->i_sb != dst_inode->i_sb)
-+			return -EXDEV;
-+	}
-+
-+	if (same_inode)
-+		inode_lock(src_inode);
-+	else
-+		btrfs_double_inode_lock(src_inode, dst_inode);
-+
- 	ret = btrfs_remap_file_range_prep(src_file, off, dst_file, destoff,
- 					  &len, remap_flags);
- 	if (ret < 0 || len == 0)
--		return ret;
-+		goto out_unlock;
- 
- 	if (remap_flags & REMAP_FILE_DEDUP)
- 		ret = btrfs_extent_same(src_inode, off, len, dst_inode, destoff);
- 	else
- 		ret = btrfs_clone_files(dst_file, src_file, off, len, destoff);
- 
-+out_unlock:
- 	if (same_inode)
- 		inode_unlock(src_inode);
- 	else
--- 
-2.16.4
+> +
+>         /*
+>          * 1 for quota root item
+>          * 1 for BTRFS_QGROUP_STATUS item
+> @@ -909,12 +916,7 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info=
+)
+>                 goto out;
+>         }
+>
+> -       fs_info->qgroup_ulist =3D ulist_alloc(GFP_KERNEL);
+> -       if (!fs_info->qgroup_ulist) {
+> -               ret =3D -ENOMEM;
+> -               btrfs_abort_transaction(trans, ret);
+> -               goto out;
+> -       }
+> +       fs_info->qgroup_ulist =3D tmp_ulist;
+>
+>         /*
+>          * initially create the quota tree
+> --
+> 2.20.1
+>
 
+
+--=20
+Filipe David Manana,
+
+=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
+ right.=E2=80=9D

@@ -2,223 +2,436 @@ Return-Path: <SRS0=5Bfi=RA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 391C6C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 00:28:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5E15FC43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 04:38:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E98A120989
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 00:28:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1FDEE20842
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 04:38:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726458AbfBYA2L (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 24 Feb 2019 19:28:11 -0500
-Received: from mout.gmx.net ([212.227.15.19]:34047 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726229AbfBYA2L (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 24 Feb 2019 19:28:11 -0500
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx003
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0LrNE4-1hALBx1IFA-013ANH; Mon, 25
- Feb 2019 01:28:06 +0100
-Subject: Re: RAID1 device deletion feedback
-To:     Nemo <me@captnemo.in>, linux-btrfs@vger.kernel.org
-References: <d1eac64c-056b-a95b-7890-875d313a7ab4@captnemo.in>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <50bda293-891a-6c6f-8696-77037880fc12@gmx.com>
-Date:   Mon, 25 Feb 2019 08:27:57 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.1
+        id S1727197AbfBYEiI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 24 Feb 2019 23:38:08 -0500
+Received: from mx2.suse.de ([195.135.220.15]:43358 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726755AbfBYEiH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 24 Feb 2019 23:38:07 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id DF67BACD8;
+        Mon, 25 Feb 2019 04:38:05 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Dan Carpenter <dan.carpenter@oracle.com>
+Subject: [PATCH v2] btrfs: extent_io: Always return error pointer for extent buffer allocation failure
+Date:   Mon, 25 Feb 2019 12:38:01 +0800
+Message-Id: <20190225043801.17321-1-wqu@suse.com>
+X-Mailer: git-send-email 2.20.1
 MIME-Version: 1.0
-In-Reply-To: <d1eac64c-056b-a95b-7890-875d313a7ab4@captnemo.in>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="gJAJt2kw2ZSbXmb0bUg1q8L4TGL8o3oWu"
-X-Provags-ID: V03:K1:FNUeNBd8g6MQd/55Hzg6tVBBlt5MXxFBLswDFMv2yCchrAqSrQY
- Eq1s/xefJEZ1MkvU7jykIOvqEmWEcZLUe6bMkMWqnVsyHk1uI/5DoFZnCjM4Jzkx1jv5B6z
- YK2NPDgc1w61BtVzI1OizEkxY8yR+6qUVfiR7U+zTlLbyDGvoAB7XC0z5KQzWChfZpSgAoE
- nsYvz58yjgltkDRqI7MxA==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:tYW30v8ZZZw=:osvyOclB4dYKXLkvYuwxE0
- 9BWKluor0FRV2ZHchKJkIAONQ35JVoju/tDGnyGXEJWt432CpMmwSNh44tqjiv86FEDlERe8+
- K2afCxJOeMgM0BKVt1Oj7OJdAK6mV01VmYWCPSM940fjnWkQFJ+lZfno+BfhDIH2BrXsDsKeA
- KDtLFvf9iJZspN/WWhBnf32ZnisXhgBXz0Zw2ciB0CIgyomZm7M7sdsIKno26W1aeIVGasOIq
- Vq6FQDW8k3T1glWtvZLrUPeq/h3yhd4SH1S6Uf5HaCbLT7CSfqINlg5WHDLuCZ7n/LcNQa2GY
- ZA7qJgI1km3RV7eu13OCtIGrpktItwR64Kpis0aWiqd8WQlwVLE6oW6CqoWViU+e70jkRmaSk
- vsWKOGmyn9bCYetXe92FEOr1jI6OeWLxvVorEahFSnDWkJKxOtOmGU214+YBbgQB97IwuhZh8
- JMJrmjxxhZ5BVsDPJk7fKH1rBA6Rq/QCQ2yph4bx2O1JuP5OkLd7Sl0UTuidSQHz9ZWWi8vYI
- /qCjuN8LiESvY2YYcjNpUXF2S+gtC7HcL0kwEVScRjB0NQhcWCQpilajlLlnf0feZswiMPDO7
- 0rbdjf33OhzJZFliLoePmUw4NdYTPsys/TXZ+GLbvcZ0luGpEy39iuK+a76hvcB68RCXn3LYf
- Vt9kR6anRZEInKathd3joHw4tvJZLHB7MamDXntk6hMgrsGSqCcYHVEJDfW2eONoy1q0hLCee
- LIB7puUORxebSdOhp8q03Y8AeeW/lHDuczhOT8fqd26/3gPooU8maxuDUbA1dhHs52M7dAQ2T
- MVELU/Oby/d/XM4kEPY6wnAUwL2FAxns83u3j9CKF9nGBxCtanGZE1CKPGMZ0QOyfSZrTw3eo
- UWtNgLKdshg9m0w6YtFRGlpKZluQTm16jPvOcYZ0UDlWsCI7/6GABc9ygjzsI4
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---gJAJt2kw2ZSbXmb0bUg1q8L4TGL8o3oWu
-Content-Type: multipart/mixed; boundary="cB2PpCmdOOn8vQoRRQ2cx493Ztv8gh20s";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Nemo <me@captnemo.in>, linux-btrfs@vger.kernel.org
-Message-ID: <50bda293-891a-6c6f-8696-77037880fc12@gmx.com>
-Subject: Re: RAID1 device deletion feedback
-References: <d1eac64c-056b-a95b-7890-875d313a7ab4@captnemo.in>
-In-Reply-To: <d1eac64c-056b-a95b-7890-875d313a7ab4@captnemo.in>
+There are 5 extent buffer allocation functions in btrfs:
+__alloc_extent_buffer();
+alloc_extent_buffer();
+__alloc_dummy_extent_buffer();
+alloc_dummy_extent_buffer();
+alloc_test_extent_buffer();
 
---cB2PpCmdOOn8vQoRRQ2cx493Ztv8gh20s
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+However they return different value for error:
+__alloc_extent_buffer()		Never fail
+alloc_extent_buffer()		ERR_PTR()
+__alloc_dummy_extent_buffer()	NULL
+alloc_dummy_extent_buffer()	NULL
+alloc_test_extent_buffer()	NULL
 
+This makes certain wrapper function to have 2 different failure modes,
+e.g. btrfs_find_create_tree_block() can return NULL or PTR_ERR(-ENOMEM).
 
+Under most case, the NULL return value is only possible for selftest and
+super rare to hit, but this inconsistent behavior still makes static
+checker and reader crazy.
 
-On 2019/2/25 =E4=B8=8A=E5=8D=881:32, Nemo wrote:
-> Hi,
->=20
-> I had a RAID1 disk failure recently, and a limitation in number of SATA=
+This patch will make all the following functions to return error pointer
+for error:
+__alloc_extent_buffer()
+alloc_extent_buffer()
+__alloc_dummy_extent_buffer()
+alloc_dummy_extent_buffer()
+alloc_test_extent_buffer()
+btrfs_clone_extent_buffer()
+btrfs_find_create_tree_block()
 
-> connectors meant I could not do a live replace.
+Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+changelog:
+v2:
+- Merge all previous 5 patches into one
+  Split patches doesn't make much sense for such small cleanup, and has
+  already confused reviewers.
+- Fix a missing IS_ERR() check in btrfs_compare_trees()
+---
+ fs/btrfs/backref.c                     |  8 ++--
+ fs/btrfs/ctree.c                       | 18 ++++----
+ fs/btrfs/extent_io.c                   | 58 ++++++++++++++++++--------
+ fs/btrfs/qgroup.c                      |  5 ++-
+ fs/btrfs/tests/extent-buffer-tests.c   |  6 ++-
+ fs/btrfs/tests/extent-io-tests.c       |  4 +-
+ fs/btrfs/tests/free-space-tree-tests.c |  3 +-
+ fs/btrfs/tests/inode-tests.c           |  6 ++-
+ fs/btrfs/tests/qgroup-tests.c          |  3 +-
+ 9 files changed, 71 insertions(+), 40 deletions(-)
 
-Then you should go USB or other interfaces.
-In your case, device deletion is not possible due to reasons explained
-below.
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index 78556447e1d5..b6e469a12011 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -2016,8 +2016,8 @@ static int iterate_inode_refs(u64 inum, struct btrfs_root *fs_root,
+ 		parent = found_key.offset;
+ 		slot = path->slots[0];
+ 		eb = btrfs_clone_extent_buffer(path->nodes[0]);
+-		if (!eb) {
+-			ret = -ENOMEM;
++		if (IS_ERR(eb)) {
++			ret = PTR_ERR(eb);
+ 			break;
+ 		}
+ 		btrfs_release_path(path);
+@@ -2075,8 +2075,8 @@ static int iterate_inode_extrefs(u64 inum, struct btrfs_root *fs_root,
+ 
+ 		slot = path->slots[0];
+ 		eb = btrfs_clone_extent_buffer(path->nodes[0]);
+-		if (!eb) {
+-			ret = -ENOMEM;
++		if (IS_ERR(eb)) {
++			ret = PTR_ERR(eb);
+ 			break;
+ 		}
+ 		btrfs_release_path(path);
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 5a6c39b44c84..ebd640f2ad86 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1293,7 +1293,7 @@ tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
+ 	if (tm->op == MOD_LOG_KEY_REMOVE_WHILE_FREEING) {
+ 		BUG_ON(tm->slot != 0);
+ 		eb_rewin = alloc_dummy_extent_buffer(fs_info, eb->start);
+-		if (!eb_rewin) {
++		if (IS_ERR(eb_rewin)) {
+ 			btrfs_tree_read_unlock_blocking(eb);
+ 			free_extent_buffer(eb);
+ 			return NULL;
+@@ -1384,7 +1384,7 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
+ 		free_extent_buffer(eb_root);
+ 	}
+ 
+-	if (!eb)
++	if (IS_ERR(eb))
+ 		return NULL;
+ 	btrfs_tree_read_lock(eb);
+ 	if (old_root) {
+@@ -2624,8 +2624,8 @@ static struct extent_buffer *btrfs_search_slot_get_root(struct btrfs_root *root,
+ 			down_read(&fs_info->commit_root_sem);
+ 			b = btrfs_clone_extent_buffer(root->commit_root);
+ 			up_read(&fs_info->commit_root_sem);
+-			if (!b)
+-				return ERR_PTR(-ENOMEM);
++			if (IS_ERR(b))
++				return b;
+ 
+ 		} else {
+ 			b = root->commit_root;
+@@ -5429,9 +5429,10 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
+ 	left_root_level = left_level;
+ 	left_path->nodes[left_level] =
+ 			btrfs_clone_extent_buffer(left_root->commit_root);
+-	if (!left_path->nodes[left_level]) {
++	if (IS_ERR(left_path->nodes[left_level])) {
+ 		up_read(&fs_info->commit_root_sem);
+-		ret = -ENOMEM;
++		ret = PTR_ERR(left_path->nodes[left_level]);
++		left_path->nodes[left_level] = NULL;
+ 		goto out;
+ 	}
+ 
+@@ -5439,9 +5440,10 @@ int btrfs_compare_trees(struct btrfs_root *left_root,
+ 	right_root_level = right_level;
+ 	right_path->nodes[right_level] =
+ 			btrfs_clone_extent_buffer(right_root->commit_root);
+-	if (!right_path->nodes[right_level]) {
++	if (IS_ERR(right_path->nodes[right_level])) {
+ 		up_read(&fs_info->commit_root_sem);
+-		ret = -ENOMEM;
++		ret = PTR_ERR(right_path->nodes[right_level]);
++		right_path->nodes[right_level] = NULL;
+ 		goto out;
+ 	}
+ 	up_read(&fs_info->commit_root_sem);
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 52abe4082680..e0a96f74e81e 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4661,6 +4661,11 @@ static inline void btrfs_release_extent_buffer(struct extent_buffer *eb)
+ 	__free_extent_buffer(eb);
+ }
+ 
++/*
++ * This function should not fail due to its __GFP_NOFAIL flag.
++ *
++ * But caller should check IS_ERR() to be future-proof.
++ */
+ static struct extent_buffer *
+ __alloc_extent_buffer(struct btrfs_fs_info *fs_info, u64 start,
+ 		      unsigned long len)
+@@ -4668,6 +4673,8 @@ __alloc_extent_buffer(struct btrfs_fs_info *fs_info, u64 start,
+ 	struct extent_buffer *eb = NULL;
+ 
+ 	eb = kmem_cache_zalloc(extent_buffer_cache, GFP_NOFS|__GFP_NOFAIL);
++	if (!eb)
++		return ERR_PTR(-ENOMEM);
+ 	eb->start = start;
+ 	eb->len = len;
+ 	eb->fs_info = fs_info;
+@@ -4707,14 +4714,14 @@ struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src)
+ 	int num_pages = num_extent_pages(src);
+ 
+ 	new = __alloc_extent_buffer(src->fs_info, src->start, src->len);
+-	if (new == NULL)
+-		return NULL;
++	if (IS_ERR(new))
++		return new;
+ 
+ 	for (i = 0; i < num_pages; i++) {
+ 		p = alloc_page(GFP_NOFS);
+ 		if (!p) {
+ 			btrfs_release_extent_buffer(new);
+-			return NULL;
++			return ERR_PTR(-ENOMEM);
+ 		}
+ 		attach_extent_buffer_page(new, p);
+ 		WARN_ON(PageDirty(p));
+@@ -4729,6 +4736,13 @@ struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src)
+ 	return new;
+ }
+ 
++/*
++ * Allocate an extent buffer for selftest.
++ *
++ * Return valid pointer if everything goes well.
++ * Return PTR_ERR() for error.
++ * Will NEVER return NULL.
++ */
+ struct extent_buffer *__alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
+ 						  u64 start, unsigned long len)
+ {
+@@ -4737,8 +4751,8 @@ struct extent_buffer *__alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
+ 	int i;
+ 
+ 	eb = __alloc_extent_buffer(fs_info, start, len);
+-	if (!eb)
+-		return NULL;
++	if (IS_ERR(eb))
++		return eb;
+ 
+ 	num_pages = num_extent_pages(eb);
+ 	for (i = 0; i < num_pages; i++) {
+@@ -4755,7 +4769,7 @@ struct extent_buffer *__alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
+ 	for (; i > 0; i--)
+ 		__free_page(eb->pages[i - 1]);
+ 	__free_extent_buffer(eb);
+-	return NULL;
++	return ERR_PTR(-ENOMEM);
+ }
+ 
+ struct extent_buffer *alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
+@@ -4851,6 +4865,7 @@ struct extent_buffer *find_extent_buffer(struct btrfs_fs_info *fs_info,
+ }
+ 
+ #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
++/* Will either return valid pointer or PTR_ERR(), NEVER NULL pointer. */
+ struct extent_buffer *alloc_test_extent_buffer(struct btrfs_fs_info *fs_info,
+ 					u64 start)
+ {
+@@ -4861,13 +4876,15 @@ struct extent_buffer *alloc_test_extent_buffer(struct btrfs_fs_info *fs_info,
+ 	if (eb)
+ 		return eb;
+ 	eb = alloc_dummy_extent_buffer(fs_info, start);
+-	if (!eb)
+-		return NULL;
++	if (IS_ERR(eb))
++		return eb;
+ 	eb->fs_info = fs_info;
+ again:
+ 	ret = radix_tree_preload(GFP_NOFS);
+-	if (ret)
+-		goto free_eb;
++	if (ret) {
++		btrfs_release_extent_buffer(eb);
++		return ERR_PTR(ret);
++	}
+ 	spin_lock(&fs_info->buffer_lock);
+ 	ret = radix_tree_insert(&fs_info->buffer_radix,
+ 				start >> PAGE_SHIFT, eb);
+@@ -4875,21 +4892,26 @@ struct extent_buffer *alloc_test_extent_buffer(struct btrfs_fs_info *fs_info,
+ 	radix_tree_preload_end();
+ 	if (ret == -EEXIST) {
+ 		exists = find_extent_buffer(fs_info, start);
+-		if (exists)
+-			goto free_eb;
+-		else
+-			goto again;
++		if (exists) {
++			btrfs_release_extent_buffer(eb);
++			return exists;
++		}
++		goto again;
+ 	}
+ 	check_buffer_tree_ref(eb);
+ 	set_bit(EXTENT_BUFFER_IN_TREE, &eb->bflags);
+ 
+ 	return eb;
+-free_eb:
+-	btrfs_release_extent_buffer(eb);
+-	return exists;
+ }
+ #endif
+ 
++/*
++ * Allocate an extent buffer structure, with all its pages attached and locked.
++ *
++ * Return valid pointer if nothing goes wrong.
++ * Return PTR_ERR() if failed.
++ * Will never return NULL.
++ */
+ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+ 					  u64 start)
+ {
+@@ -4914,7 +4936,7 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+ 		return eb;
+ 
+ 	eb = __alloc_extent_buffer(fs_info, start, len);
+-	if (!eb)
++	if (IS_ERR(eb))
+ 		return ERR_PTR(-ENOMEM);
+ 
+ 	num_pages = num_extent_pages(eb);
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 4e473a998219..ccfa992a10bf 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -3105,8 +3105,9 @@ static int qgroup_rescan_leaf(struct btrfs_trans_handle *trans,
+ 	fs_info->qgroup_rescan_progress.objectid = found.objectid + 1;
+ 
+ 	scratch_leaf = btrfs_clone_extent_buffer(path->nodes[0]);
+-	if (!scratch_leaf) {
+-		ret = -ENOMEM;
++	if (IS_ERR(scratch_leaf)) {
++		ret = PTR_ERR(scratch_leaf);
++		scratch_leaf = NULL;
+ 		mutex_unlock(&fs_info->qgroup_rescan_lock);
+ 		goto out;
+ 	}
+diff --git a/fs/btrfs/tests/extent-buffer-tests.c b/fs/btrfs/tests/extent-buffer-tests.c
+index 7d72eab6d32c..edf2ab6a7d74 100644
+--- a/fs/btrfs/tests/extent-buffer-tests.c
++++ b/fs/btrfs/tests/extent-buffer-tests.c
+@@ -48,12 +48,14 @@ static int test_btrfs_split_item(u32 sectorsize, u32 nodesize)
+ 		goto out;
+ 	}
+ 
+-	path->nodes[0] = eb = alloc_dummy_extent_buffer(fs_info, nodesize);
+-	if (!eb) {
++	eb = alloc_dummy_extent_buffer(fs_info, nodesize);
++	if (IS_ERR(eb)) {
++		eb = NULL;
+ 		test_err("could not allocate dummy buffer");
+ 		ret = -ENOMEM;
+ 		goto out;
+ 	}
++	path->nodes[0] = eb;
+ 	path->slots[0] = 0;
+ 
+ 	key.objectid = 0;
+diff --git a/fs/btrfs/tests/extent-io-tests.c b/fs/btrfs/tests/extent-io-tests.c
+index 3c46d7f23456..d1f3b727fbf2 100644
+--- a/fs/btrfs/tests/extent-io-tests.c
++++ b/fs/btrfs/tests/extent-io-tests.c
+@@ -396,7 +396,7 @@ static int test_eb_bitmaps(u32 sectorsize, u32 nodesize)
+ 	}
+ 
+ 	eb = __alloc_dummy_extent_buffer(fs_info, 0, len);
+-	if (!eb) {
++	if (IS_ERR(eb)) {
+ 		test_err("couldn't allocate test extent buffer");
+ 		kfree(bitmap);
+ 		return -ENOMEM;
+@@ -409,7 +409,7 @@ static int test_eb_bitmaps(u32 sectorsize, u32 nodesize)
+ 	/* Do it over again with an extent buffer which isn't page-aligned. */
+ 	free_extent_buffer(eb);
+ 	eb = __alloc_dummy_extent_buffer(NULL, nodesize / 2, len);
+-	if (!eb) {
++	if (IS_ERR(eb)) {
+ 		test_err("couldn't allocate test extent buffer");
+ 		kfree(bitmap);
+ 		return -ENOMEM;
+diff --git a/fs/btrfs/tests/free-space-tree-tests.c b/fs/btrfs/tests/free-space-tree-tests.c
+index 89346da890cf..025fce63959a 100644
+--- a/fs/btrfs/tests/free-space-tree-tests.c
++++ b/fs/btrfs/tests/free-space-tree-tests.c
+@@ -462,7 +462,8 @@ static int run_test(test_func_t test_func, int bitmaps, u32 sectorsize,
+ 	root->fs_info->tree_root = root;
+ 
+ 	root->node = alloc_test_extent_buffer(root->fs_info, nodesize);
+-	if (!root->node) {
++	if (IS_ERR(root->node)) {
++		root->node = NULL;
+ 		test_err("couldn't allocate dummy buffer");
+ 		ret = -ENOMEM;
+ 		goto out;
+diff --git a/fs/btrfs/tests/inode-tests.c b/fs/btrfs/tests/inode-tests.c
+index af0c8e30d9e2..56a112a39211 100644
+--- a/fs/btrfs/tests/inode-tests.c
++++ b/fs/btrfs/tests/inode-tests.c
+@@ -249,7 +249,8 @@ static noinline int test_btrfs_get_extent(u32 sectorsize, u32 nodesize)
+ 	}
+ 
+ 	root->node = alloc_dummy_extent_buffer(fs_info, nodesize);
+-	if (!root->node) {
++	if (IS_ERR(root->node)) {
++		root->node = NULL;
+ 		test_err("couldn't allocate dummy buffer");
+ 		goto out;
+ 	}
+@@ -850,7 +851,8 @@ static int test_hole_first(u32 sectorsize, u32 nodesize)
+ 	}
+ 
+ 	root->node = alloc_dummy_extent_buffer(fs_info, nodesize);
+-	if (!root->node) {
++	if (IS_ERR(root->node)) {
++		root->node = NULL;
+ 		test_err("couldn't allocate dummy buffer");
+ 		goto out;
+ 	}
+diff --git a/fs/btrfs/tests/qgroup-tests.c b/fs/btrfs/tests/qgroup-tests.c
+index 412b910b04cc..536600eb4d9d 100644
+--- a/fs/btrfs/tests/qgroup-tests.c
++++ b/fs/btrfs/tests/qgroup-tests.c
+@@ -484,7 +484,8 @@ int btrfs_test_qgroups(u32 sectorsize, u32 nodesize)
+ 	 * *cough*backref walking code*cough*
+ 	 */
+ 	root->node = alloc_test_extent_buffer(root->fs_info, nodesize);
+-	if (!root->node) {
++	if (IS_ERR(root->node)) {
++		root->node = NULL;
+ 		test_err("couldn't allocate dummy buffer");
+ 		ret = -ENOMEM;
+ 		goto out;
+-- 
+2.20.1
 
-> I'm still in the
-> progress of resolving the issue, but posting some feedback here on the
-> issues I faced and what could have helped.
->=20
-> **What all I did**
->=20
-> - remove the dying disk and mount in degraded mode. This didn't work,
-> but _didn't provide me a failure reason_
-
-It provides a failure reason, in dmesg.
-
-> - swap the dead disk post boot with the new one. Tried a btrfs device
-> add, but it failed as well because of too many failing reads from the
-> dead disk (which wasn't even attached).
-> - Started a btrfs device delete, which finally pointed me to the root
-> cause:
->=20
-> `ERROR: error removing device '/dev/sdb1': No space left on device`
->=20
-> In short:
->=20
-> 1. My 2.7TBx3 setup was storing 2.9TB of data
-
-If using RAID1, it takes 5.8T of your 7.1T total capacity.
-Removing one missing device will cause ENOSPC failure, as 2 devices will
-only be 5.4TB.
-
-What you should do is replace, as during replace you only need one extra
-chunk and your current device free space is completely fine for replacing=
-=2E
-
-> 2. Removing any one the disks was not possible without losing some data=
-
->=20
-> However, getting to this error message took me hours of effort, despite=
-
-> having read the btrfs wiki.
->=20
-> **Feedback**
->=20
-> 1. The `btrfs device delete` command should have failed immediately
-> instead of making me wait for ages.
-
-Not that easy, as btrfs replace/delete/relocate all happens at chunk
-level, we can only do educated guess to determine if it's possible,
-especially all those operations are done online, user can do whatever
-they want, initial estimation is not reliable.
-
-Thanks,
-Qu
-
-> 2. A delete command should stop writes to a disk, unless avoidable. Thi=
-s
-> would have left some data on the disk, and a subsequent delete could
-> have cleaned it up much faster. It failed in the worst manner possible,=
-
-> because all deletion progress reversed once it failed: it balanced back=
-
-> to complete usage, causing more strain on a dying disk.
-> 3. A degraded mount failure should provide some error message.
->=20
-> *Status*: I cleared up some disk space, and ran another delete which is=
-
-> still ongoing. I don't have physical access to the system for a few mor=
-e
-> days, so adding the new disk will take me some time.
->=20
-> ---
->=20
-> ## Debug Details
->=20
->=20
-> ```
-> uname -a
-> Linux tatooine.captnemo.in 4.20.10-arch1-1-ARCH #1 SMP PREEMPT Fri Feb
-> 15 17:49:06 UTC 2019 x86_64 GNU/Linux
->=20
-> btrfs --version
-> btrfs-progs v4.20.1
-> ```
->=20
-> A few more details are on a reddit post[0] I made to help debug the
-> issue and a gist[1] has disk usage and filesystem details.
->=20
-> [0]:
-> https://www.reddit.com/r/archlinux/comments/asrlam/btrfscleaner_at_100_=
-cpu_usage_on_raid1_setup/egwc047/
-> [1]: https://paste.ubuntu.com/p/GDNKNBqqFy/
->=20
-
-
---cB2PpCmdOOn8vQoRRQ2cx493Ztv8gh20s--
-
---gJAJt2kw2ZSbXmb0bUg1q8L4TGL8o3oWu
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxzNo0ACgkQwj2R86El
-/qgaCAf+I7Ah3KAVFMJkte97j8vlTu/ZQb+s4NtvIp6TRSVEKKLUXxKHPM+d7KKu
-otupv28jemA6l9pzBRDfdxoVXIGb8C91V6p8uNtAVdKsuuQWGT2rZX3VNMcOLoqc
-ebiyo9ob9qBJJx9q7aoCXr4irmOJR4O/uQ4htLLKCEjOer7oKWUq/FG3+tckjhnL
-A6r930FDJs4XggvlD4NWzYkTU/FX5NTCLwh9TX35ndUn3rc1Fr1j4N0h3yrkj53T
-yMOQGlXCpf56g7jiTLqn8p+zq43EvucIkNy6/xqcr9deUvqgMkSQd/vOmUeRgJXx
-fZ/EiPuldm7YpNBaqUIcposJx+Lzzw==
-=EGa8
------END PGP SIGNATURE-----
-
---gJAJt2kw2ZSbXmb0bUg1q8L4TGL8o3oWu--

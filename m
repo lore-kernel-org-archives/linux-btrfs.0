@@ -2,176 +2,154 @@ Return-Path: <SRS0=5Bfi=RA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 12EC6C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 13:03:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6D4EFC43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 13:10:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D6BF520842
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 13:03:15 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="dMt/k1ez"
+	by mail.kernel.org (Postfix) with ESMTP id 445E720842
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 13:10:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726997AbfBYNDO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Feb 2019 08:03:14 -0500
-Received: from mail-it1-f194.google.com ([209.85.166.194]:35955 "EHLO
-        mail-it1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726921AbfBYNDO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Feb 2019 08:03:14 -0500
-Received: by mail-it1-f194.google.com with SMTP id v83so1977875itf.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Feb 2019 05:03:13 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=subject:to:references:from:message-id:date:user-agent:mime-version
-         :in-reply-to:content-language:content-transfer-encoding;
-        bh=HSq27D2tHHp7L8kBW2XdSSh13xvQg5oKyJrWFVMMIeA=;
-        b=dMt/k1ezwcZf/OOqIkqnjkggXH77yFPP7oMufYLpjeJtx2RYQyGMn2ZxyAr9GsAGgo
-         BB+O97ACQ2NFWIf+rz4cETHM+STidOX0IcFbWsLOj92RkGFY7mxaHpaIjvRS5BoIbMT/
-         av8J6bPu1eSFKs+3vLwv+Et0s4WF5K2JOrv0/q5qPl7BK0YM8FU8RFhj44nxl57Tp3ay
-         knsJ5BKBAWXeOdfrhXTrPVsV4hn4sEGXY2Ed16RTQ8zRHY65YchoJrRqAiwKCBZY6ZGW
-         WaGNSp5I01TnJi0fX+JRUXipdGDsNCbfOTFRA4N+ihLh7K5CJyUrvlEh6hjJDTg9pozZ
-         tQpA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=HSq27D2tHHp7L8kBW2XdSSh13xvQg5oKyJrWFVMMIeA=;
-        b=R+ZlH+w/8/IiL+P4chhcmA8N8Lp6YbKSVuleXjWywmzBzLwa1LfuUlA0E+lXEaj/4Q
-         5cmBomnaUXke4azammyJLCbYozkKfBig04LPubLvIhlpA/bTHEaCyqRtSgaNBaPQ4Wdb
-         1zkMyQ0+pLDuYEcxsFryWGbH1ZSfFgVDP0SwrqcBMm8oM076NU2A6GodGyfYsBnM6irC
-         QlYL6+iMjRL3LqvgSsa6E3KXPz52MoMrx5xIu0z9wx5O4e4UGSdBzYKyObgDzE9sAUSC
-         ywlcbLejRtvSRnK9jBg8KXJKh7lRIdhv8EhsiBvl+ZPaafdxSBHELuu+OJDB5If+ZJPl
-         r5NA==
-X-Gm-Message-State: AHQUAuZO7mEOc1OcQrx1Yz+ESV2qsY6ndKM1n4uuPN6CnKxdY5qRSh3C
-        xPM8lJtPU4bHsrqBrewzqLJ9xv6WpCk=
-X-Google-Smtp-Source: AHgI3IahrlDMgWFoQspmU4/DDxirLGvu8d2MQ8CMul1zS7X6gKWpPw1qYkDNKYe+wWvSYvqxZjH3/g==
-X-Received: by 2002:a24:6983:: with SMTP id e125mr8873202itc.26.1551099792541;
-        Mon, 25 Feb 2019 05:03:12 -0800 (PST)
-Received: from [191.9.209.46] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
-        by smtp.gmail.com with ESMTPSA id l19sm3506643iok.20.2019.02.25.05.03.11
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Mon, 25 Feb 2019 05:03:11 -0800 (PST)
-Subject: Re: RAID1 device deletion feedback
-To:     Nemo <me@captnemo.in>, linux-btrfs@vger.kernel.org
-References: <d1eac64c-056b-a95b-7890-875d313a7ab4@captnemo.in>
-From:   "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <ad1585cf-20ca-b921-1d27-ffc50f0061e0@gmail.com>
-Date:   Mon, 25 Feb 2019 08:03:09 -0500
-User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
+        id S1726997AbfBYNKt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Feb 2019 08:10:49 -0500
+Received: from mout.gmx.net ([212.227.15.19]:57629 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726921AbfBYNKt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Feb 2019 08:10:49 -0500
+Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx003
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0LikE1-1haL0P246P-00cwVz; Mon, 25
+ Feb 2019 14:10:41 +0100
+Subject: Re: [PATCH 0/2] Use new incompat feature BG_TREE to hugely reduce
+ mount time
+To:     Hans van Kranenburg <hans@knorrie.org>, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20190102052945.16325-1-wqu@suse.com>
+ <01eb72d8-73b2-049e-a6f4-37668742a2b8@knorrie.org>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <79f01a1d-97b3-d7c1-91b7-01b7830b3f18@gmx.com>
+Date:   Mon, 25 Feb 2019 21:10:35 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.5.1
 MIME-Version: 1.0
-In-Reply-To: <d1eac64c-056b-a95b-7890-875d313a7ab4@captnemo.in>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+In-Reply-To: <01eb72d8-73b2-049e-a6f4-37668742a2b8@knorrie.org>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="BQyiejei2G5vjuRb0XrxaYdSfhGnYZeng"
+X-Provags-ID: V03:K1:bRrOZCul1rgiYhvZPPTdRBvevZbYe0sXpI+W7gSUNi/cZSrWm0w
+ oaHRS1cqgYi7PpbJajrx+PtdVn0LeqHOE0hN2l8VRo2kTTZb18ZJ0l+71uZqyHhkWQ2Qpuq
+ Vi62iIAK8DsgSjaBapr3Ewup0ZNjO9rBdz0o3NdjLYPhRZQV2hIKJJPIl7+0iFz/YUPOrIC
+ +eKo8LPIvh+LQnGUQV5cQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:05IFI2PBAw4=:287LrtAU1DsjKJMnr6mDqx
+ a6OdBJ5UkVlMQbRz54Dsiwt079tGecm2nYAatlqZY2O9ZPOjEUWg/y5TUsq9tDPCEzVEH75uI
+ s4XEkqjqXPw+dmh423rfdTzNEdcVHsPl1pJc0biuOZCaAuinQOyAgueQqTZnFo+SqAuDIlH/T
+ 28Es/3M6dVYCcK+DZU1Q4i1Q8/kkxI8+VnfDqnmjqlmjiUrLcapIPjPR0VmY7hya50H7IHkYs
+ fTFx0Xy/FidKMI3kwVRXFQdPSgYJvulAdFUMlI7YWQb1qOc2rMea8XUgOw78oti/Z3OmXU2ld
+ fYyLT6yrZ+dtnHdWvJAYIskQCzBemHM710scX4l1HjDeV8Lccmz2q5PJatcfvVlcQqiFewes9
+ 4p3dy1H55PKE4zBjL0acbeL3ONs3I9h7K4UsBGL7FNl/ifb61ybWozQiZNf5h14ebxc25IswS
+ nfh+dPtKLqat7Ma6SSbpCufcoQgFUM6bbE35pRWgUlTj16hxoDkkbNXvsgOQQ0PZZAj1stiWJ
+ 724jLEN/IfTUAfdwLWGGSuoJQ1P94LIJ+6GaB9mQDVLAzniiPfZdmNwxJwPtJ4y2xMzrkyzzn
+ OVSM6e6ipi3UdJLzkACbV/XA4YgttN+PKNcppnXnbpy4Jzd0+GHcpF4qI1UW1t3Th0ZH33q0l
+ ddbTHSdtjgn2kjAsE6zI5sYGhlkZ9bXTt249qxSxXCbItTNX0TlXmJqn9r+B4uKEG/XadTN0+
+ PxROyvFniZiMtXKEVlYKVW35MZVVDc8mlMxUCJ+vXVd1viW07ZeJJMA5iL2e+O8Gf6UQ9WMfM
+ D1D55Ej6pbxfOOeQRa2Qghc3jeM5OCC2PBZqpWCzE9AcYvLLPNbFWmsSSCdoppB/QIAE8LoJj
+ GLH7fuguBjXekWEAVLbUmdl8Dp4sB4jMfy2gcFrVHf58hBi7B/Nx/jwl1PZYEb
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 2019-02-24 12:32, Nemo wrote:
-> Hi,
-> 
-> I had a RAID1 disk failure recently, and a limitation in number of SATA
-> connectors meant I could not do a live replace. I'm still in the
-> progress of resolving the issue, but posting some feedback here on the
-> issues I faced and what could have helped.
-> 
-> **What all I did**
-> 
-> - remove the dying disk and mount in degraded mode. This didn't work,
-> but _didn't provide me a failure reason_
-If you don't see a message on the console, check dmesg.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--BQyiejei2G5vjuRb0XrxaYdSfhGnYZeng
+Content-Type: multipart/mixed; boundary="jD7cL2XyeXlLOQgJaJZQQrMIlTnyXVl9c";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Hans van Kranenburg <hans@knorrie.org>, Qu Wenruo <wqu@suse.com>,
+ linux-btrfs@vger.kernel.org
+Message-ID: <79f01a1d-97b3-d7c1-91b7-01b7830b3f18@gmx.com>
+Subject: Re: [PATCH 0/2] Use new incompat feature BG_TREE to hugely reduce
+ mount time
+References: <20190102052945.16325-1-wqu@suse.com>
+ <01eb72d8-73b2-049e-a6f4-37668742a2b8@knorrie.org>
+In-Reply-To: <01eb72d8-73b2-049e-a6f4-37668742a2b8@knorrie.org>
 
-> - swap the dead disk post boot with the new one. Tried a btrfs device
-> add, but it failed as well because of too many failing reads from the
-> dead disk (which wasn't even attached).
-You can take this approach, but you need to use the replace command not 
-the add command.  You can't really add devices to a partial array, for 
-exactly the reason you saw it fail here.  In the case of replacing a 
-device that is missing, you want to do the following (though it only 
-works if you have only one missing device):
+--jD7cL2XyeXlLOQgJaJZQQrMIlTnyXVl9c
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-     btrfs replace start -r missing /path/to/new/dev /path/to/fs
 
-> - Started a btrfs device delete, which finally pointed me to the root
-> cause:
-> 
-> `ERROR: error removing device '/dev/sdb1': No space left on device`
 
-> 
-> In short:
-> 
-> 1. My 2.7TBx3 setup was storing 2.9TB of data
-> 2. Removing any one the disks was not possible without losing some data
-> 
-> However, getting to this error message took me hours of effort, despite
-> having read the btrfs wiki.
-> 
-> **Feedback**
-> 
-> 1. The `btrfs device delete` command should have failed immediately
-> instead of making me wait for ages.
-I won't pretend that your statement isn't correct, but I can at least 
-explain _why_ it didn't.
+On 2019/2/25 =E4=B8=8B=E5=8D=889:02, Hans van Kranenburg wrote:
+> Hi Qu,
+>=20
+> On 1/2/19 6:29 AM, Qu Wenruo wrote:
+>> This patchset can be fetched from:
+>> https://github.com/adam900710/linux/tree/bg_tree
+>> Which is based on v4.20-rc1 tag.
+>>
+>> This patchset will hugely reduce mount time of large fs by putting all=
 
-Put simply, the device delete command is a special case of a balance 
-operation, and balancing doesn't do any check prior to running to make 
-sure that the requested state is valid.  Part of this is that it's 
-actually useful in some cases to just run the balance until it fails 
-(because getting part of the work done is usually better than none), and 
-part of it is because it is very much non-trivial in a number of the 
-cases that balance needs to handle how the disk will look after running 
-the balance if it's successful.
+>> block group items into its own tree.
+>=20
+> I'm going to test this.
+>=20
+> Is there some specific command you'd like me to use to produce results
+> for benchmarks?
 
-> 2. A delete command should stop writes to a disk, unless avoidable. This
-> would have left some data on the disk, and a subsequent delete could
-> have cleaned it up much faster. It failed in the worst manner possible,
-> because all deletion progress reversed once it failed: it balanced back
-> to complete usage, causing more strain on a dying disk.
-It essentially operates currently in a manner similar to the LVM2 pvmove 
-command WRT writes, just not as smart.  AFAIUI:
+Nope. If I provides some commands, those must be super beneficial for
+BG_TREE.
 
-* Any writes that go to a chunk that is on the device to be removed 
-still go through.
-* Any writes that go to a chunk that is not on the device to be removed 
-don't touch it.
-* Any writes that go to the chunk currently being moved off of the 
-device being removed go to the new location for that chunk.
+So just use whatever you like, near real world use case would be more
+appreciated.
 
-> 3. A degraded mount failure should provide some error message.
-Again, if you see a mount failure, check dmesg.  This is the case for 
-pretty much any filesystem (hell, mount actually tells you to do this in 
-a lot of cases).
-> 
-> *Status*: I cleared up some disk space, and ran another delete which is
-> still ongoing. I don't have physical access to the system for a few more
-> days, so adding the new disk will take me some time.
-> 
-> ---
-> 
-> ## Debug Details
-> 
-> 
-> ```
-> uname -a
-> Linux tatooine.captnemo.in 4.20.10-arch1-1-ARCH #1 SMP PREEMPT Fri Feb
-> 15 17:49:06 UTC 2019 x86_64 GNU/Linux
-> 
-> btrfs --version
-> btrfs-progs v4.20.1
-> ```
-> 
-> A few more details are on a reddit post[0] I made to help debug the
-> issue and a gist[1] has disk usage and filesystem details.
-> 
-> [0]:
-> https://www.reddit.com/r/archlinux/comments/asrlam/btrfscleaner_at_100_cpu_usage_on_raid1_setup/egwc047/
-> [1]: https://paste.ubuntu.com/p/GDNKNBqqFy/
-> 
+Thanks,
+Qu
 
+
+--jD7cL2XyeXlLOQgJaJZQQrMIlTnyXVl9c--
+
+--BQyiejei2G5vjuRb0XrxaYdSfhGnYZeng
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlxz6UsACgkQwj2R86El
+/qjAxQf/cJc4sjioZB4pu6YEkNe/Tr0lN8TIjnioJUIoelvLvwPax/8V0ZP9pTJS
+0hMERtxyp4SBImJDbsRnU3FJVGIF+nzpfAVFZDzq4QtSRxyWz+AJNl+PO0NrVzhk
+bIKsrTTF/ybix2HcqDHa6dU5h6WnsJmDbzpis16iZi65z8hAR0zWZvLCxIdKgcGa
+w8W/bQ7zgNie4tO5hYGoYoCsJdhw8SocyfBQZlFaO2mLfaqqbAyGNIlaYXDcvkYc
+T56mTo5Ks8uuZbfYZSabrthy3QW5EM7RCXocq+lEcYScBRDpMh2W/FN6RBY/3CQd
+ogohjtOAQvL4yeFVHs+HQvv/0zse/Q==
+=kcP9
+-----END PGP SIGNATURE-----
+
+--BQyiejei2G5vjuRb0XrxaYdSfhGnYZeng--

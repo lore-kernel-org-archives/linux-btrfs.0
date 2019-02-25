@@ -2,114 +2,177 @@ Return-Path: <SRS0=5Bfi=RA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,USER_AGENT_NEOMUTT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 656F3C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 15:46:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BE123C43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 16:14:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 27E952087C
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 15:46:08 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8CE612083D
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 16:14:50 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="K5aAcGkL"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="lGu3WHTh"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727765AbfBYPqH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Feb 2019 10:46:07 -0500
-Received: from mail-yb1-f194.google.com ([209.85.219.194]:45156 "EHLO
-        mail-yb1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727638AbfBYPqG (ORCPT
+        id S1727950AbfBYQOt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Feb 2019 11:14:49 -0500
+Received: from mail-qk1-f195.google.com ([209.85.222.195]:36175 "EHLO
+        mail-qk1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727808AbfBYQOt (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Feb 2019 10:46:06 -0500
-Received: by mail-yb1-f194.google.com with SMTP id c76so2466764ybf.12
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Feb 2019 07:46:06 -0800 (PST)
+        Mon, 25 Feb 2019 11:14:49 -0500
+Received: by mail-qk1-f195.google.com with SMTP id c2so4903582qkb.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Feb 2019 08:14:48 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:content-transfer-encoding:in-reply-to
-         :user-agent;
-        bh=+3AqGD3YK4Nm3j2P9atW6CaGg7U9HCP8PTU+T6zAlH0=;
-        b=K5aAcGkLklU6P9k0qAIx0+utRQghgG0SyYL7TgtguogBpbsivezL5FJEGruG19ipX2
-         ls7gKUNMW8Hn/83kmCN701puli6RIdk3P19NG+tKDtthl+JZ3rXaYVYqx527N356NSja
-         OEQwMMGzFtiMBz25zWRPvr33G79lbxPrnSMl/Z6d8xGD+edrca3A95vC4Cnl26kS+yq7
-         a1ULGdqrwee4S6D1c0PnAxhA3p1W1c4Cp7QEKBZ5Qhw89lUJRfYkiKNijj534wgF8I/C
-         OTHbFyXw09bgvmt9sq0NQYoXgxhnhNubBJW7RHBumUHhda72X/nktqjYJZVGCvGuV7qo
-         p/sA==
+        h=from:to:subject:date:message-id;
+        bh=3b9KJrOIMlLwY9uYT/4oovJQxbLY2sTHfG5p2JaXMJI=;
+        b=lGu3WHThuDnIpBAViq4KbDuJYcFF5b20TTi/SIWAf1FFTVDSCpntvEbbJnTInCvvJ4
+         M6m61AMFh7M2MVJHYUqCZ3LCRfjWWyUNB+501c56eQgNeaLvroaEwmCgAmT0z+2JhISJ
+         56Pl7Xvu5eGRDztCW0EBTLI/SWkLhpaBDFUDmsKa/XNlQMir2eqiCBYUpbWA05M0XKiY
+         nMaQthpC3ufG//J3JoF7vO3hS4RQoTzl5ySru48hTLg/DzkEKnwdIAGaCqiI599uFFIE
+         f7+N+6dq1U/E4ACBBIv8fdSWk0h+DW8+nbDM9YomWj1uwduh79DRy26V5JwLeg/HVoeR
+         zFnw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:content-transfer-encoding
-         :in-reply-to:user-agent;
-        bh=+3AqGD3YK4Nm3j2P9atW6CaGg7U9HCP8PTU+T6zAlH0=;
-        b=WDpLP9nt2aur8O/h1tmJrbLZ0Sg0FLsOyPrBSX8dSMSlm8AeT+x5CwFvNhoYgjxvJ/
-         rTZYXgLLJ8GitXKNXZatj1ZkV3D0bAeZaXsNgdB1qcP8gCJSD81H4o/wPEPgXlRpCfJT
-         iijvE+KslalDeE+p2KtIbuW3IgQdoFiotnpV6e0tPdlHaQY2o8rcE1WGlzbIYUZb/E1d
-         mJ6tgOeG/7K5fDzoNt0KM2aRs0MRm6utNSjVnWylD60gVFvrI3ZG1BE1DqurBp7wBV24
-         V5jCjWzSCNBMEa0vv75LW6/FM5Sx+djSWDYl4GKQY7XBbfDPbQKfkZswsl3QTe1GL8XH
-         YS3g==
-X-Gm-Message-State: AHQUAuaJW4OlTwyw+INopudbDp98RcJhZ3r7lMf8bFDqQmj69FaOXEOM
-        o+ecHaEkTK/Kc5+cNXPxFV84Vx2nvFw=
-X-Google-Smtp-Source: AHgI3Ia2WoAa0EEp8DMjCi0ISiMJKhp/4pSV/1ITlhMB1MCvPK5IpIUxbzPIWlkzLChDS8eo84MGYA==
-X-Received: by 2002:a25:c087:: with SMTP id c129mr15006420ybf.320.1551109565881;
-        Mon, 25 Feb 2019 07:46:05 -0800 (PST)
-Received: from localhost ([2620:10d:c091:180::1:917f])
-        by smtp.gmail.com with ESMTPSA id g21sm3293065ywk.16.2019.02.25.07.46.04
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Mon, 25 Feb 2019 07:46:04 -0800 (PST)
-Date:   Mon, 25 Feb 2019 10:46:03 -0500
+        h=x-gm-message-state:from:to:subject:date:message-id;
+        bh=3b9KJrOIMlLwY9uYT/4oovJQxbLY2sTHfG5p2JaXMJI=;
+        b=PTct5H7HapdTEvEi9d2/4QCokBNts/DRDLauk9pSc8fothaqzGzwgzDdfmrt2qm0Lb
+         PnEX2o3czQ8QPxo02dSCVffmu+jhHz7k7vQxnBdiIjYj5e2hPDNX4W7lwTgS70pGQkEy
+         XE5J45ZYKnifINLOQ+8d56Avu8h9waFwjzC8R2hTNvsKofaYyFfOX1Gbr6qsfcjTBvMM
+         1mcmUKyK38bd/h/XZvB6CmH7eBXMWqYIkABElklUIuql2udLYUBhK4FyVApo6anf55e/
+         sgLyti15JAvL0ehVtafFG2vE4aivJzFSE7gGo1UMHcthgxzNoIv4zWKyzrYMYkydyKuW
+         kbjQ==
+X-Gm-Message-State: AHQUAuYYDpkyMtiYZ4S/PT87vPzheBTuuKP0VOuFI+JK2VIa1GZG7b4r
+        kByLL1+M5xvbEOC8qya9GV1dSDQGGd4=
+X-Google-Smtp-Source: AHgI3IZECDFpqIuWedYMuug5pAETT8MXf2bENzyK9lf2+sSxaZ1NTkV1RnJ8R8d+IzWVn/BMJPvrxQ==
+X-Received: by 2002:a37:7d86:: with SMTP id y128mr1028611qkc.36.1551111287252;
+        Mon, 25 Feb 2019 08:14:47 -0800 (PST)
+Received: from localhost ([107.15.81.208])
+        by smtp.gmail.com with ESMTPSA id o2sm7148207qtf.46.2019.02.25.08.14.46
+        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
+        Mon, 25 Feb 2019 08:14:46 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
-To:     David Sterba <dsterba@suse.cz>
-Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org, josef@toxicpanda.com
-Subject: Re: [PATCH] btrfs: Use struct inode* to replace
- extent_io_tree::private_data
-Message-ID: <20190225154602.gsrmmp465l7rnkm3@macbook-pro-91.dhcp.thefacebook.com>
-References: <20190225055043.1621-1-wqu@suse.com>
- <20190225121540.GN9874@twin.jikos.cz>
- <7a8afd82-7acf-e2cc-deff-38ccf702ef2d@gmx.com>
- <20190225122657.GP9874@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <20190225122657.GP9874@twin.jikos.cz>
-User-Agent: NeoMutt/20180716
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: [PATCH][RFC] btrfs: fix relocation panic
+Date:   Mon, 25 Feb 2019 11:14:45 -0500
+Message-Id: <20190225161445.2025-1-josef@toxicpanda.com>
+X-Mailer: git-send-email 2.14.3
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Feb 25, 2019 at 01:26:57PM +0100, David Sterba wrote:
-> On Mon, Feb 25, 2019 at 08:17:52PM +0800, Qu Wenruo wrote:
-> > 
-> > 
-> > On 2019/2/25 下午8:15, David Sterba wrote:
-> > > On Mon, Feb 25, 2019 at 01:50:43PM +0800, Qu Wenruo wrote:
-> > >> All users of extent_io_tree::private_data are expecting struct inode*.
-> > >> So just use struct inode* to replace extent_io_tree::private_data, and
-> > >> this should provide better type check.
-> > >>
-> > >> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> > >>  struct extent_io_tree {
-> > >>  	struct rb_root state;
-> > >> -	void *private_data;
-> > >> +	struct inode *inode;
-> > >>  	u64 dirty_bytes;
-> > >>  	int track_uptodate;
-> > >>  	spinlock_t lock;
-> > > 
-> > > So this is effectively reverting c6100a4b4e3d1650deafd ("Btrfs: replace
-> > > tree->mapping with tree->private_data"),
-> > 
-> > That commit message doesn't explain why this is needed for btree_inode
-> > removal.
-> > 
-> > Any idea what the extra type would be used in that case?
-> 
-> I don't know, Josef in CC to answer that.
+We've been seeing the following sporadically throughout our fleet
 
-Yeah there's a mapping tree thing I make to keep track of the metadata, it holds
-the radix tree for the eb's and a bunch of other stuff.  This needs to stay a
-void *.  Thanks,
+panic: kernel BUG at fs/btrfs/relocation.c:4584!
+netversion: 5.0-0
+Backtrace:
+ #0 [ffffc90003adb880] machine_kexec at ffffffff81041da8
+ #1 [ffffc90003adb8c8] __crash_kexec at ffffffff8110396c
+ #2 [ffffc90003adb988] crash_kexec at ffffffff811048ad
+ #3 [ffffc90003adb9a0] oops_end at ffffffff8101c19a
+ #4 [ffffc90003adb9c0] do_trap at ffffffff81019114
+ #5 [ffffc90003adba00] do_error_trap at ffffffff810195d0
+ #6 [ffffc90003adbab0] invalid_op at ffffffff81a00a9b
+    [exception RIP: btrfs_reloc_cow_block+692]
+    RIP: ffffffff8143b614  RSP: ffffc90003adbb68  RFLAGS: 00010246
+    RAX: fffffffffffffff7  RBX: ffff8806b9c32000  RCX: ffff8806aad00690
+    RDX: ffff880850b295e0  RSI: ffff8806b9c32000  RDI: ffff88084f205bd0
+    RBP: ffff880849415000   R8: ffffc90003adbbe0   R9: ffff88085ac90000
+    R10: ffff8805f7369140  R11: 0000000000000000  R12: ffff880850b295e0
+    R13: ffff88084f205bd0  R14: 0000000000000000  R15: 0000000000000000
+    ORIG_RAX: ffffffffffffffff  CS: 0010  SS: 0018
+ #7 [ffffc90003adbbb0] __btrfs_cow_block at ffffffff813bf1cd
+ #8 [ffffc90003adbc28] btrfs_cow_block at ffffffff813bf4b3
+ #9 [ffffc90003adbc78] btrfs_search_slot at ffffffff813c2e6c
 
-Josef
+The way relocation moves data extents is by creating a reloc inode and
+preallocating extents in this inode and then copying the data into these
+preallocated extents.  Once we've done this for all of our extents,
+we'll write out these dirty pages, which marks the extent written, and
+goes into btrfs_reloc_cow_block().  From here we get our current
+reloc_control, which _should_ match the reloc_control for the current
+block group we're relocating.
+
+However if we get an ENOSPC in this path at some point we'll bail out,
+never initiating writeback on this inode.  Not a huge deal, unless we
+happen to be doing relocation on a different block group, and this block
+group is now rc->stage == UPDATE_DATA_PTRS.  This trips the BUG_ON() in
+btrfs_reloc_cow_block(), because we expect to be done modifying the data
+inode.  We are in fact done modifying the metadata for the data inode
+we're currently using, but not the one from the failed block group, and
+thus we BUG_ON().
+
+Fix this by writing out the reloc data inode always, and then breaking
+out of the loop after that point to keep from tripping this BUG_ON()
+later.
+
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+
+This is tricky to reproduce, it only happens on ~50 boxes a day here, and is
+completely timing dependant.  I'm heading to Boston for a few days, but this is
+kind of important and I need everybody to look at this and tell me if it makes
+sense.  I'm trying to force the problem to happen locally, but I'm not going to
+be able to put much more time into it until Thursday.
+
+ fs/btrfs/relocation.c | 31 ++++++++++++++++++++-----------
+ 1 file changed, 20 insertions(+), 11 deletions(-)
+
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index ddf028509931..00c3dd92f088 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -4330,27 +4330,36 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
+ 		mutex_lock(&fs_info->cleaner_mutex);
+ 		ret = relocate_block_group(rc);
+ 		mutex_unlock(&fs_info->cleaner_mutex);
+-		if (ret < 0) {
++		if (ret < 0)
+ 			err = ret;
+-			goto out;
+-		}
+-
+-		if (rc->extents_found == 0)
+-			break;
+-
+-		btrfs_info(fs_info, "found %llu extents", rc->extents_found);
+ 
++		/*
++		 * We may have gotten ENOSPC after we already dirtied some
++		 * extents.  If writeout happens while we're relocating a
++		 * different block group we could end up hitting the
++		 * BUG_ON(rc->stage == UPDATE_DATA_PTRS) in
++		 * btrfs_reloc_cow_block.  Make sure we write everything out
++		 * properly so we don't trip over this problem, and then break
++		 * out of the loop if we hit an error.
++		 */
+ 		if (rc->stage == MOVE_DATA_EXTENTS && rc->found_file_extent) {
+ 			ret = btrfs_wait_ordered_range(rc->data_inode, 0,
+ 						       (u64)-1);
+-			if (ret) {
++			if (ret)
+ 				err = ret;
+-				goto out;
+-			}
+ 			invalidate_mapping_pages(rc->data_inode->i_mapping,
+ 						 0, -1);
+ 			rc->stage = UPDATE_DATA_PTRS;
+ 		}
++
++		if (err < 0)
++			goto out;
++
++		if (rc->extents_found == 0)
++			break;
++
++		btrfs_info(fs_info, "found %llu extents", rc->extents_found);
++
+ 	}
+ 
+ 	WARN_ON(rc->block_group->pinned > 0);
+-- 
+2.14.3
+

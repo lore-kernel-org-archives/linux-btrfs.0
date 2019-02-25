@@ -2,177 +2,187 @@ Return-Path: <SRS0=5Bfi=RA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-6.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BE123C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 16:14:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6ABB2C43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 16:36:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8CE612083D
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 16:14:50 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="lGu3WHTh"
+	by mail.kernel.org (Postfix) with ESMTP id 37D2920684
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 16:36:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727950AbfBYQOt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Feb 2019 11:14:49 -0500
-Received: from mail-qk1-f195.google.com ([209.85.222.195]:36175 "EHLO
-        mail-qk1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727808AbfBYQOt (ORCPT
+        id S1728124AbfBYQgH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Feb 2019 11:36:07 -0500
+Received: from syrinx.knorrie.org ([82.94.188.77]:44178 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727930AbfBYQgH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Feb 2019 11:14:49 -0500
-Received: by mail-qk1-f195.google.com with SMTP id c2so4903582qkb.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Feb 2019 08:14:48 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id;
-        bh=3b9KJrOIMlLwY9uYT/4oovJQxbLY2sTHfG5p2JaXMJI=;
-        b=lGu3WHThuDnIpBAViq4KbDuJYcFF5b20TTi/SIWAf1FFTVDSCpntvEbbJnTInCvvJ4
-         M6m61AMFh7M2MVJHYUqCZ3LCRfjWWyUNB+501c56eQgNeaLvroaEwmCgAmT0z+2JhISJ
-         56Pl7Xvu5eGRDztCW0EBTLI/SWkLhpaBDFUDmsKa/XNlQMir2eqiCBYUpbWA05M0XKiY
-         nMaQthpC3ufG//J3JoF7vO3hS4RQoTzl5ySru48hTLg/DzkEKnwdIAGaCqiI599uFFIE
-         f7+N+6dq1U/E4ACBBIv8fdSWk0h+DW8+nbDM9YomWj1uwduh79DRy26V5JwLeg/HVoeR
-         zFnw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id;
-        bh=3b9KJrOIMlLwY9uYT/4oovJQxbLY2sTHfG5p2JaXMJI=;
-        b=PTct5H7HapdTEvEi9d2/4QCokBNts/DRDLauk9pSc8fothaqzGzwgzDdfmrt2qm0Lb
-         PnEX2o3czQ8QPxo02dSCVffmu+jhHz7k7vQxnBdiIjYj5e2hPDNX4W7lwTgS70pGQkEy
-         XE5J45ZYKnifINLOQ+8d56Avu8h9waFwjzC8R2hTNvsKofaYyFfOX1Gbr6qsfcjTBvMM
-         1mcmUKyK38bd/h/XZvB6CmH7eBXMWqYIkABElklUIuql2udLYUBhK4FyVApo6anf55e/
-         sgLyti15JAvL0ehVtafFG2vE4aivJzFSE7gGo1UMHcthgxzNoIv4zWKyzrYMYkydyKuW
-         kbjQ==
-X-Gm-Message-State: AHQUAuYYDpkyMtiYZ4S/PT87vPzheBTuuKP0VOuFI+JK2VIa1GZG7b4r
-        kByLL1+M5xvbEOC8qya9GV1dSDQGGd4=
-X-Google-Smtp-Source: AHgI3IZECDFpqIuWedYMuug5pAETT8MXf2bENzyK9lf2+sSxaZ1NTkV1RnJ8R8d+IzWVn/BMJPvrxQ==
-X-Received: by 2002:a37:7d86:: with SMTP id y128mr1028611qkc.36.1551111287252;
-        Mon, 25 Feb 2019 08:14:47 -0800 (PST)
-Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id o2sm7148207qtf.46.2019.02.25.08.14.46
-        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Mon, 25 Feb 2019 08:14:46 -0800 (PST)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH][RFC] btrfs: fix relocation panic
-Date:   Mon, 25 Feb 2019 11:14:45 -0500
-Message-Id: <20190225161445.2025-1-josef@toxicpanda.com>
-X-Mailer: git-send-email 2.14.3
+        Mon, 25 Feb 2019 11:36:07 -0500
+Received: from [10.200.4.80] (unknown [85.146.242.35])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by syrinx.knorrie.org (Postfix) with ESMTPSA id 588093B449565;
+        Mon, 25 Feb 2019 17:36:05 +0100 (CET)
+Subject: Re: [PATCH 0/6] btrfs-progs: Support for BG_TREE feature
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20181228083806.3204-1-wqu@suse.com>
+From:   Hans van Kranenburg <hans@knorrie.org>
+Openpgp: preference=signencrypt
+Autocrypt: addr=hans@knorrie.org; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <8a88277e-6a9f-7383-601f-cb6e84451ce5@knorrie.org>
+Date:   Mon, 25 Feb 2019 17:36:04 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.5.0
+MIME-Version: 1.0
+In-Reply-To: <20181228083806.3204-1-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en_US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We've been seeing the following sporadically throughout our fleet
+Sorry to bother you again...
 
-panic: kernel BUG at fs/btrfs/relocation.c:4584!
-netversion: 5.0-0
-Backtrace:
- #0 [ffffc90003adb880] machine_kexec at ffffffff81041da8
- #1 [ffffc90003adb8c8] __crash_kexec at ffffffff8110396c
- #2 [ffffc90003adb988] crash_kexec at ffffffff811048ad
- #3 [ffffc90003adb9a0] oops_end at ffffffff8101c19a
- #4 [ffffc90003adb9c0] do_trap at ffffffff81019114
- #5 [ffffc90003adba00] do_error_trap at ffffffff810195d0
- #6 [ffffc90003adbab0] invalid_op at ffffffff81a00a9b
-    [exception RIP: btrfs_reloc_cow_block+692]
-    RIP: ffffffff8143b614  RSP: ffffc90003adbb68  RFLAGS: 00010246
-    RAX: fffffffffffffff7  RBX: ffff8806b9c32000  RCX: ffff8806aad00690
-    RDX: ffff880850b295e0  RSI: ffff8806b9c32000  RDI: ffff88084f205bd0
-    RBP: ffff880849415000   R8: ffffc90003adbbe0   R9: ffff88085ac90000
-    R10: ffff8805f7369140  R11: 0000000000000000  R12: ffff880850b295e0
-    R13: ffff88084f205bd0  R14: 0000000000000000  R15: 0000000000000000
-    ORIG_RAX: ffffffffffffffff  CS: 0010  SS: 0018
- #7 [ffffc90003adbbb0] __btrfs_cow_block at ffffffff813bf1cd
- #8 [ffffc90003adbc28] btrfs_cow_block at ffffffff813bf4b3
- #9 [ffffc90003adbc78] btrfs_search_slot at ffffffff813c2e6c
+On 12/28/18 9:38 AM, Qu Wenruo wrote:
+> This patchset can be fetched from github:
+> https://github.com/adam900710/btrfs-progs/tree/bg_tree
+> The basis commit is:
+> 
+> commit 7d16a2b460182ee98c649533a6975b6e419c3d71
+> Author: Qu Wenruo <wqu@suse.com>
+> Date:   Thu Dec 27 13:49:18 2018 +0800
+> 
+>     btrfs-progs: Create uuid tree with proper contents
+> 
+> Which is further based on devel branch.
+> 
+> This patchset provides the needed user space infrastructure for BG_TREE
+> feature.
+> 
+> Since it's an new exclusive feature, unlike SKINNY_METADATA, btrfs-progs
+> is needed to convert existing fs (unmounted) to new format.
+> 
+> Although I have prepared the functionality, convert_to_bg_tree(), and
+> already uses it in mkfs, I haven't decided if I should put it under
+> btrfstune, as btrfstune isn't such offline convert tool.
 
-The way relocation moves data extents is by creating a reloc inode and
-preallocating extents in this inode and then copying the data into these
-preallocated extents.  Once we've done this for all of our extents,
-we'll write out these dirty pages, which marks the extent written, and
-goes into btrfs_reloc_cow_block().  From here we get our current
-reloc_control, which _should_ match the reloc_control for the current
-block group we're relocating.
+Ok, so, the convert_to_bg_tree still needs wiring up somewhere before
+it's possible to convert an existing fs?
 
-However if we get an ENOSPC in this path at some point we'll bail out,
-never initiating writeback on this inode.  Not a huge deal, unless we
-happen to be doing relocation on a different block group, and this block
-group is now rc->stage == UPDATE_DATA_PTRS.  This trips the BUG_ON() in
-btrfs_reloc_cow_block(), because we expect to be done modifying the data
-inode.  We are in fact done modifying the metadata for the data inode
-we're currently using, but not the one from the failed block group, and
-thus we BUG_ON().
+I want to test with a (iSCSI level clone of a) rather large-ish
+filesystem, so I was searching for how to convert that in place.
 
-Fix this by writing out the reloc data inode always, and then breaking
-out of the loop after that point to keep from tripping this BUG_ON()
-later.
+Do you have an idea for a (quick hack?) way to make this happen?
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
+Doing the offline conversion itself is also already an interesting
+thing, seeing how it behaves with some tens of thousands of block
+groups... (As the intended audience for it will mostly be people having
+large filesystems already.)
 
-This is tricky to reproduce, it only happens on ~50 boxes a day here, and is
-completely timing dependant.  I'm heading to Boston for a few days, but this is
-kind of important and I need everybody to look at this and tell me if it makes
-sense.  I'm trying to force the problem to happen locally, but I'm not going to
-be able to put much more time into it until Thursday.
-
- fs/btrfs/relocation.c | 31 ++++++++++++++++++++-----------
- 1 file changed, 20 insertions(+), 11 deletions(-)
-
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index ddf028509931..00c3dd92f088 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -4330,27 +4330,36 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
- 		mutex_lock(&fs_info->cleaner_mutex);
- 		ret = relocate_block_group(rc);
- 		mutex_unlock(&fs_info->cleaner_mutex);
--		if (ret < 0) {
-+		if (ret < 0)
- 			err = ret;
--			goto out;
--		}
--
--		if (rc->extents_found == 0)
--			break;
--
--		btrfs_info(fs_info, "found %llu extents", rc->extents_found);
- 
-+		/*
-+		 * We may have gotten ENOSPC after we already dirtied some
-+		 * extents.  If writeout happens while we're relocating a
-+		 * different block group we could end up hitting the
-+		 * BUG_ON(rc->stage == UPDATE_DATA_PTRS) in
-+		 * btrfs_reloc_cow_block.  Make sure we write everything out
-+		 * properly so we don't trip over this problem, and then break
-+		 * out of the loop if we hit an error.
-+		 */
- 		if (rc->stage == MOVE_DATA_EXTENTS && rc->found_file_extent) {
- 			ret = btrfs_wait_ordered_range(rc->data_inode, 0,
- 						       (u64)-1);
--			if (ret) {
-+			if (ret)
- 				err = ret;
--				goto out;
--			}
- 			invalidate_mapping_pages(rc->data_inode->i_mapping,
- 						 0, -1);
- 			rc->stage = UPDATE_DATA_PTRS;
- 		}
-+
-+		if (err < 0)
-+			goto out;
-+
-+		if (rc->extents_found == 0)
-+			break;
-+
-+		btrfs_info(fs_info, "found %llu extents", rc->extents_found);
-+
- 	}
- 
- 	WARN_ON(rc->block_group->pinned > 0);
--- 
-2.14.3
+> If anyone has better idea on the new convert tool interface, I'm all
+> ears.
+> 
+> For the performance improvement, please check the kernel patchset cover
+> letter or the last patch.
+> (SPOILER ALERT: It's super fast)
+> 
+> Qu Wenruo (6):
+>   btrfs-progs: Refactor excluded extent functions to use fs_info
+>   btrfs-progs: Refactor btrfs_read_block_groups()
+>   btrfs-progs: Enable read-write ability for 'bg_tree' feature
+>   btrfs-progs: mkfs: Introduce -O bg-tree
+>   btrfs-progs: dump-tree/dump-super: Introduce support for bg tree
+>   btrfs-progs: check: Introduce support for bg-tree feature
+> 
+>  check/main.c              |   7 +-
+>  check/mode-lowmem.c       |   9 +-
+>  cmds-inspect-dump-super.c |   3 +-
+>  cmds-inspect-dump-tree.c  |   5 +
+>  ctree.h                   |  17 +-
+>  disk-io.c                 |  29 +++-
+>  extent-tree.c             | 326 +++++++++++++++++++++++++++-----------
+>  fsfeatures.c              |   6 +
+>  mkfs/common.c             |   7 +-
+>  mkfs/common.h             |   1 +
+>  mkfs/main.c               |  57 +++++++
+>  print-tree.c              |   3 +
+>  transaction.c             |   1 +
+>  13 files changed, 365 insertions(+), 106 deletions(-)
+> 
 

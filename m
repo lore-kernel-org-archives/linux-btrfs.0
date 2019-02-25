@@ -2,58 +2,76 @@ Return-Path: <SRS0=5Bfi=RA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8F1EDC43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 18:03:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A59C2C4360F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 18:16:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6FD912084D
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 18:03:26 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7B1C720842
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 18:16:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728814AbfBYSDZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Feb 2019 13:03:25 -0500
-Received: from mx2.suse.de ([195.135.220.15]:45322 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726225AbfBYSDZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Feb 2019 13:03:25 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B6E80B16A
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Feb 2019 18:03:23 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 7AC06DA83C; Mon, 25 Feb 2019 19:04:40 +0100 (CET)
-From:   David Sterba <dsterba@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: Btrfs progs release 4.20.2
-Date:   Mon, 25 Feb 2019 19:04:37 +0100
-Message-Id: <20190225180438.4249-1-dsterba@suse.com>
+        id S1728854AbfBYSQz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Feb 2019 13:16:55 -0500
+Received: from tartarus.angband.pl ([54.37.238.230]:33780 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728834AbfBYSQz (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Feb 2019 13:16:55 -0500
+Received: from [2a02:a31c:853f:a300::6] (helo=umbar.angband.pl)
+        by tartarus.angband.pl with esmtps (TLS1.2:ECDHE_RSA_AES_256_GCM_SHA384:256)
+        (Exim 4.89)
+        (envelope-from <kilobyte@angband.pl>)
+        id 1gyKo6-00029G-Cx; Mon, 25 Feb 2019 19:16:52 +0100
+Received: from kilobyte by umbar.angband.pl with local (Exim 4.92)
+        (envelope-from <kilobyte@umbar.angband.pl>)
+        id 1gyKo4-0002hJ-GL; Mon, 25 Feb 2019 19:16:48 +0100
+From:   Adam Borowski <kilobyte@angband.pl>
+To:     David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
+        Mark Fasheh <mfasheh@versity.com>
+Cc:     Adam Borowski <kilobyte@angband.pl>
+Date:   Mon, 25 Feb 2019 19:16:43 +0100
+Message-Id: <20190225181644.10262-1-kilobyte@angband.pl>
 X-Mailer: git-send-email 2.20.1
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-SA-Exim-Connect-IP: 2a02:a31c:853f:a300::6
+X-SA-Exim-Mail-From: kilobyte@angband.pl
+Subject: [PATCH resend 1/2] btrfs-progs: fix kernel version parsing on some versions past 3.0
+X-SA-Exim-Version: 4.2.1 (built Tue, 02 Aug 2016 21:08:31 +0000)
+X-SA-Exim-Scanned: Yes (on tartarus.angband.pl)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+The code fails if the third section is missing (like "4.18") or is followed
+by anything but "." or "-".  This happens for example if we're not exactly
+at a tag and CONFIG_LOCALVERSION_AUTO=n (which results in "4.18.5+").
 
-btrfs-progs version 4.20.2 have been released. This is a quick fix of a problem
-with send/receive path checks that break some setups. As there's no proper
-fix yet, the patch that caused the regression has been reverted.
+Signed-off-by: Adam Borowski <kilobyte@angband.pl>
+---
+ fsfeatures.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
 
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+diff --git a/fsfeatures.c b/fsfeatures.c
+index 13ad0308..68653739 100644
+--- a/fsfeatures.c
++++ b/fsfeatures.c
+@@ -216,11 +216,8 @@ u32 get_running_kernel_version(void)
+ 		return (u32)-1;
+ 	version |= atoi(tmp) << 8;
+ 	tmp = strtok_r(NULL, ".", &saveptr);
+-	if (tmp) {
+-		if (!string_is_numerical(tmp))
+-			return (u32)-1;
++	if (tmp && string_is_numerical(tmp))
+ 		version |= atoi(tmp);
+-	}
+ 
+ 	return version;
+ }
+-- 
+2.20.1
 
-Shortlog:
-
-David Sterba (5):
-      btrfs-progs: ci: explicitly request reiserfs support for btrfs-convert
-      btrfs-progs: ci: switch to newer build environment
-      Revert "Btrfs-progs: fix mount point detection due to partial prefix match"
-      btrfs-progs: update CHANGES for v4.20.2
-      Btrfs progs v4.20.2
-
-Nikolay Borisov (1):
-      btrfs-progs: Use a single tab for 'leafsize (deprecated)' row

@@ -3,28 +3,32 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BF554C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 11:10:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 242E8C43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 11:17:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 975412147C
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 11:10:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id EAC702087C
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Feb 2019 11:17:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726725AbfBYLKk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Feb 2019 06:10:40 -0500
-Received: from mx2.suse.de ([195.135.220.15]:56062 "EHLO mx1.suse.de"
+        id S1726756AbfBYLRj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Feb 2019 06:17:39 -0500
+Received: from mx2.suse.de ([195.135.220.15]:58510 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726574AbfBYLKk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Feb 2019 06:10:40 -0500
+        id S1726701AbfBYLRj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Feb 2019 06:17:39 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 7F0A5AD2C
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Feb 2019 11:10:38 +0000 (UTC)
-Subject: Re: [PATCH] btrfs: Use struct inode* to replace
- extent_io_tree::private_data
-To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20190225055043.1621-1-wqu@suse.com>
+        by mx1.suse.de (Postfix) with ESMTP id 73BA0ACD3
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Feb 2019 11:17:37 +0000 (UTC)
+Subject: Re: [PATCH v3] btrfs: factor our read/write stage off
+ csum_tree_block() into its callers
+To:     dsterba@suse.cz, David Sterba <dsterba@suse.com>,
+        Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
+        Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>
+References: <20190219124353.22948-1-jthumshirn@suse.de>
+ <20190222145508.GE9874@twin.jikos.cz>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -82,12 +86,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <bda8823b-0570-50dc-0ed8-7dd2695ff4e6@suse.de>
-Date:   Mon, 25 Feb 2019 12:10:37 +0100
+Message-ID: <7e2a667b-819b-7594-9b94-65f6ef710434@suse.de>
+Date:   Mon, 25 Feb 2019 12:17:36 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.3.0
 MIME-Version: 1.0
-In-Reply-To: <20190225055043.1621-1-wqu@suse.com>
+In-Reply-To: <20190222145508.GE9874@twin.jikos.cz>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -96,8 +100,21 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Looks good,
-Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
+On 22/02/2019 15:55, David Sterba wrote:
+>>  
+>> -	return csum_tree_block(fs_info, eb, 0);
+>> +	if (WARN_ON(csum_tree_block(eb, result)))
+> 
+> I think the warn should go to csum_tree_block when the mapping function
+> returns 1, there's even a comment explaining why it can't normally
+> happen. The reason for the warning in csum_dirty_buffer is not very
+> clear from the context.
+> 
+> Otherwise ok, the verify or write semantics of a function that (by name)
+> only calculates checksum is confusing. Thanks.
+
+Sure. Would it make sense to split this into two patches?
+
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems
 jthumshirn@suse.de                                +49 911 74053 689

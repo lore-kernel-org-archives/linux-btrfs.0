@@ -2,152 +2,142 @@ Return-Path: <SRS0=RlhI=RB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D0DDFC43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Feb 2019 05:55:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EFFAEC43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Feb 2019 06:25:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9C9C42147C
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Feb 2019 05:55:27 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BB9DD2173C
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Feb 2019 06:25:48 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="dNXgwGb5"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725904AbfBZFz0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Feb 2019 00:55:26 -0500
-Received: from mx2.suse.de ([195.135.220.15]:57226 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725879AbfBZFzZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Feb 2019 00:55:25 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id EBC96ABDC
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Feb 2019 05:55:23 +0000 (UTC)
-Subject: Re: [PATCH] btrfs-progs: balance: Sync the fs before balancing
- metadata chunks
-To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20190129065739.31707-1-wqu@suse.com>
- <20190225172118.GA24609@twin.jikos.cz>
-From:   Qu Wenruo <wqu@suse.de>
-Openpgp: preference=signencrypt
-Autocrypt: addr=wqu@suse.de; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0F1F1IFdlbnJ1byA8d3F1QHN1c2UuZGU+iQFUBBMBCAA+AhsDBQsJCAcCBhUICQoLAgQW
- AgMBAh4BAheAFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlnVgp0FCQlmAm4ACgkQwj2R86El
- /qilmgf/cUq9kFQo577ku5gc6rFpVg68ublBwjYpwjw0b//xo+Wo1wm+RRbUGs+djSZAqw12
- D4F3r0mBTI7abUCNWAbFkYZSAIFVi0DMkjypIVS7PSaEt04rM9VBTToE+YqU6WENeJ57R2p2
- +hI0wZrBwxObdsdaOtxWtsp3bmhIbdqxSKrtXuRawy4KnQYcLuGzOce9okdlbAE0W3KHm1gQ
- oNAe6FX8nC9qo14m8LqEbThYH+qj4iCMlN8HIfbSx4F3e7nHZ+UAMW+E/lnMRkIB9Df+JyVd
- /NlXzIjZAggcWsqpx6D4wyAuexKWkiGQeUeArUNihAwXjmyqWPGmjVyIh+oC6LkBDQRZ1YGv
- AQgAqlPrYeBLMv3PAZ75YhQIwH6c4SNcB++hQ9TCT5gIQNw51+SQzkXIGgmzxMIS49cZcE4K
- Xk/kHw5hieQeQZa60BWVRNXwoRI4ib8okgDuMkD5Kz1WEyO149+BZ7HD4/yK0VFJGuvDJR8T
- 7RZwB69uVSLjkuNZZmCmDcDzS0c/SJOg5nkxt1iTtgUETb1wNKV6yR9XzRkrEW/qShChyrS9
- fNN8e9c0MQsC4fsyz9Ylx1TOY/IF/c6rqYoEEfwnpdlz0uOM1nA1vK+wdKtXluCa79MdfaeD
- /dt76Kp/o6CAKLLcjU1Iwnkq1HSrYfY3HZWpvV9g84gPwxwxX0uXquHxLwARAQABiQE8BBgB
- CAAmFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlnVga8CGwwFCQPCZwAACgkQwj2R86El/qgN
- 8Qf+M0vM2Idwm5txZZSs+/kSgcPxEwYmxUinnUJGyc0ZWYQXPl0cBetZon9El0naijGzNWvf
- HxIPB+ZFehk6Otgc78p1a3/xck/s1myFRLrmbbTJNoFiyL25ljcq0J8z5Zp4yuABL2RiLdaZ
- Pt/jfwjBHwGR+QKp6dD2qMrUWf9b7TFzYDMZXzZ2/eoIgtyjEelNBPrIgOFe24iKMjaGjd97
- fJuRcBMHdhUAxvXQF1oRtd83JvYJ5OtwTd8MgkEfl+fo7HwWkuHbzc70L4fFKv2BowqFdaHy
- mId1ijGPGr46tuZ5a4cw/zbaPYx6fJ4sK9tSv/6V1QPNUdqml6hm6pfs6A==
-Message-ID: <3e574c54-f714-424e-78bb-4a251a864153@suse.de>
-Date:   Tue, 26 Feb 2019 13:55:06 +0800
+        id S1726539AbfBZGZr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Feb 2019 01:25:47 -0500
+Received: from userp2120.oracle.com ([156.151.31.85]:51608 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725904AbfBZGZr (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 26 Feb 2019 01:25:47 -0500
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x1Q6OEJ6115444;
+        Tue, 26 Feb 2019 06:25:40 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : from : to :
+ cc : references : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2018-07-02;
+ bh=S2lmXSSZWzDd0vBawewudFiFn4S1PslhclMK8UkyFDI=;
+ b=dNXgwGb5v36WoM4wiG6pzXe+shByBl7VXnnyR29s/Pur5vb1PFpkxa0ZQfB7tCJziThQ
+ 1xDUqpEab1NuOuybooTg6M21akKE923AIEcCzXVU+uEJRspJ9obpzMjMYuZmIyaaXyVc
+ x01C90N3ptMkDgzZ7O0uDtWAahzFy2nLWB7EOl9KxPggKHqB3o6f546vfUp2vVhtbWD5
+ ZTXsye46n3q7fCs0TyKVufRzra5Q0Xh4Al49SqBH+E7AsmVykmmIWMvItWRUCQyAgXxm
+ qq5GuOrkpaNCS+TSRvowbUNtbUWJADzwW9bx0C45v/ASFPZRe4WGQyGWX8xej1INlXBI Eg== 
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by userp2120.oracle.com with ESMTP id 2qtxtrjfmn-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Tue, 26 Feb 2019 06:25:40 +0000
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id x1Q6Pdvu009056
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Tue, 26 Feb 2019 06:25:39 GMT
+Received: from abhmp0009.oracle.com (abhmp0009.oracle.com [141.146.116.15])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x1Q6Pc26003442;
+        Tue, 26 Feb 2019 06:25:39 GMT
+Received: from [10.190.142.77] (/192.188.170.109)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Mon, 25 Feb 2019 22:25:38 -0800
+Subject: Re: Btrfs progs release 4.20.2
+From:   Anand Jain <anand.jain@oracle.com>
+To:     David Sterba <dsterba@suse.com>, dsterba@suse.cz
+Cc:     linux-btrfs@vger.kernel.org
+References: <20190225180438.4249-1-dsterba@suse.com>
+ <03a1aba5-3a19-25fe-de3a-d99ad32d2edd@oracle.com>
+Message-ID: <707f025e-3980-7e5b-6fd1-93616ae696ce@oracle.com>
+Date:   Tue, 26 Feb 2019 14:25:44 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.1
+ Thunderbird/60.5.0
 MIME-Version: 1.0
-In-Reply-To: <20190225172118.GA24609@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="pFoCibeEG56lnQXJcbTVq1ssJI6YXfJSY"
+In-Reply-To: <03a1aba5-3a19-25fe-de3a-d99ad32d2edd@oracle.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9178 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1902260048
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---pFoCibeEG56lnQXJcbTVq1ssJI6YXfJSY
-Content-Type: multipart/mixed; boundary="QNj34NN4aJiYahdFvLVqyPkIHX2Mt169O";
- protected-headers="v1"
-From: Qu Wenruo <wqu@suse.de>
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <3e574c54-f714-424e-78bb-4a251a864153@suse.de>
-Subject: Re: [PATCH] btrfs-progs: balance: Sync the fs before balancing
- metadata chunks
-References: <20190129065739.31707-1-wqu@suse.com>
- <20190225172118.GA24609@twin.jikos.cz>
-In-Reply-To: <20190225172118.GA24609@twin.jikos.cz>
-
---QNj34NN4aJiYahdFvLVqyPkIHX2Mt169O
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
 
+I got some logs with and without fix.
 
-On 2019/2/26 =E4=B8=8A=E5=8D=881:21, David Sterba wrote:
-> On Tue, Jan 29, 2019 at 02:57:39PM +0800, Qu Wenruo wrote:
->> The most straightforward is to sync the fs before balancing metadata
->> chunks.
+Test case:
+
+Pause a balance:
+
+# btrfs bal start --full-balance /btrfs
+balance paused by user
+
+
+Try to run replace now:
+
+Without fix:
+
+# btrfs replace start -B /dev/sdb /dev/sdc /btrfs
+ERROR: ioctl(DEV_REPLACE_START) on '/btrfs' returns error: <illegal 
+result value>
+
+With fix:
+
+# ./btrfs replace start -B /dev/sdb /dev/sdc /btrfs
+ERROR: ioctl(DEV_REPLACE_START) '/btrfs': 
+add/delete/balance/replace/resize operation in progress
+
+
+-Anand
+
+
+On 2/26/19 1:06 PM, Anand Jain wrote:
+> 
+> 
+>   https://patchwork.kernel.org/patch/10732689/
+> 
+> Would like to bring to your notice. Above patch is not yet integrated 
+> for a long time. Any comments?
+> 
+> Thanks, Anand
+> 
+> 
+> On 2/26/19 2:04 AM, David Sterba wrote:
+>> Hi,
 >>
->> We could enhance the kernel bytes_may_use calculation, but I doubt abo=
-ut
->> the complexity.
->> So I take the easy fix to reduce the false ENOSPC reports.
->=20
-> Agreed.
->=20
->> +	/*
->> +	 * There may be many over-reserved space for metadata block groups,
->> +	 * especially for inlined file extents.
->> +	 *
->> +	 * Do a sync here will free those over-reserved space and hugely
->> +	 * reduce the possibility of some false ENOSPC
->> +	 */
->> +	if (args->flags & BTRFS_BALANCE_METADATA) {
->> +		ret =3D btrfs_util_sync(path);
->=20
-> As the fd is already open, we should use the _fd version,
->=20
->> +		if (ret) {
->> +			error("failed to sync the fs before balance: %m");
->> +			ret =3D -errno;
->> +			goto out;
->=20
-> and possibly only warn if there's an error returned as the sync failure=
-
-> is not a critical condition.
-
-AFAIK if we can't even sync the fs, the balance is definitely going to
-fail, as the most common failure mode for syncfs is RO fs, caused by
-aborted transaction.
-
-Thus I still think we should error out. Or is there some other
-non-critical failure mode I missed?
-
-Thanks,
-Qu
-
-
---QNj34NN4aJiYahdFvLVqyPkIHX2Mt169O--
-
---pFoCibeEG56lnQXJcbTVq1ssJI6YXfJSY
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlx01LoACgkQwj2R86El
-/qgBegf+Ojs2Cqf5MosYy1IaNrZZPeisJbcb8HzkPKgg+gGFbdrLkfo1HkQeP86X
-rFkzH13POnCGvpSq3KaeNmijgcnO5V+4k/m6lyd/1Dowzbpod6nQhBEIia+AlqP+
-iSKimgCbBXFy8/KiNfl2Vg+Pw3ZCGo0gaP42kb7bzun47w1Y2E/BcFezPfoc9t54
-Cwx9/fZSeRoqf/DxYX1I2PX5T7EsEvxVquC+58FdPUqyzNka1+AX37NsTgGC14At
-eyY/XxyoBN2SGxe21Ebxnvovlsdp10JdCGseboJ2bnYenpOB8wXXrLdvt5+8e+q+
-ljLOURR+4WCT3f56SckF7r+eYzXw4A==
-=GUjZ
------END PGP SIGNATURE-----
-
---pFoCibeEG56lnQXJcbTVq1ssJI6YXfJSY--
+>> btrfs-progs version 4.20.2 have been released. This is a quick fix of 
+>> a problem
+>> with send/receive path checks that break some setups. As there's no 
+>> proper
+>> fix yet, the patch that caused the regression has been reverted.
+>>
+>> Tarballs: 
+>> https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
+>> Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+>>
+>> Shortlog:
+>>
+>> David Sterba (5):
+>>        btrfs-progs: ci: explicitly request reiserfs support for 
+>> btrfs-convert
+>>        btrfs-progs: ci: switch to newer build environment
+>>        Revert "Btrfs-progs: fix mount point detection due to partial 
+>> prefix match"
+>>        btrfs-progs: update CHANGES for v4.20.2
+>>        Btrfs progs v4.20.2
+>>
+>> Nikolay Borisov (1):
+>>        btrfs-progs: Use a single tab for 'leafsize (deprecated)' row
+>>

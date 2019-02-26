@@ -2,131 +2,101 @@ Return-Path: <SRS0=RlhI=RB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,USER_AGENT_NEOMUTT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AD248C43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Feb 2019 13:35:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E177AC43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Feb 2019 14:37:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6D6172173C
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Feb 2019 13:35:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A5FAB20C01
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Feb 2019 14:37:16 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="OJdac/Kl"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="zbkoRkjn"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726992AbfBZNfU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Feb 2019 08:35:20 -0500
-Received: from mail-qk1-f194.google.com ([209.85.222.194]:45870 "EHLO
-        mail-qk1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725977AbfBZNfU (ORCPT
+        id S1727239AbfBZOhP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Feb 2019 09:37:15 -0500
+Received: from aserp2130.oracle.com ([141.146.126.79]:48096 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726810AbfBZOhP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Feb 2019 08:35:20 -0500
-Received: by mail-qk1-f194.google.com with SMTP id v139so7507603qkb.12
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Feb 2019 05:35:19 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:content-transfer-encoding:in-reply-to
-         :user-agent;
-        bh=slsq4a/RA411R6hJxgqs9qXOMZGssIwU9FyXP6K+peI=;
-        b=OJdac/KlIbvJ6eLZdtYecPPazN25Vi0nmY9GslO0ZPjgkuu0yOUkdciArvgv2MKG1O
-         DL95J4r8OOkSAmBod3cX6pma4iMnQAnso8QvkD10QXyartct39mvK8pmtspoCWinj80g
-         q6ePGqth3VucjjrVtzNuvvaJY2X4x/Qq4jDDgQ7F85olXyRtvf/hnIMRbFJ5lKeP2Vz3
-         JAfzQNrIH7ZbJc4N3SYLqZa7UY1wKEWwdVyNuneD/sJTgvh/ek7AJy7cRWGA2RwVYiul
-         ZQYHRFuWu3NE6U80E7Az/d7CibricnIcH5msIX0IJusxU6yHr07uxgq0U7arKwbsl+ef
-         Q/Rg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:content-transfer-encoding
-         :in-reply-to:user-agent;
-        bh=slsq4a/RA411R6hJxgqs9qXOMZGssIwU9FyXP6K+peI=;
-        b=cbWp0r31Nw2sRt4JKqlTvg1aErC+msAP/bqj0EI7BGsMgBTBfN/Sk1oZH3v3jUIYlG
-         0NiOFz7lED4jJ+qE9Okgp2MDegc65Bm+WvMH2DQbTI9B1TjOZtDT3JkIYvueFu5QWB6z
-         nUGCVb/+PqIRAftMtuvhAiNicYpDdcj0gAEqkOehwSEx/NJILVR8A2tQPM8OjdKeugAE
-         RQ2yJ6wTj4r0Zadk129XjahkeBeI+yTz0tYhPXw1OUIPwQBrShUsssfoC7Zw9OxV3OK6
-         u5uZgrW6nEkxWbn1LTB3wjIW0GKje/zsO78gYddxquqfbA8hBjm5oApKPGDJujHYi1Mh
-         /dNw==
-X-Gm-Message-State: AHQUAuZybIALOybqeCnW8/3PvnghJNE34Xu0U+Pj74M5gY0qZCV5+bgP
-        ZJHqK6nCSoK0woH/rlgFUfMp1w==
-X-Google-Smtp-Source: AHgI3IaNBT3EkW9eSX/5NCYeVpxj2BQqNuXDMY1DlmGO3+/F7cdLMvzbZu7qOZ1hSGu4Kg3hP+gEDQ==
-X-Received: by 2002:a37:a316:: with SMTP id m22mr16483140qke.194.1551188119220;
-        Tue, 26 Feb 2019 05:35:19 -0800 (PST)
-Received: from localhost ([63.138.96.6])
-        by smtp.gmail.com with ESMTPSA id c9sm8793314qkj.61.2019.02.26.05.35.18
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 26 Feb 2019 05:35:18 -0800 (PST)
-Date:   Tue, 26 Feb 2019 08:35:09 -0500
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     Josef Bacik <josef@toxicpanda.com>, David Sterba <dsterba@suse.cz>,
-        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Use struct inode* to replace
- extent_io_tree::private_data
-Message-ID: <20190226133507.botpzpuihc7phkzp@MacBook-Pro-91.local>
-References: <20190225055043.1621-1-wqu@suse.com>
- <20190225121540.GN9874@twin.jikos.cz>
- <7a8afd82-7acf-e2cc-deff-38ccf702ef2d@gmx.com>
- <20190225122657.GP9874@twin.jikos.cz>
- <20190225154602.gsrmmp465l7rnkm3@macbook-pro-91.dhcp.thefacebook.com>
- <ed6b4151-7c8d-5132-13d2-4f00ecabd2da@gmx.com>
+        Tue, 26 Feb 2019 09:37:15 -0500
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x1QEYO3A133826;
+        Tue, 26 Feb 2019 14:37:12 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
+ references : from : cc : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2018-07-02;
+ bh=JWi4tVN3uH88Bu82GUrguI0Z0Q1uRDRIt9qEj0iIolY=;
+ b=zbkoRkjn3qSFydajCzgETXIugZG6Esgt7qExYpaZ5PKmryABFrORMHjbuTU5DUed5Jga
+ hARnNuccBWxLLI9qMAM3lTFPXwnsf3oSNPb3x7cVx8IzCabvIKrpoux+8L9mjG+GonRw
+ TEEIMaG4e3BaoGMUOt9hcJyht5+tD8FqrScsRDNlQap060c/dUcv/eUdphA0vnjNE26F
+ I41T8UUmZpxQ9Vm2z+sCSFwWgdcszO+VLl0Md7ey8veaNr6bhDRxJLH1D8y7heMQlxiW
+ aFTScCcxpEiP3rgU7EzT4x1nBUC5l37vgQpLNb9zQaNflcqVMrH4kVNF9xoy+W30EpXj gw== 
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by aserp2130.oracle.com with ESMTP id 2qtupe54mg-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Tue, 26 Feb 2019 14:37:12 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x1QEbB1g028144
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Tue, 26 Feb 2019 14:37:11 GMT
+Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x1QEbBgr008688;
+        Tue, 26 Feb 2019 14:37:11 GMT
+Received: from [192.168.1.145] (/116.87.143.221)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Tue, 26 Feb 2019 06:37:11 -0800
+Subject: Re: Btrfs progs release 4.20.2
+To:     =?UTF-8?Q?Tomasz_K=c5=82oczko?= <kloczko.tomasz@gmail.com>
+References: <20190225180438.4249-1-dsterba@suse.com>
+ <03a1aba5-3a19-25fe-de3a-d99ad32d2edd@oracle.com>
+ <CABB28CzM029Wy6q6OF65M0CUZ59Rv8RQZd6ABCfrgV=eO2t4XA@mail.gmail.com>
+From:   Anand Jain <anand.jain@oracle.com>
+Cc:     linux-btrfs@vger.kernel.org
+Message-ID: <313a2d6e-22b3-bb5d-a859-5840c745d9d8@oracle.com>
+Date:   Tue, 26 Feb 2019 22:37:16 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.5.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
+In-Reply-To: <CABB28CzM029Wy6q6OF65M0CUZ59Rv8RQZd6ABCfrgV=eO2t4XA@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <ed6b4151-7c8d-5132-13d2-4f00ecabd2da@gmx.com>
-User-Agent: NeoMutt/20180716
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9178 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1011
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=919 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1902260107
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Feb 26, 2019 at 12:07:37PM +0800, Qu Wenruo wrote:
-> 
-> 
-> On 2019/2/25 下午11:46, Josef Bacik wrote:
-> > On Mon, Feb 25, 2019 at 01:26:57PM +0100, David Sterba wrote:
-> >> On Mon, Feb 25, 2019 at 08:17:52PM +0800, Qu Wenruo wrote:
-> >>>
-> >>>
-> >>> On 2019/2/25 下午8:15, David Sterba wrote:
-> >>>> On Mon, Feb 25, 2019 at 01:50:43PM +0800, Qu Wenruo wrote:
-> >>>>> All users of extent_io_tree::private_data are expecting struct inode*.
-> >>>>> So just use struct inode* to replace extent_io_tree::private_data, and
-> >>>>> this should provide better type check.
-> >>>>>
-> >>>>> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> >>>>>  struct extent_io_tree {
-> >>>>>  	struct rb_root state;
-> >>>>> -	void *private_data;
-> >>>>> +	struct inode *inode;
-> >>>>>  	u64 dirty_bytes;
-> >>>>>  	int track_uptodate;
-> >>>>>  	spinlock_t lock;
-> >>>>
-> >>>> So this is effectively reverting c6100a4b4e3d1650deafd ("Btrfs: replace
-> >>>> tree->mapping with tree->private_data"),
-> >>>
-> >>> That commit message doesn't explain why this is needed for btree_inode
-> >>> removal.
-> >>>
-> >>> Any idea what the extra type would be used in that case?
-> >>
-> >> I don't know, Josef in CC to answer that.
-> > 
-> > Yeah there's a mapping tree thing I make to keep track of the metadata, it holds
-> > the radix tree for the eb's and a bunch of other stuff.  This needs to stay a
-> > void *.  Thanks,
-> 
-> Then what about an union here?
-> 
-> BTW, for no btree_inode case, how do we distinguish regular inode
-> pointer with yours? An extra member?
->
 
-We don't have to, the only place the inode is used is when doing the callbacks.
-The callbacks are implementation specific, so the btree extent_io callbacks know
-that the void *private_data is their struct btrfs_eb_info, and the inode ones
-know it's their struct inode *.  Thanks,
 
-Josef 
+On 2/26/19 4:51 PM, Tomasz Kłoczko wrote:
+> -- Tomasz Kłoczko | Tel: 0774 1209067 | LinkedIn: http://lnkd.in/FXPWxH
+> On Tue, 26 Feb 2019 at 05:07, Anand Jain <anand.jain@oracle.com> wrote:
+>>
+>>    https://patchwork.kernel.org/patch/10732689/
+>>
+>> Would like to bring to your notice. Above patch is not yet integrated
+>> for a long time. Any comments?
+> 
+> I've been trying that patch and still it fails:
+
+  They are not related. This patch won't fix that, nor it claimed
+  to do so.
+
+>      [TEST/fsck]   037-freespacetree-repair
+> failed: root_helper umount
+> /home/tkloczko/rpmbuild/BUILD/btrfs-progs-v4.20.2/tests//test.img
+> test failed for case 037-freespacetree-repair
+
+  Looks like FREE_SPACE_BITMAP is not found in the dump-tree,
+  so the test case fails.
+
+> kloczek
+

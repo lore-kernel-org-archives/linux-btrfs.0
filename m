@@ -2,30 +2,34 @@ Return-Path: <SRS0=RlhI=RB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4B93DC43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Feb 2019 01:29:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 83CD4C43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Feb 2019 04:07:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 185C0217F4
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Feb 2019 01:29:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4E52C217F5
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Feb 2019 04:07:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726056AbfBZB3r (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Feb 2019 20:29:47 -0500
-Received: from mout.gmx.net ([212.227.15.15]:43575 "EHLO mout.gmx.net"
+        id S1726122AbfBZEHy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Feb 2019 23:07:54 -0500
+Received: from mout.gmx.net ([212.227.17.22]:33713 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725929AbfBZB3q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Feb 2019 20:29:46 -0500
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx003
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0Mdr7l-1gdsRr0yxZ-00PeqB; Tue, 26
- Feb 2019 02:29:39 +0100
-Subject: Re: [PATCH 0/6] btrfs-progs: Support for BG_TREE feature
-To:     Hans van Kranenburg <hans@knorrie.org>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20181228083806.3204-1-wqu@suse.com>
- <8a88277e-6a9f-7383-601f-cb6e84451ce5@knorrie.org>
+        id S1725877AbfBZEHy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Feb 2019 23:07:54 -0500
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx101
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0M4CB5-1hGppM11BT-00rlKF; Tue, 26
+ Feb 2019 05:07:44 +0100
+Subject: Re: [PATCH] btrfs: Use struct inode* to replace
+ extent_io_tree::private_data
+To:     Josef Bacik <josef@toxicpanda.com>, David Sterba <dsterba@suse.cz>
+Cc:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20190225055043.1621-1-wqu@suse.com>
+ <20190225121540.GN9874@twin.jikos.cz>
+ <7a8afd82-7acf-e2cc-deff-38ccf702ef2d@gmx.com>
+ <20190225122657.GP9874@twin.jikos.cz>
+ <20190225154602.gsrmmp465l7rnkm3@macbook-pro-91.dhcp.thefacebook.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -52,165 +56,132 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <c268ed19-f472-be89-b8e5-68d1b055eecd@gmx.com>
-Date:   Tue, 26 Feb 2019 09:29:33 +0800
+Message-ID: <ed6b4151-7c8d-5132-13d2-4f00ecabd2da@gmx.com>
+Date:   Tue, 26 Feb 2019 12:07:37 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.5.1
 MIME-Version: 1.0
-In-Reply-To: <8a88277e-6a9f-7383-601f-cb6e84451ce5@knorrie.org>
+In-Reply-To: <20190225154602.gsrmmp465l7rnkm3@macbook-pro-91.dhcp.thefacebook.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="awklh2UKwWcttxTrTjwbKrC8ds89Q7SpT"
-X-Provags-ID: V03:K1:DpwmUKmbj+ilXbfqVSL9ZweiBzXLXmfakYnrO0WWT557ZoUooDK
- 7yN46cF9HaO5NDvQN6+Mp/JfGQHDjW3sGGuk2HRc8sxwinVY+PjPNnxly8R6VF3vUOWtsX+
- cINfzzqL+B8MC2RzVwNzFf1rz+6JTudsSqLCDZlQkloz2onx/13v82vFHdkI97prHXznp/i
- bW7nvfgKwfhRFhKJqs7tw==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:zuV94LQAI9c=:57tCZIT8IuT04aPwhMLJzA
- 1NIddadJ212uFQo8TRbxt7rkG2xgd99MUtAyj2JiVUyUq0cTrM0XxMAQ7Me2k91H3tj+q7UTC
- UOZY0YYWS1rRPZ1lV2BIXYpjg4r/CPWqPBvODOu9fZcRLYGE4gmY+W5K1fQN9c4hCulQWJTIW
- tabJ0ku4pgI+PXTWn6usMWwp6uTJEtBLqkbgbGRtIx3RBUSV4IlF7N2EVCvSzIqnqGiJwOBM8
- RFKAcIi/2QcDEPjstdWg5TqXdd1RqS5dENSE88dQkoa/bm8JludCpBjHLpl3Yyjchxb0pSEC5
- ruTLKYTg8J98Xn8uSWfUN0dJOFr+cjI7Sm4N/zRX8japLSwA77fGlUzeodKUfJDdTlU6Ubxzj
- 6SyeBGlujRDZHX1HJ8SRtccukueCmWchSxvFe7HTU5h8s/Iyl2TwJrY9Tpc4HeRK95g3qNzhK
- mkoWGYammHfcHKixMtWfYQ69TUjRWznfmje9c6emxVVeaw/8mtP2IKnILBpPsbW+okxFmN/vI
- dteVMmYzJ4sg/RPhUcJXfr2opQrKG4tMU9IgGXpKRPAjg+6m15xtgaYs5XnmuZ8msItrNRO5K
- nqzGUrFRZVKoYEpO7cOo51JgeluG/3J3f6vbKyUDEE9vAi7ZbNi1xmm08JOgSvaDoj9AbpT51
- Xv+4kLElVl65rCi5C8Ak7MhWZUu6kCqDwVOEQ93aFEdonOZBsTmDwMiQ4IKmeU+MhfBotZohg
- CRYItuC1SsZEnvYMpWst535LOAifAex3VG7dwe+R5A1TYfcja3t4SxUXhOTbaCRbwzf8sSWYe
- a0Ux2SFVjbRD4O/qSC5k9/bIf0sMWo/7+cDAqcWOc7myNp/wkIGxrNCNYfYTYHKs9EWEVY7ka
- mfCQmUrydsxzcaoPhxs+ypCi5t4tl9aZrkY1f8LX/n8XcixrdxGvjMCp0nkcGi
+ boundary="neOdx4ashVbsAEP2M9U9mGjUYkMYZuU2F"
+X-Provags-ID: V03:K1:6tuxjinBvz2cXQx0lStj7R8V8mfL82YDDwHCI9vo0dlA+OwaSBu
+ 801Sr8JLzAsgzaW7LnRL9nPqb2kvwPNr4cjniCFzzkbKQ8+vXGgZqNIIGa+lqWVqSkXHOal
+ Dx1sE9QMxZBTgDoDl8kOK5hNvVzqJMnjUcvpikUyk2OIwrNbx6ITJaQKK4BzfPaDqTF+cN0
+ L7TeCPKzk/Affvh41H+QA==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:Mt0cYkX76Fg=:QaJWxQGgqq8CboLvbDo571
+ Wh8gHy5znNUaRtWJEwaWr0I23WO0OpNwvGDgHYL2+CeyVQsdroGZBwRJKQyJrieqp3glTErSY
+ hjPPT/h4Wqe424aUWJpJ0lLd0MaVyiNT3TIXJuad2ggNyUOhlWkbvMw6zy+hV2EVIizv54WxH
+ Sc+jtiokY4RX1UEBl8RxaWEhahfrjsWmaOPSQcMKbXZ7F3Ibu22FjH+8zeZ9cSR4q0aFuEFN9
+ zUbmnjDSIJRDsMaQwCwAJNLjKTA3MkhnCif960OYgxyrw/MrD7n7PFjjWaNBldiI7MHa2VeHA
+ pKfi6gwe/AGO0X8KuvPTON7G6HDBg54l5N2fUNELjfTP67vU/fkHrY7puCLnN5AVi8qq/uMbo
+ w/p/l8wswhz8NeEOIiyzcfhSo1J/bxtu4Rb0BUEGyZ9r2qjFjMKSHFByarWQ7pg+2oXstB3eV
+ xxXrCceK/T8hbOJ8lwcuuIGbsN2gvDhqjcw1VXhqBmkjhn9Atg5Vj/5Y8BadXT/E9zErrrdG3
+ g3yRqbd2tZ5VwzDOOcIAQYsrpu2VvjEe2Vmu+1B8g/5ZteNQfXO3o6oKvsub9cAD6gaj1+4St
+ biqx+KoID0bfJAD+f0B3UhuFZ3Uj/aY7Zetw8exvxAIiQ//1OijMPrpvk7ASTVvnEvS2kznIe
+ JobkLE7kqLxAlC1Rjwt3QOjvvSK7ucSpz7OnfEv6a4pN23Gh+SnP6obmgstzc/1JQwxf1tzfp
+ nz0L4aFt/L07vPdz4nZUs4M3yMFduw3Z0Y96BGZzcHsMALR5IPdqdffHjf2ITs+yxlWGxikUi
+ Okd0MmThgjVQxEvwSmI0l6Tp2KmAI6buEyVsstm1aSuBxIDo/5oYJ3zhhHLa6TX7UMGM+DAMc
+ oqlGIVgTll77JM8/hkMhVQlGcB/aT/6zePgKO1O//e6IAqm39hzoykkChccaMh
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---awklh2UKwWcttxTrTjwbKrC8ds89Q7SpT
-Content-Type: multipart/mixed; boundary="dSQz9qrEgLG8FeIiR4RYnaStrjJxwsJrj";
+--neOdx4ashVbsAEP2M9U9mGjUYkMYZuU2F
+Content-Type: multipart/mixed; boundary="Rqty5VqHl0uu34Q5JQwUYZYgQYYEnGzVs";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Hans van Kranenburg <hans@knorrie.org>, Qu Wenruo <wqu@suse.com>,
- linux-btrfs@vger.kernel.org
-Message-ID: <c268ed19-f472-be89-b8e5-68d1b055eecd@gmx.com>
-Subject: Re: [PATCH 0/6] btrfs-progs: Support for BG_TREE feature
-References: <20181228083806.3204-1-wqu@suse.com>
- <8a88277e-6a9f-7383-601f-cb6e84451ce5@knorrie.org>
-In-Reply-To: <8a88277e-6a9f-7383-601f-cb6e84451ce5@knorrie.org>
+To: Josef Bacik <josef@toxicpanda.com>, David Sterba <dsterba@suse.cz>
+Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <ed6b4151-7c8d-5132-13d2-4f00ecabd2da@gmx.com>
+Subject: Re: [PATCH] btrfs: Use struct inode* to replace
+ extent_io_tree::private_data
+References: <20190225055043.1621-1-wqu@suse.com>
+ <20190225121540.GN9874@twin.jikos.cz>
+ <7a8afd82-7acf-e2cc-deff-38ccf702ef2d@gmx.com>
+ <20190225122657.GP9874@twin.jikos.cz>
+ <20190225154602.gsrmmp465l7rnkm3@macbook-pro-91.dhcp.thefacebook.com>
+In-Reply-To: <20190225154602.gsrmmp465l7rnkm3@macbook-pro-91.dhcp.thefacebook.com>
 
---dSQz9qrEgLG8FeIiR4RYnaStrjJxwsJrj
+--Rqty5VqHl0uu34Q5JQwUYZYgQYYEnGzVs
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2019/2/26 =E4=B8=8A=E5=8D=8812:36, Hans van Kranenburg wrote:
-> Sorry to bother you again...
+On 2019/2/25 =E4=B8=8B=E5=8D=8811:46, Josef Bacik wrote:
+> On Mon, Feb 25, 2019 at 01:26:57PM +0100, David Sterba wrote:
+>> On Mon, Feb 25, 2019 at 08:17:52PM +0800, Qu Wenruo wrote:
+>>>
+>>>
+>>> On 2019/2/25 =E4=B8=8B=E5=8D=888:15, David Sterba wrote:
+>>>> On Mon, Feb 25, 2019 at 01:50:43PM +0800, Qu Wenruo wrote:
+>>>>> All users of extent_io_tree::private_data are expecting struct inod=
+e*.
+>>>>> So just use struct inode* to replace extent_io_tree::private_data, =
+and
+>>>>> this should provide better type check.
+>>>>>
+>>>>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>>>>>  struct extent_io_tree {
+>>>>>  	struct rb_root state;
+>>>>> -	void *private_data;
+>>>>> +	struct inode *inode;
+>>>>>  	u64 dirty_bytes;
+>>>>>  	int track_uptodate;
+>>>>>  	spinlock_t lock;
+>>>>
+>>>> So this is effectively reverting c6100a4b4e3d1650deafd ("Btrfs: repl=
+ace
+>>>> tree->mapping with tree->private_data"),
+>>>
+>>> That commit message doesn't explain why this is needed for btree_inod=
+e
+>>> removal.
+>>>
+>>> Any idea what the extra type would be used in that case?
+>>
+>> I don't know, Josef in CC to answer that.
 >=20
-> On 12/28/18 9:38 AM, Qu Wenruo wrote:
->> This patchset can be fetched from github:
->> https://github.com/adam900710/btrfs-progs/tree/bg_tree
->> The basis commit is:
->>
->> commit 7d16a2b460182ee98c649533a6975b6e419c3d71
->> Author: Qu Wenruo <wqu@suse.com>
->> Date:   Thu Dec 27 13:49:18 2018 +0800
->>
->>     btrfs-progs: Create uuid tree with proper contents
->>
->> Which is further based on devel branch.
->>
->> This patchset provides the needed user space infrastructure for BG_TRE=
-E
->> feature.
->>
->> Since it's an new exclusive feature, unlike SKINNY_METADATA, btrfs-pro=
-gs
->> is needed to convert existing fs (unmounted) to new format.
->>
->> Although I have prepared the functionality, convert_to_bg_tree(), and
->> already uses it in mkfs, I haven't decided if I should put it under
->> btrfstune, as btrfstune isn't such offline convert tool.
->=20
-> Ok, so, the convert_to_bg_tree still needs wiring up somewhere before
-> it's possible to convert an existing fs?
+> Yeah there's a mapping tree thing I make to keep track of the metadata,=
+ it holds
+> the radix tree for the eb's and a bunch of other stuff.  This needs to =
+stay a
+> void *.  Thanks,
 
-Sorry, I haven't investigate more time for this convert.
-It's more or less expected to be something use it or not so far.
+Then what about an union here?
 
->=20
-> I want to test with a (iSCSI level clone of a) rather large-ish
-> filesystem, so I was searching for how to convert that in place.
->=20
-> Do you have an idea for a (quick hack?) way to make this happen?
-
-Btrfs-progs needs extra patch for it, but I haven't implemented it yet.
-It shouldn't be super complex, but I'm not confident enough yet.
-
-If nothing goes wrong, I'll update the btrfs-progs patchset this week
-with (maybe PoC) offline convert.
+BTW, for no btree_inode case, how do we distinguish regular inode
+pointer with yours? An extra member?
 
 Thanks,
 Qu
->=20
-> Doing the offline conversion itself is also already an interesting
-> thing, seeing how it behaves with some tens of thousands of block
-> groups... (As the intended audience for it will mostly be people having=
 
-> large filesystems already.)
 >=20
->> If anyone has better idea on the new convert tool interface, I'm all
->> ears.
->>
->> For the performance improvement, please check the kernel patchset cove=
-r
->> letter or the last patch.
->> (SPOILER ALERT: It's super fast)
->>
->> Qu Wenruo (6):
->>   btrfs-progs: Refactor excluded extent functions to use fs_info
->>   btrfs-progs: Refactor btrfs_read_block_groups()
->>   btrfs-progs: Enable read-write ability for 'bg_tree' feature
->>   btrfs-progs: mkfs: Introduce -O bg-tree
->>   btrfs-progs: dump-tree/dump-super: Introduce support for bg tree
->>   btrfs-progs: check: Introduce support for bg-tree feature
->>
->>  check/main.c              |   7 +-
->>  check/mode-lowmem.c       |   9 +-
->>  cmds-inspect-dump-super.c |   3 +-
->>  cmds-inspect-dump-tree.c  |   5 +
->>  ctree.h                   |  17 +-
->>  disk-io.c                 |  29 +++-
->>  extent-tree.c             | 326 +++++++++++++++++++++++++++----------=
--
->>  fsfeatures.c              |   6 +
->>  mkfs/common.c             |   7 +-
->>  mkfs/common.h             |   1 +
->>  mkfs/main.c               |  57 +++++++
->>  print-tree.c              |   3 +
->>  transaction.c             |   1 +
->>  13 files changed, 365 insertions(+), 106 deletions(-)
->>
+> Josef
 >=20
 
 
---dSQz9qrEgLG8FeIiR4RYnaStrjJxwsJrj--
+--Rqty5VqHl0uu34Q5JQwUYZYgQYYEnGzVs--
 
---awklh2UKwWcttxTrTjwbKrC8ds89Q7SpT
+--neOdx4ashVbsAEP2M9U9mGjUYkMYZuU2F
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlx0ln0ACgkQwj2R86El
-/qhNJAgAl/M2x8UIWs4iQWbsLcoo50Vmiq4arQMlHVP22dto356I9uCo2NeWUBmS
-ZGDSTuTD1hB3H5IqPyrSdoIalYLpOVL26xoZOHGFMTQpTWk8870LJVP+Gp62iUpf
-ppQ9mLPK4lThGAr0ldQrn8qdm9WN+TGWaQlQZajl0bG4VF0HgCTzVwqYwhT0rdQ3
-hIidO4Ob+DFAuzOUYnR/lQ0SJNjfE+EE6o8JJGZTQGLqojQqpoUjoBFiHXAbhZ7q
-2iz7Fpfi0Oxdk+VXNZqzQhH3gjK79TO6pkUa8h1R9VLEWhIIvEy5TvbiI3n4XamC
-vlxJQNRbyZVc17BXIIo+y8+GJPP6/Q==
-=oJ9i
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlx0u4kACgkQwj2R86El
+/qirmAf/ZdtCUGKnO11znIsmrjFpbYR3Zhv6+3wPQR0x8q6gqfhhJ34x3uKWkvaD
+/G3ZpueUs684oMBubdDPV705oMU1ifsKJM6k2dxWIrvoWAQ93/02Mo/wn1+SToLO
+Gv0x5iT8xL+l7wWyfkxI3drrTmNtTbIdMrJEZpTAn4fAQC5pXiJq/DormAXyKMEO
+iXAD+0o4QKwxf/rDAr5m6wurWIuw/ybH1fPo7fulSVEH3+HPyHBb6Tp4QakHbyLB
+g/obBk6yKqF4IhnpD87zzRvOeW/xlcm+WvuejYJx+DoAmxBlGM1C+126wkv1L0vG
+Qb+Xipys7zZj1sbOTe/VPtWQZAnovA==
+=mrFm
 -----END PGP SIGNATURE-----
 
---awklh2UKwWcttxTrTjwbKrC8ds89Q7SpT--
+--neOdx4ashVbsAEP2M9U9mGjUYkMYZuU2F--

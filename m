@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8C99CC43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 06:06:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 22919C43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 06:06:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 696E021852
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 06:06:28 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id F174B21852
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 06:06:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729785AbfB0GG1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Feb 2019 01:06:27 -0500
-Received: from mx2.suse.de ([195.135.220.15]:34050 "EHLO mx1.suse.de"
+        id S1729794AbfB0GG3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Feb 2019 01:06:29 -0500
+Received: from mx2.suse.de ([195.135.220.15]:34058 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726268AbfB0GG1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Feb 2019 01:06:27 -0500
+        id S1726268AbfB0GG2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Feb 2019 01:06:28 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 7C366AC5F;
-        Wed, 27 Feb 2019 06:06:25 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 90965AC5F;
+        Wed, 27 Feb 2019 06:06:27 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Su Yue <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH v1.1 06/14] btrfs-progs: lowmem: rename delete_extent_tree_item() to delete_item()
-Date:   Wed, 27 Feb 2019 14:05:44 +0800
-Message-Id: <20190227060552.3841-7-wqu@suse.com>
+Subject: [PATCH v1.1 07/14] btrfs-progs: lowmem: delete unaligned bytes extent data under repair
+Date:   Wed, 27 Feb 2019 14:05:45 +0800
+Message-Id: <20190227060552.3841-8-wqu@suse.com>
 X-Mailer: git-send-email 2.21.0
 In-Reply-To: <20190227060552.3841-1-wqu@suse.com>
 References: <20190227060552.3841-1-wqu@suse.com>
@@ -40,172 +40,42 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Su Yue <suy.fnst@cn.fujitsu.com>
 
-The function can delete items in trees besides extent tree.
-Rename and move it for further use.
+If found a extent data item has unaligned part, lowmem repair
+just deletes it.
 
 Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 Reviewed-by: Qu Wenruo <wqu@suse.com>
-[Update comment, solve merge conflicts]
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- check/mode-lowmem.c | 102 +++++++++++++++++++++++---------------------
- 1 file changed, 53 insertions(+), 49 deletions(-)
+ check/mode-lowmem.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
 diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
-index 746835654d82..7bd18902e106 100644
+index 7bd18902e106..bedf18628cc9 100644
 --- a/check/mode-lowmem.c
 +++ b/check/mode-lowmem.c
-@@ -543,6 +543,54 @@ static int end_avoid_extents_overwrite(struct btrfs_fs_info *fs_info)
- 	return ret;
+@@ -3037,6 +3037,7 @@ out:
  }
  
-+/*
-+ * Delete the item @path point to. A wrapper of btrfs_del_item().
-+ *
-+ * If deleted successfully, @path will point to the previous item of the
-+ * deleted item.
-+ */
-+static int delete_item(struct btrfs_root *root, struct btrfs_path *path)
-+{
-+	struct btrfs_key key;
-+	struct btrfs_trans_handle *trans;
-+	int ret = 0;
-+
-+	ret = avoid_extents_overwrite(root->fs_info);
-+	if (ret)
-+		return ret;
-+	trans = btrfs_start_transaction(root, 1);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		error("fail to start transaction %s", strerror(-ret));
-+		goto out;
-+	}
-+	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
-+	btrfs_release_path(path);
-+	ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
-+	if (ret) {
-+		ret = -ENOENT;
-+		goto out;
-+	}
-+
-+	ret = btrfs_del_item(trans, root, path);
-+	if (ret)
-+		goto out;
-+
-+	if (path->slots[0] == 0)
-+		btrfs_prev_leaf(root, path);
-+	else
-+		path->slots[0]--;
-+out:
-+	btrfs_commit_transaction(trans, root);
-+	if (ret)
-+		error("failed to delete root %llu item[%llu, %u, %llu]",
-+		      root->objectid, key.objectid, key.type, key.offset);
-+	else
-+		printf("Deleted root %llu item[%llu, %u, %llu]\n",
-+		       root->objectid, key.objectid, key.type, key.offset);
-+	return ret;
-+}
-+
  /*
-  * Wrapper function for btrfs_fix_block_accounting().
++ * If @err contains BYTES_UNALIGNED then delete the extent data item.
+  * If @err contains BACKREF_MISSING then add extent of the
+  * file_extent_data_item.
   *
-@@ -4433,50 +4481,6 @@ static int repair_chunk_item(struct btrfs_root *chunk_root,
- 	return err;
- }
+@@ -3088,6 +3089,13 @@ static int repair_extent_data_item(struct btrfs_root *root,
+ 	else
+ 		parent = 0;
  
--static int delete_extent_tree_item(struct btrfs_root *root,
--				   struct btrfs_path *path)
--{
--	struct btrfs_key key;
--	struct btrfs_trans_handle *trans;
--	int ret = 0;
--
--	ret = avoid_extents_overwrite(root->fs_info);
--	if (ret)
--		return ret;
--	trans = btrfs_start_transaction(root, 1);
--	if (IS_ERR(trans)) {
--		ret = PTR_ERR(trans);
--		errno = -ret;
--		error("fail to start transaction: %m");
--		goto out;
--	}
--	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
--	btrfs_release_path(path);
--	ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
--	if (ret) {
--		ret = -ENOENT;
--		goto out;
--	}
--
--	ret = btrfs_del_item(trans, root, path);
--	if (ret)
--		goto out;
--
--	if (path->slots[0] == 0)
--		btrfs_prev_leaf(root, path);
--	else
--		path->slots[0]--;
--out:
--	btrfs_commit_transaction(trans, root);
--	if (ret)
--		error("failed to delete root %llu item[%llu, %u, %llu]",
--		      root->objectid, key.objectid, key.type, key.offset);
--	else
--		printf("Deleted root %llu item[%llu, %u, %llu]\n",
--		       root->objectid, key.objectid, key.type, key.offset);
--	return ret;
--}
--
- /*
-  * Main entry function to check known items and update related accounting info
-  */
-@@ -4518,7 +4522,7 @@ again:
- 		ret = check_block_group_item(fs_info, eb, slot);
- 		if (repair &&
- 		    ret & REFERENCER_MISSING)
--			ret = delete_extent_tree_item(root, path);
-+			ret = delete_item(root, path);
- 		err |= ret;
- 		break;
- 	case BTRFS_DEV_ITEM_KEY:
-@@ -4549,7 +4553,7 @@ again:
- 					       key.objectid, -1);
- 		if (repair &&
- 		    ret & (REFERENCER_MISMATCH | REFERENCER_MISSING))
--			ret = delete_extent_tree_item(root, path);
-+			ret = delete_item(root, path);
- 		err |= ret;
- 		break;
- 	case BTRFS_EXTENT_DATA_REF_KEY:
-@@ -4562,7 +4566,7 @@ again:
- 				btrfs_extent_data_ref_count(eb, dref));
- 		if (repair &&
- 		    ret & (REFERENCER_MISMATCH | REFERENCER_MISSING))
--			ret = delete_extent_tree_item(root, path);
-+			ret = delete_item(root, path);
- 		err |= ret;
- 		break;
- 	case BTRFS_SHARED_BLOCK_REF_KEY:
-@@ -4570,7 +4574,7 @@ again:
- 						 key.objectid, -1);
- 		if (repair &&
- 		    ret & (REFERENCER_MISMATCH | REFERENCER_MISSING))
--			ret = delete_extent_tree_item(root, path);
-+			ret = delete_item(root, path);
- 		err |= ret;
- 		break;
- 	case BTRFS_SHARED_DATA_REF_KEY:
-@@ -4578,7 +4582,7 @@ again:
- 						key.objectid);
- 		if (repair &&
- 		    ret & (REFERENCER_MISMATCH | REFERENCER_MISSING))
--			ret = delete_extent_tree_item(root, path);
-+			ret = delete_item(root, path);
- 		err |= ret;
- 		break;
- 	default:
++	if (err & BYTES_UNALIGNED) {
++		ret = delete_item(root, pathp);
++		if (!ret)
++			err = 0;
++		goto out;
++	}
++
+ 	/* now repair only adds backref */
+ 	if ((err & BACKREF_MISSING) == 0)
+ 		return err;
 -- 
 2.21.0
 

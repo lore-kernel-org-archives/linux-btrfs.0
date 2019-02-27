@@ -6,28 +6,27 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 51818C43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 06:06:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 88C4FC43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 06:06:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2B58E21852
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 06:06:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6208B21852
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 06:06:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729843AbfB0GGq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Feb 2019 01:06:46 -0500
-Received: from mx2.suse.de ([195.135.220.15]:34136 "EHLO mx1.suse.de"
+        id S1729847AbfB0GGt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Feb 2019 01:06:49 -0500
+Received: from mx2.suse.de ([195.135.220.15]:34152 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729824AbfB0GGp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Feb 2019 01:06:45 -0500
+        id S1729824AbfB0GGs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Feb 2019 01:06:48 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id E9218AC9A;
-        Wed, 27 Feb 2019 06:06:44 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 1403CAC5F
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2019 06:06:47 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     Su Yue <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH v1.1 13/14] btrfs-progs: fsck-test: enable lowmem repair for case 001
-Date:   Wed, 27 Feb 2019 14:05:51 +0800
-Message-Id: <20190227060552.3841-14-wqu@suse.com>
+Subject: [PATCH v1.1 14/14] btrfs-progs: Update backup roots when writing super blocks
+Date:   Wed, 27 Feb 2019 14:05:52 +0800
+Message-Id: <20190227060552.3841-15-wqu@suse.com>
 X-Mailer: git-send-email 2.21.0
 In-Reply-To: <20190227060552.3841-1-wqu@suse.com>
 References: <20190227060552.3841-1-wqu@suse.com>
@@ -38,21 +37,115 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Su Yue <suy.fnst@cn.fujitsu.com>
+The code is mostly ported from kernel with minimal change.
 
-Lowmem can repair after commit
-       'btrfs-progs: lowmem: move nbytes check before isize check',
-so add the beacon file.
+Since btrfs-progs doesn't support replaying log, there is some code
+unnecessary for btrfs-progs, but to keep the code the same, that
+unnecessary code is kept as it.
 
-Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+Now "btrfs check --repair" will update backup roots correctly.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- tests/fsck-tests/001-bad-file-extent-bytenr/.lowmem_repairable | 0
- 1 file changed, 0 insertions(+), 0 deletions(-)
- create mode 100644 tests/fsck-tests/001-bad-file-extent-bytenr/.lowmem_repairable
+ disk-io.c | 78 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 78 insertions(+)
 
-diff --git a/tests/fsck-tests/001-bad-file-extent-bytenr/.lowmem_repairable b/tests/fsck-tests/001-bad-file-extent-bytenr/.lowmem_repairable
-new file mode 100644
-index 000000000000..e69de29bb2d1
+diff --git a/disk-io.c b/disk-io.c
+index a9d58e6c1357..44219b6fab98 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -1636,6 +1636,83 @@ write_err:
+ 	return ret;
+ }
+ 
++/*
++ * copy all the root pointers into the super backup array.
++ * this will bump the backup pointer by one when it is
++ * done
++ */
++static void backup_super_roots(struct btrfs_fs_info *info)
++{
++	struct btrfs_root_backup *root_backup;
++	int next_backup;
++	int last_backup;
++
++	last_backup = find_best_backup_root(info->super_copy);
++	next_backup = (last_backup + 1) % BTRFS_NUM_BACKUP_ROOTS;
++
++	/* just overwrite the last backup if we're at the same generation */
++	root_backup = info->super_copy->super_roots + last_backup;
++	if (btrfs_backup_tree_root_gen(root_backup) ==
++	    btrfs_header_generation(info->tree_root->node))
++		next_backup = last_backup;
++
++	root_backup = info->super_copy->super_roots + next_backup;
++
++	/*
++	 * make sure all of our padding and empty slots get zero filled
++	 * regardless of which ones we use today
++	 */
++	memset(root_backup, 0, sizeof(*root_backup));
++	btrfs_set_backup_tree_root(root_backup, info->tree_root->node->start);
++	btrfs_set_backup_tree_root_gen(root_backup,
++			       btrfs_header_generation(info->tree_root->node));
++	btrfs_set_backup_tree_root_level(root_backup,
++			       btrfs_header_level(info->tree_root->node));
++
++	btrfs_set_backup_chunk_root(root_backup, info->chunk_root->node->start);
++	btrfs_set_backup_chunk_root_gen(root_backup,
++			       btrfs_header_generation(info->chunk_root->node));
++	btrfs_set_backup_chunk_root_level(root_backup,
++			       btrfs_header_level(info->chunk_root->node));
++
++	btrfs_set_backup_extent_root(root_backup, info->extent_root->node->start);
++	btrfs_set_backup_extent_root_gen(root_backup,
++			       btrfs_header_generation(info->extent_root->node));
++	btrfs_set_backup_extent_root_level(root_backup,
++			       btrfs_header_level(info->extent_root->node));
++	/*
++	 * we might commit during log recovery, which happens before we set
++	 * the fs_root.  Make sure it is valid before we fill it in.
++	 */
++	if (info->fs_root && info->fs_root->node) {
++		btrfs_set_backup_fs_root(root_backup,
++					 info->fs_root->node->start);
++		btrfs_set_backup_fs_root_gen(root_backup,
++			       btrfs_header_generation(info->fs_root->node));
++		btrfs_set_backup_fs_root_level(root_backup,
++			       btrfs_header_level(info->fs_root->node));
++	}
++
++	btrfs_set_backup_dev_root(root_backup, info->dev_root->node->start);
++	btrfs_set_backup_dev_root_gen(root_backup,
++			       btrfs_header_generation(info->dev_root->node));
++	btrfs_set_backup_dev_root_level(root_backup,
++				       btrfs_header_level(info->dev_root->node));
++
++	btrfs_set_backup_csum_root(root_backup, info->csum_root->node->start);
++	btrfs_set_backup_csum_root_gen(root_backup,
++			       btrfs_header_generation(info->csum_root->node));
++	btrfs_set_backup_csum_root_level(root_backup,
++			       btrfs_header_level(info->csum_root->node));
++
++	btrfs_set_backup_total_bytes(root_backup,
++			     btrfs_super_total_bytes(info->super_copy));
++	btrfs_set_backup_bytes_used(root_backup,
++			     btrfs_super_bytes_used(info->super_copy));
++	btrfs_set_backup_num_devices(root_backup,
++			     btrfs_super_num_devices(info->super_copy));
++};
++
+ int write_all_supers(struct btrfs_fs_info *fs_info)
+ {
+ 	struct list_head *head = &fs_info->fs_devices->devices;
+@@ -1645,6 +1722,7 @@ int write_all_supers(struct btrfs_fs_info *fs_info)
+ 	int ret;
+ 	u64 flags;
+ 
++	backup_super_roots(fs_info);
+ 	sb = fs_info->super_copy;
+ 	dev_item = &sb->dev_item;
+ 	list_for_each_entry(dev, head, dev_list) {
 -- 
 2.21.0
 

@@ -2,85 +2,104 @@ Return-Path: <SRS0=OzA0=RC=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-2.3 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2392DC43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 13:07:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8ED3FC10F01
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 13:24:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id ECDB9213A2
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 13:07:05 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5FF3E2133D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 13:24:56 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="H5mxhftu"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730006AbfB0NHE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Feb 2019 08:07:04 -0500
-Received: from mx2.suse.de ([195.135.220.15]:41582 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726122AbfB0NHE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Feb 2019 08:07:04 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 456E2ADAA;
-        Wed, 27 Feb 2019 13:07:03 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 08AD4DA83C; Wed, 27 Feb 2019 14:08:23 +0100 (CET)
-Date:   Wed, 27 Feb 2019 14:08:23 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH 0/2] Fix missing reference aborts when resuming snapshot
- delete
-Message-ID: <20190227130823.GG24609@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com
-References: <20190206204615.5862-1-josef@toxicpanda.com>
+        id S1730166AbfB0NYy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Feb 2019 08:24:54 -0500
+Received: from bombadil.infradead.org ([198.137.202.133]:49334 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726062AbfB0NYy (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Feb 2019 08:24:54 -0500
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20170209; h=In-Reply-To:Content-Type:MIME-Version
+        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:
+        Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
+        List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+         bh=XFwL8TY/dcfGWNKemGskjZiFKsKtQ8ufREkdlBJDHQg=; b=H5mxhftuDuEEx0yPZqoxnYV5F
+        /w07jIjgekwvXwQ5gjo/A21wsEX7mPyWt5Pnsd73AFk9x1UlyHDfhOjduIXaiAXeUrrYHJh5BChfb
+        SRuc9mX0/elvvzNeyKCPUOmcV4AzsO1WjhEOUUHgUrEvRt/pYhJm348qB45CksrTBtFfHB5jtZRwb
+        Ev8p8MGEJJsXWpJgGZdbBJODY80B44p1haGi0tZFVL2qBcDLwE4eORhvNiybIsJPCgCqcMu3FNcoE
+        nxeYg+bdNn0Z+o2AfjPrpki+yO9oy9x9A9vW4d0/SLQFw6uU8SZuFQ2z2XC/x0j+2G1CGL4XZ8BSq
+        FdfdGDjEQ==;
+Received: from willy by bombadil.infradead.org with local (Exim 4.90_1 #2 (Red Hat Linux))
+        id 1gyzCd-0005Ta-IB; Wed, 27 Feb 2019 13:24:51 +0000
+Date:   Wed, 27 Feb 2019 05:24:51 -0800
+From:   Matthew Wilcox <willy@infradead.org>
+To:     Keith Busch <keith.busch@intel.com>
+Cc:     "Martin K. Petersen" <martin.petersen@oracle.com>,
+        Ric Wheeler <ricwheeler@gmail.com>,
+        Dave Chinner <david@fromorbit.com>,
+        lsf-pc@lists.linux-foundation.org,
+        linux-xfs <linux-xfs@vger.kernel.org>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        linux-ext4 <linux-ext4@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        linux-block@vger.kernel.org
+Subject: Re: [LSF/MM TOPIC] More async operations for file systems - async
+ discard?
+Message-ID: <20190227132451.GL11592@bombadil.infradead.org>
+References: <92ab41f7-35bc-0f56-056f-ed88526b8ea4@gmail.com>
+ <20190217210948.GB14116@dastard>
+ <46540876-c222-0889-ddce-44815dcaad04@gmail.com>
+ <20190220234723.GA5999@localhost.localdomain>
+ <yq18sy8ili7.fsf@oracle.com>
+ <20190222164504.GB10066@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190206204615.5862-1-josef@toxicpanda.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+In-Reply-To: <20190222164504.GB10066@localhost.localdomain>
+User-Agent: Mutt/1.9.2 (2017-12-15)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Feb 06, 2019 at 03:46:13PM -0500, Josef Bacik wrote:
-> With my delayed refs rsv patches in place we started hitting issues in our build
-> servers that do a lot of snapshot deletions.  Turns out there was a bug in
-> btrfs_end_transaction_throttle() that caused it to basically always commit the
-> transaction, which uncovered this particular bug.
+On Fri, Feb 22, 2019 at 09:45:05AM -0700, Keith Busch wrote:
+> On Thu, Feb 21, 2019 at 09:51:12PM -0500, Martin K. Petersen wrote:
+> > 
+> > Keith,
+> > 
+> > > With respect to fs block sizes, one thing making discards suck is that
+> > > many high capacity SSDs' physical page sizes are larger than the fs
+> > > block size, and a sub-page discard is worse than doing nothing.
+> > 
+> > That ties into the whole zeroing as a side-effect thing.
+> > 
+> > The devices really need to distinguish between discard-as-a-hint where
+> > it is free to ignore anything that's not a whole multiple of whatever
+> > the internal granularity is, and the WRITE ZEROES use case where the end
+> > result needs to be deterministic.
 > 
-> The gory details are in the change logs for both patches, but generally speaking
-> it's a problem with how we update our root_item->drop_progress key.  We will
-> skip updating it some times even though we will have dropped references to
-> blocks.  If we crash or unmount at these times we will start at a point earlier
-> in our delete than we should be and try to free blocks that we already freed,
-> thus ending up with a transaction abort because we couldn't find the extent
-> reference.
+> Exactly, yes, considering the deterministic zeroing behavior. For devices
+> supporting that, sub-page discards turn into a read-modify-write instead
+> of invalidating the page.  That increases WAF instead of improving it
+> as intended, and large page SSDs are most likely to have relatively poor
+> write endurance in the first place.
 > 
-> There are 2 patches, 1 patch to deal with already broken file systems, and 1
-> patch to keep this problem from happening in the first place.
-> 
-> The steps to reproduce this easily are sort of tricky, I had to add a couple of
-> debug patches to the kernel in order to make it easy, basically I just needed to
-> make sure we did actually commit the transaction every time we finished a
-> walk_down_tree/walk_up_tree combo.
-> 
-> The reproducer
-> 
-> 1) Creates a base subvolume.
-> 2) Creates 100k files in the subvolume.
-> 3) Snapshots the base subvolume (snap1).
-> 4) Touches files 5000-6000 in snap1.
-> 5) Snapshots snap1 (snap2).
-> 6) Deletes snap1.
-> 
-> I do this with dm-log-writes, and then replay to every FUA in the log and fsck
-> the fs.  Without these patches this falls over pretty quickly.  With just the
-> first patch we can mount the fs at the point that the fsck fails and it cleans
-> everything up properly.  With both patches applied the fsck never fails and
-> we're golden.  Thanks,
+> We have NVMe spec changes in the pipeline so devices can report this
+> granularity. But my real concern isn't with discard per se, but more
+> with the writes since we don't support "sector" sizes greater than the
+> system's page size. This is a bit of a different topic from where this
+> thread started, though.
 
-I copied the reproducer steps to the 2nd patch. 1 and 2 added to
-misc-next.
+I don't understand how reporting a larger discard granularity helps.
+Sure, if the file was written block-by-block in that large granularity
+to begin with, then the drive can invalidate an entire page.  But if
+even one page of that, say, 256kB block was rewritten, then discarding
+the 256kB block will need to discard 252kB from one erase block and 4kB
+from another erase block.
+
+So it looks like you really just want to report a larger "optimal IO
+size", which I thought we already had.

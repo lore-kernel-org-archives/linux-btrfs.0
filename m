@@ -2,104 +2,162 @@ Return-Path: <SRS0=OzA0=RC=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8ED3FC10F01
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 13:24:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E1100C43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 13:27:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5FF3E2133D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 13:24:56 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="H5mxhftu"
+	by mail.kernel.org (Postfix) with ESMTP id B8A352075B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 13:27:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730166AbfB0NYy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Feb 2019 08:24:54 -0500
-Received: from bombadil.infradead.org ([198.137.202.133]:49334 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726062AbfB0NYy (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Feb 2019 08:24:54 -0500
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20170209; h=In-Reply-To:Content-Type:MIME-Version
-        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:
-        Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
-        List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-         bh=XFwL8TY/dcfGWNKemGskjZiFKsKtQ8ufREkdlBJDHQg=; b=H5mxhftuDuEEx0yPZqoxnYV5F
-        /w07jIjgekwvXwQ5gjo/A21wsEX7mPyWt5Pnsd73AFk9x1UlyHDfhOjduIXaiAXeUrrYHJh5BChfb
-        SRuc9mX0/elvvzNeyKCPUOmcV4AzsO1WjhEOUUHgUrEvRt/pYhJm348qB45CksrTBtFfHB5jtZRwb
-        Ev8p8MGEJJsXWpJgGZdbBJODY80B44p1haGi0tZFVL2qBcDLwE4eORhvNiybIsJPCgCqcMu3FNcoE
-        nxeYg+bdNn0Z+o2AfjPrpki+yO9oy9x9A9vW4d0/SLQFw6uU8SZuFQ2z2XC/x0j+2G1CGL4XZ8BSq
-        FdfdGDjEQ==;
-Received: from willy by bombadil.infradead.org with local (Exim 4.90_1 #2 (Red Hat Linux))
-        id 1gyzCd-0005Ta-IB; Wed, 27 Feb 2019 13:24:51 +0000
-Date:   Wed, 27 Feb 2019 05:24:51 -0800
-From:   Matthew Wilcox <willy@infradead.org>
-To:     Keith Busch <keith.busch@intel.com>
-Cc:     "Martin K. Petersen" <martin.petersen@oracle.com>,
-        Ric Wheeler <ricwheeler@gmail.com>,
-        Dave Chinner <david@fromorbit.com>,
-        lsf-pc@lists.linux-foundation.org,
-        linux-xfs <linux-xfs@vger.kernel.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        linux-ext4 <linux-ext4@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        linux-block@vger.kernel.org
-Subject: Re: [LSF/MM TOPIC] More async operations for file systems - async
- discard?
-Message-ID: <20190227132451.GL11592@bombadil.infradead.org>
-References: <92ab41f7-35bc-0f56-056f-ed88526b8ea4@gmail.com>
- <20190217210948.GB14116@dastard>
- <46540876-c222-0889-ddce-44815dcaad04@gmail.com>
- <20190220234723.GA5999@localhost.localdomain>
- <yq18sy8ili7.fsf@oracle.com>
- <20190222164504.GB10066@localhost.localdomain>
+        id S1730361AbfB0N1F (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Feb 2019 08:27:05 -0500
+Received: from mx2.suse.de ([195.135.220.15]:44800 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727316AbfB0N1F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Feb 2019 08:27:05 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 5F170AD81
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2019 13:27:03 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 4EF34DA83C; Wed, 27 Feb 2019 14:28:24 +0100 (CET)
+Date:   Wed, 27 Feb 2019 14:28:24 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Johannes Thumshirn <jthumshirn@suse.de>
+Cc:     David Sterba <dsterba@suse.com>,
+        Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v4 1/2] btrfs: factor our read/write stage off
+ csum_tree_block() into its callers
+Message-ID: <20190227132824.GH24609@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Johannes Thumshirn <jthumshirn@suse.de>,
+        David Sterba <dsterba@suse.com>,
+        Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
+References: <20190225132416.15840-1-jthumshirn@suse.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190222164504.GB10066@localhost.localdomain>
-User-Agent: Mutt/1.9.2 (2017-12-15)
+In-Reply-To: <20190225132416.15840-1-jthumshirn@suse.de>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Feb 22, 2019 at 09:45:05AM -0700, Keith Busch wrote:
-> On Thu, Feb 21, 2019 at 09:51:12PM -0500, Martin K. Petersen wrote:
-> > 
-> > Keith,
-> > 
-> > > With respect to fs block sizes, one thing making discards suck is that
-> > > many high capacity SSDs' physical page sizes are larger than the fs
-> > > block size, and a sub-page discard is worse than doing nothing.
-> > 
-> > That ties into the whole zeroing as a side-effect thing.
-> > 
-> > The devices really need to distinguish between discard-as-a-hint where
-> > it is free to ignore anything that's not a whole multiple of whatever
-> > the internal granularity is, and the WRITE ZEROES use case where the end
-> > result needs to be deterministic.
+On Mon, Feb 25, 2019 at 02:24:15PM +0100, Johannes Thumshirn wrote:
+> Currently csum_tree_block() does two things, first it as it's name
+> suggests it calculates the checksum for a tree-block. But it also writes
+> this checksum to disk or reads an extent_buffer from disk and compares the
+> checksum with the calculated checksum, depending on the verify argument.
 > 
-> Exactly, yes, considering the deterministic zeroing behavior. For devices
-> supporting that, sub-page discards turn into a read-modify-write instead
-> of invalidating the page.  That increases WAF instead of improving it
-> as intended, and large page SSDs are most likely to have relatively poor
-> write endurance in the first place.
+> Furthermore one of the two callers passes in '1' for the verify argument,
+> the other one passes in '0'.
 > 
-> We have NVMe spec changes in the pipeline so devices can report this
-> granularity. But my real concern isn't with discard per se, but more
-> with the writes since we don't support "sector" sizes greater than the
-> system's page size. This is a bit of a different topic from where this
-> thread started, though.
+> For clarity and less layering violations, factor out the second stage in
+> csum_tree_block()'s callers.
+> 
+> Suggested-by: Nikolay Borisov <nborisov@suse.com>
+> Reviewed-by: Qu Wenruo <wqu@suse.com>
+> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+> Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+> 
+> ---
+> 
+> Changes to v3:
+> - Move WARN_ON() from csum_dirty_buffer() into csum_tree_buffer()
+> 
+> Changes to v2:
+> - Directly return -EINVAL instead of EUCLEAN
+> 
+> Changes to v1:
+> - return error from csum_tree_buffer() in csum_dirty_buffer() instead of
+>   EUCLEAN (Nikolay)
+> ---
+>  fs/btrfs/disk-io.c | 51 +++++++++++++++++++++++++++------------------------
+>  1 file changed, 27 insertions(+), 24 deletions(-)
+> 
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 5216e7b3f9ad..8090e8f4ccc2 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -263,12 +263,9 @@ void btrfs_csum_final(u32 crc, u8 *result)
+>   * compute the csum for a btree block, and either verify it or write it
+>   * into the csum field of the block.
 
-I don't understand how reporting a larger discard granularity helps.
-Sure, if the file was written block-by-block in that large granularity
-to begin with, then the drive can invalidate an entire page.  But if
-even one page of that, say, 256kB block was rewritten, then discarding
-the 256kB block will need to discard 252kB from one erase block and 4kB
-from another erase block.
+The comment does not match the function anymore
 
-So it looks like you really just want to report a larger "optimal IO
-size", which I thought we already had.
+>   */
+> -static int csum_tree_block(struct btrfs_fs_info *fs_info,
+> -			   struct extent_buffer *buf,
+> -			   int verify)
+> +static int csum_tree_block(struct extent_buffer *buf,
+> +			   u8 *result)
+
+Formatting
+
+>  {
+> -	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
+> -	char result[BTRFS_CSUM_SIZE];
+>  	unsigned long len;
+>  	unsigned long cur_len;
+>  	unsigned long offset = BTRFS_CSUM_SIZE;
+> @@ -300,23 +297,6 @@ static int csum_tree_block(struct btrfs_fs_info *fs_info,
+>  
+>  	btrfs_csum_final(crc, result);
+>  
+> -	if (verify) {
+> -		if (memcmp_extent_buffer(buf, result, 0, csum_size)) {
+> -			u32 val;
+> -			u32 found = 0;
+> -			memcpy(&found, result, csum_size);
+> -
+> -			read_extent_buffer(buf, &val, 0, csum_size);
+> -			btrfs_warn_rl(fs_info,
+> -				"%s checksum verify failed on %llu wanted %X found %X level %d",
+> -				fs_info->sb->s_id, buf->start,
+> -				val, found, btrfs_header_level(buf));
+> -			return -EUCLEAN;
+> -		}
+> -	} else {
+> -		write_extent_buffer(buf, result, 0, csum_size);
+> -	}
+> -
+>  	return 0;
+>  }
+>  
+> @@ -533,6 +513,8 @@ static int csum_dirty_buffer(struct btrfs_fs_info *fs_info, struct page *page)
+>  {
+>  	u64 start = page_offset(page);
+>  	u64 found_start;
+> +	u8 result[BTRFS_CSUM_SIZE];
+> +	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
+>  	struct extent_buffer *eb;
+>  
+>  	eb = (struct extent_buffer *)page->private;
+> @@ -552,7 +534,11 @@ static int csum_dirty_buffer(struct btrfs_fs_info *fs_info, struct page *page)
+>  	ASSERT(memcmp_extent_buffer(eb, fs_info->fs_devices->metadata_uuid,
+>  			btrfs_header_fsid(), BTRFS_FSID_SIZE) == 0);
+>  
+> -	return csum_tree_block(fs_info, eb, 0);
+> +	if (csum_tree_block(eb, result))
+> +		return -EINVAL;
+> +
+> +	write_extent_buffer(eb, result, 0, csum_size);
+> +	return 0;
+>  }
+>  
+>  static int check_tree_block_fsid(struct btrfs_fs_info *fs_info,
+> @@ -595,7 +581,9 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
+>  	struct extent_buffer *eb;
+>  	struct btrfs_root *root = BTRFS_I(page->mapping->host)->root;
+>  	struct btrfs_fs_info *fs_info = root->fs_info;
+> +	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
+>  	int ret = 0;
+> +	char result[BTRFS_CSUM_SIZE];
+
+This should be 'u8'
+
+All of the above fixed and added to 5.2 queue, thanks.

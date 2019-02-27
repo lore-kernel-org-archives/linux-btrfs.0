@@ -2,128 +2,126 @@ Return-Path: <SRS0=OzA0=RC=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 04D76C4360F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 20:47:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4DF87C43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 21:22:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C699021850
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 20:47:30 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=nvidia.com header.i=@nvidia.com header.b="X0dP0ili"
+	by mail.kernel.org (Postfix) with ESMTP id 1BAE22083D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 21:22:59 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1551302579;
+	bh=6dY+ub8recU3tRwJYm/SQGJM5gm0+DCz7fncW84b3uI=;
+	h=From:To:Cc:Subject:Date:List-ID:From;
+	b=VOsI589D5sGVN4QBLKim2wqE7AZVeDut4fBvMho1C40xVo9Aol7DHFKUmjl24CoaR
+	 ujeKGAgKho036MqoSP6kghrjlmRR2myL4oMCf736afNc/+1Q4znCtpu6wO7bgJV4uz
+	 H9TPT7UFLSanCec+Ff2IcZz4cO7vBXyBV02KGTgg=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730284AbfB0UrY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Feb 2019 15:47:24 -0500
-Received: from hqemgate14.nvidia.com ([216.228.121.143]:2174 "EHLO
-        hqemgate14.nvidia.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729291AbfB0UrY (ORCPT
+        id S1730363AbfB0VWy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Feb 2019 16:22:54 -0500
+Received: from mail-yw1-f68.google.com ([209.85.161.68]:39498 "EHLO
+        mail-yw1-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729412AbfB0VWy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Feb 2019 15:47:24 -0500
-Received: from hqpgpgate101.nvidia.com (Not Verified[216.228.121.13]) by hqemgate14.nvidia.com (using TLS: TLSv1.2, DES-CBC3-SHA)
-        id <B5c76f7630000>; Wed, 27 Feb 2019 12:47:31 -0800
-Received: from hqmail.nvidia.com ([172.20.161.6])
-  by hqpgpgate101.nvidia.com (PGP Universal service);
-  Wed, 27 Feb 2019 12:47:22 -0800
-X-PGP-Universal: processed;
-        by hqpgpgate101.nvidia.com on Wed, 27 Feb 2019 12:47:22 -0800
-Received: from [10.26.11.186] (10.124.1.5) by HQMAIL101.nvidia.com
- (172.20.187.10) with Microsoft SMTP Server (TLS) id 15.0.1473.3; Wed, 27 Feb
- 2019 20:47:12 +0000
-Subject: Re: [PATCH V15 14/18] block: enable multipage bvecs
-To:     Marek Szyprowski <m.szyprowski@samsung.com>,
-        Ming Lei <ming.lei@redhat.com>, Jens Axboe <axboe@kernel.dk>
-CC:     <linux-block@vger.kernel.org>, <linux-kernel@vger.kernel.org>,
-        <linux-mm@kvack.org>, Theodore Ts'o <tytso@mit.edu>,
-        Omar Sandoval <osandov@fb.com>,
-        Sagi Grimberg <sagi@grimberg.me>,
-        Dave Chinner <dchinner@redhat.com>,
-        Kent Overstreet <kent.overstreet@gmail.com>,
-        Mike Snitzer <snitzer@redhat.com>, <dm-devel@redhat.com>,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        <linux-fsdevel@vger.kernel.org>, <linux-raid@vger.kernel.org>,
-        David Sterba <dsterba@suse.com>, <linux-btrfs@vger.kernel.org>,
-        "Darrick J . Wong" <darrick.wong@oracle.com>,
-        <linux-xfs@vger.kernel.org>, Gao Xiang <gaoxiang25@huawei.com>,
-        Christoph Hellwig <hch@lst.de>, <linux-ext4@vger.kernel.org>,
-        Coly Li <colyli@suse.de>, <linux-bcache@vger.kernel.org>,
-        Boaz Harrosh <ooo@electrozaur.com>,
-        Bob Peterson <rpeterso@redhat.com>, <cluster-devel@redhat.com>,
-        Ulf Hansson <ulf.hansson@linaro.org>,
-        "linux-mmc@vger.kernel.org" <linux-mmc@vger.kernel.org>,
-        'Linux Samsung SOC' <linux-samsung-soc@vger.kernel.org>,
-        Krzysztof Kozlowski <krzk@kernel.org>,
-        Adrian Hunter <adrian.hunter@intel.com>,
-        Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>,
-        linux-tegra <linux-tegra@vger.kernel.org>
-References: <20190215111324.30129-1-ming.lei@redhat.com>
- <20190215111324.30129-15-ming.lei@redhat.com>
- <CGME20190221084301eucas1p11e8841a62b4b1da3cccca661b6f4c29d@eucas1p1.samsung.com>
- <6c9ae4de-c56f-a2b3-2542-da7d8b95601d@samsung.com>
-From:   Jon Hunter <jonathanh@nvidia.com>
-Message-ID: <0dbbee64-5c6b-0374-4360-6dc218c70d58@nvidia.com>
-Date:   Wed, 27 Feb 2019 20:47:09 +0000
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.4.0
-MIME-Version: 1.0
-In-Reply-To: <6c9ae4de-c56f-a2b3-2542-da7d8b95601d@samsung.com>
-X-Originating-IP: [10.124.1.5]
-X-ClientProxiedBy: HQMAIL105.nvidia.com (172.20.187.12) To
- HQMAIL101.nvidia.com (172.20.187.10)
-Content-Type: text/plain; charset="utf-8"
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=nvidia.com; s=n1;
-        t=1551300451; bh=fysy4W1JsLJNGtNiqBcR+gaIGLkCCRdCGseNbvSiG5A=;
-        h=X-PGP-Universal:Subject:To:CC:References:From:Message-ID:Date:
-         User-Agent:MIME-Version:In-Reply-To:X-Originating-IP:
-         X-ClientProxiedBy:Content-Type:Content-Language:
-         Content-Transfer-Encoding;
-        b=X0dP0iliVFercVqWdMyW/NR2Nhm0eLApUzdqUyISSWUx2H+DKhUu/OKtqWe2+3ZuT
-         au4eOklUFmE4Gr2obXchzT8IXOfMhcyX4FkEsLxzHW0xgKT/h6CV7784HRm5efp90O
-         La7tft6R64o+psxbqoi6GCRY4KpDinbyuM578z8ZIBlOABzOuvOkGz6q77lXYGVw0F
-         i4IUbygeJkCCpZ0U5/kCdyLBwxOPIqZvceHCPKG8aMbmcU8ubwJyoq9ClYgVHYmDHM
-         dxcWgdcM3oW54O+MFPY5/ZPt1Zh31nOGXIQBPU0L01WBNStNQbbLPLk/T1RrJziyxj
-         hseLr65aHTomg==
+        Wed, 27 Feb 2019 16:22:54 -0500
+Received: by mail-yw1-f68.google.com with SMTP id z191so8720818ywa.6;
+        Wed, 27 Feb 2019 13:22:53 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id;
+        bh=Bw7SPCNkvP8Cy2xjgdDrHGkBpnkIyNcOhTzkkyC5wig=;
+        b=FlvfubP7PYTiXRpkozCgSPKVyD57wPVydm4PTIJzzRF7sKO+vyJxHqZHxdxbP7Saq4
+         O3zDXi9BOHdOdRqy5vLFyuHs5KXvX9DiZchgVuKw933aGY7U55KWBKmaUMZyLWFnd9sH
+         bdwUi+JfqqrvSBRwUK/F+/nhYNAwqPNf1wCxf7crbVUhGFTiHbFBJOstP+wFLztvXy3A
+         ql7GO4O+H44XfVdKC68ay7M8WLzcGze6J/GeR6RbQZuYPW968GUUEii6lnbYZ+AcU9gC
+         3ROMFq6ayohdnjPJ495gHmLPWvTaNdAiw/ZQo3xuQEFSUm5D44GpLkRMoZNk+vs9PPoj
+         jjsg==
+X-Gm-Message-State: AHQUAubI6hceSBMKiAbk6aJpjqucUez0lyhhE9teoe6MmbJc8KzZGEUK
+        MyLy/nuU0ZUML43Hnp9GGnI=
+X-Google-Smtp-Source: AHgI3IYXpEGSp1GlwEGCqPYL/bFyUPVDw9y811gxjJKWcVi5rNZ9eJJ6gZrrw0MGmF4f9bwBArRzcg==
+X-Received: by 2002:a25:3403:: with SMTP id b3mr3852646yba.164.1551302572773;
+        Wed, 27 Feb 2019 13:22:52 -0800 (PST)
+Received: from dennisz-mbp.thefacebook.com ([199.201.65.133])
+        by smtp.gmail.com with ESMTPSA id f185sm7872558ywf.18.2019.02.27.13.22.50
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
+        Wed, 27 Feb 2019 13:22:51 -0800 (PST)
+From:   Dennis Zhou <dennis@kernel.org>
+To:     David Sterba <dsterba@suse.com>,
+        Josef Bacik <josef@toxicpanda.com>, Chris Mason <clm@fb.com>,
+        Omar Sandoval <osandov@osandov.com>,
+        Nikolay Borisov <nborisov@suse.com>
+Cc:     kernel-team@fb.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, Dennis Zhou <dennis@kernel.org>
+Subject: [PATCH] btrfs: remove indirect function calls from zstd
+Date:   Wed, 27 Feb 2019 16:21:28 -0500
+Message-Id: <20190227212128.38491-1-dennis@kernel.org>
+X-Mailer: git-send-email 2.13.5
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+While calling functions inside zstd, we don't need to use the
+indirection provided by the workspace_manager. Forward declarations are
+added to maintain the function order of btrfs_compress_op.
 
-On 21/02/2019 08:42, Marek Szyprowski wrote:
-> Dear All,
-> 
-> On 2019-02-15 12:13, Ming Lei wrote:
->> This patch pulls the trigger for multi-page bvecs.
->>
->> Reviewed-by: Omar Sandoval <osandov@fb.com>
->> Signed-off-by: Ming Lei <ming.lei@redhat.com>
-> 
-> Since Linux next-20190218 I've observed problems with block layer on one
-> of my test devices (Odroid U3 with EXT4 rootfs on SD card). Bisecting
-> this issue led me to this change. This is also the first linux-next
-> release with this change merged. The issue is fully reproducible and can
-> be observed in the following kernel log:
-> 
-> sdhci: Secure Digital Host Controller Interface driver
-> sdhci: Copyright(c) Pierre Ossman
-> s3c-sdhci 12530000.sdhci: clock source 2: mmc_busclk.2 (100000000 Hz)
-> s3c-sdhci 12530000.sdhci: Got CD GPIO
-> mmc0: SDHCI controller on samsung-hsmmc [12530000.sdhci] using ADMA
-> mmc0: new high speed SDHC card at address aaaa
-> mmcblk0: mmc0:aaaa SL16G 14.8 GiB
-I have also noticed some failures when writing to an eMMC device on one
-of our Tegra boards. We have a simple eMMC write/read test and it is
-currently failing because the data written does not match the source.
+Signed-off-by: Dennis Zhou <dennis@kernel.org>
+---
+ fs/btrfs/zstd.c | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
 
-I did not seem the same crash as reported here, however, in our case the
-rootfs is NFS mounted and so probably would not. However, the bisect
-points to this commit and reverting on top of -next fixes the issues.
-
-Cheers
-Jon
-
+diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
+index 6b9e29d050f3..a6ff07cf11d5 100644
+--- a/fs/btrfs/zstd.c
++++ b/fs/btrfs/zstd.c
+@@ -90,6 +90,9 @@ static inline struct workspace *list_to_workspace(struct list_head *list)
+ 	return container_of(list, struct workspace, list);
+ }
+ 
++static void zstd_free_workspace(struct list_head *ws);
++static struct list_head *zstd_alloc_workspace(unsigned int level);
++
+ /*
+  * zstd_reclaim_timer_fn - reclaim timer
+  * @t: timer
+@@ -124,7 +127,7 @@ static void zstd_reclaim_timer_fn(struct timer_list *timer)
+ 		level = victim->level;
+ 		list_del(&victim->lru_list);
+ 		list_del(&victim->list);
+-		wsm.ops->free_workspace(&victim->list);
++		zstd_free_workspace(&victim->list);
+ 
+ 		if (list_empty(&wsm.idle_ws[level - 1]))
+ 			clear_bit(level - 1, &wsm.active_map);
+@@ -180,7 +183,7 @@ static void zstd_init_workspace_manager(void)
+ 	for (i = 0; i < ZSTD_BTRFS_MAX_LEVEL; i++)
+ 		INIT_LIST_HEAD(&wsm.idle_ws[i]);
+ 
+-	ws = wsm.ops->alloc_workspace(ZSTD_BTRFS_MAX_LEVEL);
++	ws = zstd_alloc_workspace(ZSTD_BTRFS_MAX_LEVEL);
+ 	if (IS_ERR(ws)) {
+ 		pr_warn(
+ 		"BTRFS: cannot preallocate zstd compression workspace\n");
+@@ -202,7 +205,7 @@ static void zstd_cleanup_workspace_manager(void)
+ 						 struct workspace, list);
+ 			list_del(&workspace->list);
+ 			list_del(&workspace->lru_list);
+-			wsm.ops->free_workspace(&workspace->list);
++			zstd_free_workspace(&workspace->list);
+ 		}
+ 	}
+ 	spin_unlock(&wsm.lock);
+@@ -272,7 +275,7 @@ static struct list_head *zstd_get_workspace(unsigned int level)
+ 		return ws;
+ 
+ 	nofs_flag = memalloc_nofs_save();
+-	ws = wsm.ops->alloc_workspace(level);
++	ws = zstd_alloc_workspace(level);
+ 	memalloc_nofs_restore(nofs_flag);
+ 
+ 	if (IS_ERR(ws)) {
 -- 
-nvpublic
+2.17.1
+

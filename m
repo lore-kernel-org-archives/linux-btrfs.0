@@ -2,150 +2,101 @@ Return-Path: <SRS0=OzA0=RC=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 88C4FC43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 06:06:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 98A99C43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 11:22:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6208B21852
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 06:06:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 54A522147C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 11:22:23 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=googlemail.com header.i=@googlemail.com header.b="SCMG6sYW"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729847AbfB0GGt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Feb 2019 01:06:49 -0500
-Received: from mx2.suse.de ([195.135.220.15]:34152 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729824AbfB0GGs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Feb 2019 01:06:48 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 1403CAC5F
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2019 06:06:47 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v1.1 14/14] btrfs-progs: Update backup roots when writing super blocks
-Date:   Wed, 27 Feb 2019 14:05:52 +0800
-Message-Id: <20190227060552.3841-15-wqu@suse.com>
-X-Mailer: git-send-email 2.21.0
-In-Reply-To: <20190227060552.3841-1-wqu@suse.com>
-References: <20190227060552.3841-1-wqu@suse.com>
+        id S1726810AbfB0LWV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Feb 2019 06:22:21 -0500
+Received: from mail-yw1-f66.google.com ([209.85.161.66]:45090 "EHLO
+        mail-yw1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725927AbfB0LWV (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Feb 2019 06:22:21 -0500
+Received: by mail-yw1-f66.google.com with SMTP id r188so7641270ywb.12
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2019 03:22:21 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=googlemail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=ovfBI19e8LiVXKQDNKFKjhDtNobeMq/9sRx74g33jZs=;
+        b=SCMG6sYWHPQEpM9A/kicKLMo/yLPaLqT+hiScu03cXC7ZwruN+kYP/pfVTO7VdCmt8
+         sv8Y9FtDubwM/t+Ko11I34TdL67yxWvyoI3FRRMCQghRpkUH0eCJmcaKYVHvwYbkPMbh
+         Bzsn1MB3bf+L/PpBOoPMA8P98xLfZjzCLPUIqfzhbGfLeFYVdGLZuA6RDvW5ZY2zuktb
+         rKp4/10yvbdm4C6Xh2TbU2JviFGgpvspQ5tWtyFi5AFEGMUBoEJPkAb2W+4CEKBGRB8P
+         XdZHm0mHgEcVx31E90Ozn2+oOFgCS6Gd0YdTJCTxsqBDllu76SY9M1DeGex2IdlCT5xi
+         DUdw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=ovfBI19e8LiVXKQDNKFKjhDtNobeMq/9sRx74g33jZs=;
+        b=oF9VnpoBRu0HgVbq98rg+7ATecHUyvtfE7O3QAQdlcukIBLCrAk/Blt2aSgURBqu1x
+         QP+sMdLLXcibdf0K219+lJ3g0DYTiA8/fkoge2hu0ZNJQMswL0PE8fKaoaM9JPeaWExJ
+         2cW+w/PFUbiB9oZWtfhjO5KqDmsSRp8t5cKvpS/MQfNYS6GbwRjeB7wSvv7JFwk0SVb9
+         fV56yaq2yV7VvHvo0cZ6FHfEdZhAvC5cwHYYtKjO8Fi6ha+rN6t4apNbWnkJJ5WeikqU
+         aZPCeyAg6t+zG2tXtXtrSlly3MVIrO/nvEEKgZdGkygZArI0oj62KcseXk8jQKnGQh/K
+         Bu7w==
+X-Gm-Message-State: AHQUAuZRu1Og9HZFud60wlSWGGjv3k0Dp5G+Iba/QbaiFayD1oQv7JuR
+        ER3Dh/ATNXqdYmmKJIzpVnnpx6WVP7l2xMtAoUwrxw==
+X-Google-Smtp-Source: AHgI3IaqyR9cNq4xmj/d1I/e5p56rOq7DSvlDkCvAB4xuceSj1tYAGh7IkuOC+oCmd/KZR1UjhJwsSkniV9fQyb6I04=
+X-Received: by 2002:a25:7ec5:: with SMTP id z188mr1469525ybc.282.1551266540862;
+ Wed, 27 Feb 2019 03:22:20 -0800 (PST)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <20190227051602.28987-1-wqu@suse.com>
+In-Reply-To: <20190227051602.28987-1-wqu@suse.com>
+From:   Mike Fleetwood <mike.fleetwood@googlemail.com>
+Date:   Wed, 27 Feb 2019 11:22:09 +0000
+Message-ID: <CAMU1PDi9GD9TC6B8kN4iGbeddOxkPH7B+UxeiVbC_KOwJvxnzQ@mail.gmail.com>
+Subject: Re: [PATCH] btrfs-progs: gitignore: Ignore hidden files
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The code is mostly ported from kernel with minimal change.
+On Wed, 27 Feb 2019 at 05:16, Qu Wenruo <wqu@suse.com> wrote:
+>
+> A lot of editor/IDE related config files are hidden files, like .vimrc
+> or .clang_complete.
+>
+> Instead of adding gitignore entry for each editor/IDE, just ignore all
+> hidden files like what kernel does.
+I think you mean:
+files starting with ".", like ls does by default without the -a flag.
 
-Since btrfs-progs doesn't support replaying log, there is some code
-unnecessary for btrfs-progs, but to keep the code the same, that
-unnecessary code is kept as it.
+Mike
 
-Now "btrfs check --repair" will update backup roots correctly.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- disk-io.c | 78 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 78 insertions(+)
-
-diff --git a/disk-io.c b/disk-io.c
-index a9d58e6c1357..44219b6fab98 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -1636,6 +1636,83 @@ write_err:
- 	return ret;
- }
- 
-+/*
-+ * copy all the root pointers into the super backup array.
-+ * this will bump the backup pointer by one when it is
-+ * done
-+ */
-+static void backup_super_roots(struct btrfs_fs_info *info)
-+{
-+	struct btrfs_root_backup *root_backup;
-+	int next_backup;
-+	int last_backup;
-+
-+	last_backup = find_best_backup_root(info->super_copy);
-+	next_backup = (last_backup + 1) % BTRFS_NUM_BACKUP_ROOTS;
-+
-+	/* just overwrite the last backup if we're at the same generation */
-+	root_backup = info->super_copy->super_roots + last_backup;
-+	if (btrfs_backup_tree_root_gen(root_backup) ==
-+	    btrfs_header_generation(info->tree_root->node))
-+		next_backup = last_backup;
-+
-+	root_backup = info->super_copy->super_roots + next_backup;
-+
-+	/*
-+	 * make sure all of our padding and empty slots get zero filled
-+	 * regardless of which ones we use today
-+	 */
-+	memset(root_backup, 0, sizeof(*root_backup));
-+	btrfs_set_backup_tree_root(root_backup, info->tree_root->node->start);
-+	btrfs_set_backup_tree_root_gen(root_backup,
-+			       btrfs_header_generation(info->tree_root->node));
-+	btrfs_set_backup_tree_root_level(root_backup,
-+			       btrfs_header_level(info->tree_root->node));
-+
-+	btrfs_set_backup_chunk_root(root_backup, info->chunk_root->node->start);
-+	btrfs_set_backup_chunk_root_gen(root_backup,
-+			       btrfs_header_generation(info->chunk_root->node));
-+	btrfs_set_backup_chunk_root_level(root_backup,
-+			       btrfs_header_level(info->chunk_root->node));
-+
-+	btrfs_set_backup_extent_root(root_backup, info->extent_root->node->start);
-+	btrfs_set_backup_extent_root_gen(root_backup,
-+			       btrfs_header_generation(info->extent_root->node));
-+	btrfs_set_backup_extent_root_level(root_backup,
-+			       btrfs_header_level(info->extent_root->node));
-+	/*
-+	 * we might commit during log recovery, which happens before we set
-+	 * the fs_root.  Make sure it is valid before we fill it in.
-+	 */
-+	if (info->fs_root && info->fs_root->node) {
-+		btrfs_set_backup_fs_root(root_backup,
-+					 info->fs_root->node->start);
-+		btrfs_set_backup_fs_root_gen(root_backup,
-+			       btrfs_header_generation(info->fs_root->node));
-+		btrfs_set_backup_fs_root_level(root_backup,
-+			       btrfs_header_level(info->fs_root->node));
-+	}
-+
-+	btrfs_set_backup_dev_root(root_backup, info->dev_root->node->start);
-+	btrfs_set_backup_dev_root_gen(root_backup,
-+			       btrfs_header_generation(info->dev_root->node));
-+	btrfs_set_backup_dev_root_level(root_backup,
-+				       btrfs_header_level(info->dev_root->node));
-+
-+	btrfs_set_backup_csum_root(root_backup, info->csum_root->node->start);
-+	btrfs_set_backup_csum_root_gen(root_backup,
-+			       btrfs_header_generation(info->csum_root->node));
-+	btrfs_set_backup_csum_root_level(root_backup,
-+			       btrfs_header_level(info->csum_root->node));
-+
-+	btrfs_set_backup_total_bytes(root_backup,
-+			     btrfs_super_total_bytes(info->super_copy));
-+	btrfs_set_backup_bytes_used(root_backup,
-+			     btrfs_super_bytes_used(info->super_copy));
-+	btrfs_set_backup_num_devices(root_backup,
-+			     btrfs_super_num_devices(info->super_copy));
-+};
-+
- int write_all_supers(struct btrfs_fs_info *fs_info)
- {
- 	struct list_head *head = &fs_info->fs_devices->devices;
-@@ -1645,6 +1722,7 @@ int write_all_supers(struct btrfs_fs_info *fs_info)
- 	int ret;
- 	u64 flags;
- 
-+	backup_super_roots(fs_info);
- 	sb = fs_info->super_copy;
- 	dev_item = &sb->dev_item;
- 	list_for_each_entry(dev, head, dev_list) {
--- 
-2.21.0
-
+>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  .gitignore | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+>
+> diff --git a/.gitignore b/.gitignore
+> index d9f022c48c7d..aadf9ae77d41 100644
+> --- a/.gitignore
+> +++ b/.gitignore
+> @@ -64,7 +64,7 @@
+>  /cscope.files
+>  /cscope.in.out
+>  /cscope.po.out
+> -.clang_complete
+> +.*
+>
+>  /Documentation/Makefile
+>  /Documentation/*.html
+> --
+> 2.21.0
+>

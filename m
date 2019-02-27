@@ -2,93 +2,97 @@ Return-Path: <SRS0=OzA0=RC=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E992CC43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 16:24:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D060DC43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 16:43:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B6CF820C01
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 16:24:00 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A9427217F5
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 16:43:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729129AbfB0QX7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Feb 2019 11:23:59 -0500
-Received: from mx2.suse.de ([195.135.220.15]:54806 "EHLO mx1.suse.de"
+        id S1727169AbfB0QnX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Feb 2019 11:43:23 -0500
+Received: from mx2.suse.de ([195.135.220.15]:59458 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726223AbfB0QX7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Feb 2019 11:23:59 -0500
+        id S1726181AbfB0QnX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Feb 2019 11:43:23 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 936D7ACC8
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2019 16:23:58 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id A8E5EAF5F;
+        Wed, 27 Feb 2019 16:43:21 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 6EC48DA83C; Wed, 27 Feb 2019 17:25:19 +0100 (CET)
-Date:   Wed, 27 Feb 2019 17:25:19 +0100
+        id CA7ADDA83C; Wed, 27 Feb 2019 17:44:41 +0100 (CET)
+Date:   Wed, 27 Feb 2019 17:44:41 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.de>
-Cc:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: balance: Sync the fs before balancing
- metadata chunks
-Message-ID: <20190227162519.GX24609@twin.jikos.cz>
+To:     Dennis Zhou <dennis@kernel.org>
+Cc:     David Sterba <dsterba@suse.com>,
+        Josef Bacik <josef@toxicpanda.com>, Chris Mason <clm@fb.com>,
+        Omar Sandoval <osandov@osandov.com>,
+        Nick Terrell <terrelln@fb.com>,
+        Nikolay Borisov <nborisov@suse.com>, kernel-team@fb.com,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH v2] btrfs: zstd ensure reclaim timer is properly cleaned
+ up
+Message-ID: <20190227164441.GY24609@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.de>,
-        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20190129065739.31707-1-wqu@suse.com>
- <20190225172118.GA24609@twin.jikos.cz>
- <3e574c54-f714-424e-78bb-4a251a864153@suse.de>
+Mail-Followup-To: dsterba@suse.cz, Dennis Zhou <dennis@kernel.org>,
+        David Sterba <dsterba@suse.com>, Josef Bacik <josef@toxicpanda.com>,
+        Chris Mason <clm@fb.com>, Omar Sandoval <osandov@osandov.com>,
+        Nick Terrell <terrelln@fb.com>, Nikolay Borisov <nborisov@suse.com>,
+        kernel-team@fb.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+References: <20190222195348.2728-1-dennis@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <3e574c54-f714-424e-78bb-4a251a864153@suse.de>
+In-Reply-To: <20190222195348.2728-1-dennis@kernel.org>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Feb 26, 2019 at 01:55:06PM +0800, Qu Wenruo wrote:
+On Fri, Feb 22, 2019 at 02:53:48PM -0500, Dennis Zhou wrote:
+> The timer function, zstd_reclaim_timer_fn(), reschedules itself under
+> certain conditions. When cleaning up, take the lock and remove all
+> workspaces. This prevents the timer from rearming itself. Lastly, switch
+> to del_timer_sync() to ensure that the timer function can't trigger as
+> we're unloading.
 > 
-> 
-> On 2019/2/26 上午1:21, David Sterba wrote:
-> > On Tue, Jan 29, 2019 at 02:57:39PM +0800, Qu Wenruo wrote:
-> >> The most straightforward is to sync the fs before balancing metadata
-> >> chunks.
-> >>
-> >> We could enhance the kernel bytes_may_use calculation, but I doubt about
-> >> the complexity.
-> >> So I take the easy fix to reduce the false ENOSPC reports.
-> > 
-> > Agreed.
-> > 
-> >> +	/*
-> >> +	 * There may be many over-reserved space for metadata block groups,
-> >> +	 * especially for inlined file extents.
-> >> +	 *
-> >> +	 * Do a sync here will free those over-reserved space and hugely
-> >> +	 * reduce the possibility of some false ENOSPC
-> >> +	 */
-> >> +	if (args->flags & BTRFS_BALANCE_METADATA) {
-> >> +		ret = btrfs_util_sync(path);
-> > 
-> > As the fd is already open, we should use the _fd version,
-> > 
-> >> +		if (ret) {
-> >> +			error("failed to sync the fs before balance: %m");
-> >> +			ret = -errno;
-> >> +			goto out;
-> > 
-> > and possibly only warn if there's an error returned as the sync failure
-> > is not a critical condition.
-> 
-> AFAIK if we can't even sync the fs, the balance is definitely going to
-> fail, as the most common failure mode for syncfs is RO fs, caused by
-> aborted transaction.
-> 
-> Thus I still think we should error out. Or is there some other
-> non-critical failure mode I missed?
+> Signed-off-by: Dennis Zhou <dennis@kernel.org>
 
-The read-only filesystem will be checked when balance starts, that's
-where it gets reported.
+Reviewed-by: David Sterba <dsterba@suse.com>
+
+> ---
+> v2:
+> - cleanup workspaces and then disable the timer
+> 
+>  fs/btrfs/zstd.c | 6 ++++--
+>  1 file changed, 4 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
+> index 3e418a3aeb11..6b9e29d050f3 100644
+> --- a/fs/btrfs/zstd.c
+> +++ b/fs/btrfs/zstd.c
+> @@ -195,8 +195,7 @@ static void zstd_cleanup_workspace_manager(void)
+>  	struct workspace *workspace;
+>  	int i;
+>  
+> -	del_timer(&wsm.timer);
+> -
+> +	spin_lock(&wsm.lock);
+>  	for (i = 0; i < ZSTD_BTRFS_MAX_LEVEL; i++) {
+>  		while (!list_empty(&wsm.idle_ws[i])) {
+>  			workspace = container_of(wsm.idle_ws[i].next,
+> @@ -206,6 +205,9 @@ static void zstd_cleanup_workspace_manager(void)
+>  			wsm.ops->free_workspace(&workspace->list);
+
+I've noticed while reading the code, why do you use the indirect call
+here? The wsm.ops points to btrfs_zstd_compress so free_workspace is
+always zstd_free_workspace.
+
+The compiler is usually smart to replace such things by direct call if
+the type has not escaped, but this is not true for btrfs_compress_op so
+the indirect function call must be preserved.

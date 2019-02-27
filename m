@@ -2,190 +2,128 @@ Return-Path: <SRS0=OzA0=RC=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 301D9C43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 18:56:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 04D76C4360F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 20:47:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E9CBD2184A
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 18:56:25 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1551293786;
-	bh=PN9aH0WwH7wWyRbwb864pPvoCsSe+HGLm4f1Txv0eAQ=;
-	h=References:In-Reply-To:From:Date:Subject:To:List-ID:From;
-	b=cfwHLmdabRF8TYLmEvL3ICPliZyq2d7Qw8ojuSCi4rQieAQbD1RrHRH77/5FqyfUO
-	 bykg/A3MWFKLjswSwQRv8lmi8lgMN6nJ2k8OFexoaHgfNgzX5OBmf22pgnA4/v10ua
-	 DyOGYgUho/TMQ5uDWuFx/v3MH6iK0EVYmZqxpHuI=
+	by mail.kernel.org (Postfix) with ESMTP id C699021850
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 20:47:30 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=nvidia.com header.i=@nvidia.com header.b="X0dP0ili"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730105AbfB0S4Z (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Feb 2019 13:56:25 -0500
-Received: from mail.kernel.org ([198.145.29.99]:57618 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726356AbfB0S4Y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Feb 2019 13:56:24 -0500
-Received: from mail-ua1-f41.google.com (mail-ua1-f41.google.com [209.85.222.41])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 87D352184A
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2019 18:56:22 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1551293782;
-        bh=PN9aH0WwH7wWyRbwb864pPvoCsSe+HGLm4f1Txv0eAQ=;
-        h=References:In-Reply-To:From:Date:Subject:To:From;
-        b=BsVI28vzUYvGt8iij+8MiJPJsZGtQLFxDhpzDtGBCQLedZgHDlLNOdbWeWR6dQH8Q
-         /l04YMCdssoCusJssjjJzKTJZaTxw8hN9OTaJgC9xUKjRAjd1bsTvN5G4zplOowa+X
-         Zyc6NAd104A16sPVfMKPBcPvwZWzsWDHeI6NQJvk=
-Received: by mail-ua1-f41.google.com with SMTP id s26so5733389uao.9
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2019 10:56:22 -0800 (PST)
-X-Gm-Message-State: AHQUAuZG5+7Dm9WNf4aGjf5/H2H4dsT32JXzUOk4mtGR6A10Ca3ZkYZP
-        MZ/GF9MmYPMRcnyEag59bGjBX2NEeSfv1NfZAWY=
-X-Google-Smtp-Source: AHgI3IacUN4h77S5KR/PsqTXqw5PF38Ko/LZJWlLFE2LTBsdUU0J1YJG05o7o9YA6HGO+Yjj3b87CkOFFJqJHB+g1sw=
-X-Received: by 2002:a67:e28e:: with SMTP id g14mr2574416vsf.95.1551293781625;
- Wed, 27 Feb 2019 10:56:21 -0800 (PST)
+        id S1730284AbfB0UrY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Feb 2019 15:47:24 -0500
+Received: from hqemgate14.nvidia.com ([216.228.121.143]:2174 "EHLO
+        hqemgate14.nvidia.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729291AbfB0UrY (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Feb 2019 15:47:24 -0500
+Received: from hqpgpgate101.nvidia.com (Not Verified[216.228.121.13]) by hqemgate14.nvidia.com (using TLS: TLSv1.2, DES-CBC3-SHA)
+        id <B5c76f7630000>; Wed, 27 Feb 2019 12:47:31 -0800
+Received: from hqmail.nvidia.com ([172.20.161.6])
+  by hqpgpgate101.nvidia.com (PGP Universal service);
+  Wed, 27 Feb 2019 12:47:22 -0800
+X-PGP-Universal: processed;
+        by hqpgpgate101.nvidia.com on Wed, 27 Feb 2019 12:47:22 -0800
+Received: from [10.26.11.186] (10.124.1.5) by HQMAIL101.nvidia.com
+ (172.20.187.10) with Microsoft SMTP Server (TLS) id 15.0.1473.3; Wed, 27 Feb
+ 2019 20:47:12 +0000
+Subject: Re: [PATCH V15 14/18] block: enable multipage bvecs
+To:     Marek Szyprowski <m.szyprowski@samsung.com>,
+        Ming Lei <ming.lei@redhat.com>, Jens Axboe <axboe@kernel.dk>
+CC:     <linux-block@vger.kernel.org>, <linux-kernel@vger.kernel.org>,
+        <linux-mm@kvack.org>, Theodore Ts'o <tytso@mit.edu>,
+        Omar Sandoval <osandov@fb.com>,
+        Sagi Grimberg <sagi@grimberg.me>,
+        Dave Chinner <dchinner@redhat.com>,
+        Kent Overstreet <kent.overstreet@gmail.com>,
+        Mike Snitzer <snitzer@redhat.com>, <dm-devel@redhat.com>,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        <linux-fsdevel@vger.kernel.org>, <linux-raid@vger.kernel.org>,
+        David Sterba <dsterba@suse.com>, <linux-btrfs@vger.kernel.org>,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
+        <linux-xfs@vger.kernel.org>, Gao Xiang <gaoxiang25@huawei.com>,
+        Christoph Hellwig <hch@lst.de>, <linux-ext4@vger.kernel.org>,
+        Coly Li <colyli@suse.de>, <linux-bcache@vger.kernel.org>,
+        Boaz Harrosh <ooo@electrozaur.com>,
+        Bob Peterson <rpeterso@redhat.com>, <cluster-devel@redhat.com>,
+        Ulf Hansson <ulf.hansson@linaro.org>,
+        "linux-mmc@vger.kernel.org" <linux-mmc@vger.kernel.org>,
+        'Linux Samsung SOC' <linux-samsung-soc@vger.kernel.org>,
+        Krzysztof Kozlowski <krzk@kernel.org>,
+        Adrian Hunter <adrian.hunter@intel.com>,
+        Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>,
+        linux-tegra <linux-tegra@vger.kernel.org>
+References: <20190215111324.30129-1-ming.lei@redhat.com>
+ <20190215111324.30129-15-ming.lei@redhat.com>
+ <CGME20190221084301eucas1p11e8841a62b4b1da3cccca661b6f4c29d@eucas1p1.samsung.com>
+ <6c9ae4de-c56f-a2b3-2542-da7d8b95601d@samsung.com>
+From:   Jon Hunter <jonathanh@nvidia.com>
+Message-ID: <0dbbee64-5c6b-0374-4360-6dc218c70d58@nvidia.com>
+Date:   Wed, 27 Feb 2019 20:47:09 +0000
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.4.0
 MIME-Version: 1.0
-References: <20190204142810.1800-1-fdmanana@kernel.org> <20190227134230.11860-1-fdmanana@kernel.org>
- <20190227172629.GB24609@twin.jikos.cz> <CAL3q7H4a6VjrFnxRtZVxdsjt7=bTGJCiXACyYDcEsCif7SHHcw@mail.gmail.com>
- <20190227183149.GB31119@twin.jikos.cz>
-In-Reply-To: <20190227183149.GB31119@twin.jikos.cz>
-From:   Filipe Manana <fdmanana@kernel.org>
-Date:   Wed, 27 Feb 2019 18:56:10 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H4eJr5ymDgYFa0DTxPif=7yrOhqMFhvsByijbKjM+=UUg@mail.gmail.com>
-Message-ID: <CAL3q7H4eJr5ymDgYFa0DTxPif=7yrOhqMFhvsByijbKjM+=UUg@mail.gmail.com>
-Subject: Re: [PATCH v2] Btrfs: fix file corruption after snapshotting due to
- mix of buffered/DIO writes
-To:     dsterba@suse.cz, Filipe Manana <fdmanana@kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <6c9ae4de-c56f-a2b3-2542-da7d8b95601d@samsung.com>
+X-Originating-IP: [10.124.1.5]
+X-ClientProxiedBy: HQMAIL105.nvidia.com (172.20.187.12) To
+ HQMAIL101.nvidia.com (172.20.187.10)
+Content-Type: text/plain; charset="utf-8"
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=nvidia.com; s=n1;
+        t=1551300451; bh=fysy4W1JsLJNGtNiqBcR+gaIGLkCCRdCGseNbvSiG5A=;
+        h=X-PGP-Universal:Subject:To:CC:References:From:Message-ID:Date:
+         User-Agent:MIME-Version:In-Reply-To:X-Originating-IP:
+         X-ClientProxiedBy:Content-Type:Content-Language:
+         Content-Transfer-Encoding;
+        b=X0dP0iliVFercVqWdMyW/NR2Nhm0eLApUzdqUyISSWUx2H+DKhUu/OKtqWe2+3ZuT
+         au4eOklUFmE4Gr2obXchzT8IXOfMhcyX4FkEsLxzHW0xgKT/h6CV7784HRm5efp90O
+         La7tft6R64o+psxbqoi6GCRY4KpDinbyuM578z8ZIBlOABzOuvOkGz6q77lXYGVw0F
+         i4IUbygeJkCCpZ0U5/kCdyLBwxOPIqZvceHCPKG8aMbmcU8ubwJyoq9ClYgVHYmDHM
+         dxcWgdcM3oW54O+MFPY5/ZPt1Zh31nOGXIQBPU0L01WBNStNQbbLPLk/T1RrJziyxj
+         hseLr65aHTomg==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Feb 27, 2019 at 6:30 PM David Sterba <dsterba@suse.cz> wrote:
->
-> On Wed, Feb 27, 2019 at 05:32:55PM +0000, Filipe Manana wrote:
-> > On Wed, Feb 27, 2019 at 5:25 PM David Sterba <dsterba@suse.cz> wrote:
-> > >
-> > > On Wed, Feb 27, 2019 at 01:42:30PM +0000, fdmanana@kernel.org wrote:
-> > > > @@ -1897,15 +1899,45 @@ static inline int btrfs_start_delalloc_flush(struct btrfs_fs_info *fs_info)
-> > > >        * from already being in a transaction and our join_transaction doesn't
-> > > >        * have to re-take the fs freeze lock.
-> > > >        */
-> > > > -     if (btrfs_test_opt(fs_info, FLUSHONCOMMIT))
-> > > > +     if (btrfs_test_opt(fs_info, FLUSHONCOMMIT)) {
-> > > >               writeback_inodes_sb(fs_info->sb, WB_REASON_SYNC);
-> > > > +     } else {
-> > > > +             struct btrfs_pending_snapshot *pending;
-> > > > +             struct list_head *head = &trans->transaction->pending_snapshots;
-> > > > +
-> > > > +             /*
-> > > > +              * Flush dellaloc for any root that is going to be snapshotted.
-> > > > +              * This is done to avoid a corrupted version of files, in the
-> > > > +              * snapshots, that had both buffered and direct IO writes (even
-> > > > +              * if they were done sequentially) due to an unordered update of
-> > > > +              * the inode's size on disk.
-> > > > +              */
-> > > > +             list_for_each_entry(pending, head, list)
-> > > > +                     btrfs_start_delalloc_snapshot(pending->root);
-> > > > +     }
-> > >
-> > > A diff would be better than words, incremental on top of your patch:
-> >
-> > You mean, better than a full 2nd version patch I suppose.
->
-> I mean better than my attempts to explain by words the error handling
-> logic that I was proposing.
->
-> > >
-> > > @@ -1912,8 +1912,15 @@ static inline int btrfs_start_delalloc_flush(struct btrfs_trans_handle *trans)
-> > >                  * if they were done sequentially) due to an unordered update of
-> > >                  * the inode's size on disk.
-> > >                  */
-> > > -               list_for_each_entry(pending, head, list)
-> > > -                       btrfs_start_delalloc_snapshot(pending->root);
-> > > +               list_for_each_entry(pending, head, list) {
-> > > +                       int ret;
-> > > +
-> > > +                       ret = btrfs_start_delalloc_snapshot(pending->root);
-> > > +                       if (ret < 0) {
-> > > +                               writeback_inodes_sb(fs_info->sb, WB_REASON_SYNC);
-> > > +                               break;
-> > > +                       }
-> >
-> > What do you expect by falling back to writeback_inodes_sb()?
-> > It all ends up going through the same btrfs writeback path.
-> > And as I left it, if an error happens for one root, it still tries to
-> > flush writeback for all the remaining roots as well, so I don't get it
-> > why you fallback to writeback_inodes_sb().
->
-> As I read the changelog, you say that the corruption does not happen
-> with FLUSHONCOMMIT, which does writeback_inodes_sb. Using that would be
-> too heavy, thus you only start the delalloc on snapshotted roots.
 
-It does not happen with flushoncommit because delalloc is flushed for all roots.
-If flushoncommit (writeback_inodes_sb()) would flush only for roots
-that are about to be snapshotted, the corruption wouldn't happen as
-well.
+On 21/02/2019 08:42, Marek Szyprowski wrote:
+> Dear All,
+> 
+> On 2019-02-15 12:13, Ming Lei wrote:
+>> This patch pulls the trigger for multi-page bvecs.
+>>
+>> Reviewed-by: Omar Sandoval <osandov@fb.com>
+>> Signed-off-by: Ming Lei <ming.lei@redhat.com>
+> 
+> Since Linux next-20190218 I've observed problems with block layer on one
+> of my test devices (Odroid U3 with EXT4 rootfs on SD card). Bisecting
+> this issue led me to this change. This is also the first linux-next
+> release with this change merged. The issue is fully reproducible and can
+> be observed in the following kernel log:
+> 
+> sdhci: Secure Digital Host Controller Interface driver
+> sdhci: Copyright(c) Pierre Ossman
+> s3c-sdhci 12530000.sdhci: clock source 2: mmc_busclk.2 (100000000 Hz)
+> s3c-sdhci 12530000.sdhci: Got CD GPIO
+> mmc0: SDHCI controller on samsung-hsmmc [12530000.sdhci] using ADMA
+> mmc0: new high speed SDHC card at address aaaa
+> mmcblk0: mmc0:aaaa SL16G 14.8 GiB
+I have also noticed some failures when writing to an eMMC device on one
+of our Tegra boards. We have a simple eMMC write/read test and it is
+currently failing because the data written does not match the source.
 
->
-> So the idea is to use the same logic of flushoncommit in the unlikely
-> case when btrfs_start_delalloc_snapshot would fail. Only at some
-> performance cost, unless I'm missing something.
+I did not seem the same crash as reported here, however, in our case the
+rootfs is NFS mounted and so probably would not. However, the bisect
+points to this commit and reverting on top of -next fixes the issues.
 
-Ok, so I hope the first paragraph above explains why there's no need
-to fallback to the "flush all delalloc for all roots" logic
-(writeback_inodes_sb()).
+Cheers
+Jon
 
->
-> As for the v2 as you implement it without any error handling, doesn't
-> this allow the corruption to happen? If start_delalloc_inodes has a lot
-> of inodes for which it needs to allocate delalloc_work, the failure is
-> possible. That the list_for_each continues does not affect that
-> particular root.
-
-Yes, it allows for the corruption to happen, that's why I had the
-error returned in v1.
-
-writeback_inodes_sb() isn't special in any way - flushing some
-delalloc range can fail the same way, it ends up calling the same
-btrfs writepages() callback. Yes, it doesn't return any error, because
-it's relying on callers either not caring about it, or if they do,
-checking the inode's mapping for an error, which btrfs sets through
-its writepages() callback if any an error happens (by calling
-mapping_set_error()),
-or any other fs specific way of storing/checking for writeback errors.
-
-If we get an error when flushing the dealloc range from the example in
-the changelog, then the corruption happens, regardless of writeback
-being
-triggered by writeback_inodes_sb() or btrfs_start_delalloc_snapshot().
-
->
-> > > Making a switch by the exact error is probably not necessary and wouldn't be
-> > > future proof anyway.
-> >
-> > Not sure I understood that sentence.
->
-> Under v1 I was suggesting to filter out all possible errors from
-> btrfs_start_delalloc_snapshot, EROFS and ENOMEM. So by 'making a switch'
-> I meant
->
->         if (ret == -EROFS) {
->                 break;
->         } else {
->                 writeback_inodes_sb();
->                 break;
->         }
->
-> > Anyway, it's not clear to me whether as it is it's fine, or do you
-> > want an incremental patch, or something else.
->
-> I want to continue the discussion about the error handling.  The
-> incremental diff was to show actual code behind my idea.
->
-> If this weren't a correctness and commit related code I probably would
-> not go that far be ok with the errors and abort. So I'm hoping you
-> could help me find good options with low impact as the change affects
-> the default commit path.
+-- 
+nvpublic

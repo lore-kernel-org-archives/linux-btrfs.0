@@ -2,162 +2,60 @@ Return-Path: <SRS0=OzA0=RC=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT
+X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E1100C43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 13:27:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 54EC6C43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 13:32:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B8A352075B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 13:27:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2C6A92133D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 13:32:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730361AbfB0N1F (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Feb 2019 08:27:05 -0500
-Received: from mx2.suse.de ([195.135.220.15]:44800 "EHLO mx1.suse.de"
+        id S1730217AbfB0NcA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Feb 2019 08:32:00 -0500
+Received: from mx2.suse.de ([195.135.220.15]:45424 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727316AbfB0N1F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Feb 2019 08:27:05 -0500
+        id S1726122AbfB0NcA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Feb 2019 08:32:00 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 5F170AD81
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2019 13:27:03 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id A56F9B049
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2019 13:31:59 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 4EF34DA83C; Wed, 27 Feb 2019 14:28:24 +0100 (CET)
-Date:   Wed, 27 Feb 2019 14:28:24 +0100
+        id 6008CDA83C; Wed, 27 Feb 2019 14:33:19 +0100 (CET)
+Date:   Wed, 27 Feb 2019 14:33:19 +0100
 From:   David Sterba <dsterba@suse.cz>
 To:     Johannes Thumshirn <jthumshirn@suse.de>
 Cc:     David Sterba <dsterba@suse.com>,
         Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v4 1/2] btrfs: factor our read/write stage off
- csum_tree_block() into its callers
-Message-ID: <20190227132824.GH24609@twin.jikos.cz>
+Subject: Re: [PATCH 2/2] btrfs: warn if extent buffer mapping crosses a page
+ boundary in csum_tree_block
+Message-ID: <20190227133319.GI24609@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz, Johannes Thumshirn <jthumshirn@suse.de>,
         David Sterba <dsterba@suse.com>,
         Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
 References: <20190225132416.15840-1-jthumshirn@suse.de>
+ <20190225132416.15840-2-jthumshirn@suse.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190225132416.15840-1-jthumshirn@suse.de>
+In-Reply-To: <20190225132416.15840-2-jthumshirn@suse.de>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Feb 25, 2019 at 02:24:15PM +0100, Johannes Thumshirn wrote:
-> Currently csum_tree_block() does two things, first it as it's name
-> suggests it calculates the checksum for a tree-block. But it also writes
-> this checksum to disk or reads an extent_buffer from disk and compares the
-> checksum with the calculated checksum, depending on the verify argument.
+On Mon, Feb 25, 2019 at 02:24:16PM +0100, Johannes Thumshirn wrote:
+> Since commit d2e174d5d3ee ("btrfs: document extent mapping assumptions in
+> checksum") we have a comment in place why map_private_extent_buffer() 
+> can't return 1 in the csum_tree_block() case.
 > 
-> Furthermore one of the two callers passes in '1' for the verify argument,
-> the other one passes in '0'.
+> Make this a bit more explicit and WARN_ON() in case this this assumption
+> breaks.
 > 
-> For clarity and less layering violations, factor out the second stage in
-> csum_tree_block()'s callers.
-> 
-> Suggested-by: Nikolay Borisov <nborisov@suse.com>
-> Reviewed-by: Qu Wenruo <wqu@suse.com>
-> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 > Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
-> 
-> ---
-> 
-> Changes to v3:
-> - Move WARN_ON() from csum_dirty_buffer() into csum_tree_buffer()
-> 
-> Changes to v2:
-> - Directly return -EINVAL instead of EUCLEAN
-> 
-> Changes to v1:
-> - return error from csum_tree_buffer() in csum_dirty_buffer() instead of
->   EUCLEAN (Nikolay)
-> ---
->  fs/btrfs/disk-io.c | 51 +++++++++++++++++++++++++++------------------------
->  1 file changed, 27 insertions(+), 24 deletions(-)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 5216e7b3f9ad..8090e8f4ccc2 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -263,12 +263,9 @@ void btrfs_csum_final(u32 crc, u8 *result)
->   * compute the csum for a btree block, and either verify it or write it
->   * into the csum field of the block.
 
-The comment does not match the function anymore
-
->   */
-> -static int csum_tree_block(struct btrfs_fs_info *fs_info,
-> -			   struct extent_buffer *buf,
-> -			   int verify)
-> +static int csum_tree_block(struct extent_buffer *buf,
-> +			   u8 *result)
-
-Formatting
-
->  {
-> -	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
-> -	char result[BTRFS_CSUM_SIZE];
->  	unsigned long len;
->  	unsigned long cur_len;
->  	unsigned long offset = BTRFS_CSUM_SIZE;
-> @@ -300,23 +297,6 @@ static int csum_tree_block(struct btrfs_fs_info *fs_info,
->  
->  	btrfs_csum_final(crc, result);
->  
-> -	if (verify) {
-> -		if (memcmp_extent_buffer(buf, result, 0, csum_size)) {
-> -			u32 val;
-> -			u32 found = 0;
-> -			memcpy(&found, result, csum_size);
-> -
-> -			read_extent_buffer(buf, &val, 0, csum_size);
-> -			btrfs_warn_rl(fs_info,
-> -				"%s checksum verify failed on %llu wanted %X found %X level %d",
-> -				fs_info->sb->s_id, buf->start,
-> -				val, found, btrfs_header_level(buf));
-> -			return -EUCLEAN;
-> -		}
-> -	} else {
-> -		write_extent_buffer(buf, result, 0, csum_size);
-> -	}
-> -
->  	return 0;
->  }
->  
-> @@ -533,6 +513,8 @@ static int csum_dirty_buffer(struct btrfs_fs_info *fs_info, struct page *page)
->  {
->  	u64 start = page_offset(page);
->  	u64 found_start;
-> +	u8 result[BTRFS_CSUM_SIZE];
-> +	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
->  	struct extent_buffer *eb;
->  
->  	eb = (struct extent_buffer *)page->private;
-> @@ -552,7 +534,11 @@ static int csum_dirty_buffer(struct btrfs_fs_info *fs_info, struct page *page)
->  	ASSERT(memcmp_extent_buffer(eb, fs_info->fs_devices->metadata_uuid,
->  			btrfs_header_fsid(), BTRFS_FSID_SIZE) == 0);
->  
-> -	return csum_tree_block(fs_info, eb, 0);
-> +	if (csum_tree_block(eb, result))
-> +		return -EINVAL;
-> +
-> +	write_extent_buffer(eb, result, 0, csum_size);
-> +	return 0;
->  }
->  
->  static int check_tree_block_fsid(struct btrfs_fs_info *fs_info,
-> @@ -595,7 +581,9 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
->  	struct extent_buffer *eb;
->  	struct btrfs_root *root = BTRFS_I(page->mapping->host)->root;
->  	struct btrfs_fs_info *fs_info = root->fs_info;
-> +	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
->  	int ret = 0;
-> +	char result[BTRFS_CSUM_SIZE];
-
-This should be 'u8'
-
-All of the above fixed and added to 5.2 queue, thanks.
+Reviewed-by: David Sterba <dsterba@suse.com>

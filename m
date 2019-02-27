@@ -6,132 +6,52 @@ X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CB039C43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 14:27:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C3E64C43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 14:37:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A08C520C01
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 14:27:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9ECEF213A2
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Feb 2019 14:37:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730615AbfB0O1q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Feb 2019 09:27:46 -0500
-Received: from mx2.suse.de ([195.135.220.15]:59304 "EHLO mx1.suse.de"
+        id S1729943AbfB0Oh3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Feb 2019 09:37:29 -0500
+Received: from mx2.suse.de ([195.135.220.15]:33172 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729287AbfB0O1q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Feb 2019 09:27:46 -0500
+        id S1726063AbfB0Oh3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Feb 2019 09:37:29 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 40994AEFE;
-        Wed, 27 Feb 2019 14:27:44 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 0886AAC97
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Feb 2019 14:37:28 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 0BF4BDA83C; Wed, 27 Feb 2019 15:29:05 +0100 (CET)
-Date:   Wed, 27 Feb 2019 15:29:04 +0100
+        id E532ADA83C; Wed, 27 Feb 2019 15:38:48 +0100 (CET)
+Date:   Wed, 27 Feb 2019 15:38:48 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     fdmanana@kernel.org
-Cc:     linux-btrfs@vger.kernel.org, ce3g8jdj@umail.furryterror.org
-Subject: Re: [PATCH] Btrfs: fix corruption reading shared and compressed
- extents after hole punching
-Message-ID: <20190227142904.GM24609@twin.jikos.cz>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] btrfs: Don't panic when we can't find a root key
+Message-ID: <20190227143848.GN24609@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
-        linux-btrfs@vger.kernel.org, ce3g8jdj@umail.furryterror.org
-References: <20190214151720.23563-1-fdmanana@kernel.org>
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20190226083356.18558-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190214151720.23563-1-fdmanana@kernel.org>
+In-Reply-To: <20190226083356.18558-1-wqu@suse.com>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Feb 14, 2019 at 03:17:20PM +0000, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
+On Tue, Feb 26, 2019 at 04:33:56PM +0800, Qu Wenruo wrote:
+> When we failed to find a root key in btrfs_update_root(), we just panic.
 > 
-> In the past we had data corruption when reading compressed extents that
-> are shared within the same file and they are consecutive, this got fixed
-> by commit 005efedf2c7d0 ("Btrfs: fix read corruption of compressed and
-> shared extents") and by commit 808f80b46790f ("Btrfs: update fix for read
-> corruption of compressed and shared extents"). However there was a case
-> that was missing in those fixes, which is when the shared and compressed
-> extents are referenced with a non-zero offset. The following shell script
-> creates a reproducer for this issue:
+> That's definitely not cool, fix it by outputting an unique error
+> message, aborting current transaction and return -EUCLEAN.
 > 
->   #!/bin/bash
-> 
->   mkfs.btrfs -f /dev/sdc &> /dev/null
->   mount -o compress /dev/sdc /mnt/sdc
-> 
->   # Create a file with 3 consecutive compressed extents, each has an
->   # uncompressed size of 128Kb and a compressed size of 4Kb.
->   for ((i = 1; i <= 3; i++)); do
->       head -c 4096 /dev/zero
->       for ((j = 1; j <= 31; j++)); do
->           head -c 4096 /dev/zero | tr '\0' "\377"
->       done
->   done > /mnt/sdc/foobar
->   sync
-> 
->   echo "Digest after file creation:   $(md5sum /mnt/sdc/foobar)"
-> 
->   # Clone the first extent into offsets 128K and 256K.
->   xfs_io -c "reflink /mnt/sdc/foobar 0 128K 128K" /mnt/sdc/foobar
->   xfs_io -c "reflink /mnt/sdc/foobar 0 256K 128K" /mnt/sdc/foobar
->   sync
-> 
->   echo "Digest after cloning:         $(md5sum /mnt/sdc/foobar)"
-> 
->   # Punch holes into the regions that are already full of zeroes.
->   xfs_io -c "fpunch 0 4K" /mnt/sdc/foobar
->   xfs_io -c "fpunch 128K 4K" /mnt/sdc/foobar
->   xfs_io -c "fpunch 256K 4K" /mnt/sdc/foobar
->   sync
-> 
->   echo "Digest after hole punching:   $(md5sum /mnt/sdc/foobar)"
-> 
->   echo "Dropping page cache..."
->   sysctl -q vm.drop_caches=1
->   echo "Digest after hole punching:   $(md5sum /mnt/sdc/foobar)"
-> 
->   umount /dev/sdc
-> 
-> When running the script we get the following output:
-> 
->   Digest after file creation:   5a0888d80d7ab1fd31c229f83a3bbcc8  /mnt/sdc/foobar
->   linked 131072/131072 bytes at offset 131072
->   128 KiB, 1 ops; 0.0033 sec (36.960 MiB/sec and 295.6830 ops/sec)
->   linked 131072/131072 bytes at offset 262144
->   128 KiB, 1 ops; 0.0015 sec (78.567 MiB/sec and 628.5355 ops/sec)
->   Digest after cloning:         5a0888d80d7ab1fd31c229f83a3bbcc8  /mnt/sdc/foobar
->   Digest after hole punching:   5a0888d80d7ab1fd31c229f83a3bbcc8  /mnt/sdc/foobar
->   Dropping page cache...
->   Digest after hole punching:   fba694ae8664ed0c2e9ff8937e7f1484  /mnt/sdc/foobar
-> 
-> This happens because after reading all the pages of the extent in the
-> range from 128K to 256K for example, we read the hole at offset 256K
-> and then when reading the page at offset 260K we don't submit the
-> existing bio, which is responsible for filling all the page in the
-> range 128K to 256K only, therefore adding the pages from range 260K
-> to 384K to the existing bio and submitting it after iterating over the
-> entire range. Once the bio completes, the uncompressed data fills only
-> the pages in the range 128K to 256K because there's no more data read
-> from disk, leaving the pages in the range 260K to 384K unfilled. It is
-> just a slightly different variant of what was solved by commit
-> 005efedf2c7d0 ("Btrfs: fix read corruption of compressed and shared
-> extents").
-> 
-> Fix this by forcing a bio submit, during readpages(), whenever we find a
-> compressed extent map for a page that is different from the extent map
-> for the previous page or has a different starting offset (in case it's
-> the same compressed extent), instead of the extent map's original start
-> offset.
-> 
-> A test case for fstests follows soon.
-> 
-> Reported-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-> Tested-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-> Cc: stable@vger.kernel.org # 4.3+
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-Added to misc-next and scheduled for 5.1, thanks. And thanks to Zygo for
-the report.
+Reviewed-by: David Sterba <dsterba@suse.com>
+
+I've added a sentence why the error should not normally happen.

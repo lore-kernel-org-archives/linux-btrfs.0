@@ -2,135 +2,174 @@ Return-Path: <SRS0=UqpE=RD=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 871E4C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Feb 2019 22:28:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 49717C43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Feb 2019 23:31:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 51C1C20675
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Feb 2019 22:28:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 213CD20830
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Feb 2019 23:31:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728107AbfB1W2X (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 Feb 2019 17:28:23 -0500
-Received: from syrinx.knorrie.org ([82.94.188.77]:53458 "EHLO
-        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726189AbfB1W2W (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Feb 2019 17:28:22 -0500
-Received: from [IPv6:2001:980:4a41:fb::12] (unknown [IPv6:2001:980:4a41:fb::12])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by syrinx.knorrie.org (Postfix) with ESMTPSA id 75DC73BDBE239
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Feb 2019 23:28:20 +0100 (CET)
-From:   Hans van Kranenburg <hans@knorrie.org>
-Subject: python-btrfs v11
-To:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+        id S1731675AbfB1Xbd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 Feb 2019 18:31:33 -0500
+Received: from mout.gmx.net ([212.227.17.22]:53763 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1731080AbfB1Xbc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 Feb 2019 18:31:32 -0500
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx101
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0MGWR2-1gmHkJ070K-00DDLn; Fri, 01
+ Mar 2019 00:31:23 +0100
+Subject: Re: [PATCH] btrfs: qgroup: Don't scan leaf if we're modifying reloc
+ tree
+To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20181213054856.22340-1-wqu@suse.com>
+ <20190228182603.GQ31119@twin.jikos.cz>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=hans@knorrie.org; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <dfe42089-0b69-003a-bca5-4798bc5cd658@knorrie.org>
-Date:   Thu, 28 Feb 2019 23:28:19 +0100
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <10fcd431-d365-056b-a052-2f887905cc86@gmx.com>
+Date:   Fri, 1 Mar 2019 07:31:13 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.3.0
+ Thunderbird/60.5.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Language: en_US
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20190228182603.GQ31119@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="CdGk7sIXKmu7w4jAWWSzx6lMloPXFAY71"
+X-Provags-ID: V03:K1:XiC47qobl6J3z5AFO4bRuiEkaFfLYk3lw+id3DKtzu/2e5ZcY0V
+ peXF8TjdV+Y7fPf8x4lw3tyq7tGvLWiIsqfyocl78ZX1KoIloDnfUumygCNPhlVO/Cqd267
+ +Tazfd/HZTT0dK3btWwCcBTJkFZsYSOX1ocKpBssT1UhfaaIRNFhlVRqqd7Jvl4wajq8EQL
+ CkTOnpeFub3mVA+K7n9+A==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:ly5C41i4iBQ=:qRApzHfGWDtp175OlgFZP1
+ WHtQQJyOJt6j6W3oungn8mce8yCKfdYsl7qUvCjLGLvkf18vf+x3NJCitAbmW+Hhi84gbQYbh
+ vORXI3Npz3Ob15Wu3SSnPlZjHHNuj8MPEhMTdtgE7f7FoR0g2NvMCs32si8cqEOhaWEluYSGA
+ bwwFLTbDwiObI6GIDjtryA165MJN/HErD31ZNR+IqWt2i82nRz+tOCxUP+DfFsFCUWHsJZi7f
+ PuJRso9xOgJxokMTf0oaQNO0BZsuk/aIQ0lOU/IMw5QQ8risdLJPrL+zKA2RTtoigMwjMk9fK
+ KJobzGz9mn8YLGtpBCe0bJQqwnTDXXJV7dupAzxcAUsl9AjJi5l5SgZXTd+zWpyyrBb3pFmbi
+ 3M1sZBtPWErg2oYzo2/ETmzFfRR5DbzMi+FuCE5bCytNor5gd6f4ImolkyXu0sIhpqMfZRNyO
+ zByFhi/M530v+xE4DMKDgSFNDSTieH6H86U/rgKpMNPyKuf0w8AFSWXl5c+nIM92KixwTH+OE
+ Rjps+1DrRpnUDQ7dRBcoc+dFuCABSztD0yRmal0Y1T8Ke7+o3rYnvfT8NXqsIu6MCZ1Bm50iI
+ cl3U7MNuz/P7jAx3S93tEc9nwC6sMsWIK/y5hq5Nk2z+D+hDcKMmaNP8zVIw5NTVBhuP0vCCI
+ fRYd6d3ZQ8fIXAS6f1BUMnwntXuDIEv32snpTHxW2yACV4Sgn+Fb3cfbrS86vBxNrCySJMO1P
+ 3yL8Vvwfv2ipA9ZsPN2Jwnp5UPSvQ/cp//7CxY0dH0oDz2C19P8YVLzJWlDgm16QwFVRvtytx
+ XfTqSjCGtYyVy41cU+lmUyQlT4YWN0f/++Qw79o97EBpQT2hF3p9Bz1Ce/WBandjyJjCJrw6B
+ kNXbQHTZfo8rYP5jfy2ZmCl5G1fPE9UYikEBwgmXyNNoMUs3RhT0yvVJKPJV3Q
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I just tagged v11 of the python btrfs library.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--CdGk7sIXKmu7w4jAWWSzx6lMloPXFAY71
+Content-Type: multipart/mixed; boundary="eG50iTgQru6CMetDUvORwyDy4lREd0KJh";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <10fcd431-d365-056b-a052-2f887905cc86@gmx.com>
+Subject: Re: [PATCH] btrfs: qgroup: Don't scan leaf if we're modifying reloc
+ tree
+References: <20181213054856.22340-1-wqu@suse.com>
+ <20190228182603.GQ31119@twin.jikos.cz>
+In-Reply-To: <20190228182603.GQ31119@twin.jikos.cz>
 
-https://github.com/knorrie/python-btrfs/
+--eG50iTgQru6CMetDUvORwyDy4lREd0KJh
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-Here's the summary of changes (from CHANGES):
 
-python-btrfs v11, Feb 28, 2019
-  * Promote some useful examples to proper programs, and add a man
-    page for them. Distro package maintainers can ship these in
-    /usr/bin.
-    - btrfs-usage-report
-    - btrfs-balance-least-used
-    - btrfs-space-calculator
-    - btrfs-orphan-cleaner-progress
-  * Add TEMPORARY_ITEM_KEY and PERSISTENT_ITEM_KEY, which have replaced
-    BALANCE_ITEM_KEY and DEV_STATS_KEY in kernel code a while ago.
-  * Various small documentation and bug fixes.
 
-Hans
+On 2019/3/1 =E4=B8=8A=E5=8D=882:26, David Sterba wrote:
+> On Thu, Dec 13, 2018 at 01:48:56PM +0800, Qu Wenruo wrote:
+>> Since reloc tree doesn't contribute to qgroup numbers, just skip them.=
+
+>>
+>> This should catch the final leakage of unnecessary data refs for qgrou=
+p.
+>> The 4G data 16 snapshots test should explain it pretty well:
+>>
+>>              | delayed subtree | refactor delayed ref | this patch (*)=
+
+>> ---------------------------------------------------------------------
+>> relocated    |           22653 |                22673 |         22744
+>> qgroup dirty |          122792 |                48360 |            70
+>> time         |          24.494 |               11.606 |         3.944
+>>
+>> *: Needs to be applied upon delayed subtree scan and delayed ref
+>> refactor patchsets.
+>>
+>> Finally, we're at the stage where qgroup + metadata balance cost no
+>> obvious overhead.
+>=20
+> I don't see this patch in any of the development branches but given the=
+
+> above I think it should be there. It's possible that I have missed an
+> update, sorry, please let me know the current status.
+
+This patch doesn't receive any update, so this version should be the
+latest version.
+
+Just in case, you could fetch this patch from my
+'refactor_delayed_ref_parameter' branch, it's at the last patch.
+
+
+Please also keep in mind that, the performance can only be reached with
+all the delayed ref API refactor. I haven't test it without delayed ref
+refactor.
+
+Thanks,
+Qu
+
+>=20
+> The dependencies have been merged for 5.1 so I could still queue it, an=
+d
+> the performance improvement is quite desired.
+>=20
+
+
+--eG50iTgQru6CMetDUvORwyDy4lREd0KJh--
+
+--CdGk7sIXKmu7w4jAWWSzx6lMloPXFAY71
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlx4b0EACgkQwj2R86El
+/qhyeAf/f/zsRLfHgsE9dUrSbm0V+CoG0bdJHeYDf9czbcahGOPGgfKla2YRb3x8
+4Wk6Hsqh4IapkGFr0WdlsJ08m3gixebzOD0ZZaMA09LvdWXKQew1pUSIZm20zFk8
+3GfR+xMES8FOAIDGbbz7RhviVhDKs2aSxgNbfIHd4oUB1P+IGaZ/s0EFSXffXUpd
+RigikavzD4bIs0DyBFYiVc8dAM3YawpXUotbtXaw4JdJGafRSb7MWKTBoAWEkY1v
+nmb0xXSU8oM6xw/T8S7bRRQ2HVNsDd61KIXKdwatTBrdGO7QoRvvf8kRbdVQ8yg2
+0yqYO9GO4XpZr55KdzlE8qP7Gfwhcw==
+=QYCq
+-----END PGP SIGNATURE-----
+
+--CdGk7sIXKmu7w4jAWWSzx6lMloPXFAY71--

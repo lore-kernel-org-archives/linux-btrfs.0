@@ -2,257 +2,144 @@ Return-Path: <SRS0=UqpE=RD=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-4.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D2F3CC43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Feb 2019 11:10:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 01D17C43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Feb 2019 12:39:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 932B72083D
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Feb 2019 11:10:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C16B2206DD
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Feb 2019 12:39:29 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="hw+Ycwin"
+	dkim=pass (2048-bit key) header.d=nvidia.com header.i=@nvidia.com header.b="IbMr9pBJ"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730971AbfB1LKQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 Feb 2019 06:10:16 -0500
-Received: from userp2120.oracle.com ([156.151.31.85]:52014 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730906AbfB1LKQ (ORCPT
+        id S1732273AbfB1MjX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 Feb 2019 07:39:23 -0500
+Received: from hqemgate15.nvidia.com ([216.228.121.64]:15242 "EHLO
+        hqemgate15.nvidia.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1731179AbfB1MjW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Feb 2019 06:10:16 -0500
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x1SB9kua139237;
-        Thu, 28 Feb 2019 11:10:12 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
- references : from : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=corp-2018-07-02;
- bh=JNoB020fD5stb8B4+Him4FnPZ+/0+nEqa4LtSlL3I5o=;
- b=hw+YcwinqwEFf5SPnN5TCUWS6BNPWWBGiFadJJuY3K5BgdlLMlvHgIliwf4UXOHJKFt4
- jbr3BYWh0AF5+DPGiXoEJjwURlWdBE7Pvoj4ktrncTjLu4T3I+MsA0H6PYqhJuN3htl+
- +wyd5PMM8ccOoT++TAPwZ92cbo7HmvRgc/MFEzuFDpWIyBKI4XM8SHkiR5je4IvePxaF
- B2t3AnrkS7iVXoBAlq6SuFLyKNc+KnQjg6/YiHVk/uCKaqi42W0rVa/WZrE7NDXqu1gr
- aT4yPGdEhLN1tczLR6+mCrNk5WAvuV01tsCQcKrbdHzqy1xWtfwzXB0a0twE0y3DCmDh 5Q== 
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by userp2120.oracle.com with ESMTP id 2qtxts09rq-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 28 Feb 2019 11:10:12 +0000
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x1SBAA8A026548
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 28 Feb 2019 11:10:11 GMT
-Received: from abhmp0019.oracle.com (abhmp0019.oracle.com [141.146.116.25])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x1SBAAuN000641;
-        Thu, 28 Feb 2019 11:10:10 GMT
-Received: from [192.168.1.145] (/116.87.143.221)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 28 Feb 2019 03:10:09 -0800
-Subject: Re: [PATCH v4 10/10] btrfs: kill btrfs_setxattr
-To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <1550857192-10513-1-git-send-email-anand.jain@oracle.com>
- <1550857192-10513-11-git-send-email-anand.jain@oracle.com>
- <20190227162154.GW24609@twin.jikos.cz>
-From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <3859f73d-85ba-722c-0fca-7fa6ed7b5ce6@oracle.com>
-Date:   Thu, 28 Feb 2019 19:10:15 +0800
+        Thu, 28 Feb 2019 07:39:22 -0500
+Received: from hqpgpgate101.nvidia.com (Not Verified[216.228.121.13]) by hqemgate15.nvidia.com (using TLS: TLSv1.2, DES-CBC3-SHA)
+        id <B5c77d6710001>; Thu, 28 Feb 2019 04:39:13 -0800
+Received: from hqmail.nvidia.com ([172.20.161.6])
+  by hqpgpgate101.nvidia.com (PGP Universal service);
+  Thu, 28 Feb 2019 04:39:18 -0800
+X-PGP-Universal: processed;
+        by hqpgpgate101.nvidia.com on Thu, 28 Feb 2019 04:39:18 -0800
+Received: from [10.21.132.148] (10.124.1.5) by HQMAIL101.nvidia.com
+ (172.20.187.10) with Microsoft SMTP Server (TLS) id 15.0.1473.3; Thu, 28 Feb
+ 2019 12:39:11 +0000
+Subject: Re: [PATCH V15 14/18] block: enable multipage bvecs
+To:     Marek Szyprowski <m.szyprowski@samsung.com>,
+        Ming Lei <ming.lei@redhat.com>
+CC:     Jens Axboe <axboe@kernel.dk>, <linux-block@vger.kernel.org>,
+        <linux-kernel@vger.kernel.org>, <linux-mm@kvack.org>,
+        Theodore Ts'o <tytso@mit.edu>, Omar Sandoval <osandov@fb.com>,
+        Sagi Grimberg <sagi@grimberg.me>,
+        Dave Chinner <dchinner@redhat.com>,
+        Kent Overstreet <kent.overstreet@gmail.com>,
+        Mike Snitzer <snitzer@redhat.com>, <dm-devel@redhat.com>,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        <linux-fsdevel@vger.kernel.org>, <linux-raid@vger.kernel.org>,
+        David Sterba <dsterba@suse.com>, <linux-btrfs@vger.kernel.org>,
+        "Darrick J . Wong" <darrick.wong@oracle.com>,
+        <linux-xfs@vger.kernel.org>, Gao Xiang <gaoxiang25@huawei.com>,
+        Christoph Hellwig <hch@lst.de>, <linux-ext4@vger.kernel.org>,
+        Coly Li <colyli@suse.de>, <linux-bcache@vger.kernel.org>,
+        Boaz Harrosh <ooo@electrozaur.com>,
+        Bob Peterson <rpeterso@redhat.com>, <cluster-devel@redhat.com>,
+        Ulf Hansson <ulf.hansson@linaro.org>,
+        "linux-mmc@vger.kernel.org" <linux-mmc@vger.kernel.org>,
+        'Linux Samsung SOC' <linux-samsung-soc@vger.kernel.org>,
+        Krzysztof Kozlowski <krzk@kernel.org>,
+        Adrian Hunter <adrian.hunter@intel.com>,
+        Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>,
+        linux-tegra <linux-tegra@vger.kernel.org>
+References: <20190215111324.30129-1-ming.lei@redhat.com>
+ <20190215111324.30129-15-ming.lei@redhat.com>
+ <CGME20190221084301eucas1p11e8841a62b4b1da3cccca661b6f4c29d@eucas1p1.samsung.com>
+ <6c9ae4de-c56f-a2b3-2542-da7d8b95601d@samsung.com>
+ <0dbbee64-5c6b-0374-4360-6dc218c70d58@nvidia.com>
+ <20190227232940.GA13319@ming.t460p>
+ <01155e88-f021-fbe2-d048-42e303fe2935@samsung.com>
+From:   Jon Hunter <jonathanh@nvidia.com>
+Message-ID: <83c1e25b-4aab-4374-e160-b506eea9e68f@nvidia.com>
+Date:   Thu, 28 Feb 2019 12:39:10 +0000
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.0
+ Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <20190227162154.GW24609@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <01155e88-f021-fbe2-d048-42e303fe2935@samsung.com>
+X-Originating-IP: [10.124.1.5]
+X-ClientProxiedBy: HQMAIL104.nvidia.com (172.18.146.11) To
+ HQMAIL101.nvidia.com (172.20.187.10)
+Content-Type: text/plain; charset="utf-8"
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9180 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
- suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
- lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
- definitions=main-1902280078
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=nvidia.com; s=n1;
+        t=1551357553; bh=kyaLnB1yS2uNDTq/sCdbM9/derGqD4nWTMhtRkekS5s=;
+        h=X-PGP-Universal:Subject:To:CC:References:From:Message-ID:Date:
+         User-Agent:MIME-Version:In-Reply-To:X-Originating-IP:
+         X-ClientProxiedBy:Content-Type:Content-Language:
+         Content-Transfer-Encoding;
+        b=IbMr9pBJuBI/5AbD0dC5l3dawgXept/qlylzk0GIjWO3kmfIarTR/gWqLma/G6QW7
+         QA1IecDz5AXvEeEa1vA8ApQJcym13C8r5dqcQJFUMSda6+U4j4lZ0V6gU4W7aamSrX
+         m+JRZW58fX6DtULpWLS9BsSfa4PjeWfP/3xcaEB3c22HZyi7lEpqH4l8AWCCiQl0D7
+         g8u2jtc3u01z33ZlZnGhXxk8gfT8LjZKgnLHRyeI+MxQUVwCBl4wHHBT/S1/WwV1cO
+         e8wdRmwYaz3kMXRbC2iR1CDKeIJRnxvt4wP6qPVIH0DtIGLgbocKla2k/F6gPPwt7J
+         oVQzg1220HnDQ==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
-
-On 2/28/19 12:21 AM, David Sterba wrote:
-> On Sat, Feb 23, 2019 at 01:39:52AM +0800, Anand Jain wrote:
->> Now btrfs_setxattr() is a very small function with just check for
->> readonly FS and redirect the call to do_setxattr(). So instead
->> move that checks to the parent functions.
->>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->> ---
->> v4: born
->>   fs/btrfs/acl.c   |  9 ++++++++-
->>   fs/btrfs/props.c | 16 ++++++++++------
->>   fs/btrfs/xattr.c | 30 ++++++++----------------------
->>   fs/btrfs/xattr.h |  5 ++---
->>   4 files changed, 28 insertions(+), 32 deletions(-)
->>
->> diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
->> index e395615dd304..75abe7f0d05d 100644
->> --- a/fs/btrfs/acl.c
->> +++ b/fs/btrfs/acl.c
->> @@ -60,6 +60,7 @@ static int do_set_acl(struct btrfs_trans_handle *trans, struct inode *inode,
->>   	int ret, size = 0;
->>   	const char *name;
->>   	char *value = NULL;
->> +	struct btrfs_root *root = BTRFS_I(inode)->root;
->>   
->>   	switch (type) {
->>   	case ACL_TYPE_ACCESS:
->> @@ -95,7 +96,13 @@ static int do_set_acl(struct btrfs_trans_handle *trans, struct inode *inode,
->>   			goto out;
->>   	}
->>   
->> -	ret = btrfs_setxattr(trans, inode, name, value, size, 0);
->> +	if (btrfs_root_readonly(root)) {
->> +		ret = -EROFS;
->> +		goto out;
->> +	}
->> +
->> +	ret = do_setxattr(trans, inode, name, value, size, 0);
->> +
->>   out:
->>   	kfree(value);
->>   
->> diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
->> index f878ba3160f0..be6d16ccc738 100644
->> --- a/fs/btrfs/props.c
->> +++ b/fs/btrfs/props.c
->> @@ -60,6 +60,7 @@ static int btrfs_set_prop(struct btrfs_trans_handle *trans, struct inode *inode,
->>   			  const char *name, const char *value, size_t value_len,
->>   			  int flags)
->>   {
->> +	struct btrfs_root *root = BTRFS_I(inode)->root;
->>   	const struct prop_handler *handler;
->>   	int ret;
->>   
->> @@ -70,9 +71,12 @@ static int btrfs_set_prop(struct btrfs_trans_handle *trans, struct inode *inode,
->>   	if (!handler)
->>   		return -EINVAL;
->>   
->> +	if (btrfs_root_readonly(root))
->> +		return -EROFS;
->> +
->>   	if (value_len == 0) {
->> -		ret = btrfs_setxattr(trans, inode, handler->xattr_name, NULL, 0,
->> -				     flags);
->> +		ret = do_setxattr(trans, inode, handler->xattr_name, NULL, 0,
->> +				  flags);
->>   		if (ret)
->>   			return ret;
->>   
->> @@ -85,14 +89,14 @@ static int btrfs_set_prop(struct btrfs_trans_handle *trans, struct inode *inode,
->>   	ret = handler->validate(value, value_len);
->>   	if (ret)
->>   		return ret;
->> -	ret = btrfs_setxattr(trans, inode, handler->xattr_name,
->> -			       value, value_len, flags);
->> +	ret = do_setxattr(trans, inode, handler->xattr_name, value, value_len,
->> +			  flags);
->>   	if (ret)
->>   		return ret;
->>   	ret = handler->apply(inode, value, value_len);
->>   	if (ret) {
->> -		btrfs_setxattr(trans, inode, handler->xattr_name,
->> -				 NULL, 0, flags);
->> +		ret = do_setxattr(trans, inode, handler->xattr_name, NULL, 0,
->> +				  flags);
->>   		return ret;
->>   	}
->>   
->> diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
->> index b3281d4d95b9..4e1ccfbfa44a 100644
->> --- a/fs/btrfs/xattr.c
->> +++ b/fs/btrfs/xattr.c
->> @@ -76,9 +76,8 @@ int btrfs_getxattr(struct inode *inode, const char *name,
->>   	return ret;
->>   }
->>   
->> -static int do_setxattr(struct btrfs_trans_handle *trans,
->> -		       struct inode *inode, const char *name,
->> -		       const void *value, size_t size, int flags)
->> +int do_setxattr(struct btrfs_trans_handle *trans, struct inode *inode,
->> +		const char *name, const void *value, size_t size, int flags)
->>   {
->>   	struct btrfs_dir_item *di = NULL;
->>   	struct btrfs_root *root = BTRFS_I(inode)->root;
->> @@ -217,22 +216,6 @@ static int do_setxattr(struct btrfs_trans_handle *trans,
->>   	return ret;
->>   }
->>   
->> -/*
->> - * @value: "" makes the attribute to empty, NULL removes it
->> - */
->> -int btrfs_setxattr(struct btrfs_trans_handle *trans, struct inode *inode,
->> -		   const char *name, const void *value, size_t size, int flags)
->> -{
->> -	struct btrfs_root *root = BTRFS_I(inode)->root;
->> -
->> -	ASSERT(!trans);
->> -
->> -	if (btrfs_root_readonly(root))
->> -		return -EROFS;
->> -
->> -	return do_setxattr(trans, inode, name, value, size, flags);
->> -}
->> -
->>   ssize_t btrfs_listxattr(struct dentry *dentry, char *buffer, size_t size)
->>   {
->>   	struct btrfs_key key;
->> @@ -357,11 +340,14 @@ static int btrfs_xattr_handler_set(const struct xattr_handler *handler,
->>   
->>   	name = xattr_full_name(handler, name);
->>   
->> +	if (btrfs_root_readonly(root))
->> +		return -EROFS;
->> +
->>   	trans = btrfs_start_transaction(root, 2);
->>   	if (IS_ERR(trans))
->>   		return PTR_ERR(trans);
->>   
->> -	ret = btrfs_setxattr(trans, inode, name, buffer, size, flags);
->> +	ret = do_setxattr(trans, inode, name, buffer, size, flags);
->>   
->>   	if (!ret) {
->>   		inode_inc_iversion(inode);
->> @@ -444,8 +430,8 @@ static int btrfs_initxattrs(struct inode *inode,
->>   		}
->>   		strcpy(name, XATTR_SECURITY_PREFIX);
->>   		strcpy(name + XATTR_SECURITY_PREFIX_LEN, xattr->name);
->> -		err = btrfs_setxattr(trans, inode, name, xattr->value,
->> -				xattr->value_len, 0);
->> +		err = do_setxattr(trans, inode, name, xattr->value,
->> +				  xattr->value_len, 0);
->>   		kfree(name);
->>   		if (err < 0)
->>   			break;
->> diff --git a/fs/btrfs/xattr.h b/fs/btrfs/xattr.h
->> index 471fcac6ff55..276f81a622d5 100644
->> --- a/fs/btrfs/xattr.h
->> +++ b/fs/btrfs/xattr.h
->> @@ -12,9 +12,8 @@
->>   
->>   int btrfs_getxattr(struct inode *inode, const char *name,
->>   		void *buffer, size_t size);
->> -int btrfs_setxattr(struct btrfs_trans_handle *trans,
->> -			    struct inode *inode, const char *name,
->> -			    const void *value, size_t size, int flags);
->> +int do_setxattr(struct btrfs_trans_handle *trans, struct inode *inode,
->> +		const char *name, const void *value, size_t size, int flags);
+On 28/02/2019 07:51, Marek Szyprowski wrote:
+> Hi Ming,
 > 
-> No, this is backwards. Why do you promote a static helper to interface
-> function but without the btrfs_ prefix?
+> On 2019-02-28 00:29, Ming Lei wrote:
+>> On Wed, Feb 27, 2019 at 08:47:09PM +0000, Jon Hunter wrote:
+>>> On 21/02/2019 08:42, Marek Szyprowski wrote:
+>>>> On 2019-02-15 12:13, Ming Lei wrote:
+>>>>> This patch pulls the trigger for multi-page bvecs.
+>>>>>
+>>>>> Reviewed-by: Omar Sandoval <osandov@fb.com>
+>>>>> Signed-off-by: Ming Lei <ming.lei@redhat.com>
+>>>> Since Linux next-20190218 I've observed problems with block layer on one
+>>>> of my test devices (Odroid U3 with EXT4 rootfs on SD card). Bisecting
+>>>> this issue led me to this change. This is also the first linux-next
+>>>> release with this change merged. The issue is fully reproducible and can
+>>>> be observed in the following kernel log:
+>>>>
+>>>> sdhci: Secure Digital Host Controller Interface driver
+>>>> sdhci: Copyright(c) Pierre Ossman
+>>>> s3c-sdhci 12530000.sdhci: clock source 2: mmc_busclk.2 (100000000 Hz)
+>>>> s3c-sdhci 12530000.sdhci: Got CD GPIO
+>>>> mmc0: SDHCI controller on samsung-hsmmc [12530000.sdhci] using ADMA
+>>>> mmc0: new high speed SDHC card at address aaaa
+>>>> mmcblk0: mmc0:aaaa SL16G 14.8 GiB
+>>> I have also noticed some failures when writing to an eMMC device on one
+>>> of our Tegra boards. We have a simple eMMC write/read test and it is
+>>> currently failing because the data written does not match the source.
+>>>
+>>> I did not seem the same crash as reported here, however, in our case the
+>>> rootfs is NFS mounted and so probably would not. However, the bisect
+>>> points to this commit and reverting on top of -next fixes the issues.
+>> It is sdhci, probably related with max segment size, could you test the
+>> following patch:
+>>
+>> https://marc.info/?l=linux-mmc&m=155128334122951&w=2
 > 
-> The point of do_something functions is to actually do the thing assuming
-> that external conditions have been checked, like the readonly status.
-> All such checks should happen at the entry, ie. beginning of the various
-> callbacks.
+> This seems to be fixing my issue too! Thanks!
 
-  I though so as well. Will rename.
+Thanks, I can confirm this fixes the issue for Tegra. So feel free to
+add my ...
 
-Thanks, Anand
+Tested-by: Jon Hunter <jonathanh@nvidia.com>
 
+Cheers!
+Jon
+
+-- 
+nvpublic

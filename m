@@ -2,94 +2,113 @@ Return-Path: <SRS0=UqpE=RD=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-8.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 942BAC43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Feb 2019 09:50:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5F67DC43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Feb 2019 10:03:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 631572171F
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Feb 2019 09:50:48 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="wYo+Dplq"
+	by mail.kernel.org (Postfix) with ESMTP id 37BBC2183F
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Feb 2019 10:03:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732204AbfB1Jur (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 Feb 2019 04:50:47 -0500
-Received: from aserp2130.oracle.com ([141.146.126.79]:58232 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725921AbfB1Jur (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Feb 2019 04:50:47 -0500
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x1S9n9eg070000;
-        Thu, 28 Feb 2019 09:50:43 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
- references : from : cc : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=corp-2018-07-02;
- bh=dUub27rFv6TwFtk4bfOtT9gbopN5okbGhUFEWOrJXwc=;
- b=wYo+DplqnYRmBGP4V9Y+DLOW0sofO2+5Ew5Hc72xbh38EbLPExlVJpXQB6S3ALvMIc+1
- zwkgbVYMi7qbI+Or4igsN9rK1uih4otEhpNQq1ct2mp+gKri/dS4UvwzAuzX3jRwfVRc
- pnpt+WzwZwaCJexHoDPaqw8IwGLrNZbRyOQDIXKFn8NF8S6oYwxiWN479Z2i0eG/Be5K
- 4ror2J1GGYE7sKM2UL4NKW5/ppdnWkhbgKJlUe321SjnL5GwpcGhEmMwKeoDAYxC1Diy
- FXmLbDmXiSzOxquSiYnznQ4Ue3aLlu+DWU1bUVdT58A9dteuPKSQ3KhiOB1NJGkh/eb0 MA== 
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by aserp2130.oracle.com with ESMTP id 2qtupeg6nw-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 28 Feb 2019 09:50:43 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x1S9ogKU022654
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 28 Feb 2019 09:50:42 GMT
-Received: from abhmp0017.oracle.com (abhmp0017.oracle.com [141.146.116.23])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x1S9ogF4005409;
-        Thu, 28 Feb 2019 09:50:42 GMT
-Received: from [172.20.10.2] (/183.90.37.135)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 28 Feb 2019 01:50:42 -0800
-Subject: Re: [PATCH v4 03/10] btrfs: trivial, fix c coding style
-To:     dsterba@suse.cz
-References: <1550857192-10513-1-git-send-email-anand.jain@oracle.com>
- <1550857192-10513-4-git-send-email-anand.jain@oracle.com>
- <20190227160523.GS24609@twin.jikos.cz>
-From:   Anand Jain <anand.jain@oracle.com>
-Cc:     linux-btrfs@vger.kernel.org
-Message-ID: <93a36575-31fb-dc3a-edc9-9eef6054f907@oracle.com>
-Date:   Thu, 28 Feb 2019 17:50:24 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.0
+        id S1732245AbfB1KDB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 Feb 2019 05:03:01 -0500
+Received: from mx2.suse.de ([195.135.220.15]:59282 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1731561AbfB1KDA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 Feb 2019 05:03:00 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id C11FDADD1
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Feb 2019 10:02:59 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/2] btrfs: trace: Add trace events for extent_io_tree
+Date:   Thu, 28 Feb 2019 18:02:53 +0800
+Message-Id: <20190228100255.10953-1-wqu@suse.com>
+X-Mailer: git-send-email 2.21.0
 MIME-Version: 1.0
-In-Reply-To: <20190227160523.GS24609@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9180 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
- suspectscore=1 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
- lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
- definitions=main-1902280070
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This patchset can be fetched from github:
+https://github.com/adam900710/linux/tree/ftrace_extent_io_tree
+Which is based on v5.0-rc7 tag.
 
+Btrfs uses (almost abuse) extent_io_tree for a lot of operations, e.g:
+- Tree block locking
+  BTRFS_I(btree_inode)->io_tree
+- Page status tracing
+  BTRFS_I(file_inode)->io_tree and BTRFS_I(file_inode)->io_failure_tree
+  transaction->dirty_pages
+- Pinned down extents tracing
+  fs_info->freed_extents[2]
+...
 
-On 2/28/19 12:05 AM, David Sterba wrote:
-> On Sat, Feb 23, 2019 at 01:39:45AM +0800, Anand Jain wrote:
->> Maintain the lines extented upto 80 char where possible, and indent the
->> argument.
->>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-> 
-> I don't think such patches are necessary, there's a lot of strange
-> formatting from the past and we could fix the ugly ones but otherwise
-> strive to fix everything before it gets merged.  I do a lot of fixups
-> just before the final merge, but having everybody follow the same coding
-> style is near to impossible.
-> 
+However we don't have any trace events for us to understand how btrfs
+works.
 
-Ok. Will drop this.
+This patchset will introduce trace events for
+set/clear/convert_extent_bit().
+
+The output examples and extra notes are: (copied from the 2nd patch)
+
+  btrfs_set_extent_bit: io_tree=INODE_IO_TREE ino=1 root=1 start=22036480 len=4096 set_bits=LOCKED
+  btrfs_set_extent_bit: io_tree=INODE_IO_TREE ino=1 root=1 start=22040576 len=4096 set_bits=LOCKED
+  btrfs_set_extent_bit: io_tree=INODE_IO_TREE ino=1 root=1 start=22044672 len=4096 set_bits=LOCKED
+  btrfs_set_extent_bit: io_tree=INODE_IO_TREE ino=1 root=1 start=22048768 len=4096 set_bits=LOCKED
+  btrfs_clear_extent_bit: io_tree=INODE_IO_TREE ino=1 root=1 start=22036480 len=16384 clear_bits=LOCKED
+  ^^^ Extent buffer 22036480 read from disc, the locking progress
+
+  btrfs_set_extent_bit: io_tree=TRANS_DIRTY_PAGES ino=1 root=1 start=30425088 len=16384 set_bits=DIRTY
+  btrfs_set_extent_bit: io_tree=TRANS_DIRTY_PAGES ino=1 root=1 start=30441472 len=16384 set_bits=DIRTY
+  ^^^ 2 new tree blocks allocated in one transaction
+
+  btrfs_set_extent_bit: io_tree=FREED_EXTENTS0 ino=0 root=0 start=30523392 len=16384 set_bits=DIRTY
+  btrfs_set_extent_bit: io_tree=FREED_EXTENTS0 ino=0 root=0 start=30556160 len=16384 set_bits=DIRTY
+  ^^^ 2 old tree blocks get pinned down
+
+There are 2 points which need extra attention:
+1) Those trace events are pretty heavy
+   The following workload would generate over 400 trace events.
+	mkfs.btrfs -f $dev
+	start_trace
+	mount $dev $mnt -o enospc_debug
+	sync
+	touch $mnt/file1
+	touch $mnt/file2
+	touch $mnt/file3
+	xfs_io -f -c "pwrite 0 16k" $mnt/file4
+	umount $mnt
+	end_trace
+   It's not recommended to use them in real world environment.
+
+2) No way to distinguish between different btrfs filesystems
+   Due to the fact that we can't get fs_info easily from extent_io_tree,
+   there is no way to distinguish events from different fses.
+   To avoid extra noise, please ensure there is only one btrfs in your
+   test environment.
+
+Qu Wenruo (2):
+  btrfs: Introduce extent_io_tree::owner to distinguish different
+    io_trees
+  btrfs: trace: Add trace events for extent_io_tree
+
+ fs/btrfs/disk-io.c               |  12 ++-
+ fs/btrfs/extent_io.c             |   7 +-
+ fs/btrfs/extent_io.h             |  20 +++-
+ fs/btrfs/inode.c                 |   5 +-
+ fs/btrfs/relocation.c            |   3 +-
+ fs/btrfs/tests/btrfs-tests.c     |   6 +-
+ fs/btrfs/tests/extent-io-tests.c |   2 +-
+ fs/btrfs/transaction.c           |   2 +-
+ include/trace/events/btrfs.h     | 151 +++++++++++++++++++++++++++++++
+ 9 files changed, 194 insertions(+), 14 deletions(-)
+
+-- 
+2.21.0
+

@@ -2,70 +2,60 @@ Return-Path: <SRS0=UqpE=RD=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 05699C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Feb 2019 18:24:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B3D5CC10F00
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Feb 2019 18:42:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D7A542070B
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Feb 2019 18:24:49 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 982DD218CD
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Feb 2019 18:42:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731474AbfB1SYs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 Feb 2019 13:24:48 -0500
-Received: from mx2.suse.de ([195.135.220.15]:35182 "EHLO mx1.suse.de"
+        id S2388062AbfB1SmB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 Feb 2019 13:42:01 -0500
+Received: from mx2.suse.de ([195.135.220.15]:38234 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726027AbfB1SYs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Feb 2019 13:24:48 -0500
+        id S1726232AbfB1SmB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 Feb 2019 13:42:01 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 5AFD0AC3F
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Feb 2019 18:24:47 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 18D8BAE3C;
+        Thu, 28 Feb 2019 18:42:00 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 56E48DA944; Thu, 28 Feb 2019 19:26:04 +0100 (CET)
-Date:   Thu, 28 Feb 2019 19:26:04 +0100
+        id D112DDA944; Thu, 28 Feb 2019 19:43:18 +0100 (CET)
+Date:   Thu, 28 Feb 2019 19:43:17 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: qgroup: Don't scan leaf if we're modifying reloc
- tree
-Message-ID: <20190228182603.GQ31119@twin.jikos.cz>
+To:     Dennis Zhou <dennis@kernel.org>
+Cc:     David Sterba <dsterba@suse.com>,
+        Josef Bacik <josef@toxicpanda.com>, Chris Mason <clm@fb.com>,
+        Omar Sandoval <osandov@osandov.com>,
+        Nikolay Borisov <nborisov@suse.com>, kernel-team@fb.com,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] btrfs: remove indirect function calls from zstd
+Message-ID: <20190228184316.GR31119@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20181213054856.22340-1-wqu@suse.com>
+Mail-Followup-To: dsterba@suse.cz, Dennis Zhou <dennis@kernel.org>,
+        David Sterba <dsterba@suse.com>, Josef Bacik <josef@toxicpanda.com>,
+        Chris Mason <clm@fb.com>, Omar Sandoval <osandov@osandov.com>,
+        Nikolay Borisov <nborisov@suse.com>, kernel-team@fb.com,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+References: <20190227212128.38491-1-dennis@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20181213054856.22340-1-wqu@suse.com>
+In-Reply-To: <20190227212128.38491-1-dennis@kernel.org>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Dec 13, 2018 at 01:48:56PM +0800, Qu Wenruo wrote:
-> Since reloc tree doesn't contribute to qgroup numbers, just skip them.
+On Wed, Feb 27, 2019 at 04:21:28PM -0500, Dennis Zhou wrote:
+> While calling functions inside zstd, we don't need to use the
+> indirection provided by the workspace_manager. Forward declarations are
+> added to maintain the function order of btrfs_compress_op.
 > 
-> This should catch the final leakage of unnecessary data refs for qgroup.
-> The 4G data 16 snapshots test should explain it pretty well:
-> 
->              | delayed subtree | refactor delayed ref | this patch (*)
-> ---------------------------------------------------------------------
-> relocated    |           22653 |                22673 |         22744
-> qgroup dirty |          122792 |                48360 |            70
-> time         |          24.494 |               11.606 |         3.944
-> 
-> *: Needs to be applied upon delayed subtree scan and delayed ref
-> refactor patchsets.
-> 
-> Finally, we're at the stage where qgroup + metadata balance cost no
-> obvious overhead.
+> Signed-off-by: Dennis Zhou <dennis@kernel.org>
 
-I don't see this patch in any of the development branches but given the
-above I think it should be there. It's possible that I have missed an
-update, sorry, please let me know the current status.
-
-The dependencies have been merged for 5.1 so I could still queue it, and
-the performance improvement is quite desired.
+Reviewed-by: David Sterba <dsterba@suse.com>

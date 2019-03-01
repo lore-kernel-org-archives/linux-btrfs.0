@@ -6,27 +6,27 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 63EFCC43381
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Mar 2019 02:48:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CABDCC43381
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Mar 2019 02:48:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2E78A20854
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Mar 2019 02:48:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 91FD620854
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Mar 2019 02:48:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732257AbfCACsM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 Feb 2019 21:48:12 -0500
-Received: from mx2.suse.de ([195.135.220.15]:46724 "EHLO mx1.suse.de"
+        id S1732267AbfCACsO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 Feb 2019 21:48:14 -0500
+Received: from mx2.suse.de ([195.135.220.15]:46730 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727147AbfCACsL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Feb 2019 21:48:11 -0500
+        id S1728741AbfCACsM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 Feb 2019 21:48:12 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id E96CAAE25
-        for <linux-btrfs@vger.kernel.org>; Fri,  1 Mar 2019 02:48:08 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id F15B1ADF2
+        for <linux-btrfs@vger.kernel.org>; Fri,  1 Mar 2019 02:48:10 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 2/3] btrfs: Introduce extent_io_tree::owner to distinguish different io_trees
-Date:   Fri,  1 Mar 2019 10:47:59 +0800
-Message-Id: <20190301024800.17649-3-wqu@suse.com>
+Subject: [PATCH v2 3/3] btrfs: trace: Add trace events for extent_io_tree
+Date:   Fri,  1 Mar 2019 10:48:00 +0800
+Message-Id: <20190301024800.17649-4-wqu@suse.com>
 X-Mailer: git-send-email 2.21.0
 In-Reply-To: <20190301024800.17649-1-wqu@suse.com>
 References: <20190301024800.17649-1-wqu@suse.com>
@@ -37,216 +37,279 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Btrfs has the following different extent_io_trees used:
-- fs_info::free_extents[2]
-- btrfs_inode::io_tree
-  For both normal inodes and btree inode
-- btrfs_inode::io_failure_tree
-- btrfs_transaction::dirty_pages
-- btrfs_root::dirty_log_pages
+Although btrfs heavily relies on extent_io_tree, we don't really have
+any good trace events for them.
 
-If we want to trace bits change in those io_trees, it will be pretty
-hard to distinguish them.
+This patch will add the folowing trace events:
+trace_btrfs_set_extent_bit()
+trace_btrfs_clear_extent_bit()
+trace_btrfs_convert_extent_bit()
 
-Instead of using hard-to-read pointer address, this patch will introduc
-a new member extent_io_tree::owner, which uses the unpopulated bits of
-extent_io_tree::track_uptodate, to track who owns this extent_io_tree.
+Since selftest could create temporary extent_io_tree without fs_info,
+modify TP_fast_assign_fsid() to accept NULL as fs_info.
+NULL fs_info will lead to all zero fsid.
 
-This modification needs all the callers of extent_io_tree_init() to
-accept a new parameter @owner.
+The output would be:
+  btrfs_set_extent_bit: <FDID>: io_tree=IO_TREE ino=1 root=1 start=22036480 len=4096 set_bits=LOCKED
+  btrfs_set_extent_bit: <FSID>: io_tree=IO_TREE ino=1 root=1 start=22040576 len=4096 set_bits=LOCKED
+  btrfs_set_extent_bit: <FSID>: io_tree=IO_TREE ino=1 root=1 start=22044672 len=4096 set_bits=LOCKED
+  btrfs_set_extent_bit: <FSID>: io_tree=IO_TREE ino=1 root=1 start=22048768 len=4096 set_bits=LOCKED
+  btrfs_clear_extent_bit: <FSID>: io_tree=IO_TREE ino=1 root=1 start=22036480 len=16384 clear_bits=LOCKED
+  ^^^ Extent buffer 22036480 read from disc, the locking progress
 
-This patch provides the basis for later ftrace events.
+  btrfs_set_extent_bit: <FSID>: io_tree=TRANS_DIRTY_PAGES ino=1 root=1 start=30425088 len=16384 set_bits=DIRTY
+  btrfs_set_extent_bit: <FSID>: io_tree=TRANS_DIRTY_PAGES ino=1 root=1 start=30441472 len=16384 set_bits=DIRTY
+  ^^^ 2 new tree blocks allocated in one transaction
+
+  btrfs_set_extent_bit: <FSID>: io_tree=FREED_EXTENTS0 ino=0 root=0 start=30523392 len=16384 set_bits=DIRTY
+  btrfs_set_extent_bit: <FSID>: io_tree=FREED_EXTENTS0 ino=0 root=0 start=30556160 len=16384 set_bits=DIRTY
+  ^^^ 2 old tree blocks get pinned down
+
+There is one point which need extra attention:
+1) Those trace events are pretty heavy
+   The following workload would generate over 400 trace events.
+	mkfs.btrfs -f $dev
+	start_trace
+	mount $dev $mnt -o enospc_debug
+	sync
+	touch $mnt/file1
+	touch $mnt/file2
+	touch $mnt/file3
+	xfs_io -f -c "pwrite 0 16k" $mnt/file4
+	umount $mnt
+	end_trace
+   It's not recommended to use them in real world environment.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/disk-io.c               | 12 ++++++++----
- fs/btrfs/extent_io.c             |  4 +++-
- fs/btrfs/extent_io.h             | 22 +++++++++++++++++++---
- fs/btrfs/inode.c                 |  6 ++++--
- fs/btrfs/relocation.c            |  3 ++-
- fs/btrfs/tests/btrfs-tests.c     |  6 ++++--
- fs/btrfs/tests/extent-io-tests.c |  2 +-
- fs/btrfs/transaction.c           |  2 +-
- 8 files changed, 42 insertions(+), 15 deletions(-)
+ fs/btrfs/extent_io.c         |   4 +
+ include/trace/events/btrfs.h | 159 ++++++++++++++++++++++++++++++++++-
+ 2 files changed, 162 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 9cf93645ac00..e3d7e4a4f035 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1205,7 +1205,8 @@ static void __setup_root(struct btrfs_root *root, struct btrfs_fs_info *fs_info,
- 	root->log_transid_committed = -1;
- 	root->last_log_commit = 0;
- 	if (!dummy)
--		extent_io_tree_init(fs_info, &root->dirty_log_pages, NULL);
-+		extent_io_tree_init(fs_info, &root->dirty_log_pages,
-+				    IO_TREE_ROOT_DIRTY_LOG_PAGES, NULL);
- 
- 	memset(&root->root_key, 0, sizeof(root->root_key));
- 	memset(&root->root_item, 0, sizeof(root->root_item));
-@@ -2129,7 +2130,8 @@ static void btrfs_init_btree_inode(struct btrfs_fs_info *fs_info)
- 	inode->i_mapping->a_ops = &btree_aops;
- 
- 	RB_CLEAR_NODE(&BTRFS_I(inode)->rb_node);
--	extent_io_tree_init(fs_info, &BTRFS_I(inode)->io_tree, inode);
-+	extent_io_tree_init(fs_info, &BTRFS_I(inode)->io_tree,
-+			    IO_TREE_INODE_IO_TREE, inode);
- 	BTRFS_I(inode)->io_tree.track_uptodate = 0;
- 	extent_map_tree_init(&BTRFS_I(inode)->extent_tree);
- 
-@@ -2739,8 +2741,10 @@ int open_ctree(struct super_block *sb,
- 	fs_info->block_group_cache_tree = RB_ROOT;
- 	fs_info->first_logical_byte = (u64)-1;
- 
--	extent_io_tree_init(fs_info, &fs_info->freed_extents[0], NULL);
--	extent_io_tree_init(fs_info, &fs_info->freed_extents[1], NULL);
-+	extent_io_tree_init(fs_info, &fs_info->freed_extents[0],
-+			    IO_TREE_FS_INFO_FREED_EXTENTS0, NULL);
-+	extent_io_tree_init(fs_info, &fs_info->freed_extents[1],
-+			    IO_TREE_FS_INFO_FREED_EXTENTS1, NULL);
- 	fs_info->pinned_extents = &fs_info->freed_extents[0];
- 	set_bit(BTRFS_FS_BARRIER, &fs_info->flags);
- 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index dc4c526dcf7d..dd2cfd054eef 100644
+index dd2cfd054eef..d9ef31def740 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -201,7 +201,8 @@ void __cold extent_io_exit(void)
- }
+@@ -582,6 +582,7 @@ int __clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 	int clear = 0;
  
- void extent_io_tree_init(struct btrfs_fs_info *fs_info,
--			 struct extent_io_tree *tree, void *private_data)
-+			 struct extent_io_tree *tree, unsigned int owner,
-+			 void *private_data)
- {
- 	tree->fs_info = fs_info;
- 	tree->state = RB_ROOT;
-@@ -209,6 +210,7 @@ void extent_io_tree_init(struct btrfs_fs_info *fs_info,
- 	tree->dirty_bytes = 0;
- 	spin_lock_init(&tree->lock);
- 	tree->private_data = private_data;
-+	tree->owner = owner;
- }
+ 	btrfs_debug_check_extent_io_range(tree, start, end);
++	trace_btrfs_clear_extent_bit(tree, start, end - start + 1, bits);
  
- static struct extent_state *alloc_extent_state(gfp_t mask)
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 6cb462b05f5a..54736a22fa2f 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -107,12 +107,27 @@ struct extent_io_ops {
- 				    int mirror);
- };
+ 	if (bits & EXTENT_DELALLOC)
+ 		bits |= EXTENT_NORESERVE;
+@@ -852,6 +853,7 @@ __set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 	u64 last_end;
  
-+enum {
-+	IO_TREE_FS_INFO_FREED_EXTENTS0,
-+	IO_TREE_FS_INFO_FREED_EXTENTS1,
-+	IO_TREE_INODE_IO_TREE,
-+	IO_TREE_INODE_IO_FAILURE_TREE,
-+	IO_TREE_RELOC_BLOCKS,
-+	IO_TREE_TRANSACTION_DIRTY_PAGES,
-+	IO_TREE_ROOT_DIRTY_LOG_PAGES,
-+	IO_TREE_SELFTEST_TMP,
-+};
+ 	btrfs_debug_check_extent_io_range(tree, start, end);
++	trace_btrfs_set_extent_bit(tree, start, end - start + 1, bits);
+ 
+ 	bits |= EXTENT_FIRST_DELALLOC;
+ again:
+@@ -1085,6 +1087,8 @@ int convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 	bool first_iteration = true;
+ 
+ 	btrfs_debug_check_extent_io_range(tree, start, end);
++	trace_btrfs_convert_extent_bit(tree, start, end - start + 1, bits,
++				       clear_bits);
+ 
+ again:
+ 	if (!prealloc) {
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index 2887503e4d12..2b4779b1855a 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -27,6 +27,7 @@ struct btrfs_work;
+ struct __btrfs_workqueue;
+ struct btrfs_qgroup_extent_record;
+ struct btrfs_qgroup;
++struct extent_io_tree;
+ struct prelim_ref;
+ 
+ TRACE_DEFINE_ENUM(FLUSH_DELAYED_ITEMS_NR);
+@@ -77,6 +78,17 @@ TRACE_DEFINE_ENUM(COMMIT_TRANS);
+ 		{ BTRFS_QGROUP_RSV_META_PERTRANS, "META_PERTRANS" },	\
+ 		{ BTRFS_QGROUP_RSV_META_PREALLOC, "META_PREALLOC" })
+ 
++#define show_extent_io_tree_owner(owner)				      \
++	__print_symbolic(owner,						      \
++		{ IO_TREE_FS_INFO_FREED_EXTENTS0,	"FREED_EXTENTS0" },   \
++		{ IO_TREE_FS_INFO_FREED_EXTENTS1,	"FREED_EXTENTS1" },   \
++		{ IO_TREE_INODE_IO_TREE,		"IO_TREE" },          \
++		{ IO_TREE_INODE_IO_FAILURE_TREE,	"IO_FAILURE_TREE" },  \
++		{ IO_TREE_RELOC_BLOCKS,			"RELOCATION" },	      \
++		{ IO_TREE_TRANSACTION_DIRTY_PAGES,	"TRANS_DIRTY_PAGES" },\
++		{ IO_TREE_ROOT_DIRTY_LOG_PAGES,		"ROOT_DIRTY_LOG" },   \
++		{ IO_TREE_SELFTEST_TMP,			"SELFTEST_TMP" })
 +
- struct extent_io_tree {
- 	struct rb_root state;
- 	struct btrfs_fs_info *fs_info;
- 	void *private_data;
- 	u64 dirty_bytes;
--	int track_uptodate;
-+	bool track_uptodate;
+ #define BTRFS_GROUP_FLAGS	\
+ 	{ BTRFS_BLOCK_GROUP_DATA,	"DATA"},	\
+ 	{ BTRFS_BLOCK_GROUP_SYSTEM,	"SYSTEM"},	\
+@@ -88,11 +100,36 @@ TRACE_DEFINE_ENUM(COMMIT_TRANS);
+ 	{ BTRFS_BLOCK_GROUP_RAID5,	"RAID5"},	\
+ 	{ BTRFS_BLOCK_GROUP_RAID6,	"RAID6"}
+ 
++#define EXTENT_FLAGS						\
++	{ EXTENT_DIRTY,			"DIRTY"},		\
++	{ EXTENT_WRITEBACK,		"WRITEBACK"},		\
++	{ EXTENT_UPTODATE,		"UPTODATE"},		\
++	{ EXTENT_LOCKED,		"LOCKED"},		\
++	{ EXTENT_NEW,			"NEW"},			\
++	{ EXTENT_DELALLOC,		"DELALLOC"},		\
++	{ EXTENT_DEFRAG,		"DEFRAG"},		\
++	{ EXTENT_BOUNDARY,		"BOUNDARY"},		\
++	{ EXTENT_NODATASUM,		"NODATASUM"},		\
++	{ EXTENT_CLEAR_META_RESV,	"CLEAR_META_RSV"},	\
++	{ EXTENT_FIRST_DELALLOC,	"FIRST_DELALLOC"},	\
++	{ EXTENT_NEED_WAIT,		"NEED_WAIT"},		\
++	{ EXTENT_DAMAGED,		"DAMAGED"},		\
++	{ EXTENT_NORESERVE,		"NORESERVE"},		\
++	{ EXTENT_QGROUP_RESERVED,	"QGROUP_RESERVED"},	\
++	{ EXTENT_CLEAR_DATA_RESV,	"CLEAR_DATA_RESV"},	\
++	{ EXTENT_DELALLOC_NEW,		"DELALLOC_NEW"}
 +
-+	/* who owns this io tree, should be above IO_TREE_* enum */
-+	u8 owner;
+ #define BTRFS_FSID_SIZE 16
+ #define TP_STRUCT__entry_fsid __array(u8, fsid, BTRFS_FSID_SIZE)
+ 
+ #define TP_fast_assign_fsid(fs_info)					\
+-	memcpy(__entry->fsid, fs_info->fs_devices->fsid, BTRFS_FSID_SIZE)
++({									\
++ 	if (fs_info)							\
++		memcpy(__entry->fsid, fs_info->fs_devices->fsid,	\
++		       BTRFS_FSID_SIZE);				\
++	else								\
++		memset(__entry->fsid, 0, BTRFS_FSID_SIZE);		\
++})
+ 
+ #define TP_STRUCT__entry_btrfs(args...)					\
+ 	TP_STRUCT__entry(						\
+@@ -1878,6 +1915,126 @@ DEFINE_EVENT(btrfs__block_group, btrfs_skip_unused_block_group,
+ 	TP_ARGS(bg_cache)
+ );
+ 
++TRACE_EVENT(btrfs_set_extent_bit,
++	TP_PROTO(const struct extent_io_tree *tree,
++		 u64 start, u64 len, unsigned set_bits),
 +
- 	spinlock_t lock;
- 	const struct extent_io_ops *ops;
- };
-@@ -241,8 +256,9 @@ typedef struct extent_map *(get_extent_t)(struct btrfs_inode *inode,
- 					  u64 start, u64 len,
- 					  int create);
++	TP_ARGS(tree, start, len, set_bits),
++
++	TP_STRUCT__entry_btrfs(
++		__field(	unsigned,	owner	)
++		__field(	u64,		ino	)
++		__field(	u64,		rootid	)
++		__field(	u64,		start	)
++		__field(	u64,		len	)
++		__field(	unsigned,	set_bits)
++	),
++
++	TP_fast_assign_btrfs(tree->fs_info,
++		__entry->owner	= tree->owner;
++		if (tree->private_data) {
++			struct inode *inode = tree->private_data;
++
++			__entry->ino	= btrfs_ino(BTRFS_I(inode));
++			__entry->rootid	=
++				BTRFS_I(inode)->root->root_key.objectid;
++		} else {
++			__entry->ino	= 0;
++			__entry->rootid	= 0;
++		}
++		__entry->start		= start;
++		__entry->len		= len;
++		__entry->set_bits	= set_bits;
++	),
++
++	TP_printk_btrfs(
++"io_tree=%s ino=%llu root=%llu start=%llu len=%llu set_bits=%s",
++		  show_extent_io_tree_owner(__entry->owner), __entry->ino,
++		  __entry->rootid, __entry->start, __entry->len,
++		  __print_flags(__entry->set_bits, "|", EXTENT_FLAGS))
++);
++
++TRACE_EVENT(btrfs_clear_extent_bit,
++	TP_PROTO(const struct extent_io_tree *tree,
++		 u64 start, u64 len, unsigned clear_bits),
++
++	TP_ARGS(tree, start, len, clear_bits),
++
++	TP_STRUCT__entry_btrfs(
++		__field(	unsigned,	owner	)
++		__field(	u64,		ino	)
++		__field(	u64,		rootid	)
++		__field(	u64,		start	)
++		__field(	u64,		len	)
++		__field(	unsigned,	clear_bits)
++	),
++
++	TP_fast_assign_btrfs(tree->fs_info,
++		__entry->owner	= tree->owner;
++		if (tree->private_data) {
++			struct inode *inode = tree->private_data;
++
++			__entry->ino	= btrfs_ino(BTRFS_I(inode));
++			__entry->rootid	=
++				BTRFS_I(inode)->root->root_key.objectid;
++		} else {
++			__entry->ino	= 0;
++			__entry->rootid	= 0;
++		}
++		__entry->start		= start;
++		__entry->len		= len;
++		__entry->clear_bits	= clear_bits;
++	),
++
++	TP_printk_btrfs(
++"io_tree=%s ino=%llu root=%llu start=%llu len=%llu clear_bits=%s",
++		  show_extent_io_tree_owner(__entry->owner), __entry->ino,
++		  __entry->rootid, __entry->start, __entry->len,
++		  __print_flags(__entry->clear_bits, "|", EXTENT_FLAGS))
++);
++
++TRACE_EVENT(btrfs_convert_extent_bit,
++	TP_PROTO(const struct extent_io_tree *tree,
++		 u64 start, u64 len, unsigned set_bits, unsigned clear_bits),
++
++	TP_ARGS(tree, start, len, set_bits, clear_bits),
++
++	TP_STRUCT__entry_btrfs(
++		__field(	unsigned,	owner	)
++		__field(	u64,		ino	)
++		__field(	u64,		rootid	)
++		__field(	u64,		start	)
++		__field(	u64,		len	)
++		__field(	unsigned,	set_bits)
++		__field(	unsigned,	clear_bits)
++	),
++
++	TP_fast_assign_btrfs(tree->fs_info,
++		__entry->owner	= tree->owner;
++		if (tree->private_data) {
++			struct inode *inode = tree->private_data;
++
++			__entry->ino	= btrfs_ino(BTRFS_I(inode));
++			__entry->rootid	=
++				BTRFS_I(inode)->root->root_key.objectid;
++		} else {
++			__entry->ino	= 0;
++			__entry->rootid	= 0;
++		}
++		__entry->start		= start;
++		__entry->len		= len;
++		__entry->set_bits	= set_bits;
++		__entry->clear_bits	= clear_bits;
++	),
++
++	TP_printk_btrfs(
++"io_tree=%s ino=%llu root=%llu start=%llu len=%llu set_bits=%s clear_bits=%s",
++		  show_extent_io_tree_owner(__entry->owner), __entry->ino,
++		  __entry->rootid, __entry->start, __entry->len,
++		  __print_flags(__entry->set_bits , "|", EXTENT_FLAGS),
++		  __print_flags(__entry->clear_bits, "|", EXTENT_FLAGS))
++);
++
+ #endif /* _TRACE_BTRFS_H */
  
--void extent_io_tree_init(struct btrfs_fs_info *fs_info,
--			 struct extent_io_tree *tree, void *private_data);
-+void extent_io_tree_init(struct btrfs_fs_info *fs_info, 
-+			 struct extent_io_tree *tree, unsigned int owner,
-+			 void *private_data);
- int try_release_extent_mapping(struct page *page, gfp_t mask);
- int try_release_extent_buffer(struct page *page);
- int lock_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 2d316799eff5..accbe06caf84 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -9128,8 +9128,10 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
- 
- 	inode = &ei->vfs_inode;
- 	extent_map_tree_init(&ei->extent_tree);
--	extent_io_tree_init(fs_info, &ei->io_tree, inode);
--	extent_io_tree_init(fs_info, &ei->io_failure_tree, inode);
-+	extent_io_tree_init(fs_info, &ei->io_tree, IO_TREE_INODE_IO_TREE,
-+			    inode);
-+	extent_io_tree_init(fs_info, &ei->io_failure_tree,
-+			    IO_TREE_INODE_IO_FAILURE_TREE, inode);
- 	ei->io_tree.track_uptodate = 1;
- 	ei->io_failure_tree.track_uptodate = 1;
- 	atomic_set(&ei->sync_writers, 0);
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 152e7ac15b01..0f5ed4a7c022 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -4175,7 +4175,8 @@ static struct reloc_control *alloc_reloc_control(struct btrfs_fs_info *fs_info)
- 	INIT_LIST_HEAD(&rc->reloc_roots);
- 	backref_cache_init(&rc->backref_cache);
- 	mapping_tree_init(&rc->reloc_root_tree);
--	extent_io_tree_init(fs_info, &rc->processed_blocks, NULL);
-+	extent_io_tree_init(fs_info, &rc->processed_blocks,
-+			    IO_TREE_RELOC_BLOCKS, NULL);
- 	return rc;
- }
- 
-diff --git a/fs/btrfs/tests/btrfs-tests.c b/fs/btrfs/tests/btrfs-tests.c
-index cc1e5d017dc0..1351ac2afdd2 100644
---- a/fs/btrfs/tests/btrfs-tests.c
-+++ b/fs/btrfs/tests/btrfs-tests.c
-@@ -115,8 +115,10 @@ struct btrfs_fs_info *btrfs_alloc_dummy_fs_info(u32 nodesize, u32 sectorsize)
- 	INIT_LIST_HEAD(&fs_info->tree_mod_seq_list);
- 	INIT_RADIX_TREE(&fs_info->buffer_radix, GFP_ATOMIC);
- 	INIT_RADIX_TREE(&fs_info->fs_roots_radix, GFP_ATOMIC);
--	extent_io_tree_init(fs_info, &fs_info->freed_extents[0], NULL);
--	extent_io_tree_init(fs_info, &fs_info->freed_extents[1], NULL);
-+	extent_io_tree_init(fs_info, &fs_info->freed_extents[0],
-+			    IO_TREE_FS_INFO_FREED_EXTENTS0, NULL);
-+	extent_io_tree_init(fs_info, &fs_info->freed_extents[1],
-+			    IO_TREE_FS_INFO_FREED_EXTENTS1, NULL);
- 	fs_info->pinned_extents = &fs_info->freed_extents[0];
- 	set_bit(BTRFS_FS_STATE_DUMMY_FS_INFO, &fs_info->fs_state);
- 
-diff --git a/fs/btrfs/tests/extent-io-tests.c b/fs/btrfs/tests/extent-io-tests.c
-index 6ac9770a974c..60812f4d3fe3 100644
---- a/fs/btrfs/tests/extent-io-tests.c
-+++ b/fs/btrfs/tests/extent-io-tests.c
-@@ -77,7 +77,7 @@ static int test_find_delalloc(u32 sectorsize)
- 		return -ENOMEM;
- 	}
- 
--	extent_io_tree_init(NULL, &tmp, NULL);
-+	extent_io_tree_init(NULL, &tmp, IO_TREE_SELFTEST_TMP, NULL);
- 
- 	/*
- 	 * First go through and create and mark all of our pages dirty, we pin
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 638b16c859ba..4799a3b6e2c9 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -274,7 +274,7 @@ static noinline int join_transaction(struct btrfs_fs_info *fs_info,
- 	spin_lock_init(&cur_trans->dropped_roots_lock);
- 	list_add_tail(&cur_trans->list, &fs_info->trans_list);
- 	extent_io_tree_init(fs_info, &cur_trans->dirty_pages,
--			     fs_info->btree_inode);
-+			IO_TREE_TRANSACTION_DIRTY_PAGES, fs_info->btree_inode);
- 	fs_info->generation++;
- 	cur_trans->transid = fs_info->generation;
- 	fs_info->running_transaction = cur_trans;
+ /* This part must be outside protection */
 -- 
 2.21.0
 

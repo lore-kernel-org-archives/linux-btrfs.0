@@ -2,314 +2,105 @@ Return-Path: <SRS0=p7dB=RE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CABDCC43381
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Mar 2019 02:48:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D0C13C43381
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Mar 2019 04:35:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 91FD620854
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Mar 2019 02:48:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8DAE120851
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Mar 2019 04:35:03 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="qmgpeHwH"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732267AbfCACsO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 Feb 2019 21:48:14 -0500
-Received: from mx2.suse.de ([195.135.220.15]:46730 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728741AbfCACsM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Feb 2019 21:48:12 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id F15B1ADF2
-        for <linux-btrfs@vger.kernel.org>; Fri,  1 Mar 2019 02:48:10 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
+        id S1727986AbfCAEfC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 Feb 2019 23:35:02 -0500
+Received: from userp2120.oracle.com ([156.151.31.85]:45116 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725978AbfCAEfC (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 Feb 2019 23:35:02 -0500
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x214Y6CR006547
+        for <linux-btrfs@vger.kernel.org>; Fri, 1 Mar 2019 04:35:00 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
+ date : message-id; s=corp-2018-07-02;
+ bh=antftkLjoAQ/v7QpCSluqc5M45OxNx3+I9Gw35s4GyE=;
+ b=qmgpeHwH2swbCf1LKvETLUnKbG24Z6MTFusowGV/cmSVL1ft/sWVxvYGgPbNlJPonV5w
+ vxmMJJu5qj/RkOj6S8tUJyWeqy2mtFx5FSZ9LB5YtSbFkiZhpereY0vYQHVA5DFj/oY7
+ o+FacNR+jKsPCPi4tp76NNDqqQkFqdV1+kUiMaTZ1XnJABWMgPsx/8DmFlV6YatqKj8l
+ qOQjcmtRPVmEQIY5KynJ/a8Yeg3NqWSun+13HPUHNIbhdQzvb6lhQhiqSOvB4WKBqzwy
+ OnudqMsCc4UetlI6dpyn437u7U5XwADg/Y+mSsRv7IFYqeq9bCqS9bxWv7h6c972lGOE LA== 
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by userp2120.oracle.com with ESMTP id 2qtxts53pm-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 01 Mar 2019 04:35:00 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x214YxHG006643
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 1 Mar 2019 04:34:59 GMT
+Received: from abhmp0022.oracle.com (abhmp0022.oracle.com [141.146.116.28])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x214YwvV023392
+        for <linux-btrfs@vger.kernel.org>; Fri, 1 Mar 2019 04:34:58 GMT
+Received: from tpasj.wifi.oracle.com (/192.188.170.109)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Thu, 28 Feb 2019 20:34:58 -0800
+From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 3/3] btrfs: trace: Add trace events for extent_io_tree
-Date:   Fri,  1 Mar 2019 10:48:00 +0800
-Message-Id: <20190301024800.17649-4-wqu@suse.com>
-X-Mailer: git-send-email 2.21.0
-In-Reply-To: <20190301024800.17649-1-wqu@suse.com>
-References: <20190301024800.17649-1-wqu@suse.com>
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Subject: [PATCH v5 0/9] Misc props.c cleanups
+Date:   Fri,  1 Mar 2019 12:34:46 +0800
+Message-Id: <1551414895-22925-1-git-send-email-anand.jain@oracle.com>
+X-Mailer: git-send-email 1.8.3.1
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9181 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=1 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1903010029
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Although btrfs heavily relies on extent_io_tree, we don't really have
-any good trace events for them.
+v5: drops patch
+    [PATCH v4 03/10] btrfs: trivial, fix c coding style
+    Chanegs are mainly to use BUG_ON instead of ASSERT as in the 
+     original code in patches 5-7/9. Fix ASSERT in 8/9. And add
+     a rename in 9/9. Each individual patches as the details of
+     the changes.
 
-This patch will add the folowing trace events:
-trace_btrfs_set_extent_bit()
-trace_btrfs_clear_extent_bit()
-trace_btrfs_convert_extent_bit()
+v4: More cleanups patch 4-10 were added. 4/10 is a generic cleanup.
+    5-9/10 are cleanups to assist killing btrfs_setxattr(). And
+    10/10 kills btrfs_setxattr().
 
-Since selftest could create temporary extent_io_tree without fs_info,
-modify TP_fast_assign_fsid() to accept NULL as fs_info.
-NULL fs_info will lead to all zero fsid.
+v3: Merge patch 2/5 and 3/5 as in v1.
+    Not included 1/5 in v1 as its already integrated in misc-next.
 
-The output would be:
-  btrfs_set_extent_bit: <FDID>: io_tree=IO_TREE ino=1 root=1 start=22036480 len=4096 set_bits=LOCKED
-  btrfs_set_extent_bit: <FSID>: io_tree=IO_TREE ino=1 root=1 start=22040576 len=4096 set_bits=LOCKED
-  btrfs_set_extent_bit: <FSID>: io_tree=IO_TREE ino=1 root=1 start=22044672 len=4096 set_bits=LOCKED
-  btrfs_set_extent_bit: <FSID>: io_tree=IO_TREE ino=1 root=1 start=22048768 len=4096 set_bits=LOCKED
-  btrfs_clear_extent_bit: <FSID>: io_tree=IO_TREE ino=1 root=1 start=22036480 len=16384 clear_bits=LOCKED
-  ^^^ Extent buffer 22036480 read from disc, the locking progress
+While adding the readmirror property found few cleanup things which
+can be fixed. As these aren't part of upcoming readmirror property
+I am sending these separately.
 
-  btrfs_set_extent_bit: <FSID>: io_tree=TRANS_DIRTY_PAGES ino=1 root=1 start=30425088 len=16384 set_bits=DIRTY
-  btrfs_set_extent_bit: <FSID>: io_tree=TRANS_DIRTY_PAGES ino=1 root=1 start=30441472 len=16384 set_bits=DIRTY
-  ^^^ 2 new tree blocks allocated in one transaction
+Anand Jain (9):
+  btrfs: kill __btrfs_set_prop()
+  btrfs: drop redundant forward declaration in props.c
+  btrfs: rename fs_info argument to fs_private
+  btrfs: refactor btrfs_set_prop add btrfs_set_prop_trans
+  btrfs: start transaction in btrfs_set_prop_trans
+  btrfs: start transaction in btrfs_set_acl
+  btrfs: start transaction in btrfs_xattr_handler_set
+  btrfs: btrfs_setxattr argument trans is never NULL
+  btrfs: kill btrfs_setxattr
 
-  btrfs_set_extent_bit: <FSID>: io_tree=FREED_EXTENTS0 ino=0 root=0 start=30523392 len=16384 set_bits=DIRTY
-  btrfs_set_extent_bit: <FSID>: io_tree=FREED_EXTENTS0 ino=0 root=0 start=30556160 len=16384 set_bits=DIRTY
-  ^^^ 2 old tree blocks get pinned down
+ fs/btrfs/acl.c   |  43 ++++++++---
+ fs/btrfs/ioctl.c |  10 ++-
+ fs/btrfs/props.c | 221 +++++++++++++++++++++++++++++--------------------------
+ fs/btrfs/props.h |   7 +-
+ fs/btrfs/xattr.c |  76 +++++++++----------
+ fs/btrfs/xattr.h |   5 +-
+ 6 files changed, 194 insertions(+), 168 deletions(-)
 
-There is one point which need extra attention:
-1) Those trace events are pretty heavy
-   The following workload would generate over 400 trace events.
-	mkfs.btrfs -f $dev
-	start_trace
-	mount $dev $mnt -o enospc_debug
-	sync
-	touch $mnt/file1
-	touch $mnt/file2
-	touch $mnt/file3
-	xfs_io -f -c "pwrite 0 16k" $mnt/file4
-	umount $mnt
-	end_trace
-   It's not recommended to use them in real world environment.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/extent_io.c         |   4 +
- include/trace/events/btrfs.h | 159 ++++++++++++++++++++++++++++++++++-
- 2 files changed, 162 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index dd2cfd054eef..d9ef31def740 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -582,6 +582,7 @@ int __clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 	int clear = 0;
- 
- 	btrfs_debug_check_extent_io_range(tree, start, end);
-+	trace_btrfs_clear_extent_bit(tree, start, end - start + 1, bits);
- 
- 	if (bits & EXTENT_DELALLOC)
- 		bits |= EXTENT_NORESERVE;
-@@ -852,6 +853,7 @@ __set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 	u64 last_end;
- 
- 	btrfs_debug_check_extent_io_range(tree, start, end);
-+	trace_btrfs_set_extent_bit(tree, start, end - start + 1, bits);
- 
- 	bits |= EXTENT_FIRST_DELALLOC;
- again:
-@@ -1085,6 +1087,8 @@ int convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 	bool first_iteration = true;
- 
- 	btrfs_debug_check_extent_io_range(tree, start, end);
-+	trace_btrfs_convert_extent_bit(tree, start, end - start + 1, bits,
-+				       clear_bits);
- 
- again:
- 	if (!prealloc) {
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index 2887503e4d12..2b4779b1855a 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -27,6 +27,7 @@ struct btrfs_work;
- struct __btrfs_workqueue;
- struct btrfs_qgroup_extent_record;
- struct btrfs_qgroup;
-+struct extent_io_tree;
- struct prelim_ref;
- 
- TRACE_DEFINE_ENUM(FLUSH_DELAYED_ITEMS_NR);
-@@ -77,6 +78,17 @@ TRACE_DEFINE_ENUM(COMMIT_TRANS);
- 		{ BTRFS_QGROUP_RSV_META_PERTRANS, "META_PERTRANS" },	\
- 		{ BTRFS_QGROUP_RSV_META_PREALLOC, "META_PREALLOC" })
- 
-+#define show_extent_io_tree_owner(owner)				      \
-+	__print_symbolic(owner,						      \
-+		{ IO_TREE_FS_INFO_FREED_EXTENTS0,	"FREED_EXTENTS0" },   \
-+		{ IO_TREE_FS_INFO_FREED_EXTENTS1,	"FREED_EXTENTS1" },   \
-+		{ IO_TREE_INODE_IO_TREE,		"IO_TREE" },          \
-+		{ IO_TREE_INODE_IO_FAILURE_TREE,	"IO_FAILURE_TREE" },  \
-+		{ IO_TREE_RELOC_BLOCKS,			"RELOCATION" },	      \
-+		{ IO_TREE_TRANSACTION_DIRTY_PAGES,	"TRANS_DIRTY_PAGES" },\
-+		{ IO_TREE_ROOT_DIRTY_LOG_PAGES,		"ROOT_DIRTY_LOG" },   \
-+		{ IO_TREE_SELFTEST_TMP,			"SELFTEST_TMP" })
-+
- #define BTRFS_GROUP_FLAGS	\
- 	{ BTRFS_BLOCK_GROUP_DATA,	"DATA"},	\
- 	{ BTRFS_BLOCK_GROUP_SYSTEM,	"SYSTEM"},	\
-@@ -88,11 +100,36 @@ TRACE_DEFINE_ENUM(COMMIT_TRANS);
- 	{ BTRFS_BLOCK_GROUP_RAID5,	"RAID5"},	\
- 	{ BTRFS_BLOCK_GROUP_RAID6,	"RAID6"}
- 
-+#define EXTENT_FLAGS						\
-+	{ EXTENT_DIRTY,			"DIRTY"},		\
-+	{ EXTENT_WRITEBACK,		"WRITEBACK"},		\
-+	{ EXTENT_UPTODATE,		"UPTODATE"},		\
-+	{ EXTENT_LOCKED,		"LOCKED"},		\
-+	{ EXTENT_NEW,			"NEW"},			\
-+	{ EXTENT_DELALLOC,		"DELALLOC"},		\
-+	{ EXTENT_DEFRAG,		"DEFRAG"},		\
-+	{ EXTENT_BOUNDARY,		"BOUNDARY"},		\
-+	{ EXTENT_NODATASUM,		"NODATASUM"},		\
-+	{ EXTENT_CLEAR_META_RESV,	"CLEAR_META_RSV"},	\
-+	{ EXTENT_FIRST_DELALLOC,	"FIRST_DELALLOC"},	\
-+	{ EXTENT_NEED_WAIT,		"NEED_WAIT"},		\
-+	{ EXTENT_DAMAGED,		"DAMAGED"},		\
-+	{ EXTENT_NORESERVE,		"NORESERVE"},		\
-+	{ EXTENT_QGROUP_RESERVED,	"QGROUP_RESERVED"},	\
-+	{ EXTENT_CLEAR_DATA_RESV,	"CLEAR_DATA_RESV"},	\
-+	{ EXTENT_DELALLOC_NEW,		"DELALLOC_NEW"}
-+
- #define BTRFS_FSID_SIZE 16
- #define TP_STRUCT__entry_fsid __array(u8, fsid, BTRFS_FSID_SIZE)
- 
- #define TP_fast_assign_fsid(fs_info)					\
--	memcpy(__entry->fsid, fs_info->fs_devices->fsid, BTRFS_FSID_SIZE)
-+({									\
-+ 	if (fs_info)							\
-+		memcpy(__entry->fsid, fs_info->fs_devices->fsid,	\
-+		       BTRFS_FSID_SIZE);				\
-+	else								\
-+		memset(__entry->fsid, 0, BTRFS_FSID_SIZE);		\
-+})
- 
- #define TP_STRUCT__entry_btrfs(args...)					\
- 	TP_STRUCT__entry(						\
-@@ -1878,6 +1915,126 @@ DEFINE_EVENT(btrfs__block_group, btrfs_skip_unused_block_group,
- 	TP_ARGS(bg_cache)
- );
- 
-+TRACE_EVENT(btrfs_set_extent_bit,
-+	TP_PROTO(const struct extent_io_tree *tree,
-+		 u64 start, u64 len, unsigned set_bits),
-+
-+	TP_ARGS(tree, start, len, set_bits),
-+
-+	TP_STRUCT__entry_btrfs(
-+		__field(	unsigned,	owner	)
-+		__field(	u64,		ino	)
-+		__field(	u64,		rootid	)
-+		__field(	u64,		start	)
-+		__field(	u64,		len	)
-+		__field(	unsigned,	set_bits)
-+	),
-+
-+	TP_fast_assign_btrfs(tree->fs_info,
-+		__entry->owner	= tree->owner;
-+		if (tree->private_data) {
-+			struct inode *inode = tree->private_data;
-+
-+			__entry->ino	= btrfs_ino(BTRFS_I(inode));
-+			__entry->rootid	=
-+				BTRFS_I(inode)->root->root_key.objectid;
-+		} else {
-+			__entry->ino	= 0;
-+			__entry->rootid	= 0;
-+		}
-+		__entry->start		= start;
-+		__entry->len		= len;
-+		__entry->set_bits	= set_bits;
-+	),
-+
-+	TP_printk_btrfs(
-+"io_tree=%s ino=%llu root=%llu start=%llu len=%llu set_bits=%s",
-+		  show_extent_io_tree_owner(__entry->owner), __entry->ino,
-+		  __entry->rootid, __entry->start, __entry->len,
-+		  __print_flags(__entry->set_bits, "|", EXTENT_FLAGS))
-+);
-+
-+TRACE_EVENT(btrfs_clear_extent_bit,
-+	TP_PROTO(const struct extent_io_tree *tree,
-+		 u64 start, u64 len, unsigned clear_bits),
-+
-+	TP_ARGS(tree, start, len, clear_bits),
-+
-+	TP_STRUCT__entry_btrfs(
-+		__field(	unsigned,	owner	)
-+		__field(	u64,		ino	)
-+		__field(	u64,		rootid	)
-+		__field(	u64,		start	)
-+		__field(	u64,		len	)
-+		__field(	unsigned,	clear_bits)
-+	),
-+
-+	TP_fast_assign_btrfs(tree->fs_info,
-+		__entry->owner	= tree->owner;
-+		if (tree->private_data) {
-+			struct inode *inode = tree->private_data;
-+
-+			__entry->ino	= btrfs_ino(BTRFS_I(inode));
-+			__entry->rootid	=
-+				BTRFS_I(inode)->root->root_key.objectid;
-+		} else {
-+			__entry->ino	= 0;
-+			__entry->rootid	= 0;
-+		}
-+		__entry->start		= start;
-+		__entry->len		= len;
-+		__entry->clear_bits	= clear_bits;
-+	),
-+
-+	TP_printk_btrfs(
-+"io_tree=%s ino=%llu root=%llu start=%llu len=%llu clear_bits=%s",
-+		  show_extent_io_tree_owner(__entry->owner), __entry->ino,
-+		  __entry->rootid, __entry->start, __entry->len,
-+		  __print_flags(__entry->clear_bits, "|", EXTENT_FLAGS))
-+);
-+
-+TRACE_EVENT(btrfs_convert_extent_bit,
-+	TP_PROTO(const struct extent_io_tree *tree,
-+		 u64 start, u64 len, unsigned set_bits, unsigned clear_bits),
-+
-+	TP_ARGS(tree, start, len, set_bits, clear_bits),
-+
-+	TP_STRUCT__entry_btrfs(
-+		__field(	unsigned,	owner	)
-+		__field(	u64,		ino	)
-+		__field(	u64,		rootid	)
-+		__field(	u64,		start	)
-+		__field(	u64,		len	)
-+		__field(	unsigned,	set_bits)
-+		__field(	unsigned,	clear_bits)
-+	),
-+
-+	TP_fast_assign_btrfs(tree->fs_info,
-+		__entry->owner	= tree->owner;
-+		if (tree->private_data) {
-+			struct inode *inode = tree->private_data;
-+
-+			__entry->ino	= btrfs_ino(BTRFS_I(inode));
-+			__entry->rootid	=
-+				BTRFS_I(inode)->root->root_key.objectid;
-+		} else {
-+			__entry->ino	= 0;
-+			__entry->rootid	= 0;
-+		}
-+		__entry->start		= start;
-+		__entry->len		= len;
-+		__entry->set_bits	= set_bits;
-+		__entry->clear_bits	= clear_bits;
-+	),
-+
-+	TP_printk_btrfs(
-+"io_tree=%s ino=%llu root=%llu start=%llu len=%llu set_bits=%s clear_bits=%s",
-+		  show_extent_io_tree_owner(__entry->owner), __entry->ino,
-+		  __entry->rootid, __entry->start, __entry->len,
-+		  __print_flags(__entry->set_bits , "|", EXTENT_FLAGS),
-+		  __print_flags(__entry->clear_bits, "|", EXTENT_FLAGS))
-+);
-+
- #endif /* _TRACE_BTRFS_H */
- 
- /* This part must be outside protection */
 -- 
-2.21.0
+1.8.3.1
 

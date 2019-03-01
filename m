@@ -7,51 +7,51 @@ X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 49F0CC10F03
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AAFBCC10F06
 	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Mar 2019 04:35:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 17AAE2186A
+	by mail.kernel.org (Postfix) with ESMTP id 6FCCE2186A
 	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Mar 2019 04:35:13 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="fhsoMu1D"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="ysaFMIQS"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728790AbfCAEfJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 Feb 2019 23:35:09 -0500
-Received: from userp2130.oracle.com ([156.151.31.86]:41570 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728065AbfCAEfI (ORCPT
+        id S1729130AbfCAEfM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 Feb 2019 23:35:12 -0500
+Received: from userp2120.oracle.com ([156.151.31.85]:45226 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728065AbfCAEfK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Feb 2019 23:35:08 -0500
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x214Z6UF007290
-        for <linux-btrfs@vger.kernel.org>; Fri, 1 Mar 2019 04:35:06 GMT
+        Thu, 28 Feb 2019 23:35:10 -0500
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x214YM1d006610
+        for <linux-btrfs@vger.kernel.org>; Fri, 1 Mar 2019 04:35:09 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
  date : message-id : in-reply-to : references; s=corp-2018-07-02;
- bh=+x6vaA1D+Ser6HxNKrCOkxoXVr8cuhi8x7EcybGTxMI=;
- b=fhsoMu1DajH1JP1qI+sVBXKCXQ4yTwpQDUehyF8txSQCO+u0DgixmfhLMbFcRYAaFisY
- h4F4GZwqhrRUbgj7anmQWD4+TJKoDHl7LDTKy4/A1R3zoSxEnURD+BGk2Z2VRA/qvuVZ
- b9pOJQnCf17F0YW88Yu7xlEXvwGkhX3HPTZKWNQ66fmILnA6F2f0hHyKb3jYmlZts3oK
- j1MTUGttP3xzfPb4OuJUCTXUc1B1fBCu5NmzGPKxzZwOiSSDXmEghtatwdrcgayKUOkv
- iDO0anH9pnDJTokPA32aeDWKgHV4f+G3FgyPsxu40JheMJv9xOQ/hgKxTArEw7jgWTKB dw== 
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by userp2130.oracle.com with ESMTP id 2qtwkun8bf-1
+ bh=lDSlTJXwyisHqx7Xq3uf/hG1BqPb6y6q4oNPQG2oxmM=;
+ b=ysaFMIQSrqI48N8voE18hJBmN0C3jgDj/LaSFQRTPDqJFUUzNiZhGLBRddeY1aYqwNB8
+ j9VhTs/1U7nwxBKg5nQ2D9q7xBQNM8r4dkrzgxbNH0hciLTyRQpFrdmKMgjjDrydZ4vr
+ bMAFGBWMS4EkxN281GiTjuLLy6CY2YEk9arGlKR8hK70LcEveQZ3EyQB/+bkb6/ZH1rg
+ davEsBCam2peU5rzfssl3lwCFbJ6g+Gzshy8syBC/C2Y18PGr/nSsCQH7oaHaLOvRQC0
+ ZrejVhmWaVxLTexPakHiwythMShyApICEZuSYti46UXqSNTaxmHzl/dPJe6fEhSJbACj 5Q== 
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by userp2120.oracle.com with ESMTP id 2qtxts53q6-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 01 Mar 2019 04:35:06 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x214Z5v6007176
+        for <linux-btrfs@vger.kernel.org>; Fri, 01 Mar 2019 04:35:08 +0000
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x214Z8JX023629
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 1 Mar 2019 04:35:05 GMT
+        for <linux-btrfs@vger.kernel.org>; Fri, 1 Mar 2019 04:35:08 GMT
 Received: from abhmp0022.oracle.com (abhmp0022.oracle.com [141.146.116.28])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x214Z5C4005525
-        for <linux-btrfs@vger.kernel.org>; Fri, 1 Mar 2019 04:35:05 GMT
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x214Z74s011480
+        for <linux-btrfs@vger.kernel.org>; Fri, 1 Mar 2019 04:35:07 GMT
 Received: from tpasj.wifi.oracle.com (/192.188.170.109)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 28 Feb 2019 20:35:05 -0800
+        with ESMTP ; Thu, 28 Feb 2019 20:35:06 -0800
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v5 5/9] btrfs: start transaction in btrfs_set_prop_trans
-Date:   Fri,  1 Mar 2019 12:34:51 +0800
-Message-Id: <1551414895-22925-6-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH v5 6/9] btrfs: start transaction in btrfs_set_acl
+Date:   Fri,  1 Mar 2019 12:34:52 +0800
+Message-Id: <1551414895-22925-7-git-send-email-anand.jain@oracle.com>
 X-Mailer: git-send-email 1.8.3.1
 In-Reply-To: <1551414895-22925-1-git-send-email-anand.jain@oracle.com>
 References: <1551414895-22925-1-git-send-email-anand.jain@oracle.com>
@@ -66,59 +66,107 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-In preparation to make trans argument of btrfs_setxattr() a mandatory,
-start the transaction in btrfs_set_prop_trans(). And pass the started
-transaction to btrfs_set_prop() instead of NULL. This patch copies the
-inode update part from btrfs_setxattr() to btrfs_set_prop_trans(),
-as it is from the original code.
+The main motivation is to avoid NULL for the trans argument reaching
+btrfs_set_xattr(). This patch does the following in btrfs_set_acl().
+  Create transaction and handle the inode changes update, (copies code
+    from btrfs_setxattr() as in the original, which needs a fix).
+  Rename __btrfs_set_acl to do_set_acl as this is a helper function.
+  Fix a c-code style, expand function declaration to max length 80 char.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
-v5: fix c-style. Used BUG_ON, instead of ASSERT. Change log update.
+v5: change log update. Use BUG_ON instead of ASSERT.
 v4: born
- fs/btrfs/props.c | 22 +++++++++++++++++++++-
- 1 file changed, 21 insertions(+), 1 deletion(-)
+ fs/btrfs/acl.c | 36 ++++++++++++++++++++++++++----------
+ 1 file changed, 26 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-index ca4af745fb90..75a68d7d39a2 100644
---- a/fs/btrfs/props.c
-+++ b/fs/btrfs/props.c
-@@ -4,6 +4,7 @@
-  */
- 
- #include <linux/hashtable.h>
+diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
+index 5810463dc6d2..2b9c3394fc34 100644
+--- a/fs/btrfs/acl.c
++++ b/fs/btrfs/acl.c
+@@ -11,10 +11,12 @@
+ #include <linux/sched.h>
+ #include <linux/sched/mm.h>
+ #include <linux/slab.h>
 +#include <linux/iversion.h>
- #include "props.h"
+ 
+ #include "ctree.h"
  #include "btrfs_inode.h"
- #include "transaction.h"
-@@ -103,7 +104,26 @@ static int btrfs_set_prop(struct btrfs_trans_handle *trans, struct inode *inode,
- int btrfs_set_prop_trans(struct inode *inode, const char *name,
- 			 const char *value, size_t value_len, int flags)
+ #include "xattr.h"
++#include "transaction.h"
+ 
+ struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
  {
--	return btrfs_set_prop(NULL, inode, name, value, value_len, flags);
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
+@@ -52,8 +54,8 @@ struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
+ 	return acl;
+ }
+ 
+-static int __btrfs_set_acl(struct btrfs_trans_handle *trans,
+-			 struct inode *inode, struct posix_acl *acl, int type)
++static int do_set_acl(struct btrfs_trans_handle *trans, struct inode *inode,
++		      struct posix_acl *acl, int type)
+ {
+ 	int ret, size = 0;
+ 	const char *name;
+@@ -107,20 +109,36 @@ int btrfs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
+ {
+ 	int ret;
+ 	umode_t old_mode = inode->i_mode;
 +	struct btrfs_trans_handle *trans;
-+	int ret;
++	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 
+ 	if (type == ACL_TYPE_ACCESS && acl) {
+ 		ret = posix_acl_update_mode(inode, &inode->i_mode, &acl);
+ 		if (ret)
+ 			return ret;
+ 	}
+-	ret = __btrfs_set_acl(NULL, inode, acl, type);
+-	if (ret)
 +
 +	trans = btrfs_start_transaction(root, 2);
 +	if (IS_ERR(trans))
 +		return PTR_ERR(trans);
 +
-+	ret = btrfs_set_prop(trans, inode, name, value, value_len, flags);
-+
-+	if (!ret) {
++	ret = do_set_acl(trans, inode, acl, type);
++	if (ret) {
+ 		inode->i_mode = old_mode;
++	} else {
 +		inode_inc_iversion(inode);
 +		inode->i_ctime = current_time(inode);
-+		set_bit(BTRFS_INODE_COPY_EVERYTHING,
-+			&BTRFS_I(inode)->runtime_flags);
++		set_bit(BTRFS_INODE_COPY_EVERYTHING, &BTRFS_I(inode)->runtime_flags);
 +		ret = btrfs_update_inode(trans, root, inode);
 +		BUG_ON(ret);
 +	}
++
 +	btrfs_end_transaction(trans);
-+	return ret;
+ 	return ret;
  }
  
- static int iterate_object_props(struct btrfs_root *root,
+-int btrfs_init_acl(struct btrfs_trans_handle *trans,
+-		   struct inode *inode, struct inode *dir)
++int btrfs_init_acl(struct btrfs_trans_handle *trans, struct inode *inode,
++		   struct inode *dir)
+ {
+ 	struct posix_acl *default_acl, *acl;
+ 	int ret = 0;
+@@ -134,15 +152,13 @@ int btrfs_init_acl(struct btrfs_trans_handle *trans,
+ 		return ret;
+ 
+ 	if (default_acl) {
+-		ret = __btrfs_set_acl(trans, inode, default_acl,
+-				      ACL_TYPE_DEFAULT);
++		ret = do_set_acl(trans, inode, default_acl, ACL_TYPE_DEFAULT);
+ 		posix_acl_release(default_acl);
+ 	}
+ 
+ 	if (acl) {
+ 		if (!ret)
+-			ret = __btrfs_set_acl(trans, inode, acl,
+-					      ACL_TYPE_ACCESS);
++			ret = do_set_acl(trans, inode, acl, ACL_TYPE_ACCESS);
+ 		posix_acl_release(acl);
+ 	}
+ 
 -- 
 1.8.3.1
 

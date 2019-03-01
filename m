@@ -2,64 +2,57 @@ Return-Path: <SRS0=p7dB=RE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D66CCC43381
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Mar 2019 16:21:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CF4E5C43381
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Mar 2019 16:25:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id AB9E32083D
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Mar 2019 16:21:23 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A8FB12083D
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Mar 2019 16:25:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389088AbfCAQVW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 1 Mar 2019 11:21:22 -0500
-Received: from reasonset.net ([150.95.217.78]:43098 "EHLO mail.reasonset.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725966AbfCAQVW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 1 Mar 2019 11:21:22 -0500
-X-Greylist: delayed 575 seconds by postgrey-1.27 at vger.kernel.org; Fri, 01 Mar 2019 11:21:21 EST
-Received: from hydrangea (203-153-72-31.flets.kamome.or.jp [203.153.72.31])
-        by mail.reasonset.net (Postfix) with ESMTPSA id 50A5B2201CF
-        for <linux-btrfs@vger.kernel.org>; Sat,  2 Mar 2019 01:11:45 +0900 (JST)
-Date:   Sat, 2 Mar 2019 01:11:52 +0900
-From:   MASAKI Haruka <yek@reasonset.net>
-To:     linux-btrfs@vger.kernel.org
-Subject: Unable mount subvolume with "File exists" error
-Message-ID: <20190302011152.2893c2f5@hydrangea>
-Organization: Mimir Yokohamamai
-X-Mailer: Claws Mail 3.17.3 (GTK+ 2.24.32; x86_64-pc-linux-gnu)
+        id S2389089AbfCAQZ0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 1 Mar 2019 11:25:26 -0500
+Received: from mx2.suse.de ([195.135.220.15]:57420 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S2388450AbfCAQZ0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 1 Mar 2019 11:25:26 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 86D88AEA2
+        for <linux-btrfs@vger.kernel.org>; Fri,  1 Mar 2019 16:25:24 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 94C6BDA851; Fri,  1 Mar 2019 17:26:44 +0100 (CET)
+Date:   Fri, 1 Mar 2019 17:26:44 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] btrfs-progs: Port kernel fs_devices::total_rw_bytes
+ to btrfs-progs
+Message-ID: <20190301162644.GS31119@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20190205065312.19743-1-wqu@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190205065312.19743-1-wqu@suse.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi.
+On Tue, Feb 05, 2019 at 02:53:11PM +0800, Qu Wenruo wrote:
+> Unlike kernel, btrfs-progs doesn't (yet) support devices grow/shrink,
+> the port only needs to handle open_ctree() time initialization (at
+> read_one_dev()), and btrfs_add_device() used for mkfs.
+> 
+> This provide the basis for incoming unification of chunk allocator
+> behavior.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-When run this script
-
-***
-#!/bin/zsh
-setopt RC_EXPAND_PARAM
-
-if [[ $1 == start ]]
-then 
-  if iscsiadm -m node -L all && mount /mnt/worldvol && mount /MasterVol && mount ~foo/local
-  ...
-***
-
-failed with
-mount: /MasterVol: mount(2) system call failed: File exists.
-message after last month Manjaro update.
-
-in /etc/fstab
-
-***
-LABEL=MasterBtr                           /MasterVol     btrfs   defaults,relatime,space_cache,compress=lzo,subvol=world,noauto 0 0
-LABEL=MasterBtr                           /mnt/worldvol  btrfs   defaults,relatime,space_cache,compress=lzo,noauto 0 0
-/MasterVol/local                          /home/foo/local none   rbind,noauto 0 0
-***
-
-I could mount every volume by unmount /mnt/worldvol and mount each volume manually, but the script always failed with "File exists."
+1 and 2 applied, thanks.

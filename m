@@ -1,32 +1,33 @@
-Return-Path: <SRS0=UqpE=RD=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=p7dB=RE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.0 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 49717C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Feb 2019 23:31:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7F7A9C43381
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Mar 2019 01:23:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 213CD20830
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Feb 2019 23:31:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4BDCD20643
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Mar 2019 01:23:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731675AbfB1Xbd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 Feb 2019 18:31:33 -0500
-Received: from mout.gmx.net ([212.227.17.22]:53763 "EHLO mout.gmx.net"
+        id S1727771AbfCABXe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 Feb 2019 20:23:34 -0500
+Received: from mout.gmx.net ([212.227.17.21]:43833 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1731080AbfB1Xbc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Feb 2019 18:31:32 -0500
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx101
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0MGWR2-1gmHkJ070K-00DDLn; Fri, 01
- Mar 2019 00:31:23 +0100
-Subject: Re: [PATCH] btrfs: qgroup: Don't scan leaf if we're modifying reloc
- tree
+        id S1726088AbfCABXd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 Feb 2019 20:23:33 -0500
+Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx103
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0M7H2Y-1hEKkH26Jq-00x2LC; Fri, 01
+ Mar 2019 02:23:00 +0100
+Subject: Re: [PATCH] btrfs: Fix possible NULL pointer dereference in btrfs
+ selftest
 To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20181213054856.22340-1-wqu@suse.com>
- <20190228182603.GQ31119@twin.jikos.cz>
+        linux-btrfs@vger.kernel.org,
+        Dan Carpenter <dan.carpenter@oracle.com>
+References: <20190222005350.7535-1-wqu@suse.com>
+ <20190228160253.GK31119@twin.jikos.cz>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -53,123 +54,107 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <10fcd431-d365-056b-a052-2f887905cc86@gmx.com>
-Date:   Fri, 1 Mar 2019 07:31:13 +0800
+Message-ID: <141399ee-667d-6adb-b0af-250fe1263f31@gmx.com>
+Date:   Fri, 1 Mar 2019 09:22:49 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.5.1
 MIME-Version: 1.0
-In-Reply-To: <20190228182603.GQ31119@twin.jikos.cz>
+In-Reply-To: <20190228160253.GK31119@twin.jikos.cz>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="CdGk7sIXKmu7w4jAWWSzx6lMloPXFAY71"
-X-Provags-ID: V03:K1:XiC47qobl6J3z5AFO4bRuiEkaFfLYk3lw+id3DKtzu/2e5ZcY0V
- peXF8TjdV+Y7fPf8x4lw3tyq7tGvLWiIsqfyocl78ZX1KoIloDnfUumygCNPhlVO/Cqd267
- +Tazfd/HZTT0dK3btWwCcBTJkFZsYSOX1ocKpBssT1UhfaaIRNFhlVRqqd7Jvl4wajq8EQL
- CkTOnpeFub3mVA+K7n9+A==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:ly5C41i4iBQ=:qRApzHfGWDtp175OlgFZP1
- WHtQQJyOJt6j6W3oungn8mce8yCKfdYsl7qUvCjLGLvkf18vf+x3NJCitAbmW+Hhi84gbQYbh
- vORXI3Npz3Ob15Wu3SSnPlZjHHNuj8MPEhMTdtgE7f7FoR0g2NvMCs32si8cqEOhaWEluYSGA
- bwwFLTbDwiObI6GIDjtryA165MJN/HErD31ZNR+IqWt2i82nRz+tOCxUP+DfFsFCUWHsJZi7f
- PuJRso9xOgJxokMTf0oaQNO0BZsuk/aIQ0lOU/IMw5QQ8risdLJPrL+zKA2RTtoigMwjMk9fK
- KJobzGz9mn8YLGtpBCe0bJQqwnTDXXJV7dupAzxcAUsl9AjJi5l5SgZXTd+zWpyyrBb3pFmbi
- 3M1sZBtPWErg2oYzo2/ETmzFfRR5DbzMi+FuCE5bCytNor5gd6f4ImolkyXu0sIhpqMfZRNyO
- zByFhi/M530v+xE4DMKDgSFNDSTieH6H86U/rgKpMNPyKuf0w8AFSWXl5c+nIM92KixwTH+OE
- Rjps+1DrRpnUDQ7dRBcoc+dFuCABSztD0yRmal0Y1T8Ke7+o3rYnvfT8NXqsIu6MCZ1Bm50iI
- cl3U7MNuz/P7jAx3S93tEc9nwC6sMsWIK/y5hq5Nk2z+D+hDcKMmaNP8zVIw5NTVBhuP0vCCI
- fRYd6d3ZQ8fIXAS6f1BUMnwntXuDIEv32snpTHxW2yACV4Sgn+Fb3cfbrS86vBxNrCySJMO1P
- 3yL8Vvwfv2ipA9ZsPN2Jwnp5UPSvQ/cp//7CxY0dH0oDz2C19P8YVLzJWlDgm16QwFVRvtytx
- XfTqSjCGtYyVy41cU+lmUyQlT4YWN0f/++Qw79o97EBpQT2hF3p9Bz1Ce/WBandjyJjCJrw6B
- kNXbQHTZfo8rYP5jfy2ZmCl5G1fPE9UYikEBwgmXyNNoMUs3RhT0yvVJKPJV3Q
+ boundary="cij0cnLLl0Uorewjg7vdhZm0eX72oN88d"
+X-Provags-ID: V03:K1:FK8Elms5X00UH4v9gf2u4PMX19f8/tnFxsc52Wmg+T5cHHxRZqO
+ 8uCV6JBxQevehHE/A+jiaP8yfVk4fXmEoe1yZPvQEpbgGN/UkZ7Rf9jp/M9zxK5NET6Y5sE
+ 4UF0sbljsPTPNqOMFGFAWX4M38najGokw4kBmocNmASnwGSEEighb/0lYbCNQ3WArrYoNZ9
+ 9wx5LMCnjyFujxM6EBrQw==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:J+q889svOCM=:kiBsPVdRkamd4eDCWadw5N
+ G0QXFyfco/5gdTM5vzFe4n0NDfN042Lm5iGIU0aGFlXp2c+bgAOymtZ3KOL+wi9OVU9p/IKpw
+ d1LOWmXIpUvt48qnF1F0qlYUheVapTqBUYV3qmTIWDTG9ZWPZiFwDfzty5TzKLZY5seNDc1xM
+ 4TKkGio0b7XOyztov3CgpDn+H4LsUieloGiC7VbG0R9DBuJN5wBgoLjrmEYiqHhKQZxgqTrv9
+ W3FcXkg10mXmDt8lzkvJeLp3OnlOBwXNSuLPcnxhVSg2KtnhcrhlpDlMAzoHoOvt2yS1MHUTu
+ UM02YlK/fZervp/Gxm6b+3m5lbi4ZYz3ZIrGVvMcKo6xLLcXbqmHDk+rds71mrw3SaKv5ux/o
+ wkbu5dZCNPgTF2hnBlyusWxywWwtazcfsJpMxldC9kJqx/56hQBpR9Fd+YOzcQU/KpGnXvuLS
+ Y0fhaVy7YwRt9e8hWEEXyMFtMvuyX57Ale1Nx1XYoCQsB2K/CnQMECYaYw6n+/ZAiXHVV8O+x
+ a+qHPEDXgmoKSAoIb2TL9E0sxWpgZD/wfvpQc1egoURQeUnDouWRlwViwOWIR5sIRhAi8IeGg
+ pKUCxBwxniYsHfNmhHNJEK6L0yk3QWM0DZydCugNVyKu16XcQqm/DdTRqCqekvfDJnk5YFJCw
+ UfOFtjVg4BZu0H/RWLFY3EklQyvyRc8sALnSqTu6ed55WUuV1xYRXsC7wtJh/mm1/alkoUHtU
+ l16q7HnNlzhzu+K0djF8pSvbH84mq+JuQlKTb1tMgxXgFR5yDN84DE5SB6SyaMb0GzhczVbIA
+ f+vYQcB/0xU0alutlMq/PRiHq5nBsTIiKuuS6BPLtgamCpxgRhnDhBDKPmOm9qvhQlTjsFlkt
+ kryTDxiz6glzbIvdED0zhWYGc/GTBbzB7oPVkmTVGhbHFRdDoXmbZ0YFcUHhOG
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---CdGk7sIXKmu7w4jAWWSzx6lMloPXFAY71
-Content-Type: multipart/mixed; boundary="eG50iTgQru6CMetDUvORwyDy4lREd0KJh";
+--cij0cnLLl0Uorewjg7vdhZm0eX72oN88d
+Content-Type: multipart/mixed; boundary="NuwSqD670dx9GDgAz7VxaZEUfxzIyhnOu";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <10fcd431-d365-056b-a052-2f887905cc86@gmx.com>
-Subject: Re: [PATCH] btrfs: qgroup: Don't scan leaf if we're modifying reloc
- tree
-References: <20181213054856.22340-1-wqu@suse.com>
- <20190228182603.GQ31119@twin.jikos.cz>
-In-Reply-To: <20190228182603.GQ31119@twin.jikos.cz>
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+ Dan Carpenter <dan.carpenter@oracle.com>
+Message-ID: <141399ee-667d-6adb-b0af-250fe1263f31@gmx.com>
+Subject: Re: [PATCH] btrfs: Fix possible NULL pointer dereference in btrfs
+ selftest
+References: <20190222005350.7535-1-wqu@suse.com>
+ <20190228160253.GK31119@twin.jikos.cz>
+In-Reply-To: <20190228160253.GK31119@twin.jikos.cz>
 
---eG50iTgQru6CMetDUvORwyDy4lREd0KJh
+--NuwSqD670dx9GDgAz7VxaZEUfxzIyhnOu
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2019/3/1 =E4=B8=8A=E5=8D=882:26, David Sterba wrote:
-> On Thu, Dec 13, 2018 at 01:48:56PM +0800, Qu Wenruo wrote:
->> Since reloc tree doesn't contribute to qgroup numbers, just skip them.=
+On 2019/3/1 =E4=B8=8A=E5=8D=8812:02, David Sterba wrote:
+> On Fri, Feb 22, 2019 at 08:53:50AM +0800, Qu Wenruo wrote:
+>> When CONFIG_BTRFS_FS_RUN_SANITY_TESTS is enabled, btrfs will run
+>> selftest at module load time.
+>>
+>> During selftest, we allocate extent buffer using
+>> alloc_test_extent_buffer(), instead of alloc_test_extent_buffer().
+>>
+>> The problem is, unlike alloc_extent_buffer(),
+>> alloc_test_extent_buffer() can return NULL pointer instead of error
+>> pointer, and callers all expect error pointer other than NULL pointer.=
 
 >>
->> This should catch the final leakage of unnecessary data refs for qgrou=
-p.
->> The 4G data 16 snapshots test should explain it pretty well:
+>> So this could lead to NULL pointer dereference during selftest.
 >>
->>              | delayed subtree | refactor delayed ref | this patch (*)=
-
->> ---------------------------------------------------------------------
->> relocated    |           22653 |                22673 |         22744
->> qgroup dirty |          122792 |                48360 |            70
->> time         |          24.494 |               11.606 |         3.944
+>> Fix it by returning error pointer in alloc_test_extent_buffer().
 >>
->> *: Needs to be applied upon delayed subtree scan and delayed ref
->> refactor patchsets.
->>
->> Finally, we're at the stage where qgroup + metadata balance cost no
->> obvious overhead.
+>> Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
 >=20
-> I don't see this patch in any of the development branches but given the=
+> This patch is obsoleted by https://patchwork.kernel.org/patch/10828221/=
 
-> above I think it should be there. It's possible that I have missed an
-> update, sorry, please let me know the current status.
+> "btrfs: extent_io: Always return error pointer for extent buffer
+> allocation failure", right?
 
-This patch doesn't receive any update, so this version should be the
-latest version.
-
-Just in case, you could fetch this patch from my
-'refactor_delayed_ref_parameter' branch, it's at the last patch.
-
-
-Please also keep in mind that, the performance can only be reached with
-all the delayed ref API refactor. I haven't test it without delayed ref
-refactor.
+Yup.
 
 Thanks,
 Qu
 
->=20
-> The dependencies have been merged for 5.1 so I could still queue it, an=
-d
-> the performance improvement is quite desired.
->=20
 
+--NuwSqD670dx9GDgAz7VxaZEUfxzIyhnOu--
 
---eG50iTgQru6CMetDUvORwyDy4lREd0KJh--
-
---CdGk7sIXKmu7w4jAWWSzx6lMloPXFAY71
+--cij0cnLLl0Uorewjg7vdhZm0eX72oN88d
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlx4b0EACgkQwj2R86El
-/qhyeAf/f/zsRLfHgsE9dUrSbm0V+CoG0bdJHeYDf9czbcahGOPGgfKla2YRb3x8
-4Wk6Hsqh4IapkGFr0WdlsJ08m3gixebzOD0ZZaMA09LvdWXKQew1pUSIZm20zFk8
-3GfR+xMES8FOAIDGbbz7RhviVhDKs2aSxgNbfIHd4oUB1P+IGaZ/s0EFSXffXUpd
-RigikavzD4bIs0DyBFYiVc8dAM3YawpXUotbtXaw4JdJGafRSb7MWKTBoAWEkY1v
-nmb0xXSU8oM6xw/T8S7bRRQ2HVNsDd61KIXKdwatTBrdGO7QoRvvf8kRbdVQ8yg2
-0yqYO9GO4XpZr55KdzlE8qP7Gfwhcw==
-=QYCq
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlx4iWkACgkQwj2R86El
+/qiDSAf/Y27xvygyBflHkNBOsMhpgIwASX0GNaS9JzbsZUxeJsTnSc0Bm5FOGISQ
+L1znMs7JwAEdYDqwAHEugrz96gOjRfx0zlLt2GYK/HyjTe5dvIFnsnCpCTvYhUGX
+UOLr8QG5cG9bnfRY/1rqwAnJsp2SrijatkUcHseqwVw0i8O7h5OUWIusd7AouCmI
+Wqk3RRL3po0VWIR9vt8asqqPq3ztC6wSFiDDIWNb/wHrxDi1G2y4f7/JdNuzg//Z
+mWk9XXVbZOc9F2M4fb47EnaZHzmJUt8VPARBE0NMy+uOQjHyXw3ZT2DyHkakCZ+T
+3uhvFZmEnxMvTLIzOhDnjerQEL41kg==
+=gQ2i
 -----END PGP SIGNATURE-----
 
---CdGk7sIXKmu7w4jAWWSzx6lMloPXFAY71--
+--cij0cnLLl0Uorewjg7vdhZm0eX72oN88d--

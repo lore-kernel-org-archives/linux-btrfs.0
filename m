@@ -6,27 +6,27 @@ X-Spam-Status: No, score=-8.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 009A9C43381
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Mar 2019 02:45:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5EF56C43381
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Mar 2019 02:48:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C4E6920854
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Mar 2019 02:45:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3666D20854
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Mar 2019 02:48:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729040AbfCACp4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 Feb 2019 21:45:56 -0500
-Received: from mx2.suse.de ([195.135.220.15]:46532 "EHLO mx1.suse.de"
+        id S1732166AbfCACsF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 Feb 2019 21:48:05 -0500
+Received: from mx2.suse.de ([195.135.220.15]:46712 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727948AbfCACp4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Feb 2019 21:45:56 -0500
+        id S1727147AbfCACsF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 Feb 2019 21:48:05 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 3438AADF2
-        for <linux-btrfs@vger.kernel.org>; Fri,  1 Mar 2019 02:45:54 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id C9DFEADF2
+        for <linux-btrfs@vger.kernel.org>; Fri,  1 Mar 2019 02:48:03 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Subject: [PATCH v2 0/3] btrfs: trace: Add trace events for extent_io_tree
-Date:   Fri,  1 Mar 2019 10:45:47 +0800
-Message-Id: <20190301024550.17506-1-wqu@suse.com>
+Date:   Fri,  1 Mar 2019 10:47:57 +0800
+Message-Id: <20190301024800.17649-1-wqu@suse.com>
 X-Mailer: git-send-email 2.21.0
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
@@ -104,6 +104,13 @@ There is one point which need extra attention:
 	end_trace
    It's not recommended to use them in real world environment.
 
+Changelog:
+v2:
+- Introduce fs_info to distinguish different btrfs filesystems
+- Code style change to make trace code more elegant
+- Minor IO_TREE_* naming change.
+- Use btrfs_ino() to replace raw inode number.
+- Change extent_io_tree::owner declaration to avoid affecting spinlock.
 
 Qu Wenruo (3):
   btrfs: Introduce fs_info for extent_io_tree

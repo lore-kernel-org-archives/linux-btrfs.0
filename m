@@ -2,126 +2,96 @@ Return-Path: <SRS0=BAu1=RF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5FF89C43381
-	for <linux-btrfs@archiver.kernel.org>; Sat,  2 Mar 2019 06:23:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A2318C43381
+	for <linux-btrfs@archiver.kernel.org>; Sat,  2 Mar 2019 10:19:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 193D7206DD
-	for <linux-btrfs@archiver.kernel.org>; Sat,  2 Mar 2019 06:23:20 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 65E1020838
+	for <linux-btrfs@archiver.kernel.org>; Sat,  2 Mar 2019 10:19:43 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="k27cM1MH"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="a1cC0vAE"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726216AbfCBGXS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 2 Mar 2019 01:23:18 -0500
-Received: from mail-lj1-f176.google.com ([209.85.208.176]:34388 "EHLO
-        mail-lj1-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725300AbfCBGXS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Mar 2019 01:23:18 -0500
-Received: by mail-lj1-f176.google.com with SMTP id l5so22378269lje.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 01 Mar 2019 22:23:17 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=to:from:subject:openpgp:autocrypt:message-id:date:user-agent
-         :mime-version:content-language:content-transfer-encoding;
-        bh=U1qgmZycAS9KLNE4Sh4LsG0Jt8WAx/tREJfnQ6bO2rY=;
-        b=k27cM1MHiFPomU9Bl5EL12byQomrHSIMeFoXRBAkoWxD6K0QtmRRMugwIrC3ennGaq
-         wG35x+mP0bye5N5IzYIiKTbaMSJtjAXk6qel8Iu2n2HgWJ6DcKsY9MLuWmf0e0la8DzO
-         3UcLVnu2ROQB41WVvEt/iaaUC0VKgcPG75clExwvpxF4/BGQGSdG2JyPboh04eVUJI0d
-         DxrGPONJ9FEBo+/dm4Vn4FJGSRkkbDX6+rPzLwS1cXhhUCJXCMrf1Ag3KosI33dZtcmY
-         KmbZMlyOaPMqY7aQSeLtLw0ypW4XJ6wMzq7x99E3dmtSIVO015f3TXtnKvlgNPpDxdwq
-         RRYA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:to:from:subject:openpgp:autocrypt:message-id
-         :date:user-agent:mime-version:content-language
-         :content-transfer-encoding;
-        bh=U1qgmZycAS9KLNE4Sh4LsG0Jt8WAx/tREJfnQ6bO2rY=;
-        b=I4vu6Y6qu/6u5J6Uvdw/+WHGCZLC8ixu6DGD5+2vyyrZs6i4r6bauD2AhFO0u5aqsm
-         aI4UMTq0Ar5jyZOQ3ZA+oc5mXo5HqyCg0c2VmdG8pWdr6vpnnA1ZqTa+C0v6KH0eYXwh
-         BnEyg9ov7U3+M9EeIgJw3cx5ixi+dxet1xe//b64SpnYAWDPonOPZDYIfsNGJyjSQ2xF
-         acQXaYzbYXjIuksqoCu9IrgdA6V5V9lhAF08hdKWLE7n5aoNa9jedXl90CLnTJU9hH+l
-         h7SHc+ecH/oO0VYeaMWCt2b8fzW5ua8VRJZmWKmCv6xTcvv77Ar2YacqxD+pQugzseAy
-         IFbw==
-X-Gm-Message-State: APjAAAUnx80giPSE+YJb+pF9VkBbaqRSEAIJoPl0RpNW8l451gQthjSt
-        2uEctlfHL2SDOjUrYxyuFRWDKuNcqEE=
-X-Google-Smtp-Source: APXvYqzBP8KyZ9SI924yFanfh61tU3kPpCYzDFq62ppQDigxrnxgvpZ0h69MUO54EyTKywtfK4d+KQ==
-X-Received: by 2002:a2e:97ce:: with SMTP id m14mr4858647ljj.162.1551507796062;
-        Fri, 01 Mar 2019 22:23:16 -0800 (PST)
-Received: from [192.168.1.4] ([109.252.90.29])
-        by smtp.gmail.com with ESMTPSA id y5sm2949lfe.61.2019.03.01.22.23.14
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Fri, 01 Mar 2019 22:23:15 -0800 (PST)
-To:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From:   Andrei Borzenkov <arvidjaar@gmail.com>
-Subject: Getting qgroup reports in user space (without enabling qroup)?
-Openpgp: preference=signencrypt
-Autocrypt: addr=arvidjaar@gmail.com; prefer-encrypt=mutual; keydata=
- xsDiBDxiRwwRBAC3CN9wdwpVEqUGmSoqF8tWVIT4P/bLCSZLkinSZ2drsblKpdG7x+guxwts
- +LgI8qjf/q5Lah1TwOqzDvjHYJ1wbBauxZ03nDzSLUhD4Ms1IsqlIwyTLumQs4vcQdvLxjFs
- G70aDglgUSBogtaIEsiYZXl4X0j3L9fVstuz4/wXtwCg1cN/yv/eBC0tkcM1nsJXQrC5Ay8D
- /1aA5qPticLBpmEBxqkf0EMHuzyrFlqVw1tUjZ+Ep2LMlem8malPvfdZKEZ71W1a/XbRn8FE
- SOp0tUa5GwdoDXgEp1CJUn+WLurR0KPDf01E4j/PHHAoABgrqcOTcIVoNpv2gNiBySVsNGzF
- XTeY/Yd6vQclkqjBYONGN3r9R8bWA/0Y1j4XK61qjowRk3Iy8sBggM3PmmNRUJYgroerpcAr
- 2byz6wTsb3U7OzUZ1Llgisk5Qum0RN77m3I37FXlIhCmSEY7KZVzGNW3blugLHcfw/HuCB7R
- 1w5qiLWKK6eCQHL+BZwiU8hX3dtTq9d7WhRW5nsVPEaPqudQfMSi/Ux1kc0mQW5kcmVpIEJv
- cnplbmtvdiA8YXJ2aWRqYWFyQGdtYWlsLmNvbT7CZQQTEQIAJQIbAwYLCQgHAwIGFQgCCQoL
- BBYCAwECHgECF4AFAliWAiQCGQEACgkQR6LMutpd94wFGwCeNuQnMDxve/Fo3EvYIkAOn+zE
- 21cAnRCQTXd1hTgcRHfpArEd/Rcb5+SczsBNBDxiRyQQBACQtME33UHfFOCApLki4kLFrIw1
- 5A5asua10jm5It+hxzI9jDR9/bNEKDTKSciHnM7aRUggLwTt+6CXkMy8an+tVqGL/MvDc4/R
- KKlZxj39xP7wVXdt8y1ciY4ZqqZf3tmmSN9DlLcZJIOT82DaJZuvr7UJ7rLzBFbAUh4yRKaN
- nwADBwQAjNvMr/KBcGsV/UvxZSm/mdpvUPtcw9qmbxCrqFQoB6TmoZ7F6wp/rL3TkQ5UElPR
- gsG12+Dk9GgRhnnxTHCFgN1qTiZNX4YIFpNrd0au3W/Xko79L0c4/49ten5OrFI/psx53fhY
- vLYfkJnc62h8hiNeM6kqYa/x0BEddu92ZG7CRgQYEQIABgUCPGJHJAAKCRBHosy62l33jMhd
- AJ48P7WDvKLQQ5MKnn2D/TI337uA/gCgn5mnvm4SBctbhaSBgckRmgSxfwQ=
-Message-ID: <8a91a9b3-8b4c-2df4-1c69-9e260816a2ca@gmail.com>
-Date:   Sat, 2 Mar 2019 09:23:14 +0300
+        id S1726086AbfCBKTm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 2 Mar 2019 05:19:42 -0500
+Received: from userp2130.oracle.com ([156.151.31.86]:42744 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725986AbfCBKTm (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Mar 2019 05:19:42 -0500
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x22AIuuc143766;
+        Sat, 2 Mar 2019 10:19:38 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2018-07-02;
+ bh=ShGhbJpAnuR1IBgmNGS1K4ExGEFso57jmDyogOHNeQs=;
+ b=a1cC0vAE/ikhjwAC2dkuKfsKw4MWt63+pYN6kS2X2twT0/aWLGZ1o5unjf+YoLWnibR8
+ 0kjiqfZKzDC00AbOcFza34QnA7onix9/EsIYfrGzvwffEVFVqJcgA0Ssj59PIRFML3td
+ 0a/Bh9bFt/mQ0shI4sJROjaclXZN9ojh5TScA4WDsfzEAhKWr8u10N23xl7Z69XcO08Z
+ kMOWxOjNj63wh7KFDffZrRBKbgrnoqjQRxOg2eHBE0evCHSD0ltbIajnGygS52xnhXqU
+ 4TesB80Dvby+SIgzhb34FxutHfXwUIDFw5pNrPuQ98/IKUKoaBes7bFGBkZ6vWtuWp9P SA== 
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by userp2130.oracle.com with ESMTP id 2qyh8trph7-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Sat, 02 Mar 2019 10:19:38 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x22AJbDg031593
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Sat, 2 Mar 2019 10:19:37 GMT
+Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x22AJaCh007340;
+        Sat, 2 Mar 2019 10:19:36 GMT
+Received: from [192.168.1.145] (/116.87.143.221)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Sat, 02 Mar 2019 02:19:36 -0800
+Subject: Re: [PATCH RESEND 1/2] btrfs-progs: check for no result before using
+ results
+To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <1548929141-10695-1-git-send-email-anand.jain@oracle.com>
+ <20190301164156.GT31119@twin.jikos.cz>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <0b5529a7-f8e3-9bff-6f4d-eb70c4b96d91@oracle.com>
+Date:   Sat, 2 Mar 2019 18:19:39 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.1
+ Thunderbird/60.5.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20190301164156.GT31119@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9182 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1903020076
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Is there any user-space tool that can produce report similar to "btrfs
-qgroup show" with multi-level qgroups? To clarify what I mean - here is
-"btrfs qgroup show" output from openSUSE with enabled snapper.
 
-qgroupid         rfer         excl parent
---------         ----         ---- ------
-...
-0/259         6.17GiB    262.43MiB ---
-...
-0/702         6.03GiB      1.30GiB 1/0
-0/718         6.04GiB     89.88MiB 1/0
-0/720         6.52GiB     87.28MiB 1/0
-0/724         6.10GiB     29.16MiB 1/0
-0/727         6.78GiB    217.02MiB 1/0
-0/729         6.24GiB     39.25MiB 1/0
-0/731         6.65GiB     72.67MiB 1/0
-0/732         6.24GiB    212.18MiB 1/0
-0/741         6.35GiB    778.79MiB 1/0
-0/742         6.58GiB     74.09MiB 1/0
-1/0          20.33GiB     14.42GiB ---
-...
 
-Without qgroups there is really no way to find out how much space
-snapshots are taking. "btrfs fi du" just shows equivalent of "rfer" and
-"excl" for each subvolume, but there is no way you can compute the
-values shown for 1/0 qgroup from individual numbers.
+On 3/2/19 12:41 AM, David Sterba wrote:
+> On Thu, Jan 31, 2019 at 06:05:40PM +0800, Anand Jain wrote:
+>> User space understands the ioctl BTRFS_IOC_DEV_REPLACE command status
+>> using the struct btrfs_ioctl_dev_replace_args::result, and so userspace
+>> initializes this to BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_RESULT, so exclude
+>> this value in checking for the error.
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> 
+> 1 and 2 applied, thanks.
+> 
 
-I do not think "btrfs fi du" can do it as it only knows whether extent
-is shared or not, it cannot know whether extent is shared between
-specific subvolumes.
+Thanks.
 
-Is something like this even possible in user space without qgroups? It
-is well known that qgroups are frowned upon and common advice is to
-disable them as soon as someone reports performance issues.
+  While at btrfs-progs you could include [1] as well.
+
+[1]
+  [PATCH v4] btrfs-progs: dump-tree: add noscan option
+  https://patchwork.kernel.org/patch/10832585/
+
+-Anand

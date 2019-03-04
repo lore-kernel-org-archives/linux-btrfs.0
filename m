@@ -2,270 +2,265 @@ Return-Path: <SRS0=W6bw=RH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.0 required=3.0
-	tests=HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PULL_REQUEST,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D4C15C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Mar 2019 19:19:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 72D15C43381
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Mar 2019 21:31:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9830E20823
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Mar 2019 19:19:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3020B20663
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Mar 2019 21:31:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726091AbfCDTTs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 4 Mar 2019 14:19:48 -0500
-Received: from mx2.suse.de ([195.135.220.15]:57048 "EHLO mx1.suse.de"
+        id S1726095AbfCDVbe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 4 Mar 2019 16:31:34 -0500
+Received: from mx2.suse.de ([195.135.220.15]:50958 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726038AbfCDTTs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 4 Mar 2019 14:19:48 -0500
+        id S1726038AbfCDVbd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 4 Mar 2019 16:31:33 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id E0317AE8D;
-        Mon,  4 Mar 2019 19:19:45 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id C825CDA7F5; Mon,  4 Mar 2019 20:21:04 +0100 (CET)
-From:   David Sterba <dsterba@suse.com>
-To:     torvalds@linux-foundation.org
-Cc:     David Sterba <dsterba@suse.com>, clm@fb.com,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [GIT PULL] Btrfs updates for 5.1, part 1
-Date:   Mon,  4 Mar 2019 20:20:53 +0100
-Message-Id: <cover.1551726327.git.dsterba@suse.com>
-X-Mailer: git-send-email 2.20.1
+        by mx1.suse.de (Postfix) with ESMTP id DA616AF38;
+        Mon,  4 Mar 2019 21:31:31 +0000 (UTC)
+Subject: Re: btrfs seriouse design issue
+To:     =?UTF-8?Q?Tomasz_K=c5=82oczko?= <kloczko.tomasz@gmail.com>,
+        Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+References: <CABB28CzO9x-th16nSuvZDdsE3TLey_0L8AAPRh0SVFacnV1Xsw@mail.gmail.com>
+From:   Jeff Mahoney <jeffm@suse.com>
+Message-ID: <6c8c2345-5857-b73d-0edd-02c7230e2e9a@suse.com>
+Date:   Mon, 4 Mar 2019 16:31:24 -0500
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:66.0)
+ Gecko/20100101 Thunderbird/66.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <CABB28CzO9x-th16nSuvZDdsE3TLey_0L8AAPRh0SVFacnV1Xsw@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+On 3/4/19 9:46 AM, Tomasz Kłoczko wrote:
+> Hi,
+> 
+> I just added new disk with btrfs and my intention was to use space of
+> this new disk in multiple mountpoints of existing tree.
+> So after create new btrfs pool on tol of new device I've created two
+> subvolumes srv an lxc then after adding necessary entries in fstab to
+> mount in /srv and /var/lib/lxc -> mount -a.
+> So far so good because what I've done is not illegal or wrong and such
+> trick is possible and it works.
 
-the branch contains usual mix of new features, core changes and fixes;
-full list below. I'm planning 2nd pull request, with a few more fixes
-that arrived recently but too close to merge window, will send it next
-week.
+It's not a trick.  That's the proper way to do it.
 
-Please pull, thanks.
+> Then after checking what I've just done using mount command looking on
+> the output I've realised that something is really wrong :/
+> 
+> # mount | grep btrfs
+> /dev/mmcblk0p2 on / type btrfs
+> (rw,relatime,ssd,space_cache,subvolid=257,subvol=/fedora)
+> /dev/sda2 on /var/lib/lxc type btrfs
+> (rw,relatime,ssd,space_cache,subvolid=257,subvol=/lxc)
+> /dev/sda2 on /srv type btrfs
+> (rw,relatime,ssd,space_cache,subvolid=259,subvol=/srv)
+> 
+> As it is possible to see both mount points are listed as mounted out
+> of /dev/sda2.
+> That is a real problem for any monitoring software which will be
+> catching two times mountes exactly the same device.
 
+That's a bug in the monitoring software.  Bind mounts can do this now on 
+any file system.
 
-New features:
+> So where is the design issue?
+> 1) btrfs has no concept of storage poll with name like it is in case of zfs
 
-- support zstd compression levels
+That's not a design issue.  That's a personal preference for how zfs 
+represents its storage space.
 
-- new ioctl to unregister a device from the module (ie. reverse of device
-  scan)
+> 2) all btrfs subvolumes are not listed in mount output
 
-- scrub prints a message to log when it's about to start or finish
+This a shortcoming for which I've been working on patches.  Even when 
+they're done, though, it will *not* show all subvolumes.  It will only 
+show the ones currently mounted into the namespace.  With btrfs 
+lightweight snapshots, it's easy to have thousands of subvolumes.  We 
+don't want to see them all.
 
+> With zpool name is possible to present all volumes as subobject of the
+> storage pool like in output:
+> 
+> $ zfs list
+> NAME                              USED  AVAIL  REFER  MOUNTPOINT
+> rpool                            2.03G   298G   144K  /rpool
+> rpool/ROOT                       1.96G   298G   144K  legacy
+> rpool/ROOT/solaris-0              584K   298G  1.63G  /
+> rpool/ROOT/solaris-0/var          352K   298G   140M  /var
+> rpool/ROOT/solaris-1             1.96G   298G  1.63G  /
+> rpool/ROOT/solaris-1/var          225M   298G   124M  /var
+> rpool/VARSHARE                   31.9M   298G   312K  /var/share
+> rpool/VARSHARE/pkg                296K   298G   152K  /var/share/pkg
+> rpool/VARSHARE/pkg/repositories   144K   298G   144K
+> /var/share/pkg/repositories
+> rpool/VARSHARE/sstore            22.3M   298G  22.3M  /var/share/sstore/repo
+> rpool/VARSHARE/tmp               9.07M   298G  9.07M  /var/tmp
+> rpool/export                     42.2M   298G   152K  /export
+> rpool/export/home                42.1M   298G   168K  /export/home
+> rpool/export/home/jacek           176K   298G   176K  /export/home/jacek
+> rpool/export/home/ss              196K   298G   196K  /export/home/ss
+> rpool/export/home/tkloczko       41.6M   298G  41.6M  /export/home/tkloczko
+> 
+> and all those zfs subvolumes are viable in mount output so they are
+> fully distinguishable
+> 
+>   mount | grep rpool
+> / on rpool/ROOT/solaris-1
+> read/write/setuid/nodevices/rstchown/nonbmand/exec/xattr/noatime/mountpoint=/data/HPE-Builder/root//zone=HPE-Builder/nozonemod/sharezone=1/dev=35d002b
+> on Sun Mar  3 04:17:05 2019
+> /var on rpool/ROOT/solaris-1/var
+> read/write/setuid/nodevices/rstchown/nonbmand/exec/xattr/noatime/mountpoint=/data/HPE-Builder/root/var/zone=HPE-Builder/nozonemod/sharezone=1/dev=35d002c
+> on Sun Mar  3 04:17:07 2019
+> /var/share on rpool/VARSHARE
+> read/write/nosetuid/nodevices/rstchown/nonbmand/noexec/noxattr/noatime/zone=HPE-Builder/sharezone=1/dev=35d0031
+> on Sun Mar  3 04:17:27 2019
+> /var/tmp on rpool/VARSHARE/tmp
+> read/write/setuid/nodevices/rstchown/nonbmand/exec/xattr/noatime/zone=HPE-Builder/sharezone=1/dev=35d0032
+> on Sun Mar  3 04:17:27 2019
+> /export on rpool/export
+> read/write/setuid/nodevices/rstchown/nonbmand/exec/xattr/noatime/zone=HPE-Builder/sharezone=1/dev=35d0035
+> on Sun Mar  3 04:17:35 2019
+> /export/home on rpool/export/home
+> read/write/setuid/nodevices/rstchown/nonbmand/exec/xattr/noatime/zone=HPE-Builder/sharezone=1/dev=35d0036
+> on Sun Mar  3 04:17:35 2019
+> /export/home/jacek on rpool/export/home/jacek
+> read/write/setuid/nodevices/rstchown/nonbmand/exec/xattr/noatime/zone=HPE-Builder/sharezone=1/dev=35d0037
+> on Sun Mar  3 04:17:35 2019
+> /export/home/ss on rpool/export/home/ss
+> read/write/setuid/nodevices/rstchown/nonbmand/exec/xattr/noatime/zone=HPE-Builder/sharezone=1/dev=35d0038
+> on Sun Mar  3 04:17:35 2019
+> /export/home/tkloczko on rpool/export/home/tkloczko
+> read/write/setuid/nodevices/rstchown/nonbmand/exec/xattr/noatime/zone=HPE-Builder/sharezone=1/dev=35d0039
+> on Sun Mar  3 04:17:36 2019
+> /rpool on rpool
+> read/write/setuid/nodevices/rstchown/nonbmand/exec/xattr/noatime/zone=HPE-Builder/sharezone=1/dev=35d003a
+> on Sun Mar  3 04:17:36 2019
+> /var/share/pkg on rpool/VARSHARE/pkg
+> read/write/nosetuid/nodevices/rstchown/nonbmand/noexec/noxattr/noatime/zone=HPE-Builder/sharezone=1/dev=35d003f
+> on Sun Mar  3 04:17:37 2019
+> /var/share/pkg/repositories on rpool/VARSHARE/pkg/repositories
+> read/write/nosetuid/nodevices/rstchown/nonbmand/noexec/noxattr/noatime/zone=HPE-Builder/sharezone=1/dev=35d0040
+> on Sun Mar  3 04:17:37 2019
+> /var/share/sstore/repo on rpool/VARSHARE/sstore
+> read/write/nosetuid/nodevices/rstchown/nonbmand/noexec/noxattr/noatime/zone=HPE-Builder/sharezone=1/dev=35d0044
+> on Sun Mar  3 04:17:39 2019
+> 
+> Because all zfs volumes are visable on VFS layer Solaris is able to
+> produce per volume VFS layer statistics. In case of btrfs something
+> like this is not possible because only mountpoint mounted is what was
+> specified for mount (manually or over fstab)
+> For example I can take from mount output dev=35d0044 and use it with kstat:
+> 
+> $ kstat -p | grep 35d0044
+> unix:1:vopstats_35d0044:aread_bytes     0
+> unix:1:vopstats_35d0044:aread_time      0
+> unix:1:vopstats_35d0044:awrite_bytes    0
+> unix:1:vopstats_35d0044:awrite_time     0
+> unix:1:vopstats_35d0044:class   misc
+> unix:1:vopstats_35d0044:crtime  254.04196691
+> unix:1:vopstats_35d0044:nacancel        0
+> unix:1:vopstats_35d0044:naccess 107474
+> unix:1:vopstats_35d0044:naddmap 0
+> unix:1:vopstats_35d0044:nafsync 0
+> unix:1:vopstats_35d0044:naread  0
+> unix:1:vopstats_35d0044:nawrite 0
+> unix:1:vopstats_35d0044:nclose  107474
+> unix:1:vopstats_35d0044:ncmp    42
+> unix:1:vopstats_35d0044:ncreate 58700
+> unix:1:vopstats_35d0044:ndelmap 0
+> unix:1:vopstats_35d0044:ndispose        0
+> unix:1:vopstats_35d0044:ndump   0
+> unix:1:vopstats_35d0044:ndumpctl        0
+> unix:1:vopstats_35d0044:nfid    0
+> unix:1:vopstats_35d0044:nfrlock 0
+> unix:1:vopstats_35d0044:nfsync  0
+> unix:1:vopstats_35d0044:ngetattr        156527
+> unix:1:vopstats_35d0044:ngetpage        0
+> unix:1:vopstats_35d0044:ngetsecattr     58700
+> unix:1:vopstats_35d0044:ninactive       58661
+> unix:1:vopstats_35d0044:nioctl  0
+> unix:1:vopstats_35d0044:nlink   0
+> unix:1:vopstats_35d0044:nlookup 1549680
+> unix:1:vopstats_35d0044:nmap    0
+> unix:1:vopstats_35d0044:nmkdir  0
+> unix:1:vopstats_35d0044:nopen   107474
+> unix:1:vopstats_35d0044:npageio 0
+> unix:1:vopstats_35d0044:npathconf       0
+> unix:1:vopstats_35d0044:npoll   0
+> unix:1:vopstats_35d0044:nputpage        0
+> unix:1:vopstats_35d0044:nread   48729
+> unix:1:vopstats_35d0044:nreaddir        87
+> unix:1:vopstats_35d0044:nreadlink       0
+> unix:1:vopstats_35d0044:nrealvfs        0
+> unix:1:vopstats_35d0044:nrealvp 140620
+> unix:1:vopstats_35d0044:nreflink        0
+> unix:1:vopstats_35d0044:nreletocache    1585518
+> unix:1:vopstats_35d0044:nremove 51329
+> unix:1:vopstats_35d0044:nrename 7738
+> unix:1:vopstats_35d0044:nreqzcbuf       0
+> unix:1:vopstats_35d0044:nretzcbuf       0
+> unix:1:vopstats_35d0044:nrmdir  0
+> unix:1:vopstats_35d0044:nrwlock 107515
+> unix:1:vopstats_35d0044:nrwunlock       107515
+> unix:1:vopstats_35d0044:nseek   0
+> unix:1:vopstats_35d0044:nsetattr        0
+> unix:1:vopstats_35d0044:nsetfl  0
+> unix:1:vopstats_35d0044:nsetsecattr     0
+> unix:1:vopstats_35d0044:nshrlock        0
+> unix:1:vopstats_35d0044:nspace  0
+> unix:1:vopstats_35d0044:nsymlink        0
+> unix:1:vopstats_35d0044:nvnevent        0
+> unix:1:vopstats_35d0044:nwrite  58699
+> unix:1:vopstats_35d0044:read_bytes      550957714
+> unix:1:vopstats_35d0044:read_time       514114360
+> unix:1:vopstats_35d0044:readdir_bytes   117480
+> unix:1:vopstats_35d0044:readdir_time    286027046
+> unix:1:vopstats_35d0044:snaptime        109395.47355841
+> unix:1:vopstats_35d0044:write_bytes     595622652
+> unix:1:vopstats_35d0044:write_time      1543437021
+> 
+> Other thing is that looks still btrfs does not provide any per volume metrics.
 
-Core changes:
+There is no standard interface for Linux for this, so whether it's 
+associated with a mountpoint or not doesn't make any difference.  If you 
+(or someone) wanted to add support for this, hanging it off btrfs_root 
+and exporting via ioctl would probably be the easiest way to do it.  We 
+already have subvolume iterators in the tools.
 
-- qgroups can now skip part of a tree that does not get updated during
-  relocation, because this does not affect the quota accounting, estimated
-  speedup in run time is about 20%
+> Other thing that in case of btrfs it is not possible to have subvolume
+> but mounted.
+> In case of zfs all volumes with mountpoint "legacy" are not mouted
+> when zpool is imported which creates perfect platform for cloning
+> rootfs which always is as not mounted/legacy. With multiple clones is
+> possible to use them as separated instances of boot environments
+> (BEs). Without such feature looks like using btrfs would be way
+> harder.
+> There is of course much more ZFS features which do not have any
+> analogues in case of btrfs. Some people here familiar with zfs are
+> probably more or less aware what is till missing.
+> 
+> Just in case .. I'm not complaining. I'm only trying gently point on
+> something which already will cause some confusion maybe starting kind
+> of discussion about how to solve current state.
+> I thing that redesign btrfs to have subvolumes visible in mount could
+> solve few things.
+> 
+> Comments?
 
-- the compression workspace management had to be enhanced due to zstd
-  requirements
+It sounds like you're coming from a Solaris environment with ZFS and are 
+expecting Btrfs on Linux to be a drop-in replacement, and neither are. 
+There are certainly ideas we can borrow from ZFS, though.
 
-- various enospc fixes, when there's high fragmentation the
-  over-reservation can cause ENOSPC that might not happen after a flush,
-  in such cases try to wait if the situation improves
+-Jeff
 
-
-Fixes:
-
-- various ioctls could overwrite previous return value if copy_to_user
-  fails, fix this so the original error is reported
-
-- more reclaim vs GFP_KERNEL fixes
-
-- other cleanups and refactoring
-
-- fix a (valid) lockdep warning in a test when device replace is
-  destroying worker threads
-
-- make qgroup async transaction commit more aggressive, this avoids some
-  'quota limit reached' errors if there are not enough data to trigger
-  transaction in order to flush
-
-- fix deadlock between snapshot deletion and quotas when backref walking
-  is called from context that already holds the same locks
-
-- fsync fixes:
-  - fix fsync after succession of renames of different files
-  - fix fsync after succession of renames and unlink/rmdir
-
-----------------------------------------------------------------
-The following changes since commit 5908e6b738e3357af42c10e1183753c70a0117a9:
-
-  Linux 5.0-rc8 (2019-02-24 16:46:45 -0800)
-
-are available in the Git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.1-part1-tag
-
-for you to fetch changes up to f65e25e343cfc0e6f4db9a687c4085fad268325d:
-
-  btrfs: Remove unnecessary casts in btrfs_read_root_item (2019-02-25 14:19:23 +0100)
-
-----------------------------------------------------------------
-Anand Jain (11):
-      btrfs: merge btrfs_find_device_missing_or_by_path() into parent
-      btrfs: cleanup btrfs_find_device_by_devspec()
-      btrfs: refactor btrfs_find_device() take fs_devices as argument
-      btrfs: refactor btrfs_free_stale_devices() to get return value
-      btrfs: merge btrfs_find_device and find_device
-      btrfs: scrub: print messages when started or finished
-      btrfs: introduce new ioctl to unregister a btrfs device
-      btrfs: fix comment its device list mutex not volume lock
-      btrfs: scrub: fix circular locking dependency warning
-      btrfs: scrub: add scrub_lock lockdep check in scrub_workers_get
-      btrfs: scrub: convert scrub_workers_refcnt to refcount_t
-
-Anders Roxell (1):
-      btrfs: let the assertion expression compile in all configs
-
-Dan Carpenter (1):
-      btrfs: drop the lock on error in btrfs_dev_replace_cancel
-
-Dan Robertson (1):
-      btrfs: init csum_list before possible free
-
-David Sterba (9):
-      btrfs: simplify workqueue name when allocating
-      btrfs: split btrfs_set_lock_blocking_rw to read and write helpers
-      btrfs: split btrfs_clear_lock_blocking_rw to read and write helpers
-      btrfs: replace btrfs_set_lock_blocking_rw with appropriate helpers
-      btrfs: open code now trivial btrfs_set_lock_blocking
-      btrfs: simplify waiting loop in btrfs_tree_lock
-      btrfs: merge btrfs_set_lock_blocking_rw with it's caller
-      btrfs: scrub: add assertions for worker pointers
-      btrfs: scrub: remove unused nocow worker pointer
-
-Dennis Zhou (12):
-      btrfs: add helpers for compression type and level
-      btrfs: rename workspaces_list to workspace_manager
-      btrfs: manage heuristic workspace as index 0
-      btrfs: unify compression ops with workspace_manager
-      btrfs: add helper methods for workspace manager init and cleanup
-      btrfs: add compression interface in (get/put)_workspace
-      btrfs: move to function pointers for get/put workspaces
-      btrfs: plumb level through the compression interface
-      btrfs: change set_level() to bound the level passed in
-      btrfs: zstd use the passed through level instead of default
-      btrfs: make zstd memory requirements monotonic
-      btrfs: add zstd compression level support
-
-Filipe Manana (14):
-      Btrfs: do not overwrite scrub error with fault error in scrub ioctl
-      Btrfs: do not overwrite error return value in scrub progress ioctl
-      Btrfs: do not overwrite error return value in the get device stats ioctl
-      Btrfs: setup a nofs context for memory allocation at btrfs_create_tree()
-      Btrfs: setup a nofs context for memory allocation at __btrfs_set_acl
-      Btrfs: remove redundant check for swapfiles when reflinking
-      Btrfs: do not overwrite error return value in the device replace ioctl
-      Btrfs: do not overwrite error return value in the balance ioctl
-      Btrfs: move duplicated nodatasum check into common reflink/dedupe helper
-      Btrfs: fix fsync after succession of renames of different files
-      Btrfs: fix fsync after succession of renames and unlink/rmdir
-      Btrfs: remove no longer needed range length checks for deduplication
-      Btrfs: add missing error handling after doing leaf/node binary search
-      Btrfs: remove assertion when searching for a key in a node/leaf
-
-Johannes Thumshirn (1):
-      btrfs: ensure that a DUP or RAID1 block group has exactly two stripes
-
-Josef Bacik (12):
-      btrfs: make btrfs_destroy_delayed_refs use btrfs_delayed_ref_lock
-      btrfs: make btrfs_destroy_delayed_refs use btrfs_delete_ref_head
-      btrfs: call btrfs_create_pending_block_groups unconditionally
-      btrfs: replace cleaner_delayed_iput_mutex with a waitqueue
-      btrfs: check if there are free block groups for commit
-      btrfs: dump block_rsv details when dumping space info
-      btrfs: don't use global reserve for chunk allocation
-      btrfs: don't enospc all tickets on flush failure
-      btrfs: loop in inode_rsv_refill
-      btrfs: be more explicit about allowed flush states
-      btrfs: reserve extra space during evict
-      btrfs: honor path->skip_locking in backref code
-
-Julia Lawall (1):
-      Btrfs: drop useless LIST_HEAD in merge_reloc_root
-
-Nikolay Borisov (17):
-      btrfs: Make first argument of btrfs_run_delalloc_range directly an inode
-      btrfs: Remove unused arguments from btrfs_get_extent_fiemap
-      btrfs: Refactor btrfs_get_extent_fiemap
-      btrfs: Remove redundant assignment in btrfs_get_extent_fiemap
-      btrfs: Remove inode argument from async_cow_submit
-      btrfs: Remove isize local variable in compress_file_range
-      btrfs: Use ihold instead of igrab in cow_file_range_async
-      btrfs: Remove WARN_ON in btrfs_alloc_delalloc_work
-      btrfs: Document logic regarding inode in async_cow_submit
-      btrfs: Refactor shrink_delalloc
-      btrfs: Remove impossible condition from mergable_maps
-      btrfs: Rename found_type to extent_type in btrfs_get_extent
-      btrfs: Consolidate retval checking of core btree functions
-      btrfs: Remove not_found_em label from btrfs_get_extent
-      btrfs: use WARN_ON in a canonical form btrfs_remove_block_group
-      btrfs: Remove EXTENT_FIRST_DELALLOC bit
-      btrfs: Fix grossly misleading argument names in extent io search
-
-Qu Wenruo (10):
-      btrfs: relocation: Delay reloc tree deletion after merge_reloc_roots
-      btrfs: qgroup: Refactor btrfs_qgroup_trace_subtree_swap
-      btrfs: qgroup: Introduce per-root swapped blocks infrastructure
-      btrfs: qgroup: Use delayed subtree rescan for balance
-      btrfs: qgroup: Cleanup old subtree swap code
-      btrfs: qgroup: Remove duplicated trace points for qgroup_rsv_add/release
-      btrfs: Output ENOSPC debug info in inc_block_group_ro
-      btrfs: extent_io: Kill the forward declaration of flush_write_bio
-      btrfs: qgroup: Move reserved data accounting from btrfs_delayed_ref_head to btrfs_qgroup_extent_record
-      btrfs: qgroup: Make qgroup async transaction commit more aggressive
-
-YueHaibing (2):
-      btrfs: remove set but not used variable 'num_pages'
-      btrfs: Remove unnecessary casts in btrfs_read_root_item
-
- fs/btrfs/acl.c               |   9 ++
- fs/btrfs/async-thread.c      |  10 +-
- fs/btrfs/backref.c           |  22 ++-
- fs/btrfs/compression.c       | 253 ++++++++++++++---------------
- fs/btrfs/compression.h       |  52 +++++-
- fs/btrfs/ctree.c             |  74 ++++-----
- fs/btrfs/ctree.h             |  61 +++++--
- fs/btrfs/delayed-ref.c       |  15 +-
- fs/btrfs/delayed-ref.h       |  11 --
- fs/btrfs/dev-replace.c       |   9 +-
- fs/btrfs/disk-io.c           |  39 +++--
- fs/btrfs/extent-tree.c       | 292 +++++++++++++++++++++------------
- fs/btrfs/extent_io.c         |  87 +++++-----
- fs/btrfs/extent_io.h         |  15 +-
- fs/btrfs/extent_map.c        |   5 +-
- fs/btrfs/extent_map.h        |   1 +
- fs/btrfs/file.c              |   3 +-
- fs/btrfs/inode.c             | 207 +++++++++++++++---------
- fs/btrfs/ioctl.c             |  60 ++-----
- fs/btrfs/locking.c           | 108 ++++++-------
- fs/btrfs/locking.h           |  15 +-
- fs/btrfs/lzo.c               |  31 +++-
- fs/btrfs/qgroup.c            | 372 ++++++++++++++++++++++++++++++++-----------
- fs/btrfs/qgroup.h            | 120 ++++++++++++--
- fs/btrfs/ref-verify.c        |   4 +-
- fs/btrfs/relocation.c        | 119 ++++++++++----
- fs/btrfs/root-tree.c         |   4 +-
- fs/btrfs/scrub.c             |  49 ++++--
- fs/btrfs/super.c             |  13 +-
- fs/btrfs/transaction.c       |   9 +-
- fs/btrfs/tree-defrag.c       |   2 +-
- fs/btrfs/tree-log.c          | 282 ++++++++++++++++++++++++++------
- fs/btrfs/volumes.c           | 202 ++++++++++++-----------
- fs/btrfs/volumes.h           |   5 +-
- fs/btrfs/zlib.c              |  45 +++++-
- fs/btrfs/zstd.c              | 316 ++++++++++++++++++++++++++++++++++--
- include/trace/events/btrfs.h |  30 +---
- include/uapi/linux/btrfs.h   |   2 +
- 38 files changed, 1993 insertions(+), 960 deletions(-)
+-- 
+Jeff Mahoney
+SUSE Labs

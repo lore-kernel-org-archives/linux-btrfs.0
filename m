@@ -2,100 +2,216 @@ Return-Path: <SRS0=W6bw=RH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DE906C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Mar 2019 15:46:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4B95DC43381
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Mar 2019 17:59:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B7B03206B8
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Mar 2019 15:46:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0D6F7206BA
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Mar 2019 17:59:16 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="sRUUc+8H"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727195AbfCDPqG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 4 Mar 2019 10:46:06 -0500
-Received: from mailgw-01.dd24.net ([193.46.215.41]:37685 "EHLO
-        mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726076AbfCDPqG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Mar 2019 10:46:06 -0500
-Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
-        by mailgw-01.dd24.net (Postfix) with ESMTP id 72E415FFAA;
-        Mon,  4 Mar 2019 15:46:04 +0000 (UTC)
-X-Virus-Scanned: Debian amavisd-new at
-        mailpolicy-02.live.igb.homer.key-systems.net
-Received: from smtp.dd24.net ([192.168.1.35])
-        by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
-        with ESMTP id vvE5YDn04ete; Mon,  4 Mar 2019 15:46:02 +0000 (UTC)
-Received: from heisenberg.fritz.box (ppp-82-135-82-31.dynamic.mnet-online.de [82.135.82.31])
-        (using TLSv1.2 with cipher DHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by smtp.dd24.net (Postfix) with ESMTPSA;
-        Mon,  4 Mar 2019 15:46:02 +0000 (UTC)
-Message-ID: <35900bed4a0ecb25b25c8d35be8bd1a5c38b59a8.camel@scientia.net>
-Subject: Re: Reproducer for "compressed data + hole data corruption bug,
- 2018 edition" still works on 4.20.7
-From:   Christoph Anton Mitterer <calestyo@scientia.net>
-To:     fdmanana@gmail.com
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Date:   Mon, 04 Mar 2019 16:46:00 +0100
-In-Reply-To: <CAL3q7H53VWwCU78WgD928NgD=qcKaJd4Kh7sLOY2yv-Cfy9oOg@mail.gmail.com>
-References: <20180823031125.GE13528@hungrycats.org>
-         <20190212030838.GB9995@hungrycats.org>
-         <CAL3q7H7T_NX=D8qimRC55g8V-p0k-ygUiW-K5bxF02r-6XT6Rg@mail.gmail.com>
-         <20190212165916.GA23918@hungrycats.org>
-         <CAL3q7H6eTTw-iTHiQLcJHa5iRRspWxQpfyTQRU1SmcxBqXSppg@mail.gmail.com>
-         <20190212181328.GB23918@hungrycats.org>
-         <CAL3q7H4k=N=0Cv8hYAZkfTfaG8XJgG1KzT5mA_4XnutxGFc8DA@mail.gmail.com>
-         <CAL3q7H6YShEBKDTDZ7_qBoLDMgihP_8NYee_60-LUqd6sF5xZQ@mail.gmail.com>
-         <CAL3q7H6WSe_C7_+D0x1_Z+KdK=k+iM-t2J4pQSO32ZsY4AEZ=Q@mail.gmail.com>
-         <95e4d9825c2565473184765c4d77ae0015d01580.camel@scientia.net>
-         <CAL3q7H53VWwCU78WgD928NgD=qcKaJd4Kh7sLOY2yv-Cfy9oOg@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"
-User-Agent: Evolution 3.30.5-1 
+        id S1727504AbfCDR7P (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 4 Mar 2019 12:59:15 -0500
+Received: from mail-yw1-f65.google.com ([209.85.161.65]:44786 "EHLO
+        mail-yw1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727436AbfCDR7P (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Mar 2019 12:59:15 -0500
+Received: by mail-yw1-f65.google.com with SMTP id x21so4754008ywx.11;
+        Mon, 04 Mar 2019 09:59:14 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=vFn483uWDyWi6+542jYzx7S96Xl1pdANkuogTeY9SDA=;
+        b=sRUUc+8HVUp1uCmLLoOdDDSpn8etBaY3ZzgFr6Uznc3RR+sK9MOWYFjIc9PkX6yOUC
+         VqnasnfBk8nUpWw6Fjhsh+NqwvYYVb2vFTql3msqpEnsbSuqaPLHscjRdFAYfLoYvwuJ
+         2ypwxknAnNzPxrx8O78qkwjNliY2k0d2ezzIKQcGRZEjxFmCG6RcT58QinT8w35OSWVB
+         HYYiDCh18+mYAKW/J1Uen9OPiJ/c3jx2oBqb0smS4bEW2xD9rze73519m38ce6FDgY39
+         AhshLVtOyTmK9NbrCh6LsBHB/FFd6OfloGbcMUhmkh6lFLrANyBSpoLrVoXvqAJVfaz3
+         SNrQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=vFn483uWDyWi6+542jYzx7S96Xl1pdANkuogTeY9SDA=;
+        b=aOrRkK6pVqfb4JvRavSz244oTT0lZhnPN8NB6XjQQRFqTEtwlztOaykJgspk+VjdRp
+         f2bNw45bAr64KNBAQhzteVLZI0rElKBASWtsfkLYiuzlWHSszqPxbrr2rla34bnR0BVX
+         +HpfraH8XR1Pab1/vsMn9JKZT9JptGo7t1tax4DiGKlwIk9X9epZ5zvMZOGFoNQe4hDs
+         Yxdhk4EIIs96wE8bsCuaHG/wdSVDCuv+YFs2LuxBf2cuTMmCDNEIH3X3mvgxeQQZYk+j
+         XiuhXRHfgNh0vvi8sBnm8zawa5XqsjnXuZBKSqN6ATj5XtbFVNsP3bxWCY0D3rvqc3qq
+         fNnA==
+X-Gm-Message-State: APjAAAUfL0h5ZKtKXtlWc4ofxbAmgqM60bm+L5OrXcOsd0+d0j59ZgJI
+        QkrRSfn6SETZC7+Aak4eKhLWHmo/YXEmlCMbxFQ=
+X-Google-Smtp-Source: APXvYqzpLedwPB9LICbA8sU+4TBM7bLkwfHbKOqa3nRQX1eSjtLiPwnQ14JK4HYo2d9lDsFs5hpKi/nPw1//niNEdhM=
+X-Received: by 2002:a25:1488:: with SMTP id 130mr16489457ybu.507.1551722353685;
+ Mon, 04 Mar 2019 09:59:13 -0800 (PST)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
+References: <20190304140622.23997-1-fdmanana@kernel.org> <CAOQ4uxi87QhQHake0L_xVtUYChc3D2kLqho1obq14aG6zCMu6A@mail.gmail.com>
+ <CAL3q7H6ceptNOyf65jbzojbZV5Nq3d0iKvYOvvE=pLaVnpgO2w@mail.gmail.com>
+In-Reply-To: <CAL3q7H6ceptNOyf65jbzojbZV5Nq3d0iKvYOvvE=pLaVnpgO2w@mail.gmail.com>
+From:   Amir Goldstein <amir73il@gmail.com>
+Date:   Mon, 4 Mar 2019 19:59:02 +0200
+Message-ID: <CAOQ4uxhno=ORXpLgLC2O7KoJJXm2sVEtZ8DgiHZi-4p_HmfEwg@mail.gmail.com>
+Subject: Re: [PATCH] generic: add test for fsync after shrinking truncate and rename
+To:     Filipe Manana <fdmanana@kernel.org>
+Cc:     fstests <fstests@vger.kernel.org>,
+        Linux Btrfs <linux-btrfs@vger.kernel.org>,
+        Filipe Manana <fdmanana@suse.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, 2019-02-15 at 12:02 +0000, Filipe Manana wrote:
-> Upgrade to a kernel with the patch (none yet) or build it from
-> source?
-> Not sure what kind of advice you are looking for.
+On Mon, Mar 4, 2019 at 5:23 PM Filipe Manana <fdmanana@kernel.org> wrote:
+>
+> On Mon, Mar 4, 2019 at 3:04 PM Amir Goldstein <amir73il@gmail.com> wrote:
+> >
+> > On Mon, Mar 4, 2019 at 4:44 PM <fdmanana@kernel.org> wrote:
+> > >
+> > > From: Filipe Manana <fdmanana@suse.com>
+> > >
+> > > Test that if we truncate a file to reduce its size, rename it and then
+> > > fsync it, after a power failure the file has a correct size and name.
+> > >
+> >
+> > I am not sure that ext4/xfs semantics guaranty anything about
+> > persisting file name after fsync of file?...
+> >
+> > > This test is motivated by a bug found in btrfs, which is fixed by a
+> > > patch for the linux kernel titled:
+> > >
+> > >   "Btrfs: fix incorrect file size after shrinking truncate and fsync"
+> >
+> > At least the title of this patch says nothing about persisting the
+> > name.
+>
+> Because the bug in btrfs is not about persisting the name, it's about
+> persisting the correct inode size.
+>
 
-Well more something of the kind that Zygo wrote in his mail, i.e some
-explanation of the whole issue in order to find out whether one might
-be affected or not.
+OK. Still AFAIK, ext4/xfs don't guaranty that the name bar will exist
+after power failure unless the parent dir was fsynced.
+If you fsync the parent dir instead of the file after rename, it will
+make the test correct for ext4/xfs (and POSIX for that matter).
+Will that test modification still catch the btrfs bug (pre fix)?
 
+Thanks,
+Amir.
 
-> As I said in the previous reply, and in the patch's changelog [1],
-> the
-> corruption happens at read time.
-> That means nothing stored on disk is corrupted. It's not the end of
-> the world.
-
-Well but there are many cases where data is read and then written
-again... and while Zygo's mail already answers a lot, at least the
-question of whether it could happen on btrfs send/receive is still
-open.
-
-
-My understanding was that btrfs is considered "stable" for the normal
-use cases (so e.g. perhaps without special features like raid56).
-
-Data corruption is always quite serious, even if it's just on reads and
-people may have workloads where data is read (possibly with corruption)
-and (permanently) written again... so the whole thing *could* be quite
-serious and IMO justifies a more thorough explanation for end-users and
-not just a small commit message for developers.
-
-
-Also, while it was really great to see how fast this got fixed then in
-the end... it's also a bit worrying that Zygo apparently reported it
-already some time ago and it got somehow lost.
-
-
-
-Cheers,
-Chris.
-
+> >
+> > >
+> > > This test currently passes on ext4, xfs, f2fs and patched btrfs.
+> > >
+> > > Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> > > ---
+> > >  tests/generic/532     | 66 +++++++++++++++++++++++++++++++++++++++++++++++++++
+> > >  tests/generic/532.out |  8 +++++++
+> > >  tests/generic/group   |  1 +
+> > >  3 files changed, 75 insertions(+)
+> > >  create mode 100755 tests/generic/532
+> > >  create mode 100644 tests/generic/532.out
+> > >
+> > > diff --git a/tests/generic/532 b/tests/generic/532
+> > > new file mode 100755
+> > > index 00000000..64992d85
+> > > --- /dev/null
+> > > +++ b/tests/generic/532
+> > > @@ -0,0 +1,66 @@
+> > > +#! /bin/bash
+> > > +# SPDX-License-Identifier: GPL-2.0
+> > > +# Copyright (C) 2019 SUSE Linux Products GmbH. All Rights Reserved.
+> > > +#
+> > > +# FS QA Test No. 532
+> > > +#
+> > > +# Test that if we truncate a file to reduce its size, rename it and then fsync
+> > > +# it, after a power failure the file has a correct size and name.
+> > > +#
+> > > +seq=`basename $0`
+> > > +seqres=$RESULT_DIR/$seq
+> > > +echo "QA output created by $seq"
+> > > +tmp=/tmp/$$
+> > > +status=1       # failure is the default!
+> > > +trap "_cleanup; exit \$status" 0 1 2 3 15
+> > > +
+> > > +_cleanup()
+> > > +{
+> > > +       _cleanup_flakey
+> > > +       cd /
+> > > +       rm -f $tmp.*
+> > > +}
+> > > +
+> > > +# get standard environment, filters and checks
+> > > +. ./common/rc
+> > > +. ./common/filter
+> > > +. ./common/dmflakey
+> > > +
+> > > +# real QA test starts here
+> > > +_supported_fs generic
+> > > +_supported_os Linux
+> > > +_require_scratch
+> > > +_require_dm_target flakey
+> > > +
+> > > +rm -f $seqres.full
+> > > +
+> > > +_scratch_mkfs >>$seqres.full 2>&1
+> > > +_require_metadata_journaling $SCRATCH_DEV
+> > > +_init_flakey
+> > > +_mount_flakey
+> > > +
+> > > +# Create our test file with an initial size of 8000 bytes, then fsync it,
+> > > +# followed by a truncate that reduces its size down to 3000 bytes.
+> > > +$XFS_IO_PROG -f -c "pwrite -S 0xab 0 8000" \
+> > > +            -c "fsync" \
+> > > +            -c "truncate 3000" \
+> > > +            $SCRATCH_MNT/foo | _filter_xfs_io
+> > > +
+> > > +# Now rename the file and fsync it again.
+> > > +mv $SCRATCH_MNT/foo $SCRATCH_MNT/bar
+> > > +$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/bar
+> > > +
+> > > +# Simulate a power failure and mount the filesystem to check that the file was
+> > > +# persisted with the new name and has a size of 3000 bytes.
+> > > +_flakey_drop_and_remount
+> > > +
+> > > +[ -f $SCRATCH_MNT/bar ] || echo "file name 'bar' is missing"
+> > > +[ -f $SCRATCH_MNT/foo ] && echo "file name 'foo' still exists"
+> > > +
+> > > +echo "File content after power failure:"
+> > > +od -A d -t x1 $SCRATCH_MNT/bar
+> > > +
+> > > +_unmount_flakey
+> > > +
+> > > +status=0
+> > > +exit
+> > > diff --git a/tests/generic/532.out b/tests/generic/532.out
+> > > new file mode 100644
+> > > index 00000000..554fbe2a
+> > > --- /dev/null
+> > > +++ b/tests/generic/532.out
+> > > @@ -0,0 +1,8 @@
+> > > +QA output created by 532
+> > > +wrote 8000/8000 bytes at offset 0
+> > > +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+> > > +File content after power failure:
+> > > +0000000 ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab
+> > > +*
+> > > +0002992 ab ab ab ab ab ab ab ab
+> > > +0003000
+> > > diff --git a/tests/generic/group b/tests/generic/group
+> > > index 31011ac8..7d63f303 100644
+> > > --- a/tests/generic/group
+> > > +++ b/tests/generic/group
+> > > @@ -534,3 +534,4 @@
+> > >  529 auto quick attr
+> > >  530 auto quick unlink
+> > >  531 auto quick unlink
+> > > +532 auto quick log
+> > > --
+> > > 2.11.0
+> > >

@@ -2,192 +2,141 @@ Return-Path: <SRS0=W6bw=RH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 10C4BC43381
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Mar 2019 13:10:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B53BAC43381
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Mar 2019 14:06:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D28F22075B
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Mar 2019 13:10:02 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="AD+ZGGNT"
+	by mail.kernel.org (Postfix) with ESMTP id 8250F20815
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Mar 2019 14:06:19 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1551708379;
+	bh=uadPNLQ4/qNP/mQrjhZoG55yGKfmVgE/I8ZSfTAxMCA=;
+	h=From:To:Subject:Date:List-ID:From;
+	b=w4Z/WIy4NXZSap3uNIwxq8XJ/LaaXS1x8x6z7nLpmm3ZKWhYUiXQtei0qe9CtG3Ee
+	 mtXIkjsLKa5Qp3uNjq6+EJojHda68eg5pyFUZuat47BKJIv9PNTOveTgFsFN+1AAnG
+	 3cd5PKafWa+qOoUGulxHHe54jcaljOxIDqX6bcQs=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726664AbfCDNKB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 4 Mar 2019 08:10:01 -0500
-Received: from mail-lf1-f66.google.com ([209.85.167.66]:36964 "EHLO
-        mail-lf1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726094AbfCDNKB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Mar 2019 08:10:01 -0500
-Received: by mail-lf1-f66.google.com with SMTP id z196so3462741lff.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Mar 2019 05:09:59 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:from:date:message-id:subject:to;
-        bh=oEmf6GlalJQuzcPWSKb1XfOW7QtfHkgnlyedADgUdHI=;
-        b=AD+ZGGNTrOF7t8xK6v2BIaAbVVOx0xMOLTI3nUMFGs1pwtVFpoNnxB+saQ27/kekeL
-         TfS+EYSuPpVATqhUMUR/nbj8qkNM+CRabs3UT85c0HkC0368GLHNY45Yg4TIgGlNADRb
-         BSOdMoTIHBU38qzUAKaq53WvVyNzs/u6puGHqsugOhJpwbJO9DnGyKsjAtgEBiRyCk4g
-         Z6+QIUCf8gtFrWj+NNMxVKurv4EH+WI6tLRIQDVocXRuPw4lYnbqrejbSzRrrZRsSpxl
-         l+krp3xnQHmBqhc8x1Ch17no6V4QrAmeuOrEFrI5YHrisZ1zZDVa3DWOHzZfu4eXLLuQ
-         zOmw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
-        bh=oEmf6GlalJQuzcPWSKb1XfOW7QtfHkgnlyedADgUdHI=;
-        b=kZVD84y3ZzHf2BlMvRXMpex69OkC1Dw++DNVN+MH4TtXoLE5U11nTWMQhf0mw99qVw
-         BgXbUsQJ0kD+Fq6m+DR8fl0xrC4J5ZosvTSXnd0ml8sS3ZBrlF86eNCMyL+YPGMYgKZP
-         FFDATjrPYxzTImFoF+VpEi1pPz0typjvlI5zde43PKEN/T2V94LpVrpVp/9HksgWKxkj
-         +G5R6+bDYGp0jBGefyUs8f38PaAcEXet81NQxvCJq2/YLs6kyIIfa+Ix7M091IcCMyGG
-         C87P7qtDT3uEWTHeQEFnm1VvANmY7PyletXC4W2m4b6c9qzlneqC4uuJPnm3jF4msKP+
-         4n8w==
-X-Gm-Message-State: APjAAAVH4IZ+41U/xBvaXJp+21PqtCltlyB4urDFv9Fe0zJbfqI7yuGH
-        xAwbuvzLMmYuroPVBOo4Qsg3jhwFU1WV42nmIhvt5oVC
-X-Google-Smtp-Source: APXvYqw2Zi4tk90lcunVsiW7APOrMWrdAT/fBkWMfLCSpkZhw2txELCDSe40lGRmkwL03VgRxChGQnqBn3UtmCMyuEg=
-X-Received: by 2002:a19:3f44:: with SMTP id m65mr9894994lfa.136.1551704998089;
- Mon, 04 Mar 2019 05:09:58 -0800 (PST)
-MIME-Version: 1.0
-From:   Richard Sanger <rsangerarj@gmail.com>
-Date:   Tue, 5 Mar 2019 02:09:46 +1300
-Message-ID: <CAN6QFNziqSoTyvJH3MKPQqUGGS+Wj-Om4W5ajL6QnK-E2OAj=w@mail.gmail.com>
-Subject: Btrfs balance convert does not balance reads+dealloc evenly across
- disks, any proper fix?
+        id S1726592AbfCDOGS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 4 Mar 2019 09:06:18 -0500
+Received: from mail.kernel.org ([198.145.29.99]:43870 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726111AbfCDOGR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 4 Mar 2019 09:06:17 -0500
+Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 306EB20815
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Mar 2019 14:06:16 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1551708376;
+        bh=uadPNLQ4/qNP/mQrjhZoG55yGKfmVgE/I8ZSfTAxMCA=;
+        h=From:To:Subject:Date:From;
+        b=Pq7GV8L2ExVuhAUkep9XE4X6UjjH9TdzUilYSAmvKW3d9xrVoHKTRlYL/3uvLykAH
+         My4q4rh3Ayg5vDag0o4PLYNGTlsQNBS4c9eRXg0eTsZE2+CMzSDYSYHQ81Cee7Swr/
+         zFwz2umLFX1TTeZrAMp8hZQJLSrk3BEhTifzmJ5c=
+From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Subject: [PATCH] Btrfs: fix incorrect file size after shrinking truncate and fsync
+Date:   Mon,  4 Mar 2019 14:06:12 +0000
+Message-Id: <20190304140612.23950-1-fdmanana@kernel.org>
+X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+From: Filipe Manana <fdmanana@suse.com>
 
-Firstly, thanks for all the development on btrfs, I've been using it
-on quite a few systems without any significant issues and have found
-features like snapshots very useful.
+If we do a shrinking truncate against an inode which is already present
+in the respective log tree and then rename it, as part of logging the new
+name we end up logging an inode item that reflects the old size of the
+file (the one which we previously logged) and not the new smaller size.
+The decision to preserve the size previously logged was added by commit
+1a4bcf470c886b ("Btrfs: fix fsync data loss after adding hard link to
+inode") in order to avoid data loss after replaying the log. However that
+decision is only needed for the case the logged inode size is smaller then
+the current size of the inode, as explained in that commit's change log.
+If the current size of the inode is smaller then the previously logged
+size, we know a shrinking truncate happened and therefore need to use
+that smaller size.
 
-I recently decided that raid6 was stable enough for data with raid1
-metadata, and went about converting a raid1 array. But, I ran into a
-curious problem when trying to convert existing raid1 data to raid6
-with a six drive array.
-From what I can tell balance doesn't select the raid1 chunks it
-converts evenly from all drives. As a result, one pair of drives can
-be converted first which causes the remaining drives to fill up with
-raid6 data before having a chance to free any data raid1. When this
-happens the 6-way raid6 can degrade to 5-way, 4-way, or 3-way raid6.
+Example to trigger the problem:
 
-What is the selection strategy is btrfs balance using? e.g. starting
-from the first chunk/drive, by file creation/modification, random?
-And is there a reason for this behaviour and can it be changed?
+  $ mkfs.btrfs -f /dev/sdb
+  $ mount /dev/sdb /mnt
 
-As a solution, I'm now forcing an even balance by polling device usage
-and adding the devid filter to the balance.
-Here's that script for anyone else in a similar situation.
-https://gist.github.com/rsanger/ad384c0fd3f4a003d3fbd9f097db8443
+  $ xfs_io -f -c "pwrite -S 0xab 0 8000" /mnt/foo
+  $ xfs_io -c "fsync" /mnt/foo
+  $ xfs_io -c "truncate 3000" /mnt/foo
 
-Below are the full details of what I've seen:
-I'm running a recent kernel from stretch backports: Debian
-4.19.16-1~bpo9+1 (2019-02-07) x86_64 GNU/Linux
-I have a 6x8tb btrfs array, mounted at /media/Kilo.
-It has been added to over time, originally starting with 1 or 2 drives.
+  $ mv /mnt/foo /mnt/bar
+  $ xfs_io -c "fsync" /mnt/bar
 
-Before conversion 'btrfs device usage' the drives looked something like this:
-------------------------------------------------------------------
-5 drives approx:
-Device size: 7.28TiB
-Data, RAID1: 6.9TiB
-...
-Unallocated: 500GiB
+  <power failure>
 
-1 drive, replaced a 4TB with an 8TB before the conversion:
-Device size: 7.28TiB
-Data, RAID1: 3.8TiB
-...
-Unallocated: 3.8TiB
-------------------------------------------------------------------
+  $ mount /dev/sdb /mnt
+  $ od -t x1 -A d /mnt/bar
+  0000000 ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab
+  *
+  0008000
 
-I started conversion using:
-~ btrfs balance start -dconvert=raid6 /media/Kilo/
+Once we rename the file, we log its name (and inode item), and because
+the inode was already logged before in the current transaction, we log it
+with a size of 8000 bytes because that is the size we previously logged
+(with the first fsync). As part of the rename, besides logging the inode,
+we do also sync the log, which is done since commit d4682ba03ef618
+("Btrfs: sync log after logging new name"), so the next fsync against our
+inode is effectively a no-op, since no new changes happened since the
+rename operation. Even if did not sync the log during the rename
+operation, the same problem (fize size of 8000 bytes instead of 3000
+bytes) would be visible after replaying the log if the log ended up
+getting synced to disk through some other means, such as for example by
+fsyncing some other modified file. In the example above the fsync after
+the rename operation is there just because not every filesystem may
+guarantee logging/journalling the inode (and syncing the log/journal)
+during the rename operation, for example it is needed for f2fs, but not
+for ext4 and xfs.
 
-Nearing 50% completion I noticed the drive usage looked like this,
-annotated with my interpretation:
-------------------------------------------------------------------
-/dev/sda1, ID: 1
-   Device size:             7.28TiB
-   Device slack:              0.00B
-   Data,RAID1:              3.88TiB
-   Data,RAID6:              1.76TiB <- 6-way
-   Data,RAID6:              7.63GiB <- ?
-   Data,RAID6:              1.62TiB <- 4-way
-   Metadata,RAID1:         12.00GiB
-   System,RAID1:           32.00MiB
-   Unallocated:             2.92GiB
+Fix this scenario by, when logging a new name (which is triggered by
+rename and link operations), using the current size of the inode instead
+of the previously logged inode size.
 
-/dev/sdb1, ID: 6
-   Device size:             7.28TiB
-   Device slack:            3.00KiB
-   Data,RAID1:              1.86TiB
-   Data,RAID6:              1.76TiB <- 6-way
-   Data,RAID6:              8.37GiB <- ??? 2-way
-   Data,RAID6:              1.62TiB <- 4-way
-   Data,RAID6:            320.00KiB <- 3-way
-   Metadata,RAID1:          2.00GiB
-   Unallocated:             2.02TiB
+A test case for fstests follows soon.
 
-/dev/sdd1, ID: 2
-   Device size:             7.28TiB
-   Device slack:            3.50KiB
-   Data,RAID1:              3.88TiB
-   Data,RAID6:              1.76TiB <- 6-way
-   Data,RAID6:              8.37GiB <- ??? 2-way
-   Data,RAID6:              1.62TiB <- 4-way
-   Data,RAID6:            320.00KiB <- 3-way
-   Metadata,RAID1:          7.00GiB
-   System,RAID1:           32.00MiB
-   Unallocated:             5.18GiB
+Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=202695
+Reported-by: Seulbae Kim <seulbae@gatech.edu>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/tree-log.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
-/dev/sdf1, ID: 3
-   Device size:             7.28TiB
-   Device slack:            3.50KiB
-   Data,RAID1:              2.27TiB
-   Data,RAID6:              1.76TiB <- 6-way
-   Data,RAID6:              6.57GiB <- ?
-   Data,RAID6:              1.62TiB <- 4-way
-   Metadata,RAID1:          7.00GiB
-   Unallocated:             1.62TiB
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 81a357a32837..41b66ea4060c 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -4549,6 +4549,19 @@ static int logged_inode_size(struct btrfs_root *log, struct btrfs_inode *inode,
+ 		item = btrfs_item_ptr(path->nodes[0], path->slots[0],
+ 				      struct btrfs_inode_item);
+ 		*size_ret = btrfs_inode_size(path->nodes[0], item);
++		/*
++		 * If the in-memory inode's i_size is smaller then the inode
++		 * size stored in the btree, return the inode's i_size, so
++		 * that we get a correct inode size after replaying the log
++		 * when before a power failure we had a shrinking truncate
++		 * followed by addition of a new name (rename / new hard link).
++		 * Otherwise return the inode size from the btree, to avoid
++		 * data loss when replaying a log due to previously doing a
++		 * write that expands the inode's size and logging a new name
++		 * immediately after.
++		 */
++		if (*size_ret > inode->vfs_inode.i_size)
++			*size_ret = inode->vfs_inode.i_size;
+ 	}
+ 
+ 	btrfs_release_path(path);
+-- 
+2.11.0
 
-/dev/sdg1, ID: 5
-   Device size:             7.28TiB
-   Device slack:            3.50KiB
-   Data,RAID1:              5.49TiB
-   Data,RAID6:              1.76TiB <- 6-way
-   Data,RAID6:             12.66GiB <- ?
-   Data,RAID6:            320.00KiB <- 3-way
-   Data,RAID6:              3.77GiB <- ?
-   Metadata,RAID1:          6.00GiB
-   Unallocated:             1.00MiB
-
-/dev/sdh1, ID: 4
-   Device size:             7.28TiB
-   Device slack:            3.50KiB
-   Data,RAID1:              5.49TiB
-   Data,RAID6:              1.76TiB <- 6-way
-   Data,RAID6:              7.12GiB <- ?
-   Data,RAID6:              6.31GiB <- ?
-   Metadata,RAID1:          8.00GiB
-   Unallocated:             1.00MiB
-------------------------------------------------------------------
-From what I can see disks 4 and 5 have filled up, and balance convert
-is creating 4-way raid6, not 6-way? At this point, I cancelled the
-balance and started using the script mentioned earlier.
-
-So now I'm in this situation is there anyway to filter to fix just the
-non 6-way raid-6 or will I have to run a full balance again?
-
-It would be great to see the balance operation improved in the future
-to avoid such situations. I can lodge a proper bug report if that is
-best.
-
-Thanks,
-Richard Sanger

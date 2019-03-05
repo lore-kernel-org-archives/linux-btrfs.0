@@ -2,59 +2,70 @@ Return-Path: <SRS0=ObWa=RI=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5325FC43381
-	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Mar 2019 13:29:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B82FBC43381
+	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Mar 2019 13:35:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 24CA0206DD
-	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Mar 2019 13:29:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8DC3B206DD
+	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Mar 2019 13:35:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727705AbfCEN3F (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 5 Mar 2019 08:29:05 -0500
-Received: from mx2.suse.de ([195.135.220.15]:47942 "EHLO mx1.suse.de"
+        id S1728422AbfCENfp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 5 Mar 2019 08:35:45 -0500
+Received: from mx2.suse.de ([195.135.220.15]:48888 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726098AbfCEN3F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 5 Mar 2019 08:29:05 -0500
+        id S1727325AbfCENfo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 5 Mar 2019 08:35:44 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 650D4AF9A;
-        Tue,  5 Mar 2019 13:29:04 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id A4857AB42;
+        Tue,  5 Mar 2019 13:35:43 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id CD411DA851; Tue,  5 Mar 2019 14:30:22 +0100 (CET)
-Date:   Tue, 5 Mar 2019 14:30:22 +0100
+        id EC898DA851; Tue,  5 Mar 2019 14:37:01 +0100 (CET)
+Date:   Tue, 5 Mar 2019 14:37:01 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Adam Borowski <kilobyte@angband.pl>
-Cc:     David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
-        Mark Fasheh <mfasheh@versity.com>
-Subject: Re: [PATCH resend 2/2] btrfs-progs: defrag: open files RO on new
- enough kernels
-Message-ID: <20190305133022.GY31119@twin.jikos.cz>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] btrfs-progs: gitignore: Ignore hidden files
+Message-ID: <20190305133701.GZ31119@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Adam Borowski <kilobyte@angband.pl>,
-        linux-btrfs@vger.kernel.org, Mark Fasheh <mfasheh@versity.com>
-References: <20190225181644.10262-1-kilobyte@angband.pl>
- <20190225181644.10262-2-kilobyte@angband.pl>
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20190228022206.16356-1-wqu@suse.com>
+ <20190305122709.GV31119@twin.jikos.cz>
+ <b8d87129-e7a0-7375-1bc8-32e4076ed193@gmx.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <20190225181644.10262-2-kilobyte@angband.pl>
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <b8d87129-e7a0-7375-1bc8-32e4076ed193@gmx.com>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Feb 25, 2019 at 07:16:44PM +0100, Adam Borowski wrote:
-> Defragging an executable conflicts both way with it being run, resulting in
-> ETXTBSY.  This either makes defrag fail or prevents the program from being
-> executed.
+On Tue, Mar 05, 2019 at 08:35:39PM +0800, Qu Wenruo wrote:
 > 
-> Kernels 4.19-rc1 and later allow defragging files you could have possibly
-> opened rw, even if the passed descriptor is ro (commit 616d374efa23).
 > 
-> Signed-off-by: Adam Borowski <kilobyte@angband.pl>
+> On 2019/3/5 下午8:27, David Sterba wrote:
+> > On Thu, Feb 28, 2019 at 10:22:06AM +0800, Qu Wenruo wrote:
+> >> A lot of editor/IDE related config files are dotfiles, like .vimrc
+> >> or .clang_complete.
+> >>
+> >> Instead of adding gitignore entry for each editor/IDE, just ignore all
+> >> dotfiles.
+> > 
+> > Fortunatelly it still works for tracked dotfiles like .travis.yml and
+> > .gitignore itself.
+> 
+> Didn't notice .travis.yml, but indeed i should notice .gitignore.
+> 
+> Any idea what's the correct way to handle them?
+> Just current .* or adding each possible dotfile?
 
-Applied, thanks.
+I've left .* and tested that changes to .gitignore or .travis.yml are
+recognized (diff, commit).

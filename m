@@ -2,32 +2,34 @@ Return-Path: <SRS0=mVxD=RJ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0A683C43381
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Mar 2019 06:19:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A35E4C43381
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Mar 2019 06:19:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CFE442064A
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Mar 2019 06:19:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7CE692064A
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Mar 2019 06:19:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726386AbfCFGTN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 6 Mar 2019 01:19:13 -0500
-Received: from mx2.suse.de ([195.135.220.15]:48146 "EHLO mx1.suse.de"
+        id S1727181AbfCFGTQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 6 Mar 2019 01:19:16 -0500
+Received: from mx2.suse.de ([195.135.220.15]:48156 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725747AbfCFGTN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 6 Mar 2019 01:19:13 -0500
+        id S1725747AbfCFGTQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 6 Mar 2019 01:19:16 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 175C9ADD3
-        for <linux-btrfs@vger.kernel.org>; Wed,  6 Mar 2019 06:19:12 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 5A340ADD7
+        for <linux-btrfs@vger.kernel.org>; Wed,  6 Mar 2019 06:19:14 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH RFC 0/3] btrfs: Performance profiler support
-Date:   Wed,  6 Mar 2019 14:19:04 +0800
-Message-Id: <20190306061907.29685-1-wqu@suse.com>
+Subject: [PATCH RFC 1/3] btrfs: Introduce performance profiler
+Date:   Wed,  6 Mar 2019 14:19:05 +0800
+Message-Id: <20190306061907.29685-2-wqu@suse.com>
 X-Mailer: git-send-email 2.21.0
+In-Reply-To: <20190306061907.29685-1-wqu@suse.com>
+References: <20190306061907.29685-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -35,79 +37,187 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This patchset can be fetched from github:
-https://github.com/adam900710/linux/tree/perf_tree_lock
-Which is based on v5.0-rc7 tag.
+This patch introduce the skeleton of btrfs performance profiler.
 
-Although we have ftrace/perf to do various performance analyse, under most
-case the granularity is too small, resulting data flood for users.
+The objective of btrfs performance profiler is to provide various
+indicator to locate possible performance bottleneck.
 
-This RFC patchset provides a btrfs specific performance profiler.
-It calculates certain function duration and account the duration.
+Initial btrfs profiler only supports sleepable tree lock anaylyse for
+the following trees:
+- fs/subvolume trees
+- extent tree
+- root tree
+- all other trees
 
-The result is provided through RO sysfs interface,
-/sys/fs/btrfs/<FSID>/profiler.
+This patch is just the basic skeleton for alloc/free.
 
-The content of that file is genreated when read.
-Users can have full control on the sample resolution.
-
-The example content can be found in the last patch.
-
-One example using the interface to profile fsstress can be found here:
-https://docs.google.com/spreadsheets/d/1BVng8hqyyxFWPQF_1N0cpwiCA6R3SXtDTHmRqo8qyvo/edit?usp=sharing
-
-The test script can be found here:
-https://gist.github.com/adam900710/ca47b9a8d4b8db7168b261b6fba71ff1
-
-The interesting result from the graph is:
-- Concurrency on fs tree is only high for the initial 25 seconds
-  My initial expectation is, the hotness on fs tree should be more or
-  less stable. Which looks pretty interesting
-
-- Then extent tree get more concurrency after 25 seconds
-  This again breaks my expectation. As write to extent tree should only
-  be triggered by delayed ref. So there is something interesting here
-  too.
-
-- Root tree is pretty cold
-  Since the test is only happening on fs tree, it's expected to be less
-  racy.
-  
-- There is some minor load on other trees.
-  My guess is, that's from csum tree.
-
-Although the patchset is relatively small, there are some design points
-need extra commends before the patchset get larger and larger.
-
-- How should this profiler get enabled?
-  Should this feature get enabled by mount option or kernel config?
-  Or just let it run for all kernel build?
-  Currently the overhead should be pretty small, but the overhead should
-  be larger and larger with new telemetry.
-
-- Design of the interface
-  Is this a valid usage of sysfs or an abuse?
-  And if the content can be improved for both human or program?
-
-- Idea on new telemetry
-  My plan is to add transaction wait time.
-
-Qu Wenruo (3):
-  btrfs: Introduce performance profiler
-  btrfs: locking: Add hooks for btrfs perf
-  btrfs: perf: Add RO sysfs interface to collect perf result
-
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
  fs/btrfs/Makefile  |  2 +-
- fs/btrfs/ctree.h   |  3 ++
- fs/btrfs/disk-io.c |  6 +++
- fs/btrfs/locking.c | 11 ++++++
- fs/btrfs/perf.c    | 92 ++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/perf.h    | 44 ++++++++++++++++++++++
- fs/btrfs/sysfs.c   | 39 ++++++++++++++++++++
- 7 files changed, 196 insertions(+), 1 deletion(-)
+ fs/btrfs/ctree.h   |  3 +++
+ fs/btrfs/disk-io.c |  6 ++++++
+ fs/btrfs/perf.c    | 52 ++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/perf.h    | 27 ++++++++++++++++++++++++
+ 5 files changed, 89 insertions(+), 1 deletion(-)
  create mode 100644 fs/btrfs/perf.c
  create mode 100644 fs/btrfs/perf.h
 
+diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
+index ca693dd554e9..7b20d93e4988 100644
+--- a/fs/btrfs/Makefile
++++ b/fs/btrfs/Makefile
+@@ -10,7 +10,7 @@ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
+ 	   export.o tree-log.o free-space-cache.o zlib.o lzo.o zstd.o \
+ 	   compression.o delayed-ref.o relocation.o delayed-inode.o scrub.o \
+ 	   reada.o backref.o ulist.o qgroup.o send.o dev-replace.o raid56.o \
+-	   uuid-tree.o props.o free-space-tree.o tree-checker.o
++	   uuid-tree.o props.o free-space-tree.o tree-checker.o perf.o
+ 
+ btrfs-$(CONFIG_BTRFS_FS_POSIX_ACL) += acl.o
+ btrfs-$(CONFIG_BTRFS_FS_CHECK_INTEGRITY) += check-integrity.o
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 7a2a2621f0d9..a64f81da0c5e 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1163,6 +1163,9 @@ struct btrfs_fs_info {
+ 	spinlock_t swapfile_pins_lock;
+ 	struct rb_root swapfile_pins;
+ 
++	/* performance profiler */
++	struct btrfs_perf_profiler *profiler;
++
+ #ifdef CONFIG_BTRFS_FS_REF_VERIFY
+ 	spinlock_t ref_verify_lock;
+ 	struct rb_root block_tree;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 6a2a2a951705..a2a4ae344c38 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -38,6 +38,7 @@
+ #include "compression.h"
+ #include "tree-checker.h"
+ #include "ref-verify.h"
++#include "perf.h"
+ 
+ #ifdef CONFIG_X86
+ #include <asm/cpufeature.h>
+@@ -2608,6 +2609,9 @@ int open_ctree(struct super_block *sb,
+ 	int clear_free_space_tree = 0;
+ 	int level;
+ 
++	fs_info->profiler = btrfs_perf_alloc_profiler();
++	if (IS_ERR(fs_info->profiler))
++		return PTR_ERR(fs_info->profiler);
+ 	tree_root = fs_info->tree_root = btrfs_alloc_root(fs_info, GFP_KERNEL);
+ 	chunk_root = fs_info->chunk_root = btrfs_alloc_root(fs_info, GFP_KERNEL);
+ 	if (!tree_root || !chunk_root) {
+@@ -3330,6 +3334,7 @@ int open_ctree(struct super_block *sb,
+ fail:
+ 	btrfs_free_stripe_hash_table(fs_info);
+ 	btrfs_close_devices(fs_info->fs_devices);
++	btrfs_perf_free_profiler(fs_info);
+ 	return err;
+ 
+ recovery_tree_root:
+@@ -4043,6 +4048,7 @@ void close_ctree(struct btrfs_fs_info *fs_info)
+ 	btrfs_free_stripe_hash_table(fs_info);
+ 	btrfs_free_ref_cache(fs_info);
+ 
++	btrfs_perf_free_profiler(fs_info);
+ 	while (!list_empty(&fs_info->pinned_chunks)) {
+ 		struct extent_map *em;
+ 
+diff --git a/fs/btrfs/perf.c b/fs/btrfs/perf.c
+new file mode 100644
+index 000000000000..2880111f3b0c
+--- /dev/null
++++ b/fs/btrfs/perf.c
+@@ -0,0 +1,52 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Copyright (C) 2019 SUSE Linux Products GmbH. All Rights Reserved.
++ */
++
++#include "perf.h"
++
++/*
++ * Allocate and initialize the performance profiler
++ *
++ * Return valid pointer if everything worked.
++ * Return error pointer if something went wrong.
++ */
++struct btrfs_perf_profiler *btrfs_perf_alloc_profiler(void)
++{
++	struct btrfs_perf_profiler *profiler;
++	int ret;
++	int last_failed;
++	int i;
++
++	profiler = kmalloc(sizeof(*profiler), GFP_KERNEL);
++	if (!profiler)
++		return ERR_PTR(-ENOMEM);
++	for (i = 0; i < BTRFS_PERF_LAST; i++) {
++		ret = percpu_counter_init(&profiler->perf_counters[i], 0,
++					  GFP_KERNEL);
++		if (ret < 0) {
++			last_failed = i;
++			goto cleanup;
++		}
++	}
++	profiler->last_sample = ktime_get_ns();
++	return profiler;
++cleanup:
++	for (i = 0; i < last_failed; i++)
++		percpu_counter_destroy(&profiler->perf_counters[i]);
++	return ERR_PTR(ret);
++}
++
++void btrfs_perf_free_profiler(struct btrfs_fs_info *fs_info)
++{
++	struct btrfs_perf_profiler *profiler = fs_info->profiler;
++	int i;
++
++	if (!profiler)
++		return;
++	fs_info->profiler = NULL;
++	for (i = 0; i < BTRFS_PERF_LAST; i++)
++		percpu_counter_destroy(&profiler->perf_counters[i]);
++	kfree(profiler);
++}
++
+diff --git a/fs/btrfs/perf.h b/fs/btrfs/perf.h
+new file mode 100644
+index 000000000000..9dbea6458d86
+--- /dev/null
++++ b/fs/btrfs/perf.h
+@@ -0,0 +1,27 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Copyright (C) 2019 SUSE Linux Products GmbH. All Rights Reserved.
++ */
++
++#ifndef BTRFS_PERF_H
++#define BTRFS_PERF_H
++
++#include "ctree.h"
++
++enum {
++	BTRFS_PERF_TREE_LOCK_FS,
++	BTRFS_PERF_TREE_LOCK_EXTENT,
++	BTRFS_PERF_TREE_LOCK_ROOT,
++	BTRFS_PERF_TREE_LOCK_OTHER,
++	BTRFS_PERF_LAST,
++};
++
++struct btrfs_perf_profiler {
++	/* timestamp (ns) of last sample */
++	u64 last_sample;
++	struct percpu_counter perf_counters[BTRFS_PERF_LAST];
++};
++
++struct btrfs_perf_profiler *btrfs_perf_alloc_profiler(void);
++void btrfs_perf_free_profiler(struct btrfs_fs_info *fs_info);
++#endif
 -- 
 2.21.0
 

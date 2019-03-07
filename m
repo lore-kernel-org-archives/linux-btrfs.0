@@ -2,58 +2,81 @@ Return-Path: <SRS0=nVQC=RK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 88AC6C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Mar 2019 16:03:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0F57AC43381
+	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Mar 2019 16:10:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5EDD820652
-	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Mar 2019 16:03:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DACF420851
+	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Mar 2019 16:10:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726214AbfCGQDm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 7 Mar 2019 11:03:42 -0500
-Received: from mx2.suse.de ([195.135.220.15]:57662 "EHLO mx1.suse.de"
+        id S1726259AbfCGQKv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 7 Mar 2019 11:10:51 -0500
+Received: from mx2.suse.de ([195.135.220.15]:58566 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726186AbfCGQDl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 7 Mar 2019 11:03:41 -0500
+        id S1726186AbfCGQKv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 7 Mar 2019 11:10:51 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A3B94AC69;
-        Thu,  7 Mar 2019 16:03:40 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 04D65AC69;
+        Thu,  7 Mar 2019 16:10:49 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id DCBB1DA83C; Thu,  7 Mar 2019 17:04:54 +0100 (CET)
-Date:   Thu, 7 Mar 2019 17:04:53 +0100
+        id 5F620DA83C; Thu,  7 Mar 2019 17:12:06 +0100 (CET)
+Date:   Thu, 7 Mar 2019 17:12:05 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: remove WARN_ON() in log_dir_items
-Message-ID: <20190307160452.GI31119@twin.jikos.cz>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org, linux-perf-users@vger.kernel.org
+Subject: Re: [PATCH RFC 0/3] btrfs: Performance profiler support
+Message-ID: <20190307161203.GJ31119@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
-        kernel-team@fb.com, linux-btrfs@vger.kernel.org
-References: <20190306221304.29503-1-josef@toxicpanda.com>
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+        linux-perf-users@vger.kernel.org
+References: <20190306061907.29685-1-wqu@suse.com>
+ <20190307140223.GH31119@twin.jikos.cz>
+ <ccf67c41-752a-6812-0de7-34f39c37ecac@gmx.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190306221304.29503-1-josef@toxicpanda.com>
+In-Reply-To: <ccf67c41-752a-6812-0de7-34f39c37ecac@gmx.com>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Mar 06, 2019 at 05:13:04PM -0500, Josef Bacik wrote:
-> When Filipe added the recursive directory logging stuff he specifically
-> didn't take the directory i_mutex for the children directories that we
-> need to log because of lockdep.  This is generally fine, but can lead to
-> this WARN_ON() tripping if we happen to run delayed deletion's in
-> between our first search and our second search of dir_item/dir_indexes
-> for this directory.  We expect this to happen, so the WARN_ON() isn't
-> necessary.  Drop the WARN_ON() and add a comment so we know why this
-> case can happen.
+On Thu, Mar 07, 2019 at 10:18:49PM +0800, Qu Wenruo wrote:
+> > Well, most of that is answered by 'figure out how to use tracepoints and
+> > perf for that'.
+> > 
+> > If there were not a whole substystem, actively maintained and
+> > documented, implementing something like that might help, but that's not
+> > the case.
+> > 
+> > I see what you were able to understand from the results, but it's more
+> > like a custom analysis tool that should not merged as-is. It brings a
+> > whole new interface and that's always hard to get right with all the
+> > mistakes ahead that somebody has probably solved already.
+> > 
+> > It would be good to have list of the limitations of perf you see, and we
+> > can find a solution ourselves or ask elsewhere.
 > 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> Add linux-perf-users mail list.
+> 
+> I should mention the problem of ftrace (or my perf skill) in cover letter.
+> 
+> The biggest problem is the conflicts between detailed function execution
+> duration and classification.
+> 
+> For tree lock case, indeed we can use function graph to get execution
+> duration of btrfs_tree_read_lock() and btrfs_tree_lock().
+> But that's all. We can't really do much classification.
+> 
+> If just use trace event, with trace event added, then we can't get the
+> execution duration.
 
-Added to misc-next, thanks.
+I think you can save the start and end times and put the delta to the
+tracepoint output.

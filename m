@@ -2,143 +2,102 @@ Return-Path: <SRS0=nVQC=RK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C2349C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Mar 2019 07:52:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 77696C43381
+	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Mar 2019 09:34:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 88B5B2063F
-	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Mar 2019 07:52:18 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2FB8620835
+	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Mar 2019 09:34:28 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="oGW+MdyP"
+	dkim=pass (2048-bit key) header.d=zadara-com.20150623.gappssmtp.com header.i=@zadara-com.20150623.gappssmtp.com header.b="Q0yOVCoH"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726148AbfCGHwR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 7 Mar 2019 02:52:17 -0500
-Received: from mail-yw1-f66.google.com ([209.85.161.66]:40990 "EHLO
-        mail-yw1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725554AbfCGHwR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Mar 2019 02:52:17 -0500
-Received: by mail-yw1-f66.google.com with SMTP id q128so12551490ywg.8;
-        Wed, 06 Mar 2019 23:52:16 -0800 (PST)
+        id S1726134AbfCGJe1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 7 Mar 2019 04:34:27 -0500
+Received: from mail-io1-f48.google.com ([209.85.166.48]:39698 "EHLO
+        mail-io1-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725747AbfCGJe1 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Mar 2019 04:34:27 -0500
+Received: by mail-io1-f48.google.com with SMTP id x3so12882308ior.6
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 Mar 2019 01:34:26 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=LuGQvvG4Dltf0AzmrxGD+ka+45Stojh5hh4VdPeaDRw=;
-        b=oGW+MdyPf1WPK9u+teJZG/0U+jBR81HjJi7T1op6On1gEumX2KhFWZjEp0Qtla8+LN
-         60dhRI6SZ0s6IeF3WMR5cr6wQUUkBDa5+Hu7oFE1/F19aGdQXPxymM17H8mwGlI6wr0x
-         wseebMIOmeX04vqcKkKmED0MBTNz1CrAm5FFt8tcqzVirFhSBtM7M/JkFtB5/3P5QjjO
-         /vRuuXh7L0Fk1ODgKFykxs/7L3hQ8lexeebS1fcXMvCQsSjtDsGgdvWiY9bTa1lYRhVl
-         lsSZFpD7a53hEFL6OA4jaNiKKzkeIpOyJaRM41VBr+AW6zwaJgkkdc9zRPrl8Xvteye+
-         FYTA==
+        d=zadara-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:from:date:message-id:subject:to:cc;
+        bh=LmFAdedJTtSF8+hERvo5cnFDZrLSIgoTm04Z2nQkVBI=;
+        b=Q0yOVCoHZvX5X9MmuacaQlw+e6/xX4zFnE0sA8dJB8XWeEvNSuHWn6lL/3xu+DTTZ4
+         wi5T43nO6RbH99/oG4LQhtuDx4n/VqqlKUDKawnYtn+yYr4uJraILQI19BlTMc+TJqJ6
+         n65GKq/PnJP1Fz8Bi/+XPUM7TAAHRMatUtde3/Pg/UHekC2SW/SGxrNgdPmUqj4eVPJR
+         BwTr30g9PusfgBEd3Vx9BsNd5JZS5abDcG+gVQ+yCh+FVHfEmNacm5o60/D0y+DitYxR
+         /EyvxsHYtyKoSGgXD8oXxqqvBccjQ0zs+JxMQYvO7H463izRH1ce5Wq0MpZ2rA0gfG+4
+         WpQQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=LuGQvvG4Dltf0AzmrxGD+ka+45Stojh5hh4VdPeaDRw=;
-        b=YgTrphA2syW4dGOy7NGCBw0eyikKUqyGguD19X8rRB/NN3bYjfSl/T+bTrjMFHtcL2
-         IqAs1WVFhJn2o+5aqmFJ5+/y5U22gaF/PmU0DVORnE0vc3TiVAQ9DbCRscyBXyDU4GS9
-         9Ypcdsav4kKTvatQAN/lvM/TexV9t9qoJgDa0f7VJEqidygxB+jiMDzymqVMIkocLGoI
-         kYzU0hmF7Psho+KbHvH5Bcg+WVp3fYhesvOcdrioj/wfSH0Iv0BPXsMsUHHYuvW6qWKg
-         QxT6cKiVc0DAiuyBj0ajID4eNybAK6pr9d99UmIIqnUuNKQMT06J5JdCsxTZlO4UYl6F
-         xZPw==
-X-Gm-Message-State: APjAAAVMKF/iHbFB7GF7APw1A2FvImpP9WrFySMVM5q2q3IxKLbxWkPt
-        PxRmA7TxZGtuTSfno1HITl6Ny1rOT8SXwtbCoBo=
-X-Google-Smtp-Source: APXvYqwNWVH2OnBspi7nzDGYiZiHkIX6qEth+eDfvNM5KzKQp/pEN5t3+oKTisQlebTFf1Dk3LztIcXCVTkIbb9WXd4=
-X-Received: by 2002:a25:1488:: with SMTP id 130mr10494095ybu.507.1551945136107;
- Wed, 06 Mar 2019 23:52:16 -0800 (PST)
+        h=x-gm-message-state:mime-version:from:date:message-id:subject:to:cc;
+        bh=LmFAdedJTtSF8+hERvo5cnFDZrLSIgoTm04Z2nQkVBI=;
+        b=Ano7H3Drs79r85PMpJFYzSBDCbGPLyvY1jqWxqb++l8pIxmTsfUrKqZ+p2FoLhYPuG
+         Q11QzA/8rielpDMHcBEIaG3z0rE1Jo314LV+TZj2htHPO4LDkeaaJtjfRBp9CxvVDOFB
+         VtXVR1a88RFA92nfbk7EoDQuODH54lh+R8p18mpUaGFwJw9wl6O8JuIdEBi4iFa4v+xl
+         y+5X336bzBUMlj2c6LO7odw0Itb1CeloiVyyqcDVoX0lpwe04HsY+gk6g51s2AENOhtM
+         w8Dp90BjEGdFvH7nQz6XJ5crUdwifaXEDlYibE9uYXuvBjKgTt/3BJbWIhi1BWsl8to6
+         frtw==
+X-Gm-Message-State: APjAAAVPossZuAxac4hc94Abm0E1XWhuunkkybTxcB5g2539sRUP1wEv
+        1esE9w9m0j/CLprXvj15tRS/i7FAVBmxM4i7wWyINg==
+X-Google-Smtp-Source: APXvYqzO3QI3KPaxqhnMWds8ZfrvEqytov6WuMq0688kFwVvCLcTKUe3WHK5Mu5zrLA1zbhL0QVPKC6EPqAdfqHhb3I=
+X-Received: by 2002:a5e:de0b:: with SMTP id e11mr6314198iok.73.1551951265891;
+ Thu, 07 Mar 2019 01:34:25 -0800 (PST)
 MIME-Version: 1.0
-References: <20190304140622.23997-1-fdmanana@kernel.org> <CAOQ4uxi87QhQHake0L_xVtUYChc3D2kLqho1obq14aG6zCMu6A@mail.gmail.com>
- <20190305005020.GA26298@dastard> <CAOQ4uxgKj8pAKKra9jv+xTb9dOxG-J5fKvJ_6a_iabWR9RbgrQ@mail.gmail.com>
- <20190305223301.GD26298@dastard> <CAOQ4uxggon==2r2hibMvXc4_N4zod+2z0Ycw74eKRn+q1uwYsw@mail.gmail.com>
- <20190306214813.GE26298@dastard>
-In-Reply-To: <20190306214813.GE26298@dastard>
-From:   Amir Goldstein <amir73il@gmail.com>
-Date:   Thu, 7 Mar 2019 09:52:03 +0200
-Message-ID: <CAOQ4uxjM0-D8c3KR0ooXYhhUa5+19j_=3XUaXf6vGMbsNhShJw@mail.gmail.com>
-Subject: Re: [PATCH] generic: add test for fsync after shrinking truncate and rename
-To:     Dave Chinner <david@fromorbit.com>
-Cc:     Filipe Manana <fdmanana@kernel.org>,
-        fstests <fstests@vger.kernel.org>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        Filipe Manana <fdmanana@suse.com>
+From:   Alex Lyakas <alex@zadara.com>
+Date:   Thu, 7 Mar 2019 11:34:14 +0200
+Message-ID: <CAOcd+r1haLQOKbHT5QtayGkmP4Wyy_CU2KLPupq0f3iKyx0mZA@mail.gmail.com>
+Subject: Btrfs: cut down on loops through the allocator - a5e681d9bd641c4f0677e87d3a0c92a8f4f16293
+To:     Josef Bacik <jbacik@fb.com>
+Cc:     Chris Mason <clm@fb.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Mar 6, 2019 at 11:48 PM Dave Chinner <david@fromorbit.com> wrote:
->
-> On Wed, Mar 06, 2019 at 09:51:23AM +0200, Amir Goldstein wrote:
-> > On Wed, Mar 6, 2019 at 12:33 AM Dave Chinner <david@fromorbit.com> wrote:
-> > > > So the reason this is working is because 2nd fsync needs to
-> > > > persist ctime of B and not because it needs to persist the
-> > > > truncate.
-> > >
-> > > ctime modifications during rename are irrelevent because there's no
-> > > fsync between the truncate and the rename so the file inode is
-> > > already dirty due to the truncate. I think you've got the wrong end
-> > > of the stick here, Amir. :)
-> >
-> > Doh! The discussion is still interesting because people have
-> > hard time to understand that those hidden details like ctime
-> > update on rename may have different behavior on different fs
-> > regardless if they obay ordered metadata or not.
-> > Btrfs is different in the respect of metadata dependencies from
-> > xfs/ext4 in many ways as seen in the different rename/link
-> > crash consistency discussions.
->
-> Yes, little things like can result in different behaviour, but what
-> we are trying to do is get to the point where there is minimal
-> difference between all crash-recovery-capable linux filesystems.
->
-> e.g. what we see here is that by always including the inode being
-> moved in the rename transaction (regardless of how a filesystem
-> acheives that), we provide consistent, reliable, predictable
-> behaviour in all cases of "fsync after rename". IOWs, the SOMC model
-> that _require_metadata_journaling tests are supposed to conform to
-> is far more strict that POSIX requires and our tests need to reflect
-> this stricter consistency model.
->
-> IOWs, we should be encoding the behaviour we want in these tests
-> rather than implementing yet another "test POSIX compatible
-> behaviour" - POSIX is a complete crapshoot when it comes to
-> persistence requirements. And if a filesystem fails a SOMC-model
-> test, then the filesystem needs to be fixed, not have the test
-> "relaxed" to only exercise POSIX-defined behaviour.
->
+Hi Josef,
 
-Agreed! v1 is better than v2. Sorry for my mistake in v1 review.
+This commit added the following code in find_free_extent:
+                        ret = do_chunk_alloc(trans, root, flags,
+                                             CHUNK_ALLOC_FORCE);
++
++                       /*
++                        * If we can't allocate a new chunk we've already looped
++                        * through at least once, move on to the NO_EMPTY_SIZE
++                        * case.
++                        */
++                       if (ret == -ENOSPC)
++                               loop = LOOP_NO_EMPTY_SIZE;
++
 
-I went back to look at similar fsync tests by Filipe:
-generic/{106,107,335,336,341,342,343,348,498,501,502,509,510,512}
+With this, I am hitting an early enospc, with the following scenario:
+- assume a file system is almost full, and has 5GB free space on the device left
+- there are multiple threads (say 6) calling find_free_extent() in
+parallel with empty_size=0
+- they all don't find a block group to allocate from, so they call
+do_chunk_alloc()
+- 5x1GB chunks are allocated, but additional do_chunk_alloc call()
+returns -ENOSPC
+- As a result, this thread moves to LOOP_NO_EMPTY_SIZE, but since
+empty_size is already zero, it returns -ENOSPC to the caller. But in
+fact we have 5GB free space to allocate from. We just need to to an
+extra loop.
 
-I found some alleged subtle mistakes about SOMC assumptions.
+Basically, do_chunk_alloc() returning -ENOSPC does not mean that there
+is no space. It can happen that parallel chunk allocations exhausted
+the device, but we have plenty of space.
 
-generic/336 does:
-touch $SCRATCH_MNT/a/foo
-ln $SCRATCH_MNT/a/foo $SCRATCH_MNT/b/foo_link
-touch $SCRATCH_MNT/b/bar
-sync
-unlink $SCRATCH_MNT/b/foo_link
-mv $SCRATCH_MNT/b/bar $SCRATCH_MNT/c/
-$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/a/foo
+Furthermore, this thread now sets space_info->max_extent_size. And
+from now on, any allocation that needs more than max_extent_size will
+immediately fail. But if we unmount and mount again, we will have
+plenty of space.
 
-And expects both unlink and rename to persist.
-However, this is only true in the *very likely* case that there is no
-journal commit in between unlink and rename, because fsync foo
-is only guaranteed to persist metadata changes that depend on the
-unlink and happened BEFORE it, which is not the case for the rename
-of bar.
-
-generic/343 and generic/510 do something similar.
-
-At first glance, generic/498 is actually broken (for xfs) or at least
-I don't understand why it works.
+This happens to me on 4.14, but I think the mainline still has the same logic.
 
 Thanks,
-Amir.
+Alex.

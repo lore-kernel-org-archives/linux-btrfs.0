@@ -2,31 +2,33 @@ Return-Path: <SRS0=Falb=RM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 03D83C43381
-	for <linux-btrfs@archiver.kernel.org>; Sat,  9 Mar 2019 05:51:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B1C20C43381
+	for <linux-btrfs@archiver.kernel.org>; Sat,  9 Mar 2019 06:24:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C93A32081B
-	for <linux-btrfs@archiver.kernel.org>; Sat,  9 Mar 2019 05:51:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8982120866
+	for <linux-btrfs@archiver.kernel.org>; Sat,  9 Mar 2019 06:24:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726164AbfCIFvL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 9 Mar 2019 00:51:11 -0500
-Received: from mx2.suse.de ([195.135.220.15]:52282 "EHLO mx1.suse.de"
+        id S1725994AbfCIGV0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 9 Mar 2019 01:21:26 -0500
+Received: from mx2.suse.de ([195.135.220.15]:54836 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725787AbfCIFvL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 9 Mar 2019 00:51:11 -0500
+        id S1725805AbfCIGV0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 9 Mar 2019 01:21:26 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 433E2B60D;
-        Sat,  9 Mar 2019 05:51:09 +0000 (UTC)
-Subject: Re: [PATCH 1/3] btrfs: tree-checker: Verify chunk items
-To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Cc:     Yoon Jungyeon <jungyeon@gatech.edu>
-References: <20190308072929.30863-1-wqu@suse.com>
- <20190308072929.30863-2-wqu@suse.com>
+        by mx1.suse.de (Postfix) with ESMTP id 60854AC8C;
+        Sat,  9 Mar 2019 06:21:24 +0000 (UTC)
+Subject: Re: [PATCH RFC 0/3] btrfs: Performance profiler support
+To:     dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+        linux-perf-users@vger.kernel.org
+References: <20190306061907.29685-1-wqu@suse.com>
+ <20190307140223.GH31119@twin.jikos.cz>
+ <ccf67c41-752a-6812-0de7-34f39c37ecac@gmx.com>
+ <20190307161203.GJ31119@twin.jikos.cz>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -71,12 +73,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <84bf42d2-6132-bbfd-8bdb-06df161c81d2@suse.com>
-Date:   Sat, 9 Mar 2019 07:51:07 +0200
+Message-ID: <4040a77a-7e64-9667-3ede-d0750456c9f4@suse.com>
+Date:   Sat, 9 Mar 2019 08:21:22 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <20190308072929.30863-2-wqu@suse.com>
+In-Reply-To: <20190307161203.GJ31119@twin.jikos.cz>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -87,29 +89,44 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 8.03.19 г. 9:29 ч., Qu Wenruo wrote:
-> We already have btrfs_check_chunk_valid() to verify each chunk before
-> tree-checker.
+On 7.03.19 г. 18:12 ч., David Sterba wrote:
+> On Thu, Mar 07, 2019 at 10:18:49PM +0800, Qu Wenruo wrote:
+>>> Well, most of that is answered by 'figure out how to use tracepoints and
+>>> perf for that'.
+>>>
+>>> If there were not a whole substystem, actively maintained and
+>>> documented, implementing something like that might help, but that's not
+>>> the case.
+>>>
+>>> I see what you were able to understand from the results, but it's more
+>>> like a custom analysis tool that should not merged as-is. It brings a
+>>> whole new interface and that's always hard to get right with all the
+>>> mistakes ahead that somebody has probably solved already.
+>>>
+>>> It would be good to have list of the limitations of perf you see, and we
+>>> can find a solution ourselves or ask elsewhere.
+>>
+>> Add linux-perf-users mail list.
+>>
+>> I should mention the problem of ftrace (or my perf skill) in cover letter.
+>>
+>> The biggest problem is the conflicts between detailed function execution
+>> duration and classification.
+>>
+>> For tree lock case, indeed we can use function graph to get execution
+>> duration of btrfs_tree_read_lock() and btrfs_tree_lock().
+>> But that's all. We can't really do much classification.
+>>
+>> If just use trace event, with trace event added, then we can't get the
+>> execution duration.
 > 
-> Merge that function into tree-checker, and update its error message to
-> be more readable.
+> I think you can save the start and end times and put the delta to the
+> tracepoint output.
 > 
-> Old error message would be something like:
->   BTRFS error (device dm-3): invalid chunk num_stipres: 0
-> 
-> New error message would be:
->   Btrfs critical (device dm-3): corrupt superblock syschunk array: chunk_start=2097152, invalid chunk num_stripes: 0
-> Or
->   Btrfs critical (device dm-3): corrupt leaf: root=3 block=8388608 slot=3 chunk_start=2097152, invalid chunk num_stripes: 0
-> 
-> Btrfs_check_chunk_valid() is exported for super block syschunk array
-> verification.
-> 
-> Also make tree-checker to verify chunk items, this makes chunk item
-> checker covers all chunks and avoid fuzzed image.
-> 
-> Reported-by: Yoon Jungyeon <jungyeon@gatech.edu>
-> Link: https://bugzilla.kernel.org/show_bug.cgi?id=202751
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+Yes, this can be done and in fact JBD2 uses a similar approach. For
+example check how journal->j_stats is being used in fs/jbd2/commit.c.
+I.e stats are accumulated in a structure which is then printed by some
+tracepoints. Concretely, rs_request_delayd calculates the delay between
+transaction commit being requested and the transaction entering locked
+(committing) state.

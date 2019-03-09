@@ -2,72 +2,84 @@ Return-Path: <SRS0=Falb=RM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D864C43381
-	for <linux-btrfs@archiver.kernel.org>; Sat,  9 Mar 2019 01:18:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 03D83C43381
+	for <linux-btrfs@archiver.kernel.org>; Sat,  9 Mar 2019 05:51:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0CA4A204FD
-	for <linux-btrfs@archiver.kernel.org>; Sat,  9 Mar 2019 01:18:18 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="bNh/+LSt"
+	by mail.kernel.org (Postfix) with ESMTP id C93A32081B
+	for <linux-btrfs@archiver.kernel.org>; Sat,  9 Mar 2019 05:51:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726381AbfCIBSR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 8 Mar 2019 20:18:17 -0500
-Received: from userp2120.oracle.com ([156.151.31.85]:54366 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726311AbfCIBSQ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Mar 2019 20:18:16 -0500
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x2919biK129386;
-        Sat, 9 Mar 2019 01:18:13 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
- references : from : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=corp-2018-07-02;
- bh=1XVpeE0qkUquLVqmawGeqdC2WeiGBLuw6PpTDZSrM/M=;
- b=bNh/+LStr5gYnpVqnB6EVOuvNMzPjMV9D3KjPhC+W/pUS0reWAa9iwQA4G13QmjRdYSc
- wALQP1MnXD/5bINV6htCmLcg8XqugkwV/ZEJbiULCSPZ9cTT/huMYZGSaeJUVL0cFh56
- xcEp7ewv27+FHkOcpGqvty/Rdh84KFAqQYer5BnoLGdrfPvmFJyGCKsNrh5BD7vTWSps
- JWhAxi7QWmrrQGw3o1t2I+b17f+RHDXf0PpErYJQgzWenboRMyHVbv0HNpGPmuOhlhzi
- 6oJb/oK+k24J6TXQWxQyZ++mJYHpFEYUs7TfCP/YmbsbX9P3rsBX67YeWby9IV4frhpn 6Q== 
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by userp2120.oracle.com with ESMTP id 2qyjfs37f1-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Sat, 09 Mar 2019 01:18:13 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x291ICnW017586
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Sat, 9 Mar 2019 01:18:12 GMT
-Received: from abhmp0019.oracle.com (abhmp0019.oracle.com [141.146.116.25])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x291IBgX012259;
-        Sat, 9 Mar 2019 01:18:11 GMT
-Received: from [192.168.1.145] (/116.87.143.221)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Fri, 08 Mar 2019 17:18:11 -0800
-Subject: Re: [PATCH v5 9/9] btrfs: kill btrfs_setxattr
-To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <1551414895-22925-1-git-send-email-anand.jain@oracle.com>
- <1551414895-22925-10-git-send-email-anand.jain@oracle.com>
- <20190308145642.GS31119@twin.jikos.cz>
-From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <03d1b29e-5249-b21c-89c0-486b12c41502@oracle.com>
-Date:   Sat, 9 Mar 2019 09:18:20 +0800
+        id S1726164AbfCIFvL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 9 Mar 2019 00:51:11 -0500
+Received: from mx2.suse.de ([195.135.220.15]:52282 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725787AbfCIFvL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 9 Mar 2019 00:51:11 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 433E2B60D;
+        Sat,  9 Mar 2019 05:51:09 +0000 (UTC)
+Subject: Re: [PATCH 1/3] btrfs: tree-checker: Verify chunk items
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Cc:     Yoon Jungyeon <jungyeon@gatech.edu>
+References: <20190308072929.30863-1-wqu@suse.com>
+ <20190308072929.30863-2-wqu@suse.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <84bf42d2-6132-bbfd-8bdb-06df161c81d2@suse.com>
+Date:   Sat, 9 Mar 2019 07:51:07 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.0
+ Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <20190308145642.GS31119@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20190308072929.30863-2-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9189 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
- suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
- lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
- definitions=main-1903090005
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -75,101 +87,29 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 3/8/19 10:56 PM, David Sterba wrote:
-> On Fri, Mar 01, 2019 at 12:34:55PM +0800, Anand Jain wrote:
->> Now btrfs_setxattr() is a very small function with just check for
->> readonly FS and redirect the call to do_setxattr(). So instead
->> move that checks to the parent functions and call do_setxattr()
->> directly.  Delete original btrfs_setxattr(), and rename do_setxattr()
->> to btrfs_setxattr(). Also add few c-style. Kindly note the arguments
->> of original do_setxattr() and original btrfs_setxattr() are same, so the
->> diff obliterates the changes as described above.
->>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->> ---
->> v5: rename do_setxattr() to btrfs_setxattr(). change log update. fix c-style.
->> v4: born
->>   fs/btrfs/acl.c   |  7 +++++++
->>   fs/btrfs/props.c | 16 ++++++++++------
->>   fs/btrfs/xattr.c | 29 +++++++++--------------------
->>   fs/btrfs/xattr.h |  5 ++---
->>   4 files changed, 28 insertions(+), 29 deletions(-)
->>
->> diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
->> index 2b9c3394fc34..a8a1060c8cbe 100644
->> --- a/fs/btrfs/acl.c
->> +++ b/fs/btrfs/acl.c
->> @@ -60,6 +60,7 @@ static int do_set_acl(struct btrfs_trans_handle *trans, struct inode *inode,
->>   	int ret, size = 0;
->>   	const char *name;
->>   	char *value = NULL;
->> +	struct btrfs_root *root = BTRFS_I(inode)->root;
->>   
->>   	switch (type) {
->>   	case ACL_TYPE_ACCESS:
->> @@ -95,7 +96,13 @@ static int do_set_acl(struct btrfs_trans_handle *trans, struct inode *inode,
->>   			goto out;
->>   	}
->>   
->> +	if (btrfs_root_readonly(root)) {
->> +		ret = -EROFS;
->> +		goto out;
+On 8.03.19 г. 9:29 ч., Qu Wenruo wrote:
+> We already have btrfs_check_chunk_valid() to verify each chunk before
+> tree-checker.
 > 
-> All the readonly checks needs to go first as it's the global condition,
-> the following checks make sure that the arguments are valid and depend
-> on the previous.
+> Merge that function into tree-checker, and update its error message to
+> be more readable.
 > 
->> -		ret = btrfs_setxattr(trans, inode, handler->xattr_name,
->> -				       NULL, 0, flags);
->> +		ret = btrfs_setxattr(trans, inode, handler->xattr_name, NULL, 0,
->> +				     flags);
+> Old error message would be something like:
+>   BTRFS error (device dm-3): invalid chunk num_stipres: 0
 > 
-> drive-by change
+> New error message would be:
+>   Btrfs critical (device dm-3): corrupt superblock syschunk array: chunk_start=2097152, invalid chunk num_stripes: 0
+> Or
+>   Btrfs critical (device dm-3): corrupt leaf: root=3 block=8388608 slot=3 chunk_start=2097152, invalid chunk num_stripes: 0
 > 
->>   		if (ret)
->>   			return ret;
->>   
->> @@ -85,14 +89,14 @@ static int btrfs_set_prop(struct btrfs_trans_handle *trans, struct inode *inode,
->>   	ret = handler->validate(value, value_len);
->>   	if (ret)
->>   		return ret;
->> -	ret = btrfs_setxattr(trans, inode, handler->xattr_name,
->> -			       value, value_len, flags);
->> +	ret = btrfs_setxattr(trans, inode, handler->xattr_name, value,
->> +			     value_len, flags);
+> Btrfs_check_chunk_valid() is exported for super block syschunk array
+> verification.
 > 
-> same
+> Also make tree-checker to verify chunk items, this makes chunk item
+> checker covers all chunks and avoid fuzzed image.
 > 
->>   	if (ret)
->>   		return ret;
->>   	ret = handler->apply(inode, value, value_len);
->>   	if (ret) {
->> -		btrfs_setxattr(trans, inode, handler->xattr_name,
->> -				 NULL, 0, flags);
->> +		ret = btrfs_setxattr(trans, inode, handler->xattr_name, NULL, 0,
->> +				     flags);
->
-> And that one silently changes the return value semantics but looks like
-> the other two, "just fixing the indentation". The original code does not
-> set 'ret' as the whole operation returns what the property handler
-> returned.
-> 
-> The setxattr call here resets the property. If this is not the
-> right, then fixed separately.
+> Reported-by: Yoon Jungyeon <jungyeon@gatech.edu>
+> Link: https://bugzilla.kernel.org/show_bug.cgi?id=202751
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-  That's copy and paste error. :-(. It should return ret of the
-  handler->apply(). Because if the undo part which is
-  btrfs_setxattr() is successful it means we fail silently.
-  But at this place the handler->apply() can not fail. So the
-  fail part is only theoretical.
-
-  Also, theoretically in the original code the undo part is bit wrong,
-  instead of resetting to the NULL it should reset back to the
-  old value.
-
-  I was trying to read the patch which is integrated if you
-  have made any changes, so that I can send the fix. But I
-  can't seems to find them.
-
-Thanks, Anand
-
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>

@@ -2,181 +2,92 @@ Return-Path: <SRS0=V0ug=RN=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A7D0CC43381
-	for <linux-btrfs@archiver.kernel.org>; Sun, 10 Mar 2019 10:00:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 819FBC43381
+	for <linux-btrfs@archiver.kernel.org>; Sun, 10 Mar 2019 21:50:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id AAF17207E0
-	for <linux-btrfs@archiver.kernel.org>; Sun, 10 Mar 2019 10:00:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 466DD206BA
+	for <linux-btrfs@archiver.kernel.org>; Sun, 10 Mar 2019 21:50:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725853AbfCJKAI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 10 Mar 2019 06:00:08 -0400
-Received: from mx2.suse.de ([195.135.220.15]:59328 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725846AbfCJKAI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 10 Mar 2019 06:00:08 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D300CAEF2;
-        Sun, 10 Mar 2019 10:00:06 +0000 (UTC)
-Subject: Re: [PATCH RFC 0/3] btrfs: Performance profiler support
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.de>,
-        Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-References: <20190306061907.29685-1-wqu@suse.com>
- <857277d9-7a16-cea0-13c4-aec74cb77064@oracle.com>
- <0e04dd2c-a7b0-c4ce-6340-79c90578f4b5@suse.com>
- <bcd2e6de-cf5d-311d-ebdf-63eb1ae40222@suse.de>
- <913b2ba4-5a3c-974e-10d0-26d65d4175ee@suse.com>
- <d0f17d65-b357-840e-c333-9963e20d001d@gmx.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <9f96ea81-e52f-dc48-2bad-bcf9c0744e11@suse.com>
-Date:   Sun, 10 Mar 2019 12:00:05 +0200
+        id S1726848AbfCJVuo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 10 Mar 2019 17:50:44 -0400
+Received: from endor150-229.endor.pl ([91.194.229.150]:56203 "EHLO
+        naboo.endor.pl" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1726796AbfCJVun (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 10 Mar 2019 17:50:43 -0400
+X-Greylist: delayed 345 seconds by postgrey-1.27 at vger.kernel.org; Sun, 10 Mar 2019 17:50:42 EDT
+Received: from localhost (localhost.localdomain [127.0.0.1])
+        by naboo.endor.pl (Postfix) with ESMTP id CC8081A1054
+        for <linux-btrfs@vger.kernel.org>; Sun, 10 Mar 2019 22:44:55 +0100 (CET)
+X-Virus-Scanned: Debian amavisd-new at 
+Received: from naboo.endor.pl ([91.194.229.149])
+        by localhost (naboo.endor.pl [127.0.0.1]) (amavisd-new, port 10024)
+        with ESMTP id 8c-8aNoml26n for <linux-btrfs@vger.kernel.org>;
+        Sun, 10 Mar 2019 22:44:54 +0100 (CET)
+Received: from orion.dubielvitrum.pl (91-231-23-50.studiowik.net.pl [91.231.23.50])
+        (Authenticated sender: postmaster@dubielvitrum.pl)
+        by naboo.endor.pl (Postfix) with ESMTPSA id 231E11A0FED
+        for <linux-btrfs@vger.kernel.org>; Sun, 10 Mar 2019 22:44:54 +0100 (CET)
+Received: from [83.4.120.99] (helo=[192.168.1.16])
+        by orion.dubielvitrum.pl with esmtpsa (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128)
+        (Exim 4.89)
+        (envelope-from <leszek.dubiel@dubielvitrum.pl>)
+        id 1h36FZ-0007FR-1N
+        for linux-btrfs@vger.kernel.org; Sun, 10 Mar 2019 22:44:53 +0100
+To:     linux-btrfs@vger.kernel.org
+From:   Leszek Dubiel <leszek.dubiel@dubielvitrum.pl>
+Subject: btrfs error: cmds-check.c:4869: add_data_backref: Assertion `!back`
+ failed. no space left on device
+Message-ID: <4f9e08e3-09af-cbe6-8b06-8e622559d706@dubielvitrum.pl>
+Date:   Sun, 10 Mar 2019 22:44:50 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.4.0
+ Thunderbird/60.5.1
 MIME-Version: 1.0
-In-Reply-To: <d0f17d65-b357-840e-c333-9963e20d001d@gmx.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: 8bit
+Content-Language: pl-PL
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
+Hello!
 
-On 10.03.19 г. 11:56 ч., Qu Wenruo wrote:
-> 
-> 
-> On 2019/3/10 下午5:40, Nikolay Borisov wrote:
->>
->>
->> On 10.03.19 г. 11:34 ч., Qu Wenruo wrote:
->>>
->>>
->>> On 2019/3/10 下午5:29, Nikolay Borisov wrote:
->>>>
->>>>
->>>> On 10.03.19 г. 5:08 ч., Anand Jain wrote:
->>>>>
->>>>>  I agree we need btrfs specific performance measurements and its
->>>>>  my list too.
->>>>>
->>>>>  However my idea was to add it as a btrfs-progs subcommand such as
->>>>>
->>>>>    btrfs inspect perf ...
->>>>>
->>>>>  And implement by using the systemtap/perf/bpf/dtrace, as these
->>>>>  can tap the kernel functions from the useland using which we
->>>>>  can measure the time taken and no kernel changes will be required.
->>>>>  But yes we need to update the btrfs-progs if we rename the kernel
->>>>>  function, which I think is ok.
->>>>>
->>>>>  I was too early trying this with bpf before, probably there are
->>>>>  more tools now to do that same thing.
->>>>
->>>> This is way too developer oriented to be included in the generic btrfs
->>>> tools. Frankly bpf makes sense but only as a separate script being
->>>> developed and possibly shared on github or whatnot so that other
->>>> interested people can use it. However, integrating with btrfs-progs
->>>> definitely seems the wrong thing to do.
->>>>
->>>> On the same note - I'm highly against this patchset landing in the kernel.
->>>
->>> Are you against the interface part or the btrfs specific perf part?
->>>
->>> For the first half, indeed the new sysfs is not good and I'm OK to move
->>> to any more established interface.
->>>
->>> For the later half, if bfp/ftrace can do the same work, then I'm fine.
->>> Otherwise the need is still here, both developer or experienced sys
->>> admin will need this feature.
->>
->> I'm against this functionality being part of btrfs. What would be more
->> useful is a set of bpf scripts which might very well be developed
->> alongside the main project. They will be a lot more flexible also they
->> will add overhead only when you really need them, whereas the current
->> approach AFAIK (I might be wrong, correct me if so) always accumulates
->> certain stats irrespective of whether the sys admin needs them or not?
-> 
-> Since this patchset is mostly an RFC, I skipped a lot things like mount
-> option to skip all such events.
-> 
-> But the bfp part is really a good direction for me to investigate.
-> If we can do the same work using more established facility, then I'm
-> completely fine to discard the patchset.
+I have a problem with btrfs device.
+Shows 355Gb free space.
+Done scrub on that.
 
-The only thing which migth have to be patched in btrfs is to add the
-tree owner being part of struct extent_buffer { since there is no easy
-way to query it outside of btrfs. This can be gated behind an ifdef
-BTRFS_DEBUG .
+It shows that there is no space left on device.
+Doing simple operations (mkdir, touch, find) are extremely slow.
+Checking btrfsck show add_data_backref error (see below).
 
-There is currently a very similar script in iovisor toolset:
-https://github.com/iovisor/bcc/blob/master/tools/funclatency.py
 
-it equates to what function_graph currently does but can easily be
-extended to mimic the logic in your patchset. I.e modify a map based on
-the owner of an extent buffer.
+Do you think I could do :  btrfs check —repair ?
 
-> 
-> Thanks,
-> Qu
-> 
->> At the very least you will sprinkle code such as :
->>
->> 'if (perf measurement enabled) ..... '
->>
->> I'd really we didn't add this clutter.
->>
->>>
->>> Thanks,
->>> Qu
->>>
->>>
-> 
+
+root@gamma:~# btrfsck -p /dev/sda1
+Checking filesystem on /dev/sda1
+UUID: 666a7089-d716-44ff-8081-56b969b58eff
+cmds-check.c:4869: add_data_backref: Assertion `!back` failed.
+
+
+
+root@gamma:~# df -h /dev/sda1
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda1       1.9T  1.5T  355G  81% /tmp/rescue
+
+
+
+root@gamma:~# btrfs --version
+btrfs-progs v4.7.3
+
+
+
+
+
+
+

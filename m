@@ -2,168 +2,106 @@ Return-Path: <SRS0=TRLW=RO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 19F58C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Mar 2019 12:37:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 72A6AC43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Mar 2019 13:11:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DC96020657
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Mar 2019 12:37:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 30D6C20657
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Mar 2019 13:11:02 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1552309862;
+	bh=wvdSP9RtFbLCHFyDn0i7adsaEc3vRLpBSquMbgn1ZFI=;
+	h=From:To:Subject:Date:List-ID:From;
+	b=omWQNOQJkOtrPVM1pNqTYPF+HDFjwMOTESgs5gLKvN3vQvioSH9m/lOaV59BUh2v3
+	 nDMn/U+wGFSSMOM765WYT+aKh85m9tZ3kRbyzDFP7TUS2B7+p+fQ+9GEVwt+GPR8Ro
+	 p+u4J8DtTk7hO/vpP7KeoAr9kldweaOPiTJEm4Lw=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727418AbfCKMhD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Mar 2019 08:37:03 -0400
-Received: from mx2.suse.de ([195.135.220.15]:35484 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726812AbfCKMhD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Mar 2019 08:37:03 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 82C38AF93;
-        Mon, 11 Mar 2019 12:37:01 +0000 (UTC)
-Subject: Re: confusing behavior when supers mismatch
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAJCQCtQ9nduarOggGv98Oxo6SE9QBKhm7oxYXFE9UsMbVTnwow@mail.gmail.com>
- <cf8922ef-b7db-7779-c140-80090efc60d5@gmx.com>
- <62ad41ed-5fba-d641-9a19-9231a55f603c@suse.com>
- <a79900be-5fc9-4c1d-18da-f4aa9fdda8ab@gmx.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- mQINBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
- T7g+RbfPFlmQp+EwFWOtABXlKC54zgSf+uulGwx5JAUFVUIRBmnHOYi/lUiE0yhpnb1KCA7f
- u/W+DkwGerXqhhe9TvQoGwgCKNfzFPZoM+gZrm+kWv03QLUCr210n4cwaCPJ0Nr9Z3c582xc
- bCUVbsjt7BN0CFa2BByulrx5xD9sDAYIqfLCcZetAqsTRGxM7LD0kh5WlKzOeAXj5r8DOrU2
- GdZS33uKZI/kZJZVytSmZpswDsKhnGzRN1BANGP8sC+WD4eRXajOmNh2HL4P+meO1TlM3GLl
- EQd2shHFY0qjEo7wxKZI1RyZZ5AgJnSmehrPCyuIyVY210CbMaIKHUIsTqRgY5GaNME24w7h
- TyyVCy2qAM8fLJ4Vw5bycM/u5xfWm7gyTb9V1TkZ3o1MTrEsrcqFiRrBY94Rs0oQkZvunqia
- c+NprYSaOG1Cta14o94eMH271Kka/reEwSZkC7T+o9hZ4zi2CcLcY0DXj0qdId7vUKSJjEep
- c++s8ncFekh1MPhkOgNj8pk17OAESanmDwksmzh1j12lgA5lTFPrJeRNu6/isC2zyZhTwMWs
- k3LkcTa8ZXxh0RfWAqgx/ogKPk4ZxOXQEZetkEyTFghbRH2BIwARAQABtCNOaWtvbGF5IEJv
- cmlzb3YgPG5ib3Jpc292QHN1c2UuY29tPokCOAQTAQIAIgUCWIo48QIbAwYLCQgHAwIGFQgC
- CQoLBBYCAwECHgECF4AACgkQcb6CRuU/KFc0eg/9GLD3wTQz9iZHMFbjiqTCitD7B6dTLV1C
- ddZVlC8Hm/TophPts1bWZORAmYIihHHI1EIF19+bfIr46pvfTu0yFrJDLOADMDH+Ufzsfy2v
- HSqqWV/nOSWGXzh8bgg/ncLwrIdEwBQBN9SDS6aqsglagvwFD91UCg/TshLlRxD5BOnuzfzI
- Leyx2c6YmH7Oa1R4MX9Jo79SaKwdHt2yRN3SochVtxCyafDlZsE/efp21pMiaK1HoCOZTBp5
- VzrIP85GATh18pN7YR9CuPxxN0V6IzT7IlhS4Jgj0NXh6vi1DlmKspr+FOevu4RVXqqcNTSS
- E2rycB2v6cttH21UUdu/0FtMBKh+rv8+yD49FxMYnTi1jwVzr208vDdRU2v7Ij/TxYt/v4O8
- V+jNRKy5Fevca/1xroQBICXsNoFLr10X5IjmhAhqIH8Atpz/89ItS3+HWuE4BHB6RRLM0gy8
- T7rN6ja+KegOGikp/VTwBlszhvfLhyoyjXI44Tf3oLSFM+8+qG3B7MNBHOt60CQlMkq0fGXd
- mm4xENl/SSeHsiomdveeq7cNGpHi6i6ntZK33XJLwvyf00PD7tip/GUj0Dic/ZUsoPSTF/mG
- EpuQiUZs8X2xjK/AS/l3wa4Kz2tlcOKSKpIpna7V1+CMNkNzaCOlbv7QwprAerKYywPCoOSC
- 7P25Ag0EWIoHPgEQAMiUqvRBZNvPvki34O/dcTodvLSyOmK/MMBDrzN8Cnk302XfnGlW/YAQ
- csMWISKKSpStc6tmD+2Y0z9WjyRqFr3EGfH1RXSv9Z1vmfPzU42jsdZn667UxrRcVQXUgoKg
- QYx055Q2FdUeaZSaivoIBD9WtJq/66UPXRRr4H/+Y5FaUZx+gWNGmBT6a0S/GQnHb9g3nonD
- jmDKGw+YO4P6aEMxyy3k9PstaoiyBXnzQASzdOi39BgWQuZfIQjN0aW+Dm8kOAfT5i/yk59h
- VV6v3NLHBjHVw9kHli3jwvsizIX9X2W8tb1SefaVxqvqO1132AO8V9CbE1DcVT8fzICvGi42
- FoV/k0QOGwq+LmLf0t04Q0csEl+h69ZcqeBSQcIMm/Ir+NorfCr6HjrB6lW7giBkQl6hhomn
- l1mtDP6MTdbyYzEiBFcwQD4terc7S/8ELRRybWQHQp7sxQM/Lnuhs77MgY/e6c5AVWnMKd/z
- MKm4ru7A8+8gdHeydrRQSWDaVbfy3Hup0Ia76J9FaolnjB8YLUOJPdhI2vbvNCQ2ipxw3Y3c
- KhVIpGYqwdvFIiz0Fej7wnJICIrpJs/+XLQHyqcmERn3s/iWwBpeogrx2Lf8AGezqnv9woq7
- OSoWlwXDJiUdaqPEB/HmGfqoRRN20jx+OOvuaBMPAPb+aKJyle8zABEBAAGJAh8EGAECAAkF
- AliKBz4CGwwACgkQcb6CRuU/KFdacg/+M3V3Ti9JYZEiIyVhqs+yHb6NMI1R0kkAmzsGQ1jU
- zSQUz9AVMR6T7v2fIETTT/f5Oout0+Hi9cY8uLpk8CWno9V9eR/B7Ifs2pAA8lh2nW43FFwp
- IDiSuDbH6oTLmiGCB206IvSuaQCp1fed8U6yuqGFcnf0ZpJm/sILG2ECdFK9RYnMIaeqlNQm
- iZicBY2lmlYFBEaMXHoy+K7nbOuizPWdUKoKHq+tmZ3iA+qL5s6Qlm4trH28/fPpFuOmgP8P
- K+7LpYLNSl1oQUr+WlqilPAuLcCo5Vdl7M7VFLMq4xxY/dY99aZx0ZJQYFx0w/6UkbDdFLzN
- upT7NIN68lZRucImffiWyN7CjH23X3Tni8bS9ubo7OON68NbPz1YIaYaHmnVQCjDyDXkQoKC
- R82Vf9mf5slj0Vlpf+/Wpsv/TH8X32ajva37oEQTkWNMsDxyw3aPSps6MaMafcN7k60y2Wk/
- TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
- RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
- 5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <8d1f2baf-e889-e4e5-6f48-c93890ecd3c4@suse.com>
-Date:   Mon, 11 Mar 2019 14:37:00 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.4.0
-MIME-Version: 1.0
-In-Reply-To: <a79900be-5fc9-4c1d-18da-f4aa9fdda8ab@gmx.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+        id S1726911AbfCKNLB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Mar 2019 09:11:01 -0400
+Received: from mail.kernel.org ([198.145.29.99]:36274 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726605AbfCKNLA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 11 Mar 2019 09:11:00 -0400
+Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id E311020657
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Mar 2019 13:10:59 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1552309860;
+        bh=wvdSP9RtFbLCHFyDn0i7adsaEc3vRLpBSquMbgn1ZFI=;
+        h=From:To:Subject:Date:From;
+        b=H0LgoiLpXKvJNwTvwRVeemlYLLYbY49TFPA8RuQe0uG7mSRdXczWvYnSy/1XkmDVe
+         Z4huc0RuofFIMG5riQPc52SIgK7gm0LRakcOfOA7DS/du6DgWK0BC5jM72+r0ySUA1
+         ipDlKpdDtZwlCR0V0WPJ1EGIOjUBtY3plEDZZxUM=
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: remove no longer used 'sync' member from transaction handle
+Date:   Mon, 11 Mar 2019 13:10:56 +0000
+Message-Id: <20190311131056.2365-1-fdmanana@kernel.org>
+X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+From: Filipe Manana <fdmanana@suse.com>
 
+Commit db2462a6ad3d ("btrfs: don't run delayed refs in the end transaction
+logic") removed its last use, so now it does absolutely nothing, therefore
+remove it.
 
-On 11.03.19 г. 14:35 ч., Qu Wenruo wrote:
-> 
-> 
-> On 2019/3/11 下午8:26, Nikolay Borisov wrote:
->>
->>
->> On 11.03.19 г. 3:17 ч., Qu Wenruo wrote:
->>>
->>>
->>> On 2019/3/11 上午7:09, Chris Murphy wrote:
->>>> In the case where superblock 0 at 65536 is valid but stale (older than
->>>> the others):
->>>
->>> Then this means either the fs is fuzzed, or the FUA implementation of
->>> the disk is completely screwed up.
->>>
->>> Btrfs kernel submit super blocks as the following sequence:
->>> 1) wait all metadata write
->>> 2) flush
->>> 3) FUA the primary superblock
->>
->> SATA devices generally do not have FUA support. For example my evo 850
->> ssds do not support it nor does my evo 860 PRO. IMO not having
->> functioning FUA seems to be the norm rather than an exception.
-> 
-> Kernel block layer will translate FUA to write + flush.
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/extent-tree.c | 6 ------
+ fs/btrfs/file.c        | 1 -
+ fs/btrfs/transaction.h | 1 -
+ 3 files changed, 8 deletions(-)
 
-Where exactly does this happen?
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 994f0cc41799..bda83087271f 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2910,12 +2910,6 @@ static void delayed_ref_async_start(struct btrfs_work *work)
+ 		goto done;
+ 	}
+ 
+-	/*
+-	 * trans->sync means that when we call end_transaction, we won't
+-	 * wait on delayed refs
+-	 */
+-	trans->sync = true;
+-
+ 	/* Don't bother flushing if we got into a different transaction */
+ 	if (trans->transid > async->transid)
+ 		goto end;
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 34fe8a58b0e9..94c1c86fd18a 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2165,7 +2165,6 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 		inode_unlock(inode);
+ 		goto out;
+ 	}
+-	trans->sync = true;
+ 
+ 	ret = btrfs_log_dentry_safe(trans, dentry, start, end, &ctx);
+ 	if (ret < 0) {
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index f1ba78949d1b..b34678e7968e 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -120,7 +120,6 @@ struct btrfs_trans_handle {
+ 	bool allocating_chunk;
+ 	bool can_flush_pending_bgs;
+ 	bool reloc_reserved;
+-	bool sync;
+ 	bool dirty;
+ 	struct btrfs_root *root;
+ 	struct btrfs_fs_info *fs_info;
+-- 
+2.11.0
 
-> So in that case we will do:
-> 
-> 1) wait all metadata write
-> 2) flush
-> 3) write first sb, flush
-> 4) write backup sb
-> 
-> For FUA -> write + flush, it's less atomic than native FUA, but it
-> should be good enough for pseudo-atomic.
-> 
-> Thanks,
-> Qu
-> 
->>
->>
->>> 4) write the backup superblocks
->>>
->>> If backup is newer than primary, then the FUA write doesn't reach disk
->>> before normal write.
->>> This means any fs could be corrupted on that disk, not only btrfs.
->>>
->>>>
->>>> 1. btrfs check doesn't complain, the stale super is used for the check
->>>> 2. when mounting, super 0 is used, no complaints at mount time, fairly
->>>> quickly the newer supers are overwritten
->>>
->>> The reason why kernel doesn't search backup roots is to avoid stale btrfs.
->>> For case like mkfs.btrfs -> do btrfs write -> mkfs.xfs -> try mount as
->>> btrfs again, this would cause problems.
->>>
->>> So IMHO always use the primary superblock is the designed behavior.
->>>
->>> Thanks,
->>> Qu
->>>
->>>>
->>>> Is this expected? In particular, in lieu of `btrfs rescue super`
->>>> behavior which considers super 0 a bad super, and offers to fix it
->>>> from the newer ones, and when I answer y, it replaces super 0 with
->>>> newer information from the other supers.
->>>>
->>>> I think the `btrfs rescue` behavior is correct. I would expect that
->>>> all the supers are read at mount time, and if there's discrepancy that
->>>> either there's code to suspiciously sanity check the latest roots in
->>>> the newest super, or it flat out fails to mount. Mounting based on
->>>> stale super data seems risky doesn't it?
->>>>
->>>
-> 

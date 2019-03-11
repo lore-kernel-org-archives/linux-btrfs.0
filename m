@@ -2,88 +2,71 @@ Return-Path: <SRS0=TRLW=RO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A700FC43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Mar 2019 13:27:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D6DE4C43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Mar 2019 13:49:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 81B26206BA
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Mar 2019 13:27:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9D396206BA
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Mar 2019 13:49:03 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="13YxEoM0"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727369AbfCKN14 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Mar 2019 09:27:56 -0400
-Received: from mout.gmx.net ([212.227.17.21]:58951 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727644AbfCKN1z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Mar 2019 09:27:55 -0400
-Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx102
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0MhNk6-1hOjQm0pV4-00MZpN; Mon, 11
- Mar 2019 14:27:47 +0100
-Subject: Re: confusing behavior when supers mismatch
-To:     Nikolay Borisov <nborisov@suse.com>,
-        Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAJCQCtQ9nduarOggGv98Oxo6SE9QBKhm7oxYXFE9UsMbVTnwow@mail.gmail.com>
- <cf8922ef-b7db-7779-c140-80090efc60d5@gmx.com>
- <62ad41ed-5fba-d641-9a19-9231a55f603c@suse.com>
- <a79900be-5fc9-4c1d-18da-f4aa9fdda8ab@gmx.com>
- <8d1f2baf-e889-e4e5-6f48-c93890ecd3c4@suse.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <e91ca125-ccdb-5c15-df74-5aa827bf2994@gmx.com>
-Date:   Mon, 11 Mar 2019 21:27:40 +0800
+        id S1727560AbfCKNtC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Mar 2019 09:49:02 -0400
+Received: from aserp2130.oracle.com ([141.146.126.79]:36106 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727320AbfCKNtC (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 11 Mar 2019 09:49:02 -0400
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x2BDiQJF155797;
+        Mon, 11 Mar 2019 13:48:59 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2018-07-02;
+ bh=jsLndAJ283vTYBgH8G5Aqt2fKftlatXjV2sDwZ7A++A=;
+ b=13YxEoM0p/X0SwxWi+qiH+PvSnP06zf8BsAaqCrN1XMRXGmVOjA1X06TCWZa2Ah8LRjJ
+ qhOB3RZFL2FRh7NSmLrWvRibQSKfGL4VOnHt1ZZH9skqN25x+7b0I/VolTHz3KsUXhRR
+ YAbzgFFsXASBWE9ZLFHfOU+rWraOzw2End806n0R5qwmcvp3H27mvmQ+zwvJ/jKkJ9lX
+ O7JSDGTx+XdQaqlbifZMMAEaRGpXDprcP7lncirHlCrGGzBr27H648mV7Q2a2dwXYxAj
+ TL0GWn+McRxFt/A5XjseXS8CEwsWzVTnuVUl1bFqAfXrfBOb+PhhymrpXKwe+vQLr8T5 9g== 
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by aserp2130.oracle.com with ESMTP id 2r430eey5w-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Mon, 11 Mar 2019 13:48:59 +0000
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x2BDmw0I015074
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Mon, 11 Mar 2019 13:48:58 GMT
+Received: from abhmp0019.oracle.com (abhmp0019.oracle.com [141.146.116.25])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x2BDmwvK032312;
+        Mon, 11 Mar 2019 13:48:58 GMT
+Received: from [192.168.1.145] (/116.87.143.221)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Mon, 11 Mar 2019 13:48:58 +0000
+Subject: Re: [PATCH v4] btrfs-progs: dump-tree: add noscan option
+To:     Su Yue <Damenly_Su@gmx.com>, linux-btrfs@vger.kernel.org
+References: <1551336865-9954-1-git-send-email-anand.jain@oracle.com>
+ <aab9c700-bb80-9481-3fd6-151872107612@gmx.com>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <23ab3e25-b285-e445-0fce-18607d25d972@oracle.com>
+Date:   Mon, 11 Mar 2019 21:49:06 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.3
+ Thunderbird/60.5.0
 MIME-Version: 1.0
-In-Reply-To: <8d1f2baf-e889-e4e5-6f48-c93890ecd3c4@suse.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <aab9c700-bb80-9481-3fd6-151872107612@gmx.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
-X-Provags-ID: V03:K1:KWZGRlNPPB49VDqy7JSj5BRdUIYZuKsFL9GJu5waq6FFC2Zzdz6
- BmhPlEX4KAOmqiuTkXhv4FWyk5trCWH++qNqOraUDwYo0/wI7QbxnF9DXzKMmMRwoxfcfVg
- wVQpGuIonlRgMvLkcdtabI7YmzGz0ENl3qy0WT3Jo7H2qT/OBZmUCPorpZk1962sNdB43Vs
- x2YJYOt4dgy6J8zU/k/DQ==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:bsoLm7/MjFY=:IDxxruDODRTsHWsgYVIUKK
- NhAwJ8SjUQEAieRs3SPFERTcc6tio8VCUIsoiHzXATV+tUh7yPrjTbY4L5YOONF1jODadUZAb
- oCnZ2Sj+GDGSOdpQCPYkQxdJ9680b6v/f4mNFhVeojNa9Mv0SC3ABqNENbhMGOqbjViP43CRj
- Apc/r9SCmICgIIFgTGzPde2V9JsKjzh+W3Cq7MknviRB/YDm9xRhKgPVLQmUuzqZXkqVOdWHF
- NaFZeoTCXQS5NKv+puxd+KqSoFOavhUH6yhkIbHXxOauFjrWbpALEuegRLBvV06cOIjpCoatC
- tDZPVRq4SnMSkEQyswoj/+ylEtiKtcSfnY3ONoUzsG7C8Xl7QWkHTQImnbwRMBRVc+RhyP+eQ
- o4X4zJOkaxoh35Z9cHfK5eTQeNrIMP+bY/Aq/8EuQ3lMqBshLBETlWTsqyhQ+KyZN0/kSj9NI
- km6GkzOkFk6nF9L/vdSHanSR6vM1e0LIZVdr99hf0jcijECk5hV104r6Buya96Vl3yxnRlIbY
- w48+pkoSTduaGwI1nVky8wEpk+fTSkFbijB6lwKwCRNkC6TqbG4OQ5BN831W0HN9zuX0bTtg2
- sJzAfvUwVs0UQoWlGzHCiybGMxCt/2aoCaDZwxz1zZDJ8yBZWo5vYr+0ekh6PGgyQJDU/kyTv
- rv0opUKEHfQZaXbrx5i7H5BEGfmWql0vT2ymXxoN0D2Zyh28J6ewn66j8IziEjF0x1nRx7wiT
- nDJ0J3jkYXmSaFcfdrIHHNeSNeI1k7o7DdzMp7qjsF/rzDV8hpLwBTFeQSqRWEOojNLudpL2q
- d5w26wvFo3YCVa4l4d90h5KNyUrqUtaKbdKgwE61eBScbF5dfYjxtF2Vc4koKUelfcbPsANcW
- j/acS1S+yvfdhwYX90sELgTYGbrRUCtCyOZCHXuGikZepG6ioLFFo/Z41ToGj8zxG025uOvE3
- x/ZppmzVxHw==
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9191 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1011
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=834 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1903110101
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -91,99 +74,18 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 2019/3/11 下午8:37, Nikolay Borisov wrote:
+>> +        if (ret) {
+>> +            error("device scan %s: %s", argv[dev_optind],
+>> +                   strerror(-ret));
 > 
+> Nit:
 > 
-> On 11.03.19 г. 14:35 ч., Qu Wenruo wrote:
->>
->>
->> On 2019/3/11 下午8:26, Nikolay Borisov wrote:
->>>
->>>
->>> On 11.03.19 г. 3:17 ч., Qu Wenruo wrote:
->>>>
->>>>
->>>> On 2019/3/11 上午7:09, Chris Murphy wrote:
->>>>> In the case where superblock 0 at 65536 is valid but stale (older than
->>>>> the others):
->>>>
->>>> Then this means either the fs is fuzzed, or the FUA implementation of
->>>> the disk is completely screwed up.
->>>>
->>>> Btrfs kernel submit super blocks as the following sequence:
->>>> 1) wait all metadata write
->>>> 2) flush
->>>> 3) FUA the primary superblock
->>>
->>> SATA devices generally do not have FUA support. For example my evo 850
->>> ssds do not support it nor does my evo 860 PRO. IMO not having
->>> functioning FUA seems to be the norm rather than an exception.
->>
->> Kernel block layer will translate FUA to write + flush.
+> Should do some change to follow current "%m" style?
 > 
-> Where exactly does this happen?
+> Thanks
+> Su
 
-block/blk-flush.c
+  Ok will change it. Thanks for catching.
 
-The comment part at the beginning:
+Thanks, Anand
 
- * If the device has writeback cache and doesn't support FUA, REQ_PREFLUSH
- * is translated to PREFLUSH and REQ_FUA to POSTFLUSH.
-
-I need extra digging for exactly which line does this, but I think that
-should explain the workflow fine.
-
-Thanks,
-Qu
-
-
-> 
->> So in that case we will do:
->>
->> 1) wait all metadata write
->> 2) flush
->> 3) write first sb, flush
->> 4) write backup sb
->>
->> For FUA -> write + flush, it's less atomic than native FUA, but it
->> should be good enough for pseudo-atomic.
->>
->> Thanks,
->> Qu
->>
->>>
->>>
->>>> 4) write the backup superblocks
->>>>
->>>> If backup is newer than primary, then the FUA write doesn't reach disk
->>>> before normal write.
->>>> This means any fs could be corrupted on that disk, not only btrfs.
->>>>
->>>>>
->>>>> 1. btrfs check doesn't complain, the stale super is used for the check
->>>>> 2. when mounting, super 0 is used, no complaints at mount time, fairly
->>>>> quickly the newer supers are overwritten
->>>>
->>>> The reason why kernel doesn't search backup roots is to avoid stale btrfs.
->>>> For case like mkfs.btrfs -> do btrfs write -> mkfs.xfs -> try mount as
->>>> btrfs again, this would cause problems.
->>>>
->>>> So IMHO always use the primary superblock is the designed behavior.
->>>>
->>>> Thanks,
->>>> Qu
->>>>
->>>>>
->>>>> Is this expected? In particular, in lieu of `btrfs rescue super`
->>>>> behavior which considers super 0 a bad super, and offers to fix it
->>>>> from the newer ones, and when I answer y, it replaces super 0 with
->>>>> newer information from the other supers.
->>>>>
->>>>> I think the `btrfs rescue` behavior is correct. I would expect that
->>>>> all the supers are read at mount time, and if there's discrepancy that
->>>>> either there's code to suspiciously sanity check the latest roots in
->>>>> the newest super, or it flat out fails to mount. Mounting based on
->>>>> stale super data seems risky doesn't it?
->>>>>
->>>>
->>

@@ -2,31 +2,31 @@ Return-Path: <SRS0=TRLW=RO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 62AE2C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Mar 2019 15:19:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0D145C43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Mar 2019 15:25:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2D0252084F
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Mar 2019 15:19:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D50F2206BA
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Mar 2019 15:25:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727547AbfCKPTm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Mar 2019 11:19:42 -0400
-Received: from mx2.suse.de ([195.135.220.15]:39644 "EHLO mx1.suse.de"
+        id S1727014AbfCKPZQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Mar 2019 11:25:16 -0400
+Received: from mx2.suse.de ([195.135.220.15]:40600 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726352AbfCKPTl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Mar 2019 11:19:41 -0400
+        id S1726641AbfCKPZQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 11 Mar 2019 11:25:16 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 66452AFF3;
-        Mon, 11 Mar 2019 15:19:39 +0000 (UTC)
-Subject: Re: [PATCH v4] btrfs-progs: dump-tree: add noscan option
-To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-References: <1551336865-9954-1-git-send-email-anand.jain@oracle.com>
- <bc654de6-f8f9-ec5d-bdf0-b2570f3d8e56@suse.com>
- <6db79bc0-29a4-cdd1-73f3-9c433acb12f2@oracle.com>
+        by mx1.suse.de (Postfix) with ESMTP id 7ADFBAD07;
+        Mon, 11 Mar 2019 15:25:14 +0000 (UTC)
+Subject: Re: [PATCH 1/3] btrfs: tree-checker: Verify chunk items
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Cc:     Yoon Jungyeon <jungyeon@gatech.edu>
+References: <20190308072929.30863-1-wqu@suse.com>
+ <20190308072929.30863-2-wqu@suse.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -71,12 +71,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <4c72cfcd-af49-5528-94b6-d7deaae72b03@suse.com>
-Date:   Mon, 11 Mar 2019 17:19:38 +0200
+Message-ID: <913bed07-e9a0-14ed-1602-e4a5f206e303@suse.com>
+Date:   Mon, 11 Mar 2019 17:25:13 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <6db79bc0-29a4-cdd1-73f3-9c433acb12f2@oracle.com>
+In-Reply-To: <20190308072929.30863-2-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -87,255 +87,31 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 11.03.19 г. 16:44 ч., Anand Jain wrote:
+On 8.03.19 г. 9:29 ч., Qu Wenruo wrote:
+> We already have btrfs_check_chunk_valid() to verify each chunk before
+> tree-checker.
 > 
+> Merge that function into tree-checker, and update its error message to
+> be more readable.
 > 
-> On 3/11/19 6:11 PM, Nikolay Borisov wrote:
->>
->>
->> On 28.02.19 г. 8:54 ч., Anand Jain wrote:
->>> From: Anand Jain <Anand.Jain@oracle.com>
->>>
->>> There is no way to dump tree from a disk in the degraded mode.
->>> Such as, when you specify a device for the cli 'btrfs inspect
->>> dump-tree /dev/sda' it would invariably scan for its partner devices
->>> to built and print the tree. This approach at times defeats the purpose.
->>
->> define "at times" which are those times?
+> Old error message would be something like:
+>   BTRFS error (device dm-3): invalid chunk num_stipres: 0
 > 
->  Its already defined as below. Will reword or state it explicitly.
+> New error message would be:
+>   Btrfs critical (device dm-3): corrupt superblock syschunk array: chunk_start=2097152, invalid chunk num_stripes: 0
+> Or
+>   Btrfs critical (device dm-3): corrupt leaf: root=3 block=8388608 slot=3 chunk_start=2097152, invalid chunk num_stripes: 0
 > 
->>> Suppose in RAID1 if you want to review each mirror separately as of now
->>> there is no way you can do that. So this patch adds an option --noscan
->>> for example:
->>>    'btrfs inspect dump-tree --noscan <dev> [<dev>..]'
->>> with which it shall not scan for the other devices to report the
->>> tree, and
->>> helps debug RAID1s.
->>
->> This example contradicts what the code is doing,
+> Btrfs_check_chunk_valid() is exported for super block syschunk array
+> verification.
 > 
->  No. did you miss the flag OPEN_CTREE_NO_DEVICES at [1] below. ?
->  Which means it does not scan the system for the btrfs devices.
+> Also make tree-checker to verify chunk items, this makes chunk item
+> checker covers all chunks and avoid fuzzed image.
 > 
->> with this patch you
->> will call btrfs_scan_one_device for every device passed to the noscan
->> option?
-> 
->  That's right. Its correct behavior.
-> 
->>>
->>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->>> v3->v4: change the patch title.
->>>     collapse scan_args() to its only parent cmd_inspect_dump_tree()
->>>     (it was bit confusing).
->>>     update the change log.
->>>     update usage.
->>>     update man page.
->>> v2->v3: make it scalable for more than two disks in noscan mode
->>> v1->v2: rename --degraded to --noscan
->>
->> So what problem is this actually trying to solve? The following succeeds
->> for me with btrfs-progs 4.17.1:
-> 
->> root@ubuntu-virtual:~# losetup -f file1.img
->> root@ubuntu-virtual:~# losetup -f file2.img
->> root@ubuntu-virtual:~# mkfs.btrfs -m raid1 /dev/loop1 /dev/loop0
->> losetup -d /dev/loop1
->> root@ubuntu-virtual:~# mount /dev/loop0 /media/scratch/
->> mount: wrong fs type, bad option, bad superblock on /dev/loop0,
->>         missing codepage or helper program, or other error
->>
->>         In some cases useful info is found in syslog - try
->>         dmesg | tail or so.
->>
->>
->> root@ubuntu-virtual:~# btrfs inspect-internal dump-tree /dev/loop0
->> btrfs-progs v4.17.1
->> warning, device 1 is missing
->> root tree
->> leaf 30556160 items 10 free space 13173 generation 5 owner ROOT_TREE
->> leaf 30556160 flags 0x1(WRITTEN) backref revision 1
->> fs uuid 8727408c-b1af-4c14-b63b-51b12bcff933
->> chunk uuid 5ebde928-324f-42d0-98c6-f953d680fc21
->>     item 0 key (EXTENT_TREE ROOT_ITEM 0) itemoff 15844 itemsize 439
->>         generation 5 root_dirid 0 bytenr 30523392 level 0 refs 1
->> .................
->>
->>
->>
->> Your changelog definitely needs rewriting to make it clear what you are
->> trying to do.
-> 
->  In your example above /dev/loop1 is destroyed. So are you suggesting to
->  destroy the partner device to dump-tree in degraded mode? That's not
->  a viable workaround.
+> Reported-by: Yoon Jungyeon <jungyeon@gatech.edu>
+> Link: https://bugzilla.kernel.org/show_bug.cgi?id=202751
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-From your changelog I was left with the impression it's not possible to
-issue dump-tree for a device whose counterpart is missing. Clearly
-that's not what you are fixing so you have to be more eloquent in your
-changelogs if you want people to quickly grasp what you are trying to do.
-
-> 
-> Thanks, Anand
-> 
->>> ---
->>>   Documentation/btrfs-inspect-internal.asciidoc |  5 ++-
->>>   cmds-inspect-dump-tree.c                      | 57
->>> ++++++++++++++++++++-------
->>>   2 files changed, 47 insertions(+), 15 deletions(-)
->>>
->>> diff --git a/Documentation/btrfs-inspect-internal.asciidoc
->>> b/Documentation/btrfs-inspect-internal.asciidoc
->>> index 381497d284b8..f9d7f1c58f00 100644
->>> --- a/Documentation/btrfs-inspect-internal.asciidoc
->>> +++ b/Documentation/btrfs-inspect-internal.asciidoc
->>> @@ -61,7 +61,7 @@ specify which mirror to print, valid values are 0,
->>> 1 and 2 and the superblock
->>>   must be present on the device with a valid signature, can be used
->>> together with
->>>   '--force'
->>>   -*dump-tree* [options] <device>::
->>> +*dump-tree* [options] <device> [device...]::
->>>   (replaces the standalone tool *btrfs-debug-tree*)
->>>   +
->>>   Dump tree structures from a given device in textual form, expand
->>> keys to human
->>> @@ -95,6 +95,9 @@ intermixed in the output
->>>   --bfs::::
->>>   use breadth-first search to print trees. the nodes are printed
->>> before all
->>>   leaves
->>> +--noscan::::
->>> +do not scan the system for other partner device(s), only use the
->>> device(s)
->>> +provided in the argument
->>>   -t <tree_id>::::
->>>   print only the tree with the specified ID, where the ID can be
->>> numerical or
->>>   common name in a flexible human readable form
->>> diff --git a/cmds-inspect-dump-tree.c b/cmds-inspect-dump-tree.c
->>> index ad5345b4f1db..9dd040e5de17 100644
->>> --- a/cmds-inspect-dump-tree.c
->>> +++ b/cmds-inspect-dump-tree.c
->>> @@ -21,6 +21,7 @@
->>>   #include <unistd.h>
->>>   #include <uuid/uuid.h>
->>>   #include <getopt.h>
->>> +#include <fcntl.h>
->>>     #include "kerncompat.h"
->>>   #include "radix-tree.h"
->>> @@ -185,7 +186,7 @@ static u64 treeid_from_string(const char *str,
->>> const char **end)
->>>   }
->>>     const char * const cmd_inspect_dump_tree_usage[] = {
->>> -    "btrfs inspect-internal dump-tree [options] device",
->>> +    "btrfs inspect-internal dump-tree [options] <device> [<device>
->>> ..]",
->>>       "Dump tree structures from a given device",
->>>       "Dump tree structures from a given device in textual form,
->>> expand keys to human",
->>>       "readable equivalents where possible.",
->>> @@ -200,6 +201,7 @@ const char * const cmd_inspect_dump_tree_usage[] = {
->>>       "-b|--block <block_num> print info from the specified block only",
->>>       "-t|--tree <tree_id>    print only tree with the given id
->>> (string or number)",
->>>       "--follow               use with -b, to show all children tree
->>> blocks of <block_num>",
->>> +    "--noscan               do not scan for the partner device(s)",
->>>       NULL
->>>   };
->>>   @@ -214,7 +216,7 @@ int cmd_inspect_dump_tree(int argc, char **argv)
->>>       struct btrfs_disk_key disk_key;
->>>       struct btrfs_key found_key;
->>>       char uuidbuf[BTRFS_UUID_UNPARSED_SIZE];
->>> -    int ret;
->>> +    int ret = 0;
->>>       int slot;
->>>       int extent_only = 0;
->>>       int device_only = 0;
->>> @@ -222,6 +224,7 @@ int cmd_inspect_dump_tree(int argc, char **argv)
->>>       int roots_only = 0;
->>>       int root_backups = 0;
->>>       int traverse = BTRFS_PRINT_TREE_DEFAULT;
->>> +    int dev_optind;
->>>       unsigned open_ctree_flags;
->>>       u64 block_only = 0;
->>>       struct btrfs_root *tree_root_scan;
->>> @@ -239,8 +242,8 @@ int cmd_inspect_dump_tree(int argc, char **argv)
->>>       optind = 0;
->>>       while (1) {
->>>           int c;
->>> -        enum { GETOPT_VAL_FOLLOW = 256, GETOPT_VAL_DFS,
->>> -               GETOPT_VAL_BFS };
->>> +        enum { GETOPT_VAL_FOLLOW = 256, GETOPT_VAL_DFS, GETOPT_VAL_BFS,
->>> +               GETOPT_VAL_NOSCAN};
->>>           static const struct option long_options[] = {
->>>               { "extents", no_argument, NULL, 'e'},
->>>               { "device", no_argument, NULL, 'd'},
->>> @@ -252,6 +255,7 @@ int cmd_inspect_dump_tree(int argc, char **argv)
->>>               { "follow", no_argument, NULL, GETOPT_VAL_FOLLOW },
->>>               { "bfs", no_argument, NULL, GETOPT_VAL_BFS },
->>>               { "dfs", no_argument, NULL, GETOPT_VAL_DFS },
->>> +            { "noscan", no_argument, NULL, GETOPT_VAL_NOSCAN },
->>>               { NULL, 0, NULL, 0 }
->>>           };
->>>   @@ -313,24 +317,49 @@ int cmd_inspect_dump_tree(int argc, char **argv)
->>>           case GETOPT_VAL_BFS:
->>>               traverse = BTRFS_PRINT_TREE_BFS;
->>>               break;
->>> +        case GETOPT_VAL_NOSCAN:
->>> +            open_ctree_flags |= OPEN_CTREE_NO_DEVICES;  <--- [1]
->>> +            break;
->>>           default:
->>>               usage(cmd_inspect_dump_tree_usage);
->>>           }
->>>       }
->>>   -    if (check_argc_exact(argc - optind, 1))
->>> +    if (check_argc_min(argc - optind, 1))
->>>           usage(cmd_inspect_dump_tree_usage);
->>>   -    ret = check_arg_type(argv[optind]);
->>> -    if (ret != BTRFS_ARG_BLKDEV && ret != BTRFS_ARG_REG) {
->>> -        if (ret < 0) {
->>> -            errno = -ret;
->>> -            error("invalid argument %s: %m", argv[optind]);
->>> -        } else {
->>> -            error("not a block device or regular file: %s",
->>> -                  argv[optind]);
->>> +    dev_optind = optind;
->>> +    while (dev_optind < argc) {
->>> +        int fd;
->>> +        struct btrfs_fs_devices *fs_devices;
->>> +        u64 num_devices;
->>> +
->>> +        ret = check_arg_type(argv[optind]);
->>> +        if (ret != BTRFS_ARG_BLKDEV && ret != BTRFS_ARG_REG) {
->>> +            if (ret < 0) {
->>> +                errno = -ret;
->>> +                error("invalid argument %s: %m", argv[dev_optind]);
->>> +            } else {
->>> +                error("not a block device or regular file: %s",
->>> +                       argv[dev_optind]);
->>> +            }
->>>           }
->>> -        goto out;
->>> +        fd = open(argv[dev_optind], O_RDONLY);
->>> +        if (fd < 0) {
->>> +            error("cannot open %s: %m", argv[dev_optind]);
->>> +            return -EINVAL;
->>> +        }
->>> +        ret = btrfs_scan_one_device(fd, argv[dev_optind], &fs_devices,
->>> +                        &num_devices,
->>> +                        BTRFS_SUPER_INFO_OFFSET,
->>> +                        SBREAD_DEFAULT);
->>> +        close(fd);
->>> +        if (ret) {
->>> +            error("device scan %s: %s", argv[dev_optind],
->>> +                   strerror(-ret));
->>> +            return ret;
->>> +        }
->>> +        dev_optind++;
->>>       }
->>>         printf("%s\n", PACKAGE_STRING);
->>>
-> 
+Actually since the reporter made images available I would like to have
+those integrated into the fsck group so that those changes can be
+validated and ensure further regressions do not creep up.

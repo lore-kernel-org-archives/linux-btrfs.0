@@ -2,81 +2,141 @@ Return-Path: <SRS0=TRLW=RO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4EE31C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Mar 2019 10:21:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E8624C43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Mar 2019 12:26:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 247C22077B
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Mar 2019 10:21:01 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BF2DA20657
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Mar 2019 12:26:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727085AbfCKKU7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Mar 2019 06:20:59 -0400
-Received: from mx2.suse.de ([195.135.220.15]:37448 "EHLO mx1.suse.de"
+        id S1726770AbfCKM0R (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Mar 2019 08:26:17 -0400
+Received: from mx2.suse.de ([195.135.220.15]:33754 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726826AbfCKKU7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Mar 2019 06:20:59 -0400
+        id S1725943AbfCKM0R (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 11 Mar 2019 08:26:17 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A1CCBAED4
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Mar 2019 10:20:58 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 45F46B017;
+        Mon, 11 Mar 2019 12:26:15 +0000 (UTC)
+Subject: Re: confusing behavior when supers mismatch
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CAJCQCtQ9nduarOggGv98Oxo6SE9QBKhm7oxYXFE9UsMbVTnwow@mail.gmail.com>
+ <cf8922ef-b7db-7779-c140-80090efc60d5@gmx.com>
 From:   Nikolay Borisov <nborisov@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs-progs: Remove get_argv0_buf
-Date:   Mon, 11 Mar 2019 12:20:56 +0200
-Message-Id: <20190311102056.27503-1-nborisov@suse.com>
-X-Mailer: git-send-email 2.17.1
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <62ad41ed-5fba-d641-9a19-9231a55f603c@suse.com>
+Date:   Mon, 11 Mar 2019 14:26:13 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.4.0
+MIME-Version: 1.0
+In-Reply-To: <cf8922ef-b7db-7779-c140-80090efc60d5@gmx.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-get_argv0_buf is used only in two functions in help.c which also has
-direct access to the static argv0_buf. All other references to this
-buffer are direct. So remove the function. No functional changes.
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- help.c | 9 ++-------
- 1 file changed, 2 insertions(+), 7 deletions(-)
 
-diff --git a/help.c b/help.c
-index b10b2b053e13..09e771ef6695 100644
---- a/help.c
-+++ b/help.c
-@@ -31,11 +31,6 @@
- 
- static char argv0_buf[ARGV0_BUF_SIZE] = "btrfs";
- 
--const char *get_argv0_buf(void)
--{
--	return argv0_buf;
--}
--
- void fixup_argv0(char **argv, const char *token)
- {
- 	int len = strlen(argv0_buf);
-@@ -349,7 +344,7 @@ void usage_command_group(const struct cmd_group *grp, int full, int err)
- __attribute__((noreturn))
- void help_unknown_token(const char *arg, const struct cmd_group *grp)
- {
--	fprintf(stderr, "%s: unknown token '%s'\n", get_argv0_buf(), arg);
-+	fprintf(stderr, "%s: unknown token '%s'\n", argv0_buf, arg);
- 	usage_command_group(grp, 0, 1);
- 	exit(1);
- }
-@@ -359,7 +354,7 @@ void help_ambiguous_token(const char *arg, const struct cmd_group *grp)
- {
- 	const struct cmd_struct *cmd = grp->commands;
- 
--	fprintf(stderr, "%s: ambiguous token '%s'\n", get_argv0_buf(), arg);
-+	fprintf(stderr, "%s: ambiguous token '%s'\n", argv0_buf, arg);
- 	fprintf(stderr, "\nDid you mean one of these ?\n");
- 
- 	for (; cmd->token; cmd++) {
--- 
-2.7.4
+On 11.03.19 г. 3:17 ч., Qu Wenruo wrote:
+> 
+> 
+> On 2019/3/11 上午7:09, Chris Murphy wrote:
+>> In the case where superblock 0 at 65536 is valid but stale (older than
+>> the others):
+> 
+> Then this means either the fs is fuzzed, or the FUA implementation of
+> the disk is completely screwed up.
+> 
+> Btrfs kernel submit super blocks as the following sequence:
+> 1) wait all metadata write
+> 2) flush
+> 3) FUA the primary superblock
 
+SATA devices generally do not have FUA support. For example my evo 850
+ssds do not support it nor does my evo 860 PRO. IMO not having
+functioning FUA seems to be the norm rather than an exception.
+
+
+> 4) write the backup superblocks
+> 
+> If backup is newer than primary, then the FUA write doesn't reach disk
+> before normal write.
+> This means any fs could be corrupted on that disk, not only btrfs.
+> 
+>>
+>> 1. btrfs check doesn't complain, the stale super is used for the check
+>> 2. when mounting, super 0 is used, no complaints at mount time, fairly
+>> quickly the newer supers are overwritten
+> 
+> The reason why kernel doesn't search backup roots is to avoid stale btrfs.
+> For case like mkfs.btrfs -> do btrfs write -> mkfs.xfs -> try mount as
+> btrfs again, this would cause problems.
+> 
+> So IMHO always use the primary superblock is the designed behavior.
+> 
+> Thanks,
+> Qu
+> 
+>>
+>> Is this expected? In particular, in lieu of `btrfs rescue super`
+>> behavior which considers super 0 a bad super, and offers to fix it
+>> from the newer ones, and when I answer y, it replaces super 0 with
+>> newer information from the other supers.
+>>
+>> I think the `btrfs rescue` behavior is correct. I would expect that
+>> all the supers are read at mount time, and if there's discrepancy that
+>> either there's code to suspiciously sanity check the latest roots in
+>> the newest super, or it flat out fails to mount. Mounting based on
+>> stale super data seems risky doesn't it?
+>>
+> 

@@ -2,153 +2,185 @@ Return-Path: <SRS0=uY43=RP=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B47AFC43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Mar 2019 04:00:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 90C47C43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Mar 2019 07:46:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 80633214AE
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Mar 2019 04:00:28 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 67DAD214AF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Mar 2019 07:46:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725792AbfCLEA1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 12 Mar 2019 00:00:27 -0400
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:46748 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725320AbfCLEA0 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Mar 2019 00:00:26 -0400
-Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
-        id B07F7259A08; Tue, 12 Mar 2019 00:00:25 -0400 (EDT)
-Date:   Tue, 12 Mar 2019 00:00:25 -0400
-From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+        id S1727399AbfCLHqG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 12 Mar 2019 03:46:06 -0400
+Received: from mx2.suse.de ([195.135.220.15]:39762 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726218AbfCLHqF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 12 Mar 2019 03:46:05 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id BBAC6AF03;
+        Tue, 12 Mar 2019 07:46:03 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: Spurious "ghost" "parent transid verify failed" messages on 4.14.x,
- 4.20.14
-Message-ID: <20190312040024.GI9995@hungrycats.org>
+Cc:     Yoon Jungyeon <jungyeon@gatech.edu>
+Subject: [PATCH] btrfs: Check the first key and level for cached extent buffer
+Date:   Tue, 12 Mar 2019 15:45:58 +0800
+Message-Id: <20190312074558.32393-1-wqu@suse.com>
+X-Mailer: git-send-email 2.21.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-User-Agent: Mutt/1.10.1 (2018-07-13)
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 4.14.x and 4.20.14 kernels (probably all the ones in between too,
-but I haven't tested those), I get what I call "ghost parent transid
-verify failed" errors.  Here's an unedited recent example from dmesg:
+[BUG]
+When reading a file from a fuzzed image, kernel can panic like:
+  BTRFS warning (device loop0): csum failed root 5 ino 270 off 0 csum 0x98f94189 expected csum 0x00000000 mirror 1
+  assertion failed: !memcmp_extent_buffer(b, &disk_key, offsetof(struct btrfs_leaf, items[0].key), sizeof(disk_key)), file: fs/btrfs/ctree.c, line: 2544
+  ------------[ cut here ]------------
+  kernel BUG at fs/btrfs/ctree.h:3500!
+  invalid opcode: 0000 [#1] PREEMPT SMP NOPTI
+  RIP: 0010:btrfs_search_slot.cold.24+0x61/0x63 [btrfs]
+  Call Trace:
+   btrfs_lookup_csum+0x52/0x150 [btrfs]
+   __btrfs_lookup_bio_sums+0x209/0x640 [btrfs]
+   btrfs_submit_bio_hook+0x103/0x170 [btrfs]
+   submit_one_bio+0x59/0x80 [btrfs]
+   extent_read_full_page+0x58/0x80 [btrfs]
+   generic_file_read_iter+0x2f6/0x9d0
+   __vfs_read+0x14d/0x1a0
+   vfs_read+0x8d/0x140
+   ksys_read+0x52/0xc0
+   do_syscall_64+0x60/0x210
+   entry_SYSCALL_64_after_hwframe+0x49/0xbe
 
-	[16180.649285] BTRFS error (device dm-3): parent transid verify failed on 1218181971968 wanted 9698 found 9744
-	[16864.457119] BTRFS error (device dm-3): parent transid verify failed on 981488238592 wanted 9758 found 9763
-	[16864.459153] BTRFS error (device dm-3): parent transid verify failed on 981488238592 wanted 9758 found 9763
-	[16865.409955] BTRFS error (device dm-3): parent transid verify failed on 981488238592 wanted 9758 found 9763
-	[16865.413091] BTRFS error (device dm-3): parent transid verify failed on 981488238592 wanted 9758 found 9763
-	[16865.583441] BTRFS error (device dm-3): parent transid verify failed on 981488238592 wanted 9758 found 9763
-	[16865.586602] BTRFS error (device dm-3): parent transid verify failed on 981488238592 wanted 9758 found 9763
-	[17364.870504] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
-	[17364.879696] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
-	[17364.901713] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
-	[17376.127722] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
-	[17376.129965] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
-	[17376.132919] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
-	[17376.250605] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
-	[17376.253633] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
-	[17376.577192] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
-	[17376.585174] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
-	[17380.720874] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
-	[17380.735643] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
-	[17383.282250] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
-	[17383.286598] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
-	[17433.417529] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
-	[17433.420685] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
-	[17881.816489] BTRFS error (device dm-3): parent transid verify failed on 785410277376 wanted 9786 found 9794
-	[17881.820072] BTRFS error (device dm-3): parent transid verify failed on 785410277376 wanted 9786 found 9794
-	[17881.824307] BTRFS error (device dm-3): parent transid verify failed on 785410277376 wanted 9786 found 9794
-	[19525.602623] BTRFS error (device dm-3): parent transid verify failed on 984570740736 wanted 9841 found 9846
-	[19525.605395] BTRFS error (device dm-3): parent transid verify failed on 984570740736 wanted 9841 found 9846
-	[19525.829326] BTRFS error (device dm-3): parent transid verify failed on 984570740736 wanted 9841 found 9846
-	[19525.834123] BTRFS error (device dm-3): parent transid verify failed on 984570740736 wanted 9841 found 9846
-	[19525.905553] BTRFS error (device dm-3): parent transid verify failed on 984570740736 wanted 9841 found 9846
-	[19525.909302] BTRFS error (device dm-3): parent transid verify failed on 984570740736 wanted 9841 found 9846
-	[19525.914374] BTRFS error (device dm-3): parent transid verify failed on 984570740736 wanted 9841 found 9846
-	[19525.917829] BTRFS error (device dm-3): parent transid verify failed on 984570740736 wanted 9841 found 9846
-	[19525.980067] BTRFS error (device dm-3): parent transid verify failed on 984570740736 wanted 9841 found 9846
-	[19525.983479] BTRFS error (device dm-3): parent transid verify failed on 984570740736 wanted 9841 found 9846
+[CAUSE]
+The fuzzed image has a corrupted leaf whose first key doesn't match with its parent:
+  checksum tree key (CSUM_TREE ROOT_ITEM 0)
+  node 29741056 level 1 items 14 free 107 generation 19 owner CSUM_TREE
+  fs uuid 3381d111-94a3-4ac7-8f39-611bbbdab7e6
+  chunk uuid 9af1c3c7-2af5-488b-8553-530bd515f14c
+  	...
+          key (EXTENT_CSUM EXTENT_CSUM 79691776) block 29761536 gen 19
 
-They seem to occur while running these simultaneously:
+  leaf 29761536 items 1 free space 1726 generation 19 owner CSUM_TREE
+  leaf 29761536 flags 0x1(WRITTEN) backref revision 1
+  fs uuid 3381d111-94a3-4ac7-8f39-611bbbdab7e6
+  chunk uuid 9af1c3c7-2af5-488b-8553-530bd515f14c
+          item 0 key (EXTENT_CSUM EXTENT_CSUM 8798638964736) itemoff 1751 itemsize 2244
+                  range start 8798638964736 end 8798641262592 length 2297856
 
-	* rsync receiving a lot of data
+For the first time tree read, it will not pass verify_level_key() check.
+But the extent buffer will still be cached.
 
-	* snapshot delete to make space for more data
+Also there is a pitfall in read_block_for_search(), where a cached
+extent buffer will not be checked for its level and first key.
 
-	* bees deduping said data--possibly on the snapshot being
-	deleted.
+There are context where we read tree block without verifying its
+first key, such as scrub.
 
-All three seem to be needed--these messages do not appear if one of the
-above is not running at the time.  I can get the messages on a test VM
-that is running nothing but the above three things on the test filesystem.
+So in that case, a corrupted leaf can sneak in and screw up the kernel.
 
-Unlike the usual disaster cases when "parent transid verify failed"
-messages appear, these incidents seem to be entirely harmless.  They've
-been appearing for years (since at least the first v4.14 kernels)
-and...nothing else happens.  The filesystem doesn't go read-only.
-It doesn't become irreparably damaged.  Nothing locks up or crashes
-(at the same time).  The system just keeps running normally, often for
-months, emitting a few of these messages during longer snapshot deletes.
+[FIX]
+Export verify_level_key() as btrfs_verify_level_key() and call it in
+read_block_for_search() to fill the hole.
 
-This happens on several different host systems.  There is no sign of
-hardware failure.  It looks like a real bug, but I don't have a simpler
-reproducer, and sometimes weeks or months pass between incidents on a
-given machine.
+Please note, this will cause a lot of extra error message if we have a
+bad tree block in any hot tree, but it's still much better to trigger
+the final safe net in key_search_validate().
 
-Scrubs are always clean.  There are never errors recorded in btrfs
-dev stat:
+Reported-by: Yoon Jungyeon <jungyeon@gatech.edu>
+Link: https://bugzilla.kernel.org/show_bug.cgi?id=202755
+Link: https://bugzilla.kernel.org/show_bug.cgi?id=202757
+Link: https://bugzilla.kernel.org/show_bug.cgi?id=202759
+Link: https://bugzilla.kernel.org/show_bug.cgi?id=202761
+Link: https://bugzilla.kernel.org/show_bug.cgi?id=202767
+Link: https://bugzilla.kernel.org/show_bug.cgi?id=202769
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+There is one remaining report where I can't get any kernel message
+before the VM completely lost reponse.
+https://bugzilla.kernel.org/show_bug.cgi?id=202763
+(out-of-bound access in end_bio_extent_readpage() when mounting and operating a crafted btrfs image)
 
-	# btrfs dev stat /testfs/
-	[/dev/mapper/vgtest-tvdb].write_io_errs   0
-	[/dev/mapper/vgtest-tvdb].read_io_errs    0
-	[/dev/mapper/vgtest-tvdb].flush_io_errs   0
-	[/dev/mapper/vgtest-tvdb].corruption_errs 0
-	[/dev/mapper/vgtest-tvdb].generation_errs 0
-	[/dev/mapper/vgtest-tvdc].write_io_errs   0
-	[/dev/mapper/vgtest-tvdc].read_io_errs    0
-	[/dev/mapper/vgtest-tvdc].flush_io_errs   0
-	[/dev/mapper/vgtest-tvdc].corruption_errs 0
-	[/dev/mapper/vgtest-tvdc].generation_errs 0
+And the above case can't be fixed by this patch. Still trying to get a
+good idea of what's going wrong (AKA good kernel message).
 
-dump-tree on the offending block doesn't find a metadata page in the
-block right after the error occurs.  Sometimes it finds a newer block
-(higher transid) some hours later:
+There is also another report, which doesn't provide the fuzzed image.
+https://bugzilla.kernel.org/show_bug.cgi?id=202765
+(NULL pointer dereference when mounting a crafted btrfs image)
+---
+ fs/btrfs/ctree.c   | 10 ++++++++++
+ fs/btrfs/disk-io.c | 10 +++++-----
+ fs/btrfs/disk-io.h |  3 +++
+ 3 files changed, 18 insertions(+), 5 deletions(-)
 
-	# btrfs ins dump-tree -b 984570740736 /dev/mapper/vgtest-tvdc
-	btrfs-progs v4.20.1
-	leaf 984570740736 items 151 free space 7525 generation 9882 owner EXTENT_TREE
-	leaf 984570740736 flags 0x1(WRITTEN) backref revision 1
-	[...etc]
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 5a6c39b44c84..37447a7c5b4d 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -2401,6 +2401,16 @@ read_block_for_search(struct btrfs_root *root, struct btrfs_path *p,
+ 	if (tmp) {
+ 		/* first we do an atomic uptodate check */
+ 		if (btrfs_buffer_uptodate(tmp, gen, 1) > 0) {
++			/*
++			 * Do extra check for first_key, as it's possible the
++			 * eb is read from the context without first_key
++			 * requirement
++			 */
++			if (btrfs_verify_level_key(fs_info, tmp,
++					parent_level - 1, &first_key, gen)) {
++				free_extent_buffer(tmp);
++				return -EUCLEAN;
++			}
+ 			*eb_ret = tmp;
+ 			return 0;
+ 		}
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 298b34721bc0..e2a0cb362d28 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -423,9 +423,9 @@ static int btrfs_check_super_csum(struct btrfs_fs_info *fs_info,
+ 	return ret;
+ }
+ 
+-static int verify_level_key(struct btrfs_fs_info *fs_info,
+-			    struct extent_buffer *eb, int level,
+-			    struct btrfs_key *first_key, u64 parent_transid)
++int btrfs_verify_level_key(struct btrfs_fs_info *fs_info,
++			   struct extent_buffer *eb, int level,
++			   struct btrfs_key *first_key, u64 parent_transid)
+ {
+ 	int found_level;
+ 	struct btrfs_key found_key;
+@@ -500,8 +500,8 @@ static int btree_read_extent_buffer_pages(struct btrfs_fs_info *fs_info,
+ 			if (verify_parent_transid(io_tree, eb,
+ 						   parent_transid, 0))
+ 				ret = -EIO;
+-			else if (verify_level_key(fs_info, eb, level,
+-						  first_key, parent_transid))
++			else if (btrfs_verify_level_key(fs_info, eb, level,
++						first_key, parent_transid))
+ 				ret = -EUCLEAN;
+ 			else
+ 				break;
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index 987a64bc0c66..67a9fe2d29c7 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -39,6 +39,9 @@ static inline u64 btrfs_sb_offset(int mirror)
+ struct btrfs_device;
+ struct btrfs_fs_devices;
+ 
++int btrfs_verify_level_key(struct btrfs_fs_info *fs_info,
++			   struct extent_buffer *eb, int level,
++			   struct btrfs_key *first_key, u64 parent_transid);
+ struct extent_buffer *read_tree_block(struct btrfs_fs_info *fs_info, u64 bytenr,
+ 				      u64 parent_transid, int level,
+ 				      struct btrfs_key *first_key);
+-- 
+2.21.0
 
-Mount options common to all systems exhibiting this behavior:
-
-	rw,noatime,compress,space_cache=v2
-
-	both ssd and nossd
-
-	any of: compress, compress-force, compress-force=zstd, compress=zstd
-
-My guess/theory:  someone is maybe holding a reference to metadata
-they don't hold a lock for, and the page is being updated or replaced
-underneath due to the snapshot delete, triggering the verification
-failure.  The error doesn't get persisted to disk because by the time the
-error is discovered, the page was already deleted by the snapshot delete.
-No errors are getting persisted to disk, so it's probably something
-that happens in a read operation rather than a write operation.  Every
-application reads and writes data, so if it were in plain read or write
-code someone else would have noticed by now.  it's probably not a common
-code path.  bees seems to be required to trigger the bug (or triggers it
-much more often) so it may be a problem somewhere in one of the ioctls
-bees uses.  bees does a lot of FILE_EXTENT_SAME, TREE_SEARCH_V2, and
-LOGICAL_INO ioctls.  It could be any of the three, but FILE_EXTENT_SAME
-does writes, and TREE_SEARCH_V2 isn't used by bees to look at items in
-EXTENT_TREE, which leaves LOGICAL_INO which starts from EXTENT_TREE and
-works outwards to subvol trees.  So my guess is it's a bug in LOGICAL_INO.

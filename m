@@ -2,77 +2,82 @@ Return-Path: <SRS0=uY43=RP=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=0.5 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FORGED_MUA_MOZILLA,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 04CDEC10F00
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Mar 2019 15:48:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8420FC43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Mar 2019 17:21:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6F2C020693
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Mar 2019 15:48:23 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=urbackup.org header.i=@urbackup.org header.b="GrNDRH1q";
-	dkim=pass (1024-bit key) header.d=amazonses.com header.i=@amazonses.com header.b="rkB7q0DD"
+	by mail.kernel.org (Postfix) with ESMTP id 585E5214AF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Mar 2019 17:21:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726815AbfCLPsW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 12 Mar 2019 11:48:22 -0400
-Received: from a4-4.smtp-out.eu-west-1.amazonses.com ([54.240.4.4]:57164 "EHLO
-        a4-4.smtp-out.eu-west-1.amazonses.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726798AbfCLPsV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Mar 2019 11:48:21 -0400
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/simple;
-        s=vbsgq4olmwpaxkmtpgfbbmccllr2wq3g; d=urbackup.org; t=1552405700;
-        h=To:From:Subject:Message-ID:Date:MIME-Version:Content-Type:Content-Transfer-Encoding;
-        bh=WmBfPZiCb7QiRr/GsV9yGqpV4J0GvdTKHevTIwt1ptg=;
-        b=GrNDRH1qIgRhe1snL95DL5wOtusk4cdGk4Y6UVj3BORZ5r59COi0P41T7FgSBAER
-        YaGqNhCJTHS57O6RLWWJFz++zuow9py1W+qpOWJHNXMaQg0q5VujrXXjeNnbURcf1mi
-        6cthEKADTsPs+ouqoyjJPjhYN35iNI7uuGiZPreI=
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/simple;
-        s=uku4taia5b5tsbglxyj6zym32efj7xqv; d=amazonses.com; t=1552405700;
-        h=To:From:Subject:Message-ID:Date:MIME-Version:Content-Type:Content-Transfer-Encoding:Feedback-ID;
-        bh=WmBfPZiCb7QiRr/GsV9yGqpV4J0GvdTKHevTIwt1ptg=;
-        b=rkB7q0DD+c78r6epa6LUU/HiHIXxE1PGoO+eWoiIPh1TuXgVsSkiZalCub/okERW
-        b8rQfkDNFNplEt18D1XUXZ8/v0ramqrQSOgIB7QoZf6ArOwlFJdKuDyV4oIGppxCOP7
-        pOB8rlQwLAQ7SRsXqRMgNizb1DQnnhPEz1MPa3Rc=
-To:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From:   Martin Raiber <martin@urbackup.org>
-Subject: Allow sending of rw-subvols if file system is mounted ro
-Message-ID: <0102016972971d54-e7d79438-f177-48d2-ac42-55f162b6b63f-000000@eu-west-1.amazonses.com>
-Date:   Tue, 12 Mar 2019 15:48:20 +0000
-User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.3
+        id S1729761AbfCLRVe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 12 Mar 2019 13:21:34 -0400
+Received: from mx2.suse.de ([195.135.220.15]:36432 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1728567AbfCLRVc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 12 Mar 2019 13:21:32 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id C8F30B0B3;
+        Tue, 12 Mar 2019 17:21:31 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 93485DA8D5; Tue, 12 Mar 2019 18:22:47 +0100 (CET)
+Date:   Tue, 12 Mar 2019 18:22:47 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v5 0/9] Misc props.c cleanups
+Message-ID: <20190312172247.GA31119@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
+        linux-btrfs@vger.kernel.org
+References: <1551414895-22925-1-git-send-email-anand.jain@oracle.com>
+ <20190308150111.GT31119@twin.jikos.cz>
+ <4008f7b2-c590-78c8-3004-0b635a5af688@oracle.com>
+ <20190311144116.GW31119@twin.jikos.cz>
+ <d32bb7bd-e588-76ce-c07b-b263eb63f8cd@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: 7bit
-X-SES-Outgoing: 2019.03.12-54.240.4.4
-Feedback-ID: 1.eu-west-1.zKMZH6MF2g3oUhhjaE2f3oQ8IBjABPbvixQzV8APwT0=:AmazonSES
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <d32bb7bd-e588-76ce-c07b-b263eb63f8cd@oracle.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+On Tue, Mar 12, 2019 at 07:12:24PM +0800, Anand Jain wrote:
+> 
+> 
+> On 3/11/19 10:41 PM, David Sterba wrote:
+> > On Sat, Mar 09, 2019 at 08:04:14AM +0800, Anand Jain wrote:
+> >> On 3/8/19 11:01 PM, David Sterba wrote:
+> >>> On Fri, Mar 01, 2019 at 12:34:46PM +0800, Anand Jain wrote:
+> >>>> v5: drops patch
+> >>>>       [PATCH v4 03/10] btrfs: trivial, fix c coding style
+> >>>>       Chanegs are mainly to use BUG_ON instead of ASSERT as in the
+> >>>>        original code in patches 5-7/9. Fix ASSERT in 8/9. And add
+> >>>>        a rename in 9/9. Each individual patches as the details of
+> >>>>        the changes.
+> >>>
+> >>> The cleanup makes it easier to follow and the transaction semantics is
+> >>> more visible, good.
+> >>>
+> >>> I've fixed up the small things commented under the patches, no need to
+> >>> resend. Patchset added to 5.2 queue, thanks.
+> >>>
+> >>
+> >> Thanks for the feedback, review and integration.
+> >>
+> >> Just checked these branches scrub-misc, misc-next, for-next-20190307
+> >> any idea which branch these patches went to.
+> > 
+> > It's in a local topic branch and will appear in for-next once the merge
+> > window is over. I've pushed it out now as ext/anand/cleanup-props-v5 so
+> > you can have a look.
+> 
+> Thanks. Patches [1-9]/9 Looks good.
 
-I know there are corner cases that probably make this difficult (such as
-remounting the file system rw while a send is in progress), but it would
-be nice if one could send all subvolumes as long as a file system is
-mounted read-only (pretend every subvol ist read-only if the file system
-is mounted read-only).
-
-Background/use case:
-
-Through no fault of btrfs, metadata got damaged, which makes a file
-system go read-only after a while and I'd like to btrfs send/receive the
-subvolumes and snapshots that are still readable to another btrfs file
-system (btrfs send/receive being the only option that does this somewhat
-efficiently). Only I cannot send the subvolumes that are not set to
-read-only prior to the file system going read-only.
-I patched the kernel and btrfs-tools (just commenting the checks out) to
-support this in my case, but it would be great if this would be possible
-without patching.
-
-Regards,
-Martin Raiber
-
+Thanks, added to misc-5.2

@@ -2,83 +2,65 @@ Return-Path: <SRS0=uY43=RP=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.0 required=3.0
-	tests=HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PULL_REQUEST,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 16169C43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Mar 2019 15:07:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A567BC43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Mar 2019 15:20:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D949A2147C
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Mar 2019 15:07:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 76A892054F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Mar 2019 15:20:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726746AbfCLPHn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 12 Mar 2019 11:07:43 -0400
-Received: from mx2.suse.de ([195.135.220.15]:38958 "EHLO mx1.suse.de"
+        id S1726561AbfCLPUg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 12 Mar 2019 11:20:36 -0400
+Received: from mx2.suse.de ([195.135.220.15]:41116 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726561AbfCLPHn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Mar 2019 11:07:43 -0400
+        id S1726255AbfCLPUg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 12 Mar 2019 11:20:36 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D4D3DB168;
-        Tue, 12 Mar 2019 15:07:41 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id CC131DA8D5; Tue, 12 Mar 2019 16:08:57 +0100 (CET)
-From:   David Sterba <dsterba@suse.com>
-To:     torvalds@linux-foundation.org
-Cc:     David Sterba <dsterba@suse.com>, clm@fb.com,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [GIT PULL] Btrfs updates for 5.1, part 2
-Date:   Tue, 12 Mar 2019 16:08:52 +0100
-Message-Id: <cover.1552401006.git.dsterba@suse.com>
-X-Mailer: git-send-email 2.20.1
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+        by mx1.suse.de (Postfix) with ESMTP id 2261AB69B
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Mar 2019 15:20:35 +0000 (UTC)
+From:   Nikolay Borisov <nborisov@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH v4 0/7] Compress path cleanups
+Date:   Tue, 12 Mar 2019 17:20:23 +0200
+Message-Id: <20190312152030.31987-1-nborisov@suse.com>
+X-Mailer: git-send-email 2.17.1
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+Here is the v4 of the compress path cleanups, this version  incorporates 
+feeback from v3, namely: 
 
-here's the second part containing mostly fixes. The changelog would
-repeat the subject lines, in summary there are correctness and a
-deadlock fixes. Please pull, thanks.
+* Use struct_size when calculating the size of the struct to allocated in 
+cow_file_range_async
 
-----------------------------------------------------------------
-The following changes since commit f65e25e343cfc0e6f4db9a687c4085fad268325d:
+* Reinstated the comment about ihold in cow_file_range_async
 
-  btrfs: Remove unnecessary casts in btrfs_read_root_item (2019-02-25 14:19:23 +0100)
+* Renamed "struct async_chunk *" variables from async_cow to async_chunk
 
-are available in the Git repository at:
+* Gave patch 1 a more explicit title. 
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.1-part2-tag
+* added RB tags from Johanness to patch 3 and 4
 
-for you to fetch changes up to d3865159ac7823f645d313fdbac0b256ac01eeb9:
+Nikolay Borisov (7):
+  btrfs: Preallocate chunks in cow_file_range_async
+  btrfs: Rename async_cow to async_chunk
+  btrfs: Remove fs_info from struct async_chunk
+  btrfs: Make compress_file_range take only struct async_chunk
+  btrfs: Replace clear_extent_bit with unlock_extent
+  btrfs: Set iotree only once in submit_compressed_extents
+  btrfs: Factor out common extent locking code in
+    submit_compressed_extents
 
-  btrfs: zstd: ensure reclaim timer is properly cleaned up (2019-02-27 17:45:04 +0100)
+ fs/btrfs/inode.c | 177 ++++++++++++++++++++++++++---------------------
+ 1 file changed, 100 insertions(+), 77 deletions(-)
 
-----------------------------------------------------------------
-David Sterba (1):
-      btrfs: move ulist allocation out of transaction in quota enable
+-- 
+2.17.1
 
-Dennis Zhou (1):
-      btrfs: zstd: ensure reclaim timer is properly cleaned up
-
-Filipe Manana (2):
-      Btrfs: fix corruption reading shared and compressed extents after hole punching
-      Btrfs: fix deadlock between clone/dedupe and rename
-
-Josef Bacik (2):
-      btrfs: check for refs on snapshot delete resume
-      btrfs: save drop_progress if we drop refs at all
-
- fs/btrfs/ctree.h       |  2 ++
- fs/btrfs/extent-tree.c | 74 +++++++++++++++++++++++++++++++++++++++++++++-----
- fs/btrfs/extent_io.c   |  4 +--
- fs/btrfs/ioctl.c       | 21 ++------------
- fs/btrfs/qgroup.c      | 13 ++++-----
- fs/btrfs/root-tree.c   |  8 ++++--
- fs/btrfs/zstd.c        |  6 ++--
- 7 files changed, 90 insertions(+), 38 deletions(-)

@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8399CC43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 15:45:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5CE09C43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 15:45:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5D956206BA
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 15:45:55 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2CB80206BA
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 15:45:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726142AbfCMPpy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 13 Mar 2019 11:45:54 -0400
-Received: from mx2.suse.de ([195.135.220.15]:60746 "EHLO mx1.suse.de"
+        id S1726349AbfCMPp4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 13 Mar 2019 11:45:56 -0400
+Received: from mx2.suse.de ([195.135.220.15]:60754 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726616AbfCMPpy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Mar 2019 11:45:54 -0400
+        id S1726292AbfCMPpz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 13 Mar 2019 11:45:55 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 6E0EDB117
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Mar 2019 15:45:52 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id C91E4B117
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Mar 2019 15:45:54 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 2FAE5DA875; Wed, 13 Mar 2019 16:47:08 +0100 (CET)
+        id 8B1B0DA875; Wed, 13 Mar 2019 16:47:10 +0100 (CET)
 From:   David Sterba <dsterba@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH 4/9] btrfs: use assertion helpers for spinning readers
-Date:   Wed, 13 Mar 2019 16:47:08 +0100
-Message-Id: <a76a27b87096042c0ad2d5ab2e05b586dd2f0e58.1552489554.git.dsterba@suse.com>
+Subject: [PATCH 5/9] btrfs: add assertion helpers for extent buffer read lock counters
+Date:   Wed, 13 Mar 2019 16:47:10 +0100
+Message-Id: <65c1bd09c13b8d082bda7f6ea0038934b3e78a3c.1552489554.git.dsterba@suse.com>
 X-Mailer: git-send-email 2.20.1
 In-Reply-To: <cover.1552489554.git.dsterba@suse.com>
 References: <cover.1552489554.git.dsterba@suse.com>
@@ -40,108 +40,68 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Use the helpers where open coded. On non-debug builds, the warnings will
-not trigger and extent_buffer::spining_readers become unused and can be
-moved to the appropriate section, saving a few bytes.
+The read_locks are a simple counter to track locking balance and used to
+assert tree locks.  Add helpers to make it conditionally work only in
+DEBUG builds.  Will be used in followup patches.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/extent_io.c |  2 +-
- fs/btrfs/extent_io.h |  2 +-
- fs/btrfs/locking.c   | 12 +++++-------
- 3 files changed, 7 insertions(+), 9 deletions(-)
+ fs/btrfs/locking.c | 25 ++++++++++++++++++-------
+ 1 file changed, 18 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 11a95919bb3e..30363cb97625 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4672,7 +4672,6 @@ __alloc_extent_buffer(struct btrfs_fs_info *fs_info, u64 start,
- 	atomic_set(&eb->read_locks, 0);
- 	atomic_set(&eb->blocking_readers, 0);
- 	atomic_set(&eb->blocking_writers, 0);
--	atomic_set(&eb->spinning_readers, 0);
- 	eb->lock_nested = 0;
- 	init_waitqueue_head(&eb->write_lock_wq);
- 	init_waitqueue_head(&eb->read_lock_wq);
-@@ -4692,6 +4691,7 @@ __alloc_extent_buffer(struct btrfs_fs_info *fs_info, u64 start,
- 
- #ifdef CONFIG_BTRFS_DEBUG
- 	atomic_set(&eb->spinning_writers, 0);
-+	atomic_set(&eb->spinning_readers, 0);
- #endif
- 
- 	return eb;
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index c5eb261c1ea9..e49310d2caf4 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -151,7 +151,6 @@ struct extent_buffer {
- 	atomic_t read_locks;
- 	atomic_t blocking_writers;
- 	atomic_t blocking_readers;
--	atomic_t spinning_readers;
- 	short lock_nested;
- 	/* >= 0 if eb belongs to a log tree, -1 otherwise */
- 	short log_index;
-@@ -171,6 +170,7 @@ struct extent_buffer {
- 	struct page *pages[INLINE_EXTENT_BUFFER_PAGES];
- #ifdef CONFIG_BTRFS_DEBUG
- 	atomic_t spinning_writers;
-+	atomic_t spinning_readers;
- 	struct list_head leak_list;
- #endif
- };
 diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
-index 2dd3ae524aa3..ce9dc985ce05 100644
+index ce9dc985ce05..947c66c01e34 100644
 --- a/fs/btrfs/locking.c
 +++ b/fs/btrfs/locking.c
-@@ -62,8 +62,7 @@ void btrfs_set_lock_blocking_read(struct extent_buffer *eb)
- 		return;
- 	btrfs_assert_tree_read_locked(eb);
- 	atomic_inc(&eb->blocking_readers);
--	WARN_ON(atomic_read(&eb->spinning_readers) == 0);
--	atomic_dec(&eb->spinning_readers);
-+	btrfs_assert_spinning_readers_put(eb);
- 	read_unlock(&eb->lock);
+@@ -12,8 +12,6 @@
+ #include "extent_io.h"
+ #include "locking.h"
+ 
+-static void btrfs_assert_tree_read_locked(struct extent_buffer *eb);
+-
+ #ifdef CONFIG_BTRFS_DEBUG
+ static void btrfs_assert_spinning_writers_get(struct extent_buffer *eb)
+ {
+@@ -43,12 +41,30 @@ static void btrfs_assert_spinning_readers_put(struct extent_buffer *eb)
+ 	atomic_dec(&eb->spinning_readers);
  }
  
-@@ -150,7 +149,7 @@ void btrfs_tree_read_lock(struct extent_buffer *eb)
- 		goto again;
- 	}
- 	atomic_inc(&eb->read_locks);
--	atomic_inc(&eb->spinning_readers);
-+	btrfs_assert_spinning_readers_get(eb);
- }
++static void btrfs_assert_tree_read_locks_get(struct extent_buffer *eb)
++{
++	atomic_inc(&eb->read_locks);
++}
++
++static void btrfs_assert_tree_read_locks_put(struct extent_buffer *eb)
++{
++	atomic_dec(&eb->read_locks);
++}
++
++static void btrfs_assert_tree_read_locked(struct extent_buffer *eb)
++{
++	BUG_ON(!atomic_read(&eb->read_locks));
++}
++
+ #else
+ static void btrfs_assert_spinning_writers_get(struct extent_buffer *eb) { }
+ static void btrfs_assert_spinning_writers_put(struct extent_buffer *eb) { }
+ static void btrfs_assert_no_spinning_writers(struct extent_buffer *eb) { }
+ static void btrfs_assert_spinning_readers_put(struct extent_buffer *eb) { }
+ static void btrfs_assert_spinning_readers_get(struct extent_buffer *eb) { }
++static void btrfs_assert_tree_read_locked(struct extent_buffer *eb) { }
++static void btrfs_assert_tree_read_locks_get(struct extent_buffer *eb) { }
++static void btrfs_assert_tree_read_locks_put(struct extent_buffer *eb) { }
+ #endif
  
- /*
-@@ -169,7 +168,7 @@ int btrfs_tree_read_lock_atomic(struct extent_buffer *eb)
- 		return 0;
- 	}
- 	atomic_inc(&eb->read_locks);
--	atomic_inc(&eb->spinning_readers);
-+	btrfs_assert_spinning_readers_get(eb);
- 	return 1;
+ void btrfs_set_lock_blocking_read(struct extent_buffer *eb)
+@@ -309,8 +325,3 @@ void btrfs_assert_tree_locked(struct extent_buffer *eb)
+ {
+ 	BUG_ON(!atomic_read(&eb->write_locks));
  }
- 
-@@ -190,7 +189,7 @@ int btrfs_try_tree_read_lock(struct extent_buffer *eb)
- 		return 0;
- 	}
- 	atomic_inc(&eb->read_locks);
--	atomic_inc(&eb->spinning_readers);
-+	btrfs_assert_spinning_readers_get(eb);
- 	return 1;
- }
- 
-@@ -232,8 +231,7 @@ void btrfs_tree_read_unlock(struct extent_buffer *eb)
- 		return;
- 	}
- 	btrfs_assert_tree_read_locked(eb);
--	WARN_ON(atomic_read(&eb->spinning_readers) == 0);
--	atomic_dec(&eb->spinning_readers);
-+	btrfs_assert_spinning_readers_put(eb);
- 	atomic_dec(&eb->read_locks);
- 	read_unlock(&eb->lock);
- }
+-
+-static void btrfs_assert_tree_read_locked(struct extent_buffer *eb)
+-{
+-	BUG_ON(!atomic_read(&eb->read_locks));
+-}
 -- 
 2.20.1
 

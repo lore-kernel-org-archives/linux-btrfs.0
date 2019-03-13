@@ -2,222 +2,190 @@ Return-Path: <SRS0=X8lZ=RQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.7 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E3066C43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 08:55:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4B551C43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 09:01:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BD4892183F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 08:55:31 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 190D02147C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 09:01:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727278AbfCMIza (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 13 Mar 2019 04:55:30 -0400
-Received: from mx2.suse.de ([195.135.220.15]:39160 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727178AbfCMIz3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Mar 2019 04:55:29 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 22524AF70;
-        Wed, 13 Mar 2019 08:55:28 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Yoon Jungyeon <jungyeon@gatech.edu>
-Subject: [PATCH 6/6] btrfs: inode: Verify inode mode to avoid NULL pointer dereference
-Date:   Wed, 13 Mar 2019 16:55:11 +0800
-Message-Id: <20190313085511.23540-7-wqu@suse.com>
-X-Mailer: git-send-email 2.21.0
-In-Reply-To: <20190313085511.23540-1-wqu@suse.com>
+        id S1727302AbfCMJBY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 13 Mar 2019 05:01:24 -0400
+Received: from mout.gmx.net ([212.227.15.15]:46605 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726983AbfCMJBX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 13 Mar 2019 05:01:23 -0400
+Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx002
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0MU11l-1hUdQo3Rw1-00QmJV; Wed, 13
+ Mar 2019 10:01:16 +0100
+Subject: Re: [PATCH 0/6] btrfs: Enhance tree checker and runtime checker to
+ handle the new wave of fuzzed image attack
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20190313085511.23540-1-wqu@suse.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <5f3e48b8-3998-409a-2fc7-af2481b52c0f@gmx.com>
+Date:   Wed, 13 Mar 2019 17:01:12 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.5.3
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20190313085511.23540-1-wqu@suse.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="gCoZAkPPViLykXqNf7yGNQXXVSNiYqNav"
+X-Provags-ID: V03:K1:GDL5O+IVAGCFOwuM6EQWp1FKo3loITcUSK2/u2YkG8GolXXiEf2
+ n06c5I+0WFjewVdywnmJGvPoFO03hf3M2RsoOqe46NvMPTI23Ev7iNQp33sZGEbClhvE/MG
+ oRIJXtq9Yq6gRT4rq4GCP2yZkQWyosBKXJsblMV1RlSaMROv2gEdCpvevEFYFQ4k2Hp7gkb
+ QEqDK9foM3+W05z/ymZ6g==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:SZTH5PVNDgY=:gJAPex1uEpQzogFhWEXeCd
+ AHUFPo14jiWdhDHKk7AD7PlYq0oxtQxFSLF/1ahSspEsJGOj1pVYvZgZZntt2DTwmB5XlBeC7
+ pfW6jJ9x15EEWR3l37PqvOCM1TgdFDubTMoWipb5ukIxhb4CW24scJKswyGTNkmat/uZDn+l3
+ b6BlPrM1HazWQEgrELrbgf1JiDcDfmECZzaitTW0DJO3R9iTzDO8vuNQdXx2ZEfqD4VZYp52a
+ rm4OXypyekZgrSJmf5TBao+zVPTM+wcyimfKq0YhpdfnGkUl8XGGs6Jp4H9o/W+DGhzAw5qHp
+ bHrTYyhWTX1+Vaxb0swoZmYji/spUe6znrVfK1vFJFQ9z3OZTPbDVvtMurmeRhjmf3zAqfPL1
+ hghlnQLg17oZbtxZDPYOLcLDwnAn/OO4hm9ajGdec9AEbOCG2oSWZpjlaoyDgisWJTSu9kDyF
+ eyFK+UwdzMAerCGfk0MMQAvDWWF8ieBul3gipsoLdCvsYVeRty8s077qVyuS0rB6iJiZzPnMq
+ IWKcLwc4J/sJdTpPSx/1fcZwdnAUYZCpQVZ0GdC0rS/j0iT1XguGXgIVVB5KatRaQxdHdBuzY
+ lru/OLL4FqencvlA84wGWfxZTOOzLzeRFId5P5jjSi6llW+j3plTVuLbtfKluY/mWXgV8lb7K
+ ketFshlixLFWlpEtmSTCREwINUTabNpxiE/gCWsDpO38kmrwu2/8N10WlU5TlpNOQ2iAAHI9D
+ aep/wK8tSyPmcblcCC7tctyBTIFMeG62ZK17P3FC3vCqKH78zMjA2Cs4hH30jO7z5vcAXEuD4
+ tJHOzLLF3KPSzXQhgnQYPskag4dL9SpalBU6dXGvxLjMPTuc+wt99n9ic8e5KJSucsWFxENgE
+ TZtrDtPd0GpogBxGx0FCRgqyuc8ldbz7SgM+ZzEy1W6R0RjNiTmuPPXDccdpxG
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[BUG]
-When access a file on a crafted image, btrfs can crash in block layer:
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--gCoZAkPPViLykXqNf7yGNQXXVSNiYqNav
+Content-Type: multipart/mixed; boundary="8EcMbsyefC0tTqeSgpcFnbIpTiN1jbKG1";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <5f3e48b8-3998-409a-2fc7-af2481b52c0f@gmx.com>
+Subject: Re: [PATCH 0/6] btrfs: Enhance tree checker and runtime checker to
+ handle the new wave of fuzzed image attack
+References: <20190313085511.23540-1-wqu@suse.com>
+In-Reply-To: <20190313085511.23540-1-wqu@suse.com>
 
-BUG: unable to handle kernel NULL pointer dereference at 0000000000000008
-PGD 136501067 P4D 136501067 PUD 124519067 PMD 0
-CPU: 3 PID: 0 Comm: swapper/3 Not tainted 5.0.0-rc8-default #252
-RIP: 0010:end_bio_extent_readpage+0x144/0x700
-Call Trace:
- <IRQ>
- blk_update_request+0x8f/0x350
- blk_mq_end_request+0x1a/0x120
- blk_done_softirq+0x99/0xc0
- __do_softirq+0xc7/0x467
- irq_exit+0xd1/0xe0
- call_function_single_interrupt+0xf/0x20
- </IRQ>
-RIP: 0010:default_idle+0x1e/0x170
+--8EcMbsyefC0tTqeSgpcFnbIpTiN1jbKG1
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-[CAUSE]
-The crafted image has a pretty tricky corruption, the INODE_ITEM has a
-different type against its parent dir:
-        item 20 key (268 INODE_ITEM 0) itemoff 2808 itemsize 160
-                generation 13 transid 13 size 1048576 nbytes 1048576
-                block group 0 mode 121644 links 1 uid 0 gid 0 rdev 0
-                sequence 9 flags 0x0(none)
+Just forgot the repo:
 
-This mode number 0120000 means it's a soft link.
+It can be fetched from github:
+https://github.com/adam900710/linux/tree/tree_checker_enhancement
+Which is based on my previous write time tree checker patchset.
 
-But the dir item think it's still a regular file:
-        item 8 key (264 DIR_INDEX 5) itemoff 3707 itemsize 32
-                location key (268 INODE_ITEM 0) type FILE
-                transid 13 data_len 0 name_len 2
-                name: f4
-        item 40 key (264 DIR_ITEM 51821248) itemoff 1573 itemsize 32
-                location key (268 INODE_ITEM 0) type FILE
-                transid 13 data_len 0 name_len 2
-                name: f4
+Although the patchset itself can also be applied to v5.0-rc7 tag without
+manual modification.
 
-For btrfs symlink, we don't set BTRFS_I(inode)->io_tree.ops and leave
-it empty, as symlink is only designed to have inlined extent, all
-handled by tree block read.
-Thus no need to trigger btrfs_submit_bio_hook() for inline file extent.
+Thanks,
+Qu
 
-However for end_bio_extent_readpage() it expects tree->ops populated, as
-it's reading regular data extent.
-This causes NULL pointer dereference.
+On 2019/3/13 =E4=B8=8B=E5=8D=884:55, Qu Wenruo wrote:
+> Thanks for the report from Yoon Jungyeon <jungyeon@gatech.edu>, we have=
 
-[FIX]
-This patch fixes the problem by 2 directions:
-- Verify inode mode against its dir item when looking up inode
-  So in btrfs_lookup_dentry() if we find inode mode mismatch with dir
-  item, we error out so that corrupted inode will not be access.
+> more fuzzed image to torture btrfs.
+>=20
+> Those images exposed the following problems:
+>=20
+> - Chunk check is not comprehensive nor early enough
+>   Chunk item check lacks profile bits check (e.g RAID|DUP profile is
+>   invalid).
+>   And for certain fuzzed image, the other copy can be valid, current
+>   check timming is after tree block read, so no way to retry the other
+>   copy.
+>=20
+>   Address the check timing in the 1st patch, while for the profile bits=
+,
+>   check it in the 4th patch.
+>=20
+> - Lack of device item check
+>   Address it in the 2nd patch.
+>=20
+> - First key and level check be exploited by cached extent buffer
+>   Cached bad extent buffer can avoid first key and level check.
+>   This is addressed in the 3rd patch.
+>=20
+> - Inode type mismatch can lead to NULL dereference in endio function
+>   If an inode claims itself as symlink but still has regular file
+>   extent, then endio function will cause NULL pointer dereference.
+>   Fix it by do extra inode mode and dir item type cross check, at
+>   get_extent() time and inode lookup time.
+>   Addressed in the 5th and 6th patch.
+>=20
+> Qu Wenruo (6):
+>   btrfs: tree-checker: Verify chunk items
+>   btrfs: tree-checker: Verify dev item
+>   btrfs: Check the first key and level for cached extent buffer
+>   btrfs: tree-checker: Enhance chunk checker to validate chunk profiler=
 
-- Verify inode mode when getting extent mapping
-  Only regular file should have regular or preallocated extent.
-  If we found regular/preallocated file extent for soft link or
-  whatever, we error out before we submit read bio.
+>   btrfs: tree-checker: Verify inode item
+>   btrfs: inode: Verify inode mode to avoid NULL pointer dereference
+>=20
+>  fs/btrfs/ctree.c             |  10 +
+>  fs/btrfs/ctree.h             |   2 +
+>  fs/btrfs/disk-io.c           |  10 +-
+>  fs/btrfs/disk-io.h           |   3 +
+>  fs/btrfs/inode.c             |  38 +++-
+>  fs/btrfs/tests/inode-tests.c |   1 +
+>  fs/btrfs/tree-checker.c      | 342 +++++++++++++++++++++++++++++++++++=
 
-With this fix that crafted image can be rejected gracefully:
-  BTRFS critical (device loop0): inode mode mismatch with dir: inode mode=0121644 btrfs type=7 dir type=1
+>  fs/btrfs/tree-checker.h      |   3 +
+>  fs/btrfs/volumes.c           | 103 +----------
+>  fs/btrfs/volumes.h           |   9 +
+>  10 files changed, 406 insertions(+), 115 deletions(-)
+>=20
 
-Reported-by: Yoon Jungyeon <jungyeon@gatech.edu>
-Link: https://bugzilla.kernel.org/show_bug.cgi?id=202763
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/inode.c             | 38 ++++++++++++++++++++++++++++--------
- fs/btrfs/tests/inode-tests.c |  1 +
- 2 files changed, 31 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 5c349667c761..4ced641aaa8e 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5396,12 +5396,13 @@ void btrfs_evict_inode(struct inode *inode)
- }
- 
- /*
-- * this returns the key found in the dir entry in the location pointer.
-+ * this returns the key found in the dir entry in the location pointer,
-+ * fill @type with BTRFS_FT_*, and return 0.
-  * If no dir entries were found, returns -ENOENT.
-  * If found a corrupted location in dir entry, returns -EUCLEAN.
-  */
- static int btrfs_inode_by_name(struct inode *dir, struct dentry *dentry,
--			       struct btrfs_key *location)
-+			       struct btrfs_key *location, u8 *type)
- {
- 	const char *name = dentry->d_name.name;
- 	int namelen = dentry->d_name.len;
-@@ -5430,6 +5431,8 @@ static int btrfs_inode_by_name(struct inode *dir, struct dentry *dentry,
- 			   __func__, name, btrfs_ino(BTRFS_I(dir)),
- 			   location->objectid, location->type, location->offset);
- 	}
-+	if (!ret)
-+		*type = btrfs_dir_type(path->nodes[0], di);
- out:
- 	btrfs_free_path(path);
- 	return ret;
-@@ -5667,6 +5670,11 @@ static struct inode *new_simple_dir(struct super_block *s,
- 	return inode;
- }
- 
-+static inline u8 btrfs_inode_type(struct inode *inode)
-+{
-+	return btrfs_type_by_mode[(inode->i_mode & S_IFMT) >> S_SHIFT];
-+}
-+
- struct inode *btrfs_lookup_dentry(struct inode *dir, struct dentry *dentry)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(dir->i_sb);
-@@ -5674,18 +5682,29 @@ struct inode *btrfs_lookup_dentry(struct inode *dir, struct dentry *dentry)
- 	struct btrfs_root *root = BTRFS_I(dir)->root;
- 	struct btrfs_root *sub_root = root;
- 	struct btrfs_key location;
-+	u8 di_type = 0;
- 	int index;
- 	int ret = 0;
- 
- 	if (dentry->d_name.len > BTRFS_NAME_LEN)
- 		return ERR_PTR(-ENAMETOOLONG);
- 
--	ret = btrfs_inode_by_name(dir, dentry, &location);
-+	ret = btrfs_inode_by_name(dir, dentry, &location, &di_type);
- 	if (ret < 0)
- 		return ERR_PTR(ret);
- 
- 	if (location.type == BTRFS_INODE_ITEM_KEY) {
- 		inode = btrfs_iget(dir->i_sb, &location, root, NULL);
-+
-+		/* Do extra check against inode mode with di_type */
-+		if (btrfs_inode_type(inode) != di_type) {
-+			btrfs_crit(fs_info,
-+"inode mode mismatch with dir: inode mode=0%o btrfs type=%u dir type=%u",
-+				  inode->i_mode, btrfs_inode_type(inode),
-+				  di_type);
-+			iput(inode);
-+			return ERR_PTR(-EUCLEAN);
-+		}
- 		return inode;
- 	}
- 
-@@ -6290,11 +6309,6 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
- 	return ERR_PTR(ret);
- }
- 
--static inline u8 btrfs_inode_type(struct inode *inode)
--{
--	return btrfs_type_by_mode[(inode->i_mode & S_IFMT) >> S_SHIFT];
--}
--
- /*
-  * utility function to add 'inode' into 'parent_inode' with
-  * a give name and a given sequence number.
-@@ -6816,6 +6830,14 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
- 	extent_start = found_key.offset;
- 	if (found_type == BTRFS_FILE_EXTENT_REG ||
- 	    found_type == BTRFS_FILE_EXTENT_PREALLOC) {
-+		/* Only regular file could have regular/prealloc extent */
-+		if (!S_ISREG(inode->vfs_inode.i_mode)) {
-+			ret = -EUCLEAN;
-+			btrfs_crit(fs_info,
-+		"regular/prealloc extent found for non-regular inode %llu",
-+				   btrfs_ino(inode));
-+			goto out;
-+		}
- 		extent_end = extent_start +
- 		       btrfs_file_extent_num_bytes(leaf, item);
- 
-diff --git a/fs/btrfs/tests/inode-tests.c b/fs/btrfs/tests/inode-tests.c
-index af0c8e30d9e2..b01dbcab9eed 100644
---- a/fs/btrfs/tests/inode-tests.c
-+++ b/fs/btrfs/tests/inode-tests.c
-@@ -232,6 +232,7 @@ static noinline int test_btrfs_get_extent(u32 sectorsize, u32 nodesize)
- 		return ret;
- 	}
- 
-+	inode->i_mode = S_IFREG;
- 	BTRFS_I(inode)->location.type = BTRFS_INODE_ITEM_KEY;
- 	BTRFS_I(inode)->location.objectid = BTRFS_FIRST_FREE_OBJECTID;
- 	BTRFS_I(inode)->location.offset = 0;
--- 
-2.21.0
+--8EcMbsyefC0tTqeSgpcFnbIpTiN1jbKG1--
 
+--gCoZAkPPViLykXqNf7yGNQXXVSNiYqNav
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlyIxtgACgkQwj2R86El
+/qhTGwf/VcOvq8N6V36/2f93huCmeEcD3SvfXkybYw1SbOXzYVcGHKB5rm5nI5BJ
+YPLfuQKSC/TccdYSXNNBqXt7wRUATKdUUFxHciJGtkipjhbncSCcL/ff/LpYSCEI
+3d8tUEFKS2QR+gnBPFJ9CarXvHIHoDqxtu4ya5WJXUoPs5Q8bM0+TJhaa25tp5LA
+uxVTEZ6dEOqjCu1E7v/mKstZZrZ9DAny0/+j1rNUC8va423cddaPm5EojSqicHJR
+tOuG6MqgeNJQLqvL1yNc3lePLU66CDOWeKmUQfawBNPHtfXJoOVhF6w11mu+ix+m
+WDxAqEaPg2E6HaWgxbR+FfWF1nC6aQ==
+=7hDT
+-----END PGP SIGNATURE-----
+
+--gCoZAkPPViLykXqNf7yGNQXXVSNiYqNav--

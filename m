@@ -6,28 +6,29 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4B18BC43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 07:20:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3B105C43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 07:22:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 220182173C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 07:20:31 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 076692173C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 07:22:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726591AbfCMHUa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 13 Mar 2019 03:20:30 -0400
-Received: from mx2.suse.de ([195.135.220.15]:52326 "EHLO mx1.suse.de"
+        id S1726125AbfCMHWV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 13 Mar 2019 03:22:21 -0400
+Received: from mx2.suse.de ([195.135.220.15]:52522 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725888AbfCMHU3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Mar 2019 03:20:29 -0400
+        id S1725878AbfCMHWV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 13 Mar 2019 03:22:21 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 8C0FAAD81;
-        Wed, 13 Mar 2019 07:20:28 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 72FAAAD81;
+        Wed, 13 Mar 2019 07:22:19 +0000 (UTC)
 Subject: Re: [PATCH 2/2] btrfs: fix vanished compression property after failed
  set
+From:   Nikolay Borisov <nborisov@suse.com>
 To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
 References: <1552455379-2311-1-git-send-email-anand.jain@oracle.com>
  <1552455379-2311-2-git-send-email-anand.jain@oracle.com>
-From:   Nikolay Borisov <nborisov@suse.com>
+ <4ef1a9bb-141c-c07b-d995-9ac3d0c8f1d2@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  mQINBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
@@ -71,12 +72,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <4ef1a9bb-141c-c07b-d995-9ac3d0c8f1d2@suse.com>
-Date:   Wed, 13 Mar 2019 09:20:27 +0200
+Message-ID: <90b86c08-7c3b-d0b1-a895-ebc45af4c059@suse.com>
+Date:   Wed, 13 Mar 2019 09:22:18 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <1552455379-2311-2-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <4ef1a9bb-141c-c07b-d995-9ac3d0c8f1d2@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -87,47 +88,57 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 13.03.19 г. 7:36 ч., Anand Jain wrote:
-> The compression property resets to NULL, instead of the old value if we
-> fail to set the new compression parameter.
+On 13.03.19 г. 9:20 ч., Nikolay Borisov wrote:
 > 
-> btrfs prop get /btrfs compression
->   compression=lzo
-> btrfs prop set /btrfs compression zli
->   ERROR: failed to set compression for /btrfs: Invalid argument
-> btrfs prop get /btrfs compression
 > 
-> This is because the compression property ->validate() is successful for
-> 'zli' as the strncmp() used the len passed from the userland.
+> On 13.03.19 г. 7:36 ч., Anand Jain wrote:
+>> The compression property resets to NULL, instead of the old value if we
+>> fail to set the new compression parameter.
+>>
+>> btrfs prop get /btrfs compression
+>>   compression=lzo
+>> btrfs prop set /btrfs compression zli
+>>   ERROR: failed to set compression for /btrfs: Invalid argument
+>> btrfs prop get /btrfs compression
+>>
+>> This is because the compression property ->validate() is successful for
+>> 'zli' as the strncmp() used the len passed from the userland.
+>>
+>> Fix it by using the expected string length in strncmp().
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>> ---
+>>  fs/btrfs/props.c | 6 +++---
+>>  1 file changed, 3 insertions(+), 3 deletions(-)
+>>
+>> diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
+>> index ef6502a94712..7aa362c2fbcf 100644
+>> --- a/fs/btrfs/props.c
+>> +++ b/fs/btrfs/props.c
+>> @@ -277,11 +277,11 @@ static int prop_compression_validate(struct inode *inode, const char *value,
+>>  	if (!value)
+>>  		return 0;
+>>  
+>> -	if (!strncmp("lzo", value, len))
+>> +	if (!strncmp("lzo", value, 3))
+>>  		return 0;
+>> -	else if (!strncmp("zlib", value, len))
+>> +	else if (!strncmp("zlib", value, 4))
+>>  		return 0;
+>> -	else if (!strncmp("zstd", value, len))
+>> +	else if (!strncmp("zstd", value, 4))
+>>  		return 0;
 > 
-> Fix it by using the expected string length in strncmp().
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  fs/btrfs/props.c | 6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
-> 
-> diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-> index ef6502a94712..7aa362c2fbcf 100644
-> --- a/fs/btrfs/props.c
-> +++ b/fs/btrfs/props.c
-> @@ -277,11 +277,11 @@ static int prop_compression_validate(struct inode *inode, const char *value,
->  	if (!value)
->  		return 0;
->  
-> -	if (!strncmp("lzo", value, len))
-> +	if (!strncmp("lzo", value, 3))
->  		return 0;
-> -	else if (!strncmp("zlib", value, len))
-> +	else if (!strncmp("zlib", value, 4))
->  		return 0;
-> -	else if (!strncmp("zstd", value, len))
-> +	else if (!strncmp("zstd", value, 4))
->  		return 0;
+> This also makes the len argument to prop_compression_validate redundant
+> and should be removed as well.
 
-This also makes the len argument to prop_compression_validate redundant
-and should be removed as well.
 
->  
->  	return -EINVAL;
+As a matter of fact I don't see any value in prop_compression_validate
+since the exact same code is used in prop_compression_apply and einval
+will be returned if an invalid value is passed in.
+
+> 
+>>  
+>>  	return -EINVAL;
+>>
 > 

@@ -2,108 +2,119 @@ Return-Path: <SRS0=X8lZ=RQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A3C12C43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 05:36:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EC03EC43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 07:19:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 774CC217F5
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 05:36:13 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="T7Tk3zjs"
+	by mail.kernel.org (Postfix) with ESMTP id B81B02173C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 07:19:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726562AbfCMFgM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 13 Mar 2019 01:36:12 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:42440 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726184AbfCMFgM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Mar 2019 01:36:12 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x2D5UFiD094359
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Mar 2019 05:36:10 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
- date : message-id : in-reply-to : references; s=corp-2018-07-02;
- bh=/iWxFWXeBR2QQ+io8j0TWt/Ymv55IlIrSYcm3gotyEE=;
- b=T7Tk3zjsP+SG35NsV4vUmX6eq/ILH2WxyG6a4DbE6U+Laye8vANSWbokNSW03Yi1Ve9W
- 7n2mSBMP02MRKjw5is3ncS7RGc2CHHzQkJ2y6jl3gC62rmyiuqHUfvoElVeSJ070Qr3A
- r8OLwPUutHM/jrVtEJAwamnQl9QeVdT5VND41a5m15KXv26cGhqKxnIE5YitGI8uHLY9
- V27YjR/bOaFLOUTX7em1azqa+5GA5qXpH/yAf/hOs1FRTjE+S+uqejalgKdt/bTZggAN
- NNC3XIpVO/VixoQyryk+UL9OVO2AAb7Vb3foEjmcqzcyXs5VMkgIrXCLTEqZ/KDcHLKS ZA== 
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by userp2120.oracle.com with ESMTP id 2r464rgm6s-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Mar 2019 05:36:10 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id x2D5a9mV016327
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Mar 2019 05:36:10 GMT
-Received: from abhmp0001.oracle.com (abhmp0001.oracle.com [141.146.116.7])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x2D5a9ak014851
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Mar 2019 05:36:09 GMT
-Received: from tpasj.wifi.oracle.com (/192.188.170.109)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Tue, 12 Mar 2019 22:36:09 -0700
-From:   Anand Jain <anand.jain@oracle.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs: fix vanished compression property after failed set
-Date:   Wed, 13 Mar 2019 13:36:19 +0800
-Message-Id: <1552455379-2311-2-git-send-email-anand.jain@oracle.com>
-X-Mailer: git-send-email 1.8.3.1
-In-Reply-To: <1552455379-2311-1-git-send-email-anand.jain@oracle.com>
+        id S1726451AbfCMHTH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 13 Mar 2019 03:19:07 -0400
+Received: from mx2.suse.de ([195.135.220.15]:52250 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725876AbfCMHTH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 13 Mar 2019 03:19:07 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 35DB4ACA0;
+        Wed, 13 Mar 2019 07:19:05 +0000 (UTC)
+Subject: Re: [PATCH 1/2] btrfs: fix zstd compression parameter
+To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
 References: <1552455379-2311-1-git-send-email-anand.jain@oracle.com>
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9193 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
- suspectscore=1 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
- lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
- definitions=main-1903130039
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <b443c0b4-c8e3-a9cb-9656-2d00b5ce019b@suse.com>
+Date:   Wed, 13 Mar 2019 09:19:03 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.4.0
+MIME-Version: 1.0
+In-Reply-To: <1552455379-2311-1-git-send-email-anand.jain@oracle.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The compression property resets to NULL, instead of the old value if we
-fail to set the new compression parameter.
 
-btrfs prop get /btrfs compression
-  compression=lzo
-btrfs prop set /btrfs compression zli
-  ERROR: failed to set compression for /btrfs: Invalid argument
-btrfs prop get /btrfs compression
 
-This is because the compression property ->validate() is successful for
-'zli' as the strncmp() used the len passed from the userland.
+On 13.03.19 г. 7:36 ч., Anand Jain wrote:
+> We let to pass zstd compression parameter even if its not fully written.
+> For example:
+>   btrfs prop set /btrfs compression zst
+>   btrfs prop get /btrfs compression
+>      compression=zst
+> 
+> zlib and lzo are fine.
+> 
+> Fix it by using the expected number of char in strncmp().
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
-Fix it by using the expected string length in strncmp().
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/props.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-index ef6502a94712..7aa362c2fbcf 100644
---- a/fs/btrfs/props.c
-+++ b/fs/btrfs/props.c
-@@ -277,11 +277,11 @@ static int prop_compression_validate(struct inode *inode, const char *value,
- 	if (!value)
- 		return 0;
- 
--	if (!strncmp("lzo", value, len))
-+	if (!strncmp("lzo", value, 3))
- 		return 0;
--	else if (!strncmp("zlib", value, len))
-+	else if (!strncmp("zlib", value, 4))
- 		return 0;
--	else if (!strncmp("zstd", value, len))
-+	else if (!strncmp("zstd", value, 4))
- 		return 0;
- 
- 	return -EINVAL;
--- 
-1.8.3.1
-
+> ---
+>  fs/btrfs/props.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
+> index 8577ea1d4e2b..ef6502a94712 100644
+> --- a/fs/btrfs/props.c
+> +++ b/fs/btrfs/props.c
+> @@ -306,7 +306,7 @@ static int prop_compression_apply(struct inode *inode, const char *value,
+>  		btrfs_set_fs_incompat(fs_info, COMPRESS_LZO);
+>  	} else if (!strncmp("zlib", value, 4)) {
+>  		type = BTRFS_COMPRESS_ZLIB;
+> -	} else if (!strncmp("zstd", value, len)) {
+> +	} else if (!strncmp("zstd", value, 4)) {
+>  		type = BTRFS_COMPRESS_ZSTD;
+>  		btrfs_set_fs_incompat(fs_info, COMPRESS_ZSTD);
+>  	} else {
+> 

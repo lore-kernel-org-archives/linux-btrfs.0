@@ -2,32 +2,35 @@ Return-Path: <SRS0=X8lZ=RQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 70823C43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 08:55:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D6909C43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 08:55:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3FC1A2183F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 08:55:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A2DC92183F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 08:55:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726880AbfCMIzQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 13 Mar 2019 04:55:16 -0400
-Received: from mx2.suse.de ([195.135.220.15]:39078 "EHLO mx1.suse.de"
+        id S1727172AbfCMIzU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 13 Mar 2019 04:55:20 -0400
+Received: from mx2.suse.de ([195.135.220.15]:39086 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726274AbfCMIzQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Mar 2019 04:55:16 -0400
+        id S1726274AbfCMIzU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 13 Mar 2019 04:55:20 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 167A3AF70
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Mar 2019 08:55:15 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 9B58BAF70;
+        Wed, 13 Mar 2019 08:55:17 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/6] btrfs: Enhance tree checker and runtime checker to handle the new wave of fuzzed image attack
-Date:   Wed, 13 Mar 2019 16:55:05 +0800
-Message-Id: <20190313085511.23540-1-wqu@suse.com>
+Cc:     Yoon Jungyeon <jungyeon@gatech.edu>
+Subject: [PATCH 1/6] btrfs: tree-checker: Verify chunk items
+Date:   Wed, 13 Mar 2019 16:55:06 +0800
+Message-Id: <20190313085511.23540-2-wqu@suse.com>
 X-Mailer: git-send-email 2.21.0
+In-Reply-To: <20190313085511.23540-1-wqu@suse.com>
+References: <20190313085511.23540-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -35,55 +38,336 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Thanks for the report from Yoon Jungyeon <jungyeon@gatech.edu>, we have
-more fuzzed image to torture btrfs.
+We already have btrfs_check_chunk_valid() to verify each chunk before
+tree-checker.
 
-Those images exposed the following problems:
+Merge that function into tree-checker, and update its error message to
+be more readable.
 
-- Chunk check is not comprehensive nor early enough
-  Chunk item check lacks profile bits check (e.g RAID|DUP profile is
-  invalid).
-  And for certain fuzzed image, the other copy can be valid, current
-  check timming is after tree block read, so no way to retry the other
-  copy.
+Old error message would be something like:
+  BTRFS error (device dm-3): invalid chunk num_stipres: 0
 
-  Address the check timing in the 1st patch, while for the profile bits,
-  check it in the 4th patch.
+New error message would be:
+  Btrfs critical (device dm-3): corrupt superblock syschunk array: chunk_start=2097152, invalid chunk num_stripes: 0
+Or
+  Btrfs critical (device dm-3): corrupt leaf: root=3 block=8388608 slot=3 chunk_start=2097152, invalid chunk num_stripes: 0
 
-- Lack of device item check
-  Address it in the 2nd patch.
+Btrfs_check_chunk_valid() is exported for super block syschunk array
+verification.
 
-- First key and level check be exploited by cached extent buffer
-  Cached bad extent buffer can avoid first key and level check.
-  This is addressed in the 3rd patch.
+Also make tree-checker to verify chunk items, this makes chunk item
+checker covers all chunks and avoid fuzzed image.
 
-- Inode type mismatch can lead to NULL dereference in endio function
-  If an inode claims itself as symlink but still has regular file
-  extent, then endio function will cause NULL pointer dereference.
-  Fix it by do extra inode mode and dir item type cross check, at
-  get_extent() time and inode lookup time.
-  Addressed in the 5th and 6th patch.
+Reported-by: Yoon Jungyeon <jungyeon@gatech.edu>
+Link: https://bugzilla.kernel.org/show_bug.cgi?id=202751
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/tree-checker.c | 152 ++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/tree-checker.h |   3 +
+ fs/btrfs/volumes.c      |  94 +------------------------
+ 3 files changed, 156 insertions(+), 93 deletions(-)
 
-Qu Wenruo (6):
-  btrfs: tree-checker: Verify chunk items
-  btrfs: tree-checker: Verify dev item
-  btrfs: Check the first key and level for cached extent buffer
-  btrfs: tree-checker: Enhance chunk checker to validate chunk profiler
-  btrfs: tree-checker: Verify inode item
-  btrfs: inode: Verify inode mode to avoid NULL pointer dereference
-
- fs/btrfs/ctree.c             |  10 +
- fs/btrfs/ctree.h             |   2 +
- fs/btrfs/disk-io.c           |  10 +-
- fs/btrfs/disk-io.h           |   3 +
- fs/btrfs/inode.c             |  38 +++-
- fs/btrfs/tests/inode-tests.c |   1 +
- fs/btrfs/tree-checker.c      | 342 +++++++++++++++++++++++++++++++++++
- fs/btrfs/tree-checker.h      |   3 +
- fs/btrfs/volumes.c           | 103 +----------
- fs/btrfs/volumes.h           |   9 +
- 10 files changed, 406 insertions(+), 115 deletions(-)
-
+diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+index b8cdaf472031..fe3f37c23c29 100644
+--- a/fs/btrfs/tree-checker.c
++++ b/fs/btrfs/tree-checker.c
+@@ -448,6 +448,152 @@ static int check_block_group_item(struct btrfs_fs_info *fs_info,
+ 	return 0;
+ }
+ 
++__printf(5, 6)
++__cold
++static void chunk_err(const struct btrfs_fs_info *fs_info,
++		      const struct extent_buffer *leaf,
++		      const struct btrfs_chunk *chunk, u64 logical,
++		      const char *fmt, ...)
++{
++	/* Only superblock eb is able to have such small offset */
++	bool is_sb = (leaf->start == BTRFS_SUPER_INFO_OFFSET);
++	struct va_format vaf;
++	va_list args;
++	int i;
++	int slot = -1;
++
++	if (!is_sb) {
++		/*
++		 * Get the slot number by iterating through all slots, this
++		 * would provide better readability.
++		 */
++		for (i = 0; i < btrfs_header_nritems(leaf); i++) {
++			if (btrfs_item_ptr_offset(leaf, i) ==
++					(unsigned long) chunk) {
++				slot = i;
++				break;
++			}
++		}
++	}
++	va_start(args, fmt);
++	vaf.fmt = fmt;
++	vaf.va = &args;
++
++	if (is_sb)
++		btrfs_crit(fs_info,
++		"corrupt superblock syschunk array: chunk_start=%llu, %pV",
++			   logical, &vaf);
++	else
++		btrfs_crit(fs_info,
++	"corrupt leaf: root=%llu block=%llu slot=%d chunk_start=%llu, %pV",
++			   BTRFS_CHUNK_TREE_OBJECTID, leaf->start, slot,
++			   logical, &vaf);
++	va_end(args);
++}
++
++/*
++ * The common chunk check which could also work on super block sys chunk array.
++ *
++ * Return -EUCLEAN if anything is corrupted.
++ * Return 0 if everything is OK.
++ */
++int btrfs_check_chunk_valid(struct btrfs_fs_info *fs_info,
++			    struct extent_buffer *leaf,
++			    struct btrfs_chunk *chunk, u64 logical)
++{
++	u64 length;
++	u64 stripe_len;
++	u16 num_stripes;
++	u16 sub_stripes;
++	u64 type;
++	u64 features;
++	bool mixed = false;
++
++	length = btrfs_chunk_length(leaf, chunk);
++	stripe_len = btrfs_chunk_stripe_len(leaf, chunk);
++	num_stripes = btrfs_chunk_num_stripes(leaf, chunk);
++	sub_stripes = btrfs_chunk_sub_stripes(leaf, chunk);
++	type = btrfs_chunk_type(leaf, chunk);
++
++	if (!num_stripes) {
++		chunk_err(fs_info, leaf, chunk, logical,
++			  "invalid chunk num_stripes: %u", num_stripes);
++		return -EUCLEAN;
++	}
++	if (!IS_ALIGNED(logical, fs_info->sectorsize)) {
++		chunk_err(fs_info, leaf, chunk, logical,
++			  "invalid chunk logical %llu", logical);
++		return -EUCLEAN;
++	}
++	if (btrfs_chunk_sector_size(leaf, chunk) != fs_info->sectorsize) {
++		chunk_err(fs_info, leaf, chunk, logical,
++			  "invalid chunk sectorsize %u",
++			  btrfs_chunk_sector_size(leaf, chunk));
++		return -EUCLEAN;
++	}
++	if (!length || !IS_ALIGNED(length, fs_info->sectorsize)) {
++		chunk_err(fs_info, leaf, chunk, logical,
++			  "invalid chunk length %llu", length);
++		return -EUCLEAN;
++	}
++	if (!is_power_of_2(stripe_len) || stripe_len != BTRFS_STRIPE_LEN) {
++		chunk_err(fs_info, leaf, chunk, logical,
++			  "invalid chunk stripe length: %llu", stripe_len);
++		return -EUCLEAN;
++	}
++	if (~(BTRFS_BLOCK_GROUP_TYPE_MASK | BTRFS_BLOCK_GROUP_PROFILE_MASK) &
++	    type) {
++		chunk_err(fs_info, leaf, chunk, logical,
++			  "unrecognized chunk type: %llu",
++			  ~(BTRFS_BLOCK_GROUP_TYPE_MASK |
++			    BTRFS_BLOCK_GROUP_PROFILE_MASK) &
++			  btrfs_chunk_type(leaf, chunk));
++		return -EUCLEAN;
++	}
++
++	if ((type & BTRFS_BLOCK_GROUP_TYPE_MASK) == 0) {
++		chunk_err(fs_info, leaf, chunk, logical,
++			  "missing chunk type flag: 0x%llx", type);
++		return -EUCLEAN;
++	}
++
++	if ((type & BTRFS_BLOCK_GROUP_SYSTEM) &&
++	    (type & (BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_DATA))) {
++		chunk_err(fs_info, leaf, chunk, logical,
++			"system chunk with data or metadata type: 0x%llx", type);
++		return -EUCLEAN;
++	}
++
++	features = btrfs_super_incompat_flags(fs_info->super_copy);
++	if (features & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS)
++		mixed = true;
++
++	if (!mixed) {
++		if ((type & BTRFS_BLOCK_GROUP_METADATA) &&
++		    (type & BTRFS_BLOCK_GROUP_DATA)) {
++			chunk_err(fs_info, leaf, chunk, logical,
++			"mixed chunk type in non-mixed mode: 0x%llx", type);
++			return -EUCLEAN;
++		}
++	}
++
++	if ((type & BTRFS_BLOCK_GROUP_RAID10 && sub_stripes != 2) ||
++	    (type & BTRFS_BLOCK_GROUP_RAID1 && num_stripes < 1) ||
++	    (type & BTRFS_BLOCK_GROUP_RAID5 && num_stripes < 2) ||
++	    (type & BTRFS_BLOCK_GROUP_RAID6 && num_stripes < 3) ||
++	    (type & BTRFS_BLOCK_GROUP_DUP && num_stripes > 2) ||
++	    ((type & BTRFS_BLOCK_GROUP_PROFILE_MASK) == 0 &&
++	     num_stripes != 1)) {
++		chunk_err(fs_info, leaf, chunk, logical,
++			"invalid num_stripes:sub_stripes %u:%u for profile %llu",
++			num_stripes, sub_stripes,
++			type & BTRFS_BLOCK_GROUP_PROFILE_MASK);
++		return -EUCLEAN;
++	}
++
++	return 0;
++}
++
+ /*
+  * Common point to switch the item-specific validation.
+  */
+@@ -455,6 +601,7 @@ static int check_leaf_item(struct btrfs_fs_info *fs_info,
+ 			   struct extent_buffer *leaf,
+ 			   struct btrfs_key *key, int slot)
+ {
++	struct btrfs_chunk *chunk;
+ 	int ret = 0;
+ 
+ 	switch (key->type) {
+@@ -472,6 +619,11 @@ static int check_leaf_item(struct btrfs_fs_info *fs_info,
+ 	case BTRFS_BLOCK_GROUP_ITEM_KEY:
+ 		ret = check_block_group_item(fs_info, leaf, key, slot);
+ 		break;
++	case BTRFS_CHUNK_ITEM_KEY:
++		chunk = btrfs_item_ptr(leaf, slot, struct btrfs_chunk);
++		ret = btrfs_check_chunk_valid(fs_info, leaf, chunk,
++					      key->offset);
++		break;
+ 	}
+ 	return ret;
+ }
+diff --git a/fs/btrfs/tree-checker.h b/fs/btrfs/tree-checker.h
+index 6f8d1b627c53..6cb96ba5e711 100644
+--- a/fs/btrfs/tree-checker.h
++++ b/fs/btrfs/tree-checker.h
+@@ -33,4 +33,7 @@ int btrfs_check_leaf_write(struct btrfs_fs_info *fs_info,
+ 			   struct extent_buffer *leaf);
+ int btrfs_check_node(struct btrfs_fs_info *fs_info, struct extent_buffer *node);
+ 
++int btrfs_check_chunk_valid(struct btrfs_fs_info *fs_info,
++			    struct extent_buffer *leaf,
++			    struct btrfs_chunk *chunk, u64 logical);
+ #endif
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 15561926ab32..0e3822870f1e 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -27,6 +27,7 @@
+ #include "math.h"
+ #include "dev-replace.h"
+ #include "sysfs.h"
++#include "tree-checker.h"
+ 
+ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
+ 	[BTRFS_RAID_RAID10] = {
+@@ -6705,99 +6706,6 @@ struct btrfs_device *btrfs_alloc_device(struct btrfs_fs_info *fs_info,
+ 	return dev;
+ }
+ 
+-/* Return -EIO if any error, otherwise return 0. */
+-static int btrfs_check_chunk_valid(struct btrfs_fs_info *fs_info,
+-				   struct extent_buffer *leaf,
+-				   struct btrfs_chunk *chunk, u64 logical)
+-{
+-	u64 length;
+-	u64 stripe_len;
+-	u16 num_stripes;
+-	u16 sub_stripes;
+-	u64 type;
+-	u64 features;
+-	bool mixed = false;
+-
+-	length = btrfs_chunk_length(leaf, chunk);
+-	stripe_len = btrfs_chunk_stripe_len(leaf, chunk);
+-	num_stripes = btrfs_chunk_num_stripes(leaf, chunk);
+-	sub_stripes = btrfs_chunk_sub_stripes(leaf, chunk);
+-	type = btrfs_chunk_type(leaf, chunk);
+-
+-	if (!num_stripes) {
+-		btrfs_err(fs_info, "invalid chunk num_stripes: %u",
+-			  num_stripes);
+-		return -EIO;
+-	}
+-	if (!IS_ALIGNED(logical, fs_info->sectorsize)) {
+-		btrfs_err(fs_info, "invalid chunk logical %llu", logical);
+-		return -EIO;
+-	}
+-	if (btrfs_chunk_sector_size(leaf, chunk) != fs_info->sectorsize) {
+-		btrfs_err(fs_info, "invalid chunk sectorsize %u",
+-			  btrfs_chunk_sector_size(leaf, chunk));
+-		return -EIO;
+-	}
+-	if (!length || !IS_ALIGNED(length, fs_info->sectorsize)) {
+-		btrfs_err(fs_info, "invalid chunk length %llu", length);
+-		return -EIO;
+-	}
+-	if (!is_power_of_2(stripe_len) || stripe_len != BTRFS_STRIPE_LEN) {
+-		btrfs_err(fs_info, "invalid chunk stripe length: %llu",
+-			  stripe_len);
+-		return -EIO;
+-	}
+-	if (~(BTRFS_BLOCK_GROUP_TYPE_MASK | BTRFS_BLOCK_GROUP_PROFILE_MASK) &
+-	    type) {
+-		btrfs_err(fs_info, "unrecognized chunk type: %llu",
+-			  ~(BTRFS_BLOCK_GROUP_TYPE_MASK |
+-			    BTRFS_BLOCK_GROUP_PROFILE_MASK) &
+-			  btrfs_chunk_type(leaf, chunk));
+-		return -EIO;
+-	}
+-
+-	if ((type & BTRFS_BLOCK_GROUP_TYPE_MASK) == 0) {
+-		btrfs_err(fs_info, "missing chunk type flag: 0x%llx", type);
+-		return -EIO;
+-	}
+-
+-	if ((type & BTRFS_BLOCK_GROUP_SYSTEM) &&
+-	    (type & (BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_DATA))) {
+-		btrfs_err(fs_info,
+-			"system chunk with data or metadata type: 0x%llx", type);
+-		return -EIO;
+-	}
+-
+-	features = btrfs_super_incompat_flags(fs_info->super_copy);
+-	if (features & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS)
+-		mixed = true;
+-
+-	if (!mixed) {
+-		if ((type & BTRFS_BLOCK_GROUP_METADATA) &&
+-		    (type & BTRFS_BLOCK_GROUP_DATA)) {
+-			btrfs_err(fs_info,
+-			"mixed chunk type in non-mixed mode: 0x%llx", type);
+-			return -EIO;
+-		}
+-	}
+-
+-	if ((type & BTRFS_BLOCK_GROUP_RAID10 && sub_stripes != 2) ||
+-	    (type & BTRFS_BLOCK_GROUP_RAID1 && num_stripes < 1) ||
+-	    (type & BTRFS_BLOCK_GROUP_RAID5 && num_stripes < 2) ||
+-	    (type & BTRFS_BLOCK_GROUP_RAID6 && num_stripes < 3) ||
+-	    (type & BTRFS_BLOCK_GROUP_DUP && num_stripes > 2) ||
+-	    ((type & BTRFS_BLOCK_GROUP_PROFILE_MASK) == 0 &&
+-	     num_stripes != 1)) {
+-		btrfs_err(fs_info,
+-			"invalid num_stripes:sub_stripes %u:%u for profile %llu",
+-			num_stripes, sub_stripes,
+-			type & BTRFS_BLOCK_GROUP_PROFILE_MASK);
+-		return -EIO;
+-	}
+-
+-	return 0;
+-}
+-
+ static void btrfs_report_missing_device(struct btrfs_fs_info *fs_info,
+ 					u64 devid, u8 *uuid, bool error)
+ {
 -- 
 2.21.0
 

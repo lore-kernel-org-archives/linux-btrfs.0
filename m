@@ -6,26 +6,28 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 49CBAC43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 09:28:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A842C43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 09:41:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 15E2D2183F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 09:28:28 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 563D52173C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 09:41:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727345AbfCMJ20 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 13 Mar 2019 05:28:26 -0400
-Received: from mx2.suse.de ([195.135.220.15]:44956 "EHLO mx1.suse.de"
+        id S1727276AbfCMJlM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 13 Mar 2019 05:41:12 -0400
+Received: from mx2.suse.de ([195.135.220.15]:46722 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727321AbfCMJ20 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Mar 2019 05:28:26 -0400
+        id S1726163AbfCMJlM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 13 Mar 2019 05:41:12 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 8A192B010
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Mar 2019 09:28:23 +0000 (UTC)
-Subject: Re: [PATCH 5/6] btrfs: tree-checker: Verify inode item
+        by mx1.suse.de (Postfix) with ESMTP id 3DF41AC18;
+        Wed, 13 Mar 2019 09:41:10 +0000 (UTC)
+Subject: Re: [PATCH 6/6] btrfs: inode: Verify inode mode to avoid NULL pointer
+ dereference
 To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Cc:     Yoon Jungyeon <jungyeon@gatech.edu>
 References: <20190313085511.23540-1-wqu@suse.com>
- <20190313085511.23540-6-wqu@suse.com>
+ <20190313085511.23540-7-wqu@suse.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -70,12 +72,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <53f3d158-c7bd-d3ae-f7ca-93d59f5a76a6@suse.com>
-Date:   Wed, 13 Mar 2019 11:28:22 +0200
+Message-ID: <fc6274c2-a0a0-c87b-c7cb-8d6366860c20@suse.com>
+Date:   Wed, 13 Mar 2019 11:41:08 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <20190313085511.23540-6-wqu@suse.com>
+In-Reply-To: <20190313085511.23540-7-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -87,169 +89,187 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 13.03.19 г. 10:55 ч., Qu Wenruo wrote:
-> There is a report in kernel bugzilla about mismatch file type in dir
-> item and inode item.
+> [BUG]
+> When access a file on a crafted image, btrfs can crash in block layer:
 > 
-> This inspires us to check inode mode in inode item.
+> BUG: unable to handle kernel NULL pointer dereference at 0000000000000008
+> PGD 136501067 P4D 136501067 PUD 124519067 PMD 0
+> CPU: 3 PID: 0 Comm: swapper/3 Not tainted 5.0.0-rc8-default #252
+> RIP: 0010:end_bio_extent_readpage+0x144/0x700
+> Call Trace:
+>  <IRQ>
+>  blk_update_request+0x8f/0x350
+>  blk_mq_end_request+0x1a/0x120
+>  blk_done_softirq+0x99/0xc0
+>  __do_softirq+0xc7/0x467
+>  irq_exit+0xd1/0xe0
+>  call_function_single_interrupt+0xf/0x20
+>  </IRQ>
+> RIP: 0010:default_idle+0x1e/0x170
 > 
-> This patch will check the following members:
-> - inode key objectid
->   Should be ROOT_DIR_DIR or [256, (u64)-256] or FREE_INO.
+> [CAUSE]
+> The crafted image has a pretty tricky corruption, the INODE_ITEM has a
+> different type against its parent dir:
+>         item 20 key (268 INODE_ITEM 0) itemoff 2808 itemsize 160
+>                 generation 13 transid 13 size 1048576 nbytes 1048576
+>                 block group 0 mode 121644 links 1 uid 0 gid 0 rdev 0
+>                 sequence 9 flags 0x0(none)
 > 
-> - inode key offset
->   Should be 0
+> This mode number 0120000 means it's a soft link.
 > 
-> - inode item generation
-> - inode item transid
->   No newer than sb generation + 1.
->   The +1 is for log tree.
+> But the dir item think it's still a regular file:
+>         item 8 key (264 DIR_INDEX 5) itemoff 3707 itemsize 32
+>                 location key (268 INODE_ITEM 0) type FILE
+>                 transid 13 data_len 0 name_len 2
+>                 name: f4
+>         item 40 key (264 DIR_ITEM 51821248) itemoff 1573 itemsize 32
+>                 location key (268 INODE_ITEM 0) type FILE
+>                 transid 13 data_len 0 name_len 2
+>                 name: f4
 > 
-> - inode item mode
->   No unknown bits.
->   No invalid S_IF* bit.
->   NOTE: S_IFMT check is not enough, need extra check for it.
+> For btrfs symlink, we don't set BTRFS_I(inode)->io_tree.ops and leave
+> it empty, as symlink is only designed to have inlined extent, all
+> handled by tree block read.
+> Thus no need to trigger btrfs_submit_bio_hook() for inline file extent.
 > 
-> - inode item nlink
->   Dir should have no more link than 1.
+> However for end_bio_extent_readpage() it expects tree->ops populated, as
+> it's reading regular data extent.
+> This causes NULL pointer dereference.
 > 
-> - inode item flags
+> [FIX]
+> This patch fixes the problem by 2 directions:
+> - Verify inode mode against its dir item when looking up inode
+>   So in btrfs_lookup_dentry() if we find inode mode mismatch with dir
+>   item, we error out so that corrupted inode will not be access.
 > 
+> - Verify inode mode when getting extent mapping
+>   Only regular file should have regular or preallocated extent.
+>   If we found regular/preallocated file extent for soft link or
+>   whatever, we error out before we submit read bio.
+> 
+> With this fix that crafted image can be rejected gracefully:
+>   BTRFS critical (device loop0): inode mode mismatch with dir: inode mode=0121644 btrfs type=7 dir type=1
+> 
+> Reported-by: Yoon Jungyeon <jungyeon@gatech.edu>
+> Link: https://bugzilla.kernel.org/show_bug.cgi?id=202763
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
 
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
 > ---
->  fs/btrfs/ctree.h        |  2 +
->  fs/btrfs/tree-checker.c | 99 +++++++++++++++++++++++++++++++++++++++++
->  2 files changed, 101 insertions(+)
+>  fs/btrfs/inode.c             | 38 ++++++++++++++++++++++++++++--------
+>  fs/btrfs/tests/inode-tests.c |  1 +
+>  2 files changed, 31 insertions(+), 8 deletions(-)
 > 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 7a2a2621f0d9..f002c63a34e3 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -1504,6 +1504,8 @@ do {                                                                   \
->  #define BTRFS_INODE_COMPRESS		(1 << 11)
->  
->  #define BTRFS_INODE_ROOT_ITEM_INIT	(1 << 31)
-> +#define BTRFS_INODE_FLAG_MASK		(((1 << 12) - 1) |\
-> +					 BTRFS_INODE_ROOT_ITEM_INIT)
->  
->  struct btrfs_map_token {
->  	const struct extent_buffer *eb;
-> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-> index c08609627720..4b178ef1a9e7 100644
-> --- a/fs/btrfs/tree-checker.c
-> +++ b/fs/btrfs/tree-checker.c
-> @@ -682,6 +682,102 @@ static int check_dev_item(struct btrfs_fs_info *fs_info,
->  	return -EUCLEAN;
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 5c349667c761..4ced641aaa8e 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -5396,12 +5396,13 @@ void btrfs_evict_inode(struct inode *inode)
 >  }
 >  
-> +/* Inode item error output has the same format as dir_item_err() */
-> +#define inode_item_err(fs_info, eb, slot, fmt, ...)	\
-> +	dir_item_err(fs_info, eb, slot, fmt, __VA_ARGS__)
-> +
-> +static int check_inode_item(struct btrfs_fs_info *fs_info,
-> +			    struct extent_buffer *leaf,
-> +			    struct btrfs_key *key, int slot)
+>  /*
+> - * this returns the key found in the dir entry in the location pointer.
+> + * this returns the key found in the dir entry in the location pointer,
+> + * fill @type with BTRFS_FT_*, and return 0.
+>   * If no dir entries were found, returns -ENOENT.
+>   * If found a corrupted location in dir entry, returns -EUCLEAN.
+>   */
+>  static int btrfs_inode_by_name(struct inode *dir, struct dentry *dentry,
+> -			       struct btrfs_key *location)
+> +			       struct btrfs_key *location, u8 *type)
+>  {
+>  	const char *name = dentry->d_name.name;
+>  	int namelen = dentry->d_name.len;
+> @@ -5430,6 +5431,8 @@ static int btrfs_inode_by_name(struct inode *dir, struct dentry *dentry,
+>  			   __func__, name, btrfs_ino(BTRFS_I(dir)),
+>  			   location->objectid, location->type, location->offset);
+>  	}
+> +	if (!ret)
+> +		*type = btrfs_dir_type(path->nodes[0], di);
+>  out:
+>  	btrfs_free_path(path);
+>  	return ret;
+> @@ -5667,6 +5670,11 @@ static struct inode *new_simple_dir(struct super_block *s,
+>  	return inode;
+>  }
+>  
+> +static inline u8 btrfs_inode_type(struct inode *inode)
 > +{
-> +	struct btrfs_inode_item *iitem;
-> +	u64 super_gen = btrfs_super_generation(fs_info->super_copy);
-> +	u32 valid_mask = (S_IFMT | S_ISUID | S_ISGID | S_ISVTX | 0777);
-> +	u32 mode;
-> +
-> +	if ((key->objectid < BTRFS_FIRST_FREE_OBJECTID ||
-> +	     key->objectid > BTRFS_LAST_FREE_OBJECTID) &&
-> +	     key->objectid != BTRFS_ROOT_TREE_DIR_OBJECTID &&
-> +	     key->objectid != BTRFS_FREE_INO_OBJECTID) {
-> +		generic_err(fs_info, leaf, slot,
-> +	"invalid key objectid: has %llu expect %llu or [%llu, %llu] or %llu",
-> +			    key->objectid, BTRFS_ROOT_TREE_DIR_OBJECTID,
-> +			    BTRFS_FIRST_FREE_OBJECTID,
-> +			    BTRFS_LAST_FREE_OBJECTID,
-> +			    BTRFS_FREE_INO_OBJECTID);
-> +		goto error;
-> +	}
-> +	if (key->offset != 0) {
-> +		inode_item_err(fs_info, leaf, slot,
-> +			"invalid key offset: has %llu expect 0",
-> +			key->offset);
-> +		goto error;
-> +	}
-> +	iitem = btrfs_item_ptr(leaf, slot, struct btrfs_inode_item);
-> +
-> +	/* Here we use super block generation + 1 to handle log tree */
-> +	if (btrfs_inode_generation(leaf, iitem) > super_gen + 1) {
-> +		inode_item_err(fs_info, leaf, slot,
-> +			"invalid inode generation: has %llu expect (0, %llu]",
-> +			       btrfs_inode_generation(leaf, iitem),
-> +			       super_gen + 1);
-> +		goto error;
-> +	}
-> +	/* Note for ROOT_TREE_DIR_ITEM, mkfs could make its transid as 0 */
-> +	if (btrfs_inode_transid(leaf, iitem) > super_gen + 1) {
-> +		inode_item_err(fs_info, leaf, slot,
-> +			"invalid inode generation: has %llu expect [0, %llu]",
-> +			       btrfs_inode_transid(leaf, iitem),
-> +			       super_gen + 1);
-> +		goto error;
-> +	}
-> +
-> +	/*
-> +	 * For size and nbytes it's better not to be too strict, as for dir
-> +	 * item its size/nbytes can easily get wrong, but doesn't affect
-> +	 * any thing of the fs. So here we skip the check.
-> +	 */
-> +
-> +	mode = btrfs_inode_mode(leaf, iitem);
-> +	if (mode & ~valid_mask) {
-> +		inode_item_err(fs_info, leaf, slot,
-> +			       "unknown mode bit detected: 0x%x",
-> +			       mode & ~valid_mask);
-> +		goto error;
-> +	}
-> +
-> +	/*
-> +	 * S_IFMT is not bit mapped so we can't completely rely is_power_of_2(),
-> +	 * but is_power_of_2() can save us from checking FIFO/CHR/DIR/REG.
-> +	 * Only needs to check BLK, LNK and SOCKS
-> +	 */
-> +	if (!is_power_of_2(mode & S_IFMT)) {
-> +		if (!S_ISLNK(mode) && ! S_ISBLK(mode) && !S_ISSOCK(mode)) {
-> +			inode_item_err(fs_info, leaf, slot,
-> +			"invalid mode: has 0%o expect valid S_IF* bit(s)",
-> +				       mode & S_IFMT);
-> +			goto error;
-> +		}
-> +	}
-> +	if (S_ISDIR(mode) && btrfs_inode_nlink(leaf, iitem) > 1) {
-> +		inode_item_err(fs_info, leaf, slot,
-> +			       "invalid nlink: has %u expect no more than 1 for dir",
-> +			btrfs_inode_nlink(leaf, iitem));
-> +		goto error;
-> +	}
-> +	if (btrfs_inode_flags(leaf, iitem) & ~BTRFS_INODE_FLAG_MASK) {
-> +		inode_item_err(fs_info, leaf, slot,
-> +			       "unknown flags detected: 0x%llx",
-> +			       btrfs_inode_flags(leaf, iitem) &
-> +			       ~BTRFS_INODE_FLAG_MASK);
-> +		goto error;
-> +	}
-> +	return 0;
-> +
-> +error:
-> +	return -EUCLEAN;
+> +	return btrfs_type_by_mode[(inode->i_mode & S_IFMT) >> S_SHIFT];
 > +}
 > +
->  /*
->   * Common point to switch the item-specific validation.
->   */
-> @@ -715,6 +811,9 @@ static int check_leaf_item(struct btrfs_fs_info *fs_info,
->  	case BTRFS_DEV_ITEM_KEY:
->  		ret = check_dev_item(fs_info, leaf, key, slot);
->  		break;
-> +	case BTRFS_INODE_ITEM_KEY:
-> +		ret = check_inode_item(fs_info, leaf, key, slot);
-> +		break;
+>  struct inode *btrfs_lookup_dentry(struct inode *dir, struct dentry *dentry)
+>  {
+>  	struct btrfs_fs_info *fs_info = btrfs_sb(dir->i_sb);
+> @@ -5674,18 +5682,29 @@ struct inode *btrfs_lookup_dentry(struct inode *dir, struct dentry *dentry)
+>  	struct btrfs_root *root = BTRFS_I(dir)->root;
+>  	struct btrfs_root *sub_root = root;
+>  	struct btrfs_key location;
+> +	u8 di_type = 0;
+>  	int index;
+>  	int ret = 0;
+>  
+>  	if (dentry->d_name.len > BTRFS_NAME_LEN)
+>  		return ERR_PTR(-ENAMETOOLONG);
+>  
+> -	ret = btrfs_inode_by_name(dir, dentry, &location);
+> +	ret = btrfs_inode_by_name(dir, dentry, &location, &di_type);
+>  	if (ret < 0)
+>  		return ERR_PTR(ret);
+>  
+>  	if (location.type == BTRFS_INODE_ITEM_KEY) {
+>  		inode = btrfs_iget(dir->i_sb, &location, root, NULL);
+> +
+> +		/* Do extra check against inode mode with di_type */
+> +		if (btrfs_inode_type(inode) != di_type) {
+> +			btrfs_crit(fs_info,
+> +"inode mode mismatch with dir: inode mode=0%o btrfs type=%u dir type=%u",
+> +				  inode->i_mode, btrfs_inode_type(inode),
+> +				  di_type);
+> +			iput(inode);
+> +			return ERR_PTR(-EUCLEAN);
+> +		}
+>  		return inode;
 >  	}
->  	return ret;
+>  
+> @@ -6290,11 +6309,6 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+>  	return ERR_PTR(ret);
 >  }
+>  
+> -static inline u8 btrfs_inode_type(struct inode *inode)
+> -{
+> -	return btrfs_type_by_mode[(inode->i_mode & S_IFMT) >> S_SHIFT];
+> -}
+> -
+>  /*
+>   * utility function to add 'inode' into 'parent_inode' with
+>   * a give name and a given sequence number.
+> @@ -6816,6 +6830,14 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
+>  	extent_start = found_key.offset;
+>  	if (found_type == BTRFS_FILE_EXTENT_REG ||
+>  	    found_type == BTRFS_FILE_EXTENT_PREALLOC) {
+> +		/* Only regular file could have regular/prealloc extent */
+> +		if (!S_ISREG(inode->vfs_inode.i_mode)) {
+> +			ret = -EUCLEAN;
+> +			btrfs_crit(fs_info,
+> +		"regular/prealloc extent found for non-regular inode %llu",
+> +				   btrfs_ino(inode));
+> +			goto out;
+> +		}
+>  		extent_end = extent_start +
+>  		       btrfs_file_extent_num_bytes(leaf, item);
+>  
+> diff --git a/fs/btrfs/tests/inode-tests.c b/fs/btrfs/tests/inode-tests.c
+> index af0c8e30d9e2..b01dbcab9eed 100644
+> --- a/fs/btrfs/tests/inode-tests.c
+> +++ b/fs/btrfs/tests/inode-tests.c
+> @@ -232,6 +232,7 @@ static noinline int test_btrfs_get_extent(u32 sectorsize, u32 nodesize)
+>  		return ret;
+>  	}
+>  
+> +	inode->i_mode = S_IFREG;
+>  	BTRFS_I(inode)->location.type = BTRFS_INODE_ITEM_KEY;
+>  	BTRFS_I(inode)->location.objectid = BTRFS_FIRST_FREE_OBJECTID;
+>  	BTRFS_I(inode)->location.offset = 0;
 > 

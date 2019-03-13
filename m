@@ -2,104 +2,84 @@ Return-Path: <SRS0=X8lZ=RQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3EB67C43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 17:44:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 70F8BC43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 18:02:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1BA202077B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 17:44:27 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4E345213A2
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 18:02:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727043AbfCMRo0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 13 Mar 2019 13:44:26 -0400
-Received: from mx2.suse.de ([195.135.220.15]:55506 "EHLO mx1.suse.de"
+        id S1726991AbfCMSCB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 13 Mar 2019 14:02:01 -0400
+Received: from mx2.suse.de ([195.135.220.15]:58354 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725876AbfCMRoZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Mar 2019 13:44:25 -0400
+        id S1726446AbfCMSCB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 13 Mar 2019 14:02:01 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 8D2F4AFFC;
-        Wed, 13 Mar 2019 17:44:24 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 0ED21B625
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Mar 2019 18:02:00 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 246F2DA875; Wed, 13 Mar 2019 18:45:40 +0100 (CET)
-Date:   Wed, 13 Mar 2019 18:45:39 +0100
+        id D1F82DA875; Wed, 13 Mar 2019 19:03:14 +0100 (CET)
+Date:   Wed, 13 Mar 2019 19:03:14 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
+To:     Nikolay Borisov <nborisov@suse.com>
 Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/2] btrfs: fix vanished compression property after
- failed set
-Message-ID: <20190313174539.GG31119@twin.jikos.cz>
+Subject: Re: [PATCH] btrfs: Correctly free extent buffer in case
+ btree_read_extent_buffer_pages fails
+Message-ID: <20190313180314.GH31119@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
+Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
         linux-btrfs@vger.kernel.org
-References: <1552455379-2311-1-git-send-email-anand.jain@oracle.com>
- <1552455379-2311-2-git-send-email-anand.jain@oracle.com>
- <60c3e0c1-52dd-5389-e244-c82776b214a1@oracle.com>
+References: <20190312131847.20311-1-nborisov@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <60c3e0c1-52dd-5389-e244-c82776b214a1@oracle.com>
+In-Reply-To: <20190312131847.20311-1-nborisov@suse.com>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Mar 13, 2019 at 06:33:50PM +0800, Anand Jain wrote:
+On Tue, Mar 12, 2019 at 03:18:47PM +0200, Nikolay Borisov wrote:
+> If a an eb fails to be read for whatever reason - it's corrupted on disk
+> and parent transid/key validations fail or IO for eb pages fail then
+> this buffer must be removed from the buffer cache. Currently the code
+> calls free_extent_buffer if an error occurs. Unfortunately this doesn't
+> achieve the desired behavior since btrfs_find_create_tree_block returns
+> with eb->refs == 2. On the other hand free_extent_buffer will only
+> decrement the refs once leavin it added to the buffer cache radix tree.
+> This enables later code to look up the buffer from the cache and utilize
+> it potentially leading to a crash.
 > 
-> 
-> 
-> On 3/13/19 1:36 PM, Anand Jain wrote:
-> > The compression property resets to NULL, instead of the old value if we
-> > fail to set the new compression parameter.
-> > 
-> > btrfs prop get /btrfs compression
-> >    compression=lzo
-> > btrfs prop set /btrfs compression zli
-> >    ERROR: failed to set compression for /btrfs: Invalid argument
-> > btrfs prop get /btrfs compression
-> > 
-> > This is because the compression property ->validate() is successful for
-> > 'zli' as the strncmp() used the len passed from the userland.
-> > 
-> > Fix it by using the expected string length in strncmp().
-> > 
-> > Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> > ---
-> >   fs/btrfs/props.c | 6 +++---
-> >   1 file changed, 3 insertions(+), 3 deletions(-)
-> > 
-> > diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-> > index ef6502a94712..7aa362c2fbcf 100644
-> > --- a/fs/btrfs/props.c
-> > +++ b/fs/btrfs/props.c
-> > @@ -277,11 +277,11 @@ static int prop_compression_validate(struct inode *inode, const char *value,
-> >   	if (!value)
-> >   		return 0;
-> >   
-> > -	if (!strncmp("lzo", value, len))
-> > +	if (!strncmp("lzo", value, 3))
-> >   		return 0;
-> > -	else if (!strncmp("zlib", value, len))
-> > +	else if (!strncmp("zlib", value, 4))
-> >   		return 0;
-> > -	else if (!strncmp("zstd", value, len))
-> > +	else if (!strncmp("zstd", value, 4))
-> >   		return 0;
-> >
-> 
-> 
->    Nack.
-> Now some junk value after expected string is not an error.
-> such as..
-> 
-> btrfs prop set /btrfs compression lzo110
+> The correct way to free the buffer is call free_extent_buffer_stale.
+> This function will correctly call atomic_dec explicitly for the buffer
+> and subsequently call release_extent_buffer which will decrement the
+> final reference thus correctly remove the invalid buffer from buffer
+> cache. This change affects only newly allocated buffers since they have
+> eb->refs == 2.
 
-This was intentional when the zlib levels were introduced so older
-kernels can understand newer compression specifier but still have a sane
-fallback (ie use the default level). Now it would be better to extend
-the validation to parse the method:level format at least. But as
-mentioned in the other mail, the level needs to be propagated elsewhere
-too so it's not just a change to the validation.
+Following the same pattern, should every use of
+btrfs_find_create_tree_block be followed by free_extent_buffer_stale in
+case of errors?
+
+There's almost the same sequence in readahead_tree_block as you update
+in reada_tree_block_flagged:
+
+  btrfs_find_create_tree_block
+  read_extent_buffer_pages
+  free_extent_buffer
+
+so should be the _stale variant used there too?
+
+free_extent_buffer_stale is normally used in other contexts where the
+'stale' part means that the eb is known to be disconnected.
+
+I think that btrfs_find_create_tree_block needs a dedicated freeing
+function that will make sure all invariants (refs == 2, no other
+structures connected) are met and then do effectively the same what
+_stale does now.

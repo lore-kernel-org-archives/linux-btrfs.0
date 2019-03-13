@@ -3,179 +3,120 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6BD9BC43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 17:26:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6FCE9C43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 17:37:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3F37421019
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 17:26:00 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3D3872075C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 17:37:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726011AbfCMRZ7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 13 Mar 2019 13:25:59 -0400
-Received: from mx2.suse.de ([195.135.220.15]:51532 "EHLO mx1.suse.de"
+        id S1726727AbfCMRh5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 13 Mar 2019 13:37:57 -0400
+Received: from mx2.suse.de ([195.135.220.15]:53584 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725856AbfCMRZ7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Mar 2019 13:25:59 -0400
+        id S1726336AbfCMRh4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 13 Mar 2019 13:37:56 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 2445EAD6D
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Mar 2019 17:25:57 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id AD10FAF98;
+        Wed, 13 Mar 2019 17:37:55 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id C6726DA875; Wed, 13 Mar 2019 18:27:10 +0100 (CET)
-Date:   Wed, 13 Mar 2019 18:27:10 +0100
+        id 83086DA875; Wed, 13 Mar 2019 18:39:10 +0100 (CET)
+Date:   Wed, 13 Mar 2019 18:39:09 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Exploit the fact pages passed to extent_readpages
- are always contiguous
-Message-ID: <20190313172709.GD31119@twin.jikos.cz>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/2] btrfs: fix vanished compression property after
+ failed set
+Message-ID: <20190313173909.GE31119@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20190311075538.19242-1-nborisov@suse.com>
+Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
+        Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+References: <1552455379-2311-1-git-send-email-anand.jain@oracle.com>
+ <1552455379-2311-2-git-send-email-anand.jain@oracle.com>
+ <4ef1a9bb-141c-c07b-d995-9ac3d0c8f1d2@suse.com>
+ <90b86c08-7c3b-d0b1-a895-ebc45af4c059@suse.com>
+ <ff110534-776d-738f-bb11-61233cfcd02e@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <20190311075538.19242-1-nborisov@suse.com>
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <ff110534-776d-738f-bb11-61233cfcd02e@oracle.com>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Mar 11, 2019 at 09:55:38AM +0200, Nikolay Borisov wrote:
-> Currently extent_readpages (called from btrfs_redpages) will always call
-> __extent_readpages which tries to create contiguous range of pages and
-> call __do_contiguous_readpages when such contiguous range is created.
+On Wed, Mar 13, 2019 at 04:49:54PM +0800, Anand Jain wrote:
 > 
-> It turns out this is unnecessary due to the fact that generic VFS code
-> always calls filesystem's ->readpages callback (btrfs_readpages in
-> this case) with already contiguous pages. Armed with this knowledge it's
-> possible to simplify extent_readpages by eliminating the call to
-> __extent_readpages and directly calling contiguous_readpages. The only
-> edge case that needs to be handled is when add_to_page_cache_lru
-> fails. This is easy as all that is needed is to submit whatever is the
-> number of pages successfully added to the lru.
-
-I'd like to have more details why this is correct. Submitting what we
-have so far seems ok, the reasons why add_to_page_cache_lru are unclear
-and go back to xarray.
-
-Possible error is EEXSIT, here it's clear that we don't need to read the
-pages (already there). A sequence of such pages will make it wildly hop
-from 1st for cycle iteration, to the if (nr) check and back.
-
-Previously this looped still in the for-cycle, which was easier to
-follow but otherwise not due to __extent_readpages. So I think it's an
-improvement in the end, though a few comments would be good there.
-
-Reviewed-by: David Sterba <dsterba@suse.com>
-
 > 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> ---
+> On 3/13/19 3:22 PM, Nikolay Borisov wrote:
+> > 
+> > 
+> > On 13.03.19 г. 9:20 ч., Nikolay Borisov wrote:
+> >>
+> >>
+> >> On 13.03.19 г. 7:36 ч., Anand Jain wrote:
+> >>> The compression property resets to NULL, instead of the old value if we
+> >>> fail to set the new compression parameter.
+> >>>
+> >>> btrfs prop get /btrfs compression
+> >>>    compression=lzo
+> >>> btrfs prop set /btrfs compression zli
+> >>>    ERROR: failed to set compression for /btrfs: Invalid argument
+> >>> btrfs prop get /btrfs compression
+> >>>
+> >>> This is because the compression property ->validate() is successful for
+> >>> 'zli' as the strncmp() used the len passed from the userland.
+> >>>
+> >>> Fix it by using the expected string length in strncmp().
+> >>>
+> >>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> >>> ---
+> >>>   fs/btrfs/props.c | 6 +++---
+> >>>   1 file changed, 3 insertions(+), 3 deletions(-)
+> >>>
+> >>> diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
+> >>> index ef6502a94712..7aa362c2fbcf 100644
+> >>> --- a/fs/btrfs/props.c
+> >>> +++ b/fs/btrfs/props.c
+> >>> @@ -277,11 +277,11 @@ static int prop_compression_validate(struct inode *inode, const char *value,
+> >>>   	if (!value)
+> >>>   		return 0;
+> >>>   
+> >>> -	if (!strncmp("lzo", value, len))
+> >>> +	if (!strncmp("lzo", value, 3))
+> >>>   		return 0;
+> >>> -	else if (!strncmp("zlib", value, len))
+> >>> +	else if (!strncmp("zlib", value, 4))
+> >>>   		return 0;
+> >>> -	else if (!strncmp("zstd", value, len))
+> >>> +	else if (!strncmp("zstd", value, 4))
+> >>>   		return 0;
+> >>
+> >> This also makes the len argument to prop_compression_validate redundant
+> >> and should be removed as well.
 > 
-> I've been running with this patch for the past 3 months and haven't encountered 
-> any issues with it.
->  fs/btrfs/extent_io.c | 58 +++++++++++---------------------------------
->  1 file changed, 14 insertions(+), 44 deletions(-)
+>   Its part of the 'struct prop_handler', its better to keep it until
+>   properties have completely evolved.
 > 
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index b20700ad8752..551dd21d7351 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -3066,7 +3066,7 @@ static int __do_readpage(struct extent_io_tree *tree,
->  	return ret;
->  }
->  
-> -static inline void __do_contiguous_readpages(struct extent_io_tree *tree,
-> +static inline void contiguous_readpages(struct extent_io_tree *tree,
->  					     struct page *pages[], int nr_pages,
->  					     u64 start, u64 end,
->  					     struct extent_map **em_cached,
-> @@ -3097,46 +3097,6 @@ static inline void __do_contiguous_readpages(struct extent_io_tree *tree,
->  	}
->  }
->  
-> -static void __extent_readpages(struct extent_io_tree *tree,
-> -			       struct page *pages[],
-> -			       int nr_pages,
-> -			       struct extent_map **em_cached,
-> -			       struct bio **bio, unsigned long *bio_flags,
-> -			       u64 *prev_em_start)
-> -{
-> -	u64 start = 0;
-> -	u64 end = 0;
-> -	u64 page_start;
-> -	int index;
-> -	int first_index = 0;
-> -
-> -	for (index = 0; index < nr_pages; index++) {
-> -		page_start = page_offset(pages[index]);
-> -		if (!end) {
-> -			start = page_start;
-> -			end = start + PAGE_SIZE - 1;
-> -			first_index = index;
-> -		} else if (end + 1 == page_start) {
-> -			end += PAGE_SIZE;
-> -		} else {
-> -			__do_contiguous_readpages(tree, &pages[first_index],
-> -						  index - first_index, start,
-> -						  end, em_cached,
-> -						  bio, bio_flags,
-> -						  prev_em_start);
-> -			start = page_start;
-> -			end = start + PAGE_SIZE - 1;
-> -			first_index = index;
-> -		}
-> -	}
-> -
-> -	if (end)
-> -		__do_contiguous_readpages(tree, &pages[first_index],
-> -					  index - first_index, start,
-> -					  end, em_cached, bio,
-> -					  bio_flags, prev_em_start);
-> -}
-> -
->  static int __extent_read_full_page(struct extent_io_tree *tree,
->  				   struct page *page,
->  				   get_extent_t *get_extent,
-> @@ -4098,6 +4058,8 @@ int extent_readpages(struct address_space *mapping, struct list_head *pages,
->  	u64 prev_em_start = (u64)-1;
->  
->  	while (!list_empty(pages)) {
-> +		u64 contig_end = 0;
-> +
->  		for (nr = 0; nr < ARRAY_SIZE(pagepool) && !list_empty(pages);) {
->  			struct page *page = lru_to_page(pages);
->  
-> @@ -4106,14 +4068,22 @@ int extent_readpages(struct address_space *mapping, struct list_head *pages,
->  			if (add_to_page_cache_lru(page, mapping, page->index,
->  						readahead_gfp_mask(mapping))) {
->  				put_page(page);
-> -				continue;
-> +				break;
->  			}
->  
->  			pagepool[nr++] = page;
-> +			contig_end = page_offset(page) + PAGE_SIZE - 1;
->  		}
->  
-> -		__extent_readpages(tree, pagepool, nr, &em_cached, &bio,
-> -				   &bio_flags, &prev_em_start);
-> +		if (nr) {
-> +			u64 contig_start = page_offset(pagepool[0]);
-> +
-> +			ASSERT(contig_start + (nr*PAGE_SIZE) - 1 == contig_end);
-> +
-> +			contiguous_readpages(tree, pagepool, nr, contig_start,
-> +				     contig_end, &em_cached, &bio, &bio_flags,
-> +				     &prev_em_start);
-> +		}
->  	}
->  
->  	if (em_cached)
-> -- 
-> 2.17.1
+> > 
+> > As a matter of fact I don't see any value in prop_compression_validate
+> > since the exact same code is used in prop_compression_apply and einval
+> > will be returned if an invalid value is passed in.
+> 
+>   I notice too. But its better to keep it until the most of the
+>   properties have evolved.
+> 
+>   As of now btrfs_set_prop() follows sequence..
+>     h->validate(prop)
+>     setxattr(prop)
+>     h->apply(prop)
+> 
+>   If validate fails its easy to fail exit.
+
+Agreed, some code could be repeated in the apply() callback, but
+otherwise I'd like to keep both.

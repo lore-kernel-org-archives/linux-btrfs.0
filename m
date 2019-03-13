@@ -6,28 +6,26 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 41EA1C43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 09:24:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 49CBAC43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 09:28:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0A2772184D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 09:24:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 15E2D2183F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 09:28:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726824AbfCMJYN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 13 Mar 2019 05:24:13 -0400
-Received: from mx2.suse.de ([195.135.220.15]:44420 "EHLO mx1.suse.de"
+        id S1727345AbfCMJ20 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 13 Mar 2019 05:28:26 -0400
+Received: from mx2.suse.de ([195.135.220.15]:44956 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726719AbfCMJYM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Mar 2019 05:24:12 -0400
+        id S1727321AbfCMJ20 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 13 Mar 2019 05:28:26 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B3D64AF44;
-        Wed, 13 Mar 2019 09:24:10 +0000 (UTC)
-Subject: Re: [PATCH 3/6] btrfs: Check the first key and level for cached
- extent buffer
+        by mx1.suse.de (Postfix) with ESMTP id 8A192B010
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Mar 2019 09:28:23 +0000 (UTC)
+Subject: Re: [PATCH 5/6] btrfs: tree-checker: Verify inode item
 To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Cc:     Yoon Jungyeon <jungyeon@gatech.edu>
 References: <20190313085511.23540-1-wqu@suse.com>
- <20190313085511.23540-4-wqu@suse.com>
+ <20190313085511.23540-6-wqu@suse.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -72,12 +70,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <76ea5fa7-0a19-ea2f-4256-e9c4f024ea57@suse.com>
-Date:   Wed, 13 Mar 2019 11:24:09 +0200
+Message-ID: <53f3d158-c7bd-d3ae-f7ca-93d59f5a76a6@suse.com>
+Date:   Wed, 13 Mar 2019 11:28:22 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <20190313085511.23540-4-wqu@suse.com>
+In-Reply-To: <20190313085511.23540-6-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -89,163 +87,169 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 13.03.19 г. 10:55 ч., Qu Wenruo wrote:
-> [BUG]
-> When reading a file from a fuzzed image, kernel can panic like:
->   BTRFS warning (device loop0): csum failed root 5 ino 270 off 0 csum 0x98f94189 expected csum 0x00000000 mirror 1
->   assertion failed: !memcmp_extent_buffer(b, &disk_key, offsetof(struct btrfs_leaf, items[0].key), sizeof(disk_key)), file: fs/btrfs/ctree.c, line: 2544
->   ------------[ cut here ]------------
->   kernel BUG at fs/btrfs/ctree.h:3500!
->   invalid opcode: 0000 [#1] PREEMPT SMP NOPTI
->   RIP: 0010:btrfs_search_slot.cold.24+0x61/0x63 [btrfs]
->   Call Trace:
->    btrfs_lookup_csum+0x52/0x150 [btrfs]
->    __btrfs_lookup_bio_sums+0x209/0x640 [btrfs]
->    btrfs_submit_bio_hook+0x103/0x170 [btrfs]
->    submit_one_bio+0x59/0x80 [btrfs]
->    extent_read_full_page+0x58/0x80 [btrfs]
->    generic_file_read_iter+0x2f6/0x9d0
->    __vfs_read+0x14d/0x1a0
->    vfs_read+0x8d/0x140
->    ksys_read+0x52/0xc0
->    do_syscall_64+0x60/0x210
->    entry_SYSCALL_64_after_hwframe+0x49/0xbe
+> There is a report in kernel bugzilla about mismatch file type in dir
+> item and inode item.
 > 
-> [CAUSE]
-> The fuzzed image has a corrupted leaf whose first key doesn't match with its parent:
->   checksum tree key (CSUM_TREE ROOT_ITEM 0)
->   node 29741056 level 1 items 14 free 107 generation 19 owner CSUM_TREE
->   fs uuid 3381d111-94a3-4ac7-8f39-611bbbdab7e6
->   chunk uuid 9af1c3c7-2af5-488b-8553-530bd515f14c
->   	...
->           key (EXTENT_CSUM EXTENT_CSUM 79691776) block 29761536 gen 19
+> This inspires us to check inode mode in inode item.
 > 
->   leaf 29761536 items 1 free space 1726 generation 19 owner CSUM_TREE
->   leaf 29761536 flags 0x1(WRITTEN) backref revision 1
->   fs uuid 3381d111-94a3-4ac7-8f39-611bbbdab7e6
->   chunk uuid 9af1c3c7-2af5-488b-8553-530bd515f14c
->           item 0 key (EXTENT_CSUM EXTENT_CSUM 8798638964736) itemoff 1751 itemsize 2244
->                   range start 8798638964736 end 8798641262592 length 2297856
+> This patch will check the following members:
+> - inode key objectid
+>   Should be ROOT_DIR_DIR or [256, (u64)-256] or FREE_INO.
 > 
-> When reading above tree block, we have extent_buffer->refs = 2 in the
-> context:
-> - initial one from __alloc_extent_buffer()
->   alloc_extent_buffer()
->   |- __alloc_extent_buffer()
->      |- atomic_set(&eb->refs, 1)
+> - inode key offset
+>   Should be 0
 > 
-> - one being added to fs_info->buffer_radix
->   alloc_extent_buffer()
->   |- check_buffer_tree_ref()
->      |- atomic_inc(&eb->refs)
+> - inode item generation
+> - inode item transid
+>   No newer than sb generation + 1.
+>   The +1 is for log tree.
 > 
-> So even we call free_extent_buffer() in read_tree_block or other similar
-> situation, we only decrease the refs by 1, it doesn't reach 0 and won't
-> be freed right now.
+> - inode item mode
+>   No unknown bits.
+>   No invalid S_IF* bit.
+>   NOTE: S_IFMT check is not enough, need extra check for it.
 > 
-> The staled eb and its corrupted content will still be kept cached.
+> - inode item nlink
+>   Dir should have no more link than 1.
 > 
-> Further more, we have several extra cases where we either don't do
-> first key check or the check is not proper for all callers:
-> - scrub
->   We just don't have first key in this context.
+> - inode item flags
 > 
-> - shared tree block
->   One tree block can be shared by several snapshot/subvolume trees.
->   In that case, the first key check for one subvolume doesn't apply to
->   another.
-> 
-> So for above reasons, a corrupted extent buffer can sneak into the
-> buffer cache.
-> 
-> [FIX]
-> Export verify_level_key() as btrfs_verify_level_key() and call it in
-> read_block_for_search() to fill the hole.
-> 
-> Due to above described reasons, even we can free corrupted extent buffer
-> from cache, we still need the check in read_block_for_search(), for
-> scrub and shared tree blocks.
-> 
-> Reported-by: Yoon Jungyeon <jungyeon@gatech.edu>
-> Link: https://bugzilla.kernel.org/show_bug.cgi?id=202755
-> Link: https://bugzilla.kernel.org/show_bug.cgi?id=202757
-> Link: https://bugzilla.kernel.org/show_bug.cgi?id=202759
-> Link: https://bugzilla.kernel.org/show_bug.cgi?id=202761
-> Link: https://bugzilla.kernel.org/show_bug.cgi?id=202767
-> Link: https://bugzilla.kernel.org/show_bug.cgi?id=202769
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
-
-
-I had already reviewed the earlier posting of this patch so:
 
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
->  fs/btrfs/ctree.c   | 10 ++++++++++
->  fs/btrfs/disk-io.c | 10 +++++-----
->  fs/btrfs/disk-io.h |  3 +++
->  3 files changed, 18 insertions(+), 5 deletions(-)
+> ---
+>  fs/btrfs/ctree.h        |  2 +
+>  fs/btrfs/tree-checker.c | 99 +++++++++++++++++++++++++++++++++++++++++
+>  2 files changed, 101 insertions(+)
 > 
-> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> index 5a6c39b44c84..7672932aa5b4 100644
-> --- a/fs/btrfs/ctree.c
-> +++ b/fs/btrfs/ctree.c
-> @@ -2401,6 +2401,16 @@ read_block_for_search(struct btrfs_root *root, struct btrfs_path *p,
->  	if (tmp) {
->  		/* first we do an atomic uptodate check */
->  		if (btrfs_buffer_uptodate(tmp, gen, 1) > 0) {
-> +			/*
-> +			 * Do extra check for first_key, eb can be stale due to
-> +			 * being cached, read from scrub, or have multiple
-> +			 * parents (shared tree blocks).
-> +			 */
-> +			if (btrfs_verify_level_key(fs_info, tmp,
-> +					parent_level - 1, &first_key, gen)) {
-> +				free_extent_buffer(tmp);
-> +				return -EUCLEAN;
-> +			}
->  			*eb_ret = tmp;
->  			return 0;
->  		}
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 298b34721bc0..e2a0cb362d28 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -423,9 +423,9 @@ static int btrfs_check_super_csum(struct btrfs_fs_info *fs_info,
->  	return ret;
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 7a2a2621f0d9..f002c63a34e3 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -1504,6 +1504,8 @@ do {                                                                   \
+>  #define BTRFS_INODE_COMPRESS		(1 << 11)
+>  
+>  #define BTRFS_INODE_ROOT_ITEM_INIT	(1 << 31)
+> +#define BTRFS_INODE_FLAG_MASK		(((1 << 12) - 1) |\
+> +					 BTRFS_INODE_ROOT_ITEM_INIT)
+>  
+>  struct btrfs_map_token {
+>  	const struct extent_buffer *eb;
+> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+> index c08609627720..4b178ef1a9e7 100644
+> --- a/fs/btrfs/tree-checker.c
+> +++ b/fs/btrfs/tree-checker.c
+> @@ -682,6 +682,102 @@ static int check_dev_item(struct btrfs_fs_info *fs_info,
+>  	return -EUCLEAN;
 >  }
 >  
-> -static int verify_level_key(struct btrfs_fs_info *fs_info,
-> -			    struct extent_buffer *eb, int level,
-> -			    struct btrfs_key *first_key, u64 parent_transid)
-> +int btrfs_verify_level_key(struct btrfs_fs_info *fs_info,
-> +			   struct extent_buffer *eb, int level,
-> +			   struct btrfs_key *first_key, u64 parent_transid)
->  {
->  	int found_level;
->  	struct btrfs_key found_key;
-> @@ -500,8 +500,8 @@ static int btree_read_extent_buffer_pages(struct btrfs_fs_info *fs_info,
->  			if (verify_parent_transid(io_tree, eb,
->  						   parent_transid, 0))
->  				ret = -EIO;
-> -			else if (verify_level_key(fs_info, eb, level,
-> -						  first_key, parent_transid))
-> +			else if (btrfs_verify_level_key(fs_info, eb, level,
-> +						first_key, parent_transid))
->  				ret = -EUCLEAN;
->  			else
->  				break;
-> diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-> index 987a64bc0c66..67a9fe2d29c7 100644
-> --- a/fs/btrfs/disk-io.h
-> +++ b/fs/btrfs/disk-io.h
-> @@ -39,6 +39,9 @@ static inline u64 btrfs_sb_offset(int mirror)
->  struct btrfs_device;
->  struct btrfs_fs_devices;
->  
-> +int btrfs_verify_level_key(struct btrfs_fs_info *fs_info,
-> +			   struct extent_buffer *eb, int level,
-> +			   struct btrfs_key *first_key, u64 parent_transid);
->  struct extent_buffer *read_tree_block(struct btrfs_fs_info *fs_info, u64 bytenr,
->  				      u64 parent_transid, int level,
->  				      struct btrfs_key *first_key);
+> +/* Inode item error output has the same format as dir_item_err() */
+> +#define inode_item_err(fs_info, eb, slot, fmt, ...)	\
+> +	dir_item_err(fs_info, eb, slot, fmt, __VA_ARGS__)
+> +
+> +static int check_inode_item(struct btrfs_fs_info *fs_info,
+> +			    struct extent_buffer *leaf,
+> +			    struct btrfs_key *key, int slot)
+> +{
+> +	struct btrfs_inode_item *iitem;
+> +	u64 super_gen = btrfs_super_generation(fs_info->super_copy);
+> +	u32 valid_mask = (S_IFMT | S_ISUID | S_ISGID | S_ISVTX | 0777);
+> +	u32 mode;
+> +
+> +	if ((key->objectid < BTRFS_FIRST_FREE_OBJECTID ||
+> +	     key->objectid > BTRFS_LAST_FREE_OBJECTID) &&
+> +	     key->objectid != BTRFS_ROOT_TREE_DIR_OBJECTID &&
+> +	     key->objectid != BTRFS_FREE_INO_OBJECTID) {
+> +		generic_err(fs_info, leaf, slot,
+> +	"invalid key objectid: has %llu expect %llu or [%llu, %llu] or %llu",
+> +			    key->objectid, BTRFS_ROOT_TREE_DIR_OBJECTID,
+> +			    BTRFS_FIRST_FREE_OBJECTID,
+> +			    BTRFS_LAST_FREE_OBJECTID,
+> +			    BTRFS_FREE_INO_OBJECTID);
+> +		goto error;
+> +	}
+> +	if (key->offset != 0) {
+> +		inode_item_err(fs_info, leaf, slot,
+> +			"invalid key offset: has %llu expect 0",
+> +			key->offset);
+> +		goto error;
+> +	}
+> +	iitem = btrfs_item_ptr(leaf, slot, struct btrfs_inode_item);
+> +
+> +	/* Here we use super block generation + 1 to handle log tree */
+> +	if (btrfs_inode_generation(leaf, iitem) > super_gen + 1) {
+> +		inode_item_err(fs_info, leaf, slot,
+> +			"invalid inode generation: has %llu expect (0, %llu]",
+> +			       btrfs_inode_generation(leaf, iitem),
+> +			       super_gen + 1);
+> +		goto error;
+> +	}
+> +	/* Note for ROOT_TREE_DIR_ITEM, mkfs could make its transid as 0 */
+> +	if (btrfs_inode_transid(leaf, iitem) > super_gen + 1) {
+> +		inode_item_err(fs_info, leaf, slot,
+> +			"invalid inode generation: has %llu expect [0, %llu]",
+> +			       btrfs_inode_transid(leaf, iitem),
+> +			       super_gen + 1);
+> +		goto error;
+> +	}
+> +
+> +	/*
+> +	 * For size and nbytes it's better not to be too strict, as for dir
+> +	 * item its size/nbytes can easily get wrong, but doesn't affect
+> +	 * any thing of the fs. So here we skip the check.
+> +	 */
+> +
+> +	mode = btrfs_inode_mode(leaf, iitem);
+> +	if (mode & ~valid_mask) {
+> +		inode_item_err(fs_info, leaf, slot,
+> +			       "unknown mode bit detected: 0x%x",
+> +			       mode & ~valid_mask);
+> +		goto error;
+> +	}
+> +
+> +	/*
+> +	 * S_IFMT is not bit mapped so we can't completely rely is_power_of_2(),
+> +	 * but is_power_of_2() can save us from checking FIFO/CHR/DIR/REG.
+> +	 * Only needs to check BLK, LNK and SOCKS
+> +	 */
+> +	if (!is_power_of_2(mode & S_IFMT)) {
+> +		if (!S_ISLNK(mode) && ! S_ISBLK(mode) && !S_ISSOCK(mode)) {
+> +			inode_item_err(fs_info, leaf, slot,
+> +			"invalid mode: has 0%o expect valid S_IF* bit(s)",
+> +				       mode & S_IFMT);
+> +			goto error;
+> +		}
+> +	}
+> +	if (S_ISDIR(mode) && btrfs_inode_nlink(leaf, iitem) > 1) {
+> +		inode_item_err(fs_info, leaf, slot,
+> +			       "invalid nlink: has %u expect no more than 1 for dir",
+> +			btrfs_inode_nlink(leaf, iitem));
+> +		goto error;
+> +	}
+> +	if (btrfs_inode_flags(leaf, iitem) & ~BTRFS_INODE_FLAG_MASK) {
+> +		inode_item_err(fs_info, leaf, slot,
+> +			       "unknown flags detected: 0x%llx",
+> +			       btrfs_inode_flags(leaf, iitem) &
+> +			       ~BTRFS_INODE_FLAG_MASK);
+> +		goto error;
+> +	}
+> +	return 0;
+> +
+> +error:
+> +	return -EUCLEAN;
+> +}
+> +
+>  /*
+>   * Common point to switch the item-specific validation.
+>   */
+> @@ -715,6 +811,9 @@ static int check_leaf_item(struct btrfs_fs_info *fs_info,
+>  	case BTRFS_DEV_ITEM_KEY:
+>  		ret = check_dev_item(fs_info, leaf, key, slot);
+>  		break;
+> +	case BTRFS_INODE_ITEM_KEY:
+> +		ret = check_inode_item(fs_info, leaf, key, slot);
+> +		break;
+>  	}
+>  	return ret;
+>  }
 > 

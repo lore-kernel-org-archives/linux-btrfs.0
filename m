@@ -3,28 +3,30 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EC03EC43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 07:19:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4B18BC43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 07:20:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B81B02173C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 07:19:08 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 220182173C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 07:20:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726451AbfCMHTH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 13 Mar 2019 03:19:07 -0400
-Received: from mx2.suse.de ([195.135.220.15]:52250 "EHLO mx1.suse.de"
+        id S1726591AbfCMHUa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 13 Mar 2019 03:20:30 -0400
+Received: from mx2.suse.de ([195.135.220.15]:52326 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725876AbfCMHTH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Mar 2019 03:19:07 -0400
+        id S1725888AbfCMHU3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 13 Mar 2019 03:20:29 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 35DB4ACA0;
-        Wed, 13 Mar 2019 07:19:05 +0000 (UTC)
-Subject: Re: [PATCH 1/2] btrfs: fix zstd compression parameter
+        by mx1.suse.de (Postfix) with ESMTP id 8C0FAAD81;
+        Wed, 13 Mar 2019 07:20:28 +0000 (UTC)
+Subject: Re: [PATCH 2/2] btrfs: fix vanished compression property after failed
+ set
 To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
 References: <1552455379-2311-1-git-send-email-anand.jain@oracle.com>
+ <1552455379-2311-2-git-send-email-anand.jain@oracle.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -69,12 +71,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <b443c0b4-c8e3-a9cb-9656-2d00b5ce019b@suse.com>
-Date:   Wed, 13 Mar 2019 09:19:03 +0200
+Message-ID: <4ef1a9bb-141c-c07b-d995-9ac3d0c8f1d2@suse.com>
+Date:   Wed, 13 Mar 2019 09:20:27 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <1552455379-2311-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1552455379-2311-2-git-send-email-anand.jain@oracle.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -86,35 +88,46 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 13.03.19 г. 7:36 ч., Anand Jain wrote:
-> We let to pass zstd compression parameter even if its not fully written.
-> For example:
->   btrfs prop set /btrfs compression zst
->   btrfs prop get /btrfs compression
->      compression=zst
+> The compression property resets to NULL, instead of the old value if we
+> fail to set the new compression parameter.
 > 
-> zlib and lzo are fine.
+> btrfs prop get /btrfs compression
+>   compression=lzo
+> btrfs prop set /btrfs compression zli
+>   ERROR: failed to set compression for /btrfs: Invalid argument
+> btrfs prop get /btrfs compression
 > 
-> Fix it by using the expected number of char in strncmp().
+> This is because the compression property ->validate() is successful for
+> 'zli' as the strncmp() used the len passed from the userland.
+> 
+> Fix it by using the expected string length in strncmp().
 > 
 > Signed-off-by: Anand Jain <anand.jain@oracle.com>
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
 > ---
->  fs/btrfs/props.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
+>  fs/btrfs/props.c | 6 +++---
+>  1 file changed, 3 insertions(+), 3 deletions(-)
 > 
 > diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-> index 8577ea1d4e2b..ef6502a94712 100644
+> index ef6502a94712..7aa362c2fbcf 100644
 > --- a/fs/btrfs/props.c
 > +++ b/fs/btrfs/props.c
-> @@ -306,7 +306,7 @@ static int prop_compression_apply(struct inode *inode, const char *value,
->  		btrfs_set_fs_incompat(fs_info, COMPRESS_LZO);
->  	} else if (!strncmp("zlib", value, 4)) {
->  		type = BTRFS_COMPRESS_ZLIB;
-> -	} else if (!strncmp("zstd", value, len)) {
-> +	} else if (!strncmp("zstd", value, 4)) {
->  		type = BTRFS_COMPRESS_ZSTD;
->  		btrfs_set_fs_incompat(fs_info, COMPRESS_ZSTD);
->  	} else {
+> @@ -277,11 +277,11 @@ static int prop_compression_validate(struct inode *inode, const char *value,
+>  	if (!value)
+>  		return 0;
+>  
+> -	if (!strncmp("lzo", value, len))
+> +	if (!strncmp("lzo", value, 3))
+>  		return 0;
+> -	else if (!strncmp("zlib", value, len))
+> +	else if (!strncmp("zlib", value, 4))
+>  		return 0;
+> -	else if (!strncmp("zstd", value, len))
+> +	else if (!strncmp("zstd", value, 4))
+>  		return 0;
+
+This also makes the len argument to prop_compression_validate redundant
+and should be removed as well.
+
+>  
+>  	return -EINVAL;
 > 

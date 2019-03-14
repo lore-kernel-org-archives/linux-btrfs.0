@@ -3,30 +3,27 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6A268C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 07:17:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 74394C43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 07:26:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 377322184C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 07:17:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3E31F2063F
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 07:26:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726494AbfCNHRS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 14 Mar 2019 03:17:18 -0400
-Received: from mx2.suse.de ([195.135.220.15]:41790 "EHLO mx1.suse.de"
+        id S1726628AbfCNH0k (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 14 Mar 2019 03:26:40 -0400
+Received: from mx2.suse.de ([195.135.220.15]:42646 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726284AbfCNHRR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Mar 2019 03:17:17 -0400
+        id S1726584AbfCNH0k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 14 Mar 2019 03:26:40 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A9757AEB3
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2019 07:17:15 +0000 (UTC)
-Subject: Re: [PATCH] btrfs: Exploit the fact pages passed to extent_readpages
- are always contiguous
-To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <20190311075538.19242-1-nborisov@suse.com>
- <20190313172709.GD31119@twin.jikos.cz>
+        by mx1.suse.de (Postfix) with ESMTP id 9E639AEC7
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2019 07:26:38 +0000 (UTC)
+Subject: Re: [PATCH 0/9] Extent buffer locking cleanups
+To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+References: <cover.1552489554.git.dsterba@suse.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -71,12 +68,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <7252ea0b-8a68-aad4-0b7a-a37f012e9f6c@suse.com>
-Date:   Thu, 14 Mar 2019 09:17:14 +0200
+Message-ID: <4e3a4188-2c4e-ccc7-324c-69e0c5f0c528@suse.com>
+Date:   Thu, 14 Mar 2019 09:26:37 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <20190313172709.GD31119@twin.jikos.cz>
+In-Reply-To: <cover.1552489554.git.dsterba@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -87,45 +84,39 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 13.03.19 г. 19:27 ч., David Sterba wrote:
-> On Mon, Mar 11, 2019 at 09:55:38AM +0200, Nikolay Borisov wrote:
->> Currently extent_readpages (called from btrfs_redpages) will always call
->> __extent_readpages which tries to create contiguous range of pages and
->> call __do_contiguous_readpages when such contiguous range is created.
->>
->> It turns out this is unnecessary due to the fact that generic VFS code
->> always calls filesystem's ->readpages callback (btrfs_readpages in
->> this case) with already contiguous pages. Armed with this knowledge it's
->> possible to simplify extent_readpages by eliminating the call to
->> __extent_readpages and directly calling contiguous_readpages. The only
->> edge case that needs to be handled is when add_to_page_cache_lru
->> fails. This is easy as all that is needed is to submit whatever is the
->> number of pages successfully added to the lru.
+On 13.03.19 г. 17:46 ч., David Sterba wrote:
+> The series moves several atomic counters under CONFIG_BTRFS_DEBUG. The
+> selected counters are not essential for the extent buffer locking to
+> work. There's some space saving (4x 4B at least) and the cachelines are
+> less stressed on non-debugging builds.
 > 
-> I'd like to have more details why this is correct. Submitting what we
-> have so far seems ok, the reasons why add_to_page_cache_lru are unclear
-> and go back to xarray.
+> The final size is 264 from 280, getting to 256 would be nice but hard or
+> making the code unreadable. I have ideas to shave 7 more bytes but
+> that's for another patchset.
+> 
+> David Sterba (9):
+>   btrfs: add assertion helpers for spinning writers
+>   btrfs: use assertion helpers for spinning writers
+>   btrfs: add assertion helpers for spinning readers
+>   btrfs: use assertion helpers for spinning readers
+>   btrfs: add assertion helpers for extent buffer read lock counters
+>   btrfs: use assertion helpers for extent buffer read lock counters
+>   btrfs: add assertion helpers for extent buffer write lock counters
+>   btrfs: use assertion helpers for extent buffer write lock counters
+>   btrfs: switch extent_buffer::lock_nested to bool
+> 
+>  fs/btrfs/extent_io.c |  13 +++--
+>  fs/btrfs/extent_io.h |  11 ++--
+>  fs/btrfs/locking.c   | 133 ++++++++++++++++++++++++++++++-------------
+>  3 files changed, 107 insertions(+), 50 deletions(-)
 
-I'm having a hard time parsing the sentence after the comma, could you
-rephrase that?
+Overall the series looks good, one thing I wonder is wouldn't it be
+better if you convert those WARN_ON to assert so that we fail fast in
+case the locking invariant are broken?
+
+In any case:
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
 
 > 
-> Possible error is EEXSIT, here it's clear that we don't need to read the
-
-Not only EEXIST, the code can also fail due to memory pressure from
-mem_cgroup_try_charge in __add_to_page_cache_locked. In fact this code
-was triggered by some of the xfstests I can't remember which one hence I
-added the if (nr) check.
-
-> pages (already there). A sequence of such pages will make it wildly hop
-> from 1st for cycle iteration, to the if (nr) check and back.
-> 
-> Previously this looped still in the for-cycle, which was easier to
-> follow but otherwise not due to __extent_readpages. So I think it's an
-> improvement in the end, though a few comments would be good there.
-> 
-> Reviewed-by: David Sterba <dsterba@suse.com>
-> 
-
-<snip>
-

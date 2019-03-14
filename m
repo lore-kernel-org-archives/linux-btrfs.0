@@ -6,27 +6,26 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CBC24C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 08:33:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5EF96C43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 08:57:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9BF8C2184C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 08:33:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 32554217F5
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 08:57:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726777AbfCNIdC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 14 Mar 2019 04:33:02 -0400
-Received: from mx2.suse.de ([195.135.220.15]:50134 "EHLO mx1.suse.de"
+        id S1726605AbfCNI55 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 14 Mar 2019 04:57:57 -0400
+Received: from mx2.suse.de ([195.135.220.15]:53324 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726284AbfCNIdC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Mar 2019 04:33:02 -0400
+        id S1726284AbfCNI55 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 14 Mar 2019 04:57:57 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id BF956AD4E;
-        Thu, 14 Mar 2019 08:33:00 +0000 (UTC)
-Subject: Re: [PATCH 2/4] btrfs: fix vanished compression property after failed
- set
+        by mx1.suse.de (Postfix) with ESMTP id 57396ADE3;
+        Thu, 14 Mar 2019 08:57:55 +0000 (UTC)
+Subject: Re: [PATCH 3/4] btrfs: open code btrfs_set_prop in inherit_prop
 To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
 References: <1552539906-29703-1-git-send-email-anand.jain@oracle.com>
- <1552539906-29703-3-git-send-email-anand.jain@oracle.com>
+ <1552539906-29703-4-git-send-email-anand.jain@oracle.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -71,12 +70,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <e7d5965a-662f-4b94-6806-f6dd698a55c0@suse.com>
-Date:   Thu, 14 Mar 2019 10:32:14 +0200
+Message-ID: <b31f898f-e561-326f-733c-25d92f549009@suse.com>
+Date:   Thu, 14 Mar 2019 10:57:54 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <1552539906-29703-3-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1552539906-29703-4-git-send-email-anand.jain@oracle.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -88,57 +87,81 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 14.03.19 г. 7:05 ч., Anand Jain wrote:
-> The compression property resets to NULL, instead of the old value if we
-> fail to set the new compression parameter.
-> 
-> btrfs prop get /btrfs compression
->   compression=lzo
-> btrfs prop set /btrfs compression zli
->   ERROR: failed to set compression for /btrfs: Invalid argument
-> btrfs prop get /btrfs compression
-> 
-> This is because the compression property ->validate() is successful for
-> 'zli' as the strncmp() used the len passed from the userland.
-> 
-> Fix it by using the expected string length in strncmp().
+> When an inode inherits property from its parent, we call btrfs_set_prop().
+> btrfs_set_prop() does an elaborate checks, which is not required in the
+> context of inheriting a property. Instead just open-code only the required
+> items from btrfs_set_prop() and then call btrfs_setxattr() directly. So
+> now the only user of btrfs_set_prop() is gone, (except for the wraper
+> function btrfs_set_prop_trans()).
+
+Um, no:
+
+git grep -P '(?<!__)btrfs_set_prop' fs/btrfs/
+fs/btrfs/ioctl.c:               ret = btrfs_set_prop(inode, "btrfs.compression", NULL, 0, 0);
+fs/btrfs/ioctl.c:               ret = btrfs_set_prop(inode, "btrfs.compression",
+fs/btrfs/ioctl.c:               ret = btrfs_set_prop(inode, "btrfs.compression", NULL, 0, 0);
+fs/btrfs/props.c:int btrfs_set_prop(struct inode *inode,
+fs/btrfs/props.h:int btrfs_set_prop(struct inode *inode,
+fs/btrfs/xattr.c:       return btrfs_set_prop(inode, name, value, size, flags);
+
+
+Rebase the patch on misc-next and remove the last sentence 
+since it's factually wrong.
+
 > 
 > Signed-off-by: Anand Jain <anand.jain@oracle.com>
-
-The changelog could be a bit clearer. The failure is due to the fact
-that ->validate succeeds but ->apply fails and the handling code calls
-
-	btrfs_setxattr(trans, inode, handler->xattr_name,
-              NULL, 0, flags);
-
-However, if you make this patch be the first in the series you obsolete
-the existing patch 1 and fix the issue in this one. I.e 2 birds with 1
-stone.
-
-Also I believe btrfs/048 could use some extension in the part where it
-validates compression properties to test for the bugs discovered/fixed
-in this series.
-
 > ---
->  fs/btrfs/props.c | 6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
+>  fs/btrfs/props.c | 27 +++++++++++++++++++++------
+>  1 file changed, 21 insertions(+), 6 deletions(-)
 > 
 > diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-> index 3cc007e3c7f8..72a06c4d3c70 100644
+> index 72a06c4d3c70..fb84e76f3b1d 100644
 > --- a/fs/btrfs/props.c
 > +++ b/fs/btrfs/props.c
-> @@ -275,11 +275,11 @@ static int prop_compression_validate(const char *value, size_t len)
->  	if (!value)
->  		return 0;
+> @@ -367,20 +367,35 @@ static int inherit_props(struct btrfs_trans_handle *trans,
+>  		if (!value)
+>  			continue;
 >  
-> -	if (!strncmp("lzo", value, len))
-> +	if (!strncmp("lzo", value, 3))
->  		return 0;
-> -	else if (!strncmp("zlib", value, len))
-> +	else if (!strncmp("zlib", value, 4))
->  		return 0;
-> -	else if (!strncmp("zstd", value, len))
-> +	else if (!strncmp("zstd", value, 4))
->  		return 0;
+> +		/* may be removed */
+> +		ret = h->validate(value, strlen(value));
+> +		if (ret)
+> +			continue;
+> +
+>  		num_bytes = btrfs_calc_trans_metadata_size(fs_info, 1);
+>  		ret = btrfs_block_rsv_add(root, trans->block_rsv,
+>  					  num_bytes, BTRFS_RESERVE_NO_FLUSH);
+>  		if (ret)
+> -			goto out;
+> -		ret = btrfs_set_prop(trans, inode, h->xattr_name, value,
+
+What branch is this code based on, currently misc-next is using (and 
+has been since 2014) __btrfs_set_prop yet you remove btrfs_set_prop?
+
+> +			return ret;
+> +
+> +		ret = btrfs_setxattr(trans, inode, h->xattr_name, value,
+>  				     strlen(value), 0);
+> +		if (!ret) {
+> +			ret = h->apply(inode, value, strlen(value));
+> +			if (ret)
+> +				btrfs_setxattr(trans, inode, h->xattr_name,
+> +					       NULL, 0, 0);
+> +			else
+> +				set_bit(BTRFS_INODE_HAS_PROPS,
+> +					&BTRFS_I(inode)->runtime_flags);
+> +		}
+> +
+>  		btrfs_block_rsv_release(fs_info, trans->block_rsv, num_bytes);
+>  		if (ret)
+> -			goto out;
+> +			return ret;
+>  	}
+> -	ret = 0;
+> -out:
+> -	return ret;
+> +
+> +	return 0;
+>  }
 >  
->  	return -EINVAL;
+>  int btrfs_inode_inherit_props(struct btrfs_trans_handle *trans,
 > 

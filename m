@@ -2,83 +2,74 @@ Return-Path: <SRS0=qFN0=RR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5EF96C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 08:57:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E52E4C43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 08:58:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 32554217F5
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 08:57:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id AE0F5217F5
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 08:58:00 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="o7UvEH5S"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726605AbfCNI55 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 14 Mar 2019 04:57:57 -0400
-Received: from mx2.suse.de ([195.135.220.15]:53324 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726284AbfCNI55 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Mar 2019 04:57:57 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 57396ADE3;
-        Thu, 14 Mar 2019 08:57:55 +0000 (UTC)
-Subject: Re: [PATCH 3/4] btrfs: open code btrfs_set_prop in inherit_prop
-To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+        id S1726843AbfCNI57 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 14 Mar 2019 04:57:59 -0400
+Received: from userp2130.oracle.com ([156.151.31.86]:57052 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726284AbfCNI57 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 14 Mar 2019 04:57:59 -0400
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x2E8s0np055078;
+        Thu, 14 Mar 2019 08:57:33 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2018-07-02;
+ bh=zvfRCF0tktnewZ78ZF1dpnt3OFpD5EJpOxu6zq2ir+s=;
+ b=o7UvEH5SCrU48Gq2vKiOw7OUVwwyPyDIA2CoqNVdLaMTdeqyhnEJqSO9Jpy0CyR0VN6c
+ n5XNZkl7HounVLN4QafyU43ZN+F35rmDrUwCSUKrizHYchJf+2Sw5stCvK+/zESKHj3c
+ VG4WcyIpsz5ITc+gRAlY6a/kYYk1qP90Zxj+o4dedwnoemKKRH9L/u4rlFxAsPU5t49Q
+ fyXB9jdpmiICR3WujeU2kOTiMeUe0NxhFu7sSmeJBWhPKZbJ1LL/nUoqHcO4sk1BDE8P
+ wueGXIFatqX2iuGFHcNexp/EnxZeFSiMLbsAdKGj2F7iyC2f+g44c/coUheeLrTh6NRx zQ== 
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by userp2130.oracle.com with ESMTP id 2r44wufqdv-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 14 Mar 2019 08:57:33 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x2E8vRrD008664
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 14 Mar 2019 08:57:27 GMT
+Received: from abhmp0013.oracle.com (abhmp0013.oracle.com [141.146.116.19])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x2E8vRkK022036;
+        Thu, 14 Mar 2019 08:57:27 GMT
+Received: from [10.190.142.77] (/192.188.170.109)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Thu, 14 Mar 2019 08:57:27 +0000
+Subject: Re: [PATCH 2/4] btrfs: fix vanished compression property after failed
+ set
+To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 References: <1552539906-29703-1-git-send-email-anand.jain@oracle.com>
- <1552539906-29703-4-git-send-email-anand.jain@oracle.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <b31f898f-e561-326f-733c-25d92f549009@suse.com>
-Date:   Thu, 14 Mar 2019 10:57:54 +0200
+ <1552539906-29703-3-git-send-email-anand.jain@oracle.com>
+ <e7d5965a-662f-4b94-6806-f6dd698a55c0@suse.com>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <4b17143a-0f9d-9be3-3cdf-662972f7ef7f@oracle.com>
+Date:   Thu, 14 Mar 2019 16:57:20 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.4.0
+ Thunderbird/60.5.0
 MIME-Version: 1.0
-In-Reply-To: <1552539906-29703-4-git-send-email-anand.jain@oracle.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <e7d5965a-662f-4b94-6806-f6dd698a55c0@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9194 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1903140062
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -86,82 +77,66 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 14.03.19 г. 7:05 ч., Anand Jain wrote:
-> When an inode inherits property from its parent, we call btrfs_set_prop().
-> btrfs_set_prop() does an elaborate checks, which is not required in the
-> context of inheriting a property. Instead just open-code only the required
-> items from btrfs_set_prop() and then call btrfs_setxattr() directly. So
-> now the only user of btrfs_set_prop() is gone, (except for the wraper
-> function btrfs_set_prop_trans()).
-
-Um, no:
-
-git grep -P '(?<!__)btrfs_set_prop' fs/btrfs/
-fs/btrfs/ioctl.c:               ret = btrfs_set_prop(inode, "btrfs.compression", NULL, 0, 0);
-fs/btrfs/ioctl.c:               ret = btrfs_set_prop(inode, "btrfs.compression",
-fs/btrfs/ioctl.c:               ret = btrfs_set_prop(inode, "btrfs.compression", NULL, 0, 0);
-fs/btrfs/props.c:int btrfs_set_prop(struct inode *inode,
-fs/btrfs/props.h:int btrfs_set_prop(struct inode *inode,
-fs/btrfs/xattr.c:       return btrfs_set_prop(inode, name, value, size, flags);
-
-
-Rebase the patch on misc-next and remove the last sentence 
-since it's factually wrong.
-
+On 3/14/19 4:32 PM, Nikolay Borisov wrote:
 > 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  fs/btrfs/props.c | 27 +++++++++++++++++++++------
->  1 file changed, 21 insertions(+), 6 deletions(-)
 > 
-> diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-> index 72a06c4d3c70..fb84e76f3b1d 100644
-> --- a/fs/btrfs/props.c
-> +++ b/fs/btrfs/props.c
-> @@ -367,20 +367,35 @@ static int inherit_props(struct btrfs_trans_handle *trans,
->  		if (!value)
->  			continue;
->  
-> +		/* may be removed */
-> +		ret = h->validate(value, strlen(value));
-> +		if (ret)
-> +			continue;
-> +
->  		num_bytes = btrfs_calc_trans_metadata_size(fs_info, 1);
->  		ret = btrfs_block_rsv_add(root, trans->block_rsv,
->  					  num_bytes, BTRFS_RESERVE_NO_FLUSH);
->  		if (ret)
-> -			goto out;
-> -		ret = btrfs_set_prop(trans, inode, h->xattr_name, value,
-
-What branch is this code based on, currently misc-next is using (and 
-has been since 2014) __btrfs_set_prop yet you remove btrfs_set_prop?
-
-> +			return ret;
-> +
-> +		ret = btrfs_setxattr(trans, inode, h->xattr_name, value,
->  				     strlen(value), 0);
-> +		if (!ret) {
-> +			ret = h->apply(inode, value, strlen(value));
-> +			if (ret)
-> +				btrfs_setxattr(trans, inode, h->xattr_name,
-> +					       NULL, 0, 0);
-> +			else
-> +				set_bit(BTRFS_INODE_HAS_PROPS,
-> +					&BTRFS_I(inode)->runtime_flags);
-> +		}
-> +
->  		btrfs_block_rsv_release(fs_info, trans->block_rsv, num_bytes);
->  		if (ret)
-> -			goto out;
-> +			return ret;
->  	}
-> -	ret = 0;
-> -out:
-> -	return ret;
-> +
-> +	return 0;
->  }
->  
->  int btrfs_inode_inherit_props(struct btrfs_trans_handle *trans,
+> On 14.03.19 г. 7:05 ч., Anand Jain wrote:
+>> The compression property resets to NULL, instead of the old value if we
+>> fail to set the new compression parameter.
+>>
+>> btrfs prop get /btrfs compression
+>>    compression=lzo
+>> btrfs prop set /btrfs compression zli
+>>    ERROR: failed to set compression for /btrfs: Invalid argument
+>> btrfs prop get /btrfs compression
+>>
+>> This is because the compression property ->validate() is successful for
+>> 'zli' as the strncmp() used the len passed from the userland.
+>>
+>> Fix it by using the expected string length in strncmp().
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 > 
+> The changelog could be a bit clearer. The failure is due to the fact
+> that ->validate succeeds but ->apply fails and the handling code calls
+> > 	btrfs_setxattr(trans, inode, handler->xattr_name,
+>                NULL, 0, flags);
+> 
+> However, if you make this patch be the first in the series you obsolete
+> the existing patch 1 and fix the issue in this one. I.e 2 birds with 1
+> stone.
+
+  Right. I wanted to show the bugs, its reason, and fix separately.
+
+> Also I believe btrfs/048 could use some extension in the part where it
+> validates compression properties to test for the bugs discovered/fixed
+> in this series.
+
+  Oh. Let me try. Thanks.
+
+-Anand
+
+>> ---
+>>   fs/btrfs/props.c | 6 +++---
+>>   1 file changed, 3 insertions(+), 3 deletions(-)
+>>
+>> diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
+>> index 3cc007e3c7f8..72a06c4d3c70 100644
+>> --- a/fs/btrfs/props.c
+>> +++ b/fs/btrfs/props.c
+>> @@ -275,11 +275,11 @@ static int prop_compression_validate(const char *value, size_t len)
+>>   	if (!value)
+>>   		return 0;
+>>   
+>> -	if (!strncmp("lzo", value, len))
+>> +	if (!strncmp("lzo", value, 3))
+>>   		return 0;
+>> -	else if (!strncmp("zlib", value, len))
+>> +	else if (!strncmp("zlib", value, 4))
+>>   		return 0;
+>> -	else if (!strncmp("zstd", value, len))
+>> +	else if (!strncmp("zstd", value, 4))
+>>   		return 0;
+>>   
+>>   	return -EINVAL;
+>>

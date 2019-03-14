@@ -7,51 +7,51 @@ X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 13046C10F06
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 05:05:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D8ABC43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 05:05:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D9760217F5
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 05:04:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1B8A3217F5
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 05:05:01 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="G+j/z6VJ"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="vXCmHxet"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726741AbfCNFE6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 14 Mar 2019 01:04:58 -0400
-Received: from userp2130.oracle.com ([156.151.31.86]:51386 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726646AbfCNFE6 (ORCPT
+        id S1726889AbfCNFFA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 14 Mar 2019 01:05:00 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:58348 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726646AbfCNFE7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Mar 2019 01:04:58 -0400
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x2E5460Q067893
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2019 05:04:57 GMT
+        Thu, 14 Mar 2019 01:04:59 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x2E54wpX073675
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2019 05:04:58 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
  date : message-id : in-reply-to : references; s=corp-2018-07-02;
- bh=p1QpKWpC5/eH1WEcq8+sNoolFCALr1GRilhns7bKSzk=;
- b=G+j/z6VJIfNLY8GQAqSVcmpJc02MUwTSGxblJBt6+P7qzb9m1c/+4fNcuwssnxy1JIB6
- Q8eVr1CvRXX2bs0Nkrc3Sk58/MSBLoaTq7Xp9Apj0M60Evc1Xv2rHospsFletwqFU976
- 0Ck1dzNObj7AiWs58KNVH0btXuHSQiw0kMoQIhvDSDHU655/9GP2v+ANPgB1oAav1ZVX
- Y5XVZ008PRZOQHPAp31nSr+ZIOOAUlQERQeiJGxNlRl6Y6Cqf0ngHN6+OX1J2SHW0lOY
- KmITZmvllqewA9tLknMh2ql21PhCkw2oECYMTvMI6obpiVueKhlbvICGcXBJpbs1venp YA== 
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by userp2130.oracle.com with ESMTP id 2r44wuesng-1
+ bh=+ZZCWdn3UWK+lfN5DjJM3OrVqzGAbf7MNJAvi3t3bVU=;
+ b=vXCmHxetDUllyBZkNtDIdV/AgY6sSmmXP/3q2n040XN5ME69xu6C2ga+FL9jB2A2j6EC
+ s5dU+VEXvWV7UuNEDq4KoAmkGE1h4iMK3C6fA/3Bbb2dmkx7W+aorRmWTCUjCQnCVlqq
+ SsyputanK1pzc9Z0jtVOYqI3WRL54jCx2Y8L9S6tXbIojImmg8MLkpa1KfJf4Z3IWLcb
+ +PF+nljDlxzA23cFzgvzlc5NawoDYhiyaf+nZeKi7lcNZeM4fnyCEOItbZtNr8LqHF9P
+ RoKlOb3Yy9JL98zcEtn3J1qebs+hXp95rFLgTSVae1CUldPovgkKyA5fX63uQZ9huYeU 6g== 
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by userp2120.oracle.com with ESMTP id 2r464rpqe6-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2019 05:04:56 +0000
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x2E54uJj005053
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2019 05:04:58 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x2E54vhE009936
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2019 05:04:56 GMT
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2019 05:04:57 GMT
 Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x2E54uI6028993
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2019 05:04:56 GMT
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x2E54v43031236
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2019 05:04:57 GMT
 Received: from tpasj.wifi.oracle.com (/192.188.170.109)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 14 Mar 2019 05:04:55 +0000
+        with ESMTP ; Thu, 14 Mar 2019 05:04:57 +0000
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/4] btrfs: fix zstd compression parameter
-Date:   Thu, 14 Mar 2019 13:05:03 +0800
-Message-Id: <1552539906-29703-2-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 2/4] btrfs: fix vanished compression property after failed set
+Date:   Thu, 14 Mar 2019 13:05:04 +0800
+Message-Id: <1552539906-29703-3-git-send-email-anand.jain@oracle.com>
 X-Mailer: git-send-email 1.8.3.1
 In-Reply-To: <1552539906-29703-1-git-send-email-anand.jain@oracle.com>
 References: <1552539906-29703-1-git-send-email-anand.jain@oracle.com>
@@ -66,35 +66,44 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We let to pass zstd compression parameter even if its not fully written.
-For example:
-  btrfs prop set /btrfs compression zst
-  btrfs prop get /btrfs compression
-     compression=zst
+The compression property resets to NULL, instead of the old value if we
+fail to set the new compression parameter.
 
-zlib and lzo are fine.
+btrfs prop get /btrfs compression
+  compression=lzo
+btrfs prop set /btrfs compression zli
+  ERROR: failed to set compression for /btrfs: Invalid argument
+btrfs prop get /btrfs compression
 
-Fix it by using the expected number of char in strncmp().
+This is because the compression property ->validate() is successful for
+'zli' as the strncmp() used the len passed from the userland.
+
+Fix it by using the expected string length in strncmp().
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/props.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/props.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-index f1a8be67f639..3cc007e3c7f8 100644
+index 3cc007e3c7f8..72a06c4d3c70 100644
 --- a/fs/btrfs/props.c
 +++ b/fs/btrfs/props.c
-@@ -304,7 +304,7 @@ static int prop_compression_apply(struct inode *inode, const char *value,
- 		btrfs_set_fs_incompat(fs_info, COMPRESS_LZO);
- 	} else if (!strncmp("zlib", value, 4)) {
- 		type = BTRFS_COMPRESS_ZLIB;
--	} else if (!strncmp("zstd", value, len)) {
-+	} else if (!strncmp("zstd", value, 4)) {
- 		type = BTRFS_COMPRESS_ZSTD;
- 		btrfs_set_fs_incompat(fs_info, COMPRESS_ZSTD);
- 	} else {
+@@ -275,11 +275,11 @@ static int prop_compression_validate(const char *value, size_t len)
+ 	if (!value)
+ 		return 0;
+ 
+-	if (!strncmp("lzo", value, len))
++	if (!strncmp("lzo", value, 3))
+ 		return 0;
+-	else if (!strncmp("zlib", value, len))
++	else if (!strncmp("zlib", value, 4))
+ 		return 0;
+-	else if (!strncmp("zstd", value, len))
++	else if (!strncmp("zstd", value, 4))
+ 		return 0;
+ 
+ 	return -EINVAL;
 -- 
 1.8.3.1
 

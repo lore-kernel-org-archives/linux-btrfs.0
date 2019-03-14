@@ -2,109 +2,110 @@ Return-Path: <SRS0=qFN0=RR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E5A27C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 07:50:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 87E10C43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 07:52:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B11DC2087C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 07:50:55 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=umn.edu header.i=@umn.edu header.b="mc33nTd7"
+	by mail.kernel.org (Postfix) with ESMTP id 550A92087C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 07:52:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726654AbfCNHut (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 14 Mar 2019 03:50:49 -0400
-Received: from mta-p6.oit.umn.edu ([134.84.196.206]:59806 "EHLO
-        mta-p6.oit.umn.edu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726284AbfCNHut (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Mar 2019 03:50:49 -0400
-Received: from localhost (unknown [127.0.0.1])
-        by mta-p6.oit.umn.edu (Postfix) with ESMTP id 21CF7C6E
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2019 07:50:48 +0000 (UTC)
-X-Virus-Scanned: amavisd-new at umn.edu
-Received: from mta-p6.oit.umn.edu ([127.0.0.1])
-        by localhost (mta-p6.oit.umn.edu [127.0.0.1]) (amavisd-new, port 10024)
-        with ESMTP id ORWZY6UTvClw for <linux-btrfs@vger.kernel.org>;
-        Thu, 14 Mar 2019 02:50:48 -0500 (CDT)
-Received: from mail-io1-f71.google.com (mail-io1-f71.google.com [209.85.166.71])
-        (using TLSv1.2 with cipher AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mta-p6.oit.umn.edu (Postfix) with ESMTPS id EC7E7C50
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2019 02:50:47 -0500 (CDT)
-Received: by mail-io1-f71.google.com with SMTP id k2so3690499ioj.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2019 00:50:47 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=umn.edu; s=google;
-        h=from:to:cc:subject:date:message-id;
-        bh=DLANtRSSRHAl4T+X5AQuykmiffSXk6BE1bjRT1gOrDw=;
-        b=mc33nTd7ZZ/PlEGWW5dq7jTiyDDeuhuqTkgvkT7UUjPuf9mlfb0OYOD2WSuMx7mMYL
-         k27rZu7mjFY8Hat9LMZMSNWz9ebkb88gdOs/lvkOduofrXPwfR5vW5Ppon58sXNYaFiU
-         M9mGXzggJEFRBsy+yTbckhYhrxRDeUfmJW5j67LuKN9yABTKQCOUV4GR4GGjw7xnpN1c
-         jdcTYMS072mAsXq8Tuu130+wKC4RsMBaNxQHHbJCUblLR/hdjPytSi09CixubKD9MY2Z
-         n33Y3Vrx0Y8pxAZj7zec+DRcVbFH9iS2ZeqBFK3z5Xy08gIhYk4oMOIyHMFWtOwlIDfv
-         C/KQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id;
-        bh=DLANtRSSRHAl4T+X5AQuykmiffSXk6BE1bjRT1gOrDw=;
-        b=IaKKjQ9TBPeUqOV5bW0I+8ZCYcVy7kWY79eyGWcXNpNac3URCUqGap8eCajCZX3pJN
-         g1J+rxvJ7YCtc0BD9FUNZsjDB/gxN9zVj0VzGSm+dwWenyXRV2Ii03NGoqDcO04yQB8t
-         HXoC9lO1hQtiw2GLrYPkteiFFv1tRwKXAKClOeZZ81IeeQRd5gl7kGtknSIfzH6okfZ8
-         FwwzD0bzc46APRLuTZbRwD+sDrdXFWQR51a57NXKi8Sqk5Kmq3B4OAfy3ZPlZy+11/t1
-         zhx/Am7+mtPe7BbRQRFAxsggDia6Ud12eQbqNphRfKY2KNEJBqGPiVzm/+LlKSOHWQ8F
-         sKVQ==
-X-Gm-Message-State: APjAAAWnADfM0UhKFXGcHWQl0Ioy/KnVHyLfe3pH7Cm173Vg140j3r9p
-        5gF+JGI4b2YR/Ug/KU0NzlFGw+/UYVJFGI6vNWkPrYBmW7AytoSTyH9ybjKyS3E1m5HoFI6PtRl
-        ITk+4XS9ll5RcwoYQmLQT6nizqkU=
-X-Received: by 2002:a24:29c8:: with SMTP id p191mr1116832itp.115.1552549847615;
-        Thu, 14 Mar 2019 00:50:47 -0700 (PDT)
-X-Google-Smtp-Source: APXvYqwkfCVvG2ptR02yE3dTQHdvKlnANoVN72gvCgb3pCVla2WLuPN1hMoGboIrjjpRk4TFMRVtmA==
-X-Received: by 2002:a24:29c8:: with SMTP id p191mr1116826itp.115.1552549847379;
-        Thu, 14 Mar 2019 00:50:47 -0700 (PDT)
-Received: from bee.dtc.umn.edu (cs-bee-u.cs.umn.edu. [128.101.106.63])
-        by smtp.gmail.com with ESMTPSA id k4sm820334itc.32.2019.03.14.00.50.46
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 14 Mar 2019 00:50:46 -0700 (PDT)
-From:   Kangjie Lu <kjlu@umn.edu>
-To:     kjlu@umn.edu
-Cc:     pakki001@umn.edu, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [PATCH] btrfs: fix a NULL pointer dereference
-Date:   Thu, 14 Mar 2019 02:50:40 -0500
-Message-Id: <20190314075041.28966-1-kjlu@umn.edu>
+        id S1726689AbfCNHwm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 14 Mar 2019 03:52:42 -0400
+Received: from mx2.suse.de ([195.135.220.15]:45862 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726624AbfCNHwm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 14 Mar 2019 03:52:42 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 05EBBACC5
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2019 07:52:41 +0000 (UTC)
+From:   Nikolay Borisov <nborisov@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH v2] btrfs: Correctly free extent buffer in case btree_read_extent_buffer_pages fails
+Date:   Thu, 14 Mar 2019 09:52:35 +0200
+Message-Id: <20190314075235.22797-1-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-btrfs_lookup_block_group may fail and return NULL. The fix goes
-to out when it fails to avoid NULL pointer dereference.
+If a an eb fails to be read for whatever reason - it's corrupted on disk
+and parent transid/key validations fail or IO for eb pages fail then
+this buffer must be removed from the buffer cache. Currently the code
+calls free_extent_buffer if an error occurs. Unfortunately this doesn't
+achieve the desired behavior since btrfs_find_create_tree_block returns
+with eb->refs == 2. On the other hand free_extent_buffer will only
+decrement the refs once leavin it added to the buffer cache radix tree.
+This enables later code to look up the buffer from the cache and utilize
+it potentially leading to a crash.
 
-Signed-off-by: Kangjie Lu <kjlu@umn.edu>
+The correct way to free the buffer is call free_extent_buffer_stale.
+This function will correctly call atomic_dec explicitly for the buffer
+and subsequently call release_extent_buffer which will decrement the
+final reference thus correctly remove the invalid buffer from buffer
+cache. This change affects only newly allocated buffers since they have
+eb->refs == 2.
+
+Link: https://bugzilla.kernel.org/show_bug.cgi?id=202755
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/extent-tree.c | 2 ++
- 1 file changed, 2 insertions(+)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 994f0cc41799..b1e7985bcb9d 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -7303,6 +7303,8 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
+Changes since v1: 
+ * Immediately remove a corrupted extent buffer from readahead_tree_block as 
+ well. 
+
+ fs/btrfs/disk-io.c | 15 +++++++++------
+ 1 file changed, 9 insertions(+), 6 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index f7010312d171..9dda16c27255 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1021,9 +1021,12 @@ void readahead_tree_block(struct btrfs_fs_info *fs_info, u64 bytenr)
+ 	buf = btrfs_find_create_tree_block(fs_info, bytenr);
+ 	if (IS_ERR(buf))
+ 		return;
+-	read_extent_buffer_pages(&BTRFS_I(btree_inode)->io_tree,
+-				 buf, WAIT_NONE, 0);
+-	free_extent_buffer(buf);
++
++	if (read_extent_buffer_pages(&BTRFS_I(btree_inode)->io_tree,
++				 buf, WAIT_NONE, 0))
++		free_extent_buffer_stale(buf);
++	else
++		free_extent_buffer(buf);
+ }
  
- 		pin = 0;
- 		cache = btrfs_lookup_block_group(fs_info, buf->start);
-+		if (!cache)
-+			goto out;
+ int reada_tree_block_flagged(struct btrfs_fs_info *fs_info, u64 bytenr,
+@@ -1043,12 +1046,12 @@ int reada_tree_block_flagged(struct btrfs_fs_info *fs_info, u64 bytenr,
+ 	ret = read_extent_buffer_pages(io_tree, buf, WAIT_PAGE_LOCK,
+ 				       mirror_num);
+ 	if (ret) {
+-		free_extent_buffer(buf);
++		free_extent_buffer_stale(buf);
+ 		return ret;
+ 	}
  
- 		if (btrfs_header_flag(buf, BTRFS_HEADER_FLAG_WRITTEN)) {
- 			pin_down_extent(fs_info, cache, buf->start,
+ 	if (test_bit(EXTENT_BUFFER_CORRUPT, &buf->bflags)) {
+-		free_extent_buffer(buf);
++		free_extent_buffer_stale(buf);
+ 		return -EIO;
+ 	} else if (extent_buffer_uptodate(buf)) {
+ 		*eb = buf;
+@@ -1102,7 +1105,7 @@ struct extent_buffer *read_tree_block(struct btrfs_fs_info *fs_info, u64 bytenr,
+ 	ret = btree_read_extent_buffer_pages(fs_info, buf, parent_transid,
+ 					     level, first_key);
+ 	if (ret) {
+-		free_extent_buffer(buf);
++		free_extent_buffer_stale(buf);
+ 		return ERR_PTR(ret);
+ 	}
+ 	return buf;
 -- 
 2.17.1
 

@@ -2,268 +2,139 @@ Return-Path: <SRS0=qFN0=RR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B9642C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 05:05:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 19B8BC43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 07:10:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7FE00217F5
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 05:05:04 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="0ViVTbIo"
+	by mail.kernel.org (Postfix) with ESMTP id E6C112087C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 07:10:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726971AbfCNFFD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 14 Mar 2019 01:05:03 -0400
-Received: from aserp2130.oracle.com ([141.146.126.79]:50112 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726897AbfCNFFC (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Mar 2019 01:05:02 -0400
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x2E54DZC103905
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2019 05:05:01 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
- date : message-id : in-reply-to : references; s=corp-2018-07-02;
- bh=X6hFceoyiVfuG5lZ43F/nqqVmsNjfVpfEkuCBmUzsuk=;
- b=0ViVTbIoQ+Eum97duuwD1Pr3eGzWISy8cf7EPU+HHPcQVe05oOr8CqdNFsnGhF2cUuhV
- 64dOK8y2NdN8u7mJmycuFeuA6akvhVbE5sy/4kF49lflXsdhlSgJGsAmOzstrUA0mFGN
- pjuqEDpORye+LoBlv4gKNpCcEiqzXlcUHdGPAddAFoNIoMN+f/TBFMQT3txY4CDV4jhT
- 8WvSTrCB3x3AV2G0ONZ397YX7xCR/chnLBRIBkej0k1Ui7WjBkPgwr3Ze12lCPfQQR6H
- BkrxDK2xFYGHMmmbdu/MPX3QKyIXkMKUr0MXp2nyBU6yyRrxhmKSyLZEj4V68bJr1fpG Yw== 
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by aserp2130.oracle.com with ESMTP id 2r430ey83a-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2019 05:05:01 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x2E550mn010088
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2019 05:05:01 GMT
-Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x2E550u2016572
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2019 05:05:00 GMT
-Received: from tpasj.wifi.oracle.com (/192.188.170.109)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 14 Mar 2019 05:05:00 +0000
-From:   Anand Jain <anand.jain@oracle.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/4] btrfs: fix property validate fail should not increment generation
-Date:   Thu, 14 Mar 2019 13:05:06 +0800
-Message-Id: <1552539906-29703-5-git-send-email-anand.jain@oracle.com>
-X-Mailer: git-send-email 1.8.3.1
-In-Reply-To: <1552539906-29703-1-git-send-email-anand.jain@oracle.com>
-References: <1552539906-29703-1-git-send-email-anand.jain@oracle.com>
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9194 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
- suspectscore=1 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
- lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
- definitions=main-1903140033
+        id S1726643AbfCNHKp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 14 Mar 2019 03:10:45 -0400
+Received: from mx2.suse.de ([195.135.220.15]:40260 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726582AbfCNHKp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 14 Mar 2019 03:10:45 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 50B33AB92
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2019 07:10:43 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: Correctly free extent buffer in case
+ btree_read_extent_buffer_pages fails
+To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <20190312131847.20311-1-nborisov@suse.com>
+ <20190313180314.GH31119@twin.jikos.cz>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <6581c72e-7a26-2cbe-2bc6-d3bae313a255@suse.com>
+Date:   Thu, 14 Mar 2019 09:10:42 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.4.0
+MIME-Version: 1.0
+In-Reply-To: <20190313180314.GH31119@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-When the property fails to pass the prop_handlers::validate() check, the
-thread should exit with no changes in the kernel, but as we are starting
-the transaction too early, we have just updated the generation even if
-there is no change.
 
-For example:
-btrfs prop get /btrfs compression
- compression=lzo
-sync
-btrfs in dump-super /dev/sdb | grep "^generation"
- generation		32
 
-Try to set an incomplete compression type
+On 13.03.19 г. 20:03 ч., David Sterba wrote:
+> On Tue, Mar 12, 2019 at 03:18:47PM +0200, Nikolay Borisov wrote:
+>> If a an eb fails to be read for whatever reason - it's corrupted on disk
+>> and parent transid/key validations fail or IO for eb pages fail then
+>> this buffer must be removed from the buffer cache. Currently the code
+>> calls free_extent_buffer if an error occurs. Unfortunately this doesn't
+>> achieve the desired behavior since btrfs_find_create_tree_block returns
+>> with eb->refs == 2. On the other hand free_extent_buffer will only
+>> decrement the refs once leavin it added to the buffer cache radix tree.
+>> This enables later code to look up the buffer from the cache and utilize
+>> it potentially leading to a crash.
+>>
+>> The correct way to free the buffer is call free_extent_buffer_stale.
+>> This function will correctly call atomic_dec explicitly for the buffer
+>> and subsequently call release_extent_buffer which will decrement the
+>> final reference thus correctly remove the invalid buffer from buffer
+>> cache. This change affects only newly allocated buffers since they have
+>> eb->refs == 2.
+> 
+> Following the same pattern, should every use of
+> btrfs_find_create_tree_block be followed by free_extent_buffer_stale in
+> case of errors?
+> 
+> There's almost the same sequence in readahead_tree_block as you update
+> in reada_tree_block_flagged:
+> 
+>   btrfs_find_create_tree_block
+>   read_extent_buffer_pages
+>   free_extent_buffer
+> 
+> so should be the _stale variant used there too?
 
-btrfs prop set /btrfs compression zli
-  ERROR: failed to set compression for /btrfs: Invalid argument
-sync
+You are right it should also be using the _stale variant. I will fix it.
 
-Set failed but generation is incremented
-btrfs in dump-super /dev/sdb | grep "^generation"
- generation		33  <--
+Despite my cleanup of the extent buffer freeing code I'm still not
+entirely happy with the special cases we have with the stale or unmapped
+logic. That's why we need all these special cases ;\
 
-Fix it by collapsing btrfs_set_prop_trans() into btrfs_set_prop(), which
-provides flexibility to start the transaction after the
-prop_handlers::validate() has been checked.
+> 
+> free_extent_buffer_stale is normally used in other contexts where the
+> 'stale' part means that the eb is known to be disconnected.
+> 
+> I think that btrfs_find_create_tree_block needs a dedicated freeing
+> function that will make sure all invariants (refs == 2, no other
+> structures connected) are met and then do effectively the same what
+> _stale does now.
+Sounds good though I'm a bit reluctant to add yet another
+free_extent_buffer variant. IMO the logic of the extent buffer radix
+tree need to be revised which could lead to simplifications in the whole
+ref counting code.
 
-As of now if the prop_handlers::apply() fails then we still increment
-the generation, but if there is strong prop_handlers::validate() then
-the prop_handlers::apply() can never fail.
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/ioctl.c | 10 ++++------
- fs/btrfs/props.c | 59 +++++++++++++++++++++++++-------------------------------
- fs/btrfs/props.h |  4 ++--
- fs/btrfs/xattr.c |  2 +-
- 4 files changed, 33 insertions(+), 42 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 28ee9fe6edb4..0eeaf9a68082 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -284,8 +284,7 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 		binode->flags &= ~BTRFS_INODE_COMPRESS;
- 		binode->flags |= BTRFS_INODE_NOCOMPRESS;
- 
--		ret = btrfs_set_prop_trans(inode, "btrfs.compression", NULL,
--					   0, 0);
-+		ret = btrfs_set_prop(inode, "btrfs.compression", NULL, 0, 0);
- 		if (ret && ret != -ENODATA)
- 			goto out_drop;
- 	} else if (fsflags & FS_COMPR_FL) {
-@@ -303,14 +302,13 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 		if (!comp || comp[0] == 0)
- 			comp = btrfs_compress_type2str(BTRFS_COMPRESS_ZLIB);
- 
--		ret = btrfs_set_prop_trans(inode, "btrfs.compression", comp,
--					   strlen(comp), 0);
-+		ret = btrfs_set_prop(inode, "btrfs.compression", comp,
-+				     strlen(comp), 0);
- 		if (ret)
- 			goto out_drop;
- 
- 	} else {
--		ret = btrfs_set_prop_trans(inode, "btrfs.compression", NULL,
--					   0, 0);
-+		ret = btrfs_set_prop(inode, "btrfs.compression", NULL, 0, 0);
- 		if (ret && ret != -ENODATA)
- 			goto out_drop;
- 		binode->flags &= ~(BTRFS_INODE_COMPRESS | BTRFS_INODE_NOCOMPRESS);
-diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-index fb84e76f3b1d..99fa2459ba61 100644
---- a/fs/btrfs/props.c
-+++ b/fs/btrfs/props.c
-@@ -56,11 +56,12 @@ static const struct hlist_head *find_prop_handlers_by_hash(const u64 hash)
- 	return NULL;
- }
- 
--static int btrfs_set_prop(struct btrfs_trans_handle *trans, struct inode *inode,
--			  const char *name, const char *value, size_t value_len,
--			  int flags)
-+int btrfs_set_prop(struct inode *inode, const char *name, const char *value,
-+		   size_t value_len, int flags)
- {
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	const struct prop_handler *handler;
-+	struct btrfs_trans_handle *trans;
- 	int ret;
- 
- 	if (btrfs_root_readonly(BTRFS_I(inode)->root))
-@@ -74,50 +75,40 @@ static int btrfs_set_prop(struct btrfs_trans_handle *trans, struct inode *inode,
- 		return -EINVAL;
- 
- 	if (value_len == 0) {
-+		/* Its called to reset the property */
-+		trans = btrfs_start_transaction(root, 2);
-+		if (IS_ERR(trans))
-+			return PTR_ERR(trans);
-+
- 		ret = btrfs_setxattr(trans, inode, handler->xattr_name,
- 				       NULL, 0, flags);
--		if (ret)
--			return ret;
--
--		ret = handler->apply(inode, NULL, 0);
--		ASSERT(ret == 0);
--
--		return ret;
-+		if (!ret) {
-+			ret = handler->apply(inode, NULL, 0);
-+			ASSERT(ret == 0);
-+		}
-+		goto out;
- 	}
- 
- 	ret = handler->validate(value, value_len);
- 	if (ret)
- 		return ret;
-+
-+	trans = btrfs_start_transaction(root, 2);
-+	if (IS_ERR(trans))
-+		return PTR_ERR(trans);
-+
- 	ret = btrfs_setxattr(trans, inode, handler->xattr_name,
- 			       value, value_len, flags);
- 	if (ret)
--		return ret;
-+		goto out;
-+
- 	ret = handler->apply(inode, value, value_len);
- 	if (ret) {
-+		/* Apply failed. Reset the property. */
- 		btrfs_setxattr(trans, inode, handler->xattr_name,
- 				 NULL, 0, flags);
--		return ret;
--	}
--
--	set_bit(BTRFS_INODE_HAS_PROPS, &BTRFS_I(inode)->runtime_flags);
--
--	return 0;
--}
--
--int btrfs_set_prop_trans(struct inode *inode, const char *name,
--			 const char *value, size_t value_len, int flags)
--{
--	struct btrfs_root *root = BTRFS_I(inode)->root;
--	struct btrfs_trans_handle *trans;
--	int ret;
--
--	trans = btrfs_start_transaction(root, 2);
--	if (IS_ERR(trans))
--		return PTR_ERR(trans);
--
--	ret = btrfs_set_prop(trans, inode, name, value, value_len, flags);
--
--	if (!ret) {
-+	} else {
-+		set_bit(BTRFS_INODE_HAS_PROPS, &BTRFS_I(inode)->runtime_flags);
- 		inode_inc_iversion(inode);
- 		inode->i_ctime = current_time(inode);
- 		set_bit(BTRFS_INODE_COPY_EVERYTHING,
-@@ -125,6 +116,8 @@ int btrfs_set_prop_trans(struct inode *inode, const char *name,
- 		ret = btrfs_update_inode(trans, root, inode);
- 		BUG_ON(ret);
- 	}
-+
-+out:
- 	btrfs_end_transaction(trans);
- 	return ret;
- }
-diff --git a/fs/btrfs/props.h b/fs/btrfs/props.h
-index b1a6b233b774..72bca072f9ba 100644
---- a/fs/btrfs/props.h
-+++ b/fs/btrfs/props.h
-@@ -10,8 +10,8 @@
- 
- void __init btrfs_props_init(void);
- 
--int btrfs_set_prop_trans(struct inode *inode, const char *name,
--			 const char *value, size_t value_len, int flags);
-+int btrfs_set_prop(struct inode *inode, const char *name,
-+		   const char *value, size_t value_len, int flags);
- 
- int btrfs_load_inode_props(struct inode *inode, struct btrfs_path *path);
- 
-diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
-index 58579a4d2f22..abc150a56f8b 100644
---- a/fs/btrfs/xattr.c
-+++ b/fs/btrfs/xattr.c
-@@ -371,7 +371,7 @@ static int btrfs_xattr_handler_set_prop(const struct xattr_handler *handler,
- 					size_t size, int flags)
- {
- 	name = xattr_full_name(handler, name);
--	return btrfs_set_prop_trans(inode, name, value, size, flags);
-+	return btrfs_set_prop(inode, name, value, size, flags);
- }
- 
- static const struct xattr_handler btrfs_security_xattr_handler = {
--- 
-1.8.3.1
-
+> 

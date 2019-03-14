@@ -3,33 +3,30 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CA5E1C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 08:16:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CBC24C43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 08:33:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9D49B217F5
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 08:16:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9BF8C2184C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 08:33:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726776AbfCNIQM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 14 Mar 2019 04:16:12 -0400
-Received: from mx2.suse.de ([195.135.220.15]:48218 "EHLO mx1.suse.de"
+        id S1726777AbfCNIdC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 14 Mar 2019 04:33:02 -0400
+Received: from mx2.suse.de ([195.135.220.15]:50134 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726539AbfCNIQM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Mar 2019 04:16:12 -0400
+        id S1726284AbfCNIdC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 14 Mar 2019 04:33:02 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 38852AC69;
-        Thu, 14 Mar 2019 08:16:10 +0000 (UTC)
-Subject: Re: [PATCH v2] btrfs: fix a NULL pointer dereference
-To:     Kangjie Lu <kjlu@umn.edu>
-Cc:     pakki001@umn.edu, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-References: <fcdf722f-d128-03c0-99fb-a220f680193c@suse.com>
- <20190314081304.469-1-kjlu@umn.edu>
+        by mx1.suse.de (Postfix) with ESMTP id BF956AD4E;
+        Thu, 14 Mar 2019 08:33:00 +0000 (UTC)
+Subject: Re: [PATCH 2/4] btrfs: fix vanished compression property after failed
+ set
+To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+References: <1552539906-29703-1-git-send-email-anand.jain@oracle.com>
+ <1552539906-29703-3-git-send-email-anand.jain@oracle.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -74,12 +71,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <95cfa934-4677-0c7f-781e-6ce35a87f9d6@suse.com>
-Date:   Thu, 14 Mar 2019 10:16:08 +0200
+Message-ID: <e7d5965a-662f-4b94-6806-f6dd698a55c0@suse.com>
+Date:   Thu, 14 Mar 2019 10:32:14 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <20190314081304.469-1-kjlu@umn.edu>
+In-Reply-To: <1552539906-29703-3-git-send-email-anand.jain@oracle.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -90,31 +87,58 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 14.03.19 г. 10:13 ч., Kangjie Lu wrote:
-> btrfs_lookup_block_group may fail and return NULL. The fix uses
-> assert to ensure cache is not NULL.
+On 14.03.19 г. 7:05 ч., Anand Jain wrote:
+> The compression property resets to NULL, instead of the old value if we
+> fail to set the new compression parameter.
 > 
-> Signed-off-by: Kangjie Lu <kjlu@umn.edu>
+> btrfs prop get /btrfs compression
+>   compression=lzo
+> btrfs prop set /btrfs compression zli
+>   ERROR: failed to set compression for /btrfs: Invalid argument
+> btrfs prop get /btrfs compression
+> 
+> This is because the compression property ->validate() is successful for
+> 'zli' as the strncmp() used the len passed from the userland.
+> 
+> Fix it by using the expected string length in strncmp().
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+The changelog could be a bit clearer. The failure is due to the fact
+that ->validate succeeds but ->apply fails and the handling code calls
 
-> 
+	btrfs_setxattr(trans, inode, handler->xattr_name,
+              NULL, 0, flags);
+
+However, if you make this patch be the first in the series you obsolete
+the existing patch 1 and fix the issue in this one. I.e 2 birds with 1
+stone.
+
+Also I believe btrfs/048 could use some extension in the part where it
+validates compression properties to test for the bugs discovered/fixed
+in this series.
+
 > ---
-> V2: use assert as suggested by Nikolay Borisov <nborisov@suse.com>
-> ---
->  fs/btrfs/extent-tree.c | 1 +
->  1 file changed, 1 insertion(+)
+>  fs/btrfs/props.c | 6 +++---
+>  1 file changed, 3 insertions(+), 3 deletions(-)
 > 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 994f0cc41799..80d7c272d282 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -7303,6 +7303,7 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
+> diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
+> index 3cc007e3c7f8..72a06c4d3c70 100644
+> --- a/fs/btrfs/props.c
+> +++ b/fs/btrfs/props.c
+> @@ -275,11 +275,11 @@ static int prop_compression_validate(const char *value, size_t len)
+>  	if (!value)
+>  		return 0;
 >  
->  		pin = 0;
->  		cache = btrfs_lookup_block_group(fs_info, buf->start);
-> +		ASSERT(cache);
+> -	if (!strncmp("lzo", value, len))
+> +	if (!strncmp("lzo", value, 3))
+>  		return 0;
+> -	else if (!strncmp("zlib", value, len))
+> +	else if (!strncmp("zlib", value, 4))
+>  		return 0;
+> -	else if (!strncmp("zstd", value, len))
+> +	else if (!strncmp("zstd", value, 4))
+>  		return 0;
 >  
->  		if (btrfs_header_flag(buf, BTRFS_HEADER_FLAG_WRITTEN)) {
->  			pin_down_extent(fs_info, cache, buf->start,
+>  	return -EINVAL;
 > 

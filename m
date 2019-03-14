@@ -3,29 +3,30 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 19B8BC43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 07:10:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6A268C43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 07:17:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E6C112087C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 07:10:46 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 377322184C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 07:17:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726643AbfCNHKp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 14 Mar 2019 03:10:45 -0400
-Received: from mx2.suse.de ([195.135.220.15]:40260 "EHLO mx1.suse.de"
+        id S1726494AbfCNHRS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 14 Mar 2019 03:17:18 -0400
+Received: from mx2.suse.de ([195.135.220.15]:41790 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726582AbfCNHKp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Mar 2019 03:10:45 -0400
+        id S1726284AbfCNHRR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 14 Mar 2019 03:17:17 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 50B33AB92
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2019 07:10:43 +0000 (UTC)
-Subject: Re: [PATCH] btrfs: Correctly free extent buffer in case
- btree_read_extent_buffer_pages fails
+        by mx1.suse.de (Postfix) with ESMTP id A9757AEB3
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2019 07:17:15 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: Exploit the fact pages passed to extent_readpages
+ are always contiguous
 To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <20190312131847.20311-1-nborisov@suse.com>
- <20190313180314.GH31119@twin.jikos.cz>
+References: <20190311075538.19242-1-nborisov@suse.com>
+ <20190313172709.GD31119@twin.jikos.cz>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -70,12 +71,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <6581c72e-7a26-2cbe-2bc6-d3bae313a255@suse.com>
-Date:   Thu, 14 Mar 2019 09:10:42 +0200
+Message-ID: <7252ea0b-8a68-aad4-0b7a-a37f012e9f6c@suse.com>
+Date:   Thu, 14 Mar 2019 09:17:14 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.4.0
 MIME-Version: 1.0
-In-Reply-To: <20190313180314.GH31119@twin.jikos.cz>
+In-Reply-To: <20190313172709.GD31119@twin.jikos.cz>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -86,55 +87,45 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 13.03.19 г. 20:03 ч., David Sterba wrote:
-> On Tue, Mar 12, 2019 at 03:18:47PM +0200, Nikolay Borisov wrote:
->> If a an eb fails to be read for whatever reason - it's corrupted on disk
->> and parent transid/key validations fail or IO for eb pages fail then
->> this buffer must be removed from the buffer cache. Currently the code
->> calls free_extent_buffer if an error occurs. Unfortunately this doesn't
->> achieve the desired behavior since btrfs_find_create_tree_block returns
->> with eb->refs == 2. On the other hand free_extent_buffer will only
->> decrement the refs once leavin it added to the buffer cache radix tree.
->> This enables later code to look up the buffer from the cache and utilize
->> it potentially leading to a crash.
+On 13.03.19 г. 19:27 ч., David Sterba wrote:
+> On Mon, Mar 11, 2019 at 09:55:38AM +0200, Nikolay Borisov wrote:
+>> Currently extent_readpages (called from btrfs_redpages) will always call
+>> __extent_readpages which tries to create contiguous range of pages and
+>> call __do_contiguous_readpages when such contiguous range is created.
 >>
->> The correct way to free the buffer is call free_extent_buffer_stale.
->> This function will correctly call atomic_dec explicitly for the buffer
->> and subsequently call release_extent_buffer which will decrement the
->> final reference thus correctly remove the invalid buffer from buffer
->> cache. This change affects only newly allocated buffers since they have
->> eb->refs == 2.
+>> It turns out this is unnecessary due to the fact that generic VFS code
+>> always calls filesystem's ->readpages callback (btrfs_readpages in
+>> this case) with already contiguous pages. Armed with this knowledge it's
+>> possible to simplify extent_readpages by eliminating the call to
+>> __extent_readpages and directly calling contiguous_readpages. The only
+>> edge case that needs to be handled is when add_to_page_cache_lru
+>> fails. This is easy as all that is needed is to submit whatever is the
+>> number of pages successfully added to the lru.
 > 
-> Following the same pattern, should every use of
-> btrfs_find_create_tree_block be followed by free_extent_buffer_stale in
-> case of errors?
-> 
-> There's almost the same sequence in readahead_tree_block as you update
-> in reada_tree_block_flagged:
-> 
->   btrfs_find_create_tree_block
->   read_extent_buffer_pages
->   free_extent_buffer
-> 
-> so should be the _stale variant used there too?
+> I'd like to have more details why this is correct. Submitting what we
+> have so far seems ok, the reasons why add_to_page_cache_lru are unclear
+> and go back to xarray.
 
-You are right it should also be using the _stale variant. I will fix it.
-
-Despite my cleanup of the extent buffer freeing code I'm still not
-entirely happy with the special cases we have with the stale or unmapped
-logic. That's why we need all these special cases ;\
+I'm having a hard time parsing the sentence after the comma, could you
+rephrase that?
 
 > 
-> free_extent_buffer_stale is normally used in other contexts where the
-> 'stale' part means that the eb is known to be disconnected.
-> 
-> I think that btrfs_find_create_tree_block needs a dedicated freeing
-> function that will make sure all invariants (refs == 2, no other
-> structures connected) are met and then do effectively the same what
-> _stale does now.
-Sounds good though I'm a bit reluctant to add yet another
-free_extent_buffer variant. IMO the logic of the extent buffer radix
-tree need to be revised which could lead to simplifications in the whole
-ref counting code.
+> Possible error is EEXSIT, here it's clear that we don't need to read the
 
+Not only EEXIST, the code can also fail due to memory pressure from
+mem_cgroup_try_charge in __add_to_page_cache_locked. In fact this code
+was triggered by some of the xfstests I can't remember which one hence I
+added the if (nr) check.
+
+> pages (already there). A sequence of such pages will make it wildly hop
+> from 1st for cycle iteration, to the if (nr) check and back.
 > 
+> Previously this looped still in the for-cycle, which was easier to
+> follow but otherwise not due to __extent_readpages. So I think it's an
+> improvement in the end, though a few comments would be good there.
+> 
+> Reviewed-by: David Sterba <dsterba@suse.com>
+> 
+
+<snip>
+

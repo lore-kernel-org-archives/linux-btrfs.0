@@ -1,148 +1,160 @@
-Return-Path: <SRS0=X8lZ=RQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=qFN0=RR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 163ECC43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 22:11:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ED0D9C43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 01:40:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id AFACC2087C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Mar 2019 22:11:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B45A12087C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 01:40:29 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="kYe/QbiW"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726581AbfCMWLG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 13 Mar 2019 18:11:06 -0400
-Received: from europa.tomatom.cz ([87.236.196.214]:56472 "EHLO mail.tomatom.cz"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725883AbfCMWLG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Mar 2019 18:11:06 -0400
-Received: from localhost (localhost [127.0.0.1])
-        by mail.tomatom.cz (Postfix) with ESMTP id DAF7C128EA9
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Mar 2019 22:13:06 +0000 (UTC)
-X-Virus-Scanned: Debian amavisd-new at mail.tomatom.cz
-Received: from mail.tomatom.cz ([127.0.0.1])
-        by localhost (mail.tomatom.cz [127.0.0.1]) (amavisd-new, port 10024)
-        with ESMTP id wMPnQEgrg435 for <linux-btrfs@vger.kernel.org>;
-        Wed, 13 Mar 2019 22:13:06 +0000 (UTC)
-Received: from authenticated-user (mail.tomatom.cz [127.0.0.1])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        (Authenticated sender: jakub@husak.pro)
-        by mail.tomatom.cz (Postfix) with ESMTPSA id DED90128CFE
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Mar 2019 22:13:05 +0000 (UTC)
-Authentication-Results: mail.tomatom.cz; dmarc=none header.from=husak.pro
-Authentication-Results: mail.tomatom.cz; dkim=none reason="no signature";
-        dkim-adsp=none (unprotected policy); dkim-atps=neutral
-From:   =?UTF-8?Q?Jakub_Hus=c3=a1k?= <jakub@husak.pro>
-Subject: Re: Balancing raid5 after adding another disk does not move/use any
- data on it
-To:     linux-btrfs@vger.kernel.org
-Message-ID: <7a713010-5db6-2627-2593-8e13092868b1@husak.pro>
-Date:   Wed, 13 Mar 2019 23:11:02 +0100
+        id S1726860AbfCNBk2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 13 Mar 2019 21:40:28 -0400
+Received: from userp2130.oracle.com ([156.151.31.86]:48202 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726473AbfCNBk2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 13 Mar 2019 21:40:28 -0400
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x2E1YxxU123001;
+        Thu, 14 Mar 2019 01:40:24 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2018-07-02;
+ bh=lHQU7AhQgwi51S4clc+q3+ViClH4gUbLy/eoL/QundU=;
+ b=kYe/QbiWz6RSqDMCmqy2DB+iqTz/q/l1j0IQ7yKv6PRuqch/gR7faPLMBGW5q9YYs+mp
+ thHw/Hmhoz6bVSeKp4bT49nJSxR4+SDkpO0/1iTmmq+FcZ4RTNb/7+JQtnwxsxk0VB6b
+ iLt9bloy5l/6uM5d4+4NfEEjNu/zA9C6BT9VJhR5rcthtEhG2SXyb8TvdzD234eCbkL2
+ jjQQCE2EYo+OD2NmAIi+ifpHcVqWTNsxiw7fR7niGYpHbIG1fRHmAvbgzjI0FjtOnSY1
+ oZ6nGve0O0suPrdTC4K3lx2rc9aoqfcAmLyQ3Ojocpr6Lgrb2EfQjA5GO4tLy1hEN0bT Yw== 
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by userp2130.oracle.com with ESMTP id 2r44wueaau-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 14 Mar 2019 01:40:24 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id x2E1eM92016312
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 14 Mar 2019 01:40:23 GMT
+Received: from abhmp0022.oracle.com (abhmp0022.oracle.com [141.146.116.28])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x2E1eLVq028135;
+        Thu, 14 Mar 2019 01:40:22 GMT
+Received: from [172.20.10.2] (/183.90.36.70)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Wed, 13 Mar 2019 18:40:21 -0700
+Subject: Re: [PATCH 2/2] btrfs: fix vanished compression property after failed
+ set
+To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <1552455379-2311-1-git-send-email-anand.jain@oracle.com>
+ <1552455379-2311-2-git-send-email-anand.jain@oracle.com>
+ <60c3e0c1-52dd-5389-e244-c82776b214a1@oracle.com>
+ <20190313174539.GG31119@twin.jikos.cz>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <501289dd-ab15-d10c-bcce-8efcaf939b79@oracle.com>
+Date:   Thu, 14 Mar 2019 09:40:32 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.5.0
 MIME-Version: 1.0
+In-Reply-To: <20190313174539.GG31119@twin.jikos.cz>
 Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: 8bit
 Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9194 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1903140008
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Sorry, fighting with this technology called "email" :)
 
 
-Hopefully better wrapped outputs:
+On 3/14/19 1:45 AM, David Sterba wrote:
+> On Wed, Mar 13, 2019 at 06:33:50PM +0800, Anand Jain wrote:
+>>
+>>
+>>
+>> On 3/13/19 1:36 PM, Anand Jain wrote:
+>>> The compression property resets to NULL, instead of the old value if we
+>>> fail to set the new compression parameter.
+>>>
+>>> btrfs prop get /btrfs compression
+>>>     compression=lzo
+>>> btrfs prop set /btrfs compression zli
+>>>     ERROR: failed to set compression for /btrfs: Invalid argument
+>>> btrfs prop get /btrfs compression
+>>>
+>>> This is because the compression property ->validate() is successful for
+>>> 'zli' as the strncmp() used the len passed from the userland.
+>>>
+>>> Fix it by using the expected string length in strncmp().
+>>>
+>>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>>> ---
+>>>    fs/btrfs/props.c | 6 +++---
+>>>    1 file changed, 3 insertions(+), 3 deletions(-)
+>>>
+>>> diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
+>>> index ef6502a94712..7aa362c2fbcf 100644
+>>> --- a/fs/btrfs/props.c
+>>> +++ b/fs/btrfs/props.c
+>>> @@ -277,11 +277,11 @@ static int prop_compression_validate(struct inode *inode, const char *value,
+>>>    	if (!value)
+>>>    		return 0;
+>>>    
+>>> -	if (!strncmp("lzo", value, len))
+>>> +	if (!strncmp("lzo", value, 3))
+>>>    		return 0;
+>>> -	else if (!strncmp("zlib", value, len))
+>>> +	else if (!strncmp("zlib", value, 4))
+>>>    		return 0;
+>>> -	else if (!strncmp("zstd", value, len))
+>>> +	else if (!strncmp("zstd", value, 4))
+>>>    		return 0;
+>>>
+>>
+>>
+>>     Nack.
+>> Now some junk value after expected string is not an error.
+>> such as..
+>>
+>> btrfs prop set /btrfs compression lzo110
+> 
+> This was intentional when the zlib levels were introduced so older
+> kernels can understand newer compression specifier but still have a sane
+> fallback (ie use the default level). Now it would be better to extend
+> the validation to parse the method:level format at least. But as
+> mentioned in the other mail, the level needs to be propagated elsewhere
+> too so it's not just a change to the validation.
+> 
 
-On 13. 03. 19 22:58, Jakub Husák wrote:
+  Compression levels properties can be implemented in a newer set of the
+  patches? So I believe this set ok to merge.
+
+  The other way to fix this was to save and rewrite the old parameter,
+  but that's not a good idea as well, because when parameter is not valid
+  we should rather fail without any update (generation/transid should
+  also remain unchanged, there is a bug [1] in the original code which
+  shall be fixed separately).
+
+  [1]
+  with this patch,
+  btrfs in dump-super /dev/sdb | grep "^generation"; btrfs prop set 
+/btrfs compression zli; sync; btrfs in dump-super /dev/sdb | grep 
+"^generation"
+
+generation		21
+ERROR: failed to set compression for /btrfs: Invalid argument
+generation		22
 
 
-> Hi,
->
-> I added another disk to my 3-disk raid5 and ran a balance command. 
-> After few hours I looked to output of `fi usage` to see that no data 
-> are being used on the new disk. I got the same result even when 
-> balancing my raid5 data or metadata.
->
-> Next I tried to convert my raid5 metadata to raid1 (a good idea 
-> anyway) and the new disk started to fill immediately (even though it 
-> received the whole amount of metadata with replicas being spread among 
-> the other drives, instead of being really "balanced". I know why this 
-> happened, I don't like it but I can live with it, let's not go off 
-> topic here :)).
->
-> Now my usage output looks like this:
->
-# btrfs filesystem usage   /mnt/data1
-WARNING: RAID56 detected, not implemented
-Overall:
-     Device size:          10.91TiB
-     Device allocated:         316.12GiB
-     Device unallocated:          10.61TiB
-     Device missing:             0.00B
-     Used:              58.86GiB
-     Free (estimated):             0.00B    (min: 8.00EiB)
-     Data ratio:                  0.00
-     Metadata ratio:              2.00
-     Global reserve:         512.00MiB    (used: 0.00B)
-
-Data,RAID5: Size:4.59TiB, Used:4.06TiB
-    /dev/mapper/crypt-sdb       2.29TiB
-    /dev/mapper/crypt-sdc       2.29TiB
-    /dev/mapper/crypt-sde       2.29TiB
-
-Metadata,RAID1: Size:158.00GiB, Used:29.43GiB
-    /dev/mapper/crypt-sdb      53.00GiB
-    /dev/mapper/crypt-sdc      53.00GiB
-    /dev/mapper/crypt-sdd     158.00GiB
-    /dev/mapper/crypt-sde      52.00GiB
-
-System,RAID1: Size:64.00MiB, Used:528.00KiB
-    /dev/mapper/crypt-sdc      32.00MiB
-    /dev/mapper/crypt-sdd      64.00MiB
-    /dev/mapper/crypt-sde      32.00MiB
-
-Unallocated:
-    /dev/mapper/crypt-sdb     393.04GiB
-    /dev/mapper/crypt-sdc     393.01GiB
-    /dev/mapper/crypt-sdd       2.57TiB
-    /dev/mapper/crypt-sde     394.01GiB
-
->
-> I'm now running `fi balance -dusage=10` (and rising the usage limit). 
-> I can see that the unallocated space is rising as it's freeing the 
-> little used chunks but still no data are being stored on the new disk.
->
-> I it some bug? Is `fi usage` not showing me something (as it states 
-> "WARNING: RAID56 detected, not implemented")? Or is there just too 
-> much free space on the first set of disks that the balancing is not 
-> bothering moving any data?
->
-> If so, shouldn't it be really balancing (spreading) the data among all 
-> the drives to use all the IOPS capacity, even when the raid5 
-> redundancy constraint is currently satisfied?
->
->
-#  uname -a
-Linux storage 4.19.0-0.bpo.2-amd64 #1 SMP Debian 4.19.16-1~bpo9+1 
-(2019-02-07) x86_64 GNU/Linux
-#   btrfs --version
-btrfs-progs v4.17
-#  btrfs fi show
-Label: none  uuid: xxxxxxxxxxxxxxxxx
-     Total devices 4 FS bytes used 4.09TiB
-     devid    2 size 2.73TiB used 2.34TiB path /dev/mapper/crypt-sdc
-     devid    3 size 2.73TiB used 2.34TiB path /dev/mapper/crypt-sdb
-     devid    4 size 2.73TiB used 2.34TiB path /dev/mapper/crypt-sde
-     devid    5 size 2.73TiB used 158.06GiB path /dev/mapper/crypt-sdd
-
-#   btrfs fi df .
-Data, RAID5: total=4.59TiB, used=4.06TiB
-System, RAID1: total=64.00MiB, used=528.00KiB
-Metadata, RAID1: total=158.00GiB, used=29.43GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-> Thanks
->
-> Jakub
->
+Thanks, Anand

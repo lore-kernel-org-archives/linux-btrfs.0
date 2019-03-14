@@ -2,121 +2,109 @@ Return-Path: <SRS0=qFN0=RR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 74394C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 07:26:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E5A27C43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 07:50:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3E31F2063F
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 07:26:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B11DC2087C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Mar 2019 07:50:55 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=umn.edu header.i=@umn.edu header.b="mc33nTd7"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726628AbfCNH0k (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 14 Mar 2019 03:26:40 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42646 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726584AbfCNH0k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Mar 2019 03:26:40 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 9E639AEC7
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2019 07:26:38 +0000 (UTC)
-Subject: Re: [PATCH 0/9] Extent buffer locking cleanups
-To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-References: <cover.1552489554.git.dsterba@suse.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <4e3a4188-2c4e-ccc7-324c-69e0c5f0c528@suse.com>
-Date:   Thu, 14 Mar 2019 09:26:37 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.4.0
-MIME-Version: 1.0
-In-Reply-To: <cover.1552489554.git.dsterba@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+        id S1726654AbfCNHut (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 14 Mar 2019 03:50:49 -0400
+Received: from mta-p6.oit.umn.edu ([134.84.196.206]:59806 "EHLO
+        mta-p6.oit.umn.edu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726284AbfCNHut (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 14 Mar 2019 03:50:49 -0400
+Received: from localhost (unknown [127.0.0.1])
+        by mta-p6.oit.umn.edu (Postfix) with ESMTP id 21CF7C6E
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2019 07:50:48 +0000 (UTC)
+X-Virus-Scanned: amavisd-new at umn.edu
+Received: from mta-p6.oit.umn.edu ([127.0.0.1])
+        by localhost (mta-p6.oit.umn.edu [127.0.0.1]) (amavisd-new, port 10024)
+        with ESMTP id ORWZY6UTvClw for <linux-btrfs@vger.kernel.org>;
+        Thu, 14 Mar 2019 02:50:48 -0500 (CDT)
+Received: from mail-io1-f71.google.com (mail-io1-f71.google.com [209.85.166.71])
+        (using TLSv1.2 with cipher AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mta-p6.oit.umn.edu (Postfix) with ESMTPS id EC7E7C50
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2019 02:50:47 -0500 (CDT)
+Received: by mail-io1-f71.google.com with SMTP id k2so3690499ioj.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2019 00:50:47 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=umn.edu; s=google;
+        h=from:to:cc:subject:date:message-id;
+        bh=DLANtRSSRHAl4T+X5AQuykmiffSXk6BE1bjRT1gOrDw=;
+        b=mc33nTd7ZZ/PlEGWW5dq7jTiyDDeuhuqTkgvkT7UUjPuf9mlfb0OYOD2WSuMx7mMYL
+         k27rZu7mjFY8Hat9LMZMSNWz9ebkb88gdOs/lvkOduofrXPwfR5vW5Ppon58sXNYaFiU
+         M9mGXzggJEFRBsy+yTbckhYhrxRDeUfmJW5j67LuKN9yABTKQCOUV4GR4GGjw7xnpN1c
+         jdcTYMS072mAsXq8Tuu130+wKC4RsMBaNxQHHbJCUblLR/hdjPytSi09CixubKD9MY2Z
+         n33Y3Vrx0Y8pxAZj7zec+DRcVbFH9iS2ZeqBFK3z5Xy08gIhYk4oMOIyHMFWtOwlIDfv
+         C/KQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id;
+        bh=DLANtRSSRHAl4T+X5AQuykmiffSXk6BE1bjRT1gOrDw=;
+        b=IaKKjQ9TBPeUqOV5bW0I+8ZCYcVy7kWY79eyGWcXNpNac3URCUqGap8eCajCZX3pJN
+         g1J+rxvJ7YCtc0BD9FUNZsjDB/gxN9zVj0VzGSm+dwWenyXRV2Ii03NGoqDcO04yQB8t
+         HXoC9lO1hQtiw2GLrYPkteiFFv1tRwKXAKClOeZZ81IeeQRd5gl7kGtknSIfzH6okfZ8
+         FwwzD0bzc46APRLuTZbRwD+sDrdXFWQR51a57NXKi8Sqk5Kmq3B4OAfy3ZPlZy+11/t1
+         zhx/Am7+mtPe7BbRQRFAxsggDia6Ud12eQbqNphRfKY2KNEJBqGPiVzm/+LlKSOHWQ8F
+         sKVQ==
+X-Gm-Message-State: APjAAAWnADfM0UhKFXGcHWQl0Ioy/KnVHyLfe3pH7Cm173Vg140j3r9p
+        5gF+JGI4b2YR/Ug/KU0NzlFGw+/UYVJFGI6vNWkPrYBmW7AytoSTyH9ybjKyS3E1m5HoFI6PtRl
+        ITk+4XS9ll5RcwoYQmLQT6nizqkU=
+X-Received: by 2002:a24:29c8:: with SMTP id p191mr1116832itp.115.1552549847615;
+        Thu, 14 Mar 2019 00:50:47 -0700 (PDT)
+X-Google-Smtp-Source: APXvYqwkfCVvG2ptR02yE3dTQHdvKlnANoVN72gvCgb3pCVla2WLuPN1hMoGboIrjjpRk4TFMRVtmA==
+X-Received: by 2002:a24:29c8:: with SMTP id p191mr1116826itp.115.1552549847379;
+        Thu, 14 Mar 2019 00:50:47 -0700 (PDT)
+Received: from bee.dtc.umn.edu (cs-bee-u.cs.umn.edu. [128.101.106.63])
+        by smtp.gmail.com with ESMTPSA id k4sm820334itc.32.2019.03.14.00.50.46
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Thu, 14 Mar 2019 00:50:46 -0700 (PDT)
+From:   Kangjie Lu <kjlu@umn.edu>
+To:     kjlu@umn.edu
+Cc:     pakki001@umn.edu, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [PATCH] btrfs: fix a NULL pointer dereference
+Date:   Thu, 14 Mar 2019 02:50:40 -0500
+Message-Id: <20190314075041.28966-1-kjlu@umn.edu>
+X-Mailer: git-send-email 2.17.1
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+btrfs_lookup_block_group may fail and return NULL. The fix goes
+to out when it fails to avoid NULL pointer dereference.
 
+Signed-off-by: Kangjie Lu <kjlu@umn.edu>
+---
+ fs/btrfs/extent-tree.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-On 13.03.19 г. 17:46 ч., David Sterba wrote:
-> The series moves several atomic counters under CONFIG_BTRFS_DEBUG. The
-> selected counters are not essential for the extent buffer locking to
-> work. There's some space saving (4x 4B at least) and the cachelines are
-> less stressed on non-debugging builds.
-> 
-> The final size is 264 from 280, getting to 256 would be nice but hard or
-> making the code unreadable. I have ideas to shave 7 more bytes but
-> that's for another patchset.
-> 
-> David Sterba (9):
->   btrfs: add assertion helpers for spinning writers
->   btrfs: use assertion helpers for spinning writers
->   btrfs: add assertion helpers for spinning readers
->   btrfs: use assertion helpers for spinning readers
->   btrfs: add assertion helpers for extent buffer read lock counters
->   btrfs: use assertion helpers for extent buffer read lock counters
->   btrfs: add assertion helpers for extent buffer write lock counters
->   btrfs: use assertion helpers for extent buffer write lock counters
->   btrfs: switch extent_buffer::lock_nested to bool
-> 
->  fs/btrfs/extent_io.c |  13 +++--
->  fs/btrfs/extent_io.h |  11 ++--
->  fs/btrfs/locking.c   | 133 ++++++++++++++++++++++++++++++-------------
->  3 files changed, 107 insertions(+), 50 deletions(-)
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 994f0cc41799..b1e7985bcb9d 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -7303,6 +7303,8 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
+ 
+ 		pin = 0;
+ 		cache = btrfs_lookup_block_group(fs_info, buf->start);
++		if (!cache)
++			goto out;
+ 
+ 		if (btrfs_header_flag(buf, BTRFS_HEADER_FLAG_WRITTEN)) {
+ 			pin_down_extent(fs_info, cache, buf->start,
+-- 
+2.17.1
 
-Overall the series looks good, one thing I wonder is wouldn't it be
-better if you convert those WARN_ON to assert so that we fail fast in
-case the locking invariant are broken?
-
-In any case:
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
-
-> 

@@ -2,157 +2,140 @@ Return-Path: <SRS0=BvJc=RS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A8F2EC43381
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Mar 2019 03:59:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 38A31C43381
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Mar 2019 05:28:54 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6E9712077B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Mar 2019 03:59:39 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="m0Vs6TZ1"
+	by mail.kernel.org (Postfix) with ESMTP id F12EE21872
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Mar 2019 05:28:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727245AbfCOD7i (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 14 Mar 2019 23:59:38 -0400
-Received: from mail-lj1-f193.google.com ([209.85.208.193]:46127 "EHLO
-        mail-lj1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727241AbfCOD7h (ORCPT
+        id S1727236AbfCOF2w (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 15 Mar 2019 01:28:52 -0400
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:47928 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1727152AbfCOF2w (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Mar 2019 23:59:37 -0400
-Received: by mail-lj1-f193.google.com with SMTP id z26so6479137lja.13
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Mar 2019 20:59:36 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=subject:to:references:from:openpgp:autocrypt:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=hbFo7BpvqFY42rms9dpQJmYcmhWMoN6ABLqL7i6FwuA=;
-        b=m0Vs6TZ1OmeuGtKbo6X6RR4N6wDJlTEGKUoO7ntNdomst1FiVTLdQfJPRSjejBvT6J
-         kLPtNSfyVLK701fNWgdP/lOEiGQaxbfOQ8ig9FxHUk6sXuE3A/P3DoyRPtT8S6ZZMCUJ
-         HfGGSx3OteeiBlL0ika/f7Y6F207htbFaQFVQHPPI3L4hObS4Vnn7oTyfS2Hlsf3a5zP
-         209j1Gom5CPiTAkx3AyQc3PiEdhUWP/HzwN7wE4o2pk+auCiXyVjhZq1BKAWU4+yzXId
-         2JW7ODWhTakyEykwBDUWLvcwWScYx/JnGw8LsDlK4n0JSE7ULYHBeYJ+LbK7Ws7fp/2N
-         AMJw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:openpgp:autocrypt
-         :message-id:date:user-agent:mime-version:in-reply-to
-         :content-language:content-transfer-encoding;
-        bh=hbFo7BpvqFY42rms9dpQJmYcmhWMoN6ABLqL7i6FwuA=;
-        b=fECTVQPUgUVyCx6EMD7FwmY22cOu0XUGutRBSbDQAzDLiSshKi2eIcBTatrdM4/RpX
-         xNHAFpnvNcpP/MxL76c3Q941AeeRfRGFqzR1bFNFIdPfGQZhYUAyreLR/+a4xMcuRsct
-         Jn9qenFQcp01ZgFUK0glTnqngBym2Vszexu/Adm89NSr+WivohdanlNBXA4AZlqgBLEo
-         WGFeGQB+KrNndEZk6SRJkwzCbSK34tu1OnGkOqlcqi9qfFU148XsDyxRk38VJTM6fLpY
-         6dEW5BM4HV3ITtBuuY7GZVNb5kiAJ0Bk51tsO3NxCUqOySESYMN/b0NVe43i8Qtwr58g
-         tQvQ==
-X-Gm-Message-State: APjAAAUgYGEDUiJD7PKdLFHd5KjLFeLqZbaZBSFuJ11uDGTRi89r0h3p
-        jAuL6S0qnGSSQpiWyludb49pahtY7YA=
-X-Google-Smtp-Source: APXvYqyKrgrGS9jm/eEnTbadBgPahMpCutFhGdwWPuWt/HhxjWwuMN4owl3k+C5df0T1QpX7gVdCzw==
-X-Received: by 2002:a2e:965a:: with SMTP id z26mr691917ljh.59.1552622375209;
-        Thu, 14 Mar 2019 20:59:35 -0700 (PDT)
-Received: from [192.168.1.4] ([109.252.90.29])
-        by smtp.gmail.com with ESMTPSA id d23sm185892lfc.11.2019.03.14.20.59.33
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 14 Mar 2019 20:59:33 -0700 (PDT)
-Subject: Re: mounting raid1 btrfs - occasional devid missing / open_ctree
- failed
-To:     Michal Soltys <soltys@ziu.info>,
-        Hans van Kranenburg <hans@knorrie.org>,
-        linux-btrfs@vger.kernel.org
-References: <b6e6db9d-c81a-498b-508e-581f924ff573@ziu.info>
- <eb16d309-7e81-8afb-ae2c-bd93862e1ace@knorrie.org>
- <ff6e0ace-72fb-0dc0-8fdb-8e12b2907680@ziu.info>
- <964e3bcd-730a-c186-c0e1-cd538a3c0e83@ziu.info>
-From:   Andrei Borzenkov <arvidjaar@gmail.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=arvidjaar@gmail.com; prefer-encrypt=mutual; keydata=
- xsDiBDxiRwwRBAC3CN9wdwpVEqUGmSoqF8tWVIT4P/bLCSZLkinSZ2drsblKpdG7x+guxwts
- +LgI8qjf/q5Lah1TwOqzDvjHYJ1wbBauxZ03nDzSLUhD4Ms1IsqlIwyTLumQs4vcQdvLxjFs
- G70aDglgUSBogtaIEsiYZXl4X0j3L9fVstuz4/wXtwCg1cN/yv/eBC0tkcM1nsJXQrC5Ay8D
- /1aA5qPticLBpmEBxqkf0EMHuzyrFlqVw1tUjZ+Ep2LMlem8malPvfdZKEZ71W1a/XbRn8FE
- SOp0tUa5GwdoDXgEp1CJUn+WLurR0KPDf01E4j/PHHAoABgrqcOTcIVoNpv2gNiBySVsNGzF
- XTeY/Yd6vQclkqjBYONGN3r9R8bWA/0Y1j4XK61qjowRk3Iy8sBggM3PmmNRUJYgroerpcAr
- 2byz6wTsb3U7OzUZ1Llgisk5Qum0RN77m3I37FXlIhCmSEY7KZVzGNW3blugLHcfw/HuCB7R
- 1w5qiLWKK6eCQHL+BZwiU8hX3dtTq9d7WhRW5nsVPEaPqudQfMSi/Ux1kc0mQW5kcmVpIEJv
- cnplbmtvdiA8YXJ2aWRqYWFyQGdtYWlsLmNvbT7CZQQTEQIAJQIbAwYLCQgHAwIGFQgCCQoL
- BBYCAwECHgECF4AFAliWAiQCGQEACgkQR6LMutpd94wFGwCeNuQnMDxve/Fo3EvYIkAOn+zE
- 21cAnRCQTXd1hTgcRHfpArEd/Rcb5+SczsBNBDxiRyQQBACQtME33UHfFOCApLki4kLFrIw1
- 5A5asua10jm5It+hxzI9jDR9/bNEKDTKSciHnM7aRUggLwTt+6CXkMy8an+tVqGL/MvDc4/R
- KKlZxj39xP7wVXdt8y1ciY4ZqqZf3tmmSN9DlLcZJIOT82DaJZuvr7UJ7rLzBFbAUh4yRKaN
- nwADBwQAjNvMr/KBcGsV/UvxZSm/mdpvUPtcw9qmbxCrqFQoB6TmoZ7F6wp/rL3TkQ5UElPR
- gsG12+Dk9GgRhnnxTHCFgN1qTiZNX4YIFpNrd0au3W/Xko79L0c4/49ten5OrFI/psx53fhY
- vLYfkJnc62h8hiNeM6kqYa/x0BEddu92ZG7CRgQYEQIABgUCPGJHJAAKCRBHosy62l33jMhd
- AJ48P7WDvKLQQ5MKnn2D/TI337uA/gCgn5mnvm4SBctbhaSBgckRmgSxfwQ=
-Message-ID: <49202dac-6ae2-b49f-f946-a64dce3115a3@gmail.com>
-Date:   Fri, 15 Mar 2019 06:59:32 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.1
+        Fri, 15 Mar 2019 01:28:52 -0400
+Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
+        id A93BD262512; Fri, 15 Mar 2019 01:28:45 -0400 (EDT)
+Date:   Fri, 15 Mar 2019 01:28:45 -0400
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To:     Christoph Anton Mitterer <calestyo@scientia.net>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Reproducer for "compressed data + hole data corruption bug, 2018
+ edition" still works on 4.20.7
+Message-ID: <20190315052827.GH23918@hungrycats.org>
+References: <CAL3q7H6eTTw-iTHiQLcJHa5iRRspWxQpfyTQRU1SmcxBqXSppg@mail.gmail.com>
+ <20190212181328.GB23918@hungrycats.org>
+ <CAL3q7H4k=N=0Cv8hYAZkfTfaG8XJgG1KzT5mA_4XnutxGFc8DA@mail.gmail.com>
+ <CAL3q7H6YShEBKDTDZ7_qBoLDMgihP_8NYee_60-LUqd6sF5xZQ@mail.gmail.com>
+ <CAL3q7H6WSe_C7_+D0x1_Z+KdK=k+iM-t2J4pQSO32ZsY4AEZ=Q@mail.gmail.com>
+ <95e4d9825c2565473184765c4d77ae0015d01580.camel@scientia.net>
+ <20190215054031.GC9995@hungrycats.org>
+ <f9fddae4bc3d59e539b7bc56ae75a5f04a165682.camel@scientia.net>
+ <20190307200712.GG23918@hungrycats.org>
+ <beebed47702d783e00d3478f217ffc646d47bb92.camel@scientia.net>
 MIME-Version: 1.0
-In-Reply-To: <964e3bcd-730a-c186-c0e1-cd538a3c0e83@ziu.info>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="7J16OGEJ/mt06A90"
+Content-Disposition: inline
+In-Reply-To: <beebed47702d783e00d3478f217ffc646d47bb92.camel@scientia.net>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-14.03.2019 19:17, Michal Soltys пишет:
-> On 3/14/19 5:09 PM, Michal Soltys wrote:
->> On 3/14/19 4:57 PM, Hans van Kranenburg wrote:
->>> On 3/14/19 4:44 PM, Michal Soltys wrote:
->>>>
->>>> <cut>
->>>>
->>>> Occasionally, during reboots (all of them clean of course) I get:
->>>>
->>>> devid 2 uuid <uuid> is missing
->>>> failed to ready system array: -2
->>>> open_ctree faield
->>>>
->>>> Which drops me into initramfs commandline.
->>>
->>> It might try to mount before all disks are visible. This can happen when
->>> e.g. a raid controller needs a little bit more time to initialize.
->>>
->>> Try adding rootdelay=10 to your linux command line, or any other number,
->>> and then look at logging when booting (so no quiet on your linux command
->>> line).
->>>
->>
->> It remains unmountable from initramfs's commandline with both disks
->> (partitions) present. Filesystem is mounted formally via uuid, so it
->> needs both disks present before udev/blkid can pick the correct devices.
->>
-> 
-> E.g.
-> 
-> mount /dev/sdr2 /newroot -> fails
-> mount /dev/sds2 /newroot -> ok
-> umount /newroot
-> mount /dev/sdr2 /newroot -> ok
-> 
 
-This implies that neither device was scanned with equivalent of "btrfs
-device scan". After attempt to mount both partitions kernel is aware of
-them and from now on it succeeds.
+--7J16OGEJ/mt06A90
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-What "dmesg | grep -i btrfs" shows before and after these commands?
+On Thu, Mar 14, 2019 at 07:58:45PM +0100, Christoph Anton Mitterer wrote:
+> Phew... too much [silent] corruption bugs in btrfs... :-(
+>=20
+> Actually I didn't even notice the others (which unfortunately doesn't
+> mean I'm definitely not affected), so I probably cannot much do/check
+> about them now... but only about the "recent" one that was fixed now.
+>=20
+> But maybe there should be something like a btrfs-announce list, i.e. a
+> low volume mailing list, in which (interested) users are informed about
+> more grave issues.
+> Such things can happen and there's no one to blame about that... but if
+> they happen it would be good for users to get notified so that they can
+> check their systems and possibly recover data from (still existing)
+> other sources.
 
->>>> When that happens, one of the partitions is mountable, the other is
->>>> not.
->>>> Mounting the filesystem via the "good" one also fixes the "bad" one.
->>>>
->>>> Tested with 4.20.11 and 5.0.2 kernels.
->>>>
->>>> Any idea what could be wrong ?
->>>> Does btrfs require full umount via pivoted initramfs during shutdown ?
->>> Hans
->>>
->>
->>
-> 
+I don't know if it would be a low-volume list...every kernel release
+includes fixes for _some_ exotic corner case.
 
+> What about the direct IO issues that may be still present and which
+> you've mentioned above... is this used somewhere per default / under
+> normal circumstances?
+
+Direct IO is an odd case because it's not all that well understood
+what the correct behavior is.  You can't prevent the kernel from making
+copies of data and also expect full data integrity and also lock-free
+performance, all at the same time.  Pick any two, and pay for it with
+losses in the third.
+
+The bug fixes here are more along the lines of "OK so you're using direct
+IO which means you've basically admitted you don't care about *your* data,
+let's try not to corrupt *other* data on the filesystem at the same time."
+
+> I think by now I'm pretty confident that I, personally, am safe.
+
+It took me two years to find this bug, and I had to write a tool to
+encounter it often enough to notice.  A lot of people are safe.
+
+> > If you had asked questions like "is this bug the reason why I've been
+> > seeing random SHA hash verification failures for several years?" then
+> > you should worry about this bug; otherwise, it probably didn't affect
+> > you.
+>=20
+> I think you're right... but my data with many thousands of pictures,
+> etc. from all life is really precious to me, so I better wanted to
+> understand the issue in "depth"... and I think these questions and your
+> answers may still benefit others who may also want to find out whether
+> they could have been silently affected :-)
+
+I found the 2017 compression bug in a lot of digital photographs.
+It turns out that several popular cameras (including some of the ones I
+own) put a big chunk of zeros near the beginnings of JPG files, and when
+rsync copies those it will insert a hole instead of copying the zeros.
+The 2017 bug affected "ordinary" holes so standard tools like cp and
+rsync could trigger it.  Most photo tools ignore this data completely,
+so when garbage appears there, nobody notices.
+
+A similar thing happens to .o files:  ld aligns things to 4K block
+boundaries, triggering the 2017 compressed read bug.  Nobody reads that
+data either--it's just alignment padding.
+
+I don't think I found an application that cared about the 2017 bug at all.
+Only backup verifications.
+
+The 2018 bug is a different story--when it hits, it's obvious, and
+ordinary application things break--but it won't happen to typical photo
+image files, even with aggressive dedupe.
+
+>=20
+> Cheers and thanks,
+> Chris.
+>=20
+>=20
+
+--7J16OGEJ/mt06A90
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCXIs39wAKCRCB+YsaVrMb
+nGIRAKDPzaTtxGj8vH026bzkUVCVbq6O4wCfWzRmgTh3shOmzv25DzLRnNQ1MCU=
+=d3Yb
+-----END PGP SIGNATURE-----
+
+--7J16OGEJ/mt06A90--

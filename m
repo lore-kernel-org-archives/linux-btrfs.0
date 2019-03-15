@@ -2,118 +2,77 @@ Return-Path: <SRS0=BvJc=RS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 12FA2C43381
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Mar 2019 09:36:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 95EA4C43381
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Mar 2019 11:19:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DFEB621872
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Mar 2019 09:36:00 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 630AC2085A
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Mar 2019 11:19:25 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="hKqPJJc7"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728713AbfCOJf7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 15 Mar 2019 05:35:59 -0400
-Received: from drutsystem.com ([84.10.39.251]:50142 "EHLO drutsystem.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726886AbfCOJf7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Mar 2019 05:35:59 -0400
-Received: from [10.227.137.2] (89-78-107-182.dynamic.chello.pl [89.78.107.182])
-        by drutsystem.com (Postfix) with ESMTPA id 33CE76C0102;
-        Fri, 15 Mar 2019 10:35:54 +0100 (CET)
-Subject: Re: mounting raid1 btrfs - occasional devid missing / open_ctree
- failed
-To:     Andrei Borzenkov <arvidjaar@gmail.com>,
-        Hans van Kranenburg <hans@knorrie.org>,
-        linux-btrfs@vger.kernel.org
-References: <b6e6db9d-c81a-498b-508e-581f924ff573@ziu.info>
- <eb16d309-7e81-8afb-ae2c-bd93862e1ace@knorrie.org>
- <ff6e0ace-72fb-0dc0-8fdb-8e12b2907680@ziu.info>
- <964e3bcd-730a-c186-c0e1-cd538a3c0e83@ziu.info>
- <49202dac-6ae2-b49f-f946-a64dce3115a3@gmail.com>
-From:   Michal Soltys <soltys@ziu.info>
-Message-ID: <0ff19749-3e19-a78f-5560-d20e8177478c@ziu.info>
-Date:   Fri, 15 Mar 2019 10:36:27 +0100
-User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.0
+        id S1727290AbfCOLTX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 15 Mar 2019 07:19:23 -0400
+Received: from mail-oi1-f172.google.com ([209.85.167.172]:32975 "EHLO
+        mail-oi1-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726785AbfCOLTX (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 15 Mar 2019 07:19:23 -0400
+Received: by mail-oi1-f172.google.com with SMTP id z14so7005007oid.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Mar 2019 04:19:23 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=ER5afKJMlBtC45w7KNFHHcU1sNeRMFIS8bt4Wyp12So=;
+        b=hKqPJJc7fxskc/CjIi33NBdviR5PjSNcNf5q+faT+iGXYC8yglKfxNhhzqRJS+N55T
+         7OQTuvgyTgam2KJaBa2YFVXrtuYOCyo39ASGL4ttssPq4V7+q8myY3nKroJtcj/MXj/B
+         4H1xaCAX0KFPCE2DSj/g1IMNQXUuL5mWnC8l2Hw7e/PLw4xhCnbX4yS+cz4e2IV4BnDU
+         rLMmeW42Qj5+J4pBbg0GxQ/Qr8GPpA4p56CpoBvFLhKtv4A4PFMqNwyBorj/omF19vHJ
+         L9eq9LezhEOQxj634bi496/Ns+W1rcyvmSTQuTXixo3pxX+xapIWmNs5yG/lNywH3VHp
+         paIw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=ER5afKJMlBtC45w7KNFHHcU1sNeRMFIS8bt4Wyp12So=;
+        b=C3UhCLCxoHXtIrNumIYTxBYQynwggyZwut0i+17AyXBOSEN2s8POMVCU7YIZUyDTCV
+         o+ktdQr689sFitTYlW6L0j5MfCQ/J1FV3pPOTiFKcsAKlabI9l4T66QOu+7F2y1mx9oO
+         b/6j0YXEj/9LAhE1QVxv4mKIT1ML76VZMM9hQMEGvLRnIr8yNgOAGgY5yQrENG6ZB4xx
+         xp5g3QMgG0cvzNoDleIhWbRVK6W7qhSG6rsUBGCQ249ETPAjPlgC/xwy0aRSP6Y+oqlD
+         TQWQJPRXrJAwOp+WQBfexpjUxM3/PYt2di7X3DNt0uVlifUhjroCzzsTC//QvN3RRL02
+         L0XA==
+X-Gm-Message-State: APjAAAXPk3p8zPZY1XJAagh7NcV8l/Hqbu06oKT9ZraUrSneuDOTufwC
+        mO43YJxWDgV5LTW04H8w1nBPkpSidK5BN0z6qTw=
+X-Google-Smtp-Source: APXvYqyYGqKtV7V0IOfKKwd6QKOA/VT+3KEQ151JRkyxcdZECfrO0059IhZHyJxXy3Iwjron1X6weq7buH5DA0wWRnQ=
+X-Received: by 2002:aca:3bc5:: with SMTP id i188mr1255549oia.59.1552648762724;
+ Fri, 15 Mar 2019 04:19:22 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <49202dac-6ae2-b49f-f946-a64dce3115a3@gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
-X-MailScanner-ID: 33CE76C0102.AF02B
-X-MailScanner: Not scanned: please contact your Internet E-Mail Service Provider for details
-X-MailScanner-From: soltys@ziu.info
+References: <CAJCQCtQYezBhv0FvCineu9eTGs9gisyispwDD4wEe-CURVoTCg@mail.gmail.com>
+ <010201697e5acc16-2345a495-0bdc-45d4-8363-d4397d9a7841-000000@eu-west-1.amazonses.com>
+ <20190315053822.gsqwah5dpp23uimw@navis>
+In-Reply-To: <20190315053822.gsqwah5dpp23uimw@navis>
+From:   Timofey Titovets <nefelim4ag@gmail.com>
+Date:   Fri, 15 Mar 2019 14:18:46 +0300
+Message-ID: <CAGqmi74-AjgVrWkj-H9MC_mTdh0t9G-eQzkQsCzEXNiwuWtetw@mail.gmail.com>
+Subject: Re: psa, wiki needs updating now that Btrfs supports swapfiles in 5.0
+To:     Nicholas D Steeves <nsteeves@gmail.com>
+Cc:     Martin Raiber <martin@urbackup.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 19/03/15 04:59, Andrei Borzenkov wrote:
-> 14.03.2019 19:17, Michal Soltys пишет:
->> On 3/14/19 5:09 PM, Michal Soltys wrote:
->>> On 3/14/19 4:57 PM, Hans van Kranenburg wrote:
->>>> On 3/14/19 4:44 PM, Michal Soltys wrote:
->>>>>
->>>>> <cut>
->>>>>
->>>>> Occasionally, during reboots (all of them clean of course) I get:
->>>>>
->>>>> devid 2 uuid <uuid> is missing
->>>>> failed to ready system array: -2
->>>>> open_ctree faield
->>>>>
->>>>> Which drops me into initramfs commandline.
->>>>
->>>> It might try to mount before all disks are visible. This can happen when
->>>> e.g. a raid controller needs a little bit more time to initialize.
->>>>
->>>> Try adding rootdelay=10 to your linux command line, or any other number,
->>>> and then look at logging when booting (so no quiet on your linux command
->>>> line).
->>>>
->>>
->>> It remains unmountable from initramfs's commandline with both disks
->>> (partitions) present. Filesystem is mounted formally via uuid, so it
->>> needs both disks present before udev/blkid can pick the correct devices.
->>>
->> 
->> E.g.
->> 
->> mount /dev/sdr2 /newroot -> fails
->> mount /dev/sds2 /newroot -> ok
->> umount /newroot
->> mount /dev/sdr2 /newroot -> ok
->> 
-> 
-> This implies that neither device was scanned with equivalent of "btrfs
-> device scan". After attempt to mount both partitions kernel is aware of
-> them and from now on it succeeds.
-> 
+FAQ updated.
 
-That would point to some really weird thing [not] being done in 
-initramfs in its debian variation. I'll look closer into it.
+Thanks.
 
-Thanks for pointing that out, the 'btrfs device scan' requirement 
-completely slipped my mind.
-
-> What "dmesg | grep -i btrfs" shows before and after these commands?
-> 
-
-Will verify and report.
-
->>>>> When that happens, one of the partitions is mountable, the other is
->>>>> not.
->>>>> Mounting the filesystem via the "good" one also fixes the "bad" one.
->>>>>
->>>>> Tested with 4.20.11 and 5.0.2 kernels.
->>>>>
->>>>> Any idea what could be wrong ?
->>>>> Does btrfs require full umount via pivoted initramfs during shutdown ?
->>>> Hans
->>>>
->>>
->>>
->> 
-> 
-> 
-
+-- 
+Have a nice day,
+Timofey.

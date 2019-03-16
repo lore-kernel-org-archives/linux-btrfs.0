@@ -5,26 +5,27 @@ X-Spam-Level:
 X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 589CFC43381
-	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Mar 2019 16:34:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B2485C43381
+	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Mar 2019 19:52:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 272CC2186A
-	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Mar 2019 16:34:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 85E12218AC
+	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Mar 2019 19:52:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726629AbfCPQeJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 16 Mar 2019 12:34:09 -0400
-Received: from syrinx.knorrie.org ([82.94.188.77]:36154 "EHLO
+        id S1726629AbfCPTwB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 16 Mar 2019 15:52:01 -0400
+Received: from syrinx.knorrie.org ([82.94.188.77]:40224 "EHLO
         syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726105AbfCPQeI (ORCPT
+        with ESMTP id S1726376AbfCPTwA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 16 Mar 2019 12:34:08 -0400
-Received: from [172.20.10.4] (unknown [62.140.132.62])
+        Sat, 16 Mar 2019 15:52:00 -0400
+Received: from [IPv6:2001:980:4a41:fb::12] (unknown [IPv6:2001:980:4a41:fb::12])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by syrinx.knorrie.org (Postfix) with ESMTPSA id 52D2D3EA31BAB;
-        Sat, 16 Mar 2019 17:34:06 +0100 (CET)
+        by syrinx.knorrie.org (Postfix) with ESMTPSA id 048FB3EA57B0D;
+        Sat, 16 Mar 2019 20:51:57 +0100 (CET)
 Subject: Re: Balancing raid5 after adding another disk does not move/use any
  data on it
+From:   Hans van Kranenburg <hans@knorrie.org>
 To:     Andrei Borzenkov <arvidjaar@gmail.com>,
         Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
         =?UTF-8?Q?Jakub_Hus=c3=a1k?= <jakub@husak.pro>
@@ -33,7 +34,7 @@ References: <7a713010-5db6-2627-2593-8e13092868b1@husak.pro>
  <20190315180123.GJ9995@hungrycats.org>
  <3dce71e1-6caa-59ad-1765-6a29c7dd774f@knorrie.org>
  <aa4fc47e-2eee-de11-c73f-00d947f96dbf@gmail.com>
-From:   Hans van Kranenburg <hans@knorrie.org>
+ <fa3b54fb-7473-810a-6ea6-8e5709d4e8e4@knorrie.org>
 Openpgp: preference=signencrypt
 Autocrypt: addr=hans@knorrie.org; prefer-encrypt=mutual; keydata=
  mQINBFo2pooBEADwTBe/lrCa78zuhVkmpvuN+pXPWHkYs0LuAgJrOsOKhxLkYXn6Pn7e3xm+
@@ -109,92 +110,92 @@ Autocrypt: addr=hans@knorrie.org; prefer-encrypt=mutual; keydata=
  vT3RH0/CpPJgveWV5xDOKuhD8j5l7FME+t2RWP+gyLid6dE0C7J03ir90PlTEkMEHEzyJMPt
  OhO05Phy+d51WPTo1VSKxhL4bsWddHLfQoXW8RQ388Q69JG4m+JhNH/XvWe3aQFpYP+GZuzO
  hkMez0lHCaVOOLBSKHkAHh9i0/pH+/3hfEa4NsoHCpyy
-Message-ID: <fa3b54fb-7473-810a-6ea6-8e5709d4e8e4@knorrie.org>
-Date:   Sat, 16 Mar 2019 17:34:07 +0100
+Message-ID: <655523fa-1f32-3df2-bd10-29364447e3c9@knorrie.org>
+Date:   Sat, 16 Mar 2019 20:51:57 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.0
+ Thunderbird/60.3.0
 MIME-Version: 1.0
-In-Reply-To: <aa4fc47e-2eee-de11-c73f-00d947f96dbf@gmail.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <fa3b54fb-7473-810a-6ea6-8e5709d4e8e4@knorrie.org>
+Content-Type: multipart/mixed;
+ boundary="------------4555357EA0CA6D31814B5877"
 Content-Language: en_US
-Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 3/16/19 7:07 AM, Andrei Borzenkov wrote:
-> 15.03.2019 23:31, Hans van Kranenburg пишет:
-> ...
->>>
->>>>> If so, shouldn't it be really balancing (spreading) the data among all
->>>>> the drives to use all the IOPS capacity, even when the raid5 redundancy
->>>>> constraint is currently satisfied?
->>>
->>> btrfs divides the disks into chunks first, then spreads the data across
->>> the chunks.  The chunk allocation behavior spreads chunks across all the
->>> disks.  When you are adding a disk to raid5, you have to redistribute all
->>> the old data across all the disks to get balanced IOPS and space usage,
->>> hence the full balance requirement.
->>>
->>> If you don't do a full balance, it will eventually allocate data on
->>> all disks, but it will run out of space on sdb, sdc, and sde first,
->>> and then be unable to use the remaining 2TB+ on sdd.
->>
->> Also, if you have a lot of empty space in the current allocations, btrfs
->> balance has the tendency to first start packing everything together
->> before allocating new (4 disk wide) block groups.
->>
->> This is annoying, because it can result in moving the same data multiple
->> times during balance (into empty space of another existing block group,
->> and then when that one has its turn again etc).
->>> So you want to get rid of empty space in existing block groups as soon
->> as possible. btrfs-balance-least-used can do this, (also an example from
->> python-btrfs), by doing them in order of most empty one first.
->>
+This is a multi-part message in MIME format.
+--------------4555357EA0CA6D31814B5877
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+On 3/16/19 5:34 PM, Hans van Kranenburg wrote:
+> On 3/16/19 7:07 AM, Andrei Borzenkov wrote:
+>> [...]
+>> This thread actually made me wonder - is there any guarantee (or even
+>> tentative promise) about RAID stripe width from btrfs at all? Is it
+>> possible that RAID5 degrades to mirror by itself due to unfortunate
+>> space distribution?
 > 
-> But if I understand the above correctly it will still attempt to move
-> data in next most empty chunks first.
+> For RAID5, minimum is two disks. So yes, if you add two disks and don't
+> forcibly rewrite all your data, it will happily start adding two-disk
+> RAID5 block groups if the other disks are full.
 
-Balance feeds data back to the fs as new writes, so it will try filling
-up existing block groups with lowest vaddr first (when running nossd/ssd
-mode). Newly added block groups (/chunks) always get a new vaddr which
-is higher than everything else, so they're chosen last, which means when
-all lower numbered ones are packed with data and we keep removing those
-ones.
+Attached an example that shows a list of used physical and virtual space
+ordered by chunk type (== block group flags) and also num_stripes (how
+many disks (or, dev extents)) are used. The btrfs-usage-report does not
+add this level of detail. (But maybe it would be interesting to add, but
+then I would add it into the btrfs.fs_usage code...)
 
-> Is there any way to force
-> allocation of new chunks? Or, better, force usage of chunks with given
-> stripe width as balance target?
+For the RAID56 with a big mess of different block groups with different
+"horizontal size" this will be more interesting than what it shows here
+as test:
 
-Nope. Or, the other way, blacklisting everything that you know you want
-to get rid of. Currently that's not possible. It would be knobs that
-influence the extent allocator (e.g. prefer writing into chunk with
-highest num_stripes first).
+-# ./chunks_stripes_report.py /
+flags            num_stripes     physical      virtual
+-----            -----------     --------      -------
+DATA                       1    759.00GiB    759.00GiB
+SYSTEM|DUP                 2     64.00MiB     32.00MiB
+METADATA|DUP               2      7.00GiB      3.50GiB
 
-Conversion has a similar problem. For every chunk that gets converted,
-you get a new empty one with the new target profile, and it's quite
-possible that you're first rewriting data a few times, (depending on how
-compacted everything already was) into the existing old profile chunks
-before actually starting to use the new profile.
-
-Having a lot of empty space in existing block groups is something that
-mainly happens after removing a lot of data. In that case, if you care,
-compacting everything together with least amount of data movement is why
-I added the balance-least-first algorithm.
-
-Since we're not using the "cluster" allocator for data any more (the
-ssd-option related change in 4.14), normal operation with equal amounts
-of removing and adding data all the time do not result in overallocation
-any more.
-
-> This thread actually made me wonder - is there any guarantee (or even
-> tentative promise) about RAID stripe width from btrfs at all? Is it
-> possible that RAID5 degrades to mirror by itself due to unfortunate
-> space distribution?
-
-For RAID5, minimum is two disks. So yes, if you add two disks and don't
-forcibly rewrite all your data, it will happily start adding two-disk
-RAID5 block groups if the other disks are full.
 
 Hans
+
+--------------4555357EA0CA6D31814B5877
+Content-Type: text/x-python;
+ name="chunks_stripes_report.py"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: attachment;
+ filename="chunks_stripes_report.py"
+
+#!/usr/bin/python3
+
+import btrfs
+from collections import defaultdict, Counter
+
+physical_bytes =3D defaultdict(Counter)
+virtual_bytes =3D defaultdict(Counter)
+
+with btrfs.FileSystem('/') as fs:
+    for chunk in fs.chunks():
+        physical_bytes[chunk.type][chunk.num_stripes] +=3D \
+           btrfs.volumes.chunk_to_dev_extent_length(chunk) * chunk.num_st=
+ripes
+        virtual_bytes[chunk.type][chunk.num_stripes] +=3D chunk.length
+
+report_lines =3D [
+    ('flags', 'num_stripes', 'physical', 'virtual'),
+    ('-----', '-----------', '--------', '-------'),
+]
+for flags, counter in physical_bytes.items():
+    for num_stripes, pbytes in counter.items():
+        report_lines.append((
+            btrfs.utils.block_group_flags_str(flags),
+            num_stripes,
+            btrfs.utils.pretty_size(pbytes),
+            btrfs.utils.pretty_size(virtual_bytes[flags][num_stripes]),
+        ))
+for report_line in report_lines:
+    print("{: <16} {: >11} {: >12} {: >12}".format(*report_line))
+
+--------------4555357EA0CA6D31814B5877--

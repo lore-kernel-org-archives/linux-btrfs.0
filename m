@@ -5,197 +5,190 @@ X-Spam-Level:
 X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B2485C43381
-	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Mar 2019 19:52:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 018ABC43381
+	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Mar 2019 22:11:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 85E12218AC
-	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Mar 2019 19:52:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C5DFA218AC
+	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Mar 2019 22:11:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726629AbfCPTwB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 16 Mar 2019 15:52:01 -0400
-Received: from syrinx.knorrie.org ([82.94.188.77]:40224 "EHLO
-        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726376AbfCPTwA (ORCPT
+        id S1726616AbfCPWLT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 16 Mar 2019 18:11:19 -0400
+Received: from mailgw-02.dd24.net ([193.46.215.43]:40912 "EHLO
+        mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726562AbfCPWLT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 16 Mar 2019 15:52:00 -0400
-Received: from [IPv6:2001:980:4a41:fb::12] (unknown [IPv6:2001:980:4a41:fb::12])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        Sat, 16 Mar 2019 18:11:19 -0400
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.26])
+        by mailgw-02.dd24.net (Postfix) with ESMTP id 3305F5FDB5;
+        Sat, 16 Mar 2019 22:11:16 +0000 (UTC)
+X-Virus-Scanned: Debian amavisd-new at
+        mailpolicy-01.live.igb.homer.key-systems.net
+Received: from smtp.dd24.net ([192.168.1.36])
+        by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
+        with ESMTP id woUTcG1uoZYB; Sat, 16 Mar 2019 22:11:13 +0000 (UTC)
+Received: from heisenberg.fritz.box (ppp-82-135-82-31.dynamic.mnet-online.de [82.135.82.31])
+        (using TLSv1.2 with cipher DHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by syrinx.knorrie.org (Postfix) with ESMTPSA id 048FB3EA57B0D;
-        Sat, 16 Mar 2019 20:51:57 +0100 (CET)
-Subject: Re: Balancing raid5 after adding another disk does not move/use any
- data on it
-From:   Hans van Kranenburg <hans@knorrie.org>
-To:     Andrei Borzenkov <arvidjaar@gmail.com>,
-        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
-        =?UTF-8?Q?Jakub_Hus=c3=a1k?= <jakub@husak.pro>
-Cc:     linux-btrfs@vger.kernel.org
-References: <7a713010-5db6-2627-2593-8e13092868b1@husak.pro>
- <20190315180123.GJ9995@hungrycats.org>
- <3dce71e1-6caa-59ad-1765-6a29c7dd774f@knorrie.org>
- <aa4fc47e-2eee-de11-c73f-00d947f96dbf@gmail.com>
- <fa3b54fb-7473-810a-6ea6-8e5709d4e8e4@knorrie.org>
-Openpgp: preference=signencrypt
-Autocrypt: addr=hans@knorrie.org; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <655523fa-1f32-3df2-bd10-29364447e3c9@knorrie.org>
-Date:   Sat, 16 Mar 2019 20:51:57 +0100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.3.0
+        by smtp.dd24.net (Postfix) with ESMTPSA;
+        Sat, 16 Mar 2019 22:11:13 +0000 (UTC)
+Message-ID: <303507e634c36af048ac36c7233c3b2af8311b46.camel@scientia.net>
+Subject: Re: Reproducer for "compressed data + hole data corruption bug,
+ 2018 edition" still works on 4.20.7
+From:   Christoph Anton Mitterer <calestyo@scientia.net>
+To:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Date:   Sat, 16 Mar 2019 23:11:10 +0100
+In-Reply-To: <20190315052827.GH23918@hungrycats.org>
+References: <CAL3q7H6eTTw-iTHiQLcJHa5iRRspWxQpfyTQRU1SmcxBqXSppg@mail.gmail.com>
+         <20190212181328.GB23918@hungrycats.org>
+         <CAL3q7H4k=N=0Cv8hYAZkfTfaG8XJgG1KzT5mA_4XnutxGFc8DA@mail.gmail.com>
+         <CAL3q7H6YShEBKDTDZ7_qBoLDMgihP_8NYee_60-LUqd6sF5xZQ@mail.gmail.com>
+         <CAL3q7H6WSe_C7_+D0x1_Z+KdK=k+iM-t2J4pQSO32ZsY4AEZ=Q@mail.gmail.com>
+         <95e4d9825c2565473184765c4d77ae0015d01580.camel@scientia.net>
+         <20190215054031.GC9995@hungrycats.org>
+         <f9fddae4bc3d59e539b7bc56ae75a5f04a165682.camel@scientia.net>
+         <20190307200712.GG23918@hungrycats.org>
+         <beebed47702d783e00d3478f217ffc646d47bb92.camel@scientia.net>
+         <20190315052827.GH23918@hungrycats.org>
+Content-Type: text/plain; charset="UTF-8"
+User-Agent: Evolution 3.30.5-1 
 MIME-Version: 1.0
-In-Reply-To: <fa3b54fb-7473-810a-6ea6-8e5709d4e8e4@knorrie.org>
-Content-Type: multipart/mixed;
- boundary="------------4555357EA0CA6D31814B5877"
-Content-Language: en_US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is a multi-part message in MIME format.
---------------4555357EA0CA6D31814B5877
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: 8bit
+On Fri, 2019-03-15 at 01:28 -0400, Zygo Blaxell wrote:
+> But maybe there should be something like a btrfs-announce list,
+> > i.e. a
+> > low volume mailing list, in which (interested) users are informed
+> > about
+> > more grave issues.
+> > …
+> I don't know if it would be a low-volume list...every kernel release
+> includes fixes for _some_ exotic corner case.
 
-On 3/16/19 5:34 PM, Hans van Kranenburg wrote:
-> On 3/16/19 7:07 AM, Andrei Borzenkov wrote:
->> [...]
->> This thread actually made me wonder - is there any guarantee (or even
->> tentative promise) about RAID stripe width from btrfs at all? Is it
->> possible that RAID5 degrades to mirror by itself due to unfortunate
->> space distribution?
+Well this one *may* be exotic for many users, but we have at least the
+use case of qemu which seems to be not that exotic at all.
+
+And the ones you outline below seem even more common?
+
+
+Also the other means for end-users to know whether something is stable
+or not like https://btrfs.wiki.kernel.org/index.php/Status don't seem
+to really work out.
+
+There is a known silent data corruption bug which seems so far only
+fixed in 5.1rc* ... and the page still says stable since 4.14.
+Even know with the fix, one should probably need to wait a year or so
+until one could mark it stable again if nothing had been found by then.
+
+
+
+> > What about the direct IO issues that may be still present and which
+> > you've mentioned above... is this used somewhere per default /
+> > under
+> > normal circumstances?
 > 
-> For RAID5, minimum is two disks. So yes, if you add two disks and don't
-> forcibly rewrite all your data, it will happily start adding two-disk
-> RAID5 block groups if the other disks are full.
+> Direct IO is an odd case because it's not all that well understood
+> what the correct behavior is.  You can't prevent the kernel from
+> making
+> copies of data and also expect full data integrity and also lock-free
+> performance, all at the same time.  Pick any two, and pay for it with
+> losses in the third.
+> 
+> The bug fixes here are more along the lines of "OK so you're using
+> direct
+> IO which means you've basically admitted you don't care about *your*
+> data,
+> let's try not to corrupt *other* data on the filesystem at the same
+> time."
 
-Attached an example that shows a list of used physical and virtual space
-ordered by chunk type (== block group flags) and also num_stripes (how
-many disks (or, dev extents)) are used. The btrfs-usage-report does not
-add this level of detail. (But maybe it would be interesting to add, but
-then I would add it into the btrfs.fs_usage code...)
-
-For the RAID56 with a big mess of different block groups with different
-"horizontal size" this will be more interesting than what it shows here
-as test:
-
--# ./chunks_stripes_report.py /
-flags            num_stripes     physical      virtual
------            -----------     --------      -------
-DATA                       1    759.00GiB    759.00GiB
-SYSTEM|DUP                 2     64.00MiB     32.00MiB
-METADATA|DUP               2      7.00GiB      3.50GiB
+So... if btrfs allows for direct IO... and if this isn't stable in some
+situations,... what can one do about it? I mean there doesn't seem to
+be an option to disallow it... and any program can do O_DIRECT (without
+even knowing btrfs is below).
 
 
-Hans
 
---------------4555357EA0CA6D31814B5877
-Content-Type: text/x-python;
- name="chunks_stripes_report.py"
-Content-Transfer-Encoding: quoted-printable
-Content-Disposition: attachment;
- filename="chunks_stripes_report.py"
 
-#!/usr/bin/python3
+Guess I have to go deeper down the rabbit hole now for the other
+compressions bugs...
 
-import btrfs
-from collections import defaultdict, Counter
 
-physical_bytes =3D defaultdict(Counter)
-virtual_bytes =3D defaultdict(Counter)
+> I found the 2017 compression bug in a lot of digital photographs.
 
-with btrfs.FileSystem('/') as fs:
-    for chunk in fs.chunks():
-        physical_bytes[chunk.type][chunk.num_stripes] +=3D \
-           btrfs.volumes.chunk_to_dev_extent_length(chunk) * chunk.num_st=
-ripes
-        virtual_bytes[chunk.type][chunk.num_stripes] +=3D chunk.length
+Is there any way (apart from having correct checksums) to find out
+whether a file was affected by the 2017-bug?
+Like, I don't know,.. looking for large chunks of zeros?
 
-report_lines =3D [
-    ('flags', 'num_stripes', 'physical', 'virtual'),
-    ('-----', '-----------', '--------', '-------'),
-]
-for flags, counter in physical_bytes.items():
-    for num_stripes, pbytes in counter.items():
-        report_lines.append((
-            btrfs.utils.block_group_flags_str(flags),
-            num_stripes,
-            btrfs.utils.pretty_size(pbytes),
-            btrfs.utils.pretty_size(virtual_bytes[flags][num_stripes]),
-        ))
-for report_line in report_lines:
-    print("{: <16} {: >11} {: >12} {: >12}".format(*report_line))
 
---------------4555357EA0CA6D31814B5877--
+And is there any more detailed information available on the 2017-bug,
+in the sense under which occasions it occurred?
+
+Like also only on reads (which would mean again that I'd be mostly
+safe, because my checksums should mostly catch this)?
+
+Or just on dedupe or hole punching? Or did it only affect sparse files
+(and there only the holes (blocks of zeros) as in your camera JPG
+example)?
+
+
+> It turns out that several popular cameras (including some of the ones
+> I
+> own) put a big chunk of zeros near the beginnings of JPG files, and
+> when
+> rsync copies those it will insert a hole instead of copying the
+> zeros.
+
+Many other types of files may have such bigger chunks of zeros to...
+basically everything that leaves place for meta-data.
+
+
+> The 2017 bug affected "ordinary" holes so standard tools like cp and
+> rsync could trigger it.
+
+AFAIU, both cp and rsync (--sparse) don't create spares files actively
+per default,... cp (per default) only creates sparse files when it
+detects the source file to be already sparse.
+Same seems to be the case for tar, which only stores a file sparse
+(inside the archive) when --sparse is used.
+
+So would one be safe from the 2017 bug if one haven't had sparse files
+and not activated the sparse in any of these tools?
+
+
+>   Most photo tools ignore this data completely,
+> so when garbage appears there, nobody notices.
+
+So the 2017-bug meant that areas that should be zero were filled with
+garbage but everything als was preserved correclty
+
+
+
+> I don't think I found an application that cared about the 2017 bug at
+> all.
+
+Well for me it would be still helpful to know how to find out whether I
+might have been affected or not... I do have some really old backups so
+recovery would be possible in many cases.
+
+
+
+> The 2018 bug is a different story--when it hits, it's obvious, and
+> ordinary application things break
+
+Which one to you mean now? The one recently fixed on
+reads+holepunching/dedupe/clone? Cause I thought that one was not not
+that obvious as it was silent...
+
+
+Anything still known about the even older compression related
+corruption bugs that Filipe mentioned, in the sense when they occurred
+and how to find out whether one was affected?
+
+
+Thanks,
+Chris.
+

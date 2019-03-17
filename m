@@ -3,106 +3,177 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6E386C43381
-	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Mar 2019 20:52:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7DDBCC43381
+	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Mar 2019 22:53:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 43FDE20857
-	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Mar 2019 20:52:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4DB2B20857
+	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Mar 2019 22:53:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727483AbfCQUwX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 17 Mar 2019 16:52:23 -0400
-Received: from europa.tomatom.cz ([87.236.196.214]:54720 "EHLO mail.tomatom.cz"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727417AbfCQUwV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 17 Mar 2019 16:52:21 -0400
-Received: from localhost (localhost [127.0.0.1])
-        by mail.tomatom.cz (Postfix) with ESMTP id 478A412902C
-        for <linux-btrfs@vger.kernel.org>; Sun, 17 Mar 2019 20:54:25 +0000 (UTC)
-X-Virus-Scanned: Debian amavisd-new at mail.tomatom.cz
-Received: from mail.tomatom.cz ([127.0.0.1])
-        by localhost (mail.tomatom.cz [127.0.0.1]) (amavisd-new, port 10024)
-        with ESMTP id KxNyE9ewZDaF for <linux-btrfs@vger.kernel.org>;
-        Sun, 17 Mar 2019 20:54:23 +0000 (UTC)
-Received: from authenticated-user (mail.tomatom.cz [127.0.0.1])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        id S1727102AbfCQWxt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 17 Mar 2019 18:53:49 -0400
+Received: from syrinx.knorrie.org ([82.94.188.77]:56076 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726735AbfCQWxs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 17 Mar 2019 18:53:48 -0400
+Received: from [IPv6:2001:980:4a41:fb::12] (unknown [IPv6:2001:980:4a41:fb::12])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        (Authenticated sender: jakub@husak.pro)
-        by mail.tomatom.cz (Postfix) with ESMTPSA id DE6FA129025
-        for <linux-btrfs@vger.kernel.org>; Sun, 17 Mar 2019 20:54:22 +0000 (UTC)
-Authentication-Results: mail.tomatom.cz; dmarc=none header.from=husak.pro
-Authentication-Results: mail.tomatom.cz; dkim=none reason="no signature";
-        dkim-adsp=none (unprotected policy); dkim-atps=neutral
+        by syrinx.knorrie.org (Postfix) with ESMTPSA id 3A24F3EC90C94;
+        Sun, 17 Mar 2019 23:53:46 +0100 (CET)
 Subject: Re: Balancing raid5 after adding another disk does not move/use any
  data on it
-To:     linux-btrfs@vger.kernel.org
+To:     =?UTF-8?Q?Jakub_Hus=c3=a1k?= <jakub@husak.pro>,
+        linux-btrfs@vger.kernel.org
 References: <7a713010-5db6-2627-2593-8e13092868b1@husak.pro>
  <20190315180123.GJ9995@hungrycats.org>
  <3dce71e1-6caa-59ad-1765-6a29c7dd774f@knorrie.org>
  <aa4fc47e-2eee-de11-c73f-00d947f96dbf@gmail.com>
  <fa3b54fb-7473-810a-6ea6-8e5709d4e8e4@knorrie.org>
  <655523fa-1f32-3df2-bd10-29364447e3c9@knorrie.org>
-From:   =?UTF-8?Q?Jakub_Hus=c3=a1k?= <jakub@husak.pro>
-Message-ID: <f3082d89-ee37-b421-0bb3-ff2e28cc31af@husak.pro>
-Date:   Sun, 17 Mar 2019 21:52:14 +0100
+ <f3082d89-ee37-b421-0bb3-ff2e28cc31af@husak.pro>
+From:   Hans van Kranenburg <hans@knorrie.org>
+Openpgp: preference=signencrypt
+Autocrypt: addr=hans@knorrie.org; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <6a8b2244-46c1-7754-145c-b7a71f1f1b73@knorrie.org>
+Date:   Sun, 17 Mar 2019 23:53:45 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.3.0
 MIME-Version: 1.0
-In-Reply-To: <655523fa-1f32-3df2-bd10-29364447e3c9@knorrie.org>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <f3082d89-ee37-b421-0bb3-ff2e28cc31af@husak.pro>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en_US
 Content-Transfer-Encoding: 8bit
-Content-Language: en-US
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is a great tool Hans!  This kind of overview should be a part of 
-btrfs-progs.
+Hi,
 
-Mine looks currently like this, I have a few more days to go with 
-rebalancing :)
+On 3/17/19 9:52 PM, Jakub Husák wrote:
+> This is a great tool Hans!  This kind of overview should be a part of
+> btrfs-progs.
 
-flags            num_stripes     physical      virtual
------            -----------     --------      -------
-DATA|RAID5                 3      5.29TiB      3.53TiB
-DATA|RAID5                 4    980.00GiB    735.00GiB
-SYSTEM|RAID1               2    128.00MiB     64.00MiB
-METADATA|RAID1             2    314.00GiB    157.00GiB
+Thing is... this seems super useful because it's super useful for the
+exact thing you are currently doing and trying to find out.
 
-Btw, I checked the other utils in your python-btrfs and it seems that 
-they are, sadly, not installed with simple pip install, which would be 
-great. Maybe it needs a few lines in setup.py (i'm not too familiar with 
-python packaging)?
+Fun thing is, there are a thousand other things in other scenarios that
+are interesting to know. Should btrfs-progs implement hardcoded
+solutions for all of them? Or cover 80% of what's needed with 20% of effort?
 
+The main reason why I started writing the python-btrfs library is that
+it allows me to just quickly write a few lines of code to get some
+information, exactly for what I want to know at that point.
 
-On 16. 03. 19 20:51, Hans van Kranenburg wrote:
-> On 3/16/19 5:34 PM, Hans van Kranenburg wrote:
->> On 3/16/19 7:07 AM, Andrei Borzenkov wrote:
->>> [...]
->>> This thread actually made me wonder - is there any guarantee (or even
->>> tentative promise) about RAID stripe width from btrfs at all? Is it
->>> possible that RAID5 degrades to mirror by itself due to unfortunate
->>> space distribution?
->> For RAID5, minimum is two disks. So yes, if you add two disks and don't
->> forcibly rewrite all your data, it will happily start adding two-disk
->> RAID5 block groups if the other disks are full.
-> Attached an example that shows a list of used physical and virtual space
-> ordered by chunk type (== block group flags) and also num_stripes (how
-> many disks (or, dev extents)) are used. The btrfs-usage-report does not
-> add this level of detail. (But maybe it would be interesting to add, but
-> then I would add it into the btrfs.fs_usage code...)
->
-> For the RAID56 with a big mess of different block groups with different
-> "horizontal size" this will be more interesting than what it shows here
-> as test:
->
-> -# ./chunks_stripes_report.py /
-> flags            num_stripes     physical      virtual
-> -----            -----------     --------      -------
-> DATA                       1    759.00GiB    759.00GiB
-> SYSTEM|DUP                 2     64.00MiB     32.00MiB
-> METADATA|DUP               2      7.00GiB      3.50GiB
->
->
-> Hans
+In the previous example, writing the table with output is already more
+than three times as many lines of code than getting the actual info,
+which is a simple 'for chunk in fs.chunks()' and then boom, you have a
+lot of info to do something with.
+
+https://python-btrfs.readthedocs.io/en/stable/btrfs.html#btrfs.ctree.Chunk
+
+> Mine looks currently like this, I have a few more days to go with
+> rebalancing :)
+> 
+> flags            num_stripes     physical      virtual
+> -----            -----------     --------      -------
+> DATA|RAID5                 3      5.29TiB      3.53TiB
+> DATA|RAID5                 4    980.00GiB    735.00GiB
+> SYSTEM|RAID1               2    128.00MiB     64.00MiB
+> METADATA|RAID1             2    314.00GiB    157.00GiB
+
+Ha, nice!
+
+> Btw, I checked the other utils in your python-btrfs and it seems that
+> they are, sadly, not installed with simple pip install, which would be
+> great. Maybe it needs a few lines in setup.py (i'm not too familiar with
+> python packaging)?
+
+Can you share how you're using this?
+
+Personally, I never use pip for anything, so I might not be putting in
+there what users expect. My latest thought about this was that users use
+pip to have some library dependency for something else, so they don't
+need standalone programs and example scripts?
+
+I mainly have debian packages installed everywhere, and otherwise I'm
+doing a git clone of the project from github and mess around in there,
+with added benefit that I can view history on all files.
+
+Hans

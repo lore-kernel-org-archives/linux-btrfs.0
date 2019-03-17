@@ -2,124 +2,107 @@ Return-Path: <SRS0=swP/=RU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5AC6DC43381
-	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Mar 2019 18:57:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6E386C43381
+	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Mar 2019 20:52:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1333E20872
-	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Mar 2019 18:57:35 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="dbV2H+N5"
+	by mail.kernel.org (Postfix) with ESMTP id 43FDE20857
+	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Mar 2019 20:52:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726677AbfCQStn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 17 Mar 2019 14:49:43 -0400
-Received: from smtp-18.italiaonline.it ([213.209.10.18]:59623 "EHLO libero.it"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726452AbfCQStn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 17 Mar 2019 14:49:43 -0400
-X-Greylist: delayed 488 seconds by postgrey-1.27 at vger.kernel.org; Sun, 17 Mar 2019 14:49:41 EDT
-Received: from venice.bhome ([94.38.191.48])
-        by smtp-18.iol.local with ESMTPA
-        id 5aixhekWMccUp5aixhY7oV; Sun, 17 Mar 2019 19:41:31 +0100
-x-libjamoibt: 1601
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
-        t=1552848091; bh=Vb+cXb2dfjCwNOn178TeUad1iJhYUb8FhO5yLlqjM+8=;
-        h=Reply-To:Subject:To:References:From:Date:In-Reply-To;
-        b=dbV2H+N59SIeIsEghMbg0Wu61iUQSTfSauDcXxiS1bFOfUB3V7pO/Lln2ZGjPWEaE
-         +I4kNB/m8xDdESGu+NtlqelNBRzfOJ4256MRSjwf9vgj6A65ATvDoTYeVQFYskEOKT
-         uOOBsGJHd9z1rKx6n17ZBPRmatWmL0AmFiAzs9CSzmem4xYvYwbFQ68xUaF/Vev+fF
-         5ZMHmE0ZyMn+KfyVIOIQ8Ldo91KAAtAComRsMzj6UglwU/1SW325pDoMX5CPlChkD3
-         n2PlFu14IWriVO5xzpde8q/8j1M+JCuUUboyqbmBgdnTS3DQcY3vuafqh0kWLos1As
-         SVQ66nPEAScEQ==
-X-CNFS-Analysis: v=2.3 cv=QpiPIm6d c=1 sm=1 tr=0
- a=LSmNtxrrF1VkTiQg1w8xYQ==:117 a=LSmNtxrrF1VkTiQg1w8xYQ==:17
- a=jpOVt7BSZ2e4Z31A5e1TngXxSK0=:19 a=IkcTkHD0fZMA:10 a=cHZ-0qh9iHtLFCKCVwUA:9
- a=QEXdDO2ut3YA:10
-Reply-To: kreijack@inwind.it
-Subject: Re: [PATCH 1/1] btrfs-progs: fi usage: implement raid56
-To:     stephane_btrfs@lesimple.fr, linux-btrfs@vger.kernel.org
-References: <20190317125150.26265-1-stephane_btrfs@lesimple.fr>
- <20190317125150.26265-2-stephane_btrfs@lesimple.fr>
-From:   Goffredo Baroncelli <kreijack@libero.it>
-Openpgp: preference=signencrypt
-Autocrypt: addr=kreijack@libero.it; keydata=
- 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
-Message-ID: <8679eb74-8c98-d54d-f69e-821a6eba1cd9@libero.it>
-Date:   Sun, 17 Mar 2019 19:41:30 +0100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.1
+        id S1727483AbfCQUwX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 17 Mar 2019 16:52:23 -0400
+Received: from europa.tomatom.cz ([87.236.196.214]:54720 "EHLO mail.tomatom.cz"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727417AbfCQUwV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 17 Mar 2019 16:52:21 -0400
+Received: from localhost (localhost [127.0.0.1])
+        by mail.tomatom.cz (Postfix) with ESMTP id 478A412902C
+        for <linux-btrfs@vger.kernel.org>; Sun, 17 Mar 2019 20:54:25 +0000 (UTC)
+X-Virus-Scanned: Debian amavisd-new at mail.tomatom.cz
+Received: from mail.tomatom.cz ([127.0.0.1])
+        by localhost (mail.tomatom.cz [127.0.0.1]) (amavisd-new, port 10024)
+        with ESMTP id KxNyE9ewZDaF for <linux-btrfs@vger.kernel.org>;
+        Sun, 17 Mar 2019 20:54:23 +0000 (UTC)
+Received: from authenticated-user (mail.tomatom.cz [127.0.0.1])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        (Authenticated sender: jakub@husak.pro)
+        by mail.tomatom.cz (Postfix) with ESMTPSA id DE6FA129025
+        for <linux-btrfs@vger.kernel.org>; Sun, 17 Mar 2019 20:54:22 +0000 (UTC)
+Authentication-Results: mail.tomatom.cz; dmarc=none header.from=husak.pro
+Authentication-Results: mail.tomatom.cz; dkim=none reason="no signature";
+        dkim-adsp=none (unprotected policy); dkim-atps=neutral
+Subject: Re: Balancing raid5 after adding another disk does not move/use any
+ data on it
+To:     linux-btrfs@vger.kernel.org
+References: <7a713010-5db6-2627-2593-8e13092868b1@husak.pro>
+ <20190315180123.GJ9995@hungrycats.org>
+ <3dce71e1-6caa-59ad-1765-6a29c7dd774f@knorrie.org>
+ <aa4fc47e-2eee-de11-c73f-00d947f96dbf@gmail.com>
+ <fa3b54fb-7473-810a-6ea6-8e5709d4e8e4@knorrie.org>
+ <655523fa-1f32-3df2-bd10-29364447e3c9@knorrie.org>
+From:   =?UTF-8?Q?Jakub_Hus=c3=a1k?= <jakub@husak.pro>
+Message-ID: <f3082d89-ee37-b421-0bb3-ff2e28cc31af@husak.pro>
+Date:   Sun, 17 Mar 2019 21:52:14 +0100
 MIME-Version: 1.0
-In-Reply-To: <20190317125150.26265-2-stephane_btrfs@lesimple.fr>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <655523fa-1f32-3df2-bd10-29364447e3c9@knorrie.org>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 8bit
 Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-CMAE-Envelope: MS4wfEorDEJOuMQTkpWczp615UMq4rWwlO27FAHiTyWxWMZLiOXfcxJaCo7lPDTOPSbe6oomJDTFIy8vqwYgVr4taPJHGGAvyh7YSgFgJYD+pL0yJsv5uO4w
- xdnePHwntG+ZIv6bt4oQIUTHdKltzilA8CoffZtJ9I++z91n9fxjc/b0KQlBFKJinlGR6R8L+gerOA3WuhN5Rnm5Bqh0nq4X7H0=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 17/03/2019 13.51, stephane_btrfs@lesimple.fr wrote:
-[...]
-> -		if (!ratio)
-> -			warning("RAID56 detected, not implemented");
-> -
+This is a great tool Hans!  This kind of overview should be a part of 
+btrfs-progs.
 
-IIRC one of the problem which lead to this code was that the not root user cannot
-access to chunkinfo. So the (regular) user should be warned about that: the printed 
-info may be not correct.
+Mine looks currently like this, I have a few more days to go with 
+rebalancing :)
 
-[...]
+flags            num_stripes     physical      virtual
+-----            -----------     --------      -------
+DATA|RAID5                 3      5.29TiB      3.53TiB
+DATA|RAID5                 4    980.00GiB    735.00GiB
+SYSTEM|RAID1               2    128.00MiB     64.00MiB
+METADATA|RAID1             2    314.00GiB    157.00GiB
 
-BR
-G.Baroncelli
+Btw, I checked the other utils in your python-btrfs and it seems that 
+they are, sadly, not installed with simple pip install, which would be 
+great. Maybe it needs a few lines in setup.py (i'm not too familiar with 
+python packaging)?
 
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+
+On 16. 03. 19 20:51, Hans van Kranenburg wrote:
+> On 3/16/19 5:34 PM, Hans van Kranenburg wrote:
+>> On 3/16/19 7:07 AM, Andrei Borzenkov wrote:
+>>> [...]
+>>> This thread actually made me wonder - is there any guarantee (or even
+>>> tentative promise) about RAID stripe width from btrfs at all? Is it
+>>> possible that RAID5 degrades to mirror by itself due to unfortunate
+>>> space distribution?
+>> For RAID5, minimum is two disks. So yes, if you add two disks and don't
+>> forcibly rewrite all your data, it will happily start adding two-disk
+>> RAID5 block groups if the other disks are full.
+> Attached an example that shows a list of used physical and virtual space
+> ordered by chunk type (== block group flags) and also num_stripes (how
+> many disks (or, dev extents)) are used. The btrfs-usage-report does not
+> add this level of detail. (But maybe it would be interesting to add, but
+> then I would add it into the btrfs.fs_usage code...)
+>
+> For the RAID56 with a big mess of different block groups with different
+> "horizontal size" this will be more interesting than what it shows here
+> as test:
+>
+> -# ./chunks_stripes_report.py /
+> flags            num_stripes     physical      virtual
+> -----            -----------     --------      -------
+> DATA                       1    759.00GiB    759.00GiB
+> SYSTEM|DUP                 2     64.00MiB     32.00MiB
+> METADATA|DUP               2      7.00GiB      3.50GiB
+>
+>
+> Hans

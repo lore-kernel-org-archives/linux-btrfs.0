@@ -2,254 +2,124 @@ Return-Path: <SRS0=swP/=RU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.7 required=3.0 tests=DKIM_ADSP_ALL,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AE821C43381
-	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Mar 2019 12:54:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5AC6DC43381
+	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Mar 2019 18:57:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 699ED21019
-	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Mar 2019 12:54:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1333E20872
+	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Mar 2019 18:57:35 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (1024-bit key) header.d=lesimple.fr header.i=@lesimple.fr header.b="eGbVrIC3"
+	dkim=pass (2048-bit key) header.d=libero.it header.i=@libero.it header.b="dbV2H+N5"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726855AbfCQMyh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 17 Mar 2019 08:54:37 -0400
-Received: from ns211617.ip-188-165-215.eu ([188.165.215.42]:44502 "EHLO
-        mx.speed47.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1726204AbfCQMyh (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 17 Mar 2019 08:54:37 -0400
-Received: from nas.speed47.net (lfbn-lil-1-519-34.w81-254.abo.wanadoo.fr [81.254.103.34])
-        by box.speed47.net (Postfix) with ESMTPSA id 2124D300D;
-        Sun, 17 Mar 2019 13:54:34 +0100 (CET)
-Authentication-Results: box.speed47.net; dmarc=fail (p=none dis=none) header.from=lesimple.fr
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=lesimple.fr; s=mail01;
-        t=1552827274; bh=L9jzAiqPSvyzqgikf6n+zHl6cqDrGiDBT16SabxMv5c=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References;
-        b=eGbVrIC3JnoBoPdTODVKZdNBCH8ZDRk+5KVY6h/vdOq1iI49RUD/AGHp4pjEdGYxJ
-         xPr8s7hdj49ipUwDbVzseH9fEmgx6mmhxf6eWjn5WZvQuW2Stfq8i7yBv7sw1Kb0Xh
-         YfKs5mFFqb4cY81hPHIaIACrToRWde6qX37zdo/A=
-Received: (nullmailer pid 27158 invoked by uid 500);
-        Sun, 17 Mar 2019 12:54:34 -0000
-From:   stephane_btrfs@lesimple.fr
-To:     linux-btrfs@vger.kernel.org
-Cc:     =?UTF-8?q?St=C3=A9phane=20Lesimple?= <stephane_btrfs@lesimple.fr>
-Subject: [PATCH 1/1] btrfs-progs: fi usage: implement raid56
-Date:   Sun, 17 Mar 2019 13:51:50 +0100
-Message-Id: <20190317125150.26265-2-stephane_btrfs@lesimple.fr>
-X-Mailer: git-send-email 2.17.1
-In-Reply-To: <20190317125150.26265-1-stephane_btrfs@lesimple.fr>
+        id S1726677AbfCQStn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 17 Mar 2019 14:49:43 -0400
+Received: from smtp-18.italiaonline.it ([213.209.10.18]:59623 "EHLO libero.it"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726452AbfCQStn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 17 Mar 2019 14:49:43 -0400
+X-Greylist: delayed 488 seconds by postgrey-1.27 at vger.kernel.org; Sun, 17 Mar 2019 14:49:41 EDT
+Received: from venice.bhome ([94.38.191.48])
+        by smtp-18.iol.local with ESMTPA
+        id 5aixhekWMccUp5aixhY7oV; Sun, 17 Mar 2019 19:41:31 +0100
+x-libjamoibt: 1601
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2014;
+        t=1552848091; bh=Vb+cXb2dfjCwNOn178TeUad1iJhYUb8FhO5yLlqjM+8=;
+        h=Reply-To:Subject:To:References:From:Date:In-Reply-To;
+        b=dbV2H+N59SIeIsEghMbg0Wu61iUQSTfSauDcXxiS1bFOfUB3V7pO/Lln2ZGjPWEaE
+         +I4kNB/m8xDdESGu+NtlqelNBRzfOJ4256MRSjwf9vgj6A65ATvDoTYeVQFYskEOKT
+         uOOBsGJHd9z1rKx6n17ZBPRmatWmL0AmFiAzs9CSzmem4xYvYwbFQ68xUaF/Vev+fF
+         5ZMHmE0ZyMn+KfyVIOIQ8Ldo91KAAtAComRsMzj6UglwU/1SW325pDoMX5CPlChkD3
+         n2PlFu14IWriVO5xzpde8q/8j1M+JCuUUboyqbmBgdnTS3DQcY3vuafqh0kWLos1As
+         SVQ66nPEAScEQ==
+X-CNFS-Analysis: v=2.3 cv=QpiPIm6d c=1 sm=1 tr=0
+ a=LSmNtxrrF1VkTiQg1w8xYQ==:117 a=LSmNtxrrF1VkTiQg1w8xYQ==:17
+ a=jpOVt7BSZ2e4Z31A5e1TngXxSK0=:19 a=IkcTkHD0fZMA:10 a=cHZ-0qh9iHtLFCKCVwUA:9
+ a=QEXdDO2ut3YA:10
+Reply-To: kreijack@inwind.it
+Subject: Re: [PATCH 1/1] btrfs-progs: fi usage: implement raid56
+To:     stephane_btrfs@lesimple.fr, linux-btrfs@vger.kernel.org
 References: <20190317125150.26265-1-stephane_btrfs@lesimple.fr>
+ <20190317125150.26265-2-stephane_btrfs@lesimple.fr>
+From:   Goffredo Baroncelli <kreijack@libero.it>
+Openpgp: preference=signencrypt
+Autocrypt: addr=kreijack@libero.it; keydata=
+ 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
+Message-ID: <8679eb74-8c98-d54d-f69e-821a6eba1cd9@libero.it>
+Date:   Sun, 17 Mar 2019 19:41:30 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.5.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20190317125150.26265-2-stephane_btrfs@lesimple.fr>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-CMAE-Envelope: MS4wfEorDEJOuMQTkpWczp615UMq4rWwlO27FAHiTyWxWMZLiOXfcxJaCo7lPDTOPSbe6oomJDTFIy8vqwYgVr4taPJHGGAvyh7YSgFgJYD+pL0yJsv5uO4w
+ xdnePHwntG+ZIv6bt4oQIUTHdKltzilA8CoffZtJ9I++z91n9fxjc/b0KQlBFKJinlGR6R8L+gerOA3WuhN5Rnm5Bqh0nq4X7H0=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Stéphane Lesimple <stephane_btrfs@lesimple.fr>
+On 17/03/2019 13.51, stephane_btrfs@lesimple.fr wrote:
+[...]
+> -		if (!ratio)
+> -			warning("RAID56 detected, not implemented");
+> -
 
-Implement RAID5 and RAID6 support in `filesystem usage'.
+IIRC one of the problem which lead to this code was that the not root user cannot
+access to chunkinfo. So the (regular) user should be warned about that: the printed 
+info may be not correct.
 
-Before:
-> WARNING: RAID56 detected, not implemented
-> WARNING: RAID56 detected, not implemented
-> WARNING: RAID56 detected, not implemented
->      Device allocated:     0.00B
->      Device unallocated:   2.04GiB
->      Used:                 0.00B
->      Free (estimated):     0.00B      (min: 8.00EiB)
->      Data ratio:           0.00
->      Metadata ratio:       0.00
+[...]
 
-After:
->      Device allocated:     1.83GiB
->      Device unallocated:   211.50MiB
->      Used:                 1.83GiB
->      Free (estimated):     128.44MiB  (min: 128.44MiB)
->      Data ratio:           1.65
->      Metadata ratio:       1.20
+BR
+G.Baroncelli
 
-Note that this might need some fine-tuning for mixed mode.
-
-We may also overestimate the free space incorrectly in
-some complex disk configurations, i.e. when some of the
-unallocated space is in fact unallocatable because the
-redundancy profile requisites can't be matched with how
-the remaining unallocated space is distributed over the
-devices. This is not specific to raid56 and also happens
-with other raid profiles, it'll need to be taken care of
-separately.
-
-Signed-off-by: Stéphane Lesimple <stephane_btrfs@lesimple.fr>
----
- cmds-fi-usage.c | 96 ++++++++++++++++++++++++++++++-------------------
- 1 file changed, 60 insertions(+), 36 deletions(-)
-
-diff --git a/cmds-fi-usage.c b/cmds-fi-usage.c
-index 9a23e176..baa1ff89 100644
---- a/cmds-fi-usage.c
-+++ b/cmds-fi-usage.c
-@@ -280,28 +280,6 @@ static struct btrfs_ioctl_space_args *load_space_info(int fd, const char *path)
- 	return sargs;
- }
- 
--/*
-- * This function computes the space occupied by a *single* RAID5/RAID6 chunk.
-- * The computation is performed on the basis of the number of stripes
-- * which compose the chunk, which could be different from the number of devices
-- * if a disk is added later.
-- */
--static void get_raid56_used(struct chunk_info *chunks, int chunkcount,
--		u64 *raid5_used, u64 *raid6_used)
--{
--	struct chunk_info *info_ptr = chunks;
--	*raid5_used = 0;
--	*raid6_used = 0;
--
--	while (chunkcount-- > 0) {
--		if (info_ptr->type & BTRFS_BLOCK_GROUP_RAID5)
--			(*raid5_used) += info_ptr->size / (info_ptr->num_stripes - 1);
--		if (info_ptr->type & BTRFS_BLOCK_GROUP_RAID6)
--			(*raid6_used) += info_ptr->size / (info_ptr->num_stripes - 2);
--		info_ptr++;
--	}
--}
--
- #define	MIN_UNALOCATED_THRESH	SZ_16M
- static int print_filesystem_usage_overall(int fd, struct chunk_info *chunkinfo,
- 		int chunkcount, struct device_info *devinfo, int devcount,
-@@ -331,13 +309,15 @@ static int print_filesystem_usage_overall(int fd, struct chunk_info *chunkinfo,
- 	double data_ratio;
- 	double metadata_ratio;
- 	/* logical */
--	u64 raid5_used = 0;
--	u64 raid6_used = 0;
-+	u64 r_data_raid56_chunks = 0;
-+	u64 l_data_raid56_chunks = 0;
-+	u64 r_metadata_raid56_chunks = 0;
-+	u64 l_metadata_raid56_chunks = 0;
- 	u64 l_global_reserve = 0;
- 	u64 l_global_reserve_used = 0;
- 	u64 free_estimated = 0;
- 	u64 free_min = 0;
--	int max_data_ratio = 1;
-+	double max_data_ratio = 1;
- 	int mixed = 0;
- 
- 	sargs = load_space_info(fd, path);
-@@ -359,24 +339,29 @@ static int print_filesystem_usage_overall(int fd, struct chunk_info *chunkinfo,
- 		ret = 1;
- 		goto exit;
- 	}
--	get_raid56_used(chunkinfo, chunkcount, &raid5_used, &raid6_used);
- 
- 	for (i = 0; i < sargs->total_spaces; i++) {
- 		int ratio;
- 		u64 flags = sargs->spaces[i].flags;
- 
-+		if ((flags & (BTRFS_BLOCK_GROUP_DATA | BTRFS_BLOCK_GROUP_METADATA))
-+		    == (BTRFS_BLOCK_GROUP_DATA | BTRFS_BLOCK_GROUP_METADATA)) {
-+			mixed = 1;
-+		}
-+
- 		/*
- 		 * The raid5/raid6 ratio depends by the stripes number
--		 * used by every chunk. It is computed separately
-+		 * used by every chunk. It is computed separately,
-+		 * after we're done with this loop, so skip those.
- 		 */
- 		if (flags & BTRFS_BLOCK_GROUP_RAID0)
- 			ratio = 1;
- 		else if (flags & BTRFS_BLOCK_GROUP_RAID1)
- 			ratio = 2;
- 		else if (flags & BTRFS_BLOCK_GROUP_RAID5)
--			ratio = 0;
-+			continue;
- 		else if (flags & BTRFS_BLOCK_GROUP_RAID6)
--			ratio = 0;
-+			continue;
- 		else if (flags & BTRFS_BLOCK_GROUP_DUP)
- 			ratio = 2;
- 		else if (flags & BTRFS_BLOCK_GROUP_RAID10)
-@@ -384,9 +369,6 @@ static int print_filesystem_usage_overall(int fd, struct chunk_info *chunkinfo,
- 		else
- 			ratio = 1;
- 
--		if (!ratio)
--			warning("RAID56 detected, not implemented");
--
- 		if (ratio > max_data_ratio)
- 			max_data_ratio = ratio;
- 
-@@ -394,10 +376,6 @@ static int print_filesystem_usage_overall(int fd, struct chunk_info *chunkinfo,
- 			l_global_reserve = sargs->spaces[i].total_bytes;
- 			l_global_reserve_used = sargs->spaces[i].used_bytes;
- 		}
--		if ((flags & (BTRFS_BLOCK_GROUP_DATA | BTRFS_BLOCK_GROUP_METADATA))
--		    == (BTRFS_BLOCK_GROUP_DATA | BTRFS_BLOCK_GROUP_METADATA)) {
--			mixed = 1;
--		}
- 		if (flags & BTRFS_BLOCK_GROUP_DATA) {
- 			r_data_used += sargs->spaces[i].used_bytes * ratio;
- 			r_data_chunks += sargs->spaces[i].total_bytes * ratio;
-@@ -414,6 +392,52 @@ static int print_filesystem_usage_overall(int fd, struct chunk_info *chunkinfo,
- 		}
- 	}
- 
-+	/*
-+	 * Here we compute the space occupied by every RAID5/RAID6 chunks.
-+	 * The computation is performed on the basis of the number of stripes
-+	 * which compose each chunk, which could be different from the number of devices
-+	 * if a disk is added later, or if the disks are of different sizes..
-+	 */
-+	struct chunk_info *info_ptr;
-+	for (info_ptr = chunkinfo, i = chunkcount; i > 0; i--, info_ptr++) {
-+		int flags = info_ptr->type;
-+		int nparity;
-+
-+		if (flags & BTRFS_BLOCK_GROUP_RAID5) {
-+			nparity = 1;
-+		}
-+		else if (flags & BTRFS_BLOCK_GROUP_RAID6) {
-+			nparity = 2;
-+		}
-+		else {
-+			// We're only interested in raid56 here
-+			continue;
-+		}
-+
-+		if (flags & BTRFS_BLOCK_GROUP_DATA) {
-+			r_data_raid56_chunks += info_ptr->size / (info_ptr->num_stripes - nparity);
-+			l_data_raid56_chunks += info_ptr->size / info_ptr->num_stripes;
-+		}
-+		if (flags & BTRFS_BLOCK_GROUP_METADATA) {
-+			r_metadata_raid56_chunks += info_ptr->size / (info_ptr->num_stripes - nparity);
-+			l_metadata_raid56_chunks += info_ptr->size / info_ptr->num_stripes;
-+		}
-+	}
-+
-+	if (l_data_raid56_chunks > 0) {
-+		double ratio = (double)r_data_raid56_chunks / l_data_raid56_chunks;
-+		r_data_used += r_data_raid56_chunks;
-+		r_data_chunks += r_data_raid56_chunks;
-+		l_data_chunks += l_data_raid56_chunks;
-+		if (ratio > max_data_ratio)
-+			max_data_ratio = ratio;
-+	}
-+	if (l_metadata_raid56_chunks > 0) {
-+		r_metadata_used += r_metadata_raid56_chunks;
-+		r_metadata_chunks += r_metadata_raid56_chunks;
-+		l_metadata_chunks += l_metadata_raid56_chunks;
-+	}
-+
- 	r_total_chunks = r_data_chunks + r_system_chunks;
- 	r_total_used = r_data_used + r_system_used;
- 	if (!mixed) {
 -- 
-2.17.1
-
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

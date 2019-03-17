@@ -2,38 +2,32 @@ Return-Path: <SRS0=swP/=RU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7DDBCC43381
-	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Mar 2019 22:53:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BCA9CC43381
+	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Mar 2019 23:24:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4DB2B20857
-	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Mar 2019 22:53:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 755A82086A
+	for <linux-btrfs@archiver.kernel.org>; Sun, 17 Mar 2019 23:24:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727102AbfCQWxt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 17 Mar 2019 18:53:49 -0400
-Received: from syrinx.knorrie.org ([82.94.188.77]:56076 "EHLO
+        id S1727262AbfCQXXZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 17 Mar 2019 19:23:25 -0400
+Received: from syrinx.knorrie.org ([82.94.188.77]:56726 "EHLO
         syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726735AbfCQWxs (ORCPT
+        with ESMTP id S1725914AbfCQXXY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 17 Mar 2019 18:53:48 -0400
+        Sun, 17 Mar 2019 19:23:24 -0400
 Received: from [IPv6:2001:980:4a41:fb::12] (unknown [IPv6:2001:980:4a41:fb::12])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by syrinx.knorrie.org (Postfix) with ESMTPSA id 3A24F3EC90C94;
-        Sun, 17 Mar 2019 23:53:46 +0100 (CET)
-Subject: Re: Balancing raid5 after adding another disk does not move/use any
- data on it
-To:     =?UTF-8?Q?Jakub_Hus=c3=a1k?= <jakub@husak.pro>,
-        linux-btrfs@vger.kernel.org
-References: <7a713010-5db6-2627-2593-8e13092868b1@husak.pro>
- <20190315180123.GJ9995@hungrycats.org>
- <3dce71e1-6caa-59ad-1765-6a29c7dd774f@knorrie.org>
- <aa4fc47e-2eee-de11-c73f-00d947f96dbf@gmail.com>
- <fa3b54fb-7473-810a-6ea6-8e5709d4e8e4@knorrie.org>
- <655523fa-1f32-3df2-bd10-29364447e3c9@knorrie.org>
- <f3082d89-ee37-b421-0bb3-ff2e28cc31af@husak.pro>
+        by syrinx.knorrie.org (Postfix) with ESMTPSA id CF2AD3EC9F762;
+        Mon, 18 Mar 2019 00:23:21 +0100 (CET)
+Subject: Re: [PATCH 1/1] btrfs-progs: fi usage: implement raid56
+To:     stephane_btrfs@lesimple.fr, linux-btrfs@vger.kernel.org
+References: <20190317125150.26265-1-stephane_btrfs@lesimple.fr>
+ <20190317125150.26265-2-stephane_btrfs@lesimple.fr>
 From:   Hans van Kranenburg <hans@knorrie.org>
 Openpgp: preference=signencrypt
 Autocrypt: addr=hans@knorrie.org; prefer-encrypt=mutual; keydata=
@@ -110,12 +104,12 @@ Autocrypt: addr=hans@knorrie.org; prefer-encrypt=mutual; keydata=
  vT3RH0/CpPJgveWV5xDOKuhD8j5l7FME+t2RWP+gyLid6dE0C7J03ir90PlTEkMEHEzyJMPt
  OhO05Phy+d51WPTo1VSKxhL4bsWddHLfQoXW8RQ388Q69JG4m+JhNH/XvWe3aQFpYP+GZuzO
  hkMez0lHCaVOOLBSKHkAHh9i0/pH+/3hfEa4NsoHCpyy
-Message-ID: <6a8b2244-46c1-7754-145c-b7a71f1f1b73@knorrie.org>
-Date:   Sun, 17 Mar 2019 23:53:45 +0100
+Message-ID: <d74a1afe-b218-25f9-97f1-43315e9590cf@knorrie.org>
+Date:   Mon, 18 Mar 2019 00:23:19 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.3.0
 MIME-Version: 1.0
-In-Reply-To: <f3082d89-ee37-b421-0bb3-ff2e28cc31af@husak.pro>
+In-Reply-To: <20190317125150.26265-2-stephane_btrfs@lesimple.fr>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en_US
 Content-Transfer-Encoding: 8bit
@@ -126,54 +120,239 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 Hi,
 
-On 3/17/19 9:52 PM, Jakub Husák wrote:
-> This is a great tool Hans!  This kind of overview should be a part of
-> btrfs-progs.
-
-Thing is... this seems super useful because it's super useful for the
-exact thing you are currently doing and trying to find out.
-
-Fun thing is, there are a thousand other things in other scenarios that
-are interesting to know. Should btrfs-progs implement hardcoded
-solutions for all of them? Or cover 80% of what's needed with 20% of effort?
-
-The main reason why I started writing the python-btrfs library is that
-it allows me to just quickly write a few lines of code to get some
-information, exactly for what I want to know at that point.
-
-In the previous example, writing the table with output is already more
-than three times as many lines of code than getting the actual info,
-which is a simple 'for chunk in fs.chunks()' and then boom, you have a
-lot of info to do something with.
-
-https://python-btrfs.readthedocs.io/en/stable/btrfs.html#btrfs.ctree.Chunk
-
-> Mine looks currently like this, I have a few more days to go with
-> rebalancing :)
+On 3/17/19 1:51 PM, stephane_btrfs@lesimple.fr wrote:
+> From: Stéphane Lesimple <stephane_btrfs@lesimple.fr>
 > 
-> flags            num_stripes     physical      virtual
-> -----            -----------     --------      -------
-> DATA|RAID5                 3      5.29TiB      3.53TiB
-> DATA|RAID5                 4    980.00GiB    735.00GiB
-> SYSTEM|RAID1               2    128.00MiB     64.00MiB
-> METADATA|RAID1             2    314.00GiB    157.00GiB
+> Implement RAID5 and RAID6 support in `filesystem usage'.
+> 
+> Before:
+>> WARNING: RAID56 detected, not implemented
+>> WARNING: RAID56 detected, not implemented
+>> WARNING: RAID56 detected, not implemented
+>>      Device allocated:     0.00B
+>>      Device unallocated:   2.04GiB
+>>      Used:                 0.00B
+>>      Free (estimated):     0.00B      (min: 8.00EiB)
+>>      Data ratio:           0.00
+>>      Metadata ratio:       0.00
+> 
+> After:
+>>      Device allocated:     1.83GiB
+>>      Device unallocated:   211.50MiB
+>>      Used:                 1.83GiB
+>>      Free (estimated):     128.44MiB  (min: 128.44MiB)
+>>      Data ratio:           1.65
+>>      Metadata ratio:       1.20
+> 
+> Note that this might need some fine-tuning for mixed mode.
+> 
+> We may also overestimate the free space incorrectly in
+> some complex disk configurations, i.e. when some of the
+> unallocated space is in fact unallocatable because the
+> redundancy profile requisites can't be matched with how
+> the remaining unallocated space is distributed over the
+> devices. This is not specific to raid56 and also happens
+> with other raid profiles, it'll need to be taken care of
+> separately.
+> 
+> Signed-off-by: Stéphane Lesimple <stephane_btrfs@lesimple.fr>
+> ---
+>  cmds-fi-usage.c | 96 ++++++++++++++++++++++++++++++-------------------
+>  1 file changed, 60 insertions(+), 36 deletions(-)
+> 
+> diff --git a/cmds-fi-usage.c b/cmds-fi-usage.c
+> index 9a23e176..baa1ff89 100644
+> --- a/cmds-fi-usage.c
+> +++ b/cmds-fi-usage.c
+> @@ -280,28 +280,6 @@ static struct btrfs_ioctl_space_args *load_space_info(int fd, const char *path)
+>  	return sargs;
+>  }
+>  
+> -/*
+> - * This function computes the space occupied by a *single* RAID5/RAID6 chunk.
+> - * The computation is performed on the basis of the number of stripes
+> - * which compose the chunk, which could be different from the number of devices
+> - * if a disk is added later.
+> - */
+> -static void get_raid56_used(struct chunk_info *chunks, int chunkcount,
+> -		u64 *raid5_used, u64 *raid6_used)
+> -{
+> -	struct chunk_info *info_ptr = chunks;
+> -	*raid5_used = 0;
+> -	*raid6_used = 0;
+> -
+> -	while (chunkcount-- > 0) {
+> -		if (info_ptr->type & BTRFS_BLOCK_GROUP_RAID5)
+> -			(*raid5_used) += info_ptr->size / (info_ptr->num_stripes - 1);
+> -		if (info_ptr->type & BTRFS_BLOCK_GROUP_RAID6)
+> -			(*raid6_used) += info_ptr->size / (info_ptr->num_stripes - 2);
+> -		info_ptr++;
+> -	}
+> -}
+> -
+>  #define	MIN_UNALOCATED_THRESH	SZ_16M
+>  static int print_filesystem_usage_overall(int fd, struct chunk_info *chunkinfo,
+>  		int chunkcount, struct device_info *devinfo, int devcount,
+> @@ -331,13 +309,15 @@ static int print_filesystem_usage_overall(int fd, struct chunk_info *chunkinfo,
+>  	double data_ratio;
+>  	double metadata_ratio;
+>  	/* logical */
+> -	u64 raid5_used = 0;
+> -	u64 raid6_used = 0;
+> +	u64 r_data_raid56_chunks = 0;
+> +	u64 l_data_raid56_chunks = 0;
+> +	u64 r_metadata_raid56_chunks = 0;
+> +	u64 l_metadata_raid56_chunks = 0;
 
-Ha, nice!
+Can you explain what r and l mean? I have been staring at the code and
+reading back and forth for some time, but I still really have no idea.
 
-> Btw, I checked the other utils in your python-btrfs and it seems that
-> they are, sadly, not installed with simple pip install, which would be
-> great. Maybe it needs a few lines in setup.py (i'm not too familiar with
-> python packaging)?
+>  	u64 l_global_reserve = 0;
+>  	u64 l_global_reserve_used = 0;
+>  	u64 free_estimated = 0;
+>  	u64 free_min = 0;
+> -	int max_data_ratio = 1;
+> +	double max_data_ratio = 1;
+>  	int mixed = 0;
+>  
+>  	sargs = load_space_info(fd, path);
+> @@ -359,24 +339,29 @@ static int print_filesystem_usage_overall(int fd, struct chunk_info *chunkinfo,
+>  		ret = 1;
+>  		goto exit;
+>  	}
+> -	get_raid56_used(chunkinfo, chunkcount, &raid5_used, &raid6_used);
+>  
+>  	for (i = 0; i < sargs->total_spaces; i++) {
+>  		int ratio;
+>  		u64 flags = sargs->spaces[i].flags;
+>  
+> +		if ((flags & (BTRFS_BLOCK_GROUP_DATA | BTRFS_BLOCK_GROUP_METADATA))
+> +		    == (BTRFS_BLOCK_GROUP_DATA | BTRFS_BLOCK_GROUP_METADATA)) {
+> +			mixed = 1;
+> +		}
+> +
+>  		/*
+>  		 * The raid5/raid6 ratio depends by the stripes number
+> -		 * used by every chunk. It is computed separately
+> +		 * used by every chunk. It is computed separately,
+> +		 * after we're done with this loop, so skip those.
+>  		 */
+>  		if (flags & BTRFS_BLOCK_GROUP_RAID0)
+>  			ratio = 1;
+>  		else if (flags & BTRFS_BLOCK_GROUP_RAID1)
+>  			ratio = 2;
+>  		else if (flags & BTRFS_BLOCK_GROUP_RAID5)
+> -			ratio = 0;
+> +			continue;
+>  		else if (flags & BTRFS_BLOCK_GROUP_RAID6)
+> -			ratio = 0;
+> +			continue;
+>  		else if (flags & BTRFS_BLOCK_GROUP_DUP)
+>  			ratio = 2;
+>  		else if (flags & BTRFS_BLOCK_GROUP_RAID10)
+> @@ -384,9 +369,6 @@ static int print_filesystem_usage_overall(int fd, struct chunk_info *chunkinfo,
+>  		else
+>  			ratio = 1;
+>  
+> -		if (!ratio)
+> -			warning("RAID56 detected, not implemented");
+> -
+>  		if (ratio > max_data_ratio)
+>  			max_data_ratio = ratio;
+>  
+> @@ -394,10 +376,6 @@ static int print_filesystem_usage_overall(int fd, struct chunk_info *chunkinfo,
+>  			l_global_reserve = sargs->spaces[i].total_bytes;
+>  			l_global_reserve_used = sargs->spaces[i].used_bytes;
+>  		}
+> -		if ((flags & (BTRFS_BLOCK_GROUP_DATA | BTRFS_BLOCK_GROUP_METADATA))
+> -		    == (BTRFS_BLOCK_GROUP_DATA | BTRFS_BLOCK_GROUP_METADATA)) {
+> -			mixed = 1;
+> -		}
+>  		if (flags & BTRFS_BLOCK_GROUP_DATA) {
+>  			r_data_used += sargs->spaces[i].used_bytes * ratio;
+>  			r_data_chunks += sargs->spaces[i].total_bytes * ratio;
+> @@ -414,6 +392,52 @@ static int print_filesystem_usage_overall(int fd, struct chunk_info *chunkinfo,
+>  		}
+>  	}
+>  
+> +	/*
+> +	 * Here we compute the space occupied by every RAID5/RAID6 chunks.
+> +	 * The computation is performed on the basis of the number of stripes
+> +	 * which compose each chunk, which could be different from the number of devices
+> +	 * if a disk is added later, or if the disks are of different sizes..
+> +	 */
+> +	struct chunk_info *info_ptr;
+> +	for (info_ptr = chunkinfo, i = chunkcount; i > 0; i--, info_ptr++) {
+> +		int flags = info_ptr->type;
+> +		int nparity;
+> +
+> +		if (flags & BTRFS_BLOCK_GROUP_RAID5) {
+> +			nparity = 1;
+> +		}
+> +		else if (flags & BTRFS_BLOCK_GROUP_RAID6) {
+> +			nparity = 2;
+> +		}
+> +		else {
+> +			// We're only interested in raid56 here
+> +			continue;
+> +		}
 
-Can you share how you're using this?
+I interpret the else continue as "ok, so apparently we can hit these
+lines of code for other stuff than RAID56", which is expected and fine,
+and then we'll silently ignore it.
 
-Personally, I never use pip for anything, so I might not be putting in
-there what users expect. My latest thought about this was that users use
-pip to have some library dependency for something else, so they don't
-need standalone programs and example scripts?
+But, in that case the value of nparity is not initialized and the lines
+below seem like this part of the code is actually never executed for
+anything that's not RAID56, so why the else up here? Or, maube print a
+big error or crash the program, if the else never should happen?
 
-I mainly have debian packages installed everywhere, and otherwise I'm
-doing a git clone of the project from github and mess around in there,
-with added benefit that I can view history on all files.
+> +
+> +		if (flags & BTRFS_BLOCK_GROUP_DATA) {
+> +			r_data_raid56_chunks += info_ptr->size / (info_ptr->num_stripes - nparity);
+
+Ah, so this is the calculation of device extent size. Still wondering
+what the r would mean.
+
+> +			l_data_raid56_chunks += info_ptr->size / info_ptr->num_stripes;
+
+I still don't understand what meaning this has. Chunk length divided by
+num_stripes (with parity)...
+
+A variable named data_raid56_chunks tells me that you are counting the
+amount of chunks that have type DATA and profile RAID5 or RAID6, but
+this code is doing something really different, it's counting bytes. But
+what sort of bytes...
+
+> +		}
+> +		if (flags & BTRFS_BLOCK_GROUP_METADATA) {
+> +			r_metadata_raid56_chunks += info_ptr->size / (info_ptr->num_stripes - nparity);
+> +			l_metadata_raid56_chunks += info_ptr->size / info_ptr->num_stripes;
+> +		}
+> +	}
+> +
+> +	if (l_data_raid56_chunks > 0) {
+> +		double ratio = (double)r_data_raid56_chunks / l_data_raid56_chunks;
+> +		r_data_used += r_data_raid56_chunks;
+> +		r_data_chunks += r_data_raid56_chunks;
+> +		l_data_chunks += l_data_raid56_chunks;
+> +		if (ratio > max_data_ratio)
+> +			max_data_ratio = ratio;
+> +	}
+> +	if (l_metadata_raid56_chunks > 0) {
+> +		r_metadata_used += r_metadata_raid56_chunks;
+> +		r_metadata_chunks += r_metadata_raid56_chunks;
+> +		l_metadata_chunks += l_metadata_raid56_chunks;
+> +	}
+> +
+>  	r_total_chunks = r_data_chunks + r_system_chunks;
+>  	r_total_used = r_data_used + r_system_used;
+>  	if (!mixed) {
+> 
+
+I'm not a super-experienced C coder, but I can read C and write patches
+while looking at the history of the code in some place, and following
+patterns. What I'm throwing at you here is some feedback about
+readability. I'd like to help reviewing this, but I can't really
+understand it.
 
 Hans

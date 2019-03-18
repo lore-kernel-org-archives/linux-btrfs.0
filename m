@@ -2,174 +2,102 @@ Return-Path: <SRS0=8Q4i=RV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B9912C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 16:49:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4905FC10F00
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 17:15:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9388720854
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 16:49:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 247E020863
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 17:15:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727442AbfCRQto (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 18 Mar 2019 12:49:44 -0400
-Received: from mx2.suse.de ([195.135.220.15]:56100 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726910AbfCRQto (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Mar 2019 12:49:44 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 28A85ADD4
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Mar 2019 16:49:42 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 6E6BEDA8A7; Mon, 18 Mar 2019 17:50:56 +0100 (CET)
-From:   David Sterba <dsterba@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH 22/22] btrfs: tests: unify messages when tests start
-Date:   Mon, 18 Mar 2019 17:50:56 +0100
-Message-Id: <4034c272b16cd94aad148bf7b96c7ed699e6b9a2.1552927639.git.dsterba@suse.com>
-X-Mailer: git-send-email 2.21.0
-In-Reply-To: <cover.1552927639.git.dsterba@suse.com>
-References: <cover.1552927639.git.dsterba@suse.com>
+        id S1726835AbfCRRPc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 18 Mar 2019 13:15:32 -0400
+Received: from drutsystem.com ([84.10.39.251]:47822 "EHLO drutsystem.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726626AbfCRRPb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Mar 2019 13:15:31 -0400
+Subject: Re: mounting raid1 btrfs - occasional devid missing / open_ctree
+ failed
+From:   Michal Soltys <soltys@ziu.info>
+To:     Andrei Borzenkov <arvidjaar@gmail.com>,
+        Hans van Kranenburg <hans@knorrie.org>,
+        linux-btrfs@vger.kernel.org
+References: <b6e6db9d-c81a-498b-508e-581f924ff573@ziu.info>
+ <eb16d309-7e81-8afb-ae2c-bd93862e1ace@knorrie.org>
+ <ff6e0ace-72fb-0dc0-8fdb-8e12b2907680@ziu.info>
+ <964e3bcd-730a-c186-c0e1-cd538a3c0e83@ziu.info>
+ <49202dac-6ae2-b49f-f946-a64dce3115a3@gmail.com>
+ <0ff19749-3e19-a78f-5560-d20e8177478c@ziu.info>
+Message-ID: <a0fb1af2-105b-5ee4-e5ca-feb143076001@ziu.info>
+Date:   Mon, 18 Mar 2019 18:15:21 +0100
 MIME-Version: 1.0
+In-Reply-To: <0ff19749-3e19-a78f-5560-d20e8177478c@ziu.info>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US-large
 Content-Transfer-Encoding: 8bit
+X-MailScanner-ID: F40D36C5066.AF70C
+X-MailScanner: Not scanned: please contact your Internet E-Mail Service Provider for details
+X-MailScanner-From: soltys@ziu.info
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-- make the messages more visually consistent and use same format
-  "running ... test", any error or other warning can be easily spotted
+On 3/15/19 10:36 AM, Michal Soltys wrote:
+> On 19/03/15 04:59, Andrei Borzenkov wrote:
+>> 14.03.2019 19:17, Michal Soltys пишет:
+>>> On 3/14/19 5:09 PM, Michal Soltys wrote:
+>>>> On 3/14/19 4:57 PM, Hans van Kranenburg wrote:
+>>>>> On 3/14/19 4:44 PM, Michal Soltys wrote:
+>>>>>>
+>>>>>> <cut>
+> 
+> That would point to some really weird thing [not] being done in 
+> initramfs in its debian variation. I'll look closer into it.
+> 
+> Thanks for pointing that out, the 'btrfs device scan' requirement 
+> completely slipped my mind.
+> 
+>> What "dmesg | grep -i btrfs" shows before and after these commands?
+>>
+> 
+> Will verify and report.
+> 
 
-- move some message to the test entry function
+Turned out to be a peculiar race issue with debian's initrams-tools's btrfs script (basically executing device scan during its local-premount stage). As it turned out it can be executed very early - in my case, before any block device is even visible in /dev. So no wonder later root mounting didn't work correctly.
 
-- add message to the inode tests
+Hans, Andrei - thanks for help.
 
-Example output:
+For the record:
 
-[    8.187391] Btrfs loaded, crc32c=crc32c-generic, assert=on, integrity-checker=on, ref-verify=on
-[    8.189476] BTRFS: selftest: sectorsize: 4096  nodesize: 4096
-[    8.190761] BTRFS: selftest: running btrfs free space cache tests
-[    8.192245] BTRFS: selftest: running extent only tests
-[    8.193573] BTRFS: selftest: running bitmap only tests
-[    8.194876] BTRFS: selftest: running bitmap and extent tests
-[    8.196166] BTRFS: selftest: running space stealing from bitmap to extent tests
-[    8.198026] BTRFS: selftest: running extent buffer operation tests
-[    8.199328] BTRFS: selftest: running btrfs_split_item tests
-[    8.200653] BTRFS: selftest: running extent I/O tests
-[    8.201808] BTRFS: selftest: running find delalloc tests
-[    8.320733] BTRFS: selftest: running extent buffer bitmap tests
-[    8.340795] BTRFS: selftest: running inode tests
-[    8.341766] BTRFS: selftest: running btrfs_get_extent tests
-[    8.342981] BTRFS: selftest: running hole first btrfs_get_extent test
-[    8.344342] BTRFS: selftest: running outstanding_extents tests
-[    8.345575] BTRFS: selftest: running qgroup tests
-[    8.346537] BTRFS: selftest: running qgroup add/remove tests
-[    8.347725] BTRFS: selftest: running qgroup multiple refs test
-[    8.354982] BTRFS: selftest: running free space tree tests
-[    8.372175] BTRFS: selftest: sectorsize: 4096  nodesize: 8192
-[    8.373539] BTRFS: selftest: running btrfs free space cache tests
-[    8.374989] BTRFS: selftest: running extent only tests
-[    8.376236] BTRFS: selftest: running bitmap only tests
-[    8.377483] BTRFS: selftest: running bitmap and extent tests
-[    8.378854] BTRFS: selftest: running space stealing from bitmap to extent tests
-...
+[   15.445002] scsi 0:0:7:0: atapi(n), ncq(y), asyn_notify(n), smart(y), fua(y), sw_preserve(y)
+[   15.545118] input:   USB Keyboard as /devices/pci0000:00/0000:00:1d.0/usb2/2-1/2-1.1/2-1.1.3/2-1.1.3:1.0/0003:09DA:0260.0003/input/input2
+->>> [   15.754962] ::: Starting BTRFS pre-mount
+[   15.801450] scsi 0:0:8:0: Direct-Access     ATA      ST2000VX000-1CU1 CV22 PQ: 0 ANSI: 6
+->>> [   15.803632] ::: Finishing BTRFS pre-mount
+[   15.851614] scsi 0:0:8:0: SATA: handle(0x000f), sas_addr(0x5003048000b28b90), phy(16), device_name(0x0000000000000000)
+[   15.854133] hid-generic 0003:09DA:0260.0003: input,hidraw2: USB HID v1.10 Keyboard [  USB Keyboard] on usb-0000:00:1d.0-1.1.3/input0
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/tests/free-space-tests.c |  2 +-
- fs/btrfs/tests/inode-tests.c      | 11 ++++++++---
- fs/btrfs/tests/qgroup-tests.c     |  4 ++--
- 3 files changed, 11 insertions(+), 6 deletions(-)
+.... then a bit later devices become available:
 
-diff --git a/fs/btrfs/tests/free-space-tests.c b/fs/btrfs/tests/free-space-tests.c
-index d0fdc94a5d61..af89f66f9e63 100644
---- a/fs/btrfs/tests/free-space-tests.c
-+++ b/fs/btrfs/tests/free-space-tests.c
-@@ -404,7 +404,7 @@ test_steal_space_from_bitmap_to_extent(struct btrfs_block_group_cache *cache,
- 	};
- 	const struct btrfs_free_space_op *orig_free_space_ops;
- 
--	test_msg("running space stealing from bitmap to extent");
-+	test_msg("running space stealing from bitmap to extent tests");
- 
- 	/*
- 	 * For this test, we want to ensure we end up with an extent entry
-diff --git a/fs/btrfs/tests/inode-tests.c b/fs/btrfs/tests/inode-tests.c
-index 46571cd27513..3d2c7abda5de 100644
---- a/fs/btrfs/tests/inode-tests.c
-+++ b/fs/btrfs/tests/inode-tests.c
-@@ -226,6 +226,8 @@ static noinline int test_btrfs_get_extent(u32 sectorsize, u32 nodesize)
- 	u64 offset;
- 	int ret = -ENOMEM;
- 
-+	test_msg("running btrfs_get_extent tests");
-+
- 	inode = btrfs_new_test_inode();
- 	if (!inode) {
- 		test_std_err(TEST_ALLOC_INODE);
-@@ -827,6 +829,8 @@ static int test_hole_first(u32 sectorsize, u32 nodesize)
- 	struct extent_map *em = NULL;
- 	int ret = -ENOMEM;
- 
-+	test_msg("running hole first btrfs_get_extent test");
-+
- 	inode = btrfs_new_test_inode();
- 	if (!inode) {
- 		test_std_err(TEST_ALLOC_INODE);
-@@ -927,6 +931,8 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
- 	struct btrfs_root *root = NULL;
- 	int ret = -ENOMEM;
- 
-+	test_msg("running outstanding_extents tests");
-+
- 	inode = btrfs_new_test_inode();
- 	if (!inode) {
- 		test_std_err(TEST_ALLOC_INODE);
-@@ -1110,17 +1116,16 @@ int btrfs_test_inodes(u32 sectorsize, u32 nodesize)
- {
- 	int ret;
- 
-+	test_msg("running inode tests");
-+
- 	set_bit(EXTENT_FLAG_COMPRESSED, &compressed_only);
- 	set_bit(EXTENT_FLAG_PREALLOC, &prealloc_only);
- 
--	test_msg("running btrfs_get_extent tests");
- 	ret = test_btrfs_get_extent(sectorsize, nodesize);
- 	if (ret)
- 		return ret;
--	test_msg("running hole first btrfs_get_extent test");
- 	ret = test_hole_first(sectorsize, nodesize);
- 	if (ret)
- 		return ret;
--	test_msg("running outstanding_extents tests");
- 	return test_extent_accounting(sectorsize, nodesize);
- }
-diff --git a/fs/btrfs/tests/qgroup-tests.c b/fs/btrfs/tests/qgroup-tests.c
-index c85e4b955939..09aaca1efd62 100644
---- a/fs/btrfs/tests/qgroup-tests.c
-+++ b/fs/btrfs/tests/qgroup-tests.c
-@@ -215,7 +215,7 @@ static int test_no_shared_qgroup(struct btrfs_root *root,
- 
- 	btrfs_init_dummy_trans(&trans, fs_info);
- 
--	test_msg("qgroup basic add");
-+	test_msg("running qgroup add/remove tests");
- 	ret = btrfs_create_qgroup(&trans, BTRFS_FS_TREE_OBJECTID);
- 	if (ret) {
- 		test_err("couldn't create a qgroup %d", ret);
-@@ -316,7 +316,7 @@ static int test_multiple_refs(struct btrfs_root *root,
- 
- 	btrfs_init_dummy_trans(&trans, fs_info);
- 
--	test_msg("qgroup multiple refs test");
-+	test_msg("running qgroup multiple refs test");
- 
- 	/*
- 	 * We have BTRFS_FS_TREE_OBJECTID created already from the
--- 
-2.21.0
+[   19.691841] sd 0:0:0:0: Power-on or device reset occurred
+[   19.692125] sd 0:0:1:0: Power-on or device reset occurred
+[   19.740664] sd 0:0:2:0: Power-on or device reset occurred
+[   19.740803] scsi 1:0:0:0: Direct-Access     ATA      INTEL SSDSC2BB08 0370 PQ: 0 ANSI: 5
+[   19.741009] sd 0:0:12:0: Power-on or device reset occurred
+[   19.741166] scsi 2:0:0:0: Direct-Access     ATA      INTEL SSDSC2BB08 0370 PQ: 0 ANSI: 5
+[   19.741348] sd 0:0:3:0: Power-on or device reset occurred
+[   19.742136] sd 0:0:0:0: [sda] 7814037168 512-byte logical blocks: (4.00 TB/3.64 TiB)
+
+... and finally:
+
+[   25.221537] md127: detected capacity change from 0 to 5401587744768
+[   25.363978] PM: Image not found (code -22)
+[   25.424970] BTRFS: device label xs22_root devid 1 transid 33775 /dev/sds2
+[   25.455095] BTRFS info (device sds2): disk space caching is enabled
+[   25.483435] BTRFS info (device sds2): has skinny extents
+[   25.513225] BTRFS error (device sds2): devid 2 uuid c93d387c-1acc-4bea-aeae-59a440ac7991 is missing
+[   25.546619] BTRFS error (device sds2): failed to read the system array: -2
+[   25.602175] BTRFS error (device sds2): open_ctree failed
 

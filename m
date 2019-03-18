@@ -2,114 +2,153 @@ Return-Path: <SRS0=8Q4i=RV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.7 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EC936C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 19:54:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F18F4C43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 21:13:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C4EF72173C
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 19:54:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 43A7A2085A
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 21:13:46 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=inwind.it header.i=@inwind.it header.b="O1fScDrK"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727718AbfCRTyf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 18 Mar 2019 15:54:35 -0400
-Received: from mout.gmx.net ([212.227.15.19]:55329 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727705AbfCRTyf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Mar 2019 15:54:35 -0400
-Received: from thetick.localnet ([77.47.110.32]) by mail.gmx.com (mrgmx002
- [212.227.17.190]) with ESMTPSA (Nemesis) id 0MRWzQ-1hU4kz3fSK-00ScSy for
- <linux-btrfs@vger.kernel.org>; Mon, 18 Mar 2019 20:54:33 +0100
-From:   Marc Joliet <marcec@gmx.de>
-To:     linux-btrfs@vger.kernel.org
-Subject: Re: Balancing raid5 after adding another disk does not move/use any data on it
-Date:   Mon, 18 Mar 2019 20:54:26 +0100
-Message-ID: <3329335.FRGrtYsUPj@thetick>
-In-Reply-To: <6a8b2244-46c1-7754-145c-b7a71f1f1b73@knorrie.org>
-References: <7a713010-5db6-2627-2593-8e13092868b1@husak.pro> <f3082d89-ee37-b421-0bb3-ff2e28cc31af@husak.pro> <6a8b2244-46c1-7754-145c-b7a71f1f1b73@knorrie.org>
+        id S1727193AbfCRVNo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 18 Mar 2019 17:13:44 -0400
+Received: from smtp-18.italiaonline.it ([213.209.10.18]:43617 "EHLO libero.it"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727132AbfCRVNo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Mar 2019 17:13:44 -0400
+X-Greylist: delayed 488 seconds by postgrey-1.27 at vger.kernel.org; Mon, 18 Mar 2019 17:13:42 EDT
+Received: from venice.bhome ([94.38.191.48])
+        by smtp-18.iol.local with ESMTPA
+        id 5zRrhdBcjsCsa5zRrhx0E0; Mon, 18 Mar 2019 22:05:32 +0100
+x-libjamoibt: 1601
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=inwind.it; s=s2014;
+        t=1552943132; bh=zBgkKtE1/I5/Et1q2GwqcWeD6930sz+TbOG4heYk3Wg=;
+        h=Reply-To:Subject:To:Cc:References:From:Date:In-Reply-To;
+        b=O1fScDrK8Dan7bDkdXdxms4nsGGGkZxbVTae4quMKm7dG2pvLrJUESCsPSizxn6rU
+         P5491OQhX0uNB0TCFfKCCEZKo1Z9V/CpEdIO1+Y6kUslHpwg22lBmBfEIQ90HMw/7E
+         czFSWKepJ/nQBplxvokSrPsxyz/tN9LM82JOxaxWzKCOMkuribz5Wc1BXI4/g04DLo
+         L/psKU+e7Ks35TkmF6NyI0f+P/BXdmymhwx3LTfzqkClOFUf4SVAGsPNnpw1JDy8Oy
+         tMu+LEmqY2GXc8m4yfMGyIBNXNJgZgbPJH+08hzJZ96RfwPuHCOrb/p7zxHUxdGusm
+         +/uNFYP7O8xzQ==
+X-CNFS-Analysis: v=2.3 cv=E6ccWpVl c=1 sm=1 tr=0
+ a=LSmNtxrrF1VkTiQg1w8xYQ==:117 a=LSmNtxrrF1VkTiQg1w8xYQ==:17
+ a=jpOVt7BSZ2e4Z31A5e1TngXxSK0=:19 a=IkcTkHD0fZMA:10 a=AwZj9w5X27oU-0GwW04A:9
+ a=QEXdDO2ut3YA:10
+Reply-To: kreijack@inwind.it
+Subject: Re: [PATCH 1/1] btrfs-progs: fi usage: implement raid56
+To:     =?UTF-8?Q?St=c3=a9phane_Lesimple?= <stephane_btrfs@lesimple.fr>
+Cc:     linux-btrfs@vger.kernel.org
+References: <20190317125150.26265-1-stephane_btrfs@lesimple.fr>
+ <20190317125150.26265-2-stephane_btrfs@lesimple.fr>
+ <8679eb74-8c98-d54d-f69e-821a6eba1cd9@libero.it>
+ <26c40d46f4278edeb2604e26fda957ee@lesimple.fr>
+From:   Goffredo Baroncelli <kreijack@inwind.it>
+Openpgp: preference=signencrypt
+Autocrypt: addr=kreijack@inwind.it; keydata=
+ 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
+Message-ID: <d35246f7-4506-7777-5d63-9712c20aae67@inwind.it>
+Date:   Mon, 18 Mar 2019 22:05:31 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.5.1
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart5577179.tPCZqqqJme"; micalg="pgp-sha256"; protocol="application/pgp-signature"
-X-Provags-ID: V03:K1:zzK4CxU7OGqBEd049IuzOwkfInKbzBqEOrzJ82v4qToyRQ/n4cY
- 7Wro5LfugnObeVIIS5ZaaY/0JzBt7bkYPiMXye0/Epu5U/pM0dXBf269B0hmTa2u+wqzm70
- lq9ZS6K1gTmhBtIxGqd2ZzXYKvXSPCNdaHRkvCYDhvqKHpTkRmA0TN5Opg/RpcKQPjjLcOC
- GBTE+SYpwbX5oUUEL0lsA==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:U1B8Mgugewc=:5u6+iKEFxlEB+L0a8Ov733
- iG0+0/LjrrHmdqUve4xHH2cXgak5YYuTjwrxNqbiK3Rf3DyCkcD9xGSAdRVe09KuqVZal14kY
- ivJV52rfJf/eiACHaVqmOp1+B/9lqPN13Kv7lb6U+JgOKFNI/5Yiom8dGiUUGK3sS1WnwXRc9
- nUuZBvZI6+KsXygkk82bQzDS/BsiRfzv2Bns+YfBgGtQqjoi/vTOLYJuDD+eHGlEe67zALmv4
- JrsjpFPwUKD0ZCb7k6qXOwVOsZILObZ1mHu96s689F3/xplidxcCA4+tJ0IpKzpjFGijVJd3z
- Upe+EhNAgp5m68TxQb70hvQQuWDLwByc01s87WCN6lO9/cDCHXJHnq4fxpgeQcVmN9AnWu24w
- aa9PNmhnPz9ZFpwJIy7Ybl4l8bHPNI0py4jmj+FoKAjACRDmfMEFoxdj03vP7qmiTTWA/kMPz
- pPlNzh5bs2Af6JRrIdEmOh9c6E5LKJRR6spofzyOJ45HlHGXzpegxh4zi97H55TfzMZMApXAn
- FA5pqMBPbzWd0Zs1i4/7ESbfi2PwT1lgd/X136+DIxY4QvzUIZrjn5oWCgUT/9g7ExwsBDhoL
- koVOrhYrfoA/8r4kc7aUaE+u2G9u1J71DRv2xyyRayP0N9fKWJYL+E/9mUAlxuvpP/dHyISY8
- kawwPfqRNYs5nuane2iMpxigtB5wQFRyAp3zbBJE6x7R7EEZSY+e6A97cFdsDxPLPXlSCZFkC
- pmiypnqqeqV1G2W8YcW8Yr9DBVidWNQke7kvlKHifbq20lbvM6hBPWbXeT70GAWzOnnGenmpl
- +V9wIoEtHqNuPjQnrvcJP/0BhPQlVg1MwiA2Mb4DVxo8QiFsVvLcojbWIyeahv/k+BEJC1S6Y
- T/2Xogwf5LHMe4/KEkY44NjUYeKWBk1yBIiWV0RJ++VnGP7hBsNgkDfsFXtzOw
+In-Reply-To: <26c40d46f4278edeb2604e26fda957ee@lesimple.fr>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
+X-CMAE-Envelope: MS4wfNl0MGQyTioNN1mBg/zr9rx7a4x6bGh835nmt0JLLhZI0nDgQVbCO34EVzEMi1cQaPOZoZ7++XkPlgS0XqL9Qbo7+0E5T5Id/o//izdA+4e87e2026si
+ bCE85ClX4W9Gyn+RJTGF53XHPoy4Xu+mOGXaVGJ5FxPeeD8z3Y7P5BLxGQuZLvoI1P2fIR2BylthxWslbM/T0BISXlsr1cwsP8s=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
---nextPart5577179.tPCZqqqJme
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="UTF-8"
+On 18/03/2019 20.12, Stéphane Lesimple wrote:
+> Le 2019-03-17 19:41, Goffredo Baroncelli a écrit :
+>> On 17/03/2019 13.51, stephane_btrfs@lesimple.fr wrote:
+>> [...]
+>>> -        if (!ratio)
+>>> -            warning("RAID56 detected, not implemented");
+>>> -
+>>
+>> IIRC one of the problem which lead to this code was that the not root
+>> user cannot
+>> access to chunkinfo. So the (regular) user should be warned about
+>> that: the printed info may be not correct.
+> 
+> 
+> I think you may be referencing this other warning:
+> 
+>         ret = load_chunk_info(fd, chunkinfo, chunkcount);
+>         if (ret == -EPERM) {
+>                 warning("cannot read detailed chunk info, per-device usage will not be shown, run as root");
+> 
+> This one is still present, and matches exactly what you say:
+> it fires when btrfs fi usage is run under a non-root user.
 
-Am Sonntag, 17. M=C3=A4rz 2019, 23:53:45 CET schrieb Hans van Kranenburg:
-> My latest thought about this was that users use
-> pip to have some library dependency for something else, so they don't
-> need standalone programs and example scripts?
+Perfect ! I missed this part
 
-My current understanding is that that Python land kinda wants everybody to =
-use=20
-pip to install anything written in Python (except the science people, who=20
-gravitate more towards conda, though it can wrap pip for software not packa=
-ged=20
-natively).  So yeah, it's perfectly natural to install scripts with pip,=20
-though I forgot where exactly in setup.py you have to specify them.
+BR
+G.Baroncelli
 
-Examples include SCons (which is also distributed via pip), various linters=
-=20
-such as flake8, and test frameworks such as nose which also come with scrip=
-ts=20
-needed to drive them.
-
-(Also, I seem to remember that there are provisions for specifying examples=
-=20
-separately from regular scripts, but I forgot the specifics.)
-
-Greetings
-=2D-=20
-Marc Joliet
-=2D-
-"People who think they know everything really annoy those of us who know we
-don't" - Bjarne Stroustrup
-
---nextPart5577179.tPCZqqqJme
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-
-iQIzBAABCAAdFiEEax7Ya5gDQFOJHKGQv9DmhiyIePQFAlyP93IACgkQv9DmhiyI
-ePQ87xAAl4q2u1FnvuXN67qEgaoPyy+HDlSoXElI06+bm3W0x2KlQrR7N6uFA7kJ
-Rt/7FoHYN6B4fcDUue5ccdT+K9AEopA2UiXLZY6vjDaH7TbDlwBy5Wc97f4a/M2y
-qDtp8a4aYpX+7z4WnnE275FtksJuKVr9l+oLIKPrGLQaDTW7Bv2N3zbwosd87Tik
-NhFPyhx1lYPzs2zeCHnDv2MHDjriAvaxIlE9Xt7dPZt5sBrf041DY4dOFZZCHzdI
-vYeBYOJVQ9NbUtuqXxLJA9NcK6Sdcs4C5E1KcMutA/4PWUkkEGMV8gW6AOy3VCHp
-ys/gW7eSAnJRq2WX4cY/ulBtVL+j4TgnChYr56veinQ7jucAiSI41eegdgTU2xA/
-7xgJNcGnQQchVsakyEq/H7e6g7LIkrJDSw1fbrY48hUe06I6iNxtKRwj2rzK0t3n
-XAkNfIht9YdtfPPAy16RVIdrtFvni7F+gn9F6ig5iDJms1z1k8yWQScbmlRIUPKg
-eSNZ/TWibm2jpt84/hA5slulr0pZFhbP1PVQwU27hmvu0CirWv6hoFcL1A6Rn29f
-qZnppgZ7DniNgPwXxwSjyVTUB73I6OC9c7PlW897d81sJqXKJzw4ZRWZ+4Hqzc/k
-PJnNwJ+5Yi1cZKvQ1eRzoyGZgzcFXmJMnTQcD1mBcxvZgem1hXs=
-=SLx4
------END PGP SIGNATURE-----
-
---nextPart5577179.tPCZqqqJme--
+> 
+> The "RAID56 detected, not implemented" warning, on the other hand,
+> is displayed even under the root user, and indicates that it's normal
+> that most of the counters of "filesystem usage" are at zero, because
+> the code to compute these properly under raid5/raid6 isn't there yet,
+> and it's actually precisely this missing feature that my patch tries to add!
+> 
+> Thanks,
+> 
+> Stéphane.
+> 
 
 
-
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

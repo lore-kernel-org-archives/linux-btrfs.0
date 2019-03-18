@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 52ED7C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 16:49:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9A870C43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 16:49:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 24CEF20854
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 16:49:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 76A6A204EC
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 16:49:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727697AbfCRQtN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 18 Mar 2019 12:49:13 -0400
-Received: from mx2.suse.de ([195.135.220.15]:55918 "EHLO mx1.suse.de"
+        id S1727704AbfCRQtQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 18 Mar 2019 12:49:16 -0400
+Received: from mx2.suse.de ([195.135.220.15]:55940 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727130AbfCRQtN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Mar 2019 12:49:13 -0400
+        id S1727130AbfCRQtP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Mar 2019 12:49:15 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 6D348ACFA
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Mar 2019 16:49:12 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id C4BFDAD3A
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Mar 2019 16:49:14 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id A9D92DA8A7; Mon, 18 Mar 2019 17:50:28 +0100 (CET)
+        id 04B5ADA8A7; Mon, 18 Mar 2019 17:50:30 +0100 (CET)
 From:   David Sterba <dsterba@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH 10/22] btrfs: tests: use standard error message after block group allocation failure
-Date:   Mon, 18 Mar 2019 17:50:28 +0100
-Message-Id: <f2e5328e6268399fe87cd6e684c20517f9875f4f.1552927639.git.dsterba@suse.com>
+Subject: [PATCH 11/22] btrfs: tests: properly initialize fs_info of extent buffer
+Date:   Mon, 18 Mar 2019 17:50:30 +0100
+Message-Id: <7c7776e8d4efec3fe1986251a74b6faa99d12097.1552927639.git.dsterba@suse.com>
 X-Mailer: git-send-email 2.21.0
 In-Reply-To: <cover.1552927639.git.dsterba@suse.com>
 References: <cover.1552927639.git.dsterba@suse.com>
@@ -40,38 +40,27 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+The fs_info is supposed to be valid, even though it's not used right
+now and the test does not crash.
+
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/tests/free-space-tests.c      | 2 +-
- fs/btrfs/tests/free-space-tree-tests.c | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/tests/extent-io-tests.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/tests/free-space-tests.c b/fs/btrfs/tests/free-space-tests.c
-index 8dcdefab1280..dcbe526e5698 100644
---- a/fs/btrfs/tests/free-space-tests.c
-+++ b/fs/btrfs/tests/free-space-tests.c
-@@ -847,7 +847,7 @@ int btrfs_test_free_space_cache(u32 sectorsize, u32 nodesize)
- 	cache = btrfs_alloc_dummy_block_group(fs_info,
- 				      BITS_PER_BITMAP * sectorsize + PAGE_SIZE);
- 	if (!cache) {
--		test_err("couldn't run the tests");
-+		test_std_err(TEST_ALLOC_BLOCK_GROUP);
- 		btrfs_free_dummy_fs_info(fs_info);
- 		return 0;
- 	}
-diff --git a/fs/btrfs/tests/free-space-tree-tests.c b/fs/btrfs/tests/free-space-tree-tests.c
-index 22282c16c022..09c27628e305 100644
---- a/fs/btrfs/tests/free-space-tree-tests.c
-+++ b/fs/btrfs/tests/free-space-tree-tests.c
-@@ -473,7 +473,7 @@ static int run_test(test_func_t test_func, int bitmaps, u32 sectorsize,
+diff --git a/fs/btrfs/tests/extent-io-tests.c b/fs/btrfs/tests/extent-io-tests.c
+index 8ded2d9b1ac0..1d223086094a 100644
+--- a/fs/btrfs/tests/extent-io-tests.c
++++ b/fs/btrfs/tests/extent-io-tests.c
+@@ -413,7 +413,7 @@ static int test_eb_bitmaps(u32 sectorsize, u32 nodesize)
  
- 	cache = btrfs_alloc_dummy_block_group(fs_info, 8 * alignment);
- 	if (!cache) {
--		test_err("couldn't allocate dummy block group cache");
-+		test_std_err(TEST_ALLOC_BLOCK_GROUP);
+ 	/* Do it over again with an extent buffer which isn't page-aligned. */
+ 	free_extent_buffer(eb);
+-	eb = __alloc_dummy_extent_buffer(NULL, nodesize / 2, len);
++	eb = __alloc_dummy_extent_buffer(fs_info, nodesize / 2, len);
+ 	if (!eb) {
+ 		test_std_err(TEST_ALLOC_ROOT);
  		ret = -ENOMEM;
- 		goto out;
- 	}
 -- 
 2.21.0
 

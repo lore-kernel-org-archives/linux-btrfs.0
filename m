@@ -2,398 +2,129 @@ Return-Path: <SRS0=8Q4i=RV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8C39BC43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 19:41:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3D621C43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 19:43:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 36ACB20989
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 19:41:36 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=lesimple.fr header.i=@lesimple.fr header.b="ooZRcVqj"
+	by mail.kernel.org (Postfix) with ESMTP id 163D520685
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 19:43:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727872AbfCRTlf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 18 Mar 2019 15:41:35 -0400
-Received: from ns211617.ip-188-165-215.eu ([188.165.215.42]:39188 "EHLO
-        mx.speed47.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1727647AbfCRTle (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Mar 2019 15:41:34 -0400
-Received: from rc.speed47.net (nginx [192.168.80.2])
-        by box.speed47.net (Postfix) with ESMTP id D95DFB9B1;
-        Mon, 18 Mar 2019 20:41:31 +0100 (CET)
-Authentication-Results: box.speed47.net; dmarc=fail (p=none dis=none) header.from=lesimple.fr
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=lesimple.fr;
-        s=mail01; t=1552938091;
-        bh=49pwqX73f2Tm67v1i0Bys6S9Oy3WMbAyd+fOPqy9tlg=;
-        h=Date:From:To:Cc:Subject:In-Reply-To:References;
-        b=ooZRcVqjqe7IAEw5Q6ievVevr+8/pyFBO45oLS90IF3dLz5A41jK0BT0PFP1Ck+x0
-         9tOHs2GUiLgBiSDWx8k93VwyJt7T/Jq/Q7j2n6Rzqtc+cZkD68UtrEimgwsdd/G4Jr
-         M8RsT4fBy3NBULAgyOYVi/8Uc/FExRN2EczTEVQE=
+        id S1727298AbfCRTne (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 18 Mar 2019 15:43:34 -0400
+Received: from mx2.suse.de ([195.135.220.15]:60208 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726677AbfCRTne (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Mar 2019 15:43:34 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 7D01FAAD0
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Mar 2019 19:43:31 +0000 (UTC)
+Subject: Re: [PATCH 0/9] Extent buffer locking cleanups
+To:     dsterba@suse.cz, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <cover.1552489554.git.dsterba@suse.com>
+ <4e3a4188-2c4e-ccc7-324c-69e0c5f0c528@suse.com>
+ <20190318192933.GH3516@twin.jikos.cz>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <46ec6ad2-259b-9421-1041-b2e6d92200b9@suse.com>
+Date:   Mon, 18 Mar 2019 21:43:30 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.5.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
- format=flowed
+In-Reply-To: <20190318192933.GH3516@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
 Content-Transfer-Encoding: 8bit
-Date:   Mon, 18 Mar 2019 20:41:31 +0100
-From:   =?UTF-8?Q?St=C3=A9phane_Lesimple?= <stephane_btrfs@lesimple.fr>
-To:     Hans van Kranenburg <hans@knorrie.org>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/1] btrfs-progs: fi usage: implement raid56
-In-Reply-To: <d74a1afe-b218-25f9-97f1-43315e9590cf@knorrie.org>
-References: <20190317125150.26265-1-stephane_btrfs@lesimple.fr>
- <20190317125150.26265-2-stephane_btrfs@lesimple.fr>
- <d74a1afe-b218-25f9-97f1-43315e9590cf@knorrie.org>
-Message-ID: <9fb1f7ffe56acda248a64103c2a4bda8@lesimple.fr>
-X-Sender: stephane_btrfs@lesimple.fr
-User-Agent: Roundcube Webmail/1.2.4
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi Hans,
 
-Le 2019-03-18 00:23, Hans van Kranenburg a écrit :
-> Hi,
+
+On 18.03.19 г. 21:29 ч., David Sterba wrote:
+> On Thu, Mar 14, 2019 at 09:26:37AM +0200, Nikolay Borisov wrote:
+>>
+>>
+>> On 13.03.19 г. 17:46 ч., David Sterba wrote:
+>>> The series moves several atomic counters under CONFIG_BTRFS_DEBUG. The
+>>> selected counters are not essential for the extent buffer locking to
+>>> work. There's some space saving (4x 4B at least) and the cachelines are
+>>> less stressed on non-debugging builds.
+>>>
+>>> The final size is 264 from 280, getting to 256 would be nice but hard or
+>>> making the code unreadable. I have ideas to shave 7 more bytes but
+>>> that's for another patchset.
+>>>
+>>> David Sterba (9):
+>>>   btrfs: add assertion helpers for spinning writers
+>>>   btrfs: use assertion helpers for spinning writers
+>>>   btrfs: add assertion helpers for spinning readers
+>>>   btrfs: use assertion helpers for spinning readers
+>>>   btrfs: add assertion helpers for extent buffer read lock counters
+>>>   btrfs: use assertion helpers for extent buffer read lock counters
+>>>   btrfs: add assertion helpers for extent buffer write lock counters
+>>>   btrfs: use assertion helpers for extent buffer write lock counters
+>>>   btrfs: switch extent_buffer::lock_nested to bool
+>>>
+>>>  fs/btrfs/extent_io.c |  13 +++--
+>>>  fs/btrfs/extent_io.h |  11 ++--
+>>>  fs/btrfs/locking.c   | 133 ++++++++++++++++++++++++++++++-------------
+>>>  3 files changed, 107 insertions(+), 50 deletions(-)
+>>
+>> Overall the series looks good, one thing I wonder is wouldn't it be
+>> better if you convert those WARN_ON to assert so that we fail fast in
+>> case the locking invariant are broken?
 > 
-> On 3/17/19 1:51 PM, stephane_btrfs@lesimple.fr wrote:
->> From: Stéphane Lesimple <stephane_btrfs@lesimple.fr>
->> 
->> Implement RAID5 and RAID6 support in `filesystem usage'.
->> 
->> Before:
->>> WARNING: RAID56 detected, not implemented
->>> WARNING: RAID56 detected, not implemented
->>> WARNING: RAID56 detected, not implemented
->>>      Device allocated:     0.00B
->>>      Device unallocated:   2.04GiB
->>>      Used:                 0.00B
->>>      Free (estimated):     0.00B      (min: 8.00EiB)
->>>      Data ratio:           0.00
->>>      Metadata ratio:       0.00
->> 
->> After:
->>>      Device allocated:     1.83GiB
->>>      Device unallocated:   211.50MiB
->>>      Used:                 1.83GiB
->>>      Free (estimated):     128.44MiB  (min: 128.44MiB)
->>>      Data ratio:           1.65
->>>      Metadata ratio:       1.20
->> 
->> Note that this might need some fine-tuning for mixed mode.
->> 
->> We may also overestimate the free space incorrectly in
->> some complex disk configurations, i.e. when some of the
->> unallocated space is in fact unallocatable because the
->> redundancy profile requisites can't be matched with how
->> the remaining unallocated space is distributed over the
->> devices. This is not specific to raid56 and also happens
->> with other raid profiles, it'll need to be taken care of
->> separately.
->> 
->> Signed-off-by: Stéphane Lesimple <stephane_btrfs@lesimple.fr>
->> ---
->>  cmds-fi-usage.c | 96 
->> ++++++++++++++++++++++++++++++-------------------
->>  1 file changed, 60 insertions(+), 36 deletions(-)
->> 
->> diff --git a/cmds-fi-usage.c b/cmds-fi-usage.c
->> index 9a23e176..baa1ff89 100644
->> --- a/cmds-fi-usage.c
->> +++ b/cmds-fi-usage.c
->> @@ -280,28 +280,6 @@ static struct btrfs_ioctl_space_args 
->> *load_space_info(int fd, const char *path)
->>  	return sargs;
->>  }
->> 
->> -/*
->> - * This function computes the space occupied by a *single* 
->> RAID5/RAID6 chunk.
->> - * The computation is performed on the basis of the number of stripes
->> - * which compose the chunk, which could be different from the number 
->> of devices
->> - * if a disk is added later.
->> - */
->> -static void get_raid56_used(struct chunk_info *chunks, int 
->> chunkcount,
->> -		u64 *raid5_used, u64 *raid6_used)
->> -{
->> -	struct chunk_info *info_ptr = chunks;
->> -	*raid5_used = 0;
->> -	*raid6_used = 0;
->> -
->> -	while (chunkcount-- > 0) {
->> -		if (info_ptr->type & BTRFS_BLOCK_GROUP_RAID5)
->> -			(*raid5_used) += info_ptr->size / (info_ptr->num_stripes - 1);
->> -		if (info_ptr->type & BTRFS_BLOCK_GROUP_RAID6)
->> -			(*raid6_used) += info_ptr->size / (info_ptr->num_stripes - 2);
->> -		info_ptr++;
->> -	}
->> -}
->> -
->>  #define	MIN_UNALOCATED_THRESH	SZ_16M
->>  static int print_filesystem_usage_overall(int fd, struct chunk_info 
->> *chunkinfo,
->>  		int chunkcount, struct device_info *devinfo, int devcount,
->> @@ -331,13 +309,15 @@ static int print_filesystem_usage_overall(int 
->> fd, struct chunk_info *chunkinfo,
->>  	double data_ratio;
->>  	double metadata_ratio;
->>  	/* logical */
->> -	u64 raid5_used = 0;
->> -	u64 raid6_used = 0;
->> +	u64 r_data_raid56_chunks = 0;
->> +	u64 l_data_raid56_chunks = 0;
->> +	u64 r_metadata_raid56_chunks = 0;
->> +	u64 l_metadata_raid56_chunks = 0;
-> 
-> Can you explain what r and l mean? I have been staring at the code and
-> reading back and forth for some time, but I still really have no idea.
+> This probably makes sense, the patches copy the existing code without
+> other updates. As it is entirely under debug ifdef, BUG_ON would work
+> too so it's not dependent on asserts compiled in or not.
 
-I've tried to stick with the naming convention of the other variables
-used in this function. Some lines above this diff, you'll find the 
-following
-comment in the original file, followed by some vars declarations:
-
-/*
-  * r_* prefix is for raw data
-  * l_* is for logical
-  */
-  [...]
-  u64 r_data_chunks = 0;
-  u64 l_data_chunks = 0;
-  u64 r_metadata_used = 0;
-  u64 r_metadata_chunks = 0;
-  u64 l_metadata_chunks = 0;
-
-This is why I've also named my vars this way.
-If you take for example a chunk with a raid1 replication policy, its
-real (r_) used size will be 2G, and its logical (l_) size will be 1G.
-
-
->>  	u64 l_global_reserve = 0;
->>  	u64 l_global_reserve_used = 0;
->>  	u64 free_estimated = 0;
->>  	u64 free_min = 0;
->> -	int max_data_ratio = 1;
->> +	double max_data_ratio = 1;
->>  	int mixed = 0;
->> 
->>  	sargs = load_space_info(fd, path);
->> @@ -359,24 +339,29 @@ static int print_filesystem_usage_overall(int 
->> fd, struct chunk_info *chunkinfo,
->>  		ret = 1;
->>  		goto exit;
->>  	}
->> -	get_raid56_used(chunkinfo, chunkcount, &raid5_used, &raid6_used);
->> 
->>  	for (i = 0; i < sargs->total_spaces; i++) {
->>  		int ratio;
->>  		u64 flags = sargs->spaces[i].flags;
->> 
->> +		if ((flags & (BTRFS_BLOCK_GROUP_DATA | BTRFS_BLOCK_GROUP_METADATA))
->> +		    == (BTRFS_BLOCK_GROUP_DATA | BTRFS_BLOCK_GROUP_METADATA)) {
->> +			mixed = 1;
->> +		}
->> +
->>  		/*
->>  		 * The raid5/raid6 ratio depends by the stripes number
->> -		 * used by every chunk. It is computed separately
->> +		 * used by every chunk. It is computed separately,
->> +		 * after we're done with this loop, so skip those.
->>  		 */
->>  		if (flags & BTRFS_BLOCK_GROUP_RAID0)
->>  			ratio = 1;
->>  		else if (flags & BTRFS_BLOCK_GROUP_RAID1)
->>  			ratio = 2;
->>  		else if (flags & BTRFS_BLOCK_GROUP_RAID5)
->> -			ratio = 0;
->> +			continue;
->>  		else if (flags & BTRFS_BLOCK_GROUP_RAID6)
->> -			ratio = 0;
->> +			continue;
->>  		else if (flags & BTRFS_BLOCK_GROUP_DUP)
->>  			ratio = 2;
->>  		else if (flags & BTRFS_BLOCK_GROUP_RAID10)
->> @@ -384,9 +369,6 @@ static int print_filesystem_usage_overall(int fd, 
->> struct chunk_info *chunkinfo,
->>  		else
->>  			ratio = 1;
->> 
->> -		if (!ratio)
->> -			warning("RAID56 detected, not implemented");
->> -
->>  		if (ratio > max_data_ratio)
->>  			max_data_ratio = ratio;
->> 
->> @@ -394,10 +376,6 @@ static int print_filesystem_usage_overall(int fd, 
->> struct chunk_info *chunkinfo,
->>  			l_global_reserve = sargs->spaces[i].total_bytes;
->>  			l_global_reserve_used = sargs->spaces[i].used_bytes;
->>  		}
->> -		if ((flags & (BTRFS_BLOCK_GROUP_DATA | BTRFS_BLOCK_GROUP_METADATA))
->> -		    == (BTRFS_BLOCK_GROUP_DATA | BTRFS_BLOCK_GROUP_METADATA)) {
->> -			mixed = 1;
->> -		}
->>  		if (flags & BTRFS_BLOCK_GROUP_DATA) {
->>  			r_data_used += sargs->spaces[i].used_bytes * ratio;
->>  			r_data_chunks += sargs->spaces[i].total_bytes * ratio;
->> @@ -414,6 +392,52 @@ static int print_filesystem_usage_overall(int fd, 
->> struct chunk_info *chunkinfo,
->>  		}
->>  	}
->> 
->> +	/*
->> +	 * Here we compute the space occupied by every RAID5/RAID6 chunks.
->> +	 * The computation is performed on the basis of the number of 
->> stripes
->> +	 * which compose each chunk, which could be different from the 
->> number of devices
->> +	 * if a disk is added later, or if the disks are of different 
->> sizes..
->> +	 */
->> +	struct chunk_info *info_ptr;
->> +	for (info_ptr = chunkinfo, i = chunkcount; i > 0; i--, info_ptr++) {
->> +		int flags = info_ptr->type;
->> +		int nparity;
->> +
->> +		if (flags & BTRFS_BLOCK_GROUP_RAID5) {
->> +			nparity = 1;
->> +		}
->> +		else if (flags & BTRFS_BLOCK_GROUP_RAID6) {
->> +			nparity = 2;
->> +		}
->> +		else {
->> +			// We're only interested in raid56 here
->> +			continue;
->> +		}
-> 
-> I interpret the else continue as "ok, so apparently we can hit these
-> lines of code for other stuff than RAID56", which is expected and fine,
-> and then we'll silently ignore it.
-
-Yes, this for() loop will be entered in any case, because the 
-replication
-policy (raid5 or raid1) is not a property of the filesystem as a whole,
-it's a property of a chunk. So you can have in the same filesystem, some
-chunks with raid1 replication policy, and some others in raid5.
-This can happen if, for example, you start a balance with 
--dconvert=raid5
-on a previously raid1-only filesystem, and stop it after a few chunks 
-have
-been converted. This is perfectly valid from a btrfs standpoint.
-
-So, this for() loop's job is to go trough each chunkinfo and process 
-only
-the raid5/raid6 ones, because for the other replication profiles, this 
-is
-already handled by the code above this for(), asfor every profile
-except raid5/raid6, one don't need to go through each chunk: for raid1 
-we
-know that the ratio is exactly 2, because that's the very definition of
-btrfs-raid1. For raid5/6 on the other hand, it depends on the number of
-slices the chunk has, and this can change over time (as disks are added,
-or if disks are not of the same size).
-
-> But, in that case the value of nparity is not initialized and the lines
-> below seem like this part of the code is actually never executed for
-> anything that's not RAID56, so why the else up here? Or, maube print a
-> big error or crash the program, if the else never should happen?
-
-Actually, the else is there to just go check the next chunk in case the 
-one we're
-working on is not raid5 or raid6, because this for() loop only counts 
-the
-number of bytes in raid5/raid6 chunks (to later be able to compute the 
-ratio).
-We just want to skip all the others (they've already been handled by 
-preexisting
-code).
-Also, as nparity is only used if we're inspecting a raid5/6 chunk,
-there shouldn't be a case where it is referenced and not initialized 
-AFAICT.
+I'm fine with turning it into a BUG_ON as well.
 
 > 
->> +
->> +		if (flags & BTRFS_BLOCK_GROUP_DATA) {
->> +			r_data_raid56_chunks += info_ptr->size / (info_ptr->num_stripes - 
->> nparity);
-> 
-> Ah, so this is the calculation of device extent size. Still wondering
-> what the r would mean.
-
-here, we're counting the number of bytes used by raid5 or raid6 chunks, 
-physically
-on the devices.
-
-> 
->> +			l_data_raid56_chunks += info_ptr->size / info_ptr->num_stripes;
-> 
-> I still don't understand what meaning this has. Chunk length divided by
-> num_stripes (with parity)...
-> 
-> A variable named data_raid56_chunks tells me that you are counting the
-> amount of chunks that have type DATA and profile RAID5 or RAID6, but
-> this code is doing something really different, it's counting bytes. But
-> what sort of bytes...
-
-It's a bit misleading indeed, actually a previous version of my patch 
-had
-this variable named "r_data_raid56_size", but I noticed that in 
-preexisting
-code, "r_data_chunks" is used to count the number of bytes (and not 
-number of
-chunks) used by non-raid5/6 chunks, as you can see:
-
-r_data_chunks += sargs->spaces[i].total_bytes * ratio;
-
-And a similar line for the "l_" variant:
-
-l_data_chunks += sargs->spaces[i].total_bytes;
-
-So I've renamed my variables to stick with this naming usage.
-
->> +		}
->> +		if (flags & BTRFS_BLOCK_GROUP_METADATA) {
->> +			r_metadata_raid56_chunks += info_ptr->size / 
->> (info_ptr->num_stripes - nparity);
->> +			l_metadata_raid56_chunks += info_ptr->size / 
->> info_ptr->num_stripes;
->> +		}
->> +	}
->> +
->> +	if (l_data_raid56_chunks > 0) {
->> +		double ratio = (double)r_data_raid56_chunks / l_data_raid56_chunks;
->> +		r_data_used += r_data_raid56_chunks;
->> +		r_data_chunks += r_data_raid56_chunks;
->> +		l_data_chunks += l_data_raid56_chunks;
->> +		if (ratio > max_data_ratio)
->> +			max_data_ratio = ratio;
->> +	}
->> +	if (l_metadata_raid56_chunks > 0) {
->> +		r_metadata_used += r_metadata_raid56_chunks;
->> +		r_metadata_chunks += r_metadata_raid56_chunks;
->> +		l_metadata_chunks += l_metadata_raid56_chunks;
->> +	}
->> +
->>  	r_total_chunks = r_data_chunks + r_system_chunks;
->>  	r_total_used = r_data_used + r_system_used;
->>  	if (!mixed) {
->> 
-> 
-> I'm not a super-experienced C coder, but I can read C and write patches
-> while looking at the history of the code in some place, and following
-> patterns. What I'm throwing at you here is some feedback about
-> readability. I'd like to help reviewing this, but I can't really
-> understand it.
-
-Thanks for your time reviewing this patch, and in any case I hope I've 
-shed
-some light on what it does exactly! Please don't hesitate to comment 
-back
-if anything is still not clear!
-
--- 
-Stéphane.

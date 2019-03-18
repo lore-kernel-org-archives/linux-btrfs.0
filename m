@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 424B4C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 16:49:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0A012C43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 16:49:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1FFB120854
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 16:49:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D380220854
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 16:49:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727688AbfCRQtY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 18 Mar 2019 12:49:24 -0400
-Received: from mx2.suse.de ([195.135.220.15]:56016 "EHLO mx1.suse.de"
+        id S1727708AbfCRQtZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 18 Mar 2019 12:49:25 -0400
+Received: from mx2.suse.de ([195.135.220.15]:56030 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727454AbfCRQtX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Mar 2019 12:49:23 -0400
+        id S1727454AbfCRQtZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Mar 2019 12:49:25 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A741DADD4
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Mar 2019 16:49:21 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 06EA3ADD4
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Mar 2019 16:49:24 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id E3C29DA8A7; Mon, 18 Mar 2019 17:50:37 +0100 (CET)
+        id 44CD3DA8A7; Mon, 18 Mar 2019 17:50:40 +0100 (CET)
 From:   David Sterba <dsterba@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH 14/22] btrfs: tests: return errors from extent map test case 2
-Date:   Mon, 18 Mar 2019 17:50:37 +0100
-Message-Id: <428d38e3c4a92fc4a26dab65c8aa017b264dbcb5.1552927639.git.dsterba@suse.com>
+Subject: [PATCH 15/22] btrfs: tests: return errors from extent map test case 3
+Date:   Mon, 18 Mar 2019 17:50:40 +0100
+Message-Id: <0d98222b3cca213d21ed25d3df0401a87bf3f37d.1552927639.git.dsterba@suse.com>
 X-Mailer: git-send-email 2.21.0
 In-Reply-To: <cover.1552927639.git.dsterba@suse.com>
 References: <cover.1552927639.git.dsterba@suse.com>
@@ -44,26 +44,14 @@ Replace asserts with error messages and return errors.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/tests/extent-map-tests.c | 20 ++++++++++++++------
- 1 file changed, 14 insertions(+), 6 deletions(-)
+ fs/btrfs/tests/extent-map-tests.c | 15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
 
 diff --git a/fs/btrfs/tests/extent-map-tests.c b/fs/btrfs/tests/extent-map-tests.c
-index 320c2842347c..d56d03d6b781 100644
+index d56d03d6b781..17182b14ce9d 100644
 --- a/fs/btrfs/tests/extent-map-tests.c
 +++ b/fs/btrfs/tests/extent-map-tests.c
-@@ -143,7 +143,10 @@ static int test_case_2(struct btrfs_fs_info *fs_info,
- 	em->block_start = EXTENT_MAP_INLINE;
- 	em->block_len = (u64)-1;
- 	ret = add_extent_mapping(em_tree, em, 0);
--	ASSERT(ret == 0);
-+	if (ret < 0) {
-+		test_err("cannot add extent range [0, 1K)");
-+		goto out;
-+	}
- 	free_extent_map(em);
- 
- 	/* Add [4K, 4K) following [0, 1K)  */
-@@ -158,7 +161,10 @@ static int test_case_2(struct btrfs_fs_info *fs_info,
+@@ -216,7 +216,10 @@ static int __test_case_3(struct btrfs_fs_info *fs_info,
  	em->block_start = SZ_4K;
  	em->block_len = SZ_4K;
  	ret = add_extent_mapping(em_tree, em, 0);
@@ -75,23 +63,28 @@ index 320c2842347c..d56d03d6b781 100644
  	free_extent_map(em);
  
  	em = alloc_extent_map();
-@@ -173,19 +179,21 @@ static int test_case_2(struct btrfs_fs_info *fs_info,
- 	em->block_start = EXTENT_MAP_INLINE;
- 	em->block_len = (u64)-1;
- 	ret = btrfs_add_extent_mapping(fs_info, em_tree, &em, em->start, em->len);
+@@ -231,24 +234,26 @@ static int __test_case_3(struct btrfs_fs_info *fs_info,
+ 	em->block_start = 0;
+ 	em->block_len = SZ_16K;
+ 	ret = btrfs_add_extent_mapping(fs_info, em_tree, &em, start, len);
 -	if (ret)
 +	if (ret) {
- 		test_err("case2 [0 1K]: ret %d", ret);
+ 		test_err("case3 [0x%llx 0x%llx): ret %d",
+ 			 start, start + len, ret);
 +		goto out;
 +	}
+ 	/*
+ 	 * Since bytes within em are contiguous, em->block_start is identical to
+ 	 * em->start.
+ 	 */
  	if (em &&
- 	    (em->start != 0 || extent_map_end(em) != SZ_1K ||
--	     em->block_start != EXTENT_MAP_INLINE || em->block_len != (u64)-1))
-+	     em->block_start != EXTENT_MAP_INLINE || em->block_len != (u64)-1)) {
+ 	    (start < em->start || start + len > extent_map_end(em) ||
+-	     em->start != em->block_start || em->len != em->block_len))
++	     em->start != em->block_start || em->len != em->block_len)) {
  		test_err(
- "case2 [0 1K]: ret %d return a wrong em (start %llu len %llu block_start %llu block_len %llu",
- 			 ret, em->start, em->len, em->block_start,
- 			 em->block_len);
+ "case3 [0x%llx 0x%llx): ret %d em (start 0x%llx len 0x%llx block_start 0x%llx block_len 0x%llx)",
+ 			 start, start + len, ret, em->start, em->len,
+ 			 em->block_start, em->block_len);
 +		ret = -EINVAL;
 +	}
  	free_extent_map(em);

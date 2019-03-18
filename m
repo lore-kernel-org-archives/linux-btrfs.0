@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 66121C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 16:49:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 75088C43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 16:49:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4214920854
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 16:49:31 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4D9DD20854
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 16:49:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727743AbfCRQta (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 18 Mar 2019 12:49:30 -0400
-Received: from mx2.suse.de ([195.135.220.15]:56046 "EHLO mx1.suse.de"
+        id S1727749AbfCRQtd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 18 Mar 2019 12:49:33 -0400
+Received: from mx2.suse.de ([195.135.220.15]:56056 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727454AbfCRQt3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Mar 2019 12:49:29 -0400
+        id S1727442AbfCRQtd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Mar 2019 12:49:33 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id BF8C7ADD4
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Mar 2019 16:49:28 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id E2762ADD4
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Mar 2019 16:49:31 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id DADA0DA8A7; Mon, 18 Mar 2019 17:50:44 +0100 (CET)
+        id 31B4EDA8A7; Mon, 18 Mar 2019 17:50:47 +0100 (CET)
 From:   David Sterba <dsterba@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH 17/22] btrfs: tests: return error from all extent map test cases
-Date:   Mon, 18 Mar 2019 17:50:44 +0100
-Message-Id: <c2c29fbc951329dcca19498192d0fec79b01954e.1552927639.git.dsterba@suse.com>
+Subject: [PATCH 18/22] btrfs: tests: use standard error message after extent map allocation failure
+Date:   Mon, 18 Mar 2019 17:50:47 +0100
+Message-Id: <b2fa1d434b0e3bf7b0d3159316a83b65ee65dc62.1552927639.git.dsterba@suse.com>
 X-Mailer: git-send-email 2.21.0
 In-Reply-To: <cover.1552927639.git.dsterba@suse.com>
 References: <cover.1552927639.git.dsterba@suse.com>
@@ -40,90 +40,119 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The way the extent map tests handle errors does not conform to the rest
-of the suite, where the first failure is reported and then it stops.
-Do the same now that we have the errors returned from all the functions.
-
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/tests/extent-map-tests.c | 44 ++++++++++++++++++++++---------
- 1 file changed, 32 insertions(+), 12 deletions(-)
+ fs/btrfs/tests/extent-map-tests.c | 23 +++++++++++++++++++----
+ 1 file changed, 19 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/tests/extent-map-tests.c b/fs/btrfs/tests/extent-map-tests.c
-index 35cfb65f1016..5e99c7d40ea1 100644
+index 5e99c7d40ea1..9bf75f7d2c26 100644
 --- a/fs/btrfs/tests/extent-map-tests.c
 +++ b/fs/btrfs/tests/extent-map-tests.c
-@@ -275,12 +275,20 @@ static int __test_case_3(struct btrfs_fs_info *fs_info,
-  *   -> add_extent_mapping()
-  *                            -> add_extent_mapping()
-  */
--static void test_case_3(struct btrfs_fs_info *fs_info,
-+static int test_case_3(struct btrfs_fs_info *fs_info,
- 		struct extent_map_tree *em_tree)
- {
--	__test_case_3(fs_info, em_tree, 0);
--	__test_case_3(fs_info, em_tree, SZ_8K);
--	__test_case_3(fs_info, em_tree, (12 * 1024ULL));
-+	int ret;
-+
-+	ret = __test_case_3(fs_info, em_tree, 0);
-+	if (ret)
-+		return ret;
-+	ret = __test_case_3(fs_info, em_tree, SZ_8K);
-+	if (ret)
-+		return ret;
-+	ret = __test_case_3(fs_info, em_tree, (12 * 1024ULL));
-+
-+	return ret;
- }
+@@ -56,8 +56,10 @@ static int test_case_1(struct btrfs_fs_info *fs_info,
+ 	int ret;
  
- static int __test_case_4(struct btrfs_fs_info *fs_info,
-@@ -379,11 +387,17 @@ static int __test_case_4(struct btrfs_fs_info *fs_info,
-  *                                             # handle -EEXIST when adding
-  *                                             # [0, 32K)
-  */
--static void test_case_4(struct btrfs_fs_info *fs_info,
-+static int test_case_4(struct btrfs_fs_info *fs_info,
- 		struct extent_map_tree *em_tree)
- {
--	__test_case_4(fs_info, em_tree, 0);
--	__test_case_4(fs_info, em_tree, SZ_4K);
-+	int ret;
-+
-+	ret = __test_case_4(fs_info, em_tree, 0);
-+	if (ret)
-+		return ret;
-+	ret = __test_case_4(fs_info, em_tree, SZ_4K);
-+
-+	return ret;
- }
+ 	em = alloc_extent_map();
+-	if (!em)
++	if (!em) {
++		test_std_err(TEST_ALLOC_EXTENT_MAP);
+ 		return -ENOMEM;
++	}
  
- int btrfs_test_extent_map(void)
-@@ -412,13 +426,19 @@ int btrfs_test_extent_map(void)
+ 	/* Add [0, 16K) */
+ 	em->start = 0;
+@@ -74,6 +76,7 @@ static int test_case_1(struct btrfs_fs_info *fs_info,
+ 	/* Add [16K, 20K) following [0, 16K)  */
+ 	em = alloc_extent_map();
+ 	if (!em) {
++		test_std_err(TEST_ALLOC_EXTENT_MAP);
+ 		ret = -ENOMEM;
+ 		goto out;
+ 	}
+@@ -91,6 +94,7 @@ static int test_case_1(struct btrfs_fs_info *fs_info,
  
- 	extent_map_tree_init(em_tree);
+ 	em = alloc_extent_map();
+ 	if (!em) {
++		test_std_err(TEST_ALLOC_EXTENT_MAP);
+ 		ret = -ENOMEM;
+ 		goto out;
+ 	}
+@@ -134,8 +138,10 @@ static int test_case_2(struct btrfs_fs_info *fs_info,
+ 	int ret;
  
--	test_case_1(fs_info, em_tree);
--	test_case_2(fs_info, em_tree);
--	test_case_3(fs_info, em_tree);
--	test_case_4(fs_info, em_tree);
-+	ret = test_case_1(fs_info, em_tree);
-+	if (ret)
-+		goto out;
-+	ret = test_case_2(fs_info, em_tree);
-+	if (ret)
-+		goto out;
-+	ret = test_case_3(fs_info, em_tree);
-+	if (ret)
-+		goto out;
-+	ret = test_case_4(fs_info, em_tree);
+ 	em = alloc_extent_map();
+-	if (!em)
++	if (!em) {
++		test_std_err(TEST_ALLOC_EXTENT_MAP);
+ 		return -ENOMEM;
++	}
  
--	kfree(em_tree);
- out:
-+	kfree(em_tree);
- 	btrfs_free_dummy_fs_info(fs_info);
+ 	/* Add [0, 1K) */
+ 	em->start = 0;
+@@ -152,6 +158,7 @@ static int test_case_2(struct btrfs_fs_info *fs_info,
+ 	/* Add [4K, 4K) following [0, 1K)  */
+ 	em = alloc_extent_map();
+ 	if (!em) {
++		test_std_err(TEST_ALLOC_EXTENT_MAP);
+ 		ret = -ENOMEM;
+ 		goto out;
+ 	}
+@@ -169,6 +176,7 @@ static int test_case_2(struct btrfs_fs_info *fs_info,
  
- 	return ret;
+ 	em = alloc_extent_map();
+ 	if (!em) {
++		test_std_err(TEST_ALLOC_EXTENT_MAP);
+ 		ret = -ENOMEM;
+ 		goto out;
+ 	}
+@@ -207,8 +215,10 @@ static int __test_case_3(struct btrfs_fs_info *fs_info,
+ 	int ret;
+ 
+ 	em = alloc_extent_map();
+-	if (!em)
++	if (!em) {
++		test_std_err(TEST_ALLOC_EXTENT_MAP);
+ 		return -ENOMEM;
++	}
+ 
+ 	/* Add [4K, 8K) */
+ 	em->start = SZ_4K;
+@@ -224,6 +234,7 @@ static int __test_case_3(struct btrfs_fs_info *fs_info,
+ 
+ 	em = alloc_extent_map();
+ 	if (!em) {
++		test_std_err(TEST_ALLOC_EXTENT_MAP);
+ 		ret = -ENOMEM;
+ 		goto out;
+ 	}
+@@ -299,8 +310,10 @@ static int __test_case_4(struct btrfs_fs_info *fs_info,
+ 	int ret;
+ 
+ 	em = alloc_extent_map();
+-	if (!em)
++	if (!em) {
++		test_std_err(TEST_ALLOC_EXTENT_MAP);
+ 		return -ENOMEM;
++	}
+ 
+ 	/* Add [0K, 8K) */
+ 	em->start = 0;
+@@ -316,6 +329,7 @@ static int __test_case_4(struct btrfs_fs_info *fs_info,
+ 
+ 	em = alloc_extent_map();
+ 	if (!em) {
++		test_std_err(TEST_ALLOC_EXTENT_MAP);
+ 		ret = -ENOMEM;
+ 		goto out;
+ 	}
+@@ -334,6 +348,7 @@ static int __test_case_4(struct btrfs_fs_info *fs_info,
+ 
+ 	em = alloc_extent_map();
+ 	if (!em) {
++		test_std_err(TEST_ALLOC_EXTENT_MAP);
+ 		ret = -ENOMEM;
+ 		goto out;
+ 	}
 -- 
 2.21.0
 

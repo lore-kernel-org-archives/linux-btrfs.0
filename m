@@ -2,129 +2,114 @@ Return-Path: <SRS0=8Q4i=RV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.7 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3D621C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 19:43:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EC936C43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 19:54:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 163D520685
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 19:43:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C4EF72173C
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 19:54:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727298AbfCRTne (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 18 Mar 2019 15:43:34 -0400
-Received: from mx2.suse.de ([195.135.220.15]:60208 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726677AbfCRTne (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Mar 2019 15:43:34 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 7D01FAAD0
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Mar 2019 19:43:31 +0000 (UTC)
-Subject: Re: [PATCH 0/9] Extent buffer locking cleanups
-To:     dsterba@suse.cz, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <cover.1552489554.git.dsterba@suse.com>
- <4e3a4188-2c4e-ccc7-324c-69e0c5f0c528@suse.com>
- <20190318192933.GH3516@twin.jikos.cz>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <46ec6ad2-259b-9421-1041-b2e6d92200b9@suse.com>
-Date:   Mon, 18 Mar 2019 21:43:30 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.1
+        id S1727718AbfCRTyf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 18 Mar 2019 15:54:35 -0400
+Received: from mout.gmx.net ([212.227.15.19]:55329 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727705AbfCRTyf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Mar 2019 15:54:35 -0400
+Received: from thetick.localnet ([77.47.110.32]) by mail.gmx.com (mrgmx002
+ [212.227.17.190]) with ESMTPSA (Nemesis) id 0MRWzQ-1hU4kz3fSK-00ScSy for
+ <linux-btrfs@vger.kernel.org>; Mon, 18 Mar 2019 20:54:33 +0100
+From:   Marc Joliet <marcec@gmx.de>
+To:     linux-btrfs@vger.kernel.org
+Subject: Re: Balancing raid5 after adding another disk does not move/use any data on it
+Date:   Mon, 18 Mar 2019 20:54:26 +0100
+Message-ID: <3329335.FRGrtYsUPj@thetick>
+In-Reply-To: <6a8b2244-46c1-7754-145c-b7a71f1f1b73@knorrie.org>
+References: <7a713010-5db6-2627-2593-8e13092868b1@husak.pro> <f3082d89-ee37-b421-0bb3-ff2e28cc31af@husak.pro> <6a8b2244-46c1-7754-145c-b7a71f1f1b73@knorrie.org>
 MIME-Version: 1.0
-In-Reply-To: <20190318192933.GH3516@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: multipart/signed; boundary="nextPart5577179.tPCZqqqJme"; micalg="pgp-sha256"; protocol="application/pgp-signature"
+X-Provags-ID: V03:K1:zzK4CxU7OGqBEd049IuzOwkfInKbzBqEOrzJ82v4qToyRQ/n4cY
+ 7Wro5LfugnObeVIIS5ZaaY/0JzBt7bkYPiMXye0/Epu5U/pM0dXBf269B0hmTa2u+wqzm70
+ lq9ZS6K1gTmhBtIxGqd2ZzXYKvXSPCNdaHRkvCYDhvqKHpTkRmA0TN5Opg/RpcKQPjjLcOC
+ GBTE+SYpwbX5oUUEL0lsA==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:U1B8Mgugewc=:5u6+iKEFxlEB+L0a8Ov733
+ iG0+0/LjrrHmdqUve4xHH2cXgak5YYuTjwrxNqbiK3Rf3DyCkcD9xGSAdRVe09KuqVZal14kY
+ ivJV52rfJf/eiACHaVqmOp1+B/9lqPN13Kv7lb6U+JgOKFNI/5Yiom8dGiUUGK3sS1WnwXRc9
+ nUuZBvZI6+KsXygkk82bQzDS/BsiRfzv2Bns+YfBgGtQqjoi/vTOLYJuDD+eHGlEe67zALmv4
+ JrsjpFPwUKD0ZCb7k6qXOwVOsZILObZ1mHu96s689F3/xplidxcCA4+tJ0IpKzpjFGijVJd3z
+ Upe+EhNAgp5m68TxQb70hvQQuWDLwByc01s87WCN6lO9/cDCHXJHnq4fxpgeQcVmN9AnWu24w
+ aa9PNmhnPz9ZFpwJIy7Ybl4l8bHPNI0py4jmj+FoKAjACRDmfMEFoxdj03vP7qmiTTWA/kMPz
+ pPlNzh5bs2Af6JRrIdEmOh9c6E5LKJRR6spofzyOJ45HlHGXzpegxh4zi97H55TfzMZMApXAn
+ FA5pqMBPbzWd0Zs1i4/7ESbfi2PwT1lgd/X136+DIxY4QvzUIZrjn5oWCgUT/9g7ExwsBDhoL
+ koVOrhYrfoA/8r4kc7aUaE+u2G9u1J71DRv2xyyRayP0N9fKWJYL+E/9mUAlxuvpP/dHyISY8
+ kawwPfqRNYs5nuane2iMpxigtB5wQFRyAp3zbBJE6x7R7EEZSY+e6A97cFdsDxPLPXlSCZFkC
+ pmiypnqqeqV1G2W8YcW8Yr9DBVidWNQke7kvlKHifbq20lbvM6hBPWbXeT70GAWzOnnGenmpl
+ +V9wIoEtHqNuPjQnrvcJP/0BhPQlVg1MwiA2Mb4DVxo8QiFsVvLcojbWIyeahv/k+BEJC1S6Y
+ T/2Xogwf5LHMe4/KEkY44NjUYeKWBk1yBIiWV0RJ++VnGP7hBsNgkDfsFXtzOw
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+--nextPart5577179.tPCZqqqJme
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="UTF-8"
+
+Am Sonntag, 17. M=C3=A4rz 2019, 23:53:45 CET schrieb Hans van Kranenburg:
+> My latest thought about this was that users use
+> pip to have some library dependency for something else, so they don't
+> need standalone programs and example scripts?
+
+My current understanding is that that Python land kinda wants everybody to =
+use=20
+pip to install anything written in Python (except the science people, who=20
+gravitate more towards conda, though it can wrap pip for software not packa=
+ged=20
+natively).  So yeah, it's perfectly natural to install scripts with pip,=20
+though I forgot where exactly in setup.py you have to specify them.
+
+Examples include SCons (which is also distributed via pip), various linters=
+=20
+such as flake8, and test frameworks such as nose which also come with scrip=
+ts=20
+needed to drive them.
+
+(Also, I seem to remember that there are provisions for specifying examples=
+=20
+separately from regular scripts, but I forgot the specifics.)
+
+Greetings
+=2D-=20
+Marc Joliet
+=2D-
+"People who think they know everything really annoy those of us who know we
+don't" - Bjarne Stroustrup
+
+--nextPart5577179.tPCZqqqJme
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCAAdFiEEax7Ya5gDQFOJHKGQv9DmhiyIePQFAlyP93IACgkQv9DmhiyI
+ePQ87xAAl4q2u1FnvuXN67qEgaoPyy+HDlSoXElI06+bm3W0x2KlQrR7N6uFA7kJ
+Rt/7FoHYN6B4fcDUue5ccdT+K9AEopA2UiXLZY6vjDaH7TbDlwBy5Wc97f4a/M2y
+qDtp8a4aYpX+7z4WnnE275FtksJuKVr9l+oLIKPrGLQaDTW7Bv2N3zbwosd87Tik
+NhFPyhx1lYPzs2zeCHnDv2MHDjriAvaxIlE9Xt7dPZt5sBrf041DY4dOFZZCHzdI
+vYeBYOJVQ9NbUtuqXxLJA9NcK6Sdcs4C5E1KcMutA/4PWUkkEGMV8gW6AOy3VCHp
+ys/gW7eSAnJRq2WX4cY/ulBtVL+j4TgnChYr56veinQ7jucAiSI41eegdgTU2xA/
+7xgJNcGnQQchVsakyEq/H7e6g7LIkrJDSw1fbrY48hUe06I6iNxtKRwj2rzK0t3n
+XAkNfIht9YdtfPPAy16RVIdrtFvni7F+gn9F6ig5iDJms1z1k8yWQScbmlRIUPKg
+eSNZ/TWibm2jpt84/hA5slulr0pZFhbP1PVQwU27hmvu0CirWv6hoFcL1A6Rn29f
+qZnppgZ7DniNgPwXxwSjyVTUB73I6OC9c7PlW897d81sJqXKJzw4ZRWZ+4Hqzc/k
+PJnNwJ+5Yi1cZKvQ1eRzoyGZgzcFXmJMnTQcD1mBcxvZgem1hXs=
+=SLx4
+-----END PGP SIGNATURE-----
+
+--nextPart5577179.tPCZqqqJme--
 
 
-On 18.03.19 г. 21:29 ч., David Sterba wrote:
-> On Thu, Mar 14, 2019 at 09:26:37AM +0200, Nikolay Borisov wrote:
->>
->>
->> On 13.03.19 г. 17:46 ч., David Sterba wrote:
->>> The series moves several atomic counters under CONFIG_BTRFS_DEBUG. The
->>> selected counters are not essential for the extent buffer locking to
->>> work. There's some space saving (4x 4B at least) and the cachelines are
->>> less stressed on non-debugging builds.
->>>
->>> The final size is 264 from 280, getting to 256 would be nice but hard or
->>> making the code unreadable. I have ideas to shave 7 more bytes but
->>> that's for another patchset.
->>>
->>> David Sterba (9):
->>>   btrfs: add assertion helpers for spinning writers
->>>   btrfs: use assertion helpers for spinning writers
->>>   btrfs: add assertion helpers for spinning readers
->>>   btrfs: use assertion helpers for spinning readers
->>>   btrfs: add assertion helpers for extent buffer read lock counters
->>>   btrfs: use assertion helpers for extent buffer read lock counters
->>>   btrfs: add assertion helpers for extent buffer write lock counters
->>>   btrfs: use assertion helpers for extent buffer write lock counters
->>>   btrfs: switch extent_buffer::lock_nested to bool
->>>
->>>  fs/btrfs/extent_io.c |  13 +++--
->>>  fs/btrfs/extent_io.h |  11 ++--
->>>  fs/btrfs/locking.c   | 133 ++++++++++++++++++++++++++++++-------------
->>>  3 files changed, 107 insertions(+), 50 deletions(-)
->>
->> Overall the series looks good, one thing I wonder is wouldn't it be
->> better if you convert those WARN_ON to assert so that we fail fast in
->> case the locking invariant are broken?
-> 
-> This probably makes sense, the patches copy the existing code without
-> other updates. As it is entirely under debug ifdef, BUG_ON would work
-> too so it's not dependent on asserts compiled in or not.
 
-I'm fine with turning it into a BUG_ON as well.
-
-> 

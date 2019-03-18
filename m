@@ -2,93 +2,87 @@ Return-Path: <SRS0=8Q4i=RV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 64F3EC43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 19:00:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7CA84C43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 19:12:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3690C20989
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 19:00:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 242A82133D
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Mar 2019 19:12:14 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=lesimple.fr header.i=@lesimple.fr header.b="3UW/dwKC"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727239AbfCRTAg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 18 Mar 2019 15:00:36 -0400
-Received: from mx2.suse.de ([195.135.220.15]:54822 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726832AbfCRTAg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Mar 2019 15:00:36 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id E4728AF9A
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Mar 2019 19:00:34 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 1B4A9DA829; Mon, 18 Mar 2019 20:01:49 +0100 (CET)
-Date:   Mon, 18 Mar 2019 20:01:48 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Correctly free extent buffer in case
- btree_read_extent_buffer_pages fails
-Message-ID: <20190318190148.GG3516@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20190312131847.20311-1-nborisov@suse.com>
- <20190313180314.GH31119@twin.jikos.cz>
- <6581c72e-7a26-2cbe-2bc6-d3bae313a255@suse.com>
+        id S1727425AbfCRTMM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 18 Mar 2019 15:12:12 -0400
+Received: from ns211617.ip-188-165-215.eu ([188.165.215.42]:37796 "EHLO
+        mx.speed47.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1726780AbfCRTMM (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Mar 2019 15:12:12 -0400
+Received: from rc.speed47.net (nginx [192.168.80.2])
+        by box.speed47.net (Postfix) with ESMTP id 5BAF8C79;
+        Mon, 18 Mar 2019 20:12:10 +0100 (CET)
+Authentication-Results: box.speed47.net; dmarc=fail (p=none dis=none) header.from=lesimple.fr
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=lesimple.fr;
+        s=mail01; t=1552936330;
+        bh=LfOqFWqWHAzYK2lqgkjb1DApZVc2mJzbeqTe2gE0dCs=;
+        h=Date:From:To:Cc:Subject:In-Reply-To:References;
+        b=3UW/dwKCkv2s2JAMk7kWSTWfDHK3Dzuoq3ioKmSCpVE3hpkzD4W7Z8mq3DapKu5Yc
+         glha/6hpjGBt/RBVc0o2ZexgFHKWGUTy29B8eqp4/Yw/HZrsaGpOguai+hcCILhTOQ
+         yzBl3gkjRxH4GPaYd7wWPqiuF2nwZK+txuwag0zo=
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <6581c72e-7a26-2cbe-2bc6-d3bae313a255@suse.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+Content-Transfer-Encoding: 8bit
+Date:   Mon, 18 Mar 2019 20:12:10 +0100
+From:   =?UTF-8?Q?St=C3=A9phane_Lesimple?= <stephane_btrfs@lesimple.fr>
+To:     kreijack@inwind.it
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/1] btrfs-progs: fi usage: implement raid56
+In-Reply-To: <8679eb74-8c98-d54d-f69e-821a6eba1cd9@libero.it>
+References: <20190317125150.26265-1-stephane_btrfs@lesimple.fr>
+ <20190317125150.26265-2-stephane_btrfs@lesimple.fr>
+ <8679eb74-8c98-d54d-f69e-821a6eba1cd9@libero.it>
+Message-ID: <26c40d46f4278edeb2604e26fda957ee@lesimple.fr>
+X-Sender: stephane_btrfs@lesimple.fr
+User-Agent: Roundcube Webmail/1.2.4
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Mar 14, 2019 at 09:10:42AM +0200, Nikolay Borisov wrote:
-> >> The correct way to free the buffer is call free_extent_buffer_stale.
-> >> This function will correctly call atomic_dec explicitly for the buffer
-> >> and subsequently call release_extent_buffer which will decrement the
-> >> final reference thus correctly remove the invalid buffer from buffer
-> >> cache. This change affects only newly allocated buffers since they have
-> >> eb->refs == 2.
-> > 
-> > Following the same pattern, should every use of
-> > btrfs_find_create_tree_block be followed by free_extent_buffer_stale in
-> > case of errors?
-> > 
-> > There's almost the same sequence in readahead_tree_block as you update
-> > in reada_tree_block_flagged:
-> > 
-> >   btrfs_find_create_tree_block
-> >   read_extent_buffer_pages
-> >   free_extent_buffer
-> > 
-> > so should be the _stale variant used there too?
+Le 2019-03-17 19:41, Goffredo Baroncelli a écrit :
+> On 17/03/2019 13.51, stephane_btrfs@lesimple.fr wrote:
+> [...]
+>> -		if (!ratio)
+>> -			warning("RAID56 detected, not implemented");
+>> -
 > 
-> You are right it should also be using the _stale variant. I will fix it.
-> 
-> Despite my cleanup of the extent buffer freeing code I'm still not
-> entirely happy with the special cases we have with the stale or unmapped
-> logic. That's why we need all these special cases ;\
-> 
-> > 
-> > free_extent_buffer_stale is normally used in other contexts where the
-> > 'stale' part means that the eb is known to be disconnected.
-> > 
-> > I think that btrfs_find_create_tree_block needs a dedicated freeing
-> > function that will make sure all invariants (refs == 2, no other
-> > structures connected) are met and then do effectively the same what
-> > _stale does now.
-> Sounds good though I'm a bit reluctant to add yet another
-> free_extent_buffer variant. IMO the logic of the extent buffer radix
-> tree need to be revised which could lead to simplifications in the whole
-> ref counting code.
+> IIRC one of the problem which lead to this code was that the not root
+> user cannot
+> access to chunkinfo. So the (regular) user should be warned about
+> that: the printed info may be not correct.
 
-Revised maybe, but this is the core of the MM <-> FS interaction and
-must be correct, even after the simplification. There's RCU in the mix,
-non-standard refcounting, page tracking. This won't be easy. Adding a
-admitedly why-yet-another special freeing helper would at least stop
-abusing the API and annotate the context. That's an intermediate step.
+
+I think you may be referencing this other warning:
+
+         ret = load_chunk_info(fd, chunkinfo, chunkcount);
+         if (ret == -EPERM) {
+                 warning("cannot read detailed chunk info, per-device 
+usage will not be shown, run as root");
+
+This one is still present, and matches exactly what you say:
+it fires when btrfs fi usage is run under a non-root user.
+
+The "RAID56 detected, not implemented" warning, on the other hand,
+is displayed even under the root user, and indicates that it's normal
+that most of the counters of "filesystem usage" are at zero, because
+the code to compute these properly under raid5/raid6 isn't there yet,
+and it's actually precisely this missing feature that my patch tries to 
+add!
+
+Thanks,
+
+Stéphane.

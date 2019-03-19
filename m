@@ -4,28 +4,29 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-6.7 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
 	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EB681C43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Mar 2019 03:31:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 45963C43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Mar 2019 04:47:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BAAB720872
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Mar 2019 03:31:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 175D820854
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Mar 2019 04:47:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726915AbfCSDbq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 18 Mar 2019 23:31:46 -0400
-Received: from mout.gmx.net ([212.227.17.20]:37233 "EHLO mout.gmx.net"
+        id S1725988AbfCSErH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Mar 2019 00:47:07 -0400
+Received: from mout.gmx.net ([212.227.17.21]:43429 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726743AbfCSDbq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Mar 2019 23:31:46 -0400
-Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx102
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0Lb90f-1giHBY1BlZ-00kiTx; Tue, 19
- Mar 2019 04:31:38 +0100
-Subject: Re: [PATCH 2/3] btrfs: Fix bound checking in
- qgroup_trace_new_subtree_blocks
+        id S1725934AbfCSErH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Mar 2019 00:47:07 -0400
+Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx101
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0MIiHs-1h8JZr2eMa-002Kg7; Tue, 19
+ Mar 2019 05:47:00 +0100
+Subject: Re: [PATCH 3/3] btrfs: Avoid possible qgroup_rsv_size overflow in
+ btrfs_calculate_inode_block_rsv_size
 To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 References: <20190318154520.4086-1-nborisov@suse.com>
- <20190318154520.4086-3-nborisov@suse.com>
+ <20190318154520.4086-4-nborisov@suse.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -52,34 +53,34 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <760ce5a7-4ada-8642-89b9-3d8c79c7ad6e@gmx.com>
-Date:   Tue, 19 Mar 2019 11:31:32 +0800
+Message-ID: <ae22172a-b1df-7608-914a-0edbdb2f4e96@gmx.com>
+Date:   Tue, 19 Mar 2019 12:46:55 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.5.3
 MIME-Version: 1.0
-In-Reply-To: <20190318154520.4086-3-nborisov@suse.com>
+In-Reply-To: <20190318154520.4086-4-nborisov@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
-X-Provags-ID: V03:K1:XQENPR4Cx7TtK9500Uh9FrkiENttWCLxqDgstDC8DK5SRmMH+6n
- yPXFLeGmeI9/k3Rl5sT2m9YkbWlBAHau+oWIFJu55ichZbauXkKRJTxI+IMNscsvLvNfbzL
- mJqHM0YNwrW4kt9ChavU9ZAOalqSQf8pbI/vqE2HyJPCRxnYDSKtARu3BaH28qpii+R1xSC
- o93uiOk42cZS3SvVHRW5g==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:p/6Fzvsut20=:HEGh19uUrhRU8+cYzDCogS
- +61rXRRVsfGR2NKhFMFZGAAcMi85hk0ovn+cNQZklX/Vp8qe1H7wsD7EoStphjWeT/gaj3rus
- SBBgPAqDbeokNtNhBVhU4ojY7NJmzJY3LBOTo61WaVyDLqjR+SyNU5jVoB50xqDbS8FbDdJ72
- 8Yxuz9t6nWMHgUP65Jv3/N5J/mNPJ13ALNodASeb0hgAWIZUEP4HcB8TyVGuQ6PzAEP8KljdY
- i0PlQ2pttWY1rcoc1tuk/6q7C2BMbDl1BEz5A0T+TgMqc23+cy8c+GX+4j3VjU2QOsSWUCvQm
- j4swNq3XOBXPL4zMKAE0Ecit0l9LttLT4o9UqhC1hyg7P7gnUHzql1plcSJHmqKXpfBBWO4UZ
- OEbMszQxnB7LjvzIBSHXgPMm3XAFpJJVEBHHEZS7dDuqRR6kYBGXbv4AC8eu6HKAawjxew+D5
- pNbzkB7PhYARACwdKryuGSkgMr5D4K0cvQARJtgr/p+dUX09yxFJTb7DoUgcyqztZ9UEHyETw
- 6zwaEriOj/Eq31w2trsKuu+OJ++hScgP9QtQzkfbgjKjLPDQlylZ87GoPsP2/LGhbVJlQLawG
- edscAeTolHc+qicZG96+KSc65F7aKNsOC0Uke9Dbb7WU7gEzpSHrhs0QAwlXwSzW3RMr7AuYq
- NeYpZw0Qk8cS12NPp5qoBM62d5JCllbQIOFgsXoNDjGoSJicwVFbchIGYHOzAE2OskhYldfAb
- kR8a8DyeQR40dN4KwQm/l4VdWfTveaKoZpGjEZc0Fxwd6VGU+dnRVKFAO8scZInpGEOUuswss
- lXe+2Vz+rbZAZmXHlT1JZm5J9xMF5H9tEBZKWKenr5m6Sj3x69hN3KnPFv90KbMJc673BjUxX
- H7L0PZFHFKA+qIjoI3unss5RxLJ7laCBwVClrRUsbSyLfKAqtiSRENttRjiLmcRWAF3qh4svd
- Lq4DRjD5YWw==
+X-Provags-ID: V03:K1:xaASTvws6PehWckZWrMLCGoDcmNBQRvxl6nOSx7XDCmSfb1Qdga
+ fxIfjxkpYWFasDd2yip7TAN/+yvPRFk+iV84S7mIv1y4RqALvcI+ZxZE6BV2YleOpkkP6Tb
+ R7NZuuLAU+nUozVrUZx4adlfYqb6CtoOwBpjquk0RxNTBkOynVzVBPEtlnhRMFpXSQrh5t1
+ LAH3LNBX15854RvQbXyMw==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:T0OcFgoueHg=:9/Dcby/8ryItktICIDjMZO
+ CLuHebBpeuOSq5lbdy3Ca/OdZjlmytNMVfRN5Ew0QZzzVxei3ss6OXt6npurK8DlnR433GxgD
+ ShHQPwXeBJsfqqh0njoil/p0QGK8Ob8cxMU2I2rGAMho6ttVoPiCAuontCl9dFHsyjPP7Fwhn
+ Vs60xf0Xpr5bRtzyR30gDKB7Qdm9RDOZiq6IdsnSgc56Zv4UGtShP5a9fZ/KV+hM5J4KDPecE
+ fuzSeCAJ2fCgyzqyzXz3Ijo+DkDtDyEkJm1l8a11Ibn+cGvziJnF1/52TzgbEdhdbDf1IbRr8
+ ++OKsrRjSUfBOD6MWgsey+vZ6UPdQgs1Rem8lnPRU+gIdiN81vqrUnn0KjDzT36IPg5gps9B3
+ j5C2HU3ag8cgxuI0FNv6jpF8Cm6euBKc+gSLuWtZYkubCApW+ceEqn9oFEF26QadHen5TtIfw
+ uJgWyL0zbYi79cIsQFEJhP2ChSrAq6Q7khXyhz+vz6kyEGyTGMGa6oaOHBvbwCUKiGJ2/DY7f
+ TqO5Wo5D+UpdKTJlAXtxq/R91MMdyRnGww+ePquySSezf0MryxEssjXnQAPielJoyN1TTTT2x
+ gUOjdOp5MqnN12xzh3YLaNGmMAmgFHXRD0Fxd7+VLZTiNm0s5D6RN+dExg377EsWrCK8+B1Bm
+ ZcfB+Qj++Jv9P4o4orwCA+Gn+VmLTkvTFuoDPUM12oqZ3UDy6zdIhgie9A33ksOCtF7JUZxEn
+ tmweaLYaYM/hqvsvaZFpoIfxsCieMUBF31/LbaFCZrrygYKPtt+0p1ZlIcTraZVhoK3oR+q2C
+ txsvTv726iIzOa38EFfui0h69CTZtXpeIw73chLBl4y7XtG968NqHg1nEyc3qYqjV4/p8fyDY
+ 9oXfQJ9gglic2lmhZE7zwr31VbrOQfRHue6km2xpotbjb2oRd+leVja2LKCjyDm/LlimyEp5i
+ 3/TcdTSkcpg==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -88,48 +89,42 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 2019/3/18 下午11:45, Nikolay Borisov wrote:
-> If 'cur_level' is 7  then the bound checking at the top of the function
-> will actually pass. Later on, it's possible to dereference
-> ds_path->nodes[cur_level+1] which will be an out of bounds.
+> qgroup_rsv_size is calculated as the product of
+> outstanding_extent * fs_info->nodesize. The product is calculated with
+> 32 bith precision since both variables are defined as u32. Yet
+> qgroup_rsv_size expects a 64 bit result.
 > 
-> The correct check will be cur_level >= BTRFS_MAX_LEVEL - 1 .
+> Avoid possible multiplication overflow by casting outstanding_extent to
+> u64.
 > 
-> Fixes-coverty-id: 1440918
-> Fixes-coverty-id: 1440911
-> Fixes: ea49f3e73c4b ("btrfs: qgroup: Introduce function to find all new tree blocks of reloc tree")
+> Fixes-coverity-id: 1435101
+> ff6bc37eb7f6 ("btrfs: qgroup: Use independent and accurate per inode qgroup rsv")
+> 
 > Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  fs/btrfs/extent-tree.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index b085d8215f0e..beddf9eef4a2 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -6173,7 +6173,7 @@ static void btrfs_calculate_inode_block_rsv_size(struct btrfs_fs_info *fs_info,
+>  	 *
+>  	 * This is overestimating in most cases.
+>  	 */
+> -	qgroup_rsv_size = outstanding_extents * fs_info->nodesize;
+> +	qgroup_rsv_size = (u64) outstanding_extents * fs_info->nodesize;
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+I'm a little uncertain about what's the proper way to do a u32 * u32 and
+get a u64 in C.
+
+For division we have DIV macro but not for multiple.
 
 Thanks,
 Qu
 
-> ---
->  fs/btrfs/qgroup.c | 6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
-> 
-> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> index eb680b715dd6..7019edf5625c 100644
-> --- a/fs/btrfs/qgroup.c
-> +++ b/fs/btrfs/qgroup.c
-> @@ -1922,8 +1922,8 @@ static int qgroup_trace_new_subtree_blocks(struct btrfs_trans_handle* trans,
->  	int i;
 >  
->  	/* Level sanity check */
-> -	if (cur_level < 0 || cur_level >= BTRFS_MAX_LEVEL ||
-> -	    root_level < 0 || root_level >= BTRFS_MAX_LEVEL ||
-> +	if (cur_level < 0 || cur_level >= BTRFS_MAX_LEVEL - 1 ||
-> +	    root_level < 0 || root_level >= BTRFS_MAX_LEVEL - 1 ||
->  	    root_level < cur_level) {
->  		btrfs_err_rl(fs_info,
->  			"%s: bad levels, cur_level=%d root_level=%d",
-> @@ -3482,7 +3482,7 @@ static int __btrfs_qgroup_release_data(struct inode *inode,
->  	if (free && reserved)
->  		return qgroup_free_reserved_data(inode, reserved, start, len);
->  	extent_changeset_init(&changeset);
-> -	ret = clear_record_extent_bits(&BTRFS_I(inode)->io_tree, start, 
-> +	ret = clear_record_extent_bits(&BTRFS_I(inode)->io_tree, start,
->  			start + len -1, EXTENT_QGROUP_RESERVED, &changeset);
->  	if (ret < 0)
->  		goto out;
+>  	spin_lock(&block_rsv->lock);
+>  	block_rsv->size = reserve_size;
 > 

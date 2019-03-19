@@ -2,82 +2,87 @@ Return-Path: <SRS0=+tZ8=RW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.7 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A97B1C43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Mar 2019 06:51:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2D4CAC43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Mar 2019 06:56:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 821342147C
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Mar 2019 06:51:05 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C4E8220685
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Mar 2019 06:56:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727516AbfCSGvE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 19 Mar 2019 02:51:04 -0400
-Received: from mx2.suse.de ([195.135.220.15]:47442 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726437AbfCSGvD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Mar 2019 02:51:03 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 96B38AFE2
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Mar 2019 06:51:01 +0000 (UTC)
-Subject: Re: [PATCH 1/2] btrfs: Make btrfs_(set|clear)_header_flag return void
-To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20190319060418.29575-1-wqu@suse.com>
-From:   Nikolay Borisov <nborisov@suse.com>
+        id S1726465AbfCSG40 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Mar 2019 02:56:26 -0400
+Received: from mout.gmx.net ([212.227.15.18]:37743 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725988AbfCSG40 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Mar 2019 02:56:26 -0400
+Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx002
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0Lg0sd-1geFi41fXX-00pcRA; Tue, 19
+ Mar 2019 07:56:20 +0100
+Subject: Re: [PATCH 3/3] btrfs: Avoid possible qgroup_rsv_size overflow in
+ btrfs_calculate_inode_block_rsv_size
+To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+References: <20190318154520.4086-1-nborisov@suse.com>
+ <20190318154520.4086-4-nborisov@suse.com>
+ <ae22172a-b1df-7608-914a-0edbdb2f4e96@gmx.com>
+ <3b6fec08-f14a-265d-522c-a07a630d129c@suse.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- mQINBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
- T7g+RbfPFlmQp+EwFWOtABXlKC54zgSf+uulGwx5JAUFVUIRBmnHOYi/lUiE0yhpnb1KCA7f
- u/W+DkwGerXqhhe9TvQoGwgCKNfzFPZoM+gZrm+kWv03QLUCr210n4cwaCPJ0Nr9Z3c582xc
- bCUVbsjt7BN0CFa2BByulrx5xD9sDAYIqfLCcZetAqsTRGxM7LD0kh5WlKzOeAXj5r8DOrU2
- GdZS33uKZI/kZJZVytSmZpswDsKhnGzRN1BANGP8sC+WD4eRXajOmNh2HL4P+meO1TlM3GLl
- EQd2shHFY0qjEo7wxKZI1RyZZ5AgJnSmehrPCyuIyVY210CbMaIKHUIsTqRgY5GaNME24w7h
- TyyVCy2qAM8fLJ4Vw5bycM/u5xfWm7gyTb9V1TkZ3o1MTrEsrcqFiRrBY94Rs0oQkZvunqia
- c+NprYSaOG1Cta14o94eMH271Kka/reEwSZkC7T+o9hZ4zi2CcLcY0DXj0qdId7vUKSJjEep
- c++s8ncFekh1MPhkOgNj8pk17OAESanmDwksmzh1j12lgA5lTFPrJeRNu6/isC2zyZhTwMWs
- k3LkcTa8ZXxh0RfWAqgx/ogKPk4ZxOXQEZetkEyTFghbRH2BIwARAQABtCNOaWtvbGF5IEJv
- cmlzb3YgPG5ib3Jpc292QHN1c2UuY29tPokCOAQTAQIAIgUCWIo48QIbAwYLCQgHAwIGFQgC
- CQoLBBYCAwECHgECF4AACgkQcb6CRuU/KFc0eg/9GLD3wTQz9iZHMFbjiqTCitD7B6dTLV1C
- ddZVlC8Hm/TophPts1bWZORAmYIihHHI1EIF19+bfIr46pvfTu0yFrJDLOADMDH+Ufzsfy2v
- HSqqWV/nOSWGXzh8bgg/ncLwrIdEwBQBN9SDS6aqsglagvwFD91UCg/TshLlRxD5BOnuzfzI
- Leyx2c6YmH7Oa1R4MX9Jo79SaKwdHt2yRN3SochVtxCyafDlZsE/efp21pMiaK1HoCOZTBp5
- VzrIP85GATh18pN7YR9CuPxxN0V6IzT7IlhS4Jgj0NXh6vi1DlmKspr+FOevu4RVXqqcNTSS
- E2rycB2v6cttH21UUdu/0FtMBKh+rv8+yD49FxMYnTi1jwVzr208vDdRU2v7Ij/TxYt/v4O8
- V+jNRKy5Fevca/1xroQBICXsNoFLr10X5IjmhAhqIH8Atpz/89ItS3+HWuE4BHB6RRLM0gy8
- T7rN6ja+KegOGikp/VTwBlszhvfLhyoyjXI44Tf3oLSFM+8+qG3B7MNBHOt60CQlMkq0fGXd
- mm4xENl/SSeHsiomdveeq7cNGpHi6i6ntZK33XJLwvyf00PD7tip/GUj0Dic/ZUsoPSTF/mG
- EpuQiUZs8X2xjK/AS/l3wa4Kz2tlcOKSKpIpna7V1+CMNkNzaCOlbv7QwprAerKYywPCoOSC
- 7P25Ag0EWIoHPgEQAMiUqvRBZNvPvki34O/dcTodvLSyOmK/MMBDrzN8Cnk302XfnGlW/YAQ
- csMWISKKSpStc6tmD+2Y0z9WjyRqFr3EGfH1RXSv9Z1vmfPzU42jsdZn667UxrRcVQXUgoKg
- QYx055Q2FdUeaZSaivoIBD9WtJq/66UPXRRr4H/+Y5FaUZx+gWNGmBT6a0S/GQnHb9g3nonD
- jmDKGw+YO4P6aEMxyy3k9PstaoiyBXnzQASzdOi39BgWQuZfIQjN0aW+Dm8kOAfT5i/yk59h
- VV6v3NLHBjHVw9kHli3jwvsizIX9X2W8tb1SefaVxqvqO1132AO8V9CbE1DcVT8fzICvGi42
- FoV/k0QOGwq+LmLf0t04Q0csEl+h69ZcqeBSQcIMm/Ir+NorfCr6HjrB6lW7giBkQl6hhomn
- l1mtDP6MTdbyYzEiBFcwQD4terc7S/8ELRRybWQHQp7sxQM/Lnuhs77MgY/e6c5AVWnMKd/z
- MKm4ru7A8+8gdHeydrRQSWDaVbfy3Hup0Ia76J9FaolnjB8YLUOJPdhI2vbvNCQ2ipxw3Y3c
- KhVIpGYqwdvFIiz0Fej7wnJICIrpJs/+XLQHyqcmERn3s/iWwBpeogrx2Lf8AGezqnv9woq7
- OSoWlwXDJiUdaqPEB/HmGfqoRRN20jx+OOvuaBMPAPb+aKJyle8zABEBAAGJAh8EGAECAAkF
- AliKBz4CGwwACgkQcb6CRuU/KFdacg/+M3V3Ti9JYZEiIyVhqs+yHb6NMI1R0kkAmzsGQ1jU
- zSQUz9AVMR6T7v2fIETTT/f5Oout0+Hi9cY8uLpk8CWno9V9eR/B7Ifs2pAA8lh2nW43FFwp
- IDiSuDbH6oTLmiGCB206IvSuaQCp1fed8U6yuqGFcnf0ZpJm/sILG2ECdFK9RYnMIaeqlNQm
- iZicBY2lmlYFBEaMXHoy+K7nbOuizPWdUKoKHq+tmZ3iA+qL5s6Qlm4trH28/fPpFuOmgP8P
- K+7LpYLNSl1oQUr+WlqilPAuLcCo5Vdl7M7VFLMq4xxY/dY99aZx0ZJQYFx0w/6UkbDdFLzN
- upT7NIN68lZRucImffiWyN7CjH23X3Tni8bS9ubo7OON68NbPz1YIaYaHmnVQCjDyDXkQoKC
- R82Vf9mf5slj0Vlpf+/Wpsv/TH8X32ajva37oEQTkWNMsDxyw3aPSps6MaMafcN7k60y2Wk/
- TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
- RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
- 5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <f38b2b79-cef0-7ec1-77e3-31ba7160391c@suse.com>
-Date:   Tue, 19 Mar 2019 08:51:00 +0200
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <6d6ccbb4-07be-0cd0-3b7a-5524c3728f20@gmx.com>
+Date:   Tue, 19 Mar 2019 14:56:13 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.1
+ Thunderbird/60.5.3
 MIME-Version: 1.0
-In-Reply-To: <20190319060418.29575-1-wqu@suse.com>
+In-Reply-To: <3b6fec08-f14a-265d-522c-a07a630d129c@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
+X-Provags-ID: V03:K1:lIDbsT1N3lyo1TzEPj5ehO7AMPmqpKHRwf02OkWHKF8XJfOEQIE
+ xEiSy1+D6SQWpknfD+rjsRyEVw1Tct+a913PWftwt8ThFJB6ngThFGMtVoBgz2JVuG9lWk+
+ Ld7I1iUakBEmKyAngp3yGhoVYmWZSQf9yNIrXYGJ5oz6iIxqQVZZgjnJmR9jJQ1zr0qp9HD
+ DsnxnBDABGUIJWPh7Xiug==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:qvYO2TkTXXo=:Jm4whzQN7YfZ0ItdHSG2o5
+ 3n7irf/N4azS087FbXrhTHN/IBonYnYhgnvGpMNrrn4b/wHS6Xb/+0W80ZbdMWm1NcjnHKSpK
+ uBtt3rThY7g3uCdp/KNbEyY0rI1xxEuUQdg7Le6/DTuwE+fE1Pir/PGOVr1r/Cxu6+V5B9W8G
+ l6x7CgwEonSLZHVxVXZ68HDaHMxuo1y7AtVONHSdGK22rzbmobPPZYwGB5x6q2xg369805ZHv
+ PK3Ed+XnRgJfMID3y4i3zsy+JLEFRGL9Jh4Ep/MAk3qvCV6EH/WLZITBE6hr9DVaEAMb/pFzL
+ VuIJMIT0pwLC0hQqOb87NuEk243lDQbRELMFOlJZMrjsqh0PmKsdgjsgSsCipjA+fvxWWltzS
+ J21MMmZ6bDvmoOaWAehqgooMwQmUMRMYW1haQse+9rgJgubHFFxqwRYtv+amDX2lAi9LMFcXD
+ H5muZtAGvNbRSRvyZTPqptDZ4GgNPOkVpNPjIYKzKsOdUnmsvGra6D2thX5xLeVqtoBm3XY4u
+ kzu8Fgnbi1OSSQqiLOk/29wYgyG9vq5uYu6nE48qfxCxkfeLvRUYDveDpm9k/p6dAXsiW0kP+
+ jA4uAadpUTuG4po1sBDgzBFsLc9kLf48EqIyZgsuHRtqeGt0OnlkBtp/cRVkhs4BT8BPxhKHB
+ hMbBTETEBH62sINLvrxS9R6hU68ExO9ZJOYT6zPnW0FchUA2hHkdlXGUSJrWWDfsAXcssHLE5
+ M0W9vRioXLJ4SVkORoKDh0BxcceYnlxpy9Tpt/7LQuZZ3cL8rJpJFU7YiLltjztWw6S3uWIRs
+ pRVbblPsFIWdRwAwUKHUfrfa3+kxcDygDVOCXRbUzFxrWbRuTJ9pyiw/VhemKqGsARGSBi7mY
+ RujN8FP1PDTQtOmIZ6lWzdI+zddO0V/wxymCZKbo1NBi/WCU0AjytpWRfuvxJFzikUuyD2sKz
+ KNYDddU5d2Q==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -85,44 +90,64 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 19.03.19 г. 8:04 ч., Qu Wenruo wrote:
-> From the introduce of btrfs_(set|clear)_header_flag, there is no usage
-> of its return value.
+On 2019/3/19 下午2:48, Nikolay Borisov wrote:
 > 
-> So just make it return void.
 > 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> On 19.03.19 г. 6:46 ч., Qu Wenruo wrote:
+>>
+>>
+>> On 2019/3/18 下午11:45, Nikolay Borisov wrote:
+>>> qgroup_rsv_size is calculated as the product of
+>>> outstanding_extent * fs_info->nodesize. The product is calculated with
+>>> 32 bith precision since both variables are defined as u32. Yet
+>>> qgroup_rsv_size expects a 64 bit result.
+>>>
+>>> Avoid possible multiplication overflow by casting outstanding_extent to
+>>> u64.
+>>>
+>>> Fixes-coverity-id: 1435101
+>>> ff6bc37eb7f6 ("btrfs: qgroup: Use independent and accurate per inode qgroup rsv")
+>>>
+>>> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+>>> ---
+>>>  fs/btrfs/extent-tree.c | 2 +-
+>>>  1 file changed, 1 insertion(+), 1 deletion(-)
+>>>
+>>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+>>> index b085d8215f0e..beddf9eef4a2 100644
+>>> --- a/fs/btrfs/extent-tree.c
+>>> +++ b/fs/btrfs/extent-tree.c
+>>> @@ -6173,7 +6173,7 @@ static void btrfs_calculate_inode_block_rsv_size(struct btrfs_fs_info *fs_info,
+>>>  	 *
+>>>  	 * This is overestimating in most cases.
+>>>  	 */
+>>> -	qgroup_rsv_size = outstanding_extents * fs_info->nodesize;
+>>> +	qgroup_rsv_size = (u64) outstanding_extents * fs_info->nodesize;
+>>
+>> I'm a little uncertain about what's the proper way to do a u32 * u32 and
+>> get a u64 in C.
+>>
+>> For division we have DIV macro but not for multiple.
+> 
+> You should definitely read this:
+> 
+> https://wiki.sei.cmu.edu/confluence/display/c/INT18-C.+Evaluate+integer+expressions+in+a+larger+size+before+comparing+or+assigning+to+that+size
+> 
+> In particular the 2nd "Noncompliant Code Example
+> " described there is exactly the case you have in this code.
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
+Thanks,
+Qu
 
-> ---
->  fs/btrfs/ctree.h | 6 ++----
->  1 file changed, 2 insertions(+), 4 deletions(-)
 > 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index b3642367a595..c03852d1aa34 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -2163,18 +2163,16 @@ static inline int btrfs_header_flag(const struct extent_buffer *eb, u64 flag)
->  	return (btrfs_header_flags(eb) & flag) == flag;
->  }
->  
-> -static inline int btrfs_set_header_flag(struct extent_buffer *eb, u64 flag)
-> +static inline void btrfs_set_header_flag(struct extent_buffer *eb, u64 flag)
->  {
->  	u64 flags = btrfs_header_flags(eb);
->  	btrfs_set_header_flags(eb, flags | flag);
-> -	return (flags & flag) == flag;
->  }
->  
-> -static inline int btrfs_clear_header_flag(struct extent_buffer *eb, u64 flag)
-> +static inline void btrfs_clear_header_flag(struct extent_buffer *eb, u64 flag)
->  {
->  	u64 flags = btrfs_header_flags(eb);
->  	btrfs_set_header_flags(eb, flags & ~flag);
-> -	return (flags & flag) == flag;
->  }
->  
->  static inline int btrfs_header_backref_rev(const struct extent_buffer *eb)
-> 
+>>
+>> Thanks,
+>> Qu
+>>
+>>>  
+>>>  	spin_lock(&block_rsv->lock);
+>>>  	block_rsv->size = reserve_size;
+>>>
+>>

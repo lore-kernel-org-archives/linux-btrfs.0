@@ -7,51 +7,51 @@ X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A583DC43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Mar 2019 10:00:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7BAA6C43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Mar 2019 10:00:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6FB1D20857
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Mar 2019 10:00:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4B49F20857
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Mar 2019 10:00:21 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="dCSgimgn"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="If1sYzLt"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727017AbfCSKAP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 19 Mar 2019 06:00:15 -0400
-Received: from userp2130.oracle.com ([156.151.31.86]:57982 "EHLO
+        id S1727208AbfCSKAU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Mar 2019 06:00:20 -0400
+Received: from userp2130.oracle.com ([156.151.31.86]:58084 "EHLO
         userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725905AbfCSKAO (ORCPT
+        with ESMTP id S1726809AbfCSKAT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Mar 2019 06:00:14 -0400
+        Tue, 19 Mar 2019 06:00:19 -0400
 Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x2J9wx0a186178
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Mar 2019 10:00:13 GMT
+        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x2J9wwiQ186164
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Mar 2019 10:00:17 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
  date : message-id : in-reply-to : references; s=corp-2018-07-02;
- bh=lGvfOq153aKR2IeqhILLafZwQYpDRLY7NBZeUiLMwCA=;
- b=dCSgimgneoD1kiZx7DI4NuIqneHaswX0p75RCt+FwdfbgTwqVZ/fVZRnLvFmmUzVngmD
- 60/raPtztPm43Wp+ZRZg/G1FgUHVCqKrP4q76pDM4lKhs/635jkYV68wvlmr2CO0tNK/
- Z+cdOq3bozUYsa8txDvYg+jF02gbQbfhk0Lwx2s6+YQVfIKMbf8e6E2F5vbMIh0pPl+q
- a9zLq8i3Rn0rszvtH6ENlKxy2+1laf/xjm5CU+gO+pI7KZUxA6esjuR1k6jgkShRfyy8
- r4Xa2KTp923iB6kczDUhcnruGxXMi2ImkS10yuTYKSzsoP5b8iDMc+548vuQVU/EduOi hA== 
+ bh=63Itet+jxuSBdBetsVOTDkgoIEq4oAqphov+mw44S0I=;
+ b=If1sYzLtTMglQx+PIsIq/0JfMh81gEi5DcSX3TCmyWY5bkltOeBEG/2aG182ns4Hg9iW
+ ZsFj6DS4LsQNJIIZ959nqIALrdXUTDLbPK8sxZkkCqVhoAUBYeFDUqqoOybaPYGH3rdC
+ UmRiKyrOKvJZ4WDm3XSlEiGm6Rvn7dvTzM75/IlBOEwQZ0hA4IWqwDhUz8dkK2MK6FxE
+ mlsiyxekSr0wd+cUTgCO92IjcAiEKgp1cRYFBHHFWQpUNxcqbIlSOT68AjuKgB1nzFka
+ PH0xL/QG8jy86fTSwxGuYmlYTLsxn7BKj6ckR4xAzokTup/qYvYzhDPlNavoE2Uamqe3 iw== 
 Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by userp2130.oracle.com with ESMTP id 2r8rjukmrn-1
+        by userp2130.oracle.com with ESMTP id 2r8rjukmsj-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Mar 2019 10:00:12 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id x2JA0Bik027845
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Mar 2019 10:00:17 +0000
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id x2JA0Hwg028513
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Mar 2019 10:00:11 GMT
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Mar 2019 10:00:17 GMT
 Received: from abhmp0020.oracle.com (abhmp0020.oracle.com [141.146.116.26])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x2JA0B7C000488
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Mar 2019 10:00:11 GMT
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x2JA0HC6018949
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Mar 2019 10:00:17 GMT
 Received: from tpasj.wifi.oracle.com (/192.188.170.109)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Tue, 19 Mar 2019 03:00:11 -0700
+        with ESMTP ; Tue, 19 Mar 2019 03:00:16 -0700
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH RFC 1/5] btrfs: add inode pointer to prop_handler::validate()
-Date:   Tue, 19 Mar 2019 18:00:20 +0800
-Message-Id: <1552989624-29577-2-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH RFC 5/5] btrfs: add readmirror devid mount option
+Date:   Tue, 19 Mar 2019 18:00:24 +0800
+Message-Id: <1552989624-29577-6-git-send-email-anand.jain@oracle.com>
 X-Mailer: git-send-email 1.8.3.1
 In-Reply-To: <1552989624-29577-1-git-send-email-anand.jain@oracle.com>
 References: <1552989624-29577-1-git-send-email-anand.jain@oracle.com>
@@ -66,56 +66,75 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-In preparation to add the readmirror devid property, pass inode in the
-prop_handler::validate() function vector, so that it can fetch
-corresponding fs_devices.
+This patch provides the readmirror=devid<n> feature configurable through
+the mount option which is transient and can be applied during readonly
+mount as well.
+
+For example:
+mount -o readmirror=devid<n>
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/props.c | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
+ fs/btrfs/super.c   | 19 +++++++++++++++++++
+ fs/btrfs/volumes.c |  2 ++
+ fs/btrfs/volumes.h |  1 +
+ 3 files changed, 22 insertions(+)
 
-diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-index 99fa2459ba61..1a13f10a6ef5 100644
---- a/fs/btrfs/props.c
-+++ b/fs/btrfs/props.c
-@@ -18,7 +18,7 @@
- struct prop_handler {
- 	struct hlist_node node;
- 	const char *xattr_name;
--	int (*validate)(const char *value, size_t len);
-+	int (*validate)(struct inode *inode, const char *value, size_t len);
- 	int (*apply)(struct inode *inode, const char *value, size_t len);
- 	const char *(*extract)(struct inode *inode);
- 	int inheritable;
-@@ -89,7 +89,7 @@ int btrfs_set_prop(struct inode *inode, const char *name, const char *value,
- 		goto out;
- 	}
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 9d25a01bcecb..5aa1a4d14cd7 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -857,6 +857,25 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+ 				info->fs_devices->readmirror_policy =
+ 							BTRFS_READMIRROR_PID;
+ 				break;
++			} else if (strncmp(args[0].from, "devid", 5) == 0) {
++				u64 devid;
++				struct btrfs_device *device;
++
++				if (kstrtoull(args[0].from + 5, 10, &devid)) {
++					ret = -EINVAL;
++					goto out;
++				}
++				info->fs_devices->readmirror_policy =
++							BTRFS_READMIRROR_DEVID;
++				device = btrfs_find_device(info->fs_devices,
++							   devid, NULL, NULL,
++							   false);
++				if (!device) {
++					ret = -ENODEV;
++					goto out;
++				}
++		                device->type_in_ram = BTRFS_DEVICE_TYPE_READ_OPTIMIZED;
++				break;
+ 			}
+ 			ret = -EINVAL;
+ 			goto out;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index d3b7427d6d96..637617087c83 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5569,6 +5569,8 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
+ 		if (map->type & BTRFS_BLOCK_GROUP_RAID1) {
+ 			for (i = first; i < first + num_stripes; i++) {
+ 				if (map->stripes[i].dev->type ==
++				    BTRFS_DEVICE_TYPE_READ_OPTIMIZED ||
++				    map->stripes[i].dev->type_in_ram ==
+ 				    BTRFS_DEVICE_TYPE_READ_OPTIMIZED) {
+ 					preferred_mirror = i;
+ 					found = true;
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 9c2e64548a11..3e534bcaf43e 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -91,6 +91,7 @@ struct btrfs_device {
+ 	u32 io_width;
+ 	/* type and info about this device */
+ 	u64 type;
++	u64 type_in_ram;
  
--	ret = handler->validate(value, value_len);
-+	ret = handler->validate(inode, value, value_len);
- 	if (ret)
- 		return ret;
- 
-@@ -263,7 +263,8 @@ int btrfs_load_inode_props(struct inode *inode, struct btrfs_path *path)
- 	return ret;
- }
- 
--static int prop_compression_validate(const char *value, size_t len)
-+static int prop_compression_validate(struct inode *inode, const char *value,
-+				     size_t len)
- {
- 	if (!value)
- 		return 0;
-@@ -361,7 +362,7 @@ static int inherit_props(struct btrfs_trans_handle *trans,
- 			continue;
- 
- 		/* may be removed */
--		ret = h->validate(value, strlen(value));
-+		ret = h->validate(inode, value, strlen(value));
- 		if (ret)
- 			continue;
- 
+ 	/* minimal io size for this device */
+ 	u32 sector_size;
 -- 
 1.8.3.1
 

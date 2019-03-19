@@ -2,128 +2,243 @@ Return-Path: <SRS0=+tZ8=RW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 897A8C43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Mar 2019 11:04:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0756BC43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Mar 2019 11:35:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5DC382147C
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Mar 2019 11:04:27 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B9A1E2085A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Mar 2019 11:35:19 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="Y9oirIBL"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727218AbfCSLE0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 19 Mar 2019 07:04:26 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42758 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726896AbfCSLE0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Mar 2019 07:04:26 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 8DD14AD47;
-        Tue, 19 Mar 2019 11:04:24 +0000 (UTC)
-Subject: Re: [PATCH] btrfs: Extend btrfs/003 device removal test
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, guaneryu@gmail.com
-References: <20190319105842.9227-1-nborisov@suse.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <30507ca4-dcf4-86be-123e-ef6445f74d77@suse.com>
-Date:   Tue, 19 Mar 2019 13:04:23 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.1
-MIME-Version: 1.0
-In-Reply-To: <20190319105842.9227-1-nborisov@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+        id S1726896AbfCSLfS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Mar 2019 07:35:18 -0400
+Received: from aserp2130.oracle.com ([141.146.126.79]:40920 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726763AbfCSLfS (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Mar 2019 07:35:18 -0400
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x2JBYYEO106207
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Mar 2019 11:35:17 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
+ date : message-id : in-reply-to : references; s=corp-2018-07-02;
+ bh=IB0zk4sbsFH2Fn+fdgtHQvLEPw4QQiKkiV+IRh4SvUQ=;
+ b=Y9oirIBLJVdj4cRT0etTW6jhysALTV6v3X3jzkr6+k5pfCF56T7GpWT/ZZ8Wn6WXPrCB
+ kZFqipUv1MiG8TLVybSU3ITku4xZ4LacQ7bMvA+jGmZ4nS08BXvLlE4V5CAJT6Z8kdmj
+ FQqZSPRw59Q5ZAdQVGp4Jz8CYeAsVDlHAvWAsWyy++BeMqxfgJtqChXyojdfPX79/gz1
+ Z0WMKsUTDE6+gza7Yr/0Tu9unoxubfj6XHIKApaoupqRmuFiVOhNOT8sxCNnQY/JLVI3
+ 7CdtkQ9cgm6yWv+oiPn7tZ4P3tp9iX7XxGHp6JXbKfNEfeLx+edlPJFFqNBkrand4WYM Cg== 
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by aserp2130.oracle.com with ESMTP id 2r8pnem8re-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Mar 2019 11:35:16 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id x2JBZGnd024880
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Mar 2019 11:35:16 GMT
+Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x2JBZFXo020217
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Mar 2019 11:35:16 GMT
+Received: from tpasj.wifi.oracle.com (/192.188.170.109)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Tue, 19 Mar 2019 04:35:15 -0700
+From:   Anand Jain <anand.jain@oracle.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] fstests: btrfs test read from disks of different generation
+Date:   Tue, 19 Mar 2019 19:35:30 +0800
+Message-Id: <1552995330-28927-2-git-send-email-anand.jain@oracle.com>
+X-Mailer: git-send-email 1.8.3.1
+In-Reply-To: <1552995330-28927-1-git-send-email-anand.jain@oracle.com>
+References: <1552995330-28927-1-git-send-email-anand.jain@oracle.com>
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9199 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=1 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1903190087
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Verify file read from disks assembled with different generations.
 
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ tests/btrfs/184     | 132 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/184.out |   9 ++++
+ tests/btrfs/group   |   1 +
+ 3 files changed, 142 insertions(+)
+ create mode 100755 tests/btrfs/184
+ create mode 100644 tests/btrfs/184.out
 
-On 19.03.19 г. 12:58 ч., Nikolay Borisov wrote:
-> When a device is deleted/removed from a btrfs filesystem the kernel
-> ensures all superblocks on said device are zeroed out. Test for this
-> behavior. Since btrfs inspect-internal dump-super always return success
-> I cannot test for the return value of the command. Instead there are 2
-> cases to handle:
-> 
->     1. When the device is smaller than the requested super block copy, i.e.
->     super block copy 2 resides at 256GB. In such cases btrfs command just
->     returns blank screen
-> 
->     2. When the device is removed and a valid offset of the super block is
->     queried btrfs command returns a textual error to stderr.
-> 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> ---
+diff --git a/tests/btrfs/184 b/tests/btrfs/184
+new file mode 100755
+index 000000000000..1791fdb079b7
+--- /dev/null
++++ b/tests/btrfs/184
+@@ -0,0 +1,132 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (c) 2019 YOUR NAME HERE.  All Rights Reserved.
++#
++# FS QA Test 184
++#
++# Test read on raid1 assembled with disks of different generations.
++#  Steps:
++#   . Use btrfs snapshot on the test_dir to create disk images of
++#     different generations (lets say generation a and generation b).
++#   . Mount one disk from generation a and another disk from generation
++#     b, and verify the file md5sum.
++#  Note: readmirror feature (in the btrfs ml) helps to reproduce the
++#     problem consistently.
++#  Fix-by: kernel patch
++#   [PATCH] btrfs: fix read corrpution on disks of different generation
++
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++	_scratch_unmount > /dev/null 2>&1
++	_destroy_loop_device $dev1
++	_destroy_loop_device $dev2
++	btrfs subvolume delete $img_subvol > /dev/null 2>&1
++	btrfs subvolume delete $img_subvol_at_gen_a > /dev/null 2>&1
++	[[ -z $scratch_dev_pool_saved ]] || \
++			SCRATCH_DEV_POOL="$scratch_dev_pool_saved"
++	_scratch_dev_pool_put
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++
++# real QA test starts here
++
++# Modify as appropriate.
++_supported_fs generic
++_supported_os Linux
++_require_test
++_require_scratch_dev_pool 2
++
++_test_unmount
++_require_btrfs_forget_if_not_fs_loadable
++_test_mount
++
++_scratch_dev_pool_get 2
++scratch_dev_pool_saved=""
++
++img_subvol=$TEST_DIR/img_subvol
++img_subvol_at_gen_a=$TEST_DIR/img_subvol_at_gen_a
++dev1_img=$img_subvol/d1
++dev2_img=$img_subvol/d2
++dev1_img_at_gen_a=$img_subvol_at_gen_a/d1
++dev2_img_at_gen_a=$img_subvol_at_gen_a/d2
++
++$BTRFS_UTIL_PROG subvolume create $img_subvol >> /dev/null 2>&1 || \
++					_fail "subvol create failed"
++
++$XFS_IO_PROG -f -c "pwrite -S 0xdd 0 256m" $dev1_img >> /dev/null 2>&1
++$XFS_IO_PROG -f -c "pwrite -S 0xdd 0 256m" $dev2_img >> /dev/null 2>&1
++
++dev1=$(_create_loop_device $dev1_img)
++dev2=$(_create_loop_device $dev2_img)
++
++scratch_dev_pool_saved="$SCRATCH_DEV_POOL"
++SCRATCH_DEV_POOL="$dev1 $dev2"
++_scratch_pool_mkfs -d raid1 -m raid1 >> $seqres.full 2>&1 || \
++			_fail  "mkfs failed on $SCRATCH_DEV_POOL"
++
++
++_mount "-o max_inline=0,nodatacow,device=$dev1" $dev2 $SCRATCH_MNT || \
++					_fail "mount for gen a failed"
++
++$XFS_IO_PROG -f -c "pwrite -S 0xaa 0 4K" $SCRATCH_MNT/foobar >> /dev/null 2>&1
++
++echo md5sum at generation aa
++md5sum $SCRATCH_MNT/foobar | _filter_scratch
++echo
++_scratch_unmount
++
++$BTRFS_UTIL_PROG subvolume snapshot $img_subvol $img_subvol_at_gen_a \
++		>> /dev/null 2>&1 || _fail "subvol create failed"
++
++_mount "-o max_inline=0,nodatacow,device=$dev1" $dev2 $SCRATCH_MNT || \
++					_fail "mount for gen b failed"
++
++$XFS_IO_PROG -f -c "pwrite -S 0xbb 0 4K" $SCRATCH_MNT/foobar >> /dev/null 2>&1
++
++echo md5sum at generation bb
++md5sum $SCRATCH_MNT/foobar | _filter_scratch
++echo
++
++_scratch_unmount
++
++_destroy_loop_device $dev1
++_destroy_loop_device $dev2
++
++_test_unmount
++_btrfs_forget_if_not_fs_reload
++_test_mount
++
++dev1=$(_create_loop_device $dev1_img_at_gen_a)
++dev2=$(_create_loop_device $dev2_img)
++
++# mount with readmirror option, if it fails try without but the
++# problem may or may not be reproduced without the readmirror option.
++_mount "-o ro,device=$dev1,readmirror=devid$dev1_devid" $dev2 $SCRATCH_MNT > \
++								/dev/null 2>&1
++[[ $? != 0 ]] && (echo "readmirror option notfound" >> $seqres.full;
++		  _mount "-o ro,device=$dev1" $dev2 $SCRATCH_MNT || \
++					_fail "mount at gen ab failed";)
++echo md5sum at generation ab
++md5sum $SCRATCH_MNT/foobar | _filter_scratch
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/184.out b/tests/btrfs/184.out
+new file mode 100644
+index 000000000000..cc71898920ec
+--- /dev/null
++++ b/tests/btrfs/184.out
+@@ -0,0 +1,9 @@
++QA output created by 184
++md5sum at generation aa
++3e4309c7cc81f23d45e260a8f13ca860  SCRATCH_MNT/foobar
++
++md5sum at generation bb
++055a2a7342c0528969e1b6e32aadeee3  SCRATCH_MNT/foobar
++
++md5sum at generation ab
++055a2a7342c0528969e1b6e32aadeee3  SCRATCH_MNT/foobar
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index f3227c1708d9..a4f8fe1eb5ce 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -186,3 +186,4 @@
+ 181 auto quick balance
+ 182 auto quick balance
+ 183 auto quick clone compress punch
++184 other
+-- 
+1.8.3.1
 
-Disregard this version and check v2.
-
->  tests/btrfs/003 | 7 +++++++
->  1 file changed, 7 insertions(+)
-> 
-> diff --git a/tests/btrfs/003 b/tests/btrfs/003
-> index 22aa57aad0b9..938030ef4c65 100755
-> --- a/tests/btrfs/003
-> +++ b/tests/btrfs/003
-> @@ -161,6 +161,13 @@ _test_remove()
->  	dev_del=`echo ${SCRATCH_DEV_POOL} | awk '{print $NF}'`
->  	$BTRFS_UTIL_PROG device delete $dev_del $SCRATCH_MNT || _fail "btrfs device delete failed"
->  	$BTRFS_UTIL_PROG filesystem show $SCRATCH_DEV 2>&1 | grep $dev_del >> $seqres.full && _fail "btrfs still shows the deleted dev"
-> +	for i in {0..2}; do
-> +		local output=$($BTRFS_UTIL_PROG inspect-internal dump-super -s $i $dev_del 2>&1)
-> +		$BTRFS_UTIL_PROG inspect-internal dump-super -s $i $dev_del 2>&1 | grep -q "bad magic"
-> +		if [[ "$output" != "" && $ret -eq 1 ]]; then
-> +			_fail "Delete dev superblocks not scratched"
-> +		fi
-> +	done
->  	_scratch_unmount
->  }
->  
-> 

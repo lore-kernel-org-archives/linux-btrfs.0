@@ -2,97 +2,82 @@ Return-Path: <SRS0=+tZ8=RW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 538CBC43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Mar 2019 08:03:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8CFDDC43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Mar 2019 08:05:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 103FD20857
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Mar 2019 08:03:44 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="MvOBAdhJ"
+	by mail.kernel.org (Postfix) with ESMTP id 65B842147C
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Mar 2019 08:05:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727367AbfCSIDm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 19 Mar 2019 04:03:42 -0400
-Received: from mout.gmx.net ([212.227.15.18]:47693 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726020AbfCSIDm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Mar 2019 04:03:42 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1552982311;
-        bh=ZFb9u4/+1MuBvKta0n6l1Z3xizYhQTIzgnKnSTmUdiA=;
-        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
-        b=MvOBAdhJ1xuioWTcxbbf6OVDuVwoJwtoMU1nIqVaLvbxFLYkcvSpgHSbNN7j7p7Tg
-         gfiSSE6la3oIewzTGe0u1sZC+vw3L5HW21mLzUKDBxXR5x1O3B6QOs/Crz+9fBhxVV
-         DwAzeEdv43kMWOr5LqKFlP8Nhgi7h3FYir1CzmiY=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx001
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0M4nt7-1gngxH1LR7-00yzLr; Tue, 19
- Mar 2019 08:58:31 +0100
-Subject: Re: [PATCH 1/3] btrfs: tree-checker: Verify chunk items
-To:     Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-Cc:     Yoon Jungyeon <jungyeon@gatech.edu>
-References: <20190308072929.30863-1-wqu@suse.com>
- <20190308072929.30863-2-wqu@suse.com>
- <913bed07-e9a0-14ed-1602-e4a5f206e303@suse.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+        id S1727500AbfCSIFd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Mar 2019 04:05:33 -0400
+Received: from mx2.suse.de ([195.135.220.15]:56452 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726910AbfCSIFc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Mar 2019 04:05:32 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id C1C31AC8B
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Mar 2019 08:05:30 +0000 (UTC)
+Subject: Re: [PATCH] btrfs-progs: Makefile: Also clean test results
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20190319075043.4597-1-wqu@suse.com>
+From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <95e0667a-0004-bec0-03c3-1708ab013320@gmx.com>
-Date:   Tue, 19 Mar 2019 15:58:24 +0800
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <ed307dc3-1f6c-de30-4c82-6b3d9a335818@suse.com>
+Date:   Tue, 19 Mar 2019 10:05:29 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.3
+ Thunderbird/60.5.1
 MIME-Version: 1.0
-In-Reply-To: <913bed07-e9a0-14ed-1602-e4a5f206e303@suse.com>
+In-Reply-To: <20190319075043.4597-1-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:0NEOIbwmwQjXUeBpaNT+oDxgIphx48Bv3cJP5N1q5OKawO1OWPf
- kEuDSxCHVsV3LIbT1OyQEiOIHbIvUv0HtE+jafupr2yamgg2Y47SoPUnapl7A34eiKnUYjO
- JYRbXe1bEhsnFPe8Ia+ADVdi3tGowJnKGd3OkIgNUWUMSB4IEKUG2HKvD5q7oW20VeZcW7W
- y+gMquSzlNfmXhHZQbxLw==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:9/sEXdRar1Y=:A3q4NWDBbRrAAAtkLY4FjI
- i6RzpYFRrkNBIiNGPxlxXQi6UeXNqryKSwVZ0d3DODyH/SBXuB4A1hnw4HmEMTiCg5mqyWj3v
- lwswTemDsP/zNaQrFER4QvctF+cOSAXNiHmUN9p8quE9KJ0054wHHrV0xiG3FfWxF00rcndPp
- HHy6VTAT7OpcMcd4QR4t9tlZsYl5fB4bqCsG8PkXbJKU/+y34t2dZJC5N+yEbeqk5LHTe/DDd
- +13kQ+Dnn6RJoz8wLh4nycTuntnuiv553hKakiZXFHLLdbx663WjQbY/zXgUw9hvRpC0PNV/r
- nzDpgVPAvaGbGkk/ikx7wAnKAx55rdfXaWcb/oV6nEFnRYqABZorDT1LHcm2hoAhTRw9R0oWW
- 61ebhBwXipslsHyALntmMPRFQ+i7KK4kcy5PmAYa/sJqhcBfsLKqz+0K/sUPHj7h1EoVgMomt
- QyKGvyZFHgttbDH6Odo+gEvAM1t+eVJ85l5icynjSbxjNTWG4kpPw6HK5zFRR1UxFv08Y1Wbb
- DkXPRJyjKPy85zS5mzsqTzMWq0U+ZM4YlOING8gihf62bupLkq36Xpuadc533pajOHShkMiHB
- /lPpHdi6CtEFMzWgt55464fqA7Y8aaa2xtxzanSUe1TZJYYiyGQqyihp8xY4BPYEWGdlTl9fP
- rylEeN0TJ/FfCC0tpjWauIcJ1LTJv77DtyXxEeKY0xuwSt80i1FKtJR1XW6waBtoyVKBvDs2d
- JgGpS2RWGS6Rq1tuRoQY6pVHwYI5K1rtTnxPvh8wqQL/5nNQx1y1gh3foc9vFzYaUahH0GQSr
- 6/ofnxEuhCU48Qjcb9WWonI/LwI/vJCsw0ZxYLEVt9D4iocbwQIxtguxq/S+9LFrDz6Yl1OBb
- N+61LExXBPk6TLykYYRIxEm2CuCZeUsUc15FOfkz7HLlwWmhbuosj5xqRwTyyIbSNBcBFoxgh
- QiHgqdJ4tQg==
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -100,56 +85,27 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 2019/3/11 =E4=B8=8B=E5=8D=8811:25, Nikolay Borisov wrote:
->
->
-> On 8.03.19 =D0=B3. 9:29 =D1=87., Qu Wenruo wrote:
->> We already have btrfs_check_chunk_valid() to verify each chunk before
->> tree-checker.
->>
->> Merge that function into tree-checker, and update its error message to
->> be more readable.
->>
->> Old error message would be something like:
->>   BTRFS error (device dm-3): invalid chunk num_stipres: 0
->>
->> New error message would be:
->>   Btrfs critical (device dm-3): corrupt superblock syschunk array: chun=
-k_start=3D2097152, invalid chunk num_stripes: 0
->> Or
->>   Btrfs critical (device dm-3): corrupt leaf: root=3D3 block=3D8388608 =
-slot=3D3 chunk_start=3D2097152, invalid chunk num_stripes: 0
->>
->> Btrfs_check_chunk_valid() is exported for super block syschunk array
->> verification.
->>
->> Also make tree-checker to verify chunk items, this makes chunk item
->> checker covers all chunks and avoid fuzzed image.
->>
->> Reported-by: Yoon Jungyeon <jungyeon@gatech.edu>
->> Link: https://bugzilla.kernel.org/show_bug.cgi?id=3D202751
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->
-> Actually since the reporter made images available I would like to have
-> those integrated into the fsck group so that those changes can be
-> validated and ensure further regressions do not creep up.
->
+On 19.03.19 г. 9:50 ч., Qu Wenruo wrote:
+> This makes greping a lot easier.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-Add David into this discussion.
-This topic seems to be mentioned before.
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
-Should we put kernel test cases into btrfs-progs?
-
-We have fuzzed test groups for btrfs-progs mainly, but we don't really
-have kernel tests in btrfs-progs.
-Is it proper to put kernel-crashing tests into btrfs-progs?
-
-If not, where should we put such tests?
-
-
-And BTW, I originally wanted to craft the minimal image for those tests,
-but quite a lot of the image needs several corruption combined to hit
-the pitfall. I'm not sure if it's worthy to create the minimal image.
-
-Thanks,
-Qu
+> ---
+>  Makefile | 1 +
+>  1 file changed, 1 insertion(+)
+> 
+> diff --git a/Makefile b/Makefile
+> index e25e256f96af..9cefd70d2bd6 100644
+> --- a/Makefile
+> +++ b/Makefile
+> @@ -628,6 +628,7 @@ clean: $(CLEANDIRS)
+>  		mkfs/*.o mkfs/*.o.d check/*.o check/*.o.d \
+>  	      ioctl-test quick-test library-test library-test-static \
+>                mktables btrfs.static mkfs.btrfs.static fssum \
+> +	      tests/*-results.txt \
+>  	      $(check_defs) \
+>  	      $(libs) $(lib_links) \
+>  	      $(progs_static) \
+> 

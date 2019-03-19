@@ -7,51 +7,51 @@ X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 33C1AC43381
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8730BC10F03
 	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Mar 2019 10:00:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 014D520857
+	by mail.kernel.org (Postfix) with ESMTP id 56F2520857
 	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Mar 2019 10:00:17 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="V3OJ0Wxb"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="rSX2WrVm"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727151AbfCSKAQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1727188AbfCSKAQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Tue, 19 Mar 2019 06:00:16 -0400
-Received: from aserp2130.oracle.com ([141.146.126.79]:41660 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726644AbfCSKAP (ORCPT
+Received: from userp2130.oracle.com ([156.151.31.86]:58010 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726809AbfCSKAQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Mar 2019 06:00:15 -0400
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x2J9wxgX026904
+        Tue, 19 Mar 2019 06:00:16 -0400
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x2J9wwgl186161
         for <linux-btrfs@vger.kernel.org>; Tue, 19 Mar 2019 10:00:14 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
  date : message-id : in-reply-to : references; s=corp-2018-07-02;
- bh=4P3onIx9J6wUX1eKT/4TREnzzsbDLMk87ROF1CJOOcw=;
- b=V3OJ0WxboP5fEUXRvBhQP2PfnevrJTpKeqaYIGNFGZ7hXwxScpMIs1Sm5mZOJQbyq368
- V3qWjWwt1021IyngvBZetEOsmpK8i45u0QwlxEKwxusR3QQZFtZ+a9Gsh9GEpPiKcS5U
- KvxJ85yNKACjpk82x1oosnmZc3Y6c4tq/tPnyDTzVl2RwzJT+1jouYA90OikUnMb1KSs
- 5MS54z9yonmEt36Ta7gBoT9oTOwnEgMDZTkO037adE37TL4N+ebKdbsEggFMTy5LelVK
- Vu1q58KQyzvmL3TAjUXp5wr3vmAAKIBfYcpqKfUQ05ZTCYrhP21ojGE/paoTHt6VvVPB 1g== 
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by aserp2130.oracle.com with ESMTP id 2r8pnektpj-1
+ bh=G31YDQJr6bDjTxaGgQLxg6ph+qVLEg0OJNBHWWy0kww=;
+ b=rSX2WrVm6uhUea9m+DRi+0u+7Vj9nYycLQA7G5sZ5h1TdPBixd1KO6/aKjKcpT2qKLgU
+ sZaKeBuRfRHdLSrl98WRdXVrDqRnGuYxhK8Zvr8IkYIu3jRL2rDQiMUdLlxMI28yB8BB
+ 8AydtDiYXq9+KMX3YAI8iusSVC4RtSomrnAwyuTKjDDoduWlZvZF0rk0GDVnsXkNypiC
+ X7LtBAHO/Zwp2pO7DX1Wd7R/KJ8A6g2A+/zzHijmHRsm56bGmyOSWnoreaMigLMs18tz
+ EJR8PqXB7mKCZrU1LouzvMFnNArIJoh0b8tlw4ep5knb3E+GvQt03ClN1aOc4JtI2NVP Jg== 
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by userp2130.oracle.com with ESMTP id 2r8rjukms0-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Mar 2019 10:00:13 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id x2JA0CEP027958
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Mar 2019 10:00:14 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x2JA0EZw005045
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Mar 2019 10:00:13 GMT
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Mar 2019 10:00:14 GMT
 Received: from abhmp0020.oracle.com (abhmp0020.oracle.com [141.146.116.26])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x2JA0CiK000520
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Mar 2019 10:00:12 GMT
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x2JA0Ep7002912
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Mar 2019 10:00:14 GMT
 Received: from tpasj.wifi.oracle.com (/192.188.170.109)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Tue, 19 Mar 2019 03:00:12 -0700
+        with ESMTP ; Tue, 19 Mar 2019 03:00:13 -0700
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH RFC 2/5] btrfs: add readmirror pid property
-Date:   Tue, 19 Mar 2019 18:00:21 +0800
-Message-Id: <1552989624-29577-3-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH RFC 3/5] btrfs: add readmirror devid property
+Date:   Tue, 19 Mar 2019 18:00:22 +0800
+Message-Id: <1552989624-29577-4-git-send-email-anand.jain@oracle.com>
 X-Mailer: git-send-email 1.8.3.1
 In-Reply-To: <1552989624-29577-1-git-send-email-anand.jain@oracle.com>
 References: <1552989624-29577-1-git-send-email-anand.jain@oracle.com>
@@ -66,155 +66,144 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Function call chain  __btrfs_map_block()->find_live_mirror() uses
-thread %pid to determine the %mirror_num for the read when the
-mirror_num=0 in the argument.
+Introduces devid readmirror property, which directs all read IO to a
+device.
 
-This pid based mirror_num extrapolation has following disadvantages
- A single-process large read IO will read only from one disk.
- In a worst scenario all processes read accessing the FS could have
-   either odd or even pid, the read IO gets skewed.
- There is no deterministic way of knowing/controlling which copy will
-   be used for reading.
- May see performance variations for a given set of multi process
-   workload ran at different times.
+For example:
+  btrfs property set <mnt> readmirror devid<n>
 
-So we need other types of readmirror policies.
-
-This patch introduces a framework so that we can add more policies, and
-converts the existing %pid into as a configurable parameter using the
-property.
-
- For example:
-  btrfs property set /btrfs readmirror pid
-  btrfs property set /btrfs readmirror ""
+As of now readmirror by devid supports only raid1s. Raid10 support has
+to leverage device grouping feature to facilitate the setting of
+readmirror by device set.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/props.c   | 47 +++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.c | 11 ++++++++++-
- fs/btrfs/volumes.h |  7 +++++++
- 3 files changed, 64 insertions(+), 1 deletion(-)
+ fs/btrfs/props.c   | 49 ++++++++++++++++++++++++++++++++++++++++++++++---
+ fs/btrfs/volumes.c | 16 ++++++++++++++++
+ fs/btrfs/volumes.h |  3 +++
+ 3 files changed, 65 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-index 1a13f10a6ef5..776cdf099f93 100644
+index 776cdf099f93..a17c5a69bcb3 100644
 --- a/fs/btrfs/props.c
 +++ b/fs/btrfs/props.c
-@@ -11,6 +11,7 @@
- #include "ctree.h"
- #include "xattr.h"
- #include "compression.h"
-+#include "volumes.h"
+@@ -338,8 +338,28 @@ static int prop_readmirror_validate(struct inode *inode, const char *value,
+ 	if (!len)
+ 		return 0;
  
- #define BTRFS_PROP_HANDLERS_HT_BITS 8
- static DEFINE_HASHTABLE(prop_handlers_ht, BTRFS_PROP_HANDLERS_HT_BITS);
-@@ -326,6 +327,45 @@ static const char *prop_compression_extract(struct inode *inode)
- 	return NULL;
- }
- 
-+static int prop_readmirror_validate(struct inode *inode, const char *value,
-+				    size_t len)
-+{
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
+-	if (!strncmp("pid", value, 3))
++	if (!strncmp("pid", value, 3)) {
+ 		return 0;
++	} else if (!strncmp("devid", value, 5)) {
++		u64 devid;
++		char *value_dup;
 +
-+	if (root->root_key.objectid != BTRFS_FS_TREE_OBJECTID)
-+		return -EINVAL;
++		if (len <= 5)
++			return -EINVAL;
 +
-+	if (!len)
-+		return 0;
++		value_dup = kstrndup(value, len, GFP_KERNEL);
++		if (!value_dup)
++			return -ENOMEM;
++		if (kstrtoull(value_dup + 5, 10, &devid)) {
++			kfree(value_dup);
++			return -EINVAL;
++		}
++		kfree(value_dup);
 +
-+	if (!strncmp("pid", value, 3))
-+		return 0;
-+
-+	return -EINVAL;
-+}
-+
-+static int prop_readmirror_apply(struct inode *inode, const char *value,
-+				 size_t len)
-+{
-+	struct btrfs_fs_devices *fs_devices = btrfs_sb(inode->i_sb)->fs_devices;
-+
-+	if (!value)
-+		fs_devices->readmirror_policy = BTRFS_READMIRROR_DEFAULT;
-+	else if (!strncmp("pid", value, 3))
-+		fs_devices->readmirror_policy = BTRFS_READMIRROR_PID;
-+
-+	return 0;
-+}
-+
-+static const char *prop_readmirror_extract(struct inode *inode)
-+{
-+	/*
-+	 * readmirror policy is applied for the whole FS, inheritance is not
-+	 * applicable.
-+	 */
-+	return NULL;
-+}
-+
- static struct prop_handler prop_handlers[] = {
- 	{
- 		.xattr_name = XATTR_BTRFS_PREFIX "compression",
-@@ -334,6 +374,13 @@ static const char *prop_compression_extract(struct inode *inode)
- 		.extract = prop_compression_extract,
- 		.inheritable = 1
- 	},
-+	{
-+		.xattr_name = XATTR_BTRFS_PREFIX "readmirror",
-+		.validate = prop_readmirror_validate,
-+		.apply = prop_readmirror_apply,
-+		.extract = prop_readmirror_extract,
-+		.inheritable = 0
-+	},
- };
- 
- static int inherit_props(struct btrfs_trans_handle *trans,
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 9024eee889b9..e5072d46e181 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5562,7 +5562,16 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
- 	else
- 		num_stripes = map->num_stripes;
- 
--	preferred_mirror = first + current->pid % num_stripes;
-+	switch(fs_info->fs_devices->readmirror_policy) {
-+	case BTRFS_READMIRROR_PID:
-+		/* fall through */
-+	case BTRFS_READMIRROR_DEFAULT:
-+		/* fall through */
-+	default:
-+		/* readmirror as per thread pid */
-+		preferred_mirror = first + current->pid % num_stripes;
-+		break;
++		if (btrfs_find_device(root->fs_info->fs_devices, devid,
++				      NULL, NULL, false))
++			return 0;
 +	}
  
- 	if (dev_replace_is_ongoing &&
- 	    fs_info->dev_replace.cont_reading_from_srcdev_mode ==
+ 	return -EINVAL;
+ }
+@@ -349,10 +369,33 @@ static int prop_readmirror_apply(struct inode *inode, const char *value,
+ {
+ 	struct btrfs_fs_devices *fs_devices = btrfs_sb(inode->i_sb)->fs_devices;
+ 
+-	if (!value)
++	if (!value) {
+ 		fs_devices->readmirror_policy = BTRFS_READMIRROR_DEFAULT;
+-	else if (!strncmp("pid", value, 3))
++	} else if (!strncmp("pid", value, 3)) {
+ 		fs_devices->readmirror_policy = BTRFS_READMIRROR_PID;
++	} else if (!strncmp("devid", value, 5)) {
++		u64 devid;
++		char *value_dup;
++		struct btrfs_device *device;
++		struct btrfs_root *root = BTRFS_I(inode)->root;
++
++		value_dup = kstrndup(value, len, GFP_KERNEL);
++		if (!value_dup)
++			return -ENOMEM;
++		if (kstrtoull(value_dup + 5, 10, &devid)) {
++			kfree(value_dup);
++			return -EINVAL;
++		}
++		kfree(value_dup);
++
++		fs_devices->readmirror_policy = BTRFS_READMIRROR_DEVID;
++		device = btrfs_find_device(root->fs_info->fs_devices, devid,
++					   NULL, NULL, false);
++		if (!device)
++			return -ENODEV;
++
++		device->type = BTRFS_DEVICE_TYPE_READ_OPTIMIZED;
++	}
+ 
+ 	return 0;
+ }
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index e5072d46e181..d3b7427d6d96 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5553,6 +5553,7 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
+ 	int preferred_mirror;
+ 	int tolerance;
+ 	struct btrfs_device *srcdev;
++	bool found = false;
+ 
+ 	ASSERT((map->type &
+ 		 (BTRFS_BLOCK_GROUP_RAID1 | BTRFS_BLOCK_GROUP_RAID10)));
+@@ -5563,6 +5564,21 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
+ 		num_stripes = map->num_stripes;
+ 
+ 	switch(fs_info->fs_devices->readmirror_policy) {
++	case BTRFS_READMIRROR_DEVID:
++		/* skip raid10 for now */
++		if (map->type & BTRFS_BLOCK_GROUP_RAID1) {
++			for (i = first; i < first + num_stripes; i++) {
++				if (map->stripes[i].dev->type ==
++				    BTRFS_DEVICE_TYPE_READ_OPTIMIZED) {
++					preferred_mirror = i;
++					found = true;
++					break;
++				}
++			}
++			if (found)
++				break;
++		}
++		/* fall through */
+ 	case BTRFS_READMIRROR_PID:
+ 		/* fall through */
+ 	case BTRFS_READMIRROR_DEFAULT:
 diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 3ad9d58d1b66..27dce9242b55 100644
+index 27dce9242b55..9c2e64548a11 100644
 --- a/fs/btrfs/volumes.h
 +++ b/fs/btrfs/volumes.h
-@@ -208,6 +208,11 @@ struct btrfs_device {
+@@ -208,9 +208,12 @@ struct btrfs_device {
  BTRFS_DEVICE_GETSET_FUNCS(disk_total_bytes);
  BTRFS_DEVICE_GETSET_FUNCS(bytes_used);
  
-+enum btrfs_readmirror_policy {
-+	BTRFS_READMIRROR_DEFAULT,
-+	BTRFS_READMIRROR_PID,
-+};
++#define BTRFS_DEVICE_TYPE_READ_OPTIMIZED  1ULL
 +
- struct btrfs_fs_devices {
- 	u8 fsid[BTRFS_FSID_SIZE]; /* FS specific uuid */
- 	u8 metadata_uuid[BTRFS_FSID_SIZE];
-@@ -254,6 +259,8 @@ struct btrfs_fs_devices {
- 	struct kobject fsid_kobj;
- 	struct kobject *device_dir_kobj;
- 	struct completion kobj_unregister;
-+
-+	int readmirror_policy;
+ enum btrfs_readmirror_policy {
+ 	BTRFS_READMIRROR_DEFAULT,
+ 	BTRFS_READMIRROR_PID,
++	BTRFS_READMIRROR_DEVID,
  };
  
- #define BTRFS_BIO_INLINE_CSUM_SIZE	64
+ struct btrfs_fs_devices {
 -- 
 1.8.3.1
 

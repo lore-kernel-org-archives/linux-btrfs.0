@@ -3,30 +3,30 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AB9C7C43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 09:59:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6A34BC43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 10:34:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 849FB2184E
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 09:59:55 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 431C12075C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 10:34:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727268AbfCTJ7y (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 20 Mar 2019 05:59:54 -0400
-Received: from mx2.suse.de ([195.135.220.15]:41354 "EHLO mx1.suse.de"
+        id S1726801AbfCTKen (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 20 Mar 2019 06:34:43 -0400
+Received: from mx2.suse.de ([195.135.220.15]:48144 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726922AbfCTJ7y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Mar 2019 05:59:54 -0400
+        id S1726020AbfCTKen (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Mar 2019 06:34:43 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 31DB7ABC6;
-        Wed, 20 Mar 2019 09:59:52 +0000 (UTC)
-Subject: Re: delayed_refs has NO entry / btrfs_update_root:136: Aborting
- unused transaction(No space left).
-To:     Christoph Anton Mitterer <calestyo@scientia.net>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <b2a668d7124f1d3e410367f587926f622b3f03a4.camel@scientia.net>
- <d35fa8de087c746f9affb789cf3ab599a3d042c1.camel@scientia.net>
+        by mx1.suse.de (Postfix) with ESMTP id 0B965AC50
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Mar 2019 10:34:41 +0000 (UTC)
+Subject: Re: [PATCh v2 1/9] btrfs: Move btrfs_check_chunk_valid() to
+ tree-check.[ch] and export it
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20190320063717.31770-1-wqu@suse.com>
+ <20190320063717.31770-2-wqu@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -84,12 +84,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <9ff84820-5d7e-f541-6adc-29c4949d44e0@suse.de>
-Date:   Wed, 20 Mar 2019 10:59:51 +0100
+Message-ID: <919fedfd-6ae1-957e-e8eb-dcef74f817de@suse.de>
+Date:   Wed, 20 Mar 2019 11:34:40 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.3.0
 MIME-Version: 1.0
-In-Reply-To: <d35fa8de087c746f9affb789cf3ab599a3d042c1.camel@scientia.net>
+In-Reply-To: <20190320063717.31770-2-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -98,37 +98,8 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 20/03/2019 01:59, Christoph Anton Mitterer wrote:
-> Anything I should do with respect to this?
-> 
-> I.e. is further debug info needed for an interested developer? or can I
-> simply scrap that particular image (which is not an important one)?
-
-
-OK, I can give it a shot, but please be aware I'm still relatively new
-to BTRFS.
-
-First of all, have you tried a more recent kernel than the Debian
-kernels you referenced? E.g. Linus' current master or David's misc-next
-branch? Just so we don't try to hunt down a bug that's already fixed.
-
-If it's still reproducible with a more recent kernel, I think having an
-image would be very valuable.
-
-From the dmesg (I don't have the referenced kernel version handy, Greg's
-4.19.27 is the closest I have) we're hitting this WARN_ON():
-
-        WARN_ON(cur_trans != info->running_transaction);
-
-Which means there's a mismatch between the transaction that's currently
-running and the transaction the filesystem thinks is running, if I read
-it correctly.
-
-Also if you can still reproduce the bug, please activate tracing in
-btrfs and send the trace output.
-
-Byte,
-	Johannes
+Looks good,
+Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems
 jthumshirn@suse.de                                +49 911 74053 689

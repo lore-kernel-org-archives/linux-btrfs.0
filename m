@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 71EA2C43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 03:45:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A0E8EC43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 03:52:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1AEBE20857
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 03:45:27 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5C31520857
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 03:52:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727276AbfCTDp1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 19 Mar 2019 23:45:27 -0400
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:34752 "EHLO
+        id S1727593AbfCTDug (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Mar 2019 23:50:36 -0400
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:35016 "EHLO
         james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1727089AbfCTDp0 (ORCPT
+        by vger.kernel.org with ESMTP id S1726896AbfCTDug (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Mar 2019 23:45:26 -0400
+        Tue, 19 Mar 2019 23:50:36 -0400
 Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
-        id 0023426E397; Tue, 19 Mar 2019 23:45:23 -0400 (EDT)
-Date:   Tue, 19 Mar 2019 23:45:22 -0400
+        id 8CF2826E3AF; Tue, 19 Mar 2019 23:49:52 -0400 (EDT)
+Date:   Tue, 19 Mar 2019 23:49:51 -0400
 From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
 To:     linux-btrfs@vger.kernel.org
-Subject: Re: A collection of btrfs lockup stack traces
-Message-ID: <20190320034511.GB16651@hungrycats.org>
+Subject: Re: A collection of btrfs lockup stack traces (4.20.13)
+Message-ID: <20190320034950.GC16651@hungrycats.org>
 References: <20190320033957.GA16651@hungrycats.org>
 MIME-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="GID0FwUMdk1T2AWN"
+        protocol="application/pgp-signature"; boundary="+nBD6E3TurpgldQp"
 Content-Disposition: inline
 In-Reply-To: <20190320033957.GA16651@hungrycats.org>
 User-Agent: Mutt/1.10.1 (2018-07-13)
@@ -39,7 +39,7 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
---GID0FwUMdk1T2AWN
+--+nBD6E3TurpgldQp
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
@@ -122,876 +122,405 @@ v2.
 > 	again.	I'm not sure if this is because there are two separate
 > 	bugs, or just a single bug with corner cases.
 >=20
-> Here's a recent lockup example with lockdep output, from 4.14.105 with
-> the cherry-picked patches above:
 
-And another:
+Here's one on 4.20.13.  Alas, no lockdep output in this one.  I note
+that there is both rename and dedupe in here, but they don't seem to be
+deadlocked with each other (that case would have lock_two_nondirectories
+in the stack, and that isn't present here).
 
-[Fri Mar  8 03:50:32 2019] 1 lock held by khungtaskd/465:
-[Fri Mar  8 03:50:32 2019]  #0:  (tasklist_lock){.+.+}, at: [<ffffffff870f0=
-367>] debug_show_all_locks+0x37/0x190
-[Fri Mar  8 03:50:32 2019] 3 locks held by btrfs-transacti/27078:
-[Fri Mar  8 03:50:32 2019]  #0:  (&fs_info->transaction_kthread_mutex){+.+.=
-}, at: [<ffffffff874352b4>] transaction_kthread+0x74/0x1d0
-[Fri Mar  8 03:50:32 2019]  #1:  (&fs_info->delalloc_root_mutex){+.+.}, at:=
- [<ffffffff8744f728>] btrfs_start_delalloc_roots+0x58/0x380
-[Fri Mar  8 03:50:32 2019]  #2:  (&root->delalloc_mutex){+.+.}, at: [<fffff=
-fff8744f302>] __start_delalloc_inodes+0x52/0x320
-[Fri Mar  8 03:50:32 2019] 4 locks held by crawl_290/13174:
-[Fri Mar  8 03:50:32 2019]  #0:  (sb_writers#8){.+.+}, at: [<ffffffff872d4e=
-1b>] mnt_want_write_file+0x3b/0xb0
-[Fri Mar  8 03:50:32 2019]  #1:  (&sb->s_type->i_mutex_key#14/1){+.+.}, at:=
- [<ffffffff87479bde>] btrfs_dedupe_file_range+0x8e/0x660
-[Fri Mar  8 03:50:32 2019]  #2:  (&sb->s_type->i_mutex_key#14/2){+.+.}, at:=
- [<ffffffff87479bef>] btrfs_dedupe_file_range+0x9f/0x660
-[Fri Mar  8 03:50:32 2019]  #3:  (sb_internal){.+.+}, at: [<ffffffff8743b5d=
-6>] start_transaction+0x2b6/0x4d0
-[Fri Mar  8 03:50:32 2019] 4 locks held by crawl_302/15836:
-[Fri Mar  8 03:50:32 2019]  #0:  (sb_writers#8){.+.+}, at: [<ffffffff872d4e=
-1b>] mnt_want_write_file+0x3b/0xb0
-[Fri Mar  8 03:50:32 2019]  #1:  (&sb->s_type->i_mutex_key#14/1){+.+.}, at:=
- [<ffffffff87479bde>] btrfs_dedupe_file_range+0x8e/0x660
-[Fri Mar  8 03:50:32 2019]  #2:  (&sb->s_type->i_mutex_key#14/2){+.+.}, at:=
- [<ffffffff87479bef>] btrfs_dedupe_file_range+0x9f/0x660
-[Fri Mar  8 03:50:32 2019]  #3:  (sb_internal){.+.+}, at: [<ffffffff8743b5d=
-6>] start_transaction+0x2b6/0x4d0
-[Fri Mar  8 03:50:32 2019] 4 locks held by crawl_275/15837:
-[Fri Mar  8 03:50:32 2019]  #0:  (sb_writers#8){.+.+}, at: [<ffffffff872d4e=
-1b>] mnt_want_write_file+0x3b/0xb0
-[Fri Mar  8 03:50:32 2019]  #1:  (&sb->s_type->i_mutex_key#14/1){+.+.}, at:=
- [<ffffffff87479bde>] btrfs_dedupe_file_range+0x8e/0x660
-[Fri Mar  8 03:50:32 2019]  #2:  (&sb->s_type->i_mutex_key#14/2){+.+.}, at:=
- [<ffffffff87479bef>] btrfs_dedupe_file_range+0x9f/0x660
-[Fri Mar  8 03:50:32 2019]  #3:  (sb_internal){.+.+}, at: [<ffffffff8743b5d=
-6>] start_transaction+0x2b6/0x4d0
-[Fri Mar  8 03:50:32 2019] 4 locks held by crawl_299/15838:
-[Fri Mar  8 03:50:32 2019]  #0:  (sb_writers#8){.+.+}, at: [<ffffffff872d4e=
-1b>] mnt_want_write_file+0x3b/0xb0
-[Fri Mar  8 03:50:32 2019]  #1:  (&sb->s_type->i_mutex_key#14/1){+.+.}, at:=
- [<ffffffff87479bde>] btrfs_dedupe_file_range+0x8e/0x660
-[Fri Mar  8 03:50:32 2019]  #2:  (&sb->s_type->i_mutex_key#14/2){+.+.}, at:=
- [<ffffffff87479bef>] btrfs_dedupe_file_range+0x9f/0x660
-[Fri Mar  8 03:50:32 2019]  #3:  (sb_internal){.+.+}, at: [<ffffffff8743b5d=
-6>] start_transaction+0x2b6/0x4d0
-[Fri Mar  8 03:50:32 2019] 4 locks held by crawl_290/15839:
-[Fri Mar  8 03:50:32 2019]  #0:  (sb_writers#8){.+.+}, at: [<ffffffff872d4e=
-1b>] mnt_want_write_file+0x3b/0xb0
-[Fri Mar  8 03:50:32 2019]  #1:  (&sb->s_type->i_mutex_key#14/1){+.+.}, at:=
- [<ffffffff87479bde>] btrfs_dedupe_file_range+0x8e/0x660
-[Fri Mar  8 03:50:32 2019]  #2:  (&sb->s_type->i_mutex_key#14/2){+.+.}, at:=
- [<ffffffff87479bef>] btrfs_dedupe_file_range+0x9f/0x660
-[Fri Mar  8 03:50:32 2019]  #3:  (sb_internal){.+.+}, at: [<ffffffff8743b5d=
-6>] start_transaction+0x2b6/0x4d0
-[Fri Mar  8 03:50:32 2019] 1 lock held by btrfs/9795:
-[Fri Mar  8 03:50:32 2019]  #0:  (sb_writers#8){.+.+}, at: [<ffffffff872d4e=
-1b>] mnt_want_write_file+0x3b/0xb0
-[Fri Mar  8 03:50:32 2019] 1 lock held by btrfs/9796:
-[Fri Mar  8 03:50:32 2019]  #0:  (sb_writers#8){.+.+}, at: [<ffffffff872d4e=
-1b>] mnt_want_write_file+0x3b/0xb0
-[Fri Mar  8 03:50:32 2019] 1 lock held by btrfs/9797:
-[Fri Mar  8 03:50:32 2019]  #0:  (sb_writers#8){.+.+}, at: [<ffffffff872d4e=
-1b>] mnt_want_write_file+0x3b/0xb0
-[Fri Mar  8 03:50:32 2019] 1 lock held by btrfs/9798:
-[Fri Mar  8 03:50:32 2019]  #0:  (sb_writers#8){.+.+}, at: [<ffffffff872d4e=
-1b>] mnt_want_write_file+0x3b/0xb0
-[Fri Mar  8 03:50:32 2019] 1 lock held by btrfs/9799:
-[Fri Mar  8 03:50:32 2019]  #0:  (sb_writers#8){.+.+}, at: [<ffffffff872d4e=
-1b>] mnt_want_write_file+0x3b/0xb0
-[Fri Mar  8 03:50:32 2019] 3 locks held by rsync/24322:
-[Fri Mar  8 03:50:32 2019]  #0:  (sb_writers#8){.+.+}, at: [<ffffffff872aa7=
-cc>] do_sys_ftruncate.constprop.1+0xdc/0x180
-[Fri Mar  8 03:50:32 2019]  #1:  (&sb->s_type->i_mutex_key#14){+.+.}, at: [=
-<ffffffff872aa3ff>] do_truncate+0x4f/0x90
-[Fri Mar  8 03:50:32 2019]  #2:  (sb_internal){.+.+}, at: [<ffffffff8743b5d=
-6>] start_transaction+0x2b6/0x4d0
-[Fri Mar  8 03:50:32 2019] 2 locks held by kworker/u8:20/20623:
-[Fri Mar  8 03:50:32 2019]  #0:  ("%s-%s""btrfs", name){+.+.}, at: [<ffffff=
-ff870ae2be>] process_one_work+0x17e/0x650
-[Fri Mar  8 03:50:32 2019]  #1:  ((&work->normal_work)){+.+.}, at: [<ffffff=
-ff870ae2be>] process_one_work+0x17e/0x650
-[Fri Mar  8 03:50:32 2019] 3 locks held by mkdir/17020:
-[Fri Mar  8 03:50:32 2019]  #0:  (sb_writers#8){.+.+}, at: [<ffffffff872d4d=
-90>] mnt_want_write+0x20/0x50
-[Fri Mar  8 03:50:32 2019]  #1:  (&type->i_mutex_dir_key#6/1){+.+.}, at: [<=
-ffffffff872bf42f>] filename_create+0x6f/0x140
-[Fri Mar  8 03:50:32 2019]  #2:  (sb_internal){.+.+}, at: [<ffffffff8743b5d=
-6>] start_transaction+0x2b6/0x4d0
+[573870.943159] sysrq: SysRq : Show Blocked State
+[573870.948005]   task                        PC stack   pid father
+[573870.954068] btrfs-transacti D    0  4481      2 0x80000000
+[573870.960142] Call Trace:
+[573870.963075]  ? __schedule+0x3cf/0xb60
+[573870.967334]  schedule+0x39/0x90
+[573870.971170]  btrfs_commit_transaction+0x2a7/0x990
+[573870.976658]  ? wait_woken+0xa0/0xa0
+[573870.980761]  transaction_kthread+0x149/0x180
+[573870.985725]  kthread+0x106/0x140
+[573870.989529]  ? btrfs_cleanup_transaction+0x620/0x620
+[573870.995281]  ? kthread_park+0x90/0x90
+[573870.999734]  ret_from_fork+0x3a/0x50
+[573871.003985] crawl_5         D    0  4547   4537 0x00000000
+[573871.010913] Call Trace:
+[573871.014051]  ? __schedule+0x3cf/0xb60
+[573871.018543]  schedule+0x39/0x90
+[573871.022735]  wait_current_trans+0xc3/0x100
+[573871.027895]  ? wait_woken+0xa0/0xa0
+[573871.032218]  start_transaction+0x13f/0x460
+[573871.035587]  btrfs_clone+0x5cd/0xcf0
+[573871.037992]  ? do_raw_spin_lock+0xa0/0xb0
+[573871.041436]  btrfs_extent_same_range+0x380/0x440
+[573871.045232]  btrfs_remap_file_range+0x2d8/0x300
+[573871.049143]  vfs_dedupe_file_range_one+0x10c/0x160
+[573871.053176]  vfs_dedupe_file_range+0x14c/0x1e0
+[573871.056805]  do_vfs_ioctl+0x278/0x6f0
+[573871.059844]  ? __fget+0x11f/0x210
+[573871.062627]  ksys_ioctl+0x70/0x80
+[573871.064115]  __x64_sys_ioctl+0x16/0x20
+[573871.065819]  do_syscall_64+0x60/0x190
+[573871.068437]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+[573871.071756] RIP: 0033:0x7fd5eda85017
+[573871.072514] Code: Bad RIP value.
+[573871.074543] RSP: 002b:00007fd5ed19e998 EFLAGS: 00000246 ORIG_RAX: 00000=
+00000000010
+[573871.079062] RAX: ffffffffffffffda RBX: 00007fd5880c2070 RCX: 00007fd5ed=
+a85017
+[573871.084890] RDX: 00007fd5880c2070 RSI: 00000000c0189436 RDI: 0000000000=
+000249
+[573871.090847] RBP: 00007fd5ed19ed20 R08: 00007fd5885a9f20 R09: 0000000000=
+000000
+[573871.096633] R10: 00007fd5ed19ef40 R11: 0000000000000246 R12: 0000000000=
+000001
+[573871.102273] R13: 0000000000000018 R14: 00007fd5885a9f38 R15: 00007fd5ed=
+19ed28
+[573871.107906] hash_writeback  D    0  4551   4537 0x00000000
+[573871.112175] Call Trace:
+[573871.114219]  ? __schedule+0x3cf/0xb60
+[573871.117138]  ? _raw_spin_unlock_irqrestore+0x32/0x60
+[573871.121025]  schedule+0x39/0x90
+[573871.123576]  schedule_timeout+0x1de/0x4e0
+[573871.126728]  ? collect_expired_timers+0xb0/0xb0
+[573871.130113]  io_schedule_timeout+0x19/0x40
+[573871.133246]  balance_dirty_pages+0x354/0xeb0
+[573871.136407]  ? lock_acquire+0xbc/0x1c0
+[573871.139268]  ? kvm_sched_clock_read+0x14/0x30
+[573871.142567]  balance_dirty_pages_ratelimited+0x5e0/0xae0
+[573871.146543]  btrfs_buffered_write.isra.4+0x40a/0x7b0
+[573871.150250]  btrfs_file_write_iter+0x224/0x5c3
+[573871.153632]  __vfs_write+0x113/0x1a0
+[573871.156478]  vfs_write+0xc5/0x1b0
+[573871.159245]  ksys_pwrite64+0x74/0x90
+[573871.162194]  do_syscall_64+0x60/0x190
+[573871.165247]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+[573871.169292] RIP: 0033:0x7fd5ee5f0983
+[573871.172240] Code: Bad RIP value.
+[573871.174953] RSP: 002b:00007fd5e6ffc390 EFLAGS: 00000293 ORIG_RAX: 00000=
+00000000012
+[573871.180664] RAX: ffffffffffffffda RBX: 0000000000020000 RCX: 00007fd5ee=
+5f0983
+[573871.186068] RDX: 0000000000020000 RSI: 00007fd59c000d80 RDI: 0000000000=
+000005
+[573871.191469] RBP: 000000001f7e0000 R08: 00007fd59c000d80 R09: 0000000000=
+020010
+[573871.196794] R10: 000000001f7e0000 R11: 0000000000000293 R12: 00007fd5e6=
+ffc5c0
+[573871.202069] R13: 0000000000020000 R14: 00007fd5bf7e0000 R15: 00007fd59c=
+020d80
+[573871.207279] hash_prefetch   D    0  4552   4537 0x00000000
+[573871.211333] Call Trace:
+[573871.213305]  ? __schedule+0x3cf/0xb60
+[573871.216119]  ? mark_held_locks+0x6a/0x90
+[573871.219125]  ? rwsem_down_write_failed+0x165/0x300
+[573871.222752]  schedule+0x39/0x90
+[573871.225294]  rwsem_down_write_failed+0x16a/0x300
+[573871.228933]  ? call_rwsem_down_write_failed+0x13/0x20
+[573871.232925]  call_rwsem_down_write_failed+0x13/0x20
+[573871.236742]  down_write_nested+0x87/0xb0
+[573871.239851]  do_unlinkat+0x130/0x310
+[573871.242747]  do_syscall_64+0x60/0x190
+[573871.245683]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+[573871.249591] RIP: 0033:0x7fd5eda81117
+[573871.252454] Code: Bad RIP value.
+[573871.255045] RSP: 002b:00007fd5e67fae18 EFLAGS: 00000246 ORIG_RAX: 00000=
+00000000107
+[573871.261002] RAX: ffffffffffffffda RBX: 00007fd5e67fae40 RCX: 00007fd5ed=
+a81117
+[573871.266855] RDX: 0000000000000000 RSI: 00007fd598003d70 RDI: 0000000000=
+000003
+[573871.272742] RBP: 0000563346f72f78 R08: 0000000000000000 R09: 00007fd5e6=
+7faef0
+[573871.274377] R10: 000056334558ec60 R11: 0000000000000246 R12: 00007fd5e6=
+7faf50
+[573871.280664] R13: 00007fd5e67fb170 R14: 00007fd59800b4b0 R15: 00007fd5e6=
+7fb120
+[573871.286681] crawl_writeback D    0  4554   4537 0x00000000
+[573871.291274] Call Trace:
+[573871.293418]  ? __schedule+0x3cf/0xb60
+[573871.296478]  schedule+0x39/0x90
+[573871.299132]  wait_current_trans+0xc3/0x100
+[573871.302523]  ? wait_woken+0xa0/0xa0
+[573871.305539]  start_transaction+0x13f/0x460
+[573871.308956]  btrfs_create+0x58/0x1f0
+[573871.311985]  lookup_open+0x451/0x770
+[573871.315006]  path_openat+0x435/0xbb0
+[573871.318000]  do_filp_open+0x99/0x110
+[573871.321097]  ? __alloc_fd+0xee/0x200
+[573871.324301]  ? do_raw_spin_unlock+0x49/0xc0
+[573871.328074]  ? do_sys_open+0x14a/0x210
+[573871.331430]  do_sys_open+0x14a/0x210
+[573871.334633]  do_syscall_64+0x60/0x190
+[573871.337905]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+[573871.342230] RIP: 0033:0x7fd5eda7f847
+[573871.345333] Code: Bad RIP value.
+[573871.348248] RSP: 002b:00007fd5e499fcc0 EFLAGS: 00000293 ORIG_RAX: 00000=
+00000000101
+[573871.354668] RAX: ffffffffffffffda RBX: 00000000000e09c1 RCX: 00007fd5ed=
+a7f847
+[573871.360572] RDX: 00000000000e09c1 RSI: 00007fd594000b20 RDI: 0000000000=
+000003
+[573871.366456] RBP: 0000000000000003 R08: 0000000000000000 R09: 00007fd5e4=
+9a0080
+[573871.372160] R10: 0000000000000180 R11: 0000000000000293 R12: 00007fd594=
+000b20
+[573871.377834] R13: 0000000000000003 R14: 00007fd5e49a03d0 R15: 00007fd5e4=
+9a0350
+[573871.383707] kworker/u8:0    D    0 27279      2 0x80000000
+[573871.388290] Workqueue: btrfs-endio-write btrfs_endio_write_helper
+[573871.393359] Call Trace:
+[573871.395574]  ? __schedule+0x3cf/0xb60
+[573871.398743]  schedule+0x39/0x90
+[573871.401438]  wait_current_trans+0xc3/0x100
+[573871.404926]  ? wait_woken+0xa0/0xa0
+[573871.407881]  start_transaction+0x21a/0x460
+[573871.411309]  btrfs_finish_ordered_io+0x492/0x7e0
+[573871.415121]  normal_work_helper+0x95/0x530
+[573871.418555]  process_one_work+0x223/0x5d0
+[573871.421998]  worker_thread+0x4f/0x3b0
+[573871.425198]  kthread+0x106/0x140
+[573871.428121]  ? process_one_work+0x5d0/0x5d0
+[573871.431825]  ? kthread_park+0x90/0x90
+[573871.435066]  ret_from_fork+0x3a/0x50
+[573871.438181] kworker/u8:14   D    0 15161      2 0x80000000
+[573871.442785] Workqueue: btrfs-endio-write btrfs_endio_write_helper
+[573871.447777] Call Trace:
+[573871.449916]  ? __schedule+0x3cf/0xb60
+[573871.452971]  schedule+0x39/0x90
+[573871.455716]  wait_current_trans+0xc3/0x100
+[573871.459181]  ? wait_woken+0xa0/0xa0
+[573871.462174]  start_transaction+0x21a/0x460
+[573871.465633]  btrfs_finish_ordered_io+0x492/0x7e0
+[573871.469430]  normal_work_helper+0x95/0x530
+[573871.472784]  process_one_work+0x223/0x5d0
+[573871.476078]  worker_thread+0x4f/0x3b0
+[573871.479116]  kthread+0x106/0x140
+[573871.481819]  ? process_one_work+0x5d0/0x5d0
+[573871.485236]  ? kthread_park+0x90/0x90
+[573871.488292]  ret_from_fork+0x3a/0x50
+[573871.491453] kworker/u8:17   D    0 23801      2 0x80000000
+[573871.496239] Workqueue: btrfs-flush_delalloc btrfs_flush_delalloc_helper
+[573871.501882] Call Trace:
+[573871.504102]  ? __schedule+0x3cf/0xb60
+[573871.507305]  schedule+0x39/0x90
+[573871.510091]  btrfs_start_ordered_extent+0x10a/0x1b0
+[573871.514178]  ? wait_woken+0xa0/0xa0
+[573871.517248]  btrfs_run_ordered_extent_work+0x21/0x30
+[573871.519956]  normal_work_helper+0x95/0x530
+[573871.521156]  process_one_work+0x223/0x5d0
+[573871.525102]  worker_thread+0x4f/0x3b0
+[573871.527891]  kthread+0x106/0x140
+[573871.531303]  ? process_one_work+0x5d0/0x5d0
+[573871.534825]  ? kthread_park+0x90/0x90
+[573871.537987]  ret_from_fork+0x3a/0x50
+[573871.541073] kworker/u8:10   D    0  4421      2 0x80000000
+[573871.546477] Workqueue: btrfs-endio-write btrfs_endio_write_helper
+[573871.552581] Call Trace:
+[573871.554839]  ? __schedule+0x3cf/0xb60
+[573871.558046]  schedule+0x39/0x90
+[573871.560804]  wait_current_trans+0xc3/0x100
+[573871.564327]  ? wait_woken+0xa0/0xa0
+[573871.568464]  start_transaction+0x21a/0x460
+[573871.572087]  btrfs_finish_ordered_io+0x492/0x7e0
+[573871.576026]  normal_work_helper+0x95/0x530
+[573871.580231]  process_one_work+0x223/0x5d0
+[573871.583564]  worker_thread+0x4f/0x3b0
+[573871.586649]  kthread+0x106/0x140
+[573871.589343]  ? process_one_work+0x5d0/0x5d0
+[573871.592762]  ? kthread_park+0x90/0x90
+[573871.595837]  ret_from_fork+0x3a/0x50
+[573871.598912] kworker/u8:1    D    0 17773      2 0x80000000
+[573871.603488] Workqueue: btrfs-endio-write btrfs_endio_write_helper
+[573871.608535] Call Trace:
+[573871.610722]  ? __schedule+0x3cf/0xb60
+[573871.613924]  schedule+0x39/0x90
+[573871.616706]  wait_current_trans+0xc3/0x100
+[573871.620241]  ? wait_woken+0xa0/0xa0
+[573871.623248]  start_transaction+0x21a/0x460
+[573871.626734]  btrfs_finish_ordered_io+0x492/0x7e0
+[573871.630627]  normal_work_helper+0x95/0x530
+[573871.634232]  process_one_work+0x223/0x5d0
+[573871.637772]  worker_thread+0x4f/0x3b0
+[573871.641029]  kthread+0x106/0x140
+[573871.643825]  ? process_one_work+0x5d0/0x5d0
+[573871.647422]  ? kthread_park+0x90/0x90
+[573871.648344]  ret_from_fork+0x3a/0x50
+[573871.649126] rsync           D    0  3068   3054 0x00000000
+[573871.650256] Call Trace:
+[573871.650789]  ? __schedule+0x3cf/0xb60
+[573871.651589]  schedule+0x39/0x90
+[573871.652283]  wait_current_trans+0xc3/0x100
+[573871.653191]  ? wait_woken+0xa0/0xa0
+[573871.654236]  start_transaction+0x21a/0x460
+[573871.655154]  btrfs_evict_inode+0x47d/0x520
+[573871.656043]  ? dput+0x25/0x2e0
+[573871.656726]  evict+0xbf/0x1c0
+[573871.657394]  __dentry_kill+0xca/0x1b0
+[573871.658198]  dentry_kill+0x50/0x1d0
+[573871.658929]  ? dput+0x25/0x2e0
+[573871.659588]  dput+0x286/0x2e0
+[573871.660224]  do_renameat2+0x3fc/0x570
+[573871.661000]  __x64_sys_rename+0x1c/0x20
+[573871.661806]  do_syscall_64+0x60/0x190
+[573871.662741]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+[573871.663971] RIP: 0033:0x7f539eaa4d47
+[573871.664867] Code: Bad RIP value.
+[573871.665663] RSP: 002b:00007ffc71486c68 EFLAGS: 00000246 ORIG_RAX: 00000=
+00000000052
+[573871.667489] RAX: ffffffffffffffda RBX: 00007ffc71488e30 RCX: 00007f539e=
+aa4d47
+[573871.669223] RDX: 0000000000000000 RSI: 00007ffc71486e30 RDI: 00007ffc71=
+488e30
+[573871.671126] RBP: 00007ffc71486e30 R08: 0000000000000000 R09: 0000000000=
+000001
+[573871.672985] R10: 0000000000000100 R11: 0000000000000246 R12: 0000000000=
+000000
+[573871.674899] R13: 0000000000000004 R14: 0000000000008180 R15: 0000000000=
+000001
+[573871.676784] rsync           D    0  9157   9148 0x00000000
+[573871.678162] Call Trace:
+[573871.678789]  ? __schedule+0x3cf/0xb60
+[573871.679835]  schedule+0x39/0x90
+[573871.680703]  wait_current_trans+0xc3/0x100
+[573871.681829]  ? wait_woken+0xa0/0xa0
+[573871.682690]  start_transaction+0x21a/0x460
+[573871.683789]  btrfs_dirty_inode+0x42/0xd0
+[573871.684748]  btrfs_setattr+0xab/0x590
+[573871.685693]  ? current_time+0x4d/0x90
+[573871.686610]  notify_change+0x2f0/0x450
+[573871.687603]  chown_common+0x1ac/0x1d0
+[573871.688485]  ? rcu_read_lock_sched_held+0x68/0x70
+[573871.689743]  do_fchownat+0xbc/0xf0
+[573871.690650]  __x64_sys_lchown+0x21/0x30
+[573871.691594]  do_syscall_64+0x60/0x190
+[573871.692460]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+[573871.693756] RIP: 0033:0x7f8cc9ac29b7
+[573871.694648] Code: Bad RIP value.
+[573871.695452] RSP: 002b:00007ffd2bdbd5a8 EFLAGS: 00000246 ORIG_RAX: 00000=
+0000000005e
+[573871.697377] RAX: ffffffffffffffda RBX: 00000000000041c0 RCX: 00007f8cc9=
+ac29b7
+[573871.699268] RDX: 00000000000003e8 RSI: 00000000000003e8 RDI: 00007ffd2b=
+dbfa10
+[573871.701174] RBP: 00007ffd2bdbfa10 R08: 0000000000000000 R09: 0000000000=
+000000
+[573871.702972] R10: 0000000000000000 R11: 0000000000000246 R12: 00007ffd2b=
+dbd8e0
+[573871.704864] R13: 00000000000003e8 R14: 0000558019715758 R15: 0000000000=
+000001
+[573871.706837] rsync           D    0 10148  10138 0x00000000
+[573871.708286] Call Trace:
+[573871.708921]  ? __schedule+0x3cf/0xb60
+[573871.710017]  schedule+0x39/0x90
+[573871.710865]  wait_current_trans+0xc3/0x100
+[573871.711956]  ? wait_woken+0xa0/0xa0
+[573871.712942]  start_transaction+0x13f/0x460
+[573871.714018]  btrfs_link+0xb1/0x280
+[573871.714899]  vfs_link+0x23e/0x310
+[573871.715746]  do_linkat+0x296/0x340
+[573871.716742]  __x64_sys_link+0x1c/0x20
+[573871.717664]  do_syscall_64+0x60/0x190
+[573871.718691]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+[573871.720020] RIP: 0033:0x7f0ad9ccbfc7
+[573871.720964] Code: Bad RIP value.
+[573871.721808] RSP: 002b:00007ffe17e262a8 EFLAGS: 00000246 ORIG_RAX: 00000=
+00000000056
+[573871.723825] RAX: ffffffffffffffda RBX: 0000561a33fcd098 RCX: 00007f0ad9=
+ccbfc7
+[573871.725767] RDX: 0000000000000000 RSI: 00007ffe17e262f0 RDI: 0000561a30=
+3452c0
+[573871.727529] RBP: 0000561a303452c0 R08: 0000000000000000 R09: 00007ffe17=
+e2a710
+[573871.729252] R10: 0000000000000064 R11: 0000000000000246 R12: 00007ffe17=
+e262f0
+[573871.731148] R13: 0000000000000000 R14: 0000561a303452c0 R15: 0000561a33=
+fcd098
+[573871.732946] kworker/u8:5    D    0  1064      2 0x80000000
+[573871.734371] Workqueue: btrfs-endio-write btrfs_endio_write_helper
+[573871.735956] Call Trace:
+[573871.736625]  ? __schedule+0x3cf/0xb60
+[573871.737644]  schedule+0x39/0x90
+[573871.738424]  wait_current_trans+0xc3/0x100
+[573871.739520]  ? wait_woken+0xa0/0xa0
+[573871.740416]  start_transaction+0x21a/0x460
+[573871.741506]  btrfs_finish_ordered_io+0x492/0x7e0
+[573871.742726]  normal_work_helper+0x95/0x530
+[573871.743747]  process_one_work+0x223/0x5d0
+[573871.744868]  worker_thread+0x4f/0x3b0
+[573871.745812]  kthread+0x106/0x140
+[573871.746603]  ? process_one_work+0x5d0/0x5d0
+[573871.747753]  ? kthread_park+0x90/0x90
+[573871.748751]  ret_from_fork+0x3a/0x50
+[573871.749713] kworker/u8:9    D    0  6027      2 0x80000000
+[573871.751135] Workqueue: btrfs-endio-write btrfs_endio_write_helper
+[573871.752691] Call Trace:
+[573871.753233]  ? __schedule+0x3cf/0xb60
+[573871.754177]  schedule+0x39/0x90
+[573871.754957]  wait_current_trans+0xc3/0x100
+[573871.755864]  ? wait_woken+0xa0/0xa0
+[573871.756777]  start_transaction+0x21a/0x460
+[573871.757843]  btrfs_finish_ordered_io+0x492/0x7e0
+[573871.759189]  normal_work_helper+0x95/0x530
+[573871.760342]  process_one_work+0x223/0x5d0
+[573871.761526]  worker_thread+0x4f/0x3b0
+[573871.762559]  kthread+0x106/0x140
+[573871.763463]  ? process_one_work+0x5d0/0x5d0
+[573871.764592]  ? kthread_park+0x90/0x90
+[573871.765657]  ret_from_fork+0x3a/0x50
+[573871.766674] btrfs           D    0 19926   4537 0x00000000
+[573871.768208] Call Trace:
+[573871.768956]  ? __schedule+0x3cf/0xb60
+[573871.770052]  schedule+0x39/0x90
+[573871.770905]  schedule_timeout+0x228/0x4e0
+[573871.771996]  ? mark_held_locks+0x6a/0x90
+[573871.772961]  ? _raw_spin_unlock_irq+0x29/0x40
+[573871.774157]  wait_for_common+0x155/0x220
+[573871.775262]  ? wake_up_q+0x70/0x70
+[573871.776133]  btrfs_wait_ordered_extents+0x27c/0x400
+[573871.777477]  btrfs_mksubvol+0x3cd/0x5e0
+[573871.778450]  ? rcu_read_lock_sched_held+0x68/0x70
+[573871.779637]  ? rcu_sync_lockdep_assert+0x30/0x60
+[573871.780829]  ? __sb_start_write+0xcc/0x1b0
+[573871.781831]  ? mnt_want_write_file+0x24/0x50
+[573871.783016]  btrfs_ioctl_snap_create_transid+0x169/0x1a0
+[573871.784449]  btrfs_ioctl_snap_create_v2+0x11d/0x170
+[573871.785716]  btrfs_ioctl+0x1351/0x2cb0
+[573871.786692]  ? kvm_sched_clock_read+0x14/0x30
+[573871.787778]  ? __handle_mm_fault+0x1067/0x1810
+[573871.788844]  ? do_raw_spin_unlock+0x49/0xc0
+[573871.789842]  ? _raw_spin_unlock+0x24/0x30
+[573871.790882]  ? __handle_mm_fault+0x1067/0x1810
+[573871.791917]  ? do_vfs_ioctl+0xa2/0x6f0
+[573871.792901]  ? btrfs_ioctl_get_supported_features+0x30/0x30
+[573871.794404]  do_vfs_ioctl+0xa2/0x6f0
+[573871.795263]  ? __do_page_fault+0x1fa/0x5a0
+[573871.796289]  ? entry_SYSCALL_64_after_hwframe+0x3e/0xbe
+[573871.797557]  ksys_ioctl+0x70/0x80
+[573871.798431]  __x64_sys_ioctl+0x16/0x20
+[573871.799384]  do_syscall_64+0x60/0x190
+[573871.800254]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+[573871.801407] RIP: 0033:0x7f4657246017
+[573871.802177] Code: Bad RIP value.
+[573871.802975] RSP: 002b:00007fffb9cdb928 EFLAGS: 00000206 ORIG_RAX: 00000=
+00000000010
+[573871.804897] RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f4657=
+246017
+[573871.806659] RDX: 00007fffb9cdb968 RSI: 0000000050009417 RDI: 0000000000=
+000003
+[573871.808372] RBP: 00000000013e1010 R08: 0000000000000008 R09: 0000000000=
+000048
+[573871.810129] R10: 0000000000000541 R11: 0000000000000206 R12: 0000000001=
+3e1040
+[573871.811974] R13: 00000000013e1040 R14: 0000000000000004 R15: 0000000000=
+000003
 
-[Fri Mar  8 03:50:32 2019] =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D
-
-[Fri Mar  8 04:38:21 2019]   task                        PC stack   pid fat=
-her
-[Fri Mar  8 04:38:21 2019] btrfs-transacti D    0 27078      2 0x80000000
-[Fri Mar  8 04:38:21 2019] Call Trace:
-[Fri Mar  8 04:38:21 2019]  ? __schedule+0x429/0xbb0
-[Fri Mar  8 04:38:21 2019]  schedule+0x39/0x90
-[Fri Mar  8 04:38:21 2019]  schedule_timeout+0x20f/0x590
-[Fri Mar  8 04:38:21 2019]  ? lock_acquire+0xbc/0x200
-[Fri Mar  8 04:38:21 2019]  ? mark_held_locks+0x6a/0x90
-[Fri Mar  8 04:38:21 2019]  ? _raw_spin_unlock_irq+0x29/0x40
-[Fri Mar  8 04:38:21 2019]  ? wait_for_common+0x131/0x1f0
-[Fri Mar  8 04:38:21 2019]  wait_for_common+0x131/0x1f0
-[Fri Mar  8 04:38:21 2019]  ? wake_up_q+0x70/0x70
-[Fri Mar  8 04:38:21 2019]  __start_delalloc_inodes+0x22f/0x320
-[Fri Mar  8 04:38:21 2019]  btrfs_start_delalloc_roots+0x1cd/0x380
-[Fri Mar  8 04:38:21 2019]  btrfs_commit_transaction+0x807/0xa20
-[Fri Mar  8 04:38:21 2019]  ? start_transaction+0x89/0x4d0
-[Fri Mar  8 04:38:21 2019]  transaction_kthread+0x194/0x1d0
-[Fri Mar  8 04:38:21 2019]  kthread+0x10d/0x140
-[Fri Mar  8 04:38:21 2019]  ? btrfs_cleanup_transaction+0x650/0x650
-[Fri Mar  8 04:38:21 2019]  ? kthread_create_on_node+0x40/0x40
-[Fri Mar  8 04:38:21 2019]  ret_from_fork+0x27/0x50
-[Fri Mar  8 04:38:21 2019] hash_prefetch   D    0 27397  27345 0x00000000
-[Fri Mar  8 04:38:21 2019] Call Trace:
-[Fri Mar  8 04:38:21 2019]  ? __schedule+0x429/0xbb0
-[Fri Mar  8 04:38:21 2019]  ? rwsem_down_write_failed+0x134/0x2b0
-[Fri Mar  8 04:38:21 2019]  schedule+0x39/0x90
-[Fri Mar  8 04:38:21 2019]  rwsem_down_write_failed+0x139/0x2b0
-[Fri Mar  8 04:38:21 2019]  ? lock_acquire+0xbc/0x200
-[Fri Mar  8 04:38:21 2019]  ? call_rwsem_down_write_failed+0x13/0x20
-[Fri Mar  8 04:38:21 2019]  call_rwsem_down_write_failed+0x13/0x20
-[Fri Mar  8 04:38:21 2019]  down_write_nested+0x87/0xb0
-[Fri Mar  8 04:38:21 2019]  do_unlinkat+0x113/0x300
-[Fri Mar  8 04:38:21 2019]  do_syscall_64+0x76/0x180
-[Fri Mar  8 04:38:21 2019]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
-[Fri Mar  8 04:38:21 2019] RIP: 0033:0x7fdcc7534ed7
-[Fri Mar  8 04:38:21 2019] RSP: 002b:00007fdbc2c4ce18 EFLAGS: 00000246 ORIG=
-_RAX: 0000000000000107
-[Fri Mar  8 04:38:21 2019] RAX: ffffffffffffffda RBX: 00007fdbc2c4ce40 RCX:=
- 00007fdcc7534ed7
-[Fri Mar  8 04:38:21 2019] RDX: 0000000000000000 RSI: 00007fdbb8002590 RDI:=
- 0000000000000003
-[Fri Mar  8 04:38:21 2019] RBP: 00005570f731f1a8 R08: 0000000000000000 R09:=
- 00007fdbc2c4cef0
-[Fri Mar  8 04:38:21 2019] R10: 00005570f6d65c80 R11: 0000000000000246 R12:=
- 00007fdbc2c4cf50
-[Fri Mar  8 04:38:21 2019] R13: 00007fdbc2c4d170 R14: 00007fdbb800af60 R15:=
- 00007fdbc2c4d120
-[Fri Mar  8 04:38:21 2019] crawl_writeback D    0 27400  27345 0x00000000
-[Fri Mar  8 04:38:21 2019] Call Trace:
-[Fri Mar  8 04:38:21 2019]  ? __schedule+0x429/0xbb0
-[Fri Mar  8 04:38:21 2019]  ? prepare_to_wait_event+0x97/0x190
-[Fri Mar  8 04:38:21 2019]  schedule+0x39/0x90
-[Fri Mar  8 04:38:21 2019]  wait_current_trans+0xa3/0xf0
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0xa0/0xa0
-[Fri Mar  8 04:38:21 2019]  start_transaction+0x29b/0x4d0
-[Fri Mar  8 04:38:21 2019]  btrfs_create+0x47/0x1d0
-[Fri Mar  8 04:38:21 2019]  lookup_open+0x404/0x760
-[Fri Mar  8 04:38:21 2019]  path_openat+0x4e9/0xcc0
-[Fri Mar  8 04:38:21 2019]  do_filp_open+0x8a/0xf0
-[Fri Mar  8 04:38:21 2019]  ? __alloc_fd+0xee/0x200
-[Fri Mar  8 04:38:21 2019]  ? do_sys_open+0x130/0x200
-[Fri Mar  8 04:38:21 2019]  do_sys_open+0x130/0x200
-[Fri Mar  8 04:38:21 2019]  do_syscall_64+0x76/0x180
-[Fri Mar  8 04:38:21 2019]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
-[Fri Mar  8 04:38:21 2019] RIP: 0033:0x7fdcc7533607
-[Fri Mar  8 04:38:21 2019] RSP: 002b:00007fdbc1c4acc0 EFLAGS: 00000293 ORIG=
-_RAX: 0000000000000101
-[Fri Mar  8 04:38:21 2019] RAX: ffffffffffffffda RBX: 00000000000e09c1 RCX:=
- 00007fdcc7533607
-[Fri Mar  8 04:38:21 2019] RDX: 00000000000e09c1 RSI: 00007fdba40008f0 RDI:=
- 0000000000000003
-[Fri Mar  8 04:38:21 2019] RBP: 0000000000000003 R08: 0000000000000000 R09:=
- 00007fdbc1c4b080
-[Fri Mar  8 04:38:21 2019] R10: 0000000000000180 R11: 0000000000000293 R12:=
- 00007fdba40008f0
-[Fri Mar  8 04:38:21 2019] R13: 0000000000000003 R14: 00007fdbc1c4b3d0 R15:=
- 00007fdbc1c4b350
-[Fri Mar  8 04:38:21 2019] crawl_290       D    0 13174  27345 0x00000000
-[Fri Mar  8 04:38:21 2019] Call Trace:
-[Fri Mar  8 04:38:21 2019]  ? __schedule+0x429/0xbb0
-[Fri Mar  8 04:38:21 2019]  ? prepare_to_wait_event+0x97/0x190
-[Fri Mar  8 04:38:21 2019]  schedule+0x39/0x90
-[Fri Mar  8 04:38:21 2019]  wait_current_trans+0xa3/0xf0
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0xa0/0xa0
-[Fri Mar  8 04:38:21 2019]  start_transaction+0x29b/0x4d0
-[Fri Mar  8 04:38:21 2019]  btrfs_clone+0x5a3/0xcc0
-[Fri Mar  8 04:38:21 2019]  btrfs_dedupe_file_range+0x5e3/0x660
-[Fri Mar  8 04:38:21 2019]  vfs_dedupe_file_range+0x22e/0x280
-[Fri Mar  8 04:38:21 2019]  do_vfs_ioctl+0x24d/0x6b0
-[Fri Mar  8 04:38:21 2019]  ? __fget+0x11f/0x210
-[Fri Mar  8 04:38:21 2019]  SyS_ioctl+0x74/0x80
-[Fri Mar  8 04:38:21 2019]  do_syscall_64+0x76/0x180
-[Fri Mar  8 04:38:21 2019]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
-[Fri Mar  8 04:38:21 2019] RIP: 0033:0x7fdcc7538dd7
-[Fri Mar  8 04:38:21 2019] RSP: 002b:00007fdcc6451ac8 EFLAGS: 00000246 ORIG=
-_RAX: 0000000000000010
-[Fri Mar  8 04:38:21 2019] RAX: ffffffffffffffda RBX: 00007fdb9c5e4010 RCX:=
- 00007fdcc7538dd7
-[Fri Mar  8 04:38:21 2019] RDX: 00007fdb9c5e4010 RSI: 00000000c0189436 RDI:=
- 0000000000000465
-[Fri Mar  8 04:38:21 2019] RBP: 00007fdcc6451e40 R08: 00007fdb9c1e8510 R09:=
- 0000000000000000
-[Fri Mar  8 04:38:21 2019] R10: 00007fdb9c044b80 R11: 0000000000000246 R12:=
- 0000000000000020
-[Fri Mar  8 04:38:21 2019] R13: 0000000000000018 R14: 00007fdb9c1e8528 R15:=
- 00007fdcc6451e48
-[Fri Mar  8 04:38:21 2019] crawl_302       D    0 15836  27345 0x00000000
-[Fri Mar  8 04:38:21 2019] Call Trace:
-[Fri Mar  8 04:38:21 2019]  ? __schedule+0x429/0xbb0
-[Fri Mar  8 04:38:21 2019]  ? prepare_to_wait_event+0x97/0x190
-[Fri Mar  8 04:38:21 2019]  schedule+0x39/0x90
-[Fri Mar  8 04:38:21 2019]  wait_current_trans+0xa3/0xf0
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0xa0/0xa0
-[Fri Mar  8 04:38:21 2019]  start_transaction+0x29b/0x4d0
-[Fri Mar  8 04:38:21 2019]  btrfs_clone+0x5a3/0xcc0
-[Fri Mar  8 04:38:21 2019]  btrfs_dedupe_file_range+0x5e3/0x660
-[Fri Mar  8 04:38:21 2019]  vfs_dedupe_file_range+0x22e/0x280
-[Fri Mar  8 04:38:21 2019]  do_vfs_ioctl+0x24d/0x6b0
-[Fri Mar  8 04:38:21 2019]  ? __fget+0x11f/0x210
-[Fri Mar  8 04:38:21 2019]  SyS_ioctl+0x74/0x80
-[Fri Mar  8 04:38:21 2019]  do_syscall_64+0x76/0x180
-[Fri Mar  8 04:38:21 2019]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
-[Fri Mar  8 04:38:21 2019] RIP: 0033:0x7fdcc7538dd7
-[Fri Mar  8 04:38:21 2019] RSP: 002b:00007fdcc4c4f0a8 EFLAGS: 00000246 ORIG=
-_RAX: 0000000000000010
-[Fri Mar  8 04:38:21 2019] RAX: ffffffffffffffda RBX: 00007fdb98125c40 RCX:=
- 00007fdcc7538dd7
-[Fri Mar  8 04:38:21 2019] RDX: 00007fdb98125c40 RSI: 00000000c0189436 RDI:=
- 0000000000000027
-[Fri Mar  8 04:38:21 2019] RBP: 00007fdcc4c4f420 R08: 00007fdb9807ee10 R09:=
- 0000000000000000
-[Fri Mar  8 04:38:21 2019] R10: 00007fdb98090b70 R11: 0000000000000246 R12:=
- 0000000000000020
-[Fri Mar  8 04:38:21 2019] R13: 0000000000000018 R14: 00007fdb9807ee28 R15:=
- 00007fdcc4c4f428
-[Fri Mar  8 04:38:21 2019] crawl_275       D    0 15837  27345 0x00000000
-[Fri Mar  8 04:38:21 2019] Call Trace:
-[Fri Mar  8 04:38:21 2019]  ? __schedule+0x429/0xbb0
-[Fri Mar  8 04:38:21 2019]  ? prepare_to_wait_event+0x97/0x190
-[Fri Mar  8 04:38:21 2019]  schedule+0x39/0x90
-[Fri Mar  8 04:38:21 2019]  wait_current_trans+0xa3/0xf0
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0xa0/0xa0
-[Fri Mar  8 04:38:21 2019]  start_transaction+0x29b/0x4d0
-[Fri Mar  8 04:38:21 2019]  btrfs_clone+0x5a3/0xcc0
-[Fri Mar  8 04:38:21 2019]  btrfs_dedupe_file_range+0x5e3/0x660
-[Fri Mar  8 04:38:21 2019]  vfs_dedupe_file_range+0x22e/0x280
-[Fri Mar  8 04:38:21 2019]  do_vfs_ioctl+0x24d/0x6b0
-[Fri Mar  8 04:38:21 2019]  ? __fget+0x11f/0x210
-[Fri Mar  8 04:38:21 2019]  SyS_ioctl+0x74/0x80
-[Fri Mar  8 04:38:21 2019]  do_syscall_64+0x76/0x180
-[Fri Mar  8 04:38:21 2019]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
-[Fri Mar  8 04:38:21 2019] RIP: 0033:0x7fdcc7538dd7
-[Fri Mar  8 04:38:21 2019] RSP: 002b:00007fdcc3c4d0a8 EFLAGS: 00000246 ORIG=
-_RAX: 0000000000000010
-[Fri Mar  8 04:38:21 2019] RAX: ffffffffffffffda RBX: 00007fdba02014f0 RCX:=
- 00007fdcc7538dd7
-[Fri Mar  8 04:38:21 2019] RDX: 00007fdba02014f0 RSI: 00000000c0189436 RDI:=
- 0000000000000029
-[Fri Mar  8 04:38:21 2019] RBP: 00007fdcc3c4d420 R08: 00007fdba0010cc0 R09:=
- 0000000000000000
-[Fri Mar  8 04:38:21 2019] R10: 00007fdba0088130 R11: 0000000000000246 R12:=
- 0000000000000020
-[Fri Mar  8 04:38:21 2019] R13: 0000000000000018 R14: 00007fdba0010cd8 R15:=
- 00007fdcc3c4d428
-[Fri Mar  8 04:38:21 2019] crawl_299       D    0 15838  27345 0x00000000
-[Fri Mar  8 04:38:21 2019] Call Trace:
-[Fri Mar  8 04:38:21 2019]  ? __schedule+0x429/0xbb0
-[Fri Mar  8 04:38:21 2019]  ? prepare_to_wait_event+0x97/0x190
-[Fri Mar  8 04:38:21 2019]  schedule+0x39/0x90
-[Fri Mar  8 04:38:21 2019]  wait_current_trans+0xa3/0xf0
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0xa0/0xa0
-[Fri Mar  8 04:38:21 2019]  start_transaction+0x29b/0x4d0
-[Fri Mar  8 04:38:21 2019]  btrfs_clone+0x5a3/0xcc0
-[Fri Mar  8 04:38:21 2019]  btrfs_dedupe_file_range+0x5e3/0x660
-[Fri Mar  8 04:38:21 2019]  vfs_dedupe_file_range+0x22e/0x280
-[Fri Mar  8 04:38:21 2019]  do_vfs_ioctl+0x24d/0x6b0
-[Fri Mar  8 04:38:21 2019]  ? __fget+0x11f/0x210
-[Fri Mar  8 04:38:21 2019]  SyS_ioctl+0x74/0x80
-[Fri Mar  8 04:38:21 2019]  do_syscall_64+0x76/0x180
-[Fri Mar  8 04:38:21 2019]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
-[Fri Mar  8 04:38:21 2019] RIP: 0033:0x7fdcc7538dd7
-[Fri Mar  8 04:38:21 2019] RSP: 002b:00007fdcc444e0a8 EFLAGS: 00000246 ORIG=
-_RAX: 0000000000000010
-[Fri Mar  8 04:38:21 2019] RAX: ffffffffffffffda RBX: 00007fdb942937c0 RCX:=
- 00007fdcc7538dd7
-[Fri Mar  8 04:38:21 2019] RDX: 00007fdb942937c0 RSI: 00000000c0189436 RDI:=
- 00000000000004a0
-[Fri Mar  8 04:38:21 2019] RBP: 00007fdcc444e420 R08: 00007fdb94094dd0 R09:=
- 0000000000000000
-[Fri Mar  8 04:38:21 2019] R10: 00007fdb94049c10 R11: 0000000000000246 R12:=
- 0000000000000020
-[Fri Mar  8 04:38:21 2019] R13: 0000000000000018 R14: 00007fdb94094de8 R15:=
- 00007fdcc444e428
-[Fri Mar  8 04:38:21 2019] crawl_290       D    0 15839  27345 0x00000000
-[Fri Mar  8 04:38:21 2019] Call Trace:
-[Fri Mar  8 04:38:21 2019]  ? __schedule+0x429/0xbb0
-[Fri Mar  8 04:38:21 2019]  ? prepare_to_wait_event+0x97/0x190
-[Fri Mar  8 04:38:21 2019]  schedule+0x39/0x90
-[Fri Mar  8 04:38:21 2019]  wait_current_trans+0xa3/0xf0
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0xa0/0xa0
-[Fri Mar  8 04:38:21 2019]  start_transaction+0x29b/0x4d0
-[Fri Mar  8 04:38:21 2019]  btrfs_clone+0x5a3/0xcc0
-[Fri Mar  8 04:38:21 2019]  btrfs_dedupe_file_range+0x5e3/0x660
-[Fri Mar  8 04:38:21 2019]  vfs_dedupe_file_range+0x22e/0x280
-[Fri Mar  8 04:38:21 2019]  do_vfs_ioctl+0x24d/0x6b0
-[Fri Mar  8 04:38:21 2019]  ? __fget+0x11f/0x210
-[Fri Mar  8 04:38:21 2019]  SyS_ioctl+0x74/0x80
-[Fri Mar  8 04:38:21 2019]  do_syscall_64+0x76/0x180
-[Fri Mar  8 04:38:21 2019]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
-[Fri Mar  8 04:38:21 2019] RIP: 0033:0x7fdcc7538dd7
-[Fri Mar  8 04:38:21 2019] RSP: 002b:00007fdcc5c510a8 EFLAGS: 00000246 ORIG=
-_RAX: 0000000000000010
-[Fri Mar  8 04:38:21 2019] RAX: ffffffffffffffda RBX: 00007fdb8c4a6060 RCX:=
- 00007fdcc7538dd7
-[Fri Mar  8 04:38:21 2019] RDX: 00007fdb8c4a6060 RSI: 00000000c0189436 RDI:=
- 00000000000004a1
-[Fri Mar  8 04:38:21 2019] RBP: 00007fdcc5c51420 R08: 00007fdb8c060170 R09:=
- 0000000000000000
-[Fri Mar  8 04:38:21 2019] R10: 00007fdb8c07dd40 R11: 0000000000000246 R12:=
- 0000000000000020
-[Fri Mar  8 04:38:21 2019] R13: 0000000000000018 R14: 00007fdb8c060188 R15:=
- 00007fdcc5c51428
-[Fri Mar  8 04:38:21 2019] btrfs           D    0  9795   9787 0x00000000
-[Fri Mar  8 04:38:21 2019] Call Trace:
-[Fri Mar  8 04:38:21 2019]  ? __schedule+0x429/0xbb0
-[Fri Mar  8 04:38:21 2019]  ? prepare_to_wait_event+0x97/0x190
-[Fri Mar  8 04:38:21 2019]  schedule+0x39/0x90
-[Fri Mar  8 04:38:21 2019]  wait_for_commit+0x3f/0x70
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0xa0/0xa0
-[Fri Mar  8 04:38:21 2019]  btrfs_wait_for_commit+0xf2/0x130
-[Fri Mar  8 04:38:21 2019]  btrfs_inc_block_group_ro+0x52/0x170
-[Fri Mar  8 04:38:21 2019]  scrub_enumerate_chunks+0x191/0x610
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0x70/0xa0
-[Fri Mar  8 04:38:21 2019]  btrfs_scrub_dev+0x1fa/0x650
-[Fri Mar  8 04:38:21 2019]  ? mnt_want_write_file+0x3b/0xb0
-[Fri Mar  8 04:38:21 2019]  btrfs_ioctl+0x1342/0x26a0
-[Fri Mar  8 04:38:21 2019]  ? lock_acquire+0xbc/0x200
-[Fri Mar  8 04:38:21 2019]  ? lock_acquire+0xbc/0x200
-[Fri Mar  8 04:38:21 2019]  ? do_vfs_ioctl+0x92/0x6b0
-[Fri Mar  8 04:38:21 2019]  do_vfs_ioctl+0x92/0x6b0
-[Fri Mar  8 04:38:21 2019]  ? __fget+0x11f/0x210
-[Fri Mar  8 04:38:21 2019]  SyS_ioctl+0x74/0x80
-[Fri Mar  8 04:38:21 2019]  do_syscall_64+0x76/0x180
-[Fri Mar  8 04:38:21 2019]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
-[Fri Mar  8 04:38:21 2019] RIP: 0033:0x7f0ab8c50dd7
-[Fri Mar  8 04:38:21 2019] RSP: 002b:00007f0ab8b6ed58 EFLAGS: 00000246 ORIG=
-_RAX: 0000000000000010
-[Fri Mar  8 04:38:21 2019] RAX: ffffffffffffffda RBX: 00005601803ae4f0 RCX:=
- 00007f0ab8c50dd7
-[Fri Mar  8 04:38:21 2019] RDX: 00005601803ae4f0 RSI: 00000000c400941b RDI:=
- 0000000000000003
-[Fri Mar  8 04:38:21 2019] RBP: 0000000000000000 R08: 00007f0ab8b6f700 R09:=
- 0000000000000000
-[Fri Mar  8 04:38:21 2019] R10: 00007f0ab8b6f700 R11: 0000000000000246 R12:=
- 0000000000000000
-[Fri Mar  8 04:38:21 2019] R13: 00007ffd74e35cdf R14: 0000000000000000 R15:=
- 00007f0ab9bec040
-[Fri Mar  8 04:38:21 2019] btrfs           D    0  9796   9787 0x00000000
-[Fri Mar  8 04:38:21 2019] Call Trace:
-[Fri Mar  8 04:38:21 2019]  ? __schedule+0x429/0xbb0
-[Fri Mar  8 04:38:21 2019]  ? prepare_to_wait_event+0x97/0x190
-[Fri Mar  8 04:38:21 2019]  schedule+0x39/0x90
-[Fri Mar  8 04:38:21 2019]  wait_for_commit+0x3f/0x70
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0xa0/0xa0
-[Fri Mar  8 04:38:21 2019]  btrfs_wait_for_commit+0xf2/0x130
-[Fri Mar  8 04:38:21 2019]  btrfs_inc_block_group_ro+0x52/0x170
-[Fri Mar  8 04:38:21 2019]  scrub_enumerate_chunks+0x191/0x610
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0x70/0xa0
-[Fri Mar  8 04:38:21 2019]  btrfs_scrub_dev+0x1fa/0x650
-[Fri Mar  8 04:38:21 2019]  ? mnt_want_write_file+0x3b/0xb0
-[Fri Mar  8 04:38:21 2019]  btrfs_ioctl+0x1342/0x26a0
-[Fri Mar  8 04:38:21 2019]  ? lock_acquire+0xbc/0x200
-[Fri Mar  8 04:38:21 2019]  ? lock_acquire+0xbc/0x200
-[Fri Mar  8 04:38:21 2019]  ? do_vfs_ioctl+0x92/0x6b0
-[Fri Mar  8 04:38:21 2019]  do_vfs_ioctl+0x92/0x6b0
-[Fri Mar  8 04:38:21 2019]  ? __fget+0x11f/0x210
-[Fri Mar  8 04:38:21 2019]  SyS_ioctl+0x74/0x80
-[Fri Mar  8 04:38:21 2019]  do_syscall_64+0x76/0x180
-[Fri Mar  8 04:38:21 2019]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
-[Fri Mar  8 04:38:21 2019] RIP: 0033:0x7f0ab8c50dd7
-[Fri Mar  8 04:38:21 2019] RSP: 002b:00007f0ab836dd58 EFLAGS: 00000246 ORIG=
-_RAX: 0000000000000010
-[Fri Mar  8 04:38:21 2019] RAX: ffffffffffffffda RBX: 00005601803ae970 RCX:=
- 00007f0ab8c50dd7
-[Fri Mar  8 04:38:21 2019] RDX: 00005601803ae970 RSI: 00000000c400941b RDI:=
- 0000000000000003
-[Fri Mar  8 04:38:21 2019] RBP: 0000000000000000 R08: 00007f0ab836e700 R09:=
- 0000000000000000
-[Fri Mar  8 04:38:21 2019] R10: 00007f0ab836e700 R11: 0000000000000246 R12:=
- 0000000000000000
-[Fri Mar  8 04:38:21 2019] R13: 00007ffd74e35cdf R14: 0000000000000000 R15:=
- 00007f0ab9bec040
-[Fri Mar  8 04:38:21 2019] btrfs           D    0  9797   9787 0x00000000
-[Fri Mar  8 04:38:21 2019] Call Trace:
-[Fri Mar  8 04:38:21 2019]  ? __schedule+0x429/0xbb0
-[Fri Mar  8 04:38:21 2019]  ? prepare_to_wait_event+0x97/0x190
-[Fri Mar  8 04:38:21 2019]  schedule+0x39/0x90
-[Fri Mar  8 04:38:21 2019]  wait_for_commit+0x3f/0x70
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0xa0/0xa0
-[Fri Mar  8 04:38:21 2019]  btrfs_wait_for_commit+0xf2/0x130
-[Fri Mar  8 04:38:21 2019]  btrfs_inc_block_group_ro+0x52/0x170
-[Fri Mar  8 04:38:21 2019]  scrub_enumerate_chunks+0x191/0x610
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0x70/0xa0
-[Fri Mar  8 04:38:21 2019]  btrfs_scrub_dev+0x1fa/0x650
-[Fri Mar  8 04:38:21 2019]  ? mnt_want_write_file+0x3b/0xb0
-[Fri Mar  8 04:38:21 2019]  btrfs_ioctl+0x1342/0x26a0
-[Fri Mar  8 04:38:21 2019]  ? lock_acquire+0xbc/0x200
-[Fri Mar  8 04:38:21 2019]  ? lock_acquire+0xbc/0x200
-[Fri Mar  8 04:38:21 2019]  ? do_vfs_ioctl+0x92/0x6b0
-[Fri Mar  8 04:38:21 2019]  do_vfs_ioctl+0x92/0x6b0
-[Fri Mar  8 04:38:21 2019]  ? __fget+0x11f/0x210
-[Fri Mar  8 04:38:21 2019]  SyS_ioctl+0x74/0x80
-[Fri Mar  8 04:38:21 2019]  do_syscall_64+0x76/0x180
-[Fri Mar  8 04:38:21 2019]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
-[Fri Mar  8 04:38:21 2019] RIP: 0033:0x7f0ab8c50dd7
-[Fri Mar  8 04:38:21 2019] RSP: 002b:00007f0ab7b6cd58 EFLAGS: 00000246 ORIG=
-_RAX: 0000000000000010
-[Fri Mar  8 04:38:21 2019] RAX: ffffffffffffffda RBX: 00005601803aedf0 RCX:=
- 00007f0ab8c50dd7
-[Fri Mar  8 04:38:21 2019] RDX: 00005601803aedf0 RSI: 00000000c400941b RDI:=
- 0000000000000003
-[Fri Mar  8 04:38:21 2019] RBP: 0000000000000000 R08: 00007f0ab7b6d700 R09:=
- 0000000000000000
-[Fri Mar  8 04:38:21 2019] R10: 00007f0ab7b6d700 R11: 0000000000000246 R12:=
- 0000000000000000
-[Fri Mar  8 04:38:21 2019] R13: 00007ffd74e35cdf R14: 0000000000000000 R15:=
- 00007f0ab9bec040
-[Fri Mar  8 04:38:21 2019] btrfs           D    0  9798   9787 0x00000000
-[Fri Mar  8 04:38:21 2019] Call Trace:
-[Fri Mar  8 04:38:21 2019]  ? __schedule+0x429/0xbb0
-[Fri Mar  8 04:38:21 2019]  ? prepare_to_wait_event+0x97/0x190
-[Fri Mar  8 04:38:21 2019]  schedule+0x39/0x90
-[Fri Mar  8 04:38:21 2019]  wait_for_commit+0x3f/0x70
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0xa0/0xa0
-[Fri Mar  8 04:38:21 2019]  btrfs_wait_for_commit+0xf2/0x130
-[Fri Mar  8 04:38:21 2019]  btrfs_inc_block_group_ro+0x52/0x170
-[Fri Mar  8 04:38:21 2019]  scrub_enumerate_chunks+0x191/0x610
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0x70/0xa0
-[Fri Mar  8 04:38:21 2019]  btrfs_scrub_dev+0x1fa/0x650
-[Fri Mar  8 04:38:21 2019]  ? mnt_want_write_file+0x3b/0xb0
-[Fri Mar  8 04:38:21 2019]  btrfs_ioctl+0x1342/0x26a0
-[Fri Mar  8 04:38:21 2019]  ? lock_acquire+0xbc/0x200
-[Fri Mar  8 04:38:21 2019]  ? lock_acquire+0xbc/0x200
-[Fri Mar  8 04:38:21 2019]  ? do_vfs_ioctl+0x92/0x6b0
-[Fri Mar  8 04:38:21 2019]  do_vfs_ioctl+0x92/0x6b0
-[Fri Mar  8 04:38:21 2019]  ? __fget+0x11f/0x210
-[Fri Mar  8 04:38:21 2019]  SyS_ioctl+0x74/0x80
-[Fri Mar  8 04:38:21 2019]  do_syscall_64+0x76/0x180
-[Fri Mar  8 04:38:21 2019]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
-[Fri Mar  8 04:38:21 2019] RIP: 0033:0x7f0ab8c50dd7
-[Fri Mar  8 04:38:21 2019] RSP: 002b:00007f0ab736bd58 EFLAGS: 00000246 ORIG=
-_RAX: 0000000000000010
-[Fri Mar  8 04:38:21 2019] RAX: ffffffffffffffda RBX: 00005601803af270 RCX:=
- 00007f0ab8c50dd7
-[Fri Mar  8 04:38:21 2019] RDX: 00005601803af270 RSI: 00000000c400941b RDI:=
- 0000000000000003
-[Fri Mar  8 04:38:21 2019] RBP: 0000000000000000 R08: 00007f0ab736c700 R09:=
- 0000000000000000
-[Fri Mar  8 04:38:21 2019] R10: 00007f0ab736c700 R11: 0000000000000246 R12:=
- 0000000000000000
-[Fri Mar  8 04:38:21 2019] R13: 00007ffd74e35cdf R14: 0000000000000000 R15:=
- 00007f0ab9bec040
-[Fri Mar  8 04:38:21 2019] btrfs           D    0  9799   9787 0x00000000
-[Fri Mar  8 04:38:21 2019] Call Trace:
-[Fri Mar  8 04:38:21 2019]  ? __schedule+0x429/0xbb0
-[Fri Mar  8 04:38:21 2019]  ? prepare_to_wait_event+0x97/0x190
-[Fri Mar  8 04:38:21 2019]  schedule+0x39/0x90
-[Fri Mar  8 04:38:21 2019]  wait_for_commit+0x3f/0x70
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0xa0/0xa0
-[Fri Mar  8 04:38:21 2019]  btrfs_wait_for_commit+0xf2/0x130
-[Fri Mar  8 04:38:21 2019]  btrfs_inc_block_group_ro+0x52/0x170
-[Fri Mar  8 04:38:21 2019]  scrub_enumerate_chunks+0x191/0x610
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0x70/0xa0
-[Fri Mar  8 04:38:21 2019]  btrfs_scrub_dev+0x1fa/0x650
-[Fri Mar  8 04:38:21 2019]  ? mnt_want_write_file+0x3b/0xb0
-[Fri Mar  8 04:38:21 2019]  btrfs_ioctl+0x1342/0x26a0
-[Fri Mar  8 04:38:21 2019]  ? lock_acquire+0xbc/0x200
-[Fri Mar  8 04:38:21 2019]  ? lock_acquire+0xbc/0x200
-[Fri Mar  8 04:38:21 2019]  ? do_vfs_ioctl+0x92/0x6b0
-[Fri Mar  8 04:38:21 2019]  do_vfs_ioctl+0x92/0x6b0
-[Fri Mar  8 04:38:21 2019]  ? __fget+0x11f/0x210
-[Fri Mar  8 04:38:21 2019]  SyS_ioctl+0x74/0x80
-[Fri Mar  8 04:38:21 2019]  do_syscall_64+0x76/0x180
-[Fri Mar  8 04:38:21 2019]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
-[Fri Mar  8 04:38:21 2019] RIP: 0033:0x7f0ab8c50dd7
-[Fri Mar  8 04:38:21 2019] RSP: 002b:00007f0ab6b6ad58 EFLAGS: 00000246 ORIG=
-_RAX: 0000000000000010
-[Fri Mar  8 04:38:21 2019] RAX: ffffffffffffffda RBX: 00005601803af6f0 RCX:=
- 00007f0ab8c50dd7
-[Fri Mar  8 04:38:21 2019] RDX: 00005601803af6f0 RSI: 00000000c400941b RDI:=
- 0000000000000003
-[Fri Mar  8 04:38:21 2019] RBP: 0000000000000000 R08: 00007f0ab6b6b700 R09:=
- 0000000000000000
-[Fri Mar  8 04:38:21 2019] R10: 00007f0ab6b6b700 R11: 0000000000000246 R12:=
- 0000000000000000
-[Fri Mar  8 04:38:21 2019] R13: 00007ffd74e35cdf R14: 0000000000000000 R15:=
- 00007f0ab9bec040
-[Fri Mar  8 04:38:21 2019] rsync           D    0 12329  12200 0x00000000
-[Fri Mar  8 04:38:21 2019] Call Trace:
-[Fri Mar  8 04:38:21 2019]  ? __schedule+0x429/0xbb0
-[Fri Mar  8 04:38:21 2019]  ? prepare_to_wait_event+0x97/0x190
-[Fri Mar  8 04:38:21 2019]  schedule+0x39/0x90
-[Fri Mar  8 04:38:21 2019]  wait_current_trans+0xa3/0xf0
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0xa0/0xa0
-[Fri Mar  8 04:38:21 2019]  start_transaction+0x29b/0x4d0
-[Fri Mar  8 04:38:21 2019]  btrfs_create+0x47/0x1d0
-[Fri Mar  8 04:38:21 2019]  lookup_open+0x404/0x760
-[Fri Mar  8 04:38:21 2019]  ? __wake_up_common_lock+0x53/0x90
-[Fri Mar  8 04:38:21 2019]  path_openat+0x4e9/0xcc0
-[Fri Mar  8 04:38:21 2019]  do_filp_open+0x8a/0xf0
-[Fri Mar  8 04:38:21 2019]  ? __alloc_fd+0xee/0x200
-[Fri Mar  8 04:38:21 2019]  ? do_sys_open+0x130/0x200
-[Fri Mar  8 04:38:21 2019]  do_sys_open+0x130/0x200
-[Fri Mar  8 04:38:21 2019]  do_syscall_64+0x76/0x180
-[Fri Mar  8 04:38:21 2019]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
-[Fri Mar  8 04:38:21 2019] RIP: 0033:0x7f37f89b34b0
-[Fri Mar  8 04:38:21 2019] RSP: 002b:00007ffdd3371078 EFLAGS: 00000246 ORIG=
-_RAX: 0000000000000002
-[Fri Mar  8 04:38:21 2019] RAX: ffffffffffffffda RBX: 0000000000000000 RCX:=
- 00007f37f89b34b0
-[Fri Mar  8 04:38:21 2019] RDX: 0000000000000180 RSI: 00000000000000c2 RDI:=
- 00007ffdd33732e0
-[Fri Mar  8 04:38:21 2019] RBP: 000000000003a2f8 R08: 000000000000001e R09:=
- 00007f37f8a06120
-[Fri Mar  8 04:38:21 2019] R10: 0000000000000000 R11: 0000000000000246 R12:=
- 00007ffdd33732f6
-[Fri Mar  8 04:38:21 2019] R13: 8421084210842109 R14: 00000000000000c2 R15:=
- 00007f37f8a41320
-[Fri Mar  8 04:38:21 2019] rsync           D    0 15392  15306 0x00000000
-[Fri Mar  8 04:38:21 2019] Call Trace:
-[Fri Mar  8 04:38:21 2019]  ? __schedule+0x429/0xbb0
-[Fri Mar  8 04:38:21 2019]  ? prepare_to_wait_event+0x97/0x190
-[Fri Mar  8 04:38:21 2019]  schedule+0x39/0x90
-[Fri Mar  8 04:38:21 2019]  wait_current_trans+0xa3/0xf0
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0xa0/0xa0
-[Fri Mar  8 04:38:21 2019]  start_transaction+0x29b/0x4d0
-[Fri Mar  8 04:38:21 2019]  btrfs_create+0x47/0x1d0
-[Fri Mar  8 04:38:21 2019]  lookup_open+0x404/0x760
-[Fri Mar  8 04:38:21 2019]  ? __wake_up_common_lock+0x53/0x90
-[Fri Mar  8 04:38:21 2019]  path_openat+0x4e9/0xcc0
-[Fri Mar  8 04:38:21 2019]  do_filp_open+0x8a/0xf0
-[Fri Mar  8 04:38:21 2019]  ? __alloc_fd+0xee/0x200
-[Fri Mar  8 04:38:21 2019]  ? do_sys_open+0x130/0x200
-[Fri Mar  8 04:38:21 2019]  do_sys_open+0x130/0x200
-[Fri Mar  8 04:38:21 2019]  do_syscall_64+0x76/0x180
-[Fri Mar  8 04:38:21 2019]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
-[Fri Mar  8 04:38:21 2019] RIP: 0033:0x7ff710ce34b0
-[Fri Mar  8 04:38:21 2019] RSP: 002b:00007ffc267318a8 EFLAGS: 00000246 ORIG=
-_RAX: 0000000000000002
-[Fri Mar  8 04:38:21 2019] RAX: ffffffffffffffda RBX: 0000000000000000 RCX:=
- 00007ff710ce34b0
-[Fri Mar  8 04:38:21 2019] RDX: 0000000000000180 RSI: 00000000000000c2 RDI:=
- 00007ffc26733b10
-[Fri Mar  8 04:38:21 2019] RBP: 000000000003a2f8 R08: 0000000000000000 R09:=
- 00007ff710d35b30
-[Fri Mar  8 04:38:21 2019] R10: 0000000000000000 R11: 0000000000000246 R12:=
- 00007ffc26733b3f
-[Fri Mar  8 04:38:21 2019] R13: 8421084210842109 R14: 00000000000000c2 R15:=
- 00007ff710d71320
-[Fri Mar  8 04:38:21 2019] rsync           D    0 24322  12266 0x00000000
-[Fri Mar  8 04:38:21 2019] Call Trace:
-[Fri Mar  8 04:38:21 2019]  ? __schedule+0x429/0xbb0
-[Fri Mar  8 04:38:21 2019]  ? prepare_to_wait_event+0x97/0x190
-[Fri Mar  8 04:38:21 2019]  schedule+0x39/0x90
-[Fri Mar  8 04:38:21 2019]  wait_current_trans+0xa3/0xf0
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0xa0/0xa0
-[Fri Mar  8 04:38:21 2019]  start_transaction+0x29b/0x4d0
-[Fri Mar  8 04:38:21 2019]  btrfs_setattr+0x1e6/0x3b0
-[Fri Mar  8 04:38:21 2019]  notify_change+0x2ed/0x450
-[Fri Mar  8 04:38:21 2019]  do_truncate+0x5e/0x90
-[Fri Mar  8 04:38:21 2019]  ? rcu_read_lock_sched_held+0x68/0x70
-[Fri Mar  8 04:38:21 2019]  do_sys_ftruncate.constprop.1+0x120/0x180
-[Fri Mar  8 04:38:21 2019]  ? trace_hardirqs_off_thunk+0x1a/0x1c
-[Fri Mar  8 04:38:21 2019]  do_syscall_64+0x76/0x180
-[Fri Mar  8 04:38:21 2019]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
-[Fri Mar  8 04:38:21 2019] RIP: 0033:0x7f2994512c87
-[Fri Mar  8 04:38:21 2019] RSP: 002b:00007fff6ffc5be8 EFLAGS: 00000246 ORIG=
-_RAX: 000000000000004d
-[Fri Mar  8 04:38:21 2019] RAX: ffffffffffffffda RBX: 0000000000000000 RCX:=
- 00007f2994512c87
-[Fri Mar  8 04:38:21 2019] RDX: 0000000000000000 RSI: 0000000004648f62 RDI:=
- 0000000000000004
-[Fri Mar  8 04:38:21 2019] RBP: 0000000000000004 R08: 0000000000000000 R09:=
- 00007f299455d7b8
-[Fri Mar  8 04:38:21 2019] R10: 0000000000000000 R11: 0000000000000246 R12:=
- 0000000004648f62
-[Fri Mar  8 04:38:21 2019] R13: 00000000000008a1 R14: 0000000000001f78 R15:=
- 0000000000000005
-[Fri Mar  8 04:38:21 2019] rsync           D    0 25113  12114 0x00000000
-[Fri Mar  8 04:38:21 2019] Call Trace:
-[Fri Mar  8 04:38:21 2019]  ? __schedule+0x429/0xbb0
-[Fri Mar  8 04:38:21 2019]  ? prepare_to_wait_event+0x97/0x190
-[Fri Mar  8 04:38:21 2019]  schedule+0x39/0x90
-[Fri Mar  8 04:38:21 2019]  wait_current_trans+0xa3/0xf0
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0xa0/0xa0
-[Fri Mar  8 04:38:21 2019]  start_transaction+0x29b/0x4d0
-[Fri Mar  8 04:38:21 2019]  __btrfs_setxattr+0x61/0x110
-[Fri Mar  8 04:38:21 2019]  __vfs_setxattr+0x66/0x80
-[Fri Mar  8 04:38:21 2019]  __vfs_setxattr_noperm+0x6d/0x1b0
-[Fri Mar  8 04:38:21 2019]  vfs_setxattr+0xa0/0xb0
-[Fri Mar  8 04:38:21 2019]  setxattr+0x131/0x1a0
-[Fri Mar  8 04:38:21 2019]  ? lock_acquire+0xbc/0x200
-[Fri Mar  8 04:38:21 2019]  ? rcu_read_lock_sched_held+0x68/0x70
-[Fri Mar  8 04:38:21 2019]  ? rcu_sync_lockdep_assert+0x30/0x60
-[Fri Mar  8 04:38:21 2019]  ? __sb_start_write+0xcc/0x1b0
-[Fri Mar  8 04:38:21 2019]  ? mnt_want_write+0x20/0x50
-[Fri Mar  8 04:38:21 2019]  path_setxattr+0x94/0xc0
-[Fri Mar  8 04:38:21 2019]  SyS_lsetxattr+0xd/0x10
-[Fri Mar  8 04:38:21 2019]  do_syscall_64+0x76/0x180
-[Fri Mar  8 04:38:21 2019]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
-[Fri Mar  8 04:38:21 2019] RIP: 0033:0x7f1934b64229
-[Fri Mar  8 04:38:21 2019] RSP: 002b:00007ffc0ca30b38 EFLAGS: 00000246 ORIG=
-_RAX: 00000000000000bd
-[Fri Mar  8 04:38:21 2019] RAX: ffffffffffffffda RBX: 0000000000000000 RCX:=
- 00007f1934b64229
-[Fri Mar  8 04:38:21 2019] RDX: 00007ffc0ca30c70 RSI: 000055cb645696dd RDI:=
- 00007ffc0ca33050
-[Fri Mar  8 04:38:21 2019] RBP: 00007ffc0ca30c70 R08: 0000000000000000 R09:=
- 00000000000003ea
-[Fri Mar  8 04:38:21 2019] R10: 0000000000000014 R11: 0000000000000246 R12:=
- 0000000000000000
-[Fri Mar  8 04:38:21 2019] R13: 00007ffc0ca33050 R14: 00000000000081a4 R15:=
- 00007f19355af7ec
-[Fri Mar  8 04:38:21 2019] rsync           D    0 14184  14076 0x00000000
-[Fri Mar  8 04:38:21 2019] Call Trace:
-[Fri Mar  8 04:38:21 2019]  ? __schedule+0x429/0xbb0
-[Fri Mar  8 04:38:21 2019]  ? prepare_to_wait_event+0x97/0x190
-[Fri Mar  8 04:38:21 2019]  schedule+0x39/0x90
-[Fri Mar  8 04:38:21 2019]  wait_current_trans+0xa3/0xf0
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0xa0/0xa0
-[Fri Mar  8 04:38:21 2019]  start_transaction+0x29b/0x4d0
-[Fri Mar  8 04:38:21 2019]  btrfs_start_transaction_fallback_global_rsv+0x3=
-4/0x200
-[Fri Mar  8 04:38:21 2019]  btrfs_unlink+0x30/0xd0
-[Fri Mar  8 04:38:21 2019]  vfs_unlink+0xf8/0x190
-[Fri Mar  8 04:38:21 2019]  do_unlinkat+0x287/0x300
-[Fri Mar  8 04:38:21 2019]  do_syscall_64+0x76/0x180
-[Fri Mar  8 04:38:21 2019]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
-[Fri Mar  8 04:38:21 2019] RIP: 0033:0x7fc9a562cea7
-[Fri Mar  8 04:38:21 2019] RSP: 002b:00007ffd3cbd9a18 EFLAGS: 00000246 ORIG=
-_RAX: 0000000000000057
-[Fri Mar  8 04:38:21 2019] RAX: ffffffffffffffda RBX: 0000000000000002 RCX:=
- 00007fc9a562cea7
-[Fri Mar  8 04:38:21 2019] RDX: 0000000000000000 RSI: 00000000000081a4 RDI:=
- 00007ffd3cbdaad0
-[Fri Mar  8 04:38:21 2019] RBP: 00000000000081a4 R08: 000000000000fff0 R09:=
- 00007fc9a567d770
-[Fri Mar  8 04:38:21 2019] R10: 632e766c6f736572 R11: 0000000000000246 R12:=
- 00007ffd3cbdaad0
-[Fri Mar  8 04:38:21 2019] R13: 0000000000008000 R14: 0000000000000000 R15:=
- 00000000000081a4
-[Fri Mar  8 04:38:21 2019] kworker/u8:20   D    0 20623      2 0x80000000
-[Fri Mar  8 04:38:21 2019] Workqueue: btrfs-flush_delalloc btrfs_flush_dela=
-lloc_helper
-[Fri Mar  8 04:38:21 2019] Call Trace:
-[Fri Mar  8 04:38:21 2019]  ? __schedule+0x429/0xbb0
-[Fri Mar  8 04:38:21 2019]  schedule+0x39/0x90
-[Fri Mar  8 04:38:21 2019]  io_schedule+0x12/0x40
-[Fri Mar  8 04:38:21 2019]  __lock_page+0x110/0x140
-[Fri Mar  8 04:38:21 2019]  ? add_to_page_cache_lru+0xc0/0xc0
-[Fri Mar  8 04:38:21 2019]  extent_write_cache_pages.constprop.27+0x2d9/0x3=
-b0
-[Fri Mar  8 04:38:21 2019]  ? lock_acquire+0xbc/0x200
-[Fri Mar  8 04:38:21 2019]  extent_writepages+0x4e/0x70
-[Fri Mar  8 04:38:21 2019]  ? btrfs_direct_IO+0x3e0/0x3e0
-[Fri Mar  8 04:38:21 2019]  do_writepages+0x23/0x80
-[Fri Mar  8 04:38:21 2019]  __filemap_fdatawrite_range+0xaa/0xe0
-[Fri Mar  8 04:38:21 2019]  btrfs_run_delalloc_work+0x17/0x60
-[Fri Mar  8 04:38:21 2019]  btrfs_scrubparity_helper+0x8f/0x640
-[Fri Mar  8 04:38:21 2019]  process_one_work+0x204/0x650
-[Fri Mar  8 04:38:21 2019]  worker_thread+0x4d/0x3b0
-[Fri Mar  8 04:38:21 2019]  kthread+0x10d/0x140
-[Fri Mar  8 04:38:21 2019]  ? process_one_work+0x650/0x650
-[Fri Mar  8 04:38:21 2019]  ? kthread_create_on_node+0x40/0x40
-[Fri Mar  8 04:38:21 2019]  ret_from_fork+0x27/0x50
-[Fri Mar  8 04:38:21 2019] mkdir           D    0 17020  17013 0x00000000
-[Fri Mar  8 04:38:21 2019] Call Trace:
-[Fri Mar  8 04:38:21 2019]  ? __schedule+0x429/0xbb0
-[Fri Mar  8 04:38:21 2019]  ? prepare_to_wait_event+0x97/0x190
-[Fri Mar  8 04:38:21 2019]  schedule+0x39/0x90
-[Fri Mar  8 04:38:21 2019]  wait_current_trans+0xa3/0xf0
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0xa0/0xa0
-[Fri Mar  8 04:38:21 2019]  start_transaction+0x29b/0x4d0
-[Fri Mar  8 04:38:21 2019]  btrfs_mkdir+0x50/0x1d0
-[Fri Mar  8 04:38:21 2019]  vfs_mkdir+0x134/0x1c0
-[Fri Mar  8 04:38:21 2019]  SyS_mkdirat+0xb3/0xf0
-[Fri Mar  8 04:38:21 2019]  do_syscall_64+0x76/0x180
-[Fri Mar  8 04:38:21 2019]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
-[Fri Mar  8 04:38:21 2019] RIP: 0033:0x7fed308fb447
-[Fri Mar  8 04:38:21 2019] RSP: 002b:00007ffcfc5df778 EFLAGS: 00000206 ORIG=
-_RAX: 0000000000000053
-[Fri Mar  8 04:38:21 2019] RAX: ffffffffffffffda RBX: 00007ffcfc5e1b28 RCX:=
- 00007fed308fb447
-[Fri Mar  8 04:38:21 2019] RDX: 0000000000000000 RSI: 00000000000001ff RDI:=
- 00007ffcfc5e1b4d
-[Fri Mar  8 04:38:21 2019] RBP: 00007ffcfc5df8f0 R08: 00000000000001ff R09:=
- 000056093bb17e10
-[Fri Mar  8 04:38:21 2019] R10: 0000000000000376 R11: 0000000000000206 R12:=
- 000056093bb17e50
-[Fri Mar  8 04:38:21 2019] R13: 00000000000001ff R14: 00007ffcfc5dfa90 R15:=
- 0000000000000001
-[Fri Mar  8 04:38:21 2019] rsync           D    0  2327   2261 0x00000000
-[Fri Mar  8 04:38:21 2019] Call Trace:
-[Fri Mar  8 04:38:21 2019]  ? __schedule+0x429/0xbb0
-[Fri Mar  8 04:38:21 2019]  ? prepare_to_wait_event+0x97/0x190
-[Fri Mar  8 04:38:21 2019]  schedule+0x39/0x90
-[Fri Mar  8 04:38:21 2019]  wait_current_trans+0xa3/0xf0
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0xa0/0xa0
-[Fri Mar  8 04:38:21 2019]  start_transaction+0x29b/0x4d0
-[Fri Mar  8 04:38:21 2019]  btrfs_create+0x47/0x1d0
-[Fri Mar  8 04:38:21 2019]  lookup_open+0x404/0x760
-[Fri Mar  8 04:38:21 2019]  ? __wake_up_common_lock+0x53/0x90
-[Fri Mar  8 04:38:21 2019]  path_openat+0x4e9/0xcc0
-[Fri Mar  8 04:38:21 2019]  ? filemap_map_pages+0x312/0x520
-[Fri Mar  8 04:38:21 2019]  do_filp_open+0x8a/0xf0
-[Fri Mar  8 04:38:21 2019]  ? __alloc_fd+0xee/0x200
-[Fri Mar  8 04:38:21 2019]  ? do_sys_open+0x130/0x200
-[Fri Mar  8 04:38:21 2019]  do_sys_open+0x130/0x200
-[Fri Mar  8 04:38:21 2019]  do_syscall_64+0x76/0x180
-[Fri Mar  8 04:38:21 2019]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
-[Fri Mar  8 04:38:21 2019] RIP: 0033:0x7f084cebb4b0
-[Fri Mar  8 04:38:21 2019] RSP: 002b:00007ffea5c6f238 EFLAGS: 00000246 ORIG=
-_RAX: 0000000000000002
-[Fri Mar  8 04:38:21 2019] RAX: ffffffffffffffda RBX: 0000000000000000 RCX:=
- 00007f084cebb4b0
-[Fri Mar  8 04:38:21 2019] RDX: 0000000000000180 RSI: 00000000000000c2 RDI:=
- 00007ffea5c714a0
-[Fri Mar  8 04:38:21 2019] RBP: 000000000003a2f8 R08: 000000000000f000 R09:=
- 00007f084cf0e300
-[Fri Mar  8 04:38:21 2019] R10: 0000000000000000 R11: 0000000000000246 R12:=
- 00007ffea5c714e6
-[Fri Mar  8 04:38:21 2019] R13: 8421084210842109 R14: 00000000000000c2 R15:=
- 00007f084cf49320
-[Fri Mar  8 04:38:21 2019] rsync           D    0  6002   6001 0x00000000
-[Fri Mar  8 04:38:21 2019] Call Trace:
-[Fri Mar  8 04:38:21 2019]  ? __schedule+0x429/0xbb0
-[Fri Mar  8 04:38:21 2019]  ? prepare_to_wait_event+0x97/0x190
-[Fri Mar  8 04:38:21 2019]  schedule+0x39/0x90
-[Fri Mar  8 04:38:21 2019]  wait_current_trans+0xa3/0xf0
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0xa0/0xa0
-[Fri Mar  8 04:38:21 2019]  start_transaction+0x29b/0x4d0
-[Fri Mar  8 04:38:21 2019]  btrfs_create+0x47/0x1d0
-[Fri Mar  8 04:38:21 2019]  lookup_open+0x404/0x760
-[Fri Mar  8 04:38:21 2019]  ? __wake_up_common_lock+0x53/0x90
-[Fri Mar  8 04:38:21 2019]  path_openat+0x4e9/0xcc0
-[Fri Mar  8 04:38:21 2019]  ? filemap_map_pages+0x312/0x520
-[Fri Mar  8 04:38:21 2019]  do_filp_open+0x8a/0xf0
-[Fri Mar  8 04:38:21 2019]  ? __alloc_fd+0xee/0x200
-[Fri Mar  8 04:38:21 2019]  ? do_sys_open+0x130/0x200
-[Fri Mar  8 04:38:21 2019]  do_sys_open+0x130/0x200
-[Fri Mar  8 04:38:21 2019]  do_syscall_64+0x76/0x180
-[Fri Mar  8 04:38:21 2019]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
-[Fri Mar  8 04:38:21 2019] RIP: 0033:0x7f8e8d0b34b0
-[Fri Mar  8 04:38:21 2019] RSP: 002b:00007ffeaa16f288 EFLAGS: 00000246 ORIG=
-_RAX: 0000000000000002
-[Fri Mar  8 04:38:21 2019] RAX: ffffffffffffffda RBX: 0000000000000000 RCX:=
- 00007f8e8d0b34b0
-[Fri Mar  8 04:38:21 2019] RDX: 0000000000000180 RSI: 00000000000000c2 RDI:=
- 00007ffeaa1714f0
-[Fri Mar  8 04:38:21 2019] RBP: 000000000003a2f8 R08: 000000000000c0ff R09:=
- 00007f8e8d105950
-[Fri Mar  8 04:38:21 2019] R10: 0000000000000000 R11: 0000000000000246 R12:=
- 00007ffeaa171507
-[Fri Mar  8 04:38:21 2019] R13: 8421084210842109 R14: 00000000000000c2 R15:=
- 00007f8e8d141320
-[Fri Mar  8 04:38:21 2019] rsync           D    0 24698  24688 0x00000000
-[Fri Mar  8 04:38:21 2019] Call Trace:
-[Fri Mar  8 04:38:21 2019]  ? __schedule+0x429/0xbb0
-[Fri Mar  8 04:38:21 2019]  ? prepare_to_wait_event+0x97/0x190
-[Fri Mar  8 04:38:21 2019]  schedule+0x39/0x90
-[Fri Mar  8 04:38:21 2019]  wait_current_trans+0xa3/0xf0
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0xa0/0xa0
-[Fri Mar  8 04:38:21 2019]  start_transaction+0x29b/0x4d0
-[Fri Mar  8 04:38:21 2019]  btrfs_create+0x47/0x1d0
-[Fri Mar  8 04:38:21 2019]  lookup_open+0x404/0x760
-[Fri Mar  8 04:38:21 2019]  ? __wake_up_common_lock+0x53/0x90
-[Fri Mar  8 04:38:21 2019]  path_openat+0x4e9/0xcc0
-[Fri Mar  8 04:38:21 2019]  ? filemap_map_pages+0x312/0x520
-[Fri Mar  8 04:38:21 2019]  do_filp_open+0x8a/0xf0
-[Fri Mar  8 04:38:21 2019]  ? __alloc_fd+0xee/0x200
-[Fri Mar  8 04:38:21 2019]  ? do_sys_open+0x130/0x200
-[Fri Mar  8 04:38:21 2019]  do_sys_open+0x130/0x200
-[Fri Mar  8 04:38:21 2019]  do_syscall_64+0x76/0x180
-[Fri Mar  8 04:38:21 2019]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
-[Fri Mar  8 04:38:21 2019] RIP: 0033:0x7f062ff5b4b0
-[Fri Mar  8 04:38:21 2019] RSP: 002b:00007ffce5979488 EFLAGS: 00000246 ORIG=
-_RAX: 0000000000000002
-[Fri Mar  8 04:38:21 2019] RAX: ffffffffffffffda RBX: 0000000000000000 RCX:=
- 00007f062ff5b4b0
-[Fri Mar  8 04:38:21 2019] RDX: 0000000000000180 RSI: 00000000000000c2 RDI:=
- 00007ffce597b6f0
-[Fri Mar  8 04:38:21 2019] RBP: 000000000003a2f8 R08: 000000000000c0ff R09:=
- 00007f062ffad950
-[Fri Mar  8 04:38:21 2019] R10: 0000000000000000 R11: 0000000000000246 R12:=
- 00007ffce597b707
-[Fri Mar  8 04:38:21 2019] R13: 8421084210842109 R14: 00000000000000c2 R15:=
- 00007f062ffe9320
-[Fri Mar  8 04:38:21 2019] rsync           D    0 10903  10902 0x00000000
-[Fri Mar  8 04:38:21 2019] Call Trace:
-[Fri Mar  8 04:38:21 2019]  ? __schedule+0x429/0xbb0
-[Fri Mar  8 04:38:21 2019]  ? prepare_to_wait_event+0x97/0x190
-[Fri Mar  8 04:38:21 2019]  schedule+0x39/0x90
-[Fri Mar  8 04:38:21 2019]  wait_current_trans+0xa3/0xf0
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0xa0/0xa0
-[Fri Mar  8 04:38:21 2019]  start_transaction+0x29b/0x4d0
-[Fri Mar  8 04:38:21 2019]  btrfs_create+0x47/0x1d0
-[Fri Mar  8 04:38:21 2019]  lookup_open+0x404/0x760
-[Fri Mar  8 04:38:21 2019]  ? __wake_up_common_lock+0x53/0x90
-[Fri Mar  8 04:38:21 2019]  path_openat+0x4e9/0xcc0
-[Fri Mar  8 04:38:21 2019]  ? filemap_map_pages+0x312/0x520
-[Fri Mar  8 04:38:21 2019]  do_filp_open+0x8a/0xf0
-[Fri Mar  8 04:38:21 2019]  ? __alloc_fd+0xee/0x200
-[Fri Mar  8 04:38:21 2019]  ? do_sys_open+0x130/0x200
-[Fri Mar  8 04:38:21 2019]  do_sys_open+0x130/0x200
-[Fri Mar  8 04:38:21 2019]  do_syscall_64+0x76/0x180
-[Fri Mar  8 04:38:21 2019]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
-[Fri Mar  8 04:38:21 2019] RIP: 0033:0x7fe4adc8b4b0
-[Fri Mar  8 04:38:21 2019] RSP: 002b:00007fff53e747a8 EFLAGS: 00000246 ORIG=
-_RAX: 0000000000000002
-[Fri Mar  8 04:38:21 2019] RAX: ffffffffffffffda RBX: 0000000000000000 RCX:=
- 00007fe4adc8b4b0
-[Fri Mar  8 04:38:21 2019] RDX: 0000000000000180 RSI: 00000000000000c2 RDI:=
- 00007fff53e76a10
-[Fri Mar  8 04:38:21 2019] RBP: 000000000003a2f8 R08: 000000000000c0ff R09:=
- 00007fe4adcddf10
-[Fri Mar  8 04:38:21 2019] R10: 0000000000000000 R11: 0000000000000246 R12:=
- 00007fff53e76a23
-[Fri Mar  8 04:38:21 2019] R13: 8421084210842109 R14: 00000000000000c2 R15:=
- 00007fe4add19320
-[Fri Mar  8 04:38:21 2019] rsync           D    0 14079  13983 0x00000000
-[Fri Mar  8 04:38:21 2019] Call Trace:
-[Fri Mar  8 04:38:21 2019]  ? __schedule+0x429/0xbb0
-[Fri Mar  8 04:38:21 2019]  ? prepare_to_wait_event+0x97/0x190
-[Fri Mar  8 04:38:21 2019]  schedule+0x39/0x90
-[Fri Mar  8 04:38:21 2019]  wait_current_trans+0xa3/0xf0
-[Fri Mar  8 04:38:21 2019]  ? wait_woken+0xa0/0xa0
-[Fri Mar  8 04:38:21 2019]  start_transaction+0x29b/0x4d0
-[Fri Mar  8 04:38:21 2019]  btrfs_create+0x47/0x1d0
-[Fri Mar  8 04:38:21 2019]  lookup_open+0x404/0x760
-[Fri Mar  8 04:38:21 2019]  ? __wake_up_common_lock+0x53/0x90
-[Fri Mar  8 04:38:21 2019]  path_openat+0x4e9/0xcc0
-[Fri Mar  8 04:38:21 2019]  ? filemap_map_pages+0x312/0x520
-[Fri Mar  8 04:38:21 2019]  do_filp_open+0x8a/0xf0
-[Fri Mar  8 04:38:21 2019]  ? __alloc_fd+0xee/0x200
-[Fri Mar  8 04:38:21 2019]  ? do_sys_open+0x130/0x200
-[Fri Mar  8 04:38:21 2019]  do_sys_open+0x130/0x200
-[Fri Mar  8 04:38:21 2019]  do_syscall_64+0x76/0x180
-[Fri Mar  8 04:38:21 2019]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
-[Fri Mar  8 04:38:21 2019] RIP: 0033:0x7f4bb133b4b0
-[Fri Mar  8 04:38:21 2019] RSP: 002b:00007ffe9a1d4a48 EFLAGS: 00000246 ORIG=
-_RAX: 0000000000000002
-[Fri Mar  8 04:38:21 2019] RAX: ffffffffffffffda RBX: 0000000000000000 RCX:=
- 00007f4bb133b4b0
-[Fri Mar  8 04:38:21 2019] RDX: 0000000000000180 RSI: 00000000000000c2 RDI:=
- 00007ffe9a1d6cb0
-[Fri Mar  8 04:38:21 2019] RBP: 000000000003a2f8 R08: 000000000000fff8 R09:=
- 00007f4bb138df10
-[Fri Mar  8 04:38:21 2019] R10: 0000000000000000 R11: 0000000000000246 R12:=
- 00007ffe9a1d6ccd
-[Fri Mar  8 04:38:21 2019] R13: 8421084210842109 R14: 00000000000000c2 R15:=
- 00007f4bb13c9320
-
---GID0FwUMdk1T2AWN
+--+nBD6E3TurpgldQp
 Content-Type: application/pgp-signature; name="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCXJG3RgAKCRCB+YsaVrMb
-nNnxAJ4spCwPRKFpo5XIA2YkzxpkKgWakACdGjXuKS1DE9LjyTBqL08Y9DtuD/U=
-=sx+9
+iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCXJG4XgAKCRCB+YsaVrMb
+nDJsAKCbwIHkIjYHgtM3NvVeK48irm926QCgj6Mzt949iSu2r27PyJszJKwP7oU=
+=RpIi
 -----END PGP SIGNATURE-----
 
---GID0FwUMdk1T2AWN--
+--+nBD6E3TurpgldQp--

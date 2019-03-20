@@ -2,41 +2,41 @@ Return-Path: <SRS0=xnYl=RX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A81C9C43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 00:46:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6C72FC43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 00:55:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4314620835
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 00:46:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2F35320835
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 00:55:10 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="TsbBzc83"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="ew/BX1RY"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727068AbfCTAqg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 19 Mar 2019 20:46:36 -0400
-Received: from mout.gmx.net ([212.227.15.18]:41433 "EHLO mout.gmx.net"
+        id S1727124AbfCTAzI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Mar 2019 20:55:08 -0400
+Received: from mout.gmx.net ([212.227.15.19]:59059 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726801AbfCTAqg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Mar 2019 20:46:36 -0400
+        id S1726896AbfCTAzI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Mar 2019 20:55:08 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1553042784;
-        bh=TS3laHxXrqJkDxup+yCV3PD1pqX+ayYIXLc7YBMLahM=;
+        s=badeba3b8450; t=1553043299;
+        bh=Ly9xlgFQcERKf3pGl2jxrZKONP+melVt/jGNjesJvyQ=;
         h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=TsbBzc83/fdUKyQ7iIndEQx85AwOWLcMYJ8TSBW2DKX1hgtR9osnFhSJtO75swBNA
-         JIZ2aOIOkjX7LO3NZXqdg4JCkPcrD8H4vAn6Pc6Y0zJ7m0ep0RVVPE+oUJQJ2IB2on
-         4Xo8aiINiEIRoYOlGEyTzkZPKGaxpgSRaVJtH0LY=
+        b=ew/BX1RYFDTO7kHg+D+ePqXtQw31Q4ZoEXGOb14mZGL5rbaSrVTqvq29HetwiVzlW
+         IVlVAYBMpVbtjQMVXbZwDcI919fcnqjFDKkgsSC9LhInxxd6iPOJ9WsQKzgrJrfvNl
+         3lR+2KPQsGn5I52dG64hgFPs+m1bhS8ylxoO3Mco=
 X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx002
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0LxPAo-1gvw4D17G6-0170lM; Wed, 20
- Mar 2019 01:46:24 +0100
-Subject: Re: [PATCH 1/6] btrfs: tree-checker: Verify chunk items
+Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx001
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0Lee2I-1gfMU82X5K-00qQlB; Wed, 20
+ Mar 2019 01:54:59 +0100
+Subject: Re: [PATCH 2/2] btrfs: Introduce new tree block flag,
+ BTRFS_HEADER_FLAG_LOG
 To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org, Yoon Jungyeon <jungyeon@gatech.edu>
-References: <20190313085511.23540-1-wqu@suse.com>
- <20190313085511.23540-2-wqu@suse.com> <20190319145050.GL3516@twin.jikos.cz>
+        linux-btrfs@vger.kernel.org
+References: <20190319060418.29575-1-wqu@suse.com>
+ <20190319060418.29575-2-wqu@suse.com> <20190319182308.GP3516@twin.jikos.cz>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -63,172 +63,150 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <ce65b283-568f-16d1-375e-654e1337d2e8@gmx.com>
-Date:   Wed, 20 Mar 2019 08:46:16 +0800
+Message-ID: <8f1add83-36d0-b074-aa21-30b125136800@gmx.com>
+Date:   Wed, 20 Mar 2019 08:54:53 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.5.3
 MIME-Version: 1.0
-In-Reply-To: <20190319145050.GL3516@twin.jikos.cz>
+In-Reply-To: <20190319182308.GP3516@twin.jikos.cz>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="5etTlr99HTSlp8AMpRbOs184HPKVxIDPv"
-X-Provags-ID: V03:K1:WSaTqeXrPuznGoLXuNxExFROD2Derll4tBD8jqHkY7Vrna76WBz
- LMo/+70VOvNInYJZMjZSTEnoFkxjA77QvmUTFjNzek+lDTlf3GN3CuSR8KPsqQ0MZs1W+rE
- vjAF3PBNh7njl9alADz7oOpBGCVVBtNzTsHu1hqkZwpWYx8ksYlSUGYtyCuaGjkDcCFnZKE
- 5HNAu2sitkWEAyUrI7Twg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:qlwgh/FXOsc=:lQbAIPMgj7onha1awqyjy8
- SKI4hQP6RooX/yTWsnctfm9J0lejL4caLAb31TUiHHi6JGzZeibpeQOEu36JEG6a6VpHlF+Ih
- wiPMJzziSpcrODSgDL3nIEFWTgjj+SQmoriZtkhpYri2pzQ6okpun4DDwLI83ZERGkE2SgG1F
- ih8h6dIZ1F/TRdH+iy/nvMiW/4lIP6iIfK0CXCdj1HdC8o9JVYyPwWXQIn6QgcQjkzZ+GxOcX
- h4JSpeWcyGU8KpaWc8eLtvrMmJkw60xWNikGj9PO/UyY5TUuF+9CF6T1MictYKrjQn6IVVMrW
- /GddBXv2cBQjUC/GCz5jWyHEAoHAJZJe5AP7G/eiJwn47ofI/voD8Xz7+PcpTfPlbPImruVLl
- PcEYUcpe7RPvXh8AJgrXemQ7njfcwDW0B6KLqA0JFS6Phf1BAtk7fZianUpkS1U82wuog9bvg
- nAYAJ9H0dGqWWEpmGyWZsq+hZHerp/z+/6wnYgmkexSSExgmf1H72ht3RYymbdrFdET0H/AOz
- JkndJSZOXBXo0NcSSjldJyJnpJhVTh5Gv98NWmfK0Py+W0LQGT1Ayh2nkUQj/7NyBrUgEKn/F
- +DBBgSGKsTxQIL8HGXVRCg9jwhPtnFJm5ueUkZie/jclE3+0M1vB74fqj8inzKMJ0IU9C/LZU
- gcpVXK2GAmXwaYbBgp/68dnE6ngRkrQjb5LDj+lUiKf9rDDFrunBJIQ2YKlZ7DTweAx1Zf/nW
- /dr/uJiULpXH84S+XRRpD6ClmPNUOpAngt5pnJa4U/48QjylQi7KNcjlzHLJs/z0wXiQuNQpv
- BgLldKMFqFiELaHoIABYXzmaq2TaAr2SE0aUg3e4/QT8cSXuCpTz0FbJnDt0+ky+0/tlGigMH
- QIk9N9IcAnqNAu1OfL0te5skwS9Bnx4FCayLl5xwCEOGESU6H5sp/0uXRQAXPK
+ boundary="BdpNkd5ynBB2U32yafJrVk5AIL9xRqOFn"
+X-Provags-ID: V03:K1:IWge4Hhi17b69Wze782Ex4osfg1YQvSJfr0R2KeMlq34zuHoKF5
+ NPZOs7fJ1y6wDCF9+TBOI9dfWHfeUuzBjN6HZThS9fDRaIQ31uWLe1CuaIhMv8zJMLjq6DU
+ YvRhdJlxOPLNeQLW576WxgJuXinE/revDirNN1eCGTDimMqYgT4I6SjFv8F245ovri3A1T8
+ ruvVEtiZFRzlNdyb6BKjQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:SNO0vrydisM=:oy5PZc4UhuKz/6glD37RAk
+ G19mzTm507OY7QDV6PKLMsgWWC7tpuVyX5vbkOlR7FzSPssVbFrQNzUmPWK2Z9/FMWVxKb2GZ
+ +iAziANjksSI5IXEBXrF6FlkePcG5eP/rfd5WSI3uTAhPQLKL0kpah3TMoh5M7vvKkn7nH1I5
+ 0RUzUhBMzkd3d/PEyArCb/gqLZhAA+CiWlDm9VzITgGaPDC7U5++i81Guw4HcDyjODtDhupG2
+ TRurBSLHofTQ9xgMspmR4AlWN5l3g4/jBqEVgx4HzaQsMf2DAkRA3m9t73etBPuVYSJqheZL9
+ mjtO2ns4imzFLUAPJFAgW/8y8HtBsAVEfeQL5dKPgNIo0WiVPMpxY9SkCS84IyZbG+LVEncmN
+ KXR/XJpC7+VhlefdROzvqdWfRsGruPNinY/zQ/W18ExYrJDNWeX3rDA6nEEYK9GR+ri3dmn79
+ evSFlM4STXsEaBRIgb8FC6OBxEpWtP/Sb6ahUfz1/qjgJJHSi6m0TocAx7raMo5/DAuTinuTI
+ viX5ZUIwwWHVGLoOIi9E0/u0/of7c3keCSXyeFxZfENP9FTJrCDmTPd/RzhoXSPqU6r9eF4bX
+ IEvbqsdxjmNQnVwI/dfn5y/gsCV2973OmSC+IRHPCHXdqan/+S2CfITmFIUVLX82pluJyuSAM
+ XUQIcqvP7OVxUtrm1oSj8nxNRhFSOnjErtm9+jpHPOE7EBBxQA55KYcBe+p1C8pevfRKjkMH2
+ h3nGFY7QnYjgDqwJCPI8LBPqefQbtY1mjaiedcLpJrd16FenT2jFCx5EeFAWy6MM4xc57d5Zg
+ 8zCwcuPqKViPe+qTx/YIRZJGehtZ+G5f37SU43iQdMsTgPJxkTM0hIZGNagVFpDB1Y9SraBDR
+ SHNBl1nXjeYMAP2UEq1nlMP3wfNolhLzbJJvYGdjMx1ljeRUXPUQKg7CbUfzEY
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---5etTlr99HTSlp8AMpRbOs184HPKVxIDPv
-Content-Type: multipart/mixed; boundary="RXffeqORCfigjr25eTewjfn651cqUMt7P";
+--BdpNkd5ynBB2U32yafJrVk5AIL9xRqOFn
+Content-Type: multipart/mixed; boundary="Ax5noO2nUSVVYQYUzjaLkPQGQlmMk71KM";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
- Yoon Jungyeon <jungyeon@gatech.edu>
-Message-ID: <ce65b283-568f-16d1-375e-654e1337d2e8@gmx.com>
-Subject: Re: [PATCH 1/6] btrfs: tree-checker: Verify chunk items
-References: <20190313085511.23540-1-wqu@suse.com>
- <20190313085511.23540-2-wqu@suse.com> <20190319145050.GL3516@twin.jikos.cz>
-In-Reply-To: <20190319145050.GL3516@twin.jikos.cz>
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <8f1add83-36d0-b074-aa21-30b125136800@gmx.com>
+Subject: Re: [PATCH 2/2] btrfs: Introduce new tree block flag,
+ BTRFS_HEADER_FLAG_LOG
+References: <20190319060418.29575-1-wqu@suse.com>
+ <20190319060418.29575-2-wqu@suse.com> <20190319182308.GP3516@twin.jikos.cz>
+In-Reply-To: <20190319182308.GP3516@twin.jikos.cz>
 
---RXffeqORCfigjr25eTewjfn651cqUMt7P
+--Ax5noO2nUSVVYQYUzjaLkPQGQlmMk71KM
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2019/3/19 =E4=B8=8B=E5=8D=8810:50, David Sterba wrote:
-> On Wed, Mar 13, 2019 at 04:55:06PM +0800, Qu Wenruo wrote:
->> We already have btrfs_check_chunk_valid() to verify each chunk before
->> tree-checker.
+On 2019/3/20 =E4=B8=8A=E5=8D=882:23, David Sterba wrote:
+> On Tue, Mar 19, 2019 at 02:04:18PM +0800, Qu Wenruo wrote:
+>> This new tree block flag is to indicate the tree block belongs to a lo=
+g
+>> tree.
 >>
->> Merge that function into tree-checker, and update its error message to=
+>> For btrfs on-disk format, there are several different trees could use
+>> the same owner number:
+>> - ordinary subvolume tree
+>> - log tree for ordinary subvolume
+>> - reloc tree for ordinary subvolume
+>>
+>> It's possible to do the backref walk or use the content to determine t=
+he
+>> real owner of the tree block.
+>> But backref walk is too expensive, content detection is not reliable.
+>>
+>> So adding a new flag to explicitly show the owner of log tree.
+>>
+>> Thankfully, tree-checker hasn't checked header flags yet, and there is=
 
->> be more readable.
->>
->> Old error message would be something like:
->>   BTRFS error (device dm-3): invalid chunk num_stipres: 0
->>
->> New error message would be:
->>   Btrfs critical (device dm-3): corrupt superblock syschunk array: chu=
-nk_start=3D2097152, invalid chunk num_stripes: 0
->> Or
->>   Btrfs critical (device dm-3): corrupt leaf: root=3D3 block=3D8388608=
- slot=3D3 chunk_start=3D2097152, invalid chunk num_stripes: 0
->>
->> Btrfs_check_chunk_valid() is exported for super block syschunk array
->> verification.
->>
->> Also make tree-checker to verify chunk items, this makes chunk item
->> checker covers all chunks and avoid fuzzed image.
->>
->> Reported-by: Yoon Jungyeon <jungyeon@gatech.edu>
->> Link: https://bugzilla.kernel.org/show_bug.cgi?id=3D202751
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->> ---
->>  fs/btrfs/tree-checker.c | 152 +++++++++++++++++++++++++++++++++++++++=
-+
->>  fs/btrfs/tree-checker.h |   3 +
->>  fs/btrfs/volumes.c      |  94 +------------------------
->>  3 files changed, 156 insertions(+), 93 deletions(-)
+>> no real user for this flag yet.
+>> So we don't need to introduce any compatibility flag for this
+>> modification.
 >=20
-> Please split the patch to part where you just move the code and where
-> the logic is changed. btrfs_check_chunk_valid is not the same, old has
-> -EIO and new -EUCLEAN. Moving a function is ok in the same patch if
-> there's no change.
+> I think we can't simply skip the backward compatibility here, this is a=
 
-There is change in the verification timing by just moving the code to
-tree checker.
+> change of on-disk format and at least we have to understand what can go=
 
-The new timing of chunk verification will make btrfs more robust by
-trying the other copy when content doesn't make sense.
+> wrong when the combinations of new/old kernel/fs are used.
 
-In fact the code move itself would solve the bug in the kernel bugzilla.
+Currently since neither new fs nor old fs cares the unused bit in extent
+buffer headers, so it won't cause anything different.
 
-So It doesn't make that much sense to split the patch.
+But if newer fs is going to rely on this bit to do tree-checker, then we
+should introduce a COMPATIBLE bit.
+Without that bit, kernel do no tagging, to be backward compatible.
+
+>=20
+>> The introduction of this new flag makes tree block owner easier to
+>> distinguish, making life easier for:
+>> - tree checker on log tree
+>>   Log tree could contain some items impossible for regular trees
+>> - performance profiler
+>>   Now it's much easier to distinguish log tree.
+>=20
+> So is this for enhanced correctness or performance helper? I'd tend to
+> skip the performance part for now, it's not convincing argument for the=
+
+> on-disk change.
+>=20
+> And for the correctness I'd like more details, but the idea sounds good=
+
+> in general.
+
+The chaos of eb->owner is, we have 3 root referring to one subvolid:
+ordinary root
+root->reloc_root
+root->log_root
+
+For ordinary root and reloc root, they're the completely the same
+content, so tree-checker needs no modification at all.
+
+But for log_root, its content is completely different, it can contain
+things like EXTENT_CSUM.
+
+With the ability to know if a tree block is a log tree one, we can
+finally implement owner based key type checker.
+E.g. if we have an EXTENT_CSUM item in subvol 256 and it's not a log
+tree eb, then we know something is definitely wrong.
 
 Thanks,
 Qu
 
->=20
->>
->> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
->> index b8cdaf472031..fe3f37c23c29 100644
->> --- a/fs/btrfs/tree-checker.c
->> +++ b/fs/btrfs/tree-checker.c
->> @@ -448,6 +448,152 @@ static int check_block_group_item(struct btrfs_f=
-s_info *fs_info,
->>  	return 0;
->>  }
->> =20
->> +__printf(5, 6)
->> +__cold
->> +static void chunk_err(const struct btrfs_fs_info *fs_info,
->> +		      const struct extent_buffer *leaf,
->> +		      const struct btrfs_chunk *chunk, u64 logical,
->> +		      const char *fmt, ...)
->> +{
->> +	/* Only superblock eb is able to have such small offset */
->> +	bool is_sb =3D (leaf->start =3D=3D BTRFS_SUPER_INFO_OFFSET);
->=20
-> Please move the initialization and comment out of the declaration block=
 
->=20
->> +	struct va_format vaf;
->> +	va_list args;
->> +	int i;
->> +	int slot =3D -1;
->> +
->> +	if (!is_sb) {
->> +		/*
->> +		 * Get the slot number by iterating through all slots, this
->> +		 * would provide better readability.
->> +		 */
->> +		for (i =3D 0; i < btrfs_header_nritems(leaf); i++) {
->> +			if (btrfs_item_ptr_offset(leaf, i) =3D=3D
->> +					(unsigned long) chunk) {
->> +				slot =3D i;
->> +				break;
->> +			}
->> +		}
->> +	}
+--Ax5noO2nUSVVYQYUzjaLkPQGQlmMk71KM--
 
-
---RXffeqORCfigjr25eTewjfn651cqUMt7P--
-
---5etTlr99HTSlp8AMpRbOs184HPKVxIDPv
+--BdpNkd5ynBB2U32yafJrVk5AIL9xRqOFn
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlyRjVgACgkQwj2R86El
-/qhpSAf+LukAB0Dj2PNBunxzDlZPuK/HHXDrmQLkZZdGu34RIUVOBTsnGTFNJaOs
-/zZegEOsWVnbg+mnS7FCA5FkxEwlwj9VSeuRJFnzfA+HCTNWjGMO/nxRSO+P4P/E
-boPeXI8QKUuwhN1EHnM2QQSJRGyl5TyEUz00D3FJ5/ZqCXdwEXaqQG7tLSnfoMjj
-zf74vPOAY/wrq3BQt3DzAD5slG+s65cRVaxOEaoFryyd3AJabHlo7B9SIb64mXYT
-c4Ax2TA1BbSDAHtepSIPROnA34riqGz4L/SkAPlM03NGuKtG4NRypMF5Z97zlvPz
-MYk6t55jl0v1nReZ2jVC8JiUnEOnuA==
-=x03Q
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlyRj10ACgkQwj2R86El
+/qhUVAf6Ap9+EZMPCsBWy7gVKIGpg8zgA80KYHVkmY6yUqxNo9BJygNnP2Q17rgp
+n8d6LbDdmWEQDQpFT10aqMVU0H3/GCQtBlWaEpFnmL/nGdymgfCTFDbyjKWdTPd3
+rW+e/iULLmZ8q0n1RRHmeZFxwh9rewKBmIGkWIkgwbbItLua1nSH+8OzlgXgmxmd
+gsAO+CDExQaOLCXWkgeOKzKsFIFBS8He8vwOAIHqlK5w3Xf/+rrrqaIp/rUuE0yh
+94/9q/MwtizSKAI+cLguGYATzErpiRH3N9gmMNefToYrMNufFuuS9Kk2knDFXOxC
+We62UmXBowwhuEobGqeO6GlIvmKnlA==
+=R1iW
 -----END PGP SIGNATURE-----
 
---5etTlr99HTSlp8AMpRbOs184HPKVxIDPv--
+--BdpNkd5ynBB2U32yafJrVk5AIL9xRqOFn--

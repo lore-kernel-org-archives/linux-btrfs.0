@@ -6,27 +6,27 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 23A9CC43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 06:28:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 157C2C43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 06:28:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id F15D02184E
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 06:28:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DB2402184E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 06:28:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727590AbfCTG2J (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 20 Mar 2019 02:28:09 -0400
-Received: from mx2.suse.de ([195.135.220.15]:39818 "EHLO mx1.suse.de"
+        id S1727597AbfCTG2L (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 20 Mar 2019 02:28:11 -0400
+Received: from mx2.suse.de ([195.135.220.15]:39828 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727452AbfCTG2I (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Mar 2019 02:28:08 -0400
+        id S1727452AbfCTG2K (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Mar 2019 02:28:10 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 292BEAD3B
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Mar 2019 06:28:07 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id D9BF7AC3B
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Mar 2019 06:28:08 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v5.3 07/11] btrfs: extent_io: Handle error better in extent_write_locked_range()
-Date:   Wed, 20 Mar 2019 14:27:45 +0800
-Message-Id: <20190320062749.30953-8-wqu@suse.com>
+Subject: [PATCH v5.3 08/11] btrfs: extent_io: Kill the BUG_ON() in lock_extent_buffer_for_io()
+Date:   Wed, 20 Mar 2019 14:27:46 +0800
+Message-Id: <20190320062749.30953-9-wqu@suse.com>
 X-Mailer: git-send-email 2.21.0
 In-Reply-To: <20190320062749.30953-1-wqu@suse.com>
 References: <20190320062749.30953-1-wqu@suse.com>
@@ -37,41 +37,91 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Do proper cleanup if we hit any error in extent_write_locked_range(),
-and check the return value of flush_write_bio().
+This function needs some extra check on locked pages and eb.
+
+For error handling we need to unlock locked pages and the eb.
+
+Also add comment for possible return values of lock_extent_buffer_for_io().
+
+There is a rare >0 return value branch, where all pages get locked
+while write bio is not flushed.
+
+Thankfully it's handled by the only caller, btree_write_cache_pages(),
+as later write_one_eb() call will trigger submit_one_bio().
+So there shouldn't be any problem.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/extent_io.c | 9 ++++++---
- 1 file changed, 6 insertions(+), 3 deletions(-)
+ fs/btrfs/extent_io.c | 25 ++++++++++++++++++++-----
+ 1 file changed, 20 insertions(+), 5 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 4ad7c6afe623..c688049ccfc3 100644
+index c688049ccfc3..5de18900a3c3 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -4077,7 +4077,6 @@ int extent_write_locked_range(struct inode *inode, u64 start, u64 end,
- 			      int mode)
- {
- 	int ret = 0;
--	int flush_ret;
- 	struct address_space *mapping = inode->i_mapping;
- 	struct extent_io_tree *tree = &BTRFS_I(inode)->io_tree;
- 	struct page *page;
-@@ -4110,8 +4109,12 @@ int extent_write_locked_range(struct inode *inode, u64 start, u64 end,
- 		start += PAGE_SIZE;
- 	}
- 
--	flush_ret = flush_write_bio(&epd);
--	BUG_ON(flush_ret < 0);
-+	ASSERT(ret <= 0);
-+	if (ret < 0) {
-+		end_write_bio(&epd, ret);
-+		return ret;
-+	}
-+	ret = flush_write_bio(&epd);
- 	return ret;
+@@ -3527,19 +3527,25 @@ void wait_on_extent_buffer_writeback(struct extent_buffer *eb)
+ 		       TASK_UNINTERRUPTIBLE);
  }
  
++/*
++ * Return 0 if nothing went wrong, its pages get locked and submitted.
++ * Return >0 is mostly the same as 0, except bio is not submitted.
++ * Return <0 if something went wrong, no page get locked.
++ */
+ static noinline_for_stack int
+ lock_extent_buffer_for_io(struct extent_buffer *eb,
+ 			  struct btrfs_fs_info *fs_info,
+ 			  struct extent_page_data *epd)
+ {
+-	int i, num_pages;
++	int i, num_pages, failed_page_nr;
+ 	int flush = 0;
+ 	int ret = 0;
+ 
+ 	if (!btrfs_try_tree_write_lock(eb)) {
+-		flush = 1;
+ 		ret = flush_write_bio(epd);
+-		BUG_ON(ret < 0);
++		if (ret < 0)
++			return ret;
++		flush = 1;
+ 		btrfs_tree_lock(eb);
+ 	}
+ 
+@@ -3549,7 +3555,8 @@ lock_extent_buffer_for_io(struct extent_buffer *eb,
+ 			return 0;
+ 		if (!flush) {
+ 			ret = flush_write_bio(epd);
+-			BUG_ON(ret < 0);
++			if (ret < 0)
++				return ret;
+ 			flush = 1;
+ 		}
+ 		while (1) {
+@@ -3591,7 +3598,10 @@ lock_extent_buffer_for_io(struct extent_buffer *eb,
+ 		if (!trylock_page(p)) {
+ 			if (!flush) {
+ 				ret = flush_write_bio(epd);
+-				BUG_ON(ret < 0);
++				if (ret < 0) {
++					failed_page_nr = i;
++					goto err_unlock;
++				}
+ 				flush = 1;
+ 			}
+ 			lock_page(p);
+@@ -3599,6 +3609,11 @@ lock_extent_buffer_for_io(struct extent_buffer *eb,
+ 	}
+ 
+ 	return ret;
++err_unlock:
++	/* Unlock these already locked pages */
++	for (i = 0; i < failed_page_nr; i++)
++		unlock_page(eb->pages[i]);
++	return ret;
+ }
+ 
+ static void end_extent_buffer_writeback(struct extent_buffer *eb)
 -- 
 2.21.0
 

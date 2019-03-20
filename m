@@ -6,47 +6,47 @@ X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
 	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2F73CC43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 13:54:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3666FC43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 14:00:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E60DB2175B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 13:54:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 04C302175B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 14:00:03 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="Nkl9hOZm"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="EmAAzu0N"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727194AbfCTNyS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 20 Mar 2019 09:54:18 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:60940 "EHLO
+        id S1728138AbfCTOAC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 20 Mar 2019 10:00:02 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:38010 "EHLO
         userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726644AbfCTNyS (ORCPT
+        with ESMTP id S1726990AbfCTOAC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Mar 2019 09:54:18 -0400
+        Wed, 20 Mar 2019 10:00:02 -0400
 Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x2KDrmEt008226;
-        Wed, 20 Mar 2019 13:54:14 GMT
+        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x2KDrlmL007992;
+        Wed, 20 Mar 2019 13:59:58 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
  references : from : message-id : date : mime-version : in-reply-to :
  content-type : content-transfer-encoding; s=corp-2018-07-02;
- bh=kQNW83QTshIi5RSgDIMBHjhb3PBDePrF+kVC2yPFPBs=;
- b=Nkl9hOZmkNVkhqKP9ErpIs24r0EFyK45t9Kj5sOM7Nthr9xbYirI+Ri5n+4fWMunSJne
- cDQqeUlU44u4QAGEHxzu3jQeelmz09fpmLdNRa3qf6ROoQuMYLVjWrhEvumATI4x7DsH
- z/E99IsPZsO1s6n8Y5WkrYa9zf0Qk1TuKng2CJfegCYUWepENt7qdwgMqpgGF0/XQYbb
- AsK9yrEuC6aryUgvfc0Hlmwkc/TnalhTn9uIHAKK8IP39ZgP6nQVz0A6aESmDwZqPoB1
- /LLCVGBuNXaGLC1Kaw5McjkSFiiXe/vih1oJ5/awdsrTla+7KlhAS579jk9QhAFbS0/y ag== 
+ bh=HLwvgonsRV0Z0zfWOBl/onusixsGNcFZj15YDcBXWiI=;
+ b=EmAAzu0NpNONTIIoOL2R/bCHz+Q8ZZF1rGpvOHO6UkE6WEqjCZ0vSGwaICTVdBBizd4O
+ vGLkVNeneWnwuKguy95whgHZR22cD6jzIag4ssKsjjgiJEkFqf8FDcFHH4UEOjcooj7P
+ z08uRe9xwOi1qk8yt55s4qz/VpOH3GlOnEOVTg1fpPveIbHxdyM7ta66b076pX/psCPW
+ ZEjbNdGs0ZtFbZXfgOmLjc3Ja8B2NOeMPQNw1mNN15klO6aksHNDk1m8wBc6v91Z4gBr
+ oHBbKcPvS40wTdIXjUTdWu8t/mjKzuIUZEm2ReNa6SnQwzH01w350vXiBlSjPSkb6+Go bQ== 
 Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by userp2120.oracle.com with ESMTP id 2r8ssrjrrh-1
+        by userp2120.oracle.com with ESMTP id 2r8ssrjsy7-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Wed, 20 Mar 2019 13:54:14 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x2KDsDaM012613
+        Wed, 20 Mar 2019 13:59:58 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x2KDxvMq030747
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Wed, 20 Mar 2019 13:54:13 GMT
-Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x2KDsCrg031476;
-        Wed, 20 Mar 2019 13:54:12 GMT
+        Wed, 20 Mar 2019 13:59:57 GMT
+Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x2KDxuBw022576;
+        Wed, 20 Mar 2019 13:59:56 GMT
 Received: from [192.168.1.145] (/116.87.143.221)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Wed, 20 Mar 2019 06:54:12 -0700
+        with ESMTP ; Wed, 20 Mar 2019 06:59:56 -0700
 Subject: Re: [PATCH RFC] btrfs: fix read corrpution from disks of different
  generation
 To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
@@ -55,14 +55,14 @@ References: <1552995330-28927-1-git-send-email-anand.jain@oracle.com>
  <055cad22-76be-1547-c7f7-4de54dd1049c@oracle.com>
  <36d9d5d6-323c-ebe6-5170-3b2555130bfd@gmx.com>
  <7cbf618b-5a09-16a5-f9e8-483ab3e7bbf3@oracle.com>
- <541e2efd-ae4f-bc06-1d08-46f55208a095@gmx.com>
+ <2efdd0a5-cc4b-28a8-226b-a0ad060b10b8@gmx.com>
 From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <ce5be72e-5fae-932b-4ba7-85e0b3d8b825@oracle.com>
-Date:   Wed, 20 Mar 2019 21:54:16 +0800
+Message-ID: <503ae9ba-a78b-5b52-4d8f-babf42a6bc11@oracle.com>
+Date:   Wed, 20 Mar 2019 22:00:17 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.5.0
 MIME-Version: 1.0
-In-Reply-To: <541e2efd-ae4f-bc06-1d08-46f55208a095@gmx.com>
+In-Reply-To: <2efdd0a5-cc4b-28a8-226b-a0ad060b10b8@gmx.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -78,119 +78,6 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
-
-On 3/20/19 2:27 PM, Qu Wenruo wrote:
-> 
-> 
-> On 2019/3/20 下午1:47, Anand Jain wrote:
->>
->>
->>>>>> A tree based integrity verification
->>>>>>     is important for all data, which is missing.
->>>>>>       Fix:
->>>>>>       In this RFC patch it proposes to use same disk from with the
->>>>>> metadata
->>>>>>     is read to read the data.
->>>>>
->>>>> The obvious problem I found is, the idea only works for RAID1/10.
->>>>>
->>>>> For striped profile it makes no sense, or even have a worse chance to
->>>>> get stale data.
->>>>>
->>>>>
->>>>> To me, the idea of using possible better mirror makes some sense, but
->>>>> very profile limited.
->>>>
->>>>    Yep. This problem and fix is only for the mirror based profiles
->>>>    such as raid1/raid10.
->>>
->>> Then current implementation lacks such check.
->>>
->>> Further more, data and metadata can lie in different chunks and have
->>> different chunk types.
->>
->>   Right. Current tests for this RFC were only for raid1.
->>
->>   But the final patch can fix that.
->>
->>   In fact current patch works for all the cases except for the case of
->>   replace is running and mix of metadata:raid1 and data:raid56
->>
->>   We need some cleanups in mirror_num, basically we need to bring it
->>   under #define. and handle it accordingly in __btrfs_map_block()
-> 
-> 
-> Wait for a minute.
-> 
-> There is a hidden pitfall from the very beginning.
-> 
-> Consider such chunk layout:
-> Chunk A Type DATA|RAID1
-> Stripe 1: Dev 1
-> Stripe 2: Dev 2
-> 
-> Chunk B Type METADATA|RAID1
-> Stripe 1: Dev 2
-> Stripe 2: Dev 1
-
-  Right this fix can't solve this case.
-  So one down. The other choice I had is to
-  Quarantine whole disk by comparing dev1 and dev2 generation # in the 
-superblock during mount. or
-  Quarantine whole chunk(s) by comparing dev1 and dev2 generation # in 
-the chunk tree during mount. or
-  Always read eb from both dev1 and dev2, if fails then fail its 
-corresponding data block as well if any. or
-  During mount compare dev1 and dev2 generation #, record the range of 
-generation number missing on the disk. But this need ondisk format 
-changes. (But nodatacow, notrunc reg data extent write must change gen#). or
-  Similar to btree eb read pages, nest the extent data read as well.
-  (But nodatacow, notrunc reg data extent write must change gen#).
-
-Thanks, Anand
-
-
-> Then when we found stale metadata in chunk B mirror 1, caused by dev 2,
-> then your patch consider device 2 stale, and try to use mirror num 2 to
-> read from data chunk.
-> 
-> However in data chunk, mirror num 2 means it's still from device 2, and
-> we get stale data.
-> 
-> So the eb->mirror_num can still map to bad/stale device, due to the
-> flexibility provided by btrfs per-chunk mapping.
-> 
-> Thanks,
-> Qu
-> 
->>
->>>>> Another idea I get inspired from the idea is, make it more generic so
->>>>> that bad/stale device get a lower priority.
->>>>
->>>>    When it comes to reading junk data, its not about the priority its
->>>>    about the eliminating. When the problem is only few blocks, I am
->>>>    against making the whole disk as bad.
->>>>
->>>>> Although it suffers the same problem as I described.
->>>>>
->>>>> To make the point short, the use case looks very limited.
->>>>
->>>>    It applies to raid1/raid10 with nodatacow (which implies nodatasum).
->>>>    In my understanding that's not rare.
->>>>
->>>>    Any comments on the fix offered here?
->>>
->>> The implementation part is, is eb->read_mirror reliable?
->>>
->>> E.g. if the data and the eb are in different chunks, and the stale
->>> happens in the chunk of eb but not in the data chunk?
->>
->>
->>   eb and regular data are indeed in different chunks always. But eb
->>   can never be stale as there is parent transid which is verified against
->>   the read eb. However we do not have such a check for the data (this is
->>   the core of the issue here) and so we return the junk data silently.
->>
 >>   Also any idea why the generation number for the extent data is not
 >>   incremented [2] when -o nodatacow and notrunc option is used, is it
 >>   a bug? the dump-tree is taken with the script as below [1]
@@ -198,6 +85,24 @@ Thanks, Anand
 >>   being incremented, but as another way to fix for the corruption we can
 >>   verify the inode EXTENT_DATA generation from the same disk from which
 >>   the data is read).
+> 
+> For the generation part, it's the generation when data is written to disk.
+> 
+> Truncation/nocow overwrite shouldn't really change the generation of
+> existing file extents.
+> 
+> So I'm afraid you can't use that generation to do the check.
+
+  Any idea why it shouldn't change? Albeit there isn't new allocation
+  due to nodatacow and notrunc overwrite, but sure data is overwritten.
+  If that's the case then I would guess there will be bug in send receive
+  as well.
+
+Thanks, Anand
+
+> Thanks,
+> Qu
+> 
 >>
 >> [1]
 >>   umount /btrfs; mkfs.btrfs -fq -dsingle -msingle /dev/sdb && \

@@ -6,27 +6,28 @@ X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5E2BCC43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 10:56:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F2163C43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 11:51:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2C66A2175B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 10:56:27 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B92FA2184E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 11:51:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727416AbfCTK40 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 20 Mar 2019 06:56:26 -0400
-Received: from mx2.suse.de ([195.135.220.15]:52188 "EHLO mx1.suse.de"
+        id S1727427AbfCTLvM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 20 Mar 2019 07:51:12 -0400
+Received: from mx2.suse.de ([195.135.220.15]:60702 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727363AbfCTK4Z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Mar 2019 06:56:25 -0400
+        id S1726006AbfCTLvM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Mar 2019 07:51:12 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id F18B6ABF5
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Mar 2019 10:56:23 +0000 (UTC)
-Subject: Re: [PATCh v2 4/9] btrfs: tree-checker: Check chunk item at tree
- block read time
+        by mx1.suse.de (Postfix) with ESMTP id 65C92AC6C;
+        Wed, 20 Mar 2019 11:51:10 +0000 (UTC)
+Subject: Re: [PATCh v2 5/9] btrfs: tree-checker: Verify dev item
 To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Cc:     Yoon Jungyeon <jungyeon@gatech.edu>,
+        Nikolay Borisov <nborisov@suse.com>
 References: <20190320063717.31770-1-wqu@suse.com>
- <20190320063717.31770-5-wqu@suse.com>
+ <20190320063717.31770-6-wqu@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -84,12 +85,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <ebc3eba3-7044-fb86-fa56-a27a0d86ab1c@suse.de>
-Date:   Wed, 20 Mar 2019 11:56:23 +0100
+Message-ID: <1472c094-bc6a-dc6f-2cf8-220ad5d34e40@suse.de>
+Date:   Wed, 20 Mar 2019 12:51:09 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.3.0
 MIME-Version: 1.0
-In-Reply-To: <20190320063717.31770-5-wqu@suse.com>
+In-Reply-To: <20190320063717.31770-6-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -98,8 +99,71 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Looks good,
-Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
+On 20/03/2019 07:37, Qu Wenruo wrote:
+[...]
+
+> +static int check_dev_item(struct btrfs_fs_info *fs_info,
+> +			  struct extent_buffer *leaf,
+> +			  struct btrfs_key *key, int slot)
+> +{
+> +	struct btrfs_dev_item *ditem;
+> +	u64 max_devid = max(BTRFS_MAX_DEVS(fs_info), BTRFS_MAX_DEVS_SYS_CHUNK);
+> +
+> +	if (key->objectid != BTRFS_DEV_ITEMS_OBJECTID) {
+> +		dev_item_err(fs_info, leaf, slot,
+> +			     "invalid objectid: has=%llu expect=%llu",
+> +			     key->objectid, BTRFS_DEV_ITEMS_OBJECTID);
+> +		goto error;
+> +	}
+> +	if (key->offset > max_devid) {
+> +		dev_item_err(fs_info, leaf, slot,
+> +			     "invalid devid: has=%llu expect=[0, %llu]",
+> +			     key->offset, max_devid);
+> +		goto error;
+> +	}
+> +	ditem = btrfs_item_ptr(leaf, slot, struct btrfs_dev_item);
+> +	if (btrfs_device_id(leaf, ditem) != key->offset) {
+> +		dev_item_err(fs_info, leaf, slot,
+> +			     "devid mismatch: key has=%llu item has=%llu",
+> +			     key->offset, btrfs_device_id(leaf, ditem));
+> +		goto error;
+> +	}
+> +
+> +	/*
+> +	 * Since btrfs device add doesn't check device size at all, we could
+> +	 * have device item whose size is smaller than 1M which is useless, but
+> +	 * still valid.
+> +	 * So here we can only check the obviously wrong case.
+> +	 */
+> +	if (btrfs_device_total_bytes(leaf, ditem) == 0) {
+> +		dev_item_err(fs_info, leaf, slot,
+> +			     "invalid total bytes: have 0");
+> +		goto error;
+> +	}
+> +	if (btrfs_device_bytes_used(leaf, ditem) >
+> +	    btrfs_device_total_bytes(leaf, ditem)) {
+> +		dev_item_err(fs_info, leaf, slot,
+> +			     "invalid bytes used: have %llu expect [0, %llu]",
+> +			     btrfs_device_bytes_used(leaf, ditem),
+> +			     btrfs_device_total_bytes(leaf, ditem));
+> +		goto error;
+> +	}
+> +	/*
+> +	 * Remaining members like io_align/type/gen/dev_group aren't really
+> +	 * utilized.
+> +	 * Skip them to make later usage of them easier.
+> +	 */
+> +	return 0;
+> +error:
+> +	return -EUCLEAN;
+> +}
+> +
+
+Why aren't you directly returning -EUCLEAN instead of the gotos? There's
+no cleanup pending so the additional jump label is unnecessary.
+
+
+
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems
 jthumshirn@suse.de                                +49 911 74053 689

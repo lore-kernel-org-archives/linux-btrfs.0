@@ -6,27 +6,29 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 92A6EC10F05
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 06:37:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0CC2CC43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 06:37:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 63B422186A
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 06:37:32 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CF0EE2184E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 06:37:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727720AbfCTGha (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 20 Mar 2019 02:37:30 -0400
-Received: from mx2.suse.de ([195.135.220.15]:40866 "EHLO mx1.suse.de"
+        id S1727725AbfCTGhd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 20 Mar 2019 02:37:33 -0400
+Received: from mx2.suse.de ([195.135.220.15]:40872 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727716AbfCTGh3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Mar 2019 02:37:29 -0400
+        id S1727716AbfCTGhc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Mar 2019 02:37:32 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id DD39FAC69
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Mar 2019 06:37:27 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id A37E4AC69;
+        Wed, 20 Mar 2019 06:37:30 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCh v2 4/9] btrfs: tree-checker: Check chunk item at tree block read time
-Date:   Wed, 20 Mar 2019 14:37:12 +0800
-Message-Id: <20190320063717.31770-5-wqu@suse.com>
+Cc:     Yoon Jungyeon <jungyeon@gatech.edu>,
+        Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCh v2 5/9] btrfs: tree-checker: Verify dev item
+Date:   Wed, 20 Mar 2019 14:37:13 +0800
+Message-Id: <20190320063717.31770-6-wqu@suse.com>
 X-Mailer: git-send-email 2.21.0
 In-Reply-To: <20190320063717.31770-1-wqu@suse.com>
 References: <20190320063717.31770-1-wqu@suse.com>
@@ -37,70 +39,180 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Since we have btrfs_check_chunk_valid() in tree-checker, let's do
-chunk item verification in tree-checker too.
+[BUG]
+For fuzzed image whose DEV_ITEM has invalid total_bytes as 0, then
+kernel will just panic:
+  BUG: unable to handle kernel NULL pointer dereference at 0000000000000098
+  #PF error: [normal kernel read fault]
+  PGD 800000022b2bd067 P4D 800000022b2bd067 PUD 22b2bc067 PMD 0
+  Oops: 0000 [#1] SMP PTI
+  CPU: 0 PID: 1106 Comm: mount Not tainted 5.0.0-rc8+ #9
+  RIP: 0010:btrfs_verify_dev_extents+0x2a5/0x5a0
+  Call Trace:
+   open_ctree+0x160d/0x2149
+   btrfs_mount_root+0x5b2/0x680
 
-Since the tree-checker is run at endio time, if one chunk leaf fails
-chunk verification, we can still retry the other copy, making btrfs more
-robust to fuzzed image as we may still get a good chunk item.
+[CAUSE]
+If device extent verification finds a deivce with 0 total_bytes, then it
+assumes it's a seed dummy, then search for seed devices.
 
-Also since we have done chunk verification in tree block read time, skip
-the btrfs_check_chunk_valid() call in read_one_chunk() if we're reading
-chunk items from leaf.
+But in this case, there is no seed device at all, causing NULL pointer.
 
+[FIX]
+Since this is caused by fuzzed image, let's go the tree-check way, just
+add a new verification for device item.
+
+Reported-by: Yoon Jungyeon <jungyeon@gatech.edu>
+Link: https://bugzilla.kernel.org/show_bug.cgi?id=202691
 Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/tree-checker.c |  6 ++++++
- fs/btrfs/volumes.c      | 12 +++++++++---
- 2 files changed, 15 insertions(+), 3 deletions(-)
+ fs/btrfs/tree-checker.c | 83 +++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/volumes.c      |  9 -----
+ fs/btrfs/volumes.h      |  9 +++++
+ 3 files changed, 92 insertions(+), 9 deletions(-)
 
 diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index 63fbe0b5ae8e..86dee12d7917 100644
+index 86dee12d7917..004219175f0c 100644
 --- a/fs/btrfs/tree-checker.c
 +++ b/fs/btrfs/tree-checker.c
-@@ -610,6 +610,7 @@ static int check_leaf_item(struct btrfs_fs_info *fs_info,
- 			   struct btrfs_key *key, int slot)
- {
- 	int ret = 0;
-+	struct btrfs_chunk *chunk;
+@@ -602,6 +602,86 @@ int btrfs_check_chunk_valid(struct btrfs_fs_info *fs_info,
+ }
  
- 	switch (key->type) {
- 	case BTRFS_EXTENT_DATA_KEY:
-@@ -626,6 +627,11 @@ static int check_leaf_item(struct btrfs_fs_info *fs_info,
- 	case BTRFS_BLOCK_GROUP_ITEM_KEY:
- 		ret = check_block_group_item(fs_info, leaf, key, slot);
+ 
++__printf(4, 5)
++__cold
++static void dev_item_err(const struct btrfs_fs_info *fs_info,
++			 const struct extent_buffer *eb, int slot,
++			 const char *fmt, ...)
++{
++	struct btrfs_key key;
++	struct va_format vaf;
++	va_list args;
++
++	btrfs_item_key_to_cpu(eb, &key, slot);
++	va_start(args, fmt);
++
++	vaf.fmt = fmt;
++	vaf.va = &args;
++
++	btrfs_crit(fs_info,
++	"corrupt %s: root=%llu block=%llu slot=%d devid=%llu %pV",
++		btrfs_header_level(eb) == 0 ? "leaf" : "node",
++		btrfs_header_owner(eb), btrfs_header_bytenr(eb), slot,
++		key.objectid, &vaf);
++	va_end(args);
++}
++
++static int check_dev_item(struct btrfs_fs_info *fs_info,
++			  struct extent_buffer *leaf,
++			  struct btrfs_key *key, int slot)
++{
++	struct btrfs_dev_item *ditem;
++	u64 max_devid = max(BTRFS_MAX_DEVS(fs_info), BTRFS_MAX_DEVS_SYS_CHUNK);
++
++	if (key->objectid != BTRFS_DEV_ITEMS_OBJECTID) {
++		dev_item_err(fs_info, leaf, slot,
++			     "invalid objectid: has=%llu expect=%llu",
++			     key->objectid, BTRFS_DEV_ITEMS_OBJECTID);
++		goto error;
++	}
++	if (key->offset > max_devid) {
++		dev_item_err(fs_info, leaf, slot,
++			     "invalid devid: has=%llu expect=[0, %llu]",
++			     key->offset, max_devid);
++		goto error;
++	}
++	ditem = btrfs_item_ptr(leaf, slot, struct btrfs_dev_item);
++	if (btrfs_device_id(leaf, ditem) != key->offset) {
++		dev_item_err(fs_info, leaf, slot,
++			     "devid mismatch: key has=%llu item has=%llu",
++			     key->offset, btrfs_device_id(leaf, ditem));
++		goto error;
++	}
++
++	/*
++	 * Since btrfs device add doesn't check device size at all, we could
++	 * have device item whose size is smaller than 1M which is useless, but
++	 * still valid.
++	 * So here we can only check the obviously wrong case.
++	 */
++	if (btrfs_device_total_bytes(leaf, ditem) == 0) {
++		dev_item_err(fs_info, leaf, slot,
++			     "invalid total bytes: have 0");
++		goto error;
++	}
++	if (btrfs_device_bytes_used(leaf, ditem) >
++	    btrfs_device_total_bytes(leaf, ditem)) {
++		dev_item_err(fs_info, leaf, slot,
++			     "invalid bytes used: have %llu expect [0, %llu]",
++			     btrfs_device_bytes_used(leaf, ditem),
++			     btrfs_device_total_bytes(leaf, ditem));
++		goto error;
++	}
++	/*
++	 * Remaining members like io_align/type/gen/dev_group aren't really
++	 * utilized.
++	 * Skip them to make later usage of them easier.
++	 */
++	return 0;
++error:
++	return -EUCLEAN;
++}
++
+ /*
+  * Common point to switch the item-specific validation.
+  */
+@@ -632,6 +712,9 @@ static int check_leaf_item(struct btrfs_fs_info *fs_info,
+ 		ret = btrfs_check_chunk_valid(fs_info, leaf, chunk,
+ 					      key->offset);
  		break;
-+	case BTRFS_CHUNK_ITEM_KEY:
-+		chunk = btrfs_item_ptr(leaf, slot, struct btrfs_chunk);
-+		ret = btrfs_check_chunk_valid(fs_info, leaf, chunk,
-+					      key->offset);
++	case BTRFS_DEV_ITEM_KEY:
++		ret = check_dev_item(fs_info, leaf, key, slot);
 +		break;
  	}
  	return ret;
  }
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 2a4ac5aa2a16..645ffc9c47b0 100644
+index 645ffc9c47b0..7510272408e8 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -6745,9 +6745,15 @@ static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
- 	length = btrfs_chunk_length(leaf, chunk);
- 	num_stripes = btrfs_chunk_num_stripes(leaf, chunk);
+@@ -4958,15 +4958,6 @@ static void check_raid56_incompat_flag(struct btrfs_fs_info *info, u64 type)
+ 	btrfs_set_fs_incompat(info, RAID56);
+ }
  
--	ret = btrfs_check_chunk_valid(fs_info, leaf, chunk, logical);
--	if (ret)
--		return ret;
-+	/*
-+	 * Only need to verify chunk item if we're reading from sys chunk array,
-+	 * as chunk item in tree block is already verified by tree-checker.
-+	 */
-+	if (leaf->start == BTRFS_SUPER_INFO_OFFSET) {
-+		ret = btrfs_check_chunk_valid(fs_info, leaf, chunk, logical);
-+		if (ret)
-+			return ret;
-+	}
+-#define BTRFS_MAX_DEVS(info) ((BTRFS_MAX_ITEM_SIZE(info)	\
+-			- sizeof(struct btrfs_chunk))		\
+-			/ sizeof(struct btrfs_stripe) + 1)
+-
+-#define BTRFS_MAX_DEVS_SYS_CHUNK ((BTRFS_SYSTEM_CHUNK_ARRAY_SIZE	\
+-				- 2 * sizeof(struct btrfs_disk_key)	\
+-				- 2 * sizeof(struct btrfs_chunk))	\
+-				/ sizeof(struct btrfs_stripe) + 1)
+-
+ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 			       u64 start, u64 type)
+ {
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 3ad9d58d1b66..38ed94b77202 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -258,6 +258,15 @@ struct btrfs_fs_devices {
  
- 	read_lock(&map_tree->map_tree.lock);
- 	em = lookup_extent_mapping(&map_tree->map_tree, logical, 1);
+ #define BTRFS_BIO_INLINE_CSUM_SIZE	64
+ 
++#define BTRFS_MAX_DEVS(info) ((BTRFS_MAX_ITEM_SIZE(info)	\
++			- sizeof(struct btrfs_chunk))		\
++			/ sizeof(struct btrfs_stripe) + 1)
++
++#define BTRFS_MAX_DEVS_SYS_CHUNK ((BTRFS_SYSTEM_CHUNK_ARRAY_SIZE	\
++				- 2 * sizeof(struct btrfs_disk_key)	\
++				- 2 * sizeof(struct btrfs_chunk))	\
++				/ sizeof(struct btrfs_stripe) + 1)
++
+ /*
+  * we need the mirror number and stripe index to be passed around
+  * the call chain while we are processing end_io (especially errors).
 -- 
 2.21.0
 

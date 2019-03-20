@@ -3,30 +3,31 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 38A8BC43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 13:27:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 07538C43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 13:33:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0F40D213F2
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 13:27:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CF610213F2
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 13:33:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727239AbfCTN1N (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 20 Mar 2019 09:27:13 -0400
-Received: from mx2.suse.de ([195.135.220.15]:51610 "EHLO mx1.suse.de"
+        id S1727426AbfCTNdZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 20 Mar 2019 09:33:25 -0400
+Received: from mx2.suse.de ([195.135.220.15]:52558 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725905AbfCTN1N (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Mar 2019 09:27:13 -0400
+        id S1727194AbfCTNdZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Mar 2019 09:33:25 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 5D0F8AF0A
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Mar 2019 13:27:11 +0000 (UTC)
-Subject: Re: [PATCh v2 8/9] btrfs: tree-checker: Verify inode item
+        by mx1.suse.de (Postfix) with ESMTP id 48134AF0A;
+        Wed, 20 Mar 2019 13:33:23 +0000 (UTC)
+Subject: Re: [PATCh v2 9/9] btrfs: inode: Verify inode mode to avoid NULL
+ pointer dereference
 To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
+Cc:     Yoon Jungyeon <jungyeon@gatech.edu>,
+        Nikolay Borisov <nborisov@suse.com>
 References: <20190320063717.31770-1-wqu@suse.com>
- <20190320063717.31770-9-wqu@suse.com>
+ <20190320063717.31770-10-wqu@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -84,12 +85,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <ca3e648f-45b2-1d28-b5fe-e3cf681ca2f0@suse.de>
-Date:   Wed, 20 Mar 2019 14:27:11 +0100
+Message-ID: <40c177c0-cceb-4111-03b3-faf84802eefe@suse.de>
+Date:   Wed, 20 Mar 2019 14:33:22 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.3.0
 MIME-Version: 1.0
-In-Reply-To: <20190320063717.31770-9-wqu@suse.com>
+In-Reply-To: <20190320063717.31770-10-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -100,9 +101,6 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 Looks good,
 Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
-
-Although I prefer direct returns instead of gotos if there's no cleanup.
-
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems
 jthumshirn@suse.de                                +49 911 74053 689

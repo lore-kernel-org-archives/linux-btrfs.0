@@ -2,109 +2,251 @@ Return-Path: <SRS0=xnYl=RX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 07538C43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 13:33:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2F73CC43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 13:54:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CF610213F2
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 13:33:26 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E60DB2175B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 13:54:19 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="Nkl9hOZm"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727426AbfCTNdZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 20 Mar 2019 09:33:25 -0400
-Received: from mx2.suse.de ([195.135.220.15]:52558 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727194AbfCTNdZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Mar 2019 09:33:25 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 48134AF0A;
-        Wed, 20 Mar 2019 13:33:23 +0000 (UTC)
-Subject: Re: [PATCh v2 9/9] btrfs: inode: Verify inode mode to avoid NULL
- pointer dereference
-To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Cc:     Yoon Jungyeon <jungyeon@gatech.edu>,
-        Nikolay Borisov <nborisov@suse.com>
-References: <20190320063717.31770-1-wqu@suse.com>
- <20190320063717.31770-10-wqu@suse.com>
-From:   Johannes Thumshirn <jthumshirn@suse.de>
-Openpgp: preference=signencrypt
-Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <40c177c0-cceb-4111-03b3-faf84802eefe@suse.de>
-Date:   Wed, 20 Mar 2019 14:33:22 +0100
+        id S1727194AbfCTNyS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 20 Mar 2019 09:54:18 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:60940 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726644AbfCTNyS (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Mar 2019 09:54:18 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x2KDrmEt008226;
+        Wed, 20 Mar 2019 13:54:14 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2018-07-02;
+ bh=kQNW83QTshIi5RSgDIMBHjhb3PBDePrF+kVC2yPFPBs=;
+ b=Nkl9hOZmkNVkhqKP9ErpIs24r0EFyK45t9Kj5sOM7Nthr9xbYirI+Ri5n+4fWMunSJne
+ cDQqeUlU44u4QAGEHxzu3jQeelmz09fpmLdNRa3qf6ROoQuMYLVjWrhEvumATI4x7DsH
+ z/E99IsPZsO1s6n8Y5WkrYa9zf0Qk1TuKng2CJfegCYUWepENt7qdwgMqpgGF0/XQYbb
+ AsK9yrEuC6aryUgvfc0Hlmwkc/TnalhTn9uIHAKK8IP39ZgP6nQVz0A6aESmDwZqPoB1
+ /LLCVGBuNXaGLC1Kaw5McjkSFiiXe/vih1oJ5/awdsrTla+7KlhAS579jk9QhAFbS0/y ag== 
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by userp2120.oracle.com with ESMTP id 2r8ssrjrrh-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 20 Mar 2019 13:54:14 +0000
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x2KDsDaM012613
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 20 Mar 2019 13:54:13 GMT
+Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x2KDsCrg031476;
+        Wed, 20 Mar 2019 13:54:12 GMT
+Received: from [192.168.1.145] (/116.87.143.221)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Wed, 20 Mar 2019 06:54:12 -0700
+Subject: Re: [PATCH RFC] btrfs: fix read corrpution from disks of different
+ generation
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+References: <1552995330-28927-1-git-send-email-anand.jain@oracle.com>
+ <b458f22f-9833-27bd-dd06-ba2862aa59c4@gmx.com>
+ <055cad22-76be-1547-c7f7-4de54dd1049c@oracle.com>
+ <36d9d5d6-323c-ebe6-5170-3b2555130bfd@gmx.com>
+ <7cbf618b-5a09-16a5-f9e8-483ab3e7bbf3@oracle.com>
+ <541e2efd-ae4f-bc06-1d08-46f55208a095@gmx.com>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <ce5be72e-5fae-932b-4ba7-85e0b3d8b825@oracle.com>
+Date:   Wed, 20 Mar 2019 21:54:16 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.3.0
+ Thunderbird/60.5.0
 MIME-Version: 1.0
-In-Reply-To: <20190320063717.31770-10-wqu@suse.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <541e2efd-ae4f-bc06-1d08-46f55208a095@gmx.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9200 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1903200108
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Looks good,
-Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
--- 
-Johannes Thumshirn                            SUSE Labs Filesystems
-jthumshirn@suse.de                                +49 911 74053 689
-SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
-GF: Felix Imendörffer, Jane Smithard, Graham Norton
-HRB 21284 (AG Nürnberg)
-Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850
+
+
+On 3/20/19 2:27 PM, Qu Wenruo wrote:
+> 
+> 
+> On 2019/3/20 下午1:47, Anand Jain wrote:
+>>
+>>
+>>>>>> A tree based integrity verification
+>>>>>>     is important for all data, which is missing.
+>>>>>>       Fix:
+>>>>>>       In this RFC patch it proposes to use same disk from with the
+>>>>>> metadata
+>>>>>>     is read to read the data.
+>>>>>
+>>>>> The obvious problem I found is, the idea only works for RAID1/10.
+>>>>>
+>>>>> For striped profile it makes no sense, or even have a worse chance to
+>>>>> get stale data.
+>>>>>
+>>>>>
+>>>>> To me, the idea of using possible better mirror makes some sense, but
+>>>>> very profile limited.
+>>>>
+>>>>    Yep. This problem and fix is only for the mirror based profiles
+>>>>    such as raid1/raid10.
+>>>
+>>> Then current implementation lacks such check.
+>>>
+>>> Further more, data and metadata can lie in different chunks and have
+>>> different chunk types.
+>>
+>>   Right. Current tests for this RFC were only for raid1.
+>>
+>>   But the final patch can fix that.
+>>
+>>   In fact current patch works for all the cases except for the case of
+>>   replace is running and mix of metadata:raid1 and data:raid56
+>>
+>>   We need some cleanups in mirror_num, basically we need to bring it
+>>   under #define. and handle it accordingly in __btrfs_map_block()
+> 
+> 
+> Wait for a minute.
+> 
+> There is a hidden pitfall from the very beginning.
+> 
+> Consider such chunk layout:
+> Chunk A Type DATA|RAID1
+> Stripe 1: Dev 1
+> Stripe 2: Dev 2
+> 
+> Chunk B Type METADATA|RAID1
+> Stripe 1: Dev 2
+> Stripe 2: Dev 1
+
+  Right this fix can't solve this case.
+  So one down. The other choice I had is to
+  Quarantine whole disk by comparing dev1 and dev2 generation # in the 
+superblock during mount. or
+  Quarantine whole chunk(s) by comparing dev1 and dev2 generation # in 
+the chunk tree during mount. or
+  Always read eb from both dev1 and dev2, if fails then fail its 
+corresponding data block as well if any. or
+  During mount compare dev1 and dev2 generation #, record the range of 
+generation number missing on the disk. But this need ondisk format 
+changes. (But nodatacow, notrunc reg data extent write must change gen#). or
+  Similar to btree eb read pages, nest the extent data read as well.
+  (But nodatacow, notrunc reg data extent write must change gen#).
+
+Thanks, Anand
+
+
+> Then when we found stale metadata in chunk B mirror 1, caused by dev 2,
+> then your patch consider device 2 stale, and try to use mirror num 2 to
+> read from data chunk.
+> 
+> However in data chunk, mirror num 2 means it's still from device 2, and
+> we get stale data.
+> 
+> So the eb->mirror_num can still map to bad/stale device, due to the
+> flexibility provided by btrfs per-chunk mapping.
+> 
+> Thanks,
+> Qu
+> 
+>>
+>>>>> Another idea I get inspired from the idea is, make it more generic so
+>>>>> that bad/stale device get a lower priority.
+>>>>
+>>>>    When it comes to reading junk data, its not about the priority its
+>>>>    about the eliminating. When the problem is only few blocks, I am
+>>>>    against making the whole disk as bad.
+>>>>
+>>>>> Although it suffers the same problem as I described.
+>>>>>
+>>>>> To make the point short, the use case looks very limited.
+>>>>
+>>>>    It applies to raid1/raid10 with nodatacow (which implies nodatasum).
+>>>>    In my understanding that's not rare.
+>>>>
+>>>>    Any comments on the fix offered here?
+>>>
+>>> The implementation part is, is eb->read_mirror reliable?
+>>>
+>>> E.g. if the data and the eb are in different chunks, and the stale
+>>> happens in the chunk of eb but not in the data chunk?
+>>
+>>
+>>   eb and regular data are indeed in different chunks always. But eb
+>>   can never be stale as there is parent transid which is verified against
+>>   the read eb. However we do not have such a check for the data (this is
+>>   the core of the issue here) and so we return the junk data silently.
+>>
+>>   Also any idea why the generation number for the extent data is not
+>>   incremented [2] when -o nodatacow and notrunc option is used, is it
+>>   a bug? the dump-tree is taken with the script as below [1]
+>>   (this corruption is seen with or without generation number is
+>>   being incremented, but as another way to fix for the corruption we can
+>>   verify the inode EXTENT_DATA generation from the same disk from which
+>>   the data is read).
+>>
+>> [1]
+>>   umount /btrfs; mkfs.btrfs -fq -dsingle -msingle /dev/sdb && \
+>>   mount -o notreelog,max_inline=0,nodatasum /dev/sdb /btrfs && \
+>>   echo 1st write: && \
+>>   dd status=none if=/dev/urandom of=/btrfs/anand bs=4096 count=1
+>> conv=fsync,notrunc && sync && \
+>>   btrfs in dump-tree /dev/sdb | egrep -A7 "257 INODE_ITEM 0\) item" && \
+>>   echo --- && \
+>>   btrfs in dump-tree /dev/sdb  | grep -A4 "257 EXTENT_DATA" && \
+>>   echo 2nd write: && \
+>>   dd status=none if=/dev/urandom of=/btrfs/anand bs=4096 count=1
+>> conv=fsync,notrunc && sync && \
+>>   btrfs in dump-tree /dev/sdb | egrep -A7 "257 INODE_ITEM 0\) item" && \
+>>   echo --- && \
+>>   btrfs in dump-tree /dev/sdb  | grep -A4 "257 EXTENT_DATA"
+>>
+>>
+>> 1st write:
+>>      item 4 key (257 INODE_ITEM 0) itemoff 15881 itemsize 160
+>>          generation 6 transid 6 size 4096 nbytes 4096
+>>          block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+>>          sequence 1 flags 0x3(NODATASUM|NODATACOW)
+>>          atime 1553058460.163985452 (2019-03-20 13:07:40)
+>>          ctime 1553058460.163985452 (2019-03-20 13:07:40)
+>>          mtime 1553058460.163985452 (2019-03-20 13:07:40)
+>>          otime 1553058460.163985452 (2019-03-20 13:07:40)
+>> ---
+>>      item 6 key (257 EXTENT_DATA 0) itemoff 15813 itemsize 53
+>>          generation 6 type 1 (regular)
+>>          extent data disk byte 13631488 nr 4096
+>>          extent data offset 0 nr 4096 ram 4096
+>>          extent compression 0 (none)
+>> 2nd write:
+>>      item 4 key (257 INODE_ITEM 0) itemoff 15881 itemsize 160
+>>          generation 6 transid 7 size 4096 nbytes 4096
+>>          block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
+>>          sequence 2 flags 0x3(NODATASUM|NODATACOW)
+>>          atime 1553058460.163985452 (2019-03-20 13:07:40)
+>>          ctime 1553058460.189985450 (2019-03-20 13:07:40)
+>>          mtime 1553058460.189985450 (2019-03-20 13:07:40)
+>>          otime 1553058460.163985452 (2019-03-20 13:07:40)
+>> ---
+>>      item 6 key (257 EXTENT_DATA 0) itemoff 15813 itemsize 53
+>>          generation 6 type 1 (regular)   <----- [2]
+>>          extent data disk byte 13631488 nr 4096
+>>          extent data offset 0 nr 4096 ram 4096
+>>          extent compression 0 (none)
+>>
+>>
+>> Thanks, Anand
+> 

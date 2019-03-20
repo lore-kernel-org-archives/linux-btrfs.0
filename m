@@ -2,224 +2,137 @@ Return-Path: <SRS0=xnYl=RX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DFCBDC43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 06:37:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AB9C7C43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 09:59:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B256F2184E
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 06:37:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 849FB2184E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Mar 2019 09:59:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727745AbfCTGhm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 20 Mar 2019 02:37:42 -0400
-Received: from mx2.suse.de ([195.135.220.15]:40956 "EHLO mx1.suse.de"
+        id S1727268AbfCTJ7y (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 20 Mar 2019 05:59:54 -0400
+Received: from mx2.suse.de ([195.135.220.15]:41354 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727726AbfCTGhm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Mar 2019 02:37:42 -0400
+        id S1726922AbfCTJ7y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Mar 2019 05:59:54 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 65ACAAE20;
-        Wed, 20 Mar 2019 06:37:40 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Yoon Jungyeon <jungyeon@gatech.edu>,
-        Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCh v2 9/9] btrfs: inode: Verify inode mode to avoid NULL pointer dereference
-Date:   Wed, 20 Mar 2019 14:37:17 +0800
-Message-Id: <20190320063717.31770-10-wqu@suse.com>
-X-Mailer: git-send-email 2.21.0
-In-Reply-To: <20190320063717.31770-1-wqu@suse.com>
-References: <20190320063717.31770-1-wqu@suse.com>
+        by mx1.suse.de (Postfix) with ESMTP id 31DB7ABC6;
+        Wed, 20 Mar 2019 09:59:52 +0000 (UTC)
+Subject: Re: delayed_refs has NO entry / btrfs_update_root:136: Aborting
+ unused transaction(No space left).
+To:     Christoph Anton Mitterer <calestyo@scientia.net>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <b2a668d7124f1d3e410367f587926f622b3f03a4.camel@scientia.net>
+ <d35fa8de087c746f9affb789cf3ab599a3d042c1.camel@scientia.net>
+From:   Johannes Thumshirn <jthumshirn@suse.de>
+Openpgp: preference=signencrypt
+Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <9ff84820-5d7e-f541-6adc-29c4949d44e0@suse.de>
+Date:   Wed, 20 Mar 2019 10:59:51 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.3.0
 MIME-Version: 1.0
+In-Reply-To: <d35fa8de087c746f9affb789cf3ab599a3d042c1.camel@scientia.net>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[BUG]
-When access a file on a crafted image, btrfs can crash in block layer:
+On 20/03/2019 01:59, Christoph Anton Mitterer wrote:
+> Anything I should do with respect to this?
+> 
+> I.e. is further debug info needed for an interested developer? or can I
+> simply scrap that particular image (which is not an important one)?
 
-BUG: unable to handle kernel NULL pointer dereference at 0000000000000008
-PGD 136501067 P4D 136501067 PUD 124519067 PMD 0
-CPU: 3 PID: 0 Comm: swapper/3 Not tainted 5.0.0-rc8-default #252
-RIP: 0010:end_bio_extent_readpage+0x144/0x700
-Call Trace:
- <IRQ>
- blk_update_request+0x8f/0x350
- blk_mq_end_request+0x1a/0x120
- blk_done_softirq+0x99/0xc0
- __do_softirq+0xc7/0x467
- irq_exit+0xd1/0xe0
- call_function_single_interrupt+0xf/0x20
- </IRQ>
-RIP: 0010:default_idle+0x1e/0x170
 
-[CAUSE]
-The crafted image has a pretty tricky corruption, the INODE_ITEM has a
-different type against its parent dir:
-        item 20 key (268 INODE_ITEM 0) itemoff 2808 itemsize 160
-                generation 13 transid 13 size 1048576 nbytes 1048576
-                block group 0 mode 121644 links 1 uid 0 gid 0 rdev 0
-                sequence 9 flags 0x0(none)
+OK, I can give it a shot, but please be aware I'm still relatively new
+to BTRFS.
 
-This mode number 0120000 means it's a soft link.
+First of all, have you tried a more recent kernel than the Debian
+kernels you referenced? E.g. Linus' current master or David's misc-next
+branch? Just so we don't try to hunt down a bug that's already fixed.
 
-But the dir item think it's still a regular file:
-        item 8 key (264 DIR_INDEX 5) itemoff 3707 itemsize 32
-                location key (268 INODE_ITEM 0) type FILE
-                transid 13 data_len 0 name_len 2
-                name: f4
-        item 40 key (264 DIR_ITEM 51821248) itemoff 1573 itemsize 32
-                location key (268 INODE_ITEM 0) type FILE
-                transid 13 data_len 0 name_len 2
-                name: f4
+If it's still reproducible with a more recent kernel, I think having an
+image would be very valuable.
 
-For btrfs symlink, we don't set BTRFS_I(inode)->io_tree.ops and leave
-it empty, as symlink is only designed to have inlined extent, all
-handled by tree block read.
-Thus no need to trigger btrfs_submit_bio_hook() for inline file extent.
+From the dmesg (I don't have the referenced kernel version handy, Greg's
+4.19.27 is the closest I have) we're hitting this WARN_ON():
 
-However for end_bio_extent_readpage() it expects tree->ops populated, as
-it's reading regular data extent.
-This causes NULL pointer dereference.
+        WARN_ON(cur_trans != info->running_transaction);
 
-[FIX]
-This patch fixes the problem by 2 directions:
-- Verify inode mode against its dir item when looking up inode
-  So in btrfs_lookup_dentry() if we find inode mode mismatch with dir
-  item, we error out so that corrupted inode will not be access.
+Which means there's a mismatch between the transaction that's currently
+running and the transaction the filesystem thinks is running, if I read
+it correctly.
 
-- Verify inode mode when getting extent mapping
-  Only regular file should have regular or preallocated extent.
-  If we found regular/preallocated file extent for soft link or
-  whatever, we error out before we submit read bio.
+Also if you can still reproduce the bug, please activate tracing in
+btrfs and send the trace output.
 
-With this fix that crafted image can be rejected gracefully:
-  BTRFS critical (device loop0): inode mode mismatch with dir: inode mode=0121644 btrfs type=7 dir type=1
-
-Reported-by: Yoon Jungyeon <jungyeon@gatech.edu>
-Link: https://bugzilla.kernel.org/show_bug.cgi?id=202763
-Signed-off-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/inode.c             | 38 ++++++++++++++++++++++++++++--------
- fs/btrfs/tests/inode-tests.c |  1 +
- 2 files changed, 31 insertions(+), 8 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 82fdda8ff5ab..2e16b7779217 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5448,12 +5448,13 @@ void btrfs_evict_inode(struct inode *inode)
- }
- 
- /*
-- * this returns the key found in the dir entry in the location pointer.
-+ * this returns the key found in the dir entry in the location pointer,
-+ * fill @type with BTRFS_FT_*, and return 0.
-  * If no dir entries were found, returns -ENOENT.
-  * If found a corrupted location in dir entry, returns -EUCLEAN.
-  */
- static int btrfs_inode_by_name(struct inode *dir, struct dentry *dentry,
--			       struct btrfs_key *location)
-+			       struct btrfs_key *location, u8 *type)
- {
- 	const char *name = dentry->d_name.name;
- 	int namelen = dentry->d_name.len;
-@@ -5482,6 +5483,8 @@ static int btrfs_inode_by_name(struct inode *dir, struct dentry *dentry,
- 			   __func__, name, btrfs_ino(BTRFS_I(dir)),
- 			   location->objectid, location->type, location->offset);
- 	}
-+	if (!ret)
-+		*type = btrfs_dir_type(path->nodes[0], di);
- out:
- 	btrfs_free_path(path);
- 	return ret;
-@@ -5719,6 +5722,11 @@ static struct inode *new_simple_dir(struct super_block *s,
- 	return inode;
- }
- 
-+static inline u8 btrfs_inode_type(struct inode *inode)
-+{
-+	return btrfs_type_by_mode[(inode->i_mode & S_IFMT) >> S_SHIFT];
-+}
-+
- struct inode *btrfs_lookup_dentry(struct inode *dir, struct dentry *dentry)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(dir->i_sb);
-@@ -5726,18 +5734,29 @@ struct inode *btrfs_lookup_dentry(struct inode *dir, struct dentry *dentry)
- 	struct btrfs_root *root = BTRFS_I(dir)->root;
- 	struct btrfs_root *sub_root = root;
- 	struct btrfs_key location;
-+	u8 di_type = 0;
- 	int index;
- 	int ret = 0;
- 
- 	if (dentry->d_name.len > BTRFS_NAME_LEN)
- 		return ERR_PTR(-ENAMETOOLONG);
- 
--	ret = btrfs_inode_by_name(dir, dentry, &location);
-+	ret = btrfs_inode_by_name(dir, dentry, &location, &di_type);
- 	if (ret < 0)
- 		return ERR_PTR(ret);
- 
- 	if (location.type == BTRFS_INODE_ITEM_KEY) {
- 		inode = btrfs_iget(dir->i_sb, &location, root, NULL);
-+
-+		/* Do extra check against inode mode with di_type */
-+		if (btrfs_inode_type(inode) != di_type) {
-+			btrfs_crit(fs_info,
-+"inode mode mismatch with dir: inode mode=0%o btrfs type=%u dir type=%u",
-+				  inode->i_mode, btrfs_inode_type(inode),
-+				  di_type);
-+			iput(inode);
-+			return ERR_PTR(-EUCLEAN);
-+		}
- 		return inode;
- 	}
- 
-@@ -6342,11 +6361,6 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
- 	return ERR_PTR(ret);
- }
- 
--static inline u8 btrfs_inode_type(struct inode *inode)
--{
--	return btrfs_type_by_mode[(inode->i_mode & S_IFMT) >> S_SHIFT];
--}
--
- /*
-  * utility function to add 'inode' into 'parent_inode' with
-  * a give name and a given sequence number.
-@@ -6864,6 +6878,14 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
- 	extent_start = found_key.offset;
- 	if (extent_type == BTRFS_FILE_EXTENT_REG ||
- 	    extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
-+		/* Only regular file could have regular/prealloc extent */
-+		if (!S_ISREG(inode->vfs_inode.i_mode)) {
-+			ret = -EUCLEAN;
-+			btrfs_crit(fs_info,
-+		"regular/prealloc extent found for non-regular inode %llu",
-+				   btrfs_ino(inode));
-+			goto out;
-+		}
- 		extent_end = extent_start +
- 		       btrfs_file_extent_num_bytes(leaf, item);
- 
-diff --git a/fs/btrfs/tests/inode-tests.c b/fs/btrfs/tests/inode-tests.c
-index af0c8e30d9e2..b01dbcab9eed 100644
---- a/fs/btrfs/tests/inode-tests.c
-+++ b/fs/btrfs/tests/inode-tests.c
-@@ -232,6 +232,7 @@ static noinline int test_btrfs_get_extent(u32 sectorsize, u32 nodesize)
- 		return ret;
- 	}
- 
-+	inode->i_mode = S_IFREG;
- 	BTRFS_I(inode)->location.type = BTRFS_INODE_ITEM_KEY;
- 	BTRFS_I(inode)->location.objectid = BTRFS_FIRST_FREE_OBJECTID;
- 	BTRFS_I(inode)->location.offset = 0;
+Byte,
+	Johannes
 -- 
-2.21.0
-
+Johannes Thumshirn                            SUSE Labs Filesystems
+jthumshirn@suse.de                                +49 911 74053 689
+SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
+GF: Felix Imendörffer, Jane Smithard, Graham Norton
+HRB 21284 (AG Nürnberg)
+Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850

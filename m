@@ -2,128 +2,90 @@ Return-Path: <SRS0=tkEE=RY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 82667C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Mar 2019 16:36:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 42F68C43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Mar 2019 16:53:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5C390218E2
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Mar 2019 16:36:31 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 10B6D2183E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Mar 2019 16:53:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728591AbfCUQga (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Mar 2019 12:36:30 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42370 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727829AbfCUQga (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Mar 2019 12:36:30 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 27BDCACE8;
-        Thu, 21 Mar 2019 16:36:28 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 6AFF6DA824; Thu, 21 Mar 2019 17:37:41 +0100 (CET)
-Date:   Thu, 21 Mar 2019 17:37:40 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     fdmanana@kernel.org
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix assertion failure on fsync with NO_HOLES
- enabled
-Message-ID: <20190321163740.GE8120@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
-        linux-btrfs@vger.kernel.org
-References: <20190319171813.14176-1-fdmanana@kernel.org>
+        id S1728093AbfCUQxF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Mar 2019 12:53:05 -0400
+Received: from bang.steev.me.uk ([81.2.120.65]:46933 "EHLO smtp.steev.me.uk"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727138AbfCUQxE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 21 Mar 2019 12:53:04 -0400
+X-Greylist: delayed 1597 seconds by postgrey-1.27 at vger.kernel.org; Thu, 21 Mar 2019 12:53:03 EDT
+Received: from localhost ([::1] helo=webmail.steev.me.uk)
+        by smtp.steev.me.uk with esmtp (Exim 4.91)
+        id 1h70WO-0001Zq-CG; Thu, 21 Mar 2019 16:26:24 +0000
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190319171813.14176-1-fdmanana@kernel.org>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Content-Transfer-Encoding: 7bit
+Date:   Thu, 21 Mar 2019 16:26:24 +0000
+From:   Steven Davies <btrfs-list@steev.me.uk>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH RFC 0/5] readmirror feature
+In-Reply-To: <1552989624-29577-1-git-send-email-anand.jain@oracle.com>
+References: <1552989624-29577-1-git-send-email-anand.jain@oracle.com>
+Message-ID: <d7b84e2bcb9920d011e585391b70020e@steev.me.uk>
+X-Sender: btrfs-list@steev.me.uk
+User-Agent: Roundcube Webmail/1.3.8
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Mar 19, 2019 at 05:18:13PM +0000, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
+On 2019-03-19 10:00, Anand Jain wrote:
+> RFC patch as of now, appreciate your comments. This patch set has
+> been tested.
 > 
-> Back in commit a89ca6f24ffe4 ("Btrfs: fix fsync after truncate when
-> no_holes feature is enabled") I added an assertion that is triggered when
-> an inline extent is found to assert that the length of the (uncompressed)
-> data the extent represents is the same as the i_size of the inode, since
-> that is true most of the time I couldn't find or didn't remembered about
-> any exception at that time. Later on the assertion was expanded twice to
-> deal with a case of a compressed inline extent representing a range that
-> matches the sector size followed by an expanding truncate, and another
-> case where fallocate can update the i_size of the inode without adding
-> or updating existing extents (if the fallocate range falls entirely within
-> the first block of the file). These two expansion/fixes of the assertion
-> were done by commit 7ed586d0a8241 ("Btrfs: fix assertion on fsync of
-> regular file when using no-holes feature") and commit 6399fb5a0b69a
-> ("Btrfs: fix assertion failure during fsync in no-holes mode").
-> These however missed the case where an falloc expands the i_size of an
-> inode to exactly the sector size and inline extent exists, for example:
+> Function call chain  __btrfs_map_block()->find_live_mirror() uses
+> thread pid to determine the %mirror_num when the mirror_num=0.
 > 
->  $ mkfs.btrfs -f -O no-holes /dev/sdc
->  $ mount /dev/sdc /mnt
+> The pid based mirror_num extrapolation has following disadvantages
+>  . A large single-process read IO will read only from one disk.
+>  . In a worst scenario all processes read accessing the FS could have
+>        either odd or even pid, the read IO gets skewed.
+>  . There is no deterministic way of knowing/controlling which copy will
+>        be used for reading.
+>  . May see performance variations for a given set of multi process
+>        workload ran at different times.
 > 
->  $ xfs_io -f -c "pwrite -S 0xab 0 1096" /mnt/foobar
->  wrote 1096/1096 bytes at offset 0
->  1 KiB, 1 ops; 0.0002 sec (4.448 MiB/sec and 4255.3191 ops/sec)
+> So we need other types of readmirror policies.
 > 
->  $ xfs_io -c "falloc 1096 3000" /mnt/foobar
->  $ xfs_io -c "fsync" /mnt/foobar
->  Segmentation fault
-> 
->  $ dmesg
->  [701253.602385] assertion failed: len == i_size || (len == fs_info->sectorsize && btrfs_file_extent_compression(leaf, extent) != BTRFS_COMPRESS_NONE) || (len < i_size && i_size < fs_info->sectorsize), file: fs/btrfs/tree-log.c, line: 4727
->  [701253.602962] ------------[ cut here ]------------
->  [701253.603224] kernel BUG at fs/btrfs/ctree.h:3533!
->  [701253.603503] invalid opcode: 0000 [#1] SMP DEBUG_PAGEALLOC PTI
->  [701253.603774] CPU: 2 PID: 7192 Comm: xfs_io Tainted: G        W         5.0.0-rc8-btrfs-next-45 #1
->  [701253.604054] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.11.2-0-gf9626ccb91-prebuilt.qemu-project.org 04/01/2014
->  [701253.604650] RIP: 0010:assfail.constprop.23+0x18/0x1a [btrfs]
->  (...)
->  [701253.605591] RSP: 0018:ffffbb48c186bc48 EFLAGS: 00010286
->  [701253.605914] RAX: 00000000000000de RBX: ffff921d0a7afc08 RCX: 0000000000000000
->  [701253.606244] RDX: 0000000000000000 RSI: ffff921d36b16868 RDI: ffff921d36b16868
->  [701253.606580] RBP: ffffbb48c186bcf0 R08: 0000000000000000 R09: 0000000000000000
->  [701253.606913] R10: 0000000000000003 R11: 0000000000000000 R12: ffff921d05d2de18
->  [701253.607247] R13: ffff921d03b54000 R14: 0000000000000448 R15: ffff921d059ecf80
->  [701253.607769] FS:  00007f14da906700(0000) GS:ffff921d36b00000(0000) knlGS:0000000000000000
->  [701253.608163] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
->  [701253.608516] CR2: 000056087ea9f278 CR3: 00000002268e8001 CR4: 00000000003606e0
->  [701253.608880] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
->  [701253.609250] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
->  [701253.609608] Call Trace:
->  [701253.609994]  btrfs_log_inode+0xdfb/0xe40 [btrfs]
->  [701253.610383]  btrfs_log_inode_parent+0x2be/0xa60 [btrfs]
->  [701253.610770]  ? do_raw_spin_unlock+0x49/0xc0
->  [701253.611150]  btrfs_log_dentry_safe+0x4a/0x70 [btrfs]
->  [701253.611537]  btrfs_sync_file+0x3b2/0x440 [btrfs]
->  [701253.612010]  ? do_sysinfo+0xb0/0xf0
->  [701253.612552]  do_fsync+0x38/0x60
->  [701253.612988]  __x64_sys_fsync+0x10/0x20
->  [701253.613360]  do_syscall_64+0x60/0x1b0
->  [701253.613733]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
->  [701253.614103] RIP: 0033:0x7f14da4e66d0
->  (...)
->  [701253.615250] RSP: 002b:00007fffa670fdb8 EFLAGS: 00000246 ORIG_RAX: 000000000000004a
->  [701253.615647] RAX: ffffffffffffffda RBX: 0000000000000001 RCX: 00007f14da4e66d0
->  [701253.616047] RDX: 000056087ea9c260 RSI: 000056087ea9c260 RDI: 0000000000000003
->  [701253.616450] RBP: 0000000000000001 R08: 0000000000000020 R09: 0000000000000010
->  [701253.616854] R10: 000000000000009b R11: 0000000000000246 R12: 000056087ea9c260
->  [701253.617257] R13: 000056087ea9c240 R14: 0000000000000000 R15: 000056087ea9dd10
->  (...)
->  [701253.619941] ---[ end trace e088d74f132b6da5 ]---
-> 
-> Updating the assertion again to allow for this particular case would result
-> in a meaningless assertion, plus there is currently no risk of logging
-> content that would result in any corruption after a log replay if the size
-> of the data encoded in an inline extent is greater than the inode's i_size
-> (which is not currently possibe either with or without compression),
-> therefore just remove the assertion.
+> This patch introduces a framework so that we can add more policies, and
+> converts the existing %pid into as a configurable parameter using the
+> property. And also provides a transient readmirror mount option, so 
+> that
+> this property can be applied for the read io during mount and for
+> readonly FS.
 
-Quite some history behind the assertion, I agree that removing it is ok.
-Patch added to misc-next and queued for 5.1, thanks.
+Is it possible to set this property at mkfs time?
+
+>  For example:
+>    btrfs property set <mnt> readmirror pid
+>    btrfs property set <mnt> readmirror ""
+>    btrfs property set <mnt> readmirror devid<n>
+> 
+>    mount -o readmirror=pid <mnt>
+>    mount -o readmirror=devid<n> <mnt>
+
+This is an edge case but should we be allowed to set more than one 
+device as a read mirror in a 3+ device array? In theory there could be 
+two fast disks and one slow disk where all stripes are guaranteed to be 
+on at least one fast disk.
+
+I'll test these patches out when I have some spare time over the next 
+few weeks. Do you have a tree I can pull / what are the patches based 
+on?
+
+Way beyond this patch series, considering a 3+ device raid1 array with 
+mixed fast and slow disks perhaps there could also be a write preference 
+for disks to fill up the fast disks first.
+
+Steven Davies

@@ -2,144 +2,90 @@ Return-Path: <SRS0=tkEE=RY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,USER_AGENT_MUTT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 978DDC43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Mar 2019 14:32:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B17F8C43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Mar 2019 15:24:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6E595218E2
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Mar 2019 14:32:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 81EDB21874
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Mar 2019 15:24:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728160AbfCUOcx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Mar 2019 10:32:53 -0400
-Received: from mx2.suse.de ([195.135.220.15]:47168 "EHLO mx1.suse.de"
+        id S1727857AbfCUPYk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Mar 2019 11:24:40 -0400
+Received: from mx2.suse.de ([195.135.220.15]:58754 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727934AbfCUOcx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Mar 2019 10:32:53 -0400
+        id S1725985AbfCUPYk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 21 Mar 2019 11:24:40 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 4BDB0AC79
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Mar 2019 14:32:51 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 0075FAEE6;
+        Thu, 21 Mar 2019 15:24:38 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 4AC6DDA8F6; Thu, 21 Mar 2019 15:34:06 +0100 (CET)
-Date:   Thu, 21 Mar 2019 15:34:06 +0100
+        id B1A81DA9FA; Thu, 21 Mar 2019 16:25:53 +0100 (CET)
+Date:   Thu, 21 Mar 2019 16:25:53 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v5.3 00/11] btrfs: tree-checker: Write time tree checker
-Message-ID: <20190321143406.GF26179@twin.jikos.cz>
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     dsterba@suse.cz, linux-btrfs@vger.kernel.org, anand.jain@oracle.com
+Subject: Re: [PATCH] btrfs: Use raw numbers when setting passing uptodate
+ parameter to btrfs_writepage_endio_finish_ordered
+Message-ID: <20190321152553.GC8120@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20190320062749.30953-1-wqu@suse.com>
+Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        linux-btrfs@vger.kernel.org, anand.jain@oracle.com
+References: <20190320195316.27134-1-nborisov@suse.com>
+ <20190321143032.GE26179@twin.jikos.cz>
+ <e0f79e5f-5ed4-defb-f614-3c722e78dc41@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <20190320062749.30953-1-wqu@suse.com>
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <e0f79e5f-5ed4-defb-f614-3c722e78dc41@suse.com>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Mar 20, 2019 at 02:27:38PM +0800, Qu Wenruo wrote:
-> Patchset can be fetched from github:
-> https://github.com/adam900710/linux/tree/write_time_tree_checker
-> Which is based on v5.1-rc1 tag.
+On Thu, Mar 21, 2019 at 04:31:53PM +0200, Nikolay Borisov wrote:
 > 
-> This patchset has the following 3 features:
-> - Tree block validation output enhancement
->   * Output validation failure timing (write time or read time)
->   * Always output tree block level/key mismatch error message
->     This part is already submitted and reviewed.
 > 
-> - Write time tree block validation check
->   To catch memory corruption either from hardware or kernel.
->   Example output would be:
+> On 21.03.19 г. 16:30 ч., David Sterba wrote:
+> > On Wed, Mar 20, 2019 at 09:53:16PM +0200, Nikolay Borisov wrote:
+> >> The uptodate parameter of btrfs_writepage_endio_finish_ordered is used
+> >> to signal whether an error has occured while writing the given page.
+> >> 0 signal an error, which is propagated to callees and 1 signifies
+> >> success. In end_compressed_bio_write the ->bi_status is checked and
+> >> based on it either BLK_STS_OK (0) or BLK_STS_NOTSUPP (1) are used. While
+> >> from functional point of view this is ok it's a for the poor reader of
+> >> the code, since the block layer values are conflated with the semantics
+> >> of the parameter.
+> >>
+> >> Just use plain 0 or 1. No functional changes.
+> >>
+> >> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> >> ---
+> >>  fs/btrfs/compression.c | 2 +-
+> >>  1 file changed, 1 insertion(+), 1 deletion(-)
+> >>
+> >> diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+> >> index eb8e20b740d6..f82441f18512 100644
+> >> --- a/fs/btrfs/compression.c
+> >> +++ b/fs/btrfs/compression.c
+> >> @@ -250,7 +250,7 @@ static void end_compressed_bio_write(struct bio *bio)
+> >>  	cb->compressed_pages[0]->mapping = cb->inode->i_mapping;
+> >>  	btrfs_writepage_endio_finish_ordered(cb->compressed_pages[0],
+> >>  			cb->start, cb->start + cb->len - 1,
+> >> -			bio->bi_status ? BLK_STS_OK : BLK_STS_NOTSUPP);
+> >> +			bio->bi_status ? 0 : 1);
+> > 
+> > Essentially reverting 2dbe0c77186c691386b74391039899808a4d3f59, but
+> > using the BLK_STS constants is definetelly wrong. The values match the
+> > intended use of 'uptodate', but otherwise are confusing.
+> > 
+> > I actually think it can be simplified to bio->bi_staus == BLK_STS_OK.
 > 
->     BTRFS critical (device dm-3): corrupt leaf: root=2 block=1350630375424 slot=68, bad key order, prev (10510212874240 169 0) current (1714119868416 169 0)
->     BTRFS error (device dm-3): block=1350630375424 write time tree block corruption detected
->     BTRFS: error (device dm-3) in btrfs_commit_transaction:2220: errno=-5 IO failure (Error while writing out transaction)
->     BTRFS info (device dm-3): forced readonly
->     BTRFS warning (device dm-3): Skipping commit of aborted transaction.
->     BTRFS: error (device dm-3) in cleanup_transaction:1839: errno=-5 IO failure
->     BTRFS info (device dm-3): delayed_refs has NO entry
-> 
-> - Better error handling before calling flush_write_bio()
->   One hidden reason of calling flush_write_bio() under all cases is,
->   flush_write_bio() will trigger endio function and endio function of
->   epd->bio will free the bio under all cases.
->   So we're in fact abusing flush_write_bio() as cleanup.
-> 
->   Since now flush_write_bio() has its own return value, we shouldn't call
->   flush_write_bio() no-brain, here we introduce proper cleanup helper,
->   end_write_bio(). Now we call flush_write_bio() like:
->               New                 |           Old
->   --------------------------------------------------------------
->   ret = do_some_evil(&epd);       | ret = do_some_evil(&epd);
->   if (ret < 0) {                  | flush_write_bio(&epd);
->   	end_write_bio(&epd, ret); | ^^^ submitting half-backed epd->bio?
->   	return ret;               | return ret;
->   }                               |
->   ret = flush_write_bio(&epd);    |
->   return ret;                     |
-> 
->   Above code should be more streamline for the error handling part.
-> 
-> Changelog:
-> v2:
-> - Unlock locked pages in lock_extent_buffer_for_io() for error handling.
-> - Added Reviewed-by tags.
-> 
-> v3:
-> - Remove duplicated error message.
-> - Use IS_ENABLED() macro to replace #ifdef.
-> - Added Reviewed-by tags.
-> 
-> v4:
-> - Re-organized patch split
->   Now each BUG_ON() cleanup has its own patch
-> - Dig much further into the call sites to eliminate unexpected >0 return
->   May be a little paranoid and abuse some ASSERT(), but it should be
->   much safer against further code change.
-> - Fix the false alert caused by balance and memory pressure
->   The fix it skip owner checker for non-essential tree at write time.
->   Since owner root can't always be reliable, either due to commit root
->   created in current transaction or balance + memory pressure.
-> 
-> v5:
-> - Do proper error-out handling other than relying on flush_write_bio()
->   to clean up.
->   This has a side effect that no Reviewed-by tags for modified patches.
-> - New comment for why we don't need to do anything about ebp->bio when
->   submit_one_bio() fails.
-> - Add some Reviewed-by tag.
-> 
-> v5.1:
-> - Add "block=%llu " output for write/read time error line.
-> - Also output read time error message for fsid/start/level check.
-> 
-> v5.2:
-> - Fix a missing page_unlock() in error hanlding
-> 
-> v5.3:
-> - Rebase to v5.1-rc1 tag
-> 
-> Qu Wenruo (11):
->   btrfs: Always output error message when key/level verification fails
->   btrfs: disk-io: Show the timing of corrupted tree block explicitly
->   btrfs: extent_io: Move the BUG_ON() in flush_write_bio() one level up
->   btrfs: extent_io: Handle error better in extent_write_full_page()
->   btrfs: extent_io: Handle error better in btree_write_cache_pages()
->   btrfs: extent_io: Kill the dead branch in extent_write_cache_pages()
->   btrfs: extent_io: Handle error better in extent_write_locked_range()
->   btrfs: extent_io: Kill the BUG_ON() in lock_extent_buffer_for_io()
->   btrfs: extent_io: Kill the BUG_ON() in extent_write_cache_pages()
->   btrfs: extent_io: Handle error better in extent_writepages()
->   btrfs: Do mandatory tree block check before submitting bio
+> Yes that would work, are you going to fix up the patch or shall I resend?
 
-All except 9 and 11 are going to misc-next after a final test. The two
-patches are only postponed, one for review and the other one due to
-conflict with another patch in misc-next.
+I'll fix it.

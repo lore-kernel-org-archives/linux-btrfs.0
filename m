@@ -5,26 +5,27 @@ X-Spam-Level:
 X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1F0CBC43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Mar 2019 13:08:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6366DC43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Mar 2019 13:13:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E3571218E2
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Mar 2019 13:08:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3D0DA2083D
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Mar 2019 13:13:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728101AbfCUNIU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Mar 2019 09:08:20 -0400
-Received: from mx2.suse.de ([195.135.220.15]:57022 "EHLO mx1.suse.de"
+        id S1728198AbfCUNNV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Mar 2019 09:13:21 -0400
+Received: from mx2.suse.de ([195.135.220.15]:57628 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727823AbfCUNIU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Mar 2019 09:08:20 -0400
+        id S1728102AbfCUNNU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 21 Mar 2019 09:13:20 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 4FA93AFA1
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Mar 2019 13:08:18 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id DB424AF2F
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Mar 2019 13:13:18 +0000 (UTC)
 Subject: Re: [PATCH] btrfs: Defer setting new inode mode until after
  do_set_acl succeeds
 To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 References: <20190321092703.8136-1-nborisov@suse.com>
+ <11112d98-e20d-6e15-c72f-8cbae4e6e550@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -82,12 +83,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <3a169540-c65c-dcf8-9f5b-5dd76e158d60@suse.de>
-Date:   Thu, 21 Mar 2019 14:08:17 +0100
+Message-ID: <4217155a-070e-acac-aa38-d1cd34ca4e8f@suse.de>
+Date:   Thu, 21 Mar 2019 14:13:18 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.3.0
 MIME-Version: 1.0
-In-Reply-To: <20190321092703.8136-1-nborisov@suse.com>
+In-Reply-To: <11112d98-e20d-6e15-c72f-8cbae4e6e550@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -96,22 +97,12 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 21/03/2019 10:27, Nikolay Borisov wrote:
-[...]
+On 21/03/2019 13:42, Nikolay Borisov wrote:
+> This patch is broken and causes inconsistencies on the fs that btrfs
+> check detects. Test that triggers it - generic/077. I'm trying to
+> understand why, meanwhile this works:
 
-> index b722866e1442..a0cfd2049ea5 100644
-> --- a/fs/btrfs/acl.c
-> +++ b/fs/btrfs/acl.c
-> @@ -99,7 +99,6 @@ static int do_set_acl(struct btrfs_trans_handle *trans, struct inode *inode,
->  	}
->  
->  	ret = btrfs_setxattr(trans, inode, name, value, size, 0);
-> -
-
-Nit: unrelated change
-
-Looks good,
-Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
+If you find the root cause, could you share it please?
 
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems

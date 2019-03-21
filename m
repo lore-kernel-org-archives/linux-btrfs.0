@@ -2,125 +2,128 @@ Return-Path: <SRS0=tkEE=RY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DE8B3C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Mar 2019 16:01:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 82667C43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Mar 2019 16:36:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B4BAA21874
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Mar 2019 16:01:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5C390218E2
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Mar 2019 16:36:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728131AbfCUQBh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Mar 2019 12:01:37 -0400
-Received: from mx2.suse.de ([195.135.220.15]:37366 "EHLO mx1.suse.de"
+        id S1728591AbfCUQga (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Mar 2019 12:36:30 -0400
+Received: from mx2.suse.de ([195.135.220.15]:42370 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725985AbfCUQBh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Mar 2019 12:01:37 -0400
+        id S1727829AbfCUQga (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 21 Mar 2019 12:36:30 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 699BEAEEE
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Mar 2019 16:01:35 +0000 (UTC)
-Subject: Re: [PATCH v2] btrfs: Defer setting new inode mode until after
- do_set_acl succeeds
-To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-References: <20190321155706.16686-1-nborisov@suse.com>
-From:   Johannes Thumshirn <jthumshirn@suse.de>
-Openpgp: preference=signencrypt
-Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <83dda88a-d358-f6d6-5358-69bce1a2bc76@suse.de>
-Date:   Thu, 21 Mar 2019 17:01:35 +0100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.3.0
+        by mx1.suse.de (Postfix) with ESMTP id 27BDCACE8;
+        Thu, 21 Mar 2019 16:36:28 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 6AFF6DA824; Thu, 21 Mar 2019 17:37:41 +0100 (CET)
+Date:   Thu, 21 Mar 2019 17:37:40 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     fdmanana@kernel.org
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix assertion failure on fsync with NO_HOLES
+ enabled
+Message-ID: <20190321163740.GE8120@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
+        linux-btrfs@vger.kernel.org
+References: <20190319171813.14176-1-fdmanana@kernel.org>
 MIME-Version: 1.0
-In-Reply-To: <20190321155706.16686-1-nborisov@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190319171813.14176-1-fdmanana@kernel.org>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 21/03/2019 16:57, Nikolay Borisov wrote:
-[...]
+On Tue, Mar 19, 2019 at 05:18:13PM +0000, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> Back in commit a89ca6f24ffe4 ("Btrfs: fix fsync after truncate when
+> no_holes feature is enabled") I added an assertion that is triggered when
+> an inline extent is found to assert that the length of the (uncompressed)
+> data the extent represents is the same as the i_size of the inode, since
+> that is true most of the time I couldn't find or didn't remembered about
+> any exception at that time. Later on the assertion was expanded twice to
+> deal with a case of a compressed inline extent representing a range that
+> matches the sector size followed by an expanding truncate, and another
+> case where fallocate can update the i_size of the inode without adding
+> or updating existing extents (if the fallocate range falls entirely within
+> the first block of the file). These two expansion/fixes of the assertion
+> were done by commit 7ed586d0a8241 ("Btrfs: fix assertion on fsync of
+> regular file when using no-holes feature") and commit 6399fb5a0b69a
+> ("Btrfs: fix assertion failure during fsync in no-holes mode").
+> These however missed the case where an falloc expands the i_size of an
+> inode to exactly the sector size and inline extent exists, for example:
+> 
+>  $ mkfs.btrfs -f -O no-holes /dev/sdc
+>  $ mount /dev/sdc /mnt
+> 
+>  $ xfs_io -f -c "pwrite -S 0xab 0 1096" /mnt/foobar
+>  wrote 1096/1096 bytes at offset 0
+>  1 KiB, 1 ops; 0.0002 sec (4.448 MiB/sec and 4255.3191 ops/sec)
+> 
+>  $ xfs_io -c "falloc 1096 3000" /mnt/foobar
+>  $ xfs_io -c "fsync" /mnt/foobar
+>  Segmentation fault
+> 
+>  $ dmesg
+>  [701253.602385] assertion failed: len == i_size || (len == fs_info->sectorsize && btrfs_file_extent_compression(leaf, extent) != BTRFS_COMPRESS_NONE) || (len < i_size && i_size < fs_info->sectorsize), file: fs/btrfs/tree-log.c, line: 4727
+>  [701253.602962] ------------[ cut here ]------------
+>  [701253.603224] kernel BUG at fs/btrfs/ctree.h:3533!
+>  [701253.603503] invalid opcode: 0000 [#1] SMP DEBUG_PAGEALLOC PTI
+>  [701253.603774] CPU: 2 PID: 7192 Comm: xfs_io Tainted: G        W         5.0.0-rc8-btrfs-next-45 #1
+>  [701253.604054] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.11.2-0-gf9626ccb91-prebuilt.qemu-project.org 04/01/2014
+>  [701253.604650] RIP: 0010:assfail.constprop.23+0x18/0x1a [btrfs]
+>  (...)
+>  [701253.605591] RSP: 0018:ffffbb48c186bc48 EFLAGS: 00010286
+>  [701253.605914] RAX: 00000000000000de RBX: ffff921d0a7afc08 RCX: 0000000000000000
+>  [701253.606244] RDX: 0000000000000000 RSI: ffff921d36b16868 RDI: ffff921d36b16868
+>  [701253.606580] RBP: ffffbb48c186bcf0 R08: 0000000000000000 R09: 0000000000000000
+>  [701253.606913] R10: 0000000000000003 R11: 0000000000000000 R12: ffff921d05d2de18
+>  [701253.607247] R13: ffff921d03b54000 R14: 0000000000000448 R15: ffff921d059ecf80
+>  [701253.607769] FS:  00007f14da906700(0000) GS:ffff921d36b00000(0000) knlGS:0000000000000000
+>  [701253.608163] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+>  [701253.608516] CR2: 000056087ea9f278 CR3: 00000002268e8001 CR4: 00000000003606e0
+>  [701253.608880] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+>  [701253.609250] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+>  [701253.609608] Call Trace:
+>  [701253.609994]  btrfs_log_inode+0xdfb/0xe40 [btrfs]
+>  [701253.610383]  btrfs_log_inode_parent+0x2be/0xa60 [btrfs]
+>  [701253.610770]  ? do_raw_spin_unlock+0x49/0xc0
+>  [701253.611150]  btrfs_log_dentry_safe+0x4a/0x70 [btrfs]
+>  [701253.611537]  btrfs_sync_file+0x3b2/0x440 [btrfs]
+>  [701253.612010]  ? do_sysinfo+0xb0/0xf0
+>  [701253.612552]  do_fsync+0x38/0x60
+>  [701253.612988]  __x64_sys_fsync+0x10/0x20
+>  [701253.613360]  do_syscall_64+0x60/0x1b0
+>  [701253.613733]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+>  [701253.614103] RIP: 0033:0x7f14da4e66d0
+>  (...)
+>  [701253.615250] RSP: 002b:00007fffa670fdb8 EFLAGS: 00000246 ORIG_RAX: 000000000000004a
+>  [701253.615647] RAX: ffffffffffffffda RBX: 0000000000000001 RCX: 00007f14da4e66d0
+>  [701253.616047] RDX: 000056087ea9c260 RSI: 000056087ea9c260 RDI: 0000000000000003
+>  [701253.616450] RBP: 0000000000000001 R08: 0000000000000020 R09: 0000000000000010
+>  [701253.616854] R10: 000000000000009b R11: 0000000000000246 R12: 000056087ea9c260
+>  [701253.617257] R13: 000056087ea9c240 R14: 0000000000000000 R15: 000056087ea9dd10
+>  (...)
+>  [701253.619941] ---[ end trace e088d74f132b6da5 ]---
+> 
+> Updating the assertion again to allow for this particular case would result
+> in a meaningless assertion, plus there is currently no risk of logging
+> content that would result in any corruption after a log replay if the size
+> of the data encoded in an inline extent is greater than the inode's i_size
+> (which is not currently possibe either with or without compression),
+> therefore just remove the assertion.
 
->  * Fixed logic of when i_mode is set, v1 was causing an uninitialised mode
->  to be assigned to inode->i_mode resulting in fs consistency problems. Fix this
->  by introducing a variable which is set to true when the i_mode needs to be 
->  changed. I know this variable could be eliminated by simply initialising 
->  mode = inode->i_mode and always assigning it in the if (!ret) branch but I 
->  find this somewhat subtle and rather be explicit with the boolean variable. 
-
-[...]
-
-> +	if (!ret) {
-> +		if (change_mode)
-> +			inode->i_mode = mode;
-
-But what about initializing mode by inode->i_mode *and* adding a comment
-that this is either the saved state or the new one, depending on
-posix_acl_update_mode()'s outcome?
-
--- 
-Johannes Thumshirn                            SUSE Labs Filesystems
-jthumshirn@suse.de                                +49 911 74053 689
-SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
-GF: Felix Imendörffer, Mary Higgins, Sri Rasiah
-HRB 21284 (AG Nürnberg)
-Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850
+Quite some history behind the assertion, I agree that removing it is ok.
+Patch added to misc-next and queued for 5.1, thanks.

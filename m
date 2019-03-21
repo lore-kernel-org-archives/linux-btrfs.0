@@ -2,94 +2,174 @@ Return-Path: <SRS0=tkEE=RY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D7D01C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Mar 2019 09:27:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0375CC43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Mar 2019 12:42:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A8575218A2
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Mar 2019 09:27:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C3E77218A5
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Mar 2019 12:42:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728088AbfCUJ1G (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Mar 2019 05:27:06 -0400
-Received: from mx2.suse.de ([195.135.220.15]:47724 "EHLO mx1.suse.de"
+        id S1728125AbfCUMmc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Mar 2019 08:42:32 -0400
+Received: from mx2.suse.de ([195.135.220.15]:52036 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727903AbfCUJ1G (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Mar 2019 05:27:06 -0400
+        id S1727878AbfCUMmc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 21 Mar 2019 08:42:32 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 5EC54AE28
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Mar 2019 09:27:05 +0000 (UTC)
-From:   Nikolay Borisov <nborisov@suse.com>
+        by mx1.suse.de (Postfix) with ESMTP id 4FBC6AE3A
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Mar 2019 12:42:30 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: Defer setting new inode mode until after
+ do_set_acl succeeds
 To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: Defer setting new inode mode until after do_set_acl succeeds
-Date:   Thu, 21 Mar 2019 11:27:03 +0200
-Message-Id: <20190321092703.8136-1-nborisov@suse.com>
-X-Mailer: git-send-email 2.17.1
+References: <20190321092703.8136-1-nborisov@suse.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <11112d98-e20d-6e15-c72f-8cbae4e6e550@suse.com>
+Date:   Thu, 21 Mar 2019 14:42:29 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.5.1
+MIME-Version: 1.0
+In-Reply-To: <20190321092703.8136-1-nborisov@suse.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Currently a reference to inode->i_mode is passed directly to
-posix_acl_update_mode when setting an ACL which results in the inode's
-mode always being changed. In case of errors (e.g. in do_set_acl or
-even starting a transaction) the old mode needs to be re-assigned to
-->i_mode. This mode recovery is done only in case do_set_acl fails,
-which leads to buggy behavior in case btrfs_start_transaction fails.
 
-Fix it by simply setting the new mode to a temporary variable which is
-assigned to inode->i_mode's only when do_set_acl succeeds. This covers
-both failure cases explained above.
 
-Fixes: db0f220e98eb ("btrfs: start transaction in btrfs_set_acl")
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/acl.c | 10 ++++------
- 1 file changed, 4 insertions(+), 6 deletions(-)
+On 21.03.19 г. 11:27 ч., Nikolay Borisov wrote:
+> Currently a reference to inode->i_mode is passed directly to
+> posix_acl_update_mode when setting an ACL which results in the inode's
+> mode always being changed. In case of errors (e.g. in do_set_acl or
+> even starting a transaction) the old mode needs to be re-assigned to
+> ->i_mode. This mode recovery is done only in case do_set_acl fails,
+> which leads to buggy behavior in case btrfs_start_transaction fails.
+> 
+> Fix it by simply setting the new mode to a temporary variable which is
+> assigned to inode->i_mode's only when do_set_acl succeeds. This covers
+> both failure cases explained above.
+> 
+> Fixes: db0f220e98eb ("btrfs: start transaction in btrfs_set_acl")
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  fs/btrfs/acl.c | 10 ++++------
+>  1 file changed, 4 insertions(+), 6 deletions(-)
+
+
+This patch is broken and causes inconsistencies on the fs that btrfs
+check detects. Test that triggers it - generic/077. I'm trying to
+understand why, meanwhile this works:
 
 diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-index b722866e1442..a0cfd2049ea5 100644
+index b722866e1442..f56ed759e0a4 100644
 --- a/fs/btrfs/acl.c
 +++ b/fs/btrfs/acl.c
-@@ -99,7 +99,6 @@ static int do_set_acl(struct btrfs_trans_handle *trans, struct inode *inode,
- 	}
- 
- 	ret = btrfs_setxattr(trans, inode, name, value, size, 0);
--
- out:
- 	kfree(value);
- 
-@@ -112,12 +111,12 @@ static int do_set_acl(struct btrfs_trans_handle *trans, struct inode *inode,
- int btrfs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
- {
- 	int ret;
--	umode_t old_mode = inode->i_mode;
-+	umode_t mode;
- 	struct btrfs_trans_handle *trans;
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 
- 	if (type == ACL_TYPE_ACCESS && acl) {
--		ret = posix_acl_update_mode(inode, &inode->i_mode, &acl);
-+		ret = posix_acl_update_mode(inode, &mode, &acl);
- 		if (ret)
- 			return ret;
- 	}
-@@ -127,9 +126,8 @@ int btrfs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
- 		return PTR_ERR(trans);
- 
- 	ret = do_set_acl(trans, inode, acl, type);
--	if (ret) {
--		inode->i_mode = old_mode;
--	} else {
-+	if (!ret) {
-+		inode->i_mode = mode;
- 		inode_inc_iversion(inode);
- 		inode->i_ctime = current_time(inode);
- 		set_bit(BTRFS_INODE_COPY_EVERYTHING, &BTRFS_I(inode)->runtime_flags);
--- 
-2.17.1
+@@ -123,8 +123,10 @@ int btrfs_set_acl(struct inode *inode, struct
+posix_acl *acl, int type)
+        }
 
+        trans = btrfs_start_transaction(root, 2);
+-       if (IS_ERR(trans))
++       if (IS_ERR(trans)) {
++               inode->i_mode = old_mode;
+                return PTR_ERR(trans);
++       }
+
+        ret = do_set_acl(trans, inode, acl, type);
+        if (ret) {
+
+
+
+However it feels more like proliferating the bad style btrfs_set_acl is
+structured in.
+
+> 
+> diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
+> index b722866e1442..a0cfd2049ea5 100644
+> --- a/fs/btrfs/acl.c
+> +++ b/fs/btrfs/acl.c
+> @@ -99,7 +99,6 @@ static int do_set_acl(struct btrfs_trans_handle *trans, struct inode *inode,
+>  	}
+>  
+>  	ret = btrfs_setxattr(trans, inode, name, value, size, 0);
+> -
+>  out:
+>  	kfree(value);
+>  
+> @@ -112,12 +111,12 @@ static int do_set_acl(struct btrfs_trans_handle *trans, struct inode *inode,
+>  int btrfs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
+>  {
+>  	int ret;
+> -	umode_t old_mode = inode->i_mode;
+> +	umode_t mode;
+>  	struct btrfs_trans_handle *trans;
+>  	struct btrfs_root *root = BTRFS_I(inode)->root;
+>  
+>  	if (type == ACL_TYPE_ACCESS && acl) {
+> -		ret = posix_acl_update_mode(inode, &inode->i_mode, &acl);
+> +		ret = posix_acl_update_mode(inode, &mode, &acl);
+>  		if (ret)
+>  			return ret;
+>  	}
+> @@ -127,9 +126,8 @@ int btrfs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
+>  		return PTR_ERR(trans);
+>  
+>  	ret = do_set_acl(trans, inode, acl, type);
+> -	if (ret) {
+> -		inode->i_mode = old_mode;
+> -	} else {
+> +	if (!ret) {
+> +		inode->i_mode = mode;
+>  		inode_inc_iversion(inode);
+>  		inode->i_ctime = current_time(inode);
+>  		set_bit(BTRFS_INODE_COPY_EVERYTHING, &BTRFS_I(inode)->runtime_flags);
+> 

@@ -2,27 +2,26 @@ Return-Path: <SRS0=iEal=RZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7B42DC4360F
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Mar 2019 13:28:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2A1B4C43381
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Mar 2019 13:33:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 53AD22190A
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Mar 2019 13:28:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 046C72083D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Mar 2019 13:33:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728454AbfCVN2N (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Mar 2019 09:28:13 -0400
-Received: from retiisi.org.uk ([95.216.213.190]:36794 "EHLO
+        id S1728600AbfCVNdN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Mar 2019 09:33:13 -0400
+Received: from retiisi.org.uk ([95.216.213.190]:36874 "EHLO
         hillosipuli.retiisi.org.uk" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1728168AbfCVN2N (ORCPT
+        by vger.kernel.org with ESMTP id S1728162AbfCVNdN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Mar 2019 09:28:13 -0400
-X-Greylist: delayed 418 seconds by postgrey-1.27 at vger.kernel.org; Fri, 22 Mar 2019 09:28:09 EDT
+        Fri, 22 Mar 2019 09:33:13 -0400
 Received: from lanttu.localdomain (unknown [IPv6:2a01:4f9:c010:4572::e1:1001])
-        by hillosipuli.retiisi.org.uk (Postfix) with ESMTP id A5559634C7F;
-        Fri, 22 Mar 2019 15:19:03 +0200 (EET)
+        by hillosipuli.retiisi.org.uk (Postfix) with ESMTP id 3E452634C7B;
+        Fri, 22 Mar 2019 15:19:02 +0200 (EET)
 From:   Sakari Ailus <sakari.ailus@linux.intel.com>
 To:     Petr Mladek <pmladek@suse.com>, linux-kernel@vger.kernel.org
 Cc:     Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
@@ -35,105 +34,96 @@ Cc:     Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
         linux-btrfs@vger.kernel.org,
         linux-f2fs-devel@lists.sourceforge.net, linux-mm@kvack.org,
         ceph-devel@vger.kernel.org, netdev@vger.kernel.org
-Subject: [PATCH 2/2] vsprintf: Remove support for %pF and %pf in favour of %pS and %ps
-Date:   Fri, 22 Mar 2019 15:21:08 +0200
-Message-Id: <20190322132108.25501-3-sakari.ailus@linux.intel.com>
+Subject: [PATCH 0/2] Remove support for deprecated %pf and %pF in vsprintf
+Date:   Fri, 22 Mar 2019 15:21:06 +0200
+Message-Id: <20190322132108.25501-1-sakari.ailus@linux.intel.com>
 X-Mailer: git-send-email 2.11.0
-In-Reply-To: <20190322132108.25501-1-sakari.ailus@linux.intel.com>
-References: <20190322132108.25501-1-sakari.ailus@linux.intel.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-%pS and %ps are now the preferred conversion specifiers to print function
-%names. The functionality is equivalent; remove the old, deprecated %pF
-%and %pf support.
+Hi all,
 
-Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
----
+The printk family of functions supports %ps and %pS conversion specifiers
+to print function names. Yet the deprecated %pf and %pF conversion
+specifiers with equivalent functionality remain supported. A number of
+users of %pf and %pF remain.
+
+This patchsets converts the existing users of %pf and %pF to %ps and %pS,
+respectively, and removes support for the deprecated %pf and %pF.
+
+The patches apply cleanly both on 5.1-rc1 as well as on Linux-next. No new
+%pf or %pF users have been added in the meantime so the patch is
+sufficient as itself on linux-next, too.
+
+Sakari Ailus (2):
+  treewide: Switch printk users from %pf and %pF to %ps and %pS,
+    respectively
+  vsprintf: Remove support for %pF and %pf in favour of %pS and %ps
+
  Documentation/core-api/printk-formats.rst | 10 ----------
+ arch/alpha/kernel/pci_iommu.c             | 20 ++++++++++----------
+ arch/arm/mach-imx/pm-imx6.c               |  2 +-
+ arch/arm/mm/alignment.c                   |  2 +-
+ arch/arm/nwfpe/fpmodule.c                 |  2 +-
+ arch/microblaze/mm/pgtable.c              |  2 +-
+ arch/sparc/kernel/ds.c                    |  2 +-
+ arch/um/kernel/sysrq.c                    |  2 +-
+ arch/x86/include/asm/trace/exceptions.h   |  2 +-
+ arch/x86/kernel/irq_64.c                  |  2 +-
+ arch/x86/mm/extable.c                     |  4 ++--
+ arch/x86/xen/multicalls.c                 |  2 +-
+ drivers/acpi/device_pm.c                  |  2 +-
+ drivers/base/power/main.c                 |  6 +++---
+ drivers/base/syscore.c                    | 12 ++++++------
+ drivers/block/drbd/drbd_receiver.c        |  2 +-
+ drivers/block/floppy.c                    | 10 +++++-----
+ drivers/cpufreq/cpufreq.c                 |  2 +-
+ drivers/mmc/core/quirks.h                 |  2 +-
+ drivers/nvdimm/bus.c                      |  2 +-
+ drivers/nvdimm/dimm_devs.c                |  2 +-
+ drivers/pci/pci-driver.c                  | 14 +++++++-------
+ drivers/pci/quirks.c                      |  4 ++--
+ drivers/pnp/quirks.c                      |  2 +-
+ drivers/scsi/esp_scsi.c                   |  2 +-
+ fs/btrfs/tests/free-space-tree-tests.c    |  4 ++--
+ fs/f2fs/f2fs.h                            |  2 +-
+ fs/pstore/inode.c                         |  2 +-
+ include/trace/events/btrfs.h              |  2 +-
+ include/trace/events/cpuhp.h              |  4 ++--
+ include/trace/events/preemptirq.h         |  2 +-
+ include/trace/events/rcu.h                |  4 ++--
+ include/trace/events/sunrpc.h             |  2 +-
+ include/trace/events/timer.h              |  8 ++++----
+ include/trace/events/vmscan.h             |  4 ++--
+ include/trace/events/workqueue.h          |  4 ++--
+ include/trace/events/xen.h                |  2 +-
+ init/main.c                               |  6 +++---
+ kernel/async.c                            |  4 ++--
+ kernel/events/uprobes.c                   |  2 +-
+ kernel/fail_function.c                    |  2 +-
+ kernel/irq/debugfs.c                      |  2 +-
+ kernel/irq/handle.c                       |  2 +-
+ kernel/irq/manage.c                       |  2 +-
+ kernel/irq/spurious.c                     |  4 ++--
+ kernel/rcu/tree.c                         |  2 +-
+ kernel/stop_machine.c                     |  2 +-
+ kernel/time/sched_clock.c                 |  2 +-
+ kernel/time/timer.c                       |  2 +-
+ kernel/workqueue.c                        | 12 ++++++------
+ lib/error-inject.c                        |  2 +-
+ lib/percpu-refcount.c                     |  4 ++--
  lib/vsprintf.c                            |  8 ++------
+ mm/memblock.c                             | 12 ++++++------
+ mm/memory.c                               |  2 +-
+ mm/vmscan.c                               |  2 +-
+ net/ceph/osd_client.c                     |  2 +-
+ net/core/net-procfs.c                     |  2 +-
+ net/core/netpoll.c                        |  4 ++--
  scripts/checkpatch.pl                     |  5 -----
- 3 files changed, 2 insertions(+), 21 deletions(-)
+ 60 files changed, 111 insertions(+), 130 deletions(-)
 
-diff --git a/Documentation/core-api/printk-formats.rst b/Documentation/core-api/printk-formats.rst
-index c37ec7cd9c06..c90826a1ff17 100644
---- a/Documentation/core-api/printk-formats.rst
-+++ b/Documentation/core-api/printk-formats.rst
-@@ -78,8 +78,6 @@ Symbols/Function Pointers
- 
- 	%pS	versatile_init+0x0/0x110
- 	%ps	versatile_init
--	%pF	versatile_init+0x0/0x110
--	%pf	versatile_init
- 	%pSR	versatile_init+0x9/0x110
- 		(with __builtin_extract_return_addr() translation)
- 	%pB	prev_fn_of_versatile_init+0x88/0x88
-@@ -89,14 +87,6 @@ The ``S`` and ``s`` specifiers are used for printing a pointer in symbolic
- format. They result in the symbol name with (S) or without (s)
- offsets. If KALLSYMS are disabled then the symbol address is printed instead.
- 
--Note, that the ``F`` and ``f`` specifiers are identical to ``S`` (``s``)
--and thus deprecated. We have ``F`` and ``f`` because on ia64, ppc64 and
--parisc64 function pointers are indirect and, in fact, are function
--descriptors, which require additional dereferencing before we can lookup
--the symbol. As of now, ``S`` and ``s`` perform dereferencing on those
--platforms (when needed), so ``F`` and ``f`` exist for compatibility
--reasons only.
--
- The ``B`` specifier results in the symbol name with offsets and should be
- used when printing stack backtraces. The specifier takes into
- consideration the effect of compiler optimisations which may occur
-diff --git a/lib/vsprintf.c b/lib/vsprintf.c
-index 791b6fa36905..5f60b8d41277 100644
---- a/lib/vsprintf.c
-+++ b/lib/vsprintf.c
-@@ -797,7 +797,7 @@ char *symbol_string(char *buf, char *end, void *ptr,
- #ifdef CONFIG_KALLSYMS
- 	if (*fmt == 'B')
- 		sprint_backtrace(sym, value);
--	else if (*fmt != 'f' && *fmt != 's')
-+	else if (*fmt != 's')
- 		sprint_symbol(sym, value);
- 	else
- 		sprint_symbol_no_offset(sym, value);
-@@ -1853,9 +1853,7 @@ char *device_node_string(char *buf, char *end, struct device_node *dn,
-  *
-  * - 'S' For symbolic direct pointers (or function descriptors) with offset
-  * - 's' For symbolic direct pointers (or function descriptors) without offset
-- * - 'F' Same as 'S'
-- * - 'f' Same as 's'
-- * - '[FfSs]R' as above with __builtin_extract_return_addr() translation
-+ * - '[Ss]R' as above with __builtin_extract_return_addr() translation
-  * - 'B' For backtraced symbolic direct pointers with offset
-  * - 'R' For decoded struct resource, e.g., [mem 0x0-0x1f 64bit pref]
-  * - 'r' For raw struct resource, e.g., [mem 0x0-0x1f flags 0x201]
-@@ -1970,8 +1968,6 @@ char *pointer(const char *fmt, char *buf, char *end, void *ptr,
- 	}
- 
- 	switch (*fmt) {
--	case 'F':
--	case 'f':
- 	case 'S':
- 	case 's':
- 		ptr = dereference_symbol_descriptor(ptr);
-diff --git a/scripts/checkpatch.pl b/scripts/checkpatch.pl
-index 5b756278df13..b4e456b48fd7 100755
---- a/scripts/checkpatch.pl
-+++ b/scripts/checkpatch.pl
-@@ -5993,11 +5993,6 @@ sub process {
- 					my $stat_real = get_stat_real($linenr, $lc);
- 					my $ext_type = "Invalid";
- 					my $use = "";
--					if ($bad_specifier =~ /p[Ff]/) {
--						$ext_type = "Deprecated";
--						$use = " - use %pS instead";
--						$use =~ s/pS/ps/ if ($bad_specifier =~ /pf/);
--					}
- 
- 					WARN("VSPRINTF_POINTER_EXTENSION",
- 					     "$ext_type vsprintf pointer extension '$bad_specifier'$use\n" . "$here\n$stat_real\n");
 -- 
 2.11.0
 

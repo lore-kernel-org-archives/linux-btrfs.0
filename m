@@ -2,128 +2,103 @@ Return-Path: <SRS0=iEal=RZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2A1B4C43381
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Mar 2019 13:33:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5CC37C10F03
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Mar 2019 13:37:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 046C72083D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Mar 2019 13:33:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 34179218E2
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Mar 2019 13:37:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728600AbfCVNdN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Mar 2019 09:33:13 -0400
-Received: from retiisi.org.uk ([95.216.213.190]:36874 "EHLO
-        hillosipuli.retiisi.org.uk" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1728162AbfCVNdN (ORCPT
+        id S1728524AbfCVNhd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Mar 2019 09:37:33 -0400
+Received: from mail-ua1-f65.google.com ([209.85.222.65]:37544 "EHLO
+        mail-ua1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728140AbfCVNhc (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Mar 2019 09:33:13 -0400
-Received: from lanttu.localdomain (unknown [IPv6:2a01:4f9:c010:4572::e1:1001])
-        by hillosipuli.retiisi.org.uk (Postfix) with ESMTP id 3E452634C7B;
-        Fri, 22 Mar 2019 15:19:02 +0200 (EET)
-From:   Sakari Ailus <sakari.ailus@linux.intel.com>
-To:     Petr Mladek <pmladek@suse.com>, linux-kernel@vger.kernel.org
-Cc:     Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
-        linux-arm-kernel@lists.infradead.org, sparclinux@vger.kernel.org,
-        linux-um@lists.infradead.org, xen-devel@lists.xenproject.org,
-        linux-acpi@vger.kernel.org, linux-pm@vger.kernel.org,
-        drbd-dev@lists.linbit.com, linux-block@vger.kernel.org,
-        linux-mmc@vger.kernel.org, linux-nvdimm@lists.01.org,
-        linux-pci@vger.kernel.org, linux-scsi@vger.kernel.org,
-        linux-btrfs@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net, linux-mm@kvack.org,
-        ceph-devel@vger.kernel.org, netdev@vger.kernel.org
-Subject: [PATCH 0/2] Remove support for deprecated %pf and %pF in vsprintf
-Date:   Fri, 22 Mar 2019 15:21:06 +0200
-Message-Id: <20190322132108.25501-1-sakari.ailus@linux.intel.com>
-X-Mailer: git-send-email 2.11.0
+        Fri, 22 Mar 2019 09:37:32 -0400
+Received: by mail-ua1-f65.google.com with SMTP id x1so744187uaj.4;
+        Fri, 22 Mar 2019 06:37:31 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=XzQ9NHyI634XKb+UUobZCMcWq8m8E9RK1f4ELxnBy2E=;
+        b=V1v/AnSzmYyzfgtTGbdWoSkqLVLaYuJoNGCkUfnE6xPn6rGBm6rwYo4QDADjnaY0wQ
+         BXqC7l+6BAE4eOrjar1GbFHv99ONn1xR7HIIMPq/QETAWXHN3w8MpCzQ+YXBFBrn/0qC
+         YqwIleqEs/o+6Pq+43Ir43txZgWSA+hkXMzoD/PZe/NAfih+blQRtEU/Q4gZTS/yvM+6
+         cl+4x6aLPjvKnVrygfhOmnvIVSRbheBHCCA6UHhVFLTYLe81saehixXRov1vaX1iYhz/
+         FH2J7suVfmwqRnHb1xJEoWOzK0zMFKnDurbsmn9GQTIx2BPiTzi3wtsgrHoSTlg5DccL
+         tY9A==
+X-Gm-Message-State: APjAAAWiIQu/M1n/5ZHrazupQk8BYqApPh9h1Y+Sv1a3dKS81hknWLOt
+        jLiXOv/5Gd2C05GMTW2sxVsR0stTpF7O2IqI+OrgIw==
+X-Google-Smtp-Source: APXvYqy4ogpwjpSonoiPfh2lc9ghBw42usNLeIrbxmtszFsz2NZOsJfJk0zpTsb127+lhrr709ywFNgm7FrLQ8o0S0U=
+X-Received: by 2002:ab0:6419:: with SMTP id x25mr938049uao.86.1553261850477;
+ Fri, 22 Mar 2019 06:37:30 -0700 (PDT)
+MIME-Version: 1.0
+References: <20190322132108.25501-1-sakari.ailus@linux.intel.com>
+In-Reply-To: <20190322132108.25501-1-sakari.ailus@linux.intel.com>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Fri, 22 Mar 2019 14:37:18 +0100
+Message-ID: <CAMuHMdVmqqjVx7As9AAywYxYXG=grijF5rF77OBn6TUjM9+xKw@mail.gmail.com>
+Subject: Re: [PATCH 0/2] Remove support for deprecated %pf and %pF in vsprintf
+To:     Sakari Ailus <sakari.ailus@linux.intel.com>
+Cc:     Petr Mladek <pmladek@suse.com>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        scsi <linux-scsi@vger.kernel.org>,
+        Linux PM list <linux-pm@vger.kernel.org>,
+        Linux MMC List <linux-mmc@vger.kernel.org>,
+        "linux-nvdimm@lists.01.org" <linux-nvdimm@lists.01.org>,
+        linux-um@lists.infradead.org,
+        linux-f2fs-devel@lists.sourceforge.net,
+        linux-block@vger.kernel.org,
+        ACPI Devel Maling List <linux-acpi@vger.kernel.org>,
+        netdev <netdev@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        linux-pci <linux-pci@vger.kernel.org>,
+        sparclinux <sparclinux@vger.kernel.org>,
+        xen-devel@lists.xenproject.org,
+        ceph-devel <ceph-devel@vger.kernel.org>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Linux MM <linux-mm@kvack.org>,
+        Linux ARM <linux-arm-kernel@lists.infradead.org>,
+        Lars Ellenberg <drbd-dev@lists.linbit.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi all,
+Hi Sakari,
 
-The printk family of functions supports %ps and %pS conversion specifiers
-to print function names. Yet the deprecated %pf and %pF conversion
-specifiers with equivalent functionality remain supported. A number of
-users of %pf and %pF remain.
+On Fri, Mar 22, 2019 at 2:25 PM Sakari Ailus
+<sakari.ailus@linux.intel.com> wrote:
+> The printk family of functions supports %ps and %pS conversion specifiers
+> to print function names. Yet the deprecated %pf and %pF conversion
+> specifiers with equivalent functionality remain supported. A number of
+> users of %pf and %pF remain.
+>
+> This patchsets converts the existing users of %pf and %pF to %ps and %pS,
+> respectively, and removes support for the deprecated %pf and %pF.
+>
+> The patches apply cleanly both on 5.1-rc1 as well as on Linux-next. No new
+> %pf or %pF users have been added in the meantime so the patch is
+> sufficient as itself on linux-next, too.
 
-This patchsets converts the existing users of %pf and %pF to %ps and %pS,
-respectively, and removes support for the deprecated %pf and %pF.
+Do you know in which commit they became deprecated, so the backporters
+know how far this can be backported safely?
 
-The patches apply cleanly both on 5.1-rc1 as well as on Linux-next. No new
-%pf or %pF users have been added in the meantime so the patch is
-sufficient as itself on linux-next, too.
+Thanks!
 
-Sakari Ailus (2):
-  treewide: Switch printk users from %pf and %pF to %ps and %pS,
-    respectively
-  vsprintf: Remove support for %pF and %pf in favour of %pS and %ps
+Gr{oetje,eeting}s,
 
- Documentation/core-api/printk-formats.rst | 10 ----------
- arch/alpha/kernel/pci_iommu.c             | 20 ++++++++++----------
- arch/arm/mach-imx/pm-imx6.c               |  2 +-
- arch/arm/mm/alignment.c                   |  2 +-
- arch/arm/nwfpe/fpmodule.c                 |  2 +-
- arch/microblaze/mm/pgtable.c              |  2 +-
- arch/sparc/kernel/ds.c                    |  2 +-
- arch/um/kernel/sysrq.c                    |  2 +-
- arch/x86/include/asm/trace/exceptions.h   |  2 +-
- arch/x86/kernel/irq_64.c                  |  2 +-
- arch/x86/mm/extable.c                     |  4 ++--
- arch/x86/xen/multicalls.c                 |  2 +-
- drivers/acpi/device_pm.c                  |  2 +-
- drivers/base/power/main.c                 |  6 +++---
- drivers/base/syscore.c                    | 12 ++++++------
- drivers/block/drbd/drbd_receiver.c        |  2 +-
- drivers/block/floppy.c                    | 10 +++++-----
- drivers/cpufreq/cpufreq.c                 |  2 +-
- drivers/mmc/core/quirks.h                 |  2 +-
- drivers/nvdimm/bus.c                      |  2 +-
- drivers/nvdimm/dimm_devs.c                |  2 +-
- drivers/pci/pci-driver.c                  | 14 +++++++-------
- drivers/pci/quirks.c                      |  4 ++--
- drivers/pnp/quirks.c                      |  2 +-
- drivers/scsi/esp_scsi.c                   |  2 +-
- fs/btrfs/tests/free-space-tree-tests.c    |  4 ++--
- fs/f2fs/f2fs.h                            |  2 +-
- fs/pstore/inode.c                         |  2 +-
- include/trace/events/btrfs.h              |  2 +-
- include/trace/events/cpuhp.h              |  4 ++--
- include/trace/events/preemptirq.h         |  2 +-
- include/trace/events/rcu.h                |  4 ++--
- include/trace/events/sunrpc.h             |  2 +-
- include/trace/events/timer.h              |  8 ++++----
- include/trace/events/vmscan.h             |  4 ++--
- include/trace/events/workqueue.h          |  4 ++--
- include/trace/events/xen.h                |  2 +-
- init/main.c                               |  6 +++---
- kernel/async.c                            |  4 ++--
- kernel/events/uprobes.c                   |  2 +-
- kernel/fail_function.c                    |  2 +-
- kernel/irq/debugfs.c                      |  2 +-
- kernel/irq/handle.c                       |  2 +-
- kernel/irq/manage.c                       |  2 +-
- kernel/irq/spurious.c                     |  4 ++--
- kernel/rcu/tree.c                         |  2 +-
- kernel/stop_machine.c                     |  2 +-
- kernel/time/sched_clock.c                 |  2 +-
- kernel/time/timer.c                       |  2 +-
- kernel/workqueue.c                        | 12 ++++++------
- lib/error-inject.c                        |  2 +-
- lib/percpu-refcount.c                     |  4 ++--
- lib/vsprintf.c                            |  8 ++------
- mm/memblock.c                             | 12 ++++++------
- mm/memory.c                               |  2 +-
- mm/vmscan.c                               |  2 +-
- net/ceph/osd_client.c                     |  2 +-
- net/core/net-procfs.c                     |  2 +-
- net/core/netpoll.c                        |  4 ++--
- scripts/checkpatch.pl                     |  5 -----
- 60 files changed, 111 insertions(+), 130 deletions(-)
+                        Geert
 
 -- 
-2.11.0
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds

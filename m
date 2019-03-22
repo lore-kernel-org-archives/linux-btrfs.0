@@ -2,90 +2,135 @@ Return-Path: <SRS0=iEal=RZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 92968C43381
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Mar 2019 04:17:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 333B2C43381
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Mar 2019 06:08:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 637E521900
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Mar 2019 04:17:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DBBEF213F2
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Mar 2019 06:08:32 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="Ks5ZIOMo"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726165AbfCVERe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Mar 2019 00:17:34 -0400
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:38364 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1725781AbfCVERd (ORCPT
+        id S1727678AbfCVGIc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Mar 2019 02:08:32 -0400
+Received: from userp2130.oracle.com ([156.151.31.86]:46154 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727632AbfCVGIb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Mar 2019 00:17:33 -0400
-Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
-        id 149F4273342; Fri, 22 Mar 2019 00:17:32 -0400 (EDT)
-Date:   Fri, 22 Mar 2019 00:17:32 -0400
-From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To:     linux-btrfs@vger.kernel.org
-Subject: Kernels 4.15..5.0.3:  "WARNING: CPU: 2 PID: 4150 at
- fs/fs-writeback.c:2363 __writeback_inodes_sb_nr+0xa9/0xc0"
-Message-ID: <20190322041731.GF16651@hungrycats.org>
+        Fri, 22 Mar 2019 02:08:31 -0400
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x2M5sNVY104692;
+        Fri, 22 Mar 2019 06:08:25 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to : cc :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2018-07-02;
+ bh=cyxMk3EVj9e1VvTvSVK1hbV4vfwVXDEchdqL+/Ah0U4=;
+ b=Ks5ZIOMoBQGB/i3oMRqBIB7N/2i1QeGrDCg8htGuPx5j/kBZkbBJV8RtXaSsZhrsdIFr
+ E3SEYku1lxuYP2TSXsGH/2FxN/Bjq3WsKtYJCPVCo+BJ6Dk5YnqryaHrZvfDAslS6Slj
+ BZu7q96da5GvmAMZr7AEjOHV+Ml80VAoO7GmnAkperVzss4R20VQ7JixBO1nu6ULhRpH
+ z4IjAsDz3n+/VN87qnf8prP6MbVnCcvkHmTlWVpQ1i4myrchGH84pqFC23rmx5GferBH
+ k/SAflWZaivHDFYaIH602YsvxlVHlDeHWnIB1pMHVO0C5HcBkY3fHFU6T0O2yofZloWT 5g== 
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by userp2130.oracle.com with ESMTP id 2r8rjv45tf-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Fri, 22 Mar 2019 06:08:25 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x2M68J2G022018
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Fri, 22 Mar 2019 06:08:19 GMT
+Received: from abhmp0022.oracle.com (abhmp0022.oracle.com [141.146.116.28])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x2M68I9Y010768;
+        Fri, 22 Mar 2019 06:08:18 GMT
+Received: from [10.186.49.135] (/10.186.49.135)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Thu, 21 Mar 2019 23:08:17 -0700
+Subject: Re: [PATCH RFC 0/5] readmirror feature
+To:     Steven Davies <btrfs-list@steev.me.uk>
+Cc:     linux-btrfs@vger.kernel.org
+References: <1552989624-29577-1-git-send-email-anand.jain@oracle.com>
+ <d7b84e2bcb9920d011e585391b70020e@steev.me.uk>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <2cdc8fc6-797a-d420-3aaa-a15e06c677d5@oracle.com>
+Date:   Fri, 22 Mar 2019 14:08:02 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.5.0
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="QNDPHrPUIc00TOLW"
-Content-Disposition: inline
-User-Agent: Mutt/1.10.1 (2018-07-13)
+In-Reply-To: <d7b84e2bcb9920d011e585391b70020e@steev.me.uk>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9202 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1011
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1903220046
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
---QNDPHrPUIc00TOLW
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
 
-When filesystems are mounted flushoncommit, I get this warning roughly
-every 30 seconds:
+On 3/22/19 12:26 AM, Steven Davies wrote:
+> On 2019-03-19 10:00, Anand Jain wrote:
+>> RFC patch as of now, appreciate your comments. This patch set has
+>> been tested.
+>>
+>> Function call chain  __btrfs_map_block()->find_live_mirror() uses
+>> thread pid to determine the %mirror_num when the mirror_num=0.
+>>
+>> The pid based mirror_num extrapolation has following disadvantages
+>>  . A large single-process read IO will read only from one disk.
+>>  . In a worst scenario all processes read accessing the FS could have
+>>        either odd or even pid, the read IO gets skewed.
+>>  . There is no deterministic way of knowing/controlling which copy will
+>>        be used for reading.
+>>  . May see performance variations for a given set of multi process
+>>        workload ran at different times.
+>>
+>> So we need other types of readmirror policies.
+>>
+>> This patch introduces a framework so that we can add more policies, and
+>> converts the existing %pid into as a configurable parameter using the
+>> property. And also provides a transient readmirror mount option, so that
+>> this property can be applied for the read io during mount and for
+>> readonly FS.
+> 
+> Is it possible to set this property at mkfs time?
 
-	[ 4575.142805] WARNING: CPU: 3 PID: 4150 at fs/fs-writeback.c:2363 __writeback_inodes_sb_nr+0xa9/0xc0
-	[ 4575.145567] Modules linked in: crct10dif_pclmul crc32_pclmul dm_cache_smq crc32c_intel dm_cache snd_pcm ghash_clmulni_intel aesni_intel sr_mod dm_persistent_data ppdev joydev dm_bio_prison aes_x86_64 crypto_simd snd_timer dm_bufio cryptd cdrom snd glue_helper dm_mod parport_pc soundcore sg floppy parport pcspkr psmouse bochs_drm rtc_cmos ide_pci_generic piix input_leds i2c_piix4 ide_core serio_raw evbug qemu_fw_cfg evdev ip_tables x_tables ipv6 crc_ccitt autofs4
-	[ 4575.160021] CPU: 3 PID: 4150 Comm: btrfs-transacti Tainted: G        W         5.0.3-zb64+ #1
-	[ 4575.162484] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.10.2-1 04/01/2014
-	[ 4575.164505] RIP: 0010:__writeback_inodes_sb_nr+0xa9/0xc0
-	[ 4575.165809] Code: 0f b6 d2 e8 b9 f8 ff ff 48 89 ee 48 89 df e8 0e f8 ff ff 48 8b 44 24 48 65 48 33 04 25 28 00 00 00 75 0b 48 83 c4 50 5b 5d c3 <0f> 0b eb cb e8 4e e9 d6 ff 0f 1f 40 00 66 2e 0f 1f 84 00 00 00 00
-	[ 4575.171927] RSP: 0018:ffffa9cac0eabde8 EFLAGS: 00010246
-	[ 4575.173045] RAX: 0000000000000000 RBX: ffff9353e23af000 RCX: 0000000000000000
-	[ 4575.175639] RDX: 0000000000000002 RSI: 0000000000030c67 RDI: ffffa9cac0eabe30
-	[ 4575.177619] RBP: ffffa9cac0eabdec R08: ffffa9cac0eabdf0 R09: ffff9353f12da000
-	[ 4575.179736] R10: 0000000000000000 R11: 0000000000000001 R12: ffff9353e1980000
-	[ 4575.181661] R13: ffff9353e1981430 R14: ffff9353f27e4260 R15: ffff9353e1981518
-	[ 4575.183871] FS:  0000000000000000(0000) GS:ffff9353f6800000(0000) knlGS:0000000000000000
-	[ 4575.185940] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-	[ 4575.188072] CR2: 00007fb81841fa20 CR3: 00000002218c0006 CR4: 00000000001606e0
-	[ 4575.190094] Call Trace:
-	[ 4575.190828]  btrfs_commit_transaction+0x7a6/0x9e0
-	[ 4575.192115]  ? start_transaction+0x91/0x4d0
-	[ 4575.193197]  transaction_kthread+0x146/0x180
-	[ 4575.194415]  kthread+0x106/0x140
-	[ 4575.195403]  ? btrfs_cleanup_transaction+0x620/0x620
-	[ 4575.196903]  ? kthread_park+0x90/0x90
-	[ 4575.198412]  ret_from_fork+0x3a/0x50
-	[ 4575.199374] irq event stamp: 54922780
-	[ 4575.200218] hardirqs last  enabled at (54922779): [<ffffffffa3d5f2e2>] _raw_spin_unlock_irqrestore+0x32/0x60
-	[ 4575.202753] hardirqs last disabled at (54922780): [<ffffffffa300379f>] trace_hardirqs_off_thunk+0x1a/0x1c
-	[ 4575.205921] softirqs last  enabled at (54922378): [<ffffffffa40003a4>] __do_softirq+0x3a4/0x45f
-	[ 4575.208350] softirqs last disabled at (54922361): [<ffffffffa30a3d44>] irq_exit+0xe4/0xf0
-	[ 4575.210616] ---[ end trace 5309dcf3a1920eca ]---
+  Possible.
 
-For my own kernel builds I just comment out the line in fs-writeback.c,
-but that's not a real solution.
+>>  For example:
+>>    btrfs property set <mnt> readmirror pid
+>>    btrfs property set <mnt> readmirror ""
+>>    btrfs property set <mnt> readmirror devid<n>
+>>
+>>    mount -o readmirror=pid <mnt>
+>>    mount -o readmirror=devid<n> <mnt>
+> 
+> This is an edge case but should we be allowed to set more than one 
+> device as a read mirror in a 3+ device array? In theory there could be 
+> two fast disks and one slow disk where all stripes are guaranteed to be 
+> on at least one fast disk.
 
---QNDPHrPUIc00TOLW
-Content-Type: application/pgp-signature; name="signature.asc"
+  Right. We need to evolve the device grouping part to get this.
 
------BEGIN PGP SIGNATURE-----
+> I'll test these patches out when I have some spare time over the next 
+> few weeks. Do you have a tree I can pull / what are the patches based on?
 
-iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCXJRh1wAKCRCB+YsaVrMb
-nKEjAKDbCfjr+ksZ29H5ItkCi5x5x8ITxgCfcEAHvUcuzKvgCusHTrr0LzxvGaU=
-=wyQh
------END PGP SIGNATURE-----
+   Thanks for the tests. Sure will upload and send the link.
 
---QNDPHrPUIc00TOLW--
+> Way beyond this patch series, considering a 3+ device raid1 array with 
+> mixed fast and slow disks perhaps there could also be a write preference 
+> for disks to fill up the fast disks first.
+
+   Right.
+
+Thanks
+Anand
+
+> Steven Davies

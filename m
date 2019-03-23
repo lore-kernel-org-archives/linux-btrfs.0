@@ -5,248 +5,122 @@ X-Spam-Level:
 X-Spam-Status: No, score=-8.3 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 40341C43381
-	for <linux-btrfs@archiver.kernel.org>; Sat, 23 Mar 2019 09:05:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 181B7C43381
+	for <linux-btrfs@archiver.kernel.org>; Sat, 23 Mar 2019 09:12:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id F1B52218E2
-	for <linux-btrfs@archiver.kernel.org>; Sat, 23 Mar 2019 09:05:28 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DB705218D4
+	for <linux-btrfs@archiver.kernel.org>; Sat, 23 Mar 2019 09:12:36 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="LY0MBpXR"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="L/5scTTH"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726061AbfCWJF2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 23 Mar 2019 05:05:28 -0400
-Received: from mail-pg1-f196.google.com ([209.85.215.196]:42602 "EHLO
-        mail-pg1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726038AbfCWJF2 (ORCPT
+        id S1726085AbfCWJMg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 23 Mar 2019 05:12:36 -0400
+Received: from mail-pf1-f196.google.com ([209.85.210.196]:37733 "EHLO
+        mail-pf1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726038AbfCWJMf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 23 Mar 2019 05:05:28 -0400
-Received: by mail-pg1-f196.google.com with SMTP id p6so3105130pgh.9;
-        Sat, 23 Mar 2019 02:05:27 -0700 (PDT)
+        Sat, 23 Mar 2019 05:12:35 -0400
+Received: by mail-pf1-f196.google.com with SMTP id 8so3116657pfr.4;
+        Sat, 23 Mar 2019 02:12:35 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=date:from:to:cc:subject:message-id:references:mime-version
          :content-disposition:in-reply-to:user-agent;
-        bh=3JJTaNq3AodIPIvBbk8fl56i9Iao5kYYg0+RshsqX3c=;
-        b=LY0MBpXRRDlTBiG8ME2xOhYtgN8gU2QxbwjKsZju7CFMxMbYS0iBGSRpdOb+OvnP+A
-         6o4JyFow6sVFVUx3RRL8cz3fdX9Es3ezm+onpPSrPc3iyq/B/lKLQcWMRTcY6fb76vzM
-         4jNt2wFUlHCrhhUJfFH5ZAfw8gydJW1nw2IS5rbFQRQy5jdq0/lvqfT3NUHgOnYviaUq
-         XpNdGwrDFiwhqkb/10sj8ydnBUvc9hagofi5YhabQqNWA/X1lAQGGoUma5EtbhQykBgF
-         3UHjLVTR07xA7r3bwRf/jmJbVe1l7y2jGD0WKM9Ve2grZfr44yj0S+WA6vuEKGoBJskV
-         NKEg==
+        bh=vUzKH7sN5kgpY2+5dtMlgK45TAYAXRpt9c7IFBZPhjI=;
+        b=L/5scTTHFF72+pOU0/+c61AKLTEqR++/6jwv80FGomveKZ/YKfrbBgSqXTFFbpJKBo
+         vQNphi7QBnDVMH3cSXBq72mQOCkrBDS5ArJ2PWTBtVpunA/w6Or2Rp6Ly9/LEjj4enBT
+         m1372GULLjoWK6fpBcdU5+gcQkta5NLvsJPfMURBkpWWAVmGaQC6QrQeIUGYbIST91kW
+         yTOzrtKbbqj5m4vDuvCXIXO+X2eym9HJI8AJzGA1hDweyVpXTth6Jlh1vj0OnwhRd27D
+         RDisg5pnTejVGzXl9w9kgAvTE+TSyddWxRPSiMA5A/Pxlkp6pvxKZHav1UTyic2vnbo5
+         clbQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:date:from:to:cc:subject:message-id:references
          :mime-version:content-disposition:in-reply-to:user-agent;
-        bh=3JJTaNq3AodIPIvBbk8fl56i9Iao5kYYg0+RshsqX3c=;
-        b=eIeDH+CZoyAcYeNa5k6yKtft6MR9rAexIfXaLU7nYP9eYsgOrP9mXqrmB08logNy9X
-         /ZGfcZPoIrVFfMLHWtMYcpg3a/CVLKgHCF7mlp0bQB0eg9X+uuECBKJcqUSajqTqVuL4
-         AP+jIlDCrFVEWwwKDQBjoGG+3TN+7Cb9YdPcxeJLrlkH6Pa0ts8GAtsjbap5zUCUqKJe
-         r83arMQpHiC7aGkBcbZ0fX9gwWMeQskFKE+IZZXghiIdtYVZBYubgrWxRXEIjZNZSavd
-         Q4JHcmF4WXf5PaLK/QOnLK5YQTqIJ7G9p36kEDQKxjTD2IgqeNG2oZP+cYlFlvEwAZ2Y
-         f4Kw==
-X-Gm-Message-State: APjAAAUhISeJr7EYdimxKtQom8SxHwPG7S3absxGmFMC6tOnqJ2EOoBC
-        gqaaCmkuWAkHiWiGk4teSIrrDO8GFVU=
-X-Google-Smtp-Source: APXvYqzhbHHhXZa8rid57KqF5Vp0s9w2dYpzpWLGVtH44zmGZOqhsq8ZYZWHHO3S8mFvWcRvUbO36Q==
-X-Received: by 2002:aa7:885a:: with SMTP id k26mr13553708pfo.70.1553331927022;
-        Sat, 23 Mar 2019 02:05:27 -0700 (PDT)
+        bh=vUzKH7sN5kgpY2+5dtMlgK45TAYAXRpt9c7IFBZPhjI=;
+        b=iN7Zpf0o7ehhZ1Zu9ZNKV6V3aVj3AOG7fn5cjLEIOLTJFngQdIw2GASNIPhmfOj5oZ
+         1lTuDcdn8dFK/a1y5JIoVSL/HHBmzV+X+HHY3bdQzLfYaqfyoHof4r/hXvbSgCOvRC2N
+         qr1/XWm/9lzF/SMFnx6nltPkj/kUMr5Weo9vlyMFgGY0LjDgW0SfbnfZ0wO7dDe0c89F
+         GY3LXpfXs3+tBvZSbnzDnmszgi+2wRiSwTss0Thk+mz2CdBsNjqR/9FSKER91oP+c/Ox
+         LD5/WSOtBjSqzfK53ubwiEyCLw7BCc/Qns2n20Nzc6WpMw7nMAEMe0u/lmCmiTOne49Y
+         5NRg==
+X-Gm-Message-State: APjAAAUE+HEg4T4IzXGB26hgrVjEiJEUhYmgj4EDJs4ns0/bkEtGQsyr
+        GJBK+2wk2BRxm/QC74l2dnbFAYng0wo=
+X-Google-Smtp-Source: APXvYqwlYBtxwPXPpLr9QzRNcyfUvO36/eenLFMfFsCUpiQEpB+JR2bUsotZhsOHH/bPTsJHRnESOQ==
+X-Received: by 2002:a63:195f:: with SMTP id 31mr2451566pgz.116.1553332355083;
+        Sat, 23 Mar 2019 02:12:35 -0700 (PDT)
 Received: from localhost ([128.199.137.77])
-        by smtp.gmail.com with ESMTPSA id u13sm19326630pfa.169.2019.03.23.02.05.24
+        by smtp.gmail.com with ESMTPSA id h184sm23916196pfc.78.2019.03.23.02.12.33
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Sat, 23 Mar 2019 02:05:26 -0700 (PDT)
-Date:   Sat, 23 Mar 2019 17:05:19 +0800
+        Sat, 23 Mar 2019 02:12:34 -0700 (PDT)
+Date:   Sat, 23 Mar 2019 17:12:27 +0800
 From:   Eryu Guan <guaneryu@gmail.com>
-To:     Anand Jain <anand.jain@oracle.com>
+To:     Nikolay Borisov <nborisov@suse.com>
 Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] fstests: btrfs try use forget to unregister device
-Message-ID: <20190323090519.GT2824@desktop>
-References: <1552988980-25710-1-git-send-email-anand.jain@oracle.com>
+Subject: Re: [PATCH v2] btrfs: Extend btrfs/003 device removal test
+Message-ID: <20190323091227.GU2824@desktop>
+References: <20190319110404.9707-1-nborisov@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <1552988980-25710-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <20190319110404.9707-1-nborisov@suse.com>
 User-Agent: Mutt/1.11.3 (2019-02-01)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Mar 19, 2019 at 05:49:40PM +0800, Anand Jain wrote:
-> btrfs module reload was introduced to unregister devices in the btrfs
-> kernel module.
+On Tue, Mar 19, 2019 at 01:04:04PM +0200, Nikolay Borisov wrote:
+> When a device is deleted/removed from a btrfs filesystem the kernel
+> ensures all superblocks on said device are zeroed out. Test for this
+> behavior. Since btrfs inspect-internal dump-super always return success
+> I cannot test for the return value of the command. Instead there are 2
+> cases to handle:
 > 
-> The problem with the module reload approach is that you can't run btrfs
-> test cases 124, 125, 154 and 164 on the system with btrfs as root fs.
+>     1. When the device is smaller than the requested super block copy, i.e.
+>     super block copy 2 resides at 256GB. In such cases btrfs command just
+>     returns blank screen
 > 
-> Patches [1] introduced btrfs forget feature which lets to cleanup the
-> kernel device list without kernel module reload.
+>     2. When the device is removed and a valid offset of the super block is
+>     queried btrfs command returns a textual error to stderr.
 > 
->  [1]
->  btrfs-progs: add cli to forget one or all scanned devices
->  btrfs: introduce new ioctl to unregister a btrfs device
-> 
-> So this patch uses forget feature instead of kernel module reload, if
-> the forget feature is available.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
-Looks fine to me. But I'd like an explicit review from btrfs folks too.
+I think this test deserves a new test itself, not being embedded in an
+existing test randomly.
 
 Thanks,
 Eryu
 
 > ---
->  common/btrfs    | 20 ++++++++++++++++++++
->  tests/btrfs/124 |  6 +++---
->  tests/btrfs/125 |  6 +++---
->  tests/btrfs/154 |  6 +++---
->  tests/btrfs/164 |  4 ++--
->  5 files changed, 31 insertions(+), 11 deletions(-)
+> V2: 
+> 	* properly assign the return value of the last command expression to ret
 > 
-> diff --git a/common/btrfs b/common/btrfs
-> index f6513c06f95f..e94e011db04e 100644
-> --- a/common/btrfs
-> +++ b/common/btrfs
-> @@ -382,3 +382,23 @@ _scratch_btrfs_sectorsize()
->  	$BTRFS_UTIL_PROG inspect-internal dump-super $SCRATCH_DEV |\
->  		grep sectorsize | awk '{print $2}'
+>  tests/btrfs/003 | 8 ++++++++
+>  1 file changed, 8 insertions(+)
+> 
+> diff --git a/tests/btrfs/003 b/tests/btrfs/003
+> index 22aa57aad0b9..a805826ce891 100755
+> --- a/tests/btrfs/003
+> +++ b/tests/btrfs/003
+> @@ -161,6 +161,14 @@ _test_remove()
+>  	dev_del=`echo ${SCRATCH_DEV_POOL} | awk '{print $NF}'`
+>  	$BTRFS_UTIL_PROG device delete $dev_del $SCRATCH_MNT || _fail "btrfs device delete failed"
+>  	$BTRFS_UTIL_PROG filesystem show $SCRATCH_DEV 2>&1 | grep $dev_del >> $seqres.full && _fail "btrfs still shows the deleted dev"
+> +	for i in {0..2}; do
+> +		local output=$($BTRFS_UTIL_PROG inspect-internal dump-super -s $i $dev_del 2>&1)
+> +		$BTRFS_UTIL_PROG inspect-internal dump-super -s $i $dev_del 2>&1 | grep -q "bad magic"
+> +		ret=$?
+> +		if [[ "$output" != "" && $ret -eq 1 ]]; then
+> +			_fail "Delete dev superblocks not scratched"
+> +		fi
+> +	done
+>  	_scratch_unmount
 >  }
-> +
-> +_btrfs_supports_forget()
-> +{
-> +	$BTRFS_UTIL_PROG device scan --help | grep -wq forget && \
-> +		$BTRFS_UTIL_PROG device scan --forget > /dev/null 2>&1
-> +}
-> +
-> +_require_btrfs_forget_if_not_fs_loadable()
-> +{
-> +	_btrfs_supports_forget && return
-> +
-> +	_require_loadable_fs_module "btrfs"
-> +}
-> +
-> +_btrfs_forget_if_not_fs_reload()
-> +{
-> +	_btrfs_supports_forget && return
-> +
-> +	_reload_fs_module "btrfs"
-> +}
-> diff --git a/tests/btrfs/124 b/tests/btrfs/124
-> index a52c65f608ff..9341dcea8896 100755
-> --- a/tests/btrfs/124
-> +++ b/tests/btrfs/124
-> @@ -51,7 +51,7 @@ _supported_fs btrfs
->  _supported_os Linux
->  _require_scratch_dev_pool 2
->  _test_unmount
-> -_require_loadable_fs_module "btrfs"
-> +_require_btrfs_forget_if_not_fs_loadable
 >  
->  _scratch_dev_pool_get 2
->  
-> @@ -86,7 +86,7 @@ echo "clean btrfs ko" >> $seqres.full
->  _scratch_unmount
->  
->  # un-scan the btrfs devices
-> -_reload_fs_module "btrfs"
-> +_btrfs_forget_if_not_fs_reload
->  
->  echo >> $seqres.full
->  echo "-----Write degraded mount fill upto $max_fs_sz bytes-----" >> $seqres.full
-> @@ -125,7 +125,7 @@ echo
->  echo "Mount degraded with the other dev"
->  _scratch_unmount
->  # un-scan the btrfs devices
-> -_reload_fs_module "btrfs"
-> +_btrfs_forget_if_not_fs_reload
->  _mount -o degraded $dev2 $SCRATCH_MNT >>$seqres.full 2>&1
->  _run_btrfs_util_prog filesystem show
->  checkpoint3=`md5sum $SCRATCH_MNT/tf2`
-> diff --git a/tests/btrfs/125 b/tests/btrfs/125
-> index 847fa62ad25f..3d847033f1a2 100755
-> --- a/tests/btrfs/125
-> +++ b/tests/btrfs/125
-> @@ -50,7 +50,7 @@ _supported_fs btrfs
->  _supported_os Linux
->  _require_scratch_dev_pool 3
->  _test_unmount
-> -_require_loadable_fs_module "btrfs"
-> +_require_btrfs_forget_if_not_fs_loadable
->  _require_btrfs_fs_feature raid56
->  
->  _scratch_dev_pool_get 3
-> @@ -103,7 +103,7 @@ echo "unmount" >> $seqres.full
->  _scratch_unmount
->  echo "clean btrfs ko" >> $seqres.full
->  # un-scan the btrfs devices
-> -_reload_fs_module "btrfs"
-> +_btrfs_forget_if_not_fs_reload
->  _mount -o degraded,device=$dev2 $dev1 $SCRATCH_MNT >>$seqres.full 2>&1
->  dd if=/dev/zero of="$SCRATCH_MNT"/tf2 bs=$bs count=$count \
->  					>>$seqres.full 2>&1
-> @@ -139,7 +139,7 @@ echo "Mount degraded but with other dev"
->  
->  _scratch_unmount
->  # un-scan the btrfs devices
-> -_reload_fs_module "btrfs"
-> +_btrfs_forget_if_not_fs_reload
->  
->  _mount -o degraded,device=${dev2} $dev3 $SCRATCH_MNT >>$seqres.full 2>&1
->  
-> diff --git a/tests/btrfs/154 b/tests/btrfs/154
-> index cd6c688fb9fe..e39f54ac6ab8 100755
-> --- a/tests/btrfs/154
-> +++ b/tests/btrfs/154
-> @@ -36,7 +36,7 @@ rm -f $seqres.full
->  _supported_fs btrfs
->  _supported_os Linux
->  _require_scratch_dev_pool 2
-> -_require_loadable_fs_module "btrfs"
-> +_require_btrfs_forget_if_not_fs_loadable
->  
->  _scratch_dev_pool_get 2
->  
-> @@ -90,7 +90,7 @@ degrade_mount_write()
->  
->  	echo "clean btrfs ko" >> $seqres.full
->  	# un-scan the btrfs devices
-> -	_reload_fs_module "btrfs"
-> +	_btrfs_forget_if_not_fs_reload
->  	_mount -o degraded $DEV1 $SCRATCH_MNT >>$seqres.full 2>&1
->  	cnt=$(( $COUNT/10 ))
->  	dd if=/dev/urandom of="$SCRATCH_MNT"/tf1 bs=$bs count=$cnt \
-> @@ -142,7 +142,7 @@ verify()
->  	echo "unmount" >> $seqres.full
->  
->  	_scratch_unmount
-> -	_reload_fs_module "btrfs"
-> +	_btrfs_forget_if_not_fs_reload
->  	_mount -o degraded $DEV2 $SCRATCH_MNT >>$seqres.full 2>&1
->  	verify_checkpoint1=`md5sum $SCRATCH_MNT/tf1`
->  	verify_checkpoint2=`md5sum $SCRATCH_MNT/tf2`
-> diff --git a/tests/btrfs/164 b/tests/btrfs/164
-> index 097191a0e493..55042c4035e0 100755
-> --- a/tests/btrfs/164
-> +++ b/tests/btrfs/164
-> @@ -36,7 +36,7 @@ rm -f $seqres.full
->  # Modify as appropriate.
->  _supported_fs btrfs
->  _supported_os Linux
-> -_require_loadable_fs_module "btrfs"
-> +_require_btrfs_forget_if_not_fs_loadable
->  _require_scratch_dev_pool 2
->  
->  _scratch_dev_pool_get 2
-> @@ -69,7 +69,7 @@ delete_seed()
->  {
->  	_run_btrfs_util_prog device delete $dev_seed $SCRATCH_MNT
->  	_scratch_unmount
-> -	_reload_fs_module "btrfs"
-> +	_btrfs_forget_if_not_fs_reload
->  	run_check _mount $dev_sprout $SCRATCH_MNT
->  	_run_btrfs_util_prog filesystem show -m $SCRATCH_MNT
->  	echo -- sprout --
 > -- 
-> 1.8.3.1
+> 2.7.4
 > 

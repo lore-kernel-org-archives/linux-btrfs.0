@@ -2,61 +2,50 @@ Return-Path: <SRS0=xp1I=R2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.8 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 27D60C43381
-	for <linux-btrfs@archiver.kernel.org>; Sat, 23 Mar 2019 00:45:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 16C8AC43381
+	for <linux-btrfs@archiver.kernel.org>; Sat, 23 Mar 2019 08:30:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DC5D0218D3
-	for <linux-btrfs@archiver.kernel.org>; Sat, 23 Mar 2019 00:45:57 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="FkDbwAdy"
+	by mail.kernel.org (Postfix) with ESMTP id D7352218D4
+	for <linux-btrfs@archiver.kernel.org>; Sat, 23 Mar 2019 08:30:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727512AbfCWAp4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Mar 2019 20:45:56 -0400
-Received: from mail-oi1-f193.google.com ([209.85.167.193]:34418 "EHLO
-        mail-oi1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727183AbfCWAp4 (ORCPT
+        id S1726026AbfCWIaG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 23 Mar 2019 04:30:06 -0400
+Received: from mail-ot1-f48.google.com ([209.85.210.48]:40146 "EHLO
+        mail-ot1-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725835AbfCWIaG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Mar 2019 20:45:56 -0400
-Received: by mail-oi1-f193.google.com with SMTP id u12so3096097oiv.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Mar 2019 17:45:56 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to;
-        bh=yMuToihcca5VoPtOw1XUJpnLTsRXic6pgSr0bO9LKZg=;
-        b=FkDbwAdyJQqDJHbHqA0vJBpBK+3T6HvkTSdX3GXnYzTbSqFAi0eHPLwwZ5l0qX6vnA
-         XKWHSrdaq2YFSuwIVJH4iN0UFgrRvCjZrIeMBJUm7G+fmVjtcibqQg00UqfvvH+yWrpF
-         UMi8raHmNWcVcSZw/FzJgbIKG4JRnEq9+NY1FXDyenJjvRv8PM8pB/dUMIUOeYkyvcHb
-         zAFJvnRqbL3CVbf8bt40RjOa7uf9hXVaJbUVt4XIfZKYg/uvZFvGe6gfOU7qQsygyDzQ
-         +uG2oadkbGbCQf8aZnZ2RpgAdQobpaWrhLptp1HK1VjE/a4tq3rSTs7sLbs1agY0/6m3
-         wgZg==
+        Sat, 23 Mar 2019 04:30:06 -0400
+Received: by mail-ot1-f48.google.com with SMTP id x8so3972716otg.7
+        for <linux-btrfs@vger.kernel.org>; Sat, 23 Mar 2019 01:30:05 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
          :message-id:subject:to;
-        bh=yMuToihcca5VoPtOw1XUJpnLTsRXic6pgSr0bO9LKZg=;
-        b=WCTAwVACTOqROvqODxn2M1CBFALFbONxqa+OjcI77P5tyAQxmwlVrWnx7mJ0xARWpC
-         RkSg60sJ8Ca1yT36w2JdnVhRn2RQ4RsdKH2HAYJUVxwm8M90rjqfpw0YShJbhHdzEcBo
-         jlTMR3bBf4LlJc8FEdMWiLgCG+ItNUGfUvx2ydIm9GnzDX9X1vMdk1WLsVaFED374JaN
-         efqLH6+eXTY0aYC34oD/JHoDzM+E8amsrikN/KQW4QcEse6+3ZLZipF6HXTwgB/ECl42
-         iQY11jOJzw+VEwTBQRmqpFQTn0qwm7ONp32TzZBRXhiy4IFRfZHWZFhO+MfCdK/KzNYg
-         xJUw==
-X-Gm-Message-State: APjAAAVydi7HhB1RPixOfdX4jJlu2gOrkqPm512P098fYP1lGUjPUGoX
-        JhFyQj0ea8gWww06oo46G5zV6clFqNIgVwWD7DOf4sbi
-X-Google-Smtp-Source: APXvYqyJwAFICU9Qb5tmhzR70W8fjqjM4hbyaPQMUVrDkHYNPBd7lAJvCfvrbSgOIX63W8WYtn+XFwr4AWWe7UALLT4=
-X-Received: by 2002:aca:5757:: with SMTP id l84mr4045548oib.155.1553301955300;
- Fri, 22 Mar 2019 17:45:55 -0700 (PDT)
+        bh=Ebx9YWh4xM8drslWVVZCHW946uqJH7cGCK3+HsW+10I=;
+        b=D57WjI+tNZcXsleu7JfE27DwTIXIvYkRqocHEQrOE7Y2nRYnyA52nqXjig8dSjoq85
+         NLlCbbuc6BCPjAREs/lFxgcbtuw973l9ygHo9lNLwPSqJIRtm6CC9mf+8aX1ugNNzx5e
+         camplbZadJSlSSYL7nJSMZlImd4orIhVbS1DSG3tmcc16Kr+0oFfTudhKdExB8Yc9NMs
+         jwsTR4jqPiU/5DegwPfIGhX81zw9f8xPexze8pAT0jZJAEC3lByABofole6+BkEeGBoa
+         /TLdKo6hUKfh/y/hhwnnTnIL4mQBGA1keb4lzaLHFrjiyCdBsucN7uIDC9GSICfWD65q
+         d31g==
+X-Gm-Message-State: APjAAAUKpLLz7/qFa7LVN5PhZLAt5kvtB0x/NXFTwdSwgyz45bTy546U
+        8E07Q/MzpXYAEB4F+rE8FN3Eve/ycQn11ZQ8ys0qPl0p
+X-Google-Smtp-Source: APXvYqwc99Rao71zHVAk2TQfKsdftSwr5w0RPHs1wVoidcG1+4IIRZOwUZWSsFVqLoXi6kyQEiN31FWvXsl25ZK9Cjg=
+X-Received: by 2002:a05:6830:15ce:: with SMTP id j14mr10523370otr.82.1553329804497;
+ Sat, 23 Mar 2019 01:30:04 -0700 (PDT)
 MIME-Version: 1.0
-References: <CAG3pWAmvekNpnBsQTaMrefKe6pvMSZjPm+SOxnKkMkpGO_1msQ@mail.gmail.com>
-In-Reply-To: <CAG3pWAmvekNpnBsQTaMrefKe6pvMSZjPm+SOxnKkMkpGO_1msQ@mail.gmail.com>
-From:   Glenn Trigg <ggtrigg@gmail.com>
-Date:   Sat, 23 Mar 2019 11:45:43 +1100
-Message-ID: <CAG3pWAkpKGE+MZQ9BVWtgk7Y6_yne_VErtsEgD4oVPz5tuOTWQ@mail.gmail.com>
-Subject: Re: help request for an unmountable raid1 filesystem
+References: <trinity-49be13bc-b1ea-4ab2-81a5-6d32096c62fb-1553194614498@3c-app-webde-bap65>
+ <trinity-774c74cd-2c34-408a-9705-459a561514f2-1553210614842@3c-app-webde-bs36>
+ <c59ce3ee-b0cd-f195-9dfa-11abd362d057@gmx.com>
+In-Reply-To: <c59ce3ee-b0cd-f195-9dfa-11abd362d057@gmx.com>
+From:   Thorsten Hirsch <t.hirsch@web.de>
+Date:   Sat, 23 Mar 2019 09:29:53 +0100
+Message-ID: <CAH+WbHwemzG5V2R81ZSHQXV7NF5pvpQ4X4pUEoZ-dtyD1_bp3w@mail.gmail.com>
+Subject: Re: Fw: kernel oops when mounting btrfs
 To:     linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -64,107 +53,65 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+Hi Qu,
 
-Since mailing this I have tried using the more recent utils - version
-btrfs-progs v4.20.2.
+thank you, but unfortunately that didn't work out so well. The tree
+dump was no problem [1], but clearing the space cache resulted in a
+core dump. Now btrfs check --readonly reports some errors. I attached
+the output of these commands.
 
-I still have not had any success in getting the filesystem to a
-mountable state and I have now also tried recovering files with btrfs
-restore, also with no success. The restore output is:
+Thorsten
 
-% ./btrfs restore -D /dev/sdc1 /data2/
-This is a dry-run, no files are going to be restored
-parent transid verify failed on 628168376320 wanted 37601 found 37712
-parent transid verify failed on 628168376320 wanted 37601 found 37712
-parent transid verify failed on 628168376320 wanted 37601 found 37712
-parent transid verify failed on 628168376320 wanted 37601 found 37712
+[1] https://gist.github.com/thorstenhirsch/65d4308ce54729c902cb09c0d4ad2baf
+
+# btrfs check --clear-space-cache v1 /dev/nvme0n1p3
+Opening filesystem to check...
+Checking filesystem on /dev/nvme0n1p3
+UUID: 4284a794-ad75-450d-b023-ebc5e75f31f5
+Failed to find [544448348160, 168, 16384]
+btrfs unable to find ref byte nr 544448364544 parent 0 root 2  owner 0 offset 0
+transaction.c:195: btrfs_commit_transaction: BUG_ON `ret` triggered, value -5
+btrfs(+0x3be68)[0x556936269e68]
+btrfs(btrfs_commit_transaction+0x12a)[0x55693626a2ec]
+btrfs(btrfs_clear_free_space_cache+0x32a)[0x55693625fecf]
+btrfs(+0x4be5b)[0x556936279e5b]
+btrfs(cmd_check+0x5c2)[0x556936284d86]
+btrfs(main+0x1f6)[0x556936241ef6]
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xeb)[0x7fb9a7911b6b]
+btrfs(_start+0x2a)[0x556936241f3a]
+Aborted (core dumped)
+
+
+# btrfs check --readonly /dev/nvme0n1p3
+Opening filesystem to check...
+parent transid verify failed on 419860414464 wanted 30188 found 30105
+parent transid verify failed on 419860414464 wanted 30188 found 30105
 Ignoring transid failure
-ERROR: child eb corrupted: parent bytenr=628624064512 item=0 parent
-level=1 child level=1
-Error searching -5
-
-Is there something else I could do to recover either the filesystem or
-at least the files?
-
-Regards,
-Glenn
-
-On Sun, 10 Mar 2019 at 08:35, Glenn Trigg <ggtrigg@gmail.com> wrote:
->
-> Hello,
->
-> I had some random machine freezing events which I suspected was due to
-> issues with a raid1 filesystem and kernel module crashes. I attempted
-> to use the information available to get the filesystem into a good
-> state where "btrfs check" and "btrfs scrub" would not have any errors,
-> however I fear things have become worse.
->
-> The current state of things is that the filesystem won't mount at all now.
->
-> % mount -r /dev/sda1 /data
-> mount: /data: can't read superblock on /dev/sda1.
->
-> and dmesg says:
->
-> [15944.017629] BTRFS info (device sda1): disk space caching is enabled
-> [15944.017632] BTRFS info (device sda1): has skinny extents
-> [15944.024480] BTRFS info (device sda1): bdev /dev/sda1 errs: wr 0, rd
-> 0, flush 0, corrupt 1, gen 0
-> [15944.024487] BTRFS info (device sda1): bdev /dev/sdb1 errs: wr 0, rd
-> 0, flush 0, corrupt 4, gen 0
-> [15944.029292] BTRFS error (device sda1): parent transid verify failed
-> on 628168376320 wanted 37601 found 37700
-> [15944.029466] BTRFS error (device sda1): parent transid verify failed
-> on 628168376320 wanted 37601 found 37700
->
-> Other system information is:
-> % uname -a
-> Linux izen 4.18.0-16-generic #17-Ubuntu SMP Fri Feb 8 00:06:57 UTC
-> 2019 x86_64 x86_64 x86_64 GNU/Linux
->
-> % btrfs --version
-> btrfs-progs v4.16.1
->
-> % btrfs fi show
-> Label: 'root'  uuid: 65fd7f11-4f60-435f-928b-6d15f12bc417
-> Total devices 1 FS bytes used 101.75GiB
-> devid    1 size 232.88GiB used 232.85GiB path /dev/nvme0n1p1
->
-> Label: 'data'  uuid: d5e50511-3e31-4de6-ba37-c5841895be9f
-> Total devices 2 FS bytes used 830.44GiB
-> devid    1 size 1.82TiB used 669.03GiB path /dev/sda1
-> devid    2 size 1.82TiB used 817.06GiB path /dev/sdb1
->
-> % btrfs check /dev/sda1
-> Checking filesystem on /dev/sda1
-> UUID: d5e50511-3e31-4de6-ba37-c5841895be9f
-> checking extents
-> parent transid verify failed on 628168343552 wanted 28163 found 37700
-> parent transid verify failed on 628168343552 wanted 28163 found 37700
-> parent transid verify failed on 628168343552 wanted 28163 found 37700
-> parent transid verify failed on 628168343552 wanted 28163 found 37700
-> Ignoring transid failure
-> bad block 628168343552
-> ERROR: errors found in extent allocation tree or chunk allocation
-> checking free space cache
-> cache and super generation don't match, space cache will be invalidated
-> checking fs roots
-> root 5 root dir 256 not found
-> ERROR: errors found in fs roots
-> found 528138240 bytes used, error(s) found
-> total csum bytes: 0
-> total tree bytes: 1785856
-> total fs tree bytes: 1064960
-> total extent tree bytes: 81920
-> btree space waste bytes: 606983
-> file data blocks allocated: 215220224
->  referenced 215220224
->
-> % btrfs rescue super-recover /dev/sda1
-> All supers are valid, no need to recover
->
-> Where do I go from here?
->
-> Regards,
-> Glenn
+Checking filesystem on /dev/nvme0n1p3
+UUID: 4284a794-ad75-450d-b023-ebc5e75f31f5
+[1/7] checking root items
+[2/7] checking extents
+ref mismatch on [544448348160 16384] extent item 1, found 0
+backref 544448348160 root 2 not referenced back 0x563ce432f010
+incorrect global backref count on 544448348160 found 1 wanted 0
+backpointer mismatch on [544448348160 16384]
+owner ref check failed [544448348160 16384]
+ref mismatch on [544448364544 16384] extent item 0, found 1
+tree backref 544448364544 parent 2 root 2 not found in extent tree
+backpointer mismatch on [544448364544 16384]
+ERROR: errors found in extent allocation tree or chunk allocation
+[3/7] checking free space cache
+cache and super generation don't match, space cache will be invalidated
+[4/7] checking fs roots
+[5/7] checking only csums items (without verifying data)
+[6/7] checking root refs
+[7/7] checking quota groups skipped (not enabled on this FS)
+ERROR: transid errors in file system
+found 275464060928 bytes used, error(s) found
+total csum bytes: 266882612
+total tree bytes: 1513570304
+total fs tree bytes: 1135788032
+total extent tree bytes: 73220096
+btree space waste bytes: 236694654
+file data blocks allocated: 1962517999616
+ referenced 221128466432

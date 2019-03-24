@@ -1,126 +1,184 @@
-Return-Path: <SRS0=xp1I=R2=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=p5gK=R3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.3 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+X-Spam-Status: No, score=-5.7 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 181B7C43381
-	for <linux-btrfs@archiver.kernel.org>; Sat, 23 Mar 2019 09:12:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1A727C43381
+	for <linux-btrfs@archiver.kernel.org>; Sun, 24 Mar 2019 10:49:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DB705218D4
-	for <linux-btrfs@archiver.kernel.org>; Sat, 23 Mar 2019 09:12:36 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="L/5scTTH"
+	by mail.kernel.org (Postfix) with ESMTP id D05F321B24
+	for <linux-btrfs@archiver.kernel.org>; Sun, 24 Mar 2019 10:49:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726085AbfCWJMg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 23 Mar 2019 05:12:36 -0400
-Received: from mail-pf1-f196.google.com ([209.85.210.196]:37733 "EHLO
-        mail-pf1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726038AbfCWJMf (ORCPT
+        id S1728615AbfCXKtd convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 24 Mar 2019 06:49:33 -0400
+Received: from mail-oi1-f195.google.com ([209.85.167.195]:39223 "EHLO
+        mail-oi1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726173AbfCXKtc (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 23 Mar 2019 05:12:35 -0400
-Received: by mail-pf1-f196.google.com with SMTP id 8so3116657pfr.4;
-        Sat, 23 Mar 2019 02:12:35 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to:user-agent;
-        bh=vUzKH7sN5kgpY2+5dtMlgK45TAYAXRpt9c7IFBZPhjI=;
-        b=L/5scTTHFF72+pOU0/+c61AKLTEqR++/6jwv80FGomveKZ/YKfrbBgSqXTFFbpJKBo
-         vQNphi7QBnDVMH3cSXBq72mQOCkrBDS5ArJ2PWTBtVpunA/w6Or2Rp6Ly9/LEjj4enBT
-         m1372GULLjoWK6fpBcdU5+gcQkta5NLvsJPfMURBkpWWAVmGaQC6QrQeIUGYbIST91kW
-         yTOzrtKbbqj5m4vDuvCXIXO+X2eym9HJI8AJzGA1hDweyVpXTth6Jlh1vj0OnwhRd27D
-         RDisg5pnTejVGzXl9w9kgAvTE+TSyddWxRPSiMA5A/Pxlkp6pvxKZHav1UTyic2vnbo5
-         clbQ==
+        Sun, 24 Mar 2019 06:49:32 -0400
+Received: by mail-oi1-f195.google.com with SMTP id n187so2029283oih.6
+        for <linux-btrfs@vger.kernel.org>; Sun, 24 Mar 2019 03:49:32 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to:user-agent;
-        bh=vUzKH7sN5kgpY2+5dtMlgK45TAYAXRpt9c7IFBZPhjI=;
-        b=iN7Zpf0o7ehhZ1Zu9ZNKV6V3aVj3AOG7fn5cjLEIOLTJFngQdIw2GASNIPhmfOj5oZ
-         1lTuDcdn8dFK/a1y5JIoVSL/HHBmzV+X+HHY3bdQzLfYaqfyoHof4r/hXvbSgCOvRC2N
-         qr1/XWm/9lzF/SMFnx6nltPkj/kUMr5Weo9vlyMFgGY0LjDgW0SfbnfZ0wO7dDe0c89F
-         GY3LXpfXs3+tBvZSbnzDnmszgi+2wRiSwTss0Thk+mz2CdBsNjqR/9FSKER91oP+c/Ox
-         LD5/WSOtBjSqzfK53ubwiEyCLw7BCc/Qns2n20Nzc6WpMw7nMAEMe0u/lmCmiTOne49Y
-         5NRg==
-X-Gm-Message-State: APjAAAUE+HEg4T4IzXGB26hgrVjEiJEUhYmgj4EDJs4ns0/bkEtGQsyr
-        GJBK+2wk2BRxm/QC74l2dnbFAYng0wo=
-X-Google-Smtp-Source: APXvYqwlYBtxwPXPpLr9QzRNcyfUvO36/eenLFMfFsCUpiQEpB+JR2bUsotZhsOHH/bPTsJHRnESOQ==
-X-Received: by 2002:a63:195f:: with SMTP id 31mr2451566pgz.116.1553332355083;
-        Sat, 23 Mar 2019 02:12:35 -0700 (PDT)
-Received: from localhost ([128.199.137.77])
-        by smtp.gmail.com with ESMTPSA id h184sm23916196pfc.78.2019.03.23.02.12.33
-        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Sat, 23 Mar 2019 02:12:34 -0700 (PDT)
-Date:   Sat, 23 Mar 2019 17:12:27 +0800
-From:   Eryu Guan <guaneryu@gmail.com>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs: Extend btrfs/003 device removal test
-Message-ID: <20190323091227.GU2824@desktop>
-References: <20190319110404.9707-1-nborisov@suse.com>
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:content-transfer-encoding;
+        bh=MEE94AfHQRz+B66vEmoJQ0TghbraJEKc6J3A7z/FkJg=;
+        b=QyiziYA3p8hARccDxB59Lese2KLNsdKz2yNTEQ8ln2FKnwJUyo23EbsPkwM4C1dmnF
+         wAhJQPWwn4lllaPQzyZfbNmhvRyXWBcXWavDyi7gAwci5oKWc1TtwcLz89mJV7J3/GHc
+         MjqE53qNQ1bEBk124OX2ZmXJ8Y3EprSQ0JcP/s2kQCYMu5IOYfXnqmN9K1VZ35ONVazq
+         TYBJqeKntVkJbC1yqERUZ3YOjCFUX4CoceKSTHLgNXSbn1reu2Yz2Js/44bAiL+UJ1LC
+         SvAwO2s170ZRMOyINHAN7xmnFNRoQQ/kPO6y1idMP3tONruWONFfAIL6k464lGsUp6HN
+         yaFQ==
+X-Gm-Message-State: APjAAAWHbOZtZi90YtW9BTKFB30dHleB/ngqYc4ELPXrIj9qkeWT7mgk
+        K192FBFu6f71jRBnt4SRrCNr6CG5eVB5BCo3FDDkwaar
+X-Google-Smtp-Source: APXvYqz0IQ0CZRkQdflbZaA8/tX6jJYKykxCynp3Z/wRDZ9QfTwTDhshxpSS2zba2b6+VUeDlyqCSqYdvawqlJk/EKc=
+X-Received: by 2002:aca:3fc4:: with SMTP id m187mr7464376oia.37.1553424571348;
+ Sun, 24 Mar 2019 03:49:31 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190319110404.9707-1-nborisov@suse.com>
-User-Agent: Mutt/1.11.3 (2019-02-01)
+References: <trinity-49be13bc-b1ea-4ab2-81a5-6d32096c62fb-1553194614498@3c-app-webde-bap65>
+ <trinity-774c74cd-2c34-408a-9705-459a561514f2-1553210614842@3c-app-webde-bs36>
+ <c59ce3ee-b0cd-f195-9dfa-11abd362d057@gmx.com> <CAH+WbHwemzG5V2R81ZSHQXV7NF5pvpQ4X4pUEoZ-dtyD1_bp3w@mail.gmail.com>
+ <CAH+WbHyQTxbz5inf31AgmAG1BvVWyTAExn3Nf_qvvEQWzZ0tHA@mail.gmail.com> <4dc0ed1a-3f90-56a2-b526-c26cb78d7932@gmx.com>
+In-Reply-To: <4dc0ed1a-3f90-56a2-b526-c26cb78d7932@gmx.com>
+From:   Thorsten Hirsch <t.hirsch@web.de>
+Date:   Sun, 24 Mar 2019 11:49:19 +0100
+Message-ID: <CAH+WbHw1cm96YNjVhmdFP4qZ_HR3mzfmojna=d-MeydCtunG1g@mail.gmail.com>
+Subject: Re: Fwd: Fw: kernel oops when mounting btrfs
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Mar 19, 2019 at 01:04:04PM +0200, Nikolay Borisov wrote:
-> When a device is deleted/removed from a btrfs filesystem the kernel
-> ensures all superblocks on said device are zeroed out. Test for this
-> behavior. Since btrfs inspect-internal dump-super always return success
-> I cannot test for the return value of the command. Instead there are 2
-> cases to handle:
-> 
->     1. When the device is smaller than the requested super block copy, i.e.
->     super block copy 2 resides at 256GB. In such cases btrfs command just
->     returns blank screen
-> 
->     2. When the device is removed and a valid offset of the super block is
->     queried btrfs command returns a textual error to stderr.
-> 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+Hi Qu,
 
-I think this test deserves a new test itself, not being embedded in an
-existing test randomly.
+thank you once again for your advice. I could indeed recover all my
+data, even the snapshots docker had created. Everything's working as
+if nothing had ever happened. Here's what I've did in the end:
 
-Thanks,
-Eryu
+btrfs recover <src> <dest> worked flawless, but only recovered some data.
+mount -o ro,notreelog,nologreplay was the only way to mount the broken
+partition and it showed me a lot more data than btrfs recover could
+recover. However when trying to access these additional files I had
+input/output errors.
 
-> ---
-> V2: 
-> 	* properly assign the return value of the last command expression to ret
-> 
->  tests/btrfs/003 | 8 ++++++++
->  1 file changed, 8 insertions(+)
-> 
-> diff --git a/tests/btrfs/003 b/tests/btrfs/003
-> index 22aa57aad0b9..a805826ce891 100755
-> --- a/tests/btrfs/003
-> +++ b/tests/btrfs/003
-> @@ -161,6 +161,14 @@ _test_remove()
->  	dev_del=`echo ${SCRATCH_DEV_POOL} | awk '{print $NF}'`
->  	$BTRFS_UTIL_PROG device delete $dev_del $SCRATCH_MNT || _fail "btrfs device delete failed"
->  	$BTRFS_UTIL_PROG filesystem show $SCRATCH_DEV 2>&1 | grep $dev_del >> $seqres.full && _fail "btrfs still shows the deleted dev"
-> +	for i in {0..2}; do
-> +		local output=$($BTRFS_UTIL_PROG inspect-internal dump-super -s $i $dev_del 2>&1)
-> +		$BTRFS_UTIL_PROG inspect-internal dump-super -s $i $dev_del 2>&1 | grep -q "bad magic"
-> +		ret=$?
-> +		if [[ "$output" != "" && $ret -eq 1 ]]; then
-> +			_fail "Delete dev superblocks not scratched"
-> +		fi
-> +	done
->  	_scratch_unmount
->  }
->  
-> -- 
-> 2.7.4
-> 
+btrfs recover -sxmS <src> <dest> was the magic command that recovered
+all my data (which I could "cp -a" back to my device after creating a
+new btrfs file system). After reading the help of btrfs-recover it's
+obvious that the arguments are required, but in the btrfs wiki it says
+"If you're really lucky, this might be enough"[1] describing the
+command w/o arguments. I think this is misleading. The arguments are
+always necessary if you want to recover all your data. Well, at least
+I think the wiki page makes mores sense if the arguments were
+included.
+
+If there's anything I can provide to help you improve btrfs or its
+recovery tools please don't hesitate to ask. Although I don't have an
+image of the broken partition, at least I still have the core dump of
+"btrfs check --clear-space-cache v1".
+
+[1] https://btrfs.wiki.kernel.org/index.php/Restore
+
+Thorsten Hirsch
+
+P.S.: btrfs check --repair was of no use. It crashed almost
+immediately. I tried it only after recovering all my data, to see if
+it would've helped as well.
+
+Am Sa., 23. März 2019 um 14:57 Uhr schrieb Qu Wenruo <quwenruo.btrfs@gmx.com>:
+>
+>
+>
+> On 2019/3/23 下午6:48, Thorsten Hirsch wrote:
+> > Hi Qu,
+> >
+> > sorry for this direct reply. I've been trying to answer to the mailing
+> > list since yesterday, but my mails seem to get dropped. So please see
+> > my answer to your mail enclosed.
+> >
+> > Thorsten
+> >
+> >
+> > ---------- Forwarded message ---------
+> > From: Thorsten Hirsch <t.hirsch@web.de>
+> > Date: Sa., 23. März 2019 um 09:29 Uhr
+> > Subject: Re: Fw: kernel oops when mounting btrfs
+> > To: <linux-btrfs@vger.kernel.org>
+> >
+> >
+> > Hi Qu,
+> >
+> > thank you, but unfortunately that didn't work out so well. The tree
+> > dump was no problem [1], but clearing the space cache resulted in a
+> > core dump. Now btrfs check --readonly reports some errors. I attached
+> > the output of these commands.
+> >
+> > Thorsten
+> >
+> > [1] https://gist.github.com/thorstenhirsch/65d4308ce54729c902cb09c0d4ad2baf
+>
+> This explains why a lot of things doesn't go correct.
+>
+> The inode item of your free space cache tree is wrong.
+> According to my experimental with latest kernel, it looks like some
+> older kernel is the culprit.
+>
+> Your free space cache inode lacks the correct mode.
+> Normally the mode should be 0100600. But your fs only has 0, and kernel
+> panics for that reason.
+>
+> >
+> > # btrfs check --clear-space-cache v1 /dev/nvme0n1p3
+> > Opening filesystem to check...
+> > Checking filesystem on /dev/nvme0n1p3
+> > UUID: 4284a794-ad75-450d-b023-ebc5e75f31f5
+> > Failed to find [544448348160, 168, 16384]
+>
+> Then this means something bad happened in extent tree.
+>
+> > btrfs unable to find ref byte nr 544448364544 parent 0 root 2  owner 0 offset 0
+> > transaction.c:195: btrfs_commit_transaction: BUG_ON `ret` triggered, value -5
+> > btrfs(+0x3be68)[0x556936269e68]
+> > btrfs(btrfs_commit_transaction+0x12a)[0x55693626a2ec]
+> > btrfs(btrfs_clear_free_space_cache+0x32a)[0x55693625fecf]
+> > btrfs(+0x4be5b)[0x556936279e5b]
+> > btrfs(cmd_check+0x5c2)[0x556936284d86]
+> > btrfs(main+0x1f6)[0x556936241ef6]
+> > /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xeb)[0x7fb9a7911b6b]
+> > btrfs(_start+0x2a)[0x556936241f3a]
+> > Aborted (core dumped)
+> >
+> >
+> > # btrfs check --readonly /dev/nvme0n1p3
+> > Opening filesystem to check...
+> > parent transid verify failed on 419860414464 wanted 30188 found 30105
+> > parent transid verify failed on 419860414464 wanted 30188 found 30105
+>
+> So extent tree get corrupted in that repair attempt, which looks pretty
+> strange, as aborted transaction shouldn't cause any impact on the
+> existing fs.
+>
+> I'm afraid you can only try btrfs check --repair.
+>
+> If no good result, then I'm afraid you have to go to salvage the data,
+> which I believe over 99% of your data should be safe.
+>
+> To salvage the data, either use btrfs-restore, or you my experimental
+> 'skip_bg' kernel patches:
+> https://github.com/adam900710/linux/tree/rescue_options
+>
+> The 'skip_bg' kernel patches introduce a new mount option,
+> 'ro,rescue=skip_bg', which can skip the whole (corrupted) extent tree,
+> and since you have all trees consistent but extent tree, you have all
+> the readonly btrfs features, like subvolume list, csum check.
+>
+> Thanks,
+> Qu
+>

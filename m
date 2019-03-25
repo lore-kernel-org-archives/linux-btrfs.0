@@ -2,44 +2,41 @@ Return-Path: <SRS0=58CB=R4=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-6.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9F9F0C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 04:23:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BFDE3C43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 04:27:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5180F2087F
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 04:23:23 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7A99D20828
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 04:27:39 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="UnbsFUge"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="SwRr3RsX"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726101AbfCYEXV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Mar 2019 00:23:21 -0400
-Received: from mout.gmx.net ([212.227.15.19]:43723 "EHLO mout.gmx.net"
+        id S1726138AbfCYE1i (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Mar 2019 00:27:38 -0400
+Received: from mout.gmx.net ([212.227.15.15]:60715 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725769AbfCYEXV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Mar 2019 00:23:21 -0400
+        id S1725799AbfCYE1i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Mar 2019 00:27:38 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1553487798;
-        bh=2aTBZQ0r35vmCXUohFO5nIPuozj/g1tXqiUz+kAvvrQ=;
+        s=badeba3b8450; t=1553488049;
+        bh=N67KDcm2ksvLr1dS8UvAzOHBT3qOJScVRXZxG+2HXXA=;
         h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
-        b=UnbsFUgeqyfvPmDYcxeSeGZZcX96rfIDXC6mrB8HSPd298nHhiiIGFf3MAPqIeg39
-         MsA/xfDvZCSdq8MVtFMwRM7tDRJhjB/IuD+CxoAUPHmWqBUeqnr/cQfxkQE3tfb88h
-         /pqZCZHee204/2QtA4yhIgdFbRKHtA/oEUn/HXNI=
+        b=SwRr3RsX84miIA3dLvDgovz9yJMK4SJ2avEitjDU/bSuMmRyq61bJbNvg/wU6U6Ee
+         ys8rfw4z+1lDZL5Gu7Lf+uoNYSyET/eN38J9khX1F6D0Yr0L3LLIbYYqnQIff5QMJb
+         V/YAawP4cGgptEnFFvVJWVuZDdllC94EufqytKDE=
 X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx003
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0MSMP5-1hXGnu0iqZ-00TYU7; Mon, 25
- Mar 2019 05:23:18 +0100
-Subject: Re: Fw: kernel oops when mounting btrfs
-To:     Chris Murphy <lists@colorremedies.com>,
-        Thorsten Hirsch <t.hirsch@web.de>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <trinity-49be13bc-b1ea-4ab2-81a5-6d32096c62fb-1553194614498@3c-app-webde-bap65>
- <trinity-774c74cd-2c34-408a-9705-459a561514f2-1553210614842@3c-app-webde-bs36>
- <c59ce3ee-b0cd-f195-9dfa-11abd362d057@gmx.com>
- <CAH+WbHwemzG5V2R81ZSHQXV7NF5pvpQ4X4pUEoZ-dtyD1_bp3w@mail.gmail.com>
- <CAJCQCtR6FKOiNXupU-6UVX-zKzwmg848Jok_z-VStAwtjoGdEQ@mail.gmail.com>
+Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx002
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0MY7dI-1hUDvU19ge-00Uv9y; Mon, 25
+ Mar 2019 05:27:29 +0100
+Subject: Re: [PATCh v2 8/9] btrfs: tree-checker: Verify inode item
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+References: <20190320063717.31770-1-wqu@suse.com>
+ <20190320063717.31770-9-wqu@suse.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -66,120 +63,221 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <d297a788-a591-477e-a54f-31cb45ca37a1@gmx.com>
-Date:   Mon, 25 Mar 2019 12:23:13 +0800
+Message-ID: <a8e3f871-370a-464b-a0ae-f4da93f0eed8@gmx.com>
+Date:   Mon, 25 Mar 2019 12:27:24 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.5.3
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtR6FKOiNXupU-6UVX-zKzwmg848Jok_z-VStAwtjoGdEQ@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="dqE8XMZTeUrhhsknsqgqQeYoGCGlaLY2n"
-X-Provags-ID: V03:K1:DjewzLI9aSlYEObTbBhQB6jVcr94gH06cOu6AoYHbx5A3okI+9c
- wAWKnH+xxCjduaiL6tEGifwiTTPL2Rynm0mqweeqo1WwvqYPXVV2AsDfa+71BmaEYqX7560
- SJg/TKK5C03DWzU76NiSg7pRILhR3YtXi1Kfrj4/j86UnAhajA0KZ7zTs9ZzGqAxIAqfZfo
- 5A/7rmsSdCD4lA3FemxtQ==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:WP/WfP63mCM=:oLISI28/8FyepDFGSFwvZn
- uJChWzvBHE5/j/o4OcTnN20g+4/ICTBcLEFaHqOlQ/Fhgl/OoJVdfpkE1lYs1EHPWsogupvAn
- zTMQp4AOoLoTTTl0J7A09S9Y+BmzBbt/K/Ydhi9q2WWLmU6mELx8hte3I4vq2ZzR3A+oNlpQj
- fBx8pD4xZ+f3itDYO9+Y7XEsFQQz32V4bo5/ZkkZLS/YanuXKTlAcI9M89hVcg77AHyS8HWrM
- 5A3RJdmBmo+rlAsT/pQDBCU1ktLrFCBG2KoFczIIaJ+d0oJqfoxf8xEGRT42HFCJvL+QlXz3V
- vQOxNI3w0p8HkAu8T3QV9Q7pSe0+rdc2Tb9X62dtDZrtl94yx1DiqbDs+UV9BgpltDSZspDql
- u+2jhEE7+aVPhRMbnrBJYMBpI8wyibkLhehLhiV/7i51+VgrJsmSHJ9ss8FP6ZAC3UgjTEgpv
- WOHHAoLDHoG+7H/Y/31GcGbzyw4xd/RfPb8pnkkQTios8SyoaR7KVhy/v5rf5dJTeFdI9jHO2
- KoWDQX/dLiRSCCO9TYQE9Ga5/1mReXNRJamZzuI+E+5M4CInM8saMfrT1FCcQ3dxB1IhEQGOt
- xspVMC6sJgJWLooyCE4zqgZ1ph/ITx8uJRpIN1jyzCIN2jnupLLsLsVF32Ibr2ZTwNb+F3luu
- 6mAWycdJS8qKOFLob5prpoLyDNgVMNVQIP6C1CKK1L7qUzrPalbp/EsD379loIgHjt/ZPLrOC
- YjXhW+zgIcijHdblUDX1o+J6TMHSowE2hozWIjWQZ+rsXIZFmAbzvjW0FdeoSF5us9oO0npOK
- 1ZYwAjAzpRfYuWESTs4JIKA1Z9+9wtv8SdEdMjU9M2/65A4fhrCQLczzSwOH4lWcuPy8Akmv4
- Bn32sfNQ7H8pA6XMPUHiITCM9EFRSCB8bK1RLmNQPP3Joyrn8kGE65grRW9kER
+In-Reply-To: <20190320063717.31770-9-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:Ro3KPi5TBYaVwMVLQCmoVLM2bXFzwY3UIYHY2s9BCWf9/R/Eavz
+ li8rFPHNxT7QVpWrz/GOstALFm9HkCohSiMACGeb467PVVHoMYpMcp3m/euxv2FatBSxeaA
+ jZKo8HaQb0aJjrJUHGvv3FgCHm2j9BLwmPFQ2vlrQGvTGouAex8hXDOnzt++0U+J0YG2OYm
+ tdwwNCUdN4JrN9gL5wOoQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:fDjBw4BVSrQ=:CS7mXM+eoaRB9Uo5OH0Hfu
+ OtMtHf3tD4eM1BDgxsXwMI7AVrhZkBuDtEDh+/RYN88D5LRppO3DFkZNFWWqkp4yZZln4PfY4
+ 4k35PNRGuHLRqJDP+WHaNZPHA0nuwrgf6R1TJAf8xvMegJ66wPGRl2sPcF6wbbjLADdh8eP68
+ eOZu2W7IDwjm3SPdkdN9c5WHl840V4JyfxyZGQ7Mw84QDGEosPJEMFlRSxUkR6tDzDHApxPn7
+ xRyL4XBAK9fQnwyqLEuYZKcLa45Ago308jnUoyL+FtRP6YIHQ+XBNplDzk0W6IhZPFg8nCp6u
+ /BW9/mhhY4pxn8xp26vI1O4OI6XR/3wYWqu0/3873Fnugm0/PTHZmMnuZxHVOZg9ly2aPhY2v
+ FE0+7WdJldQqbR7tNpYpxZ8rsgznwfgtscU42p7P1EONkJsA+XFAhz26XMqRbEQzL/b/q1eRA
+ 8yV+z2qRd7+5x4eNVEfkRi9PjXxB60VHgZ3N3X72t+2e7OP+GWu2cZY1L8qHgIkYOUAE4X+nP
+ MRRD+E6upDHN3XDjVOmLgXnHmZmiEfbsNVtvjHkavdOM/q0eLQ05kH0OjXRfmyafXv1gFwLws
+ neHcEsUwfsJoDRqdXQK/gn8iWa03hQEcJf/DJi9EmLmn9JNWgJdkawVwNMuUE9yvZf76RODtx
+ LeaP3NY+rPMVZ+huzQ6dOLHKrYgv6wDnetfzkjNzQiCAr5IYOQXvUaIOA3V1PtOpfKEsEZVcJ
+ JNHG+Yo8igeAMeaeXQ/XxfZP9H6Wtg/r6EsGKKW1WhIGrHSYGvDQkszn7HI6JXg24uIEcfJCb
+ IaNOBqvdtpLMZaWo4F59kTUZC6MNnN+mxVjZUOMSf5UXzBkhxsPL4HE53fq3mMWmzPKPPp4wm
+ A2O5ayPl+3QKJ/Ny+qJLUHPSpVFjXEJpNXoNVhHo/Ah5T74RkyJsE6H4gL83ubA955JhJ6TuP
+ /M81q3o6ZOQ==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---dqE8XMZTeUrhhsknsqgqQeYoGCGlaLY2n
-Content-Type: multipart/mixed; boundary="4VIrHLwKrPewzk36EwLjSQXKlagnjdb1W";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Chris Murphy <lists@colorremedies.com>, Thorsten Hirsch <t.hirsch@web.de>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-ID: <d297a788-a591-477e-a54f-31cb45ca37a1@gmx.com>
-Subject: Re: Fw: kernel oops when mounting btrfs
-References: <trinity-49be13bc-b1ea-4ab2-81a5-6d32096c62fb-1553194614498@3c-app-webde-bap65>
- <trinity-774c74cd-2c34-408a-9705-459a561514f2-1553210614842@3c-app-webde-bs36>
- <c59ce3ee-b0cd-f195-9dfa-11abd362d057@gmx.com>
- <CAH+WbHwemzG5V2R81ZSHQXV7NF5pvpQ4X4pUEoZ-dtyD1_bp3w@mail.gmail.com>
- <CAJCQCtR6FKOiNXupU-6UVX-zKzwmg848Jok_z-VStAwtjoGdEQ@mail.gmail.com>
-In-Reply-To: <CAJCQCtR6FKOiNXupU-6UVX-zKzwmg848Jok_z-VStAwtjoGdEQ@mail.gmail.com>
-
---4VIrHLwKrPewzk36EwLjSQXKlagnjdb1W
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
 
+On 2019/3/20 =E4=B8=8B=E5=8D=882:37, Qu Wenruo wrote:
+> There is a report in kernel bugzilla about mismatch file type in dir
+> item and inode item.
+>
+> This inspires us to check inode mode in inode item.
+>
+> This patch will check the following members:
+> - inode key objectid
+>   Should be ROOT_DIR_DIR or [256, (u64)-256] or FREE_INO.
+>
+> - inode key offset
+>   Should be 0
+>
+> - inode item generation
+> - inode item transid
+>   No newer than sb generation + 1.
+>   The +1 is for log tree.
+>
+> - inode item mode
+>   No unknown bits.
+>   No invalid S_IF* bit.
+>   NOTE: S_IFMT check is not enough, need to check every know type.
+>
+> - inode item nlink
+>   Dir should have no more link than 1.
+>
+> - inode item flags
+>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
-[snip]
->=20
-> This looks like the same problem I reported earlier this month, and
-> also filed a bug for at
-> https://bugzilla.kernel.org/show_bug.cgi?id=3D202717
->=20
-> In my case I did a scrub and check before clearing space cache v1. No
-> problems reported. And then clearing space cache v1 crashed. And then
-> check reports corruption.
->=20
-> Bug 1, for sure btrfs check clear cache crashing is a bug
-> Bug 2, btrfs check appears to do non-COW overwrite of the extent tree,
-> which might be fine as long as it doesn't crash but it seems risky
-> considering how fragile the extent tree is anyway
+There is some bug report of kernel producing free space cache inode with
+mode 0, which is invalid and can be detected by this patch.
 
-In fact I think this is a bigger problem.
+Although the patch itself is good, I'm afraid we need to address the
+invalid inode mode created by old kernel in btrfs-progs at least before
+merging this patch into upstream.
 
-This breaks the basic metadata CoW, so I'm going to look into this bug.
-
-We have enough tool to investigate this problem, but I'm afraid it may
-need certain images to trigger.
-
-If anyone is trying to try clear space cache, please try to take a
-binary dump and provide it (if small enough).
+Thankfully we still have one release cycle to handle it.
 
 Thanks,
 Qu
 
->=20
-> Clear cache right now is not fail safe near as I can tell. It can make
-> an error free file system corrupt.
->=20
-> If there's some problem already, before clearing space cache, that
-> means more bugs:
->=20
-> Bug 3, btrfs check doesn't find the problem, reports no errors
-> Bug 4, btrfs kernel code doesn't find the problem during scrub,
-> reports no errors
->=20
->=20
-
-
---4VIrHLwKrPewzk36EwLjSQXKlagnjdb1W--
-
---dqE8XMZTeUrhhsknsqgqQeYoGCGlaLY2n
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlyYV7EACgkQwj2R86El
-/qiZugf/XJsnYkB+4OQBZwe6DLPhGxrM3VMtn/j5ZyzHFs9q6o+l/UDvLNlt4PUk
-pqSq8Xm3fNQbsYt8/HG++UcuEkqAUvkmvo1gG1oo5/i0pnTToNlKxEyq/aYmZWAY
-mFdtNwksEBnEbpOVxWs3uXpvqU2JG9HJmFDS22iOqx+PPg2fETHYYb23brafdQhb
-zji6M9AKqCVIkF0cQtSjvtMtSqcUtVdetzDMwJCIk9cRUgMTIDDVdz+KwQobwd86
-rsA2MTbIu3q5+XL+jzZ4rFr/aWVoBLwE6WHD2rnHXE47UntUWr/oIGZyGGSIiuPl
-OgOQOeRJUZMxLeyWuGEqH1IqBzZdgQ==
-=iAH0
------END PGP SIGNATURE-----
-
---dqE8XMZTeUrhhsknsqgqQeYoGCGlaLY2n--
+> ---
+>  fs/btrfs/ctree.h        |  2 +
+>  fs/btrfs/tree-checker.c | 99 +++++++++++++++++++++++++++++++++++++++++
+>  2 files changed, 101 insertions(+)
+>
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index b3642367a595..b0f19cc56485 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -1539,6 +1539,8 @@ do {                                              =
+                     \
+>  #define BTRFS_INODE_COMPRESS		(1 << 11)
+>
+>  #define BTRFS_INODE_ROOT_ITEM_INIT	(1 << 31)
+> +#define BTRFS_INODE_FLAG_MASK		(((1 << 12) - 1) |\
+> +					 BTRFS_INODE_ROOT_ITEM_INIT)
+>
+>  struct btrfs_map_token {
+>  	const struct extent_buffer *eb;
+> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+> index fef0cd8c90a5..fa0ad9e7de6e 100644
+> --- a/fs/btrfs/tree-checker.c
+> +++ b/fs/btrfs/tree-checker.c
+> @@ -689,6 +689,102 @@ static int check_dev_item(struct btrfs_fs_info *fs=
+_info,
+>  	return -EUCLEAN;
+>  }
+>
+> +/* Inode item error output has the same format as dir_item_err() */
+> +#define inode_item_err(fs_info, eb, slot, fmt, ...)	\
+> +	dir_item_err(fs_info, eb, slot, fmt, __VA_ARGS__)
+> +
+> +static int check_inode_item(struct btrfs_fs_info *fs_info,
+> +			    struct extent_buffer *leaf,
+> +			    struct btrfs_key *key, int slot)
+> +{
+> +	struct btrfs_inode_item *iitem;
+> +	u64 super_gen =3D btrfs_super_generation(fs_info->super_copy);
+> +	u32 valid_mask =3D (S_IFMT | S_ISUID | S_ISGID | S_ISVTX | 0777);
+> +	u32 mode;
+> +
+> +	if ((key->objectid < BTRFS_FIRST_FREE_OBJECTID ||
+> +	     key->objectid > BTRFS_LAST_FREE_OBJECTID) &&
+> +	     key->objectid !=3D BTRFS_ROOT_TREE_DIR_OBJECTID &&
+> +	     key->objectid !=3D BTRFS_FREE_INO_OBJECTID) {
+> +		generic_err(fs_info, leaf, slot,
+> +	"invalid key objectid: has %llu expect %llu or [%llu, %llu] or %llu",
+> +			    key->objectid, BTRFS_ROOT_TREE_DIR_OBJECTID,
+> +			    BTRFS_FIRST_FREE_OBJECTID,
+> +			    BTRFS_LAST_FREE_OBJECTID,
+> +			    BTRFS_FREE_INO_OBJECTID);
+> +		goto error;
+> +	}
+> +	if (key->offset !=3D 0) {
+> +		inode_item_err(fs_info, leaf, slot,
+> +			"invalid key offset: has %llu expect 0",
+> +			key->offset);
+> +		goto error;
+> +	}
+> +	iitem =3D btrfs_item_ptr(leaf, slot, struct btrfs_inode_item);
+> +
+> +	/* Here we use super block generation + 1 to handle log tree */
+> +	if (btrfs_inode_generation(leaf, iitem) > super_gen + 1) {
+> +		inode_item_err(fs_info, leaf, slot,
+> +			"invalid inode generation: has %llu expect (0, %llu]",
+> +			       btrfs_inode_generation(leaf, iitem),
+> +			       super_gen + 1);
+> +		goto error;
+> +	}
+> +	/* Note for ROOT_TREE_DIR_ITEM, mkfs could make its transid as 0 */
+> +	if (btrfs_inode_transid(leaf, iitem) > super_gen + 1) {
+> +		inode_item_err(fs_info, leaf, slot,
+> +			"invalid inode generation: has %llu expect [0, %llu]",
+> +			       btrfs_inode_transid(leaf, iitem),
+> +			       super_gen + 1);
+> +		goto error;
+> +	}
+> +
+> +	/*
+> +	 * For size and nbytes it's better not to be too strict, as for dir
+> +	 * item its size/nbytes can easily get wrong, but doesn't affect
+> +	 * any thing of the fs. So here we skip the check.
+> +	 */
+> +
+> +	mode =3D btrfs_inode_mode(leaf, iitem);
+> +	if (mode & ~valid_mask) {
+> +		inode_item_err(fs_info, leaf, slot,
+> +			       "unknown mode bit detected: 0x%x",
+> +			       mode & ~valid_mask);
+> +		goto error;
+> +	}
+> +
+> +	/*
+> +	 * S_IFMT is not bit mapped so we can't completely rely is_power_of_2(=
+),
+> +	 * but is_power_of_2() can save us from checking FIFO/CHR/DIR/REG.
+> +	 * Only needs to check BLK, LNK and SOCKS
+> +	 */
+> +	if (!is_power_of_2(mode & S_IFMT)) {
+> +		if (!S_ISLNK(mode) && ! S_ISBLK(mode) && !S_ISSOCK(mode)) {
+> +			inode_item_err(fs_info, leaf, slot,
+> +			"invalid mode: has 0%o expect valid S_IF* bit(s)",
+> +				       mode & S_IFMT);
+> +			goto error;
+> +		}
+> +	}
+> +	if (S_ISDIR(mode) && btrfs_inode_nlink(leaf, iitem) > 1) {
+> +		inode_item_err(fs_info, leaf, slot,
+> +			       "invalid nlink: has %u expect no more than 1 for dir",
+> +			btrfs_inode_nlink(leaf, iitem));
+> +		goto error;
+> +	}
+> +	if (btrfs_inode_flags(leaf, iitem) & ~BTRFS_INODE_FLAG_MASK) {
+> +		inode_item_err(fs_info, leaf, slot,
+> +			       "unknown flags detected: 0x%llx",
+> +			       btrfs_inode_flags(leaf, iitem) &
+> +			       ~BTRFS_INODE_FLAG_MASK);
+> +		goto error;
+> +	}
+> +	return 0;
+> +
+> +error:
+> +	return -EUCLEAN;
+> +}
+> +
+>  /*
+>   * Common point to switch the item-specific validation.
+>   */
+> @@ -722,6 +818,9 @@ static int check_leaf_item(struct btrfs_fs_info *fs_=
+info,
+>  	case BTRFS_DEV_ITEM_KEY:
+>  		ret =3D check_dev_item(fs_info, leaf, key, slot);
+>  		break;
+> +	case BTRFS_INODE_ITEM_KEY:
+> +		ret =3D check_inode_item(fs_info, leaf, key, slot);
+> +		break;
+>  	}
+>  	return ret;
+>  }
+>

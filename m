@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8F8D6C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 18:45:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 659A0C10F03
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 18:45:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 64CC120700
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 18:45:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 396E620700
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 18:45:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730332AbfCYSpd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Mar 2019 14:45:33 -0400
-Received: from mx2.suse.de ([195.135.220.15]:39004 "EHLO mx1.suse.de"
+        id S1730310AbfCYSp3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Mar 2019 14:45:29 -0400
+Received: from mx2.suse.de ([195.135.220.15]:38996 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729413AbfCYSpc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Mar 2019 14:45:32 -0400
+        id S1730298AbfCYSp3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Mar 2019 14:45:29 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 6218FAF94
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Mar 2019 18:45:30 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 057EAAF94
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Mar 2019 18:45:28 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id CA1F3DA98F; Mon, 25 Mar 2019 19:46:43 +0100 (CET)
+        id 6710EDA98F; Mon, 25 Mar 2019 19:46:41 +0100 (CET)
 From:   David Sterba <dsterba@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH 13/30] btrfs: tree-checker: get fs_info from eb in generic_err
-Date:   Mon, 25 Mar 2019 19:46:43 +0100
-Message-Id: <0a8c46c8e9840ecaee8a36a2340a13e272b395ca.1553539114.git.dsterba@suse.com>
+Subject: [PATCH 12/30] btrfs: get fs_info from eb in btrfs_verify_level_key
+Date:   Mon, 25 Mar 2019 19:46:41 +0100
+Message-Id: <678d2d1704502200423419789d1fd5334995cf72.1553539114.git.dsterba@suse.com>
 X-Mailer: git-send-email 2.21.0
 In-Reply-To: <cover.1553539114.git.dsterba@suse.com>
 References: <cover.1553539114.git.dsterba@suse.com>
@@ -45,149 +45,64 @@ parameters.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/tree-checker.c | 34 +++++++++++++++++-----------------
- 1 file changed, 17 insertions(+), 17 deletions(-)
+ fs/btrfs/ctree.c   | 2 +-
+ fs/btrfs/disk-io.c | 6 +++---
+ fs/btrfs/disk-io.h | 3 +--
+ 3 files changed, 5 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index de8626234de4..dc157925a602 100644
---- a/fs/btrfs/tree-checker.c
-+++ b/fs/btrfs/tree-checker.c
-@@ -41,12 +41,12 @@
-  * Append generic "corrupt leaf/node root=%llu block=%llu slot=%d: " to @fmt.
-  * Allows callers to customize the output.
-  */
--__printf(4, 5)
-+__printf(3, 4)
- __cold
--static void generic_err(const struct btrfs_fs_info *fs_info,
--			const struct extent_buffer *eb, int slot,
-+static void generic_err(const struct extent_buffer *eb, int slot,
- 			const char *fmt, ...)
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 3e26254fefe8..0998e7fba98b 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -2420,7 +2420,7 @@ read_block_for_search(struct btrfs_root *root, struct btrfs_path *p,
+ 			 * being cached, read from scrub, or have multiple
+ 			 * parents (shared tree blocks).
+ 			 */
+-			if (btrfs_verify_level_key(fs_info, tmp,
++			if (btrfs_verify_level_key(tmp,
+ 					parent_level - 1, &first_key, gen)) {
+ 				free_extent_buffer(tmp);
+ 				return -EUCLEAN;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 3b8114ad7b8c..496b00a78a24 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -394,10 +394,10 @@ static int btrfs_check_super_csum(struct btrfs_fs_info *fs_info,
+ 	return ret;
+ }
+ 
+-int btrfs_verify_level_key(struct btrfs_fs_info *fs_info,
+-			   struct extent_buffer *eb, int level,
++int btrfs_verify_level_key(struct extent_buffer *eb, int level,
+ 			   struct btrfs_key *first_key, u64 parent_transid)
  {
-+	const struct btrfs_fs_info *fs_info = eb->fs_info;
- 	struct va_format vaf;
- 	va_list args;
++	struct btrfs_fs_info *fs_info = eb->fs_info;
+ 	int found_level;
+ 	struct btrfs_key found_key;
+ 	int ret;
+@@ -471,7 +471,7 @@ static int btree_read_extent_buffer_pages(struct extent_buffer *eb,
+ 			if (verify_parent_transid(io_tree, eb,
+ 						   parent_transid, 0))
+ 				ret = -EIO;
+-			else if (btrfs_verify_level_key(fs_info, eb, level,
++			else if (btrfs_verify_level_key(eb, level,
+ 						first_key, parent_transid))
+ 				ret = -EUCLEAN;
+ 			else
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index 917634f2bae9..a32158f0c2fc 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -39,8 +39,7 @@ static inline u64 btrfs_sb_offset(int mirror)
+ struct btrfs_device;
+ struct btrfs_fs_devices;
  
-@@ -196,19 +196,19 @@ static int check_csum_item(struct btrfs_fs_info *fs_info,
- 	u32 csumsize = btrfs_super_csum_size(fs_info->super_copy);
- 
- 	if (key->objectid != BTRFS_EXTENT_CSUM_OBJECTID) {
--		generic_err(fs_info, leaf, slot,
-+		generic_err(leaf, slot,
- 		"invalid key objectid for csum item, have %llu expect %llu",
- 			key->objectid, BTRFS_EXTENT_CSUM_OBJECTID);
- 		return -EUCLEAN;
- 	}
- 	if (!IS_ALIGNED(key->offset, sectorsize)) {
--		generic_err(fs_info, leaf, slot,
-+		generic_err(leaf, slot,
- 	"unaligned key offset for csum item, have %llu should be aligned to %u",
- 			key->offset, sectorsize);
- 		return -EUCLEAN;
- 	}
- 	if (!IS_ALIGNED(btrfs_item_size_nr(leaf, slot), csumsize)) {
--		generic_err(fs_info, leaf, slot,
-+		generic_err(leaf, slot,
- 	"unaligned item size for csum item, have %u should be aligned to %u",
- 			btrfs_item_size_nr(leaf, slot), csumsize);
- 		return -EUCLEAN;
-@@ -486,7 +486,7 @@ static int check_leaf(struct btrfs_fs_info *fs_info, struct extent_buffer *leaf,
- 	int slot;
- 
- 	if (btrfs_header_level(leaf) != 0) {
--		generic_err(fs_info, leaf, 0,
-+		generic_err(leaf, 0,
- 			"invalid level for leaf, have %d expect 0",
- 			btrfs_header_level(leaf));
- 		return -EUCLEAN;
-@@ -511,7 +511,7 @@ static int check_leaf(struct btrfs_fs_info *fs_info, struct extent_buffer *leaf,
- 		    owner == BTRFS_DEV_TREE_OBJECTID ||
- 		    owner == BTRFS_FS_TREE_OBJECTID ||
- 		    owner == BTRFS_DATA_RELOC_TREE_OBJECTID) {
--			generic_err(fs_info, leaf, 0,
-+			generic_err(leaf, 0,
- 			"invalid root, root %llu must never be empty",
- 				    owner);
- 			return -EUCLEAN;
-@@ -540,7 +540,7 @@ static int check_leaf(struct btrfs_fs_info *fs_info, struct extent_buffer *leaf,
- 			eb = btrfs_root_node(check_root);
- 			/* if leaf is the root, then it's fine */
- 			if (leaf != eb) {
--				generic_err(fs_info, leaf, 0,
-+				generic_err(leaf, 0,
- 		"invalid nritems, have %u should not be 0 for non-root leaf",
- 					nritems);
- 				free_extent_buffer(eb);
-@@ -573,7 +573,7 @@ static int check_leaf(struct btrfs_fs_info *fs_info, struct extent_buffer *leaf,
- 
- 		/* Make sure the keys are in the right order */
- 		if (btrfs_comp_cpu_keys(&prev_key, &key) >= 0) {
--			generic_err(fs_info, leaf, slot,
-+			generic_err(leaf, slot,
- 	"bad key order, prev (%llu %u %llu) current (%llu %u %llu)",
- 				prev_key.objectid, prev_key.type,
- 				prev_key.offset, key.objectid, key.type,
-@@ -592,7 +592,7 @@ static int check_leaf(struct btrfs_fs_info *fs_info, struct extent_buffer *leaf,
- 			item_end_expected = btrfs_item_offset_nr(leaf,
- 								 slot - 1);
- 		if (btrfs_item_end_nr(leaf, slot) != item_end_expected) {
--			generic_err(fs_info, leaf, slot,
-+			generic_err(leaf, slot,
- 				"unexpected item end, have %u expect %u",
- 				btrfs_item_end_nr(leaf, slot),
- 				item_end_expected);
-@@ -606,7 +606,7 @@ static int check_leaf(struct btrfs_fs_info *fs_info, struct extent_buffer *leaf,
- 		 */
- 		if (btrfs_item_end_nr(leaf, slot) >
- 		    BTRFS_LEAF_DATA_SIZE(fs_info)) {
--			generic_err(fs_info, leaf, slot,
-+			generic_err(leaf, slot,
- 			"slot end outside of leaf, have %u expect range [0, %u]",
- 				btrfs_item_end_nr(leaf, slot),
- 				BTRFS_LEAF_DATA_SIZE(fs_info));
-@@ -616,7 +616,7 @@ static int check_leaf(struct btrfs_fs_info *fs_info, struct extent_buffer *leaf,
- 		/* Also check if the item pointer overlaps with btrfs item. */
- 		if (btrfs_item_nr_offset(slot) + sizeof(struct btrfs_item) >
- 		    btrfs_item_ptr_offset(leaf, slot)) {
--			generic_err(fs_info, leaf, slot,
-+			generic_err(leaf, slot,
- 		"slot overlaps with its data, item end %lu data start %lu",
- 				btrfs_item_nr_offset(slot) +
- 				sizeof(struct btrfs_item),
-@@ -675,7 +675,7 @@ int btrfs_check_node(struct btrfs_fs_info *fs_info, struct extent_buffer *node)
- 	int ret = 0;
- 
- 	if (level <= 0 || level >= BTRFS_MAX_LEVEL) {
--		generic_err(fs_info, node, 0,
-+		generic_err(node, 0,
- 			"invalid level for node, have %d expect [1, %d]",
- 			level, BTRFS_MAX_LEVEL - 1);
- 		return -EUCLEAN;
-@@ -695,13 +695,13 @@ int btrfs_check_node(struct btrfs_fs_info *fs_info, struct extent_buffer *node)
- 		btrfs_node_key_to_cpu(node, &next_key, slot + 1);
- 
- 		if (!bytenr) {
--			generic_err(fs_info, node, slot,
-+			generic_err(node, slot,
- 				"invalid NULL node pointer");
- 			ret = -EUCLEAN;
- 			goto out;
- 		}
- 		if (!IS_ALIGNED(bytenr, fs_info->sectorsize)) {
--			generic_err(fs_info, node, slot,
-+			generic_err(node, slot,
- 			"unaligned pointer, have %llu should be aligned to %u",
- 				bytenr, fs_info->sectorsize);
- 			ret = -EUCLEAN;
-@@ -709,7 +709,7 @@ int btrfs_check_node(struct btrfs_fs_info *fs_info, struct extent_buffer *node)
- 		}
- 
- 		if (btrfs_comp_cpu_keys(&key, &next_key) >= 0) {
--			generic_err(fs_info, node, slot,
-+			generic_err(node, slot,
- 	"bad key order, current (%llu %u %llu) next (%llu %u %llu)",
- 				key.objectid, key.type, key.offset,
- 				next_key.objectid, next_key.type,
+-int btrfs_verify_level_key(struct btrfs_fs_info *fs_info,
+-			   struct extent_buffer *eb, int level,
++int btrfs_verify_level_key(struct extent_buffer *eb, int level,
+ 			   struct btrfs_key *first_key, u64 parent_transid);
+ struct extent_buffer *read_tree_block(struct btrfs_fs_info *fs_info, u64 bytenr,
+ 				      u64 parent_transid, int level,
 -- 
 2.21.0
 

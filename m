@@ -7,38 +7,37 @@ X-Spam-Status: No, score=-6.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E1775C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 23:00:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CACF7C43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 23:02:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9B2DB20828
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 23:00:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 77A3F20828
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 23:02:36 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="VyqU6Mun"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="UwEjz6xQ"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730541AbfCYXAV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Mar 2019 19:00:21 -0400
-Received: from mout.gmx.net ([212.227.17.22]:57721 "EHLO mout.gmx.net"
+        id S1730061AbfCYXCf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Mar 2019 19:02:35 -0400
+Received: from mout.gmx.net ([212.227.17.22]:48607 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726010AbfCYXAV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Mar 2019 19:00:21 -0400
+        id S1727578AbfCYXCf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Mar 2019 19:02:35 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1553554790;
-        bh=zLVb/XsmpX6/5MtVYybGyClFTcLFVF8DK5Wbra9yb8M=;
-        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
-        b=VyqU6MunUajmnE9pcgG+usqAy04NLo1/LtwSTYzHRxwNQdES4UAv8GhGL23dSlM1w
-         3rhQ2KmLHSM/iUdp3RkzeFqDx8AiwBTh2HD2AqyFOu2JzY8V/9vgY5u0mHSYit/LVI
-         YW/S5BAmlhkhvbG2HjRiSHxNMzAZBB3+YzvN8qGw=
+        s=badeba3b8450; t=1553554946;
+        bh=kkd59QIUWUCX9pLtOQQaE+olWzTDw8SYGVoLsX1kthg=;
+        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
+        b=UwEjz6xQ+lyX/Xto93ceVT4FEfTpDFf/9u6FcglDVnHAnt8byOiUSu6i6Ne8gVipO
+         rEkSXEejAtN6ugEXdFnAPE5fE35F1jEOQtXLjZ6Xr9BjFKSYdaR0+HOfk/DawegXUA
+         tacBXNkUSbAIJxO2NT5KucQEyxh22yRMf2+9zsR0=
 X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
 Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx103
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0LpsmR-1gWS4A0sNj-00fmZM; Mon, 25
- Mar 2019 23:59:50 +0100
-Subject: Re: [PATCH 2/7] btrfs-progs: check/original: Add inode mode check
-To:     Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0MVvDo-1hSIQr1kBU-00X1xx; Tue, 26
+ Mar 2019 00:02:26 +0100
+Subject: Re: [PATCh v2 1/9] btrfs: Move btrfs_check_chunk_valid() to
+ tree-check.[ch] and export it
+To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
-Cc:     Thorsten Hirsch <t.hirsch@web.de>
-References: <20190325082253.19583-1-wqu@suse.com>
- <20190325082253.19583-3-wqu@suse.com>
- <401e97ad-b1a3-fba7-94a0-3232055a85a9@suse.com>
+References: <20190320063717.31770-1-wqu@suse.com>
+ <20190320063717.31770-2-wqu@suse.com> <20190325170630.GO10640@twin.jikos.cz>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -65,107 +64,121 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <2f58316e-2278-9c37-821f-e081b5a706c2@gmx.com>
-Date:   Tue, 26 Mar 2019 06:59:44 +0800
+Message-ID: <7f08dfa3-2b60-9213-9409-83db61c969b8@gmx.com>
+Date:   Tue, 26 Mar 2019 07:02:20 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.5.3
 MIME-Version: 1.0
-In-Reply-To: <401e97ad-b1a3-fba7-94a0-3232055a85a9@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:SKbHyqpcvonnDj9vgBuw6bSV0A0mAReuFeKbHANDajwRimRaTNx
- 8nQeDvT081OnA4i2utXm7a+jIoZbNNrikqiGh+bNkuTUbeVqEeJE06NFIATwRZHJTk4Jdp0
- tD90M+zBwRd+iRbfbJq+SUIo6QGmiY5kImD2w2lhzHgFkpjGjCQ8jjmjG7XLIzuRI/iV7sJ
- C1kqQ8StnQhgf2CQta2QQ==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:ZVg6i9UdW9A=:92eFmsgW6/HMxBbpldI2oZ
- 6yzRDedGcgnrrlPBDPYlxE9R8ue43h2vFLkH3JtheZstXkX3BfaoIK78JNVNFs2ayoeUUTLxH
- Nrqx0w/AwK6+iiska3Mdq/bEipdEbDAkLG+f0KfO2ps8XqToVfq6Zfwljo0IcxEjNnLHtOfnb
- TZqQEvJJit2uNEB6bDx98sb+QU6E1R3+jSUbw7vmU6vhFa4Qa0rTupsT9u5nKk1ht73QjKthx
- e615vpIO9xgeeuQWSi+cDDi3Tf3XkH1JT+yK08+ZEN/82lele5fkYjeXtHxvZig1+kEn37hC3
- T/es4Ygz/NaJ33deHv956pP6A2k50wpKzcNlSlorskzN4Zc4bbgafogPymkfOdcci98lhVzXc
- B9Sz3XcpRWf0q58k7pUh8OoIXyQTqveJ25dNrK8XgVEkMPL7ks4NCEvd4r6SKICbnsF0CgBA3
- +AWpCMPWMBHXZRdMubfNduhxgV2r21xZGz/orjR3tAvs985D/A8oIqT5t2GNx72SbQ2xCzTxv
- WWTV+V5sF4BvL8YYpzB8HgWtIwmlrFb9IaJXmVhu4zKcXoK0DoiejVWXOo/K6VOGKLb2bj5Dq
- CybX3tCSR/qqhJzQ3I/i/3yJ7z2+zTuXkChcvpz32lrru0QrbluUZzdsyZqaryX/doKksaQxl
- njMIfk8mQclk1C7dHmBwxiioPQ/ap87JAueVdfijuf10HEfmkjE0vj8+IGFVxIXO4BEEMaBfh
- fv+em1jJxi3vOMikZDu+RXH2ryNAQnGB9rjxD+Otj963TH4KdqXnItIzPJr8SfCOJQNFD13oo
- zIEd8VW7lRLiaGUr1T5eHh/MlkWWOGRkAXIOzNHjT5ZfVkZJ4ADAaqN3i5E2NXbJ/sbW7/Wet
- PyukP1Kssl1QMk9Ru9+CAPO2H82EKJGCDPCcQhywR5pmm7YOPxWiNWrMtI/uMyZE3OZTsixdd
- qFQvlqYoFpw==
+In-Reply-To: <20190325170630.GO10640@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="7ERMfkmzJsiaY4Hyj3gavRERvsGurFu3i"
+X-Provags-ID: V03:K1:hwneCmc56djcBz1Vu/B3I1wIKiSxUhCwq4lMuj9N5o0eK2H9HoV
+ b6LMKi/dbyDDwJBqEWj5z6TuzJ7GzVgki7IC8fJ1KkjvBKhB1FXsItQAixZiT0/FCxLpAoI
+ HHk1r7M1cOmAjfB30MJkir8YadEcTmd73RLjkF+NI/9MfMBiF2Wuug2SYgoAxAew+mhJ0n9
+ d0A7oqaX1//XPFKnyncTg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:eXL9ouUglIA=:ZWWiAXiPPJTN46p43+oYpx
+ L3c+cuNXnlq6RUPr7NzsyqRbIgitLLL3MWSlYGelwIUlKDns9Be61FfbP42gVvNKibtRhUB7T
+ PIQD7Mh5kTdOWsAJk8IDQZnYmYsRLQQ9fjrdaxWOyQLeEnowFqHXTAnjqyRDHV1wQP3MxANQl
+ VtpcSlfE31i/H8eDhFShU4SlGoe/e02/6twpmxEANwLhUyObz6yIjNKKSZh4qSjyMcHXWgPVE
+ 432VxlKgkOvuc2tXxH/7rQajIS1NA8Gr9+LECowWNEnSJfuOo/CEIf1oTfuYf41ItO99rZGKf
+ rmW3hWgos66bQn9f80pU+oJ95+KH13hszR+LfNJRe4YzOLL1GB5a8SXnIMQD6LP6C/Z7uRGsa
+ 7AfZDzDa2xTsctS3Etnc3wKjSJt+9dEpBUTarz9bMpVvnCgfMEldeQv48xZ5OnRGb3uFR9OMJ
+ Qj82HZT28ZPco9tpfr7buvhw7heG96KCmz38W5P9hw7FG4D2MBK5iVmShSjRIrOanSTXB/SpQ
+ lNEaEJcu6NYAlgiKG0fkuTnbdG/s85VOygGMN/7uW+Gt5YrslJwXvBNdz44xd4MUrFg+bO0CZ
+ RW0MOwHyKAPLdzUlFyyetl65EuM0DGPR6Uk0lHSZFBI/UFELZjTyM166UCIs97vp4GL8z+yp/
+ bQd7lJKGvcvs5FONv0d9PoNXCiAYLbERF4gb/Wnq+bfqoyLKKtsVEo96qCRUqY0hHIOd00vMq
+ kN+Q9PQ/Li0KM+S46XZlszbi8CyGf5N1oDx+7CslAvtO/5sjPQU8BzXtUgFumnb9oDdoVtfmP
+ WVf3McMlRc/Npa23+i38VEegrQ8beZ2FqTrsGlKeU7EFdOfcij3W7JsHLEol9e5X2wvPaLu7Q
+ oubtCmZ13DAegvnjAEXfyVUZGfm9htWIlInUA5+U4nvLaN2pEi5yCkp9JyRUMB
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--7ERMfkmzJsiaY4Hyj3gavRERvsGurFu3i
+Content-Type: multipart/mixed; boundary="GBS6fssdIbmZUUCbE6NmgE5S4njheDeWh";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <7f08dfa3-2b60-9213-9409-83db61c969b8@gmx.com>
+Subject: Re: [PATCh v2 1/9] btrfs: Move btrfs_check_chunk_valid() to
+ tree-check.[ch] and export it
+References: <20190320063717.31770-1-wqu@suse.com>
+ <20190320063717.31770-2-wqu@suse.com> <20190325170630.GO10640@twin.jikos.cz>
+In-Reply-To: <20190325170630.GO10640@twin.jikos.cz>
+
+--GBS6fssdIbmZUUCbE6NmgE5S4njheDeWh
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-On 2019/3/25 =E4=B8=8B=E5=8D=8811:43, Nikolay Borisov wrote:
->
->
-> On 25.03.19 =D0=B3. 10:22 =D1=87., Qu Wenruo wrote:
->> Just like lowmem mode, check inode mode, specially for S_IFMT bits and
->> beyond.
+
+On 2019/3/26 =E4=B8=8A=E5=8D=881:06, David Sterba wrote:
+> On Wed, Mar 20, 2019 at 02:37:09PM +0800, Qu Wenruo wrote:
+>> By function, chunk item verification is more suitable to be done insid=
+e
+>> tree-checker.
 >>
->> Please note that, this check only applies to inodes in fs/subvol trees.
->> It doesn't apply to free space cache inodes.
+>> So move btrfs_check_chunk_valid() to tree-checker.c and export it.
 >>
->> Reported-by: Thorsten Hirsch <t.hirsch@web.de>
+>> And since it's now moved to tree-checker, also add a better comment fo=
+r
+>> what this function is doing.
+>>
 >> Signed-off-by: Qu Wenruo <wqu@suse.com>
 >> ---
->>  check/main.c          | 5 +++++
->>  check/mode-original.h | 1 +
->>  2 files changed, 6 insertions(+)
+>>  fs/btrfs/tree-checker.c | 99 ++++++++++++++++++++++++++++++++++++++++=
++
+>>  fs/btrfs/tree-checker.h |  3 ++
+>>  fs/btrfs/volumes.c      | 94 +-------------------------------------
+>>  3 files changed, 103 insertions(+), 93 deletions(-)
 >>
->> diff --git a/check/main.c b/check/main.c
->> index 7547209c5604..553c93caa2c9 100644
->> --- a/check/main.c
->> +++ b/check/main.c
->> @@ -616,6 +616,9 @@ static void print_inode_error(struct btrfs_root *ro=
-ot, struct inode_record *rec)
->>  		fprintf(stderr, ", odd inode flags");
->>  	if (errors & I_ERR_INLINE_RAM_BYTES_WRONG)
->>  		fprintf(stderr, ", invalid inline ram bytes");
->> +	if (errors & I_ERR_INVALID_IMODE)
->> +		fprintf(stderr, ", invalid inode mode bit 0%o",
->> +			rec->imode & ~07777);
->>  	fprintf(stderr, "\n");
->>  	/* Print the orphan extents if needed */
->>  	if (errors & I_ERR_FILE_EXTENT_ORPHAN)
->> @@ -811,6 +814,8 @@ static void maybe_free_inode_rec(struct cache_tree =
-*inode_cache,
->>  	if (!rec->checked || rec->merging)
->>  		return;
->>
->> +	if (!is_valid_imode(rec->imode))
->> +		rec->errors |=3D I_ERR_INVALID_IMODE;
->
-> should this check actually be moved before the call to imode_to_type.
-> Because if the mode is busted this means we could potentially get
-> REF_ERR_FILETYPE_UNMATCH error?  I.e this check should really fail
-> before anything else ?
+>> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+>> index b8cdaf472031..4e44323ae758 100644
+>> --- a/fs/btrfs/tree-checker.c
+>> +++ b/fs/btrfs/tree-checker.c
+>> @@ -448,6 +448,105 @@ static int check_block_group_item(struct btrfs_f=
+s_info *fs_info,
+>>  	return 0;
+>>  }
+>> =20
+>> +/*
+>> + * The common chunk check which could also work on super block sys ch=
+unk array.
+>> + *
+>> + * Return -EUCLEAN if anything is corrupted.
+>=20
+> Well, that's still confusing if you say EUCLEAN in the commend and use
+> EIO in the code.
+>=20
+Oh, that EIO to EUCLEAN change is in later patch (3/9).
 
-Yes, that should be the case.
-
-I'll update the patch to do this check before using imode.
+Do I need to resend the patchset?
 
 Thanks,
 Qu
 
->
->>  	if (S_ISDIR(rec->imode)) {
->>  		if (rec->found_size !=3D rec->isize)
->>  			rec->errors |=3D I_ERR_DIR_ISIZE_WRONG;
->> diff --git a/check/mode-original.h b/check/mode-original.h
->> index 25ca274118a7..e40a12930a6f 100644
->> --- a/check/mode-original.h
->> +++ b/check/mode-original.h
->> @@ -189,6 +189,7 @@ struct file_extent_hole {
->>  #define I_ERR_ODD_INODE_FLAGS		(1 << 16)
->>  #define I_ERR_INLINE_RAM_BYTES_WRONG	(1 << 17)
->>  #define I_ERR_MISMATCH_DIR_HASH		(1 << 18)
->> +#define I_ERR_INVALID_IMODE		(1 << 19)
->>
->>  struct inode_record {
->>  	struct list_head backrefs;
->>
+
+--GBS6fssdIbmZUUCbE6NmgE5S4njheDeWh--
+
+--7ERMfkmzJsiaY4Hyj3gavRERvsGurFu3i
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlyZXfwACgkQwj2R86El
+/qhgKQf9G0rj7rRhvfbjGqbq3JWn17vjUnnvrzb2OSUHEcQTxxo4jfCPdqnQmCQe
+avUPJuIG4ipxCxn0/77o5pwz8b92b/34pJQdqi6ZvBkThZSKlHrbbRaA9gaH75Em
+lzfEWVP848HVQ/gDST62E23RQKW7GmuVrBn2CgKt4dyC89eR6BziSqJc7ebZw9ix
+AW2LdYFVJRR9Y+98Mp+b//FAeBazBRtr7lCqbBWTiqIzuudzC+vZ/39yPSThJE+6
+A4caj/ZGuxtwZ98qFh6UQwvBSHvwR6/f3cuQD9/Wpkc0NCX0pd8hZHacPF8/KP6l
+y58nLOuWhn5hipsufZs811MamenJHA==
+=qJIs
+-----END PGP SIGNATURE-----
+
+--7ERMfkmzJsiaY4Hyj3gavRERvsGurFu3i--

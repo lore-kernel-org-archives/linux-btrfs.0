@@ -2,83 +2,70 @@ Return-Path: <SRS0=58CB=R4=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham
+X-Spam-Status: No, score=-6.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 76A30C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 14:27:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CDB5AC43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 14:37:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 426DA2084D
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 14:27:01 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7A19F20879
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 14:37:05 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="YdgmXLhQ"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726217AbfCYO1A (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Mar 2019 10:27:00 -0400
-Received: from mx2.suse.de ([195.135.220.15]:48398 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725788AbfCYO1A (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Mar 2019 10:27:00 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 282B1AECD;
-        Mon, 25 Mar 2019 14:26:58 +0000 (UTC)
-Subject: Re: btrfs-cleaner crashes freeing delayed node (5.0.3)
-To:     Jan Alexander Steffens <jan.steffens@gmail.com>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>
-References: <CAMQ-g0dAT1Fa_RZuDmGVk-9ZgHERx1XdrfZ46UFJxYSbNFkX=w@mail.gmail.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <3d959306-e2a5-0860-d06f-ca6748c3c933@suse.com>
-Date:   Mon, 25 Mar 2019 16:26:57 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.1
+        id S1726143AbfCYOhE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Mar 2019 10:37:04 -0400
+Received: from mout.gmx.net ([212.227.15.18]:41267 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725355AbfCYOhE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Mar 2019 10:37:04 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1553524616;
+        bh=HGXadN1s8h1wPx6z+mWLCGodLH5QULqoIGvvHpjKFYc=;
+        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
+        b=YdgmXLhQYLfS0WOvUoW8mGvdI4YIVonSOxAG0WxFC3ESBxcsc4JcYo4ijmCmhyd8e
+         ST0CO2GhmGTyEDWOimrtg+XqUuq/KBkhdeJ+d0cnWCldqaSXH6bV4MGomlQeWJoIcD
+         X9Zl2IkOIt1ef7u67N61ZWINbuHgLmxE27OHNcy8=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([173.82.105.236]) by mail.gmx.com (mrgmx003
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0MaZrd-1hO2jG23Dd-00KAVk; Mon, 25
+ Mar 2019 15:36:56 +0100
+Subject: Re: [PATCH 5/7] btrfs: check/lowmem: Check and repair free space
+ cache inode mode
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20190325082253.19583-1-wqu@suse.com>
+ <20190325082253.19583-6-wqu@suse.com>
+From:   Su Yue <Damenly_Su@gmx.com>
+Message-ID: <9cba693d-bbc3-fe91-80f4-f7b34ea84aad@gmx.com>
+Date:   Mon, 25 Mar 2019 22:36:48 +0800
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:60.0)
+ Gecko/20100101 Thunderbird/60.6.0
 MIME-Version: 1.0
-In-Reply-To: <CAMQ-g0dAT1Fa_RZuDmGVk-9ZgHERx1XdrfZ46UFJxYSbNFkX=w@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20190325082253.19583-6-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:m+Q/6bueIwBW1FSJGmX/XyCpa1w5OALIOsEqAl8AjiRM5tBBFeD
+ nUF3YHVv5ZZ409onklOoG3m3KinRxFPhqPlkMCqqmWezUogk9UYlvXU02ZbS0Jh8mJgS9PD
+ s0rBcOzAa/DfSCEPrlm43MhPA1Zc/aJ5MPzxiZPB9Ay+rsg6gUdXRN8Sldvnwh11uPrjwiG
+ iaXYlmnDgJfC3SNFeuvvQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:g4/joSl9AMU=:cD2CFgDLOMn4uKNYK1zid8
+ Vdd2I6cSltKrigUrpbIcTQ5MkwS2k+dE+qSdYfrjEZU/CxEDZ7iUszAbK3w4OpTGBBFD396Qy
+ uqLrkbpKlDjzIzYQP1aroRrp83ycM5/VAyLx5Fn0KSi84TyPPj+oL8TzxpSJIRaYGWZagLJi2
+ R3evDz43MebczpZ4RyzheCHvB7yt38kkVQJH+MoMNnWz7DKqdDAZChvEY73AdOnuYMaLalYav
+ MZ+8GF/8pHXujjZDVu5wjmDQhjA/QjpYIlYecD1cZ1/B7pHd10Jg8AC8lpyrg5JuPaF8hXVbJ
+ KWN3b70R+0CtB+VmH7M4onjbYK1AYGqM3zzXXk7g/G0WG9e48VP/9+xX4G10moqZIyn1Xodwx
+ Uoiv5cvsEkKy8H6dVxQ4zFtl9l9s22huDFe1FNymH9uzWwe06Pbaw1lj+Oi9SfjphwEiz/4n4
+ IjDfRBswhXxjOR5P+p29TXMXRDrKZ66/U6OpbPrlHsOtm5qGwQqHglNyMm3F4UyPBxTCrx524
+ Lykvxmtr11bUlsc1kJjeTJVAqVxm2X+R4rruGtXM/ntBGhC/jKxwCM4OGH7nrX8AjWsPi2wqe
+ RFEuE2HjaJPtTC5g9LxosFlMIqjvilAxHr4yIJ60zvUPyAxCwx6D3V10V95vzK+mH7Mt6f+wW
+ Ces697UvpKNeKjNdQGs2WzfUu9DOm3c0PyadcjaPEy0mQvMISj0XNXilEHbZ4+Pbv/hco71EJ
+ dlkosW6ipWTTu7CNXxvXPJrSGwPDbXqlTCKucytvokn/AIKvdHiAPn63tpv+XYxEdM3v3U6hV
+ +po6myG0eAsD8BAsa8rI+PJBnpr4B9nybWYe0v/yf42dJ3B3tk4OY4w6xZhqKsWvK3bBtg5Og
+ 92RoRNcUvtZHu2mJDCr2iJD3bnFuhPSYfpbNqGDg/UMqhkHZ2lI4Lw0vwXi8XcSxXkmeU+xhB
+ 1JurUfCoY8w==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -86,93 +73,145 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 23.03.19 г. 1:30 ч., Jan Alexander Steffens wrote:
-> Hi all,
-> 
-> we have a build server here that accumulated lots of uncleaned subvolumes.
-> Snapshots containing build roots are frequently created and destroyed.
-> There's also a borg backup script which creates and destroys a
-> snapshot of the root subvolume.
-> We noticed this only after a reboot for a kernel upgrade, after which
-> the cleaner almost ground the system to a halt.
-> 
-> The server has a single RAID1 btrfs covering two unpartitioned HDDs.
-> 
-> After letting the cleaner do its job, I started some balance
-> operations (the same as in
-> https://github.com/kdave/btrfsmaintenance/blob/master/btrfs-balance.sh).
-> During these operation, btrfs raised two warnings:
-> 
-
-Those two warnings are essentially identical. The first one is saying
-that the block group which is being relocated still has reserved space
-on it - something which shouldn't really happen. The 2nd one also barks
-about a block group which is being deleted yet has a non-zero
-reservation count.
-
-
-> 
-> Later on, long after the balance operations finished, the
-> btrfs-cleaner thread crashed:
-> 
-> Mar 22 22:18:29 soyuz kernel: ------------[ cut here ]------------
-> Mar 22 22:18:29 soyuz kernel: kernel BUG at mm/slub.c:305!
-> Mar 22 22:18:29 soyuz kernel: invalid opcode: 0000 [#1] PREEMPT SMP PTI
-> Mar 22 22:18:31 soyuz kernel: CPU: 6 PID: 305 Comm: btrfs-cleaner
-> Tainted: G W OE 5.0.3-arch1-1-ARCH #1
-> Mar 22 22:18:31 soyuz kernel: Hardware name: FUJITSU /D3417-B2, BIOS
-> V5.0.0.12 R1.8.0.SR.1 for D3417-B2x 05/16/2017
-> Mar 22 22:18:31 soyuz kernel: RIP: 0010:__slab_free+0x1e4/0x380
-> Mar 22 22:18:31 soyuz kernel: Code: 4c 89 ff e8 7e d8 5f 00 48 8b 54
-> 24 18 48 8b 74 24 20 48 89 04 24 e9 ba fe ff ff e8 e6 fb ff ff 85 c0
-> 0f 85 56 fe ff ff eb ad <0f> 0b 48 89 54 24 08 48 89 74 24 10 48 89 4c
-> 24 18 bf 01 00 00 00
-> Mar 22 22:18:31 soyuz kernel: RSP: 0000:ffffa56fc7157d70 EFLAGS: 00010246
-> Mar 22 22:18:31 soyuz kernel: RAX: ffff96b7c058f4b8 RBX:
-> ffff96b7c058f4b8 RCX: ffff96b7c058f4b8
-> Mar 22 22:18:31 soyuz kernel: RDX: 00000000001a000c RSI:
-> ffff96b7c058f4b8 RDI: ffff96c265ff2c00
-> Mar 22 22:18:31 soyuz kernel: RBP: ffffa56fc7157e08 R08:
-> 0000000000000001 R09: ffffffffc0484831
-> Mar 22 22:18:31 soyuz kernel: R10: ffffa56fc7157de0 R11:
-> ffff96bc5e372be0 R12: ffffd9e595016380
-> Mar 22 22:18:31 soyuz kernel: R13: ffff96c265ff2c00 R14:
-> ffff96b7c058f4b8 R15: ffffa56fc7157e40
-> Mar 22 22:18:31 soyuz kernel: FS: 0000000000000000(0000)
-> GS:ffff96c26e380000(0000) knlGS:0000000000000000
-> Mar 22 22:18:31 soyuz kernel: CS: 0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> Mar 22 22:18:31 soyuz kernel: CR2: 00007fa6a0b331e0 CR3:
-> 0000000ee3b60002 CR4: 00000000003606e0
-> Mar 22 22:18:31 soyuz kernel: DR0: 0000000000000000 DR1:
-> 0000000000000000 DR2: 0000000000000000
-> Mar 22 22:18:31 soyuz kernel: DR3: 0000000000000000 DR6:
-> 00000000fffe0ff0 DR7: 0000000000000400
-> Mar 22 22:18:31 soyuz kernel: Call Trace:
-> Mar 22 22:18:31 soyuz kernel: ? radix_tree_node_ctor+0x40/0x40
-> Mar 22 22:18:31 soyuz kernel: ? delete_node+0x37/0x1f0
-> Mar 22 22:18:31 soyuz kernel: ? radix_tree_delete_item+0x39/0xc0
-> Mar 22 22:18:31 soyuz kernel: kmem_cache_free+0x1d3/0x200
-> Mar 22 22:18:31 soyuz kernel: btrfs_kill_all_delayed_nodes+0xb1/0x100 [btrfs]
-> Mar 22 22:18:31 soyuz kernel: ? btrfs_destroy_pinned_extent+0x110/0x110 [btrfs]
-> Mar 22 22:18:31 soyuz kernel: btrfs_clean_one_deleted_snapshot+0x7c/0xf0 [btrfs]
-> Mar 22 22:18:31 soyuz kernel: cleaner_kthread+0x10d/0x130 [btrfs]
-> Mar 22 22:18:31 soyuz kernel: kthread+0x112/0x130
-> Mar 22 22:18:31 soyuz kernel: ? kthread_park+0x80/0x80
-> Mar 22 22:18:31 soyuz kernel: ret_from_fork+0x35/0x40
-> Mar 22 22:18:31 soyuz kernel: Modules linked in: lz4 lz4_compress zram
+On 2019/3/25 4:22 PM, Qu Wenruo wrote:
+> Unlike inodes in fs roots, we don't really check the inode items in root
+> tree, in fact we just skip everything other than ROOT_ITEM and ROOT_REF.
+>
+> This makes invalid inode items sneak into root tree.
+> For example:
+>          item 9 key (256 INODE_ITEM 0) itemoff 13702 itemsize 160
+>                  generation 30 transid 30 size 65536 nbytes 1507328
+>                  block group 0 mode 0 links 1 uid 0 gid 0 rdev 0
+> 				   ^ Should be 100600
+>                  sequence 23 flags 0x1b(NODATASUM|NODATACOW|NOCOMPRESS|P=
+REALLOC)
+>                  atime 0.0 (1970-01-01 08:00:00)
+>                  ctime 1553491158.189771625 (2019-03-25 13:19:18)
+>                  mtime 0.0 (1970-01-01 08:00:00)
+>                  otime 0.0 (1970-01-01 08:00:00)
+>
+> There is a report of such problem in the mail list.
+>
+> This patch will check and repair inode items of free space cache inodes =
+in
+> lowmem mode.
+>
+> Since free space cache inodes doesn't have INODE_REF but still has 1
+> link, we can't use check_inode_item() directly.
+> Instead we only check the inode mode, as that's the important part.
+>
+> The check and repair function: check_repair_free_space_inode() is also
+> exported for original mode.
+>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>   check/mode-common.h |  1 +
+>   check/mode-lowmem.c | 45 +++++++++++++++++++++++++++++++++++++++++++++
+>   check/mode-lowmem.h |  2 ++
+>   3 files changed, 48 insertions(+)
+>
+> diff --git a/check/mode-common.h b/check/mode-common.h
+> index 8895747adf1d..855f83617854 100644
+> --- a/check/mode-common.h
+> +++ b/check/mode-common.h
+> @@ -24,6 +24,7 @@
+>   #include <sys/stat.h>
+>   #include "ctree.h"
+>
+> +#define FREE_SPACE_CACHE_INODE_MODE	(0100600)
+>   /*
+>    * Use for tree walk to walk through trees whose leaves/nodes can be s=
+hared
+>    * between different trees. (Namely subvolume/fs trees)
+> diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+> index f37c3b42e6b6..cdb9b66a63a3 100644
+> --- a/check/mode-lowmem.c
+> +++ b/check/mode-lowmem.c
+> @@ -5091,6 +5091,40 @@ out:
+>   	return err;
+>   }
+>
+> +/*
+> + * For free space inodes, we can't call check_inode_item() as free spac=
+e
+> + * cache inode doesn't have INODE_REF.
+> + * We just check its inode mode.
+> + */
+> +int check_repair_free_space_inode(struct btrfs_fs_info *fs_info,
+> +				  struct btrfs_path *path)
+> +{
 
 
-And this is just a memory corruption. Unfortunately there isn't anything
-which can aid further debugging here.
+In personal taste, I prefer check_free_space_inode() to
+follow existed code.
+
+> +	struct btrfs_inode_item *iitem;
+> +	struct btrfs_key key;
+> +	u32 mode;
+> +	int ret =3D 0;
+> +
+> +	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
+> +	ASSERT(key.type =3D=3D BTRFS_INODE_ITEM_KEY && is_fstree(key.objectid)=
+);
+> +	iitem =3D btrfs_item_ptr(path->nodes[0], path->slots[0],
+> +			       struct btrfs_inode_item);
+> +	mode =3D btrfs_inode_mode(path->nodes[0], iitem);
+> +	if (mode !=3D FREE_SPACE_CACHE_INODE_MODE) {
+> +		error(
+> +	"free space cache inode %llu has invalid mode: has 0%o expect 0%o",
+> +			key.objectid, mode, FREE_SPACE_CACHE_INODE_MODE);
+> +		ret =3D -EUCLEAN;
+> +		if (repair) {
+> +			ret =3D repair_imode_lowmem(fs_info->tree_root,
+> +						  path);
+> +			if (ret < 0)
+> +				return ret;
+> +			return ret;
+> +		}
+> +	}
+> +	return ret;
+> +}
+> +
+>   /*
+>    * Check all fs/file tree in low_memory mode.
+>    *
+> @@ -5130,6 +5164,17 @@ int check_fs_roots_lowmem(struct btrfs_fs_info *f=
+s_info)
+>   		btrfs_item_key_to_cpu(node, &key, slot);
+>   		if (key.objectid > BTRFS_LAST_FREE_OBJECTID)
+>   			goto out;
+> +		if (key.type =3D=3D BTRFS_INODE_ITEM_KEY &&
+> +		    is_fstree(key.objectid)) {
+> +			ret =3D check_repair_free_space_inode(fs_info, &path);
+> +			/* Check if we still have a valid path to continue */
+
+'path.nodes[0]' is quite interesting :).
+What about the situation btrfs_search_slot() succeed but failed to
+commit a transaction?
 
 
-In case you can reproduce the problem it might make sense to apply
-debugging patches to help pinpoint the root cause.
-
-> 
-> I'll reboot the system now to get the cleaner going again. Any suggestions?
-> 
-> Greetings,
-> Jan Steffens
-> Arch Linux
-> 
+=2D--
+Su
+> +			if (ret < 0 && path.nodes[0]) {
+> +				err |=3D ret;
+> +				goto next;
+> +			}
+> +			if (ret < 0 && !path.nodes[0])
+> +				goto out;
+> +		}
+>   		if (key.type =3D=3D BTRFS_ROOT_ITEM_KEY &&
+>   		    fs_root_objectid(key.objectid)) {
+>   			if (key.objectid =3D=3D BTRFS_TREE_RELOC_OBJECTID) {
+> diff --git a/check/mode-lowmem.h b/check/mode-lowmem.h
+> index e0ab30b770d5..d2983fd12eb4 100644
+> --- a/check/mode-lowmem.h
+> +++ b/check/mode-lowmem.h
+> @@ -67,5 +67,7 @@
+>
+>   int check_fs_roots_lowmem(struct btrfs_fs_info *fs_info);
+>   int check_chunks_and_extents_lowmem(struct btrfs_fs_info *fs_info);
+> +int check_repair_free_space_inode(struct btrfs_fs_info *fs_info,
+> +				  struct btrfs_path *path);
+>
+>   #endif
+>

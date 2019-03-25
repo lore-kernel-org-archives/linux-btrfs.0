@@ -6,27 +6,27 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 88EC6C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 15:41:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6839CC43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 15:43:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5826A2083D
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 15:41:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 407242082C
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 15:43:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729273AbfCYPlD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Mar 2019 11:41:03 -0400
-Received: from mx2.suse.de ([195.135.220.15]:35586 "EHLO mx1.suse.de"
+        id S1728991AbfCYPnt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Mar 2019 11:43:49 -0400
+Received: from mx2.suse.de ([195.135.220.15]:36226 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725747AbfCYPlD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Mar 2019 11:41:03 -0400
+        id S1726243AbfCYPnt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Mar 2019 11:43:49 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id F29ECAFAE;
-        Mon, 25 Mar 2019 15:41:00 +0000 (UTC)
-Subject: Re: [PATCH 1/7] btrfs-progs: check/lowmem: Add inode mode check
+        by mx1.suse.de (Postfix) with ESMTP id 858D7AFBE;
+        Mon, 25 Mar 2019 15:43:47 +0000 (UTC)
+Subject: Re: [PATCH 2/7] btrfs-progs: check/original: Add inode mode check
 To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 Cc:     Thorsten Hirsch <t.hirsch@web.de>
 References: <20190325082253.19583-1-wqu@suse.com>
- <20190325082253.19583-2-wqu@suse.com>
+ <20190325082253.19583-3-wqu@suse.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -71,12 +71,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <7034c58e-686f-4ded-2d87-565ded42e316@suse.com>
-Date:   Mon, 25 Mar 2019 17:40:59 +0200
+Message-ID: <401e97ad-b1a3-fba7-94a0-3232055a85a9@suse.com>
+Date:   Mon, 25 Mar 2019 17:43:46 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.5.1
 MIME-Version: 1.0
-In-Reply-To: <20190325082253.19583-2-wqu@suse.com>
+In-Reply-To: <20190325082253.19583-3-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -88,90 +88,58 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 25.03.19 г. 10:22 ч., Qu Wenruo wrote:
-> There is one report about invalid free space cache inode mode.
-> Normally free space cache inode should have mode 100600 (regular file,
-> no uid/gid/sticky bit, rw------ bit).
-> 
-> But in that report, we have free space cache inode mode as 0.
-> 
-> So at least btrfs check should report invalid inode mode.
-> 
-> This patch will at least make btrfs check lowmem mode to detect this
-> problem.
+> Just like lowmem mode, check inode mode, specially for S_IFMT bits and
+> beyond.
 > 
 > Please note that, this check only applies to inodes in fs/subvol trees.
 > It doesn't apply to free space cache inodes.
 > 
 > Reported-by: Thorsten Hirsch <t.hirsch@web.de>
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
 > ---
->  check/mode-common.h | 24 ++++++++++++++++++++++++
->  check/mode-lowmem.c |  5 +++++
->  check/mode-lowmem.h |  1 +
->  3 files changed, 30 insertions(+)
+>  check/main.c          | 5 +++++
+>  check/mode-original.h | 1 +
+>  2 files changed, 6 insertions(+)
 > 
-> diff --git a/check/mode-common.h b/check/mode-common.h
-> index 1fb3cda7d89d..4c88365abbcc 100644
-> --- a/check/mode-common.h
-> +++ b/check/mode-common.h
-> @@ -126,4 +126,28 @@ int delete_corrupted_dir_item(struct btrfs_trans_handle *trans,
->  			      struct btrfs_key *di_key, char *namebuf,
->  			      u32 namelen);
+> diff --git a/check/main.c b/check/main.c
+> index 7547209c5604..553c93caa2c9 100644
+> --- a/check/main.c
+> +++ b/check/main.c
+> @@ -616,6 +616,9 @@ static void print_inode_error(struct btrfs_root *root, struct inode_record *rec)
+>  		fprintf(stderr, ", odd inode flags");
+>  	if (errors & I_ERR_INLINE_RAM_BYTES_WRONG)
+>  		fprintf(stderr, ", invalid inline ram bytes");
+> +	if (errors & I_ERR_INVALID_IMODE)
+> +		fprintf(stderr, ", invalid inode mode bit 0%o",
+> +			rec->imode & ~07777);
+>  	fprintf(stderr, "\n");
+>  	/* Print the orphan extents if needed */
+>  	if (errors & I_ERR_FILE_EXTENT_ORPHAN)
+> @@ -811,6 +814,8 @@ static void maybe_free_inode_rec(struct cache_tree *inode_cache,
+>  	if (!rec->checked || rec->merging)
+>  		return;
 >  
-> +/*
-> + * Check if the inode mode @imode is valid
-> + *
-> + * This check focuses on S_FTMT bits and unused bits.
-> + * Sticky/setuid/setgid and regular owner/group/other bits won't cause
-> + * any problem.
-> + */
-> +static inline bool is_valid_imode(u32 imode)
-> +{
-> +	if (imode & ~(S_IFMT | 07777))
-> +		return false;
-> +
-> +	/*
-> +	 * S_IFMT is not bitmap, nor pure numbering sequence. Need per valid
-> +	 * number check.
-> +	 */
-> +	imode &= S_IFMT;
-> +	if (imode != S_IFDIR && imode != S_IFCHR && imode != S_IFBLK &&
-> +	    imode != S_IFREG && imode != S_IFIFO && imode != S_IFLNK &&
-> +	    imode != S_IFSOCK)
-> +		return false;
-> +	return true;
-> +}
-> +
->  #endif
-> diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
-> index fc6228a05a1b..1553a4a5d2c1 100644
-> --- a/check/mode-lowmem.c
-> +++ b/check/mode-lowmem.c
-> @@ -2452,6 +2452,11 @@ static int check_inode_item(struct btrfs_root *root, struct btrfs_path *path)
->  	nlink = btrfs_inode_nlink(node, ii);
->  	nodatasum = btrfs_inode_flags(node, ii) & BTRFS_INODE_NODATASUM;
+> +	if (!is_valid_imode(rec->imode))
+> +		rec->errors |= I_ERR_INVALID_IMODE;
+
+should this check actually be moved before the call to imode_to_type.
+Because if the mode is busted this means we could potentially get
+REF_ERR_FILETYPE_UNMATCH error?  I.e this check should really fail
+before anything else ?
+
+>  	if (S_ISDIR(rec->imode)) {
+>  		if (rec->found_size != rec->isize)
+>  			rec->errors |= I_ERR_DIR_ISIZE_WRONG;
+> diff --git a/check/mode-original.h b/check/mode-original.h
+> index 25ca274118a7..e40a12930a6f 100644
+> --- a/check/mode-original.h
+> +++ b/check/mode-original.h
+> @@ -189,6 +189,7 @@ struct file_extent_hole {
+>  #define I_ERR_ODD_INODE_FLAGS		(1 << 16)
+>  #define I_ERR_INLINE_RAM_BYTES_WRONG	(1 << 17)
+>  #define I_ERR_MISMATCH_DIR_HASH		(1 << 18)
+> +#define I_ERR_INVALID_IMODE		(1 << 19)
 >  
-> +	if (!is_valid_imode(mode)) {
-> +		error("invalid imode mode bits: 0%o", mode);
-> +		err |= INODE_MODE_ERROR;
-> +	}
-> +
->  	if (S_ISLNK(mode) &&
->  	    flags & (BTRFS_INODE_IMMUTABLE | BTRFS_INODE_APPEND)) {
->  		err |= INODE_FLAGS_ERROR;
-> diff --git a/check/mode-lowmem.h b/check/mode-lowmem.h
-> index 46b9b191ce24..e0ab30b770d5 100644
-> --- a/check/mode-lowmem.h
-> +++ b/check/mode-lowmem.h
-> @@ -46,6 +46,7 @@
->  #define FATAL_ERROR             (1<<22) /* Fatal bit for errno */
->  #define INODE_FLAGS_ERROR	(1<<23) /* Invalid inode flags */
->  #define DIR_ITEM_HASH_MISMATCH	(1<<24) /* Dir item hash mismatch */
-> +#define INODE_MODE_ERROR	(1<<25) /* Bad inode mode */
->  
->  /*
->   * Error bit for low memory mode check.
+>  struct inode_record {
+>  	struct list_head backrefs;
 > 

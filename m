@@ -2,88 +2,176 @@ Return-Path: <SRS0=58CB=R4=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=unavailable
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B9AD8C10F03
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 15:24:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 88EC6C43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 15:41:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 91A9E2087E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 15:24:28 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5826A2083D
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 15:41:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727238AbfCYPYT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Mar 2019 11:24:19 -0400
-Received: from mga02.intel.com ([134.134.136.20]:41697 "EHLO mga02.intel.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726127AbfCYPYT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Mar 2019 11:24:19 -0400
-X-Amp-Result: UNSCANNABLE
-X-Amp-File-Uploaded: False
-Received: from orsmga008.jf.intel.com ([10.7.209.65])
-  by orsmga101.jf.intel.com with ESMTP/TLS/DHE-RSA-AES256-GCM-SHA384; 25 Mar 2019 08:24:17 -0700
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="5.60,269,1549958400"; 
-   d="scan'208";a="128504383"
-Received: from smile.fi.intel.com (HELO smile) ([10.237.72.86])
-  by orsmga008.jf.intel.com with ESMTP; 25 Mar 2019 08:24:11 -0700
-Received: from andy by smile with local (Exim 4.92)
-        (envelope-from <andriy.shevchenko@linux.intel.com>)
-        id 1h8RSL-0007EQ-PF; Mon, 25 Mar 2019 17:24:09 +0200
-Date:   Mon, 25 Mar 2019 17:24:09 +0200
-From:   Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-To:     Sakari Ailus <sakari.ailus@linux.intel.com>
-Cc:     Geert Uytterhoeven <geert@linux-m68k.org>,
-        Petr Mladek <pmladek@suse.com>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        scsi <linux-scsi@vger.kernel.org>,
-        Linux PM list <linux-pm@vger.kernel.org>,
-        Linux MMC List <linux-mmc@vger.kernel.org>,
-        "linux-nvdimm@lists.01.org" <linux-nvdimm@lists.01.org>,
-        linux-um@lists.infradead.org,
-        linux-f2fs-devel@lists.sourceforge.net,
-        linux-block@vger.kernel.org,
-        ACPI Devel Maling List <linux-acpi@vger.kernel.org>,
-        netdev <netdev@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        linux-pci <linux-pci@vger.kernel.org>,
-        sparclinux <sparclinux@vger.kernel.org>,
-        xen-devel@lists.xenproject.org,
-        ceph-devel <ceph-devel@vger.kernel.org>,
-        Linux MM <linux-mm@kvack.org>,
-        Linux ARM <linux-arm-kernel@lists.infradead.org>,
-        Lars Ellenberg <drbd-dev@lists.linbit.com>
-Subject: Re: [PATCH 0/2] Remove support for deprecated %pf and %pF in vsprintf
-Message-ID: <20190325152409.GF9224@smile.fi.intel.com>
-References: <20190322132108.25501-1-sakari.ailus@linux.intel.com>
- <CAMuHMdVmqqjVx7As9AAywYxYXG=grijF5rF77OBn6TUjM9+xKw@mail.gmail.com>
- <20190322135350.2btpno7vspvewxvk@paasikivi.fi.intel.com>
- <20190322170550.GX9224@smile.fi.intel.com>
- <20190324211008.lypghym3gqcp62th@mara.localdomain>
- <20190324211932.GK9224@smile.fi.intel.com>
- <20190325151259.2w22y4ijqilrbaxj@kekkonen.localdomain>
+        id S1729273AbfCYPlD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Mar 2019 11:41:03 -0400
+Received: from mx2.suse.de ([195.135.220.15]:35586 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725747AbfCYPlD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Mar 2019 11:41:03 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id F29ECAFAE;
+        Mon, 25 Mar 2019 15:41:00 +0000 (UTC)
+Subject: Re: [PATCH 1/7] btrfs-progs: check/lowmem: Add inode mode check
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Cc:     Thorsten Hirsch <t.hirsch@web.de>
+References: <20190325082253.19583-1-wqu@suse.com>
+ <20190325082253.19583-2-wqu@suse.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ mQINBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
+ T7g+RbfPFlmQp+EwFWOtABXlKC54zgSf+uulGwx5JAUFVUIRBmnHOYi/lUiE0yhpnb1KCA7f
+ u/W+DkwGerXqhhe9TvQoGwgCKNfzFPZoM+gZrm+kWv03QLUCr210n4cwaCPJ0Nr9Z3c582xc
+ bCUVbsjt7BN0CFa2BByulrx5xD9sDAYIqfLCcZetAqsTRGxM7LD0kh5WlKzOeAXj5r8DOrU2
+ GdZS33uKZI/kZJZVytSmZpswDsKhnGzRN1BANGP8sC+WD4eRXajOmNh2HL4P+meO1TlM3GLl
+ EQd2shHFY0qjEo7wxKZI1RyZZ5AgJnSmehrPCyuIyVY210CbMaIKHUIsTqRgY5GaNME24w7h
+ TyyVCy2qAM8fLJ4Vw5bycM/u5xfWm7gyTb9V1TkZ3o1MTrEsrcqFiRrBY94Rs0oQkZvunqia
+ c+NprYSaOG1Cta14o94eMH271Kka/reEwSZkC7T+o9hZ4zi2CcLcY0DXj0qdId7vUKSJjEep
+ c++s8ncFekh1MPhkOgNj8pk17OAESanmDwksmzh1j12lgA5lTFPrJeRNu6/isC2zyZhTwMWs
+ k3LkcTa8ZXxh0RfWAqgx/ogKPk4ZxOXQEZetkEyTFghbRH2BIwARAQABtCNOaWtvbGF5IEJv
+ cmlzb3YgPG5ib3Jpc292QHN1c2UuY29tPokCOAQTAQIAIgUCWIo48QIbAwYLCQgHAwIGFQgC
+ CQoLBBYCAwECHgECF4AACgkQcb6CRuU/KFc0eg/9GLD3wTQz9iZHMFbjiqTCitD7B6dTLV1C
+ ddZVlC8Hm/TophPts1bWZORAmYIihHHI1EIF19+bfIr46pvfTu0yFrJDLOADMDH+Ufzsfy2v
+ HSqqWV/nOSWGXzh8bgg/ncLwrIdEwBQBN9SDS6aqsglagvwFD91UCg/TshLlRxD5BOnuzfzI
+ Leyx2c6YmH7Oa1R4MX9Jo79SaKwdHt2yRN3SochVtxCyafDlZsE/efp21pMiaK1HoCOZTBp5
+ VzrIP85GATh18pN7YR9CuPxxN0V6IzT7IlhS4Jgj0NXh6vi1DlmKspr+FOevu4RVXqqcNTSS
+ E2rycB2v6cttH21UUdu/0FtMBKh+rv8+yD49FxMYnTi1jwVzr208vDdRU2v7Ij/TxYt/v4O8
+ V+jNRKy5Fevca/1xroQBICXsNoFLr10X5IjmhAhqIH8Atpz/89ItS3+HWuE4BHB6RRLM0gy8
+ T7rN6ja+KegOGikp/VTwBlszhvfLhyoyjXI44Tf3oLSFM+8+qG3B7MNBHOt60CQlMkq0fGXd
+ mm4xENl/SSeHsiomdveeq7cNGpHi6i6ntZK33XJLwvyf00PD7tip/GUj0Dic/ZUsoPSTF/mG
+ EpuQiUZs8X2xjK/AS/l3wa4Kz2tlcOKSKpIpna7V1+CMNkNzaCOlbv7QwprAerKYywPCoOSC
+ 7P25Ag0EWIoHPgEQAMiUqvRBZNvPvki34O/dcTodvLSyOmK/MMBDrzN8Cnk302XfnGlW/YAQ
+ csMWISKKSpStc6tmD+2Y0z9WjyRqFr3EGfH1RXSv9Z1vmfPzU42jsdZn667UxrRcVQXUgoKg
+ QYx055Q2FdUeaZSaivoIBD9WtJq/66UPXRRr4H/+Y5FaUZx+gWNGmBT6a0S/GQnHb9g3nonD
+ jmDKGw+YO4P6aEMxyy3k9PstaoiyBXnzQASzdOi39BgWQuZfIQjN0aW+Dm8kOAfT5i/yk59h
+ VV6v3NLHBjHVw9kHli3jwvsizIX9X2W8tb1SefaVxqvqO1132AO8V9CbE1DcVT8fzICvGi42
+ FoV/k0QOGwq+LmLf0t04Q0csEl+h69ZcqeBSQcIMm/Ir+NorfCr6HjrB6lW7giBkQl6hhomn
+ l1mtDP6MTdbyYzEiBFcwQD4terc7S/8ELRRybWQHQp7sxQM/Lnuhs77MgY/e6c5AVWnMKd/z
+ MKm4ru7A8+8gdHeydrRQSWDaVbfy3Hup0Ia76J9FaolnjB8YLUOJPdhI2vbvNCQ2ipxw3Y3c
+ KhVIpGYqwdvFIiz0Fej7wnJICIrpJs/+XLQHyqcmERn3s/iWwBpeogrx2Lf8AGezqnv9woq7
+ OSoWlwXDJiUdaqPEB/HmGfqoRRN20jx+OOvuaBMPAPb+aKJyle8zABEBAAGJAh8EGAECAAkF
+ AliKBz4CGwwACgkQcb6CRuU/KFdacg/+M3V3Ti9JYZEiIyVhqs+yHb6NMI1R0kkAmzsGQ1jU
+ zSQUz9AVMR6T7v2fIETTT/f5Oout0+Hi9cY8uLpk8CWno9V9eR/B7Ifs2pAA8lh2nW43FFwp
+ IDiSuDbH6oTLmiGCB206IvSuaQCp1fed8U6yuqGFcnf0ZpJm/sILG2ECdFK9RYnMIaeqlNQm
+ iZicBY2lmlYFBEaMXHoy+K7nbOuizPWdUKoKHq+tmZ3iA+qL5s6Qlm4trH28/fPpFuOmgP8P
+ K+7LpYLNSl1oQUr+WlqilPAuLcCo5Vdl7M7VFLMq4xxY/dY99aZx0ZJQYFx0w/6UkbDdFLzN
+ upT7NIN68lZRucImffiWyN7CjH23X3Tni8bS9ubo7OON68NbPz1YIaYaHmnVQCjDyDXkQoKC
+ R82Vf9mf5slj0Vlpf+/Wpsv/TH8X32ajva37oEQTkWNMsDxyw3aPSps6MaMafcN7k60y2Wk/
+ TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
+ RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
+ 5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
+Message-ID: <7034c58e-686f-4ded-2d87-565ded42e316@suse.com>
+Date:   Mon, 25 Mar 2019 17:40:59 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.5.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190325151259.2w22y4ijqilrbaxj@kekkonen.localdomain>
-Organization: Intel Finland Oy - BIC 0357606-4 - Westendinkatu 7, 02160 Espoo
-User-Agent: Mutt/1.10.1 (2018-07-13)
+In-Reply-To: <20190325082253.19583-2-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Mar 25, 2019 at 05:13:00PM +0200, Sakari Ailus wrote:
-
-> All other invalid pointer conversion specifiers currently result into a
-> warning only. I see that as an orthogonal change to this set. I found
-> another issue in checkpatch.pl that may require some discussion; would you
-> be ok with addressing this in another set?
-
-If it looks better that way, I have no objection.
-
--- 
-With Best Regards,
-Andy Shevchenko
 
 
+On 25.03.19 г. 10:22 ч., Qu Wenruo wrote:
+> There is one report about invalid free space cache inode mode.
+> Normally free space cache inode should have mode 100600 (regular file,
+> no uid/gid/sticky bit, rw------ bit).
+> 
+> But in that report, we have free space cache inode mode as 0.
+> 
+> So at least btrfs check should report invalid inode mode.
+> 
+> This patch will at least make btrfs check lowmem mode to detect this
+> problem.
+> 
+> Please note that, this check only applies to inodes in fs/subvol trees.
+> It doesn't apply to free space cache inodes.
+> 
+> Reported-by: Thorsten Hirsch <t.hirsch@web.de>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
+> ---
+>  check/mode-common.h | 24 ++++++++++++++++++++++++
+>  check/mode-lowmem.c |  5 +++++
+>  check/mode-lowmem.h |  1 +
+>  3 files changed, 30 insertions(+)
+> 
+> diff --git a/check/mode-common.h b/check/mode-common.h
+> index 1fb3cda7d89d..4c88365abbcc 100644
+> --- a/check/mode-common.h
+> +++ b/check/mode-common.h
+> @@ -126,4 +126,28 @@ int delete_corrupted_dir_item(struct btrfs_trans_handle *trans,
+>  			      struct btrfs_key *di_key, char *namebuf,
+>  			      u32 namelen);
+>  
+> +/*
+> + * Check if the inode mode @imode is valid
+> + *
+> + * This check focuses on S_FTMT bits and unused bits.
+> + * Sticky/setuid/setgid and regular owner/group/other bits won't cause
+> + * any problem.
+> + */
+> +static inline bool is_valid_imode(u32 imode)
+> +{
+> +	if (imode & ~(S_IFMT | 07777))
+> +		return false;
+> +
+> +	/*
+> +	 * S_IFMT is not bitmap, nor pure numbering sequence. Need per valid
+> +	 * number check.
+> +	 */
+> +	imode &= S_IFMT;
+> +	if (imode != S_IFDIR && imode != S_IFCHR && imode != S_IFBLK &&
+> +	    imode != S_IFREG && imode != S_IFIFO && imode != S_IFLNK &&
+> +	    imode != S_IFSOCK)
+> +		return false;
+> +	return true;
+> +}
+> +
+>  #endif
+> diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+> index fc6228a05a1b..1553a4a5d2c1 100644
+> --- a/check/mode-lowmem.c
+> +++ b/check/mode-lowmem.c
+> @@ -2452,6 +2452,11 @@ static int check_inode_item(struct btrfs_root *root, struct btrfs_path *path)
+>  	nlink = btrfs_inode_nlink(node, ii);
+>  	nodatasum = btrfs_inode_flags(node, ii) & BTRFS_INODE_NODATASUM;
+>  
+> +	if (!is_valid_imode(mode)) {
+> +		error("invalid imode mode bits: 0%o", mode);
+> +		err |= INODE_MODE_ERROR;
+> +	}
+> +
+>  	if (S_ISLNK(mode) &&
+>  	    flags & (BTRFS_INODE_IMMUTABLE | BTRFS_INODE_APPEND)) {
+>  		err |= INODE_FLAGS_ERROR;
+> diff --git a/check/mode-lowmem.h b/check/mode-lowmem.h
+> index 46b9b191ce24..e0ab30b770d5 100644
+> --- a/check/mode-lowmem.h
+> +++ b/check/mode-lowmem.h
+> @@ -46,6 +46,7 @@
+>  #define FATAL_ERROR             (1<<22) /* Fatal bit for errno */
+>  #define INODE_FLAGS_ERROR	(1<<23) /* Invalid inode flags */
+>  #define DIR_ITEM_HASH_MISMATCH	(1<<24) /* Dir item hash mismatch */
+> +#define INODE_MODE_ERROR	(1<<25) /* Bad inode mode */
+>  
+>  /*
+>   * Error bit for low memory mode check.
+> 

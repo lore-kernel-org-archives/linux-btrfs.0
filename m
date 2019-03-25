@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F1EFFC10F03
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 12:31:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0B644C43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 12:31:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CE36A2085A
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 12:31:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DB5D92085A
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 12:31:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731202AbfCYMbs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Mar 2019 08:31:48 -0400
-Received: from mx2.suse.de ([195.135.220.15]:55592 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1731176AbfCYMbn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1731182AbfCYMbn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Mon, 25 Mar 2019 08:31:43 -0400
+Received: from mx2.suse.de ([195.135.220.15]:55598 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1731006AbfCYMbl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Mar 2019 08:31:41 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 532CEAD8A
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Mar 2019 12:31:42 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 56CEFACAC
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Mar 2019 12:31:40 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v3 11/12] btrfs: Implement find_first_clear_extent_bit
-Date:   Mon, 25 Mar 2019 14:31:31 +0200
-Message-Id: <20190325123132.27835-12-nborisov@suse.com>
+Subject: [PATCH v3 05/12] btrfs: Populate ->orig_block_len during read_one_chunk
+Date:   Mon, 25 Mar 2019 14:31:25 +0200
+Message-Id: <20190325123132.27835-6-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20190325123132.27835-1-nborisov@suse.com>
 References: <20190325123132.27835-1-nborisov@suse.com>
@@ -36,113 +36,88 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This function is very similar to find_first_extent_bit except that it
-locates the first contiguous span of space which does not have bits set.
-It's intended use is in the freespace trimming code.
+Chunks read from disk currently don't get their ->orig_block_len member
+set, in contrast when a new chunk is allocated, the respective
+extent_map's ->orig_block_len is assigned the size of the stripe of this
+chunk. Let's apply the same strategy for chunks which are read from
+disk, not only does this codify the invariant that ->orig_block_len
+always contains the size of the stripe for a chunk (when the em belongs
+to the mapping tree). But it's also a preparatory patch for further work
+around tracking chunk allocation in an extent tree rather than
+pinned/pending lists.
 
+Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/extent_io.c | 73 ++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/extent_io.h |  2 ++
- 2 files changed, 75 insertions(+)
+ fs/btrfs/volumes.c | 41 ++++++++++++++++++++++-------------------
+ 1 file changed, 22 insertions(+), 19 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index ff3f8443e180..7e49e5687bac 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1535,6 +1535,79 @@ int find_first_extent_bit(struct extent_io_tree *tree, u64 start,
- 	return ret;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index b49cc5ad758e..39a107bdde06 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6811,6 +6811,26 @@ static void btrfs_report_missing_device(struct btrfs_fs_info *fs_info,
+ 			      devid, uuid);
  }
  
-+/**
-+ * find_first_clear_extent_bit - finds the first range that has @bits not set
-+ * and that starts after @start
-+ *
-+ * @tree - the tree to search
-+ * @start - the offset at/after which the found extent should start
-+ * @start_ret - records the beginning of the range
-+ * @end_ret - records the end of the range (inclusive)
-+ * @bits - the set of bits which must be unset
-+ *
-+ * Since unallocated range is also considered one which doesn't have the bits
-+ * set it's possible that @end_ret contains -1, this happens in case the range
-+ * spans (last_range_end, end of device]. In this case it's up to the caller to
-+ * trim @end_ret to the appropriate size.
-+ */
-+void find_first_clear_extent_bit(struct extent_io_tree *tree, u64 start,
-+				 u64 *start_ret, u64 *end_ret, unsigned bits)
++static u64 calc_stripe_length(u64 type, u64 chunk_len, int num_stripes)
 +{
-+	struct extent_state *state;
-+	struct rb_node *node, *prev = NULL, *next;
++	int index = btrfs_bg_flags_to_raid_index(type);
++	int ncopies = btrfs_raid_array[index].ncopies;
++	int data_stripes;
 +
-+	spin_lock(&tree->lock);
-+
-+	/* Find first extent with bits cleared */
-+	while (1) {
-+		node = __etree_search(tree, start, &next, &prev, NULL, NULL);
-+		if (!node) {
-+			node = next;
-+			if (!node) {
-+				/*
-+				 * We are past the last allocated chunk,
-+				 * set start at the end of the last extent. The
-+				 * device alloc tree should never be empty so
-+				 * prev is always set.
-+				 */
-+				ASSERT(prev);
-+				state = rb_entry(prev, struct extent_state, rb_node);
-+				*start_ret = state->end + 1;
-+				*end_ret = -1;
-+				goto out;
-+			}
-+		}
-+		state = rb_entry(node, struct extent_state, rb_node);
-+		if (in_range(start, state->start, state->end - state->start + 1) &&
-+			(state->state & bits)) {
-+			start = state->end + 1;
-+		} else {
-+			*start_ret = start;
-+			break;
-+		}
++	switch (type & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
++	case BTRFS_BLOCK_GROUP_RAID5:
++		data_stripes = num_stripes - 1;
++		break;
++	case BTRFS_BLOCK_GROUP_RAID6:
++		data_stripes = num_stripes - 2;
++		break;
++	default:
++		data_stripes = num_stripes / ncopies;
++		break;
 +	}
-+
-+	/*
-+	 * Find the longest stretch from start until an entry which has the
-+	 * bits set
-+	 */
-+	while (1) {
-+		state = rb_entry(node, struct extent_state, rb_node);
-+		if (state->end >= start && !(state->state & bits)) {
-+			*end_ret = state->end;
-+		} else {
-+			*end_ret = state->start - 1;
-+			break;
-+		}
-+
-+		node = rb_next(node);
-+		if (!node)
-+			break;
-+	}
-+out:
-+	spin_unlock(&tree->lock);
++	return div_u64(chunk_len, data_stripes);
 +}
 +
- /*
-  * find a contiguous range of bytes in the file marked as delalloc, not
-  * more than 'max_bytes'.  start and end are used to return the range,
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 9dd5190d9dd8..120bc7346405 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -406,6 +406,8 @@ static inline int set_extent_uptodate(struct extent_io_tree *tree, u64 start,
- int find_first_extent_bit(struct extent_io_tree *tree, u64 start,
- 			  u64 *start_ret, u64 *end_ret, unsigned bits,
- 			  struct extent_state **cached_state);
-+void find_first_clear_extent_bit(struct extent_io_tree *tree, u64 start,
-+				 u64 *start_ret, u64 *end_ret, unsigned bits);
- int extent_invalidatepage(struct extent_io_tree *tree,
- 			  struct page *page, unsigned long offset);
- int extent_write_full_page(struct page *page, struct writeback_control *wbc);
+ static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
+ 			  struct extent_buffer *leaf,
+ 			  struct btrfs_chunk *chunk)
+@@ -6870,6 +6890,8 @@ static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
+ 	map->type = btrfs_chunk_type(leaf, chunk);
+ 	map->sub_stripes = btrfs_chunk_sub_stripes(leaf, chunk);
+ 	map->verified_stripes = 0;
++	em->orig_block_len = calc_stripe_length(map->type, em->len,
++						map->num_stripes);
+ 	for (i = 0; i < num_stripes; i++) {
+ 		map->stripes[i].physical =
+ 			btrfs_stripe_offset_nr(leaf, chunk, i);
+@@ -7727,25 +7749,6 @@ int btrfs_bg_type_to_factor(u64 flags)
+ }
+ 
+ 
+-static u64 calc_stripe_length(u64 type, u64 chunk_len, int num_stripes)
+-{
+-	int index = btrfs_bg_flags_to_raid_index(type);
+-	int ncopies = btrfs_raid_array[index].ncopies;
+-	int data_stripes;
+-
+-	switch (type & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
+-	case BTRFS_BLOCK_GROUP_RAID5:
+-		data_stripes = num_stripes - 1;
+-		break;
+-	case BTRFS_BLOCK_GROUP_RAID6:
+-		data_stripes = num_stripes - 2;
+-		break;
+-	default:
+-		data_stripes = num_stripes / ncopies;
+-		break;
+-	}
+-	return div_u64(chunk_len, data_stripes);
+-}
+ 
+ static int verify_one_dev_extent(struct btrfs_fs_info *fs_info,
+ 				 u64 chunk_offset, u64 devid,
 -- 
 2.17.1
 

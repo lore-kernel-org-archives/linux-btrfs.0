@@ -2,82 +2,90 @@ Return-Path: <SRS0=58CB=R4=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3ADE0C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 09:16:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0F3DCC4360F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 09:30:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D72CF2085A
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 09:16:49 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="e5uhNqWS"
+	by mail.kernel.org (Postfix) with ESMTP id C3FE62085A
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 09:30:24 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1553506224;
+	bh=53EtM1rC6yqUbRN59j4sz9Ewknof3CMKmFGx3aTOh9Q=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc:List-ID:From;
+	b=ilFYkgwbHo80E68yjGcOtwUcGo0W1PIMvdpFaqR/0NrOklqKPsEy4YMV4VKzLsTq2
+	 syhD3xDiMOpQSJzTS/Wg/IMSLjAnVvuOgX13uzfmlIJHHCvIwxR5W/XfvOsqKgtFF5
+	 N8uOseVeDWJ+heRTHAQxSu8zZ2lNfSMiu8Unh0WA=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730189AbfCYJQs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Mar 2019 05:16:48 -0400
-Received: from mail.synology.com ([211.23.38.101]:50896 "EHLO synology.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1730076AbfCYJQs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Mar 2019 05:16:48 -0400
-X-Greylist: delayed 593 seconds by postgrey-1.27 at vger.kernel.org; Mon, 25 Mar 2019 05:16:47 EDT
-Received: from localhost.localdomain (unknown [10.17.32.181])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by synology.com (Postfix) with ESMTPSA id 705B2B25263B;
-        Mon, 25 Mar 2019 17:06:53 +0800 (CST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=synology.com; s=123;
-        t=1553504813; bh=ZlcAF87ymAwlg6JfFbSlvp8aiP3h4y5rPpnrSPCUH18=;
-        h=From:To:Cc:Subject:Date;
-        b=e5uhNqWSRTKCFjolfs0t05NpscfrRJNnrpCCQLHASH5CBVWFLUHWQiN/VM1otEOZe
-         tj9M4rdXlC0FOAcgaI7sQZCylMUXOemP5kTvsh3b+P1KXB7o05NJf0xzqQtlNdEtB0
-         jR8sJepd4BbU3JNQchMsgJ2XUZoK7fZ2aT4myP7c=
-From:   robbieko <robbieko@synology.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Robbie Ko <robbieko@synology.com>
-Subject: [PATCH] Btrfs: improve unnecessary free space inode update when space_cache=v1 has never been used
-Date:   Mon, 25 Mar 2019 17:06:38 +0800
-Message-Id: <1553504798-8116-1-git-send-email-robbieko@synology.com>
-X-Mailer: git-send-email 1.9.1
-X-Synology-MCP-Status: no
-X-Synology-Spam-Flag: no
-X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
-X-Synology-Virus-Status: no
+        id S1730224AbfCYJaN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Mar 2019 05:30:13 -0400
+Received: from mail-ot1-f65.google.com ([209.85.210.65]:44518 "EHLO
+        mail-ot1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1730137AbfCYJaN (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Mar 2019 05:30:13 -0400
+Received: by mail-ot1-f65.google.com with SMTP id d24so7342023otl.11;
+        Mon, 25 Mar 2019 02:30:12 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=53EtM1rC6yqUbRN59j4sz9Ewknof3CMKmFGx3aTOh9Q=;
+        b=s5SyEuJHotEhAlGBLQG8JABrWRcK5agBpO7vYn1gmHXwjFfUDM3RD6DpdyDemn4Pdk
+         OKnZrC+4ZbpkqJ1iHQilqO9Oqr8tFyfBZj4fAZINg05nDThhKZDzo1V/zmyyg+IFmpEO
+         eHVpSe+/9V/cDrpBYN6tkv3NwnX3be/NmyjhRQPzFy+jcfh7dG2RCR7ApJQ2PTPFFnx9
+         ckxciJXwXSvQRXnBMHnuubmMx8c+z6gk29vGNmtULux0Ng0oQQ6cWRadaTwgNO+sbb3Q
+         sal4a9kYs4s60/6HeDmEYBFhk0Ix37XUaDxzD1pdXGGmyhgBL77OVX4e7YlwydImzHay
+         KKyQ==
+X-Gm-Message-State: APjAAAVwrLk9aaxIkcoa9uqq0dwRJALvEeDi+vKuMDZzar6Nd1qJAFAb
+        7bSEzjNRAjCyrd24/O6DpD8LyPlxfuoiCJLMTk4=
+X-Google-Smtp-Source: APXvYqxZ3ZE1GoLHOWfT/WY3ID8zgJIIQLpFqHtK6doVrNRBVhafM/uiQ7I6yZZvN3eSo4than0MvB+pOZF6MHvafWk=
+X-Received: by 2002:a05:6830:13cd:: with SMTP id e13mr17805593otq.139.1553506212123;
+ Mon, 25 Mar 2019 02:30:12 -0700 (PDT)
+MIME-Version: 1.0
+References: <20190322132108.25501-1-sakari.ailus@linux.intel.com> <20190322132108.25501-3-sakari.ailus@linux.intel.com>
+In-Reply-To: <20190322132108.25501-3-sakari.ailus@linux.intel.com>
+From:   "Rafael J. Wysocki" <rafael@kernel.org>
+Date:   Mon, 25 Mar 2019 10:30:01 +0100
+Message-ID: <CAJZ5v0i8JiQGk25yZKQqTzCCY+nrfoKXOH8nM6eNPhkN-i+y9w@mail.gmail.com>
+Subject: Re: [PATCH 2/2] vsprintf: Remove support for %pF and %pf in favour of
+ %pS and %ps
+To:     Sakari Ailus <sakari.ailus@linux.intel.com>
+Cc:     Petr Mladek <pmladek@suse.com>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Linux ARM <linux-arm-kernel@lists.infradead.org>,
+        sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
+        xen-devel@lists.xenproject.org,
+        ACPI Devel Maling List <linux-acpi@vger.kernel.org>,
+        Linux PM <linux-pm@vger.kernel.org>, drbd-dev@lists.linbit.com,
+        linux-block@vger.kernel.org, linux-mmc <linux-mmc@vger.kernel.org>,
+        "linux-nvdimm@lists.01.org" <linux-nvdimm@lists.01.org>,
+        Linux PCI <linux-pci@vger.kernel.org>,
+        "open list:TARGET SUBSYSTEM" <linux-scsi@vger.kernel.org>,
+        linux-btrfs@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net,
+        Linux Memory Management List <linux-mm@kvack.org>,
+        ceph-devel@vger.kernel.org, netdev <netdev@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Robbie Ko <robbieko@synology.com>
+On Fri, Mar 22, 2019 at 2:21 PM Sakari Ailus
+<sakari.ailus@linux.intel.com> wrote:
+>
+> %pS and %ps are now the preferred conversion specifiers to print function
+> %names. The functionality is equivalent; remove the old, deprecated %pF
+> %and %pf support.
 
-When we have never used space_cache=v1, we don't need to update
-the free space inode, and try to free up the space occupied by the
-free space inode.
+Are %pF and %pf really not used any more in the kernel?
 
-Signed-off-by: Robbie Ko <robbieko@synology.com>
----
- fs/btrfs/extent-tree.c | 7 +++++++
- 1 file changed, 7 insertions(+)
+If that is not the case, you need to convert the remaining users of
+them to using %ps or %pS before making support for them go away
+completely.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 1d49694..d3bba07 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3403,6 +3403,13 @@ static int cache_save_setup(struct btrfs_block_group_cache *block_group,
- 
- 	if (trans->aborted)
- 		return 0;
-+
-+	if (btrfs_super_cache_generation(fs_info->super_copy) == (u64)-1 &&
-+		!btrfs_test_opt(fs_info, SPACE_CACHE)) {
-+		dcs = BTRFS_DC_WRITTEN;
-+		goto out;
-+	}
-+
- again:
- 	inode = lookup_free_space_inode(fs_info, block_group, path);
- 	if (IS_ERR(inode) && PTR_ERR(inode) != -ENOENT) {
--- 
-1.9.1
-
+That said, checkpatch can be made treat %pf/F as invalid format right away IMO.

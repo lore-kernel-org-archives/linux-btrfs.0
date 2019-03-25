@@ -2,199 +2,170 @@ Return-Path: <SRS0=58CB=R4=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-6.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BCFF9C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 22:57:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E1775C43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 23:00:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8ADC6206C0
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 22:57:00 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9B2DB20828
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 23:00:22 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="VyqU6Mun"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730180AbfCYW47 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Mar 2019 18:56:59 -0400
-Received: from frost.carfax.org.uk ([85.119.82.111]:51020 "EHLO
-        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726010AbfCYW47 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Mar 2019 18:56:59 -0400
-Received: from hrm by frost.carfax.org.uk with local (Exim 4.80)
-        (envelope-from <hrm@carfax.org.uk>)
-        id 1h8YWX-0000iI-Hx; Mon, 25 Mar 2019 22:56:57 +0000
-Date:   Mon, 25 Mar 2019 22:56:57 +0000
-From:   Hugo Mills <hugo@carfax.org.uk>
-To:     berodual_xyz <berodual_xyz@protonmail.com>
-Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: parent transid verify failed / FS wont mount / help please!
-Message-ID: <20190325225657.GE27856@carfax.org.uk>
-Mail-Followup-To: Hugo Mills <hugo@carfax.org.uk>,
-        berodual_xyz <berodual_xyz@protonmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <F4iB3ncMhJwa1h8e21JOCzT6VJADai5sLrMwrjvDwGbC5UjWSaregJSV1dzsfTAQwRBSsDL7ky6f9uVHPFH-2g_DaKhsR9Rl23Hax5JZBeM=@protonmail.com>
- <20190325223842.GC27856@carfax.org.uk>
- <kxQglfkZm7A_i8CXh0JVrJ9H0MF4vFVJWiT8BWRBc8NPM24nZC-vc6sIrts3ZR4T8HEvRTfPv1yz4lPotIuO1JiPYOk60cHMQqHcTFkDfZ4=@protonmail.com>
- <dJY4taBczsTC2XpF8mBue4O5brHguT2KuDS-bRHGA0fJ6m0o9z7bjHv0s2F6uvb0JZGISF-qkTWJT9bvl9ntyPbvq-FoOyQYCi0ZQ8_ShOw=@protonmail.com>
+        id S1730541AbfCYXAV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Mar 2019 19:00:21 -0400
+Received: from mout.gmx.net ([212.227.17.22]:57721 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726010AbfCYXAV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Mar 2019 19:00:21 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1553554790;
+        bh=zLVb/XsmpX6/5MtVYybGyClFTcLFVF8DK5Wbra9yb8M=;
+        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
+        b=VyqU6MunUajmnE9pcgG+usqAy04NLo1/LtwSTYzHRxwNQdES4UAv8GhGL23dSlM1w
+         3rhQ2KmLHSM/iUdp3RkzeFqDx8AiwBTh2HD2AqyFOu2JzY8V/9vgY5u0mHSYit/LVI
+         YW/S5BAmlhkhvbG2HjRiSHxNMzAZBB3+YzvN8qGw=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx103
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0LpsmR-1gWS4A0sNj-00fmZM; Mon, 25
+ Mar 2019 23:59:50 +0100
+Subject: Re: [PATCH 2/7] btrfs-progs: check/original: Add inode mode check
+To:     Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+Cc:     Thorsten Hirsch <t.hirsch@web.de>
+References: <20190325082253.19583-1-wqu@suse.com>
+ <20190325082253.19583-3-wqu@suse.com>
+ <401e97ad-b1a3-fba7-94a0-3232055a85a9@suse.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <2f58316e-2278-9c37-821f-e081b5a706c2@gmx.com>
+Date:   Tue, 26 Mar 2019 06:59:44 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.5.3
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="R6sEYoIZpp9JErk7"
-Content-Disposition: inline
-In-Reply-To: <dJY4taBczsTC2XpF8mBue4O5brHguT2KuDS-bRHGA0fJ6m0o9z7bjHv0s2F6uvb0JZGISF-qkTWJT9bvl9ntyPbvq-FoOyQYCi0ZQ8_ShOw=@protonmail.com>
-X-GPG-Fingerprint: DD84 D558 9D81 DDEE 930D  2054 585E 1475 E2AB 1DE4
-X-GPG-Key: E2AB1DE4
-X-Parrot: It is no more. It has joined the choir invisible.
-X-IRC-Nicks: darksatanic darkersatanic darkling darkthing
-User-Agent: Mutt/1.5.21 (2010-09-15)
+In-Reply-To: <401e97ad-b1a3-fba7-94a0-3232055a85a9@suse.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:SKbHyqpcvonnDj9vgBuw6bSV0A0mAReuFeKbHANDajwRimRaTNx
+ 8nQeDvT081OnA4i2utXm7a+jIoZbNNrikqiGh+bNkuTUbeVqEeJE06NFIATwRZHJTk4Jdp0
+ tD90M+zBwRd+iRbfbJq+SUIo6QGmiY5kImD2w2lhzHgFkpjGjCQ8jjmjG7XLIzuRI/iV7sJ
+ C1kqQ8StnQhgf2CQta2QQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:ZVg6i9UdW9A=:92eFmsgW6/HMxBbpldI2oZ
+ 6yzRDedGcgnrrlPBDPYlxE9R8ue43h2vFLkH3JtheZstXkX3BfaoIK78JNVNFs2ayoeUUTLxH
+ Nrqx0w/AwK6+iiska3Mdq/bEipdEbDAkLG+f0KfO2ps8XqToVfq6Zfwljo0IcxEjNnLHtOfnb
+ TZqQEvJJit2uNEB6bDx98sb+QU6E1R3+jSUbw7vmU6vhFa4Qa0rTupsT9u5nKk1ht73QjKthx
+ e615vpIO9xgeeuQWSi+cDDi3Tf3XkH1JT+yK08+ZEN/82lele5fkYjeXtHxvZig1+kEn37hC3
+ T/es4Ygz/NaJ33deHv956pP6A2k50wpKzcNlSlorskzN4Zc4bbgafogPymkfOdcci98lhVzXc
+ B9Sz3XcpRWf0q58k7pUh8OoIXyQTqveJ25dNrK8XgVEkMPL7ks4NCEvd4r6SKICbnsF0CgBA3
+ +AWpCMPWMBHXZRdMubfNduhxgV2r21xZGz/orjR3tAvs985D/A8oIqT5t2GNx72SbQ2xCzTxv
+ WWTV+V5sF4BvL8YYpzB8HgWtIwmlrFb9IaJXmVhu4zKcXoK0DoiejVWXOo/K6VOGKLb2bj5Dq
+ CybX3tCSR/qqhJzQ3I/i/3yJ7z2+zTuXkChcvpz32lrru0QrbluUZzdsyZqaryX/doKksaQxl
+ njMIfk8mQclk1C7dHmBwxiioPQ/ap87JAueVdfijuf10HEfmkjE0vj8+IGFVxIXO4BEEMaBfh
+ fv+em1jJxi3vOMikZDu+RXH2ryNAQnGB9rjxD+Otj963TH4KdqXnItIzPJr8SfCOJQNFD13oo
+ zIEd8VW7lRLiaGUr1T5eHh/MlkWWOGRkAXIOzNHjT5ZfVkZJ4ADAaqN3i5E2NXbJ/sbW7/Wet
+ PyukP1Kssl1QMk9Ru9+CAPO2H82EKJGCDPCcQhywR5pmm7YOPxWiNWrMtI/uMyZE3OZTsixdd
+ qFQvlqYoFpw==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
---R6sEYoIZpp9JErk7
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
 
-On Mon, Mar 25, 2019 at 10:51:24PM +0000, berodual_xyz wrote:
-> Running "btrfs check" on the 3rd of the 4 devices the volume consists of =
-crashes with a trace:
+On 2019/3/25 =E4=B8=8B=E5=8D=8811:43, Nikolay Borisov wrote:
+>
+>
+> On 25.03.19 =D0=B3. 10:22 =D1=87., Qu Wenruo wrote:
+>> Just like lowmem mode, check inode mode, specially for S_IFMT bits and
+>> beyond.
+>>
+>> Please note that, this check only applies to inodes in fs/subvol trees.
+>> It doesn't apply to free space cache inodes.
+>>
+>> Reported-by: Thorsten Hirsch <t.hirsch@web.de>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>>  check/main.c          | 5 +++++
+>>  check/mode-original.h | 1 +
+>>  2 files changed, 6 insertions(+)
+>>
+>> diff --git a/check/main.c b/check/main.c
+>> index 7547209c5604..553c93caa2c9 100644
+>> --- a/check/main.c
+>> +++ b/check/main.c
+>> @@ -616,6 +616,9 @@ static void print_inode_error(struct btrfs_root *ro=
+ot, struct inode_record *rec)
+>>  		fprintf(stderr, ", odd inode flags");
+>>  	if (errors & I_ERR_INLINE_RAM_BYTES_WRONG)
+>>  		fprintf(stderr, ", invalid inline ram bytes");
+>> +	if (errors & I_ERR_INVALID_IMODE)
+>> +		fprintf(stderr, ", invalid inode mode bit 0%o",
+>> +			rec->imode & ~07777);
+>>  	fprintf(stderr, "\n");
+>>  	/* Print the orphan extents if needed */
+>>  	if (errors & I_ERR_FILE_EXTENT_ORPHAN)
+>> @@ -811,6 +814,8 @@ static void maybe_free_inode_rec(struct cache_tree =
+*inode_cache,
+>>  	if (!rec->checked || rec->merging)
+>>  		return;
+>>
+>> +	if (!is_valid_imode(rec->imode))
+>> +		rec->errors |=3D I_ERR_INVALID_IMODE;
+>
+> should this check actually be moved before the call to imode_to_type.
+> Because if the mode is busted this means we could potentially get
+> REF_ERR_FILETYPE_UNMATCH error?  I.e this check should really fail
+> before anything else ?
 
-   Just for the record, it doesn't matter which device you use for
-btrfs check. You're running it on the whole filesystem, not just one
-device. The device just serves to identify which FS you're running it
-on. (The btrfs check code will scan all the available block devices
-for the other pieces of the FS).
+Yes, that should be the case.
 
-   Hugo.
+I'll update the patch to do this check before using imode.
 
-> ##
-> $ btrfs check --readonly /dev/sdd
-> Opening filesystem to check...
-> parent transid verify failed on 1048576 wanted 60234 found 60230
-> parent transid verify failed on 1048576 wanted 60234 found 60230
-> Ignoring transid failure
-> volumes.c:1762: btrfs_chunk_readonly: BUG_ON `!ce` triggered, value 1
-> btrfs[0x426fdc]
-> btrfs(btrfs_chunk_readonly+0x98)[0x429acd]
-> btrfs(btrfs_read_block_groups+0x1c1)[0x41cd44]
-> btrfs(btrfs_setup_all_roots+0x368)[0x416540]
-> btrfs[0x416a8a]
-> btrfs(open_ctree_fs_info+0xd0)[0x416bcc]
-> btrfs(cmd_check+0x591)[0x45f431]
-> btrfs(main+0x24a)[0x40ca02]
-> /lib64/libc.so.6(__libc_start_main+0xf5)[0x7fa320a44b35]
-> btrfs[0x40c509]
-> [1]    22848 abort      btrfs check --readonly /dev/sdd
-> ##
->=20
-> Trying to mount "ro,usebackuproot" shows bad superblock and following err=
-ors in /var/log/messages:
->=20
-> ##
-> 33814.360633] BTRFS info (device sdd): trying to use backup root at mount=
- time
-> [33814.360637] BTRFS info (device sdd): using free space tree
-> [33814.360638] BTRFS info (device sdd): has skinny extents
-> [33814.361708] BTRFS error (device sdd): parent transid verify failed on =
-1048576 wanted 60234 found 60230
-> [33814.361764] BTRFS error (device sdd): failed to read chunk root
-> [33814.373140] BTRFS error (device sdd): open_ctree failed
-> ##
->=20
->=20
-> Again, thank you very much for all help!
->=20
->=20
->=20
-> Sent with ProtonMail Secure Email.
->=20
-> =E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90 Original =
-Message =E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90
-> On Monday, March 25, 2019 11:44 PM, berodual_xyz <berodual_xyz@protonmail=
-=2Ecom> wrote:
->=20
-> > Thank you very much Hugo,
-> >
-> > the underlying devices are based on HW raid6 and effectively "stitched"=
- together. Loosing any of those would mean loosing all data, so much is cle=
-ar.
-> >
-> > My concern was not so much bitrod / silent data corruption but I would =
-not have expected disabled data checksumming to be a disadvantage at recove=
-ring from the supposed corruption now.
-> >
-> > Does anyone have any input on how to restore files based on inode no. f=
-rom the tree dump that I have?
-> >
-> > "usebackuproot,ro" did not succeed either.
-> >
-> > Much appreciate the input!
-> >
-> > Sent with ProtonMail Secure Email.
-> >
-> > =E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90 Origina=
-l Message =E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90
-> > On Monday, March 25, 2019 11:38 PM, Hugo Mills hugo@carfax.org.uk wrote:
-> >
-> > > On Mon, Mar 25, 2019 at 10:26:29PM +0000, berodual_xyz wrote:
-> > >
-> > > > Dear all,
-> > > > on a large btrfs based filesystem (multi-device raid0 - all devices=
- okay, nodatacow,nodatasum...)
-> > >
-> > > Ouch. I think the only thing you could have done to make the FS
-> > > more fragile is mounting with nobarrier(). Frankly, anything you're
-> > > getting off it is a bonus. RAID-0 gives you no duplicate copy,
-> > > nodatacow implies nodatasum, and nodatasum doesn't even give you the
-> > > ability to detect data corruption, let alone fix it.
-> > > With that configuration, I'd say pretty much by definition the
-> > > contents of the FS are considered to be discardable.
-> > > Restoring from backups is the recommended approach with transid
-> > > failures.
-> > > () Don't do that.
-> > >
-> > > > I experienced severe filesystem corruption, most likely due to a ha=
-rd reset with inflight data.
-> > > > The system cannot mount (also not with "ro,nologreplay" / "nospace_=
-cache" etc.).
-> > >
-> > > Given how close the transids are, have you tried
-> > > "ro,usebackuproot"? That's about your only other option at this
-> > > point. But, if btrfs restore isn't working, then usebacuproot probably
-> > > won't either.
-> > >
-> > > > Running "btrfs restore" I got a reasonable amount of data backed up=
-, but a large chunk is missing.
-> > > > "btrfs check" gives the following error:
+Thanks,
+Qu
 
---=20
-Hugo Mills             | I gave up smoking, drinking and sex once. It was t=
-he
-hugo@... carfax.org.uk | scariest 20 minutes of my life.
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
-
---R6sEYoIZpp9JErk7
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJcmVy5AAoJEFheFHXiqx3kOD0P/2CdQEL9/9Q8j52OOBkMk3r+
-db++yIbcGgcUYCjz6cmK3//cpAvh7/6tKpwMCtCiBJHVPNcmM6s9yp5/4FDJL6Ig
-dE8RDUWq5K8ttUNB5uDbbQkq5GGYCnTZf3RUv1Yhwjq1B5zr9XQtB4ZP4y1dbKv9
-zVgBcuVJgLd3qt5LAxJDvUngXOYMWTYr1n4zx+zUsk9GhEaNfjnuKrqbz3wjZIfA
-9vtPPcdKPPhSs10RsIbMwgeNBV5spQEfGO48EQ2ugG0E3DVNfIpZ51p8YgF0jUeC
-NHm+QwrERSRS2P9E87PrpTTPWxVO4Wq13kDtPg3n22QxiuJoOqOtqi2M7E8dtnGt
-aG93YFGjNrQz11ZMFi+cJ3Vk/0ATsDhq/EvQs1fvwJsLsSBPh1Q1pecwU8j/p54X
-orxkWg7wL1iyQRbwj1+5YOUGngavpC7cjp88uEo1rhKR6Jd7XzNbJB6/m/jKA5Gm
-mtv+Bu4RujHJKSuqxcnXcnFa2vMPfIgTMubzI/cWxNnIvTDL2kUyHph5Sa1k/XoM
-F2tV9uxLK3f2FplCBShgZstB0ScrnYXbzD4vCfPJiqxXqt3rwWidUOUEg51+jENM
-4PO24C8nt9qPDu90GGEpchZdKGlsqMINOXCZEsbew56v32g+wW1kVlr4SzbS25Z8
-ZKKyS3/QUydoNMHUuERw
-=CRL1
------END PGP SIGNATURE-----
-
---R6sEYoIZpp9JErk7--
+>
+>>  	if (S_ISDIR(rec->imode)) {
+>>  		if (rec->found_size !=3D rec->isize)
+>>  			rec->errors |=3D I_ERR_DIR_ISIZE_WRONG;
+>> diff --git a/check/mode-original.h b/check/mode-original.h
+>> index 25ca274118a7..e40a12930a6f 100644
+>> --- a/check/mode-original.h
+>> +++ b/check/mode-original.h
+>> @@ -189,6 +189,7 @@ struct file_extent_hole {
+>>  #define I_ERR_ODD_INODE_FLAGS		(1 << 16)
+>>  #define I_ERR_INLINE_RAM_BYTES_WRONG	(1 << 17)
+>>  #define I_ERR_MISMATCH_DIR_HASH		(1 << 18)
+>> +#define I_ERR_INVALID_IMODE		(1 << 19)
+>>
+>>  struct inode_record {
+>>  	struct list_head backrefs;
+>>

@@ -3,31 +3,31 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6DCC6C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 12:31:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 84828C4360F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 12:31:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4891C2085A
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 12:31:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 600C92085A
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 12:31:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731185AbfCYMbo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Mar 2019 08:31:44 -0400
-Received: from mx2.suse.de ([195.135.220.15]:55586 "EHLO mx1.suse.de"
+        id S1731200AbfCYMbr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Mar 2019 08:31:47 -0400
+Received: from mx2.suse.de ([195.135.220.15]:55604 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1730996AbfCYMbl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Mar 2019 08:31:41 -0400
+        id S1731181AbfCYMbo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Mar 2019 08:31:44 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B4107AE89
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Mar 2019 12:31:39 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 9E085AD38
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Mar 2019 12:31:42 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v3 03/12] btrfs: Handle pending/pinned chunks before blockgroup relocation during device shrink
-Date:   Mon, 25 Mar 2019 14:31:23 +0200
-Message-Id: <20190325123132.27835-4-nborisov@suse.com>
+Subject: [PATCH v3 12/12] btrfs: Switch btrfs_trim_free_extents to find_first_clear_extent_bit
+Date:   Mon, 25 Mar 2019 14:31:32 +0200
+Message-Id: <20190325123132.27835-13-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20190325123132.27835-1-nborisov@suse.com>
 References: <20190325123132.27835-1-nborisov@suse.com>
@@ -36,114 +36,149 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-During device shrink pinned/pending chunks (i.e those which have been
-deleted/created respectively, in the current transaction and haven't
-touched disk) need to be accounted when doing device shrink. Presently
-this happens after the main relocation loop in btrfs_shrink_device,
-which could lead to making another go in the body of the function.
+Instead of always calling the allocator to search for a free extent,
+that satisfies the input criteria, switch btrfs_trim_free_extents to
+using find_first_clear_extent_bit. With this change it's no longer
+necessary to read the device tree in order to figure out holes in
+the devices.
 
-Since there is no hard requirement to perform pinned/pending chunks
-handling after the relocation loop, move the code before it. This leads
-to simplifying the code flow around - i.e no need to use 'goto again'.
+Now the code always searches in-memory data structure to figure out the
+space range which contains the requested which should result in speed
+oups.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/volumes.c | 54 ++++++++++++++++++----------------------------
- 1 file changed, 21 insertions(+), 33 deletions(-)
+ fs/btrfs/extent-tree.c | 89 ++++++++++++------------------------------
+ 1 file changed, 26 insertions(+), 63 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 3f81380265e5..b49cc5ad758e 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4722,15 +4722,15 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 	int slot;
- 	int failed = 0;
- 	bool retried = false;
--	bool checked_pending_chunks = false;
- 	struct extent_buffer *l;
- 	struct btrfs_key key;
- 	struct btrfs_super_block *super_copy = fs_info->super_copy;
- 	u64 old_total = btrfs_super_total_bytes(super_copy);
- 	u64 old_size = btrfs_device_get_total_bytes(device);
- 	u64 diff;
-+	u64 start;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 503d68ba3f6a..7961038e6d08 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -11249,54 +11249,6 @@ int btrfs_error_unpin_extent_range(struct btrfs_fs_info *fs_info,
+ 	return unpin_extent_range(fs_info, start, end, false);
+ }
  
--	new_size = round_down(new_size, fs_info->sectorsize);
-+	start = new_size = round_down(new_size, fs_info->sectorsize);
- 	diff = round_down(old_size - new_size, fs_info->sectorsize);
- 
- 	if (test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state))
-@@ -4742,6 +4742,10 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 
- 	path->reada = READA_BACK;
- 
-+	trans = btrfs_start_transaction(root, 0);
-+	if (IS_ERR(trans))
-+		return PTR_ERR(trans);
-+
- 	mutex_lock(&fs_info->chunk_mutex);
- 
- 	btrfs_device_set_total_bytes(device, new_size);
-@@ -4749,7 +4753,21 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 		device->fs_devices->total_rw_bytes -= diff;
- 		atomic64_sub(diff, &fs_info->free_chunk_space);
- 	}
--	mutex_unlock(&fs_info->chunk_mutex);
-+
-+	/*
-+	 * Once the device's size has been set to the new size, ensure all
-+	 * in-memory chunks are synced to disk so that the loop below sees them
-+	 * and relocates them accordingly.
-+	 */
-+	if (contains_pending_extent(trans->transaction, device, &start, diff)) {
-+		mutex_unlock(&fs_info->chunk_mutex);
-+		ret = btrfs_commit_transaction(trans);
-+		if (ret)
-+			goto done;
-+	} else {
-+		mutex_unlock(&fs_info->chunk_mutex);
-+		btrfs_end_transaction(trans);
-+	}
- 
- again:
- 	key.objectid = device->devid;
-@@ -4840,36 +4858,6 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 	}
- 
- 	mutex_lock(&fs_info->chunk_mutex);
+-static bool should_skip_trim(struct btrfs_device *device, u64 *start, u64 *len)
+-{
+-	u64 trimmed_start = 0, trimmed_end = 0;
+-	u64 end = *start + *len - 1;
 -
--	/*
--	 * We checked in the above loop all device extents that were already in
--	 * the device tree. However before we have updated the device's
--	 * total_bytes to the new size, we might have had chunk allocations that
--	 * have not complete yet (new block groups attached to transaction
--	 * handles), and therefore their device extents were not yet in the
--	 * device tree and we missed them in the loop above. So if we have any
--	 * pending chunk using a device extent that overlaps the device range
--	 * that we can not use anymore, commit the current transaction and
--	 * repeat the search on the device tree - this way we guarantee we will
--	 * not have chunks using device extents that end beyond 'new_size'.
--	 */
--	if (!checked_pending_chunks) {
--		u64 start = new_size;
--		u64 len = old_size - new_size;
+-	if (!find_first_extent_bit(&device->alloc_state, *start, &trimmed_start,
+-				   &trimmed_end, CHUNK_TRIMMED, NULL)) {
+-		u64 trimmed_len = trimmed_end - trimmed_start + 1;
 -
--		if (contains_pending_extent(trans->transaction, device,
--					    &start, len)) {
--			mutex_unlock(&fs_info->chunk_mutex);
--			checked_pending_chunks = true;
--			failed = 0;
--			retried = false;
--			ret = btrfs_commit_transaction(trans);
--			if (ret)
--				goto done;
--			goto again;
+-		if (*start < trimmed_start) {
+-			if (in_range(end, trimmed_start, trimmed_len) ||
+-			    end > trimmed_end) {
+-				/*
+-				 * start|------|end
+-				 *      ts|--|trimmed_len
+-				 *      OR
+-				 * start|-----|end
+-				 *      ts|-----|trimmed_len
+-				 */
+-				*len = trimmed_start - *start;
+-				return false;
+-			} else if (end < trimmed_start) {
+-				/*
+-				 * start|------|end
+-				 *             ts|--|trimmed_len
+-				 */
+-				return false;
+-			}
+-		} else if (in_range(*start, trimmed_start, trimmed_len)) {
+-			if (in_range(end, trimmed_start, trimmed_len)) {
+-				/*
+-				 * start|------|end
+-				 *  ts|----------|trimmed_len
+-				 */
+-				return true;
+-			} else {
+-				/*
+-				 * start|-----------|end
+-				 *  ts|----------|trimmed_len
+-				 */
+-				*start = trimmed_end + 1;
+-				*len = end - *start + 1;
+-				return false;
+-			}
 -		}
 -	}
--
- 	btrfs_device_set_disk_total_bytes(device, new_size);
- 	if (list_empty(&device->post_commit_list))
- 		list_add_tail(&device->post_commit_list,
+-	return false;
+-}
+ /*
+  * It used to be that old block groups would be left around forever.
+  * Iterating over them would be enough to trim unused space.  Since we
+@@ -11320,7 +11272,7 @@ static bool should_skip_trim(struct btrfs_device *device, u64 *start, u64 *len)
+ static int btrfs_trim_free_extents(struct btrfs_device *device,
+ 				   struct fstrim_range *range, u64 *trimmed)
+ {
+-	u64 start = range->start, len = 0;
++	u64 start = max_t(u64, range->start, SZ_1M), len = 0, end = 0;
+ 	int ret;
+ 
+ 	*trimmed = 0;
+@@ -11347,34 +11299,45 @@ static int btrfs_trim_free_extents(struct btrfs_device *device,
+ 		if (ret)
+ 			break;
+ 
+-		ret = find_free_dev_extent_start(device, range->minlen, start,
+-						 &start, &len);
++		find_first_clear_extent_bit(&device->alloc_state, start,
++					    &start, &end,
++					    CHUNK_TRIMMED | CHUNK_ALLOCATED);
++		/* If find_first_clear_extent_bit find a range that spans the
++		 * end of the device it will set end to -1, in this case it's up
++		 * to the caller to trim the value to the size of the device.
++		 */
++		end = min(end, device->total_bytes);
++		len = end - start + 1;
+ 
+-		if (ret) {
++		/* We didn't find any extents */
++		if (!len) {
+ 			mutex_unlock(&fs_info->chunk_mutex);
+-			if (ret == -ENOSPC)
+-				ret = 0;
++			ret = 0;
+ 			break;
+ 		}
+ 
++		/* Keep going until we satisfy minlen or reach end of space */
++		if (len < range->minlen) {
++			mutex_unlock(&fs_info->chunk_mutex);
++			start += len;
++			continue;
++		}
++
+ 		/* If we are out of the passed range break */
+ 		if (start > range->start + range->len - 1) {
+ 			mutex_unlock(&fs_info->chunk_mutex);
+-			ret = 0;
+ 			break;
+ 		}
+ 
+ 		start = max(range->start, start);
+ 		len = min(range->len, len);
+ 
+-		if (!should_skip_trim(device, &start, &len)) {
+-			ret = btrfs_issue_discard(device->bdev, start, len,
+-						  &bytes);
+-			if (!ret)
+-				set_extent_bits(&device->alloc_state, start,
+-						start + bytes - 1,
+-						CHUNK_TRIMMED);
+-		}
++		ret = btrfs_issue_discard(device->bdev, start, len,
++					  &bytes);
++		if (!ret)
++			set_extent_bits(&device->alloc_state, start,
++					start + bytes - 1,
++					CHUNK_TRIMMED);
+ 		mutex_unlock(&fs_info->chunk_mutex);
+ 
+ 		if (ret)
 -- 
 2.17.1
 

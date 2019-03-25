@@ -2,99 +2,88 @@ Return-Path: <SRS0=58CB=R4=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0959BC43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 15:14:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B9AD8C10F03
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 15:24:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D70AE20879
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 15:14:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 91A9E2087E
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 15:24:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729036AbfCYPO4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Mar 2019 11:14:56 -0400
-Received: from mx2.suse.de ([195.135.220.15]:58546 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726010AbfCYPO4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Mar 2019 11:14:56 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 57CBFABA1
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Mar 2019 15:14:55 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 7667BDA825; Mon, 25 Mar 2019 16:16:08 +0100 (CET)
-Date:   Mon, 25 Mar 2019 16:16:07 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3 03/12] btrfs: Handle pending/pinned chunks before
- blockgroup relocation during device shrink
-Message-ID: <20190325151607.GG10640@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20190325123132.27835-1-nborisov@suse.com>
- <20190325123132.27835-4-nborisov@suse.com>
+        id S1727238AbfCYPYT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Mar 2019 11:24:19 -0400
+Received: from mga02.intel.com ([134.134.136.20]:41697 "EHLO mga02.intel.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726127AbfCYPYT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Mar 2019 11:24:19 -0400
+X-Amp-Result: UNSCANNABLE
+X-Amp-File-Uploaded: False
+Received: from orsmga008.jf.intel.com ([10.7.209.65])
+  by orsmga101.jf.intel.com with ESMTP/TLS/DHE-RSA-AES256-GCM-SHA384; 25 Mar 2019 08:24:17 -0700
+X-ExtLoop1: 1
+X-IronPort-AV: E=Sophos;i="5.60,269,1549958400"; 
+   d="scan'208";a="128504383"
+Received: from smile.fi.intel.com (HELO smile) ([10.237.72.86])
+  by orsmga008.jf.intel.com with ESMTP; 25 Mar 2019 08:24:11 -0700
+Received: from andy by smile with local (Exim 4.92)
+        (envelope-from <andriy.shevchenko@linux.intel.com>)
+        id 1h8RSL-0007EQ-PF; Mon, 25 Mar 2019 17:24:09 +0200
+Date:   Mon, 25 Mar 2019 17:24:09 +0200
+From:   Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+To:     Sakari Ailus <sakari.ailus@linux.intel.com>
+Cc:     Geert Uytterhoeven <geert@linux-m68k.org>,
+        Petr Mladek <pmladek@suse.com>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        scsi <linux-scsi@vger.kernel.org>,
+        Linux PM list <linux-pm@vger.kernel.org>,
+        Linux MMC List <linux-mmc@vger.kernel.org>,
+        "linux-nvdimm@lists.01.org" <linux-nvdimm@lists.01.org>,
+        linux-um@lists.infradead.org,
+        linux-f2fs-devel@lists.sourceforge.net,
+        linux-block@vger.kernel.org,
+        ACPI Devel Maling List <linux-acpi@vger.kernel.org>,
+        netdev <netdev@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        linux-pci <linux-pci@vger.kernel.org>,
+        sparclinux <sparclinux@vger.kernel.org>,
+        xen-devel@lists.xenproject.org,
+        ceph-devel <ceph-devel@vger.kernel.org>,
+        Linux MM <linux-mm@kvack.org>,
+        Linux ARM <linux-arm-kernel@lists.infradead.org>,
+        Lars Ellenberg <drbd-dev@lists.linbit.com>
+Subject: Re: [PATCH 0/2] Remove support for deprecated %pf and %pF in vsprintf
+Message-ID: <20190325152409.GF9224@smile.fi.intel.com>
+References: <20190322132108.25501-1-sakari.ailus@linux.intel.com>
+ <CAMuHMdVmqqjVx7As9AAywYxYXG=grijF5rF77OBn6TUjM9+xKw@mail.gmail.com>
+ <20190322135350.2btpno7vspvewxvk@paasikivi.fi.intel.com>
+ <20190322170550.GX9224@smile.fi.intel.com>
+ <20190324211008.lypghym3gqcp62th@mara.localdomain>
+ <20190324211932.GK9224@smile.fi.intel.com>
+ <20190325151259.2w22y4ijqilrbaxj@kekkonen.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190325123132.27835-4-nborisov@suse.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+In-Reply-To: <20190325151259.2w22y4ijqilrbaxj@kekkonen.localdomain>
+Organization: Intel Finland Oy - BIC 0357606-4 - Westendinkatu 7, 02160 Espoo
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Mar 25, 2019 at 02:31:23PM +0200, Nikolay Borisov wrote:
-> During device shrink pinned/pending chunks (i.e those which have been
-> deleted/created respectively, in the current transaction and haven't
-> touched disk) need to be accounted when doing device shrink. Presently
-> this happens after the main relocation loop in btrfs_shrink_device,
-> which could lead to making another go in the body of the function.
-> 
-> Since there is no hard requirement to perform pinned/pending chunks
-> handling after the relocation loop, move the code before it. This leads
-> to simplifying the code flow around - i.e no need to use 'goto again'.
-> 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> ---
->  fs/btrfs/volumes.c | 54 ++++++++++++++++++----------------------------
->  1 file changed, 21 insertions(+), 33 deletions(-)
-> 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 3f81380265e5..b49cc5ad758e 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -4722,15 +4722,15 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
->  	int slot;
->  	int failed = 0;
->  	bool retried = false;
-> -	bool checked_pending_chunks = false;
->  	struct extent_buffer *l;
->  	struct btrfs_key key;
->  	struct btrfs_super_block *super_copy = fs_info->super_copy;
->  	u64 old_total = btrfs_super_total_bytes(super_copy);
->  	u64 old_size = btrfs_device_get_total_bytes(device);
->  	u64 diff;
-> +	u64 start;
->  
-> -	new_size = round_down(new_size, fs_info->sectorsize);
-> +	start = new_size = round_down(new_size, fs_info->sectorsize);
->  	diff = round_down(old_size - new_size, fs_info->sectorsize);
->  
->  	if (test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state))
-> @@ -4742,6 +4742,10 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
->  
->  	path->reada = READA_BACK;
->  
-> +	trans = btrfs_start_transaction(root, 0);
-> +	if (IS_ERR(trans))
+On Mon, Mar 25, 2019 at 05:13:00PM +0200, Sakari Ailus wrote:
 
-path is leaked here
+> All other invalid pointer conversion specifiers currently result into a
+> warning only. I see that as an orthogonal change to this set. I found
+> another issue in checkpatch.pl that may require some discussion; would you
+> be ok with addressing this in another set?
 
-> +		return PTR_ERR(trans);
-> +
->  	mutex_lock(&fs_info->chunk_mutex);
->  
->  	btrfs_device_set_total_bytes(device, new_size);
+If it looks better that way, I have no objection.
+
+-- 
+With Best Regards,
+Andy Shevchenko
+
+

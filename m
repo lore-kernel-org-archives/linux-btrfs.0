@@ -2,95 +2,62 @@ Return-Path: <SRS0=58CB=R4=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 24A89C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 18:46:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EEB2AC43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 19:21:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EE88920700
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 18:46:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CC49E20850
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 19:21:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730459AbfCYSqN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Mar 2019 14:46:13 -0400
-Received: from mx2.suse.de ([195.135.220.15]:39268 "EHLO mx1.suse.de"
+        id S1730043AbfCYTV2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Mar 2019 15:21:28 -0400
+Received: from mx2.suse.de ([195.135.220.15]:44264 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729478AbfCYSqM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Mar 2019 14:46:12 -0400
+        id S1729473AbfCYTV2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Mar 2019 15:21:28 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 4998CAF94
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Mar 2019 18:46:10 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 13A72AF32;
+        Mon, 25 Mar 2019 19:21:27 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 8CF72DA98F; Mon, 25 Mar 2019 19:47:23 +0100 (CET)
-From:   David Sterba <dsterba@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH 30/30] btrfs: get fs_info from eb in btrfs_check_leaf_write
-Date:   Mon, 25 Mar 2019 19:47:23 +0100
-Message-Id: <3076478bb8e11ae9fe17fb848fded598fe8e137b.1553539114.git.dsterba@suse.com>
-X-Mailer: git-send-email 2.21.0
-In-Reply-To: <cover.1553539114.git.dsterba@suse.com>
-References: <cover.1553539114.git.dsterba@suse.com>
+        id 050F5DA98F; Mon, 25 Mar 2019 20:22:39 +0100 (CET)
+Date:   Mon, 25 Mar 2019 20:22:38 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     dsterba@suse.cz, Goldwyn Rodrigues <rgoldwyn@suse.de>,
+        Filipe Manana <fdmanana@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 3/3] btrfs: Perform locking/unlocking in
+ btrfs_remap_file_range()
+Message-ID: <20190325192238.GP10640@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Goldwyn Rodrigues <rgoldwyn@suse.de>,
+        Filipe Manana <fdmanana@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <20190225190744.21664-1-rgoldwyn@suse.de>
+ <20190225190744.21664-3-rgoldwyn@suse.de>
+ <CAL3q7H4JXORsxn5LB2ZK2Mg2wSyZcSgq3P4zFavN-nLQyn2V-A@mail.gmail.com>
+ <20190226125717.6seq2y7vjbh5hyud@merlin>
+ <20190227145242.GO24609@twin.jikos.cz>
+ <20190227150624.GP24609@twin.jikos.cz>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190227150624.GP24609@twin.jikos.cz>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We can read fs_info from extent buffer and can drop it from the
-parameters.
+On Wed, Feb 27, 2019 at 04:06:24PM +0100, David Sterba wrote:
+> So the unchecked access to inode flags does not happen, I did not have a
+> clear picture of the change. The locks are only moved outside of _prep
+> to the caller.
+> 
+> The lock/unlock look better in the same function, they're close toe each
+> other on the same page, so ok from me.
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/disk-io.c      | 2 +-
- fs/btrfs/tree-checker.c | 3 +--
- fs/btrfs/tree-checker.h | 3 +--
- 3 files changed, 3 insertions(+), 5 deletions(-)
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 78a4f6cf866e..5373f4ad4114 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -539,7 +539,7 @@ static int csum_dirty_buffer(struct btrfs_fs_info *fs_info, struct page *page)
- 	if (btrfs_header_level(eb))
- 		err = btrfs_check_node(eb);
- 	else
--		err = btrfs_check_leaf_write(fs_info, eb);
-+		err = btrfs_check_leaf_write(eb);
- 
- 	if (err < 0) {
- 		btrfs_err(fs_info,
-diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index b4f7d47f8d75..aea626a3af53 100644
---- a/fs/btrfs/tree-checker.c
-+++ b/fs/btrfs/tree-checker.c
-@@ -656,8 +656,7 @@ int btrfs_check_leaf_relaxed(struct extent_buffer *leaf)
-  * Don't check if the empty leaf belongs to a tree root. Mostly for balance
-  * and new tree created in current transaction.
-  */
--int btrfs_check_leaf_write(struct btrfs_fs_info *fs_info,
--			   struct extent_buffer *leaf)
-+int btrfs_check_leaf_write(struct extent_buffer *leaf)
- {
- 	return check_leaf(leaf, false, false);
- }
-diff --git a/fs/btrfs/tree-checker.h b/fs/btrfs/tree-checker.h
-index fd09f2247b7c..6a3e96e26b6f 100644
---- a/fs/btrfs/tree-checker.h
-+++ b/fs/btrfs/tree-checker.h
-@@ -21,8 +21,7 @@ int btrfs_check_leaf_full(struct extent_buffer *leaf);
-  * Will only check item pointers, not reading item data.
-  */
- int btrfs_check_leaf_relaxed(struct extent_buffer *leaf);
--int btrfs_check_leaf_write(struct btrfs_fs_info *fs_info,
--			   struct extent_buffer *leaf);
-+int btrfs_check_leaf_write(struct extent_buffer *leaf);
- int btrfs_check_node(struct extent_buffer *node);
- 
- #endif
--- 
-2.21.0
-
+I've applied the patch and only left the locking changes, as discussed.

@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 13C5CC43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 18:45:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8128AC43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 18:45:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E76EB20700
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 18:45:39 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5CD0120700
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 18:45:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730361AbfCYSpj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Mar 2019 14:45:39 -0400
-Received: from mx2.suse.de ([195.135.220.15]:39044 "EHLO mx1.suse.de"
+        id S1730376AbfCYSpo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Mar 2019 14:45:44 -0400
+Received: from mx2.suse.de ([195.135.220.15]:39060 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1730294AbfCYSpj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Mar 2019 14:45:39 -0400
+        id S1730369AbfCYSpn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Mar 2019 14:45:43 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 51DDEAF94
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Mar 2019 18:45:37 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 0FD42AFBD
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Mar 2019 18:45:42 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id B340BDA98F; Mon, 25 Mar 2019 19:46:50 +0100 (CET)
+        id 7971BDA98F; Mon, 25 Mar 2019 19:46:55 +0100 (CET)
 From:   David Sterba <dsterba@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH 16/30] btrfs: tree-checker: get fs_info from eb in dir_item_err
-Date:   Mon, 25 Mar 2019 19:46:50 +0100
-Message-Id: <84b70f00865d972ba1b443a87eb22050332d484e.1553539114.git.dsterba@suse.com>
+Subject: [PATCH 18/30] btrfs: tree-checker: get fs_info from eb in block_group_err
+Date:   Mon, 25 Mar 2019 19:46:55 +0100
+Message-Id: <8988075d09fc3f4a9846dff4a9dcdd03d519f4b8.1553539114.git.dsterba@suse.com>
 X-Mailer: git-send-email 2.21.0
 In-Reply-To: <cover.1553539114.git.dsterba@suse.com>
 References: <cover.1553539114.git.dsterba@suse.com>
@@ -45,107 +45,81 @@ parameters.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/tree-checker.c | 24 ++++++++++++------------
- 1 file changed, 12 insertions(+), 12 deletions(-)
+ fs/btrfs/tree-checker.c | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
 
 diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index 8d6110fafcb4..3dc83e913d09 100644
+index d6822c0390af..1bf8b67dbf57 100644
 --- a/fs/btrfs/tree-checker.c
 +++ b/fs/btrfs/tree-checker.c
-@@ -220,12 +220,12 @@ static int check_csum_item(struct extent_buffer *leaf, struct btrfs_key *key,
-  * Customized reported for dir_item, only important new info is key->objectid,
-  * which represents inode number
-  */
+@@ -354,12 +354,12 @@ static int check_dir_item(struct extent_buffer *leaf,
+ 	return 0;
+ }
+ 
 -__printf(4, 5)
 +__printf(3, 4)
  __cold
--static void dir_item_err(const struct btrfs_fs_info *fs_info,
--			 const struct extent_buffer *eb, int slot,
-+static void dir_item_err(const struct extent_buffer *eb, int slot,
- 			 const char *fmt, ...)
+-static void block_group_err(const struct btrfs_fs_info *fs_info,
+-			    const struct extent_buffer *eb, int slot,
++static void block_group_err(const struct extent_buffer *eb, int slot,
+ 			    const char *fmt, ...)
  {
 +	const struct btrfs_fs_info *fs_info = eb->fs_info;
  	struct btrfs_key key;
  	struct va_format vaf;
  	va_list args;
-@@ -263,7 +263,7 @@ static int check_dir_item(struct btrfs_fs_info *fs_info,
+@@ -392,13 +392,13 @@ static int check_block_group_item(struct btrfs_fs_info *fs_info,
+ 	 * handle it.  We care more about the size.
+ 	 */
+ 	if (key->offset == 0) {
+-		block_group_err(fs_info, leaf, slot,
++		block_group_err(leaf, slot,
+ 				"invalid block group size 0");
+ 		return -EUCLEAN;
+ 	}
  
- 		/* header itself should not cross item boundary */
- 		if (cur + sizeof(*di) > item_size) {
--			dir_item_err(fs_info, leaf, slot,
-+			dir_item_err(leaf, slot,
- 		"dir item header crosses item boundary, have %zu boundary %u",
- 				cur + sizeof(*di), item_size);
- 			return -EUCLEAN;
-@@ -272,7 +272,7 @@ static int check_dir_item(struct btrfs_fs_info *fs_info,
- 		/* dir type check */
- 		dir_type = btrfs_dir_type(leaf, di);
- 		if (dir_type >= BTRFS_FT_MAX) {
--			dir_item_err(fs_info, leaf, slot,
-+			dir_item_err(leaf, slot,
- 			"invalid dir item type, have %u expect [0, %u)",
- 				dir_type, BTRFS_FT_MAX);
- 			return -EUCLEAN;
-@@ -280,14 +280,14 @@ static int check_dir_item(struct btrfs_fs_info *fs_info,
+ 	if (item_size != sizeof(bgi)) {
+-		block_group_err(fs_info, leaf, slot,
++		block_group_err(leaf, slot,
+ 			"invalid item size, have %u expect %zu",
+ 				item_size, sizeof(bgi));
+ 		return -EUCLEAN;
+@@ -408,7 +408,7 @@ static int check_block_group_item(struct btrfs_fs_info *fs_info,
+ 			   sizeof(bgi));
+ 	if (btrfs_block_group_chunk_objectid(&bgi) !=
+ 	    BTRFS_FIRST_CHUNK_TREE_OBJECTID) {
+-		block_group_err(fs_info, leaf, slot,
++		block_group_err(leaf, slot,
+ 		"invalid block group chunk objectid, have %llu expect %llu",
+ 				btrfs_block_group_chunk_objectid(&bgi),
+ 				BTRFS_FIRST_CHUNK_TREE_OBJECTID);
+@@ -416,7 +416,7 @@ static int check_block_group_item(struct btrfs_fs_info *fs_info,
+ 	}
  
- 		if (key->type == BTRFS_XATTR_ITEM_KEY &&
- 		    dir_type != BTRFS_FT_XATTR) {
--			dir_item_err(fs_info, leaf, slot,
-+			dir_item_err(leaf, slot,
- 		"invalid dir item type for XATTR key, have %u expect %u",
- 				dir_type, BTRFS_FT_XATTR);
- 			return -EUCLEAN;
- 		}
- 		if (dir_type == BTRFS_FT_XATTR &&
- 		    key->type != BTRFS_XATTR_ITEM_KEY) {
--			dir_item_err(fs_info, leaf, slot,
-+			dir_item_err(leaf, slot,
- 			"xattr dir type found for non-XATTR key");
- 			return -EUCLEAN;
- 		}
-@@ -300,13 +300,13 @@ static int check_dir_item(struct btrfs_fs_info *fs_info,
- 		name_len = btrfs_dir_name_len(leaf, di);
- 		data_len = btrfs_dir_data_len(leaf, di);
- 		if (name_len > max_name_len) {
--			dir_item_err(fs_info, leaf, slot,
-+			dir_item_err(leaf, slot,
- 			"dir item name len too long, have %u max %u",
- 				name_len, max_name_len);
- 			return -EUCLEAN;
- 		}
- 		if (name_len + data_len > BTRFS_MAX_XATTR_SIZE(fs_info)) {
--			dir_item_err(fs_info, leaf, slot,
-+			dir_item_err(leaf, slot,
- 			"dir item name and data len too long, have %u max %u",
- 				name_len + data_len,
- 				BTRFS_MAX_XATTR_SIZE(fs_info));
-@@ -314,7 +314,7 @@ static int check_dir_item(struct btrfs_fs_info *fs_info,
- 		}
+ 	if (btrfs_block_group_used(&bgi) > key->offset) {
+-		block_group_err(fs_info, leaf, slot,
++		block_group_err(leaf, slot,
+ 			"invalid block group used, have %llu expect [0, %llu)",
+ 				btrfs_block_group_used(&bgi), key->offset);
+ 		return -EUCLEAN;
+@@ -424,7 +424,7 @@ static int check_block_group_item(struct btrfs_fs_info *fs_info,
  
- 		if (data_len && dir_type != BTRFS_FT_XATTR) {
--			dir_item_err(fs_info, leaf, slot,
-+			dir_item_err(leaf, slot,
- 			"dir item with invalid data len, have %u expect 0",
- 				data_len);
- 			return -EUCLEAN;
-@@ -324,7 +324,7 @@ static int check_dir_item(struct btrfs_fs_info *fs_info,
- 
- 		/* header and name/data should not cross item boundary */
- 		if (cur + total_size > item_size) {
--			dir_item_err(fs_info, leaf, slot,
-+			dir_item_err(leaf, slot,
- 		"dir item data crosses item boundary, have %u boundary %u",
- 				cur + total_size, item_size);
- 			return -EUCLEAN;
-@@ -342,7 +342,7 @@ static int check_dir_item(struct btrfs_fs_info *fs_info,
- 					(unsigned long)(di + 1), name_len);
- 			name_hash = btrfs_name_hash(namebuf, name_len);
- 			if (key->offset != name_hash) {
--				dir_item_err(fs_info, leaf, slot,
-+				dir_item_err(leaf, slot,
- 		"name hash mismatch with key, have 0x%016x expect 0x%016llx",
- 					name_hash, key->offset);
- 				return -EUCLEAN;
+ 	flags = btrfs_block_group_flags(&bgi);
+ 	if (hweight64(flags & BTRFS_BLOCK_GROUP_PROFILE_MASK) > 1) {
+-		block_group_err(fs_info, leaf, slot,
++		block_group_err(leaf, slot,
+ "invalid profile flags, have 0x%llx (%lu bits set) expect no more than 1 bit set",
+ 			flags & BTRFS_BLOCK_GROUP_PROFILE_MASK,
+ 			hweight64(flags & BTRFS_BLOCK_GROUP_PROFILE_MASK));
+@@ -437,7 +437,7 @@ static int check_block_group_item(struct btrfs_fs_info *fs_info,
+ 	    type != BTRFS_BLOCK_GROUP_SYSTEM &&
+ 	    type != (BTRFS_BLOCK_GROUP_METADATA |
+ 			   BTRFS_BLOCK_GROUP_DATA)) {
+-		block_group_err(fs_info, leaf, slot,
++		block_group_err(leaf, slot,
+ "invalid type, have 0x%llx (%lu bits set) expect either 0x%llx, 0x%llx, 0x%llx or 0x%llx",
+ 			type, hweight64(type),
+ 			BTRFS_BLOCK_GROUP_DATA, BTRFS_BLOCK_GROUP_METADATA,
 -- 
 2.21.0
 

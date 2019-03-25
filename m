@@ -2,100 +2,187 @@ Return-Path: <SRS0=58CB=R4=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B7767C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 16:40:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 16EFAC43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 16:43:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 896F620863
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 16:40:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DAEC320863
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 16:43:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728957AbfCYQk3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Mar 2019 12:40:29 -0400
-Received: from mx2.suse.de ([195.135.220.15]:45530 "EHLO mx1.suse.de"
+        id S1729127AbfCYQnx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Mar 2019 12:43:53 -0400
+Received: from mx2.suse.de ([195.135.220.15]:46068 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725747AbfCYQk3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Mar 2019 12:40:29 -0400
+        id S1725795AbfCYQnx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Mar 2019 12:43:53 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 4FDBFAF17
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Mar 2019 16:40:28 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id A3A15DA98F; Mon, 25 Mar 2019 17:41:41 +0100 (CET)
-Date:   Mon, 25 Mar 2019 17:41:41 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Exploit the fact pages passed to extent_readpages
- are always contiguous
-Message-ID: <20190325164141.GL10640@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20190311075538.19242-1-nborisov@suse.com>
- <20190313172709.GD31119@twin.jikos.cz>
- <7252ea0b-8a68-aad4-0b7a-a37f012e9f6c@suse.com>
+        by mx1.suse.de (Postfix) with ESMTP id C1D05AEBB
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Mar 2019 16:43:51 +0000 (UTC)
+Subject: Re: [PATCH v3 07/12] btrfs: replace pending/pinned chunks lists with
+ io tree
+To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org,
+        Jeff Mahoney <jeffm@suse.com>
+References: <20190325123132.27835-1-nborisov@suse.com>
+ <20190325123132.27835-8-nborisov@suse.com>
+ <20190325162651.GI10640@twin.jikos.cz>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <75db110a-db25-e1ff-f74d-997b61532bf7@suse.com>
+Date:   Mon, 25 Mar 2019 18:43:49 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.5.1
 MIME-Version: 1.0
+In-Reply-To: <20190325162651.GI10640@twin.jikos.cz>
 Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
+Content-Language: en-US
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <7252ea0b-8a68-aad4-0b7a-a37f012e9f6c@suse.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Mar 14, 2019 at 09:17:14AM +0200, Nikolay Borisov wrote:
-> 
-> 
-> On 13.03.19 г. 19:27 ч., David Sterba wrote:
-> > On Mon, Mar 11, 2019 at 09:55:38AM +0200, Nikolay Borisov wrote:
-> >> Currently extent_readpages (called from btrfs_redpages) will always call
-> >> __extent_readpages which tries to create contiguous range of pages and
-> >> call __do_contiguous_readpages when such contiguous range is created.
-> >>
-> >> It turns out this is unnecessary due to the fact that generic VFS code
-> >> always calls filesystem's ->readpages callback (btrfs_readpages in
-> >> this case) with already contiguous pages. Armed with this knowledge it's
-> >> possible to simplify extent_readpages by eliminating the call to
-> >> __extent_readpages and directly calling contiguous_readpages. The only
-> >> edge case that needs to be handled is when add_to_page_cache_lru
-> >> fails. This is easy as all that is needed is to submit whatever is the
-> >> number of pages successfully added to the lru.
-> > 
-> > I'd like to have more details why this is correct. Submitting what we
-> > have so far seems ok, the reasons why add_to_page_cache_lru are unclear
-> > and go back to xarray.
-> 
-> I'm having a hard time parsing the sentence after the comma, could you
-> rephrase that?
 
-The errors that can be returned from add_to_page_cache_lru are deep
-inside the MM code, I traced it to the xarray helpers that now manage
-the page cache.
 
-> > 
-> > Possible error is EEXSIT, here it's clear that we don't need to read the
+On 25.03.19 г. 18:26 ч., David Sterba wrote:
+> On Mon, Mar 25, 2019 at 02:31:27PM +0200, Nikolay Borisov wrote:
+>> From: Jeff Mahoney <jeffm@suse.com>
+>>
+>> The pending chunks list contains chunks that are allocated in the
+>> current transaction but haven't been created yet. The pinned chunks
+>> list contains chunks that are being released in the current transaction.
+>> Both describe chunks that are not reflected on disk as in use but are
+>> unavailable just the same.
+>>
+>> The pending chunks list is anchored by the transaction handle, which
+>> means that we need to hold a reference to a transaction when working
+>> with the list.
+>>
+>> We use these lists to ensure that we don't end up discarding chunks
+>> that are allocated or released in the current transaction.  What we r
+>>
+>> The way we use them is by iterating over both lists to perform
+>> comparisons on the stripes they describe for each device. This is
+>> backwards and requires that we keep a transaction handle open while
+>> we're trimming.
+>>
+>> This patchset adds an extent_io_tree to btrfs_device that maintains
+>> the allocation state of the device.  Extents are set dirty when
+>> chunks are first allocated -- when the extent maps are added to the
+>> mapping tree. They're cleared when last removed -- when the extent
+>> maps are removed from the mapping tree. This matches the lifespan
+>> of the pending and pinned chunks list and allows us to do trims
+>> on unallocated space safely without pinning the transaction for what
+>> may be a lengthy operation. We can also use this io tree to mark
+>> which chunks have already been trimmed so we don't repeat the operation.
+>>
+>> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+>> ---
+>>  fs/btrfs/ctree.h            |  6 ---
+>>  fs/btrfs/disk-io.c          | 11 -----
+>>  fs/btrfs/extent-tree.c      | 28 -----------
+>>  fs/btrfs/extent_io.c        |  2 +-
+>>  fs/btrfs/extent_io.h        |  6 ++-
+>>  fs/btrfs/extent_map.c       | 36 ++++++++++++++
+>>  fs/btrfs/extent_map.h       |  1 -
+>>  fs/btrfs/free-space-cache.c |  4 --
+>>  fs/btrfs/transaction.c      |  9 ----
+>>  fs/btrfs/transaction.h      |  1 -
+>>  fs/btrfs/volumes.c          | 96 +++++++++++++------------------------
+>>  fs/btrfs/volumes.h          |  2 +
+>>  12 files changed, 76 insertions(+), 126 deletions(-)
+>>
+>> --- a/fs/btrfs/extent_io.c
+>> +++ b/fs/btrfs/extent_io.c
+>> @@ -918,7 +918,7 @@ static void cache_state(struct extent_state *state,
+>>   * [start, end] is inclusive This takes the tree lock.
+>>   */
+>>  
+>> -static int __must_check
+>> +int __must_check
+>>  __set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+>>  		 unsigned bits, unsigned exclusive_bits,
+>>  		 u64 *failed_start, struct extent_state **cached_state,
 > 
-> Not only EEXIST, the code can also fail due to memory pressure from
-> mem_cgroup_try_charge in __add_to_page_cache_locked. In fact this code
-> was triggered by some of the xfstests I can't remember which one hence I
-> added the if (nr) check.
+> Does this really need to be exported again? There are helpers that can
+> wrap specific combinations of parameters.
 
-My concerns were about errors that could affect logic of the readpages,
-for the hard errors like ENOMEM we can't do much. 
+This is exported so that __set_extent_bit could be called with
+GFP_NOWAIT parameter otherwise I was getting lockdep splats since
+extent_map_device_set_bits (called from add_extent_mapping) is called
+under a write_lock hence we can't sleep.
 
-> > pages (already there). A sequence of such pages will make it wildly hop
-> > from 1st for cycle iteration, to the if (nr) check and back.
-> > 
-> > Previously this looped still in the for-cycle, which was easier to
-> > follow but otherwise not due to __extent_readpages. So I think it's an
-> > improvement in the end, though a few comments would be good there.
-> > 
-> > Reviewed-by: David Sterba <dsterba@suse.com>
-> > 
 > 
-> <snip>
+>> @@ -335,6 +335,8 @@ void btrfs_free_device(struct btrfs_device *device)
+>>  {
+>>  	WARN_ON(!list_empty(&device->post_commit_list));
+>>  	rcu_string_free(device->name);
+>> +	if (!in_softirq())
+>> +		extent_io_tree_release(&device->alloc_state);
+
+This is used to distinguish between btrfs_free_device being called from
+btrfs_close_devices in close_ctree i.e non rcu (hence no softirq )
+context or any of the error handlers and from free_device_rcu. In the
+latter case the extent tree is already freed in btrfs_close_one_device,
+hence there is no need to do it in the RCU callback.
+
+Furthermore, there is also a comment that the extent io tree cannot be
+destroyed in RCU context because extent_io_tree_release calls
+cond_resched_lock which in turn could sleep, but this is forbidden in
+RCU context.
+
+> 
+> This needs a comment
+> 
+>>  	bio_put(device->flush_bio);
+>>  	kfree(device);
+>>  }
+> 
+> The commit is quite big but I don't see how to shrink it, the changes
+> need to be done in several places. So, probably ok.
+> 

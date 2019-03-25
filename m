@@ -6,88 +6,65 @@ X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C2BFAC43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 16:55:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 75DEBC43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 17:02:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9B31720863
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 16:55:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4D2532087C
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 17:02:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729036AbfCYQz4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Mar 2019 12:55:56 -0400
-Received: from mx2.suse.de ([195.135.220.15]:48198 "EHLO mx1.suse.de"
+        id S1729489AbfCYRCv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Mar 2019 13:02:51 -0400
+Received: from mx2.suse.de ([195.135.220.15]:49642 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725788AbfCYQz4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Mar 2019 12:55:56 -0400
+        id S1729106AbfCYRCv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Mar 2019 13:02:51 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 367FDABEC
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Mar 2019 16:55:55 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 000AAAF17;
+        Mon, 25 Mar 2019 17:02:49 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 1416CDA98F; Mon, 25 Mar 2019 17:57:07 +0100 (CET)
-Date:   Mon, 25 Mar 2019 17:57:06 +0100
+        id 11916DA98F; Mon, 25 Mar 2019 18:04:01 +0100 (CET)
+Date:   Mon, 25 Mar 2019 18:04:01 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     dsterba@suse.cz, linux-btrfs@vger.kernel.org,
-        Jeff Mahoney <jeffm@suse.com>
-Subject: Re: [PATCH v3 07/12] btrfs: replace pending/pinned chunks lists with
- io tree
-Message-ID: <20190325165706.GM10640@twin.jikos.cz>
+To:     Qu Wenruo <wqu@suse.de>
+Cc:     Johannes Thumshirn <jthumshirn@suse.de>,
+        linux-btrfs@vger.kernel.org, Yoon Jungyeon <jungyeon@gatech.edu>,
+        Nikolay Borisov <nborisov@suse.com>
+Subject: Re: [PATCh v2 5/9] btrfs: tree-checker: Verify dev item
+Message-ID: <20190325170401.GN10640@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        linux-btrfs@vger.kernel.org, Jeff Mahoney <jeffm@suse.com>
-References: <20190325123132.27835-1-nborisov@suse.com>
- <20190325123132.27835-8-nborisov@suse.com>
- <20190325162651.GI10640@twin.jikos.cz>
- <75db110a-db25-e1ff-f74d-997b61532bf7@suse.com>
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.de>,
+        Johannes Thumshirn <jthumshirn@suse.de>,
+        linux-btrfs@vger.kernel.org, Yoon Jungyeon <jungyeon@gatech.edu>,
+        Nikolay Borisov <nborisov@suse.com>
+References: <20190320063717.31770-1-wqu@suse.com>
+ <20190320063717.31770-6-wqu@suse.com>
+ <1472c094-bc6a-dc6f-2cf8-220ad5d34e40@suse.de>
+ <b6c74880-ddca-8772-41f2-a3b1587e8374@suse.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <75db110a-db25-e1ff-f74d-997b61532bf7@suse.com>
+In-Reply-To: <b6c74880-ddca-8772-41f2-a3b1587e8374@suse.de>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Mar 25, 2019 at 06:43:49PM +0200, Nikolay Borisov wrote:
-> >> -static int __must_check
-> >> +int __must_check
-> >>  __set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
-> >>  		 unsigned bits, unsigned exclusive_bits,
-> >>  		 u64 *failed_start, struct extent_state **cached_state,
+On Wed, Mar 20, 2019 at 07:53:18PM +0800, Qu Wenruo wrote:
+> >> +error:
+> >> +	return -EUCLEAN;
+> >> +}
+> >> +
 > > 
-> > Does this really need to be exported again? There are helpers that can
-> > wrap specific combinations of parameters.
+> > Why aren't you directly returning -EUCLEAN instead of the gotos? There's
+> > no cleanup pending so the additional jump label is unnecessary.
 > 
-> This is exported so that __set_extent_bit could be called with
-> GFP_NOWAIT parameter otherwise I was getting lockdep splats since
-> extent_map_device_set_bits (called from add_extent_mapping) is called
-> under a write_lock hence we can't sleep.
-
-So then we should add a helper for that, like
-
-  int set_exentent_bit_nowait(...)
-
-similar to set_record_extent_bits.
-
-> >> @@ -335,6 +335,8 @@ void btrfs_free_device(struct btrfs_device *device)
-> >>  {
-> >>  	WARN_ON(!list_empty(&device->post_commit_list));
-> >>  	rcu_string_free(device->name);
-> >> +	if (!in_softirq())
-> >> +		extent_io_tree_release(&device->alloc_state);
+> Just a coding preference.
 > 
-> This is used to distinguish between btrfs_free_device being called from
-> btrfs_close_devices in close_ctree i.e non rcu (hence no softirq )
-> context or any of the error handlers and from free_device_rcu. In the
-> latter case the extent tree is already freed in btrfs_close_one_device,
-> hence there is no need to do it in the RCU callback.
+> Will it impact the performance or compiler is clever enough to change
+> the goto line to return -EUCLEAN?
 
-Ok, I can cook a comment from that, thanks.
-
-> Furthermore, there is also a comment that the extent io tree cannot be
-> destroyed in RCU context because extent_io_tree_release calls
-> cond_resched_lock which in turn could sleep, but this is forbidden in
-> RCU context.
-
-Yeah, comment in the right place.
+This is a matter of codingstyle, it should be consistent, so if one
+function uses return -EUCLEAN and another goto error:, then one of them
+has to be changed.

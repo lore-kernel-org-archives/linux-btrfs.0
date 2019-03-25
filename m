@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C2A10C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 12:31:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 76B1DC43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 12:31:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 976862085A
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 12:31:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4D5D82085A
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 12:31:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731205AbfCYMbu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Mar 2019 08:31:50 -0400
-Received: from mx2.suse.de ([195.135.220.15]:55626 "EHLO mx1.suse.de"
+        id S1731217AbfCYMby (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Mar 2019 08:31:54 -0400
+Received: from mx2.suse.de ([195.135.220.15]:55592 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1731108AbfCYMbn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Mar 2019 08:31:43 -0400
+        id S1731124AbfCYMbl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Mar 2019 08:31:41 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 04D42ACAC
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Mar 2019 12:31:42 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 09A61AE9A
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Mar 2019 12:31:40 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v3 10/12] btrfs: Optimize unallocated chunks discard
-Date:   Mon, 25 Mar 2019 14:31:30 +0200
-Message-Id: <20190325123132.27835-11-nborisov@suse.com>
+Subject: [PATCH v3 04/12] btrfs: Rename and export clear_btree_io_tree
+Date:   Mon, 25 Mar 2019 14:31:24 +0200
+Message-Id: <20190325123132.27835-5-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20190325123132.27835-1-nborisov@suse.com>
 References: <20190325123132.27835-1-nborisov@suse.com>
@@ -36,137 +36,146 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Currently unallocated chunks are always trimmed. For example
-2 consecutive trims on large storage would trim freespace twice
-irrespective of whether the space was actually allocated or not between
-those trims.
+This function is going to be used to clear out the device extent
+allocation information. Give it a more generic name and export it. This
+is in preparation to replacing the pending/pinned chunk lists with an
+extent tree. No functional changes.
 
-Optimise this behavior by exploiting the newly introduced alloc_state
-tree of btrfs_device. A new CHUNK_TRIMMED bit is used to mark
-those unallocated chunks which have been trimmed and have not been
-allocated afterwards. On chunk allocation the respective underlying devices'
-physical space will have its CHUNK_TRIMMED flag cleared. This avoids
-submitting discards for space which hasn't been changed since the last
-time discard was issued.
-
+Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/extent-tree.c | 57 +++++++++++++++++++++++++++++++++++++++++-
- fs/btrfs/extent_io.h   |  8 +++++-
- fs/btrfs/extent_map.c  |  4 ++-
- 3 files changed, 66 insertions(+), 3 deletions(-)
+ fs/btrfs/extent_io.c   | 28 ++++++++++++++++++++++++++++
+ fs/btrfs/extent_io.h   |  1 +
+ fs/btrfs/transaction.c | 37 ++++---------------------------------
+ 3 files changed, 33 insertions(+), 33 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 574c73e0a7c0..503d68ba3f6a 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -11249,6 +11249,54 @@ int btrfs_error_unpin_extent_range(struct btrfs_fs_info *fs_info,
- 	return unpin_extent_range(fs_info, start, end, false);
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 701acd96334b..0e953c469224 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -267,6 +267,34 @@ void extent_io_tree_init(struct btrfs_fs_info *fs_info,
+ 	tree->owner = owner;
  }
  
-+static bool should_skip_trim(struct btrfs_device *device, u64 *start, u64 *len)
++void extent_io_tree_release(struct extent_io_tree *tree)
 +{
-+	u64 trimmed_start = 0, trimmed_end = 0;
-+	u64 end = *start + *len - 1;
++	spin_lock(&tree->lock);
++	/*
++	 * Do a single barrier for the waitqueue_active check here, the state
++	 * of the waitqueue should not change once clear_btree_io_tree is
++	 * called.
++	 */
++	smp_mb();
++	while (!RB_EMPTY_ROOT(&tree->state)) {
++		struct rb_node *node;
++		struct extent_state *state;
 +
-+	if (!find_first_extent_bit(&device->alloc_state, *start, &trimmed_start,
-+				   &trimmed_end, CHUNK_TRIMMED, NULL)) {
-+		u64 trimmed_len = trimmed_end - trimmed_start + 1;
++		node = rb_first(&tree->state);
++		state = rb_entry(node, struct extent_state, rb_node);
++		rb_erase(&state->rb_node, &tree->state);
++		RB_CLEAR_NODE(&state->rb_node);
++		/*
++		 * btree io trees aren't supposed to have tasks waiting for
++		 * changes in the flags of extent states ever.
++		 */
++		ASSERT(!waitqueue_active(&state->wq));
++		free_extent_state(state);
 +
-+		if (*start < trimmed_start) {
-+			if (in_range(end, trimmed_start, trimmed_len) ||
-+			    end > trimmed_end) {
-+				/*
-+				 * start|------|end
-+				 *      ts|--|trimmed_len
-+				 *      OR
-+				 * start|-----|end
-+				 *      ts|-----|trimmed_len
-+				 */
-+				*len = trimmed_start - *start;
-+				return false;
-+			} else if (end < trimmed_start) {
-+				/*
-+				 * start|------|end
-+				 *             ts|--|trimmed_len
-+				 */
-+				return false;
-+			}
-+		} else if (in_range(*start, trimmed_start, trimmed_len)) {
-+			if (in_range(end, trimmed_start, trimmed_len)) {
-+				/*
-+				 * start|------|end
-+				 *  ts|----------|trimmed_len
-+				 */
-+				return true;
-+			} else {
-+				/*
-+				 * start|-----------|end
-+				 *  ts|----------|trimmed_len
-+				 */
-+				*start = trimmed_end + 1;
-+				*len = end - *start + 1;
-+				return false;
-+			}
-+		}
++		cond_resched_lock(&tree->lock);
 +	}
-+	return false;
++	spin_unlock(&tree->lock);
 +}
- /*
-  * It used to be that old block groups would be left around forever.
-  * Iterating over them would be enough to trim unused space.  Since we
-@@ -11319,7 +11367,14 @@ static int btrfs_trim_free_extents(struct btrfs_device *device,
- 		start = max(range->start, start);
- 		len = min(range->len, len);
- 
--		ret = btrfs_issue_discard(device->bdev, start, len, &bytes);
-+		if (!should_skip_trim(device, &start, &len)) {
-+			ret = btrfs_issue_discard(device->bdev, start, len,
-+						  &bytes);
-+			if (!ret)
-+				set_extent_bits(&device->alloc_state, start,
-+						start + bytes - 1,
-+						CHUNK_TRIMMED);
-+		}
- 		mutex_unlock(&fs_info->chunk_mutex);
- 
- 		if (ret)
+ static struct extent_state *alloc_extent_state(gfp_t mask)
+ {
+ 	struct extent_state *state;
 diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 4bcc203b5431..9dd5190d9dd8 100644
+index 586baed03780..7732b6a7384d 100644
 --- a/fs/btrfs/extent_io.h
 +++ b/fs/btrfs/extent_io.h
-@@ -28,8 +28,14 @@
- #define EXTENT_CTLBITS		(EXTENT_DO_ACCOUNTING)
- 
- 
--/* Redefined bits above which are used only in the device allocation tree */
-+/*
-+ * Redefined bits above which are used only in the device allocation tree,
-+ * shouldn't be using EXTENT_IOBITS(EXTENT_LOCKED/EXTENT_WRITEBACK) /
-+ * EXTENT_BOUNDARY / EXTENT_CLEAR_META_RESV / EXTENT_CLEAR_DATA_RESV because
-+ * they have special meaning to the bit manipulation functions
-+ */
- #define CHUNK_ALLOCATED EXTENT_DIRTY
-+#define CHUNK_TRIMMED   EXTENT_DEFRAG
- 
- /*
-  * flags for bio submission. The high bits indicate the compression
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index 0820f6fcf3a6..9e8c0904f623 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -389,8 +389,10 @@ int add_extent_mapping(struct extent_map_tree *tree,
- 		goto out;
- 
- 	setup_extent_mapping(tree, em, modified);
--	if (test_bit(EXTENT_FLAG_FS_MAPPING, &em->flags))
-+	if (test_bit(EXTENT_FLAG_FS_MAPPING, &em->flags)) {
- 		extent_map_device_set_bits(em, CHUNK_ALLOCATED);
-+		extent_map_device_clear_bits(em, CHUNK_TRIMMED);
-+	}
- out:
- 	return ret;
+@@ -255,6 +255,7 @@ typedef struct extent_map *(get_extent_t)(struct btrfs_inode *inode,
+ void extent_io_tree_init(struct btrfs_fs_info *fs_info,
+ 			 struct extent_io_tree *tree, unsigned int owner,
+ 			 void *private_data);
++void extent_io_tree_release(struct extent_io_tree *tree);
+ int try_release_extent_mapping(struct page *page, gfp_t mask);
+ int try_release_extent_buffer(struct page *page);
+ int lock_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 4aa827a2e951..b32769998bbb 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -80,35 +80,6 @@ void btrfs_put_transaction(struct btrfs_transaction *transaction)
+ 	}
  }
+ 
+-static void clear_btree_io_tree(struct extent_io_tree *tree)
+-{
+-	spin_lock(&tree->lock);
+-	/*
+-	 * Do a single barrier for the waitqueue_active check here, the state
+-	 * of the waitqueue should not change once clear_btree_io_tree is
+-	 * called.
+-	 */
+-	smp_mb();
+-	while (!RB_EMPTY_ROOT(&tree->state)) {
+-		struct rb_node *node;
+-		struct extent_state *state;
+-
+-		node = rb_first(&tree->state);
+-		state = rb_entry(node, struct extent_state, rb_node);
+-		rb_erase(&state->rb_node, &tree->state);
+-		RB_CLEAR_NODE(&state->rb_node);
+-		/*
+-		 * btree io trees aren't supposed to have tasks waiting for
+-		 * changes in the flags of extent states ever.
+-		 */
+-		ASSERT(!waitqueue_active(&state->wq));
+-		free_extent_state(state);
+-
+-		cond_resched_lock(&tree->lock);
+-	}
+-	spin_unlock(&tree->lock);
+-}
+-
+ static noinline void switch_commit_roots(struct btrfs_transaction *trans)
+ {
+ 	struct btrfs_fs_info *fs_info = trans->fs_info;
+@@ -122,7 +93,7 @@ static noinline void switch_commit_roots(struct btrfs_transaction *trans)
+ 		root->commit_root = btrfs_root_node(root);
+ 		if (is_fstree(root->root_key.objectid))
+ 			btrfs_unpin_free_ino(root);
+-		clear_btree_io_tree(&root->dirty_log_pages);
++		extent_io_tree_release(&root->dirty_log_pages);
+ 		btrfs_qgroup_clean_swapped_blocks(root);
+ 	}
+ 
+@@ -930,7 +901,7 @@ int btrfs_write_marked_extents(struct btrfs_fs_info *fs_info,
+ 		 * superblock that points to btree nodes/leafs for which
+ 		 * writeback hasn't finished yet (and without errors).
+ 		 * We cleanup any entries left in the io tree when committing
+-		 * the transaction (through clear_btree_io_tree()).
++		 * the transaction (through extent_io_tree_release()).
+ 		 */
+ 		if (err == -ENOMEM) {
+ 			err = 0;
+@@ -975,7 +946,7 @@ static int __btrfs_wait_marked_extents(struct btrfs_fs_info *fs_info,
+ 		 * left in the io tree. For a log commit, we don't remove them
+ 		 * after committing the log because the tree can be accessed
+ 		 * concurrently - we do it only at transaction commit time when
+-		 * it's safe to do it (through clear_btree_io_tree()).
++		 * it's safe to do it (through extent_io_tree_release()).
+ 		 */
+ 		err = clear_extent_bit(dirty_pages, start, end,
+ 				       EXTENT_NEED_WAIT, 0, 0, &cached_state);
+@@ -1053,7 +1024,7 @@ static int btrfs_write_and_wait_transaction(struct btrfs_trans_handle *trans)
+ 	blk_finish_plug(&plug);
+ 	ret2 = btrfs_wait_extents(fs_info, dirty_pages);
+ 
+-	clear_btree_io_tree(&trans->transaction->dirty_pages);
++	extent_io_tree_release(&trans->transaction->dirty_pages);
+ 
+ 	if (ret)
+ 		return ret;
 -- 
 2.17.1
 

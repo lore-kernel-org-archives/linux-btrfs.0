@@ -7,43 +7,41 @@ X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 743A2C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 09:52:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8D90FC43381
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 10:21:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1625320870
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 09:52:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3969F20870
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Mar 2019 10:21:46 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="s8oaktbV"
+	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="GlS37J18"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730361AbfCYJwD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Mar 2019 05:52:03 -0400
-Received: from mail.synology.com ([211.23.38.101]:49820 "EHLO synology.com"
+        id S1730584AbfCYKVp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Mar 2019 06:21:45 -0400
+Received: from mail.synology.com ([211.23.38.101]:47988 "EHLO synology.com"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1730216AbfCYJwD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Mar 2019 05:52:03 -0400
+        id S1730484AbfCYKVo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Mar 2019 06:21:44 -0400
 Received: from _ (localhost [127.0.0.1])
-        by synology.com (Postfix) with ESMTPA id C0C3BAEF1BDB;
-        Mon, 25 Mar 2019 17:52:00 +0800 (CST)
+        by synology.com (Postfix) with ESMTPA id 2019143E9A7E
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Mar 2019 18:21:43 +0800 (CST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=synology.com; s=123;
-        t=1553507520; bh=e//4vOorUcchcX0ZP8GxX0pZsKmEM8nMu77tfSC4j+Q=;
-        h=Date:From:To:Cc:Subject:In-Reply-To:References;
-        b=s8oaktbVN7ip7ZS/blpgYZoFx9gQsdfJqdG3DfviS9cmGoIC0AOytbJdIVuHohWQY
-         kRM2wKj2iYs292y7Lgopx2R7tAG2yz1NDdqy824Y1xTGd8OHXu4P3NsrgcBPyqQE8J
-         NEiW6VoMitgbrn46dSx1jnYO0+EfE1YP/rVKu4Gk=
+        t=1553509303; bh=eueeLYXr5TlYgtVkRr+IKQ21GLveGssjOpRPP3aHWbw=;
+        h=Date:From:To:Subject:In-Reply-To:References;
+        b=GlS37J18xhU7O2Mim3/vFJxL+CwgBn6inkzZJ96CBE6bMKPCduXRofdNkkAPzRKkU
+         Gy7FfgQ9KL4REOnUc/+QBq4JVODnlE9jLG2W+yCbIJcmUdHlmyWuoLcPaXIt7+enYi
+         ZSowXpQhg+jpurNud9T7FGHf/WOlQNlAduWqQKDM=
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8;
  format=flowed
 Content-Transfer-Encoding: 8bit
-Date:   Mon, 25 Mar 2019 17:52:00 +0800
+Date:   Mon, 25 Mar 2019 18:21:43 +0800
 From:   robbieko <robbieko@synology.com>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: improve unnecessary free space inode update when
- space_cache=v1 has never been used
-In-Reply-To: <fadd1246-15db-8d1d-6f53-d1ce842c46ad@suse.com>
-References: <1553504798-8116-1-git-send-email-robbieko@synology.com>
- <fadd1246-15db-8d1d-6f53-d1ce842c46ad@suse.com>
-Message-ID: <457ee831ab77d303770a81bd7b2fd3c3@synology.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix data bytes_may_use underflow with fallocate
+ due to failed quota reserve
+In-Reply-To: <1547435747-20013-1-git-send-email-robbieko@synology.com>
+References: <1547435747-20013-1-git-send-email-robbieko@synology.com>
+Message-ID: <37152188396716094fd3d7341555efb9@synology.com>
 X-Sender: robbieko@synology.com
 User-Agent: Roundcube Webmail/1.1.2
 X-Synology-MCP-Status: no
@@ -55,59 +53,44 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Nikolay Borisov 於 2019-03-25 17:35 寫到:
-> On 25.03.19 г. 11:06 ч., robbieko wrote:
->> From: Robbie Ko <robbieko@synology.com>
->> 
->> When we have never used space_cache=v1, we don't need to update
->> the free space inode, and try to free up the space occupied by the
->> free space inode.
->> 
->> Signed-off-by: Robbie Ko <robbieko@synology.com>
->> ---
->>  fs/btrfs/extent-tree.c | 7 +++++++
->>  1 file changed, 7 insertions(+)
->> 
->> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
->> index 1d49694..d3bba07 100644
->> --- a/fs/btrfs/extent-tree.c
->> +++ b/fs/btrfs/extent-tree.c
->> @@ -3403,6 +3403,13 @@ static int cache_save_setup(struct 
->> btrfs_block_group_cache *block_group,
->> 
->>  	if (trans->aborted)
->>  		return 0;
->> +
->> +	if (btrfs_super_cache_generation(fs_info->super_copy) == (u64)-1 &&
->> +		!btrfs_test_opt(fs_info, SPACE_CACHE)) {
->> +		dcs = BTRFS_DC_WRITTEN;
->> +		goto out;
->> +	}
->> +
-> 
-> Looking at the code it seems this function can only be called from
-> btrfs_write_dirty_block_groups, since its other caller
-> btrfs_setup_space_cache already checks if SPACE_CACHE option is used.
-> 
-> IMO this patch is fine if we aren't using v1 space cache no point in
-> executing that function however.
-> 
-> However, why is it necessary to do the cache_generation check, isn't it
-> sufficient to predicate the execution only on SPACE_CACHE mount option?
-> 
-
-When superblock cache_generation != -1,
-it means that space_cache=v1 has been used.
-
-If we have used space_cache=v1 before,
-we will generate a free space cache inode,
-which will take up space, so we must free up
-the space occupied by the free space inode.
-
+Hi All,
+Can someone help review the patch ?
 Thanks.
 
->>  again:
->>  	inode = lookup_free_space_inode(fs_info, block_group, path);
->>  	if (IS_ERR(inode) && PTR_ERR(inode) != -ENOENT) {
->> 
+robbieko 於 2019-01-14 11:15 寫到:
+> From: Robbie Ko <robbieko@synology.com>
+> 
+> When doing fallocate, we first add the range to the reserve_list
+> and then reserve the qutoa.
+> If quota reservation fails, we'll release all reserved parts of
+> reserve_list.
+> However, cur_offset doen't update to indicate that this range is
+> already been inserted into the list.
+> Therefore, the same range is freed twice.
+> One at list_for_each_entry loop, and the other at the end of the
+> function.
+> This will result in WARN_ON on bytes_may_use when we free the
+> remaining space.
+> 
+> Fixes: ("btrfs: update btrfs_space_info's bytes_may_use timely")
+> Signed-off-by: Robbie Ko <robbieko@synology.com>
+> ---
+>  fs/btrfs/file.c | 1 +
+>  1 file changed, 1 insertion(+)
+> 
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index d38dc8c..43c6c8a 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -3132,6 +3132,7 @@ static long btrfs_fallocate(struct file *file, 
+> int mode,
+>  			ret = btrfs_qgroup_reserve_data(inode, &data_reserved,
+>  					cur_offset, last_byte - cur_offset);
+>  			if (ret < 0) {
+> +				cur_offset = last_byte;
+>  				free_extent_map(em);
+>  				break;
+>  			}
+
+
 

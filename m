@@ -2,98 +2,86 @@ Return-Path: <SRS0=MIpn=R5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT autolearn=ham
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2866BC43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 16:01:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1282EC43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 17:39:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 01AFB2070D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 16:01:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C44762070D
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 17:39:07 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="178gkOdp"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728963AbfCZQBh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Mar 2019 12:01:37 -0400
-Received: from mx2.suse.de ([195.135.220.15]:36086 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728314AbfCZQBh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Mar 2019 12:01:37 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 92DC1AE7F;
-        Tue, 26 Mar 2019 16:01:35 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 910CFDA8D8; Tue, 26 Mar 2019 17:02:48 +0100 (CET)
-Date:   Tue, 26 Mar 2019 17:02:48 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
-        Nikolay Borisov <nborisov@suse.com>
-Subject: Re: [PATCh v2 8/9] btrfs: tree-checker: Verify inode item
-Message-ID: <20190326160248.GV10640@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
-        Nikolay Borisov <nborisov@suse.com>
-References: <20190320063717.31770-1-wqu@suse.com>
- <20190320063717.31770-9-wqu@suse.com>
- <a8e3f871-370a-464b-a0ae-f4da93f0eed8@gmx.com>
+        id S1729800AbfCZRjG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Mar 2019 13:39:06 -0400
+Received: from mail-lj1-f196.google.com ([209.85.208.196]:35009 "EHLO
+        mail-lj1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726258AbfCZRjG (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 26 Mar 2019 13:39:06 -0400
+Received: by mail-lj1-f196.google.com with SMTP id t13so11859252lji.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2019 10:39:05 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=Cesxg5Q8ka5nJnKvEEhOgZOfPXgwKAbI7eTkUr48Y8E=;
+        b=178gkOdp9Fz2msAcX0Ce9QkIybE82t7v/wqmO82TA+zWVelRZtiR0LsSTsxheDbVfX
+         S7eXuEL30eEW+HKo85Mlb5rWgcsJV4VwfYhXHcLSujRhViDlXcbdSSlHxeoQ90oqj8Ex
+         2pFUhN1mUYAdO1bsxydpQ6l5xBdpQe0St0WGfWuXqOqnTdu7WyIiZRWZzs5f6qW/cxiq
+         Zft2rkE4kFm2a8xV95ntoU3WtMHqUaD/+zOycyWlxfGOTzGwTdpiKG4HmvnuNA4O+97e
+         JUkFw1u6da+1rs4/x07HuDI9+aDiPlActtohGIFV8QI2eCSSSyKUuBG+68aCpFHqtF2K
+         jBQA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=Cesxg5Q8ka5nJnKvEEhOgZOfPXgwKAbI7eTkUr48Y8E=;
+        b=KUAoa+XCRakzMcwveXtqBw1rwGvXNC2JB5I/okORvHXMySyD4DKk6qmOKvVPjnzrcZ
+         yIkDcc1gwAvEezURy+NQV2g4LnsU0psmuVFDA9LF1QKNEjTGHjo0yZKLU12eenF4kEiW
+         twiTneZ6+UyF5AeUOVzLgPQd8Xn0V0ijRnuFjx4yiedLJ7MI3xv5jWfmZ35MT2Jn6AZi
+         zWsiouLxUW7QTJnRA3pnYJLwVEjTBSeu7EXzAIIIJi0iBKCKKhvyK1qKe37Y2/BOUdcL
+         wacayoS9LwOTxtQVC6Mea8fDOlsoc/gv8uoxgwxr1R52d/02MXPRUOq93wkKhLGghZo+
+         zlDA==
+X-Gm-Message-State: APjAAAWt9cTahb8WXoussKbMu0DTic74r1Nkhb1sL31oBBIxfy8L3M8Z
+        qut9g2XuuCXFABOEO+xURdrbLyPmAV4eBv/oDhhTJ5MI5Io=
+X-Google-Smtp-Source: APXvYqw72kKOVDX1Ujr6SgJ3VQOaiPf5F+ZYP+O3xgR27scoKxFxv9uWj5+jxCwdMVlPfq0OG7sjjD7NICJ695aJ9DI=
+X-Received: by 2002:a2e:9585:: with SMTP id w5mr542974ljh.132.1553621944403;
+ Tue, 26 Mar 2019 10:39:04 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <a8e3f871-370a-464b-a0ae-f4da93f0eed8@gmx.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+References: <ZYHmunh2bnI4vOU0LDX4lb1DXvOSPtcjyj7EAns2xBKGaQmIH0amXJKJjKuERK8ygPphnq5hOn4DyprjS9VNgd8ediqxsJOi9lLNYVYGnCA=@protonmail.com>
+ <5b21fff4-0515-5577-0ab6-03f452469ef3@gmx.com> <CAA91j0VZkER8SV_TH=V75oHs5mST+D_k8TJ0gOJQsnaZfF4BJQ@mail.gmail.com>
+In-Reply-To: <CAA91j0VZkER8SV_TH=V75oHs5mST+D_k8TJ0gOJQsnaZfF4BJQ@mail.gmail.com>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Tue, 26 Mar 2019 11:38:53 -0600
+Message-ID: <CAJCQCtTqnqxvFJ3xwHiYFfWThqAL2apxqT=q0PJMv37UPCHGew@mail.gmail.com>
+Subject: =?UTF-8?Q?Re=3A_backup_uuid=5Ftree_generation_not_consistent_acros?=
+        =?UTF-8?Q?s_multi_device_=28raid0=29_btrfs_=2D_won=C2=B4t_mount?=
+To:     Andrei Borzenkov <arvidjaar@gmail.com>
+Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        berodual_xyz <berodual_xyz@protonmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Mar 25, 2019 at 12:27:24PM +0800, Qu Wenruo wrote:
-> 
-> 
-> On 2019/3/20 下午2:37, Qu Wenruo wrote:
-> > There is a report in kernel bugzilla about mismatch file type in dir
-> > item and inode item.
-> >
-> > This inspires us to check inode mode in inode item.
-> >
-> > This patch will check the following members:
-> > - inode key objectid
-> >   Should be ROOT_DIR_DIR or [256, (u64)-256] or FREE_INO.
-> >
-> > - inode key offset
-> >   Should be 0
-> >
-> > - inode item generation
-> > - inode item transid
-> >   No newer than sb generation + 1.
-> >   The +1 is for log tree.
-> >
-> > - inode item mode
-> >   No unknown bits.
-> >   No invalid S_IF* bit.
-> >   NOTE: S_IFMT check is not enough, need to check every know type.
-> >
-> > - inode item nlink
-> >   Dir should have no more link than 1.
-> >
-> > - inode item flags
-> >
-> > Signed-off-by: Qu Wenruo <wqu@suse.com>
-> > Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-> 
-> There is some bug report of kernel producing free space cache inode with
-> mode 0, which is invalid and can be detected by this patch.
-> 
-> Although the patch itself is good, I'm afraid we need to address the
-> invalid inode mode created by old kernel in btrfs-progs at least before
-> merging this patch into upstream.
+On Tue, Mar 26, 2019 at 12:44 AM Andrei Borzenkov <arvidjaar@gmail.com> wrote:
+>
+>
+> He has btrfs raid0 profile on top of hardware RAID6 devices.
 
-Can this be addressed on the kernel side? Like detecting the invalid
-mode, print a warning and the fix on the next write. The progs can
-detect and fix that too of course.
+sys_chunk_array[2048]:
+        item 0 key (FIRST_CHUNK_TREE CHUNK_ITEM 1048576)
+                length 4194304 owner 2 stripe_len 65536 type SYSTEM
+                io_align 4096 io_width 4096 sector_size 4096
+                num_stripes 1
 
-So I'll keep the patch working as-is, we can relax the error to a
-warning if we're out of time or find out that it needs to be that way
-due to backward compatibilit reasons.
+Pretty sure the metadata profiles is "single". From the super, I can't
+tell what profile the data block groups use.
+
+-- 
+Chris Murphy

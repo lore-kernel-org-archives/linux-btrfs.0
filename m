@@ -2,76 +2,82 @@ Return-Path: <SRS0=MIpn=R5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,
+	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 05C66C43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 19:10:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 69B2CC43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 19:36:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 96EB920700
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 19:10:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 357E9206DF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 19:36:15 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="Y3Dc2c8l"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="CbfTDahx"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732141AbfCZTKC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Mar 2019 15:10:02 -0400
-Received: from bombadil.infradead.org ([198.137.202.133]:39404 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726278AbfCZTKC (ORCPT
+        id S1732019AbfCZTgO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Mar 2019 15:36:14 -0400
+Received: from mail-io1-f66.google.com ([209.85.166.66]:40512 "EHLO
+        mail-io1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729693AbfCZTgN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Mar 2019 15:10:02 -0400
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20170209; h=In-Reply-To:Content-Type:MIME-Version
-        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:
-        Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
-        List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-         bh=rPw576aKvoCAii2fC0/u+vcA6/cwIDBjek6v+kw+Ozw=; b=Y3Dc2c8lfOAKvWdLjg1Y8YDYl
-        xfw/Xb1wiQNjZTJSA8eRQyB5iAz4mYTlFjnV5SWOC78Ji/vj/2l9IZHF/bcDdc86DK/yxUchsc8aV
-        F86ztiYusZC5GYxf62BeKdmRYVBOLat8N66aI+FadZDubOM7QE/Ugn4vo6s/RYKeAk9SNis7/WoaQ
-        ZUvpXUFDkMHdS5gv40wPaC/8NOltrS4BDk9t+TpC9xod8/U14jtKgRnP66boCQMe2INFPR6E9OJye
-        fFaphD1pWEStCEvVh3n9n71LUqhvm8H9KrBwPKhrelFeZi5rF9NSTmuInx89QLy3o85UZKPHR3yHb
-        nMJLdf9aw==;
-Received: from willy by bombadil.infradead.org with local (Exim 4.90_1 #2 (Red Hat Linux))
-        id 1h8rST-0000qN-H1; Tue, 26 Mar 2019 19:10:01 +0000
-Date:   Tue, 26 Mar 2019 12:10:01 -0700
-From:   Matthew Wilcox <willy@infradead.org>
-To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc:     linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: Re: [PATCH 01/15] btrfs: create a mount option for dax
-Message-ID: <20190326191001.GP10344@bombadil.infradead.org>
-References: <20190326190301.32365-1-rgoldwyn@suse.de>
- <20190326190301.32365-2-rgoldwyn@suse.de>
+        Tue, 26 Mar 2019 15:36:13 -0400
+Received: by mail-io1-f66.google.com with SMTP id d201so11925250iof.7
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2019 12:36:13 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=FowcaI3nLCJ1clHQwPSs03JoHntqnE2qwoRUW4+U2v8=;
+        b=CbfTDahxaZUd2qj2m48nUMFnK8DQgnM/gy7QbvpYQr5IGxM9BuxsXXW5NJPsg/yidJ
+         TzDWG8H9quJzT6N5eqo9SK1I/Ih7a1nrwX3q53F/mR74TKyTcNhqE/w3/nNqIqcfC+gz
+         t9WT1L/l+Q9Ljx+NqTtrbnC21aDa53/sPaXdxl4xTYawyV5pa53P8K+Q4FWGvwXKK3Wx
+         QnFwi1SBf7mBMklmkU9MN1BEmd1p3yCpBU0Ja40BGXooB3sPR9+WGoOmap3+MYDXBst+
+         70AOHbr6QFu4Mpa9jvEuOo//dT9O6vnYVuY8MTjUqIy7Tq5lleU3A/ui5PvGGOdhni8M
+         L7Iw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=FowcaI3nLCJ1clHQwPSs03JoHntqnE2qwoRUW4+U2v8=;
+        b=qMy81afJ28Btu7P9bM1KSX9LZ0/aCC4uYBRtJ9GOIrhXc386uH4VOCf0kSqLr4/wZU
+         6+Og9AIIKOEgyWYu7yn8dC+V7Zd7lZInpNjBcdAE1wNuv86zGfvdJ08stZ/Ow/jlcdHo
+         pxemv7dykz2DJ66UBmUVDlzcH2KFxbXOtI0b5ALzrimpNpz4b+6fjVtbiPhVz1EHye99
+         IkrEWeGTtTtK/3ChYv29k1HNhpXoSIXnixzG/HtMqtc0twctvxG5JOjnu2oiX2rwFI7o
+         pNQtvrpN3UIxHDBmem0Z0b8pcXHGe7FIuZBqPPghl8skoOFcyutR2HvgH58KOfosYAD3
+         gt6g==
+X-Gm-Message-State: APjAAAXfqkrslpcI6fyGtvIR6PMUjO0gU2XbiH5PWS8S/0AsFcMwdzWZ
+        KDQC7xOaVAZazW67vdNIeLodf6di9mqWwJfoMgI=
+X-Google-Smtp-Source: APXvYqz61ppm2kOfaEprDaoPE6DkFNCAnzu56HelK1LBLIAUKuCkHvoJ+HrFierfS3PGnCjoWQGN4lXKr/WrSpxRQPs=
+X-Received: by 2002:a6b:660e:: with SMTP id a14mr21420284ioc.136.1553628972795;
+ Tue, 26 Mar 2019 12:36:12 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190326190301.32365-2-rgoldwyn@suse.de>
-User-Agent: Mutt/1.9.2 (2017-12-15)
+References: <20181205122835.19290-1-rgoldwyn@suse.de> <20181205122835.19290-8-rgoldwyn@suse.de>
+In-Reply-To: <20181205122835.19290-8-rgoldwyn@suse.de>
+From:   Dan Williams <dan.j.williams@gmail.com>
+Date:   Tue, 26 Mar 2019 12:36:01 -0700
+Message-ID: <CAA9_cmcEDc6E=zvC1m=jKXMZ7Wy+GCF91SZK5Nu5FidN6boW4w@mail.gmail.com>
+Subject: Re: [PATCH 07/10] dax: export functions for use with btrfs
+To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Goldwyn Rodrigues <rgoldwyn@suse.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Mar 26, 2019 at 02:02:47PM -0500, Goldwyn Rodrigues wrote:
-> This sets S_DAX in inode->i_flags, which can be used with
-> IS_DAX().
-> 
-> The dax option is restricted to non multi-device mounts.
-> dax interacts with the device directly instead of using bio, so
-> all bio-hooks which we use for multi-device cannot be performed
-> here. While regular read/writes could be manipulated with
-> RAID0/1, mmap() is still an issue.
-> 
-> Auto-setting free space tree, because dealing with free space
-> inode (specifically readpages) is a nightmare.
-> Auto-setting nodatasum because we don't get callback for writing
-> checksums after mmap()s.
+On Wed, Dec 5, 2018 at 4:29 AM Goldwyn Rodrigues <rgoldwyn@suse.de> wrote:
+>
+> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+>
+> These functions are required for btrfs dax support.
+>
+> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+> ---
+>  fs/dax.c            | 35 ++++++++++++++++++++++++-----------
+>  include/linux/dax.h | 16 ++++++++++++++++
+>  2 files changed, 40 insertions(+), 11 deletions(-)
 
-Congratulations on getting the bear to dance.  But why?
-
-To me, the point of btrfs is all the cool stuff it does with built-in
-checksumming and snapshots and RAID and so on.  DAX doesn't let you do
-any of that, so why would somebody want to use btrfs to manage DAX?
-
+Per MAINTAINERS, please copy the filesystem-dax developers on dax
+patches please.

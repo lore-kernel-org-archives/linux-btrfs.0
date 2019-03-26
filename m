@@ -2,47 +2,42 @@ Return-Path: <SRS0=MIpn=R5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-6.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DF4CCC43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 13:37:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A4591C4360F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 13:40:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A4DCE2070B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 13:37:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 721BC2075C
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 13:40:25 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="ln1WQ4Tz"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="BK0s1gdr"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731551AbfCZNhd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Mar 2019 09:37:33 -0400
-Received: from mout.gmx.net ([212.227.17.20]:54403 "EHLO mout.gmx.net"
+        id S1731644AbfCZNkY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Mar 2019 09:40:24 -0400
+Received: from mout.gmx.net ([212.227.17.22]:46341 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729440AbfCZNhc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Mar 2019 09:37:32 -0400
+        id S1726175AbfCZNkY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 26 Mar 2019 09:40:24 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1553607445;
-        bh=05bMfVkN6dLLA+ZjDB1PCo94gUnWFqO1ZGnXchK6VnM=;
-        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
-        b=ln1WQ4TzGUV9Fd2tyT634LlVjPQvCeLvsIvjMKF1T1aCRl0No1uDpaiSDD52eOUAY
-         6hKfFAvZ+GWyX+xREHu2x4mU90TJLtAOkDbBRWcIjWoq5g22wy489BY2PjACp7NmvL
-         wmPmrZv1s/EmEo01pKdEX5HaoTWi6KJ84wjeso3M=
+        s=badeba3b8450; t=1553607614;
+        bh=FP9kwI0ssc0pOWjOEjWk2CD1+C5YQhqmz8DrFvCOsu8=;
+        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
+        b=BK0s1gdrAKTRGfom8qW0MgAPD1JC8vpMfQfLVbLKihrq2Al1R1lgG0TYL5l1Zup7j
+         eLcvlgs+ZQqoVcTogLK1rXMvvaJYd1uKT498RrgI9SN4mZIh+FdJsTevEl3jY+2+u7
+         tOJvjNZ8Oc//lrUivU7IrdnSudxOlfoxZKfMWp7U=
 X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
 Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx102
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0M2nfO-1grwCg2yzW-00sbEG; Tue, 26
- Mar 2019 14:37:25 +0100
-Subject: =?UTF-8?Q?Re=3a_backup_uuid=5ftree_generation_not_consistent_across?=
- =?UTF-8?Q?_multi_device_=28raid0=29_btrfs_-_won=c2=b4t_mount?=
-To:     berodual_xyz <berodual_xyz@protonmail.com>
-Cc:     Andrei Borzenkov <arvidjaar@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <ZYHmunh2bnI4vOU0LDX4lb1DXvOSPtcjyj7EAns2xBKGaQmIH0amXJKJjKuERK8ygPphnq5hOn4DyprjS9VNgd8ediqxsJOi9lLNYVYGnCA=@protonmail.com>
- <5b21fff4-0515-5577-0ab6-03f452469ef3@gmx.com>
- <CAA91j0VZkER8SV_TH=V75oHs5mST+D_k8TJ0gOJQsnaZfF4BJQ@mail.gmail.com>
- <QXHERo-tRpJm0-hY7ZotKSeF7CfsqeoH0XAf-wmRRsbzVuNWv6BTb9Q2xLQ_KgLlJNQJNSjGK9xlYcqv6QP3kKpFsvtyN0CBex5bFTCjiNE=@protonmail.com>
- <cc557b84-602c-8b2e-33f9-3c6d56578631@gmx.com>
- <j90OHVlIntkt3OHfCO0q8JaXXpDB-cDjDHuKXxuu6gQ64-FYSSZ4YuTU5bZnbfre7XWiymFCF9ZgK9RZ-5ljjEoOqZJtYDcjLad4zLF1Axs=@protonmail.com>
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0LmeGF-1gZRIE2VP9-00aF7u; Tue, 26
+ Mar 2019 14:40:14 +0100
+Subject: Re: [PATCH] Btrfs: do not allow trimming when a fs is mounted with
+ the nologreplay option
+To:     Nikolay Borisov <nborisov@suse.com>, fdmanana@kernel.org,
+        linux-btrfs@vger.kernel.org
+References: <20190326104956.10314-1-fdmanana@kernel.org>
+ <d828e591-22f6-faf2-76ec-1f52397ba858@suse.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -69,185 +64,103 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <0b96fc73-b6ce-f548-a61d-b3092d3534eb@gmx.com>
-Date:   Tue, 26 Mar 2019 21:37:20 +0800
+Message-ID: <dbf7aa7b-3ea8-e5da-eb8f-746cbc5e4487@gmx.com>
+Date:   Tue, 26 Mar 2019 21:40:08 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.5.3
 MIME-Version: 1.0
-In-Reply-To: <j90OHVlIntkt3OHfCO0q8JaXXpDB-cDjDHuKXxuu6gQ64-FYSSZ4YuTU5bZnbfre7XWiymFCF9ZgK9RZ-5ljjEoOqZJtYDcjLad4zLF1Axs=@protonmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="CdIxFT8xh7XqhUDxWATRu7qNt5eBj7ear"
-X-Provags-ID: V03:K1:NXfcWvypW41HbHtSnMycC5WNzFl4Tf8bJkUvV0d0zunyGri9KV8
- 5Kwf0zRDgGS0P3fv5xTYTAu1c+9VXgIOQ2f15Od/CvJj7VwtwZVgP38V8ojGNVXK+2MONOc
- 64rgoDw4EmBg6hVokASXdeiaUCOA0aCjmbdkun+RPxcBQ3UKEl5jvS/7o4QDg1fMBMzlUyb
- //ghXEUJwmohXxnSgYWkg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:riJGjm4qF1c=:xgGu7ljGbApn+/U2nAe1gK
- mq38U/SfVeXAdFSQLHXM6ZY4EnH6naUXVxnIpNb2r6mB9ZhVSNtk++pvCxfp06607ra43JXBW
- +rB79UrYe4YSKplq2TUfsZqKY/9v0KGCoXfmoP8ExsJI7ZKr2fyhH5zwTBx64xC3k1oreSq3X
- XU6vZ2M02mhw4jAEZJPv1YqgXKlyHaz/R3cA7wQfwsx+4Egi2pzWh/D0AvEofE4vVjX09ut2u
- /O7DmJCzSbok0nkriwubpTP79fTk577FfxsVGBEN5jXZPqj1jyg1M6/XvUU17mNXVIe5Nsp6b
- CSHE5RD5JrvqHIxsewiZqlJBFTYl8N08DXDb8fUTKMgNzQr/CsLi/fpVQC99FArqVCEs3Beka
- LGlQyQQ89B8ScdjfEH05HIFqe3AoN+LwKLOLbPj9xdvC7gdhYPR72pWUtfQv/WkYakAT5+7jk
- xy4RWZA6ILrfbV9DnIah2RmKNz6J7oHmaglt9SI2S/pypDrX1umtfd8ufWKQ1exu4MBNGkD9X
- m24cL0s14t3iBl6ueoGBXBycwUTBDhWCRIPeIEG5L9emzdUVixWPLHyoARJviKFZaUZbKJ4tY
- MlZ4JbjAYwwKmS2wtO2dmqICarlhiasjLVOoiBR15RJEmlgjAMr1mANMRa6oyq21N3oYQYqBx
- +Vvk+m/oSbB3EMp4WaO0WoTv1THKDLRMZxApZOdBmetiP3iBrCqVWYqYr+gi0Tym/lAMDKBbS
- hjoGzjpQTjznMi6Fdxg+gmjL22XSoEwys9IhjHsnYj6gpXjmBAguR6Whlb5GLWA1EIf1VdZtA
- ZMDyuKfViMFBGPuDrza3t2lm6r/TU28EqKjT+tbKuISfJHHTTBUlF1js/Z2ZrgqfFsbW0ojSJ
- JfpRpXqEiRBcL8MK/kBgA5GQkhYA01f8oMjN4FzopIGIxElJTSXtz1OIDwSKY8
+In-Reply-To: <d828e591-22f6-faf2-76ec-1f52397ba858@suse.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:tzaK31S0OZ5/ro6qv3idNOyqXxJVylWGXWGBtNPyh06lka5Y5rl
+ N5ZAgxiHVtUqyQRauVtW7sYaLR9WC/gGs2BzlwJzycEoJ6IW6dfMalG4BIkPuLHcGN1C/xg
+ Rc4p5zA/3Tf80+bBFdFdUwy6U6MEaLo8TQzvfRnuwf8PwIxZIwX40I5ye1cC+YYfDMe28sx
+ 7d3ov/JSEkkp+ObQv2SjA==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:h/TGy03gb1s=:RrTPKQdW90+eApFfRqLWSK
+ 0y754LD8HOHS3g58DvP69lfR7Vy9XWMeo7eDa8SwUXyjZc5acjiTYcBdBGeR9+O2Ol0rvaF3M
+ mZyz1hrs7DZIar3aUHCz08aQHlxh6XYeeVB6ImM6QcXs+ioZsqwZxD6SFg0JqiSY9o3dHI9dZ
+ Om68iGpF/oJLXt5fgPKDEYNloBS5kAqrhwC2xEwudLqgHTtL5YIpXzBYcu7Gt8LKl6GqBJ9ks
+ MTLyEwXjRiiP+oZGhbKjbl+J4X8BDxnsSkUkoas6miZDbrKw8mqPnj0v10PyvYbb2AjGKD/BO
+ t3JBolg6cYmftt15mxu1qDCUftZ+r/ozIaoxpBtI+h2qoJ0FnHvS8eCvGRPFtASrCPDkp9tde
+ /d3lgnzZE18vOlMktt59Jkg0ETqdP91zOR4rNsEaCfab8rts0vzj5uZYpNq/9VGM7s1H+w1iY
+ +RQbvHXah5YoB/vklvcsaX5MfG0/6C+xDyAipTGj+WdQ6VtpYSCp9gvntgMceE49dbVg+klUf
+ c5BKvYEXiYoA9KScJu2nUsK14u87EDSq3hQVCHc93uK7x8DJ15aNViNAQHtLmLrls3WV7hRuG
+ TXzDuBzG9+v8pS+cwgLY3cjShyVyZB8bc3upheZBAj7NZCceLd64daAFFtBwjayYoh2msEnTE
+ pagP0J20/TKJg5JP+1WRtLAfMwg3DRoI+y2Hwq40Swc/CkrrSMbPkCzjvb64LOqzAzNPduBaM
+ pkwMvdJAMr3SOyePygyGNmokJubaNo73+WK6TzIzN1IbUxVvUhtNMtEkmj+jD6TOaP6mrNdOF
+ ibf/P9s+3dP07gwUjJG6lPSzamaUatlgIW8HTnEy3thVXBoyy8Cf9sa9AcQr66Y4os3MzG3pw
+ 1TaGCJZY+0YulNdRl5BLIXHjsrus48h0LAht/UxD6K8Nh3Vmt1S+vjHPwsDG3HFEEa9sQK//S
+ Ij9LNgGdF7Q==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---CdIxFT8xh7XqhUDxWATRu7qNt5eBj7ear
-Content-Type: multipart/mixed; boundary="DWCEYRJAR2ktqy70UdzauVzwW4IbKwiGD";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: berodual_xyz <berodual_xyz@protonmail.com>
-Cc: Andrei Borzenkov <arvidjaar@gmail.com>,
- "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Message-ID: <0b96fc73-b6ce-f548-a61d-b3092d3534eb@gmx.com>
-Subject: =?UTF-8?Q?Re=3a_backup_uuid=5ftree_generation_not_consistent_across?=
- =?UTF-8?Q?_multi_device_=28raid0=29_btrfs_-_won=c2=b4t_mount?=
-References: <ZYHmunh2bnI4vOU0LDX4lb1DXvOSPtcjyj7EAns2xBKGaQmIH0amXJKJjKuERK8ygPphnq5hOn4DyprjS9VNgd8ediqxsJOi9lLNYVYGnCA=@protonmail.com>
- <5b21fff4-0515-5577-0ab6-03f452469ef3@gmx.com>
- <CAA91j0VZkER8SV_TH=V75oHs5mST+D_k8TJ0gOJQsnaZfF4BJQ@mail.gmail.com>
- <QXHERo-tRpJm0-hY7ZotKSeF7CfsqeoH0XAf-wmRRsbzVuNWv6BTb9Q2xLQ_KgLlJNQJNSjGK9xlYcqv6QP3kKpFsvtyN0CBex5bFTCjiNE=@protonmail.com>
- <cc557b84-602c-8b2e-33f9-3c6d56578631@gmx.com>
- <j90OHVlIntkt3OHfCO0q8JaXXpDB-cDjDHuKXxuu6gQ64-FYSSZ4YuTU5bZnbfre7XWiymFCF9ZgK9RZ-5ljjEoOqZJtYDcjLad4zLF1Axs=@protonmail.com>
-In-Reply-To: <j90OHVlIntkt3OHfCO0q8JaXXpDB-cDjDHuKXxuu6gQ64-FYSSZ4YuTU5bZnbfre7XWiymFCF9ZgK9RZ-5ljjEoOqZJtYDcjLad4zLF1Axs=@protonmail.com>
-
---DWCEYRJAR2ktqy70UdzauVzwW4IbKwiGD
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
 
+On 2019/3/26 =E4=B8=8B=E5=8D=888:17, Nikolay Borisov wrote:
+>
+>
+> On 26.03.19 =D0=B3. 12:49 =D1=87., fdmanana@kernel.org wrote:
+>> From: Filipe Manana <fdmanana@suse.com>
+>>
+>> Whan a filesystem is mounted with the nologreplay mount option, which
+>> requires it to be mounted in RO mode as well, we can not allow discard =
+on
+>> free space inside block groups, because log trees refer to extents that
+>> are not pinned in a block group's free space cache (pinning the extents=
+ is
+>> precisely the first phase of replaying a log tree).
+>>
+>> So do not allow the fitrim ioctl to do anything when the filesystem is
+>> mounted with the nologreplay option, because later it can be mounted RW
+>> without that option, which causes log replay to happen and result in
+>> either a failure to replay the log trees (leading to a mount failure), =
+a
+>> crash or some silent corruption.
+>>
+>> Reported-by: Darrick J. Wong <darrick.wong@oracle.com>
+>> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+>
+> Does it make sense to make the check a bit more specific and only return
+> EROFS when NOLOGREPLAY and the log tree has non-null generation?
 
-On 2019/3/26 =E4=B8=8B=E5=8D=886:24, berodual_xyz wrote:
-> Mount messages below.
->=20
-> Thanks for your input, Qu!
->=20
-> ##
-> [42763.884134] BTRFS info (device sdd): disabling free space tree
-> [42763.884138] BTRFS info (device sdd): force clearing of disk cache
-> [42763.884140] BTRFS info (device sdd): has skinny extents
-> [42763.885207] BTRFS error (device sdd): parent transid verify failed o=
-n 1048576 wanted 60234 found 60230
-
-So btrfs is using the latest superblock while the good one should be the
-old superblock.
-
-Btrfs-progs is able to just ignore the transid mismatch, but kernel
-doesn't and shouldn't.
-
-In fact we should allow btrfs rescue super to use super blocks from
-other device to replace the old one.
-
-So my patch won't help at all, the failure happens at the very beginning
-of the devices list initialization.
-
-BTW, if btrfs restore can't recover certain files, I don't believe any
-rescue kernel mount option can do more.
+To me fstrim is a WRITE operation, why it is allowed even in RO mount?
 
 Thanks,
 Qu
 
-> [42763.885263] BTRFS error (device sdd): failed to read chunk root
-> [42763.900922] BTRFS error (device sdd): open_ctree failed
-> ##
->=20
->=20
->=20
->=20
-> Sent with ProtonMail Secure Email.
->=20
-> =E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90 Origina=
-l Message =E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=
-
-> On Tuesday, 26. March 2019 10:21, Qu Wenruo <quwenruo.btrfs@gmx.com> wr=
-ote:
->=20
->> On 2019/3/26 =E4=B8=8B=E5=8D=884:52, berodual_xyz wrote:
+>
+> In any case:
+>
+> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+>
+>> ---
+>>  fs/btrfs/ioctl.c | 10 ++++++++++
+>>  1 file changed, 10 insertions(+)
 >>
->>> Thank you both for your input.
->>> see below.
->>>
->>>>> You sda and sdb are at gen 60233 while sdd and sde are at gen 60234=
-=2E
->>>>> It's possible to allow kernel to manually assemble its device list =
-using
->>>>> "device=3D" mount option.
->>>>> Since you're using RAID6, it's possible to recover using 2 devices =
-only,
->>>>> but in that case you need "degraded" mount option.
->>>>
->>>> He has btrfs raid0 profile on top of hardware RAID6 devices.
->>>
->>> Correct, my FS is a "raid0" across four hardware-raid based raid6 dev=
-ices. The underlying devices of the raid controller are fine, same as the=
- volumes themselves.
+>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+>> index 494f0f10d70e..01808934d21f 100644
+>> --- a/fs/btrfs/ioctl.c
+>> +++ b/fs/btrfs/ioctl.c
+>> @@ -501,6 +501,16 @@ static noinline int btrfs_ioctl_fitrim(struct file=
+ *file, void __user *arg)
+>>  	if (!capable(CAP_SYS_ADMIN))
+>>  		return -EPERM;
 >>
->> Then there is not much we can do.
+>> +	/*
+>> +	 * If the fs is mounted with nologreplay, which requires it to be
+>> +	 * mounted in RO mode as well, we can not allow discard on free space
+>> +	 * inside block groups, because log trees refer to extents that are n=
+ot
+>> +	 * pinned in a block group's free space cache (pinning the extents is
+>> +	 * precisely the first phase of replaying a log tree).
+>> +	 */
+>> +	if (btrfs_test_opt(fs_info, NOLOGREPLAY))
+>> +		return -EROFS;
+>> +
+>>  	rcu_read_lock();
+>>  	list_for_each_entry_rcu(device, &fs_info->fs_devices->devices,
+>>  				dev_list) {
 >>
->> The super blocks shows all your 4 devices are in 2 different states.
->> (older generation with dirt log, newer generation without log).
->>
->> This means some writes didn't reach all devices.
->>
->>> Only corruption seems to be on the btrfs side.
->>
->> Please provide the kernel message when trying to mount the fs.
->>
->>> Does your tip regarding mounting by explicitly specifying the devices=
- still make sense?
->>
->> Not really. For RAID0 case, it doesn't make much sense.
->>
->>> Will this figure out automatically which generation to use?
->>
->> You could try, as all the mount option is making btrfs completely RO (=
-no
->> log replay), so it should be pretty safe.
->>
->>> I am at the moment in the process of using "btrfs restore" to pull mo=
-re data from the filesystem without making any further changes.
->>> After that I am happy to continue testing, and will happily test your=
- mentioned "skip_bg" patch - but if you think that there is some other wa=
-y to mount (just for recovery purpose - read only is fine!) while having =
-different gens on the devices, I highly appreciate it.
->>
->> With mounting failure dmesg, it should be pretty easy to determine
->> whether my skip_bg will work.
->>
->> Thanks,
->> Qu
->>
->>> Thanks Qu and Andrei!
->=20
-
-
---DWCEYRJAR2ktqy70UdzauVzwW4IbKwiGD--
-
---CdIxFT8xh7XqhUDxWATRu7qNt5eBj7ear
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlyaKxAACgkQwj2R86El
-/qgw4Af+PTQRGlZhOpdYOpKcAnWvM5E/V2Fj1WmXj0PHcXllhE89RgC8YHoyPNw9
-8SC0cFjoECIuDSfI03u81TrqAO5b0TEDswDeXHKPPQ7PzX2SXwiZk4SNL6RF7lRF
-+843HToiwR804tccMMGXw9qqCYz1pVnq3cCgf1Y89xSGTu1HGMH/G8MeKCpgmanZ
-GBVGbjATR/YDO7vcCFhZrb+NapGxy0p4WBw7CZ30GDlQmWmba4/Xvg/wrSREQyYj
-VcZudZt552nXl7yIP1iAlOVEAPnMVu/LAqc3I+SK1k3dOyFNuKuwqmYabriap3GD
-7Y3M5RhFEni89q61hMK2wBcD+mBaLQ==
-=A3ll
------END PGP SIGNATURE-----
-
---CdIxFT8xh7XqhUDxWATRu7qNt5eBj7ear--

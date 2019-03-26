@@ -2,134 +2,93 @@ Return-Path: <SRS0=MIpn=R5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 74FE4C43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 10:24:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 16578C43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 10:50:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E1C0820856
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 10:24:18 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=protonmail.com header.i=@protonmail.com header.b="yJOhwpZg"
+	by mail.kernel.org (Postfix) with ESMTP id D09252084B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 10:50:02 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1553597402;
+	bh=9MJJuSXkJ3xlyGc2EucN52tUEtBQqQuhdbMlpvJjRlE=;
+	h=From:To:Subject:Date:List-ID:From;
+	b=w1/IYRMUUF571UljIYIvP6k8sWD13MQHU4kZzFJSD1HzIFR44BVc5oFXiYrGj/8L5
+	 xahpx44AAgHsR1pCWNKiy1wbe6e1U0f7yhbm/Rl5IcQPC2xrYLZ2/xDSTwemMvoFpn
+	 nf8y+SMbMTS4ZjBSyqXpfwSKq3rcZU+DGvTamb+s=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731403AbfCZKYR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Mar 2019 06:24:17 -0400
-Received: from mail-40136.protonmail.ch ([185.70.40.136]:26972 "EHLO
-        mail-40136.protonmail.ch" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731430AbfCZKYQ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Mar 2019 06:24:16 -0400
-Date:   Tue, 26 Mar 2019 10:24:06 +0000
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=protonmail.com;
-        s=default; t=1553595851;
-        bh=Q7OxGCqS1Tq07VCDChFMhTz+gHswBqORVuINwgnHaAo=;
-        h=Date:To:From:Cc:Reply-To:Subject:In-Reply-To:References:
-         Feedback-ID:From;
-        b=yJOhwpZgL0i3lGduFn5EzmNAlTQ/MkVJ4ZZZsoh+gMgeSmFu19lsRVmo4f3n0+x2H
-         DHyPSngvgYtAIiGYM4EFDitwCVJe4buTSXj9n2SxRm+X+2odl74+2TcPRAik5usRGo
-         1N8BWb4h3Te4uxNTN5PtsZL2ao+y4IJ7roysl3qk=
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-From:   berodual_xyz <berodual_xyz@protonmail.com>
-Cc:     Andrei Borzenkov <arvidjaar@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Reply-To: berodual_xyz <berodual_xyz@protonmail.com>
-Subject: =?UTF-8?Q?Re:_backup_uuid=5Ftree_generation_not_consistent_across_multi_d?=
- =?UTF-8?Q?evice_(raid0)_btrfs_-_won=C2=B4t_mount?=
-Message-ID: <j90OHVlIntkt3OHfCO0q8JaXXpDB-cDjDHuKXxuu6gQ64-FYSSZ4YuTU5bZnbfre7XWiymFCF9ZgK9RZ-5ljjEoOqZJtYDcjLad4zLF1Axs=@protonmail.com>
-In-Reply-To: <cc557b84-602c-8b2e-33f9-3c6d56578631@gmx.com>
-References: <ZYHmunh2bnI4vOU0LDX4lb1DXvOSPtcjyj7EAns2xBKGaQmIH0amXJKJjKuERK8ygPphnq5hOn4DyprjS9VNgd8ediqxsJOi9lLNYVYGnCA=@protonmail.com>
- <5b21fff4-0515-5577-0ab6-03f452469ef3@gmx.com>
- <CAA91j0VZkER8SV_TH=V75oHs5mST+D_k8TJ0gOJQsnaZfF4BJQ@mail.gmail.com>
- <QXHERo-tRpJm0-hY7ZotKSeF7CfsqeoH0XAf-wmRRsbzVuNWv6BTb9Q2xLQ_KgLlJNQJNSjGK9xlYcqv6QP3kKpFsvtyN0CBex5bFTCjiNE=@protonmail.com>
- <cc557b84-602c-8b2e-33f9-3c6d56578631@gmx.com>
-Feedback-ID: I1q2L7VvFsdXESkLE1a2aLBALpN2HWsXO5F205qEARYXtg94zW3HdiV9HI52kzHEEqfcUdbqlfVMVRPA6rJltg==:Ext:ProtonMail
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+        id S1726266AbfCZKuB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Mar 2019 06:50:01 -0400
+Received: from mail.kernel.org ([198.145.29.99]:59464 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726175AbfCZKuB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 26 Mar 2019 06:50:01 -0400
+Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 657CD2084B
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2019 10:50:00 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1553597400;
+        bh=9MJJuSXkJ3xlyGc2EucN52tUEtBQqQuhdbMlpvJjRlE=;
+        h=From:To:Subject:Date:From;
+        b=vYNJRhUqvy6Wo/hVx604ZYYrDZ+2nElqRnFrTbMk/KHApASmj1uEpxaQaSA2KBKsE
+         8+PRNBHWkQFkiaPZ2/FtOtEGBRFoT0qdQ8JY3df7dL1260S8VqcE+YUf1Eepac955V
+         qzqhdBfRvCP0ACC4GGpbx5GwVj7+BPAGalhwGsxw=
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: do not allow trimming when a fs is mounted with the nologreplay option
+Date:   Tue, 26 Mar 2019 10:49:56 +0000
+Message-Id: <20190326104956.10314-1-fdmanana@kernel.org>
+X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Mount messages below.
+From: Filipe Manana <fdmanana@suse.com>
 
-Thanks for your input, Qu!
+Whan a filesystem is mounted with the nologreplay mount option, which
+requires it to be mounted in RO mode as well, we can not allow discard on
+free space inside block groups, because log trees refer to extents that
+are not pinned in a block group's free space cache (pinning the extents is
+precisely the first phase of replaying a log tree).
 
-##
-[42763.884134] BTRFS info (device sdd): disabling free space tree
-[42763.884138] BTRFS info (device sdd): force clearing of disk cache
-[42763.884140] BTRFS info (device sdd): has skinny extents
-[42763.885207] BTRFS error (device sdd): parent transid verify failed on 10=
-48576 wanted 60234 found 60230
-[42763.885263] BTRFS error (device sdd): failed to read chunk root
-[42763.900922] BTRFS error (device sdd): open_ctree failed
-##
+So do not allow the fitrim ioctl to do anything when the filesystem is
+mounted with the nologreplay option, because later it can be mounted RW
+without that option, which causes log replay to happen and result in
+either a failure to replay the log trees (leading to a mount failure), a
+crash or some silent corruption.
 
+Reported-by: Darrick J. Wong <darrick.wong@oracle.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/ioctl.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-
-
-Sent with ProtonMail Secure Email.
-
-=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90 Original Me=
-ssage =E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90
-On Tuesday, 26. March 2019 10:21, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
-
-> On 2019/3/26 =E4=B8=8B=E5=8D=884:52, berodual_xyz wrote:
->
-> > Thank you both for your input.
-> > see below.
-> >
-> > > > You sda and sdb are at gen 60233 while sdd and sde are at gen 60234=
-.
-> > > > It's possible to allow kernel to manually assemble its device list =
-using
-> > > > "device=3D" mount option.
-> > > > Since you're using RAID6, it's possible to recover using 2 devices =
-only,
-> > > > but in that case you need "degraded" mount option.
-> > >
-> > > He has btrfs raid0 profile on top of hardware RAID6 devices.
-> >
-> > Correct, my FS is a "raid0" across four hardware-raid based raid6 devic=
-es. The underlying devices of the raid controller are fine, same as the vol=
-umes themselves.
->
-> Then there is not much we can do.
->
-> The super blocks shows all your 4 devices are in 2 different states.
-> (older generation with dirt log, newer generation without log).
->
-> This means some writes didn't reach all devices.
->
-> > Only corruption seems to be on the btrfs side.
->
-> Please provide the kernel message when trying to mount the fs.
->
-> > Does your tip regarding mounting by explicitly specifying the devices s=
-till make sense?
->
-> Not really. For RAID0 case, it doesn't make much sense.
->
-> > Will this figure out automatically which generation to use?
->
-> You could try, as all the mount option is making btrfs completely RO (no
-> log replay), so it should be pretty safe.
->
-> > I am at the moment in the process of using "btrfs restore" to pull more=
- data from the filesystem without making any further changes.
-> > After that I am happy to continue testing, and will happily test your m=
-entioned "skip_bg" patch - but if you think that there is some other way to=
- mount (just for recovery purpose - read only is fine!) while having differ=
-ent gens on the devices, I highly appreciate it.
->
-> With mounting failure dmesg, it should be pretty easy to determine
-> whether my skip_bg will work.
->
-> Thanks,
-> Qu
->
-> > Thanks Qu and Andrei!
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 494f0f10d70e..01808934d21f 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -501,6 +501,16 @@ static noinline int btrfs_ioctl_fitrim(struct file *file, void __user *arg)
+ 	if (!capable(CAP_SYS_ADMIN))
+ 		return -EPERM;
+ 
++	/*
++	 * If the fs is mounted with nologreplay, which requires it to be
++	 * mounted in RO mode as well, we can not allow discard on free space
++	 * inside block groups, because log trees refer to extents that are not
++	 * pinned in a block group's free space cache (pinning the extents is
++	 * precisely the first phase of replaying a log tree).
++	 */
++	if (btrfs_test_opt(fs_info, NOLOGREPLAY))
++		return -EROFS;
++
+ 	rcu_read_lock();
+ 	list_for_each_entry_rcu(device, &fs_info->fs_devices->devices,
+ 				dev_list) {
+-- 
+2.11.0
 

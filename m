@@ -3,32 +3,32 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5F641C43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 19:03:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 62D0AC10F05
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 19:03:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3E44D20823
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 19:03:26 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3781220823
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 19:03:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732505AbfCZTDZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Mar 2019 15:03:25 -0400
-Received: from mx2.suse.de ([195.135.220.15]:36940 "EHLO mx1.suse.de"
+        id S1732572AbfCZTD0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Mar 2019 15:03:26 -0400
+Received: from mx2.suse.de ([195.135.220.15]:36958 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1732204AbfCZTDY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Mar 2019 15:03:24 -0400
+        id S1732504AbfCZTD0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 26 Mar 2019 15:03:26 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A3231ADF2;
-        Tue, 26 Mar 2019 19:03:22 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id CD4D2AEE6;
+        Tue, 26 Mar 2019 19:03:24 +0000 (UTC)
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-btrfs@vger.kernel.org
 Cc:     linux-fsdevel@vger.kernel.org,
         Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 03/15] btrfs: basic dax read
-Date:   Tue, 26 Mar 2019 14:02:49 -0500
-Message-Id: <20190326190301.32365-4-rgoldwyn@suse.de>
+Subject: [PATCH 04/15] dax: Introduce IOMAP_F_COW for copy-on-write
+Date:   Tue, 26 Mar 2019 14:02:50 -0500
+Message-Id: <20190326190301.32365-5-rgoldwyn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20190326190301.32365-1-rgoldwyn@suse.de>
 References: <20190326190301.32365-1-rgoldwyn@suse.de>
@@ -39,127 +39,97 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-Perform a basic read using iomap support. The btrfs_iomap_begin()
-finds the extent at the position and fills the iomap data
-structure with the values.
+The IOMAP_F_COW is a flag to notify dax that it needs to copy
+the data from iomap->cow_addr to iomap->addr, if the start/end
+of I/O are not page aligned.
+
+This also introduces dax_to_dax_copy() which performs a copy
+from one part of the device to another, to a maximum of one page.
+
+Question: Using iomap.cow_addr == 0 means the CoW is to be copied
+(or memset) from a hole. Would this be better handled through a flag?
 
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 ---
- fs/btrfs/Makefile |  1 +
- fs/btrfs/ctree.h  |  5 +++++
- fs/btrfs/dax.c    | 49 +++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/file.c   | 12 +++++++++++-
- 4 files changed, 66 insertions(+), 1 deletion(-)
- create mode 100644 fs/btrfs/dax.c
+ fs/dax.c              | 36 ++++++++++++++++++++++++++++++++++++
+ include/linux/iomap.h |  3 +++
+ 2 files changed, 39 insertions(+)
 
-diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
-index ca693dd554e9..1fa77b875ae9 100644
---- a/fs/btrfs/Makefile
-+++ b/fs/btrfs/Makefile
-@@ -12,6 +12,7 @@ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
- 	   reada.o backref.o ulist.o qgroup.o send.o dev-replace.o raid56.o \
- 	   uuid-tree.o props.o free-space-tree.o tree-checker.o
- 
-+btrfs-$(CONFIG_FS_DAX) += dax.o
- btrfs-$(CONFIG_BTRFS_FS_POSIX_ACL) += acl.o
- btrfs-$(CONFIG_BTRFS_FS_CHECK_INTEGRITY) += check-integrity.o
- btrfs-$(CONFIG_BTRFS_FS_REF_VERIFY) += ref-verify.o
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 9512f49262dd..b7bbe5130a3b 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3795,6 +3795,11 @@ int btrfs_reada_wait(void *handle);
- void btrfs_reada_detach(void *handle);
- int btree_readahead_hook(struct extent_buffer *eb, int err);
- 
-+#ifdef CONFIG_FS_DAX
-+/* dax.c */
-+ssize_t btrfs_file_dax_read(struct kiocb *iocb, struct iov_iter *to);
-+#endif /* CONFIG_FS_DAX */
-+
- static inline int is_fstree(u64 rootid)
- {
- 	if (rootid == BTRFS_FS_TREE_OBJECTID ||
-diff --git a/fs/btrfs/dax.c b/fs/btrfs/dax.c
-new file mode 100644
-index 000000000000..bf3d46b0acb6
---- /dev/null
-+++ b/fs/btrfs/dax.c
-@@ -0,0 +1,49 @@
-+// SPDX-License-Identifier: GPL-2.0
-+/*
-+ * DAX support for BTRFS
-+ *
-+ * Copyright (c) 2019  SUSE Linux
-+ * Author: Goldwyn Rodrigues <rgoldwyn@suse.com>
-+ */
-+
-+#ifdef CONFIG_FS_DAX
-+#include <linux/dax.h>
-+#include <linux/iomap.h>
-+#include "ctree.h"
-+#include "btrfs_inode.h"
-+
-+static int btrfs_iomap_begin(struct inode *inode, loff_t pos,
-+		loff_t length, unsigned flags, struct iomap *iomap)
-+{
-+	struct extent_map *em;
-+	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, pos, length, 0);
-+	if (em->block_start == EXTENT_MAP_HOLE) {
-+		iomap->type = IOMAP_HOLE;
-+		return 0;
-+	}
-+	iomap->type = IOMAP_MAPPED;
-+	iomap->bdev = em->bdev;
-+	iomap->dax_dev = fs_info->dax_dev;
-+	iomap->offset = em->start;
-+	iomap->length = em->len;
-+	iomap->addr = em->block_start;
-+	return 0;
-+}
-+
-+static const struct iomap_ops btrfs_iomap_ops = {
-+	.iomap_begin		= btrfs_iomap_begin,
-+};
-+
-+ssize_t btrfs_file_dax_read(struct kiocb *iocb, struct iov_iter *to)
-+{
-+	ssize_t ret;
-+	struct inode *inode = file_inode(iocb->ki_filp);
-+
-+	inode_lock_shared(inode);
-+	ret = dax_iomap_rw(iocb, to, &btrfs_iomap_ops);
-+	inode_unlock_shared(inode);
-+
-+	return ret;
-+}
-+#endif /* CONFIG_FS_DAX */
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 34fe8a58b0e9..b620f4e718b2 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -3288,9 +3288,19 @@ static int btrfs_file_open(struct inode *inode, struct file *filp)
- 	return generic_file_open(inode, filp);
+diff --git a/fs/dax.c b/fs/dax.c
+index ca0671d55aa6..e254535dd830 100644
+--- a/fs/dax.c
++++ b/fs/dax.c
+@@ -1051,6 +1051,28 @@ static bool dax_range_is_aligned(struct block_device *bdev,
+ 	return true;
  }
  
-+static ssize_t btrfs_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
++static void dax_to_dax_copy(struct iomap *iomap, loff_t pos, void *daddr,
++			    size_t len)
 +{
-+#ifdef CONFIG_FS_DAX
-+	struct inode *inode = file_inode(iocb->ki_filp);
-+	if (IS_DAX(file_inode(iocb->ki_filp)))
-+		return btrfs_file_dax_read(iocb, to);
-+#endif
-+	return generic_file_read_iter(iocb, to);
++	loff_t blk_start, blk_pg;
++	void *saddr;
++	ssize_t map_len;
++
++	/* A zero address is a hole. */
++	if (iomap->cow_addr == 0) {
++		memset(daddr, 0, len);
++		return;
++	}
++
++	blk_start = iomap->cow_addr + pos - iomap->cow_pos;
++	blk_pg = round_down(blk_start, PAGE_SIZE);
++
++	map_len = dax_direct_access(iomap->dax_dev, PHYS_PFN(blk_pg), PAGE_SIZE,
++			&saddr, NULL);
++	saddr += blk_start - blk_pg;
++	memcpy(daddr, saddr, len);
 +}
 +
- const struct file_operations btrfs_file_operations = {
- 	.llseek		= btrfs_file_llseek,
--	.read_iter      = generic_file_read_iter,
-+	.read_iter      = btrfs_file_read_iter,
- 	.splice_read	= generic_file_splice_read,
- 	.write_iter	= btrfs_file_write_iter,
- 	.mmap		= btrfs_file_mmap,
+ int __dax_zero_page_range(struct block_device *bdev,
+ 		struct dax_device *dax_dev, sector_t sector,
+ 		unsigned int offset, unsigned int size)
+@@ -1143,6 +1165,20 @@ dax_iomap_actor(struct inode *inode, loff_t pos, loff_t length, void *data,
+ 			break;
+ 		}
+ 
++		if (iomap->flags & IOMAP_F_COW) {
++			loff_t pg_end = round_up(end, PAGE_SIZE);
++			/*
++			 * Copy the first part of the page
++			 * Note: we pass offset as length
++			 */
++			if (offset)
++				dax_to_dax_copy(iomap, pos - offset, kaddr, offset);
++
++			/* Copy the last part of the range */
++			if (end < pg_end)
++				dax_to_dax_copy(iomap, end, kaddr + offset + length, pg_end - end);
++		}
++
+ 		map_len = PFN_PHYS(map_len);
+ 		kaddr += offset;
+ 		map_len -= offset;
+diff --git a/include/linux/iomap.h b/include/linux/iomap.h
+index 0fefb5455bda..391785de1428 100644
+--- a/include/linux/iomap.h
++++ b/include/linux/iomap.h
+@@ -35,6 +35,7 @@ struct vm_fault;
+ #define IOMAP_F_NEW		0x01	/* blocks have been newly allocated */
+ #define IOMAP_F_DIRTY		0x02	/* uncommitted metadata */
+ #define IOMAP_F_BUFFER_HEAD	0x04	/* file system requires buffer heads */
++#define IOMAP_F_COW		0x08	/* cow before write */
+ 
+ /*
+  * Flags that only need to be reported for IOMAP_REPORT requests:
+@@ -59,6 +60,8 @@ struct iomap {
+ 	u64			length;	/* length of mapping, bytes */
+ 	u16			type;	/* type of mapping */
+ 	u16			flags;	/* flags for mapping */
++	u64			cow_addr; /* read address to perform CoW */
++	loff_t			cow_pos; /* file offset of cow_addr */
+ 	struct block_device	*bdev;	/* block device for I/O */
+ 	struct dax_device	*dax_dev; /* dax_dev for dax operations */
+ 	void			*inline_data;
 -- 
 2.16.4
 

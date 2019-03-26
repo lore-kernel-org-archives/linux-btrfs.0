@@ -2,88 +2,167 @@ Return-Path: <SRS0=MIpn=R5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7C3EFC10F05
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 06:44:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F180CC43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 08:09:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 48B802070B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 06:44:09 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="jasIs20n"
+	by mail.kernel.org (Postfix) with ESMTP id CBFA920823
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 08:09:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731650AbfCZGoH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Mar 2019 02:44:07 -0400
-Received: from mail-oi1-f181.google.com ([209.85.167.181]:46191 "EHLO
-        mail-oi1-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731786AbfCZGgU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Mar 2019 02:36:20 -0400
-Received: by mail-oi1-f181.google.com with SMTP id x188so9030291oia.13
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Mar 2019 23:36:20 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=uYGFcwfFlb2pEIxRljPTwrupLkPlnFrhc4IuYV07otE=;
-        b=jasIs20nPXnFTGe8x9rPiGThYzGYauLaXsr3bwaBCnaKU40Dfpz3s/NtnbEc3iwsKX
-         /U7GFqdSRDZobnVKX4dJTaUlSgc7vCfFfVVftVmizkpzI6pEEBZykD7gD2EVS06KQI7K
-         374MPlsoQuJy+2Dl6pG3em7hIlq7yqhoVtLpfFwmZbkiGL3x6cWd7q1xVmvykgkG5nEZ
-         cAD7Mqx4vHGDFQ/dTN2LepYmMUKAy0a3/2M8j4T4w4PWmb/3ukCUhzA/V2xCAdZd18hf
-         gKyr2aKxIMniZSg1e4G0CF3lnUXqT6khgW8S5NXRtNyVwBSWkcOBAOYZosZuh5nqJMIE
-         CO6w==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=uYGFcwfFlb2pEIxRljPTwrupLkPlnFrhc4IuYV07otE=;
-        b=ZTsh720Xib/aLG0e6KVTqeb90m2sV64usmxyh7Hh/AqGzFTL+Au2YDJBmAKcdQ3Oe+
-         hwN6xHS3osLAKSPMtWx2nEsxUdqziV581ctezzH3xkmZo6XCRkKav5rFSA9WzgZM5MXw
-         CScbp0EJ92Pd9cIEnkJODmmfzCejG7LLPE9nQdUTmCPc4Rg4WUtZZhW195ZWVuOt8edD
-         E/Oql9VRPCx0ed5TnawzUDfcgEaufzA/pEmfGxFuBYJtAs4VKxauXqUYJiMZIpbldlZb
-         AYIRgQrsjeaLS3ZFV0zv/1AGwVaCGMNcuSLVLrMlZjA+5wxQaDpMKpmZEA7h2CJ/b3H5
-         NTcg==
-X-Gm-Message-State: APjAAAVwSIzLexZIa411RX7VXshoxOp7HMc/c1ztCdg6CbGAGaDpo7b/
-        as2Dum8ZJ9kN3V920lIpWt5DcqgZwvLTEoFqGtw=
-X-Google-Smtp-Source: APXvYqz7v9/tJMbPlQxRTEM9bPu77k6hsfMz5ZbZiUrCrEVDdJRBHh31EjnBP5mx2Ov8CfIaiYxlvSLiMEbZAJqOaZg=
-X-Received: by 2002:aca:a84a:: with SMTP id r71mr14794000oie.56.1553582179971;
- Mon, 25 Mar 2019 23:36:19 -0700 (PDT)
+        id S1726278AbfCZIJ0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Mar 2019 04:09:26 -0400
+Received: from mx2.suse.de ([195.135.220.15]:53836 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726175AbfCZIJZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 26 Mar 2019 04:09:25 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id EED60AE78;
+        Tue, 26 Mar 2019 08:09:23 +0000 (UTC)
+Subject: Re: [PATCH v3 00/12] FITRIM improvements
+To:     "Darrick J. Wong" <darrick.wong@oracle.com>
+Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>,
+        Jeff Mahoney <jeffm@suse.com>
+References: <20190325123132.27835-1-nborisov@suse.com>
+ <20190325184456.GA1172@magnolia>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <cf0fa4fe-52a6-3b7d-a381-a7b371a7de36@suse.com>
+Date:   Tue, 26 Mar 2019 10:09:22 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.5.1
 MIME-Version: 1.0
-References: <ZYHmunh2bnI4vOU0LDX4lb1DXvOSPtcjyj7EAns2xBKGaQmIH0amXJKJjKuERK8ygPphnq5hOn4DyprjS9VNgd8ediqxsJOi9lLNYVYGnCA=@protonmail.com>
- <5b21fff4-0515-5577-0ab6-03f452469ef3@gmx.com>
-In-Reply-To: <5b21fff4-0515-5577-0ab6-03f452469ef3@gmx.com>
-From:   Andrei Borzenkov <arvidjaar@gmail.com>
-Date:   Tue, 26 Mar 2019 09:36:08 +0300
-Message-ID: <CAA91j0VZkER8SV_TH=V75oHs5mST+D_k8TJ0gOJQsnaZfF4BJQ@mail.gmail.com>
-Subject: =?UTF-8?Q?Re=3A_backup_uuid=5Ftree_generation_not_consistent_acros?=
-        =?UTF-8?Q?s_multi_device_=28raid0=29_btrfs_=2D_won=C2=B4t_mount?=
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     berodual_xyz <berodual_xyz@protonmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <20190325184456.GA1172@magnolia>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Mar 26, 2019 at 8:19 AM Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
-> >
-> > Kernel 4.20.17
-> > btrfs-progs 4.20.2
-> >
-> > The filesystem consists of 4 (HW raid6) devices, each of them shows different superblock backups but my hope is that backup 2 is "consistent" across all of them.
-> >
-> > Is there any way to restore a specific superblock backup and attempt to mount the filesystem? Running "btrfs restore" did partially recover the data, but the most important bit is still missing.
->
-> You sda and sdb are at gen 60233 while sdd and sde are at gen 60234.
->
-> It's possible to allow kernel to manually assemble its device list using
-> "device=" mount option.
->
-> Since you're using RAID6, it's possible to recover using 2 devices only,
-> but in that case you need "degraded" mount option.
+[CC'ing Filipe as he should now better ]
 
-He has btrfs raid0 profile on top of hardware RAID6 devices.
+On 25.03.19 г. 20:44 ч., Darrick J. Wong wrote:
+> On Mon, Mar 25, 2019 at 02:31:20PM +0200, Nikolay Borisov wrote:
+>> Here is v3 of the fitrim patches. Change since v2 [0]: 
+>>
+>>  * Replaced BUG_ON with WARN_ON in patch 2
+>>
+>>  * Added RB to patches 04/05/06/09
+>>
+>>  * Squashed "btrfs: Transpose btrfs_close_devices/btrfs_mapping_tree_free in close_ctree"
+>>  into patch 07. It was only sent to the mailing list as a followup.
+>>
+>>  * Rebased all patches on latest misc-next.
+>>
+>>  This has undergone multiple xfstest runs and I think is ready to be merged.
+>>
+>> [0] https://lore.kernel.org/linux-btrfs/20190211083510.27591-1-nborisov@suse.com/
+>>
+>>
+>> Jeff Mahoney (1):
+>>   btrfs: replace pending/pinned chunks lists with io tree
+>>
+>> Nikolay Borisov (11):
+>>   btrfs: Honour FITRIM range constraints during free space trim
+> 
+> This is vaguely off-topic, but I noticed that you can FITRIM a btrfs
+> filesystem mounted nologreplay.  Assuming the fitrim code uses the free
+> space information to drive the discard calls, is it safe to do that with
+> unreplayed metadata?
+
+Pertinent question, indeed. But I'd defer to Filipe since he knows the
+log tree code. Filipe, FITRIM uses the freespace_ctl struct from block
+group to trim the freespace inside block groups, as well as the free
+device space to trim unallocated space. If we have a dirty log tree are
+those coherent with the dirty data i.e is it reflected in the BG's
+freespace cache that the data in the logs tree is actually allocated? If
+the answer is 'no' then it will be prudent to disallow trim in this case.
+
+
+> 
+> (And no, I don't really know what nologreplay does, so please excuse my
+> ignorance...)
+
+Log replay means the content of the log tree (which is something like a
+WAL) must be copied back into the main btree.
+
+> 
+> --D
+> 
+>>   btrfs: combine device update operations during transaction commit
+>>   btrfs: Handle pending/pinned chunks before blockgroup relocation
+>>     during device shrink
+>>   btrfs: Rename and export clear_btree_io_tree
+>>   btrfs: Populate ->orig_block_len during read_one_chunk
+>>   btrfs: Introduce new bits for device allocation tree
+>>   btrfs: Remove 'trans' argument from find_free_dev_extent(_start)
+>>   btrfs: Factor out in_range macro
+>>   btrfs: Optimize unallocated chunks discard
+>>   btrfs: Implement find_first_clear_extent_bit
+>>   btrfs: Switch btrfs_trim_free_extents to find_first_clear_extent_bit
+>>
+>>  fs/btrfs/ctree.h            |   8 +-
+>>  fs/btrfs/dev-replace.c      |   2 +-
+>>  fs/btrfs/disk-io.c          |  20 ++-
+>>  fs/btrfs/extent-tree.c      | 102 +++++--------
+>>  fs/btrfs/extent_io.c        | 103 +++++++++++++-
+>>  fs/btrfs/extent_io.h        |  19 ++-
+>>  fs/btrfs/extent_map.c       |  38 +++++
+>>  fs/btrfs/extent_map.h       |   1 -
+>>  fs/btrfs/free-space-cache.c |   4 -
+>>  fs/btrfs/transaction.c      |  51 +------
+>>  fs/btrfs/transaction.h      |   2 +-
+>>  fs/btrfs/volumes.c          | 277 ++++++++++++++----------------------
+>>  fs/btrfs/volumes.h          |  23 ++-
+>>  13 files changed, 332 insertions(+), 318 deletions(-)
+>>
+>> -- 
+>> 2.17.1
+>>
+> 

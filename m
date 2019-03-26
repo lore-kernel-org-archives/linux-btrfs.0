@@ -2,148 +2,160 @@ Return-Path: <SRS0=MIpn=R5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CC13BC43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 15:13:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C6C92C43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 15:25:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9A2CB2070D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 15:13:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9EA912075E
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 15:25:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731491AbfCZPN5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Mar 2019 11:13:57 -0400
-Received: from mx2.suse.de ([195.135.220.15]:55594 "EHLO mx1.suse.de"
+        id S1731913AbfCZPZw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Mar 2019 11:25:52 -0400
+Received: from mx2.suse.de ([195.135.220.15]:58290 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726175AbfCZPN5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Mar 2019 11:13:57 -0400
+        id S1731546AbfCZPZw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 26 Mar 2019 11:25:52 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 03575AC57;
-        Tue, 26 Mar 2019 15:13:54 +0000 (UTC)
-Subject: Re: WARNING at fs/btrfs/delayed-ref.c:296
- btrfs_merge_delayed_refs+0x3dc/0x410 (new on 5.0.4, not in 5.0.3)
-To:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc:     linux-btrfs@vger.kernel.org
-References: <20190326025028.GG16651@hungrycats.org>
- <20190326043005.GH16651@hungrycats.org>
- <00ced6df-c0c6-c762-0119-76218ab4ca0b@suse.com>
- <20190326150936.GI16651@hungrycats.org>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <d5a66daf-cb5a-0acc-3131-7ba150658f06@suse.com>
-Date:   Tue, 26 Mar 2019 17:13:53 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.1
+        by mx1.suse.de (Postfix) with ESMTP id 56B60ACBA
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Mar 2019 15:25:50 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 3D3D3DA8D8; Tue, 26 Mar 2019 16:27:03 +0100 (CET)
+Date:   Tue, 26 Mar 2019 16:27:02 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
+Subject: Re: [PATCh v2 8/9] btrfs: tree-checker: Verify inode item
+Message-ID: <20190326152702.GU10640@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
+References: <20190320063717.31770-1-wqu@suse.com>
+ <20190320063717.31770-9-wqu@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <20190326150936.GI16651@hungrycats.org>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190320063717.31770-9-wqu@suse.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Wed, Mar 20, 2019 at 02:37:16PM +0800, Qu Wenruo wrote:
+> @@ -1539,6 +1539,8 @@ do {                                                                   \
+>  #define BTRFS_INODE_COMPRESS		(1 << 11)
+>  
+>  #define BTRFS_INODE_ROOT_ITEM_INIT	(1 << 31)
+> +#define BTRFS_INODE_FLAG_MASK		(((1 << 12) - 1) |\
+> +					 BTRFS_INODE_ROOT_ITEM_INIT)
 
+That's fragile, the mask constant should enumerate all bits it's
+supposed to cover, like
 
-On 26.03.19 г. 17:09 ч., Zygo Blaxell wrote:
-> On Tue, Mar 26, 2019 at 10:42:31AM +0200, Nikolay Borisov wrote:
->>
->>
->> On 26.03.19 г. 6:30 ч., Zygo Blaxell wrote:
->>> On Mon, Mar 25, 2019 at 10:50:28PM -0400, Zygo Blaxell wrote:
->>>> Running balance, rsync, and dedupe, I get kernel warnings every few
->>>> minutes on 5.0.4.  No warnings on 5.0.3 under similar conditions.
->>>>
->>>> Mount options are:  flushoncommit,space_cache=v2,compress=zstd.
->>>>
->>>> There are two different stacks on the warnings.  This one comes from
->>>> btrfs balance:
->>>
->>> [snip]
->>>
->>> Possibly unrelated, but I'm also repeatably getting this in 5.0.4 and
->>> not 5.0.3, after about 5 hours of uptime.  Different processes, same
->>> kernel stack:
->>>
->>> 	[Mon Mar 25 23:35:17 2019] kworker/u8:4: page allocation failure: order:0, mode:0x404000(GFP_NOWAIT|__GFP_COMP), nodemask=(null),cpuset=/,mems_allowed=0
->>> 	[Mon Mar 25 23:35:17 2019] CPU: 2 PID: 29518 Comm: kworker/u8:4 Tainted: G        W         5.0.4-zb64-303ce93b05c9+ #1
->>
->> What commits does this kernel include because it doesn't seem to be a
->> pristine upstream 5.0.4 ? Also what you are seeing below is definitely a
->> bug in MM. The question is whether it's due to your doing faulty
->> backports in the kernel or it's due to something that got automatically
->> backported to 5.0.4
-> 
-> That was the first thing I thought of, so I reverted to vanilla 5.0.4,
-> repeated the test, and obtained the same result.
-> 
-> You may have a point about non-btrfs patches in 5.0.4, though.
-> I previously tested 5.0.3 with most of the 5.0.4 fs/btrfs commits
-> already included by cherry-pick:
-> 
-> 	1098803b8cb7 Btrfs: fix deadlock between clone/dedupe and rename
-> 	3486142a68e3 Btrfs: fix corruption reading shared and compressed extents after hole punching
-> 	fb9c36acfab1 btrfs: scrub: fix circular locking dependency warning
-> 	9d7b327affb8 Btrfs: setup a nofs context for memory allocation at __btrfs_set_acl
-> 	80dcd07c27df Btrfs: setup a nofs context for memory allocation at btrfs_create_tree()
-> 
-> The commits that are in 5.0.4 but not in my last 5.0.3 test run are:
-> 
-> 	ebbb48419e8a btrfs: init csum_list before possible free
-> 	88e610ae4c3a btrfs: ensure that a DUP or RAID1 block group has exactly two stripes
-> 	9c58f2ada4fa btrfs: drop the lock on error in btrfs_dev_replace_cancel
-> 
-> and I don't see how those commits could lead to the observed changes
-> in behavior.  I didn't include them for 5.0.3 because my test scenario
-> doesn't execute the code they touch.  So the problem might be outside
-> of btrfs completely.
++#define BTRFS_INODE_FLAG_MASK                                          \
++       (BTRFS_INODE_NODATASUM |                                        \
++        BTRFS_INODE_NODATACOW |                                        \
++        BTRFS_INODE_READONLY |                                         \
++        BTRFS_INODE_NOCOMPRESS |                                       \
++        BTRFS_INODE_PREALLOC |                                         \
++        BTRFS_INODE_SYNC |                                             \
++        BTRFS_INODE_IMMUTABLE |                                        \
++        BTRFS_INODE_APPEND |                                           \
++        BTRFS_INODE_NODUMP |                                           \
++        BTRFS_INODE_NOATIME |                                          \
++        BTRFS_INODE_DIRSYNC |                                          \
++        BTRFS_INODE_COMPRESS |                                         \
++        BTRFS_INODE_ROOT_ITEM_INIT)
++
 
-I think it might very well be outside of btrfs because you are seeing an
-order 0 failure when you have plenty of order 0 free pages. That's
-definitely something you might want to report to mm.
+> +	u64 super_gen = btrfs_super_generation(fs_info->super_copy);
+> +	u32 valid_mask = (S_IFMT | S_ISUID | S_ISGID | S_ISVTX | 0777);
+> +	u32 mode;
+> +
+> +	if ((key->objectid < BTRFS_FIRST_FREE_OBJECTID ||
+> +	     key->objectid > BTRFS_LAST_FREE_OBJECTID) &&
+> +	     key->objectid != BTRFS_ROOT_TREE_DIR_OBJECTID &&
+> +	     key->objectid != BTRFS_FREE_INO_OBJECTID) {
+> +		generic_err(fs_info, leaf, slot,
+> +	"invalid key objectid: has %llu expect %llu or [%llu, %llu] or %llu",
+> +			    key->objectid, BTRFS_ROOT_TREE_DIR_OBJECTID,
+> +			    BTRFS_FIRST_FREE_OBJECTID,
+> +			    BTRFS_LAST_FREE_OBJECTID,
+> +			    BTRFS_FREE_INO_OBJECTID);
+> +		goto error;
+> +	}
+> +	if (key->offset != 0) {
+> +		inode_item_err(fs_info, leaf, slot,
+> +			"invalid key offset: has %llu expect 0",
+> +			key->offset);
+> +		goto error;
+> +	}
+> +	iitem = btrfs_item_ptr(leaf, slot, struct btrfs_inode_item);
+> +
+> +	/* Here we use super block generation + 1 to handle log tree */
+> +	if (btrfs_inode_generation(leaf, iitem) > super_gen + 1) {
+> +		inode_item_err(fs_info, leaf, slot,
+> +			"invalid inode generation: has %llu expect (0, %llu]",
+> +			       btrfs_inode_generation(leaf, iitem),
+> +			       super_gen + 1);
+> +		goto error;
+> +	}
+> +	/* Note for ROOT_TREE_DIR_ITEM, mkfs could make its transid as 0 */
+> +	if (btrfs_inode_transid(leaf, iitem) > super_gen + 1) {
+> +		inode_item_err(fs_info, leaf, slot,
+> +			"invalid inode generation: has %llu expect [0, %llu]",
+> +			       btrfs_inode_transid(leaf, iitem),
+> +			       super_gen + 1);
+> +		goto error;
+> +	}
+> +
+> +	/*
+> +	 * For size and nbytes it's better not to be too strict, as for dir
+> +	 * item its size/nbytes can easily get wrong, but doesn't affect
+> +	 * any thing of the fs. So here we skip the check.
+> +	 */
+> +
+> +	mode = btrfs_inode_mode(leaf, iitem);
+> +	if (mode & ~valid_mask) {
+> +		inode_item_err(fs_info, leaf, slot,
+> +			       "unknown mode bit detected: 0x%x",
+> +			       mode & ~valid_mask);
+> +		goto error;
+> +	}
+> +
+> +	/*
+> +	 * S_IFMT is not bit mapped so we can't completely rely is_power_of_2(),
+> +	 * but is_power_of_2() can save us from checking FIFO/CHR/DIR/REG.
+> +	 * Only needs to check BLK, LNK and SOCKS
+> +	 */
+> +	if (!is_power_of_2(mode & S_IFMT)) {
+> +		if (!S_ISLNK(mode) && ! S_ISBLK(mode) && !S_ISSOCK(mode)) {
+> +			inode_item_err(fs_info, leaf, slot,
+> +			"invalid mode: has 0%o expect valid S_IF* bit(s)",
+> +				       mode & S_IFMT);
+> +			goto error;
+> +		}
+> +	}
+> +	if (S_ISDIR(mode) && btrfs_inode_nlink(leaf, iitem) > 1) {
+> +		inode_item_err(fs_info, leaf, slot,
+> +			       "invalid nlink: has %u expect no more than 1 for dir",
+> +			btrfs_inode_nlink(leaf, iitem));
+> +		goto error;
+> +	}
+> +	if (btrfs_inode_flags(leaf, iitem) & ~BTRFS_INODE_FLAG_MASK) {
+> +		inode_item_err(fs_info, leaf, slot,
+> +			       "unknown flags detected: 0x%llx",
+> +			       btrfs_inode_flags(leaf, iitem) &
+> +			       ~BTRFS_INODE_FLAG_MASK);
+> +		goto error;
+> +	}
+> +	return 0;
+> +
+> +error:
+> +	return -EUCLEAN;
 
-> 
+Switched to local returns instead of gotos.

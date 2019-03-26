@@ -3,32 +3,32 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7572FC43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 19:03:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C0CA0C43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 19:03:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5566620823
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 19:03:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A126A20823
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 19:03:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732689AbfCZTDg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1732666AbfCZTDg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Tue, 26 Mar 2019 15:03:36 -0400
-Received: from mx2.suse.de ([195.135.220.15]:36998 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37008 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1732636AbfCZTDd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Mar 2019 15:03:33 -0400
+        id S1732504AbfCZTDe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 26 Mar 2019 15:03:34 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 255BDAEE6;
-        Tue, 26 Mar 2019 19:03:31 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 4BBC0AF79;
+        Tue, 26 Mar 2019 19:03:33 +0000 (UTC)
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-btrfs@vger.kernel.org
 Cc:     linux-fsdevel@vger.kernel.org,
         Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 07/15] btrfs: add dax write support
-Date:   Tue, 26 Mar 2019 14:02:53 -0500
-Message-Id: <20190326190301.32365-8-rgoldwyn@suse.de>
+Subject: [PATCH 08/15] dax: add dax_iomap_cow to copy a mmap page before writing
+Date:   Tue, 26 Mar 2019 14:02:54 -0500
+Message-Id: <20190326190301.32365-9-rgoldwyn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20190326190301.32365-1-rgoldwyn@suse.de>
 References: <20190326190301.32365-1-rgoldwyn@suse.de>
@@ -39,211 +39,64 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-IOMAP_F_COW allows to inform the dax code, to first perform
-a copy which are not page-aligned before performing the write.
-
-A new struct btrfs_iomap is passed from iomap_begin() to
-iomap_end(), which contains all the accounting and locking information
-for CoW based writes.
-
-For writing to a hole, iomap->cow_addr is set to zero. Would this
-be better handled by a flag or can a valid filesystem block be at
-offset zero of the device?
+dax_iomap_cow copies a page before presenting for mmap.
 
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 ---
- fs/btrfs/ctree.h |   6 +++
- fs/btrfs/dax.c   | 119 +++++++++++++++++++++++++++++++++++++++++++++++++++++--
- fs/btrfs/file.c  |   4 +-
- 3 files changed, 124 insertions(+), 5 deletions(-)
+ fs/dax.c | 33 ++++++++++++++++++++++++++++++++-
+ 1 file changed, 32 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index a3543a4a063d..3bcd2a4959c1 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3801,6 +3801,12 @@ int btree_readahead_hook(struct extent_buffer *eb, int err);
- #ifdef CONFIG_FS_DAX
- /* dax.c */
- ssize_t btrfs_file_dax_read(struct kiocb *iocb, struct iov_iter *to);
-+ssize_t btrfs_file_dax_write(struct kiocb *iocb, struct iov_iter *from);
-+#else
-+static inline ssize_t btrfs_file_dax_write(struct kiocb *iocb, struct iov_iter *from)
+diff --git a/fs/dax.c b/fs/dax.c
+index e254535dd830..21ee3df6f02c 100644
+--- a/fs/dax.c
++++ b/fs/dax.c
+@@ -1269,6 +1269,33 @@ static bool dax_fault_is_synchronous(unsigned long flags,
+ 		&& (iomap->flags & IOMAP_F_DIRTY);
+ }
+ 
++static int dax_iomap_cow(struct iomap *iomap, loff_t pos, pfn_t *pfn)
 +{
-+	return 0;
-+}
- #endif /* CONFIG_FS_DAX */
- 
- static inline int is_fstree(u64 rootid)
-diff --git a/fs/btrfs/dax.c b/fs/btrfs/dax.c
-index bf3d46b0acb6..49619fe3f94f 100644
---- a/fs/btrfs/dax.c
-+++ b/fs/btrfs/dax.c
-@@ -9,30 +9,124 @@
- #ifdef CONFIG_FS_DAX
- #include <linux/dax.h>
- #include <linux/iomap.h>
-+#include <linux/uio.h>
- #include "ctree.h"
- #include "btrfs_inode.h"
- 
-+struct btrfs_iomap {
-+	u64 start;
-+	u64 end;
-+	int nocow;
-+	struct extent_changeset *data_reserved;
-+	struct extent_state *cached_state;
-+};
++	void *daddr;
++	pgoff_t pgoff;
++	long rc;
++	int id;
++	sector_t sector;
 +
- static int btrfs_iomap_begin(struct inode *inode, loff_t pos,
- 		loff_t length, unsigned flags, struct iomap *iomap)
++	pos = round_down(pos, PAGE_SIZE);
++
++	sector = round_down(iomap->addr + iomap->offset - pos, PAGE_SIZE) >> 9;
++	rc = bdev_dax_pgoff(iomap->bdev, sector, PAGE_SIZE, &pgoff);
++	if (rc)
++		return rc;
++
++	id = dax_read_lock();
++	rc = dax_direct_access(iomap->dax_dev, pgoff, 1, &daddr, pfn);
++	if (rc < 0)
++		goto out;
++
++	dax_to_dax_copy(iomap, pos, daddr, PAGE_SIZE);
++
++out:
++	dax_read_unlock(id);
++	return rc;
++}
++
+ static vm_fault_t dax_iomap_pte_fault(struct vm_fault *vmf, pfn_t *pfnp,
+ 			       int *iomap_errp, const struct iomap_ops *ops)
  {
- 	struct extent_map *em;
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+@@ -1372,7 +1399,11 @@ static vm_fault_t dax_iomap_pte_fault(struct vm_fault *vmf, pfn_t *pfnp,
+ 			count_memcg_event_mm(vma->vm_mm, PGMAJFAULT);
+ 			major = VM_FAULT_MAJOR;
+ 		}
+-		error = dax_iomap_pfn(&iomap, pos, PAGE_SIZE, &pfn);
 +
- 	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, pos, length, 0);
-+
-+	if (flags & IOMAP_WRITE) {
-+		int ret = 0, nocow;
-+		struct extent_map *map = em;
-+		struct btrfs_iomap *bi;
-+
-+		bi = kzalloc(sizeof(struct btrfs_iomap), GFP_NOFS);
-+		if (!bi)
-+			return -ENOMEM;
-+
-+		bi->start = round_down(pos, PAGE_SIZE);
-+		bi->end = round_up(pos + length, PAGE_SIZE);
-+
-+		iomap->private = bi;
-+
-+		/* Wait for existing ordered extents in range to finish */
-+		btrfs_wait_ordered_range(inode, bi->start, bi->end - bi->start);
-+
-+		lock_extent_bits(&BTRFS_I(inode)->io_tree, bi->start, bi->end, &bi->cached_state);
-+
-+		ret = btrfs_delalloc_reserve_space(inode, &bi->data_reserved,
-+				bi->start, bi->end - bi->start);
-+		if (ret) {
-+			unlock_extent_cached(&BTRFS_I(inode)->io_tree, bi->start, bi->end,
-+					&bi->cached_state);
-+			kfree(bi);
-+			return ret;
-+		}
-+
-+		refcount_inc(&map->refs);
-+		ret = btrfs_get_extent_map_write(&em, NULL,
-+				inode, bi->start, bi->end - bi->start, &nocow);
-+		if (ret) {
-+			unlock_extent_cached(&BTRFS_I(inode)->io_tree, bi->start, bi->end,
-+					&bi->cached_state);
-+			btrfs_delalloc_release_space(inode,
-+					bi->data_reserved, bi->start,
-+					bi->end - bi->start, true);
-+			extent_changeset_free(bi->data_reserved);
-+			kfree(bi);
-+			return ret;
-+		}
-+		if (!nocow) {
-+			iomap->flags |= IOMAP_F_COW;
-+			if (map->block_start != EXTENT_MAP_HOLE) {
-+				iomap->cow_addr = map->block_start;
-+				iomap->cow_pos = map->start;
-+			}
-+		} else {
-+			bi->nocow = 1;
-+		}
-+		free_extent_map(map);
-+	}
-+
-+	iomap->offset = em->start;
-+	iomap->length = em->len;
-+	iomap->bdev = em->bdev;
-+	iomap->dax_dev = fs_info->dax_dev;
-+
- 	if (em->block_start == EXTENT_MAP_HOLE) {
- 		iomap->type = IOMAP_HOLE;
- 		return 0;
- 	}
-+
- 	iomap->type = IOMAP_MAPPED;
--	iomap->bdev = em->bdev;
--	iomap->dax_dev = fs_info->dax_dev;
--	iomap->offset = em->start;
--	iomap->length = em->len;
- 	iomap->addr = em->block_start;
- 	return 0;
- }
++		if (iomap.flags & IOMAP_F_COW)
++			error = dax_iomap_cow(&iomap, pos, &pfn);
++		else
++			error = dax_iomap_pfn(&iomap, pos, PAGE_SIZE, &pfn);
+ 		if (error < 0)
+ 			goto error_finish_iomap;
  
-+static int btrfs_iomap_end(struct inode *inode, loff_t pos,
-+		loff_t length, ssize_t written, unsigned flags,
-+		struct iomap *iomap)
-+{
-+	struct btrfs_iomap *bi = iomap->private;
-+	u64 wend;
-+
-+	if (!bi)
-+		return 0;
-+
-+	unlock_extent_cached(&BTRFS_I(inode)->io_tree, bi->start, bi->end,
-+			&bi->cached_state);
-+
-+	wend = round_up(pos + written, PAGE_SIZE);
-+	if (wend < bi->end) {
-+		btrfs_delalloc_release_space(inode,
-+				bi->data_reserved, wend,
-+				bi->end - wend, true);
-+	}
-+
-+	btrfs_update_ordered_extent(inode, bi->start, wend - bi->start, true);
-+	btrfs_delalloc_release_extents(BTRFS_I(inode), wend - bi->start, false);
-+	extent_changeset_free(bi->data_reserved);
-+	kfree(bi);
-+	return 0;
-+}
-+
- static const struct iomap_ops btrfs_iomap_ops = {
- 	.iomap_begin		= btrfs_iomap_begin,
-+	.iomap_end		= btrfs_iomap_end,
- };
- 
- ssize_t btrfs_file_dax_read(struct kiocb *iocb, struct iov_iter *to)
-@@ -46,4 +140,21 @@ ssize_t btrfs_file_dax_read(struct kiocb *iocb, struct iov_iter *to)
- 
- 	return ret;
- }
-+
-+ssize_t btrfs_file_dax_write(struct kiocb *iocb, struct iov_iter *iter)
-+{
-+	ssize_t ret = 0;
-+	u64 pos = iocb->ki_pos;
-+	struct inode *inode = file_inode(iocb->ki_filp);
-+
-+	ret = dax_iomap_rw(iocb, iter, &btrfs_iomap_ops);
-+
-+	if (ret > 0) {
-+		pos += ret;
-+		if (pos > i_size_read(inode))
-+			i_size_write(inode, pos);
-+		iocb->ki_pos = pos;
-+	}
-+	return ret;
-+}
- #endif /* CONFIG_FS_DAX */
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index b620f4e718b2..3b320d0ab495 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1964,7 +1964,9 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
- 	if (sync)
- 		atomic_inc(&BTRFS_I(inode)->sync_writers);
- 
--	if (iocb->ki_flags & IOCB_DIRECT) {
-+	if (IS_DAX(inode)) {
-+		num_written = btrfs_file_dax_write(iocb, from);
-+	} else if (iocb->ki_flags & IOCB_DIRECT) {
- 		num_written = __btrfs_direct_write(iocb, from);
- 	} else {
- 		num_written = btrfs_buffered_write(iocb, from);
 -- 
 2.16.4
 

@@ -6,29 +6,29 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D7875C43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 19:03:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7572FC43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 19:03:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B81DD20823
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 19:03:32 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5566620823
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 19:03:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732638AbfCZTDb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Mar 2019 15:03:31 -0400
-Received: from mx2.suse.de ([195.135.220.15]:36986 "EHLO mx1.suse.de"
+        id S1732689AbfCZTDg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Mar 2019 15:03:36 -0400
+Received: from mx2.suse.de ([195.135.220.15]:36998 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1732504AbfCZTDb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Mar 2019 15:03:31 -0400
+        id S1732636AbfCZTDd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 26 Mar 2019 15:03:33 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 13F27ADF2;
-        Tue, 26 Mar 2019 19:03:29 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 255BDAEE6;
+        Tue, 26 Mar 2019 19:03:31 +0000 (UTC)
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-btrfs@vger.kernel.org
 Cc:     linux-fsdevel@vger.kernel.org,
         Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 06/15] btrfs: Rename __endio_write_update_ordered() to btrfs_update_ordered_extent()
-Date:   Tue, 26 Mar 2019 14:02:52 -0500
-Message-Id: <20190326190301.32365-7-rgoldwyn@suse.de>
+Subject: [PATCH 07/15] btrfs: add dax write support
+Date:   Tue, 26 Mar 2019 14:02:53 -0500
+Message-Id: <20190326190301.32365-8-rgoldwyn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20190326190301.32365-1-rgoldwyn@suse.de>
 References: <20190326190301.32365-1-rgoldwyn@suse.de>
@@ -39,93 +39,211 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-Since we will be using it in another part of the code, use a
-better name to declare it non-static
+IOMAP_F_COW allows to inform the dax code, to first perform
+a copy which are not page-aligned before performing the write.
+
+A new struct btrfs_iomap is passed from iomap_begin() to
+iomap_end(), which contains all the accounting and locking information
+for CoW based writes.
+
+For writing to a hole, iomap->cow_addr is set to zero. Would this
+be better handled by a flag or can a valid filesystem block be at
+offset zero of the device?
 
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 ---
- fs/btrfs/ctree.h |  7 +++++--
- fs/btrfs/inode.c | 14 +++++---------
- 2 files changed, 10 insertions(+), 11 deletions(-)
+ fs/btrfs/ctree.h |   6 +++
+ fs/btrfs/dax.c   | 119 +++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ fs/btrfs/file.c  |   4 +-
+ 3 files changed, 124 insertions(+), 5 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 2c49d3c46170..a3543a4a063d 100644
+index a3543a4a063d..3bcd2a4959c1 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -3280,8 +3280,11 @@ struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
- int btrfs_get_extent_map_write(struct extent_map **map, struct buffer_head *bh,
- 		struct inode *inode, u64 start, u64 len, int *nocow);
- struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
--				    struct page *page, size_t pg_offset,
--				    u64 start, u64 end, int create);
-+		struct page *page, size_t pg_offset,
-+		u64 start, u64 end, int create);
-+void btrfs_update_ordered_extent(struct inode *inode,
-+		const u64 offset, const u64 bytes,
-+		const bool uptodate);
- int btrfs_update_inode(struct btrfs_trans_handle *trans,
- 			      struct btrfs_root *root,
- 			      struct inode *inode);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index c8702e0b5e66..f721fc1e3f7f 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -98,10 +98,6 @@ static struct extent_map *create_io_em(struct inode *inode, u64 start, u64 len,
- 				       u64 ram_bytes, int compress_type,
- 				       int type);
+@@ -3801,6 +3801,12 @@ int btree_readahead_hook(struct extent_buffer *eb, int err);
+ #ifdef CONFIG_FS_DAX
+ /* dax.c */
+ ssize_t btrfs_file_dax_read(struct kiocb *iocb, struct iov_iter *to);
++ssize_t btrfs_file_dax_write(struct kiocb *iocb, struct iov_iter *from);
++#else
++static inline ssize_t btrfs_file_dax_write(struct kiocb *iocb, struct iov_iter *from)
++{
++	return 0;
++}
+ #endif /* CONFIG_FS_DAX */
  
--static void __endio_write_update_ordered(struct inode *inode,
--					 const u64 offset, const u64 bytes,
--					 const bool uptodate);
--
- /*
-  * Cleanup all submitted ordered extents in specified range to handle errors
-  * from the btrfs_run_delalloc_range() callback.
-@@ -142,7 +138,7 @@ static inline void btrfs_cleanup_ordered_extents(struct inode *inode,
- 		bytes -= PAGE_SIZE;
- 	}
+ static inline int is_fstree(u64 rootid)
+diff --git a/fs/btrfs/dax.c b/fs/btrfs/dax.c
+index bf3d46b0acb6..49619fe3f94f 100644
+--- a/fs/btrfs/dax.c
++++ b/fs/btrfs/dax.c
+@@ -9,30 +9,124 @@
+ #ifdef CONFIG_FS_DAX
+ #include <linux/dax.h>
+ #include <linux/iomap.h>
++#include <linux/uio.h>
+ #include "ctree.h"
+ #include "btrfs_inode.h"
  
--	return __endio_write_update_ordered(inode, offset, bytes, false);
-+	return btrfs_update_ordered_extent(inode, offset, bytes, false);
- }
- 
- static int btrfs_dirty_inode(struct inode *inode);
-@@ -8085,7 +8081,7 @@ static void btrfs_endio_direct_read(struct bio *bio)
- 	bio_put(bio);
- }
- 
--static void __endio_write_update_ordered(struct inode *inode,
-+void btrfs_update_ordered_extent(struct inode *inode,
- 					 const u64 offset, const u64 bytes,
- 					 const bool uptodate)
++struct btrfs_iomap {
++	u64 start;
++	u64 end;
++	int nocow;
++	struct extent_changeset *data_reserved;
++	struct extent_state *cached_state;
++};
++
+ static int btrfs_iomap_begin(struct inode *inode, loff_t pos,
+ 		loff_t length, unsigned flags, struct iomap *iomap)
  {
-@@ -8138,7 +8134,7 @@ static void btrfs_endio_direct_write(struct bio *bio)
- 	struct btrfs_dio_private *dip = bio->bi_private;
- 	struct bio *dio_bio = dip->dio_bio;
+ 	struct extent_map *em;
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
++
+ 	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, pos, length, 0);
++
++	if (flags & IOMAP_WRITE) {
++		int ret = 0, nocow;
++		struct extent_map *map = em;
++		struct btrfs_iomap *bi;
++
++		bi = kzalloc(sizeof(struct btrfs_iomap), GFP_NOFS);
++		if (!bi)
++			return -ENOMEM;
++
++		bi->start = round_down(pos, PAGE_SIZE);
++		bi->end = round_up(pos + length, PAGE_SIZE);
++
++		iomap->private = bi;
++
++		/* Wait for existing ordered extents in range to finish */
++		btrfs_wait_ordered_range(inode, bi->start, bi->end - bi->start);
++
++		lock_extent_bits(&BTRFS_I(inode)->io_tree, bi->start, bi->end, &bi->cached_state);
++
++		ret = btrfs_delalloc_reserve_space(inode, &bi->data_reserved,
++				bi->start, bi->end - bi->start);
++		if (ret) {
++			unlock_extent_cached(&BTRFS_I(inode)->io_tree, bi->start, bi->end,
++					&bi->cached_state);
++			kfree(bi);
++			return ret;
++		}
++
++		refcount_inc(&map->refs);
++		ret = btrfs_get_extent_map_write(&em, NULL,
++				inode, bi->start, bi->end - bi->start, &nocow);
++		if (ret) {
++			unlock_extent_cached(&BTRFS_I(inode)->io_tree, bi->start, bi->end,
++					&bi->cached_state);
++			btrfs_delalloc_release_space(inode,
++					bi->data_reserved, bi->start,
++					bi->end - bi->start, true);
++			extent_changeset_free(bi->data_reserved);
++			kfree(bi);
++			return ret;
++		}
++		if (!nocow) {
++			iomap->flags |= IOMAP_F_COW;
++			if (map->block_start != EXTENT_MAP_HOLE) {
++				iomap->cow_addr = map->block_start;
++				iomap->cow_pos = map->start;
++			}
++		} else {
++			bi->nocow = 1;
++		}
++		free_extent_map(map);
++	}
++
++	iomap->offset = em->start;
++	iomap->length = em->len;
++	iomap->bdev = em->bdev;
++	iomap->dax_dev = fs_info->dax_dev;
++
+ 	if (em->block_start == EXTENT_MAP_HOLE) {
+ 		iomap->type = IOMAP_HOLE;
+ 		return 0;
+ 	}
++
+ 	iomap->type = IOMAP_MAPPED;
+-	iomap->bdev = em->bdev;
+-	iomap->dax_dev = fs_info->dax_dev;
+-	iomap->offset = em->start;
+-	iomap->length = em->len;
+ 	iomap->addr = em->block_start;
+ 	return 0;
+ }
  
--	__endio_write_update_ordered(dip->inode, dip->logical_offset,
-+	btrfs_update_ordered_extent(dip->inode, dip->logical_offset,
- 				     dip->bytes, !bio->bi_status);
++static int btrfs_iomap_end(struct inode *inode, loff_t pos,
++		loff_t length, ssize_t written, unsigned flags,
++		struct iomap *iomap)
++{
++	struct btrfs_iomap *bi = iomap->private;
++	u64 wend;
++
++	if (!bi)
++		return 0;
++
++	unlock_extent_cached(&BTRFS_I(inode)->io_tree, bi->start, bi->end,
++			&bi->cached_state);
++
++	wend = round_up(pos + written, PAGE_SIZE);
++	if (wend < bi->end) {
++		btrfs_delalloc_release_space(inode,
++				bi->data_reserved, wend,
++				bi->end - wend, true);
++	}
++
++	btrfs_update_ordered_extent(inode, bi->start, wend - bi->start, true);
++	btrfs_delalloc_release_extents(BTRFS_I(inode), wend - bi->start, false);
++	extent_changeset_free(bi->data_reserved);
++	kfree(bi);
++	return 0;
++}
++
+ static const struct iomap_ops btrfs_iomap_ops = {
+ 	.iomap_begin		= btrfs_iomap_begin,
++	.iomap_end		= btrfs_iomap_end,
+ };
  
- 	kfree(dip);
-@@ -8457,7 +8453,7 @@ static void btrfs_submit_direct(struct bio *dio_bio, struct inode *inode,
- 		bio = NULL;
+ ssize_t btrfs_file_dax_read(struct kiocb *iocb, struct iov_iter *to)
+@@ -46,4 +140,21 @@ ssize_t btrfs_file_dax_read(struct kiocb *iocb, struct iov_iter *to)
+ 
+ 	return ret;
+ }
++
++ssize_t btrfs_file_dax_write(struct kiocb *iocb, struct iov_iter *iter)
++{
++	ssize_t ret = 0;
++	u64 pos = iocb->ki_pos;
++	struct inode *inode = file_inode(iocb->ki_filp);
++
++	ret = dax_iomap_rw(iocb, iter, &btrfs_iomap_ops);
++
++	if (ret > 0) {
++		pos += ret;
++		if (pos > i_size_read(inode))
++			i_size_write(inode, pos);
++		iocb->ki_pos = pos;
++	}
++	return ret;
++}
+ #endif /* CONFIG_FS_DAX */
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index b620f4e718b2..3b320d0ab495 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1964,7 +1964,9 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
+ 	if (sync)
+ 		atomic_inc(&BTRFS_I(inode)->sync_writers);
+ 
+-	if (iocb->ki_flags & IOCB_DIRECT) {
++	if (IS_DAX(inode)) {
++		num_written = btrfs_file_dax_write(iocb, from);
++	} else if (iocb->ki_flags & IOCB_DIRECT) {
+ 		num_written = __btrfs_direct_write(iocb, from);
  	} else {
- 		if (write)
--			__endio_write_update_ordered(inode,
-+			btrfs_update_ordered_extent(inode,
- 						file_offset,
- 						dio_bio->bi_iter.bi_size,
- 						false);
-@@ -8597,7 +8593,7 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
- 			 */
- 			if (dio_data.unsubmitted_oe_range_start <
- 			    dio_data.unsubmitted_oe_range_end)
--				__endio_write_update_ordered(inode,
-+				btrfs_update_ordered_extent(inode,
- 					dio_data.unsubmitted_oe_range_start,
- 					dio_data.unsubmitted_oe_range_end -
- 					dio_data.unsubmitted_oe_range_start,
+ 		num_written = btrfs_buffered_write(iocb, from);
 -- 
 2.16.4
 

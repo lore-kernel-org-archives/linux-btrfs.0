@@ -2,109 +2,135 @@ Return-Path: <SRS0=MIpn=R5=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9131DC43381
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 03:47:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 998B6C43381
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 03:50:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5A0322075C
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 03:47:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3EB0620811
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Mar 2019 03:50:27 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="r1VfFJmh"
+	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="Qdwadqjb"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730997AbfCZDr5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Mar 2019 23:47:57 -0400
-Received: from mail-lf1-f47.google.com ([209.85.167.47]:38254 "EHLO
-        mail-lf1-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730972AbfCZDr4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Mar 2019 23:47:56 -0400
-Received: by mail-lf1-f47.google.com with SMTP id a6so7585914lfl.5
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Mar 2019 20:47:55 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=subject:to:references:from:openpgp:autocrypt:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=O93fj8TdUsXRgHqztb7l0gO6N1E9+TwYf9TPsX/a2Pw=;
-        b=r1VfFJmhNVAR2eHIWjT7hOCFyIRYq10lC1bEhEChIrnHTW55vOXYccDQ2SS+pYfQfx
-         5gKGQu1owvyykd1bhSMt35e6QrRN5Pxs7oxRpp78IGQi4t8jM0iUS7g0zuWuSHFk5ocN
-         GYZRf0skf4aBrkBiFvs1SBGxF8MFqpc9EATJLSMLf74tmjYmci5r9dXx6aKGeas/I2Ir
-         rfRi6cUO3oQRymUfV4++GhAgDMZ2ilwerPhbVFGDYkh8HfTdO0Kk4fTlzU8MtEUReJRc
-         3Bsqw5+iqZA68KUjHflzYodKPi5PjEJnXYvJWXXl7ifEk3k+I71eouiUcFeBAgNcaQmg
-         t/8Q==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:openpgp:autocrypt
-         :message-id:date:user-agent:mime-version:in-reply-to
-         :content-language:content-transfer-encoding;
-        bh=O93fj8TdUsXRgHqztb7l0gO6N1E9+TwYf9TPsX/a2Pw=;
-        b=Mcob8C+/NR4pqI8nkGjp1ixDISQPvRAKqpIuO7d24qI0IAW1UaPNDjwpSGeZqSAzRw
-         kqAxsqtbWMXtQJOnLI4Mmx35jwL+kKBY2KeJbV5g5C8XL5On53xRJ7jn93yfZpa0YTYe
-         HI9XU/ZgKaFbqhvFYO0lLXpmDHVdLEya1GKaKeGTQtkMXqrKTMI0rbgS7+1D9BjFtjNv
-         DE5mx4gHT2hwBce9XGiXVtbSiFQsfGwjp8TV7EMgAFoQnjxA4Ds6iNElQaYwgqYkn/Dn
-         Rb07WSeW3+0nIVaW7+sai6obghAmFaI8lpIIHA2Cm+/yB18xWBeWbfBAIOgyHNMm4myl
-         mYfQ==
-X-Gm-Message-State: APjAAAWBNtuaQP4XiCd1om5XS16d/XgRug3rDVQEe/MT8vDsOix17rzB
-        OjiNqZdEwF8rf0K0ytIZkSJOC5kxPko=
-X-Google-Smtp-Source: APXvYqweUZHNzLWoOzeVUIDQ1BUnOmq4IbsfiMVY43rEhxzhqhZPjbOa/uFZG6dsWaNHcfds4yRclg==
-X-Received: by 2002:a19:95cf:: with SMTP id x198mr13928289lfd.73.1553572074592;
-        Mon, 25 Mar 2019 20:47:54 -0700 (PDT)
-Received: from [192.168.1.5] (109-252-90-78.nat.spd-mgts.ru. [109.252.90.78])
-        by smtp.gmail.com with ESMTPSA id t14sm3690963lfl.38.2019.03.25.20.47.52
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Mon, 25 Mar 2019 20:47:53 -0700 (PDT)
-Subject: Re: parent transid verify failed / FS wont mount / help please!
-To:     berodual_xyz <berodual_xyz@protonmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <F4iB3ncMhJwa1h8e21JOCzT6VJADai5sLrMwrjvDwGbC5UjWSaregJSV1dzsfTAQwRBSsDL7ky6f9uVHPFH-2g_DaKhsR9Rl23Hax5JZBeM=@protonmail.com>
-From:   Andrei Borzenkov <arvidjaar@gmail.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=arvidjaar@gmail.com; prefer-encrypt=mutual; keydata=
- xsDiBDxiRwwRBAC3CN9wdwpVEqUGmSoqF8tWVIT4P/bLCSZLkinSZ2drsblKpdG7x+guxwts
- +LgI8qjf/q5Lah1TwOqzDvjHYJ1wbBauxZ03nDzSLUhD4Ms1IsqlIwyTLumQs4vcQdvLxjFs
- G70aDglgUSBogtaIEsiYZXl4X0j3L9fVstuz4/wXtwCg1cN/yv/eBC0tkcM1nsJXQrC5Ay8D
- /1aA5qPticLBpmEBxqkf0EMHuzyrFlqVw1tUjZ+Ep2LMlem8malPvfdZKEZ71W1a/XbRn8FE
- SOp0tUa5GwdoDXgEp1CJUn+WLurR0KPDf01E4j/PHHAoABgrqcOTcIVoNpv2gNiBySVsNGzF
- XTeY/Yd6vQclkqjBYONGN3r9R8bWA/0Y1j4XK61qjowRk3Iy8sBggM3PmmNRUJYgroerpcAr
- 2byz6wTsb3U7OzUZ1Llgisk5Qum0RN77m3I37FXlIhCmSEY7KZVzGNW3blugLHcfw/HuCB7R
- 1w5qiLWKK6eCQHL+BZwiU8hX3dtTq9d7WhRW5nsVPEaPqudQfMSi/Ux1kc0mQW5kcmVpIEJv
- cnplbmtvdiA8YXJ2aWRqYWFyQGdtYWlsLmNvbT7CZQQTEQIAJQIbAwYLCQgHAwIGFQgCCQoL
- BBYCAwECHgECF4AFAliWAiQCGQEACgkQR6LMutpd94wFGwCeNuQnMDxve/Fo3EvYIkAOn+zE
- 21cAnRCQTXd1hTgcRHfpArEd/Rcb5+SczsBNBDxiRyQQBACQtME33UHfFOCApLki4kLFrIw1
- 5A5asua10jm5It+hxzI9jDR9/bNEKDTKSciHnM7aRUggLwTt+6CXkMy8an+tVqGL/MvDc4/R
- KKlZxj39xP7wVXdt8y1ciY4ZqqZf3tmmSN9DlLcZJIOT82DaJZuvr7UJ7rLzBFbAUh4yRKaN
- nwADBwQAjNvMr/KBcGsV/UvxZSm/mdpvUPtcw9qmbxCrqFQoB6TmoZ7F6wp/rL3TkQ5UElPR
- gsG12+Dk9GgRhnnxTHCFgN1qTiZNX4YIFpNrd0au3W/Xko79L0c4/49ten5OrFI/psx53fhY
- vLYfkJnc62h8hiNeM6kqYa/x0BEddu92ZG7CRgQYEQIABgUCPGJHJAAKCRBHosy62l33jMhd
- AJ48P7WDvKLQQ5MKnn2D/TI337uA/gCgn5mnvm4SBctbhaSBgckRmgSxfwQ=
-Message-ID: <597b7e4e-25ce-1f40-75df-bfcbb41e5d2e@gmail.com>
-Date:   Tue, 26 Mar 2019 06:47:52 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.1
+        id S1730239AbfCZDu0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Mar 2019 23:50:26 -0400
+Received: from mail.synology.com ([211.23.38.101]:41387 "EHLO synology.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727506AbfCZDuZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Mar 2019 23:50:25 -0400
+Received: from _ (localhost [127.0.0.1])
+        by synology.com (Postfix) with ESMTPA id AB894FCA7160;
+        Tue, 26 Mar 2019 11:50:23 +0800 (CST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=synology.com; s=123;
+        t=1553572223; bh=Z3kicC70BbjQFYHIZkwyiI1tN9ZbWcxrkPtJhyoZp+w=;
+        h=Date:From:To:Cc:Subject:In-Reply-To:References;
+        b=QdwadqjblbZcyOutrHV8skhaA8FJo4S5NCtov/dtw7tymGRUuOx3whH0kwWwRDAci
+         6iHkDQ7Ti7hfuv6vDg21GdMn6MsAKN39nwucfK3ngfkf89J+3ey39Bz/31aCFTa/+J
+         kqUJgkxM4ewt7/ArV4vpQuWK7FS1Sa3MCJxXjq4g=
 MIME-Version: 1.0
-In-Reply-To: <F4iB3ncMhJwa1h8e21JOCzT6VJADai5sLrMwrjvDwGbC5UjWSaregJSV1dzsfTAQwRBSsDL7ky6f9uVHPFH-2g_DaKhsR9Rl23Hax5JZBeM=@protonmail.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
 Content-Transfer-Encoding: 8bit
+Date:   Tue, 26 Mar 2019 11:50:23 +0800
+From:   robbieko <robbieko@synology.com>
+To:     fdmanana@gmail.com
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: fix data bytes_may_use underflow with fallocate
+ due to failed quota reserve
+In-Reply-To: <CAL3q7H7ootLePYme21_yg4bGUVZ+_LgK8-UyRNUWkb05Y=KT+g@mail.gmail.com>
+References: <1547435747-20013-1-git-send-email-robbieko@synology.com>
+ <CAL3q7H7ootLePYme21_yg4bGUVZ+_LgK8-UyRNUWkb05Y=KT+g@mail.gmail.com>
+Message-ID: <4e0220f46300e60f89c3da34145d0bfb@synology.com>
+X-Sender: robbieko@synology.com
+User-Agent: Roundcube Webmail/1.1.2
+X-Synology-MCP-Status: no
+X-Synology-Spam-Flag: no
+X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
+X-Synology-Virus-Status: no
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-26.03.2019 1:26, berodual_xyz пишет:
-> Dear all,
+Filipe Manana 於 2019-03-25 19:14 寫到:
+> On Mon, Jan 14, 2019 at 3:26 AM robbieko <robbieko@synology.com> wrote:
+>> 
+>> From: Robbie Ko <robbieko@synology.com>
+>> 
+>> When doing fallocate, we first add the range to the reserve_list
+>> and then reserve the qutoa.
 > 
-> on a large btrfs based filesystem (multi-device raid0 - all devices okay, nodatacow,nodatasum...) I experienced severe filesystem corruption, most likely due to a hard reset with inflight data.
-> The system cannot mount (also not with "ro,nologreplay" / "nospace_cache" etc.).
+> qutoa -> quota
 > 
-> Running "btrfs restore" I got a reasonable amount of data backed up, but a large chunk is missing.
+>> If quota reservation fails, we'll release all reserved parts of
+>> reserve_list.
+>> However, cur_offset doen't update to indicate that this range is
 > 
+> "doen't update" -> is not updated to indicate ...
+> 
+>> already been inserted into the list.
+>> Therefore, the same range is freed twice.
+>> One at list_for_each_entry loop, and the other at the end of the
+> 
+> One -> once
+> and the other at -> and once at
+> 
+>> function.
+>> This will result in WARN_ON on bytes_may_use when we free the
+>> remaining space.
+>> 
+>> Fixes: ("btrfs: update btrfs_space_info's bytes_may_use timely")
+> 
+> Missing commit id.
+> 
+>> Signed-off-by: Robbie Ko <robbieko@synology.com>
+>> ---
+>>  fs/btrfs/file.c | 1 +
+>>  1 file changed, 1 insertion(+)
+>> 
+>> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+>> index d38dc8c..43c6c8a 100644
+>> --- a/fs/btrfs/file.c
+>> +++ b/fs/btrfs/file.c
+>> @@ -3132,6 +3132,7 @@ static long btrfs_fallocate(struct file *file, 
+>> int mode,
+>>                         ret = btrfs_qgroup_reserve_data(inode, 
+>> &data_reserved,
+>>                                         cur_offset, last_byte - 
+>> cur_offset);
+>>                         if (ret < 0) {
+>> +                               cur_offset = last_byte;
+> 
+> This will fix the problem if there's only one range, or we happen to
+> be very lucky and cur_offset
+> matches exactly the middle of the entire range passed to fallocate()
+> (in case the range covers
+> a sparse region of the file, a region with holes and extents).
+> 
+> At the end, under the 'out' label we have a call to:
+> 
+>    btrfs_free_reserved_data_space(inode, data_reserved, alloc_start,
+> alloc_end - cur_offset);
+> 
+> That doesn't fell right - the start offset, third argument, should be
+> cur_offset. Everything from
+> alloc_start to cur_offset was freed by the 
+> list_for_each_entry_safe_loop.
 
-You may be interested in
-
-https://lore.kernel.org/linux-btrfs/CAH+WbHw1cm96YNjVhmdFP4qZ_HR3mzfmojna=d-MeydCtunG1g@mail.gmail.com/
+Ok, I will send patch v2.
+Thank you.
+> 
+> 
+> 
+> 
+> 
+>>                                 free_extent_map(em);
+>>                                 break;
+>>                         }
+>> --
+>> 1.9.1
+>> 
 

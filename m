@@ -3,31 +3,31 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2BE08C43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 12:24:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BB309C43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 12:24:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 06EFC2087C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 12:24:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 93F452087C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 12:24:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729190AbfC0MY3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Mar 2019 08:24:29 -0400
-Received: from mx2.suse.de ([195.135.220.15]:55222 "EHLO mx1.suse.de"
+        id S1729173AbfC0MY2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Mar 2019 08:24:28 -0400
+Received: from mx2.suse.de ([195.135.220.15]:55228 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728905AbfC0MY0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Mar 2019 08:24:26 -0400
+        id S1729082AbfC0MY1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Mar 2019 08:24:27 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id CC0F8AF3F
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Mar 2019 12:24:24 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 18122AF6A
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Mar 2019 12:24:26 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v4 11/15] btrfs: Remove 'trans' argument from find_free_dev_extent(_start)
-Date:   Wed, 27 Mar 2019 14:24:14 +0200
-Message-Id: <20190327122418.24027-12-nborisov@suse.com>
+Subject: [PATCH v4 15/15] btrfs: Switch btrfs_trim_free_extents to find_first_clear_extent_bit
+Date:   Wed, 27 Mar 2019 14:24:18 +0200
+Message-Id: <20190327122418.24027-16-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20190327122418.24027-1-nborisov@suse.com>
 References: <20190327122418.24027-1-nborisov@suse.com>
@@ -36,160 +36,149 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Now that those function no longer require a handle to transaction to
-inspect pending/pinned chunks the argument can be removed. At the same
-time also remove any surrounding code which acquired the handle.
+Instead of always calling the allocator to search for a free extent,
+that satisfies the input criteria, switch btrfs_trim_free_extents to
+using find_first_clear_extent_bit. With this change it's no longer
+necessary to read the device tree in order to figure out holes in
+the devices.
+
+Now the code always searches in-memory data structure to figure out the
+space range which contains the requested which should result in speed
+oups.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/extent-tree.c | 36 +++---------------------------------
- fs/btrfs/volumes.c     | 11 ++++-------
- fs/btrfs/volumes.h     |  8 +++-----
- 3 files changed, 10 insertions(+), 45 deletions(-)
+ fs/btrfs/extent-tree.c | 89 ++++++++++++------------------------------
+ 1 file changed, 26 insertions(+), 63 deletions(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index eb4b7f2b10a1..8ddcbd3478ad 100644
+index 503d68ba3f6a..7961038e6d08 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -9915,12 +9915,10 @@ void btrfs_dec_block_group_ro(struct btrfs_block_group_cache *cache)
-  */
- int btrfs_can_relocate(struct btrfs_fs_info *fs_info, u64 bytenr)
- {
--	struct btrfs_root *root = fs_info->extent_root;
- 	struct btrfs_block_group_cache *block_group;
- 	struct btrfs_space_info *space_info;
- 	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
- 	struct btrfs_device *device;
--	struct btrfs_trans_handle *trans;
- 	u64 min_free;
- 	u64 dev_min = 1;
- 	u64 dev_nr = 0;
-@@ -10019,13 +10017,6 @@ int btrfs_can_relocate(struct btrfs_fs_info *fs_info, u64 bytenr)
- 		min_free = div64_u64(min_free, dev_min);
- 	}
+@@ -11249,54 +11249,6 @@ int btrfs_error_unpin_extent_range(struct btrfs_fs_info *fs_info,
+ 	return unpin_extent_range(fs_info, start, end, false);
+ }
  
--	/* We need to do this so that we can look at pending chunks */
--	trans = btrfs_join_transaction(root);
--	if (IS_ERR(trans)) {
--		ret = PTR_ERR(trans);
--		goto out;
--	}
+-static bool should_skip_trim(struct btrfs_device *device, u64 *start, u64 *len)
+-{
+-	u64 trimmed_start = 0, trimmed_end = 0;
+-	u64 end = *start + *len - 1;
 -
- 	mutex_lock(&fs_info->chunk_mutex);
- 	list_for_each_entry(device, &fs_devices->alloc_list, dev_alloc_list) {
- 		u64 dev_offset;
-@@ -10036,7 +10027,7 @@ int btrfs_can_relocate(struct btrfs_fs_info *fs_info, u64 bytenr)
- 		 */
- 		if (device->total_bytes > device->bytes_used + min_free &&
- 		    !test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state)) {
--			ret = find_free_dev_extent(trans, device, min_free,
-+			ret = find_free_dev_extent(device, min_free,
- 						   &dev_offset, NULL);
- 			if (!ret)
- 				dev_nr++;
-@@ -10052,7 +10043,6 @@ int btrfs_can_relocate(struct btrfs_fs_info *fs_info, u64 bytenr)
- 			   "no space to allocate a new chunk for block group %llu",
- 			   block_group->key.objectid);
- 	mutex_unlock(&fs_info->chunk_mutex);
--	btrfs_end_transaction(trans);
- out:
- 	btrfs_put_block_group(block_group);
- 	return ret;
-@@ -11304,34 +11294,14 @@ static int btrfs_trim_free_extents(struct btrfs_device *device,
+-	if (!find_first_extent_bit(&device->alloc_state, *start, &trimmed_start,
+-				   &trimmed_end, CHUNK_TRIMMED, NULL)) {
+-		u64 trimmed_len = trimmed_end - trimmed_start + 1;
+-
+-		if (*start < trimmed_start) {
+-			if (in_range(end, trimmed_start, trimmed_len) ||
+-			    end > trimmed_end) {
+-				/*
+-				 * start|------|end
+-				 *      ts|--|trimmed_len
+-				 *      OR
+-				 * start|-----|end
+-				 *      ts|-----|trimmed_len
+-				 */
+-				*len = trimmed_start - *start;
+-				return false;
+-			} else if (end < trimmed_start) {
+-				/*
+-				 * start|------|end
+-				 *             ts|--|trimmed_len
+-				 */
+-				return false;
+-			}
+-		} else if (in_range(*start, trimmed_start, trimmed_len)) {
+-			if (in_range(end, trimmed_start, trimmed_len)) {
+-				/*
+-				 * start|------|end
+-				 *  ts|----------|trimmed_len
+-				 */
+-				return true;
+-			} else {
+-				/*
+-				 * start|-----------|end
+-				 *  ts|----------|trimmed_len
+-				 */
+-				*start = trimmed_end + 1;
+-				*len = end - *start + 1;
+-				return false;
+-			}
+-		}
+-	}
+-	return false;
+-}
+ /*
+  * It used to be that old block groups would be left around forever.
+  * Iterating over them would be enough to trim unused space.  Since we
+@@ -11320,7 +11272,7 @@ static bool should_skip_trim(struct btrfs_device *device, u64 *start, u64 *len)
+ static int btrfs_trim_free_extents(struct btrfs_device *device,
+ 				   struct fstrim_range *range, u64 *trimmed)
+ {
+-	u64 start = range->start, len = 0;
++	u64 start = max_t(u64, range->start, SZ_1M), len = 0, end = 0;
+ 	int ret;
  
- 	while (1) {
- 		struct btrfs_fs_info *fs_info = device->fs_info;
--		struct btrfs_transaction *trans;
- 		u64 bytes;
- 
- 		ret = mutex_lock_interruptible(&fs_info->chunk_mutex);
+ 	*trimmed = 0;
+@@ -11347,34 +11299,45 @@ static int btrfs_trim_free_extents(struct btrfs_device *device,
  		if (ret)
  			break;
  
--		ret = down_read_killable(&fs_info->commit_root_sem);
+-		ret = find_free_dev_extent_start(device, range->minlen, start,
+-						 &start, &len);
++		find_first_clear_extent_bit(&device->alloc_state, start,
++					    &start, &end,
++					    CHUNK_TRIMMED | CHUNK_ALLOCATED);
++		/* If find_first_clear_extent_bit find a range that spans the
++		 * end of the device it will set end to -1, in this case it's up
++		 * to the caller to trim the value to the size of the device.
++		 */
++		end = min(end, device->total_bytes);
++		len = end - start + 1;
+ 
 -		if (ret) {
--			mutex_unlock(&fs_info->chunk_mutex);
--			break;
--		}
--
--		spin_lock(&fs_info->trans_lock);
--		trans = fs_info->running_transaction;
--		if (trans)
--			refcount_inc(&trans->use_count);
--		spin_unlock(&fs_info->trans_lock);
--
--		if (!trans)
--			up_read(&fs_info->commit_root_sem);
--
--		ret = find_free_dev_extent_start(trans, device, range->minlen,
--						 start, &start, &len);
--		if (trans) {
--			up_read(&fs_info->commit_root_sem);
--			btrfs_put_transaction(trans);
--		}
-+		ret = find_free_dev_extent_start(device, range->minlen, start,
-+						 &start, &len);
- 
- 		if (ret) {
++		/* We didn't find any extents */
++		if (!len) {
  			mutex_unlock(&fs_info->chunk_mutex);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index d240c07d4b2c..915ae33ba12a 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1547,8 +1547,7 @@ static bool contains_pending_extent(struct btrfs_device *device, u64 *start,
-  * But if we don't find suitable free space, it is used to store the size of
-  * the max free space.
-  */
--int find_free_dev_extent_start(struct btrfs_transaction *transaction,
--			       struct btrfs_device *device, u64 num_bytes,
-+int find_free_dev_extent_start(struct btrfs_device *device, u64 num_bytes,
- 			       u64 search_start, u64 *start, u64 *len)
- {
- 	struct btrfs_fs_info *fs_info = device->fs_info;
-@@ -1704,13 +1703,11 @@ int find_free_dev_extent_start(struct btrfs_transaction *transaction,
- 	return ret;
- }
+-			if (ret == -ENOSPC)
+-				ret = 0;
++			ret = 0;
+ 			break;
+ 		}
  
--int find_free_dev_extent(struct btrfs_trans_handle *trans,
--			 struct btrfs_device *device, u64 num_bytes,
-+int find_free_dev_extent(struct btrfs_device *device, u64 num_bytes,
- 			 u64 *start, u64 *len)
- {
- 	/* FIXME use last free of some kind */
--	return find_free_dev_extent_start(trans->transaction, device,
--					  num_bytes, 0, start, len);
-+	return find_free_dev_extent_start(device, num_bytes, 0, start, len);
- }
++		/* Keep going until we satisfy minlen or reach end of space */
++		if (len < range->minlen) {
++			mutex_unlock(&fs_info->chunk_mutex);
++			start += len;
++			continue;
++		}
++
+ 		/* If we are out of the passed range break */
+ 		if (start > range->start + range->len - 1) {
+ 			mutex_unlock(&fs_info->chunk_mutex);
+-			ret = 0;
+ 			break;
+ 		}
  
- static int btrfs_free_dev_extent(struct btrfs_trans_handle *trans,
-@@ -5035,7 +5032,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 		if (total_avail == 0)
- 			continue;
+ 		start = max(range->start, start);
+ 		len = min(range->len, len);
  
--		ret = find_free_dev_extent(trans, device,
-+		ret = find_free_dev_extent(device,
- 					   max_stripe_size * dev_stripes,
- 					   &dev_offset, &max_avail);
- 		if (ret && ret != -ENOSPC)
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 79901df4a157..28bf8dd3ccc2 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -444,11 +444,9 @@ int btrfs_cancel_balance(struct btrfs_fs_info *fs_info);
- int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info);
- int btrfs_check_uuid_tree(struct btrfs_fs_info *fs_info);
- int btrfs_chunk_readonly(struct btrfs_fs_info *fs_info, u64 chunk_offset);
--int find_free_dev_extent_start(struct btrfs_transaction *transaction,
--			 struct btrfs_device *device, u64 num_bytes,
--			 u64 search_start, u64 *start, u64 *max_avail);
--int find_free_dev_extent(struct btrfs_trans_handle *trans,
--			 struct btrfs_device *device, u64 num_bytes,
-+int find_free_dev_extent_start(struct btrfs_device *device, u64 num_bytes,
-+			       u64 search_start, u64 *start, u64 *max_avail);
-+int find_free_dev_extent(struct btrfs_device *device, u64 num_bytes,
- 			 u64 *start, u64 *max_avail);
- void btrfs_dev_stat_inc_and_print(struct btrfs_device *dev, int index);
- int btrfs_get_dev_stats(struct btrfs_fs_info *fs_info,
+-		if (!should_skip_trim(device, &start, &len)) {
+-			ret = btrfs_issue_discard(device->bdev, start, len,
+-						  &bytes);
+-			if (!ret)
+-				set_extent_bits(&device->alloc_state, start,
+-						start + bytes - 1,
+-						CHUNK_TRIMMED);
+-		}
++		ret = btrfs_issue_discard(device->bdev, start, len,
++					  &bytes);
++		if (!ret)
++			set_extent_bits(&device->alloc_state, start,
++					start + bytes - 1,
++					CHUNK_TRIMMED);
+ 		mutex_unlock(&fs_info->chunk_mutex);
+ 
+ 		if (ret)
 -- 
 2.17.1
 

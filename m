@@ -2,177 +2,81 @@ Return-Path: <SRS0=arzm=R6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_NEOMUTT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DDBF4C43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 09:47:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7019CC43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 11:00:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B6B732075C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 09:47:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 49D6B206B8
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 11:00:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732570AbfC0JrK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Mar 2019 05:47:10 -0400
-Received: from mx2.suse.de ([195.135.220.15]:56716 "EHLO mx1.suse.de"
+        id S1733016AbfC0LAz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Mar 2019 07:00:55 -0400
+Received: from mx2.suse.de ([195.135.220.15]:43222 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726237AbfC0JrK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Mar 2019 05:47:10 -0400
+        id S1732499AbfC0LAz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Mar 2019 07:00:55 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A3234ACBC
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Mar 2019 09:47:08 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH URGENT v1.1 2/2] btrfs-progs: disk-io: Flush to ensure super block write is FUA
-Date:   Wed, 27 Mar 2019 17:46:52 +0800
-Message-Id: <20190327094652.16078-3-wqu@suse.com>
-X-Mailer: git-send-email 2.21.0
-In-Reply-To: <20190327094652.16078-1-wqu@suse.com>
-References: <20190327094652.16078-1-wqu@suse.com>
+        by mx1.suse.de (Postfix) with ESMTP id 4216DACC5;
+        Wed, 27 Mar 2019 11:00:54 +0000 (UTC)
+Date:   Wed, 27 Mar 2019 06:00:52 -0500
+From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
+To:     Matthew Wilcox <willy@infradead.org>
+Cc:     linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
+Subject: Re: [PATCH 01/15] btrfs: create a mount option for dax
+Message-ID: <20190327110052.pvn5dag2xwy2tnkv@merlin>
+References: <20190326190301.32365-1-rgoldwyn@suse.de>
+ <20190326190301.32365-2-rgoldwyn@suse.de>
+ <20190326191001.GP10344@bombadil.infradead.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190326191001.GP10344@bombadil.infradead.org>
+User-Agent: NeoMutt/20180323
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[BUG]
-There are tons of reports of btrfs-progs screwing up the fs, the most
-recent one is "btrfs check --clear-space-cache v1" triggered BUG_ON()
-and then leaving the fs with transid mismatch problem.
+On 12:10 26/03, Matthew Wilcox wrote:
+> On Tue, Mar 26, 2019 at 02:02:47PM -0500, Goldwyn Rodrigues wrote:
+> > This sets S_DAX in inode->i_flags, which can be used with
+> > IS_DAX().
+> > 
+> > The dax option is restricted to non multi-device mounts.
+> > dax interacts with the device directly instead of using bio, so
+> > all bio-hooks which we use for multi-device cannot be performed
+> > here. While regular read/writes could be manipulated with
+> > RAID0/1, mmap() is still an issue.
+> > 
+> > Auto-setting free space tree, because dealing with free space
+> > inode (specifically readpages) is a nightmare.
+> > Auto-setting nodatasum because we don't get callback for writing
+> > checksums after mmap()s.
+> 
+> Congratulations on getting the bear to dance.  But why?
+> 
 
-[CAUSE]
-In kernel, we have block layer handing the flush work, even on devices
-without FUA support (like most SATA device using default libata
-settings), kernel handles FUA write by flushing the device, then normal
-write, and finish it with another flush.
+Why not ? ;)
 
-The pre-flush, write, post-flush works pretty well to implement FUA
-write.
+> To me, the point of btrfs is all the cool stuff it does with built-in
+> checksumming and snapshots and RAID and so on.  DAX doesn't let you do
+> any of that, so why would somebody want to use btrfs to manage DAX?
+> 
 
-However in btrfs-progs we just use pwrite(), there is nothing keeping
-the write order.
+There are users who are asking for advantages of dax on btrfs.
 
-So even for basic v1 free space cache clearing, we have different vision
-on the write sequence from kernel bio layer (by dm-log-writes) and user
-space pwrite() calls.
+I have tried to make it work with snapshots in this series.
+Checksumming should be possible, but would require some more hacks. I am
+looking into it.
+multi-device is an issue for mmap() and I don't think we can work around
+it.
 
-In btrfs-progs, with extra debug output in write_tree_block() and
-write_dev_supers(), we can see btrfs-progs follows the right write
-sequence:
+I agree there is a price to pay to use dax, but I am sure the users
+would know about that.
 
-  Opening filesystem to check...
-  Checking filesystem on /dev/mapper/log
-  UUID: 3feb3c8b-4eb3-42f3-8e9c-0af22dd58ecf
-  write tree block start=1708130304 gen=39
-  write tree block start=1708146688 gen=39
-  write tree block start=1708163072 gen=39
-  write super devid=1 gen=39
-  write tree block start=1708179456 gen=40
-  write tree block start=1708195840 gen=40
-  write super devid=1 gen=40
-  write tree block start=1708130304 gen=41
-  write tree block start=1708146688 gen=41
-  write tree block start=1708228608 gen=41
-  write super devid=1 gen=41
-  write tree block start=1708163072 gen=42
-  write tree block start=1708179456 gen=42
-  write super devid=1 gen=42
-  write tree block start=1708130304 gen=43
-  write tree block start=1708146688 gen=43
-  write super devid=1 gen=43
-  Free space cache cleared
-
-But from dm-log-writes, the bio sequence is a different story:
-
-  replaying 1742: sector 131072, size 4096, flags 0(NONE)
-  replaying 1743: sector 128, size 4096, flags 0(NONE) <<< Only one sb write
-  replaying 1744: sector 2828480, size 4096, flags 0(NONE)
-  replaying 1745: sector 2828488, size 4096, flags 0(NONE)
-  replaying 1746: sector 2828496, size 4096, flags 0(NONE)
-  replaying 1787: sector 2304120, size 4096, flags 0(NONE)
-  ......
-  replaying 1790: sector 2304144, size 4096, flags 0(NONE)
-  replaying 1791: sector 2304152, size 4096, flags 0(NONE)
-  replaying 1792: sector 0, size 0, flags 8(MARK)
-
-During the free space cache clearing, we committed 3 transaction but
-dm-log-write only caught one super block write.
-
-This means all the 3 writes were merged into the last super block write.
-And the super block write was the 2nd write, before all tree block
-writes, completely screwing up the metadata CoW protection.
-
-No wonder crashed btrfs-progs can make things worse.
-
-[FIX]
-Fix this super serious problem by implementing pre and post flush for
-the primary super block in btrfs-progs.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
----
- disk-io.c | 31 +++++++++++++++++++++++++++++++
- 1 file changed, 31 insertions(+)
-
-diff --git a/disk-io.c b/disk-io.c
-index f7fb7026cd94..fd56436d70ef 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -1585,6 +1585,17 @@ static int write_dev_supers(struct btrfs_fs_info *fs_info,
- 	u32 crc;
- 	int i, ret;
- 
-+	/*
-+	 * We need to write super block after all metadata written.
-+	 * This is the equivalent of kernel pre-flush for FUA.
-+	 */
-+	ret = fsync(device->fd);
-+	if (ret < 0) {
-+		error(
-+		"failed to write super block for devid %llu: flush error: %m",
-+			device->devid);
-+		return -errno;
-+	}
- 	if (fs_info->super_bytenr != BTRFS_SUPER_INFO_OFFSET) {
- 		btrfs_set_super_bytenr(sb, fs_info->super_bytenr);
- 		crc = ~(u32)0;
-@@ -1606,6 +1617,13 @@ static int write_dev_supers(struct btrfs_fs_info *fs_info,
- 				device->devid);
- 			return -EIO;
- 		}
-+		ret = fsync(device->fd);
-+		if (ret < 0) {
-+			error(
-+		"failed to write super block for devid %llu: flush error: %m",
-+				device->devid);
-+			return -errno;
-+		}
- 		return 0;
- 	}
- 
-@@ -1634,6 +1652,19 @@ static int write_dev_supers(struct btrfs_fs_info *fs_info,
- 				device->devid);
- 			return -errno;
- 		}
-+		/*
-+		 * Flush after the primary sb write, this is the equivalent of
-+		 * kernel post-flush for FUA write.
-+		 */
-+		if (i == 0) {
-+			ret = fsync(device->fd);
-+			if (ret < 0) {
-+				error(
-+		"failed to write super block for devid %llu: flush error: %m",
-+					device->devid);
-+				return -errno;
-+			}
-+		}
- 	}
- 
- 	return 0;
 -- 
-2.21.0
-
+Goldwyn

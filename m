@@ -3,81 +3,77 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-3.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_NEOMUTT autolearn=unavailable
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_NEOMUTT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9C072C10F00
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 23:26:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 207EAC43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 23:31:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 696C221773
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 23:26:40 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E7DEC2082F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 23:31:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728334AbfC0X0j (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Mar 2019 19:26:39 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42242 "EHLO mx1.suse.de"
+        id S1728062AbfC0XbX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Mar 2019 19:31:23 -0400
+Received: from mx2.suse.de ([195.135.220.15]:42780 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726055AbfC0X0i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Mar 2019 19:26:38 -0400
+        id S1725601AbfC0XbX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Mar 2019 19:31:23 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 94ABCAA71;
-        Wed, 27 Mar 2019 23:26:37 +0000 (UTC)
-Date:   Wed, 27 Mar 2019 18:26:35 -0500
+        by mx1.suse.de (Postfix) with ESMTP id 82C98AE25;
+        Wed, 27 Mar 2019 23:31:22 +0000 (UTC)
+Date:   Wed, 27 Mar 2019 18:31:20 -0500
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
-To:     Adam Borowski <kilobyte@angband.pl>
-Cc:     linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        marcin.slusarz@intel.com
-Subject: Re: [PATCH v2 00/15] btrfs dax support
-Message-ID: <20190327232635.zw4edleqwowxfzej@merlin>
+To:     Matthew Wilcox <willy@infradead.org>
+Cc:     linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
+Subject: Re: [PATCH 01/15] btrfs: create a mount option for dax
+Message-ID: <20190327233120.ykjmdvedr4gsdyhr@merlin>
 References: <20190326190301.32365-1-rgoldwyn@suse.de>
- <20190326190908.uz5rqakhr5er3r3z@merlin>
- <20190327201442.GA22587@angband.pl>
+ <20190326190301.32365-2-rgoldwyn@suse.de>
+ <20190326191001.GP10344@bombadil.infradead.org>
+ <20190327110052.pvn5dag2xwy2tnkv@merlin>
+ <20190327120031.GR10344@bombadil.infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190327201442.GA22587@angband.pl>
+In-Reply-To: <20190327120031.GR10344@bombadil.infradead.org>
 User-Agent: NeoMutt/20180323
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 21:14 27/03, Adam Borowski wrote:
-> On Tue, Mar 26, 2019 at 02:09:08PM -0500, Goldwyn Rodrigues wrote:
-> > This patch set adds support for dax on the BTRFS filesystem.
+On  5:00 27/03, Matthew Wilcox wrote:
+> On Wed, Mar 27, 2019 at 06:00:52AM -0500, Goldwyn Rodrigues wrote:
+> > On 12:10 26/03, Matthew Wilcox wrote:
+> > > On Tue, Mar 26, 2019 at 02:02:47PM -0500, Goldwyn Rodrigues wrote:
+> > > > This sets S_DAX in inode->i_flags, which can be used with
+> > > > IS_DAX().
+> > > > 
+> > > > The dax option is restricted to non multi-device mounts.
+> > > > dax interacts with the device directly instead of using bio, so
+> > > > all bio-hooks which we use for multi-device cannot be performed
+> > > > here. While regular read/writes could be manipulated with
+> > > > RAID0/1, mmap() is still an issue.
+> > > > 
+> > > > Auto-setting free space tree, because dealing with free space
+> > > > inode (specifically readpages) is a nightmare.
+> > > > Auto-setting nodatasum because we don't get callback for writing
+> > > > checksums after mmap()s.
+> > > 
+> > > Congratulations on getting the bear to dance.  But why?
+> > 
+> > Why not ? ;)
 > 
-> This patchset doesn't seem to support MAP_SYNC, which is the usual way to
-> use (and detect) DAX.  Basically, it requests for page faults to be
-> synchronous -- ie, when a page fault returns, the mapping points to actual
-> memory rather than to some buffer that'll be written back to the destination
-> at some point in the future.
-
-The translation (in different flags/returns) goes as follows
-MAP_SYNC -> VM_SYNC -> VM_NEEDDSYNC.
-So, when dax_iomap_fault() returns, it is handled through
-dax_finish_sync_fault(). This is how all filesystems are doing it currently.
-Refer patch 09/15.
-
+>  18 files changed, 662 insertions(+), 77 deletions(-)
 > 
-> Also, not really understanding these parts of the kernel, I can't tell if
-> the snapshots are atomic.  Ie, while the kernel walks over pages to set
-> mprotect flags, the process does two writes:
->    RRRRRRRRRRRRRRRRRRRWWWWWWWWWWWWWWWWWWWWWW (R=ro W=rw)
->         A                       B
-> The write at A causes a page fault, which clones the page, CoWing it and
-> letting the write into only one of the replicas.  After this, write to B
-> happens before the mprotect, thus goes into both replicas -- and despite
-> the process having issued proper memory barriers, the other replica has
-> B but not A.  To fix this, earlier page faults can't get finalized until
-> all mprotects are in place.  (I'm writing this as a query rather than a
-> problem report -- I'm an ignoramus here.)
+> I want to know what advantage we're getting for that.
 
-When you initiate a snapshot, btrfs forces everything to CoW until
-snapshot finishes. This guarantees all new allocations
-are Cow, even if the extent is set to nocow. During this time, all
-"writebacks" happen. We don't have writebacks in DAX, but we take this
-opportunity to wrprotect the mmap'd pages.
-For more details, refer to patch 15/15 in the series.
+So the prime advantages are btrfs filesystem snapshots on the dax device.
+Leveraging btrfs features, reflinks works just as well.
+(In addition to all the advantages dax has to offer)
+
+
 
 -- 
 Goldwyn

@@ -2,180 +2,102 @@ Return-Path: <SRS0=arzm=R6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_NEOMUTT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 56C3BC4360F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 12:24:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5FF03C43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 12:26:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2F12B2087C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 12:24:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 36B262087C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 12:26:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729304AbfC0MYk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Mar 2019 08:24:40 -0400
-Received: from mx2.suse.de ([195.135.220.15]:55228 "EHLO mx1.suse.de"
+        id S1729455AbfC0M0M (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Mar 2019 08:26:12 -0400
+Received: from mx2.suse.de ([195.135.220.15]:55546 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726319AbfC0MYZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Mar 2019 08:24:25 -0400
+        id S1728696AbfC0M0L (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Mar 2019 08:26:11 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 8001CAF67
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Mar 2019 12:24:22 +0000 (UTC)
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v4 04/15] btrfs: Rename and export clear_btree_io_tree
-Date:   Wed, 27 Mar 2019 14:24:07 +0200
-Message-Id: <20190327122418.24027-5-nborisov@suse.com>
-X-Mailer: git-send-email 2.17.1
-In-Reply-To: <20190327122418.24027-1-nborisov@suse.com>
-References: <20190327122418.24027-1-nborisov@suse.com>
+        by mx1.suse.de (Postfix) with ESMTP id AA26AAD0C;
+        Wed, 27 Mar 2019 12:26:10 +0000 (UTC)
+Date:   Wed, 27 Mar 2019 07:26:08 -0500
+From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
+To:     Matthew Wilcox <willy@infradead.org>
+Cc:     linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
+Subject: Re: [PATCH 01/15] btrfs: create a mount option for dax
+Message-ID: <20190327122608.qa3z7h2wgnaiiugt@merlin>
+References: <20190326190301.32365-1-rgoldwyn@suse.de>
+ <20190326190301.32365-2-rgoldwyn@suse.de>
+ <20190326191001.GP10344@bombadil.infradead.org>
+ <20190327110052.pvn5dag2xwy2tnkv@merlin>
+ <20190327120031.GR10344@bombadil.infradead.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190327120031.GR10344@bombadil.infradead.org>
+User-Agent: NeoMutt/20180323
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This function is going to be used to clear out the device extent
-allocation information. Give it a more generic name and export it. This
-is in preparation to replacing the pending/pinned chunk lists with an
-extent tree. No functional changes.
+On  5:00 27/03, Matthew Wilcox wrote:
+> On Wed, Mar 27, 2019 at 06:00:52AM -0500, Goldwyn Rodrigues wrote:
+> > On 12:10 26/03, Matthew Wilcox wrote:
+> > > On Tue, Mar 26, 2019 at 02:02:47PM -0500, Goldwyn Rodrigues wrote:
+> > > > This sets S_DAX in inode->i_flags, which can be used with
+> > > > IS_DAX().
+> > > > 
+> > > > The dax option is restricted to non multi-device mounts.
+> > > > dax interacts with the device directly instead of using bio, so
+> > > > all bio-hooks which we use for multi-device cannot be performed
+> > > > here. While regular read/writes could be manipulated with
+> > > > RAID0/1, mmap() is still an issue.
+> > > > 
+> > > > Auto-setting free space tree, because dealing with free space
+> > > > inode (specifically readpages) is a nightmare.
+> > > > Auto-setting nodatasum because we don't get callback for writing
+> > > > checksums after mmap()s.
+> > > 
+> > > Congratulations on getting the bear to dance.  But why?
+> > 
+> > Why not ? ;)
+> 
+>  18 files changed, 662 insertions(+), 77 deletions(-)
+> 
+> I want to know what advantage we're getting for that.
 
-Reviewed-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/extent_io.c   | 28 ++++++++++++++++++++++++++++
- fs/btrfs/extent_io.h   |  1 +
- fs/btrfs/transaction.c | 37 ++++---------------------------------
- 3 files changed, 33 insertions(+), 33 deletions(-)
+Direct device mmap'd files, faster access, lower pagecache usage...
+all the advantages you would get from a dax device.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 75062e2b1912..eec64436d488 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -265,6 +265,34 @@ void extent_io_tree_init(struct btrfs_fs_info *fs_info,
- 	tree->owner = owner;
- }
- 
-+void extent_io_tree_release(struct extent_io_tree *tree)
-+{
-+	spin_lock(&tree->lock);
-+	/*
-+	 * Do a single barrier for the waitqueue_active check here, the state
-+	 * of the waitqueue should not change once clear_btree_io_tree is
-+	 * called.
-+	 */
-+	smp_mb();
-+	while (!RB_EMPTY_ROOT(&tree->state)) {
-+		struct rb_node *node;
-+		struct extent_state *state;
-+
-+		node = rb_first(&tree->state);
-+		state = rb_entry(node, struct extent_state, rb_node);
-+		rb_erase(&state->rb_node, &tree->state);
-+		RB_CLEAR_NODE(&state->rb_node);
-+		/*
-+		 * btree io trees aren't supposed to have tasks waiting for
-+		 * changes in the flags of extent states ever.
-+		 */
-+		ASSERT(!waitqueue_active(&state->wq));
-+		free_extent_state(state);
-+
-+		cond_resched_lock(&tree->lock);
-+	}
-+	spin_unlock(&tree->lock);
-+}
- static struct extent_state *alloc_extent_state(gfp_t mask)
- {
- 	struct extent_state *state;
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 586baed03780..7732b6a7384d 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -255,6 +255,7 @@ typedef struct extent_map *(get_extent_t)(struct btrfs_inode *inode,
- void extent_io_tree_init(struct btrfs_fs_info *fs_info,
- 			 struct extent_io_tree *tree, unsigned int owner,
- 			 void *private_data);
-+void extent_io_tree_release(struct extent_io_tree *tree);
- int try_release_extent_mapping(struct page *page, gfp_t mask);
- int try_release_extent_buffer(struct page *page);
- int lock_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 4aa827a2e951..b32769998bbb 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -80,35 +80,6 @@ void btrfs_put_transaction(struct btrfs_transaction *transaction)
- 	}
- }
- 
--static void clear_btree_io_tree(struct extent_io_tree *tree)
--{
--	spin_lock(&tree->lock);
--	/*
--	 * Do a single barrier for the waitqueue_active check here, the state
--	 * of the waitqueue should not change once clear_btree_io_tree is
--	 * called.
--	 */
--	smp_mb();
--	while (!RB_EMPTY_ROOT(&tree->state)) {
--		struct rb_node *node;
--		struct extent_state *state;
--
--		node = rb_first(&tree->state);
--		state = rb_entry(node, struct extent_state, rb_node);
--		rb_erase(&state->rb_node, &tree->state);
--		RB_CLEAR_NODE(&state->rb_node);
--		/*
--		 * btree io trees aren't supposed to have tasks waiting for
--		 * changes in the flags of extent states ever.
--		 */
--		ASSERT(!waitqueue_active(&state->wq));
--		free_extent_state(state);
--
--		cond_resched_lock(&tree->lock);
--	}
--	spin_unlock(&tree->lock);
--}
--
- static noinline void switch_commit_roots(struct btrfs_transaction *trans)
- {
- 	struct btrfs_fs_info *fs_info = trans->fs_info;
-@@ -122,7 +93,7 @@ static noinline void switch_commit_roots(struct btrfs_transaction *trans)
- 		root->commit_root = btrfs_root_node(root);
- 		if (is_fstree(root->root_key.objectid))
- 			btrfs_unpin_free_ino(root);
--		clear_btree_io_tree(&root->dirty_log_pages);
-+		extent_io_tree_release(&root->dirty_log_pages);
- 		btrfs_qgroup_clean_swapped_blocks(root);
- 	}
- 
-@@ -930,7 +901,7 @@ int btrfs_write_marked_extents(struct btrfs_fs_info *fs_info,
- 		 * superblock that points to btree nodes/leafs for which
- 		 * writeback hasn't finished yet (and without errors).
- 		 * We cleanup any entries left in the io tree when committing
--		 * the transaction (through clear_btree_io_tree()).
-+		 * the transaction (through extent_io_tree_release()).
- 		 */
- 		if (err == -ENOMEM) {
- 			err = 0;
-@@ -975,7 +946,7 @@ static int __btrfs_wait_marked_extents(struct btrfs_fs_info *fs_info,
- 		 * left in the io tree. For a log commit, we don't remove them
- 		 * after committing the log because the tree can be accessed
- 		 * concurrently - we do it only at transaction commit time when
--		 * it's safe to do it (through clear_btree_io_tree()).
-+		 * it's safe to do it (through extent_io_tree_release()).
- 		 */
- 		err = clear_extent_bit(dirty_pages, start, end,
- 				       EXTENT_NEED_WAIT, 0, 0, &cached_state);
-@@ -1053,7 +1024,7 @@ static int btrfs_write_and_wait_transaction(struct btrfs_trans_handle *trans)
- 	blk_finish_plug(&plug);
- 	ret2 = btrfs_wait_extents(fs_info, dirty_pages);
- 
--	clear_btree_io_tree(&trans->transaction->dirty_pages);
-+	extent_io_tree_release(&trans->transaction->dirty_pages);
- 
- 	if (ret)
- 		return ret;
+> 
+> > > To me, the point of btrfs is all the cool stuff it does with built-in
+> > > checksumming and snapshots and RAID and so on.  DAX doesn't let you do
+> > > any of that, so why would somebody want to use btrfs to manage DAX?
+> > 
+> > There are users who are asking for advantages of dax on btrfs.
+> 
+> There are also people asking for perpetual motion machines.  Do these
+> users understand the tradeoffs?
+
+The only major feature they would not be able to use is
+multi-device, which will be relayed at mount time.
+
+> 
+> > I have tried to make it work with snapshots in this series.
+> > Checksumming should be possible, but would require some more hacks. I am
+> > looking into it.
+> > multi-device is an issue for mmap() and I don't think we can work around
+> > it.
+> > 
+> > I agree there is a price to pay to use dax, but I am sure the users
+> > would know about that.
+> 
+> I really doubt it, to be honest.
+
+Care to elaborate?
+
 -- 
-2.17.1
-
+Goldwyn

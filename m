@@ -3,30 +3,31 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EB04BC43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 09:47:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DDBF4C43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 09:47:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B8BF72075D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 09:47:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B6B732075C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 09:47:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732159AbfC0JrF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Mar 2019 05:47:05 -0400
-Received: from mx2.suse.de ([195.135.220.15]:56698 "EHLO mx1.suse.de"
+        id S1732570AbfC0JrK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Mar 2019 05:47:10 -0400
+Received: from mx2.suse.de ([195.135.220.15]:56716 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726237AbfC0JrF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Mar 2019 05:47:05 -0400
+        id S1726237AbfC0JrK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Mar 2019 05:47:10 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 976AEACBC
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Mar 2019 09:47:04 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id A3234ACBC
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Mar 2019 09:47:08 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH URGENT v1.1 1/2] btrfs-progs: disk-io: Make super block write error easier to read
-Date:   Wed, 27 Mar 2019 17:46:51 +0800
-Message-Id: <20190327094652.16078-2-wqu@suse.com>
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH URGENT v1.1 2/2] btrfs-progs: disk-io: Flush to ensure super block write is FUA
+Date:   Wed, 27 Mar 2019 17:46:52 +0800
+Message-Id: <20190327094652.16078-3-wqu@suse.com>
 X-Mailer: git-send-email 2.21.0
 In-Reply-To: <20190327094652.16078-1-wqu@suse.com>
 References: <20190327094652.16078-1-wqu@suse.com>
@@ -37,70 +38,141 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-When we failed to write super blocks, we just output something like:
-  WARNING: failed to write sb: I/O error
-Or
-  WARNING: failed to write all sb data
+[BUG]
+There are tons of reports of btrfs-progs screwing up the fs, the most
+recent one is "btrfs check --clear-space-cache v1" triggered BUG_ON()
+and then leaving the fs with transid mismatch problem.
 
-There is no info about which device failed and there are two different
-error message for the same write error.
+[CAUSE]
+In kernel, we have block layer handing the flush work, even on devices
+without FUA support (like most SATA device using default libata
+settings), kernel handles FUA write by flushing the device, then normal
+write, and finish it with another flush.
 
-This patch will change it to something more detailed:
-ERROR: failed to write super block for devid 1: write error: I/O error
+The pre-flush, write, post-flush works pretty well to implement FUA
+write.
 
-This provides the basis for later super block flush error handling.
+However in btrfs-progs we just use pwrite(), there is nothing keeping
+the write order.
+
+So even for basic v1 free space cache clearing, we have different vision
+on the write sequence from kernel bio layer (by dm-log-writes) and user
+space pwrite() calls.
+
+In btrfs-progs, with extra debug output in write_tree_block() and
+write_dev_supers(), we can see btrfs-progs follows the right write
+sequence:
+
+  Opening filesystem to check...
+  Checking filesystem on /dev/mapper/log
+  UUID: 3feb3c8b-4eb3-42f3-8e9c-0af22dd58ecf
+  write tree block start=1708130304 gen=39
+  write tree block start=1708146688 gen=39
+  write tree block start=1708163072 gen=39
+  write super devid=1 gen=39
+  write tree block start=1708179456 gen=40
+  write tree block start=1708195840 gen=40
+  write super devid=1 gen=40
+  write tree block start=1708130304 gen=41
+  write tree block start=1708146688 gen=41
+  write tree block start=1708228608 gen=41
+  write super devid=1 gen=41
+  write tree block start=1708163072 gen=42
+  write tree block start=1708179456 gen=42
+  write super devid=1 gen=42
+  write tree block start=1708130304 gen=43
+  write tree block start=1708146688 gen=43
+  write super devid=1 gen=43
+  Free space cache cleared
+
+But from dm-log-writes, the bio sequence is a different story:
+
+  replaying 1742: sector 131072, size 4096, flags 0(NONE)
+  replaying 1743: sector 128, size 4096, flags 0(NONE) <<< Only one sb write
+  replaying 1744: sector 2828480, size 4096, flags 0(NONE)
+  replaying 1745: sector 2828488, size 4096, flags 0(NONE)
+  replaying 1746: sector 2828496, size 4096, flags 0(NONE)
+  replaying 1787: sector 2304120, size 4096, flags 0(NONE)
+  ......
+  replaying 1790: sector 2304144, size 4096, flags 0(NONE)
+  replaying 1791: sector 2304152, size 4096, flags 0(NONE)
+  replaying 1792: sector 0, size 0, flags 8(MARK)
+
+During the free space cache clearing, we committed 3 transaction but
+dm-log-write only caught one super block write.
+
+This means all the 3 writes were merged into the last super block write.
+And the super block write was the 2nd write, before all tree block
+writes, completely screwing up the metadata CoW protection.
+
+No wonder crashed btrfs-progs can make things worse.
+
+[FIX]
+Fix this super serious problem by implementing pre and post flush for
+the primary super block in btrfs-progs.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
- disk-io.c | 25 ++++++++++++++-----------
- 1 file changed, 14 insertions(+), 11 deletions(-)
+ disk-io.c | 31 +++++++++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
 
 diff --git a/disk-io.c b/disk-io.c
-index 797b9b79ea3c..f7fb7026cd94 100644
+index f7fb7026cd94..fd56436d70ef 100644
 --- a/disk-io.c
 +++ b/disk-io.c
-@@ -1599,8 +1599,13 @@ static int write_dev_supers(struct btrfs_fs_info *fs_info,
- 		ret = pwrite64(device->fd, fs_info->super_copy,
- 				BTRFS_SUPER_INFO_SIZE,
- 				fs_info->super_bytenr);
--		if (ret != BTRFS_SUPER_INFO_SIZE)
--			goto write_err;
-+		if (ret != BTRFS_SUPER_INFO_SIZE) {
-+			errno = EIO;
+@@ -1585,6 +1585,17 @@ static int write_dev_supers(struct btrfs_fs_info *fs_info,
+ 	u32 crc;
+ 	int i, ret;
+ 
++	/*
++	 * We need to write super block after all metadata written.
++	 * This is the equivalent of kernel pre-flush for FUA.
++	 */
++	ret = fsync(device->fd);
++	if (ret < 0) {
++		error(
++		"failed to write super block for devid %llu: flush error: %m",
++			device->devid);
++		return -errno;
++	}
+ 	if (fs_info->super_bytenr != BTRFS_SUPER_INFO_OFFSET) {
+ 		btrfs_set_super_bytenr(sb, fs_info->super_bytenr);
+ 		crc = ~(u32)0;
+@@ -1606,6 +1617,13 @@ static int write_dev_supers(struct btrfs_fs_info *fs_info,
+ 				device->devid);
+ 			return -EIO;
+ 		}
++		ret = fsync(device->fd);
++		if (ret < 0) {
 +			error(
-+		"failed to write super block for devid %llu: write error: %m",
++		"failed to write super block for devid %llu: flush error: %m",
 +				device->devid);
-+			return -EIO;
++			return -errno;
 +		}
  		return 0;
  	}
  
-@@ -1622,18 +1627,16 @@ static int write_dev_supers(struct btrfs_fs_info *fs_info,
- 		 */
- 		ret = pwrite64(device->fd, fs_info->super_copy,
- 				BTRFS_SUPER_INFO_SIZE, bytenr);
--		if (ret != BTRFS_SUPER_INFO_SIZE)
--			goto write_err;
-+		if (ret != BTRFS_SUPER_INFO_SIZE) {
-+			errno = EIO;
-+			error(
-+		"failed to write super block for devid %llu: write error: %m",
-+				device->devid);
-+			return -errno;
+@@ -1634,6 +1652,19 @@ static int write_dev_supers(struct btrfs_fs_info *fs_info,
+ 				device->devid);
+ 			return -errno;
+ 		}
++		/*
++		 * Flush after the primary sb write, this is the equivalent of
++		 * kernel post-flush for FUA write.
++		 */
++		if (i == 0) {
++			ret = fsync(device->fd);
++			if (ret < 0) {
++				error(
++		"failed to write super block for devid %llu: flush error: %m",
++					device->devid);
++				return -errno;
++			}
 +		}
  	}
  
  	return 0;
--
--write_err:
--	if (ret > 0)
--		fprintf(stderr, "WARNING: failed to write all sb data\n");
--	else
--		fprintf(stderr, "WARNING: failed to write sb: %m\n");
--	return ret;
- }
- 
- int write_all_supers(struct btrfs_fs_info *fs_info)
 -- 
 2.21.0
 

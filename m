@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BB309C43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 12:24:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3553EC10F00
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 12:24:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 93F452087C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 12:24:31 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0ED602087C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 12:24:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729173AbfC0MY2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1729153AbfC0MY2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Wed, 27 Mar 2019 08:24:28 -0400
-Received: from mx2.suse.de ([195.135.220.15]:55228 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:55254 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729082AbfC0MY1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1729052AbfC0MY1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 27 Mar 2019 08:24:27 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 18122AF6A
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Mar 2019 12:24:26 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id BF73DAF67
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Mar 2019 12:24:25 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v4 15/15] btrfs: Switch btrfs_trim_free_extents to find_first_clear_extent_bit
-Date:   Wed, 27 Mar 2019 14:24:18 +0200
-Message-Id: <20190327122418.24027-16-nborisov@suse.com>
+Subject: [PATCH v4 14/15] btrfs: Implement find_first_clear_extent_bit
+Date:   Wed, 27 Mar 2019 14:24:17 +0200
+Message-Id: <20190327122418.24027-15-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20190327122418.24027-1-nborisov@suse.com>
 References: <20190327122418.24027-1-nborisov@suse.com>
@@ -36,149 +36,113 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Instead of always calling the allocator to search for a free extent,
-that satisfies the input criteria, switch btrfs_trim_free_extents to
-using find_first_clear_extent_bit. With this change it's no longer
-necessary to read the device tree in order to figure out holes in
-the devices.
-
-Now the code always searches in-memory data structure to figure out the
-space range which contains the requested which should result in speed
-oups.
+This function is very similar to find_first_extent_bit except that it
+locates the first contiguous span of space which does not have bits set.
+It's intended use is in the freespace trimming code.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/extent-tree.c | 89 ++++++++++++------------------------------
- 1 file changed, 26 insertions(+), 63 deletions(-)
+ fs/btrfs/extent_io.c | 73 ++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/extent_io.h |  2 ++
+ 2 files changed, 75 insertions(+)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 503d68ba3f6a..7961038e6d08 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -11249,54 +11249,6 @@ int btrfs_error_unpin_extent_range(struct btrfs_fs_info *fs_info,
- 	return unpin_extent_range(fs_info, start, end, false);
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 4bf17d4c0819..d26ebecce2da 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1540,6 +1540,79 @@ int find_first_extent_bit(struct extent_io_tree *tree, u64 start,
+ 	return ret;
  }
  
--static bool should_skip_trim(struct btrfs_device *device, u64 *start, u64 *len)
--{
--	u64 trimmed_start = 0, trimmed_end = 0;
--	u64 end = *start + *len - 1;
--
--	if (!find_first_extent_bit(&device->alloc_state, *start, &trimmed_start,
--				   &trimmed_end, CHUNK_TRIMMED, NULL)) {
--		u64 trimmed_len = trimmed_end - trimmed_start + 1;
--
--		if (*start < trimmed_start) {
--			if (in_range(end, trimmed_start, trimmed_len) ||
--			    end > trimmed_end) {
--				/*
--				 * start|------|end
--				 *      ts|--|trimmed_len
--				 *      OR
--				 * start|-----|end
--				 *      ts|-----|trimmed_len
--				 */
--				*len = trimmed_start - *start;
--				return false;
--			} else if (end < trimmed_start) {
--				/*
--				 * start|------|end
--				 *             ts|--|trimmed_len
--				 */
--				return false;
--			}
--		} else if (in_range(*start, trimmed_start, trimmed_len)) {
--			if (in_range(end, trimmed_start, trimmed_len)) {
--				/*
--				 * start|------|end
--				 *  ts|----------|trimmed_len
--				 */
--				return true;
--			} else {
--				/*
--				 * start|-----------|end
--				 *  ts|----------|trimmed_len
--				 */
--				*start = trimmed_end + 1;
--				*len = end - *start + 1;
--				return false;
--			}
--		}
--	}
--	return false;
--}
- /*
-  * It used to be that old block groups would be left around forever.
-  * Iterating over them would be enough to trim unused space.  Since we
-@@ -11320,7 +11272,7 @@ static bool should_skip_trim(struct btrfs_device *device, u64 *start, u64 *len)
- static int btrfs_trim_free_extents(struct btrfs_device *device,
- 				   struct fstrim_range *range, u64 *trimmed)
- {
--	u64 start = range->start, len = 0;
-+	u64 start = max_t(u64, range->start, SZ_1M), len = 0, end = 0;
- 	int ret;
- 
- 	*trimmed = 0;
-@@ -11347,34 +11299,45 @@ static int btrfs_trim_free_extents(struct btrfs_device *device,
- 		if (ret)
- 			break;
- 
--		ret = find_free_dev_extent_start(device, range->minlen, start,
--						 &start, &len);
-+		find_first_clear_extent_bit(&device->alloc_state, start,
-+					    &start, &end,
-+					    CHUNK_TRIMMED | CHUNK_ALLOCATED);
-+		/* If find_first_clear_extent_bit find a range that spans the
-+		 * end of the device it will set end to -1, in this case it's up
-+		 * to the caller to trim the value to the size of the device.
-+		 */
-+		end = min(end, device->total_bytes);
-+		len = end - start + 1;
- 
--		if (ret) {
-+		/* We didn't find any extents */
-+		if (!len) {
- 			mutex_unlock(&fs_info->chunk_mutex);
--			if (ret == -ENOSPC)
--				ret = 0;
-+			ret = 0;
- 			break;
- 		}
- 
-+		/* Keep going until we satisfy minlen or reach end of space */
-+		if (len < range->minlen) {
-+			mutex_unlock(&fs_info->chunk_mutex);
-+			start += len;
-+			continue;
++/**
++ * find_first_clear_extent_bit - finds the first range that has @bits not set
++ * and that starts after @start
++ *
++ * @tree - the tree to search
++ * @start - the offset at/after which the found extent should start
++ * @start_ret - records the beginning of the range
++ * @end_ret - records the end of the range (inclusive)
++ * @bits - the set of bits which must be unset
++ *
++ * Since unallocated range is also considered one which doesn't have the bits
++ * set it's possible that @end_ret contains -1, this happens in case the range
++ * spans (last_range_end, end of device]. In this case it's up to the caller to
++ * trim @end_ret to the appropriate size.
++ */
++void find_first_clear_extent_bit(struct extent_io_tree *tree, u64 start,
++				 u64 *start_ret, u64 *end_ret, unsigned bits)
++{
++	struct extent_state *state;
++	struct rb_node *node, *prev = NULL, *next;
++
++	spin_lock(&tree->lock);
++
++	/* Find first extent with bits cleared */
++	while (1) {
++		node = __etree_search(tree, start, &next, &prev, NULL, NULL);
++		if (!node) {
++			node = next;
++			if (!node) {
++				/*
++				 * We are past the last allocated chunk,
++				 * set start at the end of the last extent. The
++				 * device alloc tree should never be empty so
++				 * prev is always set.
++				 */
++				ASSERT(prev);
++				state = rb_entry(prev, struct extent_state, rb_node);
++				*start_ret = state->end + 1;
++				*end_ret = -1;
++				goto out;
++			}
++		}
++		state = rb_entry(node, struct extent_state, rb_node);
++		if (in_range(start, state->start, state->end - state->start + 1) &&
++			(state->state & bits)) {
++			start = state->end + 1;
++		} else {
++			*start_ret = start;
++			break;
++		}
++	}
++
++	/*
++	 * Find the longest stretch from start until an entry which has the
++	 * bits set
++	 */
++	while (1) {
++		state = rb_entry(node, struct extent_state, rb_node);
++		if (state->end >= start && !(state->state & bits)) {
++			*end_ret = state->end;
++		} else {
++			*end_ret = state->start - 1;
++			break;
 +		}
 +
- 		/* If we are out of the passed range break */
- 		if (start > range->start + range->len - 1) {
- 			mutex_unlock(&fs_info->chunk_mutex);
--			ret = 0;
- 			break;
- 		}
- 
- 		start = max(range->start, start);
- 		len = min(range->len, len);
- 
--		if (!should_skip_trim(device, &start, &len)) {
--			ret = btrfs_issue_discard(device->bdev, start, len,
--						  &bytes);
--			if (!ret)
--				set_extent_bits(&device->alloc_state, start,
--						start + bytes - 1,
--						CHUNK_TRIMMED);
--		}
-+		ret = btrfs_issue_discard(device->bdev, start, len,
-+					  &bytes);
-+		if (!ret)
-+			set_extent_bits(&device->alloc_state, start,
-+					start + bytes - 1,
-+					CHUNK_TRIMMED);
- 		mutex_unlock(&fs_info->chunk_mutex);
- 
- 		if (ret)
++		node = rb_next(node);
++		if (!node)
++			break;
++	}
++out:
++	spin_unlock(&tree->lock);
++}
++
+ /*
+  * find a contiguous range of bytes in the file marked as delalloc, not
+  * more than 'max_bytes'.  start and end are used to return the range,
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index ea88dfe6dc30..66f9c6c07578 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -404,6 +404,8 @@ static inline int set_extent_uptodate(struct extent_io_tree *tree, u64 start,
+ int find_first_extent_bit(struct extent_io_tree *tree, u64 start,
+ 			  u64 *start_ret, u64 *end_ret, unsigned bits,
+ 			  struct extent_state **cached_state);
++void find_first_clear_extent_bit(struct extent_io_tree *tree, u64 start,
++				 u64 *start_ret, u64 *end_ret, unsigned bits);
+ int extent_invalidatepage(struct extent_io_tree *tree,
+ 			  struct page *page, unsigned long offset);
+ int extent_write_full_page(struct page *page, struct writeback_control *wbc);
 -- 
 2.17.1
 

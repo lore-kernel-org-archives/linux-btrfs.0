@@ -2,157 +2,100 @@ Return-Path: <SRS0=arzm=R6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.3 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 43BE7C43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 11:34:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 15DBAC10F00
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 12:00:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 123CB206B7
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 11:34:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D90F72087C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 12:00:33 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="HBOGRXtW"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727328AbfC0LeO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Mar 2019 07:34:14 -0400
-Received: from mx2.suse.de ([195.135.220.15]:47652 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726241AbfC0LeO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Mar 2019 07:34:14 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 8A059AC6C
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Mar 2019 11:34:12 +0000 (UTC)
-Subject: Re: [PATCH URGENT v1.1 1/2] btrfs-progs: disk-io: Make super block
- write error easier to read
-To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20190327094652.16078-1-wqu@suse.com>
- <20190327094652.16078-2-wqu@suse.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <3df41c09-4233-6e54-09df-9080960ca122@suse.com>
-Date:   Wed, 27 Mar 2019 13:34:11 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.1
+        id S1728886AbfC0MAc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Mar 2019 08:00:32 -0400
+Received: from bombadil.infradead.org ([198.137.202.133]:55032 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726241AbfC0MAc (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Mar 2019 08:00:32 -0400
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20170209; h=In-Reply-To:Content-Type:MIME-Version
+        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:
+        Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
+        List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+         bh=8UwcpcqaP8ZhHswLLo1/ZfvVHoz/qtIhN4RZjhfBKN0=; b=HBOGRXtWom6XXXTXi/OhNRxA1
+        C0ISWjCZaaFZskeTvAGowoxsDQcW16ZEC5H+7ri6b4TpkbJRPWNf0rgwqw2qLWtiSLubyVMnfBpUo
+        Id0BD3qqC3bEc/LpOo/cTLM0UMwogmQt8WwXLoSV2mOQasiRHV9zjdgSL9puByknBlu+x3za+LgQf
+        NwRWF8uuQ0YmZChZt+7q0xl3CT5F2bIQd/NU3gJcVaU0Vt3U9GObom3ezm3523CN9skm0F0oNwGrA
+        v6KHJCu+M+Ds2hVjV3IrZGfWv8i9nP7j6ma6SJQrIGF00CUSK9d9LV6OUyhiaeFIErEURy+o2otnQ
+        hSRBZcw6A==;
+Received: from willy by bombadil.infradead.org with local (Exim 4.90_1 #2 (Red Hat Linux))
+        id 1h97EO-0004h7-0C; Wed, 27 Mar 2019 12:00:32 +0000
+Date:   Wed, 27 Mar 2019 05:00:31 -0700
+From:   Matthew Wilcox <willy@infradead.org>
+To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
+Cc:     linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
+Subject: Re: [PATCH 01/15] btrfs: create a mount option for dax
+Message-ID: <20190327120031.GR10344@bombadil.infradead.org>
+References: <20190326190301.32365-1-rgoldwyn@suse.de>
+ <20190326190301.32365-2-rgoldwyn@suse.de>
+ <20190326191001.GP10344@bombadil.infradead.org>
+ <20190327110052.pvn5dag2xwy2tnkv@merlin>
 MIME-Version: 1.0
-In-Reply-To: <20190327094652.16078-2-wqu@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190327110052.pvn5dag2xwy2tnkv@merlin>
+User-Agent: Mutt/1.9.2 (2017-12-15)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Wed, Mar 27, 2019 at 06:00:52AM -0500, Goldwyn Rodrigues wrote:
+> On 12:10 26/03, Matthew Wilcox wrote:
+> > On Tue, Mar 26, 2019 at 02:02:47PM -0500, Goldwyn Rodrigues wrote:
+> > > This sets S_DAX in inode->i_flags, which can be used with
+> > > IS_DAX().
+> > > 
+> > > The dax option is restricted to non multi-device mounts.
+> > > dax interacts with the device directly instead of using bio, so
+> > > all bio-hooks which we use for multi-device cannot be performed
+> > > here. While regular read/writes could be manipulated with
+> > > RAID0/1, mmap() is still an issue.
+> > > 
+> > > Auto-setting free space tree, because dealing with free space
+> > > inode (specifically readpages) is a nightmare.
+> > > Auto-setting nodatasum because we don't get callback for writing
+> > > checksums after mmap()s.
+> > 
+> > Congratulations on getting the bear to dance.  But why?
+> 
+> Why not ? ;)
 
+ 18 files changed, 662 insertions(+), 77 deletions(-)
 
-On 27.03.19 г. 11:46 ч., Qu Wenruo wrote:
-> When we failed to write super blocks, we just output something like:
->   WARNING: failed to write sb: I/O error
-> Or
->   WARNING: failed to write all sb data
-> 
-> There is no info about which device failed and there are two different
-> error message for the same write error.
-> 
-> This patch will change it to something more detailed:
-> ERROR: failed to write super block for devid 1: write error: I/O error
-> 
-> This provides the basis for later super block flush error handling.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+I want to know what advantage we're getting for that.
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+> > To me, the point of btrfs is all the cool stuff it does with built-in
+> > checksumming and snapshots and RAID and so on.  DAX doesn't let you do
+> > any of that, so why would somebody want to use btrfs to manage DAX?
+> 
+> There are users who are asking for advantages of dax on btrfs.
 
-> ---
->  disk-io.c | 25 ++++++++++++++-----------
->  1 file changed, 14 insertions(+), 11 deletions(-)
+There are also people asking for perpetual motion machines.  Do these
+users understand the tradeoffs?
+
+> I have tried to make it work with snapshots in this series.
+> Checksumming should be possible, but would require some more hacks. I am
+> looking into it.
+> multi-device is an issue for mmap() and I don't think we can work around
+> it.
 > 
-> diff --git a/disk-io.c b/disk-io.c
-> index 797b9b79ea3c..f7fb7026cd94 100644
-> --- a/disk-io.c
-> +++ b/disk-io.c
-> @@ -1599,8 +1599,13 @@ static int write_dev_supers(struct btrfs_fs_info *fs_info,
->  		ret = pwrite64(device->fd, fs_info->super_copy,
->  				BTRFS_SUPER_INFO_SIZE,
->  				fs_info->super_bytenr);
-> -		if (ret != BTRFS_SUPER_INFO_SIZE)
-> -			goto write_err;
-> +		if (ret != BTRFS_SUPER_INFO_SIZE) {
-> +			errno = EIO;
-> +			error(
-> +		"failed to write super block for devid %llu: write error: %m",
-> +				device->devid);
-> +			return -EIO;
-> +		}
->  		return 0;
->  	}
->  
-> @@ -1622,18 +1627,16 @@ static int write_dev_supers(struct btrfs_fs_info *fs_info,
->  		 */
->  		ret = pwrite64(device->fd, fs_info->super_copy,
->  				BTRFS_SUPER_INFO_SIZE, bytenr);
-> -		if (ret != BTRFS_SUPER_INFO_SIZE)
-> -			goto write_err;
-> +		if (ret != BTRFS_SUPER_INFO_SIZE) {
-> +			errno = EIO;
-> +			error(
-> +		"failed to write super block for devid %llu: write error: %m",
-> +				device->devid);
-> +			return -errno;
-> +		}
->  	}
->  
->  	return 0;
-> -
-> -write_err:
-> -	if (ret > 0)
-> -		fprintf(stderr, "WARNING: failed to write all sb data\n");
-> -	else
-> -		fprintf(stderr, "WARNING: failed to write sb: %m\n");
-> -	return ret;
->  }
->  
->  int write_all_supers(struct btrfs_fs_info *fs_info)
-> 
+> I agree there is a price to pay to use dax, but I am sure the users
+> would know about that.
+
+I really doubt it, to be honest.

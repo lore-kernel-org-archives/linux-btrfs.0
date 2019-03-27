@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 94F2CC43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 12:24:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 21837C43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 12:24:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6CC242087C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 12:24:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id ED6712087C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 12:24:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729032AbfC0MYZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1728942AbfC0MYZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Wed, 27 Mar 2019 08:24:25 -0400
-Received: from mx2.suse.de ([195.135.220.15]:55222 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:55234 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728213AbfC0MYY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1728376AbfC0MYY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 27 Mar 2019 08:24:24 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 329EBAF3F
+        by mx1.suse.de (Postfix) with ESMTP id CBE40AF5B
         for <linux-btrfs@vger.kernel.org>; Wed, 27 Mar 2019 12:24:22 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v4 03/15] btrfs: Handle pending/pinned chunks before blockgroup relocation during device shrink
-Date:   Wed, 27 Mar 2019 14:24:06 +0200
-Message-Id: <20190327122418.24027-4-nborisov@suse.com>
+Subject: [PATCH v4 05/15] btrfs: Populate ->orig_block_len during read_one_chunk
+Date:   Wed, 27 Mar 2019 14:24:08 +0200
+Message-Id: <20190327122418.24027-6-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20190327122418.24027-1-nborisov@suse.com>
 References: <20190327122418.24027-1-nborisov@suse.com>
@@ -36,117 +36,88 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-During device shrink pinned/pending chunks (i.e those which have been
-deleted/created respectively, in the current transaction and haven't
-touched disk) need to be accounted when doing device shrink. Presently
-this happens after the main relocation loop in btrfs_shrink_device,
-which could lead to making another go in the body of the function.
+Chunks read from disk currently don't get their ->orig_block_len member
+set, in contrast when a new chunk is allocated, the respective
+extent_map's ->orig_block_len is assigned the size of the stripe of this
+chunk. Let's apply the same strategy for chunks which are read from
+disk, not only does this codify the invariant that ->orig_block_len
+always contains the size of the stripe for a chunk (when the em belongs
+to the mapping tree). But it's also a preparatory patch for further work
+around tracking chunk allocation in an extent tree rather than
+pinned/pending lists.
 
-Since there is no hard requirement to perform pinned/pending chunks
-handling after the relocation loop, move the code before it. This leads
-to simplifying the code flow around - i.e no need to use 'goto again'.
-
+Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/volumes.c | 57 +++++++++++++++++++---------------------------
- 1 file changed, 24 insertions(+), 33 deletions(-)
+ fs/btrfs/volumes.c | 41 ++++++++++++++++++++++-------------------
+ 1 file changed, 22 insertions(+), 19 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 66f4032dba13..256f7c5476bc 100644
+index 256f7c5476bc..d2d37adbc6fd 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -4722,15 +4722,16 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 	int slot;
- 	int failed = 0;
- 	bool retried = false;
--	bool checked_pending_chunks = false;
- 	struct extent_buffer *l;
- 	struct btrfs_key key;
- 	struct btrfs_super_block *super_copy = fs_info->super_copy;
- 	u64 old_total = btrfs_super_total_bytes(super_copy);
- 	u64 old_size = btrfs_device_get_total_bytes(device);
- 	u64 diff;
-+	u64 start;
+@@ -6814,6 +6814,26 @@ static void btrfs_report_missing_device(struct btrfs_fs_info *fs_info,
+ 			      devid, uuid);
+ }
  
--	new_size = round_down(new_size, fs_info->sectorsize);
-+	start = round_down(new_size, fs_info->sectorsize);
-+	new_size = start;
- 	diff = round_down(old_size - new_size, fs_info->sectorsize);
- 
- 	if (test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state))
-@@ -4742,6 +4743,12 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 
- 	path->reada = READA_BACK;
- 
-+	trans = btrfs_start_transaction(root, 0);
-+	if (IS_ERR(trans)) {
-+		btrfs_free_path(path);
-+		return PTR_ERR(trans);
-+	}
++static u64 calc_stripe_length(u64 type, u64 chunk_len, int num_stripes)
++{
++	int index = btrfs_bg_flags_to_raid_index(type);
++	int ncopies = btrfs_raid_array[index].ncopies;
++	int data_stripes;
 +
- 	mutex_lock(&fs_info->chunk_mutex);
- 
- 	btrfs_device_set_total_bytes(device, new_size);
-@@ -4749,7 +4756,21 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 		device->fs_devices->total_rw_bytes -= diff;
- 		atomic64_sub(diff, &fs_info->free_chunk_space);
- 	}
--	mutex_unlock(&fs_info->chunk_mutex);
-+
-+	/*
-+	 * Once the device's size has been set to the new size, ensure all
-+	 * in-memory chunks are synced to disk so that the loop below sees them
-+	 * and relocates them accordingly.
-+	 */
-+	if (contains_pending_extent(trans->transaction, device, &start, diff)) {
-+		mutex_unlock(&fs_info->chunk_mutex);
-+		ret = btrfs_commit_transaction(trans);
-+		if (ret)
-+			goto done;
-+	} else {
-+		mutex_unlock(&fs_info->chunk_mutex);
-+		btrfs_end_transaction(trans);
++	switch (type & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
++	case BTRFS_BLOCK_GROUP_RAID5:
++		data_stripes = num_stripes - 1;
++		break;
++	case BTRFS_BLOCK_GROUP_RAID6:
++		data_stripes = num_stripes - 2;
++		break;
++	default:
++		data_stripes = num_stripes / ncopies;
++		break;
 +	}
++	return div_u64(chunk_len, data_stripes);
++}
++
+ static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
+ 			  struct extent_buffer *leaf,
+ 			  struct btrfs_chunk *chunk)
+@@ -6873,6 +6893,8 @@ static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
+ 	map->type = btrfs_chunk_type(leaf, chunk);
+ 	map->sub_stripes = btrfs_chunk_sub_stripes(leaf, chunk);
+ 	map->verified_stripes = 0;
++	em->orig_block_len = calc_stripe_length(map->type, em->len,
++						map->num_stripes);
+ 	for (i = 0; i < num_stripes; i++) {
+ 		map->stripes[i].physical =
+ 			btrfs_stripe_offset_nr(leaf, chunk, i);
+@@ -7730,25 +7752,6 @@ int btrfs_bg_type_to_factor(u64 flags)
+ }
  
- again:
- 	key.objectid = device->devid;
-@@ -4840,36 +4861,6 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 	}
  
- 	mutex_lock(&fs_info->chunk_mutex);
+-static u64 calc_stripe_length(u64 type, u64 chunk_len, int num_stripes)
+-{
+-	int index = btrfs_bg_flags_to_raid_index(type);
+-	int ncopies = btrfs_raid_array[index].ncopies;
+-	int data_stripes;
 -
--	/*
--	 * We checked in the above loop all device extents that were already in
--	 * the device tree. However before we have updated the device's
--	 * total_bytes to the new size, we might have had chunk allocations that
--	 * have not complete yet (new block groups attached to transaction
--	 * handles), and therefore their device extents were not yet in the
--	 * device tree and we missed them in the loop above. So if we have any
--	 * pending chunk using a device extent that overlaps the device range
--	 * that we can not use anymore, commit the current transaction and
--	 * repeat the search on the device tree - this way we guarantee we will
--	 * not have chunks using device extents that end beyond 'new_size'.
--	 */
--	if (!checked_pending_chunks) {
--		u64 start = new_size;
--		u64 len = old_size - new_size;
--
--		if (contains_pending_extent(trans->transaction, device,
--					    &start, len)) {
--			mutex_unlock(&fs_info->chunk_mutex);
--			checked_pending_chunks = true;
--			failed = 0;
--			retried = false;
--			ret = btrfs_commit_transaction(trans);
--			if (ret)
--				goto done;
--			goto again;
--		}
+-	switch (type & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
+-	case BTRFS_BLOCK_GROUP_RAID5:
+-		data_stripes = num_stripes - 1;
+-		break;
+-	case BTRFS_BLOCK_GROUP_RAID6:
+-		data_stripes = num_stripes - 2;
+-		break;
+-	default:
+-		data_stripes = num_stripes / ncopies;
+-		break;
 -	}
--
- 	btrfs_device_set_disk_total_bytes(device, new_size);
- 	if (list_empty(&device->post_commit_list))
- 		list_add_tail(&device->post_commit_list,
+-	return div_u64(chunk_len, data_stripes);
+-}
+ 
+ static int verify_one_dev_extent(struct btrfs_fs_info *fs_info,
+ 				 u64 chunk_offset, u64 devid,
 -- 
 2.17.1
 

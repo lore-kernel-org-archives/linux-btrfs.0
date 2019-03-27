@@ -2,32 +2,34 @@ Return-Path: <SRS0=arzm=R6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3DEC5C43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 09:47:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EB04BC43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 09:47:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 17E7C2075C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 09:47:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B8BF72075D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 09:47:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732141AbfC0JrC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Mar 2019 05:47:02 -0400
-Received: from mx2.suse.de ([195.135.220.15]:56686 "EHLO mx1.suse.de"
+        id S1732159AbfC0JrF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Mar 2019 05:47:05 -0400
+Received: from mx2.suse.de ([195.135.220.15]:56698 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726237AbfC0JrB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Mar 2019 05:47:01 -0400
+        id S1726237AbfC0JrF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Mar 2019 05:47:05 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B55EAACBC
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Mar 2019 09:47:00 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 976AEACBC
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Mar 2019 09:47:04 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH URGENT v1.1 0/2] btrfs-progs: Fix the nobarrier behavior of write
-Date:   Wed, 27 Mar 2019 17:46:50 +0800
-Message-Id: <20190327094652.16078-1-wqu@suse.com>
+Subject: [PATCH URGENT v1.1 1/2] btrfs-progs: disk-io: Make super block write error easier to read
+Date:   Wed, 27 Mar 2019 17:46:51 +0800
+Message-Id: <20190327094652.16078-2-wqu@suse.com>
 X-Mailer: git-send-email 2.21.0
+In-Reply-To: <20190327094652.16078-1-wqu@suse.com>
+References: <20190327094652.16078-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -35,31 +37,70 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This urgent patchset can be fetched from github:
-https://github.com/adam900710/btrfs-progs/tree/flush_super
-Which is based on v4.20.2.
+When we failed to write super blocks, we just output something like:
+  WARNING: failed to write sb: I/O error
+Or
+  WARNING: failed to write all sb data
 
-Before this patch, btrfs-progs writes to the fs has no barrier at all.
-All metadata and superblock are just buffered write, no barrier between
-super blocks and metadata writes at all.
+There is no info about which device failed and there are two different
+error message for the same write error.
 
-No wonder why even clear space cache can cause serious transid
-corruption to the originally good fs.
+This patch will change it to something more detailed:
+ERROR: failed to write super block for devid 1: write error: I/O error
 
-Please merge this fix as soon as possible as I really don't want to see
-btrfs-progs corrupting any fs any more.
+This provides the basis for later super block flush error handling.
 
-Changelog:
-v1.1:
-- Use one line error report other than 2 seperate lines.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ disk-io.c | 25 ++++++++++++++-----------
+ 1 file changed, 14 insertions(+), 11 deletions(-)
 
-Qu Wenruo (2):
-  btrfs-progs: disk-io: Make super block write error easier to read
-  btrfs-progs: disk-io: Flush to ensure super block write is FUA
-
- disk-io.c | 56 ++++++++++++++++++++++++++++++++++++++++++++-----------
- 1 file changed, 45 insertions(+), 11 deletions(-)
-
+diff --git a/disk-io.c b/disk-io.c
+index 797b9b79ea3c..f7fb7026cd94 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -1599,8 +1599,13 @@ static int write_dev_supers(struct btrfs_fs_info *fs_info,
+ 		ret = pwrite64(device->fd, fs_info->super_copy,
+ 				BTRFS_SUPER_INFO_SIZE,
+ 				fs_info->super_bytenr);
+-		if (ret != BTRFS_SUPER_INFO_SIZE)
+-			goto write_err;
++		if (ret != BTRFS_SUPER_INFO_SIZE) {
++			errno = EIO;
++			error(
++		"failed to write super block for devid %llu: write error: %m",
++				device->devid);
++			return -EIO;
++		}
+ 		return 0;
+ 	}
+ 
+@@ -1622,18 +1627,16 @@ static int write_dev_supers(struct btrfs_fs_info *fs_info,
+ 		 */
+ 		ret = pwrite64(device->fd, fs_info->super_copy,
+ 				BTRFS_SUPER_INFO_SIZE, bytenr);
+-		if (ret != BTRFS_SUPER_INFO_SIZE)
+-			goto write_err;
++		if (ret != BTRFS_SUPER_INFO_SIZE) {
++			errno = EIO;
++			error(
++		"failed to write super block for devid %llu: write error: %m",
++				device->devid);
++			return -errno;
++		}
+ 	}
+ 
+ 	return 0;
+-
+-write_err:
+-	if (ret > 0)
+-		fprintf(stderr, "WARNING: failed to write all sb data\n");
+-	else
+-		fprintf(stderr, "WARNING: failed to write sb: %m\n");
+-	return ret;
+ }
+ 
+ int write_all_supers(struct btrfs_fs_info *fs_info)
 -- 
 2.21.0
 

@@ -2,78 +2,107 @@ Return-Path: <SRS0=arzm=R6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_NEOMUTT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 207EAC43381
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 23:31:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 59DAAC43381
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 23:43:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E7DEC2082F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 23:31:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 326822075E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Mar 2019 23:43:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728062AbfC0XbX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Mar 2019 19:31:23 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42780 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725601AbfC0XbX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Mar 2019 19:31:23 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 82C98AE25;
-        Wed, 27 Mar 2019 23:31:22 +0000 (UTC)
-Date:   Wed, 27 Mar 2019 18:31:20 -0500
-From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
-To:     Matthew Wilcox <willy@infradead.org>
-Cc:     linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
-Subject: Re: [PATCH 01/15] btrfs: create a mount option for dax
-Message-ID: <20190327233120.ykjmdvedr4gsdyhr@merlin>
-References: <20190326190301.32365-1-rgoldwyn@suse.de>
- <20190326190301.32365-2-rgoldwyn@suse.de>
- <20190326191001.GP10344@bombadil.infradead.org>
- <20190327110052.pvn5dag2xwy2tnkv@merlin>
- <20190327120031.GR10344@bombadil.infradead.org>
+        id S1732987AbfC0XnC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Mar 2019 19:43:02 -0400
+Received: from mx1.redhat.com ([209.132.183.28]:53238 "EHLO mx1.redhat.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1731002AbfC0XnB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Mar 2019 19:43:01 -0400
+Received: from smtp.corp.redhat.com (int-mx02.intmail.prod.int.phx2.redhat.com [10.5.11.12])
+        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mx1.redhat.com (Postfix) with ESMTPS id 9ECACDBD9E;
+        Wed, 27 Mar 2019 23:43:01 +0000 (UTC)
+Received: from warthog.procyon.org.uk (ovpn-121-98.rdu2.redhat.com [10.10.121.98])
+        by smtp.corp.redhat.com (Postfix) with ESMTP id 3C45860C18;
+        Wed, 27 Mar 2019 23:42:59 +0000 (UTC)
+Organization: Red Hat UK Ltd. Registered Address: Red Hat UK Ltd, Amberley
+ Place, 107-111 Peascod Street, Windsor, Berkshire, SI4 1TE, United
+ Kingdom.
+ Registered in England and Wales under Company Registration No. 3798903
+Subject: [RFC PATCH 19/68] vfs: Convert btrfs_test to use the new mount API
+From:   David Howells <dhowells@redhat.com>
+To:     viro@zeniv.linux.org.uk
+Cc:     David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-kernel@vger.kernel.org, dhowells@redhat.com
+Date:   Wed, 27 Mar 2019 23:42:58 +0000
+Message-ID: <155373017856.7602.13957875777837118321.stgit@warthog.procyon.org.uk>
+In-Reply-To: <155372999953.7602.13784796495137723805.stgit@warthog.procyon.org.uk>
+References: <155372999953.7602.13784796495137723805.stgit@warthog.procyon.org.uk>
+User-Agent: StGit/unknown-version
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190327120031.GR10344@bombadil.infradead.org>
-User-Agent: NeoMutt/20180323
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+X-Scanned-By: MIMEDefang 2.79 on 10.5.11.12
+X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.39]); Wed, 27 Mar 2019 23:43:01 +0000 (UTC)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On  5:00 27/03, Matthew Wilcox wrote:
-> On Wed, Mar 27, 2019 at 06:00:52AM -0500, Goldwyn Rodrigues wrote:
-> > On 12:10 26/03, Matthew Wilcox wrote:
-> > > On Tue, Mar 26, 2019 at 02:02:47PM -0500, Goldwyn Rodrigues wrote:
-> > > > This sets S_DAX in inode->i_flags, which can be used with
-> > > > IS_DAX().
-> > > > 
-> > > > The dax option is restricted to non multi-device mounts.
-> > > > dax interacts with the device directly instead of using bio, so
-> > > > all bio-hooks which we use for multi-device cannot be performed
-> > > > here. While regular read/writes could be manipulated with
-> > > > RAID0/1, mmap() is still an issue.
-> > > > 
-> > > > Auto-setting free space tree, because dealing with free space
-> > > > inode (specifically readpages) is a nightmare.
-> > > > Auto-setting nodatasum because we don't get callback for writing
-> > > > checksums after mmap()s.
-> > > 
-> > > Congratulations on getting the bear to dance.  But why?
-> > 
-> > Why not ? ;)
-> 
->  18 files changed, 662 insertions(+), 77 deletions(-)
-> 
-> I want to know what advantage we're getting for that.
+Convert the btrfs_test filesystem to the new internal mount API as the old
+one will be obsoleted and removed.  This allows greater flexibility in
+communication of mount parameters between userspace, the VFS and the
+filesystem.
 
-So the prime advantages are btrfs filesystem snapshots on the dax device.
-Leveraging btrfs features, reflinks works just as well.
-(In addition to all the advantages dax has to offer)
+See Documentation/filesystems/mount_api.txt for more information.
 
+Signed-off-by: David Howells <dhowells@redhat.com>
+Acked-by: David Sterba <dsterba@suse.com>
+cc: Chris Mason <clm@fb.com>
+cc: Josef Bacik <josef@toxicpanda.com>
+cc: linux-btrfs@vger.kernel.org
+---
 
+ fs/btrfs/tests/btrfs-tests.c |   13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
 
--- 
-Goldwyn
+diff --git a/fs/btrfs/tests/btrfs-tests.c b/fs/btrfs/tests/btrfs-tests.c
+index 8a59597f1883..dabd43a37414 100644
+--- a/fs/btrfs/tests/btrfs-tests.c
++++ b/fs/btrfs/tests/btrfs-tests.c
+@@ -5,6 +5,7 @@
+ 
+ #include <linux/fs.h>
+ #include <linux/mount.h>
++#include <linux/fs_context.h>
+ #include <linux/magic.h>
+ #include "btrfs-tests.h"
+ #include "../ctree.h"
+@@ -22,17 +23,17 @@ static const struct super_operations btrfs_test_super_ops = {
+ 	.destroy_inode	= btrfs_test_destroy_inode,
+ };
+ 
+-static struct dentry *btrfs_test_mount(struct file_system_type *fs_type,
+-				       int flags, const char *dev_name,
+-				       void *data)
++
++static int btrfs_test_init_fs_context(struct fs_context *fc)
+ {
+-	return mount_pseudo(fs_type, "btrfs_test:", &btrfs_test_super_ops,
+-			    NULL, BTRFS_TEST_MAGIC);
++	return vfs_init_pseudo_fs_context(fc, "btrfs_test:",
++					  &btrfs_test_super_ops, NULL,
++					  NULL, BTRFS_TEST_MAGIC);
+ }
+ 
+ static struct file_system_type test_type = {
+ 	.name		= "btrfs_test_fs",
+-	.mount		= btrfs_test_mount,
++	.init_fs_context = btrfs_test_init_fs_context,
+ 	.kill_sb	= kill_anon_super,
+ };
+ 
+

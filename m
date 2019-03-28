@@ -2,122 +2,96 @@ Return-Path: <SRS0=ig1K=R7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_PASS,UNPARSEABLE_RELAY autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3D5ACC43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 17:49:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 029D5C10F06
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 17:50:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1716E20823
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 17:49:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CC4592184C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 17:50:41 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="g5Us3M5u"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726293AbfC1Rto (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 Mar 2019 13:49:44 -0400
-Received: from mx2.suse.de ([195.135.220.15]:56926 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726034AbfC1Rto (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Mar 2019 13:49:44 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 11AB3ABE1;
-        Thu, 28 Mar 2019 17:49:43 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 6C5D3DA911; Thu, 28 Mar 2019 18:50:49 +0100 (CET)
-Date:   Thu, 28 Mar 2019 18:50:47 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] fstests: btrfs try use forget to unregister device
-Message-ID: <20190328175047.GR29086@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
-        fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-References: <1552988980-25710-1-git-send-email-anand.jain@oracle.com>
+        id S1727502AbfC1Rul (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 Mar 2019 13:50:41 -0400
+Received: from userp2130.oracle.com ([156.151.31.86]:48614 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726171AbfC1Ruk (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 Mar 2019 13:50:40 -0400
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x2SHnV1r045442;
+        Thu, 28 Mar 2019 17:50:38 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : from : to :
+ cc : date : message-id : mime-version : content-type :
+ content-transfer-encoding; s=corp-2018-07-02;
+ bh=UNp5UajRP0TYe7MVFZc545v0F1Jrs14oVb6FcV8yLDg=;
+ b=g5Us3M5uwvfiVcmGVSth4oChqwEma8n39onuAXCr6Vj9gVoxLraLA5s6xmqwsYgw2mI7
+ L1AA+eZXd9vnCgY2wUNwBGumDR0HhKy+qshBCXW2HzrFeUQpCsmvkzFkVyAUlV/2SbjF
+ FDIHz25JWp8a8hl/pL2ZLN/dkVRVk0XqpAfxmONiwCj8TXVveJJJvd/kc+VDg5g9iwsi
+ bKwqWg91hMrOQpHbgjrlf2jvziHLiYqW1Q6CcREwIFxJSy0di6L2nDyUjtv3ta9pFpa+
+ UKJL9zv87JURDjpZwfLwgmIA5nAYHqwSY29Ct8GRM1kIscwIj/FSCs2Q44pfi+W7RAaf +g== 
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by userp2130.oracle.com with ESMTP id 2re6g1g6nb-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 28 Mar 2019 17:50:38 +0000
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x2SHoaSQ029430
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 28 Mar 2019 17:50:37 GMT
+Received: from abhmp0015.oracle.com (abhmp0015.oracle.com [141.146.116.21])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x2SHoZDr009350;
+        Thu, 28 Mar 2019 17:50:35 GMT
+Received: from localhost (/10.159.234.216)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Thu, 28 Mar 2019 10:50:35 -0700
+Subject: [PATCH 0/3] vfs: make immutable files actually immutable
+From:   "Darrick J. Wong" <darrick.wong@oracle.com>
+To:     darrick.wong@oracle.com
+Cc:     linux-xfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-mm@kvack.org
+Date:   Thu, 28 Mar 2019 10:50:34 -0700
+Message-ID: <155379543409.24796.5783716624820175068.stgit@magnolia>
+User-Agent: StGit/0.17.1-dirty
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <1552988980-25710-1-git-send-email-anand.jain@oracle.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9209 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=1 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=554 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1903280117
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Mar 19, 2019 at 05:49:40PM +0800, Anand Jain wrote:
-> btrfs module reload was introduced to unregister devices in the btrfs
-> kernel module.
-> 
-> The problem with the module reload approach is that you can't run btrfs
-> test cases 124, 125, 154 and 164 on the system with btrfs as root fs.
-> 
-> Patches [1] introduced btrfs forget feature which lets to cleanup the
-> kernel device list without kernel module reload.
-> 
->  [1]
->  btrfs-progs: add cli to forget one or all scanned devices
+Hi all,
 
-The subject lines was changed to "btrfs-progs: device scan: add new
-option to forget one or all scanned devices"
+The chattr(1) manpage has this to say about the immutable bit that
+system administrators can set on files:
 
->  btrfs: introduce new ioctl to unregister a btrfs device
+"A file with the 'i' attribute cannot be modified: it cannot be deleted
+or renamed, no link can be created to this file, most of the file's
+metadata can not be modified, and the file can not be opened in write
+mode."
 
-> So this patch uses forget feature instead of kernel module reload, if
-> the forget feature is available.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  common/btrfs    | 20 ++++++++++++++++++++
->  tests/btrfs/124 |  6 +++---
->  tests/btrfs/125 |  6 +++---
->  tests/btrfs/154 |  6 +++---
->  tests/btrfs/164 |  4 ++--
->  5 files changed, 31 insertions(+), 11 deletions(-)
-> 
-> diff --git a/common/btrfs b/common/btrfs
-> index f6513c06f95f..e94e011db04e 100644
-> --- a/common/btrfs
-> +++ b/common/btrfs
-> @@ -382,3 +382,23 @@ _scratch_btrfs_sectorsize()
->  	$BTRFS_UTIL_PROG inspect-internal dump-super $SCRATCH_DEV |\
->  		grep sectorsize | awk '{print $2}'
->  }
-> +
-> +_btrfs_supports_forget()
-> +{
-> +	$BTRFS_UTIL_PROG device scan --help | grep -wq forget && \
-> +		$BTRFS_UTIL_PROG device scan --forget > /dev/null 2>&1
+Given the clause about how the file 'cannot be modified', it is
+surprising that programs holding writable file descriptors can continue
+to write to and truncate files after the immutable flag has been set,
+but they cannot call other things such as utimes, fallocate, unlink,
+link, setxattr, or reflink.
 
-The second part actually unregisters all devices, is there some more
-lightweight way to detect the support? Like providing a valid block
-device but without btrfs. If the ioctl is supported, then it returns
--ENOENT and if not supported then -EOPNOTSUPP.
+Since the immutable flag is only settable by administrators, resolve
+this inconsistent behavior in favor of the documented behavior -- once
+the flag is set, the file cannot be modified, period.
 
-> +}
-> +
-> +_require_btrfs_forget_if_not_fs_loadable()
+This has been lightly tested with fstests.  Enjoy!
+Comments and questions are, as always, welcome.
 
-_require_btrfs_forget_or_module_loadable
-
-We don't want to load the filesystem but the kernel module.
-
-> +{
-> +	_btrfs_supports_forget && return
-
-Why is the 'return' here? If the first command succeeds, then &&
-proceeds to return that does implicitli returns 0. So it's redundant, or
-I'm missing something subtle here.
-
-> +
-> +	_require_loadable_fs_module "btrfs"
-> +}
-> +
-> +_btrfs_forget_if_not_fs_reload()
-
-Same naming
-
-> +{
-> +	_btrfs_supports_forget && return
-> +
-> +	_reload_fs_module "btrfs"
-> +}
+--D

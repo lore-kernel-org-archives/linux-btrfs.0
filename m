@@ -2,118 +2,153 @@ Return-Path: <SRS0=ig1K=R7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3A6ACC43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 17:57:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 78D3DC43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 18:54:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0C52720811
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 17:57:58 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="bV9GvK0+"
+	by mail.kernel.org (Postfix) with ESMTP id 4A41820643
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 18:54:00 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1553799240;
+	bh=lPHlZwUaNNGQHi729o8QX8ff7ngcdGAlRQW2f0O15ts=;
+	h=From:To:Cc:Subject:Date:List-ID:From;
+	b=biRfHD8cYJ/MZtrpnPF34C7uZ5Zwlvkgr0bC6Mvj9j9DWPtbgCt1tRf1Do2GqMUrw
+	 bSwoQDs2Quw1lVxvSV1EENizBIfdIiphuDF0NEZbzD73iZ3TVxO830fLFexGoD6sSq
+	 p4XnviEo0BQyZH+D+BNDDOnqMXiphsHv+Z4NWAjQ=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727028AbfC1R55 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 Mar 2019 13:57:57 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:46524 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725816AbfC1R55 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Mar 2019 13:57:57 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x2SHs64B058152;
-        Thu, 28 Mar 2019 17:57:45 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to :
- subject : message-id : references : mime-version : content-type :
- in-reply-to; s=corp-2018-07-02;
- bh=3Am7D+JT4HdVeylSccYOusV17b+Gn6lVGdA+DJO7BWk=;
- b=bV9GvK0+ImE6m8jL04dnNpHKuufyPGi0bLte91zxCXSr2ViFUDz8ZeFeKsQqicj+Wfu1
- xU13+ProYSZkB/IlCM/AtX6eiv/hnIZQy2GhplOI/Egz/lA+cNSUO/kEH5C4uGqk7Mtc
- tviOLmKmEtMJszMjA73HXHADP7XiYifWwLspqJ4D6yxGxKpuqguqwg/27YGMZYiY9TNV
- dd6KiFpX5SlYayLIwLzoyX6f118xq3s+gKuxOx1UTjZeDVM9hC135KFT+p6snoE3wm3h
- MKVsFkUBgjJrrD/vR9UXu2gzmF2xY5lBslsVfdQRtNEcGgLQqo5lhr7fMtD7Wa70yxjO qg== 
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by userp2120.oracle.com with ESMTP id 2re6djra39-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 28 Mar 2019 17:57:45 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x2SHvj8x010812
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 28 Mar 2019 17:57:45 GMT
-Received: from abhmp0003.oracle.com (abhmp0003.oracle.com [141.146.116.9])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x2SHvi9d012946;
-        Thu, 28 Mar 2019 17:57:44 GMT
-Received: from localhost (/10.159.234.216)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 28 Mar 2019 10:57:43 -0700
-Date:   Thu, 28 Mar 2019 10:57:36 -0700
-From:   "Darrick J. Wong" <darrick.wong@oracle.com>
-To:     dsterba@suse.cz, Goldwyn Rodrigues <rgoldwyn@suse.de>,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: Re: [PATCH 01/15] btrfs: create a mount option for dax
-Message-ID: <20190328175736.GA1177@magnolia>
-References: <20190326190301.32365-1-rgoldwyn@suse.de>
- <20190326190301.32365-2-rgoldwyn@suse.de>
- <20190328172825.GQ29086@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190328172825.GQ29086@twin.jikos.cz>
-User-Agent: Mutt/1.9.4 (2018-02-28)
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9209 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
- suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
- lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
- definitions=main-1903280118
+        id S1726281AbfC1Sx7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 Mar 2019 14:53:59 -0400
+Received: from mail.kernel.org ([198.145.29.99]:44960 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725852AbfC1Sx7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 Mar 2019 14:53:59 -0400
+Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id D534B20823;
+        Thu, 28 Mar 2019 18:53:56 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1553799237;
+        bh=lPHlZwUaNNGQHi729o8QX8ff7ngcdGAlRQW2f0O15ts=;
+        h=From:To:Cc:Subject:Date:From;
+        b=Vlha13xWtWL/AgdYSdTaLFsaQd3dDimmCQwvk9/OTah+NCrinBzsoqO1RuJiOPDAM
+         O7XjoH6mMzK4JEZ+M3pdhZVLbrw5w8Wnq+Uj5V4w2cqdgrgzQVJLPaCUemSBJ67138
+         ItaJBYNEdwoJQm+WD3lFrRQ3T8nNWp/eSZ3t16Y0=
+From:   fdmanana@kernel.org
+To:     fstests@vger.kernel.org
+Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH 1/7] fsstress: rename setxattr operation to chproj
+Date:   Thu, 28 Mar 2019 18:53:52 +0000
+Message-Id: <20190328185352.28829-1-fdmanana@kernel.org>
+X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Mar 28, 2019 at 06:28:25PM +0100, David Sterba wrote:
-> On Tue, Mar 26, 2019 at 02:02:47PM -0500, Goldwyn Rodrigues wrote:
-> > From: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> > 
-> > This sets S_DAX in inode->i_flags, which can be used with
-> > IS_DAX().
-> > 
-> > The dax option is restricted to non multi-device mounts.
-> > dax interacts with the device directly instead of using bio, so
-> > all bio-hooks which we use for multi-device cannot be performed
-> > here. While regular read/writes could be manipulated with
-> > RAID0/1, mmap() is still an issue.
-> 
-> I'm looking for other features that would not work with dax. Disabling
-> multiple devices strikes out device add, device delete and device
-> replace.
-> 
-> To be verified:
-> 
-> - balance - at least profile changes must be forbidden
-> 
-> - defrag
-> 
-> - compression - as it needs COW, it won't work on the nodatacow files,
->   thus seems to be ok
-> 
-> - resize/grow - this could work without changes, no block relocation is
->   needed, only new structures created
-> 
-> - resize/shrink - depends on balance, the block groups from the removed
->   area need to be relocated
-> 
-> - swapfiles - I'm sure somebody will try that; I haven't seen any
->   IS_DAX checks in the swapfile activation code
+From: Filipe Manana <fdmanana@suse.com>
 
-I've never tried dax swapfiles, but so long as you can issue bios to the
-underlying bdev they ought to work, right?  Even if the swap code could
-be streamlined by memcpy in the dax case.
+The existing setxattr operation is used to change the project identifier
+attribute associated with an inode, and not about setting a xattr (the
+name and value pair) for a file/directory, which is confusing. So rename
+the operation to chproj, which is more descriptive about what it does
+and avoids any confusion.
 
-(Granted I have no idea what sort of bio-hooks magic btrfs does, maybe
-it really doesn't work there...)
+Fsstress currently has no operations for setting and getting xattrs of a
+file (for any namespace), and this patch is a preparation for adding such
+operations in a subsequent patch.
 
---D
+This operation actually used to be named chproj until the following
+commit:
+
+ commit 6449a993f2dfb3faaaa44e29d2f7d1bb7c5db9ba
+ Author: Nathan Scott <nathans@sgi.com>
+ Date:   Mon Dec 5 21:41:47 2005 +0000
+
+     Switch to always using get/setxattr rather than a separate projid call on IRIX.
+     Merge of master-melb:xfs-cmds:24692a by kenmcd.
+
+Which does not explain the rationale for the renaming at all.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ ltp/fsstress.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/ltp/fsstress.c b/ltp/fsstress.c
+index 2223fd7d..cc4f520e 100644
+--- a/ltp/fsstress.c
++++ b/ltp/fsstress.c
+@@ -55,6 +55,7 @@ typedef enum {
+ 	OP_BULKSTAT,
+ 	OP_BULKSTAT1,
+ 	OP_CHOWN,
++	OP_CHPROJ,
+ 	OP_CLONERANGE,
+ 	OP_COPYRANGE,
+ 	OP_CREAT,
+@@ -84,7 +85,6 @@ typedef enum {
+ 	OP_RESVSP,
+ 	OP_RMDIR,
+ 	OP_SETATTR,
+-	OP_SETXATTR,
+ 	OP_SPLICE,
+ 	OP_STAT,
+ 	OP_SYMLINK,
+@@ -165,6 +165,7 @@ void	awrite_f(int, long);
+ void	bulkstat_f(int, long);
+ void	bulkstat1_f(int, long);
+ void	chown_f(int, long);
++void	chproj_f(int, long);
+ void	clonerange_f(int, long);
+ void	copyrange_f(int, long);
+ void	creat_f(int, long);
+@@ -194,7 +195,6 @@ void	rename_f(int, long);
+ void	resvsp_f(int, long);
+ void	rmdir_f(int, long);
+ void	setattr_f(int, long);
+-void	setxattr_f(int, long);
+ void	splice_f(int, long);
+ void	stat_f(int, long);
+ void	symlink_f(int, long);
+@@ -216,6 +216,7 @@ opdesc_t	ops[] = {
+ 	{ OP_BULKSTAT, "bulkstat", bulkstat_f, 1, 0 },
+ 	{ OP_BULKSTAT1, "bulkstat1", bulkstat1_f, 1, 0 },
+ 	{ OP_CHOWN, "chown", chown_f, 3, 1 },
++	{ OP_CHPROJ, "chproj", chproj_f, 1, 1 },
+ 	{ OP_CLONERANGE, "clonerange", clonerange_f, 4, 1 },
+ 	{ OP_COPYRANGE, "copyrange", copyrange_f, 4, 1 },
+ 	{ OP_CREAT, "creat", creat_f, 4, 1 },
+@@ -245,7 +246,6 @@ opdesc_t	ops[] = {
+ 	{ OP_RESVSP, "resvsp", resvsp_f, 1, 1 },
+ 	{ OP_RMDIR, "rmdir", rmdir_f, 1, 1 },
+ 	{ OP_SETATTR, "setattr", setattr_f, 0, 1 },
+-	{ OP_SETXATTR, "setxattr", setxattr_f, 1, 1 },
+ 	{ OP_SPLICE, "splice", splice_f, 1, 1 },
+ 	{ OP_STAT, "stat", stat_f, 1, 0 },
+ 	{ OP_SYMLINK, "symlink", symlink_f, 2, 1 },
+@@ -2732,7 +2732,7 @@ out_fdr:
+ }
+ 
+ void
+-setxattr_f(int opno, long r)
++chproj_f(int opno, long r)
+ {
+ #ifdef XFS_XFLAG_EXTSIZE
+ 	struct fsxattr	fsx;
+@@ -2761,7 +2761,7 @@ setxattr_f(int opno, long r)
+ 		e = xfsctl(f.path, fd, XFS_IOC_FSSETXATTR, &fsx);
+ 	}
+ 	if (v)
+-		printf("%d/%d: setxattr %s %u %d\n", procid, opno, f.path, p, e);
++		printf("%d/%d: chproj %s %u %d\n", procid, opno, f.path, p, e);
+ 	free_pathname(&f);
+ 	close(fd);
+ #endif
+-- 
+2.11.0
+

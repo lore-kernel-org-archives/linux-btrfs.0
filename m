@@ -5,29 +5,29 @@ X-Spam-Level:
 X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 53516C43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 13:58:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 072EAC43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 14:00:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2AFE82173C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 13:58:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D5C8E2173C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 14:00:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726286AbfC1N6d (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 Mar 2019 09:58:33 -0400
-Received: from mx2.suse.de ([195.135.220.15]:59948 "EHLO mx1.suse.de"
+        id S1726185AbfC1OA3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 Mar 2019 10:00:29 -0400
+Received: from mx2.suse.de ([195.135.220.15]:33756 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726171AbfC1N6c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Mar 2019 09:58:32 -0400
+        id S1725939AbfC1OA2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 Mar 2019 10:00:28 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D9A2DAF2F;
-        Thu, 28 Mar 2019 13:58:30 +0000 (UTC)
-Subject: Re: [PATCh v2 9/9] btrfs: inode: Verify inode mode to avoid NULL
- pointer dereference
+        by mx1.suse.de (Postfix) with ESMTP id 14571BB75;
+        Thu, 28 Mar 2019 14:00:27 +0000 (UTC)
+Subject: Re: [PATCh v2 8/9] btrfs: tree-checker: Verify inode item
 To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org, Yoon Jungyeon <jungyeon@gatech.edu>,
-        Nikolay Borisov <nborisov@suse.com>
+        linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
 References: <20190320063717.31770-1-wqu@suse.com>
- <20190320063717.31770-10-wqu@suse.com> <20190328135328.GE29086@twin.jikos.cz>
+ <20190320063717.31770-9-wqu@suse.com> <20190328133806.GD29086@twin.jikos.cz>
+ <ae0fe6da-a329-ceea-cac5-085595965511@suse.de>
+ <20190328135714.GF29086@twin.jikos.cz>
 From:   Qu Wenruo <wqu@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=wqu@suse.de; prefer-encrypt=mutual; keydata=
@@ -54,12 +54,12 @@ Autocrypt: addr=wqu@suse.de; prefer-encrypt=mutual; keydata=
  Pt/jfwjBHwGR+QKp6dD2qMrUWf9b7TFzYDMZXzZ2/eoIgtyjEelNBPrIgOFe24iKMjaGjd97
  fJuRcBMHdhUAxvXQF1oRtd83JvYJ5OtwTd8MgkEfl+fo7HwWkuHbzc70L4fFKv2BowqFdaHy
  mId1ijGPGr46tuZ5a4cw/zbaPYx6fJ4sK9tSv/6V1QPNUdqml6hm6pfs6A==
-Message-ID: <9152fd71-70d4-be06-6751-ad254c603e47@suse.de>
-Date:   Thu, 28 Mar 2019 21:58:26 +0800
+Message-ID: <70209af7-5948-4bfc-a3a0-06a258ad8ed9@suse.de>
+Date:   Thu, 28 Mar 2019 22:00:22 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.5.3
 MIME-Version: 1.0
-In-Reply-To: <20190328135328.GE29086@twin.jikos.cz>
+In-Reply-To: <20190328135714.GF29086@twin.jikos.cz>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -70,66 +70,38 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 2019/3/28 下午9:53, David Sterba wrote:
-> On Wed, Mar 20, 2019 at 02:37:17PM +0800, Qu Wenruo wrote:
->> @@ -5726,18 +5734,29 @@ struct inode *btrfs_lookup_dentry(struct inode *dir, struct dentry *dentry)
->>  	struct btrfs_root *root = BTRFS_I(dir)->root;
->>  	struct btrfs_root *sub_root = root;
->>  	struct btrfs_key location;
->> +	u8 di_type = 0;
->>  	int index;
->>  	int ret = 0;
->>  
->>  	if (dentry->d_name.len > BTRFS_NAME_LEN)
->>  		return ERR_PTR(-ENAMETOOLONG);
->>  
->> -	ret = btrfs_inode_by_name(dir, dentry, &location);
->> +	ret = btrfs_inode_by_name(dir, dentry, &location, &di_type);
->>  	if (ret < 0)
->>  		return ERR_PTR(ret);
->>  
->>  	if (location.type == BTRFS_INODE_ITEM_KEY) {
->>  		inode = btrfs_iget(dir->i_sb, &location, root, NULL);
->> +
->> +		/* Do extra check against inode mode with di_type */
->> +		if (btrfs_inode_type(inode) != di_type) {
->> +			btrfs_crit(fs_info,
->> +"inode mode mismatch with dir: inode mode=0%o btrfs type=%u dir type=%u",
->> +				  inode->i_mode, btrfs_inode_type(inode),
->> +				  di_type);
->> +			iput(inode);
+On 2019/3/28 下午9:57, David Sterba wrote:
+> On Thu, Mar 28, 2019 at 09:42:59PM +0800, Qu Wenruo wrote:
+>>
+>>
+>> On 2019/3/28 下午9:38, David Sterba wrote:
+>>> On Wed, Mar 20, 2019 at 02:37:16PM +0800, Qu Wenruo wrote:
+>>>> +	if (S_ISDIR(mode) && btrfs_inode_nlink(leaf, iitem) > 1) {
+>>>> +		inode_item_err(fs_info, leaf, slot,
+>>>> +			       "invalid nlink: has %u expect no more than 1 for dir",
+>>>> +			btrfs_inode_nlink(leaf, iitem));
+>>>> +		goto error;
+>>>> +	}
+>>>
+>>> I'm not sure about this check, the number of links for a directory is 1,
+>>> but the exact count could be implemented (there's a project idea for
+>>> that). I don't know if this will require an incompat bit or not.
+>>
+>> That means we have hard link for directories.
 > 
-> The iput here seems suspicious.
-
-How? this pairs to that inode = btrfs_iget() line.
-
-And as long as we hit this branch, we will return either a valid inode
-or an error pointer.
+> Yes, hard links of directories are forbidden by VFS but that's not the
+> point here:
 > 
->> +			return ERR_PTR(-EUCLEAN);
->> +		}
->>  		return inode;
->>  	}
+> https://btrfs.wiki.kernel.org/index.php/Project_ideas#Track_link_count_for_directories
 > 
-> 5792         index = srcu_read_lock(&fs_info->subvol_srcu);
-> 5793         ret = fixup_tree_root_location(fs_info, dir, dentry,
-> 5794                                        &location, &sub_root);
-> 5795         if (ret < 0) {
-> 5796                 if (ret != -ENOENT)
-> 5797                         inode = ERR_PTR(ret);
-> 5798                 else
-> 5799                         inode = new_simple_dir(dir->i_sb, &location, sub_root);
-> 5800         } else {
-> 5801                 inode = btrfs_iget(dir->i_sb, &location, sub_root, NULL);
-> 5802         }
-> 
-> The iget happens after this block so either there's another one in the caller
-> to pair, or the above iput is wrong.
+> "The link count for directories is traditionally used to count the number
+> of subdirectores iff the link count is >= 2."
 
-This block is unrelated to above (location.type == BTRFS_INODE_ITEM_KEY)
-branch.
+Oh, got it.
 
-Or did I miss something?
+But for that case, it would be much better to go for things like nbytes
+or size, as by all means, those two members are less meaningful than
+nlinks for directory.
 
 Thanks,
 Qu

@@ -2,99 +2,172 @@ Return-Path: <SRS0=ig1K=R7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2FFAAC10F06
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 21:29:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8C39FC43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 21:36:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id F27DF2184E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 21:29:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 679BD2184E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 21:36:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727207AbfC1V3x (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 Mar 2019 17:29:53 -0400
-Received: from ipmail03.adl2.internode.on.net ([150.101.137.141]:26737 "EHLO
-        ipmail03.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726393AbfC1V3x (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Mar 2019 17:29:53 -0400
-Received: from ppp59-167-129-252.static.internode.on.net (HELO dastard) ([59.167.129.252])
-  by ipmail03.adl2.internode.on.net with ESMTP; 29 Mar 2019 07:59:50 +1030
-Received: from dave by dastard with local (Exim 4.80)
-        (envelope-from <david@fromorbit.com>)
-        id 1h9caq-0008Bp-Ef; Fri, 29 Mar 2019 08:29:48 +1100
-Date:   Fri, 29 Mar 2019 08:29:48 +1100
-From:   Dave Chinner <david@fromorbit.com>
-To:     "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc:     linux-xfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-mm@kvack.org
-Subject: Re: [PATCH 3/3] xfs: don't allow most setxattr to immutable files
-Message-ID: <20190328212948.GL23020@dastard>
-References: <155379543409.24796.5783716624820175068.stgit@magnolia>
- <155379545404.24796.5019142212767521955.stgit@magnolia>
+        id S1727540AbfC1VgZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 Mar 2019 17:36:25 -0400
+Received: from mx2.suse.de ([195.135.220.15]:44242 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726611AbfC1VgZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 Mar 2019 17:36:25 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id EE591AC18;
+        Thu, 28 Mar 2019 21:36:22 +0000 (UTC)
+Subject: Re: [PATCH 5/7] fsstress: allow afsync on directories too
+To:     fdmanana@kernel.org, fstests@vger.kernel.org
+Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+References: <20190328185458.29033-1-fdmanana@kernel.org>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <97f7c0b6-2b44-803c-b0c7-8f627a42b89d@suse.com>
+Date:   Thu, 28 Mar 2019 23:36:21 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.5.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <155379545404.24796.5019142212767521955.stgit@magnolia>
-User-Agent: Mutt/1.5.21 (2010-09-15)
+In-Reply-To: <20190328185458.29033-1-fdmanana@kernel.org>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Mar 28, 2019 at 10:50:54AM -0700, Darrick J. Wong wrote:
-> From: Darrick J. Wong <darrick.wong@oracle.com>
+
+
+On 28.03.19 г. 20:54 ч., fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
 > 
-> The chattr manpage has this to say about immutable files:
+> Currently the afsync function can only be performed against regular files.
+> Allow it to operate on directories too, to increase test coverage and allow
+> for chances of finding bugs in the filesystem implementation of fsync
+> against directories.
 > 
-> "A file with the 'i' attribute cannot be modified: it cannot be deleted
-> or renamed, no link can be created to this file, most of the file's
-> metadata can not be modified, and the file can not be opened in write
-> mode."
-> 
-> However, we don't actually check the immutable flag in the setattr code,
-> which means that we can update project ids and extent size hints on
-> supposedly immutable files.  Therefore, reject a setattr call on an
-> immutable file except for the case where we're trying to unset
-> IMMUTABLE.
-> 
-> Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 > ---
->  fs/xfs/xfs_ioctl.c |    8 ++++++++
->  1 file changed, 8 insertions(+)
+>  ltp/fsstress.c | 24 ++++++++++++++++--------
+>  1 file changed, 16 insertions(+), 8 deletions(-)
 > 
-> 
-> diff --git a/fs/xfs/xfs_ioctl.c b/fs/xfs/xfs_ioctl.c
-> index 2bd1c5ab5008..9cf0bc0ae2bd 100644
-> --- a/fs/xfs/xfs_ioctl.c
-> +++ b/fs/xfs/xfs_ioctl.c
-> @@ -1067,6 +1067,14 @@ xfs_ioctl_setattr_xflags(
->  	    !capable(CAP_LINUX_IMMUTABLE))
->  		return -EPERM;
+> diff --git a/ltp/fsstress.c b/ltp/fsstress.c
+> index ffe78ef7..0fb9e399 100644
+> --- a/ltp/fsstress.c
+> +++ b/ltp/fsstress.c
+> @@ -1767,15 +1767,21 @@ afsync_f(int opno, long r)
+>  	struct iocb	iocb;
+>  	struct iocb	*iocbs[] = { &iocb };
+>  	struct io_event	event;
+> +	DIR             *dir = NULL;
 >  
-> +	/*
-> +	 * If immutable is set and we are not clearing it, we're not allowed
-> +	 * to change anything else in the inode.
-> +	 */
-> +	if ((ip->i_d.di_flags & XFS_DIFLAG_IMMUTABLE) &&
-> +	    (fa->fsx_xflags & FS_XFLAG_IMMUTABLE))
-> +		return -EPERM;
-> +
->  	/* diflags2 only valid for v3 inodes. */
->  	di_flags2 = xfs_flags2diflags2(ip, fa->fsx_xflags);
->  	if (di_flags2 && ip->i_d.di_version < 3)
+>  	init_pathname(&f);
+> -	if (!get_fname(FT_REGFILE, r, &f, NULL, NULL, &v)) {
+> +	if (!get_fname(FT_REGFILE | FT_DIRm, r, &f, NULL, NULL, &v)) {
 
-Looks fine - catches both FS_IOC_SETFLAGS and FS_IOC_FSSETXATTR
-for XFS.
+s/FT_DIRm/FT_DIR/
 
-Do the other filesystems that implement FS_IOC_FSSETXATTR have
-the same bug?
-
-Cheers,
-
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+>  		if (v)
+>  			printf("%d/%d: afsync - no filename\n", procid, opno);
+>  		free_pathname(&f);
+>  		return;
+>  	}
+>  	fd = open_path(&f, O_WRONLY | O_DIRECT);
+> +	if (fd < 0 && errno == EISDIR) {
+> +		dir = opendir_path(&f);
+> +		if (dir)
+> +			fd = dirfd(dir);
+> +	}
+>  	e = fd < 0 ? errno : 0;
+>  	check_cwd();
+>  	if (fd < 0) {
+> @@ -1783,6 +1789,8 @@ afsync_f(int opno, long r)
+>  			printf("%d/%d: afsync - open %s failed %d\n",
+>  			       procid, opno, f.path, e);
+>  		free_pathname(&f);
+> +		if (dir)
+> +			closedir(dir);
+>  		return;
+>  	}
+>  
+> @@ -1791,24 +1799,24 @@ afsync_f(int opno, long r)
+>  		if (v)
+>  			printf("%d/%d: afsync - io_submit %s %d\n",
+>  			       procid, opno, f.path, e);
+> -		free_pathname(&f);
+> -		close(fd);
+> -		return;
+> +		goto out;
+>  	}
+>  	if ((e = io_getevents(io_ctx, 1, 1, &event, NULL)) != 1) {
+>  		if (v)
+>  			printf("%d/%d: afsync - io_getevents failed %d\n",
+>  			       procid, opno, e);
+> -		free_pathname(&f);
+> -		close(fd);
+> -		return;
+> +		goto out;
+>  	}
+>  
+>  	e = event.res2;
+>  	if (v)
+>  		printf("%d/%d: afsync %s %d\n", procid, opno, f.path, e);
+> +out:
+>  	free_pathname(&f);
+> -	close(fd);
+> +	if (dir)
+> +		closedir(dir);
+> +	else
+> +		close(fd);
+>  #endif
+>  }
+>  
+> 

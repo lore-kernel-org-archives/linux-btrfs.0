@@ -2,304 +2,157 @@ Return-Path: <SRS0=ig1K=R7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED,
-	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1D3CBC43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 14:53:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E89DBC43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 15:10:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D52BB217F9
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 14:53:18 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="VJXRCwBL"
+	by mail.kernel.org (Postfix) with ESMTP id BFA4320823
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 15:10:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726453AbfC1OxR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 Mar 2019 10:53:17 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:58508 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725939AbfC1OxR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Mar 2019 10:53:17 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x2SEcXMN070314;
-        Thu, 28 Mar 2019 14:53:11 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
- : subject : message-id : references : mime-version : content-type :
- in-reply-to; s=corp-2018-07-02;
- bh=LLNtWGl6LgDWkUtOapWPE7lu8/l5VYX6HhNdJzvMlFc=;
- b=VJXRCwBLW86lQQB/HAyAWMlOM7KXVFABNi3zcH6VaUN60KDl2yEgmHINrhVD6so4Grvc
- GQ6Q+rfQcD7Q5EQ8c/Ku3O6wjvYJ21jkMznJ6Aog69g2C/5H0C3tV0BoZdzxjssNklN+
- LOSLq7X4wYt5wOe4gVO7B97UVvGmxRK1I9zCIbzpU1BFMS+/83vGYw7tETccZ7BbTDju
- QpaZBK8yqJx1qJUb+Z45sg6YrZHX5scEw+OV9VEj/5+hgQL7RRPxME8aidukQplvan23
- uSV9lnbmAQNsfVJvK2rGRUOHgU8wpQdvJKyro2YDGOk1xu24STJH13gfU9YAnlTfoIrY uA== 
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by userp2120.oracle.com with ESMTP id 2re6djq5rh-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 28 Mar 2019 14:53:11 +0000
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id x2SEr9jV005722
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 28 Mar 2019 14:53:10 GMT
-Received: from abhmp0016.oracle.com (abhmp0016.oracle.com [141.146.116.22])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x2SEr9jH030937;
-        Thu, 28 Mar 2019 14:53:09 GMT
-Received: from localhost (/67.169.218.210)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 28 Mar 2019 07:53:08 -0700
-Date:   Thu, 28 Mar 2019 07:53:07 -0700
-From:   "Darrick J. Wong" <darrick.wong@oracle.com>
-To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc:     linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: Re: [PATCH 07/15] btrfs: add dax write support
-Message-ID: <20190328145307.GD1172@magnolia>
-References: <20190326190301.32365-1-rgoldwyn@suse.de>
- <20190326190301.32365-8-rgoldwyn@suse.de>
+        id S1726235AbfC1PKr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 Mar 2019 11:10:47 -0400
+Received: from mx2.suse.de ([195.135.220.15]:54544 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725816AbfC1PKr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 Mar 2019 11:10:47 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id A8E72AC94
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Mar 2019 15:10:45 +0000 (UTC)
+Subject: Re: [PATCH 1/7] btrfs: Preallocate chunks in cow_file_range_async
+To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <20190312152030.31987-1-nborisov@suse.com>
+ <20190312152030.31987-2-nborisov@suse.com>
+ <20190327172308.GA29086@twin.jikos.cz>
+ <04687d49-6642-54bf-1a8f-18f6b54465a0@suse.com>
+ <20190328141118.GI29086@twin.jikos.cz>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <fb80bc17-9cf2-cee3-3c16-4075a36cc78a@suse.com>
+Date:   Thu, 28 Mar 2019 17:10:39 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.5.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190326190301.32365-8-rgoldwyn@suse.de>
-User-Agent: Mutt/1.9.4 (2018-02-28)
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9208 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
- suspectscore=2 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
- lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
- definitions=main-1903280100
+In-Reply-To: <20190328141118.GI29086@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Mar 26, 2019 at 02:02:53PM -0500, Goldwyn Rodrigues wrote:
-> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+
+
+On 28.03.19 г. 16:11 ч., David Sterba wrote:
+> On Thu, Mar 28, 2019 at 02:49:30PM +0200, Nikolay Borisov wrote:
+>>
+>>
+>> On 27.03.19 г. 19:23 ч., David Sterba wrote:
+>>> On Tue, Mar 12, 2019 at 05:20:24PM +0200, Nikolay Borisov wrote:
+>>>> @@ -1190,45 +1201,71 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
+>>>>  				unsigned int write_flags)
+>>>>  {
+>>>>  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+>>>> -	struct async_cow *async_cow;
+>>>> +	struct async_cow *ctx;
+>>>> +	struct async_chunk *async_chunk;
+>>>>  	unsigned long nr_pages;
+>>>>  	u64 cur_end;
+>>>> +	u64 num_chunks = DIV_ROUND_UP(end - start, SZ_512K);
+>>>> +	int i;
+>>>> +	bool should_compress;
+>>>>  
+>>>>  	clear_extent_bit(&BTRFS_I(inode)->io_tree, start, end, EXTENT_LOCKED,
+>>>>  			 1, 0, NULL);
+>>>> -	while (start < end) {
+>>>> -		async_cow = kmalloc(sizeof(*async_cow), GFP_NOFS);
+>>>> -		BUG_ON(!async_cow); /* -ENOMEM */
+>>>> +
+>>>> +	if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS &&
+>>>> +	    !btrfs_test_opt(fs_info, FORCE_COMPRESS)) {
+>>>> +		num_chunks = 1;
+>>>> +		should_compress = false;
+>>>> +	} else {
+>>>> +		should_compress = true;
+>>>> +	}
+>>>> +
+>>>> +	ctx = kmalloc(struct_size(ctx, chunks, num_chunks), GFP_NOFS);
+>>>
+>>> This leads to OOM due to high order allocation. And this is worse than
+>>> the previous state, where there are many small allocation that could
+>>> potentially fail (but most likely will not due to GFP_NOSF and size <
+>>> PAGE_SIZE).
+>>>
+>>> So this needs to be reworked to avoid the costly allocations or reverted
+>>> to the previous state.
+>>
+>> Right, makes sense. In order to have a simplified submission logic I
+>> think to rework the allocation to have a loop that allocates a single
+>> item for every chunk or alternatively switch to using kvmalloc? I think
+>> the fact that vmalloced memory might not be contiguous is not critical
+>> for the metadata structures in this case?
 > 
-> IOMAP_F_COW allows to inform the dax code, to first perform
-> a copy which are not page-aligned before performing the write.
+> kvmalloc would work here, though there is some overhead involved
+> compared to bare kmalloc (the mappings). As the call happens on writeout
+> path, I'd be cautious about unnecessary overhead.
 > 
-> A new struct btrfs_iomap is passed from iomap_begin() to
-> iomap_end(), which contains all the accounting and locking information
-> for CoW based writes.
-> 
-> For writing to a hole, iomap->cow_addr is set to zero. Would this
-> be better handled by a flag or can a valid filesystem block be at
-> offset zero of the device?
-> 
-> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> ---
->  fs/btrfs/ctree.h |   6 +++
->  fs/btrfs/dax.c   | 119 +++++++++++++++++++++++++++++++++++++++++++++++++++++--
->  fs/btrfs/file.c  |   4 +-
->  3 files changed, 124 insertions(+), 5 deletions(-)
-> 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index a3543a4a063d..3bcd2a4959c1 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -3801,6 +3801,12 @@ int btree_readahead_hook(struct extent_buffer *eb, int err);
->  #ifdef CONFIG_FS_DAX
->  /* dax.c */
->  ssize_t btrfs_file_dax_read(struct kiocb *iocb, struct iov_iter *to);
-> +ssize_t btrfs_file_dax_write(struct kiocb *iocb, struct iov_iter *from);
-> +#else
-> +static inline ssize_t btrfs_file_dax_write(struct kiocb *iocb, struct iov_iter *from)
-> +{
-> +	return 0;
-> +}
->  #endif /* CONFIG_FS_DAX */
->  
->  static inline int is_fstree(u64 rootid)
-> diff --git a/fs/btrfs/dax.c b/fs/btrfs/dax.c
-> index bf3d46b0acb6..49619fe3f94f 100644
-> --- a/fs/btrfs/dax.c
-> +++ b/fs/btrfs/dax.c
-> @@ -9,30 +9,124 @@
->  #ifdef CONFIG_FS_DAX
->  #include <linux/dax.h>
->  #include <linux/iomap.h>
-> +#include <linux/uio.h>
->  #include "ctree.h"
->  #include "btrfs_inode.h"
->  
-> +struct btrfs_iomap {
-> +	u64 start;
-> +	u64 end;
-> +	int nocow;
-> +	struct extent_changeset *data_reserved;
-> +	struct extent_state *cached_state;
-> +};
-> +
->  static int btrfs_iomap_begin(struct inode *inode, loff_t pos,
->  		loff_t length, unsigned flags, struct iomap *iomap)
->  {
->  	struct extent_map *em;
->  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-> +
->  	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, pos, length, 0);
-> +
-> +	if (flags & IOMAP_WRITE) {
-> +		int ret = 0, nocow;
-> +		struct extent_map *map = em;
-> +		struct btrfs_iomap *bi;
+> If looping over the range works, then we can allocate the largest size
+> that does not require kvmalloc (PAGE_ALLOC_COSTLY_ORDER) and then reuse
+> it for each iteration.
 
-Please consider breaking this up into a separate helper before the
-btrfs_iomap_begin function becomes long and hard to read like the xfs
-one did.  :)
+I'm afraid I don't understand your hybrid suggestion. Ie something along 
+the lines of : 
 
-(Granted people also seem to dislike scrolling back and forth...)
+if (struct_size(ctx, chunks, num_chunks) < ((2 << PAGE_ALLOC_COSTLY_ORDER) * PAGE_SIZE))  {
+     use kmalloc
+} else { 
 
-> +
-> +		bi = kzalloc(sizeof(struct btrfs_iomap), GFP_NOFS);
-> +		if (!bi)
-> +			return -ENOMEM;
-> +
-> +		bi->start = round_down(pos, PAGE_SIZE);
-> +		bi->end = round_up(pos + length, PAGE_SIZE);
-> +
-> +		iomap->private = bi;
-> +
-> +		/* Wait for existing ordered extents in range to finish */
-> +		btrfs_wait_ordered_range(inode, bi->start, bi->end - bi->start);
-> +
-> +		lock_extent_bits(&BTRFS_I(inode)->io_tree, bi->start, bi->end, &bi->cached_state);
-> +
-> +		ret = btrfs_delalloc_reserve_space(inode, &bi->data_reserved,
-> +				bi->start, bi->end - bi->start);
-> +		if (ret) {
-> +			unlock_extent_cached(&BTRFS_I(inode)->io_tree, bi->start, bi->end,
-> +					&bi->cached_state);
-> +			kfree(bi);
-> +			return ret;
-> +		}
-> +
-> +		refcount_inc(&map->refs);
-> +		ret = btrfs_get_extent_map_write(&em, NULL,
-> +				inode, bi->start, bi->end - bi->start, &nocow);
-> +		if (ret) {
-> +			unlock_extent_cached(&BTRFS_I(inode)->io_tree, bi->start, bi->end,
-> +					&bi->cached_state);
-> +			btrfs_delalloc_release_space(inode,
-> +					bi->data_reserved, bi->start,
-> +					bi->end - bi->start, true);
-> +			extent_changeset_free(bi->data_reserved);
-> +			kfree(bi);
-> +			return ret;
-> +		}
-> +		if (!nocow) {
-> +			iomap->flags |= IOMAP_F_COW;
-> +			if (map->block_start != EXTENT_MAP_HOLE) {
-> +				iomap->cow_addr = map->block_start;
-> +				iomap->cow_pos = map->start;
+????
+}
 
-Oh, I see, cow_pos exists because the extent we're copying from and the
-extent we're copying into are not necessarily going to be positioned at
-the same file offset and (I guess) it's possible that the source range
-could be partially sparse given the destination range?
-
-Hmm, no, the previous patch doesn't account for that; it only seems to
-know how to handle @cow_pos < @offset.  In that case, why not trim the
-cow_* map to @offset?
-
---D
-
-> +			}
-> +		} else {
-> +			bi->nocow = 1;
-> +		}
-> +		free_extent_map(map);
-> +	}
-> +
-> +	iomap->offset = em->start;
-> +	iomap->length = em->len;
-> +	iomap->bdev = em->bdev;
-> +	iomap->dax_dev = fs_info->dax_dev;
-> +
->  	if (em->block_start == EXTENT_MAP_HOLE) {
->  		iomap->type = IOMAP_HOLE;
->  		return 0;
->  	}
-> +
->  	iomap->type = IOMAP_MAPPED;
-> -	iomap->bdev = em->bdev;
-> -	iomap->dax_dev = fs_info->dax_dev;
-> -	iomap->offset = em->start;
-> -	iomap->length = em->len;
->  	iomap->addr = em->block_start;
->  	return 0;
->  }
->  
-> +static int btrfs_iomap_end(struct inode *inode, loff_t pos,
-> +		loff_t length, ssize_t written, unsigned flags,
-> +		struct iomap *iomap)
-> +{
-> +	struct btrfs_iomap *bi = iomap->private;
-> +	u64 wend;
-> +
-> +	if (!bi)
-> +		return 0;
-> +
-> +	unlock_extent_cached(&BTRFS_I(inode)->io_tree, bi->start, bi->end,
-> +			&bi->cached_state);
-> +
-> +	wend = round_up(pos + written, PAGE_SIZE);
-> +	if (wend < bi->end) {
-> +		btrfs_delalloc_release_space(inode,
-> +				bi->data_reserved, wend,
-> +				bi->end - wend, true);
-> +	}
-> +
-> +	btrfs_update_ordered_extent(inode, bi->start, wend - bi->start, true);
-> +	btrfs_delalloc_release_extents(BTRFS_I(inode), wend - bi->start, false);
-> +	extent_changeset_free(bi->data_reserved);
-> +	kfree(bi);
-> +	return 0;
-> +}
-> +
->  static const struct iomap_ops btrfs_iomap_ops = {
->  	.iomap_begin		= btrfs_iomap_begin,
-> +	.iomap_end		= btrfs_iomap_end,
->  };
->  
->  ssize_t btrfs_file_dax_read(struct kiocb *iocb, struct iov_iter *to)
-> @@ -46,4 +140,21 @@ ssize_t btrfs_file_dax_read(struct kiocb *iocb, struct iov_iter *to)
->  
->  	return ret;
->  }
-> +
-> +ssize_t btrfs_file_dax_write(struct kiocb *iocb, struct iov_iter *iter)
-> +{
-> +	ssize_t ret = 0;
-> +	u64 pos = iocb->ki_pos;
-> +	struct inode *inode = file_inode(iocb->ki_filp);
-> +
-> +	ret = dax_iomap_rw(iocb, iter, &btrfs_iomap_ops);
-> +
-> +	if (ret > 0) {
-> +		pos += ret;
-> +		if (pos > i_size_read(inode))
-> +			i_size_write(inode, pos);
-> +		iocb->ki_pos = pos;
-> +	}
-> +	return ret;
-> +}
->  #endif /* CONFIG_FS_DAX */
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index b620f4e718b2..3b320d0ab495 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -1964,7 +1964,9 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
->  	if (sync)
->  		atomic_inc(&BTRFS_I(inode)->sync_writers);
->  
-> -	if (iocb->ki_flags & IOCB_DIRECT) {
-> +	if (IS_DAX(inode)) {
-> +		num_written = btrfs_file_dax_write(iocb, from);
-> +	} else if (iocb->ki_flags & IOCB_DIRECT) {
->  		num_written = __btrfs_direct_write(iocb, from);
->  	} else {
->  		num_written = btrfs_buffered_write(iocb, from);
-> -- 
-> 2.16.4
 > 

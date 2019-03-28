@@ -2,82 +2,122 @@ Return-Path: <SRS0=ig1K=R7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 318AFC43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 17:27:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3D5ACC43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 17:49:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 09B572173C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 17:27:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1716E20823
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 17:49:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726076AbfC1R1Q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 Mar 2019 13:27:16 -0400
-Received: from mx2.suse.de ([195.135.220.15]:39754 "EHLO mx1.suse.de"
+        id S1726293AbfC1Rto (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 Mar 2019 13:49:44 -0400
+Received: from mx2.suse.de ([195.135.220.15]:56926 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725816AbfC1R1P (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Mar 2019 13:27:15 -0400
+        id S1726034AbfC1Rto (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 Mar 2019 13:49:44 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 821BEAB98;
-        Thu, 28 Mar 2019 17:27:14 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 11AB3ABE1;
+        Thu, 28 Mar 2019 17:49:43 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 4EC00DA911; Thu, 28 Mar 2019 18:28:25 +0100 (CET)
-Date:   Thu, 28 Mar 2019 18:28:25 +0100
+        id 6C5D3DA911; Thu, 28 Mar 2019 18:50:49 +0100 (CET)
+Date:   Thu, 28 Mar 2019 18:50:47 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc:     linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: Re: [PATCH 01/15] btrfs: create a mount option for dax
-Message-ID: <20190328172825.GQ29086@twin.jikos.cz>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] fstests: btrfs try use forget to unregister device
+Message-ID: <20190328175047.GR29086@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Goldwyn Rodrigues <rgoldwyn@suse.de>,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>
-References: <20190326190301.32365-1-rgoldwyn@suse.de>
- <20190326190301.32365-2-rgoldwyn@suse.de>
+Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
+        fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+References: <1552988980-25710-1-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190326190301.32365-2-rgoldwyn@suse.de>
+In-Reply-To: <1552988980-25710-1-git-send-email-anand.jain@oracle.com>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Mar 26, 2019 at 02:02:47PM -0500, Goldwyn Rodrigues wrote:
-> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+On Tue, Mar 19, 2019 at 05:49:40PM +0800, Anand Jain wrote:
+> btrfs module reload was introduced to unregister devices in the btrfs
+> kernel module.
 > 
-> This sets S_DAX in inode->i_flags, which can be used with
-> IS_DAX().
+> The problem with the module reload approach is that you can't run btrfs
+> test cases 124, 125, 154 and 164 on the system with btrfs as root fs.
 > 
-> The dax option is restricted to non multi-device mounts.
-> dax interacts with the device directly instead of using bio, so
-> all bio-hooks which we use for multi-device cannot be performed
-> here. While regular read/writes could be manipulated with
-> RAID0/1, mmap() is still an issue.
+> Patches [1] introduced btrfs forget feature which lets to cleanup the
+> kernel device list without kernel module reload.
+> 
+>  [1]
+>  btrfs-progs: add cli to forget one or all scanned devices
 
-I'm looking for other features that would not work with dax. Disabling
-multiple devices strikes out device add, device delete and device
-replace.
+The subject lines was changed to "btrfs-progs: device scan: add new
+option to forget one or all scanned devices"
 
-To be verified:
+>  btrfs: introduce new ioctl to unregister a btrfs device
 
-- balance - at least profile changes must be forbidden
+> So this patch uses forget feature instead of kernel module reload, if
+> the forget feature is available.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+>  common/btrfs    | 20 ++++++++++++++++++++
+>  tests/btrfs/124 |  6 +++---
+>  tests/btrfs/125 |  6 +++---
+>  tests/btrfs/154 |  6 +++---
+>  tests/btrfs/164 |  4 ++--
+>  5 files changed, 31 insertions(+), 11 deletions(-)
+> 
+> diff --git a/common/btrfs b/common/btrfs
+> index f6513c06f95f..e94e011db04e 100644
+> --- a/common/btrfs
+> +++ b/common/btrfs
+> @@ -382,3 +382,23 @@ _scratch_btrfs_sectorsize()
+>  	$BTRFS_UTIL_PROG inspect-internal dump-super $SCRATCH_DEV |\
+>  		grep sectorsize | awk '{print $2}'
+>  }
+> +
+> +_btrfs_supports_forget()
+> +{
+> +	$BTRFS_UTIL_PROG device scan --help | grep -wq forget && \
+> +		$BTRFS_UTIL_PROG device scan --forget > /dev/null 2>&1
 
-- defrag
+The second part actually unregisters all devices, is there some more
+lightweight way to detect the support? Like providing a valid block
+device but without btrfs. If the ioctl is supported, then it returns
+-ENOENT and if not supported then -EOPNOTSUPP.
 
-- compression - as it needs COW, it won't work on the nodatacow files,
-  thus seems to be ok
+> +}
+> +
+> +_require_btrfs_forget_if_not_fs_loadable()
 
-- resize/grow - this could work without changes, no block relocation is
-  needed, only new structures created
+_require_btrfs_forget_or_module_loadable
 
-- resize/shrink - depends on balance, the block groups from the removed
-  area need to be relocated
+We don't want to load the filesystem but the kernel module.
 
-- swapfiles - I'm sure somebody will try that; I haven't seen any
-  IS_DAX checks in the swapfile activation code
+> +{
+> +	_btrfs_supports_forget && return
 
+Why is the 'return' here? If the first command succeeds, then &&
+proceeds to return that does implicitli returns 0. So it's redundant, or
+I'm missing something subtle here.
+
+> +
+> +	_require_loadable_fs_module "btrfs"
+> +}
+> +
+> +_btrfs_forget_if_not_fs_reload()
+
+Same naming
+
+> +{
+> +	_btrfs_supports_forget && return
+> +
+> +	_reload_fs_module "btrfs"
+> +}

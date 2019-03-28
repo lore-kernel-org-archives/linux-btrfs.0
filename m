@@ -2,156 +2,148 @@ Return-Path: <SRS0=ig1K=R7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 803EDC43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 23:17:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9113EC43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 23:38:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4C6CF2173C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 23:17:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 47BCA2075E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 23:38:57 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="kEinTa9L"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728547AbfC1XRK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 Mar 2019 19:17:10 -0400
-Received: from mx2.suse.de ([195.135.220.15]:33790 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728544AbfC1XRK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Mar 2019 19:17:10 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 2EB38ADDB
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Mar 2019 23:17:08 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 6E52FDA911; Fri, 29 Mar 2019 00:18:19 +0100 (CET)
-Date:   Fri, 29 Mar 2019 00:18:19 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v4 00/15] FITRIM improvement
-Message-ID: <20190328231818.GS29086@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20190327122418.24027-1-nborisov@suse.com>
+        id S1728548AbfC1Xi4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 Mar 2019 19:38:56 -0400
+Received: from mout.gmx.net ([212.227.15.19]:37095 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1728038AbfC1Xi4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 Mar 2019 19:38:56 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1553816325;
+        bh=6sJ8IH10m5Q7QAXFsUCEA4cdt+wpwX47dLpHasDSDH4=;
+        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
+        b=kEinTa9LhssL8hO2oHuDqKHwespNrlAp7KMfwcD7KZk2NF59vEBuUwVSpsdRx41Hd
+         AlmVWrrFTgWcM/gBGDA43CoQvqf3G5ytG5GwjQvFOwXw6FB8je1Ds3OZT/2BvsUSne
+         Pl9/VD1SNEXfpJAs48pzse0OiyaJA7iJRCbFI7bk=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx001
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0MHoWj-1h64dd07C9-003eJA; Fri, 29
+ Mar 2019 00:38:45 +0100
+Subject: Re: [PATCH 1/3] btrfs: tree-checker: Verify chunk items
+To:     dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+        Yoon Jungyeon <jungyeon@gatech.edu>
+References: <20190308072929.30863-1-wqu@suse.com>
+ <20190308072929.30863-2-wqu@suse.com>
+ <913bed07-e9a0-14ed-1602-e4a5f206e303@suse.com>
+ <95e0667a-0004-bec0-03c3-1708ab013320@gmx.com>
+ <20190328165843.GP29086@twin.jikos.cz>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <5b9860cc-608b-3133-013d-a723dee07f7e@gmx.com>
+Date:   Fri, 29 Mar 2019 07:38:37 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.5.3
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190327122418.24027-1-nborisov@suse.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+In-Reply-To: <20190328165843.GP29086@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:6VY+VfUBJK76lGaYvXo9CQUT2Jyghww0JQS9ytGcjNjI/NVIwW0
+ PhPJ0251N7issNWZC1HA3Gop6/8jn3dt4jkJgF/YPpsN7U07zwKNdnhaWa1Zbm3vJBgnxbu
+ WVC2caG8TzGL9cAX0oSZ9bvApaxL6EfEM/QhQqXdN9fHlbTBh8gE2CXd8DXVbUoEooWL/Uo
+ NyUfc0vueEsXcbkEIhKFw==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:997V4LYXMt8=:dDVfW2p6TmpDEbQVrVfz/f
+ 3ud98IWw3N8D2TSXI3KXid+z4917Mng7zTkET0fwSY83B6qjQdnSMc1OTNd5MtZ0Cn4gm9sKn
+ 7IK+JP9gOZqk/hzI1q22Ss013aMbEUpoCBpKoUA1um9MI3fnrO6co2efZJhLry/cSs+XZMKZC
+ X1gcSD2f50OsRSxcP0251AzpNa5zgtz/DPtDKQDnZloP0YafKn0byD53f0gDj4hatQ/o9Dw2v
+ Ua5ndRqNoMlOi28+lhjHeufDXdmcoRhWVDBBOx4Te1GNcODe8UitliXxBuIbYO9Rnsc47zDhW
+ G/mH70PgmOIccwaHfnuDQmyTr9p+YqVoGiXkmrJ3ImTCUYHgynKaIEkDTsq+Mk0fHdoQx6sAJ
+ 8feImTihexvZQsdDOP6TlGkIG1JlBYM4vlk0GvOhfUluLPDIsTAZflaHCgeiTkve8G9tbGEho
+ UKdi7+bUjSyq7SnqJbJ+Crw7WyEeAsKcsfh73P/ZHB3VBZIaNa8Z9E/WzPhWdFTl582ncTjxC
+ yMSvbXwkmZmC3koE7DXOg3M6fKiX5dSyP4290V0sJXH4+fd9Hd66msVkXxYXXO1Rjc8q58TXb
+ 8wHp8bKvf3K55gQrFzccjMe/1mTbNlz+bTUDWDFKHyUUzU89Mfgiehg4fHdCDMpk8ZoiYlvMz
+ WsPEh7icPPCISka4mQ3vldBdclWA+JhDpAtKI0ZLaBv+eg7+d2EsV7fL3PB/aB37bWP1dJG/N
+ IJfWw1eh43TL7twjFzxA0233i6mNakkVLZOn+j0syRtANAjIN6D5ON/F4VWOxu1doktfA1QWq
+ 8Nh9xvocgm11rU8WrZIG2PPgv2fY4mEqXHeSl99OZDmk05oZUTjHmvphQz6RzR1jRXFOOGzDV
+ 5q7SpvF7bLp5cx8tgF12rSn9U9lvYbfq3ozo4VXo8I60x3Z0iLFY1neChYJBVfWtbCaj8tWfX
+ XYiTldZMvdQ==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Mar 27, 2019 at 02:24:03PM +0200, Nikolay Borisov wrote:
-> Here is the (hopefully final) v4 of the fitrim patches. Main changes since v3:
 
-Nope, tests don't like it. It's v4 applied from mails on top of misc-next.
 
-generic/475             [20:36:10][11571.724402] run fstests generic/475 at 2019-03-28 20:36:10
-[11572.257044] BTRFS: device fsid 207b6d9b-30c3-4a78-a932-d18e37fbaa69 devid 1 transid 5 /dev/vdb
-[11572.331653] BTRFS info (device dm-0): disk space caching is enabled
-[11572.335242] BTRFS info (device dm-0): has skinny extents
-[11572.338687] BTRFS info (device dm-0): flagging fs with big metadata feature
-[11572.413065] BTRFS info (device dm-0): checking UUID tree
-[11574.472606] btrfs_dev_stat_print_on_error: 5 callbacks suppressed
-[11574.472609] BTRFS error (device dm-0): bdev /dev/mapper/error-test errs: wr 1, rd 0, flush 0, corrupt 0, gen 0
-[11574.476507] BTRFS error (device dm-0): bdev /dev/mapper/error-test errs: wr 2, rd 0, flush 0, corrupt 0, gen 0
-[11574.479492] BTRFS error (device dm-0): bdev /dev/mapper/error-test errs: wr 3, rd 0, flush 0, corrupt 0, gen 0
-[11574.484811] BTRFS error (device dm-0): bdev /dev/mapper/error-test errs: wr 4, rd 0, flush 0, corrupt 0, gen 0
-[11574.487569] BTRFS error (device dm-0): bdev /dev/mapper/error-test errs: wr 5, rd 0, flush 0, corrupt 0, gen 0
-[11574.489844] BTRFS error (device dm-0): bdev /dev/mapper/error-test errs: wr 5, rd 1, flush 0, corrupt 0, gen 0
-[11574.490393] BTRFS error (device dm-0): bdev /dev/mapper/error-test errs: wr 6, rd 1, flush 0, corrupt 0, gen 0
-[11574.495548] BTRFS error (device dm-0): bdev /dev/mapper/error-test errs: wr 7, rd 1, flush 0, corrupt 0, gen 0
-[11574.497559] BTRFS error (device dm-0): bdev /dev/mapper/error-test errs: wr 8, rd 1, flush 0, corrupt 0, gen 0
-[11574.500054] BTRFS error (device dm-0): bdev /dev/mapper/error-test errs: wr 9, rd 1, flush 0, corrupt 0, gen 0
-[11574.504700] BTRFS: error (device dm-0) in btrfs_commit_transaction:2226: errno=-5 IO failure (Error while writing out transaction)
-[11574.506372] BTRFS info (device dm-0): forced readonly
-[11574.507063] BTRFS warning (device dm-0): Skipping commit of aborted transaction.
-[11574.508360] BTRFS: error (device dm-0) in cleanup_transaction:1795: errno=-5 IO failure
-[11574.509641] BTRFS info (device dm-0): delayed_refs has NO entry
-[11574.510589] BTRFS warning (device dm-0): Skipping commit of aborted transaction.
-[11574.512075] BTRFS: error (device dm-0) in cleanup_transaction:1795: errno=-5 IO failure
-[11574.515481] BTRFS info (device dm-0): delayed_refs has NO entry
-[11574.845098] BTRFS info (device dm-0): disk space caching is enabled
-[11574.850062] BTRFS info (device dm-0): has skinny extents
-[11574.890143] BTRFS info (device dm-0): checking UUID tree
-[11575.962905] BTRFS: error (device dm-0) in btrfs_commit_transaction:2226: errno=-5 IO failure (Error while writing out transaction)
-[11575.968652] BTRFS info (device dm-0): forced readonly
-[11575.970188] BTRFS warning (device dm-0): Skipping commit of aborted transaction.
-[11575.972000] BTRFS: error (device dm-0) in cleanup_transaction:1795: errno=-5 IO failure
-[11575.973891] BTRFS info (device dm-0): delayed_refs has NO entry
-[11576.217136] BTRFS info (device dm-0): disk space caching is enabled
-[11576.218844] BTRFS info (device dm-0): has skinny extents
-[11576.227769] BTRFS warning (device dm-0): block group 30408704 has wrong amount of free space
-[11576.230266] BTRFS warning (device dm-0): failed to load free space cache for block group 30408704, rebuilding it now
-[11576.260681] BTRFS error (device dm-0): error reading free space cache
-[11576.260832] BUG: unable to handle kernel paging request at fffffffffffffffb
-[11576.262301] BTRFS warning (device dm-0): failed to load free space cache for block group 1104150528, rebuilding it now
-[11576.265687] #PF error: [normal kernel read fault]
-[11576.265690] PGD 2b016067 P4D 2b016067 PUD 2b018067 PMD 0
-[11576.265696] Oops: 0000 [#1] PREEMPT SMP
-[11576.265700] CPU: 0 PID: 25594 Comm: fsstress Not tainted 5.1.0-rc2-default+ #531
-[11576.265702] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.12.0-0-ga698c89-prebuilt.qemu.org 04/01/2014
-[11576.265753] RIP: 0010:btrfs_lookup_dentry+0x4ce/0x5d0 [btrfs]
-[11576.265756] Code: 4c 63 f8 85 c0 0f 88 90 fb ff ff 80 7d ae 01 0f 85 8c fc ff ff 48 8b 7b 28 45 31 c0 31 c9 4c 89 f2 48 8d 75 a6 e8 e2 f0 ff ff <0f> b7 38 49 89 c7 e8 c7 01 e9 d2 3a 45 98 0f 84 5d fb ff ff 41
-[11576.271036] BTRFS: error (device dm-0) in __btrfs_free_extent:7103: errno=-5 IO failure
-[11576.271144] RSP: 0018:ffffa82cc3fe7db8 EFLAGS: 00010292
-[11576.271149] RAX: fffffffffffffffb RBX: ffff94f41ea66218 RCX: 0000001603c56600
-[11576.273851] BTRFS info (device dm-0): forced readonly
-[11576.274694] RDX: 0000000000000011 RSI: ffff94f41ea63ed8 RDI: ffffffff930dacb4
-[11576.274696] RBP: ffffa82cc3fe7e40 R08: 0000000000000001 R09: fffffffffffffffb
-[11576.274698] R10: 0000000000000000 R11: ffff94f46f36a910 R12: ffff94f414e94500
-[11576.275912] BTRFS: error (device dm-0) in btrfs_run_delayed_refs:3001: errno=-5 IO failure
-[11576.278115] R13: ffff94f474880000 R14: ffff94f403833000 R15: ffff94f4563eaa10
-[11576.278117] FS:  00007ff34f4f4b80(0000) GS:ffff94f47d400000(0000) knlGS:0000000000000000
-[11576.278121] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[11576.278123] CR2: fffffffffffffffb CR3: 000000001f60c000 CR4: 00000000000006f0
-[11576.299608] Call Trace:
-[11576.300463]  btrfs_lookup+0xe/0x30 [btrfs]
-[11576.301666]  __lookup_hash+0x6b/0x90
-[11576.302748]  filename_create+0xa9/0x180
-[11576.303865]  do_mkdirat+0x53/0xf0
-[11576.304844]  do_syscall_64+0x54/0x180
-[11576.305924]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
-[11576.307131] RIP: 0033:0x7ff34f5e5307
-[11576.307952] Code: 1f 40 00 48 8b 05 91 eb 0c 00 64 c7 00 5f 00 00 00 b8 ff ff ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 66 90 b8 53 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 8b 0d 61 eb 0c 00 f7 d8 64 89 01
-[11576.311502] RSP: 002b:00007fff14fd0a98 EFLAGS: 00000206 ORIG_RAX: 0000000000000053
-[11576.313415] RAX: ffffffffffffffda RBX: 0000000000000014 RCX: 00007ff34f5e5307
-[11576.314809] RDX: 0000000000000000 RSI: 00000000000001ff RDI: 00000000004153d0
-[11576.316224] RBP: 00007fff14fd0bf0 R08: fefefefefefefeff R09: fefefefefeff3263
-[11576.318087] R10: 0000000000000000 R11: 0000000000000206 R12: 00000000000001ff
-[11576.319955] R13: 0000000000405390 R14: 0000000000000000 R15: 0000000000000000
-[11576.321746] Modules linked in: dm_thin_pool dm_persistent_data dm_bio_prison dm_snapshot dm_bufio btrfs libcrc32c xor zstd_decompress zstd_compress xxhash raid6_pq dm_flakey dm_mod loop [last unloaded: scsi_d
-[11576.325773] CR2: fffffffffffffffb
-[11576.326498] ---[ end trace fe71251c3619f317 ]---
-[11576.327514] RIP: 0010:btrfs_lookup_dentry+0x4ce/0x5d0 [btrfs]
-[11576.328841] Code: 4c 63 f8 85 c0 0f 88 90 fb ff ff 80 7d ae 01 0f 85 8c fc ff ff 48 8b 7b 28 45 31 c0 31 c9 4c 89 f2 48 8d 75 a6 e8 e2 f0 ff ff <0f> b7 38 49 89 c7 e8 c7 01 e9 d2 3a 45 98 0f 84 5d fb ff ff 41
-[11576.332993] RSP: 0018:ffffa82cc3fe7db8 EFLAGS: 00010292
-[11576.334430] RAX: fffffffffffffffb RBX: ffff94f41ea66218 RCX: 0000001603c56600
-[11576.336263] RDX: 0000000000000011 RSI: ffff94f41ea63ed8 RDI: ffffffff930dacb4
-[11576.338080] RBP: ffffa82cc3fe7e40 R08: 0000000000000001 R09: fffffffffffffffb
-[11576.339907] R10: 0000000000000000 R11: ffff94f46f36a910 R12: ffff94f414e94500
-[11576.341535] R13: ffff94f474880000 R14: ffff94f403833000 R15: ffff94f4563eaa10
-[11576.342561] FS:  00007ff34f4f4b80(0000) GS:ffff94f47d400000(0000) knlGS:0000000000000000
-[11576.343689] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[11576.345041] CR2: fffffffffffffffb CR3: 000000001f60c000 CR4: 00000000000006f0
-[11576.346593] BUG: sleeping function called from invalid context at include/linux/cgroup-defs.h:721
-[11576.348556] in_atomic(): 0, irqs_disabled(): 1, pid: 25594, name: fsstress
-[11576.350006] INFO: lockdep is turned off.
-[11576.350894] irq event stamp: 0
-[11576.351608] hardirqs last  enabled at (0): [<0000000000000000>]           (null)
-[11576.353254] hardirqs last disabled at (0): [<ffffffff9305cc77>] copy_process.part.72+0x847/0x1df0
-[11576.355056] softirqs last  enabled at (0): [<ffffffff9305cc77>] copy_process.part.72+0x847/0x1df0
-[11576.356705] softirqs last disabled at (0): [<0000000000000000>]           (null)
-[11576.357848] CPU: 0 PID: 25594 Comm: fsstress Tainted: G      D           5.1.0-rc2-default+ #531
-[11576.359000] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.12.0-0-ga698c89-prebuilt.qemu.org 04/01/2014
-[11576.360913] Call Trace:
-[11576.361480]  dump_stack+0x67/0x90
-[11576.362231]  ___might_sleep.cold.85+0x9f/0xb1
-[11576.363300]  exit_signals+0x30/0x130
-[11576.364220]  do_exit+0xac/0xc10
-[11576.365042]  ? do_mkdirat+0x53/0xf0
-[11576.365937]  rewind_stack_do_exit+0x17/0x20
-[failed, exit status 1] [20:36:15]- output mismatch (see /tmp/fstests/results//generic/475.out.bad)
+On 2019/3/29 =E4=B8=8A=E5=8D=8812:58, David Sterba wrote:
+> On Tue, Mar 19, 2019 at 03:58:24PM +0800, Qu Wenruo wrote:
+>> Should we put kernel test cases into btrfs-progs?
+>
+> We collect all the images in btrfs-progs.
+>
+>> We have fuzzed test groups for btrfs-progs mainly, but we don't really
+>> have kernel tests in btrfs-progs.
+>> Is it proper to put kernel-crashing tests into btrfs-progs?
+>
+> Yes, but they should not be run by default. Currently there's not even a
+> test script for mounting the images. But the testsuite can be run
+> independently in a VM so the kernel tests make sense too.
+>
+>> If not, where should we put such tests?
+>>
+>> And BTW, I originally wanted to craft the minimal image for those tests=
+,
+>> but quite a lot of the image needs several corruption combined to hit
+>> the pitfall. I'm not sure if it's worthy to create the minimal image.
+>
+> That probably depends how much other work does the minimal image save.
+
+Just tens of kilo bytes for the image.
+The original crafted image is around 100 kilo after compression.
+
+The minimal image is about 20 kilo, but I can't reproduce the same bug
+due to less corruption.
+
+> The plan is to use python-btrfs to craft the images on-the-fly. We could
+> do that by specific tools written in C or enhance btrfs-corroupt-block,
+> but I'm strongly in favor of the python way due to simplicity.
+
+Considering how many leaves and their copies needs to be corrupted, and
+some tricky combination is needed.
+
+I'm more or less tending to just use the fuzzed images provided by the
+reporter.
+
+Thanks,
+Qu
+
+>
+> Another way is to use the script only to generate the image and then
+> store it for tests to avoid the run-time dependency on python-btrfs.
+>

@@ -6,40 +6,42 @@ X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9113EC43381
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 23:38:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4B870C43381
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 23:50:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 47BCA2075E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 23:38:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0668C2173C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Mar 2019 23:50:30 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="kEinTa9L"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="jbkP2Jro"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728548AbfC1Xi4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 Mar 2019 19:38:56 -0400
-Received: from mout.gmx.net ([212.227.15.19]:37095 "EHLO mout.gmx.net"
+        id S1728555AbfC1Xu2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 Mar 2019 19:50:28 -0400
+Received: from mout.gmx.net ([212.227.15.15]:56029 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728038AbfC1Xi4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Mar 2019 19:38:56 -0400
+        id S1727658AbfC1Xu2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 Mar 2019 19:50:28 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1553816325;
-        bh=6sJ8IH10m5Q7QAXFsUCEA4cdt+wpwX47dLpHasDSDH4=;
+        s=badeba3b8450; t=1553816996;
+        bh=71GEjKvFYXGuC0ZhKNNdNJEGpjJDlNv3fJGFW+STDjQ=;
         h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=kEinTa9LhssL8hO2oHuDqKHwespNrlAp7KMfwcD7KZk2NF59vEBuUwVSpsdRx41Hd
-         AlmVWrrFTgWcM/gBGDA43CoQvqf3G5ytG5GwjQvFOwXw6FB8je1Ds3OZT/2BvsUSne
-         Pl9/VD1SNEXfpJAs48pzse0OiyaJA7iJRCbFI7bk=
+        b=jbkP2Jro/Jf0xYTrsOlfmNj44XpCvvcttv4GhKBlMful6VLjKg4Yl0+QXvN/GanKP
+         ivNzT5pniPfaL3NF2WUA/XnfK5nZczaOc8rlWW2doQt01xgojZqPrySrAe49Uhyzrz
+         upRu3RD3S2N9b+LgzFU0qbvznL/yMHAHiHIRBMd0=
 X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx001
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0MHoWj-1h64dd07C9-003eJA; Fri, 29
- Mar 2019 00:38:45 +0100
-Subject: Re: [PATCH 1/3] btrfs: tree-checker: Verify chunk items
-To:     dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
-        Yoon Jungyeon <jungyeon@gatech.edu>
-References: <20190308072929.30863-1-wqu@suse.com>
- <20190308072929.30863-2-wqu@suse.com>
- <913bed07-e9a0-14ed-1602-e4a5f206e303@suse.com>
- <95e0667a-0004-bec0-03c3-1708ab013320@gmx.com>
- <20190328165843.GP29086@twin.jikos.cz>
+Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx003
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0MV5hN-1hS10g0emz-00YQbK; Fri, 29
+ Mar 2019 00:49:56 +0100
+Subject: Re: [PATCh v2 8/9] btrfs: tree-checker: Verify inode item
+To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.de>, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
+References: <20190320063717.31770-1-wqu@suse.com>
+ <20190320063717.31770-9-wqu@suse.com> <20190328133806.GD29086@twin.jikos.cz>
+ <ae0fe6da-a329-ceea-cac5-085595965511@suse.de>
+ <20190328135714.GF29086@twin.jikos.cz>
+ <70209af7-5948-4bfc-a3a0-06a258ad8ed9@suse.de>
+ <20190328140747.GH29086@twin.jikos.cz>
+ <e5de25af-6cec-fcaf-d3a6-5445ec0f45a5@gmx.com>
+ <20190328142544.GJ29086@twin.jikos.cz>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -66,34 +68,34 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <5b9860cc-608b-3133-013d-a723dee07f7e@gmx.com>
-Date:   Fri, 29 Mar 2019 07:38:37 +0800
+Message-ID: <dac4c926-29b3-afd9-fc31-7f88fcc4f283@gmx.com>
+Date:   Fri, 29 Mar 2019 07:49:47 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.5.3
 MIME-Version: 1.0
-In-Reply-To: <20190328165843.GP29086@twin.jikos.cz>
+In-Reply-To: <20190328142544.GJ29086@twin.jikos.cz>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:6VY+VfUBJK76lGaYvXo9CQUT2Jyghww0JQS9ytGcjNjI/NVIwW0
- PhPJ0251N7issNWZC1HA3Gop6/8jn3dt4jkJgF/YPpsN7U07zwKNdnhaWa1Zbm3vJBgnxbu
- WVC2caG8TzGL9cAX0oSZ9bvApaxL6EfEM/QhQqXdN9fHlbTBh8gE2CXd8DXVbUoEooWL/Uo
- NyUfc0vueEsXcbkEIhKFw==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:997V4LYXMt8=:dDVfW2p6TmpDEbQVrVfz/f
- 3ud98IWw3N8D2TSXI3KXid+z4917Mng7zTkET0fwSY83B6qjQdnSMc1OTNd5MtZ0Cn4gm9sKn
- 7IK+JP9gOZqk/hzI1q22Ss013aMbEUpoCBpKoUA1um9MI3fnrO6co2efZJhLry/cSs+XZMKZC
- X1gcSD2f50OsRSxcP0251AzpNa5zgtz/DPtDKQDnZloP0YafKn0byD53f0gDj4hatQ/o9Dw2v
- Ua5ndRqNoMlOi28+lhjHeufDXdmcoRhWVDBBOx4Te1GNcODe8UitliXxBuIbYO9Rnsc47zDhW
- G/mH70PgmOIccwaHfnuDQmyTr9p+YqVoGiXkmrJ3ImTCUYHgynKaIEkDTsq+Mk0fHdoQx6sAJ
- 8feImTihexvZQsdDOP6TlGkIG1JlBYM4vlk0GvOhfUluLPDIsTAZflaHCgeiTkve8G9tbGEho
- UKdi7+bUjSyq7SnqJbJ+Crw7WyEeAsKcsfh73P/ZHB3VBZIaNa8Z9E/WzPhWdFTl582ncTjxC
- yMSvbXwkmZmC3koE7DXOg3M6fKiX5dSyP4290V0sJXH4+fd9Hd66msVkXxYXXO1Rjc8q58TXb
- 8wHp8bKvf3K55gQrFzccjMe/1mTbNlz+bTUDWDFKHyUUzU89Mfgiehg4fHdCDMpk8ZoiYlvMz
- WsPEh7icPPCISka4mQ3vldBdclWA+JhDpAtKI0ZLaBv+eg7+d2EsV7fL3PB/aB37bWP1dJG/N
- IJfWw1eh43TL7twjFzxA0233i6mNakkVLZOn+j0syRtANAjIN6D5ON/F4VWOxu1doktfA1QWq
- 8Nh9xvocgm11rU8WrZIG2PPgv2fY4mEqXHeSl99OZDmk05oZUTjHmvphQz6RzR1jRXFOOGzDV
- 5q7SpvF7bLp5cx8tgF12rSn9U9lvYbfq3ozo4VXo8I60x3Z0iLFY1neChYJBVfWtbCaj8tWfX
- XYiTldZMvdQ==
+X-Provags-ID: V03:K1:SPAVt05BSy9w7THQC/2dyEl3Rjt0rKHsi6go4Tvx0UriKUqcQUw
+ l2Qzb+LeQAW1xH8BY5QowV4hXt5sa25bjPKqt3a4WJ5X2RQ1IkPzhHLxrThyhM+Sh6b/9TB
+ ZSS38R/cX3uNQhST20VZA5SkUH40p6fuD3wycHyAXQvCWCUVEUbcpOlsgiAsaVg9A/9kbbD
+ qjrgZNntucnyZogO1XKzg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:3DF7MIOPSIA=:MDo7PfABQHEjsL/tEqVPea
+ fymw83QGTb/UbkEvCcJpJV1oTIehkrJRsbINth9VwtozejY12ZkW6ftwsIUWcFcCQLfhtHMcm
+ zpoFGzlebBh8JMXTMfHVWXYH4cOW2RASB710dIBxW4YywUmlmppw+2yb5Ul/QXTbfjj7nnVfE
+ pz4upUAKndHToYtZSt8Jt9aqn1JzG/5zszYctyuZr9oCjSguW40wV4jqxp+0bbqFhP/vu24kx
+ aRJHCntVHul0K4w5aYG1+lPGTbgyLd9jIgWTP9hhlYMMudoD2L9CrIrMNS70GqrPEyxGzU6PN
+ CTKqw5Wd2j24kiu92pM6YaDU43G1E84x/FaHv6h7aalRYVhHnTJK9+bCpGlqtwEFgruqmp4+G
+ vUMpfAvY+7M3XMTsLcenty4BJw1C1N0d1+ZfQBRMxT2ZYR+QhdCrwYcZ/80DB9ZWGUN385RAZ
+ wUmuKHq/ARH4nQF7dNhCqV2tdA83jxoBbijsAkenYZVvqhF/zf4zdX9M/2HQ6GADW1RWsCiJp
+ mCFJiWZY0cxO/w4c5ktcp1sSKGx5CPNBIL5fcad7c3Yx5+MyzMNDkY0787XeVw6aPzZLuWjF9
+ sOHrd+1PEj9qO+CrptO08nt3etXc5bDZpV8Zc+nzt8sze5EQcjqne2LvukJYxCbKthiogV5T0
+ Nsa8C+XLTs3gN8vvpbULuzwQaXNpCWmzM916xfyyN6Y0PypFldjUJ+cRRZrpKZTdjcJFU0Un6
+ JmvYrMmNXrJD/RoG7XJQmcD+htcunhLWjwvyhwHaM7Ut36GeO1POLJe1A8m2kIOTXZbiBy69G
+ r9QyNhfo3tWmDfAImSY06sQJVCmDT+JGIO203JNVxt+BnCqn3Tqq9cPDFgo/ynpBBlfRObKGU
+ hUjPTNwmwqoxGbvWJPCZiP2o8kIEiZBFwGnv4bRxSR+cYihsyl/+wAMNI1KTeq6RJtp/wpsoF
+ zPlIuqm+iaQ==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -101,49 +103,77 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 2019/3/29 =E4=B8=8A=E5=8D=8812:58, David Sterba wrote:
-> On Tue, Mar 19, 2019 at 03:58:24PM +0800, Qu Wenruo wrote:
->> Should we put kernel test cases into btrfs-progs?
->
-> We collect all the images in btrfs-progs.
->
->> We have fuzzed test groups for btrfs-progs mainly, but we don't really
->> have kernel tests in btrfs-progs.
->> Is it proper to put kernel-crashing tests into btrfs-progs?
->
-> Yes, but they should not be run by default. Currently there's not even a
-> test script for mounting the images. But the testsuite can be run
-> independently in a VM so the kernel tests make sense too.
->
->> If not, where should we put such tests?
->>
->> And BTW, I originally wanted to craft the minimal image for those tests=
+On 2019/3/28 =E4=B8=8B=E5=8D=8810:25, David Sterba wrote:
+> On Thu, Mar 28, 2019 at 10:13:19PM +0800, Qu Wenruo wrote:
+>>>>>> That means we have hard link for directories.
+>>>>>
+>>>>> Yes, hard links of directories are forbidden by VFS but that's not t=
+he
+>>>>> point here:
+>>>>>
+>>>>> https://btrfs.wiki.kernel.org/index.php/Project_ideas#Track_link_cou=
+nt_for_directories
+>>>>>
+>>>>> "The link count for directories is traditionally used to count the n=
+umber
+>>>>> of subdirectores iff the link count is >=3D 2."
+>>>>
+>>>> Oh, got it.
+>>>>
+>>>> But for that case, it would be much better to go for things like nbyt=
+es
+>>>> or size, as by all means, those two members are less meaningful than
+>>>> nlinks for directory.
+>>>
+>>> size of a directory is currently 2 * sum of all names in the directory=
 ,
->> but quite a lot of the image needs several corruption combined to hit
->> the pitfall. I'm not sure if it's worthy to create the minimal image.
+>>> ie. both files and directories.
+>>
+>> In fact that's not always the case for older kernels/progs.
+>>
+>> IIRC it's in recent years that we enhanced btrfs-progs to detect and fi=
+x
+>> that.
+>>
+>>> The nlink is used as an optimization
+>>> during traversal by existing tools (find), we can't simply change that
+>>> but would still like to update btrfs to provide support for that.
+>>
+>> But current nlinks is persistent against all inodes. It's always the th=
+e
+>> number of INODE_REF the inode has.
+>>
+>> While for size/nbytes, it doesn't make anything for directory inode at =
+all.
+>> Kernel doesn't care, it's mostly btrfs-check check and fix.
+>>
+>> Furthermore, only size is fixed to 2 * num_children.
+>> nbytes is only instructive and at least in lowmem mode, nbytes is only
+>> checked for alignment, even it's unaligned, lowmem check outputs warnin=
+g
+>> only, doesn't count as an error.
+>>
+>> So at least to me, directory nbytes is a better alternative, and it's
+>> back compatible.
 >
-> That probably depends how much other work does the minimal image save.
+> The point here is to use nlinks of directories for the directory
+> traversal, the size/nbytes is not relevant here for the reasons you
+> state above.
+>
+> I don't see how you think the proposed nbytes alternative would be used,
+> eg. by find.
 
-Just tens of kilo bytes for the image.
-The original crafted image is around 100 kilo after compression.
 
-The minimal image is about 20 kilo, but I can't reproduce the same bug
-due to less corruption.
+In state() call or whatever syscall find is using, export nbytes instead
+of nlink for dir.
+Of course, this needs some compatibility check, e.g. nbytes should never
+exceed size/2, or the nbytes must be old value (nodesize).
 
-> The plan is to use python-btrfs to craft the images on-the-fly. We could
-> do that by specific tools written in C or enhance btrfs-corroupt-block,
-> but I'm strongly in favor of the python way due to simplicity.
-
-Considering how many leaves and their copies needs to be corrupted, and
-some tricky combination is needed.
-
-I'm more or less tending to just use the fuzzed images provided by the
-reporter.
+My point is, if we're going to give new meaning of an existing member,
+at least choose a member that is unused and doesn't have persistent
+meaning among all inodes, not to mention current btrfs check will
+definitely complain about nlinks.
 
 Thanks,
 Qu
 
->
-> Another way is to use the script only to generate the image and then
-> store it for tests to avoid the run-time dependency on python-btrfs.
->

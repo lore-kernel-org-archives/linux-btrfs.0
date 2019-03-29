@@ -2,84 +2,135 @@ Return-Path: <SRS0=qcGt=SA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
-	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED,
+	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 59764C43381
-	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Mar 2019 03:21:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2083DC43381
+	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Mar 2019 04:02:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 19A6721850
-	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Mar 2019 03:21:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E29AD206DD
+	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Mar 2019 04:02:31 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="W3Ca5d3G"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="dVN34tq6"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728704AbfC2DVQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 Mar 2019 23:21:16 -0400
-Received: from mail-lf1-f43.google.com ([209.85.167.43]:42168 "EHLO
-        mail-lf1-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728594AbfC2DVP (ORCPT
+        id S1725839AbfC2ECa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 29 Mar 2019 00:02:30 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:34374 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725801AbfC2ECa (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Mar 2019 23:21:15 -0400
-Received: by mail-lf1-f43.google.com with SMTP id b7so413541lfg.9
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Mar 2019 20:21:14 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=hIqgjRQc+jy92nTIbKQwWQycDZX1oluhO7XgvkfUxHU=;
-        b=W3Ca5d3G+MZC3Um5CDJq7M96CmoAPLGfn9COuJ6o9X4LR0OIoPKnDTCyq+IFYTZ9O7
-         +orIIOmvgWDvi3gNKIwllokjWO8nGHx4pOGTZj/KNxIFpqa7c/1mSfORhDSj5PmuH/rT
-         VlMjI9xN96yBImez/F9dyPfsmR06kdVtJfP8s+LdQFDX31IbPKl2BtBnRE0ptT7ZRTwU
-         POJt6hgvu9ZF6brC0DP/7tNJifJoOfWQrqUh0gptcyxANhbtXZ/yYj1p4X+H+gTb+Qft
-         sz2saOEQQak86uOjB2/YoNLlOvRKy3YJrFl4mhPb67/3S9zLQkxs3Fc/Kr9SKx8Wh9C1
-         WzbQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=hIqgjRQc+jy92nTIbKQwWQycDZX1oluhO7XgvkfUxHU=;
-        b=YTBzsGd2Ri3O91PIRD0rL6qQKBbhtT0Wp5SN27//C10F3kQNa+4qg03M1Tha4Rfn4b
-         AClAPyvf4iOtEjeYcoqu4cnleVPNruqiPuuQ3yG8GGwHyUPAT9ME40ZRq/JEocPPZJNG
-         KhksjQR1Rl74JHrraRGUBVbVZ5hVlrvlUUY6c72+4WgCGkssDkAwDdg6uNhFNFTgPWND
-         EuZ6vpzBmX+DvFoFk4fT2xtFoeFCvOXeZ3grbcbfw3ikO5dPjtccGYnrVq7dKiDBvPcO
-         jjwUZrp07mapsvV0A0/ilv7g+OAF2IG+amr305wJjXaonSY/zCcVeyXdhZ1hvbesPa4P
-         D48w==
-X-Gm-Message-State: APjAAAWqabUY+233qYlXl3kO/i40dEUJvt8YIX213oclbHg1N1jj5K9T
-        UJyC53QUDhfAcQQ9HkZihzMjqfQtg/sWpcSZVQv0h4l6uIg=
-X-Google-Smtp-Source: APXvYqzL2aGMsuyl7LCUrqcdJJq01NWgWTx3ax7LGj/si+JLFOfemkH10pcqIR5hAwXeYWb3BPrBdJt67Lt532NWxFE=
-X-Received: by 2002:ac2:5638:: with SMTP id b24mr9972601lff.18.1553829673596;
- Thu, 28 Mar 2019 20:21:13 -0700 (PDT)
+        Fri, 29 Mar 2019 00:02:30 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x2T3whWq107708;
+        Fri, 29 Mar 2019 04:02:26 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
+ : subject : message-id : references : mime-version : content-type :
+ in-reply-to; s=corp-2018-07-02;
+ bh=u01ttpO1CNLjAEDYksWHTKEjyHSBV2Sue3sQFqhEFl4=;
+ b=dVN34tq6HtCv36WRYsQrQ9AuxOEQQDZjohx3wShwVgBesFMRwEUxLmixuGfX2OHhN50Z
+ VvCNugd5TDovuLz7qp47gyx6pAkxblAn2t3gYEkKImJKceyXBb24EFcwKc/hoFd0m4WU
+ HV9bIQsgfZlIbRWb9QBPQTcL8b4pOKJmbww6aMAMqeUOaTjQm5A2JFSsBaDalhccc1Pv
+ u/2qnXPA9UCygfQ99jfeUV7o3lFHdyRlUlvmkwnjyerfpG5FRQ/CeJGfirCCXu4FCPrG
+ f6d/gVIxHm6/PoqcSUoHvWbpgUoUky31lWdz0u+9rS5Qyt4lB8EDHeipWQAwsr/1SNAw 6A== 
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by userp2120.oracle.com with ESMTP id 2re6djt6h5-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Fri, 29 Mar 2019 04:02:26 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x2T42PCp027427
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Fri, 29 Mar 2019 04:02:25 GMT
+Received: from abhmp0001.oracle.com (abhmp0001.oracle.com [141.146.116.7])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x2T42O3b001680;
+        Fri, 29 Mar 2019 04:02:24 GMT
+Received: from localhost (/67.161.8.12)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Thu, 28 Mar 2019 21:02:24 -0700
+Date:   Thu, 28 Mar 2019 21:02:22 -0700
+From:   "Darrick J. Wong" <darrick.wong@oracle.com>
+To:     Dave Chinner <david@fromorbit.com>
+Cc:     linux-xfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-mm@kvack.org
+Subject: Re: [PATCH 3/3] xfs: don't allow most setxattr to immutable files
+Message-ID: <20190329040222.GC18833@magnolia>
+References: <155379543409.24796.5783716624820175068.stgit@magnolia>
+ <155379545404.24796.5019142212767521955.stgit@magnolia>
+ <20190328212948.GL23020@dastard>
 MIME-Version: 1.0
-References: <CAG3pWAmvekNpnBsQTaMrefKe6pvMSZjPm+SOxnKkMkpGO_1msQ@mail.gmail.com>
- <CAJCQCtQ3YFovgt4tFNQ+uLE81BiD0KFqPdvzE7Rxu+3wujWp2A@mail.gmail.com>
-In-Reply-To: <CAJCQCtQ3YFovgt4tFNQ+uLE81BiD0KFqPdvzE7Rxu+3wujWp2A@mail.gmail.com>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Thu, 28 Mar 2019 21:21:02 -0600
-Message-ID: <CAJCQCtQSv5t9UuGOLmBqxC66WoDzcR4gcQ8K_Yqs0-K_b8yxrg@mail.gmail.com>
-Subject: Re: help request for an unmountable raid1 filesystem
-To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Cc:     Glenn Trigg <ggtrigg@gmail.com>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190328212948.GL23020@dastard>
+User-Agent: Mutt/1.9.4 (2018-02-28)
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9210 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=992 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1903290029
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Mar 28, 2019 at 8:27 PM Chris Murphy <lists@colorremedies.com> wrote:
->>So I suggest 5.0.4, or 4.19.32, or you can be brave and
-> download this, image it to a USB stick (dd if=file of=/dev/ bs=1M
-> oflag=direct) which of course will erase everything on the stick.
->
-> https://kojipkgs.fedoraproject.org/compose/rawhide/Fedora-Rawhide-20190327.n.0/compose/Everything/x86_64/iso/Fedora-Everything-netinst-x86_64-Rawhide-20190327.n.0.iso
->
-> That might have 5.1rc2 on it, or something in between rc1 and rc2.
+On Fri, Mar 29, 2019 at 08:29:48AM +1100, Dave Chinner wrote:
+> On Thu, Mar 28, 2019 at 10:50:54AM -0700, Darrick J. Wong wrote:
+> > From: Darrick J. Wong <darrick.wong@oracle.com>
+> > 
+> > The chattr manpage has this to say about immutable files:
+> > 
+> > "A file with the 'i' attribute cannot be modified: it cannot be deleted
+> > or renamed, no link can be created to this file, most of the file's
+> > metadata can not be modified, and the file can not be opened in write
+> > mode."
+> > 
+> > However, we don't actually check the immutable flag in the setattr code,
+> > which means that we can update project ids and extent size hints on
+> > supposedly immutable files.  Therefore, reject a setattr call on an
+> > immutable file except for the case where we're trying to unset
+> > IMMUTABLE.
+> > 
+> > Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+> > ---
+> >  fs/xfs/xfs_ioctl.c |    8 ++++++++
+> >  1 file changed, 8 insertions(+)
+> > 
+> > 
+> > diff --git a/fs/xfs/xfs_ioctl.c b/fs/xfs/xfs_ioctl.c
+> > index 2bd1c5ab5008..9cf0bc0ae2bd 100644
+> > --- a/fs/xfs/xfs_ioctl.c
+> > +++ b/fs/xfs/xfs_ioctl.c
+> > @@ -1067,6 +1067,14 @@ xfs_ioctl_setattr_xflags(
+> >  	    !capable(CAP_LINUX_IMMUTABLE))
+> >  		return -EPERM;
+> >  
+> > +	/*
+> > +	 * If immutable is set and we are not clearing it, we're not allowed
+> > +	 * to change anything else in the inode.
+> > +	 */
+> > +	if ((ip->i_d.di_flags & XFS_DIFLAG_IMMUTABLE) &&
+> > +	    (fa->fsx_xflags & FS_XFLAG_IMMUTABLE))
+> > +		return -EPERM;
+> > +
+> >  	/* diflags2 only valid for v3 inodes. */
+> >  	di_flags2 = xfs_flags2diflags2(ip, fa->fsx_xflags);
+> >  	if (di_flags2 && ip->i_d.di_version < 3)
+> 
+> Looks fine - catches both FS_IOC_SETFLAGS and FS_IOC_FSSETXATTR
+> for XFS.
+> 
+> Do the other filesystems that implement FS_IOC_FSSETXATTR have
+> the same bug?
 
-Oh yeah, in case you go this route, at the bootloader menu, choose the
-troubleshooting submenu and then choose to rescue a system. When you
-get to the text installer there will be an option to get dropped to a
-shell, at which point the installer quits. ~600MB
+Yes.  I'm not even 100% sure I've finished playing xfs whackamole yet.
 
+--D
 
--- 
-Chris Murphy
+> Cheers,
+> 
+> Dave.
+> -- 
+> Dave Chinner
+> david@fromorbit.com

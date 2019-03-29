@@ -2,32 +2,32 @@ Return-Path: <SRS0=qcGt=SA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 46344C43381
-	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Mar 2019 11:00:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D25BC43381
+	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Mar 2019 11:02:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1BF11217F5
-	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Mar 2019 11:00:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2280F217F5
+	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Mar 2019 11:02:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729382AbfC2LAd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 29 Mar 2019 07:00:33 -0400
-Received: from mx2.suse.de ([195.135.220.15]:60256 "EHLO mx1.suse.de"
+        id S1729367AbfC2LCJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 29 Mar 2019 07:02:09 -0400
+Received: from mx2.suse.de ([195.135.220.15]:60516 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728694AbfC2LAd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Mar 2019 07:00:33 -0400
+        id S1728500AbfC2LCJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 29 Mar 2019 07:02:09 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 9CA78AEFE
-        for <linux-btrfs@vger.kernel.org>; Fri, 29 Mar 2019 11:00:31 +0000 (UTC)
-Subject: Re: [PATCH 3/7] btrfs-progs: check/lowmem: Repair invalid inode mode
- in root tree
+        by mx1.suse.de (Postfix) with ESMTP id 21C77AEFF
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Mar 2019 11:02:07 +0000 (UTC)
+Subject: Re: [PATCH 5/7] btrfs: check/lowmem: Check and repair free space
+ cache inode mode
 To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 References: <20190325082253.19583-1-wqu@suse.com>
- <20190325082253.19583-4-wqu@suse.com>
- <d93c7e2d-fd0f-3a61-8a92-09f096dce55b@suse.com>
+ <20190325082253.19583-6-wqu@suse.com>
+ <6e9857a2-163e-27f4-8128-7af73e5d18b1@suse.com>
 From:   Qu Wenruo <wqu@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=wqu@suse.de; prefer-encrypt=mutual; keydata=
@@ -54,103 +54,98 @@ Autocrypt: addr=wqu@suse.de; prefer-encrypt=mutual; keydata=
  Pt/jfwjBHwGR+QKp6dD2qMrUWf9b7TFzYDMZXzZ2/eoIgtyjEelNBPrIgOFe24iKMjaGjd97
  fJuRcBMHdhUAxvXQF1oRtd83JvYJ5OtwTd8MgkEfl+fo7HwWkuHbzc70L4fFKv2BowqFdaHy
  mId1ijGPGr46tuZ5a4cw/zbaPYx6fJ4sK9tSv/6V1QPNUdqml6hm6pfs6A==
-Message-ID: <3920ba29-e2ab-be17-0072-134f68e637ad@suse.de>
-Date:   Fri, 29 Mar 2019 19:00:26 +0800
+Message-ID: <a608f9c1-e3e9-875a-e472-726e2c696eac@suse.de>
+Date:   Fri, 29 Mar 2019 19:02:03 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.5.3
 MIME-Version: 1.0
-In-Reply-To: <d93c7e2d-fd0f-3a61-8a92-09f096dce55b@suse.com>
+In-Reply-To: <6e9857a2-163e-27f4-8128-7af73e5d18b1@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 2019/3/29 下午5:36, Nikolay Borisov wrote:
-> 
-> 
-> On 25.03.19 г. 10:22 ч., Qu Wenruo wrote:
->> In root tree, we only have 2 types of inodes:
->> - ROOT_TREE_DIR inode
->>   Its mode is fixed to 40755
->> - free space cache inodes
->>   Its mode is fixed to 100600
->>
->> This patch will add the ability to repair such inodes to lowmem mode.
->> For fs/subvolume tree error, at least we haven't see such corruption
->> yet, so we don't need to rush to fix corruption in fs trees yet.
->>
->> The repair function, repair_imode() can be reused by later original mode
->> patch, so it's placed in check/mode-common.c.
->>
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->> ---
->>  check/mode-common.c | 48 +++++++++++++++++++++++++++++++++++++++++++
->>  check/mode-common.h |  2 ++
->>  check/mode-lowmem.c | 50 ++++++++++++++++++++++++++++++++++++++++++++-
->>  3 files changed, 99 insertions(+), 1 deletion(-)
->>
->> diff --git a/check/mode-common.c b/check/mode-common.c
->> index fed102b0ce7a..1c150a3d5a7c 100644
->> --- a/check/mode-common.c
->> +++ b/check/mode-common.c
->> @@ -795,3 +795,51 @@ out:
->>  	btrfs_release_path(&path);
->>  	return ret;
->>  }
->> +
->> +/*
->> + * Reset inode mode with invalid mode to its known correct value.
->> + *
->> + * Only support free space cache inode and root tree dir inode of root tree.
->> + * Caller should ensure such condition.
->> + *
->> + * Return 0 if repair is done, @path will point to the correct inode item.
->> + * Return <0 for errors.
->> + */
->> +int repair_imode(struct btrfs_trans_handle *trans, struct btrfs_root *root,
->> +		 struct btrfs_path *path, u64 ino)
->> +{
-> 
-> How about renaming this function to reset_imode/set_imode:
-> 
-> reset_imode and make it take a u32 parameter for the imode.
 [snip]
+>> +/*
+>> + * For free space inodes, we can't call check_inode_item() as free space
+>> + * cache inode doesn't have INODE_REF.
+>> + * We just check its inode mode.
+>> + */
+>> +int check_repair_free_space_inode(struct btrfs_fs_info *fs_info,
+>> +				  struct btrfs_path *path)
+>> +{
+>> +	struct btrfs_inode_item *iitem;
+>> +	struct btrfs_key key;
+>> +	u32 mode;
+>> +	int ret = 0;
+>> +
 >> +	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
->> +	ASSERT(key.type == BTRFS_INODE_ITEM_KEY);
->> +	if (key.objectid != BTRFS_ROOT_TREE_DIR_OBJECTID &&
->> +	    !is_fstree(key.objectid)) {
->> +		error("unsupported ino %llu", key.objectid);
->> +		return -ENOTTY;
+>> +	ASSERT(key.type == BTRFS_INODE_ITEM_KEY && is_fstree(key.objectid));
+>> +	iitem = btrfs_item_ptr(path->nodes[0], path->slots[0],
+>> +			       struct btrfs_inode_item);
+>> +	mode = btrfs_inode_mode(path->nodes[0], iitem);
+>> +	if (mode != FREE_SPACE_CACHE_INODE_MODE) {
+>> +		error(
+>> +	"free space cache inode %llu has invalid mode: has 0%o expect 0%o",
+>> +			key.objectid, mode, FREE_SPACE_CACHE_INODE_MODE);
+>> +		ret = -EUCLEAN;
+>> +		if (repair) {
+>> +			ret = repair_imode_lowmem(fs_info->tree_root,
+>> +						  path);
+>> +			if (ret < 0)
+>> +				return ret;
+>> +			return ret;
+>> +		}
 >> +	}
->> +
->> +	trans = btrfs_start_transaction(root, 1);
->> +	if (IS_ERR(trans)) {
->> +		ret = PTR_ERR(trans);
->> +		errno = -ret;
->> +		error("failed to start transaction: %m");
->> +		return ret;
->> +	}
->> +	btrfs_release_path(path);
->> +
->> +	ret = repair_imode(trans, root, path, key.objectid);
+>> +	return ret;
+>> +}
 > 
-> And calling it here with the correct parameter based on whether ino is
-> BTRFS_ROOT_TREE_DIR_OBJECTID. Also move the asserts from reset_imode to
-> this function.
+> You put this function in mode-lowmem, yet it's also used in the next
+> patch to implement check/repair for original mode. Since you are oging
+> to re-use function across the 2 modes it makes no sense to separate them
+> in their names. Perhaps put them in mode-common.c
+> 
 
-Makes sense.
-
-I'll go that direction.
+The limitation is due to repair_imode_lowmem().
 
 Thanks,
 Qu
 
-> 
-> Otherwise you are separating the checks/asserts across 2 function and
-> this is somewhat cumbersome to follow.
-> 
+>> +
+>>  /*
+>>   * Check all fs/file tree in low_memory mode.
+>>   *
+>> @@ -5130,6 +5164,17 @@ int check_fs_roots_lowmem(struct btrfs_fs_info *fs_info)
+>>  		btrfs_item_key_to_cpu(node, &key, slot);
+>>  		if (key.objectid > BTRFS_LAST_FREE_OBJECTID)
+>>  			goto out;
+>> +		if (key.type == BTRFS_INODE_ITEM_KEY &&
+>> +		    is_fstree(key.objectid)) {
+>> +			ret = check_repair_free_space_inode(fs_info, &path);
+>> +			/* Check if we still have a valid path to continue */
+>> +			if (ret < 0 && path.nodes[0]) {
+>> +				err |= ret;
+>> +				goto next;
+>> +			}
+>> +			if (ret < 0 && !path.nodes[0])
+>> +				goto out;
+>> +		}
+>>  		if (key.type == BTRFS_ROOT_ITEM_KEY &&
+>>  		    fs_root_objectid(key.objectid)) {
+>>  			if (key.objectid == BTRFS_TREE_RELOC_OBJECTID) {
+>> diff --git a/check/mode-lowmem.h b/check/mode-lowmem.h
+>> index e0ab30b770d5..d2983fd12eb4 100644
+>> --- a/check/mode-lowmem.h
+>> +++ b/check/mode-lowmem.h
+>> @@ -67,5 +67,7 @@
+>>  
+>>  int check_fs_roots_lowmem(struct btrfs_fs_info *fs_info);
+>>  int check_chunks_and_extents_lowmem(struct btrfs_fs_info *fs_info);
+>> +int check_repair_free_space_inode(struct btrfs_fs_info *fs_info,
+>> +				  struct btrfs_path *path);
+>>  
+>>  #endif
+>>

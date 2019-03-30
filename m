@@ -1,172 +1,172 @@
-Return-Path: <SRS0=qcGt=SA=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=BPiq=SB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.3 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3D3FFC43381
-	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Mar 2019 22:46:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 12DB6C43381
+	for <linux-btrfs@archiver.kernel.org>; Sat, 30 Mar 2019 09:34:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 057F62184D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Mar 2019 22:46:35 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1553899595;
-	bh=gLueR0S6oowMp00ig+yjgWZzUrHtvuNf6KcM2aeh9i4=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc:List-ID:From;
-	b=ZllaVFspExvuxWyJCEJBU4e8gCBTLaPEBUg4Zl8NsxoIZY33a/WErcVZlTWTUrQlJ
-	 BDIIh3+IMbgSBBz6A16m+ZiZH7VPX5HcYJhgRyyd1E+NJtqFZtTJVwZMFUZjUHt4R5
-	 gyKv/RzRsTTAVZbnL5QF94m8LGCrMPQDWZVdyXx8=
+	by mail.kernel.org (Postfix) with ESMTP id D580E218A6
+	for <linux-btrfs@archiver.kernel.org>; Sat, 30 Mar 2019 09:34:49 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="jUDSfhWi"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730512AbfC2Wqe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 29 Mar 2019 18:46:34 -0400
-Received: from mail.kernel.org ([198.145.29.99]:54542 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730456AbfC2Wqe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Mar 2019 18:46:34 -0400
-Received: from mail-ua1-f43.google.com (mail-ua1-f43.google.com [209.85.222.43])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id D04A9218AC;
-        Fri, 29 Mar 2019 22:46:32 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1553899593;
-        bh=gLueR0S6oowMp00ig+yjgWZzUrHtvuNf6KcM2aeh9i4=;
-        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-        b=L1D97KxS1LAp1wFF4WHMDqrUVl7kR1jO0QaJrd16/XBmNviZPr7S2PTFvOdmzEQZX
-         uQ8OUPWM4JTOBHma6xdEvmTpMWcenDLgXzQzC5OCokUxM2bSxz+g0m3ZO8ehit/G7C
-         CKpvpPNQIv/k0bKOsDN0NPIHZ28S5TuPDFw6fTDI=
-Received: by mail-ua1-f43.google.com with SMTP id n16so1144499uae.10;
-        Fri, 29 Mar 2019 15:46:32 -0700 (PDT)
-X-Gm-Message-State: APjAAAWS4CVrrpYTjzSg5CVgmM25vN/2NbO28W7q9538izg82bCEtYsz
-        xdzMMGYFYzN/bNFUqIdpyVCOvBoJYFnWyO3WHYE=
-X-Google-Smtp-Source: APXvYqzrHVynZtXATa7/bnfalUK6Q5sCMgLHy7zDzycbVKoBihCJSY1+leoKrn3+Zy/DZh2qQiRrrVINQWDrpgPLV1s=
-X-Received: by 2002:a9f:2c8f:: with SMTP id w15mr28909823uaj.27.1553899591945;
- Fri, 29 Mar 2019 15:46:31 -0700 (PDT)
+        id S1730415AbfC3Jet (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 30 Mar 2019 05:34:49 -0400
+Received: from mail-pg1-f194.google.com ([209.85.215.194]:36785 "EHLO
+        mail-pg1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1730372AbfC3Jet (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 30 Mar 2019 05:34:49 -0400
+Received: by mail-pg1-f194.google.com with SMTP id 85so2362327pgc.3;
+        Sat, 30 Mar 2019 02:34:48 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to:user-agent;
+        bh=SHkySyDZoqXU+EuH97p1Wai6t1Rvd2KiJr7CJn/0CE8=;
+        b=jUDSfhWiGOziASa9z6Y0/yFstxY6Vbu93bp2k9hHnYroYdmCRI371q9DWmaXSaIetC
+         BYoTPG/IuOq6WsqPlCIJhoa9tB4FkfTm80kvm0QD7I7nlFop/vyfZHK01PqgBn2RRfA3
+         0uVvI715DXPMzWU3f+44jo2M48yIO2UOIjD8iGFucZBtRyDw9Wxg8UN2fcX5d1j3AXOI
+         JsGnB44YoSuKWacteWaWs6kbkDVdv3hoT0bZZKX2r7xKAvVPUkMS+fof+zcOvzm7LmpM
+         LxmhnBbyuz6COmdlUOmoV39jxiG3oHzlBS+icbeEiVdAGea2XtgpzD2VQqWbIoroBEwZ
+         S5UA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to:user-agent;
+        bh=SHkySyDZoqXU+EuH97p1Wai6t1Rvd2KiJr7CJn/0CE8=;
+        b=O7+oHssvGZYGzNdhbZGIJ/WDczz+X7mBCXXNeFWGM02zLQQZosKH4nTa6oi264hpkx
+         sjnRYVIFvt9R2oXetMmTQWh9wiEJoMpQre/3kpPT5XSE0e1YU5xkU40IAJh9R2xcOHE7
+         8YQP3o1z05BJipk574t/vb3cfZH9uLGyIfDiw+PNCg7Ig9OFd7qcuZZDMCiBx5l/MgTM
+         EcgYzdVhwWiM2RAqJiR9rTIvGmzdUtxxQQWlAny+3fDG9AaDedb04FuOu6QiDQ9sPWNv
+         L7Yypl+v8eSkz8I0Z6L/s8QKdG8sW7VZTLDUk8nahA6qGVGdWTcZC2ZdtnGN19zRLqfp
+         HE0Q==
+X-Gm-Message-State: APjAAAWYDJyXemN51fOjiZ6VcEBVxhGI5piEXhKeBKYjd9WPf/6Mm3KV
+        VJiP9glmJSerHp34X309AJwf77JwxNA=
+X-Google-Smtp-Source: APXvYqzmJwLTsmaRoXe2XlDmDQkHP64+PTzkzx+3yz+GVu4Qoou2o+7eoJ4CmcSqQ4kLU6ZgyU2IEg==
+X-Received: by 2002:a63:464c:: with SMTP id v12mr49831618pgk.431.1553938487951;
+        Sat, 30 Mar 2019 02:34:47 -0700 (PDT)
+Received: from localhost ([128.199.137.77])
+        by smtp.gmail.com with ESMTPSA id b63sm13802847pfj.54.2019.03.30.02.34.46
+        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
+        Sat, 30 Mar 2019 02:34:46 -0700 (PDT)
+Date:   Sat, 30 Mar 2019 17:34:41 +0800
+From:   Eryu Guan <guaneryu@gmail.com>
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Enable btrfs/003
+Message-ID: <20190330093441.GZ2824@desktop>
+References: <20190319105851.9280-1-nborisov@suse.com>
 MIME-Version: 1.0
-References: <20190328185404.28879-1-fdmanana@kernel.org> <20190328214839.GM26298@dastard>
- <CAL3q7H6uHcsEvBCTaBaTeCPhsQ2XHDRqVu7tVa-bPc9iHP6pNw@mail.gmail.com> <20190329223451.GF6537@magnolia>
-In-Reply-To: <20190329223451.GF6537@magnolia>
-From:   Filipe Manana <fdmanana@kernel.org>
-Date:   Fri, 29 Mar 2019 22:46:20 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H6fjXak=msNhSchpX80oOcmePivisPNB_MiUw=gQ1+8vA@mail.gmail.com>
-Message-ID: <CAL3q7H6fjXak=msNhSchpX80oOcmePivisPNB_MiUw=gQ1+8vA@mail.gmail.com>
-Subject: Re: [PATCH 2/7] fsstress: add operation for setting xattrs on files
- and directories
-To:     "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc:     Dave Chinner <david@fromorbit.com>,
-        fstests <fstests@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Filipe Manana <fdmanana@suse.com>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190319105851.9280-1-nborisov@suse.com>
+User-Agent: Mutt/1.11.3 (2019-02-01)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Mar 29, 2019 at 10:34 PM Darrick J. Wong
-<darrick.wong@oracle.com> wrote:
->
-> On Thu, Mar 28, 2019 at 10:36:37PM +0000, Filipe Manana wrote:
-> > On Thu, Mar 28, 2019 at 9:48 PM Dave Chinner <david@fromorbit.com> wrote:
-> > >
-> > > On Thu, Mar 28, 2019 at 06:54:04PM +0000, fdmanana@kernel.org wrote:
-> > > > From: Filipe Manana <fdmanana@suse.com>
-> > > >
-> > > > Currently fsstress does not exercise creating, reading or deleting xattrs
-> > > > on files or directories. This change adds support for setting xattrs on
-> > > > files and directories, using only the xattr user namespace (the other
-> > > > namespaces are not general purpose and are used for security, capabilities,
-> > > > ACLs, etc). This adds a counter for each file entry structure that keeps
-> > > > track of the number of xattrs set for the file entry, and each new xattr
-> > > > has a name that includes the counter's value (example: "user.x4").
-> > > > Values for the xattrs have at most 100 bytes, which is much more than
-> > > > the maximum size supported for all major filesystems.
-> > > >
-> > > > Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> > > > ---
-> > > >  ltp/fsstress.c | 150 +++++++++++++++++++++++++++++++++++++++++++++++++++++----
-> > > >  1 file changed, 141 insertions(+), 9 deletions(-)
-> > > >
-> > > > diff --git a/ltp/fsstress.c b/ltp/fsstress.c
-> > > > index cc4f520e..03e40eb6 100644
-> > > > --- a/ltp/fsstress.c
-> > > > +++ b/ltp/fsstress.c
-> > > > @@ -27,6 +27,7 @@
-> > > >  io_context_t io_ctx;
-> > > >  #endif
-> > > >  #include <sys/syscall.h>
-> > > > +#include <sys/xattr.h>
-> > > >
-> > > >  #ifndef FS_IOC_GETFLAGS
-> > > >  #define FS_IOC_GETFLAGS                 _IOR('f', 1, long)
-> > > > @@ -85,6 +86,7 @@ typedef enum {
-> > > >       OP_RESVSP,
-> > > >       OP_RMDIR,
-> > > >       OP_SETATTR,
-> > > > +     OP_SETXATTR,
-> > > >       OP_SPLICE,
-> > > >       OP_STAT,
-> > > >       OP_SYMLINK,
-> > > > @@ -110,6 +112,7 @@ typedef struct opdesc {
-> > > >  typedef struct fent {
-> > > >       int     id;
-> > > >       int     parent;
-> > > > +     int     xattr_counter;
-> > > >  } fent_t;
-> > > >
-> > > >  typedef struct flist {
-> > > > @@ -195,6 +198,7 @@ void      rename_f(int, long);
-> > > >  void resvsp_f(int, long);
-> > > >  void rmdir_f(int, long);
-> > > >  void setattr_f(int, long);
-> > > > +void setxattr_f(int, long);
-> > > >  void splice_f(int, long);
-> > > >  void stat_f(int, long);
-> > > >  void symlink_f(int, long);
-> > > > @@ -246,6 +250,7 @@ opdesc_t  ops[] = {
-> > > >       { OP_RESVSP, "resvsp", resvsp_f, 1, 1 },
-> > > >       { OP_RMDIR, "rmdir", rmdir_f, 1, 1 },
-> > > >       { OP_SETATTR, "setattr", setattr_f, 0, 1 },
-> > > > +     { OP_SETXATTR, "setxattr", setxattr_f, 4, 1 },
-> > >
-> > > Ok, now that I see this, the penny drops - you can't do this as
-> > > it changes the CLI interface in a way that will make existing
-> > > scripts do something entirely different to what they used to do.
-> > >
-> > > i.e. "-f setxattr=n" is used to specify the frequency of this
-> > > specific operation. It used to control the project ID setting, now
-> > > with this change it controls extended attribute frequency. There are
-> > > some tests that actually use "-f setxattr=n" (and who knows how many
-> > > custom test scripts using fsstress built from fstests), so I don't
-> > > think we should be renaming existing operations to something else
-> > > and then reusing the name for a new type of operation like this....
-> >
-> > Any idea for a good name? (Not too long, or too similar like setextattr)
->
-> setfattr, seeing as it's a cli tool already anyway?
+On Tue, Mar 19, 2019 at 12:58:51PM +0200, Nikolay Borisov wrote:
+> For a long time this test has been failing on all kinds of VM configuration,
+> which are using virtio_blk devices. This is due to the fact that scsi
+> devices are deletable and virtio_blk are not. However, this only prevents
+> device replace case to run and has no negative effect on the other
+> useful test cases.
+> 
+> Re-enable btrfs/003 to run by making _require_deletable_scratch_dev_pool
+> private to the test case and modifying it to return success (0) or
+> failure (1) if devices are not deletable. Further modify the replace
+> test case to check the return value of this function and skip it if
+> devices are not deletable.
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  common/rc       | 12 ------------
+>  tests/btrfs/003 | 19 ++++++++++++++++++-
+>  2 files changed, 18 insertions(+), 13 deletions(-)
+> 
+> diff --git a/common/rc b/common/rc
+> index 1c42515ff0ea..5693ba3cad18 100644
+> --- a/common/rc
+> +++ b/common/rc
+> @@ -2961,18 +2961,6 @@ _require_scratch_dev_pool_equal_size()
+>  	done
+>  }
+>  
+> -# We will check if the device is deletable
+> -_require_deletable_scratch_dev_pool()
+> -{
+> -	local i
+> -	local x
+> -	for i in $SCRATCH_DEV_POOL; do
+> -		x=`echo $i | cut -d"/" -f 3`
+> -		if [ ! -f /sys/class/block/${x}/device/delete ]; then
+> -			_notrun "$i is a device which is not deletable"
+> -		fi
+> -	done
+> -}
+>  
+>  # Check that fio is present, and it is able to execute given jobfile
+>  _require_fio()
+> diff --git a/tests/btrfs/003 b/tests/btrfs/003
+> index 938030ef4c65..2aeb9fe6325a 100755
+> --- a/tests/btrfs/003
+> +++ b/tests/btrfs/003
+> @@ -17,6 +17,21 @@ dev_removed=0
+>  removed_dev_htl=""
+>  trap "_cleanup; exit \$status" 0 1 2 3 15
+>  
+> +# Check if all scratch dev pools are deletable
+> +_require_deletable_scratch_dev_pool()
 
-Indeed, seems good to me as well. Was thinking about it earlier today,
-setfattr, getfattr,
-delfattr and listfattr (these last two don't have dedicated cli tools,
-setfattr and getfattr
-implement these operations).
+Then it's not a _require rule anymore, maybe we could just rename it to
+something like "deletable_scratch_dev_pool"? Also remove the leading "_"
+if it becomes a private function.
 
-Thanks.
+Thanks,
+Eryu
 
->
-> --D
->
-> >
-> >
-> > >
-> > > I certainly agree with the idea of adding extended attributes to
-> > > fsstress, just not this way...
-> > >
-> > > Cheers,
-> > >
-> > > Dave.
-> > > --
-> > > Dave Chinner
-> > > david@fromorbit.com
+> +{
+> +	local i
+> +	local x
+> +	for i in $SCRATCH_DEV_POOL; do
+> +		x=`echo $i | cut -d"/" -f 3`
+> +		if [ ! -f /sys/class/block/${x}/device/delete ]; then
+> +			return 1
+> +		fi
+> +	done
+> +
+> +	return 0
+> +}
+> +
+>  _cleanup()
+>  {
+>      cd /
+> @@ -35,7 +50,6 @@ _supported_fs btrfs
+>  _supported_os Linux
+>  _require_scratch
+>  _require_scratch_dev_pool 4
+> -_require_deletable_scratch_dev_pool
+>  _require_command "$WIPEFS_PROG" wipefs
+>  
+>  rm -f $seqres.full
+> @@ -111,6 +125,9 @@ _test_replace()
+>  	local ds
+>  	local d
+>  
+> +	# If scratch devs are not deletable skip this test
+> +	if ! _require_deletable_scratch_dev_pool; then return 0; fi
+> +
+>  	# exclude the first and the last disk in the disk pool
+>  	n=$(($n-1))
+>  	ds=${devs[@]:1:$(($n-1))}
+> -- 
+> 2.7.4
+> 

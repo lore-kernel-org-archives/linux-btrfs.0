@@ -2,87 +2,102 @@ Return-Path: <SRS0=hyUm=SC=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 77D81C43381
-	for <linux-btrfs@archiver.kernel.org>; Sun, 31 Mar 2019 18:44:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 02994C43381
+	for <linux-btrfs@archiver.kernel.org>; Sun, 31 Mar 2019 21:35:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 537C92085A
-	for <linux-btrfs@archiver.kernel.org>; Sun, 31 Mar 2019 18:44:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A62AE2085A
+	for <linux-btrfs@archiver.kernel.org>; Sun, 31 Mar 2019 21:35:08 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="XK8dcpdp"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731387AbfCaSo4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 31 Mar 2019 14:44:56 -0400
-Received: from ip5f5867e1.dynamic.kabel-deutschland.de ([95.88.103.225]:32780
-        "EHLO www.avgustinov.eu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731353AbfCaSoz (ORCPT
+        id S1731326AbfCaVfH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 31 Mar 2019 17:35:07 -0400
+Received: from mail-lf1-f67.google.com ([209.85.167.67]:35300 "EHLO
+        mail-lf1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1731172AbfCaVfH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 31 Mar 2019 14:44:55 -0400
-Received: from [192.168.178.50] (unknown [192.168.178.50])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by www.avgustinov.eu (Postfix) with ESMTPSA id 54121386371B;
-        Sun, 31 Mar 2019 20:44:56 +0200 (CEST)
-Subject: interest in post-mortem examination of a BTRFS system and improving
- the btrfs-code?
-References: <aa81a49a-d5ca-0f1c-fa75-9ed3656cff55@avgustinov.eu>
-To:     linux-btrfs@vger.kernel.org
-From:   btrfs@avgustinov.eu
-X-Forwarded-Message-Id: <aa81a49a-d5ca-0f1c-fa75-9ed3656cff55@avgustinov.eu>
-Message-ID: <a6cb572c-c015-1e19-7489-c59fd1384509@avgustinov.eu>
-Date:   Sun, 31 Mar 2019 20:44:46 +0200
-User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:60.0) Gecko/20100101
- Thunderbird/60.6.1
+        Sun, 31 Mar 2019 17:35:07 -0400
+Received: by mail-lf1-f67.google.com with SMTP id u21so4833575lfu.2
+        for <linux-btrfs@vger.kernel.org>; Sun, 31 Mar 2019 14:35:05 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=QjgLodXaWd73j2zyesKlCdIE6TT7rzt0M4RC+B5RhmU=;
+        b=XK8dcpdpvWuBZgsyZHcA9hH5DvAM/srL+YPTsYHS3uwCgAkRob9i1oFL11cq/ug1Mt
+         4JU/sEQaNuTTgqvKOcKBlCYfU/7vWtmYYDaMtChCbH+KN14UvdnwW2zNtbKWC8Cue4n8
+         Vt8pQn2q+QXjIZzJDNLB5+vlB9DvQmq/wApOjcGOLxnweCCu90TPJFVuyhgNm2HOh+3O
+         OtJeumtqkC4RfJJ+UWyp374nPY5bhP1gMfrg7WDH1P2aDJF/g33gReKQ3Diz8yJ2NGKM
+         AAZZxm0W+THdgSegqOnMDjAJ7ROGJlTp685zWgiHlf+RK8Dsx0uHnDDNqqqLMTVU4iL6
+         84pw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=QjgLodXaWd73j2zyesKlCdIE6TT7rzt0M4RC+B5RhmU=;
+        b=l9UmPoNd5DHmnYCUr8/njAs19TWZKk5QsGPMtyYLbZubmlMLyjVn7LELAqR+bt4qCC
+         1SvrkGt1uqvpTft2d6idp4DLcztnd2Oen+9evyDGVFalZjNP4MF+FwqlJp3faAKK1+rf
+         bu2VMmW+EL6MzpCVoWzic9ADMBNZ7GEh8qiPzrd3/kYVU0fWmp8mlElEulyZOHE8vNZo
+         VJZULCsQsxVvfA6tlr7AgYTwhldnTqQuX8sf+37f2CC6bqGNv44wFxlVafZsLqfkDKK1
+         UHzcXljvE/Pa+qZZLLNJE1srMgfiz0fhAVaDY8/cjk1fFac0QHzqgM8ImBCrebJuRGPi
+         etXw==
+X-Gm-Message-State: APjAAAVjAs5PWVrBQybY65oMjtfuTgvouDi5QbRO4XH8FRGozm+78Jih
+        U3kLv9oSpGAitacZVUwIFKyX5s4213z1BtM6WvldLA==
+X-Google-Smtp-Source: APXvYqxE9GZVZ2m2dymDlGllkWbXRVZjcBp6zgKs4vf7bYIw01enMLGeeFMgMPGy5u6mIsftP34gGtVARJ4eZ/99ftY=
+X-Received: by 2002:a19:a8cf:: with SMTP id r198mr17033593lfe.19.1554068105054;
+ Sun, 31 Mar 2019 14:35:05 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <aa81a49a-d5ca-0f1c-fa75-9ed3656cff55@avgustinov.eu>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: 8bit
-Content-Language: de-DE-1901
+References: <CAG3pWAmvekNpnBsQTaMrefKe6pvMSZjPm+SOxnKkMkpGO_1msQ@mail.gmail.com>
+ <CAJCQCtQ3YFovgt4tFNQ+uLE81BiD0KFqPdvzE7Rxu+3wujWp2A@mail.gmail.com> <CAG3pWA=pzd+xxCrZ92b4TBw5iWtsHkfJQ4nsNrnqcBz_6dX4Hg@mail.gmail.com>
+In-Reply-To: <CAG3pWA=pzd+xxCrZ92b4TBw5iWtsHkfJQ4nsNrnqcBz_6dX4Hg@mail.gmail.com>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Sun, 31 Mar 2019 15:34:53 -0600
+Message-ID: <CAJCQCtTgfVY9g+A3m=FA_k0O-kbMGifz8QF62W2LMVmW_C8wnA@mail.gmail.com>
+Subject: Re: help request for an unmountable raid1 filesystem
+To:     Glenn Trigg <ggtrigg@gmail.com>
+Cc:     Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Dear all,
+On Sat, Mar 30, 2019 at 5:43 PM Glenn Trigg <ggtrigg@gmail.com> wrote:
+>
+> Hi Chris,
+>
+> Thanks for replying.
+>
+> On Fri, 29 Mar 2019 at 13:27, Chris Murphy <lists@colorremedies.com> wrote:
+> ...
+> > Seem in conflict. I don't really understand how the kernel complains
+> > about a bad super and yet user space tools say they're all OK.  What
+> > happens if you try:
+> >
+> > # mount -o ro,nologreplay,usebackuproot
+>
+> I got essentially the same results...
+>
+> % mount -o ro,nologreplay,usebackuproot /dev/sda1
+> mount: /data: can't read superblock on /dev/sda1.
 
+I'm confused because "can't read superblock" isn't found in fs/btrfs.
+I'm only finding it in fs/gfs2/ops_fstype.c
 
-I am a big fan of btrfs, and I am using it since 2013 - in the meantime 
-on at least four different computers. During this time, I suffered at 
-least four bad btrfs-failures leading to unmountable, unreadable and 
-unrecoverable file system. Since in three of the cases I did not manage 
-to recover even a single file, I am beginning to lose my confidence in 
-btrfs: for 35-years working with different computers no other file 
-system was so bad at recovering files!
+From what you provided, /dev/sda1 definitely has a valid btrfs
+superblock. I wonder if there's some other stale something or other on
+this partition?
 
-Considering the importance of btrfs and keeping in mind the number of 
-similar failures, described in countless forums on the net, I have got 
-an idea: to donate my last two damaged filesystems for investigation 
-purposes and thus hopefully contribute to the improvement of btrfs. One 
-condition: any recovered personal data (mostly pictures and audio files) 
-should remain undisclosed and be deleted.
+What do you get for
 
-Should anybody be interested in this - feel free to contact me 
-personally (I am not reading the list regularly!), otherwise I am going 
-to reformat and reuse both systems in two weeks from today.
+$ sudo blkid
+$ sudo wipefs -an /dev/sda1
+$ sudo mount -v -o ro,nologreplay,usebackuproot
 
-Some more info:
-
-   - The smaller system is 83.6GB, I could either send you an image of 
-this system on an unneeded hard drive or put it into a dedicated 
-computer and give you root rights and ssh-access to it (the network lin 
-is 100Mb down, 50Mb up, so it should be acceptable).
-
-   - The used space on the other file system is about 3 TB (4 TB 
-capacity) and it is distributed among 5 drives, so I can only offer 
-remote access to this, but I will need time to organize it.
-
-If you need additional information - please ask, but keep in mind that I 
-have almost no "free time" and the answer could need a day or two.
-
-Kind regards,
-
-Nik.
-
---
-
-
+-- 
+Chris Murphy

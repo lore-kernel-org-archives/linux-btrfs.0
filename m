@@ -2,48 +2,44 @@ Return-Path: <SRS0=hyUm=SC=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-5.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E417EC43381
-	for <linux-btrfs@archiver.kernel.org>; Sun, 31 Mar 2019 14:40:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3A5A8C43381
+	for <linux-btrfs@archiver.kernel.org>; Sun, 31 Mar 2019 14:43:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 98E4620870
-	for <linux-btrfs@archiver.kernel.org>; Sun, 31 Mar 2019 14:40:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E3C5820882
+	for <linux-btrfs@archiver.kernel.org>; Sun, 31 Mar 2019 14:43:08 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="GibBULJa"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="VCOdGyLB"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731200AbfCaOke (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 31 Mar 2019 10:40:34 -0400
-Received: from mout.gmx.net ([212.227.15.19]:53931 "EHLO mout.gmx.net"
+        id S1731184AbfCaOnH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 31 Mar 2019 10:43:07 -0400
+Received: from mout.gmx.net ([212.227.15.19]:55621 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726863AbfCaOke (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 31 Mar 2019 10:40:34 -0400
+        id S1731130AbfCaOnH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 31 Mar 2019 10:43:07 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1554043226;
-        bh=XzX9Oh9DB9irDos5PCuinh5AqBKO7u1bpwY8VkcIkTg=;
-        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=GibBULJai42mt4aDe/4Xi3Kl875Avq0l6N3QoD0cuZK4MBP/IdeO8qRme+rwyqggb
-         ZtxixdH1SMh6psF2XXp/MK6Iy4lSjQQcfE//DrVet8iznrQ0PBBNNIWgA7rBJDhaaT
-         IGmYQ3Y7CU7pseOU+PHlDzwAHVQAG0Ae0+fGiOFQ=
+        s=badeba3b8450; t=1554043383;
+        bh=5dNjuA1fX8CfKrGTm7wkjZ141DJ/6m7QlpWtX4A/YdY=;
+        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
+        b=VCOdGyLBImqNxT8l226xH98GD6bSAyDFSvRK8OlKf6AjPZ8hADIAS9E1fjl+qci8t
+         +V5DOylTq52szNU0gQ8zQeCMhWiGykhfBGbWm3MO0fCemecIxFe459niDz7FpMiyPz
+         ek0l5JAzsSMRiYAM95WRT+hIVsYsaIur/S3DuPE0=
 X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx003
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0M4002-1gtLxq3pbO-00rUfn; Sun, 31
- Mar 2019 16:40:26 +0200
-Subject: Re: Is it possible that certain physical disk doesn't implement flush
- correctly?
-To:     Hannes Reinecke <hare@suse.de>,
-        Alberto Bursi <alberto.bursi@outlook.it>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Linux FS Devel <linux-fsdevel@vger.kernel.org>,
-        "linux-block@vger.kernel.org" <linux-block@vger.kernel.org>
-References: <dc1735e6-e410-e593-7059-3728eb427886@gmx.com>
- <AM0PR03MB5745ACEC53F69BC28AC480F592540@AM0PR03MB5745.eurprd03.prod.outlook.com>
- <371167e3-b1d1-48f5-e8a3-501cc41bddf6@gmx.com>
- <a340c3a4-65e7-a1f1-89a0-6b922dfb8755@suse.de>
- <1ab38ef8-93b4-5b2d-4e10-093ba19ede13@gmx.com>
- <e67b8b50-dd2a-2106-5362-913167ea48a8@suse.de>
+Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx002
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0LxgHz-1grS7K3Dn1-017E1b; Sun, 31
+ Mar 2019 16:43:02 +0200
+Subject: Re: [PATCH URGENT v1.1 0/2] btrfs-progs: Fix the nobarrier behavior
+ of write
+To:     Qu Wenruo <wqu@suse.de>, Adam Borowski <kilobyte@angband.pl>,
+        David Sterba <dsterba@suse.cz>
+Cc:     linux-btrfs@vger.kernel.org
+References: <20190327094652.16078-1-wqu@suse.com>
+ <20190327140748.GA30466@angband.pl>
+ <cd66b736-dc8f-dbc4-5253-68117920b8ec@suse.de>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -70,233 +66,169 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <7472d332-3e94-0452-8f6c-5eb61f499830@gmx.com>
-Date:   Sun, 31 Mar 2019 22:40:17 +0800
+Message-ID: <b4f5c3f5-3f8b-08b2-5552-e7f9b6b670e7@gmx.com>
+Date:   Sun, 31 Mar 2019 22:42:54 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.5.3
 MIME-Version: 1.0
-In-Reply-To: <e67b8b50-dd2a-2106-5362-913167ea48a8@suse.de>
+In-Reply-To: <cd66b736-dc8f-dbc4-5253-68117920b8ec@suse.de>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="lWNeXNfL455MwJqWGWux402oaNEKuJ2Sz"
-X-Provags-ID: V03:K1:l4I3rhCCYgC8FD7JH4eN2ZU7LxnlhumqbIiGlAzEIttWSEoUo5G
- OIGREjC9FMwLtTRWdt75u0vD8pE0k71XKQhhJg/Lv/YZlr0OSZII6E1DMzRY3G8NRwFiLtW
- 9kRnswCS7x1Du5z75yn/FyyRnMSceomsHyVCkViRRD1WXFLmRJISHJp1Sw3tj41M+zTAGP0
- RStPeEQ481FShQS0nRgsA==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:zbpEYYCGOeY=:bidA4FKY0+OUf4tWD4vPRv
- frJbEYzaOMUKpAfRAbaGV3M0Cq3XHExMZAPlew4oLbNDpyc/vha4Xxuy10bpMbbPAUOt1HvXk
- 7QgmQmDMaIahMi/k2nCXKHu45KQqYE+s/y3LUemkcxlIV7YBIYsJapm8WtMXGVWfmMETZH12I
- E5sMS5wN04QSwNj/HYCTK6IJq0EnhQJ4tREvIPUUYQ5OT0i936lRcJu0on4YNm/Bqb9mo6GF6
- X/6vEWvKGhMOJ9Wqc4loizQEmIlkW9rlzmNAcljRBz1jdKHVijBScbs31hC40UHLlY2Q9uMA1
- otuUT/PBffOyRPMVu/6D4pg9MKexWFR4EyE0GWFa2pEdEkanyj5zOmT7UT76YFkz9wOl6QL/j
- 4JyDIHLffqPusdnfsNUH8IdDYj/ZQPN7cND8rYw/c/HVsGDhu7DUotyOtcHRhxUKIs8o/hJ1H
- IwhrKut1C6uSocYWQt0EJuOYKLtQlzBJlk9YqxNz30dGs1l8J3H9fMgXrxJXG8rlt0D5XOJum
- mR3w6VP9n5FIOAUBxyTqec5BaVl3qMwfDN2irpfxi59Q8uFGtpV6qox9HKtvsAd+CQhT7n27a
- Bhmu7h4cfp1IC0trZcnWOH0NSChuhFpvJhoZAlgtlpkmcw5wJbdjkOl8pc2thL9Yxa7u7/NKo
- VwPr0A389XdgVw+XIwR4NMkoJBkKEIFlPPaKPkTQbpbXBxVj4cWQOEmzwvGL0q+HwJtC8GBss
- Sh+6nOlMp1A6WI39qNli7srfC7TiHqPuHsWhyvDsic0JW/YEbQUu8mlFhA2CpOtKLpfjwO/Hr
- wqMrabOgCTIMA0exB9cBlZioIqlK1Ci7fgjonycc6t9ftyYxE38K+HUgFvld4zH12ycDoZOTk
- s1GuXy6b4PpmKrER9YiXYyEAz0R6qnTLoMwkPspO8WfIR++tsxMCjD3adSEkLS
+ boundary="3UEwajR1NGEM87OScRj2ohkivtRaYehTB"
+X-Provags-ID: V03:K1:9huzjs0DCA0U5v0Kiu46PjM1bt+G52u7BelOQvwKoi45NN19XTa
+ XLaw7iLojavb5ZUsqOGYMdnk3LYyduEHb4RpoX4x2ql6Fzfu+3nyE0m/zdU0Rp3xZZh14ew
+ KOUi8hTGSrh20w8i8mbDoAjdSGhNChR6RZdk8ID2aEWGdCjCfcVnxJj85IWhfruf5+l9INa
+ 3G9BtqKqn6n2lUVeow+cw==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:g+r/XufgFPA=:cW2LmmFyrDx5bDxEXhlohT
+ y2OCV/2K19JGQ6fBkvjroS0O9RQ9yl8JT8brwmfqBMtDcuZF5HBNxC3qpXHUP9mU51SUQ19uB
+ V1litGb107uKQcv4oDP0/hFpbPzQ+ZTLU+PrmSFIwO8xbgZnjJTc7u/nEI7Mvv8zEa+GaSRev
+ xeprlsg4dQ6nlIAcv3DwJi6f185jX6h2PI1V8MMDx8YHkOtrxtWF3wAOwYbPikdZbby35XE73
+ mN9k2nE93XdXR4vec5KEtLHgzKdRx834qTgKzUM1j/SLADpT78A1Tfug5SI1hi2Aqd6yX9gYG
+ cal5hHsuzGUYpV+ltMtQC8assA1DxLSHmLGqb/l0hwxK42pu+QlacYzFcsM8/Y1zsUnkDpr6T
+ WhS6Ru/HyQV5AdqIl4PBUbqtDgCHxR/oMUwP1sihSBQc7dJU+rPW3vRQm4/egGm5h5OHTkBK2
+ KghlUy4w+gSSrvjwjg4183rNOWMx2EhVP92YVHeKWABwYpgUGEhKBrEARm99aY+6BgcFjTv2s
+ HEbVDZ2PmqUJh0LpgFlN/UfIcd98otnjfzBM17w+aTjH9TJi+c5FAs7qqmCzurJH2uJTYZxBt
+ QN6SHwLNP5+IkVnOv6yBPci24iAx+Tn6m1epGZApO9ekIBVD6uzCVbZBgAS0S/d/smvye/SFY
+ 6Mw/N26FxXfoxVclX1hY1Mr+QALvw2RdA+Dxz1hLmUKB1TRA6lLVqtLFXp1VXAELr7N0YigqL
+ 6aP9501QtX4xA2XBNz8Q7o11poWcipjjd0S56QDaWpt4lez57UkpHZJbAj2Tr9cGrrRc7xjWE
+ XLXNqmvGXw760HIGrglHuoFWNsDGDrCGxTbl3z0K7TvG3JqBz8VXUuISlFcI+P0dwIkwWuywv
+ yMIjtdi66NfCs4fR7cWzqVUcNLNi6ar91K6xbI0CEbAQIybP8Fs4qIZpbBEW5o
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---lWNeXNfL455MwJqWGWux402oaNEKuJ2Sz
-Content-Type: multipart/mixed; boundary="1E7zLsTyT7NDS6VUCntjn7NjwImEOocJQ";
+--3UEwajR1NGEM87OScRj2ohkivtRaYehTB
+Content-Type: multipart/mixed; boundary="W9WkicAmphxCc4gixOphAExKYo8LvSDIX";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Hannes Reinecke <hare@suse.de>, Alberto Bursi <alberto.bursi@outlook.it>,
- "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
- Linux FS Devel <linux-fsdevel@vger.kernel.org>,
- "linux-block@vger.kernel.org" <linux-block@vger.kernel.org>
-Message-ID: <7472d332-3e94-0452-8f6c-5eb61f499830@gmx.com>
-Subject: Re: Is it possible that certain physical disk doesn't implement flush
- correctly?
-References: <dc1735e6-e410-e593-7059-3728eb427886@gmx.com>
- <AM0PR03MB5745ACEC53F69BC28AC480F592540@AM0PR03MB5745.eurprd03.prod.outlook.com>
- <371167e3-b1d1-48f5-e8a3-501cc41bddf6@gmx.com>
- <a340c3a4-65e7-a1f1-89a0-6b922dfb8755@suse.de>
- <1ab38ef8-93b4-5b2d-4e10-093ba19ede13@gmx.com>
- <e67b8b50-dd2a-2106-5362-913167ea48a8@suse.de>
-In-Reply-To: <e67b8b50-dd2a-2106-5362-913167ea48a8@suse.de>
+To: Qu Wenruo <wqu@suse.de>, Adam Borowski <kilobyte@angband.pl>,
+ David Sterba <dsterba@suse.cz>
+Cc: linux-btrfs@vger.kernel.org
+Message-ID: <b4f5c3f5-3f8b-08b2-5552-e7f9b6b670e7@gmx.com>
+Subject: Re: [PATCH URGENT v1.1 0/2] btrfs-progs: Fix the nobarrier behavior
+ of write
+References: <20190327094652.16078-1-wqu@suse.com>
+ <20190327140748.GA30466@angband.pl>
+ <cd66b736-dc8f-dbc4-5253-68117920b8ec@suse.de>
+In-Reply-To: <cd66b736-dc8f-dbc4-5253-68117920b8ec@suse.de>
 
---1E7zLsTyT7NDS6VUCntjn7NjwImEOocJQ
+--W9WkicAmphxCc4gixOphAExKYo8LvSDIX
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
+Not so gentle ping.
 
-
-On 2019/3/31 =E4=B8=8B=E5=8D=8810:37, Hannes Reinecke wrote:
-> On 3/31/19 4:17 PM, Qu Wenruo wrote:
->>
->>
->> On 2019/3/31 =E4=B8=8B=E5=8D=889:36, Hannes Reinecke wrote:
->>> On 3/31/19 2:00 PM, Qu Wenruo wrote:
->>>>
->>>>
->>>> On 2019/3/31 =E4=B8=8B=E5=8D=887:27, Alberto Bursi wrote:
->>>>>
->>>>> On 30/03/19 13:31, Qu Wenruo wrote:
->>>>>> Hi,
->>>>>>
->>>>>> I'm wondering if it's possible that certain physical device doesn'=
-t
->>>>>> handle flush correctly.
->>>>>>
->>>>>> E.g. some vendor does some complex logical in their hdd controller=
- to
->>>>>> skip certain flush request (but not all, obviously) to improve
->>>>>> performance?
->>>>>>
->>>>>> Do anyone see such reports?
->>>>>>
->>>>>> And if proves to happened before, how do we users detect such
->>>>>> problem?
->>>>>>
->>>>>> Can we just check the flush time against the write before flush ca=
-ll?
->>>>>> E.g. write X random blocks into that device, call fsync() on it,
->>>>>> check
->>>>>> the execution time. Repeat Y times, and compare the avg/std.
->>>>>> And change X to 2X/4X/..., repeat above check.
->>>>>>
->>>>>> Thanks,
->>>>>> Qu
->>>>>>
->>>>>>
->>>>>
->>>>> Afaik HDDs and SSDs do lie to fsync()
->>>>
->>>> fsync() on block device is interpreted into FLUSH bio.
->>>>
->>>> If all/most consumer level SATA HDD/SSD devices are lying, then
->>>> there is
->>>> no power loss safety at all for any fs. As most fs relies on FLUSH b=
-io
->>>> to implement barrier.
->>>>
->>>> And for fs with generation check, they all should report metadata fr=
-om
->>>> the future every time a crash happens, or even worse gracefully
->>>> umounting fs would cause corruption.
->>>>
->>> Please, stop making assumptions.
->>
->> I'm not.
->>
->>>
->>> Disks don't 'lie' about anything, they report things according to the=
-
->>> (SCSI) standard.
->>> And the SCSI standard has two ways of ensuring that things are writte=
-n
->>> to disk: the SYNCHRONIZE_CACHE command and the FUA (force unit access=
-)
->>> bit in the command.
->>
->> I understand FLUSH and FUA.
->>
->>> The latter provides a way of ensuring that a single command made it t=
-o
->>> disk, and the former instructs the driver to:
->>>
->>> "a) perform a write medium operation to the LBA using the logical blo=
-ck
->>> data in volatile cache; or
->>> b) write the logical block to the non-volatile cache, if any."
->>>
->>> which means it's perfectly fine to treat the write-cache as a
->>> _non-volative_ cache if the RAID HBA is battery backed, and thus can
->>> make sure that outstanding I/O can be written back even in the case o=
-f a
->>> power failure.
->>>
->>> The FUA handling, OTOH, is another matter, and indeed is causing some=
-
->>> raised eyebrows when comparing it to the spec. But that's another sto=
-ry.
->>
->> I don't care FUA as much, since libata still doesn't support FUA by
->> default and interpret it as FLUSH/WRITE/FLUSH, so it doesn't make thin=
-gs
->> worse.
->>
->> I'm more interesting in, are all SATA/NVMe disks follows this FLUSH
->> behavior?
->>
-> They have to to be spec compliant.
->=20
->> For most case, I believe it is, or whatever the fs is, either CoW base=
-d
->> or journal based, we're going to see tons of problems, even gracefully=
-
->> unmounted fs can have corruption if FLUSH is not implemented well.
->>
->> I'm interested in, is there some device doesn't completely follow
->> regular FLUSH requirement, but do some tricks, for certain tested fs.
->>
-> Not that I'm aware of.
-
-That's great to know.
-
->=20
->> E.g. the disk is only tested for certain fs, and that fs always does
->> something like flush, write flush, fua.
->> In that case, if the controller decides to skip the 2nd flush, but onl=
-y
->> do the first flush and fua, if the 2nd write is very small (e.g.
->> journal), the chance of corruption is pretty low due to the small wind=
-ow.
->>
-> Highly unlikely.
-> Tweaking flush handling in this way is IMO far too complicated, and
-> would only add to the complexity of adding flush handling in firmware i=
-n
-> the first place.
-> Whereas the whole point of this exercise would be to _reduce_ complexit=
-y
-> in firmware (no-one really cares about the hardware here; that's alread=
-y
-> factored in during manufacturing, and reliability is measured in such a=
-
-> broad way that it doesn't make sense for the manufacture to try to
-> 'improve' reliability by tweaking the flush algorithm).
-> So if someone would be wanting to save money they'd do away with the
-> entire flush handling and do not implement a write cache at all.
-> That even saves them money on the hardware, too.
-
-If there is no report for consumer level hdd/ssd, then it should be
-fine, and matches my understanding.
+IMHO this fix itself should be worthy a minor release.
 
 Thanks,
 Qu
 
+On 2019/3/27 =E4=B8=8B=E5=8D=8810:48, Qu Wenruo wrote:
 >=20
-> Cheers,
 >=20
-> Hannes
+> On 2019/3/27 =E4=B8=8B=E5=8D=8810:07, Adam Borowski wrote:
+>> On Wed, Mar 27, 2019 at 05:46:50PM +0800, Qu Wenruo wrote:
+>>> This urgent patchset can be fetched from github:
+>>> https://github.com/adam900710/btrfs-progs/tree/flush_super
+>>> Which is based on v4.20.2.
+>>>
+>>> Before this patch, btrfs-progs writes to the fs has no barrier at all=
+=2E
+>>> All metadata and superblock are just buffered write, no barrier betwe=
+en
+>>> super blocks and metadata writes at all.
+>>>
+>>> No wonder why even clear space cache can cause serious transid
+>>> corruption to the originally good fs.
+>>>
+>>> Please merge this fix as soon as possible as I really don't want to s=
+ee
+>>> btrfs-progs corrupting any fs any more.
+>>
+>> How often does this happen in practice?  I'm slightly incredulous abou=
+t
+>> btrfs-progs crashing often.   Especially that pwrite() is buffered on =
+the
+>> kernel side, so we'd need a _kernel_ crash (usually a power loss) to b=
+reak
+>> consistency.  Obviously, a potential data loss bug is always something=
+ that
+>> needs fixing, I'm just wondering about severity.
+>=20
+> Here is a valid case where a crash could cause transid error:
+>=20
+> - transaction 1
+>   new em at 16K (fs root, gen =3D 1)
+>   new em at 32K (extent root, gen =3D 1)
+>   new em at 48K (tree root, gen =3D 1)
+>   sb->fs root =3D gen 1
+>   sb->extent root =3D gen 1
+>   sb->tree root =3D gen 1
+>=20
+> - transaction 2
+>   new em at 64K (extent root, gen =3D 2)
+>   new em at 80K (tree root, gen =3D 2)
+>   sb->fs root =3D gen 1 at 16K
+>   sb->extent root =3D gen 2
+>   sb->tree root =3D gen 2
+>=20
+> - transaction 3, half backed due to error commit transaction
+>   new eb at 16K (tree root, gen =3D 3) submitted
+>=20
+> In above case, we will write the newest eb at 16K to disk, but with sb
+> from transaction 2.
+>=20
+> Then sb expects to read out a tree with gen 1, but get a tree with gen =
+3.
+> Further more, even we ignore the generation mismatch, the content of em=
+
+> 16K is completely wrong, super block of gen 2 expects fs root content
+> from em at 16K, but its content is tree root.
+>=20
+> This should explain the severity much better.
+>=20
+> Thanks,
+> Qu
+>=20
+>>
+>> Or do I understand this wrong?
+>>
+>> Asking because Dimitri John Ledkov stepped down as Debian's maintainer=
+ of
+>> this package, and I'm taking up the mantle (with Nicholas D Steeves be=
+ing
+>> around) -- modulo any updates other than important bug fixes being on =
+hold
+>> because of Debian's freeze.  Thus, I wonder if this is important enoug=
+h to
+>> ask for a freeze exception.
+>>
+>>
+>> Meow!
+>>
+>=20
 
 
---1E7zLsTyT7NDS6VUCntjn7NjwImEOocJQ--
+--W9WkicAmphxCc4gixOphAExKYo8LvSDIX--
 
---lWNeXNfL455MwJqWGWux402oaNEKuJ2Sz
+--3UEwajR1NGEM87OScRj2ohkivtRaYehTB
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlyg0VEACgkQwj2R86El
-/qgEnQf+J0x+u11FBWfshU5U+gjZ+/k3RuPRnuevV4d/tuEGMGHArURiIcCEYoVL
-ZziyUkeUuZwUhwcTbug0lS6N10IG5l9Jlpf3GG+BWlChIm5X//7JJ3EElxBpsWoz
-LzuZJ9AhT8DG9MIytdH1badU/j5OMWrN/kEBJJaVhQxDGb0/4AyYWZBk8PGYDI7h
-1KjUgCg+ztlKkqTq/WW9FeyT+iIxPFrYb5bGr0tA5lYv6HuOSsjkRF8AAI2cEA7x
-rIhJoaBzP/6EtAdqnSkqhdPi1HQg/bZDHuhoE7Zspc9duvc3bV4wRbSgo7gIzHOi
-Zic3JfSh41NuR4kHe5zG+1wfam+GNQ==
-=zANO
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlyg0e4ACgkQwj2R86El
+/qgBqQf/QFTjV6HbLrW+uUSlw4QnlKZ5yn8Sycp0eKiEyC+4cie6NaNUUARi6OIb
+/InJfg29gq01pt5zjI/jV172KAG6Cjtb9iyyK6MumJbODrKaDGiFBEhpyWXsF3/v
+vCiQsCHPkjx01RFQYAYAnsQ063akiYrFMQvNjtdtKhj/OY2A8njCTuANO20FQowq
+7xHhPbf3oEY2xSPK6vjx5+sTdA8toWhsw/xhrauEHFrLtXjdLmu1jIQU5dfsKz36
+59QLWjVFLJoPQvvEoG8wPYV5AGylOrxcym7enNVYHNo92FyO/pBDJo6a+jdTjF/j
+rZB+OJBEc/DiS/fi2YHPI9gaQDCU0Q==
+=6EvQ
 -----END PGP SIGNATURE-----
 
---lWNeXNfL455MwJqWGWux402oaNEKuJ2Sz--
+--3UEwajR1NGEM87OScRj2ohkivtRaYehTB--

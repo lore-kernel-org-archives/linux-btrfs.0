@@ -2,102 +2,92 @@ Return-Path: <SRS0=hyUm=SC=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 02994C43381
-	for <linux-btrfs@archiver.kernel.org>; Sun, 31 Mar 2019 21:35:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EE12CC10F06
+	for <linux-btrfs@archiver.kernel.org>; Sun, 31 Mar 2019 22:45:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A62AE2085A
-	for <linux-btrfs@archiver.kernel.org>; Sun, 31 Mar 2019 21:35:08 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="XK8dcpdp"
+	by mail.kernel.org (Postfix) with ESMTP id B83CD20870
+	for <linux-btrfs@archiver.kernel.org>; Sun, 31 Mar 2019 22:45:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731326AbfCaVfH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 31 Mar 2019 17:35:07 -0400
-Received: from mail-lf1-f67.google.com ([209.85.167.67]:35300 "EHLO
-        mail-lf1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731172AbfCaVfH (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 31 Mar 2019 17:35:07 -0400
-Received: by mail-lf1-f67.google.com with SMTP id u21so4833575lfu.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 31 Mar 2019 14:35:05 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=QjgLodXaWd73j2zyesKlCdIE6TT7rzt0M4RC+B5RhmU=;
-        b=XK8dcpdpvWuBZgsyZHcA9hH5DvAM/srL+YPTsYHS3uwCgAkRob9i1oFL11cq/ug1Mt
-         4JU/sEQaNuTTgqvKOcKBlCYfU/7vWtmYYDaMtChCbH+KN14UvdnwW2zNtbKWC8Cue4n8
-         Vt8pQn2q+QXjIZzJDNLB5+vlB9DvQmq/wApOjcGOLxnweCCu90TPJFVuyhgNm2HOh+3O
-         OtJeumtqkC4RfJJ+UWyp374nPY5bhP1gMfrg7WDH1P2aDJF/g33gReKQ3Diz8yJ2NGKM
-         AAZZxm0W+THdgSegqOnMDjAJ7ROGJlTp685zWgiHlf+RK8Dsx0uHnDDNqqqLMTVU4iL6
-         84pw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=QjgLodXaWd73j2zyesKlCdIE6TT7rzt0M4RC+B5RhmU=;
-        b=l9UmPoNd5DHmnYCUr8/njAs19TWZKk5QsGPMtyYLbZubmlMLyjVn7LELAqR+bt4qCC
-         1SvrkGt1uqvpTft2d6idp4DLcztnd2Oen+9evyDGVFalZjNP4MF+FwqlJp3faAKK1+rf
-         bu2VMmW+EL6MzpCVoWzic9ADMBNZ7GEh8qiPzrd3/kYVU0fWmp8mlElEulyZOHE8vNZo
-         VJZULCsQsxVvfA6tlr7AgYTwhldnTqQuX8sf+37f2CC6bqGNv44wFxlVafZsLqfkDKK1
-         UHzcXljvE/Pa+qZZLLNJE1srMgfiz0fhAVaDY8/cjk1fFac0QHzqgM8ImBCrebJuRGPi
-         etXw==
-X-Gm-Message-State: APjAAAVjAs5PWVrBQybY65oMjtfuTgvouDi5QbRO4XH8FRGozm+78Jih
-        U3kLv9oSpGAitacZVUwIFKyX5s4213z1BtM6WvldLA==
-X-Google-Smtp-Source: APXvYqxE9GZVZ2m2dymDlGllkWbXRVZjcBp6zgKs4vf7bYIw01enMLGeeFMgMPGy5u6mIsftP34gGtVARJ4eZ/99ftY=
-X-Received: by 2002:a19:a8cf:: with SMTP id r198mr17033593lfe.19.1554068105054;
- Sun, 31 Mar 2019 14:35:05 -0700 (PDT)
+        id S1731406AbfCaWpy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 31 Mar 2019 18:45:54 -0400
+Received: from fieldses.org ([173.255.197.46]:34514 "EHLO fieldses.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1731172AbfCaWpy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 31 Mar 2019 18:45:54 -0400
+Received: by fieldses.org (Postfix, from userid 2815)
+        id D30141EF6; Sun, 31 Mar 2019 18:45:53 -0400 (EDT)
+Date:   Sun, 31 Mar 2019 18:45:53 -0400
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     Supercilious Dude <supercilious.dude@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Linux FS Devel <linux-fsdevel@vger.kernel.org>,
+        linux-block@vger.kernel.org
+Subject: Re: Is it possible that certain physical disk doesn't implement
+ flush correctly?
+Message-ID: <20190331224553.GA17421@fieldses.org>
+References: <dc1735e6-e410-e593-7059-3728eb427886@gmx.com>
+ <CAGmvKk7bYkaNXGe4agwLWmM_YM7Sjfn1NjBheQ=FzcJmUkZcGg@mail.gmail.com>
+ <16edb2d0-ee41-908f-e0bf-5c27160ccff7@gmx.com>
+ <CAGmvKk5wk9RFhBr20X850MjFDkudzrZvjWVJxGg4GkhtrDfKUw@mail.gmail.com>
+ <948a62d3-aa3e-418e-00df-d73d4dbfb5a6@gmx.com>
+ <CAGmvKk5wFJNLbiJdYGA5PVFUnAURfN4Uk=JiGUaCndcepa51NA@mail.gmail.com>
+ <4f5586f7-aef1-4e2a-2aee-5d040c023c68@gmx.com>
 MIME-Version: 1.0
-References: <CAG3pWAmvekNpnBsQTaMrefKe6pvMSZjPm+SOxnKkMkpGO_1msQ@mail.gmail.com>
- <CAJCQCtQ3YFovgt4tFNQ+uLE81BiD0KFqPdvzE7Rxu+3wujWp2A@mail.gmail.com> <CAG3pWA=pzd+xxCrZ92b4TBw5iWtsHkfJQ4nsNrnqcBz_6dX4Hg@mail.gmail.com>
-In-Reply-To: <CAG3pWA=pzd+xxCrZ92b4TBw5iWtsHkfJQ4nsNrnqcBz_6dX4Hg@mail.gmail.com>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Sun, 31 Mar 2019 15:34:53 -0600
-Message-ID: <CAJCQCtTgfVY9g+A3m=FA_k0O-kbMGifz8QF62W2LMVmW_C8wnA@mail.gmail.com>
-Subject: Re: help request for an unmountable raid1 filesystem
-To:     Glenn Trigg <ggtrigg@gmail.com>
-Cc:     Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <4f5586f7-aef1-4e2a-2aee-5d040c023c68@gmx.com>
+User-Agent: Mutt/1.5.21 (2010-09-15)
+From:   bfields@fieldses.org (J. Bruce Fields)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, Mar 30, 2019 at 5:43 PM Glenn Trigg <ggtrigg@gmail.com> wrote:
->
-> Hi Chris,
->
-> Thanks for replying.
->
-> On Fri, 29 Mar 2019 at 13:27, Chris Murphy <lists@colorremedies.com> wrote:
-> ...
-> > Seem in conflict. I don't really understand how the kernel complains
-> > about a bad super and yet user space tools say they're all OK.  What
-> > happens if you try:
-> >
-> > # mount -o ro,nologreplay,usebackuproot
->
-> I got essentially the same results...
->
-> % mount -o ro,nologreplay,usebackuproot /dev/sda1
-> mount: /data: can't read superblock on /dev/sda1.
+On Sat, Mar 30, 2019 at 09:24:37PM +0800, Qu Wenruo wrote:
+> 
+> 
+> On 2019/3/30 下午9:14, Supercilious Dude wrote:
+> > On Sat, 30 Mar 2019 at 13:09, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+> >>
+> >> If controller is doing so, it must have its own power or at least finish
+> >> flush when controller writes to its fast cache.
+> >>
+> > 
+> > The controller has its own battery backup to power the DRAM cache, as
+> > well as flash storage to dump it onto in the exceedingly unlikely
+> > event that the battery gets depleted.
+> > 
+> >> For cache case, if we have enough data, we could still find some clue on
+> >> the flush execution time.
+> >>
+> >> Despite that, for that enterprise level usage, it's OK.
+> >>
+> >> But for consumer level storage, I'm not sure, especially for HDDs, and
+> >> maybe NVMe devices.
+> >>
+> > 
+> > How do you distinguish who is a who? Am I an enterprise or a consumer?
+> 
+> Easy, price. :P
+> 
+> To be honest, I don't really care about that fancy use case.
+> It's the vendor doing its work, and if something wrong happened,
+> customer will yell at them.
+> 
+> I'm more interesting in the consumer level situation.
 
-I'm confused because "can't read superblock" isn't found in fs/btrfs.
-I'm only finding it in fs/gfs2/ops_fstype.c
+The feature seems to be advertised as "power loss protection" or
+"enhanced power loss data protection".  Which makes it sound like a data
+safety feature when really it's a performance feature.  E.g. these are
+the Intel drives with "EPLDP":
 
-From what you provided, /dev/sda1 definitely has a valid btrfs
-superblock. I wonder if there's some other stale something or other on
-this partition?
+	https://ark.intel.com/content/www/us/en/ark/search/featurefilter.html?productType=35125&0_EPLDP=True
 
-What do you get for
+Last I checked there were some that weren't too expensive.
 
-$ sudo blkid
-$ sudo wipefs -an /dev/sda1
-$ sudo mount -v -o ro,nologreplay,usebackuproot
-
--- 
-Chris Murphy
+--b.

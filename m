@@ -2,97 +2,44 @@ Return-Path: <SRS0=hyUm=SC=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 27C68C10F06
-	for <linux-btrfs@archiver.kernel.org>; Sun, 31 Mar 2019 12:21:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 12D54C10F06
+	for <linux-btrfs@archiver.kernel.org>; Sun, 31 Mar 2019 13:37:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E942D20989
-	for <linux-btrfs@archiver.kernel.org>; Sun, 31 Mar 2019 12:21:51 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="CqX9jRGI"
+	by mail.kernel.org (Postfix) with ESMTP id DC43120882
+	for <linux-btrfs@archiver.kernel.org>; Sun, 31 Mar 2019 13:37:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731260AbfCaMVv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 31 Mar 2019 08:21:51 -0400
-Received: from mail-lj1-f176.google.com ([209.85.208.176]:33989 "EHLO
-        mail-lj1-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726873AbfCaMVu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 31 Mar 2019 08:21:50 -0400
-Received: by mail-lj1-f176.google.com with SMTP id j89so5644305ljb.1;
-        Sun, 31 Mar 2019 05:21:49 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=subject:to:references:from:openpgp:autocrypt:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=vb8ji+z2/qKt5D5DeFedtohmqm5g/R2LEzauO++lqbY=;
-        b=CqX9jRGIeQByR5reKIxOwGdfbNw5ziaLzNYfhOtkVN9+VPoVLAhm6ZL/ieKEXUM33t
-         32kG5JnQzhH0e6NL1WSmUqFdGgeXPmp/9LxsT/TKGB/huu8Phzz/xVpyzGdRo6e8UATj
-         4JRalZFnxkvyFv1kPHtyer0SWVkSv6gFJFYHaE11uMllmW6+RT+skYANebdzEwwzfEae
-         Y/e932+3ZCJ0oEBGFUYYCz7iQ6f7BZJqefiyP7z9WSvpwTrbcCyWUTuAVWsKgV4DJrxa
-         aBnE6vW2j5IHZujlOopgNdvQyFHq9j3ZxxgJsZb6TfSrJBR4uxGBYT/DEB3ywmjjSYdo
-         kvXA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:openpgp:autocrypt
-         :message-id:date:user-agent:mime-version:in-reply-to
-         :content-language:content-transfer-encoding;
-        bh=vb8ji+z2/qKt5D5DeFedtohmqm5g/R2LEzauO++lqbY=;
-        b=A01HVtoP6y6b8Jc2iYYsdvdxnnXmQOL5brGrSJr8pynbDiSwjkDw7zMVMA2RB4s9gg
-         40wZwTtTYLb5PpYG2sYVl/eJHDaPNJz4ZLIbJm1A2poSGCLtMQw66ZhY1t9ciivJuMww
-         mj1dPMbL1h86MouIZSK1gNHsvMBOYY2hRnd2oRqKMEAMRQ0AA+0Z6mqVN4yfpHgDpH+s
-         FGcD292LO6/ouCUGmOR2BzzD3zMCD9XDXih+sNrX7CWBpnDLQw479cpMyzOQ7Nyynvjg
-         Th+c+zxQ/w3P3srNTqaNJ7vUyE1srBC+TT5aZpv1vi1wDZmrGOtZsZT+VYQClf3xlEWX
-         sXGw==
-X-Gm-Message-State: APjAAAUKDI48bjuxTZX4CHwTRGqx91ebHOgG2Msh9G16AxQo1xBmLL9J
-        Nqz2M2cJ5PgubOwDg/h2QA19Lv6Z
-X-Google-Smtp-Source: APXvYqym9kULuR1pBcuL6VUA5NG6BL224DK16AEOOTTi3i3ssrylc7TyiCvV8re8RHR+ecSXbG2OuA==
-X-Received: by 2002:a2e:a284:: with SMTP id k4mr28744509lja.99.1554034908257;
-        Sun, 31 Mar 2019 05:21:48 -0700 (PDT)
-Received: from [192.168.1.5] ([109.252.90.193])
-        by smtp.gmail.com with ESMTPSA id t28sm1589795lje.9.2019.03.31.05.21.47
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Sun, 31 Mar 2019 05:21:47 -0700 (PDT)
+        id S1731118AbfCaNg7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 31 Mar 2019 09:36:59 -0400
+Received: from mx2.suse.de ([195.135.220.15]:37356 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726863AbfCaNg7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 31 Mar 2019 09:36:59 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 2FCD4AD14;
+        Sun, 31 Mar 2019 13:36:58 +0000 (UTC)
 Subject: Re: Is it possible that certain physical disk doesn't implement flush
  correctly?
-To:     Alberto Bursi <alberto.bursi@outlook.it>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>,
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Alberto Bursi <alberto.bursi@outlook.it>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
         Linux FS Devel <linux-fsdevel@vger.kernel.org>,
         "linux-block@vger.kernel.org" <linux-block@vger.kernel.org>
 References: <dc1735e6-e410-e593-7059-3728eb427886@gmx.com>
  <AM0PR03MB5745ACEC53F69BC28AC480F592540@AM0PR03MB5745.eurprd03.prod.outlook.com>
-From:   Andrei Borzenkov <arvidjaar@gmail.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=arvidjaar@gmail.com; prefer-encrypt=mutual; keydata=
- xsDiBDxiRwwRBAC3CN9wdwpVEqUGmSoqF8tWVIT4P/bLCSZLkinSZ2drsblKpdG7x+guxwts
- +LgI8qjf/q5Lah1TwOqzDvjHYJ1wbBauxZ03nDzSLUhD4Ms1IsqlIwyTLumQs4vcQdvLxjFs
- G70aDglgUSBogtaIEsiYZXl4X0j3L9fVstuz4/wXtwCg1cN/yv/eBC0tkcM1nsJXQrC5Ay8D
- /1aA5qPticLBpmEBxqkf0EMHuzyrFlqVw1tUjZ+Ep2LMlem8malPvfdZKEZ71W1a/XbRn8FE
- SOp0tUa5GwdoDXgEp1CJUn+WLurR0KPDf01E4j/PHHAoABgrqcOTcIVoNpv2gNiBySVsNGzF
- XTeY/Yd6vQclkqjBYONGN3r9R8bWA/0Y1j4XK61qjowRk3Iy8sBggM3PmmNRUJYgroerpcAr
- 2byz6wTsb3U7OzUZ1Llgisk5Qum0RN77m3I37FXlIhCmSEY7KZVzGNW3blugLHcfw/HuCB7R
- 1w5qiLWKK6eCQHL+BZwiU8hX3dtTq9d7WhRW5nsVPEaPqudQfMSi/Ux1kc0mQW5kcmVpIEJv
- cnplbmtvdiA8YXJ2aWRqYWFyQGdtYWlsLmNvbT7CZQQTEQIAJQIbAwYLCQgHAwIGFQgCCQoL
- BBYCAwECHgECF4AFAliWAiQCGQEACgkQR6LMutpd94wFGwCeNuQnMDxve/Fo3EvYIkAOn+zE
- 21cAnRCQTXd1hTgcRHfpArEd/Rcb5+SczsBNBDxiRyQQBACQtME33UHfFOCApLki4kLFrIw1
- 5A5asua10jm5It+hxzI9jDR9/bNEKDTKSciHnM7aRUggLwTt+6CXkMy8an+tVqGL/MvDc4/R
- KKlZxj39xP7wVXdt8y1ciY4ZqqZf3tmmSN9DlLcZJIOT82DaJZuvr7UJ7rLzBFbAUh4yRKaN
- nwADBwQAjNvMr/KBcGsV/UvxZSm/mdpvUPtcw9qmbxCrqFQoB6TmoZ7F6wp/rL3TkQ5UElPR
- gsG12+Dk9GgRhnnxTHCFgN1qTiZNX4YIFpNrd0au3W/Xko79L0c4/49ten5OrFI/psx53fhY
- vLYfkJnc62h8hiNeM6kqYa/x0BEddu92ZG7CRgQYEQIABgUCPGJHJAAKCRBHosy62l33jMhd
- AJ48P7WDvKLQQ5MKnn2D/TI337uA/gCgn5mnvm4SBctbhaSBgckRmgSxfwQ=
-Message-ID: <8faff75a-21bb-b21b-b19b-fd5aad002b88@gmail.com>
-Date:   Sun, 31 Mar 2019 15:21:46 +0300
+ <371167e3-b1d1-48f5-e8a3-501cc41bddf6@gmx.com>
+From:   Hannes Reinecke <hare@suse.de>
+Message-ID: <a340c3a4-65e7-a1f1-89a0-6b922dfb8755@suse.de>
+Date:   Sun, 31 Mar 2019 15:36:53 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.6.1
+ Thunderbird/60.5.1
 MIME-Version: 1.0
-In-Reply-To: <AM0PR03MB5745ACEC53F69BC28AC480F592540@AM0PR03MB5745.eurprd03.prod.outlook.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <371167e3-b1d1-48f5-e8a3-501cc41bddf6@gmx.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -100,50 +47,74 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-31.03.2019 14:27, Alberto Bursi пишет:
+On 3/31/19 2:00 PM, Qu Wenruo wrote:
 > 
-> On 30/03/19 13:31, Qu Wenruo wrote:
->> Hi,
->>
->> I'm wondering if it's possible that certain physical device doesn't
->> handle flush correctly.
->>
->> E.g. some vendor does some complex logical in their hdd controller to
->> skip certain flush request (but not all, obviously) to improve performance?
->>
->> Do anyone see such reports?
->>
->> And if proves to happened before, how do we users detect such problem?
->>
->> Can we just check the flush time against the write before flush call?
->> E.g. write X random blocks into that device, call fsync() on it, check
->> the execution time. Repeat Y times, and compare the avg/std.
->> And change X to 2X/4X/..., repeat above check.
->>
->> Thanks,
->> Qu
->>
->>
 > 
-> Afaik HDDs and SSDs do lie to fsync()
+> On 2019/3/31 下午7:27, Alberto Bursi wrote:
+>>
+>> On 30/03/19 13:31, Qu Wenruo wrote:
+>>> Hi,
+>>>
+>>> I'm wondering if it's possible that certain physical device doesn't
+>>> handle flush correctly.
+>>>
+>>> E.g. some vendor does some complex logical in their hdd controller to
+>>> skip certain flush request (but not all, obviously) to improve performance?
+>>>
+>>> Do anyone see such reports?
+>>>
+>>> And if proves to happened before, how do we users detect such problem?
+>>>
+>>> Can we just check the flush time against the write before flush call?
+>>> E.g. write X random blocks into that device, call fsync() on it, check
+>>> the execution time. Repeat Y times, and compare the avg/std.
+>>> And change X to 2X/4X/..., repeat above check.
+>>>
+>>> Thanks,
+>>> Qu
+>>>
+>>>
+>>
+>> Afaik HDDs and SSDs do lie to fsync()
 > 
-> unless the write cache is turned off with hdparm,
+> fsync() on block device is interpreted into FLUSH bio.
+> 
+> If all/most consumer level SATA HDD/SSD devices are lying, then there is
+> no power loss safety at all for any fs. As most fs relies on FLUSH bio
+> to implement barrier.
+> 
+> And for fs with generation check, they all should report metadata from
+> the future every time a crash happens, or even worse gracefully
+> umounting fs would cause corruption.
+> 
+Please, stop making assumptions.
 
-I know at least one case of SSD that are claimed to flush cache in case
-of power loss. I can dig up details if anyone is interested.
+Disks don't 'lie' about anything, they report things according to the 
+(SCSI) standard.
+And the SCSI standard has two ways of ensuring that things are written 
+to disk: the SYNCHRONIZE_CACHE command and the FUA (force unit access) 
+bit in the command.
+The latter provides a way of ensuring that a single command made it to 
+disk, and the former instructs the driver to:
 
-> 
-> hdparm -W0 /dev/sda
-> 
-> similarly to RAID controllers.
-> 
-> see below
-> 
-> https://brad.livejournal.com/2116715.html
-> 
-> https://queue.acm.org/detail.cfm?id=2367378
-> 
-> 
-> -
-> 
+"a) perform a write medium operation to the LBA using the logical block 
+data in volatile cache; or
+b) write the logical block to the non-volatile cache, if any."
 
+which means it's perfectly fine to treat the write-cache as a 
+_non-volative_ cache if the RAID HBA is battery backed, and thus can 
+make sure that outstanding I/O can be written back even in the case of a 
+power failure.
+
+The FUA handling, OTOH, is another matter, and indeed is causing some 
+raised eyebrows when comparing it to the spec. But that's another story.
+
+Cheers,
+
+Hannes
+-- 
+r. Hannes Reinecke            Teamlead Storage & Networking
+hare@suse.de                              +49 911 74053 688
+SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
+GF: Felix Imendörffer, Mary Higgins, Sri Rasiah
+HRB 21284 (AG Nürnberg)

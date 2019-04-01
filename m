@@ -6,88 +6,124 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B8F54C10F05
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Apr 2019 08:30:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 30431C4360F
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Apr 2019 11:08:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 890D820857
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Apr 2019 08:30:05 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0AB0220870
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Apr 2019 11:08:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732029AbfDAIaD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 1 Apr 2019 04:30:03 -0400
-Received: from mx2.suse.de ([195.135.220.15]:51638 "EHLO mx1.suse.de"
+        id S1726636AbfDALIn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 1 Apr 2019 07:08:43 -0400
+Received: from mx2.suse.de ([195.135.220.15]:59832 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1732000AbfDAIaD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 1 Apr 2019 04:30:03 -0400
+        id S1725882AbfDALIn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 1 Apr 2019 07:08:43 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id F09E9AED7
-        for <linux-btrfs@vger.kernel.org>; Mon,  1 Apr 2019 08:30:01 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 40690AD84;
+        Mon,  1 Apr 2019 11:08:41 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 1/2] btrfs: Use kvmalloc for allocating compressed path context
-Date:   Mon,  1 Apr 2019 11:29:57 +0300
-Message-Id: <20190401082958.26470-2-nborisov@suse.com>
+To:     fstests@vger.kernel.org
+Cc:     guaneryu@gmail.com, linux-btrfs@vger.kernel.org,
+        Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH v2] btrfs: Enable btrfs/003
+Date:   Mon,  1 Apr 2019 14:08:37 +0300
+Message-Id: <20190401110837.30231-1-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
-In-Reply-To: <20190401082958.26470-1-nborisov@suse.com>
-References: <20190401082958.26470-1-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Recent refactoring of cow_file_range_async means it's now possible to
-request a rather large physically contiguous memory via kmalloc. The
-size is dependent on the number of 512k chunks that the compressed range
-consists of. David reported multiple OOM messages on such large
-allocations. Fix it by switching to using kvmalloc.
+For a long time this test has been failing on all kinds of VM configuration,
+which are using virtio_blk devices. This is due to the fact that scsi
+devices are deletable and virtio_blk are not. However, this only prevents
+device replace case to run and has no negative effect on the other
+useful test cases.
+
+Re-enable btrfs/003 to run by making _require_deletable_scratch_dev_pool
+private to the test case and modifying it to return success (0) or
+failure (1) if devices are not deletable. Further modify the replace
+test case to check the return value of this function and skip it if
+devices are not deletable.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/inode.c | 9 +++++++--
- 1 file changed, 7 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 43ee890c715f..85f61913b92d 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -28,6 +28,7 @@
- #include <linux/magic.h>
- #include <linux/iversion.h>
- #include <linux/swap.h>
-+#include <linux/sched/mm.h>
- #include <asm/unaligned.h>
- #include "ctree.h"
- #include "disk-io.h"
-@@ -1172,7 +1173,7 @@ static noinline void async_cow_free(struct btrfs_work *work)
- 	 * async_chunk's, freeing it ensures the whole array has been freed.
- 	 */
- 	if (atomic_dec_and_test(async_chunk->pending))
--		kfree(async_chunk->pending);
-+		kvfree(async_chunk->pending);
+Changes since v1: 
+ * Rename the function to deletable_scratch_dev_pool
+
+ common/rc       | 12 ------------
+ tests/btrfs/003 | 19 ++++++++++++++++++-
+ 2 files changed, 18 insertions(+), 13 deletions(-)
+
+diff --git a/common/rc b/common/rc
+index 1c42515ff0ea..5693ba3cad18 100644
+--- a/common/rc
++++ b/common/rc
+@@ -2961,18 +2961,6 @@ _require_scratch_dev_pool_equal_size()
+ 	done
  }
  
- static int cow_file_range_async(struct inode *inode, struct page *locked_page,
-@@ -1188,6 +1189,7 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
- 	u64 num_chunks = DIV_ROUND_UP(end - start, SZ_512K);
- 	int i;
- 	bool should_compress;
-+	unsigned nofs_flag;
+-# We will check if the device is deletable
+-_require_deletable_scratch_dev_pool()
+-{
+-	local i
+-	local x
+-	for i in $SCRATCH_DEV_POOL; do
+-		x=`echo $i | cut -d"/" -f 3`
+-		if [ ! -f /sys/class/block/${x}/device/delete ]; then
+-			_notrun "$i is a device which is not deletable"
+-		fi
+-	done
+-}
  
- 	unlock_extent(&BTRFS_I(inode)->io_tree, start, end);
+ # Check that fio is present, and it is able to execute given jobfile
+ _require_fio()
+diff --git a/tests/btrfs/003 b/tests/btrfs/003
+index 22aa57aad0b9..c72c34290ff0 100755
+--- a/tests/btrfs/003
++++ b/tests/btrfs/003
+@@ -17,6 +17,21 @@ dev_removed=0
+ removed_dev_htl=""
+ trap "_cleanup; exit \$status" 0 1 2 3 15
  
-@@ -1199,7 +1201,10 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
- 		should_compress = true;
- 	}
- 
--	ctx = kmalloc(struct_size(ctx, chunks, num_chunks), GFP_NOFS);
-+	nofs_flag = memalloc_nofs_save();
-+	ctx = kvmalloc(struct_size(ctx, chunks, num_chunks), GFP_KERNEL);
-+	memalloc_nofs_restore(nofs_flag);
++# Check if all scratch dev pools are deletable
++deletable_scratch_dev_pool()
++{
++	local i
++	local x
++	for i in $SCRATCH_DEV_POOL; do
++		x=`echo $i | cut -d"/" -f 3`
++		if [ ! -f /sys/class/block/${x}/device/delete ]; then
++			return 1
++		fi
++	done
 +
- 	if (!ctx) {
- 		unsigned clear_bits = EXTENT_LOCKED | EXTENT_DELALLOC |
- 			EXTENT_DELALLOC_NEW | EXTENT_DEFRAG |
++	return 0
++}
++
+ _cleanup()
+ {
+     cd /
+@@ -35,7 +50,6 @@ _supported_fs btrfs
+ _supported_os Linux
+ _require_scratch
+ _require_scratch_dev_pool 4
+-_require_deletable_scratch_dev_pool
+ _require_command "$WIPEFS_PROG" wipefs
+ 
+ rm -f $seqres.full
+@@ -111,6 +125,9 @@ _test_replace()
+ 	local ds
+ 	local d
+ 
++	# If scratch devs are not deletable skip this test
++	if ! deletable_scratch_dev_pool; then return 0; fi
++
+ 	# exclude the first and the last disk in the disk pool
+ 	n=$(($n-1))
+ 	ds=${devs[@]:1:$(($n-1))}
 -- 
-2.17.1
+2.7.4
 

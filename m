@@ -2,103 +2,130 @@ Return-Path: <SRS0=hUT/=SD=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AF60AC43381
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Apr 2019 04:38:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4967FC43381
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Apr 2019 05:48:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8837520856
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Apr 2019 04:38:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 13B1B20830
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Apr 2019 05:48:17 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="YbTr6UWP"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726451AbfDAEi4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 1 Apr 2019 00:38:56 -0400
-Received: from ipmail06.adl2.internode.on.net ([150.101.137.129]:30146 "EHLO
-        ipmail06.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1725860AbfDAEi4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 1 Apr 2019 00:38:56 -0400
-Received: from ppp59-167-129-252.static.internode.on.net (HELO dastard) ([59.167.129.252])
-  by ipmail06.adl2.internode.on.net with ESMTP; 01 Apr 2019 15:08:53 +1030
-Received: from dave by dastard with local (Exim 4.80)
-        (envelope-from <david@fromorbit.com>)
-        id 1hAoii-0004KM-1n; Mon, 01 Apr 2019 15:38:52 +1100
-Date:   Mon, 1 Apr 2019 15:38:52 +1100
-From:   Dave Chinner <david@fromorbit.com>
-To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc:     linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: Re: [PATCH 04/15] dax: Introduce IOMAP_F_COW for copy-on-write
-Message-ID: <20190401043851.GO26298@dastard>
-References: <20190326190301.32365-1-rgoldwyn@suse.de>
- <20190326190301.32365-5-rgoldwyn@suse.de>
+        id S1726961AbfDAFsQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 1 Apr 2019 01:48:16 -0400
+Received: from mail-oi1-f177.google.com ([209.85.167.177]:44646 "EHLO
+        mail-oi1-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725860AbfDAFsP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Apr 2019 01:48:15 -0400
+Received: by mail-oi1-f177.google.com with SMTP id i21so6227609oib.11
+        for <linux-btrfs@vger.kernel.org>; Sun, 31 Mar 2019 22:48:15 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=hHtiNpOh+zv1Ze9Rl4oCXTAO8cSFtj4QRNFSduBBQeM=;
+        b=YbTr6UWPTGMqVQJjp1LCl4Fl5PSX5z6pic38PeGkRnc2Ek5ccGl341BWUxut9Uj2JP
+         gYGuXIrLFS3GTnSBJOkkWfBzVbe6ZWv6d2W7XEkp2qwKhRrguwXyROSN8eUy9sxoNdnR
+         nVBYaTqInhDKQKOnX3tsNIJkP4VW8hj3P3SDSyh3M7+i9TXGoIOdGgDan4eMA6tV1xRV
+         cM54/EVFDqzzk6Kpn2dLUabnVG2g5rtV3T6jQHU4tVVPksJpNDCxm/eAjafEn8iHwumC
+         86kcaLrQBXhqUGaWKIKVkP3tJlcx24dsgQ4co1E9jKGeeO9lKS7VaBwDrmKAf1BiSsZl
+         62xw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=hHtiNpOh+zv1Ze9Rl4oCXTAO8cSFtj4QRNFSduBBQeM=;
+        b=K3bRkL8bqwxwB5ahPXvAutPXzczGRzekO7Jvnav1YGP9y0uCZmel8FklrYWW4X+3e1
+         PvCZ6Ozc4dHCGseFWSc5+7PSt0v71VThd/ff7YsD5m1LhLKw3FIoC6VmLJFPStbEF58K
+         FTvVSTwxJz0XcQR0XNZyA1sxn2mTeWnABo1k6salkPPfnj0qMSTtiTyCAqayfgunX0/a
+         I83WBHM0C0H6LeA3CBx0iZPTzALi7zLq9qHNRAC4BzcYtQiSzx6OaljPmcJnCE16Hz6r
+         RXPlxnihmbJDGQnYweLg2ti8rHBbL9DecHqhiwJqMQHpPeDNPoTrV+WgEf+lfOEBf1GQ
+         uqRg==
+X-Gm-Message-State: APjAAAUWL8pvI8/UPnODfSfrn/NU6+C38USLeTyTBhVMvVLpsx5LbQu4
+        P9rHJc6KxJN51pysGMmSE1VwBuYKufAHjAFajr4=
+X-Google-Smtp-Source: APXvYqy9VKAYPRCxk1hOFPQjujglEZVkjDS6OvUUnJgVdKO/sGA7Uogaew4rgVFsh0btgAbDosdDSbjqxPgkdgXnXQU=
+X-Received: by 2002:aca:5757:: with SMTP id l84mr12239096oib.155.1554097695246;
+ Sun, 31 Mar 2019 22:48:15 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190326190301.32365-5-rgoldwyn@suse.de>
-User-Agent: Mutt/1.5.21 (2010-09-15)
+References: <CAG3pWAmvekNpnBsQTaMrefKe6pvMSZjPm+SOxnKkMkpGO_1msQ@mail.gmail.com>
+ <CAJCQCtQ3YFovgt4tFNQ+uLE81BiD0KFqPdvzE7Rxu+3wujWp2A@mail.gmail.com>
+ <CAG3pWA=pzd+xxCrZ92b4TBw5iWtsHkfJQ4nsNrnqcBz_6dX4Hg@mail.gmail.com> <CAJCQCtTgfVY9g+A3m=FA_k0O-kbMGifz8QF62W2LMVmW_C8wnA@mail.gmail.com>
+In-Reply-To: <CAJCQCtTgfVY9g+A3m=FA_k0O-kbMGifz8QF62W2LMVmW_C8wnA@mail.gmail.com>
+From:   Glenn Trigg <ggtrigg@gmail.com>
+Date:   Mon, 1 Apr 2019 16:48:04 +1100
+Message-ID: <CAG3pWAkZdzD-W2HHd46bdyAzHwLdOt-t+LVXhWgV_bBkUmKBVg@mail.gmail.com>
+Subject: Re: help request for an unmountable raid1 filesystem
+To:     Chris Murphy <lists@colorremedies.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Mar 26, 2019 at 02:02:50PM -0500, Goldwyn Rodrigues wrote:
-> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> 
-> The IOMAP_F_COW is a flag to notify dax that it needs to copy
-> the data from iomap->cow_addr to iomap->addr, if the start/end
-> of I/O are not page aligned.
+Hi Chris,
 
-I see what you are trying to do here, but this is kinda gross.
+After booting the fedora usb stick (running rc2), I got the same results.
 
-> This also introduces dax_to_dax_copy() which performs a copy
-> from one part of the device to another, to a maximum of one page.
-> 
-> Question: Using iomap.cow_addr == 0 means the CoW is to be copied
-> (or memset) from a hole. Would this be better handled through a flag?
+On Mon, 1 Apr 2019 at 08:35, Chris Murphy <lists@colorremedies.com> wrote:
+>
+> On Sat, Mar 30, 2019 at 5:43 PM Glenn Trigg <ggtrigg@gmail.com> wrote:
+...
+>
+> I'm confused because "can't read superblock" isn't found in fs/btrfs.
+> I'm only finding it in fs/gfs2/ops_fstype.c
+>
+> From what you provided, /dev/sda1 definitely has a valid btrfs
+> superblock. I wonder if there's some other stale something or other on
+> this partition?
+>
+> What do you get for
+>
+> $ sudo blkid
 
-That's what all these checks in the iomap code do:
+/dev/sda1: LABEL="data" UUID="d5e50511-3e31-4de6-ba37-c5841895be9f"
+UUID_SUB="a28b0f34-f14d-492b-995b-2dd8a78ec9bb" TYPE="btrfs"
+PARTUUID="efa240ec-01"
+/dev/sdc1: LABEL="data" UUID="d5e50511-3e31-4de6-ba37-c5841895be9f"
+UUID_SUB="d9c56d7a-21a1-4197-a701-5493392e1ae1" TYPE="btrfs"
+PARTUUID="1aae1443-c03e-4509-ad06-124a64c4df4f"
 
-	if (iomap->type == IOMAP_HOLE || iomap->type == IOMAP_UNWRITTEN)
+> $ sudo wipefs -an /dev/sda1 /dev/sdc1
 
-Oh, wait, you're trying to map two ranges in a single iomap and then
-infer state from information that got chucked away.... IOWs, you're
-doing it wrong - iomap algorithms are driven by how we manipulate
-iomaps to do data operations efficiently, not how we copy data page
-by page.
+/dev/sda1: 8 bytes were erased at offset 0x00010040 (btrfs): 5f 42 48
+52 66 53 5f 4d
+/dev/sdc1: 8 bytes were erased at offset 0x00010040 (btrfs): 5f 42 48
+52 66 53 5f 4d
 
-IOWs, what we really should have here is two iomaps - a source
-and a destination iomap. The source is a read mapping of the
-current address (where we are going to copy the data from), the
-destination is the post-cow allocation mapping (where the data
-goes).
+> $ sudo mount -v -o ro,nologreplay,usebackuproot
 
-Now you just copy the data from one map to the other iterating
-source mappings until the necessary range of the destination has
-been covered.  And you can check if the source map is IOMAP_HOLE or
-IOMAP_UNWRITTEN and hence optimise the copy (i.e. zero the new
-allocation) before copying in the new data.
+mount: /data: can't read superblock on /dev/sda1.
 
-Even better, only do the source mapping if the write isn't
-page/filesystem block aligned, and hence only do the slow path
-copying if a source mapping exists....
+and in dmesg...
 
-> diff --git a/include/linux/iomap.h b/include/linux/iomap.h
-> index 0fefb5455bda..391785de1428 100644
-> --- a/include/linux/iomap.h
-> +++ b/include/linux/iomap.h
-> @@ -35,6 +35,7 @@ struct vm_fault;
->  #define IOMAP_F_NEW		0x01	/* blocks have been newly allocated */
->  #define IOMAP_F_DIRTY		0x02	/* uncommitted metadata */
->  #define IOMAP_F_BUFFER_HEAD	0x04	/* file system requires buffer heads */
-> +#define IOMAP_F_COW		0x08	/* cow before write */
+[ 1045.029981] BTRFS info (device sda1): use lzo compression, level 0
+[ 1045.029987] BTRFS info (device sda1): disabling log replay at mount time
+[ 1045.029991] BTRFS info (device sda1): trying to use backup root at mount time
+[ 1045.029992] BTRFS info (device sda1): disk space caching is enabled
+[ 1045.029994] BTRFS info (device sda1): has skinny extents
+[ 1045.127375] BTRFS info (device sda1): bdev /dev/sda1 errs: wr 0, rd
+0, flush 0, corrupt 1, gen 0
+[ 1045.127381] BTRFS info (device sda1): bdev /dev/sdc1 errs: wr 0, rd
+0, flush 0, corrupt 4, gen 0
+[ 1045.154198] BTRFS error (device sda1): parent transid verify failed
+on 628168376320 wanted 37601 found 37712
+[ 1045.178310] BTRFS error (device sda1): parent transid verify failed
+on 628168376320 wanted 37601 found 37712
 
-"Copy on write before write"? :)
+I.e. the same as before. It's puzzling!
 
-Cheers,
+Regards,
+Glenn
 
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+>
+> --
+> Chris Murphy

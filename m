@@ -3,359 +3,281 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_NEOMUTT autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_NEOMUTT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 16219C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Apr 2019 20:36:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E9D4FC43381
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Apr 2019 20:39:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CB28920880
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Apr 2019 20:36:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B7F4020880
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Apr 2019 20:39:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726947AbfDAUgI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 1 Apr 2019 16:36:08 -0400
-Received: from mx2.suse.de ([195.135.220.15]:59374 "EHLO mx1.suse.de"
+        id S1726836AbfDAUjn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 1 Apr 2019 16:39:43 -0400
+Received: from mx2.suse.de ([195.135.220.15]:60034 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726008AbfDAUgI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 1 Apr 2019 16:36:08 -0400
+        id S1725878AbfDAUjn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 1 Apr 2019 16:39:43 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 7AD31AE52;
-        Mon,  1 Apr 2019 20:36:06 +0000 (UTC)
-Date:   Mon, 1 Apr 2019 15:36:04 -0500
+        by mx1.suse.de (Postfix) with ESMTP id 5DBFEAEA9;
+        Mon,  1 Apr 2019 20:39:41 +0000 (UTC)
+Date:   Mon, 1 Apr 2019 15:39:39 -0500
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     "Darrick J. Wong" <darrick.wong@oracle.com>
 Cc:     linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
-Subject: Re: [PATCH 11/15] fs: dedup file range to use a compare function
-Message-ID: <20190401203604.w4xzvhb2vklxxrao@merlin>
+Subject: Re: [PATCH 07/15] btrfs: add dax write support
+Message-ID: <20190401203939.gr5zcoauxshgdfys@merlin>
 References: <20190326190301.32365-1-rgoldwyn@suse.de>
- <20190326190301.32365-12-rgoldwyn@suse.de>
- <20190328170440.GH1172@magnolia>
+ <20190326190301.32365-8-rgoldwyn@suse.de>
+ <20190328145307.GD1172@magnolia>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190328170440.GH1172@magnolia>
+In-Reply-To: <20190328145307.GD1172@magnolia>
 User-Agent: NeoMutt/20180323
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 10:04 28/03, Darrick J. Wong wrote:
-> On Tue, Mar 26, 2019 at 02:02:57PM -0500, Goldwyn Rodrigues wrote:
+On  7:53 28/03, Darrick J. Wong wrote:
+> On Tue, Mar 26, 2019 at 02:02:53PM -0500, Goldwyn Rodrigues wrote:
 > > From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 > > 
-> > With dax we cannot deal with readpage() etc. So, we create a
-> > funciton callback to perform the file data comparison and pass
-> > it to generic_remap_file_range_prep() so it can use iomap-based
-> > functions.
-> 
-> So it occurs to me -- is there an intrinsic requirement that all files
-> sharing blocks must be in DAX mode or not-DAX mode?  Or in other words,
-> if I run cp --reflink a b, then it cannot be the case that IS_DAX(a) !=
-> IS_DAX(b), right?
-> 
-> Will there be calamitous consequences if dax and page cache both point
-> to the same piece of storage?  I would imagine so...
-
-Yes, data corruptions!
-
-> 
-> > This may not be the best way to solve this. Suggestions welcome.
-> 
-> Agree.  There's a fair amount of code duplication between the dax and
-> pagecache compare functions, considering that the loop structure for
-> both cases is:
-> 
-> while (len) {
-> 	/* Figure out minimum comparison length */
-> 
-> 	/* Map source file range into memory */
-> 
-> 	/* Map dest file range into memory */
-> 
-> 	/* Compare memory */
-> 
-> 	/* Release dest file memory */
-> 
-> 	/* Release source file memory */
-> 
-> 	/* Update counters or break out */
-> }
-> 
-> The current vfs_dedupe_file_range_compare could use some improvements,
-> at least for filesystems where we actually support iomap.  In
-> particular, if you try to dedupe into or out of a hole, it'll flood the
-> page cache with zero pages, which is pretty wasteful if we could've
-> found out that it's actually a hole.
-> 
+> > IOMAP_F_COW allows to inform the dax code, to first perform
+> > a copy which are not page-aligned before performing the write.
+> > 
+> > A new struct btrfs_iomap is passed from iomap_begin() to
+> > iomap_end(), which contains all the accounting and locking information
+> > for CoW based writes.
+> > 
+> > For writing to a hole, iomap->cow_addr is set to zero. Would this
+> > be better handled by a flag or can a valid filesystem block be at
+> > offset zero of the device?
+> > 
 > > Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 > > ---
-> >  fs/btrfs/ctree.h     |  3 +++
-> >  fs/btrfs/dax.c       |  7 +++++++
-> >  fs/btrfs/ioctl.c     | 13 +++++++++++-
-> >  fs/dax.c             | 58 ++++++++++++++++++++++++++++++++++++++++++++++++++++
-> >  fs/ocfs2/file.c      |  2 +-
-> >  fs/read_write.c      |  9 +++++---
-> >  fs/xfs/xfs_reflink.c |  2 +-
-> >  include/linux/dax.h  |  2 ++
-> >  include/linux/fs.h   |  4 +++-
-> >  9 files changed, 93 insertions(+), 7 deletions(-)
+> >  fs/btrfs/ctree.h |   6 +++
+> >  fs/btrfs/dax.c   | 119 +++++++++++++++++++++++++++++++++++++++++++++++++++++--
+> >  fs/btrfs/file.c  |   4 +-
+> >  3 files changed, 124 insertions(+), 5 deletions(-)
 > > 
 > > diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> > index 0e5060933bde..750f9c70fabe 100644
+> > index a3543a4a063d..3bcd2a4959c1 100644
 > > --- a/fs/btrfs/ctree.h
 > > +++ b/fs/btrfs/ctree.h
-> > @@ -3803,6 +3803,9 @@ int btree_readahead_hook(struct extent_buffer *eb, int err);
+> > @@ -3801,6 +3801,12 @@ int btree_readahead_hook(struct extent_buffer *eb, int err);
+> >  #ifdef CONFIG_FS_DAX
+> >  /* dax.c */
 > >  ssize_t btrfs_file_dax_read(struct kiocb *iocb, struct iov_iter *to);
-> >  ssize_t btrfs_file_dax_write(struct kiocb *iocb, struct iov_iter *from);
-> >  vm_fault_t btrfs_dax_fault(struct vm_fault *vmf);
-> > +int btrfs_dax_file_range_compare(struct inode *src, loff_t srcoff,
-> > +		struct inode *dest, loff_t destoff, loff_t len,
-> > +		bool *is_same);
-> >  #else
-> >  static inline ssize_t btrfs_file_dax_write(struct kiocb *iocb, struct iov_iter *from)
-> >  {
-> > diff --git a/fs/btrfs/dax.c b/fs/btrfs/dax.c
-> > index 927f962d1e88..9488cae0f8b4 100644
-> > --- a/fs/btrfs/dax.c
-> > +++ b/fs/btrfs/dax.c
-> > @@ -168,4 +168,11 @@ vm_fault_t btrfs_dax_fault(struct vm_fault *vmf)
-> >  
-> >  	return ret;
-> >  }
-> > +
-> > +int btrfs_dax_file_range_compare(struct inode *src, loff_t srcoff,
-> > +		struct inode *dest, loff_t destoff, loff_t len,
-> > +		bool *is_same)
+> > +ssize_t btrfs_file_dax_write(struct kiocb *iocb, struct iov_iter *from);
+> > +#else
+> > +static inline ssize_t btrfs_file_dax_write(struct kiocb *iocb, struct iov_iter *from)
 > > +{
-> > +	return dax_file_range_compare(src, srcoff, dest, destoff, len, is_same, &btrfs_iomap_ops);
+> > +	return 0;
 > > +}
 > >  #endif /* CONFIG_FS_DAX */
-> > diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> > index e66426e7692d..2e5137b01561 100644
-> > --- a/fs/btrfs/ioctl.c
-> > +++ b/fs/btrfs/ioctl.c
-> > @@ -3990,8 +3990,19 @@ static int btrfs_remap_file_range_prep(struct file *file_in, loff_t pos_in,
-> >  	if (ret < 0)
-> >  		goto out_unlock;
 > >  
-> > +#ifdef CONFIG_FS_DAX
-> > +	if (IS_DAX(file_inode(file_in)) && IS_DAX(file_inode(file_out)))
-> > +		ret = generic_remap_file_range_prep(file_in, pos_in, file_out,
-> > +				pos_out, len, remap_flags,
-> > +				btrfs_dax_file_range_compare);
-> > +	else
-> > +		ret = generic_remap_file_range_prep(file_in, pos_in, file_out,
-> > +				pos_out, len, remap_flags, NULL);
-> > +#else
-> >  	ret = generic_remap_file_range_prep(file_in, pos_in, file_out, pos_out,
-> > -					    len, remap_flags);
-> > +						    len, remap_flags, NULL);
-> > +#endif
-> > +
-> >  	if (ret < 0 || *len == 0)
-> >  		goto out_unlock;
+> >  static inline int is_fstree(u64 rootid)
+> > diff --git a/fs/btrfs/dax.c b/fs/btrfs/dax.c
+> > index bf3d46b0acb6..49619fe3f94f 100644
+> > --- a/fs/btrfs/dax.c
+> > +++ b/fs/btrfs/dax.c
+> > @@ -9,30 +9,124 @@
+> >  #ifdef CONFIG_FS_DAX
+> >  #include <linux/dax.h>
+> >  #include <linux/iomap.h>
+> > +#include <linux/uio.h>
+> >  #include "ctree.h"
+> >  #include "btrfs_inode.h"
 > >  
-> > diff --git a/fs/dax.c b/fs/dax.c
-> > index 41061da42771..18998c5ee27a 100644
-> > --- a/fs/dax.c
-> > +++ b/fs/dax.c
-> > @@ -1775,3 +1775,61 @@ vm_fault_t dax_finish_sync_fault(struct vm_fault *vmf,
-> >  	return dax_insert_pfn_mkwrite(vmf, pfn, order);
-> >  }
-> >  EXPORT_SYMBOL_GPL(dax_finish_sync_fault);
+> > +struct btrfs_iomap {
+> > +	u64 start;
+> > +	u64 end;
+> > +	int nocow;
+> > +	struct extent_changeset *data_reserved;
+> > +	struct extent_state *cached_state;
+> > +};
 > > +
-> > +
-> > +int dax_file_range_compare(struct inode *src, loff_t srcoff, struct inode *dest,
-> > +		loff_t destoff, loff_t len, bool *is_same, const struct iomap_ops *ops)
-> 
-> Comments for this function assume this is a vfs generic function, not a
-> dax specific thing...
-> 
-> > +{
-> > +	void *saddr, *daddr;
-> > +	struct iomap s_iomap = {0};
-> > +	struct iomap d_iomap = {0};
-> > +	loff_t dstart, sstart;
-> > +	bool same = true;
-> > +	loff_t cmp_len, l;
-> > +	int id, ret = 0;
-> > +
-> > +	id = dax_read_lock();
-> > +	while (len) {
-> > +		ret = ops->iomap_begin(src, srcoff, len, 0, &s_iomap);
-> > +		if (ret < 0) {
-> > +			if (ops->iomap_end)
-> > +				ops->iomap_end(src, srcoff, len, ret, 0, &s_iomap);
-> > +			return ret;
-> > +		}
-> 
-> Shouldn't we be checking that the iomap actually points to written
-> storage?  As opposed to hole/delalloc/unwritten?
-> 
-> Bonus: not-written extents (hole/unwritten) could be optimized a bit,
-> though I don't know if it's worth it for something that's probably a
-> corner case.
-
-Yes, I think this needs to be optimized. However, from the VFS API end.
-As you mention above, it fills the pagecache unnecessarily. I feel file
-comparison is best handled by individual filesystems as opposed to
-the VFS.
-
-> 
-> > +		cmp_len = len;
-> > +		if (cmp_len > s_iomap.offset + s_iomap.length - srcoff)
-> > +			cmp_len = s_iomap.offset + s_iomap.length - srcoff;
-> > +
-> > +		ret = ops->iomap_begin(dest, destoff, cmp_len, 0, &d_iomap);
-> > +		if (ret < 0) {
-> > +			if (ops->iomap_end) {
-> > +				ops->iomap_end(src, srcoff, len, ret, 0, &s_iomap);
-> > +				ops->iomap_end(dest, destoff, len, ret, 0, &d_iomap);
-> > +			}
-> > +			return ret;
-> > +		}
-> > +		if (cmp_len > d_iomap.offset + d_iomap.length - destoff)
-> > +			cmp_len = d_iomap.offset + d_iomap.length - destoff;
-> > +
-> 
-> If you wanted to make this a generic function, it would be kinda nice if
-> we could switch between grabbing page cache for non-DAX files and
-> dax_direct_access for DAX files.
-> 
-> (Actually, no, that's kind of ugly too.)
-> 
-> Perhaps iomap.c needs to grow a function to iterate ranges of two files
-> and call an actor function on both sets?  And we can change the actor to
-> be the pagecache-grabbing one or the dax-access one depending on the DAX
-> mode.
-> 
-
-Yes, that would work well.
-
-> Though I guess that leaves poor old ocfs2 in the dust since it doesn't
-> support iomap.  I guess it wouldn't be too hard to adapt it to have an
-> iomap ops for reads only.
-> 
-> > +
-> > +		sstart = (get_start_sect(s_iomap.bdev) << 9) + s_iomap.addr + (srcoff - s_iomap.offset);
-> > +		l = dax_direct_access(s_iomap.dax_dev, PHYS_PFN(sstart), PHYS_PFN(cmp_len), &saddr, NULL);
-> > +		dstart = (get_start_sect(d_iomap.bdev) << 9) + d_iomap.addr + (destoff - d_iomap.offset);
-> > +		l = dax_direct_access(d_iomap.dax_dev, PHYS_PFN(dstart), PHYS_PFN(cmp_len), &daddr, NULL);
-> > +		same = !memcmp(saddr, daddr, cmp_len);
-> > +		if (!same)
-> > +			break;
-> > +		len -= cmp_len;
-> > +		srcoff += cmp_len;
-> > +		destoff += cmp_len;
-> > +
-> > +		if (ops->iomap_end) {
-> > +			ret = ops->iomap_end(src, srcoff, len, 0, 0, &s_iomap);
-> > +			ret = ops->iomap_end(dest, destoff, len, 0, 0, &d_iomap);
-> > +		}
-> > +	}
-> > +	dax_read_unlock(id);
-> > +	*is_same = same;
-> > +	return ret;
-> > +}
-> > +EXPORT_SYMBOL_GPL(dax_file_range_compare);
-> > diff --git a/fs/ocfs2/file.c b/fs/ocfs2/file.c
-> > index d640c5f8a85d..6bf3e8fbb016 100644
-> > --- a/fs/ocfs2/file.c
-> > +++ b/fs/ocfs2/file.c
-> > @@ -2558,7 +2558,7 @@ static loff_t ocfs2_remap_file_range(struct file *file_in, loff_t pos_in,
-> >  		goto out_unlock;
-> >  
-> >  	ret = generic_remap_file_range_prep(file_in, pos_in, file_out, pos_out,
-> > -			&len, remap_flags);
-> > +			&len, remap_flags, NULL);
-> >  	if (ret < 0 || len == 0)
-> >  		goto out_unlock;
-> >  
-> > diff --git a/fs/read_write.c b/fs/read_write.c
-> > index 177ccc3d405a..da521a221213 100644
-> > --- a/fs/read_write.c
-> > +++ b/fs/read_write.c
-> > @@ -1855,7 +1855,7 @@ static int vfs_dedupe_file_range_compare(struct inode *src, loff_t srcoff,
-> >   */
-> >  int generic_remap_file_range_prep(struct file *file_in, loff_t pos_in,
-> >  				  struct file *file_out, loff_t pos_out,
-> > -				  loff_t *len, unsigned int remap_flags)
-> > +				  loff_t *len, unsigned int remap_flags, compare_range_t compare)
-> 
-> Line wrapping...
-> 
+> >  static int btrfs_iomap_begin(struct inode *inode, loff_t pos,
+> >  		loff_t length, unsigned flags, struct iomap *iomap)
 > >  {
-> >  	struct inode *inode_in = file_inode(file_in);
-> >  	struct inode *inode_out = file_inode(file_out);
-> > @@ -1914,8 +1914,11 @@ int generic_remap_file_range_prep(struct file *file_in, loff_t pos_in,
-> >  	 */
-> >  	if (remap_flags & REMAP_FILE_DEDUP) {
-> >  		bool		is_same = false;
-> > -
-> > -		ret = vfs_dedupe_file_range_compare(inode_in, pos_in,
-> > +		if (compare)
-> > +			ret = compare(inode_in, pos_in,
-> > +				inode_out, pos_out, *len, &is_same);
-> > +		else
-> > +			ret = vfs_dedupe_file_range_compare(inode_in, pos_in,
-> >  				inode_out, pos_out, *len, &is_same);
+> >  	struct extent_map *em;
+> >  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+> > +
+> >  	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, pos, length, 0);
+> > +
+> > +	if (flags & IOMAP_WRITE) {
+> > +		int ret = 0, nocow;
+> > +		struct extent_map *map = em;
+> > +		struct btrfs_iomap *bi;
 > 
-> Make the callers pass in vfs_dedupe_file_range_compare instead of NULL,
-> and avoid this if clause stuff.
+> Please consider breaking this up into a separate helper before the
+> btrfs_iomap_begin function becomes long and hard to read like the xfs
+> one did.  :)
+> 
+> (Granted people also seem to dislike scrolling back and forth...)
+> 
+> > +
+> > +		bi = kzalloc(sizeof(struct btrfs_iomap), GFP_NOFS);
+> > +		if (!bi)
+> > +			return -ENOMEM;
+> > +
+> > +		bi->start = round_down(pos, PAGE_SIZE);
+> > +		bi->end = round_up(pos + length, PAGE_SIZE);
+> > +
+> > +		iomap->private = bi;
+> > +
+> > +		/* Wait for existing ordered extents in range to finish */
+> > +		btrfs_wait_ordered_range(inode, bi->start, bi->end - bi->start);
+> > +
+> > +		lock_extent_bits(&BTRFS_I(inode)->io_tree, bi->start, bi->end, &bi->cached_state);
+> > +
+> > +		ret = btrfs_delalloc_reserve_space(inode, &bi->data_reserved,
+> > +				bi->start, bi->end - bi->start);
+> > +		if (ret) {
+> > +			unlock_extent_cached(&BTRFS_I(inode)->io_tree, bi->start, bi->end,
+> > +					&bi->cached_state);
+> > +			kfree(bi);
+> > +			return ret;
+> > +		}
+> > +
+> > +		refcount_inc(&map->refs);
+> > +		ret = btrfs_get_extent_map_write(&em, NULL,
+> > +				inode, bi->start, bi->end - bi->start, &nocow);
+> > +		if (ret) {
+> > +			unlock_extent_cached(&BTRFS_I(inode)->io_tree, bi->start, bi->end,
+> > +					&bi->cached_state);
+> > +			btrfs_delalloc_release_space(inode,
+> > +					bi->data_reserved, bi->start,
+> > +					bi->end - bi->start, true);
+> > +			extent_changeset_free(bi->data_reserved);
+> > +			kfree(bi);
+> > +			return ret;
+> > +		}
+> > +		if (!nocow) {
+> > +			iomap->flags |= IOMAP_F_COW;
+> > +			if (map->block_start != EXTENT_MAP_HOLE) {
+> > +				iomap->cow_addr = map->block_start;
+> > +				iomap->cow_pos = map->start;
+> 
+> Oh, I see, cow_pos exists because the extent we're copying from and the
+> extent we're copying into are not necessarily going to be positioned at
+> the same file offset and (I guess) it's possible that the source range
+> could be partially sparse given the destination range?
 
-Got it. Thanks.
+No, there is no sparse range here.
+
+> 
+> Hmm, no, the previous patch doesn't account for that; it only seems to
+> know how to handle @cow_pos < @offset.  In that case, why not trim the
+> cow_* map to @offset?
+
+Yes, that however would put the calculation responsibility on the filesystem
+as opposed to the code. I am fine with either ways though, and it would
+eliminate the need of cow_offset. However, for CoW cow_offset will be
+calculated as round_down(offset, PAGE_SIZE) which seems reasonable.
 
 > 
 > --D
 > 
-> >  		if (ret)
-> >  			return ret;
-> > diff --git a/fs/xfs/xfs_reflink.c b/fs/xfs/xfs_reflink.c
-> > index 680ae7662a78..8907c7aa3f19 100644
-> > --- a/fs/xfs/xfs_reflink.c
-> > +++ b/fs/xfs/xfs_reflink.c
-> > @@ -1350,7 +1350,7 @@ xfs_reflink_remap_prep(
-> >  		goto out_unlock;
+> > +			}
+> > +		} else {
+> > +			bi->nocow = 1;
+> > +		}
+> > +		free_extent_map(map);
+> > +	}
+> > +
+> > +	iomap->offset = em->start;
+> > +	iomap->length = em->len;
+> > +	iomap->bdev = em->bdev;
+> > +	iomap->dax_dev = fs_info->dax_dev;
+> > +
+> >  	if (em->block_start == EXTENT_MAP_HOLE) {
+> >  		iomap->type = IOMAP_HOLE;
+> >  		return 0;
+> >  	}
+> > +
+> >  	iomap->type = IOMAP_MAPPED;
+> > -	iomap->bdev = em->bdev;
+> > -	iomap->dax_dev = fs_info->dax_dev;
+> > -	iomap->offset = em->start;
+> > -	iomap->length = em->len;
+> >  	iomap->addr = em->block_start;
+> >  	return 0;
+> >  }
 > >  
-> >  	ret = generic_remap_file_range_prep(file_in, pos_in, file_out, pos_out,
-> > -			len, remap_flags);
-> > +			len, remap_flags, NULL);
-> >  	if (ret < 0 || *len == 0)
-> >  		goto out_unlock;
+> > +static int btrfs_iomap_end(struct inode *inode, loff_t pos,
+> > +		loff_t length, ssize_t written, unsigned flags,
+> > +		struct iomap *iomap)
+> > +{
+> > +	struct btrfs_iomap *bi = iomap->private;
+> > +	u64 wend;
+> > +
+> > +	if (!bi)
+> > +		return 0;
+> > +
+> > +	unlock_extent_cached(&BTRFS_I(inode)->io_tree, bi->start, bi->end,
+> > +			&bi->cached_state);
+> > +
+> > +	wend = round_up(pos + written, PAGE_SIZE);
+> > +	if (wend < bi->end) {
+> > +		btrfs_delalloc_release_space(inode,
+> > +				bi->data_reserved, wend,
+> > +				bi->end - wend, true);
+> > +	}
+> > +
+> > +	btrfs_update_ordered_extent(inode, bi->start, wend - bi->start, true);
+> > +	btrfs_delalloc_release_extents(BTRFS_I(inode), wend - bi->start, false);
+> > +	extent_changeset_free(bi->data_reserved);
+> > +	kfree(bi);
+> > +	return 0;
+> > +}
+> > +
+> >  static const struct iomap_ops btrfs_iomap_ops = {
+> >  	.iomap_begin		= btrfs_iomap_begin,
+> > +	.iomap_end		= btrfs_iomap_end,
+> >  };
 > >  
-> > diff --git a/include/linux/dax.h b/include/linux/dax.h
-> > index 0dd316a74a29..a11bc7b1f526 100644
-> > --- a/include/linux/dax.h
-> > +++ b/include/linux/dax.h
-> > @@ -157,6 +157,8 @@ vm_fault_t dax_finish_sync_fault(struct vm_fault *vmf,
-> >  int dax_delete_mapping_entry(struct address_space *mapping, pgoff_t index);
-> >  int dax_invalidate_mapping_entry_sync(struct address_space *mapping,
-> >  				      pgoff_t index);
-> > +int dax_file_range_compare(struct inode *src, loff_t srcoff, struct inode *dest,
-> > +                loff_t destoff, loff_t len, bool *is_same, const struct iomap_ops *ops);
+> >  ssize_t btrfs_file_dax_read(struct kiocb *iocb, struct iov_iter *to)
+> > @@ -46,4 +140,21 @@ ssize_t btrfs_file_dax_read(struct kiocb *iocb, struct iov_iter *to)
 > >  
-> >  #ifdef CONFIG_FS_DAX
-> >  int __dax_zero_page_range(struct block_device *bdev,
-> > diff --git a/include/linux/fs.h b/include/linux/fs.h
-> > index 8b42df09b04c..22fe4324b22e 100644
-> > --- a/include/linux/fs.h
-> > +++ b/include/linux/fs.h
-> > @@ -1880,10 +1880,12 @@ extern ssize_t vfs_readv(struct file *, const struct iovec __user *,
-> >  		unsigned long, loff_t *, rwf_t);
-> >  extern ssize_t vfs_copy_file_range(struct file *, loff_t , struct file *,
-> >  				   loff_t, size_t, unsigned int);
-> > +typedef int (compare_range_t)(struct inode *src, loff_t srcpos, struct inode *dest,
-> > +		loff_t destpos, loff_t len, bool *is_same);
-> >  extern int generic_remap_file_range_prep(struct file *file_in, loff_t pos_in,
-> >  					 struct file *file_out, loff_t pos_out,
-> >  					 loff_t *count,
-> > -					 unsigned int remap_flags);
-> > +					 unsigned int remap_flags, compare_range_t cmp);
-> >  extern loff_t do_clone_file_range(struct file *file_in, loff_t pos_in,
-> >  				  struct file *file_out, loff_t pos_out,
-> >  				  loff_t len, unsigned int remap_flags);
+> >  	return ret;
+> >  }
+> > +
+> > +ssize_t btrfs_file_dax_write(struct kiocb *iocb, struct iov_iter *iter)
+> > +{
+> > +	ssize_t ret = 0;
+> > +	u64 pos = iocb->ki_pos;
+> > +	struct inode *inode = file_inode(iocb->ki_filp);
+> > +
+> > +	ret = dax_iomap_rw(iocb, iter, &btrfs_iomap_ops);
+> > +
+> > +	if (ret > 0) {
+> > +		pos += ret;
+> > +		if (pos > i_size_read(inode))
+> > +			i_size_write(inode, pos);
+> > +		iocb->ki_pos = pos;
+> > +	}
+> > +	return ret;
+> > +}
+> >  #endif /* CONFIG_FS_DAX */
+> > diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> > index b620f4e718b2..3b320d0ab495 100644
+> > --- a/fs/btrfs/file.c
+> > +++ b/fs/btrfs/file.c
+> > @@ -1964,7 +1964,9 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
+> >  	if (sync)
+> >  		atomic_inc(&BTRFS_I(inode)->sync_writers);
+> >  
+> > -	if (iocb->ki_flags & IOCB_DIRECT) {
+> > +	if (IS_DAX(inode)) {
+> > +		num_written = btrfs_file_dax_write(iocb, from);
+> > +	} else if (iocb->ki_flags & IOCB_DIRECT) {
+> >  		num_written = __btrfs_direct_write(iocb, from);
+> >  	} else {
+> >  		num_written = btrfs_buffered_write(iocb, from);
 > > -- 
 > > 2.16.4
 > > 

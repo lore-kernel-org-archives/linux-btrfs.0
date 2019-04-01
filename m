@@ -2,69 +2,79 @@ Return-Path: <SRS0=hUT/=SD=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_NEOMUTT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F3EB0C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Apr 2019 19:22:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C722C43381
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Apr 2019 20:08:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C8E4B2084B
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Apr 2019 19:22:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2935F20857
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Apr 2019 20:08:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725897AbfDATWL convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 1 Apr 2019 15:22:11 -0400
-Received: from smtprelay02.ispgateway.de ([80.67.18.14]:20910 "EHLO
-        smtprelay02.ispgateway.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725839AbfDATWL (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Apr 2019 15:22:11 -0400
-Received: from [94.217.144.7] (helo=[192.168.177.9])
-        by smtprelay02.ispgateway.de with esmtpsa (TLSv1.2:ECDHE-RSA-AES256-GCM-SHA384:256)
-        (Exim 4.90_1)
-        (envelope-from <hendrik@friedels.name>)
-        id 1hB2VU-0000uE-7W
-        for linux-btrfs@vger.kernel.org; Mon, 01 Apr 2019 21:22:08 +0200
-From:   "Hendrik Friedel" <hendrik@friedels.name>
-To:     linux-btrfs@vger.kernel.org
-Subject: btrfs and write barriers
-Date:   Mon, 01 Apr 2019 19:22:08 +0000
-Message-Id: <emae84cb43-e9f5-41a7-8a47-efca08cea36e@laptophendrik>
-Reply-To: "Hendrik Friedel" <hendrik@friedels.name>
-User-Agent: eM_Client/7.2.34062.0
-Mime-Version: 1.0
-Content-Type: text/plain; format=flowed; charset=utf-8
-Content-Transfer-Encoding: 8BIT
-X-Df-Sender: aGVuZHJpa0BmcmllZGVscy5uYW1l
+        id S1726384AbfDAUIH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 1 Apr 2019 16:08:07 -0400
+Received: from mx2.suse.de ([195.135.220.15]:56186 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725895AbfDAUIH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 1 Apr 2019 16:08:07 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id AB66AAB6D;
+        Mon,  1 Apr 2019 20:08:05 +0000 (UTC)
+Date:   Mon, 1 Apr 2019 15:08:03 -0500
+From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
+To:     Adam Borowski <kilobyte@angband.pl>
+Cc:     linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        marcin.slusarz@intel.com
+Subject: Re: [PATCH] btrfs: allow MAP_SYNC mmap
+Message-ID: <20190401200803.k4cm4cbcj6cthy3d@merlin>
+References: <20190327232635.zw4edleqwowxfzej@merlin>
+ <20190328102418.5466-1-kilobyte@angband.pl>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190328102418.5466-1-kilobyte@angband.pl>
+User-Agent: NeoMutt/20180323
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Dear btrfs-team,
+On 11:24 28/03, Adam Borowski wrote:
+> Used by userspace to detect DAX.
 
-I am aware, that barriers are essential for btrfs [1].
-I have some questions on that topic:
-1) I am not aware how to determine, whether barriers are supported, 
-except for searching dmesg for a message that barriers are disabled. Is 
-that correct? It would be nice, if that could be determined before 
-creating the FS.
-2) I find the location of the (only?) warning -dmesg- well hidden. I 
-think it would be better to notify the user when creating the 
-file-system.
-3) Even more, it would be good, if btrfs would disable the write cache 
-in that case, so that one does not need to rely on the user
-4) If [2] is still valid, there are drives 'lying' about their barrier 
-support. Can someone comment? If that is the case, it would be even 
-advisable to provide a test to test the actual capability. In fact, if 
-this is still valid, this may be the reason for some btrfs corruptions 
-that have been discussed here. [I did read, that LVM/Device-Mapper does 
-not support barriers, but I think that this is outdated]
+Thanks. I will add it to the series.
 
-Greetings,
-Hendrik
+> 
+> Signed-off-by: Adam Borowski <kilobyte@angband.pl>
+> ---
+>  fs/btrfs/file.c | 2 ++
+>  1 file changed, 2 insertions(+)
+> 
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index 196c8f37ff9d..8efdb040bc1d 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -16,6 +16,7 @@
+>  #include <linux/btrfs.h>
+>  #include <linux/uio.h>
+>  #include <linux/iversion.h>
+> +#include <linux/mman.h>
+>  #include "ctree.h"
+>  #include "disk-io.h"
+>  #include "transaction.h"
+> @@ -3320,6 +3321,7 @@ const struct file_operations btrfs_file_operations = {
+>  	.splice_read	= generic_file_splice_read,
+>  	.write_iter	= btrfs_file_write_iter,
+>  	.mmap		= btrfs_file_mmap,
+> +	.mmap_supported_flags = MAP_SYNC,
+>  	.open		= btrfs_file_open,
+>  	.release	= btrfs_release_file,
+>  	.fsync		= btrfs_sync_file,
+> -- 
+> 2.20.1
+> 
 
-
-[1] 
-https://btrfs.wiki.kernel.org/index.php/FAQ#I_see_a_warning_in_dmesg_about_barriers_being_disabled_when_mounting_my_filesystem._What_does_that_mean.3F
-[2] https://brad.livejournal.com/2116715.html
-
+-- 
+Goldwyn

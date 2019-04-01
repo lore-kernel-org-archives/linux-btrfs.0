@@ -6,43 +6,43 @@ X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
 	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CA8E6C43381
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Apr 2019 12:50:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 158F6C43381
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Apr 2019 12:50:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9A8F82070D
-	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Apr 2019 12:50:40 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CC644206B7
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Apr 2019 12:50:51 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1554123040;
-	bh=WEB3JPm4RZFQ/wLvV4eLZmgt6RT4dBjCbdQbR3XmqKg=;
+	s=default; t=1554123051;
+	bh=hUdbzuY+mi9zz31D34tUtjCrJX+6zewGr+26WEO9zKU=;
 	h=From:To:Cc:Subject:Date:List-ID:From;
-	b=ogSxijgyFZdd7dEXPZKtAz7p5ywR9auCB9KPnwts8UvV1tawOkmyP5BuIw16Rq5+W
-	 BMQNacaY+s34HBc1SrrIRVU13LLESpi5REFdzbrB1Wyn6tTL4mFYPl6GmIizspv96t
-	 sRu1ybceABE+1LB6U+1uM4sfRQJzKKrLj+WX4zaw=
+	b=Mb48hHHWoxLHxz+zIPE1wqYrR8+S/ERCOPFOuG5t66cJ72bNx5fRxbkiiquDxN5tk
+	 BvpyGtjRvFtH8Qcqczlyt5TXLA6PyRXuQ/sVf5KoW0x1xL1O22VF45YkT1IQn/X/Ih
+	 hfPwAptXB5+TN1jkzmQdUkIbl1VtEd6K/pnzpOEw=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726985AbfDAMuk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 1 Apr 2019 08:50:40 -0400
-Received: from mail.kernel.org ([198.145.29.99]:53314 "EHLO mail.kernel.org"
+        id S1726854AbfDAMuv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 1 Apr 2019 08:50:51 -0400
+Received: from mail.kernel.org ([198.145.29.99]:53424 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725882AbfDAMuj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 1 Apr 2019 08:50:39 -0400
+        id S1725882AbfDAMuv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 1 Apr 2019 08:50:51 -0400
 Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id A5EF42070D;
-        Mon,  1 Apr 2019 12:50:37 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 92CB42070D;
+        Mon,  1 Apr 2019 12:50:48 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1554123038;
-        bh=WEB3JPm4RZFQ/wLvV4eLZmgt6RT4dBjCbdQbR3XmqKg=;
+        s=default; t=1554123049;
+        bh=hUdbzuY+mi9zz31D34tUtjCrJX+6zewGr+26WEO9zKU=;
         h=From:To:Cc:Subject:Date:From;
-        b=id6ulD5GcZaoPx2E9xSNtvk+ITyv9BXgOYt8aQm6TQnqUc5ifouDEMr5Qrl9N2Hjt
-         ge7kZTqkVHwvZbQNV1h25zxqp+uYcutvzThr6cyztsuSrxt1Bu2/hBzt/QsH0C+2u+
-         ++RO1ivf/S3vnBc9jSbES0ukDwIVOoI2L2fZpKUQ=
+        b=O/BYXSAI9xPzmQ4OVBxk4za4GrKs6+m5TP1Y8vHVpDzwrHpqw/pEcXx/1Wnk3EVwV
+         rDfzDaBvTTFDNHPgTd1fRNFeKboSHQRvMzJOOKED/mO/iBxaavR3H2exIxXg+XyAA3
+         vzpPq+h3/7yOiVt5gitJjyoi4OsEFO749F7wDuHQ=
 From:   fdmanana@kernel.org
 To:     fstests@vger.kernel.org
 Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2 2/7] fsstress: allow afsync on directories too
-Date:   Mon,  1 Apr 2019 13:50:33 +0100
-Message-Id: <20190401125033.10059-1-fdmanana@kernel.org>
+Subject: [PATCH v2 3/7] fsstress: add operation for setting xattrs on files and directories
+Date:   Mon,  1 Apr 2019 13:50:44 +0100
+Message-Id: <20190401125044.10109-1-fdmanana@kernel.org>
 X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
@@ -51,70 +51,326 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Currently the afsync function can only be performed against regular files.
-Allow it to operate on directories too, to increase test coverage and
-allow for chances of finding bugs in a filesystem's implementation of
-fsync against directories.
+Currently fsstress does not exercise creating, reading or deleting xattrs
+on files or directories. This change adds support for setting xattrs on
+files and directories, using only the xattr user namespace (the other
+namespaces are not general purpose and are used for security, capabilities,
+ACLs, etc). This adds a counter for each file entry structure that keeps
+track of the number of xattrs set for the file entry, and each new xattr
+has a name that includes the counter's value (example: "user.x4").
+Values for the xattrs have at most 100 bytes, which is more than the
+maximum size supported for all major filesystems.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
 
-V2: Use the helper functions for opening and closing files or directories,
-    introduced in the previous patch.
+V2: Use a different name for the operation (setfattr instead of the already
+    taken setxattr) and make use of the helper functions for opening and
+    closing files or directories, introduced in the first patch of this
+    series.
 
- ltp/fsstress.c | 11 ++++++-----
- 1 file changed, 6 insertions(+), 5 deletions(-)
+ ltp/fsstress.c | 150 +++++++++++++++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 141 insertions(+), 9 deletions(-)
 
 diff --git a/ltp/fsstress.c b/ltp/fsstress.c
-index 1169b840..13d4bebc 100644
+index 13d4bebc..350a2a85 100644
 --- a/ltp/fsstress.c
 +++ b/ltp/fsstress.c
-@@ -1790,15 +1790,16 @@ afsync_f(int opno, long r)
- 	struct iocb	iocb;
- 	struct iocb	*iocbs[] = { &iocb };
- 	struct io_event	event;
-+	DIR             *dir;
- 
- 	init_pathname(&f);
--	if (!get_fname(FT_REGFILE, r, &f, NULL, NULL, &v)) {
-+	if (!get_fname(FT_REGFILE | FT_DIRm, r, &f, NULL, NULL, &v)) {
- 		if (v)
- 			printf("%d/%d: afsync - no filename\n", procid, opno);
- 		free_pathname(&f);
- 		return;
- 	}
--	fd = open_path(&f, O_WRONLY | O_DIRECT);
-+	fd = open_file_or_dir(&f, O_WRONLY | O_DIRECT, &dir);
- 	e = fd < 0 ? errno : 0;
- 	check_cwd();
- 	if (fd < 0) {
-@@ -1815,7 +1816,7 @@ afsync_f(int opno, long r)
- 			printf("%d/%d: afsync - io_submit %s %d\n",
- 			       procid, opno, f.path, e);
- 		free_pathname(&f);
--		close(fd);
-+		close_file_or_dir(fd, dir);
- 		return;
- 	}
- 	if ((e = io_getevents(io_ctx, 1, 1, &event, NULL)) != 1) {
-@@ -1823,7 +1824,7 @@ afsync_f(int opno, long r)
- 			printf("%d/%d: afsync - io_getevents failed %d\n",
- 			       procid, opno, e);
- 		free_pathname(&f);
--		close(fd);
-+		close_file_or_dir(fd, dir);
- 		return;
- 	}
- 
-@@ -1831,7 +1832,7 @@ afsync_f(int opno, long r)
- 	if (v)
- 		printf("%d/%d: afsync %s %d\n", procid, opno, f.path, e);
- 	free_pathname(&f);
--	close(fd);
-+	close_file_or_dir(fd, dir);
+@@ -27,6 +27,7 @@
+ io_context_t	io_ctx;
  #endif
+ #include <sys/syscall.h>
++#include <sys/xattr.h>
+ 
+ #ifndef FS_IOC_GETFLAGS
+ #define FS_IOC_GETFLAGS                 _IOR('f', 1, long)
+@@ -84,6 +85,7 @@ typedef enum {
+ 	OP_RESVSP,
+ 	OP_RMDIR,
+ 	OP_SETATTR,
++	OP_SETFATTR,
+ 	OP_SETXATTR,
+ 	OP_SPLICE,
+ 	OP_STAT,
+@@ -110,6 +112,7 @@ typedef struct opdesc {
+ typedef struct fent {
+ 	int	id;
+ 	int	parent;
++	int	xattr_counter;
+ } fent_t;
+ 
+ typedef struct flist {
+@@ -156,6 +159,8 @@ struct print_string {
+ #define	MAXFSIZE	((1ULL << 63) - 1ULL)
+ #define	MAXFSIZE32	((1ULL << 40) - 1ULL)
+ 
++#define XATTR_NAME_BUF_SIZE 18
++
+ void	afsync_f(int, long);
+ void	allocsp_f(int, long);
+ void	aread_f(int, long);
+@@ -194,6 +199,7 @@ void	rename_f(int, long);
+ void	resvsp_f(int, long);
+ void	rmdir_f(int, long);
+ void	setattr_f(int, long);
++void	setfattr_f(int, long);
+ void	setxattr_f(int, long);
+ void	splice_f(int, long);
+ void	stat_f(int, long);
+@@ -245,6 +251,7 @@ opdesc_t	ops[] = {
+ 	{ OP_RESVSP, "resvsp", resvsp_f, 1, 1 },
+ 	{ OP_RMDIR, "rmdir", rmdir_f, 1, 1 },
+ 	{ OP_SETATTR, "setattr", setattr_f, 0, 1 },
++	{ OP_SETFATTR, "setfattr", setfattr_f, 4, 1 },
+ 	{ OP_SETXATTR, "setxattr", setxattr_f, 1, 1 },
+ 	{ OP_SPLICE, "splice", splice_f, 1, 1 },
+ 	{ OP_STAT, "stat", stat_f, 1, 0 },
+@@ -296,7 +303,7 @@ char		*execute_cmd = NULL;
+ int		execute_freq = 1;
+ struct print_string	flag_str = {0};
+ 
+-void	add_to_flist(int, int, int);
++void	add_to_flist(int, int, int, int);
+ void	append_pathname(pathname_t *, char *);
+ int	attr_list_path(pathname_t *, char *, const int, int, attrlist_cursor_t *);
+ int	attr_remove_path(pathname_t *, const char *, int);
+@@ -316,6 +323,7 @@ int	fent_to_name(pathname_t *, flist_t *, fent_t *);
+ void	fix_parent(int, int);
+ void	free_pathname(pathname_t *);
+ int	generate_fname(fent_t *, int, pathname_t *, int *, int *);
++void	generate_xattr_name(int, char *);
+ int	get_fname(int, long, pathname_t *, flist_t **, fent_t **, int *);
+ void	init_pathname(pathname_t *);
+ int	lchown_path(pathname_t *, uid_t, gid_t);
+@@ -717,7 +725,7 @@ translate_flags(int flags, const char *delim,
  }
  
+ void
+-add_to_flist(int ft, int id, int parent)
++add_to_flist(int ft, int id, int parent, int xattr_counter)
+ {
+ 	fent_t	*fep;
+ 	flist_t	*ftp;
+@@ -730,6 +738,7 @@ add_to_flist(int ft, int id, int parent)
+ 	fep = &ftp->fents[ftp->nfiles++];
+ 	fep->id = id;
+ 	fep->parent = parent;
++	fep->xattr_counter = xattr_counter;
+ }
+ 
+ void
+@@ -1132,6 +1141,12 @@ generate_fname(fent_t *fep, int ft, pathname_t *name, int *idp, int *v)
+ 	return 1;
+ }
+ 
++void generate_xattr_name(int xattr_num, char *buffer)
++{
++	memcpy(buffer, "user.x", 6);
++	sprintf(buffer + 6, "%d", xattr_num);
++}
++
+ /*
+  * Get file 
+  * Input: "which" to choose the file-types eg. non-directory
+@@ -3036,7 +3051,7 @@ creat_f(int opno, long r)
+ 			if (xfsctl(f.path, fd, XFS_IOC_FSSETXATTR, &a) < 0)
+ 				e1 = errno;
+ 		}
+-		add_to_flist(type, id, parid);
++		add_to_flist(type, id, parid, 0);
+ 		close(fd);
+ 	}
+ 	if (v) {
+@@ -3558,6 +3573,7 @@ link_f(int opno, long r)
+ 	int		e;
+ 	pathname_t	f;
+ 	fent_t		*fep;
++	fent_t		*fep_src;
+ 	flist_t		*flp;
+ 	int		id;
+ 	pathname_t	l;
+@@ -3566,7 +3582,7 @@ link_f(int opno, long r)
+ 	int		v1;
+ 
+ 	init_pathname(&f);
+-	if (!get_fname(FT_NOTDIR, r, &f, &flp, NULL, &v1)) {
++	if (!get_fname(FT_NOTDIR, r, &f, &flp, &fep_src, &v1)) {
+ 		if (v1)
+ 			printf("%d/%d: link - no file\n", procid, opno);
+ 		free_pathname(&f);
+@@ -3593,7 +3609,7 @@ link_f(int opno, long r)
+ 	e = link_path(&f, &l) < 0 ? errno : 0;
+ 	check_cwd();
+ 	if (e == 0)
+-		add_to_flist(flp - flist, id, parid);
++		add_to_flist(flp - flist, id, parid, fep_src->xattr_counter);
+ 	if (v) {
+ 		printf("%d/%d: link %s %s %d\n", procid, opno, f.path, l.path,
+ 			e);
+@@ -3633,7 +3649,7 @@ mkdir_f(int opno, long r)
+ 	e = mkdir_path(&f, 0777) < 0 ? errno : 0;
+ 	check_cwd();
+ 	if (e == 0)
+-		add_to_flist(FT_DIR, id, parid);
++		add_to_flist(FT_DIR, id, parid, 0);
+ 	if (v) {
+ 		printf("%d/%d: mkdir %s %d\n", procid, opno, f.path, e);
+ 		printf("%d/%d: mkdir add id=%d,parent=%d\n", procid, opno, id, parid);
+@@ -3671,7 +3687,7 @@ mknod_f(int opno, long r)
+ 	e = mknod_path(&f, S_IFCHR|0444, 0) < 0 ? errno : 0;
+ 	check_cwd();
+ 	if (e == 0)
+-		add_to_flist(FT_DEV, id, parid);
++		add_to_flist(FT_DEV, id, parid, 0);
+ 	if (v) {
+ 		printf("%d/%d: mknod %s %d\n", procid, opno, f.path, e);
+ 		printf("%d/%d: mknod add id=%d,parent=%d\n", procid, opno, id, parid);
+@@ -4047,12 +4063,14 @@ rename_f(int opno, long r)
+ 	e = rename_path(&f, &newf) < 0 ? errno : 0;
+ 	check_cwd();
+ 	if (e == 0) {
++		int xattr_counter = fep->xattr_counter;
++
+ 		if (flp - flist == FT_DIR) {
+ 			oldid = fep->id;
+ 			fix_parent(oldid, id);
+ 		}
+ 		del_from_flist(flp - flist, fep - flp->fents);
+-		add_to_flist(flp - flist, id, parid);
++		add_to_flist(flp - flist, id, parid, xattr_counter);
+ 	}
+ 	if (v) {
+ 		printf("%d/%d: rename %s to %s %d\n", procid, opno, f.path,
+@@ -4174,6 +4192,120 @@ setattr_f(int opno, long r)
+ 	close(fd);
+ }
+ 
++char *gen_random_string(int len)
++{
++	static const char charset[] = "0123456789"
++		"abcdefghijklmnopqrstuvwxyz"
++		"ABCDEFGHIJKLMNOPQRSTUVWXYZ";
++	int i;
++	char *s;
++
++	if (len == 0)
++		return NULL;
++
++	s = malloc(len);
++	if (!s)
++		return NULL;
++
++	for (i = 0; i < len; i++)
++		s[i] = charset[random() % sizeof(charset)];
++
++	return s;
++}
++
++char *xattr_flag_to_string(int flag)
++{
++	if (flag == XATTR_CREATE)
++		return "create";
++	if (flag == XATTR_REPLACE)
++		return "replace";
++	return "none";
++}
++
++void
++setfattr_f(int opno, long r)
++{
++	int		fd;
++	int		e;
++	pathname_t	f;
++	fent_t	        *fep;
++	int		v;
++	int             value_len;
++	char            name[XATTR_NAME_BUF_SIZE];
++	char            *value;
++	int             flag = 0;
++	int             xattr_num;
++	DIR             *dir;
++
++	init_pathname(&f);
++	if (!get_fname(FT_REGFILE | FT_DIRm, r, &f, NULL, &fep, &v)) {
++		if (v)
++			printf("%d/%d: setfattr - no filename\n", procid, opno);
++		free_pathname(&f);
++		return;
++	}
++	fd = open_file_or_dir(&f, O_WRONLY, &dir);
++	e = fd < 0 ? errno : 0;
++	if (fd < 0) {
++		if (v)
++			printf("%d/%d: setfattr - open %s failed %d\n",
++			       procid, opno, f.path, e);
++		free_pathname(&f);
++		return;
++	}
++	check_cwd();
++
++	if ((fep->xattr_counter > 0) && (random() % 2)) {
++		/*
++		 * Use an existing xattr name for replacing its value or
++		 * create again a xattr that was previously deleted.
++		 */
++		xattr_num = (random() % fep->xattr_counter) + 1;
++		if (random() % 2)
++			flag = XATTR_REPLACE;
++	} else {
++		/* Use a new xattr name. */
++		xattr_num = fep->xattr_counter + 1;
++		/*
++		 * Don't always use the create flag because even if our xattr
++		 * counter is 0, we may still have xattrs associated to this
++		 * file (this happens when xattrs are added to a file through
++		 * one of its other hard links), so we can end up updating an
++		 * existing xattr too.
++		 */
++		if (random() % 2)
++			flag = XATTR_CREATE;
++	}
++
++	generate_xattr_name(xattr_num, name);
++
++	/*
++	 * The maximum supported value size depends on the filesystem
++	 * implementation, but 100 bytes is a safe value for most filesystems
++	 * at least.
++	 */
++	value_len = random() % 101;
++	value = gen_random_string(value_len);
++	if (!value && value_len > 0) {
++		if (v)
++			printf("%d/%d: setfattr - file %s failed to allocate value with %d bytes\n",
++			       procid, opno, f.path, value_len);
++		goto out;
++	}
++
++	e = fsetxattr(fd, name, value, value_len, flag) < 0 ? errno : 0;
++	if (e == 0)
++		fep->xattr_counter++;
++	if (v)
++		printf("%d/%d: setfattr file %s name %s flag %s value length %d: %d\n",
++		       procid, opno, f.path, name, xattr_flag_to_string(flag),
++		       value_len, e);
++out:
++	free(value);
++	free_pathname(&f);
++	close_file_or_dir(fd, dir);
++}
++
+ void
+ stat_f(int opno, long r)
+ {
+@@ -4236,7 +4368,7 @@ symlink_f(int opno, long r)
+ 	e = symlink_path(val, &f) < 0 ? errno : 0;
+ 	check_cwd();
+ 	if (e == 0)
+-		add_to_flist(FT_SYM, id, parid);
++		add_to_flist(FT_SYM, id, parid, 0);
+ 	free(val);
+ 	if (v) {
+ 		printf("%d/%d: symlink %s %d\n", procid, opno, f.path, e);
 -- 
 2.11.0
 

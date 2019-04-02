@@ -2,133 +2,95 @@ Return-Path: <SRS0=SOow=SE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EB153C4360F
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 19:21:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D6654C4360F
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 21:12:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id AC86E2084B
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 19:21:52 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="ky+HNa3U"
+	by mail.kernel.org (Postfix) with ESMTP id A57C82075E
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 21:12:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730679AbfDBTVv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Apr 2019 15:21:51 -0400
-Received: from mail-vs1-f65.google.com ([209.85.217.65]:41025 "EHLO
-        mail-vs1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726083AbfDBTVv (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Apr 2019 15:21:51 -0400
-Received: by mail-vs1-f65.google.com with SMTP id g187so8480385vsc.8
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 Apr 2019 12:21:50 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
-         :subject:to:cc:content-transfer-encoding;
-        bh=zsLCWiLo7DyVP7lByMPoycSd0u8HfEOg+TaNtBae36M=;
-        b=ky+HNa3UnQCwAbDnS/u2IDgf7pOUUpPqi6w4LY2vISOcAy1huJA+q8QWf620JI+2DV
-         laezQgkmbnHWkmdVqDDnK/u7FtnQDaM4RCwRdVoDWsGa50jT6zdZ1PPaLh99zluQ9g7o
-         6C2N5xhzQD9Ui9BQhxgo9or0sUuMZMQo4GQgUlqGPYl+4F/lP8ZRweKFQB/NgCxl1vi3
-         BraAjUWgFoOzucfyf1zOEMVbkYYPMVm339YsTEIBMnSehDCjlPMO4MLbb6PGDW/jlhAd
-         T5Y48jb5SFAMcPsDPMj5MKcwa+V+1KdV2MpIRn+l+xGh7PeYURzYCcuFmyOAulnxGms4
-         8X9Q==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
-         :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=zsLCWiLo7DyVP7lByMPoycSd0u8HfEOg+TaNtBae36M=;
-        b=TfkAei0mq6oYIHRD4lh8r5LmsJM48dq4e5CPIRCIKgcVDmLjq2FdEriKXF6qeXfkZJ
-         LJggKQM+ZfDH5j+ZNrsldjK85Ab0mJ1PMECjJDUHm74eQS0DCB/PJ3U7zEDk8niJEc0k
-         yeB9ofMMsoct53FdG7dcHn65ay/790UNu8v0osLPvV6Q8ec7aolhMmmBK5C692lKLcr5
-         Q5rm5hODPpKQyhHAt+zancWPYKHVNHYj8bjHgaGP7oYVGu9hg6oP4SHu21O/Stfe+7VU
-         fbK1mzW1cCViERFLvKXXun+6bCd8Wp0MxSYEoOG9VWYp+OPlFbl7YWqFPMtmQRThox7Q
-         NseA==
-X-Gm-Message-State: APjAAAVw8MHqvzoj6qQcQOa1EVbJKrklIzNTYiB9zsXX/D0dL2cuBY2X
-        lEk/1yf+8erFlIJ41l3x1qCcDb1ZSo3n1huEcFF5yw==
-X-Google-Smtp-Source: APXvYqwaDg5RJIa/+7hg3GZH8wEw+b92SRiVU4yUVnfpnAlF86iM4gYTWnDSDYod4HylTrO63wwxAvnEPO/tiEM5jJI=
-X-Received: by 2002:a67:e258:: with SMTP id w24mr30338343vse.20.1554232910294;
- Tue, 02 Apr 2019 12:21:50 -0700 (PDT)
+        id S1726705AbfDBVMI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Apr 2019 17:12:08 -0400
+Received: from mx2.suse.de ([195.135.220.15]:45920 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725965AbfDBVMI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 2 Apr 2019 17:12:08 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 49ED7AF61;
+        Tue,  2 Apr 2019 21:12:07 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 5CDE8DA824; Tue,  2 Apr 2019 23:13:16 +0200 (CEST)
+Date:   Tue, 2 Apr 2019 23:13:16 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 4/4 RESEND] btrfs: fix property validate fail should not
+ increment generation
+Message-ID: <20190402211315.GE29086@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+References: <20190402100742.8355-1-anand.jain@oracle.com>
+ <20190402100742.8355-6-anand.jain@oracle.com>
+ <e13f6e8f-483e-85f5-e2aa-b0efaf66e621@suse.com>
 MIME-Version: 1.0
-References: <20190402180956.28893-1-jeffm@suse.com> <20190402180956.28893-2-jeffm@suse.com>
-In-Reply-To: <20190402180956.28893-2-jeffm@suse.com>
-Reply-To: fdmanana@gmail.com
-From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Tue, 2 Apr 2019 19:21:39 +0000
-Message-ID: <CAL3q7H5hbLM_x2uUqViQr1q6uce5q8GYxmYed6Y+w--GbjKL0w@mail.gmail.com>
-Subject: Re: [PATCH 2/2] btrfs-progs: check: fixup_extent_flags needs to deal
- with non-skinny metadata
-To:     Jeff Mahoney <jeffm@suse.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <e13f6e8f-483e-85f5-e2aa-b0efaf66e621@suse.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Apr 2, 2019 at 7:31 PM <jeffm@suse.com> wrote:
->
-> From: Jeff Mahoney <jeffm@suse.com>
->
-> When repairing a file system created by a very old kernel, I ran into
-> issues fixing up the extent flags since fixup_extent_flags assumed
-> that a METADATA_ITEM would be present if the record was for metadata.
->
-> Since METADATA_ITEMs don't exist without skinny metadata, we need to
-> fall back to EXTENT_ITEMs.  This also falls back to EXTENT_ITEMs even
-> with skinny metadata enabled as other parts of the tools do.
->
-> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+On Tue, Apr 02, 2019 at 04:45:23PM +0300, Nikolay Borisov wrote:
+> 
+> 
+> On 2.04.19 г. 13:07 ч., Anand Jain wrote:
+> > When the property fails to pass the prop_handlers::validate() check, the
+> > thread should exit with no changes in the kernel, but as we are starting
+> > the transaction too early, we have just updated the generation even if
+> > there is no change.
+> > 
+> > For example:
+> > btrfs prop get /btrfs compression
+> >  compression=lzo
+> > sync
+> > btrfs in dump-super /dev/sdb | grep "^generation"
+> >  generation		32
+> > 
+> > Try to set an incomplete compression type
+> > 
+> > btrfs prop set /btrfs compression zli
+> >   ERROR: failed to set compression for /btrfs: Invalid argument
+> > sync
+> > 
+> > Set failed but generation is incremented
+> > btrfs in dump-super /dev/sdb | grep "^generation"
+> >  generation		33  <--
+> > 
+> > Fix it by collapsing btrfs_set_prop_trans() into btrfs_set_prop(), which
+> > provides flexibility to start the transaction after the
+> > prop_handlers::validate() has been checked.
+> > 
+> > As of now if the prop_handlers::apply() fails then we still increment
+> > the generation, but if there is strong prop_handlers::validate() then
+> > the prop_handlers::apply() can never fail.
+> > 
+> > Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> 
+> SO what do we gain by this patch? Whether the transaction generation
+> number (actually in your changelog it will be an improvement to mention
+> transaction generation explicitly, because there is also inode
+> generation...) is incremented or not is an implementation detail.
 
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-
-Looks good.
-
-> ---
->  check/main.c | 10 +++++++++-
->  1 file changed, 9 insertions(+), 1 deletion(-)
->
-> diff --git a/check/main.c b/check/main.c
-> index 7547209c..4a27a443 100644
-> --- a/check/main.c
-> +++ b/check/main.c
-> @@ -7540,9 +7540,13 @@ static int fixup_extent_flags(struct btrfs_fs_info=
- *fs_info,
->         struct btrfs_key key;
->         u64 flags;
->         int ret =3D 0;
-> +       bool metadata_item =3D rec->metadata;
->
-> +       if (!btrfs_fs_incompat(root->fs_info, SKINNY_METADATA))
-> +               metadata_item =3D false;
-> +retry:
->         key.objectid =3D rec->start;
-> -       if (rec->metadata) {
-> +       if (metadata_item) {
->                 key.type =3D BTRFS_METADATA_ITEM_KEY;
->                 key.offset =3D rec->info_level;
->         } else {
-> @@ -7561,6 +7565,10 @@ static int fixup_extent_flags(struct btrfs_fs_info=
- *fs_info,
->                 btrfs_commit_transaction(trans, root);
->                 return ret;
->         } else if (ret) {
-> +               if (key.type =3D=3D BTRFS_METADATA_ITEM_KEY) {
-> +                       metadata_item =3D false;
-> +                       goto retry;
-> +               }
->                 fprintf(stderr, "Didn't find extent for %llu\n",
->                         (unsigned long long)rec->start);
->                 btrfs_release_path(&path);
-> --
-> 2.16.4
->
-
-
---=20
-Filipe David Manana,
-
-=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
- right.=E2=80=9D
+No, the problem is that the order of the preliminary checks and the
+transaction start is reversed. So first the transaction, then do sanity
+checks, that are otherwise don't depend on the transaction. Many other
+places have been updatd to do the lighweight checks first and keep the
+transaction region minimal.

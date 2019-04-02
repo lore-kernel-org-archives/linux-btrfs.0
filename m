@@ -2,106 +2,165 @@ Return-Path: <SRS0=SOow=SE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CB005C4360F
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 13:29:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 08B6FC4360F
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 13:35:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9F81320883
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 13:29:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D4CDE20883
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 13:35:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731262AbfDBN3Y (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Apr 2019 09:29:24 -0400
-Received: from frost.carfax.org.uk ([85.119.82.111]:51048 "EHLO
-        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726716AbfDBN3Y (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Apr 2019 09:29:24 -0400
-Received: from hrm by frost.carfax.org.uk with local (Exim 4.80)
-        (envelope-from <hrm@carfax.org.uk>)
-        id 1hBJTc-0007EZ-Cl; Tue, 02 Apr 2019 13:29:20 +0000
-Date:   Tue, 2 Apr 2019 13:29:20 +0000
-From:   Hugo Mills <hugo@carfax.org.uk>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     "Nik." <btrfs@avgustinov.eu>, linux-btrfs@vger.kernel.org
-Subject: Re: interest in post-mortem examination of a BTRFS system and
- improving the btrfs-code?
-Message-ID: <20190402132920.GA29117@carfax.org.uk>
-Mail-Followup-To: Hugo Mills <hugo@carfax.org.uk>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>, "Nik." <btrfs@avgustinov.eu>,
-        linux-btrfs@vger.kernel.org
-References: <aa81a49a-d5ca-0f1c-fa75-9ed3656cff55@avgustinov.eu>
- <a6cb572c-c015-1e19-7489-c59fd1384509@avgustinov.eu>
- <9cf1e935-c0b1-6546-5f1e-f8e88839d560@gmx.com>
- <99c1632a-a575-b5eb-8a26-8f92666f9c3a@avgustinov.eu>
- <c0909c80-8167-7b46-3a3c-d57962aee7fd@gmx.com>
+        id S1730501AbfDBNfP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Apr 2019 09:35:15 -0400
+Received: from mx2.suse.de ([195.135.220.15]:48198 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1729532AbfDBNfP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 2 Apr 2019 09:35:15 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 999F8ABC3;
+        Tue,  2 Apr 2019 13:35:13 +0000 (UTC)
+Subject: Re: [PATCH 3/4 RESEND] btrfs: open code btrfs_set_prop in
+ inherit_prop
+To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+References: <20190402100742.8355-1-anand.jain@oracle.com>
+ <20190402100742.8355-5-anand.jain@oracle.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <8fedbab1-6fec-92cb-25b2-c9b9ff264103@suse.com>
+Date:   Tue, 2 Apr 2019 16:35:12 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.6.1
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="ew6BAiZeqk4r7MaW"
-Content-Disposition: inline
-In-Reply-To: <c0909c80-8167-7b46-3a3c-d57962aee7fd@gmx.com>
-X-GPG-Fingerprint: DD84 D558 9D81 DDEE 930D  2054 585E 1475 E2AB 1DE4
-X-GPG-Key: E2AB1DE4
-X-Parrot: It is no more. It has joined the choir invisible.
-X-IRC-Nicks: darksatanic darkersatanic darkling darkthing
-User-Agent: Mutt/1.5.21 (2010-09-15)
+In-Reply-To: <20190402100742.8355-5-anand.jain@oracle.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
---ew6BAiZeqk4r7MaW
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
 
-On Tue, Apr 02, 2019 at 09:24:03PM +0800, Qu Wenruo wrote:
->=20
->=20
-> On 2019/4/2 =E4=B8=8B=E5=8D=889:06, Nik. wrote:
-[snip]
-> > On the larger file system only "btrfs check --repair --readonly ..." was
-> > attempted (without success; most command executions were documented, so
-> > the results can be made available), no writing commands were issued.
->=20
-> --repair will cause write, unless it even failed to open the filesystem.
+On 2.04.19 г. 13:07 ч., Anand Jain wrote:
+> When an inode inherits property from its parent, we call btrfs_set_prop().
+> btrfs_set_prop() does an elaborate checks, which is not required in the
+> context of inheriting a property. Instead just open-code only the required
+> items from btrfs_set_prop() and then call btrfs_setxattr() directly. So
+> now the only user of btrfs_set_prop() is gone, (except for the wraper
+> function btrfs_set_prop_trans()).
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+>  fs/btrfs/props.c | 27 +++++++++++++++++++++------
+>  1 file changed, 21 insertions(+), 6 deletions(-)
+> 
+> diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
+> index 72a06c4d3c70..fb84e76f3b1d 100644
+> --- a/fs/btrfs/props.c
+> +++ b/fs/btrfs/props.c
+> @@ -367,20 +367,35 @@ static int inherit_props(struct btrfs_trans_handle *trans,
+>  		if (!value)
+>  			continue;
+>  
+> +		/* may be removed */
 
-   If btrfs check accepted both --repair and --readonly without
-complaining, then that's a regression and a bug. --readonly should be
-mutually exclusive with any option that might write to the FS, and if
-it isn't any more, then it's been broken and needs fixing.
+This comment brings no value. Either explain *why* it can be removed or
+remove it altogether.
 
-   Hugo.
+> +		ret = h->validate(value, strlen(value));
+> +		if (ret)
+> +			continue;
+> +
+>  		num_bytes = btrfs_calc_trans_metadata_size(fs_info, 1);
+>  		ret = btrfs_block_rsv_add(root, trans->block_rsv,
+>  					  num_bytes, BTRFS_RESERVE_NO_FLUSH);
+>  		if (ret)
+> -			goto out;
+> -		ret = btrfs_set_prop(trans, inode, h->xattr_name, value,
+> +			return ret;
+> +
+> +		ret = btrfs_setxattr(trans, inode, h->xattr_name, value,
+>  				     strlen(value), 0);
+> +		if (!ret) {
+> +			ret = h->apply(inode, value, strlen(value));
+> +			if (ret)
+> +				btrfs_setxattr(trans, inode, h->xattr_name,
+> +					       NULL, 0, 0);
+> +			else
+> +				set_bit(BTRFS_INODE_HAS_PROPS,
+> +					&BTRFS_I(inode)->runtime_flags);
+> +		}
+> +
+>  		btrfs_block_rsv_release(fs_info, trans->block_rsv, num_bytes);
 
---=20
-Hugo Mills             | Great films about cricket: Interview with the Umpi=
-re
-hugo@... carfax.org.uk |
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
+(not related to this patch) but should the reservation be released after
+setxattr is called, even if it succeeds, since we need to hold it until
+the reservation is committed. E.g. if we have to inherit 2 props then in
+the first iteration of the loop we reserve space, we call btrfs_Setxattr
+with enough reserved space, then in the 2nd reservation we need another
+reservation on top of the previous one, no ?
 
---ew6BAiZeqk4r7MaW
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Otherwise the change per se looks good:
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
-iQIcBAEBAgAGBQJco2OwAAoJEFheFHXiqx3ks8gQAJepAh51RMjUgfgc1ghwuMTf
-L71jRrlis4fBXQlZoFcIVtNDPSh4AG1wDsgybcLGr9MJ+zJRx5KKholas6/7kNZw
-NnRlt7akcW+jo9P67mz1x1HZrc4OQh8Mq+pbXcrAzie/Vs8yR9P0kA00kTwuiGZg
-MoB6GtDR5wvff2hdX/vq1FAh7jXwONWY8FAzW7Y0gpmQj9Ofr08T7UI4gsBWTysn
-ShEbrVgc5nK1yUxvDn/THgpvKfMXNH3hJExh2p2NXsJYBYIZb+1Uy25mxebzGOZ5
-rZI1oIb+hrd9B226MLmGxutH/98vMlBwi1yJDoBNqXq8dVtqwXIdNw51byJTg9Qf
-cPFw6RvalnHLm2Zpvw21yAv/l8AkutWlGpl87qIwNr05yW+geX8eJj7eM0WKobta
-OFE7133K5SzLT6ka7cDW+ROT2fuqiqJA2WQDo4it/vt4RguJ1uX+HhdlBWVBIQvi
-dIGsERaKdJUmHX8YjdqpG7g+R9+0NcyrBO/+zBYDcEqDWRIbVskwQ3IF+W/BFYrI
-MAynyQcTm7zh1Y5W2fM6RjjZVqY78Xba+w6kjZJhlXXiNWwW4zfsm+BqNOuckEOG
-+SJpAVyP+WOnEW9voIizG9oRKlZH46w9mDZYaj4YA9fPX84Hw1fCfWws0iuPKNaQ
-twFardh3TAXc+iwykQKi
-=m7CP
------END PGP SIGNATURE-----
 
---ew6BAiZeqk4r7MaW--
+>  		if (ret)
+> -			goto out;
+> +			return ret;
+>  	}
+> -	ret = 0;
+> -out:
+> -	return ret;
+> +
+> +	return 0;
+>  }
+>  
+>  int btrfs_inode_inherit_props(struct btrfs_trans_handle *trans,
+> 

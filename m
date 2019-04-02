@@ -2,70 +2,81 @@ Return-Path: <SRS0=SOow=SE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C03A0C4360F
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 12:51:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CAAE1C4360F
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 13:00:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8D9462133D
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 12:51:44 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="S/dsqPUL"
+	by mail.kernel.org (Postfix) with ESMTP id A0E342084C
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 13:00:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731011AbfDBMvR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Apr 2019 08:51:17 -0400
-Received: from mail-ed1-f67.google.com ([209.85.208.67]:41160 "EHLO
-        mail-ed1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1730934AbfDBMvO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Apr 2019 08:51:14 -0400
-Received: by mail-ed1-f67.google.com with SMTP id a25so11530398edc.8
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 Apr 2019 05:51:13 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=subject:to:references:from:message-id:date:user-agent:mime-version
-         :in-reply-to:content-language:content-transfer-encoding;
-        bh=VmnXCXeyOT/2rWI7H8lCG+oRt9ZkxnDCNgIW8vlI6aE=;
-        b=S/dsqPULcLdAI0jQA80jVRoPb2h0LpxLi89l+42UP33xQl8AIgdvnaRroyfSNEmXBE
-         n4mgCwq+eUhMsdSPoDr39DLmYZKiw54S6K7oszlfGQzwHURavZKV6mKrLt7o0FNwi68X
-         NfO4wPH3+LE+/cSYJJI51Fu8WGaJmcbRXHnM91Hyw26ONU8feNeXLPR9VtxxTRn7b9nf
-         IySgiiqrzEqamPbWQQf1MPPKiuRl8ZWpQlNDoFZB9dJ7i4s75/QmQf+f7DBhWGKcciGV
-         p1yUjwyq9r0LZg6bi0Tz3uwwV/sKzFIHxJrfCQ/aWb1gC1lz/RGEyktpRcJe+d9KE918
-         GxXQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=VmnXCXeyOT/2rWI7H8lCG+oRt9ZkxnDCNgIW8vlI6aE=;
-        b=tHKyqJOSjJcrBlsdPEMeZw+nn+2Ni7FyERecuMjaBwLNcKgJvDsgnvswTIlKvcPyS0
-         wQohd5rHwXlBZdhEUxIcxwr4MmFeL/4uehPkHx5gdoHnBE8iDmSouqOjFsAUY8t0IiRc
-         qOOd0nkvf/Y+57IntGWn25W40iOpknxvZUcIh03Mbn0s9l9aAuCm9s7sVBRoEgPfgoWl
-         /Z7wwdfYsmQ8um386nfahL0eboPF/sloAcc5VzIpLUy+U8xvDjdSPHZ3Kt4D2pm3XYd4
-         hFOJQXuPO4WzRR3NV8ao4mKl2rfXMYtZqHuQaxHNlw1ZU108LmoCo6Vz09sLRy5eSVbM
-         MzWQ==
-X-Gm-Message-State: APjAAAVyHZ4Nae1MU6CiFb2bP8CwkU+CGWG1U1CkxVOBeiUO7RQ9sZOz
-        I4gPQOMLzTP2tHQUx2Q97mXRJcG3
-X-Google-Smtp-Source: APXvYqzaM+Aw+f0hZ6jiBPHFDOlVRMfot09nlUtFN6DQevavnDw2YlFlh9e03jbZ4fNg87tedGjlEQ==
-X-Received: by 2002:aa7:d710:: with SMTP id t16mr46557313edq.222.1554209472784;
-        Tue, 02 Apr 2019 05:51:12 -0700 (PDT)
-Received: from [10.20.1.223] (ivokamhome.ddns.nbis.net. [87.120.136.31])
-        by smtp.gmail.com with ESMTPSA id bs21sm2451615ejb.11.2019.04.02.05.51.11
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 02 Apr 2019 05:51:11 -0700 (PDT)
-Subject: Re: [PATCH] fstests: btrfs/048: amend property validation cases
+        id S1729892AbfDBNAW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Apr 2019 09:00:22 -0400
+Received: from mx2.suse.de ([195.135.220.15]:39636 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726314AbfDBNAW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 2 Apr 2019 09:00:22 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 525FDAF95;
+        Tue,  2 Apr 2019 13:00:20 +0000 (UTC)
+Subject: Re: [PATCH 2/4 RESEND] btrfs: fix vanished compression property after
+ failed set
 To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
 References: <20190402100742.8355-1-anand.jain@oracle.com>
- <20190402100742.8355-3-anand.jain@oracle.com>
-From:   Nikolay Borisov <n.borisov.lkml@gmail.com>
-Message-ID: <903ccfcc-dfaf-3543-c29c-9d0c91125b75@gmail.com>
-Date:   Tue, 2 Apr 2019 15:51:10 +0300
+ <20190402100742.8355-4-anand.jain@oracle.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <33a3bb7c-5554-1f6d-63c8-2dd9ed8b3649@suse.com>
+Date:   Tue, 2 Apr 2019 16:00:19 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.6.1
 MIME-Version: 1.0
-In-Reply-To: <20190402100742.8355-3-anand.jain@oracle.com>
+In-Reply-To: <20190402100742.8355-4-anand.jain@oracle.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -77,20 +88,48 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 2.04.19 г. 13:07 ч., Anand Jain wrote:
-> Add more property validation cases which are fixed by the patches [1]
->  [1]
->   btrfs: fix property validate fail should not increment generation
->   btrfs: open code btrfs_set_prop in inherit_prop
->   btrfs: fix vanished compression property after failed set
->   btrfs: fix zstd compression parameter
+> The compression property resets to NULL, instead of the old value if we
+> fail to set the new compression parameter.
+> 
+> btrfs prop get /btrfs compression
+>   compression=lzo
+> btrfs prop set /btrfs compression zli
+>   ERROR: failed to set compression for /btrfs: Invalid argument
+> btrfs prop get /btrfs compression
+> 
+> This is because the compression property ->validate() is successful for
+> 'zli' as the strncmp() used the len passed from the userland.
+> 
+> Fix it by using the expected string length in strncmp().
 > 
 > Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
-> (As this fstest patch depends on the kernel patches,
->  this patch isn't sent to fstests mailing list yet).
-> 
 
-Doesn't matter, it's fine to have a test merged before respective kernel
-patches have landed. In fact there is one btrfs test (can't remember
-which one) authored by you which is failing, yet the respective kernel
-patches have never been sent to the mailing list.
+This mimics the code in prop_compression_apply and so if ->validate()
+fails we just return without changing anything. So this LGTM:
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
+> ---
+>  fs/btrfs/props.c | 6 +++---
+>  1 file changed, 3 insertions(+), 3 deletions(-)
+> 
+> diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
+> index 3cc007e3c7f8..72a06c4d3c70 100644
+> --- a/fs/btrfs/props.c
+> +++ b/fs/btrfs/props.c
+> @@ -275,11 +275,11 @@ static int prop_compression_validate(const char *value, size_t len)
+>  	if (!value)
+>  		return 0;
+>  
+> -	if (!strncmp("lzo", value, len))
+> +	if (!strncmp("lzo", value, 3))
+>  		return 0;
+> -	else if (!strncmp("zlib", value, len))
+> +	else if (!strncmp("zlib", value, 4))
+>  		return 0;
+> -	else if (!strncmp("zstd", value, len))
+> +	else if (!strncmp("zstd", value, 4))
+>  		return 0;
+>  
+>  	return -EINVAL;
+> 

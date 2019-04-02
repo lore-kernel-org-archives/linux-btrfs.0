@@ -2,312 +2,122 @@ Return-Path: <SRS0=SOow=SE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham
+X-Spam-Status: No, score=-6.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9D650C43381
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 07:42:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CC7F7C43381
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 07:59:54 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4B35C2070D
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 07:42:08 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="IgYl3gtP"
+	by mail.kernel.org (Postfix) with ESMTP id A0DED20830
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 07:59:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728797AbfDBHmH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Apr 2019 03:42:07 -0400
-Received: from mout.gmx.net ([212.227.15.19]:45287 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726458AbfDBHmG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 2 Apr 2019 03:42:06 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1554190918;
-        bh=8hwxpfhjKorqYj9TqNfgVEXtaIDiMGikvfkOyC2TafA=;
-        h=X-UI-Sender-Class:To:From:Subject:Date;
-        b=IgYl3gtPJ2AELRuyoEZK8+w5r0K+G2XfPHPpbdX7ijB5i30T5e8YeWUhS9601DkBX
-         LVidvEwxXebVPbj8uN0A0ef3FqzkiKozhPkmRydBesvknECaAnCEesaRkkAKlPRD8L
-         nAAyQ51oez9/jvnaGeCiQdVlNRuxHQdczqCWk/rU=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx003
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0LoVOE-1giClj2ebK-00gaEt; Tue, 02
- Apr 2019 09:41:58 +0200
-To:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        id S1728650AbfDBH7x (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Apr 2019 03:59:53 -0400
+Received: from mx2.suse.de ([195.135.220.15]:58610 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725884AbfDBH7x (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 2 Apr 2019 03:59:53 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id C47D0AEF6;
+        Tue,  2 Apr 2019 07:59:51 +0000 (UTC)
+Subject: Re: Is it a good idea to export certain internal structure
+ declaration to make bcc/ebpf happier?
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
         iovisor-dev@lists.iovisor.org
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Subject: Is it a good idea to export certain internal structure declaration to
- make bcc/ebpf happier?
+References: <28e33708-6f0d-ec65-5565-4c41e741a87e@gmx.com>
+From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <28e33708-6f0d-ec65-5565-4c41e741a87e@gmx.com>
-Date:   Tue, 2 Apr 2019 15:41:52 +0800
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <c1b06936-ba94-4467-8744-886b41bea2b6@suse.com>
+Date:   Tue, 2 Apr 2019 10:59:50 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.3
+ Thunderbird/60.6.1
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="ArZ6m4PjEdtLA3u8tEGKtuvTZmZE3DWyt"
-X-Provags-ID: V03:K1:piKi2U1osGpIZGRGPCRsrBlGUPtZ66Nt50+n4hSJrupf2A01ucq
- 7m4ywoa/FvGu3+PlM12HhSpD5pX1xnhEYOXBkQkpIwhRSwXjMXreHY+71lCwWYvswVzUaSR
- AN8QmZdEL0nyZ/zI3cFHpsMKni7hUdGPerffB/fnkW7YIM3nR1qjYGPc6kEpfuYH8lrkG6p
- awN+MRII+awWukMDbvHuw==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:hpT4B3KcmV4=:zKe7m/mpG5yyMMUwvTBSo5
- WEPwcdCWx7bkR4RtGPxz2l5r2f3hzgoW4O0YNUrL94X+PgiVw8+/uCVu1NyHqi4bu8PsnPbLL
- LrGJvDHtVw65GLkUTvP9WccsiGEisAaXvHFZxo7erfmmKisrzW9INKLrA+9cGo3W/Dlxu+QqW
- vX1VWoXz2sKAnJyRdqIKLc5pi8TBbkqKOh/LWXUzu5kXJTrMt+7xwauDxUc7CZ54wG2S1ezyp
- II8Oy4qBSMawECBHXz6QuYERbPDElmKOmHwsQOaW9KMGF2UTnatu5cbm8HZA4XKjDE9Es1ZBW
- sIYvfpvPODy02kV2/rEeqnQ+mPWXbwWjFiMYYcxPaCR1bc+N0RhES0CtyrybjGMzigyeKs+G4
- N2E5QciqG2JnAQT1sX6S/fL2yNwFy+IHIUCCuykh9XHAmEUGOZBC7+8iGDE85EGTH/oOeK6Gf
- MLPml7EXlY8Yq3hwY336F3YjMxPyf06pzCbCMlpdnOdDUonVmhoN+wVStNKFEQlAG046YnMnX
- 1FP7F8lzNSPesOWV4guKM5mW/6EWoHhYqcyr0Q7wK77K33WyOfB7Tnh23A9/6Bwx6wukItKpp
- fkndLuCSQ6nyiMJlCRXkkgwK5zy4sRl/NwwPaWZTP8Ep807C8r8AQLqw/csLF2DF5THDy6hIm
- 8ETtwujZDruvr8fBBCCK8Xf840wVBZqAAy9drIuQmQTHY/rwNEFmleWsX3dVIyMoaR89YPodb
- mjpHOyxD3asgJ1nThcP7D3PixDCBxKwPpcbvswS28RdGpIol+ykzJgyU39abOKbaqrglmHfO/
- Fy8qYUWh1ICTXssgF1JSZysFlZRREH6RFybFQn3Vcpl97P/fErpyLcbusL312jlBsP+QLkdyc
- eLatNmbadO+e9epnt4t+k4a7JP52JYIPGe5hbWhLPO2HR2rWf7Ji+0MTMfNh6x
+In-Reply-To: <28e33708-6f0d-ec65-5565-4c41e741a87e@gmx.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---ArZ6m4PjEdtLA3u8tEGKtuvTZmZE3DWyt
-Content-Type: multipart/mixed; boundary="UZ4z1kebDaDWd9Q5ryGut7jxUijRdbLnH";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
- iovisor-dev@lists.iovisor.org
-Message-ID: <28e33708-6f0d-ec65-5565-4c41e741a87e@gmx.com>
-Subject: Is it a good idea to export certain internal structure declaration to
- make bcc/ebpf happier?
-
---UZ4z1kebDaDWd9Q5ryGut7jxUijRdbLnH
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-
-Hi,
-
-I'm recently working on crafting a small bcc based script to show how
-btrfs tree block concurrency.
-
-The prototype is here:
-https://gist.github.com/adam900710/63db6cdc7d26c4744a53dfc7755fafda
-
-However it has some problems, and cannot be used directly on latest kerne=
-l.
-
-- No way to pass btrfs headers into eBPF code.
-  This is because the declaration of extent_buffer is in
-  `fs/btrfs/extent_io.h`.
-  No in the common kernel headers search path.
-
-- eBPF program can't access btrfs_header_owner() helper.
-  Even we make eBPF code understand the headers, we can't
-  access a lot of kernel functions, like btrfs_header_owner().
-
-So I'm wondering is it possible for us to export extent_buffer
-declaration just for possible eBPF usage.
-
-Or is bcc suit strong enough to handle such case?
-
-The diff would be something like this to make above bcc script work:
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index a3e3e95c632e..ba7628434ac9 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -13,6 +13,7 @@
- #include <linux/pagevec.h>
- #include <linux/prefetch.h>
- #include <linux/cleancache.h>
-+#include <linux/btrfs.h>
- #include "extent_io.h"
- #include "extent_map.h"
- #include "ctree.h"
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index c4ec104ac157..5bc0df2c1c64 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -146,48 +146,6 @@ struct extent_state {
- #endif
- };
-
--#define INLINE_EXTENT_BUFFER_PAGES 16
--#define MAX_INLINE_EXTENT_BUFFER_SIZE (INLINE_EXTENT_BUFFER_PAGES *
-PAGE_SIZE)
--struct extent_buffer {
--       u64 start;
--       unsigned long len;
--       unsigned long bflags;
--       struct btrfs_fs_info *fs_info;
--       spinlock_t refs_lock;
--       atomic_t refs;
--       atomic_t io_pages;
--       int read_mirror;
--       struct rcu_head rcu_head;
--       pid_t lock_owner;
--
--       atomic_t blocking_writers;
--       atomic_t blocking_readers;
--       bool lock_nested;
--       /* >=3D 0 if eb belongs to a log tree, -1 otherwise */
--       short log_index;
--
--       /* protects write locks */
--       rwlock_t lock;
--
--       /* readers use lock_wq while they wait for the write
--        * lock holders to unlock
--        */
--       wait_queue_head_t write_lock_wq;
--
--       /* writers use read_lock_wq while they wait for readers
--        * to unlock
--        */
--       wait_queue_head_t read_lock_wq;
--       struct page *pages[INLINE_EXTENT_BUFFER_PAGES];
--#ifdef CONFIG_BTRFS_DEBUG
--       atomic_t spinning_writers;
--       atomic_t spinning_readers;
--       atomic_t read_locks;
--       atomic_t write_locks;
--       struct list_head leak_list;
--#endif
--};
--
- /*
-  * Structure to record how many bytes and which ranges are set/cleared
-  */
-diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
-index 6df03ba36026..5cf075d02b1b 100644
---- a/fs/btrfs/locking.c
-+++ b/fs/btrfs/locking.c
-@@ -174,6 +174,8 @@ void btrfs_tree_read_lock(struct extent_buffer *eb)
-                BUG_ON(eb->lock_nested);
-                eb->lock_nested =3D true;
-                read_unlock(&eb->lock);
-+               if (IS_ENABLED(CONFIG_BTRFS_DEBUG))
-+                       eb->owner =3D btrfs_header_owner(eb);
-                return;
-        }
-        if (atomic_read(&eb->blocking_writers)) {
-@@ -184,6 +186,8 @@ void btrfs_tree_read_lock(struct extent_buffer *eb)
-        }
-        btrfs_assert_tree_read_locks_get(eb);
-        btrfs_assert_spinning_readers_get(eb);
-+       if (IS_ENABLED(CONFIG_BTRFS_DEBUG))
-+               eb->owner =3D btrfs_header_owner(eb);
- }
-
- /*
-@@ -312,6 +316,8 @@ void btrfs_tree_lock(struct extent_buffer *eb)
-        btrfs_assert_spinning_writers_get(eb);
-        btrfs_assert_tree_write_locks_get(eb);
-        eb->lock_owner =3D current->pid;
-+       if (IS_ENABLED(CONFIG_BTRFS_DEBUG))
-+               eb->owner =3D btrfs_header_owner(eb);
- }
-
- /*
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index c195896d478f..3aeaffdadabb 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -944,4 +944,47 @@ enum btrfs_err_code {
- #define BTRFS_IOC_INO_LOOKUP_USER _IOWR(BTRFS_IOCTL_MAGIC, 62, \
-                                struct btrfs_ioctl_ino_lookup_user_args)
-
-+#define INLINE_EXTENT_BUFFER_PAGES 16
-+#define MAX_INLINE_EXTENT_BUFFER_SIZE (INLINE_EXTENT_BUFFER_PAGES *
-PAGE_SIZE)
-+struct extent_buffer {
-+       u64 start;
-+       unsigned long len;
-+       unsigned long bflags;
-+       struct btrfs_fs_info *fs_info;
-+       spinlock_t refs_lock;
-+       atomic_t refs;
-+       atomic_t io_pages;
-+       int read_mirror;
-+       struct rcu_head rcu_head;
-+       pid_t lock_owner;
-+
-+       atomic_t blocking_writers;
-+       atomic_t blocking_readers;
-+       bool lock_nested;
-+       /* >=3D 0 if eb belongs to a log tree, -1 otherwise */
-+       short log_index;
-+
-+       /* protects write locks */
-+       rwlock_t lock;
-+
-+       /* readers use lock_wq while they wait for the write
-+        * lock holders to unlock
-+        */
-+       wait_queue_head_t write_lock_wq;
-+
-+       /* writers use read_lock_wq while they wait for readers
-+        * to unlock
-+        */
-+       wait_queue_head_t read_lock_wq;
-+       struct page *pages[INLINE_EXTENT_BUFFER_PAGES];
-+#ifdef CONFIG_BTRFS_DEBUG
-+       atomic_t spinning_writers;
-+       atomic_t spinning_readers;
-+       atomic_t read_locks;
-+       atomic_t write_locks;
-+       u64 owner;
-+       struct list_head leak_list;
-+#endif
-+};
-+
- #endif /* _UAPI_LINUX_BTRFS_H */
-
-Thanks,
-Qu
 
 
---UZ4z1kebDaDWd9Q5ryGut7jxUijRdbLnH--
+On 2.04.19 г. 10:41 ч., Qu Wenruo wrote:
+> Hi,
+> 
+> I'm recently working on crafting a small bcc based script to show how
+> btrfs tree block concurrency.
+> 
+> The prototype is here:
+> https://gist.github.com/adam900710/63db6cdc7d26c4744a53dfc7755fafda
+> 
+> However it has some problems, and cannot be used directly on latest kernel.
+> 
+> - No way to pass btrfs headers into eBPF code.
+>   This is because the declaration of extent_buffer is in
+>   `fs/btrfs/extent_io.h`.
+>   No in the common kernel headers search path.
+> 
+> - eBPF program can't access btrfs_header_owner() helper.
+>   Even we make eBPF code understand the headers, we can't
+>   access a lot of kernel functions, like btrfs_header_owner().
+> 
+> So I'm wondering is it possible for us to export extent_buffer
+> declaration just for possible eBPF usage.
+ >
+> Or is bcc suit strong enough to handle such case?
+> 
+> The diff would be something like this to make above bcc script work:
+> 
 
---ArZ6m4PjEdtLA3u8tEGKtuvTZmZE3DWyt
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
 
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlyjEkAACgkQwj2R86El
-/qglpwgAppT2JeAd+0384auluE7zLPvD58QEesyBgBXJJGnXHntoLR5Bb0ErWNDf
-SqOhXleD7MrehEOXdAbg9dEq/f3tQmIHfuMPe5TiT3WKBJNGIFv6AbhQQiHw0cNk
-s9ZJ2VDha5DTVnhBhxtGY/v4BgVS5MuYZZPVeU4A7QEWiy85zgTUk+IoPSPJxRrN
-ZVsZ9omkRXFu1w+sksTbuC6a7qWbKzxG7ENi2dqi6zG05Lmo13jB3iWWdsuzsfrj
-vpsKFqUqefEN4pFZeQiJ89sudGlHJs9f0VeqKBA7AUZ/x613qFV0dIUltlNfikQe
-SiTWueFd6LPhBGAsHEooKGTilO1CZg==
-=0DiP
------END PGP SIGNATURE-----
-
---ArZ6m4PjEdtLA3u8tEGKtuvTZmZE3DWyt--
+Hell no, that is _very_ ugly as hell. If you want to access such
+information why not introduce tracepoints which have enough context so
+that when they are used with ebpf you can query the data from the
+tracepoint? I *think* this ought to be made to work with ebpf?

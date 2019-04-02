@@ -2,30 +2,43 @@ Return-Path: <SRS0=SOow=SE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CB3F9C4360F
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 14:19:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C1B23C4360F
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 15:04:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9AB522084B
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 14:19:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1F1572075E
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 15:04:31 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=avgustinov.eu header.i=@avgustinov.eu header.b="kXXGpadY"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729145AbfDBOTF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Apr 2019 10:19:05 -0400
-Received: from syrinx.knorrie.org ([82.94.188.77]:53598 "EHLO
-        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726142AbfDBOTF (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Apr 2019 10:19:05 -0400
-Received: from [IPv6:2001:980:4a41:fb::12] (unknown [IPv6:2001:980:4a41:fb::12])
+        id S1732337AbfDBPE3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Apr 2019 11:04:29 -0400
+Received: from cloud.avgustinov.eu ([62.73.84.164]:33350 "EHLO
+        cloud.avgustinov.eu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1731278AbfDBPE3 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Apr 2019 11:04:29 -0400
+Received: from [192.168.99.127] (unknown [93.241.30.34])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by syrinx.knorrie.org (Postfix) with ESMTPSA id 5DE2E408DB8DC;
-        Tue,  2 Apr 2019 16:19:02 +0200 (CEST)
+        by cloud.avgustinov.eu (Postfix) with ESMTPSA id 179C747C601A;
+        Tue,  2 Apr 2019 18:04:27 +0300 (EEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=avgustinov.eu;
+        s=default; t=1554217467;
+        bh=xH/f59XOZw2la3J4uti+MzEg9pyu1ckG+xnTTDyBKSE=;
+        h=Subject:To:References:From:Date:In-Reply-To:From;
+        b=kXXGpadYrOpYysj2Rk3ayaiLzuguFCsA4Bivj+orVT/cUN/jLNDtvXm6EoaMjVxaa
+         lQCj7bGftArO58bDhfKq2hX/hj7WtPt6WJZrtiA4QvlgPsRLoAZpVmY9PFpp+z182K
+         YRSS6jpmqQVPj12c3DGwnlOr7c53uFpu6gOadAS2sZzNvH1nXmc8pt5gpwHcJXO3L4
+         kAD4uhdkdYPvSJVznHRXUCHekBh6Y0v0uGxBXMt3fZ9lpZK8o4I27QE9mlZ/p+miU8
+         5QuPmp7oOUUmRejmbrQhm6f3vNmNdhpQa4493kv2SyKsB51FCi+svOjmqB2X8Km6eR
+         LYrM96kXqgmTw==
 Subject: Re: interest in post-mortem examination of a BTRFS system and
  improving the btrfs-code?
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, "Nik." <btrfs@avgustinov.eu>,
-        linux-btrfs@vger.kernel.org
+To:     Hans van Kranenburg <hans@knorrie.org>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
 References: <aa81a49a-d5ca-0f1c-fa75-9ed3656cff55@avgustinov.eu>
  <a6cb572c-c015-1e19-7489-c59fd1384509@avgustinov.eu>
  <9cf1e935-c0b1-6546-5f1e-f8e88839d560@gmx.com>
@@ -33,133 +46,69 @@ References: <aa81a49a-d5ca-0f1c-fa75-9ed3656cff55@avgustinov.eu>
  <c0909c80-8167-7b46-3a3c-d57962aee7fd@gmx.com>
  <6c4d5ccf-562d-a9b7-3aba-0a3bfd3797eb@avgustinov.eu>
  <ff7f4039-25d8-f5c9-80ac-4e7afaace3d0@gmx.com>
-From:   Hans van Kranenburg <hans@knorrie.org>
-Openpgp: preference=signencrypt
-Autocrypt: addr=hans@knorrie.org; prefer-encrypt=mutual; keydata=
- mQINBFo2pooBEADwTBe/lrCa78zuhVkmpvuN+pXPWHkYs0LuAgJrOsOKhxLkYXn6Pn7e3xm+
- ySfxwtFmqLUMPWujQYF0r5C6DteypL7XvkPP+FPVlQnDIifyEoKq8JZRPsAFt1S87QThYPC3
- mjfluLUKVBP21H3ZFUGjcf+hnJSN9d9MuSQmAvtJiLbRTo5DTZZvO/SuQlmafaEQteaOswme
- DKRcIYj7+FokaW9n90P8agvPZJn50MCKy1D2QZwvw0g2ZMR8yUdtsX6fHTe7Ym+tHIYM3Tsg
- 2KKgt17NTxIqyttcAIaVRs4+dnQ23J98iFmVHyT+X2Jou+KpHuULES8562QltmkchA7YxZpT
- mLMZ6TPit+sIocvxFE5dGiT1FMpjM5mOVCNOP+KOup/N7jobCG15haKWtu9k0kPz+trT3NOn
- gZXecYzBmasSJro60O4bwBayG9ILHNn+v/ZLg/jv33X2MV7oYXf+ustwjXnYUqVmjZkdI/pt
- 30lcNUxCANvTF861OgvZUR4WoMNK4krXtodBoEImjmT385LATGFt9HnXd1rQ4QzqyMPBk84j
- roX5NpOzNZrNJiUxj+aUQZcINtbpmvskGpJX0RsfhOh2fxfQ39ZP/0a2C59gBQuVCH6C5qsY
- rc1qTIpGdPYT+J1S2rY88AvPpr2JHZbiVqeB3jIlwVSmkYeB/QARAQABtCZIYW5zIHZhbiBL
- cmFuZW5idXJnIDxoYW5zQGtub3JyaWUub3JnPokCTgQTAQoAOBYhBOJv1o/B6NS2GUVGTueB
- VzIYDCpVBQJaNq7KAhsDBQsJCAcDBRUKCQgLBRYCAwEAAh4BAheAAAoJEOeBVzIYDCpVgDMQ
- ANSQMebh0Rr6RNhfA+g9CKiCDMGWZvHvvq3BNo9TqAo9BC4neAoVciSmeZXIlN8xVALf6rF8
- lKy8L1omocMcWw7TlvZHBr2gZHKlFYYC34R2NvxS0xO8Iw5rhEU6paYaKzlrvxuXuHMVXgjj
- bM3zBiN8W4b9VW1MoynP9nvm1WaGtFI9GIyK9j6mBCU+N5hpvFtt4DBmuWjzdDkd3sWUufYd
- nQhGimWHEg95GWhQUiFvr4HRvYJpbjRRRQG3O/5Fm0YyTYZkI5CDzQIm5lhqKNqmuf2ENstS
- 8KcBImlbwlzEpK9Pa3Z5MUeLZ5Ywwv+d11fyhk53aT9bipdEipvcGa6DrA0DquO4WlQR+RKU
- ywoGTgntwFu8G0+tmD8J1UE6kIzFwE5kiFWjM0rxv1tAgV9ZWqmp3sbI7vzbZXn+KI/wosHV
- iDeW5rYg+PdmnOlYXQIJO+t0KmF5zJlSe7daylKZKTYtk7w1Fq/Oh1Rps9h1C4sXN8OAUO7h
- 1SAnEtehHfv52nPxwZiI6eqbvqV0uEEyLFS5pCuuwmPpC8AmOrciY2T8T+4pmkJNO2Nd3jOP
- cnJgAQrxPvD7ACp/85LParnoz5c9/nPHJB1FgbAa7N5d8ubqJgi+k9Q2lAL9vBxK67aZlFZ0
- Kd7u1w1rUlY12KlFWzxpd4TuHZJ8rwi7PUceuQINBFo2sK8BEADSZP5cKnGl2d7CHXdpAzVF
- 6K4Hxwn5eHyKC1D/YvsY+otq3PnfLJeMf1hzv2OSrGaEAkGJh/9yXPOkQ+J1OxJJs9CY0fqB
- MvHZ98iTyeFAq+4CwKcnZxLiBchQJQd0dFPujtcoMkWgzp3QdzONdkK4P7+9XfryPECyCSUF
- ib2aEkuU3Ic4LYfsBqGR5hezbJqOs96ExMnYUCEAS5aeejr3xNb8NqZLPqU38SQCTLrAmPAX
- glKVnYyEVxFUV8EXXY6AK31lRzpCqmPxLoyhPAPda9BXchRluy+QOyg+Yn4Q2DSwbgCYPrxo
- HTZKxH+E+JxCMfSW35ZE5ufvAbY3IrfHIhbNnHyxbTRgYMDbTQCDyN9F2Rvx3EButRMApj+v
- OuaMBJF/fWfxL3pSIosG9Q7uPc+qJvVMHMRNnS0Y1QQ5ZPLG0zI5TeHzMnGmSTbcvn/NOxDe
- 6EhumcclFS0foHR78l1uOhUItya/48WCJE3FvOS3+KBhYvXCsG84KVsJeen+ieX/8lnSn0d2
- ZvUsj+6wo+d8tcOAP+KGwJ+ElOilqW29QfV4qvqmxnWjDYQWzxU9WGagU3z0diN97zMEO4D8
- SfUu72S5O0o9ATgid9lEzMKdagXP94x5CRvBydWu1E5CTgKZ3YZv+U3QclOG5p9/4+QNbhqH
- W4SaIIg90CFMiwARAQABiQRsBBgBCgAgFiEE4m/Wj8Ho1LYZRUZO54FXMhgMKlUFAlo2sK8C
- GwICQAkQ54FXMhgMKlXBdCAEGQEKAB0WIQRJbJ13A1ob3rfuShiywd9yY2FfbAUCWjawrwAK
- CRCywd9yY2FfbMKbEACIGLdFrD5j8rz/1fm8xWTJlOb3+o5A6fdJ2eyPwr5njJZSG9i5R28c
- dMmcwLtVisfedBUYLaMBmCEHnj7ylOgJi60HE74ZySX055hKECNfmA9Q7eidxta5WeXeTPSb
- PwTQkAgUZ576AO129MKKP4jkEiNENePMuYugCuW7XGR+FCEC2efYlVwDQy24ZfR9Q1dNK2ny
- 0gH1c+313l0JcNTKjQ0e7M9KsQSKUr6Tk0VGTFZE2dp+dJF1sxtWhJ6Ci7N1yyj3buFFpD9c
- kj5YQFqBkEwt3OGtYNuLfdwR4d47CEGdQSm52n91n/AKdhRDG5xvvADG0qLGBXdWvbdQFllm
- v47TlJRDc9LmwpIqgtaUGTVjtkhw0SdiwJX+BjhtWTtrQPbseDe2pN3gWte/dPidJWnj8zzS
- ggZ5otY2reSvM+79w/odUlmtaFx+IyFITuFnBVcMF0uGmQBBxssew8rePQejYQHz0bZUDNbD
- VaZiXqP4njzBJu5+nzNxQKzQJ0VDF6ve5K49y0RpT4IjNOupZ+OtlZTQyM7moag+Y6bcJ7KK
- 8+MRdRjGFFWP6H/RCSFAfoOGIKTlZHubjgetyQhMwKJQ5KnGDm+XUkeIWyevPfCVPNvqF2q3
- viQm0taFit8L+x7ATpolZuSCat5PSXtgx1liGjBpPKnERxyNLQ/erRNcEACwEJliFbQm+c2i
- 6ccpx2cdtyAI1yzWuE0nr9DqpsEbIZzTCIVyry/VZgdJ27YijGJWesj/ie/8PtpDu0Cf1pty
- QOKSpC9WvRCFGJPGS8MmvzepmX2DYQ5MSKTO5tRJZ8EwCFfd9OxX2g280rdcDyCFkY3BYrf9
- ic2PTKQokx+9sLCHAC/+feSx/MA/vYpY1EJwkAr37mP7Q8KA9PCRShJziiljh5tKQeIG4sz1
- QjOrS8WryEwI160jKBBNc/M5n2kiIPCrapBGsL58MumrtbL53VimFOAJaPaRWNSdWCJSnVSv
- kCHMl/1fRgzXEMpEmOlBEY0Kdd1Ut3S2cuwejzI+WbrQLgeps2N70Ztq50PkfWkj0jeethhI
- FqIJzNlUqVkHl1zCWSFsghxiMyZmqULaGcSDItYQ+3c9fxIO/v0zDg7bLeG9Zbj4y8E47xqJ
- 6brtAAEJ1RIM42gzF5GW71BqZrbFFoI0C6AzgHjaQP1xfj7nBRSBz4ObqnsuvRr7H6Jme5rl
- eg7COIbm8R7zsFjF4tC6k5HMc1tZ8xX+WoDsurqeQuBOg7rggmhJEpDK2f+g8DsvKtP14Vs0
- Sn7fVJi87b5HZojry1lZB2pXUH90+GWPF7DabimBki4QLzmyJ/ENH8GspFulVR3U7r3YYQ5K
- ctOSoRq9pGmMi231Q+xx9LkCDQRaOtArARAA50ylThKbq0ACHyomxjQ6nFNxa9ICp6byU9Lh
- hKOax0GB6l4WebMsQLhVGRQ8H7DT84E7QLRYsidEbneB1ciToZkL5YFFaVxY0Hj1wKxCFcVo
- CRNtOfoPnHQ5m/eDLaO4o0KKL/kaxZwTn2jnl6BQDGX1Aak0u4KiUlFtoWn/E/NIv5QbTGSw
- IYuzWqqYBIzFtDbiQRvGw0NuKxAGMhwXy8VP05mmNwRdyh/CC4rWQPBTvTeMwr3nl8/G+16/
- cn4RNGhDiGTTXcX03qzZ5jZ5N7GLY5JtE6pTpLG+EXn5pAnQ7MvuO19cCbp6Dj8fXRmI0SVX
- WKSo0A2C8xH6KLCRfUMzD7nvDRU+bAHQmbi5cZBODBZ5yp5CfIL1KUCSoiGOMpMin3FrarIl
- cxhNtoE+ya23A+JVtOwtM53ESra9cJL4WPkyk/E3OvNDmh8U6iZXn4ZaKQTHaxN9yvmAUhZQ
- iQi/sABwxCcQQ2ydRb86Vjcbx+FUr5OoEyQS46gc3KN5yax9D3H9wrptOzkNNMUhFj0oK0fX
- /MYDWOFeuNBTYk1uFRJDmHAOp01rrMHRogQAkMBuJDMrMHfolivZw8RKfdPzgiI500okLTzH
- C0wgSSAOyHKGZjYjbEwmxsl3sLJck9IPOKvqQi1DkvpOPFSUeX3LPBIav5UUlXt0wjbzInUA
- EQEAAYkCNgQYAQoAIBYhBOJv1o/B6NS2GUVGTueBVzIYDCpVBQJaOtArAhsMAAoJEOeBVzIY
- DCpV4kgP+wUh3BDRhuKaZyianKroStgr+LM8FIUwQs3Fc8qKrcDaa35vdT9cocDZjkaGHprp
- mlN0OuT2PB+Djt7am2noV6Kv1C8EnCPpyDBCwa7DntGdGcGMjH9w6aR4/ruNRUGS1aSMw8sR
- QgpTVWEyzHlnIH92D+k+IhdNG+eJ6o1fc7MeC0gUwMt27Im+TxVxc0JRfniNk8PUAg4kvJq7
- z7NLBUcJsIh3hM0WHQH9AYe/mZhQq5oyZTsz4jo/dWFRSlpY7zrDS2TZNYt4cCfZj1bIdpbf
- SpRi9M3W/yBF2WOkwYgbkqGnTUvr+3r0LMCH2H7nzENrYxNY2kFmDX9bBvOWsWpcMdOEo99/
- Iayz5/q2d1rVjYVFRm5U9hG+C7BYvtUOnUvSEBeE4tnJBMakbJPYxWe61yANDQubPsINB10i
- ngzsm553yqEjLTuWOjzdHLpE4lzD416ExCoZy7RLEHNhM1YQSI2RNs8umlDfZM9Lek1+1kgB
- vT3RH0/CpPJgveWV5xDOKuhD8j5l7FME+t2RWP+gyLid6dE0C7J03ir90PlTEkMEHEzyJMPt
- OhO05Phy+d51WPTo1VSKxhL4bsWddHLfQoXW8RQ388Q69JG4m+JhNH/XvWe3aQFpYP+GZuzO
- hkMez0lHCaVOOLBSKHkAHh9i0/pH+/3hfEa4NsoHCpyy
-Message-ID: <bb5e9213-7fd1-0452-7ece-3a904528d277@knorrie.org>
-Date:   Tue, 2 Apr 2019 16:19:01 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.1
+ <bb5e9213-7fd1-0452-7ece-3a904528d277@knorrie.org>
+From:   "Nik." <btrfs@avgustinov.eu>
+Message-ID: <454746ef-b97f-bc4e-5100-61dd4b56ee7f@avgustinov.eu>
+Date:   Tue, 2 Apr 2019 17:04:21 +0200
+User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:60.0) Gecko/20100101
+ Thunderbird/60.6.1
 MIME-Version: 1.0
-In-Reply-To: <ff7f4039-25d8-f5c9-80ac-4e7afaace3d0@gmx.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en_US
+In-Reply-To: <bb5e9213-7fd1-0452-7ece-3a904528d277@knorrie.org>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: de-DE-1901
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 4/2/19 4:12 PM, Qu Wenruo wrote:
-> 
-> 
-> On 2019/4/2 下午9:59, Nik. wrote:
+
+
+2019-04-02 16:19, Hans van Kranenburg:
+> On 4/2/19 4:12 PM, Qu Wenruo wrote:
 >>
 >>
->> 2019-04-02 15:24, Qu Wenruo:
+>> On 2019/4/2 下午9:59, Nik. wrote:
 >>>
 >>>
->>> On 2019/4/2 下午9:06, Nik. wrote:
+>>> 2019-04-02 15:24, Qu Wenruo:
 >>>>
->>> If the larger fs really doesn't get any write (btrfs check --repair
->>> failed to open the fs, thus have the output "cannot open file system"),
->>> I'm interesting in that one.
+>>>>
+>>>> On 2019/4/2 下午9:06, Nik. wrote:
+>>>>>
+>>>> If the larger fs really doesn't get any write (btrfs check --repair
+>>>> failed to open the fs, thus have the output "cannot open file system"),
+>>>> I'm interesting in that one.
+>>>
+>>> This is excerpt from the terminal log:
+>>> "# btrfs check --readonly /dev/md0
+>>> incorrect offsets 15003 146075
+>>> ERROR: cannot open file system
+>>> #"
 >>
->> This is excerpt from the terminal log:
->> "# btrfs check --readonly /dev/md0
->> incorrect offsets 15003 146075
->> ERROR: cannot open file system
->> #"
+>> That's great.
+>>
+>> And to my surprise, this is completely different problem.
+>>
+>> And I believe, it will be detected by latest write time tree checker
+>> patches in next kernel release.
+>>
+>> This problem is normally caused by memory bit flip.
 > 
-> That's great.
+> To illustrate for whoever needs it to follow this reasoning:
 > 
-> And to my surprise, this is completely different problem.
+> bin(146075) -> 0b100011101010011011
+> bin(15003)  ->     0b11101010011011
+
+Wait a minute! I hope you are not saying that the file system grew too 
+much for addressing it on a 32bit architecture (inappropriate variable 
+type somewhere in the code)? Because the problem came shortly after 
+adding another drive to the file system...
+
+
+> So, 146075 is actually 15003, but with a bit flipped from 0 to 1.
 > 
-> And I believe, it will be detected by latest write time tree checker
-> patches in next kernel release.
+>> This should ring a little alert about the problem.
 > 
-> This problem is normally caused by memory bit flip.
-
-To illustrate for whoever needs it to follow this reasoning:
-
-bin(146075) -> 0b100011101010011011
-bin(15003)  ->     0b11101010011011
-
-So, 146075 is actually 15003, but with a bit flipped from 0 to 1.
-
-> This should ring a little alert about the problem.
-
-Hans
+> Hans
+> 

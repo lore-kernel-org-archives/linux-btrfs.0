@@ -2,32 +2,30 @@ Return-Path: <SRS0=SOow=SE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CC7F7C43381
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 07:59:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 193E3C43381
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 08:01:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A0DED20830
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 07:59:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E453020830
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 08:01:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728650AbfDBH7x (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Apr 2019 03:59:53 -0400
-Received: from mx2.suse.de ([195.135.220.15]:58610 "EHLO mx1.suse.de"
+        id S1726997AbfDBIBG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Apr 2019 04:01:06 -0400
+Received: from mx2.suse.de ([195.135.220.15]:58838 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725884AbfDBH7x (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 2 Apr 2019 03:59:53 -0400
+        id S1726899AbfDBIBF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 2 Apr 2019 04:01:05 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id C47D0AEF6;
-        Tue,  2 Apr 2019 07:59:51 +0000 (UTC)
-Subject: Re: Is it a good idea to export certain internal structure
- declaration to make bcc/ebpf happier?
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        iovisor-dev@lists.iovisor.org
-References: <28e33708-6f0d-ec65-5565-4c41e741a87e@gmx.com>
+        by mx1.suse.de (Postfix) with ESMTP id BC4DAAFF5
+        for <linux-btrfs@vger.kernel.org>; Tue,  2 Apr 2019 08:01:03 +0000 (UTC)
+Subject: Re: [PATCH v4 13/15] btrfs: Optimize unallocated chunks discard
+To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <20190327122418.24027-1-nborisov@suse.com>
+ <20190327122418.24027-14-nborisov@suse.com>
+ <20190401184452.GA29086@twin.jikos.cz>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -72,12 +70,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <c1b06936-ba94-4467-8744-886b41bea2b6@suse.com>
-Date:   Tue, 2 Apr 2019 10:59:50 +0300
+Message-ID: <d53b58b4-ef1b-bb2d-cd78-94cf540f48b4@suse.com>
+Date:   Tue, 2 Apr 2019 11:01:02 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.6.1
 MIME-Version: 1.0
-In-Reply-To: <28e33708-6f0d-ec65-5565-4c41e741a87e@gmx.com>
+In-Reply-To: <20190401184452.GA29086@twin.jikos.cz>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -88,36 +86,27 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 2.04.19 г. 10:41 ч., Qu Wenruo wrote:
-> Hi,
+On 1.04.19 г. 21:44 ч., David Sterba wrote:
+> On Wed, Mar 27, 2019 at 02:24:16PM +0200, Nikolay Borisov wrote:
+>> Currently unallocated chunks are always trimmed. For example
+>> 2 consecutive trims on large storage would trim freespace twice
+>> irrespective of whether the space was actually allocated or not between
+>> those trims.
+>>
+>> Optimise this behavior by exploiting the newly introduced alloc_state
+>> tree of btrfs_device. A new CHUNK_TRIMMED bit is used to mark
+>> those unallocated chunks which have been trimmed and have not been
+>> allocated afterwards. On chunk allocation the respective underlying devices'
+>> physical space will have its CHUNK_TRIMMED flag cleared. This avoids
+>> submitting discards for space which hasn't been changed since the last
+>> time discard was issued.
 > 
-> I'm recently working on crafting a small bcc based script to show how
-> btrfs tree block concurrency.
-> 
-> The prototype is here:
-> https://gist.github.com/adam900710/63db6cdc7d26c4744a53dfc7755fafda
-> 
-> However it has some problems, and cannot be used directly on latest kernel.
-> 
-> - No way to pass btrfs headers into eBPF code.
->   This is because the declaration of extent_buffer is in
->   `fs/btrfs/extent_io.h`.
->   No in the common kernel headers search path.
-> 
-> - eBPF program can't access btrfs_header_owner() helper.
->   Even we make eBPF code understand the headers, we can't
->   access a lot of kernel functions, like btrfs_header_owner().
-> 
-> So I'm wondering is it possible for us to export extent_buffer
-> declaration just for possible eBPF usage.
- >
-> Or is bcc suit strong enough to handle such case?
-> 
-> The diff would be something like this to make above bcc script work:
-> 
+> This means during one mount, right? Because the state is not recorded
+> on-disk anywhere. This also means that a complete unmount / mount
+> followed by trim will do the discard on the freed blocks again. I don't
+> thik there's anything wrong with that, just that this should be put to
+> the docs.
 
+Correct, on unmount btrfs_close_devices is called which frees trim state.
 
-Hell no, that is _very_ ugly as hell. If you want to access such
-information why not introduce tracepoints which have enough context so
-that when they are used with ebpf you can query the data from the
-tracepoint? I *think* this ought to be made to work with ebpf?
+> 

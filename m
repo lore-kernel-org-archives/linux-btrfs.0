@@ -2,261 +2,312 @@ Return-Path: <SRS0=SOow=SE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-8.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BA663C43381
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 05:58:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9D650C43381
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 07:42:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 79784208E4
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 05:58:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4B35C2070D
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 07:42:08 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="DXMDExAa"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="IgYl3gtP"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726858AbfDBF6f (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Apr 2019 01:58:35 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:38202 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725812AbfDBF6f (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Apr 2019 01:58:35 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x325wW7Y124711;
-        Tue, 2 Apr 2019 05:58:33 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to : cc :
- references : from : message-id : date : mime-version : in-reply-to :
- content-type : content-transfer-encoding; s=corp-2018-07-02;
- bh=34NPOdSMuShiCJI1uPXGvsLNfIBrT9wf3dtON29s44I=;
- b=DXMDExAa6k4iXtb6qu0CEqpa7KdUeuhlb30DxEdkozDZL3u9iekt9hnvC/c0ZuTrSnVW
- eap6qqEkTIprWYlxFtk1kYT6khPmWCta75oxOnZAGE2SOSqq5JdHt90UKm/waWI9AeFp
- 3pAJjDBsJrfDURaFecoNx+zzjIkrLldNjjidlHOOcIxtqfg2S5WhlDHpPLkkaqksYzZX
- Mn8RqQh3Ok1miSnap01e+obTF+qHDh/9+ngwhglPlxHXwvNGbm01GiG5bNXNow1INQRd
- BkMgeYwF6nky6mUPkuTxx+HJKXLgpowV55BP6Pki8PGd5cy15YEM4rieVHp1Y9hovyzP 6g== 
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by userp2120.oracle.com with ESMTP id 2rj13q2tq9-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 02 Apr 2019 05:58:32 +0000
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x325wTlo015739
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 2 Apr 2019 05:58:29 GMT
-Received: from abhmp0011.oracle.com (abhmp0011.oracle.com [141.146.116.17])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x325wSbP010677;
-        Tue, 2 Apr 2019 05:58:28 GMT
-Received: from [10.190.130.106] (/192.188.170.106)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 01 Apr 2019 22:58:28 -0700
-Subject: Re: [PATCH v3] fstests: btrfs verify hardening agaist duplicate fsid
-To:     guaneryu@gmail.com
-Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-References: <1540571900-24768-1-git-send-email-anand.jain@oracle.com>
-From:   Anand Jain <Anand.Jain@oracle.com>
-Message-ID: <799893ab-763e-7aa7-9e2b-2f1218d29b13@oracle.com>
-Date:   Tue, 2 Apr 2019 13:58:23 +0800
+        id S1728797AbfDBHmH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Apr 2019 03:42:07 -0400
+Received: from mout.gmx.net ([212.227.15.19]:45287 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726458AbfDBHmG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 2 Apr 2019 03:42:06 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1554190918;
+        bh=8hwxpfhjKorqYj9TqNfgVEXtaIDiMGikvfkOyC2TafA=;
+        h=X-UI-Sender-Class:To:From:Subject:Date;
+        b=IgYl3gtPJ2AELRuyoEZK8+w5r0K+G2XfPHPpbdX7ijB5i30T5e8YeWUhS9601DkBX
+         LVidvEwxXebVPbj8uN0A0ef3FqzkiKozhPkmRydBesvknECaAnCEesaRkkAKlPRD8L
+         nAAyQ51oez9/jvnaGeCiQdVlNRuxHQdczqCWk/rU=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx003
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0LoVOE-1giClj2ebK-00gaEt; Tue, 02
+ Apr 2019 09:41:58 +0200
+To:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        iovisor-dev@lists.iovisor.org
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Subject: Is it a good idea to export certain internal structure declaration to
+ make bcc/ebpf happier?
+Openpgp: preference=signencrypt
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <28e33708-6f0d-ec65-5565-4c41e741a87e@gmx.com>
+Date:   Tue, 2 Apr 2019 15:41:52 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.6.1
+ Thunderbird/60.5.3
 MIME-Version: 1.0
-In-Reply-To: <1540571900-24768-1-git-send-email-anand.jain@oracle.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9214 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
- suspectscore=1 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
- lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
- definitions=main-1904020044
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="ArZ6m4PjEdtLA3u8tEGKtuvTZmZE3DWyt"
+X-Provags-ID: V03:K1:piKi2U1osGpIZGRGPCRsrBlGUPtZ66Nt50+n4hSJrupf2A01ucq
+ 7m4ywoa/FvGu3+PlM12HhSpD5pX1xnhEYOXBkQkpIwhRSwXjMXreHY+71lCwWYvswVzUaSR
+ AN8QmZdEL0nyZ/zI3cFHpsMKni7hUdGPerffB/fnkW7YIM3nR1qjYGPc6kEpfuYH8lrkG6p
+ awN+MRII+awWukMDbvHuw==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:hpT4B3KcmV4=:zKe7m/mpG5yyMMUwvTBSo5
+ WEPwcdCWx7bkR4RtGPxz2l5r2f3hzgoW4O0YNUrL94X+PgiVw8+/uCVu1NyHqi4bu8PsnPbLL
+ LrGJvDHtVw65GLkUTvP9WccsiGEisAaXvHFZxo7erfmmKisrzW9INKLrA+9cGo3W/Dlxu+QqW
+ vX1VWoXz2sKAnJyRdqIKLc5pi8TBbkqKOh/LWXUzu5kXJTrMt+7xwauDxUc7CZ54wG2S1ezyp
+ II8Oy4qBSMawECBHXz6QuYERbPDElmKOmHwsQOaW9KMGF2UTnatu5cbm8HZA4XKjDE9Es1ZBW
+ sIYvfpvPODy02kV2/rEeqnQ+mPWXbwWjFiMYYcxPaCR1bc+N0RhES0CtyrybjGMzigyeKs+G4
+ N2E5QciqG2JnAQT1sX6S/fL2yNwFy+IHIUCCuykh9XHAmEUGOZBC7+8iGDE85EGTH/oOeK6Gf
+ MLPml7EXlY8Yq3hwY336F3YjMxPyf06pzCbCMlpdnOdDUonVmhoN+wVStNKFEQlAG046YnMnX
+ 1FP7F8lzNSPesOWV4guKM5mW/6EWoHhYqcyr0Q7wK77K33WyOfB7Tnh23A9/6Bwx6wukItKpp
+ fkndLuCSQ6nyiMJlCRXkkgwK5zy4sRl/NwwPaWZTP8Ep807C8r8AQLqw/csLF2DF5THDy6hIm
+ 8ETtwujZDruvr8fBBCCK8Xf840wVBZqAAy9drIuQmQTHY/rwNEFmleWsX3dVIyMoaR89YPodb
+ mjpHOyxD3asgJ1nThcP7D3PixDCBxKwPpcbvswS28RdGpIol+ykzJgyU39abOKbaqrglmHfO/
+ Fy8qYUWh1ICTXssgF1JSZysFlZRREH6RFybFQn3Vcpl97P/fErpyLcbusL312jlBsP+QLkdyc
+ eLatNmbadO+e9epnt4t+k4a7JP52JYIPGe5hbWhLPO2HR2rWf7Ji+0MTMfNh6x
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--ArZ6m4PjEdtLA3u8tEGKtuvTZmZE3DWyt
+Content-Type: multipart/mixed; boundary="UZ4z1kebDaDWd9Q5ryGut7jxUijRdbLnH";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+ iovisor-dev@lists.iovisor.org
+Message-ID: <28e33708-6f0d-ec65-5565-4c41e741a87e@gmx.com>
+Subject: Is it a good idea to export certain internal structure declaration to
+ make bcc/ebpf happier?
 
-Eryu,
+--UZ4z1kebDaDWd9Q5ryGut7jxUijRdbLnH
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-  This patch isn't integrated yet.
+Hi,
 
-Thanks, Anand
+I'm recently working on crafting a small bcc based script to show how
+btrfs tree block concurrency.
 
-On 27/10/18 12:38 AM, Anand Jain wrote:
-> We have a known bug in btrfs, that we let the device path be changed
-> after the device has been mounted. So using this loop hole the new
-> copied device would appears as if its mounted immediately after its
-> been copied. So this test case reproduces this issue.
-> 
-> For example:
-> 
-> Initially.. /dev/mmcblk0p4 is mounted as /
-> 
-> lsblk
-> NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
-> mmcblk0     179:0    0 29.2G  0 disk
-> |-mmcblk0p4 179:4    0    4G  0 part /
-> |-mmcblk0p2 179:2    0  500M  0 part /boot
-> |-mmcblk0p3 179:3    0  256M  0 part [SWAP]
-> `-mmcblk0p1 179:1    0  256M  0 part /boot/efi
-> 
-> btrfs fi show
-> Label: none  uuid: 07892354-ddaa-4443-90ea-f76a06accaba
->      Total devices 1 FS bytes used 1.40GiB
->      devid    1 size 4.00GiB used 3.00GiB path /dev/mmcblk0p4
-> 
-> Copy mmcblk0 to sda
-> dd if=/dev/mmcblk0 of=/dev/sda
-> 
-> And immediately after the copy completes the change in the device
-> superblock is notified which the automount scans using
-> btrfs device scan and the new device sda becomes the mounted root
-> device.
-> 
-> lsblk
-> NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
-> sda           8:0    1 14.9G  0 disk
-> |-sda4        8:4    1    4G  0 part /
-> |-sda2        8:2    1  500M  0 part
-> |-sda3        8:3    1  256M  0 part
-> `-sda1        8:1    1  256M  0 part
-> mmcblk0     179:0    0 29.2G  0 disk
-> |-mmcblk0p4 179:4    0    4G  0 part
-> |-mmcblk0p2 179:2    0  500M  0 part /boot
-> |-mmcblk0p3 179:3    0  256M  0 part [SWAP]
-> `-mmcblk0p1 179:1    0  256M  0 part /boot/efi
-> btrfs fi show /
-> Label: none  uuid: 07892354-ddaa-4443-90ea-f76a06accaba
->      Total devices 1 FS bytes used 1.40GiB
->      devid    1 size 4.00GiB used 3.00GiB path /dev/sda4
-> 
-> The bug is quite nasty that you can't either unmount /dev/sda4 or
-> /dev/mmcblk0p4. And the problem does not get solved until you take
-> the sda out of the system on to another system to change its fsid using
-> the 'btrfstune -u' command.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
-> v2->v3:
->    Check the return code and use _fail to verify and accordingly fix golden
->      output.
->    Rename dev_foo(bar) to device_1(2)
->    Don't log dd retun to $seqres.full
->   
-> v1->v2:
->    dont play around with dev patch use it as it is.
->    do not use SCRATCH_MNT instead create it at the TEST_DIR and its related
->     changes.
->    golden out changes
-> 
->   tests/btrfs/173     | 82 +++++++++++++++++++++++++++++++++++++++++++++++++++++
->   tests/btrfs/173.out |  2 ++
->   tests/btrfs/group   |  1 +
->   3 files changed, 85 insertions(+)
->   create mode 100755 tests/btrfs/173
->   create mode 100644 tests/btrfs/173.out
-> 
-> diff --git a/tests/btrfs/173 b/tests/btrfs/173
-> new file mode 100755
-> index 000000000000..342ae92b4781
-> --- /dev/null
-> +++ b/tests/btrfs/173
-> @@ -0,0 +1,82 @@
-> +#! /bin/bash
-> +# SPDX-License-Identifier: GPL-2.0
-> +# Copyright (c) 2018 Oracle. All Rights Reserved.
-> +#
-> +# FS QA Test 173
-> +#
-> +# Fuzzy test for FS image duplication.
-> +#  Could be fixed by
-> +#    [patch] btrfs: harden agaist duplicate fsid
-> +#
-> +seq=`basename $0`
-> +seqres=$RESULT_DIR/$seq
-> +echo "QA output created by $seq"
-> +
-> +here=`pwd`
-> +tmp=/tmp/$$
-> +status=1	# failure is the default!
-> +trap "_cleanup; exit \$status" 0 1 2 3 15
-> +
-> +mnt=$TEST_DIR/$seq.mnt
-> +_cleanup()
-> +{
-> +	rm -rf $mnt > /dev/null 2>&1
-> +	cd /
-> +	rm -f $tmp.*
-> +}
-> +
-> +# get standard environment, filters and checks
-> +. ./common/rc
-> +. ./common/filter
-> +
-> +# remove previous $seqres.full before test
-> +rm -f $seqres.full
-> +
-> +# real QA test starts here
-> +_supported_fs btrfs
-> +_supported_os Linux
-> +_require_scratch_dev_pool 2
-> +_scratch_dev_pool_get 2
-> +
-> +device_1=$(echo $SCRATCH_DEV_POOL | awk '{print $1}')
-> +device_2=$(echo $SCRATCH_DEV_POOL | awk '{print $2}')
-> +
-> +echo device_1=$device_1 device_2=$device_2 >> $seqres.full
-> +
-> +rm -rf $mnt > /dev/null 2>&1
-> +mkdir $mnt
-> +_mkfs_dev $device_1
-> +_mount $device_1 $mnt
-> +
-> +[[ $(findmnt $mnt | grep -v TARGET | awk '{print $2}') != $device_1 ]] && \
-> +						_fail "mounted device changed"
-> +
-> +for sb_bytenr in 65536 67108864
-> +do
-> +	echo -n "dd status=none if=$dev_foo of=$dev_bar bs=1 "\
-> +		"seek=$sb_bytenr skip=$sb_bytenr count=4096" >> $seqres.full
-> +	dd status=none if=$device_1 of=$device_2 bs=1 seek=$sb_bytenr \
-> +				skip=$sb_bytenr count=4096 > /dev/null 2>&1
-> +	echo ..:$? >> $seqres.full
-> +done
-> +
-> +#Original device is mounted, scan of its clone should fail
-> +$BTRFS_UTIL_PROG device scan $device_2 >> $seqres.full 2>&1
-> +[[ $? != 1 ]] && _fail "cloned device scan should fail"
-> +
-> +[[ $(findmnt $mnt | grep -v TARGET | awk '{print $2}') != $device_1 ]] && \
-> +						_fail "mounted device changed"
-> +
-> +#Original device scan should be successful
-> +$BTRFS_UTIL_PROG device scan $device_1 >> $seqres.full 2>&1
-> +[[ $? != 0 ]] && \
-> +	_fail "if it fails here, then it means subvolume mount at boot may fail "\
-> +	      "in some configs."
-> +
-> +umount $mnt > /dev/null 2>&1
-> +_scratch_dev_pool_put
-> +
-> +# success, all done
-> +echo "Silence is golden"
-> +status=0
-> +exit
-> diff --git a/tests/btrfs/173.out b/tests/btrfs/173.out
-> new file mode 100644
-> index 000000000000..2c57ea508748
-> --- /dev/null
-> +++ b/tests/btrfs/173.out
-> @@ -0,0 +1,2 @@
-> +QA output created by 173
-> +Silence is golden
-> diff --git a/tests/btrfs/group b/tests/btrfs/group
-> index 45782565c3b7..b2f1393f3e97 100644
-> --- a/tests/btrfs/group
-> +++ b/tests/btrfs/group
-> @@ -175,3 +175,4 @@
->   170 auto quick snapshot
->   171 auto quick qgroup
->   172 auto quick punch
-> +173 volume
-> 
+The prototype is here:
+https://gist.github.com/adam900710/63db6cdc7d26c4744a53dfc7755fafda
 
+However it has some problems, and cannot be used directly on latest kerne=
+l.
+
+- No way to pass btrfs headers into eBPF code.
+  This is because the declaration of extent_buffer is in
+  `fs/btrfs/extent_io.h`.
+  No in the common kernel headers search path.
+
+- eBPF program can't access btrfs_header_owner() helper.
+  Even we make eBPF code understand the headers, we can't
+  access a lot of kernel functions, like btrfs_header_owner().
+
+So I'm wondering is it possible for us to export extent_buffer
+declaration just for possible eBPF usage.
+
+Or is bcc suit strong enough to handle such case?
+
+The diff would be something like this to make above bcc script work:
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index a3e3e95c632e..ba7628434ac9 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -13,6 +13,7 @@
+ #include <linux/pagevec.h>
+ #include <linux/prefetch.h>
+ #include <linux/cleancache.h>
++#include <linux/btrfs.h>
+ #include "extent_io.h"
+ #include "extent_map.h"
+ #include "ctree.h"
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index c4ec104ac157..5bc0df2c1c64 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -146,48 +146,6 @@ struct extent_state {
+ #endif
+ };
+
+-#define INLINE_EXTENT_BUFFER_PAGES 16
+-#define MAX_INLINE_EXTENT_BUFFER_SIZE (INLINE_EXTENT_BUFFER_PAGES *
+PAGE_SIZE)
+-struct extent_buffer {
+-       u64 start;
+-       unsigned long len;
+-       unsigned long bflags;
+-       struct btrfs_fs_info *fs_info;
+-       spinlock_t refs_lock;
+-       atomic_t refs;
+-       atomic_t io_pages;
+-       int read_mirror;
+-       struct rcu_head rcu_head;
+-       pid_t lock_owner;
+-
+-       atomic_t blocking_writers;
+-       atomic_t blocking_readers;
+-       bool lock_nested;
+-       /* >=3D 0 if eb belongs to a log tree, -1 otherwise */
+-       short log_index;
+-
+-       /* protects write locks */
+-       rwlock_t lock;
+-
+-       /* readers use lock_wq while they wait for the write
+-        * lock holders to unlock
+-        */
+-       wait_queue_head_t write_lock_wq;
+-
+-       /* writers use read_lock_wq while they wait for readers
+-        * to unlock
+-        */
+-       wait_queue_head_t read_lock_wq;
+-       struct page *pages[INLINE_EXTENT_BUFFER_PAGES];
+-#ifdef CONFIG_BTRFS_DEBUG
+-       atomic_t spinning_writers;
+-       atomic_t spinning_readers;
+-       atomic_t read_locks;
+-       atomic_t write_locks;
+-       struct list_head leak_list;
+-#endif
+-};
+-
+ /*
+  * Structure to record how many bytes and which ranges are set/cleared
+  */
+diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
+index 6df03ba36026..5cf075d02b1b 100644
+--- a/fs/btrfs/locking.c
++++ b/fs/btrfs/locking.c
+@@ -174,6 +174,8 @@ void btrfs_tree_read_lock(struct extent_buffer *eb)
+                BUG_ON(eb->lock_nested);
+                eb->lock_nested =3D true;
+                read_unlock(&eb->lock);
++               if (IS_ENABLED(CONFIG_BTRFS_DEBUG))
++                       eb->owner =3D btrfs_header_owner(eb);
+                return;
+        }
+        if (atomic_read(&eb->blocking_writers)) {
+@@ -184,6 +186,8 @@ void btrfs_tree_read_lock(struct extent_buffer *eb)
+        }
+        btrfs_assert_tree_read_locks_get(eb);
+        btrfs_assert_spinning_readers_get(eb);
++       if (IS_ENABLED(CONFIG_BTRFS_DEBUG))
++               eb->owner =3D btrfs_header_owner(eb);
+ }
+
+ /*
+@@ -312,6 +316,8 @@ void btrfs_tree_lock(struct extent_buffer *eb)
+        btrfs_assert_spinning_writers_get(eb);
+        btrfs_assert_tree_write_locks_get(eb);
+        eb->lock_owner =3D current->pid;
++       if (IS_ENABLED(CONFIG_BTRFS_DEBUG))
++               eb->owner =3D btrfs_header_owner(eb);
+ }
+
+ /*
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index c195896d478f..3aeaffdadabb 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -944,4 +944,47 @@ enum btrfs_err_code {
+ #define BTRFS_IOC_INO_LOOKUP_USER _IOWR(BTRFS_IOCTL_MAGIC, 62, \
+                                struct btrfs_ioctl_ino_lookup_user_args)
+
++#define INLINE_EXTENT_BUFFER_PAGES 16
++#define MAX_INLINE_EXTENT_BUFFER_SIZE (INLINE_EXTENT_BUFFER_PAGES *
+PAGE_SIZE)
++struct extent_buffer {
++       u64 start;
++       unsigned long len;
++       unsigned long bflags;
++       struct btrfs_fs_info *fs_info;
++       spinlock_t refs_lock;
++       atomic_t refs;
++       atomic_t io_pages;
++       int read_mirror;
++       struct rcu_head rcu_head;
++       pid_t lock_owner;
++
++       atomic_t blocking_writers;
++       atomic_t blocking_readers;
++       bool lock_nested;
++       /* >=3D 0 if eb belongs to a log tree, -1 otherwise */
++       short log_index;
++
++       /* protects write locks */
++       rwlock_t lock;
++
++       /* readers use lock_wq while they wait for the write
++        * lock holders to unlock
++        */
++       wait_queue_head_t write_lock_wq;
++
++       /* writers use read_lock_wq while they wait for readers
++        * to unlock
++        */
++       wait_queue_head_t read_lock_wq;
++       struct page *pages[INLINE_EXTENT_BUFFER_PAGES];
++#ifdef CONFIG_BTRFS_DEBUG
++       atomic_t spinning_writers;
++       atomic_t spinning_readers;
++       atomic_t read_locks;
++       atomic_t write_locks;
++       u64 owner;
++       struct list_head leak_list;
++#endif
++};
++
+ #endif /* _UAPI_LINUX_BTRFS_H */
+
+Thanks,
+Qu
+
+
+--UZ4z1kebDaDWd9Q5ryGut7jxUijRdbLnH--
+
+--ArZ6m4PjEdtLA3u8tEGKtuvTZmZE3DWyt
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlyjEkAACgkQwj2R86El
+/qglpwgAppT2JeAd+0384auluE7zLPvD58QEesyBgBXJJGnXHntoLR5Bb0ErWNDf
+SqOhXleD7MrehEOXdAbg9dEq/f3tQmIHfuMPe5TiT3WKBJNGIFv6AbhQQiHw0cNk
+s9ZJ2VDha5DTVnhBhxtGY/v4BgVS5MuYZZPVeU4A7QEWiy85zgTUk+IoPSPJxRrN
+ZVsZ9omkRXFu1w+sksTbuC6a7qWbKzxG7ENi2dqi6zG05Lmo13jB3iWWdsuzsfrj
+vpsKFqUqefEN4pFZeQiJ89sudGlHJs9f0VeqKBA7AUZ/x613qFV0dIUltlNfikQe
+SiTWueFd6LPhBGAsHEooKGTilO1CZg==
+=0DiP
+-----END PGP SIGNATURE-----
+
+--ArZ6m4PjEdtLA3u8tEGKtuvTZmZE3DWyt--

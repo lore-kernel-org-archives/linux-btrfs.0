@@ -2,167 +2,89 @@ Return-Path: <SRS0=SOow=SE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D8CE8C4360F
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 09:46:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 90471C4360F
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 10:08:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B1322207E0
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 09:46:00 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3F49F20856
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 10:08:01 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="fLn9V8fR"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727082AbfDBJp7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Apr 2019 05:45:59 -0400
-Received: from mx2.suse.de ([195.135.220.15]:53522 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726157AbfDBJp7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 2 Apr 2019 05:45:59 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 55113ACBF
-        for <linux-btrfs@vger.kernel.org>; Tue,  2 Apr 2019 09:45:57 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
+        id S1729799AbfDBKH7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Apr 2019 06:07:59 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:45866 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725920AbfDBKH7 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Apr 2019 06:07:59 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x329hUBk123794
+        for <linux-btrfs@vger.kernel.org>; Tue, 2 Apr 2019 10:07:58 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
+ date : message-id; s=corp-2018-07-02;
+ bh=Vu4COXM4KJ0RFbT8aoF5F5OEa3gMJ+REVdxusZ27t4w=;
+ b=fLn9V8fRPIxTBFEI85i1vSViK2ogeAXV8x45npoQQrrgXXP9Gtx2lwlz2ExIgH2kYD0G
+ u4gXqcLJgQSY4R65Goytm+fMxHRfkp7r0uBoLsEQDKy01OW1yOJ6WxlGQJGITSBtH+Nb
+ 1buYCbEYPDmnYFAICFY+xBXJqiKIs5FfpOyDGpVQPZMhhALqxwt1MRSP9uNFph7kuZL9
+ W5rTPXFQBcWkRjS6TEFzJZSFiTGpusP7FrnWKD9aMuNsvPVSI/uaN9/RQ7f1tWj8qn5S
+ yvriva3Ll1d5L5m60ZoLeLVuB4vxyZLAcLgFObZcc3/FLFn625JpoutB6CE7RMc2BSoP ig== 
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by userp2120.oracle.com with ESMTP id 2rj13q43qq-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Apr 2019 10:07:58 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id x32A7vcD031664
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 2 Apr 2019 10:07:57 GMT
+Received: from abhmp0002.oracle.com (abhmp0002.oracle.com [141.146.116.8])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x32A7vjl006862
+        for <linux-btrfs@vger.kernel.org>; Tue, 2 Apr 2019 10:07:57 GMT
+Received: from tp.wifi.oracle.com (/192.188.170.106)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Tue, 02 Apr 2019 03:07:56 -0700
+From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs: trace: Introduce trace events for sleepable tree lock
-Date:   Tue,  2 Apr 2019 17:45:54 +0800
-Message-Id: <20190402094554.8353-1-wqu@suse.com>
-X-Mailer: git-send-email 2.21.0
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Subject: [PATCH 0/4 RESEND] btrfs: fix property bugs
+Date:   Tue,  2 Apr 2019 18:07:37 +0800
+Message-Id: <20190402100742.8355-1-anand.jain@oracle.com>
+X-Mailer: git-send-email 2.17.1
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9214 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=1 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=877 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1904020070
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There are two tree lock events which can sleep:
-- btrfs_tree_read_lock()
-- btrfs_tree_lock()
+1/4 Fixes a bug that we were applying an incomplete string zstd.
+2/4 Fixes a bug that the compression property gets reset to NULL after a
+    failed attempt to change the compression parameter on the object.
+3/4 preparatory patch so that btrfs_set_prop_trans() can be merged with
+    btrfs_set_prop() in 4/4.
+4/4 Fixes a bug that we were incrementing the generation even when the
+    property validation check failed.
 
-Sometimes we may need to look into the concurrency picture of the fs.
-For that case, we need the execution time of above two functions and the
-owner of @eb.
+3/4 and 4/4 are only added here.
 
-Here we introduce a trace events for user space tools like bcc, to get
-the execution time of above two functions, and get detailed owner info
-where eBPF code can't.
+Anand Jain (4):
+  btrfs: fix zstd compression parameter
+  btrfs: fix vanished compression property after failed set
+  btrfs: open code btrfs_set_prop in inherit_prop
+  btrfs: fix property validate fail should not increment generation
 
-All the overhead is hidden behind the trace events, so if events are not
-enabled, there is no overhead.
+ fs/btrfs/ioctl.c | 10 +++---
+ fs/btrfs/props.c | 94 ++++++++++++++++++++++++++++++--------------------------
+ fs/btrfs/props.h |  4 +--
+ fs/btrfs/xattr.c |  2 +-
+ 4 files changed, 58 insertions(+), 52 deletions(-)
 
-Also, since this patch and later user space tool only cares about the
-execution time and owner, other info like bytenr is ignored in this
-events.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-Changelog:
-v2:
-- Hide all ktime_get_ns() call behind trace events
-  So there will be no overhead if trace events are not enabled.
----
- fs/btrfs/locking.c           | 12 ++++++++++++
- include/trace/events/btrfs.h | 36 ++++++++++++++++++++++++++++++++++++
- 2 files changed, 48 insertions(+)
-
-diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
-index 6df03ba36026..67b77f1d113e 100644
---- a/fs/btrfs/locking.c
-+++ b/fs/btrfs/locking.c
-@@ -158,6 +158,10 @@ void btrfs_clear_lock_blocking_write(struct extent_buffer *eb)
-  */
- void btrfs_tree_read_lock(struct extent_buffer *eb)
- {
-+	u64 start_ns = 0;
-+
-+	if (trace_btrfs_tree_read_lock_enabled())
-+		start_ns = ktime_get_ns();
- again:
- 	BUG_ON(!atomic_read(&eb->blocking_writers) &&
- 	       current->pid == eb->lock_owner);
-@@ -174,6 +178,7 @@ void btrfs_tree_read_lock(struct extent_buffer *eb)
- 		BUG_ON(eb->lock_nested);
- 		eb->lock_nested = true;
- 		read_unlock(&eb->lock);
-+		trace_btrfs_tree_read_lock(eb, start_ns);
- 		return;
- 	}
- 	if (atomic_read(&eb->blocking_writers)) {
-@@ -184,6 +189,7 @@ void btrfs_tree_read_lock(struct extent_buffer *eb)
- 	}
- 	btrfs_assert_tree_read_locks_get(eb);
- 	btrfs_assert_spinning_readers_get(eb);
-+	trace_btrfs_tree_read_lock(eb, start_ns);
- }
- 
- /*
-@@ -299,6 +305,11 @@ void btrfs_tree_read_unlock_blocking(struct extent_buffer *eb)
-  */
- void btrfs_tree_lock(struct extent_buffer *eb)
- {
-+	u64 start_ns = 0;
-+
-+	if (trace_btrfs_tree_lock_enabled())
-+		start_ns = ktime_get_ns();
-+
- 	WARN_ON(eb->lock_owner == current->pid);
- again:
- 	wait_event(eb->read_lock_wq, atomic_read(&eb->blocking_readers) == 0);
-@@ -312,6 +323,7 @@ void btrfs_tree_lock(struct extent_buffer *eb)
- 	btrfs_assert_spinning_writers_get(eb);
- 	btrfs_assert_tree_write_locks_get(eb);
- 	eb->lock_owner = current->pid;
-+	trace_btrfs_tree_lock(eb, start_ns);
- }
- 
- /*
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index 8b12753fee78..406a71571254 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -2005,6 +2005,42 @@ TRACE_EVENT(btrfs_convert_extent_bit,
- 		  __print_flags(__entry->clear_bits, "|", EXTENT_FLAGS))
- );
- 
-+DECLARE_EVENT_CLASS(btrfs_sleep_tree_lock,
-+	TP_PROTO(const struct extent_buffer *eb, u64 start_ns),
-+
-+	TP_ARGS(eb, start_ns),
-+
-+	TP_STRUCT__entry_btrfs(
-+		__field(	u64,	start_ns	)
-+		__field(	u64,	end_ns		)
-+		__field(	u64,	owner		)
-+		__field(	int,	is_log_tree	)
-+	),
-+
-+	TP_fast_assign_btrfs(eb->fs_info,
-+		__entry->start_ns	= start_ns;
-+		__entry->end_ns		= ktime_get_ns();
-+		__entry->owner		= btrfs_header_owner(eb);
-+		__entry->is_log_tree	= (eb->log_index >= 0);
-+	),
-+
-+	TP_printk_btrfs("start_ns=%llu end_ns=%llu owner=%llu is_log_tree=%d",
-+		__entry->start_ns, __entry->end_ns, __entry->owner,
-+		__entry->is_log_tree)
-+);
-+
-+DEFINE_EVENT(btrfs_sleep_tree_lock, btrfs_tree_read_lock,
-+	TP_PROTO(const struct extent_buffer *eb, u64 start_ns),
-+
-+	TP_ARGS(eb, start_ns)
-+);
-+
-+DEFINE_EVENT(btrfs_sleep_tree_lock, btrfs_tree_lock,
-+	TP_PROTO(const struct extent_buffer *eb, u64 start_ns),
-+
-+	TP_ARGS(eb, start_ns)
-+);
-+
- #endif /* _TRACE_BTRFS_H */
- 
- /* This part must be outside protection */
 -- 
-2.21.0
+1.8.3.1
 

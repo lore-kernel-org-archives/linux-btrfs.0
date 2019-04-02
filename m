@@ -2,31 +2,31 @@ Return-Path: <SRS0=SOow=SE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 08B6FC4360F
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 13:35:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3231FC4360F
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 13:45:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D4CDE20883
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 13:35:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0813420856
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 13:45:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730501AbfDBNfP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Apr 2019 09:35:15 -0400
-Received: from mx2.suse.de ([195.135.220.15]:48198 "EHLO mx1.suse.de"
+        id S1731743AbfDBNp1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Apr 2019 09:45:27 -0400
+Received: from mx2.suse.de ([195.135.220.15]:50870 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729532AbfDBNfP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 2 Apr 2019 09:35:15 -0400
+        id S1730501AbfDBNp0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 2 Apr 2019 09:45:26 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 999F8ABC3;
-        Tue,  2 Apr 2019 13:35:13 +0000 (UTC)
-Subject: Re: [PATCH 3/4 RESEND] btrfs: open code btrfs_set_prop in
- inherit_prop
+        by mx1.suse.de (Postfix) with ESMTP id C2CB4ADE3;
+        Tue,  2 Apr 2019 13:45:24 +0000 (UTC)
+Subject: Re: [PATCH 4/4 RESEND] btrfs: fix property validate fail should not
+ increment generation
 To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
 References: <20190402100742.8355-1-anand.jain@oracle.com>
- <20190402100742.8355-5-anand.jain@oracle.com>
+ <20190402100742.8355-6-anand.jain@oracle.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -71,12 +71,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <8fedbab1-6fec-92cb-25b2-c9b9ff264103@suse.com>
-Date:   Tue, 2 Apr 2019 16:35:12 +0300
+Message-ID: <e13f6e8f-483e-85f5-e2aa-b0efaf66e621@suse.com>
+Date:   Tue, 2 Apr 2019 16:45:23 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.6.1
 MIME-Version: 1.0
-In-Reply-To: <20190402100742.8355-5-anand.jain@oracle.com>
+In-Reply-To: <20190402100742.8355-6-anand.jain@oracle.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -88,79 +88,42 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 2.04.19 г. 13:07 ч., Anand Jain wrote:
-> When an inode inherits property from its parent, we call btrfs_set_prop().
-> btrfs_set_prop() does an elaborate checks, which is not required in the
-> context of inheriting a property. Instead just open-code only the required
-> items from btrfs_set_prop() and then call btrfs_setxattr() directly. So
-> now the only user of btrfs_set_prop() is gone, (except for the wraper
-> function btrfs_set_prop_trans()).
+> When the property fails to pass the prop_handlers::validate() check, the
+> thread should exit with no changes in the kernel, but as we are starting
+> the transaction too early, we have just updated the generation even if
+> there is no change.
+> 
+> For example:
+> btrfs prop get /btrfs compression
+>  compression=lzo
+> sync
+> btrfs in dump-super /dev/sdb | grep "^generation"
+>  generation		32
+> 
+> Try to set an incomplete compression type
+> 
+> btrfs prop set /btrfs compression zli
+>   ERROR: failed to set compression for /btrfs: Invalid argument
+> sync
+> 
+> Set failed but generation is incremented
+> btrfs in dump-super /dev/sdb | grep "^generation"
+>  generation		33  <--
+> 
+> Fix it by collapsing btrfs_set_prop_trans() into btrfs_set_prop(), which
+> provides flexibility to start the transaction after the
+> prop_handlers::validate() has been checked.
+> 
+> As of now if the prop_handlers::apply() fails then we still increment
+> the generation, but if there is strong prop_handlers::validate() then
+> the prop_handlers::apply() can never fail.
 > 
 > Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  fs/btrfs/props.c | 27 +++++++++++++++++++++------
->  1 file changed, 21 insertions(+), 6 deletions(-)
-> 
-> diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-> index 72a06c4d3c70..fb84e76f3b1d 100644
-> --- a/fs/btrfs/props.c
-> +++ b/fs/btrfs/props.c
-> @@ -367,20 +367,35 @@ static int inherit_props(struct btrfs_trans_handle *trans,
->  		if (!value)
->  			continue;
->  
-> +		/* may be removed */
 
-This comment brings no value. Either explain *why* it can be removed or
-remove it altogether.
-
-> +		ret = h->validate(value, strlen(value));
-> +		if (ret)
-> +			continue;
-> +
->  		num_bytes = btrfs_calc_trans_metadata_size(fs_info, 1);
->  		ret = btrfs_block_rsv_add(root, trans->block_rsv,
->  					  num_bytes, BTRFS_RESERVE_NO_FLUSH);
->  		if (ret)
-> -			goto out;
-> -		ret = btrfs_set_prop(trans, inode, h->xattr_name, value,
-> +			return ret;
-> +
-> +		ret = btrfs_setxattr(trans, inode, h->xattr_name, value,
->  				     strlen(value), 0);
-> +		if (!ret) {
-> +			ret = h->apply(inode, value, strlen(value));
-> +			if (ret)
-> +				btrfs_setxattr(trans, inode, h->xattr_name,
-> +					       NULL, 0, 0);
-> +			else
-> +				set_bit(BTRFS_INODE_HAS_PROPS,
-> +					&BTRFS_I(inode)->runtime_flags);
-> +		}
-> +
->  		btrfs_block_rsv_release(fs_info, trans->block_rsv, num_bytes);
-
-(not related to this patch) but should the reservation be released after
-setxattr is called, even if it succeeds, since we need to hold it until
-the reservation is committed. E.g. if we have to inherit 2 props then in
-the first iteration of the loop we reserve space, we call btrfs_Setxattr
-with enough reserved space, then in the 2nd reservation we need another
-reservation on top of the previous one, no ?
-
-Otherwise the change per se looks good:
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
-
->  		if (ret)
-> -			goto out;
-> +			return ret;
->  	}
-> -	ret = 0;
-> -out:
-> -	return ret;
-> +
-> +	return 0;
->  }
->  
->  int btrfs_inode_inherit_props(struct btrfs_trans_handle *trans,
-> 
+SO what do we gain by this patch? Whether the transaction generation
+number (actually in your changelog it will be an improvement to mention
+transaction generation explicitly, because there is also inode
+generation...) is incremented or not is an implementation detail. It can
+be argued both ways whether it should or shouldn't be incremented? Does
+this have to do with how btrfs' log works? I.e the transaction
+generation is used to

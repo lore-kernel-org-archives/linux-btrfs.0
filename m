@@ -2,116 +2,261 @@ Return-Path: <SRS0=SOow=SE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0831DC43381
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 05:55:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BA663C43381
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 05:58:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D45812084C
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 05:55:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 79784208E4
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Apr 2019 05:58:36 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="DXMDExAa"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726387AbfDBFzg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Apr 2019 01:55:36 -0400
-Received: from mx2.suse.de ([195.135.220.15]:49716 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726142AbfDBFzg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 2 Apr 2019 01:55:36 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 1A0FEAF0C
-        for <linux-btrfs@vger.kernel.org>; Tue,  2 Apr 2019 05:55:34 +0000 (UTC)
-Subject: Re: [PATCH v4 03/15] btrfs: Handle pending/pinned chunks before
- blockgroup relocation during device shrink
-To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <20190327122418.24027-1-nborisov@suse.com>
- <20190327122418.24027-4-nborisov@suse.com>
- <20190401182639.GZ29086@twin.jikos.cz>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- mQINBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
- T7g+RbfPFlmQp+EwFWOtABXlKC54zgSf+uulGwx5JAUFVUIRBmnHOYi/lUiE0yhpnb1KCA7f
- u/W+DkwGerXqhhe9TvQoGwgCKNfzFPZoM+gZrm+kWv03QLUCr210n4cwaCPJ0Nr9Z3c582xc
- bCUVbsjt7BN0CFa2BByulrx5xD9sDAYIqfLCcZetAqsTRGxM7LD0kh5WlKzOeAXj5r8DOrU2
- GdZS33uKZI/kZJZVytSmZpswDsKhnGzRN1BANGP8sC+WD4eRXajOmNh2HL4P+meO1TlM3GLl
- EQd2shHFY0qjEo7wxKZI1RyZZ5AgJnSmehrPCyuIyVY210CbMaIKHUIsTqRgY5GaNME24w7h
- TyyVCy2qAM8fLJ4Vw5bycM/u5xfWm7gyTb9V1TkZ3o1MTrEsrcqFiRrBY94Rs0oQkZvunqia
- c+NprYSaOG1Cta14o94eMH271Kka/reEwSZkC7T+o9hZ4zi2CcLcY0DXj0qdId7vUKSJjEep
- c++s8ncFekh1MPhkOgNj8pk17OAESanmDwksmzh1j12lgA5lTFPrJeRNu6/isC2zyZhTwMWs
- k3LkcTa8ZXxh0RfWAqgx/ogKPk4ZxOXQEZetkEyTFghbRH2BIwARAQABtCNOaWtvbGF5IEJv
- cmlzb3YgPG5ib3Jpc292QHN1c2UuY29tPokCOAQTAQIAIgUCWIo48QIbAwYLCQgHAwIGFQgC
- CQoLBBYCAwECHgECF4AACgkQcb6CRuU/KFc0eg/9GLD3wTQz9iZHMFbjiqTCitD7B6dTLV1C
- ddZVlC8Hm/TophPts1bWZORAmYIihHHI1EIF19+bfIr46pvfTu0yFrJDLOADMDH+Ufzsfy2v
- HSqqWV/nOSWGXzh8bgg/ncLwrIdEwBQBN9SDS6aqsglagvwFD91UCg/TshLlRxD5BOnuzfzI
- Leyx2c6YmH7Oa1R4MX9Jo79SaKwdHt2yRN3SochVtxCyafDlZsE/efp21pMiaK1HoCOZTBp5
- VzrIP85GATh18pN7YR9CuPxxN0V6IzT7IlhS4Jgj0NXh6vi1DlmKspr+FOevu4RVXqqcNTSS
- E2rycB2v6cttH21UUdu/0FtMBKh+rv8+yD49FxMYnTi1jwVzr208vDdRU2v7Ij/TxYt/v4O8
- V+jNRKy5Fevca/1xroQBICXsNoFLr10X5IjmhAhqIH8Atpz/89ItS3+HWuE4BHB6RRLM0gy8
- T7rN6ja+KegOGikp/VTwBlszhvfLhyoyjXI44Tf3oLSFM+8+qG3B7MNBHOt60CQlMkq0fGXd
- mm4xENl/SSeHsiomdveeq7cNGpHi6i6ntZK33XJLwvyf00PD7tip/GUj0Dic/ZUsoPSTF/mG
- EpuQiUZs8X2xjK/AS/l3wa4Kz2tlcOKSKpIpna7V1+CMNkNzaCOlbv7QwprAerKYywPCoOSC
- 7P25Ag0EWIoHPgEQAMiUqvRBZNvPvki34O/dcTodvLSyOmK/MMBDrzN8Cnk302XfnGlW/YAQ
- csMWISKKSpStc6tmD+2Y0z9WjyRqFr3EGfH1RXSv9Z1vmfPzU42jsdZn667UxrRcVQXUgoKg
- QYx055Q2FdUeaZSaivoIBD9WtJq/66UPXRRr4H/+Y5FaUZx+gWNGmBT6a0S/GQnHb9g3nonD
- jmDKGw+YO4P6aEMxyy3k9PstaoiyBXnzQASzdOi39BgWQuZfIQjN0aW+Dm8kOAfT5i/yk59h
- VV6v3NLHBjHVw9kHli3jwvsizIX9X2W8tb1SefaVxqvqO1132AO8V9CbE1DcVT8fzICvGi42
- FoV/k0QOGwq+LmLf0t04Q0csEl+h69ZcqeBSQcIMm/Ir+NorfCr6HjrB6lW7giBkQl6hhomn
- l1mtDP6MTdbyYzEiBFcwQD4terc7S/8ELRRybWQHQp7sxQM/Lnuhs77MgY/e6c5AVWnMKd/z
- MKm4ru7A8+8gdHeydrRQSWDaVbfy3Hup0Ia76J9FaolnjB8YLUOJPdhI2vbvNCQ2ipxw3Y3c
- KhVIpGYqwdvFIiz0Fej7wnJICIrpJs/+XLQHyqcmERn3s/iWwBpeogrx2Lf8AGezqnv9woq7
- OSoWlwXDJiUdaqPEB/HmGfqoRRN20jx+OOvuaBMPAPb+aKJyle8zABEBAAGJAh8EGAECAAkF
- AliKBz4CGwwACgkQcb6CRuU/KFdacg/+M3V3Ti9JYZEiIyVhqs+yHb6NMI1R0kkAmzsGQ1jU
- zSQUz9AVMR6T7v2fIETTT/f5Oout0+Hi9cY8uLpk8CWno9V9eR/B7Ifs2pAA8lh2nW43FFwp
- IDiSuDbH6oTLmiGCB206IvSuaQCp1fed8U6yuqGFcnf0ZpJm/sILG2ECdFK9RYnMIaeqlNQm
- iZicBY2lmlYFBEaMXHoy+K7nbOuizPWdUKoKHq+tmZ3iA+qL5s6Qlm4trH28/fPpFuOmgP8P
- K+7LpYLNSl1oQUr+WlqilPAuLcCo5Vdl7M7VFLMq4xxY/dY99aZx0ZJQYFx0w/6UkbDdFLzN
- upT7NIN68lZRucImffiWyN7CjH23X3Tni8bS9ubo7OON68NbPz1YIaYaHmnVQCjDyDXkQoKC
- R82Vf9mf5slj0Vlpf+/Wpsv/TH8X32ajva37oEQTkWNMsDxyw3aPSps6MaMafcN7k60y2Wk/
- TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
- RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
- 5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <e2f491ab-4f3e-f889-e711-8138338096c4@suse.com>
-Date:   Tue, 2 Apr 2019 08:55:32 +0300
+        id S1726858AbfDBF6f (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Apr 2019 01:58:35 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:38202 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725812AbfDBF6f (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Apr 2019 01:58:35 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x325wW7Y124711;
+        Tue, 2 Apr 2019 05:58:33 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to : cc :
+ references : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2018-07-02;
+ bh=34NPOdSMuShiCJI1uPXGvsLNfIBrT9wf3dtON29s44I=;
+ b=DXMDExAa6k4iXtb6qu0CEqpa7KdUeuhlb30DxEdkozDZL3u9iekt9hnvC/c0ZuTrSnVW
+ eap6qqEkTIprWYlxFtk1kYT6khPmWCta75oxOnZAGE2SOSqq5JdHt90UKm/waWI9AeFp
+ 3pAJjDBsJrfDURaFecoNx+zzjIkrLldNjjidlHOOcIxtqfg2S5WhlDHpPLkkaqksYzZX
+ Mn8RqQh3Ok1miSnap01e+obTF+qHDh/9+ngwhglPlxHXwvNGbm01GiG5bNXNow1INQRd
+ BkMgeYwF6nky6mUPkuTxx+HJKXLgpowV55BP6Pki8PGd5cy15YEM4rieVHp1Y9hovyzP 6g== 
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by userp2120.oracle.com with ESMTP id 2rj13q2tq9-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Tue, 02 Apr 2019 05:58:32 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id x325wTlo015739
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Tue, 2 Apr 2019 05:58:29 GMT
+Received: from abhmp0011.oracle.com (abhmp0011.oracle.com [141.146.116.17])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x325wSbP010677;
+        Tue, 2 Apr 2019 05:58:28 GMT
+Received: from [10.190.130.106] (/192.188.170.106)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Mon, 01 Apr 2019 22:58:28 -0700
+Subject: Re: [PATCH v3] fstests: btrfs verify hardening agaist duplicate fsid
+To:     guaneryu@gmail.com
+Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+References: <1540571900-24768-1-git-send-email-anand.jain@oracle.com>
+From:   Anand Jain <Anand.Jain@oracle.com>
+Message-ID: <799893ab-763e-7aa7-9e2b-2f1218d29b13@oracle.com>
+Date:   Tue, 2 Apr 2019 13:58:23 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.1
+ Thunderbird/60.6.1
 MIME-Version: 1.0
-In-Reply-To: <20190401182639.GZ29086@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <1540571900-24768-1-git-send-email-anand.jain@oracle.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9214 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=1 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1904020044
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
+Eryu,
 
-On 1.04.19 г. 21:26 ч., David Sterba wrote:
-> On Wed, Mar 27, 2019 at 02:24:06PM +0200, Nikolay Borisov wrote:
->> During device shrink pinned/pending chunks (i.e those which have been
->> deleted/created respectively, in the current transaction and haven't
->> touched disk) need to be accounted when doing device shrink. Presently
->> this happens after the main relocation loop in btrfs_shrink_device,
->> which could lead to making another go in the body of the function.
->>
->> Since there is no hard requirement to perform pinned/pending chunks
->> handling after the relocation loop, move the code before it. This leads
->> to simplifying the code flow around - i.e no need to use 'goto again'.
+  This patch isn't integrated yet.
+
+Thanks, Anand
+
+On 27/10/18 12:38 AM, Anand Jain wrote:
+> We have a known bug in btrfs, that we let the device path be changed
+> after the device has been mounted. So using this loop hole the new
+> copied device would appears as if its mounted immediately after its
+> been copied. So this test case reproduces this issue.
 > 
-> On the other hand this starts 2 transactions unconditionally, previously
-> it was 1 for the final change and 1 if there were pending chunks. This
-> should be mentioned or explained why this is needed, otherwise the code
-> looks equivalent to the original version. In this case some guidance in
-> the changelog could shorten the time to understand the change, I've been
-> starting at it for half an hour.
+> For example:
 > 
-
-Valid point, how about adding the following sentence at the end of the
-changelog :
-
-A notable side effect of this change is that modification of the
-device's size requires a transaction to be started and committed before
-the relocation loop starts. This is necessary to ensure that relocation
-process sees the shrunk device size.
+> Initially.. /dev/mmcblk0p4 is mounted as /
+> 
+> lsblk
+> NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+> mmcblk0     179:0    0 29.2G  0 disk
+> |-mmcblk0p4 179:4    0    4G  0 part /
+> |-mmcblk0p2 179:2    0  500M  0 part /boot
+> |-mmcblk0p3 179:3    0  256M  0 part [SWAP]
+> `-mmcblk0p1 179:1    0  256M  0 part /boot/efi
+> 
+> btrfs fi show
+> Label: none  uuid: 07892354-ddaa-4443-90ea-f76a06accaba
+>      Total devices 1 FS bytes used 1.40GiB
+>      devid    1 size 4.00GiB used 3.00GiB path /dev/mmcblk0p4
+> 
+> Copy mmcblk0 to sda
+> dd if=/dev/mmcblk0 of=/dev/sda
+> 
+> And immediately after the copy completes the change in the device
+> superblock is notified which the automount scans using
+> btrfs device scan and the new device sda becomes the mounted root
+> device.
+> 
+> lsblk
+> NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+> sda           8:0    1 14.9G  0 disk
+> |-sda4        8:4    1    4G  0 part /
+> |-sda2        8:2    1  500M  0 part
+> |-sda3        8:3    1  256M  0 part
+> `-sda1        8:1    1  256M  0 part
+> mmcblk0     179:0    0 29.2G  0 disk
+> |-mmcblk0p4 179:4    0    4G  0 part
+> |-mmcblk0p2 179:2    0  500M  0 part /boot
+> |-mmcblk0p3 179:3    0  256M  0 part [SWAP]
+> `-mmcblk0p1 179:1    0  256M  0 part /boot/efi
+> btrfs fi show /
+> Label: none  uuid: 07892354-ddaa-4443-90ea-f76a06accaba
+>      Total devices 1 FS bytes used 1.40GiB
+>      devid    1 size 4.00GiB used 3.00GiB path /dev/sda4
+> 
+> The bug is quite nasty that you can't either unmount /dev/sda4 or
+> /dev/mmcblk0p4. And the problem does not get solved until you take
+> the sda out of the system on to another system to change its fsid using
+> the 'btrfstune -u' command.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+> v2->v3:
+>    Check the return code and use _fail to verify and accordingly fix golden
+>      output.
+>    Rename dev_foo(bar) to device_1(2)
+>    Don't log dd retun to $seqres.full
+>   
+> v1->v2:
+>    dont play around with dev patch use it as it is.
+>    do not use SCRATCH_MNT instead create it at the TEST_DIR and its related
+>     changes.
+>    golden out changes
+> 
+>   tests/btrfs/173     | 82 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+>   tests/btrfs/173.out |  2 ++
+>   tests/btrfs/group   |  1 +
+>   3 files changed, 85 insertions(+)
+>   create mode 100755 tests/btrfs/173
+>   create mode 100644 tests/btrfs/173.out
+> 
+> diff --git a/tests/btrfs/173 b/tests/btrfs/173
+> new file mode 100755
+> index 000000000000..342ae92b4781
+> --- /dev/null
+> +++ b/tests/btrfs/173
+> @@ -0,0 +1,82 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2018 Oracle. All Rights Reserved.
+> +#
+> +# FS QA Test 173
+> +#
+> +# Fuzzy test for FS image duplication.
+> +#  Could be fixed by
+> +#    [patch] btrfs: harden agaist duplicate fsid
+> +#
+> +seq=`basename $0`
+> +seqres=$RESULT_DIR/$seq
+> +echo "QA output created by $seq"
+> +
+> +here=`pwd`
+> +tmp=/tmp/$$
+> +status=1	# failure is the default!
+> +trap "_cleanup; exit \$status" 0 1 2 3 15
+> +
+> +mnt=$TEST_DIR/$seq.mnt
+> +_cleanup()
+> +{
+> +	rm -rf $mnt > /dev/null 2>&1
+> +	cd /
+> +	rm -f $tmp.*
+> +}
+> +
+> +# get standard environment, filters and checks
+> +. ./common/rc
+> +. ./common/filter
+> +
+> +# remove previous $seqres.full before test
+> +rm -f $seqres.full
+> +
+> +# real QA test starts here
+> +_supported_fs btrfs
+> +_supported_os Linux
+> +_require_scratch_dev_pool 2
+> +_scratch_dev_pool_get 2
+> +
+> +device_1=$(echo $SCRATCH_DEV_POOL | awk '{print $1}')
+> +device_2=$(echo $SCRATCH_DEV_POOL | awk '{print $2}')
+> +
+> +echo device_1=$device_1 device_2=$device_2 >> $seqres.full
+> +
+> +rm -rf $mnt > /dev/null 2>&1
+> +mkdir $mnt
+> +_mkfs_dev $device_1
+> +_mount $device_1 $mnt
+> +
+> +[[ $(findmnt $mnt | grep -v TARGET | awk '{print $2}') != $device_1 ]] && \
+> +						_fail "mounted device changed"
+> +
+> +for sb_bytenr in 65536 67108864
+> +do
+> +	echo -n "dd status=none if=$dev_foo of=$dev_bar bs=1 "\
+> +		"seek=$sb_bytenr skip=$sb_bytenr count=4096" >> $seqres.full
+> +	dd status=none if=$device_1 of=$device_2 bs=1 seek=$sb_bytenr \
+> +				skip=$sb_bytenr count=4096 > /dev/null 2>&1
+> +	echo ..:$? >> $seqres.full
+> +done
+> +
+> +#Original device is mounted, scan of its clone should fail
+> +$BTRFS_UTIL_PROG device scan $device_2 >> $seqres.full 2>&1
+> +[[ $? != 1 ]] && _fail "cloned device scan should fail"
+> +
+> +[[ $(findmnt $mnt | grep -v TARGET | awk '{print $2}') != $device_1 ]] && \
+> +						_fail "mounted device changed"
+> +
+> +#Original device scan should be successful
+> +$BTRFS_UTIL_PROG device scan $device_1 >> $seqres.full 2>&1
+> +[[ $? != 0 ]] && \
+> +	_fail "if it fails here, then it means subvolume mount at boot may fail "\
+> +	      "in some configs."
+> +
+> +umount $mnt > /dev/null 2>&1
+> +_scratch_dev_pool_put
+> +
+> +# success, all done
+> +echo "Silence is golden"
+> +status=0
+> +exit
+> diff --git a/tests/btrfs/173.out b/tests/btrfs/173.out
+> new file mode 100644
+> index 000000000000..2c57ea508748
+> --- /dev/null
+> +++ b/tests/btrfs/173.out
+> @@ -0,0 +1,2 @@
+> +QA output created by 173
+> +Silence is golden
+> diff --git a/tests/btrfs/group b/tests/btrfs/group
+> index 45782565c3b7..b2f1393f3e97 100644
+> --- a/tests/btrfs/group
+> +++ b/tests/btrfs/group
+> @@ -175,3 +175,4 @@
+>   170 auto quick snapshot
+>   171 auto quick qgroup
+>   172 auto quick punch
+> +173 volume
+> 
 

@@ -2,39 +2,42 @@ Return-Path: <SRS0=QfkU=SF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-0.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BDBFBC4360F
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 08:54:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C4979C4360F
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 09:08:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 79A64206B7
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 08:54:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8924A20882
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 09:08:10 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="IVLk9fhb"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="kn+Ntabw"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726151AbfDCIyz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Apr 2019 04:54:55 -0400
-Received: from mout.gmx.net ([212.227.15.15]:41855 "EHLO mout.gmx.net"
+        id S1726184AbfDCJIJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Apr 2019 05:08:09 -0400
+Received: from mout.gmx.net ([212.227.15.15]:39691 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725935AbfDCIyz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 3 Apr 2019 04:54:55 -0400
+        id S1725857AbfDCJIJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 3 Apr 2019 05:08:09 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1554281693;
-        bh=+hmF9BLZh9iC041/7thQeT4yfF8Sa09/PSZU5NY2fhE=;
-        h=X-UI-Sender-Class:To:From:Subject:Date;
-        b=IVLk9fhbIbc7SIgdESyKWCa6iQqJtX4IlP8URFqJemiyqwEpkb+7LjYNLTN4uhCUU
-         jvNlcWdGML2m32BBQUejh3et3JcmySRo154XktPi0ym8YrX6WtQpEza8sjhmL5GEXK
-         HzUq4apn1QpbEqnsDXCCaxhHKpSCxBD6MimSFyrw=
+        s=badeba3b8450; t=1554282471;
+        bh=rSvvWB0hRhvc/zQjAHFu9g6GLBr44ZY6phl1qqz+8/M=;
+        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
+        b=kn+NtabwrZTFHR/rp/CEPT5DB+X0h5aU3T54m7jHkUijGsEnEvKbZa3g5ApnMqk55
+         OE2sAledFs0/mOP3Fn6kGTSvjef1ls1zMjipANjUQlkHUIXg2tBNHf5txeqVVhmJIW
+         O4K7+U0Z2Br73Wqefnr7I9pg/fZXD6lK9JZyJbFU=
 X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx002
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0MYwyp-1hPVtI3aWx-00VgFr for
- <linux-btrfs@vger.kernel.org>; Wed, 03 Apr 2019 10:54:52 +0200
-To:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx003
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0MRoRF-1hMmvX0USf-00SuTe; Wed, 03
+ Apr 2019 11:07:51 +0200
+Subject: Re: [PATCH v5.3 11/11] btrfs: Do mandatory tree block check before
+ submitting bio
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Cc:     Leonard Lausen <leonard@lausen.nl>, David Sterba <dsterba@suse.cz>
+References: <20190320062749.30953-1-wqu@suse.com>
+ <20190320062749.30953-12-wqu@suse.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Subject: Interesting btrfs csum and tree-checker performance penalty analyse
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
@@ -60,123 +63,97 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <b1640ba7-b42b-8b60-6626-ab215c8e0b8e@gmx.com>
-Date:   Wed, 3 Apr 2019 16:54:47 +0800
+Message-ID: <513a77d6-b9e1-3c45-ff11-ee1387fc3d4d@gmx.com>
+Date:   Wed, 3 Apr 2019 17:07:44 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.5.3
 MIME-Version: 1.0
+In-Reply-To: <20190320062749.30953-12-wqu@suse.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="SXkgDCTb8TqRipkXn6erGBOmiKyhg3JaL"
-X-Provags-ID: V03:K1:sEbFr8GZeql13mmFK+Zxp9oIUS34HgJoR7bZVxTqgqSC93KZiRn
- NQlI+LlYg12R43hARrzEIxqo1k6yUMze/oKNXW4yjJwoYVJOtfjoamApYjRPS9kBGt70+Kn
- sigpRPJrDcZSLG1sdAWXqtfieyWu0NEQ2wsXIN71s8/bKKiZjZR34/aM6rJj4APdpI8k88Q
- zx0BoZ5QNFbBobbvSlrWg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:I1wx6pezwSg=:n2QfnQ9OJq1EUrb0zcJd7R
- vbEK7kfYRcSmLqLu9bHy4PHejHNM2gzVe3ku9VQ17Qz241dik61K9YuMkytVgcmfKsedyRM1r
- WUyiOkRuAmPp9y5ba4enUpbmO2Q/220Gavjg4fJtZS/azrJpPKdjQjxoMQOatFSuEdPvbizI1
- SdU4hzn3TfggNtLt5XU6UgejLw6BbfrbCnKQIOkMmsX8okVVFYXvbsZQ9E5HTh7syPR/+IDKX
- I61rAUVA/GChpf4q6/XILJt6FLXWVMUuSAY7Q4RSmn1lZAnz66s+TJ6I22mxPzQRnil4wDD5M
- bCEJY/cFQLJ1kLkb6tb/wx4YFFJA1UiE2L9+C4GcEMWh9Ale+Z9Wnr5EJJWwOPemgPLbkPsV5
- 9IsXXlPIyZe0dSZeZ9kwrF2LPLcdDSfq3cM+GVNBA6SUaBEuG1bycjQ0yxKXfakRDtS9P/VLY
- YNPfs7at2fwdwNw46lNkRBxp9Ld0tymYTXrd7D5NQaYhrdhc4S+yE/7Gh/lxcy8K6stjYnBPQ
- CtzNAsOMYqiP6xDUAT9QESNjK4xQGaZHgDmIv+OzvHTgRZdtTEf2YqqSkWEOV9mjscIYYvW47
- OtU8LEY6LQIb32fZIkBaZkKjU0DGLFoZxNT5EsIJTSn3EoK6Y1zO/pbfiW6ccQtvp3XoSNGhi
- TkCO/OIRtJb7fd+o+iOHp7YaWJW5eo7ME9RgXA0UfEfwjoBLnhFpruoi8gOeN02VxWK6WWzMc
- rBJ4JeRgcZPtrjDVKzodDjPfB2cLCaybmLVeICHPBs3TyqVBD0Bs2O7Drjjg9ByssqPttkXFC
- +XV1ZWgQ3S5aTHpm4j6KjDR7oJVESK17l9MpkZPA4tj5BnK0cPxNafYirInwlgtjNF3a3FI1y
- MHzfDlEGIQqSw8YKn6nzC/F3oKk4M5IASKSPEHdrDJHS5Hf9AJoVEhMkMebPku
+ boundary="OItliVWuojXdCmefxdTAlyRbYY6gqK46X"
+X-Provags-ID: V03:K1:CwPYL7bpxCbkg+MW8K2C+eZUUANwDQCzCzPOMXg12FDcYHR3q6X
+ oG6x3b5+sribEStVRQoOtBb9MCZSrfMUmB56/mL39nkc3oo+cu5Eo3sJ5Jz+HUJ2y6cpoF9
+ R+kqVZr6uEOPfRVvNjN+4qnLUO0H9loZnBqvoZiLrC1wNzxJhsnev1tbqILa/Fvl+N+y7TD
+ Wuel95fT0/ReLIMgg6Gvg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:KWuowsDf7gE=:7hGCjcQGD4CK6w3O1Fg5+0
+ bQ34H9xF9tizpNqnJ9SBxP2Jn3qFIbPhmLdpPzQPkc9oAqUHTxMlitxlur2AJiiRDYzXc7XN8
+ 1F3XF5EgZ5hdNlkYafYlx2frysOYKS5DxNFYIUqcoRdT6eutur2Pc3HpxkQATMke4RESKWE1K
+ GftV10oqPeNRfs/md50SyRfVzj0rm5xp7b9MLBMoMubmt/9fUpYMH8Gg06vIbfzMIYxL7IFXi
+ nWHPtGSvXs/dFeDd6+NvspV3SK5Fo6QABjaByUzXtZrUjmhxqhmiYlYt2TQQSxUZCOry1ABAu
+ b2Mo4ykMG+Sb8/i70bzgWljArj/s5v9ZQVdiyIuAmsevn1oP9tRaC6W/L0UIlNLofDSM+bWuX
+ J1sJmYHzJlcpth1hjJ8QxhuqD60TcBmLK/nFUFUgOQIgj38sQU3uItV+2sBWv5cYkiziGF4Ym
+ 1W+3kIbBc/0V8InnPcR4VdlzqoaE+fS+Cocvkii56BhfYp0JFiq/w46sIO0AQEuEtaYzpbZf8
+ ZNz4cGjm+1eKk4f/NawH0fIEBOf+Cs2bTKwYAbi9GK4M28GzIfWbq+STf0M9GtyFXJ80G8qHM
+ 31KaJJGe9A+vDeaTVnQP4UVH2BN0afPOcZlLVEA58MJxC4Yb/Vr3LcXTpvA+7ODtVzZcvOZTt
+ DCOccFUCo5TyG3HcAm0s5IeXLMs3yHux8xN02UhsbE+VkDJaGMDaH0FNAGTdbzKmVjKeItOK/
+ QSoIO+hOw12ywQGMZq7lobEP+oIPUMsjYORbWPBcr/dG9qkHeUmFFFhXtcZlFwRccoOIfv9rA
+ tXL+TeZggDveoyp0+WY+PIbpUY6IQa3TJ6rIacvPL4dEnyrWUksn+rzhdkKVKpmo1D0MxGgbF
+ ERXM0Y4ps7mJHbOV1nHBhzO3vK/L5Tjb8GPewq65dSqTe9W0pVX8cvPPtHB5mZ
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---SXkgDCTb8TqRipkXn6erGBOmiKyhg3JaL
-Content-Type: multipart/mixed; boundary="QYIQDc1DfW6SZ0gvEc99GVHKSnRMlfoJ4";
+--OItliVWuojXdCmefxdTAlyRbYY6gqK46X
+Content-Type: multipart/mixed; boundary="P4I2bHAEcYnwPQe7SDkwICllJp5rvj6sA";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Message-ID: <b1640ba7-b42b-8b60-6626-ab215c8e0b8e@gmx.com>
-Subject: Interesting btrfs csum and tree-checker performance penalty analyse
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Cc: Leonard Lausen <leonard@lausen.nl>, David Sterba <dsterba@suse.cz>
+Message-ID: <513a77d6-b9e1-3c45-ff11-ee1387fc3d4d@gmx.com>
+Subject: Re: [PATCH v5.3 11/11] btrfs: Do mandatory tree block check before
+ submitting bio
+References: <20190320062749.30953-1-wqu@suse.com>
+ <20190320062749.30953-12-wqu@suse.com>
+In-Reply-To: <20190320062749.30953-12-wqu@suse.com>
 
---QYIQDc1DfW6SZ0gvEc99GVHKSnRMlfoJ4
+--P4I2bHAEcYnwPQe7SDkwICllJp5rvj6sA
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
-Hi,
-
-Recently Intel LKP performance test is reporting regression of btrfs
-performance.
-
-It points to tree-checker code, and since I'm poking around the
-bcc/ebpf, I spend some time to do an interesting look into the
-performance penalty about both btrfs csum and tree-checker.
-
-The code base is David's misc-next, which contains both write-time tree
-checker and enhanced code to handle fuzzed image.
-
-The tool can be find in my gist:
-https://gist.github.com/adam900710/b5542f2e52ed4687986cf41f64b85253
-
-To use the tool, one needs bcc-python binding and kernel config for
-eBPF, but at least Arch default kernel has all needed config, so any one
-can try it on Arch.
-
-The work load is:
- mkfs.btrfs -n 4K $DEV
- mount $DEV $MNT
- fsstress -n 10000 -w -d $MNT
- umount $MNT
-
- ## start my script ##
- mount $DEV $MNT
- ls -R $MNT > /dev/null # To read all fs tree blocks
- fsstress -n 1000 -w -d $MNT # Trigger enough write
- umount $MNT
- ## stop my script ##
 
 
-The result is very interesting:
-Basic result is:
-CSUM_TREE_BLOCK: nr=3D2311 total=3D10000612 avg=3D4327
-TREE_CHECKER_READ: nr=3D461 total=3D41911553 avg=3D90914
-TREE_CHECKER_WRITE: nr=3D1575 total=3D5783330 avg=3D3671
+On 2019/3/20 =E4=B8=8B=E5=8D=882:27, Qu Wenruo wrote:
+<snip>
+> +int btrfs_check_leaf_write(struct btrfs_fs_info *fs_info,
+> +			   struct extent_buffer *leaf)
+> +{
+> +	return check_leaf(fs_info, leaf, false, false);
+>  }
 
-So if just looking at the average number of csum calculate, it only
-brings 3~5=CE=BCs. And surprisingly, write time tree checker even slower =
-than
-checksum!
+Well, I got confused by those two bool paramters.
 
-Also surprisingly, read time tree checker takes near 100=CE=BCs. nearly 2=
-0
-times slower than csum/write time tree checker.
+The first bool is whether to check leaf data.
+!!OF COURSE WE NEED TO CHECK LEAF DATA!!
 
-So we have a new direction to enhance tree-checker performance.
-BTW, bcc/ebpf is really awesome!
+So the 3rd parameter should be "true".
+
+David, would you please fold this change into misc-next branch?
 
 Thanks,
 Qu
 
 
---QYIQDc1DfW6SZ0gvEc99GVHKSnRMlfoJ4--
+--P4I2bHAEcYnwPQe7SDkwICllJp5rvj6sA--
 
---SXkgDCTb8TqRipkXn6erGBOmiKyhg3JaL
+--OItliVWuojXdCmefxdTAlyRbYY6gqK46X
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlykdNcACgkQwj2R86El
-/qhLfAf+PkEftY4tGYSttmBvS3DI+h8OBQtd+ycN5RaOqiJDqsvSFidw09MWC2Bg
-yQXdEU+pDpFyX3eEtTOs/abuzaoZ2YHMkdMLtHYKmfcRfWFQ3FpiNGd0E5W18FR4
-sgmpptI0jJsyJxc7Pz0yJitg1agHM/m6P2990JIv/IUmstswStPNVNOQSBwdDzga
-hsf7LykkSAFYJlonXDJkz5vpU/PhILHm1PDq27qhp0l8thOJ/yRl5g+/dgNFgzH4
-emupga3TJtVi7aAiEQZjTiwL/ye8fy7ogtezLiAQKmY//wq/y3U57HZq9zx6lN6a
-2x0v7pJ4IwKCVqjBPD4ZNBnV02WSug==
-=qdbx
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlykd+AACgkQwj2R86El
+/qiL3gf9ECAbO2lDrj7CoSzT8MNhmaA9SLl3P/omXWUK0Mi3GJFuV0LksWRGy01C
+rDuhn4v+2yQiBz8pErfpmkKrRPEOeyWlJ9677AGMCckAORm/LtiZajR5KZUUpj0R
+g+fBbE0XjlLWBpvxWqakcUwNnhhDT0BiUg505Sa+USY3ATjHZan/N5p0Md4N6aX1
+kGZz2lCtoSg9X2WnLjO/qc01931OpO8AS8WkxXG9xRnNcLd58Dxxt+7342efgDni
+OvFuLb2RuHoaM4oB5WxxlKFUCv5UZgJytLOdiB98BKmu+hkc5fwYqSLjCptl7bUx
+PwQDrbjh8kSuhz5smefHmmAvrs99dA==
+=/TIn
 -----END PGP SIGNATURE-----
 
---SXkgDCTb8TqRipkXn6erGBOmiKyhg3JaL--
+--OItliVWuojXdCmefxdTAlyRbYY6gqK46X--

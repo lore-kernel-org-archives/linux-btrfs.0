@@ -7,54 +7,54 @@ X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 353DCC10F0B
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 16:51:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 66BEAC4360F
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 16:51:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 043E8206DF
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 16:51:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 17AE3206DF
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 16:51:55 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="VEIVTB0e"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="E128W4sj"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726384AbfDCQvx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Apr 2019 12:51:53 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:49754 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726167AbfDCQvw (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Apr 2019 12:51:52 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x33GhvSh140349;
-        Wed, 3 Apr 2019 16:51:49 GMT
+        id S1726193AbfDCQvv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Apr 2019 12:51:51 -0400
+Received: from aserp2130.oracle.com ([141.146.126.79]:44498 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726105AbfDCQvv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Apr 2019 12:51:51 -0400
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x33Ghj9E136420;
+        Wed, 3 Apr 2019 16:51:47 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
  subject : date : message-id : in-reply-to : references; s=corp-2018-07-02;
- bh=MbNFh7yIKykfiHky1TcNtM2Ymowh92fAu/saz5+bbJY=;
- b=VEIVTB0eVw0j08UGwATKy+pvuzBtezvVFkVHM5dWFnf1MRNr5UZTG7N9eboNIJaVuXIt
- mUcKTlWHoXoXxcMIedNVyB+hlTqxtfozSyHLGtinNlgTbZto6z5ISHo/uX2TJgDAyeKg
- /BhL7jp93a/tZHQwz6mBboZZoO/o66K+LTuge66PPZY0Y96MGlIob6Yc04Yp9ORomxty
- toEvieI+DBq1ehPWg+H9n42ncURGnz42EUp/u4UZki5vmY+zYjvcZHHuKFMFFgEKTarl
- TUitpe1J4Z1LsaZzTzoeXZg31N93SvGYIPQD9YRifNy8lj2O8zbHaCid3QSdFQLE51tr 5A== 
-Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
-        by userp2120.oracle.com with ESMTP id 2rj13qa6nh-1
+ bh=m3SpdUHiHrksRK+VGXqoejRKa73cuwT9GAx8JhauHYE=;
+ b=E128W4sjkvkWKhmBbqyuz/Nw5OESRvLt1vdvdEOg2+wVNuZ1mSfD6ewhkKY1O7TCcl8d
+ zmeMZXoBrJYSxGKt//pbGNF6oHABmbHFR0JbJlQ9gKxTgLgl/TDk720dpyeU3jYp3b8T
+ zLJU9Zu6OCFlxlzGhbEJHxwHGNPBLfpyUc7qPWaAJjh4Dg9mJBRft3hOlW09HJ1yP6N/
+ JSDIDdNXDUx14D/hpIjpgIYVeVtRtrptUzP4EU0kdAem8Rqe5mNKgQ3bMBeXpIz6RDGw
+ xPxOEDWRBHM6WTvAT/eSTY3MfO7I9o8IUz0QCe5sD3nD36nWBy8CeSLlBHJ+DP9bHXBh yQ== 
+Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
+        by aserp2130.oracle.com with ESMTP id 2rhwydaeya-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Wed, 03 Apr 2019 16:51:48 +0000
-Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
-        by userp3020.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x33Gpb4t171968;
-        Wed, 3 Apr 2019 16:51:48 GMT
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userp3020.oracle.com with ESMTP id 2rm8f678nc-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Wed, 03 Apr 2019 16:51:48 +0000
-Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x33Gplr1032217;
+        Wed, 03 Apr 2019 16:51:47 +0000
+Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
+        by aserp3020.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x33GpMH1040385;
         Wed, 3 Apr 2019 16:51:47 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by aserp3020.oracle.com with ESMTP id 2rm9mj5tbc-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 03 Apr 2019 16:51:47 +0000
+Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x33Gpjpc003807;
+        Wed, 3 Apr 2019 16:51:46 GMT
 Received: from localhost.localdomain (/116.87.143.221)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Wed, 03 Apr 2019 09:51:47 -0700
+        with ESMTP ; Wed, 03 Apr 2019 09:51:45 -0700
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     dsterba@suse.cz
-Subject: [PATCH 2/4] btrfs: rename __btrfs_set_acl to do_set_acl
-Date:   Thu,  4 Apr 2019 00:51:32 +0800
-Message-Id: <20190403165134.12378-3-anand.jain@oracle.com>
+Subject: [PATCH 1/4] btrfs: rename __btrfs_set_prop to btrfs_set_prop_trans
+Date:   Thu,  4 Apr 2019 00:51:31 +0800
+Message-Id: <20190403165134.12378-2-anand.jain@oracle.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20190403165134.12378-1-anand.jain@oracle.com>
 References: <20190403165134.12378-1-anand.jain@oracle.com>
@@ -74,56 +74,56 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-__btrfs_set_acl() is helper function of btrfs_set_acl(), rename it to
-do_set_acl(). No functional changes.
+__btrfs_set_prop() accepts trans an argument, which when NULL,
+the trans is created further down at btrfs_setxattr().
+So btrfs_set_prop() is a redirect to __btrfs_set_prop() with the
+transaction handle equal to NULL. No functional changes.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/acl.c | 12 +++++-------
- 1 file changed, 5 insertions(+), 7 deletions(-)
+ fs/btrfs/props.c | 15 ++++++---------
+ 1 file changed, 6 insertions(+), 9 deletions(-)
 
-diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-index 5810463dc6d2..a22ebb04d9ca 100644
---- a/fs/btrfs/acl.c
-+++ b/fs/btrfs/acl.c
-@@ -52,8 +52,8 @@ struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
- 	return acl;
+diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
+index 7466ffd33ba6..0939554ffa63 100644
+--- a/fs/btrfs/props.c
++++ b/fs/btrfs/props.c
+@@ -55,12 +55,9 @@ find_prop_handler(const char *name,
+ 	return NULL;
  }
  
--static int __btrfs_set_acl(struct btrfs_trans_handle *trans,
--			 struct inode *inode, struct posix_acl *acl, int type)
-+static int do_set_acl(struct btrfs_trans_handle *trans, struct inode *inode,
-+		      struct posix_acl *acl, int type)
+-static int __btrfs_set_prop(struct btrfs_trans_handle *trans,
+-			    struct inode *inode,
+-			    const char *name,
+-			    const char *value,
+-			    size_t value_len,
+-			    int flags)
++static int btrfs_set_prop_trans(struct btrfs_trans_handle *trans,
++				struct inode *inode, const char *name,
++				const char *value, size_t value_len, int flags)
  {
- 	int ret, size = 0;
- 	const char *name;
-@@ -113,7 +113,7 @@ int btrfs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
+ 	const struct prop_handler *handler;
+ 	int ret;
+@@ -109,7 +106,7 @@ int btrfs_set_prop(struct inode *inode,
+ 		   size_t value_len,
+ 		   int flags)
+ {
+-	return __btrfs_set_prop(NULL, inode, name, value, value_len, flags);
++	return btrfs_set_prop_trans(NULL, inode, name, value, value_len, flags);
+ }
+ 
+ static int iterate_object_props(struct btrfs_root *root,
+@@ -355,8 +352,8 @@ static int inherit_props(struct btrfs_trans_handle *trans,
+ 					  num_bytes, BTRFS_RESERVE_NO_FLUSH);
  		if (ret)
- 			return ret;
- 	}
--	ret = __btrfs_set_acl(NULL, inode, acl, type);
-+	ret = do_set_acl(NULL, inode, acl, type);
- 	if (ret)
- 		inode->i_mode = old_mode;
- 	return ret;
-@@ -134,15 +134,13 @@ int btrfs_init_acl(struct btrfs_trans_handle *trans,
- 		return ret;
- 
- 	if (default_acl) {
--		ret = __btrfs_set_acl(trans, inode, default_acl,
--				      ACL_TYPE_DEFAULT);
-+		ret = do_set_acl(trans, inode, default_acl, ACL_TYPE_DEFAULT);
- 		posix_acl_release(default_acl);
- 	}
- 
- 	if (acl) {
- 		if (!ret)
--			ret = __btrfs_set_acl(trans, inode, acl,
--					      ACL_TYPE_ACCESS);
-+			ret = do_set_acl(trans, inode, acl, ACL_TYPE_ACCESS);
- 		posix_acl_release(acl);
- 	}
- 
+ 			goto out;
+-		ret = __btrfs_set_prop(trans, inode, h->xattr_name,
+-				       value, strlen(value), 0);
++		ret = btrfs_set_prop_trans(trans, inode, h->xattr_name, value,
++					   strlen(value), 0);
+ 		btrfs_block_rsv_release(fs_info, trans->block_rsv, num_bytes);
+ 		if (ret)
+ 			goto out;
 -- 
 2.17.1
 

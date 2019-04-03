@@ -2,31 +2,31 @@ Return-Path: <SRS0=QfkU=SF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 94BC4C4360F
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 14:15:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D0A8C4360F
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 14:20:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6ECED20830
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 14:15:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 261962075E
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 14:20:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726264AbfDCOPk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Apr 2019 10:15:40 -0400
-Received: from mx2.suse.de ([195.135.220.15]:46900 "EHLO mx1.suse.de"
+        id S1726184AbfDCOUR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Apr 2019 10:20:17 -0400
+Received: from mx2.suse.de ([195.135.220.15]:48806 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726084AbfDCOPk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 3 Apr 2019 10:15:40 -0400
+        id S1726144AbfDCOUR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 3 Apr 2019 10:20:17 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 5A8E4AFF6
-        for <linux-btrfs@vger.kernel.org>; Wed,  3 Apr 2019 14:15:38 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 104FAB00C
+        for <linux-btrfs@vger.kernel.org>; Wed,  3 Apr 2019 14:20:15 +0000 (UTC)
 Subject: Re: [PATCH 1/2] btrfs: tree-checker: Make write time tree checker
  verify the content of leaves
-To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
+To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 References: <20190403115919.17049-1-wqu@suse.com>
- <20190403141321.GN29086@twin.jikos.cz>
+ <0a3ba25a-10b5-794d-6db2-0cf9b27c83d8@suse.com>
 From:   Qu Wenruo <wqu@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=wqu@suse.de; prefer-encrypt=mutual; keydata=
@@ -53,89 +53,65 @@ Autocrypt: addr=wqu@suse.de; prefer-encrypt=mutual; keydata=
  Pt/jfwjBHwGR+QKp6dD2qMrUWf9b7TFzYDMZXzZ2/eoIgtyjEelNBPrIgOFe24iKMjaGjd97
  fJuRcBMHdhUAxvXQF1oRtd83JvYJ5OtwTd8MgkEfl+fo7HwWkuHbzc70L4fFKv2BowqFdaHy
  mId1ijGPGr46tuZ5a4cw/zbaPYx6fJ4sK9tSv/6V1QPNUdqml6hm6pfs6A==
-Message-ID: <6a5021cd-573c-8a8f-3867-964c51bd3823@suse.de>
-Date:   Wed, 3 Apr 2019 22:15:27 +0800
+Message-ID: <f6170c6e-7858-45a7-57e2-408e56c68361@suse.de>
+Date:   Wed, 3 Apr 2019 22:20:11 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.5.3
 MIME-Version: 1.0
-In-Reply-To: <20190403141321.GN29086@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="AnTIpueNENYrLdrn7vdofvnJxWg00SHNb"
+In-Reply-To: <0a3ba25a-10b5-794d-6db2-0cf9b27c83d8@suse.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---AnTIpueNENYrLdrn7vdofvnJxWg00SHNb
-Content-Type: multipart/mixed; boundary="oyJFM1UeXzpMWVTqyA55MHLJqTKsmlOiC";
- protected-headers="v1"
-From: Qu Wenruo <wqu@suse.de>
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <6a5021cd-573c-8a8f-3867-964c51bd3823@suse.de>
-Subject: Re: [PATCH 1/2] btrfs: tree-checker: Make write time tree checker
- verify the content of leaves
-References: <20190403115919.17049-1-wqu@suse.com>
- <20190403141321.GN29086@twin.jikos.cz>
-In-Reply-To: <20190403141321.GN29086@twin.jikos.cz>
-
---oyJFM1UeXzpMWVTqyA55MHLJqTKsmlOiC
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
 
-
-On 2019/4/3 =E4=B8=8B=E5=8D=8810:13, David Sterba wrote:
-> On Wed, Apr 03, 2019 at 07:59:18PM +0800, Qu Wenruo wrote:
->> Commit "btrfs: Do mandatory tree block check before submitting bio" is=
-
+On 2019/4/3 下午10:12, Nikolay Borisov wrote:
+> 
+> 
+> On 3.04.19 г. 14:59 ч., Qu Wenruo wrote:
+>> Commit "btrfs: Do mandatory tree block check before submitting bio" is
 >> designed to check leaves contents, just as read time check.
 >>
->> However due to the confusing parameter list, "false" is passed to wher=
-e
+>> However due to the confusing parameter list, "false" is passed to where
 >> it is supposed to be "true".
->=20
-> And this seems to invalidate all testing since false->true will do
-> additional expensive checks.
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> 
+> The subject of the patch could be a bit more precise, by passing true
+> you are doing further validation of the body of individual items in the
+> leaves. Alternatively you are sanity checking the keys and the
+> boundaries of item body. So how about:
+> 
+> "Perform item body validation during write"
 
-That's the case.
-
-However with the next patch, btrfs_check_leaf_full() is less expensive.
-Just 3~5 times expensive as csum_tree_block(), reduced from 20 times.
-
-My full fstests run is coming to the end and so far no regression.
-
-> I thought I'd fold the fix to the original
-> patch but in this case it'd be the wrong thing to do due to the visible=
-
-> effects of the change.
-
-If that's the case, I'd add new Fixes: tag, but that can only happen
-after write time patch get merged upstream.
+That's much better, I'd take that tile if I need to resend.
 
 Thanks,
 Qu
 
-
---oyJFM1UeXzpMWVTqyA55MHLJqTKsmlOiC--
-
---AnTIpueNENYrLdrn7vdofvnJxWg00SHNb
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlykv/8ACgkQwj2R86El
-/qjdXQf9FG474/XTbmGG8Lh3MyLps8WpbyWt15CnlQxdjLLeWp7t3iabJkQlD7/3
-OmXTf3Lw3h8NIG5qlLL9hcYN2O5+F9onUMu1FnF+z7RYpT7DW4rdOT1/xFeQazYW
-nL0GsoDTeB41qBEAOG7XCbHd58jov9qgBuQh2OIJHRT5aOYNy9QXBga+jkDjw2O+
-h+eOAGfGnvP71jLaAqOcdzzjZEtbZJYfeyx4oAouEZ05FlZD/XFUgiVKPssr2GdG
-39cXnxkEGSUGKiW3GGuSKXELtqa5JK9gAnOxsNn7fLsE84sLnrI2wHo6O2tLpAlM
-ajk0X44ODywB1hbYFgZz0ALHaQgf7g==
-=kfe/
------END PGP SIGNATURE-----
-
---AnTIpueNENYrLdrn7vdofvnJxWg00SHNb--
+> 
+> 
+> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+> 
+>> ---
+>>  fs/btrfs/tree-checker.c | 2 +-
+>>  1 file changed, 1 insertion(+), 1 deletion(-)
+>>
+>> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+>> index 4318e3e67443..204fe53c90aa 100644
+>> --- a/fs/btrfs/tree-checker.c
+>> +++ b/fs/btrfs/tree-checker.c
+>> @@ -999,7 +999,7 @@ int btrfs_check_leaf_relaxed(struct btrfs_fs_info *fs_info,
+>>  int btrfs_check_leaf_write(struct btrfs_fs_info *fs_info,
+>>  			   struct extent_buffer *leaf)
+>>  {
+>> -	return check_leaf(leaf, false, false);
+>> +	return check_leaf(leaf, true, false);
+>>  }
+>>  
+>>  int btrfs_check_node(struct btrfs_fs_info *fs_info, struct extent_buffer *node)
+>>

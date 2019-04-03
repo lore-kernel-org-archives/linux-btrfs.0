@@ -2,236 +2,181 @@ Return-Path: <SRS0=QfkU=SF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F17C4C4360F
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 08:04:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BDBFBC4360F
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 08:54:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BF42D206BA
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 08:04:27 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 79A64206B7
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 08:54:56 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="IVLk9fhb"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726724AbfDCIE0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Apr 2019 04:04:26 -0400
-Received: from mx2.suse.de ([195.135.220.15]:40922 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725936AbfDCIE0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 3 Apr 2019 04:04:26 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 7D445ADA3;
-        Wed,  3 Apr 2019 08:04:24 +0000 (UTC)
-Subject: Re: life time of backup roots
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAJCQCtTwrBS-ZCm=MWStBdfm4iRgMiCt9vnC-WZHYNr9m1dO_Q@mail.gmail.com>
- <186f3845-10b2-35c0-0ca3-3518b45acdd8@gmx.com>
-From:   Nikolay Borisov <nborisov@suse.com>
+        id S1726151AbfDCIyz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Apr 2019 04:54:55 -0400
+Received: from mout.gmx.net ([212.227.15.15]:41855 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725935AbfDCIyz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 3 Apr 2019 04:54:55 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1554281693;
+        bh=+hmF9BLZh9iC041/7thQeT4yfF8Sa09/PSZU5NY2fhE=;
+        h=X-UI-Sender-Class:To:From:Subject:Date;
+        b=IVLk9fhbIbc7SIgdESyKWCa6iQqJtX4IlP8URFqJemiyqwEpkb+7LjYNLTN4uhCUU
+         jvNlcWdGML2m32BBQUejh3et3JcmySRo154XktPi0ym8YrX6WtQpEza8sjhmL5GEXK
+         HzUq4apn1QpbEqnsDXCCaxhHKpSCxBD6MimSFyrw=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx002
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0MYwyp-1hPVtI3aWx-00VgFr for
+ <linux-btrfs@vger.kernel.org>; Wed, 03 Apr 2019 10:54:52 +0200
+To:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Subject: Interesting btrfs csum and tree-checker performance penalty analyse
 Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <701c3374-c603-39ac-f964-2252e03abdfc@suse.com>
-Date:   Wed, 3 Apr 2019 11:04:23 +0300
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <b1640ba7-b42b-8b60-6626-ab215c8e0b8e@gmx.com>
+Date:   Wed, 3 Apr 2019 16:54:47 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.6.1
+ Thunderbird/60.5.3
 MIME-Version: 1.0
-In-Reply-To: <186f3845-10b2-35c0-0ca3-3518b45acdd8@gmx.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="SXkgDCTb8TqRipkXn6erGBOmiKyhg3JaL"
+X-Provags-ID: V03:K1:sEbFr8GZeql13mmFK+Zxp9oIUS34HgJoR7bZVxTqgqSC93KZiRn
+ NQlI+LlYg12R43hARrzEIxqo1k6yUMze/oKNXW4yjJwoYVJOtfjoamApYjRPS9kBGt70+Kn
+ sigpRPJrDcZSLG1sdAWXqtfieyWu0NEQ2wsXIN71s8/bKKiZjZR34/aM6rJj4APdpI8k88Q
+ zx0BoZ5QNFbBobbvSlrWg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:I1wx6pezwSg=:n2QfnQ9OJq1EUrb0zcJd7R
+ vbEK7kfYRcSmLqLu9bHy4PHejHNM2gzVe3ku9VQ17Qz241dik61K9YuMkytVgcmfKsedyRM1r
+ WUyiOkRuAmPp9y5ba4enUpbmO2Q/220Gavjg4fJtZS/azrJpPKdjQjxoMQOatFSuEdPvbizI1
+ SdU4hzn3TfggNtLt5XU6UgejLw6BbfrbCnKQIOkMmsX8okVVFYXvbsZQ9E5HTh7syPR/+IDKX
+ I61rAUVA/GChpf4q6/XILJt6FLXWVMUuSAY7Q4RSmn1lZAnz66s+TJ6I22mxPzQRnil4wDD5M
+ bCEJY/cFQLJ1kLkb6tb/wx4YFFJA1UiE2L9+C4GcEMWh9Ale+Z9Wnr5EJJWwOPemgPLbkPsV5
+ 9IsXXlPIyZe0dSZeZ9kwrF2LPLcdDSfq3cM+GVNBA6SUaBEuG1bycjQ0yxKXfakRDtS9P/VLY
+ YNPfs7at2fwdwNw46lNkRBxp9Ld0tymYTXrd7D5NQaYhrdhc4S+yE/7Gh/lxcy8K6stjYnBPQ
+ CtzNAsOMYqiP6xDUAT9QESNjK4xQGaZHgDmIv+OzvHTgRZdtTEf2YqqSkWEOV9mjscIYYvW47
+ OtU8LEY6LQIb32fZIkBaZkKjU0DGLFoZxNT5EsIJTSn3EoK6Y1zO/pbfiW6ccQtvp3XoSNGhi
+ TkCO/OIRtJb7fd+o+iOHp7YaWJW5eo7ME9RgXA0UfEfwjoBLnhFpruoi8gOeN02VxWK6WWzMc
+ rBJ4JeRgcZPtrjDVKzodDjPfB2cLCaybmLVeICHPBs3TyqVBD0Bs2O7Drjjg9ByssqPttkXFC
+ +XV1ZWgQ3S5aTHpm4j6KjDR7oJVESK17l9MpkZPA4tj5BnK0cPxNafYirInwlgtjNF3a3FI1y
+ MHzfDlEGIQqSw8YKn6nzC/F3oKk4M5IASKSPEHdrDJHS5Hf9AJoVEhMkMebPku
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--SXkgDCTb8TqRipkXn6erGBOmiKyhg3JaL
+Content-Type: multipart/mixed; boundary="QYIQDc1DfW6SZ0gvEc99GVHKSnRMlfoJ4";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Message-ID: <b1640ba7-b42b-8b60-6626-ab215c8e0b8e@gmx.com>
+Subject: Interesting btrfs csum and tree-checker performance penalty analyse
+
+--QYIQDc1DfW6SZ0gvEc99GVHKSnRMlfoJ4
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+
+Hi,
+
+Recently Intel LKP performance test is reporting regression of btrfs
+performance.
+
+It points to tree-checker code, and since I'm poking around the
+bcc/ebpf, I spend some time to do an interesting look into the
+performance penalty about both btrfs csum and tree-checker.
+
+The code base is David's misc-next, which contains both write-time tree
+checker and enhanced code to handle fuzzed image.
+
+The tool can be find in my gist:
+https://gist.github.com/adam900710/b5542f2e52ed4687986cf41f64b85253
+
+To use the tool, one needs bcc-python binding and kernel config for
+eBPF, but at least Arch default kernel has all needed config, so any one
+can try it on Arch.
+
+The work load is:
+ mkfs.btrfs -n 4K $DEV
+ mount $DEV $MNT
+ fsstress -n 10000 -w -d $MNT
+ umount $MNT
+
+ ## start my script ##
+ mount $DEV $MNT
+ ls -R $MNT > /dev/null # To read all fs tree blocks
+ fsstress -n 1000 -w -d $MNT # Trigger enough write
+ umount $MNT
+ ## stop my script ##
 
 
-On 3.04.19 г. 10:05 ч., Qu Wenruo wrote:
-> 
-> 
-> On 2019/4/3 上午11:58, Chris Murphy wrote:
->> I'm sometimes seeing the same backup_tree_root used more than once.
->> Below you'll see backup 0 and backup 2 have the same address,
->> different generation. The concern is if this suggests backup 2 is
->> actually stale and not useful?
-> 
-> Currently, backup root of btrfs only has a life time of one generation.
-> 
-> That's to say, any backup older than current generation - 1 is already
-> stale.
+The result is very interesting:
+Basic result is:
+CSUM_TREE_BLOCK: nr=3D2311 total=3D10000612 avg=3D4327
+TREE_CHECKER_READ: nr=3D461 total=3D41911553 avg=3D90914
+TREE_CHECKER_WRITE: nr=3D1575 total=3D5783330 avg=3D3671
 
-Yeah, backup roots should really be perceived as a "best-effort" type of
-mechanism rather than something guaranteeing you can go back 4
-generations w.r.t fs state.
+So if just looking at the average number of csum calculate, it only
+brings 3~5=CE=BCs. And surprisingly, write time tree checker even slower =
+than
+checksum!
 
-> 
-> Filipe had tried to make btrfs to pin down extents up to 4 generations.
-> Thus btrfs could make all 4 backup roots valid, but that leaded to a lot
-> of ENOSPC. So he gave up that idea.
-> 
-> Thanks,
-> Qu
-> 
->>
->> We've previously seen that Btrfs with discard mount option can very
->> quickly cause the locations pointed to by backup roots to return no
->> data (metadata deallocated and trimmed). I wonder if this is similar
->> where Btrfs has no concept of delaying metadata deallocation for a
->> while so that the backup trees remain valid for a while (few minutes?)
->> Anyway if these backup roots can become stale, if they're ever needed
->> they're not going to be useful.
->>
->> superblock: bytenr=65536, device=/dev/mapper/sdc
->> ---------------------------------------------------------
->> csum_type        0 (crc32c)
->> csum_size        4
->> csum            0xe0c01b78 [match]
->> bytenr            65536
->> flags            0x1
->>             ( WRITTEN )
->> magic            _BHRfS_M [match]
->> fsid            ecd5e90e-6fb7-4b42-ab57-515a733c01f2
->> metadata_uuid        ecd5e90e-6fb7-4b42-ab57-515a733c01f2
->> label            third
->> generation        686
->> root            3355115520
->> sys_array_size        129
->> chunk_root_generation    685
->> root_level        1
->> chunk_root        4325376000
->> chunk_root_level    1
->> log_root        0
->> log_root_transid    0
->> log_root_level        0
->> total_bytes        1000207335424
->> bytes_used        439356653568
->> sectorsize        4096
->> nodesize        32768
->> leafsize (deprecated)    32768
->> stripesize        4096
->> root_dir        6
->> num_devices        2
->> compat_flags        0x0
->> compat_ro_flags        0x3
->>             ( FREE_SPACE_TREE |
->>               FREE_SPACE_TREE_VALID )
->> incompat_flags        0x171
->>             ( MIXED_BACKREF |
->>               COMPRESS_ZSTD |
->>               BIG_METADATA |
->>               EXTENDED_IREF |
->>               SKINNY_METADATA )
->> cache_generation    18446744073709551615
->> uuid_tree_generation    686
->> dev_item.uuid        de7a23cd-ec25-47d4-bbdb-fcf9c4dc705a
->> dev_item.fsid        ecd5e90e-6fb7-4b42-ab57-515a733c01f2 [match]
->> dev_item.type        0
->> dev_item.total_bytes    500103667712
->> dev_item.bytes_used    442415185920
->> dev_item.io_align    4096
->> dev_item.io_width    4096
->> dev_item.sector_size    4096
->> dev_item.devid        2
->> dev_item.dev_group    0
->> dev_item.seek_speed    0
->> dev_item.bandwidth    0
->> dev_item.generation    0
->> sys_chunk_array[2048]:
->>     item 0 key (FIRST_CHUNK_TREE CHUNK_ITEM 4325376000)
->>         length 33554432 owner 2 stripe_len 65536 type SYSTEM|RAID1
->>         io_align 65536 io_width 65536 sector_size 4096
->>         num_stripes 2 sub_stripes 1
->>             stripe 0 devid 2 offset 1083179008
->>             dev_uuid de7a23cd-ec25-47d4-bbdb-fcf9c4dc705a
->>             stripe 1 devid 1 offset 1104150528
->>             dev_uuid 15e28877-dbc7-446d-9991-618504a758ca
->> backup_roots[4]:
->>     backup 0:
->>         backup_tree_root:    3355115520    gen: 686    level: 1
->>         backup_chunk_root:    4325376000    gen: 685    level: 1
->>         backup_extent_root:    3358523392    gen: 686    level: 2
->>         backup_fs_root:        3550511104    gen: 497    level: 0
->>         backup_dev_root:    3358752768    gen: 685    level: 1
->>         backup_csum_root:    3259400192    gen: 500    level: 2
->>         backup_total_bytes:    1000207335424
->>         backup_bytes_used:    439356653568
->>         backup_num_devices:    2
->>
->>     backup 1:
->>         backup_tree_root:    3358752768    gen: 683    level: 1
->>         backup_chunk_root:    4325441536    gen: 677    level: 1
->>         backup_extent_root:    3359506432    gen: 683    level: 2
->>         backup_fs_root:        3550511104    gen: 497    level: 0
->>         backup_dev_root:    3358982144    gen: 677    level: 1
->>         backup_csum_root:    3259400192    gen: 500    level: 2
->>         backup_total_bytes:    1000207335424
->>         backup_bytes_used:    439356653568
->>         backup_num_devices:    2
->>
->>     backup 2:
->>         backup_tree_root:    3355115520    gen: 684    level: 1
->>         backup_chunk_root:    4325441536    gen: 677    level: 1
->>         backup_extent_root:    3358523392    gen: 684    level: 2
->>         backup_fs_root:        3550511104    gen: 497    level: 0
->>         backup_dev_root:    3358982144    gen: 677    level: 1
->>         backup_csum_root:    3259400192    gen: 500    level: 2
->>         backup_total_bytes:    1000207335424
->>         backup_bytes_used:    439356653568
->>         backup_num_devices:    2
->>
->>     backup 3:
->>         backup_tree_root:    3359834112    gen: 685    level: 1
->>         backup_chunk_root:    4325376000    gen: 685    level: 1
->>         backup_extent_root:    3361898496    gen: 685    level: 2
->>         backup_fs_root:        3550511104    gen: 497    level: 0
->>         backup_dev_root:    3358752768    gen: 685    level: 1
->>         backup_csum_root:    3259400192    gen: 500    level: 2
->>         backup_total_bytes:    1000207335424
->>         backup_bytes_used:    439356653568
->>         backup_num_devices:    2
->>
->>
->>
->>
-> 
+Also surprisingly, read time tree checker takes near 100=CE=BCs. nearly 2=
+0
+times slower than csum/write time tree checker.
+
+So we have a new direction to enhance tree-checker performance.
+BTW, bcc/ebpf is really awesome!
+
+Thanks,
+Qu
+
+
+--QYIQDc1DfW6SZ0gvEc99GVHKSnRMlfoJ4--
+
+--SXkgDCTb8TqRipkXn6erGBOmiKyhg3JaL
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlykdNcACgkQwj2R86El
+/qhLfAf+PkEftY4tGYSttmBvS3DI+h8OBQtd+ycN5RaOqiJDqsvSFidw09MWC2Bg
+yQXdEU+pDpFyX3eEtTOs/abuzaoZ2YHMkdMLtHYKmfcRfWFQ3FpiNGd0E5W18FR4
+sgmpptI0jJsyJxc7Pz0yJitg1agHM/m6P2990JIv/IUmstswStPNVNOQSBwdDzga
+hsf7LykkSAFYJlonXDJkz5vpU/PhILHm1PDq27qhp0l8thOJ/yRl5g+/dgNFgzH4
+emupga3TJtVi7aAiEQZjTiwL/ye8fy7ogtezLiAQKmY//wq/y3U57HZq9zx6lN6a
+2x0v7pJ4IwKCVqjBPD4ZNBnV02WSug==
+=qdbx
+-----END PGP SIGNATURE-----
+
+--SXkgDCTb8TqRipkXn6erGBOmiKyhg3JaL--

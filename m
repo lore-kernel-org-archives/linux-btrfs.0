@@ -2,173 +2,177 @@ Return-Path: <SRS0=QfkU=SF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 10BA0C4360F
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 15:42:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C9479C4360F
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 16:07:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id ADC1D206B8
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 15:42:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 81E72206B7
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 16:07:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726372AbfDCPmr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Apr 2019 11:42:47 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42028 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725990AbfDCPmr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 3 Apr 2019 11:42:47 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 41186B035
-        for <linux-btrfs@vger.kernel.org>; Wed,  3 Apr 2019 15:42:45 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 00201DA8D8; Wed,  3 Apr 2019 17:43:54 +0200 (CEST)
-Date:   Wed, 3 Apr 2019 17:43:54 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs: trace: Introduce trace events for sleepable
- tree lock
-Message-ID: <20190403154354.GR29086@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20190402094554.8353-1-wqu@suse.com>
+        id S1726548AbfDCQHi convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Apr 2019 12:07:38 -0400
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:39654 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1725959AbfDCQHh (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 3 Apr 2019 12:07:37 -0400
+Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
+        id 08FCF291CE6; Wed,  3 Apr 2019 12:07:36 -0400 (EDT)
+Date:   Wed, 3 Apr 2019 12:07:36 -0400
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To:     Jorge Bastos <jorge.mrbastos@gmail.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Spurious "ghost" "parent transid verify failed" messages on
+ 4.14.x, 4.20.14
+Message-ID: <20190403160736.GB15312@hungrycats.org>
+References: <20190312040024.GI9995@hungrycats.org>
+ <CAHzMYBS039kb-w0aUqyA=M_COyKKQmfE0tidUghgQwGOQDhreg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190402094554.8353-1-wqu@suse.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+Content-Transfer-Encoding: 8BIT
+In-Reply-To: <CAHzMYBS039kb-w0aUqyA=M_COyKKQmfE0tidUghgQwGOQDhreg@mail.gmail.com>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Apr 02, 2019 at 05:45:54PM +0800, Qu Wenruo wrote:
-> There are two tree lock events which can sleep:
-> - btrfs_tree_read_lock()
-> - btrfs_tree_lock()
-> 
-> Sometimes we may need to look into the concurrency picture of the fs.
-> For that case, we need the execution time of above two functions and the
-> owner of @eb.
-> 
-> Here we introduce a trace events for user space tools like bcc, to get
-> the execution time of above two functions, and get detailed owner info
-> where eBPF code can't.
-> 
-> All the overhead is hidden behind the trace events, so if events are not
-> enabled, there is no overhead.
-> 
-> Also, since this patch and later user space tool only cares about the
-> execution time and owner, other info like bytenr is ignored in this
-> events.
+Hmmm btrfs send is _also_ prone to use-after-free issues when running with
+balance (or anything that modifies readonly snapshots).  That and the
+lockdep warning on 5.0.x points to...well, maybe not the same bug as
+the snapshot delete case, but either a single bug in common code,
+or two similar bugs in two different places.
 
-The time is definetelly the interesting part here, I'm thinking if the
-block number could also provide some useful hints. The gathered trace
-data can be used to group by blocks to compare the times, or see the
-histogram of times.
-
-The block at minimum would be useful and I don't want to add more
-information there, like level or nritems. In case we do want that
-information, a heavier tracepoint version should be added with all the
-other data.
-
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
-> Changelog:
-> v2:
-> - Hide all ktime_get_ns() call behind trace events
->   So there will be no overhead if trace events are not enabled.
-> ---
->  fs/btrfs/locking.c           | 12 ++++++++++++
->  include/trace/events/btrfs.h | 36 ++++++++++++++++++++++++++++++++++++
->  2 files changed, 48 insertions(+)
+On Tue, Mar 12, 2019 at 05:34:36PM +0000, Jorge Bastos wrote:
+> I've got similar errors when doing a balance and send/receive at the
+> same time, in these cases send/receive would abort because of the
+> errors, but it all worked normally after waiting for the balance to
+> finish, no more errors, though now I try to remember to disable any
+> scheduled send/receive jobs before a balance.
 > 
-> diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
-> index 6df03ba36026..67b77f1d113e 100644
-> --- a/fs/btrfs/locking.c
-> +++ b/fs/btrfs/locking.c
-> @@ -158,6 +158,10 @@ void btrfs_clear_lock_blocking_write(struct extent_buffer *eb)
->   */
->  void btrfs_tree_read_lock(struct extent_buffer *eb)
->  {
-> +	u64 start_ns = 0;
-> +
-> +	if (trace_btrfs_tree_read_lock_enabled())
-> +		start_ns = ktime_get_ns();
->  again:
->  	BUG_ON(!atomic_read(&eb->blocking_writers) &&
->  	       current->pid == eb->lock_owner);
-> @@ -174,6 +178,7 @@ void btrfs_tree_read_lock(struct extent_buffer *eb)
->  		BUG_ON(eb->lock_nested);
->  		eb->lock_nested = true;
->  		read_unlock(&eb->lock);
-> +		trace_btrfs_tree_read_lock(eb, start_ns);
->  		return;
->  	}
->  	if (atomic_read(&eb->blocking_writers)) {
-> @@ -184,6 +189,7 @@ void btrfs_tree_read_lock(struct extent_buffer *eb)
->  	}
->  	btrfs_assert_tree_read_locks_get(eb);
->  	btrfs_assert_spinning_readers_get(eb);
-> +	trace_btrfs_tree_read_lock(eb, start_ns);
->  }
->  
->  /*
-> @@ -299,6 +305,11 @@ void btrfs_tree_read_unlock_blocking(struct extent_buffer *eb)
->   */
->  void btrfs_tree_lock(struct extent_buffer *eb)
->  {
-> +	u64 start_ns = 0;
-> +
-> +	if (trace_btrfs_tree_lock_enabled())
-> +		start_ns = ktime_get_ns();
-> +
->  	WARN_ON(eb->lock_owner == current->pid);
->  again:
->  	wait_event(eb->read_lock_wq, atomic_read(&eb->blocking_readers) == 0);
-> @@ -312,6 +323,7 @@ void btrfs_tree_lock(struct extent_buffer *eb)
->  	btrfs_assert_spinning_writers_get(eb);
->  	btrfs_assert_tree_write_locks_get(eb);
->  	eb->lock_owner = current->pid;
-> +	trace_btrfs_tree_lock(eb, start_ns);
->  }
->  
->  /*
-> diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-> index 8b12753fee78..406a71571254 100644
-> --- a/include/trace/events/btrfs.h
-> +++ b/include/trace/events/btrfs.h
-> @@ -2005,6 +2005,42 @@ TRACE_EVENT(btrfs_convert_extent_bit,
->  		  __print_flags(__entry->clear_bits, "|", EXTENT_FLAGS))
->  );
->  
-> +DECLARE_EVENT_CLASS(btrfs_sleep_tree_lock,
-> +	TP_PROTO(const struct extent_buffer *eb, u64 start_ns),
-> +
-> +	TP_ARGS(eb, start_ns),
-> +
-> +	TP_STRUCT__entry_btrfs(
-> +		__field(	u64,	start_ns	)
-> +		__field(	u64,	end_ns		)
-> +		__field(	u64,	owner		)
-> +		__field(	int,	is_log_tree	)
-> +	),
-> +
-> +	TP_fast_assign_btrfs(eb->fs_info,
-> +		__entry->start_ns	= start_ns;
-> +		__entry->end_ns		= ktime_get_ns();
-> +		__entry->owner		= btrfs_header_owner(eb);
-> +		__entry->is_log_tree	= (eb->log_index >= 0);
-> +	),
-> +
-> +	TP_printk_btrfs("start_ns=%llu end_ns=%llu owner=%llu is_log_tree=%d",
-> +		__entry->start_ns, __entry->end_ns, __entry->owner,
-> +		__entry->is_log_tree)
-
-I think the delta between start_ns and end_ns should be printed too, so
-it's obvious without further processing:
-
-	TP_printk_btrfs("start_ns=%llu end_ns=%llu diff=%llu owner=%llu is_log_tree=%d",
+> Jorge
+> 
+> On Tue, Mar 12, 2019 at 4:03 AM Zygo Blaxell
+> <ce3g8jdj@umail.furryterror.org> wrote:
+> >
+> > On 4.14.x and 4.20.14 kernels (probably all the ones in between too,
+> > but I haven't tested those), I get what I call "ghost parent transid
+> > verify failed" errors.  Here's an unedited recent example from dmesg:
+> >
+> >         [16180.649285] BTRFS error (device dm-3): parent transid verify failed on 1218181971968 wanted 9698 found 9744
+> >         [16864.457119] BTRFS error (device dm-3): parent transid verify failed on 981488238592 wanted 9758 found 9763
+> >         [16864.459153] BTRFS error (device dm-3): parent transid verify failed on 981488238592 wanted 9758 found 9763
+> >         [16865.409955] BTRFS error (device dm-3): parent transid verify failed on 981488238592 wanted 9758 found 9763
+> >         [16865.413091] BTRFS error (device dm-3): parent transid verify failed on 981488238592 wanted 9758 found 9763
+> >         [16865.583441] BTRFS error (device dm-3): parent transid verify failed on 981488238592 wanted 9758 found 9763
+> >         [16865.586602] BTRFS error (device dm-3): parent transid verify failed on 981488238592 wanted 9758 found 9763
+> >         [17364.870504] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
+> >         [17364.879696] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
+> >         [17364.901713] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
+> >         [17376.127722] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
+> >         [17376.129965] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
+> >         [17376.132919] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
+> >         [17376.250605] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
+> >         [17376.253633] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
+> >         [17376.577192] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
+> >         [17376.585174] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
+> >         [17380.720874] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
+> >         [17380.735643] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
+> >         [17383.282250] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
+> >         [17383.286598] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
+> >         [17433.417529] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
+> >         [17433.420685] BTRFS error (device dm-3): parent transid verify failed on 564765081600 wanted 9774 found 9779
+> >         [17881.816489] BTRFS error (device dm-3): parent transid verify failed on 785410277376 wanted 9786 found 9794
+> >         [17881.820072] BTRFS error (device dm-3): parent transid verify failed on 785410277376 wanted 9786 found 9794
+> >         [17881.824307] BTRFS error (device dm-3): parent transid verify failed on 785410277376 wanted 9786 found 9794
+> >         [19525.602623] BTRFS error (device dm-3): parent transid verify failed on 984570740736 wanted 9841 found 9846
+> >         [19525.605395] BTRFS error (device dm-3): parent transid verify failed on 984570740736 wanted 9841 found 9846
+> >         [19525.829326] BTRFS error (device dm-3): parent transid verify failed on 984570740736 wanted 9841 found 9846
+> >         [19525.834123] BTRFS error (device dm-3): parent transid verify failed on 984570740736 wanted 9841 found 9846
+> >         [19525.905553] BTRFS error (device dm-3): parent transid verify failed on 984570740736 wanted 9841 found 9846
+> >         [19525.909302] BTRFS error (device dm-3): parent transid verify failed on 984570740736 wanted 9841 found 9846
+> >         [19525.914374] BTRFS error (device dm-3): parent transid verify failed on 984570740736 wanted 9841 found 9846
+> >         [19525.917829] BTRFS error (device dm-3): parent transid verify failed on 984570740736 wanted 9841 found 9846
+> >         [19525.980067] BTRFS error (device dm-3): parent transid verify failed on 984570740736 wanted 9841 found 9846
+> >         [19525.983479] BTRFS error (device dm-3): parent transid verify failed on 984570740736 wanted 9841 found 9846
+> >
+> > They seem to occur while running these simultaneously:
+> >
+> >         * rsync receiving a lot of data
+> >
+> >         * snapshot delete to make space for more data
+> >
+> >         * bees deduping said data--possibly on the snapshot being
+> >         deleted.
+> >
+> > All three seem to be needed--these messages do not appear if one of the
+> > above is not running at the time.  I can get the messages on a test VM
+> > that is running nothing but the above three things on the test filesystem.
+> >
+> > Unlike the usual disaster cases when "parent transid verify failed"
+> > messages appear, these incidents seem to be entirely harmless.  They've
+> > been appearing for years (since at least the first v4.14 kernels)
+> > and...nothing else happens.  The filesystem doesn't go read-only.
+> > It doesn't become irreparably damaged.  Nothing locks up or crashes
+> > (at the same time).  The system just keeps running normally, often for
+> > months, emitting a few of these messages during longer snapshot deletes.
+> >
+> > This happens on several different host systems.  There is no sign of
+> > hardware failure.  It looks like a real bug, but I don't have a simpler
+> > reproducer, and sometimes weeks or months pass between incidents on a
+> > given machine.
+> >
+> > Scrubs are always clean.  There are never errors recorded in btrfs
+> > dev stat:
+> >
+> >         # btrfs dev stat /testfs/
+> >         [/dev/mapper/vgtest-tvdb].write_io_errs   0
+> >         [/dev/mapper/vgtest-tvdb].read_io_errs    0
+> >         [/dev/mapper/vgtest-tvdb].flush_io_errs   0
+> >         [/dev/mapper/vgtest-tvdb].corruption_errs 0
+> >         [/dev/mapper/vgtest-tvdb].generation_errs 0
+> >         [/dev/mapper/vgtest-tvdc].write_io_errs   0
+> >         [/dev/mapper/vgtest-tvdc].read_io_errs    0
+> >         [/dev/mapper/vgtest-tvdc].flush_io_errs   0
+> >         [/dev/mapper/vgtest-tvdc].corruption_errs 0
+> >         [/dev/mapper/vgtest-tvdc].generation_errs 0
+> >
+> > dump-tree on the offending block doesn't find a metadata page in the
+> > block right after the error occurs.  Sometimes it finds a newer block
+> > (higher transid) some hours later:
+> >
+> >         # btrfs ins dump-tree -b 984570740736 /dev/mapper/vgtest-tvdc
+> >         btrfs-progs v4.20.1
+> >         leaf 984570740736 items 151 free space 7525 generation 9882 owner EXTENT_TREE
+> >         leaf 984570740736 flags 0x1(WRITTEN) backref revision 1
+> >         [...etc]
+> >
+> > Mount options common to all systems exhibiting this behavior:
+> >
+> >         rw,noatime,compress,space_cache=v2
+> >
+> >         both ssd and nossd
+> >
+> >         any of: compress, compress-force, compress-force=zstd, compress=zstd
+> >
+> > My guess/theory:  someone is maybe holding a reference to metadata
+> > they don't hold a lock for, and the page is being updated or replaced
+> > underneath due to the snapshot delete, triggering the verification
+> > failure.  The error doesn't get persisted to disk because by the time the
+> > error is discovered, the page was already deleted by the snapshot delete.
+> > No errors are getting persisted to disk, so it's probably something
+> > that happens in a read operation rather than a write operation.  Every
+> > application reads and writes data, so if it were in plain read or write
+> > code someone else would have noticed by now.  it's probably not a common
+> > code path.  bees seems to be required to trigger the bug (or triggers it
+> > much more often) so it may be a problem somewhere in one of the ioctls
+> > bees uses.  bees does a lot of FILE_EXTENT_SAME, TREE_SEARCH_V2, and
+> > LOGICAL_INO ioctls.  It could be any of the three, but FILE_EXTENT_SAME
+> > does writes, and TREE_SEARCH_V2 isn't used by bees to look at items in
+> > EXTENT_TREE, which leaves LOGICAL_INO which starts from EXTENT_TREE and
+> > works outwards to subvol trees.  So my guess is it's a bug in LOGICAL_INO.

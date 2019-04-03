@@ -2,187 +2,175 @@ Return-Path: <SRS0=QfkU=SF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_NEOMUTT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 20D41C10F0B
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 01:56:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B1784C4360F
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 02:18:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id ED04720882
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 01:56:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 84E602084B
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 02:18:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726486AbfDCB4g (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Apr 2019 21:56:36 -0400
-Received: from mx2.suse.de ([195.135.220.15]:51748 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726157AbfDCB4g (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 2 Apr 2019 21:56:36 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A3BA4AB71;
-        Wed,  3 Apr 2019 01:56:34 +0000 (UTC)
-Date:   Tue, 2 Apr 2019 20:56:31 -0500
-From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
-To:     Dave Chinner <david@fromorbit.com>
-Cc:     linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
-Subject: Re: [PATCH 04/15] dax: Introduce IOMAP_F_COW for copy-on-write
-Message-ID: <20190403015631.eogm76qw5fwo235p@merlin>
-References: <20190326190301.32365-1-rgoldwyn@suse.de>
- <20190326190301.32365-5-rgoldwyn@suse.de>
- <20190401043851.GO26298@dastard>
- <20190401214102.bn4giybeqpbvdbb3@merlin>
- <20190401230653.GT23020@dastard>
+        id S1726565AbfDCCSZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Apr 2019 22:18:25 -0400
+Received: from ipmail03.adl6.internode.on.net ([150.101.137.143]:44101 "EHLO
+        ipmail03.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726130AbfDCCSZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 2 Apr 2019 22:18:25 -0400
+Received: from ppp59-167-129-252.static.internode.on.net (HELO dastard) ([59.167.129.252])
+  by ipmail03.adl6.internode.on.net with ESMTP; 03 Apr 2019 12:48:22 +1030
+Received: from dave by dastard with local (Exim 4.80)
+        (envelope-from <david@fromorbit.com>)
+        id 1hBVTn-00078i-6d; Wed, 03 Apr 2019 13:18:19 +1100
+Date:   Wed, 3 Apr 2019 13:18:19 +1100
+From:   Dave Chinner <david@fromorbit.com>
+To:     fdmanana@kernel.org
+Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        Filipe Manana <fdmanana@suse.com>
+Subject: Re: [PATCH v2 1/7] fsstress: allow fsync on directories too
+Message-ID: <20190403021819.GW23020@dastard>
+References: <20190401125018.10009-1-fdmanana@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190401230653.GT23020@dastard>
-User-Agent: NeoMutt/20180323
+In-Reply-To: <20190401125018.10009-1-fdmanana@kernel.org>
+User-Agent: Mutt/1.5.21 (2010-09-15)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 10:06 02/04, Dave Chinner wrote:
-> On Mon, Apr 01, 2019 at 04:41:02PM -0500, Goldwyn Rodrigues wrote:
-> > On 15:38 01/04, Dave Chinner wrote:
-> > > On Tue, Mar 26, 2019 at 02:02:50PM -0500, Goldwyn Rodrigues wrote:
-> > > > From: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> > > > 
-> > > > The IOMAP_F_COW is a flag to notify dax that it needs to copy
-> > > > the data from iomap->cow_addr to iomap->addr, if the start/end
-> > > > of I/O are not page aligned.
-> > > 
-> > > I see what you are trying to do here, but this is kinda gross.
-> > > 
-> > > > This also introduces dax_to_dax_copy() which performs a copy
-> > > > from one part of the device to another, to a maximum of one page.
-> > > > 
-> > > > Question: Using iomap.cow_addr == 0 means the CoW is to be copied
-> > > > (or memset) from a hole. Would this be better handled through a flag?
-> > > 
-> > > That's what all these checks in the iomap code do:
-> > > 
-> > 
-> > This is using iomap->flags not type.
+On Mon, Apr 01, 2019 at 01:50:18PM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
 > 
-> Yes, I know. The fact that you tell me this (when it was obvious)
-> indicates to me that you didn't understand what I was saying.
+> Currently the fsync function can only be performed against regular files.
+> Allow it to operate on directories too, to increase test coverage and
+> allow for chances of finding bugs in a filesystem's implementation of
+> fsync against directories.
 > 
-> i.e. the gross hack here is that this patch is trying to define a
-> new iomap type - both behaviourally and iomap content - via adding
-> a modifier flag rather than defining a new iomap->type. That's the
-> gross hack, and everything stems from that.
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
 > 
-> i.e. the "bloating" of the struct iomap is caused because the flag
-> modifier (IOMAP_F_COW) can't use parts of the iomap that are defined
-> for specific iomap types. e.g. IOMAP_INLINE type uses ->inline_data,
-> and so it can't be re-used by a iomap flag modifier such as
-> IOMAP_F_COW.
-> 
-> However, if we define a new type for this "need multiple mappings"
-> iomap rather than a flag, we don't need any new fields in the struct
-> iomap because we can use what already exists in the iomap.
-> 
-> > > 	if (iomap->type == IOMAP_HOLE || iomap->type == IOMAP_UNWRITTEN)
-> > > 
-> > > Oh, wait, you're trying to map two ranges in a single iomap and then
-> > > infer state from information that got chucked away.... IOWs, you're
-> > > doing it wrong - iomap algorithms are driven by how we manipulate
-> > > iomaps to do data operations efficiently, not how we copy data page
-> > > by page.
-> > > 
-> > > IOWs, what we really should have here is two iomaps - a source
-> > > and a destination iomap. The source is a read mapping of the
-> > > current address (where we are going to copy the data from), the
-> > > destination is the post-cow allocation mapping (where the data
-> > > goes).
-> > > 
-> > > Now you just copy the data from one map to the other iterating
-> > > source mappings until the necessary range of the destination has
-> > > been covered.  And you can check if the source map is IOMAP_HOLE or
-> > > IOMAP_UNWRITTEN and hence optimise the copy (i.e. zero the new
-> > > allocation) before copying in the new data.
-> > 
-> > Won't that be inefficient? With CoW we only need to write the first
-> > and last block.
-> 
-> You're assuming that partial data overwrites are the only case where
-> this dax-to-dax copy of a file range is required. That assumption is
-> false.
-> 
-> i.e. FALLOC_FL_UNSHARE_RANGE for DAX requires iterating over the
-> entire source range and copying all the contents to the newly
-> allocated destination range.  The partial block copying is just a
-> short version of this limited to a single block.
-> 
-> Sure, btrfs doesn't support FALLOC_FL_UNSHARE_RANGE, but if you're
-> going to be adding support for reflink to DAX, the infrastructure
-> needs to provide support for performing FALLOC_FL_UNSHARE_RANGE
-> to break extent sharing efficiently.
-> 
-> > Again, that is not required if the offset/end
-> > offset is block aligned. After that, it falls back to the
-> > regular write path of performing dax_copy_to_iter().
-> > We don't deal with IOMAP_UNWRITTEN in dax,
-> 
-> Yes we do. fallocate() can lay down unwritten extents, and we can
-> both read and write to them. See, for example, dax_iomap_actor()
-> called from dax_iomap_rw() via iomap_apply() - it does not call
-> dax_copy_to_iter() for reads if the range is IOMAP_HOLE or
-> IOMAP_UNWRITTEN.
-> 
-> > though other
-> > filesystems in the future may use CoW without dax.
-> 
-> That makes no sense. :/
-> 
-> > Besides, what you are suggesting will not fit well with the
-> > current iomap iterator code and would require another function
-> > altogether.
-> 
-> I'm not concerned about that - I would much prefer we do things
-> cleanly and properly rather than make expedient hacks for
-> questionable benefit that we'll have to completely rework or remove
-> the moment we implement DAX+reflink support in XFS.
-> 
-> > After Darrick's suggestion, we can even do away with cow_pos, so
-> > only the read address of cow_addr will exist.
-> 
-> As I mentioned earlier, even that is not necessary.
-> 
-> This is DAX - the iomap API and mapping functions can already return
-> pointers to inline data, and DAX can effectively be considered
-> inline data for the purposes of reading data.
-> 
-> As I said, the problem here is you are trying to use flags to define
-> a new type of iomap operation requires two mappings rather than one.
-> IMO, we should be defining an IOMAP_DAX_COW /type/ and then define
-> it to contain and behave as follows:
-> 
-> 	- new destination region for data to be copied into is the
-> 	  same setup as IOMAP_MAPPED
-> 	- existing shared data that may be needed for reading is
-> 	  mapped direct to device address by ->iomap_begin into
-> 	  iomap->inline_data
-> 	- if the iomap infrastructure needs to copy original source
-> 	  data into destination, it copies directly from the memory
-> 	  address in iomap->inline_data into the directly mapped DAX
-> 	  desitination via memcpy().
-> 
-> This covers both the partial write COW case you are concerned with
-> here, and the full-extent range copy case that
-> FALLOC_FL_UNSHARE_RANGE requires.
-> 
+> V2: Added helper functions to open and close files or directories.
 
-Ok, understood. However, we may have to differentiate between a CoW
-with FALLOC_FL_UNSHARE_RANGE because CoW will only (conditionally)
-copy the first and the last block wheras FALLOC_FL_UNSHARE_RANGE
-will copy the whole range. So, should it be another type?
+not exactly what I meant, more below....
+> 
+>  ltp/fsstress.c | 42 +++++++++++++++++++++++++++++++++++++++---
+>  1 file changed, 39 insertions(+), 3 deletions(-)
+> 
+> diff --git a/ltp/fsstress.c b/ltp/fsstress.c
+> index 2223fd7d..1169b840 100644
+> --- a/ltp/fsstress.c
+> +++ b/ltp/fsstress.c
+> @@ -303,6 +303,7 @@ int	attr_remove_path(pathname_t *, const char *, int);
+>  int	attr_set_path(pathname_t *, const char *, const char *, const int, int);
+>  void	check_cwd(void);
+>  void	cleanup_flist(void);
+> +void	close_file_or_dir(int, DIR *);
+>  int	creat_path(pathname_t *, mode_t);
+>  void	dcache_enter(int, int);
+>  void	dcache_init(void);
+> @@ -324,6 +325,7 @@ void	make_freq_table(void);
+>  int	mkdir_path(pathname_t *, mode_t);
+>  int	mknod_path(pathname_t *, mode_t, dev_t);
+>  void	namerandpad(int, char *, int);
+> +int	open_file_or_dir(pathname_t *, int, DIR **);
+>  int	open_path(pathname_t *, int);
+>  DIR	*opendir_path(pathname_t *);
+>  void	process_freq(char *);
+> @@ -852,6 +854,15 @@ cleanup_flist(void)
+>  	}
+>  }
+>  
+> +void
+> +close_file_or_dir(int fd, DIR *dir)
+> +{
+> +	if (dir)
+> +		closedir(dir);
+> +	else
+> +		close(fd);
+> +}
+> +
+>  int
+>  creat_path(pathname_t *name, mode_t mode)
+>  {
+> @@ -1385,6 +1396,30 @@ namerandpad(int id, char *buf, int i)
+>  }
+>  
+>  int
+> +open_file_or_dir(pathname_t *name, int flags, DIR **dir)
+> +{
+> +	int fd;
+> +
+> +	fd = open_path(name, flags);
+> +	if (fd < 0 && errno == EISDIR) {
+> +		*dir = opendir_path(name);
 
-Also, this would require iomap_begin to translate block->dax address
-which I suppose can be a function in the dax code.
+Why this function, and not just open(O_DIRECTORY)?
+None of the code that uses this function actually uses the DIR *
+that is returned, just the fd that is extracted from it. So why no
+just open() the directory directly and avoid having all the mess
+with dir streams that aren't needed?
 
 
+> +		if (*dir) {
+> +			fd = dirfd(*dir);
+> +			if (fd < 0) {
+> +				int e = errno;
+> +
+> +				closedir(*dir);
+> +				*dir = NULL;
+> +				errno = e;
+> +			}
+> +		}
+> +	} else {
+> +		*dir = NULL;
+> +	}
+> +	return fd;
+
+Excessive nesting. I think this should be as simple as:
+
+	fd = open_path(name, flags);
+	if (fd < 0 && errno != EISDIR) {
+		return -1;
+	return open_path(name, flags | O_DIRECTORY);
+
+And the close_file_or_dir() function is completely unnecessary.
+
+
+> +
+> +int
+>  open_path(pathname_t *name, int oflag)
+>  {
+>  	char		buf[NAME_MAX + 1];
+> @@ -3440,15 +3475,16 @@ fsync_f(int opno, long r)
+>  	pathname_t	f;
+>  	int		fd;
+>  	int		v;
+> +	DIR             *dir;
+>  
+>  	init_pathname(&f);
+> -	if (!get_fname(FT_REGFILE, r, &f, NULL, NULL, &v)) {
+> +	if (!get_fname(FT_REGFILE | FT_DIRm, r, &f, NULL, NULL, &v)) {
+>  		if (v)
+>  			printf("%d/%d: fsync - no filename\n", procid, opno);
+>  		free_pathname(&f);
+>  		return;
+>  	}
+> -	fd = open_path(&f, O_WRONLY);
+> +	fd = open_file_or_dir(&f, O_WRONLY, &dir);
+>  	e = fd < 0 ? errno : 0;
+>  	check_cwd();
+>  	if (fd < 0) {
+
+This whole hunk - from init_pathname to check_cwd - was what I was
+suggesting you factor out, not just the open_path() code.
+
+Cheers,
+
+Dave.
 -- 
-Goldwyn
+Dave Chinner
+david@fromorbit.com

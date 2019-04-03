@@ -2,176 +2,87 @@ Return-Path: <SRS0=QfkU=SF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E278CC4360F
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 11:59:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 49FDEC4360F
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 13:44:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B934F20830
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 11:59:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 12D1820651
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Apr 2019 13:44:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726155AbfDCL72 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Apr 2019 07:59:28 -0400
-Received: from mx2.suse.de ([195.135.220.15]:36394 "EHLO mx1.suse.de"
+        id S1726193AbfDCNow (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Apr 2019 09:44:52 -0400
+Received: from mx2.suse.de ([195.135.220.15]:35398 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725956AbfDCL72 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 3 Apr 2019 07:59:28 -0400
+        id S1725959AbfDCNov (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 3 Apr 2019 09:44:51 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A1D68ABD4
-        for <linux-btrfs@vger.kernel.org>; Wed,  3 Apr 2019 11:59:26 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs: tree-checker: Remove comprehensive root owner check
-Date:   Wed,  3 Apr 2019 19:59:19 +0800
-Message-Id: <20190403115919.17049-2-wqu@suse.com>
-X-Mailer: git-send-email 2.21.0
-In-Reply-To: <20190403115919.17049-1-wqu@suse.com>
-References: <20190403115919.17049-1-wqu@suse.com>
+        by mx1.suse.de (Postfix) with ESMTP id C7456ACB7
+        for <linux-btrfs@vger.kernel.org>; Wed,  3 Apr 2019 13:44:50 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 9151CDA8D8; Wed,  3 Apr 2019 15:46:00 +0200 (CEST)
+Date:   Wed, 3 Apr 2019 15:46:00 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v4 00/15] FITRIM improvement
+Message-ID: <20190403134600.GM29086@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20190327122418.24027-1-nborisov@suse.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190327122418.24027-1-nborisov@suse.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Commit 1ba98d086fe3 ("Btrfs: detect corruption when non-root leaf has
-zero item") introduced comprehensive root owner checker.
+On Wed, Mar 27, 2019 at 02:24:03PM +0200, Nikolay Borisov wrote:
+> Here is the (hopefully final) v4 of the fitrim patches. Main changes since v3:
+> 
+> * Fixed leaked btrfs_path in patch 3.
+> 
+> * Fixed multiple assignemnt on single line in patch 3.
+> 
+> * New patch 9 transposing btrfs_close_devices/btrfs_mapping_tree_free, in v3
+> this change was wrongly squashed in patch "Introduce new bits for device allocation tree".
+> 
+> * Introduced new patch "Implement set_extent_bits_nowait" and use it instead
+> of exposing __set_extent_bit in patch 9.
+> 
+> * Introduce new patch "Stop using call_rcu for device freeing" which simplifies
+> the resulting code freeing the mapping tree, this is prep for patch 9. This also 
+> fixes a bunch of places that weren't correctly freeing the extent mapping tree
+> upon device close.
+> 
+> * Fixed ASSERT condition in patch 2
+> 
+> Jeff Mahoney (1):
+>   btrfs: replace pending/pinned chunks lists with io tree
+> 
+> Nikolay Borisov (14):
+>   btrfs: Honour FITRIM range constraints during free space trim
+>   btrfs: combine device update operations during transaction commit
+>   btrfs: Handle pending/pinned chunks before blockgroup relocation
+>     during device shrink
+>   btrfs: Rename and export clear_btree_io_tree
+>   btrfs: Populate ->orig_block_len during read_one_chunk
+>   btrfs: Introduce new bits for device allocation tree
+>   btrfs: Implement set_extent_bits_nowait
+>   btrfs: Stop using call_rcu for device freeing
+>   btrfs: Transpose btrfs_close_devices/btrfs_mapping_tree_free in
+>     close_ctree
+>   btrfs: Remove 'trans' argument from find_free_dev_extent(_start)
+>   btrfs: Factor out in_range macro
+>   btrfs: Optimize unallocated chunks discard
+>   btrfs: Implement find_first_clear_extent_bit
+>   btrfs: Switch btrfs_trim_free_extents to find_first_clear_extent_bit
 
-However it's pretty expensive tree search to locate the owner root,
-especially when it get reused by mandatory read and write time
-tree-checker.
-
-This patch will remove that check, and completely rely on owner based
-empty leaf check, which is much faster and still works fine for most
-case.
-
-And since we skip the old root owner check, now write time tree check
-can be merged with btrfs_check_leaf_full().
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/disk-io.c      |  2 +-
- fs/btrfs/tree-checker.c | 51 +++--------------------------------------
- fs/btrfs/tree-checker.h |  2 --
- 3 files changed, 4 insertions(+), 51 deletions(-)
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index c3b89584dad6..fddcf7d7c30c 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -539,7 +539,7 @@ static int csum_dirty_buffer(struct btrfs_fs_info *fs_info, struct page *page)
- 	if (btrfs_header_level(eb))
- 		err = btrfs_check_node(fs_info, eb);
- 	else
--		err = btrfs_check_leaf_write(fs_info, eb);
-+		err = btrfs_check_leaf_full(fs_info, eb);
- 
- 	if (err < 0) {
- 		btrfs_err(fs_info,
-diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index 204fe53c90aa..e325d4df5c23 100644
---- a/fs/btrfs/tree-checker.c
-+++ b/fs/btrfs/tree-checker.c
-@@ -812,8 +812,7 @@ static int check_leaf_item(struct extent_buffer *leaf,
- 	return ret;
- }
- 
--static int check_leaf(struct extent_buffer *leaf, bool check_item_data,
--		      bool check_empty_leaf)
-+static int check_leaf(struct extent_buffer *leaf, bool check_item_data)
- {
- 	struct btrfs_fs_info *fs_info = leaf->fs_info;
- 	/* No valid key type is 0, so all key should be larger than this key */
-@@ -839,7 +838,6 @@ static int check_leaf(struct extent_buffer *leaf, bool check_item_data,
- 	 */
- 	if (nritems == 0 && !btrfs_header_flag(leaf, BTRFS_HEADER_FLAG_RELOC)) {
- 		u64 owner = btrfs_header_owner(leaf);
--		struct btrfs_root *check_root;
- 
- 		/* These trees must never be empty */
- 		if (owner == BTRFS_ROOT_TREE_OBJECTID ||
-@@ -853,38 +851,6 @@ static int check_leaf(struct extent_buffer *leaf, bool check_item_data,
- 				    owner);
- 			return -EUCLEAN;
- 		}
--
--		/*
--		 * Don't check empty leaves at write time for trees where we
--		 * can't use @owner to indicate the right owner. This happens
--		 * for reloc trees or for a new commit root.
--		 */
--		if (!check_empty_leaf)
--			return 0;
--
--		key.objectid = owner;
--		key.type = BTRFS_ROOT_ITEM_KEY;
--		key.offset = (u64)-1;
--
--		check_root = btrfs_get_fs_root(fs_info, &key, false);
--		/*
--		 * The only reason we also check NULL here is that during
--		 * open_ctree() some roots has not yet been set up.
--		 */
--		if (!IS_ERR_OR_NULL(check_root)) {
--			struct extent_buffer *eb;
--
--			eb = btrfs_root_node(check_root);
--			/* if leaf is the root, then it's fine */
--			if (leaf != eb) {
--				generic_err(leaf, 0,
--		"invalid nritems, have %u should not be 0 for non-root leaf",
--					nritems);
--				free_extent_buffer(eb);
--				return -EUCLEAN;
--			}
--			free_extent_buffer(eb);
--		}
- 		return 0;
- 	}
- 
-@@ -982,24 +948,13 @@ static int check_leaf(struct extent_buffer *leaf, bool check_item_data,
- int btrfs_check_leaf_full(struct btrfs_fs_info *fs_info,
- 			  struct extent_buffer *leaf)
- {
--	return check_leaf(leaf, true, true);
-+	return check_leaf(leaf, true);
- }
- 
- int btrfs_check_leaf_relaxed(struct btrfs_fs_info *fs_info,
- 			     struct extent_buffer *leaf)
- {
--	return check_leaf(leaf, false, true);
--}
--
--/*
-- * Write time specific leaf checker.
-- * Don't check if the empty leaf belongs to a tree root. Mostly for balance
-- * and new tree created in current transaction.
-- */
--int btrfs_check_leaf_write(struct btrfs_fs_info *fs_info,
--			   struct extent_buffer *leaf)
--{
--	return check_leaf(leaf, true, false);
-+	return check_leaf(leaf, false);
- }
- 
- int btrfs_check_node(struct btrfs_fs_info *fs_info, struct extent_buffer *node)
-diff --git a/fs/btrfs/tree-checker.h b/fs/btrfs/tree-checker.h
-index 281eb7136bc1..4df45e8a6659 100644
---- a/fs/btrfs/tree-checker.h
-+++ b/fs/btrfs/tree-checker.h
-@@ -23,8 +23,6 @@ int btrfs_check_leaf_full(struct btrfs_fs_info *fs_info,
-  */
- int btrfs_check_leaf_relaxed(struct btrfs_fs_info *fs_info,
- 			     struct extent_buffer *leaf);
--int btrfs_check_leaf_write(struct btrfs_fs_info *fs_info,
--			   struct extent_buffer *leaf);
- int btrfs_check_node(struct btrfs_fs_info *fs_info, struct extent_buffer *node);
- 
- int btrfs_check_chunk_valid(struct btrfs_fs_info *fs_info,
--- 
-2.21.0
-
+Patchset added to misc-next, thanks.

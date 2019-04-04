@@ -2,98 +2,254 @@ Return-Path: <SRS0=iUkD=SG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A9E52C4360F
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Apr 2019 06:46:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B620AC4360F
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Apr 2019 07:30:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8255A206DF
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Apr 2019 06:46:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 77B75206DF
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Apr 2019 07:30:10 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="JQv1wGP8"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727027AbfDDGql (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 4 Apr 2019 02:46:41 -0400
-Received: from mx2.suse.de ([195.135.220.15]:36536 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725904AbfDDGql (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 4 Apr 2019 02:46:41 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 3BA23AE7D
-        for <linux-btrfs@vger.kernel.org>; Thu,  4 Apr 2019 06:46:40 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
+        id S1726948AbfDDHaK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 4 Apr 2019 03:30:10 -0400
+Received: from aserp2130.oracle.com ([141.146.126.79]:35776 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726122AbfDDHaJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Apr 2019 03:30:09 -0400
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x347NwsM020923
+        for <linux-btrfs@vger.kernel.org>; Thu, 4 Apr 2019 07:30:08 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
+ date : message-id; s=corp-2018-07-02;
+ bh=9KkMaAVQdXkeSuSKmF9DSSEVz/qg5pXkIjlpA83umNY=;
+ b=JQv1wGP84DkUNJ6J68+ilVGpYjRchoHuOj8POscJJX7fIvdOj6+5XM9/WznDhyaf14QY
+ PyVc+QOw1z3MRUyD+3pXyIrAKV9n66fOvLiA2cFN2TB2GkshAT3Nqu38I1iiOQ/79zab
+ H4kj2IU6JAw/iO77+WSCdkZNFkrbK8FeufQcxBgIEuDUnirltkQcAQ4YCDMI5Cf10iwf
+ W8ikcIKw4xT4ar7aOd14n1ZDVcmRE2qtWsjIVXjRyRksbVeinXqTzMxRH+Qn+O0LWZHk
+ pGcRnV1PkEq5kYm5rYvksdhwcR7wxAbfzx3KGPeASOD1iSIG0JHRNAQtKw0jpYJVHJGl jA== 
+Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
+        by aserp2130.oracle.com with ESMTP id 2rhwyddgh6-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Thu, 04 Apr 2019 07:30:08 +0000
+Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
+        by userp3020.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x347Tbf4113340
+        for <linux-btrfs@vger.kernel.org>; Thu, 4 Apr 2019 07:30:07 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by userp3020.oracle.com with ESMTP id 2rm8f6gq9e-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Thu, 04 Apr 2019 07:30:07 +0000
+Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x347U53h020783
+        for <linux-btrfs@vger.kernel.org>; Thu, 4 Apr 2019 07:30:06 GMT
+Received: from tp.wifi.oracle.com (/192.188.170.106)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Thu, 04 Apr 2019 00:30:05 -0700
+From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v3.1 9/9] btrfs: qgroup: Don't scan leaf if we're modifying reloc tree
-Date:   Thu,  4 Apr 2019 14:45:37 +0800
-Message-Id: <20190404064537.4031-10-wqu@suse.com>
-X-Mailer: git-send-email 2.21.0
-In-Reply-To: <20190404064537.4031-1-wqu@suse.com>
-References: <20190404064537.4031-1-wqu@suse.com>
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Subject: [PATCH v5 RESEND] btrfs-progs: dump-tree: add noscan option
+Date:   Thu,  4 Apr 2019 15:29:57 +0800
+Message-Id: <20190404072957.2847-1-anand.jain@oracle.com>
+X-Mailer: git-send-email 2.17.1
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9216 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=1 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1810050000 definitions=main-1904040053
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9216 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=1 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1904040053
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Since reloc tree doesn't contribute to qgroup numbers, just skip them.
+From: Anand Jain <Anand.Jain@oracle.com>
 
-This should catch the final cause of unnecessary data refs for qgroup +
-metadata balance.
+The cli 'btrfs inspect dump-tree <dev>' will scan for the partner devices
+if any by default.
 
-The 4G data 16 snapshots test (*) should explain it pretty well:
+So as of now you can not inspect each mirrored device independently.
 
-             | delayed subtree | refactor delayed ref | this patch
----------------------------------------------------------------------
-relocated    |           22653 |                22673 |         22744
-qgroup dirty |          122792 |                48360 |            70
-time         |          24.494 |               11.606 |         3.944
+This patch adds noscan option, which when used won't scan the system for
+the partner devices, instead it just uses the devices provided in the
+argument.
 
-Finally, we're at the stage where qgroup + metadata balance cost no
-obvious overhead.
+For example:
+  btrfs inspect dump-tree --noscan <dev> [<dev>..]
 
-*: Test environment
-Test VM:
-- vRAM		8G
-- vCPU		8
-- block dev	vitrio-blk, 'unsafe' cache mode
-- host block	850evo
+This helps to debug degraded raid1 and raid10.
 
-Test workload
-- Copy 4G data from /usr/ to one subvolume
-- Create 16 snapshots of that subvolume, and modify 3 files in each
-  snapshot
-- Enable quota, rescan
-- Time "btrfs balance start -m"
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/extent-tree.c | 10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
+v4->v5: nit: use %m to print error string.
+	changelog update.
+v3->v4: change the patch title.
+	collapse scan_args() to its only parent cmd_inspect_dump_tree()
+	(it was bit confusing).
+	update the change log.
+	update usage.
+	update man page.
+v2->v3: make it scalable for more than two disks in noscan mode
+v1->v2: rename --degraded to --noscan
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 2c08b9646c61..2d71cc1acb2f 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -9235,11 +9235,13 @@ static noinline int walk_up_proc(struct btrfs_trans_handle *trans,
- 			else
- 				ret = btrfs_dec_ref(trans, root, eb, 0);
- 			BUG_ON(ret); /* -ENOMEM */
--			ret = btrfs_qgroup_trace_leaf_items(trans, eb);
--			if (ret) {
--				btrfs_err_rl(fs_info,
--					     "error %d accounting leaf items. Quota is out of sync, rescan required.",
-+			if (is_fstree(root->root_key.objectid)) {
-+				ret = btrfs_qgroup_trace_leaf_items(trans, eb);
-+				if (ret) {
-+					btrfs_err_rl(fs_info,
-+"error %d accounting leaf items. Quota is out of sync, rescan required.",
- 					     ret);
-+				}
- 			}
+ Documentation/btrfs-inspect-internal.asciidoc |  5 ++-
+ cmds-inspect-dump-tree.c                      | 53 +++++++++++++++++++++------
+ 2 files changed, 45 insertions(+), 13 deletions(-)
+
+diff --git a/Documentation/btrfs-inspect-internal.asciidoc b/Documentation/btrfs-inspect-internal.asciidoc
+index 381497d284b8..f9d7f1c58f00 100644
+--- a/Documentation/btrfs-inspect-internal.asciidoc
++++ b/Documentation/btrfs-inspect-internal.asciidoc
+@@ -61,7 +61,7 @@ specify which mirror to print, valid values are 0, 1 and 2 and the superblock
+ must be present on the device with a valid signature, can be used together with
+ '--force'
+ 
+-*dump-tree* [options] <device>::
++*dump-tree* [options] <device> [device...]::
+ (replaces the standalone tool *btrfs-debug-tree*)
+ +
+ Dump tree structures from a given device in textual form, expand keys to human
+@@ -95,6 +95,9 @@ intermixed in the output
+ --bfs::::
+ use breadth-first search to print trees. the nodes are printed before all
+ leaves
++--noscan::::
++do not scan the system for other partner device(s), only use the device(s)
++provided in the argument
+ -t <tree_id>::::
+ print only the tree with the specified ID, where the ID can be numerical or
+ common name in a flexible human readable form
+diff --git a/cmds-inspect-dump-tree.c b/cmds-inspect-dump-tree.c
+index ad5345b4f1db..37d9b29fa824 100644
+--- a/cmds-inspect-dump-tree.c
++++ b/cmds-inspect-dump-tree.c
+@@ -21,6 +21,7 @@
+ #include <unistd.h>
+ #include <uuid/uuid.h>
+ #include <getopt.h>
++#include <fcntl.h>
+ 
+ #include "kerncompat.h"
+ #include "radix-tree.h"
+@@ -185,7 +186,7 @@ static u64 treeid_from_string(const char *str, const char **end)
+ }
+ 
+ const char * const cmd_inspect_dump_tree_usage[] = {
+-	"btrfs inspect-internal dump-tree [options] device",
++	"btrfs inspect-internal dump-tree [options] <device> [<device> ..]",
+ 	"Dump tree structures from a given device",
+ 	"Dump tree structures from a given device in textual form, expand keys to human",
+ 	"readable equivalents where possible.",
+@@ -200,6 +201,7 @@ const char * const cmd_inspect_dump_tree_usage[] = {
+ 	"-b|--block <block_num> print info from the specified block only",
+ 	"-t|--tree <tree_id>    print only tree with the given id (string or number)",
+ 	"--follow               use with -b, to show all children tree blocks of <block_num>",
++	"--noscan               do not scan for the partner device(s)",
+ 	NULL
+ };
+ 
+@@ -214,7 +216,7 @@ int cmd_inspect_dump_tree(int argc, char **argv)
+ 	struct btrfs_disk_key disk_key;
+ 	struct btrfs_key found_key;
+ 	char uuidbuf[BTRFS_UUID_UNPARSED_SIZE];
+-	int ret;
++	int ret = 0;
+ 	int slot;
+ 	int extent_only = 0;
+ 	int device_only = 0;
+@@ -222,6 +224,7 @@ int cmd_inspect_dump_tree(int argc, char **argv)
+ 	int roots_only = 0;
+ 	int root_backups = 0;
+ 	int traverse = BTRFS_PRINT_TREE_DEFAULT;
++	int dev_optind;
+ 	unsigned open_ctree_flags;
+ 	u64 block_only = 0;
+ 	struct btrfs_root *tree_root_scan;
+@@ -239,8 +242,8 @@ int cmd_inspect_dump_tree(int argc, char **argv)
+ 	optind = 0;
+ 	while (1) {
+ 		int c;
+-		enum { GETOPT_VAL_FOLLOW = 256, GETOPT_VAL_DFS,
+-		       GETOPT_VAL_BFS };
++		enum { GETOPT_VAL_FOLLOW = 256, GETOPT_VAL_DFS, GETOPT_VAL_BFS,
++		       GETOPT_VAL_NOSCAN};
+ 		static const struct option long_options[] = {
+ 			{ "extents", no_argument, NULL, 'e'},
+ 			{ "device", no_argument, NULL, 'd'},
+@@ -252,6 +255,7 @@ int cmd_inspect_dump_tree(int argc, char **argv)
+ 			{ "follow", no_argument, NULL, GETOPT_VAL_FOLLOW },
+ 			{ "bfs", no_argument, NULL, GETOPT_VAL_BFS },
+ 			{ "dfs", no_argument, NULL, GETOPT_VAL_DFS },
++			{ "noscan", no_argument, NULL, GETOPT_VAL_NOSCAN },
+ 			{ NULL, 0, NULL, 0 }
+ 		};
+ 
+@@ -313,24 +317,49 @@ int cmd_inspect_dump_tree(int argc, char **argv)
+ 		case GETOPT_VAL_BFS:
+ 			traverse = BTRFS_PRINT_TREE_BFS;
+ 			break;
++		case GETOPT_VAL_NOSCAN:
++			open_ctree_flags |= OPEN_CTREE_NO_DEVICES;
++			break;
+ 		default:
+ 			usage(cmd_inspect_dump_tree_usage);
  		}
- 		/* make block locked assertion in btrfs_clean_tree_block happy */
+ 	}
+ 
+-	if (check_argc_exact(argc - optind, 1))
++	if (check_argc_min(argc - optind, 1))
+ 		usage(cmd_inspect_dump_tree_usage);
+ 
+-	ret = check_arg_type(argv[optind]);
+-	if (ret != BTRFS_ARG_BLKDEV && ret != BTRFS_ARG_REG) {
++	dev_optind = optind;
++	while (dev_optind < argc) {
++		int fd;
++		struct btrfs_fs_devices *fs_devices;
++		u64 num_devices;
++
++		ret = check_arg_type(argv[optind]);
++		if (ret != BTRFS_ARG_BLKDEV && ret != BTRFS_ARG_REG) {
++			if (ret < 0) {
++				errno = -ret;
++				error("invalid argument %s: %m", argv[dev_optind]);
++			} else {
++				error("not a block device or regular file: %s",
++				       argv[dev_optind]);
++			}
++		}
++		fd = open(argv[dev_optind], O_RDONLY);
++		if (fd < 0) {
++			error("cannot open %s: %m", argv[dev_optind]);
++			return -EINVAL;
++		}
++		ret = btrfs_scan_one_device(fd, argv[dev_optind], &fs_devices,
++					    &num_devices,
++					    BTRFS_SUPER_INFO_OFFSET,
++					    SBREAD_DEFAULT);
++		close(fd);
+ 		if (ret < 0) {
+ 			errno = -ret;
+-			error("invalid argument %s: %m", argv[optind]);
+-		} else {
+-			error("not a block device or regular file: %s",
+-			      argv[optind]);
++			error("device scan %s: %m", argv[dev_optind]);
++			return ret;
+ 		}
+-		goto out;
++		dev_optind++;
+ 	}
+ 
+ 	printf("%s\n", PACKAGE_STRING);
 -- 
-2.21.0
+1.8.3.1
 

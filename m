@@ -2,137 +2,122 @@ Return-Path: <SRS0=iUkD=SG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8B4C4C4360F
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Apr 2019 15:58:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 63A10C4360F
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Apr 2019 16:30:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5D1A02082E
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Apr 2019 15:58:46 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=avgustinov.eu header.i=@avgustinov.eu header.b="MJeYVnDc"
+	by mail.kernel.org (Postfix) with ESMTP id 327AA20882
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Apr 2019 16:30:01 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1554395401;
+	bh=nir2zhAB+ffTaYpNhMvtmTE8peUYGNM+40t823StYIE=;
+	h=From:To:Cc:Subject:Date:List-ID:From;
+	b=vn0NCwHDPTj4dxpArvvsffm8K9f5K6TK+ESX4EJqJ/ktPlm8ZmWmW493mnRVwA5Oi
+	 yJLaJ6xTbPGBPFQZdxidMa8OpcTNDyBhJTI9OSnjYHKLickluoPN+ykJThJyjPfquN
+	 f8ESPVrsoLgn1hVzv/cJEr+uyfN99d1dtwHkx7XA=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728027AbfDDP6p (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 4 Apr 2019 11:58:45 -0400
-Received: from cloud.avgustinov.eu ([62.73.84.164]:46820 "EHLO
-        cloud.avgustinov.eu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726888AbfDDP6o (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Apr 2019 11:58:44 -0400
-Received: from [172.18.148.109] (unknown [46.183.103.8])
+        id S1727347AbfDDQaA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 4 Apr 2019 12:30:00 -0400
+Received: from mail.kernel.org ([198.145.29.99]:37930 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726698AbfDDQaA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 4 Apr 2019 12:30:00 -0400
+Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by cloud.avgustinov.eu (Postfix) with ESMTPSA id 4DAB2484CE8A;
-        Thu,  4 Apr 2019 18:58:41 +0300 (EEST)
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=avgustinov.eu;
-        s=default; t=1554393522;
-        bh=yKAw+VssIiOcr1MykS8yESueI4sKqQgFN1SFjed24vw=;
-        h=Subject:To:References:From:Date:In-Reply-To:From;
-        b=MJeYVnDcQ1+/VjchhF83IqZTq1YzR9+xePNFtNwtSS3lUNsI4+uIyImgjI3xy3cvZ
-         X2YT0+BVG76RSdrh3O0y4GyN5rb6gGGbcGCZtGTFhgi+iQMcHqd3hJJ6mDGyzWIoko
-         ALZI/V68HvNnSK0EAlXePW3zg/0CormIAsClFmrrhLo5peZRL/fcPrg9s5+loeapSb
-         KW7K2Ayrl72Ihba4WTXlCLmmPVTL8Vlp/L63DBLWa9lnjOkwLcxLE2OEIDeS1zn7Hx
-         m5E8ipbl7WYDyNGXe5c0UXw7sowj9TPYzTwSRsuTnLtS+YyJJcew4MJ7bVn7iVPCP2
-         NhqLRB63gN7/g==
-Subject: Re: interest in post-mortem examination of a BTRFS system and
- improving the btrfs-code?
-To:     Jeff Mahoney <jeffm@suse.com>, linux-btrfs@vger.kernel.org
-References: <aa81a49a-d5ca-0f1c-fa75-9ed3656cff55@avgustinov.eu>
- <a6cb572c-c015-1e19-7489-c59fd1384509@avgustinov.eu>
- <95d0844a-27e3-b1c6-3ef5-ed2df3f0e367@suse.com>
-From:   "Nik." <btrfs@avgustinov.eu>
-Message-ID: <3a3537f5-b84c-ee01-b5da-d6bab5bdf221@avgustinov.eu>
-Date:   Thu, 4 Apr 2019 17:58:36 +0200
-User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:60.0) Gecko/20100101
- Thunderbird/60.6.1
-MIME-Version: 1.0
-In-Reply-To: <95d0844a-27e3-b1c6-3ef5-ed2df3f0e367@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+        by mail.kernel.org (Postfix) with ESMTPSA id 92701206BA;
+        Thu,  4 Apr 2019 16:29:58 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1554395399;
+        bh=nir2zhAB+ffTaYpNhMvtmTE8peUYGNM+40t823StYIE=;
+        h=From:To:Cc:Subject:Date:From;
+        b=FxVVUaoz1f3NdgNHp/19vsNTex1PKS3ArHd4GUTKfPQ3qg6FocCUViq+MXAjXbLmQ
+         9Vc/UdfxA8X6Waj8IKosHhCLkGp5R4jacDAKJ9qmEwa7hoSUdpR+/ZMp6qcUEY1ivX
+         XPQdQUP4LAr/Uj4J7eSDsnnp2nvxVeWsJNe5p6S8=
+From:   fdmanana@kernel.org
+To:     fstests@vger.kernel.org
+Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v3 1/7] fsstress: allow fsync on directories too
+Date:   Thu,  4 Apr 2019 17:29:52 +0100
+Message-Id: <20190404162952.19026-1-fdmanana@kernel.org>
+X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+From: Filipe Manana <fdmanana@suse.com>
 
-2019-04-04 04:48, Jeff Mahoney:
-> On 3/31/19 2:44 PM, btrfs@avgustinov.eu wrote:
->> Dear all,
->>
->>
->> I am a big fan of btrfs, and I am using it since 2013 - in the meantime
->> on at least four different computers. During this time, I suffered at
->> least four bad btrfs-failures leading to unmountable, unreadable and
->> unrecoverable file system. Since in three of the cases I did not manage
->> to recover even a single file, I am beginning to lose my confidence in
->> btrfs: for 35-years working with different computers no other file
->> system was so bad at recovering files!
->>
->> Considering the importance of btrfs and keeping in mind the number of
->> similar failures, described in countless forums on the net, I have got
->> an idea: to donate my last two damaged filesystems for investigation
->> purposes and thus hopefully contribute to the improvement of btrfs. One
->> condition: any recovered personal data (mostly pictures and audio files)
->> should remain undisclosed and be deleted.
->>
->> Should anybody be interested in this - feel free to contact me
->> personally (I am not reading the list regularly!), otherwise I am going
->> to reformat and reuse both systems in two weeks from today.
->>
->> Some more info:
->>
->>    - The smaller system is 83.6GB, I could either send you an image of
->> this system on an unneeded hard drive or put it into a dedicated
->> computer and give you root rights and ssh-access to it (the network lin
->> is 100Mb down, 50Mb up, so it should be acceptable).
->>
->>    - The used space on the other file system is about 3 TB (4 TB
->> capacity) and it is distributed among 5 drives, so I can only offer
->> remote access to this, but I will need time to organize it.
->>
->> If you need additional information - please ask, but keep in mind that I
->> have almost no "free time" and the answer could need a day or two.
-> 
-> My team is always interested in images of broken file systems.  This is
-> how --repair evolves.  Images with failed --repair operations are still
-> valuable.  That's the first step most users take and why wouldn't they?
->   If --repair is misbehaving, the end result shouldn't be "I hope you
-> have backups."
+Currently the fsync function can only be performed against regular files.
+Allow it to operate on directories too, to increase test coverage and
+allow for chances of finding bugs in a filesystem's implementation of
+fsync against directories.
 
-I absolutely agree!
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
 
-> It's not the size of the file system that matters so much.  The data on
-> it doesn't matter from a debugging perspective and, in any event, it's
-> not written to the image file anyway.  I do want a btrfs-image file from
-> the file system, and if btrfs-image fails to create a usable image,
-> that's also valuable to know and fix.
+V2: Added helper functions to open and close files or directories.
+V3: Simplified helper to open file or directory, removed no longer needed
+    helper for closing file or directory.
 
-The larger filesystem gives me the following output (kernel 
-5.0.6-050006-generic, btrfs-progs v4.20.2):
+ ltp/fsstress.c | 21 +++++++++++++++++++--
+ 1 file changed, 19 insertions(+), 2 deletions(-)
 
-# btrfs-image -c 9 /dev/md0 /mnt/b/md.img
-incorrect offsets 15003 146075
-ERROR: open ctree failed
-ERROR: create failed: Success
+diff --git a/ltp/fsstress.c b/ltp/fsstress.c
+index 41a0155e..72c574da 100644
+--- a/ltp/fsstress.c
++++ b/ltp/fsstress.c
+@@ -324,6 +324,7 @@ void	make_freq_table(void);
+ int	mkdir_path(pathname_t *, mode_t);
+ int	mknod_path(pathname_t *, mode_t, dev_t);
+ void	namerandpad(int, char *, int);
++int	open_file_or_dir(pathname_t *, int);
+ int	open_path(pathname_t *, int);
+ DIR	*opendir_path(pathname_t *);
+ void	process_freq(char *);
+@@ -1385,6 +1386,22 @@ namerandpad(int id, char *buf, int i)
+ }
+ 
+ int
++open_file_or_dir(pathname_t *name, int flags)
++{
++	int fd;
++
++	fd = open_path(name, flags);
++	if (fd != -1)
++		return fd;
++	if (fd == -1 && errno != EISDIR)
++		return fd;
++	/* Directories can not be opened in write mode. */
++	flags &= ~O_WRONLY;
++	flags |= O_RDONLY | O_DIRECTORY;
++	return open_path(name, flags);
++}
++
++int
+ open_path(pathname_t *name, int oflag)
+ {
+ 	char		buf[NAME_MAX + 1];
+@@ -3455,13 +3472,13 @@ fsync_f(int opno, long r)
+ 	int		v;
+ 
+ 	init_pathname(&f);
+-	if (!get_fname(FT_REGFILE, r, &f, NULL, NULL, &v)) {
++	if (!get_fname(FT_REGFILE | FT_DIRm, r, &f, NULL, NULL, &v)) {
+ 		if (v)
+ 			printf("%d/%d: fsync - no filename\n", procid, opno);
+ 		free_pathname(&f);
+ 		return;
+ 	}
+-	fd = open_path(&f, O_WRONLY);
++	fd = open_file_or_dir(&f, O_WRONLY);
+ 	e = fd < 0 ? errno : 0;
+ 	check_cwd();
+ 	if (fd < 0) {
+-- 
+2.11.0
 
-Last line is funny.
-The smaller system let me create an image, but the size of the file, 
-resulting from "btrfs-image -c 9 /dev/sdXY ...", is surprisingly small - 
-only 536576B. I guess this is conform with the man-page: "All data will 
-be zeroed, but metadata and the like is preserved. Mainly used for 
-debugging purposes."
-
-I shall send you a link to the image (in a private mail) as soon as 
-possible. Please, respect any private data in case you manage to recover 
-something.
-
-Kind regards,
-Nik.
---
-
-> Thanks,
-> 
-> -Jeff
-> 

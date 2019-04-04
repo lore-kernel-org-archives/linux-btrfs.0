@@ -2,136 +2,191 @@ Return-Path: <SRS0=iUkD=SG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 67C01C4360F
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Apr 2019 01:12:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 80747C4360F
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Apr 2019 02:38:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 34C7320820
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Apr 2019 01:12:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4DCBC2082E
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Apr 2019 02:38:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726310AbfDDBMd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Apr 2019 21:12:33 -0400
-Received: from mx2.suse.de ([195.135.220.15]:36718 "EHLO mx1.suse.de"
+        id S1726425AbfDDCiQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Apr 2019 22:38:16 -0400
+Received: from mx2.suse.de ([195.135.220.15]:56050 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726199AbfDDBMd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 3 Apr 2019 21:12:33 -0400
+        id S1726218AbfDDCiP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 3 Apr 2019 22:38:15 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A9CBDAF51
-        for <linux-btrfs@vger.kernel.org>; Thu,  4 Apr 2019 01:12:31 +0000 (UTC)
-Subject: Re: [PATCH v3 0/9] btrfs: Refactor delayed ref parameter list
-To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20190211051653.3167-1-wqu@suse.com>
- <20190403162935.GS29086@twin.jikos.cz>
-From:   Qu Wenruo <wqu@suse.de>
+        by mx1.suse.de (Postfix) with ESMTP id 274A3AD8A;
+        Thu,  4 Apr 2019 02:38:14 +0000 (UTC)
+Subject: Re: [PATCH 1/2] btrfs-progs: check: run delayed refs after writing
+ out dirty block groups
+To:     fdmanana@gmail.com
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <20190402180956.28893-1-jeffm@suse.com>
+ <CAL3q7H7O=ZqJdQUXYZjJRfZF04Or7kLgEVnRUGE97YRsV=3pMg@mail.gmail.com>
+From:   Jeff Mahoney <jeffm@suse.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=wqu@suse.de; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0F1F1IFdlbnJ1byA8d3F1QHN1c2UuZGU+iQFUBBMBCAA+AhsDBQsJCAcCBhUICQoLAgQW
- AgMBAh4BAheAFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlnVgp0FCQlmAm4ACgkQwj2R86El
- /qilmgf/cUq9kFQo577ku5gc6rFpVg68ublBwjYpwjw0b//xo+Wo1wm+RRbUGs+djSZAqw12
- D4F3r0mBTI7abUCNWAbFkYZSAIFVi0DMkjypIVS7PSaEt04rM9VBTToE+YqU6WENeJ57R2p2
- +hI0wZrBwxObdsdaOtxWtsp3bmhIbdqxSKrtXuRawy4KnQYcLuGzOce9okdlbAE0W3KHm1gQ
- oNAe6FX8nC9qo14m8LqEbThYH+qj4iCMlN8HIfbSx4F3e7nHZ+UAMW+E/lnMRkIB9Df+JyVd
- /NlXzIjZAggcWsqpx6D4wyAuexKWkiGQeUeArUNihAwXjmyqWPGmjVyIh+oC6LkBDQRZ1YGv
- AQgAqlPrYeBLMv3PAZ75YhQIwH6c4SNcB++hQ9TCT5gIQNw51+SQzkXIGgmzxMIS49cZcE4K
- Xk/kHw5hieQeQZa60BWVRNXwoRI4ib8okgDuMkD5Kz1WEyO149+BZ7HD4/yK0VFJGuvDJR8T
- 7RZwB69uVSLjkuNZZmCmDcDzS0c/SJOg5nkxt1iTtgUETb1wNKV6yR9XzRkrEW/qShChyrS9
- fNN8e9c0MQsC4fsyz9Ylx1TOY/IF/c6rqYoEEfwnpdlz0uOM1nA1vK+wdKtXluCa79MdfaeD
- /dt76Kp/o6CAKLLcjU1Iwnkq1HSrYfY3HZWpvV9g84gPwxwxX0uXquHxLwARAQABiQE8BBgB
- CAAmFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlnVga8CGwwFCQPCZwAACgkQwj2R86El/qgN
- 8Qf+M0vM2Idwm5txZZSs+/kSgcPxEwYmxUinnUJGyc0ZWYQXPl0cBetZon9El0naijGzNWvf
- HxIPB+ZFehk6Otgc78p1a3/xck/s1myFRLrmbbTJNoFiyL25ljcq0J8z5Zp4yuABL2RiLdaZ
- Pt/jfwjBHwGR+QKp6dD2qMrUWf9b7TFzYDMZXzZ2/eoIgtyjEelNBPrIgOFe24iKMjaGjd97
- fJuRcBMHdhUAxvXQF1oRtd83JvYJ5OtwTd8MgkEfl+fo7HwWkuHbzc70L4fFKv2BowqFdaHy
- mId1ijGPGr46tuZ5a4cw/zbaPYx6fJ4sK9tSv/6V1QPNUdqml6hm6pfs6A==
-Message-ID: <81c717e3-d75f-56cd-9224-8680e6428178@suse.de>
-Date:   Thu, 4 Apr 2019 09:12:27 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.3
+Autocrypt: addr=jeffm@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <068957f9-c4cf-688d-3db7-7f519c21e4ea@suse.com>
+Date:   Wed, 3 Apr 2019 22:38:09 -0400
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:60.0)
+ Gecko/20100101 Thunderbird/60.6.1
 MIME-Version: 1.0
-In-Reply-To: <20190403162935.GS29086@twin.jikos.cz>
+In-Reply-To: <CAL3q7H7O=ZqJdQUXYZjJRfZF04Or7kLgEVnRUGE97YRsV=3pMg@mail.gmail.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="sdUElpGlLM1pyPyGtMDO6m3SC38dTHjdw"
+ boundary="1uz7alJcqwNQDXcQlzAX6bPw9H0yDH2vm"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---sdUElpGlLM1pyPyGtMDO6m3SC38dTHjdw
-Content-Type: multipart/mixed; boundary="ppaqk7TZFaCZawzdL8J01ChoRsREdCx3J";
+--1uz7alJcqwNQDXcQlzAX6bPw9H0yDH2vm
+Content-Type: multipart/mixed; boundary="AW1HX8lK5aY2hctBxrIwvmNS0LZBhVayx";
  protected-headers="v1"
-From: Qu Wenruo <wqu@suse.de>
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <81c717e3-d75f-56cd-9224-8680e6428178@suse.de>
-Subject: Re: [PATCH v3 0/9] btrfs: Refactor delayed ref parameter list
-References: <20190211051653.3167-1-wqu@suse.com>
- <20190403162935.GS29086@twin.jikos.cz>
-In-Reply-To: <20190403162935.GS29086@twin.jikos.cz>
+From: Jeff Mahoney <jeffm@suse.com>
+To: fdmanana@gmail.com
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <068957f9-c4cf-688d-3db7-7f519c21e4ea@suse.com>
+Subject: Re: [PATCH 1/2] btrfs-progs: check: run delayed refs after writing
+ out dirty block groups
+References: <20190402180956.28893-1-jeffm@suse.com>
+ <CAL3q7H7O=ZqJdQUXYZjJRfZF04Or7kLgEVnRUGE97YRsV=3pMg@mail.gmail.com>
+In-Reply-To: <CAL3q7H7O=ZqJdQUXYZjJRfZF04Or7kLgEVnRUGE97YRsV=3pMg@mail.gmail.com>
 
---ppaqk7TZFaCZawzdL8J01ChoRsREdCx3J
+--AW1HX8lK5aY2hctBxrIwvmNS0LZBhVayx
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
-
-
-On 2019/4/4 =E4=B8=8A=E5=8D=8812:29, David Sterba wrote:
-> On Mon, Feb 11, 2019 at 01:16:44PM +0800, Qu Wenruo wrote:
->> Qu Wenruo (9):
->>   btrfs: delayed-ref: Introduce better documented delayed ref structur=
-es
->>   btrfs: extent-tree: Open-code process_func in __btrfs_mod_ref
->>   btrfs: delayed-ref: Use btrfs_ref to refactor
->>     btrfs_add_delayed_tree_ref()
->>   btrfs: delayed-ref: Use btrfs_ref to refactor
->>     btrfs_add_delayed_data_ref()
->>   btrfs: ref-verify: Use btrfs_ref to refactor btrfs_ref_tree_mod()
->>   btrfs: extent-tree: Use btrfs_ref to refactor add_pinned_bytes()
->>   btrfs: extent-tree: Use btrfs_ref to refactor btrfs_inc_extent_ref()=
-
->>   btrfs: extent-tree: Use btrfs_ref to refactor btrfs_free_extent()
+On 4/2/19 3:19 PM, Filipe Manana wrote:
+> On Tue, Apr 2, 2019 at 7:29 PM <jeffm@suse.com> wrote:
+>>
+>> From: Jeff Mahoney <jeffm@suse.com>
+>>
+>> When repairing the extent tree, it's possible for delayed extents to
+>> be created when running btrfs_write_dirty_block_groups.  We run
+>> delayed refs one last time in the kernel but that is missing in
+>> the userspace tools.
+>>
+>> That results in delayed refs getting dropped on the floor, the extent
+>> records not getting created, and in the next tranaction, when the
+>> extent tree is CoW'd again, we hit the BUG_ON when we can't find
+>> the extent record.
+>>
+>> We can fix this by running the delayed refs after writing out the
+>> dirty block groups.
+>>
+>> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+>> ---
+>>  transaction.c | 2 ++
+>>  1 file changed, 2 insertions(+)
+>>
+>> diff --git a/transaction.c b/transaction.c
+>> index e756db33..2f19e9c8 100644
+>> --- a/transaction.c
+>> +++ b/transaction.c
+>> @@ -194,6 +194,8 @@ commit_tree:
+>>         ret =3D btrfs_run_delayed_refs(trans, -1);
+>>         BUG_ON(ret);
+>>         btrfs_write_dirty_block_groups(trans);
+>> +       ret =3D btrfs_run_delayed_refs(trans, -1);
+>> +       BUG_ON(ret);
 >=20
-> If you would like to get the above merged (ie. the parameter cleanup) t=
-o
-> 5.2, please refresh and resend on top of current misc-next. I tested
-> this patchset back then and it did not pass fstests but I haven't
-> investigated. As this patchset does only a transformation, I'm
-> suspecting some typo so another look from you would be helpful. Thanks.=
+> And running delayed refs can dirty more block groups as well.
+> At this point shouldn't we loop running delayed refs until no more
+> dirty block groups exist? Just like in the kernel.
+
+Right.  This is another argument for code sharing between the kernel and
+userspace.
+
+-Jeff
+
+> thanks
+>=20
+>>         __commit_transaction(trans, root);
+>>         if (ret < 0)
+>>                 goto out;
+>> --
+>> 2.16.4
+>>
+>=20
+>=20
 
 
-I'll rebase and retest the patchset.
+--=20
+Jeff Mahoney
+SUSE Labs
 
-Thanks for the mentioning.
-Qu
 
+--AW1HX8lK5aY2hctBxrIwvmNS0LZBhVayx--
 
---ppaqk7TZFaCZawzdL8J01ChoRsREdCx3J--
-
---sdUElpGlLM1pyPyGtMDO6m3SC38dTHjdw
+--1uz7alJcqwNQDXcQlzAX6bPw9H0yDH2vm
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlylWfwACgkQwj2R86El
-/qjqSgf/XugKjztCE22lWJeC2o//sIhKfA52ZnZ4/lU1EIMLuxfSG9uIHB4x3pU9
-ZnG4tKk8d7a3fsa+rl9eO8wkD4BZPVFawl8vFp/3jzbxolzukGrY49KYlZEJ+zsf
-YuVP71PQrH8dcCJb0dNopO/0k2NlgD+/0imN0ih2vgnBf1EkVArI/WhgSclT5zlq
-+lPctDWQG3A+LdjDK9nb8+p/jiEwbgXJ3lnZzdjX/pt6ERxQVYUtZK1PEPWCg9f6
-/QnT3hiWDvFadGuxeqeo6vvqHzpPjqQrq9r9rCLPanm3RSgYeTLvlfZq8EPk2pJJ
-xTNezduQPRLAhKhNuz0SnuERABV1ug==
-=FUCX
+iQIzBAEBCAAdFiEE8wzgbmZ74SnKPwtDHntLYyF55bIFAlylbhIACgkQHntLYyF5
+5bK5yxAAkTh48dKB/w7mmVsdM17+d3NivzTt3g1+/8XYt/HTHPxwxMqMLdCbubQT
+EsMVWhdpsYR9xy5YYseAyv6YEl4mUX8cxvVfock1FntJAOI01HbCxSJJ2u3ZzqZV
+RFqBVnscjgwjn620PaMoyxZo4o+YK9RxE7f0tcuYriLUILWfEMyjQXhBczbF8bfN
+jpSHWeKFL7A8i8Q4iKY+wy6egLIhPWUfSQklU5aCOUZ5L8DxwUdVejoG4GcnxiBs
+78yFIC77hl1PrydhGgejm7Ay5cSfDm72FeqxLL3LTCOHA9o2U+eTwtgTqTuD+gGE
+9hiHVh/WzjEMpLI6GB+4r5ba6xm0fX8BlCB6J6tNSUSrwCCttzWejyEmWdxy1QzP
+7AO0d3OBxx7h+zQXoKM3Be84nfyWKSKHw7Eya0Smp25jHL1lA3wsJ52myXRW2mm+
+RPF5iBz67JYGV3QqfaG1EFg3RiplGHSvnnGFp8THHadhczCnlG0Coag/ed4cSa6F
+OwI8IIFskjoIHly7HobXmgdJvvTgD4RxesYXo+lhrwF50+bXnHjxVCZQB2X8cAcK
+qhnAaIuspB2OfHL8JHqs8aGdfWt8P7dz2nZ6KU6YN1CB962YEFFJqZGFpgUzgAaO
+kQgpj/vTBlXEixKDAzv5Ece6D2Kh+ayeOdopgjbkM9M2q1FStuA=
+=sl3f
 -----END PGP SIGNATURE-----
 
---sdUElpGlLM1pyPyGtMDO6m3SC38dTHjdw--
+--1uz7alJcqwNQDXcQlzAX6bPw9H0yDH2vm--

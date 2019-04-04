@@ -2,32 +2,30 @@ Return-Path: <SRS0=iUkD=SG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 80747C4360F
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Apr 2019 02:38:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AD4D9C4360F
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Apr 2019 02:48:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4DCBC2082E
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Apr 2019 02:38:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7663220820
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Apr 2019 02:48:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726425AbfDDCiQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Apr 2019 22:38:16 -0400
-Received: from mx2.suse.de ([195.135.220.15]:56050 "EHLO mx1.suse.de"
+        id S1726461AbfDDCsb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Apr 2019 22:48:31 -0400
+Received: from mx2.suse.de ([195.135.220.15]:58338 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726218AbfDDCiP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 3 Apr 2019 22:38:15 -0400
+        id S1726193AbfDDCsa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 3 Apr 2019 22:48:30 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 274A3AD8A;
-        Thu,  4 Apr 2019 02:38:14 +0000 (UTC)
-Subject: Re: [PATCH 1/2] btrfs-progs: check: run delayed refs after writing
- out dirty block groups
-To:     fdmanana@gmail.com
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <20190402180956.28893-1-jeffm@suse.com>
- <CAL3q7H7O=ZqJdQUXYZjJRfZF04Or7kLgEVnRUGE97YRsV=3pMg@mail.gmail.com>
+        by mx1.suse.de (Postfix) with ESMTP id 67F70ACA5;
+        Thu,  4 Apr 2019 02:48:29 +0000 (UTC)
+Subject: Re: interest in post-mortem examination of a BTRFS system and
+ improving the btrfs-code?
+To:     btrfs@avgustinov.eu, linux-btrfs@vger.kernel.org
+References: <aa81a49a-d5ca-0f1c-fa75-9ed3656cff55@avgustinov.eu>
+ <a6cb572c-c015-1e19-7489-c59fd1384509@avgustinov.eu>
 From:   Jeff Mahoney <jeffm@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jeffm@suse.com; prefer-encrypt=mutual; keydata=
@@ -72,121 +70,126 @@ Autocrypt: addr=jeffm@suse.com; prefer-encrypt=mutual; keydata=
  OK7ndnNgazs2ixfXHgpH9XNONWj47aT+ZUOhCmW8azWR41eBgLNybklqqF7PJyLgMrMQYZqB
  QXojKVO9EWQ6+BVB3U8tDr1tVJ28PXU0VHTl8DIztdbi5b938szC+12/Kt7WQ6ggvE3mpeTa
  u+87eivt/vK4zQ59juFTl+t1Mk2sl43isQ9xQMXhQSHmnkdOisTsIEUCx7Hgg/dN64c=
-Message-ID: <068957f9-c4cf-688d-3db7-7f519c21e4ea@suse.com>
-Date:   Wed, 3 Apr 2019 22:38:09 -0400
+Message-ID: <95d0844a-27e3-b1c6-3ef5-ed2df3f0e367@suse.com>
+Date:   Wed, 3 Apr 2019 22:48:25 -0400
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:60.0)
  Gecko/20100101 Thunderbird/60.6.1
 MIME-Version: 1.0
-In-Reply-To: <CAL3q7H7O=ZqJdQUXYZjJRfZF04Or7kLgEVnRUGE97YRsV=3pMg@mail.gmail.com>
+In-Reply-To: <a6cb572c-c015-1e19-7489-c59fd1384509@avgustinov.eu>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="1uz7alJcqwNQDXcQlzAX6bPw9H0yDH2vm"
+ boundary="kjWsjRJ4uAqSLrucXBG6leGkDWeN3IXjK"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---1uz7alJcqwNQDXcQlzAX6bPw9H0yDH2vm
-Content-Type: multipart/mixed; boundary="AW1HX8lK5aY2hctBxrIwvmNS0LZBhVayx";
+--kjWsjRJ4uAqSLrucXBG6leGkDWeN3IXjK
+Content-Type: multipart/mixed; boundary="vwtDxAtSe8pY6fzWgECcvMSYQWDqwkW40";
  protected-headers="v1"
 From: Jeff Mahoney <jeffm@suse.com>
-To: fdmanana@gmail.com
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <068957f9-c4cf-688d-3db7-7f519c21e4ea@suse.com>
-Subject: Re: [PATCH 1/2] btrfs-progs: check: run delayed refs after writing
- out dirty block groups
-References: <20190402180956.28893-1-jeffm@suse.com>
- <CAL3q7H7O=ZqJdQUXYZjJRfZF04Or7kLgEVnRUGE97YRsV=3pMg@mail.gmail.com>
-In-Reply-To: <CAL3q7H7O=ZqJdQUXYZjJRfZF04Or7kLgEVnRUGE97YRsV=3pMg@mail.gmail.com>
+To: btrfs@avgustinov.eu, linux-btrfs@vger.kernel.org
+Message-ID: <95d0844a-27e3-b1c6-3ef5-ed2df3f0e367@suse.com>
+Subject: Re: interest in post-mortem examination of a BTRFS system and
+ improving the btrfs-code?
+References: <aa81a49a-d5ca-0f1c-fa75-9ed3656cff55@avgustinov.eu>
+ <a6cb572c-c015-1e19-7489-c59fd1384509@avgustinov.eu>
+In-Reply-To: <a6cb572c-c015-1e19-7489-c59fd1384509@avgustinov.eu>
 
---AW1HX8lK5aY2hctBxrIwvmNS0LZBhVayx
+--vwtDxAtSe8pY6fzWgECcvMSYQWDqwkW40
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
-On 4/2/19 3:19 PM, Filipe Manana wrote:
-> On Tue, Apr 2, 2019 at 7:29 PM <jeffm@suse.com> wrote:
->>
->> From: Jeff Mahoney <jeffm@suse.com>
->>
->> When repairing the extent tree, it's possible for delayed extents to
->> be created when running btrfs_write_dirty_block_groups.  We run
->> delayed refs one last time in the kernel but that is missing in
->> the userspace tools.
->>
->> That results in delayed refs getting dropped on the floor, the extent
->> records not getting created, and in the next tranaction, when the
->> extent tree is CoW'd again, we hit the BUG_ON when we can't find
->> the extent record.
->>
->> We can fix this by running the delayed refs after writing out the
->> dirty block groups.
->>
->> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
->> ---
->>  transaction.c | 2 ++
->>  1 file changed, 2 insertions(+)
->>
->> diff --git a/transaction.c b/transaction.c
->> index e756db33..2f19e9c8 100644
->> --- a/transaction.c
->> +++ b/transaction.c
->> @@ -194,6 +194,8 @@ commit_tree:
->>         ret =3D btrfs_run_delayed_refs(trans, -1);
->>         BUG_ON(ret);
->>         btrfs_write_dirty_block_groups(trans);
->> +       ret =3D btrfs_run_delayed_refs(trans, -1);
->> +       BUG_ON(ret);
+On 3/31/19 2:44 PM, btrfs@avgustinov.eu wrote:
+> Dear all,
 >=20
-> And running delayed refs can dirty more block groups as well.
-> At this point shouldn't we loop running delayed refs until no more
-> dirty block groups exist? Just like in the kernel.
+>=20
+> I am a big fan of btrfs, and I am using it since 2013 - in the meantime=
 
-Right.  This is another argument for code sharing between the kernel and
-userspace.
+> on at least four different computers. During this time, I suffered at
+> least four bad btrfs-failures leading to unmountable, unreadable and
+> unrecoverable file system. Since in three of the cases I did not manage=
+
+> to recover even a single file, I am beginning to lose my confidence in
+> btrfs: for 35-years working with different computers no other file
+> system was so bad at recovering files!
+>=20
+> Considering the importance of btrfs and keeping in mind the number of
+> similar failures, described in countless forums on the net, I have got
+> an idea: to donate my last two damaged filesystems for investigation
+> purposes and thus hopefully contribute to the improvement of btrfs. One=
+
+> condition: any recovered personal data (mostly pictures and audio files=
+)
+> should remain undisclosed and be deleted.
+>=20
+> Should anybody be interested in this - feel free to contact me
+> personally (I am not reading the list regularly!), otherwise I am going=
+
+> to reformat and reuse both systems in two weeks from today.
+>=20
+> Some more info:
+>=20
+> =C2=A0 - The smaller system is 83.6GB, I could either send you an image=
+ of
+> this system on an unneeded hard drive or put it into a dedicated
+> computer and give you root rights and ssh-access to it (the network lin=
+
+> is 100Mb down, 50Mb up, so it should be acceptable).
+>=20
+> =C2=A0 - The used space on the other file system is about 3 TB (4 TB
+> capacity) and it is distributed among 5 drives, so I can only offer
+> remote access to this, but I will need time to organize it.
+>=20
+> If you need additional information - please ask, but keep in mind that =
+I
+> have almost no "free time" and the answer could need a day or two.
+
+My team is always interested in images of broken file systems.  This is
+how --repair evolves.  Images with failed --repair operations are still
+valuable.  That's the first step most users take and why wouldn't they?
+ If --repair is misbehaving, the end result shouldn't be "I hope you
+have backups."
+
+It's not the size of the file system that matters so much.  The data on
+it doesn't matter from a debugging perspective and, in any event, it's
+not written to the image file anyway.  I do want a btrfs-image file from
+the file system, and if btrfs-image fails to create a usable image,
+that's also valuable to know and fix.
+
+Thanks,
 
 -Jeff
-
-> thanks
->=20
->>         __commit_transaction(trans, root);
->>         if (ret < 0)
->>                 goto out;
->> --
->> 2.16.4
->>
->=20
->=20
-
 
 --=20
 Jeff Mahoney
 SUSE Labs
 
 
---AW1HX8lK5aY2hctBxrIwvmNS0LZBhVayx--
+--vwtDxAtSe8pY6fzWgECcvMSYQWDqwkW40--
 
---1uz7alJcqwNQDXcQlzAX6bPw9H0yDH2vm
+--kjWsjRJ4uAqSLrucXBG6leGkDWeN3IXjK
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQIzBAEBCAAdFiEE8wzgbmZ74SnKPwtDHntLYyF55bIFAlylbhIACgkQHntLYyF5
-5bK5yxAAkTh48dKB/w7mmVsdM17+d3NivzTt3g1+/8XYt/HTHPxwxMqMLdCbubQT
-EsMVWhdpsYR9xy5YYseAyv6YEl4mUX8cxvVfock1FntJAOI01HbCxSJJ2u3ZzqZV
-RFqBVnscjgwjn620PaMoyxZo4o+YK9RxE7f0tcuYriLUILWfEMyjQXhBczbF8bfN
-jpSHWeKFL7A8i8Q4iKY+wy6egLIhPWUfSQklU5aCOUZ5L8DxwUdVejoG4GcnxiBs
-78yFIC77hl1PrydhGgejm7Ay5cSfDm72FeqxLL3LTCOHA9o2U+eTwtgTqTuD+gGE
-9hiHVh/WzjEMpLI6GB+4r5ba6xm0fX8BlCB6J6tNSUSrwCCttzWejyEmWdxy1QzP
-7AO0d3OBxx7h+zQXoKM3Be84nfyWKSKHw7Eya0Smp25jHL1lA3wsJ52myXRW2mm+
-RPF5iBz67JYGV3QqfaG1EFg3RiplGHSvnnGFp8THHadhczCnlG0Coag/ed4cSa6F
-OwI8IIFskjoIHly7HobXmgdJvvTgD4RxesYXo+lhrwF50+bXnHjxVCZQB2X8cAcK
-qhnAaIuspB2OfHL8JHqs8aGdfWt8P7dz2nZ6KU6YN1CB962YEFFJqZGFpgUzgAaO
-kQgpj/vTBlXEixKDAzv5Ece6D2Kh+ayeOdopgjbkM9M2q1FStuA=
-=sl3f
+iQIzBAEBCAAdFiEE8wzgbmZ74SnKPwtDHntLYyF55bIFAlylcHoACgkQHntLYyF5
+5bKBOBAAlIGZIHcXguPM50FpzT/xGP3ONzKmMFUwKdWAqMTS/HeahKYAIUjehtpx
+jlj+T6cg4/FUK+A1FMarZ/Tj8yFhMHclERCaSgvMm8uQ6+fHUzWHgGYkmdnhwgG1
+gNy5ZwNzHVJ/WSNP56sqJV75ltyHjEvlNUju8EpaTsyGDPtCSQa9rMm7kuM39MU/
+hEJ8TaQXsYebLifzahMkD/wtfBB5QEfOWGoy0tzMMewPWyJDKDmCFUz8+/izk62x
+sMSZmeq6eiyOuysYFOMW9y22UKMvOu3ATl7m4YJe32YWnMW4dduEsAIM54xGU534
+oBbTT2TmJBhmqi4xoSwNsuOlhGIboEmi29pvytucJGZ48GELt4PcgOSsqcF3yozr
+pr+/eGnj8OwVbV/FK1iZMVlXDfmRVICbgAS0A4Pm392yZMAOeedNKDQxM3Di96z+
+tpWEvPUVePZ+m6bQBG2fvFcRJwclvaDE0iGq4HVL2sXJFh4PAa27HslnhyZWS7QE
+TIKgMgdB2JuVQGaK/TR74w6e3eyl9+aUHZlmJ+sPdqNwPhRHGdvP0qjLcA9AcnWq
+wOBU92h2ura4R2D+CEMBCBmIoNtG0hjtc2m1zeYqrrfckty9DtTuToexrXJMH/5A
+1RHoTVS3eOU9nxTEEgeDZyNMnaUDlR+LxoxNunQIOMgh6wqohys=
+=9zsw
 -----END PGP SIGNATURE-----
 
---1uz7alJcqwNQDXcQlzAX6bPw9H0yDH2vm--
+--kjWsjRJ4uAqSLrucXBG6leGkDWeN3IXjK--

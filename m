@@ -2,283 +2,154 @@ Return-Path: <SRS0=iUkD=SG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
+	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 58854C4360F
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Apr 2019 16:31:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B6AD6C4360F
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Apr 2019 17:31:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2378F20882
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Apr 2019 16:31:16 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1554395476;
-	bh=AGA07ANO0FIkcVyU8JUBPzKluABHYo70Xsvl7FjzsEE=;
-	h=From:To:Cc:Subject:Date:List-ID:From;
-	b=PK+0I35xFr6lMIMcvLCDUvFj0l5CUnOeKpiE1TzJPLsZmculJ53fmnKFMSty2dUvM
-	 4F5mVVdns0/mmkeL+m4AkLhjN5LycgvuTACxI9szC8yydfeFwWtINgCQItwGdnsJSI
-	 DBp79uihCe1A6zKIZ9cojzXunlhM+t0Pp1q1oEOs=
+	by mail.kernel.org (Postfix) with ESMTP id 6CAF02075E
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Apr 2019 17:31:38 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="zyk69UwT"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729104AbfDDQbP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 4 Apr 2019 12:31:15 -0400
-Received: from mail.kernel.org ([198.145.29.99]:38264 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727039AbfDDQbP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 4 Apr 2019 12:31:15 -0400
-Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 24AF7206BA;
-        Thu,  4 Apr 2019 16:31:12 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1554395474;
-        bh=AGA07ANO0FIkcVyU8JUBPzKluABHYo70Xsvl7FjzsEE=;
-        h=From:To:Cc:Subject:Date:From;
-        b=zq5QXuNLgDbgi5cNmZtbR7qSDaBnQwSA2KNE6VPxhf9SBap0BIZJGRUppnje+Lu4u
-         4EjR4f1nJtFG/Y5u47+vkbiEfUDqIN6l4JKHFk2B34puecbNqCitQ20WI8CLBCVZhF
-         vJIZ5S5hwokFWCCZY2K6wY3ivsdwAzcEPUtjRE6k=
-From:   fdmanana@kernel.org
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v3 7/7] fssum: add support for checking xattrs
-Date:   Thu,  4 Apr 2019 17:31:09 +0100
-Message-Id: <20190404163109.19339-1-fdmanana@kernel.org>
-X-Mailer: git-send-email 2.11.0
+        id S1728682AbfDDRbg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 4 Apr 2019 13:31:36 -0400
+Received: from mail-lj1-f175.google.com ([209.85.208.175]:46932 "EHLO
+        mail-lj1-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727562AbfDDRbg (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Apr 2019 13:31:36 -0400
+Received: by mail-lj1-f175.google.com with SMTP id h21so2796854ljk.13
+        for <linux-btrfs@vger.kernel.org>; Thu, 04 Apr 2019 10:31:34 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=SO1POOFymPhH6dVF4CtUPhHXRC+72x/FdWX62mNdNDI=;
+        b=zyk69UwTcKQjAZ3I/LyQK00KAjZuoubZWz+0pMBuoY1OyvoWDIM5QZ4z5ACYxpLYA5
+         bqM1hjbOs/fTWDCZlvJ4y4ZpFWY4K2w/rGWOh6ijnkIJd3Oo5+KNGGEx6NeGzBprWJKK
+         j0vO7N5mSzs1IEM8ww/g9S647KL1jy1ocsQGU5zOdJl5IyTNDSxgIj2/EYtPiU/B1DPr
+         DuHHLUf4Zkk5bGD5AeZm2cDlcQmanmTV7IbjI+Poysfj4g5UO5TBfH9pHoKHWqrZnJGL
+         4k/NXoymBISh3Q/O+FxFbisbmn9zlyg5ZqTjVFOPRuUHjTGw8lOjnmpX0hdhSw1U8YgD
+         zzBg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=SO1POOFymPhH6dVF4CtUPhHXRC+72x/FdWX62mNdNDI=;
+        b=GSihNh7SNKWPQpN1YhnHkXNpGZWxMV/YZkvCZ33J3u1wtFPM+Q05GIdgdx8K3YeUa2
+         9c5nARZcdsmq6NXUcGpyeTTu07J5CvyULPzBbGf0p9mtu/pHQhbNJetapAP7bWwA+LsT
+         QDHeylIUHLgtd/cYx8mXR/y7O9/NcIC7ma6DUNN3Spsad9t/WOIjP1fDn8gA8KaCLnsj
+         ImQwRPRXyRD1v/oJL1EopjPlokYH7e4UTAZcHUxIH0XcG7cIlpD5LcvbAMURgh5Zs3ah
+         278A+kJNvo8wnDp616O5EgtoT+J8xCtrTfzZDNaa8BzMlCBpKB+haLF2ElGb8G16tXar
+         Xl4Q==
+X-Gm-Message-State: APjAAAWkHkxBOkan8TbP2zUbvHbCcr3n9BhgFgnPBNG2RAiGL8Ul1rWD
+        r2sHOTWKcS/Uq106cPZVsnJXoXsqTcf/HgVKJG3KZ4cAi4o=
+X-Google-Smtp-Source: APXvYqym0/JldN5Ss9kQnp3sO6lNBcV7R62s6yHEw6clR3xzV9g7+rsIKIXbUdsWf/4acqNNcohErE9105thhcvyYt4=
+X-Received: by 2002:a2e:8507:: with SMTP id j7mr4353533lji.85.1554399094049;
+ Thu, 04 Apr 2019 10:31:34 -0700 (PDT)
+MIME-Version: 1.0
+References: <aa81a49a-d5ca-0f1c-fa75-9ed3656cff55@avgustinov.eu>
+ <a6cb572c-c015-1e19-7489-c59fd1384509@avgustinov.eu> <95d0844a-27e3-b1c6-3ef5-ed2df3f0e367@suse.com>
+ <3a3537f5-b84c-ee01-b5da-d6bab5bdf221@avgustinov.eu>
+In-Reply-To: <3a3537f5-b84c-ee01-b5da-d6bab5bdf221@avgustinov.eu>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Thu, 4 Apr 2019 11:31:22 -0600
+Message-ID: <CAJCQCtRp+53U_RG+n6oTpBrRRhSSR36OLBc++Q9dQDbHFovurw@mail.gmail.com>
+Subject: Re: interest in post-mortem examination of a BTRFS system and
+ improving the btrfs-code?
+To:     "Nik." <btrfs@avgustinov.eu>
+Cc:     Jeff Mahoney <jeffm@suse.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+On Thu, Apr 4, 2019 at 9:58 AM Nik. <btrfs@avgustinov.eu> wrote:
+>
+>
+> 2019-04-04 04:48, Jeff Mahoney:
+> > On 3/31/19 2:44 PM, btrfs@avgustinov.eu wrote:
+> >> Dear all,
+> >>
+> >>
+> >> I am a big fan of btrfs, and I am using it since 2013 - in the meantime
+> >> on at least four different computers. During this time, I suffered at
+> >> least four bad btrfs-failures leading to unmountable, unreadable and
+> >> unrecoverable file system. Since in three of the cases I did not manage
+> >> to recover even a single file, I am beginning to lose my confidence in
+> >> btrfs: for 35-years working with different computers no other file
+> >> system was so bad at recovering files!
+> >>
+> >> Considering the importance of btrfs and keeping in mind the number of
+> >> similar failures, described in countless forums on the net, I have got
+> >> an idea: to donate my last two damaged filesystems for investigation
+> >> purposes and thus hopefully contribute to the improvement of btrfs. One
+> >> condition: any recovered personal data (mostly pictures and audio files)
+> >> should remain undisclosed and be deleted.
+> >>
+> >> Should anybody be interested in this - feel free to contact me
+> >> personally (I am not reading the list regularly!), otherwise I am going
+> >> to reformat and reuse both systems in two weeks from today.
+> >>
+> >> Some more info:
+> >>
+> >>    - The smaller system is 83.6GB, I could either send you an image of
+> >> this system on an unneeded hard drive or put it into a dedicated
+> >> computer and give you root rights and ssh-access to it (the network lin
+> >> is 100Mb down, 50Mb up, so it should be acceptable).
+> >>
+> >>    - The used space on the other file system is about 3 TB (4 TB
+> >> capacity) and it is distributed among 5 drives, so I can only offer
+> >> remote access to this, but I will need time to organize it.
+> >>
+> >> If you need additional information - please ask, but keep in mind that I
+> >> have almost no "free time" and the answer could need a day or two.
+> >
+> > My team is always interested in images of broken file systems.  This is
+> > how --repair evolves.  Images with failed --repair operations are still
+> > valuable.  That's the first step most users take and why wouldn't they?
+> >   If --repair is misbehaving, the end result shouldn't be "I hope you
+> > have backups."
+>
+> I absolutely agree!
+>
+> > It's not the size of the file system that matters so much.  The data on
+> > it doesn't matter from a debugging perspective and, in any event, it's
+> > not written to the image file anyway.  I do want a btrfs-image file from
+> > the file system, and if btrfs-image fails to create a usable image,
+> > that's also valuable to know and fix.
+>
+> The larger filesystem gives me the following output (kernel
+> 5.0.6-050006-generic, btrfs-progs v4.20.2):
+>
+> # btrfs-image -c 9 /dev/md0 /mnt/b/md.img
+> incorrect offsets 15003 146075
+> ERROR: open ctree failed
+> ERROR: create failed: Success
+>
+> Last line is funny.
 
-Currently fssum, mostly used for btrfs test cases that test the btrfs send
-feature, ignores completely the existence of xattrs. This change teaches
-fssum to find xattrs and make them contribute to the checksum of a
-filesystem, so that we can catch filesystem bugs regarding missing, corrupt
-or not supposed to exist xattrs (i.e. that an incremental btrfs send does
-not forget to create, update or remove xattrs).
+I've complained about that nonsense for a while and yet it remains. A
+successful failure is an ERROR. I still don't know what it means but I
+suspect it's an incomplete image.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
 
-V2: No changes from v1.
-V3: No changes from v2 and v1.
+> The smaller system let me create an image, but the size of the file,
+> resulting from "btrfs-image -c 9 /dev/sdXY ...", is surprisingly small -
+> only 536576B. I guess this is conform with the man-page: "All data will
+> be zeroed, but metadata and the like is preserved. Mainly used for
+> debugging purposes."
+>
+> I shall send you a link to the image (in a private mail) as soon as
+> possible. Please, respect any private data in case you manage to recover
+> something.
 
- src/fssum.c | 143 ++++++++++++++++++++++++++++++++++++++++++++++++++++++------
- 1 file changed, 129 insertions(+), 14 deletions(-)
+You should use -ss option for this reason.
 
-diff --git a/src/fssum.c b/src/fssum.c
-index f1da72fb..6ba0a95c 100644
---- a/src/fssum.c
-+++ b/src/fssum.c
-@@ -20,6 +20,7 @@
- #include <sys/types.h>
- #include <sys/stat.h>
- #include <sys/sysmacros.h>
-+#include <sys/xattr.h>
- #ifdef __SOLARIS__
- #include <sys/mkdev.h>
- #endif
-@@ -40,7 +41,6 @@
- #endif
- 
- /* TODO: add hardlink recognition */
--/* TODO: add xattr/acl */
- 
- struct excludes {
- 	char *path;
-@@ -71,15 +71,16 @@ enum _flags {
- 	FLAG_MTIME,
- 	FLAG_CTIME,
- 	FLAG_DATA,
-+	FLAG_XATTRS,
- 	FLAG_OPEN_ERROR,
- 	FLAG_STRUCTURE,
- 	NUM_FLAGS
- };
- 
--const char flchar[] = "ugoamcdes";
-+const char flchar[] = "ugoamcdxes";
- char line[65536];
- 
--int flags[NUM_FLAGS] = {1, 1, 1, 1, 1, 0, 1, 0, 0};
-+int flags[NUM_FLAGS] = {1, 1, 1, 1, 1, 0, 1, 1, 0, 0};
- 
- char *
- getln(char *buf, int size, FILE *fp)
-@@ -135,7 +136,7 @@ usage(void)
- 	fprintf(stderr, "    -v          : verbose mode (debugging only)\n");
- 	fprintf(stderr,
- 		"    -r <file>   : read checksum or manifest from file\n");
--	fprintf(stderr, "    -[ugoamcde] : specify which fields to include in checksum calculation.\n");
-+	fprintf(stderr, "    -[ugoamcdxe]: specify which fields to include in checksum calculation.\n");
- 	fprintf(stderr, "         u      : include uid\n");
- 	fprintf(stderr, "         g      : include gid\n");
- 	fprintf(stderr, "         o      : include mode\n");
-@@ -143,9 +144,10 @@ usage(void)
- 	fprintf(stderr, "         a      : include atime\n");
- 	fprintf(stderr, "         c      : include ctime\n");
- 	fprintf(stderr, "         d      : include file data\n");
-+	fprintf(stderr, "         x      : include xattrs\n");
- 	fprintf(stderr, "         e      : include open errors (aborts otherwise)\n");
- 	fprintf(stderr, "         s      : include block structure (holes)\n");
--	fprintf(stderr, "    -[UGOAMCDES]: exclude respective field from calculation\n");
-+	fprintf(stderr, "    -[UGOAMCDXES]: exclude respective field from calculation\n");
- 	fprintf(stderr, "    -n          : reset all flags\n");
- 	fprintf(stderr, "    -N          : set all flags\n");
- 	fprintf(stderr, "    -x path     : exclude path when building checksum (multiple ok)\n");
-@@ -221,6 +223,106 @@ sum_to_string(sum_t *dst)
- }
- 
- int
-+namecmp(const void *aa, const void *bb)
-+{
-+	char * const *a = aa;
-+	char * const *b = bb;
-+
-+	return strcmp(*a, *b);
-+}
-+
-+int
-+sum_xattrs(int fd, sum_t *dst)
-+{
-+	ssize_t buflen;
-+	ssize_t len;
-+	char *buf;
-+	char *p;
-+	char **names = NULL;
-+	int num_xattrs = 0;
-+	int ret = 0;
-+	int i;
-+
-+	buflen = flistxattr(fd, NULL, 0);
-+	if (buflen < 0)
-+		return -errno;
-+	/* no xattrs exist */
-+	if (buflen == 0)
-+		return 0;
-+
-+	buf = malloc(buflen);
-+	if (!buf)
-+		return -ENOMEM;
-+
-+	buflen = flistxattr(fd, buf, buflen);
-+	if (buflen < 0) {
-+		ret = -errno;
-+		goto out;
-+	}
-+
-+	/*
-+	 * Keep the list of xattrs sorted, because the order in which they are
-+	 * listed is filesystem dependent, so we want to get the same checksum
-+	 * on different filesystems.
-+	 */
-+
-+	p = buf;
-+	len = buflen;
-+	while (len > 0) {
-+		int keylen;
-+
-+		keylen = strlen(p) + 1; /* +1 for NULL terminator */
-+		len -= keylen;
-+		p += keylen;
-+		num_xattrs++;
-+	}
-+
-+	names = malloc(sizeof(char *) * num_xattrs);
-+	if (!names) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+
-+	p = buf;
-+	for (i = 0; i < num_xattrs; i++) {
-+		names[i] = p;
-+		p += strlen(p) + 1; /* +1 for NULL terminator */
-+	}
-+
-+	qsort(names, num_xattrs, sizeof(char *), namecmp);
-+
-+	for (i = 0; i < num_xattrs; i++) {
-+		len = fgetxattr(fd, names[i], NULL, 0);
-+		if (len < 0) {
-+			ret = -errno;
-+			goto out;
-+		}
-+		sum_add(dst, names[i], strlen(names[i]));
-+		/* no value */
-+		if (len == 0)
-+			continue;
-+		p = malloc(len);
-+		if (!p) {
-+			ret = -ENOMEM;
-+			goto out;
-+		}
-+		len = fgetxattr(fd, names[i], p, len);
-+		if (len < 0) {
-+			ret = -errno;
-+			free(p);
-+			goto out;
-+		}
-+		sum_add(dst, p, len);
-+		free(p);
-+	}
-+out:
-+	free(buf);
-+	free(names);
-+
-+	return ret;
-+}
-+
-+int
- sum_file_data_permissive(int fd, sum_t *dst)
- {
- 	int ret;
-@@ -401,15 +503,6 @@ malformed:
- 		excess_file(fn);
- }
- 
--int
--namecmp(const void *aa, const void *bb)
--{
--	char * const *a = aa;
--	char * const *b = bb;
--
--	return strcmp(*a, *b);
--}
--
- void
- sum(int dirfd, int level, sum_t *dircs, char *path_prefix, char *path_in)
- {
-@@ -493,6 +586,28 @@ sum(int dirfd, int level, sum_t *dircs, char *path_prefix, char *path_in)
- 			sum_add_time(&meta, st.st_mtime);
- 		if (flags[FLAG_CTIME])
- 			sum_add_time(&meta, st.st_ctime);
-+		if (flags[FLAG_XATTRS] &&
-+		    (S_ISDIR(st.st_mode) || S_ISREG(st.st_mode))) {
-+			fd = openat(dirfd, namelist[i], 0);
-+			if (fd == -1 && flags[FLAG_OPEN_ERROR]) {
-+				sum_add_u64(&meta, errno);
-+			} else if (fd == -1) {
-+				fprintf(stderr, "open failed for %s/%s: %s\n",
-+					path_prefix, path, strerror(errno));
-+				exit(-1);
-+			} else {
-+				ret = sum_xattrs(fd, &meta);
-+				close(fd);
-+				if (ret < 0) {
-+					fprintf(stderr,
-+						"failed to read xattrs from "
-+						"%s/%s: %s\n",
-+						path_prefix, path,
-+						strerror(-ret));
-+					exit(-1);
-+				}
-+			}
-+		}
- 		if (S_ISDIR(st.st_mode)) {
- 			fd = openat(dirfd, namelist[i], 0);
- 			if (fd == -1 && flags[FLAG_OPEN_ERROR]) {
+
 -- 
-2.11.0
-
+Chris Murphy

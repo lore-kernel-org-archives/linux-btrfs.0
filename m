@@ -2,152 +2,152 @@ Return-Path: <SRS0=fkam=SH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.8 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4079DC282CE
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Apr 2019 19:32:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B40B0C282CE
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Apr 2019 19:38:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1126D2146F
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Apr 2019 19:32:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5E8762146F
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Apr 2019 19:38:16 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=avgustinov.eu header.i=@avgustinov.eu header.b="Drst0SCU"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731704AbfDETcV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 5 Apr 2019 15:32:21 -0400
-Received: from frost.carfax.org.uk ([85.119.82.111]:33568 "EHLO
-        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731611AbfDETcU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Apr 2019 15:32:20 -0400
-Received: from hrm by frost.carfax.org.uk with local (Exim 4.80)
-        (envelope-from <hrm@carfax.org.uk>)
-        id 1hCUZW-000564-FS; Fri, 05 Apr 2019 19:32:18 +0000
-Date:   Fri, 5 Apr 2019 19:32:18 +0000
-From:   Hugo Mills <hugo@carfax.org.uk>
-To:     Nazar Mokrynskyi <nazar@mokrynskyi.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: corrupt leaf, bad key order on kernel 5.0
-Message-ID: <20190405193218.GC1084@carfax.org.uk>
-Mail-Followup-To: Hugo Mills <hugo@carfax.org.uk>,
-        Nazar Mokrynskyi <nazar@mokrynskyi.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <af457d27-16b5-2900-8289-98462b6de770@mokrynskyi.com>
+        id S1731851AbfDETiP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 5 Apr 2019 15:38:15 -0400
+Received: from cloud.avgustinov.eu ([62.73.84.164]:54502 "EHLO
+        cloud.avgustinov.eu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1731707AbfDETiO (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Apr 2019 15:38:14 -0400
+Received: from [192.168.178.50] (ip5f5867e1.dynamic.kabel-deutschland.de [95.88.103.225])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by cloud.avgustinov.eu (Postfix) with ESMTPSA id 0094E489440C;
+        Fri,  5 Apr 2019 22:38:11 +0300 (EEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=avgustinov.eu;
+        s=default; t=1554493092;
+        bh=TNFGOEodBD4O1hPoGnx7/nKasD6fHUJpZaoh9/zRLvY=;
+        h=Subject:To:References:From:Date:In-Reply-To:From;
+        b=Drst0SCUwpNuHA0VkDxvRPWW4SkE6sRZW6X/EC99u/9Bn1ED3hXRJDOWR4XieRPCf
+         gDaD9IIa0+SYsx9oX9w+WjdcX7cNpyuDwEVCEcro2qmw5L/2FEYmIV+CROL+masREn
+         2IdGIQYSMOKPC4BnZkpvujYcLk9/zKITXQBp5C6m0h5pqIKd9yhymwu9BC98xcUDCC
+         g9KrGZPD69uD5E8/kcKHJBN7op11CY6ZXYamsHcI3aiHGohBtyYvgHJ8WDApRGaH/r
+         p03v6cXzcjyBxCinGns4Dt0zLI4xlJiRRZiked+HE3DmC9GoL7qzNJDlG81p+E3BQi
+         2EVGgS0DE4zrw==
+Subject: Re: interest in post-mortem examination of a BTRFS system and
+ improving the btrfs-code?
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <aa81a49a-d5ca-0f1c-fa75-9ed3656cff55@avgustinov.eu>
+ <a6cb572c-c015-1e19-7489-c59fd1384509@avgustinov.eu>
+ <9cf1e935-c0b1-6546-5f1e-f8e88839d560@gmx.com>
+ <99c1632a-a575-b5eb-8a26-8f92666f9c3a@avgustinov.eu>
+ <c0909c80-8167-7b46-3a3c-d57962aee7fd@gmx.com>
+ <6c4d5ccf-562d-a9b7-3aba-0a3bfd3797eb@avgustinov.eu>
+ <ff7f4039-25d8-f5c9-80ac-4e7afaace3d0@gmx.com>
+ <9a800f8e-a8eb-ea5c-328b-7aed53bc3742@avgustinov.eu>
+ <edbb548a-75e8-0b9e-914f-684aa6b4a5ea@gmx.com>
+ <7d605543-2899-144a-7b46-7caed803b43b@avgustinov.eu>
+ <8fdb5da5-d649-0c0d-1a21-c3f430476afd@gmx.com>
+ <ce8be6b2-1a2f-201f-a4ff-03686b3620f1@avgustinov.eu>
+ <3dcaf6ae-34c4-3760-70f9-6ce2962b42c8@gmx.com>
+ <e9720559-eff2-e88b-12b4-81defb8c29c5@avgustinov.eu>
+ <a75981da-86f7-e0fb-d1dc-a2576b09c668@gmx.com>
+From:   "Nik." <btrfs@avgustinov.eu>
+Message-ID: <039ec3eb-c44e-35e9-cf1b-f9f75849d873@avgustinov.eu>
+Date:   Fri, 5 Apr 2019 21:38:06 +0200
+User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:60.0) Gecko/20100101
+ Thunderbird/60.6.1
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="uh9ZiVrAOUUm9fzH"
-Content-Disposition: inline
-In-Reply-To: <af457d27-16b5-2900-8289-98462b6de770@mokrynskyi.com>
-X-GPG-Fingerprint: DD84 D558 9D81 DDEE 930D  2054 585E 1475 E2AB 1DE4
-X-GPG-Key: E2AB1DE4
-X-Parrot: It is no more. It has joined the choir invisible.
-X-IRC-Nicks: darksatanic darkersatanic darkling darkthing
-User-Agent: Mutt/1.5.21 (2010-09-15)
+In-Reply-To: <a75981da-86f7-e0fb-d1dc-a2576b09c668@gmx.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: de-DE-1901
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
---uh9ZiVrAOUUm9fzH
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
 
-On Fri, Apr 05, 2019 at 10:11:57PM +0300, Nazar Mokrynskyi wrote:
-> NOTE: I do not need help with recovery, I have fully automated snapshots,=
- backups and restoration mechanisms, the only purpose of this email is to h=
-elp developers find the reason of yet another filesystem corruption and hop=
-efully fix it.
+2019-04-05 10:15, Qu Wenruo:
+> 
+> 
+> On 2019/4/5 下午3:41, Nik. wrote:
+>>
+>> Below is the stderr of both commands:
+>>
+>> # btrfs inspect dump-tree -t chunk /dev/md0>DT-chunk.log
+>> # btrfs inspect dump-tree -t extent /dev/md0>DT-extent.log
+>> ERROR: leaf 1894009225216 slot 30 pointer invalid, offset 146038 size 37
+>> leaf data limit 16283
+>> ERROR: skip remaining slots
+>>
+>> Since the output on stdout is pretty long even after gzip, I am
+>> providing only the output of the first command as attachment. The output
+>> of the second command (25 MB after gzip -9) can be downloaded here:
+>>
+>> https://cloud.avgustinov.eu/index.php/s/AgbwWyCrbYjenq8
+> 
+> Sorry, I should have use a more specific command to get a smaller output.
+> But anyway, your output is good enough for me to craft the fix patch.
+> 
+> Here is the dirty fix branch:
+> https://github.com/adam900710/btrfs-progs/tree/dirty_fix_for_nik
+> 
+> Compile the btrfs-progs as usual.
+> Just a late hint, you can disable document/btrfs-convert to reduce the
+> dependency:
+> $ ./configure --disable-documentation --disable-convert
+> 
+> Then, inside btrfs-progs directory, call:
+> # ./btrfs-corrupt-block -X /dev/md0
+incorrect offsets 15003 146075
+Open ctree failed
 
-   That's good news, at least.
+Actually there was one warning during make, I don't know of it is relevant:
+     [CC]     check/main.o
+check/main.c: In function ‘try_repair_inode’:
+check/main.c:2688:5: warning: ‘ret’ may be used uninitialized in this 
+function [-Wmaybe-uninitialized]
+   if (!ret) {
+      ^
+check/main.c:2666:6: note: ‘ret’ was declared here
+   int ret;
+       ^~~
 
-> Yet another corruption of my root BTRFS filesystem happened today.
-> Didn't bother to run scrub, balance or check, just created disk image for=
- future investigation and restored everything from backup.
->=20
-> Here is what corruption looks like:
-> [=A0 274.241339] BTRFS info (device dm-0): disk space caching is enabled
-> [=A0 274.241344] BTRFS info (device dm-0): has skinny extents
-> [=A0 274.283238] BTRFS info (device dm-0): enabling ssd optimizations
-> [=A0 310.436672] BTRFS critical (device dm-0): corrupt leaf: root=3D268 b=
-lock=3D42044719104 slot=3D123, bad key order, prev (1240717 108 41447424) c=
-urrent (1240717 76 41451520)
+The previous steps were as follow (output ommited, since nothing 
+unexpected happened):
+#git clone --single-branch -v -b dirty_fix_for_nik 
+https://github.com/adam900710/btrfs-progs.git
+#cd btrfs-progs/
+#./autogen.sh
+#./configure --disable-documentation --disable-convert
+#make
 
-   "Bad key order" is usually an indicator of faulty RAM -- a piece of
-metadata gets loaded into RAM for modification, a bit gets flipped in
-it (because the bit is stuck on one value), and then the csum is
-computed for the page (including the faulty bit), and written out to
-disk. In this case, it's not obvious, but I'd suggest that the second
-field of the key has been flipped, as 108 is 0x6c, and 76 is 0x4c --
-one bit away from each other.
+Did I got the right branch? Or miss any step?
 
-   I recommend you check your hardware thoroughly before attempting to
-rebuild the FS.
+Kind regards,
+Nik.
+--
 
-   Hugo.
-
-> [=A0 310.449304] BTRFS critical (device dm-0): corrupt leaf: root=3D268 b=
-lock=3D42044719104 slot=3D123, bad key order, prev (1240717 108 41447424) c=
-urrent (1240717 76 41451520)
-> [=A0 310.449309] BTRFS: error (device dm-0) in btrfs_dropa_snapshot:9250:=
- errno=3D-5 IO failure
-> [=A0 310.449311] BTRFS info (device dm-0): forced readonly
-> [=A0 311.266789] BTRFS info (device dm-0): delayed_refs has NO entry
-> [=A0 311.277088] BTRFS error (device dm-0): cleaner transaction attach re=
-turned -30
->=20
-> My system just freezed when I was not looking at it and this is the state=
- it is in now.
-> File system survived from March 8th til April 05, one of the fastest corr=
-uptions in my experience.
->=20
-> Looks like this happened during sending incremental snapshot to the other=
- BTRFS filesystem, since last snapshot on that one was not read-only as it =
-should have been otherwise.
->=20
-> I'm on Ubuntu 19.04 with Linux kernel 5.0.5 and btrfs-progs v4.20.2.
->=20
-> My filesystem is on top of LUKS on NVMe SSD (SM961), I have 3 snapshots c=
-reated every 15 minutes from 3 subvolumes with rotation of old snapshots (c=
-an be from tens to hundreds of snapshots at any time).
->=20
-> Mount options: compress=3Dlzo,noatime,ssd
->=20
-> I have full disk image with corrupted filesystem and will create Qcow2 sn=
-apshots of it, so if you want me to run any experiments, including potentia=
-lly destructive, including usage of custom patches to btrfs-progs to find o=
-ut the reason of corruption, would be happy to help as much as I can.
->=20
-> P.S. I'm riding latest stable and rc kernels all the time and during last=
- 6 months I've got about as many corruptions of different BTRFS filesystems=
- as during 3 years before that, really worrying if you ask me.
->=20
-
---=20
-Hugo Mills             | I'm always right.
-hugo@... carfax.org.uk | But I might be wrong about that.
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
-
---uh9ZiVrAOUUm9fzH
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJcp61CAAoJEFheFHXiqx3kySIQAJT2NLmDBfg3o1NljqX+ItNv
-nhNPPFfYyiYLfzCJazpwA1oWDLT4fQj45sH6KEhlKTgAIP6+Jw14zFtsS+dKWuWP
-7oZAwzrbstz/+S2JnfWrsUKmVJxHfq/sJYrtE0ruwJjpO6WFCdLNcy+IMIVMG03a
-Bn5AwJqYr1YYmr8ygRaAazmBCWhsB3uqxJdUlHi9OmtAWBHI+G/1RMdn6TlUBaR+
-xXqe3PJG1qtp7jtB686bpcpR/kCKppnOmH6Jt0K6swWwm27q2O2F4Zz8gj4RT8Cl
-LBIB2qzTu+cxZ3C1AAu3KpS1dS+qTB3WFxOorLaNHQOVzyYOVeenGpsfO4kkJTGG
-canlQbPa01TFi3g2ePes9pDXLaNo0snZ5f3bXz0hdtRg3MMlSjKOQrPzLS/Vbc7T
-jaSce13DaTNLKWRISDvP+ciRqY5rDUEbWw4ycsUAAMMU2aBQgRQU1o84suOSMmeG
-VyiKqIT82BSIXqWA2Y/MsAIScZgs4CEB1wS2aMg85GfUoaF1YpgJ4Zd5xqtL7ipD
-B5s1BzHm1VRZPC/SFHf66e+uxZ2Zf0BdbhGMMHSJyUxtSp506UOeighhwvLwg3jr
-NCM+sGhLwk339e7FDv2WyJsqzpw2hrwe4iwGx4ma/XlmqZhvXoXERGFwMN+DJpCW
-MesyUyKfJUeZMQlsAhFi
-=9le7
------END PGP SIGNATURE-----
-
---uh9ZiVrAOUUm9fzH--
+> If everything goes correctly, it should output something like:
+>    Successfully repaired tree block at 1894009225216
+> (And please ignore any grammar error in my code)
+> 
+> After that, please run a "btrfs check --readonly" to ensure no other bit
+> flip in your fs.
+> 
+> Thanks,
+> Qu
+> 
+> 
+> 
+>>
+>> Hope this is ok.
+>>
+>> Regards,
+>> Nik.
+>> -
+> 

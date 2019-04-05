@@ -2,116 +2,118 @@ Return-Path: <SRS0=fkam=SH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=unavailable autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-6.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 81D47C4360F
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Apr 2019 16:04:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C65BDC282CE
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Apr 2019 19:20:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4F9C82175B
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Apr 2019 16:04:28 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9015821738
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Apr 2019 19:20:10 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=mokrynskyi.com header.i=@mokrynskyi.com header.b="jMy4invY"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731442AbfDEQEX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 5 Apr 2019 12:04:23 -0400
-Received: from mx2.suse.de ([195.135.220.15]:44290 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726135AbfDEQEW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 5 Apr 2019 12:04:22 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 5BBC2AF47;
-        Fri,  5 Apr 2019 16:04:20 +0000 (UTC)
-To:     Ming Lei <ming.lei@redhat.com>
-Cc:     Jens Axboe <axboe@kernel.dk>, Omar Sandoval <osandov@osandov.com>,
-        linux-block@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-From:   Nikolay Borisov <nborisov@suse.com>
-Subject: Possible bio merging breakage in mp bio rework
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <59c19acf-999f-1911-b0b8-1a5cec8116c5@suse.com>
-Date:   Fri, 5 Apr 2019 19:04:18 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.6.1
+        id S1731755AbfDETUJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 5 Apr 2019 15:20:09 -0400
+Received: from mx.mokrynskyi.com ([46.4.12.50]:44198 "EHLO mx.mokrynskyi.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1731183AbfDETUJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 5 Apr 2019 15:20:09 -0400
+X-Greylist: delayed 488 seconds by postgrey-1.27 at vger.kernel.org; Fri, 05 Apr 2019 15:20:07 EDT
+Received: from localhost (localhost [127.0.0.1])
+        by mx.mokrynskyi.com (Postfix) with ESMTP id 447903A16
+        for <linux-btrfs@vger.kernel.org>; Fri,  5 Apr 2019 19:11:58 +0000 (UTC)
+Authentication-Results: mx.mokrynskyi.com (amavisd-new);
+        dkim=pass (1024-bit key) reason="pass (just generated, assumed good)"
+        header.d=mokrynskyi.com
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=mokrynskyi.com;
+         h=content-transfer-encoding:content-language:content-type
+        :content-type:mime-version:user-agent:date:date:message-id
+        :organization:subject:subject:from:from:to; s=dkim; t=
+        1554491517; x=1555355518; bh=eyQWptvBXqa0AQ8/Zmy9Lrufvu8tFAwtUOU
+        evyu1W70=; b=jMy4invY1zWfhGGzLYnHuBAFLIJzbNNlE8qKSzlTjfMzWi3teFe
+        5GQlNbLSqgCsoyTdpPCc1eJ5ypNww0KY152B081j+6Il6pbTvfDXbv1LwT3oIuvp
+        ZKJNc6CKy+My7Bu2NB0AqdUSMwPnzJI39B4IvQ4BWrI3RpqFm/+WA0is=
+X-Virus-Scanned: Debian amavisd-new at mx.mokrynskyi.com
+Received: from mx.mokrynskyi.com ([127.0.0.1])
+        by localhost (mx.mokrynskyi.com [127.0.0.1]) (amavisd-new, port 10026)
+        with ESMTP id DmI2-qBXq_UY for <linux-btrfs@vger.kernel.org>;
+        Fri,  5 Apr 2019 19:11:57 +0000 (UTC)
+Received: from [192.168.1.2] (bomann.znet.kiev.ua [176.122.88.128])
+        by mx.mokrynskyi.com (Postfix) with ESMTPSA id DD399DAC
+        for <linux-btrfs@vger.kernel.org>; Fri,  5 Apr 2019 19:11:57 +0000 (UTC)
+To:     linux-btrfs <linux-btrfs@vger.kernel.org>
+From:   Nazar Mokrynskyi <nazar@mokrynskyi.com>
+Subject: corrupt leaf, bad key order on kernel 5.0
+Organization: CleverStyle, Ecoisme
+Message-ID: <af457d27-16b5-2900-8289-98462b6de770@mokrynskyi.com>
+Date:   Fri, 5 Apr 2019 22:11:57 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:67.0) Gecko/20100101
+ Thunderbird/67.0
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Language: uk
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello Ming, 
+NOTE: I do not need help with recovery, I have fully automated snapshots,=
+ backups and restoration mechanisms, the only purpose of this email is to=
+ help developers find the reason of yet another filesystem corruption and=
+ hopefully fix it.
 
-Following the mp biovec rework what is the maximum 
-data that a bio could contain? Should it be PAGE_SIZE * bio_vec 
-or something else? Currently I can see bios as large as 127 megs 
-on sequential workloads, I got prompted to this since btrfs has a 
-memory allocation that is dependent on the data in the bio and this 
-particular memory allocation started failing with order 6 allocs. 
-Further debugging showed that with the following xfs_io command line: 
+Yet another corruption of my root BTRFS filesystem happened today.
+Didn't bother to run scrub, balance or check, just created disk image for=
+ future investigation and restored everything from backup.
 
+Here is what corruption looks like:
+[=C2=A0 274.241339] BTRFS info (device dm-0): disk space caching is enabl=
+ed
+[=C2=A0 274.241344] BTRFS info (device dm-0): has skinny extents
+[=C2=A0 274.283238] BTRFS info (device dm-0): enabling ssd optimizations
+[=C2=A0 310.436672] BTRFS critical (device dm-0): corrupt leaf: root=3D26=
+8 block=3D42044719104 slot=3D123, bad key order, prev (1240717 108 414474=
+24) current (1240717 76 41451520)
+[=C2=A0 310.449304] BTRFS critical (device dm-0): corrupt leaf: root=3D26=
+8 block=3D42044719104 slot=3D123, bad key order, prev (1240717 108 414474=
+24) current (1240717 76 41451520)
+[=C2=A0 310.449309] BTRFS: error (device dm-0) in btrfs_dropa_snapshot:92=
+50: errno=3D-5 IO failure
+[=C2=A0 310.449311] BTRFS info (device dm-0): forced readonly
+[=C2=A0 311.266789] BTRFS info (device dm-0): delayed_refs has NO entry
+[=C2=A0 311.277088] BTRFS error (device dm-0): cleaner transaction attach=
+ returned -30
 
-xfs_io -f -c "pwrite -S 0x61 -b 4m 0 10g" /media/scratch/file1
+My system just freezed when I was not looking at it and this is the state=
+ it is in now.
+File system survived from March 8th til April 05, one of the fastest corr=
+uptions in my experience.
 
-I can easily see very large bios: 
+Looks like this happened during sending incremental snapshot to the other=
+ BTRFS filesystem, since last snapshot on that one was not read-only as i=
+t should have been otherwise.
 
-[  188.366540] kworker/-7       3.... 34847519us : btrfs_submit_bio_hook: bio: ffff8dffe9940bb0 bi_iter.bi_size = 134184960 bi_vcn: 28 bi_vcnt_max: 256
-[  188.367129] kworker/-658     2.... 34946536us : btrfs_submit_bio_hook: bio: ffff8dffe9940370 bi_iter.bi_size = 134246400 bi_vcn: 28 bi_vcnt_max: 256
-[  188.367714] kworker/-7       3.... 35107967us : btrfs_submit_bio_hook: bio: ffff8dffe9940bb0 bi_iter.bi_size = 134184960 bi_vcn: 30 bi_vcnt_max: 256
-[  188.368319] kworker/-658     2.... 35229894us : btrfs_submit_bio_hook: bio: ffff8dffe9940370 bi_iter.bi_size = 134246400 bi_vcn: 32 bi_vcnt_max: 256
-[  188.368909] kworker/-7       3.... 35374809us : btrfs_submit_bio_hook: bio: ffff8dffe9940bb0 bi_iter.bi_size = 134184960 bi_vcn: 25 bi_vcnt_max: 256
-[  188.369498] kworker/-658     2.... 35516194us : btrfs_submit_bio_hook: bio: ffff8dffe9940370 bi_iter.bi_size = 134246400 bi_vcn: 31 bi_vcnt_max: 256
-[  188.370086] kworker/-7       3.... 35663669us : btrfs_submit_bio_hook: bio: ffff8dffe9940bb0 bi_iter.bi_size = 134184960 bi_vcn: 32 bi_vcnt_max: 256
-[  188.370696] kworker/-658     2.... 35791006us : btrfs_submit_bio_hook: bio: ffff8dffe9940370 bi_iter.bi_size = 100655104 bi_vcn: 24 bi_vcnt_max: 256
-[  188.371335] kworker/-658     2.... 35816114us : btrfs_submit_bio_hook: bio: ffff8dffe99434f0 bi_iter.bi_size = 33591296 bi_vcn: 5 bi_vcnt_max: 256
+I'm on Ubuntu 19.04 with Linux kernel 5.0.5 and btrfs-progs v4.20.2.
 
+My filesystem is on top of LUKS on NVMe SSD (SM961), I have 3 snapshots c=
+reated every 15 minutes from 3 subvolumes with rotation of old snapshots =
+(can be from tens to hundreds of snapshots at any time).
 
-So that's 127 megs in a single bio? This stems from the new merging logic. 
-07173c3ec276 ("block: enable multipage bvecs") made it so that physically 
-contiguous pages added to the bio would just modify bi_iter.bi_size and the 
-initial page's bio_vec's bv_len. There's no longer the 
-page == bv->bv_page portion of the check. 
+Mount options: compress=3Dlzo,noatime,ssd
+
+I have full disk image with corrupted filesystem and will create Qcow2 sn=
+apshots of it, so if you want me to run any experiments, including potent=
+ially destructive, including usage of custom patches to btrfs-progs to fi=
+nd out the reason of corruption, would be happy to help as much as I can.
+
+P.S. I'm riding latest stable and rc kernels all the time and during last=
+ 6 months I've got about as many corruptions of different BTRFS filesyste=
+ms as during 3 years before that, really worrying if you ask me.
+
+--=20
+Sincerely, Nazar Mokrynskyi
+github.com/nazar-pc
+

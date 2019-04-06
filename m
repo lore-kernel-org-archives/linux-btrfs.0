@@ -2,33 +2,35 @@ Return-Path: <SRS0=k9FD=SI=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=unavailable autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 70970C10F06
-	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 06:09:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D1D10C10F06
+	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 06:20:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 40CDD20863
-	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 06:09:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A20502173C
+	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 06:20:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726360AbfDFGJR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 6 Apr 2019 02:09:17 -0400
-Received: from mx2.suse.de ([195.135.220.15]:48260 "EHLO mx1.suse.de"
+        id S1726232AbfDFGUk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 6 Apr 2019 02:20:40 -0400
+Received: from mx2.suse.de ([195.135.220.15]:49200 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726002AbfDFGJQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 6 Apr 2019 02:09:16 -0400
+        id S1725440AbfDFGUj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 6 Apr 2019 02:20:39 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 9D8D5AE8D;
-        Sat,  6 Apr 2019 06:09:14 +0000 (UTC)
-Subject: Re: Possible bio merging breakage in mp bio rework
-To:     Ming Lei <ming.lei@redhat.com>
-Cc:     Jens Axboe <axboe@kernel.dk>, Omar Sandoval <osandov@osandov.com>,
-        linux-block@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <59c19acf-999f-1911-b0b8-1a5cec8116c5@suse.com>
- <20190406001653.GA4805@ming.t460p>
+        by mx1.suse.de (Postfix) with ESMTP id 27188AC7F;
+        Sat,  6 Apr 2019 06:20:37 +0000 (UTC)
+Subject: Re: [PATCH 2/2] btrfs: Add error string for EUCLEAN
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        "Darrick J. Wong" <darrick.wong@oracle.com>,
+        Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org
+References: <20190406031426.22436-1-wqu@suse.com>
+ <20190406031426.22436-2-wqu@suse.com> <20190406045008.GE1177@magnolia>
+ <02797135-0903-4d4d-67a1-469a13e20397@gmx.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -73,12 +75,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <9ac6f2eb-069a-a02c-7863-e33cb00ad312@suse.com>
-Date:   Sat, 6 Apr 2019 09:09:12 +0300
+Message-ID: <782bc384-9022-6f5d-d4d5-90ff180bbb90@suse.com>
+Date:   Sat, 6 Apr 2019 09:20:35 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.6.1
 MIME-Version: 1.0
-In-Reply-To: <20190406001653.GA4805@ming.t460p>
+In-Reply-To: <02797135-0903-4d4d-67a1-469a13e20397@gmx.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -89,68 +91,73 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 6.04.19 г. 3:16 ч., Ming Lei wrote:
-> Hi Nikolay,
+On 6.04.19 г. 8:05 ч., Qu Wenruo wrote:
 > 
-> On Fri, Apr 05, 2019 at 07:04:18PM +0300, Nikolay Borisov wrote:
->> Hello Ming, 
+> 
+> On 2019/4/6 下午12:50, Darrick J. Wong wrote:
+>> On Sat, Apr 06, 2019 at 11:14:26AM +0800, Qu Wenruo wrote:
+>>> Since we're going to support write time tree checker, it's possible that
+>>> transaction get aborted due to tree-checker, also due to new
+>>> BLK_STS_SELFTEST bit, we can distinguish real EIO error and EUCLEAN
+>>> error.
+>>>
+>>> Now add error string for EUCLEAN too.
+>>>
+>>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>>> ---
+>>>  fs/btrfs/super.c | 3 +++
+>>>  1 file changed, 3 insertions(+)
+>>>
+>>> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+>>> index 120e4340792a..a4cbbd7861d3 100644
+>>> --- a/fs/btrfs/super.c
+>>> +++ b/fs/btrfs/super.c
+>>> @@ -86,6 +86,9 @@ const char *btrfs_decode_error(int errno)
+>>>  	case -ENOENT:
+>>>  		errstr = "No such entry";
+>>>  		break;
+>>> +	case -EUCLEAN:
+>>> +		errstr = "Selftest failure";
+>>> +		break;
 >>
->> Following the mp biovec rework what is the maximum 
->> data that a bio could contain? Should it be PAGE_SIZE * bio_vec 
+>> EUCLEAN usually spits out "Structure needs cleaning" in userspace (and
+>> ext4 & xfs have been using it for years to complain about corrupt data),
+>> so why diverge here?
 > 
-> There isn't any maximum data limit on the bio submitted from fs,
-> and block layer will make the final bio sent to driver correct
-> by applying all kinds of queue limit, such as max segment size,
-> max segment number, max sectors, ...
-> 
->> or something else? Currently I can see bios as large as 127 megs 
->> on sequential workloads, I got prompted to this since btrfs has a 
->> memory allocation that is dependent on the data in the bio and this 
->> particular memory allocation started failing with order 6 allocs. 
-> 
-> Could you share us the code? I don't see why order 6 allocs is a must.
+> Because the original "structure needs cleaning" doesn't really show the
+> meaning we're using.
 
-When a bio is submitted btrfs has to calculate the checksum for it, this
-happens in btrfs_csum_one_bio. Said checksums are stored in an
-kmalloc'ed array, whose size is calculated as:
-
-32 + bio_size / btrfs' block size (usually 4k). So for a 127mb bio that
-would be: 32 * ((134184960÷4096) * 4) = 127k. We'd make an order 3
-allocation. Admittedly the code in btrfs should know better rather than
-make unbounded allocations without a fallback, but bio suddenly becoming
-rather unbounded in their size caught us offhand.
-
+On the contrary, structure needs cleaning means the filesystem has
+detected a consistency error. How that detection has happened shouldn't
+burden the user, the important fact is it has. Selftest is somewhat
+cryptic, I'd suggest at least "verification error" or just go with
+canonical "Structure needs cleaning".
 
 > 
->> Further debugging showed that with the following xfs_io command line: 
->>
->>
->> xfs_io -f -c "pwrite -S 0x61 -b 4m 0 10g" /media/scratch/file1
->>
->> I can easily see very large bios: 
->>
->> [  188.366540] kworker/-7       3.... 34847519us : btrfs_submit_bio_hook: bio: ffff8dffe9940bb0 bi_iter.bi_size = 134184960 bi_vcn: 28 bi_vcnt_max: 256
->> [  188.367129] kworker/-658     2.... 34946536us : btrfs_submit_bio_hook: bio: ffff8dffe9940370 bi_iter.bi_size = 134246400 bi_vcn: 28 bi_vcnt_max: 256
->> [  188.367714] kworker/-7       3.... 35107967us : btrfs_submit_bio_hook: bio: ffff8dffe9940bb0 bi_iter.bi_size = 134184960 bi_vcn: 30 bi_vcnt_max: 256
->> [  188.368319] kworker/-658     2.... 35229894us : btrfs_submit_bio_hook: bio: ffff8dffe9940370 bi_iter.bi_size = 134246400 bi_vcn: 32 bi_vcnt_max: 256
->> [  188.368909] kworker/-7       3.... 35374809us : btrfs_submit_bio_hook: bio: ffff8dffe9940bb0 bi_iter.bi_size = 134184960 bi_vcn: 25 bi_vcnt_max: 256
->> [  188.369498] kworker/-658     2.... 35516194us : btrfs_submit_bio_hook: bio: ffff8dffe9940370 bi_iter.bi_size = 134246400 bi_vcn: 31 bi_vcnt_max: 256
->> [  188.370086] kworker/-7       3.... 35663669us : btrfs_submit_bio_hook: bio: ffff8dffe9940bb0 bi_iter.bi_size = 134184960 bi_vcn: 32 bi_vcnt_max: 256
->> [  188.370696] kworker/-658     2.... 35791006us : btrfs_submit_bio_hook: bio: ffff8dffe9940370 bi_iter.bi_size = 100655104 bi_vcn: 24 bi_vcnt_max: 256
->> [  188.371335] kworker/-658     2.... 35816114us : btrfs_submit_bio_hook: bio: ffff8dffe99434f0 bi_iter.bi_size = 33591296 bi_vcn: 5 bi_vcnt_max: 256
->>
->>
->> So that's 127 megs in a single bio? This stems from the new merging logic. 
->> 07173c3ec276 ("block: enable multipage bvecs") made it so that physically 
->> contiguous pages added to the bio would just modify bi_iter.bi_size and the 
->> initial page's bio_vec's bv_len. There's no longer the 
->> page == bv->bv_page portion of the check. 
+> We really means, something wrong happened, thus I prefer something like
+> selftest failure.
 > 
-> bio_add_page() tries best to put physically contiguous pages into one bvec, and
-> I don't see anything is wrong in the log.
+> And, the idea of adding -EUCLEAN, is to replace the original "unknown"
+> output, if you're sticking with the original error string, we still need
+> that branch.
 > 
-> Could you show us what the real problem is?
+>>
+>> Wait... does "tree-checker" mean online metadata checking, and 'selftest
+>> failure' is what gets spit out when it finds some metadata it doesn't
+>> like?
+> 
+> Yep.
 > 
 > Thanks,
-> Ming
+> Qu
+> 
+>>
+>> --D
+>>
+>>>  	}
+>>>  
+>>>  	return errstr;
+>>> -- 
+>>> 2.21.0
+>>>
 > 

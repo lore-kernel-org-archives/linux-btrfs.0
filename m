@@ -2,35 +2,35 @@ Return-Path: <SRS0=k9FD=SI=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D1D10C10F06
-	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 06:20:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 80D35C10F06
+	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 06:22:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A20502173C
-	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 06:20:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 54C882173C
+	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 06:22:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726232AbfDFGUk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 6 Apr 2019 02:20:40 -0400
-Received: from mx2.suse.de ([195.135.220.15]:49200 "EHLO mx1.suse.de"
+        id S1726310AbfDFGWD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 6 Apr 2019 02:22:03 -0400
+Received: from mx2.suse.de ([195.135.220.15]:49272 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725440AbfDFGUj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 6 Apr 2019 02:20:39 -0400
+        id S1725440AbfDFGWD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 6 Apr 2019 02:22:03 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 27188AC7F;
-        Sat,  6 Apr 2019 06:20:37 +0000 (UTC)
-Subject: Re: [PATCH 2/2] btrfs: Add error string for EUCLEAN
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        "Darrick J. Wong" <darrick.wong@oracle.com>,
-        Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org
-References: <20190406031426.22436-1-wqu@suse.com>
- <20190406031426.22436-2-wqu@suse.com> <20190406045008.GE1177@magnolia>
- <02797135-0903-4d4d-67a1-469a13e20397@gmx.com>
+        by mx1.suse.de (Postfix) with ESMTP id 142B7AC7F;
+        Sat,  6 Apr 2019 06:22:01 +0000 (UTC)
+Subject: Re: [PATCH v3.1 1/9] btrfs: delayed-ref: Introduce better documented
+ delayed ref structures
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, dsterba@suse.cz,
+        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20190404064537.4031-1-wqu@suse.com>
+ <20190404064537.4031-2-wqu@suse.com> <20190405120950.GW29086@twin.jikos.cz>
+ <c5a74629-3a44-0cde-aa64-9b3b8b8cbce9@gmx.com>
+ <20190405155109.GY29086@twin.jikos.cz>
+ <eebc9aa3-c166-8168-2ab5-06d62f4ba788@gmx.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -75,12 +75,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <782bc384-9022-6f5d-d4d5-90ff180bbb90@suse.com>
-Date:   Sat, 6 Apr 2019 09:20:35 +0300
+Message-ID: <3907c286-41c1-c3aa-dd00-81798d54e989@suse.com>
+Date:   Sat, 6 Apr 2019 09:21:59 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.6.1
 MIME-Version: 1.0
-In-Reply-To: <02797135-0903-4d4d-67a1-469a13e20397@gmx.com>
+In-Reply-To: <eebc9aa3-c166-8168-2ab5-06d62f4ba788@gmx.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -91,73 +91,47 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 6.04.19 г. 8:05 ч., Qu Wenruo wrote:
+On 6.04.19 г. 2:47 ч., Qu Wenruo wrote:
 > 
-> 
-> On 2019/4/6 下午12:50, Darrick J. Wong wrote:
->> On Sat, Apr 06, 2019 at 11:14:26AM +0800, Qu Wenruo wrote:
->>> Since we're going to support write time tree checker, it's possible that
->>> transaction get aborted due to tree-checker, also due to new
->>> BLK_STS_SELFTEST bit, we can distinguish real EIO error and EUCLEAN
->>> error.
+>>>>> +	/* For non-skinny metadata, no special member needed */
+>>>>> +};
+>>>>> +
+>>>>> +struct btrfs_ref {
+>>>>
+>>>> The structure name sounds a bit generic, but I think we can keep it
+>>>> short. There are no other btrfs-specific references that could be
+>>>> confused, there are 'backrefs', 'delayed-refs' all refering to the
+>>>> b-tree references.
+>>>>
+>>>>> +	enum btrfs_ref_type type;
+>>>>> +	int action;
+>>>>> +
+>>>>> +	/*
+>>>>> +	 * Only use parent pointers as backref (SHARED_BLOCK_REF or
+>>>>> +	 * SHARED_DATA_REF) for this extent and its children.
+>>>>> +	 * Set for reloc trees.
+>>>>> +	 */
+>>>>> +	bool only_backreferences:1;
+>>>>
+>>>> No bool bitfields please, wasn't this mentioned last time?
+>>>>
+>>> Oh, I forgot that one.
 >>>
->>> Now add error string for EUCLEAN too.
->>>
->>> Signed-off-by: Qu Wenruo <wqu@suse.com>
->>> ---
->>>  fs/btrfs/super.c | 3 +++
->>>  1 file changed, 3 insertions(+)
->>>
->>> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
->>> index 120e4340792a..a4cbbd7861d3 100644
->>> --- a/fs/btrfs/super.c
->>> +++ b/fs/btrfs/super.c
->>> @@ -86,6 +86,9 @@ const char *btrfs_decode_error(int errno)
->>>  	case -ENOENT:
->>>  		errstr = "No such entry";
->>>  		break;
->>> +	case -EUCLEAN:
->>> +		errstr = "Selftest failure";
->>> +		break;
+>>> Do I need to resend or just edit that commit in my github branch?
 >>
->> EUCLEAN usually spits out "Structure needs cleaning" in userspace (and
->> ext4 & xfs have been using it for years to complain about corrupt data),
->> so why diverge here?
-> 
-> Because the original "structure needs cleaning" doesn't really show the
-> meaning we're using.
-
-On the contrary, structure needs cleaning means the filesystem has
-detected a consistency error. How that detection has happened shouldn't
-burden the user, the important fact is it has. Selftest is somewhat
-cryptic, I'd suggest at least "verification error" or just go with
-canonical "Structure needs cleaning".
-
-> 
-> We really means, something wrong happened, thus I prefer something like
-> selftest failure.
-> 
-> And, the idea of adding -EUCLEAN, is to replace the original "unknown"
-> output, if you're sticking with the original error string, we still need
-> that branch.
-> 
+>> No need to resend, I'll edit that as it's a trivial change. I'll have
+>> another look at the whole structure if the layout could be optimized,
+>> eg. the enum takes 4 bytes but we'd be fine with a byte.
 >>
->> Wait... does "tree-checker" mean online metadata checking, and 'selftest
->> failure' is what gets spit out when it finds some metadata it doesn't
->> like?
-> 
-> Yep.
+> Maybe I have already said this before, but I still really hope either we
+> have some external tool to do that for us, or some attribute to do it.
+
+Pahole[0] does show the layout of structures. Not entirely automatic but
+better than nothing.
+
+[0]https://git.kernel.org/pub/scm/devel/pahole/pahole.git
+
 > 
 > Thanks,
 > Qu
-> 
->>
->> --D
->>
->>>  	}
->>>  
->>>  	return errstr;
->>> -- 
->>> 2.21.0
->>>
 > 

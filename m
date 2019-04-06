@@ -2,258 +2,297 @@ Return-Path: <SRS0=k9FD=SI=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_PASS autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.8 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 14C85C282DC
-	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 14:00:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 478C4C10F06
+	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 14:19:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B414C2175B
-	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 14:00:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 058282083E
+	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 14:19:18 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="eggklNjh"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=avgustinov.eu header.i=@avgustinov.eu header.b="FGFGXH5+"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726493AbfDFOAS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 6 Apr 2019 10:00:18 -0400
-Received: from mout.gmx.net ([212.227.15.18]:46215 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726419AbfDFOAS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 6 Apr 2019 10:00:18 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1554559211;
-        bh=3SLb5x5/VLbq1OX5Mq1K/7H/gpnZm+XCggnGnPh9qko=;
-        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
-        b=eggklNjhO7Z+OvQSOjw7wTImVr4zQt6tiNgRC4RU0PCJFlENWGCnYDwqUYQNrkAQF
-         1ESxqcwZwTsGKnrqMXpjZZVvFGikscuGmU669H+yi1spvcDxLxiqN+MtwcwIOkyHLP
-         Hub1HU2yBvA9/wPpJ7yWZzVm1EN/OuzP/m972vYw=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx003
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0LcBin-1gVyv634i5-00jcBo; Sat, 06
- Apr 2019 16:00:10 +0200
-Subject: Re: No way to break bio_for_each_segment_all() macro?
-To:     Ming Lei <ming.lei@redhat.com>
-Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Linux FS Devel <linux-fsdevel@vger.kernel.org>,
-        "linux-block@vger.kernel.org" <linux-block@vger.kernel.org>
-References: <ac2ba6e0-5312-1ec5-471e-edd16d6cde3a@gmx.com>
- <20190406134718.GC3018@ming.t460p>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <eec127e6-e1d4-edc6-572a-92dc7e818790@gmx.com>
-Date:   Sat, 6 Apr 2019 22:00:02 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.5.3
+        id S1726451AbfDFOTR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 6 Apr 2019 10:19:17 -0400
+Received: from cloud.avgustinov.eu ([62.73.84.164]:60830 "EHLO
+        cloud.avgustinov.eu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726404AbfDFOTQ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 6 Apr 2019 10:19:16 -0400
+Received: from [192.168.178.50] (ip5f5867e1.dynamic.kabel-deutschland.de [95.88.103.225])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by cloud.avgustinov.eu (Postfix) with ESMTPSA id E6AFF48C3A22;
+        Sat,  6 Apr 2019 17:19:13 +0300 (EEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=avgustinov.eu;
+        s=default; t=1554560354;
+        bh=9TCzmfIr3iE9G2e0VpFITRri2Ri5/TC/Apnb+B1UfjE=;
+        h=Subject:To:References:From:Date:In-Reply-To:From;
+        b=FGFGXH5+MMWZP/gNKHblKk+TklxLrpPzSS/1JOpsV+ttqfSaYXn4Dl+0zMdEbip+w
+         UsfI1nOPFTtlQu4cBUH4VrU90bOUm6i98yACLmUNlfKobVaT3NL95w83S/HaaaLXGL
+         ZPERFuguJ675bEpDMmIHFjIWUFWNofSW8ZIYYRqNKd2Q4yFYuYHBDXMpY5k2OvY8fr
+         yp530SoeMMOKnbk2JQrNUPwnbD5PcMuv65YP5c1T6/sUG/yfd2GmVEmK9OrWSG4J1B
+         JsHpKUD/QFmF2bP9GMbLIhIXbUYpEsX8BUQ6qCXfJLWTcuvqyghnCM5nMv5RfaXhCS
+         9HNK7hhvBPZwg==
+Subject: Re: interest in post-mortem examination of a BTRFS system and
+ improving the btrfs-code?
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <aa81a49a-d5ca-0f1c-fa75-9ed3656cff55@avgustinov.eu>
+ <6c4d5ccf-562d-a9b7-3aba-0a3bfd3797eb@avgustinov.eu>
+ <ff7f4039-25d8-f5c9-80ac-4e7afaace3d0@gmx.com>
+ <9a800f8e-a8eb-ea5c-328b-7aed53bc3742@avgustinov.eu>
+ <edbb548a-75e8-0b9e-914f-684aa6b4a5ea@gmx.com>
+ <7d605543-2899-144a-7b46-7caed803b43b@avgustinov.eu>
+ <8fdb5da5-d649-0c0d-1a21-c3f430476afd@gmx.com>
+ <ce8be6b2-1a2f-201f-a4ff-03686b3620f1@avgustinov.eu>
+ <3dcaf6ae-34c4-3760-70f9-6ce2962b42c8@gmx.com>
+ <e9720559-eff2-e88b-12b4-81defb8c29c5@avgustinov.eu>
+ <a75981da-86f7-e0fb-d1dc-a2576b09c668@gmx.com>
+ <039ec3eb-c44e-35e9-cf1b-f9f75849d873@avgustinov.eu>
+ <c69778f5-a015-8b77-3fab-e41e49a0e0db@gmx.com>
+ <51021dd7-b21b-b001-c3f9-9bc31205738b@avgustinov.eu>
+ <00e3ddf1-cbd7-a65a-dee3-ca720cecc77d@gmx.com>
+ <a6917f39-eeb4-5548-f346-a78972c7c3fe@avgustinov.eu>
+ <6a592ffa-4a5a-81af-baef-8f1681accc87@gmx.com>
+ <2c786019-646a-486f-1306-25a3df36e6b3@avgustinov.eu>
+ <52b23bd7-108b-63f3-b958-2a5959c7ca6e@gmx.com>
+From:   "Nik." <btrfs@avgustinov.eu>
+Message-ID: <f2b33d93-aa37-9fd3-6036-44e1e3f065eb@avgustinov.eu>
+Date:   Sat, 6 Apr 2019 16:19:03 +0200
+User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:60.0) Gecko/20100101
+ Thunderbird/60.6.1
 MIME-Version: 1.0
-In-Reply-To: <20190406134718.GC3018@ming.t460p>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="Dqwoz2nzTkviyWrC29elZ61H4dVfRYawB"
-X-Provags-ID: V03:K1:yPh9QcGLB7VSAN9KlgdBAgjlV++BttG9yN0hpYVYh1nz0RWhO9j
- b42pya1w/k6SCvBX1tTwj0LruAtCef8L9dFGSggNZLFQr/lhMt8gBdQKbuTe5oKlWFPutpm
- lJ1otcoQwfd9ODc2p1Joxvc4lXBpOyqRLgxFkr44zpeC1jaAfyD+aYJYIwrRg0TIZojb+Po
- ptzydA+71xvNlN+p8fpEQ==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:ZaGKYShBIFo=:U6sPo8bq2fPXWXKMzTrumH
- I55uWVVk1isyPSdM2ZvXbDChSt6F4B8OmmtWumWDzHMTSxgQl/rj88TqQK0ti13VKZwRFSG07
- EiPArH1fNFzdWMda246OdSVfsBUgonBOOPMunDCsmdqjb+AZyypa0rxyP7LDptIBR57NpVo3m
- JwBjxvL8sHkRRPWJsDGQQDwhpNF0xuptKV5TshqtkauX9sp8El83vS/Yjy6M7WfmGSJImGv2X
- NTGapFgTj4P/Rlc1goFwHs/pfH9KjTdYsnoxLKv2dzVqyBsL1qRgGK6eBgU7ll3NRFGK8QDcJ
- 70Sf/MkOOH1XJFumNKrGxDhoGhhc7a2jh5D79PyX2w3UPNWTXcYfWD8gKo1wPG+wfg8IEZkKG
- BavPMQITjYtRZ2P/qhx0U+9QTToWY0wSgNNo8RNLpcDOy8cTPS5Ko/PUgNIbioYAubbYwlDb9
- VkQ0os59McA2ssVtsznVX/Ap9DtWElxfdYmFnU5GyGT3vzsH46VnY+TkC6Ztk9om0iyvsFURK
- ekM7pVKeiUGLH9jYpA4iRePk7kqcePYECvUkUCeiTJ+O+qGZqmB+J+o/V2dFux7vgpCAGbST0
- ktBVO3GHPnnH82+jVLSJQsPiHepWykGbXBcobu1woDm6nxGGlUINRsgd1dxaortl3RJVJOCRC
- UJBQGo7u2DdNNqFg5DU4Ur9aos7dyriuKQR5u0i34clUKeiw4tQb8HFjG+fhLXH4jTlopu9jw
- xvn6LJXcaGgQh8vUpC6OYd/RUAycX+RqD8J3TIntDSVh5JeEvSc9SdZk8vaH4G5ios83K+Eyh
- Gs1J2HeH2gU26s197/SYZiP8kAJybsdQWH23twMZ/RqhrHjN013YgI29nNdlVhNoRFsGfIDnx
- YHhj9YUgLegBcVjSVwwgbTbka41jecfs1eABe9JL4qAk16HS5uyTy299rxh2BO
+In-Reply-To: <52b23bd7-108b-63f3-b958-2a5959c7ca6e@gmx.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---Dqwoz2nzTkviyWrC29elZ61H4dVfRYawB
-Content-Type: multipart/mixed; boundary="Ye9Y9E8rkY0yUvPRLPtxsElfDjj496vGC";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Ming Lei <ming.lei@redhat.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
- Linux FS Devel <linux-fsdevel@vger.kernel.org>,
- "linux-block@vger.kernel.org" <linux-block@vger.kernel.org>
-Message-ID: <eec127e6-e1d4-edc6-572a-92dc7e818790@gmx.com>
-Subject: Re: No way to break bio_for_each_segment_all() macro?
-References: <ac2ba6e0-5312-1ec5-471e-edd16d6cde3a@gmx.com>
- <20190406134718.GC3018@ming.t460p>
-In-Reply-To: <20190406134718.GC3018@ming.t460p>
-
---Ye9Y9E8rkY0yUvPRLPtxsElfDjj496vGC
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
 
-
-On 2019/4/6 =E4=B8=8B=E5=8D=889:47, Ming Lei wrote:
-> On Sat, Apr 06, 2019 at 09:53:07AM +0800, Qu Wenruo wrote:
->> Hi,
+2019-04-06 15:22, Qu Wenruo:
+> 
+> 
+> On 2019/4/6 下午9:20, Nik. wrote:
 >>
->> I'm looking into a strange behavior that we can't break
->> bio_for_each_segment_all() after commit 6dc4f100c175 ("block: allow
->> bio_for_each_segment_all() to iterate over multi-page bvec").
 >>
->> It's screwing up all bio_for_each_segment_all() call with error out br=
-anch.
+>> 2019-04-06 11:06, Qu Wenruo:
+>>>>>
+>>>>> Please try again, and sorry for the inconvenience. Hopes this is the
+>>>>> last try.
+>>>>
+>>>> #sudo ./btrfs-corrupt-block -X /dev/md0
+>>>> old offset=131072 len=0
+>>>> new offset=0 len=0
+>>>
+>>> My bad, the first fix is bad, leading the bad result.
+>>>
+>>> (And that's why we need to review patches)
+>>>
+>>> Fortunately we have everything we need to manually set the value, no
+>>> magic any more.
 >>
->=20
-> Please test the following patch:
+>> So I gues the next steps were git fetch, make and run again the above
+>> two commands:
+>>
+>> #git fetch
+>>  From https://github.com/adam900710/btrfs-progs
+>>   + c7bfe8cc...a8c26abd dirty_fix_for_nik -> origin/dirty_fix_for_nik
+>> (forced update)
+> 
+> It looks like you haven't checked out to the correct branch.
+> 
+> You could use command 'git checkout origin/dirty_fix_for_nik' to change
+> to the latest branch.
 
-It works!
+Sorry about this. Once again:
 
-Without touching the handling in btrfs part, error can break out of that
-bio_for_each_segment_all() loop, just as it used to do.
+#git checkout origin/dirty_fix_for_nik
+HEAD is now at a8c26abd btrfs-progs: corrupt-block: Manually fix bit 
+flip for Nik.
+# make
+     [PY]     libbtrfsutil
 
-Thanks,
-Qu
+#./btrfs-corrupt-block -X /dev/md0
+old offset=0 len=0
+new offset=14966 len=37
+Successfully repair tree block at 1894009225216
 
-> --
->=20
-> diff --git a/include/linux/bio.h b/include/linux/bio.h
-> index bb6090aa165d..7bd7e64e02f8 100644
-> --- a/include/linux/bio.h
-> +++ b/include/linux/bio.h
-> @@ -120,19 +120,15 @@ static inline bool bio_full(struct bio *bio)
->  	return bio->bi_vcnt >=3D bio->bi_max_vecs;
->  }
-> =20
-> -#define mp_bvec_for_each_segment(bv, bvl, i, iter_all)			\
-> -	for (bv =3D bvec_init_iter_all(&iter_all);			\
-> -		(iter_all.done < (bvl)->bv_len) &&			\
-> -		(mp_bvec_next_segment((bvl), &iter_all), 1);		\
-> -		iter_all.done +=3D bv->bv_len, i +=3D 1)
-> -
->  /*
->   * drivers should _never_ use the all version - the bio may have been =
-split
->   * before it got to the driver and the driver won't own all of it
->   */
-> -#define bio_for_each_segment_all(bvl, bio, i, iter_all)		\
-> -	for (i =3D 0, iter_all.idx =3D 0; iter_all.idx < (bio)->bi_vcnt; iter=
-_all.idx++)	\
-> -		mp_bvec_for_each_segment(bvl, &((bio)->bi_io_vec[iter_all.idx]), i, =
-iter_all)
-> +#define bio_for_each_segment_all(bvl, bio, i, iter_all)			\
-> +	for (i =3D 0, bvl =3D bvec_init_iter_all(&iter_all);		\
-> +		iter_all.idx < (bio)->bi_vcnt &&			\
-> +		(mp_bvec_advance(&((bio)->bi_io_vec[iter_all.idx]),	\
-> +				 &iter_all), 1); i++)
-> =20
->  static inline void bio_advance_iter(struct bio *bio, struct bvec_iter =
-*iter,
->  				    unsigned bytes)
-> diff --git a/include/linux/bvec.h b/include/linux/bvec.h
-> index f6275c4da13a..6e4996dfc847 100644
-> --- a/include/linux/bvec.h
-> +++ b/include/linux/bvec.h
-> @@ -48,7 +48,7 @@ struct bvec_iter {
->  struct bvec_iter_all {
->  	struct bio_vec	bv;
->  	int		idx;
-> -	unsigned	done;
-> +	unsigned	bv_done;
->  };
-> =20
->  static inline struct page *bvec_nth_page(struct page *page, int idx)
-> @@ -145,18 +145,18 @@ static inline bool bvec_iter_advance(const struct=
- bio_vec *bv,
-> =20
->  static inline struct bio_vec *bvec_init_iter_all(struct bvec_iter_all =
-*iter_all)
->  {
-> -	iter_all->bv.bv_page =3D NULL;
-> -	iter_all->done =3D 0;
-> +	iter_all->bv_done =3D 0;
-> +	iter_all->idx =3D 0;
-> =20
->  	return &iter_all->bv;
->  }
-> =20
-> -static inline void mp_bvec_next_segment(const struct bio_vec *bvec,
-> -					struct bvec_iter_all *iter_all)
-> +static inline void mp_bvec_advance(const struct bio_vec *bvec,
-> +				   struct bvec_iter_all *iter_all)
->  {
->  	struct bio_vec *bv =3D &iter_all->bv;
-> =20
-> -	if (bv->bv_page) {
-> +	if (iter_all->bv_done) {
->  		bv->bv_page =3D nth_page(bv->bv_page, 1);
->  		bv->bv_offset =3D 0;
->  	} else {
-> @@ -164,7 +164,13 @@ static inline void mp_bvec_next_segment(const stru=
-ct bio_vec *bvec,
->  		bv->bv_offset =3D bvec->bv_offset;
->  	}
->  	bv->bv_len =3D min_t(unsigned int, PAGE_SIZE - bv->bv_offset,
-> -			   bvec->bv_len - iter_all->done);
-> +			   bvec->bv_len - iter_all->bv_done);
-> +	iter_all->bv_done +=3D bv->bv_len;
-> +
-> +	if (iter_all->bv_done =3D=3D bvec->bv_len) {
-> +		iter_all->idx++;
-> +		iter_all->bv_done =3D 0;
-> +	}
->  }
-> =20
->  /*
->=20
+# mount -t btrfs -o ro /dev/md0 /mnt/md0/
+mount: /mnt/md0: wrong fs type, bad option, bad superblock on /dev/md0, 
+missing codepage or helper program, or other error.
+
+root@bach:~# dmesg|tail
+...
+[59138.540585] BTRFS info (device md0): disk space caching is enabled
+[59138.697727] BTRFS info (device md0): bdev /dev/md0 errs: wr 0, rd 0, 
+flush 0, corrupt 2181, gen 0
+[59139.944682] BTRFS critical (device md0): corrupt leaf: root=1 
+block=1894009225216 slot=83, bad key order, prev (564984271564800 168 
+962560) current (2034319192064 168 262144)
+[59139.945109] BTRFS error (device md0): failed to read block groups: -5
+[59139.984122] BTRFS error (device md0): open_ctree failed
+
+Kind regards,
+Nik.
+--
+
 > Thanks,
-> Ming
->=20
-
-
---Ye9Y9E8rkY0yUvPRLPtxsElfDjj496vGC--
-
---Dqwoz2nzTkviyWrC29elZ61H4dVfRYawB
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlyosOIACgkQwj2R86El
-/qj+AQf/a24Iw1UB5MaBI9GNKm1NVYETMatmfW3FMYhRLr67+l9Q+d0741mMnc/E
-oXvfITsj8e+0IzJCA/fvton7N2q//WGlezW+SWvwJN2dfLiXNBT7ECxBRaVg9X+b
-1/Q5K40WNhOEj/sPWhmF6Iws90PDg/uDlOBIyqZKigzFIOHWqyaL7AdNc6LTFQAc
-PuthujUfyfSR+VN5/CeGUVIPa4bMAcsiz+i2AoE8E2TZBEXsRFplr7K1aBeJpdtV
-KxhYgaLZQc7Qn2PFBOKMAxw5QIwLHK2l964wKragjs8KCUyf+DZ985A4VxHeitnH
-X5Lzt5M08NQ+hK25xAQYMaNvaqsFWw==
-=WvsY
------END PGP SIGNATURE-----
-
---Dqwoz2nzTkviyWrC29elZ61H4dVfRYawB--
+> Qu
+> 
+>> #make
+>>      [PY]     libbtrfsutil
+>>
+>> #./btrfs-corrupt-block -X /dev/md0
+>> old offset=0 len=0
+>> new offset=0 len=0
+>> Successfully repair tree block at 1894009225216
+>>
+>> # mount -t btrfs -o ro /dev/md0 /mnt/md0/
+>> mount: /mnt/md0: wrong fs type, bad option, bad superblock on /dev/md0,
+>> missing codepage or helper program, or other error.
+>>
+>> # dmesg|tail
+>> ...
+>> [56146.672395] BTRFS info (device md0): disk space caching is enabled
+>> [56146.841632] BTRFS info (device md0): bdev /dev/md0 errs: wr 0, rd 0,
+>> flush 0, corrupt 2181, gen 0
+>> [56148.097242] BTRFS critical (device md0): corrupt leaf: root=1
+>> block=1894009225216 slot=30, unexpected item end, have 0 expect 15003
+>> [56148.097583] BTRFS error (device md0): failed to read block groups: -5
+>> [56148.140137] BTRFS error (device md0): open_ctree failed
+>>
+>> If the above steps were wrong - please, correct!
+>>
+>>> The only uncertain part is the size.
+>>> If mount still fails, dmesg will tell me the size I need.
+>>>
+>>>
+>>>> Successfully repair tree block at 1894009225216
+>>>> # mount -t btrfs -o ro /dev/md0 /mnt/md0/
+>>>> mount: /mnt/md0: wrong fs type, bad option, bad superblock on /dev/md0,
+>>>> missing codepage or helper program, or other error.
+>>>> root@bach:~# dmesg|tail
+>>>> ...
+>>>> [39342.860715] BTRFS info (device md0): disk space caching is enabled
+>>>> [39342.933380] BTRFS info (device md0): bdev /dev/md0 errs: wr 0, rd 0,
+>>>> flush 0, corrupt 2181, gen 0
+>>>> [39344.197411] BTRFS critical (device md0): corrupt leaf: root=1
+>>>> block=1894009225216 slot=30, unexpected item end, have 0 expect 15003
+>>>> [39344.197915] BTRFS error (device md0): failed to read block groups: -5
+>>>> [39344.248137] BTRFS error (device md0): open_ctree failed
+>>>>
+>>>> Sorry, I forgot to tell: this and previous attempt were with kernel
+>>>> 4.15.0-47-generic.
+>>>
+>>> As long as it can output above message, the kernel version doesn't make
+>>> much difference.
+>>>
+>>>
+>>>> My Ubuntu 18.04 LTS is having enormous problems with
+>>>> Kernel 5.0.2 - very long boot; network, login and other services cycling
+>>>> trough "start, timeout, fail, stop" again and again, etc. If kernel 5 is
+>>>> important I will need time to get it right (maybe even assistance from
+>>>> another(?) developer group).
+>>>> Actually with 5.0.2 each boot sends me an email about an empty and not
+>>>> automatically mounted btrfs filesystem with raid1 profile, consisting
+>>>> from two devices (sdb and sdi):
+>>>>
+>>>> kernel: [    9.625619] BTRFS: device fsid
+>>>> 05bd214a-8961-4165-9205-a5089a65b59b devid 2 transid 832 /dev/sdi
+>>>>
+>>>> Scrubbing it finishes almost immediately (see below), but during next
+>>>> boot the email comes again:
+>>>>
+>>>> #btrfs scrub status /mnt/b
+>>>> scrub status for 05bd214a-8961-4165-9205-a5089a65b59b
+>>>>           scrub started at Sat Apr  6 10:42:15 2019 and finished after
+>>>> 00:00:00
+>>>>           total bytes scrubbed: 1.51MiB with 0 errors
+>>>>
+>>>> Should I be worried about it?
+>>>
+>>> You could try btrfs check --readonly and see what's going on.
+>>> If btrfs check --readonly is OK, then it should be mostly OK.
+>>
+>> Then it seems to be ok, thank you!
+>>
+>>
+>>> Thanks,
+>>> Qu
+>>>
+>>>
+>>>>
+>>>> Kind regards,
+>>>> Nik.
+>>>> -- 
+>>>>
+>>>>> Thanks,
+>>>>> Qu
+>>>>>>
+>>>>>> Thank you.
+>>>>>> Nik.
+>>>>>> -- 
+>>>>>>
+>>>>>>> Thanks,
+>>>>>>> Qu
+>>>>>>>
+>>>>>>>>
+>>>>>>>> Actually there was one warning during make, I don't know of it is
+>>>>>>>> relevant:
+>>>>>>>>         [CC]     check/main.o
+>>>>>>>> check/main.c: In function ‘try_repair_inode’:
+>>>>>>>> check/main.c:2688:5: warning: ‘ret’ may be used uninitialized in
+>>>>>>>> this
+>>>>>>>> function [-Wmaybe-uninitialized]
+>>>>>>>>       if (!ret) {
+>>>>>>>>          ^
+>>>>>>>> check/main.c:2666:6: note: ‘ret’ was declared here
+>>>>>>>>       int ret;
+>>>>>>>>           ^~~
+>>>>>>>>
+>>>>>>>> The previous steps were as follow (output ommited, since nothing
+>>>>>>>> unexpected happened):
+>>>>>>>> #git clone --single-branch -v -b dirty_fix_for_nik
+>>>>>>>> https://github.com/adam900710/btrfs-progs.git
+>>>>>>>> #cd btrfs-progs/
+>>>>>>>> #./autogen.sh
+>>>>>>>> #./configure --disable-documentation --disable-convert
+>>>>>>>> #make
+>>>>>>>>
+>>>>>>>> Did I got the right branch? Or miss any step?
+>>>>>>>>
+>>>>>>>> Kind regards,
+>>>>>>>> Nik.
+>>>>>>>> -- 
+>>>>>>>>
+>>>>>>>>> If everything goes correctly, it should output something like:
+>>>>>>>>>        Successfully repaired tree block at 1894009225216
+>>>>>>>>> (And please ignore any grammar error in my code)
+>>>>>>>>>
+>>>>>>>>> After that, please run a "btrfs check --readonly" to ensure no
+>>>>>>>>> other
+>>>>>>>>> bit
+>>>>>>>>> flip in your fs.
+>>>>>>>>>
+>>>>>>>>> Thanks,
+>>>>>>>>> Qu
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>>>>
+>>>>>>>>>>
+>>>>>>>>>> Hope this is ok.
+>>>>>>>>>>
+>>>>>>>>>> Regards,
+>>>>>>>>>> Nik.
+>>>>>>>>>> -
+>>>>>>>>>
+>>>>>>>
+>>>>>
+>>>
+> 

@@ -1,44 +1,57 @@
-Return-Path: <SRS0=fkam=SH=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=k9FD=SI=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-5.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,URIBL_BLOCKED autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B5F92C282CE
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Apr 2019 23:48:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DDAD3C282CE
+	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 00:03:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6F67820700
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Apr 2019 23:48:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8BDD32175B
+	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 00:03:09 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="TR7JURQI"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="fK4+sCZo"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726456AbfDEXsJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 5 Apr 2019 19:48:09 -0400
-Received: from mout.gmx.net ([212.227.17.20]:55513 "EHLO mout.gmx.net"
+        id S1726326AbfDFADI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 5 Apr 2019 20:03:08 -0400
+Received: from mout.gmx.net ([212.227.15.18]:41703 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726310AbfDEXsI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 5 Apr 2019 19:48:08 -0400
+        id S1726204AbfDFADI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 5 Apr 2019 20:03:08 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1554508079;
-        bh=yRnMfPpyt7IhxscaEWdiCaVqzYlLQPvauY5loLTy+DY=;
+        s=badeba3b8450; t=1554508984;
+        bh=a4wvFc4yjd9vBIv8MI3XKoKw1SIzrv2eqzLj7P1c8Wg=;
         h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=TR7JURQIQWmy6tdp/qmHaRCYL30Pj/cF0g7/o/ttPcUlkcOeo14XiRmGLSHXhel1Q
-         VCTfsfRdYjf0IlG8cUnlNriDoOsKb1/UD8yPityeBJacq1OfVr1m/cck5pyK3+EaeR
-         Zpcw8rtI+0XgIrx5dBVKrHXLsICFrthIF4a5+1EY=
+        b=fK4+sCZo7xJ2PgtZi8tkBFuMIocBjwiC3ry929QcYAvqYqrC9FodqUUomgNv0fTy1
+         VU25dOQnNkTmuPrLyzBF31B/dJlcVAh6dUf5zkGsCpyTymKI6WLGP2grOxEXgNILkB
+         y/0bg1WzCxAcH9g/Wznytw6CWecaEghBpmWPSfOo=
 X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx103
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0M2tKM-1gt6ng0f8o-00seDx; Sat, 06
- Apr 2019 01:47:59 +0200
-Subject: Re: [PATCH v3.1 1/9] btrfs: delayed-ref: Introduce better documented
- delayed ref structures
-To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20190404064537.4031-1-wqu@suse.com>
- <20190404064537.4031-2-wqu@suse.com> <20190405120950.GW29086@twin.jikos.cz>
- <c5a74629-3a44-0cde-aa64-9b3b8b8cbce9@gmx.com>
- <20190405155109.GY29086@twin.jikos.cz>
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx003
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0MIuSH-1hETfy1C3d-002XiR; Sat, 06
+ Apr 2019 02:03:04 +0200
+Subject: Re: interest in post-mortem examination of a BTRFS system and
+ improving the btrfs-code?
+To:     "Nik." <btrfs@avgustinov.eu>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <aa81a49a-d5ca-0f1c-fa75-9ed3656cff55@avgustinov.eu>
+ <a6cb572c-c015-1e19-7489-c59fd1384509@avgustinov.eu>
+ <9cf1e935-c0b1-6546-5f1e-f8e88839d560@gmx.com>
+ <99c1632a-a575-b5eb-8a26-8f92666f9c3a@avgustinov.eu>
+ <c0909c80-8167-7b46-3a3c-d57962aee7fd@gmx.com>
+ <6c4d5ccf-562d-a9b7-3aba-0a3bfd3797eb@avgustinov.eu>
+ <ff7f4039-25d8-f5c9-80ac-4e7afaace3d0@gmx.com>
+ <9a800f8e-a8eb-ea5c-328b-7aed53bc3742@avgustinov.eu>
+ <edbb548a-75e8-0b9e-914f-684aa6b4a5ea@gmx.com>
+ <7d605543-2899-144a-7b46-7caed803b43b@avgustinov.eu>
+ <8fdb5da5-d649-0c0d-1a21-c3f430476afd@gmx.com>
+ <ce8be6b2-1a2f-201f-a4ff-03686b3620f1@avgustinov.eu>
+ <3dcaf6ae-34c4-3760-70f9-6ce2962b42c8@gmx.com>
+ <e9720559-eff2-e88b-12b4-81defb8c29c5@avgustinov.eu>
+ <a75981da-86f7-e0fb-d1dc-a2576b09c668@gmx.com>
+ <039ec3eb-c44e-35e9-cf1b-f9f75849d873@avgustinov.eu>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -65,113 +78,193 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <eebc9aa3-c166-8168-2ab5-06d62f4ba788@gmx.com>
-Date:   Sat, 6 Apr 2019 07:47:51 +0800
+Message-ID: <c69778f5-a015-8b77-3fab-e41e49a0e0db@gmx.com>
+Date:   Sat, 6 Apr 2019 08:03:00 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.5.3
 MIME-Version: 1.0
-In-Reply-To: <20190405155109.GY29086@twin.jikos.cz>
+In-Reply-To: <039ec3eb-c44e-35e9-cf1b-f9f75849d873@avgustinov.eu>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="m0cu8KD4qEO9szc6t3Xw8VnDNZAwQlDHU"
-X-Provags-ID: V03:K1:AJUtJxcQ6vgzak/Ob2I+KP9zZc2kKMs+CSYaOPdP+FvN4O4/beC
- PCWTP4215K2B4ohsrMtgNuo9lpsK19Lfr2DdXojhN27P1FFPDu/K+TMDHVmxG3v+aN48A+M
- jTZ5xkAvOBMsvx+H2evKq7WiQv7dM+ajNT4IbB0ags4xcN1ntPG9kCb9eJxBLzU2A01N5G4
- 2SqVrbzi5EEAeglYB/Hiw==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:X8C/rVEojtw=:NGFn/XcCbvgMEBAtx9pGq9
- XnH/Ejux+svryFlXSqgMZ6wpPBYHqwNIoua2OVNebchWPoqEKWvpk9NLklSzGu9Jm1JR4Idzi
- LQqph5mkxbfDi7eVIvFDxHKYoHCLeM6drQFynGoDH1D73XXwR37RYN6OAqT9A+uGPoSktoSub
- zL0UlCsNqaSrkfkNSj1XVTjzCuCro2L+HjxO1ciEwcxG/9brN+c7hkJXq//YENRoJWeN85F8L
- REU87hSwLfdp94OkRPE69wsYt8plLfRoYgp2ht13PIqvrHcPnNmKK2U+ywhqJzlPeTQnetxU9
- 9+vujjb+BWIhvH2cuMQPD8M5hFQSUGmT1N4C+N3a3VrFiKxHvA/g8NqlXvWuvVJw+QbWlhWfC
- 84+UBz8+oxJJdcBIf6m2bD9Qkz+K8Br5b6ITJ1w6au8gFQd0EBmrsIJqK+tcZhrK34uhBUF/T
- S/5OvEoYEsmiyGwLub+wUZ4oqH5XWGQYId/NQGnuQ1k+juf9SmF1hMBNfBT2za9Ll/AH7WQHa
- wLjNJ8hoh+p14ClyDuitDZCzcTDho6ooY8dvgLGoUC3OnMZIALKBPEdkU1XZOGDQTycAKt8ps
- 506EMtYqez6ZOBGMYmkijBAJf+fZWzLuARjb11+4YsldgCwokwlVmSlhcRgVgL+TTkcyfMzKO
- 7CrmGLmKrKODLBgXjbLuX3kdiL378m5O1crmMwhbnKKNIjbRRB3e/T2QJySo/pilZXNBvEuMv
- sjXs3LxS0yaVk/X5yGbcNfnh/dFpMlOYbc4SUfzYeMCcDkGomRNH6lNIWs4gdwfKjJPU/StkU
- zIgLt8HRUU4iLuMmLHv7ptblLiHc/6yKe8fzFP9NZSLr2gnifYjxUKLXqL+o3tH4RXj4gJdyf
- 1hzrTPYRZ+G3aX8swmvfBAmf1kx5Es4WanFCrVJHoBwH+8/wWl4726CyA2eN4A
+ boundary="TbAUtqZeLrJxe0NiwpHYV10SRZktWSACQ"
+X-Provags-ID: V03:K1:BHUxLX7ktcSToGkR2A+QB/IC6YZuoz1jC5zVtzAsyXptrb02H8E
+ CAXeSPcKpnH1pJCzlKsjDksscZ/eEQ6QdYOozGg3/59hH9Y8tsP9u7aHlUt6svRf6ZDn2JX
+ GDFkTQwmmhNLqLAJePyefzADY/C2XBXtOz22ij/NcBlbwvJwfDZLyj5nNSLkRinLSxpDpSq
+ OtmgPuMMIzuxRG7tkfGzg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:BOuUsVUOfiE=:yEDXE/xRs+QEmJMtmzpRqo
+ nACFM+Ffnkh5M1EJ4nWEy++YmsFai6r0RgOh0ZfQG8jYYmR4QTRODLyqBwZ0DvTR50OaIe8xn
+ 3SZO6fSegYdQ6wHxnjOEI67WgKM58pqnFa4HPxj6Hh3M3OJQxN96qCL2R3IjuDqA5psKnXqw8
+ SBPyLAFGAC59aROFuhTPfY86bn5sdOG0Mrq/47UQkoMGOfuGz5veHWTyVhllqkWQlKhEs1adt
+ auDhXSW2S7FNwlM+1Zwh4NmTjYE3HP6poMi1Lwu3YaODCeJTDr6stG27IB/hWC6Ib2u5t2jyF
+ 8nbCkIlKVJh5o4KmTjH2jIdDpePwg1LPPzFijjr3hDVWde9LXu73cC20ATN8xmwvspoXE4PUD
+ Bg2viQAE3lsO/YqMt/BmXNhi132qeem+njnAj1b/kzPESj+gJLMEujTla3ACRQ+x9HTgo8L8f
+ Cg6yuAs+X9BBz2Yp6OKk2IrwUOZmjU2DZxMeuX4hxYYXlSKxsX7lxUYZPvtaw6u9DdOyWAuzK
+ V0Brm+Br0VZyeRxfNAkxv9Sucu5x1NtwNYrSeGlXkq9klzetGp6v8UrpyJDxoVWhGuubJZSGt
+ FjgXoH4EUjZMQzsnG0I2XT2ONuHQ7AGE8yEQW0Og6tB72Dn+MuEFT2XyuB8IZYCGgvZemAFeV
+ ec/SHs/14q5KsgZ0Xntt8MwJlS7cwGZ89ec/jSo6/xxDVBw/8tlUefvRc02TBKs+D3JM4uKjO
+ SHalwjnW//1Qjhw/pYmYEB8MFpTVWIncHvRXI5ipOd3O2sAzScvTgTFWjP6+S6UBo/kEvmp2C
+ BiTpIMWEKDE8CmB+2oB2oID0NU0Lp05D+BGtCKLoSRM2mpqobPzGoIzBhZl/+r2VLKQ3AJkM+
+ bGt0ZHwXUC3z1+I5P/FVYtsp7hciRg6vFj/kvq3smibV7Adw/v1aOns6qTEZy4
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---m0cu8KD4qEO9szc6t3Xw8VnDNZAwQlDHU
-Content-Type: multipart/mixed; boundary="mrqsAaIuUliGO6cxfWYQM4DRjExptcFnR";
+--TbAUtqZeLrJxe0NiwpHYV10SRZktWSACQ
+Content-Type: multipart/mixed; boundary="aIonC9VuiPPSgEfcE8ymTY0BiZwbSrIQh";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <eebc9aa3-c166-8168-2ab5-06d62f4ba788@gmx.com>
-Subject: Re: [PATCH v3.1 1/9] btrfs: delayed-ref: Introduce better documented
- delayed ref structures
-References: <20190404064537.4031-1-wqu@suse.com>
- <20190404064537.4031-2-wqu@suse.com> <20190405120950.GW29086@twin.jikos.cz>
- <c5a74629-3a44-0cde-aa64-9b3b8b8cbce9@gmx.com>
- <20190405155109.GY29086@twin.jikos.cz>
-In-Reply-To: <20190405155109.GY29086@twin.jikos.cz>
+To: "Nik." <btrfs@avgustinov.eu>,
+ "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Message-ID: <c69778f5-a015-8b77-3fab-e41e49a0e0db@gmx.com>
+Subject: Re: interest in post-mortem examination of a BTRFS system and
+ improving the btrfs-code?
+References: <aa81a49a-d5ca-0f1c-fa75-9ed3656cff55@avgustinov.eu>
+ <a6cb572c-c015-1e19-7489-c59fd1384509@avgustinov.eu>
+ <9cf1e935-c0b1-6546-5f1e-f8e88839d560@gmx.com>
+ <99c1632a-a575-b5eb-8a26-8f92666f9c3a@avgustinov.eu>
+ <c0909c80-8167-7b46-3a3c-d57962aee7fd@gmx.com>
+ <6c4d5ccf-562d-a9b7-3aba-0a3bfd3797eb@avgustinov.eu>
+ <ff7f4039-25d8-f5c9-80ac-4e7afaace3d0@gmx.com>
+ <9a800f8e-a8eb-ea5c-328b-7aed53bc3742@avgustinov.eu>
+ <edbb548a-75e8-0b9e-914f-684aa6b4a5ea@gmx.com>
+ <7d605543-2899-144a-7b46-7caed803b43b@avgustinov.eu>
+ <8fdb5da5-d649-0c0d-1a21-c3f430476afd@gmx.com>
+ <ce8be6b2-1a2f-201f-a4ff-03686b3620f1@avgustinov.eu>
+ <3dcaf6ae-34c4-3760-70f9-6ce2962b42c8@gmx.com>
+ <e9720559-eff2-e88b-12b4-81defb8c29c5@avgustinov.eu>
+ <a75981da-86f7-e0fb-d1dc-a2576b09c668@gmx.com>
+ <039ec3eb-c44e-35e9-cf1b-f9f75849d873@avgustinov.eu>
+In-Reply-To: <039ec3eb-c44e-35e9-cf1b-f9f75849d873@avgustinov.eu>
 
---mrqsAaIuUliGO6cxfWYQM4DRjExptcFnR
+--aIonC9VuiPPSgEfcE8ymTY0BiZwbSrIQh
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
->>>> +	/* For non-skinny metadata, no special member needed */
->>>> +};
->>>> +
->>>> +struct btrfs_ref {
->>>
->>> The structure name sounds a bit generic, but I think we can keep it
->>> short. There are no other btrfs-specific references that could be
->>> confused, there are 'backrefs', 'delayed-refs' all refering to the
->>> b-tree references.
->>>
->>>> +	enum btrfs_ref_type type;
->>>> +	int action;
->>>> +
->>>> +	/*
->>>> +	 * Only use parent pointers as backref (SHARED_BLOCK_REF or
->>>> +	 * SHARED_DATA_REF) for this extent and its children.
->>>> +	 * Set for reloc trees.
->>>> +	 */
->>>> +	bool only_backreferences:1;
->>>
->>> No bool bitfields please, wasn't this mentioned last time?
->>>
->> Oh, I forgot that one.
+
+On 2019/4/6 =E4=B8=8A=E5=8D=883:38, Nik. wrote:
+>=20
+>=20
+> 2019-04-05 10:15, Qu Wenruo:
 >>
->> Do I need to resend or just edit that commit in my github branch?
->=20
-> No need to resend, I'll edit that as it's a trivial change. I'll have
-> another look at the whole structure if the layout could be optimized,
-> eg. the enum takes 4 bytes but we'd be fine with a byte.
->=20
-Maybe I have already said this before, but I still really hope either we
-have some external tool to do that for us, or some attribute to do it.
+>>
+>> On 2019/4/5 =E4=B8=8B=E5=8D=883:41, Nik. wrote:
+>>>
+>>> Below is the stderr of both commands:
+>>>
+>>> # btrfs inspect dump-tree -t chunk /dev/md0>DT-chunk.log
+>>> # btrfs inspect dump-tree -t extent /dev/md0>DT-extent.log
+>>> ERROR: leaf 1894009225216 slot 30 pointer invalid, offset 146038 size=
+ 37
+>>> leaf data limit 16283
+>>> ERROR: skip remaining slots
+>>>
+>>> Since the output on stdout is pretty long even after gzip, I am
+>>> providing only the output of the first command as attachment. The out=
+put
+>>> of the second command (25 MB after gzip -9) can be downloaded here:
+>>>
+>>> https://cloud.avgustinov.eu/index.php/s/AgbwWyCrbYjenq8
+>>
+>> Sorry, I should have use a more specific command to get a smaller outp=
+ut.
+>> But anyway, your output is good enough for me to craft the fix patch.
+>>
+>> Here is the dirty fix branch:
+>> https://github.com/adam900710/btrfs-progs/tree/dirty_fix_for_nik
+>>
+>> Compile the btrfs-progs as usual.
+>> Just a late hint, you can disable document/btrfs-convert to reduce the=
+
+>> dependency:
+>> $ ./configure --disable-documentation --disable-convert
+>>
+>> Then, inside btrfs-progs directory, call:
+>> # ./btrfs-corrupt-block -X /dev/md0
+> incorrect offsets 15003 146075
+> Open ctree failed
+
+Oh, I forgot it's in extent tree, which may need to be read out at mount
+time.
+
+Just a new flag can handle it.
+
+The branch is updated, please check.
 
 Thanks,
 Qu
 
+>=20
+> Actually there was one warning during make, I don't know of it is relev=
+ant:
+> =C2=A0=C2=A0=C2=A0 [CC]=C2=A0=C2=A0=C2=A0=C2=A0 check/main.o
+> check/main.c: In function =E2=80=98try_repair_inode=E2=80=99:
+> check/main.c:2688:5: warning: =E2=80=98ret=E2=80=99 may be used uniniti=
+alized in this
+> function [-Wmaybe-uninitialized]
+> =C2=A0 if (!ret) {
+> =C2=A0=C2=A0=C2=A0=C2=A0 ^
+> check/main.c:2666:6: note: =E2=80=98ret=E2=80=99 was declared here
+> =C2=A0 int ret;
+> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ^~~
+>=20
+> The previous steps were as follow (output ommited, since nothing
+> unexpected happened):
+> #git clone --single-branch -v -b dirty_fix_for_nik
+> https://github.com/adam900710/btrfs-progs.git
+> #cd btrfs-progs/
+> #./autogen.sh
+> #./configure --disable-documentation --disable-convert
+> #make
+>=20
+> Did I got the right branch? Or miss any step?
+>=20
+> Kind regards,
+> Nik.
+> --=20
+>=20
+>> If everything goes correctly, it should output something like:
+>> =C2=A0=C2=A0 Successfully repaired tree block at 1894009225216
+>> (And please ignore any grammar error in my code)
+>>
+>> After that, please run a "btrfs check --readonly" to ensure no other b=
+it
+>> flip in your fs.
+>>
+>> Thanks,
+>> Qu
+>>
+>>
+>>
+>>>
+>>> Hope this is ok.
+>>>
+>>> Regards,
+>>> Nik.
+>>> -
+>>
 
---mrqsAaIuUliGO6cxfWYQM4DRjExptcFnR--
 
---m0cu8KD4qEO9szc6t3Xw8VnDNZAwQlDHU
+--aIonC9VuiPPSgEfcE8ymTY0BiZwbSrIQh--
+
+--TbAUtqZeLrJxe0NiwpHYV10SRZktWSACQ
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlyn6ScACgkQwj2R86El
-/qjJdAf+IHcdOwUCYLnUCSr24Cb4FPYtmA3e3lDvX8jaxlkXtArsHfTrc25Y0w31
-j49kIDPZdUJ5DlZBxKYbLBWWhLQppqrNUR0cIJmfYUgwxTFbI4o745uy2ja9M0n/
-42vUlSqfLSFXj+6EoorWhXo/cIlyUxAp/z3psMs7OrdgBNAy2QTyTzIwo2uBZT5z
-QAYn5HlWfaq0cuBeYiiyuHFLTHC1+jdTryVFFX6vJl5OVqT7PRSSvo5g438tmpSw
-nb9E7+QrWgrC9PRzKUPmLeRMaPQ92ED2YQ8xChf0jWiyNiXC9RbDObnckwWbN28H
-1Bqb/3segkrjBS0wKVt49a/Vg0c4LQ==
-=x+Zz
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlyn7LQACgkQwj2R86El
+/qhfcAf/esMz4SXayM6sNGPAD7w52VniVg/d2EAp8UKH797SjqBz9oDjKB0/YuUY
+zRJv81dBRouUN8tl7wJl8hgumn4nTiWT9EDuU9Ej9qgvwSV1kBdQCkDQGPne8AgK
+pyVO4iaM+mRyaVNvkU6bs2JqILI0Z0o2Ubq7lIUwaX/1O9ID0vW+kZdkkzqE9Go8
+nauxYOW5k3undaDWQa5egxA12WapxLuT9tzURIwut+FtiewPwUurvSF9KqYF1suO
+ymqAcFMLbbsS0OIYGWIcXgeUgRP9elVL0GC6zJkW2DIBeOQz9/YNraIpoLJ+kJhB
+jQBg65hBn9ohUagTS29YMU34CGDVlg==
+=LN8J
 -----END PGP SIGNATURE-----
 
---m0cu8KD4qEO9szc6t3Xw8VnDNZAwQlDHU--
+--TbAUtqZeLrJxe0NiwpHYV10SRZktWSACQ--

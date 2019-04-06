@@ -4,29 +4,30 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6AB29C10F06
-	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 10:20:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1E621C282DA
+	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 10:38:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3B5C6218C3
-	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 10:20:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E0CCD218D9
+	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 10:38:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726353AbfDFKUL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 6 Apr 2019 06:20:11 -0400
-Received: from mx2.suse.de ([195.135.220.15]:48166 "EHLO mx1.suse.de"
+        id S1726534AbfDFKiH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 6 Apr 2019 06:38:07 -0400
+Received: from mx2.suse.de ([195.135.220.15]:49724 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726036AbfDFKUL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 6 Apr 2019 06:20:11 -0400
+        id S1726036AbfDFKiG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 6 Apr 2019 06:38:06 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 1F7EAAFEA
-        for <linux-btrfs@vger.kernel.org>; Sat,  6 Apr 2019 10:20:10 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 51881AC1B;
+        Sat,  6 Apr 2019 10:38:05 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: Record error in btree_csum_one_bio()
-Date:   Sat,  6 Apr 2019 18:20:05 +0800
-Message-Id: <20190406102005.5420-1-wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org
+Subject: [PATCH v2 1/2] block: Add new BLK_STS_SELFTEST status
+Date:   Sat,  6 Apr 2019 18:37:58 +0800
+Message-Id: <20190406103759.6330-1-wqu@suse.com>
 X-Mailer: git-send-email 2.21.0
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
@@ -35,33 +36,55 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Since commit 6dc4f100c175 ("block: allow bio_for_each_segment_all() to
-iterate over multi-page bvec"), break will only break the inner loop of
-bio_for_each_segment_all(), unable to break the outer loop.
+There are quite a lot of filesystems doing their verification work done
+at endio hook or hook before submitting bio.
 
-This patch will break out by utilizing goto command.
+Normally such verification should return -EUCLEAN to indicate something
+unexpected.
+
+However there is no BLK_STS_* bit for that, this makes every selftest
+error to be interpreted to EIO, which lowers the severity.
+
+This patch will add a new BLK_STS_UCLEAN, to allow -EUCLEAN to be
+converted to BLK_STS_UCLEAN, and then converted back to -EUCLEAN without
+losing anything.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/disk-io.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+changelog:
+v2:
+- Use BLK_STS_UCLEAN to replace the previous stupid naming scheme.
+---
+ block/blk-core.c          | 1 +
+ include/linux/blk_types.h | 3 +++
+ 2 files changed, 4 insertions(+)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 6fe9197f6ee4..e20b952d3cde 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -840,9 +840,10 @@ static blk_status_t btree_csum_one_bio(struct bio *bio)
- 		root = BTRFS_I(bvec->bv_page->mapping->host)->root;
- 		ret = csum_dirty_buffer(root->fs_info, bvec->bv_page);
- 		if (ret)
--			break;
-+			goto out;
- 	}
+diff --git a/block/blk-core.c b/block/blk-core.c
+index 4673ebe42255..a51c0a13fd5e 100644
+--- a/block/blk-core.c
++++ b/block/blk-core.c
+@@ -135,6 +135,7 @@ static const struct {
+ 	[BLK_STS_RESOURCE]	= { -ENOMEM,	"kernel resource" },
+ 	[BLK_STS_DEV_RESOURCE]	= { -EBUSY,	"device resource" },
+ 	[BLK_STS_AGAIN]		= { -EAGAIN,	"nonblocking retry" },
++	[BLK_STS_UCLEAN]	= { -EUCLEAN,	"structure needs cleaning" },
  
-+out:
- 	return errno_to_blk_status(ret);
- }
+ 	/* device mapper special case, should not leak out: */
+ 	[BLK_STS_DM_REQUEUE]	= { -EREMCHG, "dm internal retry" },
+diff --git a/include/linux/blk_types.h b/include/linux/blk_types.h
+index 791fee35df88..df0c470147c1 100644
+--- a/include/linux/blk_types.h
++++ b/include/linux/blk_types.h
+@@ -63,6 +63,9 @@ typedef u8 __bitwise blk_status_t;
+  */
+ #define BLK_STS_DEV_RESOURCE	((__force blk_status_t)13)
  
++/* Normally filesystem layer generated error */
++#define BLK_STS_UCLEAN		((__force blk_status_t)14)
++
+ /**
+  * blk_path_error - returns true if error may be path related
+  * @error: status the request was completed with
 -- 
 2.21.0
 

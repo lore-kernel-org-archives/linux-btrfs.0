@@ -2,97 +2,247 @@ Return-Path: <SRS0=k9FD=SI=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.8 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BAC41C10F06
-	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 12:30:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 37596C10F06
+	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 13:20:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 94F71218D9
-	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 12:30:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BFB432173C
+	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 13:20:16 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=avgustinov.eu header.i=@avgustinov.eu header.b="b3VOPO5S"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726496AbfDFMav (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 6 Apr 2019 08:30:51 -0400
-Received: from mx1.redhat.com ([209.132.183.28]:59880 "EHLO mx1.redhat.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726316AbfDFMav (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 6 Apr 2019 08:30:51 -0400
-Received: from smtp.corp.redhat.com (int-mx02.intmail.prod.int.phx2.redhat.com [10.5.11.12])
-        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        id S1726427AbfDFNUP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 6 Apr 2019 09:20:15 -0400
+Received: from cloud.avgustinov.eu ([62.73.84.164]:60256 "EHLO
+        cloud.avgustinov.eu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726404AbfDFNUP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 6 Apr 2019 09:20:15 -0400
+Received: from [192.168.178.50] (ip5f5867e1.dynamic.kabel-deutschland.de [95.88.103.225])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mx1.redhat.com (Postfix) with ESMTPS id 196BD9D0DA;
-        Sat,  6 Apr 2019 12:30:51 +0000 (UTC)
-Received: from ming.t460p (ovpn-8-16.pek2.redhat.com [10.72.8.16])
-        by smtp.corp.redhat.com (Postfix) with ESMTPS id 35ECD60CCC;
-        Sat,  6 Apr 2019 12:30:42 +0000 (UTC)
-Date:   Sat, 6 Apr 2019 20:30:37 +0800
-From:   Ming Lei <ming.lei@redhat.com>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     Jens Axboe <axboe@kernel.dk>, Omar Sandoval <osandov@osandov.com>,
-        linux-block@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Possible bio merging breakage in mp bio rework
-Message-ID: <20190406123035.GA3018@ming.t460p>
-References: <59c19acf-999f-1911-b0b8-1a5cec8116c5@suse.com>
- <20190406001653.GA4805@ming.t460p>
- <9ac6f2eb-069a-a02c-7863-e33cb00ad312@suse.com>
+        by cloud.avgustinov.eu (Postfix) with ESMTPSA id 159D448C12E1;
+        Sat,  6 Apr 2019 16:20:13 +0300 (EEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=avgustinov.eu;
+        s=default; t=1554556813;
+        bh=iRmq1UQaCQ8ZMJjcB6V9HCBgCJk8Qk0vXC1PgWbw1/0=;
+        h=Subject:To:References:From:Date:In-Reply-To:From;
+        b=b3VOPO5S9C7P6pAjGO3utfXSwuIkj8rCXzBqTCD3K1g4vryyi40f7clECRkfq3eVH
+         SDhB/kUR8IDYwPX9ze0ePObCrwjV3/APH22GzzqxSO8neAABM+kvFlJ+YC5JjMAQM8
+         bSxPZThsCzkkfVKuXjJPmWhuqGn3903F0w5zljXYPTuTGibr654Tw/QmEwPAYJRsHQ
+         LstcuhesBUw0i03RWHkLiJrb0TfA8qEhvBdoknYlowX90mlmxHwqmoNS+OlsFhevb4
+         /AniyuwOPFqhcWvJ6iGJQiaakPYYPjOqa7xlJ5GEPg/gEgHadtjAubLaf6Vtqazyej
+         uMSsWEF7Kc0pw==
+Subject: Re: interest in post-mortem examination of a BTRFS system and
+ improving the btrfs-code?
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <aa81a49a-d5ca-0f1c-fa75-9ed3656cff55@avgustinov.eu>
+ <99c1632a-a575-b5eb-8a26-8f92666f9c3a@avgustinov.eu>
+ <c0909c80-8167-7b46-3a3c-d57962aee7fd@gmx.com>
+ <6c4d5ccf-562d-a9b7-3aba-0a3bfd3797eb@avgustinov.eu>
+ <ff7f4039-25d8-f5c9-80ac-4e7afaace3d0@gmx.com>
+ <9a800f8e-a8eb-ea5c-328b-7aed53bc3742@avgustinov.eu>
+ <edbb548a-75e8-0b9e-914f-684aa6b4a5ea@gmx.com>
+ <7d605543-2899-144a-7b46-7caed803b43b@avgustinov.eu>
+ <8fdb5da5-d649-0c0d-1a21-c3f430476afd@gmx.com>
+ <ce8be6b2-1a2f-201f-a4ff-03686b3620f1@avgustinov.eu>
+ <3dcaf6ae-34c4-3760-70f9-6ce2962b42c8@gmx.com>
+ <e9720559-eff2-e88b-12b4-81defb8c29c5@avgustinov.eu>
+ <a75981da-86f7-e0fb-d1dc-a2576b09c668@gmx.com>
+ <039ec3eb-c44e-35e9-cf1b-f9f75849d873@avgustinov.eu>
+ <c69778f5-a015-8b77-3fab-e41e49a0e0db@gmx.com>
+ <51021dd7-b21b-b001-c3f9-9bc31205738b@avgustinov.eu>
+ <00e3ddf1-cbd7-a65a-dee3-ca720cecc77d@gmx.com>
+ <a6917f39-eeb4-5548-f346-a78972c7c3fe@avgustinov.eu>
+ <6a592ffa-4a5a-81af-baef-8f1681accc87@gmx.com>
+From:   "Nik." <btrfs@avgustinov.eu>
+Message-ID: <2c786019-646a-486f-1306-25a3df36e6b3@avgustinov.eu>
+Date:   Sat, 6 Apr 2019 15:20:02 +0200
+User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:60.0) Gecko/20100101
+ Thunderbird/60.6.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
+In-Reply-To: <6a592ffa-4a5a-81af-baef-8f1681accc87@gmx.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: de-DE-1901
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <9ac6f2eb-069a-a02c-7863-e33cb00ad312@suse.com>
-User-Agent: Mutt/1.9.1 (2017-09-22)
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.12
-X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.39]); Sat, 06 Apr 2019 12:30:51 +0000 (UTC)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, Apr 06, 2019 at 09:09:12AM +0300, Nikolay Borisov wrote:
+
+
+2019-04-06 11:06, Qu Wenruo:
+>>>
+>>> Please try again, and sorry for the inconvenience. Hopes this is the
+>>> last try.
+>>
+>> #sudo ./btrfs-corrupt-block -X /dev/md0
+>> old offset=131072 len=0
+>> new offset=0 len=0
+> 
+> My bad, the first fix is bad, leading the bad result.
+> 
+> (And that's why we need to review patches)
+> 
+> Fortunately we have everything we need to manually set the value, no
+> magic any more.
+
+So I gues the next steps were git fetch, make and run again the above 
+two commands:
+
+#git fetch
+ From https://github.com/adam900710/btrfs-progs
+  + c7bfe8cc...a8c26abd dirty_fix_for_nik -> origin/dirty_fix_for_nik 
+(forced update)
+#make
+     [PY]     libbtrfsutil
+
+#./btrfs-corrupt-block -X /dev/md0
+old offset=0 len=0
+new offset=0 len=0
+Successfully repair tree block at 1894009225216
+
+# mount -t btrfs -o ro /dev/md0 /mnt/md0/
+mount: /mnt/md0: wrong fs type, bad option, bad superblock on /dev/md0, 
+missing codepage or helper program, or other error.
+
+# dmesg|tail
+...
+[56146.672395] BTRFS info (device md0): disk space caching is enabled
+[56146.841632] BTRFS info (device md0): bdev /dev/md0 errs: wr 0, rd 0, 
+flush 0, corrupt 2181, gen 0
+[56148.097242] BTRFS critical (device md0): corrupt leaf: root=1 
+block=1894009225216 slot=30, unexpected item end, have 0 expect 15003
+[56148.097583] BTRFS error (device md0): failed to read block groups: -5
+[56148.140137] BTRFS error (device md0): open_ctree failed
+
+If the above steps were wrong - please, correct!
+
+> The only uncertain part is the size.
+> If mount still fails, dmesg will tell me the size I need.
 > 
 > 
-> On 6.04.19 г. 3:16 ч., Ming Lei wrote:
-> > Hi Nikolay,
-> > 
-> > On Fri, Apr 05, 2019 at 07:04:18PM +0300, Nikolay Borisov wrote:
-> >> Hello Ming, 
-> >>
-> >> Following the mp biovec rework what is the maximum 
-> >> data that a bio could contain? Should it be PAGE_SIZE * bio_vec 
-> > 
-> > There isn't any maximum data limit on the bio submitted from fs,
-> > and block layer will make the final bio sent to driver correct
-> > by applying all kinds of queue limit, such as max segment size,
-> > max segment number, max sectors, ...
-> > 
-> >> or something else? Currently I can see bios as large as 127 megs 
-> >> on sequential workloads, I got prompted to this since btrfs has a 
-> >> memory allocation that is dependent on the data in the bio and this 
-> >> particular memory allocation started failing with order 6 allocs. 
-> > 
-> > Could you share us the code? I don't see why order 6 allocs is a must.
+>> Successfully repair tree block at 1894009225216
+>> # mount -t btrfs -o ro /dev/md0 /mnt/md0/
+>> mount: /mnt/md0: wrong fs type, bad option, bad superblock on /dev/md0,
+>> missing codepage or helper program, or other error.
+>> root@bach:~# dmesg|tail
+>> ...
+>> [39342.860715] BTRFS info (device md0): disk space caching is enabled
+>> [39342.933380] BTRFS info (device md0): bdev /dev/md0 errs: wr 0, rd 0,
+>> flush 0, corrupt 2181, gen 0
+>> [39344.197411] BTRFS critical (device md0): corrupt leaf: root=1
+>> block=1894009225216 slot=30, unexpected item end, have 0 expect 15003
+>> [39344.197915] BTRFS error (device md0): failed to read block groups: -5
+>> [39344.248137] BTRFS error (device md0): open_ctree failed
+>>
+>> Sorry, I forgot to tell: this and previous attempt were with kernel
+>> 4.15.0-47-generic.
 > 
-> When a bio is submitted btrfs has to calculate the checksum for it, this
-> happens in btrfs_csum_one_bio. Said checksums are stored in an
-> kmalloc'ed array, whose size is calculated as:
+> As long as it can output above message, the kernel version doesn't make
+> much difference.
 > 
-> 32 + bio_size / btrfs' block size (usually 4k). So for a 127mb bio that
-> would be: 32 * ((134184960÷4096) * 4) = 127k. We'd make an order 3
-> allocation. Admittedly the code in btrfs should know better rather than
-> make unbounded allocations without a fallback, but bio suddenly becoming
-> rather unbounded in their size caught us offhand.
+> 
+>> My Ubuntu 18.04 LTS is having enormous problems with
+>> Kernel 5.0.2 - very long boot; network, login and other services cycling
+>> trough "start, timeout, fail, stop" again and again, etc. If kernel 5 is
+>> important I will need time to get it right (maybe even assistance from
+>> another(?) developer group).
+>> Actually with 5.0.2 each boot sends me an email about an empty and not
+>> automatically mounted btrfs filesystem with raid1 profile, consisting
+>> from two devices (sdb and sdi):
+>>
+>> kernel: [    9.625619] BTRFS: device fsid
+>> 05bd214a-8961-4165-9205-a5089a65b59b devid 2 transid 832 /dev/sdi
+>>
+>> Scrubbing it finishes almost immediately (see below), but during next
+>> boot the email comes again:
+>>
+>> #btrfs scrub status /mnt/b
+>> scrub status for 05bd214a-8961-4165-9205-a5089a65b59b
+>>          scrub started at Sat Apr  6 10:42:15 2019 and finished after
+>> 00:00:00
+>>          total bytes scrubbed: 1.51MiB with 0 errors
+>>
+>> Should I be worried about it?
+> 
+> You could try btrfs check --readonly and see what's going on.
+> If btrfs check --readonly is OK, then it should be mostly OK.
 
-OK, thanks for your explanation.
+Then it seems to be ok, thank you!
 
-Given it is one btrfs specific feature, I'd suggest you set one max size for
-btrfs bio, for example, suppose the max checksum array is 4k, then the max
-bio size can be calculated as:
 
-	(4k - 32) * btrfs's block size
-
-which should be big enough.
-
-Thanks,
-Ming
+> Thanks,
+> Qu
+> 
+> 
+>>
+>> Kind regards,
+>> Nik.
+>> -- 
+>>
+>>> Thanks,
+>>> Qu
+>>>>
+>>>> Thank you.
+>>>> Nik.
+>>>> -- 
+>>>>
+>>>>> Thanks,
+>>>>> Qu
+>>>>>
+>>>>>>
+>>>>>> Actually there was one warning during make, I don't know of it is
+>>>>>> relevant:
+>>>>>>        [CC]     check/main.o
+>>>>>> check/main.c: In function ‘try_repair_inode’:
+>>>>>> check/main.c:2688:5: warning: ‘ret’ may be used uninitialized in this
+>>>>>> function [-Wmaybe-uninitialized]
+>>>>>>      if (!ret) {
+>>>>>>         ^
+>>>>>> check/main.c:2666:6: note: ‘ret’ was declared here
+>>>>>>      int ret;
+>>>>>>          ^~~
+>>>>>>
+>>>>>> The previous steps were as follow (output ommited, since nothing
+>>>>>> unexpected happened):
+>>>>>> #git clone --single-branch -v -b dirty_fix_for_nik
+>>>>>> https://github.com/adam900710/btrfs-progs.git
+>>>>>> #cd btrfs-progs/
+>>>>>> #./autogen.sh
+>>>>>> #./configure --disable-documentation --disable-convert
+>>>>>> #make
+>>>>>>
+>>>>>> Did I got the right branch? Or miss any step?
+>>>>>>
+>>>>>> Kind regards,
+>>>>>> Nik.
+>>>>>> -- 
+>>>>>>
+>>>>>>> If everything goes correctly, it should output something like:
+>>>>>>>       Successfully repaired tree block at 1894009225216
+>>>>>>> (And please ignore any grammar error in my code)
+>>>>>>>
+>>>>>>> After that, please run a "btrfs check --readonly" to ensure no other
+>>>>>>> bit
+>>>>>>> flip in your fs.
+>>>>>>>
+>>>>>>> Thanks,
+>>>>>>> Qu
+>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>>>>>
+>>>>>>>> Hope this is ok.
+>>>>>>>>
+>>>>>>>> Regards,
+>>>>>>>> Nik.
+>>>>>>>> -
+>>>>>>>
+>>>>>
+>>>
+> 

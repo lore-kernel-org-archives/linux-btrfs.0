@@ -5,178 +5,165 @@ X-Spam-Level:
 X-Spam-Status: No, score=-8.3 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+	SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0CED4C10F06
-	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 12:02:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A3564C10F06
+	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 12:11:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B59642087F
-	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 12:02:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 59D332087F
+	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 12:11:01 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="onLpXbZQ"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="u5zh27ya"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726435AbfDFMCP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 6 Apr 2019 08:02:15 -0400
-Received: from mail-pf1-f194.google.com ([209.85.210.194]:37628 "EHLO
-        mail-pf1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726271AbfDFMCO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 6 Apr 2019 08:02:14 -0400
-Received: by mail-pf1-f194.google.com with SMTP id 8so4789141pfr.4;
-        Sat, 06 Apr 2019 05:02:14 -0700 (PDT)
+        id S1726436AbfDFMLA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 6 Apr 2019 08:11:00 -0400
+Received: from mail-pg1-f194.google.com ([209.85.215.194]:35828 "EHLO
+        mail-pg1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726310AbfDFMLA (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 6 Apr 2019 08:11:00 -0400
+Received: by mail-pg1-f194.google.com with SMTP id g8so4532280pgf.2;
+        Sat, 06 Apr 2019 05:10:59 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:content-transfer-encoding:in-reply-to
-         :user-agent;
-        bh=mcrYvKPjo5rQdagr9HjuJ6Pr/3+i6Mk9twbxI0iDPTg=;
-        b=onLpXbZQZlYUmC5BftYPIfXFFQicLx/MNa/PhwmBsmLd2PDLYwt0WvRDYM3+l2J1Sd
-         F0DUfcg2F1P6jdXnNLtn80QlYyJeGjGkH5zkEwJL5NEsB7xV9jEG+bEvIx8QpcsfUTai
-         fXyNt51y0NSs85QEl9DHYZLNZfHaL0T8Ls65bSyFSgFGTNZk8T30o5kKwaqU6EXA1cG8
-         s0/Vr4Wd5B+zGrskSk+C77gBDhey3XcwAaNPtmtohX9zldnktR1MhAfrkR880C1lX73F
-         6JMKXsFapSnK6dcrLbhGEmgoQaVgOLyU9wMwbx2sehrFJs+qTi8Q3YVp2G9Cm2LRJREy
-         tYhQ==
+         :content-disposition:in-reply-to:user-agent;
+        bh=PI371pY3oITJ6VkXzelzBhLA6ZNObyVtPYN5gZwzbXo=;
+        b=u5zh27yaVbt0r7R7n3RjI40REMLfmFxgvp99ulzmU8xlES5QrBQWdcko242b6f7Nlz
+         njp4YvwDvGd5VMFDuchj85DA6XRDgvAfgyFatR6aCi/V/o+V1gVTPfoVnKbFRbT+2NwU
+         /TttQsVWmLQSoEyq6DvEO6H+uZnqInQv8NTboj9eHXuT9Q8ykKagNcBGxjC/ZTolUNK6
+         /WclIx55lmi5z8pz1oHkE8J+iNDauijfRAFKwVEsl0SmvlS3fu7xJJLtFEFNOS2QsSxa
+         BjhVo/OteNywNE4yUCfwUx9pkkoCSnerlLJOQVAR9pb6UJAZpR2c84xMDFPJWb/YcRP+
+         aMmQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:content-transfer-encoding
-         :in-reply-to:user-agent;
-        bh=mcrYvKPjo5rQdagr9HjuJ6Pr/3+i6Mk9twbxI0iDPTg=;
-        b=jiHsynvXaRl3F1fUdc+na3gp8ULSlmj2SnDQYbIp9sHYdmHJPKXcjdloMV8T6c9/+L
-         FT45+AyqYVsXprl60P6d/SONqs9EfHC2/qe/LypBwzqAyYTQC/VHLXJBwdVNkwV53gT6
-         iamm2T74kZPZwFvI5IZokymw9smoZm7gy7J7SmlTqyYnwhvd7YPoGEvO5TBzmq8Fzehy
-         ZNn4y2gXvASwEstJaH2RfSoZKXSnlA4tuYjM1seTw0cxVgax1zAfJScxC/KTv6rFJS9F
-         8Nn1R4hU1qPpd9L5ZGcv4ITnmTUJJXNpuAJPLHmY+CVL8XDZg+jFHHpIf8NXujG1hWGe
-         e6LQ==
-X-Gm-Message-State: APjAAAUNuoQra+ffoSkAMZtm0MdaJsB4Eq5P73pgE3+GVphB6+tFZLtx
-        SY08uAkzKC2s/R5DplMaqPc=
-X-Google-Smtp-Source: APXvYqxNdCTXWQJnPGWimgUAVrfov9OLjlayIqFbYLYgKqu8I+v2KzlaR4acIYe2CF1fj35zqrQ0DQ==
-X-Received: by 2002:aa7:8289:: with SMTP id s9mr18214886pfm.208.1554552133625;
-        Sat, 06 Apr 2019 05:02:13 -0700 (PDT)
+         :mime-version:content-disposition:in-reply-to:user-agent;
+        bh=PI371pY3oITJ6VkXzelzBhLA6ZNObyVtPYN5gZwzbXo=;
+        b=ZBJjIG6aAa1uPu6aCLiU8WtcaEu7kppE3Jko+wlFbzn3taltDwIguYxcMdZd163HiA
+         DC2ReIlRlzOzUo9e4t7Q6abQxQXeZFQpS9FguTFwp3SawMIQ3sGssCbiSZRcqUl6Es6D
+         mXsgTsX47mOpWPMqYyEINk9zq0oMGKFU6gSHUWreb/T8WdKLygfaWeGs72xe50Kn2yho
+         xCrzP8dVJCfduVVlc0dp5zXCBE6FDLlMhWl5ZzLilMM6b85/270wYZ9mFzphuo5DjQP2
+         duEDLeFJ2OKYZcEqGQBw25QuoQJmbMz6lx2yC9fphyNFQQOHEz/d43tT6NIUuoq5NBc4
+         qmfA==
+X-Gm-Message-State: APjAAAWBUpNE0J8Jg3MBZDdl0+i1sYa5CwfjI4Okd4jqdxOoLHUtkRkU
+        XxZ9G/QLWoBnqBNQ/3aq3dQ=
+X-Google-Smtp-Source: APXvYqwlp3xXKToys2jKUKlGZkYMa1IgWy+IUVMZDwsygeCLCQS0Cls74/6U1clviDPMjnN6zBW+yw==
+X-Received: by 2002:a63:1749:: with SMTP id 9mr17030872pgx.94.1554552659471;
+        Sat, 06 Apr 2019 05:10:59 -0700 (PDT)
 Received: from localhost ([128.199.137.77])
-        by smtp.gmail.com with ESMTPSA id g73sm44974591pfd.185.2019.04.06.05.02.11
+        by smtp.gmail.com with ESMTPSA id k186sm5505882pfc.137.2019.04.06.05.10.56
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Sat, 06 Apr 2019 05:02:12 -0700 (PDT)
-Date:   Sat, 6 Apr 2019 20:02:07 +0800
+        Sat, 06 Apr 2019 05:10:58 -0700 (PDT)
+Date:   Sat, 6 Apr 2019 20:10:51 +0800
 From:   Eryu Guan <guaneryu@gmail.com>
-To:     Nikolay Borisov <nborisov@suse.com>,
-        Anand Jain <anand.jain@oracle.com>
-Cc:     Anand Jain <anand.jain@oracle.com>, fstests@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] fstests: btrfs/048: amend property validation cases
-Message-ID: <20190406120207.GG2824@desktop>
-References: <20190403165419.12666-1-anand.jain@oracle.com>
- <20190403170437.14448-1-anand.jain@oracle.com>
- <7de2d0fd-e777-2bec-5731-15ba2f2af4f2@suse.com>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org, fstests@vger.kernel.org,
+        Josef Bacik <josef@toxicpanda.com>,
+        Amir Goldstein <amir73il@gmail.com>
+Subject: Re: [PATCH] fstests: log-writes: Add new option to replay/find next
+ write to sector
+Message-ID: <20190406121051.GH2824@desktop>
+References: <20190328053507.10191-1-wqu@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <7de2d0fd-e777-2bec-5731-15ba2f2af4f2@suse.com>
+In-Reply-To: <20190328053507.10191-1-wqu@suse.com>
 User-Agent: Mutt/1.11.3 (2019-02-01)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Apr 05, 2019 at 04:21:10PM +0300, Nikolay Borisov wrote:
+On Thu, Mar 28, 2019 at 01:35:07PM +0800, Qu Wenruo wrote:
+> For kernel operation we have METADATA/FUA/FLUSH flags as a beacon, but
+> for user space write we don't have any useful flag unless the user space
+> tool call fsync() to generate a FLUSH bio.
 > 
+> This means for user space write, we don't really have an equivalent of
+> --next-fua to find super block write.
 > 
-> On 3.04.19 г. 20:04 ч., Anand Jain wrote:
-> > Add more property validation cases which are fixed by the patches [1]
-> >  [1]
-> >   btrfs: fix vanished compression property after failed set
-> >   btrfs: fix zstd compression parameter
-> > 
-> > Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> So this patch will add a new option, --next-write <sector> to
+> replay/find next write to certain sector.
+> And normally the <sector> should be super block sector number.
 > 
-> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+> With that, we can replay to super block write even it's user space
+> triggering the write.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-Thanks for the test and the review!
-
-But this looks like a targeted regression test that may fail an existing
-test. It's better to write a new test for this.
+This lools fine to me. But I'd like Josef or Amir to take a look at it
+too, I think they're more familiar with log-writes infrastructure than
+me :)
 
 Thanks,
 Eryu
 
+> ---
+>  src/log-writes/replay-log.c | 16 +++++++++++++++-
+>  1 file changed, 15 insertions(+), 1 deletion(-)
 > 
-> > ---
-> > v2: correct kernel patch titles in the test header and change log
-> > 
-> >  tests/btrfs/048     | 23 +++++++++++++++++++++++
-> >  tests/btrfs/048.out | 16 ++++++++++++++++
-> >  2 files changed, 39 insertions(+)
-> > 
-> > diff --git a/tests/btrfs/048 b/tests/btrfs/048
-> > index 588219579cc6..f6de0b8ca8b1 100755
-> > --- a/tests/btrfs/048
-> > +++ b/tests/btrfs/048
-> > @@ -6,6 +6,9 @@
-> >  #
-> >  # Btrfs properties test. The btrfs properties feature was introduced in the
-> >  # linux kernel 3.14.
-> > +# Fails without the kernel patches:
-> > +#  btrfs: fix vanished compression property after failed set
-> > +#  btrfs: fix zstd compression parameter
-> >  #
-> >  seq=`basename $0`
-> >  seqres=$RESULT_DIR/$seq
-> > @@ -34,6 +37,7 @@ _supported_os Linux
-> >  _require_test
-> >  _require_scratch
-> >  _require_btrfs_command "property"
-> > +_require_btrfs_command inspect-internal dump-super
-> >  
-> >  send_files_dir=$TEST_DIR/btrfs-test-$seq
-> >  
-> > @@ -203,5 +207,24 @@ $BTRFS_UTIL_PROG property get $SCRATCH_MNT/sv1 compression
-> >  touch $SCRATCH_MNT/sv1/file2
-> >  $BTRFS_UTIL_PROG property get $SCRATCH_MNT/sv1/file2 compression
-> >  
-> > +echo -e "\nTesting argument validation, should fail"
-> > +$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'lz' | _filter_scratch
-> > +echo "***"
-> > +$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'zli' | _filter_scratch
-> > +echo "***"
-> > +$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'zst' | _filter_scratch
-> > +
-> > +echo -e "\nTesting if property is persistent across failed validation"
-> > +$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'lzo'
-> > +$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'zli' | _filter_scratch
-> > +$BTRFS_UTIL_PROG property get $SCRATCH_MNT compression
-> > +
-> > +echo -e "\nTesting generation is unchanged after failed validation"
-> > +$BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT
-> > +$BTRFS_UTIL_PROG inspect-internal dump-super $SCRATCH_DEV | grep '^generation'
-> > +$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'lz' | _filter_scratch
-> > +$BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT
-> > +$BTRFS_UTIL_PROG inspect-internal dump-super $SCRATCH_DEV | grep '^generation'
-> > +
-> >  status=0
-> >  exit
-> > diff --git a/tests/btrfs/048.out b/tests/btrfs/048.out
-> > index 3e4e3d28950a..00f39bc01227 100644
-> > --- a/tests/btrfs/048.out
-> > +++ b/tests/btrfs/048.out
-> > @@ -76,3 +76,19 @@ compression=zlib
-> >  Testing subvolume property inheritance
-> >  compression=lzo
-> >  compression=lzo
-> > +
-> > +Testing argument validation, should fail
-> > +ERROR: failed to set compression for /mnt/scratch: Invalid argument
-> > +***
-> > +ERROR: failed to set compression for /mnt/scratch: Invalid argument
-> > +***
-> > +ERROR: failed to set compression for /mnt/scratch: Invalid argument
-> > +
-> > +Testing if property is persistent across failed validation
-> > +ERROR: failed to set compression for /mnt/scratch: Invalid argument
-> > +compression=lzo
-> > +
-> > +Testing generation is unchanged after failed validation
-> > +generation		7
-> > +ERROR: failed to set compression for /mnt/scratch: Invalid argument
-> > +generation		7
-> > 
+> diff --git a/src/log-writes/replay-log.c b/src/log-writes/replay-log.c
+> index c16df40e5741..0d0ec49c8a00 100644
+> --- a/src/log-writes/replay-log.c
+> +++ b/src/log-writes/replay-log.c
+> @@ -9,6 +9,7 @@
+>  enum option_indexes {
+>  	NEXT_FLUSH,
+>  	NEXT_FUA,
+> +	NEXT_WRITE,
+>  	START_ENTRY,
+>  	END_MARK,
+>  	LOG,
+> @@ -28,6 +29,7 @@ enum option_indexes {
+>  static struct option long_options[] = {
+>  	{"next-flush", no_argument, NULL, 0},
+>  	{"next-fua", no_argument, NULL, 0},
+> +	{"next-write", required_argument, NULL, 0},
+>  	{"start-entry", required_argument, NULL, 0},
+>  	{"end-mark", required_argument, NULL, 0},
+>  	{"log", required_argument, NULL, 0},
+> @@ -53,6 +55,8 @@ static void usage(void)
+>  	fprintf(stderr, "\t--limit <number> - number of entries to replay\n");
+>  	fprintf(stderr, "\t--next-flush - replay to/find the next flush\n");
+>  	fprintf(stderr, "\t--next-fua - replay to/find the next fua\n");
+> +	fprintf(stderr, "\t--next-write <sector> - replay to/find the next "
+> +			"write to <sector>\n");
+>  	fprintf(stderr, "\t--start-entry <entry> - start at the given "
+>  		"entry #\n");
+>  	fprintf(stderr, "\t--start-mark <mark> - mark to start from\n");
+> @@ -139,6 +143,7 @@ int main(int argc, char **argv)
+>  	char *logfile = NULL, *replayfile = NULL, *fsck_command = NULL;
+>  	struct log_write_entry *entry;
+>  	u64 stop_flags = 0;
+> +	u64 stop_sector = 0;
+>  	u64 start_entry = 0;
+>  	u64 start_sector = 0;
+>  	u64 end_sector = -1ULL;
+> @@ -173,6 +178,14 @@ int main(int argc, char **argv)
+>  		case NEXT_FUA:
+>  			stop_flags |= LOG_FUA_FLAG;
+>  			break;
+> +		case NEXT_WRITE:
+> +			stop_sector = strtoull(optarg, &tmp, 0);
+> +			if (tmp && *tmp != '\0') {
+> +				fprintf(stderr, "Invalid sector number\n");
+> +				exit(1);
+> +			}
+> +			tmp = NULL;
+> +			break;
+>  		case START_ENTRY:
+>  			start_entry = strtoull(optarg, &tmp, 0);
+>  			if (tmp && *tmp != '\0') {
+> @@ -324,7 +337,8 @@ int main(int argc, char **argv)
+>  		while ((ret = log_seek_next_entry(log, entry, 1)) == 0) {
+>  			num_entries++;
+>  			if ((run_limit && num_entries == run_limit) ||
+> -			    should_stop(entry, stop_flags, end_mark)) {
+> +			    should_stop(entry, stop_flags, end_mark) ||
+> +			    (stop_sector && entry->sector == stop_sector)) {
+>  				printf("%llu@%llu\n",
+>  				       (unsigned long long)log->cur_entry - 1,
+>  				       log->cur_pos / log->sectorsize);
+> -- 
+> 2.21.0
+> 

@@ -2,59 +2,42 @@ Return-Path: <SRS0=k9FD=SI=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-6.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 04318C10F06
-	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 09:06:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 014F3C282DA
+	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 09:18:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9706821855
-	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 09:06:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B3EB1218FE
+	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Apr 2019 09:18:54 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="ep3fBrzJ"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="gshJiRa4"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726271AbfDFJGX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 6 Apr 2019 05:06:23 -0400
-Received: from mout.gmx.net ([212.227.17.21]:33023 "EHLO mout.gmx.net"
+        id S1726384AbfDFJSx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 6 Apr 2019 05:18:53 -0400
+Received: from mout.gmx.net ([212.227.17.21]:55941 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726002AbfDFJGX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 6 Apr 2019 05:06:23 -0400
+        id S1725978AbfDFJSx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 6 Apr 2019 05:18:53 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1554541579;
-        bh=pz0Q3DYZGzrPYbWEem9lp6PidqBFg1o7Rna4LTWszbY=;
+        s=badeba3b8450; t=1554542302;
+        bh=T5W+IpQoCcEBJvovdY3hOw6ES3pM42Xbk7Nigv5F4ro=;
         h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=ep3fBrzJ4dk2P2imz1tjUWP+SMhw31q8/s84ShrwOy3DqfEZi1ToT1HpB7wr5iL6K
-         3BzYcC5LJ5ReV4ttdctUqS7kIvSsnNhMzBEk/29hui8rgEwViHCWM2Wka3m8r+yzWX
-         nI310W9D27Pn/KYVxCBKlJOIrdQ6sX6ADME+LVsU=
+        b=gshJiRa42mRWWq4j0OJ0TIvWE8WIPVJjoJMXFcxKAiO2cP0QufoWURcbFiIApVJqb
+         uHMoWWHXyN0O+bMk1JCmLbqdJqUle2Ez0d6GhpOZFJRbSLmEraCzVVVnbQUjBTICTE
+         Q9WeYwvC3Afx1Sc5cMQGLqEKW451Ea+ZLZ4x0M1Y=
 X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx103
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0MHXd2-1hBaHW0Hz2-003QEK; Sat, 06
- Apr 2019 11:06:19 +0200
-Subject: Re: interest in post-mortem examination of a BTRFS system and
- improving the btrfs-code?
-To:     "Nik." <btrfs@avgustinov.eu>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <aa81a49a-d5ca-0f1c-fa75-9ed3656cff55@avgustinov.eu>
- <9cf1e935-c0b1-6546-5f1e-f8e88839d560@gmx.com>
- <99c1632a-a575-b5eb-8a26-8f92666f9c3a@avgustinov.eu>
- <c0909c80-8167-7b46-3a3c-d57962aee7fd@gmx.com>
- <6c4d5ccf-562d-a9b7-3aba-0a3bfd3797eb@avgustinov.eu>
- <ff7f4039-25d8-f5c9-80ac-4e7afaace3d0@gmx.com>
- <9a800f8e-a8eb-ea5c-328b-7aed53bc3742@avgustinov.eu>
- <edbb548a-75e8-0b9e-914f-684aa6b4a5ea@gmx.com>
- <7d605543-2899-144a-7b46-7caed803b43b@avgustinov.eu>
- <8fdb5da5-d649-0c0d-1a21-c3f430476afd@gmx.com>
- <ce8be6b2-1a2f-201f-a4ff-03686b3620f1@avgustinov.eu>
- <3dcaf6ae-34c4-3760-70f9-6ce2962b42c8@gmx.com>
- <e9720559-eff2-e88b-12b4-81defb8c29c5@avgustinov.eu>
- <a75981da-86f7-e0fb-d1dc-a2576b09c668@gmx.com>
- <039ec3eb-c44e-35e9-cf1b-f9f75849d873@avgustinov.eu>
- <c69778f5-a015-8b77-3fab-e41e49a0e0db@gmx.com>
- <51021dd7-b21b-b001-c3f9-9bc31205738b@avgustinov.eu>
- <00e3ddf1-cbd7-a65a-dee3-ca720cecc77d@gmx.com>
- <a6917f39-eeb4-5548-f346-a78972c7c3fe@avgustinov.eu>
+Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx101
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0MJXEd-1hBJcU338d-0031Xt; Sat, 06
+ Apr 2019 11:18:22 +0200
+Subject: Re: [PATCH 1/2] block: Add new BLK_STS_SELFTEST status
+To:     Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org
+References: <20190406031426.22436-1-wqu@suse.com>
+ <8b35c2d5-6707-0898-b978-ab09b748f2cb@suse.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -81,241 +64,100 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <6a592ffa-4a5a-81af-baef-8f1681accc87@gmx.com>
-Date:   Sat, 6 Apr 2019 17:06:13 +0800
+Message-ID: <d959f6d7-ee8b-1441-1484-7d6ba276c122@gmx.com>
+Date:   Sat, 6 Apr 2019 17:18:16 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.5.3
 MIME-Version: 1.0
-In-Reply-To: <a6917f39-eeb4-5548-f346-a78972c7c3fe@avgustinov.eu>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="YROfgPN4bARmzvig0TIpVqR4yepN9ZPeV"
-X-Provags-ID: V03:K1:f5TN7eO9R8DVlFswDfWffYTp7s2gng0Kmnhxtg/DRcV219hFKOv
- yhuaSKnEpY/mCnAUB/teI29Z3qrS50F7gR746k1j6Y3IJGLr1gozMmYkH7luFr8LF6OFvzg
- KXAumtnAdtYrBzb/fT4TzLmy5kwv3iUiOlp9vlFfv9SxbQE9A2xISXjCsm7yEBP23gQ0GPJ
- B1BJ6vk1R5rA9m3GPmDtA==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:qaaS6OONfC0=:fcdIzBvMUSm/7toA2upN2c
- K3FE84koY+bngoq3LH29oj3BJT94uMfMH9Ne98rt0AKzKSyhIDdt/D8YAvyTO86FTk9hL3/zQ
- My4AdsIbQvl14HrKa3j+nxmn5lfh0sEoN68OZDIpHGWf9GfMnAL4DuqNWM10RwCmwUiDGkNXS
- v/TNu+XzKddwrIzXBmUzYEOmkf3kxtiFZf2lvgTgLywrTZJO7uJQOzlqhE0j1AawQFQWpD9ft
- FY4QVQarXVvBHQgsbxOBpW+bFYaPYSsNxWtEY+X3CE7ND7Huep8cARF9b928mClN9vAqASSWg
- 5eegmjjDqI/1bJDkfVnN9Sr6TZE8BxDVYLy2ZgOoJYHzJf1/Spwzv0JjQAdxrUBL4b9vjn4Ys
- KPung1zwIwuRZLPQ+cMYSS555A7FH1cg57aQZb39/yWPRDhcg5xkjyPxHHqElOK8eDn41DBD6
- sWLBqvvwMUvwjYrGgEMNjvWzBJtdpFyFyy8t2FtwZA+GsNKZ3AL+D5iRYEMpEpgx7kFSC0vvX
- jituxfTM7NYM2Xkht69lk3h7b4byOsQKM9JvEYA7Ck+z42Fo/jKau7lk+vpQQ9kyNCKBO7ZMN
- TnZZpijSo3nhhyxSiyPfcuRfbTpaaxGhasMVLMV3eFOxR8DCO+dxHvVEsyehJILn677AvX2Oq
- miZ2tdwlmrnMkIHd+gIBYz20g3NEJ2TJimolfCM+++azAhUhat9P0+2eM9ejcHd2LjJp3ehnx
- qljwC7HokdsO8PsaVgpoO4Drk3/DzdSExwYSfJiB/5krsQGMm4vhbNb+E68GX2BoOt8kHD+OJ
- xhqgERNQjE91skv1WnFW628LEXFM4ExXxgK+cWwOnn01MfDG8GSjILuIUZB0zoRurL6+zu4/k
- vfALitHYXJeslrtzXi2HPDYS9pCsyrBCxERKoShs0aXWuVOyE459houNAL8hX4
+In-Reply-To: <8b35c2d5-6707-0898-b978-ab09b748f2cb@suse.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:oyRG6Mzq8LK+rpcvILKzNKHBZ8T76M8rEi7FU1v9dh7klm53OKF
+ 2l9StMNtlBke44hxfLlLTJ0c0LL7RxJ3R1INuPcoejYEkAZA/w9fgEpTLtffEvXrs6oB5nf
+ /AJe0idTqKdIDrNeRUCuAS202rci3kkXTbeGn5zbGhDV9FDmVs+G32D0lslQQC3GWa7S/O9
+ GR8KUC4X0RVlDm0PIZ08w==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:Dv7rqTzstQo=:ZY5aUkayE99oNk7GOVXwbt
+ mRtV4i+L+V6KnU0J7DL13kUBCJRD8x1UhCErkrGbcOpkOxdVrJVO9CXZyKG9EL0BHTvRSiT/G
+ vNsdqvR8q/Kmlr+l3xUn1w2XkfqkxQOdAgmbHKDYxDhW9gbxXe0kbEL1RSN4eDOk48YJrVxa0
+ rwvWZXCC67U2+Quvx71W8DvzAfxxVUiuiaapx9ahtqd02Pq8AYEitXOTQCxwhbRm3FyZm0nfB
+ EDWwRi/Qn3Khd6gv9ySIPLoqjN3fiLZMSv7+ORd1UJyxzyGdJYdKBh/ONLpYSYVH7P54azb8f
+ QJyuymSGrcIBpegvupAduP/OCMaOL8cw2lDd89ubuvSqumTqTxQ/lW1deQGKmmyRlwys6SEfz
+ blhuW6B6Jw1QVy8xWIGaFrI+5nw1WWgJoVr7VLw4j+8m2jWklmIKjk2T+8yghFCkmAJqEq8Ig
+ THadbpoP3lmj7OI5KMHMnG+wcsbghUJDvVBjgxiCjF92coQTktrzKQFJEAvcdAN+bAh4lJrNf
+ y+ysZB0A5Hge1ThHwh2Kmdn0nsgnmaUFSjuXygUSZTO/+peFUTwSN/Z+3lwq4J8xxb55XfoVY
+ F34/birEw6FvKSYW0Pnsn0Pte9unYoEX4llXMTyvDs5/264AmPs1xngLng2GYyLqxetGS3J61
+ G9x9pXjPXAGudHXtavfT+fsasOVuN0D2TFHTmXq5tnUwSOhNHWgMwDLSuAA+IMoQPfH1EHOiI
+ sJB8RZxNRxoYmSr2A7XqXJYPdO/PDi2KnX9Y7sYbcW7Y3ftUwGAQRFVbeG6VbpufENFoMTNLW
+ fRplh4W5dni/zFG7kVKXEws1Ch5WH0mBHfMq1W95qq17UoZnl02cVKKy2HYRalHEy1X1h9fg4
+ PQX4DhkFb5U0eDiujzjAhZsumqVcPjsjzPZcD0E5pbtx34CwyqKQw3tPiLKRahY3u8WPfN2VF
+ sUnat13hKuQ==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---YROfgPN4bARmzvig0TIpVqR4yepN9ZPeV
-Content-Type: multipart/mixed; boundary="h6PrTgXw7nc8NiOYg18jTjTI3x6QmNx0R";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: "Nik." <btrfs@avgustinov.eu>,
- "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Message-ID: <6a592ffa-4a5a-81af-baef-8f1681accc87@gmx.com>
-Subject: Re: interest in post-mortem examination of a BTRFS system and
- improving the btrfs-code?
-References: <aa81a49a-d5ca-0f1c-fa75-9ed3656cff55@avgustinov.eu>
- <a6cb572c-c015-1e19-7489-c59fd1384509@avgustinov.eu>
- <9cf1e935-c0b1-6546-5f1e-f8e88839d560@gmx.com>
- <99c1632a-a575-b5eb-8a26-8f92666f9c3a@avgustinov.eu>
- <c0909c80-8167-7b46-3a3c-d57962aee7fd@gmx.com>
- <6c4d5ccf-562d-a9b7-3aba-0a3bfd3797eb@avgustinov.eu>
- <ff7f4039-25d8-f5c9-80ac-4e7afaace3d0@gmx.com>
- <9a800f8e-a8eb-ea5c-328b-7aed53bc3742@avgustinov.eu>
- <edbb548a-75e8-0b9e-914f-684aa6b4a5ea@gmx.com>
- <7d605543-2899-144a-7b46-7caed803b43b@avgustinov.eu>
- <8fdb5da5-d649-0c0d-1a21-c3f430476afd@gmx.com>
- <ce8be6b2-1a2f-201f-a4ff-03686b3620f1@avgustinov.eu>
- <3dcaf6ae-34c4-3760-70f9-6ce2962b42c8@gmx.com>
- <e9720559-eff2-e88b-12b4-81defb8c29c5@avgustinov.eu>
- <a75981da-86f7-e0fb-d1dc-a2576b09c668@gmx.com>
- <039ec3eb-c44e-35e9-cf1b-f9f75849d873@avgustinov.eu>
- <c69778f5-a015-8b77-3fab-e41e49a0e0db@gmx.com>
- <51021dd7-b21b-b001-c3f9-9bc31205738b@avgustinov.eu>
- <00e3ddf1-cbd7-a65a-dee3-ca720cecc77d@gmx.com>
- <a6917f39-eeb4-5548-f346-a78972c7c3fe@avgustinov.eu>
-In-Reply-To: <a6917f39-eeb4-5548-f346-a78972c7c3fe@avgustinov.eu>
 
---h6PrTgXw7nc8NiOYg18jTjTI3x6QmNx0R
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
+On 2019/4/6 =E4=B8=8B=E5=8D=884:41, Nikolay Borisov wrote:
+>
+>
+> On 6.04.19 =D0=B3. 6:14 =D1=87., Qu Wenruo wrote:
+>> There are a lot of end_io hooks which can do some self test at
+>> read/write time.
 >>
->> Please try again, and sorry for the inconvenience. Hopes this is the
->> last try.
->=20
-> #sudo ./btrfs-corrupt-block -X /dev/md0
-> old offset=3D131072 len=3D0
-> new offset=3D0 len=3D0
+>> Normally such selftest should return -EUCLEAN to indicate something
+>> unexpected.
+>>
+>> However there is no BLK_STS_* bit for that, this makes every selftest
+>> error to be interpreted to EIO, which lowers the severity.
+>>
+>> This patch will add a new BLK_STS_SELFTEST, to allow the error from
+>> endio to be passed to filesystem.
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>>  block/blk-core.c          | 1 +
+>>  include/linux/blk_types.h | 3 +++
+>>  2 files changed, 4 insertions(+)
+>>
+>> diff --git a/block/blk-core.c b/block/blk-core.c
+>> index 4673ebe42255..66967642a5ef 100644
+>> --- a/block/blk-core.c
+>> +++ b/block/blk-core.c
+>> @@ -135,6 +135,7 @@ static const struct {
+>>  	[BLK_STS_RESOURCE]	=3D { -ENOMEM,	"kernel resource" },
+>>  	[BLK_STS_DEV_RESOURCE]	=3D { -EBUSY,	"device resource" },
+>>  	[BLK_STS_AGAIN]		=3D { -EAGAIN,	"nonblocking retry" },
+>> +	[BLK_STS_SELFTEST]	=3D { -EUCLEAN,	"filesystem selftest" },
+>
+> SELFTEST is ambiguous, I personally relate it to the selftests that some
+> subsystems have. This should be changed to STS_CLEANUP or STS_CORRUPT or
+> some such.
 
-My bad, the first fix is bad, leading the bad result.
-
-(And that's why we need to review patches)
-
-Fortunately we have everything we need to manually set the value, no
-magic any more.
-
-The only uncertain part is the size.
-If mount still fails, dmesg will tell me the size I need.
-
-
-> Successfully repair tree block at 1894009225216
-> # mount -t btrfs -o ro /dev/md0 /mnt/md0/
-> mount: /mnt/md0: wrong fs type, bad option, bad superblock on /dev/md0,=
-
-> missing codepage or helper program, or other error.
-> root@bach:~# dmesg|tail
-> ...
-> [39342.860715] BTRFS info (device md0): disk space caching is enabled
-> [39342.933380] BTRFS info (device md0): bdev /dev/md0 errs: wr 0, rd 0,=
-
-> flush 0, corrupt 2181, gen 0
-> [39344.197411] BTRFS critical (device md0): corrupt leaf: root=3D1
-> block=3D1894009225216 slot=3D30, unexpected item end, have 0 expect 150=
-03
-> [39344.197915] BTRFS error (device md0): failed to read block groups: -=
-5
-> [39344.248137] BTRFS error (device md0): open_ctree failed
->=20
-> Sorry, I forgot to tell: this and previous attempt were with kernel
-> 4.15.0-47-generic.
-
-As long as it can output above message, the kernel version doesn't make
-much difference.
-
-
-> My Ubuntu 18.04 LTS is having enormous problems with
-> Kernel 5.0.2 - very long boot; network, login and other services cyclin=
-g
-> trough "start, timeout, fail, stop" again and again, etc. If kernel 5 i=
-s
-> important I will need time to get it right (maybe even assistance from
-> another(?) developer group).
-> Actually with 5.0.2 each boot sends me an email about an empty and not
-> automatically mounted btrfs filesystem with raid1 profile, consisting
-> from two devices (sdb and sdi):
->=20
-> kernel: [=C2=A0=C2=A0=C2=A0 9.625619] BTRFS: device fsid
-> 05bd214a-8961-4165-9205-a5089a65b59b devid 2 transid 832 /dev/sdi
->=20
-> Scrubbing it finishes almost immediately (see below), but during next
-> boot the email comes again:
->=20
-> #btrfs scrub status /mnt/b
-> scrub status for 05bd214a-8961-4165-9205-a5089a65b59b
-> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 scrub started at Sat Apr=C2=A0=
- 6 10:42:15 2019 and finished after
-> 00:00:00
-> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 total bytes scrubbed: 1.51Mi=
-B with 0 errors
->=20
-> Should I be worried about it?
-
-You could try btrfs check --readonly and see what's going on.
-If btrfs check --readonly is OK, then it should be mostly OK.
+Considering my poor naming schemes, what about sticking to EUCLEAN
+across all of these?
+BLK_STS_UCLEAN	-ECULEAN "Structure needs clean up"
 
 Thanks,
 Qu
 
-
->=20
-> Kind regards,
-> Nik.
-> --=20
->=20
->> Thanks,
->> Qu
->>>
->>> Thank you.
->>> Nik.
->>> --=C2=A0
->>>
->>>> Thanks,
->>>> Qu
->>>>
->>>>>
->>>>> Actually there was one warning during make, I don't know of it is
->>>>> relevant:
->>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 [CC]=C2=A0=C2=A0=C2=A0=C2=A0 check/m=
-ain.o
->>>>> check/main.c: In function =E2=80=98try_repair_inode=E2=80=99:
->>>>> check/main.c:2688:5: warning: =E2=80=98ret=E2=80=99 may be used uni=
-nitialized in this
->>>>> function [-Wmaybe-uninitialized]
->>>>> =C2=A0=C2=A0=C2=A0 if (!ret) {
->>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ^
->>>>> check/main.c:2666:6: note: =E2=80=98ret=E2=80=99 was declared here
->>>>> =C2=A0=C2=A0=C2=A0 int ret;
->>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ^~~
->>>>>
->>>>> The previous steps were as follow (output ommited, since nothing
->>>>> unexpected happened):
->>>>> #git clone --single-branch -v -b dirty_fix_for_nik
->>>>> https://github.com/adam900710/btrfs-progs.git
->>>>> #cd btrfs-progs/
->>>>> #./autogen.sh
->>>>> #./configure --disable-documentation --disable-convert
->>>>> #make
->>>>>
->>>>> Did I got the right branch? Or miss any step?
->>>>>
->>>>> Kind regards,
->>>>> Nik.
->>>>> --=C2=A0
->>>>>
->>>>>> If everything goes correctly, it should output something like:
->>>>>> =C2=A0=C2=A0=C2=A0=C2=A0 Successfully repaired tree block at 18940=
-09225216
->>>>>> (And please ignore any grammar error in my code)
->>>>>>
->>>>>> After that, please run a "btrfs check --readonly" to ensure no oth=
-er
->>>>>> bit
->>>>>> flip in your fs.
->>>>>>
->>>>>> Thanks,
->>>>>> Qu
->>>>>>
->>>>>>
->>>>>>
->>>>>>>
->>>>>>> Hope this is ok.
->>>>>>>
->>>>>>> Regards,
->>>>>>> Nik.
->>>>>>> -
->>>>>>
->>>>
+>
 >>
-
-
---h6PrTgXw7nc8NiOYg18jTjTI3x6QmNx0R--
-
---YROfgPN4bARmzvig0TIpVqR4yepN9ZPeV
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlyobAUACgkQwj2R86El
-/qi/5gf+JJB3Zb85TbX1zydEu8tV7oBDvbTR5rhx35a2Itj9wK4drTGYWQr/R0Ol
-ZFgvQGPq7bLeXuiIQuUMOBtr6hbn7doH37Ek3HLIzltvPcrajM2NF2/56NBY8BP2
-YMlITlOMrOwUa97CUC+JB0LWFa6yAlzPVmP4J3YcW/XMv9N7JWOwW+FWRFaTwryk
-UgAJNmtAds+CauY9EpLhXlwsbC+JlEVXLPNuRwxoBhfA5QPiFxzYOjjppqjttGnW
-F3YN4DxhSxneEOvp0iyNH0yFIjOAxHQajPhqlVI7G1XV+5HtMCX1uA34VBUdgkMZ
-0jgxXuWn5cd2U7hzItgGJRwf5lqCJg==
-=/M/0
------END PGP SIGNATURE-----
-
---YROfgPN4bARmzvig0TIpVqR4yepN9ZPeV--
+>>  	/* device mapper special case, should not leak out: */
+>>  	[BLK_STS_DM_REQUEUE]	=3D { -EREMCHG, "dm internal retry" },
+>> diff --git a/include/linux/blk_types.h b/include/linux/blk_types.h
+>> index 791fee35df88..5bba24c3753c 100644
+>> --- a/include/linux/blk_types.h
+>> +++ b/include/linux/blk_types.h
+>> @@ -63,6 +63,9 @@ typedef u8 __bitwise blk_status_t;
+>>   */
+>>  #define BLK_STS_DEV_RESOURCE	((__force blk_status_t)13)
+>>
+>> +/* Filesystem selftest error */
+>> +#define BLK_STS_SELFTEST	((__force blk_status_t)14)
+>> +
+>>  /**
+>>   * blk_path_error - returns true if error may be path related
+>>   * @error: status the request was completed with
+>>

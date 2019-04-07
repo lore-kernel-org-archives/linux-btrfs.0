@@ -2,111 +2,109 @@ Return-Path: <SRS0=Yn0v=SJ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_PASS,UNPARSEABLE_RELAY autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EC6D7C10F0E
-	for <linux-btrfs@archiver.kernel.org>; Sun,  7 Apr 2019 18:45:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4A84CC282DE
+	for <linux-btrfs@archiver.kernel.org>; Sun,  7 Apr 2019 20:27:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9D01920896
-	for <linux-btrfs@archiver.kernel.org>; Sun,  7 Apr 2019 18:45:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 17793213F2
+	for <linux-btrfs@archiver.kernel.org>; Sun,  7 Apr 2019 20:27:17 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="xE4bENKN"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="i/pDYUgc"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726468AbfDGSp2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 7 Apr 2019 14:45:28 -0400
-Received: from mail-lj1-f176.google.com ([209.85.208.176]:37961 "EHLO
-        mail-lj1-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726362AbfDGSp2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Apr 2019 14:45:28 -0400
-Received: by mail-lj1-f176.google.com with SMTP id p14so9248342ljg.5
-        for <linux-btrfs@vger.kernel.org>; Sun, 07 Apr 2019 11:45:27 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to;
-        bh=BlOHComsFKrWS4op23qzULI6FEyqII1OXnwUUAxioq4=;
-        b=xE4bENKNNhY07q8+58laCMyN2w8jqDIS7czrESPKHgwifYRyAJ9L9UcahkOWCXbNEP
-         51Vow4j8/Ak9lgvw9zKLbSezEaioWxLFl7/PPk1Bdlq55gH+XgEC0kl0W2Jbpr8qKmLs
-         yRsP3HitOUARS0U0t1tCFBjCPvpIM06eJZCbOAInF0gL/KInLDAThW9jxql2irKNcXe3
-         y0kub6b3ZOMQf06w5sf6INQCwUNSsoGNu6Q9WF4HCTrZFr8zl94EbPkrXk82nhtDtykH
-         8S4p2BdYph7muwc7Nbo1wSQtEfMMiTS+amO2GuuaD2ullqAaQyZlTzGDBTfHRmzfZnuc
-         H/Kg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to;
-        bh=BlOHComsFKrWS4op23qzULI6FEyqII1OXnwUUAxioq4=;
-        b=SGw3rHYNdcYN4Gbe8+vtbPSYh09fZHNSrYqWIglXNUBMLZBcEn5GtFuWehLj8jJc1e
-         wzF73hzEoqLfBGxJmgZ7gBC2bLVMgq8khO0uAiQ2wiQE1mDSJj1bq6T7c/Qmsbhk+gJg
-         o0wAfPrnSUODbetu0Bk0VWcw/83iX0Uz3X2LHRx1/j4SnbhaFVWwPsaP0w8zDY4BkbW0
-         2gE+ikOD5HNmJhDOknQPTiB7m+PiVFL5CfDxYtyC9df2tO6bSjTkmAgjYA7YwuU6/thn
-         I+rWhxBQ2coCnp6YuKg+UvZDGjmoC/z/SpPvF8JMZvoZ9nbeZtGca9dLUQhAtDO0trEZ
-         0GXw==
-X-Gm-Message-State: APjAAAUUUw/pG0HvnfENvbqqKtk/dU2twG+LteGbo8vDL3miSw+HfGuI
-        5TcKp5A0j22KIGse19idYvpJ5sBTw5/7XcbXh/bWjg==
-X-Google-Smtp-Source: APXvYqwZbEmj5FqBq6CVQlAQGtJu11Lu28vnuTdGUCIXabniD98wX4iBk92rwOMlc55uUa1XDuVbUzLBE0IJPhZVoRo=
-X-Received: by 2002:a2e:7e0f:: with SMTP id z15mr13601256ljc.122.1554662726408;
- Sun, 07 Apr 2019 11:45:26 -0700 (PDT)
+        id S1726462AbfDGU1Q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 7 Apr 2019 16:27:16 -0400
+Received: from aserp2130.oracle.com ([141.146.126.79]:52010 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726397AbfDGU1P (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Apr 2019 16:27:15 -0400
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x37KN3Zc070689;
+        Sun, 7 Apr 2019 20:27:11 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : from : to :
+ cc : date : message-id : mime-version : content-type :
+ content-transfer-encoding; s=corp-2018-07-02;
+ bh=35ifg42zEenL7YYdIzei8tu3bHGzCDlXvpdEmpGEZok=;
+ b=i/pDYUgcoqB269ddpKABvxhrxLkJqqLgpAzhiuesP7D0l6OAhEZcOvkF6siap0yGqFz/
+ kzWPS2V9t5yZ7FZ+wAqyXbbDLDhaTdR1Mh1qkUDDiBoPQgArZGQOCTa2bP/Q1v6TMiDF
+ l3SB3uCcXCSEEau64WqIbnZxy2ytpNLRrVNBm+r82VZvwzbeEYG8XmceDoPSQCEXgulC
+ xvFeLHCqyuvfwHu+CCx381BtQS1uNxAXpk1mm3EPNGbq2jfPpzuWnkvDwmTTw6g6rvJi
+ kLy27dVAGxodOCF/nm6mmm7fkbfdsDGUAyY/EinEFWIivwvm/j+nOnlo12xcX4niwyhA 3g== 
+Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
+        by aserp2130.oracle.com with ESMTP id 2rphme3bdu-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Sun, 07 Apr 2019 20:27:11 +0000
+Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
+        by userp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x37KQN6u165532;
+        Sun, 7 Apr 2019 20:27:10 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userp3030.oracle.com with ESMTP id 2rph7rqdfn-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Sun, 07 Apr 2019 20:27:10 +0000
+Received: from abhmp0003.oracle.com (abhmp0003.oracle.com [141.146.116.9])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x37KR8wa025403;
+        Sun, 7 Apr 2019 20:27:09 GMT
+Received: from localhost (/67.169.218.210)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Sun, 07 Apr 2019 13:27:08 -0700
+Subject: [PATCH v2 0/4] vfs: make immutable files actually immutable
+From:   "Darrick J. Wong" <darrick.wong@oracle.com>
+To:     darrick.wong@oracle.com
+Cc:     david@fromorbit.com, linux-xfs@vger.kernel.org, linux-mm@kvack.org,
+        linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+Date:   Sun, 07 Apr 2019 13:27:01 -0700
+Message-ID: <155466882175.633834.15261194784129614735.stgit@magnolia>
+User-Agent: StGit/0.17.1-dirty
 MIME-Version: 1.0
-References: <aa81a49a-d5ca-0f1c-fa75-9ed3656cff55@avgustinov.eu>
- <9a800f8e-a8eb-ea5c-328b-7aed53bc3742@avgustinov.eu> <edbb548a-75e8-0b9e-914f-684aa6b4a5ea@gmx.com>
- <7d605543-2899-144a-7b46-7caed803b43b@avgustinov.eu> <8fdb5da5-d649-0c0d-1a21-c3f430476afd@gmx.com>
- <ce8be6b2-1a2f-201f-a4ff-03686b3620f1@avgustinov.eu> <3dcaf6ae-34c4-3760-70f9-6ce2962b42c8@gmx.com>
- <e9720559-eff2-e88b-12b4-81defb8c29c5@avgustinov.eu> <a75981da-86f7-e0fb-d1dc-a2576b09c668@gmx.com>
- <039ec3eb-c44e-35e9-cf1b-f9f75849d873@avgustinov.eu> <c69778f5-a015-8b77-3fab-e41e49a0e0db@gmx.com>
- <51021dd7-b21b-b001-c3f9-9bc31205738b@avgustinov.eu> <00e3ddf1-cbd7-a65a-dee3-ca720cecc77d@gmx.com>
- <a6917f39-eeb4-5548-f346-a78972c7c3fe@avgustinov.eu> <6a592ffa-4a5a-81af-baef-8f1681accc87@gmx.com>
- <2c786019-646a-486f-1306-25a3df36e6b3@avgustinov.eu> <52b23bd7-108b-63f3-b958-2a5959c7ca6e@gmx.com>
- <f2b33d93-aa37-9fd3-6036-44e1e3f065eb@avgustinov.eu> <a9135dba-26fe-777f-048b-87052d5cbd14@gmx.com>
- <21ff2435-af15-573c-e897-05ceb4f42e0b@avgustinov.eu>
-In-Reply-To: <21ff2435-af15-573c-e897-05ceb4f42e0b@avgustinov.eu>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Sun, 7 Apr 2019 12:45:15 -0600
-Message-ID: <CAJCQCtQJkJwEyouCUzcV1MzPkcxhvtqxkWqmrwnB9txV=MUTXA@mail.gmail.com>
-Subject: Re: interest in post-mortem examination of a BTRFS system and
- improving the btrfs-code?
-To:     "Nik." <btrfs@avgustinov.eu>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9220 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=954
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1810050000 definitions=main-1904070193
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9220 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=981 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1904070193
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sun, Apr 7, 2019 at 1:42 AM Nik. <btrfs@avgustinov.eu> wrote:
-> 2019-04-07 01:18, Qu Wenruo:
+Hi all,
 
-> > You have 2 bits flipped just in one tree block!
-> >
-> If the data-tree structures alone have so many bits flipped, how much
-> flipped bits are to be expected in the data itself? What should a normal
-> btrfs user do in order to prevent such disasters?
+The chattr(1) manpage has this to say about the immutable bit that
+system administrators can set on files:
 
-I think the corruption in your case is inferred by Btrfs only by bad
-key ordering, not csum failure for the leaf? I can't tell for sure
-from the error, but I don't see a csum complaint.
+"A file with the 'i' attribute cannot be modified: it cannot be deleted
+or renamed, no link can be created to this file, most of the file's
+metadata can not be modified, and the file can not be opened in write
+mode."
 
-I'd expect a RAM caused corruption could affect a metadata leaf data,
-followed by csum computation. Therefore no csum failure on subsequent
-read. Whereas if the corruption is storage stack related, we'd see a
-csum error on subsequent read.
+Given the clause about how the file 'cannot be modified', it is
+surprising that programs holding writable file descriptors can continue
+to write to and truncate files after the immutable flag has been set,
+but they cannot call other things such as utimes, fallocate, unlink,
+link, setxattr, or reflink.
 
-Once there's corruption in a block address, the corruption can
-propagate into anything else that depends on that block address even
-if there isn't another corruption event. So one event, multiple
-corruptions.
+Since the immutable flag is only settable by administrators, resolve
+this inconsistent behavior in favor of the documented behavior -- once
+the flag is set, the file cannot be modified, period.
 
+If you're going to start using this mess, you probably ought to just
+pull from my git trees, which are linked below.
 
-> And another thing: if I am getting it right, it should have been more
-> reliable/appropriate to let btrfs manage the five disks behind the md0
-> with a raid1 profile instead binding them in a RAID5 and "giving" just a
-> single device to btrfs.
+This has been lightly tested with fstests.  Enjoy!
+Comments and questions are, as always, welcome.
 
-Not necessarily. If corruption happens early enough, it gets baked
-into all copies of the metadata.
+--D
 
-
--- 
-Chris Murphy
+kernel git tree:
+https://git.kernel.org/cgit/linux/kernel/git/djwong/xfs-linux.git/log/?h=immutable-files

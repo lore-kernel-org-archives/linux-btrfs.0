@@ -2,98 +2,67 @@ Return-Path: <SRS0=zp8L=SK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS
+X-Spam-Status: No, score=-2.3 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 68AB4C282DF
-	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Apr 2019 06:21:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A7E74C282DE
+	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Apr 2019 06:32:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3805D208E4
-	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Apr 2019 06:21:01 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 785FC2084F
+	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Apr 2019 06:32:37 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Rx88oJdv"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="ArDCGbBn"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726462AbfDHGVA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 8 Apr 2019 02:21:00 -0400
-Received: from mail-yb1-f195.google.com ([209.85.219.195]:41421 "EHLO
-        mail-yb1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725854AbfDHGVA (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Apr 2019 02:21:00 -0400
-Received: by mail-yb1-f195.google.com with SMTP id c15so4713389ybk.8;
-        Sun, 07 Apr 2019 23:20:59 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=V1hfycwz+T8gKzXC1mEa3ufVAa0p9RIkob73pxd6Heg=;
-        b=Rx88oJdvfbYbHfcyuYhp/HIwLgUliSzUzf9wUqkfo+IG9Z0gjcB0ovemEo39/g6R2n
-         8qaI4yWCYPfJoYKsvt5Uf5MVQKmswZHay9LLbBrLO2DR0vTauFX9K16ah59wQTB11CNQ
-         UTsQv7oRxk7OslVY9/BvCl1MRWQHP+TsICnT3deM71isDZlLeengy3I6gcpHFLK6baHi
-         3NNKjrM/PX5QZvK4V0a24M9XEerAsp/08KEIDdUxbzKtKlRMmVCE5qcPSqCsc9+bBXwt
-         5GzRnOXccH+HSbmR3tAGSJSg1+oOkOzXHDH7STRQzbbMDPqH7sBi3xMWfWwbJgckEAiC
-         aCRA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=V1hfycwz+T8gKzXC1mEa3ufVAa0p9RIkob73pxd6Heg=;
-        b=Xsz/QQJlqkh2cqrFpkkRaiyX5kE06ysQgMQBHOACbPW3Ef1AOTx5B+STdSd5DFKeh+
-         fnd9iQgFrAzU/8DGe6V4kxWpOp3H2xKsr357HJa+3zW/Rq8yR5rHAmczE8hwVMx8i5iA
-         zukCJhGLVJp1czW1wnXOP3VJsklAWTgxIxMBmc85W0cVIyNtlcFoQ8FEZkbaGi7sjbro
-         LeVNCp7X8FxsUZ6aFki1giHIn+8+tpR7HuHY3KMSmfhtzGsa+hMv1hy/PRJ6vBLhvjx2
-         lgM7L/hNbRgm09Yar4otWMGnzAHp5hWRXqusoaTG5647+0Sm6JPgLvjcVJXOGDhh/hes
-         Yerg==
-X-Gm-Message-State: APjAAAVuVXq/rS2X2mZXTMkp4sDeR397IWI7PYJIufkm18ZJszFaFAaV
-        +F40CVwsBzO8QaR+8Zk9mqwVjGQ66NM9wlZ8H5c=
-X-Google-Smtp-Source: APXvYqzcGihYsVJQygsz2fv91+mltqJC2lziBlhN0kcSkp2OBWv1mBujCpf/ni6MLrdLjhPaYvcJ/pI6OO9/8E2ylPQ=
-X-Received: by 2002:a25:6b06:: with SMTP id g6mr22871030ybc.214.1554704459044;
- Sun, 07 Apr 2019 23:20:59 -0700 (PDT)
+        id S1726253AbfDHGcg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 8 Apr 2019 02:32:36 -0400
+Received: from bombadil.infradead.org ([198.137.202.133]:53564 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725881AbfDHGcf (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Apr 2019 02:32:35 -0400
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20170209; h=In-Reply-To:Content-Type:MIME-Version
+        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:
+        Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
+        List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+         bh=+d7sEEPpohC1GBFngRFeGjJqaKn7dWmpZgp8RSmS5EI=; b=ArDCGbBn1YuaX2lZp3pipFmF0
+        xTukaj/dHZOJRKmRghOIu+l1AF+WKwhOqcwLyeJGCnfKU/kTBiMyQFjrurIe1NhPlFej7E7AKqs95
+        k7PURLSIKlmLHrJKTY4tHLpQ3T3U8KLk7+pek88EPCBe5iEaW5x+uvjJbiW1aNEgNycY305nKatCT
+        8FE+fucum9NoCx9sLo04R/nRQcJ6cmtYjI1R1HXkt8XEUTQI70+GIyjyH7p51EWJD7LRUBO4ccIi8
+        UV43CWuLJMyfl5veyZroanOfcwsDRiEfgFNejRbSyybuYtwLOjKNHsXf0CqKWfBr/Qn349wVQSwJC
+        Yjbhl2v/g==;
+Received: from hch by bombadil.infradead.org with local (Exim 4.90_1 #2 (Red Hat Linux))
+        id 1hDNpb-0001DV-6r; Mon, 08 Apr 2019 06:32:35 +0000
+Date:   Sun, 7 Apr 2019 23:32:35 -0700
+From:   Christoph Hellwig <hch@infradead.org>
+To:     Qu Wenruo <wqu@suse.de>
+Cc:     Christoph Hellwig <hch@infradead.org>, linux-block@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
+Subject: Re: [PATCH v2 1/2] block: Add new BLK_STS_SELFTEST status
+Message-ID: <20190408063235.GA1298@infradead.org>
+References: <20190406103759.6330-1-wqu@suse.com>
+ <20190407070451.GA32498@infradead.org>
+ <41acfcc7-1971-88a0-e34d-00fc34a5c190@suse.de>
 MIME-Version: 1.0
-References: <155466882175.633834.15261194784129614735.stgit@magnolia> <155466884962.633834.14320700092446721044.stgit@magnolia>
-In-Reply-To: <155466884962.633834.14320700092446721044.stgit@magnolia>
-From:   Amir Goldstein <amir73il@gmail.com>
-Date:   Mon, 8 Apr 2019 09:20:47 +0300
-Message-ID: <CAOQ4uxj4WLX8sWbnm11Ps+rmCNTPecV-w9YUzJfKDtDs+qTx3Q@mail.gmail.com>
-Subject: Re: [PATCH 4/4] xfs: don't allow most setxattr to immutable files
-To:     "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc:     Dave Chinner <david@fromorbit.com>,
-        linux-xfs <linux-xfs@vger.kernel.org>,
-        Linux MM <linux-mm@kvack.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        Ext4 <linux-ext4@vger.kernel.org>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <41acfcc7-1971-88a0-e34d-00fc34a5c190@suse.de>
+User-Agent: Mutt/1.9.2 (2017-12-15)
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sun, Apr 7, 2019 at 11:28 PM Darrick J. Wong <darrick.wong@oracle.com> wrote:
->
-> From: Darrick J. Wong <darrick.wong@oracle.com>
->
-> The chattr manpage has this to say about immutable files:
->
-> "A file with the 'i' attribute cannot be modified: it cannot be deleted
-> or renamed, no link can be created to this file, most of the file's
-> metadata can not be modified, and the file can not be opened in write
-> mode."
->
-> However, we don't actually check the immutable flag in the setattr code,
-> which means that we can update project ids and extent size hints on
-> supposedly immutable files.  Therefore, reject a setattr call on an
-> immutable file except for the case where we're trying to unset
-> IMMUTABLE.
->
-> Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+On Sun, Apr 07, 2019 at 03:08:42PM +0800, Qu Wenruo wrote:
+> > But then again I really wonder why you need to pass this information
+> > through a blk_status_t to start with.  In general these kinds of error
+> > should be passed through file system specific errno fields.
+> > 
+> 
+> For functions called in endio hook, we return blk_status_t.
+> Or for case like hook before submitting bio, we set bio->bi_status to
+> record it.
 
-Did you miss my comment on v1, or do you not think this use case
-is going to hurt any application that is not a rootkit?
-
-chattr +i foo => OK
-chattr +i foo => -EPERM
-
-Thanks,
-Amir.
+Ok.  Good enough explanation, please add it to the changelog.

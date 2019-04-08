@@ -2,73 +2,97 @@ Return-Path: <SRS0=zp8L=SK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F418FC10F13
-	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Apr 2019 16:48:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A93D1C10F13
+	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Apr 2019 17:01:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CDF3420880
-	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Apr 2019 16:48:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 82A2B20880
+	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Apr 2019 17:01:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728988AbfDHQsI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 8 Apr 2019 12:48:08 -0400
-Received: from mx2.suse.de ([195.135.220.15]:59820 "EHLO mx1.suse.de"
+        id S1728698AbfDHRBM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 8 Apr 2019 13:01:12 -0400
+Received: from mx2.suse.de ([195.135.220.15]:33492 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726253AbfDHQsI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 8 Apr 2019 12:48:08 -0400
+        id S1726726AbfDHRBM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 8 Apr 2019 13:01:12 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 3629FB03B
-        for <linux-btrfs@vger.kernel.org>; Mon,  8 Apr 2019 16:48:07 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id A5C25AE5E
+        for <linux-btrfs@vger.kernel.org>; Mon,  8 Apr 2019 17:01:06 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id B991CDA88B; Mon,  8 Apr 2019 18:49:14 +0200 (CEST)
-Date:   Mon, 8 Apr 2019 18:49:14 +0200
+        id 4790FDA88B; Mon,  8 Apr 2019 19:02:14 +0200 (CEST)
+Date:   Mon, 8 Apr 2019 19:02:14 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Record error in btree_csum_one_bio()
-Message-ID: <20190408164914.GA29086@twin.jikos.cz>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH 0/4] property fixes and cleanups
+Message-ID: <20190408170214.GB29086@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
         linux-btrfs@vger.kernel.org
-References: <20190406102005.5420-1-wqu@suse.com>
+References: <20190403165134.12378-1-anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190406102005.5420-1-wqu@suse.com>
+In-Reply-To: <20190403165134.12378-1-anand.jain@oracle.com>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, Apr 06, 2019 at 06:20:05PM +0800, Qu Wenruo wrote:
-> Since commit 6dc4f100c175 ("block: allow bio_for_each_segment_all() to
-> iterate over multi-page bvec"), break will only break the inner loop of
-> bio_for_each_segment_all(), unable to break the outer loop.
+On Thu, Apr 04, 2019 at 12:51:30AM +0800, Anand Jain wrote:
+> Both mainline and misc-5.2 fails the test case that transaction 
+> generation number must be unaltered if the property validation fails.
 > 
-> This patch will break out by utilizing goto command.
+> For example:
+> btrfs in dump-super /dev/sdb | grep ^generation; \
+> btrfs prop set /btrfs compression lz; sync; \
+> btrfs in dump-super /dev/sdb | grep ^generation
+> generation		53
+> ERROR: failed to set compression for /btrfs: Invalid argument
+> generation		54
 > 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  fs/btrfs/disk-io.c | 3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
+> Which the patch in the mailing list fixes and based on misc-5.2
+>   [PATCH 4/4 RESEND] btrfs: fix property validate fail should not increment
 > 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 6fe9197f6ee4..e20b952d3cde 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -840,9 +840,10 @@ static blk_status_t btree_csum_one_bio(struct bio *bio)
->  		root = BTRFS_I(bvec->bv_page->mapping->host)->root;
->  		ret = csum_dirty_buffer(root->fs_info, bvec->bv_page);
->  		if (ret)
-> -			break;
-> +			goto out;
+> But, now I notice that the reason for which the original code failed
+> is different from the reason for which misc-5.2 failed. Former failed
+> because the malformed 'lz' was only abled to be caught by handle->apply(),
+> and in latter we were calling the start_transaction() too early before the
+> handle->validation() which few of the patches in misc-5.1 did. My bad.
+> 
+> As per your misc-5.2 branch please drop the following patches as I have
+> better fixes as in this patch.
+> 
+> 584aebf26bbf btrfs: merge btrfs_setxattr and do_setxattr
+> ab54ee38fff7 btrfs: don't create transaction in btrfs_setxattr
+> 0cbf560f72e1 btrfs: start transaction in btrfs_xattr_handler_set
+> db0f220e98eb btrfs: start transaction in btrfs_set_acl
+> 56e9e992c00a btrfs: start transaction in btrfs_set_prop_trans
+> 3e2299ea6a8b btrfs: refactor btrfs_set_prop and add btrfs_set_prop_trans
+> 737e67ce0f3f btrfs: merge _btrfs_set_prop helpers
+> 
+> And please apply the patches as in this set.
+> 
+> Anand Jain (4):
+>   btrfs: rename __btrfs_set_prop to btrfs_set_prop_trans
+>   btrfs: rename __btrfs_set_acl to do_set_acl
+>   btrfs: fix zstd compression parameter
+>   btrfs: fix vanished compression property after failed set
 
-This being fixed in the block layer macros, but note that 'break' is not
-the only thing that's broken, also 'continue' and we do have a few
-instances of that in btrfs code.
+I'm going to send the two fixes independently to 5.1 as they affect
+current code. Regarding the increased transaction, I don't want to drop
+the patches that move transaction around just yet, as they're 100
+patches deep in the devel queue.
 
-Once this is fixed in the macros, this patch is not necessary.
+The validation should happen before the transaction, the code currently
+does a few nested calls so this might need further cleanups but I'd
+rather go that way than to deleting what's in misc-next and starting
+again.
+
+If deleting the current misc-next patches appears to be a better option
+in the end, then I'll do that.

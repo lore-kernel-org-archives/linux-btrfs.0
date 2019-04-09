@@ -2,85 +2,109 @@ Return-Path: <SRS0=c/cW=SL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 25AAEC10F0E
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Apr 2019 10:26:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C571EC10F0E
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Apr 2019 10:30:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id F39642084F
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Apr 2019 10:26:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9CD1C20830
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Apr 2019 10:30:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726800AbfDIK0B (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 9 Apr 2019 06:26:01 -0400
-Received: from mx2.suse.de ([195.135.220.15]:50992 "EHLO mx1.suse.de"
+        id S1727059AbfDIKam (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 9 Apr 2019 06:30:42 -0400
+Received: from mx2.suse.de ([195.135.220.15]:51590 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726091AbfDIK0B (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 9 Apr 2019 06:26:01 -0400
+        id S1726112AbfDIKal (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 9 Apr 2019 06:30:41 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 4F51CADC7;
-        Tue,  9 Apr 2019 10:25:59 +0000 (UTC)
-Date:   Tue, 9 Apr 2019 12:25:58 +0200
+        by mx1.suse.de (Postfix) with ESMTP id 96B14AEF1;
+        Tue,  9 Apr 2019 10:30:40 +0000 (UTC)
+Date:   Tue, 9 Apr 2019 12:30:39 +0200
 From:   Johannes Thumshirn <jthumshirn@suse.de>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Matthew Wilcox <willy@infradead.org>,
-        Hannes Reinecke <hare@suse.de>, Ming Lei <ming.lei@redhat.com>,
-        Jens Axboe <axboe@kernel.dk>, linux-block@vger.kernel.org,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        Omar Sandoval <osandov@fb.com>
-Subject: Re: [PATCH] block: don't use for-inside-for in
- bio_for_each_segment_all
-Message-ID: <20190409102558.GC5099@linux-x5ow.site>
-References: <20190406215428.3131-1-ming.lei@redhat.com>
- <20190407065205.GA8799@lst.de>
- <f0c82caf-24f3-dba7-0bf0-85dd0e056e73@suse.de>
- <20190408141203.GT22763@bombadil.infradead.org>
- <20190409094839.GA6827@lst.de>
+To:     Su Yue <Damenly_Su@gmx.com>
+Cc:     David Sterba <dsterba@suse.com>,
+        Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 1/2] btrfs-progs: add 'btrfs inspect-internal csum-dump'
+ command
+Message-ID: <20190409103039.GD5099@linux-x5ow.site>
+References: <20190408133146.21355-1-jthumshirn@suse.de>
+ <20190408133146.21355-2-jthumshirn@suse.de>
+ <adb47c0d-6c71-3b34-7f20-7764bc16e036@gmx.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=iso-8859-1
 Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <20190409094839.GA6827@lst.de>
+In-Reply-To: <adb47c0d-6c71-3b34-7f20-7764bc16e036@gmx.com>
 User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Apr 09, 2019 at 11:48:39AM +0200, Christoph Hellwig wrote:
-> On Mon, Apr 08, 2019 at 07:12:04AM -0700, Matthew Wilcox wrote:
-> > On Mon, Apr 08, 2019 at 08:07:55AM +0200, Hannes Reinecke wrote:
-> > > Oh yes, please do.
-> > > The macros are fast becoming unparseable :-)
+On Tue, Apr 09, 2019 at 05:34:22PM +0800, Su Yue wrote:
+> 
+> 
+> On 2019/4/8 9:31 PM, Johannes Thumshirn wrote:
+> > Add a 'btrfs inspect-internal csum-dump' command to dump the on-disk
+> > checksums of a file.
 > > 
-> > I think something that would help is removing the mandatory 'i' parameter
-> > to this iterator.  Most of the users don't use it, and the ones that do
-> > can implement it themselves.  eg:
+> > The dump command first uses the FIEMAP ioctl() to get a map of the file's
+> > extents and then uses the BTRFS_TREE_SEARCH_V2 ioctl() to get the
+> > checksums for these extents.
+> > 
+> > Using FIEMAP instead of the BTRFS_TREE_SEARCH_V2 ioctl() to get the
+> > extents allows us to quickly filter out any holes in the file, as this is
+> > already done for us in the kernel.
+> > 
 > 
-> Yeah, I quickly hacked this up during a meeting yesterday and we have
-> exactly two users of the iterator.  Patch against the for-linus tree
-> below, although it conflicts with some of the 5.2 work.  Maybe it is
-> best to merge this just after the next rc1..
+> Looks much better than V1. Some comments bellow.
 > 
-> --
-> From 6a872f0186846a64a898b149be54d385f9f03f8b Mon Sep 17 00:00:00 2001
-> From: Christoph Hellwig <hch@lst.de>
-> Date: Mon, 8 Apr 2019 18:11:44 +0200
-> Subject: block: remove the i argument to bio_for_each_segment_all
-> 
-> We only have two callers that need the simple loop iterator, and
-> they can easily do it themselves.
-> 
-> Suggested-by: Matthew Wilcox <willy@infradead.org>
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
 
-Nice cleanup!
+Thanks.
 
-Looks good,
-Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
+[...]
+
+> > +	fiemap = calloc(1, sizeof(*fiemap));
+> > +	if (!fiemap)
+> > +		return -1;
+> 
+> -ENOMEM is better.
+
+OK.
+
+> > +
+> > +	fiemap->fm_length = ~0;
+> > +
+> > +	ret = ioctl(fd, FS_IOC_FIEMAP, fiemap);
+> > +	if (ret)
+> > +		goto free_fiemap;
+> > +
+> > +	ext_size = fiemap->fm_mapped_extents * sizeof(struct fiemap_extent);
+> > +
+> > +	tmp = realloc(fiemap, sizeof(*fiemap) + ext_size);
+> > +	if (!tmp)
+> 
+> ret = -ENOMEM;
+> else btrfs_get_extent_csum() will return 0.
+> 
+
+Good catch, thanks
+
+[...]
+
+> > +	fd = open(filename, O_RDONLY);
+> > +	if (fd < 0) {
+> > +		error("cannot open file %s:%m\n", filename);
+> 
+> error() does break a line, no need of '\n'.
+> > +		return 1;
+> 
+> -errno is better here.
+
+OK.
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems
 jthumshirn@suse.de                                +49 911 74053 689

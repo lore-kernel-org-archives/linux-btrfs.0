@@ -2,185 +2,439 @@ Return-Path: <SRS0=c/cW=SL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 38C0CC282DA
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Apr 2019 08:24:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 00BD4C10F0E
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Apr 2019 08:47:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 071D820880
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Apr 2019 08:24:25 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="l885hRvr"
+	by mail.kernel.org (Postfix) with ESMTP id B650E206C0
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Apr 2019 08:47:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726588AbfDIIYX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 9 Apr 2019 04:24:23 -0400
-Received: from mail-yw1-f66.google.com ([209.85.161.66]:39618 "EHLO
-        mail-yw1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726372AbfDIIYX (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Apr 2019 04:24:23 -0400
-Received: by mail-yw1-f66.google.com with SMTP id z9so5933549ywd.6;
-        Tue, 09 Apr 2019 01:24:22 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=bWQFwo7IHDylYNN8NyHxPZ7hU2kY+f0QWx1JmjnI1F8=;
-        b=l885hRvrFXm9KxwnJJq0DifCiw24GZL7QCGuCEL8qQOU8Eq/Qud59KwIfmSRv2Sh9G
-         fT1vppb0DHQgkOaVCIxm+Gd73163C6x60XGT+zTB9ls15VR2EODAeYlNDYoJ7AjCkm/2
-         lcSni2HLILDC5T1izm9kB39F/ppk6RqWWGQpEUwNbr85Px4WHx/QSL7eOv5mKcIpKfmn
-         pGp6Cl3s4cB54vyVpnF/u0cVMU9nvxlLbjKhd+I81VMojpwTO6D0Sh+gj5bKmpnm+BMQ
-         NjIthNgLfnJJmf22TnnRFF4EMDYMoi9Yn7c7XCxnHLaP2ayAyOW4hXRx7rt7h82BRb2l
-         t2Ug==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=bWQFwo7IHDylYNN8NyHxPZ7hU2kY+f0QWx1JmjnI1F8=;
-        b=ktFbb2K+E55DNUdX1uVrZ4KVymfpV3mNKuxpK094bVwt7z5+XCq/IvfFOJ5u5WrbvC
-         nmpzgo990IP0LYLmM93nkl1ojlMV+2yUsiYPyEikK0gbq2b0ctHUch0cAmbGXyoyW/YV
-         p/nMHy1TEqbMahxBkCR8TemxgWvPyNNdZxSvLiSSBCGh2RtMV+n4l3mMIZ8lvI42aAYh
-         W8Bwip2yTQzHp+qQ7J5ERoI3m7jtuCC6NnimbmsOUV7jVaAKNBQka8stFXm7pSOS+CNP
-         lQBQ4/AmHX7l24MtUCR1qC4x01w8qxR9bNk0HjtyD8IFBcWzldkH3ZGXpjQCPXlEhaaG
-         CFlw==
-X-Gm-Message-State: APjAAAWXOP9jy8BChIVdg7Jjj3F73vzkiiXHOclEiMx/4HolKlzjE6xd
-        +6F/rexKYWJJADZFle6vc8ML5uzPQ2GRtHqmibs=
-X-Google-Smtp-Source: APXvYqzou3QnWh3Vv2nMQWyo4D7id6da58r3bg3DsHGTl7DQcgno15ZNugvun/RPcvRvvDvoF1Ocf7d6VA6OL7YiVfs=
-X-Received: by 2002:a81:1383:: with SMTP id 125mr27735505ywt.265.1554798262016;
- Tue, 09 Apr 2019 01:24:22 -0700 (PDT)
+        id S1726162AbfDIIry (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 9 Apr 2019 04:47:54 -0400
+Received: from mx2.suse.de ([195.135.220.15]:51850 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726035AbfDIIry (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 9 Apr 2019 04:47:54 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 172DFAFF5
+        for <linux-btrfs@vger.kernel.org>; Tue,  9 Apr 2019 08:47:52 +0000 (UTC)
+Subject: Re: [PATCH 1/2] btrfs-progs: add 'btrfs inspect-internal csum-dump'
+ command
+To:     Johannes Thumshirn <jthumshirn@suse.de>,
+        David Sterba <dsterba@suse.com>
+Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
+References: <20190408133146.21355-1-jthumshirn@suse.de>
+ <20190408133146.21355-2-jthumshirn@suse.de>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <e8196cf2-983e-7e97-5bac-bad4cd3fbd47@suse.com>
+Date:   Tue, 9 Apr 2019 11:47:50 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.6.1
 MIME-Version: 1.0
-References: <155466882175.633834.15261194784129614735.stgit@magnolia>
- <155466884962.633834.14320700092446721044.stgit@magnolia> <20190409031929.GE5147@magnolia>
-In-Reply-To: <20190409031929.GE5147@magnolia>
-From:   Amir Goldstein <amir73il@gmail.com>
-Date:   Tue, 9 Apr 2019 11:24:10 +0300
-Message-ID: <CAOQ4uxgDQHJntoO6EZ1fn-iBVo8gshsSpHd_UB1cnXUJ3CXOTg@mail.gmail.com>
-Subject: Re: [PATCH v2 4/4] xfs: don't allow most setxattr to immutable files
-To:     "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc:     Dave Chinner <david@fromorbit.com>,
-        linux-xfs <linux-xfs@vger.kernel.org>,
-        Linux MM <linux-mm@kvack.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        Ext4 <linux-ext4@vger.kernel.org>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <20190408133146.21355-2-jthumshirn@suse.de>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Apr 9, 2019 at 6:19 AM Darrick J. Wong <darrick.wong@oracle.com> wrote:
->
-> From: Darrick J. Wong <darrick.wong@oracle.com>
->
-> The chattr manpage has this to say about immutable files:
->
-> "A file with the 'i' attribute cannot be modified: it cannot be deleted
-> or renamed, no link can be created to this file, most of the file's
-> metadata can not be modified, and the file can not be opened in write
-> mode."
->
-> However, we don't actually check the immutable flag in the setattr code,
-> which means that we can update project ids and extent size hints on
-> supposedly immutable files.  Therefore, reject a setattr call on an
-> immutable file except for the case where we're trying to unset
-> IMMUTABLE.
->
-> Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+
+
+On 8.04.19 г. 16:31 ч., Johannes Thumshirn wrote:
+> Add a 'btrfs inspect-internal csum-dump' command to dump the on-disk
+> checksums of a file.
+> 
+> The dump command first uses the FIEMAP ioctl() to get a map of the file's
+> extents and then uses the BTRFS_TREE_SEARCH_V2 ioctl() to get the
+> checksums for these extents.
+> 
+> Using FIEMAP instead of the BTRFS_TREE_SEARCH_V2 ioctl() to get the
+> extents allows us to quickly filter out any holes in the file, as this is
+> already done for us in the kernel.
+> 
+> Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+
+Overall looks good and not nearly as ugly as I expected so the csum tree
+is not _THAT_ cumbersome to work with after all :). However, do you
+intend to submit tests with files with specific patterns to ensure we do
+not regress? Also I have some minor comments below but they are mostly
+cosmetic so:
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
 > ---
->  fs/xfs/xfs_ioctl.c |   46 ++++++++++++++++++++++++++++++++++++++++++++--
->  1 file changed, 44 insertions(+), 2 deletions(-)
->
-> diff --git a/fs/xfs/xfs_ioctl.c b/fs/xfs/xfs_ioctl.c
-> index 5a1b96dad901..67d12027f563 100644
-> --- a/fs/xfs/xfs_ioctl.c
-> +++ b/fs/xfs/xfs_ioctl.c
-> @@ -1023,6 +1023,40 @@ xfs_ioctl_setattr_flush(
->         return filemap_write_and_wait(inode->i_mapping);
->  }
->
+>  Makefile                 |   3 +-
+>  cmds-inspect-dump-csum.c | 231 +++++++++++++++++++++++++++++++++++++++++++++++
+>  cmds-inspect.c           |   2 +
+>  commands.h               |   2 +
+>  4 files changed, 237 insertions(+), 1 deletion(-)
+>  create mode 100644 cmds-inspect-dump-csum.c
+> 
+> diff --git a/Makefile b/Makefile
+> index e25e256f96af..f5d0c0532faf 100644
+> --- a/Makefile
+> +++ b/Makefile
+> @@ -130,7 +130,8 @@ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+>  	       cmds-restore.o cmds-rescue.o chunk-recover.o super-recover.o \
+>  	       cmds-property.o cmds-fi-usage.o cmds-inspect-dump-tree.o \
+>  	       cmds-inspect-dump-super.o cmds-inspect-tree-stats.o cmds-fi-du.o \
+> -	       mkfs/common.o check/mode-common.o check/mode-lowmem.o
+> +	       cmds-inspect-dump-csum.o mkfs/common.o check/mode-common.o \
+> +	       check/mode-lowmem.o
+>  libbtrfs_objects = send-stream.o send-utils.o kernel-lib/rbtree.o btrfs-list.o \
+>  		   kernel-lib/crc32c.o messages.o \
+>  		   uuid-tree.o utils-lib.o rbtree-utils.o
+> diff --git a/cmds-inspect-dump-csum.c b/cmds-inspect-dump-csum.c
+> new file mode 100644
+> index 000000000000..7181013d0c95
+> --- /dev/null
+> +++ b/cmds-inspect-dump-csum.c
+> @@ -0,0 +1,231 @@
 > +/*
-> + * If immutable is set and we are not clearing it, we're not allowed to change
-> + * anything else in the inode.
-
-This looks correct, but FYI, neither xfs_io nor chattr clears 'immutable'
-and sets projid/*extsize in one ioctl/xfsctl, so there is no justification to
-making an extra effort to support that use case. You could do with
-checking 'immutable' inside xfs_ioctl_setattr_check_projid/*extsize()
-and leave only the di_flags check here.
-
-Some would say that will be cleaner code.
-Its a matter of taste and its your subsystem, so feel free to dismiss
-this comments.
-
-Thanks,
-Amir.
-
-> Don't error out if we're only trying to set
-> + * immutable on an immutable file.
+> + * Copyright (C) 2019 SUSE. All rights reserved.
+> + *
+> + * This program is free software; you can redistribute it and/or
+> + * modify it under the terms of the GNU General Public
+> + * License v2 as published by the Free Software Foundation.
+> + *
+> + * This program is distributed in the hope that it will be useful,
+> + * but WITHOUT ANY WARRANTY; without even the implied warranty of
+> + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+> + * General Public License for more details.
+> + *
+> + * You should have received a copy of the GNU General Public
+> + * License along with this program; if not, write to the
+> + * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+> + * Boston, MA 021110-1307, USA.
 > + */
-> +static int
-> +xfs_ioctl_setattr_immutable(
-> +       struct xfs_inode        *ip,
-> +       struct fsxattr          *fa,
-> +       uint16_t                di_flags,
-> +       uint64_t                di_flags2)
-> +{
-> +       struct xfs_mount        *mp = ip->i_mount;
 > +
-> +       if (!(ip->i_d.di_flags & XFS_DIFLAG_IMMUTABLE) ||
-> +           !(fa->fsx_xflags & FS_XFLAG_IMMUTABLE))
-> +               return 0;
+> +#include <linux/fiemap.h>
+> +#include <linux/fs.h>
 > +
-> +       if ((ip->i_d.di_flags & ~XFS_DIFLAG_IMMUTABLE) !=
-> +           (di_flags & ~XFS_DIFLAG_IMMUTABLE))
-> +               return -EPERM;
-> +       if (ip->i_d.di_version >= 3 && ip->i_d.di_flags2 != di_flags2)
-> +               return -EPERM;
-> +       if (xfs_get_projid(ip) != fa->fsx_projid)
-> +               return -EPERM;
-> +       if (ip->i_d.di_extsize != fa->fsx_extsize >> mp->m_sb.sb_blocklog)
-> +               return -EPERM;
-> +       if (ip->i_d.di_version >= 3 && (di_flags2 & XFS_DIFLAG2_COWEXTSIZE) &&
-> +           ip->i_d.di_cowextsize != fa->fsx_cowextsize >> mp->m_sb.sb_blocklog)
-> +               return -EPERM;
+> +#include <sys/types.h>
+> +#include <sys/stat.h>
+> +#include <sys/ioctl.h>
 > +
-> +       return 0;
+> +#include <stdlib.h>
+> +#include <stdio.h>
+> +#include <errno.h>
+> +#include <unistd.h>
+> +#include <string.h>
+> +#include <fcntl.h>
+> +#include <getopt.h>
+> +
+> +#include "kerncompat.h"
+> +#include "ctree.h"
+> +#include "messages.h"
+> +#include "help.h"
+> +#include "ioctl.h"
+> +#include "utils.h"
+> +
+> +static bool debug = false;
+> +
+> +static int btrfs_lookup_csum_for_phys(int fd, u64 phys, u64 extent_csums)> +{
+> +	struct btrfs_ioctl_search_args_v2 *search;
+> +	struct btrfs_ioctl_search_key *sk;
+> +	int bufsz = 1024;
+> +	char buf[bufsz], *bp;
+> +	unsigned int off = 0;
+> +	const int csum_size = 4; // TODO figure out by runtime
+
+In cmds-inspect-dump-super.c there is a function 'load_and_dump_sb', IMO
+it will make sense to split it into load_sb and dump/print_sb. That way
+the former could be made into a library function and moved to utils.c
+this will enable you to query the size of the csum dynamically.
+
+
+> +	int ret, i, j;
+> +	u64 needle = phys;
+> +	u64 pending_csums = extent_csums;
+
+Perhahps pending_csums could be renamed to something more descriptive e.g:
+
+pending_csum_count
+
+OTOH the plural form slightly hints at the possible usage but while I
+was reviewing the code I had to scroll up to be sure what the variable
+holds.
+
+> +
+> +	memset(buf, 0, sizeof(buf));
+> +	search = (struct btrfs_ioctl_search_args_v2 *)buf;
+> +	sk = &search->key;
+> +
+> +again:
+> +	if (debug)
+> +		printf(
+> +"Looking up checksums for extent at physial offset: %llu (searching at %llu), looking for %llu csums\n",
+> +		       phys, needle, pending_csums);
+> +
+> +	sk->tree_id = BTRFS_CSUM_TREE_OBJECTID;
+> +	sk->min_objectid = BTRFS_EXTENT_CSUM_OBJECTID;
+> +	sk->max_objectid = BTRFS_EXTENT_CSUM_OBJECTID;
+> +	sk->max_type = BTRFS_EXTENT_CSUM_KEY;
+> +	sk->min_type = BTRFS_EXTENT_CSUM_KEY;
+> +	sk->min_offset = needle;
+> +	sk->max_offset = (u64)-1;
+> +	sk->max_transid = (u64)-1;
+> +	sk->nr_items = 1;
+> +	search->buf_size = bufsz - sizeof(*search);
+> +
+> +	ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH_V2, search);
+> +	if (ret < 0)
+> +		return ret;
+> +> +	if (sk->nr_items == 0) {
+
+I'd like a comment here that this is a heuristics
+
+> +		needle -= 4096;
+> +		goto again;
+> +	}
+
+nit: My personal preference is to always use the idiomatic constructs
+that a language gives to developers. I know it will increase the
+indentation level but a do {} while(!sk->nr_items) feels more correct
+than constant abuse of labels (and in the btrfs code base we are grave
+offenders in that regard. This is only my opinion so if David feels it'
+better to leave the label-based construct I'm not going to argue.
+
+> +
+> +
+> +	bp = (char *) search->buf;
+> +
+> +	for (i = 0; i < sk->nr_items; i++) {
+> +		struct btrfs_ioctl_search_header *sh;
+> +		int csums_in_item;
+> +
+> +		sh = (struct btrfs_ioctl_search_header *) (bp + off);
+> +		off += sizeof(*sh);
+> +
+> +		csums_in_item = btrfs_search_header_len(sh) / csum_size;
+> +
+> +		if (csums_in_item > pending_csums)
+> +			csums_in_item = pending_csums;
+
+nit: csums_in_item = max(csums_in_item, pending_csums);
+
+> +
+> +		for (j = 0; j < csums_in_item; j++) {
+> +			struct btrfs_csum_item *csum_item;
+> +
+> +			csum_item = (struct btrfs_csum_item *) (bp + off + j * 4);
+> +
+> +			printf("Offset: %llu, checksum: 0x%08x\n",
+> +			       phys + j * 4096, *(u32 *)csum_item);
+> +		}
+> +
+> +		off += btrfs_search_header_len(sh);
+> +		pending_csums -= csums_in_item;
+> +
+> +	}
+> +
+> +	return ret;
 > +}
 > +
->  static int
->  xfs_ioctl_setattr_xflags(
->         struct xfs_trans        *tp,
-> @@ -1030,7 +1064,9 @@ xfs_ioctl_setattr_xflags(
->         struct fsxattr          *fa)
->  {
->         struct xfs_mount        *mp = ip->i_mount;
-> +       uint16_t                di_flags;
->         uint64_t                di_flags2;
-> +       int                     error;
->
->         /* Can't change realtime flag if any extents are allocated. */
->         if ((ip->i_d.di_nextents || ip->i_delayed_blks) &&
-> @@ -1061,12 +1097,18 @@ xfs_ioctl_setattr_xflags(
->             !capable(CAP_LINUX_IMMUTABLE))
->                 return -EPERM;
->
-> -       /* diflags2 only valid for v3 inodes. */
-> +       /* Don't allow changes to an immutable inode. */
-> +       di_flags = xfs_flags2diflags(ip, fa->fsx_xflags);
->         di_flags2 = xfs_flags2diflags2(ip, fa->fsx_xflags);
-> +       error = xfs_ioctl_setattr_immutable(ip, fa, di_flags, di_flags2);
-> +       if (error)
-> +               return error;
+> +static int btrfs_get_extent_csum(int fd, struct stat *sb)
+> +{
+> +	struct fiemap *fiemap, *tmp;
+> +	struct fiemap_extent *fe;
+> +	size_t ext_size;
+> +	int ret, i;
 > +
-> +       /* diflags2 only valid for v3 inodes. */
->         if (di_flags2 && ip->i_d.di_version < 3)
->                 return -EINVAL;
->
-> -       ip->i_d.di_flags = xfs_flags2diflags(ip, fa->fsx_xflags);
-> +       ip->i_d.di_flags = di_flags;
->         ip->i_d.di_flags2 = di_flags2;
->
->         xfs_diflags_to_linux(ip);
+> +	fiemap = calloc(1, sizeof(*fiemap));
+> +	if (!fiemap)
+> +		return -1;
+> +
+> +	fiemap->fm_length = ~0;
+> +
+> +	ret = ioctl(fd, FS_IOC_FIEMAP, fiemap);
+> +	if (ret)
+> +		goto free_fiemap;
+> +
+> +	ext_size = fiemap->fm_mapped_extents * sizeof(struct fiemap_extent);
+> +
+> +	tmp = realloc(fiemap, sizeof(*fiemap) + ext_size);
+> +	if (!tmp)
+> +		goto free_fiemap;
+
+That works but if a file has A LOT OF extents then this could
+potentially trigger a very large allocation. A different strategy is to
+have a fixed number of extents and read the whole file in a loop. This
+could of course be added later. Just mentioning it.
+
+> +
+> +	fiemap = tmp;
+> +	fiemap->fm_extent_count = fiemap->fm_mapped_extents;
+> +	fiemap->fm_mapped_extents = 0;
+> +
+> +	ret = ioctl(fd, FS_IOC_FIEMAP, fiemap);
+> +	if (ret)
+> +		goto free_fiemap;
+> +
+> +	for (i = 0; i < fiemap->fm_mapped_extents; i++) {
+> +		u64 extent_csums;
+> +
+> +		fe = &fiemap->fm_extents[i];
+> +		extent_csums = fe->fe_length / sb->st_blksize;
+> +
+> +		if (debug)
+> +			printf(
+> +"Found extent at physial offset: %llu, length %llu, looking for %llu csums\n",
+> +			       fe->fe_physical, fe->fe_length, extent_csums);
+> +
+> +		ret = btrfs_lookup_csum_for_phys(fd, fe->fe_physical,
+> +						 extent_csums);
+> +		if (ret)
+> +			break;
+> +
+> +		if(fe->fe_flags & FIEMAP_EXTENT_LAST)
+> +			break;
+> +	}
+> +
+> +
+> +free_fiemap:
+> +	free(fiemap);
+> +	return ret;
+> +}
+> +
+> +const char * const cmd_inspect_dump_csum_usage[] = {
+> +	"btrfs inspect-internal dump-csum <path>",
+> +	"Get Checksums for a given file",
+> +	"-d|--debug    Be more verbose",
+> +	NULL
+> +};
+> +
+> +int cmd_inspect_dump_csum(int argc, char **argv)
+> +{
+> +	struct stat sb;
+> +	char *filename;
+> +	int fd;
+> +	int ret;
+> +
+> +	optind = 0;
+> +
+> +	while (1) {
+> +		static const struct option longopts[] = {
+> +			{ "debug", no_argument, NULL, 'd' },
+> +			{ NULL, 0, NULL, 0 }
+> +		};
+> +
+> +		int opt = getopt_long(argc, argv, "d", longopts, NULL);
+> +		if (opt < 0)
+> +			break;
+> +
+> +		switch (opt) {
+> +		case 'd':
+> +			debug = true;
+> +			break;
+> +		default:
+> +			usage(cmd_inspect_dump_csum_usage);
+> +		}
+> +	}
+> +
+> +	if (check_argc_exact(argc - optind, 1))
+> +		usage(cmd_inspect_dump_csum_usage);
+> +
+> +	filename = argv[optind];
+> +
+> +	fd = open(filename, O_RDONLY);
+> +	if (fd < 0) {
+> +		error("cannot open file %s:%m\n", filename);
+> +		return 1;
+> +	}
+> +	ret = fstat(fd, &sb);
+> +	if (ret) {
+> +		error("cannot stat %s: %m\n", filename);
+> +		return 1;
+> +	}
+> +
+> +	ret = btrfs_get_extent_csum(fd, &sb);
+> +	if (ret)
+> +		error("checsum lookup for file %s (%lu) failed\n",
+> +			filename, sb.st_ino);
+> +	close(fd);
+> +	return ret;
+> +}
+> diff --git a/cmds-inspect.c b/cmds-inspect.c
+> index efea0331b7aa..c20decbf6fac 100644
+> --- a/cmds-inspect.c
+> +++ b/cmds-inspect.c
+> @@ -654,6 +654,8 @@ const struct cmd_group inspect_cmd_group = {
+>  				cmd_inspect_dump_super_usage, NULL, 0 },
+>  		{ "tree-stats", cmd_inspect_tree_stats,
+>  				cmd_inspect_tree_stats_usage, NULL, 0 },
+> +		{ "dump-csum",  cmd_inspect_dump_csum,
+> +				cmd_inspect_dump_csum_usage, NULL, 0 },
+>  		NULL_CMD_STRUCT
+>  	}
+>  };
+> diff --git a/commands.h b/commands.h
+> index 76991f2b28d5..698ae532b2b8 100644
+> --- a/commands.h
+> +++ b/commands.h
+> @@ -92,6 +92,7 @@ extern const char * const cmd_rescue_usage[];
+>  extern const char * const cmd_inspect_dump_super_usage[];
+>  extern const char * const cmd_inspect_dump_tree_usage[];
+>  extern const char * const cmd_inspect_tree_stats_usage[];
+> +extern const char * const cmd_inspect_dump_csum_usage[];
+>  extern const char * const cmd_filesystem_du_usage[];
+>  extern const char * const cmd_filesystem_usage_usage[];
+>  
+> @@ -108,6 +109,7 @@ int cmd_super_recover(int argc, char **argv);
+>  int cmd_inspect(int argc, char **argv);
+>  int cmd_inspect_dump_super(int argc, char **argv);
+>  int cmd_inspect_dump_tree(int argc, char **argv);
+> +int cmd_inspect_dump_csum(int argc, char **argv);
+>  int cmd_inspect_tree_stats(int argc, char **argv);
+>  int cmd_property(int argc, char **argv);
+>  int cmd_send(int argc, char **argv);
+> 

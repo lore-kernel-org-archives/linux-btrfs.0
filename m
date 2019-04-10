@@ -2,161 +2,176 @@ Return-Path: <SRS0=M5aM=SM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED,
-	USER_AGENT_MUTT autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 411B4C10F14
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Apr 2019 15:11:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BDF3EC10F11
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Apr 2019 15:28:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1045E2082E
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Apr 2019 15:11:44 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="MiDuJv8a"
+	by mail.kernel.org (Postfix) with ESMTP id 97F8B2082E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Apr 2019 15:28:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1733053AbfDJPLn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 10 Apr 2019 11:11:43 -0400
-Received: from userp2130.oracle.com ([156.151.31.86]:46810 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1733021AbfDJPLm (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Apr 2019 11:11:42 -0400
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x3AF3o1S133576;
-        Wed, 10 Apr 2019 15:11:38 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
- : subject : message-id : references : mime-version : content-type :
- in-reply-to; s=corp-2018-07-02;
- bh=pvviq/8w+OCF5ey3WMTxmPBlvXnn7k03Hvzq+b0NS8k=;
- b=MiDuJv8aSM4uArz0jiPL3Vbgeu2spaO7tOm0gyTPG4+oLTBwIUlqXL6g9BHHFVFuWBfW
- ArFCUik5cooUlkA5DKERWKlrKh8mhxCeT+ykCyrpB/Hzc6uZM0QpZtNY0Zo/k3vHmeKu
- gihk/hIPjLBi2EkEYRGk2daOSl5KQo9F/+S2a/GRp50HDpUAomxiNu5lotxEPvMJzoDl
- W4spmZnmXKp6jzVOM72BjPn9e/+bbmNqH8SK2gy92sXO9EDDdSnjpeunMBDDsTbkslPC
- bdY2ApAzBSXay4hhwyp37Tn2lE9bTiwaNZB3LAWW8UHQISwOELZJyZdIasJQr5oQIvnq 0w== 
-Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
-        by userp2130.oracle.com with ESMTP id 2rpkht3sbf-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Wed, 10 Apr 2019 15:11:38 +0000
-Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
-        by aserp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x3AFBbUj016952;
-        Wed, 10 Apr 2019 15:11:37 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserp3030.oracle.com with ESMTP id 2rpj5b8ac9-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Wed, 10 Apr 2019 15:11:37 +0000
-Received: from abhmp0022.oracle.com (abhmp0022.oracle.com [141.146.116.28])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x3AFBZ71002787;
-        Wed, 10 Apr 2019 15:11:36 GMT
-Received: from localhost (/67.169.218.210)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Wed, 10 Apr 2019 08:11:35 -0700
-Date:   Wed, 10 Apr 2019 08:11:34 -0700
-From:   "Darrick J. Wong" <darrick.wong@oracle.com>
-To:     Qu Wenruo <wqu@suse.com>
+        id S1729295AbfDJP2h (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 10 Apr 2019 11:28:37 -0400
+Received: from mx2.suse.de ([195.135.220.15]:37468 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1729116AbfDJP2h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 10 Apr 2019 11:28:37 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 0406BAF03;
+        Wed, 10 Apr 2019 15:28:34 +0000 (UTC)
+Subject: Re: [PATCH RFC 1/2] errno.h: Export EFSCORRUPTED error number
+To:     "Darrick J. Wong" <darrick.wong@oracle.com>,
+        Qu Wenruo <wqu@suse.com>
 Cc:     linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org,
         linux-fsdevel@vger.kernel.org
-Subject: Re: [PATCH RFC 1/2] errno.h: Export EFSCORRUPTED error number
-Message-ID: <20190410151134.GG1177@magnolia>
 References: <20190410083508.21091-1-wqu@suse.com>
+ <20190410151134.GG1177@magnolia>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ mQINBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
+ T7g+RbfPFlmQp+EwFWOtABXlKC54zgSf+uulGwx5JAUFVUIRBmnHOYi/lUiE0yhpnb1KCA7f
+ u/W+DkwGerXqhhe9TvQoGwgCKNfzFPZoM+gZrm+kWv03QLUCr210n4cwaCPJ0Nr9Z3c582xc
+ bCUVbsjt7BN0CFa2BByulrx5xD9sDAYIqfLCcZetAqsTRGxM7LD0kh5WlKzOeAXj5r8DOrU2
+ GdZS33uKZI/kZJZVytSmZpswDsKhnGzRN1BANGP8sC+WD4eRXajOmNh2HL4P+meO1TlM3GLl
+ EQd2shHFY0qjEo7wxKZI1RyZZ5AgJnSmehrPCyuIyVY210CbMaIKHUIsTqRgY5GaNME24w7h
+ TyyVCy2qAM8fLJ4Vw5bycM/u5xfWm7gyTb9V1TkZ3o1MTrEsrcqFiRrBY94Rs0oQkZvunqia
+ c+NprYSaOG1Cta14o94eMH271Kka/reEwSZkC7T+o9hZ4zi2CcLcY0DXj0qdId7vUKSJjEep
+ c++s8ncFekh1MPhkOgNj8pk17OAESanmDwksmzh1j12lgA5lTFPrJeRNu6/isC2zyZhTwMWs
+ k3LkcTa8ZXxh0RfWAqgx/ogKPk4ZxOXQEZetkEyTFghbRH2BIwARAQABtCNOaWtvbGF5IEJv
+ cmlzb3YgPG5ib3Jpc292QHN1c2UuY29tPokCOAQTAQIAIgUCWIo48QIbAwYLCQgHAwIGFQgC
+ CQoLBBYCAwECHgECF4AACgkQcb6CRuU/KFc0eg/9GLD3wTQz9iZHMFbjiqTCitD7B6dTLV1C
+ ddZVlC8Hm/TophPts1bWZORAmYIihHHI1EIF19+bfIr46pvfTu0yFrJDLOADMDH+Ufzsfy2v
+ HSqqWV/nOSWGXzh8bgg/ncLwrIdEwBQBN9SDS6aqsglagvwFD91UCg/TshLlRxD5BOnuzfzI
+ Leyx2c6YmH7Oa1R4MX9Jo79SaKwdHt2yRN3SochVtxCyafDlZsE/efp21pMiaK1HoCOZTBp5
+ VzrIP85GATh18pN7YR9CuPxxN0V6IzT7IlhS4Jgj0NXh6vi1DlmKspr+FOevu4RVXqqcNTSS
+ E2rycB2v6cttH21UUdu/0FtMBKh+rv8+yD49FxMYnTi1jwVzr208vDdRU2v7Ij/TxYt/v4O8
+ V+jNRKy5Fevca/1xroQBICXsNoFLr10X5IjmhAhqIH8Atpz/89ItS3+HWuE4BHB6RRLM0gy8
+ T7rN6ja+KegOGikp/VTwBlszhvfLhyoyjXI44Tf3oLSFM+8+qG3B7MNBHOt60CQlMkq0fGXd
+ mm4xENl/SSeHsiomdveeq7cNGpHi6i6ntZK33XJLwvyf00PD7tip/GUj0Dic/ZUsoPSTF/mG
+ EpuQiUZs8X2xjK/AS/l3wa4Kz2tlcOKSKpIpna7V1+CMNkNzaCOlbv7QwprAerKYywPCoOSC
+ 7P25Ag0EWIoHPgEQAMiUqvRBZNvPvki34O/dcTodvLSyOmK/MMBDrzN8Cnk302XfnGlW/YAQ
+ csMWISKKSpStc6tmD+2Y0z9WjyRqFr3EGfH1RXSv9Z1vmfPzU42jsdZn667UxrRcVQXUgoKg
+ QYx055Q2FdUeaZSaivoIBD9WtJq/66UPXRRr4H/+Y5FaUZx+gWNGmBT6a0S/GQnHb9g3nonD
+ jmDKGw+YO4P6aEMxyy3k9PstaoiyBXnzQASzdOi39BgWQuZfIQjN0aW+Dm8kOAfT5i/yk59h
+ VV6v3NLHBjHVw9kHli3jwvsizIX9X2W8tb1SefaVxqvqO1132AO8V9CbE1DcVT8fzICvGi42
+ FoV/k0QOGwq+LmLf0t04Q0csEl+h69ZcqeBSQcIMm/Ir+NorfCr6HjrB6lW7giBkQl6hhomn
+ l1mtDP6MTdbyYzEiBFcwQD4terc7S/8ELRRybWQHQp7sxQM/Lnuhs77MgY/e6c5AVWnMKd/z
+ MKm4ru7A8+8gdHeydrRQSWDaVbfy3Hup0Ia76J9FaolnjB8YLUOJPdhI2vbvNCQ2ipxw3Y3c
+ KhVIpGYqwdvFIiz0Fej7wnJICIrpJs/+XLQHyqcmERn3s/iWwBpeogrx2Lf8AGezqnv9woq7
+ OSoWlwXDJiUdaqPEB/HmGfqoRRN20jx+OOvuaBMPAPb+aKJyle8zABEBAAGJAh8EGAECAAkF
+ AliKBz4CGwwACgkQcb6CRuU/KFdacg/+M3V3Ti9JYZEiIyVhqs+yHb6NMI1R0kkAmzsGQ1jU
+ zSQUz9AVMR6T7v2fIETTT/f5Oout0+Hi9cY8uLpk8CWno9V9eR/B7Ifs2pAA8lh2nW43FFwp
+ IDiSuDbH6oTLmiGCB206IvSuaQCp1fed8U6yuqGFcnf0ZpJm/sILG2ECdFK9RYnMIaeqlNQm
+ iZicBY2lmlYFBEaMXHoy+K7nbOuizPWdUKoKHq+tmZ3iA+qL5s6Qlm4trH28/fPpFuOmgP8P
+ K+7LpYLNSl1oQUr+WlqilPAuLcCo5Vdl7M7VFLMq4xxY/dY99aZx0ZJQYFx0w/6UkbDdFLzN
+ upT7NIN68lZRucImffiWyN7CjH23X3Tni8bS9ubo7OON68NbPz1YIaYaHmnVQCjDyDXkQoKC
+ R82Vf9mf5slj0Vlpf+/Wpsv/TH8X32ajva37oEQTkWNMsDxyw3aPSps6MaMafcN7k60y2Wk/
+ TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
+ RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
+ 5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
+Message-ID: <4ea0124a-d27b-f732-dab0-00525a903ffc@suse.com>
+Date:   Wed, 10 Apr 2019 18:28:33 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.6.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190410083508.21091-1-wqu@suse.com>
-User-Agent: Mutt/1.9.4 (2018-02-28)
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9223 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1810050000 definitions=main-1904100107
-X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9223 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
- suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
- lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
- definitions=main-1904100107
+In-Reply-To: <20190410151134.GG1177@magnolia>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Apr 10, 2019 at 04:35:07PM +0800, Qu Wenruo wrote:
-> Xfs and Ext* uses EFSCORRUPTED to indicate filesystem corruption.
-> They both map EFSCORRUPTED to EUCLEAN.
+
+
+On 10.04.19 г. 18:11 ч., Darrick J. Wong wrote:
+> On Wed, Apr 10, 2019 at 04:35:07PM +0800, Qu Wenruo wrote:
+>> Xfs and Ext* uses EFSCORRUPTED to indicate filesystem corruption.
+>> They both map EFSCORRUPTED to EUCLEAN.
+>>
+>> Btrfs/Ubifs/fscrypto all use EUCLEAN directly to indicate filesystem
+>> corruption.
 > 
-> Btrfs/Ubifs/fscrypto all use EUCLEAN directly to indicate filesystem
-> corruption.
-
-I don't know if you (btrfs folks specifically) care but ext* and xfs
-also use EFSBADCRC to signal unrecovered checksum validation failures.
-Can we promote both of them to asm-generic/errno.h at the same time?
-
-#define EFSBADCRC   EBADMSG
-
---D
-
-> And block layer is going to distinguish filesystem corruption with
-> oridinary EIO error, it's a good idea to export the initial EFSCORRUPTED
-> declaration to <linux/errno.h> so all filesystems and block layer can
-> take advantage of this easier-to-read error number.
+> I don't know if you (btrfs folks specifically) care but ext* and xfs
+> also use EFSBADCRC to signal unrecovered checksum validation failures.
+> Can we promote both of them to asm-generic/errno.h at the same time?
 > 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  fs/ext2/ext2.h                   | 1 -
->  fs/ext4/ext4.h                   | 1 -
->  fs/xfs/xfs_linux.h               | 1 -
->  include/uapi/asm-generic/errno.h | 3 +++
->  4 files changed, 3 insertions(+), 3 deletions(-)
+> #define EFSBADCRC   EBADMSG
+
+No we don't but I think we ought to start since this is more precise
+than simple -EUCLEAN. So I agree with your suggestion
+
 > 
-> diff --git a/fs/ext2/ext2.h b/fs/ext2/ext2.h
-> index 10ab238de9a6..03d0ca8fae42 100644
-> --- a/fs/ext2/ext2.h
-> +++ b/fs/ext2/ext2.h
-> @@ -369,7 +369,6 @@ struct ext2_inode {
->   */
->  #define	EXT2_VALID_FS			0x0001	/* Unmounted cleanly */
->  #define	EXT2_ERROR_FS			0x0002	/* Errors detected */
-> -#define	EFSCORRUPTED			EUCLEAN	/* Filesystem is corrupted */
->  
->  /*
->   * Mount flags
-> diff --git a/fs/ext4/ext4.h b/fs/ext4/ext4.h
-> index 82ffdacdc7fa..f906b5cbf96d 100644
-> --- a/fs/ext4/ext4.h
-> +++ b/fs/ext4/ext4.h
-> @@ -3248,6 +3248,5 @@ extern const struct iomap_ops ext4_iomap_ops;
->  #endif	/* __KERNEL__ */
->  
->  #define EFSBADCRC	EBADMSG		/* Bad CRC detected */
-> -#define EFSCORRUPTED	EUCLEAN		/* Filesystem is corrupted */
->  
->  #endif	/* _EXT4_H */
-> diff --git a/fs/xfs/xfs_linux.h b/fs/xfs/xfs_linux.h
-> index edbd5a210df2..36e5c6549f15 100644
-> --- a/fs/xfs/xfs_linux.h
-> +++ b/fs/xfs/xfs_linux.h
-> @@ -125,7 +125,6 @@ typedef __u32			xfs_nlink_t;
->  
->  #define ENOATTR		ENODATA		/* Attribute not found */
->  #define EWRONGFS	EINVAL		/* Mount with wrong filesystem type */
-> -#define EFSCORRUPTED	EUCLEAN		/* Filesystem is corrupted */
->  #define EFSBADCRC	EBADMSG		/* Bad CRC detected */
->  
->  #define SYNCHRONIZE()	barrier()
-> diff --git a/include/uapi/asm-generic/errno.h b/include/uapi/asm-generic/errno.h
-> index cf9c51ac49f9..ebd6e7e76a98 100644
-> --- a/include/uapi/asm-generic/errno.h
-> +++ b/include/uapi/asm-generic/errno.h
-> @@ -98,6 +98,9 @@
->  #define	EINPROGRESS	115	/* Operation now in progress */
->  #define	ESTALE		116	/* Stale file handle */
->  #define	EUCLEAN		117	/* Structure needs cleaning */
-> +
-> +#define EFSCORRUPTED	EUCLEAN	/* Filesystem is corrupted */
-> +
->  #define	ENOTNAM		118	/* Not a XENIX named type file */
->  #define	ENAVAIL		119	/* No XENIX semaphores available */
->  #define	EISNAM		120	/* Is a named type file */
-> -- 
-> 2.21.0
+> --D
+> 
+>> And block layer is going to distinguish filesystem corruption with
+>> oridinary EIO error, it's a good idea to export the initial EFSCORRUPTED
+>> declaration to <linux/errno.h> so all filesystems and block layer can
+>> take advantage of this easier-to-read error number.
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>>  fs/ext2/ext2.h                   | 1 -
+>>  fs/ext4/ext4.h                   | 1 -
+>>  fs/xfs/xfs_linux.h               | 1 -
+>>  include/uapi/asm-generic/errno.h | 3 +++
+>>  4 files changed, 3 insertions(+), 3 deletions(-)
+>>
+>> diff --git a/fs/ext2/ext2.h b/fs/ext2/ext2.h
+>> index 10ab238de9a6..03d0ca8fae42 100644
+>> --- a/fs/ext2/ext2.h
+>> +++ b/fs/ext2/ext2.h
+>> @@ -369,7 +369,6 @@ struct ext2_inode {
+>>   */
+>>  #define	EXT2_VALID_FS			0x0001	/* Unmounted cleanly */
+>>  #define	EXT2_ERROR_FS			0x0002	/* Errors detected */
+>> -#define	EFSCORRUPTED			EUCLEAN	/* Filesystem is corrupted */
+>>  
+>>  /*
+>>   * Mount flags
+>> diff --git a/fs/ext4/ext4.h b/fs/ext4/ext4.h
+>> index 82ffdacdc7fa..f906b5cbf96d 100644
+>> --- a/fs/ext4/ext4.h
+>> +++ b/fs/ext4/ext4.h
+>> @@ -3248,6 +3248,5 @@ extern const struct iomap_ops ext4_iomap_ops;
+>>  #endif	/* __KERNEL__ */
+>>  
+>>  #define EFSBADCRC	EBADMSG		/* Bad CRC detected */
+>> -#define EFSCORRUPTED	EUCLEAN		/* Filesystem is corrupted */
+>>  
+>>  #endif	/* _EXT4_H */
+>> diff --git a/fs/xfs/xfs_linux.h b/fs/xfs/xfs_linux.h
+>> index edbd5a210df2..36e5c6549f15 100644
+>> --- a/fs/xfs/xfs_linux.h
+>> +++ b/fs/xfs/xfs_linux.h
+>> @@ -125,7 +125,6 @@ typedef __u32			xfs_nlink_t;
+>>  
+>>  #define ENOATTR		ENODATA		/* Attribute not found */
+>>  #define EWRONGFS	EINVAL		/* Mount with wrong filesystem type */
+>> -#define EFSCORRUPTED	EUCLEAN		/* Filesystem is corrupted */
+>>  #define EFSBADCRC	EBADMSG		/* Bad CRC detected */
+>>  
+>>  #define SYNCHRONIZE()	barrier()
+>> diff --git a/include/uapi/asm-generic/errno.h b/include/uapi/asm-generic/errno.h
+>> index cf9c51ac49f9..ebd6e7e76a98 100644
+>> --- a/include/uapi/asm-generic/errno.h
+>> +++ b/include/uapi/asm-generic/errno.h
+>> @@ -98,6 +98,9 @@
+>>  #define	EINPROGRESS	115	/* Operation now in progress */
+>>  #define	ESTALE		116	/* Stale file handle */
+>>  #define	EUCLEAN		117	/* Structure needs cleaning */
+>> +
+>> +#define EFSCORRUPTED	EUCLEAN	/* Filesystem is corrupted */
+>> +
+>>  #define	ENOTNAM		118	/* Not a XENIX named type file */
+>>  #define	ENAVAIL		119	/* No XENIX semaphores available */
+>>  #define	EISNAM		120	/* Is a named type file */
+>> -- 
+>> 2.21.0
+>>
 > 

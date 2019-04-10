@@ -2,182 +2,135 @@ Return-Path: <SRS0=M5aM=SM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 72995C10F11
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Apr 2019 16:40:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9AB8AC10F11
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Apr 2019 16:46:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 421CB206DF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Apr 2019 16:40:00 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5C8E1206B6
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Apr 2019 16:46:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2387527AbfDJQj7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 10 Apr 2019 12:39:59 -0400
-Received: from mx2.suse.de ([195.135.220.15]:48612 "EHLO mx1.suse.de"
+        id S1732859AbfDJQqH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 10 Apr 2019 12:46:07 -0400
+Received: from mx2.suse.de ([195.135.220.15]:49924 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1731199AbfDJQj6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Apr 2019 12:39:58 -0400
+        id S1727171AbfDJQqH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 10 Apr 2019 12:46:07 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 2055FAEAD
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Apr 2019 16:39:57 +0000 (UTC)
-Subject: Re: [PATCH 6/6] btrfs: Remove bio_offset argument from
- submit_bio_hook
-To:     linux-btrfs@vger.kernel.org
-References: <20190410142443.6470-1-nborisov@suse.com>
- <20190410142443.6470-7-nborisov@suse.com>
+        by mx1.suse.de (Postfix) with ESMTP id 246A9AD02
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Apr 2019 16:46:06 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <b28cae6a-8e8b-0e9b-08d7-0b08b907361a@suse.com>
-Date:   Wed, 10 Apr 2019 19:39:55 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.6.1
-MIME-Version: 1.0
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH v2] btrfs: Remove bio_offset argument from submit_bio_hook
+Date:   Wed, 10 Apr 2019 19:46:04 +0300
+Message-Id: <20190410164604.29788-1-nborisov@suse.com>
+X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20190410142443.6470-7-nborisov@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+References: <20190410142443.6470-7-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+None of the implementers of the submit_bio_hook use the bio_offset
+parameter, simply remove it. No functional changes.
 
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
 
-On 10.04.19 г. 17:24 ч., Nikolay Borisov wrote:
-> None of the implementers of the submit_bio_hook use the bio_offset
-> parameter, simply remove it. No functional changes.
-> 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> ---
->  fs/btrfs/disk-io.c   | 4 ++--
->  fs/btrfs/extent_io.c | 6 ++----
->  fs/btrfs/extent_io.h | 3 +--
->  fs/btrfs/inode.c     | 5 +++--
->  4 files changed, 8 insertions(+), 10 deletions(-)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index ee9e03b8aae3..0a7897adc58f 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -885,8 +885,8 @@ static int check_async_write(struct btrfs_inode *bi)
->  }
->  
->  static blk_status_t btree_submit_bio_hook(struct inode *inode, struct bio *bio,
-> -					  int mirror_num, unsigned long bio_flags,
-> -					  u64 bio_offset)
-> +					  int mirror_num,
-> +					  unsigned long bio_flags)
->  {
->  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
->  	int async = check_async_write(BTRFS_I(inode));
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 048d6c6fe7b9..61191156ee2b 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -152,16 +152,14 @@ static int __must_check submit_one_bio(struct bio *bio, int mirror_num,
->  	struct bio_vec *bvec = bio_last_bvec_all(bio);
->  	struct bio_vec bv;
->  	struct extent_io_tree *tree = bio->bi_private;
-> -	u64 start;
->  
->  	mp_bvec_last_segment(bvec, &bv);
-> -	start = page_offset(bv.bv_page) + bv.bv_offset;
+Change since v1: 
 
-This hunk could be extended even further by removing bv/bvec definitions
-as well as the call to mp_bvec_last_segment. Shall I resend or are you
-going to fold this change David?
+ * Remove code dealing with bio internals in submit_one_bio.
 
->  
->  	bio->bi_private = NULL;
->  
->  	if (tree->ops)
->  		ret = tree->ops->submit_bio_hook(tree->private_data, bio,
-> -					   mirror_num, bio_flags, start);
-> +						 mirror_num, bio_flags);
->  	else
->  		btrfsic_submit_bio(bio);
->  
-> @@ -2546,7 +2544,7 @@ static int bio_readpage_error(struct bio *failed_bio, u64 phy_offset,
->  		read_mode, failrec->this_mirror, failrec->in_validation);
->  
->  	status = tree->ops->submit_bio_hook(tree->private_data, bio, failrec->this_mirror,
-> -					 failrec->bio_flags, 0);
-> +					 failrec->bio_flags);
->  	if (status) {
->  		free_io_failure(failure_tree, tree, failrec);
->  		bio_put(bio);
-> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-> index 37240e03c4e3..aa18a16a6ed7 100644
-> --- a/fs/btrfs/extent_io.h
-> +++ b/fs/btrfs/extent_io.h
-> @@ -105,8 +105,7 @@ struct extent_io_ops {
->  	 * pointer will be called unconditionally.
->  	 */
->  	blk_status_t (*submit_bio_hook)(struct inode *inode, struct bio *bio,
-> -					int mirror_num, unsigned long bio_flags,
-> -					u64 bio_offset);
-> +					int mirror_num, unsigned long bio_flags);
->  	int (*readpage_end_io_hook)(struct btrfs_io_bio *io_bio, u64 phy_offset,
->  				    struct page *page, u64 start, u64 end,
->  				    int mirror);
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 6e5f1afa7407..476111d44021 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -1954,8 +1954,9 @@ static blk_status_t btrfs_submit_bio_start(void *private_data, struct bio *bio,
->   *    c-3) otherwise:			async submit
->   */
->  static blk_status_t btrfs_submit_bio_hook(struct inode *inode, struct bio *bio,
-> -				 int mirror_num, unsigned long bio_flags,
-> -				 u64 bio_offset)
-> +					  int mirror_num,
-> +					  unsigned long bio_flags)
-> +
->  {
->  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
->  	struct btrfs_root *root = BTRFS_I(inode)->root;
-> 
+ fs/btrfs/disk-io.c   |  4 ++--
+ fs/btrfs/extent_io.c | 10 ++--------
+ fs/btrfs/extent_io.h |  3 +--
+ fs/btrfs/inode.c     |  5 +++--
+ 4 files changed, 8 insertions(+), 14 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index ee9e03b8aae3..0a7897adc58f 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -885,8 +885,8 @@ static int check_async_write(struct btrfs_inode *bi)
+ }
+ 
+ static blk_status_t btree_submit_bio_hook(struct inode *inode, struct bio *bio,
+-					  int mirror_num, unsigned long bio_flags,
+-					  u64 bio_offset)
++					  int mirror_num,
++					  unsigned long bio_flags)
+ {
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 	int async = check_async_write(BTRFS_I(inode));
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 048d6c6fe7b9..9aa79ad794c9 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -149,19 +149,13 @@ static int __must_check submit_one_bio(struct bio *bio, int mirror_num,
+ 				       unsigned long bio_flags)
+ {
+ 	blk_status_t ret = 0;
+-	struct bio_vec *bvec = bio_last_bvec_all(bio);
+-	struct bio_vec bv;
+ 	struct extent_io_tree *tree = bio->bi_private;
+-	u64 start;
+-
+-	mp_bvec_last_segment(bvec, &bv);
+-	start = page_offset(bv.bv_page) + bv.bv_offset;
+ 
+ 	bio->bi_private = NULL;
+ 
+ 	if (tree->ops)
+ 		ret = tree->ops->submit_bio_hook(tree->private_data, bio,
+-					   mirror_num, bio_flags, start);
++						 mirror_num, bio_flags);
+ 	else
+ 		btrfsic_submit_bio(bio);
+ 
+@@ -2546,7 +2540,7 @@ static int bio_readpage_error(struct bio *failed_bio, u64 phy_offset,
+ 		read_mode, failrec->this_mirror, failrec->in_validation);
+ 
+ 	status = tree->ops->submit_bio_hook(tree->private_data, bio, failrec->this_mirror,
+-					 failrec->bio_flags, 0);
++					 failrec->bio_flags);
+ 	if (status) {
+ 		free_io_failure(failure_tree, tree, failrec);
+ 		bio_put(bio);
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 37240e03c4e3..aa18a16a6ed7 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -105,8 +105,7 @@ struct extent_io_ops {
+ 	 * pointer will be called unconditionally.
+ 	 */
+ 	blk_status_t (*submit_bio_hook)(struct inode *inode, struct bio *bio,
+-					int mirror_num, unsigned long bio_flags,
+-					u64 bio_offset);
++					int mirror_num, unsigned long bio_flags);
+ 	int (*readpage_end_io_hook)(struct btrfs_io_bio *io_bio, u64 phy_offset,
+ 				    struct page *page, u64 start, u64 end,
+ 				    int mirror);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 6e5f1afa7407..476111d44021 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1954,8 +1954,9 @@ static blk_status_t btrfs_submit_bio_start(void *private_data, struct bio *bio,
+  *    c-3) otherwise:			async submit
+  */
+ static blk_status_t btrfs_submit_bio_hook(struct inode *inode, struct bio *bio,
+-				 int mirror_num, unsigned long bio_flags,
+-				 u64 bio_offset)
++					  int mirror_num,
++					  unsigned long bio_flags)
++
+ {
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+-- 
+2.17.1
+

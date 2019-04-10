@@ -2,119 +2,139 @@ Return-Path: <SRS0=M5aM=SM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.6 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_IN_DEF_DKIM_WL autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 15AB8C10F11
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Apr 2019 13:16:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0659EC10F11
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Apr 2019 13:47:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E10DA20830
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Apr 2019 13:16:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C606C20830
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Apr 2019 13:47:40 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b="F9QaUd7n"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730576AbfDJNQQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 10 Apr 2019 09:16:16 -0400
-Received: from mx2.suse.de ([195.135.220.15]:56088 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729060AbfDJNQQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Apr 2019 09:16:16 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 78151AF70
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Apr 2019 13:16:15 +0000 (UTC)
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: Remove redundant inode argument from btrfs_add_ordered_sum
-Date:   Wed, 10 Apr 2019 16:16:11 +0300
-Message-Id: <20190410131611.18149-1-nborisov@suse.com>
-X-Mailer: git-send-email 2.17.1
+        id S1731910AbfDJNrj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 10 Apr 2019 09:47:39 -0400
+Received: from mail-ua1-f67.google.com ([209.85.222.67]:35317 "EHLO
+        mail-ua1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1730167AbfDJNrj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 10 Apr 2019 09:47:39 -0400
+Received: by mail-ua1-f67.google.com with SMTP id a46so794583uae.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Apr 2019 06:47:38 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=google.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc:content-transfer-encoding;
+        bh=zQQOrgESGDCkEyrIM71xSzHfX8ZEuYbZibrK3lIv7i8=;
+        b=F9QaUd7neKHbxseTkVzKegwJs/tU/hugwDn1aiLgnXVphYCY+GceIM4ZyYNceOouUs
+         5Gmaz/0gRqFKLhDS4Ev0TEinnFid9qVy44F9flqMTliwsnaQeVuvIGFoDeGvvfG3C4P2
+         zexc4jy6oQU3UWkgEwfg9/pNKw4fdtsnoYMtqpIymusA6FHd/q12inlwsVDb6RGBZfIL
+         caF0O93WMNDKZqoAUe/Q5JZvP5OPUGjiZaqOlI/FtJA4qbHZg5BRrY+5MVt0iLDiPTp7
+         5LmfruLcknIkWjWRw4BrR6Erx62ECjL+uVCQGeR4GChxI6Uua3eDzFWMWM8kUzksra71
+         SrAw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=zQQOrgESGDCkEyrIM71xSzHfX8ZEuYbZibrK3lIv7i8=;
+        b=Cw16roiaBTG8IadkEJiD2PJNo4zPAikyTmh+iCJDs6a6YXA+2MgS76RIYCqc55yry1
+         Xkk+AG8yGczTrKgN0zEpq9RMpTjSIA0o925+aPNhqjQl0ISHVQZX5hNKVCExt0jJnvYZ
+         3SphueEFUoBD8TCmIBHcYVNktEBBpRM3MbGLGDk6//OfUhA/T7Kh1qYeu3Bp3BkaXBC1
+         7UgF3UhPYqc2d+8QCYVBU9MS98u9tmv6slOK7TFsB9f2DELLOd9kMAX/XvrsjFMz/Qol
+         rUQ4+biVIRaiBii9n9xhjy+bQ5p8jAFD7b7MIfqmo+oyZ/cwhZjdqJdz0vpXdyN2tb/u
+         7Q3Q==
+X-Gm-Message-State: APjAAAVOr45SD+s6cbthkqcCoZz1p0l2FiQPyYt7zOh1v8aq2mau6AXM
+        0x3BmAIc+U6wvuK40QODlrpAkP0JHFqkpynrazMg2w==
+X-Google-Smtp-Source: APXvYqx6rmKTlAdG3lUDpiRVJ7to6JQCFZkxpN4lSbXlHXBDJbFOqkcG5pK/Sz08ZMkiqv1PM0ws2nJeIMhqJE6UHOc=
+X-Received: by 2002:ab0:1d82:: with SMTP id l2mr23247938uak.120.1554904058043;
+ Wed, 10 Apr 2019 06:47:38 -0700 (PDT)
+MIME-Version: 1.0
+References: <20190410102754.387743324@linutronix.de> <20190410103646.221275815@linutronix.de>
+In-Reply-To: <20190410103646.221275815@linutronix.de>
+From:   Alexander Potapenko <glider@google.com>
+Date:   Wed, 10 Apr 2019 15:47:26 +0200
+Message-ID: <CAG_fn=WaiTn9J6wS=1XsJWuorbRCg18Oe0PMAiHx9heb04v=ig@mail.gmail.com>
+Subject: Re: [RFC patch 29/41] btrfs: ref-verify: Simplify stack trace retrieval
+To:     Thomas Gleixner <tglx@linutronix.de>
+Cc:     LKML <linux-kernel@vger.kernel.org>,
+        Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
+        Andy Lutomirski <luto@kernel.org>,
+        Steven Rostedt <rostedt@goodmis.org>,
+        Alexander Potapenko <glider@google.com>,
+        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Ordered csums are keyed off of a btrfs_ordered_extent, which already
-has a reference to the inode. This implies that an explicit inode
-argument is redundant. So remove it.
+On Wed, Apr 10, 2019 at 1:06 PM Thomas Gleixner <tglx@linutronix.de> wrote:
+>
+> Replace the indirection through struct stack_trace with an invocation of
+> the storage array based interface.
+>
+> Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+> Cc: David Sterba <dsterba@suse.com>
+> Cc: Chris Mason <clm@fb.com>
+> Cc: Josef Bacik <josef@toxicpanda.com>
+> Cc: linux-btrfs@vger.kernel.org
+> ---
+>  fs/btrfs/ref-verify.c |   15 ++-------------
+>  1 file changed, 2 insertions(+), 13 deletions(-)
+>
+> --- a/fs/btrfs/ref-verify.c
+> +++ b/fs/btrfs/ref-verify.c
+> @@ -205,28 +205,17 @@ static struct root_entry *lookup_root_en
+>  #ifdef CONFIG_STACKTRACE
+>  static void __save_stack_trace(struct ref_action *ra)
+>  {
+> -       struct stack_trace stack_trace;
+> -
+> -       stack_trace.max_entries =3D MAX_TRACE;
+> -       stack_trace.nr_entries =3D 0;
+> -       stack_trace.entries =3D ra->trace;
+> -       stack_trace.skip =3D 2;
+> -       save_stack_trace(&stack_trace);
+> -       ra->trace_len =3D stack_trace.nr_entries;
+> +       ra->trace_len =3D stack_trace_save(ra->trace, MAX_TRACE, 2);
+Now that stack_trace.skip is gone, it's unclear what this "2" stands for.
+Maybe add an inline comment saying it's skipnr?
+(This is probably valid for all other stack_trace_save() callsites)
+>  }
+>
+>  static void __print_stack_trace(struct btrfs_fs_info *fs_info,
+>                                 struct ref_action *ra)
+>  {
+> -       struct stack_trace trace;
+> -
+>         if (ra->trace_len =3D=3D 0) {
+>                 btrfs_err(fs_info, "  ref-verify: no stacktrace");
+>                 return;
+>         }
+> -       trace.nr_entries =3D ra->trace_len;
+> -       trace.entries =3D ra->trace;
+> -       print_stack_trace(&trace, 2);
+> +       stack_trace_print(ra->trace, ra->trace_len, 2);
+>  }
+>  #else
+>  static void inline __save_stack_trace(struct ref_action *ra)
+>
+>
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/file-item.c    | 4 ++--
- fs/btrfs/ordered-data.c | 5 ++---
- fs/btrfs/ordered-data.h | 3 +--
- fs/btrfs/relocation.c   | 2 +-
- 4 files changed, 6 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index 3038054bbd2b..7e2cd9c81eb1 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -464,7 +464,7 @@ blk_status_t btrfs_csum_one_bio(struct inode *inode, struct bio *bio,
- 
- 				sums->len = this_sum_bytes;
- 				this_sum_bytes = 0;
--				btrfs_add_ordered_sum(inode, ordered, sums);
-+				btrfs_add_ordered_sum(ordered, sums);
- 				btrfs_put_ordered_extent(ordered);
- 
- 				bytes_left = bio->bi_iter.bi_size - total_bytes;
-@@ -499,7 +499,7 @@ blk_status_t btrfs_csum_one_bio(struct inode *inode, struct bio *bio,
- 
- 	}
- 	this_sum_bytes = 0;
--	btrfs_add_ordered_sum(inode, ordered, sums);
-+	btrfs_add_ordered_sum(ordered, sums);
- 	btrfs_put_ordered_extent(ordered);
- 	return 0;
- }
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 6fde2b2741ef..4d9bb0dea9af 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -270,13 +270,12 @@ int btrfs_add_ordered_extent_compress(struct inode *inode, u64 file_offset,
-  * when an ordered extent is finished.  If the list covers more than one
-  * ordered extent, it is split across multiples.
-  */
--void btrfs_add_ordered_sum(struct inode *inode,
--			   struct btrfs_ordered_extent *entry,
-+void btrfs_add_ordered_sum(struct btrfs_ordered_extent *entry,
- 			   struct btrfs_ordered_sum *sum)
- {
- 	struct btrfs_ordered_inode_tree *tree;
- 
--	tree = &BTRFS_I(inode)->ordered_tree;
-+	tree = &BTRFS_I(entry->inode)->ordered_tree;
- 	spin_lock_irq(&tree->lock);
- 	list_add_tail(&sum->list, &entry->list);
- 	spin_unlock_irq(&tree->lock);
-diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-index fb9a161f0215..4c5991c3de14 100644
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -167,8 +167,7 @@ int btrfs_add_ordered_extent_dio(struct inode *inode, u64 file_offset,
- int btrfs_add_ordered_extent_compress(struct inode *inode, u64 file_offset,
- 				      u64 start, u64 len, u64 disk_len,
- 				      int type, int compress_type);
--void btrfs_add_ordered_sum(struct inode *inode,
--			   struct btrfs_ordered_extent *entry,
-+void btrfs_add_ordered_sum(struct btrfs_ordered_extent *entry,
- 			   struct btrfs_ordered_sum *sum);
- struct btrfs_ordered_extent *btrfs_lookup_ordered_extent(struct inode *inode,
- 							 u64 file_offset);
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 25fc6a4f3ecf..2246aa2e30e3 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -4604,7 +4604,7 @@ int btrfs_reloc_clone_csums(struct inode *inode, u64 file_pos, u64 len)
- 		new_bytenr = ordered->start + (sums->bytenr - disk_bytenr);
- 		sums->bytenr = new_bytenr;
- 
--		btrfs_add_ordered_sum(inode, ordered, sums);
-+		btrfs_add_ordered_sum(ordered, sums);
- 	}
- out:
- 	btrfs_put_ordered_extent(ordered);
--- 
-2.17.1
+--=20
+Alexander Potapenko
+Software Engineer
 
+Google Germany GmbH
+Erika-Mann-Stra=C3=9Fe, 33
+80636 M=C3=BCnchen
+
+Gesch=C3=A4ftsf=C3=BChrer: Paul Manicle, Halimah DeLaine Prado
+Registergericht und -nummer: Hamburg, HRB 86891
+Sitz der Gesellschaft: Hamburg

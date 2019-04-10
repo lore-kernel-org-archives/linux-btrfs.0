@@ -6,29 +6,27 @@ X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BDF3EC10F11
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Apr 2019 15:28:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 72995C10F11
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Apr 2019 16:40:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 97F8B2082E
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Apr 2019 15:28:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 421CB206DF
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Apr 2019 16:40:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729295AbfDJP2h (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 10 Apr 2019 11:28:37 -0400
-Received: from mx2.suse.de ([195.135.220.15]:37468 "EHLO mx1.suse.de"
+        id S2387527AbfDJQj7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 10 Apr 2019 12:39:59 -0400
+Received: from mx2.suse.de ([195.135.220.15]:48612 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729116AbfDJP2h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Apr 2019 11:28:37 -0400
+        id S1731199AbfDJQj6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 10 Apr 2019 12:39:58 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 0406BAF03;
-        Wed, 10 Apr 2019 15:28:34 +0000 (UTC)
-Subject: Re: [PATCH RFC 1/2] errno.h: Export EFSCORRUPTED error number
-To:     "Darrick J. Wong" <darrick.wong@oracle.com>,
-        Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org
-References: <20190410083508.21091-1-wqu@suse.com>
- <20190410151134.GG1177@magnolia>
+        by mx1.suse.de (Postfix) with ESMTP id 2055FAEAD
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Apr 2019 16:39:57 +0000 (UTC)
+Subject: Re: [PATCH 6/6] btrfs: Remove bio_offset argument from
+ submit_bio_hook
+To:     linux-btrfs@vger.kernel.org
+References: <20190410142443.6470-1-nborisov@suse.com>
+ <20190410142443.6470-7-nborisov@suse.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -73,12 +71,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <4ea0124a-d27b-f732-dab0-00525a903ffc@suse.com>
-Date:   Wed, 10 Apr 2019 18:28:33 +0300
+Message-ID: <b28cae6a-8e8b-0e9b-08d7-0b08b907361a@suse.com>
+Date:   Wed, 10 Apr 2019 19:39:55 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.6.1
 MIME-Version: 1.0
-In-Reply-To: <20190410151134.GG1177@magnolia>
+In-Reply-To: <20190410142443.6470-7-nborisov@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -89,89 +87,97 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 10.04.19 г. 18:11 ч., Darrick J. Wong wrote:
-> On Wed, Apr 10, 2019 at 04:35:07PM +0800, Qu Wenruo wrote:
->> Xfs and Ext* uses EFSCORRUPTED to indicate filesystem corruption.
->> They both map EFSCORRUPTED to EUCLEAN.
->>
->> Btrfs/Ubifs/fscrypto all use EUCLEAN directly to indicate filesystem
->> corruption.
+On 10.04.19 г. 17:24 ч., Nikolay Borisov wrote:
+> None of the implementers of the submit_bio_hook use the bio_offset
+> parameter, simply remove it. No functional changes.
 > 
-> I don't know if you (btrfs folks specifically) care but ext* and xfs
-> also use EFSBADCRC to signal unrecovered checksum validation failures.
-> Can we promote both of them to asm-generic/errno.h at the same time?
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  fs/btrfs/disk-io.c   | 4 ++--
+>  fs/btrfs/extent_io.c | 6 ++----
+>  fs/btrfs/extent_io.h | 3 +--
+>  fs/btrfs/inode.c     | 5 +++--
+>  4 files changed, 8 insertions(+), 10 deletions(-)
 > 
-> #define EFSBADCRC   EBADMSG
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index ee9e03b8aae3..0a7897adc58f 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -885,8 +885,8 @@ static int check_async_write(struct btrfs_inode *bi)
+>  }
+>  
+>  static blk_status_t btree_submit_bio_hook(struct inode *inode, struct bio *bio,
+> -					  int mirror_num, unsigned long bio_flags,
+> -					  u64 bio_offset)
+> +					  int mirror_num,
+> +					  unsigned long bio_flags)
+>  {
+>  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+>  	int async = check_async_write(BTRFS_I(inode));
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 048d6c6fe7b9..61191156ee2b 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -152,16 +152,14 @@ static int __must_check submit_one_bio(struct bio *bio, int mirror_num,
+>  	struct bio_vec *bvec = bio_last_bvec_all(bio);
+>  	struct bio_vec bv;
+>  	struct extent_io_tree *tree = bio->bi_private;
+> -	u64 start;
+>  
+>  	mp_bvec_last_segment(bvec, &bv);
+> -	start = page_offset(bv.bv_page) + bv.bv_offset;
 
-No we don't but I think we ought to start since this is more precise
-than simple -EUCLEAN. So I agree with your suggestion
+This hunk could be extended even further by removing bv/bvec definitions
+as well as the call to mp_bvec_last_segment. Shall I resend or are you
+going to fold this change David?
 
-> 
-> --D
-> 
->> And block layer is going to distinguish filesystem corruption with
->> oridinary EIO error, it's a good idea to export the initial EFSCORRUPTED
->> declaration to <linux/errno.h> so all filesystems and block layer can
->> take advantage of this easier-to-read error number.
->>
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->> ---
->>  fs/ext2/ext2.h                   | 1 -
->>  fs/ext4/ext4.h                   | 1 -
->>  fs/xfs/xfs_linux.h               | 1 -
->>  include/uapi/asm-generic/errno.h | 3 +++
->>  4 files changed, 3 insertions(+), 3 deletions(-)
->>
->> diff --git a/fs/ext2/ext2.h b/fs/ext2/ext2.h
->> index 10ab238de9a6..03d0ca8fae42 100644
->> --- a/fs/ext2/ext2.h
->> +++ b/fs/ext2/ext2.h
->> @@ -369,7 +369,6 @@ struct ext2_inode {
->>   */
->>  #define	EXT2_VALID_FS			0x0001	/* Unmounted cleanly */
->>  #define	EXT2_ERROR_FS			0x0002	/* Errors detected */
->> -#define	EFSCORRUPTED			EUCLEAN	/* Filesystem is corrupted */
->>  
->>  /*
->>   * Mount flags
->> diff --git a/fs/ext4/ext4.h b/fs/ext4/ext4.h
->> index 82ffdacdc7fa..f906b5cbf96d 100644
->> --- a/fs/ext4/ext4.h
->> +++ b/fs/ext4/ext4.h
->> @@ -3248,6 +3248,5 @@ extern const struct iomap_ops ext4_iomap_ops;
->>  #endif	/* __KERNEL__ */
->>  
->>  #define EFSBADCRC	EBADMSG		/* Bad CRC detected */
->> -#define EFSCORRUPTED	EUCLEAN		/* Filesystem is corrupted */
->>  
->>  #endif	/* _EXT4_H */
->> diff --git a/fs/xfs/xfs_linux.h b/fs/xfs/xfs_linux.h
->> index edbd5a210df2..36e5c6549f15 100644
->> --- a/fs/xfs/xfs_linux.h
->> +++ b/fs/xfs/xfs_linux.h
->> @@ -125,7 +125,6 @@ typedef __u32			xfs_nlink_t;
->>  
->>  #define ENOATTR		ENODATA		/* Attribute not found */
->>  #define EWRONGFS	EINVAL		/* Mount with wrong filesystem type */
->> -#define EFSCORRUPTED	EUCLEAN		/* Filesystem is corrupted */
->>  #define EFSBADCRC	EBADMSG		/* Bad CRC detected */
->>  
->>  #define SYNCHRONIZE()	barrier()
->> diff --git a/include/uapi/asm-generic/errno.h b/include/uapi/asm-generic/errno.h
->> index cf9c51ac49f9..ebd6e7e76a98 100644
->> --- a/include/uapi/asm-generic/errno.h
->> +++ b/include/uapi/asm-generic/errno.h
->> @@ -98,6 +98,9 @@
->>  #define	EINPROGRESS	115	/* Operation now in progress */
->>  #define	ESTALE		116	/* Stale file handle */
->>  #define	EUCLEAN		117	/* Structure needs cleaning */
->> +
->> +#define EFSCORRUPTED	EUCLEAN	/* Filesystem is corrupted */
->> +
->>  #define	ENOTNAM		118	/* Not a XENIX named type file */
->>  #define	ENAVAIL		119	/* No XENIX semaphores available */
->>  #define	EISNAM		120	/* Is a named type file */
->> -- 
->> 2.21.0
->>
+>  
+>  	bio->bi_private = NULL;
+>  
+>  	if (tree->ops)
+>  		ret = tree->ops->submit_bio_hook(tree->private_data, bio,
+> -					   mirror_num, bio_flags, start);
+> +						 mirror_num, bio_flags);
+>  	else
+>  		btrfsic_submit_bio(bio);
+>  
+> @@ -2546,7 +2544,7 @@ static int bio_readpage_error(struct bio *failed_bio, u64 phy_offset,
+>  		read_mode, failrec->this_mirror, failrec->in_validation);
+>  
+>  	status = tree->ops->submit_bio_hook(tree->private_data, bio, failrec->this_mirror,
+> -					 failrec->bio_flags, 0);
+> +					 failrec->bio_flags);
+>  	if (status) {
+>  		free_io_failure(failure_tree, tree, failrec);
+>  		bio_put(bio);
+> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+> index 37240e03c4e3..aa18a16a6ed7 100644
+> --- a/fs/btrfs/extent_io.h
+> +++ b/fs/btrfs/extent_io.h
+> @@ -105,8 +105,7 @@ struct extent_io_ops {
+>  	 * pointer will be called unconditionally.
+>  	 */
+>  	blk_status_t (*submit_bio_hook)(struct inode *inode, struct bio *bio,
+> -					int mirror_num, unsigned long bio_flags,
+> -					u64 bio_offset);
+> +					int mirror_num, unsigned long bio_flags);
+>  	int (*readpage_end_io_hook)(struct btrfs_io_bio *io_bio, u64 phy_offset,
+>  				    struct page *page, u64 start, u64 end,
+>  				    int mirror);
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 6e5f1afa7407..476111d44021 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -1954,8 +1954,9 @@ static blk_status_t btrfs_submit_bio_start(void *private_data, struct bio *bio,
+>   *    c-3) otherwise:			async submit
+>   */
+>  static blk_status_t btrfs_submit_bio_hook(struct inode *inode, struct bio *bio,
+> -				 int mirror_num, unsigned long bio_flags,
+> -				 u64 bio_offset)
+> +					  int mirror_num,
+> +					  unsigned long bio_flags)
+> +
+>  {
+>  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+>  	struct btrfs_root *root = BTRFS_I(inode)->root;
 > 

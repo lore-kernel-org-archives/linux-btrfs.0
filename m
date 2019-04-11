@@ -3,29 +3,29 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6E726C10F13
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 13:27:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 00E54C10F14
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 13:29:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 434132077C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 13:27:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D08FA2184B
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 13:29:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726585AbfDKN1D (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Apr 2019 09:27:03 -0400
-Received: from mx2.suse.de ([195.135.220.15]:48862 "EHLO mx1.suse.de"
+        id S1726757AbfDKN3u (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Apr 2019 09:29:50 -0400
+Received: from mx2.suse.de ([195.135.220.15]:50010 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726145AbfDKN1D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Apr 2019 09:27:03 -0400
+        id S1726517AbfDKN3t (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 11 Apr 2019 09:29:49 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 1FE6CAD3B;
-        Thu, 11 Apr 2019 13:27:01 +0000 (UTC)
-Subject: Re: [PATCH 5/6] btrfs: Always pass 0 bio_offset for
- btree_submit_bio_start
+        by mx1.suse.de (Postfix) with ESMTP id E1ABFAD9D;
+        Thu, 11 Apr 2019 13:29:47 +0000 (UTC)
+Subject: Re: [PATCH v2] btrfs: Remove bio_offset argument from submit_bio_hook
 To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-References: <20190410142443.6470-1-nborisov@suse.com>
- <20190410142443.6470-6-nborisov@suse.com>
+References: <20190410142443.6470-7-nborisov@suse.com>
+ <20190410164604.29788-1-nborisov@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -83,12 +83,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <2604b214-8d0e-93d5-72f8-2dd6c1dec3c2@suse.de>
-Date:   Thu, 11 Apr 2019 15:27:00 +0200
+Message-ID: <98da405c-d2fa-0f84-9dc4-5d81d6ce3454@suse.de>
+Date:   Thu, 11 Apr 2019 15:29:47 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.3.0
 MIME-Version: 1.0
-In-Reply-To: <20190410142443.6470-6-nborisov@suse.com>
+In-Reply-To: <20190410164604.29788-1-nborisov@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -97,7 +97,11 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Looks good,
 Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
+
+Here you could also add the removal of bio_offset from async_submit_bio.
+
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems
 jthumshirn@suse.de                                +49 911 74053 689

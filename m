@@ -3,32 +3,29 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A9C3CC10F13
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 13:26:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6E726C10F13
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 13:27:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 81A772077C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 13:26:27 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 434132077C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 13:27:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726564AbfDKN00 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Apr 2019 09:26:26 -0400
-Received: from mx2.suse.de ([195.135.220.15]:48354 "EHLO mx1.suse.de"
+        id S1726585AbfDKN1D (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Apr 2019 09:27:03 -0400
+Received: from mx2.suse.de ([195.135.220.15]:48862 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726145AbfDKN00 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Apr 2019 09:26:26 -0400
+        id S1726145AbfDKN1D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 11 Apr 2019 09:27:03 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 63B06ADDC;
-        Thu, 11 Apr 2019 13:26:24 +0000 (UTC)
-Subject: Re: [PATCH 4/6] btrfs: Pass 0 for bio_offset to btrfs_wq_submit_bio
+        by mx1.suse.de (Postfix) with ESMTP id 1FE6CAD3B;
+        Thu, 11 Apr 2019 13:27:01 +0000 (UTC)
+Subject: Re: [PATCH 5/6] btrfs: Always pass 0 bio_offset for
+ btree_submit_bio_start
 To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 References: <20190410142443.6470-1-nborisov@suse.com>
- <20190410142443.6470-5-nborisov@suse.com>
- <e78bde45-db9a-ce69-2020-953c508fc4fc@suse.de>
- <2790b8e6-feb5-ac50-086e-dde1fc430a46@suse.de>
- <758f1053-2231-358e-1d7e-b9bc6870876c@suse.com>
+ <20190410142443.6470-6-nborisov@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -86,12 +83,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <22663f05-be9f-0967-1b16-024729d88a1e@suse.de>
-Date:   Thu, 11 Apr 2019 15:26:24 +0200
+Message-ID: <2604b214-8d0e-93d5-72f8-2dd6c1dec3c2@suse.de>
+Date:   Thu, 11 Apr 2019 15:27:00 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.3.0
 MIME-Version: 1.0
-In-Reply-To: <758f1053-2231-358e-1d7e-b9bc6870876c@suse.com>
+In-Reply-To: <20190410142443.6470-6-nborisov@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -100,24 +97,7 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 11/04/2019 15:17, Nikolay Borisov wrote:
-> 
-> 
-> On 11.04.19 г. 16:10 ч., Johannes Thumshirn wrote:
->> On 11/04/2019 15:09, Johannes Thumshirn wrote:
->>> I think we can also kill 'async_submit_bio::bio_offset' as no other
->>> value than 0 is ever used.
->>
->> Right, this is what the following patches do. Ignore this.
-> 
-> Actually they don't particularly kill async_submit_bio::bio_offset. But
-> it could be done :)
-
-
-Yes but that's a follow up I guess.
-Anyways,
 Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
-
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems
 jthumshirn@suse.de                                +49 911 74053 689

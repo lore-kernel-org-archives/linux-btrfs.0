@@ -1,135 +1,211 @@
-Return-Path: <SRS0=M5aM=SM=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=DOz6=SN=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 84905C10F11
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Apr 2019 21:04:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 85BB6C10F11
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 00:28:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 51EA820818
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Apr 2019 21:04:06 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=avgustinov.eu header.i=@avgustinov.eu header.b="PBtKruIH"
+	by mail.kernel.org (Postfix) with ESMTP id 460FF20818
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 00:28:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726096AbfDJVEF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 10 Apr 2019 17:04:05 -0400
-Received: from cloud.avgustinov.eu ([62.73.84.164]:51046 "EHLO
-        cloud.avgustinov.eu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726023AbfDJVEE (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Apr 2019 17:04:04 -0400
-Received: from [192.168.29.36] (avgustinov.eu [87.140.63.18])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by cloud.avgustinov.eu (Postfix) with ESMTPSA id 19F3749C82A6;
-        Thu, 11 Apr 2019 00:04:01 +0300 (EEST)
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=avgustinov.eu;
-        s=default; t=1554930241;
-        bh=+NakhqLAzT300xW6DLHmO7RcfwdZkR3o0y95jKVGHsg=;
-        h=Subject:To:References:From:Date:In-Reply-To:From;
-        b=PBtKruIHabWI/DQEr5e//iB0fAAQaTwPTXuSfUJdObimc2C99+pHCgqAJIfz7DK5m
-         ieB1Jyje7yxC5k9I4nWbgBIpZHBQxxVs+lIjehBralOFp3vUCvXbEQ722JjEDdMUbQ
-         HgPXBzKGbihXYyXsN3uXHo5OtX5U/F3Yk+uPJHNhgALrSTFBHvUe4lcd+/Kqe9GHNQ
-         Zg6izMJ8giD/XjI3SLRdGadVjKv7WaR4ALuM9sx/P2b6UzNxjTZrQ2pIaGvpogpxU1
-         m0Gu/ofewCGbQs7pocRgLQpB6Rwa2ukWub+3O6kHMvi8N61ZmIRKNic2/McmaUFWqt
-         aoQiWR21UBIvg==
-Subject: Re: interest in post-mortem examination of a BTRFS system and
- improving the btrfs-code?
-To:     Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>
-References: <aa81a49a-d5ca-0f1c-fa75-9ed3656cff55@avgustinov.eu>
- <7d605543-2899-144a-7b46-7caed803b43b@avgustinov.eu>
- <8fdb5da5-d649-0c0d-1a21-c3f430476afd@gmx.com>
- <ce8be6b2-1a2f-201f-a4ff-03686b3620f1@avgustinov.eu>
- <3dcaf6ae-34c4-3760-70f9-6ce2962b42c8@gmx.com>
- <e9720559-eff2-e88b-12b4-81defb8c29c5@avgustinov.eu>
- <a75981da-86f7-e0fb-d1dc-a2576b09c668@gmx.com>
- <039ec3eb-c44e-35e9-cf1b-f9f75849d873@avgustinov.eu>
- <c69778f5-a015-8b77-3fab-e41e49a0e0db@gmx.com>
- <51021dd7-b21b-b001-c3f9-9bc31205738b@avgustinov.eu>
- <00e3ddf1-cbd7-a65a-dee3-ca720cecc77d@gmx.com>
- <a6917f39-eeb4-5548-f346-a78972c7c3fe@avgustinov.eu>
- <6a592ffa-4a5a-81af-baef-8f1681accc87@gmx.com>
- <2c786019-646a-486f-1306-25a3df36e6b3@avgustinov.eu>
- <52b23bd7-108b-63f3-b958-2a5959c7ca6e@gmx.com>
- <f2b33d93-aa37-9fd3-6036-44e1e3f065eb@avgustinov.eu>
- <a9135dba-26fe-777f-048b-87052d5cbd14@gmx.com>
- <21ff2435-af15-573c-e897-05ceb4f42e0b@avgustinov.eu>
- <CAJCQCtQJkJwEyouCUzcV1MzPkcxhvtqxkWqmrwnB9txV=MUTXA@mail.gmail.com>
-From:   "Nik." <btrfs@avgustinov.eu>
-Message-ID: <f6ee7655-e6e2-4162-6c34-7b4b3dba71c7@avgustinov.eu>
-Date:   Wed, 10 Apr 2019 23:03:55 +0200
-User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:60.0) Gecko/20100101
+        id S1726716AbfDKA2v (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 10 Apr 2019 20:28:51 -0400
+Received: from mx2.suse.de ([195.135.220.15]:53208 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726026AbfDKA2v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 10 Apr 2019 20:28:51 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 4D56DABCE;
+        Thu, 11 Apr 2019 00:28:49 +0000 (UTC)
+Subject: Re: [PATCH RFC 1/2] errno.h: Export EFSCORRUPTED error number
+To:     "Darrick J. Wong" <darrick.wong@oracle.com>
+Cc:     linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org
+References: <20190410083508.21091-1-wqu@suse.com>
+ <20190410151134.GG1177@magnolia>
+From:   Qu Wenruo <wqu@suse.de>
+Openpgp: preference=signencrypt
+Autocrypt: addr=wqu@suse.de; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0F1F1IFdlbnJ1byA8d3F1QHN1c2UuZGU+iQFUBBMBCAA+AhsDBQsJCAcCBhUICQoLAgQW
+ AgMBAh4BAheAFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlnVgp0FCQlmAm4ACgkQwj2R86El
+ /qilmgf/cUq9kFQo577ku5gc6rFpVg68ublBwjYpwjw0b//xo+Wo1wm+RRbUGs+djSZAqw12
+ D4F3r0mBTI7abUCNWAbFkYZSAIFVi0DMkjypIVS7PSaEt04rM9VBTToE+YqU6WENeJ57R2p2
+ +hI0wZrBwxObdsdaOtxWtsp3bmhIbdqxSKrtXuRawy4KnQYcLuGzOce9okdlbAE0W3KHm1gQ
+ oNAe6FX8nC9qo14m8LqEbThYH+qj4iCMlN8HIfbSx4F3e7nHZ+UAMW+E/lnMRkIB9Df+JyVd
+ /NlXzIjZAggcWsqpx6D4wyAuexKWkiGQeUeArUNihAwXjmyqWPGmjVyIh+oC6LkBDQRZ1YGv
+ AQgAqlPrYeBLMv3PAZ75YhQIwH6c4SNcB++hQ9TCT5gIQNw51+SQzkXIGgmzxMIS49cZcE4K
+ Xk/kHw5hieQeQZa60BWVRNXwoRI4ib8okgDuMkD5Kz1WEyO149+BZ7HD4/yK0VFJGuvDJR8T
+ 7RZwB69uVSLjkuNZZmCmDcDzS0c/SJOg5nkxt1iTtgUETb1wNKV6yR9XzRkrEW/qShChyrS9
+ fNN8e9c0MQsC4fsyz9Ylx1TOY/IF/c6rqYoEEfwnpdlz0uOM1nA1vK+wdKtXluCa79MdfaeD
+ /dt76Kp/o6CAKLLcjU1Iwnkq1HSrYfY3HZWpvV9g84gPwxwxX0uXquHxLwARAQABiQE8BBgB
+ CAAmFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlnVga8CGwwFCQPCZwAACgkQwj2R86El/qgN
+ 8Qf+M0vM2Idwm5txZZSs+/kSgcPxEwYmxUinnUJGyc0ZWYQXPl0cBetZon9El0naijGzNWvf
+ HxIPB+ZFehk6Otgc78p1a3/xck/s1myFRLrmbbTJNoFiyL25ljcq0J8z5Zp4yuABL2RiLdaZ
+ Pt/jfwjBHwGR+QKp6dD2qMrUWf9b7TFzYDMZXzZ2/eoIgtyjEelNBPrIgOFe24iKMjaGjd97
+ fJuRcBMHdhUAxvXQF1oRtd83JvYJ5OtwTd8MgkEfl+fo7HwWkuHbzc70L4fFKv2BowqFdaHy
+ mId1ijGPGr46tuZ5a4cw/zbaPYx6fJ4sK9tSv/6V1QPNUdqml6hm6pfs6A==
+Message-ID: <eae01c59-2280-69da-1d78-5550e3c47371@suse.de>
+Date:   Thu, 11 Apr 2019 08:28:44 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.6.1
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQJkJwEyouCUzcV1MzPkcxhvtqxkWqmrwnB9txV=MUTXA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+In-Reply-To: <20190410151134.GG1177@magnolia>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="Iij6IPpVMa1LXNeMXcl1awBmNWaR4hcxs"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--Iij6IPpVMa1LXNeMXcl1awBmNWaR4hcxs
+Content-Type: multipart/mixed; boundary="KqyVJgBzXLW4om0Lx1M74YQ4frD9gdzam";
+ protected-headers="v1"
+From: Qu Wenruo <wqu@suse.de>
+To: "Darrick J. Wong" <darrick.wong@oracle.com>
+Cc: linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org,
+ linux-fsdevel@vger.kernel.org
+Message-ID: <eae01c59-2280-69da-1d78-5550e3c47371@suse.de>
+Subject: Re: [PATCH RFC 1/2] errno.h: Export EFSCORRUPTED error number
+References: <20190410083508.21091-1-wqu@suse.com>
+ <20190410151134.GG1177@magnolia>
+In-Reply-To: <20190410151134.GG1177@magnolia>
+
+--KqyVJgBzXLW4om0Lx1M74YQ4frD9gdzam
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-2019-04-07 20:45, Chris Murphy:
-> On Sun, Apr 7, 2019 at 1:42 AM Nik. <btrfs@avgustinov.eu> wrote:
->> 2019-04-07 01:18, Qu Wenruo:
-> 
->>> You have 2 bits flipped just in one tree block!
->>>
->> If the data-tree structures alone have so many bits flipped, how much
->> flipped bits are to be expected in the data itself? What should a normal
->> btrfs user do in order to prevent such disasters?
-> 
-> I think the corruption in your case is inferred by Btrfs only by bad
-> key ordering, not csum failure for the leaf? I can't tell for sure
-> from the error, but I don't see a csum complaint.
 
-I do not quite understand where the "bad key ordering" came from, but my 
-question why (in my case) it keeps happening only to the btrfs file 
-systems? Is it relevant, that all four failed systems have had initially 
-ext4 format and were converted to btrfs (with the btrfs-progs used 5-6 
-years ago)?
+On 2019/4/10 =E4=B8=8B=E5=8D=8811:11,  Darrick J. Wong  wrote:
+> On Wed, Apr 10, 2019 at 04:35:07PM +0800, Qu Wenruo wrote:
+>> Xfs and Ext* uses EFSCORRUPTED to indicate filesystem corruption.
+>> They both map EFSCORRUPTED to EUCLEAN.
+>>
+>> Btrfs/Ubifs/fscrypto all use EUCLEAN directly to indicate filesystem
+>> corruption.
+>=20
+> I don't know if you (btrfs folks specifically) care but ext* and xfs
+> also use EFSBADCRC to signal unrecovered checksum validation failures.
+> Can we promote both of them to asm-generic/errno.h at the same time?
 
-Another question: I am sure that many btrfs users are ready in some 
-cases to trade reliability for performance; wouldn't it be interesting 
-to introduce a kind of switch/option like the "verify on", used many 
-years ago on msdos-systems to ensure that write operations (especially 
-on floppy disks) were successful? Just an idea...
+It looks pretty good to me in fact.
 
-My btrfs-restore is still running (since Monday evening, until now about 
-50% restored), and I am on a business trip. As soon as it finishes and I 
-am back home I will compare with the backup and give more info, but it 
-seems that this would need another day or two.
+I'm really tired of using -EIO for csum mismatch/any other higher level
+mismatch.
 
-Kind regards,
+The only concern is the "CRC" part. Yes, btrfs uses and only supports
+CRC32 so far, but I'm sure btrfs will support cryptographic hash.
 
-Nik.
---
+So what about renaming it to EFSBADCSUM?
 
-> I'd expect a RAM caused corruption could affect a metadata leaf data,
-> followed by csum computation. Therefore no csum failure on subsequent
-> read. Whereas if the corruption is storage stack related, we'd see a
-> csum error on subsequent read.
-> 
-> Once there's corruption in a block address, the corruption can
-> propagate into anything else that depends on that block address even
-> if there isn't another corruption event. So one event, multiple
-> corruptions.
-> 
-> 
->> And another thing: if I am getting it right, it should have been more
->> reliable/appropriate to let btrfs manage the five disks behind the md0
->> with a raid1 profile instead binding them in a RAID5 and "giving" just a
->> single device to btrfs.
-> 
-> Not necessarily. If corruption happens early enough, it gets baked
-> into all copies of the metadata.
-> 
-> 
+Thanks,
+Qu
+
+>=20
+> #define EFSBADCRC   EBADMSG
+>=20
+> --D
+>=20
+>> And block layer is going to distinguish filesystem corruption with
+>> oridinary EIO error, it's a good idea to export the initial EFSCORRUPT=
+ED
+>> declaration to <linux/errno.h> so all filesystems and block layer can
+>> take advantage of this easier-to-read error number.
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>>  fs/ext2/ext2.h                   | 1 -
+>>  fs/ext4/ext4.h                   | 1 -
+>>  fs/xfs/xfs_linux.h               | 1 -
+>>  include/uapi/asm-generic/errno.h | 3 +++
+>>  4 files changed, 3 insertions(+), 3 deletions(-)
+>>
+>> diff --git a/fs/ext2/ext2.h b/fs/ext2/ext2.h
+>> index 10ab238de9a6..03d0ca8fae42 100644
+>> --- a/fs/ext2/ext2.h
+>> +++ b/fs/ext2/ext2.h
+>> @@ -369,7 +369,6 @@ struct ext2_inode {
+>>   */
+>>  #define	EXT2_VALID_FS			0x0001	/* Unmounted cleanly */
+>>  #define	EXT2_ERROR_FS			0x0002	/* Errors detected */
+>> -#define	EFSCORRUPTED			EUCLEAN	/* Filesystem is corrupted */
+>> =20
+>>  /*
+>>   * Mount flags
+>> diff --git a/fs/ext4/ext4.h b/fs/ext4/ext4.h
+>> index 82ffdacdc7fa..f906b5cbf96d 100644
+>> --- a/fs/ext4/ext4.h
+>> +++ b/fs/ext4/ext4.h
+>> @@ -3248,6 +3248,5 @@ extern const struct iomap_ops ext4_iomap_ops;
+>>  #endif	/* __KERNEL__ */
+>> =20
+>>  #define EFSBADCRC	EBADMSG		/* Bad CRC detected */
+>> -#define EFSCORRUPTED	EUCLEAN		/* Filesystem is corrupted */
+>> =20
+>>  #endif	/* _EXT4_H */
+>> diff --git a/fs/xfs/xfs_linux.h b/fs/xfs/xfs_linux.h
+>> index edbd5a210df2..36e5c6549f15 100644
+>> --- a/fs/xfs/xfs_linux.h
+>> +++ b/fs/xfs/xfs_linux.h
+>> @@ -125,7 +125,6 @@ typedef __u32			xfs_nlink_t;
+>> =20
+>>  #define ENOATTR		ENODATA		/* Attribute not found */
+>>  #define EWRONGFS	EINVAL		/* Mount with wrong filesystem type */
+>> -#define EFSCORRUPTED	EUCLEAN		/* Filesystem is corrupted */
+>>  #define EFSBADCRC	EBADMSG		/* Bad CRC detected */
+>> =20
+>>  #define SYNCHRONIZE()	barrier()
+>> diff --git a/include/uapi/asm-generic/errno.h b/include/uapi/asm-gener=
+ic/errno.h
+>> index cf9c51ac49f9..ebd6e7e76a98 100644
+>> --- a/include/uapi/asm-generic/errno.h
+>> +++ b/include/uapi/asm-generic/errno.h
+>> @@ -98,6 +98,9 @@
+>>  #define	EINPROGRESS	115	/* Operation now in progress */
+>>  #define	ESTALE		116	/* Stale file handle */
+>>  #define	EUCLEAN		117	/* Structure needs cleaning */
+>> +
+>> +#define EFSCORRUPTED	EUCLEAN	/* Filesystem is corrupted */
+>> +
+>>  #define	ENOTNAM		118	/* Not a XENIX named type file */
+>>  #define	ENAVAIL		119	/* No XENIX semaphores available */
+>>  #define	EISNAM		120	/* Is a named type file */
+>> --=20
+>> 2.21.0
+>>
+>=20
+
+
+--KqyVJgBzXLW4om0Lx1M74YQ4frD9gdzam--
+
+--Iij6IPpVMa1LXNeMXcl1awBmNWaR4hcxs
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlyuijwACgkQwj2R86El
+/qiFLAgAsYKPOj1GuSgvjjr/nyWufmBJ2q8XUpcyx+9BrjAB3sDkzp0Hfc3u34X7
+nprjYLBlT7++zkfzmPklim4uSEbxigas5lBy43QNw8wPgdhRfwXiJ3n20JRctOR/
+0E4z2WvEdfXtfedZnTtW18x9bhU6U7vOkOrxeBNlyss7SlP97rIOfRwDW9vLxzwj
+6n7wgPSttC/iZim2g7xVPSEJNQBnG024sWtkKtbnMKrr9yTmRmBn8QvMpPUTcB7l
+FEzE/UaTEujh/azdQiyLNY+9t+cIYLZLS0P4Q1ijI1KvZ6q4qTFbGf6+Ut9hN4X9
+x7//RLak3MFJRrorGVg9HA3yB4O0Wg==
+=/KwY
+-----END PGP SIGNATURE-----
+
+--Iij6IPpVMa1LXNeMXcl1awBmNWaR4hcxs--

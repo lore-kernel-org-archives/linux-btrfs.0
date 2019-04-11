@@ -2,337 +2,142 @@ Return-Path: <SRS0=DOz6=SN=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0D884C10F13
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 06:00:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F0B12C10F13
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 06:17:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A81FF20693
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 06:00:10 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="SQDF6nTl"
+	by mail.kernel.org (Postfix) with ESMTP id C8E7A20873
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 06:17:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726603AbfDKGAJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Apr 2019 02:00:09 -0400
-Received: from mout.gmx.net ([212.227.15.18]:40569 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725782AbfDKGAJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Apr 2019 02:00:09 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1554962407;
-        bh=zzOSV9esLRW9hUwYE1kI9UIcSZ/cDlTjQnDkRo6E0bM=;
-        h=X-UI-Sender-Class:To:From:Subject:Date;
-        b=SQDF6nTlYznURI7/ZE1IDh2AO3mNvyhD/uzu62ONcqyXKVqU5yGZAAiemr+9qo7sP
-         CBRrRspPki9tmGaxczt/JvvlIWAu7TQ67qwkwZB6VAi4+2B4Wnm++3Q81+cDSrYPtZ
-         anElkuEiL330hAkCIMrgrZ70iQslG+TpvY4GNSpE=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx002
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0MFuWk-1h8QG61SFi-00EyEr; Thu, 11
- Apr 2019 07:54:49 +0200
-To:     David Sterba <dsterba@suse.cz>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Subject: [PULL REQUEST] btrfs-progs updates, the main part
+        id S1726139AbfDKGRl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Apr 2019 02:17:41 -0400
+Received: from mx2.suse.de ([195.135.220.15]:37058 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726104AbfDKGRl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 11 Apr 2019 02:17:41 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 511F1AC61
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Apr 2019 06:17:39 +0000 (UTC)
+Subject: Re: [PATCH] btrfs-progs: Don't BUG_ON() when write_dev_supers() fails
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20190411053015.5857-1-wqu@suse.com>
+From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <48f7ce97-b1cb-b7f8-5b4d-33c8e3737fcf@gmx.com>
-Date:   Thu, 11 Apr 2019 13:54:44 +0800
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <2527b189-707a-5578-35a7-4713eedbc4cd@suse.com>
+Date:   Thu, 11 Apr 2019 09:17:38 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.6.1
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="8yQEzljtdxcGdiLy0QFfUUCInCBpjDwx1"
-X-Provags-ID: V03:K1:icW7W4HjowGpKystQky2jEzlPPUzGmtmsbyOdjUJ0XiGy37Jhpv
- XKx3Z8R5KR1KaKLLU/HhXeZIiR88AFfCJGAgdk7q6yUhKoBJnpIPVVgb7Yy2EVp1vMdkJxg
- jmMTPWbkRxyAmWEfnR84ZGFhS9A9T94EGSc5yiyScOoJ5Qu88bFWQelMBuJZ7ViItvQmd0y
- chQTQAkjrRhYV8EjpK6jg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:BcL9Aqv3KAE=:81qtZRRIkJQNm/PUHdHP3Y
- WbeaAlDTZdEKxEFyyW4u1EkLHJ3goDAEJsZWvLmHolayESZbmNRF821J1sjWnzOaiMc/rPBkC
- Wt4+m2PS2bWJ/Hx3sutYl37l/P1Igi8neJ+LOvDLrqCR+kdqmUm1591EI1uYX3qm48UZ1JrqS
- +XJS+zBYsPygsYW0+ORudfk1eIljD4Na4e+A+FSJl0LAolZaBFt9OeRhio+zF32I9S8YaVMmW
- Uitx/h6k0+PTBCyZZ1DMZlDqUI6jcjTQ+IWtyVijUVwD3QtdkSPhXHk4haleu5D8/9fJ7XSsC
- 6tGNS7XCH8iQxoYFLZ3HIKfFOhFd5zsjiZf/zeckhsKwemmTp0BOw7E5wE0REK3fbl6idOvfR
- cLnqCw8iatj6h3mnO+6aLXVLWdnqn2xrN7E6SS1gsjFgcfngBjo9N3JgvTfD+OBRKT1UtcN1x
- WmX6y0Yh9jGYRayUTygQAJywh+bXkVpxBym4wlSXfhQwlXZA/5BL8zCrIDU/KtMO77xW7Chgz
- Iv4MausYJGdKroa1/X/tgklFkrX9uoRDp7rgCWXpbU66BfvbpkK/bRYbn/eMrg4yNl5kIQEuz
- cUsddVy9k7Bl17sd8TLQq2r7bjiIqL6Om/9UvfUY9O1Q2vd1vuUJbjbH9q18BZnObcmNyKFXW
- qZ2v/C1y5ZmRUzrsJWSE4+rSMD602AKmpBKBU/9BawILmBmvbQKDyxfbsj78FEXctufROYyHr
- Id6VSxaaNpDCVwUSiddySjHF8jzXPVKYe2Wvovd3hJky+JzC3WNgyhzyfk4vCfPVXkT9DN8zx
- CK7KdPxFAdQeN0LvYKvKXpaGuuS8qiU4Uf8y0h6zYBj580oA68VRYiW/1PITyXTvbzxga0KbT
- 8XuyzMLMTMdwED6/NLfvSbd4Rq9MsNkpjV45XPgxMEfuuv+tm6qYy4p8wsyKho
+In-Reply-To: <20190411053015.5857-1-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---8yQEzljtdxcGdiLy0QFfUUCInCBpjDwx1
-Content-Type: multipart/mixed; boundary="cJ9pnAVa6DAvuvj806AZHZ6ucezpSwJmL";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: David Sterba <dsterba@suse.cz>,
- "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Message-ID: <48f7ce97-b1cb-b7f8-5b4d-33c8e3737fcf@gmx.com>
-Subject: [PULL REQUEST] btrfs-progs updates, the main part
-
---cJ9pnAVa6DAvuvj806AZHZ6ucezpSwJmL
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-
-Hi David,
-
-Here is my pull request for the btrfs-progs:
-https://github.com/adam900710/btrfs-progs/tree/for_devel
-
-The basis is the following commit from your devel branch:
-commit a8389337c5a0e7c3fb32ff91d557889c036da73a
-Author: Adam Borowski <kilobyte@angband.pl>
-Date:   Mon Feb 25 19:16:44 2019 +0100
-
-    btrfs-progs: defrag: open files RO on new enough kernels
-
-This branch drops the following commit in your devel branch:
-commit 4e8eb31f048f3fe9a68aacb58e4c0714df25b5c4 (david/devel)
-Author: Qu Wenruo <wqu@suse.com>
-Date:   Fri Sep 14 15:49:44 2018 +0800
-
-    btrfs-progs: Do metadata preallocation as long as we're not
-modifying extent tree
-
-Due to test failure on looping chunk allocation.
-
-The branch passes all selftests, except misc/035 which is a known problem=
-=2E
-
-This pull request include the following features:
-
-Core change:
-- check --repair
-  * Flush/FUA support to avoid breaking metadata CoW
-      Now btrfs-progs crashing or transaction aborted won't cause
-      new transid error.
-- device scan:
-  * Add the ability to forget a device
-
-Fixes and Enhancement:
-- generic
-  * Try best copy when reading tree blocks.
-  * Skip unnecessary retry when one tree block copy fails.
-  * Avoid back tree block to populate tree block cache.
-- check
-  * File extents repair no longer relies data in extent tree.
-  * New ability to check and repair free space cache invalid inode mode.
-  * Update backup roots when commit transaction.
-- mkfs:
-  * Enlarge metadata chunk size to follow kernel size.
-- defrag
-  * open file in RO for newer kernel.
-- gitignore
-  * Ignore hidden files.
-- qgroup report
-  * Handle unrecognized sort string.
-- receive
-  * New quite mode.
-- Misc
-  * More cleanup for fs_info <-> root parameters.
-
-Adam Borowski (2):
-  btrfs-progs: fix kernel version parsing on some versions past 3.0
-  btrfs-progs: defrag: open files RO on new enough kernels
-
-Anand Jain (3):
-  btrfs-progs: device scan: add new option to forget one or all scanned
-    devices
-  btrfs-progs: dev replace: check for no result before using results
-  btrfs-progs: dev replace: gracefully handle the exclusive operation
-    report
-
-David Sterba (21):
-  btrfs-progs: device scan: constify path argument
-  btrfs-progs: device scan: update help text
-  btrfs-progs: device scan: update help text
-  btrfs-progs: docs: add scan --forget
-  btrfs-progs: device scan: update error messages
-  btrfs-progs: device: update help texts
-  btrfs-progs: help: add helper for unrecognized option error message
-  btrfs-progs: help: update messages of argc constraint checkers
-  btrfs-progs: help: use unknown command option helper
-  btrfs-progs: help: don't print usage on wrong argument counts
-  btrfs-progs: prop: let parsing helper return error to the caller
-  btrfs-progs: prop: don't print full usage on invalid arguments
-  btrfs-progs: prop: return only common error values
-  btrfs-progs: find-root: use common usage helper for uknown option
-  btrfs-progs: find-root: don't dump usage on wrong argument count
-  btrfs-progs: find-root: use the common help infrastructure
-  btrfs-progs: qgroup: report unknown option
-  btrfs-progs: qgroup: remove unused option handling
-  btrfs-progs: qgroup show: report errors while parsing sort string
-  btrfs-progs: qgroup show: report unrecognized format of sort string
-  btrfs-progs: qgoup: propagate errors from
-    btrfs_qgroup_parse_sort_string
-
-Lu Fengqi (2):
-  btrfs-progs: lowmem: fix false alert about the existence of gaps in
-    the check_file_extent
-  btrfs-progs: tests: add case for inode lose one file extent
-
-Nikolay Borisov (1):
-  btrfs-progs: Remove get_argv0_buf
-
-Qu Wenruo (20):
-  btrfs-progs: Port kernel fs_devices::total_rw_bytes
-  btrfs-progs: Unify metadata chunk size with kernel
-  btrfs-progs: check: Fix false alert about uninitialized variable
-  btrfs-progs: gitignore: Ignore hidden files
-  btrfs-progs: Update backup roots when writing super blocks
-  btrfs-progs: Free bad extent buffer as soon as possible
-  btrfs-progs: Use @fs_info to replace @root for btrfs_check_leaf/node()
-  btrfs-progs: Use mirror_num start from 1 to avoid unnecessary retry
-  btrfs-progs: Move btrfs_num_copies() call out of the loop in
-    read_tree_block()
-  btrfs-progs: disk-io: Try to find a best copy when reading tree blocks
-  btrfs-progs: check/lowmem: Add inode mode check
-  btrfs-progs: check/original: Add inode mode check
-  btrfs-progs: check/lowmem: Repair invalid inode mode in root tree
-  btrfs-progs: check/original: Repair invalid inode mode in root tree
-  btrfs-progs: check/lowmem: Check and repair free space cache inode
-    mode
-  btrfs-progs: check/original: Check and repair free space cache inode
-    item
-  btrfs-progs: tests/fsck: Add test image for free space cache mode
-    repair
-  btrfs-progs: disk-io: Make super block write error easier to read
-  btrfs-progs: disk-io: Flush to ensure super block write is FUA
-  btrfs-progs: Don't BUG_ON() when write_dev_supers() fails
-
-Steven Davies (1):
-  btrfs-progs: receive: add option for quiet mode
-
-Su Yanjun (4):
-  btrfs-progs: Revert "btrfs-progs: Add repair and report function for
-    orphan file extent."
-  btrfs-progs: Revert "btrfs-progs: Record orphan data extent ref to
-    corresponding root."
-  btrfs-progs: check: fix wrong @offset used in find_possible_backrefs()
-  btrfs-progs: check: Delete file extent item with unaligned disk bytenr
-
-Su Yue (7):
-  btrfs-progs: lowmem: add argument path to punch_extent_hole()
-  btrfs-progs: lowmem: move nbytes check before isize check
-  btrfs-progs: lowmem: fix false alert if extent item has been repaired
-  btrfs-progs: lowmem: check unaligned disk_bytenr for extent_data
-  btrfs-progs: lowmem: rename delete_extent_tree_item() to delete_item()
-  btrfs-progs: lowmem: delete unaligned bytes extent data under repair
-  btrfs-progs: fsck-test: enable lowmem repair for case 001
-
- .gitignore                                    |   2 +-
- Documentation/btrfs-device.asciidoc           |  15 +-
- btrfs-corrupt-block.c                         |   2 +-
- btrfs-crc.c                                   |   4 +-
- btrfs-find-root.c                             |  35 +-
- btrfs-fragments.c                             |   2 +-
- btrfs-map-logical.c                           |   2 +-
- btrfs-select-super.c                          |   2 +-
- btrfstune.c                                   |   4 +-
- check/main.c                                  | 640 +++++++++++-------
- check/mode-common.c                           | 129 ++++
- check/mode-common.h                           |  29 +
- check/mode-lowmem.c                           | 323 +++++----
- check/mode-lowmem.h                           |   3 +
- check/mode-original.h                         |  31 +-
- cmds-balance.c                                |  14 +-
- cmds-device.c                                 | 112 ++-
- cmds-fi-du.c                                  |   4 +-
- cmds-fi-usage.c                               |   4 +-
- cmds-filesystem.c                             |  30 +-
- cmds-inspect-dump-super.c                     |   4 +-
- cmds-inspect-dump-tree.c                      |   4 +-
- cmds-inspect-tree-stats.c                     |   7 +-
- cmds-inspect.c                                |  19 +-
- cmds-property.c                               |  46 +-
- cmds-qgroup.c                                 |  42 +-
- cmds-quota.c                                  |   4 +-
- cmds-receive.c                                |  66 +-
- cmds-replace.c                                |  22 +-
- cmds-rescue.c                                 |  15 +-
- cmds-restore.c                                |   2 +-
- cmds-scrub.c                                  |  18 +-
- cmds-send.c                                   |   7 +-
- cmds-subvolume.c                              |  38 +-
- ctree.c                                       |  32 +-
- ctree.h                                       |  18 +-
- disk-io.c                                     | 181 ++++-
- fsfeatures.c                                  |   6 +-
- help.c                                        |  69 +-
- help.h                                        |   3 +
- ioctl.h                                       |   2 +
- qgroup.c                                      |  23 +-
- .../.lowmem_repairable                        |   0
- .../test.raw.xz                               | Bin 0 -> 159128 bytes
- .../.lowmem_repairable                        |   0
- .../default_case.img                          | Bin 0 -> 3072 bytes
- volumes.c                                     |  11 +-
- volumes.h                                     |   3 +
- 48 files changed, 1359 insertions(+), 670 deletions(-)
- create mode 100644
-tests/fsck-tests/001-bad-file-extent-bytenr/.lowmem_repairable
- create mode 100644
-tests/fsck-tests/038-bad-free-space-cache-inode-mode/test.raw.xz
- create mode 100644
-tests/fsck-tests/038-missing-one-file-extent/.lowmem_repairable
- create mode 100644
-tests/fsck-tests/038-missing-one-file-extent/default_case.img
 
 
-Thanks,
-Qu
+On 11.04.19 г. 8:30 ч., Qu Wenruo wrote:
+> [BUG]
+> Since commit "btrfs-progs: disk-io: Flush to ensure super block write is
+> FUA" mkfs-tests/017 will fail like:
+> 
+>   ====== RUN MUSTFAIL /home/adam/btrfs-progs/mkfs.btrfs -K -f /dev/mapper/btrfs-progs-thin-vol
+>   ERROR: failed to write super block for devid 1: flush error: Input/output error
+>   disk-io.c:1810: write_all_supers: BUG_ON `ret` triggered, value -5
+>   /home/adam/btrfs-progs/mkfs.btrfs(+0x1e5c1)[0x557a2c83e5c1]
+>   /home/adam/btrfs-progs/mkfs.btrfs(+0x1e65f)[0x557a2c83e65f]
+>   /home/adam/btrfs-progs/mkfs.btrfs(write_all_supers+0x1ce)[0x557a2c843a8a]
+>   /home/adam/btrfs-progs/mkfs.btrfs(write_ctree_super+0x12d)[0x557a2c843be2]
+>   /home/adam/btrfs-progs/mkfs.btrfs(btrfs_commit_transaction+0x250)[0x557a2c887c56]
+>   /home/adam/btrfs-progs/mkfs.btrfs(+0xc0b1)[0x557a2c82c0b1]
+>   /home/adam/btrfs-progs/mkfs.btrfs(main+0x1049)[0x557a2c82e929]
+>   /usr/lib/libc.so.6(__libc_start_main+0xf3)[0x7f6689e99223]
+>   /home/adam/btrfs-progs/mkfs.btrfs(_start+0x2e)[0x557a2c82b86e]
+>   failed (expected): /home/adam/btrfs-progs/mkfs.btrfs -K -f /dev/mapper/btrfs-progs-thin-vol
+> 
+> [CAUSE]
+> Just one BUG_ON() in write_all_supers().
+> 
+> [FIX]
+> Just remove the BUG_ON(). Callers of write_all_supers() are already
+> checking the return value.
 
+Not entirely true. btrfs_commit_transaction calls write_ctree_super and
+ignores the retval (which is the retval of write_all_supers). I wonder
+if there is anything more that could be done in this context though?
 
---cJ9pnAVa6DAvuvj806AZHZ6ucezpSwJmL--
+I'm in favor of removing the BUG_ON though. If there isn't anything else
+to do in btrfs_commit_transaction:
 
---8yQEzljtdxcGdiLy0QFfUUCInCBpjDwx1
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlyu1qQACgkQwj2R86El
-/qjebAgAiphV12faN1C61tTImc6LzxYbFJ0R2/5m/nCDMcFfYI5pFRjS1ZlHth4y
-nq0peOoc513ZI8YwcG/J/pb0EG9zhv1RHVOI8I81pLx/dCDWPi0ALyvojj+FY8Qp
-c8An609K5bVWZHvFUc6t63X1T6R/cWMbeWcmyJpCw3Sv92cPxTYx4rblIpS2XOlt
-n0okO7NuLbtSWRkaVKhDHImFjUwgtGFp+rvUVNqd/16uDTroOXXoLkXPs864bINq
-aaiaX7p1F64NESJCXeBTETN5Dblk9uUoeqmXlNJvlgKTqSNrv5Fl13r3tWf5tToD
-0ZystqovjEG9J6iIKb4McYlqR8mpQA==
-=H4YX
------END PGP SIGNATURE-----
-
---8yQEzljtdxcGdiLy0QFfUUCInCBpjDwx1--
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  disk-io.c | 3 ++-
+>  1 file changed, 2 insertions(+), 1 deletion(-)
+> 
+> diff --git a/disk-io.c b/disk-io.c
+> index 10550151c5bb..3517de3d8672 100644
+> --- a/disk-io.c
+> +++ b/disk-io.c
+> @@ -1807,7 +1807,8 @@ int write_all_supers(struct btrfs_fs_info *fs_info)
+>  		btrfs_set_super_flags(sb, flags | BTRFS_HEADER_FLAG_WRITTEN);
+>  
+>  		ret = write_dev_supers(fs_info, sb, dev);
+> -		BUG_ON(ret);
+> +		if (ret < 0)
+> +			return ret;
+>  	}
+>  	return 0;
+>  }
+> 

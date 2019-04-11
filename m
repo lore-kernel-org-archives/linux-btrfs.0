@@ -2,98 +2,108 @@ Return-Path: <SRS0=DOz6=SN=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 876F5C10F13
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 14:39:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0384FC282CE
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 15:07:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5053D2083E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 14:39:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C698E20818
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 15:07:30 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel-dk.20150623.gappssmtp.com header.i=@kernel-dk.20150623.gappssmtp.com header.b="Q2jELVK5"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726603AbfDKOjI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Apr 2019 10:39:08 -0400
-Received: from mx2.suse.de ([195.135.220.15]:43144 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726538AbfDKOjH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Apr 2019 10:39:07 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id E6346AB91
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Apr 2019 14:39:05 +0000 (UTC)
-Subject: Re: [PATCH v2] btrfs: Remove bio_offset argument from submit_bio_hook
-To:     Johannes Thumshirn <jthumshirn@suse.de>,
-        linux-btrfs@vger.kernel.org
-References: <20190410142443.6470-7-nborisov@suse.com>
- <20190410164604.29788-1-nborisov@suse.com>
- <98da405c-d2fa-0f84-9dc4-5d81d6ce3454@suse.de>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <54afd979-2ab6-481d-54c4-488d47cb6d2b@suse.com>
-Date:   Thu, 11 Apr 2019 17:39:04 +0300
+        id S1726699AbfDKPH3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Apr 2019 11:07:29 -0400
+Received: from mail-pl1-f195.google.com ([209.85.214.195]:44590 "EHLO
+        mail-pl1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726630AbfDKPH3 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 11 Apr 2019 11:07:29 -0400
+Received: by mail-pl1-f195.google.com with SMTP id g12so3530929pll.11
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Apr 2019 08:07:28 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=kernel-dk.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:references:from:message-id:date:user-agent:mime-version
+         :in-reply-to:content-language:content-transfer-encoding;
+        bh=g5Ru/rgY38nq5GSjSyaqeF8D/1tI3TdnCfYTKWCj5T8=;
+        b=Q2jELVK5Tg3gjA5LLWWrRg6y8XJkM/qc7nxtoYZ9TP18eW29OtM5nujeOMa7BLGF6e
+         rm3d1aNpR3jUlTZJG54zH6Y43fD+FlCjOBjuUQ6iEl3sqrtx85O88umqna26zWCUxdmL
+         hA9L1b4+Qug6bsnQqKTvij+X4cZi84ps+5eksvbRFz/gQ9RtzHVlofuQENxoJ5wFmoNe
+         VIuXiEQVYYYnEQ1J8P4MW0r2qxp0EaJqfvwjaiPrOdrIPRlmuLYaijvmQdkdj3QOtH99
+         uNznu08fzFa+vaTrOMRCSOBef7UQ/SEBLz0VBrE0ntbhP7NTnBSjAFvcmW8f+miRUCUR
+         7YKA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=g5Ru/rgY38nq5GSjSyaqeF8D/1tI3TdnCfYTKWCj5T8=;
+        b=MdmgtNnsd8CVFTHrZtR/ngRDKdS+FBOBpGqV0RhxXJifb/FQcfn5lCe+k8H1hWIdLf
+         +svR6ibdxwzk1Fz7AzDWIAz4MRdSpEW18MEKJgy3msFhUkmbpoQ1ydcIpO/A2lo3tGKL
+         QHxiI77K3pvt4k3msoYDsGTAC+MEgrAzIZ0BsnXC8q7FsBpfJ+uKZBjJ8vi/0c9LNX5V
+         V8RsHY3nqBKJURY3IoaB52Xsgxmj+kSScEn8Hg1Ui7fk48z4YfxYCwOyFqgG+nkrldhJ
+         EqzXqCcRJLvm/AOMVUIXnpvrqYxyZmCJKtjqJ4G8+W+GS7FMQ2m7lrpvL1CfGm/WJWBC
+         5qzw==
+X-Gm-Message-State: APjAAAUrpPMVEdBBtS5XQ8rgl9IXz9tY2UBCpekIMOn64gLccuhVjMTC
+        7Ki4Gvp8hTS59ZSK/3cCtGPNZw==
+X-Google-Smtp-Source: APXvYqxXRKZEVZK0jmdgq0VIbLZQ6OyERWJlqzGYibrl/GVpWrDMHAzI2wwmctasqH4EVce86YiA2g==
+X-Received: by 2002:a17:902:8349:: with SMTP id z9mr48874086pln.144.1554995248339;
+        Thu, 11 Apr 2019 08:07:28 -0700 (PDT)
+Received: from [192.168.1.121] (66.29.188.166.static.utbb.net. [66.29.188.166])
+        by smtp.gmail.com with ESMTPSA id g4sm8487333pfc.75.2019.04.11.08.07.26
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Thu, 11 Apr 2019 08:07:27 -0700 (PDT)
+Subject: Re: [PATCH V3] block: don't use for-inside-for in
+ bio_for_each_segment_all
+To:     dsterba@suse.cz, Ming Lei <ming.lei@redhat.com>,
+        linux-block@vger.kernel.org, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        Omar Sandoval <osandov@fb.com>, Christoph Hellwig <hch@lst.de>
+References: <20190408110238.30478-1-ming.lei@redhat.com>
+ <b55becef-d644-6f6d-428b-e25216016218@kernel.dk>
+ <20190411132652.GP29086@twin.jikos.cz>
+From:   Jens Axboe <axboe@kernel.dk>
+Message-ID: <5c317eff-32bb-8f9f-defd-fc707b65316f@kernel.dk>
+Date:   Thu, 11 Apr 2019 09:07:25 -0600
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.6.1
 MIME-Version: 1.0
-In-Reply-To: <98da405c-d2fa-0f84-9dc4-5d81d6ce3454@suse.de>
+In-Reply-To: <20190411132652.GP29086@twin.jikos.cz>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 11.04.19 г. 16:29 ч., Johannes Thumshirn wrote:
-> Looks good,
-> Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
+On 4/11/19 7:26 AM, David Sterba wrote:
+> On Mon, Apr 08, 2019 at 08:19:59AM -0600, Jens Axboe wrote:
+>> On 4/8/19 5:02 AM, Ming Lei wrote:
+>>> Commit 6dc4f100c175 ("block: allow bio_for_each_segment_all() to
+>>> iterate over multi-page bvec") changes bio_for_each_segment_all()
+>>> to use for-inside-for.
+>>>
+>>> This way breaks all bio_for_each_segment_all() call with error out
+>>> branch via 'break', since now 'break' can only break from the inner
+>>> loop.
+>>>
+>>> Fixes this issue by implementing bio_for_each_segment_all() via
+>>> single 'for' loop, and now the logic is very similar with normal
+>>> bvec iterator.
+>>
+>> Applied, thanks Ming.
 > 
-> Here you could also add the removal of bio_offset from async_submit_bio.
-> 
+> What's the merge target please? This affects btrfs testing so I wonder
+> if we should start adding workarounds or just wait for the next rc.
+> Thanks.
 
-Actually no, we can't since for DIO case we do use it from:
-btrfs_submit_dio_bio->btrfs_wq_submit_bio
+It's queued up in my for-linus, so it's for this series. It'll go
+upstream tomorrow.
+
+
+-- 
+Jens Axboe
+

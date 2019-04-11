@@ -3,28 +3,30 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F0B12C10F13
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 06:17:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 758F2C10F13
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 06:52:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C8E7A20873
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 06:17:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 376F520873
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 06:52:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726139AbfDKGRl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Apr 2019 02:17:41 -0400
-Received: from mx2.suse.de ([195.135.220.15]:37058 "EHLO mx1.suse.de"
+        id S1726588AbfDKGwe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Apr 2019 02:52:34 -0400
+Received: from mx2.suse.de ([195.135.220.15]:42100 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726104AbfDKGRl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Apr 2019 02:17:41 -0400
+        id S1726137AbfDKGwd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 11 Apr 2019 02:52:33 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 511F1AC61
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Apr 2019 06:17:39 +0000 (UTC)
-Subject: Re: [PATCH] btrfs-progs: Don't BUG_ON() when write_dev_supers() fails
-To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20190411053015.5857-1-wqu@suse.com>
+        by mx1.suse.de (Postfix) with ESMTP id 9A3AFAFCB;
+        Thu, 11 Apr 2019 06:52:32 +0000 (UTC)
+Subject: Re: [PATCH v5 RESEND] btrfs-progs: dump-tree: add noscan option
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+References: <20190404072957.2847-1-anand.jain@oracle.com>
+ <121e7005-2535-c3d3-d779-9401db10bfa9@gmx.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -69,12 +71,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <2527b189-707a-5578-35a7-4713eedbc4cd@suse.com>
-Date:   Thu, 11 Apr 2019 09:17:38 +0300
+Message-ID: <e46d41f4-6f40-b8cb-fe2d-6ddd3b9458e4@suse.com>
+Date:   Thu, 11 Apr 2019 09:52:31 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.6.1
 MIME-Version: 1.0
-In-Reply-To: <20190411053015.5857-1-wqu@suse.com>
+In-Reply-To: <121e7005-2535-c3d3-d779-9401db10bfa9@gmx.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -85,59 +87,216 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 11.04.19 г. 8:30 ч., Qu Wenruo wrote:
-> [BUG]
-> Since commit "btrfs-progs: disk-io: Flush to ensure super block write is
-> FUA" mkfs-tests/017 will fail like:
+On 11.04.19 г. 7:53 ч., Qu Wenruo wrote:
 > 
->   ====== RUN MUSTFAIL /home/adam/btrfs-progs/mkfs.btrfs -K -f /dev/mapper/btrfs-progs-thin-vol
->   ERROR: failed to write super block for devid 1: flush error: Input/output error
->   disk-io.c:1810: write_all_supers: BUG_ON `ret` triggered, value -5
->   /home/adam/btrfs-progs/mkfs.btrfs(+0x1e5c1)[0x557a2c83e5c1]
->   /home/adam/btrfs-progs/mkfs.btrfs(+0x1e65f)[0x557a2c83e65f]
->   /home/adam/btrfs-progs/mkfs.btrfs(write_all_supers+0x1ce)[0x557a2c843a8a]
->   /home/adam/btrfs-progs/mkfs.btrfs(write_ctree_super+0x12d)[0x557a2c843be2]
->   /home/adam/btrfs-progs/mkfs.btrfs(btrfs_commit_transaction+0x250)[0x557a2c887c56]
->   /home/adam/btrfs-progs/mkfs.btrfs(+0xc0b1)[0x557a2c82c0b1]
->   /home/adam/btrfs-progs/mkfs.btrfs(main+0x1049)[0x557a2c82e929]
->   /usr/lib/libc.so.6(__libc_start_main+0xf3)[0x7f6689e99223]
->   /home/adam/btrfs-progs/mkfs.btrfs(_start+0x2e)[0x557a2c82b86e]
->   failed (expected): /home/adam/btrfs-progs/mkfs.btrfs -K -f /dev/mapper/btrfs-progs-thin-vol
 > 
-> [CAUSE]
-> Just one BUG_ON() in write_all_supers().
+> On 2019/4/4 下午3:29, Anand Jain wrote:
+>> From: Anand Jain <Anand.Jain@oracle.com>
+>>
+>> The cli 'btrfs inspect dump-tree <dev>' will scan for the partner devices
+>> if any by default.
+>>
+>> So as of now you can not inspect each mirrored device independently.
+>>
+>> This patch adds noscan option, which when used won't scan the system for
+>> the partner devices, instead it just uses the devices provided in the
+>> argument.
+>>
+>> For example:
+>>   btrfs inspect dump-tree --noscan <dev> [<dev>..]
 > 
-> [FIX]
-> Just remove the BUG_ON(). Callers of write_all_supers() are already
-> checking the return value.
+> So you can specify multiple devices, just like kernel "device=" mount
+> option.
+> 
+> Then I don't think --noscan is a good naming, while I don't have any
+> good alternative, as the --degraded is no better.
 
-Not entirely true. btrfs_commit_transaction calls write_ctree_super and
-ignores the retval (which is the retval of write_all_supers). I wonder
-if there is anything more that could be done in this context though?
-
-I'm in favor of removing the BUG_ON though. If there isn't anything else
-to do in btrfs_commit_transaction:
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+How about skipscan ?
 
 > 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  disk-io.c | 3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
+> My idea is "(--device=<dev1>,<dev2>)|(<dev>)", but that looks more awful.
 > 
-> diff --git a/disk-io.c b/disk-io.c
-> index 10550151c5bb..3517de3d8672 100644
-> --- a/disk-io.c
-> +++ b/disk-io.c
-> @@ -1807,7 +1807,8 @@ int write_all_supers(struct btrfs_fs_info *fs_info)
->  		btrfs_set_super_flags(sb, flags | BTRFS_HEADER_FLAG_WRITTEN);
->  
->  		ret = write_dev_supers(fs_info, sb, dev);
-> -		BUG_ON(ret);
-> +		if (ret < 0)
-> +			return ret;
->  	}
->  	return 0;
->  }
+> Despite of that, the patch looks pretty good.
+> 
+>>
+>> This helps to debug degraded raid1 and raid10.
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>> ---
+>> v4->v5: nit: use %m to print error string.
+>> 	changelog update.
+>> v3->v4: change the patch title.
+>> 	collapse scan_args() to its only parent cmd_inspect_dump_tree()
+>> 	(it was bit confusing).
+> 
+> I don't this is the correct direction.
+> 
+> You're introducing "--device=" btrfs-progs equivalent, there is no way
+> it will only be utilized by dump-tree.
+> 
+> Btrfs-check, btrfs-restore can all take advantage of this feature.
+> 
+> You don't need to resend, later code can export them when needed.
+> But doing it at the first place really helps.
+> 
+> Thanks,
+> Qu
+> 
+>> 	update the change log.
+>> 	update usage.
+>> 	update man page.
+>> v2->v3: make it scalable for more than two disks in noscan mode
+>> v1->v2: rename --degraded to --noscan
+>>
+>>  Documentation/btrfs-inspect-internal.asciidoc |  5 ++-
+>>  cmds-inspect-dump-tree.c                      | 53 +++++++++++++++++++++------
+>>  2 files changed, 45 insertions(+), 13 deletions(-)
+>>
+>> diff --git a/Documentation/btrfs-inspect-internal.asciidoc b/Documentation/btrfs-inspect-internal.asciidoc
+>> index 381497d284b8..f9d7f1c58f00 100644
+>> --- a/Documentation/btrfs-inspect-internal.asciidoc
+>> +++ b/Documentation/btrfs-inspect-internal.asciidoc
+>> @@ -61,7 +61,7 @@ specify which mirror to print, valid values are 0, 1 and 2 and the superblock
+>>  must be present on the device with a valid signature, can be used together with
+>>  '--force'
+>>  
+>> -*dump-tree* [options] <device>::
+>> +*dump-tree* [options] <device> [device...]::
+>>  (replaces the standalone tool *btrfs-debug-tree*)
+>>  +
+>>  Dump tree structures from a given device in textual form, expand keys to human
+>> @@ -95,6 +95,9 @@ intermixed in the output
+>>  --bfs::::
+>>  use breadth-first search to print trees. the nodes are printed before all
+>>  leaves
+>> +--noscan::::
+>> +do not scan the system for other partner device(s), only use the device(s)
+>> +provided in the argument
+>>  -t <tree_id>::::
+>>  print only the tree with the specified ID, where the ID can be numerical or
+>>  common name in a flexible human readable form
+>> diff --git a/cmds-inspect-dump-tree.c b/cmds-inspect-dump-tree.c
+>> index ad5345b4f1db..37d9b29fa824 100644
+>> --- a/cmds-inspect-dump-tree.c
+>> +++ b/cmds-inspect-dump-tree.c
+>> @@ -21,6 +21,7 @@
+>>  #include <unistd.h>
+>>  #include <uuid/uuid.h>
+>>  #include <getopt.h>
+>> +#include <fcntl.h>
+>>  
+>>  #include "kerncompat.h"
+>>  #include "radix-tree.h"
+>> @@ -185,7 +186,7 @@ static u64 treeid_from_string(const char *str, const char **end)
+>>  }
+>>  
+>>  const char * const cmd_inspect_dump_tree_usage[] = {
+>> -	"btrfs inspect-internal dump-tree [options] device",
+>> +	"btrfs inspect-internal dump-tree [options] <device> [<device> ..]",
+>>  	"Dump tree structures from a given device",
+>>  	"Dump tree structures from a given device in textual form, expand keys to human",
+>>  	"readable equivalents where possible.",
+>> @@ -200,6 +201,7 @@ const char * const cmd_inspect_dump_tree_usage[] = {
+>>  	"-b|--block <block_num> print info from the specified block only",
+>>  	"-t|--tree <tree_id>    print only tree with the given id (string or number)",
+>>  	"--follow               use with -b, to show all children tree blocks of <block_num>",
+>> +	"--noscan               do not scan for the partner device(s)",
+>>  	NULL
+>>  };
+>>  
+>> @@ -214,7 +216,7 @@ int cmd_inspect_dump_tree(int argc, char **argv)
+>>  	struct btrfs_disk_key disk_key;
+>>  	struct btrfs_key found_key;
+>>  	char uuidbuf[BTRFS_UUID_UNPARSED_SIZE];
+>> -	int ret;
+>> +	int ret = 0;
+>>  	int slot;
+>>  	int extent_only = 0;
+>>  	int device_only = 0;
+>> @@ -222,6 +224,7 @@ int cmd_inspect_dump_tree(int argc, char **argv)
+>>  	int roots_only = 0;
+>>  	int root_backups = 0;
+>>  	int traverse = BTRFS_PRINT_TREE_DEFAULT;
+>> +	int dev_optind;
+>>  	unsigned open_ctree_flags;
+>>  	u64 block_only = 0;
+>>  	struct btrfs_root *tree_root_scan;
+>> @@ -239,8 +242,8 @@ int cmd_inspect_dump_tree(int argc, char **argv)
+>>  	optind = 0;
+>>  	while (1) {
+>>  		int c;
+>> -		enum { GETOPT_VAL_FOLLOW = 256, GETOPT_VAL_DFS,
+>> -		       GETOPT_VAL_BFS };
+>> +		enum { GETOPT_VAL_FOLLOW = 256, GETOPT_VAL_DFS, GETOPT_VAL_BFS,
+>> +		       GETOPT_VAL_NOSCAN};
+>>  		static const struct option long_options[] = {
+>>  			{ "extents", no_argument, NULL, 'e'},
+>>  			{ "device", no_argument, NULL, 'd'},
+>> @@ -252,6 +255,7 @@ int cmd_inspect_dump_tree(int argc, char **argv)
+>>  			{ "follow", no_argument, NULL, GETOPT_VAL_FOLLOW },
+>>  			{ "bfs", no_argument, NULL, GETOPT_VAL_BFS },
+>>  			{ "dfs", no_argument, NULL, GETOPT_VAL_DFS },
+>> +			{ "noscan", no_argument, NULL, GETOPT_VAL_NOSCAN },
+>>  			{ NULL, 0, NULL, 0 }
+>>  		};
+>>  
+>> @@ -313,24 +317,49 @@ int cmd_inspect_dump_tree(int argc, char **argv)
+>>  		case GETOPT_VAL_BFS:
+>>  			traverse = BTRFS_PRINT_TREE_BFS;
+>>  			break;
+>> +		case GETOPT_VAL_NOSCAN:
+>> +			open_ctree_flags |= OPEN_CTREE_NO_DEVICES;
+>> +			break;
+>>  		default:
+>>  			usage(cmd_inspect_dump_tree_usage);
+>>  		}
+>>  	}
+>>  
+>> -	if (check_argc_exact(argc - optind, 1))
+>> +	if (check_argc_min(argc - optind, 1))
+>>  		usage(cmd_inspect_dump_tree_usage);
+>>  
+>> -	ret = check_arg_type(argv[optind]);
+>> -	if (ret != BTRFS_ARG_BLKDEV && ret != BTRFS_ARG_REG) {
+>> +	dev_optind = optind;
+>> +	while (dev_optind < argc) {
+>> +		int fd;
+>> +		struct btrfs_fs_devices *fs_devices;
+>> +		u64 num_devices;
+>> +
+>> +		ret = check_arg_type(argv[optind]);
+>> +		if (ret != BTRFS_ARG_BLKDEV && ret != BTRFS_ARG_REG) {
+>> +			if (ret < 0) {
+>> +				errno = -ret;
+>> +				error("invalid argument %s: %m", argv[dev_optind]);
+>> +			} else {
+>> +				error("not a block device or regular file: %s",
+>> +				       argv[dev_optind]);
+>> +			}
+>> +		}
+>> +		fd = open(argv[dev_optind], O_RDONLY);
+>> +		if (fd < 0) {
+>> +			error("cannot open %s: %m", argv[dev_optind]);
+>> +			return -EINVAL;
+>> +		}
+>> +		ret = btrfs_scan_one_device(fd, argv[dev_optind], &fs_devices,
+>> +					    &num_devices,
+>> +					    BTRFS_SUPER_INFO_OFFSET,
+>> +					    SBREAD_DEFAULT);
+>> +		close(fd);
+>>  		if (ret < 0) {
+>>  			errno = -ret;
+>> -			error("invalid argument %s: %m", argv[optind]);
+>> -		} else {
+>> -			error("not a block device or regular file: %s",
+>> -			      argv[optind]);
+>> +			error("device scan %s: %m", argv[dev_optind]);
+>> +			return ret;
+>>  		}
+>> -		goto out;
+>> +		dev_optind++;
+>>  	}
+>>  
+>>  	printf("%s\n", PACKAGE_STRING);
+>>
 > 

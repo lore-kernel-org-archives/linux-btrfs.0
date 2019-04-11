@@ -6,26 +6,27 @@ X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9F42BC10F13
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 11:10:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 83764C10F13
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 11:18:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 79CF72083E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 11:10:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 58DA92184B
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 11:18:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726752AbfDKLKG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Apr 2019 07:10:06 -0400
-Received: from mx2.suse.de ([195.135.220.15]:49418 "EHLO mx1.suse.de"
+        id S1726713AbfDKLS3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Apr 2019 07:18:29 -0400
+Received: from mx2.suse.de ([195.135.220.15]:53096 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726121AbfDKLKG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Apr 2019 07:10:06 -0400
+        id S1726615AbfDKLS2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 11 Apr 2019 07:18:28 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 13512AC6E;
-        Thu, 11 Apr 2019 11:10:04 +0000 (UTC)
-Subject: Re: [PATCH 1/6] btrfs: Define submit_bio_hook's type directly
+        by mx1.suse.de (Postfix) with ESMTP id EA039ACAC;
+        Thu, 11 Apr 2019 11:18:26 +0000 (UTC)
+Subject: Re: [PATCH 2/6] btrfs: Change submit_bio_hook to taking an inode
+ directly
 To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 References: <20190410142443.6470-1-nborisov@suse.com>
- <20190410142443.6470-2-nborisov@suse.com>
+ <20190410142443.6470-3-nborisov@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -83,12 +84,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <c8c11dbd-ce36-7c18-f327-aea693821259@suse.de>
-Date:   Thu, 11 Apr 2019 13:10:03 +0200
+Message-ID: <6473ad5d-3404-a6e3-3031-11760fa348a4@suse.de>
+Date:   Thu, 11 Apr 2019 13:18:26 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.3.0
 MIME-Version: 1.0
-In-Reply-To: <20190410142443.6470-2-nborisov@suse.com>
+In-Reply-To: <20190410142443.6470-3-nborisov@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -97,8 +98,15 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Looks good,
-Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
+On 10/04/2019 16:24, Nikolay Borisov wrote:
+> The only possible 'private_data' that is passed to this function is
+> actually an inode. Make that explicit by changing the signature of the
+> call back. No functional changes.
+
+Can't we change struct extent_io_tree::private_data and
+extent_io_tree_init(..., void *private_data) to be an inode as well?
+
+If I didn't overlook something we always pass in an inode or NULL.
 
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems

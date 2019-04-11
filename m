@@ -2,30 +2,30 @@ Return-Path: <SRS0=DOz6=SN=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D1C06C10F13
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 13:01:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3C3BFC10F14
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 13:09:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A87962184B
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 13:01:51 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 12F9F20693
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Apr 2019 13:09:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726690AbfDKNBu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Apr 2019 09:01:50 -0400
-Received: from mx2.suse.de ([195.135.220.15]:56230 "EHLO mx1.suse.de"
+        id S1726564AbfDKNJX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Apr 2019 09:09:23 -0400
+Received: from mx2.suse.de ([195.135.220.15]:36480 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726014AbfDKNBu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Apr 2019 09:01:50 -0400
+        id S1726106AbfDKNJW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 11 Apr 2019 09:09:22 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 32103AD8F;
-        Thu, 11 Apr 2019 13:01:48 +0000 (UTC)
-Subject: Re: [PATCH 3/6] btrfs: Remove 'tree' argument from
- read_extent_buffer_pages
+        by mx1.suse.de (Postfix) with ESMTP id 6F313B8E2;
+        Thu, 11 Apr 2019 13:09:20 +0000 (UTC)
+Subject: Re: [PATCH 4/6] btrfs: Pass 0 for bio_offset to btrfs_wq_submit_bio
 To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 References: <20190410142443.6470-1-nborisov@suse.com>
- <20190410142443.6470-4-nborisov@suse.com>
+ <20190410142443.6470-5-nborisov@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -83,12 +83,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <a2c2b431-f4eb-9640-a3fe-db356f38e832@suse.de>
-Date:   Thu, 11 Apr 2019 15:01:47 +0200
+Message-ID: <e78bde45-db9a-ce69-2020-953c508fc4fc@suse.de>
+Date:   Thu, 11 Apr 2019 15:09:16 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.3.0
 MIME-Version: 1.0
-In-Reply-To: <20190410142443.6470-4-nborisov@suse.com>
+In-Reply-To: <20190410142443.6470-5-nborisov@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -97,8 +97,39 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Looks good,
-Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
+On 10/04/2019 16:24, Nikolay Borisov wrote:
+> Buffered writeback always calls btrfs_csum_one_bio with the last 2
+> arguments being 0 irrespective of what the bio_offset has been passed
+> to btrfs_submit_bio_start. Make this apparent by explicitly passing 0
+> for bio_offset when calling btrfs_wq_submit_bio from
+> btrfs_submit_bio_hook. This will allow for further simplifications down
+> the line. No functional changes.
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  fs/btrfs/inode.c | 3 +--
+>  1 file changed, 1 insertion(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 07cf7050c99f..6e5f1afa7407 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -1991,8 +1991,7 @@ static blk_status_t btrfs_submit_bio_hook(struct inode *inode, struct bio *bio,
+>  			goto mapit;
+>  		/* we're doing a write, do the async checksumming */
+>  		ret = btrfs_wq_submit_bio(fs_info, bio, mirror_num, bio_flags,
+> -					  bio_offset, inode,
+> -					  btrfs_submit_bio_start);
+> +					  0, inode, btrfs_submit_bio_start);
+>  		goto out;
+>  	} else if (!skip_sum) {
+>  		ret = btrfs_csum_one_bio(inode, bio, 0, 0);
+> 
+
+I think we can also kill 'async_submit_bio::bio_offset' as no other
+value than 0 is ever used.
+
+
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems
 jthumshirn@suse.de                                +49 911 74053 689

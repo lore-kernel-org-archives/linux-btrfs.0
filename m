@@ -6,27 +6,27 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 328B7C10F0E
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Apr 2019 09:05:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8B8F4C10F14
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Apr 2019 09:05:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id ED72F20850
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Apr 2019 09:05:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 666B120850
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Apr 2019 09:05:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727278AbfDLJFi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Apr 2019 05:05:38 -0400
-Received: from mx2.suse.de ([195.135.220.15]:43050 "EHLO mx1.suse.de"
+        id S1727285AbfDLJFk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Apr 2019 05:05:40 -0400
+Received: from mx2.suse.de ([195.135.220.15]:43094 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726678AbfDLJFh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Apr 2019 05:05:37 -0400
+        id S1726678AbfDLJFk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 12 Apr 2019 05:05:40 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 31A21AFD1
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Apr 2019 09:05:36 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 77E55AE62
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Apr 2019 09:05:38 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] btrfs-progs: dump-tree: Do simple bit flip check and continue if we can handle it
-Date:   Fri, 12 Apr 2019 17:05:29 +0800
-Message-Id: <20190412090530.29132-2-wqu@suse.com>
+Subject: [PATCH 2/2] btrfs-progs: misc-tests: Test if dump-tree can handle obviously flipped bit in btrfs item
+Date:   Fri, 12 Apr 2019 17:05:30 +0800
+Message-Id: <20190412090530.29132-3-wqu@suse.com>
 X-Mailer: git-send-email 2.21.0
 In-Reply-To: <20190412090530.29132-1-wqu@suse.com>
 References: <20190412090530.29132-1-wqu@suse.com>
@@ -37,245 +37,128 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We have quite some users reporting bit flips, despite the cause, we
-still need to figure out if it's a bit flip manually.
+The crafted image has one bit flipped for one item offset and one item
+size.
 
-Let's make dump-tree clever enough to handle at least item offset/size
-bit flip by itself.
-
-This is done by manually checking if there is single bit out of the
-node size range.
-If there is a bit flipped and after fix it passes regular item
-size/offset check, then we manually use the corrected item offset/size
-in the printing routine.
-
-Before this patch, dump-tree will just skip all remaining items like:
-  fs tree key (FS_TREE ROOT_ITEM 0)
-  leaf 30572544 items 11 free space 15293 generation 6 owner FS_TREE
-  leaf 30572544 flags 0x1(WRITTEN) backref revision 1
-  fs uuid d547b94d-7372-4739-a2bb-076906aa1d12
-  chunk uuid aceea146-a2fc-450c-9aa9-e0e82323641a
-  	item 0 key (256 INODE_ITEM 0) itemoff 16123 itemsize 160
-  		generation 3 transid 6 size 20 nbytes 16384
-  		block group 0 mode 40755 links 1 uid 0 gid 0 rdev 0
-  		sequence 2 flags 0x0(none)
-  		atime 1555057503.953957270 (2019-04-12 16:25:03)
-  		ctime 1555057509.900560077 (2019-04-12 16:25:09)
-  		mtime 1555057509.900560077 (2019-04-12 16:25:09)
-  		otime 1555057483.0 (2019-04-12 16:24:43)
-  	item 1 key (256 INODE_REF 256) itemoff 16111 itemsize 12
-  		index 0 namelen 2 name: ..
-  ERROR: leaf 30572544 slot 2 pointer invalid, offset 48844 size 35 leaf data limit 16283
-  ERROR: skip remaining slots
-
-While after this patch, it will mark the corrupted item and still output
-the correct content, although with some stderr output:
-  incorrect offsets 16111 48879
-  incorrect offsets 16111 48879
-  incorrect offsets 16111 48879
-  fs tree key (FS_TREE ROOT_ITEM 0)
-  leaf 30572544 items 11 free space 15293 generation 6 owner FS_TREE
-  leaf 30572544 flags 0x1(WRITTEN) backref revision 1
-  fs uuid d547b94d-7372-4739-a2bb-076906aa1d12
-  chunk uuid aceea146-a2fc-450c-9aa9-e0e82323641a
-  	item 0 key (256 INODE_ITEM 0) itemoff 16123 itemsize 160
-  		generation 3 transid 6 size 20 nbytes 16384
-  		block group 0 mode 40755 links 1 uid 0 gid 0 rdev 0
-  		sequence 2 flags 0x0(none)
-  		atime 1555057503.953957270 (2019-04-12 16:25:03)
-  		ctime 1555057509.900560077 (2019-04-12 16:25:09)
-  		mtime 1555057509.900560077 (2019-04-12 16:25:09)
-  		otime 1555057483.0 (2019-04-12 16:24:43)
-  	item 1 key (256 INODE_REF 256) itemoff 16111 itemsize 12
-  		index 0 namelen 2 name: ..
-  !!!	item 2 key (256 DIR_ITEM 3846364860) itemoff 16076 (original: 48844) itemsize 35 (original: 35)
-  		location key (258 INODE_ITEM 0) type FILE
-  		transid 6 data_len 0 name_len 5
-  		name: file2
-  	item 3 key (256 DIR_ITEM 4128386376) itemoff 16041 itemsize 35
-  		location key (257 INODE_ITEM 0) type FILE
-  		transid 6 data_len 0 name_len 5
-  		name: file1
-  !!!	item 4 key (256 DIR_INDEX 2) itemoff 16006 (original: 16006) itemsize 35 (original: 65571)
-  		location key (257 INODE_ITEM 0) type FILE
-  		transid 6 data_len 0 name_len 5
-  		name: file1
-  <snip>
-  	item 10 key (258 INODE_REF 256) itemoff 15568 itemsize 15
-  		index 3 namelen 5 name: file2
-
-The "!!!" is used to indicate the problem, and both original and
-corrected item offset size will be outputted.
+The test will check if dump-tree can handle it by:
+- Detect the bit flip
+- Output the correct content for the remaining items
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- print-tree.c | 100 +++++++++++++++++++++++++++++++++++++++++----------
- 1 file changed, 81 insertions(+), 19 deletions(-)
+ .../misc-tests/036-dump-tree-bit-flip/test.sh |  21 ++++++++++++++++++
+ .../two_corrupted_items.raw.xz                | Bin 0 -> 22024 bytes
+ 2 files changed, 21 insertions(+)
+ create mode 100755 tests/misc-tests/036-dump-tree-bit-flip/test.sh
+ create mode 100644 tests/misc-tests/036-dump-tree-bit-flip/two_corrupted_items.raw.xz
 
-diff --git a/print-tree.c b/print-tree.c
-index ab77463706c1..e88b3934dcf9 100644
---- a/print-tree.c
-+++ b/print-tree.c
-@@ -417,7 +417,8 @@ void print_extent_item(struct extent_buffer *eb, int slot, int metadata)
- 	unsigned long end;
- 	unsigned long ptr;
- 	int type;
--	u32 item_size = btrfs_item_size_nr(eb, slot);
-+	u32 item_size = btrfs_item_size_nr(eb, slot) &
-+			(eb->fs_info->nodesize - 1);
- 	u64 flags;
- 	u64 offset;
- 	char flags_str[32] = {0};
-@@ -583,7 +584,7 @@ static void print_root_item(struct extent_buffer *leaf, int slot)
- 	struct btrfs_key drop_key;
- 
- 	ri = btrfs_item_ptr(leaf, slot, struct btrfs_root_item);
--	len = btrfs_item_size_nr(leaf, slot);
-+	len = btrfs_item_size_nr(leaf, slot) & (leaf->fs_info->nodesize - 1);
- 
- 	memset(&root_item, 0, sizeof(root_item));
- 	read_extent_buffer(leaf, &root_item, (unsigned long)ri, len);
-@@ -1184,6 +1185,51 @@ static void header_flags_to_str(u64 flags, char *ret)
- 	}
- }
- 
-+static bool __is_valid_item_ptr(struct btrfs_fs_info *fs_info, u32 item_offset,
-+				u32 item_size)
-+{
-+	u32 leaf_data_size = BTRFS_LEAF_DATA_SIZE(fs_info);
+diff --git a/tests/misc-tests/036-dump-tree-bit-flip/test.sh b/tests/misc-tests/036-dump-tree-bit-flip/test.sh
+new file mode 100755
+index 000000000000..f3f65c435e58
+--- /dev/null
++++ b/tests/misc-tests/036-dump-tree-bit-flip/test.sh
+@@ -0,0 +1,21 @@
++#!/bin/bash
++# Test if btrfs ins dump-tree can handle certain bit flip case and output
++# enough info for both the good and bad items
 +
-+	/* Item pointer must be inside the leaf */
-+	return !(item_offset > leaf_data_size || item_offset + item_size
-+		 > leaf_data_size);
++source "$TEST_TOP/common"
++
++check_prereq btrfs
++
++tmp_output=$(mktemp --tmpdir btrfs-progs-test-dump-tree-output.XXXXXX)
++
++check_image() {
++	run_check_stdout "$TOP/btrfs" ins dump-tree -t 5 "$1" \
++		2>&1 > "$tmp_output"
++	if [ $(grep '\!\!\!' "$tmp_output" | wc -l ) -ne 2 ]; then
++		rm "$tmp_output" -rf
++		_fail "bit flipped item not detected"
++	fi
++	rm "$tmp_output" -rf
 +}
 +
-+static bool is_valid_item(struct extent_buffer *leaf, int slot)
-+{
-+	return __is_valid_item_ptr(leaf->fs_info,
-+			btrfs_item_offset_nr(leaf, slot),
-+			btrfs_item_size_nr(leaf, slot));
-+}
-+
-+static bool is_bit_flipped(struct extent_buffer *leaf, int slot)
-+{
-+	u32 nodesize_mask = leaf->fs_info->nodesize - 1;
-+	u32 item_offset = btrfs_item_offset_nr(leaf, slot);
-+	u32 item_size = btrfs_item_size_nr(leaf, slot);
-+
-+	ASSERT(is_power_of_2(leaf->fs_info->nodesize));
-+	/* Bit flip should only happen once */
-+	if (is_power_of_2(item_offset & ~nodesize_mask) &&
-+	    (item_size & ~nodesize_mask) == 0 &&
-+	    __is_valid_item_ptr(leaf->fs_info, item_offset & nodesize_mask,
-+				item_size))
-+		return true;
-+	if (is_power_of_2(item_size & ~nodesize_mask) &&
-+	    (item_offset & ~nodesize_mask) == 0 &&
-+	    __is_valid_item_ptr(leaf->fs_info, item_offset,
-+				item_size & nodesize_mask))
-+		return true;
-+	return false;
-+}
-+
-+static void *btrfs_item_safe_ptr(struct extent_buffer *leaf, int slot)
-+{
-+	return (void *)(btrfs_leaf_data(leaf) +
-+			(btrfs_item_offset_nr(leaf, slot) &
-+			 (leaf->fs_info->nodesize - 1)));
-+}
-+
- void btrfs_print_leaf(struct extent_buffer *eb)
- {
- 	struct btrfs_fs_info *fs_info = eb->fs_info;
-@@ -1193,6 +1239,7 @@ void btrfs_print_leaf(struct extent_buffer *eb)
- 	u32 leaf_data_size = BTRFS_LEAF_DATA_SIZE(fs_info);
- 	u32 i;
- 	u32 nr;
-+	u32 nodesize_mask = fs_info->nodesize - 1;
- 	u64 flags;
- 	u8 backref_rev;
- 
-@@ -1213,6 +1260,7 @@ void btrfs_print_leaf(struct extent_buffer *eb)
- 	fflush(stdout);
- 
- 	for (i = 0; i < nr; i++) {
-+		bool bit_flip = false;
- 		u32 item_size;
- 		void *ptr;
- 		u64 objectid;
-@@ -1225,32 +1273,46 @@ void btrfs_print_leaf(struct extent_buffer *eb)
- 		 * Only need to ensure all pointers are pointing range inside
- 		 * the leaf, thus no segfault.
- 		 */
--		if (btrfs_item_offset_nr(eb, i) > leaf_data_size ||
--		    btrfs_item_size_nr(eb, i) + btrfs_item_offset_nr(eb, i) >
--		    leaf_data_size) {
--			error(
-+		if (!is_valid_item(eb, i)) {
-+			if (is_bit_flipped(eb, i)) {
-+				bit_flip = true;
-+			} else {
-+				error(
- "leaf %llu slot %u pointer invalid, offset %u size %u leaf data limit %u",
--			      btrfs_header_bytenr(eb), i,
--			      btrfs_item_offset_nr(eb, i),
--			      btrfs_item_size_nr(eb, i), leaf_data_size);
--			error("skip remaining slots");
--			break;
-+				      btrfs_header_bytenr(eb), i,
-+				      btrfs_item_offset_nr(eb, i),
-+				      btrfs_item_size_nr(eb, i),
-+				      leaf_data_size);
-+				error("skip remaining slots");
-+				break;
-+			}
- 		}
- 		item = btrfs_item_nr(i);
--		item_size = btrfs_item_size(eb, item);
-+		item_size = btrfs_item_size(eb, item) & nodesize_mask;
- 		/* Untyped extraction of slot from btrfs_item_ptr */
--		ptr = btrfs_item_ptr(eb, i, void*);
-+		ptr = btrfs_item_safe_ptr(eb, i);
- 
- 		btrfs_item_key(eb, &disk_key, i);
- 		objectid = btrfs_disk_key_objectid(&disk_key);
- 		type = btrfs_disk_key_type(&disk_key);
- 		offset = btrfs_disk_key_offset(&disk_key);
- 
--		printf("\titem %d ", i);
-+		if (bit_flip)
-+			printf("!!!\titem %d ", i);
-+		else
-+			printf("\titem %d ", i);
- 		btrfs_print_key(&disk_key);
--		printf(" itemoff %d itemsize %d\n",
--			btrfs_item_offset(eb, item),
--			btrfs_item_size(eb, item));
-+		if (bit_flip)
-+			printf(
-+		" itemoff %d (original: %d) itemsize %d (original: %d)\n",
-+				btrfs_item_offset(eb, item) & nodesize_mask,
-+				btrfs_item_offset(eb, item),
-+				btrfs_item_size(eb, item) & nodesize_mask,
-+				btrfs_item_size(eb, item));
-+		else
-+			printf(" itemoff %d itemsize %d\n",
-+				btrfs_item_offset(eb, item),
-+				btrfs_item_size(eb, item));
- 
- 		if (type == 0 && objectid == BTRFS_FREE_SPACE_OBJECTID)
- 			print_free_space_header(eb, i);
-@@ -1360,8 +1422,8 @@ void btrfs_print_leaf(struct extent_buffer *eb)
- 			break;
- 		case BTRFS_UUID_KEY_SUBVOL:
- 		case BTRFS_UUID_KEY_RECEIVED_SUBVOL:
--			print_uuid_item(eb, btrfs_item_ptr_offset(eb, i),
--					btrfs_item_size_nr(eb, i));
-+			print_uuid_item(eb, btrfs_item_ptr_offset(eb, i) &
-+					nodesize_mask, item_size);
- 			break;
- 		case BTRFS_STRING_ITEM_KEY: {
- 			const char *str = eb->data + btrfs_item_ptr_offset(eb, i);
++check_all_images
+diff --git a/tests/misc-tests/036-dump-tree-bit-flip/two_corrupted_items.raw.xz b/tests/misc-tests/036-dump-tree-bit-flip/two_corrupted_items.raw.xz
+new file mode 100644
+index 0000000000000000000000000000000000000000..6487657f81f3c3d4dca002372011f1cc1cc26f57
+GIT binary patch
+literal 22024
+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
+H*xce@+_+3p
+
+literal 0
+HcmV?d00001
+
 -- 
 2.21.0
 

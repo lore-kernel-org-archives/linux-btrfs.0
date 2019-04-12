@@ -7,54 +7,54 @@ X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CED0EC10F14
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Apr 2019 08:03:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4A8CBC10F0E
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Apr 2019 08:03:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9BF0D2171F
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Apr 2019 08:03:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1F71A205ED
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Apr 2019 08:03:21 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="qBoBGzfH"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="bEPmBE0q"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727171AbfDLIDS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Apr 2019 04:03:18 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:60308 "EHLO
+        id S1727301AbfDLIDU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Apr 2019 04:03:20 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:60364 "EHLO
         userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727282AbfDLIDQ (ORCPT
+        with ESMTP id S1727260AbfDLIDT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Apr 2019 04:03:16 -0400
+        Fri, 12 Apr 2019 04:03:19 -0400
 Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x3C7s1Cr084742
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Apr 2019 08:03:15 GMT
+        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x3C7rfRn084285
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Apr 2019 08:03:18 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
  date : message-id : in-reply-to : references; s=corp-2018-07-02;
- bh=gLpHSiWplZJryWcSuLimwCd5a2ldmftYZC7VXIuwqX4=;
- b=qBoBGzfHBx5QId1+cgEPPM1MMLQxNTu+VetkhGUGgMtkUl3xuBhIliafs7j7c8NNXbnf
- aB+YYppZs+pSzmu8eXUnJC1LvOsziqkmQfqoUl2Z5i9p4tEcYuhqejwb4W8+WpoIJ07I
- hL+DSIB+cObBuPyUnIeeINYab4yRTiMAztCpn/Y5PFQPvt9Joj1wr+7WhO55mGQmktBV
- 0lAEe3+8nhMbFKIfKh4XlYUpeunvyEst5ga0q8DQcE4GbnkgmndSVwzBm6xLALmszJZM
- K3h3eAvCU1Ozatinb+N7R6eAqKu+ATlSBmtTBr9DZ/Cv7sgcCHGroPfnx/3S5Ab0KpKb oA== 
-Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
-        by userp2120.oracle.com with ESMTP id 2rpmrqmy79-1
+ bh=PehDrGFZgiOmvFe2YQQejsHpFyEmT7KoG7pWSGTuBPA=;
+ b=bEPmBE0qCRHcQtxzKAqpuEmdnGI2bEJiUiJRLeOffgU9RIO+MXi53nvFzo5g0bOFJFYj
+ Uz0sr54EOFgPi0VTUWgJZVvgj2cXyeKtkiZO0/X/PlEIkiv0Q3pFzXw+mTZQnWvyY3S0
+ OmLh3HYrr0VcdyhdLuwyfX/a1Z5X6xxxs4lnRlhriPcZHkV0gnnEXJTF2P6B5Fu1rTxG
+ NNalf+ZTo0Zh17d1g4WYPRlDK8N59YKN2J3YHLYYo8Vd8EYIEhEUSeMx7qm73XN3uK1K
+ f0An50nlHrz8nwQikVyX63fi3yQo+PtmX7OSxckU3n6jdkNf89QZ4GF6afbxSCOTVl46 fA== 
+Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
+        by userp2120.oracle.com with ESMTP id 2rpmrqmy7j-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Apr 2019 08:03:15 +0000
-Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
-        by aserp3020.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x3C830qE169317
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Apr 2019 08:03:15 GMT
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by aserp3020.oracle.com with ESMTP id 2rpytd6fd8-1
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Apr 2019 08:03:18 +0000
+Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
+        by aserp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x3C831r8139895
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Apr 2019 08:03:17 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserp3030.oracle.com with ESMTP id 2rt9uq1ggm-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Apr 2019 08:03:14 +0000
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Apr 2019 08:03:17 +0000
 Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x3C83Eqj009074
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Apr 2019 08:03:14 GMT
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x3C83G83023263
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Apr 2019 08:03:16 GMT
 Received: from tp.wifi.oracle.com (/192.188.170.106)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Fri, 12 Apr 2019 01:03:14 -0700
+        with ESMTP ; Fri, 12 Apr 2019 01:03:15 -0700
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/6] btrfs: remove redundant readonly root check in btrfs_setxattr_trans
-Date:   Fri, 12 Apr 2019 16:02:57 +0800
-Message-Id: <20190412080259.5192-5-anand.jain@oracle.com>
+Subject: [PATCH 5/6] btrfs: split thread with trans to use btrfs_setxattr
+Date:   Fri, 12 Apr 2019 16:02:58 +0800
+Message-Id: <20190412080259.5192-6-anand.jain@oracle.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20190412080259.5192-1-anand.jain@oracle.com>
 References: <20190412080259.5192-1-anand.jain@oracle.com>
@@ -74,52 +74,124 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-btrfs_setxattr_trans() is called by 5 threads as below and all of them are
-write based threads, which won't run for a readonly root. So its ok to
-remove the readonly root check here.
-
-1.
-__btrfs_set_acl()
-btrfs_init_acl()
-btrfs_init_inode_security()
-
-2.
-__btrfs_set_acl()
-btrfs_set_acl()
-
-3.
-btrfs_set_prop()
-btrfs_set_prop_trans()
-  /                   \
-btrfs_ioctl_setflags()   btrfs_xattr_handler_set_prop()
-
-4.
-btrfs_xattr_handler_set()
-
-5.
-btrfs_initxattrs()
-btrfs_xattr_security_init()
-btrfs_init_inode_security()
+When the parent thread has already created the transaction call
+btrfs_setxattr() directly. Also adds assert in btrfs_setxattr()
+to check if trans is not null.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/xattr.c | 3 ---
- 1 file changed, 3 deletions(-)
+ fs/btrfs/acl.c   |  6 +++++-
+ fs/btrfs/props.c | 34 ++++++++++++++++++++++++----------
+ fs/btrfs/xattr.c |  6 ++++--
+ 3 files changed, 33 insertions(+), 13 deletions(-)
 
+diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
+index d3b04c6abc61..7fe6551bc59b 100644
+--- a/fs/btrfs/acl.c
++++ b/fs/btrfs/acl.c
+@@ -93,7 +93,11 @@ static int __btrfs_set_acl(struct btrfs_trans_handle *trans,
+ 			goto out;
+ 	}
+ 
+-	ret = btrfs_setxattr_trans(trans, inode, name, value, size, 0);
++	if (trans)
++		ret = btrfs_setxattr(trans, inode, name, value, size, 0);
++	else
++		ret = btrfs_setxattr_trans(NULL, inode, name, value, size, 0);
++
+ out:
+ 	kfree(value);
+ 
+diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
+index 61ced0ebb5ba..a73c1bdc7b05 100644
+--- a/fs/btrfs/props.c
++++ b/fs/btrfs/props.c
+@@ -70,8 +70,13 @@ static int btrfs_set_prop(struct btrfs_trans_handle *trans, struct inode *inode,
+ 		return -EINVAL;
+ 
+ 	if (value_len == 0) {
+-		ret = btrfs_setxattr_trans(trans, inode, handler->xattr_name,
+-					   NULL, 0, flags);
++		if (trans)
++			ret = btrfs_setxattr(trans, inode, handler->xattr_name,
++					     NULL, 0, flags);
++		else
++			ret = btrfs_setxattr_trans(NULL, inode,
++						   handler->xattr_name, NULL, 0,
++						   flags);
+ 		if (ret)
+ 			return ret;
+ 
+@@ -84,14 +89,23 @@ static int btrfs_set_prop(struct btrfs_trans_handle *trans, struct inode *inode,
+ 	ret = handler->validate(value, value_len);
+ 	if (ret)
+ 		return ret;
+-	ret = btrfs_setxattr_trans(trans, inode, handler->xattr_name,
+-				   value, value_len, flags);
++	if (trans)
++		ret = btrfs_setxattr(trans, inode, handler->xattr_name, value,
++				     value_len, flags);
++	else
++		ret = btrfs_setxattr_trans(NULL, inode, handler->xattr_name,
++					   value, value_len, flags);
++
+ 	if (ret)
+ 		return ret;
+ 	ret = handler->apply(inode, value, value_len);
+ 	if (ret) {
+-		btrfs_setxattr_trans(trans, inode, handler->xattr_name,
+-				     NULL, 0, flags);
++		if (trans)
++			btrfs_setxattr(trans, inode, handler->xattr_name, NULL,
++				       0, flags);
++		else
++			btrfs_setxattr_trans(NULL, inode, handler->xattr_name,
++					     NULL, 0, flags);
+ 		return ret;
+ 	}
+ 
+@@ -358,13 +372,13 @@ static int inherit_props(struct btrfs_trans_handle *trans,
+ 		if (ret)
+ 			return ret;
+ 
+-		ret = btrfs_setxattr_trans(trans, inode, h->xattr_name, value,
+-					   strlen(value), 0);
++		ret = btrfs_setxattr(trans, inode, h->xattr_name, value,
++				     strlen(value), 0);
+ 		if (!ret) {
+ 			ret = h->apply(inode, value, strlen(value));
+ 			if (ret)
+-				btrfs_setxattr_trans(trans, inode, h->xattr_name,
+-						     NULL, 0, 0);
++				btrfs_setxattr(trans, inode, h->xattr_name,
++					       NULL, 0, 0);
+ 			else
+ 				set_bit(BTRFS_INODE_HAS_PROPS,
+ 					&BTRFS_I(inode)->runtime_flags);
 diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
-index b2b68676ec52..4c447b1f32e5 100644
+index 4c447b1f32e5..623d508f21a6 100644
 --- a/fs/btrfs/xattr.c
 +++ b/fs/btrfs/xattr.c
-@@ -226,9 +226,6 @@ int btrfs_setxattr_trans(struct btrfs_trans_handle *trans,
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	int ret;
+@@ -86,6 +86,8 @@ int btrfs_setxattr(struct btrfs_trans_handle *trans, struct inode *inode,
+ 	size_t name_len = strlen(name);
+ 	int ret = 0;
  
--	if (btrfs_root_readonly(root))
--		return -EROFS;
--
- 	if (trans)
- 		return btrfs_setxattr(trans, inode, name, value, size, flags);
++	ASSERT(trans);
++
+ 	if (name_len + size > BTRFS_MAX_XATTR_SIZE(root->fs_info))
+ 		return -ENOSPC;
  
+@@ -437,8 +439,8 @@ static int btrfs_initxattrs(struct inode *inode,
+ 		}
+ 		strcpy(name, XATTR_SECURITY_PREFIX);
+ 		strcpy(name + XATTR_SECURITY_PREFIX_LEN, xattr->name);
+-		err = btrfs_setxattr_trans(trans, inode, name, xattr->value,
+-					   xattr->value_len, 0);
++		err = btrfs_setxattr(trans, inode, name, xattr->value,
++				     xattr->value_len, 0);
+ 		kfree(name);
+ 		if (err < 0)
+ 			break;
 -- 
 2.17.1
 

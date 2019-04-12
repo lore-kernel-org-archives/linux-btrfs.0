@@ -2,301 +2,329 @@ Return-Path: <SRS0=+qyB=SO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 43BF6C10F0E
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Apr 2019 12:45:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7C929C10F0E
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Apr 2019 13:06:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id F02F62084D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Apr 2019 12:45:15 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="hgRgZSiV"
+	by mail.kernel.org (Postfix) with ESMTP id 41F2620818
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Apr 2019 13:06:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727514AbfDLMpP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Apr 2019 08:45:15 -0400
-Received: from mout.gmx.net ([212.227.17.21]:58695 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726755AbfDLMpO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Apr 2019 08:45:14 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1555073110;
-        bh=W1cF3NAPDda6x93+vzoX8X4RNTDSpPkdWxO9IqZwIp0=;
-        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=hgRgZSiV/yEGY15UeErdWPTemDDv8W7GiWD+V7gvw25bjbZBJs82ZL/c0mQf/Wo6Z
-         2aEeCPvTgZ9BPYWfDJPe7VWKzKsLcEASoYYgzqsLxxim/EQti7VGUUKvZoQMYJFSYm
-         gIZ9CkzO+e/9cLcN9UNkHUfLn6VabFI2g38aAemk=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx102
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0Ldspr-1gXeis2KI7-00j13g; Fri, 12
- Apr 2019 14:45:10 +0200
-Subject: Re: interest in post-mortem examination of a BTRFS system and
- improving the btrfs-code?
-To:     "Nik." <btrfs@avgustinov.eu>,
-        Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <aa81a49a-d5ca-0f1c-fa75-9ed3656cff55@avgustinov.eu>
- <a75981da-86f7-e0fb-d1dc-a2576b09c668@gmx.com>
- <039ec3eb-c44e-35e9-cf1b-f9f75849d873@avgustinov.eu>
- <c69778f5-a015-8b77-3fab-e41e49a0e0db@gmx.com>
- <51021dd7-b21b-b001-c3f9-9bc31205738b@avgustinov.eu>
- <00e3ddf1-cbd7-a65a-dee3-ca720cecc77d@gmx.com>
- <a6917f39-eeb4-5548-f346-a78972c7c3fe@avgustinov.eu>
- <6a592ffa-4a5a-81af-baef-8f1681accc87@gmx.com>
- <2c786019-646a-486f-1306-25a3df36e6b3@avgustinov.eu>
- <52b23bd7-108b-63f3-b958-2a5959c7ca6e@gmx.com>
- <f2b33d93-aa37-9fd3-6036-44e1e3f065eb@avgustinov.eu>
- <a9135dba-26fe-777f-048b-87052d5cbd14@gmx.com>
- <21ff2435-af15-573c-e897-05ceb4f42e0b@avgustinov.eu>
- <CAJCQCtQJkJwEyouCUzcV1MzPkcxhvtqxkWqmrwnB9txV=MUTXA@mail.gmail.com>
- <3f1f66d3-e04e-de16-e9a4-7c8a6238d5b8@gmx.com>
- <246c2330-acb6-3205-0468-051bacbfaeb5@avgustinov.eu>
- <24ab8eed-a790-bff2-cdad-0b091f7d0fe9@avgustinov.eu>
- <917e0530-7f68-a801-d87b-d00bb4e10287@gmx.com>
- <fea90c59-9aad-e997-8763-6c9221652acc@avgustinov.eu>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+        id S1727025AbfDLNGa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Apr 2019 09:06:30 -0400
+Received: from mx2.suse.de ([195.135.220.15]:40918 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726755AbfDLNGa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 12 Apr 2019 09:06:30 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id EBCA6AD43;
+        Fri, 12 Apr 2019 13:06:27 +0000 (UTC)
+Subject: Re: [PATCH 2/2] btrfs: reserve delalloc metadata differently
+To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
+References: <20190410195610.84110-1-josef@toxicpanda.com>
+ <20190410195610.84110-3-josef@toxicpanda.com>
+From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <a6948885-53ab-4e8f-b147-1a57d82a3022@gmx.com>
-Date:   Fri, 12 Apr 2019 20:45:05 +0800
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <0098847c-71fb-b305-3f2a-392ce2737ed4@suse.com>
+Date:   Fri, 12 Apr 2019 16:06:25 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.6.1
 MIME-Version: 1.0
-In-Reply-To: <fea90c59-9aad-e997-8763-6c9221652acc@avgustinov.eu>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="Uxql1LKAeqzJRTAGQn3uDTfUX1SMc1Quv"
-X-Provags-ID: V03:K1:8xD9frqf4ViSbU1GhLnmNeMaDcZLpkf8OiaiizyfiiE6ZlJJUCs
- bCc1fUOmyqTO4WJyNrLN7QsUIulP2hxDm1iN4aJD/SBGoggwYmZL49DlASrVcgbPQCYEz50
- D+PgcDae4ffTRv9kNs97s+YpSgtovswkD2L8tTSvabQAk1IKa5ipVY34TI1YA3LlcWfeiiR
- 53/FqrxaTZimNqHTfCfqw==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:0IEWW/dFrhk=:ZAhELeR6gZ3DbdNQaPA/Vd
- cqMChUAXde+2XgmbrRMJ4BFe2ju9JEtER5gPIVpnd6SQThdWJGm3VdPaKs912KKHcl/WMi/nX
- ynDBRLf3c/JmUVOWSOstKjBjtSBoLaL82iL5N4leVtV+5GLNVPbOqdIEK3Acqu3JzZg92gqON
- dKNQp+PErnyrRKDbZQg9WHS49i9+6E+5R3qUhs0fyrR+uND3B2HscxZMes21m5Ec9BmABK6hw
- lubbsGtYCXSZfS2v7ViuNA8976T5a03ptHeKj4QpNdr6Yqg/4Nu+KazhfnTQnfOCQdZVEscuw
- J9vp+hNFItjPfBIdUFha1bYdLoyFQ9Kj9WnHK5hQApjwgP/etNrRRi5jplmEdyib/ZZjB2eRb
- 31v+6XRWv0nztHu9fGylT0mAnV7g4ezXKGdAU0b+TuCjRo3RVr1/26KXS5zJAq+qj61D9CchC
- UAWnUeHz/9sgtXK9NJ0Loa/IcbpjmS+/Jv9vJP1JKuHk9LbxrLqOxE7gPP/2X9MePZEpI4sgF
- rpPXs6Ao3duNQZM3RxDVmzTXWqzUYDvCmpae5J9jJd0VzNO8AXSt9rXAReJr56UErb4C1QNtk
- qCNp701pbrOY53ivSnvjVm28dqq7kHMhpzEfh2Mxyj3cHjyZ+JUBfOn6YJ7uCzi7xbJvzQDzX
- aufjlSUaGzu+BrfJtNCw3mwYwJehI+JLN3cSp3c4cvmo5pLFBieNyPR3IvEubC7QuPOGYrBgY
- DLHbnzkH6lCeHicK1WSt7VDsIUJm2Nk47IRDanCPaU1czDoShjWBws1jZHNSYYZ0ZSwiSf++0
- iwYLT0UoFWcYWfEBSnMR7T3SPpfFsk4B87XfKncWttjaEYBKTlJCaeGj6o/lccrQ/kr4Adqtq
- sRjNB5tav9FynYHxuTo+ZHrqGCe8IvkiEf/yiOb3JcDKSbUBYOz3g1yN8lgl0A
+In-Reply-To: <20190410195610.84110-3-josef@toxicpanda.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---Uxql1LKAeqzJRTAGQn3uDTfUX1SMc1Quv
-Content-Type: multipart/mixed; boundary="pdb1508Ao38ETw370HNmLdUi2grKokiPE";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: "Nik." <btrfs@avgustinov.eu>, Chris Murphy <lists@colorremedies.com>,
- Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-ID: <a6948885-53ab-4e8f-b147-1a57d82a3022@gmx.com>
-Subject: Re: interest in post-mortem examination of a BTRFS system and
- improving the btrfs-code?
-References: <aa81a49a-d5ca-0f1c-fa75-9ed3656cff55@avgustinov.eu>
- <e9720559-eff2-e88b-12b4-81defb8c29c5@avgustinov.eu>
- <a75981da-86f7-e0fb-d1dc-a2576b09c668@gmx.com>
- <039ec3eb-c44e-35e9-cf1b-f9f75849d873@avgustinov.eu>
- <c69778f5-a015-8b77-3fab-e41e49a0e0db@gmx.com>
- <51021dd7-b21b-b001-c3f9-9bc31205738b@avgustinov.eu>
- <00e3ddf1-cbd7-a65a-dee3-ca720cecc77d@gmx.com>
- <a6917f39-eeb4-5548-f346-a78972c7c3fe@avgustinov.eu>
- <6a592ffa-4a5a-81af-baef-8f1681accc87@gmx.com>
- <2c786019-646a-486f-1306-25a3df36e6b3@avgustinov.eu>
- <52b23bd7-108b-63f3-b958-2a5959c7ca6e@gmx.com>
- <f2b33d93-aa37-9fd3-6036-44e1e3f065eb@avgustinov.eu>
- <a9135dba-26fe-777f-048b-87052d5cbd14@gmx.com>
- <21ff2435-af15-573c-e897-05ceb4f42e0b@avgustinov.eu>
- <CAJCQCtQJkJwEyouCUzcV1MzPkcxhvtqxkWqmrwnB9txV=MUTXA@mail.gmail.com>
- <3f1f66d3-e04e-de16-e9a4-7c8a6238d5b8@gmx.com>
- <246c2330-acb6-3205-0468-051bacbfaeb5@avgustinov.eu>
- <24ab8eed-a790-bff2-cdad-0b091f7d0fe9@avgustinov.eu>
- <917e0530-7f68-a801-d87b-d00bb4e10287@gmx.com>
- <fea90c59-9aad-e997-8763-6c9221652acc@avgustinov.eu>
-In-Reply-To: <fea90c59-9aad-e997-8763-6c9221652acc@avgustinov.eu>
-
---pdb1508Ao38ETw370HNmLdUi2grKokiPE
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
 
+On 10.04.19 г. 22:56 ч., Josef Bacik wrote:
+> With the per-inode block rsvs we started refilling the reserve based on
+> the calculated size of the outstanding csum bytes and extents for the
+> inode, including the amount we were adding with the new operation.
+> 
+> However generic/224 exposed a problem with this approach.  With 1000
+> files all writing at the same time we ended up with a bunch of bytes
+> being reserved but unusable.
+> 
+> When you write to a file we reserve space for the csum leaves for those
+> bytes, the number of extent items required to cover those bytes, and a
+> single credit for updating the inode at ordered extent finish for that
+> range of bytes.  This is held until the ordered extent finishes and we
+> release all of the reserved space.
+> 
+> If a second write comes in at this point we would add a single
+> reservation for the new outstanding extent and however many reservations
+> for the csum leaves.  
 
-On 2019/4/12 =E4=B8=8B=E5=8D=887:38, Nik. wrote:
->=20
->=20
-> 2019-04-12 12:50, Qu Wenruo:
->>
->>
->> On 2019/4/12 =E4=B8=8B=E5=8D=886:44, Nik. wrote:
->>>
->>> 2019-04-08 23:22, Nik.:
->>>>
->>>>
->>>> 2019-04-08 15:09, Qu Wenruo:
->>>>> Unfortunately, I didn't receive the last mail from Nik.
->>>>>
->>>>> So I'm using the content from lore.kernel.org.
->>>>>
->>>>> [122293.101782] BTRFS critical (device md0): corrupt leaf: root=3D1=
-
->>>>> block=3D1894009225216 slot=3D82, bad key order, prev (2034321682432=
- 168
->>>>> 262144) current (2034318143488 168 962560)
->>>>>
->>>>> Root=3D1 means it's root tree, 168 means EXTENT_ITEM, which should =
-only
->>>>> occur in extent tree, not in root tree.
->>>>>
->>>>> This means either the leaf owner, or some tree blocks get totally
->>>>> screwed up.
->>>>>
->>>>> This is not easy to fix, if possible.
->>>>>
->>>>> Would you please try this kernel branch and mount it with
->>>>> "rescue=3Dskip_bg,ro"?
->>>>> https://github.com/adam900710/linux/tree/rescue_options
->>>>>
->>>>> I think that's the last method. Before that, you could try
->>>>> btrfs-restore, which is purely user-space and should be easier to
->>>>> setup
->>>>> than custom kernel.
->>>>>
->>>>> Thanks,
->>>>> Qu
->>>>
->>>> Tried "btrfs restore -vsxmi ..." (it did not work before my first
->>>> email), it is processing for at least 6 hours until now. It seems th=
-at
->>>> despite many error messages files are getting restored. As soon as i=
-t
->>>> finishes will check what is the result and give feedback. Will also
->>>> test the mentioned kernel branch.
->>>>
->>> After almost four days only about 120 GB of my initially 3.7TB of fre=
-e
->>> space remain free, and the restore is still working (how about
->>> introducing a "progress" switch?)... I guess that due to the option "=
--s"
->>> and the lack of deduplication the snapshots are going to fill all the=
-
->>> space without reaching the "end" of the file restoring system.
->>>
->>> Until now I still did not have chance (and time) to compare the resto=
-red
->>> with backups, but at this point I would like to ask you: what else wo=
-uld
->>> you like to know|try|do? Should I try the mentioned above kernel and =
-its
->>> rescue options?
->>
->> That's the only remaining thing you need.
->=20
-> Ok, the "git clone ..." just finished, but in your earlier mail you
-> spoke about kernel 5.1/5.2, and the readme of the above repository is
-> talking about "Linux kernel release 4.x"? Since building the kernel is
-> not a "minute" task (especially when building on atom processor), I
-> would like to double check the steps to be done.
-
-It's based on v4.20 kernel I think.
-
-I should refresh the patchset on latest branch before re-sending it to
-the mail list.
-
-> Until now:
-> $ git clone https://github.com/adam900710/linux.git
-> $ git checkout --track origin/rescue_options
->=20
-> What next? No autogen, no configure. ... The Readme refers to
-> "Documentation/process/changes.rst", so am I going to follow its sectio=
-n
-> "Configuring the kernel"?
-
-Oh, that's will be problem.
-
-Kernel config is done by "make menuconfig", but if you're not familiar
-with that, you can easily get a kernel which can't even boot.
-
-So just forget this, it's not risky, but very time consuming for end
-users, too many things need to be learned.
-
-Thanks,
-Qu
-
-> If there is another description of the steps to be taken somewhere -
-> please provide a link.
->=20
-> Best,
-> Nik.
->=20
->> In fact, I didn't consider the size of the fs, and for that large fs,
->> rescue mount option should be the first choice before btrfs-restore.
->>
->> Thanks,
->> Qu
->>
->>> Something else, which is risky and should not be tried
->>> on a production system?
->>>
->>> Kind regards,
->>>
->>> Nik.
->>>
->>> --=C2=A0
->>>
->>> [snip]
->>>
->>
+If a second write comes we won't do anything different than the first
+i.e calculate the number of extent items + csums bytes required, add
+them to the block reservation and call btrfs_inode_rsv_refill which
+should refill the delta necessary for the 2nd write.
 
 
---pdb1508Ao38ETw370HNmLdUi2grKokiPE--
+At this point we find the delta of how much we
+> have reserved and how much outstanding size this is and attempt to
+> reserve this delta.  If the first write finishes it will not release any
+> space, because the space it had reserved for the initial write is still
+> needed for the second write.  However some space would have been used,
 
---Uxql1LKAeqzJRTAGQn3uDTfUX1SMc1Quv
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+Each and every reservation is responsible for itself how come the first
+one will know some of its space is required for the second, hence it
+won't be released?
 
------BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlywiFEACgkQwj2R86El
-/qh73gf/Wwn94dhiTrZV6UCjDO/FqIbxhoJmOtvjc2vWIk2LPuJZ1tkydy+tA7oU
-7pgAHBsoCk0gUMOkEotmnVjL3HDPYoCesxNO5AVZrX9RCRPyBN5rk+VJ2mzz8A9v
-lVOuJ0uzm44cVDVERvW6ORbHnS3jvra/bFWxX2Gms39pPCgczLGUIkuoINbQk8nd
-UAz3/OM3+bkTi6+38xDEYkLg5x9lOZ8IkfLJonn4HaxM3+pz4Ak1o/12BoiLhYlo
-DVcqYPjhfgVA9rc+vZt4v1ISgFLchA6eQHF/zQllsYL0ea9NqAUTlHkEvLx43TFj
-fy8JTAMBzXElqsVQzqnhcyrm6la8iQ==
-=0d2l
------END PGP SIGNATURE-----
-
---Uxql1LKAeqzJRTAGQn3uDTfUX1SMc1Quv--
+> as we have added csums, extent items, and dirtied the inode.  Our
+> reserved space would be > 0 but < the total needed reserved space.
+> 
+> This is just for a single inode, now consider generic/224.  This has
+> 1000 inodes writing in parallel to a very small file system, 1gib.  In
+> my testing this usually means we get about a 120mib metadata area to
+> work with, more than enough to allow the writes to continue, but not
+> enough if all of the inodes are stuck trying to reserve the slack space
+> while continuing to hold their leftovers from their initial writes.
+> 
+> Fix this by pre-reserved _only_ for the space we are currently trying to
+> add.  Then once that is successful modify our inodes csum count and
+> outstanding extents, and then add the newly reserved space to the inodes
+> block_rsv.  This allows us to actually pass generic/224 without running
+> out of metadata space.
+> 
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> ---
+>  fs/btrfs/extent-tree.c | 145 ++++++++++++++++++-------------------------------
+>  1 file changed, 53 insertions(+), 92 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 0982456ebabb..9aff7a8817d9 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -5811,85 +5811,6 @@ int btrfs_block_rsv_refill(struct btrfs_root *root,
+>  	return ret;
+>  }
+>  
+> -static void calc_refill_bytes(struct btrfs_block_rsv *block_rsv,
+> -				u64 *metadata_bytes, u64 *qgroup_bytes)
+> -{
+> -	*metadata_bytes = 0;
+> -	*qgroup_bytes = 0;
+> -
+> -	spin_lock(&block_rsv->lock);
+> -	if (block_rsv->reserved < block_rsv->size)
+> -		*metadata_bytes = block_rsv->size - block_rsv->reserved;
+> -	if (block_rsv->qgroup_rsv_reserved < block_rsv->qgroup_rsv_size)
+> -		*qgroup_bytes = block_rsv->qgroup_rsv_size -
+> -			block_rsv->qgroup_rsv_reserved;
+> -	spin_unlock(&block_rsv->lock);
+> -}
+> -
+> -/**
+> - * btrfs_inode_rsv_refill - refill the inode block rsv.
+> - * @inode - the inode we are refilling.
+> - * @flush - the flushing restriction.
+> - *
+> - * Essentially the same as btrfs_block_rsv_refill, except it uses the
+> - * block_rsv->size as the minimum size.  We'll either refill the missing amount
+> - * or return if we already have enough space.  This will also handle the reserve
+> - * tracepoint for the reserved amount.
+> - */
+> -static int btrfs_inode_rsv_refill(struct btrfs_inode *inode,
+> -				  enum btrfs_reserve_flush_enum flush)
+> -{
+> -	struct btrfs_root *root = inode->root;
+> -	struct btrfs_block_rsv *block_rsv = &inode->block_rsv;
+> -	u64 num_bytes, last = 0;
+> -	u64 qgroup_num_bytes;
+> -	int ret = -ENOSPC;
+> -
+> -	calc_refill_bytes(block_rsv, &num_bytes, &qgroup_num_bytes);
+> -	if (num_bytes == 0)
+> -		return 0;
+> -
+> -	do {
+> -		ret = btrfs_qgroup_reserve_meta_prealloc(root, qgroup_num_bytes,
+> -							 true);
+> -		if (ret)
+> -			return ret;
+> -		ret = reserve_metadata_bytes(root, block_rsv, num_bytes, flush);
+> -		if (ret) {
+> -			btrfs_qgroup_free_meta_prealloc(root, qgroup_num_bytes);
+> -			last = num_bytes;
+> -			/*
+> -			 * If we are fragmented we can end up with a lot of
+> -			 * outstanding extents which will make our size be much
+> -			 * larger than our reserved amount.
+> -			 *
+> -			 * If the reservation happens here, it might be very
+> -			 * big though not needed in the end, if the delalloc
+> -			 * flushing happens.
+> -			 *
+> -			 * If this is the case try and do the reserve again.
+> -			 */
+> -			if (flush == BTRFS_RESERVE_FLUSH_ALL)
+> -				calc_refill_bytes(block_rsv, &num_bytes,
+> -						   &qgroup_num_bytes);
+> -			if (num_bytes == 0)
+> -				return 0;
+> -		}
+> -	} while (ret && last != num_bytes);
+> -
+> -	if (!ret) {
+> -		block_rsv_add_bytes(block_rsv, num_bytes, false);
+> -		trace_btrfs_space_reservation(root->fs_info, "delalloc",
+> -					      btrfs_ino(inode), num_bytes, 1);
+> -
+> -		/* Don't forget to increase qgroup_rsv_reserved */
+> -		spin_lock(&block_rsv->lock);
+> -		block_rsv->qgroup_rsv_reserved += qgroup_num_bytes;
+> -		spin_unlock(&block_rsv->lock);
+> -	}
+> -	return ret;
+> -}
+> -
+>  static u64 __btrfs_block_rsv_release(struct btrfs_fs_info *fs_info,
+>  				     struct btrfs_block_rsv *block_rsv,
+>  				     u64 num_bytes, u64 *qgroup_to_release)
+> @@ -6190,9 +6111,26 @@ static void btrfs_calculate_inode_block_rsv_size(struct btrfs_fs_info *fs_info,
+>  	spin_unlock(&block_rsv->lock);
+>  }
+>  
+> +static inline void calc_inode_reservations(struct btrfs_fs_info *fs_info,
+> +					   struct btrfs_inode *inode,
+> +					   u64 num_bytes, u64 *meta_reserve,
+> +					   u64 *qgroup_reserve)
+> +{
+> +	u64 nr_extents = count_max_extents(num_bytes);
+> +	u64 csum_leaves = btrfs_csum_bytes_to_leaves(fs_info, num_bytes);
+> +
+> +	/* We add one for the inode update at finish ordered time. */
+> +	*meta_reserve = btrfs_calc_trans_metadata_size(fs_info,
+> +						nr_extents + csum_leaves + 1);
+> +	*qgroup_reserve = nr_extents * fs_info->nodesize;
+> +}
+> +
+>  int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes)
+>  {
+> -	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+> +	struct btrfs_root *root = inode->root;
+> +	struct btrfs_fs_info *fs_info = root->fs_info;
+> +	struct btrfs_block_rsv *block_rsv = &inode->block_rsv;
+> +	u64 meta_reserve, qgroup_reserve;
+>  	unsigned nr_extents;
+>  	enum btrfs_reserve_flush_enum flush = BTRFS_RESERVE_FLUSH_ALL;
+>  	int ret = 0;
+> @@ -6222,7 +6160,31 @@ int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes)
+>  
+>  	num_bytes = ALIGN(num_bytes, fs_info->sectorsize);
+>  
+> -	/* Add our new extents and calculate the new rsv size. */
+> +	/*
+> +	 * Josef, we always want to do it this way, every other way is wrong and
+> +	 * ends in tears.  Pre-reserving the amount we are going to add will
+> +	 * always be the right way, because otherwise if we have enough
+> +	 * parallelism we could end up with thousands of inodes all holding
+> +	 * little bits of reservations they were able to make previously and the
+> +	 * only way to reclaim that space is to ENOSPC out the operations and
+> +	 * clear everything out and try again, which is shitty.  This way we
+> +	 * just over-reserve slightly, and clean up the mess when we are done.
+> +	 */
+> +	calc_inode_reservations(fs_info, inode, num_bytes, &meta_reserve,
+> +				&qgroup_reserve);
+> +	ret = btrfs_qgroup_reserve_meta_prealloc(root, qgroup_reserve, true);
+> +	if (ret)
+> +		goto out_fail;
+> +	ret = reserve_metadata_bytes(root, block_rsv, meta_reserve, flush);
+> +	if (ret)
+> +		goto out_qgroup;
+> +
+> +	/*
+> +	 * Now we need to update our outstanding extents and csum bytes _first_
+> +	 * and then add the reservation to the block_rsv.  This keeps us from
+> +	 * racing with an ordered completion or some such that would think it
+> +	 * needs to free the reservation we just made.
+> +	 */
+>  	spin_lock(&inode->lock);
+>  	nr_extents = count_max_extents(num_bytes);
+>  	btrfs_mod_outstanding_extents(inode, nr_extents);
+> @@ -6230,22 +6192,21 @@ int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes)
+>  	btrfs_calculate_inode_block_rsv_size(fs_info, inode);
+>  	spin_unlock(&inode->lock);
+>  
+> -	ret = btrfs_inode_rsv_refill(inode, flush);
+> -	if (unlikely(ret))
+> -		goto out_fail;
+> +	/* Now we can safely add our space to our block rsv. */
+> +	block_rsv_add_bytes(block_rsv, meta_reserve, false);
+> +	trace_btrfs_space_reservation(root->fs_info, "delalloc",
+> +				      btrfs_ino(inode), meta_reserve, 1);
+> +
+> +	spin_lock(&block_rsv->lock);
+> +	block_rsv->qgroup_rsv_reserved += qgroup_reserve;
+> +	spin_unlock(&block_rsv->lock);
+>  
+>  	if (delalloc_lock)
+>  		mutex_unlock(&inode->delalloc_mutex);
+>  	return 0;
+> -
+> +out_qgroup:
+> +	btrfs_qgroup_free_meta_prealloc(root, qgroup_reserve);
+>  out_fail:
+> -	spin_lock(&inode->lock);
+> -	nr_extents = count_max_extents(num_bytes);
+> -	btrfs_mod_outstanding_extents(inode, -nr_extents);
+> -	inode->csum_bytes -= num_bytes;
+> -	btrfs_calculate_inode_block_rsv_size(fs_info, inode);
+> -	spin_unlock(&inode->lock);
+> -
+>  	btrfs_inode_rsv_release(inode, true);
+>  	if (delalloc_lock)
+>  		mutex_unlock(&inode->delalloc_mutex);
+> 

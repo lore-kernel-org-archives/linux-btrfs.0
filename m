@@ -2,350 +2,111 @@ Return-Path: <SRS0=I+S+=SR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 284C0C10F0E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Apr 2019 08:31:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6881EC10F0E
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Apr 2019 08:42:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 27C9620833
-	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Apr 2019 08:31:32 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1555317092;
-	bh=j9x5ykCVDRuLFTLQis2LKKcGdwb2lpggxQXG0rEM3pI=;
-	h=From:To:Cc:Subject:Date:List-ID:From;
-	b=bouQFdysG/7/rM22BPPategdSZsIRJQBDFMB4WjhrmIckSXw3KMDBSJZOtCBioxkL
-	 pw3wjWmz67alFwCYjOu5j4uHExUKyuNCF/T6ew4BoxcEP99GOMrymkdB0aQ8FDDY7S
-	 lEBEVmB/KDbSUZKFIP8f9t7P7aYtj6rMA2xauQJ0=
+	by mail.kernel.org (Postfix) with ESMTP id 4290520656
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Apr 2019 08:42:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726817AbfDOIbb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 15 Apr 2019 04:31:31 -0400
-Received: from mail.kernel.org ([198.145.29.99]:56300 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725779AbfDOIbb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 15 Apr 2019 04:31:31 -0400
-Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 66B7120651;
-        Mon, 15 Apr 2019 08:31:29 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1555317090;
-        bh=j9x5ykCVDRuLFTLQis2LKKcGdwb2lpggxQXG0rEM3pI=;
-        h=From:To:Cc:Subject:Date:From;
-        b=Hj3QJrtqVouPnwev/1Fn/9tHbOcNpC+65AECRSsyjxDxXU2uszot1fMdkExp6ayZN
-         XJfqKH3+JPQa2gYM3f2q0S117IfYKuv/JlkM0T75LgL9s4fs1qpxBy3BOkgg5IBlvx
-         eeI/9eQr8wdfXP0efq+e9juCe1uA42ALtxOdvl6I=
-From:   fdmanana@kernel.org
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] btrfs: test send with deduplication running concurrently
-Date:   Mon, 15 Apr 2019 09:31:21 +0100
-Message-Id: <20190415083121.2338-1-fdmanana@kernel.org>
-X-Mailer: git-send-email 2.11.0
+        id S1726214AbfDOImD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 15 Apr 2019 04:42:03 -0400
+Received: from mx2.suse.de ([195.135.220.15]:46948 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725828AbfDOImD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 15 Apr 2019 04:42:03 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id DC12AAEC8;
+        Mon, 15 Apr 2019 08:42:01 +0000 (UTC)
+Date:   Mon, 15 Apr 2019 10:42:01 +0200
+From:   Johannes Thumshirn <jthumshirn@suse.de>
+To:     Christoph Anton Mitterer <calestyo@scientia.net>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: delayed_refs has NO entry / btrfs_update_root:136: Aborting
+ unused transaction(No space left).
+Message-ID: <20190415084200.GA7586@linux-x5ow.site>
+References: <b2a668d7124f1d3e410367f587926f622b3f03a4.camel@scientia.net>
+ <d35fa8de087c746f9affb789cf3ab599a3d042c1.camel@scientia.net>
+ <9ff84820-5d7e-f541-6adc-29c4949d44e0@suse.de>
+ <e92b879b03f4838cc05c1b80d20917d3be1ba7f7.camel@scientia.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <e92b879b03f4838cc05c1b80d20917d3be1ba7f7.camel@scientia.net>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+On Sat, Apr 13, 2019 at 12:46:28AM +0200, Christoph Anton Mitterer wrote:
+> On Wed, 2019-03-20 at 10:59 +0100, Johannes Thumshirn wrote:
+> > First of all, have you tried a more recent kernel than the Debian
+> > kernels you referenced? E.g. Linus' current master or David's misc-
+> > next
+> > branch? Just so we don't try to hunt down a bug that's already fixed.
+> 
+> I haven't and that's a bit difficult for me unless it's packaged by the
+> distro (policy reasons).
+> 
+> 
+> Also giving out the image is a bit problematic as it's huge (8TB).
+> 
+> > Also if you can still reproduce the bug, please activate tracing in
+> > btrfs and send the trace output.
+> 
+> How would I do that?
+> 
+> 
+> In the meantime, I think I can reproduce it with fresh images so could
+> you try the following:
+> 
+> # truncate --size 1G image
+> # mkfs.btrfs image
+> 
+> # mount -o compress image /mnt
+> # cd /mnt
+> 
+> # # create some data e.g.:
+> # tar xaf /usr/src/linux-source-4.19.tar.xz
+> # cd
+> # umount /mnt
+> 
+> # losetup -r -f image
+> # mount -o compress /dev/loop0 /mnt
+> 
+> # find /mnt -type f -exec filefrag -v {} \;
+> 
 
-Stress send running in parallel with deduplication against files that
-belong to the snapshots used by send. The goal is to hit assertion failures
-and BUG_ONs when send is running, or send finding an inconsistent snapshot
-that leads to a failure (reported in dmesg/syslog) and results in an EIO
-error returned to user space. The test needs big trees (snapshots) with
-large differences between the parent and send snapshots in order to hit
-such issues with a good probability.
+I'll give it a try.
 
-This currently fails in btrfs, and there is a patch for the linux kernel
-that fixes it and is titled:
 
-  "Btrfs: fix race between send and deduplication that lead to failures
-   and crashes"
+> 
+> And there your kernel log will explode ;-)
+> 
+> The culprit seems to be the device itself being read-only i.e.
+> losetup's -r, respectively blockdev --setro DEVICE which I've used
+> previously.
+> 
+> If you repeat the above from the losetup point, but with -r ...
+> everything works fine.
+> Haven't checked whether -o compress actually makes a difference.
+> 
+> 
+> Cheers,
+> Chris.
+> 
+> 
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- tests/btrfs/186     | 247 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/186.out |   3 +
- tests/btrfs/group   |   1 +
- 3 files changed, 251 insertions(+)
- create mode 100755 tests/btrfs/186
- create mode 100644 tests/btrfs/186.out
-
-diff --git a/tests/btrfs/186 b/tests/btrfs/186
-new file mode 100755
-index 00000000..ca1a5638
---- /dev/null
-+++ b/tests/btrfs/186
-@@ -0,0 +1,247 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (C) 2019 SUSE Linux Products GmbH. All Rights Reserved.
-+#
-+# FSQA Test No. 186
-+#
-+# Stress send running in parallel with deduplication against files that belong
-+# to the snapshots used by send. The goal is to hit assertion failures and
-+# BUG_ONs when send is running, or send finding an inconsistent snapshot that
-+# leads to a failure (reported in dmesg/syslog) and results in an EIO error
-+# returned to user space. The test needs big trees (snapshots) with large
-+# differences between the parent and send snapshots in order to hit such issues
-+# with a good probability.
-+#
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/attr
-+. ./common/filter
-+. ./common/reflink
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch_dedupe
-+_require_attrs
-+
-+rm -f $seqres.full
-+
-+_scratch_mkfs >>$seqres.full 2>&1
-+_scratch_mount
-+
-+test_log_dir=$TEST_DIR/btrfs-test-$seq
-+
-+rm -fr $test_log_dir
-+mkdir $test_log_dir
-+
-+dedupe_two_files()
-+{
-+	trap "wait; exit" SIGTERM
-+
-+	local log_file=$1
-+	local f1=$(find $SCRATCH_MNT/snap1 -type f | shuf -n 1)
-+	local f2=$(find $SCRATCH_MNT/snap2 -type f | shuf -n 1)
-+
-+	if (( RANDOM % 2 )); then
-+		local tmp=$f1
-+		f1=$f2
-+		f2=$tmp
-+	fi
-+
-+	$XFS_IO_PROG -r -c "dedupe $f1 0 0 64K" $f2 >/dev/null 2>>$log_file
-+}
-+
-+dedupe_files_loop()
-+{
-+	trap "wait; exit" SIGTERM
-+
-+	while true; do
-+		for ((i = 1; i <= 10; i++)); do
-+			dedupe_two_files "${test_log_dir}/dedup_${i}.log" &
-+		done
-+		wait
-+	done
-+}
-+
-+full_send_loop()
-+{
-+	trap "wait; exit" SIGTERM
-+
-+	local count=$1
-+
-+	for ((i = 1; i <= $count; i++)); do
-+		local send_stream_file=$send_files_dir/full_$i.send
-+
-+		# The send command may run successfully or it might return an
-+		# error. If the error happens due to the kernel ioctl returning
-+		# -EAGAIN, it's because a concurrent deduplication is ongoing
-+		# against the same root (snapshot) send tried to work on.
-+		# We will check later (in dmesg/syslog) for errors other then
-+		# the expected one due to concurrent deduplication and for
-+		# any reported error from send other than EAGAIN.
-+		$BTRFS_UTIL_PROG send --no-data -f /dev/null $SCRATCH_MNT/snap1 \
-+			>/dev/null 2>>$test_log_dir/full_send.log
-+	done
-+}
-+
-+inc_send_loop()
-+{
-+	trap "wait; exit" SIGTERM
-+
-+	local count=$1
-+
-+	for ((i = 1; i <= $count; i++)); do
-+		# The send command may run successfully or it might return an
-+		# error. If the error happens due to the kernel ioctl returning
-+		# -EAGAIN, it's because a concurrent deduplication is ongoing
-+		# against the same root (snapshot) send tried to work on.
-+		# We will check later (in dmesg/syslog) for errors other then
-+		# the expected one due to concurrent deduplication and for
-+		# any reported error from send other than EAGAIN.
-+		$BTRFS_UTIL_PROG send --no-data -f /dev/null \
-+			-p $SCRATCH_MNT/snap1 $SCRATCH_MNT/snap2 >/dev/null \
-+			2>>$test_log_dir/inc_send.log
-+	done
-+}
-+
-+# Number of files created before first snapshot. Must be divisable by 4.
-+nr_initial_files=50000
-+# Number of files created after the first snapshot. Must be divisable by 4.
-+nr_more_files=50000
-+
-+# Create initial files.
-+step=$((nr_initial_files / 4))
-+for ((n = 0; n < 4; n++)); do
-+	offset=$((step * $n))
-+	(
-+		for ((i = 1; i <= step; i++)); do
-+			$XFS_IO_PROG -f -c "pwrite -S 0xea 0 64K" \
-+				$SCRATCH_MNT/file_$((i + offset)) >/dev/null
-+		done
-+	) &
-+	create_pids[$n]=$!
-+done
-+wait ${create_pids[@]}
-+
-+$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/snap1 \
-+	| _filter_scratch
-+
-+# Add some more files, so that that are substantial differences between the
-+# two test snapshots used for an incremental send later.
-+
-+# Create more files.
-+step=$((nr_more_files / 4))
-+for ((n = 0; n < 4; n++)); do
-+	offset=$((nr_initial_files + step * $n))
-+	(
-+		for ((i = 1; i <= step; i++)); do
-+			$XFS_IO_PROG -f -c "pwrite -S 0xea 0 64K" \
-+				$SCRATCH_MNT/file_$((i + offset)) >/dev/null
-+		done
-+	) &
-+	create_pids[$n]=$!
-+done
-+wait ${create_pids[@]}
-+
-+# Add some xattrs to all files, so that every leaf and node of the fs tree is
-+# COWed. Adding more files does only adds leafs and nodes to the tree's right
-+# side, since inode numbers are based on a counter and form the first part
-+# (objectid) of btree keys (we only modifying the right most leaf of the tree).
-+# Use large values for the xattrs to quickly increase the height of the tree.
-+xattr_value=$(printf '%0.sX' $(seq 1 3800))
-+
-+# Split the work into 4 workers working on consecutive ranges to avoid contention
-+# on the same leafs as much as possible.
-+step=$(((nr_more_files + nr_initial_files) / 4))
-+for ((n = 0; n < 4; n++)); do
-+	offset=$((step * $n))
-+	(
-+		for ((i = 1; i <= step; i++)); do
-+			$SETFATTR_PROG -n 'user.x1' -v $xattr_value \
-+				$SCRATCH_MNT/file_$((i + offset))
-+		done
-+	) &
-+	setxattr_pids[$n]=$!
-+done
-+wait ${setxattr_pids[@]}
-+
-+$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/snap2 \
-+	| _filter_scratch
-+
-+full_send_loop 5 &
-+full_send_pid=$!
-+
-+inc_send_loop 10 &
-+inc_send_pid=$!
-+
-+dedupe_files_loop &
-+dedupe_pid=$!
-+
-+wait $full_send_pid
-+wait $inc_send_pid
-+
-+kill $dedupe_pid
-+wait $dedupe_pid
-+
-+# Check for errors messages that happen due to inconsistent snapshot caused by
-+# deduplication running in parallel with send, causing btree nodes/leafs to
-+# disappear and getting reused while send is using them.
-+#
-+# Example messages:
-+#
-+# BTRFS error (device sdc): did not find backref in send_root. inode=63292, \
-+#     offset=0, disk_byte=5228134400 found extent=5228134400
-+#
-+# BTRFS error (device sdc): parent transid verify failed on 32243712 wanted 24 \
-+#     found 27
-+#
-+_dmesg_since_test_start | egrep -e '\bBTRFS error \(device [A-Za-z0-9]*?\): '
-+
-+# Check for errors the send ioctl returned. Only EAGAIN errors are expected,
-+# every other error is unexpected and must make the test fail.
-+
-+echo "Errors from full send operations:" >>$seqres.full
-+egrep -v -e "At subvol $SCRATCH_MNT/snap1" \
-+	-e "ERROR: send ioctl failed with -11: Resource temporarily unavailable" \
-+	$test_log_dir/full_send.log >>$seqres.full
-+if [ $? -eq 0 ]; then
-+	echo "Unexpected errors from full send operations, check $seqres.full"
-+else
-+	echo "none" >>$seqres.full
-+fi
-+
-+echo "Errors from incremental send operations:" >>$seqres.full
-+egrep -v -e "At subvol $SCRATCH_MNT/snap2" \
-+	-e "ERROR: send ioctl failed with -11: Resource temporarily unavailable" \
-+	$test_log_dir/inc_send.log >>$seqres.full
-+if [ $? -eq 0 ]; then
-+	echo "Unexpected errors from incremental send operations, check $seqres.full"
-+else
-+	echo "none" >>$seqres.full
-+fi
-+
-+# Check for errors from deduplication. Only EAGIN errors are expected.
-+echo "Errors from deduplication operations:" >>$seqres.full
-+egrep -v -e "XFS_IOC_FILE_EXTENT_SAME: Resource temporarily unavailable" \
-+	${test_log_dir}/dedup_*.log >>$seqres.full
-+if [ $? -eq 0 ]; then
-+	echo "Unexpected errors from deduplication operations, check $seqres.full"
-+else
-+	echo "none" >>$seqres.full
-+fi
-+
-+status=0
-+exit
-diff --git a/tests/btrfs/186.out b/tests/btrfs/186.out
-new file mode 100644
-index 00000000..42bcc0e6
---- /dev/null
-+++ b/tests/btrfs/186.out
-@@ -0,0 +1,3 @@
-+QA output created by 186
-+Create a readonly snapshot of 'SCRATCH_MNT' in 'SCRATCH_MNT/snap1'
-+Create a readonly snapshot of 'SCRATCH_MNT' in 'SCRATCH_MNT/snap2'
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 6b81ecce..8bfda602 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -188,3 +188,4 @@
- 183 auto quick clone compress punch
- 184 auto quick volume
- 185 auto quick send volume
-+186 auto send dedupe clone
 -- 
-2.11.0
-
+Johannes Thumshirn                            SUSE Labs Filesystems
+jthumshirn@suse.de                                +49 911 74053 689
+SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
+GF: Felix Imendörffer, Mary Higgins, Sri Rasiah
+HRB 21284 (AG Nürnberg)
+Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850

@@ -2,303 +2,156 @@ Return-Path: <SRS0=I+S+=SR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A1BDBC10F11
-	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Apr 2019 05:36:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9A13AC10F11
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Apr 2019 08:29:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6D2362075B
-	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Apr 2019 05:36:20 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 663DB20651
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Apr 2019 08:29:07 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1555316947;
+	bh=aT2S75WC6rXiU9V6vQBxBka+egbS1F+jaDDzpsahr8s=;
+	h=From:To:Subject:Date:List-ID:From;
+	b=R0+8ef9M0V4xYbbDah2xE9KhxakPfehIlh6GZYrb3duHYlTqoGhwJQUaGXX3g5FWb
+	 wgLVqJn9soywGnWWbMr8o43onPJPMCP7AJ3mIgrDq6KiA7xIasRMDQihfveXIq3bry
+	 wb14CjoR7Bplsiel07lo44sPIbyffnI77n5dx2VE=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726057AbfDOFgT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 15 Apr 2019 01:36:19 -0400
-Received: from mx2.suse.de ([195.135.220.15]:52720 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725779AbfDOFgT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 15 Apr 2019 01:36:19 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 87AFFACEE
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Apr 2019 05:36:17 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
+        id S1726839AbfDOI3G (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 15 Apr 2019 04:29:06 -0400
+Received: from mail.kernel.org ([198.145.29.99]:55402 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726811AbfDOI3G (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 15 Apr 2019 04:29:06 -0400
+Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 282AC20651
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Apr 2019 08:29:03 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1555316944;
+        bh=aT2S75WC6rXiU9V6vQBxBka+egbS1F+jaDDzpsahr8s=;
+        h=From:To:Subject:Date:From;
+        b=b5ues33ncPio7OuvH8eZnx3so0gRgvCkxQmSYQy8wRO6xX2QocBepOQLK9//pG+XV
+         Yudk8eCWRcHWcb5Tr8JcUXIiuboSZOffuiPMPNFZH2syDAtpJE1B+Zq7jLgUJ47s9Z
+         OkeVTrVr7G9vvdNGylipgBkZJXZ1VlE2b+kOIR2g=
+From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2.1 3/3] btrfs: Introduce new mount option to skip block group items scan
-Date:   Mon, 15 Apr 2019 13:36:08 +0800
-Message-Id: <20190415053608.29003-4-wqu@suse.com>
-X-Mailer: git-send-email 2.21.0
-In-Reply-To: <20190415053608.29003-1-wqu@suse.com>
-References: <20190415053608.29003-1-wqu@suse.com>
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Subject: [PATCH] Btrfs: do not start a transaction during fiemap
+Date:   Mon, 15 Apr 2019 09:29:00 +0100
+Message-Id: <20190415082900.2023-1-fdmanana@kernel.org>
+X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[PROBLEM]
-There are some reports of corrupted fs which can't be mounted due to
-corrupted extent tree.
+From: Filipe Manana <fdmanana@suse.com>
 
-However under such situation, it's more likely the fs/subvolume trees
-are still fine.
+During fiemap, for regular extents (non inline) we need to check if they
+are shared and if they are, set the shared bit. Checking if an extent is
+shared requires checking the delayed references of the currently running
+transaction, since some reference might have not yet hit the extent tree
+and be only in the in-memory delayed references.
 
-For such case we normally go btrfs-restore and salvage as much as we
-can. However btrfs-restore can't list subvolumes as "btrfs subv list",
-making it harder to restore a fs.
+However we were using a transaction join for this, which creates a new
+transaction when there is no transaction currently running. That means
+that two more potential failures can happen: creating the transaction and
+committing it. Further, if no write activity is currently happening in the
+system, and fiemap calls keep being done, we end up creating and
+committing transactions that do nothing.
 
-[ENHANCEMENT]
-This patch will introduce a new mount option "rescue=skip_bg" to skip
-the mount time block group scan, and use chunk info purely to populate
-fake block group cache.
+In some extreme cases this can result in the commit of the transaction
+created by fiemap to fail with ENOSPC when updating the root item of a
+subvolume tree because a join does not reserve any space, leading to a
+trace like the following:
 
-The mount option has the following dependency:
-- RO mount
-  Obviously.
+ heisenberg kernel: ------------[ cut here ]------------
+ heisenberg kernel: BTRFS: Transaction aborted (error -28)
+ heisenberg kernel: WARNING: CPU: 0 PID: 7137 at fs/btrfs/root-tree.c:136 btrfs_update_root+0x22b/0x320 [btrfs]
+(...)
+ heisenberg kernel: CPU: 0 PID: 7137 Comm: btrfs-transacti Not tainted 4.19.0-4-amd64 #1 Debian 4.19.28-2
+ heisenberg kernel: Hardware name: FUJITSU LIFEBOOK U757/FJNB2A5, BIOS Version 1.21 03/19/2018
+ heisenberg kernel: RIP: 0010:btrfs_update_root+0x22b/0x320 [btrfs]
+(...)
+ heisenberg kernel: RSP: 0018:ffffb5448828bd40 EFLAGS: 00010286
+ heisenberg kernel: RAX: 0000000000000000 RBX: ffff8ed56bccef50 RCX: 0000000000000006
+ heisenberg kernel: RDX: 0000000000000007 RSI: 0000000000000092 RDI: ffff8ed6bda166a0
+ heisenberg kernel: RBP: 00000000ffffffe4 R08: 00000000000003df R09: 0000000000000007
+ heisenberg kernel: R10: 0000000000000000 R11: 0000000000000001 R12: ffff8ed63396a078
+ heisenberg kernel: R13: ffff8ed092d7c800 R14: ffff8ed64f5db028 R15: ffff8ed6bd03d068
+ heisenberg kernel: FS:  0000000000000000(0000) GS:ffff8ed6bda00000(0000) knlGS:0000000000000000
+ heisenberg kernel: CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+ heisenberg kernel: CR2: 00007f46f75f8000 CR3: 0000000310a0a002 CR4: 00000000003606f0
+ heisenberg kernel: DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+ heisenberg kernel: DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+ heisenberg kernel: Call Trace:
+ heisenberg kernel:  commit_fs_roots+0x166/0x1d0 [btrfs]
+ heisenberg kernel:  ? _cond_resched+0x15/0x30
+ heisenberg kernel:  ? btrfs_run_delayed_refs+0xac/0x180 [btrfs]
+ heisenberg kernel:  btrfs_commit_transaction+0x2bd/0x870 [btrfs]
+ heisenberg kernel:  ? start_transaction+0x9d/0x3f0 [btrfs]
+ heisenberg kernel:  transaction_kthread+0x147/0x180 [btrfs]
+ heisenberg kernel:  ? btrfs_cleanup_transaction+0x530/0x530 [btrfs]
+ heisenberg kernel:  kthread+0x112/0x130
+ heisenberg kernel:  ? kthread_bind+0x30/0x30
+ heisenberg kernel:  ret_from_fork+0x35/0x40
+ heisenberg kernel: ---[ end trace 05de912e30e012d9 ]---
 
-- No log tree or use nologreplay mount option
+Since fiemap (and btrfs_check_shared()) is a read-only operation, do not do
+a transaction join to avoid the overhead of creating a new transaction (if
+there is currently no running transaction) and introducing a potential
+point of failure when the new transaction gets committed, instead use a
+transaction attach to grab a handle for the currently running transaction
+if any.
 
-- No way to remoutn RW
-  Similar to nologreplay option.
-
-This should allow kernel to accept most extent tree corruption, and
-salvage data and subvolume info.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reported-by: Christoph Anton Mitterer <calestyo@scientia.net>
+Link: https://lore.kernel.org/linux-btrfs/b2a668d7124f1d3e410367f587926f622b3f03a4.camel@scientia.net/
+Fixes: afce772e87c36c ("btrfs: fix check_shared for fiemap ioctl")
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/ctree.h       |  1 +
- fs/btrfs/disk-io.c     | 29 ++++++++++++++++++---
- fs/btrfs/extent-tree.c | 59 ++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/super.c       | 24 ++++++++++++++++-
- fs/btrfs/volumes.c     |  7 +++++
- 5 files changed, 115 insertions(+), 5 deletions(-)
+ fs/btrfs/backref.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index b3642367a595..4636c60e2601 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1442,6 +1442,7 @@ static inline u32 BTRFS_MAX_XATTR_SIZE(const struct btrfs_fs_info *info)
- #define BTRFS_MOUNT_FREE_SPACE_TREE	(1 << 26)
- #define BTRFS_MOUNT_NOLOGREPLAY		(1 << 27)
- #define BTRFS_MOUNT_REF_VERIFY		(1 << 28)
-+#define BTRFS_MOUNT_SKIP_BG		(1 << 29)
- 
- #define BTRFS_DEFAULT_COMMIT_INTERVAL	(30)
- #define BTRFS_DEFAULT_MAX_INLINE	(2048)
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 6fe9197f6ee4..711d01f9a614 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2327,11 +2327,15 @@ static int btrfs_read_roots(struct btrfs_fs_info *fs_info)
- 
- 	root = btrfs_read_tree_root(tree_root, &location);
- 	if (IS_ERR(root)) {
--		ret = PTR_ERR(root);
--		goto out;
-+		if (!btrfs_test_opt(fs_info, SKIP_BG)) {
-+			ret = PTR_ERR(root);
-+			goto out;
-+		}
-+		fs_info->extent_root = NULL;
-+	} else {
-+		set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
-+		fs_info->extent_root = root;
- 	}
--	set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
--	fs_info->extent_root = root;
- 
- 	location.objectid = BTRFS_DEV_TREE_OBJECTID;
- 	root = btrfs_read_tree_root(tree_root, &location);
-@@ -2949,6 +2953,23 @@ int open_ctree(struct super_block *sb,
- 		goto fail_alloc;
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index 11459fe84a29..876e6bb93797 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -1460,8 +1460,8 @@ int btrfs_find_all_roots(struct btrfs_trans_handle *trans,
+  * callers (such as fiemap) which want to know whether the extent is
+  * shared but do not need a ref count.
+  *
+- * This attempts to allocate a transaction in order to account for
+- * delayed refs, but continues on even when the alloc fails.
++ * This attempts to attach to the running transaction in order to account for
++ * delayed refs, but continues on even when no running transaction exists.
+  *
+  * Return: 0 if extent is not shared, 1 if it is shared, < 0 on error.
+  */
+@@ -1489,8 +1489,12 @@ int btrfs_check_shared(struct btrfs_root *root, u64 inum, u64 bytenr)
+ 		return -ENOMEM;
  	}
  
-+	/* Skip bg needs RO and no log tree replay */
-+	if (btrfs_test_opt(fs_info, SKIP_BG)) {
-+		if (!sb_rdonly(sb)) {
-+			btrfs_err(fs_info,
-+		"skip_bg mount option can only be used with read-only mount");
-+			err = -EINVAL;
-+			goto fail_alloc;
-+		}
-+		if (btrfs_super_log_root(disk_super) &&
-+		    !btrfs_test_opt(fs_info, NOTREELOG)) {
-+			btrfs_err(fs_info,
-+	"skip_bg must be used with notreelog mount option for dirty log");
-+			err = -EINVAL;
-+			goto fail_alloc;
-+		}
-+	}
-+
- 	ret = btrfs_init_workqueues(fs_info, fs_devices);
- 	if (ret) {
- 		err = ret;
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index c5880329ae37..a073d2f9524a 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -10441,6 +10441,62 @@ static int check_chunk_block_group_mappings(struct btrfs_fs_info *fs_info)
- 	return ret;
- }
- 
-+static int fill_dummy_bgs(struct btrfs_fs_info *fs_info)
-+{
-+	struct extent_map_tree *em_tree = &fs_info->mapping_tree.map_tree;
-+	struct extent_map *em;
-+	struct map_lookup *map;
-+	struct btrfs_block_group_cache *cache;
-+	struct btrfs_space_info *space_info;
-+	struct rb_node *node;
-+	int ret = 0;
-+
-+	read_lock(&em_tree->lock);
-+	for (node = rb_first_cached(&em_tree->map); node;
-+	     node = rb_next(node)) {
-+		em = rb_entry(node, struct extent_map, rb_node);
-+		map = em->map_lookup;
-+		cache = btrfs_create_block_group_cache(fs_info, em->start,
-+						       em->len);
-+		if (!cache) {
-+			ret = -ENOMEM;
+-	trans = btrfs_join_transaction(root);
++	trans = btrfs_attach_transaction(root);
+ 	if (IS_ERR(trans)) {
++		if (PTR_ERR(trans) != -ENOENT) {
++			ret = PTR_ERR(trans);
 +			goto out;
 +		}
-+
-+		/* Fill dummy cache as FULL */
-+		cache->flags = map->type;
-+		cache->last_byte_to_unpin = (u64)-1;
-+		cache->cached = BTRFS_CACHE_FINISHED;
-+		btrfs_set_block_group_used(&cache->item, em->len);
-+		btrfs_set_block_group_chunk_objectid(&cache->item, em->start);
-+		btrfs_set_block_group_flags(&cache->item, map->type);
-+		ret = exclude_super_stripes(cache);
-+		if (ret) {
-+			free_excluded_extents(cache);
-+			btrfs_put_block_group(cache);
-+			goto out;
-+		}
-+		free_excluded_extents(cache);
-+		ret = btrfs_add_block_group_cache(fs_info, cache);
-+		if (ret) {
-+			btrfs_remove_free_space_cache(cache);
-+			btrfs_put_block_group(cache);
-+			goto out;
-+		}
-+		update_space_info(fs_info, cache->flags, em->start, em->len,
-+				  cache->bytes_super, &space_info);
-+		cache->space_info = space_info;
-+		link_block_group(cache);
-+
-+		set_avail_alloc_bits(fs_info, cache->flags);
-+		if (btrfs_chunk_readonly(fs_info, em->start))
-+			inc_block_group_ro(cache, 1);
-+	}
+ 		trans = NULL;
+ 		down_read(&fs_info->commit_root_sem);
+ 	} else {
+@@ -1523,6 +1527,7 @@ int btrfs_check_shared(struct btrfs_root *root, u64 inum, u64 bytenr)
+ 	} else {
+ 		up_read(&fs_info->commit_root_sem);
+ 	}
 +out:
-+	read_unlock(&em_tree->lock);
-+	return ret;
-+}
-+
- int btrfs_read_block_groups(struct btrfs_fs_info *info)
- {
- 	struct btrfs_path *path;
-@@ -10455,6 +10511,9 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
- 	u64 feature;
- 	int mixed;
- 
-+	if (btrfs_test_opt(info, SKIP_BG))
-+		return fill_dummy_bgs(info);
-+
- 	feature = btrfs_super_incompat_flags(info->super_copy);
- 	mixed = !!(feature & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS);
- 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 87968b9d5499..f27a7b1917f7 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -340,7 +340,7 @@ enum {
- 	Opt_ref_verify,
- #endif
- 	/* Rescue options */
--	Opt_rescue, Opt_usebackuproot, Opt_nologreplay,
-+	Opt_rescue, Opt_usebackuproot, Opt_nologreplay, Opt_rescue_skip_bg,
- 	Opt_err,
- };
- 
-@@ -416,6 +416,7 @@ static const match_table_t tokens = {
- static const match_table_t rescue_tokens = {
- 	{Opt_usebackuproot, "use_backup_root"},
- 	{Opt_nologreplay, "no_log_replay"},
-+	{Opt_rescue_skip_bg, "skip_bg"},
- 	{Opt_err, NULL},
- };
- 
-@@ -448,6 +449,10 @@ static int parse_rescue_options(struct btrfs_fs_info *info, const char *options)
- 			btrfs_set_and_info(info, NOLOGREPLAY,
- 					   "disabling log replay at mount time");
- 			break;
-+		case Opt_rescue_skip_bg:
-+			btrfs_set_and_info(info, SKIP_BG,
-+				"skip mount time block group searching");
-+			break;
- 		case Opt_err:
- 			btrfs_info(info, "unrecognized rescue option '%s'", p);
- 			ret = -EINVAL;
-@@ -1367,6 +1372,8 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
- 		seq_puts(seq, ",notreelog");
- 	if (btrfs_test_opt(info, NOLOGREPLAY))
- 		seq_puts(seq, ",rescue=no_log_replay");
-+	if (btrfs_test_opt(info, SKIP_BG))
-+		seq_puts(seq, ",rescue=skip_bg");
- 	if (btrfs_test_opt(info, FLUSHONCOMMIT))
- 		seq_puts(seq, ",flushoncommit");
- 	if (btrfs_test_opt(info, DISCARD))
-@@ -1796,6 +1803,14 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
- 	if (ret)
- 		goto restore;
- 
-+	if (btrfs_test_opt(fs_info, SKIP_BG) !=
-+	    (old_opts & BTRFS_MOUNT_SKIP_BG)) {
-+		btrfs_err(fs_info,
-+		"rescue=skip_bg mount option can't be changed during remount");
-+		ret = -EINVAL;
-+		goto restore;
-+	}
-+
- 	btrfs_remount_begin(fs_info, old_opts, *flags);
- 	btrfs_resize_thread_pool(fs_info,
- 		fs_info->thread_pool_size, old_thread_pool_size);
-@@ -1857,6 +1872,13 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
- 			goto restore;
- 		}
- 
-+		if (btrfs_test_opt(fs_info, SKIP_BG)) {
-+			btrfs_err(fs_info,
-+		"remounting read-write with rescue=skip_bg is not allowed");
-+			ret = -EINVAL;
-+			goto restore;
-+		}
-+
- 		ret = btrfs_cleanup_fs_roots(fs_info);
- 		if (ret)
- 			goto restore;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index db934ceae9c1..443f52c7630d 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -7903,6 +7903,13 @@ int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info)
- 	u64 prev_dev_ext_end = 0;
- 	int ret = 0;
- 
-+	/*
-+	 * For rescue=skip_bg mount option, we're already RO and are salvaging
-+	 * data, no need for such strict check.
-+	 */
-+	if (btrfs_test_opt(fs_info, SKIP_BG))
-+		return 0;
-+
- 	key.objectid = 1;
- 	key.type = BTRFS_DEV_EXTENT_KEY;
- 	key.offset = 0;
+ 	ulist_free(tmp);
+ 	ulist_free(roots);
+ 	return ret;
 -- 
-2.21.0
+2.11.0
 

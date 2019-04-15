@@ -6,42 +6,42 @@ X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
 	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9A13AC10F11
-	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Apr 2019 08:29:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1AADBC10F0E
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Apr 2019 08:29:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 663DB20651
-	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Apr 2019 08:29:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CF9BE20651
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Apr 2019 08:29:14 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1555316947;
-	bh=aT2S75WC6rXiU9V6vQBxBka+egbS1F+jaDDzpsahr8s=;
+	s=default; t=1555316954;
+	bh=QACJuIGVJERHD8Vv+YhJ597ermYcp0o3c4Wf96fNxO8=;
 	h=From:To:Subject:Date:List-ID:From;
-	b=R0+8ef9M0V4xYbbDah2xE9KhxakPfehIlh6GZYrb3duHYlTqoGhwJQUaGXX3g5FWb
-	 wgLVqJn9soywGnWWbMr8o43onPJPMCP7AJ3mIgrDq6KiA7xIasRMDQihfveXIq3bry
-	 wb14CjoR7Bplsiel07lo44sPIbyffnI77n5dx2VE=
+	b=AhPuG1tgHZxrvKYIyPo6Qp/BCFnkhISbY3Y2+PoLVvWeufMXj8ML196jDjARb4Sw3
+	 O/+TdBPwEE3hBlvVxp+RqFBPM7HMDDIm2LfyFlrnpVIOOy3n3wMPqPxaR1wk0DkPsG
+	 DPlB1CSvC10PyLVunseai9TA/58sXD1PnZd34CY0=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726839AbfDOI3G (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 15 Apr 2019 04:29:06 -0400
-Received: from mail.kernel.org ([198.145.29.99]:55402 "EHLO mail.kernel.org"
+        id S1726840AbfDOI3N (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 15 Apr 2019 04:29:13 -0400
+Received: from mail.kernel.org ([198.145.29.99]:55504 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726811AbfDOI3G (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 15 Apr 2019 04:29:06 -0400
+        id S1726057AbfDOI3N (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 15 Apr 2019 04:29:13 -0400
 Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 282AC20651
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Apr 2019 08:29:03 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 9018820651
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Apr 2019 08:29:12 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1555316944;
-        bh=aT2S75WC6rXiU9V6vQBxBka+egbS1F+jaDDzpsahr8s=;
+        s=default; t=1555316953;
+        bh=QACJuIGVJERHD8Vv+YhJ597ermYcp0o3c4Wf96fNxO8=;
         h=From:To:Subject:Date:From;
-        b=b5ues33ncPio7OuvH8eZnx3so0gRgvCkxQmSYQy8wRO6xX2QocBepOQLK9//pG+XV
-         Yudk8eCWRcHWcb5Tr8JcUXIiuboSZOffuiPMPNFZH2syDAtpJE1B+Zq7jLgUJ47s9Z
-         OkeVTrVr7G9vvdNGylipgBkZJXZ1VlE2b+kOIR2g=
+        b=l76ATE3DK+NZ/bcjED/X7B9PEs5SZE4LfAza//hSmKzebJDtMPH7SWxvWaYhKWdiS
+         maE1qMRatTI4s7DsF8RmEourf/mPBcPq6C6oapPTk8rilHZgr215zcixiJiT3JGXbC
+         klrXsifD4KkDLN+TEWhaWBG4YKQPzzPrIWMhI7nc=
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: do not start a transaction during fiemap
-Date:   Mon, 15 Apr 2019 09:29:00 +0100
-Message-Id: <20190415082900.2023-1-fdmanana@kernel.org>
+Subject: [PATCH] Btrfs: allocate ulists in btrfs_check_shared() using GFP_KERNEL
+Date:   Mon, 15 Apr 2019 09:29:10 +0100
+Message-Id: <20190415082910.2073-1-fdmanana@kernel.org>
 X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
@@ -50,108 +50,35 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-During fiemap, for regular extents (non inline) we need to check if they
-are shared and if they are, set the shared bit. Checking if an extent is
-shared requires checking the delayed references of the currently running
-transaction, since some reference might have not yet hit the extent tree
-and be only in the in-memory delayed references.
+As of commit bb739cf08e8f32 ("btrfs: btrfs_check_shared should manage its
+own transaction") btrfs_check_shared() manages its own transaction, it
+no longer receives a transaction handle as parameter. Since it is used
+only in the fiemap path, the ulists it needs to use are allocated before
+it grabs a transaction handle and we are not holding any locks that could
+cause a deadlock in case reclaim happens during a memory allocation, we
+can use the GFP_KERNEL flag to allocate the ulists instead of GFP_NOFS.
+So do that switch.
 
-However we were using a transaction join for this, which creates a new
-transaction when there is no transaction currently running. That means
-that two more potential failures can happen: creating the transaction and
-committing it. Further, if no write activity is currently happening in the
-system, and fiemap calls keep being done, we end up creating and
-committing transactions that do nothing.
-
-In some extreme cases this can result in the commit of the transaction
-created by fiemap to fail with ENOSPC when updating the root item of a
-subvolume tree because a join does not reserve any space, leading to a
-trace like the following:
-
- heisenberg kernel: ------------[ cut here ]------------
- heisenberg kernel: BTRFS: Transaction aborted (error -28)
- heisenberg kernel: WARNING: CPU: 0 PID: 7137 at fs/btrfs/root-tree.c:136 btrfs_update_root+0x22b/0x320 [btrfs]
-(...)
- heisenberg kernel: CPU: 0 PID: 7137 Comm: btrfs-transacti Not tainted 4.19.0-4-amd64 #1 Debian 4.19.28-2
- heisenberg kernel: Hardware name: FUJITSU LIFEBOOK U757/FJNB2A5, BIOS Version 1.21 03/19/2018
- heisenberg kernel: RIP: 0010:btrfs_update_root+0x22b/0x320 [btrfs]
-(...)
- heisenberg kernel: RSP: 0018:ffffb5448828bd40 EFLAGS: 00010286
- heisenberg kernel: RAX: 0000000000000000 RBX: ffff8ed56bccef50 RCX: 0000000000000006
- heisenberg kernel: RDX: 0000000000000007 RSI: 0000000000000092 RDI: ffff8ed6bda166a0
- heisenberg kernel: RBP: 00000000ffffffe4 R08: 00000000000003df R09: 0000000000000007
- heisenberg kernel: R10: 0000000000000000 R11: 0000000000000001 R12: ffff8ed63396a078
- heisenberg kernel: R13: ffff8ed092d7c800 R14: ffff8ed64f5db028 R15: ffff8ed6bd03d068
- heisenberg kernel: FS:  0000000000000000(0000) GS:ffff8ed6bda00000(0000) knlGS:0000000000000000
- heisenberg kernel: CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
- heisenberg kernel: CR2: 00007f46f75f8000 CR3: 0000000310a0a002 CR4: 00000000003606f0
- heisenberg kernel: DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
- heisenberg kernel: DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
- heisenberg kernel: Call Trace:
- heisenberg kernel:  commit_fs_roots+0x166/0x1d0 [btrfs]
- heisenberg kernel:  ? _cond_resched+0x15/0x30
- heisenberg kernel:  ? btrfs_run_delayed_refs+0xac/0x180 [btrfs]
- heisenberg kernel:  btrfs_commit_transaction+0x2bd/0x870 [btrfs]
- heisenberg kernel:  ? start_transaction+0x9d/0x3f0 [btrfs]
- heisenberg kernel:  transaction_kthread+0x147/0x180 [btrfs]
- heisenberg kernel:  ? btrfs_cleanup_transaction+0x530/0x530 [btrfs]
- heisenberg kernel:  kthread+0x112/0x130
- heisenberg kernel:  ? kthread_bind+0x30/0x30
- heisenberg kernel:  ret_from_fork+0x35/0x40
- heisenberg kernel: ---[ end trace 05de912e30e012d9 ]---
-
-Since fiemap (and btrfs_check_shared()) is a read-only operation, do not do
-a transaction join to avoid the overhead of creating a new transaction (if
-there is currently no running transaction) and introducing a potential
-point of failure when the new transaction gets committed, instead use a
-transaction attach to grab a handle for the currently running transaction
-if any.
-
-Reported-by: Christoph Anton Mitterer <calestyo@scientia.net>
-Link: https://lore.kernel.org/linux-btrfs/b2a668d7124f1d3e410367f587926f622b3f03a4.camel@scientia.net/
-Fixes: afce772e87c36c ("btrfs: fix check_shared for fiemap ioctl")
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/backref.c | 11 ++++++++---
- 1 file changed, 8 insertions(+), 3 deletions(-)
+ fs/btrfs/backref.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 11459fe84a29..876e6bb93797 100644
+index 876e6bb93797..377978bb8845 100644
 --- a/fs/btrfs/backref.c
 +++ b/fs/btrfs/backref.c
-@@ -1460,8 +1460,8 @@ int btrfs_find_all_roots(struct btrfs_trans_handle *trans,
-  * callers (such as fiemap) which want to know whether the extent is
-  * shared but do not need a ref count.
-  *
-- * This attempts to allocate a transaction in order to account for
-- * delayed refs, but continues on even when the alloc fails.
-+ * This attempts to attach to the running transaction in order to account for
-+ * delayed refs, but continues on even when no running transaction exists.
-  *
-  * Return: 0 if extent is not shared, 1 if it is shared, < 0 on error.
-  */
-@@ -1489,8 +1489,12 @@ int btrfs_check_shared(struct btrfs_root *root, u64 inum, u64 bytenr)
- 		return -ENOMEM;
- 	}
+@@ -1481,8 +1481,8 @@ int btrfs_check_shared(struct btrfs_root *root, u64 inum, u64 bytenr)
+ 		.share_count = 0,
+ 	};
  
--	trans = btrfs_join_transaction(root);
-+	trans = btrfs_attach_transaction(root);
- 	if (IS_ERR(trans)) {
-+		if (PTR_ERR(trans) != -ENOENT) {
-+			ret = PTR_ERR(trans);
-+			goto out;
-+		}
- 		trans = NULL;
- 		down_read(&fs_info->commit_root_sem);
- 	} else {
-@@ -1523,6 +1527,7 @@ int btrfs_check_shared(struct btrfs_root *root, u64 inum, u64 bytenr)
- 	} else {
- 		up_read(&fs_info->commit_root_sem);
- 	}
-+out:
- 	ulist_free(tmp);
- 	ulist_free(roots);
- 	return ret;
+-	tmp = ulist_alloc(GFP_NOFS);
+-	roots = ulist_alloc(GFP_NOFS);
++	tmp = ulist_alloc(GFP_KERNEL);
++	roots = ulist_alloc(GFP_KERNEL);
+ 	if (!tmp || !roots) {
+ 		ulist_free(tmp);
+ 		ulist_free(roots);
 -- 
 2.11.0
 

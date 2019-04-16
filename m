@@ -6,31 +6,31 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 687C3C10F14
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 16:42:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9A11FC10F14
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 16:42:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 42286206B6
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 16:42:23 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7196C206B6
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 16:42:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730028AbfDPQmW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 16 Apr 2019 12:42:22 -0400
-Received: from mx2.suse.de ([195.135.220.15]:36244 "EHLO mx1.suse.de"
+        id S1730044AbfDPQmZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 16 Apr 2019 12:42:25 -0400
+Received: from mx2.suse.de ([195.135.220.15]:36282 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729237AbfDPQmV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 Apr 2019 12:42:21 -0400
+        id S1729237AbfDPQmY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 16 Apr 2019 12:42:24 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 28500B0B8;
-        Tue, 16 Apr 2019 16:42:19 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 23E6EB0BE;
+        Tue, 16 Apr 2019 16:42:23 +0000 (UTC)
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-btrfs@vger.kernel.org
 Cc:     linux-fsdevel@vger.kernel.org, jack@suse.cz, david@fromorbit.com,
         willy@infradead.org, hch@lst.de, darrick.wong@oracle.com,
         kilobyte@angband.pl, dsterba@suse.cz, nborisov@suse.com,
         linux-nvdimm@lists.01.org, Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 06/18] btrfs: Rename __endio_write_update_ordered() to btrfs_update_ordered_extent()
-Date:   Tue, 16 Apr 2019 11:41:42 -0500
-Message-Id: <20190416164154.30390-7-rgoldwyn@suse.de>
+Subject: [PATCH 08/18] dax: memcpy page in case of IOMAP_DAX_COW for mmap faults
+Date:   Tue, 16 Apr 2019 11:41:44 -0500
+Message-Id: <20190416164154.30390-9-rgoldwyn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20190416164154.30390-1-rgoldwyn@suse.de>
 References: <20190416164154.30390-1-rgoldwyn@suse.de>
@@ -41,93 +41,83 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-Since we will be using it in another part of the code, use a
-better name to declare it non-static
+Change dax_iomap_pfn to return the address as well in order to
+use it for performing a memcpy in case the type is IOMAP_DAX_COW.
+
+Question:
+The sequence of bdev_dax_pgoff() and dax_direct_access() is
+used multiple times to calculate address and pfn's. Would it make
+sense to call it while calculating address as well to reduce code?
 
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 ---
- fs/btrfs/ctree.h |  7 +++++--
- fs/btrfs/inode.c | 14 +++++---------
- 2 files changed, 10 insertions(+), 11 deletions(-)
+ fs/dax.c | 16 ++++++++++++----
+ 1 file changed, 12 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 050f30165531..1e3e758b83c2 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3280,8 +3280,11 @@ struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
- int btrfs_get_extent_map_write(struct extent_map **map, struct buffer_head *bh,
- 		struct inode *inode, u64 start, u64 len, bool *nocow);
- struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
--				    struct page *page, size_t pg_offset,
--				    u64 start, u64 end, int create);
-+		struct page *page, size_t pg_offset,
-+		u64 start, u64 end, int create);
-+void btrfs_update_ordered_extent(struct inode *inode,
-+		const u64 offset, const u64 bytes,
-+		const bool uptodate);
- int btrfs_update_inode(struct btrfs_trans_handle *trans,
- 			      struct btrfs_root *root,
- 			      struct inode *inode);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 06764d89490f..7fc778eb6bd2 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -98,10 +98,6 @@ static struct extent_map *create_io_em(struct inode *inode, u64 start, u64 len,
- 				       u64 ram_bytes, int compress_type,
- 				       int type);
- 
--static void __endio_write_update_ordered(struct inode *inode,
--					 const u64 offset, const u64 bytes,
--					 const bool uptodate);
--
- /*
-  * Cleanup all submitted ordered extents in specified range to handle errors
-  * from the btrfs_run_delalloc_range() callback.
-@@ -142,7 +138,7 @@ static inline void btrfs_cleanup_ordered_extents(struct inode *inode,
- 		bytes -= PAGE_SIZE;
- 	}
- 
--	return __endio_write_update_ordered(inode, offset, bytes, false);
-+	return btrfs_update_ordered_extent(inode, offset, bytes, false);
+diff --git a/fs/dax.c b/fs/dax.c
+index 4b4ac51fbd16..45fc2e18969a 100644
+--- a/fs/dax.c
++++ b/fs/dax.c
+@@ -983,7 +983,7 @@ static sector_t dax_iomap_sector(struct iomap *iomap, loff_t pos)
  }
  
- static int btrfs_dirty_inode(struct inode *inode);
-@@ -8085,7 +8081,7 @@ static void btrfs_endio_direct_read(struct bio *bio)
- 	bio_put(bio);
- }
- 
--static void __endio_write_update_ordered(struct inode *inode,
-+void btrfs_update_ordered_extent(struct inode *inode,
- 					 const u64 offset, const u64 bytes,
- 					 const bool uptodate)
+ static int dax_iomap_pfn(struct iomap *iomap, loff_t pos, size_t size,
+-			 pfn_t *pfnp)
++			 pfn_t *pfnp, void **addr)
  {
-@@ -8138,7 +8134,7 @@ static void btrfs_endio_direct_write(struct bio *bio)
- 	struct btrfs_dio_private *dip = bio->bi_private;
- 	struct bio *dio_bio = dip->dio_bio;
+ 	const sector_t sector = dax_iomap_sector(iomap, pos);
+ 	pgoff_t pgoff;
+@@ -995,7 +995,7 @@ static int dax_iomap_pfn(struct iomap *iomap, loff_t pos, size_t size,
+ 		return rc;
+ 	id = dax_read_lock();
+ 	length = dax_direct_access(iomap->dax_dev, pgoff, PHYS_PFN(size),
+-				   NULL, pfnp);
++				   addr, pfnp);
+ 	if (length < 0) {
+ 		rc = length;
+ 		goto out;
+@@ -1280,6 +1280,7 @@ static vm_fault_t dax_iomap_pte_fault(struct vm_fault *vmf, pfn_t *pfnp,
+ 	XA_STATE(xas, &mapping->i_pages, vmf->pgoff);
+ 	struct inode *inode = mapping->host;
+ 	unsigned long vaddr = vmf->address;
++	void *addr;
+ 	loff_t pos = (loff_t)vmf->pgoff << PAGE_SHIFT;
+ 	struct iomap iomap = { 0 };
+ 	unsigned flags = IOMAP_FAULT;
+@@ -1369,16 +1370,23 @@ static vm_fault_t dax_iomap_pte_fault(struct vm_fault *vmf, pfn_t *pfnp,
+ 	sync = dax_fault_is_synchronous(flags, vma, &iomap);
  
--	__endio_write_update_ordered(dip->inode, dip->logical_offset,
-+	btrfs_update_ordered_extent(dip->inode, dip->logical_offset,
- 				     dip->bytes, !bio->bi_status);
+ 	switch (iomap.type) {
++	case IOMAP_DAX_COW:
+ 	case IOMAP_MAPPED:
+ 		if (iomap.flags & IOMAP_F_NEW) {
+ 			count_vm_event(PGMAJFAULT);
+ 			count_memcg_event_mm(vma->vm_mm, PGMAJFAULT);
+ 			major = VM_FAULT_MAJOR;
+ 		}
+-		error = dax_iomap_pfn(&iomap, pos, PAGE_SIZE, &pfn);
++		error = dax_iomap_pfn(&iomap, pos, PAGE_SIZE, &pfn, &addr);
+ 		if (error < 0)
+ 			goto error_finish_iomap;
  
- 	kfree(dip);
-@@ -8457,7 +8453,7 @@ static void btrfs_submit_direct(struct bio *dio_bio, struct inode *inode,
- 		bio = NULL;
- 	} else {
- 		if (write)
--			__endio_write_update_ordered(inode,
-+			btrfs_update_ordered_extent(inode,
- 						file_offset,
- 						dio_bio->bi_iter.bi_size,
- 						false);
-@@ -8597,7 +8593,7 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
- 			 */
- 			if (dio_data.unsubmitted_oe_range_start <
- 			    dio_data.unsubmitted_oe_range_end)
--				__endio_write_update_ordered(inode,
-+				btrfs_update_ordered_extent(inode,
- 					dio_data.unsubmitted_oe_range_start,
- 					dio_data.unsubmitted_oe_range_end -
- 					dio_data.unsubmitted_oe_range_start,
++		if (iomap.type == IOMAP_DAX_COW) {
++			if (iomap.inline_data)
++				memcpy(addr, iomap.inline_data, PAGE_SIZE);
++			else
++				memset(addr, 0, PAGE_SIZE);
++		}
+ 		entry = dax_insert_entry(&xas, mapping, vmf, entry, pfn,
+ 						 0, write && !sync);
+ 
+@@ -1577,7 +1585,7 @@ static vm_fault_t dax_iomap_pmd_fault(struct vm_fault *vmf, pfn_t *pfnp,
+ 
+ 	switch (iomap.type) {
+ 	case IOMAP_MAPPED:
+-		error = dax_iomap_pfn(&iomap, pos, PMD_SIZE, &pfn);
++		error = dax_iomap_pfn(&iomap, pos, PMD_SIZE, &pfn, NULL);
+ 		if (error < 0)
+ 			goto finish_iomap;
+ 
 -- 
 2.16.4
 

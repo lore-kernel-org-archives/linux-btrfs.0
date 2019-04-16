@@ -6,31 +6,31 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 01D6AC10F13
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 16:42:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 152C7C10F13
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 16:42:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BEBCE206B6
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 16:42:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D8509206B6
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 16:42:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730002AbfDPQmP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 16 Apr 2019 12:42:15 -0400
-Received: from mx2.suse.de ([195.135.220.15]:36184 "EHLO mx1.suse.de"
+        id S1730018AbfDPQmS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 16 Apr 2019 12:42:18 -0400
+Received: from mx2.suse.de ([195.135.220.15]:36224 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726816AbfDPQmO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 Apr 2019 12:42:14 -0400
+        id S1729237AbfDPQmS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 16 Apr 2019 12:42:18 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id CBE5EB077;
-        Tue, 16 Apr 2019 16:42:12 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 00FF1B05E;
+        Tue, 16 Apr 2019 16:42:17 +0000 (UTC)
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-btrfs@vger.kernel.org
 Cc:     linux-fsdevel@vger.kernel.org, jack@suse.cz, david@fromorbit.com,
         willy@infradead.org, hch@lst.de, darrick.wong@oracle.com,
         kilobyte@angband.pl, dsterba@suse.cz, nborisov@suse.com,
         linux-nvdimm@lists.01.org, Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 03/18] btrfs: basic dax read
-Date:   Tue, 16 Apr 2019 11:41:39 -0500
-Message-Id: <20190416164154.30390-4-rgoldwyn@suse.de>
+Subject: [PATCH 05/18] btrfs: return whether extent is nocow or not
+Date:   Tue, 16 Apr 2019 11:41:41 -0500
+Message-Id: <20190416164154.30390-6-rgoldwyn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20190416164154.30390-1-rgoldwyn@suse.de>
 References: <20190416164154.30390-1-rgoldwyn@suse.de>
@@ -41,126 +41,67 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-Perform a basic read using iomap support. The btrfs_iomap_begin()
-finds the extent at the position and fills the iomap data
-structure with the values.
+We require this to make sure we return type IOMAP_DAX_COW in
+iomap structure, in the later patches.
 
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 ---
- fs/btrfs/Makefile |  1 +
- fs/btrfs/ctree.h  |  5 +++++
- fs/btrfs/dax.c    | 49 +++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/file.c   | 11 ++++++++++-
- 4 files changed, 65 insertions(+), 1 deletion(-)
- create mode 100644 fs/btrfs/dax.c
+ fs/btrfs/ctree.h | 2 +-
+ fs/btrfs/inode.c | 9 +++++++--
+ 2 files changed, 8 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
-index ca693dd554e9..1fa77b875ae9 100644
---- a/fs/btrfs/Makefile
-+++ b/fs/btrfs/Makefile
-@@ -12,6 +12,7 @@ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
- 	   reada.o backref.o ulist.o qgroup.o send.o dev-replace.o raid56.o \
- 	   uuid-tree.o props.o free-space-tree.o tree-checker.o
- 
-+btrfs-$(CONFIG_FS_DAX) += dax.o
- btrfs-$(CONFIG_BTRFS_FS_POSIX_ACL) += acl.o
- btrfs-$(CONFIG_BTRFS_FS_CHECK_INTEGRITY) += check-integrity.o
- btrfs-$(CONFIG_BTRFS_FS_REF_VERIFY) += ref-verify.o
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 9512f49262dd..b7bbe5130a3b 100644
+index b7bbe5130a3b..050f30165531 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -3795,6 +3795,11 @@ int btrfs_reada_wait(void *handle);
- void btrfs_reada_detach(void *handle);
- int btree_readahead_hook(struct extent_buffer *eb, int err);
- 
-+#ifdef CONFIG_FS_DAX
-+/* dax.c */
-+ssize_t btrfs_file_dax_read(struct kiocb *iocb, struct iov_iter *to);
-+#endif /* CONFIG_FS_DAX */
-+
- static inline int is_fstree(u64 rootid)
+@@ -3278,7 +3278,7 @@ struct inode *btrfs_iget_path(struct super_block *s, struct btrfs_key *location,
+ struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
+ 			 struct btrfs_root *root, int *was_new);
+ int btrfs_get_extent_map_write(struct extent_map **map, struct buffer_head *bh,
+-		struct inode *inode, u64 start, u64 len);
++		struct inode *inode, u64 start, u64 len, bool *nocow);
+ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
+ 				    struct page *page, size_t pg_offset,
+ 				    u64 start, u64 end, int create);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 80184d0c3b52..06764d89490f 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7499,12 +7499,15 @@ static int btrfs_get_blocks_direct_read(struct extent_map *em,
+ int btrfs_get_extent_map_write(struct extent_map **map,
+ 		struct buffer_head *bh,
+ 		struct inode *inode,
+-		u64 start, u64 len)
++		u64 start, u64 len, bool *nocow)
  {
- 	if (rootid == BTRFS_FS_TREE_OBJECTID ||
-diff --git a/fs/btrfs/dax.c b/fs/btrfs/dax.c
-new file mode 100644
-index 000000000000..bf3d46b0acb6
---- /dev/null
-+++ b/fs/btrfs/dax.c
-@@ -0,0 +1,49 @@
-+// SPDX-License-Identifier: GPL-2.0
-+/*
-+ * DAX support for BTRFS
-+ *
-+ * Copyright (c) 2019  SUSE Linux
-+ * Author: Goldwyn Rodrigues <rgoldwyn@suse.com>
-+ */
-+
-+#ifdef CONFIG_FS_DAX
-+#include <linux/dax.h>
-+#include <linux/iomap.h>
-+#include "ctree.h"
-+#include "btrfs_inode.h"
-+
-+static int btrfs_iomap_begin(struct inode *inode, loff_t pos,
-+		loff_t length, unsigned flags, struct iomap *iomap)
-+{
-+	struct extent_map *em;
-+	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, pos, length, 0);
-+	if (em->block_start == EXTENT_MAP_HOLE) {
-+		iomap->type = IOMAP_HOLE;
-+		return 0;
-+	}
-+	iomap->type = IOMAP_MAPPED;
-+	iomap->bdev = em->bdev;
-+	iomap->dax_dev = fs_info->dax_dev;
-+	iomap->offset = em->start;
-+	iomap->length = em->len;
-+	iomap->addr = em->block_start;
-+	return 0;
-+}
-+
-+static const struct iomap_ops btrfs_iomap_ops = {
-+	.iomap_begin		= btrfs_iomap_begin,
-+};
-+
-+ssize_t btrfs_file_dax_read(struct kiocb *iocb, struct iov_iter *to)
-+{
-+	ssize_t ret;
-+	struct inode *inode = file_inode(iocb->ki_filp);
-+
-+	inode_lock_shared(inode);
-+	ret = dax_iomap_rw(iocb, to, &btrfs_iomap_ops);
-+	inode_unlock_shared(inode);
-+
-+	return ret;
-+}
-+#endif /* CONFIG_FS_DAX */
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 34fe8a58b0e9..9194591f9eea 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -3288,9 +3288,18 @@ static int btrfs_file_open(struct inode *inode, struct file *filp)
- 	return generic_file_open(inode, filp);
- }
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 	struct extent_map *em = *map;
+ 	int ret = 0;
  
-+static ssize_t btrfs_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
-+{
-+#ifdef CONFIG_FS_DAX
-+	if (IS_DAX(file_inode(iocb->ki_filp)))
-+		return btrfs_file_dax_read(iocb, to);
-+#endif
-+	return generic_file_read_iter(iocb, to);
-+}
++	if (nocow)
++		*nocow = false;
 +
- const struct file_operations btrfs_file_operations = {
- 	.llseek		= btrfs_file_llseek,
--	.read_iter      = generic_file_read_iter,
-+	.read_iter      = btrfs_file_read_iter,
- 	.splice_read	= generic_file_splice_read,
- 	.write_iter	= btrfs_file_write_iter,
- 	.mmap		= btrfs_file_mmap,
+ 	/*
+ 	 * We don't allocate a new extent in the following cases
+ 	 *
+@@ -7553,6 +7556,8 @@ int btrfs_get_extent_map_write(struct extent_map **map,
+ 			 */
+ 			btrfs_free_reserved_data_space_noquota(inode, start,
+ 							       len);
++			if (nocow)
++				*nocow = true;
+ 			/* skip COW */
+ 			goto out;
+ 		}
+@@ -7579,7 +7584,7 @@ static int btrfs_get_blocks_direct_write(struct extent_map **map,
+ 	struct extent_map *em;
+ 
+ 	ret = btrfs_get_extent_map_write(map, bh_result, inode,
+-			start, len);
++			start, len, NULL);
+ 	if (ret < 0)
+ 		return ret;
+ 	em = *map;
 -- 
 2.16.4
 

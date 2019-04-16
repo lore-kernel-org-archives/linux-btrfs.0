@@ -2,75 +2,63 @@ Return-Path: <SRS0=AHcI=SS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+X-Spam-Status: No, score=-3.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3176FC10F13
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 09:16:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 33406C10F13
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 10:21:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0ACD220675
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 09:16:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0DD0F206BA
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 10:21:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726770AbfDPJQe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 16 Apr 2019 05:16:34 -0400
-Received: from mx2.suse.de ([195.135.220.15]:36786 "EHLO mx1.suse.de"
+        id S1729021AbfDPKVu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 16 Apr 2019 06:21:50 -0400
+Received: from mx2.suse.de ([195.135.220.15]:50668 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726208AbfDPJQe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 Apr 2019 05:16:34 -0400
+        id S1728625AbfDPKVu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 16 Apr 2019 06:21:50 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 8CC82AE1D
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2019 09:16:33 +0000 (UTC)
-Date:   Tue, 16 Apr 2019 11:16:33 +0200
-From:   Johannes Thumshirn <jthumshirn@suse.de>
-To:     dsterba@suse.cz, David Sterba <dsterba@suse.com>,
-        Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: simplify read_extent_buffer_pages a bit
-Message-ID: <20190416091632.GA4226@linux-x5ow.site>
-References: <20190411164059.4981-1-jthumshirn@suse.de>
- <20190411165935.GA3476@twin.jikos.cz>
+        by mx1.suse.de (Postfix) with ESMTP id 92198AFD4
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2019 10:21:49 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/2] btrfs-progs: Metadata preallocation enhancement
+Date:   Tue, 16 Apr 2019 18:21:42 +0800
+Message-Id: <20190416102144.12173-1-wqu@suse.com>
+X-Mailer: git-send-email 2.21.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <20190411165935.GA3476@twin.jikos.cz>
-User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This patchset will address the github issue #123 to make btrfs-convert
+less possible to report false ENOSPC.
 
-On Thu, Apr 11, 2019 at 06:59:35PM +0200, David Sterba wrote:
-> On Thu, Apr 11, 2019 at 06:40:59PM +0200, Johannes Thumshirn wrote:
-> > Currently read_extent_buffer_pages() uses a 4 pass algorithm to read an
-> > extent buffer's pages from disk, all 4 stages looping over all pages of
-> > the extent buffer.
-> > 
-> > 1) Loop over all pages and lock them.
-> > 2) Loop over all pages and see if one is not marked as PageUptodate, so we
-> >    can break out of the function early.
-> > 3) Loop over all pages and if the page is !PageUptodate read the page,
-> >    otherwise unlock the page.
-> > 4) Loop over all pages and wait for stable pages.
-> > 
-> > Unify the 1st two for loops, we can count the number of uptodate pages
-> > after we have locked them without the need for re-starting the loop.
-> 
-> Effectively reverting 2571e739677f1e4c0c63f5ed49adcc0857923625 that
-> fixed a bug. Please have a look if something has really changed so that
-> the split loops are no longer necessary.
+The first patch will try to avoid the nested chunk/extent tree
+modification in a more explicit way.
 
-After starring at the .s and .lst files GCC produces I cannot say whether this
-holds true or not.
+The 2nd patch will address the ENOSPC problem, by adding CSUM tree to
+the metadata preallocate list.
 
-But as it was fixing a bug back then, I'll take back this patch.
+The 2nd patch is not as aggressive as 7a12d8470e5f ("btrfs-progs:
+Do metadata preallocation as long as we're not modifying extent tree").
+Even we have the 1st patch I still prefer to make less modification to
+avoid possible bugs.
+
+Qu Wenruo (2):
+  btrfs-progs: Avoid nested chunk allocation call
+  btrfs-progs: Do metadata preallocation for fs trees and csum tree
+
+ check/main.c  |  2 +-
+ extent-tree.c | 20 +++++++++++++++++++-
+ transaction.c |  3 ++-
+ transaction.h |  3 ++-
+ 4 files changed, 24 insertions(+), 4 deletions(-)
 
 -- 
-Johannes Thumshirn                            SUSE Labs Filesystems
-jthumshirn@suse.de                                +49 911 74053 689
-SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
-GF: Felix Imendörffer, Mary Higgins, Sri Rasiah
-HRB 21284 (AG Nürnberg)
-Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850
+2.21.0
+

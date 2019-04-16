@@ -2,183 +2,155 @@ Return-Path: <SRS0=AHcI=SS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,
+	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F4210C10F13
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 07:39:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 058DBC10F13
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 07:46:54 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C425020857
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 07:39:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C00802073F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 07:46:53 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=brunner-ninja.20150623.gappssmtp.com header.i=@brunner-ninja.20150623.gappssmtp.com header.b="Lxz2kEHs"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728203AbfDPHjF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 16 Apr 2019 03:39:05 -0400
-Received: from mx2.suse.de ([195.135.220.15]:49124 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726783AbfDPHjF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 Apr 2019 03:39:05 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 679BAAE0F
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2019 07:39:03 +0000 (UTC)
-Subject: Re: [PATCH 2/3] btrfs-progs: Refactor btrfs_finish_extent_commit()
-To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20190416071526.3576-1-wqu@suse.com>
- <20190416071526.3576-3-wqu@suse.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <c5e92734-0c9a-aab2-2c6f-e849418bbdde@suse.com>
-Date:   Tue, 16 Apr 2019 10:39:02 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.6.1
+        id S1728478AbfDPHqw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 16 Apr 2019 03:46:52 -0400
+Received: from mail-wm1-f53.google.com ([209.85.128.53]:38080 "EHLO
+        mail-wm1-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727845AbfDPHqw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 16 Apr 2019 03:46:52 -0400
+Received: by mail-wm1-f53.google.com with SMTP id w15so23884896wmc.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2019 00:46:51 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=brunner-ninja.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :content-transfer-encoding;
+        bh=16L6u0k3vnu+W+8RKYgKSs980JDZQGOL2YWlh+2QWBE=;
+        b=Lxz2kEHsRm6Upax3zm6U70AEZ9XTBuU+tkA3YIpXFjuLXfGFfsvRJJ6IFP23iOO/kr
+         mXtjdJZOrF7HQDTuarxICon0EBv31TYEXnveWwruoyjuxHUqb221i6vfwKrKL9YUWN0s
+         ZAaOP5qEUwUlRTryiM6ybC+udG6/qLqbTXcMTD5Q7++X6girNmyRWxeMB4lUisVN/h0S
+         MZATVOAXVzYeFNg8U5IWsnuIJL3p5xYo5y1Kup3HNbw1eX/3SUJ/UN5M+qZcKsLXQprD
+         9t25K5zxv7soXhbwinkFlGtQ6lVRA5LhGBDU+pZDneGy4crFWT9EOA7HezMTkQ7BrYSP
+         j0FA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:content-transfer-encoding;
+        bh=16L6u0k3vnu+W+8RKYgKSs980JDZQGOL2YWlh+2QWBE=;
+        b=BA5eZaZI1zJUmwrva/jqpnUmvITrnLQN+eNCqj4yjiaagSgw6brpVP9bulevFzVCTq
+         waO3e2M5NTdiNlWmWp9DKjDpjOjudPnMFs+ded3bYYtuE8ELuRWEPJfDEOcJena4AztQ
+         9DjigBjlDqqLn4sSb5R0Voe2qJdME9+Kn/R7gI/nGvGRXEEhH9H6YLqMsIf5bp0Xdw2q
+         MlTmODdWs5H3H/rI82cOzfoc4AxBuzvKhB9L0/FgN09Qa4YJVVeeM/jpqI88hKbEh7IX
+         naw8zbGF4L0lzBRK2W5uv5SZGNOsS1J9GHCIyA6nAzYwd+tleG5LsEQnUO5uEUOvYcAf
+         IeVA==
+X-Gm-Message-State: APjAAAVFoF+KS8vQW5RFuLvWqY/jJlenRLVjkh/iTxKZGQVv5EWJG+lb
+        9alQE9oiuZbIYD0PZwQQzwfDVD9E/iZIv+7gWiZPQw==
+X-Google-Smtp-Source: APXvYqxN24REfyr3ZPn91NBE9nxUAE4+SrMRLU+W4CM7ON9U0Wiexh2Ovw0KJ6jakx2MP8KJW5muVukDNpcjw5ynMlE=
+X-Received: by 2002:a1c:1a53:: with SMTP id a80mr25456507wma.15.1555400810395;
+ Tue, 16 Apr 2019 00:46:50 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20190416071526.3576-3-wqu@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+References: <CAD7Y51iQMJQiTBBW9AqQ_-aJ6A4fMVEswyNwPMYnj5iAaLOXjw@mail.gmail.com>
+ <CAD7Y51jD5HDjDHWNZwycYYb2UHjuao_X4bTT2ATeMiX1gOUi_w@mail.gmail.com> <d762e0b9-034e-9386-3ecc-ee182493a82e@gmx.com>
+In-Reply-To: <d762e0b9-034e-9386-3ecc-ee182493a82e@gmx.com>
+From:   Daniel Brunner <daniel@brunner.ninja>
+Date:   Tue, 16 Apr 2019 09:46:39 +0200
+Message-ID: <CAD7Y51jX2x39tLaDOL9LcBxSmGecG92-Xytku0TWsU4B5d=EcA@mail.gmail.com>
+Subject: Re: Corrupted files support needed
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Hi,
 
+thanks for the quick response.
 
-On 16.04.19 г. 10:15 ч., Qu Wenruo wrote:
-> This patch will refactor btrfs_finish_extent_commit() by:
-> - Make it return void
->   There is no failure pattern for btrfs_finish_extent_commit(), thus it
->   always return 0. And the caller doesn't care about the return value.
->   So no need to return int.
-> 
-> - Remove @root and @unpin parameters
->   @root is only used to extract fs_info, which can be extracted from
->   transaction handler already.
->   @unpin is always fs_info->pinned_extents.
->   All these parameters can be extracted from @trans, no need to pass
->   them.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+The filesystem went read-only on its own right at the first read error.
+I unmounted all mounts and rebooted (just to be sure).
 
-This also makes the function's signature identical to its kernel
-counterpart.
+I ran the command you suggested with --progress
+All output is flushed away with thousands of lines like those at the
+end of the log paste.
 
+Does it make sense to let it run until the end or can I assume that 2
+drives are bad?
+Also I checked SMART values but they seem to be ok.
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+https://0x0.st/zNg6.log
 
-> ---
->  ctree.h       |  4 +---
->  extent-tree.c | 14 ++++++--------
->  transaction.c |  3 +--
->  3 files changed, 8 insertions(+), 13 deletions(-)
-> 
-> diff --git a/ctree.h b/ctree.h
-> index 3357290d7045..76f52b1c9b08 100644
-> --- a/ctree.h
-> +++ b/ctree.h
-> @@ -2516,9 +2516,7 @@ int btrfs_free_extent(struct btrfs_trans_handle *trans,
->  		      struct btrfs_root *root,
->  		      u64 bytenr, u64 num_bytes, u64 parent,
->  		      u64 root_objectid, u64 owner, u64 offset);
-> -int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans,
-> -			       struct btrfs_root *root,
-> -			       struct extent_io_tree *unpin);
-> +void btrfs_finish_extent_commit(struct btrfs_trans_handle *trans);
->  int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
->  				struct btrfs_root *root,
->  				u64 bytenr, u64 num_bytes, u64 parent,
-> diff --git a/extent-tree.c b/extent-tree.c
-> index b7ece0ccc237..1140ebfc61ff 100644
-> --- a/extent-tree.c
-> +++ b/extent-tree.c
-> @@ -1977,27 +1977,25 @@ next:
->  	return 0;
->  }
->  
-> -int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans,
-> -			       struct btrfs_root *root,
-> -			       struct extent_io_tree *unpin)
-> +void btrfs_finish_extent_commit(struct btrfs_trans_handle *trans)
->  {
->  	u64 start;
->  	u64 end;
->  	int ret;
-> -	struct extent_io_tree *free_space_cache;
-> -	free_space_cache = &root->fs_info->free_space_cache;
-> +	struct btrfs_fs_info *fs_info = trans->fs_info;
-> +	struct extent_io_tree *free_space_cache = &fs_info->free_space_cache;
-> +	struct extent_io_tree *pinned_extents = &fs_info->pinned_extents;
->  
->  	while(1) {
-> -		ret = find_first_extent_bit(unpin, 0, &start, &end,
-> +		ret = find_first_extent_bit(pinned_extents, 0, &start, &end,
->  					    EXTENT_DIRTY);
->  		if (ret)
->  			break;
->  		update_pinned_extents(trans->fs_info, start, end + 1 - start,
->  				      0);
-> -		clear_extent_dirty(unpin, start, end);
-> +		clear_extent_dirty(pinned_extents, start, end);
->  		set_extent_dirty(free_space_cache, start, end);
->  	}
-> -	return 0;
->  }
->  
->  static int pin_down_bytes(struct btrfs_trans_handle *trans, u64 bytenr,
-> diff --git a/transaction.c b/transaction.c
-> index 3a63988b0969..8d15eb11c7b5 100644
-> --- a/transaction.c
-> +++ b/transaction.c
-> @@ -198,8 +198,7 @@ commit_tree:
->  	if (ret < 0)
->  		goto out;
->  	ret = write_ctree_super(trans);
-> -	btrfs_finish_extent_commit(trans, fs_info->extent_root,
-> -			           &fs_info->pinned_extents);
-> +	btrfs_finish_extent_commit(trans);
->  	kfree(trans);
->  	free_extent_buffer(root->commit_root);
->  	root->commit_root = NULL;
-> 
+-- Daniel
+
+Am Mo., 15. Apr. 2019 um 13:58 Uhr schrieb Qu Wenruo <quwenruo.btrfs@gmx.co=
+m>:
+>
+>
+>
+> On 2019/4/15 =E4=B8=8B=E5=8D=887:44, Daniel Brunner wrote:
+> > Hi,
+> >
+> > after normal a reboot I noticed that many files fail to open / read
+> > (Input/Output error). I don't really have a backup of it (only
+> > snapshots which also seem to be corrupted too).
+> > The machine is remote, I can only ssh into it (at the moment). The
+> > raid consists of 8x 10TB drives.
+> >
+> > System & Metadata is RAID1
+> > Data is RAID6
+> >
+> > kernel is the most recent from arch linux repositories:
+> > 5.0.7-arch1-1-ARCH #1 SMP PREEMPT Mon Apr 8 10:37:08 UTC 2019 x86_64 GN=
+U/Linux
+> >
+> > Disk layout & usage:
+> > https://0x0.st/zNBl.log
+> >
+> > Output of btrfs check:
+> > https://0x0.st/zNJs.log
+>
+> Strange, btrfs check reports no error at all.
+>
+> Would you please try btrfs check unmounted just in case.
+>
+> >
+> > Kernel messages:
+> > http://cwillu.com:8080/84.115.44.105/2
+>
+> According to the dmesg, it looks like one device is bad, affecting both
+> data and metadata.
+>
+> And thanks to recent RAID6 enhancement to try all possible mirror
+> combination, it doesn't cause too many problem to metadata at least.
+>
+> Although data csum is not that good.
+> Quite a lot of combination doesn't match checksum, and even more, some
+> check doesn't exist in csum tree.
+>
+> An unmounted btrfs check is recommended.
+> # btrfs check --check-data-csum --readonly
+>
+> This would be better than scrub.
+>
+> And please check the SMART info, some devices look suspicious.
+>
+> Also, please remount the fs read only at least to prevent further
+> corruption.
+>
+> Thanks,
+> Qu
+>
+> >
+> > btrfs scrub is running but it seems like it will take weeks to finish..=
+.
+> >
+> > Do you think my data is gone or is there anything I can try? An rsync
+> > is already running, but every 5th file fails to read.
+> >
+> > Best regards,
+> > Daniel
+> >
+>

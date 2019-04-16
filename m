@@ -4,33 +4,33 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 152C7C10F13
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 16:42:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 32894C282DA
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 16:42:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D8509206B6
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 16:42:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0ACFE206B6
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 16:42:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730018AbfDPQmS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1730012AbfDPQmS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Tue, 16 Apr 2019 12:42:18 -0400
-Received: from mx2.suse.de ([195.135.220.15]:36224 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:36198 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729237AbfDPQmS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 Apr 2019 12:42:18 -0400
+        id S1726816AbfDPQmR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 16 Apr 2019 12:42:17 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 00FF1B05E;
-        Tue, 16 Apr 2019 16:42:17 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 4B09FAF1B;
+        Tue, 16 Apr 2019 16:42:15 +0000 (UTC)
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-btrfs@vger.kernel.org
 Cc:     linux-fsdevel@vger.kernel.org, jack@suse.cz, david@fromorbit.com,
         willy@infradead.org, hch@lst.de, darrick.wong@oracle.com,
         kilobyte@angband.pl, dsterba@suse.cz, nborisov@suse.com,
         linux-nvdimm@lists.01.org, Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 05/18] btrfs: return whether extent is nocow or not
-Date:   Tue, 16 Apr 2019 11:41:41 -0500
-Message-Id: <20190416164154.30390-6-rgoldwyn@suse.de>
+Subject: [PATCH 04/18] dax: Introduce IOMAP_DAX_COW to CoW edges during writes
+Date:   Tue, 16 Apr 2019 11:41:40 -0500
+Message-Id: <20190416164154.30390-5-rgoldwyn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20190416164154.30390-1-rgoldwyn@suse.de>
 References: <20190416164154.30390-1-rgoldwyn@suse.de>
@@ -41,67 +41,101 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-We require this to make sure we return type IOMAP_DAX_COW in
-iomap structure, in the later patches.
+The IOMAP_DAX_COW is a iomap type which performs copy of
+edges of data while performing a write if start/end are
+not page aligned. The source address is expected in
+iomap->inline_data.
+
+dax_copy_edges() is a helper functions performs a copy from
+one part of the device to another for data not page aligned.
+If iomap->inline_data is NULL, it memset's the area to zero.
 
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 ---
- fs/btrfs/ctree.h | 2 +-
- fs/btrfs/inode.c | 9 +++++++--
- 2 files changed, 8 insertions(+), 3 deletions(-)
+ fs/dax.c              | 41 ++++++++++++++++++++++++++++++++++++++++-
+ include/linux/iomap.h |  1 +
+ 2 files changed, 41 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index b7bbe5130a3b..050f30165531 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3278,7 +3278,7 @@ struct inode *btrfs_iget_path(struct super_block *s, struct btrfs_key *location,
- struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
- 			 struct btrfs_root *root, int *was_new);
- int btrfs_get_extent_map_write(struct extent_map **map, struct buffer_head *bh,
--		struct inode *inode, u64 start, u64 len);
-+		struct inode *inode, u64 start, u64 len, bool *nocow);
- struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
- 				    struct page *page, size_t pg_offset,
- 				    u64 start, u64 end, int create);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 80184d0c3b52..06764d89490f 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7499,12 +7499,15 @@ static int btrfs_get_blocks_direct_read(struct extent_map *em,
- int btrfs_get_extent_map_write(struct extent_map **map,
- 		struct buffer_head *bh,
- 		struct inode *inode,
--		u64 start, u64 len)
-+		u64 start, u64 len, bool *nocow)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct extent_map *em = *map;
- 	int ret = 0;
+diff --git a/fs/dax.c b/fs/dax.c
+index ca0671d55aa6..4b4ac51fbd16 100644
+--- a/fs/dax.c
++++ b/fs/dax.c
+@@ -1083,6 +1083,40 @@ int __dax_zero_page_range(struct block_device *bdev,
+ }
+ EXPORT_SYMBOL_GPL(__dax_zero_page_range);
  
-+	if (nocow)
-+		*nocow = false;
++/*
++ * dax_copy_edges - Copies the part of the pages not included in
++ * 		    the write, but required for CoW because
++ * 		    offset/offset+length are not page aligned.
++ */
++static void dax_copy_edges(struct inode *inode, loff_t pos, loff_t length,
++			   struct iomap *iomap, void *daddr)
++{
++	unsigned offset = pos & (PAGE_SIZE - 1);
++	loff_t end = pos + length;
++	loff_t pg_end = round_up(end, PAGE_SIZE);
++	void *saddr = iomap->inline_data;
++	/*
++	 * Copy the first part of the page
++	 * Note: we pass offset as length
++	 */
++	if (offset) {
++		if (saddr)
++			memcpy(daddr, saddr, offset);
++		else
++			memset(daddr, 0, offset);
++	}
++
++	/* Copy the last part of the range */
++	if (end < pg_end) {
++		if (saddr)
++			memcpy(daddr + offset + length,
++			       saddr + offset + length,	pg_end - end);
++		else
++			memset(daddr + offset + length, 0,
++					pg_end - end);
++	}
++}
++
+ static loff_t
+ dax_iomap_actor(struct inode *inode, loff_t pos, loff_t length, void *data,
+ 		struct iomap *iomap)
+@@ -1104,9 +1138,11 @@ dax_iomap_actor(struct inode *inode, loff_t pos, loff_t length, void *data,
+ 			return iov_iter_zero(min(length, end - pos), iter);
+ 	}
+ 
+-	if (WARN_ON_ONCE(iomap->type != IOMAP_MAPPED))
++	if (WARN_ON_ONCE(iomap->type != IOMAP_MAPPED
++			 && iomap->type != IOMAP_DAX_COW))
+ 		return -EIO;
+ 
 +
  	/*
- 	 * We don't allocate a new extent in the following cases
- 	 *
-@@ -7553,6 +7556,8 @@ int btrfs_get_extent_map_write(struct extent_map **map,
- 			 */
- 			btrfs_free_reserved_data_space_noquota(inode, start,
- 							       len);
-+			if (nocow)
-+				*nocow = true;
- 			/* skip COW */
- 			goto out;
+ 	 * Write can allocate block for an area which has a hole page mapped
+ 	 * into page tables. We have to tear down these mappings so that data
+@@ -1143,6 +1179,9 @@ dax_iomap_actor(struct inode *inode, loff_t pos, loff_t length, void *data,
+ 			break;
  		}
-@@ -7579,7 +7584,7 @@ static int btrfs_get_blocks_direct_write(struct extent_map **map,
- 	struct extent_map *em;
  
- 	ret = btrfs_get_extent_map_write(map, bh_result, inode,
--			start, len);
-+			start, len, NULL);
- 	if (ret < 0)
- 		return ret;
- 	em = *map;
++		if (iomap->type == IOMAP_DAX_COW)
++			dax_copy_edges(inode, pos, length, iomap, kaddr);
++
+ 		map_len = PFN_PHYS(map_len);
+ 		kaddr += offset;
+ 		map_len -= offset;
+diff --git a/include/linux/iomap.h b/include/linux/iomap.h
+index 0fefb5455bda..6e885c5a38a3 100644
+--- a/include/linux/iomap.h
++++ b/include/linux/iomap.h
+@@ -25,6 +25,7 @@ struct vm_fault;
+ #define IOMAP_MAPPED	0x03	/* blocks allocated at @addr */
+ #define IOMAP_UNWRITTEN	0x04	/* blocks allocated at @addr in unwritten state */
+ #define IOMAP_INLINE	0x05	/* data inline in the inode */
++#define IOMAP_DAX_COW	0x06	/* Copy data pointed by inline_data before write*/
+ 
+ /*
+  * Flags for all iomap mappings:
 -- 
 2.16.4
 

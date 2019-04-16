@@ -3,247 +3,136 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
-	autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CEE85C282E0
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 22:41:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8E38EC10F13
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 23:46:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 983C3217D4
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 22:41:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 575BD20880
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 23:46:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728404AbfDPWlC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 16 Apr 2019 18:41:02 -0400
-Received: from smtp.infotech.no ([82.134.31.41]:43553 "EHLO smtp.infotech.no"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727136AbfDPWlC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 Apr 2019 18:41:02 -0400
-X-Greylist: delayed 426 seconds by postgrey-1.27 at vger.kernel.org; Tue, 16 Apr 2019 18:40:57 EDT
-Received: from localhost (localhost [127.0.0.1])
-        by smtp.infotech.no (Postfix) with ESMTP id 7AE53204198;
-        Wed, 17 Apr 2019 00:33:49 +0200 (CEST)
-X-Virus-Scanned: by amavisd-new-2.6.6 (20110518) (Debian) at infotech.no
-Received: from smtp.infotech.no ([127.0.0.1])
-        by localhost (smtp.infotech.no [127.0.0.1]) (amavisd-new, port 10024)
-        with ESMTP id GbqKz4pLBTus; Wed, 17 Apr 2019 00:33:42 +0200 (CEST)
-Received: from [192.168.48.23] (host-45-58-224-183.dyn.295.ca [45.58.224.183])
-        by smtp.infotech.no (Postfix) with ESMTPA id 07E86204195;
-        Wed, 17 Apr 2019 00:33:36 +0200 (CEST)
-Reply-To: dgilbert@interlog.com
-Subject: Re: [PATCH v3 00/26] compat_ioctl: cleanups
-To:     Arnd Bergmann <arnd@arndb.de>,
-        Alexander Viro <viro@zeniv.linux.org.uk>
-Cc:     linux-fsdevel@vger.kernel.org, y2038@lists.linaro.org,
-        linux-kernel@vger.kernel.org,
-        "David S. Miller" <davem@davemloft.net>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Karsten Keil <isdn@linux-pingi.de>,
-        "James E.J. Bottomley" <jejb@linux.ibm.com>,
-        "Martin K. Petersen" <martin.petersen@oracle.com>,
-        Marcel Holtmann <marcel@holtmann.org>, netdev@vger.kernel.org,
-        devel@driverdev.osuosl.org, linux-integrity@vger.kernel.org,
-        qat-linux@intel.com, linux-crypto@vger.kernel.org,
-        linux-media@vger.kernel.org, dri-devel@lists.freedesktop.org,
-        linux1394-devel@lists.sourceforge.net,
-        amd-gfx@lists.freedesktop.org, linux-input@vger.kernel.org,
-        linux-usb@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
-        linux-ide@vger.kernel.org, linux-iio@vger.kernel.org,
-        linux-rdma@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-mtd@lists.infradead.org, linux-ppp@vger.kernel.org,
-        linux-nvme@lists.infradead.org,
-        platform-driver-x86@vger.kernel.org,
-        linux-remoteproc@vger.kernel.org, linux-rtc@vger.kernel.org,
-        linux-s390@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-scsi@vger.kernel.org, linux-fbdev@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org,
-        linux-bluetooth@vger.kernel.org, linux-wireless@vger.kernel.org,
-        alsa-devel@alsa-project.org
-References: <20190416202013.4034148-1-arnd@arndb.de>
-From:   Douglas Gilbert <dgilbert@interlog.com>
-Message-ID: <c379ed8d-1f33-e391-a1b5-810da77605f2@interlog.com>
-Date:   Tue, 16 Apr 2019 18:33:35 -0400
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.6.1
+        id S1729291AbfDPXp6 convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 16 Apr 2019 19:45:58 -0400
+Received: from mx0a-002e3701.pphosted.com ([148.163.147.86]:37902 "EHLO
+        mx0a-002e3701.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1728856AbfDPXp6 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 16 Apr 2019 19:45:58 -0400
+Received: from pps.filterd (m0134421.ppops.net [127.0.0.1])
+        by mx0b-002e3701.pphosted.com (8.16.0.27/8.16.0.27) with SMTP id x3GNflP9000356;
+        Tue, 16 Apr 2019 23:45:27 GMT
+Received: from g9t5009.houston.hpe.com (g9t5009.houston.hpe.com [15.241.48.73])
+        by mx0b-002e3701.pphosted.com with ESMTP id 2rwpjph366-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+        Tue, 16 Apr 2019 23:45:26 +0000
+Received: from G2W6311.americas.hpqcorp.net (g2w6311.austin.hp.com [16.197.64.53])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by g9t5009.houston.hpe.com (Postfix) with ESMTPS id 41F0B72;
+        Tue, 16 Apr 2019 23:45:24 +0000 (UTC)
+Received: from G9W8669.americas.hpqcorp.net (16.220.49.28) by
+ G2W6311.americas.hpqcorp.net (16.197.64.53) with Microsoft SMTP Server (TLS)
+ id 15.0.1367.3; Tue, 16 Apr 2019 23:45:02 +0000
+Received: from G9W9210.americas.hpqcorp.net (2002:10dc:429b::10dc:429b) by
+ G9W8669.americas.hpqcorp.net (2002:10dc:311c::10dc:311c) with Microsoft SMTP
+ Server (TLS) id 15.0.1367.3; Tue, 16 Apr 2019 23:45:02 +0000
+Received: from NAM02-SN1-obe.outbound.protection.outlook.com (15.241.52.13) by
+ G9W9210.americas.hpqcorp.net (16.220.66.155) with Microsoft SMTP Server (TLS)
+ id 15.0.1367.3 via Frontend Transport; Tue, 16 Apr 2019 23:45:02 +0000
+Received: from AT5PR8401MB1169.NAMPRD84.PROD.OUTLOOK.COM (10.169.7.147) by
+ AT5PR8401MB0372.NAMPRD84.PROD.OUTLOOK.COM (10.169.3.144) with Microsoft SMTP
+ Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.20.1792.19; Tue, 16 Apr 2019 23:45:00 +0000
+Received: from AT5PR8401MB1169.NAMPRD84.PROD.OUTLOOK.COM
+ ([fe80::42e:3524:1bf3:fed2]) by AT5PR8401MB1169.NAMPRD84.PROD.OUTLOOK.COM
+ ([fe80::42e:3524:1bf3:fed2%7]) with mapi id 15.20.1792.018; Tue, 16 Apr 2019
+ 23:45:00 +0000
+From:   "Elliott, Robert (Servers)" <elliott@hpe.com>
+To:     Goldwyn Rodrigues <rgoldwyn@suse.de>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+CC:     "kilobyte@angband.pl" <kilobyte@angband.pl>,
+        "jack@suse.cz" <jack@suse.cz>,
+        "darrick.wong@oracle.com" <darrick.wong@oracle.com>,
+        "nborisov@suse.com" <nborisov@suse.com>,
+        "linux-nvdimm@lists.01.org" <linux-nvdimm@lists.01.org>,
+        "david@fromorbit.com" <david@fromorbit.com>,
+        "dsterba@suse.cz" <dsterba@suse.cz>,
+        "willy@infradead.org" <willy@infradead.org>,
+        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+        "hch@lst.de" <hch@lst.de>, Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: RE: [PATCH 02/18] btrfs: Carve out btrfs_get_extent_map_write() out
+ of btrfs_get_blocks_write()
+Thread-Topic: [PATCH 02/18] btrfs: Carve out btrfs_get_extent_map_write() out
+ of btrfs_get_blocks_write()
+Thread-Index: AQHU9HNk8Id3QWceuk+YwitRy94OnaY/c1aQ
+Date:   Tue, 16 Apr 2019 23:45:00 +0000
+Message-ID: <AT5PR8401MB116964C9F08E4378BDE415F3AB240@AT5PR8401MB1169.NAMPRD84.PROD.OUTLOOK.COM>
+References: <20190416164154.30390-1-rgoldwyn@suse.de>
+ <20190416164154.30390-3-rgoldwyn@suse.de>
+In-Reply-To: <20190416164154.30390-3-rgoldwyn@suse.de>
+Accept-Language: en-US
+Content-Language: en-US
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+x-originating-ip: [15.211.195.7]
+x-ms-publictraffictype: Email
+x-ms-office365-filtering-correlation-id: 3e5119be-30b2-41f5-87ce-08d6c2c58a9f
+x-ms-office365-filtering-ht: Tenant
+x-microsoft-antispam: BCL:0;PCL:0;RULEID:(2390118)(7020095)(4652040)(8989299)(5600140)(711020)(4605104)(4618075)(4534185)(4627221)(201703031133081)(201702281549075)(8990200)(2017052603328)(7193020);SRVR:AT5PR8401MB0372;
+x-ms-traffictypediagnostic: AT5PR8401MB0372:
+x-microsoft-antispam-prvs: <AT5PR8401MB0372FD5B01B7D69B2844FBD5AB240@AT5PR8401MB0372.NAMPRD84.PROD.OUTLOOK.COM>
+x-forefront-prvs: 000947967F
+x-forefront-antispam-report: SFV:NSPM;SFS:(10019020)(366004)(346002)(376002)(39860400002)(396003)(136003)(199004)(189003)(13464003)(97736004)(186003)(54906003)(316002)(76176011)(229853002)(5660300002)(8936002)(6436002)(305945005)(9686003)(476003)(14454004)(86362001)(52536014)(68736007)(11346002)(74316002)(486006)(25786009)(71190400001)(2906002)(71200400001)(106356001)(6246003)(81156014)(105586002)(81166006)(256004)(8676002)(33656002)(6116002)(478600001)(55016002)(7696005)(446003)(66066001)(53936002)(110136005)(4326008)(99286004)(102836004)(26005)(53546011)(7416002)(4744005)(6506007)(2501003)(3846002)(7736002);DIR:OUT;SFP:1102;SCL:1;SRVR:AT5PR8401MB0372;H:AT5PR8401MB1169.NAMPRD84.PROD.OUTLOOK.COM;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;A:1;MX:1;
+received-spf: None (protection.outlook.com: hpe.com does not designate
+ permitted sender hosts)
+x-ms-exchange-senderadcheck: 1
+x-microsoft-antispam-message-info: IJIGniMlyk9BsO8TkEcyG+m1ebf8Br0XkvqnET7mR7HzFNXdE3qdxdFGaqSJpVga13QwLN8MxlHYNU2Qjwb1CmZN9Bos8yV+dFV4RuM2/js6mx/yBH36zLR09ygHYxovhzbYH39Ayo9pYfBUjSxEd5IlgCWpjaz/BmT3bDRUCz/b3BZCrh7cLzklBpEJjT8aCYhCiCnmofM5F+e5cnHv4gEVN7J9G1iURRvE4gF/0uTp/pxRNFATbAqN8o7hATv7vR/wVbq19D93np3qRNJ+SCX0hGdiOEIHj1I0P+Z5pTdEeS9q2pve6tf0ZwitpFfCJdtT24GCnyI0juAiDhHi+Nh+/36VtOtBbLNFq6myXUMOZSRtZgk8FPdd6eBQ0n+QnN5XrauBExLVdYXbkWGvJn9D0FFcwq6da/ilYqZXczk=
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 8BIT
 MIME-Version: 1.0
-In-Reply-To: <20190416202013.4034148-1-arnd@arndb.de>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-CA
-Content-Transfer-Encoding: 7bit
+X-MS-Exchange-CrossTenant-Network-Message-Id: 3e5119be-30b2-41f5-87ce-08d6c2c58a9f
+X-MS-Exchange-CrossTenant-originalarrivaltime: 16 Apr 2019 23:45:00.9190
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: 105b2061-b669-4b31-92ac-24d304d195dc
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: AT5PR8401MB0372
+X-OriginatorOrg: hpe.com
+X-HPE-SCL: -1
+X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10434:,, definitions=2019-04-16_09:,,
+ signatures=0
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 priorityscore=1501
+ malwarescore=0 suspectscore=0 phishscore=0 bulkscore=0 spamscore=0
+ clxscore=1011 lowpriorityscore=0 mlxscore=0 impostorscore=0
+ mlxlogscore=843 adultscore=0 classifier=spam adjust=0 reason=mlx
+ scancount=1 engine=8.0.1-1810050000 definitions=main-1904160141
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 2019-04-16 4:19 p.m., Arnd Bergmann wrote:
-> Hi Al,
-> 
-> It took me way longer than I had hoped to revisit this series, see
-> https://lore.kernel.org/lkml/20180912150142.157913-1-arnd@arndb.de/
-> for the previously posted version.
-> 
-> I've come to the point where all conversion handlers and most
-> COMPATIBLE_IOCTL() entries are gone from this file, but for
-> now, this series only has the parts that have either been reviewed
-> previously, or that are simple enough to include.
-> 
-> The main missing piece is the SG_IO/SG_GET_REQUEST_TABLE conversion.
-> I'll post the patches I made for that later, as they need more
-> testing and review from the scsi maintainers.
+> -----Original Message-----
+> From: Linux-nvdimm [mailto:linux-nvdimm-bounces@lists.01.org] On Behalf Of Goldwyn Rodrigues
+> Sent: Tuesday, April 16, 2019 11:42 AM
+> Subject: [PATCH 02/18] btrfs: Carve out btrfs_get_extent_map_write() out of btrfs_get_blocks_write()
+...
+> +static int btrfs_get_blocks_direct_write(struct extent_map **map,
+> +					 struct buffer_head *bh_result,
+> +					 struct inode *inode,
+> +					 struct btrfs_dio_data *dio_data,
+> +					 u64 start, u64 len)
+> +{
+> +	int ret = 0;
 
-Perhaps you could look at the document in this url:
-     http://sg.danny.cz/sg/sg_v40.html
+That initialization value is not needed, since ret is always overwritten
+two lines later.
 
-It is work-in-progress to modernize the SCSI generic driver. It
-extends ioctl(sg_fd, SG_IO, &pt_obj) to additionally accept the sg v4
-interface as defined in include/uapi/linux/bsg.h . Currently only the
-bsg driver uses the sg v4 interface. Since struct sg_io_v4 is all
-explicitly sized integers, I'm guessing it is immune "compat" problems.
-[I can see no reference to bsg nor struct sg_io_v4 in the current
-fs/compat_ioctl.c file.]
-
-Other additions described in the that document are these new ioctls:
-   - SG_IOSUBMIT    ultimately to replace write(sg_fd, ...)
-   - SG_IORECEIVE              to replace read(sg_fd, ...)
-   - SG_IOABORT     abort SCSI cmd in progress; new functionality
-   - SG_SET_GET_EXTENDED   has associated struct sg_extended_info
-
-The first three take a pointer to a struct sg_io_hdr (v3 interface) or
-a struct sg_io_v4 object. Both objects start with a 32 bit integer:
-'S' identifies the v3 interface while 'Q' identifies the v4 interface.
-
-The SG_SET_GET_EXTENDED ioctl takes a pointer to a struct
-sg_extended_info object which contains explicitly sized integers so it
-may also be immune from "compat" problems. The ioctls section (13) of
-that document referenced above has a table showing how many "sets and
-gets" are hiding in the SG_SET_GET_EXTENDED ioctl.
-
-BTW No change is proposed for this case:
-     ioctl(normal_block_device, SG_IO, &sg_v3_obj)
-which is handled by block/scsi_ioctl.c
-
-
-This would be a good time for me to address any "compat" concerns in the
-proposed sg driver update.
-
-Doug Gilbert
-
-
-> I hope you can still take these for the coming merge window, unless
-> new problems come up.
-> 
->        Arnd
-> 
-> Arnd Bergmann (26):
->    compat_ioctl: pppoe: fix PPPOEIOCSFWD handling
->    compat_ioctl: move simple ppp command handling into driver
->    compat_ioctl: avoid unused function warning for do_ioctl
->    compat_ioctl: move PPPIOCSCOMPRESS32 to ppp-generic.c
->    compat_ioctl: move PPPIOCSPASS32/PPPIOCSACTIVE32 to ppp_generic.c
->    compat_ioctl: handle PPPIOCGIDLE for 64-bit time_t
->    compat_ioctl: move rtc handling into rtc-dev.c
->    compat_ioctl: add compat_ptr_ioctl()
->    compat_ioctl: move drivers to compat_ptr_ioctl
->    compat_ioctl: use correct compat_ptr() translation in drivers
->    ceph: fix compat_ioctl for ceph_dir_operations
->    compat_ioctl: move more drivers to compat_ptr_ioctl
->    compat_ioctl: move tape handling into drivers
->    compat_ioctl: move ATYFB_CLK handling to atyfb driver
->    compat_ioctl: move isdn/capi ioctl translation into driver
->    compat_ioctl: move rfcomm handlers into driver
->    compat_ioctl: move hci_sock handlers into driver
->    compat_ioctl: remove HCIUART handling
->    compat_ioctl: remove HIDIO translation
->    compat_ioctl: remove translation for sound ioctls
->    compat_ioctl: remove IGNORE_IOCTL()
->    compat_ioctl: remove /dev/random commands
->    compat_ioctl: remove joystick ioctl translation
->    compat_ioctl: remove PCI ioctl translation
->    compat_ioctl: remove /dev/raw ioctl translation
->    compat_ioctl: remove last RAID handling code
-> 
->   Documentation/networking/ppp_generic.txt    |   2 +
->   arch/um/drivers/hostaudio_kern.c            |   1 +
->   drivers/android/binder.c                    |   2 +-
->   drivers/char/ppdev.c                        |  12 +-
->   drivers/char/random.c                       |   1 +
->   drivers/char/tpm/tpm_vtpm_proxy.c           |  12 +-
->   drivers/crypto/qat/qat_common/adf_ctl_drv.c |   2 +-
->   drivers/dma-buf/dma-buf.c                   |   4 +-
->   drivers/dma-buf/sw_sync.c                   |   2 +-
->   drivers/dma-buf/sync_file.c                 |   2 +-
->   drivers/firewire/core-cdev.c                |  12 +-
->   drivers/gpu/drm/amd/amdkfd/kfd_chardev.c    |   2 +-
->   drivers/hid/hidraw.c                        |   4 +-
->   drivers/hid/usbhid/hiddev.c                 |  11 +-
->   drivers/hwtracing/stm/core.c                |  12 +-
->   drivers/ide/ide-tape.c                      |  31 +-
->   drivers/iio/industrialio-core.c             |   2 +-
->   drivers/infiniband/core/uverbs_main.c       |   4 +-
->   drivers/isdn/capi/capi.c                    |  31 +
->   drivers/isdn/i4l/isdn_ppp.c                 |  14 +-
->   drivers/media/rc/lirc_dev.c                 |   4 +-
->   drivers/mfd/cros_ec_dev.c                   |   4 +-
->   drivers/misc/cxl/flash.c                    |   8 +-
->   drivers/misc/genwqe/card_dev.c              |  23 +-
->   drivers/misc/mei/main.c                     |  22 +-
->   drivers/misc/vmw_vmci/vmci_host.c           |   2 +-
->   drivers/mtd/ubi/cdev.c                      |  36 +-
->   drivers/net/ppp/ppp_generic.c               |  99 +++-
->   drivers/net/ppp/pppoe.c                     |   7 +
->   drivers/net/ppp/pptp.c                      |   3 +
->   drivers/net/tap.c                           |  12 +-
->   drivers/nvdimm/bus.c                        |   4 +-
->   drivers/nvme/host/core.c                    |   2 +-
->   drivers/pci/switch/switchtec.c              |   2 +-
->   drivers/platform/x86/wmi.c                  |   2 +-
->   drivers/rpmsg/rpmsg_char.c                  |   4 +-
->   drivers/rtc/dev.c                           |  13 +-
->   drivers/rtc/rtc-vr41xx.c                    |  10 +
->   drivers/s390/char/tape_char.c               |  41 +-
->   drivers/sbus/char/display7seg.c             |   2 +-
->   drivers/sbus/char/envctrl.c                 |   4 +-
->   drivers/scsi/3w-xxxx.c                      |   4 +-
->   drivers/scsi/cxlflash/main.c                |   2 +-
->   drivers/scsi/esas2r/esas2r_main.c           |   2 +-
->   drivers/scsi/megaraid/megaraid_mm.c         |  28 +-
->   drivers/scsi/osst.c                         |  34 +-
->   drivers/scsi/pmcraid.c                      |   4 +-
->   drivers/scsi/st.c                           |  35 +-
->   drivers/staging/android/ion/ion.c           |   4 +-
->   drivers/staging/pi433/pi433_if.c            |  12 +-
->   drivers/staging/vme/devices/vme_user.c      |   2 +-
->   drivers/tee/tee_core.c                      |   2 +-
->   drivers/usb/class/cdc-wdm.c                 |   2 +-
->   drivers/usb/class/usbtmc.c                  |   4 +-
->   drivers/usb/core/devio.c                    |  16 +-
->   drivers/usb/gadget/function/f_fs.c          |  12 +-
->   drivers/vfio/vfio.c                         |  39 +-
->   drivers/vhost/net.c                         |  12 +-
->   drivers/vhost/scsi.c                        |  12 +-
->   drivers/vhost/test.c                        |  12 +-
->   drivers/vhost/vsock.c                       |  12 +-
->   drivers/video/fbdev/aty/atyfb_base.c        |  12 +-
->   drivers/virt/fsl_hypervisor.c               |   2 +-
->   fs/btrfs/super.c                            |   2 +-
->   fs/ceph/dir.c                               |   1 +
->   fs/ceph/file.c                              |   2 +-
->   fs/compat_ioctl.c                           | 602 +-------------------
->   fs/fat/file.c                               |  13 +-
->   fs/fuse/dev.c                               |   2 +-
->   fs/notify/fanotify/fanotify_user.c          |   2 +-
->   fs/userfaultfd.c                            |   2 +-
->   include/linux/fs.h                          |   7 +
->   include/linux/if_pppox.h                    |   2 +
->   include/linux/mtio.h                        |  58 ++
->   include/uapi/linux/ppp-ioctl.h              |   2 +
->   include/uapi/linux/ppp_defs.h               |  14 +
->   net/bluetooth/hci_sock.c                    |  21 +-
->   net/bluetooth/rfcomm/sock.c                 |  14 +-
->   net/l2tp/l2tp_ppp.c                         |   3 +
->   net/rfkill/core.c                           |   2 +-
->   sound/core/oss/pcm_oss.c                    |   4 +
->   sound/oss/dmasound/dmasound_core.c          |   2 +
->   82 files changed, 452 insertions(+), 1034 deletions(-)
->   create mode 100644 include/linux/mtio.h
-> 
+> +	struct extent_map *em;
+> +
+> +	ret = btrfs_get_extent_map_write(map, bh_result, inode,
+> +			start, len);
+> +	if (ret < 0)
+> +		return ret;
+> +	em = *map;
 

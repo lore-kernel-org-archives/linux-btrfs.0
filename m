@@ -2,251 +2,256 @@ Return-Path: <SRS0=AHcI=SS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4F30AC10F13
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 07:48:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BE1A7C10F13
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 07:56:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1BB852073F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 07:48:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7B9112073F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 07:56:43 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="L27oMmtq"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728307AbfDPHsU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 16 Apr 2019 03:48:20 -0400
-Received: from mx2.suse.de ([195.135.220.15]:50266 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725943AbfDPHsT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 Apr 2019 03:48:19 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 50C0DAF24
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Apr 2019 07:48:18 +0000 (UTC)
-Subject: Re: [PATCH 3/3] btrfs-progs: Handle error properly in
- btrfs_commit_transaction()
-To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20190416071526.3576-1-wqu@suse.com>
- <20190416071526.3576-4-wqu@suse.com>
-From:   Nikolay Borisov <nborisov@suse.com>
+        id S1726905AbfDPH4m (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 16 Apr 2019 03:56:42 -0400
+Received: from mout.gmx.net ([212.227.17.21]:50015 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726346AbfDPH4m (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 16 Apr 2019 03:56:42 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1555401398;
+        bh=oM01hfF/Bfo0cyBXaazVVe+cRTignjLVwAS15QY9Cnc=;
+        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
+        b=L27oMmtq2Tdh1wQ2msZSQ1Aq+zPglA7CRUruk9bA9x7XGvOkoyEehaFhPodGGy9zg
+         QeZvQcA0Ln4GcL/KG5F8JFBUhcRcEHs2RJBvptLKvj8gRXcmWaoMWeSQSQdmmh8ATt
+         95yJ4HRKRsn42OSdKJSk5o9Z//ITbpZ+ZXj4CxWw=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx102
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0Lmwpk-1gdgLZ1KQ8-00h2s9; Tue, 16
+ Apr 2019 09:56:38 +0200
+Subject: Re: Corrupted files support needed
+To:     Daniel Brunner <daniel@brunner.ninja>, linux-btrfs@vger.kernel.org
+References: <CAD7Y51iQMJQiTBBW9AqQ_-aJ6A4fMVEswyNwPMYnj5iAaLOXjw@mail.gmail.com>
+ <CAD7Y51jD5HDjDHWNZwycYYb2UHjuao_X4bTT2ATeMiX1gOUi_w@mail.gmail.com>
+ <d762e0b9-034e-9386-3ecc-ee182493a82e@gmx.com>
+ <CAD7Y51jX2x39tLaDOL9LcBxSmGecG92-Xytku0TWsU4B5d=EcA@mail.gmail.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <fe9cb7fe-4485-fe34-82b9-6b5b5adfbdf6@suse.com>
-Date:   Tue, 16 Apr 2019 10:48:17 +0300
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <6947fcc2-7db9-d796-0ed6-308ef8110d72@gmx.com>
+Date:   Tue, 16 Apr 2019 15:56:33 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.6.1
 MIME-Version: 1.0
-In-Reply-To: <20190416071526.3576-4-wqu@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <CAD7Y51jX2x39tLaDOL9LcBxSmGecG92-Xytku0TWsU4B5d=EcA@mail.gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="Jat8LTvj27uH0SxVbiYmLXw2L4m4ZNcpT"
+X-Provags-ID: V03:K1:0pcKTl6rmIbXI40tXJK0c5uu2CKxSBNor8JjsoQ8BObHBVi+/gE
+ O4V7vBDMUa7qzTkp05OfDzs4yGi9J94uvFlPskb4Hdb0N6QbMFoDZCYDXpZLCqLX/f6QRJl
+ ht+7sOlxpq7aRwV+SMZbeQHhabThKLmHcrr5il6O47PXfHuq2r+fzk8iF9QcShs7ojEDIvH
+ VR0GrBcaqRPWRWH9o7JHg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:mUo6I+IncY0=:GpGQSwEaO3asdFvTfxeRST
+ +cntkFiwBj9vSAhGG1hPzT5fYVNNBSDrY/+IgympRegb2VvgvxjbqYy6syGl6gVgHfpiB3JW9
+ IkFVGd9qDsdeaDIbxgYrliz19Bxw76vEUKEQLYV8xQvxkG11Qe3gQ4tFeBPEdA5Wm6eG18VVr
+ AJbOp5sosTWJo5mKRsawzUbz/UBrKQkOxxJkXuWcHwYV48jObsNVFAGOPxHkGh7XMr4RcsMTT
+ xXVXHu4IvjIW1f62X+61vRPh/GdcbNoVym5M5mZnLhXdVEGjGoUf1xGf9o+d0XTFTw8HrC6d6
+ hXA8ChdQYdFXEpMgYuE73VYescPHzG3SiWMyyxy0F9AVNjAkPTr67rQjKTvqOtqIWkQ47ltP0
+ KCWeo4aeyJEHWUTTBcHGEuoNMeWQAq/I3GLLOoa6oGsS2MQj+xq5EWhda71pGutXCq5shXYXU
+ VVvW1a2hIU0hltXbtmIo5PlLRJTe0MQbDo7BIAisBzgyqThcTdFHn/G0jqtxdiNQ9MNiD0xBP
+ +n1+xu9Ttv/Hv8eeJAAyKm+pDBeqmd0JwSNpmkeJPoxmkP66AVc1AjujPx6uk3oNcu8HwpQQ2
+ GuDOd4khr4PA9CurL26g5ecDn/b0FhkaNKQDPfgtdAuCin8aSG5djdjpsLzVm9JANglouSMY0
+ IBII5E+307mf8ePqaOhET6jdhmhMHh/qJgFfXf5hDduAzp6yfAmWFe8tuNyWc/ujizhKjPqR7
+ 465g4sMGf4XxIfYObGR/yTQgdXJBQ5cEsq2me+nV0ChB+uhvLVum9MsBBWhG0F0ZlWaI/lDzl
+ dON3zDgHdQLHTetNoNFXGul0F/AJHvJ35pQhqMcPhFp9RApKMG6/tnzOp+HwXpls7Mg+++zXB
+ FfXjUpeUxFpn90JvP9LBPd+GeP/lo0KCVgV/kU1g/Q3MV9UYO49aLeWsIioWwe
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--Jat8LTvj27uH0SxVbiYmLXw2L4m4ZNcpT
+Content-Type: multipart/mixed; boundary="tgo4nKNrws1X2H14VJKV1oiDEMMcmUD6Q";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Daniel Brunner <daniel@brunner.ninja>, linux-btrfs@vger.kernel.org
+Message-ID: <6947fcc2-7db9-d796-0ed6-308ef8110d72@gmx.com>
+Subject: Re: Corrupted files support needed
+References: <CAD7Y51iQMJQiTBBW9AqQ_-aJ6A4fMVEswyNwPMYnj5iAaLOXjw@mail.gmail.com>
+ <CAD7Y51jD5HDjDHWNZwycYYb2UHjuao_X4bTT2ATeMiX1gOUi_w@mail.gmail.com>
+ <d762e0b9-034e-9386-3ecc-ee182493a82e@gmx.com>
+ <CAD7Y51jX2x39tLaDOL9LcBxSmGecG92-Xytku0TWsU4B5d=EcA@mail.gmail.com>
+In-Reply-To: <CAD7Y51jX2x39tLaDOL9LcBxSmGecG92-Xytku0TWsU4B5d=EcA@mail.gmail.com>
+
+--tgo4nKNrws1X2H14VJKV1oiDEMMcmUD6Q
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-On 16.04.19 г. 10:15 ч., Qu Wenruo wrote:
-> [BUG]
-> When running fuzz-tests/003 and fuzz-tests/009, btrfs-progs will crash
-> due to BUG_ON().
-> 
-> [CAUSE]
-> We abused BUG_ON() in btrfs_commit_transaction(), which is one of the
-> most error prone function for fuzzed images.
-> 
-> Currently to cleanup the aborted transaction, we only need to clean up
-> the only per-transaction data: delayed refs.
-> 
-> This patch will introduce a new function, btrfs_destroy_delayed_refs()
-> to cleanup delayed refs when we failed to commit transaction.
-> 
-> With that function, we will gently destroy per-trans delayed ref, and
-> remove the BUG_ON()s in btrfs_commit_transaction().
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+
+On 2019/4/16 =E4=B8=8B=E5=8D=883:46, Daniel Brunner wrote:
+> Hi,
+>=20
+> thanks for the quick response.
+>=20
+> The filesystem went read-only on its own right at the first read error.=
 
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+Then the fs metadata should get corrupted.
 
-Though see below for a suggestion of further cleanup
+> I unmounted all mounts and rebooted (just to be sure).
+>=20
+> I ran the command you suggested with --progress
+> All output is flushed away with thousands of lines like those at the
+> end of the log paste.
 
-> ---
->  delayed-ref.c | 24 ++++++++++++++++++++++++
->  delayed-ref.h |  5 +++++
->  extent-tree.c |  6 +++---
->  transaction.c | 20 ++++++++++++++------
->  4 files changed, 46 insertions(+), 9 deletions(-)
-> 
-> diff --git a/delayed-ref.c b/delayed-ref.c
-> index 9974dbbd4c6b..69f8be34fe18 100644
-> --- a/delayed-ref.c
-> +++ b/delayed-ref.c
-> @@ -605,3 +605,27 @@ free_ref:
->  
->  	return -ENOMEM;
->  }
-> +
-> +void btrfs_destroy_delayed_refs(struct btrfs_trans_handle *trans)
-> +{
-> +	struct btrfs_fs_info *fs_info = trans->fs_info;
-> +	struct rb_node *node;
-> +	struct btrfs_delayed_ref_root *delayed_refs;
-> +
-> +	delayed_refs = &trans->delayed_refs;
-> +	if (RB_EMPTY_ROOT(&delayed_refs->href_root))
-> +		return;
-> +	while ((node = rb_first(&delayed_refs->href_root)) != NULL) {
-> +		struct btrfs_delayed_ref_head *head;
-> +		struct btrfs_delayed_ref_node *ref;
-> +		struct rb_node *n;
-> +
-> +		head = rb_entry(node, struct btrfs_delayed_ref_head, href_node);
-> +		while ((n = rb_first(&head->ref_tree)) != NULL) {
-> +			ref = rb_entry(n, struct btrfs_delayed_ref_node,
-> +				       ref_node);
-> +			drop_delayed_ref(trans, delayed_refs, head, ref);
-> +		}
-> +		ASSERT(cleanup_ref_head(trans, fs_info, head) == 0);
-> +	}
-> +}
-> diff --git a/delayed-ref.h b/delayed-ref.h
-> index 30a68b2a278c..4ff3eaa929ba 100644
-> --- a/delayed-ref.h
-> +++ b/delayed-ref.h
-> @@ -205,4 +205,9 @@ btrfs_delayed_node_to_tree_ref(struct btrfs_delayed_ref_node *node)
->  {
->  	return container_of(node, struct btrfs_delayed_tree_ref, node);
->  }
-> +
-> +int cleanup_ref_head(struct btrfs_trans_handle *trans,
-> +		     struct btrfs_fs_info *fs_info,
-> +		     struct btrfs_delayed_ref_head *head);
-> +void btrfs_destroy_delayed_refs(struct btrfs_trans_handle *trans);
->  #endif
-> diff --git a/extent-tree.c b/extent-tree.c
-> index 1140ebfc61ff..e62ee8c2ba13 100644
-> --- a/extent-tree.c
-> +++ b/extent-tree.c
-> @@ -4085,9 +4085,9 @@ static void unselect_delayed_ref_head(struct btrfs_delayed_ref_root *delayed_ref
->  	delayed_refs->num_heads_ready++;
->  }
->  
-> -static int cleanup_ref_head(struct btrfs_trans_handle *trans,
-> -			    struct btrfs_fs_info *fs_info,
-> -			    struct btrfs_delayed_ref_head *head)
-> +int cleanup_ref_head(struct btrfs_trans_handle *trans,
-> +		     struct btrfs_fs_info *fs_info,
-> +		     struct btrfs_delayed_ref_head *head)
+Then please stop that running command, as it won't help much.
 
-You can create a followup patch that removes the fs_info argument from
-cleanup_ref_head to make it identical to the kernel version.
+Regular "btrfs check --readonly" should be able to report the metadata
+corruption.
 
->  {
->  	struct btrfs_delayed_ref_root *delayed_refs;
->  
-> diff --git a/transaction.c b/transaction.c
-> index 8d15eb11c7b5..138e10f0d6cc 100644
-> --- a/transaction.c
-> +++ b/transaction.c
-> @@ -17,6 +17,7 @@
->  #include "kerncompat.h"
->  #include "disk-io.h"
->  #include "transaction.h"
-> +#include "delayed-ref.h"
->  
->  #include "messages.h"
->  
-> @@ -165,7 +166,8 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
->  	 * consistent
->  	 */
->  	ret = btrfs_run_delayed_refs(trans, -1);
-> -	BUG_ON(ret);
-> +	if (ret < 0)
-> +		goto error;
->  
->  	if (root->commit_root == root->node)
->  		goto commit_tree;
-> @@ -182,21 +184,24 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
->  	root->root_item.level = btrfs_header_level(root->node);
->  	ret = btrfs_update_root(trans, root->fs_info->tree_root,
->  				&root->root_key, &root->root_item);
-> -	BUG_ON(ret);
-> +	if (ret < 0)
-> +		goto error;
->  
->  commit_tree:
->  	ret = commit_tree_roots(trans, fs_info);
-> -	BUG_ON(ret);
-> +	if (ret < 0)
-> +		goto error;
->  	/*
->  	 * Ensure that all committed roots are properly accounted in the
->  	 * extent tree
->  	 */
->  	ret = btrfs_run_delayed_refs(trans, -1);
-> -	BUG_ON(ret);
-> +	if (ret < 0)
-> +		goto error;
->  	btrfs_write_dirty_block_groups(trans);
->  	__commit_transaction(trans, root);
->  	if (ret < 0)
-> -		goto out;
-> +		goto error;
->  	ret = write_ctree_super(trans);
->  	btrfs_finish_extent_commit(trans);
->  	kfree(trans);
-> @@ -204,7 +209,10 @@ commit_tree:
->  	root->commit_root = NULL;
->  	fs_info->running_transaction = NULL;
->  	fs_info->last_trans_committed = transid;
-> -out:
-> +	return ret;
-> +error:
-> +	btrfs_destroy_delayed_refs(trans);
-> +	free(trans);
->  	return ret;
->  }
->  
-> 
+>=20
+> Does it make sense to let it run until the end or can I assume that 2
+> drives are bad?
+
+No need to continue, there should be some metadata corruption.
+
+Above command should report something.
+
+For the device corruption part, I'm not sure. But I think there is
+definitely something wrong.
+
+Please start salvage your data, as I'm afraid the fs is already damaged,
+although not sure how serious it is.
+
+Thanks,
+Qu
+
+> Also I checked SMART values but they seem to be ok.
+>=20
+> https://0x0.st/zNg6.log
+>=20
+> -- Daniel
+>=20
+> Am Mo., 15. Apr. 2019 um 13:58 Uhr schrieb Qu Wenruo <quwenruo.btrfs@gm=
+x.com>:
+>>
+>>
+>>
+>> On 2019/4/15 =E4=B8=8B=E5=8D=887:44, Daniel Brunner wrote:
+>>> Hi,
+>>>
+>>> after normal a reboot I noticed that many files fail to open / read
+>>> (Input/Output error). I don't really have a backup of it (only
+>>> snapshots which also seem to be corrupted too).
+>>> The machine is remote, I can only ssh into it (at the moment). The
+>>> raid consists of 8x 10TB drives.
+>>>
+>>> System & Metadata is RAID1
+>>> Data is RAID6
+>>>
+>>> kernel is the most recent from arch linux repositories:
+>>> 5.0.7-arch1-1-ARCH #1 SMP PREEMPT Mon Apr 8 10:37:08 UTC 2019 x86_64 =
+GNU/Linux
+>>>
+>>> Disk layout & usage:
+>>> https://0x0.st/zNBl.log
+>>>
+>>> Output of btrfs check:
+>>> https://0x0.st/zNJs.log
+>>
+>> Strange, btrfs check reports no error at all.
+>>
+>> Would you please try btrfs check unmounted just in case.
+>>
+>>>
+>>> Kernel messages:
+>>> http://cwillu.com:8080/84.115.44.105/2
+>>
+>> According to the dmesg, it looks like one device is bad, affecting bot=
+h
+>> data and metadata.
+>>
+>> And thanks to recent RAID6 enhancement to try all possible mirror
+>> combination, it doesn't cause too many problem to metadata at least.
+>>
+>> Although data csum is not that good.
+>> Quite a lot of combination doesn't match checksum, and even more, some=
+
+>> check doesn't exist in csum tree.
+>>
+>> An unmounted btrfs check is recommended.
+>> # btrfs check --check-data-csum --readonly
+>>
+>> This would be better than scrub.
+>>
+>> And please check the SMART info, some devices look suspicious.
+>>
+>> Also, please remount the fs read only at least to prevent further
+>> corruption.
+>>
+>> Thanks,
+>> Qu
+>>
+>>>
+>>> btrfs scrub is running but it seems like it will take weeks to finish=
+=2E..
+>>>
+>>> Do you think my data is gone or is there anything I can try? An rsync=
+
+>>> is already running, but every 5th file fails to read.
+>>>
+>>> Best regards,
+>>> Daniel
+>>>
+>>
+
+
+--tgo4nKNrws1X2H14VJKV1oiDEMMcmUD6Q--
+
+--Jat8LTvj27uH0SxVbiYmLXw2L4m4ZNcpT
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAly1irEACgkQwj2R86El
+/qhj0wf+OTvBFC1NxsmFPB78Y7eVbAzRzJNngmE3VOORBlsp6kwzQUVQyWsAOK/t
+WC377fenttcUfbEMR8Mo+K0DF6N4QvNSwICMHvreQDwiDohk8t0tMwAi6ABzCpkM
+ooqUh/N6CHUEDqMtTR9vLPQGM54uBMn1xb4YU521AItmbBcmE/BkBpD5LY1N+FnE
+CvhJl9RorMSTb+KtXpJKzttjEyhuPeODu6yhlP6qWO7/drYFJZmi/RJd8b/a/7xk
+SemKkDkb6bYwyeQhHDWFv5GIgOZIb7DePmbygztj6yLwqqItGKk9h/zp0frujpkK
+Lhk74DWcHizd9ZjIMO5GWB49mLk2ZA==
+=J4Sm
+-----END PGP SIGNATURE-----
+
+--Jat8LTvj27uH0SxVbiYmLXw2L4m4ZNcpT--

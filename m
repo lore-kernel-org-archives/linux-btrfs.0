@@ -2,42 +2,40 @@ Return-Path: <SRS0=AHcI=SS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-5.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,URIBL_BLOCKED autolearn=ham
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4A790C10F0E
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 00:19:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8633EC10F0E
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 02:29:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 00DD620830
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 00:19:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3EE162070D
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 02:29:11 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="ax8uceOR"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="D1Oaiys4"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727235AbfDPATo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 15 Apr 2019 20:19:44 -0400
-Received: from mout.gmx.net ([212.227.15.19]:59711 "EHLO mout.gmx.net"
+        id S1726215AbfDPC3J (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 15 Apr 2019 22:29:09 -0400
+Received: from mout.gmx.net ([212.227.15.18]:42627 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726038AbfDPATn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 15 Apr 2019 20:19:43 -0400
+        id S1725768AbfDPC3J (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 15 Apr 2019 22:29:09 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1555373978;
-        bh=7WBkz0XrwJaBxRlI2S5aqWByhF5SM3IxoumuTTYMQFw=;
-        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=ax8uceORcnijiBvvAWdTzoSA++l0DlLZFm2wVE3hQ0B/mlo2w3Q2z5CI/UVVrG/Uy
-         /fQ/a431mgvHJk+svDC4LVrlpvnnD9lH8C6Lm+cmJ+orj1TfMYe/4dJBfoqnh2BiMX
-         nms3EAsb/R5aFDaoImvJc3NluDaArqTNzzu35CFs=
+        s=badeba3b8450; t=1555381747;
+        bh=xBq6HVHQAxCiNVdiP3K3co9PVnVYyTAqr3D5vMv6XdQ=;
+        h=X-UI-Sender-Class:To:From:Subject:Date;
+        b=D1Oaiys4kOnDz80PlPKVuC1ImD76hK6/30RzSdMLv8giVqRv7qURun+M7/IRyCXpN
+         OhwSjWOe2oHvo+jM3nJdoCnlPgp6ByTgeXmj0/QbMKk99ljjYUHTEaohpAeJe74CCJ
+         VrL0YIJy3MY92hYnu/9oFssJD4D1AFEiqz9c8ZMI=
 X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([210.140.77.29]) by mail.gmx.com (mrgmx005
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1N95e9-1gkmZa2qHP-0163d4; Tue, 16
- Apr 2019 02:19:38 +0200
-Subject: Re: [PULL REQUEST] btrfs-progs updates, the main part
-To:     dsterba@suse.cz,
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx001
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0MO77c-1hAhSY36bU-005bCN; Tue, 16
+ Apr 2019 04:24:03 +0200
+To:     David Sterba <dsterba@suse.cz>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <48f7ce97-b1cb-b7f8-5b4d-33c8e3737fcf@gmx.com>
- <20190415162727.GB22216@twin.jikos.cz>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Subject: [PULL REQUEST v2] btrfs-progs updates, the main part
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
@@ -63,206 +61,158 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <d6db1caf-cbc9-3229-13b2-aab6a3750a38@gmx.com>
-Date:   Tue, 16 Apr 2019 08:19:34 +0800
+Message-ID: <cb2ed110-4ad0-6f72-2dcb-fe150bab461e@gmx.com>
+Date:   Tue, 16 Apr 2019 10:23:59 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.6.1
 MIME-Version: 1.0
-In-Reply-To: <20190415162727.GB22216@twin.jikos.cz>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="FegjSx4EKNvqCrkmEgv8nvB3vZTXDjxI1"
-X-Provags-ID: V03:K1:7Fl24WLvi2uPAWxtbn0ShfS3AA08cQ0vKeUf+KS7eD1D31GfhtC
- bJTigVU5eX3Ro31DQmTPvbjN1zrCyqDeHd/QVDjqke1a9i9cLmBk4Zng96LHvT78PgTvlvd
- kJVgLfmh5+zGwAnIioLGSRICa8/rAeHMIjtv7a6oBlKx3qtnm3NlX6aA1EPORBXx2Qkc71n
- RBGBnfY+owgylj8i9Q1zA==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:Fk9KKCF3c78=:1vxXJ4kVUgjKri1DATs2Fk
- wBw6yHQkxEMDzUko4LEDsnD2OmqalwkMAhVgFWBI5nIjbjDjSY6fISYNqac+KjSAt3on7iFHu
- UxKdNT74LFep7xwmEtqnasOfAgwOZvAGGAEPtXBOuYQhuZiHTu1xwXW+7ve319FcPjzXrTUAq
- 4ghzZZlfrXaYk0PUSfsY2dQu0Fe16sHCjdgXkkDqa1qBQ8o4aNse+/O9gq9+wllfwDEfuIdb3
- WQYEcioHeDbyO1/dQM9J1xD6irZRcu8rtersohwcSj+HBAgVvgTEWFpjS+UM/dOEzlUnwHG3b
- Mcze7kC6Vx6WyLP0oAjgKq9qBGaUXmLcitm6XG00LT5yjU1HDgTerv6gjrn6v7Y51cNTm0HtS
- VEjWAHs31fhH1x+OqbjgKeKnZPQhT2n7EfBQh/k9JrGs9MINOjbIsa3NXWTsUnyThGXUOfB4f
- 1wJlh24gEmbvRMZeDKE4nds3OtiCVVp6Q6OOizV6Rt3xHH7RylpxA0+8YHZ6BkF9YKugpgKIZ
- RJhh3QomEcyY4UkJCjYqLhasnnf+hVLgf7iz/ViugDejnu5ml8pvLvEYur0KVLxuS2OBKCDTR
- lN/lEW/zaRWqmz8CHVmdaMrW2iM7r+RTypfAHNjL4zI6JoZpF0crr9WbPkaMT/Vegc3VGCGKE
- 7iYvDstXmI8sB0ZWc9HPslK3P8cNNk+amiFAICfAre0BgISGUwQ+sUpu27FR5G3QQe+qWEIzn
- HBkMN8P/ZT8qhdNgS32pJztyo2ya90AR99TYChGRA72jvET0TbN3u1IAL0zmY+rxV0+M9HkUo
- X9cJIO7lFW25gKIDaPMKMBldbderOZIISQsMvUe82FuORqkfNkEyKW8SDZrddQYcoXiN+CTq9
- hOYEBN4dKIIrJXeF0dAEMLLROrJnqSQEXutNLTAQm8fRaLOpmIBGiM5gcBDOMh
+ boundary="fpNvBfWaVx2ihyb2PWLPFzxBBuhX2pVzm"
+X-Provags-ID: V03:K1:RJ46AMobSpGPnywm8U7hbgtO6JaBqMFRIDH28iCMi9T2p7Z7FTA
+ 6Eru0+bcRyyk+4hZHgV/gkIXrIgauZ6Ryeqs6F7rH7dSLxp6tVQGJ0qzom3opSWzEfcQVFE
+ DCeF1JgJO96AxiX/a/AYs1WNc146QOI3edRpsEtYZIDd0XHB4VX3OoRHVqOjnhx5U6DRYr6
+ 67Rte6U7kI21sFHe0P+eg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:ILd5FE6CXHc=:MD7de8ginMDNtyEZwDd2C5
+ mvjr7odjHISUK06KH7q4ThPKRgu5QGIDEu7K6ltvBwKQVRh5U7IW84xCg+WZS0Os9yTHMZfXL
+ 9XNXxYOAgRC7YreF7pE3CsV20FXPwWKYmR7hUjBhbVdKE8pRS04BGmE4WVZP7BXki0j4E/QNx
+ 3fKQtgmB59zgM7fH56BqJJg4tzIk1uTqFaOmfUUGbvlrWpGX221O03ytlnlIk9BND0mqD2eHB
+ jP5MDhLYQpkrT6LaWqeCaTgMDcB2pR111YtVd1/Qa9gX2j459LJqidn+9QlThVhM2NunQViaw
+ FBHBhfdh1oq+N7LA7B+BMc/0+cPfsbyBR1fZ+7fU+E2lVYJC3ngDvXW3QPhG61G0tp/hUwDYt
+ pHrJR9iHltH2s9X5wPpR/38ryotxHwq4k06c4AVwrc23VlUMjpLdnt43SDbnvpMc81L51DIxT
+ S8+ZkxJyTi49EJ2AIsOBX0nq/0OZx6HpAYbt+gsmGfwwzmhu7smcMNF0U9dHq4yrAKZz6/+l2
+ arpCCJ1Sek5D8tvNkmN8TXEisBExArx/w+qdkzIRQOXfFT1IrAFEryNy15PTVshYMjqo73yKB
+ P3lOQDt7cXU3ZCONZbIerlf7yLHKjLTLuwSX9gzfIShbJ+f+8AfpoCGe1OQRafJZLgbQr4kAd
+ w0WeYRrXoXnuL1i3z/630YzomKPJoZJk8fWd5YWhcz9g71yA4veQP5q1igqBH+wf/dWs9745O
+ iyi/+bC9dPIkfqLrm6OUIl4AnGCERypGDEvsvwTvn95rxxz5eNjlzfI7PRgwiXCXW9kU5BNzc
+ s9cG3lOjg1qUOLSsOa2RZIsHFbAv6rSLHI7MCL49cH3L85tZlig9+MVwFkloLpQZn4ln7Ch3p
+ mIXoh4uvMCJJ0CB0snv4e9+/HlomKXU+F0LjMC8Y+oGxk66aNSw2a4PLRhOyP6
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---FegjSx4EKNvqCrkmEgv8nvB3vZTXDjxI1
-Content-Type: multipart/mixed; boundary="7E11nxEtzbgvEjJnH1ggbUPq1Uwk5ZrH3";
+--fpNvBfWaVx2ihyb2PWLPFzxBBuhX2pVzm
+Content-Type: multipart/mixed; boundary="Yairbt5obpG7l0IKtv3TfiTkGw2sal5yy";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, "linux-btrfs@vger.kernel.org"
- <linux-btrfs@vger.kernel.org>
-Message-ID: <d6db1caf-cbc9-3229-13b2-aab6a3750a38@gmx.com>
-Subject: Re: [PULL REQUEST] btrfs-progs updates, the main part
-References: <48f7ce97-b1cb-b7f8-5b4d-33c8e3737fcf@gmx.com>
- <20190415162727.GB22216@twin.jikos.cz>
-In-Reply-To: <20190415162727.GB22216@twin.jikos.cz>
+To: David Sterba <dsterba@suse.cz>,
+ "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Message-ID: <cb2ed110-4ad0-6f72-2dcb-fe150bab461e@gmx.com>
+Subject: [PULL REQUEST v2] btrfs-progs updates, the main part
 
---7E11nxEtzbgvEjJnH1ggbUPq1Uwk5ZrH3
+--Yairbt5obpG7l0IKtv3TfiTkGw2sal5yy
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
+Hi David,
+
+Here is my pull request for the btrfs-progs:
+https://github.com/adam900710/btrfs-progs/tree/for_devel
+
+The basis is the following commit from your devel branch:
+commit cfa470d5a6b6b305fed4898b64db31c125b4dcbc (david/devel)
+Author: Nikolay Borisov <nborisov@suse.com>
+Date:   Mon Mar 11 12:20:56 2019 +0200
+
+    btrfs-progs: Remove get_argv0_buf
+
+The commit on the top is going to revert 7a12d8470e5f ("btrfs-progs: Do
+metadata preallocation as long as we're not modifying extent tree").
+
+You can drop that commit if you have discarded that commit.
+
+The branch passes all selftests, except:
+- misc/035
+  Known bug as the fix is reverted.
+- fuzz/003
+- fuzz/009
+  Not a regression, as stable tags also triggers them.
+  BUG_ON() in commit_transaction get triggered due to ENOSPC.
+  These two bugs will be addressed soon. but not in this pull.
+
+This pull request include the following features:
+
+Core change:
+- check --repair
+  * Flush/FUA support to avoid breaking metadata CoW
+      Now btrfs-progs crashing or transaction aborted won't cause
+      new transid error.
+
+Fixes and Enhancement:
+- generic
+  * Try best copy when reading tree blocks.
+  * Skip unnecessary retry when one tree block copy fails.
+  * Avoid back tree block to populate tree block cache.
+  * Don't BUG_ON() when failed to flush/write super blocks
+- check
+  * File extents repair no longer relies data in extent tree.
+  * New ability to check and repair free space cache invalid inode mode.
+  * Update backup roots when commit transaction.
+
+- Misc
+  * fs_info <-> root parameters cleanup for btrfs_check_leaf/node()
 
 
-On 2019/4/16 =E4=B8=8A=E5=8D=8812:27, David Sterba wrote:
-> On Thu, Apr 11, 2019 at 01:54:44PM +0800, Qu Wenruo wrote:
->> Here is my pull request for the btrfs-progs:
->> https://github.com/adam900710/btrfs-progs/tree/for_devel
->>
->> The basis is the following commit from your devel branch:
->> commit a8389337c5a0e7c3fb32ff91d557889c036da73a
->> Author: Adam Borowski <kilobyte@angband.pl>
->> Date:   Mon Feb 25 19:16:44 2019 +0100
->>
->>     btrfs-progs: defrag: open files RO on new enough kernels
->=20
-> Please rebase the branch on top of current devel, with "btrfs-progs:
-> Remove get_argv0_buf". I had a few patches merged but the branch was no=
-t
-> public so there's some duplication.
->=20
->> This branch drops the following commit in your devel branch:
->> commit 4e8eb31f048f3fe9a68aacb58e4c0714df25b5c4 (david/devel)
->> Author: Qu Wenruo <wqu@suse.com>
->> Date:   Fri Sep 14 15:49:44 2018 +0800
->>
->>     btrfs-progs: Do metadata preallocation as long as we're not
->> modifying extent tree
->=20
-> This fixes issue #123, is there another fix?=20
+For reference, the devel branch itself contains the following features.
 
-Not yet, the reason is known but new fix is still under development.
-Discarding it at least won't cause new problem.
+Core change:
+- device scan:
+  * Add the ability to forget a device
+
+Fixes and Enhancement:
+- generic:
+  * Better unrecognized/invalid option handling.
+    Including btrfs-prop, btrfs-qgroup, btrfs-find-root.
+- mkfs:
+  * Enlarge metadata chunk size to follow kernel size.
+- dev-replace:
+  * Better error handling and error message.
+- receive:
+  * New quite mode.
+- dump-tree:
+  * allow multiple --block to be specified.
+- misc
+  * Fix compiler false alerts about uninitialized variable.
+  * Update gitignore file to ignore dot files.
+  * kernel version parsing fix.
 
 
->I'll drop the patch from
-> devel as it fails the test so the revert won't be needed.
->=20
->> Due to test failure on looping chunk allocation.
->>
->> The branch passes all selftests, except misc/035 which is a known prob=
-lem.
->>
->> This pull request include the following features:
->>
->> Core change:
->> - check --repair
->>   * Flush/FUA support to avoid breaking metadata CoW
->>       Now btrfs-progs crashing or transaction aborted won't cause
->>       new transid error.
->> - device scan:
->>   * Add the ability to forget a device
->>
->> Fixes and Enhancement:
->> - generic
->>   * Try best copy when reading tree blocks.
->>   * Skip unnecessary retry when one tree block copy fails.
->>   * Avoid back tree block to populate tree block cache.
->> - check
->>   * File extents repair no longer relies data in extent tree.
->>   * New ability to check and repair free space cache invalid inode mod=
-e.
->>   * Update backup roots when commit transaction.
->> - mkfs:
->>   * Enlarge metadata chunk size to follow kernel size.
->> - defrag
->>   * open file in RO for newer kernel.
->> - gitignore
->>   * Ignore hidden files.
->> - qgroup report
->>   * Handle unrecognized sort string.
->> - receive
->>   * New quite mode.
->> - Misc
->>   * More cleanup for fs_info <-> root parameters.
->=20
-> Nice, I'll put it to the merge commit once the branch is ready.
->=20
-[snip]
->>   btrfs-progs: qgroup show: report errors while parsing sort string
->>   btrfs-progs: qgroup show: report unrecognized format of sort string
->>   btrfs-progs: qgoup: propagate errors from
->>     btrfs_qgroup_parse_sort_string
->=20
-> For pull-based workflows there are some things that I'd require, based
-> on what I do for kernel patches, so let's use this one to set the
-> expectations:
->=20
-> The excerpt above from the shortlog (and other commits) was not intende=
-d
-> to be pulled, so it should not be in the shortlog.
-
-Got it.
-
->=20
-> Please note that all patches need to have signed-off-by by the
-> committer. This is not true for
-
-Just one minor question, if I'm the author, no need for another SoB line
-right?
-
->=20
-> - btrfs-progs: fsck-test: enable lowmem repair for case 001
-> - btrfs-progs: tests: add case for inode lose one file extent
->=20
-> The commits that do revert do not need the 'btrfs-progs:' prefix,
-> without it it's obvious in the patch subject list that those are
-> exceptions.
->=20
-> One thing that I edit in almost all commit is the order of tags, briefl=
-y
-> documented at
-> https://btrfs.wiki.kernel.org/index.php/Developer%27s_FAQ#Ordering
-
-Oh, this is indeed different from my understand.
-
-Especially for the reviewed-by and tested-by tags.
-
-I'll definitely reorder those in next update.
+Changelog:
+v2:
+- Reorder the tags to follow the general guideline
+- Rebase to latest devel branch
+- Add SoB line for commits not authored by me
+- Add revert commit other than dropping the offending commit
+  This should makes merge itself easier.
+- Updated the cover letter feature list
+  Split into two parts, the features introduced in this pull, and
+  the feature introduced by devel branch.
 
 Thanks,
 Qu
->=20
-> I don't require a signed tag to pull as the amount of pull requests is
-> not going to be high, review is feasible for me.
->=20
-> One thing that might be new for you is that you'll be the first get
-> blamed for everything what's in the branch you send to pull, then the
-> original authors :) It's good to favor quality over quantity.
->=20
-> There's probably more of lower importance, we'll find out along the way=
-=2E
->=20
 
 
---7E11nxEtzbgvEjJnH1ggbUPq1Uwk5ZrH3--
 
---FegjSx4EKNvqCrkmEgv8nvB3vZTXDjxI1
+--Yairbt5obpG7l0IKtv3TfiTkGw2sal5yy--
+
+--fpNvBfWaVx2ihyb2PWLPFzxBBuhX2pVzm
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAly1H5YACgkQwj2R86El
-/qiH8QgAoajOnXyYRHpNbyrp1b6xhY9r2zL6qRGaTux1agT61993rpjq3gFXPdaR
-ILc9CiGlFA/DYGAfXlp4bshr43kO7T9Wj2tvxBv4b+IYneRFvujj1R4usuHriOFQ
-dGWj68oRpd47DMMS1htWABSqn5yd1GqajrdypIWhpFWMLLThpqCzN7g4MJ2heZxn
-XIHem97zAB8jSQXrv6Ux4Babie89mYO3DGMY1LFNp3TV4Lo0fLNfBJpIunKe0A/3
-1fS3H6IkKBrBmLyxp4nAzvmToWSnEmfI8haQBnl9n47BW6T28ZFNP2xTcfLGlWvr
-Q5BKdWrDXACQS75+U1xAC0vpUPmvBw==
-=TXZN
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAly1PL8ACgkQwj2R86El
+/qhQxAgAnH+jCvqUWzIbuJRVwKKnqNzrv2bg7pb7UDxbwF/Q+wfOVM+2xyiBxhLs
+9v+eFQKnd3yCTgXQcykkuu1PGrADEuYtFohyE8DUaa9iHKXp/g6hkdSOP7Y3oANM
+THr5hB978gx2zN5JFSCNEHQ9xzbfgMxeTPMyJ7wQiKmJujrQSuEo9gKrfiK74R1a
+LQ/qXGA0wHXpgVAMMb2EfXZtQ/cuFPVfNqSnnF8SiCgmGPq3f15urjWCVr0C9S2u
+bXkF98vbohbQ21AIQvHN2W8nzB+aCBOYxqhO1cxAQEHjjiFnprS0lhuM1wBqUeLz
+Yhkh9kVYFQN/3SvjFFk/72gTShdd8A==
+=wEnx
 -----END PGP SIGNATURE-----
 
---FegjSx4EKNvqCrkmEgv8nvB3vZTXDjxI1--
+--fpNvBfWaVx2ihyb2PWLPFzxBBuhX2pVzm--

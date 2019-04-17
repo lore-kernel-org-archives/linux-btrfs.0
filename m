@@ -1,138 +1,222 @@
-Return-Path: <SRS0=AHcI=SS=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=+3PB=ST=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8E38EC10F13
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 23:46:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1BC79C10F13
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Apr 2019 00:08:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 575BD20880
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Apr 2019 23:46:01 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CDBF42176F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Apr 2019 00:08:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729291AbfDPXp6 convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 16 Apr 2019 19:45:58 -0400
-Received: from mx0a-002e3701.pphosted.com ([148.163.147.86]:37902 "EHLO
-        mx0a-002e3701.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1728856AbfDPXp6 (ORCPT
+        id S1728954AbfDQAHw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 16 Apr 2019 20:07:52 -0400
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:35382 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1728379AbfDQAHv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 Apr 2019 19:45:58 -0400
-Received: from pps.filterd (m0134421.ppops.net [127.0.0.1])
-        by mx0b-002e3701.pphosted.com (8.16.0.27/8.16.0.27) with SMTP id x3GNflP9000356;
-        Tue, 16 Apr 2019 23:45:27 GMT
-Received: from g9t5009.houston.hpe.com (g9t5009.houston.hpe.com [15.241.48.73])
-        by mx0b-002e3701.pphosted.com with ESMTP id 2rwpjph366-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-        Tue, 16 Apr 2019 23:45:26 +0000
-Received: from G2W6311.americas.hpqcorp.net (g2w6311.austin.hp.com [16.197.64.53])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by g9t5009.houston.hpe.com (Postfix) with ESMTPS id 41F0B72;
-        Tue, 16 Apr 2019 23:45:24 +0000 (UTC)
-Received: from G9W8669.americas.hpqcorp.net (16.220.49.28) by
- G2W6311.americas.hpqcorp.net (16.197.64.53) with Microsoft SMTP Server (TLS)
- id 15.0.1367.3; Tue, 16 Apr 2019 23:45:02 +0000
-Received: from G9W9210.americas.hpqcorp.net (2002:10dc:429b::10dc:429b) by
- G9W8669.americas.hpqcorp.net (2002:10dc:311c::10dc:311c) with Microsoft SMTP
- Server (TLS) id 15.0.1367.3; Tue, 16 Apr 2019 23:45:02 +0000
-Received: from NAM02-SN1-obe.outbound.protection.outlook.com (15.241.52.13) by
- G9W9210.americas.hpqcorp.net (16.220.66.155) with Microsoft SMTP Server (TLS)
- id 15.0.1367.3 via Frontend Transport; Tue, 16 Apr 2019 23:45:02 +0000
-Received: from AT5PR8401MB1169.NAMPRD84.PROD.OUTLOOK.COM (10.169.7.147) by
- AT5PR8401MB0372.NAMPRD84.PROD.OUTLOOK.COM (10.169.3.144) with Microsoft SMTP
- Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.20.1792.19; Tue, 16 Apr 2019 23:45:00 +0000
-Received: from AT5PR8401MB1169.NAMPRD84.PROD.OUTLOOK.COM
- ([fe80::42e:3524:1bf3:fed2]) by AT5PR8401MB1169.NAMPRD84.PROD.OUTLOOK.COM
- ([fe80::42e:3524:1bf3:fed2%7]) with mapi id 15.20.1792.018; Tue, 16 Apr 2019
- 23:45:00 +0000
-From:   "Elliott, Robert (Servers)" <elliott@hpe.com>
-To:     Goldwyn Rodrigues <rgoldwyn@suse.de>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-CC:     "kilobyte@angband.pl" <kilobyte@angband.pl>,
-        "jack@suse.cz" <jack@suse.cz>,
-        "darrick.wong@oracle.com" <darrick.wong@oracle.com>,
-        "nborisov@suse.com" <nborisov@suse.com>,
-        "linux-nvdimm@lists.01.org" <linux-nvdimm@lists.01.org>,
-        "david@fromorbit.com" <david@fromorbit.com>,
-        "dsterba@suse.cz" <dsterba@suse.cz>,
-        "willy@infradead.org" <willy@infradead.org>,
-        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-        "hch@lst.de" <hch@lst.de>, Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: RE: [PATCH 02/18] btrfs: Carve out btrfs_get_extent_map_write() out
- of btrfs_get_blocks_write()
-Thread-Topic: [PATCH 02/18] btrfs: Carve out btrfs_get_extent_map_write() out
- of btrfs_get_blocks_write()
-Thread-Index: AQHU9HNk8Id3QWceuk+YwitRy94OnaY/c1aQ
-Date:   Tue, 16 Apr 2019 23:45:00 +0000
-Message-ID: <AT5PR8401MB116964C9F08E4378BDE415F3AB240@AT5PR8401MB1169.NAMPRD84.PROD.OUTLOOK.COM>
-References: <20190416164154.30390-1-rgoldwyn@suse.de>
- <20190416164154.30390-3-rgoldwyn@suse.de>
-In-Reply-To: <20190416164154.30390-3-rgoldwyn@suse.de>
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-x-originating-ip: [15.211.195.7]
-x-ms-publictraffictype: Email
-x-ms-office365-filtering-correlation-id: 3e5119be-30b2-41f5-87ce-08d6c2c58a9f
-x-ms-office365-filtering-ht: Tenant
-x-microsoft-antispam: BCL:0;PCL:0;RULEID:(2390118)(7020095)(4652040)(8989299)(5600140)(711020)(4605104)(4618075)(4534185)(4627221)(201703031133081)(201702281549075)(8990200)(2017052603328)(7193020);SRVR:AT5PR8401MB0372;
-x-ms-traffictypediagnostic: AT5PR8401MB0372:
-x-microsoft-antispam-prvs: <AT5PR8401MB0372FD5B01B7D69B2844FBD5AB240@AT5PR8401MB0372.NAMPRD84.PROD.OUTLOOK.COM>
-x-forefront-prvs: 000947967F
-x-forefront-antispam-report: SFV:NSPM;SFS:(10019020)(366004)(346002)(376002)(39860400002)(396003)(136003)(199004)(189003)(13464003)(97736004)(186003)(54906003)(316002)(76176011)(229853002)(5660300002)(8936002)(6436002)(305945005)(9686003)(476003)(14454004)(86362001)(52536014)(68736007)(11346002)(74316002)(486006)(25786009)(71190400001)(2906002)(71200400001)(106356001)(6246003)(81156014)(105586002)(81166006)(256004)(8676002)(33656002)(6116002)(478600001)(55016002)(7696005)(446003)(66066001)(53936002)(110136005)(4326008)(99286004)(102836004)(26005)(53546011)(7416002)(4744005)(6506007)(2501003)(3846002)(7736002);DIR:OUT;SFP:1102;SCL:1;SRVR:AT5PR8401MB0372;H:AT5PR8401MB1169.NAMPRD84.PROD.OUTLOOK.COM;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;A:1;MX:1;
-received-spf: None (protection.outlook.com: hpe.com does not designate
- permitted sender hosts)
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam-message-info: IJIGniMlyk9BsO8TkEcyG+m1ebf8Br0XkvqnET7mR7HzFNXdE3qdxdFGaqSJpVga13QwLN8MxlHYNU2Qjwb1CmZN9Bos8yV+dFV4RuM2/js6mx/yBH36zLR09ygHYxovhzbYH39Ayo9pYfBUjSxEd5IlgCWpjaz/BmT3bDRUCz/b3BZCrh7cLzklBpEJjT8aCYhCiCnmofM5F+e5cnHv4gEVN7J9G1iURRvE4gF/0uTp/pxRNFATbAqN8o7hATv7vR/wVbq19D93np3qRNJ+SCX0hGdiOEIHj1I0P+Z5pTdEeS9q2pve6tf0ZwitpFfCJdtT24GCnyI0juAiDhHi+Nh+/36VtOtBbLNFq6myXUMOZSRtZgk8FPdd6eBQ0n+QnN5XrauBExLVdYXbkWGvJn9D0FFcwq6da/ilYqZXczk=
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 8BIT
+        Tue, 16 Apr 2019 20:07:51 -0400
+Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
+        id B933C2B8E73; Tue, 16 Apr 2019 20:07:50 -0400 (EDT)
+Date:   Tue, 16 Apr 2019 20:07:50 -0400
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To:     fdmanana@kernel.org
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: do not start a transaction during fiemap
+Message-ID: <20190417000749.GA16405@hungrycats.org>
+References: <20190415082900.2023-1-fdmanana@kernel.org>
 MIME-Version: 1.0
-X-MS-Exchange-CrossTenant-Network-Message-Id: 3e5119be-30b2-41f5-87ce-08d6c2c58a9f
-X-MS-Exchange-CrossTenant-originalarrivaltime: 16 Apr 2019 23:45:00.9190
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: 105b2061-b669-4b31-92ac-24d304d195dc
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: AT5PR8401MB0372
-X-OriginatorOrg: hpe.com
-X-HPE-SCL: -1
-X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10434:,, definitions=2019-04-16_09:,,
- signatures=0
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 priorityscore=1501
- malwarescore=0 suspectscore=0 phishscore=0 bulkscore=0 spamscore=0
- clxscore=1011 lowpriorityscore=0 mlxscore=0 impostorscore=0
- mlxlogscore=843 adultscore=0 classifier=spam adjust=0 reason=mlx
- scancount=1 engine=8.0.1-1810050000 definitions=main-1904160141
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="wRRV7LY7NUeQGEoC"
+Content-Disposition: inline
+In-Reply-To: <20190415082900.2023-1-fdmanana@kernel.org>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-> -----Original Message-----
-> From: Linux-nvdimm [mailto:linux-nvdimm-bounces@lists.01.org] On Behalf Of Goldwyn Rodrigues
-> Sent: Tuesday, April 16, 2019 11:42 AM
-> Subject: [PATCH 02/18] btrfs: Carve out btrfs_get_extent_map_write() out of btrfs_get_blocks_write()
-...
-> +static int btrfs_get_blocks_direct_write(struct extent_map **map,
-> +					 struct buffer_head *bh_result,
-> +					 struct inode *inode,
-> +					 struct btrfs_dio_data *dio_data,
-> +					 u64 start, u64 len)
-> +{
-> +	int ret = 0;
 
-That initialization value is not needed, since ret is always overwritten
-two lines later.
+--wRRV7LY7NUeQGEoC
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-> +	struct extent_map *em;
-> +
-> +	ret = btrfs_get_extent_map_write(map, bh_result, inode,
-> +			start, len);
-> +	if (ret < 0)
-> +		return ret;
-> +	em = *map;
+On Mon, Apr 15, 2019 at 09:29:00AM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+>=20
+> During fiemap, for regular extents (non inline) we need to check if they
+> are shared and if they are, set the shared bit. Checking if an extent is
+> shared requires checking the delayed references of the currently running
+> transaction, since some reference might have not yet hit the extent tree
+> and be only in the in-memory delayed references.
+>=20
+> However we were using a transaction join for this, which creates a new
+> transaction when there is no transaction currently running. That means
+> that two more potential failures can happen: creating the transaction and
+> committing it. Further, if no write activity is currently happening in the
+> system, and fiemap calls keep being done, we end up creating and
+> committing transactions that do nothing.
 
+Cool!
+
+Any chance we can do this for the LOGICAL_INO ioctl?  Last time I checked
+(I admit that was a while ago), LOGICAL_INO cost about the same as
+fsync(), because it creates transactions with btrfs_join_transaction a
+few levels deep in the call stack, and gets blocked waiting for them
+to complete.
+
+It looks like btrfs_ioctl_logical_to_ino can set:
+
+	path->search_commit_root =3D 1;
+
+just before calling iterate_inodes_from_logical, but I tried that once,
+and my test filesystem blew up a few days later, so there might be
+something subtle that I missed.  Or maybe my test filesystem was going
+to blow up that day anyway--I just assumed that I don't know what I'm
+doing, and didn't repeat the test.
+
+bees spends about 30% of its time stuck in LOGICAL_INO with a stack
+trace like this:
+
+	[<ffffffffa8400e88>] btrfs_async_run_delayed_refs+0x118/0x140
+	[<ffffffffa841fbaa>] __btrfs_end_transaction+0x1da/0x2e0
+	[<ffffffffa848ed19>] iterate_extent_inodes+0x159/0x3a0
+	[<ffffffffa848eff6>] iterate_inodes_from_logical+0x96/0xb0
+	[<ffffffffa84590a8>] btrfs_ioctl_logical_to_ino+0xe8/0x190
+	[<ffffffffa845f1fd>] btrfs_ioctl+0xc5d/0x26a0
+	[<ffffffffa82a8a62>] do_vfs_ioctl+0x92/0x6b0
+	[<ffffffffa82a90f4>] SyS_ioctl+0x74/0x80
+	[<ffffffffa8003b96>] do_syscall_64+0x76/0x180
+	[<ffffffffa8e00086>] entry_SYSCALL_64_after_hwframe+0x42/0xb7
+	[<ffffffffffffffff>] 0xffffffffffffffff
+
+so if it's at all possible to do LOGICAL_INO without joining a
+transaction, the benefits should be significant.
+
+> In some extreme cases this can result in the commit of the transaction
+> created by fiemap to fail with ENOSPC when updating the root item of a
+> subvolume tree because a join does not reserve any space, leading to a
+> trace like the following:
+>=20
+>  heisenberg kernel: ------------[ cut here ]------------
+>  heisenberg kernel: BTRFS: Transaction aborted (error -28)
+>  heisenberg kernel: WARNING: CPU: 0 PID: 7137 at fs/btrfs/root-tree.c:136=
+ btrfs_update_root+0x22b/0x320 [btrfs]
+> (...)
+>  heisenberg kernel: CPU: 0 PID: 7137 Comm: btrfs-transacti Not tainted 4.=
+19.0-4-amd64 #1 Debian 4.19.28-2
+>  heisenberg kernel: Hardware name: FUJITSU LIFEBOOK U757/FJNB2A5, BIOS Ve=
+rsion 1.21 03/19/2018
+>  heisenberg kernel: RIP: 0010:btrfs_update_root+0x22b/0x320 [btrfs]
+> (...)
+>  heisenberg kernel: RSP: 0018:ffffb5448828bd40 EFLAGS: 00010286
+>  heisenberg kernel: RAX: 0000000000000000 RBX: ffff8ed56bccef50 RCX: 0000=
+000000000006
+>  heisenberg kernel: RDX: 0000000000000007 RSI: 0000000000000092 RDI: ffff=
+8ed6bda166a0
+>  heisenberg kernel: RBP: 00000000ffffffe4 R08: 00000000000003df R09: 0000=
+000000000007
+>  heisenberg kernel: R10: 0000000000000000 R11: 0000000000000001 R12: ffff=
+8ed63396a078
+>  heisenberg kernel: R13: ffff8ed092d7c800 R14: ffff8ed64f5db028 R15: ffff=
+8ed6bd03d068
+>  heisenberg kernel: FS:  0000000000000000(0000) GS:ffff8ed6bda00000(0000)=
+ knlGS:0000000000000000
+>  heisenberg kernel: CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+>  heisenberg kernel: CR2: 00007f46f75f8000 CR3: 0000000310a0a002 CR4: 0000=
+0000003606f0
+>  heisenberg kernel: DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000=
+000000000000
+>  heisenberg kernel: DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000=
+000000000400
+>  heisenberg kernel: Call Trace:
+>  heisenberg kernel:  commit_fs_roots+0x166/0x1d0 [btrfs]
+>  heisenberg kernel:  ? _cond_resched+0x15/0x30
+>  heisenberg kernel:  ? btrfs_run_delayed_refs+0xac/0x180 [btrfs]
+>  heisenberg kernel:  btrfs_commit_transaction+0x2bd/0x870 [btrfs]
+>  heisenberg kernel:  ? start_transaction+0x9d/0x3f0 [btrfs]
+>  heisenberg kernel:  transaction_kthread+0x147/0x180 [btrfs]
+>  heisenberg kernel:  ? btrfs_cleanup_transaction+0x530/0x530 [btrfs]
+>  heisenberg kernel:  kthread+0x112/0x130
+>  heisenberg kernel:  ? kthread_bind+0x30/0x30
+>  heisenberg kernel:  ret_from_fork+0x35/0x40
+>  heisenberg kernel: ---[ end trace 05de912e30e012d9 ]---
+>=20
+> Since fiemap (and btrfs_check_shared()) is a read-only operation, do not =
+do
+> a transaction join to avoid the overhead of creating a new transaction (if
+> there is currently no running transaction) and introducing a potential
+> point of failure when the new transaction gets committed, instead use a
+> transaction attach to grab a handle for the currently running transaction
+> if any.
+>=20
+> Reported-by: Christoph Anton Mitterer <calestyo@scientia.net>
+> Link: https://lore.kernel.org/linux-btrfs/b2a668d7124f1d3e410367f587926f6=
+22b3f03a4.camel@scientia.net/
+> Fixes: afce772e87c36c ("btrfs: fix check_shared for fiemap ioctl")
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  fs/btrfs/backref.c | 11 ++++++++---
+>  1 file changed, 8 insertions(+), 3 deletions(-)
+>=20
+> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+> index 11459fe84a29..876e6bb93797 100644
+> --- a/fs/btrfs/backref.c
+> +++ b/fs/btrfs/backref.c
+> @@ -1460,8 +1460,8 @@ int btrfs_find_all_roots(struct btrfs_trans_handle =
+*trans,
+>   * callers (such as fiemap) which want to know whether the extent is
+>   * shared but do not need a ref count.
+>   *
+> - * This attempts to allocate a transaction in order to account for
+> - * delayed refs, but continues on even when the alloc fails.
+> + * This attempts to attach to the running transaction in order to accoun=
+t for
+> + * delayed refs, but continues on even when no running transaction exist=
+s.
+>   *
+>   * Return: 0 if extent is not shared, 1 if it is shared, < 0 on error.
+>   */
+> @@ -1489,8 +1489,12 @@ int btrfs_check_shared(struct btrfs_root *root, u6=
+4 inum, u64 bytenr)
+>  		return -ENOMEM;
+>  	}
+> =20
+> -	trans =3D btrfs_join_transaction(root);
+> +	trans =3D btrfs_attach_transaction(root);
+>  	if (IS_ERR(trans)) {
+> +		if (PTR_ERR(trans) !=3D -ENOENT) {
+> +			ret =3D PTR_ERR(trans);
+> +			goto out;
+> +		}
+>  		trans =3D NULL;
+>  		down_read(&fs_info->commit_root_sem);
+>  	} else {
+> @@ -1523,6 +1527,7 @@ int btrfs_check_shared(struct btrfs_root *root, u64=
+ inum, u64 bytenr)
+>  	} else {
+>  		up_read(&fs_info->commit_root_sem);
+>  	}
+> +out:
+>  	ulist_free(tmp);
+>  	ulist_free(roots);
+>  	return ret;
+> --=20
+> 2.11.0
+>=20
+
+--wRRV7LY7NUeQGEoC
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCXLZuUQAKCRCB+YsaVrMb
+nPfUAKC1II7/r0gO2R03CA5kw4xVdZ8w6wCdGq3mGecFWrwBZoSKL0MgWTCfPtg=
+=vrg6
+-----END PGP SIGNATURE-----
+
+--wRRV7LY7NUeQGEoC--

@@ -2,181 +2,96 @@ Return-Path: <SRS0=+3PB=ST=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8283AC10F12
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Apr 2019 09:28:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 59DF1C10F12
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Apr 2019 09:30:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4B1F12173C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Apr 2019 09:28:58 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1555493338;
-	bh=BHooVTkdpyQX8oO41Xf2W8ClDBM2qf93QuDHCuwRmZw=;
-	h=From:To:Subject:Date:List-ID:From;
-	b=UvNNJzwWqpLAWwNzcjE2BoLxrisIDASwUAmoM+K9tTsBavSSKGm4tJgitDgGgoknT
-	 I3HOiLVtLL3xf041xC5lEY1ioNBKYAhwsRV0h7wpzM4qsZjDjoikE7JouRtcrCkbpt
-	 qyNn76pAzrKHEHvj9qZKgoj1Ze9+W/pDb+crTfWM=
+	by mail.kernel.org (Postfix) with ESMTP id 27D9C2073F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Apr 2019 09:30:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731549AbfDQJ25 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Apr 2019 05:28:57 -0400
-Received: from mail.kernel.org ([198.145.29.99]:39886 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726237AbfDQJ2w (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Apr 2019 05:28:52 -0400
-Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id C9F232073F
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Apr 2019 09:28:50 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1555493331;
-        bh=BHooVTkdpyQX8oO41Xf2W8ClDBM2qf93QuDHCuwRmZw=;
-        h=From:To:Subject:Date:From;
-        b=HYfMEJOHKva3tv5xVkehhycKnWSn7aLnpKSmzPHOw7lDlTwWtkuFqo3Q6PIKY83lB
-         Z0pptXnzs8S+V3+z8N8UAvr854it60M4k2ct4NbEffSikXs7PL+qHc6WL+jDG0WybN
-         vQCIHlRF0y6mmHRbDCenTJHo9HdPoxm2h9zT6qNA=
-From:   fdmanana@kernel.org
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: remove no longer used function to run delayed refs asynchronously
-Date:   Wed, 17 Apr 2019 10:28:47 +0100
-Message-Id: <20190417092847.17299-1-fdmanana@kernel.org>
-X-Mailer: git-send-email 2.11.0
+        id S1731446AbfDQJah (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Apr 2019 05:30:37 -0400
+Received: from mx2.suse.de ([195.135.220.15]:51268 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726237AbfDQJag (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 17 Apr 2019 05:30:36 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id D0DD3AC84;
+        Wed, 17 Apr 2019 09:30:35 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 789BCDA871; Wed, 17 Apr 2019 11:31:43 +0200 (CEST)
+Date:   Wed, 17 Apr 2019 11:31:43 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/6] cleanup property and extended attribute set
+Message-ID: <20190417093142.GC20156@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
+        linux-btrfs@vger.kernel.org
+References: <20190412080259.5192-1-anand.jain@oracle.com>
+ <20190415190117.GA20156@twin.jikos.cz>
+ <5e49b381-ef69-f9d9-c934-7122bbc5406b@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <5e49b381-ef69-f9d9-c934-7122bbc5406b@oracle.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+On Tue, Apr 16, 2019 at 06:01:58AM +0800, Anand Jain wrote:
+> 
+> 
+> On 16/4/19 3:01 am, David Sterba wrote:
+> > On Fri, Apr 12, 2019 at 04:02:53PM +0800, Anand Jain wrote:
+> >> In an attempt to stream line the property and extended attribute set here
+> >> are the few cleanup patches.
+> >>
+> >>   1/6 to 3/6 are mostly non functional cleanups (except for the conversion
+> >>    to non static function in 3/6) and can be merged together.
+> >>   4/6 removes the readonly root check in btrfs_setxattr() more details in
+> >>    the change log.
+> >>   5/6 as now we have btrfs_setxattr() and btrfs_setxattr_trans() for the
+> >>    threads with transaction and without transaction respectively, so this
+> >>    patch uses them.
+> >>   6/6 as 5/6 as diverted the threads with transaction to btrfs_setxattr(),
+> >>    now btrfs_setxattr_trans() can drop the trans arg.
+> >>
+> >> Anand Jain (6):
+> >>    btrfs: rename btrfs_setxattr to btrfs_setxattr_trans
+> >>    btrfs: rename do_setxattr to btrfs_setxattr
+> >>    btrfs: declare btrfs_setxattr as a non static function
+> >>    btrfs: remove redundant readonly root check in btrfs_setxattr_trans
+> >>    btrfs: split thread with trans to use btrfs_setxattr
+> >>    btrfs: cleanup btrfs_setxattr_trans drop trans arg
+> > 
+> > Looks good to me, thanks. The result is very close to what the previous
+> > patchset did. Patchset will go to for-next soon.
+> > 
+> 
+> Thanks. On top of these, I am writing patches to merge 
+> start_transactions in btrfs_ioctl_setflags().
 
-It used to be called from only two places (truncate path and releasing a
-transaction handle), but commits 28bad2125767c5 ("btrfs: fix truncate
-throttling") and db2462a6ad3dc4 ("btrfs: don't run delayed refs in the end
-transaction logic") removed their calls to this function, so it's not used
-anymore. Just remove it and all its helpers.
+My current idea how to change btrfs_ioctl_setflags is like that (but I
+haven't prototyped it so it might not work):
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/ctree.h       |  2 --
- fs/btrfs/extent-tree.c | 91 --------------------------------------------------
- 2 files changed, 93 deletions(-)
+- don't change binode->flags directly, but do all flag updates on a
+  temporary variable
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 0f4838e00fbc..a1c7effe6de4 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2698,8 +2698,6 @@ void btrfs_wait_nocow_writers(struct btrfs_block_group_cache *bg);
- void btrfs_put_block_group(struct btrfs_block_group_cache *cache);
- int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
- 			   unsigned long count);
--int btrfs_async_run_delayed_refs(struct btrfs_fs_info *fs_info,
--				 unsigned long count, u64 transid, int wait);
- void btrfs_cleanup_ref_head_accounting(struct btrfs_fs_info *fs_info,
- 				  struct btrfs_delayed_ref_root *delayed_refs,
- 				  struct btrfs_delayed_ref_head *head);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 5b33cf0a539b..22dccd691c1e 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2877,97 +2877,6 @@ int btrfs_should_throttle_delayed_refs(struct btrfs_trans_handle *trans)
- 	return btrfs_check_space_for_delayed_refs(trans->fs_info);
- }
- 
--struct async_delayed_refs {
--	struct btrfs_root *root;
--	u64 transid;
--	int count;
--	int error;
--	int sync;
--	struct completion wait;
--	struct btrfs_work work;
--};
--
--static inline struct async_delayed_refs *
--to_async_delayed_refs(struct btrfs_work *work)
--{
--	return container_of(work, struct async_delayed_refs, work);
--}
--
--static void delayed_ref_async_start(struct btrfs_work *work)
--{
--	struct async_delayed_refs *async = to_async_delayed_refs(work);
--	struct btrfs_trans_handle *trans;
--	struct btrfs_fs_info *fs_info = async->root->fs_info;
--	int ret;
--
--	/* if the commit is already started, we don't need to wait here */
--	if (btrfs_transaction_blocked(fs_info))
--		goto done;
--
--	trans = btrfs_join_transaction(async->root);
--	if (IS_ERR(trans)) {
--		async->error = PTR_ERR(trans);
--		goto done;
--	}
--
--	/*
--	 * trans->sync means that when we call end_transaction, we won't
--	 * wait on delayed refs
--	 */
--	trans->sync = true;
--
--	/* Don't bother flushing if we got into a different transaction */
--	if (trans->transid > async->transid)
--		goto end;
--
--	ret = btrfs_run_delayed_refs(trans, async->count);
--	if (ret)
--		async->error = ret;
--end:
--	ret = btrfs_end_transaction(trans);
--	if (ret && !async->error)
--		async->error = ret;
--done:
--	if (async->sync)
--		complete(&async->wait);
--	else
--		kfree(async);
--}
--
--int btrfs_async_run_delayed_refs(struct btrfs_fs_info *fs_info,
--				 unsigned long count, u64 transid, int wait)
--{
--	struct async_delayed_refs *async;
--	int ret;
--
--	async = kmalloc(sizeof(*async), GFP_NOFS);
--	if (!async)
--		return -ENOMEM;
--
--	async->root = fs_info->tree_root;
--	async->count = count;
--	async->error = 0;
--	async->transid = transid;
--	if (wait)
--		async->sync = 1;
--	else
--		async->sync = 0;
--	init_completion(&async->wait);
--
--	btrfs_init_work(&async->work, btrfs_extent_refs_helper,
--			delayed_ref_async_start, NULL, NULL);
--
--	btrfs_queue_work(fs_info->extent_workers, &async->work);
--
--	if (wait) {
--		wait_for_completion(&async->wait);
--		ret = async->error;
--		kfree(async);
--		return ret;
--	}
--	return 0;
--}
--
- /*
-  * this starts processing the delayed reference count updates and
-  * extent insertions we have queued up so far.  count can be
--- 
-2.11.0
+- if a property needs to be changed, do validation first, then start
+  transaction and pass it to the property handler
 
+- in the finalizing code, start a transaction unless it's been started
+  already, apply the iflags and end transaction
+
+This means there are up to 4 starting points of transaction, but the
+property validation should never fail between start/end region. There
+are other potential failures due to ENOMEM or ENOSPC, but that's the
+general set of errors we can't avoid.

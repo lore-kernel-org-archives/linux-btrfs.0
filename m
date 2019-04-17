@@ -2,80 +2,70 @@ Return-Path: <SRS0=+3PB=ST=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED,
-	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D79FAC282DA
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Apr 2019 15:36:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 936DAC282DA
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Apr 2019 15:37:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 94E1220674
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Apr 2019 15:36:46 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 56EF620674
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Apr 2019 15:37:20 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="RynXM008"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="ywcqeoUV"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732704AbfDQPgp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Apr 2019 11:36:45 -0400
-Received: from userp2130.oracle.com ([156.151.31.86]:39310 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1732110AbfDQPgp (ORCPT
+        id S1731959AbfDQPhT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Apr 2019 11:37:19 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:54836 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1731472AbfDQPhT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Apr 2019 11:36:45 -0400
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x3HFJ4wY167805;
-        Wed, 17 Apr 2019 15:36:25 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
- : subject : message-id : references : mime-version : content-type :
- in-reply-to; s=corp-2018-07-02;
- bh=xt6m8Dou3zF/VrxOCVEAQikoO2vPPlVk9oqrwx55qQk=;
- b=RynXM008DUzlOcY8/Jv0UNnLo/qQykSAgvkzstJI/Q+atmALif55dLq4tnMIDnVUvyCe
- kLIYTiE0KN45/pL4mmnO8YRHQCyuGrJ3CgpbFH6TXZxVeUEyz5+0oAoCHLQOgj4Kcz80
- EiZv82dgN6OI2dfSBJYDtkbQpdk5N6U38cblWN4DCUwYxCZ/tOIqSIfmMymoX7wTmhSN
- QhKNq7E0PaFLLcN6BhIlLBJebeDZCrMXOdwlgrpq16m3nKCScs5ZoMnaPOPTzP4AjzxN
- tLHYrTk+VSXFlnHLRN2ePCSu346Cz+xL1EE+jl2ylJMES5q1kZF1F6Ho1KpiOt317RN6 1g== 
+        Wed, 17 Apr 2019 11:37:19 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x3HFJ0Q5184584;
+        Wed, 17 Apr 2019 15:37:15 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
+ subject : date : message-id; s=corp-2018-07-02;
+ bh=RYYmY75JHgEXYlf0iBKQMsU0I5qFYi8nB6whpuMbGTs=;
+ b=ywcqeoUVMjnJIELmMU422FI/+Xeo+6GI+QyskgV082+NVpnnzLTrdzMnoSLyyfgGotUh
+ voEfIjJzlSTHVxFMJ7l/lmVCJWIoN6EVnPOG2rKQMfAY1esytyCJI/u0pjxcpEHnxRRE
+ zrRD95393k/MpdAcbvJmcPKZppUA4E8uy35HVEcV6HY5N/APQMzqNMzb3VBNCBq4DHFu
+ j83XzK6m9UaGkope966L2RJTbO20UJP5XYR+UQLsNCgqYDRUbbm7ZZDWVGDPPz5jgKkA
+ l/u8+dvSZQ1fPcFJ9laywrekHRpzJZc9LE0nxrBJeZFeQLLaAMls61e/GZDffhr4Fs2w LA== 
 Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
-        by userp2130.oracle.com with ESMTP id 2rvwk3uuvx-1
+        by userp2120.oracle.com with ESMTP id 2rusnf1r0u-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Wed, 17 Apr 2019 15:36:25 +0000
+        Wed, 17 Apr 2019 15:37:15 +0000
 Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
-        by userp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x3HFZ1w8115341;
-        Wed, 17 Apr 2019 15:36:24 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userp3030.oracle.com with ESMTP id 2ru4vtvh1y-1
+        by userp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x3HFb4xt121682;
+        Wed, 17 Apr 2019 15:37:15 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by userp3030.oracle.com with ESMTP id 2ru4vtvhkd-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Wed, 17 Apr 2019 15:36:24 +0000
-Received: from abhmp0015.oracle.com (abhmp0015.oracle.com [141.146.116.21])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x3HFaLwb018738;
-        Wed, 17 Apr 2019 15:36:22 GMT
-Received: from localhost (/67.169.218.210)
+        Wed, 17 Apr 2019 15:37:15 +0000
+Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x3HFbEka002563;
+        Wed, 17 Apr 2019 15:37:14 GMT
+Received: from localhost.localdomain (/116.87.143.221)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Wed, 17 Apr 2019 08:36:21 -0700
-Date:   Wed, 17 Apr 2019 08:36:19 -0700
-From:   "Darrick J. Wong" <darrick.wong@oracle.com>
-To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc:     linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        jack@suse.cz, david@fromorbit.com, willy@infradead.org, hch@lst.de,
-        kilobyte@angband.pl, dsterba@suse.cz, nborisov@suse.com,
-        linux-nvdimm@lists.01.org, Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: Re: [PATCH 13/18] fs: dedup file range to use a compare function
-Message-ID: <20190417153619.GB4740@magnolia>
-References: <20190416164154.30390-1-rgoldwyn@suse.de>
- <20190416164154.30390-14-rgoldwyn@suse.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190416164154.30390-14-rgoldwyn@suse.de>
-User-Agent: Mutt/1.9.4 (2018-02-28)
+        with ESMTP ; Wed, 17 Apr 2019 08:37:13 -0700
+From:   Anand Jain <anand.jain@oracle.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     dsterba@suse.cz
+Subject: [PATCH 0/2 RFC] fix duplicate code in btrfs_ioctl_setflags
+Date:   Wed, 17 Apr 2019 23:37:04 +0800
+Message-Id: <20190417153706.29942-1-anand.jain@oracle.com>
+X-Mailer: git-send-email 2.17.1
 X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9230 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=1 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=781
  adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.0.1-1810050000 definitions=main-1904170104
 X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9230 signatures=668685
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
- suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
- lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ suspectscore=1 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=815 adultscore=0
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
  definitions=main-1904170104
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -83,282 +73,13 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Apr 16, 2019 at 11:41:49AM -0500, Goldwyn Rodrigues wrote:
-> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> 
-> With dax we cannot deal with readpage() etc. So, we create a
-> funciton callback to perform the file data comparison and pass
-> it to generic_remap_file_range_prep() so it can use iomap-based
-> functions.
-> 
-> This may not be the best way to solve this. Suggestions welcome.
-> 
-> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> ---
->  fs/btrfs/ctree.h     |  9 ++++++++
->  fs/btrfs/dax.c       |  7 +++++++
->  fs/btrfs/ioctl.c     | 11 ++++++++--
->  fs/dax.c             | 58 ++++++++++++++++++++++++++++++++++++++++++++++++++++
->  fs/ocfs2/file.c      |  2 +-
->  fs/read_write.c      | 10 ++++-----
->  fs/xfs/xfs_reflink.c |  2 +-
->  include/linux/dax.h  |  2 ++
->  include/linux/fs.h   |  7 ++++++-
->  9 files changed, 98 insertions(+), 10 deletions(-)
-> 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 2b7bdabb44f8..d3d044125619 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -3803,11 +3803,20 @@ int btree_readahead_hook(struct extent_buffer *eb, int err);
->  ssize_t btrfs_file_dax_read(struct kiocb *iocb, struct iov_iter *to);
->  ssize_t btrfs_file_dax_write(struct kiocb *iocb, struct iov_iter *from);
->  vm_fault_t btrfs_dax_fault(struct vm_fault *vmf);
-> +int btrfs_dax_file_range_compare(struct inode *src, loff_t srcoff,
-> +		struct inode *dest, loff_t destoff, loff_t len,
-> +		bool *is_same);
->  #else
->  static inline ssize_t btrfs_file_dax_write(struct kiocb *iocb, struct iov_iter *from)
->  {
->  	return 0;
->  }
-> +static inline int btrfs_dax_file_range_compare(struct inode *src, loff_t srcoff,
-> +		struct inode *dest, loff_t destoff, loff_t len,
-> +		bool *is_same)
-> +{
-> +	return 0;
-> +}
->  #endif /* CONFIG_FS_DAX */
->  
->  static inline int is_fstree(u64 rootid)
-> diff --git a/fs/btrfs/dax.c b/fs/btrfs/dax.c
-> index de957d681e16..a29628b403b3 100644
-> --- a/fs/btrfs/dax.c
-> +++ b/fs/btrfs/dax.c
-> @@ -227,4 +227,11 @@ vm_fault_t btrfs_dax_fault(struct vm_fault *vmf)
->  
->  	return ret;
->  }
-> +
-> +int btrfs_dax_file_range_compare(struct inode *src, loff_t srcoff,
-> +		struct inode *dest, loff_t destoff, loff_t len,
-> +		bool *is_same)
-> +{
-> +	return dax_file_range_compare(src, srcoff, dest, destoff, len, is_same, &btrfs_iomap_ops);
-> +}
->  #endif /* CONFIG_FS_DAX */
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 0138119cd9a3..cd590105bd78 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -4000,8 +4000,15 @@ static int btrfs_remap_file_range_prep(struct file *file_in, loff_t pos_in,
->  	if (ret < 0)
->  		goto out_unlock;
->  
-> -	ret = generic_remap_file_range_prep(file_in, pos_in, file_out, pos_out,
-> -					    len, remap_flags);
-> +	if (IS_DAX(file_inode(file_in)) && IS_DAX(file_inode(file_out)))
-> +		ret = generic_remap_file_range_prep(file_in, pos_in, file_out,
-> +				pos_out, len, remap_flags,
-> +				btrfs_dax_file_range_compare);
-> +	else
-> +		ret = generic_remap_file_range_prep(file_in, pos_in, file_out,
-> +				pos_out, len, remap_flags,
-> +				vfs_dedupe_file_range_compare);
+There are two reasons why I am marking this as RFC as of now.
+I don't see the preparatory patches yet, I wonder if this should
+be based on for-next-20190415? I couldn't reproduce the issue,
+which theoretically should exist as in the patch 2/2.
 
-I wonder if you could simply have a compare_range_t variable that you
-can set to either the vfs and btrfs_dax compare functions, and then only
-have to maintain a single generic_remap_file_range_prep callsite?
-
-> +
->  	if (ret < 0 || *len == 0)
->  		goto out_unlock;
->  
-> diff --git a/fs/dax.c b/fs/dax.c
-> index d5100cbe8bd2..abbe4a79f219 100644
-> --- a/fs/dax.c
-> +++ b/fs/dax.c
-> @@ -1759,3 +1759,61 @@ vm_fault_t dax_finish_sync_fault(struct vm_fault *vmf,
->  	return dax_insert_pfn_mkwrite(vmf, pfn, order);
->  }
->  EXPORT_SYMBOL_GPL(dax_finish_sync_fault);
-> +
-> +
-> +int dax_file_range_compare(struct inode *src, loff_t srcoff, struct inode *dest,
-> +		loff_t destoff, loff_t len, bool *is_same, const struct iomap_ops *ops)
-> +{
-> +	void *saddr, *daddr;
-> +	struct iomap s_iomap = {0};
-> +	struct iomap d_iomap = {0};
-> +	loff_t dstart, sstart;
-> +	bool same = true;
-> +	loff_t cmp_len, l;
-> +	int id, ret = 0;
-> +
-> +	id = dax_read_lock();
-> +	while (len) {
-> +		ret = ops->iomap_begin(src, srcoff, len, 0, &s_iomap);
-> +		if (ret < 0) {
-> +			if (ops->iomap_end)
-> +				ops->iomap_end(src, srcoff, len, ret, 0, &s_iomap);
-> +			return ret;
-> +		}
-> +		cmp_len = len;
-> +		if (cmp_len > s_iomap.offset + s_iomap.length - srcoff)
-> +			cmp_len = s_iomap.offset + s_iomap.length - srcoff;
-> +
-> +		ret = ops->iomap_begin(dest, destoff, cmp_len, 0, &d_iomap);
-> +		if (ret < 0) {
-> +			if (ops->iomap_end) {
-> +				ops->iomap_end(src, srcoff, len, ret, 0, &s_iomap);
-> +				ops->iomap_end(dest, destoff, len, ret, 0, &d_iomap);
-> +			}
-> +			return ret;
-> +		}
-> +		if (cmp_len > d_iomap.offset + d_iomap.length - destoff)
-> +			cmp_len = d_iomap.offset + d_iomap.length - destoff;
-> +
-> +
-> +		sstart = (get_start_sect(s_iomap.bdev) << 9) + s_iomap.addr + (srcoff - s_iomap.offset);
-
-This kinda screams static inline helper function...
-
-> +		l = dax_direct_access(s_iomap.dax_dev, PHYS_PFN(sstart), PHYS_PFN(cmp_len), &saddr, NULL);
-> +		dstart = (get_start_sect(d_iomap.bdev) << 9) + d_iomap.addr + (destoff - d_iomap.offset);
-
-...especially since it happens again here...
-
-> +		l = dax_direct_access(d_iomap.dax_dev, PHYS_PFN(dstart), PHYS_PFN(cmp_len), &daddr, NULL);
-
-...and these lines are too long.
-
-> +		same = !memcmp(saddr, daddr, cmp_len);
-> +		if (!same)
-> +			break;
-> +		len -= cmp_len;
-> +		srcoff += cmp_len;
-> +		destoff += cmp_len;
-> +
-> +		if (ops->iomap_end) {
-> +			ret = ops->iomap_end(src, srcoff, len, 0, 0, &s_iomap);
-> +			ret = ops->iomap_end(dest, destoff, len, 0, 0, &d_iomap);
-> +		}
-> +	}
-> +	dax_read_unlock(id);
-> +	*is_same = same;
-> +	return ret;
-> +}
-> +EXPORT_SYMBOL_GPL(dax_file_range_compare);
-> diff --git a/fs/ocfs2/file.c b/fs/ocfs2/file.c
-> index d640c5f8a85d..9d470306cfc3 100644
-> --- a/fs/ocfs2/file.c
-> +++ b/fs/ocfs2/file.c
-> @@ -2558,7 +2558,7 @@ static loff_t ocfs2_remap_file_range(struct file *file_in, loff_t pos_in,
->  		goto out_unlock;
->  
->  	ret = generic_remap_file_range_prep(file_in, pos_in, file_out, pos_out,
-> -			&len, remap_flags);
-> +			&len, remap_flags, vfs_dedupe_file_range_compare);
->  	if (ret < 0 || len == 0)
->  		goto out_unlock;
->  
-> diff --git a/fs/read_write.c b/fs/read_write.c
-> index 61b43ad7608e..ecc67740d0ff 100644
-> --- a/fs/read_write.c
-> +++ b/fs/read_write.c
-> @@ -1778,7 +1778,7 @@ static struct page *vfs_dedupe_get_page(struct inode *inode, loff_t offset)
->   * Compare extents of two files to see if they are the same.
->   * Caller must have locked both inodes to prevent write races.
->   */
-> -static int vfs_dedupe_file_range_compare(struct inode *src, loff_t srcoff,
-> +int vfs_dedupe_file_range_compare(struct inode *src, loff_t srcoff,
->  					 struct inode *dest, loff_t destoff,
->  					 loff_t len, bool *is_same)
->  {
-> @@ -1845,6 +1845,7 @@ static int vfs_dedupe_file_range_compare(struct inode *src, loff_t srcoff,
->  out_error:
->  	return error;
->  }
-> +EXPORT_SYMBOL(vfs_dedupe_file_range_compare);
-
-Not EXPORT_SYMBOL_GPL? :D
-
->  /*
->   * Check that the two inodes are eligible for cloning, the ranges make
-> @@ -1856,7 +1857,7 @@ static int vfs_dedupe_file_range_compare(struct inode *src, loff_t srcoff,
->   */
->  int generic_remap_file_range_prep(struct file *file_in, loff_t pos_in,
->  				  struct file *file_out, loff_t pos_out,
-> -				  loff_t *len, unsigned int remap_flags)
-> +				  loff_t *len, unsigned int remap_flags, compare_range_t compare)
->  {
->  	struct inode *inode_in = file_inode(file_in);
->  	struct inode *inode_out = file_inode(file_out);
-> @@ -1915,9 +1916,8 @@ int generic_remap_file_range_prep(struct file *file_in, loff_t pos_in,
->  	 */
->  	if (remap_flags & REMAP_FILE_DEDUP) {
->  		bool		is_same = false;
-> -
-> -		ret = vfs_dedupe_file_range_compare(inode_in, pos_in,
-> -				inode_out, pos_out, *len, &is_same);
-> +		ret = compare(inode_in, pos_in,
-> +			inode_out, pos_out, *len, &is_same);
->  		if (ret)
->  			return ret;
->  		if (!is_same)
-> diff --git a/fs/xfs/xfs_reflink.c b/fs/xfs/xfs_reflink.c
-> index 680ae7662a78..68e4257cebb0 100644
-> --- a/fs/xfs/xfs_reflink.c
-> +++ b/fs/xfs/xfs_reflink.c
-> @@ -1350,7 +1350,7 @@ xfs_reflink_remap_prep(
->  		goto out_unlock;
->  
->  	ret = generic_remap_file_range_prep(file_in, pos_in, file_out, pos_out,
-> -			len, remap_flags);
-> +			len, remap_flags, vfs_dedupe_file_range_compare);
->  	if (ret < 0 || *len == 0)
->  		goto out_unlock;
->  
-> diff --git a/include/linux/dax.h b/include/linux/dax.h
-> index 0dd316a74a29..a11bc7b1f526 100644
-> --- a/include/linux/dax.h
-> +++ b/include/linux/dax.h
-> @@ -157,6 +157,8 @@ vm_fault_t dax_finish_sync_fault(struct vm_fault *vmf,
->  int dax_delete_mapping_entry(struct address_space *mapping, pgoff_t index);
->  int dax_invalidate_mapping_entry_sync(struct address_space *mapping,
->  				      pgoff_t index);
-> +int dax_file_range_compare(struct inode *src, loff_t srcoff, struct inode *dest,
-> +                loff_t destoff, loff_t len, bool *is_same, const struct iomap_ops *ops);
->  
->  #ifdef CONFIG_FS_DAX
->  int __dax_zero_page_range(struct block_device *bdev,
-> diff --git a/include/linux/fs.h b/include/linux/fs.h
-> index dd28e7679089..b1aa2fc105ae 100644
-> --- a/include/linux/fs.h
-> +++ b/include/linux/fs.h
-> @@ -1883,10 +1883,15 @@ extern ssize_t vfs_readv(struct file *, const struct iovec __user *,
->  		unsigned long, loff_t *, rwf_t);
->  extern ssize_t vfs_copy_file_range(struct file *, loff_t , struct file *,
->  				   loff_t, size_t, unsigned int);
-> +extern int vfs_dedupe_file_range_compare(struct inode *src, loff_t srcoff,
-> +					 struct inode *dest, loff_t destoff,
-> +					 loff_t len, bool *is_same);
-> +typedef int (compare_range_t)(struct inode *src, loff_t srcpos, struct inode *dest,
-> +		loff_t destpos, loff_t len, bool *is_same);
-
-Might want to call this vfs_compare_range_t to make it clear that this
-belongs to the generic vfs namespace.
-
---D
-
->  extern int generic_remap_file_range_prep(struct file *file_in, loff_t pos_in,
->  					 struct file *file_out, loff_t pos_out,
->  					 loff_t *count,
-> -					 unsigned int remap_flags);
-> +					 unsigned int remap_flags, compare_range_t cmp);
->  extern loff_t do_clone_file_range(struct file *file_in, loff_t pos_in,
->  				  struct file *file_out, loff_t pos_out,
->  				  loff_t len, unsigned int remap_flags);
-> -- 
-> 2.16.4
-> 
+Some more cleanups related to the inode flags such as [1]
+[1]
+(don't change binode->flags directly, but do all flag updates on a
+ temporary variable)
+is wip.

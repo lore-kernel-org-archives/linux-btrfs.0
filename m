@@ -2,202 +2,235 @@ Return-Path: <SRS0=+3PB=ST=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SIGNED_OFF_BY,SPF_PASS autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B370EC282DA
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Apr 2019 08:15:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 15558C10F12
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Apr 2019 09:23:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 82F562073F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Apr 2019 08:15:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C89A92173C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Apr 2019 09:22:59 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1555492979;
+	bh=7jhW4IDV/T8wScjyLIP2sMdwOE3T8LqO0jXZHbIU2O8=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc:List-ID:From;
+	b=jQQOm4P6TgH8zGMbnqKQr9nnxKPzXpNX/4ss9BPYZS6kJmsSbZ/6+vyr5CnTNxmjk
+	 leJeSO+ODEuf1g3XTB+L0/258/oQaxfHuJg4uJwh/+Ab2J52jQexJuEkjsrJlQs2jX
+	 kWoNpcUXmpSSaUdP8sW6oQMceYFgt1NgzVeJBNMs=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729039AbfDQIPJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Apr 2019 04:15:09 -0400
-Received: from mx2.suse.de ([195.135.220.15]:36658 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726237AbfDQIPI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Apr 2019 04:15:08 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D1C6CAFED;
-        Wed, 17 Apr 2019 08:15:06 +0000 (UTC)
-Subject: Re: btrfs: drop inode reference count on error path
-To:     Pan Bian <bianpan2016@163.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>
-Cc:     linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-References: <1555467810-27859-1-git-send-email-bianpan2016@163.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <41baed4e-279c-6074-b2b8-d8972bdb8859@suse.com>
-Date:   Wed, 17 Apr 2019 11:15:05 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.6.1
+        id S1729198AbfDQJW6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Apr 2019 05:22:58 -0400
+Received: from mail.kernel.org ([198.145.29.99]:38402 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727282AbfDQJW6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 17 Apr 2019 05:22:58 -0400
+Received: from mail-vs1-f48.google.com (mail-vs1-f48.google.com [209.85.217.48])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 942172173C
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Apr 2019 09:22:56 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1555492976;
+        bh=7jhW4IDV/T8wScjyLIP2sMdwOE3T8LqO0jXZHbIU2O8=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=GG0ZZtZcuGy/+ncRigw/I2l0oZXb6RzTQHZDM4fZjLpfDGrZcVV/JmMta5T+GS/NV
+         YBRQgE3KTQuayphX4o954BK/vHewEHT+C9ksY+HZ+BHOVNqbvl6dKHppiJH4gp5KqP
+         hAOByHI74OKaPtcETunDcc12+o4TxtWw09yBsns4=
+Received: by mail-vs1-f48.google.com with SMTP id g127so13186750vsd.6
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Apr 2019 02:22:56 -0700 (PDT)
+X-Gm-Message-State: APjAAAXsIm76T4xItZeZSpqp6cqC8aSCj3Wt6XCffB0uxWE8LPb7fj5N
+        Di1aalJsDfucrANaajqIxI0isHusdEEzduNoC3k=
+X-Google-Smtp-Source: APXvYqyvlDtP+i3jiyYl+ibL7dHPOUno7TnT7bcyBPv9wpZCvMTYKIqMgUdb2GMSyWjeb+KNTWNrhigHg/9qQwomgmw=
+X-Received: by 2002:a67:e258:: with SMTP id w24mr24402621vse.20.1555492975671;
+ Wed, 17 Apr 2019 02:22:55 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <1555467810-27859-1-git-send-email-bianpan2016@163.com>
-Content-Type: multipart/mixed;
- boundary="------------7D938910A1B79AF0323CC7CA"
-Content-Language: en-US
+References: <20190415082900.2023-1-fdmanana@kernel.org> <20190417000749.GA16405@hungrycats.org>
+In-Reply-To: <20190417000749.GA16405@hungrycats.org>
+From:   Filipe Manana <fdmanana@kernel.org>
+Date:   Wed, 17 Apr 2019 09:22:44 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H6dz3jJ-YpBeMW_HM5t_RD11ezPAscadR1-CwhfccPHeQ@mail.gmail.com>
+Message-ID: <CAL3q7H6dz3jJ-YpBeMW_HM5t_RD11ezPAscadR1-CwhfccPHeQ@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: do not start a transaction during fiemap
+To:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is a multi-part message in MIME format.
---------------7D938910A1B79AF0323CC7CA
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: 8bit
+On Wed, Apr 17, 2019 at 1:08 AM Zygo Blaxell
+<ce3g8jdj@umail.furryterror.org> wrote:
+>
+> On Mon, Apr 15, 2019 at 09:29:00AM +0100, fdmanana@kernel.org wrote:
+> > From: Filipe Manana <fdmanana@suse.com>
+> >
+> > During fiemap, for regular extents (non inline) we need to check if they
+> > are shared and if they are, set the shared bit. Checking if an extent is
+> > shared requires checking the delayed references of the currently running
+> > transaction, since some reference might have not yet hit the extent tree
+> > and be only in the in-memory delayed references.
+> >
+> > However we were using a transaction join for this, which creates a new
+> > transaction when there is no transaction currently running. That means
+> > that two more potential failures can happen: creating the transaction and
+> > committing it. Further, if no write activity is currently happening in the
+> > system, and fiemap calls keep being done, we end up creating and
+> > committing transactions that do nothing.
+>
+> Cool!
+>
+> Any chance we can do this for the LOGICAL_INO ioctl?  Last time I checked
+> (I admit that was a while ago), LOGICAL_INO cost about the same as
+> fsync(), because it creates transactions with btrfs_join_transaction a
+> few levels deep in the call stack, and gets blocked waiting for them
+> to complete.
 
+So iterate_extent_inodes() should definitly use the attach API and not join for
+the same reasons. And I can fix that separately.
 
+>
+> It looks like btrfs_ioctl_logical_to_ino can set:
+>
+>         path->search_commit_root = 1;
+>
+> just before calling iterate_inodes_from_logical, but I tried that once,
+> and my test filesystem blew up a few days later, so there might be
+> something subtle that I missed.  Or maybe my test filesystem was going
+> to blow up that day anyway--I just assumed that I don't know what I'm
+> doing, and didn't repeat the test.
 
-On 17.04.19 г. 5:23 ч., Pan Bian wrote:
-> The reference count of inode is incremented by ihold. It should be
-> dropped if not used. However, the reference count is not dropped if
-> error occurs during updating the inode or deleting orphan items. This
-> patch fixes the bug.
-> 
-> Signed-off-by: Pan Bian <bianpan2016@163.com>
+Blew up? That's a very vague term... What do you mean with it? What
+happened exactly?
 
-The extra reference count taken is needed for the call to d_instantiate,
-while this operation is in progress the inode is actually locked. This
-means it will be a lot clearer if ihold is done right before
-d_instantiate and they are moved at the end of the function where we are
-sure no errors have appened. Something like the attached diff
+Setting search_commit_root should not cause any problems, the only
+thing that can happen is giving you non-accurate results
+because there might be relevant changes in the current transaction and
+therefore they are not visible yet from the commit roots.
 
+>
+> bees spends about 30% of its time stuck in LOGICAL_INO with a stack
+> trace like this:
+>
+>         [<ffffffffa8400e88>] btrfs_async_run_delayed_refs+0x118/0x140
+>         [<ffffffffa841fbaa>] __btrfs_end_transaction+0x1da/0x2e0
+>         [<ffffffffa848ed19>] iterate_extent_inodes+0x159/0x3a0
+>         [<ffffffffa848eff6>] iterate_inodes_from_logical+0x96/0xb0
+>         [<ffffffffa84590a8>] btrfs_ioctl_logical_to_ino+0xe8/0x190
+>         [<ffffffffa845f1fd>] btrfs_ioctl+0xc5d/0x26a0
+>         [<ffffffffa82a8a62>] do_vfs_ioctl+0x92/0x6b0
+>         [<ffffffffa82a90f4>] SyS_ioctl+0x74/0x80
+>         [<ffffffffa8003b96>] do_syscall_64+0x76/0x180
+>         [<ffffffffa8e00086>] entry_SYSCALL_64_after_hwframe+0x42/0xb7
+>         [<ffffffffffffffff>] 0xffffffffffffffff
+>
+> so if it's at all possible to do LOGICAL_INO without joining a
+> transaction, the benefits should be significant.
 
---------------7D938910A1B79AF0323CC7CA
-Content-Type: text/x-patch;
- name="btrfs-link-cleanup.diff"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment;
- filename="btrfs-link-cleanup.diff"
+So that is not the same problem. That means that some other task has
+already started a transaction, the transaction
+was not created by the logical_ino ioctl. It just happened that
+logical_ino ended up flushing delayed refs, created by some other
+task(s),
+when releasing its transaction handle.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 82fdda8ff5ab..5cc6529a549f 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6579,7 +6579,7 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	u64 index;
- 	int err;
--	int drop_inode = 0;
-+	int log_mode;
- 
- 	/* do not allow sys_link's with other subvols of the same device */
- 	if (root->root_key.objectid != BTRFS_I(inode)->root->root_key.objectid)
-@@ -6610,47 +6610,42 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
- 	inc_nlink(inode);
- 	inode_inc_iversion(inode);
- 	inode->i_ctime = current_time(inode);
--	ihold(inode);
- 	set_bit(BTRFS_INODE_COPY_EVERYTHING, &BTRFS_I(inode)->runtime_flags);
- 
- 	err = btrfs_add_nondir(trans, BTRFS_I(dir), dentry, BTRFS_I(inode),
- 			1, index);
-+	if (err)
-+		goto fail;
- 
--	if (err) {
--		drop_inode = 1;
--	} else {
--		struct dentry *parent = dentry->d_parent;
--		int ret;
--
--		err = btrfs_update_inode(trans, root, inode);
-+	err = btrfs_update_inode(trans, root, inode);
-+	if (err)
-+		goto fail;
-+	if (inode->i_nlink == 1) {
-+		/*
-+		 * If new hard link count is 1, it's a file created
-+		 * with open(2) O_TMPFILE flag.
-+		 */
-+		err = btrfs_orphan_del(trans, BTRFS_I(inode));
-+		if (err)
-+			goto fail;
-+	}
-+	BTRFS_I(inode)->last_link_trans = trans->transid;
-+	log_mode = btrfs_log_new_name(trans, BTRFS_I(inode), NULL,
-+				      dentry->d_parent, true, NULL);
-+	if (log_mode == BTRFS_NEED_TRANS_COMMIT) {
-+		err = btrfs_commit_transaction(trans);
-+		trans = NULL;
- 		if (err)
- 			goto fail;
--		if (inode->i_nlink == 1) {
--			/*
--			 * If new hard link count is 1, it's a file created
--			 * with open(2) O_TMPFILE flag.
--			 */
--			err = btrfs_orphan_del(trans, BTRFS_I(inode));
--			if (err)
--				goto fail;
--		}
--		BTRFS_I(inode)->last_link_trans = trans->transid;
--		d_instantiate(dentry, inode);
--		ret = btrfs_log_new_name(trans, BTRFS_I(inode), NULL, parent,
--					 true, NULL);
--		if (ret == BTRFS_NEED_TRANS_COMMIT) {
--			err = btrfs_commit_transaction(trans);
--			trans = NULL;
--		}
- 	}
- 
-+	ihold(inode);
-+	d_instantiate(dentry, inode);
- fail:
- 	if (trans)
- 		btrfs_end_transaction(trans);
--	if (drop_inode) {
-+	if (err)
- 		inode_dec_link_count(inode);
--		iput(inode);
--	}
- 	btrfs_btree_balance_dirty(fs_info);
- 	return err;
- }
+We don't flush delayed refs when releasing a transaction handle
+anymore, as of commit:
 
---------------7D938910A1B79AF0323CC7CA--
+https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=db2462a6ad3dc490ac33250042e728226ef3ba00
+
+>
+> > In some extreme cases this can result in the commit of the transaction
+> > created by fiemap to fail with ENOSPC when updating the root item of a
+> > subvolume tree because a join does not reserve any space, leading to a
+> > trace like the following:
+> >
+> >  heisenberg kernel: ------------[ cut here ]------------
+> >  heisenberg kernel: BTRFS: Transaction aborted (error -28)
+> >  heisenberg kernel: WARNING: CPU: 0 PID: 7137 at fs/btrfs/root-tree.c:136 btrfs_update_root+0x22b/0x320 [btrfs]
+> > (...)
+> >  heisenberg kernel: CPU: 0 PID: 7137 Comm: btrfs-transacti Not tainted 4.19.0-4-amd64 #1 Debian 4.19.28-2
+> >  heisenberg kernel: Hardware name: FUJITSU LIFEBOOK U757/FJNB2A5, BIOS Version 1.21 03/19/2018
+> >  heisenberg kernel: RIP: 0010:btrfs_update_root+0x22b/0x320 [btrfs]
+> > (...)
+> >  heisenberg kernel: RSP: 0018:ffffb5448828bd40 EFLAGS: 00010286
+> >  heisenberg kernel: RAX: 0000000000000000 RBX: ffff8ed56bccef50 RCX: 0000000000000006
+> >  heisenberg kernel: RDX: 0000000000000007 RSI: 0000000000000092 RDI: ffff8ed6bda166a0
+> >  heisenberg kernel: RBP: 00000000ffffffe4 R08: 00000000000003df R09: 0000000000000007
+> >  heisenberg kernel: R10: 0000000000000000 R11: 0000000000000001 R12: ffff8ed63396a078
+> >  heisenberg kernel: R13: ffff8ed092d7c800 R14: ffff8ed64f5db028 R15: ffff8ed6bd03d068
+> >  heisenberg kernel: FS:  0000000000000000(0000) GS:ffff8ed6bda00000(0000) knlGS:0000000000000000
+> >  heisenberg kernel: CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> >  heisenberg kernel: CR2: 00007f46f75f8000 CR3: 0000000310a0a002 CR4: 00000000003606f0
+> >  heisenberg kernel: DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+> >  heisenberg kernel: DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+> >  heisenberg kernel: Call Trace:
+> >  heisenberg kernel:  commit_fs_roots+0x166/0x1d0 [btrfs]
+> >  heisenberg kernel:  ? _cond_resched+0x15/0x30
+> >  heisenberg kernel:  ? btrfs_run_delayed_refs+0xac/0x180 [btrfs]
+> >  heisenberg kernel:  btrfs_commit_transaction+0x2bd/0x870 [btrfs]
+> >  heisenberg kernel:  ? start_transaction+0x9d/0x3f0 [btrfs]
+> >  heisenberg kernel:  transaction_kthread+0x147/0x180 [btrfs]
+> >  heisenberg kernel:  ? btrfs_cleanup_transaction+0x530/0x530 [btrfs]
+> >  heisenberg kernel:  kthread+0x112/0x130
+> >  heisenberg kernel:  ? kthread_bind+0x30/0x30
+> >  heisenberg kernel:  ret_from_fork+0x35/0x40
+> >  heisenberg kernel: ---[ end trace 05de912e30e012d9 ]---
+> >
+> > Since fiemap (and btrfs_check_shared()) is a read-only operation, do not do
+> > a transaction join to avoid the overhead of creating a new transaction (if
+> > there is currently no running transaction) and introducing a potential
+> > point of failure when the new transaction gets committed, instead use a
+> > transaction attach to grab a handle for the currently running transaction
+> > if any.
+> >
+> > Reported-by: Christoph Anton Mitterer <calestyo@scientia.net>
+> > Link: https://lore.kernel.org/linux-btrfs/b2a668d7124f1d3e410367f587926f622b3f03a4.camel@scientia.net/
+> > Fixes: afce772e87c36c ("btrfs: fix check_shared for fiemap ioctl")
+> > Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> > ---
+> >  fs/btrfs/backref.c | 11 ++++++++---
+> >  1 file changed, 8 insertions(+), 3 deletions(-)
+> >
+> > diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+> > index 11459fe84a29..876e6bb93797 100644
+> > --- a/fs/btrfs/backref.c
+> > +++ b/fs/btrfs/backref.c
+> > @@ -1460,8 +1460,8 @@ int btrfs_find_all_roots(struct btrfs_trans_handle *trans,
+> >   * callers (such as fiemap) which want to know whether the extent is
+> >   * shared but do not need a ref count.
+> >   *
+> > - * This attempts to allocate a transaction in order to account for
+> > - * delayed refs, but continues on even when the alloc fails.
+> > + * This attempts to attach to the running transaction in order to account for
+> > + * delayed refs, but continues on even when no running transaction exists.
+> >   *
+> >   * Return: 0 if extent is not shared, 1 if it is shared, < 0 on error.
+> >   */
+> > @@ -1489,8 +1489,12 @@ int btrfs_check_shared(struct btrfs_root *root, u64 inum, u64 bytenr)
+> >               return -ENOMEM;
+> >       }
+> >
+> > -     trans = btrfs_join_transaction(root);
+> > +     trans = btrfs_attach_transaction(root);
+> >       if (IS_ERR(trans)) {
+> > +             if (PTR_ERR(trans) != -ENOENT) {
+> > +                     ret = PTR_ERR(trans);
+> > +                     goto out;
+> > +             }
+> >               trans = NULL;
+> >               down_read(&fs_info->commit_root_sem);
+> >       } else {
+> > @@ -1523,6 +1527,7 @@ int btrfs_check_shared(struct btrfs_root *root, u64 inum, u64 bytenr)
+> >       } else {
+> >               up_read(&fs_info->commit_root_sem);
+> >       }
+> > +out:
+> >       ulist_free(tmp);
+> >       ulist_free(roots);
+> >       return ret;
+> > --
+> > 2.11.0
+> >

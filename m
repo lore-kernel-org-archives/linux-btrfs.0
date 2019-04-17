@@ -4,45 +4,45 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CBE4BC10F12
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Apr 2019 10:30:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 77E3BC10F12
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Apr 2019 10:31:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 986FD2173C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Apr 2019 10:30:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 307B12173C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Apr 2019 10:31:13 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1555497037;
-	bh=d5zRrsaK9PC/9ViGMEw2Khfe1//gCYswslCpZrx/sSY=;
-	h=From:To:Cc:Subject:Date:List-ID:From;
-	b=u+GnoKSe4xrg49qlxEZMajjgPxIvR9lfkZeq6Ot3Zm4j1uyLGx0PrfOoYuakjVUV+
-	 Ef+AqJ3lvTcNNNwyffQvfqWWMJfxQbkoSnYY3vEBnMl06b5RT/8INEosk9zTwlYE0a
-	 6XE6dE4k9o+Iy2ej/iKi1ITOHq15k8WLByD6FaRA=
+	s=default; t=1555497073;
+	bh=MoNDeGwrMhVVOhuZlr/i3xS70JaR6f7QE9wGKB/2GWI=;
+	h=From:To:Subject:Date:List-ID:From;
+	b=DUWV3Z7Nu0/EtgLVtyCqzSUx0dLYt9hudJTARofgr59uxUXzKQkR0+cho0hM0dsPo
+	 l6XWiSeFagZNKQRxicM0nSuPWo3C0/uda69GcCUj4xf+4Ito0S9hrMIfKRd0Zj4XPm
+	 Vf9oCMtRLZ/nDVkTOj6o7DODh6DsSbEK8MfpyT8M=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728373AbfDQKag (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Apr 2019 06:30:36 -0400
-Received: from mail.kernel.org ([198.145.29.99]:32970 "EHLO mail.kernel.org"
+        id S1729091AbfDQKbL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Apr 2019 06:31:11 -0400
+Received: from mail.kernel.org ([198.145.29.99]:33032 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726695AbfDQKag (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Apr 2019 06:30:36 -0400
+        id S1728575AbfDQKbK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 17 Apr 2019 06:31:10 -0400
 Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id CC4D521773;
-        Wed, 17 Apr 2019 10:30:33 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id E6EB32173C
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Apr 2019 10:31:08 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1555497034;
-        bh=d5zRrsaK9PC/9ViGMEw2Khfe1//gCYswslCpZrx/sSY=;
-        h=From:To:Cc:Subject:Date:From;
-        b=nU7bUNOCpJIxZtm7o5Pgd9TZTAj6IdN33W5JJPNoiU+7/o8Mc3lDp5rkxv2oRNX/G
-         b3d6X458Iu6XErbURvwILnlB5rSk6KsDsPOgfdsowdFmwJMTjXZnWFEvWgyl98JuHt
-         RFFBrwSX2onOIxJyhAyZXMdvKPJKk445m9NiWTlw=
+        s=default; t=1555497069;
+        bh=MoNDeGwrMhVVOhuZlr/i3xS70JaR6f7QE9wGKB/2GWI=;
+        h=From:To:Subject:Date:From;
+        b=wsBz7u2m2SAMZTKodAQWrAvyD6OeZfkm549BtWMEZFfCz+ImTdlcQqKb56DA/B3ec
+         lkbwHtaWPJET64isFxqeF9ruoSwGujpn5mwKe09ZNrNqUzTV/KUcwFwVABHyjIm6as
+         VMsKZZq7u2ZT0PtVKmf3HMdIAWOCY/6Q6HgwU3pA=
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Cc:     ce3g8jdj@umail.furryterror.org
-Subject: [PATCH] Btrfs: do not start a transaction at iterate_extent_inodes()
-Date:   Wed, 17 Apr 2019 11:30:30 +0100
-Message-Id: <20190417103030.24883-1-fdmanana@kernel.org>
+Subject: [PATCH] Btrfs: improve performance on fsync of files with multiple hardlinks
+Date:   Wed, 17 Apr 2019 11:31:06 +0100
+Message-Id: <20190417103106.30900-1-fdmanana@kernel.org>
 X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
@@ -51,110 +51,356 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-When finding out which inodes have references on a particular extent, done
-by backref.c:iterate_extent_inodes(), from the BTRFS_IOC_LOGICAL_INO (both
-v1 and v2) ioctl and from scrub we use the transaction join api to grab a
-reference on the currently running transaction, since in order to give
-accurate results we need to inspect the delayed references of the currently
-running transaction.
+Commit 41bd6067692382 ("Btrfs: fix fsync of files with multiple hard links
+in new directories") introduced a path that makes fsync fallback to a full
+transaction commit in order to avoid losing hard links and new ancestors
+of the fsynced inode. That path is triggered only when the inode has more
+than one hard link and either has a new hard link created in the current
+transaction or the inode was evicted and reloaded in the current
+transaction.
 
-However, if there is currently no running transaction, the join operation
-will create a new transaction. This is inneficient as the transaction will
-eventually be committed, doing unnecessary IO and introducing a potential
-point of failure that will lead to a transaction abort due to -ENOSPC, as
-recently reported [1].
+That path ends up getting triggered very often (hundreds of times) during
+the course of pgbench benchmarks, resulting in performance drops of about
+20%.
 
-That's because the join, creates the transaction but does not reserves any
-space, so when attempting to update the root item of the root passed to
-btrfs_join_transaction(), during the transaction commit, we can end up
-failling with -ENOSPC. Users of a join operation are supposed to actually
-do some filesystem changes and reserve space by some means, which is not
-the case of iterate_extent_inodes(), it is a read-only operation for all
-contextes from which it is called.
+This change restores the performance by not triggering the full transaction
+commit in those cases, and instead iterate the fs/subvolume tree in search
+of all possible new ancestors, for all hard links, to log them.
 
-The reported [1] -ENOSPC failure stack trace is the following:
-
-heisenberg kernel: ------------[ cut here ]------------
- heisenberg kernel: BTRFS: Transaction aborted (error -28)
- heisenberg kernel: WARNING: CPU: 0 PID: 7137 at fs/btrfs/root-tree.c:136 btrfs_update_root+0x22b/0x320 [btrfs]
-(...)
- heisenberg kernel: CPU: 0 PID: 7137 Comm: btrfs-transacti Not tainted 4.19.0-4-amd64 #1 Debian 4.19.28-2
- heisenberg kernel: Hardware name: FUJITSU LIFEBOOK U757/FJNB2A5, BIOS Version 1.21 03/19/2018
- heisenberg kernel: RIP: 0010:btrfs_update_root+0x22b/0x320 [btrfs]
-(...)
- heisenberg kernel: RSP: 0018:ffffb5448828bd40 EFLAGS: 00010286
- heisenberg kernel: RAX: 0000000000000000 RBX: ffff8ed56bccef50 RCX: 0000000000000006
- heisenberg kernel: RDX: 0000000000000007 RSI: 0000000000000092 RDI: ffff8ed6bda166a0
- heisenberg kernel: RBP: 00000000ffffffe4 R08: 00000000000003df R09: 0000000000000007
- heisenberg kernel: R10: 0000000000000000 R11: 0000000000000001 R12: ffff8ed63396a078
- heisenberg kernel: R13: ffff8ed092d7c800 R14: ffff8ed64f5db028 R15: ffff8ed6bd03d068
- heisenberg kernel: FS:  0000000000000000(0000) GS:ffff8ed6bda00000(0000) knlGS:0000000000000000
- heisenberg kernel: CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
- heisenberg kernel: CR2: 00007f46f75f8000 CR3: 0000000310a0a002 CR4: 00000000003606f0
- heisenberg kernel: DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
- heisenberg kernel: DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
- heisenberg kernel: Call Trace:
- heisenberg kernel:  commit_fs_roots+0x166/0x1d0 [btrfs]
- heisenberg kernel:  ? _cond_resched+0x15/0x30
- heisenberg kernel:  ? btrfs_run_delayed_refs+0xac/0x180 [btrfs]
- heisenberg kernel:  btrfs_commit_transaction+0x2bd/0x870 [btrfs]
- heisenberg kernel:  ? start_transaction+0x9d/0x3f0 [btrfs]
- heisenberg kernel:  transaction_kthread+0x147/0x180 [btrfs]
- heisenberg kernel:  ? btrfs_cleanup_transaction+0x530/0x530 [btrfs]
- heisenberg kernel:  kthread+0x112/0x130
- heisenberg kernel:  ? kthread_bind+0x30/0x30
- heisenberg kernel:  ret_from_fork+0x35/0x40
- heisenberg kernel: ---[ end trace 05de912e30e012d9 ]---
-
-So fix that by using the attach API, which does not create a transaction
-when there is currently no running transaction.
-
-[1] https://lore.kernel.org/linux-btrfs/b2a668d7124f1d3e410367f587926f622b3f03a4.camel@scientia.net/
-
-Reported-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Reported-by: Zhao Yuhu <zyuhu@suse.com>
+Tested-by: James Wang <jnwang@suse.com>
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/backref.c | 18 ++++++++++++------
- 1 file changed, 12 insertions(+), 6 deletions(-)
+ fs/btrfs/btrfs_inode.h |   6 --
+ fs/btrfs/inode.c       |  17 ----
+ fs/btrfs/tree-log.c    | 228 ++++++++++++++++++++++++++++++++++++++++---------
+ 3 files changed, 188 insertions(+), 63 deletions(-)
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 6d616737f349..fd4d968f1b41 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -1916,13 +1916,19 @@ int iterate_extent_inodes(struct btrfs_fs_info *fs_info,
- 			extent_item_objectid);
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 6f5d07415dab..fc25607304f2 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -148,12 +148,6 @@ struct btrfs_inode {
+ 	u64 last_unlink_trans;
  
- 	if (!search_commit_root) {
--		trans = btrfs_join_transaction(fs_info->extent_root);
--		if (IS_ERR(trans))
--			return PTR_ERR(trans);
-+		trans = btrfs_attach_transaction(fs_info->extent_root);
-+		if (IS_ERR(trans)) {
-+			if (PTR_ERR(trans) != -ENOENT &&
-+			    PTR_ERR(trans) != -EROFS)
-+				return PTR_ERR(trans);
-+			trans = NULL;
-+		}
-+	}
+ 	/*
+-	 * Track the transaction id of the last transaction used to create a
+-	 * hard link for the inode. This is used by the log tree (fsync).
+-	 */
+-	u64 last_link_trans;
+-
+-	/*
+ 	 * Number of bytes outstanding that are going to need csums.  This is
+ 	 * used in ENOSPC accounting.
+ 	 */
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 3f180b857e20..cacde7040329 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3699,21 +3699,6 @@ static int btrfs_read_locked_inode(struct inode *inode,
+ 	 * inode is not a directory, logging its parent unnecessarily.
+ 	 */
+ 	BTRFS_I(inode)->last_unlink_trans = BTRFS_I(inode)->last_trans;
+-	/*
+-	 * Similar reasoning for last_link_trans, needs to be set otherwise
+-	 * for a case like the following:
+-	 *
+-	 * mkdir A
+-	 * touch foo
+-	 * ln foo A/bar
+-	 * echo 2 > /proc/sys/vm/drop_caches
+-	 * fsync foo
+-	 * <power failure>
+-	 *
+-	 * Would result in link bar and directory A not existing after the power
+-	 * failure.
+-	 */
+-	BTRFS_I(inode)->last_link_trans = BTRFS_I(inode)->last_trans;
+ 
+ 	path->slots[0]++;
+ 	if (inode->i_nlink != 1 ||
+@@ -6634,7 +6619,6 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
+ 			if (err)
+ 				goto fail;
+ 		}
+-		BTRFS_I(inode)->last_link_trans = trans->transid;
+ 		d_instantiate(dentry, inode);
+ 		ret = btrfs_log_new_name(trans, BTRFS_I(inode), NULL, parent,
+ 					 true, NULL);
+@@ -9161,7 +9145,6 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
+ 	ei->index_cnt = (u64)-1;
+ 	ei->dir_index = 0;
+ 	ei->last_unlink_trans = 0;
+-	ei->last_link_trans = 0;
+ 	ei->last_log_commit = 0;
+ 
+ 	spin_lock_init(&ei->lock);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 561884f60d35..bb7b27a47537 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -5819,6 +5819,190 @@ static int btrfs_log_all_parents(struct btrfs_trans_handle *trans,
+ 	return ret;
+ }
+ 
++static int log_new_ancestors(struct btrfs_trans_handle *trans,
++			     struct btrfs_root *root,
++			     struct btrfs_path *path,
++			     struct btrfs_log_ctx *ctx)
++{
++	struct btrfs_key found_key;
 +
-+	if (trans)
- 		btrfs_get_tree_mod_seq(fs_info, &tree_mod_seq_elem);
--	} else {
-+	else
- 		down_read(&fs_info->commit_root_sem);
++	btrfs_item_key_to_cpu(path->nodes[0], &found_key, path->slots[0]);
++
++	while (true) {
++		struct btrfs_fs_info *fs_info = root->fs_info;
++		const u64 last_committed = fs_info->last_trans_committed;
++		struct extent_buffer *leaf = path->nodes[0];
++		int slot = path->slots[0];
++		struct btrfs_key search_key;
++		struct inode *inode;
++		int ret = 0;
++
++		btrfs_release_path(path);
++
++		search_key.objectid = found_key.offset;
++		search_key.type = BTRFS_INODE_ITEM_KEY;
++		search_key.offset = 0;
++		inode = btrfs_iget(fs_info->sb, &search_key, root, NULL);
++		if (IS_ERR(inode))
++			return PTR_ERR(inode);
++
++		if (BTRFS_I(inode)->generation > last_committed)
++			ret = btrfs_log_inode(trans, root, BTRFS_I(inode),
++					      LOG_INODE_EXISTS,
++					      0, LLONG_MAX, ctx);
++		iput(inode);
++		if (ret)
++			return ret;
++
++		if (search_key.objectid == BTRFS_FIRST_FREE_OBJECTID)
++			break;
++
++		search_key.type = BTRFS_INODE_REF_KEY;
++		ret = btrfs_search_slot(NULL, root, &search_key, path, 0, 0);
++		if (ret < 0)
++			return ret;
++
++		leaf = path->nodes[0];
++		slot = path->slots[0];
++		if (slot >= btrfs_header_nritems(leaf)) {
++			ret = btrfs_next_leaf(root, path);
++			if (ret < 0)
++				return ret;
++			else if (ret > 0)
++				return -ENOENT;
++			leaf = path->nodes[0];
++			slot = path->slots[0];
++		}
++
++		btrfs_item_key_to_cpu(leaf, &found_key, slot);
++		if (found_key.objectid != search_key.objectid ||
++		    found_key.type != BTRFS_INODE_REF_KEY)
++			return -ENOENT;
++	}
++	return 0;
++}
++
++static int log_new_ancestors_fast(struct btrfs_trans_handle *trans,
++				  struct btrfs_inode *inode,
++				  struct dentry *parent,
++				  struct btrfs_log_ctx *ctx)
++{
++	struct btrfs_root *root = inode->root;
++	struct btrfs_fs_info *fs_info = root->fs_info;
++	struct dentry *old_parent = NULL;
++	struct super_block *sb = inode->vfs_inode.i_sb;
++	int ret = 0;
++
++	while (true) {
++		if (!parent || d_really_is_negative(parent) ||
++		    sb != parent->d_sb)
++			break;
++
++		inode = BTRFS_I(d_inode(parent));
++		if (root != inode->root)
++			break;
++
++		if (inode->generation > fs_info->last_trans_committed) {
++			ret = btrfs_log_inode(trans, root, inode,
++					LOG_INODE_EXISTS, 0, LLONG_MAX, ctx);
++			if (ret)
++				break;
++		}
++		if (IS_ROOT(parent))
++			break;
++
++		parent = dget_parent(parent);
++		dput(old_parent);
++		old_parent = parent;
++	}
++	dput(old_parent);
++
++	return ret;
++}
++
++static int log_all_new_ancestors(struct btrfs_trans_handle *trans,
++				 struct btrfs_inode *inode,
++				 struct dentry *parent,
++				 struct btrfs_log_ctx *ctx)
++{
++	struct btrfs_root *root = inode->root;
++	const u64 ino = btrfs_ino(inode);
++	struct btrfs_path *path;
++	struct btrfs_key search_key;
++	int ret;
++
++	/*
++	 * For a single hard link case, go through a fast path that does not
++	 * need to iterate the fs/subvolume tree.
++	 */
++	if (inode->vfs_inode.i_nlink < 2)
++		return log_new_ancestors_fast(trans, inode, parent, ctx);
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	search_key.objectid = ino;
++	search_key.type = BTRFS_INODE_REF_KEY;
++	search_key.offset = 0;
++again:
++	ret = btrfs_search_slot(NULL, root, &search_key, path, 0, 0);
++	if (ret < 0)
++		goto out;
++	if (ret == 0)
++		path->slots[0]++;
++
++	while (true) {
++		struct extent_buffer *leaf = path->nodes[0];
++		int slot = path->slots[0];
++		struct btrfs_key found_key;
++
++		if (slot >= btrfs_header_nritems(leaf)) {
++			ret = btrfs_next_leaf(root, path);
++			if (ret < 0)
++				goto out;
++			else if (ret > 0)
++				break;
++			continue;
++		}
++
++		btrfs_item_key_to_cpu(leaf, &found_key, slot);
++		if (found_key.objectid != ino ||
++		    found_key.type > BTRFS_INODE_EXTREF_KEY)
++			break;
++
++		/*
++		 * Don't deal with extended references because they are rare
++		 * cases and too complex to deal with (we would need to keep
++		 * track of which subitem we are processing for each item in
++		 * this loop, etc). So just return some error to fallback to
++		 * a transaction commit.
++		 */
++		if (found_key.type == BTRFS_INODE_EXTREF_KEY) {
++			ret = -EMLINK;
++			goto out;
++		}
++
++		/*
++		 * Logging ancestors needs to do more searches on the fs/subvol
++		 * tree, so it releases the path as needed to avoid deadlocks.
++		 * Keep track of the last inode ref key and resume from that key
++		 * after logging all new ancestors for the current hard link.
++		 */
++		memcpy(&search_key, &found_key, sizeof(search_key));
++
++		ret = log_new_ancestors(trans, root, path, ctx);
++		if (ret)
++			goto out;
++		btrfs_release_path(path);
++		goto again;
++	}
++	ret = 0;
++out:
++	btrfs_free_path(path);
++	return ret;
++}
++
+ /*
+  * helper function around btrfs_log_inode to make sure newly created
+  * parent directories also end up in the log.  A minimal inode and backref
+@@ -5836,11 +6020,9 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 	struct btrfs_root *root = inode->root;
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	struct super_block *sb;
+-	struct dentry *old_parent = NULL;
+ 	int ret = 0;
+ 	u64 last_committed = fs_info->last_trans_committed;
+ 	bool log_dentries = false;
+-	struct btrfs_inode *orig_inode = inode;
+ 
+ 	sb = inode->vfs_inode.i_sb;
+ 
+@@ -5946,54 +6128,20 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 	 * and has a link count of 2.
+ 	 */
+ 	if (inode->last_unlink_trans > last_committed) {
+-		ret = btrfs_log_all_parents(trans, orig_inode, ctx);
++		ret = btrfs_log_all_parents(trans, inode, ctx);
+ 		if (ret)
+ 			goto end_trans;
+ 	}
+ 
+-	/*
+-	 * If a new hard link was added to the inode in the current transaction
+-	 * and its link count is now greater than 1, we need to fallback to a
+-	 * transaction commit, otherwise we can end up not logging all its new
+-	 * parents for all the hard links. Here just from the dentry used to
+-	 * fsync, we can not visit the ancestor inodes for all the other hard
+-	 * links to figure out if any is new, so we fallback to a transaction
+-	 * commit (instead of adding a lot of complexity of scanning a btree,
+-	 * since this scenario is not a common use case).
+-	 */
+-	if (inode->vfs_inode.i_nlink > 1 &&
+-	    inode->last_link_trans > last_committed) {
+-		ret = -EMLINK;
++	ret = log_all_new_ancestors(trans, inode, parent, ctx);
++	if (ret)
+ 		goto end_trans;
 -	}
+-
+-	while (1) {
+-		if (!parent || d_really_is_negative(parent) || sb != parent->d_sb)
+-			break;
+-
+-		inode = BTRFS_I(d_inode(parent));
+-		if (root != inode->root)
+-			break;
  
- 	ret = btrfs_find_all_leafs(trans, fs_info, extent_item_objectid,
- 				   tree_mod_seq_elem.seq, &refs,
-@@ -1955,7 +1961,7 @@ int iterate_extent_inodes(struct btrfs_fs_info *fs_info,
- 
- 	free_leaf_list(refs);
- out:
--	if (!search_commit_root) {
-+	if (trans) {
- 		btrfs_put_tree_mod_seq(fs_info, &tree_mod_seq_elem);
- 		btrfs_end_transaction(trans);
- 	} else {
+-		if (inode->generation > last_committed) {
+-			ret = btrfs_log_inode(trans, root, inode,
+-					LOG_INODE_EXISTS, 0, LLONG_MAX, ctx);
+-			if (ret)
+-				goto end_trans;
+-		}
+-		if (IS_ROOT(parent))
+-			break;
+-
+-		parent = dget_parent(parent);
+-		dput(old_parent);
+-		old_parent = parent;
+-	}
+ 	if (log_dentries)
+-		ret = log_new_dir_dentries(trans, root, orig_inode, ctx);
++		ret = log_new_dir_dentries(trans, root, inode, ctx);
+ 	else
+ 		ret = 0;
+ end_trans:
+-	dput(old_parent);
+ 	if (ret < 0) {
+ 		btrfs_set_log_full_commit(fs_info, trans);
+ 		ret = 1;
 -- 
 2.11.0
 

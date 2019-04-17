@@ -2,58 +2,187 @@ Return-Path: <SRS0=+3PB=ST=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.5 required=3.0
+	tests=HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 144AAC282DA
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Apr 2019 13:39:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0CF33C282DD
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Apr 2019 14:10:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E3B51204EC
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Apr 2019 13:39:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CF81A20663
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Apr 2019 14:09:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731959AbfDQNjP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Apr 2019 09:39:15 -0400
-Received: from mx2.suse.de ([195.135.220.15]:35182 "EHLO mx1.suse.de"
+        id S1732401AbfDQOJ6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Apr 2019 10:09:58 -0400
+Received: from mx2.suse.de ([195.135.220.15]:45060 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729356AbfDQNjO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Apr 2019 09:39:14 -0400
+        id S1728335AbfDQOJ5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 17 Apr 2019 10:09:57 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id C23ABB176;
-        Wed, 17 Apr 2019 13:39:13 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 0955CAC52;
+        Wed, 17 Apr 2019 14:09:54 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 77F08DA871; Wed, 17 Apr 2019 15:40:21 +0200 (CEST)
-Date:   Wed, 17 Apr 2019 15:40:21 +0200
+        id 8D2BBDA871; Wed, 17 Apr 2019 16:11:01 +0200 (CEST)
+Date:   Wed, 17 Apr 2019 16:11:01 +0200
 From:   David Sterba <dsterba@suse.cz>
 To:     fdmanana@kernel.org
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: remove no longer used function to run delayed
- refs asynchronously
-Message-ID: <20190417134021.GG20156@twin.jikos.cz>
+Cc:     linux-btrfs@vger.kernel.org, ce3g8jdj@umail.furryterror.org
+Subject: Re: [PATCH] Btrfs: fix race between send and deduplication that lead
+ to failures and crashes
+Message-ID: <20190417141101.GH20156@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
-        linux-btrfs@vger.kernel.org
-References: <20190417092847.17299-1-fdmanana@kernel.org>
+        linux-btrfs@vger.kernel.org, ce3g8jdj@umail.furryterror.org
+References: <20190415083018.2224-1-fdmanana@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190417092847.17299-1-fdmanana@kernel.org>
+In-Reply-To: <20190415083018.2224-1-fdmanana@kernel.org>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Apr 17, 2019 at 10:28:47AM +0100, fdmanana@kernel.org wrote:
+On Mon, Apr 15, 2019 at 09:30:18AM +0100, fdmanana@kernel.org wrote:
 > From: Filipe Manana <fdmanana@suse.com>
 > 
-> It used to be called from only two places (truncate path and releasing a
-> transaction handle), but commits 28bad2125767c5 ("btrfs: fix truncate
-> throttling") and db2462a6ad3dc4 ("btrfs: don't run delayed refs in the end
-> transaction logic") removed their calls to this function, so it's not used
-> anymore. Just remove it and all its helpers.
+> Send operates on read only trees and expects them to never change while it
+> is using them. This is part of its initial design, and this expection is
+> due to two different reasons:
+> 
+> 1) When it was introduced, no operations were allowed to modifiy read-only
+>    subvolumes/snapshots (including defrag for example).
+> 
+> 2) It keeps send from having an impact on other filesystem operations.
+>    Namely send does not need to keep locks on the trees nor needs to hold on
+>    to transaction handles and delay transaction commits. This ends up being
+>    a consequence of the former reason.
+> 
+> However the deduplication feature was introduced later (on September 2013,
+> while send was introduced in July 2012) and it allowed for deduplication
+> with destination files that belong to read-only trees (subvolumes and
+> snapshots).
+> 
+> That means that having a send operation (either full or incremental) running
+> in parallel with a deduplication that has the destination inode in one of
+> the trees used by the send operation, can result in tree nodes and leaves
+> getting freed and reused while send is using them. This problem is similar
+> to the problem solved for the root nodes getting freed and reused when a
+> snapshot is made against one tree that is currenly being used by a send
+> operation, fixed in commits [1] and [2]. These commits explain in detail
+> how the problem happens and the explanation is valid for any node or leaf
+> that is not the root of a tree as well. This problem was also discussed
+> and explained recently in a thread [3].
+> 
+> The problem is very easy to reproduce when using send with large trees
+> (snapshots) and just a few concurrent deduplication operations that target
+> files in the trees used by send. A stress test case is being sent for
+> fstests that triggers the issue easily. The most common error to hit is
+> the send ioctl return -EIO with the following messages in dmesg/syslog:
+> 
+>  [1631617.204075] BTRFS error (device sdc): did not find backref in send_root. inode=63292, offset=0, disk_byte=5228134400 found extent=5228134400
+>  [1631633.251754] BTRFS error (device sdc): parent transid verify failed on 32243712 wanted 24 found 27
+> 
+> The first one is very easy to hit while the second one happens much less
+> frequently, except for very large trees (in that test case, snapshots
+> with 100000 files having large xattrs to get deep and wide trees).
+> Less frequently, at least one BUG_ON can be hit:
+> 
+>  [1631742.130080] ------------[ cut here ]------------
+>  [1631742.130625] kernel BUG at fs/btrfs/ctree.c:1806!
+>  [1631742.131188] invalid opcode: 0000 [#6] SMP DEBUG_PAGEALLOC PTI
+>  [1631742.131726] CPU: 1 PID: 13394 Comm: btrfs Tainted: G    B D W         5.0.0-rc8-btrfs-next-45 #1
+>  [1631742.132265] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.11.2-0-gf9626ccb91-prebuilt.qemu-project.org 04/01/2014
+>  [1631742.133399] RIP: 0010:read_node_slot+0x122/0x130 [btrfs]
+>  (...)
+>  [1631742.135061] RSP: 0018:ffffb530021ebaa0 EFLAGS: 00010246
+>  [1631742.135615] RAX: ffff93ac8912e000 RBX: 000000000000009d RCX: 0000000000000002
+>  [1631742.136173] RDX: 000000000000009d RSI: ffff93ac564b0d08 RDI: ffff93ad5b48c000
+>  [1631742.136759] RBP: ffffb530021ebb7d R08: 0000000000000001 R09: ffffb530021ebb7d
+>  [1631742.137324] R10: ffffb530021eba70 R11: 0000000000000000 R12: ffff93ac87d0a708
+>  [1631742.137900] R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000001
+>  [1631742.138455] FS:  00007f4cdb1528c0(0000) GS:ffff93ad76a80000(0000) knlGS:0000000000000000
+>  [1631742.139010] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+>  [1631742.139568] CR2: 00007f5acb3d0420 CR3: 000000012be3e006 CR4: 00000000003606e0
+>  [1631742.140131] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+>  [1631742.140719] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+>  [1631742.141272] Call Trace:
+>  [1631742.141826]  ? do_raw_spin_unlock+0x49/0xc0
+>  [1631742.142390]  tree_advance+0x173/0x1d0 [btrfs]
+>  [1631742.142948]  btrfs_compare_trees+0x268/0x690 [btrfs]
+>  [1631742.143533]  ? process_extent+0x1070/0x1070 [btrfs]
+>  [1631742.144088]  btrfs_ioctl_send+0x1037/0x1270 [btrfs]
+>  [1631742.144645]  _btrfs_ioctl_send+0x80/0x110 [btrfs]
+>  [1631742.145161]  ? trace_sched_stick_numa+0xe0/0xe0
+>  [1631742.145685]  btrfs_ioctl+0x13fe/0x3120 [btrfs]
+>  [1631742.146179]  ? account_entity_enqueue+0xd3/0x100
+>  [1631742.146662]  ? reweight_entity+0x154/0x1a0
+>  [1631742.147135]  ? update_curr+0x20/0x2a0
+>  [1631742.147593]  ? check_preempt_wakeup+0x103/0x250
+>  [1631742.148053]  ? do_vfs_ioctl+0xa2/0x6f0
+>  [1631742.148510]  ? btrfs_ioctl_get_supported_features+0x30/0x30 [btrfs]
+>  [1631742.148942]  do_vfs_ioctl+0xa2/0x6f0
+>  [1631742.149361]  ? __fget+0x113/0x200
+>  [1631742.149767]  ksys_ioctl+0x70/0x80
+>  [1631742.150159]  __x64_sys_ioctl+0x16/0x20
+>  [1631742.150543]  do_syscall_64+0x60/0x1b0
+>  [1631742.150931]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+>  [1631742.151326] RIP: 0033:0x7f4cd9f5add7
+>  (...)
+>  [1631742.152509] RSP: 002b:00007ffe91017708 EFLAGS: 00000202 ORIG_RAX: 0000000000000010
+>  [1631742.152892] RAX: ffffffffffffffda RBX: 0000000000000105 RCX: 00007f4cd9f5add7
+>  [1631742.153268] RDX: 00007ffe91017790 RSI: 0000000040489426 RDI: 0000000000000007
+>  [1631742.153633] RBP: 0000000000000007 R08: 00007f4cd9e79700 R09: 00007f4cd9e79700
+>  [1631742.153999] R10: 00007f4cd9e799d0 R11: 0000000000000202 R12: 0000000000000003
+>  [1631742.154365] R13: 0000555dfae53020 R14: 0000000000000000 R15: 0000000000000001
+>  (...)
+>  [1631742.156696] ---[ end trace 5dac9f96dcc3fd6b ]---
+> 
+> That BUG_ON happens because while send is using a node, that node is COWed
+> by a concurrent deduplication, gets freed and gets reused as a leaf (because
+> a transaction commit happened in between), so when it attempts to read a
+> slot from the extent buffer, at ctree.c:read_node_slot(), the extent buffer
+> contents were wiped out and it now matches a leaf (which can even belong to
+> some other tree now), hitting the BUG_ON(level == 0).
+> 
+> Fix this concurrency issue by not allowing send and deduplication to run
+> in parallel if both operate on the same readonly trees, returning EAGAIN
+> to user space and logging an exlicit warning in dmesg/syslog.
+> 
+> [1] https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=be6821f82c3cc36e026f5afd10249988852b35ea
+> [2] https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=6f2f0b394b54e2b159ef969a0b5274e9bbf82ff2
+> [3] https://lore.kernel.org/linux-btrfs/CAL3q7H7iqSEEyFaEtpRZw3cp613y+4k2Q8b4W7mweR3tZA05bQ@mail.gmail.com/
 > 
 > Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-Added to misc-next, thanks.
+Reviewed-by: David Sterba <dsterba@suse.com>
+
+> +		btrfs_warn_rl(fs_info,
+> +			      "Can not use root %llu for send while a deduplication on it is in progress",
+> +			      send_root->root_key.objectid);
+
+> +					      "Can not use root %llu for send while a deduplication on it is in progress",
+> +					      clone_root->root_key.objectid);
+
+> +			btrfs_warn_rl(fs_info,
+> +				      "Can not use root %llu for send while a deduplication on it is in progress",
+> +				      sctx->parent_root->root_key.objectid);
+
+I think 3 occurences of the same string deserve a helper. Also strings
+should be un-indented to fit below 80 chars per column.
+
+I'm thinking about the message level, you use warning. The ratelimiting
+makes sense here, but I'm not sure if KERN_INFO would be sufficient.
+Maybe there are different expectations for send and dedupe too.
+
+If dedupe does not work due to send, then I don't rate is as a severe
+problem. Some space is not deduped.
+
+OTOH, send can be used for backups so a failure should be more visible.
+
+As we don't have a better mechanism to report such event to the user,
+it's the return code and syslog message. We should try to find a
+reasonable default but can't satisfy all users.

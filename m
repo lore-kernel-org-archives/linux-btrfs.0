@@ -2,187 +2,204 @@ Return-Path: <SRS0=+3PB=ST=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.5 required=3.0
-	tests=HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-8.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_MUTT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0CF33C282DD
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Apr 2019 14:10:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DB58CC282DA
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Apr 2019 15:27:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CF81A20663
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Apr 2019 14:09:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 99FF720652
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Apr 2019 15:27:52 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="loJynm65"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732401AbfDQOJ6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Apr 2019 10:09:58 -0400
-Received: from mx2.suse.de ([195.135.220.15]:45060 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728335AbfDQOJ5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Apr 2019 10:09:57 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 0955CAC52;
-        Wed, 17 Apr 2019 14:09:54 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 8D2BBDA871; Wed, 17 Apr 2019 16:11:01 +0200 (CEST)
-Date:   Wed, 17 Apr 2019 16:11:01 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     fdmanana@kernel.org
-Cc:     linux-btrfs@vger.kernel.org, ce3g8jdj@umail.furryterror.org
-Subject: Re: [PATCH] Btrfs: fix race between send and deduplication that lead
- to failures and crashes
-Message-ID: <20190417141101.GH20156@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
-        linux-btrfs@vger.kernel.org, ce3g8jdj@umail.furryterror.org
-References: <20190415083018.2224-1-fdmanana@kernel.org>
+        id S1732741AbfDQP1v (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Apr 2019 11:27:51 -0400
+Received: from userp2130.oracle.com ([156.151.31.86]:57380 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1732736AbfDQP1v (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 17 Apr 2019 11:27:51 -0400
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x3HFJ8oj167842;
+        Wed, 17 Apr 2019 15:26:59 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
+ : subject : message-id : references : mime-version : content-type :
+ in-reply-to; s=corp-2018-07-02;
+ bh=nlq8yIfjLOXxziWjU7ZRWZ5V5Wk9mZ0HLZBlU6kpdUM=;
+ b=loJynm65X0NyBOqMxaepCrOqllHBahAbE8eZ/JSsz4TiIviJnuXGJJ2tENFzxfwCnT6T
+ xe6FAGmSUIqitDH2M07Q5GIVKu0R9Ej7TDqX4N2oHZ0LT8p13ulgp3MeXv6wL0B0vTDj
+ rKeKvl0eGH+ousInwXqM/Zg9is7Z9aifo6KUzQtx7RQ7W2WXhh0tjXxpUCqxiSnDpPp+
+ ygwqMxlVL+GkO2CzhNGUsppap2qiOdyuaruSi/7aQPedJqvwD0/H60rF8BMEUowy/seo
+ fSURBXDIWagwnYcREqYMn6BTAh+mHzQpwKUT+CVxdF6XkZXY5/yzlsQqh/ITFSxt34fw Vw== 
+Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
+        by userp2130.oracle.com with ESMTP id 2rvwk3usxm-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 17 Apr 2019 15:26:59 +0000
+Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
+        by aserp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x3HFO8Mn167134;
+        Wed, 17 Apr 2019 15:24:58 GMT
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserp3030.oracle.com with ESMTP id 2rwe7afdqu-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 17 Apr 2019 15:24:58 +0000
+Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x3HFOtTX009582;
+        Wed, 17 Apr 2019 15:24:55 GMT
+Received: from localhost (/67.169.218.210)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Wed, 17 Apr 2019 08:24:54 -0700
+Date:   Wed, 17 Apr 2019 08:24:53 -0700
+From:   "Darrick J. Wong" <darrick.wong@oracle.com>
+To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
+Cc:     linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        jack@suse.cz, david@fromorbit.com, willy@infradead.org, hch@lst.de,
+        kilobyte@angband.pl, dsterba@suse.cz, nborisov@suse.com,
+        linux-nvdimm@lists.01.org, Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: Re: [PATCH 10/18] dax: replace mmap entry in case of CoW
+Message-ID: <20190417152453.GA4740@magnolia>
+References: <20190416164154.30390-1-rgoldwyn@suse.de>
+ <20190416164154.30390-11-rgoldwyn@suse.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190415083018.2224-1-fdmanana@kernel.org>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+In-Reply-To: <20190416164154.30390-11-rgoldwyn@suse.de>
+User-Agent: Mutt/1.9.4 (2018-02-28)
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9230 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1810050000 definitions=main-1904170104
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9230 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1011
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1904170104
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Apr 15, 2019 at 09:30:18AM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
+On Tue, Apr 16, 2019 at 11:41:46AM -0500, Goldwyn Rodrigues wrote:
+> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 > 
-> Send operates on read only trees and expects them to never change while it
-> is using them. This is part of its initial design, and this expection is
-> due to two different reasons:
+> We replace the existing entry to the newly allocated one
+> in case of CoW. Also, we mark the entry as PAGECACHE_TAG_TOWRITE
+> so writeback marks this entry as writeprotected. This
+> helps us snapshots so new write pagefaults after snapshots
+> trigger a CoW.
 > 
-> 1) When it was introduced, no operations were allowed to modifiy read-only
->    subvolumes/snapshots (including defrag for example).
+> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+> ---
+>  fs/dax.c | 23 +++++++++++++++--------
+>  1 file changed, 15 insertions(+), 8 deletions(-)
 > 
-> 2) It keeps send from having an impact on other filesystem operations.
->    Namely send does not need to keep locks on the trees nor needs to hold on
->    to transaction handles and delay transaction commits. This ends up being
->    a consequence of the former reason.
-> 
-> However the deduplication feature was introduced later (on September 2013,
-> while send was introduced in July 2012) and it allowed for deduplication
-> with destination files that belong to read-only trees (subvolumes and
-> snapshots).
-> 
-> That means that having a send operation (either full or incremental) running
-> in parallel with a deduplication that has the destination inode in one of
-> the trees used by the send operation, can result in tree nodes and leaves
-> getting freed and reused while send is using them. This problem is similar
-> to the problem solved for the root nodes getting freed and reused when a
-> snapshot is made against one tree that is currenly being used by a send
-> operation, fixed in commits [1] and [2]. These commits explain in detail
-> how the problem happens and the explanation is valid for any node or leaf
-> that is not the root of a tree as well. This problem was also discussed
-> and explained recently in a thread [3].
-> 
-> The problem is very easy to reproduce when using send with large trees
-> (snapshots) and just a few concurrent deduplication operations that target
-> files in the trees used by send. A stress test case is being sent for
-> fstests that triggers the issue easily. The most common error to hit is
-> the send ioctl return -EIO with the following messages in dmesg/syslog:
-> 
->  [1631617.204075] BTRFS error (device sdc): did not find backref in send_root. inode=63292, offset=0, disk_byte=5228134400 found extent=5228134400
->  [1631633.251754] BTRFS error (device sdc): parent transid verify failed on 32243712 wanted 24 found 27
-> 
-> The first one is very easy to hit while the second one happens much less
-> frequently, except for very large trees (in that test case, snapshots
-> with 100000 files having large xattrs to get deep and wide trees).
-> Less frequently, at least one BUG_ON can be hit:
-> 
->  [1631742.130080] ------------[ cut here ]------------
->  [1631742.130625] kernel BUG at fs/btrfs/ctree.c:1806!
->  [1631742.131188] invalid opcode: 0000 [#6] SMP DEBUG_PAGEALLOC PTI
->  [1631742.131726] CPU: 1 PID: 13394 Comm: btrfs Tainted: G    B D W         5.0.0-rc8-btrfs-next-45 #1
->  [1631742.132265] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.11.2-0-gf9626ccb91-prebuilt.qemu-project.org 04/01/2014
->  [1631742.133399] RIP: 0010:read_node_slot+0x122/0x130 [btrfs]
->  (...)
->  [1631742.135061] RSP: 0018:ffffb530021ebaa0 EFLAGS: 00010246
->  [1631742.135615] RAX: ffff93ac8912e000 RBX: 000000000000009d RCX: 0000000000000002
->  [1631742.136173] RDX: 000000000000009d RSI: ffff93ac564b0d08 RDI: ffff93ad5b48c000
->  [1631742.136759] RBP: ffffb530021ebb7d R08: 0000000000000001 R09: ffffb530021ebb7d
->  [1631742.137324] R10: ffffb530021eba70 R11: 0000000000000000 R12: ffff93ac87d0a708
->  [1631742.137900] R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000001
->  [1631742.138455] FS:  00007f4cdb1528c0(0000) GS:ffff93ad76a80000(0000) knlGS:0000000000000000
->  [1631742.139010] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
->  [1631742.139568] CR2: 00007f5acb3d0420 CR3: 000000012be3e006 CR4: 00000000003606e0
->  [1631742.140131] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
->  [1631742.140719] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
->  [1631742.141272] Call Trace:
->  [1631742.141826]  ? do_raw_spin_unlock+0x49/0xc0
->  [1631742.142390]  tree_advance+0x173/0x1d0 [btrfs]
->  [1631742.142948]  btrfs_compare_trees+0x268/0x690 [btrfs]
->  [1631742.143533]  ? process_extent+0x1070/0x1070 [btrfs]
->  [1631742.144088]  btrfs_ioctl_send+0x1037/0x1270 [btrfs]
->  [1631742.144645]  _btrfs_ioctl_send+0x80/0x110 [btrfs]
->  [1631742.145161]  ? trace_sched_stick_numa+0xe0/0xe0
->  [1631742.145685]  btrfs_ioctl+0x13fe/0x3120 [btrfs]
->  [1631742.146179]  ? account_entity_enqueue+0xd3/0x100
->  [1631742.146662]  ? reweight_entity+0x154/0x1a0
->  [1631742.147135]  ? update_curr+0x20/0x2a0
->  [1631742.147593]  ? check_preempt_wakeup+0x103/0x250
->  [1631742.148053]  ? do_vfs_ioctl+0xa2/0x6f0
->  [1631742.148510]  ? btrfs_ioctl_get_supported_features+0x30/0x30 [btrfs]
->  [1631742.148942]  do_vfs_ioctl+0xa2/0x6f0
->  [1631742.149361]  ? __fget+0x113/0x200
->  [1631742.149767]  ksys_ioctl+0x70/0x80
->  [1631742.150159]  __x64_sys_ioctl+0x16/0x20
->  [1631742.150543]  do_syscall_64+0x60/0x1b0
->  [1631742.150931]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
->  [1631742.151326] RIP: 0033:0x7f4cd9f5add7
->  (...)
->  [1631742.152509] RSP: 002b:00007ffe91017708 EFLAGS: 00000202 ORIG_RAX: 0000000000000010
->  [1631742.152892] RAX: ffffffffffffffda RBX: 0000000000000105 RCX: 00007f4cd9f5add7
->  [1631742.153268] RDX: 00007ffe91017790 RSI: 0000000040489426 RDI: 0000000000000007
->  [1631742.153633] RBP: 0000000000000007 R08: 00007f4cd9e79700 R09: 00007f4cd9e79700
->  [1631742.153999] R10: 00007f4cd9e799d0 R11: 0000000000000202 R12: 0000000000000003
->  [1631742.154365] R13: 0000555dfae53020 R14: 0000000000000000 R15: 0000000000000001
->  (...)
->  [1631742.156696] ---[ end trace 5dac9f96dcc3fd6b ]---
-> 
-> That BUG_ON happens because while send is using a node, that node is COWed
-> by a concurrent deduplication, gets freed and gets reused as a leaf (because
-> a transaction commit happened in between), so when it attempts to read a
-> slot from the extent buffer, at ctree.c:read_node_slot(), the extent buffer
-> contents were wiped out and it now matches a leaf (which can even belong to
-> some other tree now), hitting the BUG_ON(level == 0).
-> 
-> Fix this concurrency issue by not allowing send and deduplication to run
-> in parallel if both operate on the same readonly trees, returning EAGAIN
-> to user space and logging an exlicit warning in dmesg/syslog.
-> 
-> [1] https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=be6821f82c3cc36e026f5afd10249988852b35ea
-> [2] https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=6f2f0b394b54e2b159ef969a0b5274e9bbf82ff2
-> [3] https://lore.kernel.org/linux-btrfs/CAL3q7H7iqSEEyFaEtpRZw3cp613y+4k2Q8b4W7mweR3tZA05bQ@mail.gmail.com/
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> diff --git a/fs/dax.c b/fs/dax.c
+> index 45fc2e18969a..d5100cbe8bd2 100644
+> --- a/fs/dax.c
+> +++ b/fs/dax.c
+> @@ -708,14 +708,15 @@ static int copy_user_dax(struct block_device *bdev, struct dax_device *dax_dev,
+>   */
+>  static void *dax_insert_entry(struct xa_state *xas,
+>  		struct address_space *mapping, struct vm_fault *vmf,
+> -		void *entry, pfn_t pfn, unsigned long flags, bool dirty)
+> +		void *entry, pfn_t pfn, unsigned long flags, bool dirty,
+> +		bool cow)
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+I still wish these were flags instead of double booleans that will be
+easy to mix up, especially since this is a static function and nobody
+else has to see the flags...
 
-> +		btrfs_warn_rl(fs_info,
-> +			      "Can not use root %llu for send while a deduplication on it is in progress",
-> +			      send_root->root_key.objectid);
+#define IE_DIRTY	(1 << 0) /* mark entry and inode dirty */
+#define IE_REPLACE	(1 << 1) /* replacing one page with another */
 
-> +					      "Can not use root %llu for send while a deduplication on it is in progress",
-> +					      clone_root->root_key.objectid);
+...otoh maybe I'll just defer to the maintainer. :)
 
-> +			btrfs_warn_rl(fs_info,
-> +				      "Can not use root %llu for send while a deduplication on it is in progress",
-> +				      sctx->parent_root->root_key.objectid);
+>  {
+>  	void *new_entry = dax_make_entry(pfn, flags);
+>  
+>  	if (dirty)
+>  		__mark_inode_dirty(mapping->host, I_DIRTY_PAGES);
+>  
+> -	if (dax_is_zero_entry(entry) && !(flags & DAX_ZERO_PAGE)) {
+> +	if (cow || (dax_is_zero_entry(entry) && !(flags & DAX_ZERO_PAGE))) {
+>  		unsigned long index = xas->xa_index;
+>  		/* we are replacing a zero page with block mapping */
 
-I think 3 occurences of the same string deserve a helper. Also strings
-should be un-indented to fit below 80 chars per column.
+These comments need updating.
 
-I'm thinking about the message level, you use warning. The ratelimiting
-makes sense here, but I'm not sure if KERN_INFO would be sufficient.
-Maybe there are different expectations for send and dedupe too.
+Otherwise looks good to me...
 
-If dedupe does not work due to send, then I don't rate is as a severe
-problem. Some space is not deduped.
+--D
 
-OTOH, send can be used for backups so a failure should be more visible.
-
-As we don't have a better mechanism to report such event to the user,
-it's the return code and syslog message. We should try to find a
-reasonable default but can't satisfy all users.
+>  		if (dax_is_pmd_entry(entry))
+> @@ -727,12 +728,12 @@ static void *dax_insert_entry(struct xa_state *xas,
+>  
+>  	xas_reset(xas);
+>  	xas_lock_irq(xas);
+> -	if (dax_entry_size(entry) != dax_entry_size(new_entry)) {
+> +	if (cow || (dax_entry_size(entry) != dax_entry_size(new_entry))) {
+>  		dax_disassociate_entry(entry, mapping, false);
+>  		dax_associate_entry(new_entry, mapping, vmf->vma, vmf->address);
+>  	}
+>  
+> -	if (dax_is_zero_entry(entry) || dax_is_empty_entry(entry)) {
+> +	if (cow || dax_is_zero_entry(entry) || dax_is_empty_entry(entry)) {
+>  		/*
+>  		 * Only swap our new entry into the page cache if the current
+>  		 * entry is a zero page or an empty entry.  If a normal PTE or
+> @@ -752,6 +753,9 @@ static void *dax_insert_entry(struct xa_state *xas,
+>  	if (dirty)
+>  		xas_set_mark(xas, PAGECACHE_TAG_DIRTY);
+>  
+> +	if (cow)
+> +		xas_set_mark(xas, PAGECACHE_TAG_TOWRITE);
+> +
+>  	xas_unlock_irq(xas);
+>  	return entry;
+>  }
+> @@ -1031,7 +1035,7 @@ static vm_fault_t dax_load_hole(struct xa_state *xas,
+>  	vm_fault_t ret;
+>  
+>  	*entry = dax_insert_entry(xas, mapping, vmf, *entry, pfn,
+> -			DAX_ZERO_PAGE, false);
+> +			DAX_ZERO_PAGE, false, false);
+>  
+>  	ret = vmf_insert_mixed(vmf->vma, vaddr, pfn);
+>  	trace_dax_load_hole(inode, vmf, ret);
+> @@ -1388,7 +1392,8 @@ static vm_fault_t dax_iomap_pte_fault(struct vm_fault *vmf, pfn_t *pfnp,
+>  				memset(addr, 0, PAGE_SIZE);
+>  		}
+>  		entry = dax_insert_entry(&xas, mapping, vmf, entry, pfn,
+> -						 0, write && !sync);
+> +						 0, write && !sync,
+> +						 iomap.type == IOMAP_DAX_COW);
+>  
+>  		/*
+>  		 * If we are doing synchronous page fault and inode needs fsync,
+> @@ -1467,7 +1472,8 @@ static vm_fault_t dax_pmd_load_hole(struct xa_state *xas, struct vm_fault *vmf,
+>  
+>  	pfn = page_to_pfn_t(zero_page);
+>  	*entry = dax_insert_entry(xas, mapping, vmf, *entry, pfn,
+> -			DAX_PMD | DAX_ZERO_PAGE, false);
+> +			DAX_PMD | DAX_ZERO_PAGE, false,
+> +			iomap->type == IOMAP_DAX_COW);
+>  
+>  	ptl = pmd_lock(vmf->vma->vm_mm, vmf->pmd);
+>  	if (!pmd_none(*(vmf->pmd))) {
+> @@ -1590,7 +1596,8 @@ static vm_fault_t dax_iomap_pmd_fault(struct vm_fault *vmf, pfn_t *pfnp,
+>  			goto finish_iomap;
+>  
+>  		entry = dax_insert_entry(&xas, mapping, vmf, entry, pfn,
+> -						DAX_PMD, write && !sync);
+> +						DAX_PMD, write && !sync,
+> +						false);
+>  
+>  		/*
+>  		 * If we are doing synchronous page fault and inode needs fsync,
+> -- 
+> 2.16.4
+> 

@@ -6,33 +6,32 @@ X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E4E1BC10F0E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:09:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 93EFFC10F14
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:10:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id AD5B4206B6
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:09:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6BD1F218FD
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:10:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388656AbfDRJJ5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Apr 2019 05:09:57 -0400
-Received: from Galois.linutronix.de ([146.0.238.70]:34070 "EHLO
+        id S2388698AbfDRJKG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Apr 2019 05:10:06 -0400
+Received: from Galois.linutronix.de ([146.0.238.70]:34061 "EHLO
         Galois.linutronix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2388519AbfDRJHc (ORCPT
+        with ESMTP id S2388501AbfDRJHb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Apr 2019 05:07:32 -0400
+        Thu, 18 Apr 2019 05:07:31 -0400
 Received: from localhost ([127.0.0.1] helo=nanos.tec.linutronix.de)
         by Galois.linutronix.de with esmtp (Exim 4.80)
         (envelope-from <tglx@linutronix.de>)
-        id 1hH2zt-0001ox-KZ; Thu, 18 Apr 2019 11:06:21 +0200
-Message-Id: <20190418084254.082820685@linutronix.de>
+        id 1hH2zj-0001n0-DA; Thu, 18 Apr 2019 11:06:11 +0200
+Message-Id: <20190418084253.628227766@linutronix.de>
 User-Agent: quilt/0.65
-Date:   Thu, 18 Apr 2019 10:41:30 +0200
+Date:   Thu, 18 Apr 2019 10:41:25 +0200
 From:   Thomas Gleixner <tglx@linutronix.de>
 To:     LKML <linux-kernel@vger.kernel.org>
 Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
         Andy Lutomirski <luto@kernel.org>,
         Steven Rostedt <rostedt@goodmis.org>,
         Alexander Potapenko <glider@google.com>,
-        Akinobu Mita <akinobu.mita@gmail.com>,
         Alexey Dobriyan <adobriyan@gmail.com>,
         Andrew Morton <akpm@linux-foundation.org>,
         Pekka Enberg <penberg@kernel.org>, linux-mm@kvack.org,
@@ -43,6 +42,7 @@ Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
         Andrey Ryabinin <aryabinin@virtuozzo.com>,
         kasan-dev@googlegroups.com,
         Mike Rapoport <rppt@linux.vnet.ibm.com>,
+        Akinobu Mita <akinobu.mita@gmail.com>,
         iommu@lists.linux-foundation.org,
         Robin Murphy <robin.murphy@arm.com>,
         Christoph Hellwig <hch@lst.de>,
@@ -61,7 +61,7 @@ Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
         Daniel Vetter <daniel@ffwll.ch>,
         Rodrigo Vivi <rodrigo.vivi@intel.com>,
         linux-arch@vger.kernel.org
-Subject: [patch V2 11/29] fault-inject: Simplify stacktrace retrieval
+Subject: [patch V2 06/29] latency_top: Simplify stack trace handling
 References: <20190418084119.056416939@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -74,38 +74,42 @@ Replace the indirection through struct stack_trace with an invocation of
 the storage array based interface.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-Cc: Akinobu Mita <akinobu.mita@gmail.com>
 ---
- lib/fault-inject.c |   12 +++---------
- 1 file changed, 3 insertions(+), 9 deletions(-)
+ kernel/latencytop.c |   17 ++---------------
+ 1 file changed, 2 insertions(+), 15 deletions(-)
 
---- a/lib/fault-inject.c
-+++ b/lib/fault-inject.c
-@@ -65,22 +65,16 @@ static bool fail_task(struct fault_attr
+--- a/kernel/latencytop.c
++++ b/kernel/latencytop.c
+@@ -141,20 +141,6 @@ account_global_scheduler_latency(struct
+ 	memcpy(&latency_record[i], lat, sizeof(struct latency_record));
+ }
  
- static bool fail_stacktrace(struct fault_attr *attr)
- {
+-/*
+- * Iterator to store a backtrace into a latency record entry
+- */
+-static inline void store_stacktrace(struct task_struct *tsk,
+-					struct latency_record *lat)
+-{
 -	struct stack_trace trace;
- 	int depth = attr->stacktrace_depth;
- 	unsigned long entries[MAX_STACK_TRACE_DEPTH];
--	int n;
-+	int n, nr_entries;
- 	bool found = (attr->require_start == 0 && attr->require_end == ULONG_MAX);
- 
- 	if (depth == 0)
- 		return found;
- 
--	trace.nr_entries = 0;
--	trace.entries = entries;
--	trace.max_entries = depth;
--	trace.skip = 1;
 -
--	save_stack_trace(&trace);
--	for (n = 0; n < trace.nr_entries; n++) {
-+	nr_entries = stack_trace_save(entries, depth, 1);
-+	for (n = 0; n < nr_entries; n++) {
- 		if (attr->reject_start <= entries[n] &&
- 			       entries[n] < attr->reject_end)
- 			return false;
+-	memset(&trace, 0, sizeof(trace));
+-	trace.max_entries = LT_BACKTRACEDEPTH;
+-	trace.entries = &lat->backtrace[0];
+-	save_stack_trace_tsk(tsk, &trace);
+-}
+-
+ /**
+  * __account_scheduler_latency - record an occurred latency
+  * @tsk - the task struct of the task hitting the latency
+@@ -191,7 +177,8 @@ void __sched
+ 	lat.count = 1;
+ 	lat.time = usecs;
+ 	lat.max = usecs;
+-	store_stacktrace(tsk, &lat);
++
++	stack_trace_save_tsk(tsk, lat.backtrace, LT_BACKTRACEDEPTH, 0);
+ 
+ 	raw_spin_lock_irqsave(&latency_lock, flags);
+ 
 
 

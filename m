@@ -6,26 +6,26 @@ X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E573DC10F14
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:07:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8FFE5C282DD
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:07:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BEA7721871
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:07:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6CB302183E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:07:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388417AbfDRJHH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Apr 2019 05:07:07 -0400
-Received: from Galois.linutronix.de ([146.0.238.70]:33868 "EHLO
+        id S2388000AbfDRJHg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Apr 2019 05:07:36 -0400
+Received: from Galois.linutronix.de ([146.0.238.70]:34081 "EHLO
         Galois.linutronix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2388406AbfDRJHG (ORCPT
+        with ESMTP id S2388540AbfDRJHf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Apr 2019 05:07:06 -0400
+        Thu, 18 Apr 2019 05:07:35 -0400
 Received: from localhost ([127.0.0.1] helo=nanos.tec.linutronix.de)
         by Galois.linutronix.de with esmtp (Exim 4.80)
         (envelope-from <tglx@linutronix.de>)
-        id 1hH2zh-0001mY-4r; Thu, 18 Apr 2019 11:06:09 +0200
-Message-Id: <20190418084253.534580989@linutronix.de>
+        id 1hH30L-0001w5-1f; Thu, 18 Apr 2019 11:06:49 +0200
+Message-Id: <20190418084255.186774860@linutronix.de>
 User-Agent: quilt/0.65
-Date:   Thu, 18 Apr 2019 10:41:24 +0200
+Date:   Thu, 18 Apr 2019 10:41:42 +0200
 From:   Thomas Gleixner <tglx@linutronix.de>
 To:     LKML <linux-kernel@vger.kernel.org>
 Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
@@ -61,7 +61,7 @@ Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
         Daniel Vetter <daniel@ffwll.ch>,
         Rodrigo Vivi <rodrigo.vivi@intel.com>,
         linux-arch@vger.kernel.org
-Subject: [patch V2 05/29] proc: Simplify task stack retrieval
+Subject: [patch V2 23/29] tracing: Simplify stack trace retrieval
 References: <20190418084119.056416939@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -70,51 +70,102 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Replace the indirection through struct stack_trace with an invocation of
-the storage array based interface.
+Replace the indirection through struct stack_trace by using the storage
+array based interfaces.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-Reviewed-by: Alexey Dobriyan <adobriyan@gmail.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Steven Rostedt <rostedt@goodmis.org>
 ---
- fs/proc/base.c |   14 +++++---------
- 1 file changed, 5 insertions(+), 9 deletions(-)
+ kernel/trace/trace.c |   40 +++++++++++++---------------------------
+ 1 file changed, 13 insertions(+), 27 deletions(-)
 
---- a/fs/proc/base.c
-+++ b/fs/proc/base.c
-@@ -407,7 +407,6 @@ static void unlock_trace(struct task_str
- static int proc_pid_stack(struct seq_file *m, struct pid_namespace *ns,
- 			  struct pid *pid, struct task_struct *task)
+--- a/kernel/trace/trace.c
++++ b/kernel/trace/trace.c
+@@ -2774,22 +2774,18 @@ static void __ftrace_trace_stack(struct
  {
+ 	struct trace_event_call *call = &event_kernel_stack;
+ 	struct ring_buffer_event *event;
++	unsigned int size, nr_entries;
+ 	struct ftrace_stack *fstack;
+ 	struct stack_entry *entry;
 -	struct stack_trace trace;
- 	unsigned long *entries;
- 	int err;
- 
-@@ -430,20 +429,17 @@ static int proc_pid_stack(struct seq_fil
- 	if (!entries)
- 		return -ENOMEM;
+-	int size = FTRACE_KSTACK_ENTRIES;
+ 	int stackidx;
  
 -	trace.nr_entries	= 0;
--	trace.max_entries	= MAX_STACK_TRACE_DEPTH;
--	trace.entries		= entries;
--	trace.skip		= 0;
+-	trace.skip		= skip;
 -
- 	err = lock_trace(task);
- 	if (!err) {
--		unsigned int i;
-+		unsigned int i, nr_entries;
+ 	/*
+ 	 * Add one, for this function and the call to save_stack_trace()
+ 	 * If regs is set, then these functions will not be in the way.
+ 	 */
+ #ifndef CONFIG_UNWINDER_ORC
+ 	if (!regs)
+-		trace.skip++;
++		skip++;
+ #endif
  
--		save_stack_trace_tsk(task, &trace);
-+		nr_entries = stack_trace_save_tsk(task, entries,
-+						  MAX_STACK_TRACE_DEPTH, 0);
+ 	/*
+@@ -2816,28 +2812,24 @@ static void __ftrace_trace_stack(struct
+ 	barrier();
  
--		for (i = 0; i < trace.nr_entries; i++) {
-+		for (i = 0; i < nr_entries; i++) {
- 			seq_printf(m, "[<0>] %pB\n", (void *)entries[i]);
- 		}
-+
- 		unlock_trace(task);
- 	}
- 	kfree(entries);
+ 	fstack = this_cpu_ptr(ftrace_stacks.stacks) + (stackidx - 1);
+-	trace.entries		= fstack->calls;
+-	trace.max_entries	= FTRACE_KSTACK_ENTRIES;
+-
+-	if (regs)
+-		save_stack_trace_regs(regs, &trace);
+-	else
+-		save_stack_trace(&trace);
+-
+-	if (trace.nr_entries > size)
+-		size = trace.nr_entries;
++	size = ARRAY_SIZE(fstack->calls);
+ 
+-	size *= sizeof(unsigned long);
++	if (regs) {
++		nr_entries = stack_trace_save_regs(regs, fstack->calls,
++						   size, skip);
++	} else {
++		nr_entries = stack_trace_save(fstack->calls, size, skip);
++	}
+ 
++	size = nr_entries * sizeof(unsigned long);
+ 	event = __trace_buffer_lock_reserve(buffer, TRACE_STACK,
+ 					    sizeof(*entry) + size, flags, pc);
+ 	if (!event)
+ 		goto out;
+ 	entry = ring_buffer_event_data(event);
+ 
+-	memcpy(&entry->caller, trace.entries, size);
+-
+-	entry->size = trace.nr_entries;
++	memcpy(&entry->caller, fstack->calls, size);
++	entry->size = nr_entries;
+ 
+ 	if (!call_filter_check_discard(call, entry, buffer, event))
+ 		__buffer_unlock_commit(buffer, event);
+@@ -2916,7 +2908,6 @@ ftrace_trace_userstack(struct ring_buffe
+ 	struct trace_event_call *call = &event_user_stack;
+ 	struct ring_buffer_event *event;
+ 	struct userstack_entry *entry;
+-	struct stack_trace trace;
+ 
+ 	if (!(global_trace.trace_flags & TRACE_ITER_USERSTACKTRACE))
+ 		return;
+@@ -2947,12 +2938,7 @@ ftrace_trace_userstack(struct ring_buffe
+ 	entry->tgid		= current->tgid;
+ 	memset(&entry->caller, 0, sizeof(entry->caller));
+ 
+-	trace.nr_entries	= 0;
+-	trace.max_entries	= FTRACE_STACK_ENTRIES;
+-	trace.skip		= 0;
+-	trace.entries		= entry->caller;
+-
+-	save_stack_trace_user(&trace);
++	stack_trace_save_user(entry->caller, FTRACE_STACK_ENTRIES);
+ 	if (!call_filter_check_discard(call, entry, buffer, event))
+ 		__buffer_unlock_commit(buffer, event);
+ 
 
 

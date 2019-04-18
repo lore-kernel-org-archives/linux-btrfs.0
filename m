@@ -6,26 +6,32 @@ X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 95972C10F14
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 20:13:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 434D0C10F0E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 20:22:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 70A0B2186A
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 20:13:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1D24620869
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 20:22:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2390151AbfDRUNs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Apr 2019 16:13:48 -0400
-Received: from mail.kernel.org ([198.145.29.99]:41798 "EHLO mail.kernel.org"
+        id S2390029AbfDRUW0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Apr 2019 16:22:26 -0400
+Received: from mga05.intel.com ([192.55.52.43]:60488 "EHLO mga05.intel.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1732589AbfDRUNs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Apr 2019 16:13:48 -0400
-Received: from gandalf.local.home (cpe-66-24-58-225.stny.res.rr.com [66.24.58.225])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 103CF206B6;
-        Thu, 18 Apr 2019 20:13:43 +0000 (UTC)
-Date:   Thu, 18 Apr 2019 16:13:42 -0400
-From:   Steven Rostedt <rostedt@goodmis.org>
-To:     Tom Zanussi <tom.zanussi@linux.intel.com>
+        id S1728508AbfDRUW0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 18 Apr 2019 16:22:26 -0400
+X-Amp-Result: SKIPPED(no attachment in message)
+X-Amp-File-Uploaded: False
+Received: from fmsmga008.fm.intel.com ([10.253.24.58])
+  by fmsmga105.fm.intel.com with ESMTP/TLS/DHE-RSA-AES256-GCM-SHA384; 18 Apr 2019 13:22:25 -0700
+X-ExtLoop1: 1
+X-IronPort-AV: E=Sophos;i="5.60,367,1549958400"; 
+   d="scan'208";a="141818813"
+Received: from dytagah-mobl.amr.corp.intel.com ([10.254.15.29])
+  by fmsmga008.fm.intel.com with ESMTP; 18 Apr 2019 13:22:22 -0700
+Message-ID: <a8b9954d0c0a6cc4c213ff65c9ec3795ed0a05ba.camel@linux.intel.com>
+Subject: Re: [patch V2 20/29] tracing: Simplify stacktrace retrieval in
+ histograms
+From:   Tom Zanussi <tom.zanussi@linux.intel.com>
+To:     Steven Rostedt <rostedt@goodmis.org>
 Cc:     Thomas Gleixner <tglx@linutronix.de>,
         LKML <linux-kernel@vger.kernel.org>,
         Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
@@ -60,37 +66,49 @@ Cc:     Thomas Gleixner <tglx@linutronix.de>,
         Daniel Vetter <daniel@ffwll.ch>,
         Rodrigo Vivi <rodrigo.vivi@intel.com>,
         linux-arch@vger.kernel.org
-Subject: Re: [patch V2 20/29] tracing: Simplify stacktrace retrieval in
- histograms
-Message-ID: <20190418161342.34f4abca@gandalf.local.home>
-In-Reply-To: <014a7564d606b249a5e50bef0fedf266977a935b.camel@linux.intel.com>
+Date:   Thu, 18 Apr 2019 15:22:22 -0500
+In-Reply-To: <20190418161342.34f4abca@gandalf.local.home>
 References: <20190418084119.056416939@linutronix.de>
-        <20190418084254.910579307@linutronix.de>
-        <20190418094014.7d457f29@gandalf.local.home>
-        <014a7564d606b249a5e50bef0fedf266977a935b.camel@linux.intel.com>
-X-Mailer: Claws Mail 3.17.3 (GTK+ 2.24.32; x86_64-pc-linux-gnu)
-MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+         <20190418084254.910579307@linutronix.de>
+         <20190418094014.7d457f29@gandalf.local.home>
+         <014a7564d606b249a5e50bef0fedf266977a935b.camel@linux.intel.com>
+         <20190418161342.34f4abca@gandalf.local.home>
+Content-Type: text/plain; charset="UTF-8"
+X-Mailer: Evolution 3.28.5 (3.28.5-1.fc28) 
+Mime-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, 18 Apr 2019 14:58:55 -0500
-Tom Zanussi <tom.zanussi@linux.intel.com> wrote:
+Hi Steve,
 
-> > Tom,
+On Thu, 2019-04-18 at 16:13 -0400, Steven Rostedt wrote:
+> On Thu, 18 Apr 2019 14:58:55 -0500
+> Tom Zanussi <tom.zanussi@linux.intel.com> wrote:
+> 
+> > > Tom,
+> > > 
+> > > Can you review this too?  
 > > 
-> > Can you review this too?  
+> > Looks good to me too!
+> > 
+> > Acked-by: Tom Zanussi <tom.zanussi@linux.intel.com>
+> > 
 > 
-> Looks good to me too!
-> 
-> Acked-by: Tom Zanussi <tom.zanussi@linux.intel.com>
+> Would you be OK to upgrade this to a Reviewed-by tag?
 > 
 
-Would you be OK to upgrade this to a Reviewed-by tag?
+Yeah, I did review it and even tested it, so:
 
-Thanks!
+Reviewed-by: Tom Zanussi <tom.zanussi@linux.intel.com>
+Tested-by: Tom Zanussi <tom.zanussi@linux.intel.com>
 
--- Steve
+Tom
+
+
+> Thanks!
+> 
+> -- Steve
+

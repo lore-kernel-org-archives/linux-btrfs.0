@@ -6,26 +6,26 @@ X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 36D77C10F14
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:09:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2A0BEC10F14
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:09:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1276E2183E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:09:05 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0495E206B6
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:09:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388650AbfDRJH6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Apr 2019 05:07:58 -0400
-Received: from Galois.linutronix.de ([146.0.238.70]:34126 "EHLO
+        id S2388621AbfDRJHs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Apr 2019 05:07:48 -0400
+Received: from Galois.linutronix.de ([146.0.238.70]:34115 "EHLO
         Galois.linutronix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2388631AbfDRJHv (ORCPT
+        with ESMTP id S2388571AbfDRJHr (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Apr 2019 05:07:51 -0400
+        Thu, 18 Apr 2019 05:07:47 -0400
 Received: from localhost ([127.0.0.1] helo=nanos.tec.linutronix.de)
         by Galois.linutronix.de with esmtp (Exim 4.80)
         (envelope-from <tglx@linutronix.de>)
-        id 1hH303-0001rK-1g; Thu, 18 Apr 2019 11:06:31 +0200
-Message-Id: <20190418084254.459090858@linutronix.de>
+        id 1hH300-0001qd-GI; Thu, 18 Apr 2019 11:06:28 +0200
+Message-Id: <20190418084254.361284697@linutronix.de>
 User-Agent: quilt/0.65
-Date:   Thu, 18 Apr 2019 10:41:34 +0200
+Date:   Thu, 18 Apr 2019 10:41:33 +0200
 From:   Thomas Gleixner <tglx@linutronix.de>
 To:     LKML <linux-kernel@vger.kernel.org>
 Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
@@ -60,7 +60,7 @@ Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
         Daniel Vetter <daniel@ffwll.ch>,
         Rodrigo Vivi <rodrigo.vivi@intel.com>,
         linux-arch@vger.kernel.org
-Subject: [patch V2 15/29] dm persistent data: Simplify stack trace handling
+Subject: [patch V2 14/29] dm bufio: Simplify stack trace retrieval
 References: <20190418084119.056416939@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -70,72 +70,60 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 Replace the indirection through struct stack_trace with an invocation of
-the storage array based interface. This results in less storage space and
-indirection.
+the storage array based interface.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Cc: dm-devel@redhat.com
 Cc: Mike Snitzer <snitzer@redhat.com>
 Cc: Alasdair Kergon <agk@redhat.com>
 ---
- drivers/md/persistent-data/dm-block-manager.c |   19 +++++++++----------
- 1 file changed, 9 insertions(+), 10 deletions(-)
+ drivers/md/dm-bufio.c |   15 ++++++---------
+ 1 file changed, 6 insertions(+), 9 deletions(-)
 
---- a/drivers/md/persistent-data/dm-block-manager.c
-+++ b/drivers/md/persistent-data/dm-block-manager.c
-@@ -35,7 +35,10 @@
- #define MAX_HOLDERS 4
- #define MAX_STACK 10
- 
--typedef unsigned long stack_entries[MAX_STACK];
-+struct stack_store {
-+	unsigned int	nr_entries;
-+	unsigned long	entries[MAX_STACK];
-+};
- 
- struct block_lock {
- 	spinlock_t lock;
-@@ -44,8 +47,7 @@ struct block_lock {
- 	struct task_struct *holders[MAX_HOLDERS];
- 
+--- a/drivers/md/dm-bufio.c
++++ b/drivers/md/dm-bufio.c
+@@ -150,7 +150,7 @@ struct dm_buffer {
+ 	void (*end_io)(struct dm_buffer *, blk_status_t);
  #ifdef CONFIG_DM_DEBUG_BLOCK_STACK_TRACING
--	struct stack_trace traces[MAX_HOLDERS];
--	stack_entries entries[MAX_HOLDERS];
-+	struct stack_store traces[MAX_HOLDERS];
+ #define MAX_STACK 10
+-	struct stack_trace stack_trace;
++	unsigned int stack_len;
+ 	unsigned long stack_entries[MAX_STACK];
  #endif
  };
- 
-@@ -73,7 +75,7 @@ static void __add_holder(struct block_lo
+@@ -232,11 +232,7 @@ static DEFINE_MUTEX(dm_bufio_clients_loc
+ #ifdef CONFIG_DM_DEBUG_BLOCK_STACK_TRACING
+ static void buffer_record_stack(struct dm_buffer *b)
  {
- 	unsigned h = __find_holder(lock, NULL);
- #ifdef CONFIG_DM_DEBUG_BLOCK_STACK_TRACING
--	struct stack_trace *t;
-+	struct stack_store *t;
- #endif
- 
- 	get_task_struct(task);
-@@ -81,11 +83,7 @@ static void __add_holder(struct block_lo
- 
- #ifdef CONFIG_DM_DEBUG_BLOCK_STACK_TRACING
- 	t = lock->traces + h;
--	t->nr_entries = 0;
--	t->max_entries = MAX_STACK;
--	t->entries = lock->entries[h];
--	t->skip = 2;
--	save_stack_trace(t);
-+	t->nr_entries = stack_trace_save(t->entries, MAX_STACK, 2);
- #endif
+-	b->stack_trace.nr_entries = 0;
+-	b->stack_trace.max_entries = MAX_STACK;
+-	b->stack_trace.entries = b->stack_entries;
+-	b->stack_trace.skip = 2;
+-	save_stack_trace(&b->stack_trace);
++	b->stack_len = stack_trace_save(b->stack_entries, MAX_STACK, 2);
  }
+ #endif
  
-@@ -106,7 +104,8 @@ static int __check_holder(struct block_l
- 			DMERR("recursive lock detected in metadata");
+@@ -438,7 +434,7 @@ static struct dm_buffer *alloc_buffer(st
+ 	adjust_total_allocated(b->data_mode, (long)c->block_size);
+ 
  #ifdef CONFIG_DM_DEBUG_BLOCK_STACK_TRACING
- 			DMERR("previously held here:");
--			print_stack_trace(lock->traces + i, 4);
-+			stack_trace_print(lock->traces[i].entries,
-+					  lock->traces[i].nr_entries, 4);
+-	memset(&b->stack_trace, 0, sizeof(b->stack_trace));
++	b->stack_len = 0;
+ #endif
+ 	return b;
+ }
+@@ -1520,8 +1516,9 @@ static void drop_buffers(struct dm_bufio
+ 			DMERR("leaked buffer %llx, hold count %u, list %d",
+ 			      (unsigned long long)b->block, b->hold_count, i);
+ #ifdef CONFIG_DM_DEBUG_BLOCK_STACK_TRACING
+-			print_stack_trace(&b->stack_trace, 1);
+-			b->hold_count = 0; /* mark unclaimed to avoid BUG_ON below */
++			stack_trace_print(b->stack_entries, b->stack_len, 1);
++			/* mark unclaimed to avoid BUG_ON below */
++			b->hold_count = 0;
+ #endif
+ 		}
  
- 			DMERR("subsequent acquisition attempted here:");
- 			dump_stack();
 
 

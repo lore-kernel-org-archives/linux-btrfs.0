@@ -6,26 +6,26 @@ X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 51E9FC10F14
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:08:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AB3C6C282DD
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:08:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2BC782183F
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:08:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 88A29206B6
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:08:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388690AbfDRJIF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Apr 2019 05:08:05 -0400
-Received: from Galois.linutronix.de ([146.0.238.70]:34155 "EHLO
+        id S2388754AbfDRJI0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Apr 2019 05:08:26 -0400
+Received: from Galois.linutronix.de ([146.0.238.70]:34189 "EHLO
         Galois.linutronix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2388665AbfDRJIE (ORCPT
+        with ESMTP id S2388741AbfDRJI0 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Apr 2019 05:08:04 -0400
+        Thu, 18 Apr 2019 05:08:26 -0400
 Received: from localhost ([127.0.0.1] helo=nanos.tec.linutronix.de)
         by Galois.linutronix.de with esmtp (Exim 4.80)
         (envelope-from <tglx@linutronix.de>)
-        id 1hH2ze-0001mB-SZ; Thu, 18 Apr 2019 11:06:07 +0200
-Message-Id: <20190418084253.431851214@linutronix.de>
+        id 1hH30I-0001v7-RI; Thu, 18 Apr 2019 11:06:47 +0200
+Message-Id: <20190418084255.088813838@linutronix.de>
 User-Agent: quilt/0.65
-Date:   Thu, 18 Apr 2019 10:41:23 +0200
+Date:   Thu, 18 Apr 2019 10:41:41 +0200
 From:   Thomas Gleixner <tglx@linutronix.de>
 To:     LKML <linux-kernel@vger.kernel.org>
 Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
@@ -61,7 +61,8 @@ Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
         Daniel Vetter <daniel@ffwll.ch>,
         Rodrigo Vivi <rodrigo.vivi@intel.com>,
         linux-arch@vger.kernel.org
-Subject: [patch V2 04/29] backtrace-test: Simplify stack trace handling
+Subject: [patch V2 22/29] tracing: Make ftrace_trace_userstack() static and
+ conditional
 References: <20190418084119.056416939@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -70,38 +71,76 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Replace the indirection through struct stack_trace by using the storage
-array based interfaces.
+It's only used in trace.c and there is absolutely no point in compiling it
+in when user space stack traces are not supported.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Cc: Steven Rostedt <rostedt@goodmis.org>
 ---
- kernel/backtracetest.c |   11 +++--------
- 1 file changed, 3 insertions(+), 8 deletions(-)
+ kernel/trace/trace.c |   14 ++++++++------
+ kernel/trace/trace.h |    8 --------
+ 2 files changed, 8 insertions(+), 14 deletions(-)
 
---- a/kernel/backtracetest.c
-+++ b/kernel/backtracetest.c
-@@ -48,19 +48,14 @@ static void backtrace_test_irq(void)
- #ifdef CONFIG_STACKTRACE
- static void backtrace_test_saved(void)
- {
--	struct stack_trace trace;
- 	unsigned long entries[8];
-+	unsigned int nr_entries;
+--- a/kernel/trace/trace.c
++++ b/kernel/trace/trace.c
+@@ -159,6 +159,8 @@ static union trace_eval_map_item *trace_
+ #endif /* CONFIG_TRACE_EVAL_MAP_FILE */
  
- 	pr_info("Testing a saved backtrace.\n");
- 	pr_info("The following trace is a kernel self test and not a bug!\n");
+ static int tracing_set_tracer(struct trace_array *tr, const char *buf);
++static void ftrace_trace_userstack(struct ring_buffer *buffer,
++				   unsigned long flags, int pc);
  
--	trace.nr_entries = 0;
--	trace.max_entries = ARRAY_SIZE(entries);
--	trace.entries = entries;
--	trace.skip = 0;
--
--	save_stack_trace(&trace);
--	print_stack_trace(&trace, 0);
-+	nr_entries = stack_trace_save(entries, ARRAY_SIZE(entries), 0);
-+	stack_trace_print(entries, nr_entries, 0);
+ #define MAX_TRACER_SIZE		100
+ static char bootup_tracer_buf[MAX_TRACER_SIZE] __initdata;
+@@ -2905,9 +2907,10 @@ void trace_dump_stack(int skip)
  }
+ EXPORT_SYMBOL_GPL(trace_dump_stack);
+ 
++#ifdef CONFIG_USER_STACKTRACE_SUPPORT
+ static DEFINE_PER_CPU(int, user_stack_count);
+ 
+-void
++static void
+ ftrace_trace_userstack(struct ring_buffer *buffer, unsigned long flags, int pc)
+ {
+ 	struct trace_event_call *call = &event_user_stack;
+@@ -2958,13 +2961,12 @@ ftrace_trace_userstack(struct ring_buffe
+  out:
+ 	preempt_enable();
+ }
+-
+-#ifdef UNUSED
+-static void __trace_userstack(struct trace_array *tr, unsigned long flags)
++#else /* CONFIG_USER_STACKTRACE_SUPPORT */
++static void ftrace_trace_userstack(struct ring_buffer *buffer,
++				   unsigned long flags, int pc)
+ {
+-	ftrace_trace_userstack(tr, flags, preempt_count());
+ }
+-#endif /* UNUSED */
++#endif /* !CONFIG_USER_STACKTRACE_SUPPORT */
+ 
+ #endif /* CONFIG_STACKTRACE */
+ 
+--- a/kernel/trace/trace.h
++++ b/kernel/trace/trace.h
+@@ -782,17 +782,9 @@ void update_max_tr_single(struct trace_a
+ #endif /* CONFIG_TRACER_MAX_TRACE */
+ 
+ #ifdef CONFIG_STACKTRACE
+-void ftrace_trace_userstack(struct ring_buffer *buffer, unsigned long flags,
+-			    int pc);
+-
+ void __trace_stack(struct trace_array *tr, unsigned long flags, int skip,
+ 		   int pc);
  #else
- static void backtrace_test_saved(void)
+-static inline void ftrace_trace_userstack(struct ring_buffer *buffer,
+-					  unsigned long flags, int pc)
+-{
+-}
+-
+ static inline void __trace_stack(struct trace_array *tr, unsigned long flags,
+ 				 int skip, int pc)
+ {
 
 

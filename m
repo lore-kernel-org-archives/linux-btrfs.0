@@ -2,38 +2,35 @@ Return-Path: <SRS0=uOHe=SU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_NEOMUTT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 73575C10F0E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 14:52:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A982DC10F0E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 14:53:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4DE5E21872
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 14:52:20 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 853F42183E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 14:53:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389293AbfDROwP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Apr 2019 10:52:15 -0400
-Received: from mx1.redhat.com ([209.132.183.28]:60865 "EHLO mx1.redhat.com"
+        id S2388775AbfDROxl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Apr 2019 10:53:41 -0400
+Received: from mail.kernel.org ([198.145.29.99]:39810 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1733192AbfDROwP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Apr 2019 10:52:15 -0400
-Received: from smtp.corp.redhat.com (int-mx07.intmail.prod.int.phx2.redhat.com [10.5.11.22])
-        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        id S2388301AbfDROxk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 18 Apr 2019 10:53:40 -0400
+Received: from gandalf.local.home (cpe-66-24-58-225.stny.res.rr.com [66.24.58.225])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by mx1.redhat.com (Postfix) with ESMTPS id C39BB3078AD9;
-        Thu, 18 Apr 2019 14:52:13 +0000 (UTC)
-Received: from treble (ovpn-124-190.rdu2.redhat.com [10.10.124.190])
-        by smtp.corp.redhat.com (Postfix) with ESMTPS id 518AE1001DC0;
-        Thu, 18 Apr 2019 14:52:03 +0000 (UTC)
-Date:   Thu, 18 Apr 2019 09:52:01 -0500
-From:   Josh Poimboeuf <jpoimboe@redhat.com>
+        by mail.kernel.org (Postfix) with ESMTPSA id 35831206B6;
+        Thu, 18 Apr 2019 14:53:36 +0000 (UTC)
+Date:   Thu, 18 Apr 2019 10:53:34 -0400
+From:   Steven Rostedt <rostedt@goodmis.org>
 To:     Thomas Gleixner <tglx@linutronix.de>
-Cc:     LKML <linux-kernel@vger.kernel.org>, x86@kernel.org,
+Cc:     LKML <linux-kernel@vger.kernel.org>,
+        Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
         Andy Lutomirski <luto@kernel.org>,
-        Steven Rostedt <rostedt@goodmis.org>,
         Alexander Potapenko <glider@google.com>,
-        linux-arch@vger.kernel.org, Alexey Dobriyan <adobriyan@gmail.com>,
+        Alexey Dobriyan <adobriyan@gmail.com>,
         Andrew Morton <akpm@linux-foundation.org>,
         Pekka Enberg <penberg@kernel.org>, linux-mm@kvack.org,
         David Rientjes <rientjes@google.com>,
@@ -60,62 +57,78 @@ Cc:     LKML <linux-kernel@vger.kernel.org>, x86@kernel.org,
         dri-devel@lists.freedesktop.org, David Airlie <airlied@linux.ie>,
         Jani Nikula <jani.nikula@linux.intel.com>,
         Daniel Vetter <daniel@ffwll.ch>,
-        Rodrigo Vivi <rodrigo.vivi@intel.com>
-Subject: Re: [patch V2 28/29] stacktrace: Provide common infrastructure
-Message-ID: <20190418145201.mjzyqbmkjcghqzex@treble>
+        Rodrigo Vivi <rodrigo.vivi@intel.com>,
+        linux-arch@vger.kernel.org
+Subject: Re: [patch V2 21/29] tracing: Use percpu stack trace buffer more
+ intelligently
+Message-ID: <20190418105334.5093528d@gandalf.local.home>
+In-Reply-To: <20190418084254.999521114@linutronix.de>
 References: <20190418084119.056416939@linutronix.de>
- <20190418084255.652003111@linutronix.de>
+        <20190418084254.999521114@linutronix.de>
+X-Mailer: Claws Mail 3.17.3 (GTK+ 2.24.32; x86_64-pc-linux-gnu)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-In-Reply-To: <20190418084255.652003111@linutronix.de>
-User-Agent: NeoMutt/20180716
-X-Scanned-By: MIMEDefang 2.84 on 10.5.11.22
-X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.48]); Thu, 18 Apr 2019 14:52:14 +0000 (UTC)
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Apr 18, 2019 at 10:41:47AM +0200, Thomas Gleixner wrote:
-> All architectures which support stacktrace carry duplicated code and
-> do the stack storage and filtering at the architecture side.
+On Thu, 18 Apr 2019 10:41:40 +0200
+Thomas Gleixner <tglx@linutronix.de> wrote:
+
+> The per cpu stack trace buffer usage pattern is odd at best. The buffer has
+> place for 512 stack trace entries on 64-bit and 1024 on 32-bit. When
+> interrupts or exceptions nest after the per cpu buffer was acquired the
+> stacktrace length is hardcoded to 8 entries. 512/1024 stack trace entries
+> in kernel stacks are unrealistic so the buffer is a complete waste.
 > 
-> Provide a consolidated interface with a callback function for consuming the
-> stack entries provided by the architecture specific stack walker. This
-> removes lots of duplicated code and allows to implement better filtering
-> than 'skip number of entries' in the future without touching any
-> architecture specific code.
+> Split the buffer into chunks of 64 stack entries which is plenty. This
+> allows nesting contexts (interrupts, exceptions) to utilize the cpu buffer
+> for stack retrieval and avoids the fixed length allocation along with the
+> conditional execution pathes.
 > 
 > Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-> Cc: linux-arch@vger.kernel.org
+> Cc: Steven Rostedt <rostedt@goodmis.org>
+> ---
+>  kernel/trace/trace.c |   77 +++++++++++++++++++++++++--------------------------
+>  1 file changed, 39 insertions(+), 38 deletions(-)
+> 
+> --- a/kernel/trace/trace.c
+> +++ b/kernel/trace/trace.c
+> @@ -2749,12 +2749,21 @@ trace_function(struct trace_array *tr,
+>  
+>  #ifdef CONFIG_STACKTRACE
+>  
+> -#define FTRACE_STACK_MAX_ENTRIES (PAGE_SIZE / sizeof(unsigned long))
+> +/* 64 entries for kernel stacks are plenty */
+> +#define FTRACE_KSTACK_ENTRIES	64
+> +
+>  struct ftrace_stack {
+> -	unsigned long		calls[FTRACE_STACK_MAX_ENTRIES];
+> +	unsigned long		calls[FTRACE_KSTACK_ENTRIES];
+>  };
+>  
+> -static DEFINE_PER_CPU(struct ftrace_stack, ftrace_stack);
+> +/* This allows 8 level nesting which is plenty */
 
-This is a step in the right direction, especially if it allows us to get
-rid of the 'skip' stuff.  But I'm not crazy about the callbacks.
+Can we make this 4 level nesting and increase the size? (I can see us
+going more than 64 deep, kernel developers never cease to amaze me ;-)
+That's all we need:
 
-Another idea I had (but never got a chance to work on) was to extend the
-x86 unwind interface to all arches.  So instead of the callbacks, each
-arch would implement something like this API:
+ Context: Normal, softirq, irq, NMI
 
+Is there any other way to nest?
 
-struct unwind_state state;
+-- Steve
 
-void unwind_start(struct unwind_state *state, struct task_struct *task,
-		  struct pt_regs *regs, unsigned long *first_frame);
-
-bool unwind_next_frame(struct unwind_state *state);
-
-inline bool unwind_done(struct unwind_state *state);
-
-
-Not only would it avoid the callbacks (which is a nice benefit already),
-it would also allow the interfaces to be used outside of the
-stack_trace_*() interfaces.  That would come in handy in cases like the
-ftrace stack tracer code, which needs more than the stack_trace_*() API
-can give.
-
-Of course, this may be more work than what you thought you signed up for
-;-)
-
--- 
-Josh
+> +#define FTRACE_KSTACK_NESTING	(PAGE_SIZE / sizeof(struct ftrace_stack))
+> +
+> +struct ftrace_stacks {
+> +	struct ftrace_stack	stacks[FTRACE_KSTACK_NESTING];
+> +};
+> +
+> +static DEFINE_PER_CPU(struct ftrace_stacks, ftrace_stacks);
+>  static DEFINE_PER_CPU(int, ftrace_stack_reserve);
+>  
+> 

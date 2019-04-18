@@ -2,119 +2,331 @@ Return-Path: <SRS0=uOHe=SU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.0 required=3.0
-	tests=HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham
+X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 71245C10F0B
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 07:34:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 097ECC282DF
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:06:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 419022083D
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 07:34:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C4D95218A1
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:06:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388000AbfDRHeY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Apr 2019 03:34:24 -0400
-Received: from szxga06-in.huawei.com ([45.249.212.32]:54616 "EHLO huawei.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729446AbfDRHeY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Apr 2019 03:34:24 -0400
-Received: from DGGEMS404-HUB.china.huawei.com (unknown [172.30.72.59])
-        by Forcepoint Email with ESMTP id 98EBEC5D5E067E109CB5;
-        Thu, 18 Apr 2019 15:34:18 +0800 (CST)
-Received: from [127.0.0.1] (10.177.31.96) by DGGEMS404-HUB.china.huawei.com
- (10.3.19.204) with Microsoft SMTP Server id 14.3.408.0; Thu, 18 Apr 2019
- 15:34:15 +0800
-Subject: Re: [PATCH -next] btrfs: Remove set but not used variable 'fs_info'
-To:     Nikolay Borisov <nborisov@suse.com>, Chris Mason <clm@fb.com>,
+        id S2388301AbfDRJGn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Apr 2019 05:06:43 -0400
+Received: from Galois.linutronix.de ([146.0.238.70]:33576 "EHLO
+        Galois.linutronix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726873AbfDRJGn (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 18 Apr 2019 05:06:43 -0400
+Received: from localhost ([127.0.0.1] helo=nanos.tec.linutronix.de)
+        by Galois.linutronix.de with esmtp (Exim 4.80)
+        (envelope-from <tglx@linutronix.de>)
+        id 1hH2zb-0001m0-4R; Thu, 18 Apr 2019 11:06:03 +0200
+Message-Id: <20190418084253.234868907@linutronix.de>
+User-Agent: quilt/0.65
+Date:   Thu, 18 Apr 2019 10:41:21 +0200
+From:   Thomas Gleixner <tglx@linutronix.de>
+To:     LKML <linux-kernel@vger.kernel.org>
+Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
+        Andy Lutomirski <luto@kernel.org>,
+        Steven Rostedt <rostedt@goodmis.org>,
+        Alexander Potapenko <glider@google.com>,
+        Alexey Dobriyan <adobriyan@gmail.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Pekka Enberg <penberg@kernel.org>, linux-mm@kvack.org,
+        David Rientjes <rientjes@google.com>,
+        Christoph Lameter <cl@linux.com>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Dmitry Vyukov <dvyukov@google.com>,
+        Andrey Ryabinin <aryabinin@virtuozzo.com>,
+        kasan-dev@googlegroups.com,
+        Mike Rapoport <rppt@linux.vnet.ibm.com>,
+        Akinobu Mita <akinobu.mita@gmail.com>,
+        iommu@lists.linux-foundation.org,
+        Robin Murphy <robin.murphy@arm.com>,
+        Christoph Hellwig <hch@lst.de>,
+        Marek Szyprowski <m.szyprowski@samsung.com>,
+        Johannes Thumshirn <jthumshirn@suse.de>,
+        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
         Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>
-References: <20190418064356.10418-1-yuehaibing@huawei.com>
- <0d280de4-9ef4-1531-5bad-22ea15cc150c@suse.com>
-CC:     <linux-btrfs@vger.kernel.org>, <kernel-janitors@vger.kernel.org>
-From:   YueHaibing <yuehaibing@huawei.com>
-Message-ID: <b2b59b30-e1de-bea3-d25b-ff3a10796f7d@huawei.com>
-Date:   Thu, 18 Apr 2019 15:34:14 +0800
-User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:45.0) Gecko/20100101
- Thunderbird/45.2.0
+        linux-btrfs@vger.kernel.org, dm-devel@redhat.com,
+        Mike Snitzer <snitzer@redhat.com>,
+        Alasdair Kergon <agk@redhat.com>,
+        intel-gfx@lists.freedesktop.org,
+        Joonas Lahtinen <joonas.lahtinen@linux.intel.com>,
+        Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
+        dri-devel@lists.freedesktop.org, David Airlie <airlied@linux.ie>,
+        Jani Nikula <jani.nikula@linux.intel.com>,
+        Daniel Vetter <daniel@ffwll.ch>,
+        Rodrigo Vivi <rodrigo.vivi@intel.com>,
+        linux-arch@vger.kernel.org
+Subject: [patch V2 02/29] stacktrace: Provide helpers for common stack trace
+ operations
+References: <20190418084119.056416939@linutronix.de>
 MIME-Version: 1.0
-In-Reply-To: <0d280de4-9ef4-1531-5bad-22ea15cc150c@suse.com>
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-X-Originating-IP: [10.177.31.96]
-X-CFilter-Loop: Reflected
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+All operations with stack traces are based on struct stack_trace. That's a
+horrible construct as the struct is a kitchen sink for input and
+output. Quite some usage sites embed it into their own data structures
+which creates weird indirections.
 
-On 2019/4/18 14:37, Nikolay Borisov wrote:
-> 
-> 
-> On 18.04.19 г. 9:43 ч., YueHaibing wrote:
->> Fixes gcc '-Wunused-but-set-variable' warning:
->>
->> fs/btrfs/free-space-tree.c: In function 'load_free_space_tree':
->> fs/btrfs/free-space-tree.c:1535:24: warning:
->>  variable 'fs_info' set but not used [-Wunused-but-set-variable]
->>
->> It's not used since commit 05e9d3137d47 ("btrfs: get fs_info from block group
->> in search_free_space_info"),  so can be removed.
->>
->> Signed-off-by: YueHaibing <yuehaibing@huawei.com>
->> ---
->>  fs/btrfs/free-space-tree.c | 2 --
->>  1 file changed, 2 deletions(-)
->>
->> diff --git a/fs/btrfs/free-space-tree.c b/fs/btrfs/free-space-tree.c
->> index cfe9dfb0ff05..f5dc115ebba0 100644
->> --- a/fs/btrfs/free-space-tree.c
->> +++ b/fs/btrfs/free-space-tree.c
->> @@ -1532,14 +1532,12 @@ static int load_free_space_extents(struct btrfs_caching_control *caching_ctl,
->>  int load_free_space_tree(struct btrfs_caching_control *caching_ctl)
->>  {
->>  	struct btrfs_block_group_cache *block_group;
->> -	struct btrfs_fs_info *fs_info;
->>  	struct btrfs_free_space_info *info;
->>  	struct btrfs_path *path;
->>  	u32 extent_count, flags;
->>  	int ret;
->>  
->>  	block_group = caching_ctl->block_group;
->> -	fs_info = block_group->fs_info;
-> 
-> What version is this patch based on? In current misc-next ( on which new
-> patches ought to be based  and can be found at: currently has:
+There is absolutely no point in doing so. For all use cases a storage array
+and the number of valid stack trace entries in the array is sufficient.
 
-This patch based on linux-next tree:
+Provide helper functions which avoid the struct stack_trace indirection so
+the usage sites can be cleaned up.
 
-https://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next.git/commit/?id=05e9d3137d47
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ include/linux/stacktrace.h |   27 +++++++
+ kernel/stacktrace.c        |  160 ++++++++++++++++++++++++++++++++++++++++-----
+ 2 files changed, 172 insertions(+), 15 deletions(-)
 
-> 
-> fs_info = block_group->fs_info;
-> root = fs_info->free_space_root;
-> 
-> ......
-> 
-> if (extent_count != expected_extent_count) {
->                   btrfs_err(fs_info,
-> 
->                             "incorrect extent count for %llu; counted
-> %u, expected %u",
->                             block_group->key.objectid, extent_count,
-> 
->                             expected_extent_count);
-> 
-> In short: nack
-> 
->>  
->>  	path = btrfs_alloc_path();
->>  	if (!path)
->>
->>
->>
->>
-> 
-> 
+--- a/include/linux/stacktrace.h
++++ b/include/linux/stacktrace.h
+@@ -3,11 +3,26 @@
+ #define __LINUX_STACKTRACE_H
+ 
+ #include <linux/types.h>
++#include <asm/errno.h>
+ 
+ struct task_struct;
+ struct pt_regs;
+ 
+ #ifdef CONFIG_STACKTRACE
++void stack_trace_print(unsigned long *trace, unsigned int nr_entries,
++		       int spaces);
++int stack_trace_snprint(char *buf, size_t size, unsigned long *entries,
++			unsigned int nr_entries, int spaces);
++unsigned int stack_trace_save(unsigned long *store, unsigned int size,
++			      unsigned int skipnr);
++unsigned int stack_trace_save_tsk(struct task_struct *task,
++				  unsigned long *store, unsigned int size,
++				  unsigned int skipnr);
++unsigned int stack_trace_save_regs(struct pt_regs *regs, unsigned long *store,
++				   unsigned int size, unsigned int skipnr);
++unsigned int stack_trace_save_user(unsigned long *store, unsigned int size);
++
++/* Internal interfaces. Do not use in generic code */
+ struct stack_trace {
+ 	unsigned int nr_entries, max_entries;
+ 	unsigned long *entries;
+@@ -41,4 +56,16 @@ extern void save_stack_trace_user(struct
+ # define save_stack_trace_tsk_reliable(tsk, trace)	({ -ENOSYS; })
+ #endif /* CONFIG_STACKTRACE */
+ 
++#if defined(CONFIG_STACKTRACE) && defined(CONFIG_HAVE_RELIABLE_STACKTRACE)
++int stack_trace_save_tsk_reliable(struct task_struct *tsk, unsigned long *store,
++				  unsigned int size);
++#else
++static inline int stack_trace_save_tsk_reliable(struct task_struct *tsk,
++						unsigned long *store,
++						unsigned int size)
++{
++	return -ENOSYS;
++}
++#endif
++
+ #endif /* __LINUX_STACKTRACE_H */
+--- a/kernel/stacktrace.c
++++ b/kernel/stacktrace.c
+@@ -11,35 +11,52 @@
+ #include <linux/kallsyms.h>
+ #include <linux/stacktrace.h>
+ 
+-void print_stack_trace(struct stack_trace *trace, int spaces)
++/**
++ * stack_trace_print - Print the entries in the stack trace
++ * @entries:	Pointer to storage array
++ * @nr_entries:	Number of entries in the storage array
++ * @spaces:	Number of leading spaces to print
++ */
++void stack_trace_print(unsigned long *entries, unsigned int nr_entries,
++		       int spaces)
+ {
+-	int i;
++	unsigned int i;
+ 
+-	if (WARN_ON(!trace->entries))
++	if (WARN_ON(!entries))
+ 		return;
+ 
+-	for (i = 0; i < trace->nr_entries; i++)
+-		printk("%*c%pS\n", 1 + spaces, ' ', (void *)trace->entries[i]);
++	for (i = 0; i < nr_entries; i++)
++		printk("%*c%pS\n", 1 + spaces, ' ', (void *)entries[i]);
++}
++EXPORT_SYMBOL_GPL(stack_trace_print);
++
++void print_stack_trace(struct stack_trace *trace, int spaces)
++{
++	stack_trace_print(trace->entries, trace->nr_entries, spaces);
+ }
+ EXPORT_SYMBOL_GPL(print_stack_trace);
+ 
+-int snprint_stack_trace(char *buf, size_t size,
+-			struct stack_trace *trace, int spaces)
++/**
++ * stack_trace_snprint - Print the entries in the stack trace into a buffer
++ * @buf:	Pointer to the print buffer
++ * @size:	Size of the print buffer
++ * @entries:	Pointer to storage array
++ * @nr_entries:	Number of entries in the storage array
++ * @spaces:	Number of leading spaces to print
++ */
++int stack_trace_snprint(char *buf, size_t size, unsigned long *entries,
++			unsigned int nr_entries, int spaces)
+ {
+-	int i;
+-	int generated;
+-	int total = 0;
++	unsigned int generated, i, total = 0;
+ 
+-	if (WARN_ON(!trace->entries))
++	if (WARN_ON(!entries))
+ 		return 0;
+ 
+-	for (i = 0; i < trace->nr_entries; i++) {
++	for (i = 0; i < nr_entries; i++) {
+ 		generated = snprintf(buf, size, "%*c%pS\n", 1 + spaces, ' ',
+-				     (void *)trace->entries[i]);
++				     (void *)entries[i]);
+ 
+ 		total += generated;
+-
+-		/* Assume that generated isn't a negative number */
+ 		if (generated >= size) {
+ 			buf += size;
+ 			size = 0;
+@@ -51,6 +68,14 @@ int snprint_stack_trace(char *buf, size_
+ 
+ 	return total;
+ }
++EXPORT_SYMBOL_GPL(stack_trace_snprint);
++
++int snprint_stack_trace(char *buf, size_t size,
++			struct stack_trace *trace, int spaces)
++{
++	return stack_trace_snprint(buf, size, trace->entries,
++				   trace->nr_entries, spaces);
++}
+ EXPORT_SYMBOL_GPL(snprint_stack_trace);
+ 
+ /*
+@@ -77,3 +102,108 @@ save_stack_trace_tsk_reliable(struct tas
+ 	WARN_ONCE(1, KERN_INFO "save_stack_tsk_reliable() not implemented yet.\n");
+ 	return -ENOSYS;
+ }
++
++/**
++ * stack_trace_save - Save a stack trace into a storage array
++ * @store:	Pointer to storage array
++ * @size:	Size of the storage array
++ * @skipnr:	Number of entries to skip at the start of the stack trace
++ */
++unsigned int stack_trace_save(unsigned long *store, unsigned int size,
++			      unsigned int skipnr)
++{
++	struct stack_trace trace = {
++		.entries	= store,
++		.max_entries	= size,
++		.skip		= skipnr + 1,
++	};
++
++	save_stack_trace(&trace);
++	return trace.nr_entries;
++}
++EXPORT_SYMBOL_GPL(stack_trace_save);
++
++/**
++ * stack_trace_save_tsk - Save a task stack trace into a storage array
++ * @task:	The task to examine
++ * @store:	Pointer to storage array
++ * @size:	Size of the storage array
++ * @skipnr:	Number of entries to skip at the start of the stack trace
++ */
++unsigned int stack_trace_save_tsk(struct task_struct *task,
++				  unsigned long *store, unsigned int size,
++				  unsigned int skipnr)
++{
++	struct stack_trace trace = {
++		.entries	= store,
++		.max_entries	= size,
++		.skip		= skipnr + 1,
++	};
++
++	save_stack_trace_tsk(task, &trace);
++	return trace.nr_entries;
++}
++
++/**
++ * stack_trace_save_regs - Save a stack trace based on pt_regs into a storage array
++ * @regs:	Pointer to pt_regs to examine
++ * @store:	Pointer to storage array
++ * @size:	Size of the storage array
++ * @skipnr:	Number of entries to skip at the start of the stack trace
++ */
++unsigned int stack_trace_save_regs(struct pt_regs *regs, unsigned long *store,
++				   unsigned int size, unsigned int skipnr)
++{
++	struct stack_trace trace = {
++		.entries	= store,
++		.max_entries	= size,
++		.skip		= skipnr,
++	};
++
++	save_stack_trace_regs(regs, &trace);
++	return trace.nr_entries;
++}
++
++#ifdef CONFIG_HAVE_RELIABLE_STACKTRACE
++/**
++ * stack_trace_save_tsk_reliable - Save task stack with verification
++ * @tsk:	Pointer to the task to examine
++ * @store:	Pointer to storage array
++ * @size:	Size of the storage array
++ *
++ * Returns:	An error if it detects any unreliable features of the
++ *		stack. Otherwise it guarantees that the stack trace is
++ *		reliable and returns the number of entries stored.
++ *
++ * If the task is not 'current', the caller *must* ensure the task is inactive.
++ */
++int stack_trace_save_tsk_reliable(struct task_struct *tsk, unsigned long *store,
++				  unsigned int size)
++{
++	struct stack_trace trace = {
++		.entries	= store,
++		.max_entries	= size,
++	};
++	int ret = save_stack_trace_tsk_reliable(tsk, &trace);
++
++	return ret ? ret : trace.nr_entries;
++}
++#endif
++
++#ifdef CONFIG_USER_STACKTRACE_SUPPORT
++/**
++ * stack_trace_save_user - Save a user space stack trace into a storage array
++ * @store:	Pointer to storage array
++ * @size:	Size of the storage array
++ */
++unsigned int stack_trace_save_user(unsigned long *store, unsigned int size)
++{
++	struct stack_trace trace = {
++		.entries	= store,
++		.max_entries	= size,
++	};
++
++	save_stack_trace_user(&trace);
++	return trace.nr_entries;
++}
++#endif /* CONFIG_USER_STACKTRACE_SUPPORT */
+
 

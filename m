@@ -3,37 +3,39 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2A0BEC10F14
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:09:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 63997C10F14
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:09:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0495E206B6
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:09:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3E529206B6
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:09:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388621AbfDRJHs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Apr 2019 05:07:48 -0400
-Received: from Galois.linutronix.de ([146.0.238.70]:34115 "EHLO
+        id S2388420AbfDRJJI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Apr 2019 05:09:08 -0400
+Received: from Galois.linutronix.de ([146.0.238.70]:34117 "EHLO
         Galois.linutronix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2388571AbfDRJHr (ORCPT
+        with ESMTP id S2388614AbfDRJHs (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Apr 2019 05:07:47 -0400
+        Thu, 18 Apr 2019 05:07:48 -0400
 Received: from localhost ([127.0.0.1] helo=nanos.tec.linutronix.de)
         by Galois.linutronix.de with esmtp (Exim 4.80)
         (envelope-from <tglx@linutronix.de>)
-        id 1hH300-0001qd-GI; Thu, 18 Apr 2019 11:06:28 +0200
-Message-Id: <20190418084254.361284697@linutronix.de>
+        id 1hH2zw-0001pi-65; Thu, 18 Apr 2019 11:06:24 +0200
+Message-Id: <20190418084254.180116966@linutronix.de>
 User-Agent: quilt/0.65
-Date:   Thu, 18 Apr 2019 10:41:33 +0200
+Date:   Thu, 18 Apr 2019 10:41:31 +0200
 From:   Thomas Gleixner <tglx@linutronix.de>
 To:     LKML <linux-kernel@vger.kernel.org>
 Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
         Andy Lutomirski <luto@kernel.org>,
         Steven Rostedt <rostedt@goodmis.org>,
-        Alexander Potapenko <glider@google.com>, dm-devel@redhat.com,
-        Mike Snitzer <snitzer@redhat.com>,
-        Alasdair Kergon <agk@redhat.com>,
+        Alexander Potapenko <glider@google.com>,
+        iommu@lists.linux-foundation.org,
+        Robin Murphy <robin.murphy@arm.com>,
+        Christoph Hellwig <hch@lst.de>,
+        Marek Szyprowski <m.szyprowski@samsung.com>,
         Alexey Dobriyan <adobriyan@gmail.com>,
         Andrew Morton <akpm@linux-foundation.org>,
         Pekka Enberg <penberg@kernel.org>, linux-mm@kvack.org,
@@ -45,14 +47,13 @@ Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
         kasan-dev@googlegroups.com,
         Mike Rapoport <rppt@linux.vnet.ibm.com>,
         Akinobu Mita <akinobu.mita@gmail.com>,
-        iommu@lists.linux-foundation.org,
-        Robin Murphy <robin.murphy@arm.com>,
-        Christoph Hellwig <hch@lst.de>,
-        Marek Szyprowski <m.szyprowski@samsung.com>,
         Johannes Thumshirn <jthumshirn@suse.de>,
         David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
         Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, intel-gfx@lists.freedesktop.org,
+        linux-btrfs@vger.kernel.org, dm-devel@redhat.com,
+        Mike Snitzer <snitzer@redhat.com>,
+        Alasdair Kergon <agk@redhat.com>,
+        intel-gfx@lists.freedesktop.org,
         Joonas Lahtinen <joonas.lahtinen@linux.intel.com>,
         Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
         dri-devel@lists.freedesktop.org, David Airlie <airlied@linux.ie>,
@@ -60,7 +61,7 @@ Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
         Daniel Vetter <daniel@ffwll.ch>,
         Rodrigo Vivi <rodrigo.vivi@intel.com>,
         linux-arch@vger.kernel.org
-Subject: [patch V2 14/29] dm bufio: Simplify stack trace retrieval
+Subject: [patch V2 12/29] dma/debug: Simplify stracktrace retrieval
 References: <20190418084119.056416939@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -73,57 +74,50 @@ Replace the indirection through struct stack_trace with an invocation of
 the storage array based interface.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-Cc: dm-devel@redhat.com
-Cc: Mike Snitzer <snitzer@redhat.com>
-Cc: Alasdair Kergon <agk@redhat.com>
+Cc: iommu@lists.linux-foundation.org
+Cc: Robin Murphy <robin.murphy@arm.com>
+Cc: Christoph Hellwig <hch@lst.de>
+Cc: Marek Szyprowski <m.szyprowski@samsung.com>
 ---
- drivers/md/dm-bufio.c |   15 ++++++---------
- 1 file changed, 6 insertions(+), 9 deletions(-)
+ kernel/dma/debug.c |   13 +++++--------
+ 1 file changed, 5 insertions(+), 8 deletions(-)
 
---- a/drivers/md/dm-bufio.c
-+++ b/drivers/md/dm-bufio.c
-@@ -150,7 +150,7 @@ struct dm_buffer {
- 	void (*end_io)(struct dm_buffer *, blk_status_t);
- #ifdef CONFIG_DM_DEBUG_BLOCK_STACK_TRACING
- #define MAX_STACK 10
--	struct stack_trace stack_trace;
-+	unsigned int stack_len;
- 	unsigned long stack_entries[MAX_STACK];
+--- a/kernel/dma/debug.c
++++ b/kernel/dma/debug.c
+@@ -89,8 +89,8 @@ struct dma_debug_entry {
+ 	int		 sg_mapped_ents;
+ 	enum map_err_types  map_err_type;
+ #ifdef CONFIG_STACKTRACE
+-	struct		 stack_trace stacktrace;
+-	unsigned long	 st_entries[DMA_DEBUG_STACKTRACE_ENTRIES];
++	unsigned int	stack_len;
++	unsigned long	stack_entries[DMA_DEBUG_STACKTRACE_ENTRIES];
  #endif
  };
-@@ -232,11 +232,7 @@ static DEFINE_MUTEX(dm_bufio_clients_loc
- #ifdef CONFIG_DM_DEBUG_BLOCK_STACK_TRACING
- static void buffer_record_stack(struct dm_buffer *b)
- {
--	b->stack_trace.nr_entries = 0;
--	b->stack_trace.max_entries = MAX_STACK;
--	b->stack_trace.entries = b->stack_entries;
--	b->stack_trace.skip = 2;
--	save_stack_trace(&b->stack_trace);
-+	b->stack_len = stack_trace_save(b->stack_entries, MAX_STACK, 2);
- }
- #endif
  
-@@ -438,7 +434,7 @@ static struct dm_buffer *alloc_buffer(st
- 	adjust_total_allocated(b->data_mode, (long)c->block_size);
- 
- #ifdef CONFIG_DM_DEBUG_BLOCK_STACK_TRACING
--	memset(&b->stack_trace, 0, sizeof(b->stack_trace));
-+	b->stack_len = 0;
+@@ -174,7 +174,7 @@ static inline void dump_entry_trace(stru
+ #ifdef CONFIG_STACKTRACE
+ 	if (entry) {
+ 		pr_warning("Mapped at:\n");
+-		print_stack_trace(&entry->stacktrace, 0);
++		stack_trace_print(entry->stack_entries, entry->stack_len, 0);
+ 	}
  #endif
- 	return b;
  }
-@@ -1520,8 +1516,9 @@ static void drop_buffers(struct dm_bufio
- 			DMERR("leaked buffer %llx, hold count %u, list %d",
- 			      (unsigned long long)b->block, b->hold_count, i);
- #ifdef CONFIG_DM_DEBUG_BLOCK_STACK_TRACING
--			print_stack_trace(&b->stack_trace, 1);
--			b->hold_count = 0; /* mark unclaimed to avoid BUG_ON below */
-+			stack_trace_print(b->stack_entries, b->stack_len, 1);
-+			/* mark unclaimed to avoid BUG_ON below */
-+			b->hold_count = 0;
+@@ -704,12 +704,9 @@ static struct dma_debug_entry *dma_entry
+ 	spin_unlock_irqrestore(&free_entries_lock, flags);
+ 
+ #ifdef CONFIG_STACKTRACE
+-	entry->stacktrace.max_entries = DMA_DEBUG_STACKTRACE_ENTRIES;
+-	entry->stacktrace.entries = entry->st_entries;
+-	entry->stacktrace.skip = 1;
+-	save_stack_trace(&entry->stacktrace);
++	entry->stack_len = stack_trace_save(entry->stack_entries,
++					    ARRAY_SIZE(entry->stack_entries), 1);
  #endif
- 		}
+-
+ 	return entry;
+ }
  
 
 

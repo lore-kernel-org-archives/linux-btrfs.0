@@ -6,36 +6,32 @@ X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 63997C10F14
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:09:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8514AC10F0E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:09:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3E529206B6
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:09:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5C737206B6
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:09:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388420AbfDRJJI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Apr 2019 05:09:08 -0400
-Received: from Galois.linutronix.de ([146.0.238.70]:34117 "EHLO
+        id S2388585AbfDRJHj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Apr 2019 05:07:39 -0400
+Received: from Galois.linutronix.de ([146.0.238.70]:34090 "EHLO
         Galois.linutronix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2388614AbfDRJHs (ORCPT
+        with ESMTP id S2388571AbfDRJHj (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Apr 2019 05:07:48 -0400
+        Thu, 18 Apr 2019 05:07:39 -0400
 Received: from localhost ([127.0.0.1] helo=nanos.tec.linutronix.de)
         by Galois.linutronix.de with esmtp (Exim 4.80)
         (envelope-from <tglx@linutronix.de>)
-        id 1hH2zw-0001pi-65; Thu, 18 Apr 2019 11:06:24 +0200
-Message-Id: <20190418084254.180116966@linutronix.de>
+        id 1hH30U-0001zE-8G; Thu, 18 Apr 2019 11:06:58 +0200
+Message-Id: <20190418084255.561045203@linutronix.de>
 User-Agent: quilt/0.65
-Date:   Thu, 18 Apr 2019 10:41:31 +0200
+Date:   Thu, 18 Apr 2019 10:41:46 +0200
 From:   Thomas Gleixner <tglx@linutronix.de>
 To:     LKML <linux-kernel@vger.kernel.org>
 Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
         Andy Lutomirski <luto@kernel.org>,
         Steven Rostedt <rostedt@goodmis.org>,
         Alexander Potapenko <glider@google.com>,
-        iommu@lists.linux-foundation.org,
-        Robin Murphy <robin.murphy@arm.com>,
-        Christoph Hellwig <hch@lst.de>,
-        Marek Szyprowski <m.szyprowski@samsung.com>,
         Alexey Dobriyan <adobriyan@gmail.com>,
         Andrew Morton <akpm@linux-foundation.org>,
         Pekka Enberg <penberg@kernel.org>, linux-mm@kvack.org,
@@ -47,6 +43,10 @@ Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
         kasan-dev@googlegroups.com,
         Mike Rapoport <rppt@linux.vnet.ibm.com>,
         Akinobu Mita <akinobu.mita@gmail.com>,
+        iommu@lists.linux-foundation.org,
+        Robin Murphy <robin.murphy@arm.com>,
+        Christoph Hellwig <hch@lst.de>,
+        Marek Szyprowski <m.szyprowski@samsung.com>,
         Johannes Thumshirn <jthumshirn@suse.de>,
         David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
         Josef Bacik <josef@toxicpanda.com>,
@@ -61,7 +61,7 @@ Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
         Daniel Vetter <daniel@ffwll.ch>,
         Rodrigo Vivi <rodrigo.vivi@intel.com>,
         linux-arch@vger.kernel.org
-Subject: [patch V2 12/29] dma/debug: Simplify stracktrace retrieval
+Subject: [patch V2 27/29] lib/stackdepot: Remove obsolete functions
 References: <20190418084119.056416939@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -70,54 +70,63 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Replace the indirection through struct stack_trace with an invocation of
-the storage array based interface.
+No more users of the struct stack_trace based interfaces.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-Cc: iommu@lists.linux-foundation.org
-Cc: Robin Murphy <robin.murphy@arm.com>
-Cc: Christoph Hellwig <hch@lst.de>
-Cc: Marek Szyprowski <m.szyprowski@samsung.com>
+Acked-by: Alexander Potapenko <glider@google.com>
 ---
- kernel/dma/debug.c |   13 +++++--------
- 1 file changed, 5 insertions(+), 8 deletions(-)
+ include/linux/stackdepot.h |    4 ----
+ lib/stackdepot.c           |   20 --------------------
+ 2 files changed, 24 deletions(-)
 
---- a/kernel/dma/debug.c
-+++ b/kernel/dma/debug.c
-@@ -89,8 +89,8 @@ struct dma_debug_entry {
- 	int		 sg_mapped_ents;
- 	enum map_err_types  map_err_type;
- #ifdef CONFIG_STACKTRACE
--	struct		 stack_trace stacktrace;
--	unsigned long	 st_entries[DMA_DEBUG_STACKTRACE_ENTRIES];
-+	unsigned int	stack_len;
-+	unsigned long	stack_entries[DMA_DEBUG_STACKTRACE_ENTRIES];
- #endif
- };
+--- a/include/linux/stackdepot.h
++++ b/include/linux/stackdepot.h
+@@ -23,13 +23,9 @@
  
-@@ -174,7 +174,7 @@ static inline void dump_entry_trace(stru
- #ifdef CONFIG_STACKTRACE
- 	if (entry) {
- 		pr_warning("Mapped at:\n");
--		print_stack_trace(&entry->stacktrace, 0);
-+		stack_trace_print(entry->stack_entries, entry->stack_len, 0);
- 	}
- #endif
- }
-@@ -704,12 +704,9 @@ static struct dma_debug_entry *dma_entry
- 	spin_unlock_irqrestore(&free_entries_lock, flags);
+ typedef u32 depot_stack_handle_t;
  
- #ifdef CONFIG_STACKTRACE
--	entry->stacktrace.max_entries = DMA_DEBUG_STACKTRACE_ENTRIES;
--	entry->stacktrace.entries = entry->st_entries;
--	entry->stacktrace.skip = 1;
--	save_stack_trace(&entry->stacktrace);
-+	entry->stack_len = stack_trace_save(entry->stack_entries,
-+					    ARRAY_SIZE(entry->stack_entries), 1);
- #endif
+-struct stack_trace;
 -
- 	return entry;
- }
+-depot_stack_handle_t depot_save_stack(struct stack_trace *trace, gfp_t flags);
+ depot_stack_handle_t stack_depot_save(unsigned long *entries,
+ 				      unsigned int nr_entries, gfp_t gfp_flags);
  
+-void depot_fetch_stack(depot_stack_handle_t handle, struct stack_trace *trace);
+ unsigned int stack_depot_fetch(depot_stack_handle_t handle,
+ 			       unsigned long **entries);
+ 
+--- a/lib/stackdepot.c
++++ b/lib/stackdepot.c
+@@ -212,14 +212,6 @@ unsigned int stack_depot_fetch(depot_sta
+ }
+ EXPORT_SYMBOL_GPL(stack_depot_fetch);
+ 
+-void depot_fetch_stack(depot_stack_handle_t handle, struct stack_trace *trace)
+-{
+-	unsigned int nent = stack_depot_fetch(handle, &trace->entries);
+-
+-	trace->max_entries = trace->nr_entries = nent;
+-}
+-EXPORT_SYMBOL_GPL(depot_fetch_stack);
+-
+ /**
+  * stack_depot_save - Save a stack trace from an array
+  *
+@@ -314,15 +306,3 @@ depot_stack_handle_t stack_depot_save(un
+ 	return retval;
+ }
+ EXPORT_SYMBOL_GPL(stack_depot_save);
+-
+-/**
+- * depot_save_stack - save stack in a stack depot.
+- * @trace - the stacktrace to save.
+- * @alloc_flags - flags for allocating additional memory if required.
+- */
+-depot_stack_handle_t depot_save_stack(struct stack_trace *trace,
+-				      gfp_t alloc_flags)
+-{
+-	return stack_depot_save(trace->entries, trace->nr_entries, alloc_flags);
+-}
+-EXPORT_SYMBOL_GPL(depot_save_stack);
 
 

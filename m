@@ -2,132 +2,129 @@ Return-Path: <SRS0=uOHe=SU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.6 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_PASS,URIBL_BLOCKED,USER_IN_DEF_DKIM_WL autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3900FC10F0E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 12:12:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7FD98C10F0E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 12:27:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0AC502183E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 12:12:03 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b="QYox3mHS"
+	by mail.kernel.org (Postfix) with ESMTP id 57D572083D
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 12:27:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388939AbfDRML5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Apr 2019 08:11:57 -0400
-Received: from mail-vs1-f68.google.com ([209.85.217.68]:45205 "EHLO
-        mail-vs1-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2388875AbfDRML4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Apr 2019 08:11:56 -0400
-Received: by mail-vs1-f68.google.com with SMTP id o10so1003524vsp.12
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Apr 2019 05:11:56 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc:content-transfer-encoding;
-        bh=iSgCAvUEGOmkA7yqq7QK6OCH2CFcFcPt+JEh4ZctSK0=;
-        b=QYox3mHSqW80j2A3IIiagUUBm09mZj02WRCKir6HBQx5T+b+hhAzGHQFOTwlONKbj+
-         JJgyR/WQHwg8Cc7ukRkbYZ/f59+ReLAwpKS1zTzZMgMWjQjpa+NvSVrh8A8T3ceV7bLY
-         uoXOMjV66AX9yM+yes+lXGolAtYtmsYKfcrPtWTFFr/7rqv9SEvseUou0t+cwv7s/iye
-         TvT67Ae1wW9IHuwbcM5KGneuy8s3xRcKd0xOYCDyYWSzCvqtrVSm9//cPZFi/yYSzHlT
-         1EQatPDgbrTsuxjhpE9ZcaOv8iSwAziw9Dkkkdizs+FhJMHfeZvWV03ILGIJlDd0RIEk
-         lVyA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc:content-transfer-encoding;
-        bh=iSgCAvUEGOmkA7yqq7QK6OCH2CFcFcPt+JEh4ZctSK0=;
-        b=j4kXCGWdt/666N3Bwefm4tA8sQm7/nzIMb7tarbcyq6PtFD4DgILYRr/HwOt8SQwVN
-         091BsddZukLnBMBVMdlbsXvJNVqY9fVNiEQ6AwcgmikqJjXzR8LLt76M5uDT3gxW8Oub
-         m9938O3/aXBZS3DfVC1/F4SudDU8V+1RDFQ3ifT6kz9JG8g+Awamp4fTZYj+7PigAL6M
-         cfX0GT8ptUbM4bqfLOGaxStMT3gbBf5DGiM56JK6sQ3bGXJmNLxRyUcPfPDtOdD6g8z2
-         +VqPHZ/WAG+3YDwvrvL37qXoDuT4NEr8ZKu2re8C5uPitybfooEm9AgTMoz1ifY3FUZA
-         g0HQ==
-X-Gm-Message-State: APjAAAXBfDtneVTPtwW2sWH47sFOHZv4PEdm1CmckQWgaUcXi25TVzAf
-        MJxGLMsVekYa5QouHEuN43kA0wkGZRh5dfEmCPYFYA==
-X-Google-Smtp-Source: APXvYqwECAvEJzUlV7fzRl9b6wg7o0AisQ+1RCTx/KeiR4GaCwP9nHgwP4vp46KXwzB2ZT6/gaSoiXLGbekHjekrJKI=
-X-Received: by 2002:a67:e30a:: with SMTP id j10mr51098919vsf.103.1555589515631;
- Thu, 18 Apr 2019 05:11:55 -0700 (PDT)
+        id S2388263AbfDRM1X (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Apr 2019 08:27:23 -0400
+Received: from mx2.suse.de ([195.135.220.15]:54996 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727807AbfDRM1W (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 18 Apr 2019 08:27:22 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id B7EDEB039;
+        Thu, 18 Apr 2019 12:27:20 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: extent_io: Handle memory allocation failure in
+ __clear_extent_bit()
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.de>,
+        dsterba@suse.cz, linux-btrfs@vger.kernel.org,
+        Josef Bacik <josef@toxicpanda.com>
+References: <20190418072114.4573-1-wqu@suse.com>
+ <b2ff0fa1-9fec-46e1-75f5-e7903523063f@suse.com>
+ <f96176af-6e8a-4257-e49a-4ca2604e7226@suse.de>
+ <20190418113853.GJ20156@twin.jikos.cz>
+ <324dd379-1794-eb65-f4f7-84e78d70435c@suse.de>
+ <a7d7c706-6e42-21bb-c42d-c60529bcd946@gmx.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <156a2901-a5e9-7ba4-1712-42a4bd4dff8a@suse.com>
+Date:   Thu, 18 Apr 2019 15:27:19 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.6.1
 MIME-Version: 1.0
-References: <20190418084119.056416939@linutronix.de> <20190418084254.361284697@linutronix.de>
- <CAG_fn=WP9+bVv9hedoaTzWK+xBzedxaGJGVOPnF0o115s-oWvg@mail.gmail.com> <alpine.DEB.2.21.1904181353420.3174@nanos.tec.linutronix.de>
-In-Reply-To: <alpine.DEB.2.21.1904181353420.3174@nanos.tec.linutronix.de>
-From:   Alexander Potapenko <glider@google.com>
-Date:   Thu, 18 Apr 2019 14:11:44 +0200
-Message-ID: <CAG_fn=WL0yLqavV_mhodT=B6KcAzJ+LS0hss1jqany9Cn92RHw@mail.gmail.com>
-Subject: Re: [patch V2 14/29] dm bufio: Simplify stack trace retrieval
-To:     Thomas Gleixner <tglx@linutronix.de>
-Cc:     LKML <linux-kernel@vger.kernel.org>,
-        Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
-        Andy Lutomirski <luto@kernel.org>,
-        Steven Rostedt <rostedt@goodmis.org>, dm-devel@redhat.com,
-        Mike Snitzer <snitzer@redhat.com>,
-        Alasdair Kergon <agk@redhat.com>,
-        Alexey Dobriyan <adobriyan@gmail.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Pekka Enberg <penberg@kernel.org>,
-        Linux Memory Management List <linux-mm@kvack.org>,
-        David Rientjes <rientjes@google.com>,
-        Christoph Lameter <cl@linux.com>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Dmitry Vyukov <dvyukov@google.com>,
-        Andrey Ryabinin <aryabinin@virtuozzo.com>,
-        kasan-dev <kasan-dev@googlegroups.com>,
-        Mike Rapoport <rppt@linux.vnet.ibm.com>,
-        Akinobu Mita <akinobu.mita@gmail.com>,
-        iommu@lists.linux-foundation.org,
-        Robin Murphy <robin.murphy@arm.com>,
-        Christoph Hellwig <hch@lst.de>,
-        Marek Szyprowski <m.szyprowski@samsung.com>,
-        Johannes Thumshirn <jthumshirn@suse.de>,
-        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, intel-gfx@lists.freedesktop.org,
-        Joonas Lahtinen <joonas.lahtinen@linux.intel.com>,
-        Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
-        dri-devel@lists.freedesktop.org, David Airlie <airlied@linux.ie>,
-        Jani Nikula <jani.nikula@linux.intel.com>,
-        Daniel Vetter <daniel@ffwll.ch>,
-        Rodrigo Vivi <rodrigo.vivi@intel.com>,
-        linux-arch@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+In-Reply-To: <a7d7c706-6e42-21bb-c42d-c60529bcd946@gmx.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Apr 18, 2019 at 1:54 PM Thomas Gleixner <tglx@linutronix.de> wrote:
->
-> On Thu, 18 Apr 2019, Alexander Potapenko wrote:
-> > On Thu, Apr 18, 2019 at 11:06 AM Thomas Gleixner <tglx@linutronix.de> w=
-rote:
-> > > -       save_stack_trace(&b->stack_trace);
-> > > +       b->stack_len =3D stack_trace_save(b->stack_entries, MAX_STACK=
-, 2);
-> > As noted in one of similar patches before, can we have an inline
-> > comment to indicate what does this "2" stand for?
->
-> Come on. We have gazillion of functions which take numerical constant
-> arguments. Should we add comments to all of them?
-Ok, sorry. I might not be familiar enough with the kernel style guide.
+
+
+On 18.04.19 г. 14:54 ч., Qu Wenruo wrote:
+<snip>
+
+> 
+> Forgot to mention, for that method, I'll definitely keep the BUG_ON() on
+> @prealloc.
+> 
+> Just make the allocation part fall back to use fs_info->last_chance[] to
+> grab a valid memory slot.
+
+Before you go and re-invent the wheel I will suggest you take a look at
+the mempool api (include/linux/mempool.h). AFAIK it's purpose is to
+exactly ensure memory allocations from it will not fail (depending on
+how the pool is configured)
+
+> 
 > Thanks,
->
->         tglx
-
-
-
---=20
-Alexander Potapenko
-Software Engineer
-
-Google Germany GmbH
-Erika-Mann-Stra=C3=9Fe, 33
-80636 M=C3=BCnchen
-
-Gesch=C3=A4ftsf=C3=BChrer: Paul Manicle, Halimah DeLaine Prado
-Registergericht und -nummer: Hamburg, HRB 86891
-Sitz der Gesellschaft: Hamburg
+> Qu
+> 
+>>
+>> The main reason I'm doing such error injection test is to ensure write
+>> time tree checker is not the cause of the lockup.
+>>
+>> Of course I can directly inject error into btrfs_check_leaf_full() and
+>> btrfs_check_node(), and filter the stack to ensure it only happen in
+>> write time, and that's already what I'm crafting, based on the bcc error
+>> inject example and kprobe return value overriding.
+>>
+>> But it will never be a bad idea to explore what can go wrong.
+>> And "always BUG_ON()" -> "good enough (TM)" already looks like a
+>> improvement to me.
+>>
+>> Thanks,
+>> Qu
+>>
+> 

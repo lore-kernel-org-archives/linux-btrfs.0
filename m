@@ -3,54 +3,55 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=unavailable
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CF4CEC10F14
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:10:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 44D66C10F14
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:10:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A85E8206B6
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:10:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2027F206B6
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 09:10:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388466AbfDRJHV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Apr 2019 05:07:21 -0400
-Received: from Galois.linutronix.de ([146.0.238.70]:33978 "EHLO
+        id S2388450AbfDRJHR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Apr 2019 05:07:17 -0400
+Received: from Galois.linutronix.de ([146.0.238.70]:33957 "EHLO
         Galois.linutronix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2388461AbfDRJHU (ORCPT
+        with ESMTP id S2388426AbfDRJHR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Apr 2019 05:07:20 -0400
+        Thu, 18 Apr 2019 05:07:17 -0400
 Received: from localhost ([127.0.0.1] helo=nanos.tec.linutronix.de)
         by Galois.linutronix.de with esmtp (Exim 4.80)
         (envelope-from <tglx@linutronix.de>)
-        id 1hH2zy-0001qB-1o; Thu, 18 Apr 2019 11:06:26 +0200
-Message-Id: <20190418084254.270025615@linutronix.de>
+        id 1hH2zp-0001nn-CA; Thu, 18 Apr 2019 11:06:17 +0200
+Message-Id: <20190418084253.903603121@linutronix.de>
 User-Agent: quilt/0.65
-Date:   Thu, 18 Apr 2019 10:41:32 +0200
+Date:   Thu, 18 Apr 2019 10:41:28 +0200
 From:   Thomas Gleixner <tglx@linutronix.de>
 To:     LKML <linux-kernel@vger.kernel.org>
 Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
         Andy Lutomirski <luto@kernel.org>,
         Steven Rostedt <rostedt@goodmis.org>,
         Alexander Potapenko <glider@google.com>,
-        Johannes Thumshirn <jthumshirn@suse.de>,
-        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, Alexey Dobriyan <adobriyan@gmail.com>,
+        Dmitry Vyukov <dvyukov@google.com>,
+        Andrey Ryabinin <aryabinin@virtuozzo.com>,
+        kasan-dev@googlegroups.com, linux-mm@kvack.org,
+        Alexey Dobriyan <adobriyan@gmail.com>,
         Andrew Morton <akpm@linux-foundation.org>,
-        Pekka Enberg <penberg@kernel.org>, linux-mm@kvack.org,
+        Pekka Enberg <penberg@kernel.org>,
         David Rientjes <rientjes@google.com>,
         Christoph Lameter <cl@linux.com>,
         Catalin Marinas <catalin.marinas@arm.com>,
-        Dmitry Vyukov <dvyukov@google.com>,
-        Andrey Ryabinin <aryabinin@virtuozzo.com>,
-        kasan-dev@googlegroups.com,
         Mike Rapoport <rppt@linux.vnet.ibm.com>,
         Akinobu Mita <akinobu.mita@gmail.com>,
         iommu@lists.linux-foundation.org,
         Robin Murphy <robin.murphy@arm.com>,
         Christoph Hellwig <hch@lst.de>,
         Marek Szyprowski <m.szyprowski@samsung.com>,
-        dm-devel@redhat.com, Mike Snitzer <snitzer@redhat.com>,
+        Johannes Thumshirn <jthumshirn@suse.de>,
+        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs@vger.kernel.org, dm-devel@redhat.com,
+        Mike Snitzer <snitzer@redhat.com>,
         Alasdair Kergon <agk@redhat.com>,
         intel-gfx@lists.freedesktop.org,
         Joonas Lahtinen <joonas.lahtinen@linux.intel.com>,
@@ -60,7 +61,7 @@ Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
         Daniel Vetter <daniel@ffwll.ch>,
         Rodrigo Vivi <rodrigo.vivi@intel.com>,
         linux-arch@vger.kernel.org
-Subject: [patch V2 13/29] btrfs: ref-verify: Simplify stack trace retrieval
+Subject: [patch V2 09/29] mm/kasan: Simplify stacktrace handling
 References: <20190418084119.056416939@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -69,51 +70,85 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Replace the indirection through struct stack_trace with an invocation of
-the storage array based interface.
+Replace the indirection through struct stack_trace by using the storage
+array based interfaces.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
-Acked-by: David Sterba <dsterba@suse.com>
-Cc: Chris Mason <clm@fb.com>
-Cc: Josef Bacik <josef@toxicpanda.com>
-Cc: linux-btrfs@vger.kernel.org
+Acked-by: Dmitry Vyukov <dvyukov@google.com>
+Cc: Andrey Ryabinin <aryabinin@virtuozzo.com>
+Cc: Alexander Potapenko <glider@google.com>
+Cc: kasan-dev@googlegroups.com
+Cc: linux-mm@kvack.org
 ---
- fs/btrfs/ref-verify.c |   15 ++-------------
- 1 file changed, 2 insertions(+), 13 deletions(-)
+ mm/kasan/common.c |   30 ++++++++++++------------------
+ mm/kasan/report.c |    7 ++++---
+ 2 files changed, 16 insertions(+), 21 deletions(-)
 
---- a/fs/btrfs/ref-verify.c
-+++ b/fs/btrfs/ref-verify.c
-@@ -205,28 +205,17 @@ static struct root_entry *lookup_root_en
- #ifdef CONFIG_STACKTRACE
- static void __save_stack_trace(struct ref_action *ra)
- {
--	struct stack_trace stack_trace;
--
--	stack_trace.max_entries = MAX_TRACE;
--	stack_trace.nr_entries = 0;
--	stack_trace.entries = ra->trace;
--	stack_trace.skip = 2;
--	save_stack_trace(&stack_trace);
--	ra->trace_len = stack_trace.nr_entries;
-+	ra->trace_len = stack_trace_save(ra->trace, MAX_TRACE, 2);
+--- a/mm/kasan/common.c
++++ b/mm/kasan/common.c
+@@ -48,34 +48,28 @@ static inline int in_irqentry_text(unsig
+ 		 ptr < (unsigned long)&__softirqentry_text_end);
  }
  
- static void __print_stack_trace(struct btrfs_fs_info *fs_info,
- 				struct ref_action *ra)
+-static inline void filter_irq_stacks(struct stack_trace *trace)
++static inline unsigned int filter_irq_stacks(unsigned long *entries,
++					     unsigned int nr_entries)
  {
--	struct stack_trace trace;
--
- 	if (ra->trace_len == 0) {
- 		btrfs_err(fs_info, "  ref-verify: no stacktrace");
- 		return;
- 	}
--	trace.nr_entries = ra->trace_len;
--	trace.entries = ra->trace;
--	print_stack_trace(&trace, 2);
-+	stack_trace_print(ra->trace, ra->trace_len, 2);
+-	int i;
++	unsigned int i;
+ 
+-	if (!trace->nr_entries)
+-		return;
+-	for (i = 0; i < trace->nr_entries; i++)
+-		if (in_irqentry_text(trace->entries[i])) {
++	for (i = 0; i < nr_entries; i++) {
++		if (in_irqentry_text(entries[i])) {
+ 			/* Include the irqentry function into the stack. */
+-			trace->nr_entries = i + 1;
+-			break;
++			return i + 1;
+ 		}
++	}
++	return nr_entries;
  }
- #else
- static void inline __save_stack_trace(struct ref_action *ra)
+ 
+ static inline depot_stack_handle_t save_stack(gfp_t flags)
+ {
+ 	unsigned long entries[KASAN_STACK_DEPTH];
+-	struct stack_trace trace = {
+-		.nr_entries = 0,
+-		.entries = entries,
+-		.max_entries = KASAN_STACK_DEPTH,
+-		.skip = 0
+-	};
++	unsigned int nr_entries;
+ 
+-	save_stack_trace(&trace);
+-	filter_irq_stacks(&trace);
+-
+-	return depot_save_stack(&trace, flags);
++	nr_entries = stack_trace_save(entries, ARRAY_SIZE(entries), 0);
++	nr_entries = filter_irq_stacks(entries, nr_entries);
++	return stack_depot_save(entries, nr_entries, flags);
+ }
+ 
+ static inline void set_track(struct kasan_track *track, gfp_t flags)
+--- a/mm/kasan/report.c
++++ b/mm/kasan/report.c
+@@ -100,10 +100,11 @@ static void print_track(struct kasan_tra
+ {
+ 	pr_err("%s by task %u:\n", prefix, track->pid);
+ 	if (track->stack) {
+-		struct stack_trace trace;
++		unsigned long *entries;
++		unsigned int nr_entries;
+ 
+-		depot_fetch_stack(track->stack, &trace);
+-		print_stack_trace(&trace, 0);
++		nr_entries = stack_depot_fetch(track->stack, &entries);
++		stack_trace_print(entries, nr_entries, 0);
+ 	} else {
+ 		pr_err("(stack is not available)\n");
+ 	}
 
 

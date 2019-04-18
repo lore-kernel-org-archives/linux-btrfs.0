@@ -2,103 +2,70 @@ Return-Path: <SRS0=uOHe=SU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=unavailable autolearn_force=no
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6E599C10F0E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 15:46:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AE937C10F0E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 15:48:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 450FB217FA
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 15:46:40 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 820BB217D7
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 15:48:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389038AbfDRPqf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Apr 2019 11:46:35 -0400
-Received: from mail.kernel.org ([198.145.29.99]:43132 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2387519AbfDRPqf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Apr 2019 11:46:35 -0400
-Received: from gandalf.local.home (cpe-66-24-58-225.stny.res.rr.com [66.24.58.225])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 17C4B217D7;
-        Thu, 18 Apr 2019 15:46:31 +0000 (UTC)
-Date:   Thu, 18 Apr 2019 11:46:29 -0400
-From:   Steven Rostedt <rostedt@goodmis.org>
-To:     Thomas Gleixner <tglx@linutronix.de>
-Cc:     LKML <linux-kernel@vger.kernel.org>,
-        Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
-        Andy Lutomirski <luto@kernel.org>,
-        Alexander Potapenko <glider@google.com>,
-        Alexey Dobriyan <adobriyan@gmail.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Pekka Enberg <penberg@kernel.org>, linux-mm@kvack.org,
-        David Rientjes <rientjes@google.com>,
-        Christoph Lameter <cl@linux.com>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Dmitry Vyukov <dvyukov@google.com>,
-        Andrey Ryabinin <aryabinin@virtuozzo.com>,
-        kasan-dev@googlegroups.com,
-        Mike Rapoport <rppt@linux.vnet.ibm.com>,
-        Akinobu Mita <akinobu.mita@gmail.com>,
-        iommu@lists.linux-foundation.org,
-        Robin Murphy <robin.murphy@arm.com>,
-        Christoph Hellwig <hch@lst.de>,
-        Marek Szyprowski <m.szyprowski@samsung.com>,
-        Johannes Thumshirn <jthumshirn@suse.de>,
-        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, dm-devel@redhat.com,
-        Mike Snitzer <snitzer@redhat.com>,
-        Alasdair Kergon <agk@redhat.com>,
-        intel-gfx@lists.freedesktop.org,
-        Joonas Lahtinen <joonas.lahtinen@linux.intel.com>,
-        Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
-        dri-devel@lists.freedesktop.org, David Airlie <airlied@linux.ie>,
-        Jani Nikula <jani.nikula@linux.intel.com>,
-        Daniel Vetter <daniel@ffwll.ch>,
-        Rodrigo Vivi <rodrigo.vivi@intel.com>,
-        linux-arch@vger.kernel.org
-Subject: Re: [patch V2 21/29] tracing: Use percpu stack trace buffer more
- intelligently
-Message-ID: <20190418114629.023b63d7@gandalf.local.home>
-In-Reply-To: <alpine.DEB.2.21.1904181743270.3174@nanos.tec.linutronix.de>
-References: <20190418084119.056416939@linutronix.de>
-        <20190418084254.999521114@linutronix.de>
-        <20190418105334.5093528d@gandalf.local.home>
-        <alpine.DEB.2.21.1904181743270.3174@nanos.tec.linutronix.de>
-X-Mailer: Claws Mail 3.17.3 (GTK+ 2.24.32; x86_64-pc-linux-gnu)
+        id S2388457AbfDRPsK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Apr 2019 11:48:10 -0400
+Received: from mx2.suse.de ([195.135.220.15]:40146 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S2387519AbfDRPsK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 18 Apr 2019 11:48:10 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id E8080B090
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Apr 2019 15:48:08 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 42C80DA991; Thu, 18 Apr 2019 17:49:14 +0200 (CEST)
+Date:   Thu, 18 Apr 2019 17:49:13 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Cleanup btrfs_destroy_delayed_refs()
+Message-ID: <20190418154913.GO20156@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20190416055739.25771-1-wqu@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190416055739.25771-1-wqu@suse.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, 18 Apr 2019 17:43:59 +0200 (CEST)
-Thomas Gleixner <tglx@linutronix.de> wrote:
+On Tue, Apr 16, 2019 at 01:57:39PM +0800, Qu Wenruo wrote:
+> This patches cleans up btrfs_destroy_delayed_refs() by:
+> - Remove the forward declaration
+>   The caller comes after the implementation, no need to do forward
+>   declaration.
 
-> On Thu, 18 Apr 2019, Steven Rostedt wrote:
-> > On Thu, 18 Apr 2019 10:41:40 +0200
-> > Thomas Gleixner <tglx@linutronix.de> wrote:  
-> > > -static DEFINE_PER_CPU(struct ftrace_stack, ftrace_stack);
-> > > +/* This allows 8 level nesting which is plenty */  
-> > 
-> > Can we make this 4 level nesting and increase the size? (I can see us
-> > going more than 64 deep, kernel developers never cease to amaze me ;-)
-> > That's all we need:
-> > 
-> >  Context: Normal, softirq, irq, NMI
-> > 
-> > Is there any other way to nest?  
-> 
-> Not that I know, but you are the tracer dude :)
->
+Ok.
 
-There's other places I only test 4 deep, so it should be fine to limit
-it to 4 then.
+> - Remove the @fs_info parameter
+>   @fs_info can be extracted from @trans parameter.
 
-Thanks!
+Ok.
 
--- Steve
+> - Make it return void
+>   Again, no failure pattern.
+
+When switching a fuction to return void, please check the whole
+callgraph for functions that do not properly handler errors and do
+BUG_ON. You won't see errors passed from them so this gives the
+impression no error handling is needed in the caller.
+
+This has been sent in the past, so I can point you to the 2nd paragraph in
+https://lore.kernel.org/linux-btrfs/20180815124425.GM24025@twin.jikos.cz/
+
+hint: btrfs_pin_extent

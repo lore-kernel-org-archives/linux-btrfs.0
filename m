@@ -2,175 +2,111 @@ Return-Path: <SRS0=uOHe=SU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.0 required=3.0 tests=DKIMWL_WL_MED,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_PASS,URIBL_BLOCKED,USER_AGENT_NEOMUTT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C79A7C10F14
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 14:09:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 98202C10F0E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 14:10:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A1B3521479
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 14:09:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 654EC21479
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 14:10:55 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="D3VuetEO"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389316AbfDROJs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Apr 2019 10:09:48 -0400
-Received: from mx2.suse.de ([195.135.220.15]:50446 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2388346AbfDROJs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Apr 2019 10:09:48 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B80FFAEF5;
-        Thu, 18 Apr 2019 14:09:45 +0000 (UTC)
-Subject: Re: [V2] btrfs: drop inode reference count on error path
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     Pan Bian <bianpan2016@163.com>, Chris Mason <clm@fb.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-References: <1555585576-31045-1-git-send-email-bianpan2016@163.com>
- <ac36d111-547e-a76a-149e-a7ad603d7dfd@suse.com>
- <20190418140749.h57y5kqz4s47sbuo@macbook-pro-91.dhcp.thefacebook.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <bf1a23fa-d9e3-3fd4-8cf5-2ed53225fe11@suse.com>
-Date:   Thu, 18 Apr 2019 17:09:44 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.6.1
+        id S2389123AbfDROKy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Apr 2019 10:10:54 -0400
+Received: from mail-yb1-f196.google.com ([209.85.219.196]:42485 "EHLO
+        mail-yb1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2388346AbfDROKx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 18 Apr 2019 10:10:53 -0400
+Received: by mail-yb1-f196.google.com with SMTP id l124so879191ybf.9
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Apr 2019 07:10:53 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:content-transfer-encoding:in-reply-to
+         :user-agent;
+        bh=dbEpCO36b2NizGkn3aqbLGQPUCPGalb+z8Lwy2lKS38=;
+        b=D3VuetEOJCOIAbBIbQOC3ZwVe1WUwdxAiqx/wOoPzy0zwxX77ooTExBXNccxgK4O6a
+         oeC5GVTznfNDSI1gdJWg6rTHWPGujPDjerbP32IGZQFcqeSgjEtwVD9LBvm1wyiA+WKr
+         yjYZD+mxstyu18bu0O7ElEmLmmCqiCoVEKmEV6l5sVK60SbgGqZg/RegPECUTezVFDd3
+         /U79boIAgtudpUXgen0nKnQhWtk0pTU5Z9fAyvP7/Fa0nTP1Xo6UfJcoCI0+0chMwR3t
+         D6T/rPDh7fz8W4uplzTblnDW5MR3BuGSvqtqKQ/FpobO8d60IzcSkw8sd3JTSvJnNRMp
+         ZO9Q==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:content-transfer-encoding
+         :in-reply-to:user-agent;
+        bh=dbEpCO36b2NizGkn3aqbLGQPUCPGalb+z8Lwy2lKS38=;
+        b=VuV4d5QHySMx8dijxy6/5nsHi7LOaQHyoovvqXZW4idhJtpPae6osI+dQOMs6zkj3w
+         42dFsH9w4uDzS/OnLYJq3TyADVPM5jGfaI7XiUiCaEP16NFmsgau7EBKtXX/6Y18wlUq
+         z6B489VXFS7BKy9A2xp5l4ds3HoNSAOdUMK+2WQLTOcKB4izNswQ6nUoEMFzBQeyKByz
+         UsW+ylIuLflSVLdZGoaK+ybfMJ70atMbVSOz+a21Q3rWcwkdPMe77Mb0epQSwm7yi1dK
+         yRtSlimGIkhfo0Rq2x2a6OLK/E+54JZuxT7VbIrtD+H+tDSV6Y84ngsOJ8CuZgTJN6k5
+         dcaA==
+X-Gm-Message-State: APjAAAVAdEIltu0OW3+BCHTqPYZMn+23Vn8qbMbtuJdSy6mmJ4dwTBCu
+        FkwEYCO2lZ+dyMHG82TB3i93wA==
+X-Google-Smtp-Source: APXvYqyxNdpRCflfs/WXiaN+6RU1lfBL2fzLj8UnhS4WsLIB0ieHHQ4IbLdVLfNDbH2MbzxnW73k9A==
+X-Received: by 2002:a25:6c88:: with SMTP id h130mr76191533ybc.112.1555596652861;
+        Thu, 18 Apr 2019 07:10:52 -0700 (PDT)
+Received: from localhost ([2620:10d:c091:180::e445])
+        by smtp.gmail.com with ESMTPSA id l12sm701853ywb.60.2019.04.18.07.10.51
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Thu, 18 Apr 2019 07:10:52 -0700 (PDT)
+Date:   Thu, 18 Apr 2019 10:10:50 -0400
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+        Josef Bacik <josef@toxicpanda.com>
+Subject: Re: [PATCH] btrfs: extent_io: Handle memory allocation failure in
+ __clear_extent_bit()
+Message-ID: <20190418141049.gazrt4nw7ynlqayl@macbook-pro-91.dhcp.thefacebook.com>
+References: <20190418072114.4573-1-wqu@suse.com>
+ <b2ff0fa1-9fec-46e1-75f5-e7903523063f@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <20190418140749.h57y5kqz4s47sbuo@macbook-pro-91.dhcp.thefacebook.com>
 Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
+In-Reply-To: <b2ff0fa1-9fec-46e1-75f5-e7903523063f@suse.com>
+User-Agent: NeoMutt/20180716
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 18.04.19 г. 17:07 ч., Josef Bacik wrote:
-> On Thu, Apr 18, 2019 at 03:50:00PM +0300, Nikolay Borisov wrote:
->>
->>
->> On 18.04.19 г. 14:06 ч., Pan Bian wrote:
->>> The reference count of inode is incremented by ihold. It should be
->>> dropped if not used. However, the reference count is not dropped if
->>> error occurs during updating the inode or deleting orphan items. This
->>> patch fixes the bug.
->>>
->>> Signed-off-by: Pan Bian <bianpan2016@163.com>
->>> ---
->>> V2: move ihold just before device_initialize to make code clearer
->>> ---
->>>  fs/btrfs/inode.c | 54 +++++++++++++++++++++++++-----------------------------
->>>  1 file changed, 25 insertions(+), 29 deletions(-)
->>>
->>> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
->>> index 82fdda8..d6630df 100644
->>> --- a/fs/btrfs/inode.c
->>> +++ b/fs/btrfs/inode.c
->>> @@ -6579,7 +6579,7 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
->>>  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
->>>  	u64 index;
->>>  	int err;
->>> -	int drop_inode = 0;
->>> +	int log_mode;
->>>  
->>>  	/* do not allow sys_link's with other subvols of the same device */
->>>  	if (root->root_key.objectid != BTRFS_I(inode)->root->root_key.objectid)
->>> @@ -6616,41 +6616,37 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
->>>  	err = btrfs_add_nondir(trans, BTRFS_I(dir), dentry, BTRFS_I(inode),
->>>  			1, index);
->>>  
->>> -	if (err) {
->>> -		drop_inode = 1;
->>> -	} else {
->>> -		struct dentry *parent = dentry->d_parent;
->>> -		int ret;
->>> +	if (err)
->>> +		goto err_link;
->>>  
->>> -		err = btrfs_update_inode(trans, root, inode);
->>> +	err = btrfs_update_inode(trans, root, inode);
->>> +	if (err)
->>> +		goto err_link;
->>> +	if (inode->i_nlink == 1) {
->>> +		/*
->>> +		 * If new hard link count is 1, it's a file created
->>> +		 * with open(2) O_TMPFILE flag.
->>> +		 */
->>> +		err = btrfs_orphan_del(trans, BTRFS_I(inode));
->>>  		if (err)
->>> -			goto fail;
->>> -		if (inode->i_nlink == 1) {
->>> -			/*
->>> -			 * If new hard link count is 1, it's a file created
->>> -			 * with open(2) O_TMPFILE flag.
->>> -			 */
->>> -			err = btrfs_orphan_del(trans, BTRFS_I(inode));
->>> -			if (err)
->>> -				goto fail;
->>> -		}
->>> -		BTRFS_I(inode)->last_link_trans = trans->transid;
->>> -		d_instantiate(dentry, inode);
->>> -		ret = btrfs_log_new_name(trans, BTRFS_I(inode), NULL, parent,
->>> -					 true, NULL);
->>> -		if (ret == BTRFS_NEED_TRANS_COMMIT) {
->>> -			err = btrfs_commit_transaction(trans);
->>> -			trans = NULL;
->>> -		}
->>> +			goto err_link;
->>> +	}
->>> +	BTRFS_I(inode)->last_link_trans = trans->transid;
->>> +	ihold(inode);
+On Thu, Apr 18, 2019 at 10:24:10AM +0300, Nikolay Borisov wrote:
 > 
-> Where is the iput for this ihold?
-
-This ihold is sort of "given" to the d_instantiate. I.e the iput happens
-when the respective dentry is unhashed/removed.
-
 > 
-> Josef
+> On 18.04.19 г. 10:21 ч., Qu Wenruo wrote:
+> > There is a BUG_ON() in __clear_extent_bit() for memory allocation
+> > failure.
+> > 
+> > While comment of __clear_extent_bit() says it can return error, but we
+> > always return 0.
+> > 
+> > Some __clear_extent_bit() callers just ignore the return value, while
+> > some still expect error.
+> > 
+> > Let's return proper error for this memory allocation anyway, to remove
+> > that BUG_ON() as a first step, so at least we can continue test.
 > 
+> I remember Josef did some changes into this code and said that prealloc
+> shouldn't fail because this will cause mayhem down the road i.e. proper
+> error handling is missing. If anything I think it should be added first
+> and then remove the BUG_ONs.
+
+I'm ok with changing this, but it needs to be more than just one patch.  Make
+alloc_extent_state_atomic() error injectable and then use either error-inject.py
+in bcc or use
+https://github.com/josefbacik/debug-scripts/blob/master/inject-error.py to test
+it and fix all the fallout from not handling lock_extent() succeeding.
+
+You can use https://github.com/josefbacik/debug-scripts/blob/master/codepaths.py
+to find all call sites for inject-error to make sure you are catching all the
+cases.  Thanks,
+
+Josef

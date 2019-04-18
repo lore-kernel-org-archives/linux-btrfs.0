@@ -6,97 +6,76 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 15C48C10F0B
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 06:28:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A488CC10F0B
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 06:33:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DAC0A21479
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 06:28:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6AF2F214DA
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 06:33:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1733049AbfDRG2O (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Apr 2019 02:28:14 -0400
-Received: from mx2.suse.de ([195.135.220.15]:47442 "EHLO mx1.suse.de"
+        id S2388044AbfDRGdi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Apr 2019 02:33:38 -0400
+Received: from szxga07-in.huawei.com ([45.249.212.35]:57874 "EHLO huawei.com"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725864AbfDRG2O (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Apr 2019 02:28:14 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 52C63AF5B
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Apr 2019 06:28:13 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: volumes: Check memory allocation failure for alloc_btrfs_bio()
-Date:   Thu, 18 Apr 2019 14:28:07 +0800
-Message-Id: <20190418062807.32340-1-wqu@suse.com>
-X-Mailer: git-send-email 2.21.0
+        id S1733151AbfDRGdi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 18 Apr 2019 02:33:38 -0400
+Received: from DGGEMS406-HUB.china.huawei.com (unknown [172.30.72.58])
+        by Forcepoint Email with ESMTP id D67889D44AABF653ADA3;
+        Thu, 18 Apr 2019 14:33:28 +0800 (CST)
+Received: from localhost.localdomain.localdomain (10.175.113.25) by
+ DGGEMS406-HUB.china.huawei.com (10.3.19.206) with Microsoft SMTP Server id
+ 14.3.408.0; Thu, 18 Apr 2019 14:33:18 +0800
+From:   YueHaibing <yuehaibing@huawei.com>
+To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>
+CC:     YueHaibing <yuehaibing@huawei.com>, <linux-btrfs@vger.kernel.org>,
+        <kernel-janitors@vger.kernel.org>
+Subject: [PATCH -next] btrfs: Remove set but not used variable 'fs_info'
+Date:   Thu, 18 Apr 2019 06:43:56 +0000
+Message-ID: <20190418064356.10418-1-yuehaibing@huawei.com>
+X-Mailer: git-send-email 2.20.1
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type:   text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7BIT
+X-Originating-IP: [10.175.113.25]
+X-CFilter-Loop: Reflected
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[BUG]
-With kmalloc failure injection for submit_one_bio(), btrfs can crash like:
+Fixes gcc '-Wunused-but-set-variable' warning:
 
-  BUG: unable to handle kernel NULL pointer dereference at 0000000000000038
-  #PF error: [WRITE]
-  PGD 0 P4D 0
-  Oops: 0002 [#1] PREEMPT SMP PTI
-  CPU: 1 PID: 247 Comm: kworker/u8:4 Not tainted 5.1.0-rc5-custom+ #19
-  Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 0.0.0 02/06/2015
-  Workqueue: writeback wb_workfn (flush-btrfs-6)
-  RIP: 0010:alloc_btrfs_bio+0x1e/0x30 [btrfs]
-  Code: 2e 0f 1f 84 00 00 00 00 00 0f 1f 00 0f 1f 44 00 00 48 63 f6 48 63 ff 48 8d 7c fe 18 be 40 8d 00 00 48 c1 e7 02 e8 a2 86 94 e0 <c7> 40 38 00 00 00 00 c7 00 01 00 00 00 c3 0f 1f 40 00 0f 1f 44 00
-  Call Trace:
-   __btrfs_map_block+0x5ce/0x1210 [btrfs]
-   ? btrfs_bio_counter_inc_blocked+0x3a/0xc0 [btrfs]
-   btrfs_map_bio+0x9a/0x430 [btrfs]
-   btree_submit_bio_hook+0x82/0xb0 [btrfs]
-   submit_one_bio+0x95/0xc0 [btrfs]
-   copy_oldmem_page_encrypted+0x20/0x20
-   ? write_one_eb+0x18f/0x2a0 [btrfs]
-   ? end_extent_buffer_writeback+0x20/0x20 [btrfs]
-   ? btree_write_cache_pages+0x12c/0x350 [btrfs]
-   ? do_writepages+0x41/0xd0
-   ? __writeback_single_inode+0x54/0x650
-   ? writeback_sb_inodes+0x1f9/0x540
-   ? __writeback_inodes_wb+0x5d/0xb0
-   ? wb_writeback+0x340/0x4b0
-   ? wb_workfn+0x410/0x5d0
-   ? process_one_work+0x294/0x650
-   ? worker_thread+0x2d/0x3d0
-   ? process_one_work+0x650/0x650
-   ? kthread+0x112/0x130
-   ? kthread_park+0x80/0x80
-   ? ret_from_fork+0x3a/0x50
-  ---[ end trace b637169fb8b17c9c ]---
+fs/btrfs/free-space-tree.c: In function 'load_free_space_tree':
+fs/btrfs/free-space-tree.c:1535:24: warning:
+ variable 'fs_info' set but not used [-Wunused-but-set-variable]
 
-[CAUSE]
-We just forgot to check the return value of kmalloc.
-Surprisingly, all alloc_btrfs_bio() callers have handled memory
-allocation pretty well.
+It's not used since commit 05e9d3137d47 ("btrfs: get fs_info from block group
+in search_free_space_info"),  so can be removed.
 
-[FIX]
-Check and return if we failed memory allocation.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: YueHaibing <yuehaibing@huawei.com>
 ---
- fs/btrfs/volumes.c | 2 ++
- 1 file changed, 2 insertions(+)
+ fs/btrfs/free-space-tree.c | 2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 78bab7803bda..875d0eee1785 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5582,6 +5582,8 @@ static struct btrfs_bio *alloc_btrfs_bio(int total_stripes, int real_stripes)
- 		sizeof(u64) * (total_stripes),
- 		GFP_NOFS|__GFP_NOFAIL);
+diff --git a/fs/btrfs/free-space-tree.c b/fs/btrfs/free-space-tree.c
+index cfe9dfb0ff05..f5dc115ebba0 100644
+--- a/fs/btrfs/free-space-tree.c
++++ b/fs/btrfs/free-space-tree.c
+@@ -1532,14 +1532,12 @@ static int load_free_space_extents(struct btrfs_caching_control *caching_ctl,
+ int load_free_space_tree(struct btrfs_caching_control *caching_ctl)
+ {
+ 	struct btrfs_block_group_cache *block_group;
+-	struct btrfs_fs_info *fs_info;
+ 	struct btrfs_free_space_info *info;
+ 	struct btrfs_path *path;
+ 	u32 extent_count, flags;
+ 	int ret;
  
-+	if (!bbio)
-+		return NULL;
- 	atomic_set(&bbio->error, 0);
- 	refcount_set(&bbio->refs, 1);
+ 	block_group = caching_ctl->block_group;
+-	fs_info = block_group->fs_info;
  
--- 
-2.21.0
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+
+
 

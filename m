@@ -2,149 +2,96 @@ Return-Path: <SRS0=uOHe=SU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D26C2C10F0E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 11:22:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D828AC10F0E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 11:37:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A3874214DA
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 11:22:52 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b="H3COmsMF"
+	by mail.kernel.org (Postfix) with ESMTP id B2476217FA
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 11:37:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388703AbfDRLWv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Apr 2019 07:22:51 -0400
-Received: from proxy22674.mail.163.com ([113.108.226.74]:53410 "EHLO
-        proxy22674.mail.163.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727807AbfDRLWv (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Apr 2019 07:22:51 -0400
-X-Greylist: delayed 908 seconds by postgrey-1.27 at vger.kernel.org; Thu, 18 Apr 2019 07:22:44 EDT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=163.com;
-        s=s110527; h=From:Subject:Date:Message-Id; bh=+p4hmUoOzGvSUCMj7E
-        a2jxUQ9gNsUw3Zf6GnGrJzpMo=; b=H3COmsMFfiseARRoMbHogsUI/gipWm+XFi
-        W2Z17n0vQtpVl6ucsVQpU7td22FKYGXaCrE4In0ieqGTQAG6ov+OJo1GI5TztlTq
-        v+9OmFAA8FLlVVuDn+0EQvO9f+w5mP+wsDMzq6diB91NOOJJjG2JJg3s48cFic+f
-        yMrQDZXzc=
-Received: from bp.localdomain (unknown [218.106.182.174])
-        by smtp3 (Coremail) with SMTP id DdGowAA3PyMxWrhc30UvAA--.663S3;
-        Thu, 18 Apr 2019 19:06:27 +0800 (CST)
-From:   Pan Bian <bianpan2016@163.com>
-To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>
-Cc:     linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Pan Bian <bianpan2016@163.com>
-Subject: [V2] btrfs: drop inode reference count on error path
-Date:   Thu, 18 Apr 2019 19:06:16 +0800
-Message-Id: <1555585576-31045-1-git-send-email-bianpan2016@163.com>
-X-Mailer: git-send-email 2.7.4
-X-CM-TRANSID: DdGowAA3PyMxWrhc30UvAA--.663S3
-X-Coremail-Antispam: 1Uf129KBjvJXoWxZr17uw17KF17Cr48Gr4kWFg_yoW5Xr17pF
-        yfCwn5K395XryDurs2qF4jvr4Fq3Wvgw4UJrs09ws5ta1UAwsaqryYvr10ya43trWkCrWj
-        qr4Ykw4UGFsrCw7anT9S1TB71UUUUUUqnTZGkaVYY2UrUUUUjbIjqfuFe4nvWSU5nxnvy2
-        9KBjDUYxBIdaVFxhVjvjDU0xZFpf9x07UseOXUUUUU=
-X-Originating-IP: [218.106.182.174]
-X-CM-SenderInfo: held01tdqsiiqw6rljoofrz/1tbiQBOaclSIaHS-VAAAsQ
+        id S2388756AbfDRLhr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Apr 2019 07:37:47 -0400
+Received: from mx2.suse.de ([195.135.220.15]:43638 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1728074AbfDRLhr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 18 Apr 2019 07:37:47 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 38E9CAC84;
+        Thu, 18 Apr 2019 11:37:46 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 7DA87DA871; Thu, 18 Apr 2019 13:38:53 +0200 (CEST)
+Date:   Thu, 18 Apr 2019 13:38:53 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <wqu@suse.de>
+Cc:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org,
+        Josef Bacik <josef@toxicpanda.com>
+Subject: Re: [PATCH] btrfs: extent_io: Handle memory allocation failure in
+ __clear_extent_bit()
+Message-ID: <20190418113853.GJ20156@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.de>,
+        Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org,
+        Josef Bacik <josef@toxicpanda.com>
+References: <20190418072114.4573-1-wqu@suse.com>
+ <b2ff0fa1-9fec-46e1-75f5-e7903523063f@suse.com>
+ <f96176af-6e8a-4257-e49a-4ca2604e7226@suse.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <f96176af-6e8a-4257-e49a-4ca2604e7226@suse.de>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The reference count of inode is incremented by ihold. It should be
-dropped if not used. However, the reference count is not dropped if
-error occurs during updating the inode or deleting orphan items. This
-patch fixes the bug.
+On Thu, Apr 18, 2019 at 03:30:20PM +0800, Qu Wenruo wrote:
+> 
+> 
+> On 2019/4/18 下午3:24, Nikolay Borisov wrote:
+> > 
+> > 
+> > On 18.04.19 г. 10:21 ч., Qu Wenruo wrote:
+> >> There is a BUG_ON() in __clear_extent_bit() for memory allocation
+> >> failure.
+> >>
+> >> While comment of __clear_extent_bit() says it can return error, but we
+> >> always return 0.
+> >>
+> >> Some __clear_extent_bit() callers just ignore the return value, while
+> >> some still expect error.
+> >>
+> >> Let's return proper error for this memory allocation anyway, to remove
+> >> that BUG_ON() as a first step, so at least we can continue test.
+> > 
+> > I remember Josef did some changes into this code and said that prealloc
+> > shouldn't fail because this will cause mayhem down the road i.e. proper
+> > error handling is missing. If anything I think it should be added first
+> > and then remove the BUG_ONs.
+> 
+> That's true, we could have some strange lockup due to
+> lock_extent_bits(), as if some clear_extent_bits() failed due to ENOMEM
+> and caller just ignore the error, we could have a lockup.
 
-Signed-off-by: Pan Bian <bianpan2016@163.com>
----
-V2: move ihold just before device_initialize to make code clearer
----
- fs/btrfs/inode.c | 54 +++++++++++++++++++++++++-----------------------------
- 1 file changed, 25 insertions(+), 29 deletions(-)
+Not only lockup but unhandled failed extent range locking totally breaks
+assumptions that the following code makes and this would lead to
+unpredictable corruptions. Just count how many lock_extent_bits calls
+are there. And any caller of __set_extent_bit. There are so many that
+the BUG_ON is the measure of last resort to prevent worse problems.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 82fdda8..d6630df 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6579,7 +6579,7 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	u64 index;
- 	int err;
--	int drop_inode = 0;
-+	int log_mode;
- 
- 	/* do not allow sys_link's with other subvols of the same device */
- 	if (root->root_key.objectid != BTRFS_I(inode)->root->root_key.objectid)
-@@ -6616,41 +6616,37 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
- 	err = btrfs_add_nondir(trans, BTRFS_I(dir), dentry, BTRFS_I(inode),
- 			1, index);
- 
--	if (err) {
--		drop_inode = 1;
--	} else {
--		struct dentry *parent = dentry->d_parent;
--		int ret;
-+	if (err)
-+		goto err_link;
- 
--		err = btrfs_update_inode(trans, root, inode);
-+	err = btrfs_update_inode(trans, root, inode);
-+	if (err)
-+		goto err_link;
-+	if (inode->i_nlink == 1) {
-+		/*
-+		 * If new hard link count is 1, it's a file created
-+		 * with open(2) O_TMPFILE flag.
-+		 */
-+		err = btrfs_orphan_del(trans, BTRFS_I(inode));
- 		if (err)
--			goto fail;
--		if (inode->i_nlink == 1) {
--			/*
--			 * If new hard link count is 1, it's a file created
--			 * with open(2) O_TMPFILE flag.
--			 */
--			err = btrfs_orphan_del(trans, BTRFS_I(inode));
--			if (err)
--				goto fail;
--		}
--		BTRFS_I(inode)->last_link_trans = trans->transid;
--		d_instantiate(dentry, inode);
--		ret = btrfs_log_new_name(trans, BTRFS_I(inode), NULL, parent,
--					 true, NULL);
--		if (ret == BTRFS_NEED_TRANS_COMMIT) {
--			err = btrfs_commit_transaction(trans);
--			trans = NULL;
--		}
-+			goto err_link;
-+	}
-+	BTRFS_I(inode)->last_link_trans = trans->transid;
-+	ihold(inode);
-+	d_instantiate(dentry, inode);
-+	log_mode = btrfs_log_new_name(trans, BTRFS_I(inode), NULL,
-+			dentry->d_parent, true, NULL);
-+	if (log_mode == BTRFS_NEED_TRANS_COMMIT) {
-+		err = btrfs_commit_transaction(trans);
-+		trans = NULL;
- 	}
- 
-+err_link:
-+	if (err)
-+		inode_dec_link_count(inode);
- fail:
- 	if (trans)
- 		btrfs_end_transaction(trans);
--	if (drop_inode) {
--		inode_dec_link_count(inode);
--		iput(inode);
--	}
- 	btrfs_btree_balance_dirty(fs_info);
- 	return err;
- }
--- 
-2.7.4
+> I'll try to pre-allocate certain amount of extent_state as the last
+> chance of redemption.
 
+This only lowers the chances to hit the allocation error but there's
+always a case when certain amount + 1 would be needed.
 
+> Anyway, such BUG_ON() right after kmalloc() is really a blockage for
+> error injection test.
+
+Maybe, but the code is not yet in the state to inject memory allocation
+faiulres to that particular path (ie. the state changes).

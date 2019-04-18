@@ -2,189 +2,85 @@ Return-Path: <SRS0=uOHe=SU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5403EC10F0E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 12:50:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1F0ABC10F0E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 13:03:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 222692183E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 12:50:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id EE42E20656
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 13:03:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388579AbfDRMuE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Apr 2019 08:50:04 -0400
-Received: from mx2.suse.de ([195.135.220.15]:60852 "EHLO mx1.suse.de"
+        id S2388528AbfDRNDs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Apr 2019 09:03:48 -0400
+Received: from mx2.suse.de ([195.135.220.15]:35828 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726162AbfDRMuD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Apr 2019 08:50:03 -0400
+        id S1729497AbfDRNDs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 18 Apr 2019 09:03:48 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id CA9CEB018;
-        Thu, 18 Apr 2019 12:50:01 +0000 (UTC)
-Subject: Re: [V2] btrfs: drop inode reference count on error path
-To:     Pan Bian <bianpan2016@163.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>
-Cc:     linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-References: <1555585576-31045-1-git-send-email-bianpan2016@163.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <ac36d111-547e-a76a-149e-a7ad603d7dfd@suse.com>
-Date:   Thu, 18 Apr 2019 15:50:00 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.6.1
+        by mx1.suse.de (Postfix) with ESMTP id 6C13CB656
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Apr 2019 13:03:47 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id D4F34DA871; Thu, 18 Apr 2019 15:04:54 +0200 (CEST)
+Date:   Thu, 18 Apr 2019 15:04:54 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/6] Simplifications around submit_bio_hook
+Message-ID: <20190418130454.GL20156@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20190410142443.6470-1-nborisov@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <1555585576-31045-1-git-send-email-bianpan2016@163.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190410142443.6470-1-nborisov@suse.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 18.04.19 г. 14:06 ч., Pan Bian wrote:
-> The reference count of inode is incremented by ihold. It should be
-> dropped if not used. However, the reference count is not dropped if
-> error occurs during updating the inode or deleting orphan items. This
-> patch fixes the bug.
+On Wed, Apr 10, 2019 at 05:24:37PM +0300, Nikolay Borisov wrote:
+> I've been taking a look at the submit_bio_hook et al  and I saw some
+> opportunities for improvement. First I begin by simplifying the definition of 
+> submit_bio_hook callback and making one of its arguments explicit. 
 > 
-> Signed-off-by: Pan Bian <bianpan2016@163.com>
-> ---
-> V2: move ihold just before device_initialize to make code clearer
-> ---
->  fs/btrfs/inode.c | 54 +++++++++++++++++++++++++-----------------------------
->  1 file changed, 25 insertions(+), 29 deletions(-)
+> Patch 3 removes a redundant extent_io_tree argument that was passed through 
+> several layers of functions and ultimately made it somewhat cumbersome to reason
+> what extent_io_tree is being used. 
 > 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 82fdda8..d6630df 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -6579,7 +6579,7 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
->  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
->  	u64 index;
->  	int err;
-> -	int drop_inode = 0;
-> +	int log_mode;
->  
->  	/* do not allow sys_link's with other subvols of the same device */
->  	if (root->root_key.objectid != BTRFS_I(inode)->root->root_key.objectid)
-> @@ -6616,41 +6616,37 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
->  	err = btrfs_add_nondir(trans, BTRFS_I(dir), dentry, BTRFS_I(inode),
->  			1, index);
->  
-> -	if (err) {
-> -		drop_inode = 1;
-> -	} else {
-> -		struct dentry *parent = dentry->d_parent;
-> -		int ret;
-> +	if (err)
-> +		goto err_link;
->  
-> -		err = btrfs_update_inode(trans, root, inode);
-> +	err = btrfs_update_inode(trans, root, inode);
-> +	if (err)
-> +		goto err_link;
-> +	if (inode->i_nlink == 1) {
-> +		/*
-> +		 * If new hard link count is 1, it's a file created
-> +		 * with open(2) O_TMPFILE flag.
-> +		 */
-> +		err = btrfs_orphan_del(trans, BTRFS_I(inode));
->  		if (err)
-> -			goto fail;
-> -		if (inode->i_nlink == 1) {
-> -			/*
-> -			 * If new hard link count is 1, it's a file created
-> -			 * with open(2) O_TMPFILE flag.
-> -			 */
-> -			err = btrfs_orphan_del(trans, BTRFS_I(inode));
-> -			if (err)
-> -				goto fail;
-> -		}
-> -		BTRFS_I(inode)->last_link_trans = trans->transid;
-> -		d_instantiate(dentry, inode);
-> -		ret = btrfs_log_new_name(trans, BTRFS_I(inode), NULL, parent,
-> -					 true, NULL);
-> -		if (ret == BTRFS_NEED_TRANS_COMMIT) {
-> -			err = btrfs_commit_transaction(trans);
-> -			trans = NULL;
-> -		}
-> +			goto err_link;
-> +	}
-> +	BTRFS_I(inode)->last_link_trans = trans->transid;
-> +	ihold(inode);
-> +	d_instantiate(dentry, inode);
-> +	log_mode = btrfs_log_new_name(trans, BTRFS_I(inode), NULL,
-> +			dentry->d_parent, true, NULL);
-> +	if (log_mode == BTRFS_NEED_TRANS_COMMIT) {
-> +		err = btrfs_commit_transaction(trans);
-> +		trans = NULL;
->  	}
->  
-> +err_link:
-> +	if (err)
-> +		inode_dec_link_count(inode);
-
-Any particular reason why you moved this before ending the transaction?
-It potentially has an effect during tyransaction commit since doing
-inode_dec_link_count does mark_inode_dirty which moves the inode on the
-dirty list. Have you explicitly thought about that ? Note, I'm not
-saying it's wrong but I want the rationale for the code move.
-
->  fail:
->  	if (trans)
->  		btrfs_end_transaction(trans);
-> -	if (drop_inode) {
-> -		inode_dec_link_count(inode);
-> -		iput(inode);
-> -	}
->  	btrfs_btree_balance_dirty(fs_info);
->  	return err;
->  }
+> Patch 4 and 5 hardcode a 0 being passed  for the bio_offset parameter to
+> btrfs_submit_bio_start/btree_submit_bio_start since it only matters for DIO. 
 > 
+> Patch 6 finally does away with the bio_offset parameter of submit_bio_hook. 
+> 
+> Here is the output of bloat-o-meter for posterity:
+> 
+> add/remove: 0/0 grow/shrink: 4/7 up/down: 48/-319 (-271)
+> Function                                     old     new   delta
+> read_extent_buffer_pages                     784     822     +38
+> btrfs_add_ordered_sum                        100     104      +4
+> btrfs_submit_bio_hook                        364     367      +3
+> btree_submit_bio_hook                        175     178      +3
+> end_bio_extent_readpage                     2119    2116      -3
+> btrfs_reloc_clone_csums                      272     262     -10
+> btrfs_csum_one_bio                          1358    1348     -10
+> btree_read_extent_buffer_pages               282     272     -10
+> readahead_tree_block                          73      55     -18
+> reada_tree_block_flagged                     194     165     -29
+> submit_one_bio                               313      74    -239
+> Total: Before=1072719, After=1072448, chg -0.03%
+> 
+> Nikolay Borisov (6):
+>   btrfs: Define submit_bio_hook's type directly
+>   btrfs: Change submit_bio_hook to taking an inode directly
+>   btrfs: Remove 'tree' argument from read_extent_buffer_pages
+>   btrfs: Pass 0 for bio_offset to btrfs_wq_submit_bio
+>   btrfs: Always pass 0 bio_offset for btree_submit_bio_start
+>   btrfs: Remove bio_offset argument from submit_bio_hook
+
+Patchset added to misc-next, thanks.

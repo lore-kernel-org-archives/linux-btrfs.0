@@ -7,43 +7,43 @@ X-Spam-Status: No, score=-9.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A58C9C282DA
-	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Apr 2019 18:33:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C3EA2C282DF
+	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Apr 2019 18:33:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 75064204EC
-	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Apr 2019 18:33:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 985AF204EC
+	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Apr 2019 18:33:47 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1555698825;
-	bh=9RXCj8OHIWsuMAxW2auL4pF8XiqeYUBf+8hsTSCVZJQ=;
+	s=default; t=1555698827;
+	bh=7Q2/2pO/M5iZUWilsbZWtWkqAuNSwPiAGmf9aFbrRoM=;
 	h=From:To:Cc:Subject:Date:List-ID:From;
-	b=YrkDJXhpHCoVV3osI6B2RK4t7ppVuGdyuUXlDVRMCRuIcX/Kl0aFq5DU/ZATMleY0
-	 xtzXdzFHRId9lbFVGRHmURSl0SWIsckTCvbDlZ+UTJfuBZLKSwILee5uqVf/H5O4Xe
-	 9XwsvXpjYcilOT23Ghs56ty+KXBDuE5IKXEPLUSk=
+	b=O36uEd+AMB5NpdbXnPUIt8TJMafJ7DX2TFAgup5lU8tYAq24EehiNFKJSX8gTStm6
+	 zSYS4+tkmAHQFOfIjD7gXTEVSG1RBXfI+u923SIB6CSju9H6KRQoGlGEBRMgGIdu7y
+	 QyfHElOyEOYiUIeSATO4Hdn6UCgpDHV1vcrU/Ip0=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728174AbfDSSdm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 19 Apr 2019 14:33:42 -0400
-Received: from mail.kernel.org ([198.145.29.99]:53916 "EHLO mail.kernel.org"
+        id S1728137AbfDSSdl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 19 Apr 2019 14:33:41 -0400
+Received: from mail.kernel.org ([198.145.29.99]:53910 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727599AbfDSS3Q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1727574AbfDSS3Q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Fri, 19 Apr 2019 14:29:16 -0400
 Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id DE76821902;
-        Fri, 19 Apr 2019 10:54:25 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 6442A21909;
+        Fri, 19 Apr 2019 10:55:20 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1555671266;
-        bh=9RXCj8OHIWsuMAxW2auL4pF8XiqeYUBf+8hsTSCVZJQ=;
+        s=default; t=1555671321;
+        bh=7Q2/2pO/M5iZUWilsbZWtWkqAuNSwPiAGmf9aFbrRoM=;
         h=From:To:Cc:Subject:Date:From;
-        b=Ix/VpuROGxQsL0Gz1XX07zQbdYWQFHkIotZHKZltbdFL1Z9NX/WHmH6gsjNdSEASA
-         +Epg+0B16SVyqiD3tmHPZe1CXH4CXyldCr2CfgiDa31jeEn1F2KjTiYatUxhU9wgBg
-         SRKHN+4xKeeHUctYjFWMbxIF44xWGW7BNqfpLlck=
+        b=I3qVFZcI07XoPNsIRI834qwrPKvfVcIgAXj3Vlt4F1yLW7v0KPQk2JDFL++OOMPF0
+         baE3NKfH6DfOkayZ7/BoFrGKvCd1GkF6gU71pVL1xxbx10Mj6tYocN5UkDP2Y8KI8+
+         Glx0vKb2XDSS4YjJ9bWnvq/JMfXBW0NLOdWMJaZA=
 From:   fdmanana@kernel.org
 To:     fstests@vger.kernel.org
 Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v4 4/7] fsstress: add operation for reading xattrs from files and directories
-Date:   Fri, 19 Apr 2019 11:54:22 +0100
-Message-Id: <20190419105422.11934-1-fdmanana@kernel.org>
+Subject: [PATCH v4 7/7] fssum: add support for checking xattrs
+Date:   Fri, 19 Apr 2019 11:55:16 +0100
+Message-Id: <20190419105516.12088-1-fdmanana@kernel.org>
 X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
@@ -52,128 +52,235 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-The previous patch added support for an operation to set xattrs on regular
-files and directories, this patch just adds one operation to read (get)
-them.
+Currently fssum, mostly used for btrfs test cases that test the btrfs send
+feature, ignores completely the existence of xattrs. This change teaches
+fssum to find xattrs and make them contribute to the checksum of a
+filesystem, so that we can catch filesystem bugs regarding missing, corrupt
+or not supposed to exist xattrs (i.e. that an incremental btrfs send does
+not forget to create, update or remove xattrs).
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
 
-V2: Use a different name for the operation (getfattr) and make use of the
-    helper functions for opening and closing files or directories, introduced
-    in the first patch of this series.
-V3: Simplified implementation to not need to open a file descriptor and
-    use a path string instead.  
-V4: Addressed Eryu's comments.
+V2: No changes from v1.
+V3: No changes from v2 and v1.
+V4: No changes from v3, v2 and v1.
 
- ltp/fsstress.c | 73 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 73 insertions(+)
+ src/fssum.c | 143 ++++++++++++++++++++++++++++++++++++++++++++++++++++++------
+ 1 file changed, 129 insertions(+), 14 deletions(-)
 
-diff --git a/ltp/fsstress.c b/ltp/fsstress.c
-index b3ff8d92..f24dd42d 100644
---- a/ltp/fsstress.c
-+++ b/ltp/fsstress.c
-@@ -69,6 +69,7 @@ typedef enum {
- 	OP_FSYNC,
- 	OP_GETATTR,
- 	OP_GETDENTS,
-+	OP_GETFATTR,
- 	OP_LINK,
- 	OP_MKDIR,
- 	OP_MKNOD,
-@@ -184,6 +185,7 @@ void	fsync_f(int, long);
- char	*gen_random_string(int);
- void	getattr_f(int, long);
- void	getdents_f(int, long);
-+void	getfattr_f(int, long);
- void	link_f(int, long);
- void	mkdir_f(int, long);
- void	mknod_f(int, long);
-@@ -237,6 +239,8 @@ opdesc_t	ops[] = {
- 	{ OP_FSYNC, "fsync", fsync_f, 1, 1 },
- 	{ OP_GETATTR, "getattr", getattr_f, 1, 0 },
- 	{ OP_GETDENTS, "getdents", getdents_f, 1, 0 },
-+	/* get extended attribute */
-+	{ OP_GETFATTR, "getfattr", getfattr_f, 1, 0 },
- 	{ OP_LINK, "link", link_f, 1, 1 },
- 	{ OP_MKDIR, "mkdir", mkdir_f, 2, 1 },
- 	{ OP_MKNOD, "mknod", mknod_f, 2, 1 },
-@@ -3594,6 +3598,75 @@ getdents_f(int opno, long r)
+diff --git a/src/fssum.c b/src/fssum.c
+index f1da72fb..6ba0a95c 100644
+--- a/src/fssum.c
++++ b/src/fssum.c
+@@ -20,6 +20,7 @@
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ #include <sys/sysmacros.h>
++#include <sys/xattr.h>
+ #ifdef __SOLARIS__
+ #include <sys/mkdev.h>
+ #endif
+@@ -40,7 +41,6 @@
+ #endif
+ 
+ /* TODO: add hardlink recognition */
+-/* TODO: add xattr/acl */
+ 
+ struct excludes {
+ 	char *path;
+@@ -71,15 +71,16 @@ enum _flags {
+ 	FLAG_MTIME,
+ 	FLAG_CTIME,
+ 	FLAG_DATA,
++	FLAG_XATTRS,
+ 	FLAG_OPEN_ERROR,
+ 	FLAG_STRUCTURE,
+ 	NUM_FLAGS
+ };
+ 
+-const char flchar[] = "ugoamcdes";
++const char flchar[] = "ugoamcdxes";
+ char line[65536];
+ 
+-int flags[NUM_FLAGS] = {1, 1, 1, 1, 1, 0, 1, 0, 0};
++int flags[NUM_FLAGS] = {1, 1, 1, 1, 1, 0, 1, 1, 0, 0};
+ 
+ char *
+ getln(char *buf, int size, FILE *fp)
+@@ -135,7 +136,7 @@ usage(void)
+ 	fprintf(stderr, "    -v          : verbose mode (debugging only)\n");
+ 	fprintf(stderr,
+ 		"    -r <file>   : read checksum or manifest from file\n");
+-	fprintf(stderr, "    -[ugoamcde] : specify which fields to include in checksum calculation.\n");
++	fprintf(stderr, "    -[ugoamcdxe]: specify which fields to include in checksum calculation.\n");
+ 	fprintf(stderr, "         u      : include uid\n");
+ 	fprintf(stderr, "         g      : include gid\n");
+ 	fprintf(stderr, "         o      : include mode\n");
+@@ -143,9 +144,10 @@ usage(void)
+ 	fprintf(stderr, "         a      : include atime\n");
+ 	fprintf(stderr, "         c      : include ctime\n");
+ 	fprintf(stderr, "         d      : include file data\n");
++	fprintf(stderr, "         x      : include xattrs\n");
+ 	fprintf(stderr, "         e      : include open errors (aborts otherwise)\n");
+ 	fprintf(stderr, "         s      : include block structure (holes)\n");
+-	fprintf(stderr, "    -[UGOAMCDES]: exclude respective field from calculation\n");
++	fprintf(stderr, "    -[UGOAMCDXES]: exclude respective field from calculation\n");
+ 	fprintf(stderr, "    -n          : reset all flags\n");
+ 	fprintf(stderr, "    -N          : set all flags\n");
+ 	fprintf(stderr, "    -x path     : exclude path when building checksum (multiple ok)\n");
+@@ -221,6 +223,106 @@ sum_to_string(sum_t *dst)
  }
  
- void
-+getfattr_f(int opno, long r)
+ int
++namecmp(const void *aa, const void *bb)
 +{
-+	fent_t	        *fep;
-+	int		e;
-+	pathname_t	f;
-+	int		v;
-+	char            name[XATTR_NAME_BUF_SIZE];
-+	char            *value = NULL;
-+	int             value_len;
-+	int             xattr_num;
++	char * const *a = aa;
++	char * const *b = bb;
 +
-+	init_pathname(&f);
-+	if (!get_fname(FT_REGFILE | FT_DIRm, r, &f, NULL, &fep, &v)) {
-+		if (v)
-+			printf("%d/%d: getfattr - no filename\n", procid, opno);
-+		goto out;
-+	}
-+	check_cwd();
-+
-+	/*
-+	 * If the file/dir has xattrs, pick one randomly, otherwise attempt
-+	 * to read a xattr that doesn't exist (fgetxattr should fail with
-+	 * errno set to ENOATTR (61) in this case).
-+	 */
-+	if (fep->xattr_counter > 0)
-+		xattr_num = (random() % fep->xattr_counter) + 1;
-+	else
-+		xattr_num = 0;
-+
-+	e = generate_xattr_name(xattr_num, name, sizeof(name));
-+	if (e < 0) {
-+		printf("%d/%d: getfattr - file %s failed to generate xattr name: %d\n",
-+		       procid, opno, f.path, e);
-+		goto out;
-+	}
-+
-+	value_len = getxattr(f.path, name, NULL, 0);
-+	if (value_len < 0) {
-+		if (v)
-+			printf("%d/%d: getfattr file %s name %s failed %d\n",
-+			       procid, opno, f.path, name, errno);
-+		goto out;
-+	}
-+
-+	/* A xattr without value.*/
-+	if (value_len == 0) {
-+		e = 0;
-+		goto out_log;
-+	}
-+
-+	value = malloc(value_len);
-+	if (!value) {
-+		if (v)
-+			printf("%d/%d: getfattr file %s failed to allocate buffer with %d bytes\n",
-+			       procid, opno, f.path, value_len);
-+		goto out;
-+	}
-+
-+	e = getxattr(f.path, name, value, value_len) < 0 ? errno : 0;
-+out_log:
-+	if (v)
-+		printf("%d/%d: getfattr file %s name %s value length %d %d\n",
-+		       procid, opno, f.path, name, value_len, e);
-+out:
-+	free(value);
-+	free_pathname(&f);
++	return strcmp(*a, *b);
 +}
 +
-+void
- link_f(int opno, long r)
++int
++sum_xattrs(int fd, sum_t *dst)
++{
++	ssize_t buflen;
++	ssize_t len;
++	char *buf;
++	char *p;
++	char **names = NULL;
++	int num_xattrs = 0;
++	int ret = 0;
++	int i;
++
++	buflen = flistxattr(fd, NULL, 0);
++	if (buflen < 0)
++		return -errno;
++	/* no xattrs exist */
++	if (buflen == 0)
++		return 0;
++
++	buf = malloc(buflen);
++	if (!buf)
++		return -ENOMEM;
++
++	buflen = flistxattr(fd, buf, buflen);
++	if (buflen < 0) {
++		ret = -errno;
++		goto out;
++	}
++
++	/*
++	 * Keep the list of xattrs sorted, because the order in which they are
++	 * listed is filesystem dependent, so we want to get the same checksum
++	 * on different filesystems.
++	 */
++
++	p = buf;
++	len = buflen;
++	while (len > 0) {
++		int keylen;
++
++		keylen = strlen(p) + 1; /* +1 for NULL terminator */
++		len -= keylen;
++		p += keylen;
++		num_xattrs++;
++	}
++
++	names = malloc(sizeof(char *) * num_xattrs);
++	if (!names) {
++		ret = -ENOMEM;
++		goto out;
++	}
++
++	p = buf;
++	for (i = 0; i < num_xattrs; i++) {
++		names[i] = p;
++		p += strlen(p) + 1; /* +1 for NULL terminator */
++	}
++
++	qsort(names, num_xattrs, sizeof(char *), namecmp);
++
++	for (i = 0; i < num_xattrs; i++) {
++		len = fgetxattr(fd, names[i], NULL, 0);
++		if (len < 0) {
++			ret = -errno;
++			goto out;
++		}
++		sum_add(dst, names[i], strlen(names[i]));
++		/* no value */
++		if (len == 0)
++			continue;
++		p = malloc(len);
++		if (!p) {
++			ret = -ENOMEM;
++			goto out;
++		}
++		len = fgetxattr(fd, names[i], p, len);
++		if (len < 0) {
++			ret = -errno;
++			free(p);
++			goto out;
++		}
++		sum_add(dst, p, len);
++		free(p);
++	}
++out:
++	free(buf);
++	free(names);
++
++	return ret;
++}
++
++int
+ sum_file_data_permissive(int fd, sum_t *dst)
  {
- 	int		e;
+ 	int ret;
+@@ -401,15 +503,6 @@ malformed:
+ 		excess_file(fn);
+ }
+ 
+-int
+-namecmp(const void *aa, const void *bb)
+-{
+-	char * const *a = aa;
+-	char * const *b = bb;
+-
+-	return strcmp(*a, *b);
+-}
+-
+ void
+ sum(int dirfd, int level, sum_t *dircs, char *path_prefix, char *path_in)
+ {
+@@ -493,6 +586,28 @@ sum(int dirfd, int level, sum_t *dircs, char *path_prefix, char *path_in)
+ 			sum_add_time(&meta, st.st_mtime);
+ 		if (flags[FLAG_CTIME])
+ 			sum_add_time(&meta, st.st_ctime);
++		if (flags[FLAG_XATTRS] &&
++		    (S_ISDIR(st.st_mode) || S_ISREG(st.st_mode))) {
++			fd = openat(dirfd, namelist[i], 0);
++			if (fd == -1 && flags[FLAG_OPEN_ERROR]) {
++				sum_add_u64(&meta, errno);
++			} else if (fd == -1) {
++				fprintf(stderr, "open failed for %s/%s: %s\n",
++					path_prefix, path, strerror(errno));
++				exit(-1);
++			} else {
++				ret = sum_xattrs(fd, &meta);
++				close(fd);
++				if (ret < 0) {
++					fprintf(stderr,
++						"failed to read xattrs from "
++						"%s/%s: %s\n",
++						path_prefix, path,
++						strerror(-ret));
++					exit(-1);
++				}
++			}
++		}
+ 		if (S_ISDIR(st.st_mode)) {
+ 			fd = openat(dirfd, namelist[i], 0);
+ 			if (fd == -1 && flags[FLAG_OPEN_ERROR]) {
 -- 
 2.11.0
 

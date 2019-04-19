@@ -2,285 +2,138 @@ Return-Path: <SRS0=DdMj=SV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-3.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_NEOMUTT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C3EA2C282DF
-	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Apr 2019 18:33:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 40C2BC282DA
+	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Apr 2019 18:46:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 985AF204EC
-	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Apr 2019 18:33:47 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1555698827;
-	bh=7Q2/2pO/M5iZUWilsbZWtWkqAuNSwPiAGmf9aFbrRoM=;
-	h=From:To:Cc:Subject:Date:List-ID:From;
-	b=O36uEd+AMB5NpdbXnPUIt8TJMafJ7DX2TFAgup5lU8tYAq24EehiNFKJSX8gTStm6
-	 zSYS4+tkmAHQFOfIjD7gXTEVSG1RBXfI+u923SIB6CSju9H6KRQoGlGEBRMgGIdu7y
-	 QyfHElOyEOYiUIeSATO4Hdn6UCgpDHV1vcrU/Ip0=
+	by mail.kernel.org (Postfix) with ESMTP id 141FE205F4
+	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Apr 2019 18:46:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728137AbfDSSdl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 19 Apr 2019 14:33:41 -0400
-Received: from mail.kernel.org ([198.145.29.99]:53910 "EHLO mail.kernel.org"
+        id S1727466AbfDSSqw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 19 Apr 2019 14:46:52 -0400
+Received: from mx1.redhat.com ([209.132.183.28]:60756 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727574AbfDSS3Q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 Apr 2019 14:29:16 -0400
-Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        id S1726543AbfDSSqw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 19 Apr 2019 14:46:52 -0400
+Received: from smtp.corp.redhat.com (int-mx04.intmail.prod.int.phx2.redhat.com [10.5.11.14])
+        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 6442A21909;
-        Fri, 19 Apr 2019 10:55:20 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1555671321;
-        bh=7Q2/2pO/M5iZUWilsbZWtWkqAuNSwPiAGmf9aFbrRoM=;
-        h=From:To:Cc:Subject:Date:From;
-        b=I3qVFZcI07XoPNsIRI834qwrPKvfVcIgAXj3Vlt4F1yLW7v0KPQk2JDFL++OOMPF0
-         baE3NKfH6DfOkayZ7/BoFrGKvCd1GkF6gU71pVL1xxbx10Mj6tYocN5UkDP2Y8KI8+
-         Glx0vKb2XDSS4YjJ9bWnvq/JMfXBW0NLOdWMJaZA=
-From:   fdmanana@kernel.org
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v4 7/7] fssum: add support for checking xattrs
-Date:   Fri, 19 Apr 2019 11:55:16 +0100
-Message-Id: <20190419105516.12088-1-fdmanana@kernel.org>
-X-Mailer: git-send-email 2.11.0
+        by mx1.redhat.com (Postfix) with ESMTPS id B05EF85541;
+        Fri, 19 Apr 2019 16:17:41 +0000 (UTC)
+Received: from treble (ovpn-124-190.rdu2.redhat.com [10.10.124.190])
+        by smtp.corp.redhat.com (Postfix) with ESMTPS id 8459E5D9D2;
+        Fri, 19 Apr 2019 16:17:32 +0000 (UTC)
+Date:   Fri, 19 Apr 2019 11:17:30 -0500
+From:   Josh Poimboeuf <jpoimboe@redhat.com>
+To:     Peter Zijlstra <peterz@infradead.org>
+Cc:     Thomas Gleixner <tglx@linutronix.de>,
+        LKML <linux-kernel@vger.kernel.org>, x86@kernel.org,
+        Andy Lutomirski <luto@kernel.org>,
+        Steven Rostedt <rostedt@goodmis.org>,
+        Alexander Potapenko <glider@google.com>,
+        linux-arch@vger.kernel.org, Alexey Dobriyan <adobriyan@gmail.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Pekka Enberg <penberg@kernel.org>, linux-mm@kvack.org,
+        David Rientjes <rientjes@google.com>,
+        Christoph Lameter <cl@linux.com>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Dmitry Vyukov <dvyukov@google.com>,
+        Andrey Ryabinin <aryabinin@virtuozzo.com>,
+        kasan-dev@googlegroups.com,
+        Mike Rapoport <rppt@linux.vnet.ibm.com>,
+        Akinobu Mita <akinobu.mita@gmail.com>,
+        iommu@lists.linux-foundation.org,
+        Robin Murphy <robin.murphy@arm.com>,
+        Christoph Hellwig <hch@lst.de>,
+        Marek Szyprowski <m.szyprowski@samsung.com>,
+        Johannes Thumshirn <jthumshirn@suse.de>,
+        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs@vger.kernel.org, dm-devel@redhat.com,
+        Mike Snitzer <snitzer@redhat.com>,
+        Alasdair Kergon <agk@redhat.com>,
+        intel-gfx@lists.freedesktop.org,
+        Joonas Lahtinen <joonas.lahtinen@linux.intel.com>,
+        Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
+        dri-devel@lists.freedesktop.org, David Airlie <airlied@linux.ie>,
+        Jani Nikula <jani.nikula@linux.intel.com>,
+        Daniel Vetter <daniel@ffwll.ch>,
+        Rodrigo Vivi <rodrigo.vivi@intel.com>
+Subject: Re: [patch V2 28/29] stacktrace: Provide common infrastructure
+Message-ID: <20190419161730.zgpa3e5fhny42wq7@treble>
+References: <20190418084119.056416939@linutronix.de>
+ <20190418084255.652003111@linutronix.de>
+ <20190419071843.GM4038@hirez.programming.kicks-ass.net>
+ <alpine.DEB.2.21.1904191031390.3174@nanos.tec.linutronix.de>
+ <20190419090717.GN7905@worktop.programming.kicks-ass.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+In-Reply-To: <20190419090717.GN7905@worktop.programming.kicks-ass.net>
+User-Agent: NeoMutt/20180716
+X-Scanned-By: MIMEDefang 2.79 on 10.5.11.14
+X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.28]); Fri, 19 Apr 2019 16:17:42 +0000 (UTC)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+On Fri, Apr 19, 2019 at 11:07:17AM +0200, Peter Zijlstra wrote:
+> On Fri, Apr 19, 2019 at 10:32:30AM +0200, Thomas Gleixner wrote:
+> > On Fri, 19 Apr 2019, Peter Zijlstra wrote:
+> > > On Thu, Apr 18, 2019 at 10:41:47AM +0200, Thomas Gleixner wrote:
+> > > 
+> > > > +typedef bool (*stack_trace_consume_fn)(void *cookie, unsigned long addr,
+> > > > +                                      bool reliable);
+> > > 
+> > > > +void arch_stack_walk(stack_trace_consume_fn consume_entry, void *cookie,
+> > > > +		     struct task_struct *task, struct pt_regs *regs);
+> > > > +int arch_stack_walk_reliable(stack_trace_consume_fn consume_entry, void *cookie,
+> > > > +			     struct task_struct *task);
+> > > 
+> > > This bugs me a little; ideally the _reliable() thing would not exists.
+> > > 
+> > > Thomas said that the existing __save_stack_trace_reliable() is different
+> > > enough for the unification to be non-trivial, but maybe Josh can help
+> > > out?
+> > > 
+> > > >From what I can see the biggest significant differences are:
+> > > 
+> > >  - it looks at the regs sets on the stack and for FP bails early
+> > >  - bails for khreads and idle (after it does all the hard work!?!)
 
-Currently fssum, mostly used for btrfs test cases that test the btrfs send
-feature, ignores completely the existence of xattrs. This change teaches
-fssum to find xattrs and make them contribute to the checksum of a
-filesystem, so that we can catch filesystem bugs regarding missing, corrupt
-or not supposed to exist xattrs (i.e. that an incremental btrfs send does
-not forget to create, update or remove xattrs).
+That's done for a reason, see the "Success path" comments.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
+> > > The first (FP checking for exceptions) should probably be reflected in
+> > > consume_fn(.reliable) anyway -- although that would mean a lot of extra
+> > > '?' entries where there are none today.
+> > > 
+> > > And the second (KTHREAD/IDLE) is something that the generic code can
+> > > easily do before calling into the arch unwinder.
+> > 
+> > And looking at the powerpc version of it, that has even more interesting
+> > extra checks in that function.
+> 
+> Right, but not fundamentally different from determining @reliable I
+> think.
+> 
+> Anyway, it would be good if someone knowledgable could have a look at
+> this.
 
-V2: No changes from v1.
-V3: No changes from v2 and v1.
-V4: No changes from v3, v2 and v1.
+Yeah, we could probably do that.
 
- src/fssum.c | 143 ++++++++++++++++++++++++++++++++++++++++++++++++++++++------
- 1 file changed, 129 insertions(+), 14 deletions(-)
+The flow would need to be changed a bit -- some of the errors are soft
+errors which most users don't care about because they just want a best
+effort.  The soft errors can be remembered without breaking out of the
+loop, and just returned at the end.  Most users could just ignore the
+return code.
 
-diff --git a/src/fssum.c b/src/fssum.c
-index f1da72fb..6ba0a95c 100644
---- a/src/fssum.c
-+++ b/src/fssum.c
-@@ -20,6 +20,7 @@
- #include <sys/types.h>
- #include <sys/stat.h>
- #include <sys/sysmacros.h>
-+#include <sys/xattr.h>
- #ifdef __SOLARIS__
- #include <sys/mkdev.h>
- #endif
-@@ -40,7 +41,6 @@
- #endif
- 
- /* TODO: add hardlink recognition */
--/* TODO: add xattr/acl */
- 
- struct excludes {
- 	char *path;
-@@ -71,15 +71,16 @@ enum _flags {
- 	FLAG_MTIME,
- 	FLAG_CTIME,
- 	FLAG_DATA,
-+	FLAG_XATTRS,
- 	FLAG_OPEN_ERROR,
- 	FLAG_STRUCTURE,
- 	NUM_FLAGS
- };
- 
--const char flchar[] = "ugoamcdes";
-+const char flchar[] = "ugoamcdxes";
- char line[65536];
- 
--int flags[NUM_FLAGS] = {1, 1, 1, 1, 1, 0, 1, 0, 0};
-+int flags[NUM_FLAGS] = {1, 1, 1, 1, 1, 0, 1, 1, 0, 0};
- 
- char *
- getln(char *buf, int size, FILE *fp)
-@@ -135,7 +136,7 @@ usage(void)
- 	fprintf(stderr, "    -v          : verbose mode (debugging only)\n");
- 	fprintf(stderr,
- 		"    -r <file>   : read checksum or manifest from file\n");
--	fprintf(stderr, "    -[ugoamcde] : specify which fields to include in checksum calculation.\n");
-+	fprintf(stderr, "    -[ugoamcdxe]: specify which fields to include in checksum calculation.\n");
- 	fprintf(stderr, "         u      : include uid\n");
- 	fprintf(stderr, "         g      : include gid\n");
- 	fprintf(stderr, "         o      : include mode\n");
-@@ -143,9 +144,10 @@ usage(void)
- 	fprintf(stderr, "         a      : include atime\n");
- 	fprintf(stderr, "         c      : include ctime\n");
- 	fprintf(stderr, "         d      : include file data\n");
-+	fprintf(stderr, "         x      : include xattrs\n");
- 	fprintf(stderr, "         e      : include open errors (aborts otherwise)\n");
- 	fprintf(stderr, "         s      : include block structure (holes)\n");
--	fprintf(stderr, "    -[UGOAMCDES]: exclude respective field from calculation\n");
-+	fprintf(stderr, "    -[UGOAMCDXES]: exclude respective field from calculation\n");
- 	fprintf(stderr, "    -n          : reset all flags\n");
- 	fprintf(stderr, "    -N          : set all flags\n");
- 	fprintf(stderr, "    -x path     : exclude path when building checksum (multiple ok)\n");
-@@ -221,6 +223,106 @@ sum_to_string(sum_t *dst)
- }
- 
- int
-+namecmp(const void *aa, const void *bb)
-+{
-+	char * const *a = aa;
-+	char * const *b = bb;
-+
-+	return strcmp(*a, *b);
-+}
-+
-+int
-+sum_xattrs(int fd, sum_t *dst)
-+{
-+	ssize_t buflen;
-+	ssize_t len;
-+	char *buf;
-+	char *p;
-+	char **names = NULL;
-+	int num_xattrs = 0;
-+	int ret = 0;
-+	int i;
-+
-+	buflen = flistxattr(fd, NULL, 0);
-+	if (buflen < 0)
-+		return -errno;
-+	/* no xattrs exist */
-+	if (buflen == 0)
-+		return 0;
-+
-+	buf = malloc(buflen);
-+	if (!buf)
-+		return -ENOMEM;
-+
-+	buflen = flistxattr(fd, buf, buflen);
-+	if (buflen < 0) {
-+		ret = -errno;
-+		goto out;
-+	}
-+
-+	/*
-+	 * Keep the list of xattrs sorted, because the order in which they are
-+	 * listed is filesystem dependent, so we want to get the same checksum
-+	 * on different filesystems.
-+	 */
-+
-+	p = buf;
-+	len = buflen;
-+	while (len > 0) {
-+		int keylen;
-+
-+		keylen = strlen(p) + 1; /* +1 for NULL terminator */
-+		len -= keylen;
-+		p += keylen;
-+		num_xattrs++;
-+	}
-+
-+	names = malloc(sizeof(char *) * num_xattrs);
-+	if (!names) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+
-+	p = buf;
-+	for (i = 0; i < num_xattrs; i++) {
-+		names[i] = p;
-+		p += strlen(p) + 1; /* +1 for NULL terminator */
-+	}
-+
-+	qsort(names, num_xattrs, sizeof(char *), namecmp);
-+
-+	for (i = 0; i < num_xattrs; i++) {
-+		len = fgetxattr(fd, names[i], NULL, 0);
-+		if (len < 0) {
-+			ret = -errno;
-+			goto out;
-+		}
-+		sum_add(dst, names[i], strlen(names[i]));
-+		/* no value */
-+		if (len == 0)
-+			continue;
-+		p = malloc(len);
-+		if (!p) {
-+			ret = -ENOMEM;
-+			goto out;
-+		}
-+		len = fgetxattr(fd, names[i], p, len);
-+		if (len < 0) {
-+			ret = -errno;
-+			free(p);
-+			goto out;
-+		}
-+		sum_add(dst, p, len);
-+		free(p);
-+	}
-+out:
-+	free(buf);
-+	free(names);
-+
-+	return ret;
-+}
-+
-+int
- sum_file_data_permissive(int fd, sum_t *dst)
- {
- 	int ret;
-@@ -401,15 +503,6 @@ malformed:
- 		excess_file(fn);
- }
- 
--int
--namecmp(const void *aa, const void *bb)
--{
--	char * const *a = aa;
--	char * const *b = bb;
--
--	return strcmp(*a, *b);
--}
--
- void
- sum(int dirfd, int level, sum_t *dircs, char *path_prefix, char *path_in)
- {
-@@ -493,6 +586,28 @@ sum(int dirfd, int level, sum_t *dircs, char *path_prefix, char *path_in)
- 			sum_add_time(&meta, st.st_mtime);
- 		if (flags[FLAG_CTIME])
- 			sum_add_time(&meta, st.st_ctime);
-+		if (flags[FLAG_XATTRS] &&
-+		    (S_ISDIR(st.st_mode) || S_ISREG(st.st_mode))) {
-+			fd = openat(dirfd, namelist[i], 0);
-+			if (fd == -1 && flags[FLAG_OPEN_ERROR]) {
-+				sum_add_u64(&meta, errno);
-+			} else if (fd == -1) {
-+				fprintf(stderr, "open failed for %s/%s: %s\n",
-+					path_prefix, path, strerror(errno));
-+				exit(-1);
-+			} else {
-+				ret = sum_xattrs(fd, &meta);
-+				close(fd);
-+				if (ret < 0) {
-+					fprintf(stderr,
-+						"failed to read xattrs from "
-+						"%s/%s: %s\n",
-+						path_prefix, path,
-+						strerror(-ret));
-+					exit(-1);
-+				}
-+			}
-+		}
- 		if (S_ISDIR(st.st_mode)) {
- 			fd = openat(dirfd, namelist[i], 0);
- 			if (fd == -1 && flags[FLAG_OPEN_ERROR]) {
+The only thing I'd be worried about is performance for the non-livepatch
+users, but I guess those checks don't look very expensive.  And the x86
+unwinders are already pretty slow anyway...
+
 -- 
-2.11.0
-
+Josh

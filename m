@@ -1,33 +1,32 @@
-Return-Path: <SRS0=uOHe=SU=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=DdMj=SV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=unavailable autolearn_force=no
-	version=3.4.0
+	MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 778F6C10F14
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 22:45:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 75550C10F14
+	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Apr 2019 00:40:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5123320693
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Apr 2019 22:45:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4D7642186A
+	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Apr 2019 00:40:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726063AbfDRWo7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Apr 2019 18:44:59 -0400
-Received: from Galois.linutronix.de ([146.0.238.70]:39427 "EHLO
-        Galois.linutronix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725855AbfDRWo6 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Apr 2019 18:44:58 -0400
-Received: from pd9ef12d2.dip0.t-ipconnect.de ([217.239.18.210] helo=nanos)
-        by Galois.linutronix.de with esmtpsa (TLS1.2:DHE_RSA_AES_256_CBC_SHA256:256)
-        (Exim 4.80)
-        (envelope-from <tglx@linutronix.de>)
-        id 1hHFlT-0000Hv-O2; Fri, 19 Apr 2019 00:44:19 +0200
-Date:   Fri, 19 Apr 2019 00:44:17 +0200 (CEST)
-From:   Thomas Gleixner <tglx@linutronix.de>
-To:     Steven Rostedt <rostedt@goodmis.org>
-cc:     LKML <linux-kernel@vger.kernel.org>,
+        id S1726355AbfDSAkA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Apr 2019 20:40:00 -0400
+Received: from mail.kernel.org ([198.145.29.99]:60306 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725917AbfDSAkA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 18 Apr 2019 20:40:00 -0400
+Received: from oasis.local.home (cpe-66-24-58-225.stny.res.rr.com [66.24.58.225])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 51E6C2171F;
+        Fri, 19 Apr 2019 00:39:56 +0000 (UTC)
+Date:   Thu, 18 Apr 2019 20:39:54 -0400
+From:   Steven Rostedt <rostedt@goodmis.org>
+To:     Thomas Gleixner <tglx@linutronix.de>
+Cc:     LKML <linux-kernel@vger.kernel.org>,
         Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
         Andy Lutomirski <luto@kernel.org>,
         Alexander Potapenko <glider@google.com>,
@@ -61,57 +60,67 @@ cc:     LKML <linux-kernel@vger.kernel.org>,
         Rodrigo Vivi <rodrigo.vivi@intel.com>,
         linux-arch@vger.kernel.org
 Subject: Re: [patch V2 01/29] tracing: Cleanup stack trace code
-In-Reply-To: <20190418181938.2e2a9a04@gandalf.local.home>
-Message-ID: <alpine.DEB.2.21.1904190040510.3174@nanos.tec.linutronix.de>
-References: <20190418084119.056416939@linutronix.de>        <20190418084253.142712304@linutronix.de> <20190418181938.2e2a9a04@gandalf.local.home>
-User-Agent: Alpine 2.21 (DEB 202 2017-01-01)
+Message-ID: <20190418203954.631914cb@oasis.local.home>
+In-Reply-To: <alpine.DEB.2.21.1904190040510.3174@nanos.tec.linutronix.de>
+References: <20190418084119.056416939@linutronix.de>
+        <20190418084253.142712304@linutronix.de>
+        <20190418181938.2e2a9a04@gandalf.local.home>
+        <alpine.DEB.2.21.1904190040510.3174@nanos.tec.linutronix.de>
+X-Mailer: Claws Mail 3.17.3 (GTK+ 2.24.32; x86_64-pc-linux-gnu)
 MIME-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
-X-Linutronix-Spam-Score: -1.0
-X-Linutronix-Spam-Level: -
-X-Linutronix-Spam-Status: No , -1.0 points, 5.0 required,  ALL_TRUSTED=-1,SHORTCIRCUIT=-0.0001
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, 18 Apr 2019, Steven Rostedt wrote:
-> On Thu, 18 Apr 2019 10:41:20 +0200
-> Thomas Gleixner <tglx@linutronix.de> wrote:
+On Fri, 19 Apr 2019 00:44:17 +0200 (CEST)
+Thomas Gleixner <tglx@linutronix.de> wrote:
+
+> On Thu, 18 Apr 2019, Steven Rostedt wrote:
+> > On Thu, 18 Apr 2019 10:41:20 +0200
+> > Thomas Gleixner <tglx@linutronix.de> wrote:
+> >   
+> > > @@ -412,23 +404,20 @@ stack_trace_sysctl(struct ctl_table *tab
+> > >  		   void __user *buffer, size_t *lenp,
+> > >  		   loff_t *ppos)
+> > >  {
+> > > -	int ret;
+> > > +	int ret, was_enabled;  
+> > 
+> > One small nit. Could this be:
+> > 
+> > 	int was_enabled;
+> > 	int ret;
+> > 
+> > I prefer only joining variables that are related on the same line.
+> > Makes it look cleaner IMO.  
 > 
-> > @@ -412,23 +404,20 @@ stack_trace_sysctl(struct ctl_table *tab
-> >  		   void __user *buffer, size_t *lenp,
-> >  		   loff_t *ppos)
-> >  {
-> > -	int ret;
-> > +	int ret, was_enabled;
+> If you wish so. To me it's waste of screen space :)
+
+At least you didn't say it helps the compiler ;-)
+
 > 
-> One small nit. Could this be:
+> > >  
+> > >  	mutex_lock(&stack_sysctl_mutex);
+> > > +	was_enabled = !!stack_tracer_enabled;
+> > >    
+> > 
+> > Bah, not sure why I didn't do it this way to begin with. I think I
+> > copied something else that couldn't do it this way for some reason and
+> > didn't put any brain power behind the copy. :-/ But that was back in
+> > 2008 so I blame it on being "young and stupid" ;-)  
 > 
-> 	int was_enabled;
-> 	int ret;
+> The young part is gone for sure :)
+
+I purposely set you up for that response.
+
 > 
-> I prefer only joining variables that are related on the same line.
-> Makes it look cleaner IMO.
-
-If you wish so. To me it's waste of screen space :)
-
-> >  
-> >  	mutex_lock(&stack_sysctl_mutex);
-> > +	was_enabled = !!stack_tracer_enabled;
-> >  
+> > Other then the above nit and removing the unneeded +1 in max_entries:  
 > 
-> Bah, not sure why I didn't do it this way to begin with. I think I
-> copied something else that couldn't do it this way for some reason and
-> didn't put any brain power behind the copy. :-/ But that was back in
-> 2008 so I blame it on being "young and stupid" ;-)
+> s/+1/-1/
 
-The young part is gone for sure :)
+That was an ode to G+
 
-> Other then the above nit and removing the unneeded +1 in max_entries:
-
-s/+1/-1/
-
-Thanks,
-
-	tglx
+-- Steve

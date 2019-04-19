@@ -6,43 +6,43 @@ X-Spam-Status: No, score=-2.3 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 02790C282E1
-	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Apr 2019 22:54:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AFAECC282E0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Apr 2019 22:55:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BE764217F9
-	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Apr 2019 22:54:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 79569217F9
+	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Apr 2019 22:55:03 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="RJpXP6G5"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="i1Hy/GRW"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727663AbfDSWyj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 19 Apr 2019 18:54:39 -0400
+        id S1726072AbfDSWyW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 19 Apr 2019 18:54:22 -0400
 Received: from bombadil.infradead.org ([198.137.202.133]:49702 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726834AbfDSWy0 (ORCPT
+        with ESMTP id S1725280AbfDSWyV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 Apr 2019 18:54:26 -0400
+        Fri, 19 Apr 2019 18:54:21 -0400
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20170209; h=In-Reply-To:Content-Type:MIME-Version
         :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
         Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:
         Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
         List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-         bh=Z3FgX2qYeAVr6a7aOjZTKzD1LI5HjVL2uBhAKfg9pDs=; b=RJpXP6G57WJQo20w1oN6XV1Sv
-        W0L+9FKiKEGCXF0UITD24ixi+tPLIpDsoo3ae5bCC4wswL29O/O1INxloaH4aS+LS5yudtvbT81Fe
-        Wyjy7ZPOBCxw1Isgsz4PXKHIt/FoNeftgsdcHKhkwrLmW0UrqT9w+USQ4dwLxmPbn84yeQGclO3a6
-        xNsCQIrNih4rri7LJVSPoidSd3rDLti1c9VgyWRiS/K6aGXChzk762fRVgxajeZs/pUD/y03P1xNR
-        3LO1qv4gn1QkLcarsdl9Pi02ID3DDYmPnYB9iH/StdK1D5dChx2YdtqtZ/iCpQ/j41edlnb+n3hiR
-        7ZbFFPYzQ==;
-Received: from [92.65.108.250] (helo=worktop.programming.kicks-ass.net)
+         bh=L7eq8Aug6+D0Uzgmn7vgZITr6hThHMPewFsEW47cNZg=; b=i1Hy/GRW9HiWiapoFoRTCdgu1
+        cUt7Er7sr71bgd43+dYv+n0Lv5GqnvJ+fSpYP2kjtQcZK4KSH9eqZMuPMywNyKvmhH64/AJZF28Kd
+        AlhoxD9/xO4V7UsOg/7MAE2EeVnrnoWM0Pi7ybOHHUHP44EMSsIwE6Jwu+NXpJ/AgQnIsAxNgPdAJ
+        Ota/ejkQQY1W48qZZdy3Q4RNzTzjM7hk86diK53SIfg/s2qF6MI2J0OScfSmfawFdDLDzngU6/tDG
+        13MF/x52A68J+MK67YWX2NX2H2bIpQcWWr4GQXNqFjTBedeNIaoV6M4g88Nvr+yKVzWJBaI25hvyv
+        9aVlwsorw==;
+Received: from j217100.upc-j.chello.nl ([24.132.217.100] helo=hirez.programming.kicks-ass.net)
         by bombadil.infradead.org with esmtpsa (Exim 4.90_1 #2 (Red Hat Linux))
-        id 1hHPUT-0001vd-67; Fri, 19 Apr 2019 09:07:25 +0000
-Received: by worktop.programming.kicks-ass.net (Postfix, from userid 1000)
-        id 0D676984ED8; Fri, 19 Apr 2019 11:07:18 +0200 (CEST)
-Date:   Fri, 19 Apr 2019 11:07:17 +0200
+        id 1hHNXI-00007w-SC; Fri, 19 Apr 2019 07:02:13 +0000
+Received: by hirez.programming.kicks-ass.net (Postfix, from userid 1000)
+        id 5B5DB29B52F42; Fri, 19 Apr 2019 09:02:11 +0200 (CEST)
+Date:   Fri, 19 Apr 2019 09:02:11 +0200
 From:   Peter Zijlstra <peterz@infradead.org>
 To:     Thomas Gleixner <tglx@linutronix.de>
-Cc:     LKML <linux-kernel@vger.kernel.org>,
-        Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
+Cc:     Josh Poimboeuf <jpoimboe@redhat.com>,
+        LKML <linux-kernel@vger.kernel.org>, x86@kernel.org,
         Andy Lutomirski <luto@kernel.org>,
         Steven Rostedt <rostedt@goodmis.org>,
         Alexander Potapenko <glider@google.com>,
@@ -75,56 +75,48 @@ Cc:     LKML <linux-kernel@vger.kernel.org>,
         Daniel Vetter <daniel@ffwll.ch>,
         Rodrigo Vivi <rodrigo.vivi@intel.com>
 Subject: Re: [patch V2 28/29] stacktrace: Provide common infrastructure
-Message-ID: <20190419090717.GN7905@worktop.programming.kicks-ass.net>
+Message-ID: <20190419070211.GL4038@hirez.programming.kicks-ass.net>
 References: <20190418084119.056416939@linutronix.de>
  <20190418084255.652003111@linutronix.de>
- <20190419071843.GM4038@hirez.programming.kicks-ass.net>
- <alpine.DEB.2.21.1904191031390.3174@nanos.tec.linutronix.de>
+ <20190418145201.mjzyqbmkjcghqzex@treble>
+ <alpine.DEB.2.21.1904181734200.3174@nanos.tec.linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <alpine.DEB.2.21.1904191031390.3174@nanos.tec.linutronix.de>
+In-Reply-To: <alpine.DEB.2.21.1904181734200.3174@nanos.tec.linutronix.de>
 User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Apr 19, 2019 at 10:32:30AM +0200, Thomas Gleixner wrote:
-> On Fri, 19 Apr 2019, Peter Zijlstra wrote:
-> > On Thu, Apr 18, 2019 at 10:41:47AM +0200, Thomas Gleixner wrote:
-> > 
-> > > +typedef bool (*stack_trace_consume_fn)(void *cookie, unsigned long addr,
-> > > +                                      bool reliable);
-> > 
-> > > +void arch_stack_walk(stack_trace_consume_fn consume_entry, void *cookie,
-> > > +		     struct task_struct *task, struct pt_regs *regs);
-> > > +int arch_stack_walk_reliable(stack_trace_consume_fn consume_entry, void *cookie,
-> > > +			     struct task_struct *task);
-> > 
-> > This bugs me a little; ideally the _reliable() thing would not exists.
-> > 
-> > Thomas said that the existing __save_stack_trace_reliable() is different
-> > enough for the unification to be non-trivial, but maybe Josh can help
-> > out?
-> > 
-> > >From what I can see the biggest significant differences are:
-> > 
-> >  - it looks at the regs sets on the stack and for FP bails early
-> >  - bails for khreads and idle (after it does all the hard work!?!)
-> > 
-> > The first (FP checking for exceptions) should probably be reflected in
-> > consume_fn(.reliable) anyway -- although that would mean a lot of extra
-> > '?' entries where there are none today.
-> > 
-> > And the second (KTHREAD/IDLE) is something that the generic code can
-> > easily do before calling into the arch unwinder.
+On Thu, Apr 18, 2019 at 05:42:55PM +0200, Thomas Gleixner wrote:
+> On Thu, 18 Apr 2019, Josh Poimboeuf wrote:
+
+> > Another idea I had (but never got a chance to work on) was to extend the
+> > x86 unwind interface to all arches.  So instead of the callbacks, each
+> > arch would implement something like this API:
+
+> I surely thought about that, but after staring at all incarnations of
+> arch/*/stacktrace.c I just gave up.
 > 
-> And looking at the powerpc version of it, that has even more interesting
-> extra checks in that function.
+> Aside of that quite some archs already have callback based unwinders
+> because they use them for more than stacktracing and just have a single
+> implementation of that loop.
+> 
+> I'm fine either way. We can start with x86 and then let archs convert over
+> their stuff, but I wouldn't hold my breath that this will be completed in
+> the forseeable future.
 
-Right, but not fundamentally different from determining @reliable I
-think.
+I suggested the same to Thomas early on, and I even spend the time to
+convert some $random arch to the iterator interface, and while it is
+indeed entirely feasible, it is _far_ more work.
 
-Anyway, it would be good if someone knowledgable could have a look at
-this.
+The callback thing OTOH is flexible enough to do what we want to do now,
+and allows converting most archs to it without too much pain (as Thomas
+said, many archs are already in this form and only need minor API
+adjustments), which gets us in a far better place than we are now.
+
+And we can always go to iterators later on. But I think getting the
+generic unwinder improved across all archs is a really important first
+step here.

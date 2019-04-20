@@ -7,55 +7,55 @@ X-Spam-Status: No, score=-9.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A6F7C282DD
-	for <linux-btrfs@archiver.kernel.org>; Sat, 20 Apr 2019 11:49:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 16316C282E2
+	for <linux-btrfs@archiver.kernel.org>; Sat, 20 Apr 2019 11:49:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 55C042183F
-	for <linux-btrfs@archiver.kernel.org>; Sat, 20 Apr 2019 11:49:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D773A2183F
+	for <linux-btrfs@archiver.kernel.org>; Sat, 20 Apr 2019 11:49:18 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="jJc1ZtWZ"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="XTdTqZMk"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728169AbfDTLtQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 20 Apr 2019 07:49:16 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:40314 "EHLO
+        id S1728188AbfDTLtR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 20 Apr 2019 07:49:17 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:40332 "EHLO
         userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727493AbfDTLtP (ORCPT
+        with ESMTP id S1727977AbfDTLtQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 20 Apr 2019 07:49:15 -0400
+        Sat, 20 Apr 2019 07:49:16 -0400
 Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x3KBnE61057583
-        for <linux-btrfs@vger.kernel.org>; Sat, 20 Apr 2019 11:49:14 GMT
+        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x3KBn39v057534
+        for <linux-btrfs@vger.kernel.org>; Sat, 20 Apr 2019 11:49:15 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
  date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=corp-2018-07-02;
- bh=Gsx3jealNn/J5p9TasixiI0nCoc+H6cPf9Fw6lx+pPs=;
- b=jJc1ZtWZIOwkTYsEc7jvjcguLjHMxwn5hlNiCQQGiPpTRjIY1qmuDaHjykC9AXy82Fxk
- d26DSIBWtgHrTIEcXLkyMTDBmm5FYgZd1np82JFPJuyJ1hCBAhii2Z/i/oB/ot4ZZAVG
- rqEfGH9btyhqNyB33Lvic6d0R+EJi9qw0Dyk1I3SGxgMSR6piBv5DqURXBmJ8oJ9bM8n
- 64jPxbeVxV4sO1ltN2iAVkIbctR66Xmk8m0w+1LnNPAKQGldyeamqxcoWYkzrqe9VI6w
- J4bOpCNDOlS3A1q+QLInTVI0yNKTyZfEbp4tDwk3OdNUwwHFEEoAQ5sGncIXoCppUmL/ Kg== 
-Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
-        by userp2120.oracle.com with ESMTP id 2ryv2prrjt-1
+ bh=W8i+l7hsY21hE/yjxGeXW8Jb94nnEWUtYIXW3GMiAFw=;
+ b=XTdTqZMk+3RglWPfYdZjZ8pRFdbhpAVPTYLq4oo35XDhiDDkKRZ+UzPeUSA0edeEy8xh
+ QjXnrpwf/lYrqePa7sQu243YTntJv1ZAKbFB+zB45hIAuwMzpRSIwYpgSjGs5WnS2zfn
+ gCh5JmAVxf0jL970OhW6CB4jZPbM9zv5TB+F/wDdZ/S/TtIQsFuxY+KkQ3h+XrnOuuEc
+ EURSGyO9uSgzmWz36v/6PoEhG8Duk+Yq/oaI6PP6bV4aN5v+2fd5zIZz+mAoheRaDPQx
+ N78LJo6/VqZurtrb+BElctUliYtLmfIWov+qBTFtB3L04nRZU4NTH2sLFVyfigzuxSTS sg== 
+Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
+        by userp2120.oracle.com with ESMTP id 2ryv2prrjv-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Sat, 20 Apr 2019 11:49:14 +0000
-Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
-        by aserp3020.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x3KBmTfM037012
-        for <linux-btrfs@vger.kernel.org>; Sat, 20 Apr 2019 11:49:13 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserp3020.oracle.com with ESMTP id 2ryu803awx-1
+        for <linux-btrfs@vger.kernel.org>; Sat, 20 Apr 2019 11:49:15 +0000
+Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
+        by userp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x3KBn8PX002540
+        for <linux-btrfs@vger.kernel.org>; Sat, 20 Apr 2019 11:49:15 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by userp3030.oracle.com with ESMTP id 2ryrhqxf59-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Sat, 20 Apr 2019 11:49:13 +0000
+        for <linux-btrfs@vger.kernel.org>; Sat, 20 Apr 2019 11:49:15 +0000
 Received: from abhmp0014.oracle.com (abhmp0014.oracle.com [141.146.116.20])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x3KBnDt2027904
-        for <linux-btrfs@vger.kernel.org>; Sat, 20 Apr 2019 11:49:13 GMT
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x3KBnE32022342
+        for <linux-btrfs@vger.kernel.org>; Sat, 20 Apr 2019 11:49:14 GMT
 Received: from localhost.localdomain (/116.87.143.221)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Sat, 20 Apr 2019 04:49:12 -0700
+        with ESMTP ; Sat, 20 Apr 2019 04:49:14 -0700
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 03/10] btrfs: start transaction in btrfs_ioctl_setflags()
-Date:   Sat, 20 Apr 2019 19:48:53 +0800
-Message-Id: <20190420114900.15472-4-anand.jain@oracle.com>
+Subject: [PATCH 04/10] btrfs: drop useless inode i_flags copy and restore
+Date:   Sat, 20 Apr 2019 19:48:54 +0800
+Message-Id: <20190420114900.15472-5-anand.jain@oracle.com>
 X-Mailer: git-send-email 2.20.1 (Apple Git-117)
 In-Reply-To: <20190420114900.15472-1-anand.jain@oracle.com>
 References: <20190420114900.15472-1-anand.jain@oracle.com>
@@ -77,107 +77,48 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Inode attribute can be set through the FS_IOC_SETFLAGS ioctl.
-This flags also includes compression attribute for which we would
-set/reset the compression extended attribute. While doing this there
-is a bit of duplicate code, the following things happens twice-
-start/end_transaction, inode_inc_iversion(), current_time update to
-inode->i_ctime, and btrfs_update_inode(). These are updated both at
-btrfs_ioctl_setflags() and btrfs_set_props() as well.
-
-This patch merges these two duplicate codes at btrfs_ioctl_setflags().
+The patch (btrfs: start transaction in btrfs_ioctl_setflags())
+used btrfs_set_prop() instead of btrfs_set_prop_trans() by which now
+the inode::i_flags update functions such as
+btrfs_sync_inode_flags_to_i_flags() and btrfs_update_inode() is called
+in btrfs_ioctl_setflags() instead of
+btrfs_set_prop_trans()->btrfs_setxattr() as earlier. So the inode::i_flags
+remains unmodified until the thread has checked all the conditions. So drop
+the saved inode::i_flags in out_i_flags.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
-RFC->v1: call btrfs_transaction_abort() at the place of error return
- 
- fs/btrfs/ioctl.c | 41 +++++++++++++++++++++--------------------
- 1 file changed, 21 insertions(+), 20 deletions(-)
+ fs/btrfs/ioctl.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 63e6e2f5b659..fc3f75c9a210 100644
+index fc3f75c9a210..1834b576d1cb 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -192,6 +192,7 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+@@ -190,7 +190,6 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+ 	unsigned int fsflags, old_fsflags;
+ 	int ret;
  	u64 old_flags;
- 	unsigned int old_i_flags;
+-	unsigned int old_i_flags;
  	umode_t mode;
-+	const char *comp = NULL;
+ 	const char *comp = NULL;
  
- 	if (!inode_owner_or_capable(inode))
- 		return -EPERM;
-@@ -283,14 +284,7 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 	if (fsflags & FS_NOCOMP_FL) {
- 		binode->flags &= ~BTRFS_INODE_COMPRESS;
- 		binode->flags |= BTRFS_INODE_NOCOMPRESS;
--
--		/* set no-compression no need to validate prop here */
--		ret = btrfs_set_prop_trans(inode, "btrfs.compression", NULL,
--					   0, 0);
--		if (ret && ret != -ENODATA)
--			goto out_drop;
- 	} else if (fsflags & FS_COMPR_FL) {
--		const char *comp;
+@@ -214,7 +213,6 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+ 	inode_lock(inode);
  
- 		if (IS_SWAPFILE(inode)) {
- 			ret = -ETXTBSY;
-@@ -300,36 +294,43 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 		binode->flags |= BTRFS_INODE_COMPRESS;
- 		binode->flags &= ~BTRFS_INODE_NOCOMPRESS;
+ 	old_flags = binode->flags;
+-	old_i_flags = inode->i_flags;
+ 	mode = inode->i_mode;
  
--		/* compress_type is already validated during mount options */
- 		comp = btrfs_compress_type2str(fs_info->compress_type);
- 		if (!comp || comp[0] == 0)
- 			comp = btrfs_compress_type2str(BTRFS_COMPRESS_ZLIB);
--
--		ret = btrfs_set_prop_trans(inode, "btrfs.compression", comp,
--					   strlen(comp), 0);
--		if (ret)
--			goto out_drop;
--
- 	} else {
--		/* reset prop, no need of validate prop here */
--		ret = btrfs_set_prop_trans(inode, "btrfs.compression", NULL,
--					   0, 0);
--		if (ret && ret != -ENODATA)
--			goto out_drop;
- 		binode->flags &= ~(BTRFS_INODE_COMPRESS | BTRFS_INODE_NOCOMPRESS);
- 	}
- 
--	trans = btrfs_start_transaction(root, 1);
-+	trans = btrfs_start_transaction(root, 3);
- 	if (IS_ERR(trans)) {
- 		ret = PTR_ERR(trans);
- 		goto out_drop;
- 	}
- 
-+	if (comp) {
-+		ret = btrfs_set_prop(trans, inode, "btrfs.compression", comp,
-+				     strlen(comp), 0);
-+		if (ret) {
-+			btrfs_abort_transaction(trans, ret);
-+			goto out_end_trans;
-+		}
-+		set_bit(BTRFS_INODE_COPY_EVERYTHING,
-+			&BTRFS_I(inode)->runtime_flags);
-+	} else {
-+		ret = btrfs_set_prop(trans, inode, "btrfs.compression", NULL,
-+				     0, 0);
-+		if (ret && ret != -ENODATA) {
-+			btrfs_abort_transaction(trans, ret);
-+			goto out_end_trans;
-+		}
-+	}
-+
- 	btrfs_sync_inode_flags_to_i_flags(inode);
- 	inode_inc_iversion(inode);
- 	inode->i_ctime = current_time(inode);
- 	ret = btrfs_update_inode(trans, root, inode);
- 
-+ out_end_trans:
- 	btrfs_end_transaction(trans);
+ 	fsflags = btrfs_mask_fsflags_for_type(inode, fsflags);
+@@ -335,7 +333,6 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
   out_drop:
  	if (ret) {
+ 		binode->flags = old_flags;
+-		inode->i_flags = old_i_flags;
+ 	}
+ 
+  out_unlock:
 -- 
 2.20.1 (Apple Git-117)
 

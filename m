@@ -7,55 +7,55 @@ X-Spam-Status: No, score=-9.2 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0F232C282E3
-	for <linux-btrfs@archiver.kernel.org>; Sat, 20 Apr 2019 11:49:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 33FC0C282DD
+	for <linux-btrfs@archiver.kernel.org>; Sat, 20 Apr 2019 11:49:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D13E32183F
-	for <linux-btrfs@archiver.kernel.org>; Sat, 20 Apr 2019 11:49:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 013672183F
+	for <linux-btrfs@archiver.kernel.org>; Sat, 20 Apr 2019 11:49:24 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="r4A56liD"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="d5mKlOl7"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728210AbfDTLtU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 20 Apr 2019 07:49:20 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:40372 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728190AbfDTLtU (ORCPT
+        id S1728226AbfDTLtW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 20 Apr 2019 07:49:22 -0400
+Received: from userp2130.oracle.com ([156.151.31.86]:36894 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728190AbfDTLtW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 20 Apr 2019 07:49:20 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x3KBnAxu057555
-        for <linux-btrfs@vger.kernel.org>; Sat, 20 Apr 2019 11:49:18 GMT
+        Sat, 20 Apr 2019 07:49:22 -0400
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x3KBn6xb043495
+        for <linux-btrfs@vger.kernel.org>; Sat, 20 Apr 2019 11:49:20 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
  date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=corp-2018-07-02;
- bh=Gom96yC4GG/uaSuw0KEX6LSdHQ+BVlJjH/HRDm78keM=;
- b=r4A56liDVKvcXNkbiejPLVWUBGS0LKBt+hmP9pyTrDQBPbuWP1J/CSM+qkDfKDCQTQmT
- nXO6nusDG6Z7ndEYM7SM+b98qqcbWaU/0UseZYDMv582izpD7k7PmC+8BKajIUkoPNYc
- Xjs10qsh2tCjG6jTax7fgpYvRM+YJcVJ5HiL1QN+Wp1pInp/MSz5JpPbTONu2qh1kkt4
- 6Mxi5kPCFANCCHfkkv5H7ToxxGF6fxfBDqK+1/NsrzErjDVWDlZb1CHG02NwMJulzjER
- AirIp4TQxYcA3JmnjGB4KXZV4k08V6qs6Ni7+9lw4uLD6qLVhGCUE36hGN4uNXxRPzTK ng== 
-Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
-        by userp2120.oracle.com with ESMTP id 2ryv2prrk2-1
+ bh=JMg0oIpzJqA10zVwdAn5yw6HsZtrSixPJyp+iQsgesI=;
+ b=d5mKlOl7XZ+QHmdPLr336hpTNdiZOm07bgK2tRt4gzrXUx6vQC3o/EYl1ULrXDDBRCVm
+ 0JariL2QP2yyb9IbllwFo1FjibIbWtcXsq4JEZqzsa50SzFUsho5zIsRYrrwB5A2WiJ6
+ YOBNAh1Tc00kmh91qQGCj4n8SGAsDg6xEBZO18TctLwIlCivwelN8nCVREUuUeW+y2yI
+ pn9JGnidelLNGPG/zuXtWB5kTxkM8nktfv1otASpjI5YvYvOZWhClknsMTcOnfVtCYjM
+ 05ulGQMZzUrvqYj8uHTG31za4cVlV1o5ONSzEglClr6F69LcLShC0Iz1pKiymNzdN6T9 SA== 
+Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
+        by userp2130.oracle.com with ESMTP id 2rytusgw4x-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Sat, 20 Apr 2019 11:49:18 +0000
-Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
-        by userp3020.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x3KBn2CC155754
-        for <linux-btrfs@vger.kernel.org>; Sat, 20 Apr 2019 11:49:18 GMT
+        for <linux-btrfs@vger.kernel.org>; Sat, 20 Apr 2019 11:49:20 +0000
+Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
+        by aserp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x3KBmqJm003694
+        for <linux-btrfs@vger.kernel.org>; Sat, 20 Apr 2019 11:49:19 GMT
 Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userp3020.oracle.com with ESMTP id 2rytrh3m38-1
+        by aserp3030.oracle.com with ESMTP id 2rysf8vqj2-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Sat, 20 Apr 2019 11:49:18 +0000
+        for <linux-btrfs@vger.kernel.org>; Sat, 20 Apr 2019 11:49:19 +0000
 Received: from abhmp0014.oracle.com (abhmp0014.oracle.com [141.146.116.20])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x3KBnH4J027920
-        for <linux-btrfs@vger.kernel.org>; Sat, 20 Apr 2019 11:49:17 GMT
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x3KBnJgB027923
+        for <linux-btrfs@vger.kernel.org>; Sat, 20 Apr 2019 11:49:19 GMT
 Received: from localhost.localdomain (/116.87.143.221)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Sat, 20 Apr 2019 04:49:16 -0700
+        with ESMTP ; Sat, 20 Apr 2019 04:49:18 -0700
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 06/10] btrfs: drop old_fsflags in btrfs_ioctl_setflags
-Date:   Sat, 20 Apr 2019 19:48:56 +0800
-Message-Id: <20190420114900.15472-7-anand.jain@oracle.com>
+Subject: [PATCH 07/10] btrfs: drop local copy of inode i_mode
+Date:   Sat, 20 Apr 2019 19:48:57 +0800
+Message-Id: <20190420114900.15472-8-anand.jain@oracle.com>
 X-Mailer: git-send-email 2.20.1 (Apple Git-117)
 In-Reply-To: <20190420114900.15472-1-anand.jain@oracle.com>
 References: <20190420114900.15472-1-anand.jain@oracle.com>
@@ -77,38 +77,53 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-btrfs_inode_flags_to_fsflags() is copied into %old_fsflags and used only
-once. Instead used it directly.
+There isn't real use of making struct inode::i_mode a local copy, it saves
+a dereference one time, not much. Just use it directly.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/ioctl.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ fs/btrfs/ioctl.c | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index b87a249642f7..e83412d7363a 100644
+index e83412d7363a..142fcdaf6a93 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -187,7 +187,7 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 	struct btrfs_inode *binode = BTRFS_I(inode);
- 	struct btrfs_root *root = binode->root;
+@@ -189,7 +189,6 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
  	struct btrfs_trans_handle *trans;
--	unsigned int fsflags, old_fsflags;
-+	unsigned int fsflags;
+ 	unsigned int fsflags;
  	int ret;
- 	umode_t mode;
+-	umode_t mode;
  	const char *comp = NULL;
-@@ -215,8 +215,8 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 	mode = inode->i_mode;
+ 	u32 binode_flags = binode->flags;
  
+@@ -212,8 +211,6 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+ 
+ 	inode_lock(inode);
+ 
+-	mode = inode->i_mode;
+-
  	fsflags = btrfs_mask_fsflags_for_type(inode, fsflags);
--	old_fsflags = btrfs_inode_flags_to_fsflags(binode->flags);
--	if ((fsflags ^ old_fsflags) & (FS_APPEND_FL | FS_IMMUTABLE_FL)) {
-+	if ((fsflags ^ btrfs_inode_flags_to_fsflags(binode->flags)) &
-+	    (FS_APPEND_FL | FS_IMMUTABLE_FL)) {
- 		if (!capable(CAP_LINUX_IMMUTABLE)) {
- 			ret = -EPERM;
- 			goto out_unlock;
+ 	if ((fsflags ^ btrfs_inode_flags_to_fsflags(binode->flags)) &
+ 	    (FS_APPEND_FL | FS_IMMUTABLE_FL)) {
+@@ -248,7 +245,7 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+ 	else
+ 		binode_flags &= ~BTRFS_INODE_DIRSYNC;
+ 	if (fsflags & FS_NOCOW_FL) {
+-		if (S_ISREG(mode)) {
++		if (S_ISREG(inode->i_mode)) {
+ 			/*
+ 			 * It's safe to turn csums off here, no extents exist.
+ 			 * Otherwise we want the flag to reflect the real COW
+@@ -264,7 +261,7 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+ 		/*
+ 		 * Revert back under same assumptions as above
+ 		 */
+-		if (S_ISREG(mode)) {
++		if (S_ISREG(inode->i_mode)) {
+ 			if (inode->i_size == 0)
+ 				binode_flags &= ~(BTRFS_INODE_NODATACOW |
+ 						  BTRFS_INODE_NODATASUM);
 -- 
 2.20.1 (Apple Git-117)
 

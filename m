@@ -2,347 +2,299 @@ Return-Path: <SRS0=kwY/=SZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham
+X-Spam-Status: No, score=-5.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,URIBL_BLOCKED autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2303EC10F03
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Apr 2019 23:06:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 96C60C10F03
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Apr 2019 23:49:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D4124206BA
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Apr 2019 23:06:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 437DF20B1F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Apr 2019 23:49:18 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="G86JaaXI"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727045AbfDWXG5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 23 Apr 2019 19:06:57 -0400
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:44536 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1726325AbfDWXG5 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Apr 2019 19:06:57 -0400
-Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
-        id 340502CAC8B; Tue, 23 Apr 2019 19:06:53 -0400 (EDT)
-Date:   Tue, 23 Apr 2019 19:06:51 -0400
-From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To:     linux-btrfs@vger.kernel.org
-Subject: Global reserve and ENOSPC while deleting snapshots on 5.0.9
-Message-ID: <20190423230649.GB11530@hungrycats.org>
+        id S1728398AbfDWXtR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 23 Apr 2019 19:49:17 -0400
+Received: from mout.gmx.net ([212.227.15.18]:54999 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727045AbfDWXtQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 23 Apr 2019 19:49:16 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1556063351;
+        bh=I0N9uvNrCfWmpGn+erQqyLQLvnzUIvhbs+R4xiD+HjA=;
+        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
+        b=G86JaaXIL2uGElXVJ+0L2Gfan8a1XMbvv2aE5YL/a5oi/SbUF2k9VQQKLtCAcyLuY
+         tIilo/xD7C4e7eUaJrFrzQUG63E0CbXCqqQn9/wUOdc8YdznSw+3FoCpIcD0xw1H/x
+         kJkCqevU4vTmMhCwxat8hG30EDm39EK2kcmEDueo=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([52.197.165.36]) by mail.gmx.com (mrgmx005
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MzQkE-1gx23y10vA-00vM7h; Wed, 24
+ Apr 2019 01:49:11 +0200
+Subject: Re: fallocate does not prevent ENOSPC on write
+To:     fdmanana@gmail.com
+Cc:     dsterba@suse.cz, Jakob Unterwurzacher <jakobunt@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <CAPv9Zmk46As_P9Gyf_icET53xRda63h7iC1meES9xbdDEt9qow@mail.gmail.com>
+ <f64c6b65-5f21-48eb-6e1e-db30cbe57545@gmx.com>
+ <20190423113302.GS20156@twin.jikos.cz>
+ <a82d7cdb-206e-d141-e53b-4836b4b150de@gmx.com>
+ <CAL3q7H7dzVQFRcTzBNNhCU69i5Yi4xStT14XjRw_vivH6QWnRw@mail.gmail.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <8a3b5e64-1df7-447d-3b07-e276b8d65b40@gmx.com>
+Date:   Wed, 24 Apr 2019 07:49:02 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.6.1
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="K8nIJk4ghYZn606h"
-Content-Disposition: inline
-User-Agent: Mutt/1.10.1 (2018-07-13)
+In-Reply-To: <CAL3q7H7dzVQFRcTzBNNhCU69i5Yi4xStT14XjRw_vivH6QWnRw@mail.gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="5W1WV3NIL54K70kg6tvQBCKiUuu3qEJjt"
+X-Provags-ID: V03:K1:Hqm655qkBzLXuNsEdt/XrPr43e1geuGEMaLe5g5RAZ6jnlyeS4y
+ isFI5gEbD2CSBi52hPHlPd6C1vjBe1yzexaN5HEMhThgofrYtd49NYoWB2A7fUG8DejJw5+
+ BDZln/6IZahzTA5mg4hp72xxqy2hm8HfqVIoUf8ul6WcZ731WVEJK1kPfw0JYWxIGx9uWnF
+ xDHjAYJrIHoEWbK5p+/gw==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:QPSyl/knphI=:83uhWx0FdoQuKpZbsr+qe+
+ sofZZ3INfukeRMSnL09GTF2Ve73XaaAC3EbY6DtodOq3t/FWbSbqrkH1HNCMIlW/jcECgnOXb
+ nOlctlUqhnHNGt/HVP1+6Z2bcdMJVcsiwYEOjlt8JswBo6u/webp+jbvGmzPc8drqFM+DVWei
+ Am5a3yuMgNBeEzN/uqeM+odL0mf0WOhS2lXFG4pvDP9oUHqvcBVw03/aUhPRfzQvoKIsVA2cm
+ U6TWdA9ujLbh5Z9cZ9xhUaoI38S/OlWm2fadjzailYzaWNOT76WTPVIuZe5s45H/YI9nt9Ms8
+ 786dQ7WXkCXMhFzQ+vzxpy2SYiy5Ep22OsC83rpcR6Wta/4xDcZNwAfP9dFUoK3Lo5RZ8URN/
+ AeITi9hV+XZiNNtJ1J1bYiZFmpT7jxNBO1uk1S8stkLhk4mHm5D4bClrg1ht5bR6Eiqb56rLi
+ eK3zzcZV/LQEVpDHvvKi5fcZ2ZBZFFRBeybz5Ihr0pCqP+iabXQHbvycxIGF2ED43NGAtEk7Y
+ XavEZex2hrIkQbWVyUHiUFfkdW5CXM/On//TEkmuFQ9EBtC73NKT/T7EIRBcqsiEHOwggD5wf
+ 29CPAYAfCtwiP1xYdt70uct5grZx/gYCuJsez0pIsY2sicjMSt4VUYqu5cKjvIwnQiEDxeejA
+ x8FGEM6hUkX+6e5lqjd7tR+dzuFB0X9TUvEzpr54VHFfGJkpdCZqogZaDckjtV1TsD4lvsYA8
+ rLMFYhz+E/iOCHJkPpuOq5faayCnxPBiYXnHdNbdZrOwI/1cWPqX2WaLqdbFSSlDNfVbuMvc2
+ wADz+NppRdUJWF94LUaoauUTYxXx9FtkOCYhLkgiAPDmdOAQ4S0bn+MzH4LMADtI7kXlmcQaR
+ W2Mj+nvH5n1LJMioHQz3e1wW3dt3wpqAtjrmuDXrtHC0pv8+wWIbM2pi9HI7xW
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--5W1WV3NIL54K70kg6tvQBCKiUuu3qEJjt
+Content-Type: multipart/mixed; boundary="hcDjobzV2fpMbI5ibG6aibgwA1TIblRnP";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: fdmanana@gmail.com
+Cc: dsterba@suse.cz, Jakob Unterwurzacher <jakobunt@gmail.com>,
+ linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <8a3b5e64-1df7-447d-3b07-e276b8d65b40@gmx.com>
+Subject: Re: fallocate does not prevent ENOSPC on write
+References: <CAPv9Zmk46As_P9Gyf_icET53xRda63h7iC1meES9xbdDEt9qow@mail.gmail.com>
+ <f64c6b65-5f21-48eb-6e1e-db30cbe57545@gmx.com>
+ <20190423113302.GS20156@twin.jikos.cz>
+ <a82d7cdb-206e-d141-e53b-4836b4b150de@gmx.com>
+ <CAL3q7H7dzVQFRcTzBNNhCU69i5Yi4xStT14XjRw_vivH6QWnRw@mail.gmail.com>
+In-Reply-To: <CAL3q7H7dzVQFRcTzBNNhCU69i5Yi4xStT14XjRw_vivH6QWnRw@mail.gmail.com>
 
---K8nIJk4ghYZn606h
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+--hcDjobzV2fpMbI5ibG6aibgwA1TIblRnP
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
-I had a test filesystem that ran out of unallocated space, then ran
-out of metadata space during a snapshot delete, and forced readonly.
-The workload before the failure was a lot of rsync and bees dedupe
-combined with random snapshot creates and deletes.
 
-I tried the usual fix strategies:
 
-	1.  Immediately after mount, try to balance to free space for
-	metadata
+On 2019/4/23 =E4=B8=8B=E5=8D=8810:50, Filipe Manana wrote:
+> On Tue, Apr 23, 2019 at 1:14 PM Qu Wenruo <quwenruo.btrfs@gmx.com> wrot=
+e:
+>>
+>>
+>>
+>> On 2019/4/23 =E4=B8=8B=E5=8D=887:33, David Sterba wrote:
+>>> On Tue, Apr 23, 2019 at 10:16:32AM +0800, Qu Wenruo wrote:
+>>>> On 2019/4/23 =E4=B8=8A=E5=8D=885:09, Jakob Unterwurzacher wrote:
+>>>>> I have a user who is reporting ENOSPC errors when running gocryptfs=
+ on
+>>>>> top of btrfs (ticket: https://github.com/rfjakob/gocryptfs/issues/3=
+95 ).
+>>>>>
+>>>>> What is interesting is that the error gets thrown at write time. Th=
+is
+>>>>> is not supposed to happen, because gocryptfs does
+>>>>>
+>>>>>     fallocate(..., FALLOC_FL_KEEP_SIZE, ...)
+>>>>>
+>>>>> before writing.
+>>>>>
+>>>>> I wrote a minimal reproducer in C: https://github.com/rfjakob/fallo=
+cate_write
+>>>>> This is what it looks like on ext4:
+>>>>>
+>>>>>     $ ../fallocate_write/fallocate_write
+>>>>>     reading from /dev/urandom
+>>>>>     writing to ./blob.379Q8P
+>>>>>     writing blocks of 132096 bytes each
+>>>>>     [...]
+>>>>>     fallocate failed: No space left on device
+>>>>>
+>>>>> On btrfs, it will instead look like this:
+>>>>>
+>>>>>     [...]
+>>>>>     pwrite failed: No space left on device
+>>>>>
+>>>>> Is this a bug in btrfs' fallocate implementation or am I reading th=
+e
+>>>>> guarantees that fallocate gives me wrong?
+>>>>
+>>>> Since v4.7, this commit changed the how btrfs do NodataCOW check:
+>>>> c6887cd11149 ("Btrfs: don't do nocow check unless we have to").
+>>>>
+>>>> Before that commit, btrfs always check if they need to reserve space=
+ for
+>>>> COW, while after that patch, btrfs never checks unless we have no sp=
+ace.
+>>>>
+>>>> However this screws up other nodatacow space check.
+>>>> And due to its age and deep changeset, it's pretty hard to fix it.
+>>>> I have tried several times, but it will only cause more problems.
+>>>
+>>> What if the commit is reverted, if the problem is otherwise hard to f=
+ix?
+>>
+>> Tried reverted, but all other problems came up.
+>=20
+> I haven't seen an explanation on why that patch causes ENOSPC or what
+> nodatacow space check screw ups it causes.
+>=20
+> It seems fine to me, and what we currently do:
+>=20
+> 1) For any buffered write, check if there's enough free data space;
+> 2) If not try to allocate a new data chunk;
+> 3) If that fails check if the file has the "have prealloc extents"
+> flag or has the nodatacow flag set
+> 4) If any of those conditions is true, check if we can write to the
+> existing extent - if it's not shared or no checksums exist in its
+> range, meaning it's an unwritten (prealloc) extent, return success to
+> userspace
+>=20
+> So what's wrong with it? And how does it cause the ENOSPC?
 
-	2.  Immediately after mount, add additional disks to provide
-	unallocated space for metadata
+E.g.
 
-	3.  Mount -o nossd to increase metadata density
+We have a 128Mb preallocated file extent.
+And assume the fs only have 128M free data space, meaning 0 remaining
+space at all.
 
-#3 had no effect.  #1 failed consistently.
+Then we try to buffer write, which means buffered will just fail as it
+will need data space.
 
-#2 was successful, but the additional space was not used because
-btrfs couldn't allocate chunks for metadata because it ran out of
-metadata space for new metadata chunks.
+The idea is always here for fallocate/pwrite, just the timing where the
+ENOSPC happens.
 
-When btrfs-cleaner tried to remove the first pending deleted snapshot,
-it started a transaction that failed due to lack of metadata space.
-Since the transaction failed, the filesystem reverts to its earlier state,
-and exactly the same thing happens on the next mount.  The 'btrfs dev
-add' in #2 is successful only if it is executed immediately after mount,
-before the btrfs-cleaner thread wakes up.
 
-Here's what the kernel said during one of the attempts:
+We have btrfs/153 for the same reason to fail for a long time, although
+it's from quota, but the reason the completely the same.
 
-	[41263.822252] BTRFS info (device dm-3): use zstd compression, level 0
-	[41263.825135] BTRFS info (device dm-3): using free space tree
-	[41263.827319] BTRFS info (device dm-3): has skinny extents
-	[42046.463356] ------------[ cut here ]------------
-	[42046.463387] BTRFS: error (device dm-3) in __btrfs_free_extent:7056: err=
-no=3D-28 No space left
-	[42046.463404] BTRFS: error (device dm-3) in __btrfs_free_extent:7056: err=
-no=3D-28 No space left
-	[42046.463407] BTRFS info (device dm-3): forced readonly
-	[42046.463414] BTRFS: error (device dm-3) in btrfs_run_delayed_refs:3011: =
-errno=3D-28 No space left
-	[42046.463429] BTRFS: error (device dm-3) in btrfs_create_pending_block_gr=
-oups:10517: errno=3D-28 No space left
-	[42046.463548] BTRFS: error (device dm-3) in btrfs_create_pending_block_gr=
-oups:10520: errno=3D-28 No space left
-	[42046.471363] BTRFS: error (device dm-3) in btrfs_run_delayed_refs:3011: =
-errno=3D-28 No space left
-	[42046.471475] BTRFS: error (device dm-3) in btrfs_create_pending_block_gr=
-oups:10517: errno=3D-28 No space left
-	[42046.471506] BTRFS: error (device dm-3) in btrfs_create_pending_block_gr=
-oups:10520: errno=3D-28 No space left
-	[42046.473672] BTRFS: error (device dm-3) in btrfs_drop_snapshot:9489: err=
-no=3D-28 No space left
-	[42046.475643] WARNING: CPU: 0 PID: 10187 at fs/btrfs/extent-tree.c:7056 _=
-_btrfs_free_extent+0x364/0xf60
-	[42046.475645] Modules linked in: mq_deadline bfq dm_cache_smq dm_cache dm=
-_persistent_data dm_bio_prison dm_bufio joydev ppdev crct10dif_pclmul crc32=
-_pclmul crc32c_intel ghash_clmulni_intel dm_mod snd_pcm aesni_intel aes_x86=
-_64 snd_timer crypto_simd cryptd glue_helper sr_mod snd cdrom psmouse sg so=
-undcore input_leds pcspkr serio_raw ide_pci_generic i2c_piix4 bochs_drm par=
-port_pc piix rtc_cmos floppy parport pcc_cpufreq ide_core qemu_fw_cfg evbug=
- evdev ip_tables x_tables ipv6 crc_ccitt autofs4
-	[42046.475677] CPU: 0 PID: 10187 Comm: btrfs-transacti Tainted: G    B   W=
-         5.0.8-zb64-10a85e8a1569+ #1
-	[42046.475678] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS=
- 1.10.2-1 04/01/2014
-	[42046.475681] RIP: 0010:__btrfs_free_extent+0x364/0xf60
-	[42046.475684] Code: 50 f0 48 0f ba a8 90 22 00 00 02 72 1f 8b 85 88 fe ff=
- ff 83 f8 fb 0f 84 59 04 00 00 89 c6 48 c7 c7 00 85 be b8 e8 3c 1b 9b ff <0=
-f> 0b 8b 8d 88 fe ff ff 48 8b bd 90 fe ff ff ba 90 1b 00 00 48 c7
-	[42046.475685] RSP: 0018:ffff888103d8f8e0 EFLAGS: 00010282
-	[42046.475688] RAX: 0000000000000000 RBX: ffff88802d9ce370 RCX: ffffffffb7=
-224ca2
-	[42046.475689] RDX: 0000000000000001 RSI: 0000000000000008 RDI: ffff888119=
-60dfac
-	[42046.475691] RBP: ffff888103d8fa98 R08: ffffed10232c24c1 R09: ffffed1023=
-2c24c0
-	[42046.475693] R10: ffff888025c94aeb R11: ffffed10232c24c1 R12: 0000000000=
-a5054e
-	[42046.475694] R13: 0000000000003000 R14: 000000000000214a R15: ffff888103=
-d8fa70
-	[42046.475696] FS:  0000000000000000(0000) GS:ffff888119400000(0000) knlGS=
-:0000000000000000
-	[42046.475698] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-	[42046.475700] CR2: 00007f1b84271718 CR3: 00000000a3636001 CR4: 0000000000=
-1606f0
-	[42046.475702] Call Trace:
-	[42046.475707]  ? trace_hardirqs_off+0x24/0x120
-	[42046.475714]  ? update_block_group+0x6d0/0x6d0
-	[42046.475718]  ? __lock_acquire+0xf8/0x26e0
-	[42046.475721]  ? __kasan_slab_free+0x14d/0x230
-	[42046.475724]  ? btrfs_delayed_ref_lock+0x3e/0x100
-	[42046.475727]  ? __lock_acquire+0xf8/0x26e0
-	[42046.475730]  ? kthread+0x1a9/0x200
-	[42046.475733]  ? debug_show_all_locks+0x210/0x210
-	[42046.475737]  ? __btrfs_run_delayed_refs+0xce/0x210
-	[42046.475742]  ? debug_show_all_locks+0x210/0x210
-	[42046.475747]  run_delayed_data_ref+0x15a/0x400
-	[42046.475752]  ? alloc_reserved_file_extent+0x520/0x520
-	[42046.475756]  ? rb_next+0x25/0x90
-	[42046.475761]  run_one_delayed_ref+0x71/0xe0
-	[42046.475765]  btrfs_run_delayed_refs_for_head+0x284/0x580
-	[42046.475772]  __btrfs_run_delayed_refs+0xeb/0x210
-	[42046.475777]  ? btrfs_run_delayed_refs_for_head+0x580/0x580
-	[42046.475781]  ? debug_show_all_locks+0x210/0x210
-	[42046.475786]  btrfs_run_delayed_refs+0xc0/0x260
-	[42046.475792]  btrfs_commit_transaction+0xf0/0x10f0
-	[42046.475795]  ? do_raw_spin_unlock+0xa8/0x140
-	[42046.475799]  ? _raw_spin_unlock+0x27/0x40
-	[42046.475803]  ? btrfs_record_root_in_trans+0x24/0xb0
-	[42046.475807]  ? btrfs_apply_pending_changes+0xb0/0xb0
-	[42046.475809]  ? start_transaction+0x14a/0x760
-	[42046.475816]  transaction_kthread+0x218/0x250
-	[42046.475822]  kthread+0x1a9/0x200
-	[42046.475824]  ? btrfs_cleanup_transaction+0xb80/0xb80
-	[42046.475827]  ? kthread_park+0xb0/0xb0
-	[42046.475831]  ret_from_fork+0x3a/0x50
-	[42046.475837] irq event stamp: 0
-	[42046.475839] hardirqs last  enabled at (0): [<0000000000000000>]        =
-   (null)
-	[42046.475843] hardirqs last disabled at (0): [<ffffffffb70efe95>] copy_pr=
-ocess.part.7+0xad5/0x3b80
-	[42046.475846] softirqs last  enabled at (0): [<ffffffffb70efe95>] copy_pr=
-ocess.part.7+0xad5/0x3b80
-	[42046.475847] softirqs last disabled at (0): [<0000000000000000>]        =
-   (null)
-	[42046.475849] ---[ end trace b02d556137ea688c ]---
-	[42046.475852] BTRFS: error (device dm-3) in __btrfs_free_extent:7056: err=
-no=3D-28 No space left
-	[42046.475859] BTRFS: error (device dm-3) in btrfs_run_delayed_refs:3011: =
-errno=3D-28 No space left
-	[42046.475878] BTRFS: error (device dm-3) in btrfs_create_pending_block_gr=
-oups:10517: errno=3D-28 No space left
-	[42046.475905] BTRFS: error (device dm-3) in btrfs_create_pending_block_gr=
-oups:10520: errno=3D-28 No space left
+Thanks,
+Qu
 
-I noticed that during the few minutes when the filesystem was running,
-the "global reserve" number in "btrfs fi usage" output kept going up to
-503M or so, then the transaction failed.
+>=20
+> Trying the reproducer, at least on a 5.0 kernel, does never fail on a
+> pwrite for me, but always on fallocate:
+>=20
+> $ mkfs.btrfs -f -b $((4 * 1024 * 1024 * 1024)) /dev/sdi
+> $ mount /dev/sdi /mnt/sdi
+> $ cd /mnt/sdi
+> $ /path/to/reproducer
+> reading from /dev/urandom
+> writing to ./blob.IIa6tH
+> writing blocks of 132096 bytes each
+> total    125 MiB,  65.52 MiB/s
+> total    251 MiB,  44.59 MiB/s
+> total    377 MiB,  55.23 MiB/s
+> total    503 MiB,  66.21 MiB/s
+> total    629 MiB,  59.97 MiB/s
+> total    755 MiB,   3.70 MiB/s
+> total    881 MiB,  50.24 MiB/s
+> total   1007 MiB,  64.51 MiB/s
+> total   1133 MiB,  50.70 MiB/s
+> total   1259 MiB,  49.29 MiB/s
+> total   1385 MiB,  47.93 MiB/s
+> total   1511 MiB,   4.00 MiB/s
+> total   1637 MiB,  49.85 MiB/s
+> total   1763 MiB,  48.11 MiB/s
+> total   1889 MiB,  66.62 MiB/s
+> total   2015 MiB,   5.60 MiB/s
+> total   2141 MiB,  19.58 MiB/s
+> total   2267 MiB,  64.80 MiB/s
+> total   2393 MiB,  13.23 MiB/s
+> total   2519 MiB,  14.95 MiB/s
+> fallocate failed: No space left on device
+>=20
+> So either that was tested on a rather old kernel or:
+>=20
+> 1) we had snapshotting happening between a fallocate and a pwrite (or
+> at the same time as the pwrite)
+> 2) before the pwrite (or during) the unwritten/prealloc extent was
+> reflinked (cp --reflink, clone or dedupe ioctls)
+>=20
+> What did I miss here?
+>=20
+> Thanks.
+>=20
+>>
+>> E.g. reserved space underflow.
+>>
+>> I'll find the old thread and retry again.
+>>
+>> Thanks,
+>> Qu
+>>
+>>> This seems to break the semantics of fallocate so the performance sho=
+uld
+>>> not the main concern here.
+>>>
+>>
+>=20
+>=20
 
-I then applied this patch to the kernel (5.0.8):
 
-	diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-	index 83791d13c204..59ba456e2314 100644
-	--- a/fs/btrfs/extent-tree.c
-	+++ b/fs/btrfs/extent-tree.c
-	@@ -5790,7 +5790,7 @@ static void update_global_block_rsv(struct btrfs_fs_=
-info *fs_info)
-		spin_lock(&sinfo->lock);
-		spin_lock(&block_rsv->lock);
+--hcDjobzV2fpMbI5ibG6aibgwA1TIblRnP--
 
-	-       block_rsv->size =3D min_t(u64, num_bytes, SZ_512M);
-	+       block_rsv->size =3D min_t(u64, num_bytes, SZ_1G);
-
-		if (block_rsv->reserved < block_rsv->size) {
-			num_bytes =3D btrfs_space_info_used(sinfo, true);
-
-Then mounted the filesystem.
-
-With the larger reserved block size, btrfs-cleaner was able to get
-past its earlier failures, allocating 3GB of new metadata chunks in the
-first transaction after it started deleting snapshots.  After this, the
-filesystem deleted some more snapshots (there are currently 2470 deleted
-snapshots remaining on this filesystem).
-
-This isn't really a solution, though, for two reasons:
-
-1.  The commit that adds the limit on block_rsv->size (fdf30d1c1b3
-"Btrfs: limit the global reserve to 512mb") points out:
-
-    A user reported a problem where he was getting early ENOSPC with
-    hundreds of gigs of free data space and 6 gigs of free metadata space.
-    This is because the global block reserve was taking up the entire
-    free metadata space.  This is ridiculous, we have infrastructure in
-    place to throttle if we start using too much of the global reserve,
-    so instead of letting it get this huge just limit it to 512mb so that
-    users can still get work done.  This allowed the user to complete
-    his rsync without issues.=20
-
-In other words, something should be handling the case when reserved
-space runs out, and that something is failing.
-
-2.  The 1G reserved limit still isn't sufficient.  The filesystem deletes
-a few dozen snapshots, then fails again later:
-
-	[ 3705.477036] CPU: 2 PID: 8388 Comm: btrfs-transacti Tainted: G    B     =
-        5.0.9-zb64-b6eed6abc880+ #3
-	[ 3705.481510] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS=
- 1.10.2-1 04/01/2014
-	[ 3705.484038] RIP: 0010:__btrfs_free_extent+0x364/0xf60
-	[ 3705.485061] Code: 50 f0 48 0f ba a8 90 22 00 00 02 72 1f 8b 85 88 fe ff=
- ff 83 f8 fb 0f 84 59 04 00 00 89 c6 48 c7 c7 80 85 be 8b e8 fc 1b 9b ff <0=
-f> 0b 8b 8d 88 fe ff ff 48 8b bd 90 fe ff ff ba 90 1b 00 00 48 c7
-	[ 3705.488046] RSP: 0018:ffff8881c29cf8e0 EFLAGS: 00010282
-	[ 3705.488868] RAX: 0000000000000000 RBX: ffff888121dbdf20 RCX: ffffffff8a=
-224a92
-	[ 3705.490129] RDX: 0000000000000001 RSI: 0000000000000008 RDI: ffff8881f5=
-e0dfac
-	[ 3705.491246] RBP: ffff8881c29cfa98 R08: ffffed103ebc24c1 R09: ffffed103e=
-bc24c0
-	[ 3705.492376] R10: ffff88819e6d430b R11: ffffed103ebc24c1 R12: 0000000000=
-9ecb21
-	[ 3705.493501] R13: 0000000000040000 R14: 00000000000021b3 R15: ffff8881c2=
-9cfa70
-	[ 3705.494619] FS:  0000000000000000(0000) GS:ffff8881f5c00000(0000) knlGS=
-:0000000000000000
-	[ 3705.495883] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-	[ 3705.496781] CR2: 0000556bc833ec70 CR3: 00000001ef9e0001 CR4: 0000000000=
-1606e0
-	[ 3705.497872] Call Trace:
-	[ 3705.498279]  ? update_block_group+0x6d0/0x6d0
-	[ 3705.498950]  ? btrfs_run_delayed_refs_for_head+0x352/0x580
-	[ 3705.499816]  ? kthread+0x1a9/0x200
-	[ 3705.500379]  ? debug_show_all_locks+0x210/0x210
-	[ 3705.501078]  ? __btrfs_run_delayed_refs+0xce/0x210
-	[ 3705.501813]  ? debug_show_all_locks+0x210/0x210
-	[ 3705.502516]  run_delayed_data_ref+0x15a/0x400
-	[ 3705.503193]  ? alloc_reserved_file_extent+0x520/0x520
-	[ 3705.503968]  ? rb_next+0x3c/0x90
-	[ 3705.504479]  run_one_delayed_ref+0x71/0xe0
-	[ 3705.505116]  btrfs_run_delayed_refs_for_head+0x284/0x580
-	[ 3705.505935]  __btrfs_run_delayed_refs+0xeb/0x210
-	[ 3705.506649]  ? btrfs_run_delayed_refs_for_head+0x580/0x580
-	[ 3705.507495]  ? debug_show_all_locks+0x210/0x210
-	[ 3705.508201]  btrfs_run_delayed_refs+0xc0/0x260
-	[ 3705.508912]  btrfs_commit_transaction+0xf0/0x10f0
-	[ 3705.509654]  ? do_raw_spin_unlock+0xa8/0x140
-	[ 3705.510343]  ? _raw_spin_unlock+0x27/0x40
-	[ 3705.510979]  ? btrfs_record_root_in_trans+0x24/0xb0
-	[ 3705.511748]  ? btrfs_apply_pending_changes+0xb0/0xb0
-	[ 3705.512533]  ? start_transaction+0x14a/0x760
-	[ 3705.513216]  transaction_kthread+0x218/0x250
-	[ 3705.513900]  kthread+0x1a9/0x200
-	[ 3705.514425]  ? btrfs_cleanup_transaction+0xb80/0xb80
-	[ 3705.515233]  ? kthread_park+0xb0/0xb0
-	[ 3705.515829]  ret_from_fork+0x3a/0x50
-	[ 3705.516408] irq event stamp: 0
-	[ 3705.516898] hardirqs last  enabled at (0): [<0000000000000000>]        =
-   (null)
-	[ 3705.518054] hardirqs last disabled at (0): [<ffffffff8a0efe65>] copy_pr=
-ocess.part.7+0xad5/0x3b80
-	[ 3705.519419] softirqs last  enabled at (0): [<ffffffff8a0efe65>] copy_pr=
-ocess.part.7+0xad5/0x3b80
-	[ 3705.520779] softirqs last disabled at (0): [<0000000000000000>]        =
-   (null)
-	[ 3705.521944] ---[ end trace 3a5f720e889bc0d3 ]---
-	[ 3705.522713] BTRFS: error (device dm-3) in __btrfs_free_extent:7056: err=
-no=3D-28 No space left
-	[ 3705.524069] BTRFS: error (device dm-3) in btrfs_run_delayed_refs:3011: =
-errno=3D-28 No space left
-
-If I increase the reserved limit again to 2G, btrfs-cleaner gets past
-this shapshot (so far).  It takes more than 10 minutes to delete some
-of the snapshots, so this will take a while to finish all 2470.
-
-The current btrfs fi usage output worries me:
-
-	Overall:
-	    Device size:                   2.02TiB
-	    Device allocated:              2.01TiB
-	    Device unallocated:           10.03GiB
-	    Device missing:                  0.00B
-	    Used:                          1.70TiB
-	    Free (estimated):            296.02GiB      (min: 291.01GiB)
-	    Data ratio:                       1.00
-	    Metadata ratio:                   2.00
-	    Global reserve:                2.00GiB      (used: 864.00KiB)
-
-	Data,single: Size:1.81TiB, Used:1.53TiB
-	   /dev/mapper/vgnebtest-tvdb    928.97GiB
-	   /dev/mapper/vgnebtest-tvdc    929.00GiB
-
-	Metadata,RAID1: Size:99.99GiB, Used:82.29GiB
-	   /dev/mapper/vgnebtest-lvol1     5.00GiB
-	   /dev/mapper/vgnebtest-lvol2     5.00GiB
-	   /dev/mapper/vgnebtest-tvdb     94.99GiB
-	   /dev/mapper/vgnebtest-tvdc     94.99GiB
-
-	System,RAID1: Size:8.00MiB, Used:240.00KiB
-	   /dev/mapper/vgnebtest-tvdb      8.00MiB
-	   /dev/mapper/vgnebtest-tvdc      8.00MiB
-
-	Unallocated:
-	   /dev/mapper/vgnebtest-lvol1     5.00GiB
-	   /dev/mapper/vgnebtest-lvol2     5.00GiB
-	   /dev/mapper/vgnebtest-tvdb     30.00MiB
-	   /dev/mapper/vgnebtest-tvdc      1.00MiB
-
-Note "lvol1" and "lvol2" were added after the initial failure. =20
-
-There is clearly a lot of metadata space available, but the filesystem still
-intermittently hits ENOSPC while trying to free space.
-
---K8nIJk4ghYZn606h
+--5W1WV3NIL54K70kg6tvQBCKiUuu3qEJjt
 Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCXL+ahgAKCRCB+YsaVrMb
-nMnOAKDUveyLfW8ihadifuva5Krpb1PeDgCg3rAgCSuppAyfScqZ7kBL9brniIY=
-=RuHP
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAly/pG4ACgkQwj2R86El
+/qjv2gf8CMaqs2xldS/pNJgXMwGDufjCTc2UiCOFuCbGDETeXwcxS6kU4/RrDQuj
+hF/pXtXTaI5kDinQ5W/lm89BVP6dWUPfWeXupj2MnYye4HtmxyXGtHXaS6AkMFWV
+JzHBozFebtT+1D89kLOw3DthPYVp2hSz0fnSndn+7J9hXyH3UxogomNU+sx2ptFK
+eJD0uA8Om8vaQCtr0M0EvW0xYl3vZAOyo1dPNOGANXXXGqTTwaKMwTfjTfV48Za/
+S5TXltqc2pL1dtPqWjc23SLiJ1z5UldCv/uFrv9oMj/7FssJjTG4L4OPoLj3UZyo
+s014aRi/RqNIKMUX+GxrEIRqv5kcjw==
+=b+yG
 -----END PGP SIGNATURE-----
 
---K8nIJk4ghYZn606h--
+--5W1WV3NIL54K70kg6tvQBCKiUuu3qEJjt--

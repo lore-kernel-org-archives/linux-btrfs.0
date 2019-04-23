@@ -2,206 +2,109 @@ Return-Path: <SRS0=kwY/=SZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-0.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4DA85C10F03
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Apr 2019 14:50:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 901EBC10F03
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Apr 2019 19:21:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1B74221738
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Apr 2019 14:50:18 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 57C5D217D9
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Apr 2019 19:21:23 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="JYc8//1A"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="igQbEbvz"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727762AbfDWOuR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 23 Apr 2019 10:50:17 -0400
-Received: from mail-ua1-f66.google.com ([209.85.222.66]:39464 "EHLO
-        mail-ua1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726421AbfDWOuQ (ORCPT
+        id S1726043AbfDWTVW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 23 Apr 2019 15:21:22 -0400
+Received: from mail-oi1-f194.google.com ([209.85.167.194]:35507 "EHLO
+        mail-oi1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725957AbfDWTVW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Apr 2019 10:50:16 -0400
-Received: by mail-ua1-f66.google.com with SMTP id d5so4851338uan.6
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Apr 2019 07:50:15 -0700 (PDT)
+        Tue, 23 Apr 2019 15:21:22 -0400
+Received: by mail-oi1-f194.google.com with SMTP id j132so12267899oib.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 Apr 2019 12:21:21 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
-         :subject:to:cc:content-transfer-encoding;
-        bh=pVakqkzAHxALEHXan0R2RqF/m1CtwswKK8jMX649u+w=;
-        b=JYc8//1An8YlAqIA4A2B3k0FUR3I/7GO5TvJVOmFNffsAA383uz6HSUXgpbNbsUvqx
-         K/4si9Pc2zjZTpiBJ1/LSxwtlh97vvfzuasnZQ8yWhy59PmZi3QgWr99axtj2EyJ4bI4
-         vnKiSiCNAenyQAtBxe353E3J2Jna/HDb1SlwCj8YPvtorxz4kjjn4t0fMb4bholLEbxu
-         uKIEv2AYwtQd2q9M5Xf5zkPAVN/kk29TiBXNEPWwLJQRf5MAoC1yCcumwzxEi+84/zWL
-         Of26WMFMyH9QZqMYfRibHcrBUSSbXRgx90e1trGdMMgD4y6JKbPrbR/+5c4qPqtPbzDS
-         8kvA==
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=foM6lnWkBU89oJoyX26AaLtm2HFIFFNZelrRGFmV1PM=;
+        b=igQbEbvzK6IeBwdS7ZDjatmUiEUNovOPnnYDdTFA0vmp60+RRE8J0F15Mc8wmKbqyo
+         0cBkIOVo9wWjX21wmz8OI2vnIAh7wezXINgtz0s2C5c6dsnSBeFos6aAM16pIgrozK6/
+         LcCzD2jGhEri59+Z/7b+MhkMmhnMf+gP28BqdcUMBey7Zk1ojvxv6wphNI8o69aKbK4M
+         qWpEgW6YbUTsqkozYCCXiadXCwr7DlGFnVz5bSC/CpAHM7sEUp6Dy+vlPWVjTxCrQXtc
+         IJOlRPXDWGGG+zQ5BykEHpYu7xs2DP1JNhV53YP5pfZ02Ul7P9ic2gW6OnQNiSiqsCx/
+         1lUg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
-         :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=pVakqkzAHxALEHXan0R2RqF/m1CtwswKK8jMX649u+w=;
-        b=tYIErU8h1lK3ViqWhuoaTna0cUmxsfXDEJPz7ZAkBAtDoX3Y3+ufbIFJnBV+NJ6Cnc
-         cb+ty1+Z6JiGmB7Kip1xzDN6SU/LryHnbrMmr7agUcKLTVVrVEX1Ezjq+oIh/QSHWIw4
-         QgrRzwyDJ9tBrX430smh1T+o/34NLpBKCvJYpHM0vNhO5ZFmvdS61fSV/xGzRnQoBfYU
-         bnC0ptjm7IWbIuOyNHfAdPN3XhXC9gZgHDi5AgksFhBaNCUoJPT0chCFOlCZlnU6ai4r
-         tg+rUheU0h7wTCFr81OpKJbVN6fG93BWK0JqKTsnkfocYDht9jTQJcEIGzFI6k1kycyg
-         lg2A==
-X-Gm-Message-State: APjAAAWVIgYVDTFKhBdPJKe9PMtfrp+XDNvGS/u4HkpJZGNKrO/nSWNT
-        dML124NXimhr+hPGWv1Kw0E6P1Aws9iycCAWm0iDhPr2
-X-Google-Smtp-Source: APXvYqwLZ1nZdoBLcpaJu+cM8o/OXsTfOHJBLdlHZfhirvyosRlYwwg4DWnyuCXqFN3lKN9hebD44JgLP2+NvGtoarA=
-X-Received: by 2002:ab0:7003:: with SMTP id k3mr13167602ual.0.1556031015157;
- Tue, 23 Apr 2019 07:50:15 -0700 (PDT)
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=foM6lnWkBU89oJoyX26AaLtm2HFIFFNZelrRGFmV1PM=;
+        b=IutWJC5pXrxoA2cOrPG47vXJz5TGS7CHjdbygeM9aQ2nYz6SCMjpkoJ3Hp5jlgffqA
+         9UBar18jsiphvQlLOfSWokKntGuUNF3K9MX30dYMcwCYn3jziV+ZOBHD2D/SR64IYQ4C
+         ONOgGIgkr3Y95S4ZN0tlNAkKhM7yFz4+MwNje9IvkSx+PFOrnr4RHXI2O4JoLwzrlIzm
+         xKRJ7JGsXU1wWUZ+ZMdQiPN3fdv98/FU5NpLa0nW4idNhJ8alpu19LQU2+/9EnIEnAUu
+         Bn2KPSAWc/t7l/SCGM1uB9oWL9Fu5a/fGcbYkr3SvO7XNjk/5kvRAfb8OmEf8a9MgB5R
+         yBYQ==
+X-Gm-Message-State: APjAAAUTgGzPF9xp9RFzGTJaM5yb9iYm0PMirKAEl9yJ9HR7OAVA2t5r
+        l0I9o3IlBLMSofRhaqZ8v0STth59vRekKc2FPig=
+X-Google-Smtp-Source: APXvYqwjKr7RbSSm679tWnbO6tbJSDukXFxAHtsPgsBu9hSdslbdeo+XWnTeubEH0FYMwgPsiPMa3QoSGKuu7R/NDtg=
+X-Received: by 2002:aca:fdd6:: with SMTP id b205mr2962590oii.131.1556047281015;
+ Tue, 23 Apr 2019 12:21:21 -0700 (PDT)
 MIME-Version: 1.0
 References: <CAPv9Zmk46As_P9Gyf_icET53xRda63h7iC1meES9xbdDEt9qow@mail.gmail.com>
  <f64c6b65-5f21-48eb-6e1e-db30cbe57545@gmx.com> <20190423113302.GS20156@twin.jikos.cz>
- <a82d7cdb-206e-d141-e53b-4836b4b150de@gmx.com>
-In-Reply-To: <a82d7cdb-206e-d141-e53b-4836b4b150de@gmx.com>
-Reply-To: fdmanana@gmail.com
-From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Tue, 23 Apr 2019 15:50:03 +0100
-Message-ID: <CAL3q7H7dzVQFRcTzBNNhCU69i5Yi4xStT14XjRw_vivH6QWnRw@mail.gmail.com>
+ <a82d7cdb-206e-d141-e53b-4836b4b150de@gmx.com> <CAL3q7H7dzVQFRcTzBNNhCU69i5Yi4xStT14XjRw_vivH6QWnRw@mail.gmail.com>
+In-Reply-To: <CAL3q7H7dzVQFRcTzBNNhCU69i5Yi4xStT14XjRw_vivH6QWnRw@mail.gmail.com>
+From:   Jakob Unterwurzacher <jakobunt@gmail.com>
+Date:   Tue, 23 Apr 2019 21:21:09 +0200
+Message-ID: <CAPv9ZmkZM5E=ZyQ=dsovkrmuAYxLZ=80AjimV4cXyR1RCNqbpw@mail.gmail.com>
 Subject: Re: fallocate does not prevent ENOSPC on write
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     dsterba@suse.cz, Jakob Unterwurzacher <jakobunt@gmail.com>,
+To:     fdmanana@gmail.com
+Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>, dsterba@suse.cz,
         linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Apr 23, 2019 at 1:14 PM Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+> Trying the reproducer, at least on a 5.0 kernel, does never fail on a
+> pwrite for me, but always on fallocate:
+[...]
+> So either that was tested on a rather old kernel or:
 >
->
->
-> On 2019/4/23 =E4=B8=8B=E5=8D=887:33, David Sterba wrote:
-> > On Tue, Apr 23, 2019 at 10:16:32AM +0800, Qu Wenruo wrote:
-> >> On 2019/4/23 =E4=B8=8A=E5=8D=885:09, Jakob Unterwurzacher wrote:
-> >>> I have a user who is reporting ENOSPC errors when running gocryptfs o=
-n
-> >>> top of btrfs (ticket: https://github.com/rfjakob/gocryptfs/issues/395=
- ).
-> >>>
-> >>> What is interesting is that the error gets thrown at write time. This
-> >>> is not supposed to happen, because gocryptfs does
-> >>>
-> >>>     fallocate(..., FALLOC_FL_KEEP_SIZE, ...)
-> >>>
-> >>> before writing.
-> >>>
-> >>> I wrote a minimal reproducer in C: https://github.com/rfjakob/falloca=
-te_write
-> >>> This is what it looks like on ext4:
-> >>>
-> >>>     $ ../fallocate_write/fallocate_write
-> >>>     reading from /dev/urandom
-> >>>     writing to ./blob.379Q8P
-> >>>     writing blocks of 132096 bytes each
-> >>>     [...]
-> >>>     fallocate failed: No space left on device
-> >>>
-> >>> On btrfs, it will instead look like this:
-> >>>
-> >>>     [...]
-> >>>     pwrite failed: No space left on device
-> >>>
-> >>> Is this a bug in btrfs' fallocate implementation or am I reading the
-> >>> guarantees that fallocate gives me wrong?
-> >>
-> >> Since v4.7, this commit changed the how btrfs do NodataCOW check:
-> >> c6887cd11149 ("Btrfs: don't do nocow check unless we have to").
-> >>
-> >> Before that commit, btrfs always check if they need to reserve space f=
-or
-> >> COW, while after that patch, btrfs never checks unless we have no spac=
-e.
-> >>
-> >> However this screws up other nodatacow space check.
-> >> And due to its age and deep changeset, it's pretty hard to fix it.
-> >> I have tried several times, but it will only cause more problems.
-> >
-> > What if the commit is reverted, if the problem is otherwise hard to fix=
-?
->
-> Tried reverted, but all other problems came up.
+> 1) we had snapshotting happening between a fallocate and a pwrite (or
+> at the same time as the pwrite)
+> 2) before the pwrite (or during) the unwritten/prealloc extent was
+> reflinked (cp --reflink, clone or dedupe ioctls)
 
-I haven't seen an explanation on why that patch causes ENOSPC or what
-nodatacow space check screw ups it causes.
+I am at Linux 5.0.4-200.fc29.x86_64, the user in the github ticket is
+at Linux 5.0.7-arch1-1-ARCH, so pretty recent.
+There should be no snapshot or reflink or really any other activity on
+the test filesystem.
 
-It seems fine to me, and what we currently do:
+Maybe the difference is that I am testing on a file and you on a raw
+block device?
+This is how things look at 4GB size:
 
-1) For any buffered write, check if there's enough free data space;
-2) If not try to allocate a new data chunk;
-3) If that fails check if the file has the "have prealloc extents"
-flag or has the nodatacow flag set
-4) If any of those conditions is true, check if we can write to the
-existing extent - if it's not shared or no checksums exist in its
-range, meaning it's an unwritten (prealloc) extent, return success to
-userspace
-
-So what's wrong with it? And how does it cause the ENOSPC?
-
-Trying the reproducer, at least on a 5.0 kernel, does never fail on a
-pwrite for me, but always on fallocate:
-
-$ mkfs.btrfs -f -b $((4 * 1024 * 1024 * 1024)) /dev/sdi
-$ mount /dev/sdi /mnt/sdi
-$ cd /mnt/sdi
-$ /path/to/reproducer
+$ dd if=/dev/zero of=img bs=1M count=5000
+$ mkfs.btrfs -f -b $((4 * 1024 * 1024 * 1024)) img
+$ mkdir mnt
+$ sudo mount img mnt
+$ sudo chmod 777 mnt
+$ cd mnt
+$ ../fallocate_write/fallocate_write
 reading from /dev/urandom
-writing to ./blob.IIa6tH
+writing to ./blob.qEaSZl
 writing blocks of 132096 bytes each
-total    125 MiB,  65.52 MiB/s
-total    251 MiB,  44.59 MiB/s
-total    377 MiB,  55.23 MiB/s
-total    503 MiB,  66.21 MiB/s
-total    629 MiB,  59.97 MiB/s
-total    755 MiB,   3.70 MiB/s
-total    881 MiB,  50.24 MiB/s
-total   1007 MiB,  64.51 MiB/s
-total   1133 MiB,  50.70 MiB/s
-total   1259 MiB,  49.29 MiB/s
-total   1385 MiB,  47.93 MiB/s
-total   1511 MiB,   4.00 MiB/s
-total   1637 MiB,  49.85 MiB/s
-total   1763 MiB,  48.11 MiB/s
-total   1889 MiB,  66.62 MiB/s
-total   2015 MiB,   5.60 MiB/s
-total   2141 MiB,  19.58 MiB/s
-total   2267 MiB,  64.80 MiB/s
-total   2393 MiB,  13.23 MiB/s
-total   2519 MiB,  14.95 MiB/s
-fallocate failed: No space left on device
+total    125 MiB, 162.06 MiB/s
+total    251 MiB, 162.92 MiB/s
+pwrite failed: No space left on device
 
-So either that was tested on a rather old kernel or:
+Is your /dev/sdi an SSD? I noticed that mkfs.btrfs does NOT think that
+the disk image file is an SSD,
+despite the file residing on an SSD.
 
-1) we had snapshotting happening between a fallocate and a pwrite (or
-at the same time as the pwrite)
-2) before the pwrite (or during) the unwritten/prealloc extent was
-reflinked (cp --reflink, clone or dedupe ioctls)
-
-What did I miss here?
-
-Thanks.
-
->
-> E.g. reserved space underflow.
->
-> I'll find the old thread and retry again.
->
-> Thanks,
-> Qu
->
-> > This seems to break the semantics of fallocate so the performance shoul=
-d
-> > not the main concern here.
-> >
->
-
-
---=20
-Filipe David Manana,
-
-=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
- right.=E2=80=9D
+Thanks,
+Jakob

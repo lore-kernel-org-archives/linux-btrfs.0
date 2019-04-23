@@ -2,92 +2,74 @@ Return-Path: <SRS0=kwY/=SZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,USER_AGENT_MUTT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DFCB4C10F14
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Apr 2019 11:31:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 50236C282DD
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Apr 2019 11:41:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id AD41E2077C
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Apr 2019 11:31:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 288ED2077C
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Apr 2019 11:41:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727500AbfDWLb6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 23 Apr 2019 07:31:58 -0400
-Received: from mx2.suse.de ([195.135.220.15]:39726 "EHLO mx1.suse.de"
+        id S1727634AbfDWLlV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 23 Apr 2019 07:41:21 -0400
+Received: from mx2.suse.de ([195.135.220.15]:43896 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726150AbfDWLb6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Apr 2019 07:31:58 -0400
+        id S1726150AbfDWLlU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 23 Apr 2019 07:41:20 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 5AC5FACEF;
-        Tue, 23 Apr 2019 11:31:57 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 6FAB4AD1E
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 Apr 2019 11:41:19 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id B4531DA7FC; Tue, 23 Apr 2019 13:33:02 +0200 (CEST)
-Date:   Tue, 23 Apr 2019 13:33:02 +0200
+        id A8F5BDA7FC; Tue, 23 Apr 2019 13:42:24 +0200 (CEST)
+Date:   Tue, 23 Apr 2019 13:42:24 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     Jakob Unterwurzacher <jakobunt@gmail.com>,
+To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
-Subject: Re: fallocate does not prevent ENOSPC on write
-Message-ID: <20190423113302.GS20156@twin.jikos.cz>
+Subject: Re: [PATCH v3.1 0/9] btrfs: Refactor delayed ref parameter list
+Message-ID: <20190423114224.GT20156@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Jakob Unterwurzacher <jakobunt@gmail.com>,
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
-References: <CAPv9Zmk46As_P9Gyf_icET53xRda63h7iC1meES9xbdDEt9qow@mail.gmail.com>
- <f64c6b65-5f21-48eb-6e1e-db30cbe57545@gmx.com>
+References: <20190404064537.4031-1-wqu@suse.com>
+ <20190405120609.GV29086@twin.jikos.cz>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <f64c6b65-5f21-48eb-6e1e-db30cbe57545@gmx.com>
+In-Reply-To: <20190405120609.GV29086@twin.jikos.cz>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Apr 23, 2019 at 10:16:32AM +0800, Qu Wenruo wrote:
-> On 2019/4/23 上午5:09, Jakob Unterwurzacher wrote:
-> > I have a user who is reporting ENOSPC errors when running gocryptfs on
-> > top of btrfs (ticket: https://github.com/rfjakob/gocryptfs/issues/395 ).
+On Fri, Apr 05, 2019 at 02:06:09PM +0200, David Sterba wrote:
+> >               |      base |  w/ patchset |  no qgroups |
+> > -------------------------------------------------------------
+> > relocated     |     23765 |        23772 |       23811 |
+> > qgroup dirty  |    124498 |           70 |           0 |
+> > time (sec)    |    23.353 |        3.505 |       3.421 |
 > > 
-> > What is interesting is that the error gets thrown at write time. This
-> > is not supposed to happen, because gocryptfs does
 > > 
-> >     fallocate(..., FALLOC_FL_KEEP_SIZE, ...)
+> > Changelog:
+> > v2:
+> > - Better documentation for btrfs_ref declaration
+> > - Rebase to newer delayed subtree rescan patchset
+> > - Add reviewed-by tags
+> > - Remove unnecessary ASSERT() for NULL pointer.
 > > 
-> > before writing.
+> > v3:
+> > - Rebase to misc-next branch as that branch has all prerequisite now.
+> > - Update benchmark result, compare with qgroups disabled case directly.
 > > 
-> > I wrote a minimal reproducer in C: https://github.com/rfjakob/fallocate_write
-> > This is what it looks like on ext4:
-> > 
-> >     $ ../fallocate_write/fallocate_write
-> >     reading from /dev/urandom
-> >     writing to ./blob.379Q8P
-> >     writing blocks of 132096 bytes each
-> >     [...]
-> >     fallocate failed: No space left on device
-> > 
-> > On btrfs, it will instead look like this:
-> > 
-> >     [...]
-> >     pwrite failed: No space left on device
-> > 
-> > Is this a bug in btrfs' fallocate implementation or am I reading the
-> > guarantees that fallocate gives me wrong?
+> > v3.1:
+> > - Rebase to misc-next branch.
 > 
-> Since v4.7, this commit changed the how btrfs do NodataCOW check:
-> c6887cd11149 ("Btrfs: don't do nocow check unless we have to").
-> 
-> Before that commit, btrfs always check if they need to reserve space for
-> COW, while after that patch, btrfs never checks unless we have no space.
-> 
-> However this screws up other nodatacow space check.
-> And due to its age and deep changeset, it's pretty hard to fix it.
-> I have tried several times, but it will only cause more problems.
+> This does not seem to exhibit the problems I recall from previous
+> testing, so I'll queue it for merge to misc-next unless there are more
+> review comments.
 
-What if the commit is reverted, if the problem is otherwise hard to fix?
-This seems to break the semantics of fallocate so the performance should
-not the main concern here.
+Added to misc-next, ie. the argument cleanup and there's the
+qgroup+metadata balance improvement. Thanks.

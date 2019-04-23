@@ -2,186 +2,170 @@ Return-Path: <SRS0=kwY/=SZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS autolearn=ham
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 79D5BC10F11
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Apr 2019 02:16:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AD0D9C10F11
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Apr 2019 02:39:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 338FE2077C
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Apr 2019 02:16:40 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 61F3B2075A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Apr 2019 02:39:05 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="aAiR6N7t"
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="KPilGPX6"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730020AbfDWCQj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 22 Apr 2019 22:16:39 -0400
-Received: from mout.gmx.net ([212.227.17.22]:49539 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729734AbfDWCQi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 Apr 2019 22:16:38 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1555985796;
-        bh=hSr7PyVzWj1llUr902untT+WK3f6rHgnWi4Cgpq4r9A=;
-        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=aAiR6N7tfY5OC/5gM1pXUKSHklaYcPKAxCrHk3yZBeFdxtW6R9yD99DwS9oh6mTaz
-         PyAQckOpe5elqYmD8Hs7t7w7lNaQQPaAiuSxuT/LxG2z6uDQFQsrzbMeMg3LdkATJK
-         WlbYsChb/hbJYgTz/n0RxSwdPn5EPTVvRpWFIwtY=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.com (mrgmx103
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0M4GND-1h0x7I20SB-00rlbn; Tue, 23
- Apr 2019 04:16:36 +0200
-Subject: Re: fallocate does not prevent ENOSPC on write
-To:     Jakob Unterwurzacher <jakobunt@gmail.com>,
-        linux-btrfs@vger.kernel.org
-References: <CAPv9Zmk46As_P9Gyf_icET53xRda63h7iC1meES9xbdDEt9qow@mail.gmail.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <f64c6b65-5f21-48eb-6e1e-db30cbe57545@gmx.com>
-Date:   Tue, 23 Apr 2019 10:16:32 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.6.1
+        id S1731106AbfDWCjE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 22 Apr 2019 22:39:04 -0400
+Received: from mail-lj1-f194.google.com ([209.85.208.194]:44039 "EHLO
+        mail-lj1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729113AbfDWCjD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 22 Apr 2019 22:39:03 -0400
+Received: by mail-lj1-f194.google.com with SMTP id h16so11988765ljg.11
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Apr 2019 19:39:01 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=UpWc5yc4j0yZdIZcPIcR+559ZCWvAp7H6Y+TTw6Px34=;
+        b=KPilGPX626JNee68tEz5kvBiYkNyTYJgWrsSQqtEpo/lmNGZZ48Gyq3SdpCmODLTbF
+         wsZc+r7mW5NOMYIo7WGKNmZy86n1oc7iMT3qXSg8NWkeLbVOEoJUp+f7QGdKIPtWP4xy
+         22OjrvA/lGoYrQGgCtpbOaiKZ2WD3jOKWWjXDWqugq87xSjWh5aXaB8cKZwV4FCuJ4rW
+         P/eXQFO1RuKdjf+B/57g203bUhjcjWx77mivSXmpv6f/7SeVrWvuofua5E5ucdGfaGHK
+         w3kYfXPmxo7CkqeaZVEAAqLScFEj7k5fc37oKm3kC8eCgMjEg+tqBKN1O64iuwEEltbK
+         FQXA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=UpWc5yc4j0yZdIZcPIcR+559ZCWvAp7H6Y+TTw6Px34=;
+        b=R+OgFRwBMkWj8SmBLD65n9YKvwgpJAVu5080Vte66ZEyinnyeay7ioSVwlLWVcQbgT
+         zCCLcYagFtN4ply/pWFvXii7Of38exHKnYN2LkCS/amur0uGZdK5iSLDpbVxTLyMxzyG
+         6fHbsBBdwDcNbQyNHrdnLTphfxSVd+NuB0Abktkm2apwt87xNEGRNINoskiGqY4GFOpf
+         O629T34U5s9+dWEq5AkluwXXHbWOkRHAxoEM8LHiAZdLs+m8Mx8o5BX3HWgZyLfQVBeH
+         5c0dl/bzY2Q00+4xfmepO3NR3ggF6C16t6wGKrYvN+r9m4HAij3g/9oXomZ1Evgqv1Tm
+         /Qdw==
+X-Gm-Message-State: APjAAAUB7ST5lwaibyW1tpAPpQPoNyRtKM8nGO9ItV2ZNGS7ovENEDUo
+        mx05bMBW9CAK1TOXQNuy/rIOa7qv6O4RW8mUronHiH0kHqg=
+X-Google-Smtp-Source: APXvYqynmJ27+ce0056JOC6Euo6k5/5hrwWWlPi1NqY5+dHZCN1jlVMrGu7NvrxffYu77xY6iTGQjIDa058QRLvc7ZY=
+X-Received: by 2002:a2e:8582:: with SMTP id b2mr11849840lji.24.1555987140929;
+ Mon, 22 Apr 2019 19:39:00 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAPv9Zmk46As_P9Gyf_icET53xRda63h7iC1meES9xbdDEt9qow@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="3vUfvTV8i9WvNtVdUbzgO9SoxLK5LRPpn"
-X-Provags-ID: V03:K1:zD/5ackTTpPbXbgoxaXe4SNh43obMXYmKTUn+StXFL72Zk0WQbw
- 5HteSffjxPOYtpEU888R5B9vCvglOmM95/YTHF07SvsaUAy/j8hjpqucg2ROiL8LSpZoXPB
- keeuB1fLXSrlDH6C3E3upXULcCnY6bt/NexYETjhTbzhyROxUPhO/Cgktvw2hSKONw6VYHh
- icO1928HkuUqTvUgRAqMQ==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:SWX5VW4qxdo=:uMMDt09ycB0zSp6pkEc6VO
- aPrNr6oaTF9InMPNy3H1t79cwDjMns43+L3PTwI6+utqhuaCCzpf96pW729D+8I8xlvdMgrXI
- /8Ezq0SGHT1klGF1vmo+RLQ8YQqiKdDttN62WFZSatkIq1RFnkaMuL9fxoJMQSkQqdZGHI3Jy
- ooZzAsGz7Bf3XSwrT8rUbUyobGoXImOuDxyTDUlE0AoiJ146lOqM8GP6hek9JTpWocyO+b9lY
- Iu/3Mtc47oZJF2ch/U4syHOPalhWj8aM8TdH+otXqfbfZgQaPrAPWa7qnurBZ2jzC/9rnpLdW
- 3dOiR76JCZh28Nx713eT0+MO/bLGP5ON/1vvsIEv3zWP7vfirJpHAis1/LtEbjJo7X7MKz16J
- lsWEjgX5HAUH45g6rBuBgyOBzPhEeVW5M4QK/W+ovk8OZFvd0vzaw3LRwOxiuZbvJKBv+leOD
- Tcjy9fxqF03gKeAapc9y5FR4RuZvFZzjyg0miBLPQsYtnp+86MHfB8wUad8kbbq1u/cl52eDV
- RYMsRzd1J0ziWx4Un23fgc8GB8YZmLHMj9tw7NuDL/qCbWwupxDuGfYFdWbbWz/9d11Df5049
- vVwsgX/uod/8NrGBcBBYAsxSbjdmLE2ORcAOlXD9umxv3kmLJIl+FOugn5I8D08Hg1qkBF1hy
- CYO/O3Mpi9wXlYi1jfoEUEB2vx2oQCvJ5vf5gyeD6jvMuK6SLXn0nm1wWSCUGZbgayYWQtX3V
- E9CMLtWpPVxoFFxKpBs2Io/aYb34gjrYbXfU09zrtjUMjkh06i3sFAymSSHHJQWroBe3IVcfb
- kj0EfEoOU2inPSFG0RORhSBeuhRHaAv4DCijqTXz1z9k2ZZretHO9dLxsjk8xZ393PsOIG+tS
- qXCJkyLWDMllJl2YVZKMw+vKPkEMngTtxYlRKIhu6IKGdPl+We6MzIEy2JT+7n
+References: <CAEEhgEsQD1WgqZBZ2YEsEZKKH6X6PSxZGKbMgSVrzkEjVVDFrg@mail.gmail.com>
+In-Reply-To: <CAEEhgEsQD1WgqZBZ2YEsEZKKH6X6PSxZGKbMgSVrzkEjVVDFrg@mail.gmail.com>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Mon, 22 Apr 2019 20:38:49 -0600
+Message-ID: <CAJCQCtQcpmWAnXrRQdMytvOhZ6eO2P=o1K4Hr5R2C-iWKudh3Q@mail.gmail.com>
+Subject: Re: reading/writing btrfs volume regularly freezes system
+To:     Nathan Dehnel <ncdehnel@gmail.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---3vUfvTV8i9WvNtVdUbzgO9SoxLK5LRPpn
-Content-Type: multipart/mixed; boundary="FpBBE7U6X3rmkGCpLaEggWM2r1eEFappS";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Jakob Unterwurzacher <jakobunt@gmail.com>, linux-btrfs@vger.kernel.org
-Message-ID: <f64c6b65-5f21-48eb-6e1e-db30cbe57545@gmx.com>
-Subject: Re: fallocate does not prevent ENOSPC on write
-References: <CAPv9Zmk46As_P9Gyf_icET53xRda63h7iC1meES9xbdDEt9qow@mail.gmail.com>
-In-Reply-To: <CAPv9Zmk46As_P9Gyf_icET53xRda63h7iC1meES9xbdDEt9qow@mail.gmail.com>
+On Mon, Apr 22, 2019 at 2:38 PM Nathan Dehnel <ncdehnel@gmail.com> wrote:
+>
+> I have a raid10 volume that frequently locks up when I try to write to
+> it or delete things. Any command that touches it will hang (and can't
+> be killed) and I have to start a new ssh session to get into the
+> computer again. Nothing fixes it besides a reboot, and the volume will
+> fail to unmount while the computer is shutting down.
+>
+> [  302.360912] sysrq: SysRq : Show Blocked State
+> [  302.360951]   task                        PC stack   pid father
+> [  302.360987] btrfs-transacti D    0  2187      2 0x80000000
+> [  302.360993] Call Trace:
+> [  302.361007]  ? __schedule+0x59d/0x5f1
+> [  302.361012]  schedule+0x6a/0x85
+> [  302.361019]  btrfs_commit_transaction+0x219/0x7ac
+> [  302.361027]  ? wait_woken+0x6d/0x6d
+> [  302.361031]  transaction_kthread+0xc9/0x135
+> [  302.361036]  ? btrfs_cleanup_transaction+0x4c7/0x4c7
+> [  302.361041]  kthread+0x115/0x11d
+> [  302.361046]  ? kthread_park+0x76/0x76
+> [  302.361050]  ret_from_fork+0x35/0x40
+> [  302.361064] nfsd            D    0  2292      2 0x80000000
+> [  302.361067] Call Trace:
+> [  302.361072]  ? __schedule+0x59d/0x5f1
+> [  302.361077]  schedule+0x6a/0x85
+> [  302.361120]  wait_current_trans+0x9b/0xd8
+> [  302.361126]  ? wait_woken+0x6d/0x6d
+> [  302.361131]  start_transaction+0x1ae/0x38e
+> [  302.361135]  btrfs_create+0x59/0x1d0
+> [  302.361142]  vfs_create+0xbf/0xef
+> [  302.361160]  do_nfsd_create+0x2be/0x41d [nfsd]
+> [  302.361214]  nfsd4_open+0x223/0x578 [nfsd]
+> [  302.361229]  nfsd4_proc_compound+0x44a/0x562 [nfsd]
+> [  302.361240]  nfsd_dispatch+0xb9/0x16e [nfsd]
+> [  302.361258]  svc_process+0x524/0x6e2 [sunrpc]
+> [  302.361270]  ? nfsd_destroy+0x5f/0x5f [nfsd]
+> [  302.361278]  nfsd+0xf9/0x150 [nfsd]
+> [  302.361284]  kthread+0x115/0x11d
+> [  302.361289]  ? kthread_park+0x76/0x76
+> [  302.361292]  ret_from_fork+0x35/0x40
+> [  302.361297] nfsd            D    0  2293      2 0x80000000
+> [  302.361300] Call Trace:
+> [  302.361305]  ? __schedule+0x59d/0x5f1
+> [  302.361309]  schedule+0x6a/0x85
+> [  302.361314]  rwsem_down_write_failed+0x1af/0x210
+> [  302.361325]  ? nfsd_permission+0xa3/0xe8 [nfsd]
+> [  302.361330]  call_rwsem_down_write_failed+0x13/0x20
+> [  302.361335]  down_write+0x20/0x2e
+> [  302.361345]  nfsd_unlink+0xb1/0x16b [nfsd]
+> [  302.361359]  nfsd4_remove+0x4e/0x10a [nfsd]
+> [  302.361371]  nfsd4_proc_compound+0x44a/0x562 [nfsd]
+> [  302.361381]  nfsd_dispatch+0xb9/0x16e [nfsd]
+> [  302.361395]  svc_process+0x524/0x6e2 [sunrpc]
+> [  302.361401]  ? __mutex_unlock_slowpath.isra.6+0x1e8/0x20a
+> [  302.361410]  ? nfsd_destroy+0x5f/0x5f [nfsd]
+> [  302.361419]  nfsd+0xf9/0x150 [nfsd]
+> [  302.361424]  kthread+0x115/0x11d
+> [  302.361428]  ? kthread_park+0x76/0x76
+> [  302.361434]  ret_from_fork+0x35/0x40
+> [  302.361441] rm              D    0  2388   2334 0x00000004
+> [  302.361444] Call Trace:
+> [  302.361449]  ? __schedule+0x59d/0x5f1
+> [  302.361453]  schedule+0x6a/0x85
+> [  302.361457]  wait_current_trans+0x9b/0xd8
+> [  302.361462]  ? wait_woken+0x6d/0x6d
+> [  302.361466]  start_transaction+0x1ae/0x38e
+> [  302.361471]  btrfs_start_transaction_fallback_global_rsv+0x32/0x127
+> [  302.361475]  btrfs_unlink+0x30/0xc0
+> [  302.361478]  vfs_unlink+0xd2/0x147
+> [  302.361482]  do_unlinkat+0x112/0x223
+> [  302.361488]  do_syscall_64+0x7e/0x133
+> [  302.361492]  entry_SYSCALL_64_after_hwframe+0x44/0xa9
+> [  302.361496] RIP: 0033:0x7f681509b5d7
+> [  302.361504] Code: Bad RIP value.
+> [  302.361506] RSP: 002b:00007fffb1aed668 EFLAGS: 00000202 ORIG_RAX:
+> 0000000000000107
+> [  302.361510] RAX: ffffffffffffffda RBX: 000055672760c6c0 RCX: 00007f681509b5d7
+> [  302.361512] RDX: 0000000000000000 RSI: 000055672760b490 RDI: 00000000ffffff9c
+> [  302.361514] RBP: 0000000000000000 R08: 0000000000000003 R09: 0000000000000000
+> [  302.361516] R10: fffffffffffff12b R11: 0000000000000202 R12: 00007fffb1aed848
+> [  302.361518] R13: 000055672760b400 R14: 0000000000000002 R15: 0000000000000000
 
---FpBBE7U6X3rmkGCpLaEggWM2r1eEFappS
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+
+What kernel version? Is it reproducible with something current? i.e.
+5.0.6 or ideally 5.1rc6?
+
+And is this actually writes/deletes to NFS as an intermediate to the
+Btrfs volume? I can't really tell from the call trace if this is an
+issue in nfsd or use case specific problem with NFS on Btrfs. You're
+able to directly write/delete with this Btrfs volume?
+
+Since you're getting some information out of the system when this
+happens (call trace) I'm wondering if you can issue sysrq+t during the
+hang? I find setting up sysrq and writing out the trigger command in a
+console (either a tty if you have physical access, or netconsole),
+then reproduce the hang, and then hit return on the console with the
+pre-typed sysrq command. Sometimes the sysrq output is quite a lot for
+the kernel buffer and will overflow dmesg,  so you'll either need to
+use  `log_buf_len=1M` boot parameter, or you can get sysrq output from
+journalctl if it's a system system.
 
 
-
-On 2019/4/23 =E4=B8=8A=E5=8D=885:09, Jakob Unterwurzacher wrote:
-> I have a user who is reporting ENOSPC errors when running gocryptfs on
-> top of btrfs (ticket: https://github.com/rfjakob/gocryptfs/issues/395 )=
-=2E
->=20
-> What is interesting is that the error gets thrown at write time. This
-> is not supposed to happen, because gocryptfs does
->=20
->     fallocate(..., FALLOC_FL_KEEP_SIZE, ...)
->=20
-> before writing.
->=20
-> I wrote a minimal reproducer in C: https://github.com/rfjakob/fallocate=
-_write
-> This is what it looks like on ext4:
->=20
->     $ ../fallocate_write/fallocate_write
->     reading from /dev/urandom
->     writing to ./blob.379Q8P
->     writing blocks of 132096 bytes each
->     [...]
->     fallocate failed: No space left on device
->=20
-> On btrfs, it will instead look like this:
->=20
->     [...]
->     pwrite failed: No space left on device
->=20
-> Is this a bug in btrfs' fallocate implementation or am I reading the
-> guarantees that fallocate gives me wrong?
-
-Since v4.7, this commit changed the how btrfs do NodataCOW check:
-c6887cd11149 ("Btrfs: don't do nocow check unless we have to").
-
-Before that commit, btrfs always check if they need to reserve space for
-COW, while after that patch, btrfs never checks unless we have no space.
-
-However this screws up other nodatacow space check.
-And due to its age and deep changeset, it's pretty hard to fix it.
-I have tried several times, but it will only cause more problems.
-
-So I'm afraid it's a known problem and not something we can fix very soon=
-=2E
-
-Thanks,
-Qu
-
->=20
-> Thanks!
-> Jakob
->=20
-
-
---FpBBE7U6X3rmkGCpLaEggWM2r1eEFappS--
-
---3vUfvTV8i9WvNtVdUbzgO9SoxLK5LRPpn
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAly+dYAACgkQwj2R86El
-/qjb2wf/eIBoexPuFxr5Q7F3NcEwHCIFU7dWi99nEiHMgTKoAgHzKbaNgTxvj2ON
-6hjI/MwIELbzXC24V0BF5W7J4/OOlAz9qGmc1bZ39G6EPP2bdKOksrOkMtBbaRzF
-SsfpYwgSNg23/snnKsxD0I2O6le6FkLtx108dMgaqOtUP0mtajFk8X4wQIRJKcY8
-/4AFC5ioOjO694cuywMhKGQyTzx72za80sydAQviSIqDDH8IhaNVtydWI+P7vFNE
-JZ7IZtVU4OWXEEUQsolMBeKTVmFR17X30kkoSNNkrHdGIz1tBluAZb2wQaTS9mOZ
-JSg0L+jrWqWLN/JFwuXjVlMciHtahA==
-=lKTC
------END PGP SIGNATURE-----
-
---3vUfvTV8i9WvNtVdUbzgO9SoxLK5LRPpn--
+-- 
+Chris Murphy

@@ -2,59 +2,69 @@ Return-Path: <SRS0=IMPl=S2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+X-Spam-Status: No, score=-5.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
 	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 07A4DC10F11
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Apr 2019 09:13:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 02F1CC10F11
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Apr 2019 09:29:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B705320656
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Apr 2019 09:13:22 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1556097202;
-	bh=0mDSDY/K95Rqd1g90HR7ulRIm0r4fbMd5R7FUVmXQNM=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc:List-ID:From;
-	b=d9AFHfp3W7IOcCY25UydbkpwfBpwl02lfzHz3/+GOnWbi/kmV4pA+i7+yLOJQiXz8
-	 FpJ6ztrJSAD+8pHJXroJdCXit7EIphcSLholoFP6z0MY+eKsqC5NEXKOMOwZboy9tw
-	 ji2/z/S6GorhI5eld+T2s+n4anYr+UK8zhKRJ55U=
+	by mail.kernel.org (Postfix) with ESMTP id AD29F20449
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Apr 2019 09:29:09 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="XDXIjleF"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727383AbfDXJNV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 Apr 2019 05:13:21 -0400
-Received: from mail.kernel.org ([198.145.29.99]:35636 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727046AbfDXJNV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Apr 2019 05:13:21 -0400
-Received: from mail-vk1-f180.google.com (mail-vk1-f180.google.com [209.85.221.180])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id BA57420656
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Apr 2019 09:13:19 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1556097199;
-        bh=0mDSDY/K95Rqd1g90HR7ulRIm0r4fbMd5R7FUVmXQNM=;
-        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-        b=fnJY01NM2MuQEQgom12bbayY/ohYWRUs7b91O+y9hAel12FghU4BzsGd4s8cTZkYf
-         VN7bIskkiyYTMrnSVfScdZGYWDgR3EKKXn08SsyZP3tFWU0PUJwPpJPWmfUUOgHU/D
-         cHYUpWBJBH3DceCjDoa0xIagLpv90YpPQ5eVQNJM=
-Received: by mail-vk1-f180.google.com with SMTP id q189so3850955vkq.11
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Apr 2019 02:13:19 -0700 (PDT)
-X-Gm-Message-State: APjAAAVXCaNPYMUHrWn5GG2s/yk1cidp8l/N32sIP2a6qbE+MPOQnJxp
-        HUByRQ06BDDWylwdWllqqTDuKSJm4pVIaLaJD5E=
-X-Google-Smtp-Source: APXvYqwsnTTePu+rPWO4qKrht5UkWrtebEdOKAWK76nc+fEfFYj2Eqc0ZvWQuKWomYrVYZRUFdq/4YO6dGINghpbeK4=
-X-Received: by 2002:ac5:c24b:: with SMTP id n11mr15964003vkk.81.1556097198806;
- Wed, 24 Apr 2019 02:13:18 -0700 (PDT)
+        id S1727314AbfDXJ3I (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 Apr 2019 05:29:08 -0400
+Received: from mail-ua1-f65.google.com ([209.85.222.65]:45661 "EHLO
+        mail-ua1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726176AbfDXJ3I (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 24 Apr 2019 05:29:08 -0400
+Received: by mail-ua1-f65.google.com with SMTP id o33so585504uae.12
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Apr 2019 02:29:07 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
+         :subject:to:cc:content-transfer-encoding;
+        bh=L32iPJfkwBm1CJbnyVibqxxJ2oHQOI91Nmm0vJOFLxc=;
+        b=XDXIjleFn2DmVYve5tC35Ze0jClphyzXvi38SaUJKZjAwF8PgJY7eV0zY5j5EvDUke
+         uJy3FV7qape7t4OspLVFLSC3puaqTT/xb1cifvqsk9ZX7byztf80Ip3G1k7U4R5kwNQo
+         NBsdA9+tNrkKPS4FmPo0MFO49iSVkI7cSXEHua2q2SR1tdVCX6utGXFnxWHM4EMjtGws
+         4JDcW+tmYUbFWqWYBGap8QAJ/iWh4Kts9sLmXev6XYLLZox649CEBWvMvRki6WN7/GwS
+         H2LUa4zgniA3BVchjmuT0aXZLHCEMZ5enMJKOUzHR2ndJgV7foJB4KC+rnunmSPqni1m
+         Rwmg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
+         :from:date:message-id:subject:to:cc:content-transfer-encoding;
+        bh=L32iPJfkwBm1CJbnyVibqxxJ2oHQOI91Nmm0vJOFLxc=;
+        b=FvMINIuPet7g9rdabypZs9SPuukC3ImelZiaNJjC8sbO4lI8VdwgsVzhVQRLtNPfIs
+         R3TGcLjeXOu3gsNmzOS35mpQqr8mnMyHNXqhpnnlJEKtvV/vBKoVA0NW30b0zeHo1MWq
+         oZ5P5YFI0EsroOJ7UdIscf1vPSHGoHOP3nBTc+e3AI/SrlN93ou9iDevX5ADfqWsB9Bb
+         UOir7qMz99hxAHUkzNJhKG4RBdfihjZE4XRAVHenTVhXmY51ekKrDGbmRhf+8+IXHdDy
+         G/qvgxVcOnWhIfIszoi6PUMep+wf0y6YqvOekvJ1jBln94aKqbalqtvEIY2uRfXCY7m4
+         kkng==
+X-Gm-Message-State: APjAAAU+z5YK+3lIqEL9dk9c5zEIirjv9rVasdBnqcns4kr2SdLM0Ebj
+        sxVPo6TnbQZ0beLZij7RdxnevpJWrbH07HEen70/4A==
+X-Google-Smtp-Source: APXvYqy+cSRBm6ESVRWtEJ2Qm+ucm81yWoTditJ4d1w+tzKiTY1ITGKikyfIfU0iQ152e91mAxdsq5C22i5VtirX8TM=
+X-Received: by 2002:ab0:77d3:: with SMTP id y19mr5642480uar.123.1556098146814;
+ Wed, 24 Apr 2019 02:29:06 -0700 (PDT)
 MIME-Version: 1.0
-References: <20190422154409.16323-1-fdmanana@kernel.org> <d7be0714-bd84-4468-f87a-ad504c3a7b0f@suse.com>
-In-Reply-To: <d7be0714-bd84-4468-f87a-ad504c3a7b0f@suse.com>
-From:   Filipe Manana <fdmanana@kernel.org>
-Date:   Wed, 24 Apr 2019 10:13:07 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H752QrWa=7A4CuOjTx1fFwQfq0a97JuqZ_CFA2f3-OpEA@mail.gmail.com>
-Message-ID: <CAL3q7H752QrWa=7A4CuOjTx1fFwQfq0a97JuqZ_CFA2f3-OpEA@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: prevent send failures and crashes due to
- concurrent relocation
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <CAPv9Zmk46As_P9Gyf_icET53xRda63h7iC1meES9xbdDEt9qow@mail.gmail.com>
+ <f64c6b65-5f21-48eb-6e1e-db30cbe57545@gmx.com> <20190423113302.GS20156@twin.jikos.cz>
+ <a82d7cdb-206e-d141-e53b-4836b4b150de@gmx.com> <CAL3q7H7dzVQFRcTzBNNhCU69i5Yi4xStT14XjRw_vivH6QWnRw@mail.gmail.com>
+ <8a3b5e64-1df7-447d-3b07-e276b8d65b40@gmx.com>
+In-Reply-To: <8a3b5e64-1df7-447d-3b07-e276b8d65b40@gmx.com>
+Reply-To: fdmanana@gmail.com
+From:   Filipe Manana <fdmanana@gmail.com>
+Date:   Wed, 24 Apr 2019 10:28:55 +0100
+Message-ID: <CAL3q7H4cjWJgoNg5C4+KsKFHg66KFmj7CDJiTMM9yBGU-fnjzA@mail.gmail.com>
+Subject: Re: fallocate does not prevent ENOSPC on write
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     dsterba@suse.cz, Jakob Unterwurzacher <jakobunt@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -62,219 +72,193 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Apr 24, 2019 at 9:56 AM Nikolay Borisov <nborisov@suse.com> wrote:
+On Wed, Apr 24, 2019 at 12:49 AM Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
 >
 >
 >
-> On 22.04.19 =D0=B3. 18:44 =D1=87., fdmanana@kernel.org wrote:
-> > From: Filipe Manana <fdmanana@suse.com>
+> On 2019/4/23 =E4=B8=8B=E5=8D=8810:50, Filipe Manana wrote:
+> > On Tue, Apr 23, 2019 at 1:14 PM Qu Wenruo <quwenruo.btrfs@gmx.com> wrot=
+e:
+> >>
+> >>
+> >>
+> >> On 2019/4/23 =E4=B8=8B=E5=8D=887:33, David Sterba wrote:
+> >>> On Tue, Apr 23, 2019 at 10:16:32AM +0800, Qu Wenruo wrote:
+> >>>> On 2019/4/23 =E4=B8=8A=E5=8D=885:09, Jakob Unterwurzacher wrote:
+> >>>>> I have a user who is reporting ENOSPC errors when running gocryptfs=
+ on
+> >>>>> top of btrfs (ticket: https://github.com/rfjakob/gocryptfs/issues/3=
+95 ).
+> >>>>>
+> >>>>> What is interesting is that the error gets thrown at write time. Th=
+is
+> >>>>> is not supposed to happen, because gocryptfs does
+> >>>>>
+> >>>>>     fallocate(..., FALLOC_FL_KEEP_SIZE, ...)
+> >>>>>
+> >>>>> before writing.
+> >>>>>
+> >>>>> I wrote a minimal reproducer in C: https://github.com/rfjakob/fallo=
+cate_write
+> >>>>> This is what it looks like on ext4:
+> >>>>>
+> >>>>>     $ ../fallocate_write/fallocate_write
+> >>>>>     reading from /dev/urandom
+> >>>>>     writing to ./blob.379Q8P
+> >>>>>     writing blocks of 132096 bytes each
+> >>>>>     [...]
+> >>>>>     fallocate failed: No space left on device
+> >>>>>
+> >>>>> On btrfs, it will instead look like this:
+> >>>>>
+> >>>>>     [...]
+> >>>>>     pwrite failed: No space left on device
+> >>>>>
+> >>>>> Is this a bug in btrfs' fallocate implementation or am I reading th=
+e
+> >>>>> guarantees that fallocate gives me wrong?
+> >>>>
+> >>>> Since v4.7, this commit changed the how btrfs do NodataCOW check:
+> >>>> c6887cd11149 ("Btrfs: don't do nocow check unless we have to").
+> >>>>
+> >>>> Before that commit, btrfs always check if they need to reserve space=
+ for
+> >>>> COW, while after that patch, btrfs never checks unless we have no sp=
+ace.
+> >>>>
+> >>>> However this screws up other nodatacow space check.
+> >>>> And due to its age and deep changeset, it's pretty hard to fix it.
+> >>>> I have tried several times, but it will only cause more problems.
+> >>>
+> >>> What if the commit is reverted, if the problem is otherwise hard to f=
+ix?
+> >>
+> >> Tried reverted, but all other problems came up.
 > >
-> > Send always operates on read-only trees and always expected that while =
-it
-> > is in progress, nothing changes in those trees. Due to that expectation
-> > and the fact that send is a read-only operation, it operates on commit
-> > roots and does not hold transaction handles. However relocation can COW
-> > nodes and leafs from read-only trees, which can cause unexpected failur=
-es
-> > and crashes (hitting BUG_ONs). while send using a node/leaf, it gets
-> > COWed, the transaction used to COW it is committed, a new transaction
-> > starts, the extent previously used for that node/leaf gets allocated,
-> > possibly for another tree, and the respective extent buffer' content
-> > changes while send is still using it. When this happens send normally
-> > fails with EIO being returned to user space and messages like the
-> > following are found in dmesg/syslog:
+> > I haven't seen an explanation on why that patch causes ENOSPC or what
+> > nodatacow space check screw ups it causes.
 > >
-> >   [ 3408.699121] BTRFS error (device sdc): parent transid verify failed=
- on 58703872 wanted 250 found 253
-> >   [ 3441.523123] BTRFS error (device sdc): did not find backref in send=
-_root. inode=3D63211, offset=3D0, disk_byte=3D5222825984 found extent=3D522=
-2825984
+> > It seems fine to me, and what we currently do:
 > >
-> > Other times, less often, we hit a BUG_ON() because an extent buffer tha=
-t
-> > send is using used to be a node, and while send is still using it, it
-> > got COWed and got reused as a leaf while send is still using, producing
-> > the following trace:
+> > 1) For any buffered write, check if there's enough free data space;
+> > 2) If not try to allocate a new data chunk;
+> > 3) If that fails check if the file has the "have prealloc extents"
+> > flag or has the nodatacow flag set
+> > 4) If any of those conditions is true, check if we can write to the
+> > existing extent - if it's not shared or no checksums exist in its
+> > range, meaning it's an unwritten (prealloc) extent, return success to
+> > userspace
 > >
-> >  [ 3478.466280] ------------[ cut here ]------------
-> >  [ 3478.466282] kernel BUG at fs/btrfs/ctree.c:1806!
-> >  [ 3478.466965] invalid opcode: 0000 [#1] SMP DEBUG_PAGEALLOC PTI
-> >  [ 3478.467635] CPU: 0 PID: 2165 Comm: btrfs Not tainted 5.0.0-btrfs-ne=
-xt-46 #1
-> >  [ 3478.468311] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), =
-BIOS rel-1.11.2-0-gf9626ccb91-prebuilt.qemu-project.org 04/01/2014
-> >  [ 3478.469681] RIP: 0010:read_node_slot+0x122/0x130 [btrfs]
-> >  (...)
-> >  [ 3478.471758] RSP: 0018:ffffa437826bfaa0 EFLAGS: 00010246
-> >  [ 3478.472457] RAX: ffff961416ed7000 RBX: 000000000000003d RCX: 000000=
-0000000002
-> >  [ 3478.473151] RDX: 000000000000003d RSI: ffff96141e387408 RDI: ffff96=
-1599b30000
-> >  [ 3478.473837] RBP: ffffa437826bfb8e R08: 0000000000000001 R09: ffffa4=
-37826bfb8e
-> >  [ 3478.474515] R10: ffffa437826bfa70 R11: 0000000000000000 R12: ffff96=
-14385c8708
-> >  [ 3478.475186] R13: 0000000000000000 R14: 0000000000000000 R15: 000000=
-0000000000
-> >  [ 3478.475840] FS:  00007f8e0e9cc8c0(0000) GS:ffff9615b6a00000(0000) k=
-nlGS:0000000000000000
-> >  [ 3478.476489] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> >  [ 3478.477127] CR2: 00007f98b67a056e CR3: 0000000005df6005 CR4: 000000=
-00003606f0
-> >  [ 3478.477762] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 000000=
-0000000000
-> >  [ 3478.478385] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 000000=
-0000000400
-> >  [ 3478.479003] Call Trace:
-> >  [ 3478.479600]  ? do_raw_spin_unlock+0x49/0xc0
-> >  [ 3478.480202]  tree_advance+0x173/0x1d0 [btrfs]
-> >  [ 3478.480810]  btrfs_compare_trees+0x30c/0x690 [btrfs]
-> >  [ 3478.481388]  ? process_extent+0x1280/0x1280 [btrfs]
-> >  [ 3478.481954]  btrfs_ioctl_send+0x1037/0x1270 [btrfs]
-> >  [ 3478.482510]  _btrfs_ioctl_send+0x80/0x110 [btrfs]
-> >  [ 3478.483062]  btrfs_ioctl+0x13fe/0x3120 [btrfs]
-> >  [ 3478.483581]  ? rq_clock_task+0x2e/0x60
-> >  [ 3478.484086]  ? wake_up_new_task+0x1f3/0x370
-> >  [ 3478.484582]  ? do_vfs_ioctl+0xa2/0x6f0
-> >  [ 3478.485075]  ? btrfs_ioctl_get_supported_features+0x30/0x30 [btrfs]
-> >  [ 3478.485552]  do_vfs_ioctl+0xa2/0x6f0
-> >  [ 3478.486016]  ? __fget+0x113/0x200
-> >  [ 3478.486467]  ksys_ioctl+0x70/0x80
-> >  [ 3478.486911]  __x64_sys_ioctl+0x16/0x20
-> >  [ 3478.487337]  do_syscall_64+0x60/0x1b0
-> >  [ 3478.487751]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
-> >  [ 3478.488159] RIP: 0033:0x7f8e0d7d4dd7
-> >  (...)
-> >  [ 3478.489349] RSP: 002b:00007ffcf6fb4908 EFLAGS: 00000202 ORIG_RAX: 0=
-000000000000010
-> >  [ 3478.489742] RAX: ffffffffffffffda RBX: 0000000000000105 RCX: 00007f=
-8e0d7d4dd7
-> >  [ 3478.490142] RDX: 00007ffcf6fb4990 RSI: 0000000040489426 RDI: 000000=
-0000000005
-> >  [ 3478.490548] RBP: 0000000000000005 R08: 00007f8e0d6f3700 R09: 00007f=
-8e0d6f3700
-> >  [ 3478.490953] R10: 00007f8e0d6f39d0 R11: 0000000000000202 R12: 000000=
-0000000005
-> >  [ 3478.491343] R13: 00005624e0780020 R14: 0000000000000000 R15: 000000=
-0000000001
-> >  (...)
-> >  [ 3478.493352] ---[ end trace d5f537302be4f8c8 ]---
-> >
-> > Another possibility, much less likely to happen, is that send will not
-> > fail but the contents of the stream it produces may not be correct.
-> >
-> > To avoid this, do not allow send and relocation (balance) to run in
-> > parallel. In the long term the goal is to allow for both to be able to
-> > run concurrently without any problems, but that will take a significant
-> > effort in development and testing.
-> >
-> > Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> > ---
-> >  fs/btrfs/ctree.h   |  7 +++++++
-> >  fs/btrfs/disk-io.c |  2 ++
-> >  fs/btrfs/send.c    | 14 ++++++++++++++
-> >  fs/btrfs/volumes.c |  8 ++++++++
-> >  4 files changed, 31 insertions(+)
-> >
-> > diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> > index 753ff68a8e8f..e6284e353dee 100644
-> > --- a/fs/btrfs/ctree.h
-> > +++ b/fs/btrfs/ctree.h
-> > @@ -785,6 +785,7 @@ enum {
-> >       /*
-> >        * Indicate that balance has been set up from the ioctl and is in=
- the
-> >        * main phase. The fs_info::balance_ctl is initialized.
-> > +      * Set and cleared while holding fs_info::balance_mutex.
-> >        */
-> >       BTRFS_FS_BALANCE_RUNNING,
-> >
-> > @@ -1167,6 +1168,12 @@ struct btrfs_fs_info {
-> >       spinlock_t swapfile_pins_lock;
-> >       struct rb_root swapfile_pins;
-> >
-> > +     /*
-> > +      * Number of send operations in progress.
-> > +      * Updated while holding fs_info::balance_mutex.
-> > +      */
-> > +     int send_in_progress;
-> > +
+> > So what's wrong with it? And how does it cause the ENOSPC?
 >
-> Rather than introducing yet another variable and more state why not
-> piggy back on BTRFS_FS_EXCL_OP, this will prevent send running while
-> balance is running as well as while devices are being removed/added.
+> E.g.
+>
+> We have a 128Mb preallocated file extent.
+> And assume the fs only have 128M free data space, meaning 0 remaining
+> space at all.
 
-Because we want multiple sends to be able to run in parallel, and
-there's no need to prevent concurrent device add/remove/replace/resize
-as well.
-Also useful to report/log the number of sends currently running.
+That's a contradicting sentence...
 
 >
-> >  #ifdef CONFIG_BTRFS_FS_REF_VERIFY
-> >       spinlock_t ref_verify_lock;
-> >       struct rb_root block_tree;
-> > diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> > index 5216e7b3f9ad..4cde9a9654fe 100644
-> > --- a/fs/btrfs/disk-io.c
-> > +++ b/fs/btrfs/disk-io.c
-> > @@ -2785,6 +2785,8 @@ int open_ctree(struct super_block *sb,
-> >       spin_lock_init(&fs_info->swapfile_pins_lock);
-> >       fs_info->swapfile_pins =3D RB_ROOT;
+> Then we try to buffer write, which means buffered will just fail as it
+> will need data space.
+>
+> The idea is always here for fallocate/pwrite, just the timing where the
+> ENOSPC happens.
+
+Can't make sense of that sentence as well.
+
+So I suppose what you are trying to say is that a write into an
+unwritten extent causes space allocation,
+and that can prevent some other write (which is not into an unwritten
+extent) from being able to allocate space and therefore fail.
+
+That's a valid problem that should be temporary.
+
+However when allocating space for a write into an unwritten extent (or
+any nodatacow write) we increment the data space info's bytes_may_use
+counter,
+but then if when writeback starts if we don't need to fallback into
+CoW, we end up never decrementing the bytes_may_use counter (even
+after writeback completes), leaking it.
+Not sure if this is the problem you were mentioning or just causing
+other writes to temporarily fail.
+
+thanks
+
+
+>
+>
+> We have btrfs/153 for the same reason to fail for a long time, although
+> it's from quota, but the reason the completely the same.
+>
+> Thanks,
+> Qu
+>
 > >
-> > +     fs_info->send_in_progress =3D 0;
-> > +
-> >       ret =3D btrfs_alloc_stripe_hash_table(fs_info);
-> >       if (ret) {
-> >               err =3D ret;
-> > diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-> > index f91f474f14f6..5c32ac661519 100644
-> > --- a/fs/btrfs/send.c
-> > +++ b/fs/btrfs/send.c
-> > @@ -6869,9 +6869,23 @@ long btrfs_ioctl_send(struct file *mnt_file, str=
-uct btrfs_ioctl_send_args *arg)
-> >       if (ret)
-> >               goto out;
+> > Trying the reproducer, at least on a 5.0 kernel, does never fail on a
+> > pwrite for me, but always on fallocate:
 > >
-> > +     mutex_lock(&fs_info->balance_mutex);
-> > +     if (test_bit(BTRFS_FS_BALANCE_RUNNING, &fs_info->flags)) {
-> > +             mutex_unlock(&fs_info->balance_mutex);
-> > +             btrfs_warn_rl(fs_info,
-> > +           "Can not run send because a balance operation is in progres=
-s");
-> > +             ret =3D -EAGAIN;
-> > +             goto out;
-> > +     }
-> > +     fs_info->send_in_progress++;
-> > +     mutex_unlock(&fs_info->balance_mutex);
-> > +
-> >       current->journal_info =3D BTRFS_SEND_TRANS_STUB;
-> >       ret =3D send_subvol(sctx);
-> >       current->journal_info =3D NULL;
-> > +     mutex_lock(&fs_info->balance_mutex);
-> > +     fs_info->send_in_progress--;
-> > +     mutex_unlock(&fs_info->balance_mutex);
-> >       if (ret < 0)
-> >               goto out;
+> > $ mkfs.btrfs -f -b $((4 * 1024 * 1024 * 1024)) /dev/sdi
+> > $ mount /dev/sdi /mnt/sdi
+> > $ cd /mnt/sdi
+> > $ /path/to/reproducer
+> > reading from /dev/urandom
+> > writing to ./blob.IIa6tH
+> > writing blocks of 132096 bytes each
+> > total    125 MiB,  65.52 MiB/s
+> > total    251 MiB,  44.59 MiB/s
+> > total    377 MiB,  55.23 MiB/s
+> > total    503 MiB,  66.21 MiB/s
+> > total    629 MiB,  59.97 MiB/s
+> > total    755 MiB,   3.70 MiB/s
+> > total    881 MiB,  50.24 MiB/s
+> > total   1007 MiB,  64.51 MiB/s
+> > total   1133 MiB,  50.70 MiB/s
+> > total   1259 MiB,  49.29 MiB/s
+> > total   1385 MiB,  47.93 MiB/s
+> > total   1511 MiB,   4.00 MiB/s
+> > total   1637 MiB,  49.85 MiB/s
+> > total   1763 MiB,  48.11 MiB/s
+> > total   1889 MiB,  66.62 MiB/s
+> > total   2015 MiB,   5.60 MiB/s
+> > total   2141 MiB,  19.58 MiB/s
+> > total   2267 MiB,  64.80 MiB/s
+> > total   2393 MiB,  13.23 MiB/s
+> > total   2519 MiB,  14.95 MiB/s
+> > fallocate failed: No space left on device
 > >
-> > diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> > index db934ceae9c1..8145b62e3912 100644
-> > --- a/fs/btrfs/volumes.c
-> > +++ b/fs/btrfs/volumes.c
-> > @@ -4203,6 +4203,14 @@ int btrfs_balance(struct btrfs_fs_info *fs_info,
-> >                          get_raid_name(meta_index), get_raid_name(data_=
-index));
-> >       }
+> > So either that was tested on a rather old kernel or:
 > >
-> > +     if (fs_info->send_in_progress) {
-> > +             btrfs_warn_rl(fs_info,
-> > +"Can not run balance while send operations are in progress (%d in prog=
-ress)",
-> > +                           fs_info->send_in_progress);
-> > +             ret =3D -EAGAIN;
-> > +             goto out;
-> > +     }
-> > +
-> >       ret =3D insert_balance_item(fs_info, bctl);
-> >       if (ret && ret !=3D -EEXIST)
-> >               goto out;
+> > 1) we had snapshotting happening between a fallocate and a pwrite (or
+> > at the same time as the pwrite)
+> > 2) before the pwrite (or during) the unwritten/prealloc extent was
+> > reflinked (cp --reflink, clone or dedupe ioctls)
 > >
+> > What did I miss here?
+> >
+> > Thanks.
+> >
+> >>
+> >> E.g. reserved space underflow.
+> >>
+> >> I'll find the old thread and retry again.
+> >>
+> >> Thanks,
+> >> Qu
+> >>
+> >>> This seems to break the semantics of fallocate so the performance sho=
+uld
+> >>> not the main concern here.
+> >>>
+> >>
+> >
+> >
+>
+
+
+--=20
+Filipe David Manana,
+
+=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
+ right.=E2=80=9D

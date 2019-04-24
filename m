@@ -2,120 +2,165 @@ Return-Path: <SRS0=IMPl=S2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.5 required=3.0
+	tests=HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E075EC10F11
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Apr 2019 16:15:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 32C4DC10F11
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Apr 2019 16:25:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B95C2208E4
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Apr 2019 16:15:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0106A2148D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Apr 2019 16:25:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732186AbfDXQP2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 Apr 2019 12:15:28 -0400
-Received: from mx2.suse.de ([195.135.220.15]:54718 "EHLO mx1.suse.de"
+        id S1732342AbfDXQZt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 Apr 2019 12:25:49 -0400
+Received: from mx2.suse.de ([195.135.220.15]:56408 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727393AbfDXQP2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Apr 2019 12:15:28 -0400
+        id S1732043AbfDXQZs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 24 Apr 2019 12:25:48 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 06A71AE7D;
-        Wed, 24 Apr 2019 16:15:27 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id C99B4AEE5;
+        Wed, 24 Apr 2019 16:25:46 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 47DB3DA85E; Wed, 24 Apr 2019 18:16:30 +0200 (CEST)
-Date:   Wed, 24 Apr 2019 18:16:28 +0200
+        id E6D23DA85E; Wed, 24 Apr 2019 18:26:49 +0200 (CEST)
+Date:   Wed, 24 Apr 2019 18:26:49 +0200
 From:   David Sterba <dsterba@suse.cz>
 To:     fdmanana@kernel.org
 Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: send, flush dellaloc in order to avoid data loss
-Message-ID: <20190424161628.GY20156@twin.jikos.cz>
+Subject: Re: [PATCH v2] Btrfs: fix race between send and deduplication that
+ lead to failures and crashes
+Message-ID: <20190424162647.GZ20156@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
         linux-btrfs@vger.kernel.org
-References: <20190415082936.2173-1-fdmanana@kernel.org>
+References: <20190415083018.2224-1-fdmanana@kernel.org>
+ <20190422154342.11873-1-fdmanana@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190415082936.2173-1-fdmanana@kernel.org>
+In-Reply-To: <20190422154342.11873-1-fdmanana@kernel.org>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Apr 15, 2019 at 09:29:36AM +0100, fdmanana@kernel.org wrote:
+On Mon, Apr 22, 2019 at 04:43:42PM +0100, fdmanana@kernel.org wrote:
 > From: Filipe Manana <fdmanana@suse.com>
 > 
-> When we set a subvolume to read-only mode we do not flush dellaloc for any
-> of its inodes (except if the filesystem is mounted with -o flushoncommit),
-> since it does not affect correctness for any subsequent operations - except
-> for a future send operation. The send operation will not be able to see the
-> delalloc data since the respective file extent items, inode item updates,
-> backreferences, etc, have not hit yet the subvolume and extent trees.
+> Send operates on read only trees and expects them to never change while it
+> is using them. This is part of its initial design, and this expection is
+> due to two different reasons:
 > 
-> Effectively this means data loss, since the send stream will not contain
-> any data from existing delalloc. Another problem from this is that if the
-> writeback starts and finishes while the send operation is in progress, we
-> have the subvolume tree being being modified concurrently which can result
-> in send failing unexpectedly with EIO or hitting runtime errors, assertion
-> failures or hitting BUG_ONs, etc.
+> 1) When it was introduced, no operations were allowed to modifiy read-only
+>    subvolumes/snapshots (including defrag for example).
 > 
-> Simple reproducer:
+> 2) It keeps send from having an impact on other filesystem operations.
+>    Namely send does not need to keep locks on the trees nor needs to hold on
+>    to transaction handles and delay transaction commits. This ends up being
+>    a consequence of the former reason.
 > 
->   $ mkfs.btrfs -f /dev/sdb
->   $ mount /dev/sdb /mnt
+> However the deduplication feature was introduced later (on September 2013,
+> while send was introduced in July 2012) and it allowed for deduplication
+> with destination files that belong to read-only trees (subvolumes and
+> snapshots).
 > 
->   $ btrfs subvolume create /mnt/sv
->   $ xfs_io -f -c "pwrite -S 0xea 0 108K" /mnt/sv/foo
+> That means that having a send operation (either full or incremental) running
+> in parallel with a deduplication that has the destination inode in one of
+> the trees used by the send operation, can result in tree nodes and leaves
+> getting freed and reused while send is using them. This problem is similar
+> to the problem solved for the root nodes getting freed and reused when a
+> snapshot is made against one tree that is currenly being used by a send
+> operation, fixed in commits [1] and [2]. These commits explain in detail
+> how the problem happens and the explanation is valid for any node or leaf
+> that is not the root of a tree as well. This problem was also discussed
+> and explained recently in a thread [3].
 > 
->   $ btrfs property set /mnt/sv ro true
->   $ btrfs send -f /tmp/send.stream /mnt/sv
+> The problem is very easy to reproduce when using send with large trees
+> (snapshots) and just a few concurrent deduplication operations that target
+> files in the trees used by send. A stress test case is being sent for
+> fstests that triggers the issue easily. The most common error to hit is
+> the send ioctl return -EIO with the following messages in dmesg/syslog:
 > 
->   $ od -t x1 -A d /mnt/sv/foo
->   0000000 ea ea ea ea ea ea ea ea ea ea ea ea ea ea ea ea
->   *
->   0110592
+>  [1631617.204075] BTRFS error (device sdc): did not find backref in send_root. inode=63292, offset=0, disk_byte=5228134400 found extent=5228134400
+>  [1631633.251754] BTRFS error (device sdc): parent transid verify failed on 32243712 wanted 24 found 27
 > 
->   $ umount /mnt
->   $ mkfs.btrfs -f /dev/sdc
->   $ mount /dev/sdc /mnt
+> The first one is very easy to hit while the second one happens much less
+> frequently, except for very large trees (in that test case, snapshots
+> with 100000 files having large xattrs to get deep and wide trees).
+> Less frequently, at least one BUG_ON can be hit:
 > 
->   $ btrfs receive -f /tmp/send.stream /mnt
->   $ echo $?
->   0
->   $ od -t x1 -A d /mnt/sv/foo
->   0000000
->   # ---> empty file
+>  [1631742.130080] ------------[ cut here ]------------
+>  [1631742.130625] kernel BUG at fs/btrfs/ctree.c:1806!
+>  [1631742.131188] invalid opcode: 0000 [#6] SMP DEBUG_PAGEALLOC PTI
+>  [1631742.131726] CPU: 1 PID: 13394 Comm: btrfs Tainted: G    B D W         5.0.0-rc8-btrfs-next-45 #1
+>  [1631742.132265] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.11.2-0-gf9626ccb91-prebuilt.qemu-project.org 04/01/2014
+>  [1631742.133399] RIP: 0010:read_node_slot+0x122/0x130 [btrfs]
+>  (...)
+>  [1631742.135061] RSP: 0018:ffffb530021ebaa0 EFLAGS: 00010246
+>  [1631742.135615] RAX: ffff93ac8912e000 RBX: 000000000000009d RCX: 0000000000000002
+>  [1631742.136173] RDX: 000000000000009d RSI: ffff93ac564b0d08 RDI: ffff93ad5b48c000
+>  [1631742.136759] RBP: ffffb530021ebb7d R08: 0000000000000001 R09: ffffb530021ebb7d
+>  [1631742.137324] R10: ffffb530021eba70 R11: 0000000000000000 R12: ffff93ac87d0a708
+>  [1631742.137900] R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000001
+>  [1631742.138455] FS:  00007f4cdb1528c0(0000) GS:ffff93ad76a80000(0000) knlGS:0000000000000000
+>  [1631742.139010] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+>  [1631742.139568] CR2: 00007f5acb3d0420 CR3: 000000012be3e006 CR4: 00000000003606e0
+>  [1631742.140131] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+>  [1631742.140719] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+>  [1631742.141272] Call Trace:
+>  [1631742.141826]  ? do_raw_spin_unlock+0x49/0xc0
+>  [1631742.142390]  tree_advance+0x173/0x1d0 [btrfs]
+>  [1631742.142948]  btrfs_compare_trees+0x268/0x690 [btrfs]
+>  [1631742.143533]  ? process_extent+0x1070/0x1070 [btrfs]
+>  [1631742.144088]  btrfs_ioctl_send+0x1037/0x1270 [btrfs]
+>  [1631742.144645]  _btrfs_ioctl_send+0x80/0x110 [btrfs]
+>  [1631742.145161]  ? trace_sched_stick_numa+0xe0/0xe0
+>  [1631742.145685]  btrfs_ioctl+0x13fe/0x3120 [btrfs]
+>  [1631742.146179]  ? account_entity_enqueue+0xd3/0x100
+>  [1631742.146662]  ? reweight_entity+0x154/0x1a0
+>  [1631742.147135]  ? update_curr+0x20/0x2a0
+>  [1631742.147593]  ? check_preempt_wakeup+0x103/0x250
+>  [1631742.148053]  ? do_vfs_ioctl+0xa2/0x6f0
+>  [1631742.148510]  ? btrfs_ioctl_get_supported_features+0x30/0x30 [btrfs]
+>  [1631742.148942]  do_vfs_ioctl+0xa2/0x6f0
+>  [1631742.149361]  ? __fget+0x113/0x200
+>  [1631742.149767]  ksys_ioctl+0x70/0x80
+>  [1631742.150159]  __x64_sys_ioctl+0x16/0x20
+>  [1631742.150543]  do_syscall_64+0x60/0x1b0
+>  [1631742.150931]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+>  [1631742.151326] RIP: 0033:0x7f4cd9f5add7
+>  (...)
+>  [1631742.152509] RSP: 002b:00007ffe91017708 EFLAGS: 00000202 ORIG_RAX: 0000000000000010
+>  [1631742.152892] RAX: ffffffffffffffda RBX: 0000000000000105 RCX: 00007f4cd9f5add7
+>  [1631742.153268] RDX: 00007ffe91017790 RSI: 0000000040489426 RDI: 0000000000000007
+>  [1631742.153633] RBP: 0000000000000007 R08: 00007f4cd9e79700 R09: 00007f4cd9e79700
+>  [1631742.153999] R10: 00007f4cd9e799d0 R11: 0000000000000202 R12: 0000000000000003
+>  [1631742.154365] R13: 0000555dfae53020 R14: 0000000000000000 R15: 0000000000000001
+>  (...)
+>  [1631742.156696] ---[ end trace 5dac9f96dcc3fd6b ]---
 > 
-> Since this a problem that affects send only, fix it in send by flushing
-> dellaloc for all the roots used by the send operation before send starts
-> to process the commit roots.
+> That BUG_ON happens because while send is using a node, that node is COWed
+> by a concurrent deduplication, gets freed and gets reused as a leaf (because
+> a transaction commit happened in between), so when it attempts to read a
+> slot from the extent buffer, at ctree.c:read_node_slot(), the extent buffer
+> contents were wiped out and it now matches a leaf (which can even belong to
+> some other tree now), hitting the BUG_ON(level == 0).
 > 
-> This is a problem that affects send since it was introduced (commit
-> 31db9f7c23fbf7 ("Btrfs: introduce BTRFS_IOC_SEND for btrfs send/receive"))
-> but backporting it to older kernels has some dependencies:
+> Fix this concurrency issue by not allowing send and deduplication to run
+> in parallel if both operate on the same readonly trees, returning EAGAIN
+> to user space and logging an exlicit warning in dmesg/syslog.
 > 
-> - For kernels between 3.19 and 4.20, it depends on commit 3cd24c698004d2
->   ("btrfs: use tagged writepage to mitigate livelock of snapshot") because
->   the function btrfs_start_delalloc_snapshot() does not exist before that
->   commit. So one has to either pick that commit or replace the calls to
->   btrfs_start_delalloc_snapshot() in this patch with calls to
->   btrfs_start_delalloc_inodes().
+> [1] https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=be6821f82c3cc36e026f5afd10249988852b35ea
+> [2] https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=6f2f0b394b54e2b159ef969a0b5274e9bbf82ff2
+> [3] https://lore.kernel.org/linux-btrfs/CAL3q7H7iqSEEyFaEtpRZw3cp613y+4k2Q8b4W7mweR3tZA05bQ@mail.gmail.com/
 > 
-> - For kernels older than 3.19 it also requires commit e5fa8f865b3324
->   ("Btrfs: ensure send always works on roots without orphans") because
->   it depends on the function ensure_commit_roots_uptodate() which that
->   commits introduced.
-> 
-> - No dependencies for 5.0+ kernels.
-
-^^^ thanks for writing the backporting instructions.
-
-> 
-> A test case for fstests follows soon.
-> 
-> CC: stable@vger.kernel.org # 3.19+
 > Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+> 
+> V2: Moved send warning to an helper function. Log number of send and 
+>     deduplications in progress too.
 
 Added to misc-next, thanks.

@@ -6,50 +6,66 @@ X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E87CFC282CE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Apr 2019 17:47:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1CC2CC282CE
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Apr 2019 18:07:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C2982218B0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Apr 2019 17:47:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E232520685
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Apr 2019 18:07:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2391282AbfDXRbw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 Apr 2019 13:31:52 -0400
-Received: from mx2.suse.de ([195.135.220.15]:40390 "EHLO mx1.suse.de"
+        id S2388382AbfDXSHo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 Apr 2019 14:07:44 -0400
+Received: from mx2.suse.de ([195.135.220.15]:37008 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2391271AbfDXRbt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Apr 2019 13:31:49 -0400
+        id S2388464AbfDXRQi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 24 Apr 2019 13:16:38 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 504D5AE58
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Apr 2019 17:31:48 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 76DEFACEC;
+        Wed, 24 Apr 2019 17:16:37 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 96D43DA85E; Wed, 24 Apr 2019 19:32:52 +0200 (CEST)
-Date:   Wed, 24 Apr 2019 19:32:52 +0200
+        id 1C95ADA85E; Wed, 24 Apr 2019 19:17:37 +0200 (CEST)
+Date:   Wed, 24 Apr 2019 19:17:36 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
+To:     fdmanana@kernel.org
 Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: tree-checker: Allow error injection for
- tree-checker
-Message-ID: <20190424173251.GD20156@twin.jikos.cz>
+Subject: Re: [PATCH] Btrfs: improve performance on fsync of files with
+ multiple hardlinks
+Message-ID: <20190424171736.GB20156@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
         linux-btrfs@vger.kernel.org
-References: <20190424072253.4979-1-wqu@suse.com>
+References: <20190417103106.30900-1-fdmanana@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190424072253.4979-1-wqu@suse.com>
+In-Reply-To: <20190417103106.30900-1-fdmanana@kernel.org>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Apr 24, 2019 at 03:22:53PM +0800, Qu Wenruo wrote:
-> Allowing error injection for btrfs_check_leaf_full() and
-> btrfs_check_node() is useful to test the failure path of btrfs write
-> time tree check.
+On Wed, Apr 17, 2019 at 11:31:06AM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
 > 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> Commit 41bd6067692382 ("Btrfs: fix fsync of files with multiple hard links
+> in new directories") introduced a path that makes fsync fallback to a full
+> transaction commit in order to avoid losing hard links and new ancestors
+> of the fsynced inode. That path is triggered only when the inode has more
+> than one hard link and either has a new hard link created in the current
+> transaction or the inode was evicted and reloaded in the current
+> transaction.
+> 
+> That path ends up getting triggered very often (hundreds of times) during
+> the course of pgbench benchmarks, resulting in performance drops of about
+> 20%.
+> 
+> This change restores the performance by not triggering the full transaction
+> commit in those cases, and instead iterate the fs/subvolume tree in search
+> of all possible new ancestors, for all hard links, to log them.
+> 
+> Reported-by: Zhao Yuhu <zyuhu@suse.com>
+> Tested-by: James Wang <jnwang@suse.com>
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
 Added to misc-next, thanks.

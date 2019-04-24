@@ -2,163 +2,367 @@ Return-Path: <SRS0=IMPl=S2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0DEB4C282CE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Apr 2019 14:43:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B316AC10F11
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Apr 2019 14:50:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D0FB8218B0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Apr 2019 14:43:09 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="On/5vxVT"
+	by mail.kernel.org (Postfix) with ESMTP id 8389F218FC
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Apr 2019 14:50:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731873AbfDXOnI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 Apr 2019 10:43:08 -0400
-Received: from mail-ua1-f67.google.com ([209.85.222.67]:38116 "EHLO
-        mail-ua1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731661AbfDXOnH (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Apr 2019 10:43:07 -0400
-Received: by mail-ua1-f67.google.com with SMTP id t15so6114224uao.5
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Apr 2019 07:43:06 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
-         :subject:to:cc:content-transfer-encoding;
-        bh=chBe2xbsrwAL3ScU6iFG1DoAemcgo/p/LUEx0JY4KeY=;
-        b=On/5vxVTR63yF6pMfTldnDnjodsBIrC0FzEPgt3cbHFREbM/XFZx8id0elf52DqkKu
-         ZrDBs77UPZOFiQtnht/NDq28q51FED4rUoYKGN10FsGEGRnaLf0UEeHRjDmxxGOZTZeX
-         qBpd+62amjO0cxdC9WrC4cQg7QsrCv80Vm0c+nDnn5YzpCeWVCiRFjCrnYhlFTNZ1VEW
-         8gkZAZ8nD+Ux4l/UmXiSqSZ5067xZxRb8GtWDncahpMEAxSQkIAZYLTiiZo/vFICOiIn
-         O7f7nnRDsZ65u3GSncefO5bC0iLeVwyZKKUYf5w9Mwa7HdGxmIVIWCKq++7f/MPYF0kE
-         3Brg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
-         :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=chBe2xbsrwAL3ScU6iFG1DoAemcgo/p/LUEx0JY4KeY=;
-        b=F9zg5G7LZTIy/XUCmFLr4cjr45zOV/qr9jF0puiK/+LfD8FUP2A3YHsJpee+c5/EBG
-         azMNY2JiF1fOw69Fp/XHzL35BzH1vBIJyCgiPeqGS24Ce+MBjxtYVhCQoGY3AdsyjhMy
-         NGt1Dp6UbbTc3EJooHHOcJIFTq2tWhXjk28vKIg4B7UNhoWWEdqY83hh+4J+A8X5knJt
-         zST6xXx3gD/9tAanDav+qLtqe/kFmyHxQSPGG+T3ZhFw1iqycZ6G+OjR+JbUm+1T1x9p
-         2wE+WA2/PI/+hqRknbNVTRPlzhWcxPs31yHtp5uwcw7bmXZzToIlIxY/goyZ+iTDs82V
-         3n0g==
-X-Gm-Message-State: APjAAAUH4RyOcaokawL4LXP+TlU9fYdylXq8DHrb6t+6nXx4tiENA05x
-        1H/pCZ2z3MFJdopQLFThY3G7gVEHmv9EigmoAM5hefB9
-X-Google-Smtp-Source: APXvYqzo3pyFIfyTB8vSAEEoOH0ApEb2zS6GjOWx3xmT+Bb+RaOKAIKQ/KECNU2Uae95lm753O750yRghX2ggkyoh9A=
-X-Received: by 2002:ab0:156b:: with SMTP id p40mr16115413uae.83.1556116986283;
- Wed, 24 Apr 2019 07:43:06 -0700 (PDT)
-MIME-Version: 1.0
-References: <20190424143134.32699-1-wqu@suse.com>
-In-Reply-To: <20190424143134.32699-1-wqu@suse.com>
-Reply-To: fdmanana@gmail.com
-From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Wed, 24 Apr 2019 15:42:55 +0100
-Message-ID: <CAL3q7H5zK32tUr3sOd7VPoArdQz5OX81Q2cU9L6kTsSBCPcepA@mail.gmail.com>
-Subject: Re: [PATCH v2] btrfs: ctree: Dump the leaf before BUG_ON()
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+        id S1732388AbfDXOsI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 Apr 2019 10:48:08 -0400
+Received: from mx2.suse.de ([195.135.220.15]:51698 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1731184AbfDXOsE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 24 Apr 2019 10:48:04 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id A4C34AE17
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Apr 2019 14:48:02 +0000 (UTC)
+From:   Johannes Thumshirn <jthumshirn@suse.de>
+To:     David Sterba <dsterba@suse.com>
+Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
+        Johannes Thumshirn <jthumshirn@suse.de>
+Subject: [PATCH v2 2/3] btrfs-progs: add 'btrfs inspect-internal csum-dump' command
+Date:   Wed, 24 Apr 2019 16:47:53 +0200
+Message-Id: <20190424144754.4612-3-jthumshirn@suse.de>
+X-Mailer: git-send-email 2.16.4
+In-Reply-To: <20190424144754.4612-1-jthumshirn@suse.de>
+References: <20190424144754.4612-1-jthumshirn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Apr 24, 2019 at 3:33 PM Qu Wenruo <wqu@suse.com> wrote:
->
-> We have a user reporting BUG_ON() triggered in
-> btrfs_set_item_key_safe().
->
-> Let's dump the leaf content before triggering BUG_ON() so that we can
-> have some clue on what's going wrong.
-> The output of tree locks should help us to debug such problem.
->
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
-> changelog:
-> v2:
-> - Also dump the slot/disk_key/new_key.
-> ---
->  fs/btrfs/ctree.c | 24 ++++++++++++++++++++++--
->  1 file changed, 22 insertions(+), 2 deletions(-)
->
-> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> index f52eb952597b..61e6e2a23a8a 100644
-> --- a/fs/btrfs/ctree.c
-> +++ b/fs/btrfs/ctree.c
-> @@ -3185,11 +3185,31 @@ void btrfs_set_item_key_safe(struct btrfs_fs_info=
- *fs_info,
->         slot =3D path->slots[0];
->         if (slot > 0) {
->                 btrfs_item_key(eb, &disk_key, slot - 1);
-> -               BUG_ON(comp_keys(&disk_key, new_key) >=3D 0);
-> +               if (unlikely(comp_keys(&disk_key, new_key) >=3D 0)) {
-> +                       btrfs_crit(fs_info,
-> +               "on-disk slot %u key (%llu, %u, %llu) new key (%llu %u %l=
-lu)",
+Add a 'btrfs inspect-internal csum-dump' command to dump the on-disk
+checksums of a file.
 
-On-disk?  Not necessarily, the leaf might have been changed multiple
-times after the last time it was persisted to disk.
-I would remove that.
+The dump command first uses the FIEMAP ioctl() to get a map of the file's
+extents and then uses the BTRFS_TREE_SEARCH_V2 ioctl() to get the
+checksums for these extents.
 
-Also remove the commas after each element of key, just like you do for
-new key (which is the prevalent style we have).
+Using FIEMAP instead of the BTRFS_TREE_SEARCH_V2 ioctl() to get the
+extents allows us to quickly filter out any holes in the file, as this is
+already done for us in the kernel.
 
-> +                                  slot, btrfs_disk_key_objectid(&disk_ke=
-y),
-> +                                  btrfs_disk_key_type(&disk_key),
-> +                                  btrfs_disk_key_offset(&disk_key),
-> +                                  new_key->objectid, new_key->type,
-> +                                  new_key->offset);
-> +                       btrfs_print_leaf(eb);
-> +                       BUG_ON(1);
+Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+---
+ Makefile                 |   3 +-
+ cmds-inspect-dump-csum.c | 253 +++++++++++++++++++++++++++++++++++++++++++++++
+ cmds-inspect.c           |   2 +
+ commands.h               |   2 +
+ 4 files changed, 259 insertions(+), 1 deletion(-)
+ create mode 100644 cmds-inspect-dump-csum.c
 
-Use BUG(); instead please, see
-https://lore.kernel.org/linux-btrfs/20190325130256.1437810-1-arnd@arndb.de/
+diff --git a/Makefile b/Makefile
+index e25e256f96af..f5d0c0532faf 100644
+--- a/Makefile
++++ b/Makefile
+@@ -130,7 +130,8 @@ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+ 	       cmds-restore.o cmds-rescue.o chunk-recover.o super-recover.o \
+ 	       cmds-property.o cmds-fi-usage.o cmds-inspect-dump-tree.o \
+ 	       cmds-inspect-dump-super.o cmds-inspect-tree-stats.o cmds-fi-du.o \
+-	       mkfs/common.o check/mode-common.o check/mode-lowmem.o
++	       cmds-inspect-dump-csum.o mkfs/common.o check/mode-common.o \
++	       check/mode-lowmem.o
+ libbtrfs_objects = send-stream.o send-utils.o kernel-lib/rbtree.o btrfs-list.o \
+ 		   kernel-lib/crc32c.o messages.o \
+ 		   uuid-tree.o utils-lib.o rbtree-utils.o
+diff --git a/cmds-inspect-dump-csum.c b/cmds-inspect-dump-csum.c
+new file mode 100644
+index 000000000000..67e14fde6ec7
+--- /dev/null
++++ b/cmds-inspect-dump-csum.c
+@@ -0,0 +1,253 @@
++/*
++ * Copyright (C) 2019 SUSE. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++#include <linux/fiemap.h>
++#include <linux/fs.h>
++
++#include <sys/types.h>
++#include <sys/ioctl.h>
++
++#include <stdlib.h>
++#include <stdio.h>
++#include <errno.h>
++#include <unistd.h>
++#include <string.h>
++#include <fcntl.h>
++#include <getopt.h>
++
++#include "kerncompat.h"
++#include "ctree.h"
++#include "messages.h"
++#include "help.h"
++#include "ioctl.h"
++#include "utils.h"
++#include "disk-io.h"
++
++static bool debug = false;
++
++static int btrfs_lookup_csum_for_phys(int fd, struct btrfs_super_block *sb,
++				      u64 phys, u64 extent_csums)
++{
++	struct btrfs_ioctl_search_args_v2 *search;
++	struct btrfs_ioctl_search_key *sk;
++	int bufsz = 1024;
++	char buf[bufsz], *bp;
++	unsigned int off = 0;
++	const int csum_size = btrfs_super_csum_size(sb);
++	const int sector_size = btrfs_super_sectorsize(sb);
++	int ret, i, j;
++	u64 needle = phys;
++	u64 pending_csum_count = extent_csums;
++
++	memset(buf, 0, sizeof(buf));
++	search = (struct btrfs_ioctl_search_args_v2 *)buf;
++	sk = &search->key;
++
++again:
++	if (debug)
++		printf(
++"Looking up checksums for extent at physial offset: %llu (searching at %llu), looking for %llu csums\n",
++		       phys, needle, pending_csum_count);
++
++	sk->tree_id = BTRFS_CSUM_TREE_OBJECTID;
++	sk->min_objectid = BTRFS_EXTENT_CSUM_OBJECTID;
++	sk->max_objectid = BTRFS_EXTENT_CSUM_OBJECTID;
++	sk->max_type = BTRFS_EXTENT_CSUM_KEY;
++	sk->min_type = BTRFS_EXTENT_CSUM_KEY;
++	sk->min_offset = needle;
++	sk->max_offset = (u64)-1;
++	sk->max_transid = (u64)-1;
++	sk->nr_items = 1;
++	search->buf_size = bufsz - sizeof(*search);
++
++	ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH_V2, search);
++	if (ret < 0)
++		return ret;
++
++	/*
++	 * If we don't find the csum item at @needle go back by @sector_size and
++	 * retry until we've found it.
++	 */
++	if (sk->nr_items == 0) {
++		needle -= sector_size;
++		goto again;
++	}
++
++
++	bp = (char *) search->buf;
++
++	for (i = 0; i < sk->nr_items; i++) {
++		struct btrfs_ioctl_search_header *sh;
++		u64 csums_in_item;
++
++		sh = (struct btrfs_ioctl_search_header *) (bp + off);
++		off += sizeof(*sh);
++
++		csums_in_item = btrfs_search_header_len(sh) / csum_size;
++		csums_in_item = min(csums_in_item, pending_csum_count);
++
++		for (j = 0; j < csums_in_item; j++) {
++			struct btrfs_csum_item *csum_item;
++
++			csum_item = (struct btrfs_csum_item *)
++						(bp + off + j * csum_size);
++
++			printf("Offset: %llu, checksum: 0x%08x\n",
++			       phys + j * sector_size, *(u32 *)csum_item);
++		}
++
++		off += btrfs_search_header_len(sh);
++		pending_csum_count -= csums_in_item;
++
++	}
++
++	return ret;
++}
++
++static int btrfs_get_extent_csum(int fd, struct btrfs_super_block *sb)
++{
++	struct fiemap *fiemap, *tmp;
++	struct fiemap_extent *fe;
++	size_t ext_size;
++	int ret, i;
++
++	fiemap = calloc(1, sizeof(*fiemap));
++	if (!fiemap)
++		return -ENOMEM;
++
++	fiemap->fm_length = ~0;
++
++	ret = ioctl(fd, FS_IOC_FIEMAP, fiemap);
++	if (ret)
++		goto free_fiemap;
++
++	ext_size = fiemap->fm_mapped_extents * sizeof(struct fiemap_extent);
++
++	tmp = realloc(fiemap, sizeof(*fiemap) + ext_size);
++	if (!tmp) {
++		ret = -ENOMEM;
++		goto free_fiemap;
++	}
++
++	fiemap = tmp;
++	fiemap->fm_extent_count = fiemap->fm_mapped_extents;
++	fiemap->fm_mapped_extents = 0;
++
++	ret = ioctl(fd, FS_IOC_FIEMAP, fiemap);
++	if (ret)
++		goto free_fiemap;
++
++	for (i = 0; i < fiemap->fm_mapped_extents; i++) {
++		u64 extent_csums;
++
++		fe = &fiemap->fm_extents[i];
++		extent_csums = fe->fe_length / btrfs_super_sectorsize(sb);
++
++		if (debug)
++			printf(
++"Found extent at physial offset: %llu, length %llu, looking for %llu csums\n",
++			       fe->fe_physical, fe->fe_length, extent_csums);
++
++		ret = btrfs_lookup_csum_for_phys(fd, sb, fe->fe_physical,
++						 extent_csums);
++		if (ret)
++			break;
++
++		if(fe->fe_flags & FIEMAP_EXTENT_LAST)
++			break;
++	}
++
++
++free_fiemap:
++	free(fiemap);
++	return ret;
++}
++
++const char * const cmd_inspect_dump_csum_usage[] = {
++	"btrfs inspect-internal dump-csum <path> <device>",
++	"Get Checksums for a given file",
++	"-d|--debug    Be more verbose",
++	NULL
++};
++
++int cmd_inspect_dump_csum(int argc, char **argv)
++{
++	struct btrfs_super_block *sb;
++	u8 super_block_data[BTRFS_SUPER_INFO_SIZE] = { 0 };
++	char *filename;
++	char *device;
++	int fd;
++	int devfd;
++	int ret;
++
++	optind = 0;
++
++	sb = (struct btrfs_super_block *)super_block_data;
++
++	while (1) {
++		static const struct option longopts[] = {
++			{ "debug", no_argument, NULL, 'd' },
++			{ NULL, 0, NULL, 0 }
++		};
++
++		int opt = getopt_long(argc, argv, "d", longopts, NULL);
++		if (opt < 0)
++			break;
++
++		switch (opt) {
++		case 'd':
++			debug = true;
++			break;
++		default:
++			usage(cmd_inspect_dump_csum_usage);
++		}
++	}
++
++	if (check_argc_exact(argc - optind, 2))
++		usage(cmd_inspect_dump_csum_usage);
++
++	filename = argv[optind];
++	device = argv[optind + 1];
++
++	fd = open(filename, O_RDONLY);
++	if (fd < 0) {
++		error("cannot open file %s:%m", filename);
++		return -errno;
++	}
++
++	devfd = open(device, O_RDONLY);
++	if (devfd < 0) {
++		ret = -errno;
++		goto out_close;
++	}
++	load_sb(devfd, btrfs_sb_offset(0), sb, BTRFS_SUPER_INFO_SIZE);
++	close(devfd);
++
++	if (btrfs_super_magic(sb) != BTRFS_MAGIC) {
++		ret = -EINVAL;
++		error("bad magic on superblock on %s", device);
++		goto out_close;
++	}
++
++	ret = btrfs_get_extent_csum(fd,sb);
++	if (ret)
++		error("checsum lookup for file %s failed", filename);
++out_close:
++	close(fd);
++	return ret;
++}
+diff --git a/cmds-inspect.c b/cmds-inspect.c
+index efea0331b7aa..c20decbf6fac 100644
+--- a/cmds-inspect.c
++++ b/cmds-inspect.c
+@@ -654,6 +654,8 @@ const struct cmd_group inspect_cmd_group = {
+ 				cmd_inspect_dump_super_usage, NULL, 0 },
+ 		{ "tree-stats", cmd_inspect_tree_stats,
+ 				cmd_inspect_tree_stats_usage, NULL, 0 },
++		{ "dump-csum",  cmd_inspect_dump_csum,
++				cmd_inspect_dump_csum_usage, NULL, 0 },
+ 		NULL_CMD_STRUCT
+ 	}
+ };
+diff --git a/commands.h b/commands.h
+index 76991f2b28d5..698ae532b2b8 100644
+--- a/commands.h
++++ b/commands.h
+@@ -92,6 +92,7 @@ extern const char * const cmd_rescue_usage[];
+ extern const char * const cmd_inspect_dump_super_usage[];
+ extern const char * const cmd_inspect_dump_tree_usage[];
+ extern const char * const cmd_inspect_tree_stats_usage[];
++extern const char * const cmd_inspect_dump_csum_usage[];
+ extern const char * const cmd_filesystem_du_usage[];
+ extern const char * const cmd_filesystem_usage_usage[];
+ 
+@@ -108,6 +109,7 @@ int cmd_super_recover(int argc, char **argv);
+ int cmd_inspect(int argc, char **argv);
+ int cmd_inspect_dump_super(int argc, char **argv);
+ int cmd_inspect_dump_tree(int argc, char **argv);
++int cmd_inspect_dump_csum(int argc, char **argv);
+ int cmd_inspect_tree_stats(int argc, char **argv);
+ int cmd_property(int argc, char **argv);
+ int cmd_send(int argc, char **argv);
+-- 
+2.16.4
 
-> +               }
->         }
->         if (slot < btrfs_header_nritems(eb) - 1) {
->                 btrfs_item_key(eb, &disk_key, slot + 1);
-> -               BUG_ON(comp_keys(&disk_key, new_key) <=3D 0);
-> +               if (unlikely(comp_keys(&disk_key, new_key) <=3D 0)) {
-> +                       btrfs_crit(fs_info,
-> +               "on-disk slot %u key (%llu, %u, %llu) new key (%llu %u %l=
-lu)",
-
-Same here.
-
-> +                                  slot, btrfs_disk_key_objectid(&disk_ke=
-y),
-> +                                  btrfs_disk_key_type(&disk_key),
-> +                                  btrfs_disk_key_offset(&disk_key),
-> +                                  new_key->objectid, new_key->type,
-> +                                  new_key->offset);
-> +                       btrfs_print_leaf(eb);
-> +                       BUG_ON(1);
-
-Same here.
-
-Other then that, it looks ok to me and you can add Reviewed-by:
-fdmanana@suse.com
-
-Thanks.
-
-> +               }
->         }
->
->         btrfs_cpu_key_to_disk(&disk_key, new_key);
-> --
-> 2.21.0
->
-
-
---=20
-Filipe David Manana,
-
-=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
- right.=E2=80=9D

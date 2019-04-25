@@ -6,26 +6,26 @@ X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0205DC282E1
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 10:00:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 48CCDC10F03
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 10:00:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C4F7F206BA
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 10:00:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1A4C1206BA
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 10:00:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729866AbfDYKAp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 25 Apr 2019 06:00:45 -0400
-Received: from Galois.linutronix.de ([146.0.238.70]:58054 "EHLO
+        id S1729212AbfDYKAu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 25 Apr 2019 06:00:50 -0400
+Received: from Galois.linutronix.de ([146.0.238.70]:58065 "EHLO
         Galois.linutronix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729813AbfDYKAn (ORCPT
+        with ESMTP id S1729877AbfDYKAs (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Apr 2019 06:00:43 -0400
+        Thu, 25 Apr 2019 06:00:48 -0400
 Received: from localhost ([127.0.0.1] helo=nanos.tec.linutronix.de)
         by Galois.linutronix.de with esmtp (Exim 4.80)
         (envelope-from <tglx@linutronix.de>)
-        id 1hJbA6-0001uB-F4; Thu, 25 Apr 2019 11:59:26 +0200
-Message-Id: <20190425094802.716274532@linutronix.de>
+        id 1hJbAI-0001yH-Jz; Thu, 25 Apr 2019 11:59:38 +0200
+Message-Id: <20190425094803.340000461@linutronix.de>
 User-Agent: quilt/0.65
-Date:   Thu, 25 Apr 2019 11:45:10 +0200
+Date:   Thu, 25 Apr 2019 11:45:17 +0200
 From:   Thomas Gleixner <tglx@linutronix.de>
 To:     LKML <linux-kernel@vger.kernel.org>
 Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
@@ -62,8 +62,7 @@ Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
         Rodrigo Vivi <rodrigo.vivi@intel.com>,
         Tom Zanussi <tom.zanussi@linux.intel.com>,
         Miroslav Benes <mbenes@suse.cz>, linux-arch@vger.kernel.org
-Subject: [patch V3 17/29] lockdep: Remove unused trace argument from
- print_circular_bug()
+Subject: [patch V3 24/29] tracing: Remove the last struct stack_trace usage
 References: <20190425094453.875139013@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -72,35 +71,126 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
----
- kernel/locking/lockdep.c |    9 ++++-----
- 1 file changed, 4 insertions(+), 5 deletions(-)
+Simplify the stack retrieval code by using the storage array based
+interface.
 
---- a/kernel/locking/lockdep.c
-+++ b/kernel/locking/lockdep.c
-@@ -1522,10 +1522,9 @@ static inline int class_equal(struct loc
- }
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Reviewed-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+---
+ kernel/trace/trace_stack.c |   37 ++++++++++++++++---------------------
+ 1 file changed, 16 insertions(+), 21 deletions(-)
+
+--- a/kernel/trace/trace_stack.c
++++ b/kernel/trace/trace_stack.c
+@@ -23,11 +23,7 @@
+ static unsigned long stack_dump_trace[STACK_TRACE_ENTRIES];
+ static unsigned stack_trace_index[STACK_TRACE_ENTRIES];
  
- static noinline int print_circular_bug(struct lock_list *this,
--				struct lock_list *target,
--				struct held_lock *check_src,
--				struct held_lock *check_tgt,
--				struct stack_trace *trace)
-+				       struct lock_list *target,
-+				       struct held_lock *check_src,
-+				       struct held_lock *check_tgt)
- {
- 	struct task_struct *curr = current;
- 	struct lock_list *parent;
-@@ -2206,7 +2205,7 @@ check_prev_add(struct task_struct *curr,
- 			 */
- 			save(trace);
- 		}
--		return print_circular_bug(&this, target_entry, next, prev, trace);
-+		return print_circular_bug(&this, target_entry, next, prev);
+-struct stack_trace stack_trace_max = {
+-	.max_entries		= STACK_TRACE_ENTRIES,
+-	.entries		= &stack_dump_trace[0],
+-};
+-
++static unsigned int stack_trace_entries;
+ static unsigned long stack_trace_max_size;
+ static arch_spinlock_t stack_trace_max_lock =
+ 	(arch_spinlock_t)__ARCH_SPIN_LOCK_UNLOCKED;
+@@ -44,10 +40,10 @@ static void print_max_stack(void)
+ 
+ 	pr_emerg("        Depth    Size   Location    (%d entries)\n"
+ 			   "        -----    ----   --------\n",
+-			   stack_trace_max.nr_entries);
++			   stack_trace_entries);
+ 
+-	for (i = 0; i < stack_trace_max.nr_entries; i++) {
+-		if (i + 1 == stack_trace_max.nr_entries)
++	for (i = 0; i < stack_trace_entries; i++) {
++		if (i + 1 == stack_trace_entries)
+ 			size = stack_trace_index[i];
+ 		else
+ 			size = stack_trace_index[i] - stack_trace_index[i+1];
+@@ -93,13 +89,12 @@ static void check_stack(unsigned long ip
+ 
+ 	stack_trace_max_size = this_size;
+ 
+-	stack_trace_max.nr_entries = 0;
+-	stack_trace_max.skip = 0;
+-
+-	save_stack_trace(&stack_trace_max);
++	stack_trace_entries = stack_trace_save(stack_dump_trace,
++					       ARRAY_SIZE(stack_dump_trace) - 1,
++					       0);
+ 
+ 	/* Skip over the overhead of the stack tracer itself */
+-	for (i = 0; i < stack_trace_max.nr_entries; i++) {
++	for (i = 0; i < stack_trace_entries; i++) {
+ 		if (stack_dump_trace[i] == ip)
+ 			break;
  	}
- 	else if (unlikely(ret < 0))
- 		return print_bfs_bug(ret);
+@@ -108,7 +103,7 @@ static void check_stack(unsigned long ip
+ 	 * Some archs may not have the passed in ip in the dump.
+ 	 * If that happens, we need to show everything.
+ 	 */
+-	if (i == stack_trace_max.nr_entries)
++	if (i == stack_trace_entries)
+ 		i = 0;
+ 
+ 	/*
+@@ -126,13 +121,13 @@ static void check_stack(unsigned long ip
+ 	 * loop will only happen once. This code only takes place
+ 	 * on a new max, so it is far from a fast path.
+ 	 */
+-	while (i < stack_trace_max.nr_entries) {
++	while (i < stack_trace_entries) {
+ 		int found = 0;
+ 
+ 		stack_trace_index[x] = this_size;
+ 		p = start;
+ 
+-		for (; p < top && i < stack_trace_max.nr_entries; p++) {
++		for (; p < top && i < stack_trace_entries; p++) {
+ 			/*
+ 			 * The READ_ONCE_NOCHECK is used to let KASAN know that
+ 			 * this is not a stack-out-of-bounds error.
+@@ -163,7 +158,7 @@ static void check_stack(unsigned long ip
+ 			i++;
+ 	}
+ 
+-	stack_trace_max.nr_entries = x;
++	stack_trace_entries = x;
+ 
+ 	if (task_stack_end_corrupted(current)) {
+ 		print_max_stack();
+@@ -265,7 +260,7 @@ static void *
+ {
+ 	long n = *pos - 1;
+ 
+-	if (n >= stack_trace_max.nr_entries)
++	if (n >= stack_trace_entries)
+ 		return NULL;
+ 
+ 	m->private = (void *)n;
+@@ -329,7 +324,7 @@ static int t_show(struct seq_file *m, vo
+ 		seq_printf(m, "        Depth    Size   Location"
+ 			   "    (%d entries)\n"
+ 			   "        -----    ----   --------\n",
+-			   stack_trace_max.nr_entries);
++			   stack_trace_entries);
+ 
+ 		if (!stack_tracer_enabled && !stack_trace_max_size)
+ 			print_disabled(m);
+@@ -339,10 +334,10 @@ static int t_show(struct seq_file *m, vo
+ 
+ 	i = *(long *)v;
+ 
+-	if (i >= stack_trace_max.nr_entries)
++	if (i >= stack_trace_entries)
+ 		return 0;
+ 
+-	if (i + 1 == stack_trace_max.nr_entries)
++	if (i + 1 == stack_trace_entries)
+ 		size = stack_trace_index[i];
+ 	else
+ 		size = stack_trace_index[i] - stack_trace_index[i+1];
 
 

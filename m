@@ -7,55 +7,55 @@ X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5CF84C282E1
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8CE14C282E5
 	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 11:55:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 30040218AD
+	by mail.kernel.org (Postfix) with ESMTP id 5C7D1217FA
 	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 11:55:35 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="q216PaAH"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="VNUbZyrh"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727722AbfDYLzd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 25 Apr 2019 07:55:33 -0400
-Received: from aserp2130.oracle.com ([141.146.126.79]:54454 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727443AbfDYLzc (ORCPT
+        id S1727793AbfDYLze (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 25 Apr 2019 07:55:34 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:57162 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727683AbfDYLzd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Apr 2019 07:55:32 -0400
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x3PBs90g067906
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Apr 2019 11:55:30 GMT
+        Thu, 25 Apr 2019 07:55:33 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x3PBsLS4079114
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Apr 2019 11:55:32 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
  date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding; s=corp-2018-07-02;
- bh=uJ9iFLXrH9aID1v0/X9Ru8OBfcfwqRWFNGvhPxqbQvM=;
- b=q216PaAHci4lOtxXRd4a3cISPak80tql61a7aFOr+kwe+3ACyY8HoYgTQkMlBzyR3UXR
- DXdjDN/nJe3jwMDUGB4cytQjiGuATj1G62xkLQxfS+97fGo5L6dAX1lGFQjPoHF1cNkW
- E+Q2Fa5gTS8VAJ0AqjmF0yAWIyWDsRiRv4hDjzTDa18FIbGvFIUyJTU40KJJlNXGaXx1
- D1hojM5g+Itni3i4xfCZky9bsdKebIGSYmYwiyhCPfv8ToxPZZwRCetHEzEz4UsQhh6C
- QcoPRyKvYRGehRW9r9Q+7mWOUBZzHS4iSn7DnMvo0cI/vKwDM8Oc1vsHB6AlG/k9coJa Eg== 
-Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
-        by aserp2130.oracle.com with ESMTP id 2ryrxd82eh-1
+ bh=mJlag4BBcZEO8GQftNtoGX18aglEiGhiFerPFhliAY8=;
+ b=VNUbZyrh6xtuy0/l9Prs//6FfdZY8xKK4YQFdNg3iRK7s09RjqGwd/3kADrxiPrbAVY2
+ arGC3RmxRhKIdSsZ7gYPL3FPMPFGVLm0w3xpH/qWEBNZkVCXvie4t1GZ79Cy6N1fHUKd
+ 4KtocCj8W/CpuxjdyO1sVXwzHXyhKvlezBv+SsOfF2bDNn/99nadTrmQVv8IKcdYi9/a
+ 6aQM5VaTKbQgw0iaVky4K3+Yc92E47RAxGJkuzdSLXkhZ5/cjvLuJVU9ridXzBlK/fvB
+ FvATr5omSdSEYo09xTqbEGIx0iuoXh6jJzvaZJ0cVFFs0P4GP8c9CdY1UnhSkGx7p4vv vA== 
+Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
+        by userp2120.oracle.com with ESMTP id 2ryv2qfsr1-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Apr 2019 11:55:30 +0000
-Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
-        by userp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x3PBtTQB174645
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Apr 2019 11:55:29 GMT
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userp3030.oracle.com with ESMTP id 2ryrht5rn4-1
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Apr 2019 11:55:32 +0000
+Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
+        by userp3020.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x3PBsl8f136144
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Apr 2019 11:55:32 GMT
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by userp3020.oracle.com with ESMTP id 2s0dwfbxdc-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Apr 2019 11:55:29 +0000
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Apr 2019 11:55:31 +0000
 Received: from abhmp0002.oracle.com (abhmp0002.oracle.com [141.146.116.8])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x3PBtTsh015795
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Apr 2019 11:55:29 GMT
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x3PBtV2Y019394
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Apr 2019 11:55:31 GMT
 Received: from dhcp-10-186-51-152.sg.oracle.com (/10.186.51.152)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Thu, 25 Apr 2019 04:55:28 -0700
+        with ESMTP ; Thu, 25 Apr 2019 04:55:30 -0700
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/3] btrfs: add inode pointer to prop_handler::validate()
-Date:   Thu, 25 Apr 2019 19:55:22 +0800
-Message-Id: <20190425115524.2482-2-anand.jain@oracle.com>
+Subject: [PATCH 3/3] btrfs: add readmirror devid property
+Date:   Thu, 25 Apr 2019 19:55:24 +0800
+Message-Id: <20190425115524.2482-4-anand.jain@oracle.com>
 X-Mailer: git-send-email 2.20.1 (Apple Git-117)
 In-Reply-To: <20190425115524.2482-1-anand.jain@oracle.com>
 References: <20190425115524.2482-1-anand.jain@oracle.com>
@@ -63,13 +63,13 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9237 signatures=668685
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=5 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=936
  adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.0.1-1810050000 definitions=main-1904250076
 X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9237 signatures=668685
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
  suspectscore=5 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
- lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=964 adultscore=0
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
  definitions=main-1904250076
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -77,96 +77,176 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-In preparation to add the readmirror property, pass inode in the
-prop_handler::validate() function vector, so that it can fetch
-corresponding fs_devices.
+From: Anand Jain <asj@dhcp-10-186-51-152.sg.oracle.com>
+
+Introduces devid readmirror property, to direct read IO to the specified
+device(s).
+
+The readmirror property is stored as extended attribute on the root
+inode. The readmirror input format is devid1,2,3.. etc. And for the
+each devid provided, a new flag BTRFS_DEV_STATE_READ_OPTIMISED is set.
+
+As of now readmirror by devid supports only raid1s. Raid10 support has
+to leverage device grouping feature, which is yet to be implemented.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/props.c | 12 +++++++-----
- fs/btrfs/props.h |  4 ++--
- fs/btrfs/xattr.c |  2 +-
- 3 files changed, 10 insertions(+), 8 deletions(-)
+ fs/btrfs/props.c   | 69 +++++++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/volumes.c | 16 +++++++++++
+ fs/btrfs/volumes.h |  2 ++
+ 3 files changed, 86 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-index ca2716917e37..5c1fccc32b43 100644
+index 1d44fbdd5891..c5d17e29ab4e 100644
 --- a/fs/btrfs/props.c
 +++ b/fs/btrfs/props.c
-@@ -17,7 +17,7 @@ static DEFINE_HASHTABLE(prop_handlers_ht, BTRFS_PROP_HANDLERS_HT_BITS);
- struct prop_handler {
- 	struct hlist_node node;
- 	const char *xattr_name;
--	int (*validate)(const char *value, size_t len);
-+	int (*validate)(struct inode *inode, const char *value, size_t len);
- 	int (*apply)(struct inode *inode, const char *value, size_t len);
- 	const char *(*extract)(struct inode *inode);
- 	int inheritable;
-@@ -55,7 +55,8 @@ find_prop_handler(const char *name,
- 	return NULL;
- }
- 
--int btrfs_validate_prop(const char *name, const char *value, size_t value_len)
-+int btrfs_validate_prop(struct inode *inode, const char *name,
-+			const char *value, size_t value_len)
+@@ -320,7 +320,10 @@ static const char *prop_compression_extract(struct inode *inode)
+ static int prop_readmirror_validate(struct inode *inode, const char *value,
+ 				    size_t len)
  {
- 	const struct prop_handler *handler;
- 
-@@ -69,7 +70,7 @@ int btrfs_validate_prop(const char *name, const char *value, size_t value_len)
- 	if (value_len == 0)
- 		return 0;
- 
--	return handler->validate(value, value_len);
-+	return handler->validate(inode, value, value_len);
- }
- 
- int btrfs_set_prop(struct btrfs_trans_handle *trans, struct inode *inode,
-@@ -252,7 +253,8 @@ int btrfs_load_inode_props(struct inode *inode, struct btrfs_path *path)
- 	return ret;
- }
- 
--static int prop_compression_validate(const char *value, size_t len)
-+static int prop_compression_validate(struct inode *inode, const char *value,
-+				     size_t len)
- {
- 	if (!value)
- 		return 0;
-@@ -353,7 +355,7 @@ static int inherit_props(struct btrfs_trans_handle *trans,
- 		 * This is not strictly necessary as the property should be
- 		 * valid, but in case it isn't, don't propagate it futher.
- 		 */
--		ret = h->validate(value, strlen(value));
-+		ret = h->validate(inode, value, strlen(value));
- 		if (ret)
- 			continue;
- 
-diff --git a/fs/btrfs/props.h b/fs/btrfs/props.h
-index 40b2c65b518c..5b1e39136f7f 100644
---- a/fs/btrfs/props.h
-+++ b/fs/btrfs/props.h
-@@ -13,8 +13,8 @@ void __init btrfs_props_init(void);
- int btrfs_set_prop(struct btrfs_trans_handle *trans, struct inode *inode,
- 		   const char *name, const char *value, size_t value_len,
- 		   int flags);
--int btrfs_validate_prop(const char *name, const char *value, size_t value_len);
--
-+int btrfs_validate_prop(struct inode *inode, const char *name,
-+			const char *value, size_t value_len);
- int btrfs_load_inode_props(struct inode *inode, struct btrfs_path *path);
- 
- int btrfs_inode_inherit_props(struct btrfs_trans_handle *trans,
-diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
-index 46ad7b5cf209..4e4f0edd4968 100644
---- a/fs/btrfs/xattr.c
-+++ b/fs/btrfs/xattr.c
-@@ -378,7 +378,7 @@ static int btrfs_xattr_handler_set_prop(const struct xattr_handler *handler,
++	char *value_dup;
++	char *devid_str;
  	struct btrfs_root *root = BTRFS_I(inode)->root;
++	struct btrfs_fs_devices *fs_devices = root->fs_info->fs_devices;
  
- 	name = xattr_full_name(handler, name);
--	ret = btrfs_validate_prop(name, value, size);
-+	ret = btrfs_validate_prop(inode, name, value, size);
- 	if (ret)
- 		return ret;
+ 	if (root->root_key.objectid != BTRFS_FS_TREE_OBJECTID)
+ 		return -EINVAL;
+@@ -328,16 +331,80 @@ static int prop_readmirror_validate(struct inode *inode, const char *value,
+ 	if (!len)
+ 		return 0;
  
+-	return -EINVAL;
++	if (len <= 5 || strncmp("devid", value, 5))
++		return -EINVAL;
++
++	value_dup = kstrndup(value + 5, len - 5, GFP_KERNEL);
++	if (!value_dup)
++		return -ENOMEM;
++
++	while ((devid_str = strsep(&value_dup, ",")) != NULL) {
++		u64 devid;
++		struct btrfs_device *device;
++
++		if (kstrtoull(devid_str, 10, &devid)) {
++			kfree(value_dup);
++			return -EINVAL;
++		}
++
++		device = btrfs_find_device(fs_devices, devid, NULL, NULL, false);
++		if (!device) {
++			kfree(value_dup);
++			return -EINVAL;
++		}
++	}
++
++	return 0;
+ }
+ 
+ static int prop_readmirror_apply(struct inode *inode, const char *value,
+ 				 size_t len)
+ {
++	char *value_dup;
++	char *devid_str;
++	struct btrfs_device *device;
+ 	struct btrfs_fs_devices *fs_devices = btrfs_sb(inode->i_sb)->fs_devices;
+ 
++	if (value) {
++		value_dup = kstrndup(value + 5, len - 5, GFP_KERNEL);
++		if (!value_dup)
++			return -ENOMEM;
++	}
++
++	/* Both set and reset has to clear the exisiting values */
++	list_for_each_entry(device, &fs_devices->devices, dev_list) {
++		if (test_bit(BTRFS_DEV_STATE_READ_OPTIMISED,
++			     &device->dev_state)) {
++			clear_bit(BTRFS_DEV_STATE_READ_OPTIMISED,
++				  &device->dev_state);
++		}
++	}
+ 	fs_devices->readmirror_policy = BTRFS_READMIRROR_DEFAULT;
+ 
++	/* Its only reset so just return */
++	if (!value)
++		return 0;
++
++	while ((devid_str = strsep(&value_dup, ",")) != NULL) {
++		u64 devid;
++
++		/* Has been verified in validate() this will not fail */
++		if (kstrtoull(devid_str, 10, &devid)) {
++			kfree(value_dup);
++			return -EINVAL;
++		}
++
++		device = btrfs_find_device(fs_devices, devid, NULL, NULL, false);
++		if (!device) {
++			kfree(value_dup);
++			return -EINVAL;
++		}
++
++		set_bit(BTRFS_DEV_STATE_READ_OPTIMISED, &device->dev_state);
++		fs_devices->readmirror_policy = BTRFS_READMIRROR_DEVID;
++	}
++
++	kfree(value_dup);
+ 	return 0;
+ }
+ 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 64c3a2d8b264..90cbc03a20f6 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5495,6 +5495,7 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
+ 	int preferred_mirror;
+ 	int tolerance;
+ 	struct btrfs_device *srcdev;
++	bool found = false;
+ 
+ 	ASSERT((map->type &
+ 		 (BTRFS_BLOCK_GROUP_RAID1 | BTRFS_BLOCK_GROUP_RAID10)));
+@@ -5505,6 +5506,21 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
+ 		num_stripes = map->num_stripes;
+ 
+ 	switch(fs_info->fs_devices->readmirror_policy) {
++	case BTRFS_READMIRROR_DEVID:
++		/* skip raid10 for now */
++		if (map->type & BTRFS_BLOCK_GROUP_RAID1) {
++			for (i = first; i < first + num_stripes; i++) {
++				if (test_bit(BTRFS_DEV_STATE_READ_OPTIMISED,
++					     &map->stripes[i].dev->dev_state)) {
++					preferred_mirror = i;
++					found = true;
++					break;
++				}
++			}
++			if (found)
++				break;
++		}
++		/* fall through */
+ 	case BTRFS_READMIRROR_DEFAULT:
+ 		/* fall through */
+ 	default:
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 5dffaa6f9d18..6c223790dc4c 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -41,6 +41,7 @@ struct btrfs_pending_bios {
+ #define BTRFS_DEV_STATE_MISSING		(2)
+ #define BTRFS_DEV_STATE_REPLACE_TGT	(3)
+ #define BTRFS_DEV_STATE_FLUSH_SENT	(4)
++#define BTRFS_DEV_STATE_READ_OPTIMISED	(5)
+ 
+ struct btrfs_device {
+ 	struct list_head dev_list;
+@@ -206,6 +207,7 @@ BTRFS_DEVICE_GETSET_FUNCS(bytes_used);
+ 
+ enum btrfs_readmirror_policy {
+ 	BTRFS_READMIRROR_DEFAULT,
++	BTRFS_READMIRROR_DEVID,
+ };
+ 
+ struct btrfs_fs_devices {
 -- 
 2.20.1 (Apple Git-117)
 

@@ -2,182 +2,170 @@ Return-Path: <SRS0=mBNC=S3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D55DAC10F11
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 00:25:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 51BA8C10F11
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 00:30:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8FA4120643
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 00:25:22 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1556151922;
-	bh=y1s/p9Q95WVyoV/00G2bE4wx2YA55Os5PlothV+nViM=;
-	h=From:To:Cc:Subject:Date:List-ID:From;
-	b=OoLpWg9f3ykpgUCA38ISI5qx6NcBTLGv4CpyDa4If2QmrKi9CQpG7ZNG8Jc/eeybd
-	 B7y1Ag00u70tBGkOTFBGcFxWQ5Hc6VRT9QWx8Zw4sg8jWadWoh48Z1TWTa5sknBilB
-	 bEkUzsHBLB52fH2ogTqGLr+VbnGR27q/4uVpXFVo=
+	by mail.kernel.org (Postfix) with ESMTP id 171E2218DE
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 00:30:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728644AbfDYAZV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 Apr 2019 20:25:21 -0400
-Received: from mail.kernel.org ([198.145.29.99]:57034 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728605AbfDYAZV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Apr 2019 20:25:21 -0400
-Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 00D9120643;
-        Thu, 25 Apr 2019 00:25:18 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1556151919;
-        bh=y1s/p9Q95WVyoV/00G2bE4wx2YA55Os5PlothV+nViM=;
-        h=From:To:Cc:Subject:Date:From;
-        b=A4r9bIHhUJiSHnD6AgBannW0uZulI0e9bcIu4FrRJAPresuIi70idDqGufH05E7Cz
-         G9cApeccxyQt2XTLkjRupBOQ1VbXnRoRwE2eEy7FVUXEAh0cFgyHE+QWv5gPv2Yj8e
-         Le4taAHgWtgS7fATTAoHGIyV7ysm9EgxfAxDJ3PQ=
-From:   fdmanana@kernel.org
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] btrfs: fix filtering of scratch device in test case 048
-Date:   Thu, 25 Apr 2019 01:24:57 +0100
-Message-Id: <20190425002457.28648-1-fdmanana@kernel.org>
-X-Mailer: git-send-email 2.11.0
+        id S2388039AbfDYAao (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 Apr 2019 20:30:44 -0400
+Received: from mx2.suse.de ([195.135.220.15]:45748 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S2388021AbfDYAao (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 24 Apr 2019 20:30:44 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 89973AF0F
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Apr 2019 00:30:42 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: tree-checker: Allow error injection for
+ tree-checker
+To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20190424072253.4979-1-wqu@suse.com>
+ <20190424174507.GF20156@twin.jikos.cz>
+From:   Qu Wenruo <wqu@suse.de>
+Openpgp: preference=signencrypt
+Autocrypt: addr=wqu@suse.de; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0F1F1IFdlbnJ1byA8d3F1QHN1c2UuZGU+iQFUBBMBCAA+AhsDBQsJCAcCBhUICQoLAgQW
+ AgMBAh4BAheAFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlnVgp0FCQlmAm4ACgkQwj2R86El
+ /qilmgf/cUq9kFQo577ku5gc6rFpVg68ublBwjYpwjw0b//xo+Wo1wm+RRbUGs+djSZAqw12
+ D4F3r0mBTI7abUCNWAbFkYZSAIFVi0DMkjypIVS7PSaEt04rM9VBTToE+YqU6WENeJ57R2p2
+ +hI0wZrBwxObdsdaOtxWtsp3bmhIbdqxSKrtXuRawy4KnQYcLuGzOce9okdlbAE0W3KHm1gQ
+ oNAe6FX8nC9qo14m8LqEbThYH+qj4iCMlN8HIfbSx4F3e7nHZ+UAMW+E/lnMRkIB9Df+JyVd
+ /NlXzIjZAggcWsqpx6D4wyAuexKWkiGQeUeArUNihAwXjmyqWPGmjVyIh+oC6LkBDQRZ1YGv
+ AQgAqlPrYeBLMv3PAZ75YhQIwH6c4SNcB++hQ9TCT5gIQNw51+SQzkXIGgmzxMIS49cZcE4K
+ Xk/kHw5hieQeQZa60BWVRNXwoRI4ib8okgDuMkD5Kz1WEyO149+BZ7HD4/yK0VFJGuvDJR8T
+ 7RZwB69uVSLjkuNZZmCmDcDzS0c/SJOg5nkxt1iTtgUETb1wNKV6yR9XzRkrEW/qShChyrS9
+ fNN8e9c0MQsC4fsyz9Ylx1TOY/IF/c6rqYoEEfwnpdlz0uOM1nA1vK+wdKtXluCa79MdfaeD
+ /dt76Kp/o6CAKLLcjU1Iwnkq1HSrYfY3HZWpvV9g84gPwxwxX0uXquHxLwARAQABiQE8BBgB
+ CAAmFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlnVga8CGwwFCQPCZwAACgkQwj2R86El/qgN
+ 8Qf+M0vM2Idwm5txZZSs+/kSgcPxEwYmxUinnUJGyc0ZWYQXPl0cBetZon9El0naijGzNWvf
+ HxIPB+ZFehk6Otgc78p1a3/xck/s1myFRLrmbbTJNoFiyL25ljcq0J8z5Zp4yuABL2RiLdaZ
+ Pt/jfwjBHwGR+QKp6dD2qMrUWf9b7TFzYDMZXzZ2/eoIgtyjEelNBPrIgOFe24iKMjaGjd97
+ fJuRcBMHdhUAxvXQF1oRtd83JvYJ5OtwTd8MgkEfl+fo7HwWkuHbzc70L4fFKv2BowqFdaHy
+ mId1ijGPGr46tuZ5a4cw/zbaPYx6fJ4sK9tSv/6V1QPNUdqml6hm6pfs6A==
+Message-ID: <143ea4d1-5014-5198-8a34-8d579bef5966@suse.de>
+Date:   Thu, 25 Apr 2019 08:30:38 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.6.1
+MIME-Version: 1.0
+In-Reply-To: <20190424174507.GF20156@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="6UGXcUMGpfpEA7ZRTE6JZnzvQJTJTo6J2"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--6UGXcUMGpfpEA7ZRTE6JZnzvQJTJTo6J2
+Content-Type: multipart/mixed; boundary="Iw8zxOEM3V1ElKCjThYPTvG9KBipNTw10";
+ protected-headers="v1"
+From: Qu Wenruo <wqu@suse.de>
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <143ea4d1-5014-5198-8a34-8d579bef5966@suse.de>
+Subject: Re: [PATCH] btrfs: tree-checker: Allow error injection for
+ tree-checker
+References: <20190424072253.4979-1-wqu@suse.com>
+ <20190424174507.GF20156@twin.jikos.cz>
+In-Reply-To: <20190424174507.GF20156@twin.jikos.cz>
 
-The recent commit 4529b20e1aa8f9 ("btrfs/048: amend property validation
-cases"), does not properly filter the scratch device because the error
-messages are sent to stderr and not to stdout, and the pipe filter only
-gets input from the stdout of the btrfs utility. We need to redirect the
-stderr of the btrfs utility to its stdout.
+--Iw8zxOEM3V1ElKCjThYPTvG9KBipNTw10
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-Further, the golden output had the path "/mnt/scratch" hardcoded, instead
-of using SCRATCH_MNT. Fix that as well.
 
-The test was failing on any setup where the scratch device is not mounted
-at "/mnt/scratch", like this:
 
-$ ./check btrfs/048
-FSTYP         -- btrfs
-PLATFORM      -- Linux/x86_64 debian5 5.0.0-btrfs-next-46
-MKFS_OPTIONS  -- /dev/sdc
-MOUNT_OPTIONS -- /dev/sdc /home/fdmanana/btrfs-tests/scratch_1
+On 2019/4/25 =E4=B8=8A=E5=8D=881:45, David Sterba wrote:
+> On Wed, Apr 24, 2019 at 03:22:53PM +0800, Qu Wenruo wrote:
+>> Allowing error injection for btrfs_check_leaf_full() and
+>> btrfs_check_node() is useful to test the failure path of btrfs write
+>> time tree check.
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>=20
+> Does not compile:
+>=20
+>   CC [M]  fs/btrfs/tests/extent-map-tests.o
+> In file included from fs/btrfs/tree-checker.c:18:
+> ./include/linux/error-injection.h:15:15: error: unknown type name =E2=80=
+=98bool=E2=80=99
+>  static inline bool within_error_injection_list(unsigned long addr)
+>                ^~~~
+> ./include/linux/error-injection.h: In function =E2=80=98within_error_in=
+jection_list=E2=80=99:
+> ./include/linux/error-injection.h:17:9: error: =E2=80=98false=E2=80=99 =
+undeclared (first use in this function)
+>   return false;
+>          ^~~~~
+> ./include/linux/error-injection.h:17:9: note: each undeclared identifie=
+r is reported only once for each function it appears in
+> make[1]: *** [scripts/Makefile.build:275: fs/btrfs/tree-checker.o] Erro=
+r 1
+> make[1]: *** Waiting for unfinished jobs....
+> make: *** [Makefile:1737: fs/btrfs/] Error 2
 
-btrfs/048 1s ... - output mismatch (see /home/fdmanana/git/hub/xfstests/results//btrfs/048.out.bad)
-    --- tests/btrfs/048.out	2019-04-22 12:52:00.937610318 +0100
-    +++ /home/fdmanana/git/hub/xfstests/results//btrfs/048.out.bad	2019-04-25 01:14:43.077297630 +0100
-    @@ -78,17 +78,17 @@
-     compression=lzo
+Compiles without problem here using 8.2.1 gcc.
 
-     Testing argument validation, should fail
-    -ERROR: failed to set compression for /mnt/scratch: Invalid argument
-    +ERROR: failed to set compression for /home/fdmanana/btrfs-tests/scratch_1: Invalid argument
-     ***
-    -ERROR: failed to set compression for /mnt/scratch: Invalid argument
-    ...
-    (Run 'diff -u /home/fdmanana/git/hub/xfstests/tests/btrfs/048.out /home/fdmanana/git/hub/xfstests/results//btrfs/048.out.bad'  to see the entire diff)
-Ran: btrfs/048
-Failures: btrfs/048
-Failed 1 of 1 tests
+=2E..
+  CC [M]  fs/btrfs/check-integrity.o
+  CC [M]  fs/btrfs/ref-verify.o
+  CC [M]  fs/btrfs/tests/free-space-tests.o
+  CC [M]  fs/btrfs/tests/extent-buffer-tests.o
+  CC [M]  fs/btrfs/tests/btrfs-tests.o
+  CC [M]  fs/btrfs/tests/extent-io-tests.o
+  CC [M]  fs/btrfs/tests/inode-tests.o
+  CC [M]  fs/btrfs/tests/qgroup-tests.o
+  CC [M]  fs/btrfs/tests/free-space-tree-tests.o
+  CC [M]  fs/btrfs/tests/extent-map-tests.o
+  LD [M]  fs/btrfs/btrfs.o
+  Building modules, stage 2.
+  MODPOST 1 modules
+  CC      fs/btrfs/btrfs.mod.o
+  LD [M]  fs/btrfs/btrfs.ko
 
-$ diff -u /home/fdmanana/git/hub/xfstests/tests/btrfs/048.out /home/fdmanana/git/hub/xfstests/results//btrfs/048.out.bad
---- /home/fdmanana/git/hub/xfstests/tests/btrfs/048.out	2019-04-22 12:52:00.937610318 +0100
-+++ /home/fdmanana/git/hub/xfstests/results//btrfs/048.out.bad	2019-04-25 01:14:43.077297630 +0100
-@@ -78,17 +78,17 @@
- compression=lzo
+>=20
+>=20
+> gcc is 8.3.1
+>=20
 
- Testing argument validation, should fail
--ERROR: failed to set compression for /mnt/scratch: Invalid argument
-+ERROR: failed to set compression for /home/fdmanana/btrfs-tests/scratch_1: Invalid argument
- ***
--ERROR: failed to set compression for /mnt/scratch: Invalid argument
-+ERROR: failed to set compression for /home/fdmanana/btrfs-tests/scratch_1: Invalid argument
- ***
--ERROR: failed to set compression for /mnt/scratch: Invalid argument
-+ERROR: failed to set compression for /home/fdmanana/btrfs-tests/scratch_1: Invalid argument
+Upgrading to gcc 8.3.0, still passes.
 
- Testing if property is persistent across failed validation
--ERROR: failed to set compression for /mnt/scratch: Invalid argument
-+ERROR: failed to set compression for /home/fdmanana/btrfs-tests/scratch_1: Invalid argument
- compression=lzo
+Is that a regression in gcc 8.3.1?
 
- Testing generation is unchanged after failed validation
- generation		7
--ERROR: failed to set compression for /mnt/scratch: Invalid argument
-+ERROR: failed to set compression for /home/fdmanana/btrfs-tests/scratch_1: Invalid argument
- generation		7
+Thanks,
+Qu
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- tests/btrfs/048     | 10 +++++-----
- tests/btrfs/048.out | 10 +++++-----
- 2 files changed, 10 insertions(+), 10 deletions(-)
 
-diff --git a/tests/btrfs/048 b/tests/btrfs/048
-index f6de0b8c..8bb10a90 100755
---- a/tests/btrfs/048
-+++ b/tests/btrfs/048
-@@ -208,21 +208,21 @@ touch $SCRATCH_MNT/sv1/file2
- $BTRFS_UTIL_PROG property get $SCRATCH_MNT/sv1/file2 compression
- 
- echo -e "\nTesting argument validation, should fail"
--$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'lz' | _filter_scratch
-+$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'lz' 2>&1 | _filter_scratch
- echo "***"
--$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'zli' | _filter_scratch
-+$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'zli' 2>&1 | _filter_scratch
- echo "***"
--$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'zst' | _filter_scratch
-+$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'zst' 2>&1 | _filter_scratch
- 
- echo -e "\nTesting if property is persistent across failed validation"
- $BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'lzo'
--$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'zli' | _filter_scratch
-+$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'zli' 2>&1 | _filter_scratch
- $BTRFS_UTIL_PROG property get $SCRATCH_MNT compression
- 
- echo -e "\nTesting generation is unchanged after failed validation"
- $BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT
- $BTRFS_UTIL_PROG inspect-internal dump-super $SCRATCH_DEV | grep '^generation'
--$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'lz' | _filter_scratch
-+$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'lz' 2>&1 | _filter_scratch
- $BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT
- $BTRFS_UTIL_PROG inspect-internal dump-super $SCRATCH_DEV | grep '^generation'
- 
-diff --git a/tests/btrfs/048.out b/tests/btrfs/048.out
-index 00f39bc0..16a785a6 100644
---- a/tests/btrfs/048.out
-+++ b/tests/btrfs/048.out
-@@ -78,17 +78,17 @@ compression=lzo
- compression=lzo
- 
- Testing argument validation, should fail
--ERROR: failed to set compression for /mnt/scratch: Invalid argument
-+ERROR: failed to set compression for SCRATCH_MNT: Invalid argument
- ***
--ERROR: failed to set compression for /mnt/scratch: Invalid argument
-+ERROR: failed to set compression for SCRATCH_MNT: Invalid argument
- ***
--ERROR: failed to set compression for /mnt/scratch: Invalid argument
-+ERROR: failed to set compression for SCRATCH_MNT: Invalid argument
- 
- Testing if property is persistent across failed validation
--ERROR: failed to set compression for /mnt/scratch: Invalid argument
-+ERROR: failed to set compression for SCRATCH_MNT: Invalid argument
- compression=lzo
- 
- Testing generation is unchanged after failed validation
- generation		7
--ERROR: failed to set compression for /mnt/scratch: Invalid argument
-+ERROR: failed to set compression for SCRATCH_MNT: Invalid argument
- generation		7
--- 
-2.11.0
+--Iw8zxOEM3V1ElKCjThYPTvG9KBipNTw10--
 
+--6UGXcUMGpfpEA7ZRTE6JZnzvQJTJTo6J2
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlzA/64ACgkQwj2R86El
+/qgNcwf+NlVzp7AIWo8VJLrDGerXb11mWBmrxJ07yBggMmBzRhVeOzV6mfu3zKWO
+XFmf9sHRuVXCZI1uVQw3jyStf7Oq8/3vuM5CzoS5Rzlwt9mVN6j1TSFxhX0Exz67
+N9xJ16PttJwipDMIpbuOjR5DDcKgGy5CqnPTy3SirJaDxXEC008y8/41dkRtvEZC
+qU9b7NTmvPfuuvs70gzq3fGx5NlcUZCaRwSIMNRTWr8y5buKR4FZFUsE/WN0mohl
+MbLlzgikEkYyo1En2gUmoGaNeO7icckzoZLAwFC8B0awLK6B11+YOxqkeurEoors
+yMfxcQvC8iNlSFnIYipSBP/0PfqO3w==
+=gdA2
+-----END PGP SIGNATURE-----
+
+--6UGXcUMGpfpEA7ZRTE6JZnzvQJTJTo6J2--

@@ -1,109 +1,183 @@
-Return-Path: <SRS0=IMPl=S2=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=mBNC=S3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS autolearn=unavailable autolearn_force=no
+X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E656FC282CE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Apr 2019 19:51:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D55DAC10F11
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 00:25:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BBFE520674
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Apr 2019 19:51:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8FA4120643
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 00:25:22 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1556151922;
+	bh=y1s/p9Q95WVyoV/00G2bE4wx2YA55Os5PlothV+nViM=;
+	h=From:To:Cc:Subject:Date:List-ID:From;
+	b=OoLpWg9f3ykpgUCA38ISI5qx6NcBTLGv4CpyDa4If2QmrKi9CQpG7ZNG8Jc/eeybd
+	 B7y1Ag00u70tBGkOTFBGcFxWQ5Hc6VRT9QWx8Zw4sg8jWadWoh48Z1TWTa5sknBilB
+	 bEkUzsHBLB52fH2ogTqGLr+VbnGR27q/4uVpXFVo=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731963AbfDXTvt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 Apr 2019 15:51:49 -0400
-Received: from Galois.linutronix.de ([146.0.238.70]:55610 "EHLO
-        Galois.linutronix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725970AbfDXTvs (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Apr 2019 15:51:48 -0400
-Received: from p5de0b374.dip0.t-ipconnect.de ([93.224.179.116] helo=nanos)
-        by Galois.linutronix.de with esmtpsa (TLS1.2:DHE_RSA_AES_256_CBC_SHA256:256)
-        (Exim 4.80)
-        (envelope-from <tglx@linutronix.de>)
-        id 1hJNv9-0005Zr-Gt; Wed, 24 Apr 2019 21:51:07 +0200
-Date:   Wed, 24 Apr 2019 21:51:05 +0200 (CEST)
-From:   Thomas Gleixner <tglx@linutronix.de>
-To:     Peter Zijlstra <peterz@infradead.org>
-cc:     LKML <linux-kernel@vger.kernel.org>,
-        Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
-        Andy Lutomirski <luto@kernel.org>,
-        Steven Rostedt <rostedt@goodmis.org>,
-        Alexander Potapenko <glider@google.com>,
-        Alexey Dobriyan <adobriyan@gmail.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Pekka Enberg <penberg@kernel.org>, linux-mm@kvack.org,
-        David Rientjes <rientjes@google.com>,
-        Christoph Lameter <cl@linux.com>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Dmitry Vyukov <dvyukov@google.com>,
-        Andrey Ryabinin <aryabinin@virtuozzo.com>,
-        kasan-dev@googlegroups.com,
-        Mike Rapoport <rppt@linux.vnet.ibm.com>,
-        Akinobu Mita <akinobu.mita@gmail.com>,
-        iommu@lists.linux-foundation.org,
-        Robin Murphy <robin.murphy@arm.com>,
-        Christoph Hellwig <hch@lst.de>,
-        Marek Szyprowski <m.szyprowski@samsung.com>,
-        Johannes Thumshirn <jthumshirn@suse.de>,
-        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, dm-devel@redhat.com,
-        Mike Snitzer <snitzer@redhat.com>,
-        Alasdair Kergon <agk@redhat.com>,
-        intel-gfx@lists.freedesktop.org,
-        Joonas Lahtinen <joonas.lahtinen@linux.intel.com>,
-        Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
-        dri-devel@lists.freedesktop.org, David Airlie <airlied@linux.ie>,
-        Jani Nikula <jani.nikula@linux.intel.com>,
-        Daniel Vetter <daniel@ffwll.ch>,
-        Rodrigo Vivi <rodrigo.vivi@intel.com>,
-        linux-arch@vger.kernel.org
-Subject: Re: [patch V2 18/29] lockdep: Move stack trace logic into
- check_prev_add()
-In-Reply-To: <20190424194505.GR11158@hirez.programming.kicks-ass.net>
-Message-ID: <alpine.DEB.2.21.1904242148480.1762@nanos.tec.linutronix.de>
-References: <20190418084119.056416939@linutronix.de> <20190418084254.729689921@linutronix.de> <20190424194505.GR11158@hirez.programming.kicks-ass.net>
-User-Agent: Alpine 2.21 (DEB 202 2017-01-01)
-MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-X-Linutronix-Spam-Score: -1.0
-X-Linutronix-Spam-Level: -
-X-Linutronix-Spam-Status: No , -1.0 points, 5.0 required,  ALL_TRUSTED=-1,SHORTCIRCUIT=-0.0001
+        id S1728644AbfDYAZV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 Apr 2019 20:25:21 -0400
+Received: from mail.kernel.org ([198.145.29.99]:57034 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1728605AbfDYAZV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 24 Apr 2019 20:25:21 -0400
+Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 00D9120643;
+        Thu, 25 Apr 2019 00:25:18 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1556151919;
+        bh=y1s/p9Q95WVyoV/00G2bE4wx2YA55Os5PlothV+nViM=;
+        h=From:To:Cc:Subject:Date:From;
+        b=A4r9bIHhUJiSHnD6AgBannW0uZulI0e9bcIu4FrRJAPresuIi70idDqGufH05E7Cz
+         G9cApeccxyQt2XTLkjRupBOQ1VbXnRoRwE2eEy7FVUXEAh0cFgyHE+QWv5gPv2Yj8e
+         Le4taAHgWtgS7fATTAoHGIyV7ysm9EgxfAxDJ3PQ=
+From:   fdmanana@kernel.org
+To:     fstests@vger.kernel.org
+Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] btrfs: fix filtering of scratch device in test case 048
+Date:   Thu, 25 Apr 2019 01:24:57 +0100
+Message-Id: <20190425002457.28648-1-fdmanana@kernel.org>
+X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, 24 Apr 2019, Peter Zijlstra wrote:
-> On Thu, Apr 18, 2019 at 10:41:37AM +0200, Thomas Gleixner wrote:
-> > There is only one caller of check_prev_add() which hands in a zeroed struct
-> > stack trace and a function pointer to save_stack(). Inside check_prev_add()
-> > the stack_trace struct is checked for being empty, which is always
-> > true. Based on that one code path stores a stack trace which is unused. The
-> > comment there does not make sense either. It's all leftovers from
-> > historical lockdep code (cross release).
-> 
-> I was more or less expecting a revert of:
-> 
-> ce07a9415f26 ("locking/lockdep: Make check_prev_add() able to handle external stack_trace")
-> 
-> And then I read the comment that went with the "static struct
-> stack_trace trace" that got removed (in the above commit) and realized
-> that your patch will consume more stack entries.
-> 
-> The problem is when the held lock stack in check_prevs_add() has multple
-> trylock entries on top, in that case we call check_prev_add() multiple
-> times, and this patch will then save the exact same stack-trace multiple
-> times, consuming static resources.
-> 
-> Possibly we should copy what stackdepot does (but we cannot use it
-> directly because stackdepot uses locks; but possible we can share bits),
-> but that is a patch for another day I think.
-> 
-> So while convoluted, perhaps we should retain this code for now.
+From: Filipe Manana <fdmanana@suse.com>
 
-Uurg, what a mess.
+The recent commit 4529b20e1aa8f9 ("btrfs/048: amend property validation
+cases"), does not properly filter the scratch device because the error
+messages are sent to stderr and not to stdout, and the pipe filter only
+gets input from the stdout of the btrfs utility. We need to redirect the
+stderr of the btrfs utility to its stdout.
+
+Further, the golden output had the path "/mnt/scratch" hardcoded, instead
+of using SCRATCH_MNT. Fix that as well.
+
+The test was failing on any setup where the scratch device is not mounted
+at "/mnt/scratch", like this:
+
+$ ./check btrfs/048
+FSTYP         -- btrfs
+PLATFORM      -- Linux/x86_64 debian5 5.0.0-btrfs-next-46
+MKFS_OPTIONS  -- /dev/sdc
+MOUNT_OPTIONS -- /dev/sdc /home/fdmanana/btrfs-tests/scratch_1
+
+btrfs/048 1s ... - output mismatch (see /home/fdmanana/git/hub/xfstests/results//btrfs/048.out.bad)
+    --- tests/btrfs/048.out	2019-04-22 12:52:00.937610318 +0100
+    +++ /home/fdmanana/git/hub/xfstests/results//btrfs/048.out.bad	2019-04-25 01:14:43.077297630 +0100
+    @@ -78,17 +78,17 @@
+     compression=lzo
+
+     Testing argument validation, should fail
+    -ERROR: failed to set compression for /mnt/scratch: Invalid argument
+    +ERROR: failed to set compression for /home/fdmanana/btrfs-tests/scratch_1: Invalid argument
+     ***
+    -ERROR: failed to set compression for /mnt/scratch: Invalid argument
+    ...
+    (Run 'diff -u /home/fdmanana/git/hub/xfstests/tests/btrfs/048.out /home/fdmanana/git/hub/xfstests/results//btrfs/048.out.bad'  to see the entire diff)
+Ran: btrfs/048
+Failures: btrfs/048
+Failed 1 of 1 tests
+
+$ diff -u /home/fdmanana/git/hub/xfstests/tests/btrfs/048.out /home/fdmanana/git/hub/xfstests/results//btrfs/048.out.bad
+--- /home/fdmanana/git/hub/xfstests/tests/btrfs/048.out	2019-04-22 12:52:00.937610318 +0100
++++ /home/fdmanana/git/hub/xfstests/results//btrfs/048.out.bad	2019-04-25 01:14:43.077297630 +0100
+@@ -78,17 +78,17 @@
+ compression=lzo
+
+ Testing argument validation, should fail
+-ERROR: failed to set compression for /mnt/scratch: Invalid argument
++ERROR: failed to set compression for /home/fdmanana/btrfs-tests/scratch_1: Invalid argument
+ ***
+-ERROR: failed to set compression for /mnt/scratch: Invalid argument
++ERROR: failed to set compression for /home/fdmanana/btrfs-tests/scratch_1: Invalid argument
+ ***
+-ERROR: failed to set compression for /mnt/scratch: Invalid argument
++ERROR: failed to set compression for /home/fdmanana/btrfs-tests/scratch_1: Invalid argument
+
+ Testing if property is persistent across failed validation
+-ERROR: failed to set compression for /mnt/scratch: Invalid argument
++ERROR: failed to set compression for /home/fdmanana/btrfs-tests/scratch_1: Invalid argument
+ compression=lzo
+
+ Testing generation is unchanged after failed validation
+ generation		7
+-ERROR: failed to set compression for /mnt/scratch: Invalid argument
++ERROR: failed to set compression for /home/fdmanana/btrfs-tests/scratch_1: Invalid argument
+ generation		7
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ tests/btrfs/048     | 10 +++++-----
+ tests/btrfs/048.out | 10 +++++-----
+ 2 files changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/tests/btrfs/048 b/tests/btrfs/048
+index f6de0b8c..8bb10a90 100755
+--- a/tests/btrfs/048
++++ b/tests/btrfs/048
+@@ -208,21 +208,21 @@ touch $SCRATCH_MNT/sv1/file2
+ $BTRFS_UTIL_PROG property get $SCRATCH_MNT/sv1/file2 compression
+ 
+ echo -e "\nTesting argument validation, should fail"
+-$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'lz' | _filter_scratch
++$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'lz' 2>&1 | _filter_scratch
+ echo "***"
+-$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'zli' | _filter_scratch
++$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'zli' 2>&1 | _filter_scratch
+ echo "***"
+-$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'zst' | _filter_scratch
++$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'zst' 2>&1 | _filter_scratch
+ 
+ echo -e "\nTesting if property is persistent across failed validation"
+ $BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'lzo'
+-$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'zli' | _filter_scratch
++$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'zli' 2>&1 | _filter_scratch
+ $BTRFS_UTIL_PROG property get $SCRATCH_MNT compression
+ 
+ echo -e "\nTesting generation is unchanged after failed validation"
+ $BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT
+ $BTRFS_UTIL_PROG inspect-internal dump-super $SCRATCH_DEV | grep '^generation'
+-$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'lz' | _filter_scratch
++$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'lz' 2>&1 | _filter_scratch
+ $BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT
+ $BTRFS_UTIL_PROG inspect-internal dump-super $SCRATCH_DEV | grep '^generation'
+ 
+diff --git a/tests/btrfs/048.out b/tests/btrfs/048.out
+index 00f39bc0..16a785a6 100644
+--- a/tests/btrfs/048.out
++++ b/tests/btrfs/048.out
+@@ -78,17 +78,17 @@ compression=lzo
+ compression=lzo
+ 
+ Testing argument validation, should fail
+-ERROR: failed to set compression for /mnt/scratch: Invalid argument
++ERROR: failed to set compression for SCRATCH_MNT: Invalid argument
+ ***
+-ERROR: failed to set compression for /mnt/scratch: Invalid argument
++ERROR: failed to set compression for SCRATCH_MNT: Invalid argument
+ ***
+-ERROR: failed to set compression for /mnt/scratch: Invalid argument
++ERROR: failed to set compression for SCRATCH_MNT: Invalid argument
+ 
+ Testing if property is persistent across failed validation
+-ERROR: failed to set compression for /mnt/scratch: Invalid argument
++ERROR: failed to set compression for SCRATCH_MNT: Invalid argument
+ compression=lzo
+ 
+ Testing generation is unchanged after failed validation
+ generation		7
+-ERROR: failed to set compression for /mnt/scratch: Invalid argument
++ERROR: failed to set compression for SCRATCH_MNT: Invalid argument
+ generation		7
+-- 
+2.11.0
 

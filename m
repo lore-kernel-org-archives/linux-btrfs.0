@@ -6,31 +6,34 @@ X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5A2E9C10F03
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 10:02:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E594DC282E1
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 10:02:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 31DE3206BA
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 10:02:31 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BE157206BA
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 10:02:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727970AbfDYKC0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 25 Apr 2019 06:02:26 -0400
-Received: from Galois.linutronix.de ([146.0.238.70]:57978 "EHLO
+        id S2387590AbfDYKAN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 25 Apr 2019 06:00:13 -0400
+Received: from Galois.linutronix.de ([146.0.238.70]:57920 "EHLO
         Galois.linutronix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728935AbfDYKAU (ORCPT
+        with ESMTP id S2387566AbfDYKAJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Apr 2019 06:00:20 -0400
+        Thu, 25 Apr 2019 06:00:09 -0400
 Received: from localhost ([127.0.0.1] helo=nanos.tec.linutronix.de)
         by Galois.linutronix.de with esmtp (Exim 4.80)
         (envelope-from <tglx@linutronix.de>)
-        id 1hJbAM-0001zT-1S; Thu, 25 Apr 2019 11:59:42 +0200
-Message-Id: <20190425094803.524796783@linutronix.de>
+        id 1hJbA0-0001sR-AQ; Thu, 25 Apr 2019 11:59:20 +0200
+Message-Id: <20190425094802.338890064@linutronix.de>
 User-Agent: quilt/0.65
-Date:   Thu, 25 Apr 2019 11:45:19 +0200
+Date:   Thu, 25 Apr 2019 11:45:06 +0200
 From:   Thomas Gleixner <tglx@linutronix.de>
 To:     LKML <linux-kernel@vger.kernel.org>
 Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
         Andy Lutomirski <luto@kernel.org>,
-        Steven Rostedt <rostedt@goodmis.org>,
+        Johannes Thumshirn <jthumshirn@suse.de>,
+        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs@vger.kernel.org, Steven Rostedt <rostedt@goodmis.org>,
         Alexander Potapenko <glider@google.com>,
         Alexey Dobriyan <adobriyan@gmail.com>,
         Andrew Morton <akpm@linux-foundation.org>,
@@ -47,11 +50,7 @@ Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
         iommu@lists.linux-foundation.org,
         Robin Murphy <robin.murphy@arm.com>,
         Marek Szyprowski <m.szyprowski@samsung.com>,
-        Johannes Thumshirn <jthumshirn@suse.de>,
-        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, dm-devel@redhat.com,
-        Mike Snitzer <snitzer@redhat.com>,
+        dm-devel@redhat.com, Mike Snitzer <snitzer@redhat.com>,
         Alasdair Kergon <agk@redhat.com>,
         Daniel Vetter <daniel@ffwll.ch>,
         intel-gfx@lists.freedesktop.org,
@@ -62,7 +61,7 @@ Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
         Rodrigo Vivi <rodrigo.vivi@intel.com>,
         Tom Zanussi <tom.zanussi@linux.intel.com>,
         Miroslav Benes <mbenes@suse.cz>, linux-arch@vger.kernel.org
-Subject: [patch V3 26/29] stacktrace: Remove obsolete functions
+Subject: [patch V3 13/29] btrfs: ref-verify: Simplify stack trace retrieval
 References: <20190425094453.875139013@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -71,74 +70,51 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-No more users of the struct stack_trace based interfaces. Remove them.
-
-Remove the macro stubs for !CONFIG_STACKTRACE as well as they are pointless
-because the storage on the call sites is conditional on CONFIG_STACKTRACE
-already. No point to be 'smart'.
+Replace the indirection through struct stack_trace with an invocation of
+the storage array based interface.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
+Acked-by: David Sterba <dsterba@suse.com>
+Cc: Chris Mason <clm@fb.com>
+Cc: Josef Bacik <josef@toxicpanda.com>
+Cc: linux-btrfs@vger.kernel.org
 ---
- include/linux/stacktrace.h |   17 -----------------
- kernel/stacktrace.c        |   14 --------------
- 2 files changed, 31 deletions(-)
+ fs/btrfs/ref-verify.c |   15 ++-------------
+ 1 file changed, 2 insertions(+), 13 deletions(-)
 
---- a/include/linux/stacktrace.h
-+++ b/include/linux/stacktrace.h
-@@ -36,24 +36,7 @@ extern void save_stack_trace_tsk(struct
- 				struct stack_trace *trace);
- extern int save_stack_trace_tsk_reliable(struct task_struct *tsk,
- 					 struct stack_trace *trace);
+--- a/fs/btrfs/ref-verify.c
++++ b/fs/btrfs/ref-verify.c
+@@ -205,28 +205,17 @@ static struct root_entry *lookup_root_en
+ #ifdef CONFIG_STACKTRACE
+ static void __save_stack_trace(struct ref_action *ra)
+ {
+-	struct stack_trace stack_trace;
 -
--extern void print_stack_trace(struct stack_trace *trace, int spaces);
--extern int snprint_stack_trace(char *buf, size_t size,
--			struct stack_trace *trace, int spaces);
--
--#ifdef CONFIG_USER_STACKTRACE_SUPPORT
- extern void save_stack_trace_user(struct stack_trace *trace);
--#else
--# define save_stack_trace_user(trace)              do { } while (0)
--#endif
--
--#else /* !CONFIG_STACKTRACE */
--# define save_stack_trace(trace)			do { } while (0)
--# define save_stack_trace_tsk(tsk, trace)		do { } while (0)
--# define save_stack_trace_user(trace)			do { } while (0)
--# define print_stack_trace(trace, spaces)		do { } while (0)
--# define snprint_stack_trace(buf, size, trace, spaces)	do { } while (0)
--# define save_stack_trace_tsk_reliable(tsk, trace)	({ -ENOSYS; })
- #endif /* CONFIG_STACKTRACE */
- 
- #if defined(CONFIG_STACKTRACE) && defined(CONFIG_HAVE_RELIABLE_STACKTRACE)
---- a/kernel/stacktrace.c
-+++ b/kernel/stacktrace.c
-@@ -30,12 +30,6 @@ void stack_trace_print(unsigned long *en
+-	stack_trace.max_entries = MAX_TRACE;
+-	stack_trace.nr_entries = 0;
+-	stack_trace.entries = ra->trace;
+-	stack_trace.skip = 2;
+-	save_stack_trace(&stack_trace);
+-	ra->trace_len = stack_trace.nr_entries;
++	ra->trace_len = stack_trace_save(ra->trace, MAX_TRACE, 2);
  }
- EXPORT_SYMBOL_GPL(stack_trace_print);
  
--void print_stack_trace(struct stack_trace *trace, int spaces)
--{
--	stack_trace_print(trace->entries, trace->nr_entries, spaces);
--}
--EXPORT_SYMBOL_GPL(print_stack_trace);
+ static void __print_stack_trace(struct btrfs_fs_info *fs_info,
+ 				struct ref_action *ra)
+ {
+-	struct stack_trace trace;
 -
- /**
-  * stack_trace_snprint - Print the entries in the stack trace into a buffer
-  * @buf:	Pointer to the print buffer
-@@ -72,14 +66,6 @@ int stack_trace_snprint(char *buf, size_
+ 	if (ra->trace_len == 0) {
+ 		btrfs_err(fs_info, "  ref-verify: no stacktrace");
+ 		return;
+ 	}
+-	trace.nr_entries = ra->trace_len;
+-	trace.entries = ra->trace;
+-	print_stack_trace(&trace, 2);
++	stack_trace_print(ra->trace, ra->trace_len, 2);
  }
- EXPORT_SYMBOL_GPL(stack_trace_snprint);
- 
--int snprint_stack_trace(char *buf, size_t size,
--			struct stack_trace *trace, int spaces)
--{
--	return stack_trace_snprint(buf, size, trace->entries,
--				   trace->nr_entries, spaces);
--}
--EXPORT_SYMBOL_GPL(snprint_stack_trace);
--
- /*
-  * Architectures that do not implement save_stack_trace_*()
-  * get these weak aliases and once-per-bootup warnings
+ #else
+ static void inline __save_stack_trace(struct ref_action *ra)
 
 

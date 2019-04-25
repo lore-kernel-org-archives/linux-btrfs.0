@@ -3,33 +3,33 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 104F3C10F03
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 10:02:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 050F8C282E1
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 10:02:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D197E217D7
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 10:02:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C8773206BA
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 10:02:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729489AbfDYKA0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 25 Apr 2019 06:00:26 -0400
-Received: from Galois.linutronix.de ([146.0.238.70]:57986 "EHLO
+        id S1730129AbfDYKCN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 25 Apr 2019 06:02:13 -0400
+Received: from Galois.linutronix.de ([146.0.238.70]:58158 "EHLO
         Galois.linutronix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728739AbfDYKAZ (ORCPT
+        with ESMTP id S1726168AbfDYKCL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Apr 2019 06:00:25 -0400
+        Thu, 25 Apr 2019 06:02:11 -0400
 Received: from localhost ([127.0.0.1] helo=nanos.tec.linutronix.de)
         by Galois.linutronix.de with esmtp (Exim 4.80)
         (envelope-from <tglx@linutronix.de>)
-        id 1hJbAD-0001wo-Fc; Thu, 25 Apr 2019 11:59:33 +0200
-Message-Id: <20190425094803.066064076@linutronix.de>
+        id 1hJbAR-00021P-Dx; Thu, 25 Apr 2019 11:59:47 +0200
+Message-Id: <20190425094803.816485461@linutronix.de>
 User-Agent: quilt/0.65
-Date:   Thu, 25 Apr 2019 11:45:14 +0200
+Date:   Thu, 25 Apr 2019 11:45:22 +0200
 From:   Thomas Gleixner <tglx@linutronix.de>
 To:     LKML <linux-kernel@vger.kernel.org>
 Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
-        Andy Lutomirski <luto@kernel.org>,
+        Andy Lutomirski <luto@kernel.org>, linux-arch@vger.kernel.org,
         Steven Rostedt <rostedt@goodmis.org>,
         Alexander Potapenko <glider@google.com>,
         Alexey Dobriyan <adobriyan@gmail.com>,
@@ -61,9 +61,8 @@ Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
         Jani Nikula <jani.nikula@linux.intel.com>,
         Rodrigo Vivi <rodrigo.vivi@intel.com>,
         Tom Zanussi <tom.zanussi@linux.intel.com>,
-        Miroslav Benes <mbenes@suse.cz>, linux-arch@vger.kernel.org
-Subject: [patch V3 21/29] tracing: Use percpu stack trace buffer more
- intelligently
+        Miroslav Benes <mbenes@suse.cz>
+Subject: [patch V3 29/29] x86/stacktrace: Use common infrastructure
 References: <20190425094453.875139013@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -72,139 +71,200 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The per cpu stack trace buffer usage pattern is odd at best. The buffer has
-place for 512 stack trace entries on 64-bit and 1024 on 32-bit. When
-interrupts or exceptions nest after the per cpu buffer was acquired the
-stacktrace length is hardcoded to 8 entries. 512/1024 stack trace entries
-in kernel stacks are unrealistic so the buffer is a complete waste.
-
-Split the buffer into 4 nest levels, which are 128/256 entries per
-level. This allows nesting contexts (interrupts, exceptions) to utilize the
-cpu buffer for stack retrieval and avoids the fixed length allocation along
-with the conditional execution pathes.
+Replace the stack_trace_save*() functions with the new arch_stack_walk()
+interfaces.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-Cc: Steven Rostedt <rostedt@goodmis.org>
+Cc: linux-arch@vger.kernel.org
 ---
-V3: Limit to 4 nest levels and increase size per level.
----
- kernel/trace/trace.c |   77 +++++++++++++++++++++++++--------------------------
- 1 file changed, 39 insertions(+), 38 deletions(-)
+ arch/x86/Kconfig             |    1 
+ arch/x86/kernel/stacktrace.c |  116 +++++++------------------------------------
+ 2 files changed, 20 insertions(+), 97 deletions(-)
 
---- a/kernel/trace/trace.c
-+++ b/kernel/trace/trace.c
-@@ -2749,12 +2749,21 @@ trace_function(struct trace_array *tr,
+--- a/arch/x86/Kconfig
++++ b/arch/x86/Kconfig
+@@ -74,6 +74,7 @@ config X86
+ 	select ARCH_MIGHT_HAVE_ACPI_PDC		if ACPI
+ 	select ARCH_MIGHT_HAVE_PC_PARPORT
+ 	select ARCH_MIGHT_HAVE_PC_SERIO
++	select ARCH_STACKWALK
+ 	select ARCH_SUPPORTS_ACPI
+ 	select ARCH_SUPPORTS_ATOMIC_RMW
+ 	select ARCH_SUPPORTS_NUMA_BALANCING	if X86_64
+--- a/arch/x86/kernel/stacktrace.c
++++ b/arch/x86/kernel/stacktrace.c
+@@ -12,75 +12,31 @@
+ #include <asm/stacktrace.h>
+ #include <asm/unwind.h>
  
- #ifdef CONFIG_STACKTRACE
- 
--#define FTRACE_STACK_MAX_ENTRIES (PAGE_SIZE / sizeof(unsigned long))
-+/* Allow 4 levels of nesting: normal, softirq, irq, NMI */
-+#define FTRACE_KSTACK_NESTING	4
-+
-+#define FTRACE_KSTACK_ENTRIES	(PAGE_SIZE / FTRACE_KSTACK_NESTING)
-+
- struct ftrace_stack {
--	unsigned long		calls[FTRACE_STACK_MAX_ENTRIES];
-+	unsigned long		calls[FTRACE_KSTACK_ENTRIES];
-+};
-+
-+
-+struct ftrace_stacks {
-+	struct ftrace_stack	stacks[FTRACE_KSTACK_NESTING];
- };
- 
--static DEFINE_PER_CPU(struct ftrace_stack, ftrace_stack);
-+static DEFINE_PER_CPU(struct ftrace_stacks, ftrace_stacks);
- static DEFINE_PER_CPU(int, ftrace_stack_reserve);
- 
- static void __ftrace_trace_stack(struct ring_buffer *buffer,
-@@ -2763,10 +2772,11 @@ static void __ftrace_trace_stack(struct
- {
- 	struct trace_event_call *call = &event_kernel_stack;
- 	struct ring_buffer_event *event;
-+	struct ftrace_stack *fstack;
- 	struct stack_entry *entry;
- 	struct stack_trace trace;
--	int use_stack;
--	int size = FTRACE_STACK_ENTRIES;
-+	int size = FTRACE_KSTACK_ENTRIES;
-+	int stackidx;
- 
- 	trace.nr_entries	= 0;
- 	trace.skip		= skip;
-@@ -2788,29 +2798,32 @@ static void __ftrace_trace_stack(struct
- 	 */
- 	preempt_disable_notrace();
- 
--	use_stack = __this_cpu_inc_return(ftrace_stack_reserve);
-+	stackidx = __this_cpu_inc_return(ftrace_stack_reserve);
-+
-+	/* This should never happen. If it does, yell once and skip */
-+	if (WARN_ON_ONCE(stackidx >= FTRACE_KSTACK_NESTING))
-+		goto out;
-+
- 	/*
--	 * We don't need any atomic variables, just a barrier.
--	 * If an interrupt comes in, we don't care, because it would
--	 * have exited and put the counter back to what we want.
--	 * We just need a barrier to keep gcc from moving things
--	 * around.
-+	 * The above __this_cpu_inc_return() is 'atomic' cpu local. An
-+	 * interrupt will either see the value pre increment or post
-+	 * increment. If the interrupt happens pre increment it will have
-+	 * restored the counter when it returns.  We just need a barrier to
-+	 * keep gcc from moving things around.
- 	 */
- 	barrier();
--	if (use_stack == 1) {
--		trace.entries		= this_cpu_ptr(ftrace_stack.calls);
--		trace.max_entries	= FTRACE_STACK_MAX_ENTRIES;
+-static int save_stack_address(struct stack_trace *trace, unsigned long addr,
+-			      bool nosched)
+-{
+-	if (nosched && in_sched_functions(addr))
+-		return 0;
 -
--		if (regs)
--			save_stack_trace_regs(regs, &trace);
--		else
--			save_stack_trace(&trace);
--
--		if (trace.nr_entries > size)
--			size = trace.nr_entries;
--	} else
--		/* From now on, use_stack is a boolean */
--		use_stack = 0;
-+
-+	fstack = this_cpu_ptr(ftrace_stacks.stacks) + (stackidx - 1);
-+	trace.entries		= fstack->calls;
-+	trace.max_entries	= FTRACE_KSTACK_ENTRIES;
-+
-+	if (regs)
-+		save_stack_trace_regs(regs, &trace);
-+	else
-+		save_stack_trace(&trace);
-+
-+	if (trace.nr_entries > size)
-+		size = trace.nr_entries;
- 
- 	size *= sizeof(unsigned long);
- 
-@@ -2820,19 +2833,7 @@ static void __ftrace_trace_stack(struct
- 		goto out;
- 	entry = ring_buffer_event_data(event);
- 
--	memset(&entry->caller, 0, size);
--
--	if (use_stack)
--		memcpy(&entry->caller, trace.entries,
--		       trace.nr_entries * sizeof(unsigned long));
--	else {
--		trace.max_entries	= FTRACE_STACK_ENTRIES;
--		trace.entries		= entry->caller;
--		if (regs)
--			save_stack_trace_regs(regs, &trace);
--		else
--			save_stack_trace(&trace);
+-	if (trace->skip > 0) {
+-		trace->skip--;
+-		return 0;
 -	}
-+	memcpy(&entry->caller, trace.entries, size);
+-
+-	if (trace->nr_entries >= trace->max_entries)
+-		return -1;
+-
+-	trace->entries[trace->nr_entries++] = addr;
+-	return 0;
+-}
+-
+-static void noinline __save_stack_trace(struct stack_trace *trace,
+-			       struct task_struct *task, struct pt_regs *regs,
+-			       bool nosched)
++void arch_stack_walk(stack_trace_consume_fn consume_entry, void *cookie,
++		     struct task_struct *task, struct pt_regs *regs)
+ {
+ 	struct unwind_state state;
+ 	unsigned long addr;
  
- 	entry->size = trace.nr_entries;
+-	if (regs)
+-		save_stack_address(trace, regs->ip, nosched);
++	if (regs && !consume_entry(cookie, regs->ip, false))
++		return;
  
+ 	for (unwind_start(&state, task, regs, NULL); !unwind_done(&state);
+ 	     unwind_next_frame(&state)) {
+ 		addr = unwind_get_return_address(&state);
+-		if (!addr || save_stack_address(trace, addr, nosched))
++		if (!addr || !consume_entry(cookie, addr, false))
+ 			break;
+ 	}
+ }
+ 
+ /*
+- * Save stack-backtrace addresses into a stack_trace buffer.
++ * This function returns an error if it detects any unreliable features of the
++ * stack.  Otherwise it guarantees that the stack trace is reliable.
++ *
++ * If the task is not 'current', the caller *must* ensure the task is inactive.
+  */
+-void save_stack_trace(struct stack_trace *trace)
+-{
+-	trace->skip++;
+-	__save_stack_trace(trace, current, NULL, false);
+-}
+-EXPORT_SYMBOL_GPL(save_stack_trace);
+-
+-void save_stack_trace_regs(struct pt_regs *regs, struct stack_trace *trace)
+-{
+-	__save_stack_trace(trace, current, regs, false);
+-}
+-
+-void save_stack_trace_tsk(struct task_struct *tsk, struct stack_trace *trace)
+-{
+-	if (!try_get_task_stack(tsk))
+-		return;
+-
+-	if (tsk == current)
+-		trace->skip++;
+-	__save_stack_trace(trace, tsk, NULL, true);
+-
+-	put_task_stack(tsk);
+-}
+-EXPORT_SYMBOL_GPL(save_stack_trace_tsk);
+-
+-#ifdef CONFIG_HAVE_RELIABLE_STACKTRACE
+-
+-static int __always_inline
+-__save_stack_trace_reliable(struct stack_trace *trace,
+-			    struct task_struct *task)
++int arch_stack_walk_reliable(stack_trace_consume_fn consume_entry,
++			     void *cookie, struct task_struct *task)
+ {
+ 	struct unwind_state state;
+ 	struct pt_regs *regs;
+@@ -117,7 +73,7 @@ static int __always_inline
+ 		if (!addr)
+ 			return -EINVAL;
+ 
+-		if (save_stack_address(trace, addr, false))
++		if (!consume_entry(cookie, addr, false))
+ 			return -EINVAL;
+ 	}
+ 
+@@ -132,32 +88,6 @@ static int __always_inline
+ 	return 0;
+ }
+ 
+-/*
+- * This function returns an error if it detects any unreliable features of the
+- * stack.  Otherwise it guarantees that the stack trace is reliable.
+- *
+- * If the task is not 'current', the caller *must* ensure the task is inactive.
+- */
+-int save_stack_trace_tsk_reliable(struct task_struct *tsk,
+-				  struct stack_trace *trace)
+-{
+-	int ret;
+-
+-	/*
+-	 * If the task doesn't have a stack (e.g., a zombie), the stack is
+-	 * "reliably" empty.
+-	 */
+-	if (!try_get_task_stack(tsk))
+-		return 0;
+-
+-	ret = __save_stack_trace_reliable(trace, tsk);
+-
+-	put_task_stack(tsk);
+-
+-	return ret;
+-}
+-#endif /* CONFIG_HAVE_RELIABLE_STACKTRACE */
+-
+ /* Userspace stacktrace - based on kernel/trace/trace_sysprof.c */
+ 
+ struct stack_frame_user {
+@@ -182,15 +112,15 @@ copy_stack_frame(const void __user *fp,
+ 	return ret;
+ }
+ 
+-static inline void __save_stack_trace_user(struct stack_trace *trace)
++void arch_stack_walk_user(stack_trace_consume_fn consume_entry, void *cookie,
++			  const struct pt_regs *regs)
+ {
+-	const struct pt_regs *regs = task_pt_regs(current);
+ 	const void __user *fp = (const void __user *)regs->bp;
+ 
+-	if (trace->nr_entries < trace->max_entries)
+-		trace->entries[trace->nr_entries++] = regs->ip;
++	if (!consume_entry(cookie, regs->ip, false))
++		return;
+ 
+-	while (trace->nr_entries < trace->max_entries) {
++	while (1) {
+ 		struct stack_frame_user frame;
+ 
+ 		frame.next_fp = NULL;
+@@ -200,8 +130,8 @@ static inline void __save_stack_trace_us
+ 		if ((unsigned long)fp < regs->sp)
+ 			break;
+ 		if (frame.ret_addr) {
+-			trace->entries[trace->nr_entries++] =
+-				frame.ret_addr;
++			if (!consume_entry(cookie, frame.ret_addr, false))
++				return;
+ 		}
+ 		if (fp == frame.next_fp)
+ 			break;
+@@ -209,11 +139,3 @@ static inline void __save_stack_trace_us
+ 	}
+ }
+ 
+-void save_stack_trace_user(struct stack_trace *trace)
+-{
+-	/*
+-	 * Trace user stack if we are not a kernel thread
+-	 */
+-	if (current->mm)
+-		__save_stack_trace_user(trace);
+-}
 
 

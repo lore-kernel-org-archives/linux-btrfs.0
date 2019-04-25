@@ -2,140 +2,237 @@ Return-Path: <SRS0=mBNC=S3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CEDAEC43218
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 17:56:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 64DE0C43219
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 20:52:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5DE1D206A3
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 17:56:05 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 34C9F206BF
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 20:52:52 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="IqzvXmTP"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="AlaO0IJ8"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726995AbfDYR4D (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 25 Apr 2019 13:56:03 -0400
-Received: from mail-lj1-f176.google.com ([209.85.208.176]:37044 "EHLO
-        mail-lj1-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726490AbfDYR4D (ORCPT
+        id S2387657AbfDYUwv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 25 Apr 2019 16:52:51 -0400
+Received: from mail-yw1-f68.google.com ([209.85.161.68]:34047 "EHLO
+        mail-yw1-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726360AbfDYUwu (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Apr 2019 13:56:03 -0400
-Received: by mail-lj1-f176.google.com with SMTP id v13so458598ljk.4
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Apr 2019 10:56:02 -0700 (PDT)
+        Thu, 25 Apr 2019 16:52:50 -0400
+Received: by mail-yw1-f68.google.com with SMTP id u14so424321ywe.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Apr 2019 13:52:50 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=subject:to:references:from:openpgp:autocrypt:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=YOMbeq+7Us/cFuC3g3eOtoXdgWSuMvO4z4oB4FS3U8A=;
-        b=IqzvXmTPFIH8pWzqwx3osLvqdT71a+46aKwcBOSMyeS0MC0UEd6Jjg1fh7fQbLyp2c
-         VfeVQtkFsPuli1UGJKuE9I2fpGAVoC+JHJJGLUkdi7dZrMj85nV5NmnjJa2zSyBQbinl
-         ityF9mm9iOMpw6UywQRa9TaQEt6AvNAC13AV724r6WEqxyt/hmrJGqh5DhnkPGLwe3XK
-         wQ4hYVmx6lOWg+YrcHs2O18O0oA18FsDOdewzxk6uFOK8RQ8rip4h318jlm5Vmmexcrf
-         40HNaxdO9RsL4BFD/WOYYEjNNua9BQ0vUkflXnCDfni0gnZjgKiQ+qw6H5Sst1uHpU59
-         4UfQ==
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=from:to:subject:date:message-id:in-reply-to:references;
+        bh=tu/GUFU/ra7x9u8KYeGsPuCdGxqXH37A6eCbA6dufJ8=;
+        b=AlaO0IJ8BYli7ERHWZ9ozPf946UrtPzOa/2VdQ6RU4W+iWKJnzeVG0dM5slNbGTYw0
+         e5I08mR19QRhWGduPb9pylPMxDdrZD68/a26nyTgaaMLdLXMmNH73WNBZNIevmhQU7lB
+         6B/xkBupM8bAZoOKqoaF4GDXef7/RhRrNdDxx3/Qi6Y0r8DoAJ44MlEoCfu9zg8BJQSw
+         apUm5UIfpU9duwQ6FOI70rw8XTlpUNti7vmJZ4Xc99LuyjVe61cE3IP3g1/D2cmiO4vr
+         E4Exe1EiMyr3E7bMN0cgKeCxa+9TX26rZca13rtPA2P2TeBVhQ76UuHJsugVIsbeGLGx
+         D2Iw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:openpgp:autocrypt
-         :message-id:date:user-agent:mime-version:in-reply-to
-         :content-language:content-transfer-encoding;
-        bh=YOMbeq+7Us/cFuC3g3eOtoXdgWSuMvO4z4oB4FS3U8A=;
-        b=BDxEMr26sDoDdJQ/Kl6dtGXH4/IhsFgSKB94WqZ3Vbu/DXHfOkwHgxylVKALQnAo7E
-         qoKLhUAfXunfzkRhAIXF5vx8AO9OjfxiS7/zrc9WDncIjIEUI++dFdvAzghK2lFpbSlq
-         AIGGkt7DIdn/pQcvKkvh1o0B6d2N+RDrgsWpPY/t2/WWmcY72tup+FprqVIx02pqFjKX
-         IUSQrOWWwVKCKLDSzjR6LgNb+g8+bEyT1qbJECHpqa8pGK1MB4DNWWM8vezQXRiv/7zF
-         FAOe9kfe+nXbWUAkSeH2vPGCGNU0iWZH51kWCepQ0nuMN9GN3xGxe5jNbvoBNxj5NEt9
-         E+6A==
-X-Gm-Message-State: APjAAAVdEerOQaNoBaxn/bZj0DhZp3kaQOLlbj1PYs4jrL9OuBypVt3h
-        LLMXdsE/LAM/MwRKwODPK9QWJPBw
-X-Google-Smtp-Source: APXvYqx3qwRNT74u10TpBbyduludGMA4tn+uij2X1P4cjvHMqT0yQhuViYKgt7eu+0DjG7pFYibV9A==
-X-Received: by 2002:a2e:7a03:: with SMTP id v3mr11443344ljc.142.1556214960928;
-        Thu, 25 Apr 2019 10:56:00 -0700 (PDT)
-Received: from [192.168.1.5] ([109.252.90.193])
-        by smtp.gmail.com with ESMTPSA id y20sm1312962ljh.27.2019.04.25.10.55.59
+        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
+         :references;
+        bh=tu/GUFU/ra7x9u8KYeGsPuCdGxqXH37A6eCbA6dufJ8=;
+        b=IhY4az3XuqvDzbeucAO5Q6uvL7Y8lafsfLX+XcvZUHWR2/9OEcO9uShTpHQu3IeWh8
+         dMOF31/5DS0ku9xwyM/IsStUQAz7005/blBvD7yNEFwGcdHQlOgPMGff30SRZBg1TYB6
+         xgllJ/XiI0jtdi2nZWRszvHIgWUXg35gow0KDbIbCTGapa8gx+9rtTgUZgNsVxnaTs9i
+         C8ID+6oJjsaElYJ7vVtNtm/JDhRAyzP6PwN4y5dA/dic6Grod9RJ5EjnrMSwaBix8MJo
+         hVsjRZD3CA//CGL180nwLtdLdeHAHIwsWFMUveRzXgyR1O02kfRTaEqU4wUdWLUAv3eB
+         dkeQ==
+X-Gm-Message-State: APjAAAVRb3QYnml2iW4RhiQphVUpHeTsMUF86MdItrfP8VdWjy3CotXn
+        X8eNxu6YpdxzZrHDSzu7yuDQhL7OpxXt6A==
+X-Google-Smtp-Source: APXvYqwf4g11X2mafCQo7BMec13V2GLFECimRPbauOzPTnTkZsyST23LfIAweGh8YJ1Qw72+rupyxA==
+X-Received: by 2002:a81:9292:: with SMTP id j140mr23647752ywg.301.1556225569108;
+        Thu, 25 Apr 2019 13:52:49 -0700 (PDT)
+Received: from localhost ([2620:10d:c091:180::590e])
+        by smtp.gmail.com with ESMTPSA id 207sm26832ywo.85.2019.04.25.13.52.48
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 25 Apr 2019 10:56:00 -0700 (PDT)
-Subject: Re: Some file lost when send back snapshot.
-To:     MASAKI Haruka <reasonset@inflaton.co.jp>,
-        linux-btrfs@vger.kernel.org
-References: <20190425223457.5a7dfd20@hydrangea>
-From:   Andrei Borzenkov <arvidjaar@gmail.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=arvidjaar@gmail.com; prefer-encrypt=mutual; keydata=
- xsDiBDxiRwwRBAC3CN9wdwpVEqUGmSoqF8tWVIT4P/bLCSZLkinSZ2drsblKpdG7x+guxwts
- +LgI8qjf/q5Lah1TwOqzDvjHYJ1wbBauxZ03nDzSLUhD4Ms1IsqlIwyTLumQs4vcQdvLxjFs
- G70aDglgUSBogtaIEsiYZXl4X0j3L9fVstuz4/wXtwCg1cN/yv/eBC0tkcM1nsJXQrC5Ay8D
- /1aA5qPticLBpmEBxqkf0EMHuzyrFlqVw1tUjZ+Ep2LMlem8malPvfdZKEZ71W1a/XbRn8FE
- SOp0tUa5GwdoDXgEp1CJUn+WLurR0KPDf01E4j/PHHAoABgrqcOTcIVoNpv2gNiBySVsNGzF
- XTeY/Yd6vQclkqjBYONGN3r9R8bWA/0Y1j4XK61qjowRk3Iy8sBggM3PmmNRUJYgroerpcAr
- 2byz6wTsb3U7OzUZ1Llgisk5Qum0RN77m3I37FXlIhCmSEY7KZVzGNW3blugLHcfw/HuCB7R
- 1w5qiLWKK6eCQHL+BZwiU8hX3dtTq9d7WhRW5nsVPEaPqudQfMSi/Ux1kc0mQW5kcmVpIEJv
- cnplbmtvdiA8YXJ2aWRqYWFyQGdtYWlsLmNvbT7CZQQTEQIAJQIbAwYLCQgHAwIGFQgCCQoL
- BBYCAwECHgECF4AFAliWAiQCGQEACgkQR6LMutpd94wFGwCeNuQnMDxve/Fo3EvYIkAOn+zE
- 21cAnRCQTXd1hTgcRHfpArEd/Rcb5+SczsBNBDxiRyQQBACQtME33UHfFOCApLki4kLFrIw1
- 5A5asua10jm5It+hxzI9jDR9/bNEKDTKSciHnM7aRUggLwTt+6CXkMy8an+tVqGL/MvDc4/R
- KKlZxj39xP7wVXdt8y1ciY4ZqqZf3tmmSN9DlLcZJIOT82DaJZuvr7UJ7rLzBFbAUh4yRKaN
- nwADBwQAjNvMr/KBcGsV/UvxZSm/mdpvUPtcw9qmbxCrqFQoB6TmoZ7F6wp/rL3TkQ5UElPR
- gsG12+Dk9GgRhnnxTHCFgN1qTiZNX4YIFpNrd0au3W/Xko79L0c4/49ten5OrFI/psx53fhY
- vLYfkJnc62h8hiNeM6kqYa/x0BEddu92ZG7CRgQYEQIABgUCPGJHJAAKCRBHosy62l33jMhd
- AJ48P7WDvKLQQ5MKnn2D/TI337uA/gCgn5mnvm4SBctbhaSBgckRmgSxfwQ=
-Message-ID: <aa5623ca-e1c2-4499-75ee-be818acf3333@gmail.com>
-Date:   Thu, 25 Apr 2019 20:55:59 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.6.1
-MIME-Version: 1.0
-In-Reply-To: <20190425223457.5a7dfd20@hydrangea>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+        Thu, 25 Apr 2019 13:52:48 -0700 (PDT)
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: [PATCH][v2] btrfs: track odirect bytes in flight
+Date:   Thu, 25 Apr 2019 16:52:47 -0400
+Message-Id: <20190425205247.99177-1-josef@toxicpanda.com>
+X-Mailer: git-send-email 2.13.5
+In-Reply-To: <20190410195610.84110-1-josef@toxicpanda.com>
+References: <20190410195610.84110-1-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-25.04.2019 16:34, MASAKI Haruka пишет:
-> I send snapshot from backup volume, and send new snaopshot to backup volume,
-> and some file lost in received volume.
-> 
-> In detail:
-> 
-> 1. Host A has new Btrfs volume and Host B have two backuped readonly subvolumes (190312-010100, 190315-001000).
-> 2. Host B send 190315-001000 subvolume to Host A.
-> 3. Host A completely received (all files exist.)
-> 4. Host B took new readonly snapshot "back1" on 190315-001000 (all files exist.)
-> 5. Host B send back1 with `-p 190315-001000` to Host A (some file lost.)
-> 6. Host B took new read-writable snapshot "world" on back1 (all files exist.)
-> 7. Host B modified world.
-> 8. Host B took new readonly snapshot "back2" on world (all files exist.)
-> 9. Host B send back2 with `-p 190315-001000` to Host A (some file lost.)
-> 10. Deleted received snapshot and Host B send back2 with `-p back1` to Host A (some file lost.)
-> 
+When diagnosing a slowdown of generic/224 I noticed we were not doing
+anything when calling into shrink_delalloc().  This is because all
+writes in 224 are O_DIRECT, not delalloc, and thus our delalloc_bytes
+counter is 0, which short circuits most of the work inside of
+shrink_delalloc().  However O_DIRECT writes still consume metadata
+resources and generate ordered extents, which we can still wait on.
 
-Please show
+Fix this by tracking outstandingn odirect write bytes, and use this as
+well as the delalloc byts counter to decide if we need to lookup and
+wait on any ordered extents.  If we have more odirect writes than
+delalloc bytes we'll go ahead and wait on any ordered extents
+irregardless of our flush state as flushing delalloc is likely to not
+gain us anything.
 
-1. Full protocol of commands you executed (commands and their output),
-e.g. captured using script.
-2. Commands used to determine missing files on both source and receive
-sides.
-3. Listing of subvolumes on both source and receive sides with
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+v1->v2:
+- updated the changelog
 
-btrfs sub li -Rqu /mount/point
+ fs/btrfs/ctree.h        |  1 +
+ fs/btrfs/disk-io.c      | 15 ++++++++++++++-
+ fs/btrfs/extent-tree.c  | 17 +++++++++++++++--
+ fs/btrfs/ordered-data.c |  9 ++++++++-
+ 4 files changed, 38 insertions(+), 4 deletions(-)
 
-> Kernel
-> 5.0.5-1-MANJARO
-> 
-> Btrfs progs
-> btrfs-progs 4.20.2-1
-> 
-> 
-> What I should do?
-> 
-> Thanks.
-> 
-> 
-> 
-> Masaki Haruka
-> 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 7e774d48c48c..e293d74b2ead 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1016,6 +1016,7 @@ struct btrfs_fs_info {
+ 	/* used to keep from writing metadata until there is a nice batch */
+ 	struct percpu_counter dirty_metadata_bytes;
+ 	struct percpu_counter delalloc_bytes;
++	struct percpu_counter odirect_bytes;
+ 	s32 dirty_metadata_batch;
+ 	s32 delalloc_batch;
+ 
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 7a88de4be8d7..3f0b1854cedc 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2641,11 +2641,17 @@ int open_ctree(struct super_block *sb,
+ 		goto fail;
+ 	}
+ 
+-	ret = percpu_counter_init(&fs_info->dirty_metadata_bytes, 0, GFP_KERNEL);
++	ret = percpu_counter_init(&fs_info->odirect_bytes, 0, GFP_KERNEL);
+ 	if (ret) {
+ 		err = ret;
+ 		goto fail_srcu;
+ 	}
++
++	ret = percpu_counter_init(&fs_info->dirty_metadata_bytes, 0, GFP_KERNEL);
++	if (ret) {
++		err = ret;
++		goto fail_odirect_bytes;
++	}
+ 	fs_info->dirty_metadata_batch = PAGE_SIZE *
+ 					(1 + ilog2(nr_cpu_ids));
+ 
+@@ -3344,6 +3350,8 @@ int open_ctree(struct super_block *sb,
+ 	percpu_counter_destroy(&fs_info->delalloc_bytes);
+ fail_dirty_metadata_bytes:
+ 	percpu_counter_destroy(&fs_info->dirty_metadata_bytes);
++fail_odirect_bytes:
++	percpu_counter_destroy(&fs_info->odirect_bytes);
+ fail_srcu:
+ 	cleanup_srcu_struct(&fs_info->subvol_srcu);
+ fail:
+@@ -4025,6 +4033,10 @@ void close_ctree(struct btrfs_fs_info *fs_info)
+ 		       percpu_counter_sum(&fs_info->delalloc_bytes));
+ 	}
+ 
++	if (percpu_counter_sum(&fs_info->odirect_bytes))
++		btrfs_info(fs_info, "at unmount odirect count %lld",
++			   percpu_counter_sum(&fs_info->odirect_bytes));
++
+ 	btrfs_sysfs_remove_mounted(fs_info);
+ 	btrfs_sysfs_remove_fsid(fs_info->fs_devices);
+ 
+@@ -4056,6 +4068,7 @@ void close_ctree(struct btrfs_fs_info *fs_info)
+ 
+ 	percpu_counter_destroy(&fs_info->dirty_metadata_bytes);
+ 	percpu_counter_destroy(&fs_info->delalloc_bytes);
++	percpu_counter_destroy(&fs_info->odirect_bytes);
+ 	percpu_counter_destroy(&fs_info->dev_replace.bio_counter);
+ 	cleanup_srcu_struct(&fs_info->subvol_srcu);
+ 
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index d0626f945de2..0982456ebabb 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4727,6 +4727,7 @@ static void shrink_delalloc(struct btrfs_fs_info *fs_info, u64 to_reclaim,
+ 	struct btrfs_space_info *space_info;
+ 	struct btrfs_trans_handle *trans;
+ 	u64 delalloc_bytes;
++	u64 odirect_bytes;
+ 	u64 async_pages;
+ 	u64 items;
+ 	long time_left;
+@@ -4742,7 +4743,9 @@ static void shrink_delalloc(struct btrfs_fs_info *fs_info, u64 to_reclaim,
+ 
+ 	delalloc_bytes = percpu_counter_sum_positive(
+ 						&fs_info->delalloc_bytes);
+-	if (delalloc_bytes == 0) {
++	odirect_bytes = percpu_counter_sum_positive(
++						&fs_info->odirect_bytes);
++	if (delalloc_bytes == 0 && odirect_bytes == 0) {
+ 		if (trans)
+ 			return;
+ 		if (wait_ordered)
+@@ -4750,8 +4753,16 @@ static void shrink_delalloc(struct btrfs_fs_info *fs_info, u64 to_reclaim,
+ 		return;
+ 	}
+ 
++	/*
++	 * If we are doing more ordered than delalloc we need to just wait on
++	 * ordered extents, otherwise we'll waste time trying to flush delalloc
++	 * that likely won't give us the space back we need.
++	 */
++	if (odirect_bytes > delalloc_bytes)
++		wait_ordered = true;
++
+ 	loops = 0;
+-	while (delalloc_bytes && loops < 3) {
++	while ((delalloc_bytes || odirect_bytes)  && loops < 3) {
+ 		nr_pages = min(delalloc_bytes, to_reclaim) >> PAGE_SHIFT;
+ 
+ 		/*
+@@ -4801,6 +4812,8 @@ static void shrink_delalloc(struct btrfs_fs_info *fs_info, u64 to_reclaim,
+ 		}
+ 		delalloc_bytes = percpu_counter_sum_positive(
+ 						&fs_info->delalloc_bytes);
++		odirect_bytes = percpu_counter_sum_positive(
++						&fs_info->odirect_bytes);
+ 	}
+ }
+ 
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index 6fde2b2741ef..967c62b85d77 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -194,8 +194,11 @@ static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
+ 	if (type != BTRFS_ORDERED_IO_DONE && type != BTRFS_ORDERED_COMPLETE)
+ 		set_bit(type, &entry->flags);
+ 
+-	if (dio)
++	if (dio) {
++		percpu_counter_add_batch(&fs_info->odirect_bytes, len,
++					 fs_info->delalloc_batch);
+ 		set_bit(BTRFS_ORDERED_DIRECT, &entry->flags);
++	}
+ 
+ 	/* one ref for the tree */
+ 	refcount_set(&entry->refs, 1);
+@@ -468,6 +471,10 @@ void btrfs_remove_ordered_extent(struct inode *inode,
+ 	if (root != fs_info->tree_root)
+ 		btrfs_delalloc_release_metadata(btrfs_inode, entry->len, false);
+ 
++	if (test_bit(BTRFS_ORDERED_DIRECT, &entry->flags))
++		percpu_counter_add_batch(&fs_info->odirect_bytes, -entry->len,
++					 fs_info->delalloc_batch);
++
+ 	tree = &btrfs_inode->ordered_tree;
+ 	spin_lock_irq(&tree->lock);
+ 	node = &entry->rb_node;
+-- 
+2.13.5
 

@@ -2,137 +2,98 @@ Return-Path: <SRS0=mBNC=S3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EDF3FC10F11
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 00:37:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D9BE1C10F11
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 00:56:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BD66A214C6
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 00:37:16 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1556152636;
-	bh=LNjJNW+Ec4NB9odYh5DR8DRMNhl3WnjL1yBSwxaAd1Y=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=Hdj/Wgma7XuMqdjxQqUceD/LpNQ6SPezPFI7sP0mlMpTuWUapA6t7N/JHU/Jmm3Ag
-	 VfGs03jdFH8dzJgU0k5npwGuqthPS+GgAnkLy4FaklEZPpLr+0UPtRfJwbcK89gnvr
-	 CFVP6dzS9AEMsp5arRHSPesfcSZByfIKrjkq8+qE=
+	by mail.kernel.org (Postfix) with ESMTP id A6E7F208E4
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 00:56:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726380AbfDYAhQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 Apr 2019 20:37:16 -0400
-Received: from mail.kernel.org ([198.145.29.99]:58294 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726143AbfDYAhP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Apr 2019 20:37:15 -0400
-Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 68357214C6;
-        Thu, 25 Apr 2019 00:37:13 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1556152634;
-        bh=LNjJNW+Ec4NB9odYh5DR8DRMNhl3WnjL1yBSwxaAd1Y=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=yD5pxCQea/wbBQMS18C+AbQCI6i1hSlQ+WJ7F0qUipPTVMGpJInwJABsKGii6m72Y
-         jGoY8opoNRD00LyjJClrcrd847neL4gXGtoUog37xen2csAbciAPn8kHG+PO+EqGyw
-         uouidjOuzhL64piXJbsgJqrBgMUrlFd4XYvISHuc=
-From:   fdmanana@kernel.org
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2] btrfs: fix filtering of scratch device in test case 048
-Date:   Thu, 25 Apr 2019 01:37:09 +0100
-Message-Id: <20190425003709.28749-1-fdmanana@kernel.org>
-X-Mailer: git-send-email 2.11.0
-In-Reply-To: <20190425002457.28648-1-fdmanana@kernel.org>
-References: <20190425002457.28648-1-fdmanana@kernel.org>
+        id S1728585AbfDYA4B (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 Apr 2019 20:56:01 -0400
+Received: from mx2.suse.de ([195.135.220.15]:48138 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726455AbfDYA4A (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 24 Apr 2019 20:56:00 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 84C3DADD8
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Apr 2019 00:55:59 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Filip Manana <fdmanana@suse.com>
+Subject: [PATCH v3] btrfs: ctree: Dump the leaf before BUG_ON()
+Date:   Thu, 25 Apr 2019 08:55:53 +0800
+Message-Id: <20190425005553.3126-1-wqu@suse.com>
+X-Mailer: git-send-email 2.21.0
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+We have a user reporting BUG_ON() triggered in
+btrfs_set_item_key_safe().
 
-The recent commit 4529b20e1aa8f9 ("btrfs/048: amend property validation
-cases"), does not properly filter the scratch device because the error
-messages are sent to stderr and not to stdout, and the pipe filter only
-gets input from the stdout of the btrfs utility. We need to redirect the
-stderr of the btrfs utility to its stdout.
+Let's dump the leaf content before triggering BUG_ON() so that we can
+have some clue on what's going wrong.
+The output of tree locks should help us to debug such problem.
 
-Further, the golden output had the path "/mnt/scratch" hardcoded, instead
-of using SCRATCH_MNT. Fix that as well.
-
-The test was failing on any setup where the scratch device is not mounted
-at "/mnt/scratch".
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Reviewed-by: Filip Manana <fdmanana@suse.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
+Changelog:
+v2:
+- Dump slot/old key/new key.
+v3:
+- Output message update, to avoid "on-disk" wording.
+- Use BUG() to replace BUG_ON(1) to make clang quite.
 
-V2: Fix the formatting of the patch, which was causing git apply / path to fail.
+ fs/btrfs/ctree.c | 24 ++++++++++++++++++++++--
+ 1 file changed, 22 insertions(+), 2 deletions(-)
 
- tests/btrfs/048     | 10 +++++-----
- tests/btrfs/048.out | 10 +++++-----
- 2 files changed, 10 insertions(+), 10 deletions(-)
-
-diff --git a/tests/btrfs/048 b/tests/btrfs/048
-index f6de0b8c..8bb10a90 100755
---- a/tests/btrfs/048
-+++ b/tests/btrfs/048
-@@ -208,21 +208,21 @@ touch $SCRATCH_MNT/sv1/file2
- $BTRFS_UTIL_PROG property get $SCRATCH_MNT/sv1/file2 compression
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 5116c2a1f0f9..5df76c17775a 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -3185,11 +3185,31 @@ void btrfs_set_item_key_safe(struct btrfs_fs_info *fs_info,
+ 	slot = path->slots[0];
+ 	if (slot > 0) {
+ 		btrfs_item_key(eb, &disk_key, slot - 1);
+-		BUG_ON(comp_keys(&disk_key, new_key) >= 0);
++		if (unlikely(comp_keys(&disk_key, new_key) >= 0)) {
++			btrfs_crit(fs_info,
++		"slot %u key (%llu %u %llu) new key (%llu %u %llu)",
++				   slot, btrfs_disk_key_objectid(&disk_key),
++				   btrfs_disk_key_type(&disk_key),
++				   btrfs_disk_key_offset(&disk_key),
++				   new_key->objectid, new_key->type,
++				   new_key->offset);
++			btrfs_print_leaf(eb);
++			BUG();
++		}
+ 	}
+ 	if (slot < btrfs_header_nritems(eb) - 1) {
+ 		btrfs_item_key(eb, &disk_key, slot + 1);
+-		BUG_ON(comp_keys(&disk_key, new_key) <= 0);
++		if (unlikely(comp_keys(&disk_key, new_key) <= 0)) {
++			btrfs_crit(fs_info,
++		"slot %u key (%llu %u %llu) new key (%llu %u %llu)",
++				   slot, btrfs_disk_key_objectid(&disk_key),
++				   btrfs_disk_key_type(&disk_key),
++				   btrfs_disk_key_offset(&disk_key),
++				   new_key->objectid, new_key->type,
++				   new_key->offset);
++			btrfs_print_leaf(eb);
++			BUG();
++		}
+ 	}
  
- echo -e "\nTesting argument validation, should fail"
--$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'lz' | _filter_scratch
-+$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'lz' 2>&1 | _filter_scratch
- echo "***"
--$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'zli' | _filter_scratch
-+$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'zli' 2>&1 | _filter_scratch
- echo "***"
--$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'zst' | _filter_scratch
-+$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'zst' 2>&1 | _filter_scratch
- 
- echo -e "\nTesting if property is persistent across failed validation"
- $BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'lzo'
--$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'zli' | _filter_scratch
-+$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'zli' 2>&1 | _filter_scratch
- $BTRFS_UTIL_PROG property get $SCRATCH_MNT compression
- 
- echo -e "\nTesting generation is unchanged after failed validation"
- $BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT
- $BTRFS_UTIL_PROG inspect-internal dump-super $SCRATCH_DEV | grep '^generation'
--$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'lz' | _filter_scratch
-+$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'lz' 2>&1 | _filter_scratch
- $BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT
- $BTRFS_UTIL_PROG inspect-internal dump-super $SCRATCH_DEV | grep '^generation'
- 
-diff --git a/tests/btrfs/048.out b/tests/btrfs/048.out
-index 00f39bc0..16a785a6 100644
---- a/tests/btrfs/048.out
-+++ b/tests/btrfs/048.out
-@@ -78,17 +78,17 @@ compression=lzo
- compression=lzo
- 
- Testing argument validation, should fail
--ERROR: failed to set compression for /mnt/scratch: Invalid argument
-+ERROR: failed to set compression for SCRATCH_MNT: Invalid argument
- ***
--ERROR: failed to set compression for /mnt/scratch: Invalid argument
-+ERROR: failed to set compression for SCRATCH_MNT: Invalid argument
- ***
--ERROR: failed to set compression for /mnt/scratch: Invalid argument
-+ERROR: failed to set compression for SCRATCH_MNT: Invalid argument
- 
- Testing if property is persistent across failed validation
--ERROR: failed to set compression for /mnt/scratch: Invalid argument
-+ERROR: failed to set compression for SCRATCH_MNT: Invalid argument
- compression=lzo
- 
- Testing generation is unchanged after failed validation
- generation		7
--ERROR: failed to set compression for /mnt/scratch: Invalid argument
-+ERROR: failed to set compression for SCRATCH_MNT: Invalid argument
- generation		7
+ 	btrfs_cpu_key_to_disk(&disk_key, new_key);
 -- 
-2.11.0
+2.21.0
 

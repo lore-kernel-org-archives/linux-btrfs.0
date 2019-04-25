@@ -2,85 +2,91 @@ Return-Path: <SRS0=mBNC=S3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B7012C43219
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 13:43:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BCF45C43219
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 13:47:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 30F93206C0
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 13:43:07 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=inflaton.co.jp header.i=@inflaton.co.jp header.b="jNDLzFvr"
+	by mail.kernel.org (Postfix) with ESMTP id 9AA26206C0
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 13:47:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727053AbfDYNnF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 25 Apr 2019 09:43:05 -0400
-Received: from mailgw1-55.conoha.ne.jp ([163.44.187.55]:23974 "EHLO
-        mailgw1.conoha.ne.jp" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1725900AbfDYNnF (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Apr 2019 09:43:05 -0400
-X-Greylist: delayed 517 seconds by postgrey-1.27 at vger.kernel.org; Thu, 25 Apr 2019 09:43:04 EDT
-Received: from mail1.conoha.ne.jp (unknown [172.16.42.13])
-        by mailgw1.conoha.ne.jp (Postfix) with ESMTP id 2CBCC180135709
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Apr 2019 22:34:26 +0900 (JST)
-Received: from hydrangea (p191169-ipngn6801hodogaya.kanagawa.ocn.ne.jp [124.87.185.169])
-        by mail1.conoha.ne.jp (Postfix) with ESMTPSA id 03D1B200CD4C4
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Apr 2019 22:34:25 +0900 (JST)
-DKIM-Filter: OpenDKIM Filter v2.11.0 mail1.conoha.ne.jp 03D1B200CD4C4
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=inflaton.co.jp;
-        s=default; t=1556199266;
-        bh=dU3S1vRM+p5uyG5BscSiRoZuBKKXbo/5N1p94lq9q88=;
-        h=Date:From:To:Subject:From;
-        b=jNDLzFvrQrNcXtiWEqdidxJ8PUzYxrTo/lgMOnrLhmoq/lDqI2wa7AxY3eITNLN2L
-         NNB34gZB4tR/R0AZBX5KDGODAFTcj3Y8WWWdNHvocVRJe5CmfjbnfnN9E2DeZjD8qa
-         51Wq1oUjdXH7QpsraOrOLX1RivVvHJN/xeIKhX/xLPcViNJobskv27UI5XAgZzxTno
-         9e3wpH6rsg8+Qbq/7kwIgGWRDWPADXEBW39skrHfnI3HPyKUQjguSy5nfckqAVxu2I
-         vfYA1pgbOWzXv2j0Lfy1PJlGnEe8h5sq7OYkVBjERVWDJZqjKxoEaskg8stu4qTesi
-         EJZxEWOMl5xTw==
-Date:   Thu, 25 Apr 2019 22:34:57 +0900
-From:   MASAKI Haruka <reasonset@inflaton.co.jp>
-To:     linux-btrfs@vger.kernel.org
-Subject: Some file lost when send back snapshot.
-Message-ID: <20190425223457.5a7dfd20@hydrangea>
-Organization: Inflaton, Inc.
-X-Mailer: Claws Mail 3.17.3 (GTK+ 2.24.32; x86_64-pc-linux-gnu)
+        id S1727413AbfDYNrR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 25 Apr 2019 09:47:17 -0400
+Received: from mx2.suse.de ([195.135.220.15]:46198 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726452AbfDYNrR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 25 Apr 2019 09:47:17 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 30D1AAFC5
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Apr 2019 13:47:16 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 37D62DA847; Thu, 25 Apr 2019 15:48:14 +0200 (CEST)
+Date:   Thu, 25 Apr 2019 15:48:12 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org, Filip Manana <fdmanana@suse.com>
+Subject: Re: [PATCH v3] btrfs: ctree: Dump the leaf before BUG_ON()
+Message-ID: <20190425134812.GH20156@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org, Filip Manana <fdmanana@suse.com>
+References: <20190425005553.3126-1-wqu@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190425005553.3126-1-wqu@suse.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I send snapshot from backup volume, and send new snaopshot to backup volume,
-and some file lost in received volume.
+On Thu, Apr 25, 2019 at 08:55:53AM +0800, Qu Wenruo wrote:
+> We have a user reporting BUG_ON() triggered in
+> btrfs_set_item_key_safe().
+> 
+> Let's dump the leaf content before triggering BUG_ON() so that we can
+> have some clue on what's going wrong.
+> The output of tree locks should help us to debug such problem.
+> 
+> Reviewed-by: Filip Manana <fdmanana@suse.com>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+> Changelog:
+> v2:
+> - Dump slot/old key/new key.
+> v3:
+> - Output message update, to avoid "on-disk" wording.
+> - Use BUG() to replace BUG_ON(1) to make clang quite.
+> 
+>  fs/btrfs/ctree.c | 24 ++++++++++++++++++++++--
+>  1 file changed, 22 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> index 5116c2a1f0f9..5df76c17775a 100644
+> --- a/fs/btrfs/ctree.c
+> +++ b/fs/btrfs/ctree.c
+> @@ -3185,11 +3185,31 @@ void btrfs_set_item_key_safe(struct btrfs_fs_info *fs_info,
+>  	slot = path->slots[0];
+>  	if (slot > 0) {
+>  		btrfs_item_key(eb, &disk_key, slot - 1);
+> -		BUG_ON(comp_keys(&disk_key, new_key) >= 0);
+> +		if (unlikely(comp_keys(&disk_key, new_key) >= 0)) {
+> +			btrfs_crit(fs_info,
+> +		"slot %u key (%llu %u %llu) new key (%llu %u %llu)",
+> +				   slot, btrfs_disk_key_objectid(&disk_key),
+> +				   btrfs_disk_key_type(&disk_key),
+> +				   btrfs_disk_key_offset(&disk_key),
+> +				   new_key->objectid, new_key->type,
+> +				   new_key->offset);
+> +			btrfs_print_leaf(eb);
+> +			BUG();
 
-In detail:
-
-1. Host A has new Btrfs volume and Host B have two backuped readonly subvolumes (190312-010100, 190315-001000).
-2. Host B send 190315-001000 subvolume to Host A.
-3. Host A completely received (all files exist.)
-4. Host B took new readonly snapshot "back1" on 190315-001000 (all files exist.)
-5. Host B send back1 with `-p 190315-001000` to Host A (some file lost.)
-6. Host B took new read-writable snapshot "world" on back1 (all files exist.)
-7. Host B modified world.
-8. Host B took new readonly snapshot "back2" on world (all files exist.)
-9. Host B send back2 with `-p 190315-001000` to Host A (some file lost.)
-10. Deleted received snapshot and Host B send back2 with `-p back1` to Host A (some file lost.)
-
-Kernel
-5.0.5-1-MANJARO
-
-Btrfs progs
-btrfs-progs 4.20.2-1
-
-
-What I should do?
-
-Thanks.
-
-
-
-Masaki Haruka
+This is going to produce a lot of lines, with the stacktrace at the end.
+We'll understand what's wrong just by seeing the stack, though the
+contents of the leaf will be only in the logs and not on screen. This
+hopefully will be available for analysis. I've seen this bug too and
+will be able to provide the logs eventually.

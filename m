@@ -6,32 +6,34 @@ X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 612CBC282E1
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 10:02:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 396ACC10F03
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 10:02:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3BADB206BA
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 10:02:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1104E206BA
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 10:02:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729380AbfDYKAN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 25 Apr 2019 06:00:13 -0400
-Received: from Galois.linutronix.de ([146.0.238.70]:57937 "EHLO
+        id S1729719AbfDYKC4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 25 Apr 2019 06:02:56 -0400
+Received: from Galois.linutronix.de ([146.0.238.70]:57895 "EHLO
         Galois.linutronix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729368AbfDYKAM (ORCPT
+        with ESMTP id S2387540AbfDYKAG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Apr 2019 06:00:12 -0400
+        Thu, 25 Apr 2019 06:00:06 -0400
 Received: from localhost ([127.0.0.1] helo=nanos.tec.linutronix.de)
         by Galois.linutronix.de with esmtp (Exim 4.80)
         (envelope-from <tglx@linutronix.de>)
-        id 1hJbA3-0001t5-BV; Thu, 25 Apr 2019 11:59:23 +0200
-Message-Id: <20190425094802.533968922@linutronix.de>
+        id 1hJb9y-0001sB-TT; Thu, 25 Apr 2019 11:59:19 +0200
+Message-Id: <20190425094802.248658135@linutronix.de>
 User-Agent: quilt/0.65
-Date:   Thu, 25 Apr 2019 11:45:08 +0200
+Date:   Thu, 25 Apr 2019 11:45:05 +0200
 From:   Thomas Gleixner <tglx@linutronix.de>
 To:     LKML <linux-kernel@vger.kernel.org>
 Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
-        Andy Lutomirski <luto@kernel.org>, dm-devel@redhat.com,
-        Mike Snitzer <snitzer@redhat.com>,
-        Alasdair Kergon <agk@redhat.com>,
+        Andy Lutomirski <luto@kernel.org>,
+        Christoph Hellwig <hch@lst.de>,
+        iommu@lists.linux-foundation.org,
+        Robin Murphy <robin.murphy@arm.com>,
+        Marek Szyprowski <m.szyprowski@samsung.com>,
         Steven Rostedt <rostedt@goodmis.org>,
         Alexander Potapenko <glider@google.com>,
         Alexey Dobriyan <adobriyan@gmail.com>,
@@ -45,14 +47,13 @@ Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
         kasan-dev@googlegroups.com,
         Mike Rapoport <rppt@linux.vnet.ibm.com>,
         Akinobu Mita <akinobu.mita@gmail.com>,
-        Christoph Hellwig <hch@lst.de>,
-        iommu@lists.linux-foundation.org,
-        Robin Murphy <robin.murphy@arm.com>,
-        Marek Szyprowski <m.szyprowski@samsung.com>,
         Johannes Thumshirn <jthumshirn@suse.de>,
         David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
         Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, Daniel Vetter <daniel@ffwll.ch>,
+        linux-btrfs@vger.kernel.org, dm-devel@redhat.com,
+        Mike Snitzer <snitzer@redhat.com>,
+        Alasdair Kergon <agk@redhat.com>,
+        Daniel Vetter <daniel@ffwll.ch>,
         intel-gfx@lists.freedesktop.org,
         Joonas Lahtinen <joonas.lahtinen@linux.intel.com>,
         Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
@@ -61,7 +62,7 @@ Cc:     Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
         Rodrigo Vivi <rodrigo.vivi@intel.com>,
         Tom Zanussi <tom.zanussi@linux.intel.com>,
         Miroslav Benes <mbenes@suse.cz>, linux-arch@vger.kernel.org
-Subject: [patch V3 15/29] dm persistent data: Simplify stack trace handling
+Subject: [patch V3 12/29] dma/debug: Simplify stracktrace retrieval
 References: <20190425094453.875139013@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -71,72 +72,54 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 Replace the indirection through struct stack_trace with an invocation of
-the storage array based interface. This results in less storage space and
-indirection.
+the storage array based interface.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-Cc: dm-devel@redhat.com
-Cc: Mike Snitzer <snitzer@redhat.com>
-Cc: Alasdair Kergon <agk@redhat.com>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+Cc: iommu@lists.linux-foundation.org
+Cc: Robin Murphy <robin.murphy@arm.com>
+Cc: Marek Szyprowski <m.szyprowski@samsung.com>
 ---
- drivers/md/persistent-data/dm-block-manager.c |   19 +++++++++----------
- 1 file changed, 9 insertions(+), 10 deletions(-)
+ kernel/dma/debug.c |   14 ++++++--------
+ 1 file changed, 6 insertions(+), 8 deletions(-)
 
---- a/drivers/md/persistent-data/dm-block-manager.c
-+++ b/drivers/md/persistent-data/dm-block-manager.c
-@@ -35,7 +35,10 @@
- #define MAX_HOLDERS 4
- #define MAX_STACK 10
- 
--typedef unsigned long stack_entries[MAX_STACK];
-+struct stack_store {
-+	unsigned int	nr_entries;
-+	unsigned long	entries[MAX_STACK];
-+};
- 
- struct block_lock {
- 	spinlock_t lock;
-@@ -44,8 +47,7 @@ struct block_lock {
- 	struct task_struct *holders[MAX_HOLDERS];
- 
- #ifdef CONFIG_DM_DEBUG_BLOCK_STACK_TRACING
--	struct stack_trace traces[MAX_HOLDERS];
--	stack_entries entries[MAX_HOLDERS];
-+	struct stack_store traces[MAX_HOLDERS];
+--- a/kernel/dma/debug.c
++++ b/kernel/dma/debug.c
+@@ -89,8 +89,8 @@ struct dma_debug_entry {
+ 	int		 sg_mapped_ents;
+ 	enum map_err_types  map_err_type;
+ #ifdef CONFIG_STACKTRACE
+-	struct		 stack_trace stacktrace;
+-	unsigned long	 st_entries[DMA_DEBUG_STACKTRACE_ENTRIES];
++	unsigned int	stack_len;
++	unsigned long	stack_entries[DMA_DEBUG_STACKTRACE_ENTRIES];
  #endif
  };
  
-@@ -73,7 +75,7 @@ static void __add_holder(struct block_lo
- {
- 	unsigned h = __find_holder(lock, NULL);
- #ifdef CONFIG_DM_DEBUG_BLOCK_STACK_TRACING
--	struct stack_trace *t;
-+	struct stack_store *t;
- #endif
- 
- 	get_task_struct(task);
-@@ -81,11 +83,7 @@ static void __add_holder(struct block_lo
- 
- #ifdef CONFIG_DM_DEBUG_BLOCK_STACK_TRACING
- 	t = lock->traces + h;
--	t->nr_entries = 0;
--	t->max_entries = MAX_STACK;
--	t->entries = lock->entries[h];
--	t->skip = 2;
--	save_stack_trace(t);
-+	t->nr_entries = stack_trace_save(t->entries, MAX_STACK, 2);
+@@ -174,7 +174,7 @@ static inline void dump_entry_trace(stru
+ #ifdef CONFIG_STACKTRACE
+ 	if (entry) {
+ 		pr_warning("Mapped at:\n");
+-		print_stack_trace(&entry->stacktrace, 0);
++		stack_trace_print(entry->stack_entries, entry->stack_len, 0);
+ 	}
  #endif
  }
+@@ -704,12 +704,10 @@ static struct dma_debug_entry *dma_entry
+ 	spin_unlock_irqrestore(&free_entries_lock, flags);
  
-@@ -106,7 +104,8 @@ static int __check_holder(struct block_l
- 			DMERR("recursive lock detected in metadata");
- #ifdef CONFIG_DM_DEBUG_BLOCK_STACK_TRACING
- 			DMERR("previously held here:");
--			print_stack_trace(lock->traces + i, 4);
-+			stack_trace_print(lock->traces[i].entries,
-+					  lock->traces[i].nr_entries, 4);
+ #ifdef CONFIG_STACKTRACE
+-	entry->stacktrace.max_entries = DMA_DEBUG_STACKTRACE_ENTRIES;
+-	entry->stacktrace.entries = entry->st_entries;
+-	entry->stacktrace.skip = 1;
+-	save_stack_trace(&entry->stacktrace);
++	entry->stack_len = stack_trace_save(entry->stack_entries,
++					    ARRAY_SIZE(entry->stack_entries),
++					    1);
+ #endif
+-
+ 	return entry;
+ }
  
- 			DMERR("subsequent acquisition attempted here:");
- 			dump_stack();
 
 

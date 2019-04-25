@@ -2,99 +2,85 @@ Return-Path: <SRS0=mBNC=S3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.3 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_MUTT autolearn=unavailable autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 91EB5C43218
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 13:37:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B7012C43219
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 13:43:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 58DD0206BF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 13:37:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 30F93206C0
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Apr 2019 13:43:07 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="Gg0uxuaD"
+	dkim=pass (2048-bit key) header.d=inflaton.co.jp header.i=@inflaton.co.jp header.b="jNDLzFvr"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727523AbfDYNg7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 25 Apr 2019 09:36:59 -0400
-Received: from merlin.infradead.org ([205.233.59.134]:51296 "EHLO
-        merlin.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725935AbfDYNg7 (ORCPT
+        id S1727053AbfDYNnF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 25 Apr 2019 09:43:05 -0400
+Received: from mailgw1-55.conoha.ne.jp ([163.44.187.55]:23974 "EHLO
+        mailgw1.conoha.ne.jp" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1725900AbfDYNnF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Apr 2019 09:36:59 -0400
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=merlin.20170209; h=In-Reply-To:Content-Type:MIME-Version:
-        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:
-        Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
-        List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-         bh=cilSacm49Yfv3yMpgdaQhWv20ykDrXiN3MsGcQ6O+1Q=; b=Gg0uxuaDkYyw6kLrTrmTd2Sw6
-        n+aNn/QLc2hEIkZ+/ND8NCAnx6RF3fW2lY+PUWBDA2fBhd0RhUhI1eEXKmbrCpT9ft93CfFlCkdyS
-        RsNaDcB8XRunkoMdHJa/Htvyj8Px3d27BsqqbESaKXlrlD/+2rF7pc+ifo1QfuYavEJnvemrFz+Jv
-        dKAF+mzv+IFtIpqqc3hyRPwsKByzhFVdMmp+5/96EfVNDqR+LsVcYmUtPdvbtBtw3S0CnVr7FSuAZ
-        N3A+tBtSgyIwKYztPEjfIl8x/ClV/RJt6CmRi1SRp+JXV9A53CkNFOQ58LOdj1ON937bDh3YmgcWm
-        dM4fhMzaA==;
-Received: from j217100.upc-j.chello.nl ([24.132.217.100] helo=hirez.programming.kicks-ass.net)
-        by merlin.infradead.org with esmtpsa (Exim 4.90_1 #2 (Red Hat Linux))
-        id 1hJeXY-0004TE-0R; Thu, 25 Apr 2019 13:35:52 +0000
-Received: by hirez.programming.kicks-ass.net (Postfix, from userid 1000)
-        id 147B82395002B; Thu, 25 Apr 2019 15:35:49 +0200 (CEST)
-Date:   Thu, 25 Apr 2019 15:35:49 +0200
-From:   Peter Zijlstra <peterz@infradead.org>
-To:     Thomas Gleixner <tglx@linutronix.de>
-Cc:     LKML <linux-kernel@vger.kernel.org>,
-        Josh Poimboeuf <jpoimboe@redhat.com>, x86@kernel.org,
-        Andy Lutomirski <luto@kernel.org>,
-        Steven Rostedt <rostedt@goodmis.org>,
-        Alexander Potapenko <glider@google.com>,
-        Alexey Dobriyan <adobriyan@gmail.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Christoph Lameter <cl@linux.com>,
-        Pekka Enberg <penberg@kernel.org>, linux-mm@kvack.org,
-        David Rientjes <rientjes@google.com>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Dmitry Vyukov <dvyukov@google.com>,
-        Andrey Ryabinin <aryabinin@virtuozzo.com>,
-        kasan-dev@googlegroups.com,
-        Mike Rapoport <rppt@linux.vnet.ibm.com>,
-        Akinobu Mita <akinobu.mita@gmail.com>,
-        Christoph Hellwig <hch@lst.de>,
-        iommu@lists.linux-foundation.org,
-        Robin Murphy <robin.murphy@arm.com>,
-        Marek Szyprowski <m.szyprowski@samsung.com>,
-        Johannes Thumshirn <jthumshirn@suse.de>,
-        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, dm-devel@redhat.com,
-        Mike Snitzer <snitzer@redhat.com>,
-        Alasdair Kergon <agk@redhat.com>,
-        Daniel Vetter <daniel@ffwll.ch>,
-        intel-gfx@lists.freedesktop.org,
-        Joonas Lahtinen <joonas.lahtinen@linux.intel.com>,
-        Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
-        dri-devel@lists.freedesktop.org, David Airlie <airlied@linux.ie>,
-        Jani Nikula <jani.nikula@linux.intel.com>,
-        Rodrigo Vivi <rodrigo.vivi@intel.com>,
-        Tom Zanussi <tom.zanussi@linux.intel.com>,
-        Miroslav Benes <mbenes@suse.cz>, linux-arch@vger.kernel.org
-Subject: Re: [patch V3 18/29] lockdep: Remove save argument from
- check_prev_add()
-Message-ID: <20190425133549.GW4038@hirez.programming.kicks-ass.net>
-References: <20190425094453.875139013@linutronix.de>
- <20190425094802.803362058@linutronix.de>
+        Thu, 25 Apr 2019 09:43:05 -0400
+X-Greylist: delayed 517 seconds by postgrey-1.27 at vger.kernel.org; Thu, 25 Apr 2019 09:43:04 EDT
+Received: from mail1.conoha.ne.jp (unknown [172.16.42.13])
+        by mailgw1.conoha.ne.jp (Postfix) with ESMTP id 2CBCC180135709
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Apr 2019 22:34:26 +0900 (JST)
+Received: from hydrangea (p191169-ipngn6801hodogaya.kanagawa.ocn.ne.jp [124.87.185.169])
+        by mail1.conoha.ne.jp (Postfix) with ESMTPSA id 03D1B200CD4C4
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Apr 2019 22:34:25 +0900 (JST)
+DKIM-Filter: OpenDKIM Filter v2.11.0 mail1.conoha.ne.jp 03D1B200CD4C4
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=inflaton.co.jp;
+        s=default; t=1556199266;
+        bh=dU3S1vRM+p5uyG5BscSiRoZuBKKXbo/5N1p94lq9q88=;
+        h=Date:From:To:Subject:From;
+        b=jNDLzFvrQrNcXtiWEqdidxJ8PUzYxrTo/lgMOnrLhmoq/lDqI2wa7AxY3eITNLN2L
+         NNB34gZB4tR/R0AZBX5KDGODAFTcj3Y8WWWdNHvocVRJe5CmfjbnfnN9E2DeZjD8qa
+         51Wq1oUjdXH7QpsraOrOLX1RivVvHJN/xeIKhX/xLPcViNJobskv27UI5XAgZzxTno
+         9e3wpH6rsg8+Qbq/7kwIgGWRDWPADXEBW39skrHfnI3HPyKUQjguSy5nfckqAVxu2I
+         vfYA1pgbOWzXv2j0Lfy1PJlGnEe8h5sq7OYkVBjERVWDJZqjKxoEaskg8stu4qTesi
+         EJZxEWOMl5xTw==
+Date:   Thu, 25 Apr 2019 22:34:57 +0900
+From:   MASAKI Haruka <reasonset@inflaton.co.jp>
+To:     linux-btrfs@vger.kernel.org
+Subject: Some file lost when send back snapshot.
+Message-ID: <20190425223457.5a7dfd20@hydrangea>
+Organization: Inflaton, Inc.
+X-Mailer: Claws Mail 3.17.3 (GTK+ 2.24.32; x86_64-pc-linux-gnu)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190425094802.803362058@linutronix.de>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Apr 25, 2019 at 11:45:11AM +0200, Thomas Gleixner wrote:
-> There is only one caller which hands in save_trace as function pointer.
-> 
-> Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+I send snapshot from backup volume, and send new snaopshot to backup volume,
+and some file lost in received volume.
 
-Acked-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+In detail:
+
+1. Host A has new Btrfs volume and Host B have two backuped readonly subvolumes (190312-010100, 190315-001000).
+2. Host B send 190315-001000 subvolume to Host A.
+3. Host A completely received (all files exist.)
+4. Host B took new readonly snapshot "back1" on 190315-001000 (all files exist.)
+5. Host B send back1 with `-p 190315-001000` to Host A (some file lost.)
+6. Host B took new read-writable snapshot "world" on back1 (all files exist.)
+7. Host B modified world.
+8. Host B took new readonly snapshot "back2" on world (all files exist.)
+9. Host B send back2 with `-p 190315-001000` to Host A (some file lost.)
+10. Deleted received snapshot and Host B send back2 with `-p back1` to Host A (some file lost.)
+
+Kernel
+5.0.5-1-MANJARO
+
+Btrfs progs
+btrfs-progs 4.20.2-1
+
+
+What I should do?
+
+Thanks.
+
+
+
+Masaki Haruka

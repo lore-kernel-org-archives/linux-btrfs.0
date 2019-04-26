@@ -2,72 +2,75 @@ Return-Path: <SRS0=BNt3=S4=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-0.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0EA94C43219
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 09:03:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 32347C43219
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 09:09:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B85882077B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 09:03:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E594720675
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 09:09:13 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="DWXshFX6"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="K9VjqhH2"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726184AbfDZJD3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 26 Apr 2019 05:03:29 -0400
-Received: from mail-vs1-f67.google.com ([209.85.217.67]:38907 "EHLO
-        mail-vs1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725933AbfDZJD3 (ORCPT
+        id S1725993AbfDZJJM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 26 Apr 2019 05:09:12 -0400
+Received: from mail-vs1-f66.google.com ([209.85.217.66]:43182 "EHLO
+        mail-vs1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725935AbfDZJJM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Apr 2019 05:03:29 -0400
-Received: by mail-vs1-f67.google.com with SMTP id s2so1511753vsi.5
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 Apr 2019 02:03:28 -0700 (PDT)
+        Fri, 26 Apr 2019 05:09:12 -0400
+Received: by mail-vs1-f66.google.com with SMTP id t23so1499446vso.10;
+        Fri, 26 Apr 2019 02:09:11 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=mime-version:references:in-reply-to:reply-to:from:date:message-id
          :subject:to:cc:content-transfer-encoding;
-        bh=lN6qc3+0tNCBxTqFGlDiml5DydmrL7v22B/gXt/msVY=;
-        b=DWXshFX6Bi8jmuXbRcFNR2faDEMdRCwL2uKZ05DefzeH7R/KRy7otdy+DiAYZuzRk+
-         dzHQtUJoJv5JPNQ90/Qkx1qY0QBI/H44ihU/gN93QeJUlluz+YJ+RMdkJHtaZBdoydtp
-         LxaR7AXqGeGqwMyFhiUENTXx4EW3ezMuOm/rnSqElZhqq8adRPRE+4WvFdXP7gXcoIHh
-         Uz0NI3Cw+q5K4kX2F8ow0OeToy1fOv4jSrKi+fmpUMbBSvid11EHOQQPJqFkdqN3r+jC
-         eWsDETilJvo6GLp0h16Oxgqk0Sn5Mc8K1JBcJqHQgle/Fz12CFJtXRJof/SBGlB/Eqtm
-         RjMQ==
+        bh=TvUOukXXyxFa9CqmUNSq3KzLDs0BUp6xRIqDRAFNpLw=;
+        b=K9VjqhH2o1aMOxzedMzrYNiIvHPpghYdsY+ijs5MK/K3vwtG0GgrDmGkucjLBXHP21
+         OhVMUKIDTwU4Fthad81wfp2npOvAW2cb5v/cNTbzhNiGy+qHho0x8b0XMeTNVtc7LIkI
+         isqC7gA8AOVlwzKsCKs1fJwBFPjReBevhsVqXVeb3raafzlWjppqGRg0CHVW24/MFY6W
+         HbM1LU5alk9oUKGwATMnetKbflrApAAcuQec3k0JeZQkmN1OI1YtC6XVivz3NDENx4uu
+         12yxhSwxcUbrqL1pAlrWFHhpWala4m2GQ3UJRVg6/0CyEBObWz4FLp2j0iuT9ejPzAH3
+         +p1g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
          :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=lN6qc3+0tNCBxTqFGlDiml5DydmrL7v22B/gXt/msVY=;
-        b=Ob3DMkcz1B4UhO7x8Va8FY8dhdXwwmHXY7FhzdCc76HIUOtmBeodYFutH3QXLHrMqm
-         ZGexW0/0cKm0B3gP3+VWX/bySJUJ8CGQwqFwdWAkXCdH4esDhV7Wvxb+tdrarVNQrYCp
-         cTs6X9PmuxMNDIsE3Gd1nT9O1dtirpZDuwaQ/obJ4owKsF75zWbVA/+xLANvY1leJfCF
-         exkMI+jYPS/vov2cHArCBe+t/nmjMngFcRyIoZJJ+vFYaDICgZhVNSfaACjIg+Nc8Lzh
-         aiiQBTx9JU+9/RF4GKq6kysXTuEC1VbaxqxB5iRUUUA5qeEgUZwIqKz9fKiEiTahO58W
-         IRJA==
-X-Gm-Message-State: APjAAAX5kVV3xEUjt3/cqRJ7BnTGtTlzOvyfUL79v49+4uVWXLv7GFsz
-        iawrCiJny9rQcNnCWiFU3uBsPRIc1W5s6RpaiYQ=
-X-Google-Smtp-Source: APXvYqzTwKL0aVYjYy9PCE6qC9L4L1xqfZCIZKF2eCBERlVIioU57it9scjseXyWWZZ6stqbq6xyD1Vo5afn4/yJYFA=
-X-Received: by 2002:a67:af1a:: with SMTP id v26mr20958599vsl.99.1556269408188;
- Fri, 26 Apr 2019 02:03:28 -0700 (PDT)
+        bh=TvUOukXXyxFa9CqmUNSq3KzLDs0BUp6xRIqDRAFNpLw=;
+        b=TqcmcsAQllYoBP9l3BXqqTnzFUKu4qxdXlaW7kCFGBmTW0QF4/s/EP6G8Mewqns7Nv
+         AjPBDlUqTM0tzkw5Q6T/GUw8MSLuhboA6qQCVZW5KVoGecB5e0+16q6BC05hY2DAL8oA
+         +uPovhs+0NtVH1T8P9LK44L0+J8lW4sP4dA8CD2ehHRlzgjaxYemqx9O+XQTCdGBg94K
+         MWgM+3OHLJPjI/gtqPS+QiA076urQHFrpJoAilu+uAE9cpyBdTqxV9Z8Uk3QK5mQse33
+         ABlkTUYiCu9i0UkuOO2oICVkThST78IkYxUvlciDlD39QPBgmbh+s1eoNQ8h5ZIq/Bb6
+         B2LA==
+X-Gm-Message-State: APjAAAVd1RicT5WfUk/FBarpSTMo2L00tzufpeFIXdi6naLcv3YYX6uq
+        pKZUcCHqnjsDI0b1Egmr7UhlevUs69sM9u3mCEmvmQ==
+X-Google-Smtp-Source: APXvYqyVIEIuI5hnNmDeFFnovMXA1PTCnIMePNQ1BJUEwVdYoUbd1GYs7ov6al29w0MbMgIExKKjSYN6DkH+oedwgHc=
+X-Received: by 2002:a67:af1a:: with SMTP id v26mr20971192vsl.99.1556269750937;
+ Fri, 26 Apr 2019 02:09:10 -0700 (PDT)
 MIME-Version: 1.0
 References: <1533522630-21758-1-git-send-email-robbieko@synology.com>
  <afb5d89f-e1f9-351e-c789-ac291649d17b@gmx.com> <06b5b693-8017-7ec0-b17a-c723291f00c7@suse.com>
  <950b2924-9edd-d9d7-ace0-bc3e2ab07a6a@gmx.com> <CAL3q7H6-9mxYyzi8Y0N8Vvgf4qRgrqURqHASE_4Du-jLmywuBQ@mail.gmail.com>
- <cfcaf75e-7e89-cf1f-9293-6a022762f22c@gmx.com>
-In-Reply-To: <cfcaf75e-7e89-cf1f-9293-6a022762f22c@gmx.com>
+ <cfcaf75e-7e89-cf1f-9293-6a022762f22c@gmx.com> <20b22fc6cdc288ed9aaf0be1a6cdeb7b@synology.com>
+ <1fcaaa0c-cf7b-38dc-0af9-c90773c9af07@gmx.com> <50d35084420d7fed439d74fd29b12d7d@synology.com>
+ <cc92c057-915a-b83e-f308-2f0fcbd5107d@gmx.com> <bc2fd2ad-1ca9-48d1-d8ff-13eec7eabd02@gmx.com>
+In-Reply-To: <bc2fd2ad-1ca9-48d1-d8ff-13eec7eabd02@gmx.com>
 Reply-To: fdmanana@gmail.com
 From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Fri, 26 Apr 2019 10:03:17 +0100
-Message-ID: <CAL3q7H7Af6XV0yY+y8hNk+KKoAv5Hfg3abAZDQY7E3dhJW-00Q@mail.gmail.com>
+Date:   Fri, 26 Apr 2019 10:09:00 +0100
+Message-ID: <CAL3q7H6t3Ot+rhY5KQ2+o3=eikyUm_03C8Dog1cTFf6rXVVsLg@mail.gmail.com>
 Subject: Re: [PATCH] Btrfs: fix unexpected failure of nocow buffered writes
  after snapshotting when low on space
 To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     Nikolay Borisov <nborisov@suse.com>,
-        robbieko <robbieko@synology.com>,
+Cc:     robbieko <robbieko@synology.com>,
+        Nikolay Borisov <nborisov@suse.com>,
         linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Filipe Manana <fdmanana@suse.com>
+        Filipe Manana <fdmanana@suse.com>,
+        linux-btrfs-owner@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -75,333 +78,143 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Apr 26, 2019 at 12:21 AM Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+On Fri, Apr 26, 2019 at 7:59 AM Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
 >
-> [snip]
+>
+>
+> On 2019/4/26 =E4=B8=8B=E5=8D=882:32, Qu Wenruo wrote:
+> >
+> >
+> > On 2019/4/26 =E4=B8=8A=E5=8D=8811:32, robbieko wrote:
+> > [snipped]
 > >>>
-> >>> 1. Serializing snapshots (acquiring write-side of the semaphore)
+> >>> But now, before creating new snapshot, we will flush all data.
+> >>>
+> >>> This means at this time, the data will be written back *NOCOW*, just =
+as
+> >>> expected.
+> >>>
+> >>>> will_be_snapshotted will be set, and then flush
+> >>>
+> >>> will_be_snapshotted will also be gone.
+> >>>
+> >>> Thanks,
+> >>> Qu
+> >>>
 > >>
-> >> With the new btrfs_start_delalloc_snapshot() in
-> >> btrfs_commit_transaction(), do we really need to do anything special n=
-ow?
+> >> Why will will_be_snapshotted disappear?
 > >>
-> >> Snapshot creation will only happen in btrfs_commit_transaction(), as
-> >> long as all dirty inodes/pages are written before pending snapshots,
-> >> we're completely fine.
+> >> If will_be_snapshotted is removed, when volume is full,
+> >> how do we ensure that snapshot and write are both
+> >> simultaneous data not loss ?
 > >>
-> >> Or did I miss something?
+> >> How do you avoid the write data between btrfs_start_delalloc_snapshot
+> >> and create_pending_snapshot during this time ?
 > >
-> > You missed the whole point of both patches.
+> > Oh, I forgot that buffered write doesn't rely on transaction, thus it
+> > has the race window between above 2 functions.
 > >
-> > The one I authored recently, is about ensuring we see ordered update
-> > of an inode's disk_i_size / i_size.
-> > That flushes delalloc a second time, during the transaction commit, to
-> > ensure an ordered update of disk_i_size in case direct IO writes
-> > happened during snapshotting.
-> > btrfs/078 could detect this when not running with the no-holes feature
-> > enabled, since fsck will report missing file extent items.
->
-> But that flush at commit time ensures all pages of the source snapshot
-> to disk, killing the following old case:
-> - preallocate
-> - buffered write
->   at this timing, the write will be nodatacow
-> - snapshot creation
->   now the write needs to be cowed
-> - dirty page writeback happens
->
-> With your flush, snapshot creation will flush all its dirty pages before
-> the new snapshot is created.
->
 > >
-> > Robbie's patch is about making sure that buffered nodatacow writes
-> > that happened before snapshotting (and success was returned to user
-> > space), will not fail silently during the writeback triggered by
-> > snapshot creation.
-> > There's even a test case for this, btrfs/170, which I submitted.
+> > So will_be_snapshotted is to ensure buffered write at above race window
+> > always reserve space for COW.
 > >
-> > So no, you can't simply revert Robbie's change, that will re-introduce
-> > the bug it fixed.
+> > So your patch changes the behavior from:
+> >                    /------------------------ inc(will_be_snapshotted)
+> >                    |
+> > -------------------|-------------------------------------
+> > reserve: NOCOW     | reserve: COW
+> > delalloc: NOCOW    | delalloc: COW
+> >
+> > That reserve NOCOW->delalloc COW is causing ENOSPC.
+> >
+> > To new the behavior:
+> >
+> >                    /------------------------ inc(will_be_snapshotted)
+> >                    |                     /-- inc(snapshot_force_cow)
+> > -------------------|---------------------|---------------
+> > reserve: NOCOW     | reserve: COW        | reserve: COW
+> > delalloc: NOCOW    | delalloc: NOCOW     | delalloc: COW
+> >
+> > And now reserve->delalloc is either NOCOW->NOCOW or COW->COW, avoiding
+> > the possible ENOSPC.
+> >
+> > Then it makes sense now. (although way more complex)
+> >
+> > Although I still have some questions about all these
+> > will_be_snapshotted/snapshot_force_cow code.
+> >
+> > 1) Does that btrfs_start_delalloc_snapshot() in create_snapshot() call
+> >    still make sense?
+> >    We now have btrfs_start_delalloc_snapshot() in
+> >    btrfs_start_delalloc_flush().
+> >    Can we remove that call in create_snapshot() and:
+> >
+> > 2) Can't we make the race window smaller? (If we can remove the call in
+> >    mentioned in above quiestion)
+> >    E.g. move the inc(will_be_snapshotted) before
+> >    btrfs_start_delalloc_snapshot() in btrfs_start_delalloc_flush(),
+> >    and move inc(snapshot_force_cow) after that
+> >    btrfs_start_delalloc_snapshot() call?
+> >
+> >    As you also mentioned, the real race window is between
+> >    btrfs_start_delalloc_snapshot() and create_pending_snapshot().
 >
-> With your patch, I see nothing need to be handled specially in a
-> snapshot source. Thus we don't need Robbie patch after your more
-> comprehensive fix.
+> And another (unrelated) question:
+>
+> 3) Why we use such complex way to prevent race? Why not just go per-
+>    subvolume freeze like various volume manager?
+>
+>    Current way keeps buffered write still going, but does it worth?
 
-Qu,
+And that's precisely one of the advantages of Btrfs' snapshotting - it
+does not block writes while snapshotting is in progress.
+Blocking them is terrible for user experience - waiting for
+snapshotting IO (flushing delalloc, waiting for delalloc, committing a
+transaction, etc) can take seconds, or minutes, or maybe more in
+extreme cases.
 
-Do you think I would have done my previous reply without confirming
-that the test passes after reverting Robbie's patch?
+As a user, while I'm browsing youtube, replying to these threads,
+playing games, etc, I would really hate if I experience stalls while
+snapper decided to take a snapshot of my root or home subvolumes.
+Not to mention the case for IO intensive applications (databases, etc).
 
-I did test it, not just to be sure but all to avoid wasting my time
-and the time of anyone else following this thread, especially those
-who are participating on it.
+>
+>    If we freeze/block write when creating snapshot, it just falls back
+>    to traditional volume manager behavior, shouldn't cause much problem,
+>    and we can get rid of all these snapshot specific fixes.
 
-Really, you have no excuse for being so stubborn, there's is a
-deterministic test for this issue.
+So if after that we still find bugs in snapshotting, and we will for
+sure, then we do what? Disable snapshotting in btrfs, remove all the
+supporting code?
 
-Thanks.
+NACK.
 
-> Or did I miss something again?
 >
 > Thanks,
 > Qu
 >
 > >
-> > Thanks.
+> > Thanks,
+> > Qu
 > >
 > >>
-> >> Thanks,
-> >> Qu
+> >> E.g. chattr +C /mnt
+> >> Fallocate -l 4096 /mnt/small_file
+> >> Fallocate -l $((64*1024*1024)) /mnt/large_file
 > >>
-> >>>
-> >>> 2. Nocow writers simply acquire the readsize of the semaphore.
-> >>>
-> >>> the will_be_snapshoted thing is very convoluted relying on a percpu
-> >>> counter/waitqueue  to exclude snapshots from pending nocow writers. O=
-TOH
-> >>> it depends on atomic_t and an implicit wait queue thanks to wait_var
-> >>> infrastructure to exclude nocow writers from pending snapshots. Filip=
-e
-> >>> had some concerns regarding performance but if the patch you mentione=
-d
-> >>> fixed all issues I'm all in favor of removing the code!
-> >>>
-> >>>
-> >>>>
-> >>>> Thanks,
-> >>>> Qu
-> >>>>
-> >>>>>
-> >>>>> 1. It is incremented when we start to create a snapshot after
-> >>>>> triggering writeback and before waiting for writeback to finish.
-> >>>>>
-> >>>>> 2. This new atomic is now what is used by writeback (running delall=
-oc)
-> >>>>> to decide whether we need to fallback to COW or not. Because we
-> >>>>> incremented this new atomic after triggering writeback in the snaps=
-hot
-> >>>>> creation ioctl, we ensure that all buffered writes that happened
-> >>>>> before snapshot creation will succeed and not fallback to COW
-> >>>>> (which would make them fail with ENOSPC).
-> >>>>>
-> >>>>> 3. The existing atomic, will_be_snapshotted, is kept because it is
-> >>>>> used to force new buffered writes, that start after we started
-> >>>>> snapshotting, to reserve data space even when NOCOW is possible.
-> >>>>> This makes these writes fail early with ENOSPC when there's no
-> >>>>> available space to allocate, preventing the unexpected behaviour
-> >>>>> of writeback later failing with ENOSPC due to a fallback to COW mod=
-e.
-> >>>>>
-> >>>>> Fixes: e9894fd3e3b3 ("Btrfs: fix snapshot vs nocow writting")
-> >>>>> Signed-off-by: Robbie Ko <robbieko@synology.com>
-> >>>>> Reviewed-by: Filipe Manana <fdmanana@suse.com>
-> >>>>> ---
-> >>>>>  fs/btrfs/ctree.h   |  1 +
-> >>>>>  fs/btrfs/disk-io.c |  1 +
-> >>>>>  fs/btrfs/inode.c   | 26 +++++---------------------
-> >>>>>  fs/btrfs/ioctl.c   | 16 ++++++++++++++++
-> >>>>>  4 files changed, 23 insertions(+), 21 deletions(-)
-> >>>>>
-> >>>>> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> >>>>> index 118346a..663ce05 100644
-> >>>>> --- a/fs/btrfs/ctree.h
-> >>>>> +++ b/fs/btrfs/ctree.h
-> >>>>> @@ -1277,6 +1277,7 @@ struct btrfs_root {
-> >>>>>     int send_in_progress;
-> >>>>>     struct btrfs_subvolume_writers *subv_writers;
-> >>>>>     atomic_t will_be_snapshotted;
-> >>>>> +   atomic_t snapshot_force_cow;
-> >>>>>
-> >>>>>     /* For qgroup metadata reserved space */
-> >>>>>     spinlock_t qgroup_meta_rsv_lock;
-> >>>>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> >>>>> index 205092d..5573916 100644
-> >>>>> --- a/fs/btrfs/disk-io.c
-> >>>>> +++ b/fs/btrfs/disk-io.c
-> >>>>> @@ -1216,6 +1216,7 @@ static void __setup_root(struct btrfs_root *r=
-oot, struct btrfs_fs_info *fs_info,
-> >>>>>     atomic_set(&root->log_batch, 0);
-> >>>>>     refcount_set(&root->refs, 1);
-> >>>>>     atomic_set(&root->will_be_snapshotted, 0);
-> >>>>> +   atomic_set(&root->snapshot_force_cow, 0);
-> >>>>>     root->log_transid =3D 0;
-> >>>>>     root->log_transid_committed =3D -1;
-> >>>>>     root->last_log_commit =3D 0;
-> >>>>> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> >>>>> index eba61bc..263b852 100644
-> >>>>> --- a/fs/btrfs/inode.c
-> >>>>> +++ b/fs/btrfs/inode.c
-> >>>>> @@ -1275,7 +1275,7 @@ static noinline int run_delalloc_nocow(struct=
- inode *inode,
-> >>>>>     u64 disk_num_bytes;
-> >>>>>     u64 ram_bytes;
-> >>>>>     int extent_type;
-> >>>>> -   int ret, err;
-> >>>>> +   int ret;
-> >>>>>     int type;
-> >>>>>     int nocow;
-> >>>>>     int check_prev =3D 1;
-> >>>>> @@ -1407,11 +1407,9 @@ static noinline int run_delalloc_nocow(struc=
-t inode *inode,
-> >>>>>                      * if there are pending snapshots for this root=
-,
-> >>>>>                      * we fall into common COW way.
-> >>>>>                      */
-> >>>>> -                   if (!nolock) {
-> >>>>> -                           err =3D btrfs_start_write_no_snapshotti=
-ng(root);
-> >>>>> -                           if (!err)
-> >>>>> -                                   goto out_check;
-> >>>>> -                   }
-> >>>>> +                   if (!nolock &&
-> >>>>> +                           unlikely(atomic_read(&root->snapshot_fo=
-rce_cow)))
-> >>>>> +                           goto out_check;
-> >>>>>                     /*
-> >>>>>                      * force cow if csum exists in the range.
-> >>>>>                      * this ensure that csum for a given extent are
-> >>>>> @@ -1420,9 +1418,6 @@ static noinline int run_delalloc_nocow(struct=
- inode *inode,
-> >>>>>                     ret =3D csum_exist_in_range(fs_info, disk_byten=
-r,
-> >>>>>                                               num_bytes);
-> >>>>>                     if (ret) {
-> >>>>> -                           if (!nolock)
-> >>>>> -                                   btrfs_end_write_no_snapshotting=
-(root);
-> >>>>> -
-> >>>>>                             /*
-> >>>>>                              * ret could be -EIO if the above fails=
- to read
-> >>>>>                              * metadata.
-> >>>>> @@ -1435,11 +1430,8 @@ static noinline int run_delalloc_nocow(struc=
-t inode *inode,
-> >>>>>                             WARN_ON_ONCE(nolock);
-> >>>>>                             goto out_check;
-> >>>>>                     }
-> >>>>> -                   if (!btrfs_inc_nocow_writers(fs_info, disk_byte=
-nr)) {
-> >>>>> -                           if (!nolock)
-> >>>>> -                                   btrfs_end_write_no_snapshotting=
-(root);
-> >>>>> +                   if (!btrfs_inc_nocow_writers(fs_info, disk_byte=
-nr))
-> >>>>>                             goto out_check;
-> >>>>> -                   }
-> >>>>>                     nocow =3D 1;
-> >>>>>             } else if (extent_type =3D=3D BTRFS_FILE_EXTENT_INLINE)=
- {
-> >>>>>                     extent_end =3D found_key.offset +
-> >>>>> @@ -1453,8 +1445,6 @@ static noinline int run_delalloc_nocow(struct=
- inode *inode,
-> >>>>>  out_check:
-> >>>>>             if (extent_end <=3D start) {
-> >>>>>                     path->slots[0]++;
-> >>>>> -                   if (!nolock && nocow)
-> >>>>> -                           btrfs_end_write_no_snapshotting(root);
-> >>>>>                     if (nocow)
-> >>>>>                             btrfs_dec_nocow_writers(fs_info, disk_b=
-ytenr);
-> >>>>>                     goto next_slot;
-> >>>>> @@ -1476,8 +1466,6 @@ static noinline int run_delalloc_nocow(struct=
- inode *inode,
-> >>>>>                                          end, page_started, nr_writ=
-ten, 1,
-> >>>>>                                          NULL);
-> >>>>>                     if (ret) {
-> >>>>> -                           if (!nolock && nocow)
-> >>>>> -                                   btrfs_end_write_no_snapshotting=
-(root);
-> >>>>>                             if (nocow)
-> >>>>>                                     btrfs_dec_nocow_writers(fs_info=
-,
-> >>>>>                                                             disk_by=
-tenr);
-> >>>>> @@ -1497,8 +1485,6 @@ static noinline int run_delalloc_nocow(struct=
- inode *inode,
-> >>>>>                                       ram_bytes, BTRFS_COMPRESS_NON=
-E,
-> >>>>>                                       BTRFS_ORDERED_PREALLOC);
-> >>>>>                     if (IS_ERR(em)) {
-> >>>>> -                           if (!nolock && nocow)
-> >>>>> -                                   btrfs_end_write_no_snapshotting=
-(root);
-> >>>>>                             if (nocow)
-> >>>>>                                     btrfs_dec_nocow_writers(fs_info=
-,
-> >>>>>                                                             disk_by=
-tenr);
-> >>>>> @@ -1537,8 +1523,6 @@ static noinline int run_delalloc_nocow(struct=
- inode *inode,
-> >>>>>                                          EXTENT_CLEAR_DATA_RESV,
-> >>>>>                                          PAGE_UNLOCK | PAGE_SET_PRI=
-VATE2);
-> >>>>>
-> >>>>> -           if (!nolock && nocow)
-> >>>>> -                   btrfs_end_write_no_snapshotting(root);
-> >>>>>             cur_offset =3D extent_end;
-> >>>>>
-> >>>>>             /*
-> >>>>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> >>>>> index b077544..331b495 100644
-> >>>>> --- a/fs/btrfs/ioctl.c
-> >>>>> +++ b/fs/btrfs/ioctl.c
-> >>>>> @@ -761,6 +761,7 @@ static int create_snapshot(struct btrfs_root *r=
-oot, struct inode *dir,
-> >>>>>     struct btrfs_pending_snapshot *pending_snapshot;
-> >>>>>     struct btrfs_trans_handle *trans;
-> >>>>>     int ret;
-> >>>>> +   bool snapshot_force_cow =3D false;
-> >>>>>
-> >>>>>     if (!test_bit(BTRFS_ROOT_REF_COWS, &root->state))
-> >>>>>             return -EINVAL;
-> >>>>> @@ -777,6 +778,11 @@ static int create_snapshot(struct btrfs_root *=
-root, struct inode *dir,
-> >>>>>             goto free_pending;
-> >>>>>     }
-> >>>>>
-> >>>>> +   /*
-> >>>>> +    * Force new buffered writes to reserve space even when NOCOW i=
-s
-> >>>>> +    * possible. This is to avoid later writeback (running dealloc)
-> >>>>> +    * to fallback to COW mode and unexpectedly fail with ENOSPC.
-> >>>>> +    */
-> >>>>>     atomic_inc(&root->will_be_snapshotted);
-> >>>>>     smp_mb__after_atomic();
-> >>>>>     /* wait for no snapshot writes */
-> >>>>> @@ -787,6 +793,14 @@ static int create_snapshot(struct btrfs_root *=
-root, struct inode *dir,
-> >>>>>     if (ret)
-> >>>>>             goto dec_and_free;
-> >>>>>
-> >>>>> +   /*
-> >>>>> +    * All previous writes have started writeback in NOCOW mode, so=
- now
-> >>>>> +    * we force future writes to fallback to COW mode during snapsh=
-ot
-> >>>>> +    * creation.
-> >>>>> +    */
-> >>>>> +   atomic_inc(&root->snapshot_force_cow);
-> >>>>> +   snapshot_force_cow =3D true;
-> >>>>> +
-> >>>>>     btrfs_wait_ordered_extents(root, U64_MAX, 0, (u64)-1);
-> >>>>>
-> >>>>>     btrfs_init_block_rsv(&pending_snapshot->block_rsv,
-> >>>>> @@ -851,6 +865,8 @@ static int create_snapshot(struct btrfs_root *r=
-oot, struct inode *dir,
-> >>>>>  fail:
-> >>>>>     btrfs_subvolume_release_metadata(fs_info, &pending_snapshot->bl=
-ock_rsv);
-> >>>>>  dec_and_free:
-> >>>>> +   if (snapshot_force_cow)
-> >>>>> +           atomic_dec(&root->snapshot_force_cow);
-> >>>>>     if (atomic_dec_and_test(&root->will_be_snapshotted))
-> >>>>>             wake_up_var(&root->will_be_snapshotted);
-> >>>>>  free_pending:
-> >>>>>
-> >>>>
-> >
-> >
+> >> First process:
+> >> While true; do
+> >> dd if=3D/dev/urandom of=3D/mnt/small_file bs=3D4k count=3D1 conv=3Dnot=
+runc
+> >> Done
+> >>
+> >> Second process:
+> >> While true; do
+> >> dd if=3D/dev/urandom of=3D/mnt/large_file bs=3D64k count=3D1024 conv=
+=3Dnotrunc
+> >> Done
+> >>
+> >> Third process: create snapshot.
 > >
 
 

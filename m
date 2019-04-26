@@ -2,184 +2,107 @@ Return-Path: <SRS0=BNt3=S4=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_PASS,UNPARSEABLE_RELAY autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8CB18C43219
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 04:50:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9D52EC43218
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 06:20:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 331BF206BF
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 04:50:00 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 717142077B
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 06:20:35 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=inflaton.co.jp header.i=@inflaton.co.jp header.b="QA0nXlYI"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="BZn2Kzoc"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726119AbfDZEt7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 26 Apr 2019 00:49:59 -0400
-Received: from mailgw1-55.conoha.ne.jp ([163.44.187.55]:50869 "EHLO
-        mailgw1.conoha.ne.jp" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1725871AbfDZEt6 (ORCPT
+        id S1726883AbfDZGUZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 26 Apr 2019 02:20:25 -0400
+Received: from userp2130.oracle.com ([156.151.31.86]:40556 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725944AbfDZGUZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Apr 2019 00:49:58 -0400
-Received: from mail1.conoha.ne.jp (unknown [172.16.42.13])
-        by mailgw1.conoha.ne.jp (Postfix) with ESMTP id 4FFCB1800E5DE2;
-        Fri, 26 Apr 2019 13:49:55 +0900 (JST)
-Received: from hydrangea (p191169-ipngn6801hodogaya.kanagawa.ocn.ne.jp [124.87.185.169])
-        by mail1.conoha.ne.jp (Postfix) with ESMTPSA id 301DE200CFCCB;
-        Fri, 26 Apr 2019 13:49:55 +0900 (JST)
-DKIM-Filter: OpenDKIM Filter v2.11.0 mail1.conoha.ne.jp 301DE200CFCCB
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=inflaton.co.jp;
-        s=default; t=1556254195;
-        bh=4dN1TfxlZJIhzNFeTToJqswV+c7JXNIYVpDMPy9OZQs=;
-        h=Date:From:To:Subject:In-Reply-To:References:From;
-        b=QA0nXlYIPYKziBsrUCGh0nlg2/hLwDv8LwhY2u1AeWLpb4plHJA9nkDBAln1y0vuS
-         ZXCCDruxjwz2MtXmxIwzZYPgUUYsk9PRfOsv1xvxaPFLlWFPJfhyxvv3o1aGvsNqt1
-         HRWMpCpuL2MvIXI4V4XU8rnzIo8r/Ksb+jh/S7f7MXWcEr217pHW7xmM/gOyebQocu
-         8craK5srrUdbopsRs9DR11aRXf3mQ5pzyjfGLe1PgdsqigVRrUZVEeXk7ut5p8phc5
-         GG4rdxODXRGl11k0ukE9aWTxSjY9LZtUfNu8+9z2KwcWnZ59uIOaaiNqqy03dSI3Yl
-         CZ2u7zQmCzUFg==
-Date:   Fri, 26 Apr 2019 13:50:27 +0900
-From:   MASAKI Haruka <reasonset@inflaton.co.jp>
-To:     Andrei Borzenkov <arvidjaar@gmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: Some file lost when send back snapshot.
-Message-ID: <20190426135027.62dcaa31@hydrangea>
-In-Reply-To: <aa5623ca-e1c2-4499-75ee-be818acf3333@gmail.com>
-References: <20190425223457.5a7dfd20@hydrangea>
- <aa5623ca-e1c2-4499-75ee-be818acf3333@gmail.com>
-Organization: Inflaton, Inc.
-X-Mailer: Claws Mail 3.17.3 (GTK+ 2.24.32; x86_64-pc-linux-gnu)
+        Fri, 26 Apr 2019 02:20:25 -0400
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x3Q6Idbo110983;
+        Fri, 26 Apr 2019 06:20:20 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
+ references : cc : from : message-id : date : mime-version : in-reply-to :
+ content-type : content-transfer-encoding; s=corp-2018-07-02;
+ bh=dBuJV6r/yPwJ0bU8FCbkF1i91sxOJVLxH7uw6QWWgng=;
+ b=BZn2Kzoc62SSfmEEQscDkvaPbWyIsINIoeCMkhrdHJEQwJM346qw9f6bqHvugRpds0Cs
+ Ft2fdfd/T07pJ2phSY0UWFq84vLWKrVvhvTltDS9EpI1nLh7N3TgkPGSPtinGJWzLuh4
+ zGBKTSh8QrQ51xNfFW4H3lujT5M3sucm52W2kKnacQzgx+J29QYRgz4465+GUsddN9E+
+ CwuTNWObJDTD7S+j6giXNMtAtloDAgdXwcKAIz5m3YBoAD4b3JF1U1JiQsR5p0jo3EZ2
+ 1mX/xSoDNMCf78wO3lV2IR/vw7wptLz0Eh/+463YS9P+7cwmPcyiXHwY3TcBKy0VsxYo Dg== 
+Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
+        by userp2130.oracle.com with ESMTP id 2rytutc82f-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Fri, 26 Apr 2019 06:20:20 +0000
+Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
+        by userp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x3Q6Jdq2103914;
+        Fri, 26 Apr 2019 06:20:20 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by userp3030.oracle.com with ESMTP id 2ryrhtnsm9-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Fri, 26 Apr 2019 06:20:20 +0000
+Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x3Q6KHPQ015179;
+        Fri, 26 Apr 2019 06:20:17 GMT
+Received: from mb.local (/192.188.170.109)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Thu, 25 Apr 2019 23:20:17 -0700
+Subject: Re: [PATCH 00/10] cleanup btrfs_ioctl_setflags and btrfs_set_prop
+To:     dsterba@suse.cz
+References: <20190420114900.15472-1-anand.jain@oracle.com>
+ <20190424151432.GX20156@twin.jikos.cz>
+Cc:     linux-btrfs@vger.kernel.org
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <e2c545dd-3339-05b4-66d9-5408f97f69da@oracle.com>
+Date:   Fri, 26 Apr 2019 14:20:08 +0800
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:52.0)
+ Gecko/20100101 Thunderbird/52.9.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+In-Reply-To: <20190424151432.GX20156@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9238 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=1 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=787
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1810050000 definitions=main-1904260045
+X-Proofpoint-Virus-Version: vendor=nai engine=5900 definitions=9238 signatures=668685
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=1 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=811 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1904260045
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Thank you for your reply.
-
-# What does
-
-@Host A ("lily" master, new volume)
-aki@lily /mnt % socat TCP-LISTEN:25500 STDOUT | sudo btrfs receive -vv .=20
-
-@Host B ("daisy" backup, having volumes)
-aki@daisy /HySlave % sudo btrfs send -v 190315-001000 | socat STDIN TCP:lil=
-y.local:25500=20
-
-( ...Transfared 11TB... )
-
-@Host A
-aki@lily /mnt % sudo btrfs subvolume snapshot 190315-001000 world
-Create a snapshot of '190315-001000' in './world'
-aki@lily /mnt % sudo btrfs subvolume snapshot -r world back1
-Create a readonly snapshot of 'world' in './back1'
-
-@Host A
-aki@lily /mnt % sudo btrfs send -vv -p 190315-001000 back1 | socat STDIN tc=
-p-connect:192.168.1.17:25555
-At subvol back1
-BTRFS_IOC_SEND returned 0
-joining genl thread
-
-@Host B
-root@daisy /HySlave # socat TCP-LISTEN:25555 STDOUT | btrfs receive -vv .
-At snapshot back1
-receiving snapshot back1 uuid=3D32dda1a2-07bd-684f-b773-c5b4cd5f29c1, ctran=
-sid=3D2658 parent_uuid=3D9c10b77f-74fb-f94a-9a24-3c6d30c00ca2, parent_ctran=
-sid=3D2658
-BTRFS_IOC_SET_RECEIVED_SUBVOL uuid=3D32dda1a2-07bd-684f-b773-c5b4cd5f29c1, =
-stransid=3D2658
-
-# Host A current
-
-aki@lily /mnt % ls
-190315-001000  back1  back2  world
-aki@lily /mnt % sudo btrfs sub li -Rqu .
-ID 258 gen 2698 top level 5 parent_uuid -                                  =
-  received_uuid 9c10b77f-74fb-f94a-9a24-3c6d30c00ca2 uuid bc90d05c-7430-7b4=
-2-b683-702d906bb993 path 190315-001000
-ID 2139 gen 2696 top level 5 parent_uuid bc90d05c-7430-7b42-b683-702d906bb9=
-93 received_uuid -                                    uuid 23c5fede-a338-d1=
-4a-afcd-677db2e97637 path world
-ID 2140 gen 2660 top level 5 parent_uuid 23c5fede-a338-d14a-afcd-677db2e976=
-37 received_uuid -                                    uuid 32dda1a2-07bd-68=
-4f-b773-c5b4cd5f29c1 path back1
-ID 2142 gen 2672 top level 5 parent_uuid 23c5fede-a338-d14a-afcd-677db2e976=
-37 received_uuid -                                    uuid a8e3e041-c1fc-e4=
-43-9baf-ab481ae32b8b path back2
-
-
-# Host B current
-
-aki@daisy /HySlave % pwd
-/HySlave
-aki@daisy /HySlave % ls
-190312-010100  190315-001000  back1  back2
-[aki@daisy HySlave]$ sudo btrfs sub li -Rqu .
-ID 256 gen 36238 top level 5 parent_uuid -                                 =
-   received_uuid -                                    uuid 4e42555d-a715-0e=
-47-bd0e-85d6eb8911e0 path slave
-ID 259 gen 35116 top level 256 parent_uuid -                               =
-     received_uuid 9c10b77f-74fb-f94a-9a24-3c6d30c00ca2 uuid 4a91d585-ab25-=
-0c49-b183-ae951b5377e1 path 190312-010100
-ID 3059 gen 7273 top level 256 parent_uuid 4a91d585-ab25-0c49-b183-ae951b53=
-77e1 received_uuid 9c10b77f-74fb-f94a-9a24-3c6d30c00ca2 uuid 114cd74f-80d8-=
-af44-a9d0-fd8ce3c991b4 path 190315-001000
-ID 3072 gen 35112 top level 256 parent_uuid 4a91d585-ab25-0c49-b183-ae951b5=
-377e1 received_uuid 32dda1a2-07bd-684f-b773-c5b4cd5f29c1 uuid fe7281d1-8b3e=
--8f46-a0b4-cdc52a1bb7aa path back1
-ID 3073 gen 36236 top level 256 parent_uuid 4a91d585-ab25-0c49-b183-ae951b5=
-377e1 received_uuid a8e3e041-c1fc-e443-9baf-ab481ae32b8b uuid 65206183-f20d=
--4648-83ab-e0485b16f7af path back2
-
-# Files missing
-
-aki@daisy /HySlave % ls /HySlave/190315-001000/local/pub/media/sound/notmus=
-ic_in_CD=20
-Little_My_Maid  SMEE  el_louis  firstkiss  gakuensai  infinity-kid  kid-mem=
-ories-off  ojyo_tokkyu  samusupi  wizards_harmony  yuukyuu-chara-seala
-
-aki@daisy /HySlave % ls /HySlave/back1/local/pub/media/sound/notmusic_in_CD
-Little_My_Maid  el_louis  firstkiss  gakuensai  infinity-kid  kid-memories-=
-off  ojyo_tokkyu  samusupi  wizards_harmony  yuukyuu-chara-seala
-
-aki@lily /mnt % ls /mnt/190315-001000/local/pub/media/sound/notmusic_in_CD
-Little_My_Maid  SMEE  el_louis  firstkiss  gakuensai  infinity-kid  kid-mem=
-ories-off  ojyo_tokkyu  samusupi  wizards_harmony  yuukyuu-chara-seala
-
-ki@lily /mnt % ls /mnt/back1/local/pub/media/sound/notmusic_in_CD       =20
-Little_My_Maid  SMEE  el_louis  firstkiss  gakuensai  infinity-kid  kid-mem=
-ories-off  ojyo_tokkyu  samusupi  wizards_harmony  yuukyuu-chara-seala
-
-aki@lily /mnt % ls /mnt/world/local/pub/media/sound/notmusic_in_CD=20
-Little_My_Maid  SMEE  el_louis  firstkiss  gakuensai  infinity-kid  kid-mem=
-ories-off  ojyo_tokkyu  samusupi  wizards_harmony  yuukyuu-chara-seala
-
-
-SMEE is missing.
-
-
-
-
+On 24/4/19 11:14 PM, David Sterba wrote:
+> On Sat, Apr 20, 2019 at 07:48:50PM +0800, Anand Jain wrote:
+>> A set of pathes to clean up btrfs_ioctl_setflags(), btrfs_set_prop_trans()
+>> and btrfs_set_prop(). So as to avoidi duplicate code in
+>> btrfs_ioctl_setflags() and killing of btrfs_set_prop_trans().
+>>
+>> Anand Jain (10):
+>>    btrfs: refactor btrfs_set_props to validate externally
+>>    btrfs: export btrfs_set_prop
+>>    btrfs: start transaction in btrfs_ioctl_setflags()
+>>    btrfs: drop useless inode i_flags copy and restore
+>>    btrfs: make a local copy of btrfs_inode flags before update
+>>    btrfs: drop old_fsflags in btrfs_ioctl_setflags
+>>    btrfs: drop local copy of inode i_mode
+>>    btrfs: start transaction in xattr_handler_set_prop
+>>    btrfs: delete unused function btrfs_set_prop_trans
+>>    btrfs: btrfs_set_prop trans is never null
+> 
+> Looks good to me, I'll add it to misc-next as it's only a cleanup
+> series, now that we're getting close to 5.2 code freeze.
+> 
 Thanks.
-
-
-On Thu, 25 Apr 2019 20:55:59 +0300
-Andrei Borzenkov <arvidjaar@gmail.com> wrote:
-
-> 25.04.2019 16:34, MASAKI Haruka =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
->  [...] =20
->=20
-> Please show
->=20
-> 1. Full protocol of commands you executed (commands and their output),
-> e.g. captured using script.
-> 2. Commands used to determine missing files on both source and receive
-> sides.
-> 3. Listing of subvolumes on both source and receive sides with
->=20
-> btrfs sub li -Rqu /mount/point
->=20
->  [...] =20
->=20
+I thought I will take a look, looks like its not yet pushed?
+Which is the most updated? repo gitlab/github?
+-Anand

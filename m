@@ -2,75 +2,254 @@ Return-Path: <SRS0=BNt3=S4=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_MUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 797FAC43219
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 11:48:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 70FDCC43219
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 12:01:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 49D2B2077B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 11:48:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3DEC0206C1
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 12:01:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726271AbfDZLsL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 26 Apr 2019 07:48:11 -0400
-Received: from mx2.suse.de ([195.135.220.15]:55028 "EHLO mx1.suse.de"
+        id S1726044AbfDZMBt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 26 Apr 2019 08:01:49 -0400
+Received: from mx2.suse.de ([195.135.220.15]:56992 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725901AbfDZLsJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Apr 2019 07:48:09 -0400
+        id S1726012AbfDZMBt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Apr 2019 08:01:49 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B5D45AE04;
-        Fri, 26 Apr 2019 11:48:08 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id A9929DA847; Fri, 26 Apr 2019 13:49:12 +0200 (CEST)
-Date:   Fri, 26 Apr 2019 13:49:12 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 00/10] cleanup btrfs_ioctl_setflags and btrfs_set_prop
-Message-ID: <20190426114912.GQ20156@suse.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
-        linux-btrfs@vger.kernel.org
-References: <20190420114900.15472-1-anand.jain@oracle.com>
- <20190424151432.GX20156@twin.jikos.cz>
- <e2c545dd-3339-05b4-66d9-5408f97f69da@oracle.com>
+        by mx1.suse.de (Postfix) with ESMTP id 03576AF19
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Apr 2019 12:01:46 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: Make the critical section of will_be_snapshotted and snapshot_force_cow smaller
+Date:   Fri, 26 Apr 2019 20:01:40 +0800
+Message-Id: <20190426120140.5956-1-wqu@suse.com>
+X-Mailer: git-send-email 2.21.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <e2c545dd-3339-05b4-66d9-5408f97f69da@oracle.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Apr 26, 2019 at 02:20:08PM +0800, Anand Jain wrote:
-> On 24/4/19 11:14 PM, David Sterba wrote:
-> > On Sat, Apr 20, 2019 at 07:48:50PM +0800, Anand Jain wrote:
-> >> A set of pathes to clean up btrfs_ioctl_setflags(), btrfs_set_prop_trans()
-> >> and btrfs_set_prop(). So as to avoidi duplicate code in
-> >> btrfs_ioctl_setflags() and killing of btrfs_set_prop_trans().
-> >>
-> >> Anand Jain (10):
-> >>    btrfs: refactor btrfs_set_props to validate externally
-> >>    btrfs: export btrfs_set_prop
-> >>    btrfs: start transaction in btrfs_ioctl_setflags()
-> >>    btrfs: drop useless inode i_flags copy and restore
-> >>    btrfs: make a local copy of btrfs_inode flags before update
-> >>    btrfs: drop old_fsflags in btrfs_ioctl_setflags
-> >>    btrfs: drop local copy of inode i_mode
-> >>    btrfs: start transaction in xattr_handler_set_prop
-> >>    btrfs: delete unused function btrfs_set_prop_trans
-> >>    btrfs: btrfs_set_prop trans is never null
-> > 
-> > Looks good to me, I'll add it to misc-next as it's only a cleanup
-> > series, now that we're getting close to 5.2 code freeze.
-> > 
-> Thanks.
-> I thought I will take a look, looks like its not yet pushed?
-> Which is the most updated? repo gitlab/github?
+Btrfs uses btrfs_root::will_be_snapshotted and
+btrfs_root::snapshot_force_cow to control data space reservation and
+delalloc for NODATACOW/COW switch.
 
-It's been in for-next until yesterday and I've merged it to misc-next
-after that so it'll be out today.
+To be more specific:
+
+                   /------------------------ inc(will_be_snapshotted)
+                   |                     /-- inc(snapshot_force_cow)
+-------------------|---------------------|---------------
+reserve: NOCOW     | reserve: COW        | reserve: COW
+delalloc: NOCOW    | delalloc: NOCOW     | delalloc: COW
+
+They combined together ensure btrfs data NOCOW cooperate with
+snapshot creation, and no data reservation underflow.
+- No data written into shared extents
+  This is ensured by snapshot_force_cow, as with it set, all
+  NOCOW delalloc range will be forced back to COW.
+
+- No data reserved space underflow
+  This is ensured by will_be_snapshot and snapshot_force_cow sequence.
+
+Normally, we use the following call sequence:
+  atomic_inc(&root->will_be_snapshotted)
+  smp_mb__after_atomic();
+  wait_event(root->subv_writers->wait,
+  	     percpu_counter_sum(&root->subv_writers->coutner) == 0;
+  btrfs_start_delalloc_snapshot(root);
+  atomic_inc(&root->snapshot_force_cow);
+
+And such calls happens in create_snapshot().
+
+However since commit 09e804d771f ("Btrfs: fix file corruption after
+snapshotting due to mix of buffered/DIO writes"), we also call
+btrfs_start_delalloc_snapstho() in btrfs_start_delalloc_flush().
+
+This means we can make the critical section smaller, instead of doing
+above call sequence in the ioctl context, we reuse the
+btrfs_start_delalloc_snapshot() in btrfs_start_delalloc_flush() in the
+transaction commit context.
+
+So old call critical section will be changed from:
+
+/-------- snapshot ioctl
+|    /- inc will_be/force_cow and call start_delalloc_snapshot()
+|    |     /- btrfs_start_transaction()
+|    |     |                        /- btrfs_commit_transaction()
+|    |     |                        |  /- dec will_be/force_cow
+|----|/////|///////////////////////////|-----| <- ioctl return
+
+To new one:
+
+/-------- snapshot ioctl
+|    /- inc will_be/force_cow and call start_delalloc_snapshot()
+|    |     /- btrfs_start_transaction()
+|    |     |                        /- btrfs_commit_transaction()
+|    |     |                        |  /- dec will_be/force_cow
+|----|-----|--|//////////////////|--|--|-----| <- ioctl return
+              |                  |
+              |                  \- create_pending_snapshot() return
+              \- btrfs_start_delalloc_flush()
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/ioctl.c       | 31 +-------------------------
+ fs/btrfs/transaction.c | 50 ++++++++++++++++++++++++++++++++++++------
+ 2 files changed, 44 insertions(+), 37 deletions(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 8c9a908d3acc..d41e8b6aa36f 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -766,7 +766,6 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
+ 	struct btrfs_pending_snapshot *pending_snapshot;
+ 	struct btrfs_trans_handle *trans;
+ 	int ret;
+-	bool snapshot_force_cow = false;
+ 
+ 	if (!test_bit(BTRFS_ROOT_REF_COWS, &root->state))
+ 		return -EINVAL;
+@@ -789,29 +788,6 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
+ 		goto free_pending;
+ 	}
+ 
+-	/*
+-	 * Force new buffered writes to reserve space even when NOCOW is
+-	 * possible. This is to avoid later writeback (running dealloc) to
+-	 * fallback to COW mode and unexpectedly fail with ENOSPC.
+-	 */
+-	atomic_inc(&root->will_be_snapshotted);
+-	smp_mb__after_atomic();
+-	/* wait for no snapshot writes */
+-	wait_event(root->subv_writers->wait,
+-		   percpu_counter_sum(&root->subv_writers->counter) == 0);
+-
+-	ret = btrfs_start_delalloc_snapshot(root);
+-	if (ret)
+-		goto dec_and_free;
+-
+-	/*
+-	 * All previous writes have started writeback in NOCOW mode, so now
+-	 * we force future writes to fallback to COW mode during snapshot
+-	 * creation.
+-	 */
+-	atomic_inc(&root->snapshot_force_cow);
+-	snapshot_force_cow = true;
+-
+ 	btrfs_wait_ordered_extents(root, U64_MAX, 0, (u64)-1);
+ 
+ 	btrfs_init_block_rsv(&pending_snapshot->block_rsv,
+@@ -828,7 +804,7 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
+ 					&pending_snapshot->block_rsv, 8,
+ 					false);
+ 	if (ret)
+-		goto dec_and_free;
++		goto free_pending;
+ 
+ 	pending_snapshot->dentry = dentry;
+ 	pending_snapshot->root = root;
+@@ -875,11 +851,6 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
+ 	ret = 0;
+ fail:
+ 	btrfs_subvolume_release_metadata(fs_info, &pending_snapshot->block_rsv);
+-dec_and_free:
+-	if (snapshot_force_cow)
+-		atomic_dec(&root->snapshot_force_cow);
+-	if (atomic_dec_and_test(&root->will_be_snapshotted))
+-		wake_up_var(&root->will_be_snapshotted);
+ free_pending:
+ 	kfree(pending_snapshot->root_item);
+ 	btrfs_free_path(pending_snapshot->path);
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 3f6811cdf803..67fb520fed9b 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1605,6 +1605,9 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	}
+ 
+ fail:
++	if (atomic_dec_and_test(&root->will_be_snapshotted))
++		wake_up_var(&root->will_be_snapshotted);
++	atomic_dec(&root->snapshot_force_cow);
+ 	pending->error = ret;
+ dir_item_existed:
+ 	trans->block_rsv = rsv;
+@@ -1852,6 +1855,10 @@ static void btrfs_cleanup_pending_block_groups(struct btrfs_trans_handle *trans)
+ static inline int btrfs_start_delalloc_flush(struct btrfs_trans_handle *trans)
+ {
+ 	struct btrfs_fs_info *fs_info = trans->fs_info;
++	struct btrfs_pending_snapshot *last_fail;
++	struct btrfs_pending_snapshot *pending;
++	struct list_head *head = &trans->transaction->pending_snapshots;
++	int ret = 0;
+ 
+ 	/*
+ 	 * We use writeback_inodes_sb here because if we used
+@@ -1865,8 +1872,6 @@ static inline int btrfs_start_delalloc_flush(struct btrfs_trans_handle *trans)
+ 	if (btrfs_test_opt(fs_info, FLUSHONCOMMIT)) {
+ 		writeback_inodes_sb(fs_info->sb, WB_REASON_SYNC);
+ 	} else {
+-		struct btrfs_pending_snapshot *pending;
+-		struct list_head *head = &trans->transaction->pending_snapshots;
+ 
+ 		/*
+ 		 * Flush dellaloc for any root that is going to be snapshotted.
+@@ -1876,14 +1881,45 @@ static inline int btrfs_start_delalloc_flush(struct btrfs_trans_handle *trans)
+ 		 * the inode's size on disk.
+ 		 */
+ 		list_for_each_entry(pending, head, list) {
+-			int ret;
+-
+-			ret = btrfs_start_delalloc_snapshot(pending->root);
+-			if (ret)
+-				return ret;
++			struct btrfs_root *root = pending->root;
++
++			/*
++			 * Force new buffered writes to reserve space even
++			 * when NOCOW is possible. This is to avoid later
++			 * writeback (running dealloc) to fallback to COW mode
++			 * and unexpectedly fail with ENOSPC.
++			 */
++			atomic_inc(&root->will_be_snapshotted);
++			smp_mb__after_atomic();
++			/* wait for no snapshot writes */
++			wait_event(root->subv_writers->wait,
++				   percpu_counter_sum(&root->subv_writers->counter) == 0);
++			ret = btrfs_start_delalloc_snapshot(root);
++			if (ret) {
++				atomic_dec(&root->will_be_snapshotted);
++				last_fail = pending;
++				goto cleanup;
++			}
++			/*
++			 * All previous writes have started writeback in NOCOW
++			 * mode, so now we force future writes to fallback
++			 * to COW mode during snapshot creation.
++			 */
++			atomic_inc(&root->snapshot_force_cow);
+ 		}
+ 	}
+ 	return 0;
++cleanup:
++	list_for_each_entry(pending, head, list) {
++		struct btrfs_root *root = pending->root;
++
++		if (pending == last_fail)
++			break;
++		if (atomic_dec_and_test(&root->will_be_snapshotted))
++			wake_up_var(&root->will_be_snapshotted);
++		atomic_dec(&root->snapshot_force_cow);
++	}
++	return ret;
+ }
+ 
+ static inline void btrfs_wait_delalloc_flush(struct btrfs_trans_handle *trans)
+-- 
+2.21.0
+

@@ -6,33 +6,34 @@ X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 91655C43218
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 06:32:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9D9EBC43218
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 07:00:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 500F42067C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 06:32:33 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 665B6206DD
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 07:00:02 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="a3PuUhXC"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="a7/uE3Vu"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726414AbfDZGcc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 26 Apr 2019 02:32:32 -0400
-Received: from mout.gmx.net ([212.227.15.19]:53291 "EHLO mout.gmx.net"
+        id S1725923AbfDZHAB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 26 Apr 2019 03:00:01 -0400
+Received: from mout.gmx.net ([212.227.17.20]:48531 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725800AbfDZGcc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Apr 2019 02:32:32 -0400
+        id S1725899AbfDZHAA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Apr 2019 03:00:00 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1556260334;
-        bh=3OKnfGd3dPtdqVBSCFCWh6cPjDJjWEW76UWLrwKFi1s=;
-        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
-        b=a3PuUhXCpVMcK1n1z5jqmW0TC7gFsidLNdt8h18wG6iWVFhqZiAZ3oEwODwo5IkQU
-         wkHsW5y3LpXreomcT0eQz9CF4JVj68H7QGRAfZ/p+4q06PM42mEM62YvAZ9L3fT2hE
-         8tvAkXFXHTkbiBS5bM4KvBzOZEfetAm+JZcCCeLw=
+        s=badeba3b8450; t=1556261976;
+        bh=QRWxnbmM1EulrzHPqRNbibayoA+Un5pFJHEJcKzpy2Y=;
+        h=X-UI-Sender-Class:Subject:From:To:Cc:References:Date:In-Reply-To;
+        b=a7/uE3VubeACQigwCSEIVCNAxTUdC9nCL8eDRlY31MySgtOv/DfRN2SPfouzymG6b
+         NuuqbMluV9g57eGHSI4SzWrufdcxzw68McEgT89HTtip4B1ZPkKqSfi+ZwzRyCXwZy
+         PzAi9UGUKvRV5vaW0+XCKhvEx4xWbtN8hoJnjz5k=
 X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx005
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1MaJ3n-1hGvhw3fvR-00WDwp; Fri, 26
- Apr 2019 08:32:14 +0200
+Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx102
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0MEccf-1hZZ5q2uUb-00Flel; Fri, 26
+ Apr 2019 08:59:36 +0200
 Subject: Re: [PATCH] Btrfs: fix unexpected failure of nocow buffered writes
  after snapshotting when low on space
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 To:     robbieko <robbieko@synology.com>
 Cc:     fdmanana@gmail.com, Nikolay Borisov <nborisov@suse.com>,
         linux-btrfs <linux-btrfs@vger.kernel.org>,
@@ -47,7 +48,7 @@ References: <1533522630-21758-1-git-send-email-robbieko@synology.com>
  <20b22fc6cdc288ed9aaf0be1a6cdeb7b@synology.com>
  <1fcaaa0c-cf7b-38dc-0af9-c90773c9af07@gmx.com>
  <50d35084420d7fed439d74fd29b12d7d@synology.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+ <cc92c057-915a-b83e-f308-2f0fcbd5107d@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
@@ -73,34 +74,34 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <cc92c057-915a-b83e-f308-2f0fcbd5107d@gmx.com>
-Date:   Fri, 26 Apr 2019 14:32:07 +0800
+Message-ID: <bc2fd2ad-1ca9-48d1-d8ff-13eec7eabd02@gmx.com>
+Date:   Fri, 26 Apr 2019 14:59:27 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.6.1
 MIME-Version: 1.0
-In-Reply-To: <50d35084420d7fed439d74fd29b12d7d@synology.com>
+In-Reply-To: <cc92c057-915a-b83e-f308-2f0fcbd5107d@gmx.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:r/rLOyYHEnM/jOX/dzi/DDx+xalu6hQVtJ3356Ept7GPylHPDV3
- p09KtXXzsv8kmTgG3/FaFsTEzm88HZFtIKmCgfqFoAwTLy+dHoGKWDG1SabRNOIOBi7NmgO
- rz6G3IXthV27/3Hv/U+1txCbEgTwAtQw27QNWXPBbMIpb+uFz++oYqj1eElpQtXRVq9G6rc
- saalbOCEXUSl9L5c79c9g==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:xcdX1DFhAq0=:6V5FJqcw588HjyjZVG+hLt
- vpQ1dC/Hisaq8p+AzdFFLFLlDHFSDV/zKWBhOfwHv2bBeT2IPwStNJ4thDR6kRqO8k2fECUSD
- ersvpJfn6jXCXouXuEijP4fF2p+Tl9kRddPBivHEfKVyCBhkUnhchmlDnTd9LrOpR33ocAf+5
- DrgX6GZwuBBC0shcVU1C0PbKOjwuxnN88AEsBqlT6DO25Ni+SmYZfrQefm1zSEV6XlrBNMKRc
- 6bfBtHAUbFS9pwhecxkqeODBIgt/PpEhSBMnL49OkjNhn9WIABf+wM7WllMMjk1CEqjeG1yd5
- sBmbGugssrxkG219pDz5QmY09dPDRzrJAuxS9AOfSPYsoB9d1QNP8JtpuyKUmmXDV/qwkLnG8
- SKOSpnu//NK+dTZlDPF0EQA2lpcM/+STnu1YmTrXI4qPNQTJXXenFY2zX1Y+rT/CJbtCQEHlt
- BJFXdVO7q4KBNd3HcgqFaWz25qJA9eY1WQpW9J7O8cDhlV/q7BbZY3ZLmmpt67rB9u3wzx/m/
- EY/ext8iPaXdE/re9xWyD17dkY798VNB0LDhej4M95eHz+pgaENFGBxK44gOXig+iaRhJCJks
- 7MzniOOi/npOJ3MyqNvGYha3auKuUDvviW7ypRk//5wryBww4seY1PBVySEjrS74yV0mvjpB2
- fJy0viTMbTwRUGrHumMCtJqgnr/PyJgtZbThqXHua4GUcQDGiI2njaLLwLgomDYtpnUPKV8sU
- 96/AFmQup0PGbrdcGwyV3a7CDUF6kvMJnaUCI+LBhyWGHcYhSY/++Eai80ywVmof+/yvTRVro
- dR0pwQlLQ/mAhbSvkTg6eDUVNopUj0aAgp3jkq5McshncUdXzBF8NYta3PmG2Czl5vKS6OL3f
- oWsKucF6djTdbtg7wY5FEAftK0ksDhAU+RT3gN9tmfTEMsJ5hmCnPICzCyF3GXYbfUIcvs6TT
- sCV0+KRixmw==
+X-Provags-ID: V03:K1:EKg82/XV7ugL2wd7HS4RIFoFzbCSszm8XUM1K9oy31ir1Nh5lfc
+ j6iJiz4HdvW6gzZxDoERy5oiwvg+ILZGfxRYIY8WYejqIS+OTF4N65St9f+htbJ3fxCYNE5
+ E0JTgiQJdKABAqmTdcFci7lzesPnjagGxNPRWW3QyLcDFGvMHO7o4lgv0X57tuGAwe39u83
+ YqJ65W3rkwaZKcTDJaGzQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:vy8ts3nVtKo=:fy0D4Z9e3Tfz9yEugAKuIB
+ IuxbI/xTtWotFVhLogOLik+HJKzxPSXwQzltZXyepOSNnyd48WSRBtYWbMyQHTRss5aTsvuxO
+ smt37BD5IOsdZh/qfGM0paz+liEFTyZ/BgGBSuXl+nnEV157S25G9eJo1ZjRQEhW6KC6L5bIo
+ vaiTRCdn8lQPcVUvpLJ/qSashBfQlQ5fXbkFd21kOBF7mgOmSH7tLmnxTzSGfJ0yOmpKcnW3b
+ 7tCXCBk5T8d/49NhHLPd4hyCZFHcp6AQb2wN8myagze+zGKVo1L1O9KIJZtzftkWswOlo4xnU
+ hxkKyktR3lzZ+UYFRZ2+DNTeyAWfyLbVvBOFo+Uo0UqqeJXHWnd9mz5F2BJTnvflD7RH7eQIk
+ OHuTqbMwVJqjcpCrOCeEHy7hkA8Trz3FnNnasDLm4qLYozN50jxB58Il9XxRX80fJ+lkoqEYw
+ Mr8wzTKkybN4YGzkpEpJruPW/uSMcetusGTp/uTSZsAcuQqCB55J7Cy0LzXVDpeKulvZwemgO
+ w3cVTpVlxJZt2xP3zejfumg8tmV2wRyUTWcc/j/eXiZKRd3W4KbrWFA6+fKWTwDBHBG+xQJjf
+ 8BUHKWi+Lpn8anykIiwvF1Hp75jVSx5mlLZaPTDwDGqWPNIpRCeYJ7izJoy7Zpq2b6QlaIrh4
+ cGdPsncS/aqknbVWfl9G6hDcHf2p0tR0GKwbg7XgD1p9QjzgQrQgVY62zSuayPbY5fejTpEo0
+ 6KMfe544tLtrnxG+gYC9qbfToCgM16zaMXm3dyjKlaUMflp2C7hWf2FMVUJUqOtjuk1aWMosp
+ r3GkTXfOo09y8eoQd0us5IauiAv+ytS5x/PQDB6sSwD1PXt2weq4RY03g/mbaPM7mYsioigqD
+ sTN600EFmUB1AcPNI9t3NRygHiLDZMrRPkIT0+3l/s72dUZO3w/pgQ7I6yqOqgcHrkdTnPR8c
+ zMzYEZjvE1w==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -108,98 +109,117 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 2019/4/26 =E4=B8=8A=E5=8D=8811:32, robbieko wrote:
-[snipped]
->>
->> But now, before creating new snapshot, we will flush all data.
->>
->> This means at this time, the data will be written back *NOCOW*, just as
->> expected.
->>
->>> will_be_snapshotted will be set, and then flush
->>
->> will_be_snapshotted will also be gone.
->>
->> Thanks,
->> Qu
->>
+On 2019/4/26 =E4=B8=8B=E5=8D=882:32, Qu Wenruo wrote:
 >
-> Why will will_be_snapshotted disappear?
 >
-> If will_be_snapshotted is removed, when volume is full,
-> how do we ensure that snapshot and write are both
-> simultaneous data not loss ?
+> On 2019/4/26 =E4=B8=8A=E5=8D=8811:32, robbieko wrote:
+> [snipped]
+>>>
+>>> But now, before creating new snapshot, we will flush all data.
+>>>
+>>> This means at this time, the data will be written back *NOCOW*, just a=
+s
+>>> expected.
+>>>
+>>>> will_be_snapshotted will be set, and then flush
+>>>
+>>> will_be_snapshotted will also be gone.
+>>>
+>>> Thanks,
+>>> Qu
+>>>
+>>
+>> Why will will_be_snapshotted disappear?
+>>
+>> If will_be_snapshotted is removed, when volume is full,
+>> how do we ensure that snapshot and write are both
+>> simultaneous data not loss ?
+>>
+>> How do you avoid the write data between btrfs_start_delalloc_snapshot
+>> and create_pending_snapshot during this time ?
 >
-> How do you avoid the write data between btrfs_start_delalloc_snapshot
-> and create_pending_snapshot during this time ?
+> Oh, I forgot that buffered write doesn't rely on transaction, thus it
+> has the race window between above 2 functions.
+>
+>
+> So will_be_snapshotted is to ensure buffered write at above race window
+> always reserve space for COW.
+>
+> So your patch changes the behavior from:
+>                    /------------------------ inc(will_be_snapshotted)
+>                    |
+> -------------------|-------------------------------------
+> reserve: NOCOW     | reserve: COW
+> delalloc: NOCOW    | delalloc: COW
+>
+> That reserve NOCOW->delalloc COW is causing ENOSPC.
+>
+> To new the behavior:
+>
+>                    /------------------------ inc(will_be_snapshotted)
+>                    |                     /-- inc(snapshot_force_cow)
+> -------------------|---------------------|---------------
+> reserve: NOCOW     | reserve: COW        | reserve: COW
+> delalloc: NOCOW    | delalloc: NOCOW     | delalloc: COW
+>
+> And now reserve->delalloc is either NOCOW->NOCOW or COW->COW, avoiding
+> the possible ENOSPC.
+>
+> Then it makes sense now. (although way more complex)
+>
+> Although I still have some questions about all these
+> will_be_snapshotted/snapshot_force_cow code.
+>
+> 1) Does that btrfs_start_delalloc_snapshot() in create_snapshot() call
+>    still make sense?
+>    We now have btrfs_start_delalloc_snapshot() in
+>    btrfs_start_delalloc_flush().
+>    Can we remove that call in create_snapshot() and:
+>
+> 2) Can't we make the race window smaller? (If we can remove the call in
+>    mentioned in above quiestion)
+>    E.g. move the inc(will_be_snapshotted) before
+>    btrfs_start_delalloc_snapshot() in btrfs_start_delalloc_flush(),
+>    and move inc(snapshot_force_cow) after that
+>    btrfs_start_delalloc_snapshot() call?
+>
+>    As you also mentioned, the real race window is between
+>    btrfs_start_delalloc_snapshot() and create_pending_snapshot().
 
-Oh, I forgot that buffered write doesn't rely on transaction, thus it
-has the race window between above 2 functions.
+And another (unrelated) question:
 
+3) Why we use such complex way to prevent race? Why not just go per-
+   subvolume freeze like various volume manager?
 
-So will_be_snapshotted is to ensure buffered write at above race window
-always reserve space for COW.
+   Current way keeps buffered write still going, but does it worth?
 
-So your patch changes the behavior from:
-                   /------------------------ inc(will_be_snapshotted)
-                   |
-=2D------------------|-------------------------------------
-reserve: NOCOW     | reserve: COW
-delalloc: NOCOW    | delalloc: COW
-
-That reserve NOCOW->delalloc COW is causing ENOSPC.
-
-To new the behavior:
-
-                   /------------------------ inc(will_be_snapshotted)
-                   |                     /-- inc(snapshot_force_cow)
-=2D------------------|---------------------|---------------
-reserve: NOCOW     | reserve: COW        | reserve: COW
-delalloc: NOCOW    | delalloc: NOCOW     | delalloc: COW
-
-And now reserve->delalloc is either NOCOW->NOCOW or COW->COW, avoiding
-the possible ENOSPC.
-
-Then it makes sense now. (although way more complex)
-
-Although I still have some questions about all these
-will_be_snapshotted/snapshot_force_cow code.
-
-1) Does that btrfs_start_delalloc_snapshot() in create_snapshot() call
-   still make sense?
-   We now have btrfs_start_delalloc_snapshot() in
-   btrfs_start_delalloc_flush().
-   Can we remove that call in create_snapshot() and:
-
-2) Can't we make the race window smaller? (If we can remove the call in
-   mentioned in above quiestion)
-   E.g. move the inc(will_be_snapshotted) before
-   btrfs_start_delalloc_snapshot() in btrfs_start_delalloc_flush(),
-   and move inc(snapshot_force_cow) after that
-   btrfs_start_delalloc_snapshot() call?
-
-   As you also mentioned, the real race window is between
-   btrfs_start_delalloc_snapshot() and create_pending_snapshot().
+   If we freeze/block write when creating snapshot, it just falls back
+   to traditional volume manager behavior, shouldn't cause much problem,
+   and we can get rid of all these snapshot specific fixes.
 
 Thanks,
 Qu
 
 >
-> E.g. chattr +C /mnt
-> Fallocate -l 4096 /mnt/small_file
-> Fallocate -l $((64*1024*1024)) /mnt/large_file
+> Thanks,
+> Qu
 >
-> First process:
-> While true; do
-> dd if=3D/dev/urandom of=3D/mnt/small_file bs=3D4k count=3D1 conv=3Dnotru=
-nc
-> Done
+>>
+>> E.g. chattr +C /mnt
+>> Fallocate -l 4096 /mnt/small_file
+>> Fallocate -l $((64*1024*1024)) /mnt/large_file
+>>
+>> First process:
+>> While true; do
+>> dd if=3D/dev/urandom of=3D/mnt/small_file bs=3D4k count=3D1 conv=3Dnotr=
+unc
+>> Done
+>>
+>> Second process:
+>> While true; do
+>> dd if=3D/dev/urandom of=3D/mnt/large_file bs=3D64k count=3D1024 conv=3D=
+notrunc
+>> Done
+>>
+>> Third process: create snapshot.
 >
-> Second process:
-> While true; do
-> dd if=3D/dev/urandom of=3D/mnt/large_file bs=3D64k count=3D1024 conv=3Dn=
-otrunc
-> Done
->
-> Third process: create snapshot.
-

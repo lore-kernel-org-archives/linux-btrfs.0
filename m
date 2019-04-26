@@ -2,221 +2,185 @@ Return-Path: <SRS0=BNt3=S4=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
+X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_MUTT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9067BC43218
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 18:11:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 74AE1C43218
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 18:17:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EF974208CA
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 18:11:57 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=inflaton.co.jp header.i=@inflaton.co.jp header.b="UdHeutzD"
+	by mail.kernel.org (Postfix) with ESMTP id 4C6FA208CA
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 18:17:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726173AbfDZSL4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 26 Apr 2019 14:11:56 -0400
-Received: from mailgw1-54.conoha.ne.jp ([163.44.187.54]:43037 "EHLO
-        mailgw1.conoha.ne.jp" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1726053AbfDZSL4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Apr 2019 14:11:56 -0400
-Received: from mail1.conoha.ne.jp (unknown [172.16.42.13])
-        by mailgw1.conoha.ne.jp (Postfix) with ESMTP id 93B0A180135719;
-        Sat, 27 Apr 2019 03:11:53 +0900 (JST)
-Received: from hydrangea (p191169-ipngn6801hodogaya.kanagawa.ocn.ne.jp [124.87.185.169])
-        by mail1.conoha.ne.jp (Postfix) with ESMTPSA id 71045200B798E;
-        Sat, 27 Apr 2019 03:11:53 +0900 (JST)
-DKIM-Filter: OpenDKIM Filter v2.11.0 mail1.conoha.ne.jp 71045200B798E
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=inflaton.co.jp;
-        s=default; t=1556302313;
-        bh=2tkYgKwWE4aoP7KMll7raJ3z6nqK49Qbi4vAslyMYNw=;
-        h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
-        b=UdHeutzDcEboXGoC9s3PevfMi0UwXJOliOReHPwZFFFY8CuoBmW7/ND8SuUbO5qT+
-         W3VISUSRy8+kaBy5+afsU7mwAgQBvsc3JPV+y+w69F13v4Ac6R82Y403QioruatkjT
-         7CwO6mJzCK+iVZhn74bJ0zmhRhLr1Ke5PXmJT8ah3jZqMFAnLFbYecaPwsRLtp49lE
-         H+9OVmRZZLUZ0sEFF7vgvVAP7/sJbVb/zCeChMi24wH6i798KD6M87uuAyjY9KBAzC
-         VMMTkjqjQ9pi+AUaUNfmN3Esp5WwzpMdwekBSbMmC6qT/vR2qj140a+fXHhgtOI+KM
-         PhaK2zLN5/WNw==
-Date:   Sat, 27 Apr 2019 03:12:25 +0900
-From:   MASAKI Haruka <reasonset@inflaton.co.jp>
-To:     Andrei Borzenkov <arvidjaar@gmail.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: Some file lost when send back snapshot.
-Message-ID: <20190427031225.7f04d7bb@hydrangea>
-In-Reply-To: <efad3130-e13d-2649-556e-6e932e5a4dc6@gmail.com>
-References: <20190425223457.5a7dfd20@hydrangea>
-        <aa5623ca-e1c2-4499-75ee-be818acf3333@gmail.com>
-        <20190426135027.62dcaa31@hydrangea>
-        <efad3130-e13d-2649-556e-6e932e5a4dc6@gmail.com>
-Organization: Inflaton, Inc.
-X-Mailer: Claws Mail 3.17.3 (GTK+ 2.24.32; x86_64-pc-linux-gnu)
+        id S1726253AbfDZSRo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 26 Apr 2019 14:17:44 -0400
+Received: from mx1.redhat.com ([209.132.183.28]:46402 "EHLO mx1.redhat.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726005AbfDZSRo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Apr 2019 14:17:44 -0400
+Received: from smtp.corp.redhat.com (int-mx06.intmail.prod.int.phx2.redhat.com [10.5.11.16])
+        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mx1.redhat.com (Postfix) with ESMTPS id C887DC0AF781;
+        Fri, 26 Apr 2019 18:17:43 +0000 (UTC)
+Received: from bfoster (dhcp-41-2.bos.redhat.com [10.18.41.2])
+        by smtp.corp.redhat.com (Postfix) with ESMTPS id 247495C225;
+        Fri, 26 Apr 2019 18:17:43 +0000 (UTC)
+Date:   Fri, 26 Apr 2019 14:17:41 -0400
+From:   Brian Foster <bfoster@redhat.com>
+To:     "Darrick J. Wong" <darrick.wong@oracle.com>
+Cc:     linux-xfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-mm@kvack.org
+Subject: Re: [PATCH 1/8] mm/fs: don't allow writes to immutable files
+Message-ID: <20190426181738.GB34536@bfoster>
+References: <155552786671.20411.6442426840435740050.stgit@magnolia>
+ <155552787330.20411.11893581890744963309.stgit@magnolia>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <155552787330.20411.11893581890744963309.stgit@magnolia>
+User-Agent: Mutt/1.11.3 (2019-02-01)
+X-Scanned-By: MIMEDefang 2.79 on 10.5.11.16
+X-Greylist: Sender IP whitelisted, not delayed by milter-greylist-4.5.16 (mx1.redhat.com [10.5.110.31]); Fri, 26 Apr 2019 18:17:43 +0000 (UTC)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-> You have two subvolumes with the same received_uuid. Is the content of
-> these subvolumes the same? Is "missing" file present in both subvolumes?
+On Wed, Apr 17, 2019 at 12:04:33PM -0700, Darrick J. Wong wrote:
+> From: Darrick J. Wong <darrick.wong@oracle.com>
+> 
+> The chattr manpage has this to say about immutable files:
+> 
+> "A file with the 'i' attribute cannot be modified: it cannot be deleted
+> or renamed, no link can be created to this file, most of the file's
+> metadata can not be modified, and the file can not be opened in write
+> mode."
+> 
+> Once the flag is set, it is enforced for quite a few file operations,
+> such as fallocate, fpunch, fzero, rm, touch, open, etc.  However, we
+> don't check for immutability when doing a write(), a PROT_WRITE mmap(),
+> a truncate(), or a write to a previously established mmap.
+> 
+> If a program has an open write fd to a file that the administrator
+> subsequently marks immutable, the program still can change the file
+> contents.  Weird!
+> 
+> The ability to write to an immutable file does not follow the manpage
+> promise that immutable files cannot be modified.  Worse yet it's
+> inconsistent with the behavior of other syscalls which don't allow
+> modifications of immutable files.
+> 
+> Therefore, add the necessary checks to make the write, mmap, and
+> truncate behavior consistent with what the manpage says and consistent
+> with other syscalls on filesystems which support IMMUTABLE.
+> 
+> Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+> ---
 
-No, each subvolume name (190312-010100, 190315-001000) is timestamp.
-These snapshot volumes were created by job scheduler on original (already l=
-ost) volume, so 190315-001000 is modified from 190312-010100.
+This mostly seems reasonable to me. I assume you'll want some mm acks. A
+couple notes..
 
-190315-001000 has lost file,
-% ls /HySlave/190315-001000/local/pub/media/sound/notmusic_in_CD/
-Little_My_Maid  SMEE  el_louis  firstkiss  gakuensai  infinity-kid  kid-mem=
-ories-off  ojyo_tokkyu  samusupi  wizards_harmony  yuukyuu-chara-seala
+>  fs/attr.c    |   13 ++++++-------
+>  mm/filemap.c |    3 +++
+>  mm/memory.c  |    3 +++
+>  mm/mmap.c    |    8 ++++++--
+>  4 files changed, 18 insertions(+), 9 deletions(-)
+> 
+> 
+> diff --git a/fs/attr.c b/fs/attr.c
+> index d22e8187477f..1fcfdcc5b367 100644
+> --- a/fs/attr.c
+> +++ b/fs/attr.c
+> @@ -233,19 +233,18 @@ int notify_change(struct dentry * dentry, struct iattr * attr, struct inode **de
+>  
+>  	WARN_ON_ONCE(!inode_is_locked(inode));
+>  
+> -	if (ia_valid & (ATTR_MODE | ATTR_UID | ATTR_GID | ATTR_TIMES_SET)) {
+> -		if (IS_IMMUTABLE(inode) || IS_APPEND(inode))
+> -			return -EPERM;
+> -	}
+> +	if (IS_IMMUTABLE(inode))
+> +		return -EPERM;
+> +
+> +	if ((ia_valid & (ATTR_MODE | ATTR_UID | ATTR_GID | ATTR_TIMES_SET)) &&
+> +	    IS_APPEND(inode))
+> +		return -EPERM;
+>  
+>  	/*
+>  	 * If utimes(2) and friends are called with times == NULL (or both
+>  	 * times are UTIME_NOW), then we need to check for write permission
+>  	 */
+>  	if (ia_valid & ATTR_TOUCH) {
+> -		if (IS_IMMUTABLE(inode))
+> -			return -EPERM;
+> -
+>  		if (!inode_owner_or_capable(inode)) {
+>  			error = inode_permission(inode, MAY_WRITE);
+>  			if (error)
+> diff --git a/mm/filemap.c b/mm/filemap.c
+> index d78f577baef2..9fed698f4c63 100644
+> --- a/mm/filemap.c
+> +++ b/mm/filemap.c
+> @@ -3033,6 +3033,9 @@ inline ssize_t generic_write_checks(struct kiocb *iocb, struct iov_iter *from)
+>  	loff_t count;
+>  	int ret;
+>  
+> +	if (IS_IMMUTABLE(inode))
+> +		return -EPERM;
+> +
+>  	if (!iov_iter_count(from))
+>  		return 0;
+>  
+> diff --git a/mm/memory.c b/mm/memory.c
+> index ab650c21bccd..dfd5eba278d6 100644
+> --- a/mm/memory.c
+> +++ b/mm/memory.c
+> @@ -2149,6 +2149,9 @@ static vm_fault_t do_page_mkwrite(struct vm_fault *vmf)
+>  
+>  	vmf->flags = FAULT_FLAG_WRITE|FAULT_FLAG_MKWRITE;
+>  
+> +	if (vmf->vma->vm_file && IS_IMMUTABLE(file_inode(vmf->vma->vm_file)))
+> +		return VM_FAULT_SIGBUS;
+> +
 
-but 190312-010100 doesn't.
-% ls /HySlave/190312-010100/local/pub/media/sound/notmusic_in_CD/
-Little_My_Maid  el_louis  firstkiss  gakuensai  infinity-kid  kid-memories-=
-off  ojyo_tokkyu  samusupi  wizards_harmony  yuukyuu-chara-seala
+I take it this depends on cleaning already dirty pages when the
+immutable bit is set. That appears to be done later in the series, but I
+notice it occurs at the filesystem level (presumably due to the ioctl).
+That of course is fine, but it makes me wonder a bit whether we should
+have a generic helper for each fs to call that does the requisite
+writeback and dio wait (similar to generic_remap_file_range_prep() for
+example). Thoughts?
 
+>  	ret = vmf->vma->vm_ops->page_mkwrite(vmf);
+>  	/* Restore original flags so that caller is not surprised */
+>  	vmf->flags = old_flags;
+> diff --git a/mm/mmap.c b/mm/mmap.c
+> index 41eb48d9b527..697a101bda59 100644
+> --- a/mm/mmap.c
+> +++ b/mm/mmap.c
+> @@ -1481,8 +1481,12 @@ unsigned long do_mmap(struct file *file, unsigned long addr,
+>  		case MAP_SHARED_VALIDATE:
+>  			if (flags & ~flags_mask)
+>  				return -EOPNOTSUPP;
+> -			if ((prot&PROT_WRITE) && !(file->f_mode&FMODE_WRITE))
+> -				return -EACCES;
+> +			if (prot & PROT_WRITE) {
+> +				if (!(file->f_mode & FMODE_WRITE))
+> +					return -EACCES;
+> +				if (IS_IMMUTABLE(file_inode(file)))
+> +					return -EPERM;
+> +			}
 
+We haven't done anything to clean up writeable mappings on marking the
+inode immutable, right? It seems a little strange that we can have some
+writeable mappings hang around while we can't create new ones, but
+perhaps it doesn't matter if the write fault behavior is the same.
 
+Brian
 
-On Fri, 26 Apr 2019 20:30:07 +0300
-Andrei Borzenkov <arvidjaar@gmail.com> wrote:
-
-> 26.04.2019 7:50, MASAKI Haruka =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
-> > Thank you for your reply.
-> >=20
-> > # What does
-> >=20
-> > @Host A ("lily" master, new volume)
-> > aki@lily /mnt % socat TCP-LISTEN:25500 STDOUT | sudo btrfs receive -vv =
-.=20
-> >=20
-> > @Host B ("daisy" backup, having volumes)
-> > aki@daisy /HySlave % sudo btrfs send -v 190315-001000 | socat STDIN TCP=
-:lily.local:25500=20
-> >=20
-> > ( ...Transfared 11TB... )
-> >=20
-> > @Host A
-> > aki@lily /mnt % sudo btrfs subvolume snapshot 190315-001000 world
-> > Create a snapshot of '190315-001000' in './world'
-> > aki@lily /mnt % sudo btrfs subvolume snapshot -r world back1
-> > Create a readonly snapshot of 'world' in './back1'
-> >=20
-> > @Host A
-> > aki@lily /mnt % sudo btrfs send -vv -p 190315-001000 back1 | socat STDI=
-N tcp-connect:192.168.1.17:25555
-> > At subvol back1
-> > BTRFS_IOC_SEND returned 0
-> > joining genl thread
-> >=20
-> > @Host B
-> > root@daisy /HySlave # socat TCP-LISTEN:25555 STDOUT | btrfs receive -vv=
- .
-> > At snapshot back1
-> > receiving snapshot back1 uuid=3D32dda1a2-07bd-684f-b773-c5b4cd5f29c1, c=
-transid=3D2658 parent_uuid=3D9c10b77f-74fb-f94a-9a24-3c6d30c00ca2, parent_c=
-transid=3D2658
-> > BTRFS_IOC_SET_RECEIVED_SUBVOL uuid=3D32dda1a2-07bd-684f-b773-c5b4cd5f29=
-c1, stransid=3D2658
-> >=20
-> > # Host A current
-> >=20
-> > aki@lily /mnt % ls
-> > 190315-001000  back1  back2  world
-> > aki@lily /mnt % sudo btrfs sub li -Rqu .
-> > ID 258 gen 2698 top level 5 parent_uuid -                              =
-      received_uuid 9c10b77f-74fb-f94a-9a24-3c6d30c00ca2 uuid bc90d05c-7430=
--7b42-b683-702d906bb993 path 190315-001000
-> > ID 2139 gen 2696 top level 5 parent_uuid bc90d05c-7430-7b42-b683-702d90=
-6bb993 received_uuid -                                    uuid 23c5fede-a33=
-8-d14a-afcd-677db2e97637 path world
-> > ID 2140 gen 2660 top level 5 parent_uuid 23c5fede-a338-d14a-afcd-677db2=
-e97637 received_uuid -                                    uuid 32dda1a2-07b=
-d-684f-b773-c5b4cd5f29c1 path back1
-> > ID 2142 gen 2672 top level 5 parent_uuid 23c5fede-a338-d14a-afcd-677db2=
-e97637 received_uuid -                                    uuid a8e3e041-c1f=
-c-e443-9baf-ab481ae32b8b path back2
-> >=20
-> >=20
-> > # Host B current
-> >=20
-> > aki@daisy /HySlave % pwd
-> > /HySlave
-> > aki@daisy /HySlave % ls
-> > 190312-010100  190315-001000  back1  back2
-> > [aki@daisy HySlave]$ sudo btrfs sub li -Rqu .
-> > ID 256 gen 36238 top level 5 parent_uuid -                             =
-       received_uuid -                                    uuid 4e42555d-a71=
-5-0e47-bd0e-85d6eb8911e0 path slave
-> > ID 259 gen 35116 top level 256 parent_uuid -                           =
-         received_uuid 9c10b77f-74fb-f94a-9a24-3c6d30c00ca2 uuid 4a91d585-a=
-b25-0c49-b183-ae951b5377e1 path 190312-010100
-> > ID 3059 gen 7273 top level 256 parent_uuid 4a91d585-ab25-0c49-b183-ae95=
-1b5377e1 received_uuid 9c10b77f-74fb-f94a-9a24-3c6d30c00ca2 uuid 114cd74f-8=
-0d8-af44-a9d0-fd8ce3c991b4 path 190315-001000
->=20
-> You have two subvolumes with the same received_uuid. Is the content of
-> these subvolumes the same? Is "missing" file present in both subvolumes?
->=20
-> > ID 3072 gen 35112 top level 256 parent_uuid 4a91d585-ab25-0c49-b183-ae9=
-51b5377e1 received_uuid 32dda1a2-07bd-684f-b773-c5b4cd5f29c1 uuid fe7281d1-=
-8b3e-8f46-a0b4-cdc52a1bb7aa path back1
-> > ID 3073 gen 36236 top level 256 parent_uuid 4a91d585-ab25-0c49-b183-ae9=
-51b5377e1 received_uuid a8e3e041-c1fc-e443-9baf-ab481ae32b8b uuid 65206183-=
-f20d-4648-83ab-e0485b16f7af path back2
-> >=20
-> > # Files missing
-> >=20
-> > aki@daisy /HySlave % ls /HySlave/190315-001000/local/pub/media/sound/no=
-tmusic_in_CD=20
-> > Little_My_Maid  SMEE  el_louis  firstkiss  gakuensai  infinity-kid  kid=
--memories-off  ojyo_tokkyu  samusupi  wizards_harmony  yuukyuu-chara-seala
-> >=20
-> > aki@daisy /HySlave % ls /HySlave/back1/local/pub/media/sound/notmusic_i=
-n_CD
-> > Little_My_Maid  el_louis  firstkiss  gakuensai  infinity-kid  kid-memor=
-ies-off  ojyo_tokkyu  samusupi  wizards_harmony  yuukyuu-chara-seala
-> >=20
-> > aki@lily /mnt % ls /mnt/190315-001000/local/pub/media/sound/notmusic_in=
-_CD
-> > Little_My_Maid  SMEE  el_louis  firstkiss  gakuensai  infinity-kid  kid=
--memories-off  ojyo_tokkyu  samusupi  wizards_harmony  yuukyuu-chara-seala
-> >=20
-> > ki@lily /mnt % ls /mnt/back1/local/pub/media/sound/notmusic_in_CD      =
- =20
-> > Little_My_Maid  SMEE  el_louis  firstkiss  gakuensai  infinity-kid  kid=
--memories-off  ojyo_tokkyu  samusupi  wizards_harmony  yuukyuu-chara-seala
-> >=20
-> > aki@lily /mnt % ls /mnt/world/local/pub/media/sound/notmusic_in_CD=20
-> > Little_My_Maid  SMEE  el_louis  firstkiss  gakuensai  infinity-kid  kid=
--memories-off  ojyo_tokkyu  samusupi  wizards_harmony  yuukyuu-chara-seala
-> >=20
-> >=20
-> > SMEE is missing.
-> >=20
-> >=20
-> >=20
-> >=20
-> > Thanks.
-> >=20
-> >=20
-> > On Thu, 25 Apr 2019 20:55:59 +0300
-> > Andrei Borzenkov <arvidjaar@gmail.com> wrote:
-> >=20
-> >> 25.04.2019 16:34, MASAKI Haruka =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
-> >>  [...] =20
-> >>
-> >> Please show
-> >>
-> >> 1. Full protocol of commands you executed (commands and their output),
-> >> e.g. captured using script.
-> >> 2. Commands used to determine missing files on both source and receive
-> >> sides.
-> >> 3. Listing of subvolumes on both source and receive sides with
-> >>
-> >> btrfs sub li -Rqu /mount/point
-> >>
-> >>  [...] =20
-> >>
->=20
+>  
+>  			/*
+>  			 * Make sure we don't allow writing to an append-only
+> 

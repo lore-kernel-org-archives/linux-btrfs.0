@@ -2,390 +2,378 @@ Return-Path: <SRS0=BNt3=S4=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-6.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3ABFAC43218
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 02:48:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 58E77C43219
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 02:53:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DC7A52084F
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 02:48:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 133D2206A3
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 02:53:52 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="Kkx9jjtJ"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="PvCF6Y7E"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729469AbfDZCsG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 25 Apr 2019 22:48:06 -0400
-Received: from mail.synology.com ([211.23.38.101]:58657 "EHLO synology.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728983AbfDZCsG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Apr 2019 22:48:06 -0400
-Received: from _ (localhost [127.0.0.1])
-        by synology.com (Postfix) with ESMTPA id AEAD81FA636ED;
-        Fri, 26 Apr 2019 10:47:59 +0800 (CST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=synology.com; s=123;
-        t=1556246879; bh=Hm5mdkj4DrAcMk7F5NJXGnktf7truEqOrLydUrV68wE=;
-        h=Date:From:To:Cc:Subject:In-Reply-To:References;
-        b=Kkx9jjtJs7HzSK4M/A7Yufj6phWjTorIpnAKCi0PdhZ6tAA0/zigNnJbm1MHsPy1F
-         dCmkZm5VIfwsbmJCTJ/edz9d/67QDFDe7XB+pNz/Q0qanzvgrNi0jlCw+SzuE1sNNC
-         iCoD8E7ZX6qeD8qosLz4EEVebAGhGSg2E3XsIgh8=
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
- format=flowed
-Content-Transfer-Encoding: 8bit
-Date:   Fri, 26 Apr 2019 10:47:59 +0800
-From:   robbieko <robbieko@synology.com>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+        id S1728020AbfDZCxv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 25 Apr 2019 22:53:51 -0400
+Received: from mout.gmx.net ([212.227.15.18]:53197 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727360AbfDZCxv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 25 Apr 2019 22:53:51 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1556247212;
+        bh=QbcCjRdZ+HCE86cJ8MzH4c5mgvvDsMZhVLg3P+0s+PE=;
+        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
+        b=PvCF6Y7E0TKNQeUNS6sOBkcFJmMUNQ4UjdGeK/KIDrTdC1kpQMrSVFnYLwSHjodu5
+         991xlxF/LRR1AVNxc3MP3nHCwYY2NGxnE6hWVZw+SORp0f1zMY4UjPZDyntkgUwjtu
+         q7jUUn0HRPLbAQhr5oLD87nM8H3W52E6f6lmr8VQ=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx005
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1Mn2W5-1guNzg2onH-00kANH; Fri, 26
+ Apr 2019 04:53:32 +0200
+Subject: Re: [PATCH] Btrfs: fix unexpected failure of nocow buffered writes
+ after snapshotting when low on space
+To:     robbieko <robbieko@synology.com>
 Cc:     fdmanana@gmail.com, Nikolay Borisov <nborisov@suse.com>,
         linux-btrfs <linux-btrfs@vger.kernel.org>,
         Filipe Manana <fdmanana@suse.com>,
         linux-btrfs-owner@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix unexpected failure of nocow buffered writes
- after snapshotting when low on space
-In-Reply-To: <cfcaf75e-7e89-cf1f-9293-6a022762f22c@gmx.com>
 References: <1533522630-21758-1-git-send-email-robbieko@synology.com>
  <afb5d89f-e1f9-351e-c789-ac291649d17b@gmx.com>
  <06b5b693-8017-7ec0-b17a-c723291f00c7@suse.com>
  <950b2924-9edd-d9d7-ace0-bc3e2ab07a6a@gmx.com>
  <CAL3q7H6-9mxYyzi8Y0N8Vvgf4qRgrqURqHASE_4Du-jLmywuBQ@mail.gmail.com>
  <cfcaf75e-7e89-cf1f-9293-6a022762f22c@gmx.com>
-Message-ID: <20b22fc6cdc288ed9aaf0be1a6cdeb7b@synology.com>
-X-Sender: robbieko@synology.com
-User-Agent: Roundcube Webmail/1.1.2
-X-Synology-MCP-Status: no
-X-Synology-Spam-Flag: no
-X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
-X-Synology-Virus-Status: no
+ <20b22fc6cdc288ed9aaf0be1a6cdeb7b@synology.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <1fcaaa0c-cf7b-38dc-0af9-c90773c9af07@gmx.com>
+Date:   Fri, 26 Apr 2019 10:53:25 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.6.1
+MIME-Version: 1.0
+In-Reply-To: <20b22fc6cdc288ed9aaf0be1a6cdeb7b@synology.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: base64
+X-Provags-ID: V03:K1:GlSQMZtVf4bjV1n2TLoyVj+AWj/y59+2q+hqydrPftn2bPm6zUM
+ hf+dYJC0ltc+g+ScnVRdwSRGw0tgA7KM9HZEErbxGbf+4Z4C8LDK51p5kVL7zFM5ZyYGo4V
+ WTGIJ4gkzdaQHjRQSrlHLBCs+sjSxbrGZCrz/Uz3d+8GUDI+Be6osxRB4Zmeoh+7fSaaNPb
+ eZKH4Y/nzQZ8A/F83MDKw==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:d/J760NEDT8=:eHIp4WnkpQL9vAdV+ZwCZF
+ y6K79bOWluBP68++5o8W0EqwvmR1SSYX8TF0QRsb8TEf0/4rStAthzxmtib4MVDQPX71abvEa
+ DrRHQ0iw5zDoCm7Odax8PDHobRuDp1jFo+prF9e/Fn81oDT7HxgDu5qYjPg0Cs4LfOh2UEAx5
+ 47RYngi58W3/xQE1qVwX2y2vM2kq2By/8GnOSPETCJO/LNDC4enJrS1JJmtjQANKbWGnVvSNk
+ GA4obgVRAk5z7PS2wJCFWcCtDk6d6YnY8p3824LDDFBq6lq8IrXLRhGabeDeJKsBJxxfcmGUU
+ LyYRwf7tXUhGlaXWyv7jTzuy314nxzOxiOSm/m14mSeGGXOlHhE5N5V2NXcmXrllQuNboCcOS
+ xE3eetj/ZzG8wtdjDWY5DilQI10eCgSxtZlaQ7Mkb8atXzUWUGX5u68JfbHUCVe6ah8x4eL3Z
+ bwVu0I9QpHfsnm5RllOT7+u+KFQCwAy2IleWKJX/bUzMaDIkqnySTofhsWWyaQnCsxIGlkw9X
+ 22Q/X4rrZLqL7WlLePHv5EC/seHmBLw22BEKt5y9pUjeJP/wlNVEvN4p7Hybwj/czJdIdiI2s
+ pyBsJGOErrtPMTxEF+YGYJg/p0mExr9O35ldwo1AVz1xtyAQGA3zf/J/D6ZVa/IFf/Hh9wCSi
+ cOiMtQPHZtxhy6qKBY3XGSfO961eyACBDpAESYlAKs23/DzdSSwdbNkRsxTuFI40M3P8jkr2y
+ SjnP1dNjV2iQ4UIq0Y3v+eWqwyn5Z1naZ0Ar3wbNdpQNO0E03bREgRkbfGgh0xdNTbZhJ+HtI
+ wh9jRbVbx3lAxdhPO+HoThtGnzt8rJCRSWJ/h+6Z7uQGJKSQV5t+FqiLThjcyJJkzSk/e0FYJ
+ aMQ7cibKdMEmNzcpdug08jLVyYk4RYTkopAKVkvaz50+pw02Rm8kIJcmC5qyYh+dvM2nVi3zQ
+ dGvy+grBiDQ==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Qu Wenruo 於 2019-04-26 07:20 寫到:
-> [snip]
->>>> 
->>>> 1. Serializing snapshots (acquiring write-side of the semaphore)
->>> 
->>> With the new btrfs_start_delalloc_snapshot() in
->>> btrfs_commit_transaction(), do we really need to do anything special 
->>> now?
->>> 
->>> Snapshot creation will only happen in btrfs_commit_transaction(), as
->>> long as all dirty inodes/pages are written before pending snapshots,
->>> we're completely fine.
->>> 
->>> Or did I miss something?
->> 
->> You missed the whole point of both patches.
->> 
->> The one I authored recently, is about ensuring we see ordered update
->> of an inode's disk_i_size / i_size.
->> That flushes delalloc a second time, during the transaction commit, to
->> ensure an ordered update of disk_i_size in case direct IO writes
->> happened during snapshotting.
->> btrfs/078 could detect this when not running with the no-holes feature
->> enabled, since fsck will report missing file extent items.
-> 
-> But that flush at commit time ensures all pages of the source snapshot
-> to disk, killing the following old case:
-> - preallocate
-> - buffered write
->   at this timing, the write will be nodatacow
-> - snapshot creation
->   now the write needs to be cowed
-> - dirty page writeback happens
-> 
-> With your flush, snapshot creation will flush all its dirty pages 
-> before
-> the new snapshot is created.
-> 
->> 
->> Robbie's patch is about making sure that buffered nodatacow writes
->> that happened before snapshotting (and success was returned to user
->> space), will not fail silently during the writeback triggered by
->> snapshot creation.
->> There's even a test case for this, btrfs/170, which I submitted.
->> 
->> So no, you can't simply revert Robbie's change, that will re-introduce
->> the bug it fixed.
-> 
-> With your patch, I see nothing need to be handled specially in a
-> snapshot source. Thus we don't need Robbie patch after your more
-> comprehensive fix.
-> 
-> Or did I miss something again?
-
-If you revert my patch directly, when volume is full, when writing data,
-it will check and try to use nocow to write, but if the data is still
-in the page cache, it has not been written back to disk.
-If snapshot is triggered, will_be_snapshotted will be set, and then 
-flush
-data, causing data to be unable to do nocow in run_delalloc_nocow,
-can only be written back in cow way, but there is no extra space to use,
-so that data loss.
-Thanks.
-Robbieko
-
-> Thanks,
-> Qu
-> 
->> 
->> Thanks.
->> 
->>> 
->>> Thanks,
->>> Qu
->>> 
->>>> 
->>>> 2. Nocow writers simply acquire the readsize of the semaphore.
->>>> 
->>>> the will_be_snapshoted thing is very convoluted relying on a percpu
->>>> counter/waitqueue  to exclude snapshots from pending nocow writers. 
->>>> OTOH
->>>> it depends on atomic_t and an implicit wait queue thanks to wait_var
->>>> infrastructure to exclude nocow writers from pending snapshots. 
->>>> Filipe
->>>> had some concerns regarding performance but if the patch you 
->>>> mentioned
->>>> fixed all issues I'm all in favor of removing the code!
->>>> 
->>>> 
->>>>> 
->>>>> Thanks,
->>>>> Qu
->>>>> 
->>>>>> 
->>>>>> 1. It is incremented when we start to create a snapshot after
->>>>>> triggering writeback and before waiting for writeback to finish.
->>>>>> 
->>>>>> 2. This new atomic is now what is used by writeback (running 
->>>>>> delalloc)
->>>>>> to decide whether we need to fallback to COW or not. Because we
->>>>>> incremented this new atomic after triggering writeback in the 
->>>>>> snapshot
->>>>>> creation ioctl, we ensure that all buffered writes that happened
->>>>>> before snapshot creation will succeed and not fallback to COW
->>>>>> (which would make them fail with ENOSPC).
->>>>>> 
->>>>>> 3. The existing atomic, will_be_snapshotted, is kept because it is
->>>>>> used to force new buffered writes, that start after we started
->>>>>> snapshotting, to reserve data space even when NOCOW is possible.
->>>>>> This makes these writes fail early with ENOSPC when there's no
->>>>>> available space to allocate, preventing the unexpected behaviour
->>>>>> of writeback later failing with ENOSPC due to a fallback to COW 
->>>>>> mode.
->>>>>> 
->>>>>> Fixes: e9894fd3e3b3 ("Btrfs: fix snapshot vs nocow writting")
->>>>>> Signed-off-by: Robbie Ko <robbieko@synology.com>
->>>>>> Reviewed-by: Filipe Manana <fdmanana@suse.com>
->>>>>> ---
->>>>>>  fs/btrfs/ctree.h   |  1 +
->>>>>>  fs/btrfs/disk-io.c |  1 +
->>>>>>  fs/btrfs/inode.c   | 26 +++++---------------------
->>>>>>  fs/btrfs/ioctl.c   | 16 ++++++++++++++++
->>>>>>  4 files changed, 23 insertions(+), 21 deletions(-)
->>>>>> 
->>>>>> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
->>>>>> index 118346a..663ce05 100644
->>>>>> --- a/fs/btrfs/ctree.h
->>>>>> +++ b/fs/btrfs/ctree.h
->>>>>> @@ -1277,6 +1277,7 @@ struct btrfs_root {
->>>>>>     int send_in_progress;
->>>>>>     struct btrfs_subvolume_writers *subv_writers;
->>>>>>     atomic_t will_be_snapshotted;
->>>>>> +   atomic_t snapshot_force_cow;
->>>>>> 
->>>>>>     /* For qgroup metadata reserved space */
->>>>>>     spinlock_t qgroup_meta_rsv_lock;
->>>>>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->>>>>> index 205092d..5573916 100644
->>>>>> --- a/fs/btrfs/disk-io.c
->>>>>> +++ b/fs/btrfs/disk-io.c
->>>>>> @@ -1216,6 +1216,7 @@ static void __setup_root(struct btrfs_root 
->>>>>> *root, struct btrfs_fs_info *fs_info,
->>>>>>     atomic_set(&root->log_batch, 0);
->>>>>>     refcount_set(&root->refs, 1);
->>>>>>     atomic_set(&root->will_be_snapshotted, 0);
->>>>>> +   atomic_set(&root->snapshot_force_cow, 0);
->>>>>>     root->log_transid = 0;
->>>>>>     root->log_transid_committed = -1;
->>>>>>     root->last_log_commit = 0;
->>>>>> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
->>>>>> index eba61bc..263b852 100644
->>>>>> --- a/fs/btrfs/inode.c
->>>>>> +++ b/fs/btrfs/inode.c
->>>>>> @@ -1275,7 +1275,7 @@ static noinline int 
->>>>>> run_delalloc_nocow(struct inode *inode,
->>>>>>     u64 disk_num_bytes;
->>>>>>     u64 ram_bytes;
->>>>>>     int extent_type;
->>>>>> -   int ret, err;
->>>>>> +   int ret;
->>>>>>     int type;
->>>>>>     int nocow;
->>>>>>     int check_prev = 1;
->>>>>> @@ -1407,11 +1407,9 @@ static noinline int 
->>>>>> run_delalloc_nocow(struct inode *inode,
->>>>>>                      * if there are pending snapshots for this 
->>>>>> root,
->>>>>>                      * we fall into common COW way.
->>>>>>                      */
->>>>>> -                   if (!nolock) {
->>>>>> -                           err = 
->>>>>> btrfs_start_write_no_snapshotting(root);
->>>>>> -                           if (!err)
->>>>>> -                                   goto out_check;
->>>>>> -                   }
->>>>>> +                   if (!nolock &&
->>>>>> +                           
->>>>>> unlikely(atomic_read(&root->snapshot_force_cow)))
->>>>>> +                           goto out_check;
->>>>>>                     /*
->>>>>>                      * force cow if csum exists in the range.
->>>>>>                      * this ensure that csum for a given extent 
->>>>>> are
->>>>>> @@ -1420,9 +1418,6 @@ static noinline int 
->>>>>> run_delalloc_nocow(struct inode *inode,
->>>>>>                     ret = csum_exist_in_range(fs_info, 
->>>>>> disk_bytenr,
->>>>>>                                               num_bytes);
->>>>>>                     if (ret) {
->>>>>> -                           if (!nolock)
->>>>>> -                                   
->>>>>> btrfs_end_write_no_snapshotting(root);
->>>>>> -
->>>>>>                             /*
->>>>>>                              * ret could be -EIO if the above 
->>>>>> fails to read
->>>>>>                              * metadata.
->>>>>> @@ -1435,11 +1430,8 @@ static noinline int 
->>>>>> run_delalloc_nocow(struct inode *inode,
->>>>>>                             WARN_ON_ONCE(nolock);
->>>>>>                             goto out_check;
->>>>>>                     }
->>>>>> -                   if (!btrfs_inc_nocow_writers(fs_info, 
->>>>>> disk_bytenr)) {
->>>>>> -                           if (!nolock)
->>>>>> -                                   
->>>>>> btrfs_end_write_no_snapshotting(root);
->>>>>> +                   if (!btrfs_inc_nocow_writers(fs_info, 
->>>>>> disk_bytenr))
->>>>>>                             goto out_check;
->>>>>> -                   }
->>>>>>                     nocow = 1;
->>>>>>             } else if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
->>>>>>                     extent_end = found_key.offset +
->>>>>> @@ -1453,8 +1445,6 @@ static noinline int 
->>>>>> run_delalloc_nocow(struct inode *inode,
->>>>>>  out_check:
->>>>>>             if (extent_end <= start) {
->>>>>>                     path->slots[0]++;
->>>>>> -                   if (!nolock && nocow)
->>>>>> -                           btrfs_end_write_no_snapshotting(root);
->>>>>>                     if (nocow)
->>>>>>                             btrfs_dec_nocow_writers(fs_info, 
->>>>>> disk_bytenr);
->>>>>>                     goto next_slot;
->>>>>> @@ -1476,8 +1466,6 @@ static noinline int 
->>>>>> run_delalloc_nocow(struct inode *inode,
->>>>>>                                          end, page_started, 
->>>>>> nr_written, 1,
->>>>>>                                          NULL);
->>>>>>                     if (ret) {
->>>>>> -                           if (!nolock && nocow)
->>>>>> -                                   
->>>>>> btrfs_end_write_no_snapshotting(root);
->>>>>>                             if (nocow)
->>>>>>                                     
->>>>>> btrfs_dec_nocow_writers(fs_info,
->>>>>>                                                             
->>>>>> disk_bytenr);
->>>>>> @@ -1497,8 +1485,6 @@ static noinline int 
->>>>>> run_delalloc_nocow(struct inode *inode,
->>>>>>                                       ram_bytes, 
->>>>>> BTRFS_COMPRESS_NONE,
->>>>>>                                       BTRFS_ORDERED_PREALLOC);
->>>>>>                     if (IS_ERR(em)) {
->>>>>> -                           if (!nolock && nocow)
->>>>>> -                                   
->>>>>> btrfs_end_write_no_snapshotting(root);
->>>>>>                             if (nocow)
->>>>>>                                     
->>>>>> btrfs_dec_nocow_writers(fs_info,
->>>>>>                                                             
->>>>>> disk_bytenr);
->>>>>> @@ -1537,8 +1523,6 @@ static noinline int 
->>>>>> run_delalloc_nocow(struct inode *inode,
->>>>>>                                          EXTENT_CLEAR_DATA_RESV,
->>>>>>                                          PAGE_UNLOCK | 
->>>>>> PAGE_SET_PRIVATE2);
->>>>>> 
->>>>>> -           if (!nolock && nocow)
->>>>>> -                   btrfs_end_write_no_snapshotting(root);
->>>>>>             cur_offset = extent_end;
->>>>>> 
->>>>>>             /*
->>>>>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->>>>>> index b077544..331b495 100644
->>>>>> --- a/fs/btrfs/ioctl.c
->>>>>> +++ b/fs/btrfs/ioctl.c
->>>>>> @@ -761,6 +761,7 @@ static int create_snapshot(struct btrfs_root 
->>>>>> *root, struct inode *dir,
->>>>>>     struct btrfs_pending_snapshot *pending_snapshot;
->>>>>>     struct btrfs_trans_handle *trans;
->>>>>>     int ret;
->>>>>> +   bool snapshot_force_cow = false;
->>>>>> 
->>>>>>     if (!test_bit(BTRFS_ROOT_REF_COWS, &root->state))
->>>>>>             return -EINVAL;
->>>>>> @@ -777,6 +778,11 @@ static int create_snapshot(struct btrfs_root 
->>>>>> *root, struct inode *dir,
->>>>>>             goto free_pending;
->>>>>>     }
->>>>>> 
->>>>>> +   /*
->>>>>> +    * Force new buffered writes to reserve space even when NOCOW 
->>>>>> is
->>>>>> +    * possible. This is to avoid later writeback (running 
->>>>>> dealloc)
->>>>>> +    * to fallback to COW mode and unexpectedly fail with ENOSPC.
->>>>>> +    */
->>>>>>     atomic_inc(&root->will_be_snapshotted);
->>>>>>     smp_mb__after_atomic();
->>>>>>     /* wait for no snapshot writes */
->>>>>> @@ -787,6 +793,14 @@ static int create_snapshot(struct btrfs_root 
->>>>>> *root, struct inode *dir,
->>>>>>     if (ret)
->>>>>>             goto dec_and_free;
->>>>>> 
->>>>>> +   /*
->>>>>> +    * All previous writes have started writeback in NOCOW mode, 
->>>>>> so now
->>>>>> +    * we force future writes to fallback to COW mode during 
->>>>>> snapshot
->>>>>> +    * creation.
->>>>>> +    */
->>>>>> +   atomic_inc(&root->snapshot_force_cow);
->>>>>> +   snapshot_force_cow = true;
->>>>>> +
->>>>>>     btrfs_wait_ordered_extents(root, U64_MAX, 0, (u64)-1);
->>>>>> 
->>>>>>     btrfs_init_block_rsv(&pending_snapshot->block_rsv,
->>>>>> @@ -851,6 +865,8 @@ static int create_snapshot(struct btrfs_root 
->>>>>> *root, struct inode *dir,
->>>>>>  fail:
->>>>>>     btrfs_subvolume_release_metadata(fs_info, 
->>>>>> &pending_snapshot->block_rsv);
->>>>>>  dec_and_free:
->>>>>> +   if (snapshot_force_cow)
->>>>>> +           atomic_dec(&root->snapshot_force_cow);
->>>>>>     if (atomic_dec_and_test(&root->will_be_snapshotted))
->>>>>>             wake_up_var(&root->will_be_snapshotted);
->>>>>>  free_pending:
->>>>>> 
->>>>> 
->> 
->> 
->> 
-
+DQoNCk9uIDIwMTkvNC8yNiDkuIrljYgxMDo0Nywgcm9iYmlla28gd3JvdGU6DQo+IFF1IFdlbnJ1
+byDmlrwgMjAxOS0wNC0yNiAwNzoyMCDlr6vliLA6DQo+PiBbc25pcF0NCj4+Pj4+DQo+Pj4+PiAx
+LiBTZXJpYWxpemluZyBzbmFwc2hvdHMgKGFjcXVpcmluZyB3cml0ZS1zaWRlIG9mIHRoZSBzZW1h
+cGhvcmUpDQo+Pj4+DQo+Pj4+IFdpdGggdGhlIG5ldyBidHJmc19zdGFydF9kZWxhbGxvY19zbmFw
+c2hvdCgpIGluDQo+Pj4+IGJ0cmZzX2NvbW1pdF90cmFuc2FjdGlvbigpLCBkbyB3ZSByZWFsbHkg
+bmVlZCB0byBkbyBhbnl0aGluZyBzcGVjaWFsDQo+Pj4+IG5vdz8NCj4+Pj4NCj4+Pj4gU25hcHNo
+b3QgY3JlYXRpb24gd2lsbCBvbmx5IGhhcHBlbiBpbiBidHJmc19jb21taXRfdHJhbnNhY3Rpb24o
+KSwgYXMNCj4+Pj4gbG9uZyBhcyBhbGwgZGlydHkgaW5vZGVzL3BhZ2VzIGFyZSB3cml0dGVuIGJl
+Zm9yZSBwZW5kaW5nIHNuYXBzaG90cywNCj4+Pj4gd2UncmUgY29tcGxldGVseSBmaW5lLg0KPj4+
+Pg0KPj4+PiBPciBkaWQgSSBtaXNzIHNvbWV0aGluZz8NCj4+Pg0KPj4+IFlvdSBtaXNzZWQgdGhl
+IHdob2xlIHBvaW50IG9mIGJvdGggcGF0Y2hlcy4NCj4+Pg0KPj4+IFRoZSBvbmUgSSBhdXRob3Jl
+ZCByZWNlbnRseSwgaXMgYWJvdXQgZW5zdXJpbmcgd2Ugc2VlIG9yZGVyZWQgdXBkYXRlDQo+Pj4g
+b2YgYW4gaW5vZGUncyBkaXNrX2lfc2l6ZSAvIGlfc2l6ZS4NCj4+PiBUaGF0IGZsdXNoZXMgZGVs
+YWxsb2MgYSBzZWNvbmQgdGltZSwgZHVyaW5nIHRoZSB0cmFuc2FjdGlvbiBjb21taXQsIHRvDQo+
+Pj4gZW5zdXJlIGFuIG9yZGVyZWQgdXBkYXRlIG9mIGRpc2tfaV9zaXplIGluIGNhc2UgZGlyZWN0
+IElPIHdyaXRlcw0KPj4+IGhhcHBlbmVkIGR1cmluZyBzbmFwc2hvdHRpbmcuDQo+Pj4gYnRyZnMv
+MDc4IGNvdWxkIGRldGVjdCB0aGlzIHdoZW4gbm90IHJ1bm5pbmcgd2l0aCB0aGUgbm8taG9sZXMg
+ZmVhdHVyZQ0KPj4+IGVuYWJsZWQsIHNpbmNlIGZzY2sgd2lsbCByZXBvcnQgbWlzc2luZyBmaWxl
+IGV4dGVudCBpdGVtcy4NCj4+DQo+PiBCdXQgdGhhdCBmbHVzaCBhdCBjb21taXQgdGltZSBlbnN1
+cmVzIGFsbCBwYWdlcyBvZiB0aGUgc291cmNlIHNuYXBzaG90DQo+PiB0byBkaXNrLCBraWxsaW5n
+IHRoZSBmb2xsb3dpbmcgb2xkIGNhc2U6DQo+PiAtIHByZWFsbG9jYXRlDQo+PiAtIGJ1ZmZlcmVk
+IHdyaXRlDQo+PiDCoCBhdCB0aGlzIHRpbWluZywgdGhlIHdyaXRlIHdpbGwgYmUgbm9kYXRhY293
+DQo+PiAtIHNuYXBzaG90IGNyZWF0aW9uDQo+PiDCoCBub3cgdGhlIHdyaXRlIG5lZWRzIHRvIGJl
+IGNvd2VkDQo+PiAtIGRpcnR5IHBhZ2Ugd3JpdGViYWNrIGhhcHBlbnMNCj4+DQo+PiBXaXRoIHlv
+dXIgZmx1c2gsIHNuYXBzaG90IGNyZWF0aW9uIHdpbGwgZmx1c2ggYWxsIGl0cyBkaXJ0eSBwYWdl
+cyBiZWZvcmUNCj4+IHRoZSBuZXcgc25hcHNob3QgaXMgY3JlYXRlZC4NCj4+DQo+Pj4NCj4+PiBS
+b2JiaWUncyBwYXRjaCBpcyBhYm91dCBtYWtpbmcgc3VyZSB0aGF0IGJ1ZmZlcmVkIG5vZGF0YWNv
+dyB3cml0ZXMNCj4+PiB0aGF0IGhhcHBlbmVkIGJlZm9yZSBzbmFwc2hvdHRpbmcgKGFuZCBzdWNj
+ZXNzIHdhcyByZXR1cm5lZCB0byB1c2VyDQo+Pj4gc3BhY2UpLCB3aWxsIG5vdCBmYWlsIHNpbGVu
+dGx5IGR1cmluZyB0aGUgd3JpdGViYWNrIHRyaWdnZXJlZCBieQ0KPj4+IHNuYXBzaG90IGNyZWF0
+aW9uLg0KPj4+IFRoZXJlJ3MgZXZlbiBhIHRlc3QgY2FzZSBmb3IgdGhpcywgYnRyZnMvMTcwLCB3
+aGljaCBJIHN1Ym1pdHRlZC4NCj4+Pg0KPj4+IFNvIG5vLCB5b3UgY2FuJ3Qgc2ltcGx5IHJldmVy
+dCBSb2JiaWUncyBjaGFuZ2UsIHRoYXQgd2lsbCByZS1pbnRyb2R1Y2UNCj4+PiB0aGUgYnVnIGl0
+IGZpeGVkLg0KPj4NCj4+IFdpdGggeW91ciBwYXRjaCwgSSBzZWUgbm90aGluZyBuZWVkIHRvIGJl
+IGhhbmRsZWQgc3BlY2lhbGx5IGluIGENCj4+IHNuYXBzaG90IHNvdXJjZS4gVGh1cyB3ZSBkb24n
+dCBuZWVkIFJvYmJpZSBwYXRjaCBhZnRlciB5b3VyIG1vcmUNCj4+IGNvbXByZWhlbnNpdmUgZml4
+Lg0KPj4NCj4+IE9yIGRpZCBJIG1pc3Mgc29tZXRoaW5nIGFnYWluPw0KPiANCj4gSWYgeW91IHJl
+dmVydCBteSBwYXRjaCBkaXJlY3RseSwgd2hlbiB2b2x1bWUgaXMgZnVsbCwgd2hlbiB3cml0aW5n
+IGRhdGEsDQo+IGl0IHdpbGwgY2hlY2sgYW5kIHRyeSB0byB1c2Ugbm9jb3cgdG8gd3JpdGUsIGJ1
+dCBpZiB0aGUgZGF0YSBpcyBzdGlsbA0KPiBpbiB0aGUgcGFnZSBjYWNoZSwgaXQgaGFzIG5vdCBi
+ZWVuIHdyaXR0ZW4gYmFjayB0byBkaXNrLg0KPiBJZiBzbmFwc2hvdCBpcyB0cmlnZ2VyZWQsDQoN
+CkJ1dCBub3csIGJlZm9yZSBjcmVhdGluZyBuZXcgc25hcHNob3QsIHdlIHdpbGwgZmx1c2ggYWxs
+IGRhdGEuDQoNClRoaXMgbWVhbnMgYXQgdGhpcyB0aW1lLCB0aGUgZGF0YSB3aWxsIGJlIHdyaXR0
+ZW4gYmFjayAqTk9DT1cqLCBqdXN0IGFzDQpleHBlY3RlZC4NCg0KPiB3aWxsX2JlX3NuYXBzaG90
+dGVkIHdpbGwgYmUgc2V0LCBhbmQgdGhlbiBmbHVzaA0KDQp3aWxsX2JlX3NuYXBzaG90dGVkIHdp
+bGwgYWxzbyBiZSBnb25lLg0KDQpUaGFua3MsDQpRdQ0KDQo+IGRhdGEsIGNhdXNpbmcgZGF0YSB0
+byBiZSB1bmFibGUgdG8gZG8gbm9jb3cgaW4gcnVuX2RlbGFsbG9jX25vY293LA0KPiBjYW4gb25s
+eSBiZSB3cml0dGVuIGJhY2sgaW4gY293IHdheSwgYnV0IHRoZXJlIGlzIG5vIGV4dHJhIHNwYWNl
+IHRvIHVzZSwNCj4gc28gdGhhdCBkYXRhIGxvc3MuDQo+IFRoYW5rcy4NCj4gUm9iYmlla28NCj4g
+DQo+PiBUaGFua3MsDQo+PiBRdQ0KPj4NCj4+Pg0KPj4+IFRoYW5rcy4NCj4+Pg0KPj4+Pg0KPj4+
+PiBUaGFua3MsDQo+Pj4+IFF1DQo+Pj4+DQo+Pj4+Pg0KPj4+Pj4gMi4gTm9jb3cgd3JpdGVycyBz
+aW1wbHkgYWNxdWlyZSB0aGUgcmVhZHNpemUgb2YgdGhlIHNlbWFwaG9yZS4NCj4+Pj4+DQo+Pj4+
+PiB0aGUgd2lsbF9iZV9zbmFwc2hvdGVkIHRoaW5nIGlzIHZlcnkgY29udm9sdXRlZCByZWx5aW5n
+IG9uIGEgcGVyY3B1DQo+Pj4+PiBjb3VudGVyL3dhaXRxdWV1ZcKgIHRvIGV4Y2x1ZGUgc25hcHNo
+b3RzIGZyb20gcGVuZGluZyBub2NvdyB3cml0ZXJzLg0KPj4+Pj4gT1RPSA0KPj4+Pj4gaXQgZGVw
+ZW5kcyBvbiBhdG9taWNfdCBhbmQgYW4gaW1wbGljaXQgd2FpdCBxdWV1ZSB0aGFua3MgdG8gd2Fp
+dF92YXINCj4+Pj4+IGluZnJhc3RydWN0dXJlIHRvIGV4Y2x1ZGUgbm9jb3cgd3JpdGVycyBmcm9t
+IHBlbmRpbmcgc25hcHNob3RzLiBGaWxpcGUNCj4+Pj4+IGhhZCBzb21lIGNvbmNlcm5zIHJlZ2Fy
+ZGluZyBwZXJmb3JtYW5jZSBidXQgaWYgdGhlIHBhdGNoIHlvdSBtZW50aW9uZWQNCj4+Pj4+IGZp
+eGVkIGFsbCBpc3N1ZXMgSSdtIGFsbCBpbiBmYXZvciBvZiByZW1vdmluZyB0aGUgY29kZSENCj4+
+Pj4+DQo+Pj4+Pg0KPj4+Pj4+DQo+Pj4+Pj4gVGhhbmtzLA0KPj4+Pj4+IFF1DQo+Pj4+Pj4NCj4+
+Pj4+Pj4NCj4+Pj4+Pj4gMS4gSXQgaXMgaW5jcmVtZW50ZWQgd2hlbiB3ZSBzdGFydCB0byBjcmVh
+dGUgYSBzbmFwc2hvdCBhZnRlcg0KPj4+Pj4+PiB0cmlnZ2VyaW5nIHdyaXRlYmFjayBhbmQgYmVm
+b3JlIHdhaXRpbmcgZm9yIHdyaXRlYmFjayB0byBmaW5pc2guDQo+Pj4+Pj4+DQo+Pj4+Pj4+IDIu
+IFRoaXMgbmV3IGF0b21pYyBpcyBub3cgd2hhdCBpcyB1c2VkIGJ5IHdyaXRlYmFjayAocnVubmlu
+Zw0KPj4+Pj4+PiBkZWxhbGxvYykNCj4+Pj4+Pj4gdG8gZGVjaWRlIHdoZXRoZXIgd2UgbmVlZCB0
+byBmYWxsYmFjayB0byBDT1cgb3Igbm90LiBCZWNhdXNlIHdlDQo+Pj4+Pj4+IGluY3JlbWVudGVk
+IHRoaXMgbmV3IGF0b21pYyBhZnRlciB0cmlnZ2VyaW5nIHdyaXRlYmFjayBpbiB0aGUNCj4+Pj4+
+Pj4gc25hcHNob3QNCj4+Pj4+Pj4gY3JlYXRpb24gaW9jdGwsIHdlIGVuc3VyZSB0aGF0IGFsbCBi
+dWZmZXJlZCB3cml0ZXMgdGhhdCBoYXBwZW5lZA0KPj4+Pj4+PiBiZWZvcmUgc25hcHNob3QgY3Jl
+YXRpb24gd2lsbCBzdWNjZWVkIGFuZCBub3QgZmFsbGJhY2sgdG8gQ09XDQo+Pj4+Pj4+ICh3aGlj
+aCB3b3VsZCBtYWtlIHRoZW0gZmFpbCB3aXRoIEVOT1NQQykuDQo+Pj4+Pj4+DQo+Pj4+Pj4+IDMu
+IFRoZSBleGlzdGluZyBhdG9taWMsIHdpbGxfYmVfc25hcHNob3R0ZWQsIGlzIGtlcHQgYmVjYXVz
+ZSBpdCBpcw0KPj4+Pj4+PiB1c2VkIHRvIGZvcmNlIG5ldyBidWZmZXJlZCB3cml0ZXMsIHRoYXQg
+c3RhcnQgYWZ0ZXIgd2Ugc3RhcnRlZA0KPj4+Pj4+PiBzbmFwc2hvdHRpbmcsIHRvIHJlc2VydmUg
+ZGF0YSBzcGFjZSBldmVuIHdoZW4gTk9DT1cgaXMgcG9zc2libGUuDQo+Pj4+Pj4+IFRoaXMgbWFr
+ZXMgdGhlc2Ugd3JpdGVzIGZhaWwgZWFybHkgd2l0aCBFTk9TUEMgd2hlbiB0aGVyZSdzIG5vDQo+
+Pj4+Pj4+IGF2YWlsYWJsZSBzcGFjZSB0byBhbGxvY2F0ZSwgcHJldmVudGluZyB0aGUgdW5leHBl
+Y3RlZCBiZWhhdmlvdXINCj4+Pj4+Pj4gb2Ygd3JpdGViYWNrIGxhdGVyIGZhaWxpbmcgd2l0aCBF
+Tk9TUEMgZHVlIHRvIGEgZmFsbGJhY2sgdG8gQ09XDQo+Pj4+Pj4+IG1vZGUuDQo+Pj4+Pj4+DQo+
+Pj4+Pj4+IEZpeGVzOiBlOTg5NGZkM2UzYjMgKCJCdHJmczogZml4IHNuYXBzaG90IHZzIG5vY293
+IHdyaXR0aW5nIikNCj4+Pj4+Pj4gU2lnbmVkLW9mZi1ieTogUm9iYmllIEtvIDxyb2JiaWVrb0Bz
+eW5vbG9neS5jb20+DQo+Pj4+Pj4+IFJldmlld2VkLWJ5OiBGaWxpcGUgTWFuYW5hIDxmZG1hbmFu
+YUBzdXNlLmNvbT4NCj4+Pj4+Pj4gLS0tDQo+Pj4+Pj4+IMKgZnMvYnRyZnMvY3RyZWUuaMKgwqAg
+fMKgIDEgKw0KPj4+Pj4+PiDCoGZzL2J0cmZzL2Rpc2staW8uYyB8wqAgMSArDQo+Pj4+Pj4+IMKg
+ZnMvYnRyZnMvaW5vZGUuY8KgwqAgfCAyNiArKysrKy0tLS0tLS0tLS0tLS0tLS0tLS0tLQ0KPj4+
+Pj4+PiDCoGZzL2J0cmZzL2lvY3RsLmPCoMKgIHwgMTYgKysrKysrKysrKysrKysrKw0KPj4+Pj4+
+PiDCoDQgZmlsZXMgY2hhbmdlZCwgMjMgaW5zZXJ0aW9ucygrKSwgMjEgZGVsZXRpb25zKC0pDQo+
+Pj4+Pj4+DQo+Pj4+Pj4+IGRpZmYgLS1naXQgYS9mcy9idHJmcy9jdHJlZS5oIGIvZnMvYnRyZnMv
+Y3RyZWUuaA0KPj4+Pj4+PiBpbmRleCAxMTgzNDZhLi42NjNjZTA1IDEwMDY0NA0KPj4+Pj4+PiAt
+LS0gYS9mcy9idHJmcy9jdHJlZS5oDQo+Pj4+Pj4+ICsrKyBiL2ZzL2J0cmZzL2N0cmVlLmgNCj4+
+Pj4+Pj4gQEAgLTEyNzcsNiArMTI3Nyw3IEBAIHN0cnVjdCBidHJmc19yb290IHsNCj4+Pj4+Pj4g
+wqDCoMKgIGludCBzZW5kX2luX3Byb2dyZXNzOw0KPj4+Pj4+PiDCoMKgwqAgc3RydWN0IGJ0cmZz
+X3N1YnZvbHVtZV93cml0ZXJzICpzdWJ2X3dyaXRlcnM7DQo+Pj4+Pj4+IMKgwqDCoCBhdG9taWNf
+dCB3aWxsX2JlX3NuYXBzaG90dGVkOw0KPj4+Pj4+PiArwqDCoCBhdG9taWNfdCBzbmFwc2hvdF9m
+b3JjZV9jb3c7DQo+Pj4+Pj4+DQo+Pj4+Pj4+IMKgwqDCoCAvKiBGb3IgcWdyb3VwIG1ldGFkYXRh
+IHJlc2VydmVkIHNwYWNlICovDQo+Pj4+Pj4+IMKgwqDCoCBzcGlubG9ja190IHFncm91cF9tZXRh
+X3Jzdl9sb2NrOw0KPj4+Pj4+PiBkaWZmIC0tZ2l0IGEvZnMvYnRyZnMvZGlzay1pby5jIGIvZnMv
+YnRyZnMvZGlzay1pby5jDQo+Pj4+Pj4+IGluZGV4IDIwNTA5MmQuLjU1NzM5MTYgMTAwNjQ0DQo+
+Pj4+Pj4+IC0tLSBhL2ZzL2J0cmZzL2Rpc2staW8uYw0KPj4+Pj4+PiArKysgYi9mcy9idHJmcy9k
+aXNrLWlvLmMNCj4+Pj4+Pj4gQEAgLTEyMTYsNiArMTIxNiw3IEBAIHN0YXRpYyB2b2lkIF9fc2V0
+dXBfcm9vdChzdHJ1Y3QgYnRyZnNfcm9vdA0KPj4+Pj4+PiAqcm9vdCwgc3RydWN0IGJ0cmZzX2Zz
+X2luZm8gKmZzX2luZm8sDQo+Pj4+Pj4+IMKgwqDCoCBhdG9taWNfc2V0KCZyb290LT5sb2dfYmF0
+Y2gsIDApOw0KPj4+Pj4+PiDCoMKgwqAgcmVmY291bnRfc2V0KCZyb290LT5yZWZzLCAxKTsNCj4+
+Pj4+Pj4gwqDCoMKgIGF0b21pY19zZXQoJnJvb3QtPndpbGxfYmVfc25hcHNob3R0ZWQsIDApOw0K
+Pj4+Pj4+PiArwqDCoCBhdG9taWNfc2V0KCZyb290LT5zbmFwc2hvdF9mb3JjZV9jb3csIDApOw0K
+Pj4+Pj4+PiDCoMKgwqAgcm9vdC0+bG9nX3RyYW5zaWQgPSAwOw0KPj4+Pj4+PiDCoMKgwqAgcm9v
+dC0+bG9nX3RyYW5zaWRfY29tbWl0dGVkID0gLTE7DQo+Pj4+Pj4+IMKgwqDCoCByb290LT5sYXN0
+X2xvZ19jb21taXQgPSAwOw0KPj4+Pj4+PiBkaWZmIC0tZ2l0IGEvZnMvYnRyZnMvaW5vZGUuYyBi
+L2ZzL2J0cmZzL2lub2RlLmMNCj4+Pj4+Pj4gaW5kZXggZWJhNjFiYy4uMjYzYjg1MiAxMDA2NDQN
+Cj4+Pj4+Pj4gLS0tIGEvZnMvYnRyZnMvaW5vZGUuYw0KPj4+Pj4+PiArKysgYi9mcy9idHJmcy9p
+bm9kZS5jDQo+Pj4+Pj4+IEBAIC0xMjc1LDcgKzEyNzUsNyBAQCBzdGF0aWMgbm9pbmxpbmUgaW50
+DQo+Pj4+Pj4+IHJ1bl9kZWxhbGxvY19ub2NvdyhzdHJ1Y3QgaW5vZGUgKmlub2RlLA0KPj4+Pj4+
+PiDCoMKgwqAgdTY0IGRpc2tfbnVtX2J5dGVzOw0KPj4+Pj4+PiDCoMKgwqAgdTY0IHJhbV9ieXRl
+czsNCj4+Pj4+Pj4gwqDCoMKgIGludCBleHRlbnRfdHlwZTsNCj4+Pj4+Pj4gLcKgwqAgaW50IHJl
+dCwgZXJyOw0KPj4+Pj4+PiArwqDCoCBpbnQgcmV0Ow0KPj4+Pj4+PiDCoMKgwqAgaW50IHR5cGU7
+DQo+Pj4+Pj4+IMKgwqDCoCBpbnQgbm9jb3c7DQo+Pj4+Pj4+IMKgwqDCoCBpbnQgY2hlY2tfcHJl
+diA9IDE7DQo+Pj4+Pj4+IEBAIC0xNDA3LDExICsxNDA3LDkgQEAgc3RhdGljIG5vaW5saW5lIGlu
+dA0KPj4+Pj4+PiBydW5fZGVsYWxsb2Nfbm9jb3coc3RydWN0IGlub2RlICppbm9kZSwNCj4+Pj4+
+Pj4gwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCAqIGlmIHRoZXJlIGFy
+ZSBwZW5kaW5nIHNuYXBzaG90cyBmb3IgdGhpcyByb290LA0KPj4+Pj4+PiDCoMKgwqDCoMKgwqDC
+oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgICogd2UgZmFsbCBpbnRvIGNvbW1vbiBDT1cgd2F5
+Lg0KPj4+Pj4+PiDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgICovDQo+
+Pj4+Pj4+IC3CoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqAgaWYgKCFub2xvY2sp
+IHsNCj4+Pj4+Pj4gLcKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
+wqDCoMKgwqAgZXJyID0NCj4+Pj4+Pj4gYnRyZnNfc3RhcnRfd3JpdGVfbm9fc25hcHNob3R0aW5n
+KHJvb3QpOw0KPj4+Pj4+PiAtwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
+oMKgwqDCoMKgwqDCoCBpZiAoIWVycikNCj4+Pj4+Pj4gLcKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
+oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgIGdvdG8gb3V0X2No
+ZWNrOw0KPj4+Pj4+PiAtwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgIH0NCj4+
+Pj4+Pj4gK8KgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCBpZiAoIW5vbG9jayAm
+Jg0KPj4+Pj4+PiArwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
+oMKgwqDCoA0KPj4+Pj4+PiB1bmxpa2VseShhdG9taWNfcmVhZCgmcm9vdC0+c25hcHNob3RfZm9y
+Y2VfY293KSkpDQo+Pj4+Pj4+ICvCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
+oMKgwqDCoMKgwqDCoMKgIGdvdG8gb3V0X2NoZWNrOw0KPj4+Pj4+PiDCoMKgwqDCoMKgwqDCoMKg
+wqDCoMKgwqDCoMKgwqDCoMKgwqDCoCAvKg0KPj4+Pj4+PiDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
+wqDCoMKgwqDCoMKgwqDCoMKgICogZm9yY2UgY293IGlmIGNzdW0gZXhpc3RzIGluIHRoZSByYW5n
+ZS4NCj4+Pj4+Pj4gwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCAqIHRo
+aXMgZW5zdXJlIHRoYXQgY3N1bSBmb3IgYSBnaXZlbiBleHRlbnQgYXJlDQo+Pj4+Pj4+IEBAIC0x
+NDIwLDkgKzE0MTgsNiBAQCBzdGF0aWMgbm9pbmxpbmUgaW50DQo+Pj4+Pj4+IHJ1bl9kZWxhbGxv
+Y19ub2NvdyhzdHJ1Y3QgaW5vZGUgKmlub2RlLA0KPj4+Pj4+PiDCoMKgwqDCoMKgwqDCoMKgwqDC
+oMKgwqDCoMKgwqDCoMKgwqDCoCByZXQgPSBjc3VtX2V4aXN0X2luX3JhbmdlKGZzX2luZm8sIGRp
+c2tfYnl0ZW5yLA0KPj4+Pj4+PiDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
+oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqAgbnVt
+X2J5dGVzKTsNCj4+Pj4+Pj4gwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqAg
+aWYgKHJldCkgew0KPj4+Pj4+PiAtwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
+wqDCoMKgwqDCoMKgwqDCoCBpZiAoIW5vbG9jaykNCj4+Pj4+Pj4gLcKgwqDCoMKgwqDCoMKgwqDC
+oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgDQo+Pj4+
+Pj4+IGJ0cmZzX2VuZF93cml0ZV9ub19zbmFwc2hvdHRpbmcocm9vdCk7DQo+Pj4+Pj4+IC0NCj4+
+Pj4+Pj4gwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
+oMKgIC8qDQo+Pj4+Pj4+IMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
+oMKgwqDCoMKgwqDCoMKgICogcmV0IGNvdWxkIGJlIC1FSU8gaWYgdGhlIGFib3ZlDQo+Pj4+Pj4+
+IGZhaWxzIHRvIHJlYWQNCj4+Pj4+Pj4gwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
+oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqAgKiBtZXRhZGF0YS4NCj4+Pj4+Pj4gQEAgLTE0MzUsMTEg
+KzE0MzAsOCBAQCBzdGF0aWMgbm9pbmxpbmUgaW50DQo+Pj4+Pj4+IHJ1bl9kZWxhbGxvY19ub2Nv
+dyhzdHJ1Y3QgaW5vZGUgKmlub2RlLA0KPj4+Pj4+PiDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
+oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqAgV0FSTl9PTl9PTkNFKG5vbG9jayk7DQo+Pj4+
+Pj4+IMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
+oCBnb3RvIG91dF9jaGVjazsNCj4+Pj4+Pj4gwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
+wqDCoMKgwqAgfQ0KPj4+Pj4+PiAtwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
+IGlmICghYnRyZnNfaW5jX25vY293X3dyaXRlcnMoZnNfaW5mbywNCj4+Pj4+Pj4gZGlza19ieXRl
+bnIpKSB7DQo+Pj4+Pj4+IC3CoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
+wqDCoMKgwqDCoMKgIGlmICghbm9sb2NrKQ0KPj4+Pj4+PiAtwqDCoMKgwqDCoMKgwqDCoMKgwqDC
+oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqANCj4+Pj4+Pj4g
+YnRyZnNfZW5kX3dyaXRlX25vX3NuYXBzaG90dGluZyhyb290KTsNCj4+Pj4+Pj4gK8KgwqDCoMKg
+wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCBpZiAoIWJ0cmZzX2luY19ub2Nvd193cml0ZXJz
+KGZzX2luZm8sDQo+Pj4+Pj4+IGRpc2tfYnl0ZW5yKSkNCj4+Pj4+Pj4gwqDCoMKgwqDCoMKgwqDC
+oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgIGdvdG8gb3V0X2NoZWNrOw0K
+Pj4+Pj4+PiAtwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgIH0NCj4+Pj4+Pj4g
+wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqAgbm9jb3cgPSAxOw0KPj4+Pj4+
+PiDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgIH0gZWxzZSBpZiAoZXh0ZW50X3R5cGUgPT0gQlRSRlNf
+RklMRV9FWFRFTlRfSU5MSU5FKSB7DQo+Pj4+Pj4+IMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
+wqDCoMKgwqDCoMKgIGV4dGVudF9lbmQgPSBmb3VuZF9rZXkub2Zmc2V0ICsNCj4+Pj4+Pj4gQEAg
+LTE0NTMsOCArMTQ0NSw2IEBAIHN0YXRpYyBub2lubGluZSBpbnQNCj4+Pj4+Pj4gcnVuX2RlbGFs
+bG9jX25vY293KHN0cnVjdCBpbm9kZSAqaW5vZGUsDQo+Pj4+Pj4+IMKgb3V0X2NoZWNrOg0KPj4+
+Pj4+PiDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgIGlmIChleHRlbnRfZW5kIDw9IHN0YXJ0KSB7DQo+
+Pj4+Pj4+IMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgIHBhdGgtPnNsb3Rz
+WzBdKys7DQo+Pj4+Pj4+IC3CoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqAgaWYg
+KCFub2xvY2sgJiYgbm9jb3cpDQo+Pj4+Pj4+IC3CoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
+wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgIGJ0cmZzX2VuZF93cml0ZV9ub19zbmFwc2hvdHRpbmco
+cm9vdCk7DQo+Pj4+Pj4+IMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgIGlm
+IChub2NvdykNCj4+Pj4+Pj4gwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
+oMKgwqDCoMKgwqDCoMKgIGJ0cmZzX2RlY19ub2Nvd193cml0ZXJzKGZzX2luZm8sDQo+Pj4+Pj4+
+IGRpc2tfYnl0ZW5yKTsNCj4+Pj4+Pj4gwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
+oMKgwqAgZ290byBuZXh0X3Nsb3Q7DQo+Pj4+Pj4+IEBAIC0xNDc2LDggKzE0NjYsNiBAQCBzdGF0
+aWMgbm9pbmxpbmUgaW50DQo+Pj4+Pj4+IHJ1bl9kZWxhbGxvY19ub2NvdyhzdHJ1Y3QgaW5vZGUg
+Kmlub2RlLA0KPj4+Pj4+PiDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
+wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCBlbmQsIHBhZ2Vfc3RhcnRl
+ZCwNCj4+Pj4+Pj4gbnJfd3JpdHRlbiwgMSwNCj4+Pj4+Pj4gwqDCoMKgwqDCoMKgwqDCoMKgwqDC
+oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
+wqAgTlVMTCk7DQo+Pj4+Pj4+IMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
+IGlmIChyZXQpIHsNCj4+Pj4+Pj4gLcKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
+oMKgwqDCoMKgwqDCoMKgwqAgaWYgKCFub2xvY2sgJiYgbm9jb3cpDQo+Pj4+Pj4+IC3CoMKgwqDC
+oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
+wqDCoA0KPj4+Pj4+PiBidHJmc19lbmRfd3JpdGVfbm9fc25hcHNob3R0aW5nKHJvb3QpOw0KPj4+
+Pj4+PiDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
+wqAgaWYgKG5vY293KQ0KPj4+Pj4+PiDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
+wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgIGJ0cmZzX2RlY19ub2Nvd193cml0
+ZXJzKGZzX2luZm8sDQo+Pj4+Pj4+IMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
+oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
+wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqANCj4+Pj4+Pj4gZGlza19ieXRlbnIpOw0KPj4+Pj4+
+PiBAQCAtMTQ5Nyw4ICsxNDg1LDYgQEAgc3RhdGljIG5vaW5saW5lIGludA0KPj4+Pj4+PiBydW5f
+ZGVsYWxsb2Nfbm9jb3coc3RydWN0IGlub2RlICppbm9kZSwNCj4+Pj4+Pj4gwqDCoMKgwqDCoMKg
+wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
+oMKgwqAgcmFtX2J5dGVzLA0KPj4+Pj4+PiBCVFJGU19DT01QUkVTU19OT05FLA0KPj4+Pj4+PiDC
+oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
+wqDCoMKgwqDCoMKgwqDCoCBCVFJGU19PUkRFUkVEX1BSRUFMTE9DKTsNCj4+Pj4+Pj4gwqDCoMKg
+wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqAgaWYgKElTX0VSUihlbSkpIHsNCj4+Pj4+
+Pj4gLcKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqAg
+aWYgKCFub2xvY2sgJiYgbm9jb3cpDQo+Pj4+Pj4+IC3CoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
+oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoA0KPj4+Pj4+PiBidHJm
+c19lbmRfd3JpdGVfbm9fc25hcHNob3R0aW5nKHJvb3QpOw0KPj4+Pj4+PiDCoMKgwqDCoMKgwqDC
+oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqAgaWYgKG5vY293KQ0KPj4+
+Pj4+PiDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
+wqDCoMKgwqDCoMKgwqDCoMKgIGJ0cmZzX2RlY19ub2Nvd193cml0ZXJzKGZzX2luZm8sDQo+Pj4+
+Pj4+IMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
+oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
+wqDCoMKgwqANCj4+Pj4+Pj4gZGlza19ieXRlbnIpOw0KPj4+Pj4+PiBAQCAtMTUzNyw4ICsxNTIz
+LDYgQEAgc3RhdGljIG5vaW5saW5lIGludA0KPj4+Pj4+PiBydW5fZGVsYWxsb2Nfbm9jb3coc3Ry
+dWN0IGlub2RlICppbm9kZSwNCj4+Pj4+Pj4gwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
+wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqAgRVhURU5U
+X0NMRUFSX0RBVEFfUkVTViwNCj4+Pj4+Pj4gwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
+wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqAgUEFHRV9V
+TkxPQ0sgfA0KPj4+Pj4+PiBQQUdFX1NFVF9QUklWQVRFMik7DQo+Pj4+Pj4+DQo+Pj4+Pj4+IC3C
+oMKgwqDCoMKgwqDCoMKgwqDCoCBpZiAoIW5vbG9jayAmJiBub2NvdykNCj4+Pj4+Pj4gLcKgwqDC
+oMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCBidHJmc19lbmRfd3JpdGVfbm9fc25hcHNo
+b3R0aW5nKHJvb3QpOw0KPj4+Pj4+PiDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgIGN1cl9vZmZzZXQg
+PSBleHRlbnRfZW5kOw0KPj4+Pj4+Pg0KPj4+Pj4+PiDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgIC8q
+DQo+Pj4+Pj4+IGRpZmYgLS1naXQgYS9mcy9idHJmcy9pb2N0bC5jIGIvZnMvYnRyZnMvaW9jdGwu
+Yw0KPj4+Pj4+PiBpbmRleCBiMDc3NTQ0Li4zMzFiNDk1IDEwMDY0NA0KPj4+Pj4+PiAtLS0gYS9m
+cy9idHJmcy9pb2N0bC5jDQo+Pj4+Pj4+ICsrKyBiL2ZzL2J0cmZzL2lvY3RsLmMNCj4+Pj4+Pj4g
+QEAgLTc2MSw2ICs3NjEsNyBAQCBzdGF0aWMgaW50IGNyZWF0ZV9zbmFwc2hvdChzdHJ1Y3QgYnRy
+ZnNfcm9vdA0KPj4+Pj4+PiAqcm9vdCwgc3RydWN0IGlub2RlICpkaXIsDQo+Pj4+Pj4+IMKgwqDC
+oCBzdHJ1Y3QgYnRyZnNfcGVuZGluZ19zbmFwc2hvdCAqcGVuZGluZ19zbmFwc2hvdDsNCj4+Pj4+
+Pj4gwqDCoMKgIHN0cnVjdCBidHJmc190cmFuc19oYW5kbGUgKnRyYW5zOw0KPj4+Pj4+PiDCoMKg
+wqAgaW50IHJldDsNCj4+Pj4+Pj4gK8KgwqAgYm9vbCBzbmFwc2hvdF9mb3JjZV9jb3cgPSBmYWxz
+ZTsNCj4+Pj4+Pj4NCj4+Pj4+Pj4gwqDCoMKgIGlmICghdGVzdF9iaXQoQlRSRlNfUk9PVF9SRUZf
+Q09XUywgJnJvb3QtPnN0YXRlKSkNCj4+Pj4+Pj4gwqDCoMKgwqDCoMKgwqDCoMKgwqDCoCByZXR1
+cm4gLUVJTlZBTDsNCj4+Pj4+Pj4gQEAgLTc3Nyw2ICs3NzgsMTEgQEAgc3RhdGljIGludCBjcmVh
+dGVfc25hcHNob3Qoc3RydWN0IGJ0cmZzX3Jvb3QNCj4+Pj4+Pj4gKnJvb3QsIHN0cnVjdCBpbm9k
+ZSAqZGlyLA0KPj4+Pj4+PiDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgIGdvdG8gZnJlZV9wZW5kaW5n
+Ow0KPj4+Pj4+PiDCoMKgwqAgfQ0KPj4+Pj4+Pg0KPj4+Pj4+PiArwqDCoCAvKg0KPj4+Pj4+PiAr
+wqDCoMKgICogRm9yY2UgbmV3IGJ1ZmZlcmVkIHdyaXRlcyB0byByZXNlcnZlIHNwYWNlIGV2ZW4g
+d2hlbiBOT0NPVyBpcw0KPj4+Pj4+PiArwqDCoMKgICogcG9zc2libGUuIFRoaXMgaXMgdG8gYXZv
+aWQgbGF0ZXIgd3JpdGViYWNrIChydW5uaW5nIGRlYWxsb2MpDQo+Pj4+Pj4+ICvCoMKgwqAgKiB0
+byBmYWxsYmFjayB0byBDT1cgbW9kZSBhbmQgdW5leHBlY3RlZGx5IGZhaWwgd2l0aCBFTk9TUEMu
+DQo+Pj4+Pj4+ICvCoMKgwqAgKi8NCj4+Pj4+Pj4gwqDCoMKgIGF0b21pY19pbmMoJnJvb3QtPndp
+bGxfYmVfc25hcHNob3R0ZWQpOw0KPj4+Pj4+PiDCoMKgwqAgc21wX21iX19hZnRlcl9hdG9taWMo
+KTsNCj4+Pj4+Pj4gwqDCoMKgIC8qIHdhaXQgZm9yIG5vIHNuYXBzaG90IHdyaXRlcyAqLw0KPj4+
+Pj4+PiBAQCAtNzg3LDYgKzc5MywxNCBAQCBzdGF0aWMgaW50IGNyZWF0ZV9zbmFwc2hvdChzdHJ1
+Y3QgYnRyZnNfcm9vdA0KPj4+Pj4+PiAqcm9vdCwgc3RydWN0IGlub2RlICpkaXIsDQo+Pj4+Pj4+
+IMKgwqDCoCBpZiAocmV0KQ0KPj4+Pj4+PiDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgIGdvdG8gZGVj
+X2FuZF9mcmVlOw0KPj4+Pj4+Pg0KPj4+Pj4+PiArwqDCoCAvKg0KPj4+Pj4+PiArwqDCoMKgICog
+QWxsIHByZXZpb3VzIHdyaXRlcyBoYXZlIHN0YXJ0ZWQgd3JpdGViYWNrIGluIE5PQ09XIG1vZGUs
+DQo+Pj4+Pj4+IHNvIG5vdw0KPj4+Pj4+PiArwqDCoMKgICogd2UgZm9yY2UgZnV0dXJlIHdyaXRl
+cyB0byBmYWxsYmFjayB0byBDT1cgbW9kZSBkdXJpbmcNCj4+Pj4+Pj4gc25hcHNob3QNCj4+Pj4+
+Pj4gK8KgwqDCoCAqIGNyZWF0aW9uLg0KPj4+Pj4+PiArwqDCoMKgICovDQo+Pj4+Pj4+ICvCoMKg
+IGF0b21pY19pbmMoJnJvb3QtPnNuYXBzaG90X2ZvcmNlX2Nvdyk7DQo+Pj4+Pj4+ICvCoMKgIHNu
+YXBzaG90X2ZvcmNlX2NvdyA9IHRydWU7DQo+Pj4+Pj4+ICsNCj4+Pj4+Pj4gwqDCoMKgIGJ0cmZz
+X3dhaXRfb3JkZXJlZF9leHRlbnRzKHJvb3QsIFU2NF9NQVgsIDAsICh1NjQpLTEpOw0KPj4+Pj4+
+Pg0KPj4+Pj4+PiDCoMKgwqAgYnRyZnNfaW5pdF9ibG9ja19yc3YoJnBlbmRpbmdfc25hcHNob3Qt
+PmJsb2NrX3JzdiwNCj4+Pj4+Pj4gQEAgLTg1MSw2ICs4NjUsOCBAQCBzdGF0aWMgaW50IGNyZWF0
+ZV9zbmFwc2hvdChzdHJ1Y3QgYnRyZnNfcm9vdA0KPj4+Pj4+PiAqcm9vdCwgc3RydWN0IGlub2Rl
+ICpkaXIsDQo+Pj4+Pj4+IMKgZmFpbDoNCj4+Pj4+Pj4gwqDCoMKgIGJ0cmZzX3N1YnZvbHVtZV9y
+ZWxlYXNlX21ldGFkYXRhKGZzX2luZm8sDQo+Pj4+Pj4+ICZwZW5kaW5nX3NuYXBzaG90LT5ibG9j
+a19yc3YpOw0KPj4+Pj4+PiDCoGRlY19hbmRfZnJlZToNCj4+Pj4+Pj4gK8KgwqAgaWYgKHNuYXBz
+aG90X2ZvcmNlX2NvdykNCj4+Pj4+Pj4gK8KgwqDCoMKgwqDCoMKgwqDCoMKgIGF0b21pY19kZWMo
+JnJvb3QtPnNuYXBzaG90X2ZvcmNlX2Nvdyk7DQo+Pj4+Pj4+IMKgwqDCoCBpZiAoYXRvbWljX2Rl
+Y19hbmRfdGVzdCgmcm9vdC0+d2lsbF9iZV9zbmFwc2hvdHRlZCkpDQo+Pj4+Pj4+IMKgwqDCoMKg
+wqDCoMKgwqDCoMKgwqAgd2FrZV91cF92YXIoJnJvb3QtPndpbGxfYmVfc25hcHNob3R0ZWQpOw0K
+Pj4+Pj4+PiDCoGZyZWVfcGVuZGluZzoNCj4+Pj4+Pj4NCj4+Pj4+Pg0KPj4+DQo+Pj4NCj4+Pg0K
+PiANCg==

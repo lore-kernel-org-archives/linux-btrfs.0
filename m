@@ -2,121 +2,79 @@ Return-Path: <SRS0=BNt3=S4=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+X-Spam-Status: No, score=-13.0 required=3.0
+	tests=HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PULL_REQUEST,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B2ACDC43218
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 11:09:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2801AC43218
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 11:19:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 587E7206DD
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 11:09:44 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=synology.com header.i=@synology.com header.b="NSE313h+"
+	by mail.kernel.org (Postfix) with ESMTP id 0272F206C1
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Apr 2019 11:19:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725966AbfDZLJn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 26 Apr 2019 07:09:43 -0400
-Received: from mail.synology.com ([211.23.38.101]:35316 "EHLO synology.com"
+        id S1726013AbfDZLTj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 26 Apr 2019 07:19:39 -0400
+Received: from mx2.suse.de ([195.135.220.15]:49472 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725877AbfDZLJm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Apr 2019 07:09:42 -0400
-Received: from localhost.localdomain (unknown [10.17.32.181])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by synology.com (Postfix) with ESMTPSA id 4E9581FC104FC;
-        Fri, 26 Apr 2019 19:09:40 +0800 (CST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=synology.com; s=123;
-        t=1556276980; bh=qAWipAkXRojyQuYPu7pQlxLnqYY+ezKZS0/4cbJv5yM=;
-        h=From:To:Cc:Subject:Date;
-        b=NSE313h+9ZqJVPpt/XrNCZ/JetAO9lWiAXYHLEgbCq0rC2OxqF6GCyM+nUP7Xg3VH
-         Hc6kisF2hq1tXuSvkNTQc2Oe8dZQ/eyETxLoR6ssbrgJKRxuqkv8tAKbSWRJEawvI4
-         eqTNmePaN7hKTXnBKJHIIjjqmzl4sJxc/7iidXPI=
-From:   robbieko <robbieko@synology.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Robbie Ko <robbieko@synology.com>
-Subject: [PATCH] Btrfs: avoid allocating too many data chunks on massive concurrent write
-Date:   Fri, 26 Apr 2019 19:09:22 +0800
-Message-Id: <20190426110922.21888-1-robbieko@synology.com>
-X-Mailer: git-send-email 2.17.1
-X-Synology-MCP-Status: no
-X-Synology-Spam-Flag: no
-X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
-X-Synology-Virus-Status: no
+        id S1725901AbfDZLTj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Apr 2019 07:19:39 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 1FFADAC10;
+        Fri, 26 Apr 2019 11:19:38 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id EEC94DA847; Fri, 26 Apr 2019 13:20:41 +0200 (CEST)
+From:   David Sterba <dsterba@suse.com>
+To:     torvalds@linux-foundation.org
+Cc:     David Sterba <dsterba@suse.com>, clm@fb.com,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: [GIT PULL] Btrfs fix for 5.1-rc7
+Date:   Fri, 26 Apr 2019 13:20:36 +0200
+Message-Id: <cover.1556276662.git.dsterba@suse.com>
+X-Mailer: git-send-email 2.21.0
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Robbie Ko <robbieko@synology.com>
+Hi,
 
-I found a issue when btrfs allocates much more space than it actual needed
-on massive concurrent writes. That may consume all free space and when it
-need to allocate more space for metadata that result in ENOSPC.
+one patch to fix a crash in io submission path, due to memory allocation
+errors. In short, the multipage bio work that landed in 5.1 caused
+larger bios that in turn require larger temporary memory for checksums.
+The patch is a workaround, we're going to rework the allocation so it
+does not require the vmalloc fallback.
 
-I did a test that issue by 5000 dd to do write stress concurrently.
+It took a while to identify that it's caused by patches in 5.1 and not a
+patchset that did some changes in error handling in the code. I've
+tested it on various memory/cpu combinations, it could hit OOM but does
+not crash.
 
-The space info after ENOSPC:
-Overall:
-Device size: 926.91GiB
-Device allocated: 926.91GiB
-Device unallocated: 1.00MiB
-Device missing: 0.00B
-Used: 211.59GiB
-Free (estimated): 714.18GiB (min: 714.18GiB)
-Data ratio: 1.00
-Metadata ratio: 2.00
-Global reserve: 512.00MiB (used: 0.00B)
+The timestamp of the patch is less than a day due to updates in the
+changelog, tests were running meanwhile.
 
-Data,single: Size:923.77GiB, Used:209.59GiB
-/dev/devname 923.77GiB
+Please pull, thanks.
 
-Metadata,DUP: Size:1.50GiB, Used:1022.50MiB
-/dev/devname 3.00GiB
+----------------------------------------------------------------
+The following changes since commit 272e5326c7837697882ce3162029ba893059b616:
 
-System,DUP: Size:72.00MiB, Used:128.00KiB
-/dev/devname 144.00MiB
+  btrfs: prop: fix vanished compression property after failed set (2019-04-04 17:57:53 +0200)
 
-We can see that the Metadata space (1022.50MiB + 512.00MiB) is almost full.
-But Data allocated much more space (923.77GiB) than it actually needed
-(209.59GiB).
+are available in the Git repository at:
 
-When the data space is not enough, this 5000 dd process will call
-do_chunk_alloc() to allocate more space.
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.1-rc6-tag
 
-In the while loop of do_chunk_alloc, the variable force will be changed
-to CHUNK_ALLOC_FORCE in second run and should_alloc_chunk() will always
-return true when force is CHUNK_ALLOC_FORCE. That means every concurrent
-dd process will allocate a chunk in do_chunk_alloc().
+for you to fetch changes up to a3d46aea46f99d134b4e0726e4826b824c3e5980:
 
-Fix this by keeping original value of force and re-assign it to force in
-the end of the loop.
+  btrfs: Switch memory allocations in async csum calculation path to kvmalloc (2019-04-25 14:17:38 +0200)
 
-Signed-off-by: Robbie Ko <robbieko@synology.com>
----
- fs/btrfs/extent-tree.c | 2 ++
- 1 file changed, 2 insertions(+)
+----------------------------------------------------------------
+Nikolay Borisov (1):
+      btrfs: Switch memory allocations in async csum calculation path to kvmalloc
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index c5880329ae37..73856f70db31 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4511,6 +4511,7 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans, u64 flags,
- 	bool wait_for_alloc = false;
- 	bool should_alloc = false;
- 	int ret = 0;
-+	int orig_force = force;
- 
- 	/* Don't re-enter if we're already allocating a chunk */
- 	if (trans->allocating_chunk)
-@@ -4544,6 +4545,7 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans, u64 flags,
- 			 */
- 			wait_for_alloc = true;
- 			spin_unlock(&space_info->lock);
-+			force = orig_force;
- 			mutex_lock(&fs_info->chunk_mutex);
- 			mutex_unlock(&fs_info->chunk_mutex);
- 		} else {
--- 
-2.17.1
-
+ fs/btrfs/file-item.c    | 15 +++++++++++----
+ fs/btrfs/ordered-data.c |  3 ++-
+ 2 files changed, 13 insertions(+), 5 deletions(-)

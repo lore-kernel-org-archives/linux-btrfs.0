@@ -6,31 +6,31 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C5198C43219
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Apr 2019 17:27:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AC4DBC004C9
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Apr 2019 17:27:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9E3432075E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Apr 2019 17:27:33 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 85BEB2075E
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Apr 2019 17:27:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728982AbfD2R1c (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 29 Apr 2019 13:27:32 -0400
-Received: from mx2.suse.de ([195.135.220.15]:58270 "EHLO mx1.suse.de"
+        id S1728964AbfD2R11 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 29 Apr 2019 13:27:27 -0400
+Received: from mx2.suse.de ([195.135.220.15]:58202 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728748AbfD2R13 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Apr 2019 13:27:29 -0400
+        id S1728928AbfD2R1X (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 29 Apr 2019 13:27:23 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 67F39ADE3;
-        Mon, 29 Apr 2019 17:27:28 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 2A3BAADD7;
+        Mon, 29 Apr 2019 17:27:22 +0000 (UTC)
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-btrfs@vger.kernel.org
 Cc:     kilobyte@angband.pl, linux-fsdevel@vger.kernel.org, jack@suse.cz,
         david@fromorbit.com, willy@infradead.org, hch@lst.de,
         darrick.wong@oracle.com, dsterba@suse.cz, nborisov@suse.com,
         linux-nvdimm@lists.01.org, Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 11/18] btrfs: add dax mmap support
-Date:   Mon, 29 Apr 2019 12:26:42 -0500
-Message-Id: <20190429172649.8288-12-rgoldwyn@suse.de>
+Subject: [PATCH 08/18] dax: memcpy page in case of IOMAP_DAX_COW for mmap faults
+Date:   Mon, 29 Apr 2019 12:26:39 -0500
+Message-Id: <20190429172649.8288-9-rgoldwyn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20190429172649.8288-1-rgoldwyn@suse.de>
 References: <20190429172649.8288-1-rgoldwyn@suse.de>
@@ -41,96 +41,87 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-Add a new vm_operations struct btrfs_dax_vm_ops
-specifically for dax files.
+Change dax_iomap_pfn to return the address as well in order to
+use it for performing a memcpy in case the type is IOMAP_DAX_COW.
+We don't handle PMD because btrfs does not support hugepages.
 
-Since we will be removing(nulling) readpages/writepages for dax
-return ENOEXEC only for non-dax files.
+Question:
+The sequence of bdev_dax_pgoff() and dax_direct_access() is
+used multiple times to calculate address and pfn's. Would it make
+sense to call it while calculating address as well to reduce code?
 
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 ---
- fs/btrfs/ctree.h |  1 +
- fs/btrfs/dax.c   | 13 ++++++++++++-
- fs/btrfs/file.c  | 18 ++++++++++++++++--
- 3 files changed, 29 insertions(+), 3 deletions(-)
+ fs/dax.c | 19 +++++++++++++++----
+ 1 file changed, 15 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index eec01eb92f33..2b7bdabb44f8 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3802,6 +3802,7 @@ int btree_readahead_hook(struct extent_buffer *eb, int err);
- /* dax.c */
- ssize_t btrfs_file_dax_read(struct kiocb *iocb, struct iov_iter *to);
- ssize_t btrfs_file_dax_write(struct kiocb *iocb, struct iov_iter *from);
-+vm_fault_t btrfs_dax_fault(struct vm_fault *vmf);
- #else
- static inline ssize_t btrfs_file_dax_write(struct kiocb *iocb, struct iov_iter *from)
- {
-diff --git a/fs/btrfs/dax.c b/fs/btrfs/dax.c
-index f5cc9bcdbf14..de957d681e16 100644
---- a/fs/btrfs/dax.c
-+++ b/fs/btrfs/dax.c
-@@ -139,7 +139,7 @@ static int btrfs_iomap_begin(struct inode *inode, loff_t pos,
- 
- 	iomap->addr = em->block_start + diff;
- 	/* Check if we really need to copy data from old extent */
--	if (bi && !bi->nocow && (offset || pos + length < bi->end)) {
-+	if (bi && !bi->nocow && (offset || pos + length < bi->end || flags & IOMAP_FAULT)) {
- 		iomap->type = IOMAP_DAX_COW;
- 		if (srcblk) {
- 			sector_t sector = (srcblk + (pos & PAGE_MASK) -
-@@ -216,4 +216,15 @@ ssize_t btrfs_file_dax_write(struct kiocb *iocb, struct iov_iter *iter)
- 	}
- 	return ret;
+diff --git a/fs/dax.c b/fs/dax.c
+index 610bfa861a28..718b1632a39d 100644
+--- a/fs/dax.c
++++ b/fs/dax.c
+@@ -984,7 +984,7 @@ static sector_t dax_iomap_sector(struct iomap *iomap, loff_t pos)
  }
-+
-+vm_fault_t btrfs_dax_fault(struct vm_fault *vmf)
-+{
-+	vm_fault_t ret;
-+	pfn_t pfn;
-+	ret = dax_iomap_fault(vmf, PE_SIZE_PTE, &pfn, NULL, &btrfs_iomap_ops);
-+	if (ret & VM_FAULT_NEEDDSYNC)
-+		ret = dax_finish_sync_fault(vmf, PE_SIZE_PTE, pfn);
-+
-+	return ret;
-+}
- #endif /* CONFIG_FS_DAX */
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index a795023e26ca..9d5a3c99a6b9 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2214,15 +2214,29 @@ static const struct vm_operations_struct btrfs_file_vm_ops = {
- 	.page_mkwrite	= btrfs_page_mkwrite,
- };
  
-+#ifdef CONFIG_FS_DAX
-+static const struct vm_operations_struct btrfs_dax_vm_ops = {
-+	.fault          = btrfs_dax_fault,
-+	.page_mkwrite   = btrfs_dax_fault,
-+	.pfn_mkwrite    = btrfs_dax_fault,
-+};
-+#else
-+#define btrfs_dax_vm_ops btrfs_file_vm_ops
-+#endif
-+
- static int btrfs_file_mmap(struct file	*filp, struct vm_area_struct *vma)
+ static int dax_iomap_pfn(struct iomap *iomap, loff_t pos, size_t size,
+-			 pfn_t *pfnp)
++			 pfn_t *pfnp, void **addr)
  {
- 	struct address_space *mapping = filp->f_mapping;
-+	struct inode *inode = file_inode(filp);
+ 	const sector_t sector = dax_iomap_sector(iomap, pos);
+ 	pgoff_t pgoff;
+@@ -996,7 +996,7 @@ static int dax_iomap_pfn(struct iomap *iomap, loff_t pos, size_t size,
+ 		return rc;
+ 	id = dax_read_lock();
+ 	length = dax_direct_access(iomap->dax_dev, pgoff, PHYS_PFN(size),
+-				   NULL, pfnp);
++				   addr, pfnp);
+ 	if (length < 0) {
+ 		rc = length;
+ 		goto out;
+@@ -1286,6 +1286,7 @@ static vm_fault_t dax_iomap_pte_fault(struct vm_fault *vmf, pfn_t *pfnp,
+ 	XA_STATE(xas, &mapping->i_pages, vmf->pgoff);
+ 	struct inode *inode = mapping->host;
+ 	unsigned long vaddr = vmf->address;
++	void *addr;
+ 	loff_t pos = (loff_t)vmf->pgoff << PAGE_SHIFT;
+ 	struct iomap iomap = { 0 };
+ 	unsigned flags = IOMAP_FAULT;
+@@ -1375,16 +1376,26 @@ static vm_fault_t dax_iomap_pte_fault(struct vm_fault *vmf, pfn_t *pfnp,
+ 	sync = dax_fault_is_synchronous(flags, vma, &iomap);
  
--	if (!mapping->a_ops->readpage)
-+	if (!IS_DAX(inode) && !mapping->a_ops->readpage)
- 		return -ENOEXEC;
+ 	switch (iomap.type) {
++	case IOMAP_DAX_COW:
+ 	case IOMAP_MAPPED:
+ 		if (iomap.flags & IOMAP_F_NEW) {
+ 			count_vm_event(PGMAJFAULT);
+ 			count_memcg_event_mm(vma->vm_mm, PGMAJFAULT);
+ 			major = VM_FAULT_MAJOR;
+ 		}
+-		error = dax_iomap_pfn(&iomap, pos, PAGE_SIZE, &pfn);
++		error = dax_iomap_pfn(&iomap, pos, PAGE_SIZE, &pfn, &addr);
+ 		if (error < 0)
+ 			goto error_finish_iomap;
  
- 	file_accessed(filp);
--	vma->vm_ops = &btrfs_file_vm_ops;
-+	if (IS_DAX(inode))
-+		vma->vm_ops = &btrfs_dax_vm_ops;
-+	else
-+		vma->vm_ops = &btrfs_file_vm_ops;
++		if (iomap.type == IOMAP_DAX_COW) {
++			if (iomap.inline_data) {
++				error = memcpy_mcsafe(addr, iomap.inline_data,
++					      PAGE_SIZE);
++				if (error < 0)
++					goto error_finish_iomap;
++			} else
++				memset(addr, 0, PAGE_SIZE);
++		}
+ 		entry = dax_insert_entry(&xas, mapping, vmf, entry, pfn,
+ 						 0, write && !sync);
  
- 	return 0;
- }
+@@ -1597,7 +1608,7 @@ static vm_fault_t dax_iomap_pmd_fault(struct vm_fault *vmf, pfn_t *pfnp,
+ 
+ 	switch (iomap.type) {
+ 	case IOMAP_MAPPED:
+-		error = dax_iomap_pfn(&iomap, pos, PMD_SIZE, &pfn);
++		error = dax_iomap_pfn(&iomap, pos, PMD_SIZE, &pfn, NULL);
+ 		if (error < 0)
+ 			goto finish_iomap;
+ 
 -- 
 2.16.4
 

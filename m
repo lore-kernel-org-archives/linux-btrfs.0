@@ -6,31 +6,31 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AC4DBC004C9
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Apr 2019 17:27:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CA6B8C43219
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Apr 2019 17:27:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 85BEB2075E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Apr 2019 17:27:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A383C2075E
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Apr 2019 17:27:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728964AbfD2R11 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 29 Apr 2019 13:27:27 -0400
-Received: from mx2.suse.de ([195.135.220.15]:58202 "EHLO mx1.suse.de"
+        id S1728996AbfD2R1e (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 29 Apr 2019 13:27:34 -0400
+Received: from mx2.suse.de ([195.135.220.15]:58288 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728928AbfD2R1X (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Apr 2019 13:27:23 -0400
+        id S1728954AbfD2R1b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 29 Apr 2019 13:27:31 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 2A3BAADD7;
-        Mon, 29 Apr 2019 17:27:22 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 6BA01AE29;
+        Mon, 29 Apr 2019 17:27:30 +0000 (UTC)
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-btrfs@vger.kernel.org
 Cc:     kilobyte@angband.pl, linux-fsdevel@vger.kernel.org, jack@suse.cz,
         david@fromorbit.com, willy@infradead.org, hch@lst.de,
         darrick.wong@oracle.com, dsterba@suse.cz, nborisov@suse.com,
         linux-nvdimm@lists.01.org, Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 08/18] dax: memcpy page in case of IOMAP_DAX_COW for mmap faults
-Date:   Mon, 29 Apr 2019 12:26:39 -0500
-Message-Id: <20190429172649.8288-9-rgoldwyn@suse.de>
+Subject: [PATCH 12/18] btrfs: allow MAP_SYNC mmap
+Date:   Mon, 29 Apr 2019 12:26:43 -0500
+Message-Id: <20190429172649.8288-13-rgoldwyn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20190429172649.8288-1-rgoldwyn@suse.de>
 References: <20190429172649.8288-1-rgoldwyn@suse.de>
@@ -39,89 +39,38 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+From: Adam Borowski <kilobyte@angband.pl>
 
-Change dax_iomap_pfn to return the address as well in order to
-use it for performing a memcpy in case the type is IOMAP_DAX_COW.
-We don't handle PMD because btrfs does not support hugepages.
-
-Question:
-The sequence of bdev_dax_pgoff() and dax_direct_access() is
-used multiple times to calculate address and pfn's. Would it make
-sense to call it while calculating address as well to reduce code?
-
+Used by userspace to detect DAX.
+[rgoldwyn@suse.com: Added CONFIG_FS_DAX around mmap_supported_flags]
+Signed-off-by: Adam Borowski <kilobyte@angband.pl>
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 ---
- fs/dax.c | 19 +++++++++++++++----
- 1 file changed, 15 insertions(+), 4 deletions(-)
+ fs/btrfs/file.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/fs/dax.c b/fs/dax.c
-index 610bfa861a28..718b1632a39d 100644
---- a/fs/dax.c
-+++ b/fs/dax.c
-@@ -984,7 +984,7 @@ static sector_t dax_iomap_sector(struct iomap *iomap, loff_t pos)
- }
- 
- static int dax_iomap_pfn(struct iomap *iomap, loff_t pos, size_t size,
--			 pfn_t *pfnp)
-+			 pfn_t *pfnp, void **addr)
- {
- 	const sector_t sector = dax_iomap_sector(iomap, pos);
- 	pgoff_t pgoff;
-@@ -996,7 +996,7 @@ static int dax_iomap_pfn(struct iomap *iomap, loff_t pos, size_t size,
- 		return rc;
- 	id = dax_read_lock();
- 	length = dax_direct_access(iomap->dax_dev, pgoff, PHYS_PFN(size),
--				   NULL, pfnp);
-+				   addr, pfnp);
- 	if (length < 0) {
- 		rc = length;
- 		goto out;
-@@ -1286,6 +1286,7 @@ static vm_fault_t dax_iomap_pte_fault(struct vm_fault *vmf, pfn_t *pfnp,
- 	XA_STATE(xas, &mapping->i_pages, vmf->pgoff);
- 	struct inode *inode = mapping->host;
- 	unsigned long vaddr = vmf->address;
-+	void *addr;
- 	loff_t pos = (loff_t)vmf->pgoff << PAGE_SHIFT;
- 	struct iomap iomap = { 0 };
- 	unsigned flags = IOMAP_FAULT;
-@@ -1375,16 +1376,26 @@ static vm_fault_t dax_iomap_pte_fault(struct vm_fault *vmf, pfn_t *pfnp,
- 	sync = dax_fault_is_synchronous(flags, vma, &iomap);
- 
- 	switch (iomap.type) {
-+	case IOMAP_DAX_COW:
- 	case IOMAP_MAPPED:
- 		if (iomap.flags & IOMAP_F_NEW) {
- 			count_vm_event(PGMAJFAULT);
- 			count_memcg_event_mm(vma->vm_mm, PGMAJFAULT);
- 			major = VM_FAULT_MAJOR;
- 		}
--		error = dax_iomap_pfn(&iomap, pos, PAGE_SIZE, &pfn);
-+		error = dax_iomap_pfn(&iomap, pos, PAGE_SIZE, &pfn, &addr);
- 		if (error < 0)
- 			goto error_finish_iomap;
- 
-+		if (iomap.type == IOMAP_DAX_COW) {
-+			if (iomap.inline_data) {
-+				error = memcpy_mcsafe(addr, iomap.inline_data,
-+					      PAGE_SIZE);
-+				if (error < 0)
-+					goto error_finish_iomap;
-+			} else
-+				memset(addr, 0, PAGE_SIZE);
-+		}
- 		entry = dax_insert_entry(&xas, mapping, vmf, entry, pfn,
- 						 0, write && !sync);
- 
-@@ -1597,7 +1608,7 @@ static vm_fault_t dax_iomap_pmd_fault(struct vm_fault *vmf, pfn_t *pfnp,
- 
- 	switch (iomap.type) {
- 	case IOMAP_MAPPED:
--		error = dax_iomap_pfn(&iomap, pos, PMD_SIZE, &pfn);
-+		error = dax_iomap_pfn(&iomap, pos, PMD_SIZE, &pfn, NULL);
- 		if (error < 0)
- 			goto finish_iomap;
- 
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 9d5a3c99a6b9..362a9cf9dcb2 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -16,6 +16,7 @@
+ #include <linux/btrfs.h>
+ #include <linux/uio.h>
+ #include <linux/iversion.h>
++#include <linux/mman.h>
+ #include "ctree.h"
+ #include "disk-io.h"
+ #include "transaction.h"
+@@ -3319,6 +3320,9 @@ const struct file_operations btrfs_file_operations = {
+ 	.splice_read	= generic_file_splice_read,
+ 	.write_iter	= btrfs_file_write_iter,
+ 	.mmap		= btrfs_file_mmap,
++#ifdef CONFIG_FS_DAX
++	.mmap_supported_flags = MAP_SYNC,
++#endif
+ 	.open		= btrfs_file_open,
+ 	.release	= btrfs_release_file,
+ 	.fsync		= btrfs_sync_file,
 -- 
 2.16.4
 

@@ -4,33 +4,33 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5675DC04AA6
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Apr 2019 17:27:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B8EE0C43219
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Apr 2019 17:27:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2B3842075E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Apr 2019 17:27:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 90D5C2075E
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Apr 2019 17:27:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728953AbfD2R1X (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 29 Apr 2019 13:27:23 -0400
-Received: from mx2.suse.de ([195.135.220.15]:58172 "EHLO mx1.suse.de"
+        id S1728970AbfD2R12 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 29 Apr 2019 13:27:28 -0400
+Received: from mx2.suse.de ([195.135.220.15]:58230 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728929AbfD2R1W (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Apr 2019 13:27:22 -0400
+        id S1728929AbfD2R10 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 29 Apr 2019 13:27:26 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 1AAACAD5D;
-        Mon, 29 Apr 2019 17:27:20 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 41383ADDB;
+        Mon, 29 Apr 2019 17:27:24 +0000 (UTC)
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-btrfs@vger.kernel.org
 Cc:     kilobyte@angband.pl, linux-fsdevel@vger.kernel.org, jack@suse.cz,
         david@fromorbit.com, willy@infradead.org, hch@lst.de,
         darrick.wong@oracle.com, dsterba@suse.cz, nborisov@suse.com,
         linux-nvdimm@lists.01.org, Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 07/18] btrfs: add dax write support
-Date:   Mon, 29 Apr 2019 12:26:38 -0500
-Message-Id: <20190429172649.8288-8-rgoldwyn@suse.de>
+Subject: [PATCH 09/18] btrfs: Add dax specific address_space_operations
+Date:   Mon, 29 Apr 2019 12:26:40 -0500
+Message-Id: <20190429172649.8288-10-rgoldwyn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20190429172649.8288-1-rgoldwyn@suse.de>
 References: <20190429172649.8288-1-rgoldwyn@suse.de>
@@ -41,273 +41,105 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-IOMAP_DAX_COW allows to inform the dax code, to first perform
-a copy which are not page-aligned before performing the write.
-The responsibility of checking if data edges are page aligned
-is performed in ->iomap_begin() and the source address is
-stored in ->inline_data
-
-A new struct btrfs_iomap is passed from iomap_begin() to
-iomap_end(), which contains all the accounting and locking information
-for CoW based writes.
-
-For writing to a hole, iomap->inline_data is set to zero.
-
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 ---
- fs/btrfs/ctree.h |   6 ++
- fs/btrfs/dax.c   | 182 +++++++++++++++++++++++++++++++++++++++++++++++++++++--
- fs/btrfs/file.c  |   4 +-
- 3 files changed, 185 insertions(+), 7 deletions(-)
+ fs/btrfs/inode.c | 34 +++++++++++++++++++++++++++++++---
+ 1 file changed, 31 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 1e3e758b83c2..eec01eb92f33 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3801,6 +3801,12 @@ int btree_readahead_hook(struct extent_buffer *eb, int err);
- #ifdef CONFIG_FS_DAX
- /* dax.c */
- ssize_t btrfs_file_dax_read(struct kiocb *iocb, struct iov_iter *to);
-+ssize_t btrfs_file_dax_write(struct kiocb *iocb, struct iov_iter *from);
-+#else
-+static inline ssize_t btrfs_file_dax_write(struct kiocb *iocb, struct iov_iter *from)
-+{
-+	return 0;
-+}
- #endif /* CONFIG_FS_DAX */
- 
- static inline int is_fstree(u64 rootid)
-diff --git a/fs/btrfs/dax.c b/fs/btrfs/dax.c
-index bf3d46b0acb6..f5cc9bcdbf14 100644
---- a/fs/btrfs/dax.c
-+++ b/fs/btrfs/dax.c
-@@ -9,30 +9,184 @@
- #ifdef CONFIG_FS_DAX
- #include <linux/dax.h>
- #include <linux/iomap.h>
-+#include <linux/uio.h>
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index af4b56cba104..05714ffc4894 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -28,6 +28,7 @@
+ #include <linux/magic.h>
+ #include <linux/iversion.h>
+ #include <linux/swap.h>
++#include <linux/dax.h>
+ #include <asm/unaligned.h>
  #include "ctree.h"
- #include "btrfs_inode.h"
+ #include "disk-io.h"
+@@ -65,6 +66,7 @@ static const struct inode_operations btrfs_dir_ro_inode_operations;
+ static const struct inode_operations btrfs_special_inode_operations;
+ static const struct inode_operations btrfs_file_inode_operations;
+ static const struct address_space_operations btrfs_aops;
++static const struct address_space_operations btrfs_dax_aops;
+ static const struct file_operations btrfs_dir_file_operations;
+ static const struct extent_io_ops btrfs_extent_io_ops;
  
-+struct btrfs_iomap {
-+	u64 start;
-+	u64 end;
-+	bool nocow;
-+	struct extent_changeset *data_reserved;
-+	struct extent_state *cached_state;
-+};
-+
-+static struct btrfs_iomap *btrfs_iomap_init(struct inode *inode,
-+				     struct extent_map **em,
-+				     loff_t pos, loff_t length)
-+{
-+	int ret = 0;
-+	struct extent_map *map = *em;
-+	struct btrfs_iomap *bi;
-+
-+	bi = kzalloc(sizeof(struct btrfs_iomap), GFP_NOFS);
-+	if (!bi)
-+		return ERR_PTR(-ENOMEM);
-+
-+	bi->start = round_down(pos, PAGE_SIZE);
-+	bi->end = PAGE_ALIGN(pos + length);
-+
-+	/* Wait for existing ordered extents in range to finish */
-+	btrfs_wait_ordered_range(inode, bi->start, bi->end - bi->start);
-+
-+	lock_extent_bits(&BTRFS_I(inode)->io_tree, bi->start, bi->end, &bi->cached_state);
-+
-+	ret = btrfs_delalloc_reserve_space(inode, &bi->data_reserved,
-+			bi->start, bi->end - bi->start);
-+	if (ret) {
-+		unlock_extent_cached(&BTRFS_I(inode)->io_tree, bi->start, bi->end,
-+				&bi->cached_state);
-+		kfree(bi);
-+		return ERR_PTR(ret);
-+	}
-+
-+	refcount_inc(&map->refs);
-+	ret = btrfs_get_extent_map_write(em, NULL,
-+			inode, bi->start, bi->end - bi->start, &bi->nocow);
-+	if (ret) {
-+		unlock_extent_cached(&BTRFS_I(inode)->io_tree, bi->start, bi->end,
-+				&bi->cached_state);
-+		btrfs_delalloc_release_space(inode,
-+				bi->data_reserved, bi->start,
-+				bi->end - bi->start, true);
-+		extent_changeset_free(bi->data_reserved);
-+		kfree(bi);
-+		return ERR_PTR(ret);
-+	}
-+	free_extent_map(map);
-+	return bi;
-+}
-+
-+static void *dax_address(struct block_device *bdev, struct dax_device *dax_dev,
-+			 sector_t sector, loff_t pos, loff_t length)
-+{
-+	size_t size = ALIGN(pos + length, PAGE_SIZE);
-+	int id, ret = 0;
-+	void *kaddr = NULL;
-+	pgoff_t pgoff;
-+	long map_len;
-+
-+	id = dax_read_lock();
-+
-+	ret = bdev_dax_pgoff(bdev, sector, size, &pgoff);
-+	if (ret)
-+		goto out;
-+
-+	map_len = dax_direct_access(dax_dev, pgoff, PHYS_PFN(size),
-+			&kaddr, NULL);
-+	if (map_len < 0)
-+		ret = map_len;
-+
-+out:
-+	dax_read_unlock(id);
-+	if (ret)
-+		return ERR_PTR(ret);
-+	return kaddr;
-+}
-+
- static int btrfs_iomap_begin(struct inode *inode, loff_t pos,
- 		loff_t length, unsigned flags, struct iomap *iomap)
- {
- 	struct extent_map *em;
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-+	struct btrfs_iomap *bi = NULL;
-+	unsigned offset = pos & (PAGE_SIZE - 1);
-+	u64 srcblk = 0;
-+	loff_t diff;
-+
- 	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, pos, length, 0);
-+
-+	iomap->type = IOMAP_MAPPED;
-+
-+	if (flags & IOMAP_WRITE) {
-+		if (em->block_start != EXTENT_MAP_HOLE)
-+			srcblk = em->block_start + pos - em->start - offset;
-+
-+		bi = btrfs_iomap_init(inode, &em, pos, length);
-+		if (IS_ERR(bi))
-+			return PTR_ERR(bi);
-+
-+	}
-+
-+	/*
-+	 * Advance the difference between pos and start, to align well with
-+	 * inline_data in case of writes
-+	 */
-+	diff = round_down(pos - em->start, PAGE_SIZE);
-+	iomap->offset = em->start + diff;
-+	iomap->length = em->len - diff;
-+	iomap->bdev = em->bdev;
-+	iomap->dax_dev = fs_info->dax_dev;
-+
-+	/*
-+	 * This will be true for reads only since we have already
-+	 * allocated em
-+	 */
- 	if (em->block_start == EXTENT_MAP_HOLE) {
- 		iomap->type = IOMAP_HOLE;
- 		return 0;
+@@ -3757,7 +3759,10 @@ static int btrfs_read_locked_inode(struct inode *inode,
+ 
+ 	switch (inode->i_mode & S_IFMT) {
+ 	case S_IFREG:
+-		inode->i_mapping->a_ops = &btrfs_aops;
++		if (btrfs_test_opt(fs_info, DAX))
++			inode->i_mapping->a_ops = &btrfs_dax_aops;
++		else
++			inode->i_mapping->a_ops = &btrfs_aops;
+ 		BTRFS_I(inode)->io_tree.ops = &btrfs_extent_io_ops;
+ 		inode->i_fop = &btrfs_file_operations;
+ 		inode->i_op = &btrfs_file_inode_operations;
+@@ -3778,6 +3783,7 @@ static int btrfs_read_locked_inode(struct inode *inode,
  	}
--	iomap->type = IOMAP_MAPPED;
--	iomap->bdev = em->bdev;
--	iomap->dax_dev = fs_info->dax_dev;
--	iomap->offset = em->start;
--	iomap->length = em->len;
--	iomap->addr = em->block_start;
+ 
+ 	btrfs_sync_inode_flags_to_i_flags(inode);
 +
-+	iomap->addr = em->block_start + diff;
-+	/* Check if we really need to copy data from old extent */
-+	if (bi && !bi->nocow && (offset || pos + length < bi->end)) {
-+		iomap->type = IOMAP_DAX_COW;
-+		if (srcblk) {
-+			sector_t sector = (srcblk + (pos & PAGE_MASK) -
-+					  iomap->offset) >> 9;
-+			iomap->inline_data = dax_address(em->bdev,
-+					fs_info->dax_dev, sector, pos, length);
-+			if (IS_ERR(iomap->inline_data)) {
-+				kfree(bi);
-+				return PTR_ERR(iomap->inline_data);
-+			}
-+		}
-+	}
-+
-+	iomap->private = bi;
-+	return 0;
-+}
-+
-+static int btrfs_iomap_end(struct inode *inode, loff_t pos,
-+		loff_t length, ssize_t written, unsigned flags,
-+		struct iomap *iomap)
-+{
-+	struct btrfs_iomap *bi = iomap->private;
-+	u64 wend;
-+
-+	if (!bi)
-+		return 0;
-+
-+	unlock_extent_cached(&BTRFS_I(inode)->io_tree, bi->start, bi->end,
-+			&bi->cached_state);
-+
-+	wend = PAGE_ALIGN(pos + written);
-+	if (wend < bi->end) {
-+		btrfs_delalloc_release_space(inode,
-+				bi->data_reserved, wend,
-+				bi->end - wend, true);
-+	}
-+
-+	btrfs_update_ordered_extent(inode, bi->start, wend - bi->start, true);
-+	btrfs_delalloc_release_extents(BTRFS_I(inode), wend - bi->start, false);
-+	extent_changeset_free(bi->data_reserved);
-+	kfree(bi);
  	return 0;
  }
  
- static const struct iomap_ops btrfs_iomap_ops = {
- 	.iomap_begin		= btrfs_iomap_begin,
-+	.iomap_end		= btrfs_iomap_end,
+@@ -6538,7 +6544,10 @@ static int btrfs_create(struct inode *dir, struct dentry *dentry,
+ 	*/
+ 	inode->i_fop = &btrfs_file_operations;
+ 	inode->i_op = &btrfs_file_inode_operations;
+-	inode->i_mapping->a_ops = &btrfs_aops;
++	if (IS_DAX(inode) && S_ISREG(mode))
++		inode->i_mapping->a_ops = &btrfs_dax_aops;
++	else
++		inode->i_mapping->a_ops = &btrfs_aops;
+ 
+ 	err = btrfs_init_inode_security(trans, inode, dir, &dentry->d_name);
+ 	if (err)
+@@ -8665,6 +8674,15 @@ static int btrfs_writepages(struct address_space *mapping,
+ 	return extent_writepages(mapping, wbc);
+ }
+ 
++static int btrfs_dax_writepages(struct address_space *mapping,
++			    struct writeback_control *wbc)
++{
++	struct inode *inode = mapping->host;
++	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
++	return dax_writeback_mapping_range(mapping, fs_info->fs_devices->latest_bdev,
++			wbc);
++}
++
+ static int
+ btrfs_readpages(struct file *file, struct address_space *mapping,
+ 		struct list_head *pages, unsigned nr_pages)
+@@ -10436,7 +10454,10 @@ static int btrfs_tmpfile(struct inode *dir, struct dentry *dentry, umode_t mode)
+ 	inode->i_fop = &btrfs_file_operations;
+ 	inode->i_op = &btrfs_file_inode_operations;
+ 
+-	inode->i_mapping->a_ops = &btrfs_aops;
++	if (IS_DAX(inode))
++		inode->i_mapping->a_ops = &btrfs_dax_aops;
++	else
++		inode->i_mapping->a_ops = &btrfs_aops;
+ 	BTRFS_I(inode)->io_tree.ops = &btrfs_extent_io_ops;
+ 
+ 	ret = btrfs_init_inode_security(trans, inode, dir, NULL);
+@@ -10892,6 +10913,13 @@ static const struct address_space_operations btrfs_aops = {
+ 	.swap_deactivate = btrfs_swap_deactivate,
  };
  
- ssize_t btrfs_file_dax_read(struct kiocb *iocb, struct iov_iter *to)
-@@ -46,4 +200,20 @@ ssize_t btrfs_file_dax_read(struct kiocb *iocb, struct iov_iter *to)
- 
- 	return ret;
- }
++static const struct address_space_operations btrfs_dax_aops = {
++	.writepages             = btrfs_dax_writepages,
++	.direct_IO              = noop_direct_IO,
++	.set_page_dirty         = noop_set_page_dirty,
++	.invalidatepage         = noop_invalidatepage,
++};
 +
-+ssize_t btrfs_file_dax_write(struct kiocb *iocb, struct iov_iter *iter)
-+{
-+	ssize_t ret = 0;
-+	u64 pos = iocb->ki_pos;
-+	struct inode *inode = file_inode(iocb->ki_filp);
-+	ret = dax_iomap_rw(iocb, iter, &btrfs_iomap_ops);
-+
-+	if (ret > 0) {
-+		pos += ret;
-+		if (pos > i_size_read(inode))
-+			i_size_write(inode, pos);
-+		iocb->ki_pos = pos;
-+	}
-+	return ret;
-+}
- #endif /* CONFIG_FS_DAX */
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 9194591f9eea..a795023e26ca 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1964,7 +1964,9 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
- 	if (sync)
- 		atomic_inc(&BTRFS_I(inode)->sync_writers);
- 
--	if (iocb->ki_flags & IOCB_DIRECT) {
-+	if (IS_DAX(inode)) {
-+		num_written = btrfs_file_dax_write(iocb, from);
-+	} else if (iocb->ki_flags & IOCB_DIRECT) {
- 		num_written = __btrfs_direct_write(iocb, from);
- 	} else {
- 		num_written = btrfs_buffered_write(iocb, from);
+ static const struct inode_operations btrfs_file_inode_operations = {
+ 	.getattr	= btrfs_getattr,
+ 	.setattr	= btrfs_setattr,
 -- 
 2.16.4
 

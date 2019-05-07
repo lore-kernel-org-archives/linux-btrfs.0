@@ -2,160 +2,55 @@ Return-Path: <SRS0=hL4i=TH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,
-	T_DKIMWL_WL_HIGH,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.9 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AF535C004C9
-	for <linux-btrfs@archiver.kernel.org>; Tue,  7 May 2019 06:02:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BBDFBC004C9
+	for <linux-btrfs@archiver.kernel.org>; Tue,  7 May 2019 07:19:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 827B820C01
-	for <linux-btrfs@archiver.kernel.org>; Tue,  7 May 2019 06:02:31 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1557208951;
-	bh=oxyX3hjJz+OABeVAQr1I6dRhgr5IRIY6tXqYrzy3+hs=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=GeS9qnVLxJUrsY6YRbiPpNC+JiHmoeheFrpqzaUjxAbcjRdINQTS7Pb0s5oSY3na3
-	 XLXUmObk4kitY4KkxOKHjcWZkJq4utkFjwnyznnyBQeAbUA9dV057eQqXKWWKWb+OF
-	 5wF/7tMyeXd7Ebh43uLxcsvOa9rv4whP/CFycmPM=
+	by mail.kernel.org (Postfix) with ESMTP id 97EAC2087F
+	for <linux-btrfs@archiver.kernel.org>; Tue,  7 May 2019 07:19:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727028AbfEGGC0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 7 May 2019 02:02:26 -0400
-Received: from mail.kernel.org ([198.145.29.99]:55606 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727828AbfEGFfe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 7 May 2019 01:35:34 -0400
-Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 536C52087F;
-        Tue,  7 May 2019 05:35:32 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1557207333;
-        bh=oxyX3hjJz+OABeVAQr1I6dRhgr5IRIY6tXqYrzy3+hs=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=njAbU8bpf4iUcCS1n68q2AN6mJChhKzjRUpQEfLc4fGCFrPKhcySf9+eT3xdqFIlA
-         LCJRnrqoIJLcm4DM+EGq7dRrBAAFl+StnGQEEb2IHoWG3yQMSZ9EkEWCV7QRNjr25h
-         gUjZtnX4nXwblExHgulJmomNfkGKOS1mldBKHBSs=
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>,
-        David Sterba <dsterba@suse.com>,
-        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.0 92/99] btrfs: Switch memory allocations in async csum calculation path to kvmalloc
-Date:   Tue,  7 May 2019 01:32:26 -0400
-Message-Id: <20190507053235.29900-92-sashal@kernel.org>
-X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20190507053235.29900-1-sashal@kernel.org>
-References: <20190507053235.29900-1-sashal@kernel.org>
-MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
-Content-Transfer-Encoding: 8bit
+        id S1726866AbfEGHT2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 7 May 2019 03:19:28 -0400
+Received: from mx2.suse.de ([195.135.220.15]:53536 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726584AbfEGHT2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 7 May 2019 03:19:28 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 1B269ABD0
+        for <linux-btrfs@vger.kernel.org>; Tue,  7 May 2019 07:19:27 +0000 (UTC)
+From:   Nikolay Borisov <nborisov@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH v2 0/3] Ordered extent flushing refactor
+Date:   Tue,  7 May 2019 10:19:21 +0300
+Message-Id: <20190507071924.17643-1-nborisov@suse.com>
+X-Mailer: git-send-email 2.17.1
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Nikolay Borisov <nborisov@suse.com>
+Here is v2 of factoring out common code when flushing ordered extent. The main
+change in this version is the switch from inode to btrfs_inode for  function 
+interfaces as per David's feedback. 
 
-[ Upstream commit a3d46aea46f99d134b4e0726e4826b824c3e5980 ]
+Nikolay Borisov (3):
+  btrfs: Implement btrfs_lock_and_flush_ordered_range
+  btrfs: Use newly introduced btrfs_lock_and_flush_ordered_range
+  btrfs: Always use a cached extent_state in
+    btrfs_lock_and_flush_ordered_range
 
-Recent multi-page biovec rework allowed creation of bios that can span
-large regions - up to 128 megabytes in the case of btrfs. OTOH btrfs'
-submission path currently allocates a contiguous array to store the
-checksums for every bio submitted. This means we can request up to
-(128mb / BTRFS_SECTOR_SIZE) * 4 bytes + 32bytes of memory from kmalloc.
-On busy systems with possibly fragmented memory said kmalloc can fail
-which will trigger BUG_ON due to improper error handling IO submission
-context in btrfs.
+ fs/btrfs/extent_io.c    | 29 ++++----------------------
+ fs/btrfs/file.c         | 14 ++-----------
+ fs/btrfs/inode.c        | 17 ++--------------
+ fs/btrfs/ordered-data.c | 45 +++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/ordered-data.h |  4 ++++
+ 5 files changed, 57 insertions(+), 52 deletions(-)
 
-Until error handling is improved or bios in btrfs limited to a more
-manageable size (e.g. 1m) let's use kvmalloc to fallback to vmalloc for
-such large allocations. There is no hard requirement that the memory
-allocated for checksums during IO submission has to be contiguous, but
-this is a simple fix that does not require several non-contiguous
-allocations.
-
-For small writes this is unlikely to have any visible effect since
-kmalloc will still satisfy allocation requests as usual. For larger
-requests the code will just fallback to vmalloc.
-
-We've performed evaluation on several workload types and there was no
-significant difference kmalloc vs kvmalloc.
-
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/file-item.c    | 15 +++++++++++----
- fs/btrfs/ordered-data.c |  3 ++-
- 2 files changed, 13 insertions(+), 5 deletions(-)
-
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index 920bf3b4b0ef..cccc75d15970 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -7,6 +7,7 @@
- #include <linux/slab.h>
- #include <linux/pagemap.h>
- #include <linux/highmem.h>
-+#include <linux/sched/mm.h>
- #include "ctree.h"
- #include "disk-io.h"
- #include "transaction.h"
-@@ -427,9 +428,13 @@ blk_status_t btrfs_csum_one_bio(struct inode *inode, struct bio *bio,
- 	unsigned long this_sum_bytes = 0;
- 	int i;
- 	u64 offset;
-+	unsigned nofs_flag;
-+
-+	nofs_flag = memalloc_nofs_save();
-+	sums = kvzalloc(btrfs_ordered_sum_size(fs_info, bio->bi_iter.bi_size),
-+		       GFP_KERNEL);
-+	memalloc_nofs_restore(nofs_flag);
- 
--	sums = kzalloc(btrfs_ordered_sum_size(fs_info, bio->bi_iter.bi_size),
--		       GFP_NOFS);
- 	if (!sums)
- 		return BLK_STS_RESOURCE;
- 
-@@ -472,8 +477,10 @@ blk_status_t btrfs_csum_one_bio(struct inode *inode, struct bio *bio,
- 
- 				bytes_left = bio->bi_iter.bi_size - total_bytes;
- 
--				sums = kzalloc(btrfs_ordered_sum_size(fs_info, bytes_left),
--					       GFP_NOFS);
-+				nofs_flag = memalloc_nofs_save();
-+				sums = kvzalloc(btrfs_ordered_sum_size(fs_info,
-+						      bytes_left), GFP_KERNEL);
-+				memalloc_nofs_restore(nofs_flag);
- 				BUG_ON(!sums); /* -ENOMEM */
- 				sums->len = bytes_left;
- 				ordered = btrfs_lookup_ordered_extent(inode,
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 6fde2b2741ef..45e3cfd1198b 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -6,6 +6,7 @@
- #include <linux/slab.h>
- #include <linux/blkdev.h>
- #include <linux/writeback.h>
-+#include <linux/sched/mm.h>
- #include "ctree.h"
- #include "transaction.h"
- #include "btrfs_inode.h"
-@@ -442,7 +443,7 @@ void btrfs_put_ordered_extent(struct btrfs_ordered_extent *entry)
- 			cur = entry->list.next;
- 			sum = list_entry(cur, struct btrfs_ordered_sum, list);
- 			list_del(&sum->list);
--			kfree(sum);
-+			kvfree(sum);
- 		}
- 		kmem_cache_free(btrfs_ordered_extent_cache, entry);
- 	}
 -- 
-2.20.1
+2.17.1
 

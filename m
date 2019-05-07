@@ -7,48 +7,48 @@ X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	T_DKIMWL_WL_HIGH,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 63A66C004C9
-	for <linux-btrfs@archiver.kernel.org>; Tue,  7 May 2019 05:56:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AF535C004C9
+	for <linux-btrfs@archiver.kernel.org>; Tue,  7 May 2019 06:02:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 367942054F
-	for <linux-btrfs@archiver.kernel.org>; Tue,  7 May 2019 05:56:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 827B820C01
+	for <linux-btrfs@archiver.kernel.org>; Tue,  7 May 2019 06:02:31 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1557208608;
-	bh=Oud8qUkPlLbB9a6qg14+M/3sEvYqAYptLUqBaWDOX60=;
+	s=default; t=1557208951;
+	bh=oxyX3hjJz+OABeVAQr1I6dRhgr5IRIY6tXqYrzy3+hs=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=Sa2ppsbQPJQ5v1XJ+1tg6fb8Rti8+3ifx9i6Gs/HHne0VCTOF4jNSS5PrlNx3GhQ8
-	 2k2b87d/pGU+JJLA8mpW5l5SnRnmu6pXquAhP9Kt7AuRuBfuDEurMAnBtycL5GMpFq
-	 84lqmGs+QgG6aBU+isNCe5VEz4TrWwE3/0NTB1LU=
+	b=GeS9qnVLxJUrsY6YRbiPpNC+JiHmoeheFrpqzaUjxAbcjRdINQTS7Pb0s5oSY3na3
+	 XLXUmObk4kitY4KkxOKHjcWZkJq4utkFjwnyznnyBQeAbUA9dV057eQqXKWWKWb+OF
+	 5wF/7tMyeXd7Ebh43uLxcsvOa9rv4whP/CFycmPM=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728465AbfEGFhx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 7 May 2019 01:37:53 -0400
-Received: from mail.kernel.org ([198.145.29.99]:57652 "EHLO mail.kernel.org"
+        id S1727028AbfEGGC0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 7 May 2019 02:02:26 -0400
+Received: from mail.kernel.org ([198.145.29.99]:55606 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726492AbfEGFhv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 7 May 2019 01:37:51 -0400
+        id S1727828AbfEGFfe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 7 May 2019 01:35:34 -0400
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 170BE20675;
-        Tue,  7 May 2019 05:37:50 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 536C52087F;
+        Tue,  7 May 2019 05:35:32 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1557207470;
-        bh=Oud8qUkPlLbB9a6qg14+M/3sEvYqAYptLUqBaWDOX60=;
+        s=default; t=1557207333;
+        bh=oxyX3hjJz+OABeVAQr1I6dRhgr5IRIY6tXqYrzy3+hs=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=15huqM1HMuEYyBXxLMYJx4OwaYGmGEaHo52KgweRUzU+3xT/JMYe4ybUKiAAFL+db
-         AS/gu4pltX0QIX/n4rwkQsTXpwnWrdF6QBaE1D5vIqlOc7pS6W/tqZa1R/kKEiq1W2
-         /VVGBfkk65RDrk9mfsl6Qhmv9rh9u6FEoQ2JcDxk=
+        b=njAbU8bpf4iUcCS1n68q2AN6mJChhKzjRUpQEfLc4fGCFrPKhcySf9+eT3xdqFIlA
+         LCJRnrqoIJLcm4DM+EGq7dRrBAAFl+StnGQEEb2IHoWG3yQMSZ9EkEWCV7QRNjr25h
+         gUjZtnX4nXwblExHgulJmomNfkGKOS1mldBKHBSs=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.19 61/81] btrfs: Switch memory allocations in async csum calculation path to kvmalloc
-Date:   Tue,  7 May 2019 01:35:32 -0400
-Message-Id: <20190507053554.30848-61-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.0 92/99] btrfs: Switch memory allocations in async csum calculation path to kvmalloc
+Date:   Tue,  7 May 2019 01:32:26 -0400
+Message-Id: <20190507053235.29900-92-sashal@kernel.org>
 X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20190507053554.30848-1-sashal@kernel.org>
-References: <20190507053554.30848-1-sashal@kernel.org>
+In-Reply-To: <20190507053235.29900-1-sashal@kernel.org>
+References: <20190507053235.29900-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -95,7 +95,7 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  2 files changed, 13 insertions(+), 5 deletions(-)
 
 diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index ba74827beb32..2ba8de8c0d17 100644
+index 920bf3b4b0ef..cccc75d15970 100644
 --- a/fs/btrfs/file-item.c
 +++ b/fs/btrfs/file-item.c
 @@ -7,6 +7,7 @@
@@ -106,7 +106,7 @@ index ba74827beb32..2ba8de8c0d17 100644
  #include "ctree.h"
  #include "disk-io.h"
  #include "transaction.h"
-@@ -434,9 +435,13 @@ blk_status_t btrfs_csum_one_bio(struct inode *inode, struct bio *bio,
+@@ -427,9 +428,13 @@ blk_status_t btrfs_csum_one_bio(struct inode *inode, struct bio *bio,
  	unsigned long this_sum_bytes = 0;
  	int i;
  	u64 offset;
@@ -122,7 +122,7 @@ index ba74827beb32..2ba8de8c0d17 100644
  	if (!sums)
  		return BLK_STS_RESOURCE;
  
-@@ -479,8 +484,10 @@ blk_status_t btrfs_csum_one_bio(struct inode *inode, struct bio *bio,
+@@ -472,8 +477,10 @@ blk_status_t btrfs_csum_one_bio(struct inode *inode, struct bio *bio,
  
  				bytes_left = bio->bi_iter.bi_size - total_bytes;
  
@@ -136,7 +136,7 @@ index ba74827beb32..2ba8de8c0d17 100644
  				sums->len = bytes_left;
  				ordered = btrfs_lookup_ordered_extent(inode,
 diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 0c4ef208b8b9..b92edf0600e3 100644
+index 6fde2b2741ef..45e3cfd1198b 100644
 --- a/fs/btrfs/ordered-data.c
 +++ b/fs/btrfs/ordered-data.c
 @@ -6,6 +6,7 @@

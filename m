@@ -6,29 +6,29 @@ X-Spam-Status: No, score=-8.9 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 75061C04A6B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 10 May 2019 11:16:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1C026C04AB3
+	for <linux-btrfs@archiver.kernel.org>; Fri, 10 May 2019 11:16:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4B96620989
+	by mail.kernel.org (Postfix) with ESMTP id EDF7620989
 	for <linux-btrfs@archiver.kernel.org>; Fri, 10 May 2019 11:16:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727398AbfEJLQD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1727391AbfEJLQD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Fri, 10 May 2019 07:16:03 -0400
-Received: from mx2.suse.de ([195.135.220.15]:50588 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:50582 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727308AbfEJLPz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1727318AbfEJLPz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Fri, 10 May 2019 07:15:55 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 6D4ABAFA1
+        by mx1.suse.de (Postfix) with ESMTP id 4F2F5AF96
         for <linux-btrfs@vger.kernel.org>; Fri, 10 May 2019 11:15:52 +0000 (UTC)
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 To:     David Sterba <dsterba@suse.com>
 Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
         Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH 14/17] btrfs: directly call into crypto framework for checsumming
-Date:   Fri, 10 May 2019 13:15:44 +0200
-Message-Id: <20190510111547.15310-15-jthumshirn@suse.de>
+Subject: [PATCH 11/17] btrfs: Simplify btrfs_check_super_csum() and get rid of size assumptions
+Date:   Fri, 10 May 2019 13:15:41 +0200
+Message-Id: <20190510111547.15310-12-jthumshirn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20190510111547.15310-1-jthumshirn@suse.de>
 References: <20190510111547.15310-1-jthumshirn@suse.de>
@@ -37,60 +37,68 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Currently btrfs_csum_data() relied on the crc32c() wrapper around the crypto
-framework for calculating the CRCs.
+Now that we have already checked for a valid checksum type before calling
+btrfs_check_super_csum(), it can be simplified even further.
 
-As we have our own crypto_shash structure in the fs_info now, we can
-directly call into the crypto framework without going trough the wrapper.
+While at it get rid of the implicit size assumption of the resulting
+checksum as well.
 
 Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
 ---
- fs/btrfs/disk-io.c | 28 ++++++++++++++++++++++++++--
- 1 file changed, 26 insertions(+), 2 deletions(-)
+ fs/btrfs/disk-io.c | 37 +++++++++++++------------------------
+ 1 file changed, 13 insertions(+), 24 deletions(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index fb0b06b7b9f6..0c9ac7b45ce8 100644
+index 74937effaed4..21ae9daf52b7 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -253,12 +253,36 @@ struct extent_map *btree_get_extent(struct btrfs_inode *inode,
- u32 btrfs_csum_data(struct btrfs_fs_info *fs_info, const char *data,
- 		    u32 seed, size_t len)
+@@ -375,33 +375,22 @@ static int btrfs_check_super_csum(struct btrfs_fs_info *fs_info,
  {
--	return crc32c(seed, data, len);
-+	SHASH_DESC_ON_STACK(shash, fs_info->csum_shash);
-+	u32 *ctx = (u32 *)shash_desc_ctx(shash);
-+	u32 retval;
-+	int err;
-+
-+	shash->tfm = fs_info->csum_shash;
-+	shash->flags = 0;
-+	*ctx = seed;
-+
-+	err = crypto_shash_update(shash, data, len);
-+	ASSERT(err);
-+
-+	retval = *ctx;
-+	barrier_data(ctx);
-+
-+	return retval;
+ 	struct btrfs_super_block *disk_sb =
+ 		(struct btrfs_super_block *)raw_disk_sb;
+-	u16 csum_type = btrfs_super_csum_type(disk_sb);
+-	int ret = 0;
+-
+-	if (!btrfs_supported_super_csum(disk_sb)) {
+-		btrfs_err(fs_info, "unsupported checksum algorithm %u",
+-			  csum_type);
+-		ret = 1;
+-	}
+-
+-	if (csum_type == BTRFS_CSUM_TYPE_CRC32) {
+-		u32 crc = ~(u32)0;
+-		char result[sizeof(crc)];
++	u32 crc = ~(u32)0;
++	char result[BTRFS_CSUM_SIZE];
+ 
+-		/*
+-		 * The super_block structure does not span the whole
+-		 * BTRFS_SUPER_INFO_SIZE range, we expect that the unused space
+-		 * is filled with zeros and is included in the checksum.
+-		 */
+-		crc = btrfs_csum_data(raw_disk_sb + BTRFS_CSUM_SIZE,
+-				crc, BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
+-		btrfs_csum_final(crc, result);
++	/*
++	 * The super_block structure does not span the whole
++	 * BTRFS_SUPER_INFO_SIZE range, we expect that the unused space
++	 * is filled with zeros and is included in the checksum.
++	 */
++	crc = btrfs_csum_data(raw_disk_sb + BTRFS_CSUM_SIZE,
++			      crc, BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
++	btrfs_csum_final(crc, result);
+ 
+-		if (memcmp(raw_disk_sb, result, sizeof(result)))
+-			ret = 1;
+-	}
++	if (memcmp(raw_disk_sb, result, btrfs_super_csum_size(disk_sb)))
++		return 1;
+ 
+-	return ret;
++	return 0;
  }
  
- void btrfs_csum_final(struct btrfs_fs_info *fs_info, u32 crc, u8 *result)
- {
--	put_unaligned_le32(~crc, result);
-+	SHASH_DESC_ON_STACK(shash, fs_info->csum_shash);
-+	u32 *ctx = (u32 *)shash_desc_ctx(shash);
-+	int err;
-+
-+	shash->tfm = fs_info->csum_shash;
-+	shash->flags = 0;
-+	*ctx = crc;
-+
-+	err = crypto_shash_final(shash, result);
-+	ASSERT(err);
- }
- 
- /*
+ int btrfs_verify_level_key(struct extent_buffer *eb, int level,
 -- 
 2.16.4
 

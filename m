@@ -3,104 +3,118 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-8.9 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 88403C04A6B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 10 May 2019 04:45:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 252DCC04A6B
+	for <linux-btrfs@archiver.kernel.org>; Fri, 10 May 2019 11:15:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5752B217F9
-	for <linux-btrfs@archiver.kernel.org>; Fri, 10 May 2019 04:45:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0068520989
+	for <linux-btrfs@archiver.kernel.org>; Fri, 10 May 2019 11:15:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726916AbfEJEpO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 10 May 2019 00:45:14 -0400
-Received: from mx2.suse.de ([195.135.220.15]:38704 "EHLO mx1.suse.de"
+        id S1727248AbfEJLPx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 10 May 2019 07:15:53 -0400
+Received: from mx2.suse.de ([195.135.220.15]:50510 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725904AbfEJEpO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 10 May 2019 00:45:14 -0400
+        id S1727223AbfEJLPx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 10 May 2019 07:15:53 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id DB81CAE4E;
-        Fri, 10 May 2019 04:45:12 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     kernel test robot <rong.a.chen@intel.com>
-Subject: [PATCH] btrfs: extent-tree: Fix a bug that btrfs is unable to add pinned bytes
-Date:   Fri, 10 May 2019 12:45:05 +0800
-Message-Id: <20190510044505.17422-1-wqu@suse.com>
-X-Mailer: git-send-email 2.21.0
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+        by mx1.suse.de (Postfix) with ESMTP id 1C11FAF81
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 May 2019 11:15:52 +0000 (UTC)
+From:   Johannes Thumshirn <jthumshirn@suse.de>
+To:     David Sterba <dsterba@suse.com>
+Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
+        Johannes Thumshirn <jthumshirn@suse.de>
+Subject: [PATCH 02/17] btrfs: resurrect btrfs_crc32c()
+Date:   Fri, 10 May 2019 13:15:32 +0200
+Message-Id: <20190510111547.15310-3-jthumshirn@suse.de>
+X-Mailer: git-send-email 2.16.4
+In-Reply-To: <20190510111547.15310-1-jthumshirn@suse.de>
+References: <20190510111547.15310-1-jthumshirn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Commit ddf30cf03fb5 ("btrfs: extent-tree: Use btrfs_ref to refactor
-add_pinned_bytes()") refactored add_pinned_bytes(), but during that
-refactor, there are two callers which add the pinned bytes instead
-of subtracting.
+Commit 9678c54388b6 ("btrfs: Remove custom crc32c init code") removed the
+btrfs_crc32c() function, because it was a duplicate of the crc32c() library
+function we already have in the kernel.
 
-That refactor misses those two caller, causing incorrect pinned bytes
-calculation and resulting unexpected ENOSPC error.
+Resurrect it as a shim wrapper over crc32c() to make following
+transformations of the checksumming code in btrfs easier.
 
-Fix it by adding a new parameter @sign to restore the original behavior.
+Also provide a btrfs_crc32_final() to ease following transformations.
 
-Reported-by: kernel test robot <rong.a.chen@intel.com>
-Fixes: ddf30cf03fb5 ("btrfs: extent-tree: Use btrfs_ref to refactor add_pinned_bytes()")
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
 ---
- fs/btrfs/extent-tree.c | 12 +++++++-----
- 1 file changed, 7 insertions(+), 5 deletions(-)
+ fs/btrfs/ctree.h       | 12 ++++++++++++
+ fs/btrfs/extent-tree.c |  6 +++---
+ fs/btrfs/send.c        |  2 +-
+ 3 files changed, 16 insertions(+), 4 deletions(-)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index b81c331b28fa..d85541f13f65 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -19,6 +19,7 @@
+ #include <linux/kobject.h>
+ #include <trace/events/btrfs.h>
+ #include <asm/kmap_types.h>
++#include <asm/unaligned.h>
+ #include <linux/pagemap.h>
+ #include <linux/btrfs.h>
+ #include <linux/btrfs_tree.h>
+@@ -2642,6 +2643,17 @@ BTRFS_SETGET_STACK_FUNCS(stack_dev_replace_cursor_right,
+ 	((unsigned long)(BTRFS_LEAF_DATA_OFFSET + \
+ 	btrfs_item_offset_nr(leaf, slot)))
+ 
++
++static inline u32 btrfs_crc32c(u32 crc, const void *address, unsigned length)
++{
++	return crc32c(crc, address, length);
++}
++
++static inline void btrfs_crc32c_final(u32 crc, u8 *result)
++{
++	put_unaligned_le32(~crc, result);
++}
++
+ static inline u64 btrfs_name_hash(const char *name, int len)
+ {
+        return crc32c((u32)~1, name, len);
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index f79e477a378e..8592d31e321c 100644
+index f79e477a378e..06a30f2cd2e0 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -757,12 +757,14 @@ static struct btrfs_space_info *__find_space_info(struct btrfs_fs_info *info,
+@@ -1119,11 +1119,11 @@ static u64 hash_extent_data_ref(u64 root_objectid, u64 owner, u64 offset)
+ 	__le64 lenum;
+ 
+ 	lenum = cpu_to_le64(root_objectid);
+-	high_crc = crc32c(high_crc, &lenum, sizeof(lenum));
++	high_crc = btrfs_crc32c(high_crc, &lenum, sizeof(lenum));
+ 	lenum = cpu_to_le64(owner);
+-	low_crc = crc32c(low_crc, &lenum, sizeof(lenum));
++	low_crc = btrfs_crc32c(low_crc, &lenum, sizeof(lenum));
+ 	lenum = cpu_to_le64(offset);
+-	low_crc = crc32c(low_crc, &lenum, sizeof(lenum));
++	low_crc = btrfs_crc32c(low_crc, &lenum, sizeof(lenum));
+ 
+ 	return ((u64)high_crc << 31) ^ (u64)low_crc;
  }
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index dd38dfe174df..c029ca6d5eba 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -686,7 +686,7 @@ static int send_cmd(struct send_ctx *sctx)
+ 	hdr->len = cpu_to_le32(sctx->send_size - sizeof(*hdr));
+ 	hdr->crc = 0;
  
- static void add_pinned_bytes(struct btrfs_fs_info *fs_info,
--			     struct btrfs_ref *ref)
-+			     struct btrfs_ref *ref, int sign)
- {
- 	struct btrfs_space_info *space_info;
--	s64 num_bytes = -ref->len;
-+	s64 num_bytes;
- 	u64 flags;
+-	crc = crc32c(0, (unsigned char *)sctx->send_buf, sctx->send_size);
++	crc = btrfs_crc32c(0, (unsigned char *)sctx->send_buf, sctx->send_size);
+ 	hdr->crc = cpu_to_le32(crc);
  
-+	ASSERT(sign == 1 || sign == -1);
-+	num_bytes = sign * ref->len;
- 	if (ref->type == BTRFS_REF_METADATA) {
- 		if (ref->tree_ref.root == BTRFS_CHUNK_TREE_OBJECTID)
- 			flags = BTRFS_BLOCK_GROUP_SYSTEM;
-@@ -2063,7 +2065,7 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
- 	btrfs_ref_tree_mod(fs_info, generic_ref);
- 
- 	if (ret == 0 && old_ref_mod < 0 && new_ref_mod >= 0)
--		add_pinned_bytes(fs_info, generic_ref);
-+		add_pinned_bytes(fs_info, generic_ref, -1);
- 
- 	return ret;
- }
-@@ -7190,7 +7192,7 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
- 	}
- out:
- 	if (pin)
--		add_pinned_bytes(fs_info, &generic_ref);
-+		add_pinned_bytes(fs_info, &generic_ref, 1);
- 
- 	if (last_ref) {
- 		/*
-@@ -7238,7 +7240,7 @@ int btrfs_free_extent(struct btrfs_trans_handle *trans, struct btrfs_ref *ref)
- 		btrfs_ref_tree_mod(fs_info, ref);
- 
- 	if (ret == 0 && old_ref_mod >= 0 && new_ref_mod < 0)
--		add_pinned_bytes(fs_info, ref);
-+		add_pinned_bytes(fs_info, ref, 1);
- 
- 	return ret;
- }
+ 	ret = write_buf(sctx->send_filp, sctx->send_buf, sctx->send_size,
 -- 
-2.21.0
+2.16.4
 

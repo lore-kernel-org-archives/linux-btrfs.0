@@ -2,33 +2,34 @@ Return-Path: <SRS0=Lj+K=TK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.9 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.1 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_PASS,
+	UNWANTED_LANGUAGE_BODY,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 91769C04AB2
-	for <linux-btrfs@archiver.kernel.org>; Fri, 10 May 2019 11:15:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 25C87C04A6B
+	for <linux-btrfs@archiver.kernel.org>; Fri, 10 May 2019 11:16:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 66E4A20989
-	for <linux-btrfs@archiver.kernel.org>; Fri, 10 May 2019 11:15:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E870D20989
+	for <linux-btrfs@archiver.kernel.org>; Fri, 10 May 2019 11:15:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727347AbfEJLP5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 10 May 2019 07:15:57 -0400
-Received: from mx2.suse.de ([195.135.220.15]:50566 "EHLO mx1.suse.de"
+        id S1727359AbfEJLP7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 10 May 2019 07:15:59 -0400
+Received: from mx2.suse.de ([195.135.220.15]:50586 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727251AbfEJLPz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 10 May 2019 07:15:55 -0400
+        id S1727067AbfEJLP5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 10 May 2019 07:15:57 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 3763BAF8F
+        by mx1.suse.de (Postfix) with ESMTP id 62A9BAF9A
         for <linux-btrfs@vger.kernel.org>; Fri, 10 May 2019 11:15:52 +0000 (UTC)
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 To:     David Sterba <dsterba@suse.com>
 Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
         Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH 05/17] btrfs: don't assume ordered sums to be 4 bytes
-Date:   Fri, 10 May 2019 13:15:35 +0200
-Message-Id: <20190510111547.15310-6-jthumshirn@suse.de>
+Subject: [PATCH 13/17] btrfs: pass in an fs_info to btrfs_csum_{data,final}()
+Date:   Fri, 10 May 2019 13:15:43 +0200
+Message-Id: <20190510111547.15310-14-jthumshirn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20190510111547.15310-1-jthumshirn@suse.de>
 References: <20190510111547.15310-1-jthumshirn@suse.de>
@@ -37,232 +38,229 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-BTRFS has the implicit assumption that a checksum in btrfs_orderd_sums is 4
-bytes. While this is true for CRC32C, it is not for any other checksum.
-
-Change the data type to be a byte array and adjust loop index calculation
-accordingly.
+Later patches will need the fs_info to get the checksum function in
+btrfs_csum_data() and btrfs_csum_final().
 
 Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
 ---
- fs/btrfs/compression.c  |  4 ++--
- fs/btrfs/ctree.h        |  3 ++-
- fs/btrfs/file-item.c    | 28 +++++++++++++++-------------
- fs/btrfs/ordered-data.c | 10 ++++++----
- fs/btrfs/ordered-data.h |  4 ++--
- fs/btrfs/scrub.c        |  2 +-
- 6 files changed, 28 insertions(+), 23 deletions(-)
+ fs/btrfs/check-integrity.c |  4 ++--
+ fs/btrfs/compression.c     |  4 ++--
+ fs/btrfs/disk-io.c         | 18 ++++++++++--------
+ fs/btrfs/disk-io.h         |  5 +++--
+ fs/btrfs/file-item.c       |  4 ++--
+ fs/btrfs/inode.c           |  5 +++--
+ fs/btrfs/scrub.c           | 12 ++++++------
+ 7 files changed, 28 insertions(+), 24 deletions(-)
 
+diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
+index 85774e2fa3e5..6aad0c3d197f 100644
+--- a/fs/btrfs/check-integrity.c
++++ b/fs/btrfs/check-integrity.c
+@@ -1728,9 +1728,9 @@ static int btrfsic_test_for_metadata(struct btrfsic_state *state,
+ 		size_t sublen = i ? PAGE_SIZE :
+ 				    (PAGE_SIZE - BTRFS_CSUM_SIZE);
+ 
+-		crc = btrfs_csum_data(data, crc, sublen);
++		crc = btrfs_csum_data(fs_info, data, crc, sublen);
+ 	}
+-	btrfs_csum_final(crc, csum);
++	btrfs_csum_final(fs_info, crc, csum);
+ 	if (memcmp(csum, h->csum, state->csum_size))
+ 		return 1;
+ 
 diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 4ec1df369e47..98d8c2ed367f 100644
+index d5642f3b5c44..e63bd29e5a27 100644
 --- a/fs/btrfs/compression.c
 +++ b/fs/btrfs/compression.c
-@@ -632,7 +632,7 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+@@ -74,8 +74,8 @@ static int check_compressed_csum(struct btrfs_inode *inode,
+ 		csum = ~(u32)0;
  
- 			if (!(BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)) {
- 				ret = btrfs_lookup_bio_sums(inode, comp_bio,
--							    sums);
-+							    (u8 *)sums);
- 				BUG_ON(ret); /* -ENOMEM */
- 			}
- 			sums += DIV_ROUND_UP(comp_bio->bi_iter.bi_size,
-@@ -658,7 +658,7 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 	BUG_ON(ret); /* -ENOMEM */
+ 		kaddr = kmap_atomic(page);
+-		csum = btrfs_csum_data(kaddr, csum, PAGE_SIZE);
+-		btrfs_csum_final(csum, (u8 *)&csum);
++		csum = btrfs_csum_data(fs_info, kaddr, csum, PAGE_SIZE);
++		btrfs_csum_final(fs_info, csum, (u8 *)&csum);
+ 		kunmap_atomic(kaddr);
  
- 	if (!(BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)) {
--		ret = btrfs_lookup_bio_sums(inode, comp_bio, sums);
-+		ret = btrfs_lookup_bio_sums(inode, comp_bio, (u8 *) sums);
- 		BUG_ON(ret); /* -ENOMEM */
- 	}
- 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 0a2a377f1640..e62934fb8748 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3184,7 +3184,8 @@ int btrfs_find_name_in_ext_backref(struct extent_buffer *leaf, int slot,
- struct btrfs_dio_private;
- int btrfs_del_csums(struct btrfs_trans_handle *trans,
- 		    struct btrfs_fs_info *fs_info, u64 bytenr, u64 len);
--blk_status_t btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio, u32 *dst);
-+blk_status_t btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio,
-+				   u8 *dst);
- blk_status_t btrfs_lookup_bio_sums_dio(struct inode *inode, struct bio *bio,
- 			      u64 logical_offset);
- int btrfs_insert_file_extent(struct btrfs_trans_handle *trans,
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index d431ea8198e4..210ff69917a0 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -22,9 +22,9 @@
- #define MAX_CSUM_ITEMS(r, size) (min_t(u32, __MAX_CSUM_ITEMS(r, size), \
- 				       PAGE_SIZE))
- 
--#define MAX_ORDERED_SUM_BYTES(fs_info) ((PAGE_SIZE - \
-+#define MAX_ORDERED_SUM_BYTES(fs_info, csum_size) ((PAGE_SIZE - \
- 				   sizeof(struct btrfs_ordered_sum)) / \
--				   sizeof(u32) * (fs_info)->sectorsize)
-+				   (csum_size) * (fs_info)->sectorsize)
- 
- int btrfs_insert_file_extent(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *root,
-@@ -144,7 +144,7 @@ int btrfs_lookup_file_extent(struct btrfs_trans_handle *trans,
+ 		if (memcmp(&csum, cb_sum, csum_size)) {
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index d57adf3eaa85..fb0b06b7b9f6 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -250,12 +250,13 @@ struct extent_map *btree_get_extent(struct btrfs_inode *inode,
+ 	return em;
  }
  
- static blk_status_t __btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio,
--				   u64 logical_offset, u32 *dst, int dio)
-+				   u64 logical_offset, u8 *dst, int dio)
+-u32 btrfs_csum_data(const char *data, u32 seed, size_t len)
++u32 btrfs_csum_data(struct btrfs_fs_info *fs_info, const char *data,
++		    u32 seed, size_t len)
  {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct bio_vec bvec;
-@@ -211,7 +211,7 @@ static blk_status_t __btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio
- 		if (!dio)
- 			offset = page_offset(bvec.bv_page) + bvec.bv_offset;
- 		count = btrfs_find_ordered_sum(inode, offset, disk_bytenr,
--					       (u32 *)csum, nblocks);
-+					       csum, nblocks);
- 		if (count)
- 			goto found;
+ 	return crc32c(seed, data, len);
+ }
  
-@@ -283,7 +283,8 @@ static blk_status_t __btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio
+-void btrfs_csum_final(u32 crc, u8 *result)
++void btrfs_csum_final(struct btrfs_fs_info *fs_info, u32 crc, u8 *result)
+ {
+ 	put_unaligned_le32(~crc, result);
+ }
+@@ -289,14 +290,14 @@ static int csum_tree_block(struct extent_buffer *buf, u8 *result)
+ 		if (WARN_ON(err))
+ 			return err;
+ 		cur_len = min(len, map_len - (offset - map_start));
+-		crc = btrfs_csum_data(kaddr + offset - map_start,
++		crc = btrfs_csum_data(buf->fs_info, kaddr + offset - map_start,
+ 				      crc, cur_len);
+ 		len -= cur_len;
+ 		offset += cur_len;
+ 	}
+ 	memset(result, 0, BTRFS_CSUM_SIZE);
+ 
+-	btrfs_csum_final(crc, result);
++	btrfs_csum_final(buf->fs_info, crc, result);
+ 
  	return 0;
  }
+@@ -384,9 +385,9 @@ static int btrfs_check_super_csum(struct btrfs_fs_info *fs_info,
+ 	 * BTRFS_SUPER_INFO_SIZE range, we expect that the unused space
+ 	 * is filled with zeros and is included in the checksum.
+ 	 */
+-	crc = btrfs_csum_data(raw_disk_sb + BTRFS_CSUM_SIZE,
++	crc = btrfs_csum_data(fs_info, raw_disk_sb + BTRFS_CSUM_SIZE,
+ 			      crc, BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
+-	btrfs_csum_final(crc, result);
++	btrfs_csum_final(fs_info, crc, result);
  
--blk_status_t btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio, u32 *dst)
-+blk_status_t btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio,
-+				   u8 *dst)
- {
- 	return __btrfs_lookup_bio_sums(inode, bio, 0, dst, 0);
- }
-@@ -374,7 +375,7 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
- 				      struct btrfs_csum_item);
- 		while (start < csum_end) {
- 			size = min_t(size_t, csum_end - start,
--				     MAX_ORDERED_SUM_BYTES(fs_info));
-+				     MAX_ORDERED_SUM_BYTES(fs_info, csum_size));
- 			sums = kzalloc(btrfs_ordered_sum_size(fs_info, size),
- 				       GFP_NOFS);
- 			if (!sums) {
-@@ -439,6 +440,7 @@ blk_status_t btrfs_csum_one_bio(struct inode *inode, struct bio *bio,
- 	int i;
- 	u64 offset;
- 	unsigned nofs_flag;
-+	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
+ 	if (memcmp(raw_disk_sb, result, btrfs_super_csum_size(disk_sb)))
+ 		return 1;
+@@ -3534,9 +3535,10 @@ static int write_dev_supers(struct btrfs_device *device,
+ 		btrfs_set_super_bytenr(sb, bytenr);
  
- 	nofs_flag = memalloc_nofs_save();
- 	sums = kvzalloc(btrfs_ordered_sum_size(fs_info, bio->bi_iter.bi_size),
-@@ -473,6 +475,7 @@ blk_status_t btrfs_csum_one_bio(struct inode *inode, struct bio *bio,
- 						 - 1);
+ 		crc = ~(u32)0;
+-		crc = btrfs_csum_data((const char *)sb + BTRFS_CSUM_SIZE, crc,
++		crc = btrfs_csum_data(device->fs_info,
++				      (const char *)sb + BTRFS_CSUM_SIZE, crc,
+ 				      BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
+-		btrfs_csum_final(crc, sb->csum);
++		btrfs_csum_final(device->fs_info, crc, sb->csum);
  
- 		for (i = 0; i < nr_sectors; i++) {
-+			u32 tmp;
- 			if (offset >= ordered->file_offset + ordered->len ||
- 				offset < ordered->file_offset) {
- 				unsigned long bytes_left;
-@@ -498,17 +501,16 @@ blk_status_t btrfs_csum_one_bio(struct inode *inode, struct bio *bio,
- 				index = 0;
- 			}
+ 		/* One reference for us, and we leave it for the caller */
+ 		bh = __getblk(device->bdev, bytenr / BTRFS_BDEV_BLOCKSIZE,
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index a0161aa1ea0b..434c4d402326 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -115,8 +115,9 @@ int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid,
+ 			  int atomic);
+ int btrfs_read_buffer(struct extent_buffer *buf, u64 parent_transid, int level,
+ 		      struct btrfs_key *first_key);
+-u32 btrfs_csum_data(const char *data, u32 seed, size_t len);
+-void btrfs_csum_final(u32 crc, u8 *result);
++u32 btrfs_csum_data(struct btrfs_fs_info *fs_info, const char *data,
++		    u32 seed, size_t len);
++void btrfs_csum_final(struct btrfs_fs_info *fs_info, u32 crc, u8 *result);
+ blk_status_t btrfs_bio_wq_end_io(struct btrfs_fs_info *info, struct bio *bio,
+ 			enum btrfs_wq_endio_type metadata);
+ blk_status_t btrfs_wq_submit_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index c551479afa63..8ff939ebb118 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -503,12 +503,12 @@ blk_status_t btrfs_csum_one_bio(struct inode *inode, struct bio *bio,
  
--			sums->sums[index] = ~(u32)0;
-+			memset(&sums->sums[index], 0xff, csum_size);
+ 			memset(&sums->sums[index], 0xff, csum_size);
  			data = kmap_atomic(bvec.bv_page);
--			sums->sums[index]
--				= btrfs_csum_data(data + bvec.bv_offset
-+			tmp = btrfs_csum_data(data + bvec.bv_offset
+-			tmp = btrfs_csum_data(data + bvec.bv_offset
++			tmp = btrfs_csum_data(fs_info, data + bvec.bv_offset
  						+ (i * fs_info->sectorsize),
--						sums->sums[index],
-+						*(u32 *)&sums->sums[index],
+ 						*(u32 *)&sums->sums[index],
  						fs_info->sectorsize);
  			kunmap_atomic(data);
--			btrfs_csum_final(sums->sums[index],
-+			btrfs_csum_final(tmp,
+-			btrfs_csum_final(tmp,
++			btrfs_csum_final(fs_info, tmp,
  					(char *)(sums->sums + index));
--			index++;
-+			index += csum_size;
+ 			index += csum_size;
  			offset += fs_info->sectorsize;
- 			this_sum_bytes += fs_info->sectorsize;
- 			total_bytes += fs_info->sectorsize;
-@@ -904,9 +906,9 @@ int btrfs_csum_file_blocks(struct btrfs_trans_handle *trans,
- 	write_extent_buffer(leaf, sums->sums + index, (unsigned long)item,
- 			    ins_size);
- 
-+	index += ins_size;
- 	ins_size /= csum_size;
- 	total_bytes += ins_size * fs_info->sectorsize;
--	index += ins_size;
- 
- 	btrfs_mark_buffer_dirty(path->nodes[0]);
- 	if (total_bytes < sums->len) {
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 52889da69113..6f7a18148dcb 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -924,14 +924,16 @@ int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
-  * be reclaimed before their checksum is actually put into the btree
-  */
- int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr,
--			   u32 *sum, int len)
-+			   u8 *sum, int len)
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index db19f113d514..578d1d696889 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3203,6 +3203,7 @@ static int __readpage_endio_check(struct inode *inode,
+ 				  int icsum, struct page *page,
+ 				  int pgoff, u64 start, size_t len)
  {
 +	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct btrfs_ordered_sum *ordered_sum;
- 	struct btrfs_ordered_extent *ordered;
- 	struct btrfs_ordered_inode_tree *tree = &BTRFS_I(inode)->ordered_tree;
- 	unsigned long num_sectors;
- 	unsigned long i;
- 	u32 sectorsize = btrfs_inode_sectorsize(inode);
-+	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
- 	int index = 0;
+ 	char *kaddr;
+ 	u32 csum_expected;
+ 	u32 csum = ~(u32)0;
+@@ -3210,8 +3211,8 @@ static int __readpage_endio_check(struct inode *inode,
+ 	csum_expected = *(((u32 *)io_bio->csum) + icsum);
  
- 	ordered = btrfs_lookup_ordered_extent(inode, offset);
-@@ -947,10 +949,10 @@ int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr,
- 			num_sectors = ordered_sum->len >>
- 				      inode->i_sb->s_blocksize_bits;
- 			num_sectors = min_t(int, len - index, num_sectors - i);
--			memcpy(sum + index, ordered_sum->sums + i,
--			       num_sectors);
-+			memcpy(sum + index, ordered_sum->sums + i * csum_size,
-+			       num_sectors * csum_size);
+ 	kaddr = kmap_atomic(page);
+-	csum = btrfs_csum_data(kaddr + pgoff, csum,  len);
+-	btrfs_csum_final(csum, (u8 *)&csum);
++	csum = btrfs_csum_data(fs_info, kaddr + pgoff, csum,  len);
++	btrfs_csum_final(fs_info, csum, (u8 *)&csum);
+ 	if (csum != csum_expected)
+ 		goto zeroit;
  
--			index += (int)num_sectors;
-+			index += (int)num_sectors * csum_size;
- 			if (index == len)
- 				goto out;
- 			disk_bytenr += num_sectors * sectorsize;
-diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-index 4c5991c3de14..9a9884966343 100644
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -23,7 +23,7 @@ struct btrfs_ordered_sum {
- 	int len;
- 	struct list_head list;
- 	/* last field is a variable length array of csums */
--	u32 sums[];
-+	u8 sums[];
- };
- 
- /*
-@@ -183,7 +183,7 @@ struct btrfs_ordered_extent *btrfs_lookup_ordered_range(
- int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
- 				struct btrfs_ordered_extent *ordered);
- int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr,
--			   u32 *sum, int len);
-+			   u8 *sum, int len);
- u64 btrfs_wait_ordered_extents(struct btrfs_root *root, u64 nr,
- 			       const u64 range_start, const u64 range_len);
- u64 btrfs_wait_ordered_roots(struct btrfs_fs_info *fs_info, u64 nr,
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index f7b29f9db5e2..2cf3cf9e9c9b 100644
+index 2cf3cf9e9c9b..b8fd4edeee53 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -2448,7 +2448,7 @@ static int scrub_find_csum(struct scrub_ctx *sctx, u64 logical, u8 *csum)
- 	ASSERT(index < UINT_MAX);
+@@ -1808,7 +1808,7 @@ static int scrub_checksum_data(struct scrub_block *sblock)
+ 	for (;;) {
+ 		u64 l = min_t(u64, len, PAGE_SIZE);
  
- 	num_sectors = sum->len / sctx->fs_info->sectorsize;
--	memcpy(csum, sum->sums + index, sctx->csum_size);
-+	memcpy(csum, sum->sums + index * sctx->csum_size, sctx->csum_size);
- 	if (index == num_sectors - 1) {
- 		list_del(&sum->list);
- 		kfree(sum);
+-		crc = btrfs_csum_data(buffer, crc, l);
++		crc = btrfs_csum_data(sctx->fs_info, buffer, crc, l);
+ 		kunmap_atomic(buffer);
+ 		len -= l;
+ 		if (len == 0)
+@@ -1820,7 +1820,7 @@ static int scrub_checksum_data(struct scrub_block *sblock)
+ 		buffer = kmap_atomic(page);
+ 	}
+ 
+-	btrfs_csum_final(crc, csum);
++	btrfs_csum_final(sctx->fs_info, crc, csum);
+ 	if (memcmp(csum, on_disk_csum, sctx->csum_size))
+ 		sblock->checksum_error = 1;
+ 
+@@ -1875,7 +1875,7 @@ static int scrub_checksum_tree_block(struct scrub_block *sblock)
+ 	for (;;) {
+ 		u64 l = min_t(u64, len, mapped_size);
+ 
+-		crc = btrfs_csum_data(p, crc, l);
++		crc = btrfs_csum_data(fs_info, p, crc, l);
+ 		kunmap_atomic(mapped_buffer);
+ 		len -= l;
+ 		if (len == 0)
+@@ -1889,7 +1889,7 @@ static int scrub_checksum_tree_block(struct scrub_block *sblock)
+ 		p = mapped_buffer;
+ 	}
+ 
+-	btrfs_csum_final(crc, calculated_csum);
++	btrfs_csum_final(fs_info, crc, calculated_csum);
+ 	if (memcmp(calculated_csum, on_disk_csum, sctx->csum_size))
+ 		sblock->checksum_error = 1;
+ 
+@@ -1934,7 +1934,7 @@ static int scrub_checksum_super(struct scrub_block *sblock)
+ 	for (;;) {
+ 		u64 l = min_t(u64, len, mapped_size);
+ 
+-		crc = btrfs_csum_data(p, crc, l);
++		crc = btrfs_csum_data(sctx->fs_info, p, crc, l);
+ 		kunmap_atomic(mapped_buffer);
+ 		len -= l;
+ 		if (len == 0)
+@@ -1948,7 +1948,7 @@ static int scrub_checksum_super(struct scrub_block *sblock)
+ 		p = mapped_buffer;
+ 	}
+ 
+-	btrfs_csum_final(crc, calculated_csum);
++	btrfs_csum_final(sctx->fs_info, crc, calculated_csum);
+ 	if (memcmp(calculated_csum, on_disk_csum, sctx->csum_size))
+ 		++fail_cor;
+ 
 -- 
 2.16.4
 

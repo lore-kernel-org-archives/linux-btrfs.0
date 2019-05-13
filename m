@@ -2,134 +2,243 @@ Return-Path: <SRS0=eL0R=TN=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 47E90C04AA7
-	for <linux-btrfs@archiver.kernel.org>; Mon, 13 May 2019 13:55:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 11F84C04AA7
+	for <linux-btrfs@archiver.kernel.org>; Mon, 13 May 2019 14:04:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 06480208CA
-	for <linux-btrfs@archiver.kernel.org>; Mon, 13 May 2019 13:55:41 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b="UezKFt0I";
-	dkim=pass (1024-bit key) header.d=fb.onmicrosoft.com header.i=@fb.onmicrosoft.com header.b="jkJOiGhh"
+	by mail.kernel.org (Postfix) with ESMTP id BE94D208CA
+	for <linux-btrfs@archiver.kernel.org>; Mon, 13 May 2019 14:04:28 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1557756268;
+	bh=W9bVmywEtKfoBTydCBYLM1ordxXwdloe4TaDdD1M44w=;
+	h=References:In-Reply-To:From:Date:Subject:To:List-ID:From;
+	b=L+JtQjkwKD7tVQWsIlczPPgi4s+DVBmj0GfePyzVI9uEpQse0rLJ6/L6XXl6Zy8XY
+	 W5div9qY+Rb/QbvYmfys6ZLzVUwM2Ha2gV2K6np3VOzwO8E6uUwq4f9hwi+yTLJbxN
+	 I6BE9iNc1wh66bDzyVGU/FY0Y4F3YoxOKL3GCTrA=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729943AbfEMNzk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 13 May 2019 09:55:40 -0400
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:37200 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1729710AbfEMNzj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 May 2019 09:55:39 -0400
-Received: from pps.filterd (m0148461.ppops.net [127.0.0.1])
-        by mx0a-00082601.pphosted.com (8.16.0.27/8.16.0.27) with SMTP id x4DDmBiR025380;
-        Mon, 13 May 2019 06:55:11 -0700
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
- : date : message-id : references : in-reply-to : content-type :
- content-transfer-encoding : mime-version; s=facebook;
- bh=JRSB28FqriSrL6oY4fhgvF0PqKL/uK71y3gwe6gCU7U=;
- b=UezKFt0IqDiLpAqEqhU0D4b0+glFMUjA7Ok9qbxnFTClFi3xE4scSozMKBEbs7cqqpto
- HFxQquyCvBTMtHuw1E9QPCRb9IZs+kzTgrPKIIKh2hHyxXIgiJCvfEh9CU97UAcrZwJp
- W3Kmoyli1fkipqq+eSHZxUIwMFQizA/xnak= 
-Received: from maileast.thefacebook.com ([163.114.130.16])
-        by mx0a-00082601.pphosted.com with ESMTP id 2sdug85y2k-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT);
-        Mon, 13 May 2019 06:55:11 -0700
-Received: from ash-exhub102.TheFacebook.com (2620:10d:c0a8:82::f) by
- ash-exhub201.TheFacebook.com (2620:10d:c0a8:83::7) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.1.1713.5; Mon, 13 May 2019 06:55:10 -0700
-Received: from NAM05-CO1-obe.outbound.protection.outlook.com (100.104.31.183)
- by o365-in.thefacebook.com (100.104.35.172) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id 15.1.1713.5
- via Frontend Transport; Mon, 13 May 2019 06:55:10 -0700
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.onmicrosoft.com;
- s=selector1-fb-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=JRSB28FqriSrL6oY4fhgvF0PqKL/uK71y3gwe6gCU7U=;
- b=jkJOiGhh0c7gZSPsFEEi/n/LDH7pvZ6ebLxFrlEEIBOdwPqxfb7rT5cVesvADyhGTWJ3UKKAjVXWCCE5XuhCd9q0obD7UF7TFFmT25MqvboDMu8OIKuIup4WXO+Q1zgJo/tTxbzI7c473BJf8u6slyVDwlvKdzriTdXT8BQBqH4=
-Received: from DM5PR15MB1290.namprd15.prod.outlook.com (10.173.212.17) by
- DM5PR15MB1817.namprd15.prod.outlook.com (10.174.246.151) with Microsoft SMTP
- Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.20.1878.22; Mon, 13 May 2019 13:55:07 +0000
-Received: from DM5PR15MB1290.namprd15.prod.outlook.com
- ([fe80::6182:329:231e:af13]) by DM5PR15MB1290.namprd15.prod.outlook.com
- ([fe80::6182:329:231e:af13%5]) with mapi id 15.20.1878.024; Mon, 13 May 2019
- 13:55:07 +0000
-From:   Chris Mason <clm@fb.com>
-To:     Johannes Thumshirn <jthumshirn@suse.de>
-CC:     David Sterba <dsterba@suse.com>,
-        Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 14/17] btrfs: directly call into crypto framework for
- checsumming
-Thread-Topic: [PATCH 14/17] btrfs: directly call into crypto framework for
- checsumming
-Thread-Index: AQHVByHcHj361c2vWkWOfcMgLPaHB6ZkHAOAgAACbwCABIsjgIAAbxUA
-Date:   Mon, 13 May 2019 13:55:07 +0000
-Message-ID: <9697C6F0-1C0B-4790-A96C-4B56F4DF37D0@fb.com>
-References: <20190510111547.15310-1-jthumshirn@suse.de>
- <20190510111547.15310-15-jthumshirn@suse.de>
- <18303EEF-24F1-40BB-9448-A55324AA119A@fb.com>
- <A792E55A-8007-44AB-8E9A-4EE4C363D15C@fb.com> <20190513071729.GD12653@x250>
-In-Reply-To: <20190513071729.GD12653@x250>
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-x-mailer: MailMate (1.12.4r5594)
-x-clientproxiedby: BN6PR19CA0108.namprd19.prod.outlook.com
- (2603:10b6:404:a0::22) To DM5PR15MB1290.namprd15.prod.outlook.com
- (2603:10b6:3:b8::17)
-x-ms-exchange-messagesentrepresentingtype: 1
-x-originating-ip: [67.253.148.112]
-x-ms-publictraffictype: Email
-x-ms-office365-filtering-correlation-id: 284437cb-6267-4365-622c-08d6d7aa9b23
-x-microsoft-antispam: BCL:0;PCL:0;RULEID:(2390118)(7020095)(4652040)(8989299)(4534185)(4627221)(201703031133081)(201702281549075)(8990200)(5600141)(711020)(4605104)(2017052603328)(7193020);SRVR:DM5PR15MB1817;
-x-ms-traffictypediagnostic: DM5PR15MB1817:
-x-microsoft-antispam-prvs: <DM5PR15MB18178E99109758E6E2A45E2BD30F0@DM5PR15MB1817.namprd15.prod.outlook.com>
-x-ms-oob-tlc-oobclassifiers: OLM:9508;
-x-forefront-prvs: 0036736630
-x-forefront-antispam-report: SFV:NSPM;SFS:(10019020)(366004)(199004)(189003)(6916009)(83716004)(73956011)(26005)(5660300002)(66946007)(64756008)(66446008)(66476007)(66556008)(66066001)(82746002)(386003)(33656002)(6506007)(498600001)(305945005)(7736002)(14454004)(52116002)(76176011)(86362001)(186003)(6116002)(2616005)(99286004)(81166006)(81156014)(50226002)(68736007)(4744005)(36756003)(25786009)(3846002)(53546011)(6246003)(446003)(8676002)(8936002)(11346002)(54906003)(486006)(53936002)(71190400001)(71200400001)(256004)(6436002)(476003)(4326008)(102836004)(2906002)(6486002)(229853002)(6512007);DIR:OUT;SFP:1102;SCL:1;SRVR:DM5PR15MB1817;H:DM5PR15MB1290.namprd15.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;A:1;MX:1;
-received-spf: None (protection.outlook.com: fb.com does not designate
- permitted sender hosts)
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam-message-info: U1VCCN/i7Q8Q6nrDctE6rf9BQXrNLWj3nIqkweET+o+dq/6W3L05Tb7j0f6bywP3TY3MUPN861e1txpzJu12etw27UCKWZqR6dF0OD+WRVyH/ituS+4ua4oYvMomGCQkLoo9FyrL3l6Rh1gu0j1QqWoTwo7edyHjkQCxw6kmYWumV0FC0HAW/bEAxsGiZExJGyJ8ZXFasTp/MGU0K478cgi/DW5305581KeMt+OEJTL5b5EFVvjBB4/ouDXPbm5xkWL7wmTvijSgro+6e5cV1jIvzHPmYsy8JvGF3hFrCjF5pWYGv9pqs2ewq7uJurkvCB2LOI4d2vDHSAufh6G8rodFZ3+jv/YiZ57FLb00ww1t6PIBN1bPqCLv8SbX1xX+qSdW6KQQFJGRiuIo9zYp84FjTLaEJWWpwMwlH8pAS8U=
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+        id S1730334AbfEMOE1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 13 May 2019 10:04:27 -0400
+Received: from mail.kernel.org ([198.145.29.99]:42028 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1729875AbfEMOE1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 13 May 2019 10:04:27 -0400
+Received: from mail-ua1-f49.google.com (mail-ua1-f49.google.com [209.85.222.49])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id EA6BC21019
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 May 2019 14:04:25 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1557756266;
+        bh=W9bVmywEtKfoBTydCBYLM1ordxXwdloe4TaDdD1M44w=;
+        h=References:In-Reply-To:From:Date:Subject:To:From;
+        b=JexnKV+ahaF+8AG6C78CXKIReMErRxaZwNvRm6filWJ28RoJwk973rG1zv/3aoyct
+         EYK/OUckrglLwTLlZr7LL0SApjbs3bHkTHOyYYYb4n1rvTr5aRVaFlMr1VVY9WM7im
+         2716xYxTz4qprsg9ie1eCQA5jNntWBi7OQGM+4Wg=
+Received: by mail-ua1-f49.google.com with SMTP id g16so4845048uad.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 May 2019 07:04:25 -0700 (PDT)
+X-Gm-Message-State: APjAAAWnrqpdjqbfeJM9kuWqvbOKdPiwJ5xwja0CZdp9+SXwQO6NNc9e
+        bZ2HJf46ywiW83NuuJAy91+55zXXnltAEVVV/YM=
+X-Google-Smtp-Source: APXvYqwmJyfMlHOYbEZgzT6sR/zirFDMjWHTrfsxLhOsT87TNLj4Pb2bjHQNSl5JCqoh52ihze11NBMYOO59p2KMJLM=
+X-Received: by 2002:a9f:326e:: with SMTP id y43mr12934601uad.83.1557756264524;
+ Mon, 13 May 2019 07:04:24 -0700 (PDT)
 MIME-Version: 1.0
-X-MS-Exchange-CrossTenant-Network-Message-Id: 284437cb-6267-4365-622c-08d6d7aa9b23
-X-MS-Exchange-CrossTenant-originalarrivaltime: 13 May 2019 13:55:07.0826
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: 8ae927fe-1255-47a7-a2af-5f3a069daaa2
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: DM5PR15MB1817
-X-OriginatorOrg: fb.com
-X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10434:,, definitions=2019-05-13_07:,,
- signatures=0
-X-Proofpoint-Spam-Details: rule=fb_default_notspam policy=fb_default score=0 priorityscore=1501
- malwarescore=0 suspectscore=0 phishscore=0 bulkscore=0 spamscore=0
- clxscore=1015 lowpriorityscore=0 mlxscore=0 impostorscore=0
- mlxlogscore=658 adultscore=0 classifier=spam adjust=0 reason=mlx
- scancount=1 engine=8.0.1-1810050000 definitions=main-1905130097
-X-FB-Internal: deliver
+References: <20190422154409.16323-1-fdmanana@kernel.org>
+In-Reply-To: <20190422154409.16323-1-fdmanana@kernel.org>
+From:   Filipe Manana <fdmanana@kernel.org>
+Date:   Mon, 13 May 2019 15:04:13 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H4nrAJSwXoX9c5LX2oFb-CFdHQ-enMON3ZqgNWoRqP33g@mail.gmail.com>
+Message-ID: <CAL3q7H4nrAJSwXoX9c5LX2oFb-CFdHQ-enMON3ZqgNWoRqP33g@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: prevent send failures and crashes due to
+ concurrent relocation
+To:     linux-btrfs <linux-btrfs@vger.kernel.org>,
+        David Sterba <dsterba@suse.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-T24gMTMgTWF5IDIwMTksIGF0IDM6MTcsIEpvaGFubmVzIFRodW1zaGlybiB3cm90ZToNCg0KPiBP
-biBGcmksIE1heSAxMCwgMjAxOSBhdCAwMTo1NDozMFBNICswMDAwLCBDaHJpcyBNYXNvbiB3cm90
-ZToNCj4+IExvb2tpbmcgYXQgdGhlIGNhbGxlcnMgb2YgYnRyZnNfY3N1bV9maW5hbCgpIGFuZCBi
-dHJmc19jc3VtX2RhdGEoKSwgDQo+PiBsZXRzDQo+PiBqdXN0IHBhc3MgdGhlIHNoYXNoX2Rlc2Mg
-ZnJvbSB0aGUgY2FsbGVycy4gIFRoYXQgd2F5IHlvdSBkb24ndCBoYXZlIA0KPj4gdG8NCj4+IHBv
-a2UgYXQgbWVtY3B5IGFuZCBzaGFzaF9kZXNjX2N0eCgpLg0KPg0KPiBJIHdhbnRlZCB0byBhdm9p
-ZCBzcHJlYWRpbmcga25vd2xlZGdlIGFib3V0IHRoZSBjcnlwdG8gYXBpIHRvIGRlZXAgDQo+IGlu
-dG8gdGhlDQo+IGZpbGVzeXN0ZW0uIEknZCBhY3R1YWxseSBsb3ZlZCB0byBoYXZlIHNvbWV0aGlu
-ZyBha2luIHRvIHViaWZzJw0KPiB1Ymlmc19pbmZvOjpsb2dfaGFzaCBidXQgd2Fzbid0IHJlYWxs
-eSBzdXJlIGhvdyB0byBoYW5kbGUgY29uY3VycmVuY3kuDQoNCkl0J3MgbXVjaCBiZXR0ZXIgdG8g
-YmUgZXhwbGljaXQgdGhhdCB3ZSdyZSB1c2luZyB0aGUgY3J5cHRvIEFQSSB0aGFuIHRvIA0KbXVj
-ayBhcm91bmQgaW4gY3J5cHRvIGFwaSBpbnRlcm5hbCBkYXRhIHN0cnVjdHMuICBJdCdzIGp1c3Qg
-YSBmZXcgDQpjYWxsZXJzLCBhbmQgbm90IG1ham9yIHN1cmdlcnkgdG8gY2hhbmdlIGl0IGFyb3Vu
-ZCBzb21lIHRpbWUgbGF0ZXIgaWYgd2UgDQpuZWVkIHRvLg0KDQotY2hyaXMNCg==
+On Mon, Apr 22, 2019 at 4:52 PM <fdmanana@kernel.org> wrote:
+>
+> From: Filipe Manana <fdmanana@suse.com>
+>
+> Send always operates on read-only trees and always expected that while it
+> is in progress, nothing changes in those trees. Due to that expectation
+> and the fact that send is a read-only operation, it operates on commit
+> roots and does not hold transaction handles. However relocation can COW
+> nodes and leafs from read-only trees, which can cause unexpected failures
+> and crashes (hitting BUG_ONs). while send using a node/leaf, it gets
+> COWed, the transaction used to COW it is committed, a new transaction
+> starts, the extent previously used for that node/leaf gets allocated,
+> possibly for another tree, and the respective extent buffer' content
+> changes while send is still using it. When this happens send normally
+> fails with EIO being returned to user space and messages like the
+> following are found in dmesg/syslog:
+>
+>   [ 3408.699121] BTRFS error (device sdc): parent transid verify failed on 58703872 wanted 250 found 253
+>   [ 3441.523123] BTRFS error (device sdc): did not find backref in send_root. inode=63211, offset=0, disk_byte=5222825984 found extent=5222825984
+>
+> Other times, less often, we hit a BUG_ON() because an extent buffer that
+> send is using used to be a node, and while send is still using it, it
+> got COWed and got reused as a leaf while send is still using, producing
+> the following trace:
+>
+>  [ 3478.466280] ------------[ cut here ]------------
+>  [ 3478.466282] kernel BUG at fs/btrfs/ctree.c:1806!
+>  [ 3478.466965] invalid opcode: 0000 [#1] SMP DEBUG_PAGEALLOC PTI
+>  [ 3478.467635] CPU: 0 PID: 2165 Comm: btrfs Not tainted 5.0.0-btrfs-next-46 #1
+>  [ 3478.468311] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.11.2-0-gf9626ccb91-prebuilt.qemu-project.org 04/01/2014
+>  [ 3478.469681] RIP: 0010:read_node_slot+0x122/0x130 [btrfs]
+>  (...)
+>  [ 3478.471758] RSP: 0018:ffffa437826bfaa0 EFLAGS: 00010246
+>  [ 3478.472457] RAX: ffff961416ed7000 RBX: 000000000000003d RCX: 0000000000000002
+>  [ 3478.473151] RDX: 000000000000003d RSI: ffff96141e387408 RDI: ffff961599b30000
+>  [ 3478.473837] RBP: ffffa437826bfb8e R08: 0000000000000001 R09: ffffa437826bfb8e
+>  [ 3478.474515] R10: ffffa437826bfa70 R11: 0000000000000000 R12: ffff9614385c8708
+>  [ 3478.475186] R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
+>  [ 3478.475840] FS:  00007f8e0e9cc8c0(0000) GS:ffff9615b6a00000(0000) knlGS:0000000000000000
+>  [ 3478.476489] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+>  [ 3478.477127] CR2: 00007f98b67a056e CR3: 0000000005df6005 CR4: 00000000003606f0
+>  [ 3478.477762] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+>  [ 3478.478385] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+>  [ 3478.479003] Call Trace:
+>  [ 3478.479600]  ? do_raw_spin_unlock+0x49/0xc0
+>  [ 3478.480202]  tree_advance+0x173/0x1d0 [btrfs]
+>  [ 3478.480810]  btrfs_compare_trees+0x30c/0x690 [btrfs]
+>  [ 3478.481388]  ? process_extent+0x1280/0x1280 [btrfs]
+>  [ 3478.481954]  btrfs_ioctl_send+0x1037/0x1270 [btrfs]
+>  [ 3478.482510]  _btrfs_ioctl_send+0x80/0x110 [btrfs]
+>  [ 3478.483062]  btrfs_ioctl+0x13fe/0x3120 [btrfs]
+>  [ 3478.483581]  ? rq_clock_task+0x2e/0x60
+>  [ 3478.484086]  ? wake_up_new_task+0x1f3/0x370
+>  [ 3478.484582]  ? do_vfs_ioctl+0xa2/0x6f0
+>  [ 3478.485075]  ? btrfs_ioctl_get_supported_features+0x30/0x30 [btrfs]
+>  [ 3478.485552]  do_vfs_ioctl+0xa2/0x6f0
+>  [ 3478.486016]  ? __fget+0x113/0x200
+>  [ 3478.486467]  ksys_ioctl+0x70/0x80
+>  [ 3478.486911]  __x64_sys_ioctl+0x16/0x20
+>  [ 3478.487337]  do_syscall_64+0x60/0x1b0
+>  [ 3478.487751]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
+>  [ 3478.488159] RIP: 0033:0x7f8e0d7d4dd7
+>  (...)
+>  [ 3478.489349] RSP: 002b:00007ffcf6fb4908 EFLAGS: 00000202 ORIG_RAX: 0000000000000010
+>  [ 3478.489742] RAX: ffffffffffffffda RBX: 0000000000000105 RCX: 00007f8e0d7d4dd7
+>  [ 3478.490142] RDX: 00007ffcf6fb4990 RSI: 0000000040489426 RDI: 0000000000000005
+>  [ 3478.490548] RBP: 0000000000000005 R08: 00007f8e0d6f3700 R09: 00007f8e0d6f3700
+>  [ 3478.490953] R10: 00007f8e0d6f39d0 R11: 0000000000000202 R12: 0000000000000005
+>  [ 3478.491343] R13: 00005624e0780020 R14: 0000000000000000 R15: 0000000000000001
+>  (...)
+>  [ 3478.493352] ---[ end trace d5f537302be4f8c8 ]---
+>
+> Another possibility, much less likely to happen, is that send will not
+> fail but the contents of the stream it produces may not be correct.
+>
+> To avoid this, do not allow send and relocation (balance) to run in
+> parallel. In the long term the goal is to allow for both to be able to
+> run concurrently without any problems, but that will take a significant
+> effort in development and testing.
+>
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+
+David, are you picking this for this merge window or have any other plans?
+
+Thanks.
+
+> ---
+>  fs/btrfs/ctree.h   |  7 +++++++
+>  fs/btrfs/disk-io.c |  2 ++
+>  fs/btrfs/send.c    | 14 ++++++++++++++
+>  fs/btrfs/volumes.c |  8 ++++++++
+>  4 files changed, 31 insertions(+)
+>
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 753ff68a8e8f..e6284e353dee 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -785,6 +785,7 @@ enum {
+>         /*
+>          * Indicate that balance has been set up from the ioctl and is in the
+>          * main phase. The fs_info::balance_ctl is initialized.
+> +        * Set and cleared while holding fs_info::balance_mutex.
+>          */
+>         BTRFS_FS_BALANCE_RUNNING,
+>
+> @@ -1167,6 +1168,12 @@ struct btrfs_fs_info {
+>         spinlock_t swapfile_pins_lock;
+>         struct rb_root swapfile_pins;
+>
+> +       /*
+> +        * Number of send operations in progress.
+> +        * Updated while holding fs_info::balance_mutex.
+> +        */
+> +       int send_in_progress;
+> +
+>  #ifdef CONFIG_BTRFS_FS_REF_VERIFY
+>         spinlock_t ref_verify_lock;
+>         struct rb_root block_tree;
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 5216e7b3f9ad..4cde9a9654fe 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -2785,6 +2785,8 @@ int open_ctree(struct super_block *sb,
+>         spin_lock_init(&fs_info->swapfile_pins_lock);
+>         fs_info->swapfile_pins = RB_ROOT;
+>
+> +       fs_info->send_in_progress = 0;
+> +
+>         ret = btrfs_alloc_stripe_hash_table(fs_info);
+>         if (ret) {
+>                 err = ret;
+> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> index f91f474f14f6..5c32ac661519 100644
+> --- a/fs/btrfs/send.c
+> +++ b/fs/btrfs/send.c
+> @@ -6869,9 +6869,23 @@ long btrfs_ioctl_send(struct file *mnt_file, struct btrfs_ioctl_send_args *arg)
+>         if (ret)
+>                 goto out;
+>
+> +       mutex_lock(&fs_info->balance_mutex);
+> +       if (test_bit(BTRFS_FS_BALANCE_RUNNING, &fs_info->flags)) {
+> +               mutex_unlock(&fs_info->balance_mutex);
+> +               btrfs_warn_rl(fs_info,
+> +             "Can not run send because a balance operation is in progress");
+> +               ret = -EAGAIN;
+> +               goto out;
+> +       }
+> +       fs_info->send_in_progress++;
+> +       mutex_unlock(&fs_info->balance_mutex);
+> +
+>         current->journal_info = BTRFS_SEND_TRANS_STUB;
+>         ret = send_subvol(sctx);
+>         current->journal_info = NULL;
+> +       mutex_lock(&fs_info->balance_mutex);
+> +       fs_info->send_in_progress--;
+> +       mutex_unlock(&fs_info->balance_mutex);
+>         if (ret < 0)
+>                 goto out;
+>
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index db934ceae9c1..8145b62e3912 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -4203,6 +4203,14 @@ int btrfs_balance(struct btrfs_fs_info *fs_info,
+>                            get_raid_name(meta_index), get_raid_name(data_index));
+>         }
+>
+> +       if (fs_info->send_in_progress) {
+> +               btrfs_warn_rl(fs_info,
+> +"Can not run balance while send operations are in progress (%d in progress)",
+> +                             fs_info->send_in_progress);
+> +               ret = -EAGAIN;
+> +               goto out;
+> +       }
+> +
+>         ret = insert_balance_item(fs_info, bctl);
+>         if (ret && ret != -EEXIST)
+>                 goto out;
+> --
+> 2.11.0
+>

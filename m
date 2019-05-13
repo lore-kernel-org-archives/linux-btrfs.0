@@ -2,75 +2,72 @@ Return-Path: <SRS0=eL0R=TN=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_MUTT autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_PASS,USER_AGENT_MUTT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0F281C04AA7
-	for <linux-btrfs@archiver.kernel.org>; Mon, 13 May 2019 13:37:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E0F0BC04AA7
+	for <linux-btrfs@archiver.kernel.org>; Mon, 13 May 2019 13:54:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D5EEC20645
-	for <linux-btrfs@archiver.kernel.org>; Mon, 13 May 2019 13:37:43 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1557754663;
-	bh=d9zV5NxRO983geJRFbQCgZJPUiqH8fIlmgOX6IEtKC0=;
-	h=Date:From:To:Subject:References:In-Reply-To:List-ID:From;
-	b=EF5tMGzRxsDq+xoRbaKFN7y3be2UAquYwjW6V9Aj7p/lupYgmXTnsPlmjL5CcQyqH
-	 LBOOqzMfnbsPzRTNkqYQHGPkoXC8jI9nuvjTPnTYo0RPQHjNgUhXER+oyNLjdoiQBu
-	 XpHhqAHHJzAv5A2Ay5vT3E04l+Evfz/Lgxf40cuU=
+	by mail.kernel.org (Postfix) with ESMTP id BABC3208CA
+	for <linux-btrfs@archiver.kernel.org>; Mon, 13 May 2019 13:54:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730245AbfEMNhi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 13 May 2019 09:37:38 -0400
-Received: from mail.kernel.org ([198.145.29.99]:60734 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730234AbfEMNhi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 May 2019 09:37:38 -0400
-Received: from localhost (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 75A0321019;
-        Mon, 13 May 2019 13:37:37 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1557754657;
-        bh=d9zV5NxRO983geJRFbQCgZJPUiqH8fIlmgOX6IEtKC0=;
-        h=Date:From:To:Subject:References:In-Reply-To:From;
-        b=aijBOMDb7JZM0E98uhcqkFlvetuou4pSY2/WVrWlKyh9Nc1z8C+0xkBzksEUJbbr3
-         omZUaLiNRbOAh7xIx5dY6UPD1Kxhlq8morYgLA0U1CGzQl2Sd2yHQDE07Iwm3/C2s3
-         nurBc0LKZ3RmLMWZuxNZed45/CG3N9EgkemTn7HE=
-Date:   Mon, 13 May 2019 09:37:36 -0400
-From:   Sasha Levin <sashal@kernel.org>
-To:     dsterba@suse.cz, linux-kernel@vger.kernel.org,
-        stable@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH AUTOSEL 5.0 92/99] btrfs: Switch memory allocations in
- async csum calculation path to kvmalloc
-Message-ID: <20190513133736.GC11972@sasha-vm>
-References: <20190507053235.29900-1-sashal@kernel.org>
- <20190507053235.29900-92-sashal@kernel.org>
- <20190507074919.GM20156@twin.jikos.cz>
+        id S1729733AbfEMNys (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 13 May 2019 09:54:48 -0400
+Received: from mx2.suse.de ([195.135.220.15]:53510 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1729040AbfEMNys (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 13 May 2019 09:54:48 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 9E32BAD64
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 May 2019 13:54:47 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id AEC77DA851; Mon, 13 May 2019 15:55:48 +0200 (CEST)
+Date:   Mon, 13 May 2019 15:55:48 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/3] btrfs-progs: Handle error properly in
+ btrfs_commit_transaction()
+Message-ID: <20190513135548.GA3138@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20190416071526.3576-1-wqu@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190507074919.GM20156@twin.jikos.cz>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+In-Reply-To: <20190416071526.3576-1-wqu@suse.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, May 07, 2019 at 09:49:19AM +0200, David Sterba wrote:
->On Tue, May 07, 2019 at 01:32:26AM -0400, Sasha Levin wrote:
->> From: Nikolay Borisov <nborisov@suse.com>
->>
->> [ Upstream commit a3d46aea46f99d134b4e0726e4826b824c3e5980 ]
->>
->> Recent multi-page biovec rework allowed creation of bios that can span
->> large regions - up to 128 megabytes in the case of btrfs.
->
->Not necessary for 5.0/4.x as it depends on 5.1 changes.
+On Tue, Apr 16, 2019 at 03:15:23PM +0800, Qu Wenruo wrote:
+> This patchset can be fetched from github:
+> https://github.com/adam900710/btrfs-progs/tree/commit_failure_cleanup
+> 
+> This patchset will address the BUG_ON() triggered in fuzz-tests/003 and
+> fuzz-tests/009.
+> 
+> For proper error handling in btrfs_commit_transaction(), we need a way
+> to clean up per-transaction data properly.
+> 
+> Currently we only have delayed refs which are per-transaction, so
+> introduce a new function, btrfs_destroy_delayed_refs() to cleanup
+> delayed refs.
+> 
+> Now btrfs_commit_transaction() can error out gracefully with proper
+> cleanup.
+> 
+> Patch 1 and 2 are just some minor cleanups found when crafting the 3rd
+> patch.
+> 
+> Qu Wenruo (3):
+>   btrfs-progs: Remove the dead branch in btrfs_run_delayed_refs()
+>   btrfs-progs: Refactor btrfs_finish_extent_commit()
+>   btrfs-progs: Handle error properly in btrfs_commit_transaction()
 
-Dropped it, thank you!
-
---
-Thanks,
-Sasha
+Added to devel, thanks.

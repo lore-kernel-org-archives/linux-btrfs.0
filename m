@@ -4,30 +4,30 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C163DC04E84
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 May 2019 08:42:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9434CC04AB4
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 May 2019 08:42:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9B44A205C9
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 May 2019 08:42:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6ABFD205C9
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 May 2019 08:42:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726804AbfEPImz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1726780AbfEPImz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Thu, 16 May 2019 04:42:55 -0400
-Received: from mx2.suse.de ([195.135.220.15]:60180 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:60174 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725975AbfEPImy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1726503AbfEPImy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 16 May 2019 04:42:54 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 42F71AED5
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 May 2019 08:42:53 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id E8051AECB
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 May 2019 08:42:52 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 3/3] btrfs-progs: tests: Test fs on image files is correctly recognised
-Date:   Thu, 16 May 2019 11:42:50 +0300
-Message-Id: <20190516084250.19363-4-nborisov@suse.com>
+Subject: [PATCH 2/3] btrfs-progs: Correctly identify fs on image files in "filesystem" subcommands
+Date:   Thu, 16 May 2019 11:42:49 +0300
+Message-Id: <20190516084250.19363-3-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20190516084250.19363-1-nborisov@suse.com>
 References: <20190516084250.19363-1-nborisov@suse.com>
@@ -36,37 +36,41 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This ensures that 'btrfs filesystem show' can correctly identify a
-filesystem on a newly created local file.
+Currently if a new filesystem is created and interrogated with we get
+an error:
+
+    truncate -s 3g btrfs.img
+    mkfs.btrfs btrfs.img
+    btrfs fi show btrfs.img
+    ERROR: not a valid btrfs filesystem: /root/btrfs.img
+
+The reason is that the image is not automatically recognised by libblkid
+meaning btrfs_scan_devices will not "see" the device, resulting in the
+aofrementioned error.
+
+Fix it by detecting when this condition occurs and pass the path to the
+file to btrfs_scan_devices, which will correctly add it to libblkid's
+cache.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- tests/cli-tests/010-fi-show-on-new-file/test.sh | 16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
- create mode 100755 tests/cli-tests/010-fi-show-on-new-file/test.sh
+ cmds-filesystem.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/tests/cli-tests/010-fi-show-on-new-file/test.sh b/tests/cli-tests/010-fi-show-on-new-file/test.sh
-new file mode 100755
-index 000000000000..668f0f9b2cfe
---- /dev/null
-+++ b/tests/cli-tests/010-fi-show-on-new-file/test.sh
-@@ -0,0 +1,16 @@
-+#!/bin/bash
-+# test for 'filesystem show' on fresh local file
-+
-+source "$TEST_TOP/common"
-+
-+check_prereq mkfs.btrfs
-+check_prereq btrfs
-+
-+IMAGE=$(mktemp -u btrfs-XXXXXX.img)
-+
-+truncate -s3g "$IMAGE"
-+run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f "$IMAGE"
-+run_check $SUDO_HELPER "$TOP/btrfs" filesystem show "$IMAGE"
-+
-+rm -f "$IMAGE"
-+
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index 4657deb20fde..0327563154d5 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -771,8 +771,7 @@ static int cmd_filesystem_show(int argc, char **argv)
+ 		goto out;
+ 
+ devs_only:
+-	ret = btrfs_scan_devices(NULL);
+-
++	ret = btrfs_scan_devices(type == BTRFS_ARG_REG ? search : NULL);
+ 	if (ret) {
+ 		error("blkid device scan returned %d", ret);
+ 		return 1;
 -- 
 2.7.4
 

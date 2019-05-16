@@ -2,25 +2,25 @@ Return-Path: <SRS0=Y5xQ=TQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DF56CC04AB4
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 May 2019 08:48:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7A380C04E87
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 May 2019 08:48:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B363C205C9
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 May 2019 08:48:33 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 57FFF205C9
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 May 2019 08:48:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727005AbfEPIsG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 16 May 2019 04:48:06 -0400
-Received: from mx2.suse.de ([195.135.220.15]:32944 "EHLO mx1.suse.de"
+        id S1727110AbfEPIsd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 16 May 2019 04:48:33 -0400
+Received: from mx2.suse.de ([195.135.220.15]:33006 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726352AbfEPIsG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 May 2019 04:48:06 -0400
+        id S1726486AbfEPIsH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 16 May 2019 04:48:07 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 96398AEE6;
+        by mx1.suse.de (Postfix) with ESMTP id 99F5AAF61;
         Thu, 16 May 2019 08:48:05 +0000 (UTC)
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 To:     David Sterba <dsterba@suse.com>
@@ -29,57 +29,80 @@ Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
         David Gstir <david@sigma-star.at>,
         Nikolay Borisov <nborisov@suse.com>,
         Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH v2 03/13] btrfs: use btrfs_crc32c{,_final}() in for free space cache
-Date:   Thu, 16 May 2019 10:47:53 +0200
-Message-Id: <20190516084803.9774-4-jthumshirn@suse.de>
+Subject: [PATCH v2 00/13] Add support for SHA-256 checksums
+Date:   Thu, 16 May 2019 10:47:50 +0200
+Message-Id: <20190516084803.9774-1-jthumshirn@suse.de>
 X-Mailer: git-send-email 2.16.4
-In-Reply-To: <20190516084803.9774-1-jthumshirn@suse.de>
-References: <20190516084803.9774-1-jthumshirn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The CRC checksum in the free space cache is not dependant on the super
-block's csum_type field but always a CRC32C.
+This patchset add support for adding new checksum types in BTRFS.
 
-So use btrfs_crc32c() and btrfs_crc32c_final() instead of btrfs_csum_data()
-and btrfs_csum_final() for computing these checksums.
+Currently BTRFS only supports CRC32C as data and metadata checksum, which is
+good if you only want to detect errors due to data corruption in hardware.
 
-Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/free-space-cache.c | 10 ++++------
- 1 file changed, 4 insertions(+), 6 deletions(-)
+But CRC32C isn't able cover other use-cases like de-duplication or
+cryptographically save data integrity guarantees.
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index f74dc259307b..26ed8ed60722 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -465,9 +465,8 @@ static void io_ctl_set_crc(struct btrfs_io_ctl *io_ctl, int index)
- 	if (index == 0)
- 		offset = sizeof(u32) * io_ctl->num_pages;
- 
--	crc = btrfs_csum_data(io_ctl->orig + offset, crc,
--			      PAGE_SIZE - offset);
--	btrfs_csum_final(crc, (u8 *)&crc);
-+	crc = btrfs_crc32c(crc, io_ctl->orig + offset, PAGE_SIZE - offset);
-+	btrfs_crc32c_final(crc, (u8 *)&crc);
- 	io_ctl_unmap_page(io_ctl);
- 	tmp = page_address(io_ctl->pages[0]);
- 	tmp += index;
-@@ -493,9 +492,8 @@ static int io_ctl_check_crc(struct btrfs_io_ctl *io_ctl, int index)
- 	val = *tmp;
- 
- 	io_ctl_map_page(io_ctl, 0);
--	crc = btrfs_csum_data(io_ctl->orig + offset, crc,
--			      PAGE_SIZE - offset);
--	btrfs_csum_final(crc, (u8 *)&crc);
-+	crc = btrfs_crc32c(crc, io_ctl->orig + offset, PAGE_SIZE - offset);
-+	btrfs_crc32c_final(crc, (u8 *)&crc);
- 	if (val != crc) {
- 		btrfs_err_rl(io_ctl->fs_info,
- 			"csum mismatch on free space cache");
+The following properties made SHA-256 interesting for these use-cases:
+- Still considered cryptographically sound
+- Reasonably well understood by the security industry
+- Result fits into the 32Byte/256Bit we have for the checksum in the on-disk
+  format
+- Small enough collision space to make it feasible for data de-duplication
+- Fast enough to calculate and offloadable to crypto hardware via the kernel's
+  crypto_shash framework.
+
+The patchset also provides mechanisms for plumbing in different hash
+algorithms relatively easy.
+
+Unfortunately this patchset also partially reverts commit: 
+9678c54388b6 ("btrfs: Remove custom crc32c init code")
+
+This is an intermediate submission, as a) mkfs.btrfs support is still missing
+and b) David requested to have three hash algorithms, where 1 is crc32c, one
+cryptographically secure and one in between.
+
+Johannes Thumshirn (13):
+  btrfs: use btrfs_csum_data() instead of directly calling crc32c
+  btrfs: resurrect btrfs_crc32c()
+  btrfs: use btrfs_crc32c{,_final}() in for free space cache
+  btrfs: don't assume ordered sums to be 4 bytes
+  btrfs: dont assume compressed_bio sums to be 4 bytes
+  btrfs: format checksums according to type for printing
+  btrfs: add common checksum type validation
+  btrfs: check for supported superblock checksum type before checksum
+    validation
+  btrfs: Simplify btrfs_check_super_csum() and get rid of size
+    assumptions
+  btrfs: add boilerplate code for directly including the crypto
+    framework
+  btrfs: directly call into crypto framework for checsumming
+  btrfs: remove assumption about csum type form
+    btrfs_print_data_csum_error()
+  btrfs: add sha256 as another checksum algorithm
+
+ fs/btrfs/Kconfig                |   3 +-
+ fs/btrfs/btrfs_inode.h          |  33 +++++++--
+ fs/btrfs/check-integrity.c      |  12 ++--
+ fs/btrfs/compression.c          |  40 +++++++----
+ fs/btrfs/compression.h          |   2 +-
+ fs/btrfs/ctree.h                |  28 +++++++-
+ fs/btrfs/disk-io.c              | 146 ++++++++++++++++++++++++++--------------
+ fs/btrfs/disk-io.h              |   2 -
+ fs/btrfs/extent-tree.c          |   6 +-
+ fs/btrfs/file-item.c            |  38 ++++++-----
+ fs/btrfs/free-space-cache.c     |  10 ++-
+ fs/btrfs/inode.c                |  20 ++++--
+ fs/btrfs/ordered-data.c         |  13 ++--
+ fs/btrfs/ordered-data.h         |   4 +-
+ fs/btrfs/scrub.c                |  39 ++++++++---
+ fs/btrfs/send.c                 |   2 +-
+ include/uapi/linux/btrfs_tree.h |   6 +-
+ 17 files changed, 275 insertions(+), 129 deletions(-)
+
 -- 
 2.16.4
 

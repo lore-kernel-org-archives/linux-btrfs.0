@@ -4,23 +4,23 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 71918C04E84
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 May 2019 08:48:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 16689C04AB4
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 May 2019 08:48:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4BD86205C9
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 May 2019 08:48:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DBEDA205C9
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 May 2019 08:48:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727040AbfEPIsJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1727032AbfEPIsJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Thu, 16 May 2019 04:48:09 -0400
-Received: from mx2.suse.de ([195.135.220.15]:33068 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:33064 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727021AbfEPIsI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 May 2019 04:48:08 -0400
+        id S1727010AbfEPIsH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 16 May 2019 04:48:07 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D78DFAF86;
+        by mx1.suse.de (Postfix) with ESMTP id D154CAF7D;
         Thu, 16 May 2019 08:48:05 +0000 (UTC)
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 To:     David Sterba <dsterba@suse.com>
@@ -29,9 +29,9 @@ Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
         David Gstir <david@sigma-star.at>,
         Nikolay Borisov <nborisov@suse.com>,
         Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH v2 08/13] btrfs: check for supported superblock checksum type before checksum validation
-Date:   Thu, 16 May 2019 10:47:58 +0200
-Message-Id: <20190516084803.9774-9-jthumshirn@suse.de>
+Subject: [PATCH v2 07/13] btrfs: add common checksum type validation
+Date:   Thu, 16 May 2019 10:47:57 +0200
+Message-Id: <20190516084803.9774-8-jthumshirn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20190516084803.9774-1-jthumshirn@suse.de>
 References: <20190516084803.9774-1-jthumshirn@suse.de>
@@ -40,37 +40,75 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Now that we have factorerd out the superblock checksum type validation, we
-can check for supported superblock checksum types before doing the actual
-validation of the superblock read from disk.
+Currently btrfs is only supporting CRC32C as checksumming algorithm. As
+this is about to change provide a function to validate the checksum type in
+the superblock against all possible algorithms.
 
-This leads the path to further simplifications of btrfs_check_super_csum()
-later on.
+This makes adding new algorithms easier as there are fewer places to adjust
+when adding new algorithms.
 
 Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/disk-io.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ fs/btrfs/disk-io.c | 24 +++++++++++++++++-------
+ 1 file changed, 17 insertions(+), 7 deletions(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index ab13282d91d2..74937effaed4 100644
+index 663efce22d98..ab13282d91d2 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -2822,6 +2822,14 @@ int open_ctree(struct super_block *sb,
- 		goto fail_alloc;
- 	}
+@@ -356,6 +356,16 @@ static int verify_parent_transid(struct extent_io_tree *io_tree,
+ 	return ret;
+ }
  
-+	if (!btrfs_supported_super_csum((struct btrfs_super_block *)
-+					bh->b_data)) {
-+		btrfs_err(fs_info, "unsupported checksum algorithm");
-+		err = -EINVAL;
-+		brelse(bh);
-+		goto fail_alloc;
++static bool btrfs_supported_super_csum(struct btrfs_super_block *sb)
++{
++	switch (btrfs_super_csum_type(sb)) {
++	case BTRFS_CSUM_TYPE_CRC32:
++		return true;
++	default:
++		return false;
++	}
++}
++
+ /*
+  * Return 0 if the superblock checksum type matches the checksum value of that
+  * algorithm. Pass the raw disk superblock data.
+@@ -368,6 +378,12 @@ static int btrfs_check_super_csum(struct btrfs_fs_info *fs_info,
+ 	u16 csum_type = btrfs_super_csum_type(disk_sb);
+ 	int ret = 0;
+ 
++	if (!btrfs_supported_super_csum(disk_sb)) {
++		btrfs_err(fs_info, "unsupported checksum algorithm %u",
++			  csum_type);
++		ret = 1;
 +	}
 +
- 	/*
- 	 * We want to check superblock checksum, the type is stored inside.
- 	 * Pass the whole disk block of size BTRFS_SUPER_INFO_SIZE (4k).
+ 	if (csum_type == BTRFS_CSUM_TYPE_CRC32) {
+ 		u32 crc = ~(u32)0;
+ 		char result[sizeof(crc)];
+@@ -385,12 +401,6 @@ static int btrfs_check_super_csum(struct btrfs_fs_info *fs_info,
+ 			ret = 1;
+ 	}
+ 
+-	if (csum_type >= ARRAY_SIZE(btrfs_csum_sizes)) {
+-		btrfs_err(fs_info, "unsupported checksum algorithm %u",
+-				csum_type);
+-		ret = 1;
+-	}
+-
+ 	return ret;
+ }
+ 
+@@ -2577,7 +2587,7 @@ static int btrfs_validate_write_super(struct btrfs_fs_info *fs_info,
+ 	ret = validate_super(fs_info, sb, -1);
+ 	if (ret < 0)
+ 		goto out;
+-	if (btrfs_super_csum_type(sb) != BTRFS_CSUM_TYPE_CRC32) {
++	if (!btrfs_supported_super_csum(sb)) {
+ 		ret = -EUCLEAN;
+ 		btrfs_err(fs_info, "invalid csum type, has %u want %u",
+ 			  btrfs_super_csum_type(sb), BTRFS_CSUM_TYPE_CRC32);
 -- 
 2.16.4
 

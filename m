@@ -2,186 +2,167 @@ Return-Path: <SRS0=EcPT=TR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2DC9DC04AB4
-	for <linux-btrfs@archiver.kernel.org>; Fri, 17 May 2019 15:36:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D12DFC04AB4
+	for <linux-btrfs@archiver.kernel.org>; Fri, 17 May 2019 16:22:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CD43C2087E
-	for <linux-btrfs@archiver.kernel.org>; Fri, 17 May 2019 15:36:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8E6F020848
+	for <linux-btrfs@archiver.kernel.org>; Fri, 17 May 2019 16:22:49 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=georgianit.com header.i=@georgianit.com header.b="gHWHHeWc";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="WTDYyT41"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729032AbfEQPgM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 17 May 2019 11:36:12 -0400
-Received: from zaphod.cobb.me.uk ([213.138.97.131]:37526 "EHLO
-        zaphod.cobb.me.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728520AbfEQPgL (ORCPT
+        id S1728977AbfEQQWs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 17 May 2019 12:22:48 -0400
+Received: from out5-smtp.messagingengine.com ([66.111.4.29]:52595 "EHLO
+        out5-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1728551AbfEQQWs (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 May 2019 11:36:11 -0400
-X-Greylist: delayed 458 seconds by postgrey-1.27 at vger.kernel.org; Fri, 17 May 2019 11:36:10 EDT
-Received: by zaphod.cobb.me.uk (Postfix, from userid 107)
-        id 94FCE142BC3; Fri, 17 May 2019 16:28:30 +0100 (BST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=cobb.uk.net;
-        s=201703; t=1558106910;
-        bh=fdtlg3ydregXD701IqH0f3JBQTY1NfIknl1HAsY/N8s=;
-        h=Subject:To:References:From:Date:In-Reply-To:From;
-        b=AKU+5VFmDzswX6kWQM0HJQbirj2/Hc6ZRXxQ9Lu3j+pCKP6RcP9piwL694kVf97o4
-         VRVTYRsWcqC788eDh0k3w0tH8JHJEwUX8C8oFjRkH2nvw+sQt85TfT2N6Ayd1pDrpF
-         +hkh6lfFFBR3jkdvegJ9iDLF4SEYhBx4cOLeUNPhAzbZ91/5PTZmp5FdrELegnp7u6
-         JYwgdVrfoddrlSQ3dun5Lko+t+wHR81smSzfY1+HrCF1VAteGIw+H5DRZ2fTrOaqY3
-         2wfhcegozea9fWElUQmGDADC8vBVnigHcsOmhaQEhxKkEIAzKtEIwIFI2jgWgM7vT/
-         weQ2j278uU1pQ==
-Received: from black.home.cobb.me.uk (unknown [192.168.0.205])
-        by zaphod.cobb.me.uk (Postfix) with ESMTP id D7199142BC2
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 May 2019 16:28:28 +0100 (BST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=cobb.uk.net;
-        s=201703; t=1558106908;
-        bh=fdtlg3ydregXD701IqH0f3JBQTY1NfIknl1HAsY/N8s=;
-        h=Subject:To:References:From:Date:In-Reply-To:From;
-        b=wqHoB8QbSx7yw2ACfsluF1ak/+PKPhXyTZ08MSebfVWCsRMI8+ZasM2oJ5rbB0S0W
-         PRyGmNwrBKsUakNbo6I4Q/XcNpBXUJbcwUbNePG6uOuGQfR6wvWIFKbpPfCxwEwA8j
-         riGkxzLZLNSCIdgUoqNvNz0+k0uu+Y3bRfcb627MoLi8zT+/P+W4JA5pVjE0wGG4cY
-         yZo4c7+qQeFhZyhON7KXvJ7e0axOT44pKfBZ2f4wA+l7TUBe5cZkmpEvb0t1AplF8a
-         JnKiADyusGlGMHRbbDjiAqP/fDb5Sih6VuwhkhTWITbXr8W5mop9xUefY8DY6Mku/F
-         +X9yl2/tkskWA==
-Received: from [192.168.0.211] (novatech.home.cobb.me.uk [192.168.0.211])
-        by black.home.cobb.me.uk (Postfix) with ESMTPS id 916AF68D9A
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 May 2019 16:28:28 +0100 (BST)
+        Fri, 17 May 2019 12:22:48 -0400
+Received: from compute2.internal (compute2.nyi.internal [10.202.2.42])
+        by mailout.nyi.internal (Postfix) with ESMTP id 38DAA2361B;
+        Fri, 17 May 2019 12:22:47 -0400 (EDT)
+Received: from mailfrontend1 ([10.202.2.162])
+  by compute2.internal (MEProxy); Fri, 17 May 2019 12:22:47 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=georgianit.com;
+         h=subject:to:references:cc:from:message-id:date:mime-version
+        :in-reply-to:content-type; s=fm3; bh=LcXux7tSbQ95RJ+mCcAIZkfEqcd
+        NjKeFO5s3rxayWF0=; b=gHWHHeWcFFHwKaXUdRDgtJG1CHAvGadK45gPths05l/
+        M6AgVcy59CcqEFR28U5+07u1cpYC7WzXtgfcAEnE2XpIEnYbbRhCTuYdFwyKY+xe
+        g6aFCUEULCg/WFocrsZfzaf3in6miqkehrIZnJ+qDFm3f69cOl2csMy34OxWmjcq
+        WPKxyKD17/POtaktpv576yoJAusS+SSv629lfq1+xzZQGcJh53PhvvMKBWTa6i3n
+        DsUQiJtL90tc1o0hkt0UDNyLfGIpVUfwV66F/nDrPSqq2UI3X5LTNgToiFwpD8aJ
+        UobISvAlUSOjkD0itaUrEuYpzd0g5382aCnLSwfHZzA==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:content-type:date:from:in-reply-to
+        :message-id:mime-version:references:subject:to:x-me-proxy
+        :x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; bh=LcXux7
+        tSbQ95RJ+mCcAIZkfEqcdNjKeFO5s3rxayWF0=; b=WTDYyT41x/NkAFpByxmaiz
+        gFJN2kBq8sAwcIy2RWWxB1cgEDFOnYLxmZ9pmhFY+xh5Qo5vfRUV17tlyxDlZVKv
+        KBAYaW85UTXYktSzYZQmWssndKG2ftzpaSFiBY/f0qzu5cPO8KnRosHdqJARGr8N
+        hw8kxMdPrS4ERIOGiTaNvQBKW3hRPEAgsOYOI9DxYD0smcMbnIIuokxxpcAPPsbl
+        Z9zMUoxlQFhJVjGQQe+l9OGlte4V1aQG/tndYxLm6fLmQ4i/ddoyCg2fGjStyllj
+        gKlT9fjjwsz7mD7GZIUalvxWRJBxEN0ppRbBLV/Lej9V/wUGkrFR8QVekqmdAvMA
+        ==
+X-ME-Sender: <xms:1t_eXBHx0bMOyJ1xv2-hIwLynIvwLb0TBZOE1tBzpqFehQz2iMjw6g>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeduuddruddtvddguddtvdcutefuodetggdotefrod
+    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfgh
+    necuuegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmd
+    enucfjughrpefuvfhfhffkffgfgggjtgesghdtrefotdefjeenucfhrhhomheptfgvmhhi
+    ucfirghuvhhinhcuoehrvghmihesghgvohhrghhirghnihhtrdgtohhmqeenucfkphepud
+    efhedrvdefrddvgeeirddufedunecurfgrrhgrmhepmhgrihhlfhhrohhmpehrvghmihes
+    ghgvohhrghhirghnihhtrdgtohhmnecuvehluhhsthgvrhfuihiivgeptd
+X-ME-Proxy: <xmx:1t_eXAIyEJy86VYaStRErAm2Inny0IdrJiONKdJIpJvBXuAOFw1uWg>
+    <xmx:1t_eXB8CVNtLEVu_e0lTLjAmFeVrJ6R-ouMv7D1a15o33DUnKhg36Q>
+    <xmx:1t_eXCfrpVHmFW-A-D9hFQQTAJIVPOj2fzVJfBMfi2dJG5yezNyz4Q>
+    <xmx:19_eXHUcIbKTxaoCgXcmJ4PRtCP5bPtvcRFwNaprYHRc1e0gB5K1Yg>
+Received: from [10.0.0.6] (135-23-246-131.cpe.pppoe.ca [135.23.246.131])
+        by mail.messagingengine.com (Postfix) with ESMTPA id 5C9638005A;
+        Fri, 17 May 2019 12:22:46 -0400 (EDT)
 Subject: Re: Used disk size of a received subvolume?
-To:     linux-btrfs <linux-btrfs@vger.kernel.org>
+To:     Axel Burri <axel@tty0.ch>
 References: <c79df692-cc5d-5a3a-1123-e376e8c94eb3@tty0.ch>
- <20190516171225.GH1667@carfax.org.uk>
- <27af7824-f3e9-47a5-7760-d3e30827a081@tty0.ch>
-From:   Graham Cobb <g.btrfs@cobb.uk.net>
-Openpgp: preference=signencrypt
-Autocrypt: addr=g.btrfs@cobb.uk.net; prefer-encrypt=mutual; keydata=
- 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 myxb
-Message-ID: <811bcd96-5a8e-cb10-7efb-22c1046e0f42@cobb.uk.net>
-Date:   Fri, 17 May 2019 16:28:28 +0100
+ <cef97a5e-b19e-fdae-2142-f8757d06c4d4@georgianit.com>
+ <aed995de-79d4-9932-397d-bd0d12a51b7a@tty0.ch>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+From:   Remi Gauvin <remi@georgianit.com>
+Openpgp: url=http://www.georgianit.com/pgp/Remi%20Gauvin%20remi%40georgianit.com%20(0xEF539FF247456A6D)%20pub.asc
+Autocrypt: addr=remi@georgianit.com; prefer-encrypt=mutual;
+ keydata= mQENBFogjcYBCADvI0pxdYyVkEUAIzT6HwYnZ5CAy2czT87Si5mqk4wL4Ulupwfv9TLzaj3R
+ CUgHPNpFsp1n/nKKyOq1ZmE6w5YKx4I8/o9tRl+vjnJr2otfS7XizBaVV7UwziODikOimmT+
+ sGNfYGcjdJ+CC567g9aAECbvnyxNlncTyUPUdmazOKhmzB4IvG8+M2u+C4c9nVkX2ucf3OuF
+ t/qmeRaF8+nlkCMtAdIVh0F7HBYJzvYG3EPiKbGmbOody3OM55113uEzyw39k8WHRhhaKhi6
+ 8QY9nKCPVhRFzk6wUHJa2EKbKxqeFcFzZ1ok7l7vrX3/OBk2dGOAoOJ4UX+ozAtrMqCBABEB
+ AAG0IVJlbWkgR2F1dmluIDxyZW1pQGdlb3JnaWFuaXQuY29tPokBPgQTAQIAKAUCWiCNxgIb
+ IwUJCWYBgAYLCQgHAwIGFQgCCQoLBBYCAwECHgECF4AACgkQ71Of8kdFam2V1Qf9Fs6LSx1i
+ OoVgOzjWwiI06vJrZznjmtbJkcm/Of5onITZnB4h+tbqEyaMYYsEIk1r4oFMfKB7SDpQbADj
+ 9CI2EbpygwZa24Oqv4gWEzb4c7mSJuLKTnrhmwCOtdeDQXO/uu6BZPkazDAaKHUM6XqNEVvt
+ WHBaGioaV4dGxzjXALQDpLc4vDreSl9nwlTorwJR9t6u5BlDcdh3VOuYlgXjI4pCk+cihgtY
+ k3KZo/El1fWFYmtSTq7m/JPpKZyb77cbzf2AbkxJuLgg9o0iVAg81LjElznI0R5UbYrJcJeh
+ Jo4rvXKFYQ1qFwno1jlSXejsFA5F3FQzJe1JUAu2HlYqRrkBDQRaII3GAQgAo0Y6FX84QsDp
+ R8kFEqMhpkjeVQpbwYhqBgIFJT5cBMQpZsHmnOgpYU0Jo8P3owHUFu569g6j4+wSubbh2+bt
+ WL0QoFZcng0a2/j3qH98g9lAn8ZgohxavmwYINt7b+LEeDoBvq0s/0ZeXx47MOmbjROq8L/g
+ QOYbIWoJLO2emyxmVo1Fg00FKkbuCEgJPW8U/7VX4EFYaIhPQv/K3mpnyWXIq5lviiMCHzxE
+ jzBh/35DTLwymDdmtzWgcu1rzZ6j2s+4bTxE8mYXd4l2Xonn7v448gwvQmZJ8EPplO/pWe9F
+ oISyiNxZnQNCVEO9lManKPFphfVHqJ1WEtYMiLxTkQARAQABiQElBBgBAgAPBQJaII3GAhsM
+ BQkJZgGAAAoJEO9Tn/JHRWptnn0H+gOtkumwlKcad2PqLFXCt2SzVJm5rHuYZhPPq4GCdMbz
+ XwuCEPXDoECFVXeiXngJmrL8+tLxvUhxUMdXtyYSPusnmFgj/EnCjQdFMLdvgvXI/wF5qj0/
+ r6NKJWtx3/+OSLW0E9J/gLfimIc3OF49E3S1c35Wj+4Okx9Tpwor7Tw8KwBVbdZA6TyQF08N
+ phFkhgnTK6gl2XqIHaoxPKhI9pKU5oPkg2eI27OICZrpTCppaSh3SGUp0EHPkZuhVfIxg4vF
+ nato30VZr+RMHtPtx813VZ/kzj+2pC/DrwZOtqFeaqJfCi6JSik3vX9BQd9GL4mxytQBZKXz
+ SY9JJa155sI=
+Message-ID: <f380d94d-5588-2c0a-577e-41b5f928c291@georgianit.com>
+Date:   Fri, 17 May 2019 12:22:45 -0400
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.6.1
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-In-Reply-To: <27af7824-f3e9-47a5-7760-d3e30827a081@tty0.ch>
-Content-Type: text/plain; charset=windows-1252
-Content-Language: en-GB
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <aed995de-79d4-9932-397d-bd0d12a51b7a@tty0.ch>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="Zwa2nC6VCpyZSB7kCmMoU6gfnqaI9IQus"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 17/05/2019 14:57, Axel Burri wrote:
-> btrfs fi du shows me the information wanted, but only for the last
-> received subvolume (as you said it changes over time, and any later
-> child will share data with it). For all others, it merely shows "this
-> is what gets freed if you delete this subvolume".
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--Zwa2nC6VCpyZSB7kCmMoU6gfnqaI9IQus
+Content-Type: multipart/mixed; boundary="pkiowLHBeIOTJDgP6eXe1182L0LPCiAAT";
+ protected-headers="v1"
+From: Remi Gauvin <remi@georgianit.com>
+To: Axel Burri <axel@tty0.ch>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <f380d94d-5588-2c0a-577e-41b5f928c291@georgianit.com>
+Subject: Re: Used disk size of a received subvolume?
+References: <c79df692-cc5d-5a3a-1123-e376e8c94eb3@tty0.ch>
+ <cef97a5e-b19e-fdae-2142-f8757d06c4d4@georgianit.com>
+ <aed995de-79d4-9932-397d-bd0d12a51b7a@tty0.ch>
+In-Reply-To: <aed995de-79d4-9932-397d-bd0d12a51b7a@tty0.ch>
 
-It doesn't even show you that: it is possible to have shared (not
-exclusive) data which is only shared between files within the subvolume,
-and which will be freed if the subvolume is deleted. And, of course, the
-obvious problem that if you only count exclusive then no one is being
-charged for all the shared segments ("Oh, my backup is getting a bit
-expensive. Hmm. I know! I will back up all my files to two different
-destinations, and make sure btrfs is sharing the data between both
-locations! Then no one pays for it! Whoopee!")
+--pkiowLHBeIOTJDgP6eXe1182L0LPCiAAT
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-In my opinion, the shared/exclusive information in btrfs fi du is worse
-than useless: it confuses people who think it means something different
-from what it does. And, in btrfs, it isn't really useful to know whether
-something is "exclusive" or not -- what people care about is always
-something else (which is dependent on **where** it is shared, and by whom).
+On 2019-05-17 10:14 a.m., Axel Burri wrote:
 
-The biggest problem is that you haven't defined what **you** (in your
-particular use case) mean by the "size" of a subvolume. For btrfs that
-doesn't have any single obvious definition.
+>=20
+> Nevertheless I played around with it and it seems to work, I'll keep it=
 
-Most commonly, I think, people mean "how much space on disk would be
-freed up if I deleted this subvolume and all subvolumes contained within
-it", although quite often they mean the similar (but not identical) "how
-much space on disk would be freed up if I deleted just this subvolume".
-And sometimes they actually mean "how much space on disk would be freed
-up if I deleted this subvolume, the subvolumes contained with in, and
-all the snapshots I have taken but are lying around forgotten about in
-some other directory tree somewhere".
+> in mind for the future.
+>=20
 
-But often they mean something else completely, such as "how much space
-is taken up by the data which was originally created in this subvolume
-but which has been cloned into all sorts of places now and may not even
-be referred to from this subvolume any more" (typically this is the case
-if you want to charge the subvolume owner for the data usage).
 
-And, of course, another reading of your question would be "how much data
-was transferred during this send/receive operation" (relevant if you are
-running a backup service and want to charge people by how much they are
-sending to the service rather than the amount of data stored).
+fi du was not implemented last time I had to do this, so I had
+completely forgotten about it.  It makes much more sense to just use
+that for the Excluisve disk usage of a single subvolume.
 
-That is why I created my "extents-list" stuff. This is a horrible hack
-(one day I will rewrite it using the python library) which lets me
-answer questions like: "how much space am I wasting by keeping
-historical snapshots", "how much data is being shared between two
-subvolumes", "how much of the data in my latest snapshot is unique to
-that snapshot" and "how much space would I actually free up if I removed
-(just) these particular directories". None of which can be answered from
-the existing btrfs command line tools (unless I have missed something).
+However, Qgroups does allow you to group multiple subvolumes,, so, for
+example, you build a query to find out how much disk space is used
+exclusively by the 10 oldest snapshots, which I find to be a more useful
+question..
 
-> And it is pretty slow: on my backup disk (spinning rust, ~2000
-> subvolumes, ~100 sharing data), btrfs fi du takes around 5min for a
-> subvolume of 20GB, while btrfs find-new takes only seconds.
 
-Yes. Answering the real questions involves taking the FIEMAP data for
-every file involved (which, for some questions, is actually every file
-on the disk!) so it takes a very long time. Days for my multi-terabyte
-backup disk.
+--pkiowLHBeIOTJDgP6eXe1182L0LPCiAAT--
 
-> Summing up, what I'm looking for would be something like:
-> 
->   btrfs fi du -s --exclusive-relative-to=<other-subvol> <subvol>
+--Zwa2nC6VCpyZSB7kCmMoU6gfnqaI9IQus
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
-You can do that with FIEMAP data. Feel free to look extents-lists. Also
-feel free to shout "this is a gross hack" and scream at me!
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
 
-If you really just need it for two subvols like that
+iQEcBAEBCAAGBQJc3t/VAAoJEO9Tn/JHRWptE2sH/3gnl2SQIbnbE9YII2j75uWc
+Q4IffRVZ8oGwrTzy6MifPO8QkS04r3skg6LoDwB5wMzwpjXE9L3+RKeO/wc1ox3U
+mKko1Qcs/z9vM51MeVBaNeHWmKElRzIZllw6B8qb1849g5vW4bzas+Ef2noi9rZe
+XLJQnAyS3QyHRAtdxR/LLtPQu72c0oS8YuRRIgAbiRWiCgkvYvDu/OV0zNarJsMH
+JZwSZLuwZHmtkBVC8tpXMTzjJLQnONq6mE3f4VtUU8uh9avah8YeZIK8RE9R8Jbp
+JKJzXX8DRjYi3R46llaBVq88wFkdLg8qGR0L+q9QCMxh1Uq5vT/EiWLzgxQF+ac=
+=qMC3
+-----END PGP SIGNATURE-----
 
-extents-expr -s <subvol> - <other-subvol>
-
-will tell you how much space is in extents used in <subvol> but not used
-in <other-subvol>.
-
-Graham
+--Zwa2nC6VCpyZSB7kCmMoU6gfnqaI9IQus--

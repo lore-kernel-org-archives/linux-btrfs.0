@@ -6,61 +6,60 @@ X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E96A0C04AAF
-	for <linux-btrfs@archiver.kernel.org>; Sat, 18 May 2019 04:14:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 21DA0C04E87
+	for <linux-btrfs@archiver.kernel.org>; Sat, 18 May 2019 04:14:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A34D6204FD
+	by mail.kernel.org (Postfix) with ESMTP id DDB4D20882
 	for <linux-btrfs@archiver.kernel.org>; Sat, 18 May 2019 04:14:08 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="Wh3+psFX"
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="zA2yMW/+"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725468AbfEREGb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 18 May 2019 00:06:31 -0400
-Received: from mail-lj1-f193.google.com ([209.85.208.193]:44767 "EHLO
-        mail-lj1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725294AbfEREGb (ORCPT
+        id S1725790AbfEREJ0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 18 May 2019 00:09:26 -0400
+Received: from mail-lj1-f178.google.com ([209.85.208.178]:41002 "EHLO
+        mail-lj1-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725554AbfEREJZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 18 May 2019 00:06:31 -0400
-Received: by mail-lj1-f193.google.com with SMTP id e13so7914599ljl.11
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 May 2019 21:06:29 -0700 (PDT)
+        Sat, 18 May 2019 00:09:25 -0400
+Received: by mail-lj1-f178.google.com with SMTP id k8so7938689lja.8
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 May 2019 21:09:24 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
         h=mime-version:references:in-reply-to:from:date:message-id:subject:to
          :cc:content-transfer-encoding;
-        bh=9iPBjl2S+UwngaKyMzDlyxJtl4/YsbX0Oet3snxDCtU=;
-        b=Wh3+psFXNTS5E+r8lx/vp4k9azLprxAL9hrKVwQS2fTlHGq9ouYsGQ5GrToT46pilv
-         EidhW89iT6uZr/sSwKi4uzUc7OaYcSQ1kvTtnmF0OqKSRfSmCelvWnnSOy/a8TWrIxge
-         T+NAkCjqNKu4m7PbU/dgpm8yT2AZgHjj8Ho0iLAuBpCvEiYRssa5GBqsiNsArL8lXlgc
-         SqImj3UTT+dlQ+NBvu5QtbXXVKSVPG/5t7fx0DCVvTCpw4kLSzbbFfAJayzxtyq34uGM
-         ps+CwqssYo+UKw0A/PXDnjbdsnjQhF8JkvkBddJwhLtJ7RE9WJ1Z6nFuDY71XXZdL2T5
-         CEQg==
+        bh=rhTm4DukoVSVojlued0l0dJrdDC4VocEvkMWVztjvWE=;
+        b=zA2yMW/+Icx2lrLg2juqbNLi+Ga9rZXhczJ1KsxypvOzRdbGDeLIivieyhKRGkZywn
+         kJscEfOBaYFJaUAW/9+01r25EG+u0HUuaNk5rLlYG3CrL9Xsr+5dqj4Soxsa8Kbus3Q7
+         WAwDyfICtwKjMig8zwITfSLi7LMlRoBiyyoH09ZwTuAyGiGQ9TbnU6ogENQPj+lj3RP/
+         MHtDJXFnGruHMqkkIPRA5VOeQ0R6fY7J1M0xx6o7RILvrBIV/BFcFv7pHVUNxPLypDBw
+         tq2/UedSFhWNj6KXOqjJDdaSe4aqBr4qteHTghepBi8wObvORlfPyyYDPkpLmXP91EiN
+         gWOA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
          :message-id:subject:to:cc:content-transfer-encoding;
-        bh=9iPBjl2S+UwngaKyMzDlyxJtl4/YsbX0Oet3snxDCtU=;
-        b=bSzdt13LbUW5v6C2QVBtoFUEzUz+wVPFYTyaOkqWco/ldYhC02LYbI9I6mcyYfCGcX
-         zp62i8kI5hSknP1mMcKSdhsTRv8NOYIJ27mixgvZSqvJpKZyrh9Wm0iaeTumOaiY5QB0
-         7sAKBuewjf6mVyucOnce1iVgWu/BqLnn7ncTOSSkPHoPjMtHnXRnDDsQmoX5RtmuiImb
-         zy6J5hXm9p0MEZfogcuCJpluVJsC7ldQ038VgZPfuYNHARArMJejwPu5ptTTPJwMSo5H
-         JOXEeCNEsEr6OvizmdRnwt+EP2p8Ey3G+RDLMaOoyOzoHlb6s69xfdPGh8EtrkDqRw0i
-         4aRA==
-X-Gm-Message-State: APjAAAVRWb0GukTvxgJGoMqRJk8xpT+ErkH0J2xAozP296pvCSrqa1Me
-        kmAazVWv1WYPcUP+aXazehLh85mH5hnspRtQ1q4jrA==
-X-Google-Smtp-Source: APXvYqx1CRS2/bD1MueOPg1CpT9FCJoK3AhW8tmjuvazE348AT0PMUKCtdWTvQCqZEQT591L3YszvqyGpd+s1Qr5o0c=
-X-Received: by 2002:a2e:8041:: with SMTP id p1mr5267211ljg.121.1558152389041;
- Fri, 17 May 2019 21:06:29 -0700 (PDT)
+        bh=rhTm4DukoVSVojlued0l0dJrdDC4VocEvkMWVztjvWE=;
+        b=ke3en1tcCpO0fHZ5/0H+Ueitzwll6Tx9CFxJBw1+nN5Erhpp2lJYSUVGLxq904/Q4P
+         qhMczAE08VTrSgYnYPT3Mdh9E7VDvtOzw06eBI89car2ZTW9YhYJPBvomFn373xIZ1pu
+         xhwUnOVoRI1VrCPbXtzuvMvHFnvOCFvDBYdULITfC3KHsJSClEsFFGwWq1mM+aWIgyP1
+         qxWfnKKUxLM22nP/jOt+OUKprp76jXbBy8HgXBd5tAlq2OHpvI3SQKgPyLhvTMYykXl9
+         EX3snXbnC4KAHLyN6xZOlcjd7RijmOLOaXkFwlq591A5IVG2FtLKAy/KeYj75JZanAlh
+         HVwA==
+X-Gm-Message-State: APjAAAU/GA+G4sYGu03R6nm4MusQ4WlEXea3AaApcZvIAIctOSfocnrR
+        ragyqVR2+ojFoTI54RMq7soGzh7T9nWMBHJaNhcBv5e3wyE=
+X-Google-Smtp-Source: APXvYqyExhH76sEfqkjs4Vx9UJBPBrxg1chjSFmnqsO42icKTeKKQhpMy3btI15BsaGdN8oyBt8SRINuaDbJKjJxp0I=
+X-Received: by 2002:a2e:93c7:: with SMTP id p7mr17991311ljh.32.1558152563761;
+ Fri, 17 May 2019 21:09:23 -0700 (PDT)
 MIME-Version: 1.0
-References: <CAKS=YrP=z2+rP5AtFKkf7epi+Dr2Arfsaq3pZ9cR3iKif3gV5g@mail.gmail.com>
- <CAJCQCtTmZY-UHeNYp=waTV8TWiAKXr8bJq13DQ7KQg=syvQ=tg@mail.gmail.com> <CAKS=YrMB6SNbCnJsU=rD5gC6cR5yEnSzPDax5eP-VQ-UpzHvAg@mail.gmail.com>
-In-Reply-To: <CAKS=YrMB6SNbCnJsU=rD5gC6cR5yEnSzPDax5eP-VQ-UpzHvAg@mail.gmail.com>
+References: <297da4cbe20235080205719805b08810@bi-co.net> <CAJCQCtR-uo9fgs66pBMEoYX_xAye=O-L8kiMwyAdFjPS5T4+CA@mail.gmail.com>
+ <8C31D41C-9608-4A65-B543-8ABCC0B907A0@bi-co.net>
+In-Reply-To: <8C31D41C-9608-4A65-B543-8ABCC0B907A0@bi-co.net>
 From:   Chris Murphy <lists@colorremedies.com>
-Date:   Fri, 17 May 2019 22:06:17 -0600
-Message-ID: <CAJCQCtQhrh8VBKe11gQUt5BSuWCsDQUdt_Q4a4opnAYE5XoEVQ@mail.gmail.com>
-Subject: Re: Unbootable root btrfs
-To:     Lee Fleming <leeflemingster@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Cc:     Chris Murphy <lists@colorremedies.com>
+Date:   Fri, 17 May 2019 22:09:12 -0600
+Message-ID: <CAJCQCtTZWXUgUDh8vn0BFeEbAdKToDSVYYw4Q0bt0rECQr9nxQ@mail.gmail.com>
+Subject: Re: Massive filesystem corruption after balance + fstrim on Linux 5.1.2
+To:     =?UTF-8?B?TWljaGFlbCBMYcOf?= <bevan@bi-co.net>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -68,37 +67,19 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, May 17, 2019 at 2:18 AM Lee Fleming <leeflemingster@gmail.com> wrot=
-e:
+On Fri, May 17, 2019 at 11:37 AM Michael La=C3=9F <bevan@bi-co.net> wrote:
 >
-> I didn't see that particular warning. I did see a warning that it could c=
-ause damage and should be tried after trying some other things which I did.=
- The data on this drive isn't important. I just wanted to see if it could b=
-e recovered before reinstalling.
 >
-> There was no crash, just a reboot. I was setting up KVM and I rebooted in=
-to a different kernel to see if some performance problems were kernel relat=
-ed. And it just didn't boot.
+> I tried to reproduce this issue: I recreated the btrfs file system, set u=
+p a minimal system and issued fstrim again. It printed the following error =
+message:
+>
+> fstrim: /: FITRIM ioctl failed: Input/output error
 
-OK the corrupted Btrfs volume is a guest file system?
-
-That's unexpected. There must be some configuration specific issue
-that's instigating this. I've done quite a lot of Btrfs testing in
-qemu-kvm including the virtioblk devices using unsafe caching, and I
-do vile things with the VM's intentionally trying to blow up Btrfs
-including force quitting the VM while it's writing. And I haven't
-gotten any corruptions.
-
-All I can recommend is to try to reproduce it again and this next time
-try to keep track of the exact steps such that anyone can try to
-reproduce it. It might be a bug you've found. But we need a
-reproducer. Is it using QCOW2 or RAW file backing, or LVM, or plain
-partition? What is the qemu command for the VM? You can get that with
-'ps -aux | grep qemu' and it should show all the options used
-including the kind of block devices and caching. And then what is the
-workload inside the VM?
-
-
+Huh. Any kernel message at the same time? I would expect any fstrim
+user space error message to also have a kernel message. Any i/o error
+suggests some kind of storage stack failure - which could be hardware
+or software, you can't know without seeing the kernel messages.
 
 --=20
 Chris Murphy

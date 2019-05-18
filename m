@@ -6,49 +6,54 @@ X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 47FAAC04AAF
-	for <linux-btrfs@archiver.kernel.org>; Sat, 18 May 2019 04:14:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 94D87C04AAF
+	for <linux-btrfs@archiver.kernel.org>; Sat, 18 May 2019 04:50:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 11777204FD
-	for <linux-btrfs@archiver.kernel.org>; Sat, 18 May 2019 04:14:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5C41B20872
+	for <linux-btrfs@archiver.kernel.org>; Sat, 18 May 2019 04:50:14 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=comcastmailservice.net header.i=@comcastmailservice.net header.b="fAGnrP6Y"
+	dkim=pass (2048-bit key) header.d=comcastmailservice.net header.i=@comcastmailservice.net header.b="iFiATA79"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725909AbfEREOw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 18 May 2019 00:14:52 -0400
-Received: from resqmta-ch2-01v.sys.comcast.net ([69.252.207.33]:54274 "EHLO
+        id S1725810AbfEREj6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 18 May 2019 00:39:58 -0400
+Received: from resqmta-ch2-01v.sys.comcast.net ([69.252.207.33]:58200 "EHLO
         resqmta-ch2-01v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1725294AbfEREOw (ORCPT
+        by vger.kernel.org with ESMTP id S1725268AbfEREj6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 18 May 2019 00:14:52 -0400
-X-Greylist: delayed 488 seconds by postgrey-1.27 at vger.kernel.org; Sat, 18 May 2019 00:14:52 EDT
-Received: from resomta-ch2-10v.sys.comcast.net ([69.252.207.106])
+        Sat, 18 May 2019 00:39:58 -0400
+Received: from resomta-ch2-20v.sys.comcast.net ([69.252.207.116])
         by resqmta-ch2-01v.sys.comcast.net with ESMTP
-        id RqaDhaY0ALJtxRqcOhkQYw; Sat, 18 May 2019 04:06:44 +0000
+        id Rr7VhaZ3kLJtxRr8XhkRlB; Sat, 18 May 2019 04:39:57 +0000
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=comcastmailservice.net; s=20180828_2048; t=1558152404;
-        bh=0OcCHr9RkLA3qkco2iBIKV3IQMFeIStU24wDd0okLOE=;
-        h=Received:Received:To:From:Subject:Message-ID:Date:MIME-Version:
+        d=comcastmailservice.net; s=20180828_2048; t=1558154397;
+        bh=KzeI4xHXXeuf7MKA0OEzusIO3o946CnbG/iEQk+87Ek=;
+        h=Received:Received:Subject:To:From:Message-ID:Date:MIME-Version:
          Content-Type;
-        b=fAGnrP6YbVf0Xl3ISwmY2i/E/COGCd3hV81Ma9hAye+Ah5C0Qygz2mLRmmjQmgCnh
-         lRB9rzBNWjEAmu1wMllEmvOz5pbU4V70MafHOtNjpXCc21PQiUnjHRRAFNUX60RLF9
-         eb8SsyeI8foEwLe+jefEhvCmv+Nso346rTzIPGKB7ls0qJ+gHgQl77/4mFxXPvD2Su
-         +UmM4R58fFqe8fjVWyqsnlmjx1MLO4KcqqjUJZmEF3H3s/Cyr5hVqHFtMzU8miwhkL
-         GjktbR7sr/IF96qHG4aLImMBK/mYdHmRk7SYbx2OZ+4Mt83l2LVuNHo9GvXNMzsyO9
-         lWne7Yjq5n8dA==
+        b=iFiATA791xSqivAWgA83vf+5Zc/ah0xMAUdmVKYjrpSsG17Amaas4k5NWcWffGQ4I
+         54Klf/gNs9jZYIoVjyu5MCjLAYZkKLY7DREKOWIqIvM9HYHBQhdvJakXyEfaXqZg1h
+         dKhNeQ/INouwFApt5aUsrmE4icqprSpyXzObrfzMmaAuGLK8jsFkI1j3sXtDgCYFa6
+         2J9DI0bjialvB+oROV6PreD5GlU0pP+F/EhIaFtZzbStsybTmJvJTQ/0p9I1sXOj/q
+         KRwU5ffh2gEcB7QiF+goUMzppahvs8kECM5jRqGnAJTzZggHEP6f0cytFlD/wyeCvV
+         JFhxwtW5/GuRw==
 Received: from touchy.whiterc.com ([IPv6:2601:601:1400:69b3:5588:da99:221d:2c69])
-        by resomta-ch2-10v.sys.comcast.net with ESMTPSA
-        id RqcKh68HSjSzwRqcLhSUYF; Sat, 18 May 2019 04:06:44 +0000
+        by resomta-ch2-20v.sys.comcast.net with ESMTPSA
+        id Rr8Vhp5nE5DQoRr8Whr4cC; Sat, 18 May 2019 04:39:57 +0000
 X-Xfinity-VMeta: sc=-100;st=legit
-To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Unbootable root btrfs
+To:     Chris Murphy <lists@colorremedies.com>,
+        Lee Fleming <leeflemingster@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CAKS=YrP=z2+rP5AtFKkf7epi+Dr2Arfsaq3pZ9cR3iKif3gV5g@mail.gmail.com>
+ <CAJCQCtTmZY-UHeNYp=waTV8TWiAKXr8bJq13DQ7KQg=syvQ=tg@mail.gmail.com>
+ <CAKS=YrMB6SNbCnJsU=rD5gC6cR5yEnSzPDax5eP-VQ-UpzHvAg@mail.gmail.com>
+ <CAJCQCtQhrh8VBKe11gQUt5BSuWCsDQUdt_Q4a4opnAYE5XoEVQ@mail.gmail.com>
 From:   Robert White <rwhite@pobox.com>
-Subject: Feature Request: Directory property to upconvert mkdir/rmdir to
- subvol create/delete
-Message-ID: <a108b077-ff18-7c6d-ac5c-ea666de48084@pobox.com>
-Date:   Sat, 18 May 2019 04:06:40 +0000
+Message-ID: <2571b502-737b-05b5-633b-cf198c0e6764@pobox.com>
+Date:   Sat, 18 May 2019 04:39:55 +0000
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.6.1
 MIME-Version: 1.0
+In-Reply-To: <CAJCQCtQhrh8VBKe11gQUt5BSuWCsDQUdt_Q4a4opnAYE5XoEVQ@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-CA
 Content-Transfer-Encoding: 7bit
@@ -57,42 +62,41 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Howdy,
+On 5/18/19 4:06 AM, Chris Murphy wrote:
+> On Fri, May 17, 2019 at 2:18 AM Lee Fleming <leeflemingster@gmail.com> wrote:
+>>
+>> I didn't see that particular warning. I did see a warning that it could cause damage and should be tried after trying some other things which I did. The data on this drive isn't important. I just wanted to see if it could be recovered before reinstalling.
+>>
+>> There was no crash, just a reboot. I was setting up KVM and I rebooted into a different kernel to see if some performance problems were kernel related. And it just didn't boot.
+> 
+> OK the corrupted Btrfs volume is a guest file system?
 
-For several reasons it would be really convenient if there was a way to 
-mark a btrfs directory such that the directories created in the marked 
-directory would actually be automatically converted to subvolume 
-creation and destruction.
+Was the reboot a reboot of the guest instance or the host? The reboot of 
+the host can be indistinguishable from a crash to the guest file system 
+images if shutdown is taking a long time. That megear fifteen second gap 
+between SIGTERM and SIGKILL can be a real VM killer even in an orderly 
+shutdown. If you don't have a qemu shutdown script in your host 
+environment then every orderly shutdown is a risk to any running VM.
 
-NFS4 particularly pivots on file system boundaries, which it seems to 
-include subvolumes-in-place as such boundaries.
+The question that comes to my mind is to ask what -blockdev and/or 
+-drive parameters you are using? Some of the combinations of features 
+and flags can, in the name of speed, "helpfully violate" the necessary 
+I/O orderings that filesystems depend on.
 
-doing this to /home is another opportunity if you have transient 
-accounts created by scripts/programs you cannot easily change.
+So if the crash kills qemu before qemu has flushed and completed a 
+guest-system-critical write to the host store you've suffered a 
+corruption that has nothing to do with the filesystem code base.
 
-Other uses include creating virtual machine sets via tarballs and such.
+So, for example, you shutdown your host system. I sends SIGTERM to qemu. 
+The guest system sends SIGTERM to its processes. The guest is still 
+waiting its nominal 15 seconds, when the host evicts it from memory with 
+a SIGKILL because it's 15 second timer started sooner.
 
-It would also be super useful in apps that create large cache 
-directories that you'll eventually drop in bulk. /usr/src is another 
-place where large directories come and go under installer control.
+(15 seconds is the canonical time from my UNIX days, I don't know what 
+the real times are for every distribution.)
 
-The core logic would be to upconvert any legal rmdir to a subvol delete 
-if it's applied to a subvol. Yes, this _would_ remove non-empty subvols, 
-that would be the point. Then any mkdir in that directory would create a 
-subvol instead of a directory.
+Upping the caching behaviours for writes can be just as deadly in some 
+conditions.
 
-Normal files in the directory would be unchanged.
-
-And a normal directory moved into the directory would remain a normal 
-directory for obvious reasons.
-
-And a subvol moved out of the directory (can you even do that?) would 
-remain a subvol for equally obvious reasons.
-
-It's implicit that the non-superuser create/remove subvol operation 
-would be legal for such a directory.
-
-Programs could be rewritten to do this explicitly, of course, but that's 
-a heck of a lot of impractical patching.
-
-Anyway, just a thought I've had repeatedly that I finally thought to broach.
+None of this my apply to OP, but it's the thing I'd check before before 
+digging too far.

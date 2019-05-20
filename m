@@ -3,70 +3,85 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1AF38C04AAF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 20 May 2019 09:20:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6E111C04AAC
+	for <linux-btrfs@archiver.kernel.org>; Mon, 20 May 2019 10:35:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B614E20675
-	for <linux-btrfs@archiver.kernel.org>; Mon, 20 May 2019 09:20:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 428E020675
+	for <linux-btrfs@archiver.kernel.org>; Mon, 20 May 2019 10:35:08 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=samba.org header.i=@samba.org header.b="VNJ9fGMU"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="TIdsWwgD"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732022AbfETJU3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 20 May 2019 05:20:29 -0400
-Received: from hr2.samba.org ([144.76.82.148]:29612 "EHLO hr2.samba.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729598AbfETJU3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 May 2019 05:20:29 -0400
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=samba.org;
-         s=42627210; h=Message-ID:Cc:To:From:Date;
-        bh=61tRybvWVw6jSWyV2+xBCtkqFpMNe0a6dv7/VbKXlt8=; b=VNJ9fGMUUos/HuIjTMUpUNZrRN
-        ECq3mivyx1EKyd6VNpnOLKd132lvz4TuE9MojGl1PsE7ejnBGz+rJC22QoRc+KFFXosJCn2r9QO8r
-        8t/VEx512JjNMqfjDdL2W9XxUbTm2KcFhC4LxlUyt4/u1+lfAJWaeE2TB3DaZ4ExalmY=;
-Received: from [127.0.0.2] (localhost [127.0.0.1])
-        by hr2.samba.org with esmtpsa (TLS1.3:ECDHE_RSA_CHACHA20_POLY1305:256)
-        (Exim)
-        id 1hSeT5-00078F-P2; Mon, 20 May 2019 09:20:27 +0000
-Date:   Mon, 20 May 2019 11:20:26 +0200
-From:   David Disseldorp <ddiss@samba.org>
-To:     Andrei Borzenkov <arvidjaar@gmail.com>
-Cc:     Newbugreport <newbugreport@protonmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Btrfs send bloat
-Message-ID: <20190520112026.385537ca@samba.org>
-In-Reply-To: <275f7add-382c-bf6d-4cf8-f9823cf55daf@gmail.com>
-References: <clzY4RoSOURzgBtua3TjQ4WXJzgY3EwTyiaYwt49zFAPIi_jO2nAQ8O2saTwpqHH9x0ISw9AVbWOvVR4hFDIx8_dzlWKAzHwcOtEuwaXzJ8=@protonmail.com>
-        <275f7add-382c-bf6d-4cf8-f9823cf55daf@gmail.com>
+        id S1731635AbfETKfH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 20 May 2019 06:35:07 -0400
+Received: from mail-wm1-f45.google.com ([209.85.128.45]:53266 "EHLO
+        mail-wm1-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1731632AbfETKfH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 20 May 2019 06:35:07 -0400
+Received: by mail-wm1-f45.google.com with SMTP id 198so12713549wme.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 May 2019 03:35:06 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc:content-transfer-encoding;
+        bh=+lssdH0Jhu3CDQ1AuTZa7avnhhNR6elfyxebFRtLVVQ=;
+        b=TIdsWwgD1UH2Dg2NcOLzRhg7KTXLukBL78LhL/Jyogo3w6b/1dboFrkDy7FgFkmEd5
+         SW81WQGx7V3/h/2htw7RM8VDuQR2IZ9jyTcP919mHDb7flHnBLb655rSdvCzs+4K/aRr
+         H+Zw7YQluI64/ZRe/8SrAzdE6IQuBd7hWU9GMC4EXndGASfKYUUTUtFNUCbmaPL2zfvq
+         0B44yhDg32QjDEmBp6nfv8vXGhpDsyeWCiu82x5fQJ0QLpD6krIG/cBo4fiS6B40VzeY
+         05feBlXMzyK2cEKkS/No5NMbcIGCeRSVSLfthTsrfhDliICGpermhYb8/IVuaIAgf5Ws
+         f7Ag==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=+lssdH0Jhu3CDQ1AuTZa7avnhhNR6elfyxebFRtLVVQ=;
+        b=A3Y8WP5Bkr1YAIVb5fVELsyIHKXbB4mG2dqPptwgN8UlRJp/8NAyNPFbRn+tnnNCeB
+         vguNnIjleujc/BTyJD4lYnOdpIxz3Udh2zv/9L4ZFioYHE+hljFXNYdH5+OQfE23iE/k
+         /lZ1ti7rsAvr3uJywb4Z7bTJm9F6rg8HXd952h3ou8LXP1lxuH+YFHfANKRRMnkiL5Qj
+         UsifkfIelc37yNnybNq9W+Uni/cF3KwlXmS00nr31qnZKIPrn3szIr+ETd9wVQqoFkLi
+         nUa/ch9c/QNeQrtehp5f1JbeSl3D+0qZzuebCfIcKqqYuqnhxOgQDz73g+KnkIgqGG9r
+         lCbg==
+X-Gm-Message-State: APjAAAVzeXdXuP1zTcba72dDAfupHdWzy079FvUSvyOYmHqccTwM5AmL
+        hLvkrFiOvhpCH7e3vy6GrWNSMDmuUgbAMh246CpTRzOU
+X-Google-Smtp-Source: APXvYqyuYvMM7QCmWU7GToUWOY8Q+vc1EBopwFmwgUCeKadSL+X0NvxpQ792n9yzXlVvnu1IwWpV0SWoXtxyL6DCuD0=
+X-Received: by 2002:a05:600c:23ce:: with SMTP id p14mr25979599wmb.36.1558348505319;
+ Mon, 20 May 2019 03:35:05 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+References: <clzY4RoSOURzgBtua3TjQ4WXJzgY3EwTyiaYwt49zFAPIi_jO2nAQ8O2saTwpqHH9x0ISw9AVbWOvVR4hFDIx8_dzlWKAzHwcOtEuwaXzJ8=@protonmail.com>
+ <275f7add-382c-bf6d-4cf8-f9823cf55daf@gmail.com>
+In-Reply-To: <275f7add-382c-bf6d-4cf8-f9823cf55daf@gmail.com>
+From:   Patrik Lundquist <patrik.lundquist@gmail.com>
+Date:   Mon, 20 May 2019 12:34:51 +0200
+Message-ID: <CAA7pwKM_1uWbu9ECgkqAMXMWTOJm5xH1wvHKFwq+7w=JeQQ7xg@mail.gmail.com>
+Subject: Re: Btrfs send bloat
+To:     Newbugreport <newbugreport@protonmail.com>
+Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Andrei Borzenkov <arvidjaar@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sun, 19 May 2019 23:06:25 +0300, Andrei Borzenkov wrote:
-
+On Mon, 20 May 2019 at 02:36, Andrei Borzenkov <arvidjaar@gmail.com> wrote:
+>
 > 19.05.2019 11:11, Newbugreport =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
 > > I have 3-4 years worth of snapshots I use for backup purposes. I keep
 > > R-O live snapshots, two local backups, and AWS Glacier Deep Freeze. I
 > > use both send | receive and send > file. This works well but I get
-> > massive deltas when files are moved around in a GUI via samba. =20
->=20
+> > massive deltas when files are moved around in a GUI via samba.
+>
 > Did you analyze whether it is client or server problem? If client does
 > file copy (instead of move as you imply) may be the simplest solution
 > would be to use different tool on client. If problem is on server side,
 > it is something to discuss with SAMBA folks.
 
-Samba supports copy offload via FSCTL_SRV_COPYCHUNK and
-FSCTL_DUPLICATE_EXTENTS_TO_FILE, which can be translated to
-BTRFS_IOC_CLONE_RANGE via the btrfs Samba VFS module.
-
-Windows explorer and Linux (cifs.ko) are capable of using these
-fsctls during copy.
-
-See https://wiki.samba.org/index.php/Server-Side_Copy for details.
-
-Cheers, David
+Also try the Btrfs module in Samba.
+https://wiki.samba.org/index.php/Server-Side_Copy#Btrfs_Enhanced_Server-Sid=
+e_Copy_Offload

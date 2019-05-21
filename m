@@ -4,30 +4,30 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5893CC04AAF
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 May 2019 11:13:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 018FEC04AAF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 May 2019 11:28:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3857D2081C
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 May 2019 11:13:33 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C8DBD216B7
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 May 2019 11:28:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726900AbfEULNc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 21 May 2019 07:13:32 -0400
-Received: from mx2.suse.de ([195.135.220.15]:52320 "EHLO mx1.suse.de"
+        id S1727757AbfEUL2P (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 21 May 2019 07:28:15 -0400
+Received: from mx2.suse.de ([195.135.220.15]:60318 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726042AbfEULNc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 May 2019 07:13:32 -0400
+        id S1726750AbfEUL2P (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 21 May 2019 07:28:15 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id F0201AE14;
-        Tue, 21 May 2019 11:13:30 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 81313AD02;
+        Tue, 21 May 2019 11:28:14 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Juan Erbes <jerbes@gmail.com>
-Subject: [PATCH] btrfs: qgroup: Check if @bg is NULL to avoid NULL pointer dereference
-Date:   Tue, 21 May 2019 19:13:23 +0800
-Message-Id: <20190521111323.28154-1-wqu@suse.com>
+Subject: [PATCH v1.1] btrfs: qgroup: Check if @bg is NULL to avoid NULL pointer dereference
+Date:   Tue, 21 May 2019 19:28:08 +0800
+Message-Id: <20190521112808.28728-1-wqu@suse.com>
 X-Mailer: git-send-email 2.21.0
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
@@ -37,8 +37,8 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 [BUG]
-When mounting a fs with reloc tree and has qgroup enabled, it can call
-  NULL pointer dereference at mount time:
+When mounting a fs with reloc tree and has qgroup enabled, it can cause
+NULL pointer dereference at mount time:
   BUG: kernel NULL pointer dereference, address: 00000000000000a8
   #PF: supervisor read access in kernel mode
   #PF: error_code(0x0000) - not-present page
@@ -99,6 +99,10 @@ also some other reloc related BUG_ON() even with this patch.
 
 Without the other bug fixed, the test case will fail anyway, so test
 case will be delayed.
+
+Changelog:
+v1.1
+- Fix a grammar and format error in the [BUG] section.
 ---
  fs/btrfs/qgroup.c | 8 +++++++-
  1 file changed, 7 insertions(+), 1 deletion(-)

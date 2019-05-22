@@ -7,49 +7,49 @@ X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6F803C282DD
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 19:40:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 865E7C282CE
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 19:45:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 41ED521473
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 19:40:32 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 51DEA2081C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 19:45:03 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1558554032;
-	bh=xIYPHRiJstfsfCZdtLYB6XaGhloIDSltgGqrZvJsEwA=;
+	s=default; t=1558554303;
+	bh=1zjoZzRLkBDupvmr5evMoGuWRhBkUNF11UONvVoHDsE=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=cpnfBeJX8O9f4b/U/ipKuHhKe96XvntUDsSIIqh5Ks9Hrr8it2V3S+HuJUVoNuoXv
-	 TWVWfTV3raSRia0pJrv52kaFEn5Nny6pNJqRiB+Ytm1stN/6NpX/h4ZZWi4UtGQOsh
-	 PECLCkUvOxRqSBXSKI9wsPTb2vKE+ttLyQSpDoLM=
+	b=bgdUR+3EQO9G3zerCS7Zlkm4VNb+hs7S0hmVb/Fi00EpOSGLHRCmqFksfjBedkI7b
+	 R4JFFkkeLFTTZucWEbRIJ91NWfT0sfmM4ZQh/cieqN9IBTow87jKR7+Y5Oln2XG6j5
+	 Zt0P4fDXmUeEOzF2iiOeMNNgluJqbWxPOel1NCGI=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732882AbfEVT32 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 22 May 2019 15:29:28 -0400
-Received: from mail.kernel.org ([198.145.29.99]:52468 "EHLO mail.kernel.org"
+        id S1732449AbfEVT2C (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 22 May 2019 15:28:02 -0400
+Received: from mail.kernel.org ([198.145.29.99]:50008 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1732872AbfEVT30 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 May 2019 15:29:26 -0400
+        id S1732367AbfEVT1n (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 22 May 2019 15:27:43 -0400
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id B66F221850;
-        Wed, 22 May 2019 19:29:24 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id DEFF620879;
+        Wed, 22 May 2019 19:27:41 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1558553365;
-        bh=xIYPHRiJstfsfCZdtLYB6XaGhloIDSltgGqrZvJsEwA=;
+        s=default; t=1558553262;
+        bh=1zjoZzRLkBDupvmr5evMoGuWRhBkUNF11UONvVoHDsE=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=SXDJDFSe2CwmziXF4Q5mW0ti6N88dQ51ubinTLvM+aIFKuwDMZ4GmiBtKcsOAh1MH
-         RMe2bSH76A1aVavT/zjCEdghFNj0DrCZOR12axWbHgY5WMUuzy/xXB/FdAztD+291N
-         u5e4uCAUqDTZfNVE6EhssC9gWr1055x8m8Y0M8+E=
+        b=e/xj36djPYjlDW2lubsxu0B82/M7MJJTc1I+f04x0LybfQdwzX8ZBUpavg1Fi71Eo
+         IISR3L7mqZHYAjBXtNJKDqmHZ9WToDnnNbHlLLkechuYUQGk/BwtAFqUi8uEQonSr7
+         TE1wdPs2TqnuMuyCArltKZJ6mcJx4vXdUtzMJ5sg=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Josef Bacik <josef@toxicpanda.com>,
         Filipe Manana <fdmanana@suse.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.14 027/167] btrfs: fix panic during relocation after ENOSPC before writeback happens
-Date:   Wed, 22 May 2019 15:26:22 -0400
-Message-Id: <20190522192842.25858-27-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 4.19 041/244] btrfs: fix panic during relocation after ENOSPC before writeback happens
+Date:   Wed, 22 May 2019 15:23:07 -0400
+Message-Id: <20190522192630.24917-41-sashal@kernel.org>
 X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20190522192842.25858-1-sashal@kernel.org>
-References: <20190522192842.25858-1-sashal@kernel.org>
+In-Reply-To: <20190522192630.24917-1-sashal@kernel.org>
+References: <20190522192630.24917-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -122,10 +122,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 20 insertions(+), 11 deletions(-)
 
 diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 5feb8b03ffe86..9fa6db6a6f7d5 100644
+index 0526b6c473c79..5d57ed6293455 100644
 --- a/fs/btrfs/relocation.c
 +++ b/fs/btrfs/relocation.c
-@@ -4403,27 +4403,36 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
+@@ -4289,27 +4289,36 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
  		mutex_lock(&fs_info->cleaner_mutex);
  		ret = relocate_block_group(rc);
  		mutex_unlock(&fs_info->cleaner_mutex);

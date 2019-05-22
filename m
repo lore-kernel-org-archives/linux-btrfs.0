@@ -2,116 +2,224 @@ Return-Path: <SRS0=N9Hd=TW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_NEOMUTT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 274EFC282CE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 20:00:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6528FC282DD
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 20:14:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id ED9B820862
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 20:00:57 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1558555258;
-	bh=5JJ0A4YTngVp1poDwCyZPpjaELnYqOmKSWSMbOpvHyE=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=c9RTX4rq12HF+A4VIZrm4G0wOitu+PpNe83T8qAwbupLYg0+taHeTPGHXgQY+S1uD
-	 YdeMdCBPzFBYwQ4JWw7DgzWtH30YQior8rKvig6l+y9UqIQDR4pmZJ4LVkU85vI/5r
-	 LcYQHrXyeLWC2TsSBCq/7mQeqEONsBfy19GjPptM=
+	by mail.kernel.org (Postfix) with ESMTP id 3FEFE21473
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 20:14:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731331AbfEVUAx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 22 May 2019 16:00:53 -0400
-Received: from mail.kernel.org ([198.145.29.99]:43732 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730653AbfEVTW4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 May 2019 15:22:56 -0400
-Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 3FDAA20675;
-        Wed, 22 May 2019 19:22:55 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1558552976;
-        bh=5JJ0A4YTngVp1poDwCyZPpjaELnYqOmKSWSMbOpvHyE=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=q8hcDmIJp+F2RwoxChqPqPPVXn6ROpbTYpYHo8rkZwj61o8XgXmj1OGOa/6iy95Fx
-         KBKyQk9Ly2I/ddPa7BUEVlYk0rDpRAiSnmyBcPBmg3Q0vy+q/FqVUqE+XTNmyFW4xh
-         akImDO8qullPekPW4WaB3LHsL8XXxIdz+OS0O/kA=
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Robbie Ko <robbieko@synology.com>,
-        Filipe Manana <fdmanana@suse.com>,
-        David Sterba <dsterba@suse.com>,
-        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.1 056/375] Btrfs: fix data bytes_may_use underflow with fallocate due to failed quota reserve
-Date:   Wed, 22 May 2019 15:15:56 -0400
-Message-Id: <20190522192115.22666-56-sashal@kernel.org>
-X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20190522192115.22666-1-sashal@kernel.org>
-References: <20190522192115.22666-1-sashal@kernel.org>
+        id S1729864AbfEVUOv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 22 May 2019 16:14:51 -0400
+Received: from mx2.suse.de ([195.135.220.15]:49280 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1729483AbfEVUOv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 22 May 2019 16:14:51 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 570F7AECB;
+        Wed, 22 May 2019 20:14:49 +0000 (UTC)
+Date:   Wed, 22 May 2019 15:14:47 -0500
+From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
+To:     "Darrick J. Wong" <darrick.wong@oracle.com>
+Cc:     linux-btrfs@vger.kernel.org, kilobyte@angband.pl,
+        linux-fsdevel@vger.kernel.org, jack@suse.cz, david@fromorbit.com,
+        willy@infradead.org, hch@lst.de, dsterba@suse.cz,
+        nborisov@suse.com, linux-nvdimm@lists.01.org
+Subject: Re: [PATCH 04/18] dax: Introduce IOMAP_DAX_COW to CoW edges during
+ writes
+Message-ID: <20190522201446.tc4zbxdevjm5dofe@fiona>
+References: <20190429172649.8288-1-rgoldwyn@suse.de>
+ <20190429172649.8288-5-rgoldwyn@suse.de>
+ <20190521165158.GB5125@magnolia>
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190521165158.GB5125@magnolia>
+User-Agent: NeoMutt/20180716
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Robbie Ko <robbieko@synology.com>
+On  9:51 21/05, Darrick J. Wong wrote:
+> On Mon, Apr 29, 2019 at 12:26:35PM -0500, Goldwyn Rodrigues wrote:
+> > From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+> > 
+> > The IOMAP_DAX_COW is a iomap type which performs copy of
+> > edges of data while performing a write if start/end are
+> > not page aligned. The source address is expected in
+> > iomap->inline_data.
+> > 
+> > dax_copy_edges() is a helper functions performs a copy from
+> > one part of the device to another for data not page aligned.
+> > If iomap->inline_data is NULL, it memset's the area to zero.
+> > 
+> > Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+> > ---
+> >  fs/dax.c              | 46 +++++++++++++++++++++++++++++++++++++++++++++-
+> >  include/linux/iomap.h |  1 +
+> >  2 files changed, 46 insertions(+), 1 deletion(-)
+> > 
+> > diff --git a/fs/dax.c b/fs/dax.c
+> > index e5e54da1715f..610bfa861a28 100644
+> > --- a/fs/dax.c
+> > +++ b/fs/dax.c
+> > @@ -1084,6 +1084,42 @@ int __dax_zero_page_range(struct block_device *bdev,
+> >  }
+> >  EXPORT_SYMBOL_GPL(__dax_zero_page_range);
+> >  
+> > +/*
+> > + * dax_copy_edges - Copies the part of the pages not included in
+> > + * 		    the write, but required for CoW because
+> > + * 		    offset/offset+length are not page aligned.
+> > + */
+> > +static int dax_copy_edges(struct inode *inode, loff_t pos, loff_t length,
+> > +			   struct iomap *iomap, void *daddr)
+> > +{
+> > +	unsigned offset = pos & (PAGE_SIZE - 1);
+> > +	loff_t end = pos + length;
+> > +	loff_t pg_end = round_up(end, PAGE_SIZE);
+> > +	void *saddr = iomap->inline_data;
+> > +	int ret = 0;
+> > +	/*
+> > +	 * Copy the first part of the page
+> > +	 * Note: we pass offset as length
+> > +	 */
+> > +	if (offset) {
+> > +		if (saddr)
+> > +			ret = memcpy_mcsafe(daddr, saddr, offset);
+> > +		else
+> > +			memset(daddr, 0, offset);
+> > +	}
+> > +
+> > +	/* Copy the last part of the range */
+> > +	if (end < pg_end) {
+> > +		if (saddr)
+> > +			ret = memcpy_mcsafe(daddr + offset + length,
+> > +			       saddr + offset + length,	pg_end - end);
+> > +		else
+> > +			memset(daddr + offset + length, 0,
+> > +					pg_end - end);
+> > +	}
+> > +	return ret;
+> > +}
+> > +
+> >  static loff_t
+> >  dax_iomap_actor(struct inode *inode, loff_t pos, loff_t length, void *data,
+> >  		struct iomap *iomap)
+> > @@ -1105,9 +1141,11 @@ dax_iomap_actor(struct inode *inode, loff_t pos, loff_t length, void *data,
+> >  			return iov_iter_zero(min(length, end - pos), iter);
+> >  	}
+> >  
+> > -	if (WARN_ON_ONCE(iomap->type != IOMAP_MAPPED))
+> > +	if (WARN_ON_ONCE(iomap->type != IOMAP_MAPPED
+> > +			 && iomap->type != IOMAP_DAX_COW))
+> 
+> I reiterate (from V3) that the && goes on the previous line...
+> 
+> 	if (WARN_ON_ONCE(iomap->type != IOMAP_MAPPED &&
+> 			 iomap->type != IOMAP_DAX_COW))
+> 
+> >  		return -EIO;
+> >  
+> > +
+> >  	/*
+> >  	 * Write can allocate block for an area which has a hole page mapped
+> >  	 * into page tables. We have to tear down these mappings so that data
+> > @@ -1144,6 +1182,12 @@ dax_iomap_actor(struct inode *inode, loff_t pos, loff_t length, void *data,
+> >  			break;
+> >  		}
+> >  
+> > +		if (iomap->type == IOMAP_DAX_COW) {
+> > +			ret = dax_copy_edges(inode, pos, length, iomap, kaddr);
+> > +			if (ret)
+> > +				break;
+> > +		}
+> > +
+> >  		map_len = PFN_PHYS(map_len);
+> >  		kaddr += offset;
+> >  		map_len -= offset;
+> > diff --git a/include/linux/iomap.h b/include/linux/iomap.h
+> > index 0fefb5455bda..6e885c5a38a3 100644
+> > --- a/include/linux/iomap.h
+> > +++ b/include/linux/iomap.h
+> > @@ -25,6 +25,7 @@ struct vm_fault;
+> >  #define IOMAP_MAPPED	0x03	/* blocks allocated at @addr */
+> >  #define IOMAP_UNWRITTEN	0x04	/* blocks allocated at @addr in unwritten state */
+> >  #define IOMAP_INLINE	0x05	/* data inline in the inode */
+> 
+> > +#define IOMAP_DAX_COW	0x06
+> 
+> DAX isn't going to be the only scenario where we need a way to
+> communicate to iomap actors the need to implement copy on write.
+> 
+> XFS also uses struct iomap to hand out file leases to clients.  The
+> lease code /currently/ doesn't support files with shared blocks (because
+> the only user is pNFS) but one could easily imagine a future where some
+> client wants to lease a file with shared blocks, in which case XFS will
+> want to convey the COW details to the lessee.
+> 
+> > +/* Copy data pointed by inline_data before write*/
+> 
+> A month ago during the V3 patchset review, I wrote (possibly in an other
+> thread, sorry) about something that I'm putting my foot down about now
+> for the V4 patchset, which is the {re,ab}use of @inline_data for the
+> data source address.
 
-[ Upstream commit 39ad317315887c2cb9a4347a93a8859326ddf136 ]
+Looks like I missed this.
+> 
+> We cannot use @inline_data to convey the source address.  @inline_data
+> (so far) is used to point to the in-memory representation of the storage
+> described by @addr.  For data writes, @addr is the location of the write
+> on disk and @inline_data is the location of the write in memory.
+> 
+> Reusing @inline_data here to point to the location of the source data in
+> memory is a totally different thing and will likely result in confusion.
+> On a practical level, this also means that we cannot support the case of
+> COW && INLINE because the type codes collide and so would the users of
+> @inline_data.  This isn't required *right now*, but if you had a pmem
+> filesystem that stages inode updates in memory and flips a pointer to
+> commit changes then the ->iomap_begin function will need to convey two
+> pointers at once.
+> 
+> So this brings us back to Dave's suggestion during the V1 patchset
+> review that instead of adding more iomap flags/types and overloading
+> fields, we simply pass two struct iomaps into ->iomap_begin:
 
-When doing fallocate, we first add the range to the reserve_list and
-then reserve the quota.  If quota reservation fails, we'll release all
-reserved parts of reserve_list.
+Actually, Dave is the one who suggested to perform it this way.
+https://patchwork.kernel.org/comment/22562195/
 
-However, cur_offset is not updated to indicate that this range is
-already been inserted into the list.  Therefore, the same range is freed
-twice.  Once at list_for_each_entry loop, and once at the end of the
-function.  This will result in WARN_ON on bytes_may_use when we free the
-remaining space.
+> 
+>  - Change iomap_apply() to "struct iomap iomap[2] = 0;" and pass
+>    &iomap[0] into the ->iomap_begin and ->iomap_end functions.  The
+>    first iomap will be filled in with the destination for the write (as
+>    all implementations do now), and the second iomap can be filled in
+>    with the source information for a COW operation.
+> 
+>  - If the ->iomap_begin implementation decides that COW is necessary for
+>    the requested operation, then it should fill out that second iomap
+>    with information about the extent that the actor must copied before
+>    returning.  The second iomap's offset and length must match the
+>    first.  If COW isn't necessary, the ->iomap_begin implementation
+>    ignores it, and the second iomap retains type == 0 (i.e. invalid
+>    mapping).
+> 
+> Proceeding along these lines will (AFAICT) still allow you to enable all
+> the btrfs functionality in the rest of this patchset while making the
+> task of wiring up XFS fairly simple.  No overloaded fields and no new
+> flags.
+> 
+> This is how I'd like to see this patchset should proceed to V5.  Does
+> that make sense?
 
-At the end, under the 'out' label we have a call to:
 
-   btrfs_free_reserved_data_space(inode, data_reserved, alloc_start, alloc_end - cur_offset);
+Yes, I think this would be a more flexible design as well if we ever
+decide to extend it beyond dax.
+We would still need a IOMAP_COW type set in iomap[0].
 
-The start offset, third argument, should be cur_offset.
-
-Everything from alloc_start to cur_offset was freed by the
-list_for_each_entry_safe_loop.
-
-Fixes: 18513091af94 ("btrfs: update btrfs_space_info's bytes_may_use timely")
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: Robbie Ko <robbieko@synology.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/file.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 34fe8a58b0e9c..0832449722c12 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -3132,6 +3132,7 @@ static long btrfs_fallocate(struct file *file, int mode,
- 			ret = btrfs_qgroup_reserve_data(inode, &data_reserved,
- 					cur_offset, last_byte - cur_offset);
- 			if (ret < 0) {
-+				cur_offset = last_byte;
- 				free_extent_map(em);
- 				break;
- 			}
-@@ -3181,7 +3182,7 @@ static long btrfs_fallocate(struct file *file, int mode,
- 	/* Let go of our reservation. */
- 	if (ret != 0 && !(mode & FALLOC_FL_ZERO_RANGE))
- 		btrfs_free_reserved_data_space(inode, data_reserved,
--				alloc_start, alloc_end - cur_offset);
-+				cur_offset, alloc_end - cur_offset);
- 	extent_changeset_free(data_reserved);
- 	return ret;
- }
 -- 
-2.20.1
-
+Goldwyn

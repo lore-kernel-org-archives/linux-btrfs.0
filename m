@@ -7,49 +7,49 @@ X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 48CD9C282DD
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 19:27:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4A2B8C282CE
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 19:40:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1D1D720675
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 19:27:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1C1CB2177E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 19:40:28 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1558553265;
-	bh=Z0M1Ru0jdwl8r/WKfcgsUwrussyr67JIQ72gfQBLf24=;
+	s=default; t=1558554028;
+	bh=tT1XJYwMVrZZz9et0vtMrBF2skqe3DiQHfOYqhZBQ8Q=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=F7TSAWtFP3nkvd5ymnKzPXBG+JPXR82upQ2Ly2Kq1bOEHsrEuKGkSffrtYckB6Ct/
-	 64TFFR1cK+K19WH2fZf0z6HsKdQhW/aLnAKd0N0sUG5Bg0BvazUr5BLZJcnVGR4DvA
-	 wfMv1tV4rN9kvaX5uo1Boxerbcm9N6kehQnJJkQs=
+	b=inT36F5dxqEAYdJ2Ws1bd/v19xlz0M1FNEro3esWbcjplvfXxKimq+EHt0nqYaY2B
+	 5lWlReYUaL2S3eUeZUopyxRvIABSeozHcbN1aXtaqZBfoFl1uv/nN3tDif+SyUsBbN
+	 1ofdKoeklgxW6PQHNHSX1QS0UyWnhNMyixd63VwQ=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732376AbfEVT1o (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 22 May 2019 15:27:44 -0400
-Received: from mail.kernel.org ([198.145.29.99]:49994 "EHLO mail.kernel.org"
+        id S1732898AbfEVT33 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 22 May 2019 15:29:29 -0400
+Received: from mail.kernel.org ([198.145.29.99]:52432 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730529AbfEVT1m (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 May 2019 15:27:42 -0400
+        id S1732832AbfEVT3Z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 22 May 2019 15:29:25 -0400
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id BC89F20675;
-        Wed, 22 May 2019 19:27:40 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 9D256217F9;
+        Wed, 22 May 2019 19:29:23 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1558553261;
-        bh=Z0M1Ru0jdwl8r/WKfcgsUwrussyr67JIQ72gfQBLf24=;
+        s=default; t=1558553364;
+        bh=tT1XJYwMVrZZz9et0vtMrBF2skqe3DiQHfOYqhZBQ8Q=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=MfjZFSGKzUAz9cs07Lorn7RtSMByalzoUSc3nV7L0zbGddjvbPdGF0lKXj4zm/lIW
-         vX5orcncL1xLcU8C5dv4kewlMYkpesGZ9+Zp16ACm9Aw2UOKObFy2GtTAWktApFmk+
-         Nf8HwZSKfKOEvI4bv2mE9tinVIq9C9mkDrB74ABY=
+        b=SL5Z0TorUJKNiX2Nrz3zUHXedX1sVl3xyq2dAydeRFHXB5DN/dosXcYIF1F0t8HH7
+         nMumE1yVkVNkFkCSGJiTyBuMSuodT86u5gEFRx/VMnsBhNglxRc0DBwaHMcctHkGTU
+         LT0/GEFTu7cjkEwnP4kAC/tEBzYAwHxiUxevPAzU=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Robbie Ko <robbieko@synology.com>,
         Filipe Manana <fdmanana@suse.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.19 040/244] Btrfs: fix data bytes_may_use underflow with fallocate due to failed quota reserve
-Date:   Wed, 22 May 2019 15:23:06 -0400
-Message-Id: <20190522192630.24917-40-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 4.14 026/167] Btrfs: fix data bytes_may_use underflow with fallocate due to failed quota reserve
+Date:   Wed, 22 May 2019 15:26:21 -0400
+Message-Id: <20190522192842.25858-26-sashal@kernel.org>
 X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20190522192630.24917-1-sashal@kernel.org>
-References: <20190522192630.24917-1-sashal@kernel.org>
+In-Reply-To: <20190522192842.25858-1-sashal@kernel.org>
+References: <20190522192842.25858-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -92,10 +92,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index ca4902c66dc43..868da8566f84c 100644
+index 57e25e83b81a8..7d99f36af100e 100644
 --- a/fs/btrfs/file.c
 +++ b/fs/btrfs/file.c
-@@ -3151,6 +3151,7 @@ static long btrfs_fallocate(struct file *file, int mode,
+@@ -2964,6 +2964,7 @@ static long btrfs_fallocate(struct file *file, int mode,
  			ret = btrfs_qgroup_reserve_data(inode, &data_reserved,
  					cur_offset, last_byte - cur_offset);
  			if (ret < 0) {
@@ -103,9 +103,9 @@ index ca4902c66dc43..868da8566f84c 100644
  				free_extent_map(em);
  				break;
  			}
-@@ -3200,7 +3201,7 @@ static long btrfs_fallocate(struct file *file, int mode,
+@@ -3034,7 +3035,7 @@ static long btrfs_fallocate(struct file *file, int mode,
  	/* Let go of our reservation. */
- 	if (ret != 0 && !(mode & FALLOC_FL_ZERO_RANGE))
+ 	if (ret != 0)
  		btrfs_free_reserved_data_space(inode, data_reserved,
 -				alloc_start, alloc_end - cur_offset);
 +				cur_offset, alloc_end - cur_offset);

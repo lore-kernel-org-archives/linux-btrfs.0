@@ -6,22 +6,22 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 18422C072A4
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 08:19:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7FB0DC072A4
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 08:19:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EB52220856
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 08:19:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5988620856
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 08:19:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728690AbfEVITT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1728693AbfEVITT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Wed, 22 May 2019 04:19:19 -0400
-Received: from mx2.suse.de ([195.135.220.15]:60468 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:60478 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728491AbfEVITR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 May 2019 04:19:17 -0400
+        id S1728625AbfEVITT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 22 May 2019 04:19:19 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B63D0AF49;
-        Wed, 22 May 2019 08:19:15 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 7F5A0AF47;
+        Wed, 22 May 2019 08:19:17 +0000 (UTC)
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 To:     David Sterba <dsterba@suse.com>
 Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
@@ -29,9 +29,9 @@ Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
         David Gstir <david@sigma-star.at>,
         Nikolay Borisov <nborisov@suse.com>,
         Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH v3 05/13] btrfs: dont assume compressed_bio sums to be 4 bytes
-Date:   Wed, 22 May 2019 10:19:02 +0200
-Message-Id: <20190522081910.7689-6-jthumshirn@suse.de>
+Subject: [PATCH v3 10/13] btrfs: add boilerplate code for directly including the crypto framework
+Date:   Wed, 22 May 2019 10:19:07 +0200
+Message-Id: <20190522081910.7689-11-jthumshirn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20190522081910.7689-1-jthumshirn@suse.de>
 References: <20190522081910.7689-1-jthumshirn@suse.de>
@@ -40,139 +40,180 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-BTRFS has the implicit assumption that a checksum in compressed_bio is 4
-bytes. While this is true for CRC32C, it is not for any other checksum.
+Add boilerplate code for directly including the crypto framework.
 
-Change the data type to be a byte array and adjust loop index calculation
-accordingly.
+This helps us flipping the switch for new algorithms.
 
 Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
----
-Changes to v2:
-- Remove stray hunk in btrfs_find_ordered_sum() (Nik)
----
- fs/btrfs/compression.c | 27 +++++++++++++++++----------
- fs/btrfs/compression.h |  2 +-
- fs/btrfs/file-item.c   |  2 +-
- 3 files changed, 19 insertions(+), 12 deletions(-)
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 98d8c2ed367f..d5642f3b5c44 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -57,12 +57,14 @@ static int check_compressed_csum(struct btrfs_inode *inode,
- 				 struct compressed_bio *cb,
- 				 u64 disk_start)
- {
-+	struct btrfs_fs_info *fs_info = inode->root->fs_info;
-+	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
- 	int ret;
- 	struct page *page;
- 	unsigned long i;
- 	char *kaddr;
- 	u32 csum;
--	u32 *cb_sum = &cb->sums;
-+	u8 *cb_sum = cb->sums;
+---
+- Remove stray newline (David)
+- Directly pass in csum_type to btrfs_init_csum_hash() (David)
+- Don't use single letter variables (David)
+---
+ fs/btrfs/ctree.h   | 10 ++++++++++
+ fs/btrfs/disk-io.c | 46 +++++++++++++++++++++++++++++++++++++++-------
+ 2 files changed, 49 insertions(+), 7 deletions(-)
+
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 2ec742db2001..8b635ca370f5 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -73,6 +73,7 @@ struct btrfs_ref;
  
- 	if (inode->flags & BTRFS_INODE_NODATASUM)
- 		return 0;
-@@ -76,13 +78,13 @@ static int check_compressed_csum(struct btrfs_inode *inode,
- 		btrfs_csum_final(csum, (u8 *)&csum);
- 		kunmap_atomic(kaddr);
+ /* four bytes for CRC32 */
+ static const int btrfs_csum_sizes[] = { 4 };
++static char *btrfs_csum_names[] = { "crc32c" };
  
--		if (csum != *cb_sum) {
-+		if (memcmp(&csum, cb_sum, csum_size)) {
- 			btrfs_print_data_csum_error(inode, disk_start, csum,
--					*cb_sum, cb->mirror_num);
-+					*(u32 *)cb_sum, cb->mirror_num);
- 			ret = -EIO;
- 			goto fail;
- 		}
--		cb_sum++;
-+		cb_sum += csum_size;
+ #define BTRFS_EMPTY_DIR_SIZE 0
  
- 	}
- 	ret = 0;
-@@ -537,7 +539,8 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 	struct extent_map *em;
- 	blk_status_t ret = BLK_STS_RESOURCE;
- 	int faili = 0;
--	u32 *sums;
-+	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
-+	u8 *sums;
- 
- 	em_tree = &BTRFS_I(inode)->extent_tree;
- 
-@@ -559,7 +562,7 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 	cb->errors = 0;
- 	cb->inode = inode;
- 	cb->mirror_num = mirror_num;
--	sums = &cb->sums;
-+	sums = cb->sums;
- 
- 	cb->start = em->orig_start;
- 	em_len = em->len;
-@@ -618,6 +621,8 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 		page->mapping = NULL;
- 		if (submit || bio_add_page(comp_bio, page, PAGE_SIZE, 0) <
- 		    PAGE_SIZE) {
-+			unsigned int nr_sectors;
+@@ -1165,6 +1166,8 @@ struct btrfs_fs_info {
+ 	spinlock_t ref_verify_lock;
+ 	struct rb_root block_tree;
+ #endif
 +
- 			ret = btrfs_bio_wq_end_io(fs_info, comp_bio,
- 						  BTRFS_WQ_ENDIO_DATA);
- 			BUG_ON(ret); /* -ENOMEM */
-@@ -632,11 +637,13 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 
- 			if (!(BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)) {
- 				ret = btrfs_lookup_bio_sums(inode, comp_bio,
--							    (u8 *)sums);
-+							    sums);
- 				BUG_ON(ret); /* -ENOMEM */
- 			}
--			sums += DIV_ROUND_UP(comp_bio->bi_iter.bi_size,
--					     fs_info->sectorsize);
-+
-+			nr_sectors = DIV_ROUND_UP(comp_bio->bi_iter.bi_size,
-+						  fs_info->sectorsize);
-+			sums += csum_size * nr_sectors;
- 
- 			ret = btrfs_map_bio(fs_info, comp_bio, mirror_num, 0);
- 			if (ret) {
-@@ -658,7 +665,7 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 	BUG_ON(ret); /* -ENOMEM */
- 
- 	if (!(BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)) {
--		ret = btrfs_lookup_bio_sums(inode, comp_bio, (u8 *) sums);
-+		ret = btrfs_lookup_bio_sums(inode, comp_bio, sums);
- 		BUG_ON(ret); /* -ENOMEM */
- 	}
- 
-diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
-index 9976fe0f7526..191e5f4e3523 100644
---- a/fs/btrfs/compression.h
-+++ b/fs/btrfs/compression.h
-@@ -61,7 +61,7 @@ struct compressed_bio {
- 	 * the start of a variable length array of checksums only
- 	 * used by reads
- 	 */
--	u32 sums;
-+	u8 sums[];
++	struct crypto_shash *csum_shash;
  };
  
- static inline unsigned int btrfs_compress_type(unsigned int type_level)
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index 39fc8da701fe..0bb77392ec08 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -186,7 +186,7 @@ static blk_status_t __btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio
- 		}
- 		csum = btrfs_bio->csum;
- 	} else {
--		csum = (u8 *)dst;
-+		csum = dst;
+ static inline struct btrfs_fs_info *btrfs_sb(struct super_block *sb)
+@@ -2452,6 +2455,13 @@ static inline int btrfs_super_csum_size(const struct btrfs_super_block *s)
+ 	return btrfs_csum_sizes[t];
+ }
+ 
++static inline char *btrfs_super_csum_name(u16 csum_type)
++{
++	/*
++	 * csum type is validated at mount time
++	 */
++	return btrfs_csum_names[csum_type];
++}
+ 
+ /*
+  * The leaf data grows from end-to-front in the node.
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index b1c30a5cef9d..f73660e63522 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -19,6 +19,7 @@
+ #include <linux/crc32c.h>
+ #include <linux/sched/mm.h>
+ #include <asm/unaligned.h>
++#include <crypto/hash.h>
+ #include "ctree.h"
+ #include "disk-io.h"
+ #include "transaction.h"
+@@ -2261,6 +2262,29 @@ static int btrfs_init_workqueues(struct btrfs_fs_info *fs_info,
+ 	return 0;
+ }
+ 
++static int btrfs_init_csum_hash(struct btrfs_fs_info *fs_info, u16 csum_type)
++{
++	struct crypto_shash *csum_shash;
++	const char *csum_name = btrfs_super_csum_name(csum_type);
++
++	csum_shash = crypto_alloc_shash(csum_name, 0, 0);
++
++	if (IS_ERR(csum_shash)) {
++		btrfs_err(fs_info, "error allocating %s hash for checksum",
++			  csum_name);
++		return PTR_ERR(csum_shash);
++	}
++
++	fs_info->csum_shash = csum_shash;
++
++	return 0;
++}
++
++static void btrfs_free_csum_hash(struct btrfs_fs_info *fs_info)
++{
++	crypto_free_shash(fs_info->csum_shash);
++}
++
+ static int btrfs_replay_log(struct btrfs_fs_info *fs_info,
+ 			    struct btrfs_fs_devices *fs_devices)
+ {
+@@ -2822,6 +2846,12 @@ int open_ctree(struct super_block *sb,
+ 		goto fail_alloc;
  	}
  
- 	if (bio->bi_iter.bi_size > PAGE_SIZE * 8)
++	ret = btrfs_init_csum_hash(fs_info, csum_type);
++	if (ret) {
++		err = ret;
++		goto fail_alloc;
++	}
++
+ 	/*
+ 	 * We want to check superblock checksum, the type is stored inside.
+ 	 * Pass the whole disk block of size BTRFS_SUPER_INFO_SIZE (4k).
+@@ -2830,7 +2860,7 @@ int open_ctree(struct super_block *sb,
+ 		btrfs_err(fs_info, "superblock checksum mismatch");
+ 		err = -EINVAL;
+ 		brelse(bh);
+-		goto fail_alloc;
++		goto fail_csum;
+ 	}
+ 
+ 	/*
+@@ -2867,11 +2897,11 @@ int open_ctree(struct super_block *sb,
+ 	if (ret) {
+ 		btrfs_err(fs_info, "superblock contains fatal errors");
+ 		err = -EINVAL;
+-		goto fail_alloc;
++		goto fail_csum;
+ 	}
+ 
+ 	if (!btrfs_super_root(disk_super))
+-		goto fail_alloc;
++		goto fail_csum;
+ 
+ 	/* check FS state, whether FS is broken. */
+ 	if (btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_ERROR)
+@@ -2893,7 +2923,7 @@ int open_ctree(struct super_block *sb,
+ 	ret = btrfs_parse_options(fs_info, options, sb->s_flags);
+ 	if (ret) {
+ 		err = ret;
+-		goto fail_alloc;
++		goto fail_csum;
+ 	}
+ 
+ 	features = btrfs_super_incompat_flags(disk_super) &
+@@ -2903,7 +2933,7 @@ int open_ctree(struct super_block *sb,
+ 		    "cannot mount because of unsupported optional features (%llx)",
+ 		    features);
+ 		err = -EINVAL;
+-		goto fail_alloc;
++		goto fail_csum;
+ 	}
+ 
+ 	features = btrfs_super_incompat_flags(disk_super);
+@@ -2947,7 +2977,7 @@ int open_ctree(struct super_block *sb,
+ 		btrfs_err(fs_info,
+ "unequal nodesize/sectorsize (%u != %u) are not allowed for mixed block groups",
+ 			nodesize, sectorsize);
+-		goto fail_alloc;
++		goto fail_csum;
+ 	}
+ 
+ 	/*
+@@ -2963,7 +2993,7 @@ int open_ctree(struct super_block *sb,
+ 	"cannot mount read-write because of unsupported optional features (%llx)",
+ 		       features);
+ 		err = -EINVAL;
+-		goto fail_alloc;
++		goto fail_csum;
+ 	}
+ 
+ 	ret = btrfs_init_workqueues(fs_info, fs_devices);
+@@ -3341,6 +3371,8 @@ int open_ctree(struct super_block *sb,
+ fail_sb_buffer:
+ 	btrfs_stop_all_workers(fs_info);
+ 	btrfs_free_block_groups(fs_info);
++fail_csum:
++	btrfs_free_csum_hash(fs_info);
+ fail_alloc:
+ fail_iput:
+ 	btrfs_mapping_tree_free(&fs_info->mapping_tree);
 -- 
 2.16.4
 

@@ -2,112 +2,177 @@ Return-Path: <SRS0=N9Hd=TW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=0.1 required=3.0 tests=DATE_IN_PAST_06_12,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9CCF4C282DC
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 19:49:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 34B51C282CE
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 19:55:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 76C7820862
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 19:49:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 071B920862
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 19:55:55 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1558554955;
+	bh=uendvqay2zDyUEfWpPL/DqysVoKR2WxL91wopueSweo=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
+	b=lLtd40GiwtBLOnsR6DnlT9jy3+pXhmS51xDtIoNoEq5mDxk+RI39b+uq0rK2B+X9S
+	 C5bynYM6+3mVoSYNs3FwO/ku/IgzkZ6cjezFKrb/Ir72Od5ralSmCMdSEq8QdYjY69
+	 f5sv8CUrpKRrBFdugDOLfoD5gPkdFQ8TV06CB9/8=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732533AbfEVTs7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 22 May 2019 15:48:59 -0400
-Received: from 107-174-234-49-host.colocrossing.com ([107.174.234.49]:53905
-        "EHLO venetian.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1730906AbfEVTs6 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 May 2019 15:48:58 -0400
-To:     linux-btrfs@vger.kernel.org
-Subject: Use logo on USB drive
-Message-ID: <7859991cee3855047c71d91a98e1faab@walgreens.com>
-Date:   Wed, 22 May 2019 12:48:07 +0200
-From:   "David" <david@usbcustom.site>
-Reply-To: jensanke@aliyun.com
+        id S1731495AbfEVTZI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 22 May 2019 15:25:08 -0400
+Received: from mail.kernel.org ([198.145.29.99]:46392 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1729572AbfEVTZH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 22 May 2019 15:25:07 -0400
+Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 275582173C;
+        Wed, 22 May 2019 19:25:05 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1558553105;
+        bh=uendvqay2zDyUEfWpPL/DqysVoKR2WxL91wopueSweo=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=RwFJyg38ZhBHnN6Yk+lJKCuqPG/sZVPoCZPXC+vjJ4SLbkVZhXijopQ8pHwLmMjoj
+         GviP1QkdSMszSHMxfU+1+a5dpYN+buG0TudxS3jU6PqIECPzQkkDojCAceWKYkoiW8
+         Mkz6CcgmNGEnSiDJIIQvSIdHmzn0QjeDFBCVrC0Y=
+From:   Sasha Levin <sashal@kernel.org>
+To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc:     Josef Bacik <josef@toxicpanda.com>,
+        Filipe Manana <fdmanana@suse.com>,
+        David Sterba <dsterba@suse.com>,
+        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 5.0 050/317] btrfs: fix panic during relocation after ENOSPC before writeback happens
+Date:   Wed, 22 May 2019 15:19:11 -0400
+Message-Id: <20190522192338.23715-50-sashal@kernel.org>
+X-Mailer: git-send-email 2.20.1
+In-Reply-To: <20190522192338.23715-1-sashal@kernel.org>
+References: <20190522192338.23715-1-sashal@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; format=flowed; charset="UTF-8"
+X-stable: review
+X-Patchwork-Hint: Ignore
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+From: Josef Bacik <josef@toxicpanda.com>
 
-Not sure if you received my last email?
+[ Upstream commit ff612ba7849964b1898fd3ccd1f56941129c6aab ]
 
-Are you interested in purchasing your LOGO promotional and marketing
-products for your company?
-We produce USB Drives with your Logo Printed or artwork printed to be used
-for gifts or marketing.
-Here is more info from our website:
+We've been seeing the following sporadically throughout our fleet
 
-We can pre-load your media files, images, presentations and files onto the
-drives for you.
+panic: kernel BUG at fs/btrfs/relocation.c:4584!
+netversion: 5.0-0
+Backtrace:
+ #0 [ffffc90003adb880] machine_kexec at ffffffff81041da8
+ #1 [ffffc90003adb8c8] __crash_kexec at ffffffff8110396c
+ #2 [ffffc90003adb988] crash_kexec at ffffffff811048ad
+ #3 [ffffc90003adb9a0] oops_end at ffffffff8101c19a
+ #4 [ffffc90003adb9c0] do_trap at ffffffff81019114
+ #5 [ffffc90003adba00] do_error_trap at ffffffff810195d0
+ #6 [ffffc90003adbab0] invalid_op at ffffffff81a00a9b
+    [exception RIP: btrfs_reloc_cow_block+692]
+    RIP: ffffffff8143b614  RSP: ffffc90003adbb68  RFLAGS: 00010246
+    RAX: fffffffffffffff7  RBX: ffff8806b9c32000  RCX: ffff8806aad00690
+    RDX: ffff880850b295e0  RSI: ffff8806b9c32000  RDI: ffff88084f205bd0
+    RBP: ffff880849415000   R8: ffffc90003adbbe0   R9: ffff88085ac90000
+    R10: ffff8805f7369140  R11: 0000000000000000  R12: ffff880850b295e0
+    R13: ffff88084f205bd0  R14: 0000000000000000  R15: 0000000000000000
+    ORIG_RAX: ffffffffffffffff  CS: 0010  SS: 0018
+ #7 [ffffc90003adbbb0] __btrfs_cow_block at ffffffff813bf1cd
+ #8 [ffffc90003adbc28] btrfs_cow_block at ffffffff813bf4b3
+ #9 [ffffc90003adbc78] btrfs_search_slot at ffffffff813c2e6c
 
-Some reasons to get the USB drives from us:
-We make Custom Shaped USB drives in the shape of your logo, product or
-anything you like.
-Our USB drives are Eco-friendly
-We supply USB drives to Fortune 100 companies.
-We have over 150 styles and colors to choose from.
-People will keep the USB drive you give them and show it to others
-increasing your marketing value
+The way relocation moves data extents is by creating a reloc inode and
+preallocating extents in this inode and then copying the data into these
+preallocated extents.  Once we've done this for all of our extents,
+we'll write out these dirty pages, which marks the extent written, and
+goes into btrfs_reloc_cow_block().  From here we get our current
+reloc_control, which _should_ match the reloc_control for the current
+block group we're relocating.
 
-Please click
-to see all of our stock models and get a quote.
+However if we get an ENOSPC in this path at some point we'll bail out,
+never initiating writeback on this inode.  Not a huge deal, unless we
+happen to be doing relocation on a different block group, and this block
+group is now rc->stage == UPDATE_DATA_PTRS.  This trips the BUG_ON() in
+btrfs_reloc_cow_block(), because we expect to be done modifying the data
+inode.  We are in fact done modifying the metadata for the data inode
+we're currently using, but not the one from the failed block group, and
+thus we BUG_ON().
 
-If you are nonprofit, have further discounts for schools and charities.
+(This happens when writeback finishes for extents from the previous
+group, when we are at btrfs_finish_ordered_io() which updates the data
+reloc tree (inode item, drops/adds extent items, etc).)
 
-Thanks,
-David
-USB Drive Specialist
+Fix this by writing out the reloc data inode always, and then breaking
+out of the loop after that point to keep from tripping this BUG_ON()
+later.
 
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+[ add note from Filipe ]
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ fs/btrfs/relocation.c | 31 ++++++++++++++++++++-----------
+ 1 file changed, 20 insertions(+), 11 deletions(-)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-http://walgreens.com/mail/link.php?M=29715889&N=3584&L=29&F=T
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 272b287f8cf0d..0395b8233c905 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -4271,27 +4271,36 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
+ 		mutex_lock(&fs_info->cleaner_mutex);
+ 		ret = relocate_block_group(rc);
+ 		mutex_unlock(&fs_info->cleaner_mutex);
+-		if (ret < 0) {
++		if (ret < 0)
+ 			err = ret;
+-			goto out;
+-		}
+-
+-		if (rc->extents_found == 0)
+-			break;
+-
+-		btrfs_info(fs_info, "found %llu extents", rc->extents_found);
+ 
++		/*
++		 * We may have gotten ENOSPC after we already dirtied some
++		 * extents.  If writeout happens while we're relocating a
++		 * different block group we could end up hitting the
++		 * BUG_ON(rc->stage == UPDATE_DATA_PTRS) in
++		 * btrfs_reloc_cow_block.  Make sure we write everything out
++		 * properly so we don't trip over this problem, and then break
++		 * out of the loop if we hit an error.
++		 */
+ 		if (rc->stage == MOVE_DATA_EXTENTS && rc->found_file_extent) {
+ 			ret = btrfs_wait_ordered_range(rc->data_inode, 0,
+ 						       (u64)-1);
+-			if (ret) {
++			if (ret)
+ 				err = ret;
+-				goto out;
+-			}
+ 			invalidate_mapping_pages(rc->data_inode->i_mapping,
+ 						 0, -1);
+ 			rc->stage = UPDATE_DATA_PTRS;
+ 		}
++
++		if (err < 0)
++			goto out;
++
++		if (rc->extents_found == 0)
++			break;
++
++		btrfs_info(fs_info, "found %llu extents", rc->extents_found);
++
+ 	}
+ 
+ 	WARN_ON(rc->block_group->pinned > 0);
+-- 
+2.20.1
 

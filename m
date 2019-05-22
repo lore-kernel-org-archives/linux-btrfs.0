@@ -2,108 +2,112 @@ Return-Path: <SRS0=N9Hd=TW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=0.1 required=3.0 tests=DATE_IN_PAST_06_12,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1CF22C282CE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 19:46:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9CCF4C282DC
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 19:49:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E2CCA20862
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 19:46:56 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1558554417;
-	bh=KjnceZrrK6pttVwb8hdNkEHs3mPHFshpUT6RlkLvtX4=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=MNKoLPT2cu2QvlVECx/qk8PaCXYh3EdzRuev8A8Nmn0ptdRC/1b82KHa21WgxQI4A
-	 +acZVmbL0Gr5yHGnhO0MZ2L0H/F+ol/S1EWhRiFVwAFVFWPVmsSMJOEl4TqXkxAWNM
-	 QbVW6HvEYsKHOrci2JdHKnKZh5vH0pOnAz6MtvA8=
+	by mail.kernel.org (Postfix) with ESMTP id 76C7820862
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 19:49:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732352AbfEVTqw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 22 May 2019 15:46:52 -0400
-Received: from mail.kernel.org ([198.145.29.99]:50036 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1732372AbfEVT1o (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 May 2019 15:27:44 -0400
-Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 0FEB221473;
-        Wed, 22 May 2019 19:27:42 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1558553263;
-        bh=KjnceZrrK6pttVwb8hdNkEHs3mPHFshpUT6RlkLvtX4=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=PrBvvrNx3B434zhl7iWo1AXbhBsp07sNkyKMDsE4Wn/Fyxm76MFuwEi7PdLsKyOWz
-         sH5NLnmSXshDlLIvuPSL1bflfJ2OIOfoRBisFALsyA6VKKhCWhsR2+FN6nX7rmzpeL
-         CieeVYcrIN/jHWaCRLxPlSrIa4jlXw0UAPPFOh9A=
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Qu Wenruo <wqu@suse.com>, Filipe Manana <fdmanana@suse.com>,
-        Johannes Thumshirn <jthumshirn@suse.de>,
-        David Sterba <dsterba@suse.com>,
-        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.19 042/244] btrfs: Don't panic when we can't find a root key
-Date:   Wed, 22 May 2019 15:23:08 -0400
-Message-Id: <20190522192630.24917-42-sashal@kernel.org>
-X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20190522192630.24917-1-sashal@kernel.org>
-References: <20190522192630.24917-1-sashal@kernel.org>
+        id S1732533AbfEVTs7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 22 May 2019 15:48:59 -0400
+Received: from 107-174-234-49-host.colocrossing.com ([107.174.234.49]:53905
+        "EHLO venetian.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1730906AbfEVTs6 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 22 May 2019 15:48:58 -0400
+To:     linux-btrfs@vger.kernel.org
+Subject: Use logo on USB drive
+Message-ID: <7859991cee3855047c71d91a98e1faab@walgreens.com>
+Date:   Wed, 22 May 2019 12:48:07 +0200
+From:   "David" <david@usbcustom.site>
+Reply-To: jensanke@aliyun.com
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
+Content-Type: text/plain; format=flowed; charset="UTF-8"
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Qu Wenruo <wqu@suse.com>
+Hi,
 
-[ Upstream commit 7ac1e464c4d473b517bb784f30d40da1f842482e ]
+Not sure if you received my last email?
 
-When we failed to find a root key in btrfs_update_root(), we just panic.
+Are you interested in purchasing your LOGO promotional and marketing
+products for your company?
+We produce USB Drives with your Logo Printed or artwork printed to be used
+for gifts or marketing.
+Here is more info from our website:
 
-That's definitely not cool, fix it by outputting an unique error
-message, aborting current transaction and return -EUCLEAN. This should
-not normally happen as the root has been used by the callers in some
-way.
+We can pre-load your media files, images, presentations and files onto the
+drives for you.
 
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/root-tree.c | 13 ++++++++-----
- 1 file changed, 8 insertions(+), 5 deletions(-)
+Some reasons to get the USB drives from us:
+We make Custom Shaped USB drives in the shape of your logo, product or
+anything you like.
+Our USB drives are Eco-friendly
+We supply USB drives to Fortune 100 companies.
+We have over 150 styles and colors to choose from.
+People will keep the USB drive you give them and show it to others
+increasing your marketing value
 
-diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
-index 65bda0682928b..f51a4a425a457 100644
---- a/fs/btrfs/root-tree.c
-+++ b/fs/btrfs/root-tree.c
-@@ -137,11 +137,14 @@ int btrfs_update_root(struct btrfs_trans_handle *trans, struct btrfs_root
- 		goto out;
- 	}
- 
--	if (ret != 0) {
--		btrfs_print_leaf(path->nodes[0]);
--		btrfs_crit(fs_info, "unable to update root key %llu %u %llu",
--			   key->objectid, key->type, key->offset);
--		BUG_ON(1);
-+	if (ret > 0) {
-+		btrfs_crit(fs_info,
-+			"unable to find root key (%llu %u %llu) in tree %llu",
-+			key->objectid, key->type, key->offset,
-+			root->root_key.objectid);
-+		ret = -EUCLEAN;
-+		btrfs_abort_transaction(trans, ret);
-+		goto out;
- 	}
- 
- 	l = path->nodes[0];
--- 
-2.20.1
+Please click
+to see all of our stock models and get a quote.
+
+If you are nonprofit, have further discounts for schools and charities.
+
+Thanks,
+David
+USB Drive Specialist
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+http://walgreens.com/mail/link.php?M=29715889&N=3584&L=29&F=T
 

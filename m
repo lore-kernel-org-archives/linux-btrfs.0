@@ -2,107 +2,116 @@ Return-Path: <SRS0=N9Hd=TW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_NEOMUTT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 12947C282CE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 19:11:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 48CD9C282DD
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 19:27:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E247A20868
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 19:11:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1D1D720675
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 May 2019 19:27:45 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1558553265;
+	bh=Z0M1Ru0jdwl8r/WKfcgsUwrussyr67JIQ72gfQBLf24=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
+	b=F7TSAWtFP3nkvd5ymnKzPXBG+JPXR82upQ2Ly2Kq1bOEHsrEuKGkSffrtYckB6Ct/
+	 64TFFR1cK+K19WH2fZf0z6HsKdQhW/aLnAKd0N0sUG5Bg0BvazUr5BLZJcnVGR4DvA
+	 wfMv1tV4rN9kvaX5uo1Boxerbcm9N6kehQnJJkQs=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729506AbfEVTLo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 22 May 2019 15:11:44 -0400
-Received: from mx2.suse.de ([195.135.220.15]:35800 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728734AbfEVTLn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 May 2019 15:11:43 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 8DEEBAC6E;
-        Wed, 22 May 2019 19:11:42 +0000 (UTC)
-Date:   Wed, 22 May 2019 14:11:39 -0500
-From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
-To:     "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc:     linux-btrfs@vger.kernel.org, kilobyte@angband.pl,
-        linux-fsdevel@vger.kernel.org, jack@suse.cz, david@fromorbit.com,
-        willy@infradead.org, hch@lst.de, dsterba@suse.cz,
-        nborisov@suse.com, linux-nvdimm@lists.01.org
-Subject: Re: [PATCH 08/18] dax: memcpy page in case of IOMAP_DAX_COW for mmap
- faults
-Message-ID: <20190522191139.62v2rgby5ptjhzcd@fiona>
-References: <20190429172649.8288-1-rgoldwyn@suse.de>
- <20190429172649.8288-9-rgoldwyn@suse.de>
- <20190521174625.GF5125@magnolia>
+        id S1732376AbfEVT1o (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 22 May 2019 15:27:44 -0400
+Received: from mail.kernel.org ([198.145.29.99]:49994 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1730529AbfEVT1m (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 22 May 2019 15:27:42 -0400
+Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id BC89F20675;
+        Wed, 22 May 2019 19:27:40 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1558553261;
+        bh=Z0M1Ru0jdwl8r/WKfcgsUwrussyr67JIQ72gfQBLf24=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=MfjZFSGKzUAz9cs07Lorn7RtSMByalzoUSc3nV7L0zbGddjvbPdGF0lKXj4zm/lIW
+         vX5orcncL1xLcU8C5dv4kewlMYkpesGZ9+Zp16ACm9Aw2UOKObFy2GtTAWktApFmk+
+         Nf8HwZSKfKOEvI4bv2mE9tinVIq9C9mkDrB74ABY=
+From:   Sasha Levin <sashal@kernel.org>
+To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc:     Robbie Ko <robbieko@synology.com>,
+        Filipe Manana <fdmanana@suse.com>,
+        David Sterba <dsterba@suse.com>,
+        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 4.19 040/244] Btrfs: fix data bytes_may_use underflow with fallocate due to failed quota reserve
+Date:   Wed, 22 May 2019 15:23:06 -0400
+Message-Id: <20190522192630.24917-40-sashal@kernel.org>
+X-Mailer: git-send-email 2.20.1
+In-Reply-To: <20190522192630.24917-1-sashal@kernel.org>
+References: <20190522192630.24917-1-sashal@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190521174625.GF5125@magnolia>
-User-Agent: NeoMutt/20180716
+X-stable: review
+X-Patchwork-Hint: Ignore
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 10:46 21/05, Darrick J. Wong wrote:
-> On Mon, Apr 29, 2019 at 12:26:39PM -0500, Goldwyn Rodrigues wrote:
-> > From: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> > 
-> > Change dax_iomap_pfn to return the address as well in order to
-> > use it for performing a memcpy in case the type is IOMAP_DAX_COW.
-> > We don't handle PMD because btrfs does not support hugepages.
-> > 
-> > Question:
-> > The sequence of bdev_dax_pgoff() and dax_direct_access() is
-> > used multiple times to calculate address and pfn's. Would it make
-> > sense to call it while calculating address as well to reduce code?
-> > 
-> > Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> > ---
-> >  fs/dax.c | 19 +++++++++++++++----
-> >  1 file changed, 15 insertions(+), 4 deletions(-)
-> > 
-> > diff --git a/fs/dax.c b/fs/dax.c
-> > index 610bfa861a28..718b1632a39d 100644
-> > --- a/fs/dax.c
-> > +++ b/fs/dax.c
-> > @@ -984,7 +984,7 @@ static sector_t dax_iomap_sector(struct iomap *iomap, loff_t pos)
-> >  }
-> >  
-> >  static int dax_iomap_pfn(struct iomap *iomap, loff_t pos, size_t size,
-> > -			 pfn_t *pfnp)
-> > +			 pfn_t *pfnp, void **addr)
-> >  {
-> >  	const sector_t sector = dax_iomap_sector(iomap, pos);
-> >  	pgoff_t pgoff;
-> > @@ -996,7 +996,7 @@ static int dax_iomap_pfn(struct iomap *iomap, loff_t pos, size_t size,
-> >  		return rc;
-> >  	id = dax_read_lock();
-> >  	length = dax_direct_access(iomap->dax_dev, pgoff, PHYS_PFN(size),
-> > -				   NULL, pfnp);
-> > +				   addr, pfnp);
-> >  	if (length < 0) {
-> >  		rc = length;
-> >  		goto out;
-> > @@ -1286,6 +1286,7 @@ static vm_fault_t dax_iomap_pte_fault(struct vm_fault *vmf, pfn_t *pfnp,
-> >  	XA_STATE(xas, &mapping->i_pages, vmf->pgoff);
-> >  	struct inode *inode = mapping->host;
-> >  	unsigned long vaddr = vmf->address;
-> > +	void *addr;
-> >  	loff_t pos = (loff_t)vmf->pgoff << PAGE_SHIFT;
-> >  	struct iomap iomap = { 0 };
-> 
-> Ugh, I had forgotten that fs/dax.c open-codes iomap_apply, probably
-> because the actor returns vm_fault_t, not bytes copied.  I guess that
-> makes it a tiny bit more complicated to pass in two (struct iomap *) to
-> the iomap_begin function...
+From: Robbie Ko <robbieko@synology.com>
 
-I am not sure I understand this. We do not use iomap_apply() in
-the fault path: dax_iomap_pte_fault(). We just use iomap_begin()
-and iomap_end(). So, why can we not implement your idea of using two
-iomaps? What does open-coding iomap-apply mean?
+[ Upstream commit 39ad317315887c2cb9a4347a93a8859326ddf136 ]
 
+When doing fallocate, we first add the range to the reserve_list and
+then reserve the quota.  If quota reservation fails, we'll release all
+reserved parts of reserve_list.
+
+However, cur_offset is not updated to indicate that this range is
+already been inserted into the list.  Therefore, the same range is freed
+twice.  Once at list_for_each_entry loop, and once at the end of the
+function.  This will result in WARN_ON on bytes_may_use when we free the
+remaining space.
+
+At the end, under the 'out' label we have a call to:
+
+   btrfs_free_reserved_data_space(inode, data_reserved, alloc_start, alloc_end - cur_offset);
+
+The start offset, third argument, should be cur_offset.
+
+Everything from alloc_start to cur_offset was freed by the
+list_for_each_entry_safe_loop.
+
+Fixes: 18513091af94 ("btrfs: update btrfs_space_info's bytes_may_use timely")
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Robbie Ko <robbieko@synology.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ fs/btrfs/file.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index ca4902c66dc43..868da8566f84c 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -3151,6 +3151,7 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 			ret = btrfs_qgroup_reserve_data(inode, &data_reserved,
+ 					cur_offset, last_byte - cur_offset);
+ 			if (ret < 0) {
++				cur_offset = last_byte;
+ 				free_extent_map(em);
+ 				break;
+ 			}
+@@ -3200,7 +3201,7 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 	/* Let go of our reservation. */
+ 	if (ret != 0 && !(mode & FALLOC_FL_ZERO_RANGE))
+ 		btrfs_free_reserved_data_space(inode, data_reserved,
+-				alloc_start, alloc_end - cur_offset);
++				cur_offset, alloc_end - cur_offset);
+ 	extent_changeset_free(data_reserved);
+ 	return ret;
+ }
 -- 
-Goldwyn
+2.20.1
+

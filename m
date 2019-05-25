@@ -1,319 +1,228 @@
-Return-Path: <SRS0=C3Vb=TY=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=xj9M=TZ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-14.0 required=3.0
-	tests=HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 14155C282E1
-	for <linux-btrfs@archiver.kernel.org>; Fri, 24 May 2019 23:32:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0DF87C282E1
+	for <linux-btrfs@archiver.kernel.org>; Sat, 25 May 2019 02:36:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D6BD22175B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 24 May 2019 23:32:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B08572175B
+	for <linux-btrfs@archiver.kernel.org>; Sat, 25 May 2019 02:36:25 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="k2OM0GtL"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726046AbfEXXcv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 24 May 2019 19:32:51 -0400
-Received: from mx2.suse.de ([195.135.220.15]:39282 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726022AbfEXXcv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 24 May 2019 19:32:51 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 6C946AF21
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 May 2019 23:32:49 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: Fix false ENOSPC alert by tracking used space correctly
-Date:   Sat, 25 May 2019 07:32:43 +0800
-Message-Id: <20190524233243.4780-1-wqu@suse.com>
-X-Mailer: git-send-email 2.21.0
+        id S1726425AbfEYCbO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 24 May 2019 22:31:14 -0400
+Received: from mout.gmx.net ([212.227.17.22]:52149 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726267AbfEYCbN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 24 May 2019 22:31:13 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1558751466;
+        bh=nBCNtJ5tA1azQhucSuYUGGC5716gNeXXK0XBvb/v9Ek=;
+        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
+        b=k2OM0GtLBJTVP/mZQHBAU9r4JX4DLQvvlRdo2c90hxpYNAW3uK9bMmTngWc2KlTXg
+         1bBmyAicvrIlVNG5AfCLJ4K02m1oKcX0l2KT0NPBqVRQjCUK7EgoPhy+RljG+7q26/
+         LUZu8MTBkqHjueRSTFCP1x56CBunW2V+vKPXp3YE=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx103
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 0MMTZa-1hYE583BfS-008HwJ; Sat, 25
+ May 2019 04:31:06 +0200
+Subject: Re: [PATCH v4 01/15] btrfs: Honour FITRIM range constraints during
+ free space trim
+To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+References: <20190327122418.24027-1-nborisov@suse.com>
+ <20190327122418.24027-2-nborisov@suse.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <13ab6ca2-0e5a-3538-4bbd-753db45ed9e2@gmx.com>
+Date:   Sat, 25 May 2019 10:30:54 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.7.0
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20190327122418.24027-2-nborisov@suse.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:K1RVw7qD9mrA4E83QMC0tugkJ9R6H4nevrS7UpQYZnWdAGynFU2
+ Eqd0n99VghH4YHKRs/SogfEKWKxlSpf5z72ZiTwFXwaCIf2EruoSWTm9nZTZoiVJUUR/T1W
+ 6IaJxSaGrkca2UZOaicDdnX9ycc5kyGDB2moqHVmu/iwCh0HL3GWRa5A930Qlh/GLC/uprz
+ fMVs9U4u9Ocw7WlKNocEg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:s7jYcMJ5H1w=:UNGLhZgrbqlWWgrVNM+MVn
+ kwtSh6708z4a43h0yDkV2wzmo9WdNdlaDNpYIOniQLrqFycFaxRhLxTizoX/Z6wW2DWgSELo/
+ 8vY2vHBG/s0EasL/NuThqCxNLicdVTWUoVeJQ4zyqiupMOZ+F+qp5ED2UvPh2GBa9XrAPdRVj
+ 6eq2zTUdC66YwwnfkV7mgnr4gXPtjTw/pZhersh3HaJWkfvsinKWw1a7O+rgYwaDTaUUQiJQi
+ i6dELNzxCMdUJfwVJLggmGBPucyrr9kZYa6d7by7RVQ2N4kd/M6Tt1xuUW0i739y7o87x6FD8
+ kHEu734sDLfMTSpKfnvXRjj2cs0lCQz1kTJhvPzy9F5Sh6kYjJ3wP6jPxHHBQYWC9Tfwg9ZNH
+ vrnv/95EIAVtAtT8UqpirBKP4n02faPMph9nznwDmDpDdOmgpeOCkiZ7zmM7FKsV8Ys0ODKd3
+ +TknujVZDG5thdabTd0X7RK6jgodJg3M/IaBWeT6zwwsC8f53nLsYHYbXSDZ3st+BR/rhNs2q
+ v0z2mJLR5QooDcir/nJmiCbYNRN1eC4pTwbN9E1Gk5+LBDxJfQ/Bb6t1iES1mA+fFGeiiD5v8
+ KMFSIkCCD0wgl4rQXSXbQfTVLLsAwQk23AA4g1aLxJ85EVb4cz43RKTkMo8tdYRzjdew3SLJf
+ 8WCWpd0iSX8ouUTpLT9h2yuEBihoFpxl+X5FHyeMY4ikAakCFzp4ildO7F359357NAcCwSkv2
+ SjP9f8eRZnNoMDKxbUg1rLPJEKtKqFD7D75K3Sz5h5EmEPQzBnHqEFbzmC+IGF0c1UwN3IMGu
+ Xrt6H7tNFWj7/AdJRGsqrN296+CD2UnSIDNV0I9ZlH70CK68fG5fVH78aHKKSCamW/vGzZo2f
+ XGT5iF7LVXby9veSoyLATCPWK211lwwMLUpMwOqA6JflvUk/+NrW3ZSmLa//r971HYrzGog3o
+ /sU7zqCZMD04qvq3FUO6ghIHp4X3o8TbH8XQthYSfHwym05xQGC54
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[BUG]
-There is a bug report of unexpected ENOSPC from btrfs-convert.
-https://github.com/kdave/btrfs-progs/issues/123#
 
-After some debug, even when we have enough unallocated space, we still
-hit ENOSPC at btrfs_reserve_extent().
 
-[CAUSE]
-Btrfs-progs relies on chunk preallocator to make enough space for
-data/metadata.
+On 2019/3/27 =E4=B8=8B=E5=8D=888:24, Nikolay Borisov wrote:
+> Up until know trimming the freespace was done irrespective of what the
+> arguments of the FITRIM ioctl were.
 
-However after the introduction of delayed-ref, it's no longer reliable
-to relie on btrfs_space_info::bytes_used and
-btrfs_space_info::bytes_pinned to calculate used metadata space.
+Since commit 6ba9fc8e628b ("btrfs: Ensure btrfs_trim_fs can trim the
+whole filesystem"), btrfs in fact follows the range parameter.
 
-For a running transaction with a lot of allocated tree blocks,
-btrfs_space_info::bytes_used stays its original value, and will only be
-updated when running delayed ref.
+It interpreter the range parameter as *btrfs logical address* range, so
+it will find any block group in that range, and trim the free space in
+that range.
 
-This makes btrfs-progs chunk preallocator completely useless. And for
-btrfs-convert/mkfs.btrfs --rootdir, if we're going to have enough
-metadata to fill a metadata block group in one transaction, we will hit
-ENOSPC no matter whether we have enough unallocated space.
+> For example fstrim's -o/-l arguments
+> will be entirely ignored. Fix it by correctly handling those paramter.
 
-[FIX]
-This patch will introduce btrfs_space_info::bytes_reserved to trace how
-many space we have reserved but not yet committed to extent tree.
+The fix is in fact causing several problems:
+- Trim out of range
+  # mkfs.btrfs -f /dev/test/scratch1 # A 5G LV
+  # mount /dev/test/scratch1 /mnt/btrfs
+  # fstrim -v -o1152921504338411520 -l10m /mnt/btrfs
+  fstrim: /mnt/btrfs: FITRIM ioctl failed: Input/output error
+  # dmesg
+  [ 1253.984230] attempt to access beyond end of device
+  [ 1253.984233] dm-4: rw=3D2051, want=3D2251799813181440, limit=3D1048576=
+0
+  [ 1253.984240] BTRFS warning (device dm-4): failed to trim 1
+device(s), last error -5
 
-To support this change, this commit also introduces the following
-modification:
-- More comment on btrfs_space_info::bytes_*
-  To make code a little easier to read
+  At least we need to verify the range before using it.
 
-- Export update_space_info() to preallocate empty data/metadata space
-  info for mkfs.
-  For mkfs, we only have a temporary fs image with SYSTEM chunk only.
-  Export update_space_info() so that we can preallocate empty
-  data/metadata space info before we start a transaction.
+- Cross level interpretation of range.
+  We have chosen to interpreter the range as btrfs logical address
+  already. Then it shouldn't be interpreted as physical address any
+  more.
+  In the context of multi-device btrfs context, we need devid to locate
+  a physical range, and the fstrim range doesn't follow it at all.
 
-- Proper btrfs_space_info::bytes_reserved update
-  The timing is the as kernel (except we don't need to update
-  bytes_reserved for data extents)
-  * Increase bytes_reserved when call alloc_reserved_tree_block()
-  * Decrease bytes_reserved when running delayed refs
-    With the help of head->must_insert_reserved to determine whether we
-    need to decrease.
+  I understand always trimming the unallocated space is not a good idea,
+  but it's even worse to interpret the fstrim range into two different
+  meanings.
 
-Issue: #123
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- ctree.h       | 24 ++++++++++++++++++++++++
- extent-tree.c | 43 +++++++++++++++++++++++++++++++++++++------
- mkfs/main.c   | 11 +++++++++++
- transaction.c |  8 ++++++++
- 4 files changed, 80 insertions(+), 6 deletions(-)
+I still prefer the old behavior, or even a step furthermore, even ignore
+the range->minlen as it makes no sense at the context of device physical
+address.
 
-diff --git a/ctree.h b/ctree.h
-index 76f52b1c9b08..93f96a578f2c 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -1060,8 +1060,29 @@ struct btrfs_qgroup_limit_item {
- struct btrfs_space_info {
- 	u64 flags;
- 	u64 total_bytes;
-+	/*
-+	 * Space already used.
-+	 * Only accounting space in current extent tree, thus delayed ref
-+	 * won't be accounted here.
-+	 */
- 	u64 bytes_used;
-+
-+	/*
-+	 * Space being pinned down.
-+	 * So extent allocator will not try to allocate space from them.
-+	 *
-+	 * For cases like extents being freed in current transaction, or
-+	 * manually pinned bytes for re-initializing certain trees.
-+	 */
- 	u64 bytes_pinned;
-+
-+	/*
-+	 * Space being reserved.
-+	 * Space has already being reserved but not yet reach extent tree.
-+	 *
-+	 * New tree blocks allocated in current transaction goes here.
-+	 */
-+	u64 bytes_reserved;
- 	int full;
- 	struct list_head list;
- };
-@@ -2528,6 +2549,9 @@ int btrfs_update_extent_ref(struct btrfs_trans_handle *trans,
- 			    u64 root_objectid, u64 ref_generation,
- 			    u64 owner_objectid);
- int btrfs_write_dirty_block_groups(struct btrfs_trans_handle *trans);
-+int update_space_info(struct btrfs_fs_info *info, u64 flags,
-+		      u64 total_bytes, u64 bytes_used,
-+		      struct btrfs_space_info **space_info);
- int btrfs_free_block_groups(struct btrfs_fs_info *info);
- int btrfs_read_block_groups(struct btrfs_root *root);
- struct btrfs_block_group_cache *
-diff --git a/extent-tree.c b/extent-tree.c
-index e62ee8c2ba13..c7ca49bccd8b 100644
---- a/extent-tree.c
-+++ b/extent-tree.c
-@@ -1786,9 +1786,9 @@ static int free_space_info(struct btrfs_fs_info *fs_info, u64 flags,
- 	return 0;
- }
- 
--static int update_space_info(struct btrfs_fs_info *info, u64 flags,
--			     u64 total_bytes, u64 bytes_used,
--			     struct btrfs_space_info **space_info)
-+int update_space_info(struct btrfs_fs_info *info, u64 flags,
-+		      u64 total_bytes, u64 bytes_used,
-+		      struct btrfs_space_info **space_info)
- {
- 	struct btrfs_space_info *found;
- 
-@@ -1814,6 +1814,7 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
- 	found->total_bytes = total_bytes;
- 	found->bytes_used = bytes_used;
- 	found->bytes_pinned = 0;
-+	found->bytes_reserved = 0;
- 	found->full = 0;
- 	*space_info = found;
- 	return 0;
-@@ -1859,8 +1860,8 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
- 		return 0;
- 
- 	thresh = div_factor(space_info->total_bytes, 7);
--	if ((space_info->bytes_used + space_info->bytes_pinned + alloc_bytes) <
--	    thresh)
-+	if ((space_info->bytes_used + space_info->bytes_pinned +
-+	     space_info->bytes_reserved + alloc_bytes) < thresh)
- 		return 0;
- 
- 	/*
-@@ -2538,6 +2539,7 @@ static int alloc_reserved_tree_block(struct btrfs_trans_handle *trans,
- 	struct btrfs_fs_info *fs_info = trans->fs_info;
- 	struct btrfs_extent_item *extent_item;
- 	struct btrfs_extent_inline_ref *iref;
-+	struct btrfs_space_info *sinfo;
- 	struct extent_buffer *leaf;
- 	struct btrfs_path *path;
- 	struct btrfs_key ins;
-@@ -2545,6 +2547,9 @@ static int alloc_reserved_tree_block(struct btrfs_trans_handle *trans,
- 	u64 start, end;
- 	int ret;
- 
-+	sinfo = __find_space_info(fs_info, BTRFS_BLOCK_GROUP_METADATA);
-+	ASSERT(sinfo);
-+
- 	ins.objectid = node->bytenr;
- 	if (skinny_metadata) {
- 		ins.offset = ref->level;
-@@ -2605,6 +2610,14 @@ static int alloc_reserved_tree_block(struct btrfs_trans_handle *trans,
- 
- 	ret = update_block_group(fs_info, ins.objectid, fs_info->nodesize, 1,
- 				 0);
-+	if (sinfo) {
-+		if (fs_info->nodesize > sinfo->bytes_reserved) {
-+			WARN_ON(1);
-+			sinfo->bytes_reserved = 0;
-+		} else {
-+			sinfo->bytes_reserved -= fs_info->nodesize;
-+		}
-+	}
- 
- 	if (ref->root == BTRFS_EXTENT_TREE_OBJECTID) {
- 		clear_extent_bits(&trans->fs_info->extent_ins, start, end,
-@@ -2624,6 +2637,8 @@ static int alloc_tree_block(struct btrfs_trans_handle *trans,
- 	int ret;
- 	u64 extent_size;
- 	struct btrfs_delayed_extent_op *extent_op;
-+	struct btrfs_space_info *sinfo;
-+	struct btrfs_fs_info *fs_info = root->fs_info;
- 	bool skinny_metadata = btrfs_fs_incompat(root->fs_info,
- 						 SKINNY_METADATA);
- 
-@@ -2631,6 +2646,8 @@ static int alloc_tree_block(struct btrfs_trans_handle *trans,
- 	if (!extent_op)
- 		return -ENOMEM;
- 
-+	sinfo = __find_space_info(fs_info, BTRFS_BLOCK_GROUP_METADATA);
-+	ASSERT(sinfo);
- 	ret = btrfs_reserve_extent(trans, root, num_bytes, empty_size,
- 				   hint_byte, search_end, ins, 0);
- 	if (ret < 0)
-@@ -2663,6 +2680,7 @@ static int alloc_tree_block(struct btrfs_trans_handle *trans,
- 		BUG_ON(ret);
- 	}
- 
-+	sinfo->bytes_reserved += extent_size;
- 	ret = btrfs_add_delayed_tree_ref(root->fs_info, trans, ins->objectid,
- 					 extent_size, 0, root_objectid,
- 					 level, BTRFS_ADD_DELAYED_EXTENT,
-@@ -3000,6 +3018,10 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
- 		sinfo = list_entry(info->space_info.next,
- 				   struct btrfs_space_info, list);
- 		list_del_init(&sinfo->list);
-+		if (sinfo->bytes_reserved)
-+			warning(
-+		"reserved space leaked, flag=0x%llx bytes_reserved=%llu",
-+				sinfo->flags, sinfo->bytes_reserved);
- 		kfree(sinfo);
- 	}
- 	return 0;
-@@ -4106,8 +4128,17 @@ int cleanup_ref_head(struct btrfs_trans_handle *trans,
- 	rb_erase(&head->href_node, &delayed_refs->href_root);
- 	RB_CLEAR_NODE(&head->href_node);
- 
--	if (head->must_insert_reserved)
-+	if (head->must_insert_reserved) {
- 		btrfs_pin_extent(fs_info, head->bytenr, head->num_bytes);
-+		if (!head->is_data) {
-+			struct btrfs_space_info *sinfo;
-+
-+			sinfo = __find_space_info(trans->fs_info,
-+					BTRFS_BLOCK_GROUP_METADATA);
-+			ASSERT(sinfo);
-+			sinfo->bytes_reserved -= head->num_bytes;
-+		}
-+	}
- 
- 	btrfs_put_delayed_ref_head(head);
- 	return 0;
-diff --git a/mkfs/main.c b/mkfs/main.c
-index b442e6e40c37..1d03ec52ddd6 100644
---- a/mkfs/main.c
-+++ b/mkfs/main.c
-@@ -58,11 +58,22 @@ static int create_metadata_block_groups(struct btrfs_root *root, int mixed,
- {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct btrfs_trans_handle *trans;
-+	struct btrfs_space_info *sinfo;
- 	u64 bytes_used;
- 	u64 chunk_start = 0;
- 	u64 chunk_size = 0;
- 	int ret;
- 
-+	/* Create needed space info to trace extents reservation */
-+	ret = update_space_info(fs_info, BTRFS_BLOCK_GROUP_METADATA,
-+				0, 0, &sinfo);
-+	if (ret < 0)
-+		return ret;
-+	ret = update_space_info(fs_info, BTRFS_BLOCK_GROUP_DATA,
-+				0, 0, &sinfo);
-+	if (ret < 0)
-+		return ret;
-+
- 	trans = btrfs_start_transaction(root, 1);
- 	BUG_ON(IS_ERR(trans));
- 	bytes_used = btrfs_super_bytes_used(fs_info->super_copy);
-diff --git a/transaction.c b/transaction.c
-index 138e10f0d6cc..d2c7f4829eda 100644
---- a/transaction.c
-+++ b/transaction.c
-@@ -158,6 +158,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 	u64 transid = trans->transid;
- 	int ret = 0;
- 	struct btrfs_fs_info *fs_info = root->fs_info;
-+	struct btrfs_space_info *sinfo;
- 
- 	if (trans->fs_info->transaction_aborted)
- 		return -EROFS;
-@@ -209,6 +210,13 @@ commit_tree:
- 	root->commit_root = NULL;
- 	fs_info->running_transaction = NULL;
- 	fs_info->last_trans_committed = transid;
-+	list_for_each_entry(sinfo, &fs_info->space_info, list) {
-+		if (sinfo->bytes_reserved) {
-+			warning(
-+	"reserved space leaked, transid=%llu flag=0x%llx bytes_reserved=%llu",
-+				transid, sinfo->flags, sinfo->bytes_reserved);
-+		}
-+	}
- 	return ret;
- error:
- 	btrfs_destroy_delayed_refs(trans);
--- 
-2.21.0
+Thanks,
+Qu
 
+> This requires breaking if the found freespace extent is after the end
+> of the passed range as well as completing trim after trimming
+> fstrim_range::len bytes.
+>
+> Fixes: 499f377f49f0 ("btrfs: iterate over unused chunk space in FITRIM")
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  fs/btrfs/extent-tree.c | 25 +++++++++++++++++++------
+>  1 file changed, 19 insertions(+), 6 deletions(-)
+>
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index b0c86a817a99..dcda3c4de240 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -11309,9 +11309,9 @@ int btrfs_error_unpin_extent_range(struct btrfs_=
+fs_info *fs_info,
+>   * held back allocations.
+>   */
+>  static int btrfs_trim_free_extents(struct btrfs_device *device,
+> -				   u64 minlen, u64 *trimmed)
+> +				   struct fstrim_range *range, u64 *trimmed)
+>  {
+> -	u64 start =3D 0, len =3D 0;
+> +	u64 start =3D range->start, len =3D 0;
+>  	int ret;
+>
+>  	*trimmed =3D 0;
+> @@ -11354,8 +11354,8 @@ static int btrfs_trim_free_extents(struct btrfs_=
+device *device,
+>  		if (!trans)
+>  			up_read(&fs_info->commit_root_sem);
+>
+> -		ret =3D find_free_dev_extent_start(trans, device, minlen, start,
+> -						 &start, &len);
+> +		ret =3D find_free_dev_extent_start(trans, device, range->minlen,
+> +						 start, &start, &len);
+>  		if (trans) {
+>  			up_read(&fs_info->commit_root_sem);
+>  			btrfs_put_transaction(trans);
+> @@ -11368,6 +11368,16 @@ static int btrfs_trim_free_extents(struct btrfs=
+_device *device,
+>  			break;
+>  		}
+>
+> +		/* If we are out of the passed range break */
+> +		if (start > range->start + range->len - 1) {
+> +			mutex_unlock(&fs_info->chunk_mutex);
+> +			ret =3D 0;
+> +			break;
+> +		}
+> +
+> +		start =3D max(range->start, start);
+> +		len =3D min(range->len, len);
+> +
+>  		ret =3D btrfs_issue_discard(device->bdev, start, len, &bytes);
+>  		mutex_unlock(&fs_info->chunk_mutex);
+>
+> @@ -11377,6 +11387,10 @@ static int btrfs_trim_free_extents(struct btrfs=
+_device *device,
+>  		start +=3D len;
+>  		*trimmed +=3D bytes;
+>
+> +		/* We've trimmed enough */
+> +		if (*trimmed >=3D range->len)
+> +			break;
+> +
+>  		if (fatal_signal_pending(current)) {
+>  			ret =3D -ERESTARTSYS;
+>  			break;
+> @@ -11460,8 +11474,7 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info,=
+ struct fstrim_range *range)
+>  	mutex_lock(&fs_info->fs_devices->device_list_mutex);
+>  	devices =3D &fs_info->fs_devices->devices;
+>  	list_for_each_entry(device, devices, dev_list) {
+> -		ret =3D btrfs_trim_free_extents(device, range->minlen,
+> -					      &group_trimmed);
+> +		ret =3D btrfs_trim_free_extents(device, range, &group_trimmed);
+>  		if (ret) {
+>  			dev_failed++;
+>  			dev_ret =3D ret;
+>

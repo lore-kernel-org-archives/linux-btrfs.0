@@ -6,58 +6,56 @@ X-Spam-Status: No, score=-1.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 408BCC04AB6
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 May 2019 12:36:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0249EC04E84
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 May 2019 12:43:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1EF6F208C3
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 May 2019 12:36:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D9D2420883
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 May 2019 12:43:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727296AbfE1Mgm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 28 May 2019 08:36:42 -0400
-Received: from mailgw-01.dd24.net ([193.46.215.41]:44156 "EHLO
-        mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727175AbfE1Mgl (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 May 2019 08:36:41 -0400
-Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
-        by mailgw-01.dd24.net (Postfix) with ESMTP id 31B485FDDB;
-        Tue, 28 May 2019 12:36:40 +0000 (UTC)
-X-Virus-Scanned: Debian amavisd-new at
-        mailpolicy-02.live.igb.homer.key-systems.net
-Received: from smtp.dd24.net ([192.168.1.35])
-        by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
-        with ESMTP id iQLUs5k_ipco; Tue, 28 May 2019 12:36:38 +0000 (UTC)
-Received: from gar-nb-etp23.garching.physik.uni-muenchen.de (unknown [141.84.41.131])
-        (using TLSv1.2 with cipher DHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by smtp.dd24.net (Postfix) with ESMTPSA;
-        Tue, 28 May 2019 12:36:38 +0000 (UTC)
-Message-ID: <6e9c176d0b9389b2ff04cf38556471360725146e.camel@scientia.net>
+        id S1727237AbfE1Mnc convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 28 May 2019 08:43:32 -0400
+Received: from voltaic.bi-co.net ([134.119.3.22]:59951 "EHLO voltaic.bi-co.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727182AbfE1Mnc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 28 May 2019 08:43:32 -0400
+Received: from mila.uni-paderborn.de (mila.uni-paderborn.de [131.234.92.203])
+        by voltaic.bi-co.net (Postfix) with ESMTPSA id 0719F20839;
+        Tue, 28 May 2019 14:43:30 +0200 (CEST)
+Content-Type: text/plain;
+        charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 12.4 \(3445.104.11\))
 Subject: Re: Massive filesystem corruption after balance + fstrim on Linux
  5.1.2
-From:   Christoph Anton Mitterer <calestyo@scientia.net>
-To:     Michael =?ISO-8859-1?Q?La=DF?= <bevan@bi-co.net>,
-        linux-btrfs@vger.kernel.org
-Date:   Tue, 28 May 2019 14:36:37 +0200
-In-Reply-To: <297da4cbe20235080205719805b08810@bi-co.net>
+From:   =?utf-8?Q?Michael_La=C3=9F?= <bevan@bi-co.net>
+In-Reply-To: <6e9c176d0b9389b2ff04cf38556471360725146e.camel@scientia.net>
+Date:   Tue, 28 May 2019 14:43:30 +0200
+Cc:     linux-btrfs@vger.kernel.org
+Content-Transfer-Encoding: 8BIT
+Message-Id: <6B22E3F5-9095-4533-92F2-0A6D9041D493@bi-co.net>
 References: <297da4cbe20235080205719805b08810@bi-co.net>
-Content-Type: text/plain; charset="UTF-8"
-User-Agent: Evolution 3.30.5-1 
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
+ <6e9c176d0b9389b2ff04cf38556471360725146e.camel@scientia.net>
+To:     Christoph Anton Mitterer <calestyo@scientia.net>
+X-Mailer: Apple Mail (2.3445.104.11)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hey.
 
-Just to be on the safe side...
+> Am 28.05.2019 um 14:36 schrieb Christoph Anton Mitterer <calestyo@scientia.net>:
+> 
+> Hey.
+> 
+> Just to be on the safe side...
+> 
+> AFAIU this issue only occured in 5.1.2 and later, right?
 
-AFAIU this issue only occured in 5.1.2 and later, right?
+No. The issue was already introduced in v5.1-rc1 (commit 61697a6abd24).
 
-Starting with which 5.1.x and 5.2.x versions has the fix been merged?
+> Starting with which 5.1.x and 5.2.x versions has the fix been merged?
+
+It's fixed in v5.2-rc2 (commit 51b86f9a8d1c) and v5.1.5 (commit 871e122d55e8).
 
 Cheers,
-Chris.
-
+Michael

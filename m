@@ -4,32 +4,32 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F293FC072B1
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 May 2019 10:18:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CF3E3C46470
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 May 2019 10:24:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D52CA20989
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 May 2019 10:18:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B2B47208C3
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 May 2019 10:24:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726451AbfE1KSr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 28 May 2019 06:18:47 -0400
-Received: from mx2.suse.de ([195.135.220.15]:32826 "EHLO mx1.suse.de"
+        id S1726512AbfE1KYL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 28 May 2019 06:24:11 -0400
+Received: from mx2.suse.de ([195.135.220.15]:35026 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726236AbfE1KSr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 May 2019 06:18:47 -0400
+        id S1726203AbfE1KYK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 28 May 2019 06:24:10 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id F2CD6AC66;
-        Tue, 28 May 2019 10:18:44 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id E2DDAABF3;
+        Tue, 28 May 2019 10:24:08 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Josef Bacik <josef@toxicpanda.com>, stable@vger.kernel.org,
         David Sterba <dsterba@suse.com>,
         Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] btrfs: honor path->skip_locking in backref code
-Date:   Tue, 28 May 2019 18:18:35 +0800
-Message-Id: <20190528101835.20377-1-wqu@suse.com>
+Subject: [PATCH for v5.0.x] btrfs: honor path->skip_locking in backref code
+Date:   Tue, 28 May 2019 18:23:53 +0800
+Message-Id: <20190528102353.23714-1-wqu@suse.com>
 X-Mailer: git-send-email 2.21.0
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
@@ -117,26 +117,26 @@ walk, even only happens on commit trees, is breaking the normal top-down
 locking order, makes it deadlock prone.
 
 Fixes: fb235dc06fac ("btrfs: qgroup: Move half of the qgroup accounting time out of commit trans")
-CC: stable@vger.kernel.org # 4.19
+CC: stable@vger.kernel.org # 5.0
 Reported-and-tested-by: David Sterba <dsterba@suse.com>
 Reported-by: Filipe Manana <fdmanana@suse.com>
 Reviewed-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 Reviewed-by: Filipe Manana <fdmanana@suse.com>
 [ rebase to latest branch and fix lock assert bug in btrfs/007 ]
-[ backport to linux-4.19.y branch, solve minor conflicts ]
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 [ copy logs and deadlock analysis from Qu's patch ]
+[ solve conflicts and backport to linux-5.0.y ]
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
  fs/btrfs/backref.c | 19 ++++++++++++-------
  1 file changed, 12 insertions(+), 7 deletions(-)
 
 diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 2a4f52c7be22..ac6c383d6314 100644
+index ef66db38cedb..efe4d4080a21 100644
 --- a/fs/btrfs/backref.c
 +++ b/fs/btrfs/backref.c
-@@ -710,7 +710,7 @@ static int resolve_indirect_refs(struct btrfs_fs_info *fs_info,
+@@ -712,7 +712,7 @@ static int resolve_indirect_refs(struct btrfs_fs_info *fs_info,
   * read tree blocks and add keys where required.
   */
  static int add_missing_keys(struct btrfs_fs_info *fs_info,
@@ -145,7 +145,7 @@ index 2a4f52c7be22..ac6c383d6314 100644
  {
  	struct prelim_ref *ref;
  	struct extent_buffer *eb;
-@@ -735,12 +735,14 @@ static int add_missing_keys(struct btrfs_fs_info *fs_info,
+@@ -737,12 +737,14 @@ static int add_missing_keys(struct btrfs_fs_info *fs_info,
  			free_extent_buffer(eb);
  			return -EIO;
  		}
@@ -162,7 +162,7 @@ index 2a4f52c7be22..ac6c383d6314 100644
  		free_extent_buffer(eb);
  		prelim_ref_insert(fs_info, &preftrees->indirect, ref, NULL);
  		cond_resched();
-@@ -1225,7 +1227,7 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
+@@ -1227,7 +1229,7 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
  
  	btrfs_release_path(path);
  
@@ -171,7 +171,7 @@ index 2a4f52c7be22..ac6c383d6314 100644
  	if (ret)
  		goto out;
  
-@@ -1286,11 +1288,14 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
+@@ -1288,11 +1290,14 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
  					ret = -EIO;
  					goto out;
  				}

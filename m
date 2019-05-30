@@ -2,64 +2,88 @@ Return-Path: <SRS0=+hsm=T6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 39E4DC28CC0
-	for <linux-btrfs@archiver.kernel.org>; Thu, 30 May 2019 16:46:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3C080C28CC3
+	for <linux-btrfs@archiver.kernel.org>; Thu, 30 May 2019 19:09:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1988925DD7
-	for <linux-btrfs@archiver.kernel.org>; Thu, 30 May 2019 16:46:05 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id F258726077
+	for <linux-btrfs@archiver.kernel.org>; Thu, 30 May 2019 19:09:52 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="jOt+c2xm"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727682AbfE3QqE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 30 May 2019 12:46:04 -0400
-Received: from mx2.suse.de ([195.135.220.15]:34854 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726015AbfE3QqE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 May 2019 12:46:04 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 46F91AFF9
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 May 2019 16:46:03 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 5131DDA85E; Thu, 30 May 2019 18:46:57 +0200 (CEST)
-From:   David Sterba <dsterba@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: use file:line format for assertion report
-Date:   Thu, 30 May 2019 18:46:56 +0200
-Message-Id: <20190530164656.7085-1-dsterba@suse.com>
-X-Mailer: git-send-email 2.21.0
+        id S1726131AbfE3TJw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 30 May 2019 15:09:52 -0400
+Received: from mail-lf1-f42.google.com ([209.85.167.42]:45278 "EHLO
+        mail-lf1-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725961AbfE3TJw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 30 May 2019 15:09:52 -0400
+Received: by mail-lf1-f42.google.com with SMTP id m14so5864899lfp.12
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 May 2019 12:09:51 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:from:date:message-id:subject:to;
+        bh=bdzGvmRMTjsJtyDYlfeop9d5JXX421pEGhVjdfJelAU=;
+        b=jOt+c2xmqTMHCH9yu9LWVrvaxm62z4z4sQ9LL29xAXHrue4GDquICGLDYx61UxpcnH
+         wViGdjZlMeeqrcJgpcQMRL2CBlwzbWJ7UZsl2uF0go3beZWqHJUwtAjdTmmHkd6/Zo13
+         rEv0b1/Xrin+9BVhFsY083hfB3GYM/SJg09bViA7vx0wySemar8GoMuCjVK3CJevs/Sz
+         0QO9tBNVbkzxNPFo8FBZ1nt116sOvUmzP/wognAXeqsvALewKVRY+otBHvGhMRRYS4R6
+         q2NMVXpIJpErmHWcBPcjk9TGpb/H8BVcZRrk0RV4oY8Mcn169RYa7r9GAnGOKn3P6MM6
+         twdg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
+        bh=bdzGvmRMTjsJtyDYlfeop9d5JXX421pEGhVjdfJelAU=;
+        b=pPxMuPjBIEMTcYqFGgRCLAxdcg2NY2v9arme+QYK/jrveVt1GYfq7BKp3gjW2nTO8a
+         HSmlDO/J/lWrU0zZWGoF0oTV7SfP2BQy/jFXWwTa7g6mUaC8MTGoFzcjlf9HrGLqqPrI
+         R3LuC40CLGgzn80NnPQupCIOQxmK7mtrOgjPjs04RnZ+UbJeGHn6H39SyJwHrm8i0ozl
+         cTxFjWBYl2STwrhgVO83HhPm0xhiodEbtMNfPbTpO7D+8T7YcgpOVQni+XOvC9Qa8e5x
+         /Ew7LEXHnMmiZ+ncnhOudT5Cxd1Sp2o4MrhmvwzeMBBRuLl2iakcQseZzaiKJ40mMoJ5
+         3H5g==
+X-Gm-Message-State: APjAAAVVGTaftT9VAk61hm3l36sDxSstJRHGsLy+9KGLi/CmNwQ0oxIw
+        i3/RII/Afjs855VnmdLhHZOxOBb6KByWCH3dpbTwb3awDyA=
+X-Google-Smtp-Source: APXvYqx7SmGQE66qlOGx8LoYC5IUpxQ+rQ78GZfjVm1oyTQp8xN+n1gtiB3VguMnjgzN8ZDBzjuO3pOl5GGM+Z65kqg=
+X-Received: by 2002:ac2:54a6:: with SMTP id w6mr2981051lfk.108.1559243389547;
+ Thu, 30 May 2019 12:09:49 -0700 (PDT)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Thu, 30 May 2019 13:09:38 -0600
+Message-ID: <CAJCQCtSaSjHJQ1CTg6tk_8f7kvzej0mqTE3RpbFsvmYEc=Q8jg@mail.gmail.com>
+Subject: leaf size and compression
+To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The filename:line format is commonly understood by editors and can be
-copy&pasted more easily than the current format.
+Hi,
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/ctree.h | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+I recently setup a test ppc64le VM, and incidentally noticed some
+things. Since the page size is 64KiB, the sector size and node size
+with a default mkfs.btrfs also became 64KiB. As a result, I saw quite
+a lot of small files stuffed into a single leaf (inline data) compared
+to the default 16KiB, where often the inline process seems to give up
+and put even very small files less than 1KiB into a data block group,
+thus taking up a full 4KiB extent (that's on x86).
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 504589647290..b89e595689d4 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3527,8 +3527,7 @@ __cold
- static inline void assfail(const char *expr, const char *file, int line)
- {
- 	if (IS_ENABLED(CONFIG_BTRFS_ASSERT)) {
--		pr_err("assertion failed: %s, file: %s, line: %d\n",
--		       expr, file, line);
-+		pr_err("assertion failed: %s, in %s:%d\n", expr, file, line);
- 		BUG();
- 	}
- }
+Further, due to how compression works on 128KiB "segments" (not sure
+the proper term for it), there is quite a metadata explosion that
+happens with compression enabled. It takes quite a lot more 16KiB
+leaves to contain that metadata, compared to 64KiB leaves.
+
+I'm wondering if anyone has done benchmarking that demonstrates any
+meaningful difference for 16 KiB, 32 KiB and 64 KiB node/leaf size
+when using compression? All the prior benchmarks back in ancient times
+when default node size was changed from 4KiB to 16KIB I'm pretty sure
+were predicated on uncompressed data.
+
+It could be a question of how many angels can dance on the head of a
+pin, but there it is.
+
+
 -- 
-2.21.0
-
+Chris Murphy

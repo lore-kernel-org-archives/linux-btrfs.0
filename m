@@ -2,42 +2,42 @@ Return-Path: <SRS0=+hsm=T6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-3.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0FCA3C28CC0
-	for <linux-btrfs@archiver.kernel.org>; Thu, 30 May 2019 12:04:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 64E50C28CC3
+	for <linux-btrfs@archiver.kernel.org>; Thu, 30 May 2019 12:06:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C3B042437C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 30 May 2019 12:04:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 345C32437C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 30 May 2019 12:06:25 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="EQ5tbwgC"
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="Fi0p/bBv"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727026AbfE3MEG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 30 May 2019 08:04:06 -0400
-Received: from mout.gmx.net ([212.227.15.18]:34995 "EHLO mout.gmx.net"
+        id S1727225AbfE3MGY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 30 May 2019 08:06:24 -0400
+Received: from mout.gmx.net ([212.227.15.18]:51809 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726806AbfE3MEF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 May 2019 08:04:05 -0400
+        id S1726985AbfE3MGX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 30 May 2019 08:06:23 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1559217836;
-        bh=E3EgCuaCCb6uaa3ETOhejwqYnONt3Qr7W1aSkkARzrQ=;
+        s=badeba3b8450; t=1559217955;
+        bh=I3fdQ5p8VvGTFN9ttA8aClWqxrrWgsF3cdoN8SVkoG0=;
         h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=EQ5tbwgCWlnYy0fKUjOsKH4WyZBSPvQUWMYdtMlTA9FbIwP8TF9HGG2FuxJ3zbIyt
-         LpJD+kiPu8fpjCR8QMPrt3Ny+FG5HWgwCtxPdAg3j7qNfCWn1RPUkGT27EXTsJLHXR
-         tZRv2/SI7pNMRmpLt5irqEY3eyFTpvKwjDWhh/Wo=
+        b=Fi0p/bBvFdaHhMFauQNMd8qkP4XRfpu0KZHh74n1J50aCDMf7savs+tXSogkG6jVe
+         k6BjJcujkm37O+d234XLIZTiDffMaoXC7aIz/Rild7JjFUC6OS3OGvOk7TP4cxptGs
+         Hhwkl+XdqG8pgMyX+NLoMnvT93J9VpUP+F9IQW4g=
 X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx004
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1N95iH-1gZ2KK1MAx-01693l; Thu, 30
- May 2019 14:03:56 +0200
-Subject: Re: [PATCH] btrfs: tree-checker: Check if the file extent end
+Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx001
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 0MVvi4-1h86zi0xhY-00X6uz; Thu, 30
+ May 2019 14:05:55 +0200
+Subject: Re: [PATCH] btrfs: trim: Check the range passed into to prevent
  overflow
 To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
-References: <20190503003054.9346-1-wqu@suse.com>
- <20190530120253.GC15290@twin.jikos.cz>
+References: <20190528082154.6450-1-wqu@suse.com>
+ <20190530120402.GD15290@twin.jikos.cz>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
@@ -64,156 +64,103 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
  mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
  4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
  h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <10c517e9-7a70-4c98-6c7c-290bc5540170@gmx.com>
-Date:   Thu, 30 May 2019 20:03:48 +0800
+Message-ID: <868c3ccc-36aa-62ab-d15d-50a03ecc8b25@gmx.com>
+Date:   Thu, 30 May 2019 20:05:49 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.7.0
 MIME-Version: 1.0
-In-Reply-To: <20190530120253.GC15290@twin.jikos.cz>
+In-Reply-To: <20190530120402.GD15290@twin.jikos.cz>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="BYQltvJEEejEf5EZASrihyasslTS5Ydkt"
-X-Provags-ID: V03:K1:g+cpiLgiqZP4zfY2ZOPlsF8HZ+DlfVHA9QL/oX1e1BbwDHbcTMB
- yaNT449/7TQRJ9tGYsn6XPfOnVNzptAalSsyeL9oLPyRP4nUTFSKf5XX2JPPjO4+vEuveSK
- Qqx9vA51D6z1gCOgnfPhsTO2mwgG/68E6mMydElr/2FA2vo192ctzJk65YLCjx7qK+mrXWi
- dkns7LTQkwfAJkjW6+enw==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:UyTg7JaRFCk=:y8uP+S1oFRXm2WmOI945nv
- doo3LY6uZ0YEGTTsNt6TU6VCColqdstdSmTZB6uCEK8h4k1ZFLVhHECBbtMLZaRM64JUHDTea
- MhJEA9XYSkxdhEk8O4fmGkrGMOcWzbo+zTWg224d2s/tc9W209F/lFm5laUTTfwusW3/V5x+t
- 4YpQCvxsUvaLntZ2nT1SenAiAy53CUutiInXVtP55OH6vF8BCT042b2Elg7Hh1v9MhbEJocQl
- cqxlQo7IblIH9l0uuWnVTEcjBbLVkLz1394lghuhd+O0PpvLIY9a6klohwfAXjRleU4dj5jx0
- qz6y9UTUf6tDT/FisUfisDZ+qj6yjQ2T5eBWjcQXQEy082RRuNRNDG5QccQwziZSbpJVrOByo
- 4DwNUaMfi3Z+rPXzoUeUNIC0C5+Ph8wwFLVznuib7va9t0CdoFXqOYqUCJMXY7QXbsbSh/tgJ
- B15vxG0/3Z7bzQcKJScRWcAgYZiaQ3d+1HTlMc+GU9rGpTiS0/9TbRxsd5M90R0+svikmUJUz
- 35vC3s76+2rhIkLBJPchfglOI8w6Z3qui00h3+3JkyirtSodtapP+ZmO7kT65qMGRTzd2OUAw
- q862JBLu7StafDldwCQkgWVNMLVF9OJijDhucYIk90eD87SkYiv/cA39k/0oLb369Ve//NC39
- fnteY6+o53QHTil+1Guw2tR5NGkWNasqj0ZKUbH6QP2MBQ8JC2xlybH64r2CxMgLY+Tx6JuLi
- aKBwY2wR99sK+0Q8+vaeQOGtgeGDG5riOKwTU74QITn5r9A7twyVX5E2qZ2wYnw7E6eIhvZdG
- 2TRIIi8yjuU3coLcPsQ18whcpLep12Mvh4BxeKUULkJoESUOsUj3nv0FvRxLdKwXtrgl1Ca6x
- utCfI0eInaOOwamOVetahv8i9Gl6wXo/gq+/3jSSXfIlyWvabppzjiwGadqlVwEHHxHTdEdYj
- F7cjUxDatSqfFFegxuyvJ2KeP89g+efw=
+ boundary="y9KyCbbDtS7cexVM7ndHRnuqD8EbDfPl9"
+X-Provags-ID: V03:K1:WETHXJfyILfA+Pr4U8Mr0Y5Mb88g6rRYQFCmcKBNUZmrIE6nymj
+ apsmhw6t6W0Oq2oxTGnXVHqIHHuspKtynAYGqP+VOHVZkCwFyx3lictkfIvjJVXOWW5uRLF
+ fKDi7iHcdeKFXENFyWm7JNDQjSr8IXEEvrswb8nygbzqCld2cqSBMxyaJOKbcoIl1sdx4L2
+ WAVdJyOEbbl2FS5cE6hcg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:gEf+SqusCnQ=:G6hOQKwL9o0ciJFpQoA8bo
+ 3pWtpW/97awhLcZft9PRhGJ9zIXc/tY4b75++OBB7SXsh74mjFj1qDyg0NRseAPOZeGPxqAmM
+ zPFq7H3NovPSeV179QP6+6P9CI3QczmH7cvPhfu/20YPwWIa2TWBMLbwxHl57B5SglGmhWacO
+ NTZ7173TZTBzA4uLvoKf1VVrHW3JJ/3QxOh0rxmlIv4IjcAJNNQPmzmoVq01PIPEihV/6mfh0
+ Ri/RFqEmVUwOiRvAVnWnlJylPuqMnezO+O7mWZXEI0vpuMhZZQc6uBVlAx1DQJuE+w8L7zNR+
+ opJlfsp3KR18UeMVdfdsNXVJ4Dx/UKj52qDkRtlS8WRrdnES3IPmLdr8ty9fCDmgmm/nqVTib
+ Xc1cHQOssfJngIzqApa+y3o3lpoyulKzpBgfLqfPxH7p/5klkMReQIk3b/UnfmPrDULuP7kBT
+ O6nkCHmxt38NgXMd6ONtFJHbmPI/Id93VO8/NszmTSJWdrmFn7gTUEB/sOFps7cS8gv5qz+MT
+ NqsRbUim2sgeYHeVj9BiZ07F5gpxnJdo758BL5E2wf/aNjUHOsGmtt5IIRWBK/a8gClqGhHcZ
+ zA+CiwYtAWSmXR/iiYA9ksyRECWvpT5tO+1VWCo5CoW6MZYdVaDvhzo9d5S9dk1+Ef1eiJRZf
+ v+Efqvwdpc7BUTKI8ROcyiDxxc71Rc00+YTMFkc9AedFWVYTOIaJFo26ToJUGjhuf5sH5GeLp
+ 2bstC+pOXoYgfH1pEVor0HMReWCCjka1qY4g0LYjgUzMUvLzNQMJeyAHgExSHJjjUEVlijnMi
+ aoqebtyZcooDFYLm0pl/+hC/86D6GWqkeSXHfQlnkwd1I8IQNLZJp41EHg6QJf7SJr1WNBkWb
+ tX4vsXuDOQ8LzXsSMBtP8QkwEUl0IFetal9S5bRKGlugrombg/LK8Z6iwSo39p0LrgEg1j6Po
+ 13HJHOn4ov1QHkCDA5MW5NhkUmRZBZHI=
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---BYQltvJEEejEf5EZASrihyasslTS5Ydkt
-Content-Type: multipart/mixed; boundary="8JXfUixftLnf9ItTL69qTfLN7L5L1e7Rt";
+--y9KyCbbDtS7cexVM7ndHRnuqD8EbDfPl9
+Content-Type: multipart/mixed; boundary="6sDzKEwyAJIv1RYCIBAex1vwxMugMm9DH";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <10c517e9-7a70-4c98-6c7c-290bc5540170@gmx.com>
-Subject: Re: [PATCH] btrfs: tree-checker: Check if the file extent end
+Message-ID: <868c3ccc-36aa-62ab-d15d-50a03ecc8b25@gmx.com>
+Subject: Re: [PATCH] btrfs: trim: Check the range passed into to prevent
  overflow
-References: <20190503003054.9346-1-wqu@suse.com>
- <20190530120253.GC15290@twin.jikos.cz>
-In-Reply-To: <20190530120253.GC15290@twin.jikos.cz>
+References: <20190528082154.6450-1-wqu@suse.com>
+ <20190530120402.GD15290@twin.jikos.cz>
+In-Reply-To: <20190530120402.GD15290@twin.jikos.cz>
 
---8JXfUixftLnf9ItTL69qTfLN7L5L1e7Rt
+--6sDzKEwyAJIv1RYCIBAex1vwxMugMm9DH
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2019/5/30 =E4=B8=8B=E5=8D=888:02, David Sterba wrote:
-> On Fri, May 03, 2019 at 08:30:54AM +0800, Qu Wenruo wrote:
->> Under certain condition, we could have strange file extent item in log=
-
->> tree like:
+On 2019/5/30 =E4=B8=8B=E5=8D=888:04, David Sterba wrote:
+> On Tue, May 28, 2019 at 04:21:54PM +0800, Qu Wenruo wrote:
+>> Normally the range->len is set to default value (U64_MAX), but when it=
+'s
+>> not default value, we should check if the range overflows.
 >>
->>   item 18 key (69599 108 397312) itemoff 15208 itemsize 53
->> 	extent data disk bytenr 0 nr 0
->> 	extent data offset 0 nr 18446744073709547520 ram 18446744073709547520=
-
->>
->> The num_bytes and ram_bytes part overflow.
->>
->> For num_bytes part, we can detect such overflow along with file offset=
-
->> (key->offset), as file_offset + num_bytes should never go beyond u64
->> max.
->>
->> For ram_bytes part, it's about the decompressed size of the extent, no=
-t
->> directly related to the size.
->> In theory is OK to have super large value, and put extra
->> limitation on ram bytes may cause unexpected false alert.
->>
->> So in tree-checker, we only check if the file offset and num bytes
->> overflow.
+>> And if overflows, return -EINVAL before doing anything.
 >>
 >> Signed-off-by: Qu Wenruo <wqu@suse.com>
->> ---
->>  fs/btrfs/tree-checker.c | 9 +++++++++
->>  1 file changed, 9 insertions(+)
->>
->> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
->> index 4f4f5af6345a..795eb6c18456 100644
->> --- a/fs/btrfs/tree-checker.c
->> +++ b/fs/btrfs/tree-checker.c
->> @@ -112,6 +112,7 @@ static int check_extent_data_item(struct extent_bu=
-ffer *leaf,
->>  	struct btrfs_file_extent_item *fi;
->>  	u32 sectorsize =3D fs_info->sectorsize;
->>  	u32 item_size =3D btrfs_item_size_nr(leaf, slot);
->> +	u64 extent_end;
->> =20
->>  	if (!IS_ALIGNED(key->offset, sectorsize)) {
->>  		file_extent_err(leaf, slot,
->> @@ -186,6 +187,14 @@ static int check_extent_data_item(struct extent_b=
-uffer *leaf,
->>  	    CHECK_FE_ALIGNED(leaf, slot, fi, offset, sectorsize) ||
->>  	    CHECK_FE_ALIGNED(leaf, slot, fi, num_bytes, sectorsize))
->>  		return -EUCLEAN;
->> +	/* Catch extent end overflow case */
->> +	if (check_add_overflow(btrfs_file_extent_num_bytes(leaf, fi),
->> +			       key->offset, &extent_end)) {
->> +		file_extent_err(leaf, slot,
->> +	"extent end overflow, have file offset %llu extent num bytes %llu",
->> +				key->offset,
->> +				btrfs_file_extent_num_bytes(leaf, fi));
 >=20
-> Isn't this missing
->=20
-> 		return -EUCLEAN;
+> The range support of TRIM will be reverted so this patch won't be
+> needed.
 
-Oh, my bad.
+No, this patch is an independent one.
 
-Would you mind to fold that return line?
+The objective is to behavior the same when @range->start + @range->len
+overflows when @range->len is not default value (U64MAX).
+
+With the trim range patch reverted, we should still detect overflow and
+return -EINVAL to meet the new generic/260 check.
+
+So please still include this patch.
 
 Thanks,
 Qu
 
->=20
-> ?
->=20
->> +	}
->>  	return 0;
->>  }
->> =20
->> --=20
->> 2.21.0
 
+--6sDzKEwyAJIv1RYCIBAex1vwxMugMm9DH--
 
---8JXfUixftLnf9ItTL69qTfLN7L5L1e7Rt--
-
---BYQltvJEEejEf5EZASrihyasslTS5Ydkt
+--y9KyCbbDtS7cexVM7ndHRnuqD8EbDfPl9
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlzvxqQACgkQwj2R86El
-/qizgAf/cR6lQlnIAoRBhOhUqi+V2Shnch/krwy7ZP8nHDM4wvvHZt3y2+CAaAl/
-7ICDz9FawEkGjG8MF8BhA2D1xwy9kIVtQ9l4dJ0H4WwiDqX8IeDyds7vIkcJksxI
-/zjp9Mo5scK5k2FSBCJNhH3ppZwGTxYpDbJbGqQd0oReDinHK+WR6pgf2Idc+G3y
-D+cXRgguuPI2YL8hdWzB1kuQIZ9gkHMAGtaRNkicQx4NJ/cSBtfmnTR8RBdfPfV1
-7BxsKPLpv5bkAbzV3JvdrwHVrICippyDhU86ZPa2M5icCWf/QDGjJpHzOOlzbFIM
-UEwG1Z2lyIq/yAQvxToaoj4wVV3kuw==
-=7FkE
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlzvxx0ACgkQwj2R86El
+/qiimwf9GZOizDC/9E1TuYEj7c8I7nGgyFrY9XEksJzP83vSrywJyQNp/Kw9W9ig
+gwTvdKH5KpxQlgqxpC6JgcyEP9AMYusGhIsLgtXvpP/xK+7Z2e4tdlgJCx8P7NEi
+FwxSn5x4yXqmvNF7oRJPKuY/k5AkKIboy3XjMbog3sg8Rw3nLappXELlk95lSGsg
+pdk3GZh8Trr00IE8g5MFw6J/QE7wNt6UOVfH07M05tNxI39Xw1hg5R43cjBp/N5I
+GKHjxjjwcxaXiRT4fHvUVvA8/BAH7CJklKuhBZxOxZwZLow289/Yuf/+DmptKL9z
+RJNdYW86L5SxtoXlsMRdwHOXffLNPg==
+=OtE9
 -----END PGP SIGNATURE-----
 
---BYQltvJEEejEf5EZASrihyasslTS5Ydkt--
+--y9KyCbbDtS7cexVM7ndHRnuqD8EbDfPl9--

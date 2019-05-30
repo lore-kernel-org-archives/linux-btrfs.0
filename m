@@ -2,109 +2,56 @@ Return-Path: <SRS0=+hsm=T6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 454A4C28CC0
-	for <linux-btrfs@archiver.kernel.org>; Thu, 30 May 2019 12:02:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DCDE0C28CC0
+	for <linux-btrfs@archiver.kernel.org>; Thu, 30 May 2019 12:03:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1D4FB258AF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 30 May 2019 12:02:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C038B2437C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 30 May 2019 12:03:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727222AbfE3MCC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 30 May 2019 08:02:02 -0400
-Received: from mx2.suse.de ([195.135.220.15]:55908 "EHLO mx1.suse.de"
+        id S1727108AbfE3MDK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 30 May 2019 08:03:10 -0400
+Received: from mx2.suse.de ([195.135.220.15]:55974 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726498AbfE3MCC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 May 2019 08:02:02 -0400
+        id S1726993AbfE3MDJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 30 May 2019 08:03:09 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id F32E7AE3E
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 May 2019 12:02:00 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 55989AEB2
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 May 2019 12:03:08 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 8E955DA85E; Thu, 30 May 2019 14:02:54 +0200 (CEST)
-Date:   Thu, 30 May 2019 14:02:54 +0200
+        id 8168ADA85E; Thu, 30 May 2019 14:04:02 +0200 (CEST)
+Date:   Thu, 30 May 2019 14:04:02 +0200
 From:   David Sterba <dsterba@suse.cz>
 To:     Qu Wenruo <wqu@suse.com>
 Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: tree-checker: Check if the file extent end
+Subject: Re: [PATCH] btrfs: trim: Check the range passed into to prevent
  overflow
-Message-ID: <20190530120253.GC15290@twin.jikos.cz>
+Message-ID: <20190530120402.GD15290@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
-References: <20190503003054.9346-1-wqu@suse.com>
+References: <20190528082154.6450-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190503003054.9346-1-wqu@suse.com>
+In-Reply-To: <20190528082154.6450-1-wqu@suse.com>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, May 03, 2019 at 08:30:54AM +0800, Qu Wenruo wrote:
-> Under certain condition, we could have strange file extent item in log
-> tree like:
+On Tue, May 28, 2019 at 04:21:54PM +0800, Qu Wenruo wrote:
+> Normally the range->len is set to default value (U64_MAX), but when it's
+> not default value, we should check if the range overflows.
 > 
->   item 18 key (69599 108 397312) itemoff 15208 itemsize 53
-> 	extent data disk bytenr 0 nr 0
-> 	extent data offset 0 nr 18446744073709547520 ram 18446744073709547520
-> 
-> The num_bytes and ram_bytes part overflow.
-> 
-> For num_bytes part, we can detect such overflow along with file offset
-> (key->offset), as file_offset + num_bytes should never go beyond u64
-> max.
-> 
-> For ram_bytes part, it's about the decompressed size of the extent, not
-> directly related to the size.
-> In theory is OK to have super large value, and put extra
-> limitation on ram bytes may cause unexpected false alert.
-> 
-> So in tree-checker, we only check if the file offset and num bytes
-> overflow.
+> And if overflows, return -EINVAL before doing anything.
 > 
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  fs/btrfs/tree-checker.c | 9 +++++++++
->  1 file changed, 9 insertions(+)
-> 
-> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-> index 4f4f5af6345a..795eb6c18456 100644
-> --- a/fs/btrfs/tree-checker.c
-> +++ b/fs/btrfs/tree-checker.c
-> @@ -112,6 +112,7 @@ static int check_extent_data_item(struct extent_buffer *leaf,
->  	struct btrfs_file_extent_item *fi;
->  	u32 sectorsize = fs_info->sectorsize;
->  	u32 item_size = btrfs_item_size_nr(leaf, slot);
-> +	u64 extent_end;
->  
->  	if (!IS_ALIGNED(key->offset, sectorsize)) {
->  		file_extent_err(leaf, slot,
-> @@ -186,6 +187,14 @@ static int check_extent_data_item(struct extent_buffer *leaf,
->  	    CHECK_FE_ALIGNED(leaf, slot, fi, offset, sectorsize) ||
->  	    CHECK_FE_ALIGNED(leaf, slot, fi, num_bytes, sectorsize))
->  		return -EUCLEAN;
-> +	/* Catch extent end overflow case */
-> +	if (check_add_overflow(btrfs_file_extent_num_bytes(leaf, fi),
-> +			       key->offset, &extent_end)) {
-> +		file_extent_err(leaf, slot,
-> +	"extent end overflow, have file offset %llu extent num bytes %llu",
-> +				key->offset,
-> +				btrfs_file_extent_num_bytes(leaf, fi));
 
-Isn't this missing
-
-		return -EUCLEAN;
-
-?
-
-> +	}
->  	return 0;
->  }
->  
-> -- 
-> 2.21.0
+The range support of TRIM will be reverted so this patch won't be
+needed.

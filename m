@@ -1,148 +1,68 @@
-Return-Path: <SRS0=+hsm=T6=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=YdAF=T7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,
+	T_DKIMWL_WL_HIGH autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 55814C28CC0
-	for <linux-btrfs@archiver.kernel.org>; Thu, 30 May 2019 22:59:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 065E2C04AB6
+	for <linux-btrfs@archiver.kernel.org>; Fri, 31 May 2019 04:00:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 330C4262C9
-	for <linux-btrfs@archiver.kernel.org>; Thu, 30 May 2019 22:59:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D39FD263B1
+	for <linux-btrfs@archiver.kernel.org>; Fri, 31 May 2019 04:00:16 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1559275216;
+	bh=4jTofTqvvNDlF4QyiVcyAPeb4h9iYelQixHrFf5lvnU=;
+	h=Subject:From:In-Reply-To:References:Date:To:Cc:List-ID:From;
+	b=mGxRd6ZSrz9JMNYjldQJMlgL1eMcs8FZYS+yh4WAKP6qu8dk4j6cP+n4IxWDmn4jf
+	 RqPKhgEXdv549IWTXDDosM4Q7vc1pyjfV3EZ849NNAKLULvo8ZLhgK1V/K0VQPwv3M
+	 r02EnGl5DF7vTWt5oKv/DFmrRHaMMBTHa1AUZtbg=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726489AbfE3W7f (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 30 May 2019 18:59:35 -0400
-Received: from mail106.syd.optusnet.com.au ([211.29.132.42]:50147 "EHLO
-        mail106.syd.optusnet.com.au" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726326AbfE3W7e (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 May 2019 18:59:34 -0400
-Received: from dread.disaster.area (pa49-180-144-61.pa.nsw.optusnet.com.au [49.180.144.61])
-        by mail106.syd.optusnet.com.au (Postfix) with ESMTPS id 236DD3DC5A0;
-        Fri, 31 May 2019 08:59:28 +1000 (AEST)
-Received: from dave by dread.disaster.area with local (Exim 4.92)
-        (envelope-from <david@fromorbit.com>)
-        id 1hWU17-0000OZ-Vz; Fri, 31 May 2019 08:59:25 +1000
-Date:   Fri, 31 May 2019 08:59:25 +1000
-From:   Dave Chinner <david@fromorbit.com>
-To:     Jan Kara <jack@suse.cz>
-Cc:     "Darrick J. Wong" <darrick.wong@oracle.com>,
-        Shiyang Ruan <ruansy.fnst@cn.fujitsu.com>,
-        Goldwyn Rodrigues <rgoldwyn@suse.de>,
-        linux-btrfs@vger.kernel.org, kilobyte@angband.pl,
-        linux-fsdevel@vger.kernel.org, willy@infradead.org, hch@lst.de,
-        dsterba@suse.cz, nborisov@suse.com, linux-nvdimm@lists.01.org
-Subject: Re: [PATCH 04/18] dax: Introduce IOMAP_DAX_COW to CoW edges during
- writes
-Message-ID: <20190530225925.GG16786@dread.disaster.area>
-References: <1620c513-4ce2-84b0-33dc-2675246183ea@cn.fujitsu.com>
- <20190528091729.GD9607@quack2.suse.cz>
- <a3a919e6-ecad-bdf6-423c-fc01f9cfa661@cn.fujitsu.com>
- <20190529024749.GC16786@dread.disaster.area>
- <376256fd-dee4-5561-eb4e-546e227303cd@cn.fujitsu.com>
- <20190529040719.GL5221@magnolia>
- <20190529044658.GD16786@dread.disaster.area>
- <20190529134629.GA32147@quack2.suse.cz>
- <20190529221445.GE16786@dread.disaster.area>
- <20190530111605.GC29237@quack2.suse.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190530111605.GC29237@quack2.suse.cz>
-User-Agent: Mutt/1.10.1 (2018-07-13)
-X-Optus-CM-Score: 0
-X-Optus-CM-Analysis: v=2.2 cv=P6RKvmIu c=1 sm=1 tr=0 cx=a_idp_d
-        a=8RU0RCro9O0HS2ezTvitPg==:117 a=8RU0RCro9O0HS2ezTvitPg==:17
-        a=jpOVt7BSZ2e4Z31A5e1TngXxSK0=:19 a=kj9zAlcOel0A:10 a=E5NmQfObTbMA:10
-        a=7-415B0cAAAA:8 a=b_IONgiTaRX6Mws2oq4A:9 a=CjuIK1q_8ugA:10
-        a=biEYGPWJfzWAr4FL6Ov7:22
+        id S1726616AbfEaEAP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 31 May 2019 00:00:15 -0400
+Received: from mail.kernel.org ([198.145.29.99]:60574 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725900AbfEaEAO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 31 May 2019 00:00:14 -0400
+Subject: Re: [GIT PULL] Btrfs fixes for 5.2-rc3
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1559275214;
+        bh=4jTofTqvvNDlF4QyiVcyAPeb4h9iYelQixHrFf5lvnU=;
+        h=From:In-Reply-To:References:Date:To:Cc:From;
+        b=dh0i+GrAq7KdZvLW8yx40GPqQadwwk+aAr71pzB1lWDQGKJsYgLhdQPqAfl6zFJYS
+         01fImTlpcntu20mnB6ZTP8POGlC6ks7mPIfBccWybZQehEvaQN0uxIIbgXooZ9wv08
+         RM6+CLgs/7sSh6Vx71s8dav93GpeTkXTh5wNSD7c=
+From:   pr-tracker-bot@kernel.org
+In-Reply-To: <cover.1559167316.git.dsterba@suse.com>
+References: <cover.1559167316.git.dsterba@suse.com>
+X-PR-Tracked-List-Id: <linux-kernel.vger.kernel.org>
+X-PR-Tracked-Message-Id: <cover.1559167316.git.dsterba@suse.com>
+X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.2-rc2-tag
+X-PR-Tracked-Commit-Id: 06989c799f04810f6876900d4760c0edda369cf7
+X-PR-Merge-Tree: torvalds/linux.git
+X-PR-Merge-Refname: refs/heads/master
+X-PR-Merge-Commit-Id: 318adf8e4bfdcb0bce1833824564b1f24278927b
+Message-Id: <155927521427.31954.14941314038418072131.pr-tracker-bot@kernel.org>
+Date:   Fri, 31 May 2019 04:00:14 +0000
+To:     David Sterba <dsterba@suse.com>
+Cc:     torvalds@linux-foundation.org, David Sterba <dsterba@suse.com>,
+        clm@fb.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, May 30, 2019 at 01:16:05PM +0200, Jan Kara wrote:
-> On Thu 30-05-19 08:14:45, Dave Chinner wrote:
-> > On Wed, May 29, 2019 at 03:46:29PM +0200, Jan Kara wrote:
-> > > On Wed 29-05-19 14:46:58, Dave Chinner wrote:
-> > > >  iomap_apply()
-> > > > 
-> > > >  	->iomap_begin()
-> > > > 		map old data extent that we copy from
-> > > > 
-> > > > 		allocate new data extent we copy to in data fork,
-> > > > 		immediately replacing old data extent
-> > > > 
-> > > > 		return transaction handle as private data
-> > 
-> > This holds the inode block map locked exclusively across the IO,
-> > so....
-> 
-> Does it? We do hold XFS_IOLOCK_EXCL during the whole dax write.
+The pull request you sent on Thu, 30 May 2019 12:44:01 +0200:
 
-I forgot about that, I keep thinking that we use shared locking for
-DAX like we do for direct IO. There's another reason for range
-locks - allowing concurrent DAX read/write IO - but that's
-orthogonal to the issue here.
+> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.2-rc2-tag
 
-> But
-> xfs_file_iomap_begin() does release XFS_ILOCK_* on exit AFAICS. So I don't
-> see anything that would prevent page fault from mapping blocks into page
-> tables just after xfs_file_iomap_begin() returns.
+has been merged into torvalds/linux.git:
+https://git.kernel.org/torvalds/c/318adf8e4bfdcb0bce1833824564b1f24278927b
 
-Right, holding the IOLOCK doesn't stop concurrent page faults from
-mapping the page we are trying to write, and that leaves a window
-where stale data can be exposed if we don't initialise the newly
-allocated range whilst in the allocation transaction holding the
-ILOCK. That's what the XFS_BMAPI_ZERO flag does in the DAX block
-allocation path.
+Thank you!
 
-So the idea of holding the allocation transaction across the data
-copy means that ILOCK is then held until the data blocks are fully
-initialised with valid data, meaning we can greatly reduce the scope
-of the XFS_BMAPI_ZERO flag and possible get rid of it altogether.
-
-> > > This race was actually the strongest
-> > > motivation for pre-zeroing of blocks. OTOH copy_from_iter() in
-> > > dax_iomap_actor() needs to be able to fault pages to copy from (and these
-> > > pages may be from the same file you're writing to) so you cannot just block
-> > > faulting for the file through I_MMAP_LOCK.
-> > 
-> > Right, it doesn't take the I_MMAP_LOCK, but it would block further
-> > in. And, really, I'm not caring all this much about this corner
-> > case. i.e.  anyone using a "mmap()+write() zero copy" pattern on DAX
-> > within a file is unbeleivably naive - the data still gets copied by
-> > the CPU in the write() call. It's far simpler and more effcient to
-> > just mmap() both ranges of the file(s) and memcpy() in userspace....
-> > 
-> > FWIW, it's to avoid problems with stupid userspace stuff that nobody
-> > really should be doing that I want range locks for the XFS inode
-> > locks.  If userspace overlaps the ranges and deadlocks in that case,
-> > they they get to keep all the broken bits because, IMO, they are
-> > doing something monumentally stupid. I'd probably be making it
-> > return EDEADLOCK back out to userspace in the case rather than
-> > deadlocking but, fundamentally, I think it's broken behaviour that
-> > we should be rejecting with an error rather than adding complexity
-> > trying to handle it.
-> 
-> I agree with this. We must just prevent user from taking the kernel down
-> with maliciously created IOs...
-
-Noted. :)
-
-I'm still working to scale the range locks effectively for direct
-IO; I've got to work out why sometimes they give identical
-performance to rwsems out to 16 threads, and other times they run
-20% slower or worse at 8+ threads. I'm way ahead of the original
-mutex protected tree implementation that I have, but still got work
-to do to get consistently close to rwsem performance for pure shared
-locking workloads like direct IO.
-
-Cheers,
-
-Dave.
 -- 
-Dave Chinner
-david@fromorbit.com
+Deet-doot-dot, I am a bot.
+https://korg.wiki.kernel.org/userdoc/prtracker

@@ -2,66 +2,76 @@ Return-Path: <SRS0=ls+F=UC=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 51859C28CC6
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Jun 2019 09:38:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 02499C04AB5
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Jun 2019 10:06:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2F55223428
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Jun 2019 09:38:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C6AE828071
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Jun 2019 10:06:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727003AbfFCJim (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 3 Jun 2019 05:38:42 -0400
-Received: from mx2.suse.de ([195.135.220.15]:46340 "EHLO mx1.suse.de"
+        id S1727320AbfFCKGF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 3 Jun 2019 06:06:05 -0400
+Received: from mx2.suse.de ([195.135.220.15]:53964 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726341AbfFCJim (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 3 Jun 2019 05:38:42 -0400
+        id S1726642AbfFCKGF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 3 Jun 2019 06:06:05 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 1CCA3AE56;
-        Mon,  3 Jun 2019 09:38:41 +0000 (UTC)
-Date:   Mon, 3 Jun 2019 11:38:40 +0200
-From:   Johannes Thumshirn <jthumshirn@suse.de>
-To:     dsterba@suse.cz, David Sterba <dsterba@suse.com>,
-        Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
-        Chris Mason <clm@fb.com>, Richard Weinberger <richard@nod.at>,
-        David Gstir <david@sigma-star.at>,
-        Nikolay Borisov <nborisov@suse.com>
-Subject: Re: [PATCH v3 00/13] Add support for other checksums
-Message-ID: <20190603093840.GC4044@x250>
-References: <20190522081910.7689-1-jthumshirn@suse.de>
- <20190527171954.GP15290@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <20190527171954.GP15290@twin.jikos.cz>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+        by mx1.suse.de (Postfix) with ESMTP id A466FACAA
+        for <linux-btrfs@vger.kernel.org>; Mon,  3 Jun 2019 10:06:04 +0000 (UTC)
+From:   Nikolay Borisov <nborisov@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 0/4] Further FITRIM improvements
+Date:   Mon,  3 Jun 2019 13:05:58 +0300
+Message-Id: <20190603100602.19362-1-nborisov@suse.com>
+X-Mailer: git-send-email 2.17.1
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, May 27, 2019 at 07:19:54PM +0200, David Sterba wrote:
-> 1-5 are reviewed and ok, 6 and 13 should be reworked, 7-12 is ok. I
-> can't put the branch to next yet due to the csum formatting "issues" but
-> will do once you resend. Should be ok just 6 and 13 as they're
-> independent.
+Qu reported beyond EOD (end of device) access with latest FITRIM improvements 
+that were merged. Further testing also showed that if ranged FITRIM request is 
+sent it's possible to cause u64 overflow which in turn cause calculations to 
+go off rail in btrfs_issue_discard (because it's called with start and len 
+as (u64)-1) and trim used data. 
 
-I'd still like to hold back 13/13. SHA-256 doesn't seem to be well received by
-the community as the "slow" hash and using a plain SHA-256 is not sufficient
-for the dm-verity/fs-verity like approach I intend to implement in subsequent
-patches.
+This patchset aims to rectify this by: 
 
-For the record, the current idea is to use a HMAC(SHA-256) as checksum
-algorithm with a key provided at mkfs and mount time.
+1. Documenting the internal __etree_search since due to the rather high 
+number of output parameters it can be a bit confusing as to what the invariants 
+are. Due to this I got initially confused about possible return values on 
+boundary conditions. (Patch 1)
+
+2. Remove ranged support in btrfs_trim_free_extents - having range support in 
+btrfs_trim_free_extent is problematic because it's interpreted in device physical 
+space whilst range values from userspace should always be interpreted in 
+logical space. (Patch 2)
+
+3. Change slightly the semantics of find_first_clear_extent_bit to return the 
+range that contains the passed address or in case no such range exists the 
+next one, document the function and finally add tests (Patch 3 preps 
+btrfs_trim_free_extents to handle the change semantics and Patch 4 change 
+the semantics). 
+
+This has been fully tested with xfstest and no regressions were found. 
+
+Nikolay Borisov (4):
+  btrfs: Document __etree_search
+  btrfs: Always trim all unallocated space in btrfs_trim_free_extents
+  btrfs: Skip first megabyte on device when trimming
+  btrfs: Don't trim returned range based on input value in
+    find_first_clear_extent_bit
+
+ fs/btrfs/extent-tree.c           | 32 +++---------
+ fs/btrfs/extent_io.c             | 67 +++++++++++++++++++++---
+ fs/btrfs/tests/extent-io-tests.c | 89 ++++++++++++++++++++++++++++++++
+ 3 files changed, 157 insertions(+), 31 deletions(-)
 
 -- 
-Johannes Thumshirn                            SUSE Labs Filesystems
-jthumshirn@suse.de                                +49 911 74053 689
-SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
-GF: Felix Imendörffer, Mary Higgins, Sri Rasiah
-HRB 21284 (AG Nürnberg)
-Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850
+2.17.1
+

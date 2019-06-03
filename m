@@ -6,21 +6,21 @@ X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6E039C28CC6
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Jun 2019 14:59:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CB727C282CE
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Jun 2019 14:59:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 51AB627B3C
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Jun 2019 14:59:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id ABD7D27B3C
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Jun 2019 14:59:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729371AbfFCO7F (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 3 Jun 2019 10:59:05 -0400
-Received: from mx2.suse.de ([195.135.220.15]:60996 "EHLO mx1.suse.de"
+        id S1729379AbfFCO7H (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 3 Jun 2019 10:59:07 -0400
+Received: from mx2.suse.de ([195.135.220.15]:32794 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729357AbfFCO7E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 3 Jun 2019 10:59:04 -0400
+        id S1729349AbfFCO7G (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 3 Jun 2019 10:59:06 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B2935AF8E;
+        by mx1.suse.de (Postfix) with ESMTP id EF795AFE0;
         Mon,  3 Jun 2019 14:59:02 +0000 (UTC)
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 To:     David Sterba <dsterba@suse.com>
@@ -29,9 +29,9 @@ Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
         David Gstir <david@sigma-star.at>,
         Nikolay Borisov <nborisov@suse.com>,
         Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH v4 07/13] btrfs: add common checksum type validation
-Date:   Mon,  3 Jun 2019 16:58:53 +0200
-Message-Id: <20190603145859.7176-8-jthumshirn@suse.de>
+Subject: [PATCH v4 13/13] btrfs: add sha256 as another checksum algorithm
+Date:   Mon,  3 Jun 2019 16:58:59 +0200
+Message-Id: <20190603145859.7176-14-jthumshirn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20190603145859.7176-1-jthumshirn@suse.de>
 References: <20190603145859.7176-1-jthumshirn@suse.de>
@@ -40,90 +40,108 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Currently btrfs is only supporting CRC32C as checksumming algorithm. As
-this is about to change provide a function to validate the checksum type in
-the superblock against all possible algorithms.
+Now that we everything in place, we can add SHA-256 as another checksum
+algorithm.
 
-This makes adding new algorithms easier as there are fewer places to adjust
-when adding new algorithms.
+SHA-256 was taken as it was the cryptographically strongest algorithm that
+can fit into the 32 Bytes we have left.
 
 Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
 
 ---
-Changes to v3:
-- Fix callers of btrfs_supported_csum() (David)
-Changes to v2:
-- Only pass csum_type into btrfs_supported_csum() (David)
-- Directly return in btrfs_check_super_csum() (David)
+changes to v2:
+- Add pre dependency on sha256
+Changes to v1:
+- Select SHA-256 in KConfig
+- Minimalize switch() in btrfs_supported_super_csum() (Nikolay)
+- Use enum for new on-disk checksum type (Nikolay/David)
+- Format SHA256 using sprintf()'s hexdump mode
 ---
- fs/btrfs/disk-io.c | 29 +++++++++++++++++++----------
- 1 file changed, 19 insertions(+), 10 deletions(-)
+ fs/btrfs/Kconfig                | 1 +
+ fs/btrfs/btrfs_inode.h          | 1 +
+ fs/btrfs/ctree.h                | 4 ++--
+ fs/btrfs/disk-io.c              | 1 +
+ fs/btrfs/super.c                | 1 +
+ include/uapi/linux/btrfs_tree.h | 6 ++++--
+ 6 files changed, 10 insertions(+), 4 deletions(-)
 
+diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
+index 212b4a854f2c..2521a24f74be 100644
+--- a/fs/btrfs/Kconfig
++++ b/fs/btrfs/Kconfig
+@@ -4,6 +4,7 @@ config BTRFS_FS
+ 	tristate "Btrfs filesystem support"
+ 	select CRYPTO
+ 	select CRYPTO_CRC32C
++	select CRYPTO_SHA256
+ 	select ZLIB_INFLATE
+ 	select ZLIB_DEFLATE
+ 	select LZO_COMPRESS
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 7a89f73b13e6..812efa5e0ff8 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -340,6 +340,7 @@ static inline void btrfs_inode_resume_unlocked_dio(struct btrfs_inode *inode)
+ #define CSUM_FORMAT "0x%*phN"
+ #define CSUM_FORMAT_VALUE(size, bytes)  size, bytes
+ 
++
+ static inline void btrfs_print_data_csum_error(struct btrfs_inode *inode,
+ 		u64 logical_start, u8 *csum, u8 *csum_expected, int mirror_num)
+ {
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 8b635ca370f5..f2246aa2596a 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -72,8 +72,8 @@ struct btrfs_ref;
+ #define BTRFS_LINK_MAX 65535U
+ 
+ /* four bytes for CRC32 */
+-static const int btrfs_csum_sizes[] = { 4 };
+-static char *btrfs_csum_names[] = { "crc32c" };
++static const int btrfs_csum_sizes[] = { 4, 32 };
++static char *btrfs_csum_names[] = { "crc32c", "sha256" };
+ 
+ #define BTRFS_EMPTY_DIR_SIZE 0
+ 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 663efce22d98..c2aba3dc33c5 100644
+index fc47a682f862..387f959cb45b 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -356,6 +356,16 @@ static int verify_parent_transid(struct extent_io_tree *io_tree,
- 	return ret;
- }
+@@ -357,6 +357,7 @@ static bool btrfs_supported_super_csum(u16 csum_type)
+ {
+ 	switch (csum_type) {
+ 	case BTRFS_CSUM_TYPE_CRC32:
++	case BTRFS_CSUM_TYPE_SHA256:
+ 		return true;
+ 	default:
+ 		return false;
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index f40516ca5963..5d3687354fc7 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -2466,3 +2466,4 @@ module_exit(exit_btrfs_fs)
  
-+static bool btrfs_supported_super_csum(u16 csum_type)
-+{
-+	switch (csum_type) {
-+	case BTRFS_CSUM_TYPE_CRC32:
-+		return true;
-+	default:
-+		return false;
-+	}
-+}
-+
- /*
-  * Return 0 if the superblock checksum type matches the checksum value of that
-  * algorithm. Pass the raw disk superblock data.
-@@ -366,7 +376,12 @@ static int btrfs_check_super_csum(struct btrfs_fs_info *fs_info,
- 	struct btrfs_super_block *disk_sb =
- 		(struct btrfs_super_block *)raw_disk_sb;
- 	u16 csum_type = btrfs_super_csum_type(disk_sb);
--	int ret = 0;
-+
-+	if (!btrfs_supported_super_csum(csum_type)) {
-+		btrfs_err(fs_info, "unsupported checksum algorithm %u",
-+			  csum_type);
-+		return 1;
-+	}
+ MODULE_LICENSE("GPL");
+ MODULE_SOFTDEP("pre: crc32c");
++MODULE_SOFTDEP("pre: sha256");
+diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
+index 421239b98db2..8edb624410cb 100644
+--- a/include/uapi/linux/btrfs_tree.h
++++ b/include/uapi/linux/btrfs_tree.h
+@@ -300,8 +300,10 @@
+ #define BTRFS_CSUM_SIZE 32
  
- 	if (csum_type == BTRFS_CSUM_TYPE_CRC32) {
- 		u32 crc = ~(u32)0;
-@@ -382,16 +397,10 @@ static int btrfs_check_super_csum(struct btrfs_fs_info *fs_info,
- 		btrfs_csum_final(crc, result);
- 
- 		if (memcmp(raw_disk_sb, result, sizeof(result)))
--			ret = 1;
-+			return 1;
- 	}
- 
--	if (csum_type >= ARRAY_SIZE(btrfs_csum_sizes)) {
--		btrfs_err(fs_info, "unsupported checksum algorithm %u",
--				csum_type);
--		ret = 1;
--	}
+ /* csum types */
+-#define BTRFS_CSUM_TYPE_CRC32	0
 -
--	return ret;
-+	return 0;
- }
- 
- int btrfs_verify_level_key(struct extent_buffer *eb, int level,
-@@ -2577,7 +2586,7 @@ static int btrfs_validate_write_super(struct btrfs_fs_info *fs_info,
- 	ret = validate_super(fs_info, sb, -1);
- 	if (ret < 0)
- 		goto out;
--	if (btrfs_super_csum_type(sb) != BTRFS_CSUM_TYPE_CRC32) {
-+	if (!btrfs_supported_super_csum(btrfs_super_csum_type(sb))) {
- 		ret = -EUCLEAN;
- 		btrfs_err(fs_info, "invalid csum type, has %u want %u",
- 			  btrfs_super_csum_type(sb), BTRFS_CSUM_TYPE_CRC32);
++enum {
++	BTRFS_CSUM_TYPE_CRC32	= 0,
++	BTRFS_CSUM_TYPE_SHA256	= 1,
++};
+ /*
+  * flags definitions for directory entry item type
+  *
 -- 
 2.16.4
 

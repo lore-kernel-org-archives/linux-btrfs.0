@@ -2,73 +2,123 @@ Return-Path: <SRS0=ls+F=UC=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_MUTT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E36E1C04AB5
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Jun 2019 12:39:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 80554C04AB5
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Jun 2019 14:59:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B95D825FCC
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Jun 2019 12:39:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 639A027B3C
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Jun 2019 14:59:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726842AbfFCMjn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 3 Jun 2019 08:39:43 -0400
-Received: from mx2.suse.de ([195.135.220.15]:59946 "EHLO mx1.suse.de"
+        id S1729365AbfFCO7E (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 3 Jun 2019 10:59:04 -0400
+Received: from mx2.suse.de ([195.135.220.15]:60914 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726137AbfFCMjn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 3 Jun 2019 08:39:43 -0400
+        id S1729350AbfFCO7D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 3 Jun 2019 10:59:03 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 80AF7AF57;
-        Mon,  3 Jun 2019 12:39:42 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 521E6DA85E; Mon,  3 Jun 2019 14:40:33 +0200 (CEST)
-Date:   Mon, 3 Jun 2019 14:40:32 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Johannes Thumshirn <jthumshirn@suse.de>
-Cc:     dsterba@suse.cz, David Sterba <dsterba@suse.com>,
-        Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
+        by mx1.suse.de (Postfix) with ESMTP id 7647AADFA;
+        Mon,  3 Jun 2019 14:59:02 +0000 (UTC)
+From:   Johannes Thumshirn <jthumshirn@suse.de>
+To:     David Sterba <dsterba@suse.com>
+Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
         Chris Mason <clm@fb.com>, Richard Weinberger <richard@nod.at>,
         David Gstir <david@sigma-star.at>,
-        Nikolay Borisov <nborisov@suse.com>
-Subject: Re: [PATCH v3 00/13] Add support for other checksums
-Message-ID: <20190603124032.GN15290@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Johannes Thumshirn <jthumshirn@suse.de>,
-        David Sterba <dsterba@suse.com>,
-        Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
-        Chris Mason <clm@fb.com>, Richard Weinberger <richard@nod.at>,
-        David Gstir <david@sigma-star.at>,
-        Nikolay Borisov <nborisov@suse.com>
-References: <20190522081910.7689-1-jthumshirn@suse.de>
- <20190527171954.GP15290@twin.jikos.cz>
- <20190603093840.GC4044@x250>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190603093840.GC4044@x250>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+        Nikolay Borisov <nborisov@suse.com>,
+        Johannes Thumshirn <jthumshirn@suse.de>
+Subject: [PATCH v4 02/13] btrfs: resurrect btrfs_crc32c()
+Date:   Mon,  3 Jun 2019 16:58:48 +0200
+Message-Id: <20190603145859.7176-3-jthumshirn@suse.de>
+X-Mailer: git-send-email 2.16.4
+In-Reply-To: <20190603145859.7176-1-jthumshirn@suse.de>
+References: <20190603145859.7176-1-jthumshirn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Jun 03, 2019 at 11:38:40AM +0200, Johannes Thumshirn wrote:
-> On Mon, May 27, 2019 at 07:19:54PM +0200, David Sterba wrote:
-> > 1-5 are reviewed and ok, 6 and 13 should be reworked, 7-12 is ok. I
-> > can't put the branch to next yet due to the csum formatting "issues" but
-> > will do once you resend. Should be ok just 6 and 13 as they're
-> > independent.
-> 
-> I'd still like to hold back 13/13. SHA-256 doesn't seem to be well received by
-> the community as the "slow" hash and using a plain SHA-256 is not sufficient
-> for the dm-verity/fs-verity like approach I intend to implement in subsequent
-> patches.
-> 
-> For the record, the current idea is to use a HMAC(SHA-256) as checksum
-> algorithm with a key provided at mkfs and mount time.
+Commit 9678c54388b6 ("btrfs: Remove custom crc32c init code") removed the
+btrfs_crc32c() function, because it was a duplicate of the crc32c() library
+function we already have in the kernel.
 
-The patch actually adding the new hash won't be merged to any
-to-be-released branch until we have the final list, but for testing
-purposes the patch will be in for-next and available via linux-next.
+Resurrect it as a shim wrapper over crc32c() to make following
+transformations of the checksumming code in btrfs easier.
+
+Also provide a btrfs_crc32_final() to ease following transformations.
+
+Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/ctree.h       | 12 ++++++++++++
+ fs/btrfs/extent-tree.c |  6 +++---
+ fs/btrfs/send.c        |  2 +-
+ 3 files changed, 16 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index b81c331b28fa..d85541f13f65 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -19,6 +19,7 @@
+ #include <linux/kobject.h>
+ #include <trace/events/btrfs.h>
+ #include <asm/kmap_types.h>
++#include <asm/unaligned.h>
+ #include <linux/pagemap.h>
+ #include <linux/btrfs.h>
+ #include <linux/btrfs_tree.h>
+@@ -2642,6 +2643,17 @@ BTRFS_SETGET_STACK_FUNCS(stack_dev_replace_cursor_right,
+ 	((unsigned long)(BTRFS_LEAF_DATA_OFFSET + \
+ 	btrfs_item_offset_nr(leaf, slot)))
+ 
++
++static inline u32 btrfs_crc32c(u32 crc, const void *address, unsigned length)
++{
++	return crc32c(crc, address, length);
++}
++
++static inline void btrfs_crc32c_final(u32 crc, u8 *result)
++{
++	put_unaligned_le32(~crc, result);
++}
++
+ static inline u64 btrfs_name_hash(const char *name, int len)
+ {
+        return crc32c((u32)~1, name, len);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index f79e477a378e..06a30f2cd2e0 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -1119,11 +1119,11 @@ static u64 hash_extent_data_ref(u64 root_objectid, u64 owner, u64 offset)
+ 	__le64 lenum;
+ 
+ 	lenum = cpu_to_le64(root_objectid);
+-	high_crc = crc32c(high_crc, &lenum, sizeof(lenum));
++	high_crc = btrfs_crc32c(high_crc, &lenum, sizeof(lenum));
+ 	lenum = cpu_to_le64(owner);
+-	low_crc = crc32c(low_crc, &lenum, sizeof(lenum));
++	low_crc = btrfs_crc32c(low_crc, &lenum, sizeof(lenum));
+ 	lenum = cpu_to_le64(offset);
+-	low_crc = crc32c(low_crc, &lenum, sizeof(lenum));
++	low_crc = btrfs_crc32c(low_crc, &lenum, sizeof(lenum));
+ 
+ 	return ((u64)high_crc << 31) ^ (u64)low_crc;
+ }
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index dd38dfe174df..c029ca6d5eba 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -686,7 +686,7 @@ static int send_cmd(struct send_ctx *sctx)
+ 	hdr->len = cpu_to_le32(sctx->send_size - sizeof(*hdr));
+ 	hdr->crc = 0;
+ 
+-	crc = crc32c(0, (unsigned char *)sctx->send_buf, sctx->send_size);
++	crc = btrfs_crc32c(0, (unsigned char *)sctx->send_buf, sctx->send_size);
+ 	hdr->crc = cpu_to_le32(crc);
+ 
+ 	ret = write_buf(sctx->send_filp, sctx->send_buf, sctx->send_size,
+-- 
+2.16.4
+

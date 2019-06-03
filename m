@@ -2,71 +2,120 @@ Return-Path: <SRS0=ls+F=UC=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	URIBL_BLOCKED,USER_AGENT_MUTT autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E6B5EC04AB5
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Jun 2019 10:06:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4FBBBC04AB5
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Jun 2019 12:21:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C796928071
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Jun 2019 10:06:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 31EC3280CB
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Jun 2019 12:21:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727592AbfFCKGJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 3 Jun 2019 06:06:09 -0400
-Received: from mx2.suse.de ([195.135.220.15]:53982 "EHLO mx1.suse.de"
+        id S1727710AbfFCMVF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 3 Jun 2019 08:21:05 -0400
+Received: from mx2.suse.de ([195.135.220.15]:56724 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726642AbfFCKGG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 3 Jun 2019 06:06:06 -0400
+        id S1726342AbfFCMVF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 3 Jun 2019 08:21:05 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 7CD30AE07
-        for <linux-btrfs@vger.kernel.org>; Mon,  3 Jun 2019 10:06:05 +0000 (UTC)
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 3/4] btrfs: Skip first megabyte on device when trimming
-Date:   Mon,  3 Jun 2019 13:06:01 +0300
-Message-Id: <20190603100602.19362-4-nborisov@suse.com>
-X-Mailer: git-send-email 2.17.1
-In-Reply-To: <20190603100602.19362-1-nborisov@suse.com>
-References: <20190603100602.19362-1-nborisov@suse.com>
+        by mx1.suse.de (Postfix) with ESMTP id 03AD1AE4B;
+        Mon,  3 Jun 2019 12:21:03 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 12668DA85E; Mon,  3 Jun 2019 14:21:54 +0200 (CEST)
+Date:   Mon, 3 Jun 2019 14:21:52 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Andrey Abramov <st5pub@yandex.ru>
+Cc:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Fix -Wunused-but-set-variable warnings
+Message-ID: <20190603122152.GM15290@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Andrey Abramov <st5pub@yandex.ru>,
+        clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+References: <20190531195349.31129-1-st5pub@yandex.ru>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190531195349.31129-1-st5pub@yandex.ru>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Currently the first megabyte on a device housing a btrfs filesystem is
-exempt from allocation and trimming. Currently this is not a problem
-since 'start' is set to 1m at the beginning of btrfs_trim_free_extents
-and find_first_clear_extent_bit always returns a range that is >= start.
-However, in a follow up patch find_first_clear_extent_bit will be
-changed such that it will return a range containing 'start' and this
-range may very well be 0...>=1M so 'start'.
+On Fri, May 31, 2019 at 10:53:49PM +0300, Andrey Abramov wrote:
+> Fix -Wunused-but-set-variable warnings in raid56.c and sysfs.c files
 
-Future proof the sole user of find_first_clear_extent_bit by setting
-'start' after the function is called. No functional changes.
+Please ignore the warnings for now. The RAID56 needs more cleanups than
+that an the sysfs part needs to be reworked. The stale code comes from
+e410e34fad913dd568ec28d2a9949694324c14db that reverted
+14e46e04958df740c6c6a94849f176159a333f13.
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/extent-tree.c | 4 ++++
- 1 file changed, 4 insertions(+)
+> Signed-off-by: Andrey Abramov <st5pub@yandex.ru>
+> ---
+>  fs/btrfs/raid56.c | 32 +++++++++++---------------------
+>  fs/btrfs/sysfs.c  |  5 +----
+>  2 files changed, 12 insertions(+), 25 deletions(-)
+> 
+> diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+> index f3d0576dd327..4ab29eacfdf3 100644
+> --- a/fs/btrfs/raid56.c
+> +++ b/fs/btrfs/raid56.c
+> @@ -1182,22 +1182,17 @@ static noinline void finish_rmw(struct btrfs_raid_bio *rbio)
+>  	int nr_data = rbio->nr_data;
+>  	int stripe;
+>  	int pagenr;
+> -	int p_stripe = -1;
+> -	int q_stripe = -1;
+> +	int is_q_stripe = 0;
+>  	struct bio_list bio_list;
+>  	struct bio *bio;
+>  	int ret;
+>  
+>  	bio_list_init(&bio_list);
+>  
+> -	if (rbio->real_stripes - rbio->nr_data == 1) {
+> -		p_stripe = rbio->real_stripes - 1;
+> -	} else if (rbio->real_stripes - rbio->nr_data == 2) {
+> -		p_stripe = rbio->real_stripes - 2;
+> -		q_stripe = rbio->real_stripes - 1;
+> -	} else {
+> +	if (rbio->real_stripes - rbio->nr_data == 2)
+> +		is_q_stripe = 1;
+> +	else if (rbio->real_stripes - rbio->nr_data != 1)
+>  		BUG();
+> -	}
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index d8c5febf7636..5a11e4988243 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -11183,6 +11183,10 @@ static int btrfs_trim_free_extents(struct btrfs_device *device, u64 *trimmed)
- 		 * to the caller to trim the value to the size of the device.
- 		 */
- 		end = min(end, device->total_bytes - 1);
-+
-+		/* Ensure we skip first mb in case we have a bootloader there */
-+		start = max_t(u64, start, SZ_1M);
-+
- 		len = end - start + 1;
- 
- 		/* We didn't find any extents */
--- 
-2.17.1
+The original code is better structured, enumerates the expected cases
+and leaves a catch-all branch.
 
+>  
+>  	/* at this point we either have a full stripe,
+>  	 * or we've read the full stripe from the drive.
+> @@ -1241,7 +1236,7 @@ static noinline void finish_rmw(struct btrfs_raid_bio *rbio)
+>  		SetPageUptodate(p);
+>  		pointers[stripe++] = kmap(p);
+>  
+> -		if (q_stripe != -1) {
+> +		if (is_q_stripe) {
+>  
+>  			/*
+>  			 * raid6, add the qstripe and call the
+> @@ -2340,8 +2335,7 @@ static noinline void finish_parity_scrub(struct btrfs_raid_bio *rbio,
+>  	int nr_data = rbio->nr_data;
+>  	int stripe;
+>  	int pagenr;
+> -	int p_stripe = -1;
+
+To get rid of the warning, perhaps just this initialization could be
+removed, the rest of the code untouched.
+
+> -	int q_stripe = -1;
+> +	int is_q_stripe = 0;
+>  	struct page *p_page = NULL;
+>  	struct page *q_page = NULL;
+>  	struct bio_list bio_list;

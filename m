@@ -6,25 +6,25 @@ X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_MUTT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E3EE3C28CC3
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Jun 2019 09:14:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 81B94C282CE
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Jun 2019 09:24:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C785C21976
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Jun 2019 09:14:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 57F8C24606
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Jun 2019 09:24:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727103AbfFDJOe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 4 Jun 2019 05:14:34 -0400
-Received: from mx2.suse.de ([195.135.220.15]:60424 "EHLO mx1.suse.de"
+        id S1726994AbfFDJYe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 4 Jun 2019 05:24:34 -0400
+Received: from mx2.suse.de ([195.135.220.15]:34298 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726948AbfFDJOd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 4 Jun 2019 05:14:33 -0400
+        id S1726877AbfFDJYe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 4 Jun 2019 05:24:34 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 272D4AC54;
-        Tue,  4 Jun 2019 09:14:32 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 318CFAC3F;
+        Tue,  4 Jun 2019 09:24:33 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 07C38DA85E; Tue,  4 Jun 2019 11:15:23 +0200 (CEST)
-Date:   Tue, 4 Jun 2019 11:15:23 +0200
+        id 32EF6DA85E; Tue,  4 Jun 2019 11:25:25 +0200 (CEST)
+Date:   Tue, 4 Jun 2019 11:25:25 +0200
 From:   David Sterba <dsterba@suse.cz>
 To:     Johannes Thumshirn <jthumshirn@suse.de>
 Cc:     dsterba@suse.cz, David Sterba <dsterba@suse.com>,
@@ -33,7 +33,7 @@ Cc:     dsterba@suse.cz, David Sterba <dsterba@suse.com>,
         David Gstir <david@sigma-star.at>,
         Nikolay Borisov <nborisov@suse.com>
 Subject: Re: [PATCH v4 00/13] Add support for other checksums
-Message-ID: <20190604091523.GU15290@twin.jikos.cz>
+Message-ID: <20190604092524.GV15290@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz, Johannes Thumshirn <jthumshirn@suse.de>,
         David Sterba <dsterba@suse.com>,
@@ -55,17 +55,23 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 On Tue, Jun 04, 2019 at 09:37:30AM +0200, Johannes Thumshirn wrote:
-> > Let me summarize the current satus:
+> On Mon, Jun 03, 2019 at 08:30:22PM +0200, David Sterba wrote:
+> > On Mon, Jun 03, 2019 at 04:58:46PM +0200, Johannes Thumshirn wrote:
+> > > This patchset add support for adding new checksum types in BTRFS.
 > > 
-> > for strong hash we have SHA256 and BLAKE2. For the fast hash xxhash and
-> > murmur3 have been suggested. Let me add XXH3 and xxh128 for now (they're
-> > not finalized yet).
+> > V4 looks good to me, with a few minor fixups added to topic branch,
+> > including the sha256 patch.  As noted this may not be merged and now
+> > servers for the testing purposes.
 > 
-> I know there's a tendency to not trust FIPS but please let's not completely
-> rule out FIPS approved algorithms (be it SHA-2 or SHA-3) because we will get
-> asked to include one sooner or later.
+> Thanks \o/
+> 
+> [...]
+> 
+> > We'll need that one, briefly checking the progs souces, the same
+> > cleanups will be needed there too.
+> 
+> Yep, I've already started doing the progs side as well.
 
-That's not about FIPS, but the practical reasons. If it's slow nobody
-will use it. For example, if a crypto-strong hash is used as a hint for
-deduplication, this means we'll have to count with it for the additional
-structures that do the reverse mapping from checksum -> block.
+And we should export the information about checksums to sysfs too, in
+the global features what the module supports and what the filesystem
+uses in the per-fs directories.

@@ -6,48 +6,45 @@ X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8822AC282DE
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Jun 2019 07:35:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D959BC282DE
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Jun 2019 08:01:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 673B62075C
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Jun 2019 07:35:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id AE5932083E
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Jun 2019 08:01:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726527AbfFEHfe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 5 Jun 2019 03:35:34 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42484 "EHLO mx1.suse.de"
+        id S1726527AbfFEIBR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 5 Jun 2019 04:01:17 -0400
+Received: from mx2.suse.de ([195.135.220.15]:46168 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726464AbfFEHfe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 5 Jun 2019 03:35:34 -0400
+        id S1725294AbfFEIBR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 5 Jun 2019 04:01:17 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 53B5BAE87
-        for <linux-btrfs@vger.kernel.org>; Wed,  5 Jun 2019 07:35:33 +0000 (UTC)
-Date:   Wed, 5 Jun 2019 09:35:33 +0200
+        by mx1.suse.de (Postfix) with ESMTP id 610C5AF51
+        for <linux-btrfs@vger.kernel.org>; Wed,  5 Jun 2019 08:01:16 +0000 (UTC)
+Date:   Wed, 5 Jun 2019 10:01:16 +0200
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 To:     Nikolay Borisov <nborisov@suse.com>
 Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/3] btrfs: Introduce struct btrfs_io_geometry
-Message-ID: <20190605073532.GA27972@x250>
+Subject: Re: [PATCH 2/3] btrfs: Introduce btrfs_io_geometry
+Message-ID: <20190605080116.GB27972@x250>
 References: <20190603090505.16800-1-nborisov@suse.com>
- <20190603090505.16800-2-nborisov@suse.com>
+ <20190603090505.16800-3-nborisov@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=iso-8859-1
 Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <20190603090505.16800-2-nborisov@suse.com>
+In-Reply-To: <20190603090505.16800-3-nborisov@suse.com>
 User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I'd merge this patch into the next one, so you only introduce
-btrfs_io_geometry when there are actual users for it.
+And maybe this patch should be merged into the next one as well, so one can
+see the actual code movement between __btrfs_map_block() and
+btrfs_io_geometry()
 
-But that's personal preference I guess.
-
-Byte,
-	Johannes
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems
 jthumshirn@suse.de                                +49 911 74053 689

@@ -2,65 +2,103 @@ Return-Path: <SRS0=lmmL=UE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_MUTT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	T_DKIMWL_WL_HIGH,URIBL_BLOCKED autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D960C28CC5
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Jun 2019 16:38:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A1408C28CC5
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Jun 2019 21:32:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2C9EB2083E
-	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Jun 2019 16:38:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 78EF820874
+	for <linux-btrfs@archiver.kernel.org>; Wed,  5 Jun 2019 21:32:26 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1559770346;
+	bh=fWMGopypMZ/7C4dAWZ6+0bN8QYRsGAbzaarmqrg6gxM=;
+	h=Date:From:To:Cc:Subject:In-Reply-To:References:List-ID:From;
+	b=qn0/dS1eI5kzWUjhRDoUq9EOr3kcgwWVMivwy/1qkmf/oIp1D6RntoizUxkRZopjf
+	 iBFNTMuQazG8YD22VfmHua+V/FvdofCt51Vuy2scavWtx7D7Mtv1FafWLcRL3M9udt
+	 AX/an6RzP34Vyw1JeH9SSJtX67ju6XydKg9H5kz8=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728709AbfFEQi3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 5 Jun 2019 12:38:29 -0400
-Received: from mx2.suse.de ([195.135.220.15]:33142 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728263AbfFEQi3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 5 Jun 2019 12:38:29 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 20CB5AC3F
-        for <linux-btrfs@vger.kernel.org>; Wed,  5 Jun 2019 16:38:28 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 840A0DA866; Wed,  5 Jun 2019 18:39:19 +0200 (CEST)
-Date:   Wed, 5 Jun 2019 18:39:19 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/2] btrfs-progs: Metadata preallocation enhancement
-Message-ID: <20190605163919.GG9896@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20190416102144.12173-1-wqu@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190416102144.12173-1-wqu@suse.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+        id S1726555AbfFEVcW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 5 Jun 2019 17:32:22 -0400
+Received: from mail.kernel.org ([198.145.29.99]:46806 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726502AbfFEVcV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 5 Jun 2019 17:32:21 -0400
+Received: from akpm3.svl.corp.google.com (unknown [104.133.8.65])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 68B9320872;
+        Wed,  5 Jun 2019 21:32:20 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1559770341;
+        bh=fWMGopypMZ/7C4dAWZ6+0bN8QYRsGAbzaarmqrg6gxM=;
+        h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
+        b=tbj8Y7g23X5waBqWUHzub6be7yKGuSeBV4+Bs+ago5RmjFq2q6I5ahJCu1mPAbJFM
+         Ar16J1Rb7r4Aft+hncFL0s/xR5cO1l1G+6faP47VBAZlbz0SGJrdNG7NYX3AdnO8iq
+         gNRLxeirFnRVtKmsWgMUvCBS9NeZJ53GJ2o9u2Rc=
+Date:   Wed, 5 Jun 2019 14:32:19 -0700
+From:   Andrew Morton <akpm@linux-foundation.org>
+To:     dsterba@suse.cz
+Cc:     Maninder Singh <maninder1.s@samsung.com>,
+        herbert@gondor.apana.org.au, davem@davemloft.net,
+        keescook@chromium.org, gustavo@embeddedor.com, joe@perches.com,
+        linux-crypto@vger.kernel.org, linux-kernel@vger.kernel.org,
+        a.sahrawat@samsung.com, pankaj.m@samsung.com, v.narang@samsung.com,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        terrelln@fb.com
+Subject: Re: [PATCH 1/4] zstd: pass pointer rathen than structure to
+ functions
+Message-Id: <20190605143219.248ca514546f69946aa2e07e@linux-foundation.org>
+In-Reply-To: <20190605123253.GZ15290@suse.cz>
+References: <1559552526-4317-1-git-send-email-maninder1.s@samsung.com>
+        <CGME20190603090232epcas5p1630d0584e8a1aa9495edc819605664fc@epcas5p1.samsung.com>
+        <1559552526-4317-2-git-send-email-maninder1.s@samsung.com>
+        <20190604154326.8868a10f896c148a0ce804d1@linux-foundation.org>
+        <20190605115703.GY15290@twin.jikos.cz>
+        <20190605123253.GZ15290@suse.cz>
+X-Mailer: Sylpheed 3.7.0 (GTK+ 2.24.31; x86_64-pc-linux-gnu)
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Apr 16, 2019 at 06:21:42PM +0800, Qu Wenruo wrote:
-> This patchset will address the github issue #123 to make btrfs-convert
-> less possible to report false ENOSPC.
-> 
-> The first patch will try to avoid the nested chunk/extent tree
-> modification in a more explicit way.
-> 
-> The 2nd patch will address the ENOSPC problem, by adding CSUM tree to
-> the metadata preallocate list.
-> 
-> The 2nd patch is not as aggressive as 7a12d8470e5f ("btrfs-progs:
-> Do metadata preallocation as long as we're not modifying extent tree").
-> Even we have the 1st patch I still prefer to make less modification to
-> avoid possible bugs.
-> 
-> Qu Wenruo (2):
->   btrfs-progs: Avoid nested chunk allocation call
->   btrfs-progs: Do metadata preallocation for fs trees and csum tree
+On Wed, 5 Jun 2019 14:32:53 +0200 David Sterba <dsterba@suse.cz> wrote:
 
-Added to devel, thanks.
+> > >  
+> > > -static ZSTD_parameters zstd_get_btrfs_parameters(unsigned int level,
+> > > +static ZSTD_parameters *zstd_get_btrfs_parameters(unsigned int level,
+> > >  						 size_t src_len)
+> > >  {
+> > > -	ZSTD_parameters params = ZSTD_getParams(level, src_len, 0);
+> > > +	static ZSTD_parameters params;
+> > 
+> > > +
+> > > +	params = ZSTD_getParams(level, src_len, 0);
+> > 
+> > No thats' broken, the params can't be static as it depends on level and
+> > src_len. What happens if there are several requests in parallel with
+> > eg. different levels?
+
+I wondered.  I'll drop the patch series as some more serious thinking
+is needed.
+
+> > Would be really great if the mailinglist is CCed when the code is
+> > changed in a non-trivial way.
+
+Well we didn't actually change btrfs until I discovered that Maninder
+had missed it.
+
+> So this does not compile fs/btrfs/zstd.o which Andrew probably found
+> too, otherwise btrfs is the only in-tree user of the function outside of
+> lib/ and crypto/.
+
+Worked for me - I might have sent the wrong version.
+
+> I think that Nick Terrell should have been CCed too, as he ported zstd
+> to linux.

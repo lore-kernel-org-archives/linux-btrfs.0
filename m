@@ -2,63 +2,105 @@ Return-Path: <SRS0=hLEk=UG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 21589C28CC3
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Jun 2019 05:44:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A8D77C28CC3
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Jun 2019 09:10:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E4014208CA
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Jun 2019 05:44:13 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="ne1l66gy"
+	by mail.kernel.org (Postfix) with ESMTP id 7D5412133D
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Jun 2019 09:10:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726808AbfFGFoN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 7 Jun 2019 01:44:13 -0400
-Received: from bombadil.infradead.org ([198.137.202.133]:49162 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725601AbfFGFoN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Jun 2019 01:44:13 -0400
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20170209; h=In-Reply-To:Content-Type:MIME-Version
-        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:
-        Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
-        List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-         bh=FhEEcMcR2jAVllW++W9tBLdo7QnhO0RygKH5md+XfdI=; b=ne1l66gyBbTMvX7V2LMgMXi7E
-        qdX7P6G+1EM1tNbhEzjkV7lu7JdUTjUO2SjTH/44d0H+PvtpECsg/2efyp5LzujXn3B/gUq16JCZ1
-        9Qt3AA7trjemJlwkkTPJRNbkq4yNvNta6wDRT4KFZn/96NNiPg/TbGvZ3PzMMMxnmAnQxAHVf2AtD
-        eEvHu8sMci62CdhW2YJg3GRJiXahd4Tg2Ha+ta3dg4ZVtEk19bKBv0wSakXYgdii5rg89X+tpMD89
-        giXyiDv9oJlhisYA6VaASifuRYddqm5rKM2k66H/mMDtWJMHp7E2wtXru2E6rLKTwa1hhssr3vhLo
-        Zk3o8ChMQ==;
-Received: from hch by bombadil.infradead.org with local (Exim 4.92 #3 (Red Hat Linux))
-        id 1hZ7fg-0003xw-PF; Fri, 07 Jun 2019 05:44:12 +0000
-Date:   Thu, 6 Jun 2019 22:44:12 -0700
-From:   Christoph Hellwig <hch@infradead.org>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] fstests: generic/260: Make it handle btrfs more
- gracefully
-Message-ID: <20190607054412.GA15161@infradead.org>
-References: <20190603064009.9891-1-wqu@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190603064009.9891-1-wqu@suse.com>
-User-Agent: Mutt/1.11.4 (2019-03-13)
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+        id S1727121AbfFGJKG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 7 Jun 2019 05:10:06 -0400
+Received: from mx2.suse.de ([195.135.220.15]:38354 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726531AbfFGJKG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 7 Jun 2019 05:10:06 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 6E0A5ADD5;
+        Fri,  7 Jun 2019 09:10:05 +0000 (UTC)
+From:   Johannes Thumshirn <jthumshirn@suse.de>
+To:     Eryu Guan <guaneryu@gmail.com>, Filipe Manana <fdmanana@gmail.com>
+Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
+        fstests@vger.kernel.org, Johannes Thumshirn <jthumshirn@suse.de>
+Subject: [PATCH fstests v3] btrfs: add validation of compression options to btrfs/048
+Date:   Fri,  7 Jun 2019 11:09:37 +0200
+Message-Id: <20190607090937.7177-1-jthumshirn@suse.de>
+X-Mailer: git-send-email 2.16.4
+In-Reply-To: <20190606153228.GD4172@x250>
+References: <20190606153228.GD4172@x250>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Jun 03, 2019 at 02:40:09PM +0800, Qu Wenruo wrote:
-> If a filesystem doesn't map its logical address space (normally the
-> bytenr/blocknr returned by fiemap) directly to its devices(s), the
-> following assumptions used in the test case is no longer true:
-> - trim range start beyond the end of fs should fail
-> - trim range start beyond the end of fs with len set should fail
+The current btrfs/048 test-case did not check the behavior of properties
+with options like compression and with the compression level supplied.
 
-All these assumptions seem generally bogus.  I don't think we can just
-run this as a generic test.
+Add test cases for compression with compression level as well so we can be
+sure we don't regress there.
+
+Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+
+---
+Changes to v2:
+- Remove validation of lzo compression with option, lzo doesn't have
+  compression levels
+
+Changes to v1:
+- Removed output redirection and filtering for the cases we don't expect any
+  actual output (Filipe)
+---
+ tests/btrfs/048     | 13 +++++++++++++
+ tests/btrfs/048.out | 11 +++++++++++
+ 2 files changed, 24 insertions(+)
+
+diff --git a/tests/btrfs/048 b/tests/btrfs/048
+index 8bb10a904bc9..7294f231e4ed 100755
+--- a/tests/btrfs/048
++++ b/tests/btrfs/048
+@@ -226,5 +226,18 @@ $BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'lz' 2>&1 | _filter_scrat
+ $BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT
+ $BTRFS_UTIL_PROG inspect-internal dump-super $SCRATCH_DEV | grep '^generation'
+ 
++echo -e "\nTesting argument validation with options"
++$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'zlib:3'
++echo "***"
++$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'zstd:0'
++echo "***"
++
++echo -e "\nTesting invalid argument validation with options, should fail"
++$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'zl:9' 2>&1 | _filter_scratch
++echo "***"
++$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'zli:0' 2>&1 | _filter_scratch
++echo "***"
++$BTRFS_UTIL_PROG property set $SCRATCH_MNT compression 'zst:3' 2>&1 | _filter_scratch
++
+ status=0
+ exit
+diff --git a/tests/btrfs/048.out b/tests/btrfs/048.out
+index 16a785a642f7..0923b00c01ed 100644
+--- a/tests/btrfs/048.out
++++ b/tests/btrfs/048.out
+@@ -92,3 +92,14 @@ Testing generation is unchanged after failed validation
+ generation		7
+ ERROR: failed to set compression for SCRATCH_MNT: Invalid argument
+ generation		7
++
++Testing argument validation with options
++***
++***
++
++Testing invalid argument validation with options, should fail
++ERROR: failed to set compression for SCRATCH_MNT: Invalid argument
++***
++ERROR: failed to set compression for SCRATCH_MNT: Invalid argument
++***
++ERROR: failed to set compression for SCRATCH_MNT: Invalid argument
+-- 
+2.16.4
+

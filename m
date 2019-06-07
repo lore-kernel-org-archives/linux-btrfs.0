@@ -7,51 +7,51 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1C3D1C468BC
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Jun 2019 13:12:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C1C4DC2BCA1
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Jun 2019 13:12:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E5DD7208E3
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Jun 2019 13:12:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 96E6D20657
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Jun 2019 13:12:24 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="bf491hq+"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="QcCBV67o"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728958AbfFGNMS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 7 Jun 2019 09:12:18 -0400
+        id S1729334AbfFGNLr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 7 Jun 2019 09:11:47 -0400
 Received: from esa4.hgst.iphmx.com ([216.71.154.42]:53172 "EHLO
         esa4.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729331AbfFGNLr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Jun 2019 09:11:47 -0400
+        with ESMTP id S1729299AbfFGNLn (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Jun 2019 09:11:43 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1559913107; x=1591449107;
+  t=1559913103; x=1591449103;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=4nLHyfI3fv6ZUFS/VY17ZQTSfHVHXl6J3Rsy55AAxfI=;
-  b=bf491hq+/rKLt8/g+b4N48dghEfF3xe3USJYMWnD7ppMF6LQB8yTmc71
-   neZPESzp/2wumT2NZT4Nsh6iR+OBt8fku88HbgzpJEzA7+CTE09+hupI+
-   hYd4Kvs9Po1hI3mHMS9BQbxmNJXPYlkMeVxEm3Wxp9TdOhq9rE5EbrW5h
-   ED8s/a2zZg+wURedhcVXYtl5k0vxdHtXDQXWFKLrbeeMD9t5THXGQqfyq
-   1niVLdPmaLjNUobvSWPLJhcd0UJvb+BzpnBffPhZ7y07AYCLEaINn4yLh
-   roujzsBYITr+4N++D3x6tHCa8Ha1Gb3Qvfvwmn13lIoUIW9i6jzRJdQOp
-   g==;
+  bh=3H1gt6qDbJK5L6WeE3cmLouxI5kw9amQgf6PfEfBzzA=;
+  b=QcCBV67ouuY2x4AgZlim1TlaMQuqdgmdauxtG3nDWDgtFf4j2Uy1jsNC
+   qSUcvolFI/TePTStSz++3z0rAwZOgkQZtxqG45MyVusVjLlwG/eebkfw0
+   5vt6/0LWwyRdO92x3bf2VEDEeY5howW6jMCq6gzy0BYHP5JlOScy3MzEv
+   X1WgZ8MOJbnkrhN7whQQYVPa6yXCNY0veuhXsHLg2j3xQaq1t1Z/nBTxs
+   lok0sjAKSIHhBPZcTnT4nupL/VnpP87EzaXpPg8KezymFEwHphqNXarfk
+   GBtI0a1KwARC4otq5Bm1W+DzX60iMBnaxNjVLfAoBrqZGX/NkSp4hHg4s
+   A==;
 X-IronPort-AV: E=Sophos;i="5.63,563,1557158400"; 
-   d="scan'208";a="110027828"
+   d="scan'208";a="110027822"
 Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 07 Jun 2019 21:11:47 +0800
-IronPort-SDR: vAHs450dXNQmH+P7+KLM7Qjm+T+Um6g0Zom6PfpnvVIxDCgMey18KJNeHKoqTQs3OK4d0HOYmJ
- 9F/Og9KPt5vsNctJXnlMmVBGcNiW8atEP0b7D4jApOGur+4Te5IsJgaTIlu/dhrAXgyCHG8+vv
- C5f3AnRMI8GFWFofVRGZbUVFfJMXmkBx8Zp3V6JqPnebHu+Hsx+qQGGDCKIhqKoPMIKS1LJIO6
- 0eAIwRx8XGaGjp58CV5N8YOcD5M9Cr7+pUlJmKbX8WteLwoytbXPN46H7FNezBwXx+S3tlZWPb
- hqSxBAAHuSMis9yU/8dgmy+F
+  by ob1.hgst.iphmx.com with ESMTP; 07 Jun 2019 21:11:43 +0800
+IronPort-SDR: Y8tkiP48KrQxcmcbQHvY78pQG4VvLWFNRg1qw6o7Zm47+8ojon/l3Y5fXIBkEIO9PZGUxB1mmI
+ oHUvnbIOZ9i4xORGrZ7XMP+jCtwtvC/2VjhyU0JQLNJ1RCRMgVYtRJ2+uRUH+0rvCP+Hq0V6FA
+ vKXF2rSIwgoMbf44ui0qyVvff2g5V4p7KT5ryAvz7yOepXPJgzKBh009vj8/vfq0RfVqJTztVe
+ iIBKYhHSIs+IPmTqxiyyAP1A8SjF1wT1suk9IaJ+ChJ2PljrXYx1Bf/bWtMAQXAwPpWE992SMw
+ 5U32klJwrHCwuqUVTERit2Sx
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP; 07 Jun 2019 05:49:04 -0700
-IronPort-SDR: G16LtUd5bpuNhdKAT+GJ64jCGJDCmSwixdGbkAjD/5aTmabaHr6g0WAuwCU2x2fTn64SgXiht6
- FeQRwPatSfUymMiWjfPDDSJ9uxFPy/TCJDAJVP5ogBrTg8hCVijGXwClBVICZPXiYwiR5j5JbR
- /ZL5kUv3H4f8z1jwvQFO4LtM9jZ3yNnkLtco4C1mRcmLhwEQfWLQS50T7EyD8xT7cdwKXlAV/w
- URI8YGhsb0RJJ4qffLiCffnlQlBQZ1MHrxDz35OJMFsR9RD0pFjTv6Nz4V7p9JUoREo83OqI6l
- gVY=
+  by uls-op-cesaep02.wdc.com with ESMTP; 07 Jun 2019 05:48:59 -0700
+IronPort-SDR: fkSvxhUQTL8482s8hxWPSBdBJN+Y/AGyg2D29sTHeMWlBI9W8owNFJL1UlI7L86o8Op3gEUotR
+ XiYXVAzJ2LvaAXAARtrwmGFKW5Kd5Ye7b/pYwvUwV7UEBaeLM87dw+svFWATf/IZNlWSNMtUy2
+ 0vARqdFnHRK6PtP3lGbN9BpIQqeCwYHn3Nh6CucMNw9UUt/hvMwyQH7cbqwZOEL4u8NrkeuU0j
+ aATi5zIP32XQeUDAf1GiSr2Jt0HtObLiCnnqQWoLGPpQgHvxyooK7i4XSB4HwuisNNllTmDIuM
+ KW0=
 Received: from naota.dhcp.fujisawa.hgst.com (HELO naota.fujisawa.hgst.com) ([10.149.53.115])
-  by uls-op-cesaip02.wdc.com with ESMTP; 07 Jun 2019 06:11:45 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 07 Jun 2019 06:11:41 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
 Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
@@ -63,9 +63,9 @@ Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         Johannes Thumshirn <jthumshirn@suse.de>,
         Bart Van Assche <bvanassche@acm.org>,
         Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH 15/19] btrfs: reset zones of unused block groups
-Date:   Fri,  7 Jun 2019 22:10:21 +0900
-Message-Id: <20190607131025.31996-16-naohiro.aota@wdc.com>
+Subject: [PATCH 13/19] btrfs: avoid sync IO prioritization on checksum in HMZONED mode
+Date:   Fri,  7 Jun 2019 22:10:19 +0900
+Message-Id: <20190607131025.31996-14-naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.21.0
 In-Reply-To: <20190607131025.31996-1-naohiro.aota@wdc.com>
 References: <20190607131025.31996-1-naohiro.aota@wdc.com>
@@ -76,56 +76,39 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-For an HMZONED volume, a block group maps to a zone of the device. For
-deleted unused block groups, the zone of the block group can be reset to
-rewind the zone write pointer at the start of the zone.
+Btrfs prioritize sync I/Os to be handled by async checksum worker earlier.
+As a result, checksumming sync I/Os to larger logical extent address can
+finish faster than checksumming non-sync I/Os to smaller logical extent
+address.
+
+Since we have upper limit of number of checksum worker, it is possible that
+sync I/Os to wait forever for non-starting checksum of I/Os for smaller
+address.
+
+This situation can be reproduced by e.g. fstests btrfs/073.
+
+To avoid such disordering, disable sync IO prioritization for now. Note
+that sync I/Os anyway must wait for I/Os to smaller address to finish. So,
+actually prioritization have no benefit in HMZONED mode.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- fs/btrfs/extent-tree.c | 23 ++++++++++++++++++++++-
- 1 file changed, 22 insertions(+), 1 deletion(-)
+ fs/btrfs/disk-io.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index cb29a96c226b..ff4d55d6ef04 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2018,6 +2018,26 @@ int btrfs_discard_extent(struct btrfs_fs_info *fs_info, u64 bytenr,
- 				ASSERT(btrfs_test_opt(fs_info, DEGRADED));
- 				continue;
- 			}
-+
-+			if (btrfs_dev_is_sequential(stripe->dev,
-+						    stripe->physical) &&
-+			    stripe->length == stripe->dev->zone_size) {
-+				ret = blkdev_reset_zones(stripe->dev->bdev,
-+							 stripe->physical >>
-+								 SECTOR_SHIFT,
-+							 stripe->length >>
-+								 SECTOR_SHIFT,
-+							 GFP_NOFS);
-+				if (!ret)
-+					discarded_bytes += stripe->length;
-+				else
-+					break;
-+				set_bit(stripe->physical >>
-+						stripe->dev->zone_size_shift,
-+					stripe->dev->empty_zones);
-+				continue;
-+			}
-+
- 			req_q = bdev_get_queue(stripe->dev->bdev);
- 			if (!blk_queue_discard(req_q))
- 				continue;
-@@ -11430,7 +11450,8 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 		spin_unlock(&space_info->lock);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 56a416902ce7..6651986da470 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -838,7 +838,7 @@ blk_status_t btrfs_wq_submit_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
  
- 		/* DISCARD can flip during remount */
--		trimming = btrfs_test_opt(fs_info, DISCARD);
-+		trimming = btrfs_test_opt(fs_info, DISCARD) ||
-+				btrfs_fs_incompat(fs_info, HMZONED);
+ 	async->status = 0;
  
- 		/* Implicit trim during transaction commit. */
- 		if (trimming)
+-	if (op_is_sync(bio->bi_opf))
++	if (op_is_sync(bio->bi_opf) && !btrfs_fs_incompat(fs_info, HMZONED))
+ 		btrfs_set_work_high_priority(&async->work);
+ 
+ 	btrfs_queue_work(fs_info->workers, &async->work);
 -- 
 2.21.0
 

@@ -7,51 +7,51 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 409DDC468BC
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Jun 2019 13:18:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C2873C2BCA1
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Jun 2019 13:19:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0D249212F5
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Jun 2019 13:18:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 988EF212F5
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Jun 2019 13:19:01 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="q8ust0ih"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="j/ia6Cjy"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729362AbfFGNSs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 7 Jun 2019 09:18:48 -0400
-Received: from esa2.hgst.iphmx.com ([68.232.143.124]:56479 "EHLO
+        id S1729086AbfFGNSS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 7 Jun 2019 09:18:18 -0400
+Received: from esa2.hgst.iphmx.com ([68.232.143.124]:56474 "EHLO
         esa2.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729103AbfFGNSS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Jun 2019 09:18:18 -0400
+        with ESMTP id S1728861AbfFGNSP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Jun 2019 09:18:15 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1559913533; x=1591449533;
+  t=1559913527; x=1591449527;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=mupKjZhti+RJeT5nPjQ1XsnqAXflA8i/lJpWsbDUs5g=;
-  b=q8ust0ihOp3oa1FRY4OOh0eNdCI2fpU69P3F5W171ZA7MHgUpA7X8W74
-   oLRJ93xnAz+MjVdC/RW4Dbm7VJVLaNCA05vQJY5+o9y1mH1e9GAdwEQ6h
-   jOtay/WzqvUf+EfJ/mMd18scRurQOf9DULxUXIJVIx/loEvH0CTecS/qD
-   vpPtMNXOq2dpAOVZmGHbHvaKDL0ZvczFF1Kj73zQbDjdtynCtuKmOoz/Q
-   ai6BxHJf+JeGtmTx+Sjsf6Gf+QdMtPTEqAt6Z+bwKSzDGReglA0qtDQNc
-   /HJeXaqVU1KPm2sZqBcr228TjKPR7Fbm0PYrduydFb0JK4Fa/S4NbNeSa
-   Q==;
+  bh=USN6rEALIg6DXGN8tesjcKQiWrb+oKgfNOsJQAIlJpY=;
+  b=j/ia6CjyvdTRUluv0mkHo0/NcHrheAm7T55UJ2zK7eLBoQHhg2qgWPXQ
+   Q9d2964eZYh07qg1zXQ7cjndHOOQDixjol4ven8lV2JsjhyAqr6LVdWQv
+   vzJwQH/I4yVTd+vXvoRPZnoD2QDiGlxFDuH0mnBztwrP3PD9Q7i/lAwfu
+   tBwOruI/UOkCxotifENbW3Hm5CuJfZCnf8NI1n6Id7Vlf6Vx9YAi//U95
+   3+8xavkW4DllnljEg4q7zW2GBnHqt3a/pYTL2zHQLcLMXrtVR2zJdvaZ4
+   LMzgZhK3oKpUYeTKc12rdD8IBnUcDDwb724D+0xsHY/Hs1H5ZwQfLgf7l
+   w==;
 X-IronPort-AV: E=Sophos;i="5.63,563,1557158400"; 
-   d="scan'208";a="209675016"
+   d="scan'208";a="209675005"
 Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 07 Jun 2019 21:18:53 +0800
-IronPort-SDR: QL7PSejTigskEbVuyqF3ANhyCwH4qzVUVF3d19D7iq8Kcxjrw7GYB+ulxgmzLHDyag5rzPGi/5
- V/E8END2kTUagitlIY13yFx/fRyXxq8T4kHzz6uKZ7pbOQzlNyED4sQh9wEVCHoogq9Ofm8PIZ
- EEgQTnUU0cUWfyDTM2hukuiFMZExdUocW6u42eX1BKNKUc5xtbVUFfO6Y8oIN4BtSJpXC+vCF7
- KtFQsyoW0UT4nF4SLxuSESWmDNyIi4fogfZvPPLyEC0qCbnSceSwMIaGCxxMYXpN18eyIQx1CI
- tWFq097EcXeHtBRBgUELnkRb
+  by ob1.hgst.iphmx.com with ESMTP; 07 Jun 2019 21:18:46 +0800
+IronPort-SDR: ZFFN9wfnrckh/kPPFPSJhuRuDuH+D4SPRhQxe4ksJpeHmp8G0EF/1qjbh32KeaTBbHlGj0wlhk
+ 811nLrAd0swD8++b6t7Rdq91JDdJV1dx+t6Q2cHQVO8Wdu24seYJLuiJUNqCs6TQ/0+ifI+7Q4
+ RVnNNkflPOYTKzHuafJzdILp1Ah2WjEgj5pB9BkixWNXattMziZTGHTGKfHaA7oSzvVoMigz+m
+ korJZxdfeQhHnXiwYl0j91Ju6voUCHJ5q7mGmccJ3/I5jnNPRfAi0N+HfuOa27Qyc4FCj3ohz+
+ ootl4IMpe7d7PxslvS6zxQI9
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP; 07 Jun 2019 05:55:35 -0700
-IronPort-SDR: 9McBzwsmq/zufQcdeMvV/PRCGlDdl9a1nWqwfshZWXCEIRHBBCf+LvqkEO6pMUZKolgqHv+YS6
- +kQp3uUEVlBkLbCAp5qqM/VSPsq5B1aF2OZbdBlo92ktrrZdA5bIusVhUBglfr8jWk/WYoggi+
- ZUMrMm6j268gw7VxbMjegABSrkyZNdwVgfCde9UvGwFPYUPTOcl+78+vabUpN65eN8L6nHGnpm
- M84zKrlOXuOSD2z+3ycyNeIjzrSZpY/NXF8CFw2CrV2LYi+c0J8ebL2mxqU5S6hj397Nf2Pt7Q
- bhQ=
+  by uls-op-cesaep02.wdc.com with ESMTP; 07 Jun 2019 05:55:31 -0700
+IronPort-SDR: ilYLTBqhqUPHW7ACJRfxQ87dXLApIggwra3dceiCoshC2+EcCZNFHJRbIuZLRuHRTKVFNDqr6O
+ +HtTWQEN5GRP5SKvGCOBoQBaAIXKXgFJ26vexpOzQKinWoBUSI5mRYimRGhowuQlHnYx9OEY2K
+ /YD6rtJG5fy6VYhApsElYuFLB/5DGl2e6aIajyn8hLNCKvdqSOqXrxmP5KSNC9zRrePGRJjLEr
+ CvieLuLgiHTSzVS6YuNK781rlQ0nt9HM0iViCi293vFQ5u1K1/Stxfrv7KQGtLwb5sHhJLQnAA
+ 6no=
 Received: from naota.dhcp.fujisawa.hgst.com (HELO naota.fujisawa.hgst.com) ([10.149.53.115])
-  by uls-op-cesaip02.wdc.com with ESMTP; 07 Jun 2019 06:18:17 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 07 Jun 2019 06:18:12 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
 Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
@@ -63,9 +63,9 @@ Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         Johannes Thumshirn <jthumshirn@suse.de>,
         Bart Van Assche <bvanassche@acm.org>,
         Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH 08/12] btrfs-progs: volume: align chunk allocation to zones
-Date:   Fri,  7 Jun 2019 22:17:47 +0900
-Message-Id: <20190607131751.5359-8-naohiro.aota@wdc.com>
+Subject: [PATCH 06/12] btrfs-progs: avoid writing super block to sequential zones
+Date:   Fri,  7 Jun 2019 22:17:45 +0900
+Message-Id: <20190607131751.5359-6-naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.21.0
 In-Reply-To: <20190607131751.5359-1-naohiro.aota@wdc.com>
 References: <20190607131025.31996-1-naohiro.aota@wdc.com>
@@ -77,175 +77,53 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-To facilitate support for zoned block devices in the extent buffer
-allocation, a zoned block device chunk is always aligned to a zone of the
-device. With this, the zone write pointer location simply becomes a hint to
-allocate new buffers.
+It is not possible to write a super block copy in sequential write required
+zones as this prevents in-place updates required for super blocks.  This
+patch limits super block possible locations to zones accepting random
+writes. In particular, the zone containing the first block of the device or
+partition being formatted must accept random writes.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- volumes.c | 79 ++++++++++++++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 75 insertions(+), 4 deletions(-)
+ disk-io.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-diff --git a/volumes.c b/volumes.c
-index f6d1b1e9dc7f..64b42643390b 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -399,6 +399,34 @@ int btrfs_scan_one_device(int fd, const char *path,
- 	return ret;
- }
- 
-+/* zone size is ensured to be power of 2 */
-+static u64 btrfs_zone_align(struct btrfs_zone_info *zinfo, u64 val)
-+{
-+	if (zinfo && zinfo->zone_size)
-+		return (val + zinfo->zone_size - 1) & ~(zinfo->zone_size - 1);
-+	return val;
-+}
-+
-+static bool check_dev_zone(struct btrfs_zone_info *zinfo, u64 physical,
-+			   u64 num_bytes)
-+{
-+	u64 zone_size = zinfo->zone_size;
-+	int zone_is_random;
-+
-+	WARN_ON(!IS_ALIGNED(num_bytes, zone_size));
-+	zone_is_random = zone_is_random_write(zinfo, physical);
-+
-+	while (num_bytes) {
-+		if (zone_is_random != zone_is_random_write(zinfo, physical))
-+			return false;
-+
-+		physical += zone_size;
-+		num_bytes -= zone_size;
-+	}
-+
-+	return true;
-+}
-+
- /*
-  * find_free_dev_extent_start - find free space in the specified device
-  * @device:	  the device which we search the free space in
-@@ -428,6 +456,7 @@ static int find_free_dev_extent_start(struct btrfs_device *device,
- 	struct btrfs_root *root = device->dev_root;
- 	struct btrfs_dev_extent *dev_extent;
- 	struct btrfs_path *path;
+diff --git a/disk-io.c b/disk-io.c
+index 151eb3b5a278..74a4346cbca7 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -1609,6 +1609,7 @@ static int write_dev_supers(struct btrfs_fs_info *fs_info,
+ 			    struct btrfs_super_block *sb,
+ 			    struct btrfs_device *device)
+ {
 +	struct btrfs_zone_info *zinfo = &device->zinfo;
- 	u64 hole_size;
- 	u64 max_hole_start;
- 	u64 max_hole_size;
-@@ -445,6 +474,7 @@ static int find_free_dev_extent_start(struct btrfs_device *device,
- 	 */
- 	min_search_start = max(root->fs_info->alloc_start, (u64)SZ_1M);
- 	search_start = max(search_start, min_search_start);
-+	search_start = btrfs_zone_align(zinfo, search_start);
+ 	u64 bytenr;
+ 	u32 crc;
+ 	int i, ret;
+@@ -1631,6 +1632,14 @@ static int write_dev_supers(struct btrfs_fs_info *fs_info,
+ 				      BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
+ 		btrfs_csum_final(crc, &sb->csum[0]);
  
- 	path = btrfs_alloc_path();
- 	if (!path)
-@@ -497,6 +527,18 @@ static int find_free_dev_extent_start(struct btrfs_device *device,
- 			goto next;
- 
- 		if (key.offset > search_start) {
-+			if (zinfo && zinfo->zone_size) {
-+				while (key.offset > search_start) {
-+					hole_size = key.offset - search_start;
-+					if (hole_size < num_bytes)
-+						break;
-+					if (check_dev_zone(zinfo, search_start,
-+							   num_bytes))
-+						break;
-+					search_start += zinfo->zone_size;
-+				}
-+			}
-+
- 			hole_size = key.offset - search_start;
- 
- 			/*
-@@ -527,7 +569,8 @@ static int find_free_dev_extent_start(struct btrfs_device *device,
- 		extent_end = key.offset + btrfs_dev_extent_length(l,
- 								  dev_extent);
- 		if (extent_end > search_start)
--			search_start = extent_end;
-+			search_start =  btrfs_zone_align(&device->zinfo,
-+							 extent_end);
- next:
- 		path->slots[0]++;
- 		cond_resched();
-@@ -539,6 +582,18 @@ next:
- 	 * search_end may be smaller than search_start.
- 	 */
- 	if (search_end > search_start) {
-+		if (zinfo && zinfo->zone_size) {
-+			while (search_end > search_start) {
-+				hole_size = search_end - search_start;
-+				if (hole_size < num_bytes)
-+					break;
-+				if (check_dev_zone(zinfo, search_start,
-+						   num_bytes))
-+					break;
-+				search_start += zinfo->zone_size;
-+			}
++		if (!zone_is_random_write(zinfo, fs_info->super_bytenr)) {
++			errno = -EIO;
++			error(
++		"failed to write super block for devid %llu: require random write zone: %m",
++				device->devid);
++			return -EIO;
 +		}
 +
- 		hole_size = search_end - search_start;
+ 		/*
+ 		 * super_copy is BTRFS_SUPER_INFO_SIZE bytes and is
+ 		 * zero filled, we can use it directly
+@@ -1659,6 +1668,8 @@ static int write_dev_supers(struct btrfs_fs_info *fs_info,
+ 		bytenr = btrfs_sb_offset(i);
+ 		if (bytenr + BTRFS_SUPER_INFO_SIZE > device->total_bytes)
+ 			break;
++		if (!zone_is_random_write(zinfo, bytenr))
++			continue;
  
- 		if (hole_size > max_hole_size) {
-@@ -582,6 +637,9 @@ int btrfs_insert_dev_extent(struct btrfs_trans_handle *trans,
- 	struct extent_buffer *leaf;
- 	struct btrfs_key key;
+ 		btrfs_set_super_bytenr(sb, bytenr);
  
-+	/* Align to zone for a zoned block device */
-+	start = btrfs_zone_align(&device->zinfo, start);
-+
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		return -ENOMEM;
-@@ -1065,9 +1123,15 @@ int btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 				    btrfs_super_stripesize(info->super_copy));
- 	}
- 
--	/* we don't want a chunk larger than 10% of the FS */
--	percent_max = div_factor(btrfs_super_total_bytes(info->super_copy), 1);
--	max_chunk_size = min(percent_max, max_chunk_size);
-+	if (info->fs_devices->hmzoned) {
-+		/* Zoned mode uses zone aligned chunks */
-+		calc_size = info->fs_devices->zone_size;
-+		max_chunk_size = calc_size * num_stripes;
-+	} else {
-+		/* we don't want a chunk larger than 10% of the FS */
-+		percent_max = div_factor(btrfs_super_total_bytes(info->super_copy), 1);
-+		max_chunk_size = min(percent_max, max_chunk_size);
-+	}
- 
- again:
- 	if (chunk_bytes_by_type(type, calc_size, num_stripes, sub_stripes) >
-@@ -1147,7 +1211,9 @@ again:
- 	*num_bytes = chunk_bytes_by_type(type, calc_size,
- 					 num_stripes, sub_stripes);
- 	index = 0;
-+	dev_offset = 0;
- 	while(index < num_stripes) {
-+		size_t zone_size = device->zinfo.zone_size;
- 		struct btrfs_stripe *stripe;
- 		BUG_ON(list_empty(&private_devs));
- 		cur = private_devs.next;
-@@ -1158,11 +1224,16 @@ again:
- 		    (index == num_stripes - 1))
- 			list_move_tail(&device->dev_list, dev_list);
- 
-+		if (device->zinfo.zone_size)
-+			calc_size = device->zinfo.zone_size;
-+
- 		ret = btrfs_alloc_dev_extent(trans, device, key.offset,
- 			     calc_size, &dev_offset);
- 		if (ret < 0)
- 			goto out_chunk_map;
- 
-+		WARN_ON(zone_size && !IS_ALIGNED(dev_offset, zone_size));
-+
- 		device->bytes_used += calc_size;
- 		ret = btrfs_update_device(trans, device);
- 		if (ret < 0)
 -- 
 2.21.0
 

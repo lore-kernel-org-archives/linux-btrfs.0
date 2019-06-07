@@ -7,51 +7,51 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 80334C2BCA1
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Jun 2019 13:19:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 233A0C2BCA1
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Jun 2019 13:19:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4D80C2133D
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Jun 2019 13:19:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E3F47212F5
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Jun 2019 13:19:06 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="ORCf4r26"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="QFKpKlaF"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729047AbfFGNSR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 7 Jun 2019 09:18:17 -0400
-Received: from esa2.hgst.iphmx.com ([68.232.143.124]:56479 "EHLO
+        id S1728932AbfFGNSO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 7 Jun 2019 09:18:14 -0400
+Received: from esa2.hgst.iphmx.com ([68.232.143.124]:56467 "EHLO
         esa2.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728689AbfFGNSR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Jun 2019 09:18:17 -0400
+        with ESMTP id S1728689AbfFGNSO (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Jun 2019 09:18:14 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1559913530; x=1591449530;
+  t=1559913526; x=1591449526;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=R36dF+7nZi2WAiLjfSgK/nhq+RPyynPLz4Nk77Mne08=;
-  b=ORCf4r26XpD8cowvkyz5uSHJSYmlO6YJd7h0z3ixDRrbKcZOPxadKw30
-   TWeowZGuHUGhJk8xWV2XtOHPX8ZK+rovWI2R+oOPwQm0OdMMbM86mBZDa
-   SDyoraSJwRw/+NpuDBLWxeyNp+oo4gUMOTosLXTZ0xwkfZ0d7TvLn+h0v
-   3+opRaEKyA+cD2NmzOshggI+mCKi66ZaJt9ogGI7vtTwEYFGu1qbJZtur
-   7rIOvmzLnAl61ET6cCBOUbOz/6OH0rrdjZbsixQlm3IIclLrLvVenPnWK
-   lW7X9F7R56Jwk2QMHrC1y+ACpLp12CtlnBHyi5sMoAka+24c/VsiP+TGa
+  bh=M6mauCdJ2eXa3K/DCJMkHatGsXpK+p82lDihf8eCgSA=;
+  b=QFKpKlaFP4fS3NYikUsvzBk30Ga5M2I4P/5XX+Jx1gvHW12ZnDcY7XRe
+   olIuWnoLXdfgZR/PlIDEyrlZOuv8Q6/kkvDiIBjutD0DvQanq2h7NR352
+   6opo2w/7NWtNlb1Ye73LRSImQgBkG8+2GDZllOrcfeWwVLJnsYAo3Mo9Z
+   fQxHJGaolS6UF95rPmaTk/g+zJLq52xM1MMrpCOX1KYDV2lwkJJ+H7xK0
+   qipfqASdkHEd+/S+3k12hMOiUiVYrsS8MB3QKxpJVZZHAn0cXGK1Xlmam
+   gCelDa/xUgsvMBq3oSsUApkLZW/fqz3IxGqU9dt2xd89to+zp5JAv+TnT
    g==;
 X-IronPort-AV: E=Sophos;i="5.63,563,1557158400"; 
-   d="scan'208";a="209675011"
+   d="scan'208";a="209674990"
 Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 07 Jun 2019 21:18:49 +0800
-IronPort-SDR: TSp0czc6XgGVtJw41zWmdI3JZINXupRRMQDuZssPw6thlG57X5DbJxChz4v+pmnCZSxv22XWYQ
- GL3zzmhztjOZKpmsjYa2H7O+cEEGfU8SSQZsY1uGMozbw26mvzsULf8hftWfqZGtcbXR5VCmwn
- z9gYa5tQtxcHFnM2VF6khiSe9kF3ZTdNH6vnXGPzNwpz7AgpZDffjSc+TngpIkpKD+BkcznDFh
- uLwYzEX9CYuiUhvq9+5uslwB1lz2Csgh8YT8JUlgLZZdzq35B3Q9Hs10qaVSRkWIonP3Xmu7Xy
- Owy4FF6bQKcu39VeNqMWvC08
+  by ob1.hgst.iphmx.com with ESMTP; 07 Jun 2019 21:18:42 +0800
+IronPort-SDR: QQ3FctQPCqPR6J700W1rkoNVT4AUn6w5kfbx5qaB0LCfptC1ZJurp8YMnV029nlCbYJWpqlCqb
+ yeYWoPcE0zDTceyeU4ZyrYCHcFCQJSEnaaEQ/I/MvNqBDm8siYDN1qWEpfrEeN5B81Tgii0zUE
+ UDIySWIYpF5XFQU7uC+aFIfkdCmbBTVuR/XSN/hCUHpQBxzJevrYY7lW9Kg+eq5MsGTHVq59bd
+ 8YDRPYJg9jOz/Ud5u45RxiSzGrqyCCAdWut1XfvqePHvMcQtA8AqW0j8oztPTXU734qjdxxdDI
+ Rgcxsm2thran3BS3SDPbRJXS
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP; 07 Jun 2019 05:55:33 -0700
-IronPort-SDR: yGleyCxwzuT+RVjVyFlh1DV8xHaWda2b8IxHb2Ai7z3KXVw3UUCtkZEnVt+LbdM5v4QdGZQTVN
- bfufgj2QUAkWFxAYAveIHT5pJnW+4tdoZrHu9XBpPZeYh62AArkzIVyU82XO4gM2Q0fdbwmvKS
- nYVgsCOMycZ/BKvtkk5GTr8NNdrw4ufQKB5gs0QE+uAUboNzVGEZXsJ+yXfJr3wBuAjg5QyvJ+
- wo/MnNyKsU+oDSHwlhngOmcwx6/x2RZsmbwSfGcVp1SrYbTLPF/JEHpXoUWLvboP/26CQWtFH/
- 9fA=
+  by uls-op-cesaep02.wdc.com with ESMTP; 07 Jun 2019 05:55:26 -0700
+IronPort-SDR: rGqJ6sX/PeEuL+gtp71J29Fhvsd8uI4iMQw2RAr9mrtmVnzvJGfbnzmu11Hfll60Te3ik2RUBd
+ QMtjqiyAPKcwbchhSxq5SPDNu/wNV3Xn3+eIMFi07Tf2CjXrrsCJjCcabdhoNNYWt2pw7ED2Az
+ VOmf7XMuguuLaYeAhaz42cydhfeWneMLfuJgRtVoIkZvxyyl4/OPkVU1GBcndUe41gLwTZhJpo
+ +Tw/a5w2K+yqOiMA+eL2uXzVIMv47xAh5zYey71kWaS9vK6QYg7ERfANbP5X4vMB9imiLn/xfY
+ ulc=
 Received: from naota.dhcp.fujisawa.hgst.com (HELO naota.fujisawa.hgst.com) ([10.149.53.115])
-  by uls-op-cesaip02.wdc.com with ESMTP; 07 Jun 2019 06:18:15 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 07 Jun 2019 06:18:08 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
 Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
@@ -63,9 +63,9 @@ Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         Johannes Thumshirn <jthumshirn@suse.de>,
         Bart Van Assche <bvanassche@acm.org>,
         Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH 07/12] btrfs-progs: support discarding zoned device
-Date:   Fri,  7 Jun 2019 22:17:46 +0900
-Message-Id: <20190607131751.5359-7-naohiro.aota@wdc.com>
+Subject: [PATCH 04/12] btrfs-progs: Introduce zone block device helper functions
+Date:   Fri,  7 Jun 2019 22:17:43 +0900
+Message-Id: <20190607131751.5359-4-naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.21.0
 In-Reply-To: <20190607131751.5359-1-naohiro.aota@wdc.com>
 References: <20190607131025.31996-1-naohiro.aota@wdc.com>
@@ -77,164 +77,305 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-All zones of zoned block devices should be reset before writing. Support
-this by considering zone reset as a special case of block discard and block
-zeroing. Of note is that only zones accepting random writes can be zeroed.
+This patch introduce several zone related functions: btrfs_get_zones() to
+get zone information from the specified device and put the information in
+zinfo, and zone_is_random_write() to check if a zone accept random writes.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- utils.c | 94 +++++++++++++++++++++++++++++++++++++++++++++++++++++----
- 1 file changed, 88 insertions(+), 6 deletions(-)
+ utils.c   | 194 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ utils.h   |  16 +++++
+ volumes.h |  28 ++++++++
+ 3 files changed, 238 insertions(+)
 
 diff --git a/utils.c b/utils.c
-index a26fe7a5743c..c375b32953f7 100644
+index 7d5a1f3b7f8d..d50304b1be80 100644
 --- a/utils.c
 +++ b/utils.c
-@@ -123,6 +123,37 @@ static int discard_range(int fd, u64 start, u64 len)
- 	return 0;
+@@ -359,6 +359,200 @@ out:
+ 	return ret;
  }
  
-+/*
-+ * Discard blocks in the zones of a zoned block device.
-+ * Process this with zone size granularity so that blocks in
-+ * conventional zones are discarded using discard_range and
-+ * blocks in sequential zones are discarded though a zone reset.
-+ */
-+static int discard_zones(int fd, struct btrfs_zone_info *zinfo)
++enum btrfs_zoned_model zoned_model(const char *file)
 +{
-+#ifdef BTRFS_ZONED
-+	unsigned int i;
-+
-+	/* Zone size granularity */
-+	for (i = 0; i < zinfo->nr_zones; i++) {
-+		if (zinfo->zones[i].type == BLK_ZONE_TYPE_CONVENTIONAL) {
-+			discard_range(fd, zinfo->zones[i].start << 9,
-+				      zinfo->zone_size);
-+		} else if (zinfo->zones[i].cond != BLK_ZONE_COND_EMPTY) {
-+			struct blk_zone_range range = {
-+				zinfo->zones[i].start,
-+				zinfo->zone_size >> 9 };
-+			if (ioctl(fd, BLKRESETZONE, &range) < 0)
-+				return errno;
-+		}
-+	}
-+
-+	return 0;
-+#else
-+	return -EIO;
-+#endif
-+}
-+
- /*
-  * Discard blocks in the given range in 1G chunks, the process is interruptible
-  */
-@@ -205,8 +236,38 @@ static int zero_blocks(int fd, off_t start, size_t len)
- 
- #define ZERO_DEV_BYTES SZ_2M
- 
-+static int zero_zone_blocks(int fd, struct btrfs_zone_info *zinfo,
-+			    off_t start, size_t len)
-+{
-+	size_t zone_len = zinfo->zone_size;
-+	off_t ofst = start;
-+	size_t count;
++	char model[32];
 +	int ret;
 +
-+	/* Make sure that zero_blocks does not write sequential zones */
-+	while (len > 0) {
++	ret = queue_param(file, "zoned", model, sizeof(model));
++	if (ret <= 0)
++		return ZONED_NONE;
 +
-+		/* Limit zero_blocks to a single zone */
-+		count = min_t(size_t, len, zone_len);
-+		if (count > zone_len - (ofst & (zone_len - 1)))
-+			count = zone_len - (ofst & (zone_len - 1));
++	if (strncmp(model, "host-aware", 10) == 0)
++		return ZONED_HOST_AWARE;
++	if (strncmp(model, "host-managed", 12) == 0)
++		return ZONED_HOST_MANAGED;
 +
-+		if (zone_is_random_write(zinfo, ofst)) {
-+			ret = zero_blocks(fd, ofst, count);
-+			if (ret != 0)
-+				return ret;
++	return ZONED_NONE;
++}
++
++size_t zone_size(const char *file)
++{
++	char chunk[32];
++	int ret;
++
++	ret = queue_param(file, "chunk_sectors", chunk, sizeof(chunk));
++	if (ret <= 0)
++		return 0;
++
++	return strtoul((const char *)chunk, NULL, 10) << 9;
++}
++
++#ifdef BTRFS_ZONED
++int zone_is_random_write(struct btrfs_zone_info *zinfo, u64 bytenr)
++{
++	unsigned int zno;
++
++	if (zinfo->model == ZONED_NONE)
++		return 1;
++
++	zno = bytenr / zinfo->zone_size;
++
++	/*
++	 * Only sequential write required zones on host-managed
++	 * devices cannot be written randomly.
++	 */
++	return zinfo->zones[zno].type != BLK_ZONE_TYPE_SEQWRITE_REQ;
++}
++
++#define BTRFS_REPORT_NR_ZONES	8192
++
++static int btrfs_get_zones(int fd, const char *file, u64 block_count,
++			   struct btrfs_zone_info *zinfo)
++{
++	size_t zone_bytes = zone_size(file);
++	size_t rep_size;
++	u64 sector = 0;
++	struct blk_zone_report *rep;
++	struct blk_zone *zone;
++	unsigned int i, n = 0;
++	int ret;
++
++	/*
++	 * Zones are guaranteed (by the kernel) to be a power of 2 number of
++	 * sectors. Check this here and make sure that zones are not too
++	 * small.
++	 */
++	if (!zone_bytes || (zone_bytes & (zone_bytes - 1))) {
++		error("ERROR: Illegal zone size %zu (not a power of 2)\n",
++		      zone_bytes);
++		exit(1);
++	}
++	if (zone_bytes < BTRFS_MKFS_SYSTEM_GROUP_SIZE) {
++		error("ERROR: Illegal zone size %zu (smaller than %d)\n",
++		      zone_bytes,
++		      BTRFS_MKFS_SYSTEM_GROUP_SIZE);
++		exit(1);
++	}
++
++	/* Allocate the zone information array */
++	zinfo->zone_size = zone_bytes;
++	zinfo->nr_zones = block_count / zone_bytes;
++	if (block_count & (zone_bytes - 1))
++		zinfo->nr_zones++;
++	zinfo->zones = calloc(zinfo->nr_zones, sizeof(struct blk_zone));
++	if (!zinfo->zones) {
++		error("No memory for zone information\n");
++		exit(1);
++	}
++
++	/* Allocate a zone report */
++	rep_size = sizeof(struct blk_zone_report) +
++		sizeof(struct blk_zone) * BTRFS_REPORT_NR_ZONES;
++	rep = malloc(rep_size);
++	if (!rep) {
++		error("No memory for zones report\n");
++		exit(1);
++	}
++
++	/* Get zone information */
++	zone = (struct blk_zone *)(rep + 1);
++	while (n < zinfo->nr_zones) {
++
++		memset(rep, 0, rep_size);
++		rep->sector = sector;
++		rep->nr_zones = BTRFS_REPORT_NR_ZONES;
++
++		ret = ioctl(fd, BLKREPORTZONE, rep);
++		if (ret != 0) {
++			error("ioctl BLKREPORTZONE failed (%s)\n",
++			      strerror(errno));
++			exit(1);
 +		}
 +
-+		len -= count;
-+		ofst += count;
++		if (!rep->nr_zones)
++			break;
++
++		for (i = 0; i < rep->nr_zones; i++) {
++			if (n >= zinfo->nr_zones)
++				break;
++			memcpy(&zinfo->zones[n], &zone[i],
++			       sizeof(struct blk_zone));
++			sector = zone[i].start + zone[i].len;
++			n++;
++		}
++
 +	}
++
++	/*
++	 * We need at least one random write zone (a conventional zone or
++	 * a sequential write preferred zone on a host-aware device).
++	 */
++	if (!zone_is_random_write(zinfo, 0)) {
++		error("ERROR: No conventional zone at block 0\n");
++		exit(1);
++	}
++
++	zinfo->nr_zones = n;
++
++	free(rep);
 +
 +	return 0;
 +}
 +
- /* don't write outside the device by clamping the region to the device size */
--static int zero_dev_clamped(int fd, off_t start, ssize_t len, u64 dev_size)
-+static int zero_dev_clamped(int fd, struct btrfs_zone_info *zinfo,
-+			    off_t start, ssize_t len, u64 dev_size)
- {
- 	off_t end = max(start, start + len);
- 
-@@ -219,6 +280,9 @@ static int zero_dev_clamped(int fd, off_t start, ssize_t len, u64 dev_size)
- 	start = min_t(u64, start, dev_size);
- 	end = min_t(u64, end, dev_size);
- 
-+	if (zinfo->model != ZONED_NONE)
-+		return zero_zone_blocks(fd, zinfo, start, end - start);
++#endif
 +
- 	return zero_blocks(fd, start, end - start);
- }
- 
-@@ -566,6 +630,7 @@ int btrfs_get_zone_info(int fd, const char *file, int hmzoned,
++int btrfs_get_zone_info(int fd, const char *file, int hmzoned,
++			struct btrfs_zone_info *zinfo)
++{
++	struct stat st;
++	int ret;
++
++	memset(zinfo, 0, sizeof(struct btrfs_zone_info));
++
++	ret = fstat(fd, &st);
++	if (ret < 0) {
++		error("unable to stat %s\n", file);
++		return 1;
++	}
++
++	if (!S_ISBLK(st.st_mode))
++		return 0;
++
++	/* Check zone model */
++	zinfo->model = zoned_model(file);
++	if (zinfo->model == ZONED_NONE)
++		return 0;
++
++	if (zinfo->model == ZONED_HOST_MANAGED && !hmzoned) {
++		error("%s: host-managed zoned block device (enable zone block device support with -O hmzoned)\n",
++		      file);
++		return -1;
++	}
++
++	if (!hmzoned) {
++		/* Treat host-aware devices as regular devices */
++		zinfo->model = ZONED_NONE;
++		return 0;
++	}
++
++#ifdef BTRFS_ZONED
++	/* Get zone information */
++	ret = btrfs_get_zones(fd, file, btrfs_device_size(fd, &st), zinfo);
++	if (ret != 0)
++		return ret;
++#else
++	error("%s: Unsupported host-%s zoned block device\n",
++	      file, zinfo->model == ZONED_HOST_MANAGED ? "managed" : "aware");
++	if (zinfo->model == ZONED_HOST_MANAGED)
++		return -1;
++
++	printf("%s: heandling host-aware block device as a regular disk\n",
++	       file);
++#endif
++	return 0;
++}
++
  int btrfs_prepare_device(int fd, const char *file, u64 *block_count_ret,
  		u64 max_block_count, unsigned opflags)
  {
-+	struct btrfs_zone_info zinfo;
- 	u64 block_count;
- 	struct stat st;
- 	int i, ret;
-@@ -584,13 +649,30 @@ int btrfs_prepare_device(int fd, const char *file, u64 *block_count_ret,
- 	if (max_block_count)
- 		block_count = min(block_count, max_block_count);
+diff --git a/utils.h b/utils.h
+index 47321f62c8e0..f5e5c5bec66a 100644
+--- a/utils.h
++++ b/utils.h
+@@ -69,6 +69,7 @@ void units_set_base(unsigned *units, unsigned base);
+ #define	PREP_DEVICE_ZERO_END	(1U << 0)
+ #define	PREP_DEVICE_DISCARD	(1U << 1)
+ #define	PREP_DEVICE_VERBOSE	(1U << 2)
++#define	PREP_DEVICE_HMZONED	(1U << 3)
  
-+	ret = btrfs_get_zone_info(fd, file, opflags & PREP_DEVICE_HMZONED,
-+				  &zinfo);
-+	if (ret < 0)
-+		return 1;
+ #define SEEN_FSID_HASH_SIZE 256
+ struct seen_fsid {
+@@ -78,10 +79,25 @@ struct seen_fsid {
+ 	int fd;
+ };
+ 
++struct btrfs_zone_info;
 +
- 	if (opflags & PREP_DEVICE_DISCARD) {
- 		/*
- 		 * We intentionally ignore errors from the discard ioctl.  It
- 		 * is not necessary for the mkfs functionality but just an
--		 * optimization.
-+		 * optimization. However, we cannot ignore zone discard (reset)
-+		 * errors for a zoned block device as this could result in the
-+		 * inability to write to non-empty sequential zones of the
-+		 * device.
- 		 */
--		if (discard_range(fd, 0, 0) == 0) {
-+		if (zinfo.model != ZONED_NONE) {
-+			printf("Resetting device zones %s (%u zones) ...\n",
-+				file, zinfo.nr_zones);
-+			if (discard_zones(fd, &zinfo)) {
-+				fprintf(stderr,
-+					"ERROR: failed to reset device '%s' zones\n",
-+					file);
-+				return 1;
-+			}
-+		} else if (discard_range(fd, 0, 0) == 0) {
- 			if (opflags & PREP_DEVICE_VERBOSE)
- 				printf("Performing full device TRIM %s (%s) ...\n",
- 						file, pretty_size(block_count));
-@@ -598,12 +680,12 @@ int btrfs_prepare_device(int fd, const char *file, u64 *block_count_ret,
- 		}
- 	}
++enum btrfs_zoned_model zoned_model(const char *file);
++size_t zone_size(const char *file);
+ int btrfs_make_root_dir(struct btrfs_trans_handle *trans,
+ 			struct btrfs_root *root, u64 objectid);
+ int btrfs_prepare_device(int fd, const char *file, u64 *block_count_ret,
+ 		u64 max_block_count, unsigned opflags);
++int btrfs_get_zone_info(int fd, const char *file, int hmzoned,
++			struct btrfs_zone_info *zinfo);
++#ifdef BTRFS_ZONED
++int zone_is_random_write(struct btrfs_zone_info *zinfo, u64 bytenr);
++#else
++static inline int zone_is_random_write(struct btrfs_zone_info *zinfo,
++				       u64 bytenr)
++{
++	return 1;
++}
++#endif
+ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
+ 		      struct btrfs_root *root, int fd, const char *path,
+ 		      u64 block_count, u32 io_width, u32 io_align,
+diff --git a/volumes.h b/volumes.h
+index dbe9d3dea647..c9262ceaea93 100644
+--- a/volumes.h
++++ b/volumes.h
+@@ -22,12 +22,40 @@
+ #include "kerncompat.h"
+ #include "ctree.h"
  
--	ret = zero_dev_clamped(fd, 0, ZERO_DEV_BYTES, block_count);
-+	ret = zero_dev_clamped(fd, &zinfo, 0, ZERO_DEV_BYTES, block_count);
- 	for (i = 0 ; !ret && i < BTRFS_SUPER_MIRROR_MAX; i++)
--		ret = zero_dev_clamped(fd, btrfs_sb_offset(i),
-+		ret = zero_dev_clamped(fd, &zinfo, btrfs_sb_offset(i),
- 				       BTRFS_SUPER_INFO_SIZE, block_count);
- 	if (!ret && (opflags & PREP_DEVICE_ZERO_END))
--		ret = zero_dev_clamped(fd, block_count - ZERO_DEV_BYTES,
-+		ret = zero_dev_clamped(fd, &zinfo, block_count - ZERO_DEV_BYTES,
- 				       ZERO_DEV_BYTES, block_count);
++#ifdef BTRFS_ZONED
++#include <linux/blkzoned.h>
++#else
++struct blk_zone {
++	int dummy;
++};
++#endif
++
++/*
++ * Zoned block device models.
++ */
++enum btrfs_zoned_model {
++	ZONED_NONE = 0,
++	ZONED_HOST_AWARE,
++	ZONED_HOST_MANAGED,
++};
++
++/*
++ * Zone information for a zoned block device.
++ */
++struct btrfs_zone_info {
++	enum btrfs_zoned_model	model;
++	size_t			zone_size;
++	struct blk_zone		*zones;
++	unsigned int		nr_zones;
++};
++
+ #define BTRFS_STRIPE_LEN	SZ_64K
  
- 	if (ret < 0) {
+ struct btrfs_device {
+ 	struct list_head dev_list;
+ 	struct btrfs_root *dev_root;
+ 	struct btrfs_fs_devices *fs_devices;
++	struct btrfs_zone_info zinfo;
+ 
+ 	u64 total_ios;
+ 
 -- 
 2.21.0
 

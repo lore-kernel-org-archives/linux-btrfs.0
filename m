@@ -2,272 +2,123 @@ Return-Path: <SRS0=hLEk=UG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2F8A5C2BCA1
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Jun 2019 11:59:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 58864C2BCA1
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Jun 2019 13:11:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0955B20868
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Jun 2019 11:59:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 31DFE208E3
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Jun 2019 13:11:21 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="YnnTsX7T"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727844AbfFGL7h (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 7 Jun 2019 07:59:37 -0400
-Received: from mx2.suse.de ([195.135.220.15]:39742 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727388AbfFGL7h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 7 Jun 2019 07:59:37 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id BFE46AF8F;
-        Fri,  7 Jun 2019 11:59:35 +0000 (UTC)
-Subject: Re: [PATCH 1/2] btrfs: Implement DRW lock
-To:     paulmck@linux.ibm.com
-Cc:     linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        andrea.parri@amarulasolutions.com, peterz@infradead.org
-References: <20190606135219.1086-1-nborisov@suse.com>
- <20190606135219.1086-2-nborisov@suse.com>
- <20190607105251.GB28207@linux.ibm.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <7a1c1f42-6e2f-57fc-5cdd-8c2bea23dffa@suse.com>
-Date:   Fri, 7 Jun 2019 14:59:34 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.7.0
+        id S1728955AbfFGNLQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 7 Jun 2019 09:11:16 -0400
+Received: from esa4.hgst.iphmx.com ([216.71.154.42]:53156 "EHLO
+        esa4.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728098AbfFGNLO (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Jun 2019 09:11:14 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1559913074; x=1591449074;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=DlQ4GLxGdZJmE7yvObMcvG5bi4ACFJsGLoXRshNTPh4=;
+  b=YnnTsX7TgGm2qbncVUjZ6CfHIxdV8PjRqWEC4pV9fFdld8oGEgGQgXhc
+   IxwfFnTVFm4HGnxxVF+E720prI8UP2A74RXgmjEuq0X61poSx2rW01IgA
+   HGr219GR7U8/YzYNk+Cgu1yyRrgAbs1NhUq1d5MpvZZTxoZG9SRGC3WV+
+   MgIJLemcIhUuIhQPy8iobqwIfMHosDTtHTuZo6wTtT6veM1IrGjKRb7K5
+   1egTIC51ZVpUS+nm+kWKbQUKpyPGyOHIwRE5pTy7vmi5xs83dgLHKIf+l
+   +deZVIQ4r4Me+GjIpKd/l2pxyDbRh7n3aE196oD9jnpX1GZwY9HGgFtjB
+   Q==;
+X-IronPort-AV: E=Sophos;i="5.63,563,1557158400"; 
+   d="scan'208";a="110027764"
+Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 07 Jun 2019 21:11:14 +0800
+IronPort-SDR: cxtWHuDtXCXoPt8gegaPneVM5VhprwTNG0/zgciKLkD9vwhc2dQlngAAiAKmaWsG22rXqCf4xg
+ apBqvpzxfbsKa8n1WxrR0ylFYmZdYfekgwTITkgJmW2Fp+HPyXIS5DEIPzvCUCWKDmVFN53NI0
+ NjfDubZA/9tOc19KcpsVt+cm1eUmU4jhiIc+2iOK+OGuCU4jNbtz1c1C5zNo235/BhNKcaRC3P
+ H2NoxTjY9XnvC5IssVyXciEYosY6NeD8sKQ6YjRrIr4R4iUVLY7mtHQFCJvhoa7jWPa85ETgj1
+ rrGziCJ+NSXEoXAGRA4a1hUA
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep02.wdc.com with ESMTP; 07 Jun 2019 05:48:31 -0700
+IronPort-SDR: /mUewI0BvY0IcXPufJN85DXHDBm7kLJrWkNdFR/j9w3Yx8O7m1GDyEqDFzwYyRLNgv6HdBHBep
+ jOnug/QD5AdqhMzOFqtkUGzi2Fa8gEDxo+0T4N/L0EIP/ybIA9p9kBVawt2DH3I/+kkhs4pMiF
+ CTPZ/RViJFuQdKc/+v8m8ngMQ17xtRlRdzO7kwIe5JTQtSyOtPXfSQLaPXq9iAQyibVIMhQYkb
+ uxEyI2JgTRIzkJSGVEjregeQS9v/uGlTH8NTsep6vmo+t8jHrsvVYZTFCwduBWzWRslsd13BC6
+ Nvg=
+Received: from naota.dhcp.fujisawa.hgst.com (HELO naota.fujisawa.hgst.com) ([10.149.53.115])
+  by uls-op-cesaip02.wdc.com with ESMTP; 07 Jun 2019 06:11:12 -0700
+From:   Naohiro Aota <naohiro.aota@wdc.com>
+To:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
+Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        Qu Wenruo <wqu@suse.com>, Nikolay Borisov <nborisov@suse.com>,
+        linux-kernel@vger.kernel.org, Hannes Reinecke <hare@suse.com>,
+        linux-fsdevel@vger.kernel.org,
+        Damien Le Moal <damien.lemoal@wdc.com>,
+        =?UTF-8?q?Matias=20Bj=C3=B8rling?= <mb@lightnvm.io>,
+        Johannes Thumshirn <jthumshirn@suse.de>,
+        Bart Van Assche <bvanassche@acm.org>,
+        Naohiro Aota <naohiro.aota@wdc.com>
+Subject: [PATCH 01/19] btrfs: introduce HMZONED feature flag
+Date:   Fri,  7 Jun 2019 22:10:07 +0900
+Message-Id: <20190607131025.31996-2-naohiro.aota@wdc.com>
+X-Mailer: git-send-email 2.21.0
+In-Reply-To: <20190607131025.31996-1-naohiro.aota@wdc.com>
+References: <20190607131025.31996-1-naohiro.aota@wdc.com>
 MIME-Version: 1.0
-In-Reply-To: <20190607105251.GB28207@linux.ibm.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This patch introduces the HMZONED incompat flag. The flag indicates that
+the volume management will satisfy the constraints imposed by host-managed
+zoned block devices.
 
+Signed-off-by: Damien Le Moal <damien.lemoal@wdc.com>
+Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+---
+ fs/btrfs/sysfs.c           | 2 ++
+ include/uapi/linux/btrfs.h | 1 +
+ 2 files changed, 3 insertions(+)
 
-On 7.06.19 г. 13:52 ч., Paul E. McKenney wrote:
-> On Thu, Jun 06, 2019 at 04:52:18PM +0300, Nikolay Borisov wrote:
->> A (D)ouble (R)eader (W)riter lock is a locking primitive that allows
->> to have multiple readers or multiple writers but not multiple readers
->> and writers holding it concurrently. The code is factored out from
->> the existing open-coded locking scheme used to exclude pending
->> snapshots from nocow writers and vice-versa. Current implementation
->> actually favors Readers (that is snapshot creaters) to writers (nocow
->> writers of the filesystem).
->>
->> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> 
-> A preliminary question...
-> 
-> What prevents the following sequence of events from happening?
-> 
-> o	btrfs_drw_write_lock() invokes btrfs_drw_try_write_lock(),
-> 	which sees that lock->readers is zero and thus executes
-> 	percpu_counter_inc(&lock->writers).
-> 
-> o	btrfs_drw_read_lock() increments lock->readers, does the
-> 	smp_mb__after_atomic(), and then does the wait_event().
-> 	Because btrfs_drw_try_write_lock() incremented its CPU's
-> 	lock->writers, the sum is the value one, so it blocks.
-> 
-> o	btrfs_drw_try_write_lock() checks lock->readers, sees that
-> 	it is now nonzero, and thus invokes btrfs_drw_read_unlock()
-> 	(which decrements the current CPU's counter, so that a future
-> 	sum would get zero), and returns false.
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 2f078b77fe14..ccb3d732e7d2 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -192,6 +192,7 @@ BTRFS_FEAT_ATTR_INCOMPAT(raid56, RAID56);
+ BTRFS_FEAT_ATTR_INCOMPAT(skinny_metadata, SKINNY_METADATA);
+ BTRFS_FEAT_ATTR_INCOMPAT(no_holes, NO_HOLES);
+ BTRFS_FEAT_ATTR_INCOMPAT(metadata_uuid, METADATA_UUID);
++BTRFS_FEAT_ATTR_INCOMPAT(hmzoned, HMZONED);
+ BTRFS_FEAT_ATTR_COMPAT_RO(free_space_tree, FREE_SPACE_TREE);
+ 
+ static struct attribute *btrfs_supported_feature_attrs[] = {
+@@ -206,6 +207,7 @@ static struct attribute *btrfs_supported_feature_attrs[] = {
+ 	BTRFS_FEAT_ATTR_PTR(skinny_metadata),
+ 	BTRFS_FEAT_ATTR_PTR(no_holes),
+ 	BTRFS_FEAT_ATTR_PTR(metadata_uuid),
++	BTRFS_FEAT_ATTR_PTR(hmzoned),
+ 	BTRFS_FEAT_ATTR_PTR(free_space_tree),
+ 	NULL
+ };
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index c195896d478f..2d5e8f801135 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -270,6 +270,7 @@ struct btrfs_ioctl_fs_info_args {
+ #define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA	(1ULL << 8)
+ #define BTRFS_FEATURE_INCOMPAT_NO_HOLES		(1ULL << 9)
+ #define BTRFS_FEATURE_INCOMPAT_METADATA_UUID	(1ULL << 10)
++#define BTRFS_FEATURE_INCOMPAT_HMZONED		(1ULL << 11)
+ 
+ struct btrfs_ioctl_feature_flags {
+ 	__u64 compat_flags;
+-- 
+2.21.0
 
-btrfs_drw_read_unlock is actually btrfs_drw_write_unlock, my bad, Filipe
-already pointed that out and I've fixed it.
-
-The idea here is that if a reader came after we've incremented out
-percpu counter then it would have blocked, the writer would see that and
-invoke btrfs_drw_write_unlock which will decrement the percpu counter
-and will wakeup the reader that is now blocked on pending_readers.
-
-> 
-> o	btrfs_drw_write_lock() therefore does its wait_event().
-> 	Because lock->readers is nonzero, it blocks.
-> 
-> o	Both tasks are now blocked.  In the absence of future calls
-> 	to these functions (and perhaps even given such future calls),
-> 	we have deadlock.
-> 
-> So what am I missing here?
-> 
-> 							Thanx, Paul
-> 
->> ---
->>  fs/btrfs/Makefile   |  2 +-
->>  fs/btrfs/drw_lock.c | 71 +++++++++++++++++++++++++++++++++++++++++++++
->>  fs/btrfs/drw_lock.h | 23 +++++++++++++++
->>  3 files changed, 95 insertions(+), 1 deletion(-)
->>  create mode 100644 fs/btrfs/drw_lock.c
->>  create mode 100644 fs/btrfs/drw_lock.h
->>
->> diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
->> index ca693dd554e9..dc60127791e6 100644
->> --- a/fs/btrfs/Makefile
->> +++ b/fs/btrfs/Makefile
->> @@ -10,7 +10,7 @@ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
->>  	   export.o tree-log.o free-space-cache.o zlib.o lzo.o zstd.o \
->>  	   compression.o delayed-ref.o relocation.o delayed-inode.o scrub.o \
->>  	   reada.o backref.o ulist.o qgroup.o send.o dev-replace.o raid56.o \
->> -	   uuid-tree.o props.o free-space-tree.o tree-checker.o
->> +	   uuid-tree.o props.o free-space-tree.o tree-checker.o drw_lock.o
->>  
->>  btrfs-$(CONFIG_BTRFS_FS_POSIX_ACL) += acl.o
->>  btrfs-$(CONFIG_BTRFS_FS_CHECK_INTEGRITY) += check-integrity.o
->> diff --git a/fs/btrfs/drw_lock.c b/fs/btrfs/drw_lock.c
->> new file mode 100644
->> index 000000000000..9681bf7544be
->> --- /dev/null
->> +++ b/fs/btrfs/drw_lock.c
->> @@ -0,0 +1,71 @@
->> +#include "drw_lock.h"
->> +#include "ctree.h"
->> +
->> +void btrfs_drw_lock_init(struct btrfs_drw_lock *lock)
->> +{
->> +	atomic_set(&lock->readers, 0);
->> +	percpu_counter_init(&lock->writers, 0, GFP_KERNEL);
->> +	init_waitqueue_head(&lock->pending_readers);
->> +	init_waitqueue_head(&lock->pending_writers);
->> +}
->> +
->> +void btrfs_drw_lock_destroy(struct btrfs_drw_lock *lock)
->> +{
->> +	percpu_counter_destroy(&lock->writers);
->> +}
->> +
->> +bool btrfs_drw_try_write_lock(struct btrfs_drw_lock *lock)
->> +{
->> +	if (atomic_read(&lock->readers))
->> +		return false;
->> +
->> +	percpu_counter_inc(&lock->writers);
->> +
->> +	/*
->> +	 * Ensure writers count is updated before we check for
->> +	 * pending readers
->> +	 */
->> +	smp_mb();
->> +	if (atomic_read(&lock->readers)) {
->> +		btrfs_drw_read_unlock(lock);
->> +		return false;
->> +	}
->> +
->> +	return true;
->> +}
->> +
->> +void btrfs_drw_write_lock(struct btrfs_drw_lock *lock)
->> +{
->> +	while(true) {
->> +		if (btrfs_drw_try_write_lock(lock))
->> +			return;
->> +		wait_event(lock->pending_writers, !atomic_read(&lock->readers));
->> +	}
->> +}
->> +
->> +void btrfs_drw_write_unlock(struct btrfs_drw_lock *lock)
->> +{
->> +	percpu_counter_dec(&lock->writers);
->> +	cond_wake_up(&lock->pending_readers);
->> +}
->> +
->> +void btrfs_drw_read_lock(struct btrfs_drw_lock *lock)
->> +{
->> +	atomic_inc(&lock->readers);
->> +	smp_mb__after_atomic();
->> +
->> +	wait_event(lock->pending_readers,
->> +		   percpu_counter_sum(&lock->writers) == 0);
->> +}
->> +
->> +void btrfs_drw_read_unlock(struct btrfs_drw_lock *lock)
->> +{
->> +	/*
->> +	 * Atomic RMW operations imply full barrier, so woken up writers
->> +	 * are guaranteed to see the decrement
->> +	 */
->> +	if (atomic_dec_and_test(&lock->readers))
->> +		wake_up(&lock->pending_writers);
->> +}
->> +
->> +
->> diff --git a/fs/btrfs/drw_lock.h b/fs/btrfs/drw_lock.h
->> new file mode 100644
->> index 000000000000..baff59561c06
->> --- /dev/null
->> +++ b/fs/btrfs/drw_lock.h
->> @@ -0,0 +1,23 @@
->> +#ifndef BTRFS_DRW_LOCK_H
->> +#define BTRFS_DRW_LOCK_H
->> +
->> +#include <linux/atomic.h>
->> +#include <linux/wait.h>
->> +#include <linux/percpu_counter.h>
->> +
->> +struct btrfs_drw_lock {
->> +	atomic_t readers;
->> +	struct percpu_counter writers;
->> +	wait_queue_head_t pending_writers;
->> +	wait_queue_head_t pending_readers;
->> +};
->> +
->> +void btrfs_drw_lock_init(struct btrfs_drw_lock *lock);
->> +void btrfs_drw_lock_destroy(struct btrfs_drw_lock *lock);
->> +void btrfs_drw_write_lock(struct btrfs_drw_lock *lock);
->> +bool btrfs_drw_try_write_lock(struct btrfs_drw_lock *lock);
->> +void btrfs_drw_write_unlock(struct btrfs_drw_lock *lock);
->> +void btrfs_drw_read_lock(struct btrfs_drw_lock *lock);
->> +void btrfs_drw_read_unlock(struct btrfs_drw_lock *lock);
->> +
->> +#endif
->> -- 
->> 2.17.1
->>
-> 
-> 

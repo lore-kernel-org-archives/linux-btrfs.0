@@ -2,55 +2,56 @@ Return-Path: <SRS0=hLEk=UG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.8 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 14E4DC468BD
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Jun 2019 13:13:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9536BC2BCA1
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Jun 2019 13:18:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E2D22212F5
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Jun 2019 13:13:28 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6E2AC208E3
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Jun 2019 13:18:13 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="Qa2GLaMR"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="e8v+X/GA"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728855AbfFGNLN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 7 Jun 2019 09:11:13 -0400
-Received: from esa4.hgst.iphmx.com ([216.71.154.42]:53156 "EHLO
-        esa4.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728098AbfFGNLM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Jun 2019 09:11:12 -0400
+        id S1728759AbfFGNSI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 7 Jun 2019 09:18:08 -0400
+Received: from esa2.hgst.iphmx.com ([68.232.143.124]:56451 "EHLO
+        esa2.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728689AbfFGNSI (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Jun 2019 09:18:08 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1559913072; x=1591449072;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=zNdfBMk/0Ll1/6zgIVFQjA05zAgxi2hPkJU9V5VK9MI=;
-  b=Qa2GLaMRXSPv4VrQqKRYlFK/yd6Lt6Zba/f4xN4Z4VKXhj1Xd5LedR7v
-   KdIkOdow287t7QfYReVq7k0jAlqyj9BmLmEx6262Lt5yV0DctaYYonhoR
-   wUSw4rbfUZtLyI5GCl3MpX/xQ3joy0oFFiyOIrngdMVnFNpXKj3wMkhXN
-   g9s6LZH4esNIfQRs0CFUktR2O3V7FalWV1IQH/OH+l6hXHcrAlHf8gpl9
-   6CoC1FDugIUw4vejdNYI3U2339ft1GMUtAOdXWRK4F7xfNpW4JT7pw+5x
-   Q7/r36286LgtLzXyrPEKOxFzyY1ljJfk57+tJlJHB7VFPqCZ3w7ypjtPr
-   Q==;
+  t=1559913516; x=1591449516;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=kE1dxgEdKiS9vm8kRxNFlOdjtYNADwAQaRBEWkOjG7I=;
+  b=e8v+X/GAePuNSn+9kWOQk9oCn3mz16Ocx5kkdi7fauImTBsq2+IH7VyG
+   BPTl+CCdBolwub3SKsOoZOKYeRcMKj0Z18MazRyHJOLvPs0wuQTns6H+T
+   1j27sKYQcTcShDvfUGYgWKci7hrvVNSJxEsv53lXHM9y/HYuxEqlUIVEV
+   WjwYmOLm49irb1syqEOijhI3gerDf3+Wr01q7Xh62hxTsIAr1F5vH0d4a
+   ZtNacjQr9Nw7fStlgPkp158QwvK8EisKkZ63bE47XRoAOzBphAKEx3ys4
+   7/DOCdEzlOTkzbPwio/Z5yjGQrd2SYcu2LTH4fytOeM5qhaX8W/HdRfkG
+   g==;
 X-IronPort-AV: E=Sophos;i="5.63,563,1557158400"; 
-   d="scan'208";a="110027757"
-Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 07 Jun 2019 21:11:12 +0800
-IronPort-SDR: 0G7vY6zepLWCadsUy8exvEQQrd+Tc/fA2wgYSmVfcRCIoh4UlVFcSrKVD31Hu6mmT7mZvV9HBh
- jv4w0IfCcmbxwgcofLOqeOOHAjQVDJqPc6+aC/iIFkvahW/su7ii/o78FtqAcvtKGQJdf7dUyU
- RInhdkxFUpKzs36+uClUsIpO73LzD52rm299PlH7D8/GenHACfR1Q0mjYBSLwha89knd/itv9b
- OWIEKmGl7G40wLbYX6PTwSjh+DcvHetyxp2FCSD1gg+kCl4nLo9Adzb+wsFt5TRpxZgdrYuhn7
- MySI5q37lR84hK/gNfEsfXiP
+   d="scan'208";a="209674986"
+Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 07 Jun 2019 21:18:36 +0800
+IronPort-SDR: wh1Fat/eLjraEeHlm//cqBN4HcCeQnXpbsg57H6RSXleGlXvzwW/MCo6+TAmh9OvXMYfdWrEO9
+ 9UjvzCX1d6WsD8IJF45GstmBqnmypbOuOEAWmUptajqGiMtEvF/kXE2pjidkKuX6BCNYMETqY+
+ fAjdypuj9NFWvIpoWm2TrnfHz+kWDEGW6sN5+NSiJuoC/tCy4v1mGQchmxExluDvpLLyaGLE+g
+ KKuAeF7CBbb5fydqHOQbmNYCiGh5/8OJ/J4NF1DPWDCNGpHMDiirz09LqVPPDuj3znxZYnYGBs
+ QR/TeZUzJhteoJN8SyKaZIKw
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP; 07 Jun 2019 05:48:29 -0700
-IronPort-SDR: M58K70zWa5mGNsVrm8EEyhuoYywykETbgsLM+fZK9R8XlrMyVdQQYpmfF+IsgBzfDaJa0M1vgA
- /VaxxsFQJEQpekfHjjYSzyPtzi22+MqIesmqi1kJXLoClb6l05SqUbEEypO77EOO654NNDUWtX
- K40LdoMg7U7bnLiWzRjMLaclZbMdFdRM9Wmu45NkFywjqTTGnI6QAO2l7LJVy7cutv3OuP3Puh
- kZtQh7fzHHztOLuaMzH1m+GpmkAvoaywLTWMIiWd/n8OVaKVo1EVLVmOcZAJhsE5irSgGm+cjs
- BdE=
+  by uls-op-cesaep02.wdc.com with ESMTP; 07 Jun 2019 05:55:24 -0700
+IronPort-SDR: yz4Fwogp9nNtP6CLFtFcpZ88nZKTt+wJImrrhc8x8wAKFFBYsOLVrVR7kjJY/1AcKL3io1l2/z
+ u1Exda8OB9QDtbKEayGOAx25XX4m4sPhkSIp/u41UYCaSZ81DFUKbsKSS95rjPQY36fnwm6zEw
+ dcyCnGkNXJzkuc0qJNdC/CijPiKn2iPkYnt+dygPN1u0dZpC5z1qQhPL1DGPh8hHAnnAoTaOS/
+ E1dugsZNcoiHTxmM5f1O+hrrQPbIfPBAL9yOUpJsF2TdQqVS5sucHohTVeU01FChaRncE+NEfU
+ 6fU=
 Received: from naota.dhcp.fujisawa.hgst.com (HELO naota.fujisawa.hgst.com) ([10.149.53.115])
-  by uls-op-cesaip02.wdc.com with ESMTP; 07 Jun 2019 06:11:10 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 07 Jun 2019 06:18:06 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
 Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
@@ -62,10 +63,13 @@ Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         Johannes Thumshirn <jthumshirn@suse.de>,
         Bart Van Assche <bvanassche@acm.org>,
         Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v2 00/19] btrfs zoned block device support
-Date:   Fri,  7 Jun 2019 22:10:06 +0900
-Message-Id: <20190607131025.31996-1-naohiro.aota@wdc.com>
+Subject: [PATCH 03/12] btrfs-progs: add new HMZONED feature flag
+Date:   Fri,  7 Jun 2019 22:17:42 +0900
+Message-Id: <20190607131751.5359-3-naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.21.0
+In-Reply-To: <20190607131751.5359-1-naohiro.aota@wdc.com>
+References: <20190607131025.31996-1-naohiro.aota@wdc.com>
+ <20190607131751.5359-1-naohiro.aota@wdc.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -73,136 +77,105 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-btrfs zoned block device support
+With this feature enabled, a zoned block device aware btrfs allocates block
+groups aligned to the device zones and always write in sequential zones at
+the zone write pointer position.
 
-This series adds zoned block device support to btrfs.
+Enabling this feature also force disable conversion from ext4 volumes.
 
-A zoned block device consists of a number of zones. Zones are either
-conventional and accepting random writes or sequential and requiring that
-writes be issued in LBA order from each zone write pointer position. This
-patch series ensures that the sequential write constraint of sequential
-zones is respected while fundamentally not changing BtrFS block and I/O
-management for block stored in conventional zones.
+Note: this flag can be moved to COMPAT_RO, so that older kernel can read
+but not write zoned block devices formatted with btrfs.
 
-To achieve this, the default chunk size of btrfs is changed on zoned block
-devices so that chunks are always aligned to a zone. Allocation of blocks
-within a chunk is changed so that the allocation is always sequential from
-the beginning of the chunks. To do so, an allocation pointer is added to
-block groups and used as the allocation hint.  The allocation changes also
-ensures that block freed below the allocation pointer are ignored,
-resulting in sequential block allocation regardless of the chunk usage.
+Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+---
+ cmds-inspect-dump-super.c | 3 ++-
+ ctree.h                   | 4 +++-
+ fsfeatures.c              | 8 ++++++++
+ fsfeatures.h              | 2 +-
+ libbtrfsutil/btrfs.h      | 2 ++
+ 5 files changed, 16 insertions(+), 3 deletions(-)
 
-While the introduction of the allocation pointer ensure that blocks will be
-allocated sequentially, I/Os to write out newly allocated blocks may be
-issued out of order, causing errors when writing to sequential zones. This
-problem s solved by introducing a submit_buffer() function and changes to
-the internal I/O scheduler to ensure in-order issuing of write I/Os for
-each chunk and corresponding to the block allocation order in the chunk.
-
-The zone of a chunk is reset to allow reuse of the zone only when the block
-group is being freed, that is, when all the chunks of the block group are
-unused.
-
-For btrfs volumes composed of multiple zoned disks, restrictions are added
-to ensure that all disks have the same zone size. This matches the existing
-constraint that all chunks in a block group must have the same size.
-
-As discussed with Chris Mason in LSFMM, we enabled device replacing in
-HMZONED mode. But still drop fallocate for now.
-
-Patch 1 introduces the HMZONED incompatible feature flag to indicate that
-the btrfs volume was formatted for use on zoned block devices.
-
-Patches 2 and 3 implement functions to gather information on the zones of
-the device (zones type and write pointer position).
-
-Patches 4 and 5 disable features which are not compatible with the
-sequential write constraints of zoned block devices. This includes
-fallocate and direct I/O support.
-
-Patches 6 and 7 tweak the extent buffer allocation for HMZONED mode to
-implement sequential block allocation in block groups and chunks.
-
-Patch 8 mark block group read only when write pointers of devices which
-compose e.g. RAID1 block group devices are mismatch.
-
-Patch 9 restrict the possible locations of super blocks to conventional
-zones to preserve the existing update in-place mechanism for the super
-blocks.
-
-Patches 10 to 12 implement the new submit buffer I/O path to ensure
-sequential write I/O delivery to the device zones.
-
-Patches 13 to 17 modify several parts of btrfs to handle free blocks
-without breaking the sequential block allocation and sequential write order
-as well as zone reset for unused chunks.
-
-Patch 18 add support for device replacing.
-
-Finally, patch 19 adds the HMZONED feature to the list of supported
-features.
-
-This series applies on kdave/for-5.2-rc2.
-
-Changelog
-v2:
- - Add support for dev-replace
- -- To support dev-replace, moved submit_buffer one layer up. It now
-    handles bio instead of btrfs_bio.
- -- Mark unmirrored Block Group readonly only when there is writable
-    mirrored BGs. Necessary to handle degraded RAID.
- - Expire worker use vanilla delayed_work instead of btrfs's async-thread
- - Device extent allocator now ensure that region is on the same zone type.
- - Add delayed allocation shrinking.
- - Rename btrfs_drop_dev_zonetypes() to btrfs_destroy_dev_zonetypes
- - Fix
- -- Use SECTOR_SHIFT (Nikolay)
- -- Use btrfs_err (Nikolay)
-
-Naohiro Aota (19):
-  btrfs: introduce HMZONED feature flag
-  btrfs: Get zone information of zoned block devices
-  btrfs: Check and enable HMZONED mode
-  btrfs: disable fallocate in HMZONED mode
-  btrfs: disable direct IO in HMZONED mode
-  btrfs: align dev extent allocation to zone boundary
-  btrfs: do sequential extent allocation in HMZONED mode
-  btrfs: make unmirroed BGs readonly only if we have at least one
-    writable BG
-  btrfs: limit super block locations in HMZONED mode
-  btrfs: rename btrfs_map_bio()
-  btrfs: introduce submit buffer
-  btrfs: expire submit buffer on timeout
-  btrfs: avoid sync IO prioritization on checksum in HMZONED mode
-  btrfs: redirty released extent buffers in sequential BGs
-  btrfs: reset zones of unused block groups
-  btrfs: wait existing extents before truncating
-  btrfs: shrink delayed allocation size in HMZONED mode
-  btrfs: support dev-replace in HMZONED mode
-  btrfs: enable to mount HMZONED incompat flag
-
- fs/btrfs/ctree.h             |  47 ++-
- fs/btrfs/dev-replace.c       | 103 ++++++
- fs/btrfs/disk-io.c           |  49 ++-
- fs/btrfs/disk-io.h           |   1 +
- fs/btrfs/extent-tree.c       | 479 +++++++++++++++++++++++-
- fs/btrfs/extent_io.c         |  28 ++
- fs/btrfs/extent_io.h         |   2 +
- fs/btrfs/file.c              |   4 +
- fs/btrfs/free-space-cache.c  |  33 ++
- fs/btrfs/free-space-cache.h  |   5 +
- fs/btrfs/inode.c             |  14 +
- fs/btrfs/scrub.c             | 171 +++++++++
- fs/btrfs/super.c             |  30 +-
- fs/btrfs/sysfs.c             |   2 +
- fs/btrfs/transaction.c       |  35 ++
- fs/btrfs/transaction.h       |   3 +
- fs/btrfs/volumes.c           | 684 ++++++++++++++++++++++++++++++++++-
- fs/btrfs/volumes.h           |  37 ++
- include/trace/events/btrfs.h |  43 +++
- include/uapi/linux/btrfs.h   |   1 +
- 20 files changed, 1734 insertions(+), 37 deletions(-)
-
+diff --git a/cmds-inspect-dump-super.c b/cmds-inspect-dump-super.c
+index d62f0932556c..ff3c0aa262c8 100644
+--- a/cmds-inspect-dump-super.c
++++ b/cmds-inspect-dump-super.c
+@@ -229,7 +229,8 @@ static struct readable_flag_entry incompat_flags_array[] = {
+ 	DEF_INCOMPAT_FLAG_ENTRY(RAID56),
+ 	DEF_INCOMPAT_FLAG_ENTRY(SKINNY_METADATA),
+ 	DEF_INCOMPAT_FLAG_ENTRY(NO_HOLES),
+-	DEF_INCOMPAT_FLAG_ENTRY(METADATA_UUID)
++	DEF_INCOMPAT_FLAG_ENTRY(METADATA_UUID),
++	DEF_INCOMPAT_FLAG_ENTRY(HMZONED)
+ };
+ static const int incompat_flags_num = sizeof(incompat_flags_array) /
+ 				      sizeof(struct readable_flag_entry);
+diff --git a/ctree.h b/ctree.h
+index 76f52b1c9b08..9f79686690e0 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -492,6 +492,7 @@ struct btrfs_super_block {
+ #define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA	(1ULL << 8)
+ #define BTRFS_FEATURE_INCOMPAT_NO_HOLES		(1ULL << 9)
+ #define BTRFS_FEATURE_INCOMPAT_METADATA_UUID    (1ULL << 10)
++#define BTRFS_FEATURE_INCOMPAT_HMZONED		(1ULL << 11)
+ 
+ #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
+ 
+@@ -515,7 +516,8 @@ struct btrfs_super_block {
+ 	 BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS |		\
+ 	 BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA |	\
+ 	 BTRFS_FEATURE_INCOMPAT_NO_HOLES |		\
+-	 BTRFS_FEATURE_INCOMPAT_METADATA_UUID)
++	 BTRFS_FEATURE_INCOMPAT_METADATA_UUID |		\
++	 BTRFS_FEATURE_INCOMPAT_HMZONED)
+ 
+ /*
+  * A leaf is full of items. offset and size tell us where to find
+diff --git a/fsfeatures.c b/fsfeatures.c
+index 7f3ef03b8452..c4904ce8baf5 100644
+--- a/fsfeatures.c
++++ b/fsfeatures.c
+@@ -86,6 +86,14 @@ static const struct btrfs_fs_feature {
+ 		VERSION_TO_STRING2(4,0),
+ 		NULL, 0,
+ 		"no explicit hole extents for files" },
++#ifdef BTRFS_ZONED
++	{ "hmzoned", BTRFS_FEATURE_INCOMPAT_HMZONED,
++		"hmzoned",
++		NULL, 0,
++		NULL, 0,
++		NULL, 0,
++		"support Host-Managed Zoned devices" },
++#endif
+ 	/* Keep this one last */
+ 	{ "list-all", BTRFS_FEATURE_LIST_ALL, NULL }
+ };
+diff --git a/fsfeatures.h b/fsfeatures.h
+index 3cc9452a3327..0918ee1aa113 100644
+--- a/fsfeatures.h
++++ b/fsfeatures.h
+@@ -25,7 +25,7 @@
+ 		| BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA)
+ 
+ /*
+- * Avoid multi-device features (RAID56) and mixed block groups
++ * Avoid multi-device features (RAID56), mixed block groups, and hmzoned device
+  */
+ #define BTRFS_CONVERT_ALLOWED_FEATURES				\
+ 	(BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF			\
+diff --git a/libbtrfsutil/btrfs.h b/libbtrfsutil/btrfs.h
+index 944d50132456..5c415240f74c 100644
+--- a/libbtrfsutil/btrfs.h
++++ b/libbtrfsutil/btrfs.h
+@@ -268,6 +268,8 @@ struct btrfs_ioctl_fs_info_args {
+ #define BTRFS_FEATURE_INCOMPAT_RAID56		(1ULL << 7)
+ #define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA	(1ULL << 8)
+ #define BTRFS_FEATURE_INCOMPAT_NO_HOLES		(1ULL << 9)
++/* Missing */
++#define BTRFS_FEATURE_INCOMPAT_HMZONED		(1ULL << 11)
+ 
+ struct btrfs_ioctl_feature_flags {
+ 	__u64 compat_flags;
 -- 
 2.21.0
 

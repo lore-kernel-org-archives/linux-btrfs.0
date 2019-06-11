@@ -2,217 +2,455 @@ Return-Path: <SRS0=4IUu=UK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,T_DKIMWL_WL_HIGH,UNPARSEABLE_RELAY
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A10EDC43218
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Jun 2019 04:19:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 995ADC4321A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Jun 2019 04:46:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 697752086D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Jun 2019 04:19:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 58B6F20820
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Jun 2019 04:46:53 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=ericmesa.com header.i=@ericmesa.com header.b="HAPc14ql"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="odnbg5TE"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728922AbfFKETe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 11 Jun 2019 00:19:34 -0400
-Received: from dog.birch.relay.mailchannels.net ([23.83.209.48]:55857 "EHLO
-        dog.birch.relay.mailchannels.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726199AbfFKETe (ORCPT
+        id S2391074AbfFKEqw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 11 Jun 2019 00:46:52 -0400
+Received: from userp2130.oracle.com ([156.151.31.86]:43276 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2389620AbfFKEqv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Jun 2019 00:19:34 -0400
-X-Sender-Id: dreamhost|x-authsender|eric@ericmesa.com
-Received: from relay.mailchannels.net (localhost [127.0.0.1])
-        by relay.mailchannels.net (Postfix) with ESMTP id 1E2CE6A10ED;
-        Tue, 11 Jun 2019 04:19:32 +0000 (UTC)
-Received: from pdx1-sub0-mail-a21.g.dreamhost.com (100-96-89-88.trex.outbound.svc.cluster.local [100.96.89.88])
-        (Authenticated sender: dreamhost)
-        by relay.mailchannels.net (Postfix) with ESMTPA id 8B5FF6A0DDE;
-        Tue, 11 Jun 2019 04:19:31 +0000 (UTC)
-X-Sender-Id: dreamhost|x-authsender|eric@ericmesa.com
-Received: from pdx1-sub0-mail-a21.g.dreamhost.com ([TEMPUNAVAIL].
- [64.90.62.162])
-        (using TLSv1.2 with cipher DHE-RSA-AES256-GCM-SHA384)
-        by 0.0.0.0:2500 (trex/5.17.2);
-        Tue, 11 Jun 2019 04:19:32 +0000
-X-MC-Relay: Neutral
-X-MailChannels-SenderId: dreamhost|x-authsender|eric@ericmesa.com
-X-MailChannels-Auth-Id: dreamhost
-X-Cooperative-Plucky: 3cd0a07d15617a0a_1560226771954_756055862
-X-MC-Loop-Signature: 1560226771954:239427049
-X-MC-Ingress-Time: 1560226771954
-Received: from pdx1-sub0-mail-a21.g.dreamhost.com (localhost [127.0.0.1])
-        by pdx1-sub0-mail-a21.g.dreamhost.com (Postfix) with ESMTP id 07E2881C78;
-        Mon, 10 Jun 2019 21:19:28 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha1; c=relaxed; d=ericmesa.com; h=from:to:cc
-        :subject:date:message-id:in-reply-to:references:mime-version
-        :content-type; s=ericmesa.com; bh=HCG+/jJmL2fUn2F2Z/x2DNYPSOI=; b=
-        HAPc14qlXsFtVlbhdaWtzDFVboqMabMyut6B72eqi3jZAw3gRi9qw0xTyShP7jMm
-        YrxtRSMjYDXLiH4KGsPU/dmC5mJfX3/iNC35eL800uG4KHy0gYSMowzPtbt/zjaS
-        3pvI521xBG3Kgido5OpeW6KYt1lmUmFX9B1s2EsFeSk=
-Received: from supermario.mushroomkingdom (pool-68-134-39-132.bltmmd.fios.verizon.net [68.134.39.132])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        (Authenticated sender: eric@ericmesa.com)
-        by pdx1-sub0-mail-a21.g.dreamhost.com (Postfix) with ESMTPSA id 51E8B81C8D;
-        Mon, 10 Jun 2019 21:19:27 -0700 (PDT)
-X-DH-BACKEND: pdx1-sub0-mail-a21
-From:   Eric Mesa <eric@ericmesa.com>
-To:     Andrei Borzenkov <arvidjaar@gmail.com>
-Cc:     Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Issues with btrfs send/receive with parents
-Date:   Tue, 11 Jun 2019 00:19:18 -0400
-Message-ID: <2008850.MjMmxLcJHu@supermario.mushroomkingdom>
-In-Reply-To: <9d9f4b67-57c1-2003-8e15-52e8460c3c9d@gmail.com>
-References: <3884539.zL6soEQT1V@supermario.mushroomkingdom> <CAJCQCtSLVxVtArLHrx0XD6J1oWOowqAnOPzeWVx3J25O7vxFQw@mail.gmail.com> <9d9f4b67-57c1-2003-8e15-52e8460c3c9d@gmail.com>
+        Tue, 11 Jun 2019 00:46:51 -0400
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x5B4i8Te159594;
+        Tue, 11 Jun 2019 04:45:53 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : from : to :
+ cc : date : message-id : in-reply-to : references : mime-version :
+ content-type : content-transfer-encoding; s=corp-2018-07-02;
+ bh=BULP8VS3uEUhwz8huJqRMSPsxLDuqcwboMo6O2QxCgM=;
+ b=odnbg5TEn4ywjV+8VR1L1L9jy0lDX46JtWT1WdOu7ZRG4yXNNnK82qDzpzAZ8Mv+dwub
+ xHXaB1QV+uq1SGsQ/0qht9uHm2tukH/CDRAcuW72XWwRUTemfkqMHZhwOnq0F5EKvATv
+ hvGkawbnRL8iP0JzPvFxaI5rZZwvMRsOj2jk9vHokbF5uYdVqf+bi+YABxfC/StLxEhm
+ Nq2EI2YfxfnBL3X3OVSSYtYUK7HhW/eiL+bjH3Y3jFNfrYeMZMQVtVxq18nPWhq35qlw
+ 9IVuESDAV813FGwpwOya1UE5PM8xf7B4utxsSULvzOSPZRczXE4H9bYDbAbscvLZf4e5 BQ== 
+Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
+        by userp2130.oracle.com with ESMTP id 2t04etjktv-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Tue, 11 Jun 2019 04:45:53 +0000
+Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
+        by aserp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x5B4j7Qe120658;
+        Tue, 11 Jun 2019 04:45:52 GMT
+Received: from pps.reinject (localhost [127.0.0.1])
+        by aserp3030.oracle.com with ESMTP id 2t04hy504s-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
+        Tue, 11 Jun 2019 04:45:52 +0000
+Received: from aserp3030.oracle.com (aserp3030.oracle.com [127.0.0.1])
+        by pps.reinject (8.16.0.27/8.16.0.27) with SMTP id x5B4jqt1121808;
+        Tue, 11 Jun 2019 04:45:52 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by aserp3030.oracle.com with ESMTP id 2t04hy504q-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Tue, 11 Jun 2019 04:45:52 +0000
+Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x5B4jqvS023681;
+        Tue, 11 Jun 2019 04:45:52 GMT
+Received: from localhost (/67.169.218.210)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Mon, 10 Jun 2019 21:45:51 -0700
+Subject: [PATCH 2/4] vfs: create a generic checking function for
+ FS_IOC_FSSETXATTR
+From:   "Darrick J. Wong" <darrick.wong@oracle.com>
+To:     matthew.garrett@nebula.com, yuchao0@huawei.com, tytso@mit.edu,
+        darrick.wong@oracle.com, shaggy@kernel.org,
+        ard.biesheuvel@linaro.org, josef@toxicpanda.com, clm@fb.com,
+        adilger.kernel@dilger.ca, jk@ozlabs.org, jack@suse.com,
+        dsterba@suse.com, jaegeuk@kernel.org, viro@zeniv.linux.org.uk
+Cc:     cluster-devel@redhat.com, jfs-discussion@lists.sourceforge.net,
+        linux-efi@vger.kernel.org, reiserfs-devel@vger.kernel.org,
+        linux-kernel@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org,
+        linux-nilfs@vger.kernel.org, linux-mtd@lists.infradead.org,
+        ocfs2-devel@oss.oracle.com, linux-fsdevel@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org
+Date:   Mon, 10 Jun 2019 21:45:49 -0700
+Message-ID: <156022834894.3227089.18246471175409784122.stgit@magnolia>
+In-Reply-To: <156022833285.3227089.11990489625041926920.stgit@magnolia>
+References: <156022833285.3227089.11990489625041926920.stgit@magnolia>
+User-Agent: StGit/0.17.1-dirty
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart17733267.UCKWHnz3sf"; micalg="pgp-sha256"; protocol="application/pgp-signature"
-X-VR-OUT-STATUS: OK
-X-VR-OUT-SCORE: -100
-X-VR-OUT-SPAMCAUSE: gggruggvucftvghtrhhoucdtuddrgeduuddrudehfedgjeelucetufdoteggodetrfdotffvucfrrhhofhhilhgvmecuggftfghnshhusghstghrihgsvgdpffftgfetoffjqffuvfenuceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmnecujfgurhephffvufffkfgjfhggtgesghdtreertddtjeenucfhrhhomhepgfhrihgtucfovghsrgcuoegvrhhitgesvghrihgtmhgvshgrrdgtohhmqeenucffohhmrghinhepieegqdhlihhnuhigqdhgnhhurdhsohenucfkphepieekrddufeegrdefledrudefvdenucfrrghrrghmpehmohguvgepshhmthhppdhhvghlohepshhuphgvrhhmrghrihhordhmuhhshhhrohhomhhkihhnghguohhmpdhinhgvthepieekrddufeegrdefledrudefvddprhgvthhurhhnqdhprghthhepgfhrihgtucfovghsrgcuoegvrhhitgesvghrihgtmhgvshgrrdgtohhmqedpmhgrihhlfhhrohhmpegvrhhitgesvghrihgtmhgvshgrrdgtohhmpdhnrhgtphhtthhopehlihhnuhigqdgsthhrfhhssehvghgvrhdrkhgvrhhnvghlrdhorhhgnecuvehluhhsthgvrhfuihiivgeptd
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9284 signatures=668687
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=2 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1906110033
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
---nextPart17733267.UCKWHnz3sf
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="UTF-8"
+From: Darrick J. Wong <darrick.wong@oracle.com>
 
-On Monday, June 10, 2019 11:39:53 PM EDT Andrei Borzenkov wrote:
-> 11.06.2019 4:10, Chris Murphy =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
-> > It's most useful if you show exact commands because actually it's not
-> > always obvious to everyone what the logic should be and the error
-> > handling doesn't always stop a user from doing something that doesn't
-> > make a lot of sense. We need to know the name of the rw subvolume; the
-> > command to snapshot it; the full send/receive command for that first
-> > snapshot; the command for a subsequent snapshot; and the command to
-> > incrementally send/receive it.
->=20
-> And the actual output of each command, not description what user thinks
-> has happened.
+Create a generic checking function for the incoming FS_IOC_FSSETXATTR
+fsxattr values so that we can standardize some of the implementation
+behaviors.
 
-Here is a new session where I'll capture everything - well, on the defrag I=
-'ll=20
-do a snip.
-
-#btrfs fi defrag -v -r /home/
-
-=2E..there follows a list of files that just scrolls infinitely....
-/home/ermesa/.dropbox-dist/dropbox-lnx.x86_64-74.4.115/_bisect.cpython-37m-
-x86_64-linux-gnu.so
-/home/ermesa/.dropbox-dist/dropbox-lnx.x86_64-74.4.115/
-tornado.speedups.cpython-37m-x86_64-linux-gnu.so
-/home/ermesa/.bash_history
-total 1 failures
-
-# sync
-
-# btrfs sub snap -r /home/ /home/.snapshots/2019-06-10-2353
-Create a readonly snapshot of '/home/' in '/home/.snapshots/2019-06-10-2353'
-
-# btrfs send -vvv -p /home/.snapshots/2019-06-10-1718/ /home/.snapshots/
-2019-06-10-2353/ | ssh root@tanukimario btrfs receive /media/backups/backup=
-s1/
-supermario-home
-At subvol /home/.snapshots/2019-06-10-2353/
-ERROR: link ermesa/.mozilla/firefox/n35gu0fb.default/bookmarkbackups/
-bookmarks-2019-06-10_679_I1bs5PtgsPwtyXvcvcRdSg=3D=3D.jsonlz4 -> ermesa/.mo=
-zilla/
-firefox/n35gu0fb.default/bookmarkbackups/
-bookmarks-2019-06-09_679_I1bs5PtgsPwtyXvcvcRdSg=3D=3D.jsonlz4 failed: No su=
-ch file=20
-or directory
-
-Same error as before. So I go to tanukimario and del the errored subvol. Le=
-t=20
-me try with -vvv on the receive as well. Well, that produces a ridiculous=20
-scrolling list that I can't possible capture. Perhaps just -v? No, that's t=
-he=20
-same. So then I tried this command:
-
-# btrfs send -vvv -p /home/.snapshots/2019-06-10-1718/ /home/.snapshots/
-2019-06-10-2353/ | ssh root@tanukimario btrfs receive -vvv /media/backups/
-backups1/supermario-home > receive.log
-
-But my bash-fu was bad and it didn't put anything into the log other than "=
-At=20
-snapshot..." So yeah....
-
-What scrolled on my screen ended like this:
+Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+---
+ fs/btrfs/ioctl.c   |   21 +++++++++-------
+ fs/ext4/ioctl.c    |   27 ++++++++++++++------
+ fs/f2fs/file.c     |   26 ++++++++++++++-----
+ fs/inode.c         |   17 +++++++++++++
+ fs/xfs/xfs_ioctl.c |   70 ++++++++++++++++++++++++++++++----------------------
+ include/linux/fs.h |    3 ++
+ 6 files changed, 111 insertions(+), 53 deletions(-)
 
 
-write ermesa/.cache/mozilla/firefox/n35gu0fb.default/cache2/entries/
-32C1CAC72D7CACC3630A470C6622283DA500617A - offset=3D540672 length=3D49152
-write ermesa/.cache/mozilla/firefox/n35gu0fb.default/cache2/entries/
-32C1CAC72D7CACC3630A470C6622283DA500617A - offset=3D589824 length=3D49152
-write ermesa/.cache/mozilla/firefox/n35gu0fb.default/cache2/entries/
-32C1CAC72D7CACC3630A470C6622283DA500617A - offset=3D638976 length=3D49152
-write ermesa/.cache/mozilla/firefox/n35gu0fb.default/cache2/entries/
-32C1CAC72D7CACC3630A470C6622283DA500617A - offset=3D688128 length=3D34158
-utimes ermesa/.cache/mozilla/firefox/n35gu0fb.default/cache2/entries/
-32C1CAC72D7CACC3630A470C6622283DA500617A
-write ermesa/.cache/mozilla/firefox/n35gu0fb.default/cache2/entries/
-DC0F9B96CE8C66CE51826341395D9B8805053D05 - offset=3D0 length=3D49152
-write ermesa/.cache/mozilla/firefox/n35gu0fb.default/cache2/entries/
-DC0F9B96CE8C66CE51826341395D9B8805053D05 - offset=3D49152 length=3D49152
-write ermesa/.cache/mozilla/firefox/n35gu0fb.default/cache2/entries/
-DC0F9B96CE8C66CE51826341395D9B8805053D05 - offset=3D98304 length=3D49152
-write ermesa/.cache/mozilla/firefox/n35gu0fb.default/cache2/entries/
-DC0F9B96CE8C66CE51826341395D9B8805053D05 - offset=3D147456 length=3D49152
-write ermesa/.cache/mozilla/firefox/n35gu0fb.default/cache2/entries/
-DC0F9B96CE8C66CE51826341395D9B8805053D05 - offset=3D196608 length=3D11390
-utimes ermesa/.cache/mozilla/firefox/n35gu0fb.default/cache2/entries/
-DC0F9B96CE8C66CE51826341395D9B8805053D05
-unlink ermesa/.cache/mozilla/firefox/n35gu0fb.default/cache2/entries/
-=46EFC32BF08374B9F91B5B002FF51DF3DFB21B667
-utimes ermesa/.cache/mozilla/firefox/n35gu0fb.default/cache2/entries
-write ermesa/.cache/mozilla/firefox/n35gu0fb.default/cache2/entries/
-177BF2896EEBDB17A538A6ACB13C62925D0E84CA - offset=3D0 length=3D12280
-utimes ermesa/.cache/mozilla/firefox/n35gu0fb.default/cache2/entries/
-177BF2896EEBDB17A538A6ACB13C62925D0E84CA
-write ermesa/.cache/mozilla/firefox/n35gu0fb.default/cache2/entries/
-A0BC2B69D3EACA6005AFF72A4EC168ECC4DFC764 - offset=3D0 length=3D220
-utimes ermesa/.cache/mozilla/firefox/n35gu0fb.default/cache2/entries/
-A0BC2B69D3EACA6005AFF72A4EC168ECC4DFC764
-unlink ermesa/.cache/ksycoca5_en_cJ+y22ar1ZzIcHsefGXiujDwk34=3D
-unlink ermesa/.cache/ksycoca5
-utimes ermesa/.cache
-utimes ermesa/.cache
-link ermesa/.mozilla/firefox/n35gu0fb.default/bookmarkbackups/
-bookmarks-2019-06-10_679_I1bs5PtgsPwtyXvcvcRdSg=3D=3D.jsonlz4 -> ermesa/.mo=
-zilla/
-firefox/n35gu0fb.default/bookmarkbackups/
-bookmarks-2019-06-09_679_I1bs5PtgsPwtyXvcvcRdSg=3D=3D.jsonlz4
-ERROR: link ermesa/.mozilla/firefox/n35gu0fb.default/bookmarkbackups/
-bookmarks-2019-06-10_679_I1bs5PtgsPwtyXvcvcRdSg=3D=3D.jsonlz4 -> ermesa/.mo=
-zilla/
-firefox/n35gu0fb.default/bookmarkbackups/
-bookmarks-2019-06-09_679_I1bs5PtgsPwtyXvcvcRdSg=3D=3D.jsonlz4 failed: No su=
-ch file=20
-or directory
-
-=2D-
-Eric Mesa
---nextPart17733267.UCKWHnz3sf
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAABCAAdFiEEBs24pwhCu/Z7g0Sb2bE1K6FAnEUFAlz/K8YACgkQ2bE1K6FA
-nEX87QgA0AMPhT6bUHgWJphZFD0X0LLA9VO93E6hCy36tUlkHuU7bs9+1rn98LLP
-TU4t3SNL7yk5S48J//uHyhPlPZgBoNb6Wox/TfKaIKu5QsZ7lxXU4iCEouzY517+
-cUMXAgyNEOFq45AyymWJugu5QjVtvbx7xR+XEQXuqaLaGZwHOYzG3Y3VaK0pCFq+
-XalqHuyICIjQAgesY2oRahDfp+FPsjmCsspAsQhMzicEdeuRwfTxy8So3aZvl8R/
-MHdqyPaoYw4x2JZDOR0uSaVOYAZ20wbxNq6TyJDU0mOpprsEtP4nfG4Pf4ahxWCx
-ogaY8IXmxXyHUOi4QFq9QmJW+uKTJQ==
-=5QHE
------END PGP SIGNATURE-----
-
---nextPart17733267.UCKWHnz3sf--
-
-
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index f408aa93b0cf..7ddda5b4b6a6 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -366,6 +366,13 @@ static int check_xflags(unsigned int flags)
+ 	return 0;
+ }
+ 
++static void __btrfs_ioctl_fsgetxattr(struct btrfs_inode *binode,
++				     struct fsxattr *fa)
++{
++	memset(fa, 0, sizeof(*fa));
++	fa->fsx_xflags = btrfs_inode_flags_to_xflags(binode->flags);
++}
++
+ /*
+  * Set the xflags from the internal inode flags. The remaining items of fsxattr
+  * are zeroed.
+@@ -375,8 +382,7 @@ static int btrfs_ioctl_fsgetxattr(struct file *file, void __user *arg)
+ 	struct btrfs_inode *binode = BTRFS_I(file_inode(file));
+ 	struct fsxattr fa;
+ 
+-	memset(&fa, 0, sizeof(fa));
+-	fa.fsx_xflags = btrfs_inode_flags_to_xflags(binode->flags);
++	__btrfs_ioctl_fsgetxattr(binode, &fa);
+ 
+ 	if (copy_to_user(arg, &fa, sizeof(fa)))
+ 		return -EFAULT;
+@@ -390,7 +396,7 @@ static int btrfs_ioctl_fssetxattr(struct file *file, void __user *arg)
+ 	struct btrfs_inode *binode = BTRFS_I(inode);
+ 	struct btrfs_root *root = binode->root;
+ 	struct btrfs_trans_handle *trans;
+-	struct fsxattr fa;
++	struct fsxattr fa, old_fa;
+ 	unsigned old_flags;
+ 	unsigned old_i_flags;
+ 	int ret = 0;
+@@ -421,13 +427,10 @@ static int btrfs_ioctl_fssetxattr(struct file *file, void __user *arg)
+ 	old_flags = binode->flags;
+ 	old_i_flags = inode->i_flags;
+ 
+-	/* We need the capabilities to change append-only or immutable inode */
+-	if (((old_flags & (BTRFS_INODE_APPEND | BTRFS_INODE_IMMUTABLE)) ||
+-	     (fa.fsx_xflags & (FS_XFLAG_APPEND | FS_XFLAG_IMMUTABLE))) &&
+-	    !capable(CAP_LINUX_IMMUTABLE)) {
+-		ret = -EPERM;
++	__btrfs_ioctl_fsgetxattr(binode, &old_fa);
++	ret = vfs_ioc_fssetxattr_check(inode, &old_fa, &fa);
++	if (ret)
+ 		goto out_unlock;
+-	}
+ 
+ 	if (fa.fsx_xflags & FS_XFLAG_SYNC)
+ 		binode->flags |= BTRFS_INODE_SYNC;
+diff --git a/fs/ext4/ioctl.c b/fs/ext4/ioctl.c
+index 5126ee351a84..c2f48c90ca45 100644
+--- a/fs/ext4/ioctl.c
++++ b/fs/ext4/ioctl.c
+@@ -721,6 +721,19 @@ static int ext4_ioctl_check_project(struct inode *inode, struct fsxattr *fa)
+ 	return 0;
+ }
+ 
++static void ext4_fsgetxattr(struct inode *inode, struct fsxattr *fa)
++{
++	struct ext4_inode_info *ei = EXT4_I(inode);
++
++	memset(fa, 0, sizeof(struct fsxattr));
++	fa->fsx_xflags = ext4_iflags_to_xflags(ei->i_flags & EXT4_FL_USER_VISIBLE);
++
++	if (ext4_has_feature_project(inode->i_sb)) {
++		fa->fsx_projid = (__u32)from_kprojid(&init_user_ns,
++				ei->i_projid);
++	}
++}
++
+ long ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+ {
+ 	struct inode *inode = file_inode(filp);
+@@ -1089,13 +1102,7 @@ long ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+ 	{
+ 		struct fsxattr fa;
+ 
+-		memset(&fa, 0, sizeof(struct fsxattr));
+-		fa.fsx_xflags = ext4_iflags_to_xflags(ei->i_flags & EXT4_FL_USER_VISIBLE);
+-
+-		if (ext4_has_feature_project(inode->i_sb)) {
+-			fa.fsx_projid = (__u32)from_kprojid(&init_user_ns,
+-				EXT4_I(inode)->i_projid);
+-		}
++		ext4_fsgetxattr(inode, &fa);
+ 
+ 		if (copy_to_user((struct fsxattr __user *)arg,
+ 				 &fa, sizeof(fa)))
+@@ -1104,7 +1111,7 @@ long ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+ 	}
+ 	case EXT4_IOC_FSSETXATTR:
+ 	{
+-		struct fsxattr fa;
++		struct fsxattr fa, old_fa;
+ 		int err;
+ 
+ 		if (copy_from_user(&fa, (struct fsxattr __user *)arg,
+@@ -1127,7 +1134,11 @@ long ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+ 			return err;
+ 
+ 		inode_lock(inode);
++		ext4_fsgetxattr(inode, &old_fa);
+ 		err = ext4_ioctl_check_project(inode, &fa);
++		if (err)
++			goto out;
++		err = vfs_ioc_fssetxattr_check(inode, &old_fa, &fa);
+ 		if (err)
+ 			goto out;
+ 		flags = (ei->i_flags & ~EXT4_FL_XFLAG_VISIBLE) |
+diff --git a/fs/f2fs/file.c b/fs/f2fs/file.c
+index a969d5497e03..f707de6bd4a8 100644
+--- a/fs/f2fs/file.c
++++ b/fs/f2fs/file.c
+@@ -2773,19 +2773,26 @@ static inline unsigned long f2fs_xflags_to_iflags(__u32 xflags)
+ 	return iflags;
+ }
+ 
+-static int f2fs_ioc_fsgetxattr(struct file *filp, unsigned long arg)
++static void __f2fs_ioc_fsgetxattr(struct inode *inode,
++				  struct fsxattr *fa)
+ {
+-	struct inode *inode = file_inode(filp);
+ 	struct f2fs_inode_info *fi = F2FS_I(inode);
+-	struct fsxattr fa;
+ 
+-	memset(&fa, 0, sizeof(struct fsxattr));
+-	fa.fsx_xflags = f2fs_iflags_to_xflags(fi->i_flags &
++	memset(fa, 0, sizeof(struct fsxattr));
++	fa->fsx_xflags = f2fs_iflags_to_xflags(fi->i_flags &
+ 				F2FS_FL_USER_VISIBLE);
+ 
+ 	if (f2fs_sb_has_project_quota(F2FS_I_SB(inode)))
+-		fa.fsx_projid = (__u32)from_kprojid(&init_user_ns,
++		fa->fsx_projid = (__u32)from_kprojid(&init_user_ns,
+ 							fi->i_projid);
++}
++
++static int f2fs_ioc_fsgetxattr(struct file *filp, unsigned long arg)
++{
++	struct inode *inode = file_inode(filp);
++	struct fsxattr fa;
++
++	__f2fs_ioc_fsgetxattr(inode, &fa);
+ 
+ 	if (copy_to_user((struct fsxattr __user *)arg, &fa, sizeof(fa)))
+ 		return -EFAULT;
+@@ -2820,7 +2827,7 @@ static int f2fs_ioc_fssetxattr(struct file *filp, unsigned long arg)
+ {
+ 	struct inode *inode = file_inode(filp);
+ 	struct f2fs_inode_info *fi = F2FS_I(inode);
+-	struct fsxattr fa;
++	struct fsxattr fa, old_fa;
+ 	unsigned int flags;
+ 	int err;
+ 
+@@ -2844,6 +2851,11 @@ static int f2fs_ioc_fssetxattr(struct file *filp, unsigned long arg)
+ 
+ 	inode_lock(inode);
+ 	err = f2fs_ioctl_check_project(inode, &fa);
++	if (err)
++		goto out;
++
++	__f2fs_ioc_fsgetxattr(inode, &old_fa);
++	err = vfs_ioc_fssetxattr_check(inode, &old_fa, &fa);
+ 	if (err)
+ 		goto out;
+ 	flags = (fi->i_flags & ~F2FS_FL_XFLAG_VISIBLE) |
+diff --git a/fs/inode.c b/fs/inode.c
+index 0ce60b720608..026955258a47 100644
+--- a/fs/inode.c
++++ b/fs/inode.c
+@@ -2187,3 +2187,20 @@ int vfs_ioc_setflags_check(struct inode *inode, int oldflags, int flags)
+ 	return 0;
+ }
+ EXPORT_SYMBOL(vfs_ioc_setflags_check);
++
++/* Generic function to check FS_IOC_FSSETXATTR values. */
++int vfs_ioc_fssetxattr_check(struct inode *inode, const struct fsxattr *old_fa,
++			     struct fsxattr *fa)
++{
++	/*
++	 * Can't modify an immutable/append-only file unless we have
++	 * appropriate permission.
++	 */
++	if ((old_fa->fsx_xflags ^ fa->fsx_xflags) &
++			(FS_XFLAG_IMMUTABLE | FS_XFLAG_APPEND) &&
++	    !capable(CAP_LINUX_IMMUTABLE))
++		return -EPERM;
++
++	return 0;
++}
++EXPORT_SYMBOL(vfs_ioc_fssetxattr_check);
+diff --git a/fs/xfs/xfs_ioctl.c b/fs/xfs/xfs_ioctl.c
+index d7dfc13f30f5..08c24f2f55c3 100644
+--- a/fs/xfs/xfs_ioctl.c
++++ b/fs/xfs/xfs_ioctl.c
+@@ -879,37 +879,45 @@ xfs_di2lxflags(
+ 	return flags;
+ }
+ 
+-STATIC int
+-xfs_ioc_fsgetxattr(
+-	xfs_inode_t		*ip,
+-	int			attr,
+-	void			__user *arg)
++static void
++__xfs_ioc_fsgetxattr(
++	struct xfs_inode	*ip,
++	bool			attr,
++	struct fsxattr		*fa)
+ {
+-	struct fsxattr		fa;
+-
+-	memset(&fa, 0, sizeof(struct fsxattr));
+-
+-	xfs_ilock(ip, XFS_ILOCK_SHARED);
+-	fa.fsx_xflags = xfs_ip2xflags(ip);
+-	fa.fsx_extsize = ip->i_d.di_extsize << ip->i_mount->m_sb.sb_blocklog;
+-	fa.fsx_cowextsize = ip->i_d.di_cowextsize <<
++	memset(fa, 0, sizeof(struct fsxattr));
++	fa->fsx_xflags = xfs_ip2xflags(ip);
++	fa->fsx_extsize = ip->i_d.di_extsize << ip->i_mount->m_sb.sb_blocklog;
++	fa->fsx_cowextsize = ip->i_d.di_cowextsize <<
+ 			ip->i_mount->m_sb.sb_blocklog;
+-	fa.fsx_projid = xfs_get_projid(ip);
++	fa->fsx_projid = xfs_get_projid(ip);
+ 
+ 	if (attr) {
+ 		if (ip->i_afp) {
+ 			if (ip->i_afp->if_flags & XFS_IFEXTENTS)
+-				fa.fsx_nextents = xfs_iext_count(ip->i_afp);
++				fa->fsx_nextents = xfs_iext_count(ip->i_afp);
+ 			else
+-				fa.fsx_nextents = ip->i_d.di_anextents;
++				fa->fsx_nextents = ip->i_d.di_anextents;
+ 		} else
+-			fa.fsx_nextents = 0;
++			fa->fsx_nextents = 0;
+ 	} else {
+ 		if (ip->i_df.if_flags & XFS_IFEXTENTS)
+-			fa.fsx_nextents = xfs_iext_count(&ip->i_df);
++			fa->fsx_nextents = xfs_iext_count(&ip->i_df);
+ 		else
+-			fa.fsx_nextents = ip->i_d.di_nextents;
++			fa->fsx_nextents = ip->i_d.di_nextents;
+ 	}
++}
++
++STATIC int
++xfs_ioc_fsgetxattr(
++	xfs_inode_t		*ip,
++	int			attr,
++	void			__user *arg)
++{
++	struct fsxattr		fa;
++
++	xfs_ilock(ip, XFS_ILOCK_SHARED);
++	__xfs_ioc_fsgetxattr(ip, attr, &fa);
+ 	xfs_iunlock(ip, XFS_ILOCK_SHARED);
+ 
+ 	if (copy_to_user(arg, &fa, sizeof(fa)))
+@@ -1035,15 +1043,6 @@ xfs_ioctl_setattr_xflags(
+ 	if ((fa->fsx_xflags & FS_XFLAG_DAX) && xfs_is_reflink_inode(ip))
+ 		return -EINVAL;
+ 
+-	/*
+-	 * Can't modify an immutable/append-only file unless
+-	 * we have appropriate permission.
+-	 */
+-	if (((ip->i_d.di_flags & (XFS_DIFLAG_IMMUTABLE | XFS_DIFLAG_APPEND)) ||
+-	     (fa->fsx_xflags & (FS_XFLAG_IMMUTABLE | FS_XFLAG_APPEND))) &&
+-	    !capable(CAP_LINUX_IMMUTABLE))
+-		return -EPERM;
+-
+ 	/* diflags2 only valid for v3 inodes. */
+ 	di_flags2 = xfs_flags2diflags2(ip, fa->fsx_xflags);
+ 	if (di_flags2 && ip->i_d.di_version < 3)
+@@ -1323,6 +1322,7 @@ xfs_ioctl_setattr(
+ 	xfs_inode_t		*ip,
+ 	struct fsxattr		*fa)
+ {
++	struct fsxattr		old_fa;
+ 	struct xfs_mount	*mp = ip->i_mount;
+ 	struct xfs_trans	*tp;
+ 	struct xfs_dquot	*udqp = NULL;
+@@ -1370,7 +1370,6 @@ xfs_ioctl_setattr(
+ 		goto error_free_dquots;
+ 	}
+ 
+-
+ 	if (XFS_IS_QUOTA_RUNNING(mp) && XFS_IS_PQUOTA_ON(mp) &&
+ 	    xfs_get_projid(ip) != fa->fsx_projid) {
+ 		code = xfs_qm_vop_chown_reserve(tp, ip, udqp, NULL, pdqp,
+@@ -1379,6 +1378,11 @@ xfs_ioctl_setattr(
+ 			goto error_trans_cancel;
+ 	}
+ 
++	__xfs_ioc_fsgetxattr(ip, false, &old_fa);
++	code = vfs_ioc_fssetxattr_check(VFS_I(ip), &old_fa, fa);
++	if (code)
++		goto error_trans_cancel;
++
+ 	code = xfs_ioctl_setattr_check_extsize(ip, fa);
+ 	if (code)
+ 		goto error_trans_cancel;
+@@ -1489,6 +1493,7 @@ xfs_ioc_setxflags(
+ {
+ 	struct xfs_trans	*tp;
+ 	struct fsxattr		fa;
++	struct fsxattr		old_fa;
+ 	unsigned int		flags;
+ 	int			join_flags = 0;
+ 	int			error;
+@@ -1524,6 +1529,13 @@ xfs_ioc_setxflags(
+ 		goto out_drop_write;
+ 	}
+ 
++	__xfs_ioc_fsgetxattr(ip, false, &old_fa);
++	error = vfs_ioc_fssetxattr_check(VFS_I(ip), &old_fa, &fa);
++	if (error) {
++		xfs_trans_cancel(tp);
++		goto out_drop_write;
++	}
++
+ 	error = xfs_ioctl_setattr_xflags(tp, ip, &fa);
+ 	if (error) {
+ 		xfs_trans_cancel(tp);
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 1825d055808c..8dad3c80b611 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -3548,4 +3548,7 @@ static inline struct sock *io_uring_get_socket(struct file *file)
+ 
+ int vfs_ioc_setflags_check(struct inode *inode, int oldflags, int flags);
+ 
++int vfs_ioc_fssetxattr_check(struct inode *inode, const struct fsxattr *old_fa,
++			     struct fsxattr *fa);
++
+ #endif /* _LINUX_FS_H */
 

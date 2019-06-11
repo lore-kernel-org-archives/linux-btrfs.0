@@ -2,93 +2,122 @@ Return-Path: <SRS0=4IUu=UK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+X-Spam-Status: No, score=-5.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_MUTT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A895C4321A
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Jun 2019 16:46:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F1B8AC4321A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Jun 2019 17:01:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5F9962086A
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Jun 2019 16:46:51 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CC5FD2086A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Jun 2019 17:01:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2390450AbfFKQqu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 11 Jun 2019 12:46:50 -0400
-Received: from mx2.suse.de ([195.135.220.15]:46070 "EHLO mx1.suse.de"
+        id S2404472AbfFKRB0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 11 Jun 2019 13:01:26 -0400
+Received: from mx2.suse.de ([195.135.220.15]:47948 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2390050AbfFKQqu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Jun 2019 12:46:50 -0400
+        id S2387767AbfFKRBZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 11 Jun 2019 13:01:25 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 6C197AC2C
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Jun 2019 16:46:49 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 079A0AD8F;
+        Tue, 11 Jun 2019 17:01:24 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id A90A2DA905; Tue, 11 Jun 2019 18:47:40 +0200 (CEST)
-From:   David Sterba <dsterba@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: Btrfs progs release 5.1.1
-Date:   Tue, 11 Jun 2019 18:47:40 +0200
-Message-Id: <20190611164740.14472-1-dsterba@suse.com>
-X-Mailer: git-send-email 2.21.0
+        id 403ECDA905; Tue, 11 Jun 2019 19:02:15 +0200 (CEST)
+Date:   Tue, 11 Jun 2019 19:02:15 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     fdmanana@kernel.org
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3] Btrfs: fix data loss after inode eviction, renaming
+ it, and fsync it
+Message-ID: <20190611170215.GF3563@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
+        linux-btrfs@vger.kernel.org
+References: <20190606110719.20855-1-fdmanana@kernel.org>
+ <20190607102524.32655-1-fdmanana@kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190607102524.32655-1-fdmanana@kernel.org>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+On Fri, Jun 07, 2019 at 11:25:24AM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> When we log an inode, regardless of logging it completely or only that it
+> exists, we always update it as logged (logged_trans and last_log_commit
+> fields of the inode are updated). This is generally fine and avoids future
+> attempts to log it from having to do repeated work that brings no value.
+> 
+> However, if we write data to a file, then evict its inode after all the
+> dealloc was flushed (and ordered extents completed), rename the file and
+> fsync it, we end up not logging the new extents, since the rename may
+> result in logging that the inode exists in case the parent directory was
+> logged before. The following reproducer shows and explains how this can
+> happen:
+> 
+>   $ mkfs.btrfs -f /dev/sdb
+>   $ mount /dev/sdb /mnt
+> 
+>   $ mkdir /mnt/dir
+>   $ touch /mnt/dir/foo
+>   $ touch /mnt/dir/bar
+> 
+>   # Do a direct IO write instead of a buffered write because with a
+>   # buffered write we would need to make sure dealloc gets flushed and
+>   # complete before we do the inode eviction later, and we can not do that
+>   # from user space with call to things such as sync(2) since that results
+>   # in a transaction commit as well.
+>   $ xfs_io -d -c "pwrite -S 0xd3 0 4K" /mnt/dir/bar
+> 
+>   # Keep the directory dir in use while we evict inodes. We want our file
+>   # bar's inode to be evicted but we don't want our directory's inode to
+>   # be evicted (if it were evicted too, we would not be able to reproduce
+>   # the issue since the first fsync below, of file foo, would result in a
+>   # transaction commit.
+>   $ ( cd /mnt/dir; while true; do :; done ) &
+>   $ pid=$!
+> 
+>   # Wait a bit to give time for the background process to chdir.
+>   $ sleep 0.1
+> 
+>   # Evict all inodes, except the inode for the directory dir because it is
+>   # currently in use by our background process.
+>   $ echo 2 > /proc/sys/vm/drop_caches
+> 
+>   # fsync file foo, which ends up persisting information about the parent
+>   # directory because it is a new inode.
+>   $ xfs_io -c fsync /mnt/dir/foo
+> 
+>   # Rename bar, this results in logging that this inode exists (inode item,
+>   # names, xattrs) because the parent directory is in the log.
+>   $ mv /mnt/dir/bar /mnt/dir/baz
+> 
+>   # Now fsync baz, which ends up doing absolutely nothing because of the
+>   # rename operation which logged that the inode exists only.
+>   $ xfs_io -c fsync /mnt/dir/baz
+> 
+>   <power failure>
+> 
+>   $ mount /dev/sdb /mnt
+>   $ od -t x1 -A d /mnt/dir/baz
+>   0000000
+> 
+>     --> Empty file, data we wrote is missing.
+> 
+> Fix this by not updating last_sub_trans of an inode when we are logging
+> only that it exists and the inode was not yet logged since it was loaded
+> from disk (full_sync bit set), this is enough to make btrfs_inode_in_log()
+> return false for this scenario and make us log the inode. The logged_trans
+> of the inode is still always setsince that alone is used to track if names
+> need to be deleted as part of unlink operations.
+> 
+> Fixes: 257c62e1bce03e ("Btrfs: avoid tree log commit when there are no changes")
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-btrfs-progs version 5.1.1 have been released.
-
-Changes:
-
-  * convert and mkfs will try to use optimized crc32c
-  * fi show: accept a file-backed image
-  * fi show: fix possible crash when device is deleted in parallel
-  * build:
-    * support extra flags for python bindings
-    * separate LDFLAGS for libbtrfsutil
-  * other:
-    * space reservation fixes or debugging improvements
-    * V0 extent code removed
-    * more tests and cleanups
-
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
-
-Shortlog:
-
-David Sterba (9):
-      btrfs-progs: tests: unmount testing mount point recursively
-      btrfs-progs: tests: add helper for common mkfs on TEST_DEV
-      btrfs-progs: switch to mkfs helper
-      btrfs-progs: tests: fix misc-tests/029 to run on NFS
-      btrfs-progs: tests: misc-tests/034: use sudo helper for module probing
-      btrfs-progs: test: cleanup misc-tests/034
-      btrfs-progs: fix gcc9 warning and potentially unaligned access to dev stats
-      btrfs-progs: update CHANGES for v5.1.1
-      Btrfs progs v5.1.1
-
-Joshua Watt (1):
-      btrfs-progs: build: Pass CFLAGS and LDFLAGS to Python
-
-Nikolay Borisov (2):
-      btrfs-progs: Correctly open filesystem on image file
-      btrfs-progs: tests: Test fs on image files is correctly recognised
-
-Qu Wenruo (7):
-      btrfs-progs: convert: Workaround delayed ref bug by limiting the size of a transaction
-      btrfs-progs: Output extent tree leaf if we failed to find a backref
-      btrfs-progs: Enable crc32c optimization probe for convert and mkfs
-      btrfs-progs: Cleanup BTRFS_COMPAT_EXTENT_TREE_V0
-      btrfs-progs: check/lowmem: Reset path in repair mode to avoid incorrect item from being passed to lowmem check.
-      btrfs-progs: Avoid nested chunk allocation call
-      btrfs-progs: Do metadata preallocation for fs trees and csum tree
-
-Sergei Trofimovich (1):
-      btrfs-progs: build: apply LDFLAGS to libbtrfsutil.so
-
-Su Yue (1):
-      btrfs-progs: fix invalid memory write in get_fs_info()
-
+Added to misc-next, thanks.

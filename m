@@ -2,60 +2,59 @@ Return-Path: <SRS0=BVwv=UM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_NEOMUTT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_NEOMUTT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A0918C31E49
-	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Jun 2019 15:03:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7AEB6C31E45
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Jun 2019 15:05:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 79FF8207E0
-	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Jun 2019 15:03:00 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5063F21744
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Jun 2019 15:05:12 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="uI/WQ5SJ"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="oP6ERCa1"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732853AbfFMPCn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 13 Jun 2019 11:02:43 -0400
-Received: from mail-qt1-f196.google.com ([209.85.160.196]:35734 "EHLO
-        mail-qt1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1732510AbfFMO0B (ORCPT
+        id S1732971AbfFMPEz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 13 Jun 2019 11:04:55 -0400
+Received: from mail-qt1-f195.google.com ([209.85.160.195]:40369 "EHLO
+        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1732463AbfFMORK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Jun 2019 10:26:01 -0400
-Received: by mail-qt1-f196.google.com with SMTP id d23so22763910qto.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Jun 2019 07:26:01 -0700 (PDT)
+        Thu, 13 Jun 2019 10:17:10 -0400
+Received: by mail-qt1-f195.google.com with SMTP id a15so22707904qtn.7
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Jun 2019 07:17:09 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=date:from:to:cc:subject:message-id:references:mime-version
          :content-disposition:in-reply-to:user-agent;
-        bh=7Gz4cYRh+oElC85Gy1pK6Xy10nwHn3MvUJ0ScJkTm3E=;
-        b=uI/WQ5SJ/Qt2yWiJ1l/NoXQydtuj3RBnifEE0KmNR+6FVkvydHwwsCA93oVRfFgx+5
-         BbP4HXJl+lJPEFu0NtF2YEmfE80+FvyYM15T/vSlwPRXeJ6pt7imuegIW7KylC65MCvg
-         HqplX/eVXsXZ5Oe3RwAMtqeGscFQsCJhbYU5IwTd7TsNM2qDuTmvIa0NUaGcN/Goudsi
-         pjkI7EP4IVbghzl/wKxWw0i4piIgyDi+TSc2g1oPZ/yWjj8IEXIp70nC/K98Cbo2Ncvu
-         r0cfi8q/MlVGtDGtLGM1t7f9pgXz18KeabwhOelrkXfpR/joO78cnX9fH7oHr+JZlnuW
-         HPCw==
+        bh=IdWKzce3sZz9+VK0mMGhceU7W1z4LrhQkC1c9OeYugc=;
+        b=oP6ERCa1F6T8r6pSHlZINu6LknBTF+UPLpwmpRJcH+T6FdeYawjrBm7oQ0iaSVxmjD
+         LZmwbZomBs1w1G2Z2uECjOVu4ctdMmjAbGswoZajXSueNHfNEi2kDdbB0eo5K/L6TPX7
+         gZDgT2bbG1XJxfKdQTmNc/rRjKzTRncWVcJVin9R+eQOLHXhMw81x04KLiHKKskUszQf
+         ZBhBJw5X9u7/w7EZhQAiKlEqEZsI6T8SkRldzr2n/0VkSPQGDovwNcD8pbdF8P8kD9fH
+         yrx5FvRP/YCxnPdJUo/PdMnD9HHxHisaI1pK2EJyShl5GyzSbTt0LN5tNALrEQUHkLxB
+         Gsyg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:date:from:to:cc:subject:message-id:references
          :mime-version:content-disposition:in-reply-to:user-agent;
-        bh=7Gz4cYRh+oElC85Gy1pK6Xy10nwHn3MvUJ0ScJkTm3E=;
-        b=eqBCRXkM/YoYKT9Qg0xpiZsEoZyMPlNxYvqt13n3LSjPdZaKVoo0VGGD0JLAO9R3XW
-         xeiJhiP/QAix+GwkGM5YR8+FVPh0xmqx7LJ+hGzyL0Us8VNQomP02W0Bw9J+KdXZQdHX
-         ANfuRLvaVPJNOUEY4jrsnf3dylavpNLijQ/EU9N6SH4SNwKk8OTaOU0EdHmyYAy1e+02
-         hi690obItnaXLHB/curbY1eafOfk3XsluXuHa9ajNZr38vjzo1U4EoHQrAxhWi9CK5H7
-         6sOhwa6hO8isjoKlZoCWrTODya3/0x1syu+x3kPeyyZJ+QrIDYVw262NSxKxyLlhnm9z
-         uJWg==
-X-Gm-Message-State: APjAAAWmhPvbykvPivLNjbXq2nGNWvxokLtDl/dC5vkf6BjOVd1Jnoj0
-        doAf0UL8y9q3AHuZPci/9jGyfg==
-X-Google-Smtp-Source: APXvYqxeUOEmsQrFHvHAs097IsIUaG6o5mfZFPDjwDneMLPyqTGTvnKsPGdmZfcdm7OKvfoz923ueQ==
-X-Received: by 2002:ac8:1b64:: with SMTP id p33mr77811221qtk.62.1560435960588;
-        Thu, 13 Jun 2019 07:26:00 -0700 (PDT)
+        bh=IdWKzce3sZz9+VK0mMGhceU7W1z4LrhQkC1c9OeYugc=;
+        b=PT2v7DMUbSJCVLbjNG9vOcXdBhKvZfj4pvSd3u5loKP2HahQf/DM0Tf5lSrq5smoUM
+         aIK2NZYvgWiv3S2GRD9PZOyy9eYzCqO67owpS7XI8EOiOBFbRGB42YzFcqBCMyDQ8w+e
+         ioP1XS1Z9Qo9c1SpwpLUpB6dK83kEZ+WndeA2ThIodhoDmrTpuSR40OeFey+4XxcvJH/
+         IkihV2N+yJOZrc4TeSlpSIfJxiHQlYjVOHfq3MKypm85IpwYuJAmtelh06ctjfUGFXMk
+         pg/1yN0t+gsc+0gcIA2MxoIzwrO+k5HtlXyMIHv1tGgNqTcSMYuzkZODzhzh7RfhTUAd
+         SKdQ==
+X-Gm-Message-State: APjAAAUIuNarv7W1YunoaDWiFYFfjmkazbYL4GULAQbC2ciPJG+9BtYd
+        06/L2qD1laIa0twRohsq70FTZw==
+X-Google-Smtp-Source: APXvYqx5jPsVPa9dGQd9Bui4/XGgLT6BOzvijxJlMoqU0XvFjHiv3oPKH2im4jOl3Wj+44uE9UzG2A==
+X-Received: by 2002:ac8:25dd:: with SMTP id f29mr66160028qtf.144.1560435429256;
+        Thu, 13 Jun 2019 07:17:09 -0700 (PDT)
 Received: from localhost ([2620:10d:c091:480::9d6b])
-        by smtp.gmail.com with ESMTPSA id q37sm1950915qtj.94.2019.06.13.07.25.59
+        by smtp.gmail.com with ESMTPSA id 102sm1338356qte.52.2019.06.13.07.17.08
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 13 Jun 2019 07:25:59 -0700 (PDT)
-Date:   Thu, 13 Jun 2019 10:25:58 -0400
+        Thu, 13 Jun 2019 07:17:09 -0700 (PDT)
+Date:   Thu, 13 Jun 2019 10:17:07 -0400
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     Naohiro Aota <naohiro.aota@wdc.com>
 Cc:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
@@ -67,50 +66,39 @@ Cc:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
         Matias =?utf-8?B?QmrDuHJsaW5n?= <mb@lightnvm.io>,
         Johannes Thumshirn <jthumshirn@suse.de>,
         Bart Van Assche <bvanassche@acm.org>
-Subject: Re: [PATCH 16/19] btrfs: wait existing extents before truncating
-Message-ID: <20190613142557.sexckoyaylbspran@MacBook-Pro-91.local>
+Subject: Re: [PATCH 13/19] btrfs: avoid sync IO prioritization on checksum in
+ HMZONED mode
+Message-ID: <20190613141706.tbxc5wufplfybfib@MacBook-Pro-91.local>
 References: <20190607131025.31996-1-naohiro.aota@wdc.com>
- <20190607131025.31996-17-naohiro.aota@wdc.com>
+ <20190607131025.31996-14-naohiro.aota@wdc.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190607131025.31996-17-naohiro.aota@wdc.com>
+In-Reply-To: <20190607131025.31996-14-naohiro.aota@wdc.com>
 User-Agent: NeoMutt/20180716
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Jun 07, 2019 at 10:10:22PM +0900, Naohiro Aota wrote:
-> When truncating a file, file buffers which have already been allocated but
-> not yet written may be truncated.  Truncating these buffers could cause
-> breakage of a sequential write pattern in a block group if the truncated
-> blocks are for example followed by blocks allocated to another file. To
-> avoid this problem, always wait for write out of all unwritten buffers
-> before proceeding with the truncate execution.
+On Fri, Jun 07, 2019 at 10:10:19PM +0900, Naohiro Aota wrote:
+> Btrfs prioritize sync I/Os to be handled by async checksum worker earlier.
+> As a result, checksumming sync I/Os to larger logical extent address can
+> finish faster than checksumming non-sync I/Os to smaller logical extent
+> address.
 > 
-> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
-> ---
->  fs/btrfs/inode.c | 11 +++++++++++
->  1 file changed, 11 insertions(+)
+> Since we have upper limit of number of checksum worker, it is possible that
+> sync I/Os to wait forever for non-starting checksum of I/Os for smaller
+> address.
 > 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 89542c19d09e..4e8c7921462f 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -5137,6 +5137,17 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr)
->  		btrfs_end_write_no_snapshotting(root);
->  		btrfs_end_transaction(trans);
->  	} else {
-> +		struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-> +
-> +		if (btrfs_fs_incompat(fs_info, HMZONED)) {
-> +			u64 sectormask = fs_info->sectorsize - 1;
-> +
-> +			ret = btrfs_wait_ordered_range(inode,
-> +						       newsize & (~sectormask),
-> +						       (u64)-1);
+> This situation can be reproduced by e.g. fstests btrfs/073.
+> 
+> To avoid such disordering, disable sync IO prioritization for now. Note
+> that sync I/Os anyway must wait for I/Os to smaller address to finish. So,
+> actually prioritization have no benefit in HMZONED mode.
+> 
 
-Use ALIGN().  Thanks,
+This stuff is going away once we finish the io.weight work anyway, I wouldn't
+worry about this.  Thanks,
 
 Josef

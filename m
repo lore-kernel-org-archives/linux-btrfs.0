@@ -2,161 +2,195 @@ Return-Path: <SRS0=BVwv=UM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.5 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 33443C31E45
-	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Jun 2019 16:56:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 50862C31E45
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Jun 2019 16:57:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0B98820665
-	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Jun 2019 16:56:39 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="XB0rSeJC"
+	by mail.kernel.org (Postfix) with ESMTP id 3245B20665
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Jun 2019 16:57:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2393056AbfFMQ4h (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 13 Jun 2019 12:56:37 -0400
-Received: from mout.gmx.net ([212.227.17.22]:58161 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729961AbfFMB0L (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Jun 2019 21:26:11 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1560389162;
-        bh=DRbVvTYDMmnK5Zt6hgoQCe/UvIGxdQl5A1ucykxpL/Y=;
-        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=XB0rSeJCqhtjvZJNfnS3uvr9d3elURc8/iax4ILJUJs2NEvfJtv1NAI573HDyUGr/
-         fIejrddJ15kKNNMDBnO/ycjsUmLKCrw2oXdAhMWS6X4ZhVUWREQtnzhgC+JV+HtxU3
-         bSQJMlQTnV5BH7vl1vQnBNRxKgXBxS34RHFgGBYI=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MwwZX-1iYrR420SZ-00yO4L; Thu, 13
- Jun 2019 03:26:02 +0200
-Subject: Re: [PATCH v3 1/3] btrfs: Remove "recovery" mount option
-To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20190612063657.21063-1-wqu@suse.com>
- <20190612063657.21063-2-wqu@suse.com> <20190612145825.GO3563@twin.jikos.cz>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <972c609e-5956-c2b9-6b8a-03737de6b630@gmx.com>
-Date:   Thu, 13 Jun 2019 09:25:53 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.7.0
+        id S2393176AbfFMQ5N (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 13 Jun 2019 12:57:13 -0400
+Received: from mx2.suse.de ([195.135.220.15]:48408 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1729941AbfFMQ5M (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 13 Jun 2019 12:57:12 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 13EBBADD9;
+        Thu, 13 Jun 2019 16:57:10 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 6F7C6DA897; Thu, 13 Jun 2019 18:57:57 +0200 (CEST)
+Date:   Thu, 13 Jun 2019 18:57:56 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Chris Mason <clm@fb.com>
+Cc:     dsterba@suse.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/2] Btrfs: keep pages dirty when using
+ btrfs_writepage_fixup_worker
+Message-ID: <20190613165755.GW3563@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Chris Mason <clm@fb.com>,
+        dsterba@suse.com, linux-btrfs@vger.kernel.org
+References: <20180620145612.1644763-1-clm@fb.com>
+ <20180620145612.1644763-3-clm@fb.com>
 MIME-Version: 1.0
-In-Reply-To: <20190612145825.GO3563@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="npjxtVUdrv5FCA3VnfufqWpelo2lAP7Hs"
-X-Provags-ID: V03:K1:JZMSXmFREfLGULilHsGl3dszyqIySa9HviQEULkug12gZe0yetG
- lJSAKmxctxo2TKQdMWSr3rgLBRxRDpcMf0mSA70emI/bsvRoedsIRUo2X8z/gDeYBu4pUjp
- XVeThOtOe0Kc1q4s3HeLavSjQqdVHcg5DRcnOt85kTzzRjGa6n5hi3BGLac5JQtNqabZFBO
- y+eYqd2qCm2vdRXDm6uug==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:DCrKuNy7YI8=:Tru/iCVcGXQKOkrd/qDO4m
- zUJvkxf5+9RJIBaaVUtcfiT93G+kh6hak95/WwAu/uYdyuepJrcgCfULWREEgzi3RTnSDUer2
- pez3dd4zgilY6iUlmV1Er8VA0S5Ypt81drLUDxv+iD9VGCmZWMQUZfcjqJ3c0iUfODxUTUhHx
- 8sW0DI+YuvzmeLkkhJGKkT8KhQDgt0c3PKPCIT5y2qpwHbtn9aepG0yTsApJaPrEsLd4to2W3
- WCFWCRIWtcFRM2MRuzWm2PfDsCf4cFQwNwcVUdZFvHgWXaS2lgik3bMLWRIpGbfgvRmIqqydH
- a/7+EzO+qzNw/+frQ4CqeT0H3Fxgerm479yhanbKvi9UTDNFTJkCjw/ZNsfRyM/fIAnbZBWMa
- txOi1ty4x7EPPO7wXwYVsHycJJSv6vUfOEtF6vE5ng39l+4QpYKlbNglScLYtPpwugaIBm+1b
- uRp59c/TC2gcrmFGn7I7GqNT/lLWv+9hbya+TNDWm8aXYin6+6AI8iFy0zsAM6wYoACk5lQ/O
- LVIQc+Lg3S6ITuk2sHjy15VWlsZ5J9brqUprGTb4Xg7VLqOJ30V+p2kdbMcVJ6mFaPazUenWT
- czLLzMburaSh5wtG/R4OKaAu/pzQ0hYcl/gKZb8r1Bkt6u6gDRfcUTMKDwcjGYt/jvYxP4+bu
- k4/pqhl0jmITvhg42S9hVFO43a9VhWWBXSxwm0S3L241AJIPuXopg1/+whG4zKiaZZhcgPjwH
- zIggKvyTsWAq1gQdL84pboaUtp/wNen9NrdsfF/g2ELEmyJKPHctDYP9XkRYNxZ0rF7RmH1vK
- gNdsez1yKr2sk163Nl4HoOHJAizOBn92P4WHFjBXUsZdQlDYfAoPXx1Job1bueoY3HZHVzE/s
- SK0MZjVZ3qFnAF6JoDuwhNNjGOTvyc93oSLi8VCmdoA3MqFy3v5Ux4e74Rzl71eV2jwmz38+L
- C+vvQuLJGpQXkE2SNqQ/EVh9mnSUvW20=
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20180620145612.1644763-3-clm@fb.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---npjxtVUdrv5FCA3VnfufqWpelo2lAP7Hs
-Content-Type: multipart/mixed; boundary="XWSoiklPjFFc8Iy69jdZdO4359CLgEvUM";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <972c609e-5956-c2b9-6b8a-03737de6b630@gmx.com>
-Subject: Re: [PATCH v3 1/3] btrfs: Remove "recovery" mount option
-References: <20190612063657.21063-1-wqu@suse.com>
- <20190612063657.21063-2-wqu@suse.com> <20190612145825.GO3563@twin.jikos.cz>
-In-Reply-To: <20190612145825.GO3563@twin.jikos.cz>
+Ping.
 
---XWSoiklPjFFc8Iy69jdZdO4359CLgEvUM
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-
-
-
-On 2019/6/12 =E4=B8=8B=E5=8D=8810:58, David Sterba wrote:
-> On Wed, Jun 12, 2019 at 02:36:55PM +0800, Qu Wenruo wrote:
->> Commit 8dcddfa048de ("btrfs: Introduce new mount option usebackuproot =
-to
->> replace recovery") deprecates "recovery" mount option in 2016, and it
->> has been 3 years, it should be OK to remove "recovery" mount option.
->=20
-> Well, that's what we never know if it's ok o not so the deprecated
-> options usually stay. Eg. subvolrootid is still there.
->=20
-> 3 years might sound a like a long time but there are old kernels that
-> follow the stable branches so I'd rather derive the time to removal fro=
-m
-> that. And eg 4.4 still has the 'recovery' option not among the
-> deprecated, same 4.9 and 4.14.
->=20
-> Since 4.19 it's deprecated so we'll have to wait until that is EOL,
-> Dec 2020.
->=20
-OK, I'll remove the patch from the patchset for now.
-
-Thanks,
-Qu
-
-
---XWSoiklPjFFc8Iy69jdZdO4359CLgEvUM--
-
---npjxtVUdrv5FCA3VnfufqWpelo2lAP7Hs
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl0BpiEACgkQwj2R86El
-/qgVCAf/bOTte37kVIhbsQ2dR4Aqf5yAsEMH6nEhlyIaI+S7huytvpnkrH7Lvo8U
-bC2CShpGPHv94H/n3wUIWL04uUD0Fe6kdru4B7yul5KJrQ12a71u1gAqq7qc3wF3
-ypxiMKi6aZTlFTWTA98HGFP19+HCeMImsl7HnGXE9HxMqb8Eu9q/fUftkcopy5Pf
-C3ITThaxw8tcQKyZEB2nqldCPogidGRBS8oJqYt9N+dFBsesxYxDFNnBf/lPLm21
-d5tH0Tue7FR2KWGMtAhjuoCCxDuDRDAjIPC4RQlHJbFk/gLXHwHjccKiBomh5bKe
-KxXGEMgf8dbiJa9Jgpsf3kRLQGAtGQ==
-=Q37z
------END PGP SIGNATURE-----
-
---npjxtVUdrv5FCA3VnfufqWpelo2lAP7Hs--
+On Wed, Jun 20, 2018 at 07:56:12AM -0700, Chris Mason wrote:
+> For COW, btrfs expects pages dirty pages to have been through a few setup
+> steps.  This includes reserving space for the new block allocations and marking
+> the range in the state tree for delayed allocation.
+> 
+> A few places outside btrfs will dirty pages directly, especially when unmapping
+> mmap'd pages.  In order for these to properly go through COW, we run them
+> through a fixup worker to wait for stable pages, and do the delalloc prep.
+> 
+> 87826df0ec36 added a window where the dirty pages were cleaned, but pending
+> more action from the fixup worker.  During this window, page migration can jump
+> in and relocate the page.  Once our fixup work actually starts, it finds
+> page->mapping is NULL and we end up freeing the page without ever writing it.
+> 
+> This leads to crc errors and other exciting problems, since it screws up the
+> whole statemachine for waiting for ordered extents.  The fix here is to keep
+> the page dirty while we're waiting for the fixup worker to get to work.  This
+> also makes sure the error handling in btrfs_writepage_fixup_worker does the
+> right thing with dirty bits when we run out of space.
+> 
+> Signed-off-by: Chris Mason <clm@fb.com>
+> ---
+>  fs/btrfs/inode.c | 67 +++++++++++++++++++++++++++++++++++++++++---------------
+>  1 file changed, 49 insertions(+), 18 deletions(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 0b86cf1..5538900 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -2100,11 +2100,21 @@ static void btrfs_writepage_fixup_worker(struct btrfs_work *work)
+>  	page = fixup->page;
+>  again:
+>  	lock_page(page);
+> -	if (!page->mapping || !PageDirty(page) || !PageChecked(page)) {
+> -		ClearPageChecked(page);
+> +
+> +	/*
+> +	 * before we queued this fixup, we took a reference on the page.
+> +	 * page->mapping may go NULL, but it shouldn't be moved to a
+> +	 * different address space.
+> +	 */
+> +	if (!page->mapping || !PageDirty(page) || !PageChecked(page))
+>  		goto out_page;
+> -	}
+>  
+> +	/*
+> +	 * we keep the PageChecked() bit set until we're done with the
+> +	 * btrfs_start_ordered_extent() dance that we do below.  That
+> +	 * drops and retakes the page lock, so we don't want new
+> +	 * fixup workers queued for this page during the churn.
+> +	 */
+>  	inode = page->mapping->host;
+>  	page_start = page_offset(page);
+>  	page_end = page_offset(page) + PAGE_SIZE - 1;
+> @@ -2129,33 +2139,46 @@ static void btrfs_writepage_fixup_worker(struct btrfs_work *work)
+>  
+>  	ret = btrfs_delalloc_reserve_space(inode, &data_reserved, page_start,
+>  					   PAGE_SIZE);
+> -	if (ret) {
+> -		mapping_set_error(page->mapping, ret);
+> -		end_extent_writepage(page, ret, page_start, page_end);
+> -		ClearPageChecked(page);
+> -		goto out;
+> -	 }
+> +	if (ret)
+> +		goto out_error;
+>  
+>  	ret = btrfs_set_extent_delalloc(inode, page_start, page_end, 0,
+>  					&cached_state, 0);
+> -	if (ret) {
+> -		mapping_set_error(page->mapping, ret);
+> -		end_extent_writepage(page, ret, page_start, page_end);
+> -		ClearPageChecked(page);
+> -		goto out;
+> -	}
+> +	if (ret)
+> +		goto out_error;
+>  
+> -	ClearPageChecked(page);
+> -	set_page_dirty(page);
+>  	btrfs_delalloc_release_extents(BTRFS_I(inode), PAGE_SIZE, false);
+> +
+> +	/*
+> +	 * everything went as planned, we're now the proud owners of a
+> +	 * Dirty page with delayed allocation bits set and space reserved
+> +	 * for our COW destination.
+> +	 *
+> +	 * The page was dirty when we started, nothing should have cleaned it.
+> +	 */
+> +	BUG_ON(!PageDirty(page));
+> +
+>  out:
+>  	unlock_extent_cached(&BTRFS_I(inode)->io_tree, page_start, page_end,
+>  			     &cached_state);
+>  out_page:
+> +	ClearPageChecked(page);
+>  	unlock_page(page);
+>  	put_page(page);
+>  	kfree(fixup);
+>  	extent_changeset_free(data_reserved);
+> +	return;
+> +
+> +out_error:
+> +	/*
+> +	 * We hit ENOSPC or other errors.  Update the mapping and page to
+> +	 * reflect the errors and clean the page.
+> +	 */
+> +	mapping_set_error(page->mapping, ret);
+> +	end_extent_writepage(page, ret, page_start, page_end);
+> +	clear_page_dirty_for_io(page);
+> +	SetPageError(page);
+> +	goto out;
+>  }
+>  
+>  /*
+> @@ -2179,6 +2202,13 @@ static int btrfs_writepage_start_hook(struct page *page, u64 start, u64 end)
+>  	if (TestClearPagePrivate2(page))
+>  		return 0;
+>  
+> +	/*
+> +	 * PageChecked is set below when we create a fixup worker for this page,
+> +	 * don't try to create another one if we're already PageChecked()
+> +	 *
+> +	 * The extent_io writepage code will redirty the page if we send
+> +	 * back EAGAIN.
+> +	 */
+>  	if (PageChecked(page))
+>  		return -EAGAIN;
+>  
+> @@ -2192,7 +2222,8 @@ static int btrfs_writepage_start_hook(struct page *page, u64 start, u64 end)
+>  			btrfs_writepage_fixup_worker, NULL, NULL);
+>  	fixup->page = page;
+>  	btrfs_queue_work(fs_info->fixup_workers, &fixup->work);
+> -	return -EBUSY;
+> +
+> +	return -EAGAIN;
+>  }
+>  
+>  static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
+> -- 
+> 2.9.5
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

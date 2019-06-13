@@ -2,219 +2,134 @@ Return-Path: <SRS0=BVwv=UM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+X-Spam-Status: No, score=-8.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_MUTT autolearn=ham autolearn_force=no version=3.4.0
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B81B2C31E45
-	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Jun 2019 16:02:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0BC6AC31E4B
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Jun 2019 16:34:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8C06420665
-	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Jun 2019 16:02:33 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E327B20449
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Jun 2019 16:34:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2390728AbfFMQC0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 13 Jun 2019 12:02:26 -0400
-Received: from mx2.suse.de ([195.135.220.15]:58286 "EHLO mx1.suse.de"
+        id S1730755AbfFMQer (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 13 Jun 2019 12:34:47 -0400
+Received: from mx2.suse.de ([195.135.220.15]:40108 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1731409AbfFMQCZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Jun 2019 12:02:25 -0400
+        id S1730753AbfFMHuF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 13 Jun 2019 03:50:05 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A8940AE36
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Jun 2019 16:02:23 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 0EBA9DA897; Thu, 13 Jun 2019 18:03:13 +0200 (CEST)
-Date:   Thu, 13 Jun 2019 18:03:13 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
-Subject: Re: [PATCH] btrfs: qgroup: Don't hold qgroup_ioctl_lock in
- btrfs_qgroup_inherit()
-Message-ID: <20190613160313.GV3563@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
-References: <20190613093034.25463-1-wqu@suse.com>
+        by mx1.suse.de (Postfix) with ESMTP id 87A1AAD1E
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Jun 2019 07:50:03 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: delayed-ref: Fix memory leak and use-after-free caused by wrong condition to free delayed ref/head.
+Date:   Thu, 13 Jun 2019 15:49:59 +0800
+Message-Id: <20190613074959.20163-1-wqu@suse.com>
+X-Mailer: git-send-email 2.22.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190613093034.25463-1-wqu@suse.com>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Jun 13, 2019 at 05:30:34PM +0800, Qu Wenruo wrote:
-> [BUG]
-> Lockdep will report the following circular locking dependency:
-> 
->   WARNING: possible circular locking dependency detected
->   5.2.0-rc2-custom #24 Tainted: G           O
->   ------------------------------------------------------
->   btrfs/8631 is trying to acquire lock:
->   000000002536438c (&fs_info->qgroup_ioctl_lock#2){+.+.}, at: btrfs_qgroup_inherit+0x40/0x620 [btrfs]
-> 
->   but task is already holding lock:
->   000000003d52cc23 (&fs_info->tree_log_mutex){+.+.}, at: create_pending_snapshot+0x8b6/0xe60 [btrfs]
-> 
->   which lock already depends on the new lock.
-> 
->   the existing dependency chain (in reverse order) is:
-> 
->   -> #2 (&fs_info->tree_log_mutex){+.+.}:
->          __mutex_lock+0x76/0x940
->          mutex_lock_nested+0x1b/0x20
->          btrfs_commit_transaction+0x475/0xa00 [btrfs]
->          btrfs_commit_super+0x71/0x80 [btrfs]
->          close_ctree+0x2bd/0x320 [btrfs]
->          btrfs_put_super+0x15/0x20 [btrfs]
->          generic_shutdown_super+0x72/0x110
->          kill_anon_super+0x18/0x30
->          btrfs_kill_super+0x16/0xa0 [btrfs]
->          deactivate_locked_super+0x3a/0x80
->          deactivate_super+0x51/0x60
->          cleanup_mnt+0x3f/0x80
->          __cleanup_mnt+0x12/0x20
->          task_work_run+0x94/0xb0
->          exit_to_usermode_loop+0xd8/0xe0
->          do_syscall_64+0x210/0x240
->          entry_SYSCALL_64_after_hwframe+0x49/0xbe
-> 
->   -> #1 (&fs_info->reloc_mutex){+.+.}:
->          __mutex_lock+0x76/0x940
->          mutex_lock_nested+0x1b/0x20
->          btrfs_commit_transaction+0x40d/0xa00 [btrfs]
->          btrfs_quota_enable+0x2da/0x730 [btrfs]
->          btrfs_ioctl+0x2691/0x2b40 [btrfs]
->          do_vfs_ioctl+0xa9/0x6d0
->          ksys_ioctl+0x67/0x90
->          __x64_sys_ioctl+0x1a/0x20
->          do_syscall_64+0x65/0x240
->          entry_SYSCALL_64_after_hwframe+0x49/0xbe
-> 
->   -> #0 (&fs_info->qgroup_ioctl_lock#2){+.+.}:
->          lock_acquire+0xa7/0x190
->          __mutex_lock+0x76/0x940
->          mutex_lock_nested+0x1b/0x20
->          btrfs_qgroup_inherit+0x40/0x620 [btrfs]
->          create_pending_snapshot+0x9d7/0xe60 [btrfs]
->          create_pending_snapshots+0x94/0xb0 [btrfs]
->          btrfs_commit_transaction+0x415/0xa00 [btrfs]
->          btrfs_mksubvol+0x496/0x4e0 [btrfs]
->          btrfs_ioctl_snap_create_transid+0x174/0x180 [btrfs]
->          btrfs_ioctl_snap_create_v2+0x11c/0x180 [btrfs]
->          btrfs_ioctl+0xa90/0x2b40 [btrfs]
->          do_vfs_ioctl+0xa9/0x6d0
->          ksys_ioctl+0x67/0x90
->          __x64_sys_ioctl+0x1a/0x20
->          do_syscall_64+0x65/0x240
->          entry_SYSCALL_64_after_hwframe+0x49/0xbe
-> 
->   other info that might help us debug this:
-> 
->   Chain exists of:
->     &fs_info->qgroup_ioctl_lock#2 --> &fs_info->reloc_mutex --> &fs_info->tree_log_mutex
-> 
->    Possible unsafe locking scenario:
-> 
->          CPU0                    CPU1
->          ----                    ----
->     lock(&fs_info->tree_log_mutex);
->                                  lock(&fs_info->reloc_mutex);
->                                  lock(&fs_info->tree_log_mutex);
->     lock(&fs_info->qgroup_ioctl_lock#2);
-> 
->    *** DEADLOCK ***
-> 
->   6 locks held by btrfs/8631:
->    #0: 00000000ed8f23f6 (sb_writers#12){.+.+}, at: mnt_want_write_file+0x28/0x60
->    #1: 000000009fb1597a (&type->i_mutex_dir_key#10/1){+.+.}, at: btrfs_mksubvol+0x70/0x4e0 [btrfs]
->    #2: 0000000088c5ad88 (&fs_info->subvol_sem){++++}, at: btrfs_mksubvol+0x128/0x4e0 [btrfs]
->    #3: 000000009606fc3e (sb_internal#2){.+.+}, at: start_transaction+0x37a/0x520 [btrfs]
->    #4: 00000000f82bbdf5 (&fs_info->reloc_mutex){+.+.}, at: btrfs_commit_transaction+0x40d/0xa00 [btrfs]
->    #5: 000000003d52cc23 (&fs_info->tree_log_mutex){+.+.}, at: create_pending_snapshot+0x8b6/0xe60 [btrfs]
-> 
-> [CAUSE]
-> Due to the delayed subvolume creation, we need to call
-> btrfs_qgroup_inherit() inside commit transaction code, with a lot of
-> other mutex hold.
-> This hell of lock chain can lead to above problem.
-> 
-> [FIX]
-> On the other hand, we don't really need to hold qgroup_ioctl_lock if
-> we're in the context of create_pending_snapshot().
-> As in that context, we're the only one being able to modify qgroup.
-> 
-> All other qgroup functions which needs qgroup_ioctl_lock are either
-> holding a transaction handle, or will start a new transaction:
->   Functions will start a new transaction():
->   * btrfs_quota_enable()
->   * btrfs_quota_disable()
->   Functions hold a transaction handler:
->   * btrfs_add_qgroup_relation()
->   * btrfs_del_qgroup_relation()
->   * btrfs_create_qgroup()
->   * btrfs_remove_qgroup()
->   * btrfs_limit_qgroup()
->   * btrfs_qgroup_inherit() call inside create_subvol()
-> 
-> So we have a higher level protection provided by transaction, thus we
-> don't need to always hold qgroup_ioctl_lock in btrfs_qgroup_inherit().
-> 
-> Only the btrfs_qgroup_inherit() call in create_subvol() needs to hold
-> qgroup_ioctl_lock, while the btrfs_qgroup_inherit() call in
-> create_pending_snapshot() is already protected by transaction.
-> 
-> So the fix is to detect the context by checking
-> trans->transaction->state.
-> If we're at TRANS_STATE_COMMIT_DOING, then we're in commit transaction
-> context and no need to get the mutex.
-> 
-> Reported-by: Nikolay Borisov <nborisov@suse.com>
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  fs/btrfs/qgroup.c | 24 ++++++++++++++++++++++--
->  1 file changed, 22 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> index 3e6ffbbd8b0a..f8a3c1b0a15a 100644
-> --- a/fs/btrfs/qgroup.c
-> +++ b/fs/btrfs/qgroup.c
-> @@ -2614,6 +2614,7 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,
->  	int ret = 0;
->  	int i;
->  	u64 *i_qgroups;
-> +	bool committing = false;
->  	struct btrfs_fs_info *fs_info = trans->fs_info;
->  	struct btrfs_root *quota_root;
->  	struct btrfs_qgroup *srcgroup;
-> @@ -2621,7 +2622,25 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,
->  	u32 level_size = 0;
->  	u64 nums;
->  
-> -	mutex_lock(&fs_info->qgroup_ioctl_lock);
-> +	/*
-> +	 * There are only two callers of this function.
-> +	 *
-> +	 * One in create_subvol() in the ioctl context, which needs to hold
-> +	 * the qgroup_ioctl_lock.
-> +	 *
-> +	 * The other one in create_pending_snapshot() where no other qgroup
-> +	 * code can modify the fs as they all need to either start a new trans
-> +	 * or hold a trans handler, thus we don't need to hold
-> +	 * qgroup_ioctl_lock.
-> +	 * This would avoid long and complex lock chain and make lockdep happy.
-> +	 */
-> +	spin_lock(&fs_info->trans_lock);
-> +	if (trans->transaction->state == TRANS_STATE_COMMIT_DOING)
-> +		committing = true;
-> +	spin_unlock(&fs_info->trans_lock);
-> +
-> +	if (!committing)
-> +		mutex_lock(&fs_info->qgroup_ioctl_lock);
+[BUG]
+When btrfs-progs is compiled with D=asan, it can't pass even the very
+basic fsck tests due to btrfs-image has memory leak:
+  === START TEST /home/adam/btrfs/btrfs-progs/tests//fsck-tests/001-bad-file-extent-bytenr
+  restoring image default_case.img
 
-That's different from what I had in mind but is better in a way. The
-conditional locking is not always a good option but I think it'll be ok
-as the function is not heavily used in random contexts and it's
-commented.
+  =================================================================
+  ==7790==ERROR: LeakSanitizer: detected memory leaks
+
+  Direct leak of 104 byte(s) in 1 object(s) allocated from:
+      #0 0x7f1d3b738389 in __interceptor_malloc /build/gcc/src/gcc/libsanitizer/asan/asan_malloc_linux.cc:86
+      #1 0x560ca6b7f4ff in btrfs_add_delayed_tree_ref /home/adam/btrfs/btrfs-progs/delayed-ref.c:569
+      #2 0x560ca6af2d0b in btrfs_free_extent /home/adam/btrfs/btrfs-progs/extent-tree.c:2155
+      #3 0x560ca6ac16ca in __btrfs_cow_block /home/adam/btrfs/btrfs-progs/ctree.c:319
+      #4 0x560ca6ac1d8c in btrfs_cow_block /home/adam/btrfs/btrfs-progs/ctree.c:383
+      #5 0x560ca6ac6c8e in btrfs_search_slot /home/adam/btrfs/btrfs-progs/ctree.c:1153
+      #6 0x560ca6ab7e83 in fixup_device_size image/main.c:2113
+      #7 0x560ca6ab9279 in fixup_chunks_and_devices image/main.c:2333
+      #8 0x560ca6ab9ada in restore_metadump image/main.c:2455
+      #9 0x560ca6abaeba in main image/main.c:2723
+      #10 0x7f1d3b148ce2 in __libc_start_main (/usr/lib/libc.so.6+0x23ce2)
+
+  ... tons of similar leakage for delayed_tree_ref ...
+
+  Direct leak of 96 byte(s) in 1 object(s) allocated from:
+      #0 0x7f1d3b738389 in __interceptor_malloc /build/gcc/src/gcc/libsanitizer/asan/asan_malloc_linux.cc:86
+      #1 0x560ca6b7f5fb in btrfs_add_delayed_tree_ref /home/adam/btrfs/btrfs-progs/delayed-ref.c:583
+      #2 0x560ca6af5679 in alloc_tree_block /home/adam/btrfs/btrfs-progs/extent-tree.c:2503
+      #3 0x560ca6af57ac in btrfs_alloc_free_block /home/adam/btrfs/btrfs-progs/extent-tree.c:2524
+      #4 0x560ca6ac115b in __btrfs_cow_block /home/adam/btrfs/btrfs-progs/ctree.c:290
+      #5 0x560ca6ac1d8c in btrfs_cow_block /home/adam/btrfs/btrfs-progs/ctree.c:383
+      #6 0x560ca6b7bb15 in commit_tree_roots /home/adam/btrfs/btrfs-progs/transaction.c:98
+      #7 0x560ca6b7c525 in btrfs_commit_transaction /home/adam/btrfs/btrfs-progs/transaction.c:192
+      #8 0x560ca6ab92be in fixup_chunks_and_devices image/main.c:2337
+      #9 0x560ca6ab9ada in restore_metadump image/main.c:2455
+      #10 0x560ca6abaeba in main image/main.c:2723
+      #11 0x7f1d3b148ce2 in __libc_start_main (/usr/lib/libc.so.6+0x23ce2)
+
+  ... tons of similar leakage for delayed_ref_head ...
+
+  SUMMARY: AddressSanitizer: 1600 byte(s) leaked in 16 allocation(s).
+  failed to restore image ./default_case.img
+
+[CAUSE]
+Commit c6039704c580 ("btrfs-progs: Add delayed refs infrastructure")
+introduces delayed ref infrastructure for free space tree, however the
+refcount_dec_and_test() from kernel code is wrongly backported.
+
+refcount_dec_and_test() will return true if the refcount reaches 0.
+So kernel code will free the allocated space as expected:
+	if (refcount_dec_and_test(&ref->refs)) {
+		kmem_cache_free();
+	}
+
+However btrfs-progs backport is using the opposite condition:
+	if (--ref->refs) {
+		kfree();
+	}
+
+This will not free the memory for the last user, but for refs >= 2.
+Causing both use-after-free and memory leak for any offline write
+operation.
+
+[FIX]
+Fix the (--ref->refs) condition to (--ref->refs == 0) to fix the
+backport error.
+
+Fixes: c6039704c580 ("btrfs-progs: Add delayed refs infrastructure")
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ delayed-ref.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/delayed-ref.h b/delayed-ref.h
+index efc855eff621..2ccfd27c2b95 100644
+--- a/delayed-ref.h
++++ b/delayed-ref.h
+@@ -161,7 +161,7 @@ btrfs_free_delayed_extent_op(struct btrfs_delayed_extent_op *op)
+ static inline void btrfs_put_delayed_ref(struct btrfs_delayed_ref_node *ref)
+ {
+ 	WARN_ON(ref->refs == 0);
+-	if (--ref->refs) {
++	if (--ref->refs == 0) {
+ 		WARN_ON(ref->in_tree);
+ 		switch (ref->type) {
+ 		case BTRFS_TREE_BLOCK_REF_KEY:
+@@ -180,7 +180,7 @@ static inline void btrfs_put_delayed_ref(struct btrfs_delayed_ref_node *ref)
+ 
+ static inline void btrfs_put_delayed_ref_head(struct btrfs_delayed_ref_head *head)
+ {
+-	if (--head->refs)
++	if (--head->refs == 0)
+ 		kfree(head);
+ }
+ 
+-- 
+2.22.0
+

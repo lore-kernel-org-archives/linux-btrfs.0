@@ -4,57 +4,57 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-2.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_NEOMUTT autolearn=unavailable autolearn_force=no version=3.4.0
+	USER_AGENT_NEOMUTT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7AEB6C31E45
-	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Jun 2019 15:05:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9A9F7C31E4A
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Jun 2019 15:05:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5063F21744
-	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Jun 2019 15:05:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7485F20B7C
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Jun 2019 15:05:19 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="oP6ERCa1"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="U4iRJrkg"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732971AbfFMPEz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 13 Jun 2019 11:04:55 -0400
-Received: from mail-qt1-f195.google.com ([209.85.160.195]:40369 "EHLO
-        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1732463AbfFMORK (ORCPT
+        id S1733201AbfFMPFS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 13 Jun 2019 11:05:18 -0400
+Received: from mail-qk1-f196.google.com ([209.85.222.196]:41042 "EHLO
+        mail-qk1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1732450AbfFMOPw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Jun 2019 10:17:10 -0400
-Received: by mail-qt1-f195.google.com with SMTP id a15so22707904qtn.7
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Jun 2019 07:17:09 -0700 (PDT)
+        Thu, 13 Jun 2019 10:15:52 -0400
+Received: by mail-qk1-f196.google.com with SMTP id c11so12814391qkk.8
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Jun 2019 07:15:51 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=date:from:to:cc:subject:message-id:references:mime-version
          :content-disposition:in-reply-to:user-agent;
-        bh=IdWKzce3sZz9+VK0mMGhceU7W1z4LrhQkC1c9OeYugc=;
-        b=oP6ERCa1F6T8r6pSHlZINu6LknBTF+UPLpwmpRJcH+T6FdeYawjrBm7oQ0iaSVxmjD
-         LZmwbZomBs1w1G2Z2uECjOVu4ctdMmjAbGswoZajXSueNHfNEi2kDdbB0eo5K/L6TPX7
-         gZDgT2bbG1XJxfKdQTmNc/rRjKzTRncWVcJVin9R+eQOLHXhMw81x04KLiHKKskUszQf
-         ZBhBJw5X9u7/w7EZhQAiKlEqEZsI6T8SkRldzr2n/0VkSPQGDovwNcD8pbdF8P8kD9fH
-         yrx5FvRP/YCxnPdJUo/PdMnD9HHxHisaI1pK2EJyShl5GyzSbTt0LN5tNALrEQUHkLxB
-         Gsyg==
+        bh=sbvrt5MZdKQZtIDBTdvl9Mov/hKhPttcrBddG8hlTHo=;
+        b=U4iRJrkgboqXD/9ecVEMGKPpyhkTFeK6mRiuk3Hy6ZSjwXCUQjTvFcN1/3TbP0NwfD
+         Cc0zRy15Gx4ZrC16COD805lwAeHf+qTzSuM79QtyZaBjBOLBNYC4OcekJA1r2UIVSfCF
+         d7WXvg5HrlhBXYtFb5VvFctZCG/Ixpw8iY5IcU88+E9uOEfz1mmm4oqCAf/PiZySI+WX
+         zEsdmJ64iKb2T8hzeutqLaiWHI3UhHek9Rp74I2YSN7P2KgZU/L9RdBvxkx4IV/qxmSt
+         AGAkIzRqZ8bwB2xirmaAcULCaO3AAs2Bs0nonS+DUCjHnU1NBiJuLN34fx159zgfGaVJ
+         GVgg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:date:from:to:cc:subject:message-id:references
          :mime-version:content-disposition:in-reply-to:user-agent;
-        bh=IdWKzce3sZz9+VK0mMGhceU7W1z4LrhQkC1c9OeYugc=;
-        b=PT2v7DMUbSJCVLbjNG9vOcXdBhKvZfj4pvSd3u5loKP2HahQf/DM0Tf5lSrq5smoUM
-         aIK2NZYvgWiv3S2GRD9PZOyy9eYzCqO67owpS7XI8EOiOBFbRGB42YzFcqBCMyDQ8w+e
-         ioP1XS1Z9Qo9c1SpwpLUpB6dK83kEZ+WndeA2ThIodhoDmrTpuSR40OeFey+4XxcvJH/
-         IkihV2N+yJOZrc4TeSlpSIfJxiHQlYjVOHfq3MKypm85IpwYuJAmtelh06ctjfUGFXMk
-         pg/1yN0t+gsc+0gcIA2MxoIzwrO+k5HtlXyMIHv1tGgNqTcSMYuzkZODzhzh7RfhTUAd
-         SKdQ==
-X-Gm-Message-State: APjAAAUIuNarv7W1YunoaDWiFYFfjmkazbYL4GULAQbC2ciPJG+9BtYd
-        06/L2qD1laIa0twRohsq70FTZw==
-X-Google-Smtp-Source: APXvYqx5jPsVPa9dGQd9Bui4/XGgLT6BOzvijxJlMoqU0XvFjHiv3oPKH2im4jOl3Wj+44uE9UzG2A==
-X-Received: by 2002:ac8:25dd:: with SMTP id f29mr66160028qtf.144.1560435429256;
-        Thu, 13 Jun 2019 07:17:09 -0700 (PDT)
+        bh=sbvrt5MZdKQZtIDBTdvl9Mov/hKhPttcrBddG8hlTHo=;
+        b=mwbaGXRwIrQZ63CCP45T9Pc8n8YhNOgaJOSfoPOVTgReX76RzJHpdXazj2MgYz8mwZ
+         mQzAyaBefnSvED2o/rVh4FXLgr+08ObaTkFbw0gW7cNfGh5qFhrNv7UHP4XVXYwVMced
+         RvTS8cJjuh1NmwiYL7I24S9x6Pi87NIPloGeaLCzTAsd+7QZeYaVfFVEF1Kwf99+5Phz
+         v1d2wOlMtna4WLkKQ8WS172xZdPehXRvlxkR91rOUUR3JS94pbJZOcI76lyjm/MTi6N/
+         LrKMm6bRzWwI96a+nBGxt9/HVUce3W4V6pP+lv60EVqH9Z1KnRvJfHma22diGufTAKxI
+         vHDw==
+X-Gm-Message-State: APjAAAUSve9MZN49pZ8RjrPbF9yCOSU1J0NVpXFOTtHWM9rhZlfSm9GV
+        cO/dFhpqRtmUcm+izpfTTJeEfw==
+X-Google-Smtp-Source: APXvYqwg9ItFMlhHRYGvsdkND+NywXN/99yJ/OfGCgepby4UQnidXK6DCCbLqQXc5D4yRoAVhsjoyA==
+X-Received: by 2002:a05:620a:16cc:: with SMTP id a12mr13267398qkn.256.1560435351183;
+        Thu, 13 Jun 2019 07:15:51 -0700 (PDT)
 Received: from localhost ([2620:10d:c091:480::9d6b])
-        by smtp.gmail.com with ESMTPSA id 102sm1338356qte.52.2019.06.13.07.17.08
+        by smtp.gmail.com with ESMTPSA id t29sm2155361qtt.42.2019.06.13.07.15.50
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 13 Jun 2019 07:17:09 -0700 (PDT)
-Date:   Thu, 13 Jun 2019 10:17:07 -0400
+        Thu, 13 Jun 2019 07:15:50 -0700 (PDT)
+Date:   Thu, 13 Jun 2019 10:15:49 -0400
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     Naohiro Aota <naohiro.aota@wdc.com>
 Cc:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
@@ -66,39 +66,29 @@ Cc:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
         Matias =?utf-8?B?QmrDuHJsaW5n?= <mb@lightnvm.io>,
         Johannes Thumshirn <jthumshirn@suse.de>,
         Bart Van Assche <bvanassche@acm.org>
-Subject: Re: [PATCH 13/19] btrfs: avoid sync IO prioritization on checksum in
- HMZONED mode
-Message-ID: <20190613141706.tbxc5wufplfybfib@MacBook-Pro-91.local>
+Subject: Re: [PATCH 12/19] btrfs: expire submit buffer on timeout
+Message-ID: <20190613141548.vlczaxiqqzbxgtzk@MacBook-Pro-91.local>
 References: <20190607131025.31996-1-naohiro.aota@wdc.com>
- <20190607131025.31996-14-naohiro.aota@wdc.com>
+ <20190607131025.31996-13-naohiro.aota@wdc.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190607131025.31996-14-naohiro.aota@wdc.com>
+In-Reply-To: <20190607131025.31996-13-naohiro.aota@wdc.com>
 User-Agent: NeoMutt/20180716
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Jun 07, 2019 at 10:10:19PM +0900, Naohiro Aota wrote:
-> Btrfs prioritize sync I/Os to be handled by async checksum worker earlier.
-> As a result, checksumming sync I/Os to larger logical extent address can
-> finish faster than checksumming non-sync I/Os to smaller logical extent
-> address.
-> 
-> Since we have upper limit of number of checksum worker, it is possible that
-> sync I/Os to wait forever for non-starting checksum of I/Os for smaller
-> address.
-> 
-> This situation can be reproduced by e.g. fstests btrfs/073.
-> 
-> To avoid such disordering, disable sync IO prioritization for now. Note
-> that sync I/Os anyway must wait for I/Os to smaller address to finish. So,
-> actually prioritization have no benefit in HMZONED mode.
+On Fri, Jun 07, 2019 at 10:10:18PM +0900, Naohiro Aota wrote:
+> It is possible to have bios stalled in the submit buffer due to some bug or
+> device problem. In such situation, btrfs stops working waiting for buffered
+> bios completions. To avoid such hang, add a worker that will cancel the
+> stalled bios after a timeout.
 > 
 
-This stuff is going away once we finish the io.weight work anyway, I wouldn't
-worry about this.  Thanks,
+The block layer does this with it's request timeouts right?  So it'll timeout
+and we'll get an EIO?  If that's not working then we need to fix the block
+layer.  Thanks,
 
 Josef

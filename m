@@ -1,266 +1,302 @@
-Return-Path: <SRS0=509H=UL=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=BVwv=UM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_NEOMUTT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D308FC31E46
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Jun 2019 20:02:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3D303C31E4A
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Jun 2019 15:02:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8F50020665
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Jun 2019 20:02:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0C883207E0
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Jun 2019 15:02:11 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="t28J15wL"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="jwfykhPE"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388188AbfFLUCd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Jun 2019 16:02:33 -0400
-Received: from mail-wm1-f66.google.com ([209.85.128.66]:53739 "EHLO
-        mail-wm1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728064AbfFLUCd (ORCPT
+        id S1732531AbfFMPB4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 13 Jun 2019 11:01:56 -0400
+Received: from mail-qt1-f195.google.com ([209.85.160.195]:45664 "EHLO
+        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1732530AbfFMOd3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Jun 2019 16:02:33 -0400
-Received: by mail-wm1-f66.google.com with SMTP id x15so7808776wmj.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Jun 2019 13:02:31 -0700 (PDT)
+        Thu, 13 Jun 2019 10:33:29 -0400
+Received: by mail-qt1-f195.google.com with SMTP id j19so22759724qtr.12
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Jun 2019 07:33:28 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=9oDPZGu+rzVg9LpxBYF6pyOMV3T9fAwwwdMlfVWZUqE=;
-        b=t28J15wLdnv6L8NMlJsRcq1W/ztaYAROtWs9/3NMxpMpuNyr6VEnBn7FCVynMSjzOI
-         ZbfufPx+Ux0ipBV6na5uX4pwVRfQ/M2ywHTIQeSU6nok7H/1Fp093orzlKllY5foj8G8
-         9dG3juk5N9JaCfjFT4+Eif/H9xHG3NBv6lbEWTpvjoRc8ePLBbbnmP6R1snr+ESOcF17
-         wzDVrEF53a6ZjGEoc7cL5CJ7ZgFrwbnAQ9xIQoYKocnQsMBA3pKsWtsXBIxjMpHlYj1M
-         AMhV1L6marD6dL6sGBcZa/vd12S4cM1jUkhc37ModthgccvOCN0pYUiqJtUIz4cpfW+A
-         MCtQ==
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to:user-agent;
+        bh=C0BRU3dqqy6s0BgRmHroD92cvMT3xBvdMouvBj//NjQ=;
+        b=jwfykhPEHp2zA3zN3PapEE5CBrYWwvoLScWqftQfoS0bkS4ZzhtLfcR8BLCo2T1iRP
+         guqc2WaY0ZIWfNII5WUa9VTISaEgeDv0pXl1q+S8HkktoqGkgOtmQ32GFPxGDEjy9KFQ
+         quMPLMXsjJAHTfFnLlcO76CjviArKvDOnmIKX583CCWQTOIo4Erbrd6xoRmXbVm0gJuy
+         QR504cXAcuiJq6HPVPX6c5Nap3XXpS/eQaWK9iJEzxDJiARkVhPjuaYFvL919NUi7Vif
+         8y1X0aicXyQ2EZ2wotUp9tOvTL/0SlmaiXbE1hjEKzmwAm9Kav6qac0Li+limHEs/d7c
+         D6Nw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=9oDPZGu+rzVg9LpxBYF6pyOMV3T9fAwwwdMlfVWZUqE=;
-        b=JgqeTYCVr4kJpduFm5RiMbZzqCEuph79d0E0+Kdpknhb1+sYC/JqEDuTBXv6BKyC6d
-         PpPX0E3sjFcojXx3U1bh3XvhAda3ycfLoyABsHIrBkGkbwvcDc577SrwrQBSKDrnJePe
-         5JbRg6TWBflgcBIjGvpWI39lZ3wTxKZHdEZQ+qXNinUnx7xez9R0zA+LywiuRWsvQzvB
-         9Klk82jGNtwHBtCa6bWbEYQBkdmk9ePnagjik1kFkh6KuMXZvbIMRq/y//gR6fA1ZJPh
-         AtFn5bClyZx7cYjEc0sBIZfOGchhBkgxVFVfmchG49nPFwZcxAh8UP5RfqO8VApk/1TN
-         fZAg==
-X-Gm-Message-State: APjAAAV1tUKKs2m7r5OHxAd6jB+aL3oubF6JekCzsmmfIMkpv7EOp3qq
-        tkx3F/mFsBg/7xGb4m3iVBZbBjXKhvb7XfvslQq41XKG8UE=
-X-Google-Smtp-Source: APXvYqyeEmLvEf5XYb+6dlC1vgU4tcd6dPUquPPTYpaJyJWtFfbk4WcASoZCAChGc2msZ9zUwMgNkZmHq9GIx+KMqak=
-X-Received: by 2002:a1c:b684:: with SMTP id g126mr606371wmf.176.1560369750260;
- Wed, 12 Jun 2019 13:02:30 -0700 (PDT)
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to:user-agent;
+        bh=C0BRU3dqqy6s0BgRmHroD92cvMT3xBvdMouvBj//NjQ=;
+        b=Z9CaUhtsYLY9AIuv7sPO+Oop0LqHzqAhKPilrf7do5XbyTcEa33YVr/MBXJS5X0Xto
+         iSP/F6hruzU/hbvLSMVYUDuIk0UBZKfeU/2c5LP8EQ0pttfLrOJ3qZpjVIKbHEP99QYh
+         SYRsy08ZeBSzisEtv+C9Gf+r/hOMRTFaXYBbWMOj231JokbYlHlBCvOBtVJT+PaGvLVe
+         wpPsi83CPP8GscpFYBfrFrM5JHkE6tawocCPphq+3PTDZsrp8yp2K+sMlS8cuNJFczqg
+         6H4m+5ra8eW3jjytriubOpFBadNCk4HJRHLNpL3lUEKLz/kHg+yHZZjuhcXf9yCq6hQr
+         o5fA==
+X-Gm-Message-State: APjAAAXX7aFeNVmchsi9fL3sBuDLlK9da7RWRv/0vdchm1kDLkTDqsFk
+        LGSF9Etf2HRzP6HZVDg/CJ+FJw==
+X-Google-Smtp-Source: APXvYqxdQgoSA422ayCmjEKzjzuRUO+lo5MIbD9rb3kEteQPPipbhA3D5vzV8Xf3EefJLoWjb7pQUg==
+X-Received: by 2002:ac8:2906:: with SMTP id y6mr54187982qty.138.1560436408154;
+        Thu, 13 Jun 2019 07:33:28 -0700 (PDT)
+Received: from localhost ([2620:10d:c091:480::9d6b])
+        by smtp.gmail.com with ESMTPSA id w19sm548604qkj.66.2019.06.13.07.33.27
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Thu, 13 Jun 2019 07:33:27 -0700 (PDT)
+Date:   Thu, 13 Jun 2019 10:33:26 -0400
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     Naohiro Aota <naohiro.aota@wdc.com>
+Cc:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        Qu Wenruo <wqu@suse.com>, Nikolay Borisov <nborisov@suse.com>,
+        linux-kernel@vger.kernel.org, Hannes Reinecke <hare@suse.com>,
+        linux-fsdevel@vger.kernel.org,
+        Damien Le Moal <damien.lemoal@wdc.com>,
+        Matias =?utf-8?B?QmrDuHJsaW5n?= <mb@lightnvm.io>,
+        Johannes Thumshirn <jthumshirn@suse.de>,
+        Bart Van Assche <bvanassche@acm.org>
+Subject: Re: [PATCH 18/19] btrfs: support dev-replace in HMZONED mode
+Message-ID: <20190613143325.bxcbsx5y44upgqle@MacBook-Pro-91.local>
+References: <20190607131025.31996-1-naohiro.aota@wdc.com>
+ <20190607131025.31996-19-naohiro.aota@wdc.com>
 MIME-Version: 1.0
-References: <CAEg-Je9XTvEtg=Mpb1xKkO6Lzd3-yzSK7GcfbKH13uuf-u-wTA@mail.gmail.com>
- <CAJCQCtSPZwcg5y-d+mOhmyCdvq1dpzLUg05kPUg7CYhZp6Oz_Q@mail.gmail.com> <CAEg-Je8envHfMm5znrqDvW_U-RO8cOa3KF0+BmuGOB-3eC0k4A@mail.gmail.com>
-In-Reply-To: <CAEg-Je8envHfMm5znrqDvW_U-RO8cOa3KF0+BmuGOB-3eC0k4A@mail.gmail.com>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Wed, 12 Jun 2019 14:02:19 -0600
-Message-ID: <CAJCQCtTeFOCuCaqvRg4e68OA2kAYRLQgk2DL4wnPi_xgiG3anw@mail.gmail.com>
-Subject: Re: APFS improvements (e.g. firm links, volume w/ subvols
- replication) as ideas for Btrfs?
-To:     Neal Gompa <ngompa13@gmail.com>
-Cc:     Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190607131025.31996-19-naohiro.aota@wdc.com>
+User-Agent: NeoMutt/20180716
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jun 12, 2019 at 2:07 AM Neal Gompa <ngompa13@gmail.com> wrote:
-> I mean, yes... FHS is definitely unhelpful, but Apple conforms to FHS
-> pretty well, even though it's not obvious that it does. Apple just has
-> the benefit of being able to shuffle things around without people
-> noticing, whereas no Linux distribution has that.
+On Fri, Jun 07, 2019 at 10:10:24PM +0900, Naohiro Aota wrote:
+> Currently, dev-replace copy all the device extents on source device to the
+> target device, and it also clones new incoming write I/Os from users to the
+> source device into the target device.
+> 
+> Cloning incoming IOs can break the sequential write rule in the target
+> device. When write is mapped in the middle of block group, that I/O is
+> directed in the middle of a zone of target device, which breaks the
+> sequential write rule.
+> 
+> However, the cloning function cannot be simply disabled since incoming I/Os
+> targeting already copied device extents must be cloned so that the I/O is
+> executed on the target device.
+> 
+> We cannot use dev_replace->cursor_{left,right} to determine whether bio
+> is going to not yet copied region.  Since we have time gap between
+> finishing btrfs_scrub_dev() and rewriting the mapping tree in
+> btrfs_dev_replace_finishing(), we can have newly allocated device extent
+> which is never cloned (by handle_ops_on_dev_replace) nor copied (by the
+> dev-replace process).
+> 
+> So the point is to copy only already existing device extents. This patch
+> introduce mark_block_group_to_copy() to mark existing block group as a
+> target of copying. Then, handle_ops_on_dev_replace() and dev-replace can
+> check the flag to do their job.
+> 
+> This patch also handles empty region between used extents. Since
+> dev-replace is smart to copy only used extents on source device, we have to
+> fill the gap to honor the sequential write rule in the target device.
+> 
+> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+> ---
+>  fs/btrfs/ctree.h       |   1 +
+>  fs/btrfs/dev-replace.c |  96 +++++++++++++++++++++++
+>  fs/btrfs/extent-tree.c |  32 +++++++-
+>  fs/btrfs/scrub.c       | 169 +++++++++++++++++++++++++++++++++++++++++
+>  fs/btrfs/volumes.c     |  27 ++++++-
+>  5 files changed, 319 insertions(+), 6 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index dad8ea5c3b99..a0be2b96117a 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -639,6 +639,7 @@ struct btrfs_block_group_cache {
+>  	unsigned int has_caching_ctl:1;
+>  	unsigned int removed:1;
+>  	unsigned int wp_broken:1;
+> +	unsigned int to_copy:1;
+>  
+>  	int disk_cache_state;
+>  
+> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+> index fbe5ea2a04ed..5011b5ce0e75 100644
+> --- a/fs/btrfs/dev-replace.c
+> +++ b/fs/btrfs/dev-replace.c
+> @@ -263,6 +263,13 @@ static int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
+>  	device->dev_stats_valid = 1;
+>  	set_blocksize(device->bdev, BTRFS_BDEV_BLOCKSIZE);
+>  	device->fs_devices = fs_info->fs_devices;
+> +	if (bdev_is_zoned(bdev)) {
+> +		ret = btrfs_get_dev_zonetypes(device);
+> +		if (ret) {
+> +			mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+> +			goto error;
+> +		}
+> +	}
+>  	list_add(&device->dev_list, &fs_info->fs_devices->devices);
+>  	fs_info->fs_devices->num_devices++;
+>  	fs_info->fs_devices->open_devices++;
+> @@ -396,6 +403,88 @@ static char* btrfs_dev_name(struct btrfs_device *device)
+>  		return rcu_str_deref(device->name);
+>  }
+>  
+> +static int mark_block_group_to_copy(struct btrfs_fs_info *fs_info,
+> +				    struct btrfs_device *src_dev)
+> +{
+> +	struct btrfs_path *path;
+> +	struct btrfs_key key;
+> +	struct btrfs_key found_key;
+> +	struct btrfs_root *root = fs_info->dev_root;
+> +	struct btrfs_dev_extent *dev_extent = NULL;
+> +	struct btrfs_block_group_cache *cache;
+> +	struct extent_buffer *l;
+> +	int slot;
+> +	int ret;
+> +	u64 chunk_offset, length;
+> +
+> +	path = btrfs_alloc_path();
+> +	if (!path)
+> +		return -ENOMEM;
+> +
+> +	path->reada = READA_FORWARD;
+> +	path->search_commit_root = 1;
+> +	path->skip_locking = 1;
+> +
+> +	key.objectid = src_dev->devid;
+> +	key.offset = 0ull;
+> +	key.type = BTRFS_DEV_EXTENT_KEY;
+> +
+> +	while (1) {
+> +		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+> +		if (ret < 0)
+> +			break;
+> +		if (ret > 0) {
+> +			if (path->slots[0] >=
+> +			    btrfs_header_nritems(path->nodes[0])) {
+> +				ret = btrfs_next_leaf(root, path);
+> +				if (ret < 0)
+> +					break;
+> +				if (ret > 0) {
+> +					ret = 0;
+> +					break;
+> +				}
+> +			} else {
+> +				ret = 0;
+> +			}
+> +		}
+> +
+> +		l = path->nodes[0];
+> +		slot = path->slots[0];
+> +
+> +		btrfs_item_key_to_cpu(l, &found_key, slot);
+> +
+> +		if (found_key.objectid != src_dev->devid)
+> +			break;
+> +
+> +		if (found_key.type != BTRFS_DEV_EXTENT_KEY)
+> +			break;
+> +
+> +		if (found_key.offset < key.offset)
+> +			break;
+> +
+> +		dev_extent = btrfs_item_ptr(l, slot, struct btrfs_dev_extent);
+> +		length = btrfs_dev_extent_length(l, dev_extent);
+> +
+> +		chunk_offset = btrfs_dev_extent_chunk_offset(l, dev_extent);
+> +
+> +		cache = btrfs_lookup_block_group(fs_info, chunk_offset);
+> +		if (!cache)
+> +			goto skip;
+> +
+> +		cache->to_copy = 1;
+> +
+> +		btrfs_put_block_group(cache);
+> +
+> +skip:
+> +		key.offset = found_key.offset + length;
+> +		btrfs_release_path(path);
+> +	}
+> +
+> +	btrfs_free_path(path);
+> +
+> +	return ret;
+> +}
+> +
+>  static int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
+>  		const char *tgtdev_name, u64 srcdevid, const char *srcdev_name,
+>  		int read_src)
+> @@ -439,6 +528,13 @@ static int btrfs_dev_replace_start(struct btrfs_fs_info *fs_info,
+>  	}
+>  
+>  	need_unlock = true;
+> +
+> +	mutex_lock(&fs_info->chunk_mutex);
+> +	ret = mark_block_group_to_copy(fs_info, src_device);
+> +	mutex_unlock(&fs_info->chunk_mutex);
+> +	if (ret)
+> +		return ret;
+> +
+>  	down_write(&dev_replace->rwsem);
+>  	switch (dev_replace->replace_state) {
+>  	case BTRFS_IOCTL_DEV_REPLACE_STATE_NEVER_STARTED:
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index ff4d55d6ef04..268365dd9a5d 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -29,6 +29,7 @@
+>  #include "qgroup.h"
+>  #include "ref-verify.h"
+>  #include "rcu-string.h"
+> +#include "dev-replace.h"
+>  
+>  #undef SCRAMBLE_DELAYED_REFS
+>  
+> @@ -2022,7 +2023,31 @@ int btrfs_discard_extent(struct btrfs_fs_info *fs_info, u64 bytenr,
+>  			if (btrfs_dev_is_sequential(stripe->dev,
+>  						    stripe->physical) &&
+>  			    stripe->length == stripe->dev->zone_size) {
+> -				ret = blkdev_reset_zones(stripe->dev->bdev,
+> +				struct btrfs_device *dev = stripe->dev;
+> +
+> +				ret = blkdev_reset_zones(dev->bdev,
+> +							 stripe->physical >>
+> +								 SECTOR_SHIFT,
+> +							 stripe->length >>
+> +								 SECTOR_SHIFT,
+> +							 GFP_NOFS);
+> +				if (!ret)
+> +					discarded_bytes += stripe->length;
+> +				else
+> +					break;
+> +				set_bit(stripe->physical >>
+> +					dev->zone_size_shift,
+> +					dev->empty_zones);
+> +
+> +				if (!btrfs_dev_replace_is_ongoing(
+> +					    &fs_info->dev_replace) ||
+> +				    stripe->dev != fs_info->dev_replace.srcdev)
+> +					continue;
+> +
+> +				/* send to target as well */
+> +				dev = fs_info->dev_replace.tgtdev;
+> +
+> +				ret = blkdev_reset_zones(dev->bdev,
 
-The vast majority of macOS is located outside the FHS in Applications,
-Library, System, and Users. And in fact I don't even see the FHS
-structure in the GUI where 99.9% of macOS users interact. So the FHS
-is really incidental to macOS and macOS users.
+This is unrelated to dev replace isn't it?  Please make this it's own patch, and
+it's own helper while you are at it.  Thanks,
 
-My Mac looks like this:
-
- 14G    Applications
-3.7G    Library
-  0B    Network
-9.1G    System
-4.0K    TMVersion.ini
- 11G    Users
-226G    Volumes
-2.6M    bin
-  0B    cores
-4.5K    dev
-  0B    etc
-1.0K    home
-504M    macOS Install Data
-1.0K    net
-6.2G    private
-1.2M    sbin
-  0B    tmp
-473M    usr
-  0B    var
-
-The vast majority of private is a 4G hibernation image file, and a 2G
-dyld cache. I'm not really sure how Apple is going to leverage APFS
-for moving things around behind the scenes, it doesn't strike me as
-having been a problem in search of a solution (or even vice versa).
-
-But I can see why they'd like to have a "clean" system snapshot to
-reset to, without resetting /User (use data files). To date, they have
-no reset/refresh like Windows has had for some time, and software
-updates are not safe and do not rollback either automatically or
-manually. Their primary troubleshooting step is the "clean install" or
-really the "clean reinstall". It's expected that the user has a backup
-(preferably Time Machine) because it's a reformat, point and shoot
-installer with no separate partition for user data.
-
-
-> > > For example, this would be useful if a volume has two subvolumes: OS
-> > > and data. OS would have /usr and data would have /var and /home. But,
-> > > importantly, a couple of system data things need to be part of the OS
-> > > that are on /var: /var/lib/rpm and /var/lib/alternatives. These two
-> > > belong with the OS, and it's incredibly difficult to move it around
-> > > due to all kinds of ecosystem knock-on effects.
-
-I'd say to achieve functionally what you're after with Btrfs as it
-exists today, is possible. But it would require two "views" - the
-dirty realty that the updating system manages. And the kind unreality
-for the user.
-
-On Btrfs you can have a /var/lib/rpm and /var/lib/alternatives
-read-write subvolume, just snapshot it, as either ro or rw (your
-choice) and at the time the snapshot is created, have it created in
-the OS "area" (rather than calling it a subvolume). A snapshot is just
-a pre-populated subvolume, otherwise they are the same thing.
-
-Subvolumes can also be moved just like directories if they're rw. If
-they're ro, they can be renamed but not moved within the hierarchy.
-It's also possible to change the ro property on any subvolume.
-
-Of course this means there is a time delay. Your updating system would
-update the "data" version of /var/lib/rpm and /var/lib/alternatives,
-and then once the out of band update is finished, it would snapshot
-them into the "OS" hierarchy, replacing its now stale versions of
-/var/lib/rpm and /var/lib/alternatives.
-
-Also, subvolumes can act as a barrier to snapshots. That's a big part
-of how (open)SUSE is using Btrfs subvolumes, to delimit the
-snapshotting. i.e. they use a grub subvolume instead of a regular
-directory so that when /boot is snapshot, the changing state of the
-bootloader is NOT snapshot. Same for /etc/ and parts of /var
-
-I understand what you don't have on Btrfs, that it sounds like you'd
-like to have, is a kind of wormhole between two whatevers (be they
-directories or subvolumes or wormvolumes) where they are always
-containing identical things. But they can independently be made ro or
-rw. They can both be rw. They can both be ro. Or one can be rw and the
-other ro, which would mean one of them "sends" data into the otherone,
-live.
-
-You could fake that today. But you'd need two perspectives, where 99%
-of user space is aware of the fabricated perspective; and the 1% of
-user space that is your OS updates and switcheroo system would need to
-be aware of both perspectives and be the domain owner of managing both
-perspectives.
-
-
-> (If you want to know
-> > > more about that, just ask the SUSE kiwi team... it's the gift that
-> > > keeps on giving...). Both /var/lib/rpm and /var/lib/alternatives are
-> > > part of the OS, but they're in /var. It'd be great to stitch that in
-> > > from the read-only OS volume into the /var subvolume so that it's
-> > > actually part of the OS volume even though it looks like it's in the
-> > > data one. It's completely transparent to everything.
-
-I'm having a hard time visualizing what Apple is doing or going to do.
-I expect like most things there will be some daemon that understands
-all the new ioctls and does the actual work of changing the storage
-hierarchy states. It's transparent to 99% of the OS and user space,
-but this one daemon must understand the real deal in order to "fake"
-it with the creation of firm links and whatever else they do.
-Something in user space must know about firm links in order to
-leverage firm links.
-
-> Supporting atomic
-> > > updates (with something like a dnf plugin) becomes much easier because
-> > > we can trigger snapshot and subvolume mounts with preserving enough
-> > > structure to make things work. In this circumstance, we can flip the
-> > > properties so that the new location has a rw OS and ro data volume
-> > > mount for doing only software updates (or leave data volume rw during
-> > > this transaction and merge the changes back into the OS). We could
-> > > also do creative things with /etc if we so wish...
-
-I've done out of band software updates with dnf already myself, this
-is a quick and dirty example:
-
-# btrfs sub snap root.20190610 root.20190612
-# mount -o subvol=root.20190612 /mnt/updates
-# mount -B ## all the dev proc run sys stuff to /mnt/updates
-# chroot /mnt/updates
-# dnf update -y
-# exit
-# vi /mnt/updates/etc/fstab ##point the root to root.20190612
-# umount --resursive ## tear it down
-# grub2-editenv - set kernelopts= ##change rootflags to use the new subvol
-
-Reboot. Now the last step is janky and does not take advantage of any
-fallback we now have in GRUB at least in Fedora land. To do that I
-need to so a bit more surgery manually to create new BLS snippets to
-make an explicit "former" "current" boot menu entry that causes the
-correct subvolume to become root.
-
-But anyway, point is, I can do out of band updates, the currently
-active OS doesn't get confused as the update process is yanking out
-updates from underneath it all, and I don't have to mount /home in
-that process at all. That chroot (or it can be done with bwrap or
-nspawn or whatever) environment does not have my home in it. The
-update process can't hurt it. And if the update fails, just delete the
-bad subvolume, no harm done.
-
-And libostree actually does a very close variation on that.
-
-> >
-> > Is it really best to do this in Btrfs proper, rather than in VFS?
-> >
->
-> If we can handle it in VFS where things like firm links drag linked
-> subvolumes to be automatically mounted together at their individually
-> set snapshot level, then yeah. But best as I understand it, the VFS
-> layer is not capable of this level of granularity.
-
-Yeah I kinda need pretty pictures and animations and things to
-understand this better, I'm not really completely understanding the
-problem. I'm very aware of Apple's severe limitations with updates and
-rollbacks, and why they want a way out of that. But I'm not clear on
-why Btrfs should mimick that particular behavior and solution for
-their problem, seeing as only one distro defaults to Btrfs yet doesn't
-require it, and Fedoraland is pretty much completely over Btrfs, while
-Red Hat is building a whole new userland file system which for sure is
-not going to have wormhold dirs between its fully independent volumes
-- it'd really need something done in VFS or if it can't be done in VFS
-then possibly leverage overlayfs for some of this.
-
-
->
-> This is probably one issue with Btrfs that ZFS gets to avoid, since
-> ZFS can't use VFS and thus implements everything at its level. I'm not
-> suggesting Btrfs do it for everything, but the filesystem needs some
-> intelligence about subvolume handling that it doesn't have now.
-
-ZFS is way more limited in this regard than Btrfs. Snapshots are
-always children of datasets, they are always read only. You can clone
-a snapshot into a dataset. I don't think (?) there is such a thing as
-nested datasets or snapshots. Datasets can't be deleted until all
-children (snapshots) are deleted first. In many ways ZFS limitations
-keep users from doing things like many nested subvolumes like we see
-on Btrfs and then it turns into logical problems for users and
-developers alike.
-
-So a non-Btrfs solution is going to need higher level advancements
-anyway, either VFS over overlayfs or some combination of the two.
-
---
-Chris Murphy
+Josef

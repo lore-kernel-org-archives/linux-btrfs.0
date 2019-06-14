@@ -2,108 +2,148 @@ Return-Path: <SRS0=p/S3=UN=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+X-Spam-Status: No, score=-8.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DC3C7C31E4A
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Jun 2019 00:34:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 48D3BC31E45
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Jun 2019 00:34:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id ADB7320B7C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Jun 2019 00:34:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1AD7620B7C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Jun 2019 00:34:41 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1560472476;
-	bh=9Tv9rz/VVZozXZUsb9XFza/P35K9sTfCt4zKnujeBWM=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=z86sQLfPtPUw5dO19vTsh9iZ8d3D7k9aSpx5pybbRL+8yftXdXDSh75bxiT2D5/EA
-	 Bp+4e7brXbic6ylXgV+EV/aX7O5MkzugF8p5xQf4Fvedy7YmV5FUr+RvtiDZQES05l
-	 PvYfVlxz+6CnZHdxRURDOeZAzxmr4bnsLrKDhlbs=
+	s=default; t=1560472481;
+	bh=XAlloaOV1xZpKZTaxk01s3z5Ddta1c/KBJFc4Qcqv3w=;
+	h=From:To:Cc:Subject:Date:List-ID:From;
+	b=vjs7GFMFLuL1QORhjS6lKpXfLvU2xJ1t/+mUlmsx7nA1PaWPDd62GRSehUffAPBv6
+	 EPI0l9du2DmEqJYQWQCiljXk7xAk4MJKPq+m+4xnRLbiP0RGe7hDnkNwKuXoERybPZ
+	 7lTx5INHXO/2yT2JQnNuRGChhsbZgs9ENQHnrgBo=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727040AbfFNAeB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 13 Jun 2019 20:34:01 -0400
-Received: from mail-pg1-f195.google.com ([209.85.215.195]:35200 "EHLO
-        mail-pg1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727001AbfFNAd7 (ORCPT
+        id S1726167AbfFNAdz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 13 Jun 2019 20:33:55 -0400
+Received: from mail-pg1-f182.google.com ([209.85.215.182]:36932 "EHLO
+        mail-pg1-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725778AbfFNAdy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Jun 2019 20:33:59 -0400
-Received: by mail-pg1-f195.google.com with SMTP id s27so471771pgl.2;
-        Thu, 13 Jun 2019 17:33:59 -0700 (PDT)
+        Thu, 13 Jun 2019 20:33:54 -0400
+Received: by mail-pg1-f182.google.com with SMTP id 20so465869pgr.4;
+        Thu, 13 Jun 2019 17:33:54 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
-        h=sender:from:to:cc:subject:date:message-id:in-reply-to:references;
-        bh=J+WIIloOg8R89ClRTeMiBEyvJHmr12Pt7f1GOmgErrg=;
-        b=YhRTqGTux1UNwJbR9l++EjV3FIfs4oZYe2F/+74GkB28vP13HoaYTz1OOgDbnCwuAn
-         7PTQk5aAmp3XVlQFWDwzMZKCoiY2Nt4VrW/UCS4aucRv8Tkl1lSnWF8trTiEPjVnzVEp
-         OIyCgZUn+Hq6FjOA/cwjGotXXWat43A8uaMwa139+gx/OkrnHit+w4xLIxpuarPGfWzc
-         bg1XsyDLeM5ikjMmd3AVa7DXwf4VE9am6/XJE7BQh14YR5Ax7uZg+EjXhY5OWbISVx2q
-         XZuk2A+iD3Oj2Qb+QmOJrWS4CX8tNF1TYSxOGeFNyhjgxD7LPjVSkW9VQoHF7eSwcQzV
-         0JiA==
+        h=sender:from:to:cc:subject:date:message-id;
+        bh=oTlzP5u+wueqk5xdHgpRxhOd00u8gJeBwCjbnHotl3k=;
+        b=BzGNcoFmYi8gLKxOomEtTfMFNIXrqiP0F3yWFy2pIZq6bQXNBZWRXp+YK4O+W6BCr2
+         03Dyfn+G4eBB3Qoewqaj5dXNOGEhd5+/AUaHayk9hntIRt+00rCIjkrtozgqiu4dUT67
+         NXksTOoEBg/0aXehmbLZAvEY8gPuTmfpYZOeXwdZ+W6/stWG/qeXrkP4bwKa17v/HPEE
+         9V8TlTDTfG5rKd2Vn0dcSpmSzCnPNzfTNv9ZSXQFSxQqYOM+tQkOTpS5CANKmgM1daZg
+         LNz0VFzp3brsf7zVNzjCvQulg96AMDLT7OhuNOeL/OvusgvhPe3SUuC3odLuGzHJ91OK
+         HOZA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:sender:from:to:cc:subject:date:message-id
-         :in-reply-to:references;
-        bh=J+WIIloOg8R89ClRTeMiBEyvJHmr12Pt7f1GOmgErrg=;
-        b=qvM4KuI3Rv9cgI926sawFC2XTf7pnW3YfR5IS9b8RSEUvP//r9PnResikaD149+wKh
-         7UfjhozhvUt7elezpuC2J3og2O/k1PPurRzf6bqAGrJn5cZArYHs5Ic3gQYdXCltGDzZ
-         At4z9+26ZN48h6HLo0cIAhB6WOHDSUYKcSF7Qh5NZZ9OeaX0yJhjRLdaj+g48siQLsk4
-         S2F9HN32sbrHIRKHlEZoxvaATdPQ7io7K1whpr0gNpbeflJ/7CKP7xZu/ULc+ZZJ9C6E
-         ZOR647C3KTQzTfOyffQR37rKAvFku2+2xtHH1xIUR5SvGFnKkVEaWVsdoX+uYRoHKJRJ
-         aBMw==
-X-Gm-Message-State: APjAAAUNZc2n1gEdNlzm7O3JtUO/EvbqdC5SAUDKfpJuKaF4V/ZLxNig
-        GUZuuwpIecyohqExmn9omVk=
-X-Google-Smtp-Source: APXvYqxJXtZl5ddqNJkiz0UB18vPyNmtxAoGE34xxniDb2UxO2ThLJNJOSjuSWiMS9pD4PVo8R7OjQ==
-X-Received: by 2002:a17:90a:bb01:: with SMTP id u1mr7185132pjr.92.1560472438757;
-        Thu, 13 Jun 2019 17:33:58 -0700 (PDT)
+        h=x-gm-message-state:sender:from:to:cc:subject:date:message-id;
+        bh=oTlzP5u+wueqk5xdHgpRxhOd00u8gJeBwCjbnHotl3k=;
+        b=sWaeljdmZ/wx+PkuXrZ845qNKZwXUOs+PtyNPf2GXKVPIdpeu33Y4qee8WRMGXVAEw
+         tWLdLMtytZcSvSwglMvAROF8CA5rCV89wUq4IhGkJ8QlHRpvRpemb68YB2e1+Z4CbYzi
+         N6aqWul8Vgb6XLkR00btt4WLnrw7JK9JqZ/ZqyPtA8/EzcEWh2dBPkrh+/+BPxkQxe5q
+         4Iaz/p9nRjEtlJQVMi50UkjmDzCIdhEed6ECH7l1EW39buBWwQn/iDdi7cyXaT/oowLX
+         nldCy1YA57RXmwwQaOHZ/Mv8hZbc0McdfETvCgDdgQKBxyb67e35X3E3t82tyelVbvmB
+         sDUg==
+X-Gm-Message-State: APjAAAVQ+NBii9uloUaWJUaATdqgcZz0g6qb/no5fYJ6/mPDBm3QRgMO
+        UG/FbEufC3TdRgCvmxyxHRg5xgkw
+X-Google-Smtp-Source: APXvYqwdEJlBHl1J6iniMl+4x+IcJZNUmIQ5tWeT365a3MEshvfmKjso/WA0P3Jq5VOzRc4hZcCN1g==
+X-Received: by 2002:a62:750c:: with SMTP id q12mr75920731pfc.59.1560472433969;
+        Thu, 13 Jun 2019 17:33:53 -0700 (PDT)
 Received: from localhost ([2620:10d:c091:500::2:9d14])
-        by smtp.gmail.com with ESMTPSA id p1sm827742pff.74.2019.06.13.17.33.58
+        by smtp.gmail.com with ESMTPSA id l1sm894960pgj.67.2019.06.13.17.33.52
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 13 Jun 2019 17:33:58 -0700 (PDT)
+        Thu, 13 Jun 2019 17:33:53 -0700 (PDT)
 From:   Tejun Heo <tj@kernel.org>
 To:     dsterba@suse.com, clm@fb.com, josef@toxicpanda.com,
         axboe@kernel.dk, jack@suse.cz
 Cc:     linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-block@vger.kernel.org, kernel-team@fb.com,
-        Tejun Heo <tj@kernel.org>
-Subject: [PATCH 2/8] blkcg, writeback: Implement wbc_blkcg_css()
-Date:   Thu, 13 Jun 2019 17:33:44 -0700
-Message-Id: <20190614003350.1178444-3-tj@kernel.org>
+        linux-block@vger.kernel.org, kernel-team@fb.com
+Subject: [PATCHSET btrfs/for-next] btrfs: fix cgroup writeback support
+Date:   Thu, 13 Jun 2019 17:33:42 -0700
+Message-Id: <20190614003350.1178444-1-tj@kernel.org>
 X-Mailer: git-send-email 2.17.1
-In-Reply-To: <20190614003350.1178444-1-tj@kernel.org>
-References: <20190614003350.1178444-1-tj@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Add a helper to determine the target blkcg from wbc.
+Hello,
 
-Signed-off-by: Tejun Heo <tj@kernel.org>
----
- include/linux/writeback.h | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+When writeback is executed asynchronously (e.g. for compression), bios
+are bounced to and issued by worker pool shared by all cgroups.  This
+leads to significant priority inversions when cgroup IO control is in
+use - IOs for a low priority cgroup can tie down the workers forcing
+higher priority IOs to wait behind them.
 
-diff --git a/include/linux/writeback.h b/include/linux/writeback.h
-index b8f5f000cde4..1c85563f035d 100644
---- a/include/linux/writeback.h
-+++ b/include/linux/writeback.h
-@@ -93,6 +93,16 @@ static inline int wbc_to_write_flags(struct writeback_control *wbc)
- 	return 0;
- }
- 
-+static inline struct cgroup_subsys_state *
-+wbc_blkcg_css(struct writeback_control *wbc)
-+{
-+#ifdef CONFIG_CGROUP_WRITEBACK
-+	if (wbc->wb)
-+		return wbc->wb->blkcg_css;
-+#endif
-+	return blkcg_root_css;
-+}
-+
- /*
-  * A wb_domain represents a domain that wb's (bdi_writeback's) belong to
-  * and are measured against each other in.  There always is one global
--- 
-2.17.1
+This patchset adds an bio punt mechanism to blkcg.  A bio tagged with
+REQ_CGROUP_PUNT flag is bounced to the asynchronous issue context of
+the associated blkcg on bio_submit().  As the bios are issued from
+per-blkcg work items, there's no concern for priority inversions and
+it doesn't require invasive changes to the filesystems.  The mechanism
+should be generally useful for IO control support across different
+filesystems.
+
+btrfs async path is simplified and is updated to use REQ_CGROUP_PUNT
+for submitting asynchronous bios.  It's also updated to always and
+only account the original writeback bios against wbc so that cgroup
+inode writeback ownership arbitration isn't confused by downstream
+bios.
+
+This patchset contains the following 8 patches.  The first three are
+my blkcg patches to implement the needed mechanisms.  The latter five
+are Chris Mason's btrfs cleanup and update patches.  Please let me
+know how the patches should be routed.  Given that there currently
+aren't other users, it's likely the easiest to route all through btrfs
+tree.
+
+ 0001-blkcg-writeback-Add-wbc-no_wbc_acct.patch
+ 0002-blkcg-writeback-Implement-wbc_blkcg_css.patch
+ 0003-blkcg-implement-REQ_CGROUP_PUNT.patch
+ 0004-Btrfs-stop-using-btrfs_schedule_bio.patch
+ 0005-Btrfs-delete-the-entire-async-bio-submission-framewo.patch
+ 0006-Btrfs-only-associate-the-locked-page-with-one-async_.patch
+ 0007-Btrfs-use-REQ_CGROUP_PUNT-for-worker-thread-submitte.patch
+ 0008-Btrfs-extent_write_locked_range-should-attach-inode-.patch
+
+0001-0003 implement wbc->no_wbc_acct, wbc_blkcg_css() and
+REQ_CGROUP_PUNT.
+
+0004-0006 are prep patches to simplify / improve async bio submission.
+
+0007 makes btrfs use REQ_CGROUP_PUNT for async bios.
+
+0008 fixes wbc writeback accounting for IOs issued through
+extent_write_locked_range().
+
+This patchset is also available in the following git branch.
+
+ git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-btrfs-cgroup-updates
+
+Thanks, diffstat follows.
+
+ block/blk-cgroup.c          |   54 +++++++++
+ block/blk-core.c            |    3 
+ fs/btrfs/compression.c      |   16 +-
+ fs/btrfs/compression.h      |    3 
+ fs/btrfs/ctree.h            |    1 
+ fs/btrfs/disk-io.c          |   25 +---
+ fs/btrfs/extent_io.c        |   15 +-
+ fs/btrfs/inode.c            |   61 ++++++++--
+ fs/btrfs/super.c            |    1 
+ fs/btrfs/volumes.c          |  264 --------------------------------------------
+ fs/btrfs/volumes.h          |   10 -
+ fs/fs-writeback.c           |    2 
+ include/linux/backing-dev.h |    1 
+ include/linux/blk-cgroup.h  |   16 ++
+ include/linux/blk_types.h   |   10 +
+ include/linux/writeback.h   |   24 +++-
+ 16 files changed, 194 insertions(+), 312 deletions(-)
+
+--
+tejun
 

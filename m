@@ -4,70 +4,70 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DDD7FC31E49
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Jun 2019 00:34:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7FF96C31E45
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Jun 2019 00:34:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B239620B7C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Jun 2019 00:34:01 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3D91020B7C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Jun 2019 00:34:05 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1560472441;
-	bh=wLaCEVXKxC9dpQRwQv1a8W0gNHLrAL0Y2fiQYkjmIUc=;
+	s=default; t=1560472445;
+	bh=wQW3U3J9RXnL7YrENMNM2verv9iRV2WNTWOWNlDvs6A=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=EkzTRtLTkxnPiajEODzyCgL8LWJDXRbXhBEv8x/K9l0JFIqnYyI9zRdLoZR/xErWF
-	 CSU2zVbi1831MqwDMUpURSyZadjnCqNBN1xJSpJWUVCJMgk/a0z/00zrvoQvF0QhDC
-	 RnU/31nsVl80Bt90SpgA5+1D9va+BvM2ar+V3p/w=
+	b=JPWOz6hU+em+0vLhGuCRJrqO7z5ohbmB512KKPphvx5fU2cVZHyRn5brtymYyqSud
+	 ObnR/83x+3NsixaHvHnqk2DQM0bkhRuk/18XkbgzphgRjI3J9XSLeTfyA3xDk53NKE
+	 oEikBRtXr+twcqciqQYr5Z6Qx3HlVcU1kslBNfEs=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726933AbfFNAd6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 13 Jun 2019 20:33:58 -0400
-Received: from mail-pg1-f196.google.com ([209.85.215.196]:35864 "EHLO
-        mail-pg1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725778AbfFNAd5 (ORCPT
+        id S1727141AbfFNAeE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 13 Jun 2019 20:34:04 -0400
+Received: from mail-pg1-f194.google.com ([209.85.215.194]:37522 "EHLO
+        mail-pg1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727070AbfFNAeC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Jun 2019 20:33:57 -0400
-Received: by mail-pg1-f196.google.com with SMTP id f21so468220pgi.3;
-        Thu, 13 Jun 2019 17:33:57 -0700 (PDT)
+        Thu, 13 Jun 2019 20:34:02 -0400
+Received: by mail-pg1-f194.google.com with SMTP id 20so466050pgr.4;
+        Thu, 13 Jun 2019 17:34:01 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=sender:from:to:cc:subject:date:message-id:in-reply-to:references;
-        bh=g3Gi8DffQm5IvbH4amu3rwd2AgRjtOkwiizeIPZ8bC4=;
-        b=rvQAZUJFX2R3lXeU2x+V5wBlwbIoWXPu3GKOpeFiQ3RXyJ1jeAL0/e17CGNft2rhrX
-         C98IKGfrqAdktxu2RyjD5e1YGBrg5sfaCFVnJDNNW6Y/NSb5zoqFp+7w8XY5UkSP/seM
-         bk20mFQAQQxbfMlLT+qamrbbOzCmt2KeQFlC+N+G9Qq8dYBWMYG5dfy6yAyw+93V6DZm
-         +kMwOKX8sB+EoZr1wlDTQUZBnYVMT7j/CyFnld5HkKVlc6uZDffm1lZfoI7+G+jfw0PB
-         tdwbWTTkcSxzFKGpX4RtffK4GeyLz2nCmYoXYmwK5yNEbtCE9zQituvUyScIaAot4bJM
-         amLA==
+        bh=n3Cqzxv6aTGPD2mSNBYzcUSmQ9497Z24wwCs2a6QkSk=;
+        b=SCib9XfntYcn4LcVls7DGrduqu9RTCtFqpZHTyb/qLI0lY2kANW4iijqmCQUxyknSk
+         KMvulF1Ve+rXxV49s4csFqHDwf0rU6UEFdf3YJV1chwPkaWVKOG9L4sLxOj3Idl5fNMz
+         I1fuswDCDx5Vi+l0RZKENjE8pGym0asVZLSrHfeu1ycoyL7cZ5xR3m6FQ1GeYrojGhvI
+         BYGOVqorb4nk5XS9XZuVZ3e5V0cCSDNCZ8TNlVK9UIMO7vPoYg3x+a/bNsKuy4e/QidM
+         QroIDSZkQtGCEgUy/BrHIAXTtzFYBXF7cSmnPgsZS/s3hvBZAjaE/ZViGJzBYgQA80vq
+         niVQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:sender:from:to:cc:subject:date:message-id
          :in-reply-to:references;
-        bh=g3Gi8DffQm5IvbH4amu3rwd2AgRjtOkwiizeIPZ8bC4=;
-        b=YMyBUj3GvHFnctlMF8ifG3/+8XqF0laNGJ0tyoBGbEkV4SVVqHzWTrt9AREhD0vhCT
-         Y9941RDmFIyn0uhcdyoZFtZE/Yd+fmMpgGDbpWJOJFJISEj+8k3YyF0qUeQlzwuzkLYL
-         emVyh76esJml5Zps15bKRkm9/24dqIfZfxJWVVxOQeCiYkD355ZPGqp9HTChsRKN7Ujc
-         lUixvjvOjK1M3G8bZJocFpHYNJoC+4ExJcJm0C/LN5yDrmbn1G1A30cH1WcPCe2dyQ5Z
-         Q/Cd8KJeQmogUblsyXd0Cydh9D3Bq9vanODX2t7+upt18kFRxtTa385TK6v/Yop5d24Y
-         uDXg==
-X-Gm-Message-State: APjAAAWkybZC8h1tZi3HerXvXRMy6cFYcA1l59seBhizETVf5Sc7UIqq
-        PgL+l+EnBw//3VuII4bJbUY=
-X-Google-Smtp-Source: APXvYqwSECXMKx4WcTqubSqZ2goTeL0wAPRtCcx0+/9G0MyUC9o8uoV6sIiRlA7ObP0dRXQGYDtgAw==
-X-Received: by 2002:a17:90a:bf84:: with SMTP id d4mr8049813pjs.124.1560472436352;
-        Thu, 13 Jun 2019 17:33:56 -0700 (PDT)
+        bh=n3Cqzxv6aTGPD2mSNBYzcUSmQ9497Z24wwCs2a6QkSk=;
+        b=MZTF+e93PAwnalKd8XxtU+Ifspq/ODyHpU1Y6vzRCv6EeA5FYzphYmJ8LcL8+Ed5P7
+         ZDhY3HKuReDfgxrfH+zRFbwBGUDSoHqY4RJP2Mnfq+pFKQDlhsCzmzfvp1oAzxBRlkz8
+         e/b/uTS6sbQ3jdWWF/DjLv2boCoh+qEmiKTENkmrE/+EFcpi44hjKXtg02dkDyFcTxQ7
+         7DxUBQUm6bTrhKAF/p7dh1A/zi7Yb24HWOAEDPtrATKLcIN67tyEEZDWbloa4BAOQxQM
+         P2j2+lW3RXqezuYbpfRMvUWzborBol90yO5NjtWCDtw4iOtudSeVkNsIlWwl9OoFnTvA
+         xuxw==
+X-Gm-Message-State: APjAAAWeOYiJhHAbxJdfEJZu8ZOuNcgwZ+uzYnKbRI3BJEetKKZ1g8Si
+        7i6SZ98V4sOmkw4wjMxyOAw=
+X-Google-Smtp-Source: APXvYqwyu8WX98uWyN1Y3bw4gfznBIi9+crjgWsT1IpQAEADSMGX+rMye9WPQ0sR/VTOl4e8tvuRow==
+X-Received: by 2002:a65:5685:: with SMTP id v5mr33607678pgs.184.1560472441269;
+        Thu, 13 Jun 2019 17:34:01 -0700 (PDT)
 Received: from localhost ([2620:10d:c091:500::2:9d14])
-        by smtp.gmail.com with ESMTPSA id l7sm879098pfl.9.2019.06.13.17.33.55
+        by smtp.gmail.com with ESMTPSA id t5sm832075pgh.46.2019.06.13.17.34.00
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 13 Jun 2019 17:33:55 -0700 (PDT)
+        Thu, 13 Jun 2019 17:34:00 -0700 (PDT)
 From:   Tejun Heo <tj@kernel.org>
 To:     dsterba@suse.com, clm@fb.com, josef@toxicpanda.com,
         axboe@kernel.dk, jack@suse.cz
 Cc:     linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
         linux-block@vger.kernel.org, kernel-team@fb.com,
         Tejun Heo <tj@kernel.org>
-Subject: [PATCH 1/8] blkcg, writeback: Add wbc->no_wbc_acct
-Date:   Thu, 13 Jun 2019 17:33:43 -0700
-Message-Id: <20190614003350.1178444-2-tj@kernel.org>
+Subject: [PATCH 3/8] blkcg: implement REQ_CGROUP_PUNT
+Date:   Thu, 13 Jun 2019 17:33:45 -0700
+Message-Id: <20190614003350.1178444-4-tj@kernel.org>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20190614003350.1178444-1-tj@kernel.org>
 References: <20190614003350.1178444-1-tj@kernel.org>
@@ -76,43 +76,273 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-When writeback IOs are bounced through async layers, the IOs should
-only be accounted against the wbc from the original bdi writeback to
-avoid confusing cgroup inode ownership arbitration.  Add
-wbc->no_wbc_acct to allow disabling wbc accounting.  This will be used
-make btfs compression work well with cgroup IO control.
+When a shared kthread needs to issue a bio for a cgroup, doing so
+synchronously can lead to priority inversions as the kthread can be
+trapped waiting for that cgroup.  This patch implements
+REQ_CGROUP_PUNT flag which makes submit_bio() punt the actual issuing
+to a dedicated per-blkcg work item to avoid such priority inversions.
+
+This will be used to fix priority inversions in btrfs compression and
+should be generally useful as we grow filesystem support for
+comprehensive IO control.
 
 Signed-off-by: Tejun Heo <tj@kernel.org>
+Cc: Chris Mason <clm@fb.com>
 ---
- fs/fs-writeback.c         | 2 +-
- include/linux/writeback.h | 1 +
- 2 files changed, 2 insertions(+), 1 deletion(-)
+ block/blk-cgroup.c          | 56 +++++++++++++++++++++++++++++++++++--
+ block/blk-core.c            |  3 ++
+ include/linux/backing-dev.h |  1 +
+ include/linux/blk-cgroup.h  | 16 ++++++++++-
+ include/linux/blk_types.h   | 10 +++++++
+ include/linux/writeback.h   | 13 +++++++--
+ 6 files changed, 92 insertions(+), 7 deletions(-)
 
-diff --git a/fs/fs-writeback.c b/fs/fs-writeback.c
-index 36855c1f8daf..6c8061a49ca0 100644
---- a/fs/fs-writeback.c
-+++ b/fs/fs-writeback.c
-@@ -721,7 +721,7 @@ void wbc_account_io(struct writeback_control *wbc, struct page *page,
- 	 * behind a slow cgroup.  Ultimately, we want pageout() to kick off
- 	 * regular writeback instead of writing things out itself.
- 	 */
--	if (!wbc->wb)
-+	if (!wbc->wb || wbc->no_wbc_acct)
- 		return;
+diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
+index 617a2b3f7582..64d80a661205 100644
+--- a/block/blk-cgroup.c
++++ b/block/blk-cgroup.c
+@@ -46,12 +46,10 @@ struct blkcg blkcg_root;
+ EXPORT_SYMBOL_GPL(blkcg_root);
  
- 	id = mem_cgroup_css_from_page(page)->id;
+ struct cgroup_subsys_state * const blkcg_root_css = &blkcg_root.css;
+-
+ static struct blkcg_policy *blkcg_policy[BLKCG_MAX_POLS];
+-
+ static LIST_HEAD(all_blkcgs);		/* protected by blkcg_pol_mutex */
+-
+ static bool blkcg_debug_stats = false;
++static struct workqueue_struct *blkcg_punt_bio_wq;
+ 
+ static bool blkcg_policy_enabled(struct request_queue *q,
+ 				 const struct blkcg_policy *pol)
+@@ -87,6 +85,8 @@ static void __blkg_release(struct rcu_head *rcu)
+ 
+ 	percpu_ref_exit(&blkg->refcnt);
+ 
++	WARN_ON(!bio_list_empty(&blkg->async_bios));
++
+ 	/* release the blkcg and parent blkg refs this blkg has been holding */
+ 	css_put(&blkg->blkcg->css);
+ 	if (blkg->parent)
+@@ -112,6 +112,23 @@ static void blkg_release(struct percpu_ref *ref)
+ 	call_rcu(&blkg->rcu_head, __blkg_release);
+ }
+ 
++static void blkg_async_bio_workfn(struct work_struct *work)
++{
++	struct blkcg_gq *blkg = container_of(work, struct blkcg_gq,
++					     async_bio_work);
++	struct bio_list bios = BIO_EMPTY_LIST;
++	struct bio *bio;
++
++	/* as long as there are pending bios, @blkg can't go away */
++	spin_lock_bh(&blkg->async_bio_lock);
++	bio_list_merge(&bios, &blkg->async_bios);
++	bio_list_init(&blkg->async_bios);
++	spin_unlock_bh(&blkg->async_bio_lock);
++
++	while ((bio = bio_list_pop(&bios)))
++		submit_bio(bio);
++}
++
+ /**
+  * blkg_alloc - allocate a blkg
+  * @blkcg: block cgroup the new blkg is associated with
+@@ -137,6 +154,9 @@ static struct blkcg_gq *blkg_alloc(struct blkcg *blkcg, struct request_queue *q,
+ 
+ 	blkg->q = q;
+ 	INIT_LIST_HEAD(&blkg->q_node);
++	spin_lock_init(&blkg->async_bio_lock);
++	bio_list_init(&blkg->async_bios);
++	INIT_WORK(&blkg->async_bio_work, blkg_async_bio_workfn);
+ 	blkg->blkcg = blkcg;
+ 
+ 	for (i = 0; i < BLKCG_MAX_POLS; i++) {
+@@ -1582,6 +1602,25 @@ void blkcg_policy_unregister(struct blkcg_policy *pol)
+ }
+ EXPORT_SYMBOL_GPL(blkcg_policy_unregister);
+ 
++bool __blkcg_punt_bio_submit(struct bio *bio)
++{
++	struct blkcg_gq *blkg = bio->bi_blkg;
++
++	/* consume the flag first */
++	bio->bi_opf &= ~REQ_CGROUP_PUNT;
++
++	/* never bounce for the root cgroup */
++	if (!blkg->parent)
++		return false;
++
++	spin_lock_bh(&blkg->async_bio_lock);
++	bio_list_add(&blkg->async_bios, bio);
++	spin_unlock_bh(&blkg->async_bio_lock);
++
++	queue_work(blkcg_punt_bio_wq, &blkg->async_bio_work);
++	return true;
++}
++
+ /*
+  * Scale the accumulated delay based on how long it has been since we updated
+  * the delay.  We only call this when we are adding delay, in case it's been a
+@@ -1782,5 +1821,16 @@ void blkcg_add_delay(struct blkcg_gq *blkg, u64 now, u64 delta)
+ 	atomic64_add(delta, &blkg->delay_nsec);
+ }
+ 
++static int __init blkcg_init(void)
++{
++	blkcg_punt_bio_wq = alloc_workqueue("blkcg_punt_bio",
++					    WQ_MEM_RECLAIM | WQ_FREEZABLE |
++					    WQ_UNBOUND | WQ_SYSFS, 0);
++	if (!blkcg_punt_bio_wq)
++		return -ENOMEM;
++	return 0;
++}
++subsys_initcall(blkcg_init);
++
+ module_param(blkcg_debug_stats, bool, 0644);
+ MODULE_PARM_DESC(blkcg_debug_stats, "True if you want debug stats, false if not");
+diff --git a/block/blk-core.c b/block/blk-core.c
+index a55389ba8779..5879c1ec044d 100644
+--- a/block/blk-core.c
++++ b/block/blk-core.c
+@@ -1165,6 +1165,9 @@ EXPORT_SYMBOL_GPL(direct_make_request);
+  */
+ blk_qc_t submit_bio(struct bio *bio)
+ {
++	if (blkcg_punt_bio_submit(bio))
++		return BLK_QC_T_NONE;
++
+ 	/*
+ 	 * If it's a regular read/write or a barrier with data attached,
+ 	 * go through the normal accounting stuff before submission.
+diff --git a/include/linux/backing-dev.h b/include/linux/backing-dev.h
+index f9b029180241..35b31d176f74 100644
+--- a/include/linux/backing-dev.h
++++ b/include/linux/backing-dev.h
+@@ -48,6 +48,7 @@ extern spinlock_t bdi_lock;
+ extern struct list_head bdi_list;
+ 
+ extern struct workqueue_struct *bdi_wq;
++extern struct workqueue_struct *bdi_async_bio_wq;
+ 
+ static inline bool wb_has_dirty_io(struct bdi_writeback *wb)
+ {
+diff --git a/include/linux/blk-cgroup.h b/include/linux/blk-cgroup.h
+index 76c61318fda5..ffb2f88e87c6 100644
+--- a/include/linux/blk-cgroup.h
++++ b/include/linux/blk-cgroup.h
+@@ -134,13 +134,17 @@ struct blkcg_gq {
+ 
+ 	struct blkg_policy_data		*pd[BLKCG_MAX_POLS];
+ 
+-	struct rcu_head			rcu_head;
++	spinlock_t			async_bio_lock;
++	struct bio_list			async_bios;
++	struct work_struct		async_bio_work;
+ 
+ 	atomic_t			use_delay;
+ 	atomic64_t			delay_nsec;
+ 	atomic64_t			delay_start;
+ 	u64				last_delay;
+ 	int				last_use;
++
++	struct rcu_head			rcu_head;
+ };
+ 
+ typedef struct blkcg_policy_data *(blkcg_pol_alloc_cpd_fn)(gfp_t gfp);
+@@ -763,6 +767,15 @@ static inline bool blk_throtl_bio(struct request_queue *q, struct blkcg_gq *blkg
+ 				  struct bio *bio) { return false; }
+ #endif
+ 
++bool __blkcg_punt_bio_submit(struct bio *bio);
++
++static inline bool blkcg_punt_bio_submit(struct bio *bio)
++{
++	if (bio->bi_opf & REQ_CGROUP_PUNT)
++		return __blkcg_punt_bio_submit(bio);
++	else
++		return false;
++}
+ 
+ static inline void blkcg_bio_issue_init(struct bio *bio)
+ {
+@@ -910,6 +923,7 @@ static inline char *blkg_path(struct blkcg_gq *blkg) { return NULL; }
+ static inline void blkg_get(struct blkcg_gq *blkg) { }
+ static inline void blkg_put(struct blkcg_gq *blkg) { }
+ 
++static inline bool blkcg_punt_bio_submit(struct bio *bio) { return false; }
+ static inline void blkcg_bio_issue_init(struct bio *bio) { }
+ static inline bool blkcg_bio_issue_check(struct request_queue *q,
+ 					 struct bio *bio) { return true; }
+diff --git a/include/linux/blk_types.h b/include/linux/blk_types.h
+index 791fee35df88..e8b42a786315 100644
+--- a/include/linux/blk_types.h
++++ b/include/linux/blk_types.h
+@@ -321,6 +321,14 @@ enum req_flag_bits {
+ 	__REQ_RAHEAD,		/* read ahead, can fail anytime */
+ 	__REQ_BACKGROUND,	/* background IO */
+ 	__REQ_NOWAIT,           /* Don't wait if request will block */
++	/*
++	 * When a shared kthread needs to issue a bio for a cgroup, doing
++	 * so synchronously can lead to priority inversions as the kthread
++	 * can be trapped waiting for that cgroup.  CGROUP_PUNT flag makes
++	 * submit_bio() punt the actual issuing to a dedicated per-blkcg
++	 * work item to avoid such priority inversions.
++	 */
++	__REQ_CGROUP_PUNT,
+ 
+ 	/* command specific flags for REQ_OP_WRITE_ZEROES: */
+ 	__REQ_NOUNMAP,		/* do not free blocks when zeroing */
+@@ -347,6 +355,8 @@ enum req_flag_bits {
+ #define REQ_RAHEAD		(1ULL << __REQ_RAHEAD)
+ #define REQ_BACKGROUND		(1ULL << __REQ_BACKGROUND)
+ #define REQ_NOWAIT		(1ULL << __REQ_NOWAIT)
++#define REQ_CGROUP_PUNT		(1ULL << __REQ_CGROUP_PUNT)
++
+ #define REQ_NOUNMAP		(1ULL << __REQ_NOUNMAP)
+ #define REQ_HIPRI		(1ULL << __REQ_HIPRI)
+ 
 diff --git a/include/linux/writeback.h b/include/linux/writeback.h
-index 738a0c24874f..b8f5f000cde4 100644
+index 1c85563f035d..be602c42aab8 100644
 --- a/include/linux/writeback.h
 +++ b/include/linux/writeback.h
-@@ -68,6 +68,7 @@ struct writeback_control {
- 	unsigned for_reclaim:1;		/* Invoked from the page allocator */
+@@ -11,6 +11,7 @@
+ #include <linux/flex_proportions.h>
+ #include <linux/backing-dev-defs.h>
+ #include <linux/blk_types.h>
++#include <linux/blk-cgroup.h>
+ 
+ struct bio;
+ 
+@@ -69,6 +70,7 @@ struct writeback_control {
  	unsigned range_cyclic:1;	/* range_start is cyclic */
  	unsigned for_sync:1;		/* sync(2) WB_SYNC_ALL writeback */
-+	unsigned no_wbc_acct:1;		/* skip wbc IO accounting */
+ 	unsigned no_wbc_acct:1;		/* skip wbc IO accounting */
++	unsigned punt_to_cgroup:1;	/* cgrp punting, see __REQ_CGROUP_PUNT */
  #ifdef CONFIG_CGROUP_WRITEBACK
  	struct bdi_writeback *wb;	/* wb this writeback is issued under */
  	struct inode *inode;		/* inode being written out */
+@@ -85,12 +87,17 @@ struct writeback_control {
+ 
+ static inline int wbc_to_write_flags(struct writeback_control *wbc)
+ {
++	int flags = 0;
++
++	if (wbc->punt_to_cgroup)
++		flags = REQ_CGROUP_PUNT;
++
+ 	if (wbc->sync_mode == WB_SYNC_ALL)
+-		return REQ_SYNC;
++		flags |= REQ_SYNC;
+ 	else if (wbc->for_kupdate || wbc->for_background)
+-		return REQ_BACKGROUND;
++		flags |= REQ_BACKGROUND;
+ 
+-	return 0;
++	return flags;
+ }
+ 
+ static inline struct cgroup_subsys_state *
 -- 
 2.17.1
 

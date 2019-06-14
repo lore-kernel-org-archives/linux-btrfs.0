@@ -7,66 +7,67 @@ X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E7B9DC31E45
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Jun 2019 00:34:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DC3C7C31E4A
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Jun 2019 00:34:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id AF1C120B7C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Jun 2019 00:34:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id ADB7320B7C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Jun 2019 00:34:36 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1560472470;
-	bh=caSPBm/EN4PyEOtGGZ4M4RWpB/2SMPB7L6hCEkMm6rA=;
+	s=default; t=1560472476;
+	bh=9Tv9rz/VVZozXZUsb9XFza/P35K9sTfCt4zKnujeBWM=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=hiE9iNEqjxANcmFKrxtnD6P2a8hgvR3drC6rj1xMXuIkKhqQf65fKP463278D948H
-	 ELk55eL7eoX9hVVenUANp2kH18L1suF8DH56aMscAYIoByFun8fF3UJ8FJ2EuDWzgT
-	 6WBuAABPfOX1a1Js/qCYmV09Zq9cyrJ/trctdv98=
+	b=z86sQLfPtPUw5dO19vTsh9iZ8d3D7k9aSpx5pybbRL+8yftXdXDSh75bxiT2D5/EA
+	 Bp+4e7brXbic6ylXgV+EV/aX7O5MkzugF8p5xQf4Fvedy7YmV5FUr+RvtiDZQES05l
+	 PvYfVlxz+6CnZHdxRURDOeZAzxmr4bnsLrKDhlbs=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727314AbfFNAeL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 13 Jun 2019 20:34:11 -0400
-Received: from mail-pf1-f196.google.com ([209.85.210.196]:44974 "EHLO
-        mail-pf1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727131AbfFNAeJ (ORCPT
+        id S1727040AbfFNAeB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 13 Jun 2019 20:34:01 -0400
+Received: from mail-pg1-f195.google.com ([209.85.215.195]:35200 "EHLO
+        mail-pg1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727001AbfFNAd7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Jun 2019 20:34:09 -0400
-Received: by mail-pf1-f196.google.com with SMTP id t16so264917pfe.11;
-        Thu, 13 Jun 2019 17:34:09 -0700 (PDT)
+        Thu, 13 Jun 2019 20:33:59 -0400
+Received: by mail-pg1-f195.google.com with SMTP id s27so471771pgl.2;
+        Thu, 13 Jun 2019 17:33:59 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=sender:from:to:cc:subject:date:message-id:in-reply-to:references;
-        bh=B/Vt9MyMtLSprSkCPoNLLFZLeevCHMFAkIZcFHo/83Q=;
-        b=WGa9hHFfN8Ll9X1LHhox3hfYJAtpD6OaHmCU6iSakFBAGLC1RZ98CS3LdaLN1Gu/ZV
-         /qC3VbKHi+3x/veBLqFb1lP5PTdZox1/Y35aNHuXs4D9nLvOYqf20JrgKbQKKmv19LDG
-         uwt6Y5lBqY7F/JauKo0hvJpvkNyWrC5E/eeb/ja07oTyQivH+bqHzwd/t2UROvrJ1w4m
-         wZAUPXo9RMu7jwtWCNmLOiGpsLmoIDJ0AgG6sXsp4NE6V+UjHDnKup1UasJXYjVt1i6O
-         2tq8Zem87W3mcax7uNdVI8opovS23uYSEcZEOQ0ykOvIs10wn101pW0jey4CQ38uSBfe
-         SEVA==
+        bh=J+WIIloOg8R89ClRTeMiBEyvJHmr12Pt7f1GOmgErrg=;
+        b=YhRTqGTux1UNwJbR9l++EjV3FIfs4oZYe2F/+74GkB28vP13HoaYTz1OOgDbnCwuAn
+         7PTQk5aAmp3XVlQFWDwzMZKCoiY2Nt4VrW/UCS4aucRv8Tkl1lSnWF8trTiEPjVnzVEp
+         OIyCgZUn+Hq6FjOA/cwjGotXXWat43A8uaMwa139+gx/OkrnHit+w4xLIxpuarPGfWzc
+         bg1XsyDLeM5ikjMmd3AVa7DXwf4VE9am6/XJE7BQh14YR5Ax7uZg+EjXhY5OWbISVx2q
+         XZuk2A+iD3Oj2Qb+QmOJrWS4CX8tNF1TYSxOGeFNyhjgxD7LPjVSkW9VQoHF7eSwcQzV
+         0JiA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:sender:from:to:cc:subject:date:message-id
          :in-reply-to:references;
-        bh=B/Vt9MyMtLSprSkCPoNLLFZLeevCHMFAkIZcFHo/83Q=;
-        b=s+7TcFPjGJ1AJ7g/kn9GVOXssEl0rjflEs6VkQMbSs0sTDJ7LC5y77G0VOtXyF5MSJ
-         bduCpChJroyL7MNaMPV/GRGdTSmhYyr+y3cfIdpIQ4OxwC19mqF76LVtAa+52daxDQUm
-         Lrk8vOhz7OdIrWjKDhb61HcHSPTKb8vmmrB8hcFAAOSZTMCelap/EJjLa0dAblrp9Mrs
-         /DH8PircjtYXl6Mpe71nPfEu3+O03Iekq+siMwqFV1562sPMLVdB+w6eufTQt2h0kIg+
-         2Yf8UIGRj8gwYhCTr6JUPbrbXuvZjXDG42Yc8QZQ9HLpnWUpUimZn/+j8bpnMsu+Gota
-         OJOQ==
-X-Gm-Message-State: APjAAAWc3GjumuzNYKr0DMbMkmBGkDoMJsWzVgK6DPdem1pLmp3O1K8z
-        cTwFf5qECbn9cSnyZaXXaZDWCa8a
-X-Google-Smtp-Source: APXvYqwat4Xy+uX5U9Ip0i+sQbDbsoUG/H2DmFDer4qV6d8Hy2N1SFMedgp3iW8IOOUKoTip4EwWDw==
-X-Received: by 2002:a17:90b:d8b:: with SMTP id bg11mr8215737pjb.30.1560472448759;
-        Thu, 13 Jun 2019 17:34:08 -0700 (PDT)
+        bh=J+WIIloOg8R89ClRTeMiBEyvJHmr12Pt7f1GOmgErrg=;
+        b=qvM4KuI3Rv9cgI926sawFC2XTf7pnW3YfR5IS9b8RSEUvP//r9PnResikaD149+wKh
+         7UfjhozhvUt7elezpuC2J3og2O/k1PPurRzf6bqAGrJn5cZArYHs5Ic3gQYdXCltGDzZ
+         At4z9+26ZN48h6HLo0cIAhB6WOHDSUYKcSF7Qh5NZZ9OeaX0yJhjRLdaj+g48siQLsk4
+         S2F9HN32sbrHIRKHlEZoxvaATdPQ7io7K1whpr0gNpbeflJ/7CKP7xZu/ULc+ZZJ9C6E
+         ZOR647C3KTQzTfOyffQR37rKAvFku2+2xtHH1xIUR5SvGFnKkVEaWVsdoX+uYRoHKJRJ
+         aBMw==
+X-Gm-Message-State: APjAAAUNZc2n1gEdNlzm7O3JtUO/EvbqdC5SAUDKfpJuKaF4V/ZLxNig
+        GUZuuwpIecyohqExmn9omVk=
+X-Google-Smtp-Source: APXvYqxJXtZl5ddqNJkiz0UB18vPyNmtxAoGE34xxniDb2UxO2ThLJNJOSjuSWiMS9pD4PVo8R7OjQ==
+X-Received: by 2002:a17:90a:bb01:: with SMTP id u1mr7185132pjr.92.1560472438757;
+        Thu, 13 Jun 2019 17:33:58 -0700 (PDT)
 Received: from localhost ([2620:10d:c091:500::2:9d14])
-        by smtp.gmail.com with ESMTPSA id y22sm870240pfo.39.2019.06.13.17.34.08
+        by smtp.gmail.com with ESMTPSA id p1sm827742pff.74.2019.06.13.17.33.58
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 13 Jun 2019 17:34:08 -0700 (PDT)
+        Thu, 13 Jun 2019 17:33:58 -0700 (PDT)
 From:   Tejun Heo <tj@kernel.org>
 To:     dsterba@suse.com, clm@fb.com, josef@toxicpanda.com,
         axboe@kernel.dk, jack@suse.cz
 Cc:     linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-block@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 6/8] Btrfs: only associate the locked page with one async_cow struct
-Date:   Thu, 13 Jun 2019 17:33:48 -0700
-Message-Id: <20190614003350.1178444-7-tj@kernel.org>
+        linux-block@vger.kernel.org, kernel-team@fb.com,
+        Tejun Heo <tj@kernel.org>
+Subject: [PATCH 2/8] blkcg, writeback: Implement wbc_blkcg_css()
+Date:   Thu, 13 Jun 2019 17:33:44 -0700
+Message-Id: <20190614003350.1178444-3-tj@kernel.org>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20190614003350.1178444-1-tj@kernel.org>
 References: <20190614003350.1178444-1-tj@kernel.org>
@@ -75,155 +76,34 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Chris Mason <clm@fb.com>
+Add a helper to determine the target blkcg from wbc.
 
-The btrfs writepages function collects a large range of pages flagged
-for delayed allocation, and then sends them down through the COW code
-for processing.  When compression is on, we allocate one async_cow
-structure for every 512K, and then run those pages through the
-compression code for IO submission.
-
-writepages starts all of this off with a single page, locked by
-the original call to extent_write_cache_pages(), and it's important to
-keep track of this page because it has already been through
-clear_page_dirty_for_io().
-
-The btrfs async_cow struct has a pointer to the locked_page, and when
-we're redirtying the page because compression had to fallback to
-uncompressed IO, we use page->index to decide if a given async_cow
-struct really owns that page.
-
-But, this is racey.  If a given delalloc range is broken up into two
-async_cows (cow_A and cow_B), we can end up with something like this:
-
-compress_file_range(cowA)
-submit_compress_extents(cowA)
-submit compressed bios(cowA)
-put_page(locked_page)
-
-				compress_file_range(cowB)
-				...
-
-The end result is that cowA is completed and cleaned up before cowB even
-starts processing.  This means we can free locked_page() and reuse it
-elsewhere.  If we get really lucky, it'll have the same page->index in
-its new home as it did before.
-
-While we're processing cowB, we might decide we need to fall back to
-uncompressed IO, and so compress_file_range() will call
-__set_page_dirty_nobufers() on cowB->locked_page.
-
-Without cgroups in use, this creates as a phantom dirty page, which
-isn't great but isn't the end of the world.  With cgroups in use, we
-might crash in the accounting code because page->mapping->i_wb isn't
-set.
-
-[ 8308.523110] BUG: unable to handle kernel NULL pointer dereference at 00000000000000d0
-[ 8308.531084] IP: percpu_counter_add_batch+0x11/0x70
-[ 8308.538371] PGD 66534e067 P4D 66534e067 PUD 66534f067 PMD 0
-[ 8308.541750] Oops: 0000 [#1] SMP DEBUG_PAGEALLOC
-[ 8308.551948] CPU: 16 PID: 2172 Comm: rm Not tainted
-[ 8308.566883] RIP: 0010:percpu_counter_add_batch+0x11/0x70
-[ 8308.567891] RSP: 0018:ffffc9000a97bbe0 EFLAGS: 00010286
-[ 8308.568986] RAX: 0000000000000005 RBX: 0000000000000090 RCX: 0000000000026115
-[ 8308.570734] RDX: 0000000000000030 RSI: ffffffffffffffff RDI: 0000000000000090
-[ 8308.572543] RBP: 0000000000000000 R08: fffffffffffffff5 R09: 0000000000000000
-[ 8308.573856] R10: 00000000000260c0 R11: ffff881037fc26c0 R12: ffffffffffffffff
-[ 8308.580099] R13: ffff880fe4111548 R14: ffffc9000a97bc90 R15: 0000000000000001
-[ 8308.582520] FS:  00007f5503ced480(0000) GS:ffff880ff7200000(0000) knlGS:0000000000000000
-[ 8308.585440] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[ 8308.587951] CR2: 00000000000000d0 CR3: 00000001e0459005 CR4: 0000000000360ee0
-[ 8308.590707] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-[ 8308.592865] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
-[ 8308.594469] Call Trace:
-[ 8308.595149]  account_page_cleaned+0x15b/0x1f0
-[ 8308.596340]  __cancel_dirty_page+0x146/0x200
-[ 8308.599395]  truncate_cleanup_page+0x92/0xb0
-[ 8308.600480]  truncate_inode_pages_range+0x202/0x7d0
-[ 8308.617392]  btrfs_evict_inode+0x92/0x5a0
-[ 8308.619108]  evict+0xc1/0x190
-[ 8308.620023]  do_unlinkat+0x176/0x280
-[ 8308.621202]  do_syscall_64+0x63/0x1a0
-[ 8308.623451]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
-
-The fix here is to make asyc_cow->locked_page NULL everywhere but the
-one async_cow struct that's allowed to do things to the locked page.
-
-Signed-off-by: Chris Mason <clm@fb.com>
-Fixes: 771ed689d2cd ("Btrfs: Optimize compressed writeback and reads")
+Signed-off-by: Tejun Heo <tj@kernel.org>
 ---
- fs/btrfs/extent_io.c |  2 +-
- fs/btrfs/inode.c     | 25 +++++++++++++++++++++----
- 2 files changed, 22 insertions(+), 5 deletions(-)
+ include/linux/writeback.h | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 13fca7bfc1f2..9f223d7d78c0 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1838,7 +1838,7 @@ static int __process_pages_contig(struct address_space *mapping,
- 			if (page_ops & PAGE_SET_PRIVATE2)
- 				SetPagePrivate2(pages[i]);
+diff --git a/include/linux/writeback.h b/include/linux/writeback.h
+index b8f5f000cde4..1c85563f035d 100644
+--- a/include/linux/writeback.h
++++ b/include/linux/writeback.h
+@@ -93,6 +93,16 @@ static inline int wbc_to_write_flags(struct writeback_control *wbc)
+ 	return 0;
+ }
  
--			if (pages[i] == locked_page) {
-+			if (locked_page && pages[i] == locked_page) {
- 				put_page(pages[i]);
- 				pages_locked++;
- 				continue;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 91b161fb1521..df5527cc07b9 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -666,10 +666,12 @@ static noinline void compress_file_range(struct async_chunk *async_chunk,
- 	 * to our extent and set things up for the async work queue to run
- 	 * cow_file_range to do the normal delalloc dance.
- 	 */
--	if (page_offset(async_chunk->locked_page) >= start &&
--	    page_offset(async_chunk->locked_page) <= end)
-+	if (async_chunk->locked_page &&
-+	    (page_offset(async_chunk->locked_page) >= start &&
-+	     page_offset(async_chunk->locked_page)) <= end) {
- 		__set_page_dirty_nobuffers(async_chunk->locked_page);
- 		/* unlocked later on in the async handlers */
-+	}
- 
- 	if (redirty)
- 		extent_range_redirty_for_io(inode, start, end);
-@@ -759,7 +761,7 @@ static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
- 						  async_extent->start +
- 						  async_extent->ram_size - 1,
- 						  WB_SYNC_ALL);
--			else if (ret)
-+			else if (ret && async_chunk->locked_page)
- 				unlock_page(async_chunk->locked_page);
- 			kfree(async_extent);
- 			cond_resched();
-@@ -1236,10 +1238,25 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
- 		async_chunk[i].inode = inode;
- 		async_chunk[i].start = start;
- 		async_chunk[i].end = cur_end;
--		async_chunk[i].locked_page = locked_page;
- 		async_chunk[i].write_flags = write_flags;
- 		INIT_LIST_HEAD(&async_chunk[i].extents);
- 
-+		/*
-+		 * The locked_page comes all the way from writepage and its
-+		 * the original page we were actually given.  As we spread
-+		 * this large delalloc region across multiple async_cow
-+		 * structs, only the first struct needs a pointer to locked_page
-+		 *
-+		 * This way we don't need racey decisions about who is supposed
-+		 * to unlock it.
-+		 */
-+		if (locked_page) {
-+			async_chunk[i].locked_page = locked_page;
-+			locked_page = NULL;
-+		} else {
-+			async_chunk[i].locked_page = NULL;
-+		}
++static inline struct cgroup_subsys_state *
++wbc_blkcg_css(struct writeback_control *wbc)
++{
++#ifdef CONFIG_CGROUP_WRITEBACK
++	if (wbc->wb)
++		return wbc->wb->blkcg_css;
++#endif
++	return blkcg_root_css;
++}
 +
- 		btrfs_init_work(&async_chunk[i].work,
- 				btrfs_delalloc_helper,
- 				async_cow_start, async_cow_submit,
+ /*
+  * A wb_domain represents a domain that wb's (bdi_writeback's) belong to
+  * and are measured against each other in.  There always is one global
 -- 
 2.17.1
 

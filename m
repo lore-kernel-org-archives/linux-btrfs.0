@@ -2,304 +2,106 @@ Return-Path: <SRS0=kSG/=UO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
+X-Spam-Status: No, score=-5.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B7855C31E50
-	for <linux-btrfs@archiver.kernel.org>; Sat, 15 Jun 2019 18:25:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C28E1C31E51
+	for <linux-btrfs@archiver.kernel.org>; Sat, 15 Jun 2019 18:29:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7F07C2184D
-	for <linux-btrfs@archiver.kernel.org>; Sat, 15 Jun 2019 18:25:49 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9D0322082C
+	for <linux-btrfs@archiver.kernel.org>; Sat, 15 Jun 2019 18:29:41 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1560623149;
-	bh=XVYzYRsYz2IsuYfL5C3VW+cv1+Wz7B7C7SQpRWZ2jOY=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=XJdEdhNuqBO9gzqCW54npIr6Ixi/UISfx7zlIXewFLk9/mtQyjOdMMxPwBAfZ6ER+
-	 AkbP/ff8YGa/GaHhi7Xw6HfFzePdF+hZwzasf/MNadn1Oa45oGB7pRSsv/LIhmiS7r
-	 jB2d9q6Da3jAaE6XMQYfLoeHR911OMomo07IkEUE=
+	s=default; t=1560623381;
+	bh=drg1GKt+ib6Bp6LZP0o/5c5PxF6plAd2lkDNtWcgiCQ=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:List-ID:From;
+	b=TDboPXfir2EOIi/Zjy52cP7VlXKOQe5fnY/8OKDUmWeZQMQFglI8+SsdMXveo6Pq+
+	 9uID3AaTuh7bzkq/iCjYIPgdLk0PigS8l9ttbE54KV6PIEDG/JUhGnQZoAyQtMigoD
+	 5aECGVXplfclkpf2pSXU/rD3zPtczYpgTBifEk5E=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727135AbfFOSZS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 15 Jun 2019 14:25:18 -0400
-Received: from mail-qk1-f195.google.com ([209.85.222.195]:37665 "EHLO
-        mail-qk1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727107AbfFOSZR (ORCPT
+        id S1726764AbfFOS3h (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 15 Jun 2019 14:29:37 -0400
+Received: from mail-qk1-f193.google.com ([209.85.222.193]:45666 "EHLO
+        mail-qk1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725535AbfFOS3h (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 15 Jun 2019 14:25:17 -0400
-Received: by mail-qk1-f195.google.com with SMTP id d15so3815513qkl.4;
-        Sat, 15 Jun 2019 11:25:16 -0700 (PDT)
+        Sat, 15 Jun 2019 14:29:37 -0400
+Received: by mail-qk1-f193.google.com with SMTP id s22so3795741qkj.12;
+        Sat, 15 Jun 2019 11:29:37 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
-        h=sender:from:to:cc:subject:date:message-id:in-reply-to:references;
-        bh=YOUrDCMg1yDLfqXbDj7+733WP4wT9Kq/3RGxh4FkPz0=;
-        b=cvHkYQG8X0HXtsqTco0RaZecgA5i/7cLmz0YZUl/MLokK4JWRwXCDUvrEw7++BjQtU
-         cc50svs5FzEtynEO0c4PtBVFVst+N00hRbaGD6F/MdzZURvSJC7qnCQLrxGAWauRSWEe
-         l5z5C9VDU2KaynosUMCWZZ+XV9vpNeaFo8FLEoH8vBI6YjlhnszyNefavDHw4AWnaVRo
-         ulBEUkoll/7mVGK29o4hluF8J+Y7d7f8BULmK4n0WXLr9vEFzTZKyq7HHDVW+R4gJIHM
-         M7p5Xk2OLF7rldn4uJ4DB4+PPr6u/ianEwxgGO5bxWBwPh4ocADH5nmyxaae1uZDGnZ1
-         6a8w==
+        h=sender:date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to:user-agent;
+        bh=lZWCDkdCZYN5S0+Ul2IxfiRO29wLQTcP6wWsFwWlu8s=;
+        b=PphbEiU9i51xnvtm9V73bQYuo5cIfkeTXUcMOZ155zwXkW9k1v0AszL3HGTB5AYeTT
+         fMmrhBXuFr0sPCV8eoVVlAksctrq0Tp9EfiShBGan9umj+gy1onSVWWyp/YbfNQ8hPO0
+         /YFxWG/bnNyKmMK9S+h8oW63Tm9QU2mlTRob+1FyRqmyB1V5pEABc7CIakDbt8CPe9zk
+         5OthH7bBlGrWW0NoCY261eL7JxLB03tRJCoGI4wGle7j93IpmuJsT+faKyIQzcXuW9CI
+         btceBey/cK2gygHTP53JgjcqvJ2KM9kFr8n+9XEQeuWH9QBQVX9jjMSGKTp/Ed+ovdcz
+         DqIA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:sender:from:to:cc:subject:date:message-id
-         :in-reply-to:references;
-        bh=YOUrDCMg1yDLfqXbDj7+733WP4wT9Kq/3RGxh4FkPz0=;
-        b=BeY0hmbrCh31AzFvBH3EjWaxSxK4u8aSggr/zRBP7dtS2vaItk6GwX7YZ3tJdKMZ0E
-         8LFlIi1RpuOOOgsxMOtsqamqjtxYwKtnag+zydRFVwbRzMIof5Mx0KnmG1DSvufS8wDO
-         uRTZpXmcMRs8uMPAoZr8mAF8Vr87A9/zRAWROKB7mhp7URzWz0zt4fcH/qdEG7nHcmbo
-         BN4+OKfEtmSSSJEhL707GZl7e/AeHEvePqHDFFtetG/gdlIfwZXSYuSM+APH93R7DNw6
-         pKLoig1YzoAy2uD6noqKWo37dKWViALGe9JS4OJi+kVRK+I7hhBisdEECbbkzTprA2zn
-         5/bA==
-X-Gm-Message-State: APjAAAV/VOHs/cYAtEn702cToahdTv+2z7ibVtRM9iEfQTD8jaLz3YRd
-        v8SpBaI38PQ+Mqwz4YUv9K4=
-X-Google-Smtp-Source: APXvYqxRed92zUp/aw0i5gOYaxpXI0CPIxh4WJ0r3A01+20vWe9I+pHRW4oytSSHjxNJtAOL4Ksj1Q==
-X-Received: by 2002:a37:a854:: with SMTP id r81mr4984090qke.53.1560623115842;
-        Sat, 15 Jun 2019 11:25:15 -0700 (PDT)
+        h=x-gm-message-state:sender:date:from:to:cc:subject:message-id
+         :references:mime-version:content-disposition:in-reply-to:user-agent;
+        bh=lZWCDkdCZYN5S0+Ul2IxfiRO29wLQTcP6wWsFwWlu8s=;
+        b=YrJsVPB46VnybZ6pvHnHjY6HMrSeX/gus1txUHXOwRyDr2FIamXMCsiuWRn3tu9mOV
+         hbYjika5yo1yBq4+4L53t5P7VlXGjBxdsHn/G3lAxaVpjcGswnWAvN9Ms5M9Kj+H1wSB
+         Z12X0UlNsBt/TCmmm54ish8unSVy7rHsUpv6DKos26iU+jBN+Av82FcyADN5Zu8QvGR9
+         3maBS/rENyGssPvbRg8GnQqz1+rwQAluN/V5baMxClAjeJts37hsxNl7r3oTH6iRpg/p
+         iYm0Qx342UpkqUgJw+fUPoKP3tgdhDQ2jb4dg9zf6eLXtZLpOnb+UBg8R9EwlqUVObHx
+         k+8A==
+X-Gm-Message-State: APjAAAXW54WSp2Z5E1QfMNc3UuA3Y2N29aPwwXYL8WbTvzGuA8C5ub8L
+        eCo6VsjWRJZwHl1zKCXqYyE=
+X-Google-Smtp-Source: APXvYqx5M5Vccns8o0Sb2Ujl3A2MXEaAf0YNJo2yyhXxfxv1/7ALY9MC70OvLseEU3n6ihO/8XZSew==
+X-Received: by 2002:a05:620a:124c:: with SMTP id a12mr82297214qkl.336.1560623376408;
+        Sat, 15 Jun 2019 11:29:36 -0700 (PDT)
 Received: from localhost ([2620:10d:c091:480::4883])
-        by smtp.gmail.com with ESMTPSA id o66sm3445473qkb.90.2019.06.15.11.25.14
+        by smtp.gmail.com with ESMTPSA id c5sm4004284qkb.41.2019.06.15.11.29.35
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Sat, 15 Jun 2019 11:25:15 -0700 (PDT)
+        Sat, 15 Jun 2019 11:29:35 -0700 (PDT)
+Date:   Sat, 15 Jun 2019 11:29:33 -0700
 From:   Tejun Heo <tj@kernel.org>
 To:     dsterba@suse.com, clm@fb.com, josef@toxicpanda.com,
         axboe@kernel.dk, jack@suse.cz
 Cc:     linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
         linux-block@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 5/9] Btrfs: stop using btrfs_schedule_bio()
-Date:   Sat, 15 Jun 2019 11:24:49 -0700
-Message-Id: <20190615182453.843275-6-tj@kernel.org>
-X-Mailer: git-send-email 2.17.1
-In-Reply-To: <20190615182453.843275-1-tj@kernel.org>
+Subject: Re: [PATCH 4/9] blkcg: implement REQ_CGROUP_PUNT
+Message-ID: <20190615182933.GH657710@devbig004.ftw2.facebook.com>
 References: <20190615182453.843275-1-tj@kernel.org>
+ <20190615182453.843275-5-tj@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190615182453.843275-5-tj@kernel.org>
+User-Agent: Mutt/1.5.21 (2010-09-15)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Chris Mason <clm@fb.com>
+Hello,
 
-btrfs_schedule_bio() hands IO off to a helper thread to do the actual
-submit_bio() call.  This has been used to make sure async crc and
-compression helpers don't get stuck on IO submission.  To maintain good
-performance, over time the IO submission threads duplicated some IO
-scheduler characteristics such as high and low priority IOs and they
-also made some ugly assumptions about request allocation batch sizes.
+On Sat, Jun 15, 2019 at 11:24:48AM -0700, Tejun Heo wrote:
+> When a shared kthread needs to issue a bio for a cgroup, doing so
+> synchronously can lead to priority inversions as the kthread can be
+> trapped waiting for that cgroup.  This patch implements
+> REQ_CGROUP_PUNT flag which makes submit_bio() punt the actual issuing
+> to a dedicated per-blkcg work item to avoid such priority inversions.
+> 
+> This will be used to fix priority inversions in btrfs compression and
+> should be generally useful as we grow filesystem support for
+> comprehensive IO control.
+> 
+> Signed-off-by: Tejun Heo <tj@kernel.org>
+> Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+> Cc: Chris Mason <clm@fb.com>
 
-All of this cost at least one extra context switch during IO submission,
-and doesn't fit well with the modern blkmq IO stack.  So, this commit stops
-using btrfs_schedule_bio().  We may need to adjust the number of async
-helper threads for crcs and compression, but long term it's a better
-path.
+The blkcg patches, especially this one, need Jens's review.  Jens, if
+you're okay with the changes, please let me know how you want them to
+be routed.
 
-Signed-off-by: Chris Mason <clm@fb.com>
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/compression.c |  8 +++---
- fs/btrfs/disk-io.c     |  6 ++---
- fs/btrfs/inode.c       |  6 ++---
- fs/btrfs/volumes.c     | 55 +++---------------------------------------
- fs/btrfs/volumes.h     |  2 +-
- 5 files changed, 15 insertions(+), 62 deletions(-)
+Thanks.
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 4ec1df369e47..873261b932b8 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -355,7 +355,7 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
- 				BUG_ON(ret); /* -ENOMEM */
- 			}
- 
--			ret = btrfs_map_bio(fs_info, bio, 0, 1);
-+			ret = btrfs_map_bio(fs_info, bio, 0);
- 			if (ret) {
- 				bio->bi_status = ret;
- 				bio_endio(bio);
-@@ -385,7 +385,7 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
- 		BUG_ON(ret); /* -ENOMEM */
- 	}
- 
--	ret = btrfs_map_bio(fs_info, bio, 0, 1);
-+	ret = btrfs_map_bio(fs_info, bio, 0);
- 	if (ret) {
- 		bio->bi_status = ret;
- 		bio_endio(bio);
-@@ -638,7 +638,7 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 			sums += DIV_ROUND_UP(comp_bio->bi_iter.bi_size,
- 					     fs_info->sectorsize);
- 
--			ret = btrfs_map_bio(fs_info, comp_bio, mirror_num, 0);
-+			ret = btrfs_map_bio(fs_info, comp_bio, mirror_num);
- 			if (ret) {
- 				comp_bio->bi_status = ret;
- 				bio_endio(comp_bio);
-@@ -662,7 +662,7 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 		BUG_ON(ret); /* -ENOMEM */
- 	}
- 
--	ret = btrfs_map_bio(fs_info, comp_bio, mirror_num, 0);
-+	ret = btrfs_map_bio(fs_info, comp_bio, mirror_num);
- 	if (ret) {
- 		comp_bio->bi_status = ret;
- 		bio_endio(comp_bio);
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 663efce22d98..b34240406f36 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -800,7 +800,7 @@ static void run_one_async_done(struct btrfs_work *work)
- 	}
- 
- 	ret = btrfs_map_bio(btrfs_sb(inode->i_sb), async->bio,
--			async->mirror_num, 1);
-+			    async->mirror_num);
- 	if (ret) {
- 		async->bio->bi_status = ret;
- 		bio_endio(async->bio);
-@@ -901,12 +901,12 @@ static blk_status_t btree_submit_bio_hook(struct inode *inode, struct bio *bio,
- 					  BTRFS_WQ_ENDIO_METADATA);
- 		if (ret)
- 			goto out_w_error;
--		ret = btrfs_map_bio(fs_info, bio, mirror_num, 0);
-+		ret = btrfs_map_bio(fs_info, bio, mirror_num);
- 	} else if (!async) {
- 		ret = btree_csum_one_bio(bio);
- 		if (ret)
- 			goto out_w_error;
--		ret = btrfs_map_bio(fs_info, bio, mirror_num, 0);
-+		ret = btrfs_map_bio(fs_info, bio, mirror_num);
- 	} else {
- 		/*
- 		 * kthread helpers are used to submit writes so that
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d519c3520e87..91b161fb1521 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2032,7 +2032,7 @@ static blk_status_t btrfs_submit_bio_hook(struct inode *inode, struct bio *bio,
- 	}
- 
- mapit:
--	ret = btrfs_map_bio(fs_info, bio, mirror_num, 0);
-+	ret = btrfs_map_bio(fs_info, bio, mirror_num);
- 
- out:
- 	if (ret) {
-@@ -7764,7 +7764,7 @@ static inline blk_status_t submit_dio_repair_bio(struct inode *inode,
- 	if (ret)
- 		return ret;
- 
--	ret = btrfs_map_bio(fs_info, bio, mirror_num, 0);
-+	ret = btrfs_map_bio(fs_info, bio, mirror_num);
- 
- 	return ret;
- }
-@@ -8295,7 +8295,7 @@ static inline blk_status_t btrfs_submit_dio_bio(struct bio *bio,
- 			goto err;
- 	}
- map:
--	ret = btrfs_map_bio(fs_info, bio, 0, 0);
-+	ret = btrfs_map_bio(fs_info, bio, 0);
- err:
- 	return ret;
- }
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 1c2a6e4b39da..72326cc23985 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6386,52 +6386,8 @@ static void btrfs_end_bio(struct bio *bio)
- 	}
- }
- 
--/*
-- * see run_scheduled_bios for a description of why bios are collected for
-- * async submit.
-- *
-- * This will add one bio to the pending list for a device and make sure
-- * the work struct is scheduled.
-- */
--static noinline void btrfs_schedule_bio(struct btrfs_device *device,
--					struct bio *bio)
--{
--	struct btrfs_fs_info *fs_info = device->fs_info;
--	int should_queue = 1;
--	struct btrfs_pending_bios *pending_bios;
--
--	/* don't bother with additional async steps for reads, right now */
--	if (bio_op(bio) == REQ_OP_READ) {
--		btrfsic_submit_bio(bio);
--		return;
--	}
--
--	WARN_ON(bio->bi_next);
--	bio->bi_next = NULL;
--
--	spin_lock(&device->io_lock);
--	if (op_is_sync(bio->bi_opf))
--		pending_bios = &device->pending_sync_bios;
--	else
--		pending_bios = &device->pending_bios;
--
--	if (pending_bios->tail)
--		pending_bios->tail->bi_next = bio;
--
--	pending_bios->tail = bio;
--	if (!pending_bios->head)
--		pending_bios->head = bio;
--	if (device->running_pending)
--		should_queue = 0;
--
--	spin_unlock(&device->io_lock);
--
--	if (should_queue)
--		btrfs_queue_work(fs_info->submit_workers, &device->work);
--}
--
- static void submit_stripe_bio(struct btrfs_bio *bbio, struct bio *bio,
--			      u64 physical, int dev_nr, int async)
-+			      u64 physical, int dev_nr)
- {
- 	struct btrfs_device *dev = bbio->stripes[dev_nr].dev;
- 	struct btrfs_fs_info *fs_info = bbio->fs_info;
-@@ -6449,10 +6405,7 @@ static void submit_stripe_bio(struct btrfs_bio *bbio, struct bio *bio,
- 
- 	btrfs_bio_counter_inc_noblocked(fs_info);
- 
--	if (async)
--		btrfs_schedule_bio(dev, bio);
--	else
--		btrfsic_submit_bio(bio);
-+	btrfsic_submit_bio(bio);
- }
- 
- static void bbio_error(struct btrfs_bio *bbio, struct bio *bio, u64 logical)
-@@ -6473,7 +6426,7 @@ static void bbio_error(struct btrfs_bio *bbio, struct bio *bio, u64 logical)
- }
- 
- blk_status_t btrfs_map_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
--			   int mirror_num, int async_submit)
-+			   int mirror_num)
- {
- 	struct btrfs_device *dev;
- 	struct bio *first_bio = bio;
-@@ -6542,7 +6495,7 @@ blk_status_t btrfs_map_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
- 			bio = first_bio;
- 
- 		submit_stripe_bio(bbio, bio, bbio->stripes[dev_nr].physical,
--				  dev_nr, async_submit);
-+				  dev_nr);
- 	}
- 	btrfs_bio_counter_dec(fs_info);
- 	return BLK_STS_OK;
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index b8a0e8d0672d..8c7bd79b234a 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -415,7 +415,7 @@ int btrfs_alloc_chunk(struct btrfs_trans_handle *trans, u64 type);
- void btrfs_mapping_init(struct btrfs_mapping_tree *tree);
- void btrfs_mapping_tree_free(struct btrfs_mapping_tree *tree);
- blk_status_t btrfs_map_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
--			   int mirror_num, int async_submit);
-+			   int mirror_num);
- int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
- 		       fmode_t flags, void *holder);
- struct btrfs_device *btrfs_scan_one_device(const char *path,
 -- 
-2.17.1
-
+tejun

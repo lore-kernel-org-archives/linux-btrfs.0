@@ -2,165 +2,87 @@ Return-Path: <SRS0=jqbo=UQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.5 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
+X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2DE52C31E57
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Jun 2019 09:06:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D13A7C31E57
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Jun 2019 10:05:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E53B620645
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Jun 2019 09:06:30 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="QN4qQMbZ"
+	by mail.kernel.org (Postfix) with ESMTP id A2DD720833
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Jun 2019 10:05:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727913AbfFQJGa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 17 Jun 2019 05:06:30 -0400
-Received: from mout.gmx.net ([212.227.17.21]:57835 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727899AbfFQJG3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Jun 2019 05:06:29 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1560762386;
-        bh=HIP74PHNlopo8K8cwOjLm6cXcNhcCxZGW5mAXSpWCoM=;
-        h=X-UI-Sender-Class:To:From:Subject:Date;
-        b=QN4qQMbZBZ5nL3LvJHRyIgaDzD5DaX+GQrgcvXpZh89CEJDa0XXYQheiZ78JwV+I8
-         ORxERcOCkiqBefm0sia97act0+2h58vFz1dr2QuF27OCrC30suAkvpeMCAMEnYA6VR
-         AkOuAxzlOP3eoL01NZ4T/VxEXuhNRPU+m7x9frb0=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx101
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0Lubnw-1icV052iPo-00zn1v; Mon, 17
- Jun 2019 11:06:26 +0200
-To:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Linux FS Devel <linux-fsdevel@vger.kernel.org>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Subject: Proper packed attribute usage?
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <f24ea8b6-01ff-f570-4b9b-43b4126118e6@gmx.com>
-Date:   Mon, 17 Jun 2019 17:06:22 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.7.1
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="AvCz0ytMeoVwnc0PuhRcRTwCYkW1Cbkii"
-X-Provags-ID: V03:K1:tA8PQXqFBVFw6s1Q4uVcRLWV8Yz5D/Twikb8Ht8sbwM10xuotW2
- T9x07n/IxOzJusvjsvA/zGGneJ5G5REnI79qFx07/D16mCz55RV/mB5EOW5Ig+ncHXXXC2/
- 35zTfQquI9PWdz0ilieZWFz1+cm6jWRgiFOgRUPEOzaXV6dkTUEHJfdpaRjRVqk3zNzKLdd
- ZLmLYsJGZxPE936928l+Q==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:h4Nq5W5DqCA=:ex3LTVftj8BbtVvI6/H4ZJ
- sjh1JK6yc5e9IQh+uka2FnAyNctmNdcUlqY8IStqydLptUJ9rX8H2e14Zay3m/SG29IHyRM61
- 8e7BtoR9Zkhrr7dKe0zuIdRPnsRiXaEq1/PkqZ+XT5l/rg27quDsfpKtcU60KSA+Orq8zUMh+
- GnWh199NQe2zWWKvAn8kFjjrYZjPXZmo2cMIev7uzfL0FPhfZXLM3Uv8O5OCY4dXfT713UWe+
- niH7Qc+M1CRLatDmM/8gCK5qPSArDirs+373tqfrNRhKTDA0r+PjbpoiCuEV1W2BjA4cT7b6N
- YaoSkm6cki2tsLOwHCBql1NL3pIe6IJSBVdD29JhMKxxolj63fZros52Z6hOkndP2P81JquJo
- 3YxfyfqOaI1aO/YTCscWhETBojEiCkemY1hEKn/dAXhm5TncSv5uHN3acaYCcMk9bjpYfw+3I
- AEqKVNkvifyilTMdxROKBxtaJuwjRsHtiyCeiGTfOu7LhCi+I6G+q8C0cmMG/aFisXozHR2Mw
- mWKgpL2/nVTLMVtl2rkGNFlxh+GqA/0Ar+6VdVK39sZVHBDzVtcnPVQ3+FiwntC+K+yhXCm5d
- LcgAybcLJzXC/HTS18VDv1htXuEKW9BpGoFM9zGndngFmjnZI0LZKGd39NF00HYi1tR940h+f
- wLuxMFXYh0uKXzp7P0tBs4YswtprbEfmyI6P31K5xjQ77igaUQ7JloEA/0jZ8y21umJWfeLBz
- A/VQUdoRkL2MwzLUouPjGZKdbO2yqrR+c08OgF33URoplZqJFlAUTq7IM8kptn35nIfgzUlLu
- gW+/TUKnESkz6jKn36MNLVO7YkeWcGHdnEk0ncwdGMb2/Q3kzoQFmcbAaxjRC8ytjt+WQJqbb
- riOSeBqMgZe2WvRILGBjaoF7k8i3zuZYcIg/5f2Lt55Avzt/+zK/pCm0yu1LvnmrPcMVM+3kn
- s7qckczBzhibROVKEsaUtX3PmOJrY/xY=
+        id S1727877AbfFQKFv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 17 Jun 2019 06:05:51 -0400
+Received: from briare1.fullpliant.org ([78.227.24.35]:35140 "HELO
+        briare1.fullpliant.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with SMTP id S1727726AbfFQKFv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 17 Jun 2019 06:05:51 -0400
+X-Greylist: delayed 899 seconds by postgrey-1.27 at vger.kernel.org; Mon, 17 Jun 2019 06:05:51 EDT
+From:   Hubert Tonneau <hubert.tonneau@fullpliant.org>
+To:     linux-btrfs@vger.kernel.org
+Subject: Oops in mainline kernel 4.19.50 while btrfs scrubing
+Date:   Mon, 17 Jun 2019 11:53:34 GMT
+Message-ID: <0J8M6DA11@briare1.fullpliant.org>
+X-Mailer: Pliant 114
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---AvCz0ytMeoVwnc0PuhRcRTwCYkW1Cbkii
-Content-Type: multipart/mixed; boundary="gzrO4tgqKB0nV2uf9edJZMkOBg80DVcRG";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
- Linux FS Devel <linux-fsdevel@vger.kernel.org>
-Message-ID: <f24ea8b6-01ff-f570-4b9b-43b4126118e6@gmx.com>
-Subject: Proper packed attribute usage?
-
---gzrO4tgqKB0nV2uf9edJZMkOBg80DVcRG
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-
 Hi,
 
-With GCC 9 coming soon, its new default warning,
--Waddress-of-packed-member, is already causing a lot of btrfs-progs
-warnings.
+Here is the report of the oops I got while scrubing 2 disks in RAID1.
+No complete crash, no error reported by scrub in the end, just this strage kernel message.
+The kernel is mainline 4.19.50
 
-It's pretty sure kernel will just suppress this warning, but this makes
-me to think about the proper way to use packed attribute.
+Label: 'data1'  uuid: a1d97cfd-e793-4a40-98ae-010454321e9c
+	Total devices 2 FS bytes used 2.25TiB
+	devid    1 size 3.14TiB used 2.25TiB path /dev/sda2
+	devid    2 size 3.14TiB used 2.25TiB path /dev/sdb2
 
-To my poor understanding, we should only use packed attribute handling:
-- On-disk format
-  Obviously. And also needs extra handlers to do the endian convert.
+Data, RAID1: total=2.25TiB, used=2.24TiB
+System, RAID1: total=64.00MiB, used=368.00KiB
+Metadata, RAID1: total=6.00GiB, used=4.35GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
 
-- Ioctl parameters
-  To make sure the format doesn't change.
+<4>[ 3851.858792] RIP: 0010:btrfs_update_device+0x1ba/0x1d0 [btrfs]
+<4>[ 3851.858794] Code: 4c 89 f7 45 31 c0 ba 10 00 00 00 4c 89 ee e8 ed 39 ff ff 4c 89 f7 e8 15 0e fd ff e9 d4 fe ff ff b8 f4 ff ff ff e9 d4 fe ff ff <0f> 0b eb b7 e8 4d 19 aa cc 66 66 66 66 2e 0f 1f 84 00 00 00 00 00
+<4>[ 3851.858796] RSP: 0000:ffffac16c0e87a00 EFLAGS: 00010206
+<4>[ 3851.858799] RAX: 0000000000000fff RBX: 0000000000000000 RCX: 0000032380c00200
+<4>[ 3851.858800] RDX: 0000000000001000 RSI: 0000000000003f5c RDI: ffff9a4059084578
+<4>[ 3851.858802] RBP: ffff9a40cbaef7e0 R08: ffffac16c0e879b0 R09: ffffac16c0e879b8
+<4>[ 3851.858804] R10: 0000000000000003 R11: 0000000000000000 R12: ffff9a40d9f85600
+<4>[ 3851.858805] R13: 0000000000003f3c R14: ffff9a4059084578 R15: ffff9a409b7264e0
+<4>[ 3851.858808] FS:  00007fbe95d62700(0000) GS:ffff9a40dba00000(0000) knlGS:0000000000000000
+<4>[ 3851.858810] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+<4>[ 3851.858812] CR2: 00000000e614f364 CR3: 00000000c1ffa000 CR4: 00000000000006f0
+<4>[ 3851.858813] Call Trace:
+<4>[ 3851.858838]  ? btrfs_finish_chunk_alloc+0x10b/0x480 [btrfs]
+<4>[ 3851.858854]  ? btrfs_insert_item+0x7e/0xf0 [btrfs]
+<4>[ 3851.858872]  ? btrfs_create_pending_block_groups+0x103/0x220 [btrfs]
+<4>[ 3851.858891]  ? __btrfs_end_transaction+0x8c/0x2e0 [btrfs]
+<4>[ 3851.858909]  ? btrfs_inc_block_group_ro+0xbd/0x150 [btrfs]
+<4>[ 3851.858930]  ? scrub_enumerate_chunks+0x1a7/0x5b0 [btrfs]
+<4>[ 3851.858935]  ? woken_wake_function+0x20/0x20
+<4>[ 3851.858956]  ? btrfs_scrub_dev+0x1fe/0x560 [btrfs]
+<4>[ 3851.858960]  ? __kmalloc_track_caller+0x1ba/0x200
+<4>[ 3851.858982]  ? btrfs_ioctl+0x1911/0x2c20 [btrfs]
+<4>[ 3851.858986]  ? filemap_map_pages+0x35f/0x370
+<4>[ 3851.858990]  ? __handle_mm_fault+0xc19/0x1400
+<4>[ 3851.858993]  ? do_vfs_ioctl+0x9e/0x610
+<4>[ 3851.858996]  ? create_task_io_context+0x9b/0x100
+<4>[ 3851.858998]  ? get_task_io_context+0x43/0x80
+<4>[ 3851.859000]  ? ksys_ioctl+0x5e/0x90
+<4>[ 3851.859002]  ? __x64_sys_ioctl+0x16/0x20
+<4>[ 3851.859006]  ? do_syscall_64+0x61/0x300
+<4>[ 3851.859009]  ? entry_SYSCALL_64_after_hwframe+0x44/0xa9
+<4>[ 3851.859012] ---[ end trace b8b153a7aef691f4 ]---
 
-- Fixed format packages
-  For network packages.
+scrub status for a1d97cfd-e793-4a40-98ae-010454321e9c
+	scrub started at Sun Jun 16 15:03:18 2019 and finished after 04:56:01
+	total bytes scrubbed: 4.50TiB with 0 errors
 
-But then this means, we should have two copies of data for every such
-structures.
-One for the fixed format one, and one for the compiler aligned one, with
-enough helper to convert them (along with needed endian convert).
-
-Is that the correct practice?
-
-And for a btrfs specific question, why we have packed attribute for
-btrfs_key?
-I see no specific reason to make a CPU native structure packed, not to
-mention we already have btrfs_disk_key.
-And no ioctl structure is using btrfs_key in its parameter.
-
-Thanks,
-Qu
-
-
---gzrO4tgqKB0nV2uf9edJZMkOBg80DVcRG--
-
---AvCz0ytMeoVwnc0PuhRcRTwCYkW1Cbkii
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl0HWA4ACgkQwj2R86El
-/qgrrAf+Ip7u+1OxfactcS4HZOVdriZr4M5BzABtIQDU2WnmlkKFy5ClRsU3R/YK
-JfuZWRrYs12WFQ3NwUNWtb87nSaqkhp61nMwiSJj4N0zRXaIZHL3XYB+wS32Hp9S
-4Q9M0ugQRzGWfUBdBe8L/yqblhuj0ixSp0+irap8Bw8jqE3JSD5U7WVjYibz+UEy
-X75EHY5BncCs/z4K0jZWMXHk8tza+Mqnl7SAhYhRkTnnSNyIO2GaA7d0s7r8UMwq
-GnLuWAak5MhF7QOh1X0anNb3l2355skqqg6Mj7a2wZNStDuNmSd9asCEcgUPKU6x
-+OXfT7hoLzcp2OTkz+m7W9sXx+Bx3A==
-=Q/d8
------END PGP SIGNATURE-----
-
---AvCz0ytMeoVwnc0PuhRcRTwCYkW1Cbkii--

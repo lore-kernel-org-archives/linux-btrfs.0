@@ -2,200 +2,164 @@ Return-Path: <SRS0=jqbo=UQ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.5 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B220AC31E58
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Jun 2019 13:37:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5E607C31E50
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Jun 2019 13:40:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9474D20657
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Jun 2019 13:37:23 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2D03920657
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Jun 2019 13:40:33 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="bGQ2KKYZ"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726599AbfFQNhV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 17 Jun 2019 09:37:21 -0400
-Received: from mx2.suse.de ([195.135.220.15]:37674 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725884AbfFQNhV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Jun 2019 09:37:21 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A2184AE76
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Jun 2019 13:37:19 +0000 (UTC)
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 1/2] btrfs: Factor out logical address mapping
-Date:   Mon, 17 Jun 2019 16:37:16 +0300
-Message-Id: <20190617133717.19759-1-nborisov@suse.com>
-X-Mailer: git-send-email 2.17.1
+        id S1726599AbfFQNkc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 17 Jun 2019 09:40:32 -0400
+Received: from mout.gmx.net ([212.227.17.20]:59301 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1725884AbfFQNkc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 17 Jun 2019 09:40:32 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1560778829;
+        bh=MAvJXTyJ8LYm7Xi27VyWjODfpCEau14e7rdyN6xgMW8=;
+        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
+        b=bGQ2KKYZXlX/1UMk4BZOZZeZWDvDwzbhsci10qw9rBHk0vetKrbUMklh+gMjkWLa9
+         EeyUD9onqY56iCFE8qMyyJs72csoVJ6wgUkkZ7VvdOK5eoXKv1r1BYu+swGAFmwf0o
+         RjwQWjrXfBbGUi3JIvBP1N6bIIoErGhy+CcmGrNw=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1N5mGB-1iiBLk1egt-017DmW; Mon, 17
+ Jun 2019 15:40:28 +0200
+Subject: Re: Proper packed attribute usage?
+To:     dsterba@suse.cz,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Linux FS Devel <linux-fsdevel@vger.kernel.org>
+References: <f24ea8b6-01ff-f570-4b9b-43b4126118e6@gmx.com>
+ <20190617131837.GE19057@twin.jikos.cz>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
+ mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
+ bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
+ ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
+ rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
+ FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
+ 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
+ ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
+ CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
+ f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
+ mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
+ 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
+ h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
+Message-ID: <83271524-4c34-f44a-3d32-3ebaeea13fbe@gmx.com>
+Date:   Mon, 17 Jun 2019 21:40:19 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.7.1
+MIME-Version: 1.0
+In-Reply-To: <20190617131837.GE19057@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="tOl0xQ9b4f0YtVqbVH3vJTjwKD2Xggwmy"
+X-Provags-ID: V03:K1:NBBLCzDboFJallkSiwgUvLZ5Qu2rnFSYcmvF5Ah5PpShx6727M5
+ i9z4XEonCd41c9600ogPbcq7ClAOPxZJ51wQPeZhSsWoWYvUMDZCJNHVPgTQak7roGmVg+l
+ 7rX81ocdhDpCCmLQpjhlKvnDJx6lCBp0m8mKkZLpvUh5Mi6EongyFcGsleLlIb5IFGJWWvF
+ ZNXtal39Wxhu8cRc1P4fQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:/xZsWr6W1mo=:qOjRpZsRcf+hfKF8XALxBD
+ d1pFs4agwIySF6ZKoABemmIBGX2iLaqU0PaWkAjitf5/7PPBZ5a+VHt7YNHwbGpdLLYt23wq/
+ vk6Zx0+eOU4JLlsRMTvVZm904IgdDWW8PNNe+PrM+k+6GrdV9diiznrlLfphteIdewqNNNG6+
+ 0DwP/b7Cnq/e5JTvZ7dA/OrC583hkbD8ulTTe0aMLuytGRcst2NqrMDBcGxghaH58Ydfo0BRN
+ xkLqGpLbNK4aYlES7bK6iM6oAKrKTiV5bkErUfLJ1OQtEGkeVa1hFc2pKtSGeKVyOrXl+6nRv
+ KX39bY8o7OMKR/YBsDLL8wXYOGCOIUqP/ZgRgpzChn7bob8aKNIjbUjcEXN9KTdvYtN+QU9ll
+ 2i+5McgpH8djN6DPeibVGQEy6SgCQQZibEZxXMMbSkEWSlEcGINMCIsFAGhaLjiVaX7NFOkjz
+ GsKBglg/gkM4vWtufdw6aBx9rn4S5yRjtGhFuGwEKVG18nR0RM+wBox30wQH22PE6cekI3WjW
+ EMV3p5Y/SeKSWqZUYqj978ZJjKdCS2I1nSxqOvPrqnxA2WLf9sRjNCbKGEa2r4x0DYKMmu7B+
+ T0/RV8KOBNYtc0TlHjjKmy1kh3W0vKGYM2CA0IJb/6CMiCbfwQ3r95aoJK0prFJwJWJHqcTHh
+ O8roA/ykW4WUPbn2X1jYUh7UzFtJpn6quVtb6JntITB2bHQazpxOy8AP71qkmQvnqZeRWobIa
+ yMErIaszXOll+y2BAbbR1C5FK2Vyp2Wij3K3nwNlPvov76M6N9HOcWcSyRh664p0Vml9PpjBS
+ 8HpQH59om7mEY0hbpecsvrBG4U4sSiqZK5gyL1wtr2L2YWX7kYzZihwjyVU3h2JQ7On+eDj0F
+ gjtvjpZuYEo81fRJFIKESWjw4QrwOqOaZ1F9Q8h/1qhVAUFWAXD+RBO1HRDfWOWcnkOTXnwnK
+ inys10i4YPsCr1qqELETmOJnUwu5d1B2FImmnRTLsS3jNSlyNijXv5k3cgzwyvGqxPgYp2MEJ
+ gA==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Prepare for refactoring and simplifying the code in __btrfs_map_block
-by factoring out common code into a separete function -
-btrfs_get_io_geometry. It perform necessary actions to map a
-(logical addr, len) pair to the underlying physical disk. This code is
-also necessary to figure if particular IO req will span a btrfs stripe,
-to that effect __btrfs_map_block was called with bio_ret parameter set
-to NULL as a way to indicate we only need the "mapping" logic and not
-submit.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--tOl0xQ9b4f0YtVqbVH3vJTjwKD2Xggwmy
+Content-Type: multipart/mixed; boundary="1oojHcbhp0vNwMMTPQ1PmsQ4fFyZaBnft";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: dsterba@suse.cz, "linux-btrfs@vger.kernel.org"
+ <linux-btrfs@vger.kernel.org>, Linux FS Devel <linux-fsdevel@vger.kernel.org>
+Message-ID: <83271524-4c34-f44a-3d32-3ebaeea13fbe@gmx.com>
+Subject: Re: Proper packed attribute usage?
+References: <f24ea8b6-01ff-f570-4b9b-43b4126118e6@gmx.com>
+ <20190617131837.GE19057@twin.jikos.cz>
+In-Reply-To: <20190617131837.GE19057@twin.jikos.cz>
 
-Further it introduces a simple wrapper over its numerous return
-parameters. Having multiple return params rather than a single struct
-is a deliberate choice so as not to bloat the stack.
+--1oojHcbhp0vNwMMTPQ1PmsQ4fFyZaBnft
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/volumes.c | 119 +++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.h |   2 +
- 2 files changed, 121 insertions(+)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 41813813f840..d2627d3f9043 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5915,6 +5915,125 @@ static bool need_full_stripe(enum btrfs_map_op op)
- 	return (op == BTRFS_MAP_WRITE || op == BTRFS_MAP_GET_READ_MIRRORS);
- }
- 
-+/*
-+ * btrfs_get_io_geometry - calculates the geomery of a particular (address, len)
-+ *		       tuple. This information is used to calculate how big a
-+ *		       particular bio can get before it straddles a stripe.
-+ *
-+ * @fs_info - The omnipresent btrfs structure
-+ * @logical - Address that we want to figure out the geometry of
-+ * @len	    - Size of IO we are going to perform, starting at @logical
-+ * @op      - Type of operation - Write or Read
-+ * @out_len - length before we cross btrfs' internal stripe boundary
-+ * @out_offset - offset of @logical in chunk
-+ * @out_stripe_len - length of a single stripe
-+ * @out_stripe_nr - the number of stripe @logical falls within
-+ * @out_stripe_offset - offset of @logical in stripe
-+ * @out_raid56_stripe_offset - offset of raid56 stripe in chunk
-+ *
-+ * Returns < 0 in case a chunk for the given logical address cannot be found,
-+ * usually shouldn't happen unless @logical is corrupted, 0 otherwise.
-+ */
-+static int btrfs_get_io_geometry(struct btrfs_fs_info *fs_info,
-+			     enum btrfs_map_op op, u64 logical, u64 len,
-+			     u64 *out_len, u64 *out_offset, u64 *out_stripe_len,
-+			     u64 *out_stripe_nr, u64 *out_stripe_offset,
-+			     u64 *out_raid56_stripe_offset)
-+
-+{
-+	struct extent_map *em;
-+	struct map_lookup *map;
-+	u64 offset;
-+	u64 stripe_offset;
-+	u64 stripe_nr;
-+	u64 stripe_len;
-+	u64 raid56_full_stripe_start = (u64)-1;
-+	int data_stripes;
-+
-+	ASSERT(op != BTRFS_MAP_DISCARD);
-+
-+	em = btrfs_get_chunk_map(fs_info, logical, len);
-+	if (IS_ERR(em))
-+		return PTR_ERR(em);
-+
-+	map = em->map_lookup;
-+	/* Offset of this logical address in the chunk */
-+	offset = logical - em->start;
-+	/* Len of a stripe in a chunk */
-+	stripe_len = map->stripe_len;
-+	/* Stripe wher this block falls in */
-+	stripe_nr = div64_u64(offset, stripe_len);
-+	/* Offset of stripe in the chunk */
-+	stripe_offset = stripe_nr * stripe_len;
-+	if (offset < stripe_offset) {
-+		btrfs_crit(fs_info,
-+			   "stripe math has gone wrong, stripe_offset=%llu, offset=%llu, start=%llu, logical=%llu, stripe_len=%llu",
-+			   stripe_offset, offset, em->start, logical,
-+			   stripe_len);
-+		free_extent_map(em);
-+		return -EINVAL;
-+	}
-+
-+	/* stripe_offset is the offset of this block in its stripe*/
-+	stripe_offset = offset - stripe_offset;
-+	data_stripes = nr_data_stripes(map);
-+
-+	if (map->type & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
-+		u64 max_len = stripe_len - stripe_offset;
-+
-+		/*
-+		 * In case of raid56, we need to know the stripe aligned start
-+		 */
-+		if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
-+			unsigned long full_stripe_len = stripe_len * data_stripes;
-+			raid56_full_stripe_start = offset;
-+
-+			/*
-+			 * Allow a write of a full stripe, but make sure we
-+			 * don't allow straddling of stripes
-+			 */
-+			raid56_full_stripe_start = div64_u64(raid56_full_stripe_start,
-+					full_stripe_len);
-+			raid56_full_stripe_start *= full_stripe_len;
-+
-+			/*
-+			 * For writes to RAID[56], allow a full stripeset across
-+			 * all disks. For other RAID types and for RAID[56]
-+			 * reads, just allow a single stripe (on a single disk).
-+			 */
-+			if (op == BTRFS_MAP_WRITE) {
-+				max_len = stripe_len * data_stripes -
-+					(offset - raid56_full_stripe_start);
-+			}
-+		}
-+		len = min_t(u64, em->len - offset, max_len);
-+	} else {
-+		len = em->len - offset;
-+	}
-+
-+	if (out_len)
-+		*out_len = len;
-+	if (out_offset)
-+		*out_offset = offset;
-+	if (out_stripe_len)
-+		*out_stripe_len = stripe_len;
-+	if (out_stripe_nr)
-+		*out_stripe_nr = stripe_nr;
-+	if (out_stripe_offset)
-+		*out_stripe_offset = stripe_offset;
-+	if (out_raid56_stripe_offset)
-+		*out_raid56_stripe_offset = raid56_full_stripe_start;
-+
-+	return 0;
-+}
-+
-+int btrfs_get_stripe_rem(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
-+			 u64 logical, u64 len, u64 *out_len)
-+{
-+	return btrfs_get_io_geometry(fs_info, op, logical, len, out_len, NULL,
-+				 NULL, NULL, NULL, NULL);
-+}
-+
- static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
- 			     enum btrfs_map_op op,
- 			     u64 logical, u64 *length,
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index fea7b65a712e..10b18c38591b 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -413,6 +413,8 @@ int btrfs_map_block(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
- int btrfs_map_sblock(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
- 		     u64 logical, u64 *length,
- 		     struct btrfs_bio **bbio_ret);
-+int btrfs_get_stripe_rem(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
-+			 u64 logical, u64 len, u64 *out_len);
- int btrfs_rmap_block(struct btrfs_fs_info *fs_info, u64 chunk_start,
- 		     u64 physical, u64 **logical, int *naddrs, int *stripe_len);
- int btrfs_read_sys_array(struct btrfs_fs_info *fs_info);
--- 
-2.17.1
 
+On 2019/6/17 =E4=B8=8B=E5=8D=889:18, David Sterba wrote:
+> On Mon, Jun 17, 2019 at 05:06:22PM +0800, Qu Wenruo wrote:
+>> And for a btrfs specific question, why we have packed attribute for
+>> btrfs_key?
+>> I see no specific reason to make a CPU native structure packed, not to=
+
+>> mention we already have btrfs_disk_key.
+>=20
+> For that one there's no reason to use packed and we can go further and
+> reorder the members so that the offset is right after objectid, ie. bot=
+h
+> at aligned addresses.
+
+Yep, exactly what I want to do.
+
+>  I have a patch for that but I still need to
+> validate that.
+
+A quick grep shows no direct btrfs_key usage in ioctl structures.
+Thus I think existing test cases should be enough to validate it.
+
+Thanks,
+Qu
+
+
+--1oojHcbhp0vNwMMTPQ1PmsQ4fFyZaBnft--
+
+--tOl0xQ9b4f0YtVqbVH3vJTjwKD2Xggwmy
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl0HmEMACgkQwj2R86El
+/qjwkQf7B952FrSEOpFozBJjtkQiJWNSTI9aP67zAP8uCdANqi9XAEwamwMM3T6X
+Pq3r6gOEBZ16AFvRdhVbsZHxqnvocbD9uTI4TzfFbv1gchNkfVzmt+sVbwLCgOt3
+H8DrPueccAOkISAroc2iQ7Fs7wl6da5Cae401fY8MAIC8nc+1CwvizyCEam4FGGu
+Tz0miwZlapmfnAvzhUoWHDZLQUbyTVWC4BEbbAOhwoIFazzPHLNgj/8uMEkqNZ6O
+KdL1rWsCxdVz1gSA1Q3QsFn00tXw39bPwoAD42IDfMUoQi8dyOT+ZZGR4v5/9Oyd
+sCn1DT6q4FNYy/Ul/ixsW6t6y2ASaQ==
+=bS77
+-----END PGP SIGNATURE-----
+
+--tOl0xQ9b4f0YtVqbVH3vJTjwKD2Xggwmy--

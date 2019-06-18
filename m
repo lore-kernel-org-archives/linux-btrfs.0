@@ -2,35 +2,37 @@ Return-Path: <SRS0=NB0J=UR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4AAAAC31E5B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 18 Jun 2019 17:59:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DEA8DC31E5B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 18 Jun 2019 17:59:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 30454205F4
-	for <linux-btrfs@archiver.kernel.org>; Tue, 18 Jun 2019 17:59:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BCB26205F4
+	for <linux-btrfs@archiver.kernel.org>; Tue, 18 Jun 2019 17:59:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729835AbfFRR7P (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 18 Jun 2019 13:59:15 -0400
-Received: from mx2.suse.de ([195.135.220.15]:45050 "EHLO mx1.suse.de"
+        id S1730083AbfFRR7R (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 18 Jun 2019 13:59:17 -0400
+Received: from mx2.suse.de ([195.135.220.15]:45056 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729349AbfFRR7P (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Jun 2019 13:59:15 -0400
+        id S1729349AbfFRR7Q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 18 Jun 2019 13:59:16 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 88B8CAEA1
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Jun 2019 17:59:13 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 43B2DAEBD
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Jun 2019 17:59:15 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 5184BDA871; Tue, 18 Jun 2019 20:00:01 +0200 (CEST)
+        id 733C4DA871; Tue, 18 Jun 2019 20:00:03 +0200 (CEST)
 From:   David Sterba <dsterba@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH 0/6] Minor cleanups
-Date:   Tue, 18 Jun 2019 20:00:00 +0200
-Message-Id: <cover.1560880630.git.dsterba@suse.com>
+Subject: [PATCH 1/6] btrfs: use common helpers for eb leak messages
+Date:   Tue, 18 Jun 2019 20:00:03 +0200
+Message-Id: <b074ebe0cbd8499350e44517ac2e402108be0c06.1560880630.git.dsterba@suse.com>
 X-Mailer: git-send-email 2.21.0
+In-Reply-To: <cover.1560880630.git.dsterba@suse.com>
+References: <cover.1560880630.git.dsterba@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -38,26 +40,39 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-A few misc cleanups selected from my other branche, all should be safe.
+The extent buffer leak detector is a debugging feature, let's use the
+existing helper that prints the information about the filesystem,
+unlike pr_err.
 
-David Sterba (6):
-  btrfs: use common helpers for eb leak messages
-  btrfs: use common helpers for extent IO state insertion messages
-  btrfs: drop default value assignments in enums
-  btrfs: use raid_attr to adjust minimal stripe size in
-    btrfs_calc_avail_data_space
-  btrfs: use raid_attr for minimum stripe count in
-    btrfs_calc_avail_data_space
-  btrfs: lift bio_set_dev from bio allocation helpers
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/extent_io.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
- fs/btrfs/compression.c | 12 ++++++++----
- fs/btrfs/extent-tree.c | 14 +++++++-------
- fs/btrfs/extent_io.c   | 23 ++++++++++++++---------
- fs/btrfs/extent_io.h   |  2 +-
- fs/btrfs/file.c        |  6 +++---
- fs/btrfs/super.c       | 15 +++++++--------
- 6 files changed, 40 insertions(+), 32 deletions(-)
-
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 464e6b761a9c..8634eda07b7a 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -67,7 +67,8 @@ void btrfs_leak_debug_check(void)
+ 
+ 	while (!list_empty(&states)) {
+ 		state = list_entry(states.next, struct extent_state, leak_list);
+-		pr_err("BTRFS: state leak: start %llu end %llu state %u in tree %d refs %d\n",
++		btrfs_debug_rl(eb->fs_info,
++		"state leak: start %llu end %llu state %u in tree %d refs %d",
+ 		       state->start, state->end, state->state,
+ 		       extent_state_in_tree(state),
+ 		       refcount_read(&state->refs));
+@@ -77,7 +78,8 @@ void btrfs_leak_debug_check(void)
+ 
+ 	while (!list_empty(&buffers)) {
+ 		eb = list_entry(buffers.next, struct extent_buffer, leak_list);
+-		pr_err("BTRFS: buffer leak start %llu len %lu refs %d bflags %lu\n",
++		btrfs_debug_rl(eb->fs_info,
++		       "buffer leak start %llu len %lu refs %d bflags %lu",
+ 		       eb->start, eb->len, atomic_read(&eb->refs), eb->bflags);
+ 		list_del(&eb->leak_list);
+ 		kmem_cache_free(extent_buffer_cache, eb);
 -- 
 2.21.0
 

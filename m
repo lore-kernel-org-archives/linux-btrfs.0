@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 061FFC31E5B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 18 Jun 2019 20:09:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E6879C31E5E
+	for <linux-btrfs@archiver.kernel.org>; Tue, 18 Jun 2019 20:09:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C5B9F2084B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 18 Jun 2019 20:09:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BEA1E2084B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 18 Jun 2019 20:09:52 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="JxZ+pcFO"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="pXJrP4mU"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730565AbfFRUJs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 18 Jun 2019 16:09:48 -0400
-Received: from mail-qk1-f194.google.com ([209.85.222.194]:44886 "EHLO
-        mail-qk1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729331AbfFRUJr (ORCPT
+        id S1730571AbfFRUJv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 18 Jun 2019 16:09:51 -0400
+Received: from mail-qk1-f196.google.com ([209.85.222.196]:43234 "EHLO
+        mail-qk1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1730568AbfFRUJu (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Jun 2019 16:09:47 -0400
-Received: by mail-qk1-f194.google.com with SMTP id p144so9402907qke.11
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Jun 2019 13:09:46 -0700 (PDT)
+        Tue, 18 Jun 2019 16:09:50 -0400
+Received: by mail-qk1-f196.google.com with SMTP id m14so9424806qka.10
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Jun 2019 13:09:50 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references;
-        bh=pSoPf9whKTMAO6LvDkoJtS6tbUiy40RYGfdvWZT3aBk=;
-        b=JxZ+pcFOxsIKtcAHB9cwqTnmOYXw/r69R414YJikHIvdt3kJql9U+83yGAhCfYE8p5
-         wcujnZ65S3OuZ7Sck0tNz3tzESD5tgHWLVsasKNpc0uz/yd1bm9s7qGnAE5noyNw+ED9
-         qTyT6vm1yeFyECQl2ov/N6nFy/GbTb3VB2aE5kjw5+e0e01lgFoU59lqG6x8iiKPvvKU
-         bMqiT0VXKABfhrEqX/0Aw5qDo2PEbNF+uGQNmG1YkVmjKtL+v6tKhKxemvXkAScqFcKc
-         XIYQ4ysixJpyk+qVegsuXvPV9wJuooTCOUpA8c/PBCvC6aqOllt1pymHrh+SQ6kLtTL1
-         m5sw==
+        bh=KTzCVPq0bK/K8aJQcfi3SFT/XGM2uIKwkVBqxKxf0JU=;
+        b=pXJrP4mUva+7Trp5g/kNFJ6HQmptCYUpjpaRKaspJHbPKCBM7FxdyJK6OBsLtnQiuN
+         +rjYAOF0tSIy3i1HTOibFQCfO+bt+xkpvU7lqvF/V5h2HVA5A8Y+8FKqWY+UPmTO6kB3
+         MRhrQwK6LoDdlyr6iH3aGCA6JXH/Bbi8lgAXBaQSG6nuZoIeSQsp36cX2zvocJBsikKU
+         iifhlxvxy9AI+Ybq1ZHI+5j0zZ6ou244i+BL4/maLk+Uh07xI3I48FYoEKbQoZfQAPez
+         C1nEujtqeGN62tV5Re4sbbx0ySNx8rsD0QjAudrE1gOtOma8qdK9qFizsY3bqwacPqwa
+         syVw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references;
-        bh=pSoPf9whKTMAO6LvDkoJtS6tbUiy40RYGfdvWZT3aBk=;
-        b=qKmGMHDM69d07XqnKcpxIBKkB17jFPMbKYuYwpkGL132u1jqkVSdGBMK0O9YWywSkp
-         glaX8TMffh+HQd7R9JrPAllY2POpGrUJQY11wk4q9plWsL3QEdBG0yAv00eV3q4/c6QD
-         sv/ZSB3IcoElJwJAG7fym6k3JO3japMJN26/urHYaa1t99pzNCQ+SdRK3QCPus2fn8KP
-         kRBT1o/lUujnAInc+ZOgCN5P7xswDF0fVSCPlgKcsu2c3J99kvZoMIJT66PkdzTdrJjY
-         WZMUu+enwo7m9FW6ulkxPtfBcDDRxa52sxVD3ZhoAa9rJCsaH6Jpjal2XV7F/JTw2GHh
-         vJfA==
-X-Gm-Message-State: APjAAAVdj0gk7OrN2XeHJR0DX5vKHDDwBe/nRX8EbUtSCjbij9fJL+SO
-        Kt1dC4zvvlE+yVY1/KDOKJCv7FkqyfOjYg==
-X-Google-Smtp-Source: APXvYqxDqjO4T+BvVhC1eJllXptC+XE4Q8DBhzGjvoPsxvHCendt2kKPYhd3i9g6/amCFm8sIPIPfw==
-X-Received: by 2002:a37:4e92:: with SMTP id c140mr96757681qkb.48.1560888585666;
-        Tue, 18 Jun 2019 13:09:45 -0700 (PDT)
+        bh=KTzCVPq0bK/K8aJQcfi3SFT/XGM2uIKwkVBqxKxf0JU=;
+        b=rSUngCfpYtgQ3neY0CFCAR+YanQeIutXFLsf2rPiZ1V0i8wlqAr14JPNcHHZEdVz1P
+         mE0Y842VxQr1GhvDz/XJxZbrSKaLAFcMkcZS5V6XccgYUZ0KTbGURaY2AYUFM9bvtERH
+         G7eozWImdDDd+ZB/v+gLWsJA0U74F1t/gSzsiXLiJYaGb5Msd4I69mvD/andOmRjJRxa
+         7Tvtak0Vg0RkVRxShsk3JLtZ6RyAexvqYQP2lT8DEX7NyOe2v448r3o12og2iiijdTih
+         3ATVy8G4iYFnFiexp+p1+IbQk0C4bdSsJHNwEzt+yGlZbbcBPs55cNXjCFRzIpZ/4Ahy
+         bSkg==
+X-Gm-Message-State: APjAAAX1Ftsk3wIvpTONfVbX/yH3eitiGCWY96pNYvfciekCCiZoERuO
+        VMyhaCCbrXwoXGMbEfxxEjDaJTs+9ray+w==
+X-Google-Smtp-Source: APXvYqymEAkGUWAtnN7K9FrtrRO40oVmWwCvmqOr5pGO5wGxl0s4kY82TC1fLohjpj8OdNDvKu9rDA==
+X-Received: by 2002:a05:620a:1286:: with SMTP id w6mr93697341qki.219.1560888589499;
+        Tue, 18 Jun 2019 13:09:49 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id z18sm10837019qka.12.2019.06.18.13.09.44
+        by smtp.gmail.com with ESMTPSA id q187sm7592474qkd.19.2019.06.18.13.09.48
         for <linux-btrfs@vger.kernel.org>
         (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Tue, 18 Jun 2019 13:09:45 -0700 (PDT)
+        Tue, 18 Jun 2019 13:09:48 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 09/11] btrfs: move dump_space_info to space-info.c
-Date:   Tue, 18 Jun 2019 16:09:24 -0400
-Message-Id: <20190618200926.3352-10-josef@toxicpanda.com>
+Subject: [PATCH 11/11] btrfs: unexport can_overcommit
+Date:   Tue, 18 Jun 2019 16:09:26 -0400
+Message-Id: <20190618200926.3352-12-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.14.3
 In-Reply-To: <20190618200926.3352-1-josef@toxicpanda.com>
 References: <20190618200926.3352-1-josef@toxicpanda.com>
@@ -68,222 +68,89 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We'll need this exported so we can use it in all the various was we need
-to use it.  This is prep work to move reserve_metadata_bytes.
+Now that we've moved all of the users to space-info.c, unexport it and
+name it back to can_overcommit.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/extent-tree.c | 70 +++++---------------------------------------------
- fs/btrfs/space-info.c  | 55 +++++++++++++++++++++++++++++++++++++++
- fs/btrfs/space-info.h  |  3 +++
- 3 files changed, 65 insertions(+), 63 deletions(-)
+ fs/btrfs/space-info.c | 23 +++++++++++------------
+ fs/btrfs/space-info.h |  4 ----
+ 2 files changed, 11 insertions(+), 16 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index d21ee7af1e3e..4e1e664d36b3 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -50,9 +50,6 @@ static int alloc_reserved_tree_block(struct btrfs_trans_handle *trans,
- 				     struct btrfs_delayed_extent_op *extent_op);
- static int find_next_key(struct btrfs_path *path, int level,
- 			 struct btrfs_key *key);
--static void dump_space_info(struct btrfs_fs_info *fs_info,
--			    struct btrfs_space_info *info, u64 bytes,
--			    int dump_block_groups);
- 
- static noinline int
- block_group_cache_done(struct btrfs_block_group_cache *cache)
-@@ -4196,7 +4193,7 @@ void check_system_chunk(struct btrfs_trans_handle *trans, u64 type)
- 	if (left < thresh && btrfs_test_opt(fs_info, ENOSPC_DEBUG)) {
- 		btrfs_info(fs_info, "left=%llu, need=%llu, flags=%llu",
- 			   left, thresh, type);
--		dump_space_info(fs_info, info, 0, 0);
-+		btrfs_dump_space_info(fs_info, info, 0, 0);
- 	}
- 
- 	if (left < thresh) {
-@@ -5040,8 +5037,8 @@ static int reserve_metadata_bytes(struct btrfs_root *root,
- 					      orig_bytes, 1);
- 
- 		if (btrfs_test_opt(fs_info, ENOSPC_DEBUG))
--			dump_space_info(fs_info, block_rsv->space_info,
--					orig_bytes, 0);
-+			btrfs_dump_space_info(fs_info, block_rsv->space_info,
-+					      orig_bytes, 0);
- 	}
- 	return ret;
- }
-@@ -7653,60 +7650,6 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
- 	return ret;
- }
- 
--#define DUMP_BLOCK_RSV(fs_info, rsv_name)				\
--do {									\
--	struct btrfs_block_rsv *__rsv = &(fs_info)->rsv_name;		\
--	spin_lock(&__rsv->lock);					\
--	btrfs_info(fs_info, #rsv_name ": size %llu reserved %llu",	\
--		   __rsv->size, __rsv->reserved);			\
--	spin_unlock(&__rsv->lock);					\
--} while (0)
--
--static void dump_space_info(struct btrfs_fs_info *fs_info,
--			    struct btrfs_space_info *info, u64 bytes,
--			    int dump_block_groups)
--{
--	struct btrfs_block_group_cache *cache;
--	int index = 0;
--
--	spin_lock(&info->lock);
--	btrfs_info(fs_info, "space_info %llu has %llu free, is %sfull",
--		   info->flags,
--		   info->total_bytes - btrfs_space_info_used(info, true),
--		   info->full ? "" : "not ");
--	btrfs_info(fs_info,
--		"space_info total=%llu, used=%llu, pinned=%llu, reserved=%llu, may_use=%llu, readonly=%llu",
--		info->total_bytes, info->bytes_used, info->bytes_pinned,
--		info->bytes_reserved, info->bytes_may_use,
--		info->bytes_readonly);
--	spin_unlock(&info->lock);
--
--	DUMP_BLOCK_RSV(fs_info, global_block_rsv);
--	DUMP_BLOCK_RSV(fs_info, trans_block_rsv);
--	DUMP_BLOCK_RSV(fs_info, chunk_block_rsv);
--	DUMP_BLOCK_RSV(fs_info, delayed_block_rsv);
--	DUMP_BLOCK_RSV(fs_info, delayed_refs_rsv);
--
--	if (!dump_block_groups)
--		return;
--
--	down_read(&info->groups_sem);
--again:
--	list_for_each_entry(cache, &info->block_groups[index], list) {
--		spin_lock(&cache->lock);
--		btrfs_info(fs_info,
--			"block group %llu has %llu bytes, %llu used %llu pinned %llu reserved %s",
--			cache->key.objectid, cache->key.offset,
--			btrfs_block_group_used(&cache->item), cache->pinned,
--			cache->reserved, cache->ro ? "[readonly]" : "");
--		btrfs_dump_free_space(cache, bytes);
--		spin_unlock(&cache->lock);
--	}
--	if (++index < BTRFS_NR_RAID_TYPES)
--		goto again;
--	up_read(&info->groups_sem);
--}
--
- /*
-  * btrfs_reserve_extent - entry point to the extent allocator. Tries to find a
-  *			  hole that is at least as big as @num_bytes.
-@@ -7787,7 +7730,8 @@ int btrfs_reserve_extent(struct btrfs_root *root, u64 ram_bytes,
- 				  "allocation failed flags %llu, wanted %llu",
- 				  flags, num_bytes);
- 			if (sinfo)
--				dump_space_info(fs_info, sinfo, num_bytes, 1);
-+				btrfs_dump_space_info(fs_info, sinfo,
-+						      num_bytes, 1);
- 		}
- 	}
- 
-@@ -9305,7 +9249,7 @@ static int inc_block_group_ro(struct btrfs_block_group_cache *cache, int force)
- 		btrfs_info(cache->fs_info,
- 			"sinfo_used=%llu bg_num_bytes=%llu min_allocable=%llu",
- 			sinfo_used, num_bytes, min_allocable_bytes);
--		dump_space_info(cache->fs_info, cache->space_info, 0, 0);
-+		btrfs_dump_space_info(cache->fs_info, cache->space_info, 0, 0);
- 	}
- 	return ret;
- }
-@@ -9787,7 +9731,7 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
- 		if (WARN_ON(space_info->bytes_pinned > 0 ||
- 			    space_info->bytes_reserved > 0 ||
- 			    space_info->bytes_may_use > 0))
--			dump_space_info(info, space_info, 0, 0);
-+			btrfs_dump_space_info(info, space_info, 0, 0);
- 		list_del(&space_info->list);
- 		for (i = 0; i < BTRFS_NR_RAID_TYPES; i++) {
- 			struct kobject *kobj;
 diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index 579de5c0b5cb..4fe5f229ce68 100644
+index 3d6b197e6c0f..4efb817d1f0f 100644
 --- a/fs/btrfs/space-info.c
 +++ b/fs/btrfs/space-info.c
-@@ -7,6 +7,7 @@
- #include "space-info.h"
- #include "sysfs.h"
- #include "volumes.h"
-+#include "free-space-cache.h"
- 
- u64 btrfs_space_info_used(struct btrfs_space_info *s_info,
- 			  bool may_use_included)
-@@ -349,3 +350,57 @@ void btrfs_space_info_add_new_bytes(struct btrfs_fs_info *fs_info,
- 		goto again;
- 	}
+@@ -185,10 +185,10 @@ static inline u64 calc_global_rsv_need_space(struct btrfs_block_rsv *global)
+ 	return (global->size << 1);
  }
-+
-+#define DUMP_BLOCK_RSV(fs_info, rsv_name)				\
-+do {									\
-+	struct btrfs_block_rsv *__rsv = &(fs_info)->rsv_name;		\
-+	spin_lock(&__rsv->lock);					\
-+	btrfs_info(fs_info, #rsv_name ": size %llu reserved %llu",	\
-+		   __rsv->size, __rsv->reserved);			\
-+	spin_unlock(&__rsv->lock);					\
-+} while (0)
-+
-+void btrfs_dump_space_info(struct btrfs_fs_info *fs_info,
-+			   struct btrfs_space_info *info, u64 bytes,
-+			   int dump_block_groups)
-+{
-+	struct btrfs_block_group_cache *cache;
-+	int index = 0;
-+
-+	spin_lock(&info->lock);
-+	btrfs_info(fs_info, "space_info %llu has %llu free, is %sfull",
-+		   info->flags,
-+		   info->total_bytes - btrfs_space_info_used(info, true),
-+		   info->full ? "" : "not ");
-+	btrfs_info(fs_info,
-+		"space_info total=%llu, used=%llu, pinned=%llu, reserved=%llu, may_use=%llu, readonly=%llu",
-+		info->total_bytes, info->bytes_used, info->bytes_pinned,
-+		info->bytes_reserved, info->bytes_may_use,
-+		info->bytes_readonly);
-+	spin_unlock(&info->lock);
-+
-+	DUMP_BLOCK_RSV(fs_info, global_block_rsv);
-+	DUMP_BLOCK_RSV(fs_info, trans_block_rsv);
-+	DUMP_BLOCK_RSV(fs_info, chunk_block_rsv);
-+	DUMP_BLOCK_RSV(fs_info, delayed_block_rsv);
-+	DUMP_BLOCK_RSV(fs_info, delayed_refs_rsv);
-+
-+	if (!dump_block_groups)
-+		return;
-+
-+	down_read(&info->groups_sem);
-+again:
-+	list_for_each_entry(cache, &info->block_groups[index], list) {
-+		spin_lock(&cache->lock);
-+		btrfs_info(fs_info,
-+			"block group %llu has %llu bytes, %llu used %llu pinned %llu reserved %s",
-+			cache->key.objectid, cache->key.offset,
-+			btrfs_block_group_used(&cache->item), cache->pinned,
-+			cache->reserved, cache->ro ? "[readonly]" : "");
-+		btrfs_dump_free_space(cache, bytes);
-+		spin_unlock(&cache->lock);
-+	}
-+	if (++index < BTRFS_NR_RAID_TYPES)
-+		goto again;
-+	up_read(&info->groups_sem);
-+}
+ 
+-int btrfs_can_overcommit(struct btrfs_fs_info *fs_info,
+-			 struct btrfs_space_info *space_info, u64 bytes,
+-			 enum btrfs_reserve_flush_enum flush,
+-			 bool system_chunk)
++static int can_overcommit(struct btrfs_fs_info *fs_info,
++			  struct btrfs_space_info *space_info, u64 bytes,
++			  enum btrfs_reserve_flush_enum flush,
++			  bool system_chunk)
+ {
+ 	struct btrfs_block_rsv *global_rsv = &fs_info->global_block_rsv;
+ 	u64 profile;
+@@ -282,8 +282,7 @@ void btrfs_space_info_add_old_bytes(struct btrfs_fs_info *fs_info,
+ 		 * adding the ticket space would be a double count.
+ 		 */
+ 		if (check_overcommit &&
+-		    !btrfs_can_overcommit(fs_info, space_info, 0, flush,
+-					  false))
++		    !can_overcommit(fs_info, space_info, 0, flush, false))
+ 			break;
+ 		if (num_bytes >= ticket->bytes) {
+ 			list_del_init(&ticket->list);
+@@ -727,14 +726,14 @@ btrfs_calc_reclaim_metadata_size(struct btrfs_fs_info *fs_info,
+ 		return to_reclaim;
+ 
+ 	to_reclaim = min_t(u64, num_online_cpus() * SZ_1M, SZ_16M);
+-	if (btrfs_can_overcommit(fs_info, space_info, to_reclaim,
+-				 BTRFS_RESERVE_FLUSH_ALL, system_chunk))
++	if (can_overcommit(fs_info, space_info, to_reclaim,
++			   BTRFS_RESERVE_FLUSH_ALL, system_chunk))
+ 		return 0;
+ 
+ 	used = btrfs_space_info_used(space_info, true);
+ 
+-	if (btrfs_can_overcommit(fs_info, space_info, SZ_1M,
+-				 BTRFS_RESERVE_FLUSH_ALL, system_chunk))
++	if (can_overcommit(fs_info, space_info, SZ_1M,
++			   BTRFS_RESERVE_FLUSH_ALL, system_chunk))
+ 		expected = div_factor_fine(space_info->total_bytes, 95);
+ 	else
+ 		expected = div_factor_fine(space_info->total_bytes, 90);
+@@ -981,8 +980,8 @@ static int __reserve_metadata_bytes(struct btrfs_fs_info *fs_info,
+ 		trace_btrfs_space_reservation(fs_info, "space_info",
+ 					      space_info->flags, orig_bytes, 1);
+ 		ret = 0;
+-	} else if (btrfs_can_overcommit(fs_info, space_info, orig_bytes, flush,
+-					system_chunk)) {
++	} else if (can_overcommit(fs_info, space_info, orig_bytes, flush,
++				  system_chunk)) {
+ 		btrfs_space_info_update_bytes_may_use(fs_info, space_info,
+ 						      orig_bytes);
+ 		trace_btrfs_space_reservation(fs_info, "space_info",
 diff --git a/fs/btrfs/space-info.h b/fs/btrfs/space-info.h
-index e566a2e79d69..e2ab16e17fe1 100644
+index 05bfd8e5b10e..af9c3b016d6a 100644
 --- a/fs/btrfs/space-info.h
 +++ b/fs/btrfs/space-info.h
-@@ -128,5 +128,8 @@ int btrfs_can_overcommit(struct btrfs_fs_info *fs_info,
- 			 struct btrfs_space_info *space_info, u64 bytes,
- 			 enum btrfs_reserve_flush_enum flush,
- 			 bool system_chunk);
-+void btrfs_dump_space_info(struct btrfs_fs_info *fs_info,
-+			   struct btrfs_space_info *info, u64 bytes,
-+			   int dump_block_groups);
- 
- #endif /* BTRFS_SPACE_INFO_H */
+@@ -124,10 +124,6 @@ struct btrfs_space_info *btrfs_find_space_info(struct btrfs_fs_info *info,
+ u64 btrfs_space_info_used(struct btrfs_space_info *s_info,
+ 			  bool may_use_included);
+ void btrfs_clear_space_info_full(struct btrfs_fs_info *info);
+-int btrfs_can_overcommit(struct btrfs_fs_info *fs_info,
+-			 struct btrfs_space_info *space_info, u64 bytes,
+-			 enum btrfs_reserve_flush_enum flush,
+-			 bool system_chunk);
+ void btrfs_dump_space_info(struct btrfs_fs_info *fs_info,
+ 			   struct btrfs_space_info *info, u64 bytes,
+ 			   int dump_block_groups);
 -- 
 2.14.3
 

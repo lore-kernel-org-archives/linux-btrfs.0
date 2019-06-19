@@ -2,120 +2,99 @@ Return-Path: <SRS0=qrcf=US=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FROM_EXCESS_BASE64,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DF68BC31E49
-	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Jun 2019 08:03:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B91FBC31E49
+	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Jun 2019 08:58:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B92C721479
-	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Jun 2019 08:03:27 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5C4C22080C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Jun 2019 08:58:46 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=lesimple.fr header.i=@lesimple.fr header.b="ukyrzWQN"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731213AbfFSID1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 19 Jun 2019 04:03:27 -0400
-Received: from mx2.suse.de ([195.135.220.15]:45644 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1730418AbfFSID0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Jun 2019 04:03:26 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A2BEAAF68;
-        Wed, 19 Jun 2019 08:03:25 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     dm-devel@redhat.com
-Cc:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] dm log writes: Introduce dump_type= message type to change dump_type on the fly
-Date:   Wed, 19 Jun 2019 16:03:12 +0800
-Message-Id: <20190619080312.11549-3-wqu@suse.com>
-X-Mailer: git-send-email 2.22.0
-In-Reply-To: <20190619080312.11549-1-wqu@suse.com>
-References: <20190619080312.11549-1-wqu@suse.com>
+        id S1731378AbfFSI6p (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 19 Jun 2019 04:58:45 -0400
+Received: from ns211617.ip-188-165-215.eu ([188.165.215.42]:53348 "EHLO
+        mx.speed47.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1731347AbfFSI6p (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 19 Jun 2019 04:58:45 -0400
+Received: from [10.158.252.5] (unknown [92.184.96.174])
+        by box.speed47.net (Postfix) with ESMTPSA id 9F1D41AFC;
+        Wed, 19 Jun 2019 10:58:42 +0200 (CEST)
+Authentication-Results: box.speed47.net; dmarc=fail (p=none dis=none) header.from=lesimple.fr
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=lesimple.fr;
+        s=mail01; t=1560934722;
+        bh=NFdUA4gsixhyM0XTiYGC/9DonmKK/gG9Fh5tmKJ1Hew=;
+        h=From:To:Date:In-Reply-To:References:Subject;
+        b=ukyrzWQNDXf+epq3y7ud4VsBWbrRoHWpj+dOs9oqX3rX7pdpyDvFF7sawFOR3yMWD
+         BaShBlzhMwr7kRXBf5ZG8GTvbSvyaRwV6DrGxM+iu/2UvggfnI95a1btAi9T3MeihU
+         OqkeALE+Fz6pjCIuNdnh31vleQI3PQttI2gLg10s=
+From:   =?UTF-8?B?U3TDqXBoYW5lIExlc2ltcGxl?= <stephane_btrfs@lesimple.fr>
+To:     Andrei Borzenkov <arvidjaar@gmail.com>,
+        Hugo Mills <hugo@carfax.org.uk>, <linux-btrfs@vger.kernel.org>
+Date:   Wed, 19 Jun 2019 10:58:42 +0200
+Message-ID: <16b6ef5a5e8.2787.faeb54a6cf393cf366ff7c8c6259040e@lesimple.fr>
+In-Reply-To: <42d90ede-b469-0c9e-2a97-1d53df5eeaaf@gmail.com>
+References: <16b6bd72bc0.2787.faeb54a6cf393cf366ff7c8c6259040e@lesimple.fr>
+ <20190618184501.GJ21016@carfax.org.uk>
+ <42d90ede-b469-0c9e-2a97-1d53df5eeaaf@gmail.com>
+User-Agent: AquaMail/1.20.0-1458 (build: 102100001)
+Subject: Re: Rebalancing raid1 after adding a device
 MIME-Version: 1.0
+Content-Type: text/plain; format=flowed; charset="UTF-8"
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The new message format is:
-dump_type=<new dump type>
 
-The parameter of dump_type= follows the same one of constructor.
-This allows us to change dump_type on the fly, making the following use
-case possible:
-  # dmsetup create log --table 0 10485760 log-writes \
-    /dev/tests/dest /dev/test/log dump_type=ALL
-  # mkfs.btrfs -f /dev/mapper/log
-  # dmsetup suspend log
-  # dmsetup message log dm_dump_type=METADATA|FLUSH|FUA|DISCARD|MARK
-  # mount /dev/mapper/log
-  # <do some writes>
-  # umount /dev/mapper/log
 
-The log device will record the full mkfs bios (as user space write can't
-generate bios with METADATA flag), then switch to only log METADATA FUA
-FLUSH DISCARD writes.
+Le 19 juin 2019 05:27:21 Andrei Borzenkov <arvidjaar@gmail.com> a écrit :
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- drivers/md/dm-log-writes.c | 31 ++++++++++++++++++++++++++-----
- 1 file changed, 26 insertions(+), 5 deletions(-)
+> 18.06.2019 21:45, Hugo Mills пишет:
+> ...
+>>
+>>> Is there a way to ask the block group allocator to prefer writing to
+>>> a specific device during a balance? Something like -ddestdevid=N?
+>>> This would just be a hint to the allocator and the usual constraints
+>>> would always apply (and prevail over the hint when needed).
+>>
+>> No, there isn't. Having control over the allocator (or bypassing
+>> it) would be pretty difficult to implement, I think.
+>>
+>> It would be really great if there was an ioctl that allowed you to
+>> say things like "take the chunks of this block group and put them on
+>> devices 2, 4 and 5 in RAID-5", because you could do a load of
+>> optimisation with reshaping the FS in userspace with that. But I
+>> suspect it's a long way down the list of things to do.
+>
+> It really sounds like "btrfs replace -ddrange=x..y". Replace already
+> knows how to move chunks from one device and put it on another. Now it
+> "just" needs to skip "replace" part and ignore chunks not covered by
+> filter ...
 
-diff --git a/drivers/md/dm-log-writes.c b/drivers/md/dm-log-writes.c
-index 9edf0bdcae39..80e872c7dcd3 100644
---- a/drivers/md/dm-log-writes.c
-+++ b/drivers/md/dm-log-writes.c
-@@ -980,7 +980,8 @@ static int log_writes_iterate_devices(struct dm_target *ti,
- 
- /*
-  * Messages supported:
-- *   mark <mark data> - specify the marked data.
-+ *   mark <mark data>	    - specify the marked data.
-+ *   dump_type=<type flags> - change dump type on the fly, suspend recommended
-  */
- static int log_writes_message(struct dm_target *ti, unsigned argc, char **argv,
- 			      char *result, unsigned maxlen)
-@@ -988,15 +989,35 @@ static int log_writes_message(struct dm_target *ti, unsigned argc, char **argv,
- 	int r = -EINVAL;
- 	struct log_writes_c *lc = ti->private;
- 
--	if (argc != 2) {
--		DMWARN("Invalid log-writes message arguments, expect 2 arguments, got %d", argc);
-+	if (argc < 1) {
-+		DMWARN(
-+"Invalid log-writes message arguments, expect at least one argument, got %d",
-+			argc);
- 		return r;
- 	}
- 
--	if (!strcasecmp(argv[0], "mark"))
-+	if (!strcasecmp(argv[0], "mark")) {
-+		if (argc != 2) {
-+			DMWARN(
-+"Invalid log-writes message arguments, expect 2 arguments for mark, got %d",
-+				argc);
-+			return r;
-+		}
- 		r = log_mark(lc, argv[1]);
--	else
-+	} else if (!strncasecmp(argv[0], "dump_type=", strlen("dump_type="))) {
-+		if (argc != 1) {
-+			DMWARN(
-+"Invalid log-writes message arguments, expect 1 argument for dump_type, got %d",
-+				argc);
-+			return r;
-+		}
-+		r = parse_dump_types(lc, argv[0] + strlen("dump_type="));
-+		if (r < 0) {
-+			ti->error = "Bad dump type";
-+		}
-+	} else {
- 		DMWARN("Unrecognised log writes target message received: %s", argv[0]);
-+	}
- 
- 	return r;
- }
+Yes having btrfs balance able to "empty" a device as replace does, without 
+actually removing the device from the array would be nice.
+
+There's a way to mimic that: running a btrfs device remove, and rebooting 
+when it's almost done. The operation itself is not cancellable, but btrfs 
+forgets about the pending remove after the reboot, and the device ils still 
+part of the FS. It's ugly of course, and not really advisable, but it works.
+
+However what I would need here seems a bit different: I need block groups 
+moved from any device(s) (I don't care which), to one specific device.
+I don't think anything like that exists (even counting hacky ways).
+
 -- 
-2.22.0
+Stéphane.
+
+
+
+
+
 

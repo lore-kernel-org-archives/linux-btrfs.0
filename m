@@ -2,99 +2,63 @@ Return-Path: <SRS0=qrcf=US=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FROM_EXCESS_BASE64,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-0.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B91FBC31E49
-	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Jun 2019 08:58:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 39CA6C31E49
+	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Jun 2019 10:13:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5C4C22080C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Jun 2019 08:58:46 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=lesimple.fr header.i=@lesimple.fr header.b="ukyrzWQN"
+	by mail.kernel.org (Postfix) with ESMTP id 115AA206E0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Jun 2019 10:13:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731378AbfFSI6p (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 19 Jun 2019 04:58:45 -0400
-Received: from ns211617.ip-188-165-215.eu ([188.165.215.42]:53348 "EHLO
-        mx.speed47.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1731347AbfFSI6p (ORCPT
+        id S1727076AbfFSKNq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 19 Jun 2019 06:13:46 -0400
+Received: from mail02.iobjects.de ([188.40.134.68]:46274 "EHLO
+        mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726826AbfFSKNq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Jun 2019 04:58:45 -0400
-Received: from [10.158.252.5] (unknown [92.184.96.174])
-        by box.speed47.net (Postfix) with ESMTPSA id 9F1D41AFC;
-        Wed, 19 Jun 2019 10:58:42 +0200 (CEST)
-Authentication-Results: box.speed47.net; dmarc=fail (p=none dis=none) header.from=lesimple.fr
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=lesimple.fr;
-        s=mail01; t=1560934722;
-        bh=NFdUA4gsixhyM0XTiYGC/9DonmKK/gG9Fh5tmKJ1Hew=;
-        h=From:To:Date:In-Reply-To:References:Subject;
-        b=ukyrzWQNDXf+epq3y7ud4VsBWbrRoHWpj+dOs9oqX3rX7pdpyDvFF7sawFOR3yMWD
-         BaShBlzhMwr7kRXBf5ZG8GTvbSvyaRwV6DrGxM+iu/2UvggfnI95a1btAi9T3MeihU
-         OqkeALE+Fz6pjCIuNdnh31vleQI3PQttI2gLg10s=
-From:   =?UTF-8?B?U3TDqXBoYW5lIExlc2ltcGxl?= <stephane_btrfs@lesimple.fr>
-To:     Andrei Borzenkov <arvidjaar@gmail.com>,
-        Hugo Mills <hugo@carfax.org.uk>, <linux-btrfs@vger.kernel.org>
-Date:   Wed, 19 Jun 2019 10:58:42 +0200
-Message-ID: <16b6ef5a5e8.2787.faeb54a6cf393cf366ff7c8c6259040e@lesimple.fr>
-In-Reply-To: <42d90ede-b469-0c9e-2a97-1d53df5eeaaf@gmail.com>
-References: <16b6bd72bc0.2787.faeb54a6cf393cf366ff7c8c6259040e@lesimple.fr>
- <20190618184501.GJ21016@carfax.org.uk>
- <42d90ede-b469-0c9e-2a97-1d53df5eeaaf@gmail.com>
-User-Agent: AquaMail/1.20.0-1458 (build: 102100001)
-Subject: Re: Rebalancing raid1 after adding a device
+        Wed, 19 Jun 2019 06:13:46 -0400
+Received: from tux.wizards.de (pD9EBFA35.dip0.t-ipconnect.de [217.235.250.53])
+        by mail02.iobjects.de (Postfix) with ESMTPSA id 7AD5341651C9;
+        Wed, 19 Jun 2019 12:13:44 +0200 (CEST)
+Received: from [192.168.100.223] (ragnarok.applied-asynchrony.com [192.168.100.223])
+        by tux.wizards.de (Postfix) with ESMTP id 00C45EEB528;
+        Wed, 19 Jun 2019 12:13:44 +0200 (CEST)
+Subject: Re: updating btrfs-debugfs to python3?
+To:     Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CAJCQCtSE2VbeGFs9o=KhPTeRGwZJ=RA2uzc3xG+sU0X-SXbRuQ@mail.gmail.com>
+From:   =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
+Organization: Applied Asynchrony, Inc.
+Message-ID: <08aa27af-8a9e-cd0c-20ab-55ce630085f4@applied-asynchrony.com>
+Date:   Wed, 19 Jun 2019 12:13:43 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.7.1
 MIME-Version: 1.0
-Content-Type: text/plain; format=flowed; charset="UTF-8"
+In-Reply-To: <CAJCQCtSE2VbeGFs9o=KhPTeRGwZJ=RA2uzc3xG+sU0X-SXbRuQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On 6/19/19 5:20 AM, Chris Murphy wrote:
+> This is on Fedora Rawhide (which is planned to become Fedora 31 due in
+> October), which no longer provides python2.
+> 
+> $ ./btrfs-debugfs -b /
+> /usr/bin/env: ‘python2’: No such file or directory
+> $
+> 
+> I expect other distros are going to follow as Python 2.7 EOL is coming
+> up fast, in 6 months.
+> https://pythonclock.org/
 
+I just ran it through 2to3-3.7 with -w and the new version seems to work
+just fine for me, so it seems there is not much porting required.
 
-Le 19 juin 2019 05:27:21 Andrei Borzenkov <arvidjaar@gmail.com> a écrit :
-
-> 18.06.2019 21:45, Hugo Mills пишет:
-> ...
->>
->>> Is there a way to ask the block group allocator to prefer writing to
->>> a specific device during a balance? Something like -ddestdevid=N?
->>> This would just be a hint to the allocator and the usual constraints
->>> would always apply (and prevail over the hint when needed).
->>
->> No, there isn't. Having control over the allocator (or bypassing
->> it) would be pretty difficult to implement, I think.
->>
->> It would be really great if there was an ioctl that allowed you to
->> say things like "take the chunks of this block group and put them on
->> devices 2, 4 and 5 in RAID-5", because you could do a load of
->> optimisation with reshaping the FS in userspace with that. But I
->> suspect it's a long way down the list of things to do.
->
-> It really sounds like "btrfs replace -ddrange=x..y". Replace already
-> knows how to move chunks from one device and put it on another. Now it
-> "just" needs to skip "replace" part and ignore chunks not covered by
-> filter ...
-
-Yes having btrfs balance able to "empty" a device as replace does, without 
-actually removing the device from the array would be nice.
-
-There's a way to mimic that: running a btrfs device remove, and rebooting 
-when it's almost done. The operation itself is not cancellable, but btrfs 
-forgets about the pending remove after the reboot, and the device ils still 
-part of the FS. It's ugly of course, and not really advisable, but it works.
-
-However what I would need here seems a bit different: I need block groups 
-moved from any device(s) (I don't care which), to one specific device.
-I don't think anything like that exists (even counting hacky ways).
-
--- 
-Stéphane.
-
-
-
-
-
-
+hth,
+Holger

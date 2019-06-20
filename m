@@ -2,89 +2,106 @@ Return-Path: <SRS0=S96U=UT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_MUTT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_MUTT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 43F37C43613
-	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Jun 2019 17:01:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8FE44C43613
+	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Jun 2019 17:02:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1CEC620656
-	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Jun 2019 17:01:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 652A120675
+	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Jun 2019 17:02:57 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1561050177;
+	bh=lIp8l9DK015GOcCxOE8CHeNJkBtCSUuS80+Oe7INHH0=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:List-ID:From;
+	b=X8XBIqrwxC5zrh4PdCkwNVWEqIetG2qmLOiLCSpGy2F7cCPWKKOk/y60qhN429ejf
+	 vXszyWIXbR91qI5mRAQ1TMx+aDHjv6VpUb8W4IJEkzGZCTtc260Yy8gKtAeQ38UBPP
+	 LJvnLt6hWb6XZjaii+8m8dZne9xUKd+mf5E9CHCU=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732033AbfFTRBn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 20 Jun 2019 13:01:43 -0400
-Received: from mx2.suse.de ([195.135.220.15]:59592 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726530AbfFTRBm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Jun 2019 13:01:42 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 83A00AF58;
-        Thu, 20 Jun 2019 17:01:41 +0000 (UTC)
-Received: by quack2.suse.cz (Postfix, from userid 1000)
-        id 359951E434F; Thu, 20 Jun 2019 19:01:41 +0200 (CEST)
-Date:   Thu, 20 Jun 2019 19:01:41 +0200
-From:   Jan Kara <jack@suse.cz>
-To:     Tejun Heo <tj@kernel.org>
-Cc:     Jan Kara <jack@suse.cz>, dsterba@suse.com, clm@fb.com,
-        josef@toxicpanda.com, axboe@kernel.dk, linux-btrfs@vger.kernel.org,
+        id S1726838AbfFTRCy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 20 Jun 2019 13:02:54 -0400
+Received: from mail-pf1-f193.google.com ([209.85.210.193]:46475 "EHLO
+        mail-pf1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726530AbfFTRCx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 20 Jun 2019 13:02:53 -0400
+Received: by mail-pf1-f193.google.com with SMTP id 81so1992253pfy.13;
+        Thu, 20 Jun 2019 10:02:53 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=sender:date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to:user-agent;
+        bh=8wf4cUw4MBLQ5ZMRZPNnEwMB/4TzHc3tHqQ0sOQp8Os=;
+        b=Wg6NBK6vKlCLiPsPaXNE5QvvdM2CnFaRmcfdeCBn9IjI1jcuHtXo7vm10THbVibgnu
+         u0U7RfwHLhckYVSyanRghxO5KKgFrrx1Tx4JOIjTIzPy1Od9dftVLvCn9tWRZ1vUSSXU
+         d+3feEShEKF3XAyfMZcDewHa0x/55pg6P0pN0kSQShr+btUn26moy4nPnGaKIoul6YM/
+         Pr7GbJHYFwpcwYnHcejjSWyjTgcRVINTrfM+oS3oYJ7kIpqZStAf0KLTrI3+NwphEEyA
+         5vV47bnRpY8qlF/5PnVI9gwXpelTqwQ0RNcBW8OiyK6J3jOOUcERQ6pfuTPhiI5JtpkL
+         dzag==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:sender:date:from:to:cc:subject:message-id
+         :references:mime-version:content-disposition:in-reply-to:user-agent;
+        bh=8wf4cUw4MBLQ5ZMRZPNnEwMB/4TzHc3tHqQ0sOQp8Os=;
+        b=EGGdUTVV4rNbNCSm13F0Ykg4l5k1/ltY/+3LhvFDm+AZ+ndEKypiAdOTuyufOnkwnx
+         /b0Bgt+dUw1naLiA/HLZjhpSRkfyEcrw4nNlGBbeuxOAf8iJzySK24ETOF9RH2Y/HvEN
+         GnjxPwAGQIz0fh+7wJnY5qiJ6vzQ8ZGdKH8YhKQqoORYXl5rA/jxL+mJhoZ+1A3fikcq
+         Iys1cvUGmIwXbnEHr+ZkzIgB4geiJfbIlgTgLaqZe6obVOb+CHvyfSafq6rVsvJJq3uX
+         jb40JjYCRNvA0GyUxo+JamDCQggv5rSC0fPPrt+lQ8fNDkd9eL5+xff04znr77MKkerz
+         liLQ==
+X-Gm-Message-State: APjAAAV2TFVkq6iusIwF7AZZ4GzK8CX3GGxUwPWAnHiQQw1oy5pa64RR
+        L6Paui0G/AT5fk1udigv8h2ED2K1zI4=
+X-Google-Smtp-Source: APXvYqzo7LjGo49CmlMqmYF7gjPoklzF78RZuEScWmDOaqfh7XoF3z//V+4KuxJQBWcA7NOcTxhIvg==
+X-Received: by 2002:aa7:8157:: with SMTP id d23mr131848775pfn.92.1561050172819;
+        Thu, 20 Jun 2019 10:02:52 -0700 (PDT)
+Received: from localhost ([2620:10d:c091:500::3:8402])
+        by smtp.gmail.com with ESMTPSA id p27sm27462pfq.136.2019.06.20.10.02.52
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Thu, 20 Jun 2019 10:02:52 -0700 (PDT)
+Date:   Thu, 20 Jun 2019 10:02:50 -0700
+From:   Tejun Heo <tj@kernel.org>
+To:     Jan Kara <jack@suse.cz>
+Cc:     dsterba@suse.com, clm@fb.com, josef@toxicpanda.com,
+        axboe@kernel.dk, linux-btrfs@vger.kernel.org,
         linux-kernel@vger.kernel.org, linux-block@vger.kernel.org,
         kernel-team@fb.com
-Subject: Re: [PATCH 4/9] blkcg: implement REQ_CGROUP_PUNT
-Message-ID: <20190620170141.GO30243@quack2.suse.cz>
+Subject: Re: [PATCH 2/9] blkcg, writeback: Add wbc->no_wbc_acct
+Message-ID: <20190620170250.GL657710@devbig004.ftw2.facebook.com>
 References: <20190615182453.843275-1-tj@kernel.org>
- <20190615182453.843275-5-tj@kernel.org>
- <20190620153733.GM30243@quack2.suse.cz>
- <20190620164229.GK657710@devbig004.ftw2.facebook.com>
+ <20190615182453.843275-3-tj@kernel.org>
+ <20190620152145.GL30243@quack2.suse.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190620164229.GK657710@devbig004.ftw2.facebook.com>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+In-Reply-To: <20190620152145.GL30243@quack2.suse.cz>
+User-Agent: Mutt/1.5.21 (2010-09-15)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu 20-06-19 09:42:29, Tejun Heo wrote:
-> Hello, Jan.
-> 
-> On Thu, Jun 20, 2019 at 05:37:33PM +0200, Jan Kara wrote:
-> > > +bool __blkcg_punt_bio_submit(struct bio *bio)
-> > > +{
-> > > +	struct blkcg_gq *blkg = bio->bi_blkg;
-> > > +
-> > > +	/* consume the flag first */
-> > > +	bio->bi_opf &= ~REQ_CGROUP_PUNT;
-> > > +
-> > > +	/* never bounce for the root cgroup */
-> > > +	if (!blkg->parent)
-> > > +		return false;
-> > > +
-> > > +	spin_lock_bh(&blkg->async_bio_lock);
-> > > +	bio_list_add(&blkg->async_bios, bio);
-> > > +	spin_unlock_bh(&blkg->async_bio_lock);
-> > > +
-> > > +	queue_work(blkcg_punt_bio_wq, &blkg->async_bio_work);
-> > > +	return true;
-> > > +}
-> > > +
-> > 
-> > So does this mean that if there is some inode with lots of dirty data for a
-> > blkcg that is heavily throttled, that blkcg can occupy a ton of workers all
-> > being throttled in submit_bio()? Or what is constraining a number of
-> > workers one blkcg can consume?
-> 
-> There's only one work item per blkcg-device pair, so the maximum
-> number of kthreads a blkcg can occupy on a filesystem would be one.
-> It's the same scheme as writeback work items.
+Hello, Jan.
 
-OK, I've missed the fact that although the work item can get queued while
-it is still running it cannot get executed more than once at a time (which
-is kind of obvious but I got confused). Thanks for explanation!
+On Thu, Jun 20, 2019 at 05:21:45PM +0200, Jan Kara wrote:
+> I'm completely ignorant of how btrfs compressed writeback works so don't
+> quite understand implications of this. So does this mean that writeback to
+> btrfs compressed files won't be able to transition inodes from one memcg to
+> another? Or are you trying to say the 'wbc' used from async worker thread
+> is actually a dummy one and we would double-account the writeback?
 
-								Honza
+So, before, only the async compression workers would run through the
+wbc accounting code regardless of who originated the dirty pages,
+which is obviously wrong.  After the patch, the code accounts when the
+dirty pages are being handed off to the compression workers and
+no_wbc_acct is used to suppress spurious accounting from the workers.
+
+> Anyway, AFAICS no_wbc_acct means: "IO done as a result of this wbc will not
+> have influence on inode memcg ownership", doesn't it?
+
+Yeap.
+
+Thanks.
+
 -- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+tejun

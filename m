@@ -2,407 +2,170 @@ Return-Path: <SRS0=S96U=UT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.3 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
+	URIBL_BLOCKED,USER_AGENT_MUTT autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E457EC43613
-	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Jun 2019 19:38:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DB054C43613
+	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Jun 2019 21:40:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B61E2206BA
-	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Jun 2019 19:38:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B240B206BA
+	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Jun 2019 21:40:07 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="IIlH09pz"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="HKn791tb"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726832AbfFTTiq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 20 Jun 2019 15:38:46 -0400
-Received: from mail-yb1-f193.google.com ([209.85.219.193]:40364 "EHLO
-        mail-yb1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726819AbfFTTip (ORCPT
+        id S1726359AbfFTVkE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 20 Jun 2019 17:40:04 -0400
+Received: from userp2130.oracle.com ([156.151.31.86]:39864 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726034AbfFTVkD (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Jun 2019 15:38:45 -0400
-Received: by mail-yb1-f193.google.com with SMTP id i14so1668931ybp.7
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Jun 2019 12:38:44 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references;
-        bh=1sXdulqIjFCBFS4xb7FhZ0v3HmcGIARmmwu5Sh8FvYQ=;
-        b=IIlH09pzIl04qa1pX/XvHAXLtggvq5eZ3vD/NETuU0dkbriKq5KwrPHG06hzLgUg23
-         3qhG8pIcDxYpmMhSBLI/7w1Zj3mktMkiiFBch/3f7r7sfEvoM2iJGEL/gLUxGQyh+LgO
-         y85kLHlxUiruEfeJFLhDyxUAP25l84yTuFRKDRCkX6p0n1/9Xy/80UyvgCZKGf7jJebn
-         ZUrJj8kngZED8LSjMNrJqBQqnS8YNUg9XUU61CywTa6QEQFCyGwKpvUU7yYxCVHJQ4vH
-         nNg/gKGN78NkTO0W4dXv5ruD52UK9+bD8uEDJT5xLbh2pxzsMixT3S9hXTCO/n8B/IN3
-         PNlQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
-         :references;
-        bh=1sXdulqIjFCBFS4xb7FhZ0v3HmcGIARmmwu5Sh8FvYQ=;
-        b=lRJZKpiejjNOigJVjDwwBNfZl7An03x3nWrHAK9RDYEX3QhAsocy+KZJ6GaCo9SHYW
-         dCU4Idsinw+iXdMNCdAvyopdmhsw0UpR2x4tNUcGJdhw9RH2iH30412fay9NXfskK0i5
-         fsjomDv5sLB9Qy5KYFP1jSGHLZPoDapALayZRNsNAjz8U+59mezRltd51rminTK0Nds8
-         YDlLKQTXOO7ECug7urECDh+12Fk7jwM6LVEwq+y6U0xo2O2bU1fFzOw606eRf3ubVBpA
-         REfjx1GPhl69eC/LfnHrElgvyPmsDmqqCvyrOKIRC1+RlgWqFYBCpA5ye5SzHnGjD3yp
-         YhrA==
-X-Gm-Message-State: APjAAAWfpsOW8RqUNSbzc8wzvhCqo0ffL31QOe0xWEsCWpHjCTsmUGlR
-        iXOYNT+GdXDF2UQA38O0crkhtAM/fQau9g==
-X-Google-Smtp-Source: APXvYqz78zCaIoAkKMLn2VUqhZ9WbOJy8t66OWndGCZqwhodY6PswQAxIBNpngPdUCZqN/t046nEVA==
-X-Received: by 2002:a25:7408:: with SMTP id p8mr67945105ybc.523.1561059523639;
-        Thu, 20 Jun 2019 12:38:43 -0700 (PDT)
-Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id i126sm101474ywa.108.2019.06.20.12.38.42
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Thu, 20 Jun 2019 12:38:43 -0700 (PDT)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 21/25] btrfs: migrate btrfs_can_relocate
-Date:   Thu, 20 Jun 2019 15:38:03 -0400
-Message-Id: <20190620193807.29311-22-josef@toxicpanda.com>
-X-Mailer: git-send-email 2.14.3
-In-Reply-To: <20190620193807.29311-1-josef@toxicpanda.com>
-References: <20190620193807.29311-1-josef@toxicpanda.com>
+        Thu, 20 Jun 2019 17:40:03 -0400
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x5KLYHVn088700;
+        Thu, 20 Jun 2019 21:38:38 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
+ : subject : message-id : references : mime-version : content-type :
+ in-reply-to; s=corp-2018-07-02;
+ bh=D3CnJNHOIgWdUG1TcE81fq/bsWj72ILMBiE1tAPqQwo=;
+ b=HKn791tbDcSyV5tTwA4L7n0iz31Dp5T+PYftD80uW1HfTEOKSjNNo8ILTMjO1/Rv8cOI
+ hpROCjBB23fPljyiuqdvwYxNy/xpAecXOJ97+qJXUbuQysBIXp6+kq1M1NohTdSt2o5m
+ bdEHlQfhcUcK9Q2VlmkUVsRBf7mVWZm2yOm4eXP0y5gikqkZmSL3eKCbJdvsPzjLY50k
+ BfxiWb1VEIm42WU1tUp/bKXk3/F6YlHbkAbzrc8pKPgHNgEvkWIV2bY4z7UBJVZQfH8/
+ ZSoTLiWzgKluhc0l9SvuD6uztH108WS7lGdHTqumoJ0SNSOf6qr9qij979gZkZoaMzEB qg== 
+Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
+        by userp2130.oracle.com with ESMTP id 2t7809kdj1-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 20 Jun 2019 21:38:38 +0000
+Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
+        by aserp3020.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x5KLacer151050;
+        Thu, 20 Jun 2019 21:36:38 GMT
+Received: from pps.reinject (localhost [127.0.0.1])
+        by aserp3020.oracle.com with ESMTP id 2t77ypkrr0-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
+        Thu, 20 Jun 2019 21:36:38 +0000
+Received: from aserp3020.oracle.com (aserp3020.oracle.com [127.0.0.1])
+        by pps.reinject (8.16.0.27/8.16.0.27) with SMTP id x5KLabeL151041;
+        Thu, 20 Jun 2019 21:36:37 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by aserp3020.oracle.com with ESMTP id 2t77ypkrqs-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 20 Jun 2019 21:36:37 +0000
+Received: from abhmp0003.oracle.com (abhmp0003.oracle.com [141.146.116.9])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x5KLaWqH007037;
+        Thu, 20 Jun 2019 21:36:32 GMT
+Received: from localhost (/10.145.179.81)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Thu, 20 Jun 2019 14:36:31 -0700
+Date:   Thu, 20 Jun 2019 14:36:29 -0700
+From:   "Darrick J. Wong" <darrick.wong@oracle.com>
+To:     Jan Kara <jack@suse.cz>
+Cc:     matthew.garrett@nebula.com, yuchao0@huawei.com, tytso@mit.edu,
+        ard.biesheuvel@linaro.org, josef@toxicpanda.com, clm@fb.com,
+        adilger.kernel@dilger.ca, viro@zeniv.linux.org.uk, jack@suse.com,
+        dsterba@suse.com, jaegeuk@kernel.org, jk@ozlabs.org,
+        reiserfs-devel@vger.kernel.org, linux-efi@vger.kernel.org,
+        devel@lists.orangefs.org, linux-kernel@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org,
+        linux-mm@kvack.org, linux-nilfs@vger.kernel.org,
+        linux-mtd@lists.infradead.org, ocfs2-devel@oss.oracle.com,
+        linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 4/6] vfs: don't allow most setxattr to immutable files
+Message-ID: <20190620213629.GB5375@magnolia>
+References: <156022836912.3227213.13598042497272336695.stgit@magnolia>
+ <156022840560.3227213.4776913678782966728.stgit@magnolia>
+ <20190620140345.GI30243@quack2.suse.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190620140345.GI30243@quack2.suse.cz>
+User-Agent: Mutt/1.9.4 (2018-02-28)
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9294 signatures=668687
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1906200154
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This belongs to block-group.c, move it over.
+On Thu, Jun 20, 2019 at 04:03:45PM +0200, Jan Kara wrote:
+> On Mon 10-06-19 21:46:45, Darrick J. Wong wrote:
+> > From: Darrick J. Wong <darrick.wong@oracle.com>
+> > 
+> > The chattr manpage has this to say about immutable files:
+> > 
+> > "A file with the 'i' attribute cannot be modified: it cannot be deleted
+> > or renamed, no link can be created to this file, most of the file's
+> > metadata can not be modified, and the file can not be opened in write
+> > mode."
+> > 
+> > However, we don't actually check the immutable flag in the setattr code,
+> > which means that we can update inode flags and project ids and extent
+> > size hints on supposedly immutable files.  Therefore, reject setflags
+> > and fssetxattr calls on an immutable file if the file is immutable and
+> > will remain that way.
+> > 
+> > Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+> > ---
+> >  fs/inode.c |   31 +++++++++++++++++++++++++++++++
+> >  1 file changed, 31 insertions(+)
+> > 
+> > 
+> > diff --git a/fs/inode.c b/fs/inode.c
+> > index a3757051fd55..adfb458bf533 100644
+> > --- a/fs/inode.c
+> > +++ b/fs/inode.c
+> > @@ -2184,6 +2184,17 @@ int vfs_ioc_setflags_check(struct inode *inode, int oldflags, int flags)
+> >  	    !capable(CAP_LINUX_IMMUTABLE))
+> >  		return -EPERM;
+> >  
+> > +	/*
+> > +	 * We aren't allowed to change any other flags if the immutable flag is
+> > +	 * already set and is not being unset.
+> > +	 */
+> > +	if ((oldflags & FS_IMMUTABLE_FL) &&
+> > +	    (flags & FS_IMMUTABLE_FL)) {
+> > +		if ((oldflags & ~FS_IMMUTABLE_FL) !=
+> > +		    (flags & ~FS_IMMUTABLE_FL))
+> 
+> This check looks a bit strange when you've just check FS_IMMUTABLE_FL isn't
+> changing... Why not just oldflags != flags?
+> 
+> > +	if ((old_fa->fsx_xflags & FS_XFLAG_IMMUTABLE) &&
+> > +	    (fa->fsx_xflags & FS_XFLAG_IMMUTABLE)) {
+> > +		if ((old_fa->fsx_xflags & ~FS_XFLAG_IMMUTABLE) !=
+> > +		    (fa->fsx_xflags & ~FS_XFLAG_IMMUTABLE))
+> 
+> Ditto here...
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/block-group.c | 141 +++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/block-group.h |   1 +
- fs/btrfs/ctree.h       |   1 -
- fs/btrfs/extent-tree.c | 141 -------------------------------------------------
- 4 files changed, 142 insertions(+), 142 deletions(-)
+Good point!  I'll fix it.
 
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 6a189ad3e7e1..4d029089ec32 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -2679,3 +2679,144 @@ void btrfs_free_reserved_bytes(struct btrfs_block_group_cache *cache,
- 	spin_unlock(&cache->lock);
- 	spin_unlock(&space_info->lock);
- }
-+
-+/*
-+ * Checks to see if it's even possible to relocate this block group.
-+ *
-+ * @return - -1 if it's not a good idea to relocate this block group, 0 if its
-+ * ok to go ahead and try.
-+ */
-+int btrfs_can_relocate(struct btrfs_fs_info *fs_info, u64 bytenr)
-+{
-+	struct btrfs_block_group_cache *block_group;
-+	struct btrfs_space_info *space_info;
-+	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
-+	struct btrfs_device *device;
-+	u64 min_free;
-+	u64 dev_min = 1;
-+	u64 dev_nr = 0;
-+	u64 target;
-+	int debug;
-+	int index;
-+	int full = 0;
-+	int ret = 0;
-+
-+	debug = btrfs_test_opt(fs_info, ENOSPC_DEBUG);
-+
-+	block_group = btrfs_lookup_block_group(fs_info, bytenr);
-+
-+	/* odd, couldn't find the block group, leave it alone */
-+	if (!block_group) {
-+		if (debug)
-+			btrfs_warn(fs_info,
-+				   "can't find block group for bytenr %llu",
-+				   bytenr);
-+		return -1;
-+	}
-+
-+	min_free = btrfs_block_group_used(&block_group->item);
-+
-+	/* no bytes used, we're good */
-+	if (!min_free)
-+		goto out;
-+
-+	space_info = block_group->space_info;
-+	spin_lock(&space_info->lock);
-+
-+	full = space_info->full;
-+
-+	/*
-+	 * if this is the last block group we have in this space, we can't
-+	 * relocate it unless we're able to allocate a new chunk below.
-+	 *
-+	 * Otherwise, we need to make sure we have room in the space to handle
-+	 * all of the extents from this block group.  If we can, we're good
-+	 */
-+	if ((space_info->total_bytes != block_group->key.offset) &&
-+	    (btrfs_space_info_used(space_info, false) + min_free <
-+	     space_info->total_bytes)) {
-+		spin_unlock(&space_info->lock);
-+		goto out;
-+	}
-+	spin_unlock(&space_info->lock);
-+
-+	/*
-+	 * ok we don't have enough space, but maybe we have free space on our
-+	 * devices to allocate new chunks for relocation, so loop through our
-+	 * alloc devices and guess if we have enough space.  if this block
-+	 * group is going to be restriped, run checks against the target
-+	 * profile instead of the current one.
-+	 */
-+	ret = -1;
-+
-+	/*
-+	 * index:
-+	 *      0: raid10
-+	 *      1: raid1
-+	 *      2: dup
-+	 *      3: raid0
-+	 *      4: single
-+	 */
-+	target = btrfs_get_restripe_target(fs_info, block_group->flags);
-+	if (target) {
-+		index = btrfs_bg_flags_to_raid_index(extended_to_chunk(target));
-+	} else {
-+		/*
-+		 * this is just a balance, so if we were marked as full
-+		 * we know there is no space for a new chunk
-+		 */
-+		if (full) {
-+			if (debug)
-+				btrfs_warn(fs_info,
-+					   "no space to alloc new chunk for block group %llu",
-+					   block_group->key.objectid);
-+			goto out;
-+		}
-+
-+		index = btrfs_bg_flags_to_raid_index(block_group->flags);
-+	}
-+
-+	if (index == BTRFS_RAID_RAID10) {
-+		dev_min = 4;
-+		/* Divide by 2 */
-+		min_free >>= 1;
-+	} else if (index == BTRFS_RAID_RAID1) {
-+		dev_min = 2;
-+	} else if (index == BTRFS_RAID_DUP) {
-+		/* Multiply by 2 */
-+		min_free <<= 1;
-+	} else if (index == BTRFS_RAID_RAID0) {
-+		dev_min = fs_devices->rw_devices;
-+		min_free = div64_u64(min_free, dev_min);
-+	}
-+
-+	mutex_lock(&fs_info->chunk_mutex);
-+	list_for_each_entry(device, &fs_devices->alloc_list, dev_alloc_list) {
-+		u64 dev_offset;
-+
-+		/*
-+		 * check to make sure we can actually find a chunk with enough
-+		 * space to fit our block group in.
-+		 */
-+		if (device->total_bytes > device->bytes_used + min_free &&
-+		    !test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state)) {
-+			ret = find_free_dev_extent(device, min_free,
-+						   &dev_offset, NULL);
-+			if (!ret)
-+				dev_nr++;
-+
-+			if (dev_nr >= dev_min)
-+				break;
-+
-+			ret = -1;
-+		}
-+	}
-+	if (debug && ret == -1)
-+		btrfs_warn(fs_info,
-+			   "no space to allocate a new chunk for block group %llu",
-+			   block_group->key.objectid);
-+	mutex_unlock(&fs_info->chunk_mutex);
-+out:
-+	btrfs_put_block_group(block_group);
-+	return ret;
-+}
-diff --git a/fs/btrfs/block-group.h b/fs/btrfs/block-group.h
-index 3b7516836849..328cbffc5ce8 100644
---- a/fs/btrfs/block-group.h
-+++ b/fs/btrfs/block-group.h
-@@ -202,6 +202,7 @@ int btrfs_add_reserved_bytes(struct btrfs_block_group_cache *cache,
- 			     u64 ram_bytes, u64 num_bytes, int delalloc);
- void btrfs_free_reserved_bytes(struct btrfs_block_group_cache *cache,
- 			       u64 num_bytes, int delalloc);
-+int btrfs_can_relocate(struct btrfs_fs_info *fs_info, u64 bytenr);
- 
- static inline int
- btrfs_block_group_cache_done(struct btrfs_block_group_cache *cache)
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 15ab2d5f7cd7..e6b32c0fcbb4 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2520,7 +2520,6 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
- 
- int btrfs_extent_readonly(struct btrfs_fs_info *fs_info, u64 bytenr);
- int btrfs_free_block_groups(struct btrfs_fs_info *info);
--int btrfs_can_relocate(struct btrfs_fs_info *fs_info, u64 bytenr);
- void btrfs_add_raid_kobjects(struct btrfs_fs_info *fs_info);
- void btrfs_get_block_group_trimming(struct btrfs_block_group_cache *cache);
- void btrfs_put_block_group_trimming(struct btrfs_block_group_cache *cache);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 971d0e336fc2..b72bc622cb9a 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -5873,147 +5873,6 @@ u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo)
- 	return free_bytes;
- }
- 
--/*
-- * Checks to see if it's even possible to relocate this block group.
-- *
-- * @return - -1 if it's not a good idea to relocate this block group, 0 if its
-- * ok to go ahead and try.
-- */
--int btrfs_can_relocate(struct btrfs_fs_info *fs_info, u64 bytenr)
--{
--	struct btrfs_block_group_cache *block_group;
--	struct btrfs_space_info *space_info;
--	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
--	struct btrfs_device *device;
--	u64 min_free;
--	u64 dev_min = 1;
--	u64 dev_nr = 0;
--	u64 target;
--	int debug;
--	int index;
--	int full = 0;
--	int ret = 0;
--
--	debug = btrfs_test_opt(fs_info, ENOSPC_DEBUG);
--
--	block_group = btrfs_lookup_block_group(fs_info, bytenr);
--
--	/* odd, couldn't find the block group, leave it alone */
--	if (!block_group) {
--		if (debug)
--			btrfs_warn(fs_info,
--				   "can't find block group for bytenr %llu",
--				   bytenr);
--		return -1;
--	}
--
--	min_free = btrfs_block_group_used(&block_group->item);
--
--	/* no bytes used, we're good */
--	if (!min_free)
--		goto out;
--
--	space_info = block_group->space_info;
--	spin_lock(&space_info->lock);
--
--	full = space_info->full;
--
--	/*
--	 * if this is the last block group we have in this space, we can't
--	 * relocate it unless we're able to allocate a new chunk below.
--	 *
--	 * Otherwise, we need to make sure we have room in the space to handle
--	 * all of the extents from this block group.  If we can, we're good
--	 */
--	if ((space_info->total_bytes != block_group->key.offset) &&
--	    (btrfs_space_info_used(space_info, false) + min_free <
--	     space_info->total_bytes)) {
--		spin_unlock(&space_info->lock);
--		goto out;
--	}
--	spin_unlock(&space_info->lock);
--
--	/*
--	 * ok we don't have enough space, but maybe we have free space on our
--	 * devices to allocate new chunks for relocation, so loop through our
--	 * alloc devices and guess if we have enough space.  if this block
--	 * group is going to be restriped, run checks against the target
--	 * profile instead of the current one.
--	 */
--	ret = -1;
--
--	/*
--	 * index:
--	 *      0: raid10
--	 *      1: raid1
--	 *      2: dup
--	 *      3: raid0
--	 *      4: single
--	 */
--	target = btrfs_get_restripe_target(fs_info, block_group->flags);
--	if (target) {
--		index = btrfs_bg_flags_to_raid_index(extended_to_chunk(target));
--	} else {
--		/*
--		 * this is just a balance, so if we were marked as full
--		 * we know there is no space for a new chunk
--		 */
--		if (full) {
--			if (debug)
--				btrfs_warn(fs_info,
--					   "no space to alloc new chunk for block group %llu",
--					   block_group->key.objectid);
--			goto out;
--		}
--
--		index = btrfs_bg_flags_to_raid_index(block_group->flags);
--	}
--
--	if (index == BTRFS_RAID_RAID10) {
--		dev_min = 4;
--		/* Divide by 2 */
--		min_free >>= 1;
--	} else if (index == BTRFS_RAID_RAID1) {
--		dev_min = 2;
--	} else if (index == BTRFS_RAID_DUP) {
--		/* Multiply by 2 */
--		min_free <<= 1;
--	} else if (index == BTRFS_RAID_RAID0) {
--		dev_min = fs_devices->rw_devices;
--		min_free = div64_u64(min_free, dev_min);
--	}
--
--	mutex_lock(&fs_info->chunk_mutex);
--	list_for_each_entry(device, &fs_devices->alloc_list, dev_alloc_list) {
--		u64 dev_offset;
--
--		/*
--		 * check to make sure we can actually find a chunk with enough
--		 * space to fit our block group in.
--		 */
--		if (device->total_bytes > device->bytes_used + min_free &&
--		    !test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state)) {
--			ret = find_free_dev_extent(device, min_free,
--						   &dev_offset, NULL);
--			if (!ret)
--				dev_nr++;
--
--			if (dev_nr >= dev_min)
--				break;
--
--			ret = -1;
--		}
--	}
--	if (debug && ret == -1)
--		btrfs_warn(fs_info,
--			   "no space to allocate a new chunk for block group %llu",
--			   block_group->key.objectid);
--	mutex_unlock(&fs_info->chunk_mutex);
--out:
--	btrfs_put_block_group(block_group);
--	return ret;
--}
--
- void btrfs_put_block_group_cache(struct btrfs_fs_info *info)
- {
- 	struct btrfs_block_group_cache *block_group;
--- 
-2.14.3
+--D
 
+> 
+> > +			return -EPERM;
+> > +		if (old_fa->fsx_projid != fa->fsx_projid)
+> > +			return -EPERM;
+> > +		if ((fa->fsx_xflags & (FS_XFLAG_EXTSIZE |
+> > +				       FS_XFLAG_EXTSZINHERIT)) &&
+> > +		    old_fa->fsx_extsize != fa->fsx_extsize)
+> > +			return -EPERM;
+> > +		if ((old_fa->fsx_xflags & FS_XFLAG_COWEXTSIZE) &&
+> > +		    old_fa->fsx_cowextsize != fa->fsx_cowextsize)
+> > +			return -EPERM;
+> > +	}
+> > +
+> >  	/* Extent size hints of zero turn off the flags. */
+> >  	if (fa->fsx_extsize == 0)
+> >  		fa->fsx_xflags &= ~(FS_XFLAG_EXTSIZE | FS_XFLAG_EXTSZINHERIT);
+> 
+> 								Honza
+> -- 
+> Jan Kara <jack@suse.com>
+> SUSE Labs, CR

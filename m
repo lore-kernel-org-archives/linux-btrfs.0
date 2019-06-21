@@ -6,29 +6,29 @@ X-Spam-Status: No, score=-8.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 389A5C43613
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Jun 2019 19:28:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B2ABCC43613
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Jun 2019 19:28:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1B4632084E
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Jun 2019 19:28:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8E9832084E
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Jun 2019 19:28:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726125AbfFUT2m (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 Jun 2019 15:28:42 -0400
-Received: from mx2.suse.de ([195.135.220.15]:33226 "EHLO mx1.suse.de"
+        id S1726147AbfFUT2p (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 Jun 2019 15:28:45 -0400
+Received: from mx2.suse.de ([195.135.220.15]:33262 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726111AbfFUT2k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Jun 2019 15:28:40 -0400
+        id S1726111AbfFUT2o (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 21 Jun 2019 15:28:44 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 162A8AEE9;
-        Fri, 21 Jun 2019 19:28:39 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 3E619AF3B;
+        Fri, 21 Jun 2019 19:28:43 +0000 (UTC)
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-btrfs@vger.kernel.org
 Cc:     linux-fsdevel@vger.kernel.org, hch@lst.de, darrick.wong@oracle.com,
         david@fromorbit.com, Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 3/6] iomap: Check iblocksize before transforming page->private
-Date:   Fri, 21 Jun 2019 14:28:25 -0500
-Message-Id: <20190621192828.28900-4-rgoldwyn@suse.de>
+Subject: [PATCH 5/6] btrfs: Add CoW in iomap based writes
+Date:   Fri, 21 Jun 2019 14:28:27 -0500
+Message-Id: <20190621192828.28900-6-rgoldwyn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20190621192828.28900-1-rgoldwyn@suse.de>
 References: <20190621192828.28900-1-rgoldwyn@suse.de>
@@ -39,29 +39,80 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-btrfs uses page->private as well to store extent_buffer. Make
-the check stricter to make sure we are using page->private for iop by
-comparing iblocksize < PAGE_SIZE.
+Set iomap->type to IOMAP_COW and fill up the source map in case
+the I/O is not page aligned.
 
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 ---
- include/linux/iomap.h | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/btrfs/iomap.c | 41 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 41 insertions(+)
 
-diff --git a/include/linux/iomap.h b/include/linux/iomap.h
-index f49767c7fd83..6511124e58b6 100644
---- a/include/linux/iomap.h
-+++ b/include/linux/iomap.h
-@@ -128,7 +128,8 @@ struct iomap_page {
- 
- static inline struct iomap_page *to_iomap_page(struct page *page)
- {
--	if (page_has_private(page))
-+	if (i_blocksize(page->mapping->host) < PAGE_SIZE &&
-+			page_has_private(page))
- 		return (struct iomap_page *)page_private(page);
- 	return NULL;
+diff --git a/fs/btrfs/iomap.c b/fs/btrfs/iomap.c
+index 0435b179d461..f4133cf953b4 100644
+--- a/fs/btrfs/iomap.c
++++ b/fs/btrfs/iomap.c
+@@ -172,6 +172,35 @@ static int btrfs_buffered_page_prepare(struct inode *inode, loff_t pos,
+ 	return 0;
  }
+ 
++/*
++ * get_iomap: Get the block map and fill the iomap structure
++ * @pos: file position
++ * @length: I/O length
++ * @iomap: The iomap structure to fill
++ */
++
++static int get_iomap(struct inode *inode, loff_t pos, loff_t length,
++		struct iomap *iomap)
++{
++	struct extent_map *em;
++	iomap->addr = IOMAP_NULL_ADDR;
++	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, pos, length, 0);
++	if (IS_ERR(em))
++		return PTR_ERR(em);
++	/* XXX Do we need to check for em->flags here? */
++	if (em->block_start == EXTENT_MAP_HOLE) {
++		iomap->type = IOMAP_HOLE;
++	} else {
++		iomap->addr = em->block_start + (pos - em->start);
++		iomap->type = IOMAP_MAPPED;
++	}
++	iomap->offset = em->start;
++	iomap->bdev = em->bdev;
++	iomap->length = em->len;
++	free_extent_map(em);
++	return 0;
++}
++
+ static void btrfs_buffered_page_done(struct inode *inode, loff_t pos,
+ 		unsigned copied, struct page *page,
+ 		struct iomap *iomap)
+@@ -196,6 +225,7 @@ static int btrfs_buffered_iomap_begin(struct inode *inode, loff_t pos,
+ 	int ret;
+ 	size_t write_bytes = length;
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
++	size_t end;
+ 	size_t sector_offset = pos & (fs_info->sectorsize - 1);
+ 	struct btrfs_iomap *bi;
+ 
+@@ -263,6 +293,17 @@ static int btrfs_buffered_iomap_begin(struct inode *inode, loff_t pos,
+ 	iomap->private = bi;
+ 	iomap->length = round_up(write_bytes, fs_info->sectorsize);
+ 	iomap->offset = round_down(pos, fs_info->sectorsize);
++	end = pos + write_bytes;
++	/* Set IOMAP_COW if start/end is not page aligned */
++	if (((pos & (PAGE_SIZE - 1)) || (end & (PAGE_SIZE - 1)))) {
++		iomap->type = IOMAP_COW;
++		ret = get_iomap(inode, pos, length, srcmap);
++		if (ret < 0)
++			goto release;
++	} else {
++		iomap->type = IOMAP_DELALLOC;
++	}
++
+ 	iomap->addr = IOMAP_NULL_ADDR;
+ 	iomap->type = IOMAP_DELALLOC;
+ 	iomap->bdev = fs_info->fs_devices->latest_bdev;
 -- 
 2.16.4
 

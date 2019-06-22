@@ -1,278 +1,121 @@
-Return-Path: <SRS0=NDcF=UU=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=YWmR=UV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+X-Spam-Status: No, score=-8.3 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
+	USER_AGENT_MUTT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3081AC48BE0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Jun 2019 23:59:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A0E11C4646B
+	for <linux-btrfs@archiver.kernel.org>; Sat, 22 Jun 2019 00:21:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 04D9A206B6
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Jun 2019 23:59:27 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7683C2075E
+	for <linux-btrfs@archiver.kernel.org>; Sat, 22 Jun 2019 00:21:44 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="iop0iBLc"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="KVCFf6+f"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726583AbfFUX62 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 Jun 2019 19:58:28 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:36844 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726054AbfFUX62 (ORCPT
+        id S1726292AbfFVAVm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 Jun 2019 20:21:42 -0400
+Received: from userp2130.oracle.com ([156.151.31.86]:36690 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726080AbfFVAVm (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Jun 2019 19:58:28 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x5LNsqBD059305;
-        Fri, 21 Jun 2019 23:57:20 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : from : to :
- cc : date : message-id : in-reply-to : references : mime-version :
- content-type : content-transfer-encoding; s=corp-2018-07-02;
- bh=bO+sN6Te54B7Gm32yC/95CPAosLiG+rfFvZuf1HgzMU=;
- b=iop0iBLcfymdJCKdAp5ye36YRtYmpLaZtzpeCNIekVvk8BHvE0TvsQwZPTRe3GvBvnHB
- POhg9g6OZky6l9+XmlonbM47GDVpeHCNptPw1f0SGTFD69qudz5qj2jFjltpAPUFyq13
- w3KNWu+wVs7ezxklCQg9TRG/odCOQBt/cLogJMrLkTERZiJDfOXSZr31CkR+QhJH0+68
- gjtvuKs3csVg+Tg8WtXM+Uv0cSBNM7/LjpN7quqI1LB93qlLu9XwdmKKwOJl6wy5h1U7
- wT8duhrMKfSo1Tj8wa37VlB+1nB222jRZXy16Cni/dLFHtFij5jp8ZgfZ5xzfhH5L5KN WQ== 
-Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
-        by userp2120.oracle.com with ESMTP id 2t7809rqv6-1
+        Fri, 21 Jun 2019 20:21:42 -0400
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x5M0Jmsb067607;
+        Sat, 22 Jun 2019 00:21:10 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
+ : subject : message-id : references : mime-version : content-type :
+ in-reply-to; s=corp-2018-07-02;
+ bh=OZgG/+PaNSzFNI+C1G5b5d9WJiVZ3f7Dm0+3X0L7Kck=;
+ b=KVCFf6+fIDHVu0LkAq5W2GOo5Zt0679ULfV96BrRNdcRvbtDn9wyOe0lWFpIniqRSufz
+ sd4cyWp+WYCKEcJSVKFjIDKLTsNXlyloWyBGdsMy+eD8M9MF+C0jDbg9rKA1XgznRl2f
+ m6VRPUMcKb14Bo5VxmnmSf0xteGmn6GCXb7rxw1k3aNsclQBP7IJMlQ/Seee+ClC2WPg
+ rxyWcV9s0WlNLYF8hypuJo7NSig+eXfOTt/3JDNO8HBepFW7eXDI+Q4jKv+R4tleBlba
+ RN3j9ambUocWsZsDyQM/7abT+OdBeLekQyfeS/lRjs4e4cZCJ3HZ++kLKAItYOeyDOiF /w== 
+Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
+        by userp2130.oracle.com with ESMTP id 2t7809ru61-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Fri, 21 Jun 2019 23:57:20 +0000
-Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
-        by userp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x5LNu9VH042326;
-        Fri, 21 Jun 2019 23:57:19 GMT
-Received: from pps.reinject (localhost [127.0.0.1])
-        by userp3030.oracle.com with ESMTP id 2t77ypesfg-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
-        Fri, 21 Jun 2019 23:57:19 +0000
-Received: from userp3030.oracle.com (userp3030.oracle.com [127.0.0.1])
-        by pps.reinject (8.16.0.27/8.16.0.27) with SMTP id x5LNvJbZ044395;
-        Fri, 21 Jun 2019 23:57:19 GMT
+        Sat, 22 Jun 2019 00:21:10 +0000
+Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
+        by userp3020.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x5M0JPBT150148;
+        Sat, 22 Jun 2019 00:21:10 GMT
 Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userp3030.oracle.com with ESMTP id 2t77ypesfc-1
+        by userp3020.oracle.com with ESMTP id 2t77ypf1jc-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Fri, 21 Jun 2019 23:57:19 +0000
-Received: from abhmp0013.oracle.com (abhmp0013.oracle.com [141.146.116.19])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x5LNvIgI031562;
-        Fri, 21 Jun 2019 23:57:18 GMT
+        Sat, 22 Jun 2019 00:21:10 +0000
+Received: from abhmp0011.oracle.com (abhmp0011.oracle.com [141.146.116.17])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x5M0L8CR012074;
+        Sat, 22 Jun 2019 00:21:08 GMT
 Received: from localhost (/10.159.131.214)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Fri, 21 Jun 2019 23:57:17 +0000
-Subject: [PATCH 3/7] vfs: flush and wait for io when setting the immutable
- flag via FSSETXATTR
+        with ESMTP ; Fri, 21 Jun 2019 17:21:08 -0700
+Date:   Fri, 21 Jun 2019 17:21:07 -0700
 From:   "Darrick J. Wong" <darrick.wong@oracle.com>
-To:     matthew.garrett@nebula.com, yuchao0@huawei.com, tytso@mit.edu,
-        darrick.wong@oracle.com, ard.biesheuvel@linaro.org,
-        josef@toxicpanda.com, clm@fb.com, adilger.kernel@dilger.ca,
-        viro@zeniv.linux.org.uk, jack@suse.com, dsterba@suse.com,
-        jaegeuk@kernel.org, jk@ozlabs.org
-Cc:     reiserfs-devel@vger.kernel.org, linux-efi@vger.kernel.org,
-        devel@lists.orangefs.org, linux-kernel@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org,
-        linux-mm@kvack.org, linux-nilfs@vger.kernel.org,
-        linux-mtd@lists.infradead.org, ocfs2-devel@oss.oracle.com,
-        linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-Date:   Fri, 21 Jun 2019 16:57:15 -0700
-Message-ID: <156116143526.1664939.6767366095685084430.stgit@magnolia>
-In-Reply-To: <156116141046.1664939.11424021489724835645.stgit@magnolia>
-References: <156116141046.1664939.11424021489724835645.stgit@magnolia>
-User-Agent: StGit/0.17.1-dirty
+To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
+Cc:     linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        hch@lst.de, david@fromorbit.com,
+        Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: Re: [PATCH 3/6] iomap: Check iblocksize before transforming
+ page->private
+Message-ID: <20190622002107.GA1611011@magnolia>
+References: <20190621192828.28900-1-rgoldwyn@suse.de>
+ <20190621192828.28900-4-rgoldwyn@suse.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190621192828.28900-4-rgoldwyn@suse.de>
+User-Agent: Mutt/1.9.4 (2018-02-28)
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9295 signatures=668687
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1810050000 definitions=main-1906220001
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9295 signatures=668687
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
- suspectscore=2 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
  lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
- definitions=main-1906210182
+ definitions=main-1906220001
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Darrick J. Wong <darrick.wong@oracle.com>
+On Fri, Jun 21, 2019 at 02:28:25PM -0500, Goldwyn Rodrigues wrote:
+> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+> 
+> btrfs uses page->private as well to store extent_buffer. Make
+> the check stricter to make sure we are using page->private for iop by
+> comparing iblocksize < PAGE_SIZE.
+> 
+> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-When we're using FS_IOC_FSSETXATTR to set the immutable flag on a file,
-we need to ensure that userspace can't continue to write the file after
-the file becomes immutable.  To make that happen, we have to flush all
-the dirty pagecache pages to disk to ensure that we can fail a page
-fault on a mmap'd region, wait for pending directio to complete, and
-hope the caller locked out any new writes by holding the inode lock.
+/me wonders what will happen when btrfs decides to support blocksize !=
+pagesize... will we have to add a pointer to struct iomap_page so that
+btrfs can continue to associate an extent_buffer with a page?
 
-Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
----
- fs/btrfs/ioctl.c   |    3 +++
- fs/ext4/ioctl.c    |    3 +++
- fs/f2fs/file.c     |    3 +++
- fs/xfs/xfs_ioctl.c |   39 +++++++++++++++++++++++++++++++++------
- include/linux/fs.h |   37 +++++++++++++++++++++++++++++++++++++
- 5 files changed, 79 insertions(+), 6 deletions(-)
+--D
 
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index f431813b2454..63a9281e6ce0 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -432,6 +432,9 @@ static int btrfs_ioctl_fssetxattr(struct file *file, void __user *arg)
- 
- 	__btrfs_ioctl_fsgetxattr(binode, &old_fa);
- 	ret = vfs_ioc_fssetxattr_check(inode, &old_fa, &fa);
-+	if (ret)
-+		goto out_unlock;
-+	ret = vfs_ioc_fssetxattr_flush_data(inode, &fa);
- 	if (ret)
- 		goto out_unlock;
- 
-diff --git a/fs/ext4/ioctl.c b/fs/ext4/ioctl.c
-index a05341b94d98..6037585c1520 100644
---- a/fs/ext4/ioctl.c
-+++ b/fs/ext4/ioctl.c
-@@ -1115,6 +1115,9 @@ long ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
- 		inode_lock(inode);
- 		ext4_fsgetxattr(inode, &old_fa);
- 		err = vfs_ioc_fssetxattr_check(inode, &old_fa, &fa);
-+		if (err)
-+			goto out;
-+		err = vfs_ioc_fssetxattr_flush_data(inode, &fa);
- 		if (err)
- 			goto out;
- 		flags = (ei->i_flags & ~EXT4_FL_XFLAG_VISIBLE) |
-diff --git a/fs/f2fs/file.c b/fs/f2fs/file.c
-index d3cf4bdb8738..97f4bb36540f 100644
---- a/fs/f2fs/file.c
-+++ b/fs/f2fs/file.c
-@@ -2832,6 +2832,9 @@ static int f2fs_ioc_fssetxattr(struct file *filp, unsigned long arg)
- 
- 	__f2fs_ioc_fsgetxattr(inode, &old_fa);
- 	err = vfs_ioc_fssetxattr_check(inode, &old_fa, &fa);
-+	if (err)
-+		goto out;
-+	err = vfs_ioc_fssetxattr_flush_data(inode, &fa);
- 	if (err)
- 		goto out;
- 	flags = (fi->i_flags & ~F2FS_FL_XFLAG_VISIBLE) |
-diff --git a/fs/xfs/xfs_ioctl.c b/fs/xfs/xfs_ioctl.c
-index b494e7e881e3..88583b3e1e76 100644
---- a/fs/xfs/xfs_ioctl.c
-+++ b/fs/xfs/xfs_ioctl.c
-@@ -1014,6 +1014,28 @@ xfs_diflags_to_linux(
- #endif
- }
- 
-+/*
-+ * Lock the inode against file io and page faults, then flush all dirty pages
-+ * and wait for writeback and direct IO operations to finish.  Returns with
-+ * the relevant inode lock flags set in @join_flags.  Caller is responsible for
-+ * unlocking even on error return.
-+ */
-+static int
-+xfs_ioctl_setattr_flush(
-+	struct xfs_inode	*ip,
-+	int			*join_flags)
-+{
-+	/* Already locked the inode from IO?  Assume we're done. */
-+	if (((*join_flags) & (XFS_IOLOCK_EXCL | XFS_MMAPLOCK_EXCL)) ==
-+			     (XFS_IOLOCK_EXCL | XFS_MMAPLOCK_EXCL))
-+		return 0;
-+
-+	/* Lock and flush all mappings and IO in preparation for flag change */
-+	*join_flags = XFS_IOLOCK_EXCL | XFS_MMAPLOCK_EXCL;
-+	xfs_ilock(ip, *join_flags);
-+	return inode_flush_data(VFS_I(ip));
-+}
-+
- static int
- xfs_ioctl_setattr_xflags(
- 	struct xfs_trans	*tp,
-@@ -1099,23 +1121,22 @@ xfs_ioctl_setattr_dax_invalidate(
- 	if (!(fa->fsx_xflags & FS_XFLAG_DAX) && !IS_DAX(inode))
- 		return 0;
- 
--	if (S_ISDIR(inode->i_mode))
-+	if (!S_ISREG(inode->i_mode))
- 		return 0;
- 
--	/* lock, flush and invalidate mapping in preparation for flag change */
--	xfs_ilock(ip, XFS_MMAPLOCK_EXCL | XFS_IOLOCK_EXCL);
--	error = filemap_write_and_wait(inode->i_mapping);
-+	error = xfs_ioctl_setattr_flush(ip, join_flags);
- 	if (error)
- 		goto out_unlock;
- 	error = invalidate_inode_pages2(inode->i_mapping);
- 	if (error)
- 		goto out_unlock;
- 
--	*join_flags = XFS_MMAPLOCK_EXCL | XFS_IOLOCK_EXCL;
- 	return 0;
- 
- out_unlock:
--	xfs_iunlock(ip, XFS_MMAPLOCK_EXCL | XFS_IOLOCK_EXCL);
-+	if (*join_flags)
-+		xfs_iunlock(ip, *join_flags);
-+	*join_flags = 0;
- 	return error;
- 
- }
-@@ -1337,6 +1358,12 @@ xfs_ioctl_setattr(
- 	if (code)
- 		goto error_free_dquots;
- 
-+	if (!join_flags && vfs_ioc_fssetxattr_need_flush(VFS_I(ip), fa)) {
-+		code = xfs_ioctl_setattr_flush(ip, &join_flags);
-+		if (code)
-+			goto error_free_dquots;
-+	}
-+
- 	tp = xfs_ioctl_setattr_get_trans(ip, join_flags);
- 	if (IS_ERR(tp)) {
- 		code = PTR_ERR(tp);
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index ed9a74cf5ef3..b4553d01e254 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -3607,5 +3607,42 @@ static inline int vfs_ioc_setflags_flush_data(struct inode *inode, int flags)
- int vfs_ioc_fssetxattr_check(struct inode *inode, const struct fsxattr *old_fa,
- 			     struct fsxattr *fa);
- 
-+/*
-+ * Do we need to flush the file data before changing attributes?  When we're
-+ * setting the immutable flag we must stop all directio writes and flush the
-+ * dirty pages so that we can fail the page fault on the next write attempt.
-+ */
-+static inline bool vfs_ioc_fssetxattr_need_flush(struct inode *inode,
-+						 struct fsxattr *fa)
-+{
-+	if (S_ISREG(inode->i_mode) && !IS_IMMUTABLE(inode) &&
-+	    (fa->fsx_xflags & FS_XFLAG_IMMUTABLE))
-+		return true;
-+
-+	return false;
-+}
-+
-+/*
-+ * Flush all pending IO and dirty mappings before setting S_IMMUTABLE on an
-+ * inode via FS_IOC_SETXATTR.  If the flush fails we'll clear the flag before
-+ * returning error.
-+ *
-+ * Note: the caller should be holding i_mutex, or else be sure that
-+ * they have exclusive access to the inode structure.
-+ */
-+static inline int vfs_ioc_fssetxattr_flush_data(struct inode *inode,
-+						struct fsxattr *fa)
-+{
-+	int ret;
-+
-+	if (!vfs_ioc_fssetxattr_need_flush(inode, fa))
-+		return 0;
-+
-+	inode_set_flags(inode, S_IMMUTABLE, S_IMMUTABLE);
-+	ret = inode_flush_data(inode);
-+	if (ret)
-+		inode_set_flags(inode, 0, S_IMMUTABLE);
-+	return ret;
-+}
- 
- #endif /* _LINUX_FS_H */
-
+> ---
+>  include/linux/iomap.h | 3 ++-
+>  1 file changed, 2 insertions(+), 1 deletion(-)
+> 
+> diff --git a/include/linux/iomap.h b/include/linux/iomap.h
+> index f49767c7fd83..6511124e58b6 100644
+> --- a/include/linux/iomap.h
+> +++ b/include/linux/iomap.h
+> @@ -128,7 +128,8 @@ struct iomap_page {
+>  
+>  static inline struct iomap_page *to_iomap_page(struct page *page)
+>  {
+> -	if (page_has_private(page))
+> +	if (i_blocksize(page->mapping->host) < PAGE_SIZE &&
+> +			page_has_private(page))
+>  		return (struct iomap_page *)page_private(page);
+>  	return NULL;
+>  }
+> -- 
+> 2.16.4
+> 

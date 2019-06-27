@@ -2,133 +2,256 @@ Return-Path: <SRS0=F9iR=U2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 180E7C48BD7
-	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Jun 2019 20:40:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 34AFCC4321A
+	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Jun 2019 21:47:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E8CBB2075E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Jun 2019 20:40:26 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id F2DCD2063F
+	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Jun 2019 21:47:45 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1561668027;
-	bh=uhPVkL3y7IrRKq8KXFNf3+E60/kPbFRxIXQSEM558UQ=;
-	h=From:To:Cc:Subject:Date:List-ID:From;
-	b=Q27R8cYRZuBdCWn27+whjHmDySwQVflWbPAuvjsdfhIFIhzCETWtIlNWgtsNhxm5z
-	 xTMn7jNMkOQUn0HNCQz48IWtBSo6cmWjFd3IMCUftBbM5TV7HjAxiTwu2QeWXY3gfS
-	 vrOkOnJjBP6HzT9D0mpJvD0/V6lw/l/FzlyQokn8=
+	s=default; t=1561672066;
+	bh=SpV/uemnOrRihge5TJk4ITU92ziigblP630GRC7lbrc=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc:List-ID:From;
+	b=FzQWBOcU5RUzekZ5QRs6ODZiiK4RmZ2ZtrrxbQU6Omls4AIIHOpv5IILxFFZ+nzCs
+	 n45Dh7vS94eFPFwq1rXqt3VPdnrtKPMUzItcCOhM9fhOW8lrUfDrqeYdilEjCVHXrp
+	 dxBEcd1Jd+xaACEzbsgohD8fv2J0bl/GJe6o1WBc=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726696AbfF0Uj5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 27 Jun 2019 16:39:57 -0400
-Received: from mail-qk1-f195.google.com ([209.85.222.195]:44145 "EHLO
-        mail-qk1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726463AbfF0Uj4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Jun 2019 16:39:56 -0400
-Received: by mail-qk1-f195.google.com with SMTP id p144so2943227qke.11;
-        Thu, 27 Jun 2019 13:39:56 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=sender:from:to:cc:subject:date:message-id;
-        bh=ybck1vLhDov0MKKyXsh2jg2LPJRwZCrCeuFa0yt4DYI=;
-        b=ag2Gs+LKLeevpy56TTxF85ajtVkLQYNbia84gmoW0Xuzlw4/APmVDwv4Hy1Gkyq1XU
-         LgNQ415ZKRlP3PBfVzD1RgBIF8JMG03sjAK1wB5Nr/9WWfYw07ArtOxAYbvySBUNmtaq
-         GR0TPqUYsphdbw3IrJv7hg7XRHno0rimqodWnDvrm8/BU8mHzv2g44oaznOdxCgqJ2Je
-         6rIr5FOdo8Mv9oJt+LRjoj014nnoGVp62H4Fg/qaRSXywxUoi+ux7HO2QUj5YDbGI/JZ
-         ldQFlaqI9ZwBoZsXebY6TGjAJNrXqJtzyonUJQKmdVnDq41M8eNRbpcvcUAS4BEPGc2P
-         2Guw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:sender:from:to:cc:subject:date:message-id;
-        bh=ybck1vLhDov0MKKyXsh2jg2LPJRwZCrCeuFa0yt4DYI=;
-        b=WRXShxyPID1fRmDUJhgyJVJhm+zVzZ2T+dlrzTS27A/c5eoNeTI/Ayj/rTlM3KNgfm
-         37vyZDBaF/pizSXdWJb+Nc+8o9//xtLYCge5F+vUFpV4yhxZTgTdcDjCoxmB2rQa1jvL
-         C+zeXZ5R6zupZW/9ASsdWmPmjw9X1NqhHg7BswjK3lAzBtfyyEF28ALTFvtVQ3GsTr5A
-         4Vf2kEIS17gfTX+/KFURNQXc/Q90ZQoOpVqmVzseTbwUYKOcFe2xuG+VKdlN0ej1MxLZ
-         pUW7D/nIVJJYVynEtwL5pCCuZPN+idPs+JKm9RJDUWGo5xucWX3BSoKL+lSVM/5FZINf
-         pEUg==
-X-Gm-Message-State: APjAAAX36uDVNC8ruTajkplLl0nBl5h6RGTOZlodRbbVFsjPoB1j2Sgt
-        ktInr0vy+1CBX8PHmks0SVOQluIF
-X-Google-Smtp-Source: APXvYqxdspLa8CegnseSDgRCl+19jBVOk9zvGOA3kE9jB7Cc2EeAbkWGAOXU8jFOKdyHtNKYJRVPPw==
-X-Received: by 2002:a37:b87:: with SMTP id 129mr5171858qkl.132.1561667995759;
-        Thu, 27 Jun 2019 13:39:55 -0700 (PDT)
-Received: from localhost ([2620:10d:c091:480::5a51])
-        by smtp.gmail.com with ESMTPSA id 123sm67372qkh.113.2019.06.27.13.39.54
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 27 Jun 2019 13:39:55 -0700 (PDT)
-From:   Tejun Heo <tj@kernel.org>
-To:     axboe@kernel.dk
-Cc:     jack@suse.cz, josef@toxicpanda.com, clm@fb.com, dsterba@suse.com,
-        linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCHSET for-5.3/block] block: add blkcg bio punt mechanism
-Date:   Thu, 27 Jun 2019 13:39:47 -0700
-Message-Id: <20190627203952.386785-1-tj@kernel.org>
-X-Mailer: git-send-email 2.17.1
+        id S1726686AbfF0Vrp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 27 Jun 2019 17:47:45 -0400
+Received: from mail.kernel.org ([198.145.29.99]:39160 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1726441AbfF0Vrp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 27 Jun 2019 17:47:45 -0400
+Received: from mail-vs1-f47.google.com (mail-vs1-f47.google.com [209.85.217.47])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id A388D2133F;
+        Thu, 27 Jun 2019 21:47:43 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1561672063;
+        bh=SpV/uemnOrRihge5TJk4ITU92ziigblP630GRC7lbrc=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=iDZwlAlRNE4TdI8zZGWLcHsYNsMKV28NI1/Z1FWSKsjfQL1MvNJnH3R4FfOt1FI6U
+         NoA4RMc8FNTMy/xmWXqt/uWJxAl8AuodxTg1eEoBn0PUWQSj6LqdN9WWyUoa01fgzL
+         Ul7eDI3qZJrsAg4aeoFpmunVxqDc4COun2zvENiU=
+Received: by mail-vs1-f47.google.com with SMTP id j26so2658421vsn.10;
+        Thu, 27 Jun 2019 14:47:43 -0700 (PDT)
+X-Gm-Message-State: APjAAAVmPQSoLd4/S1DwEI4dEpYOA9mz22UWERHiSjHLnxd+fBsv+G0i
+        NX7f/PYI21csdw1pCjg7CNuWpuTa+Efh36DyFgs=
+X-Google-Smtp-Source: APXvYqzscPkX8+onkT0PS9yyWAEmKERA4byc8s6OtXj5hIMpb0Y27HgKk8Sg5fihvfMrys0KbcAS+H5hMd5yP9+S8sw=
+X-Received: by 2002:a67:d990:: with SMTP id u16mr4271105vsj.95.1561672062824;
+ Thu, 27 Jun 2019 14:47:42 -0700 (PDT)
+MIME-Version: 1.0
+References: <20190627170030.6149-1-fdmanana@kernel.org> <20190627202818.GB5167@magnolia>
+In-Reply-To: <20190627202818.GB5167@magnolia>
+From:   Filipe Manana <fdmanana@kernel.org>
+Date:   Thu, 27 Jun 2019 22:47:31 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H7PbZh3SNv+jOm_St03bkq=f2-T8Cna-no6U2+FxxMchA@mail.gmail.com>
+Message-ID: <CAL3q7H7PbZh3SNv+jOm_St03bkq=f2-T8Cna-no6U2+FxxMchA@mail.gmail.com>
+Subject: Re: [PATCH] generic: test cloning large exents to a file with many
+ small extents
+To:     "Darrick J. Wong" <darrick.wong@oracle.com>
+Cc:     fstests <fstests@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Filipe Manana <fdmanana@suse.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
+On Thu, Jun 27, 2019 at 9:28 PM Darrick J. Wong <darrick.wong@oracle.com> wrote:
+>
+> On Thu, Jun 27, 2019 at 06:00:30PM +0100, fdmanana@kernel.org wrote:
+> > From: Filipe Manana <fdmanana@suse.com>
+> >
+> > Test that if we clone a file with some large extents into a file that has
+> > many small extents, when the fs is nearly full, the clone operation does
+> > not fail and produces the correct result.
+> >
+> > This is motivated by a bug found in btrfs wich is fixed by the following
+> > patches for the linux kernel:
+> >
+> >  [PATCH 1/2] Btrfs: factor out extent dropping code from hole punch handler
+> >  [PATCH 2/2] Btrfs: fix ENOSPC errors, leading to transaction aborts, when
+> >              cloning extents
+> >
+> > The test currently passes on xfs.
+> >
+> > Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> > ---
+> >  tests/generic/558     | 75 +++++++++++++++++++++++++++++++++++++++++++++++++++
+> >  tests/generic/558.out |  5 ++++
+> >  tests/generic/group   |  1 +
+> >  3 files changed, 81 insertions(+)
+> >  create mode 100755 tests/generic/558
+> >  create mode 100644 tests/generic/558.out
+> >
+> > diff --git a/tests/generic/558 b/tests/generic/558
+> > new file mode 100755
+> > index 00000000..ee16cdf7
+> > --- /dev/null
+> > +++ b/tests/generic/558
+> > @@ -0,0 +1,75 @@
+> > +#! /bin/bash
+> > +# SPDX-License-Identifier: GPL-2.0
+> > +# Copyright (C) 2019 SUSE Linux Products GmbH. All Rights Reserved.
+> > +#
+> > +# FSQA Test No. 558
+> > +#
+> > +# Test that if we clone a file with some large extents into a file that has
+> > +# many small extents, when the fs is nearly full, the clone operation does
+> > +# not fail and produces the correct result.
+> > +#
+> > +seq=`basename $0`
+> > +seqres=$RESULT_DIR/$seq
+> > +echo "QA output created by $seq"
+> > +tmp=/tmp/$$
+> > +status=1     # failure is the default!
+> > +trap "_cleanup; exit \$status" 0 1 2 3 15
+> > +
+> > +_cleanup()
+> > +{
+> > +     cd /
+> > +     rm -f $tmp.*
+> > +}
+> > +
+> > +# get standard environment, filters and checks
+> > +. ./common/rc
+> > +. ./common/filter
+> > +. ./common/reflink
+> > +
+> > +# real QA test starts here
+> > +_supported_fs generic
+> > +_supported_os Linux
+> > +_require_scratch_reflink
+> > +
+> > +rm -f $seqres.full
+> > +
+> > +_scratch_mkfs_sized $((512 * 1024 * 1024)) >>$seqres.full 2>&1
+> > +_scratch_mount
+> > +
+> > +file_size=$(( 128 * 1024 * 1024 )) # 128Mb
+> > +extent_size=4096
+>
+> What if the fs block size is 64k?
 
-This patchset contains only the block part of the following
+Then we get extents of 64Kb instead of 4Kb. Works on btrfs. Is it a
+problem for xfs (or any other fs)?
 
-  [1] [PATCHSET v2 btrfs/for-next] blkcg, btrfs: fix cgroup writeback support
+>
+> > +num_extents=$(( $file_size / $extent_size ))
+> > +
+> > +# Create a file with many small extents.
+> > +for ((i = 0; i < $num_extents; i++)); do
+> > +     offset=$(( $i * $extent_size ))
+> > +     $XFS_IO_PROG -f -s -c "pwrite -S 0xe5 $offset $extent_size" \
+> > +             $SCRATCH_MNT/foo >>/dev/null
+> > +done
+>
+> I wouldn't have thought that this would actually succeed on xfs because
+> you could lay extents down one after the other, but then started seeing
+> this in the filefrag output:
+>
+> File size of /opt/foo is 528384 (129 blocks of 4096 bytes)
+>  ext:     logical_offset:        physical_offset: length:   expected: flags:
+>    3:       17..      17:         52..        52:      1:         37:
+>    4:       18..      18:         67..        67:      1:         53:
+>    5:       19..      19:         81..        81:      1:         68:
+>    6:       20..      20:         94..        94:      1:         82:
+>    7:       21..      21:        106..       106:      1:         95:
+>    8:       22..      22:        117..       117:      1:        107:
+>    9:       23..      23:        127..       127:      1:        118:
+>   10:       24..      24:        136..       136:      1:        128:
+>   11:       25..      25:        144..       144:      1:        137:
+>   12:       26..      26:        151..       151:      1:        145:
+>   13:       27..      27:        157..       157:      1:        152:
+>   14:       28..      28:        162..       162:      1:        158:
+>   15:       29..      29:        166..       166:      1:        163:
+>   16:       30..      30:        169..       169:      1:        167:
+>   17:       31..      32:        171..       172:      2:        170:
+>   18:       33..      33:        188..       188:      1:        173:
+>
+> 52, 67, 81, 94, 106, 117, 127, 136, 44, 151, 157, 162, 166, 169, 171...
+>
+>  +15 +14 +13 +12  +11  +10   +9   +8  +7   +6   +5   +4   +3   +2...
+>
+> Hm, I wonder what quirk of the xfs allocator this might be?
 
-with the following changes
+Don't ask me, I have no idea how it works :)
 
- * wbc_account_io() is renamed to wbc_account_cgroup_owner() and
-   wbc->no_account_io to wbc->no_cgroup_owner for clarity.
+>
+> > +
+> > +# Create file bar with the same size that file foo has but with large extents.
+> > +$XFS_IO_PROG -f -c "pwrite -S 0xc7 -b $file_size 0 $file_size" \
+> > +     $SCRATCH_MNT/bar >>/dev/null
+> > +
+> > +# Fill the fs (for btrfs we are interested in filling all unallocated space
+> > +# and most of the existing metadata block group(s), so that after this there
+> > +# will be no unallocated space and metadata space will be mostly full but with
+> > +# more than enough free space for the clone operation below to succeed).
+> > +i=1
+> > +while true; do
+> > +     $XFS_IO_PROG -f -c "pwrite 0 2K" $SCRATCH_MNT/filler_$i &> /dev/null
+> > +     [ $? -ne 0 ] && break
+> > +     i=$(( i + 1 ))
+> > +done
+>
+> _fill_fs?
 
-When writeback is executed asynchronously (e.g. for compression), bios
-are bounced to and issued by worker pool shared by all cgroups.  This
-leads to significant priority inversions when cgroup IO control is in
-use - IOs for a low priority cgroup can tie down the workers forcing
-higher priority IOs to wait behind them.
+No, because that will do fallocate. Writing 2Kb files here is on
+purpose because that will fill the metadata
+block group(s) (on btrfs we inline extents in the btree (metadata) as
+long as they are not bigger than 2Kb, by default).
+Using fallocate, we end up using data block groups.
 
-This patchset adds an bio punt mechanism to blkcg and updates btrfs to
-issue async IOs through it.  A bio tagged with REQ_CGROUP_PUNT flag is
-bounced to the asynchronous issue context of the associated blkcg on
-bio_submit().  As the bios are issued from per-blkcg work items,
-there's no concern for priority inversions and it doesn't require
-invasive changes to the filesystems.  The mechanism should be
-generally useful for IO control support across different filesystems.
+>
+> > +
+> > +# Now clone file bar into file foo. This is supposed to succeed and not fail
+> > +# with ENOSPC for example.
+> > +$XFS_IO_PROG -c "reflink $SCRATCH_MNT/bar" $SCRATCH_MNT/foo >>/dev/null
+>
+> _reflink $SCRATCH_MNT/bar $SCRATCH_MNT/foo ?
 
-This patchset contains the following 5 patches.
+Does exactly the same. I don't mind changing it however.
 
- 0001-cgroup-blkcg-Prepare-some-symbols-for-module-and-CON.patch
- 0002-blkcg-writeback-Rename-wbc_account_io-to-wbc_account.patch
- 0003-blkcg-writeback-Add-wbc-no_cgroup_owner.patch
- 0004-blkcg-writeback-Implement-wbc_blkcg_css.patch
- 0005-blkcg-implement-REQ_CGROUP_PUNT.patch
+Thanks.
 
-The patches are also available in the following branch.
-
- git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-blkcg-punt
-
-Thanks, diffstat follows.
-
- Documentation/admin-guide/cgroup-v2.rst |    2 -
- block/blk-cgroup.c                      |   54 ++++++++++++++++++++++++++++++++
- block/blk-core.c                        |    3 +
- fs/btrfs/extent_io.c                    |    4 +-
- fs/buffer.c                             |    2 -
- fs/ext4/page-io.c                       |    2 -
- fs/f2fs/data.c                          |    4 +-
- fs/fs-writeback.c                       |   13 ++++---
- fs/mpage.c                              |    2 -
- include/linux/backing-dev.h             |    1 
- include/linux/blk-cgroup.h              |   16 ++++++++-
- include/linux/blk_types.h               |   10 +++++
- include/linux/cgroup.h                  |    1 
- include/linux/writeback.h               |   41 ++++++++++++++++++++----
- 14 files changed, 134 insertions(+), 21 deletions(-)
-
---
-tejun
-
-[1] http://lkml.kernel.org/r/20190615182453.843275-1-tj@kernel.org
-
+>
+> --D
+>
+> > +
+> > +_scratch_remount
+> > +
+> > +echo "File foo data after cloning and remount:"
+> > +od -A d -t x1 $SCRATCH_MNT/foo
+> > +
+> > +status=0
+> > +exit
+> > diff --git a/tests/generic/558.out b/tests/generic/558.out
+> > new file mode 100644
+> > index 00000000..d1e8e70f
+> > --- /dev/null
+> > +++ b/tests/generic/558.out
+> > @@ -0,0 +1,5 @@
+> > +QA output created by 558
+> > +File foo data after cloning and remount:
+> > +0000000 c7 c7 c7 c7 c7 c7 c7 c7 c7 c7 c7 c7 c7 c7 c7 c7
+> > +*
+> > +134217728
+> > diff --git a/tests/generic/group b/tests/generic/group
+> > index 543c0627..c06c1cd1 100644
+> > --- a/tests/generic/group
+> > +++ b/tests/generic/group
+> > @@ -560,3 +560,4 @@
+> >  555 auto quick cap
+> >  556 auto quick casefold
+> >  557 auto quick log
+> > +558 auto clone
+> > --
+> > 2.11.0
+> >

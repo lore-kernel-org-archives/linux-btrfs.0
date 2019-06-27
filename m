@@ -7,67 +7,67 @@ X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C8A4BC004E6
-	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Jun 2019 20:40:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1FF29C48BD7
+	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Jun 2019 20:40:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A22B12075E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Jun 2019 20:40:01 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id EDA392146E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Jun 2019 20:40:07 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1561668001;
-	bh=xdji0cEGXBP2ove7oTOwQREopcU+eHPw+r9vsRTde84=;
+	s=default; t=1561668008;
+	bh=CwGcE2gsJFvJAkExSKNdUjpvReG1ZrsPsPoT0gFLfzE=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=2cY1enmO9dBMPmViZlwuX417Qv8C8ebNBOOuEix+WjhFdljcLnr0EDz7dcUed6tpU
-	 TTKzZxcJXUnt1kf5ipRueNx6pWhckQ6/VcMOEQOvKoAPbwGNVPssZzETnwp3VbTO+I
-	 oY7CIEYa9yb2BTy99+9UhleXzuyEpZV/Q6pYFpB0=
+	b=wLiNz7u+BB7LZRw/yA3jHaETfrp+opa9d7lZ/fNTEkm0B5s08oJPnWulIj0rCTKMq
+	 Z8XpFV8/wp5S3m6K55yoRJFjUWqZ7h8InfwP4fo8Qtb8DDGjlO4XUEMvHpLautwwad
+	 uLDpUOhCQZNQRbiN0ix1Emm0Z1Ug4YYOqYoPmu24=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726726AbfF0UkA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 27 Jun 2019 16:40:00 -0400
-Received: from mail-qt1-f193.google.com ([209.85.160.193]:37682 "EHLO
-        mail-qt1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726463AbfF0Uj7 (ORCPT
+        id S1726795AbfF0UkH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 27 Jun 2019 16:40:07 -0400
+Received: from mail-qk1-f195.google.com ([209.85.222.195]:41061 "EHLO
+        mail-qk1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726785AbfF0UkG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Jun 2019 16:39:59 -0400
-Received: by mail-qt1-f193.google.com with SMTP id y57so3995770qtk.4;
-        Thu, 27 Jun 2019 13:39:59 -0700 (PDT)
+        Thu, 27 Jun 2019 16:40:06 -0400
+Received: by mail-qk1-f195.google.com with SMTP id c11so2956762qkk.8;
+        Thu, 27 Jun 2019 13:40:05 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=sender:from:to:cc:subject:date:message-id:in-reply-to:references;
-        bh=AMywy7ALEe2t0mNJ1TRlsbiFePyakRxLczRqN/PYLqo=;
-        b=R0VDCHQe0+ZVtPpHXez9PeF4IKo1fN/BqfuQtE78nnlRkmudxsQrwwOWjfkHoL5sKY
-         N0Ur2BTQ62Cs6+R/42uHdn0Pso0IGX3tHyknB/AXOI69hG7Dia8Zt6MDTUsuAefjmMua
-         Amli6efEBxs/T/55RsLg9AfCjqq/ZxPXniVAYKgayjMnyJWIPmEPOqwVIn/F0vmIt12g
-         ItguiZP9RbnGqEPMz7RF7EpZ1xZh69kPWN3TBaaQTg+oclUpMByWLcny5yyFLHYakIRo
-         /sz5Yggzahgf2fmL6TWYauIEGFlgYFtrTFbuRyUQZ2J5l9pb22W62vF4K1JIPvhGCC8N
-         dV3Q==
+        bh=rSl5Em3E7t4PowLidlG5XJQX39ZMKusUKIIGePH/ZaI=;
+        b=M2xcfW5/a5KT7xxFW2u20pf83/TLWWue8R/PvJp98eItgcG0KR5HAkEJaKay6cgAYz
+         hcZWI7mnqLjIWP7yuA3zpAvSyE39gFO2SBOaZXUtW9nET16EnhritPjGtxlVjF4jCc0M
+         bBjy+JCy4waWrXCPeLXqoBPXdK20yC4G56Ca37Xf3Q1GTqnsrJC3PeLPI/5QhCX2KiLy
+         5omBq5FrgEfiDtcrRSYyLidLrVzFQUyYd9eFS84BGqNptzBrVhhxePPfx5px9+x0jSqr
+         iNMnontB+5QRT6QqVwfwE0ctQozPwpmpB60iEIFxgVjGrUkYQBerscXbZURfolLPEcKK
+         /D5A==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:sender:from:to:cc:subject:date:message-id
          :in-reply-to:references;
-        bh=AMywy7ALEe2t0mNJ1TRlsbiFePyakRxLczRqN/PYLqo=;
-        b=Yv55e6iB+CMpiWQ4ku/2bCtuZhBT4z3fllqbDfTRJCvNxRT9h6Qi6Qbf/rYnXt3cu0
-         SLwU9fYMCgOJMM//z5w1bgZrD/GZzjmbA5bncowuyqtpr1td8AX411L3R63LVHFVOaEy
-         qQlrvdCbWKFIxHMIf3XHdUANnLRGVZKVzw+ynBgmQ2fVFQ4gq5tDWKBIPEXNxJ19rxkL
-         r3UDfWzunG7JdagFxvl+7oiNrzZehGTouWPgx/UzPumMNrOKkh/mYd4+AOtU/sRbsqkp
-         1HWXLgixibQSrx9aLogIgSlFhML0tK4xuEV5ePjpAjLR6NilocgFRSqyQCFson5voFSJ
-         Ow1g==
-X-Gm-Message-State: APjAAAVuFrYJVCDtMhFK+GLvwtqrBFNdon8eKgANelfXL77iqH3onePf
-        NrMshqCzB52rgI//dUApy0c=
-X-Google-Smtp-Source: APXvYqweuAgf29mRrCJ2Yfz4Yw3CYiuLfScCA+pqmcAtQjba1z/7eF/+dYrC95C0D1Syo5Ho5LZfgA==
-X-Received: by 2002:a0c:af18:: with SMTP id i24mr4742816qvc.115.1561667998558;
-        Thu, 27 Jun 2019 13:39:58 -0700 (PDT)
+        bh=rSl5Em3E7t4PowLidlG5XJQX39ZMKusUKIIGePH/ZaI=;
+        b=AchmqMKmQU4rJe1Yz/WcUcOQL4Aq4pXSYDMHPyvDmMOdBiyHNcJgQ07Fq6m5V3udD4
+         WEM+5+wp/IKEoDwxwMWL8EKouHib15onB7KAP1FYV9zZqnxHMxZkiB9zJJbbpPkMh1Rs
+         Z7qVMcDZTZN+M2aGdr/snZTOvPMBe7D03kEhLazEkf4qjk140jLspx289Qw0MuwozPff
+         bZQbEomzcyr1U55l6uZciYayujPp408CMBcPRNqs4trvZ9Oj8BI7qYyAmqPa6g02rgjb
+         7/bSEplMHZN/sePOlzCP4sp9EC3yW/8B9z2WoUATntmixryVlZFJeMp8vYDVeNPHHuNV
+         8m5A==
+X-Gm-Message-State: APjAAAUQbEgFyhM6hYtb2+ZDTYM8bNInfWBBCabkSYIvJqVtiW84KIaQ
+        if/pOtSnEjyG29uNorWW698=
+X-Google-Smtp-Source: APXvYqx2JI0dl6XBW4xAWJ1qXPBVZ1WFgQyiXRixoGKykxjclQPXHWLff2XckRTwxx1XnTwBdnN18g==
+X-Received: by 2002:a37:a86:: with SMTP id 128mr5373463qkk.169.1561668004948;
+        Thu, 27 Jun 2019 13:40:04 -0700 (PDT)
 Received: from localhost ([2620:10d:c091:480::5a51])
-        by smtp.gmail.com with ESMTPSA id k55sm101322qtf.68.2019.06.27.13.39.57
+        by smtp.gmail.com with ESMTPSA id o38sm120603qte.5.2019.06.27.13.40.04
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 27 Jun 2019 13:39:58 -0700 (PDT)
+        Thu, 27 Jun 2019 13:40:04 -0700 (PDT)
 From:   Tejun Heo <tj@kernel.org>
 To:     axboe@kernel.dk
 Cc:     jack@suse.cz, josef@toxicpanda.com, clm@fb.com, dsterba@suse.com,
         linux-block@vger.kernel.org, linux-kernel@vger.kernel.org,
         linux-btrfs@vger.kernel.org, kernel-team@fb.com,
         Tejun Heo <tj@kernel.org>
-Subject: [PATCH 1/5] cgroup, blkcg: Prepare some symbols for module and !CONFIG_CGROUP usages
-Date:   Thu, 27 Jun 2019 13:39:48 -0700
-Message-Id: <20190627203952.386785-2-tj@kernel.org>
+Subject: [PATCH 3/5] blkcg, writeback: Add wbc->no_cgroup_owner
+Date:   Thu, 27 Jun 2019 13:39:50 -0700
+Message-Id: <20190627203952.386785-4-tj@kernel.org>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20190627203952.386785-1-tj@kernel.org>
 References: <20190627203952.386785-1-tj@kernel.org>
@@ -76,71 +76,57 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-btrfs is going to use css_put() and wbc helpers to improve cgroup
-writeback support.  Add dummy css_get() definition and export wbc
-helpers to prepare for module and !CONFIG_CGROUP builds.
+When writeback IOs are bounced through async layers, the IOs should
+only be accounted against the wbc from the original bdi writeback to
+avoid confusing cgroup inode ownership arbitration.  Add
+wbc->no_cgroup_owner to allow disabling wbc cgroup owner accounting.
+This will be used make btrfs compression work well with cgroup IO
+control.
+
+v2: Renamed from no_wbc_acct to no_cgroup_owner and added comment as
+    per Jan.
 
 Signed-off-by: Tejun Heo <tj@kernel.org>
-Reported-by: kbuild test robot <lkp@intel.com>
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 Reviewed-by: Jan Kara <jack@suse.cz>
 ---
- block/blk-cgroup.c     | 1 +
- fs/fs-writeback.c      | 3 +++
- include/linux/cgroup.h | 1 +
- 3 files changed, 5 insertions(+)
+ fs/fs-writeback.c         | 2 +-
+ include/linux/writeback.h | 9 +++++++++
+ 2 files changed, 10 insertions(+), 1 deletion(-)
 
-diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
-index 53b7bd4c7000..3319ab4ff262 100644
---- a/block/blk-cgroup.c
-+++ b/block/blk-cgroup.c
-@@ -47,6 +47,7 @@ struct blkcg blkcg_root;
- EXPORT_SYMBOL_GPL(blkcg_root);
- 
- struct cgroup_subsys_state * const blkcg_root_css = &blkcg_root.css;
-+EXPORT_SYMBOL_GPL(blkcg_root_css);
- 
- static struct blkcg_policy *blkcg_policy[BLKCG_MAX_POLS];
- 
 diff --git a/fs/fs-writeback.c b/fs/fs-writeback.c
-index 9ebfb1b28430..a8a40bc26c2f 100644
+index 0aef79e934bb..542b02d170f8 100644
 --- a/fs/fs-writeback.c
 +++ b/fs/fs-writeback.c
-@@ -270,6 +270,7 @@ void __inode_attach_wb(struct inode *inode, struct page *page)
- 	if (unlikely(cmpxchg(&inode->i_wb, NULL, wb)))
- 		wb_put(wb);
- }
-+EXPORT_SYMBOL_GPL(__inode_attach_wb);
+@@ -727,7 +727,7 @@ void wbc_account_cgroup_owner(struct writeback_control *wbc, struct page *page,
+ 	 * behind a slow cgroup.  Ultimately, we want pageout() to kick off
+ 	 * regular writeback instead of writing things out itself.
+ 	 */
+-	if (!wbc->wb)
++	if (!wbc->wb || wbc->no_cgroup_owner)
+ 		return;
  
- /**
-  * locked_inode_to_wb_and_lock_list - determine a locked inode's wb and lock it
-@@ -582,6 +583,7 @@ void wbc_attach_and_unlock_inode(struct writeback_control *wbc,
- 	if (unlikely(wb_dying(wbc->wb)))
- 		inode_switch_wbs(inode, wbc->wb_id);
- }
-+EXPORT_SYMBOL_GPL(wbc_attach_and_unlock_inode);
- 
- /**
-  * wbc_detach_inode - disassociate wbc from inode and perform foreign detection
-@@ -701,6 +703,7 @@ void wbc_detach_inode(struct writeback_control *wbc)
- 	wb_put(wbc->wb);
- 	wbc->wb = NULL;
- }
-+EXPORT_SYMBOL_GPL(wbc_detach_inode);
- 
- /**
-  * wbc_account_io - account IO issued during writeback
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index c0077adeea83..da9d2afbcf0c 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -687,6 +687,7 @@ void cgroup_path_from_kernfs_id(const union kernfs_node_id *id,
- struct cgroup_subsys_state;
- struct cgroup;
- 
-+static inline void css_get(struct cgroup_subsys_state *css) {}
- static inline void css_put(struct cgroup_subsys_state *css) {}
- static inline int cgroup_attach_task_all(struct task_struct *from,
- 					 struct task_struct *t) { return 0; }
+ 	css = mem_cgroup_css_from_page(page);
+diff --git a/include/linux/writeback.h b/include/linux/writeback.h
+index dda5cf228172..33a50fa09fac 100644
+--- a/include/linux/writeback.h
++++ b/include/linux/writeback.h
+@@ -68,6 +68,15 @@ struct writeback_control {
+ 	unsigned for_reclaim:1;		/* Invoked from the page allocator */
+ 	unsigned range_cyclic:1;	/* range_start is cyclic */
+ 	unsigned for_sync:1;		/* sync(2) WB_SYNC_ALL writeback */
++
++	/*
++	 * When writeback IOs are bounced through async layers, only the
++	 * initial synchronous phase should be accounted towards inode
++	 * cgroup ownership arbitration to avoid confusion.  Later stages
++	 * can set the following flag to disable the accounting.
++	 */
++	unsigned no_cgroup_owner:1;
++
+ #ifdef CONFIG_CGROUP_WRITEBACK
+ 	struct bdi_writeback *wb;	/* wb this writeback is issued under */
+ 	struct inode *inode;		/* inode being written out */
 -- 
 2.17.1
 

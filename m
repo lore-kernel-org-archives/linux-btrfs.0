@@ -7,42 +7,43 @@ X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 05FB2C48BD7
-	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Jun 2019 17:00:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F1C88C48BD7
+	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Jun 2019 17:00:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C470E20659
-	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Jun 2019 17:00:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CA367214AF
+	for <linux-btrfs@archiver.kernel.org>; Thu, 27 Jun 2019 17:00:51 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1561654847;
-	bh=f8IzSZdFuBU/AzY7rp2iXrVzqkmkP0hAAiSHy/dNrw8=;
-	h=From:To:Subject:Date:List-ID:From;
-	b=n6pO9mdOXu+5Vntd91Bva9iDAQuzUFhUB7gsjamASAX7fDu/lqD7+ris1JLZEoojl
-	 gftjy4onuNndxRrp+0npRXBu55Lq5eqdmk7ArT0CaNjV/Z/ekiSaYkZgR9OGJPi95b
-	 37ORc5PKAwbCankyHMd2VZB59KrBVV06HkvGdqWk=
+	s=default; t=1561654851;
+	bh=0SKNoWM8BkkGjkwSkaiau6VMf9D9LH490W4WPUoUCx8=;
+	h=From:To:Cc:Subject:Date:List-ID:From;
+	b=Pc9l18g15tUOUoDzZRWU0z/8yZK50OUuL0+mkaya/fgvt8Ysn9/qW5LU0fQy1icQU
+	 PJbPtOyCkZFynTdn3XI1D1ImIH93ZH3JrekASNNQbjbeMzUZVLPMObXYKFrJ4b2LcC
+	 3Ky9/GMwcdk2mtJm/xqUYBXZIWrtgvPZLiSosKTk=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726518AbfF0RAr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 27 Jun 2019 13:00:47 -0400
-Received: from mail.kernel.org ([198.145.29.99]:50266 "EHLO mail.kernel.org"
+        id S1726616AbfF0RAv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 27 Jun 2019 13:00:51 -0400
+Received: from mail.kernel.org ([198.145.29.99]:50326 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726315AbfF0RAq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Jun 2019 13:00:46 -0400
+        id S1726315AbfF0RAv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 27 Jun 2019 13:00:51 -0400
 Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id A9C6E20659
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Jun 2019 17:00:44 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id D226220659;
+        Thu, 27 Jun 2019 17:00:48 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1561654845;
-        bh=f8IzSZdFuBU/AzY7rp2iXrVzqkmkP0hAAiSHy/dNrw8=;
-        h=From:To:Subject:Date:From;
-        b=HVF3Qy2ucr+ItgB/cCBfdC7gGtz5WaqmDjO23lyzsiv3BaRQzAGUNUfb5OInsd99l
-         2bmnEoctLEkIAAWsloMvIexMrnMYUC439Pv2w8k8/Wewdcel4HNSHZgJU9BlPTJR9S
-         UQSxPWMFNtCkwsBZ7DtGqsFokChlPXleT/9Sm5Oc=
+        s=default; t=1561654849;
+        bh=0SKNoWM8BkkGjkwSkaiau6VMf9D9LH490W4WPUoUCx8=;
+        h=From:To:Cc:Subject:Date:From;
+        b=1jdZ+mKG8gjbM2A0hlZ2RQnstYHLaPqItRH8hq0xcCHQ/OYm0bVdH7QmGtQY2S8kk
+         eWWF/dl21EulOpPXxqeKFr5Jm4p+xb0ofLne3QYAXf46xtRm1rlgLZ08GH+0oajI4Z
+         NtiSpDbu69+zRwsQEd7Z3fT5+vuO9JtabroT87Kc=
 From:   fdmanana@kernel.org
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] Btrfs: fix ENOSPC errors, leading to transaction aborts, when cloning extents
-Date:   Thu, 27 Jun 2019 18:00:42 +0100
-Message-Id: <20190627170042.6241-1-fdmanana@kernel.org>
+To:     fstests@vger.kernel.org
+Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] generic: test cloning large exents to a file with many small extents
+Date:   Thu, 27 Jun 2019 18:00:30 +0100
+Message-Id: <20190627170030.6149-1-fdmanana@kernel.org>
 X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
@@ -51,242 +52,129 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-When cloning extents (or deduplicating) we create a transaction with a
-space reservation that considers we will drop or update a single file
-extent item of the destination inode (that we modify a single leaf). That
-is fine for the vast majority of scenarios, however it might happen that
-we need to drop many file extent items, and adjust at most two file extent
-items, in the destination root, which can span multiple leafs. This will
-lead to either the call to btrfs_drop_extents() to fail with ENOSPC or
-the subsequent calls to btrfs_insert_empty_item() or btrfs_update_inode()
-(called through clone_finish_inode_update()) to fail with ENOSPC. Such
-failure results in a transaction abort, leaving the filesystem in a
-read-only mode.
+Test that if we clone a file with some large extents into a file that has
+many small extents, when the fs is nearly full, the clone operation does
+not fail and produces the correct result.
 
-In order to fix this we need to follow the same approach as the hole
-punching code, where we create a local reservation with 1 unit and keep
-ending and starting transactions, after balancing the btree inode,
-when __btrfs_drop_extents() returns ENOSPC. So fix this by making the
-extent cloning call calls the recently added btrfs_punch_hole_range()
-helper, which is what does the mentioned work for hole punching.
+This is motivated by a bug found in btrfs wich is fixed by the following
+patches for the linux kernel:
 
-A test case for fstests follows soon.
+ [PATCH 1/2] Btrfs: factor out extent dropping code from hole punch handler
+ [PATCH 2/2] Btrfs: fix ENOSPC errors, leading to transaction aborts, when
+             cloning extents
 
-Reported-by: David Goodwin <david@codepoets.co.uk>
-Link: https://lore.kernel.org/linux-btrfs/a4a4cf31-9cf4-e52c-1f86-c62d336c9cd1@codepoets.co.uk/
-Reported-by: Sam Tygier <sam@tygier.co.uk>
-Link: https://lore.kernel.org/linux-btrfs/82aace9f-a1e3-1f0b-055f-3ea75f7a41a0@tygier.co.uk/
-Fixes: b6f3409b2197e8f ("Btrfs: reserve sufficient space for ioctl clone")
+The test currently passes on xfs.
+
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/ctree.h |  4 ++++
- fs/btrfs/file.c  | 26 +++++++++++++--------
- fs/btrfs/ioctl.c | 69 ++++++++++++++++++++++++++++++--------------------------
- 3 files changed, 58 insertions(+), 41 deletions(-)
+ tests/generic/558     | 75 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/558.out |  5 ++++
+ tests/generic/group   |  1 +
+ 3 files changed, 81 insertions(+)
+ create mode 100755 tests/generic/558
+ create mode 100644 tests/generic/558.out
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index c1a166706a77..66bf08ec82ef 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3345,6 +3345,10 @@ int __btrfs_drop_extents(struct btrfs_trans_handle *trans,
- int btrfs_drop_extents(struct btrfs_trans_handle *trans,
- 		       struct btrfs_root *root, struct inode *inode, u64 start,
- 		       u64 end, int drop_cache);
-+int btrfs_punch_hole_range(struct inode *inode, struct btrfs_path *path,
-+			   const u64 start, const u64 end,
-+			   const bool insert_holes,
-+			   struct btrfs_trans_handle **trans_out);
- int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
- 			      struct btrfs_inode *inode, u64 start, u64 end);
- int btrfs_release_file(struct inode *inode, struct file *file);
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 393a6d23b6b0..df9edf0af76a 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2452,9 +2452,10 @@ static int btrfs_punch_hole_lock_range(struct inode *inode,
-  * The respective range must have been previously locked, as well as the inode.
-  * The end offset is inclusive (last byte of the range).
-  */
--static int btrfs_punch_hole_range(struct inode *inode, struct btrfs_path *path,
--				  const u64 start, const u64 end,
--				  struct btrfs_trans_handle **trans_out)
-+int btrfs_punch_hole_range(struct inode *inode, struct btrfs_path *path,
-+			   const u64 start, const u64 end,
-+			   const bool insert_holes,
-+			   struct btrfs_trans_handle **trans_out)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	u64 min_size = btrfs_calc_trans_metadata_size(fs_info, 1);
-@@ -2482,9 +2483,14 @@ static int btrfs_punch_hole_range(struct inode *inode, struct btrfs_path *path,
- 	/*
- 	 * 1 - update the inode
- 	 * 1 - removing the extents in the range
--	 * 1 - adding the hole extent if no_holes isn't set
-+	 * 1 - adding the hole extent if no_holes isn't set or !insert_holes
-+	 *     (used for extent cloning)
- 	 */
--	rsv_count = btrfs_fs_incompat(fs_info, NO_HOLES) ? 2 : 3;
-+	if (!btrfs_fs_incompat(fs_info, NO_HOLES) || !insert_holes)
-+		rsv_count = 3;
-+	else
-+		rsv_count = 2;
+diff --git a/tests/generic/558 b/tests/generic/558
+new file mode 100755
+index 00000000..ee16cdf7
+--- /dev/null
++++ b/tests/generic/558
+@@ -0,0 +1,75 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (C) 2019 SUSE Linux Products GmbH. All Rights Reserved.
++#
++# FSQA Test No. 558
++#
++# Test that if we clone a file with some large extents into a file that has
++# many small extents, when the fs is nearly full, the clone operation does
++# not fail and produces the correct result.
++#
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
 +
- 	trans = btrfs_start_transaction(root, rsv_count);
- 	if (IS_ERR(trans)) {
- 		ret = PTR_ERR(trans);
-@@ -2507,7 +2513,8 @@ static int btrfs_punch_hole_range(struct inode *inode, struct btrfs_path *path,
- 
- 		trans->block_rsv = &fs_info->trans_block_rsv;
- 
--		if (cur_offset < drop_end && cur_offset < ino_size) {
-+		if (insert_holes && cur_offset < drop_end &&
-+		    cur_offset < ino_size) {
- 			ret = fill_holes(trans, BTRFS_I(inode), path,
- 					cur_offset, drop_end);
- 			if (ret) {
-@@ -2574,7 +2581,7 @@ static int btrfs_punch_hole_range(struct inode *inode, struct btrfs_path *path,
- 	 * (because it's useless) or if it represents a 0 bytes range (when
- 	 * cur_offset == drop_end).
- 	 */
--	if (cur_offset < ino_size && cur_offset < drop_end) {
-+	if (insert_holes && cur_offset < ino_size && cur_offset < drop_end) {
- 		ret = fill_holes(trans, BTRFS_I(inode), path,
- 				cur_offset, drop_end);
- 		if (ret) {
-@@ -2589,7 +2596,7 @@ static int btrfs_punch_hole_range(struct inode *inode, struct btrfs_path *path,
- 		goto out_free;
- 
- 	trans->block_rsv = &fs_info->trans_block_rsv;
--	if (ret)
-+	if (ret && insert_holes)
- 		btrfs_end_transaction(trans);
- 	else
- 		*trans_out = trans;
-@@ -2719,7 +2726,8 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 		goto out;
- 	}
- 
--	ret = btrfs_punch_hole_range(inode, path, lockstart, lockend, &trans);
-+	ret = btrfs_punch_hole_range(inode, path, lockstart, lockend, true,
-+				     &trans);
- 	btrfs_free_path(path);
- 	if (ret)
- 		goto out;
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 2a1be0d1a698..95d2d0d90d20 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3682,17 +3682,6 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 			else
- 				drop_start = new_key.offset;
- 
--			/*
--			 * 1 - adjusting old extent (we may have to split it)
--			 * 1 - add new extent
--			 * 1 - inode update
--			 */
--			trans = btrfs_start_transaction(root, 3);
--			if (IS_ERR(trans)) {
--				ret = PTR_ERR(trans);
--				goto out;
--			}
--
- 			if (type == BTRFS_FILE_EXTENT_REG ||
- 			    type == BTRFS_FILE_EXTENT_PREALLOC) {
- 				/*
-@@ -3710,17 +3699,20 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 					datal -= off - key.offset;
- 				}
- 
--				ret = btrfs_drop_extents(trans, root, inode,
--							 drop_start,
--							 new_key.offset + datal,
--							 1);
-+				trans = NULL;
-+				ret = btrfs_punch_hole_range(inode, path,
-+						     drop_start,
-+						     new_key.offset + datal - 1,
-+						     false, &trans);
- 				if (ret) {
--					if (ret != -EOPNOTSUPP)
-+					if (trans && ret != -EOPNOTSUPP)
- 						btrfs_abort_transaction(trans,
- 									ret);
--					btrfs_end_transaction(trans);
-+					if (trans)
-+						btrfs_end_transaction(trans);
- 					goto out;
- 				}
-+				ASSERT(trans != NULL);
- 
- 				ret = btrfs_insert_empty_item(trans, root, path,
- 							      &new_key, size);
-@@ -3781,12 +3773,27 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 
- 				if (comp && (skip || trim)) {
- 					ret = -EINVAL;
--					btrfs_end_transaction(trans);
- 					goto out;
- 				}
- 				size -= skip + trim;
- 				datal -= skip + trim;
- 
-+				/*
-+				 * If our extent is inline, we know we will drop
-+				 * or adjust at most 1 extent item in the
-+				 * destination root.
-+				 *
-+				 * 1 - adjusting old extent (we may have to
-+				 *     split it)
-+				 * 1 - add new extent
-+				 * 1 - inode update
-+				 */
-+				trans = btrfs_start_transaction(root, 3);
-+				if (IS_ERR(trans)) {
-+					ret = PTR_ERR(trans);
-+					goto out;
-+				}
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
 +
- 				ret = clone_copy_inline_extent(inode,
- 							       trans, path,
- 							       &new_key,
-@@ -3843,24 +3850,22 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 		 * fully or partially overlaps our cloning range at its end.
- 		 */
- 		btrfs_release_path(path);
-+		path->leave_spinning = 0;
- 
--		/*
--		 * 1 - remove extent(s)
--		 * 1 - inode update
--		 */
--		trans = btrfs_start_transaction(root, 2);
--		if (IS_ERR(trans)) {
--			ret = PTR_ERR(trans);
--			goto out;
--		}
--		ret = btrfs_drop_extents(trans, root, inode,
--					 last_dest_end, destoff + len, 1);
-+		trans = NULL;
-+		ret = btrfs_punch_hole_range(inode, path,
-+					     last_dest_end, destoff + len - 1,
-+					     false, &trans);
- 		if (ret) {
--			if (ret != -EOPNOTSUPP)
--				btrfs_abort_transaction(trans, ret);
--			btrfs_end_transaction(trans);
-+			if (trans) {
-+				if (ret != -EOPNOTSUPP)
-+					btrfs_abort_transaction(trans, ret);
-+				btrfs_end_transaction(trans);
-+			}
- 			goto out;
- 		}
-+		ASSERT(trans != NULL);
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/reflink
 +
- 		clone_update_extent_map(BTRFS_I(inode), trans, NULL,
- 				last_dest_end,
- 				destoff + len - last_dest_end);
++# real QA test starts here
++_supported_fs generic
++_supported_os Linux
++_require_scratch_reflink
++
++rm -f $seqres.full
++
++_scratch_mkfs_sized $((512 * 1024 * 1024)) >>$seqres.full 2>&1
++_scratch_mount
++
++file_size=$(( 128 * 1024 * 1024 )) # 128Mb
++extent_size=4096
++num_extents=$(( $file_size / $extent_size ))
++
++# Create a file with many small extents.
++for ((i = 0; i < $num_extents; i++)); do
++	offset=$(( $i * $extent_size ))
++	$XFS_IO_PROG -f -s -c "pwrite -S 0xe5 $offset $extent_size" \
++		$SCRATCH_MNT/foo >>/dev/null
++done
++
++# Create file bar with the same size that file foo has but with large extents.
++$XFS_IO_PROG -f -c "pwrite -S 0xc7 -b $file_size 0 $file_size" \
++	$SCRATCH_MNT/bar >>/dev/null
++
++# Fill the fs (for btrfs we are interested in filling all unallocated space
++# and most of the existing metadata block group(s), so that after this there
++# will be no unallocated space and metadata space will be mostly full but with
++# more than enough free space for the clone operation below to succeed).
++i=1
++while true; do
++	$XFS_IO_PROG -f -c "pwrite 0 2K" $SCRATCH_MNT/filler_$i &> /dev/null
++	[ $? -ne 0 ] && break
++	i=$(( i + 1 ))
++done
++
++# Now clone file bar into file foo. This is supposed to succeed and not fail
++# with ENOSPC for example.
++$XFS_IO_PROG -c "reflink $SCRATCH_MNT/bar" $SCRATCH_MNT/foo >>/dev/null
++
++_scratch_remount
++
++echo "File foo data after cloning and remount:"
++od -A d -t x1 $SCRATCH_MNT/foo
++
++status=0
++exit
+diff --git a/tests/generic/558.out b/tests/generic/558.out
+new file mode 100644
+index 00000000..d1e8e70f
+--- /dev/null
++++ b/tests/generic/558.out
+@@ -0,0 +1,5 @@
++QA output created by 558
++File foo data after cloning and remount:
++0000000 c7 c7 c7 c7 c7 c7 c7 c7 c7 c7 c7 c7 c7 c7 c7 c7
++*
++134217728
+diff --git a/tests/generic/group b/tests/generic/group
+index 543c0627..c06c1cd1 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -560,3 +560,4 @@
+ 555 auto quick cap
+ 556 auto quick casefold
+ 557 auto quick log
++558 auto clone
 -- 
 2.11.0
 

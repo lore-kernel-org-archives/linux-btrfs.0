@@ -2,191 +2,124 @@ Return-Path: <SRS0=VvqN=U3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.8 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6F514C5B579
-	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Jun 2019 17:39:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E43AFC4321A
+	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Jun 2019 18:35:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5707E20828
-	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Jun 2019 17:39:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C3F282083B
+	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Jun 2019 18:35:38 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="13CJOqK6"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726563AbfF1Rjt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 28 Jun 2019 13:39:49 -0400
-Received: from mx2.suse.de ([195.135.220.15]:59690 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725783AbfF1Rjt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 28 Jun 2019 13:39:49 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A3682ADEA
-        for <linux-btrfs@vger.kernel.org>; Fri, 28 Jun 2019 17:39:47 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 22D1ADAC70; Fri, 28 Jun 2019 19:40:32 +0200 (CEST)
-From:   David Sterba <dsterba@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: Btrfs progs pre-release 5.2-rc1
-Date:   Fri, 28 Jun 2019 19:40:32 +0200
-Message-Id: <20190628174032.3382-1-dsterba@suse.com>
-X-Mailer: git-send-email 2.21.0
+        id S1726958AbfF1Sf2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 28 Jun 2019 14:35:28 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:39078 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726932AbfF1Sf2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 28 Jun 2019 14:35:28 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x5SIYbxU114935;
+        Fri, 28 Jun 2019 18:34:37 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : from : to :
+ cc : date : message-id : in-reply-to : references : mime-version :
+ content-type : content-transfer-encoding; s=corp-2018-07-02;
+ bh=h0lWCLVuyu0P/36h1LaiA53s/qIbwAY/ZQm2+JFVybY=;
+ b=13CJOqK6DbCKgAFDEdGfXZEvVfIS00B34kg4IH2cPp93lXn2rhMJKQVcwMqYiZ9PEp2q
+ drixofMcAlyipPy+d/Jo+Il4ybSrgLHbAvgw4tK50RD45sM6EK0M99Ng0lKMs9md8KqU
+ 5tWdoa087WIWXwrn2s04wAsed02vkTR17Ptv29tbMr+oiYCUt2st5FEwhJD+kbBFNC1C
+ d6Cbdu48A/VnHcS1l1Uyg1hNGBWFXjSndaRyJNjjEv58y9c32fT1M9Wdzfgtx8/joI9R
+ m5/NhIOc7kzQsT4bnybWNh+KY3MzGG2YNT1bb9zN/F0Q8J/dIXekyku7LABnmpwudcIb EA== 
+Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
+        by userp2120.oracle.com with ESMTP id 2t9cyqxyhm-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Fri, 28 Jun 2019 18:34:37 +0000
+Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
+        by userp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x5SIY3ak141544;
+        Fri, 28 Jun 2019 18:34:36 GMT
+Received: from pps.reinject (localhost [127.0.0.1])
+        by userp3030.oracle.com with ESMTP id 2t99f5qutn-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL);
+        Fri, 28 Jun 2019 18:34:36 +0000
+Received: from userp3030.oracle.com (userp3030.oracle.com [127.0.0.1])
+        by pps.reinject (8.16.0.27/8.16.0.27) with SMTP id x5SIYaxV142280;
+        Fri, 28 Jun 2019 18:34:36 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by userp3030.oracle.com with ESMTP id 2t99f5qutg-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Fri, 28 Jun 2019 18:34:36 +0000
+Received: from abhmp0013.oracle.com (abhmp0013.oracle.com [141.146.116.19])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x5SIYYg3021719;
+        Fri, 28 Jun 2019 18:34:34 GMT
+Received: from localhost (/67.169.218.210)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Fri, 28 Jun 2019 11:34:34 -0700
+Subject: [PATCH 5/5] vfs: only allow FSSETXATTR to set DAX flag on files and
+ dirs
+From:   "Darrick J. Wong" <darrick.wong@oracle.com>
+To:     matthew.garrett@nebula.com, yuchao0@huawei.com, tytso@mit.edu,
+        darrick.wong@oracle.com, shaggy@kernel.org,
+        ard.biesheuvel@linaro.org, josef@toxicpanda.com, hch@infradead.org,
+        clm@fb.com, adilger.kernel@dilger.ca, jk@ozlabs.org, jack@suse.com,
+        dsterba@suse.com, jaegeuk@kernel.org, viro@zeniv.linux.org.uk
+Cc:     cluster-devel@redhat.com, jfs-discussion@lists.sourceforge.net,
+        linux-efi@vger.kernel.org, reiserfs-devel@vger.kernel.org,
+        linux-kernel@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org,
+        linux-nilfs@vger.kernel.org, linux-mtd@lists.infradead.org,
+        ocfs2-devel@oss.oracle.com, linux-fsdevel@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org
+Date:   Fri, 28 Jun 2019 11:34:31 -0700
+Message-ID: <156174687185.1557318.13703922197244050336.stgit@magnolia>
+In-Reply-To: <156174682897.1557318.14418894077683701275.stgit@magnolia>
+References: <156174682897.1557318.14418894077683701275.stgit@magnolia>
+User-Agent: StGit/0.17.1-dirty
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9302 signatures=668688
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=965 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1906280210
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+From: Darrick J. Wong <darrick.wong@oracle.com>
 
-this is a pre-release of btrfs-progs, 5.2-rc1.
+The DAX flag only applies to files and directories, so don't let it get
+set for other types of files.
 
-The proper release is scheduled to next Friday, +7 days (2019-07-05), but can
-be postponed if needed.
+Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+---
+ fs/inode.c |    8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-Scrub status has been reworked:
 
-  UUID:             bf8720e0-606b-4065-8320-b48df2e8e669
-  Scrub started:    Fri Jun 14 12:00:00 2019
-  Status:           running
-  Duration:         0:14:11
-  Time left:        0:04:04
-  ETA:              Fri Jun 14 12:18:15 2019
-  Total to scrub:   182.55GiB
-  Bytes scrubbed:   141.80GiB
-  Rate:             170.63MiB/s
-  Error summary:    csum=7
-    Corrected:      0
-    Uncorrectable:  7
-    Unverified:     0
-
-And subvolume show now prints the qgroup information:
-
- subv1
-         Name:                   subv1
-         UUID:                   58aa0df4-6bde-3e4e-b9f6-631d9c23578f
-         Parent UUID:            -
-         Received UUID:          -
-         Creation time:          2019-06-19 12:34:56 +0200
-         Subvolume ID:           258
-         Generation:             9
-         Gen at creation:        9
-         Parent ID:              5
-         Top level ID:           5
-         Flags:                  -
-         Snapshot(s):
-         Quota group:            0/258
-           Limit referenced:     -
-           Limit exclusive:      1.00GiB
-           Usage referenced:     16.00KiB
-           Usage exclusive:      16.00KiB
-
-Tweaks to the formatting are possible but I think we have our style now, this
-is used by mkfs already so there should be no big surprise.
-
-The JSON formatting output is not added to any command, only the infrastructure
-code.
-
-For developers to notice, I've moved files into cmds/ and common/. Git rebase
-is smart enough to recognize that and rebased patches will follow the new path.
-
-Changelog:
-
-  * subvol show: print qgroup information when available
-  * scrub status: show ETA, revamp the whole output
-  * image: fix hang when there are more than 32 cpus online and compression is
-    requested
-  * convert: fix some false ENOSPC errors when --rootdir is used
-  * build: fix gcc9 warnings
-  * core changes:
-    * command handling cleanups
-    * dead code removal
-    * cmds-* files moved to cmds/
-    * other shared userspace files moved to common/
-    * preparatory work for more output formats
-
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
-
-Shortlog:
-
-David Sterba (43):
-      btrfs-progs: pass whole key to btrfs_uuid_to_key
-      btrfs-progs: build: disable -Waddress-of-packed-member by default
-      btrfs-progs: docs: add reference of section 5 page
-      btrfs-progs: pass cmd_struct to usage_unknown_option()
-      btrfs-progs: subvol show: reformat qgroup information
-      btrfs-progs: subvol show: don't return error if quotas are not enabled
-      btrfs-progs: tests: simple test for subvol show output
-      btrfs-progs: move get_df to utils.c
-      btrfs-progs: sync btrfs_raid_attr from kernel
-      btrfs-progs: scrub: improve output of status
-      btrfs-progs: move cmds-quota.c to cmds/
-      btrfs-progs: move cmds-qgroup.c to cmds/
-      btrfs-progs: move cmds-rescue.c to cmds/
-      btrfs-progs: move cmds/property.c to cmds/
-      btrfs-progs: move and rename chunk-recover.c cmds/
-      btrfs-progs: move and rename super-recover.c cmds/
-      btrfs-progs: move cmds-replace.c to cmds/
-      btrfs-progs: move cmds-device.c to cmds/
-      btrfs-progs: move cmds-restore.c to cmds/
-      btrfs-progs: move cmds-balance.c to cmds/
-      btrfs-progs: move cmds-receive.c to cmds/
-      btrfs-progs: move cmds-scrub.c to cmds/
-      btrfs-progs: move cmds-subvolume.c to cmds/
-      btrfs-progs: move all cmds-inspect*.c to cmds/
-      btrfs-progs: move all cmds-fi*.c to cmds/
-      btrfs-progs: move cmds-send.c to cmds/
-      btrfs-progs: move internal.h to common/
-      btrfs-progs: move messages.[ch] to common/
-      btrfs-progs: move task-utils.[ch] to common/
-      btrfs-progs: move help.[ch] to common/
-      btrfs-progs: move commonh to common/
-      btrfs-progs: move fsfeatures.[ch] to common/
-      btrfs-progs: move string-table.[ch] to common/
-      btrfs-progs: move utils.[ch] to common/
-      btrfs-progs: build: drop kernel-lib from -I and update paths
-      btrfs-progs: move rbtree-utils.[ch] to common/
-      btrfs-progs: fix helpinfo formats, short and options separation
-      btrfs-progs: help: add helpinfo marker for global options
-      btrfs-progs: define new output format: json
-      btrfs-progs: help: define helper for command with flags
-      btrfs-progs: output formatter infrastructue
-      btrfs-progs: update CHANGES for v5.2
-      Btrfs progs v5.2-rc1
-
-Grzegorz Kowal (1):
-      btrfs-progs: scrub: show the scrubbing rate and estimated time to finish
-
-Jeff Mahoney (12):
-      btrfs-progs: qgroups: introduce and use info and limit structures
-      btrfs-progs: qgroups: introduce btrfs_qgroup_query
-      btrfs-progs: subvolume: add quota info to btrfs sub show
-      btrfs-progs: help: convert ints used as bools to bool
-      btrfs-progs: reorder placement of help declarations for send/receive
-      btrfs-progs: filesystem balance: split out special handling
-      btrfs-progs: use cmd_struct as command entry point
-      btrfs-progs: pass cmd_struct to command callback function
-      btrfs-progs: pass cmd_struct to clean_args_no_options{,_relaxed}
-      btrfs-progs: pass cmd_struct to usage()
-      btrfs-progs: handle command groups directly for common case
-      btrfs-progs: add support for output formats
-
-Nikolay Borisov (4):
-      btrfs-progs: Remove redundant if
-      btrfs-progs: Remove old commented code
-      btrfs-progs: Remove old send buffer copy implementation
-      btrfs-progs: check: Remove duplicated and commented functions
-
-Qu Wenruo (10):
-      btrfs-progs: image: Use SZ_* to replace intermediate size
-      btrfs-progs: image: Fix a indent misalign
-      btrfs-progs: image: Fix a access-beyond-boundary bug when there are 32 online CPUs
-      btrfs-progs: image: Verify the superblock before restore
-      btrfs-progs: Fix false ENOSPC alert by tracking used space correctly
-      btrfs-progs: delayed-ref: Fix memory leak and use-after-free caused by wrong condition to free delayed ref/head.
-      btrfs-progs: constify extent buffer reader
-      btrfs-progs: Fix -Waddress-of-packed-member warning in btrfs_dev_stats_values callers
-      btrfs-progs: Remove unnecessary fallthrough attribute in test_num_disk_vs_raid()
-      btrfs-progs: Fix Wformat-overflow warning in cmds-receive.c
+diff --git a/fs/inode.c b/fs/inode.c
+index 670d5408d022..f08711b34341 100644
+--- a/fs/inode.c
++++ b/fs/inode.c
+@@ -2259,6 +2259,14 @@ int vfs_ioc_fssetxattr_check(struct inode *inode, const struct fsxattr *old_fa,
+ 	    !S_ISREG(inode->i_mode) && !S_ISDIR(inode->i_mode))
+ 		return -EINVAL;
+ 
++	/*
++	 * It is only valid to set the DAX flag on regular files and
++	 * directories on filesystems.
++	 */
++	if ((fa->fsx_xflags & FS_XFLAG_DAX) &&
++	    !(S_ISREG(inode->i_mode) || S_ISDIR(inode->i_mode)))
++		return -EINVAL;
++
+ 	/* Extent size hints of zero turn off the flags. */
+ 	if (fa->fsx_extsize == 0)
+ 		fa->fsx_xflags &= ~(FS_XFLAG_EXTSIZE | FS_XFLAG_EXTSZINHERIT);
 

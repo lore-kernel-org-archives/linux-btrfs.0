@@ -1,73 +1,106 @@
-Return-Path: <SRS0=ObJK=U5=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=3R9D=U6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.4 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 30816C5B57E
-	for <linux-btrfs@archiver.kernel.org>; Sun, 30 Jun 2019 10:40:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 04D21C06508
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jul 2019 03:08:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B317820663
-	for <linux-btrfs@archiver.kernel.org>; Sun, 30 Jun 2019 10:40:02 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=yandex.ru header.i=@yandex.ru header.b="Kz3o5ajM"
+	by mail.kernel.org (Postfix) with ESMTP id C74F5208CA
+	for <linux-btrfs@archiver.kernel.org>; Mon,  1 Jul 2019 03:08:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726587AbfF3Kh2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 30 Jun 2019 06:37:28 -0400
-Received: from forward100j.mail.yandex.net ([5.45.198.240]:41688 "EHLO
-        forward100j.mail.yandex.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726531AbfF3Kh2 (ORCPT
+        id S1727176AbfGADIN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 30 Jun 2019 23:08:13 -0400
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:41754 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1727135AbfGADIN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 30 Jun 2019 06:37:28 -0400
-X-Greylist: delayed 314 seconds by postgrey-1.27 at vger.kernel.org; Sun, 30 Jun 2019 06:37:27 EDT
-Received: from mxback3o.mail.yandex.net (mxback3o.mail.yandex.net [IPv6:2a02:6b8:0:1a2d::1d])
-        by forward100j.mail.yandex.net (Yandex) with ESMTP id 7BBD950E0E65
-        for <linux-btrfs@vger.kernel.org>; Sun, 30 Jun 2019 13:32:10 +0300 (MSK)
-Received: from smtp1j.mail.yandex.net (smtp1j.mail.yandex.net [2a02:6b8:0:801::ab])
-        by mxback3o.mail.yandex.net (nwsmtp/Yandex) with ESMTP id HNtKMdIzbf-WA88lQAh;
-        Sun, 30 Jun 2019 13:32:10 +0300
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=yandex.ru; s=mail; t=1561890730;
-        bh=A8QAWiHPNEQhZ4kRoM2uiA70Hy6ZiM6NLN+E4SeD3sY=;
-        h=Subject:To:From:Date:Message-ID;
-        b=Kz3o5ajMW0O2Una90pQD+TPtmgL9e6R+q1CTI/rjy3j2IHE3VdFXq6Geb5e9Hhyv6
-         9HoBrK91qqkMKKSARdQaV56jqPBC2l+BxoyyxTrWzq4FraAxf0HVeJZ1Wxv1SP68Jt
-         CK9l+H/6PmfcnHONDlFeq1x279uKz4kedMNhHkKw=
-Authentication-Results: mxback3o.mail.yandex.net; dkim=pass header.i=@yandex.ru
-Received: by smtp1j.mail.yandex.net (nwsmtp/Yandex) with ESMTPSA id k1gFe12mRL-W97mliXI;
-        Sun, 30 Jun 2019 13:32:09 +0300
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (Client certificate not present)
-From:   Dark Penguin <darkpenguin@yandex.ru>
+        Sun, 30 Jun 2019 23:08:13 -0400
+Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
+        id 7065C36CB37; Sun, 30 Jun 2019 23:08:01 -0400 (EDT)
+Date:   Sun, 30 Jun 2019 23:07:48 -0400
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
 To:     linux-btrfs@vger.kernel.org
-Subject: Recover a damaged btrfs backup image
-Message-ID: <1f678d8a-9f2a-022c-b0f3-98af0e8c7712@yandex.ru>
-Date:   Sun, 30 Jun 2019 13:32:09 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:45.0) Gecko/20100101
- Thunderbird/45.8.0
+Subject: Re: Global reserve and ENOSPC while deleting orphan inodes on 5.1.14
+Message-ID: <20190701030725.GG11831@hungrycats.org>
+References: <20190423230649.GB11530@hungrycats.org>
+ <20190623141434.GB11831@hungrycats.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="0z5c7mBtSy1wdr4F"
+Content-Disposition: inline
+In-Reply-To: <20190623141434.GB11831@hungrycats.org>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Greetings!
 
-I have a 50-Gb backup of a btrfs subvolume made with 'btrfs send
-mysubvolume | pigz > mysubvolume.btrfs.gz'. Later it turned out that the
-archive is damaged - there are a few consecutive gzip errors after 1 Gb.
-The rest of the file can be recovered with gzip recovery tools.
+--0z5c7mBtSy1wdr4F
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-However, 'btrfs receive' can not continue after encountering this spot.
-I have found numerous ways to recover btrfs partitions, but not backup
-images. Is there any way to ignore the error and continue with the rest
-of files? I'd be happy even if I could only see the contents (metadata?)
-- to account for what exactly is lost.
+On Sun, Jun 23, 2019 at 10:14:34AM -0400, Zygo Blaxell wrote:
+> On Tue, Apr 23, 2019 at 07:06:51PM -0400, Zygo Blaxell wrote:
+> > I had a test filesystem that ran out of unallocated space, then ran
+> > out of metadata space during a snapshot delete, and forced readonly.
+> > The workload before the failure was a lot of rsync and bees dedupe
+> > combined with random snapshot creates and deletes.
+>=20
+> Had this happen again on a production filesystem, this time on 5.1.11,
+> and it happened during orphan inode cleanup instead of snapshot delete:
+>=20
+> 	[14303.076134][T20882] BTRFS: error (device dm-21) in add_to_free_space_=
+tree:1037: errno=3D-28 No space left
+> 	[14303.076144][T20882] BTRFS: error (device dm-21) in __btrfs_free_exten=
+t:7196: errno=3D-28 No space left
+> 	[14303.076157][T20882] BTRFS: error (device dm-21) in btrfs_run_delayed_=
+refs:3008: errno=3D-28 No space left
+> 	[14303.076203][T20882] BTRFS error (device dm-21): Error removing orphan=
+ entry, stopping orphan cleanup
+> 	[14303.076210][T20882] BTRFS error (device dm-21): could not do orphan c=
+leanup -22
+> 	[14303.076281][T20882] BTRFS error (device dm-21): commit super ret -30
+> 	[14303.357337][T20882] BTRFS error (device dm-21): open_ctree failed
+>=20
+> Same fix:  I bumped the reserved size limit from 512M to 2G and mounted
+> normally.  (OK, technically, I booted my old 5.0.21 kernel--but my 5.0.21
+> kernel has the 2G reserved space patch below in it.)
 
+It turns out that it was the boot with 5.0.21 that fixed this, not the
+increase reserved limit patch.  This filesystem's global reserve is is
+only 1.71G (it's a 2x150G btrfs raid1), so raising the limit to 2G has
+no effect on 5.1.x.
 
--- 
-darkpenguin
+I was able to mount the filesystem with 5.0.21, but not with 5.1.14--even
+after successfully mounting with 5.0.21 and finishing orphan inode
+cleanup, mounting on 5.1.14 or 5.1.15 fails.
+
+I tried a few other things:  balancing metadata (Size:19.04GiB,
+Used:7.54GiB) and mounting with 'nossd' (which somehow became 'ssd'
+after the fact?).  Eventually I was able to mount the filesystem with
+kernel 5.1.15 and the 'nossd' option.  I can now wait and see how long
+5.1.15 lasts until the next similar event occurs.
+
+The full mount options are:  rw,noatime,degraded,compress=3Dzstd:3,ssd,flus=
+honcommit,space_cache=3Dv2,skip_balance
+
+(filesystem isn't degraded in this case, I just have that option in case
+a disk fails some day)
+
+--0z5c7mBtSy1wdr4F
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCXRl45QAKCRCB+YsaVrMb
+nIrLAJ0QnxkjAAql/Sk0DVtUvrtcN47MYQCffHmAapiVT0bxUYqFOU4giHtl1ZY=
+=nPlP
+-----END PGP SIGNATURE-----
+
+--0z5c7mBtSy1wdr4F--

@@ -2,268 +2,135 @@ Return-Path: <SRS0=KLN3=U7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.0 required=3.0
+	tests=HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BBDE5C5B57D
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Jul 2019 08:12:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 013ABC06510
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Jul 2019 10:09:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 87C2620659
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Jul 2019 08:12:17 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="raq9utfd"
+	by mail.kernel.org (Postfix) with ESMTP id D22C320659
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Jul 2019 10:09:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728594AbfGBIJH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Jul 2019 04:09:07 -0400
-Received: from userp2130.oracle.com ([156.151.31.86]:59720 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728210AbfGBIJH (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Jul 2019 04:09:07 -0400
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x62890Jk062246
-        for <linux-btrfs@vger.kernel.org>; Tue, 2 Jul 2019 08:09:06 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : from : to :
- references : message-id : date : mime-version : in-reply-to : content-type
- : content-transfer-encoding; s=corp-2018-07-02;
- bh=JRIWFGHUit7hEdlB3aCv4Mpt1vIl9Cicg6eH0c3doTo=;
- b=raq9utfdGKQ0MjpiuujlB4frNEt9ytFJdWO/obSqPJrQmGCGU1B5tQ5jtjMjkCWeMFoH
- h6uY/eZD7WJ9TQwR5ypstEfgCCN5v3JDb+bHmYokvtuzPW2dcMbeQl2U9x2o6QAftgfb
- 6UQ+11GWjdeF5AWvLxNNpNb7I0rsDF+0IktwCkHEpN1NC2x9aGysdmUCokl4q3DBr3DR
- 2wsbMbcdryNRNMnsuIuGh80lKPjIEphmh2NrnAT5XqX6p00Ybkv3MbeGYfEKYIhq2bZT
- 39haM/u175saVY/6k4vo5umFW4YpF6BQiE89ZxexGSlGVr6sNU/r+0juTG1mr/s2rpgZ hg== 
-Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
-        by userp2130.oracle.com with ESMTP id 2te61e1udx-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 Jul 2019 08:09:05 +0000
-Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
-        by userp3020.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x6287T7J024594
-        for <linux-btrfs@vger.kernel.org>; Tue, 2 Jul 2019 08:09:05 GMT
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by userp3020.oracle.com with ESMTP id 2tebbjm64u-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 Jul 2019 08:09:05 +0000
-Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x62894ZK027055
-        for <linux-btrfs@vger.kernel.org>; Tue, 2 Jul 2019 08:09:04 GMT
-Received: from [10.190.130.61] (/192.188.170.109)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Tue, 02 Jul 2019 01:09:04 -0700
-Subject: Re: [PATCH v7 RESEND Rebased] btrfs-progs: dump-tree: add noscan
- option
-From:   Anand Jain <anand.jain@oracle.com>
-To:     linux-btrfs@vger.kernel.org
-References: <20190626083017.1833-1-anand.jain@oracle.com>
-Message-ID: <93dbcda3-fe9a-035c-59fc-b39448d1c867@oracle.com>
-Date:   Tue, 2 Jul 2019 16:09:01 +0800
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:52.0)
- Gecko/20100101 Thunderbird/52.9.1
-MIME-Version: 1.0
-In-Reply-To: <20190626083017.1833-1-anand.jain@oracle.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+        id S1726970AbfGBKJS convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Jul 2019 06:09:18 -0400
+Received: from m4a0041g.houston.softwaregrp.com ([15.124.2.87]:55480 "EHLO
+        m4a0041g.houston.softwaregrp.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1725868AbfGBKJR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 2 Jul 2019 06:09:17 -0400
+Received: FROM m4a0041g.houston.softwaregrp.com (15.120.17.146) BY m4a0041g.houston.softwaregrp.com WITH ESMTP
+ FOR linux-btrfs@vger.kernel.org;
+ Tue,  2 Jul 2019 10:09:01 +0000
+Received: from M4W0335.microfocus.com (2002:f78:1193::f78:1193) by
+ M4W0334.microfocus.com (2002:f78:1192::f78:1192) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256_P256) id
+ 15.1.1591.10; Tue, 2 Jul 2019 10:07:22 +0000
+Received: from NAM03-DM3-obe.outbound.protection.outlook.com (15.124.8.11) by
+ M4W0335.microfocus.com (15.120.17.147) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256_P256) id
+ 15.1.1591.10 via Frontend Transport; Tue, 2 Jul 2019 10:07:22 +0000
+Received: from BY5PR18MB3266.namprd18.prod.outlook.com (10.255.163.207) by
+ BY5PR18MB3284.namprd18.prod.outlook.com (10.255.137.89) with Microsoft SMTP
+ Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.20.2032.20; Tue, 2 Jul 2019 10:07:21 +0000
+Received: from BY5PR18MB3266.namprd18.prod.outlook.com
+ ([fe80::45a9:4750:5868:9bbe]) by BY5PR18MB3266.namprd18.prod.outlook.com
+ ([fe80::45a9:4750:5868:9bbe%5]) with mapi id 15.20.2032.018; Tue, 2 Jul 2019
+ 10:07:21 +0000
+From:   WenRuo Qu <wqu@suse.com>
+To:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+CC:     WenRuo Qu <wqu@suse.com>
+Subject: [PATCH v2 03/14] btrfs-progs: image: Fix an access-beyond-boundary
+ bug when there are 32 online CPUs
+Thread-Topic: [PATCH v2 03/14] btrfs-progs: image: Fix an
+ access-beyond-boundary bug when there are 32 online CPUs
+Thread-Index: AQHVML3woB0F0HJdmEepVThyZpPJwA==
+Date:   Tue, 2 Jul 2019 10:07:21 +0000
+Message-ID: <20190702100650.2746-4-wqu@suse.com>
+References: <20190702100650.2746-1-wqu@suse.com>
+In-Reply-To: <20190702100650.2746-1-wqu@suse.com>
+Accept-Language: zh-CN, en-US
 Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9305 signatures=668688
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=1 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1810050000 definitions=main-1907020095
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9305 signatures=668688
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
- suspectscore=1 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
- lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
- definitions=main-1907020095
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+x-clientproxiedby: HK2P15301CA0007.APCP153.PROD.OUTLOOK.COM
+ (2603:1096:202:1::17) To BY5PR18MB3266.namprd18.prod.outlook.com
+ (2603:10b6:a03:1a1::15)
+authentication-results: spf=none (sender IP is ) smtp.mailfrom=wqu@suse.com; 
+x-ms-exchange-messagesentrepresentingtype: 1
+x-mailer: git-send-email 2.22.0
+x-originating-ip: [240e:3a1:c40:c630::a40]
+x-ms-publictraffictype: Email
+x-ms-office365-filtering-correlation-id: 9d2cd19e-ae32-4b33-f840-08d6fed51239
+x-microsoft-antispam: BCL:0;PCL:0;RULEID:(2390118)(7020095)(4652040)(8989299)(4534185)(4627221)(201703031133081)(201702281549075)(8990200)(5600148)(711020)(4605104)(1401327)(2017052603328)(7193020);SRVR:BY5PR18MB3284;
+x-ms-traffictypediagnostic: BY5PR18MB3284:
+x-microsoft-antispam-prvs: <BY5PR18MB3284B6733F3C8CD9640BAEA7D6F80@BY5PR18MB3284.namprd18.prod.outlook.com>
+x-ms-oob-tlc-oobclassifiers: OLM:8273;
+x-forefront-prvs: 008663486A
+x-forefront-antispam-report: SFV:NSPM;SFS:(10019020)(4636009)(376002)(39860400002)(366004)(396003)(136003)(346002)(189003)(199004)(6116002)(476003)(36756003)(50226002)(68736007)(486006)(1076003)(6486002)(2501003)(2616005)(478600001)(8676002)(66476007)(66556008)(73956011)(66946007)(256004)(64756008)(66446008)(14444005)(2906002)(2351001)(102836004)(86362001)(53936002)(7736002)(6436002)(386003)(6506007)(186003)(71190400001)(5640700003)(6916009)(46003)(71200400001)(107886003)(5660300002)(305945005)(316002)(14454004)(6512007)(99286004)(8936002)(25786009)(4326008)(11346002)(76176011)(52116002)(446003)(81166006)(81156014);DIR:OUT;SFP:1102;SCL:1;SRVR:BY5PR18MB3284;H:BY5PR18MB3266.namprd18.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;MX:1;A:1;
+received-spf: None (protection.outlook.com: suse.com does not designate
+ permitted sender hosts)
+x-ms-exchange-senderadcheck: 1
+x-microsoft-antispam-message-info: nkpVRg5TjowoDsfockqJXPZiF7wIpBQ7cDT/U/wLaSx7yw5ftc4sLSBLRgMMgeT1xHLYscxjZgWxdWVHtkZKtggX0m23sqXIxkWckmoqhzBgDfkmbWFXd90Q5aZeg5gwdcun1HhJOjbROz5mkw2bwq+wmV1ImSgn77Bfn9T7eldPLb1YtAFa26sUBReanAYUjIk4WpjE3Wze7Cc5UjYQQlc7iOKqTUGnqsnqEv+Ra/0a37H+1nXhxjjjwK5BfDHWEidq1oHKY+LVh0JSATZyf5ItKvKyj/Z8RF1J5fURITub7Nq/SjDinT9XjKIV1FkFRJaVF7Y0akoqWAZc7jrkqfaPdzBbTcOUvW1FB982oyt1S8jCytJ0pQVmRCcpBKsfUmNypMPGCKybfvY1JtbS97jsdGvyuPmpiA0rLojLneE=
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: 8BIT
+MIME-Version: 1.0
+X-MS-Exchange-CrossTenant-Network-Message-Id: 9d2cd19e-ae32-4b33-f840-08d6fed51239
+X-MS-Exchange-CrossTenant-originalarrivaltime: 02 Jul 2019 10:07:21.2928
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: 856b813c-16e5-49a5-85ec-6f081e13b527
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: wqu@suse.com
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: BY5PR18MB3284
+X-OriginatorOrg: suse.com
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Ping?
+[BUG]
+When there are over 32 (in my example, 35) online CPUs, btrfs-image -c9
+will just hang.
 
+[CAUSE]
+Btrfs-image has a hard coded limit (32) on how many threads we can use.
+For the "-t" option we do the up limit check.
 
+But when we don't specify "-t" option and speicified "-c" option, then
+btrfs-image will try to auto detect the number of online CPUs, and use
+it without checking if it's over the up limit.
 
-On 26/6/19 4:30 PM, Anand Jain wrote:
-> From: Anand Jain <Anand.Jain@oracle.com>
-> 
-> The cli 'btrfs inspect dump-tree <dev>' will scan for the partner devices
-> if any by default.
-> 
-> So as of now you can not inspect each mirrored device independently.
-> 
-> This patch adds noscan option, which when used won't scan the system for
-> the partner devices, instead it just uses the devices provided in the
-> argument.
-> 
-> For example:
->    btrfs inspect dump-tree --noscan <dev> [<dev>..]
-> 
-> This helps to debug degraded raid1 and raid10.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
-> v6->v7: rebase on latest btrfs-progs::devel
-> v5->v6: rebase on latest btrfs-progs::devel
-> v4->v5: nit: use %m to print error string.
-> 	changelog update.
-> v3->v4: change the patch title.
-> 	collapse scan_args() to its only parent cmd_inspect_dump_tree()
-> 	(it was bit confusing).
-> 	update the change log.
-> 	update usage.
-> 	update man page.
-> v2->v3: make it scalable for more than two disks in noscan mode
-> v1->v2: rename --degraded to --noscan
->   Documentation/btrfs-inspect-internal.asciidoc |  5 +-
->   cmds-inspect-dump-tree.c                      | 53 ++++++++++++++-----
->   2 files changed, 45 insertions(+), 13 deletions(-)
-> 
-> diff --git a/Documentation/btrfs-inspect-internal.asciidoc b/Documentation/btrfs-inspect-internal.asciidoc
-> index 210f18c30a40..c9962ab3b548 100644
-> --- a/Documentation/btrfs-inspect-internal.asciidoc
-> +++ b/Documentation/btrfs-inspect-internal.asciidoc
-> @@ -61,7 +61,7 @@ specify which mirror to print, valid values are 0, 1 and 2 and the superblock
->   must be present on the device with a valid signature, can be used together with
->   '--force'
->   
-> -*dump-tree* [options] <device>::
-> +*dump-tree* [options] <device> [device...]::
->   (replaces the standalone tool *btrfs-debug-tree*)
->   +
->   Dump tree structures from a given device in textual form, expand keys to human
-> @@ -95,6 +95,9 @@ intermixed in the output
->   --bfs::::
->   use breadth-first search to print trees. the nodes are printed before all
->   leaves
-> +--device::::
-> +do not scan the system for other partner device(s), only use the device(s)
-> +provided in the argument
->   -t <tree_id>::::
->   print only the tree with the specified ID, where the ID can be numerical or
->   common name in a flexible human readable form
-> diff --git a/cmds-inspect-dump-tree.c b/cmds-inspect-dump-tree.c
-> index 1588a0b0774b..8e13b4335a5d 100644
-> --- a/cmds-inspect-dump-tree.c
-> +++ b/cmds-inspect-dump-tree.c
-> @@ -21,6 +21,7 @@
->   #include <unistd.h>
->   #include <uuid/uuid.h>
->   #include <getopt.h>
-> +#include <fcntl.h>
->   
->   #include "kerncompat.h"
->   #include "radix-tree.h"
-> @@ -185,7 +186,7 @@ static u64 treeid_from_string(const char *str, const char **end)
->   }
->   
->   static const char * const cmd_inspect_dump_tree_usage[] = {
-> -	"btrfs inspect-internal dump-tree [options] device",
-> +	"btrfs inspect-internal dump-tree [options] <device> [<device> ..]",
->   	"Dump tree structures from a given device",
->   	"Dump tree structures from a given device in textual form, expand keys to human",
->   	"readable equivalents where possible.",
-> @@ -201,6 +202,7 @@ static const char * const cmd_inspect_dump_tree_usage[] = {
->   	"                       can be specified multiple times",
->   	"-t|--tree <tree_id>    print only tree with the given id (string or number)",
->   	"--follow               use with -b, to show all children tree blocks of <block_num>",
-> +	"--noscan               do not scan for the partner device(s)",
->   	NULL
->   };
->   
-> @@ -297,7 +299,7 @@ static int cmd_inspect_dump_tree(const struct cmd_struct *cmd,
->   	struct btrfs_key found_key;
->   	struct cache_tree block_root;	/* for multiple --block parameters */
->   	char uuidbuf[BTRFS_UUID_UNPARSED_SIZE];
-> -	int ret;
-> +	int ret = 0;
->   	int slot;
->   	int extent_only = 0;
->   	int device_only = 0;
-> @@ -305,6 +307,7 @@ static int cmd_inspect_dump_tree(const struct cmd_struct *cmd,
->   	int roots_only = 0;
->   	int root_backups = 0;
->   	int traverse = BTRFS_PRINT_TREE_DEFAULT;
-> +	int dev_optind;
->   	unsigned open_ctree_flags;
->   	u64 block_bytenr;
->   	struct btrfs_root *tree_root_scan;
-> @@ -323,8 +326,8 @@ static int cmd_inspect_dump_tree(const struct cmd_struct *cmd,
->   	optind = 0;
->   	while (1) {
->   		int c;
-> -		enum { GETOPT_VAL_FOLLOW = 256, GETOPT_VAL_DFS,
-> -		       GETOPT_VAL_BFS };
-> +		enum { GETOPT_VAL_FOLLOW = 256, GETOPT_VAL_DFS, GETOPT_VAL_BFS,
-> +		       GETOPT_VAL_NOSCAN};
->   		static const struct option long_options[] = {
->   			{ "extents", no_argument, NULL, 'e'},
->   			{ "device", no_argument, NULL, 'd'},
-> @@ -336,6 +339,7 @@ static int cmd_inspect_dump_tree(const struct cmd_struct *cmd,
->   			{ "follow", no_argument, NULL, GETOPT_VAL_FOLLOW },
->   			{ "bfs", no_argument, NULL, GETOPT_VAL_BFS },
->   			{ "dfs", no_argument, NULL, GETOPT_VAL_DFS },
-> +			{ "noscan", no_argument, NULL, GETOPT_VAL_NOSCAN },
->   			{ NULL, 0, NULL, 0 }
->   		};
->   
-> @@ -400,24 +404,49 @@ static int cmd_inspect_dump_tree(const struct cmd_struct *cmd,
->   		case GETOPT_VAL_BFS:
->   			traverse = BTRFS_PRINT_TREE_BFS;
->   			break;
-> +		case GETOPT_VAL_NOSCAN:
-> +			open_ctree_flags |= OPEN_CTREE_NO_DEVICES;
-> +			break;
->   		default:
->   			usage_unknown_option(cmd, argv);
->   		}
->   	}
->   
-> -	if (check_argc_exact(argc - optind, 1))
-> +	if (check_argc_min(argc - optind, 1))
->   		return 1;
->   
-> -	ret = check_arg_type(argv[optind]);
-> -	if (ret != BTRFS_ARG_BLKDEV && ret != BTRFS_ARG_REG) {
-> +	dev_optind = optind;
-> +	while (dev_optind < argc) {
-> +		int fd;
-> +		struct btrfs_fs_devices *fs_devices;
-> +		u64 num_devices;
-> +
-> +		ret = check_arg_type(argv[optind]);
-> +		if (ret != BTRFS_ARG_BLKDEV && ret != BTRFS_ARG_REG) {
-> +			if (ret < 0) {
-> +				errno = -ret;
-> +				error("invalid argument %s: %m", argv[dev_optind]);
-> +			} else {
-> +				error("not a block device or regular file: %s",
-> +				       argv[dev_optind]);
-> +			}
-> +		}
-> +		fd = open(argv[dev_optind], O_RDONLY);
-> +		if (fd < 0) {
-> +			error("cannot open %s: %m", argv[dev_optind]);
-> +			return -EINVAL;
-> +		}
-> +		ret = btrfs_scan_one_device(fd, argv[dev_optind], &fs_devices,
-> +					    &num_devices,
-> +					    BTRFS_SUPER_INFO_OFFSET,
-> +					    SBREAD_DEFAULT);
-> +		close(fd);
->   		if (ret < 0) {
->   			errno = -ret;
-> -			error("invalid argument %s: %m", argv[optind]);
-> -		} else {
-> -			error("not a block device or regular file: %s",
-> -			      argv[optind]);
-> +			error("device scan %s: %m", argv[dev_optind]);
-> +			return ret;
->   		}
-> -		goto out;
-> +		dev_optind++;
->   	}
->   
->   	printf("%s\n", PACKAGE_STRING);
-> 
+And for num_threads larger than the up limit, we will over write the
+adjust members of metadump_struct/mdrestore_struct, corrupting
+pthread_mutex_t and pthread_cond_t, causing synchronising problem.
+
+Nowadays, with SMT/HT and higher cpu core counts, it's not hard to go
+beyond 32 threads, and hit the bug.
+
+[FIX]
+Just do extra num_threads check before using the number from sysconf().
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ image/main.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/image/main.c b/image/main.c
+index 9a07d9455e4f..c45d506812b2 100644
+--- a/image/main.c
++++ b/image/main.c
+@@ -2701,6 +2701,7 @@ int main(int argc, char *argv[])
+ 
+ 			if (tmp <= 0)
+ 				tmp = 1;
++			tmp = min_t(long, tmp, MAX_WORKER_THREADS);
+ 			num_threads = tmp;
+ 		}
+ 	} else {
+-- 
+2.22.0
 

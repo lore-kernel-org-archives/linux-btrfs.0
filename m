@@ -2,102 +2,134 @@ Return-Path: <SRS0=KLN3=U7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 06D7DC5B57D
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Jul 2019 05:39:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AEA72C06513
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Jul 2019 08:11:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DD38A20881
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Jul 2019 05:39:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8626220659
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Jul 2019 08:11:59 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="npQIMBjD"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725996AbfGBFjo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Jul 2019 01:39:44 -0400
-Received: from mx2.suse.de ([195.135.220.15]:60984 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725775AbfGBFjo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 2 Jul 2019 01:39:44 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 97769ADEC;
-        Tue,  2 Jul 2019 05:39:42 +0000 (UTC)
-Subject: Re: [PATCH] fs: btrfs: extent_map: Change return type of
- unpin_extent_cache
-To:     Hariprasad Kelam <hariprasad.kelam@gmail.com>,
-        Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-References: <20190702031043.GA24334@hari-Inspiron-1545>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <fa67e273-1f0a-15ae-c6df-98fc3060dcbe@suse.com>
-Date:   Tue, 2 Jul 2019 08:39:41 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.7.1
+        id S1728707AbfGBIJi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Jul 2019 04:09:38 -0400
+Received: from aserp2120.oracle.com ([141.146.126.78]:54014 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728697AbfGBIJg (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Jul 2019 04:09:36 -0400
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x6288irh162788
+        for <linux-btrfs@vger.kernel.org>; Tue, 2 Jul 2019 08:09:35 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : from : to :
+ references : message-id : date : mime-version : in-reply-to : content-type
+ : content-transfer-encoding; s=corp-2018-07-02;
+ bh=5POajhMPl0qRevwXf0QmzJmvINtzQ8cr25mR/XkwaEI=;
+ b=npQIMBjDjPGEbNEpl/lEntV6KaJcnaS38ozL+ylzbtSdz6R0zL/JRil285SEBR11y7iu
+ naxqa4i7qwnXMKzTGI7O3SdtCXTKLrQNVYuRmLuKLFXY/e65K5BKPfgwZ42XlolSTEFX
+ Kzk+owtZf+ANpUCX5CZf0IfM6GL9miXtaVpTqFE2ZTBTr0JDt8oX3wE8SQjOmg7ro2Nc
+ dBnZMpb58ZhZzhj+NAg5/pEI1x7wb+4FuIDHBa7EE7UUQoFL6BD6nEgeu6MM36pYPRgi
+ P/i08JL/a+7WMw69OX5284DoSd0e08PxLTtlIhd6xcHo4IpY/QPrgCV6y3Et0r18vUtv nw== 
+Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
+        by aserp2120.oracle.com with ESMTP id 2te5tbhv0y-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Jul 2019 08:09:35 +0000
+Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
+        by userp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x6287UIe170653
+        for <linux-btrfs@vger.kernel.org>; Tue, 2 Jul 2019 08:09:34 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userp3030.oracle.com with ESMTP id 2tebqgc0pk-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Jul 2019 08:09:34 +0000
+Received: from abhmp0017.oracle.com (abhmp0017.oracle.com [141.146.116.23])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x6289XWN012529
+        for <linux-btrfs@vger.kernel.org>; Tue, 2 Jul 2019 08:09:33 GMT
+Received: from [10.190.130.61] (/192.188.170.109)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Tue, 02 Jul 2019 01:09:33 -0700
+Subject: Re: [PATCH 0/3 RESEND Rebased] readmirror feature
+From:   Anand Jain <anand.jain@oracle.com>
+To:     linux-btrfs@vger.kernel.org
+References: <20190626083402.1895-1-anand.jain@oracle.com>
+Message-ID: <5fcf9c23-89b5-b167-1f80-a0f4ac107d0b@oracle.com>
+Date:   Tue, 2 Jul 2019 16:09:30 +0800
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:52.0)
+ Gecko/20100101 Thunderbird/52.9.1
 MIME-Version: 1.0
-In-Reply-To: <20190702031043.GA24334@hari-Inspiron-1545>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20190626083402.1895-1-anand.jain@oracle.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9305 signatures=668688
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=1 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1810050000 definitions=main-1907020095
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9305 signatures=668688
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=1 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1907020095
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Ping?
 
 
-On 2.07.19 г. 6:10 ч., Hariprasad Kelam wrote:
-> As unpin_extent_cache never fails and Caller does not expect return
-> value we can change return value from int to void.
+On 26/6/19 4:33 PM, Anand Jain wrote:
+> These patches are tested to be working fine.
 > 
-> Issue identified with coccicheck
-> fs/btrfs/extent_map.c:284:5-8: Unneeded variable: "ret". Return "0" on
-> line 316
+> Function call chain  __btrfs_map_block()->find_live_mirror() uses
+> thread pid to determine the %mirror_num when the mirror_num=0.
 > 
-> Signed-off-by: Hariprasad Kelam <hariprasad.kelam@gmail.com>
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+> This patch introduces a framework so that we can add policies to determine
+> the %mirror_num. And adds the devid as the readmirror policy.
+> 
+> The property is stored as an extented attributes of root inode
+> (BTRFS_FS_TREE_OBJECTID).
+> User provided devid list is validated against the fs_devices::dev_list.
+> 
+>   For example:
+>     Usage:
+>       btrfs property set <mnt> readmirror devid<n>[,<m>...]
+>       btrfs property set <mnt> readmirror ""
+> 
+>     mkfs.btrfs -fq -draid1 -mraid1 /dev/sd[b-d] && mount /dev/sdb /btrfs
+>     btrfs prop set /btrfs readmirror devid1,2
+>     btrfs prop get /btrfs readmirror
+>      readmirror=devid1,2
+>     getfattr -n btrfs.readmirror --absolute-names /btrfs
+>      btrfs.readmirror="devid1,2"
+>     btrfs prop set /btrfs readmirror ""
+>     getfattr -n btrfs.readmirror --absolute-names /btrfs
+>      /btrfs: btrfs.readmirror: No such attribute
+>     btrfs prop get /btrfs readmirror
+> 
+> RFC->v1:
+>    Drops pid as one of the readmirror policy choices and as usual remains
+>    as default. And when the devid is reset the readmirror policy falls back
+>    to pid.
+>    Drops the mount -o readmirror idea, it can be added at a later point of
+>    time.
+>    Property now accepts more than 1 devid as readmirror device. As shown
+>    in the example above.
+> 
+> Anand Jain (3):
+>    btrfs: add inode pointer to prop_handler::validate()
+>    btrfs: add readmirror property framework
+>    btrfs: add readmirror devid property
+> 
+>   fs/btrfs/props.c   | 120 +++++++++++++++++++++++++++++++++++++++++++--
+>   fs/btrfs/props.h   |   4 +-
+>   fs/btrfs/volumes.c |  25 +++++++++-
+>   fs/btrfs/volumes.h |   8 +++
+>   fs/btrfs/xattr.c   |   2 +-
+>   5 files changed, 150 insertions(+), 9 deletions(-)
+> 
 

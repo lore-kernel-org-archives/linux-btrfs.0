@@ -4,31 +4,31 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-10.0 required=3.0
 	tests=HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4A015C06514
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jul 2019 09:46:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 64F03C06514
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jul 2019 09:46:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2DAF421882
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jul 2019 09:46:00 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 46016218A5
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jul 2019 09:46:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727022AbfGCJp7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Jul 2019 05:45:59 -0400
-Received: from mx2.suse.de ([195.135.220.15]:45850 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726627AbfGCJp4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1727002AbfGCJp4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Wed, 3 Jul 2019 05:45:56 -0400
+Received: from mx2.suse.de ([195.135.220.15]:45838 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726404AbfGCJpz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 3 Jul 2019 05:45:55 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 5AB96AFB0;
-        Wed,  3 Jul 2019 09:45:54 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id BF26AAF60;
+        Wed,  3 Jul 2019 09:45:53 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     stable@vger.kernel.org
 Cc:     linux-btrfs@vger.kernel.org
 Subject: [PATCH] btrfs: Ensure replaced device doesn't have pending chunk allocation
-Date:   Wed,  3 Jul 2019 12:45:51 +0300
-Message-Id: <20190703094552.15833-4-nborisov@suse.com>
+Date:   Wed,  3 Jul 2019 12:45:49 +0300
+Message-Id: <20190703094552.15833-2-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
@@ -68,19 +68,20 @@ Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 Hello Greg, 
 
 Please merge the following backport of upstream commit debd1c065d2037919a7da67baf55cc683fee09f0
-to 4.14.y stable branch. 
+to 4.4.y stable branch. 
+
  fs/btrfs/dev-replace.c | 29 +++++++++++++++++++----------
  fs/btrfs/volumes.c     |  2 ++
  fs/btrfs/volumes.h     |  5 +++++
  3 files changed, 26 insertions(+), 10 deletions(-)
 
 diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index f86457713e60..f1e9dd246ab0 100644
+index 81e5bc62e8e3..1414a99b3ab4 100644
 --- a/fs/btrfs/dev-replace.c
 +++ b/fs/btrfs/dev-replace.c
-@@ -512,18 +512,27 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+@@ -495,18 +495,27 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
  	}
- 	btrfs_wait_ordered_roots(fs_info, U64_MAX, 0, (u64)-1);
+ 	btrfs_wait_ordered_roots(root->fs_info, -1);
  
 -	trans = btrfs_start_transaction(root, 0);
 -	if (IS_ERR(trans)) {
@@ -92,12 +93,12 @@ index f86457713e60..f1e9dd246ab0 100644
 +			mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
 +			return PTR_ERR(trans);
 +		}
-+		ret = btrfs_commit_transaction(trans);
++		ret = btrfs_commit_transaction(trans, root);
 +		WARN_ON(ret);
 +		mutex_lock(&uuid_mutex);
 +		/* keep away write_all_supers() during the finishing procedure */
-+		mutex_lock(&fs_info->fs_devices->device_list_mutex);
-+		mutex_lock(&fs_info->chunk_mutex);
++		mutex_lock(&root->fs_info->fs_devices->device_list_mutex);
++		mutex_lock(&root->fs_info->chunk_mutex);
 +		if (src_device->has_pending_chunks) {
 +			mutex_unlock(&root->fs_info->chunk_mutex);
 +			mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
@@ -106,41 +107,41 @@ index f86457713e60..f1e9dd246ab0 100644
 +			break;
 +		}
  	}
--	ret = btrfs_commit_transaction(trans);
+-	ret = btrfs_commit_transaction(trans, root);
 -	WARN_ON(ret);
  
 -	mutex_lock(&uuid_mutex);
 -	/* keep away write_all_supers() during the finishing procedure */
--	mutex_lock(&fs_info->fs_devices->device_list_mutex);
--	mutex_lock(&fs_info->chunk_mutex);
- 	btrfs_dev_replace_lock(dev_replace, 1);
+-	mutex_lock(&root->fs_info->fs_devices->device_list_mutex);
+-	mutex_lock(&root->fs_info->chunk_mutex);
+ 	btrfs_dev_replace_lock(dev_replace);
  	dev_replace->replace_state =
  		scrub_ret ? BTRFS_IOCTL_DEV_REPLACE_STATE_CANCELED
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 38ed8e259e00..85294fef1051 100644
+index d1cca19b29d3..4eb7a6ba7e47 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -4851,6 +4851,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+@@ -4760,6 +4760,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
  	for (i = 0; i < map->num_stripes; i++) {
  		num_bytes = map->stripes[i].dev->bytes_used + stripe_size;
  		btrfs_device_set_bytes_used(map->stripes[i].dev, num_bytes);
 +		map->stripes[i].dev->has_pending_chunks = true;
  	}
  
- 	atomic64_sub(stripe_size * map->num_stripes, &info->free_chunk_space);
-@@ -7310,6 +7311,7 @@ void btrfs_update_commit_device_bytes_used(struct btrfs_fs_info *fs_info,
+ 	spin_lock(&extent_root->fs_info->free_chunk_lock);
+@@ -7064,6 +7065,7 @@ void btrfs_update_commit_device_bytes_used(struct btrfs_root *root,
  		for (i = 0; i < map->num_stripes; i++) {
  			dev = map->stripes[i].dev;
  			dev->commit_bytes_used = dev->bytes_used;
 +			dev->has_pending_chunks = false;
  		}
  	}
- 	mutex_unlock(&fs_info->chunk_mutex);
+ 	unlock_chunks(root);
 diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 76fb6e84f201..f6ae6cdf233d 100644
+index 3c651df420be..7feac2d9da56 100644
 --- a/fs/btrfs/volumes.h
 +++ b/fs/btrfs/volumes.h
-@@ -61,6 +61,11 @@ struct btrfs_device {
+@@ -62,6 +62,11 @@ struct btrfs_device {
  
  	spinlock_t io_lock ____cacheline_aligned;
  	int running_pending;
@@ -151,7 +152,7 @@ index 76fb6e84f201..f6ae6cdf233d 100644
 +
  	/* regular prio bios */
  	struct btrfs_pending_bios pending_bios;
- 	/* sync bios */
+ 	/* WRITE_SYNC bios */
 -- 
 2.17.1
 

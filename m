@@ -2,157 +2,77 @@ Return-Path: <SRS0=ouMu=VA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.0 required=3.0
-	tests=HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 64F03C06514
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jul 2019 09:46:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 36300C0650E
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jul 2019 11:36:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 46016218A5
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jul 2019 09:46:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 05286218A0
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Jul 2019 11:36:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727002AbfGCJp4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Jul 2019 05:45:56 -0400
-Received: from mx2.suse.de ([195.135.220.15]:45838 "EHLO mx1.suse.de"
+        id S1726627AbfGCLgY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Jul 2019 07:36:24 -0400
+Received: from mx2.suse.de ([195.135.220.15]:33306 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726404AbfGCJpz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 3 Jul 2019 05:45:55 -0400
+        id S1726255AbfGCLgY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 3 Jul 2019 07:36:24 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id BF26AAF60;
-        Wed,  3 Jul 2019 09:45:53 +0000 (UTC)
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     stable@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: Ensure replaced device doesn't have pending chunk allocation
-Date:   Wed,  3 Jul 2019 12:45:49 +0300
-Message-Id: <20190703094552.15833-2-nborisov@suse.com>
-X-Mailer: git-send-email 2.17.1
+        by mx1.suse.de (Postfix) with ESMTP id 0DEA0AFA9;
+        Wed,  3 Jul 2019 11:36:23 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id A01F4DA809; Wed,  3 Jul 2019 13:37:06 +0200 (CEST)
+Date:   Wed, 3 Jul 2019 13:37:06 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     WenRuo Qu <wqu@suse.com>
+Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs-progs: Kill ASSERT() for damaged filesystem
+Message-ID: <20190703113706.GS20977@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, WenRuo Qu <wqu@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <20190703072428.13759-1-wqu@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190703072428.13759-1-wqu@suse.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Recent FITRIM work, namely bbbf7243d62d ("btrfs: combine device update
-operations during transaction commit") combined the way certain
-operations are recoded in a transaction. As a result an ASSERT was added
-in dev_replace_finish to ensure the new code works correctly.
-Unfortunately I got reports that it's possible to trigger the assert,
-meaning that during a device replace it's possible to have an unfinished
-chunk allocation on the source device.
+On Wed, Jul 03, 2019 at 07:24:42AM +0000, WenRuo Qu wrote:
+> For damaged filesystem like 'bko-155621-bad-block-group-offset.raw' from
+> fuzzed tests, there may be no valid METADATA blocks at all.
+> 
+> Thus we could hit the following ASSERT():
+>   extent-tree.c:2484: alloc_tree_block: Assertion `sinfo` failed, value 0
+>   btrfs(+0x20ef8)[0x555adf5b2ef8]
+>   btrfs(+0x2107b)[0x555adf5b307b]
+>   btrfs(+0x27e7e)[0x555adf5b9e7e]
+>   btrfs(btrfs_alloc_free_block+0x67)[0x555adf5ba097]
+>   btrfs(+0x61188)[0x555adf5f3188]
+>   btrfs(+0x70921)[0x555adf602921]
+>   btrfs(main+0x94)[0x555adf5a7168]
+>   /usr/lib/libc.so.6(__libc_start_main+0xf3)[0x7fbd4c658ee3]
+>   btrfs(_start+0x2e)[0x555adf5a6cee]
+> 
+> The ASSERT() expects that every filesystem has one METADATA block
+> groups, but btrfs-check can accept any damaged filesystem.
+> 
+> So kill the ASSERT(), and return -EUCLEAN with one error message.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+> To David:
+> Please fold this tiny modification to the following patch:
+> a970af98a1eb ("btrfs-progs: Fix false ENOSPC alert by tracking used space
+> correctly").
 
-This is supposed to be prevented by the fact that a transaction is
-committed before finishing the replace oepration and alter acquiring the
-chunk mutex. This is not sufficient since by the time the transaction is
-committed and the chunk mutex acquired it's possible to allocate a chunk
-depending on the workload being executed on the replaced device. This
-bug has been present ever since device replace was introduced but there
-was never code which checks for it.
-
-The correct way to fix is to ensure that there is no pending device
-modification operation when the chunk mutex is acquire and if there is
-repeat transaction commit. Unfortunately it's not possible to just
-exclude the source device from btrfs_fs_devices::dev_alloc_list since
-this causes ENOSPC to be hit in transaction commit.
-
-Fixing that in another way would need to add special cases to handle the
-last writes and forbid new ones. The looped transaction fix is more
-obvious, and can be easily backported. The runtime of dev-replace is
-long so there's no noticeable delay caused by that.
-
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
-
-Hello Greg, 
-
-Please merge the following backport of upstream commit debd1c065d2037919a7da67baf55cc683fee09f0
-to 4.4.y stable branch. 
-
- fs/btrfs/dev-replace.c | 29 +++++++++++++++++++----------
- fs/btrfs/volumes.c     |  2 ++
- fs/btrfs/volumes.h     |  5 +++++
- 3 files changed, 26 insertions(+), 10 deletions(-)
-
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 81e5bc62e8e3..1414a99b3ab4 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -495,18 +495,27 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 	}
- 	btrfs_wait_ordered_roots(root->fs_info, -1);
- 
--	trans = btrfs_start_transaction(root, 0);
--	if (IS_ERR(trans)) {
--		mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
--		return PTR_ERR(trans);
-+	while (1) {
-+		trans = btrfs_start_transaction(root, 0);
-+		if (IS_ERR(trans)) {
-+			mutex_unlock(&dev_replace->lock_finishing_cancel_unmount);
-+			return PTR_ERR(trans);
-+		}
-+		ret = btrfs_commit_transaction(trans, root);
-+		WARN_ON(ret);
-+		mutex_lock(&uuid_mutex);
-+		/* keep away write_all_supers() during the finishing procedure */
-+		mutex_lock(&root->fs_info->fs_devices->device_list_mutex);
-+		mutex_lock(&root->fs_info->chunk_mutex);
-+		if (src_device->has_pending_chunks) {
-+			mutex_unlock(&root->fs_info->chunk_mutex);
-+			mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
-+			mutex_unlock(&uuid_mutex);
-+		} else {
-+			break;
-+		}
- 	}
--	ret = btrfs_commit_transaction(trans, root);
--	WARN_ON(ret);
- 
--	mutex_lock(&uuid_mutex);
--	/* keep away write_all_supers() during the finishing procedure */
--	mutex_lock(&root->fs_info->fs_devices->device_list_mutex);
--	mutex_lock(&root->fs_info->chunk_mutex);
- 	btrfs_dev_replace_lock(dev_replace);
- 	dev_replace->replace_state =
- 		scrub_ret ? BTRFS_IOCTL_DEV_REPLACE_STATE_CANCELED
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index d1cca19b29d3..4eb7a6ba7e47 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4760,6 +4760,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	for (i = 0; i < map->num_stripes; i++) {
- 		num_bytes = map->stripes[i].dev->bytes_used + stripe_size;
- 		btrfs_device_set_bytes_used(map->stripes[i].dev, num_bytes);
-+		map->stripes[i].dev->has_pending_chunks = true;
- 	}
- 
- 	spin_lock(&extent_root->fs_info->free_chunk_lock);
-@@ -7064,6 +7065,7 @@ void btrfs_update_commit_device_bytes_used(struct btrfs_root *root,
- 		for (i = 0; i < map->num_stripes; i++) {
- 			dev = map->stripes[i].dev;
- 			dev->commit_bytes_used = dev->bytes_used;
-+			dev->has_pending_chunks = false;
- 		}
- 	}
- 	unlock_chunks(root);
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 3c651df420be..7feac2d9da56 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -62,6 +62,11 @@ struct btrfs_device {
- 
- 	spinlock_t io_lock ____cacheline_aligned;
- 	int running_pending;
-+	/* When true means this device has pending chunk alloc in
-+	 * current transaction. Protected by chunk_mutex.
-+	 */
-+	bool has_pending_chunks;
-+
- 	/* regular prio bios */
- 	struct btrfs_pending_bios pending_bios;
- 	/* WRITE_SYNC bios */
--- 
-2.17.1
-
+Folded to the patch, thanks. The fuzz-tests have been enabled in the
+continuous integration but due to other problems the status is red so I
+did not notice. Once the CI situtation is resolved, we'll know sooner
+that something regressed.

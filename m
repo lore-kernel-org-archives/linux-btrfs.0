@@ -2,46 +2,47 @@ Return-Path: <SRS0=R2l8=VB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1DF87C0651F
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Jul 2019 15:24:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9A0ABC0651F
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Jul 2019 15:24:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E61162083B
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Jul 2019 15:24:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6E04A2083B
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Jul 2019 15:24:14 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1562253847;
-	bh=2D5hc6YueiAs+xbSdEl7paXWYfuHN9usgSH3+zbbyDY=;
+	s=default; t=1562253854;
+	bh=ddPC0/yHo1LACTAlx/obLf9OWIhKOv47Ip2uMuPk1R8=;
 	h=From:To:Subject:Date:List-ID:From;
-	b=c1FdBHzhbpIPBxhjq4Lyu2u9Qp1L9mLDk7/TLuBiNE+4pk4tiIaBgEt3fdyvPtfAt
-	 vdCax6XQQcNuR0fl5akBADICWztcB2UhLfC2/PfT1l3YIb1hfasSMpfKcR160ZvWjS
-	 0T89UG16HPlqjMzSOLdwEJNfcrjlUxiJQu84id+g=
+	b=mW3BsX4jA9F1OMhW2YEsCQShPf3WEkGPr2ekZnOwLvLJP4gUXTbJl2reJ8rpHWTQm
+	 Vj+afBIDCNSpWaAFPVFuekgmMKu9WgHVqxK5HmRXZkY66nF5fWdSuMOtdD2pQF6AdY
+	 BclrOR0XMrpCAOg4TUAZOqcADbOAi9lqnqg8MlZA=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727660AbfGDPYG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 4 Jul 2019 11:24:06 -0400
-Received: from mail.kernel.org ([198.145.29.99]:38362 "EHLO mail.kernel.org"
+        id S1727674AbfGDPYN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 4 Jul 2019 11:24:13 -0400
+Received: from mail.kernel.org ([198.145.29.99]:38412 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727066AbfGDPYF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 4 Jul 2019 11:24:05 -0400
+        id S1727066AbfGDPYN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 4 Jul 2019 11:24:13 -0400
 Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 7DF6A2083B
-        for <linux-btrfs@vger.kernel.org>; Thu,  4 Jul 2019 15:24:04 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 1C9DE2083B
+        for <linux-btrfs@vger.kernel.org>; Thu,  4 Jul 2019 15:24:11 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1562253845;
-        bh=2D5hc6YueiAs+xbSdEl7paXWYfuHN9usgSH3+zbbyDY=;
+        s=default; t=1562253852;
+        bh=ddPC0/yHo1LACTAlx/obLf9OWIhKOv47Ip2uMuPk1R8=;
         h=From:To:Subject:Date:From;
-        b=MjDn4Sms+8LwBnGEXrAuN45To7ZUub5LPlbj1B/1uJ5Snxfizw9QuCjung3sYrYF7
-         zSSbWPY/lrq2ejrMgxH4I+N4fyuYKym5/8NWVWFCEaqyfrfi3iefxMpwilrAVPzp2S
-         nky/d2lxgQ1Ss0zIDP98MZvkQP6Kanzd3sWIYek4=
+        b=NxeTFB7ILjHgOcHUf2kGgKmao2KP6kVct7S42CXBMr+jKzVq2pKOvlDdziGiCZEg4
+         hqVOkgdt/cqTb9LvdM0pmhzqcoAp5K9XASvaIiposqpAwF690ZDHXc/bYO39rQqlON
+         d4p7GJHz7Jnk1p6miCN/49K+u74KgucaSCgQuEJY=
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/5] Btrfs: fixes for inode cache (-o inode_cache)
-Date:   Thu,  4 Jul 2019 16:24:00 +0100
-Message-Id: <20190704152400.20614-1-fdmanana@kernel.org>
+Subject: [PATCH 1/5] Btrfs: fix hang when loading existing inode cache off disk
+Date:   Thu,  4 Jul 2019 16:24:09 +0100
+Message-Id: <20190704152409.20665-1-fdmanana@kernel.org>
 X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
@@ -50,22 +51,77 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Just a small set of fixes for the inode cache feature, mostly hangs due to
-missing wakeups or incomplete error handling, as well as an inode block
-reserve leak when hitting ENOSPC.
+If we are able to load an existing inode cache off disk, we set the state
+of the cache to BTRFS_CACHE_FINISHED, but we don't wake up any one waiting
+for the cache to be available. This means that anyone waiting for the
+cache to be available, waiting on the condition that either its state is
+BTRFS_CACHE_FINISHED or its available free space is greather than zero,
+can hang forever.
 
-Filipe Manana (5):
-  Btrfs: fix hang when loading existing inode cache off disk
-  Btrfs: fix inode cache block reserve leak on failure to allocate data
-    space
-  Btrfs: fix inode cache waiters hanging on failure to start caching
-    thread
-  Btrfs: fix inode cache waiters hanging on path allocation failure
-  Btrfs: wake up inode cache waiters sooner to reduce waiting time
+This could be observed running fstests with MOUNT_OPTIONS="-o inode_cache",
+in particular test case generic/161 triggered it very frequently for me,
+producing a trace like the following:
 
- fs/btrfs/inode-map.c | 30 ++++++++++++++++++++++++------
- 1 file changed, 24 insertions(+), 6 deletions(-)
+  [63795.739712] BTRFS info (device sdc): enabling inode map caching
+  [63795.739714] BTRFS info (device sdc): disk space caching is enabled
+  [63795.739716] BTRFS info (device sdc): has skinny extents
+  [64036.653886] INFO: task btrfs-transacti:3917 blocked for more than 120 seconds.
+  [64036.654079]       Not tainted 5.2.0-rc4-btrfs-next-50 #1
+  [64036.654143] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+  [64036.654232] btrfs-transacti D    0  3917      2 0x80004000
+  [64036.654239] Call Trace:
+  [64036.654258]  ? __schedule+0x3ae/0x7b0
+  [64036.654271]  schedule+0x3a/0xb0
+  [64036.654325]  btrfs_commit_transaction+0x978/0xae0 [btrfs]
+  [64036.654339]  ? remove_wait_queue+0x60/0x60
+  [64036.654395]  transaction_kthread+0x146/0x180 [btrfs]
+  [64036.654450]  ? btrfs_cleanup_transaction+0x620/0x620 [btrfs]
+  [64036.654456]  kthread+0x103/0x140
+  [64036.654464]  ? kthread_create_worker_on_cpu+0x70/0x70
+  [64036.654476]  ret_from_fork+0x3a/0x50
+  [64036.654504] INFO: task xfs_io:3919 blocked for more than 120 seconds.
+  [64036.654568]       Not tainted 5.2.0-rc4-btrfs-next-50 #1
+  [64036.654617] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+  [64036.654685] xfs_io          D    0  3919   3633 0x00000000
+  [64036.654691] Call Trace:
+  [64036.654703]  ? __schedule+0x3ae/0x7b0
+  [64036.654716]  schedule+0x3a/0xb0
+  [64036.654756]  btrfs_find_free_ino+0xa9/0x120 [btrfs]
+  [64036.654764]  ? remove_wait_queue+0x60/0x60
+  [64036.654809]  btrfs_create+0x72/0x1f0 [btrfs]
+  [64036.654822]  lookup_open+0x6bc/0x790
+  [64036.654849]  path_openat+0x3bc/0xc00
+  [64036.654854]  ? __lock_acquire+0x331/0x1cb0
+  [64036.654869]  do_filp_open+0x99/0x110
+  [64036.654884]  ? __alloc_fd+0xee/0x200
+  [64036.654895]  ? do_raw_spin_unlock+0x49/0xc0
+  [64036.654909]  ? do_sys_open+0x132/0x220
+  [64036.654913]  do_sys_open+0x132/0x220
+  [64036.654926]  do_syscall_64+0x60/0x1d0
+  [64036.654933]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
 
+Fix this by adding a wake_up() call right after setting the cache state to
+BTRFS_CACHE_FINISHED, at start_caching(), when we are able to load the
+cache from disk.
+
+Fixes: 82d5902d9c681b ("Btrfs: Support reading/writing on disk free ino cache")
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/inode-map.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
+index ffca2abf13d0..4a5882665f8a 100644
+--- a/fs/btrfs/inode-map.c
++++ b/fs/btrfs/inode-map.c
+@@ -145,6 +145,7 @@ static void start_caching(struct btrfs_root *root)
+ 		spin_lock(&root->ino_cache_lock);
+ 		root->ino_cache_state = BTRFS_CACHE_FINISHED;
+ 		spin_unlock(&root->ino_cache_lock);
++		wake_up(&root->ino_cache_wait);
+ 		return;
+ 	}
+ 
 -- 
 2.11.0
 

@@ -3,132 +3,143 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-1.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E0B65C46499
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Jul 2019 21:18:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 616FEC46499
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Jul 2019 21:43:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id ABA8020449
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Jul 2019 21:18:26 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 377302133F
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Jul 2019 21:43:28 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="pok1cbEX"
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="q4gRvOIi"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727684AbfGEVSZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 5 Jul 2019 17:18:25 -0400
-Received: from mail-wr1-f53.google.com ([209.85.221.53]:42410 "EHLO
-        mail-wr1-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726505AbfGEVSZ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Jul 2019 17:18:25 -0400
-Received: by mail-wr1-f53.google.com with SMTP id a10so10031735wrp.9
-        for <linux-btrfs@vger.kernel.org>; Fri, 05 Jul 2019 14:18:23 -0700 (PDT)
+        id S1728219AbfGEVn1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 5 Jul 2019 17:43:27 -0400
+Received: from mail-wm1-f54.google.com ([209.85.128.54]:35282 "EHLO
+        mail-wm1-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726559AbfGEVn1 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Jul 2019 17:43:27 -0400
+Received: by mail-wm1-f54.google.com with SMTP id l2so3672762wmg.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 05 Jul 2019 14:43:25 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to;
-        bh=oOWBwtwhtW8fAxEh7Do8ZaMaXm4zq0zpaJqOBFsBt8c=;
-        b=pok1cbEXqRfV6MMye2reWNR1MdDTU7/8rOhXMng5vCB9fa3g9FX/Z799ChfLC76YHh
-         Sg9efFi7zz5yC/ERm5PX8chjmNNM/3/RtZJzpqUIxCpiYdlJTsA6cHWNxqWzsbKHu9nE
-         qlzT0PcNhDgM1Osd9fMbWYABghJpP4O+d4nq/ESgcnj9nIikwXyhHNxXOjln8ZwVzjaf
-         tsJvPIs7moKSpsfogXziCx/XUerQPSVoU7XpmjJ5KXQgeEFdEXs0q3vJ/NK3FLYwYrCL
-         aZJVV4zmS1D9rD0S4Afyx53F0MzG4GB7FeOlW6V8nsHkXl7MvBJjpgvwQ1eFYEI/u8dx
-         8TxA==
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=AyYF1PqVgVNp0UDqaXZk4DXCGbYDF9FLZ6S8gwiprSo=;
+        b=q4gRvOIidhkTDqIfQ55uI7iXCvjrB8bNUT8ozQ6J3NBCD0h34jT5kZhwVL46//59bH
+         borL4tQMFDValt7erfZP4sNwS463BjOY8A7uq5dFFR66jsm6B/j8Zl/zeDZITpYSfmoS
+         /inqlgpS6si5GWMJML8tgtfTchbtqyl85Uay15O5TI8mIY7UOdb2y4wtnF2QDrD2oUgC
+         LD5y+biDsOgy7WczYa4RQBytx63oEKBxYRQAmfx4x/Sstu58126yTXbVnZWBYHApDbVO
+         atU5WZEC3n9MDQI1FVVmRVZU276+9Ah+1/omT05fGAoXuedCGvhNqwoz37wY8QC5u0T/
+         pcfw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to;
-        bh=oOWBwtwhtW8fAxEh7Do8ZaMaXm4zq0zpaJqOBFsBt8c=;
-        b=YwQErbeJ4QgTA8VrqI24WJ5hcCHduDlfBga912gNtbtZwYyvzOcW7gg/JcUWJXGZk+
-         4XQQ3qVHEOwVhRLypA3+2q2QojJIISgLqcmTERW1oDi+RDtAOHoaxP4FDlkpxKFBRey4
-         tGB9UEsPiu6De2fg8O65rqxMfn5tzhNU3sf7sBvDrxQr3oSxD3dZ4VFKO/kdB3kn02OM
-         A/NSRdLQNtXFKUVolgkc4BY2q8ckL7IEFxPP2Ur3zRVAmRYuYNP1eb4sQs0J09fp1dIz
-         HXFPNjHrRjgZfXRpk0FDIp8qxaSNIZFR+pNEJE3poU8pYCIuxU5unwJzgbiDxa98QXtP
-         HiXg==
-X-Gm-Message-State: APjAAAVbjH1/lbAOk+1sDCgTxgo70FPUyCjEloqS2qzpXjhYyLigUTFJ
-        0qxPvtNq9jHXsY583HSedrdDFT5BuW05bnQnKpWJSy6gJwwOlg==
-X-Google-Smtp-Source: APXvYqxQqK6gjB9V3JT3LCPriTIZFS2Q/5sChb8Yr163V5YiwrkGbJJPBWiDW7Ed9jgAkqwQRLI2ZN4LcxKQXgQs+DY=
-X-Received: by 2002:a05:6000:4b:: with SMTP id k11mr5167281wrx.82.1562361502703;
- Fri, 05 Jul 2019 14:18:22 -0700 (PDT)
+         :message-id:subject:to:cc;
+        bh=AyYF1PqVgVNp0UDqaXZk4DXCGbYDF9FLZ6S8gwiprSo=;
+        b=MS9VONfV/Srimszd2dLKFOHgX6vgrBu6WOYiAAIzJY/kbE/kIPeQXzhKEf3RBD1Ppc
+         HY7GRMzpeQ/wnbUbIiP06t01oa691jLZJlVIEJ5PZrBcTtrE+2GDHo38R6IxEFpvsNqe
+         /oUonP+s7YmUL0y93L6sQMymSBW/vMeW0R1YzJMiW5l1S2plxu+EuUe7aJmZwjqR2yRr
+         bdU4h28lHWCWNLnhvlUQz0wTZ90Yjvj0qRNorY23Lj5p0E0rVEcwwKUQ0NGGVCDc1aeq
+         uth2go7uYYDV+OGwZ2FiuLy/YMb0YW1JHa2dM0WwcH5Ku2NGjWJPjjixd/bWvy9KxNyG
+         OBqQ==
+X-Gm-Message-State: APjAAAXXD+t040tL60vVMrFGu+8+uBM8WmMNLHro1DYVgtgFSnauxO7Z
+        kYNARtAq/Uas3x/yY6qouEV0HZETt6kVgELJkZ4Pcw==
+X-Google-Smtp-Source: APXvYqxlWUPAmv4NpgcFAzK3FUY9/PltXITta2uyQ/XLUdPHjAZv/VuBnySCMJySBG/g6KD+cQr2e3dGX8Qq2NmbNEk=
+X-Received: by 2002:a1c:f018:: with SMTP id a24mr4593048wmb.66.1562363004482;
+ Fri, 05 Jul 2019 14:43:24 -0700 (PDT)
 MIME-Version: 1.0
-References: <20190705103823.GA13281@tik.uni-stuttgart.de>
-In-Reply-To: <20190705103823.GA13281@tik.uni-stuttgart.de>
+References: <966f5562-1993-2a4f-0d6d-5cea69d6e1c6@gmail.com>
+In-Reply-To: <966f5562-1993-2a4f-0d6d-5cea69d6e1c6@gmail.com>
 From:   Chris Murphy <lists@colorremedies.com>
-Date:   Fri, 5 Jul 2019 15:18:11 -0600
-Message-ID: <CAJCQCtSULEVU=cu1W6WmOG1YhDHQys2xyZmcXSouBx-9=TZZOQ@mail.gmail.com>
-Subject: Re: snapshot rollback
-To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date:   Fri, 5 Jul 2019 15:43:13 -0600
+Message-ID: <CAJCQCtRhXukLGrWTK1D5TLRhxwF6e31oewOSNDg2TAxSanavMA@mail.gmail.com>
+Subject: Re: "kernel BUG" and segmentation fault with "device delete"
+To:     Vladimir Panteleev <thecybershadow@gmail.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Jul 5, 2019 at 4:45 AM Ulli Horlacher
-<framstag@rus.uni-stuttgart.de> wrote:
+On Thu, Jul 4, 2019 at 10:39 PM Vladimir Panteleev
+<thecybershadow@gmail.com> wrote:
 >
+> Hi,
 >
-> This is a conceptual btrfs question :-)
->
-> I have this btrfs filesystem:
->
-> root@xerus:~# mount | grep /test
-> /dev/sdd4 on /test type btrfs (rw,relatime,space_cache,user_subvol_rm_allowed,subvolid=5,subvol=/)
->
-> with some snapshots:
->
-> root@xerus:~# btrfs subvolume list /test
-> ID 736 gen 9722 top level 5 path .snapshot/2018-12-02_1215.test
-> ID 737 gen 9722 top level 5 path .snapshot/2018-12-02_1216.test
-> ID 738 gen 9722 top level 5 path .snapshot/2018-12-02_1217.test
->
-> I now want to do a rollback to .snapshot/2018-12-02_1217.test
-> I can do it with:
->
-> mount -t btrfs -o subvol=.snapshot/2018-12-02_1217.test /dev/sdd4 /test
->
-> But (how) can I delete the original root subvol to free disk space?
+> I'm trying to convert a data=RAID10,metadata=RAID1 (4 disks) array to
+> RAID1 (2 disks). The array was less than half full, and I disconnected
+> two parity drives, leaving two that contained one copy of all data.
 
-Near as I can tell you have to stop using whatever is using the
-subvolume you consider stale, so that you can umount the subvolme and
-then delete it. I think the more complicated rollback is for system
-root because that pretty much takes a reboot to clean everything up.
-So for example:
+There's no parity on either raid10 or raid1. But I can't tell from the
+above exactly when each drive was disconnected. In this scenario you
+need to convert to raid1 first, wait for that to complete successfully
+before you can do a device remove. That's clear.  Also clear is you
+must use 'btrfs device remove' and it must complete before that device
+is disconnected.
 
-[chris@flap ~]$ sudo btrfs sub list -t /
-ID    gen    top level    path
---    ---    ---------    ----
-258    38163    5        home
-274    38155    5        root
-280    36478    5        images
-281    12926    5        home.20190624
-282    12927    5        root.20190624
-283    17109    5        root.20190626
-285    17573    5        root.20190626-2
-286    17840    5        root.20190626-3
-# mount /dev/ /mnt
-# mv root rootold
-# btrfs sub snap root.20190626-3 root
-## reboot when I'm ready to rollback
+What I've never tried, but the man page implies, is you can specify
+two devices at one time for 'btrfs device remove' if the profile and
+the number of devices permits it. So exactly the order and commands
+you've used is really important to understand the problem and solution
+including whether there might be a bug.
 
-The system does not get cranky at the rename. The mount command
-immediately sees the rename so 'rootold' is still mounted at / and
-everything works. But on reboot, I get a rollback. And I don't have to
-update grub stuff this way. And then at my leisure I delete the
-rootold subvolume.
 
-In any case, I would not do a rollback by directly using the subvolume
-I want to rollback to, I would make a snapshot of it and use the
-snapshot. That way if I do something stupid during the rollback, I
-haven't messed up my only copy of that subvolume.
+>
+> After stubbing out btrfs_check_rw_degradable (because btrfs currently
+> can't realize when it has all drives needed for RAID10),
 
-For /home, it's similar except I just log out instead of reboot. It's
-slightly annoying that I need root user enabled, because of course if
-I login as chris, the subvolume mounted on /home is pinned. I can't
-umount it now. Or alternatively a slightly more complicated setup with
-each user getting their own subvolume, and then I could login as some
-alternate admin user to do the rollback. But I'd still do it the same
-way: umount /home, rename the subvolume, snapshot the snapshot I want
-to rollback to giving it the name that's used in fstab, and then I
-just 'mount /home' and continue on.
+Uhh? This implies it was still raid10 when you disconnected two drives
+of a four drive raid10. That's definitely data loss territory.
+However, your 'btrfs fi us' command suggests only raid1 chunks. What
+I'm suspicious of is this:
+
+>>Data,RAID1: Size:2.66TiB, Used:2.66TiB
+>>  /dev/sdd1   2.66TiB
+>>  /dev/sdf1   2.66TiB
+
+All data block groups are only on sdf1 and sdd1.
+
+>>Metadata,RAID1: Size:57.00GiB, Used:52.58GiB
+>>   /dev/sdd1  57.00GiB
+>>  /dev/sdf1  37.00GiB
+>>   missing  20.00GiB
+
+There's metadata still on one of the missing devices. You need to
+physically reconnect this device. The device removal did not complete
+before this device was physically disconnected.
+
+>> System,RAID1: Size:8.00MiB, Used:416.00KiB
+>>   /dev/sdd1   8.00MiB
+>>   missing   8.00MiB
+
+This is actually worse, potentially because it means there's only one
+copy of the system chunk on sdd1. It has not been replicated to sdf1,
+but is on the missing device. So it definitely sounds like the missing
+device was physicall removed before 'device remove' command finished.
+
+Depending on degraded operation for this task is the wrong strategy.
+You needed to 'btrfs device delete/remove' before physically
+disconnecting these drives.
+
+
+>I've
+> successfully mounted rw+degraded, balance-converted all RAID10 data to
+> RAID1, and then btrfs-device-delete-d one of the missing drives. It
+> fails at deleting the second.
+
+OK you definitely did this incorrectly if you're expecting to
+disconnect two devices at the same time, and then "btrfs device delete
+missing" instead of explicitly deleting drives by ID before you
+physically disconnect them.
+
+It sounds to me like you had a successful conversion from 4 disk
+raid10 to a 4 disk raid1. But then you're assuming there are
+sufficient copies of all data and metadata on each drive. That is not
+the case with Btrfs. The drives are not mirrored. The block groups are
+mirrored. Btrfs raid1 tolerates exactly 1 device loss. Not two.
 
 
 -- 

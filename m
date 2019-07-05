@@ -2,63 +2,121 @@ Return-Path: <SRS0=//O4=VC=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 73906C4649B
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Jul 2019 11:06:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CC045C46499
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Jul 2019 11:26:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4FAF921850
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Jul 2019 11:06:18 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9C196218CD
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Jul 2019 11:26:28 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1562325988;
+	bh=hZwBWuq3kJU0Goy/sqWl63lGwWjaKqG3XOhbCM6rm7Y=;
+	h=From:To:Cc:Subject:Date:List-ID:From;
+	b=zFbLPIvDzYf6hvt0UfPNUUreYayDp5XU43Y/N/Bfgi2MwW8Jdp+lJ/CcYelpv42rx
+	 OHh6ZhSOjeqKDJzvpog1twf+auWEKNm1zD1kw0oPMj5e4HK+7StcZERXCa4TLJfLx7
+	 EAaOqJYvHABSxUcw+604MRI1Cpdej+hIMoQwy4V8=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727595AbfGELGR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 5 Jul 2019 07:06:17 -0400
-Received: from smtp01.belwue.de ([129.143.71.86]:45552 "EHLO smtp01.belwue.de"
+        id S1727952AbfGEL01 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 5 Jul 2019 07:26:27 -0400
+Received: from mail.kernel.org ([198.145.29.99]:38828 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726107AbfGELGR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 5 Jul 2019 07:06:17 -0400
-Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
-        by smtp01.belwue.de (Postfix) with SMTP id 58AE78830
-        for <linux-btrfs@vger.kernel.org>; Fri,  5 Jul 2019 13:06:14 +0200 (MEST)
-Date:   Fri, 5 Jul 2019 13:06:14 +0200
-From:   Ulli Horlacher <framstag@rus.uni-stuttgart.de>
-To:     linux-btrfs@vger.kernel.org
-Subject: Re: snapshot rollback
-Message-ID: <20190705110614.GA14418@tik.uni-stuttgart.de>
-Mail-Followup-To: linux-btrfs@vger.kernel.org
-References: <20190705103823.GA13281@tik.uni-stuttgart.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190705103823.GA13281@tik.uni-stuttgart.de>
-User-Agent: Mutt/1.5.23 (2014-03-12)
+        id S1726523AbfGEL01 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 5 Jul 2019 07:26:27 -0400
+Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id E763B21852;
+        Fri,  5 Jul 2019 11:26:25 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1562325986;
+        bh=hZwBWuq3kJU0Goy/sqWl63lGwWjaKqG3XOhbCM6rm7Y=;
+        h=From:To:Cc:Subject:Date:From;
+        b=mAqmiB3xfT7UbXqziykTtp1thAO/O9+JIExr/iQxuwYhn1lqxZ6hQ5VkI8mj/c68Q
+         RASjSzxgyEyLuEieu+2Sh+h4gcSixKviYN672Tju31+85jCAtsR1vNrK8IcM+cPKNp
+         TMuk7TnLHrLOsUiKvbzMIaPmxQ8X6Ly47ge96n+E=
+From:   fdmanana@kernel.org
+To:     fstests@vger.kernel.org
+Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] btrfs/189: make the test work on systems with a page size greater than 4Kb
+Date:   Fri,  5 Jul 2019 12:26:21 +0100
+Message-Id: <20190705112621.653-1-fdmanana@kernel.org>
+X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri 2019-07-05 (12:38), Ulli Horlacher wrote:
+From: Filipe Manana <fdmanana@suse.com>
 
-> But (how) can I delete the original root subvol to free disk space?
+The test currently uses offsets and lengths which are multiples of 4K, but
+not multiples of 64K (or any other page size between 4Kb and 64Kb). This
+makes the reflink calls fail with -EINVAL because reflink only operates on
+ranges that are aligned to the the filesystem's block size.
 
-Found:
+Fix this by ensuring all ranges passed to the reflink calls are aligned to
+64K, so that the test works on any system regardless of its page size.
+The test still fails without the corresponding kernel fix applied [1] as
+it is supposed to.
 
-https://btrfs.wiki.kernel.org/index.php/Manpage/btrfs-subvolume
+[1] 3c850b45110950 ("Btrfs: incremental send, fix emission of invalid clone operations")
 
-  A freshly created filesystem is also a subvolume, called top-level,
-  internally has an id 5. This subvolume cannot be removed or replaced by
-  another subvolume.
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ tests/btrfs/189     | 10 ++++++----
+ tests/btrfs/189.out |  4 ++--
+ 2 files changed, 8 insertions(+), 6 deletions(-)
 
-
-Ok, it seems my idea (replacing the original root subvolume with a
-snapshot) is not possible. 
-
-
+diff --git a/tests/btrfs/189 b/tests/btrfs/189
+index 5f736d73..7b6a1708 100755
+--- a/tests/btrfs/189
++++ b/tests/btrfs/189
+@@ -59,20 +59,22 @@ $BTRFS_UTIL_PROG send -f $send_files_dir/1.snap $SCRATCH_MNT/base 2>&1 \
+ 
+ # Clone part of the extent from a higher offset to a lower offset of the same
+ # file.
+-$XFS_IO_PROG -c "reflink $SCRATCH_MNT/bar 1560K 500K 100K" $SCRATCH_MNT/bar \
++$XFS_IO_PROG -c "reflink $SCRATCH_MNT/bar 1600K 640K 128K" $SCRATCH_MNT/bar \
+ 	| _filter_xfs_io
+ 
+ # Now clone from the previous file, same range, into the middle of another file,
+ # such that the end offset at the destination is smaller than the destination's
+ # file size.
+-$XFS_IO_PROG -c "reflink $SCRATCH_MNT/bar 1560K 0 100K" $SCRATCH_MNT/zoo \
++$XFS_IO_PROG -c "reflink $SCRATCH_MNT/bar 1600K 0 128K" $SCRATCH_MNT/zoo \
+ 	| _filter_xfs_io
+ 
+ # Truncate the source file of the previous clone operation to a smaller size,
+ # which ends up in the middle of the range of previous clone operation from file
+ # bar to file bar. We want to check this doesn't confuse send to issue invalid
+-# clone operations.
+-$XFS_IO_PROG -c "truncate 550K" $SCRATCH_MNT/bar
++# clone operations. This smaller size must not be aligned to the sector size of
++# the filesystem - the unaligned size is what can cause those invalid clone
++# operations.
++$XFS_IO_PROG -c "truncate 710K" $SCRATCH_MNT/bar
+ 
+ $BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/incr 2>&1 \
+ 	| _filter_scratch
+diff --git a/tests/btrfs/189.out b/tests/btrfs/189.out
+index 0ae3cdce..79c70b03 100644
+--- a/tests/btrfs/189.out
++++ b/tests/btrfs/189.out
+@@ -9,9 +9,9 @@ wrote 2097152/2097152 bytes at offset 0
+ XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+ Create a readonly snapshot of 'SCRATCH_MNT' in 'SCRATCH_MNT/base'
+ At subvol SCRATCH_MNT/base
+-linked 102400/102400 bytes at offset 512000
++linked 131072/131072 bytes at offset 655360
+ XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+-linked 102400/102400 bytes at offset 0
++linked 131072/131072 bytes at offset 0
+ XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+ Create a readonly snapshot of 'SCRATCH_MNT' in 'SCRATCH_MNT/incr'
+ At subvol SCRATCH_MNT/incr
 -- 
-Ullrich Horlacher              Server und Virtualisierung
-Rechenzentrum TIK         
-Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
-Allmandring 30a                Tel:    ++49-711-68565868
-70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
-REF:<20190705103823.GA13281@tik.uni-stuttgart.de>
+2.11.0
+

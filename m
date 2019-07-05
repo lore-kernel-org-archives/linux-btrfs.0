@@ -2,68 +2,121 @@ Return-Path: <SRS0=//O4=VC=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+X-Spam-Status: No, score=-5.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 05442C4649B
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Jul 2019 10:45:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 502C7C4649C
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Jul 2019 11:01:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D44E32133F
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Jul 2019 10:45:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2956D216E3
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Jul 2019 11:01:41 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=kroah.com header.i=@kroah.com header.b="g0pjsKMl";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="u9kZoqs3"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728572AbfGEKpE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 5 Jul 2019 06:45:04 -0400
-Received: from smtp02.belwue.de ([129.143.71.87]:39931 "EHLO smtp02.belwue.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726523AbfGEKpD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 5 Jul 2019 06:45:03 -0400
-X-Greylist: delayed 397 seconds by postgrey-1.27 at vger.kernel.org; Fri, 05 Jul 2019 06:45:02 EDT
-Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
-        by smtp02.belwue.de (Postfix) with SMTP id B8901A2A9
-        for <linux-btrfs@vger.kernel.org>; Fri,  5 Jul 2019 12:38:23 +0200 (MEST)
-Date:   Fri, 5 Jul 2019 12:38:23 +0200
-From:   Ulli Horlacher <framstag@rus.uni-stuttgart.de>
-To:     linux-btrfs@vger.kernel.org
-Subject: snapshot rollback
-Message-ID: <20190705103823.GA13281@tik.uni-stuttgart.de>
-Mail-Followup-To: linux-btrfs@vger.kernel.org
+        id S1727341AbfGELBk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 5 Jul 2019 07:01:40 -0400
+Received: from out3-smtp.messagingengine.com ([66.111.4.27]:36349 "EHLO
+        out3-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726116AbfGELBk (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 5 Jul 2019 07:01:40 -0400
+Received: from compute6.internal (compute6.nyi.internal [10.202.2.46])
+        by mailout.nyi.internal (Postfix) with ESMTP id 880B12148D;
+        Fri,  5 Jul 2019 07:01:39 -0400 (EDT)
+Received: from mailfrontend1 ([10.202.2.162])
+  by compute6.internal (MEProxy); Fri, 05 Jul 2019 07:01:39 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kroah.com; h=
+        date:from:to:cc:subject:message-id:references:mime-version
+        :content-type:in-reply-to; s=fm1; bh=3nEACSZMYF4P+9vLi7rD5rFYOky
+        3Qp0LOHUiGLtOT9g=; b=g0pjsKMlZYUfJQifpH79VIv1rb6hW3LoDF/OqfTWxdB
+        b3G29W7Nt8OD7v5yCRXM74TGNDoLDOP4DCxPoFIUl3hgZQEhuAPmgvk0dMWl7JgS
+        sk5D5hIsOFFZjEjTIPBmGV/SVmJLzQOL50bkCp7xJptw5WVrtxWaTN6Aq91UVpV3
+        dy+143WdayG+KklC/038iO+iAU7HbzJCYHa66FqSTrrksT5XCzi9uuID2Nq8pGnw
+        pm9vibXJkXKkWLrRSEEJAAAN7FIqbzoXaMoYOurHyLX6UdcRN7XXCOj7KjFa82gB
+        CZlivoEGCfyBaGtJ5LHdp9d9AN4ybi5oZ0zrUhJhPXA==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:content-type:date:from:in-reply-to
+        :message-id:mime-version:references:subject:to:x-me-proxy
+        :x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; bh=3nEACS
+        ZMYF4P+9vLi7rD5rFYOky3Qp0LOHUiGLtOT9g=; b=u9kZoqs3qw0PExY1n9Cz8v
+        vErY7sNTX51tzWcY7vB+TtXu0uBQSdbQf/mpGpO1W5uXOu5jMMiJGJZblPYLBf/D
+        vM77G2VxXCfLQInWwQgSY5jcDR9AKa5QdlvSvYyzS6IwcOG74sQ4fJPwMInmbAAm
+        KSWHERTzyOxAxkihqykrQQQ3u4GzMRsAifQ5KNqgJpWrFi4VoyZsSb4jxySF4wH6
+        Rn1b9UTAFNQ1Cn1niwWiggs9vyam2OZASB1BLwATfCoLUNfRj52rf9XSS+Hrto5G
+        OagmOeh8UwaNZxTTqLvlitzv9oH0Wilv8pla1fvcrDcLkuZ4cy1dh7/NrK9TyRmQ
+        ==
+X-ME-Sender: <xms:Ei4fXW5Hk1ESE2eZC8HaaucMYb4gZEnT3qn1BRTcStxeKm4Q-0Ia4A>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeduvddrfeeggdefhecutefuodetggdotefrodftvf
+    curfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfghnecu
+    uegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenuc
+    fjughrpeffhffvuffkfhggtggujggfsehttdertddtredvnecuhfhrohhmpefirhgvghcu
+    mffjuceoghhrvghgsehkrhhorghhrdgtohhmqeenucfkphepkeefrdekgedruddviedrvd
+    egvdenucfrrghrrghmpehmrghilhhfrhhomhepghhrvghgsehkrhhorghhrdgtohhmnecu
+    vehluhhsthgvrhfuihiivgeptd
+X-ME-Proxy: <xmx:Ey4fXTJGyH_inrOyxGie6Z_yrmKnnkIW6v0JFs77Q1FcOpIrIYB3hg>
+    <xmx:Ey4fXe5SOVLq9imoV40jLwz77kgbJdq3h0tOn1elBq01mE7haprmaQ>
+    <xmx:Ey4fXeyes8RSU9GeR3jAfL5VOoAq_vKz0xN2X0XfnDKUYvue56eogA>
+    <xmx:Ey4fXdXr_B7OxCz-3Xxen2Y0NLOBUm3hJ0iC7UuemYJt6oAMCapGkQ>
+Received: from localhost (83-84-126-242.cable.dynamic.v4.ziggo.nl [83.84.126.242])
+        by mail.messagingengine.com (Postfix) with ESMTPA id 9A0CA80059;
+        Fri,  5 Jul 2019 07:01:38 -0400 (EDT)
+Date:   Fri, 5 Jul 2019 13:01:36 +0200
+From:   Greg KH <greg@kroah.com>
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     stable@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Ensure replaced device doesn't have pending chunk
+ allocation
+Message-ID: <20190705110136.GA14533@kroah.com>
+References: <20190703094552.15833-2-nborisov@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-User-Agent: Mutt/1.5.23 (2014-03-12)
+In-Reply-To: <20190703094552.15833-2-nborisov@suse.com>
+User-Agent: Mutt/1.12.1 (2019-06-15)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Wed, Jul 03, 2019 at 12:45:49PM +0300, Nikolay Borisov wrote:
+> Recent FITRIM work, namely bbbf7243d62d ("btrfs: combine device update
+> operations during transaction commit") combined the way certain
+> operations are recoded in a transaction. As a result an ASSERT was added
+> in dev_replace_finish to ensure the new code works correctly.
+> Unfortunately I got reports that it's possible to trigger the assert,
+> meaning that during a device replace it's possible to have an unfinished
+> chunk allocation on the source device.
+> 
+> This is supposed to be prevented by the fact that a transaction is
+> committed before finishing the replace oepration and alter acquiring the
+> chunk mutex. This is not sufficient since by the time the transaction is
+> committed and the chunk mutex acquired it's possible to allocate a chunk
+> depending on the workload being executed on the replaced device. This
+> bug has been present ever since device replace was introduced but there
+> was never code which checks for it.
+> 
+> The correct way to fix is to ensure that there is no pending device
+> modification operation when the chunk mutex is acquire and if there is
+> repeat transaction commit. Unfortunately it's not possible to just
+> exclude the source device from btrfs_fs_devices::dev_alloc_list since
+> this causes ENOSPC to be hit in transaction commit.
+> 
+> Fixing that in another way would need to add special cases to handle the
+> last writes and forbid new ones. The looped transaction fix is more
+> obvious, and can be easily backported. The runtime of dev-replace is
+> long so there's no noticeable delay caused by that.
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+> 
+> Hello Greg, 
+> 
+> Please merge the following backport of upstream commit debd1c065d2037919a7da67baf55cc683fee09f0
+> to 4.4.y stable branch. 
 
-This is a conceptual btrfs question :-)
+Thanks for all of these, now queued up.
 
-I have this btrfs filesystem:
-
-root@xerus:~# mount | grep /test
-/dev/sdd4 on /test type btrfs (rw,relatime,space_cache,user_subvol_rm_allowed,subvolid=5,subvol=/)
-
-with some snapshots:
-
-root@xerus:~# btrfs subvolume list /test
-ID 736 gen 9722 top level 5 path .snapshot/2018-12-02_1215.test
-ID 737 gen 9722 top level 5 path .snapshot/2018-12-02_1216.test
-ID 738 gen 9722 top level 5 path .snapshot/2018-12-02_1217.test
-
-I now want to do a rollback to .snapshot/2018-12-02_1217.test
-I can do it with:
-
-mount -t btrfs -o subvol=.snapshot/2018-12-02_1217.test /dev/sdd4 /test
-
-But (how) can I delete the original root subvol to free disk space?
-
-  
--- 
-Ullrich Horlacher              Server und Virtualisierung
-Rechenzentrum TIK         
-Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
-Allmandring 30a                Tel:    ++49-711-68565868
-70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
-REF:<20190705103823.GA13281@tik.uni-stuttgart.de>
+greg k-h

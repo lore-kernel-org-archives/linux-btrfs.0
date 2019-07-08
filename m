@@ -2,37 +2,30 @@ Return-Path: <SRS0=gNs2=VF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CE134C48BE7
-	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Jul 2019 06:07:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0AD7AC48BE7
+	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Jul 2019 06:13:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id A3DCA20844
-	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Jul 2019 06:07:40 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D7E3F20844
+	for <linux-btrfs@archiver.kernel.org>; Mon,  8 Jul 2019 06:13:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728609AbfGHGHj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 8 Jul 2019 02:07:39 -0400
-Received: from mx2.suse.de ([195.135.220.15]:40984 "EHLO mx1.suse.de"
+        id S1728519AbfGHGNs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 8 Jul 2019 02:13:48 -0400
+Received: from mx2.suse.de ([195.135.220.15]:41612 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728519AbfGHGHj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 8 Jul 2019 02:07:39 -0400
+        id S1727218AbfGHGNs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 8 Jul 2019 02:13:48 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B6E9EAF06;
-        Mon,  8 Jul 2019 06:07:37 +0000 (UTC)
-Subject: Re: [PATCH 2/5] Btrfs: fix inode cache block reserve leak on failure
- to allocate data space
-To:     Filipe Manana <fdmanana@kernel.org>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <20190704152419.20715-1-fdmanana@kernel.org>
- <4cdbcb14-c0e6-bdf7-e542-3c7f0286c91e@suse.com>
- <CAL3q7H6648gYV4AAQmoR23_9Z3DBq074OKCRn5K6i5cERfsnug@mail.gmail.com>
- <1f4daf23-1438-785b-92b4-e494ce270c2d@suse.com>
- <CAL3q7H7MRxw6CpgGsJDFE5qgnVsMn7CgmQLf0aKfmXX41wwNXA@mail.gmail.com>
- <7015f763-1949-661c-f1ed-4008f34e3b57@suse.com>
- <CAL3q7H5eBizJsjcsu5=Da334vDoFiaHP2a5g-STtKTCQT1KnBw@mail.gmail.com>
+        by mx1.suse.de (Postfix) with ESMTP id A9E86AF32;
+        Mon,  8 Jul 2019 06:13:46 +0000 (UTC)
+Subject: Re: [PATCH 4/5] Btrfs: fix inode cache waiters hanging on path
+ allocation failure
+To:     fdmanana@kernel.org, linux-btrfs@vger.kernel.org
+References: <20190704152444.20815-1-fdmanana@kernel.org>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -77,12 +70,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <687dab46-0a6c-4c0c-f80c-6ecba95027f8@suse.com>
-Date:   Mon, 8 Jul 2019 09:07:36 +0300
+Message-ID: <7e3f8b4a-c800-61fe-2abd-062440425efc@suse.com>
+Date:   Mon, 8 Jul 2019 09:13:45 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.7.2
 MIME-Version: 1.0
-In-Reply-To: <CAL3q7H5eBizJsjcsu5=Da334vDoFiaHP2a5g-STtKTCQT1KnBw@mail.gmail.com>
+In-Reply-To: <20190704152444.20815-1-fdmanana@kernel.org>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -93,34 +86,39 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 5.07.19 г. 17:32 ч., Filipe Manana wrote:
-<snip>
-> Nikolay,
+On 4.07.19 г. 18:24 ч., fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
 > 
-> The bytes_may_use counter gets decremented once the extent is allocated.
-> If we were leaking it, we would see a trace when unmounting the
-> filesystem, and I certainly wouldn't send this patch trading a few
-> warnings for another one.
-
-Right, indeed it's correct but it's far from obvious why.
-btrfs_prealloc_File_range calls into the allocator
-(btrfs_reserve_extent) which will convert the bytes_may_use to
-bytes_reserved which will either call btrfs_free_reserved_data_space or
-btrfs_free_reserved_extent. So what's left for the callers of
-btrfs_prealloc_file_range is just the metadata.
-
-I think it this is useful information to put in the changelog.
-
+> If the caching thread fails to allocate a path, it returns without waking
+> up any cache waiters, leaving them hang forever. Fix this by following the
+> same approach as when we fail to start the caching thread: print an error
+> message, disable inode caching and make the wakers fallback to non-caching
+> mode behaviour (calling btrfs_find_free_objectid()).
 > 
-> Thanks.
+> Fixes: 581bb050941b4f ("Btrfs: Cache free inode numbers in memory")
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
+
+> ---
+>  fs/btrfs/inode-map.c | 4 +++-
+>  1 file changed, 3 insertions(+), 1 deletion(-)
 > 
->>
->>>
->>> Thanks.
->>>
->>>>
->>>>
->>>>
->>>> <snip>
->>>
+> diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
+> index 05b8c9927f29..4820e05ea6bd 100644
+> --- a/fs/btrfs/inode-map.c
+> +++ b/fs/btrfs/inode-map.c
+> @@ -41,8 +41,10 @@ static int caching_kthread(void *data)
+>  		return 0;
+>  
+>  	path = btrfs_alloc_path();
+> -	if (!path)
+> +	if (!path) {
+> +		fail_caching_thread(root);
+>  		return -ENOMEM;
+> +	}
+>  
+>  	/* Since the commit root is read-only, we can safely skip locking. */
+>  	path->skip_locking = 1;
 > 

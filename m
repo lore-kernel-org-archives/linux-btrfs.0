@@ -2,125 +2,200 @@ Return-Path: <SRS0=3tc1=VH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0BF00C73C7C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Jul 2019 11:10:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 16985C73C7C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Jul 2019 11:12:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CABFD20665
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Jul 2019 11:10:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DB91020665
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Jul 2019 11:12:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726140AbfGJLKy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 10 Jul 2019 07:10:54 -0400
-Received: from m4a0040g.houston.softwaregrp.com ([15.124.2.86]:45955 "EHLO
-        m4a0040g.houston.softwaregrp.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726043AbfGJLKx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Jul 2019 07:10:53 -0400
-Received: FROM m4a0040g.houston.softwaregrp.com (15.120.17.147) BY m4a0040g.houston.softwaregrp.com WITH ESMTP
- FOR linux-btrfs@vger.kernel.org;
- Wed, 10 Jul 2019 11:10:23 +0000
-Received: from M4W0335.microfocus.com (2002:f78:1193::f78:1193) by
- M4W0335.microfocus.com (2002:f78:1193::f78:1193) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256_P256) id
- 15.1.1591.10; Wed, 10 Jul 2019 10:58:41 +0000
-Received: from NAM01-BY2-obe.outbound.protection.outlook.com (15.124.8.10) by
- M4W0335.microfocus.com (15.120.17.147) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256_P256) id
- 15.1.1591.10 via Frontend Transport; Wed, 10 Jul 2019 10:58:41 +0000
-Received: from BY5PR18MB3266.namprd18.prod.outlook.com (10.255.163.207) by
- BY5PR18MB3379.namprd18.prod.outlook.com (10.255.136.142) with Microsoft SMTP
- Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.20.2052.21; Wed, 10 Jul 2019 10:58:40 +0000
-Received: from BY5PR18MB3266.namprd18.prod.outlook.com
- ([fe80::45a9:4750:5868:9bbe]) by BY5PR18MB3266.namprd18.prod.outlook.com
- ([fe80::45a9:4750:5868:9bbe%5]) with mapi id 15.20.2052.020; Wed, 10 Jul 2019
- 10:58:40 +0000
-From:   WenRuo Qu <wqu@suse.com>
-To:     Nikolay Borisov <nborisov@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 1/5] btrfs: extent_io: Do extra check for extent buffer
- read write functions
-Thread-Topic: [PATCH 1/5] btrfs: extent_io: Do extra check for extent buffer
- read write functions
-Thread-Index: AQHVNww6B8OkBdNtK0igaXZiPs3BcqbDrrKA
-Date:   Wed, 10 Jul 2019 10:58:40 +0000
-Message-ID: <47b88874-6cef-4eb2-74d8-5a1f51efa99d@suse.com>
+        id S1726658AbfGJLMX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 10 Jul 2019 07:12:23 -0400
+Received: from mx2.suse.de ([195.135.220.15]:47270 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1725956AbfGJLMX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 10 Jul 2019 07:12:23 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 974B6AD0B
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jul 2019 11:12:20 +0000 (UTC)
+Subject: Re: [PATCH 4/5] btrfs: extent-tree: Kill the BUG_ON() in
+ insert_inline_extent_backref()
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20190710080243.15988-1-wqu@suse.com>
- <20190710080243.15988-2-wqu@suse.com>
- <0c6525ff-63f5-6342-4c6c-2e229d0e98b2@suse.com>
-In-Reply-To: <0c6525ff-63f5-6342-4c6c-2e229d0e98b2@suse.com>
-Accept-Language: zh-CN, en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-x-clientproxiedby: HK0PR03CA0033.apcprd03.prod.outlook.com
- (2603:1096:203:2f::21) To BY5PR18MB3266.namprd18.prod.outlook.com
- (2603:10b6:a03:1a1::15)
-authentication-results: spf=none (sender IP is ) smtp.mailfrom=wqu@suse.com; 
-x-ms-exchange-messagesentrepresentingtype: 1
-x-originating-ip: [240e:3a1:c40:c630::cac]
-x-ms-publictraffictype: Email
-x-ms-office365-filtering-correlation-id: 94dd8d28-b508-4b2b-5125-08d7052590e6
-x-microsoft-antispam: BCL:0;PCL:0;RULEID:(2390118)(7020095)(4652040)(8989299)(4534185)(4627221)(201703031133081)(201702281549075)(8990200)(5600148)(711020)(4605104)(1401327)(2017052603328)(7193020);SRVR:BY5PR18MB3379;
-x-ms-traffictypediagnostic: BY5PR18MB3379:
-x-microsoft-antispam-prvs: <BY5PR18MB337963E1C2F96CA796A5D178D6F00@BY5PR18MB3379.namprd18.prod.outlook.com>
-x-ms-oob-tlc-oobclassifiers: OLM:8882;
-x-forefront-prvs: 0094E3478A
-x-forefront-antispam-report: SFV:NSPM;SFS:(10019020)(4636009)(396003)(39860400002)(366004)(376002)(136003)(346002)(52314003)(189003)(199004)(386003)(6506007)(31686004)(99286004)(31696002)(2501003)(11346002)(110136005)(476003)(316002)(256004)(14444005)(86362001)(25786009)(486006)(2616005)(76176011)(53936002)(478600001)(6246003)(186003)(6512007)(5660300002)(66946007)(2906002)(66476007)(229853002)(52116002)(46003)(66556008)(64756008)(66446008)(6116002)(36756003)(6486002)(8936002)(8676002)(81166006)(81156014)(14454004)(446003)(7736002)(305945005)(71190400001)(71200400001)(102836004)(68736007)(6436002);DIR:OUT;SFP:1102;SCL:1;SRVR:BY5PR18MB3379;H:BY5PR18MB3266.namprd18.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;MX:1;A:1;
-received-spf: None (protection.outlook.com: suse.com does not designate
- permitted sender hosts)
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam-message-info: hUQ/k02JmDCb99/9gUijHQk4/qKRkg4mga4eGQqut+6ns/IrsGEeM0+SZR6o1DGebTvHVv5LU90octFRHV4rQcK0g1+pq0MTVNGEiUSl4QhI8XfAySbWhsf/4wmhMoFE4d0mob9MJYsVs5Ae4O+G8cxHcd1dGWlz8wsBaDB+GnR1InCD6WvuVWOQFRRVCplSOfdrO2nQO+Xop8AYYlUGK9DfDpXLlgY5vmGC+++w2we4SIKHzRC5S64LOgXBdN237CVJaW6LsbgkgHi+FlKzZSvnx+XnQsmj+dk0gryTfIGuRE8yJ0NJ3rVq/ol/jQ7Pl3tqUoWrCBGiJJDn2ARwCIa3KJRCk8GavQzQfbaB/y9atO72gzNipI6zjfzJkCKfAcxXn9UVKNhmaL/u+LBC2cnyz5W1C771N4tWRKIJbJM=
-Content-Type: text/plain; charset="utf-8"
-Content-ID: <ABAAA88FAE7F7B41A76A054C50379D21@namprd18.prod.outlook.com>
-Content-Transfer-Encoding: base64
+ <20190710080243.15988-5-wqu@suse.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <3c5b0478-8409-d6f0-6adb-3d0a9c0f4520@suse.com>
+Date:   Wed, 10 Jul 2019 14:12:19 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.7.2
 MIME-Version: 1.0
-X-MS-Exchange-CrossTenant-Network-Message-Id: 94dd8d28-b508-4b2b-5125-08d7052590e6
-X-MS-Exchange-CrossTenant-originalarrivaltime: 10 Jul 2019 10:58:40.4593
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: 856b813c-16e5-49a5-85ec-6f081e13b527
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: wqu@suse.com
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: BY5PR18MB3379
-X-OriginatorOrg: suse.com
+In-Reply-To: <20190710080243.15988-5-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-DQoNCk9uIDIwMTkvNy8xMCDkuIvljYg2OjQyLCBOaWtvbGF5IEJvcmlzb3Ygd3JvdGU6DQo+IA0K
-PiANClsuLi5dDQo+PiAgDQo+PiArLyoNCj4+ICsgKiBDaGVjayBpZiB0aGUgW3N0YXJ0LCBzdGFy
-dCArIGxlbikgcmFuZ2UgaXMgdmFsaWQgYmVmb3JlIHJlYWRpbmcvd3JpdGluZw0KPj4gKyAqIHRo
-ZSBlYi4NCj4+ICsgKg0KPj4gKyAqIENhbGxlciBzaG91bGQgbm90IHRvdWNoIHRoZSBkc3Qvc3Jj
-IG1lbW9yeSBpZiB0aGlzIGZ1bmN0aW9uIHJldHVybnMgZXJyb3IuDQo+PiArICovDQo+PiArc3Rh
-dGljIGludCBjaGVja19lYl9yYW5nZShjb25zdCBzdHJ1Y3QgZXh0ZW50X2J1ZmZlciAqZWIsIHVu
-c2lnbmVkIGxvbmcgc3RhcnQsDQo+PiArCQkJICB1bnNpZ25lZCBsb25nIGxlbikNCj4+ICt7DQo+
-PiArCXVuc2lnbmVkIGxvbmcgZW5kOw0KPj4gKw0KPj4gKwkvKiBzdGFydCwgc3RhcnQgKyBsZW4g
-c2hvdWxkIG5vdCBnbyBiZXlvbmQgZWItPmxlbiBub3Igb3ZlcmZsb3cgKi8NCj4+ICsJaWYgKHVu
-bGlrZWx5KHN0YXJ0ID4gZWItPmxlbiB8fCBzdGFydCArIGxlbiA+IGViLT5sZW4gfHwNCj4gDQo+
-IEkgdGhpbmsgeW91ciBjaGVjayBoZXJlIGlzIHdyb25nLCBpdCBzaG91bGQgYmUgc3RhcnQgKyBs
-ZW4gPiBzdGFydCArDQo+IGViLT5sZW4uIHN0YXJ0IGlzIHRoZSBsb2dpY2FsIGFkZHJlc3MgaGVu
-Y2UgaXQgY2FuIGJlIGEgbG90IGJpZ2dlciB0aGFuDQo+IHRoZSBzaXplIG9mIHRoZSBlYiB3aGlj
-aCBpcyAxNmsgYnkgZGVmYXVsdC4NCg0KRGVmaW5pdGVseSBOTy4NCg0KW3N0YXJ0LCBzdGFydCAr
-IGxlbikgbXVzdCBiZSBpbiB0aGUgcmFuZ2Ugb2YgWzAsIG5vZGVzaXplKS4NClNvIHRoaW5rIGFn
-YWluLg0KDQo+IA0KPj4gKwkJICAgICBjaGVja19hZGRfb3ZlcmZsb3coc3RhcnQsIGxlbiwgJmVu
-ZCkpKSB7DQo+PiArCQlXQVJOKElTX0VOQUJMRUQoQ09ORklHX0JUUkZTX0RFQlVHKSwgS0VSTl9F
-UlINCj4+ICsiYnRyZnM6IGJhZCBlYiBydyByZXF1ZXN0LCBlYiBieXRlbnI9JWxsdSBsZW49JWx1
-IHJ3IHN0YXJ0PSVsdSBsZW49JWx1XG4iLA0KPj4gKwkJICAgICBlYi0+c3RhcnQsIGViLT5sZW4s
-IHN0YXJ0LCBsZW4pOw0KPj4gKwkJYnRyZnNfd2FybihlYi0+ZnNfaW5mbywNCj4+ICsiYnRyZnM6
-IGJhZCBlYiBydyByZXF1ZXN0LCBlYiBieXRlbnI9JWxsdSBsZW49JWx1IHJ3IHN0YXJ0PSVsdSBs
-ZW49JWx1XG4iLA0KPj4gKwkJCSAgIGViLT5zdGFydCwgZWItPmxlbiwgc3RhcnQsIGxlbik7DQo+
-IA0KPiBJZiBDT05GSUdfQlRSRlNfREVCVUcgaXMgZW5hYmxlZCB0aGVuIHdlIHdpbGwgcHJpbnQg
-dGhlIHdhcm5pbmcgdGV4dA0KPiB0d2ljZS4gU2ltcGx5IG1ha2UgIGl0Og0KPiANCj4gV0FSTl9P
-TihJU19FTkFCTEVEKCkpIGFuZCBsZWF2ZSB0aGUgYnRyZnNfV2FybiB0byBhbHdheXMgcHJpbnQg
-dGhlIHRleHQuDQoNCldBUk5fT04oKSBkb2Vzbid0IGNvbnRhaW4gYW55IHRleHQgdG8gaW5kaWNh
-dGUgdGhlIHJlYXNvbiBvZiB0aGUgc3RhY2sgZHVtcC4NClRodXMgSSBzdGlsbCBwcmVmZXIgdG8g
-c2hvdyBleGFjdCB0aGUgcmVhc29uIG90aGVyIHRoYW4gdGFrZXMgZGV2ZWxvcGVyDQpzZXZlcmFs
-IHNlY29uZHMgdG8gY29tYmluZSB0aGUgc3RhY2sgd2l0aCB0aGUgZm9sbG93aW5nIGJ0cmZzX3dh
-cm4oKQ0KbWVzc2FnZS4NCg0KQW55d2F5LCBpdCdzIG5vdCBzb21ldGhpbmcgeW91J2xsIHNlZSBl
-dmVuIGluIG1vbnRocywgdGh1cyBJIGRvbid0DQpyZWFsbHkgdGhpbmsgaXQgd291bGQgY2F1c2Ug
-YW55IGRpZmZlcmVuY2UuDQoNClRoYW5rcywNClF1DQo=
+
+
+On 10.07.19 г. 11:02 ч., Qu Wenruo wrote:
+> [BUG]
+> With crafted image, btrfs can panic at insert_inline_extent_backref():
+>   kernel BUG at fs/btrfs/extent-tree.c:1857!
+>   invalid opcode: 0000 [#1] SMP PTI
+>   CPU: 0 PID: 1117 Comm: btrfs-transacti Not tainted 5.0.0-rc8+ #9
+>   RIP: 0010:insert_inline_extent_backref+0xcc/0xe0
+>   Code: 45 20 49 8b 7e 50 49 89 d8 4c 8b 4d 10 48 8b 55 c8 4c 89 e1 41 57 4c 89 ee 50 ff 75 18 e8 cc bf ff ff 31 c0 48 83 c4 18 eb b2 <0f> 0b e8 9d df bd ff 0f 1f 00 66 2e 0f 1f 84 00 00 00 00 00 66 66
+>   RSP: 0018:ffffac4dc1287be8 EFLAGS: 00010293
+>   RAX: 0000000000000000 RBX: 0000000000000007 RCX: 0000000000000001
+>   RDX: 0000000000001000 RSI: 0000000000000000 RDI: 0000000000000000
+>   RBP: ffffac4dc1287c28 R08: ffffac4dc1287ab8 R09: ffffac4dc1287ac0
+>   R10: 0000000000000000 R11: 0000000000000000 R12: 0000000000000000
+>   R13: ffff8febef88a540 R14: ffff8febeaa7bc30 R15: 0000000000000000
+>   FS: 0000000000000000(0000) GS:ffff8febf7a00000(0000) knlGS:0000000000000000
+>   CS: 0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+>   CR2: 00007f663ace94c0 CR3: 0000000235698006 CR4: 00000000000206f0
+>   Call Trace:
+>   ? _cond_resched+0x1a/0x50
+>   __btrfs_inc_extent_ref.isra.64+0x7e/0x240
+>   ? btrfs_merge_delayed_refs+0xa5/0x330
+>   __btrfs_run_delayed_refs+0x653/0x1120
+>   btrfs_run_delayed_refs+0xdb/0x1b0
+>   btrfs_commit_transaction+0x52/0x950
+>   ? start_transaction+0x94/0x450
+>   transaction_kthread+0x163/0x190
+>   kthread+0x105/0x140
+>   ? btrfs_cleanup_transaction+0x560/0x560
+>   ? kthread_destroy_worker+0x50/0x50
+>   ret_from_fork+0x35/0x40
+>   Modules linked in:
+>   ---[ end trace 2ad8b3de903cf825 ]---
+> 
+> [CAUSE]
+> Due to extent tree corruption (still valid by itself, but bad cross ref),
+> we can allocate an extent which is still in extent tree.
+> 
+> Then we will try to insert/update inlined extent backref line for the
+> existing tree block, and triggering the BUG_ON() where we don't expect
+> to increase refs on non-subvolume tree block.
+> 
+> [FIX]
+> Replace that BUG_ON() with proper error message and leaf dump for debug
+> build.
+> 
+> Link: https://bugzilla.kernel.org/show_bug.cgi?id=202829
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/extent-tree.c | 24 ++++++++++++++++++++++--
+>  1 file changed, 22 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 199e4eed8f2d..72868d9ac58e 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -1856,7 +1856,24 @@ int insert_inline_extent_backref(struct btrfs_trans_handle *trans,
+>  					   num_bytes, parent, root_objectid,
+>  					   owner, offset, 1);
+>  	if (ret == 0) {
+> -		BUG_ON(owner < BTRFS_FIRST_FREE_OBJECTID);
+> +		/*
+> +		 * We're adding ref to an existing tree block, only happens
+> +		 * when creating snapshots, not possible to other trees.
+> +		 */
+> +		if (owner < BTRFS_FIRST_FREE_OBJECTID) {
+> +			WARN(IS_ENABLED(CONFIG_BTRFS_DEBUG), KERN_ERR
+> +			"invalid operation for non-subvolume tree block");
+
+Again, the text of the warn doesn't bring any value, make it plain
+WARN_ON(IS_ENABLED())
+
+> +
+> +			btrfs_crit(trans->fs_info,
+> +"invalid operation, adding refs to a non-subvolume tree block, bytenr=%llu num_bytes=%llu root_objectid=%llu",
+> +				   bytenr, num_bytes, root_objectid);
+> +			if (IS_ENABLED(CONFIG_BTRFS_DEBUG)) {
+> +				btrfs_crit(trans->fs_info,
+> +			"path->slots[0]=%d path->nodes[0]:", path->slots[0]);
+> +				btrfs_print_leaf(path->nodes[0]);
+> +			}
+> +			return -EUCLEAN;
+> +		}
+>  		update_inline_extent_backref(path, iref, refs_to_add,
+>  					     extent_op, NULL);
+>  	} else if (ret == -ENOENT) {
+> @@ -2073,6 +2090,9 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+>  /*
+>   * __btrfs_inc_extent_ref - insert backreference for a given extent
+>   *
+> + * The work is opposite as __btrfs_free_extent().
+> + * For more info about how it works or examples, refer to __btrfs_free_extent().
+> + *
+>   * @trans:	    Handle of transaction
+>   *
+>   * @node:	    The delayed ref node used to get the bytenr/length for
+> @@ -2153,9 +2173,9 @@ static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+>  	/* now insert the actual backref */
+>  	ret = insert_extent_backref(trans, path, bytenr, parent, root_objectid,
+>  				    owner, offset, refs_to_add);
+> +out:
+>  	if (ret)
+>  		btrfs_abort_transaction(trans, ret);
+> -out:
+
+I think this silently fixes a bug if insert_inline_extent_backref fails.
+If that's the case then it should be in a dedicated patch with an
+explicit rationale
+
+>  	btrfs_free_path(path);
+>  	return ret;
+>  }
+> 

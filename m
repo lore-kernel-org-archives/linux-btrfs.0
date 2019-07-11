@@ -1,128 +1,154 @@
-Return-Path: <SRS0=3tc1=VH=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=U0Ji=VI=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 25504C74A35
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Jul 2019 19:28:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6770AC74A42
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Jul 2019 02:46:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id ED2FB20844
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Jul 2019 19:28:51 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1562786932;
-	bh=tAIHtXQdly/i2Qksl+8ropRftvcjny0e4UjJ9xE4LBE=;
-	h=From:To:Cc:Subject:Date:List-ID:From;
-	b=tpAXlkRCRr5RIEsgBaLFTN23vwCZykWIuZw65ZhOz2OGOhEno8cmgHXBwV1Mmk2Kx
-	 8tXTg6vN0M/8zHktQb6sF7a3e4xGpiLbUh7OwRNQgT9QeEKddf6IPsjdg9kEK/GCok
-	 jQySTunpCoiQ3i5XeTp9bLm3LCe+6qwP3vffifj8=
+	by mail.kernel.org (Postfix) with ESMTP id 3F1F920844
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Jul 2019 02:46:53 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="Xo/OFzJn"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727645AbfGJT2X (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 10 Jul 2019 15:28:23 -0400
-Received: from mail-pl1-f196.google.com ([209.85.214.196]:45169 "EHLO
-        mail-pl1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726111AbfGJT2X (ORCPT
+        id S1727708AbfGKCqw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 10 Jul 2019 22:46:52 -0400
+Received: from userp2120.oracle.com ([156.151.31.85]:53192 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726030AbfGKCqv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Jul 2019 15:28:23 -0400
-Received: by mail-pl1-f196.google.com with SMTP id y8so1691304plr.12;
-        Wed, 10 Jul 2019 12:28:22 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=sender:from:to:cc:subject:date:message-id;
-        bh=CpMUxXYROfvhBoXBWchsYgi/GL+ZYe3ofBF371/+9jo=;
-        b=lx/oCtKy/5MvXaUgXoDIwJYizVVpoBeqjISK7vsQbdLE33zb2r4sqotNdJ/koXxU9H
-         XFtrW9Xsjo/gN6EGemAuOVexvQLGsKEIzEaiqwapR1wPqRdowaFWfy7M0WTh2tb8AbCA
-         FwuanQXmwF8Eyfu+wZ67Re5mLHttjACgYbqyXcmrimB1ViHg3jTrdIw5GywewC0mYCWH
-         VW4gfgyZczGbUOtfx6zlKC7AoG7ROSVVaZG0URMfZfTQwNn3MrGnkbX56j168SIntrnC
-         djmemCFMHjVZh4eeaTwhxJachILWcG1U/LTloCRiMoyJWAEwVunTL6LolAgj+1QxepDO
-         spgw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:sender:from:to:cc:subject:date:message-id;
-        bh=CpMUxXYROfvhBoXBWchsYgi/GL+ZYe3ofBF371/+9jo=;
-        b=nkgiW4Xwe17IlysrFXXgv1eqKwxAeAP3cHf0k6hFQxrvBoeYBsvYG+NWvTdf/EWUWx
-         N9n58SMyy55sJ6vUxKXyOihRmeS5VLZh/eoTC83v7fb2qAAyIOZjOsJWXB2xAedcg7+A
-         3AxZwH7ipEuCrzVTck+rPtVJDYM5kteMjw4kDEiMo77lWENR+zdKgzQ/0/1f4lmuAtph
-         m6IwkSDLVYbulaOWjdQDBk3yUtmZME6b4N8/q5X/CtfOkzs8/bF6PgWliq8u2IxdtD+m
-         lLDBulKVyKUIT6PDT5qlV2gKTsGj3AeFreVEaFshSnNI9OmyQoVd+cnh64HxwQPW3K5x
-         fScg==
-X-Gm-Message-State: APjAAAWv5lO8hovBg5ynbvgAJkY2QgLy/bhBbtzAUcgQzTm6739/FAlz
-        RAPeAA6xnPjB0IRzZNYHV0EK1xV/C/Q=
-X-Google-Smtp-Source: APXvYqyVo7fUxbfdp2PB/TDEcvULVtT5PZytfZiXey3deyz+uJlP8ejxl60X+h7N1jJfUHuGiUnP/w==
-X-Received: by 2002:a17:902:b68f:: with SMTP id c15mr40153806pls.104.1562786902275;
-        Wed, 10 Jul 2019 12:28:22 -0700 (PDT)
-Received: from localhost ([2620:10d:c091:500::3:2bbe])
-        by smtp.gmail.com with ESMTPSA id f64sm3103555pfa.115.2019.07.10.12.28.21
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Wed, 10 Jul 2019 12:28:21 -0700 (PDT)
-From:   Tejun Heo <tj@kernel.org>
-To:     josef@toxicpanda.com, clm@fb.com, dsterba@suse.com
-Cc:     axboe@kernel.dk, jack@suse.cz, linux-kernel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCHSET v3 btrfs/for-next] btrfs: fix cgroup writeback support
-Date:   Wed, 10 Jul 2019 12:28:13 -0700
-Message-Id: <20190710192818.1069475-1-tj@kernel.org>
-X-Mailer: git-send-email 2.17.1
+        Wed, 10 Jul 2019 22:46:51 -0400
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x6B2j1vE052332;
+        Thu, 11 Jul 2019 02:46:44 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : subject : to :
+ references : message-id : date : mime-version : in-reply-to : content-type
+ : content-transfer-encoding; s=corp-2018-07-02;
+ bh=Syl45W2udtnt0oqzJwDc9wL7rurdBPrT5RQ528Taqs8=;
+ b=Xo/OFzJnz5deoVO0RJihkqAfrmjH9o6oqJKF6SySj7C4N1+p2xQI1R6sICybEhtZpPXs
+ 3Dp9yo1akpiqoh7LDaE16VfuR+Y40S5up8h1fiSRqcseNj8ANb0IYmAZEi+s3cgHLoB/
+ fWlILnOxcah3hEoRwfGgTB+O0CsuGGqj3lVEYBLvWtYF8HZ89/CGnZe49gtKLlVV4cSE
+ c8OfA1CZMgreMoMEOLfPqzL187o2q9NkyvdSVFgutGvnr/w+o6IEBGL0M0pXkHmHEMfJ
+ YQZR1xa7kXM3k/B4EZW6yG1eNQVN2viHDIQaAXJF8vXOaTmU2vWaNRbkbaaO8rsHYk98 1g== 
+Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
+        by userp2120.oracle.com with ESMTP id 2tjm9qwb2w-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 11 Jul 2019 02:46:44 +0000
+Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
+        by aserp3020.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x6B2hL1c014528;
+        Thu, 11 Jul 2019 02:46:43 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserp3020.oracle.com with ESMTP id 2tmmh3vp56-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 11 Jul 2019 02:46:43 +0000
+Received: from abhmp0009.oracle.com (abhmp0009.oracle.com [141.146.116.15])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x6B2kewH030979;
+        Thu, 11 Jul 2019 02:46:42 GMT
+Received: from [172.20.10.11] (/183.90.36.57)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Wed, 10 Jul 2019 19:46:40 -0700
+From:   Anand Jain <anand.jain@oracle.com>
+Subject: Re: "btrfs: harden agaist duplicate fsid" spams syslog
+To:     Graham Cobb <g.btrfs@cobb.uk.net>, linux-btrfs@vger.kernel.org
+References: <5d8baf80-4fb3-221f-5ab4-e98a838f63e1@cobb.uk.net>
+Message-ID: <c01ab9f6-c553-3625-5656-a8f61659de7d@oracle.com>
+Date:   Thu, 11 Jul 2019 10:46:31 +0800
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:52.0)
+ Gecko/20100101 Thunderbird/52.9.1
+MIME-Version: 1.0
+In-Reply-To: <5d8baf80-4fb3-221f-5ab4-e98a838f63e1@cobb.uk.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9314 signatures=668688
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.0.1-1810050000 definitions=main-1907110030
+X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9314 signatures=668688
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
+ suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1011
+ lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1810050000
+ definitions=main-1907110030
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
+Right. It happened even without this patch but we just know it now.
 
-This patchset contains only the btrfs part of the following patchset.
+In the original investigations of the patch, the moment you copy a
+device image into another device, the autoscan would scan the new
+device into the btrfs kernel and created a mess. Now with this patch
+we won't replace the device path unless it's the same device (and we
+have to let that happen).
 
-  [1] [PATCHSET v2 btrfs/for-next] blkcg, btrfs: fix cgroup writeback support
+Now the question I am trying to understand, why same device is being
+scanned every 2 mins, even though its already mount-ed. I am guessing
+its toggling the same device paths trying to mount the device-path
+which is not mounted. So autofs's check for the device mount seems to
+be path based.
 
-The block part has already been applied to
+Would you please provide your LVM configs and I believe you are using
+dm-mapping too. What are the device paths used in the fstab and in grub.
+And do you see these messages for all devices of
+4d1ba5af-8b89-4cb5-96c6-55d1f028a202 or just devid 4? Would you please
+provide more logs at least a complete cycle of the repeating logs.
 
-  https://git.kernel.org/pub/scm/linux/kernel/git/axboe/linux-block.git/ for-linus
+-Anand
 
-with some naming changes.  This patchset has been updated accordingly.
 
-When writeback is executed asynchronously (e.g. for compression), bios
-are bounced to and issued by worker pool shared by all cgroups.  This
-leads to significant priority inversions when cgroup IO control is in
-use - IOs for a low priority cgroup can tie down the workers forcing
-higher priority IOs to wait behind them.
-
-This patchset updates btrfs to issue async IOs through the new bio
-punt mechanism.  A bio tagged with REQ_CGROUP_PUNT flag is bounced to
-the asynchronous issue context of the associated blkcg on
-bio_submit().  As the bios are issued from per-blkcg work items,
-there's no concern for priority inversions and it doesn't require
-invasive changes to the filesystems.
-
-This patchset contains the following 5 patches.
-
- 0001-Btrfs-stop-using-btrfs_schedule_bio.patch
- 0002-Btrfs-delete-the-entire-async-bio-submission-framewo.patch
- 0003-Btrfs-only-associate-the-locked-page-with-one-async_.patch
- 0004-Btrfs-use-REQ_CGROUP_PUNT-for-worker-thread-submitte.patch
- 0005-Btrfs-extent_write_locked_range-should-attach-inode-.patch
-
-The patches are also available in the following branch.
-
- git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-btrfs-cgroup-updates-v3
-
-Thanks, diffstat follows.
-
- fs/btrfs/compression.c |   16 ++
- fs/btrfs/compression.h |    3 
- fs/btrfs/ctree.h       |    1 
- fs/btrfs/disk-io.c     |   25 +---
- fs/btrfs/extent_io.c   |   15 +-
- fs/btrfs/inode.c       |   62 +++++++++--
- fs/btrfs/super.c       |    1 
- fs/btrfs/volumes.c     |  264 -------------------------------------------------
- fs/btrfs/volumes.h     |   10 -
- 9 files changed, 90 insertions(+), 307 deletions(-)
-
---
-tejun
-
-[1] http://lkml.kernel.org/r/20190615182453.843275-1-tj@kernel.org
+On 11/7/19 2:49 AM, Graham Cobb wrote:
+> Anand's Nov 2018 patch "btrfs: harden agaist duplicate fsid" has
+> recently percolated through to my Debian buster server system.
+> 
+> And it is spamming my log files.
+> 
+> Each of my btrfs filesystem devices logs 4 messages every 2 minutes.
+> Here is an example of the 4 messages related to one device:
+> 
+> Jul 10 19:32:27 black kernel: [33017.407252] BTRFS info (device sdc3):
+> device fsid 4d1ba5af-8b89-4cb5-96c6-55d1f028a202 devid 4 moved
+> old:/dev/mapper/cryptdata4tb--vg-backup new:/dev/dm-13
+> Jul 10 19:32:27 black kernel: [33017.522242] BTRFS info (device sdc3):
+> device fsid 4d1ba5af-8b89-4cb5-96c6-55d1f028a202 devid 4 moved
+> old:/dev/dm-13 new:/dev/mapper/cryptdata4tb--vg-backup
+> Jul 10 19:32:29 black kernel: [33018.797161] BTRFS info (device sdc3):
+> device fsid 4d1ba5af-8b89-4cb5-96c6-55d1f028a202 devid 4 moved
+> old:/dev/mapper/cryptdata4tb--vg-backup new:/dev/dm-13
+> Jul 10 19:32:29 black kernel: [33019.061631] BTRFS info (device sdc3):
+> device fsid 4d1ba5af-8b89-4cb5-96c6-55d1f028a202 devid 4 moved
+> old:/dev/dm-13 new:/dev/mapper/cryptdata4tb--vg-backup
+> 
+> What is happening here is that each device is actually an LVM logical
+> volume, and it is known by a /dev/mapper name and a /dev/dm name. And
+> every 2 minutes something cause btrfs to notice that there are two names
+> for the same device and it swaps them around. Logging a message to say
+> it has done so. And doing it 4 times.
+> 
+> I presume that the swapping doesn't cause any problem. I wonder slightly
+> whether ordering guarantees and barriers all work correctly but I
+> haven't noticed any problems.
+> 
+> I also assume it has been doing this for a while -- just silently before
+> this patch came along.
+> 
+> Is btrfs noticing this itself or is something else (udev or systemd, for
+> example) triggering it?
+> 
+> Should I worry about it?
+> 
+> Is there any way to not have my log files full of this?
+> 
+> Graham
+> 
+> [This started with a Debian testing kernel a couple of months ago.
+> Current uname -a gives: Linux black 4.19.0-5-amd64 #1 SMP Debian
+> 4.19.37-5 (2019-06-19) x86_64 GNU/Linux]
+> 
 

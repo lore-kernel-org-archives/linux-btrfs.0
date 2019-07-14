@@ -2,219 +2,138 @@ Return-Path: <SRS0=zolr=VL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
-	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.9 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 24E4BC742D2
-	for <linux-btrfs@archiver.kernel.org>; Sun, 14 Jul 2019 15:45:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7BF4CC73C66
+	for <linux-btrfs@archiver.kernel.org>; Sun, 14 Jul 2019 21:00:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EE55620820
-	for <linux-btrfs@archiver.kernel.org>; Sun, 14 Jul 2019 15:45:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2C50A2063F
+	for <linux-btrfs@archiver.kernel.org>; Sun, 14 Jul 2019 21:00:21 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=ericmesa.com header.i=@ericmesa.com header.b="az9SR/jy"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728442AbfGNPpH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 14 Jul 2019 11:45:07 -0400
-Received: from 6.mo5.mail-out.ovh.net ([178.32.119.138]:50329 "EHLO
-        6.mo5.mail-out.ovh.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728220AbfGNPpH (ORCPT
+        id S1728709AbfGNVAU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 14 Jul 2019 17:00:20 -0400
+Received: from bonobo.elm.relay.mailchannels.net ([23.83.212.22]:35450 "EHLO
+        bonobo.elm.relay.mailchannels.net" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1728442AbfGNVAT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 14 Jul 2019 11:45:07 -0400
-X-Greylist: delayed 4200 seconds by postgrey-1.27 at vger.kernel.org; Sun, 14 Jul 2019 11:45:06 EDT
-Received: from player715.ha.ovh.net (unknown [10.108.35.12])
-        by mo5.mail-out.ovh.net (Postfix) with ESMTP id 214B9243506
-        for <linux-btrfs@vger.kernel.org>; Sun, 14 Jul 2019 14:07:40 +0200 (CEST)
-Received: from awhome.eu (p4FF91F5A.dip0.t-ipconnect.de [79.249.31.90])
-        (Authenticated sender: postmaster@awhome.eu)
-        by player715.ha.ovh.net (Postfix) with ESMTPSA id 48AC77BB4826;
-        Sun, 14 Jul 2019 12:07:37 +0000 (UTC)
-Subject: Re: [BUG] BTRFS critical corrupt leaf - bisected to 496245cac57e
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org,
-        wqu@suse.com
-References: <5a89e922-00af-51a9-390f-b0a6b1f6cfb6@web.de>
- <23f33860-9630-2045-483c-f59ebf91b043@gmx.com>
- <057a7561-f691-d7ee-1dea-27acc5ea79cc@web.de>
- <6e764f38-a8dd-19e2-e885-3d7561479681@gmx.com>
-From:   Alexander Wetzel <alexander.wetzel@web.de>
-Message-ID: <e2776741-3554-e9a6-440a-4bfe8a839cbb@web.de>
-Date:   Sun, 14 Jul 2019 14:07:35 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.8.0
+        Sun, 14 Jul 2019 17:00:19 -0400
+X-Sender-Id: dreamhost|x-authsender|eric@ericmesa.com
+Received: from relay.mailchannels.net (localhost [127.0.0.1])
+        by relay.mailchannels.net (Postfix) with ESMTP id 0BD0E501CE2;
+        Sun, 14 Jul 2019 21:00:17 +0000 (UTC)
+Received: from pdx1-sub0-mail-a47.g.dreamhost.com (100-96-11-126.trex.outbound.svc.cluster.local [100.96.11.126])
+        (Authenticated sender: dreamhost)
+        by relay.mailchannels.net (Postfix) with ESMTPA id BF8CC5019B0;
+        Sun, 14 Jul 2019 21:00:11 +0000 (UTC)
+X-Sender-Id: dreamhost|x-authsender|eric@ericmesa.com
+Received: from pdx1-sub0-mail-a47.g.dreamhost.com ([TEMPUNAVAIL].
+ [64.90.62.162])
+        (using TLSv1.2 with cipher DHE-RSA-AES256-GCM-SHA384)
+        by 0.0.0.0:2500 (trex/5.17.3);
+        Sun, 14 Jul 2019 21:00:16 +0000
+X-MC-Relay: Neutral
+X-MailChannels-SenderId: dreamhost|x-authsender|eric@ericmesa.com
+X-MailChannels-Auth-Id: dreamhost
+X-Exultant-Trail: 0920015a0e10a38f_1563138012272_1094497337
+X-MC-Loop-Signature: 1563138012272:3599939332
+X-MC-Ingress-Time: 1563138012272
+Received: from pdx1-sub0-mail-a47.g.dreamhost.com (localhost [127.0.0.1])
+        by pdx1-sub0-mail-a47.g.dreamhost.com (Postfix) with ESMTP id 8EB2E82FEE;
+        Sun, 14 Jul 2019 14:00:04 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha1; c=relaxed; d=ericmesa.com; h=from:to:cc
+        :subject:date:message-id:in-reply-to:references:mime-version
+        :content-type; s=ericmesa.com; bh=fW3jXefwxCaiD+pXxiQbCs4caOk=; b=
+        az9SR/jyFJ2bWHH0vth9vjlkuVeNjCEOfnqhKtamOyVErs6fFsLnJLQlBEegZNVh
+        x7CCe0bx3ExOsOTWvOiCV6fEO2/lflbKLzerH71i9pNeV10LluhQ2KizV6tOohUF
+        2fqXomOS+ygzjv/8ovzruBih5Ie7pZlwYCJc/OxO5+o=
+Received: from supermario.mushroomkingdom (pool-68-134-39-132.bltmmd.fios.verizon.net [68.134.39.132])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        (Authenticated sender: eric@ericmesa.com)
+        by pdx1-sub0-mail-a47.g.dreamhost.com (Postfix) with ESMTPSA id 8544182FEC;
+        Sun, 14 Jul 2019 14:00:03 -0700 (PDT)
+X-DH-BACKEND: pdx1-sub0-mail-a47
+From:   Eric Mesa <eric@ericmesa.com>
+To:     Chris Murphy <lists@colorremedies.com>
+Cc:     Andrei Borzenkov <arvidjaar@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Issues with btrfs send/receive with parents
+Date:   Sun, 14 Jul 2019 16:59:56 -0400
+Message-ID: <10873243.P3z0pXWhJ5@supermario.mushroomkingdom>
+In-Reply-To: <CAJCQCtRfADiHjG+r-1Gr=1bFw+c-u8-zi+bkLCO=jd5HnxjFDQ@mail.gmail.com>
+References: <3884539.zL6soEQT1V@supermario.mushroomkingdom> <97541737.v72oTHCfnW@supermario.mushroomkingdom> <CAJCQCtRfADiHjG+r-1Gr=1bFw+c-u8-zi+bkLCO=jd5HnxjFDQ@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <6e764f38-a8dd-19e2-e885-3d7561479681@gmx.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
-X-Ovh-Tracer-Id: 1948651267023389934
-X-VR-SPAMSTATE: OK
-X-VR-SPAMSCORE: 0
-X-VR-SPAMCAUSE: gggruggvucftvghtrhhoucdtuddrgeduvddrheehgdehtdcutefuodetggdotefrodftvfcurfhrohhfihhlvgemucfqggfjpdevjffgvefmvefgnecuuegrihhlohhuthemucehtddtnecu
+Content-Type: multipart/signed; boundary="nextPart1651492.uCfOGT36Gn"; micalg="pgp-sha256"; protocol="application/pgp-signature"
+X-VR-OUT-STATUS: OK
+X-VR-OUT-SCORE: -100
+X-VR-OUT-SPAMCAUSE: gggruggvucftvghtrhhoucdtuddrgeduvddrheehgdduheelucetufdoteggodetrfdotffvucfrrhhofhhilhgvmecuggftfghnshhusghstghrihgsvgdpffftgfetoffjqffuvfenuceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmnecujfgurhephffvufffkfgjfhggtgesghdtreertddtvdenucfhrhhomhepgfhrihgtucfovghsrgcuoegvrhhitgesvghrihgtmhgvshgrrdgtohhmqeenucfkphepieekrddufeegrdefledrudefvdenucfrrghrrghmpehmohguvgepshhmthhppdhhvghlohepshhuphgvrhhmrghrihhordhmuhhshhhrohhomhhkihhnghguohhmpdhinhgvthepieekrddufeegrdefledrudefvddprhgvthhurhhnqdhprghthhepgfhrihgtucfovghsrgcuoegvrhhitgesvghrihgtmhgvshgrrdgtohhmqedpmhgrihhlfhhrohhmpegvrhhitgesvghrihgtmhgvshgrrdgtohhmpdhnrhgtphhtthhopehlihhnuhigqdgsthhrfhhssehvghgvrhdrkhgvrhhnvghlrdhorhhgnecuvehluhhsthgvrhfuihiivgeptd
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Am 14.07.19 um 11:49 schrieb Qu Wenruo:
-> 
-> 
-> On 2019/7/14 下午5:25, Alexander Wetzel wrote:
->>
->>>>
->>>> filtering for btrfs and removing duplicate lines just shows three uniq
->>>> error messages:
->>>>    BTRFS critical (device vda3): corrupt leaf: root=300 block=8645398528
->>>> slot=4 ino=259223, invalid inode generation: has 139737289170944 expect
->>>> [0, 1425224]
->>>>    BTRFS critical (device vda3): corrupt leaf: root=300 block=8645398528
->>>> slot=4 ino=259223, invalid inode generation: has 139737289170944 expect
->>>> [0, 1425225]
->>>>    BTRFS critical (device vda3): corrupt leaf: root=300 block=8645398528
->>>> slot=4 ino=259223, invalid inode generation: has 139737289170944 expect
->>>> [0, 1425227]
->>>
->>> The generation number is 0x7f171f7ba000, I see no reason why it would
->>> make any sense.
->>>
->>> I see no problem rejecting obviously corrupted item.
->>>
->>> The problem is:
->>> - Is that corrupted item?
->>>     At least to me, it looks corrupted just from the dmesg.
->>>
->>> - How and when this happens
->>>     Obviously happened on some older kernel.
->>>     V5.2 will report such problem before writing corrupted data back to
->>>     disk, at least prevent such problem from happening.
->>
->> It's probably useless information at that point, but the FS was created
->> with a boot image from Debian 8 around Dec 1st 2016 by migrating an also
->> freshly created ext4 filesystem to btrfs.
-> 
-> Migrated image could has something unexpected, but according to the
-> owner id, it's definitely not the converted subvolume. But newly created
-> subvolume/snapshot.
-> 
+--nextPart1651492.uCfOGT36Gn
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
 
-Yes, I'm using snapshots and I've added subvolumes after the migration. 
-Basically I moved everything from root into a subvolume. But not sure 
-which procedure I used back then... I think I created a snapshot of old 
-root and then deleted all files/dirs in root with the exception of the 
-snapshot. Now I would have said that I did that under the 4.7.10 kernel, 
-but it's long ago and there may have been some complications.
+On Thursday, June 13, 2019 11:55:05 PM EDT Chris Murphy wrote:
+> On Thu, Jun 13, 2019 at 3:23 PM Eric Mesa <eric@ericmesa.com> wrote:
+> > On Thursday, June 13, 2019 2:26:10 AM EDT Andrei Borzenkov wrote:
+> > > All your snapshots on source have the same received_uuid (I have no idea
+> > > how is it possible). If received_uuid exists, it is sent to destination
+> > > instead of subvolume UUID to identify matching snapshot. All your backup
+> > > sbapshots on destination also have the same received_uuid which is
+> > > matched against (received_)UUID of source subvolume. In this case
+> > > receive command takes the first found subvolume (probably the most
+> > > recent, i.e. with the smallest generation number). So you send
+> > > differential stream against one subvolume and this stream is applied to
+> > > another subvolume which explains the error.
+> > 
+> > Yup. Any idea of how to fix?
+> 
+> Maybe 'cp -a --relink' into a new subvolume on the source. It won't
+> complete immediately like a snapshot. But it'll complete way faster
+> than a normal data copy. From that point, this new subvolume becomes
+> "master" where all changes occur, and all the other snapshots are made
+> from it.
+> 
+> Also, you should do incrementals between the most recent two
+> snapshots. i.e. the snapshot that follows -p should be the snapshot
+> most recently successfully received on the destination. That
+> represents the least amount of increment needed to update the
+> destination. It will work the way you're doing it now, with -p being
+> an older snapshot, but you're unnecessarily sending a lot more data
+> every time.
+Just in case anyone is searching the net with the same issue, I want to 
+confirm that this worked. Ever since moving to a clean /home subvol (didn't 
+have a recieved_UUID) everything has worked perfectly with respect to the 
+issue I'd emailed the mailing list about. 
 
->> I'm pretty sure the migration failed with the newer gentoo kernel
->> intended for operation - which was sys-kernel/hardened-sources-4.7.10 -
->> and a used the Debian boot image for that. (I can piece together all
->> kernel versions used from wtmp, but the Debian boot kernel would be
->> "guess only".)
->>
->> The time stamps like "2016-12-01 21:51:27" in the dump below are
->> matching very well to the time I was setting up the system based on the
->> few remaining log evidence I have.
-> 
-> I just did a quick grep and blame for inode transid related code.
-> The latest direct modification to inode_transid is 6e17d30bfaf4 ("Btrfs:
-> fill ->last_trans for delayed inode in btrfs_fill_inode."), which is
-> upstreamed in v4.1.
-> 
-> Furthermore, at that time, we don't have good enough practice for
-> backport, thus that commit lacks fixes tag, and won't be backported to
-> most stable branches.
-> I don't believe Debian backport team would pick this into their kernels,
-> so if the fs is modified by kernel older than v4.1, then that may be the
-> cause.
+-- 
+--
+Eric Mesa
+--nextPart1651492.uCfOGT36Gn
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
-Sounds plausible, the Debian 8 boot image used for migration probably 
-was using a 3.16 kernel. So this version did touch the FS and this may 
-be some left overs.
-Especially since I have multiple very similar VMs which are working 
-fine. (The broken one is the only one hosted in a VPS, forcing me to use 
-whatever the provider had at the time to jump start the system. All the 
-other VMs - most of them older by some years - are working with 5.2.)
+-----BEGIN PGP SIGNATURE-----
 
-Long story short: I guess we can assume it was something I did on the FS 
-while running a 3.16 kernel and the new checks are now complaining about.
+iQEzBAABCAAdFiEEBs24pwhCu/Z7g0Sb2bE1K6FAnEUFAl0rl8wACgkQ2bE1K6FA
+nEVf8ggAqz31vshAz8yb9N6L0YYoZohio8fteMoeq2GwXpuTXvVp5ywU860lp7pr
+cOY6FQZO+UXu3YOl2ioQlGG1aPDFxJXFfD3TIagpRtY2Pg6LNyqPvU1HQi78nbGM
+sGAx3kosf9HclseYpnnBO2pYIs9S7YqtYGQU/DPQBhM58/IRj1IX112QBrHf58MM
+My6YSEevpZFnwBvnQVcibwbJooVPHOtufQCfUlBnkkhDbH1NIY+N1x86mu6oURbz
+JjLpYn+zogVw6SIr8SQWpKyk4NfofsrJQFO3Kepr8HeyI2UoYU7EtQM9J37Mc1o+
+2sB1FF7FpjRygpU6mIcg0/ICGgX/FQ==
+=IixI
+-----END PGP SIGNATURE-----
 
-> 
->>
->>> Please provide the following dump:
->>>    # btrfs ins dump-tree -b 8645398528 /dev/vda3
->>>
->>
->> xar /home/alex # btrfs ins dump-tree -b 8645398528 /dev/vda3
->> btrfs-progs v4.19
->> leaf 8645398528 items 48 free space 509 generation 1425074 owner 300
->> leaf 8645398528 flags 0x1(WRITTEN) backref revision 1
->> fs uuid 668c885e-50b9-41d0-a3ce-b653a4d3f87a
->> chunk uuid 54c6809b-e261-423f-b4a1-362304e887bd
->>          item 0 key (259222 DIR_ITEM 2504220146) itemoff 3960 itemsize 35
->>                  location key (259223 INODE_ITEM 0) type FILE
->>                  transid 8119256875011 data_len 0 name_len 5
->>                  name: .keep
-> 
-> If we're checking DIR_ITEM/DIR_INDEX transid, it kernel should fail even
-> easier.
-> 
-> Those transid makes no sense at all.
-> 
->>          item 1 key (259222 DIR_INDEX 2) itemoff 3925 itemsize 35
->>                  location key (259223 INODE_ITEM 0) type FILE
->>                  transid 8119256875011 data_len 0 name_len 5
->>                  name: .keep
->>          item 2 key (259222 DIR_INDEX 3) itemoff 3888 itemsize 37
->>                  location key (258830 INODE_ITEM 0) type DIR
->>                  transid 2673440063491 data_len 0 name_len 7
->>                  name: portage
->>          item 3 key (259222 DIR_INDEX 4) itemoff 3851 itemsize 37
->>                  location key (3632036 INODE_ITEM 0) type DIR
->>                  transid 169620 data_len 0 name_len 7
->>                  name: binpkgs
->>          item 4 key (259223 INODE_ITEM 0) itemoff 3691 itemsize 160
->>                  generation 1 transid 139737289170944 size 0 nbytes 0
->>                  block group 0 mode 100644 links 1 uid 0 gid 0 rdev 0
->>                  sequence 139737289225400 flags 0x0(none)
-> 
-> Either the reported transid makes sense.
-> 
->>                  atime 1480625487.0 (2016-12-01 21:51:27)
->>                  ctime 1480625487.0 (2016-12-01 21:51:27)
->>                  mtime 1480015482.0 (2016-11-24 20:24:42)
->>                  otime 0.0 (1970-01-01 01:00:00)
->>          item 5 key (259223 INODE_REF 259222) itemoff 3676 itemsize 15
->>                  index 2 namelen 5 name: .keep
->>          item 6 key (259224 INODE_ITEM 0) itemoff 3516 itemsize 160
->>                  generation 1 transid 1733 size 4 nbytes 5
-> 
-> This transid shold be correct.
-> 
-> According to the leaf geneartion, any transid larger than 1425074 should
-> be incorrect.
-> 
-> So, the are a lot of transid error, not limited to the reported item 4.
-> There may be so many transid error that most of your tree blocks may get
-> modified to update the transid.
-> 
-> To fix this, I believe it's possible to reset all these inodes' transid
-> to leaf transid, but I'm not 100% sure if such fix won't affect things
-> like send.
-> 
-> 
-> I totally understand that the solution I'm going to provide sounds
-> aweful, but I'd recommend to use a newer enough kernel but without that
-> check, to copy all the data to another btrfs fs.
->  > It could be more safe than waiting for a btrfs check to repair it.
+--nextPart1651492.uCfOGT36Gn--
 
-No problem for me. This report here was created for science only:-)
-I just wanted to your attention prior to destroying the broken FS and 
-shredding potential useful data useful to track down what went wrong.
-With that now concluded I'll just do that!
 
-But maybe one additional remark: The snapshots transferred via btrfs 
-send/receive to another PC are working fine on a system using a 5.2 
-kernel. Since the "moved" subvolume also does not have the block 
-8645398528 I assume I don't really have to copy the files but restoring 
-the subvolume with btrfs receive on a new btrfs image will also get rid 
-of the errors.
 
-Thanks for your time, the incredible fast feedback and your help,
-
-Alexander

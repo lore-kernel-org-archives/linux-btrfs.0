@@ -2,64 +2,89 @@ Return-Path: <SRS0=OudP=VM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F0773C7618F
-	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Jul 2019 11:39:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E8929C7618F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Jul 2019 13:16:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CCA8F206B8
-	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Jul 2019 11:39:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CBB8D206B8
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Jul 2019 13:16:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729874AbfGOLjG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 15 Jul 2019 07:39:06 -0400
-Received: from smtp02.belwue.de ([129.143.71.87]:61698 "EHLO smtp02.belwue.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729802AbfGOLjG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 15 Jul 2019 07:39:06 -0400
-Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
-        by smtp02.belwue.de (Postfix) with SMTP id E3F958B8C
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Jul 2019 13:39:03 +0200 (MEST)
-Date:   Mon, 15 Jul 2019 13:39:03 +0200
-From:   Ulli Horlacher <framstag@rus.uni-stuttgart.de>
-To:     linux-btrfs@vger.kernel.org
-Subject: Re: find subvolume directories
-Message-ID: <20190715113903.GB17669@tik.uni-stuttgart.de>
-Mail-Followup-To: linux-btrfs@vger.kernel.org
-References: <20190712231705.GA16856@tik.uni-stuttgart.de>
- <75e5bd20-fafa-07fd-afd9-159e9aacb7db@gmail.com>
- <20190713082759.GB16856@tik.uni-stuttgart.de>
- <62366a29-a8ea-a889-f857-0305eba99051@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <62366a29-a8ea-a889-f857-0305eba99051@gmail.com>
-User-Agent: Mutt/1.5.23 (2014-03-12)
+        id S1730111AbfGONQS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 15 Jul 2019 09:16:18 -0400
+Received: from mx2.suse.de ([195.135.220.15]:49434 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1730012AbfGONQS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 15 Jul 2019 09:16:18 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id A4247AF7E
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Jul 2019 13:16:17 +0000 (UTC)
+From:   Johannes Thumshirn <jthumshirn@suse.de>
+To:     David Sterba <dsterba@suse.com>
+Cc:     Nikolay Borisov <nborisov@suse.com>,
+        Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
+        Johannes Thumshirn <jthumshirn@suse.de>
+Subject: [PATCH] btrfs: don't leak extent_map in btrfs_get_io_geometry()
+Date:   Mon, 15 Jul 2019 15:16:12 +0200
+Message-Id: <20190715131612.14040-1-jthumshirn@suse.de>
+X-Mailer: git-send-email 2.16.4
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat 2019-07-13 (14:10), Andrei Borzenkov wrote:
+btrfs_get_io_geometry() calls btrfs_get_chunk_map() to acquire a reference
+on a extent_map, but on normal operation it does not drop this reference
+anymore.
 
-> I am not sure what problem you are trying to solve, but you can use list
-> of current mounts to build path to each subvolume (as long as it is
-> either below one of mounted subvolumes or explicitly mounted).
+This leads to excessive kmemleak reports.
 
-I have tried it this way (many hours of programming), but it is a horrible
-complex task, because subvolumes can be mounted several times at different
-places (mount points).
+Always call free_extent_map(), not just in the error case.
 
-Why is such a common command "list all subvolumes directories" not possible
-with the standard btrfs tools?
-Am I really the only one who wants to know it?
+Fixes: 5f1411265e16 ("btrfs: Introduce btrfs_io_geometry infrastructure")
+Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+---
+ fs/btrfs/volumes.c | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
 
-
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index a13ddba1ebc3..d74b74ca07af 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5941,6 +5941,7 @@ int btrfs_get_io_geometry(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
+ 	u64 stripe_len;
+ 	u64 raid56_full_stripe_start = (u64)-1;
+ 	int data_stripes;
++	int ret = 0;
+ 
+ 	ASSERT(op != BTRFS_MAP_DISCARD);
+ 
+@@ -5961,8 +5962,8 @@ int btrfs_get_io_geometry(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
+ 		btrfs_crit(fs_info,
+ "stripe math has gone wrong, stripe_offset=%llu offset=%llu start=%llu logical=%llu stripe_len=%llu",
+ 			stripe_offset, offset, em->start, logical, stripe_len);
+-		free_extent_map(em);
+-		return -EINVAL;
++		ret = -EINVAL;
++		goto out;
+ 	}
+ 
+ 	/* stripe_offset is the offset of this block in its stripe */
+@@ -6009,7 +6010,10 @@ int btrfs_get_io_geometry(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
+ 	io_geom->stripe_offset = stripe_offset;
+ 	io_geom->raid56_stripe_offset = raid56_full_stripe_start;
+ 
+-	return 0;
++out:
++	/* once for us */
++	free_extent_map(em);
++	return ret;
+ }
+ 
+ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
 -- 
-Ullrich Horlacher              Server und Virtualisierung
-Rechenzentrum TIK         
-Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
-Allmandring 30a                Tel:    ++49-711-68565868
-70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
-REF:<62366a29-a8ea-a889-f857-0305eba99051@gmail.com>
+2.16.4
+

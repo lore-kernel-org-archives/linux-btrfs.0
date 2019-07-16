@@ -6,41 +6,40 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 273F9C7618F
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CC92CC76197
 	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Jul 2019 15:04:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 030CF20693
+	by mail.kernel.org (Postfix) with ESMTP id B289120693
 	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Jul 2019 15:04:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2387857AbfGPPEW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 16 Jul 2019 11:04:22 -0400
-Received: from mga05.intel.com ([192.55.52.43]:64284 "EHLO mga05.intel.com"
+        id S2387907AbfGPPEX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 16 Jul 2019 11:04:23 -0400
+Received: from mga17.intel.com ([192.55.52.151]:49677 "EHLO mga17.intel.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
         id S1728513AbfGPPEW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 16 Jul 2019 11:04:22 -0400
 X-Amp-Result: SKIPPED(no attachment in message)
 X-Amp-File-Uploaded: False
-Received: from orsmga005.jf.intel.com ([10.7.209.41])
-  by fmsmga105.fm.intel.com with ESMTP/TLS/DHE-RSA-AES256-GCM-SHA384; 16 Jul 2019 08:04:21 -0700
+Received: from orsmga001.jf.intel.com ([10.7.209.18])
+  by fmsmga107.fm.intel.com with ESMTP/TLS/DHE-RSA-AES256-GCM-SHA384; 16 Jul 2019 08:04:22 -0700
 X-ExtLoop1: 1
 X-IronPort-AV: E=Sophos;i="5.63,498,1557212400"; 
-   d="scan'208";a="342742570"
+   d="scan'208";a="251183689"
 Received: from black.fi.intel.com ([10.237.72.28])
-  by orsmga005.jf.intel.com with ESMTP; 16 Jul 2019 08:04:19 -0700
+  by orsmga001.jf.intel.com with ESMTP; 16 Jul 2019 08:04:18 -0700
 Received: by black.fi.intel.com (Postfix, from userid 1003)
-        id AF899159; Tue, 16 Jul 2019 18:04:18 +0300 (EEST)
+        id 9242CFD; Tue, 16 Jul 2019 18:04:18 +0300 (EEST)
 From:   Andy Shevchenko <andriy.shevchenko@linux.intel.com>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
         Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
         linux-btrfs@vger.kernel.org, Christoph Hellwig <hch@lst.de>
-Cc:     Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-Subject: [PATCH v2 3/3] uuid: Remove no more needed macro
-Date:   Tue, 16 Jul 2019 18:04:18 +0300
-Message-Id: <20190716150418.84018-3-andriy.shevchenko@linux.intel.com>
+Cc:     Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        David Sterba <dsterba@suse.cz>
+Subject: [PATCH v2 1/3] uuid: Add inline helpers to operate on raw buffers
+Date:   Tue, 16 Jul 2019 18:04:16 +0300
+Message-Id: <20190716150418.84018-1-andriy.shevchenko@linux.intel.com>
 X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20190716150418.84018-1-andriy.shevchenko@linux.intel.com>
-References: <20190716150418.84018-1-andriy.shevchenko@linux.intel.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -48,25 +47,94 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-uuid_le_gen() is no used anymore, remove it for good.
+Sometimes we may need to copy UUID from or to the raw buffer, which
+is provided outside of kernel and can't be declared as UUID type.
+With current API this operation will require an explicit casting
+to one of UUID types and length, that is always a constant
+derived as sizeof of the certain UUID type.
 
+Provide a helpful set of inline helpers to minimize developer's effort
+in the cases when raw buffers are involved.
+
+Suggested-by: David Sterba <dsterba@suse.cz>
 Signed-off-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
 ---
- include/linux/uuid.h | 1 -
- 1 file changed, 1 deletion(-)
+ include/linux/uuid.h | 40 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
 
 diff --git a/include/linux/uuid.h b/include/linux/uuid.h
-index b8e431d65222..7efa86a1b588 100644
+index 0c631e2a73b6..b8e431d65222 100644
 --- a/include/linux/uuid.h
 +++ b/include/linux/uuid.h
-@@ -117,7 +117,6 @@ int guid_parse(const char *uuid, guid_t *u);
- int uuid_parse(const char *uuid, uuid_t *u);
+@@ -43,11 +43,26 @@ static inline void guid_copy(guid_t *dst, const guid_t *src)
+ 	memcpy(dst, src, sizeof(guid_t));
+ }
  
- /* backwards compatibility, don't use in new code */
--#define uuid_le_gen(u)		guid_gen(u)
- #define uuid_le_to_bin(guid, u)	guid_parse(guid, u)
++static inline void guid_copy_from_raw(guid_t *dst, const __u8 *src)
++{
++	memcpy(dst, (const guid_t *)src, sizeof(guid_t));
++}
++
++static inline void guid_copy_to_raw(__u8 *dst, const guid_t *src)
++{
++	memcpy((guid_t *)dst, src, sizeof(guid_t));
++}
++
+ static inline bool guid_is_null(const guid_t *guid)
+ {
+ 	return guid_equal(guid, &guid_null);
+ }
  
- static inline int uuid_le_cmp(const guid_t u1, const guid_t u2)
++static inline bool guid_is_null_raw(const __u8 *guid)
++{
++	return guid_equal((const guid_t *)guid, &guid_null);
++}
++
+ static inline bool uuid_equal(const uuid_t *u1, const uuid_t *u2)
+ {
+ 	return memcmp(u1, u2, sizeof(uuid_t)) == 0;
+@@ -58,16 +73,41 @@ static inline void uuid_copy(uuid_t *dst, const uuid_t *src)
+ 	memcpy(dst, src, sizeof(uuid_t));
+ }
+ 
++static inline void uuid_copy_from_raw(uuid_t *dst, const __u8 *src)
++{
++	memcpy(dst, (const uuid_t *)src, sizeof(uuid_t));
++}
++
++static inline void uuid_copy_to_raw(__u8 *dst, const uuid_t *src)
++{
++	memcpy((uuid_t *)dst, src, sizeof(uuid_t));
++}
++
+ static inline bool uuid_is_null(const uuid_t *uuid)
+ {
+ 	return uuid_equal(uuid, &uuid_null);
+ }
+ 
++static inline bool uuid_is_null_raw(const __u8 *uuid)
++{
++	return uuid_equal((const uuid_t *)uuid, &uuid_null);
++}
++
+ void generate_random_uuid(unsigned char uuid[16]);
+ 
+ extern void guid_gen(guid_t *u);
+ extern void uuid_gen(uuid_t *u);
+ 
++static inline void guid_gen_raw(__u8 *guid)
++{
++	guid_gen((guid_t *)guid);
++}
++
++static inline void uuid_gen_raw(__u8 *uuid)
++{
++	uuid_gen((uuid_t *)uuid);
++}
++
+ bool __must_check uuid_is_valid(const char *uuid);
+ 
+ extern const u8 guid_index[16];
 -- 
 2.20.1
 

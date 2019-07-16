@@ -2,130 +2,97 @@ Return-Path: <SRS0=DfO0=VN=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 90DE1C76195
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Jul 2019 11:04:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D2AB6C76188
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Jul 2019 13:29:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 73E27206C2
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Jul 2019 11:04:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9666520693
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Jul 2019 13:29:40 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="dbG1rHWh"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2387521AbfGPLEt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 16 Jul 2019 07:04:49 -0400
-Received: from smtp02.belwue.de ([129.143.71.87]:33737 "EHLO smtp02.belwue.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1733037AbfGPLEs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 Jul 2019 07:04:48 -0400
-Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
-        by smtp02.belwue.de (Postfix) with SMTP id 33318A57B
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Jul 2019 13:04:45 +0200 (MEST)
-Date:   Tue, 16 Jul 2019 13:04:45 +0200
-From:   Ulli Horlacher <framstag@rus.uni-stuttgart.de>
-To:     linux-btrfs@vger.kernel.org
-Subject: Re: find subvolume directories
-Message-ID: <20190716110445.GA11010@tik.uni-stuttgart.de>
-Mail-Followup-To: linux-btrfs@vger.kernel.org
-References: <20190712231705.GA16856@tik.uni-stuttgart.de>
+        id S1733137AbfGPN3j (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 16 Jul 2019 09:29:39 -0400
+Received: from mail-pf1-f178.google.com ([209.85.210.178]:41859 "EHLO
+        mail-pf1-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728608AbfGPN3j (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 16 Jul 2019 09:29:39 -0400
+Received: by mail-pf1-f178.google.com with SMTP id m30so9127724pff.8
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Jul 2019 06:29:39 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=sr4DJaURjrQIF1ujy34J+TmCHOKH/RQ6niHUkteTGKA=;
+        b=dbG1rHWhSiJIbLH6kWDazrQqaV1WhfFmv6o4fVoRdyov6enLkT8/eyCWzbGFFP6zYx
+         TRlPlv/k59HRx0pclcSnmO5X4PxTtHWoyEORX3XX10s4xmzhjOWdg67Q2M437nvBqWWg
+         J4USNUZpiJ+j7ZjXXzCkm3Up94bCXkzpeuMkrJsoRVNNwz4sa4V2pVSBqIh1SBvOht31
+         iJ0nj9RA5gO2VBtK2Ukl3ckG9zq8HSaMVL/KW+tMusTfAKX47r81R8/T/1TgkrIMTMtj
+         dJDYOYUurNrBaVTSk8yLKvd56jUwmQqivKkYrD+Jxo2smQPRTcUXUsRd+9LdNbQIfha/
+         Fmrg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=sr4DJaURjrQIF1ujy34J+TmCHOKH/RQ6niHUkteTGKA=;
+        b=Xx9idd3HD6FQFUthEkvi5tU+/VigqSNuGlwoitgpHKlg/u84aDo6EpkHAipTWeAt4Q
+         G/5zt9LccQOnUgQNzMye9w4HQStq6Ot7LVrX206+ZNvWLxx8BKhdeQZghn0EH55ph/Bp
+         6GDiltFuSaS0+8mRPFkIVUXeP4ex4TeUJWXGeGkL5lH91WADtsfTDCU8gYphHIQZwTh3
+         ClSHXg+K9tPWe0IMlre8vZs39dkabaNTigf5k6BSpuKOsELZLumzUABXv7zEgJ+PaML8
+         ooKqyqZJuVs9mLNLOdT4tDVulcT8cWNEdrcMmomyEywn4KHB7b/Jzid0UbRKlFs2fj88
+         j7+Q==
+X-Gm-Message-State: APjAAAV/6/SudMC+dL0tgV9ThxTGODfU2J5xZrJqJz+pl7rk6eq4F3Tg
+        cZB0xSkBTu8MfWNvEv4dprPuqzcfM7tP/+qS920=
+X-Google-Smtp-Source: APXvYqy3r7v3RErnj8iMdrS7MttETTqknVBKBOyeZMoNucCdz7oCqemcIX80xBankMnjJTsJlGbDMzwxBfwTtTqz1J8=
+X-Received: by 2002:a63:1020:: with SMTP id f32mr2549012pgl.203.1563283778855;
+ Tue, 16 Jul 2019 06:29:38 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190712231705.GA16856@tik.uni-stuttgart.de>
-User-Agent: Mutt/1.5.23 (2014-03-12)
+References: <CAHp75VcjxDjCy3JhZHEFjBcNX_L60J8pWOQX=8_5BxyW3bN6ag@mail.gmail.com>
+In-Reply-To: <CAHp75VcjxDjCy3JhZHEFjBcNX_L60J8pWOQX=8_5BxyW3bN6ag@mail.gmail.com>
+From:   Andy Shevchenko <andy.shevchenko@gmail.com>
+Date:   Tue, 16 Jul 2019 16:29:27 +0300
+Message-ID: <CAHp75Vdb6uJ6Fkw43UrgLv=4vVx5k_g-f=fZ5KNnETfWo9G+ng@mail.gmail.com>
+Subject: Re: Compilation breakage
+To:     Johannes Thumshirn <jthumshirn@suse.de>,
+        David Sterba <dsterba@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat 2019-07-13 (01:17), Ulli Horlacher wrote:
-> I need to find (all) subvolume directories.
-> I know, btrfs subvolumes root directories have inode #256, but a
-> "find / -inum 256" is horrible slow!
-
-Because it scans also non-btrfs filesystems. This is especially a bad idea
-for nfs.
-
-I have now implemented the search for inode 256 in Perl using the algorithm: 
-
-- get a list of all mounted filesystems (via df)
-- for each btrfs filesystem do a recursive search for directories with
-  inode 256
-- stop recursion if the directory is on another (mounted) filesystem
-
-
-This speeds up the search:
-
-root@trulla:/opt/btrfs-tools/bin# sysinfo 
-System:        Linux trulla 4.4.180-94.97-default x86_64
-Distribution:  SUSE Linux Enterprise Server 12 SP3
-Hardware:      VMware, Inc. VMware Virtual Platform None (VMware)
-CPU:           Intel(R) Xeon(R) CPU E5-2680 v4 @ 2.40GHz, 1 x 2394 MHz
-RAM:           1024 MB
-
-root@trulla:/opt/btrfs-tools/bin# dropfscache;time btrfs_list -r
-ACCESS-MODE SUBVOLUME <- SNAPSHOT-PARENT
-rw / <- -
-rw /.snapshots
-ro /.snapshots/1065/snapshot <- /
-ro /.snapshots/1066/snapshot <- /
-ro /.snapshots/1089/snapshot <- /
-ro /.snapshots/1090/snapshot <- /
-ro /.snapshots/1103/snapshot <- /
-ro /.snapshots/1104/snapshot <- /
-ro /.snapshots/1107/snapshot <- /
-ro /.snapshots/1108/snapshot <- /
-ro /.snapshots/1127/snapshot <- /
-ro /.snapshots/1128/snapshot <- /
-ro /.snapshots/1131/snapshot <- /
-ro /.snapshots/1132/snapshot <- /
-ro /.snapshots/1133/snapshot <- /
-ro /.snapshots/1134/snapshot <- /
-ro /.snapshots/1135/snapshot <- /
-ro /.snapshots/1136/snapshot <- /
-ro /.snapshots/1137/snapshot <- /
-ro /.snapshots/1138/snapshot <- /
-ro /.snapshots/1139/snapshot <- /
-ro /.snapshots/1140/snapshot <- /
-rw /.snapshots/128/snapshot <- -
-rw /home
-rw /home/tux/blubb
-rw /mnt/tmp
-ro /mnt/tmp/ss
-rw /opt
-ro /opt/.snapshot/2019-07-11_0000.daily <- /opt
-ro /opt/.snapshot/2019-07-12_0000.daily <- /opt
-ro /opt/.snapshot/2019-07-13_0000.daily <- /opt
-ro /opt/.snapshot/2019-07-15_0000.daily <- /opt
-ro /opt/.snapshot/2019-07-16_0000.daily <- /opt
-ro /opt/.snapshot/2019-07-16_1100.hourly <- /opt
-ro /opt/.snapshot/2019-07-16_1200.hourly <- /opt
-rw /srv
-rw /tmp
-rw /tmp/blubb
-ro /tmp/blubb/.snapshot/2017-09-20_1801.test <- /tmp/blubb
-ro /tmp/blubb/.snapshot/2017-12-02_0940.test <- /tmp/blubb
-ro /tmp/blubb/.snapshot/2018-01-11_1415.test <- /tmp/blubb
-ro /tmp/test
-rw /usr/local
-rw /var/crash
-rw /var/lib/machines
-rw /var/log
-rw /var/opt
-rw /var/spool
-rw /var/tmp
-
-real    0m4.301s
-user    0m1.352s
-sys     0m1.438s
+On Tue, Jul 16, 2019 at 4:28 PM Andy Shevchenko
+<andy.shevchenko@gmail.com> wrote:
+>
+> The following commit broke compilation
+>
+> commit d5178578bcd461cc79118c7a139882350fe505aa
+> Author: Johannes Thumshirn <jthumshirn@suse.de>
+> Date:   Mon Jun 3 16:58:57 2019 +0200
+>
+>    btrfs: directly call into crypto framework for checksumming
+>
+> ERROR: "crc32c_impl" [fs/btrfs/btrfs.ko] undefined!
+> ERROR: "crc32c" [fs/btrfs/btrfs.ko] undefined!
+>
+> Obviously if we call directly libcrc32c, we may not remove a dependency.
+>
+> Moreover, module soft dependency works only on most, but all module
+> init tools (for example, busybox).
+>
+>
+> --
+> With Best Regards,
+> Andy Shevchenko
 
 
-(dropfscache drops the filesystem cache to have a reproducable test)
 
 -- 
-Ullrich Horlacher              Server und Virtualisierung
-Rechenzentrum TIK         
-Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
-Allmandring 30a                Tel:    ++49-711-68565868
-70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
-REF:<20190712231705.GA16856@tik.uni-stuttgart.de>
+With Best Regards,
+Andy Shevchenko

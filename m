@@ -6,67 +6,81 @@ X-Spam-Status: No, score=-9.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 129CDC76192
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Jul 2019 11:36:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E0A72C76186
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Jul 2019 11:41:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EBF9720880
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Jul 2019 11:36:40 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C556E21743
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Jul 2019 11:41:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730865AbfGQLgi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Jul 2019 07:36:38 -0400
-Received: from mga14.intel.com ([192.55.52.115]:1951 "EHLO mga14.intel.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726312AbfGQLgi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Jul 2019 07:36:38 -0400
-X-Amp-Result: SKIPPED(no attachment in message)
-X-Amp-File-Uploaded: False
-Received: from orsmga004.jf.intel.com ([10.7.209.38])
-  by fmsmga103.fm.intel.com with ESMTP/TLS/DHE-RSA-AES256-GCM-SHA384; 17 Jul 2019 04:36:37 -0700
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="5.64,274,1559545200"; 
-   d="scan'208";a="319286219"
-Received: from black.fi.intel.com ([10.237.72.28])
-  by orsmga004.jf.intel.com with ESMTP; 17 Jul 2019 04:36:35 -0700
-Received: by black.fi.intel.com (Postfix, from userid 1003)
-        id 783D340E; Wed, 17 Jul 2019 14:36:34 +0300 (EEST)
-From:   Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
-        Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org, Christoph Hellwig <hch@lst.de>
-Cc:     Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-Subject: [PATCH v3 4/4] uuid: Remove no more needed macro
-Date:   Wed, 17 Jul 2019 14:36:33 +0300
-Message-Id: <20190717113633.25922-4-andriy.shevchenko@linux.intel.com>
-X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20190717113633.25922-1-andriy.shevchenko@linux.intel.com>
-References: <20190717113633.25922-1-andriy.shevchenko@linux.intel.com>
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+        id S1726820AbfGQLlt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Jul 2019 07:41:49 -0400
+Received: from mx2.suse.de ([195.135.220.15]:47876 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726180AbfGQLlt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 17 Jul 2019 07:41:49 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 004E1ADFC
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Jul 2019 11:41:47 +0000 (UTC)
+From:   Nikolay Borisov <nborisov@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 2/2] btrfs: Move free_pages_out label in inline extent handling branch in compress_file_range
+Date:   Wed, 17 Jul 2019 14:41:45 +0300
+Message-Id: <20190717114145.27731-2-nborisov@suse.com>
+X-Mailer: git-send-email 2.17.1
+In-Reply-To: <20190717114145.27731-1-nborisov@suse.com>
+References: <20190717114145.27731-1-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-uuid_le_gen() is no used anymore, remove it for good.
+This label is only executed if compress_file_range fails to create an
+inline extent. So move its code in the semantically related inline
+extent handling branch. No functional changes.
 
-Signed-off-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- include/linux/uuid.h | 1 -
- 1 file changed, 1 deletion(-)
+ fs/btrfs/inode.c | 18 ++++++++----------
+ 1 file changed, 8 insertions(+), 10 deletions(-)
 
-diff --git a/include/linux/uuid.h b/include/linux/uuid.h
-index 3780460a9a85..d41b0d3e9474 100644
---- a/include/linux/uuid.h
-+++ b/include/linux/uuid.h
-@@ -98,7 +98,6 @@ int guid_parse(const char *uuid, guid_t *u);
- int uuid_parse(const char *uuid, uuid_t *u);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 53f973161e6d..a84d73b670ff 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -601,7 +601,14 @@ static noinline int compress_file_range(struct async_chunk *async_chunk)
+ 						     PAGE_SET_WRITEBACK |
+ 						     page_error_op |
+ 						     PAGE_END_WRITEBACK);
+-			goto free_pages_out;
++
++			for (i = 0; i < nr_pages; i++) {
++				WARN_ON(pages[i]->mapping);
++				put_page(pages[i]);
++			}
++			kfree(pages);
++
++			return 0;
+ 		}
+ 	}
  
- /* backwards compatibility, don't use in new code */
--#define uuid_le_gen(u)		guid_gen(u)
- #define uuid_le_to_bin(guid, u)	guid_parse(guid, u)
+@@ -679,15 +686,6 @@ static noinline int compress_file_range(struct async_chunk *async_chunk)
+ 	compressed_extents += 1;
  
- static inline int uuid_le_cmp(const guid_t u1, const guid_t u2)
+ 	return compressed_extents;
+-
+-free_pages_out:
+-	for (i = 0; i < nr_pages; i++) {
+-		WARN_ON(pages[i]->mapping);
+-		put_page(pages[i]);
+-	}
+-	kfree(pages);
+-
+-	return 0;
+ }
+ 
+ static void free_async_extent_pages(struct async_extent *async_extent)
 -- 
-2.20.1
+2.17.1
 

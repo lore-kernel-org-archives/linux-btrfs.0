@@ -2,181 +2,130 @@ Return-Path: <SRS0=nkuV=VT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham
-	autolearn_force=no version=3.4.0
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 38B99C76190
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Jul 2019 18:20:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3F193C7618F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Jul 2019 19:15:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 03F8C2190D
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Jul 2019 18:20:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1421A21901
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Jul 2019 19:15:15 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="G9drgAQf"
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="DfxufxAs"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731512AbfGVSUd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 22 Jul 2019 14:20:33 -0400
-Received: from mail-pf1-f193.google.com ([209.85.210.193]:45468 "EHLO
-        mail-pf1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731505AbfGVSUc (ORCPT
+        id S1732046AbfGVTPO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 22 Jul 2019 15:15:14 -0400
+Received: from mail-pl1-f194.google.com ([209.85.214.194]:36650 "EHLO
+        mail-pl1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1732005AbfGVTPN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 Jul 2019 14:20:32 -0400
-Received: by mail-pf1-f193.google.com with SMTP id r1so17758627pfq.12
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Jul 2019 11:20:32 -0700 (PDT)
+        Mon, 22 Jul 2019 15:15:13 -0400
+Received: by mail-pl1-f194.google.com with SMTP id k8so19597627plt.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Jul 2019 12:15:13 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to:user-agent;
-        bh=xyyJ/aAHfthH+InZB+MnZ/stXyT2IZJmPuzfCQRjzLo=;
-        b=G9drgAQfoLI+DzVeoHqGkJdUFC6nUNqZI73C64hypjsSZGg5Q8Qz/jFryvWqFn7h+L
-         KEVe32bz0CcG3lv0GubyR62VG/wk2bkkyh19X0iIb1t74Jjy7xc9MKhNRQTQGzJkbhc7
-         nCt0AvJZUSUX2UXUj3wFwIHq+dQ01erC0TCt51fTMvYsblXE2Lf6IZWr902h0aweElg/
-         gSphN+9ELZJWUKTsHv+vhWoiax34KkmZnBRjr7mAL83MYmkLVXyZKRqcqJHJVUvd+JZ3
-         49edv7IhUNUBBCT94x4/aU4HQTkeAlSDc8XhxTrBffC0FkXM0E7GOpcEpr5LC2mMBhFy
-         lmPg==
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=5/Ym6wVi0gaeGMb3G2cZ5Y3s+yUHGOR4CBESBMLsDTM=;
+        b=DfxufxAstQh6Ox3PzWpYxkteJTR+DcSTfcfYxdT8UGEKMofMM2SME0Gx6z7RTpMlxh
+         NS1lHVxq8nvdyytzYIJWrQ6G7M7QlwlCjXk4Zz9kHBrhJNiJPPqPpdqEQjtXo/0p2MqI
+         T61cH3FPJoOJA3up8oU0Es4gvo+Fcq+bqfeuFHoc1+J/ewlPVKmeWE3PhX0ooTYZOcFQ
+         JuwCeQMuQMjCvmhCC5ouSr6YgpsNlOu/7qS82r/ejUWh36CJ2mGBODKXqRBFwhbFY4rK
+         7KBeBe6XfK3TF+ik+Wyt9R6ZzI8FOwF/B35CjppT1mjg8KNnAm4r+odP1ki2BiGnBHh9
+         qcvw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to:user-agent;
-        bh=xyyJ/aAHfthH+InZB+MnZ/stXyT2IZJmPuzfCQRjzLo=;
-        b=q2l8nsLlHNzUxTY6jvFssK9rvzS39qz5JHkORaKAq97LNl6/Bbecu3g7Wpd3I3ftBW
-         znWUXv5J641FsNDKQYw/ohoDw7nUZOUcejkW/z0oiK62vRhxYI+OxpTDKYSQ4C4PG/3p
-         MEXfsTFP76lp8Q+9Lb6D7WcXnL9JQCmr26kNJx3zc40koEEBhuYRkI0pXqnmTGfoBMY3
-         lXt1tgGUY/hcavrU30TsBjrQXbfIkZybsl404F7wWZiXFJG5ccm05QTb7v2jQrOt2Kaf
-         v1ZD0LgGbgl2ebxy7QMb466n1cXwJosB15AJ+EYlXSiHI/kgaMhw+c7b9nyE/Rdso9yr
-         iuZQ==
-X-Gm-Message-State: APjAAAVmmQXSQ04UROuRf5NeUi2GVddYsIcLdrdbN469ZoOW2wRSvrv2
-        D28H00YvnyABX9yN79c1XP6YSA==
-X-Google-Smtp-Source: APXvYqwfjI2/+2AD9Xbo72rj+jcvhj+1N8IF7QmAjQ94N+BEGkZpwouGIFh8R+jmJZMMFke1JnLezA==
-X-Received: by 2002:a17:90a:ab01:: with SMTP id m1mr75220336pjq.69.1563819631939;
-        Mon, 22 Jul 2019 11:20:31 -0700 (PDT)
-Received: from vader ([2620:10d:c090:200::2:a31b])
-        by smtp.gmail.com with ESMTPSA id l4sm40366336pff.50.2019.07.22.11.20.30
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=5/Ym6wVi0gaeGMb3G2cZ5Y3s+yUHGOR4CBESBMLsDTM=;
+        b=Ee0D4FDSST0dN4liSZMjSnJzIgkyO4jurhI2CCBviOWgEMBNPAhrEx75xpBEs2lgq0
+         f8mI4/4e2Wr+rC3gDeRn4mYISVrXMhECk4NK7kcO7DuVHUjhmYOTFjTO5Bl3fIoWJk5B
+         HncAtcrCRyhwCV/kuRs5IZEn+udfgWFA6cbTH9/GVlOC/6ZGB4aWaSAoP3FeBZ0uyc0E
+         WAoS9gZrF5AEd2UuPQrkSIYxN3xQiWo8GG8vGJjHSYQ+zeT+zi+DEkEWTZmdzURQWwtn
+         iC39umy8CFusUlzA5Lh+gxn9evpOYA+orl9D0FCd4yHtR0IXUbx+VF21cfIMPXrGNaJh
+         +5Wg==
+X-Gm-Message-State: APjAAAU5vd3B0TG6Sod9kl6G3PEGRyF07pM/5rnDOg/vRj4boDUVIYCP
+        hMjHZT3ZRDrGVhe8Unkd8R6IYXs4+Bo=
+X-Google-Smtp-Source: APXvYqzgSMZvYbLbDhMVMcgSW5fH2tM0RcQwnUb1qJRQuuTEM6wnlR0Tu6cEKAGKpPumGOUNjvUgiw==
+X-Received: by 2002:a17:902:a607:: with SMTP id u7mr77287705plq.43.1563822912561;
+        Mon, 22 Jul 2019 12:15:12 -0700 (PDT)
+Received: from vader.thefacebook.com ([2620:10d:c090:200::2:a31b])
+        by smtp.gmail.com with ESMTPSA id t11sm47262048pgb.33.2019.07.22.12.15.11
         (version=TLS1_3 cipher=AEAD-AES256-GCM-SHA384 bits=256/256);
-        Mon, 22 Jul 2019 11:20:31 -0700 (PDT)
-Date:   Mon, 22 Jul 2019 11:20:25 -0700
+        Mon, 22 Jul 2019 12:15:12 -0700 (PDT)
 From:   Omar Sandoval <osandov@osandov.com>
-To:     Filipe Manana <fdmanana@gmail.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>, kernel-team@fb.com
-Subject: Re: [PATCH 2/2] btrfs-progs: receive: don't lookup clone root for
- received subvolume
-Message-ID: <20190722182025.GA22836@vader>
-References: <cover.1563600688.git.osandov@fb.com>
- <6af59460e12a8120bf643a923f5fa6bd3b135b20.1563600688.git.osandov@fb.com>
- <CAL3q7H6Z1RiuGODKfuV3Dq3gge8Bdkocdn0VGOrP=14ftkbe-g@mail.gmail.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     kernel-team@fb.com
+Subject: [PATCH v2 1/4] btrfs-progs: receive: remove commented out transid checks
+Date:   Mon, 22 Jul 2019 12:15:02 -0700
+Message-Id: <3035988eb320d8582006bbbfa0e872c0c4532889.1563822638.git.osandov@fb.com>
+X-Mailer: git-send-email 2.22.0
+In-Reply-To: <cover.1563822638.git.osandov@fb.com>
+References: <cover.1563822638.git.osandov@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAL3q7H6Z1RiuGODKfuV3Dq3gge8Bdkocdn0VGOrP=14ftkbe-g@mail.gmail.com>
-User-Agent: Mutt/1.12.1 (2019-06-15)
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Jul 22, 2019 at 01:16:35PM +0100, Filipe Manana wrote:
-> On Sat, Jul 20, 2019 at 3:34 PM Omar Sandoval <osandov@osandov.com> wrote:
-> >
-> > From: Omar Sandoval <osandov@fb.com>
-> >
-> > When we process a clone request, we look up the source subvolume by
-> > UUID, even if the source is the subvolume that we're currently
-> > receiving. Usually, this is fine. However, if for some reason we
-> > previously received the same subvolume, then this will use paths
-> > relative to the previously received subvolume instead of the current
-> > one. This is incorrect, since the send stream may use temporary names
-> > for the clone source. This can be reproduced as follows:
-> >
-> > btrfs subvol create subvol
-> > dd if=/dev/urandom of=subvol/foo bs=1M count=1
-> > cp --reflink subvol/foo subvol/bar
-> > mkdir subvol/dir
-> > mv subvol/foo subvol/dir/
-> > btrfs property set subvol ro true
-> > btrfs send -f stream subvol
-> > mkdir first second
-> > btrfs receive -f stream first
-> > btrfs receive -f stream second
-> >
-> > The second receive results in this error:
-> >
-> > ERROR: cannot open first/subvol/o259-7-0/foo: No such file or directory
-> >
-> > Fix it by always cloning from the current subvolume if its UUID matches.
-> > This has the nice side effect of avoiding unnecessary UUID tree lookups
-> > in that case. Also, while we're here, get rid of some code that has been
-> > commented out since it was added.
-> >
-> > Fixes: f1c24cd80dfd ("Btrfs-progs: add btrfs send/receive commands")
-> > Signed-off-by: Omar Sandoval <osandov@fb.com>
-> > ---
-> >  cmds/receive.c | 34 ++++++++--------------------------
-> >  1 file changed, 8 insertions(+), 26 deletions(-)
-> >
-> > diff --git a/cmds/receive.c b/cmds/receive.c
-> > index a3e62985..ed089af2 100644
-> > --- a/cmds/receive.c
-> > +++ b/cmds/receive.c
-> > @@ -753,15 +753,14 @@ static int process_clone(const char *path, u64 offset, u64 len,
-> >         if (ret < 0)
-> >                 goto out;
-> >
-> > -       si = subvol_uuid_search(&rctx->sus, 0, clone_uuid, clone_ctransid,
-> > -                               NULL,
-> > -                               subvol_search_by_received_uuid);
-> > -       if (IS_ERR_OR_NULL(si)) {
-> > -               if (memcmp(clone_uuid, rctx->cur_subvol.received_uuid,
-> > -                               BTRFS_UUID_SIZE) == 0) {
-> > -                       /* TODO check generation of extent */
-> > -                       subvol_path = rctx->cur_subvol_path;
-> > -               } else {
-> > +       if (memcmp(clone_uuid, rctx->cur_subvol.received_uuid,
-> > +                  BTRFS_UUID_SIZE) == 0) {
-> > +               subvol_path = rctx->cur_subvol_path;
-> > +       } else {
-> > +               si = subvol_uuid_search(&rctx->sus, 0, clone_uuid, clone_ctransid,
-> > +                                       NULL,
-> > +                                       subvol_search_by_received_uuid);
-> > +               if (IS_ERR_OR_NULL(si)) {
-> 
-> Hi Omar,
-> 
-> This, and the change log, look good.
-> 
-> >                         if (!si)
-> >                                 ret = -ENOENT;
-> >                         else
-> > @@ -769,23 +768,6 @@ static int process_clone(const char *path, u64 offset, u64 len,
-> >                         error("clone: did not find source subvol");
-> >                         goto out;
-> >                 }
-> > -       } else {
-> > -               /*if (rs_args.ctransid > rs_args.rtransid) {
-> > -                       if (!r->force) {
-> > -                               ret = -EINVAL;
-> > -                               fprintf(stderr, "ERROR: subvolume %s was "
-> > -                                               "modified after it was "
-> > -                                               "received.\n",
-> > -                                               r->subvol_parent_name);
-> > -                               goto out;
-> > -                       } else {
-> > -                               fprintf(stderr, "WARNING: subvolume %s was "
-> > -                                               "modified after it was "
-> > -                                               "received.\n",
-> > -                                               r->subvol_parent_name);
-> > -                       }
-> > -               }*/
-> > -
-> 
-> Isn't this unrelated? Shouldn't go to a separate patch?
+From: Omar Sandoval <osandov@fb.com>
 
-It didn't seem worth it to make a separate patch when I'm moving this
-code around anyways, but I noticed that there's a similar check in
-another location, so I'll just make it a separate patch.
+The checks for a subvolume being modified after it was received have
+been commented out since they were added back in commit f1c24cd80dfd
+("Btrfs-progs: add btrfs send/receive commands"). Let's just get rid of
+the noise.
 
-> Also, would you please create a test case as well?
+Signed-off-by: Omar Sandoval <osandov@fb.com>
+---
+ cmds/receive.c | 25 -------------------------
+ 1 file changed, 25 deletions(-)
 
-Will do.
+diff --git a/cmds/receive.c b/cmds/receive.c
+index b97850a7..830ed082 100644
+--- a/cmds/receive.c
++++ b/cmds/receive.c
+@@ -344,15 +344,6 @@ static int process_snapshot(const char *path, const u8 *uuid, u64 ctransid,
+ 			parent_subvol->path[sub_len - root_len - 1] = '\0';
+ 		}
+ 	}
+-	/*if (rs_args.ctransid > rs_args.rtransid) {
+-		if (!r->force) {
+-			ret = -EINVAL;
+-			fprintf(stderr, "ERROR: subvolume %s was modified after it was received.\n", r->subvol_parent_name);
+-			goto out;
+-		} else {
+-			fprintf(stderr, "WARNING: subvolume %s was modified after it was received.\n", r->subvol_parent_name);
+-		}
+-	}*/
+ 
+ 	if (*parent_subvol->path == 0)
+ 		args_v2.fd = dup(rctx->mnt_fd);
+@@ -770,22 +761,6 @@ static int process_clone(const char *path, u64 offset, u64 len,
+ 			goto out;
+ 		}
+ 	} else {
+-		/*if (rs_args.ctransid > rs_args.rtransid) {
+-			if (!r->force) {
+-				ret = -EINVAL;
+-				fprintf(stderr, "ERROR: subvolume %s was "
+-						"modified after it was "
+-						"received.\n",
+-						r->subvol_parent_name);
+-				goto out;
+-			} else {
+-				fprintf(stderr, "WARNING: subvolume %s was "
+-						"modified after it was "
+-						"received.\n",
+-						r->subvol_parent_name);
+-			}
+-		}*/
+-
+ 		/* strip the subvolume that we are receiving to from the start of subvol_path */
+ 		if (rctx->full_root_path) {
+ 			size_t root_len = strlen(rctx->full_root_path);
+-- 
+2.22.0
 
-Thanks!

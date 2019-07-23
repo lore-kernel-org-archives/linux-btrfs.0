@@ -2,34 +2,34 @@ Return-Path: <SRS0=Gv09=VU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 419A3C7618B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Jul 2019 13:52:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 39B86C7618B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Jul 2019 13:54:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2507721738
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Jul 2019 13:52:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 17B6221738
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Jul 2019 13:54:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732651AbfGWNwz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 23 Jul 2019 09:52:55 -0400
-Received: from mx2.suse.de ([195.135.220.15]:40822 "EHLO mx1.suse.de"
+        id S1732832AbfGWNy2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 23 Jul 2019 09:54:28 -0400
+Received: from mx2.suse.de ([195.135.220.15]:41382 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725907AbfGWNwy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Jul 2019 09:52:54 -0400
+        id S1725907AbfGWNy2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 23 Jul 2019 09:54:28 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 28098AEB8;
-        Tue, 23 Jul 2019 13:52:53 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id EDB7FB030;
+        Tue, 23 Jul 2019 13:54:26 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id E7AF1DA7D5; Tue, 23 Jul 2019 15:53:30 +0200 (CEST)
-Date:   Tue, 23 Jul 2019 15:53:30 +0200
+        id EC9EEDA7D5; Tue, 23 Jul 2019 15:55:04 +0200 (CEST)
+Date:   Tue, 23 Jul 2019 15:55:04 +0200
 From:   David Sterba <dsterba@suse.cz>
 To:     Anand Jain <anand.jain@oracle.com>
 Cc:     linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 2/2 RESEND Rebased] btrfs-progs: add readmirror policy
-Message-ID: <20190723135330.GC2868@twin.jikos.cz>
+Message-ID: <20190723135504.GD2868@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
         linux-btrfs@vger.kernel.org
@@ -47,88 +47,7 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 On Wed, Jun 26, 2019 at 04:37:23PM +0800, Anand Jain wrote:
-> This sets the readmirror=<parm> as a btrfs.<attr> extentded attribute.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  props.c | 49 +++++++++++++++++++++++++++++++++++++++++++++++++
->  1 file changed, 49 insertions(+)
-> 
-> diff --git a/props.c b/props.c
-> index 3a498bd9e904..1d1a2c7f9d14 100644
-> --- a/props.c
-> +++ b/props.c
-> @@ -178,6 +178,53 @@ out:
->  	return ret;
->  }
->  
-> +static int prop_readmirror(enum prop_object_type type, const char *object,
-> +			   const char *name, const char *value)
-> +{
-> +	int fd;
-> +	int ret;
-> +	char buf[256] = {0};
-> +	char *xattr_name;
-> +	DIR *dirstream = NULL;
-> +
-> +	fd = open_file_or_dir3(object, &dirstream, value ? O_RDWR : O_RDONLY);
-> +	if (fd < 0) {
-> +		ret = -errno;
-> +		error("failed to open %s: %m", object);
-> +		return ret;
-> +	}
-> +
-> +	xattr_name = alloc_xattr_name(name);
-> +	if (IS_ERR(xattr_name)) {
-> +		error("failed to alloc xattr_name %s: %m", object);
-> +		return PTR_ERR(xattr_name);
-> +	}
-> +
-> +	ret = 0;
-> +	if (value) {
-> +		if (fsetxattr(fd, xattr_name, value, strlen(value), 0) < 0) {
-> +			ret = -errno;
-> +			error("failed to set readmirror for %s: %m", object);
-> +		}
-> +	} else {
-> +		if (fgetxattr(fd, xattr_name, buf, 256) < 0) {
-> +			if (errno != ENOATTR) {
-> +				ret = -errno;
-> +				error("failed to get readmirror for %s: %m",
-> +				      object);
-> +			}
-> +		} else {
-> +			fprintf(stdout, "readmirror=%.*s\n", (int) strlen(buf),
-> +				buf);
-> +		}
-> +	}
-> +
-> +	free(xattr_name);
-> +	close_file_or_dir(fd, dirstream);
-> +
-> +	return ret;
-> +}
-> +
->  const struct prop_handler prop_handlers[] = {
->  	{"ro", "Set/get read-only flag of subvolume.", 0, prop_object_subvol,
->  	 prop_read_only},
-> @@ -185,5 +232,7 @@ const struct prop_handler prop_handlers[] = {
->  	 prop_object_dev | prop_object_root, prop_label},
->  	{"compression", "Set/get compression for a file or directory", 0,
 >  	 prop_object_inode, prop_compression},
 > +	{"readmirror", "set/get readmirror policy for filesystem", 0,
-> +	 prop_object_root, prop_readmirror},
 
-For some unknown reason the object type for filesystem-wide props is
-called prop_object_root, which is correct, but it got me confused first.
-
-So the most reliable way to set it is
-
-  $ btrfs prop set -t filesystem /path readmirror <VALUE>
-
-and
-
-  $ btrfs prop set /path readmirror <VALUE>
-
-will auto-detect the object type by /path, but I'm not sure what exactly
-does it do in case it's a mount point but not the toplevel subvolume.
+The help text for the property is useless.

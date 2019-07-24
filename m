@@ -2,55 +2,65 @@ Return-Path: <SRS0=kS6Y=VV=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6E435C7618B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Jul 2019 10:59:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 28A3BC7618B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Jul 2019 11:01:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4CA8E22387
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Jul 2019 10:59:51 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id F35FA22387
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Jul 2019 11:00:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727329AbfGXK7u (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 Jul 2019 06:59:50 -0400
-Received: from mx2.suse.de ([195.135.220.15]:32954 "EHLO mx1.suse.de"
+        id S1727083AbfGXLA7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 Jul 2019 07:00:59 -0400
+Received: from mx2.suse.de ([195.135.220.15]:33192 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726622AbfGXK7u (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Jul 2019 06:59:50 -0400
+        id S1726514AbfGXLA7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 24 Jul 2019 07:00:59 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 0878CB008
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Jul 2019 10:59:49 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id ECA79AF8E;
+        Wed, 24 Jul 2019 11:00:57 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 8F554DA808; Wed, 24 Jul 2019 13:00:26 +0200 (CEST)
-Date:   Wed, 24 Jul 2019 13:00:26 +0200
+        id 396CADA808; Wed, 24 Jul 2019 13:01:35 +0200 (CEST)
+Date:   Wed, 24 Jul 2019 13:01:35 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
+To:     Naohiro Aota <naohiro.aota@wdc.com>
 Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: extent-tree: Unify the parameters of
- btrfs_inc_extent_ref()
-Message-ID: <20190724110026.GI2868@twin.jikos.cz>
+Subject: Re: [PATCH] btrfs-progs: check: initialize qgroup_item_count in
+ earlier stage
+Message-ID: <20190724110135.GJ2868@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+Mail-Followup-To: dsterba@suse.cz, Naohiro Aota <naohiro.aota@wdc.com>,
         linux-btrfs@vger.kernel.org
-References: <20190724083554.5545-1-wqu@suse.com>
+References: <20190723091911.19598-1-naohiro.aota@wdc.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190724083554.5545-1-wqu@suse.com>
+In-Reply-To: <20190723091911.19598-1-naohiro.aota@wdc.com>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jul 24, 2019 at 04:35:54PM +0800, Qu Wenruo wrote:
-> The old parameters, @ref_generation and @owner_objectid, are pretty
-> confusing when using auto-completion.
+On Tue, Jul 23, 2019 at 06:19:11PM +0900, Naohiro Aota wrote:
+> "btrfsck -Q" segfaults because it does not call qgroup_set_item_count_ptr()
+> properly:
 > 
-> Unify the parameters as a quick fix.
+>   # btrfsck -Q /dev/sdk
+>   Opening filesystem to check...
+>   Checking filesystem on /dev/sdk
+>   UUID: 34a35bbc-43f8-40f0-8043-65ed33f2e6c3
+>   Print quota groups for /dev/sdk
+>   UUID: 34a35bbc-43f8-40f0-8043-65ed33f2e6c3
+>   Segmentation fault (core dumped)
 > 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> Since "struct task_ctx ctx" is global, we can just move
+> qgroup_set_item_count_ptr() much earlier stage in the check process to
+> avoid to forget initializing it.
+> 
+> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 
 Applied, thanks.

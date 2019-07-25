@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-9.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 57002C7618B
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Jul 2019 09:34:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 00F9CC76191
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Jul 2019 09:34:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 279E22084D
+	by mail.kernel.org (Postfix) with ESMTP id C67D42084D
 	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Jul 2019 09:34:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2403824AbfGYJeY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 25 Jul 2019 05:34:24 -0400
-Received: from mx2.suse.de ([195.135.220.15]:52352 "EHLO mx1.suse.de"
+        id S2403827AbfGYJeZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 25 Jul 2019 05:34:25 -0400
+Received: from mx2.suse.de ([195.135.220.15]:52362 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2403773AbfGYJeL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S2403782AbfGYJeL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 25 Jul 2019 05:34:11 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 X-Amavis-Alert: BAD HEADER SECTION, Duplicate header field: "References"
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 4D6B5AEFF
+        by mx1.suse.de (Postfix) with ESMTP id 89B2DAFF9
         for <linux-btrfs@vger.kernel.org>; Thu, 25 Jul 2019 09:34:09 +0000 (UTC)
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 To:     David Sterba <dsterba@suse.com>
 Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
         Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [RFC PATCH 08/17] btrfs-progs: cache csum_type in recover_control
-Date:   Thu, 25 Jul 2019 11:33:55 +0200
-Message-Id: <9f3f9dd60d4c7dbfc854ad98e6133914bb47f7dc.1564046972.git.jthumshirn@suse.de>
+Subject: [RFC PATCH 13/17] btrfs-progs: pass checksum type to btrfs_csum_data()
+Date:   Thu, 25 Jul 2019 11:34:00 +0200
+Message-Id: <bc87a2ee4f7da8bba97f006abc79ae4d612ad620.1564046972.git.jthumshirn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <cover.1564046812.git.jthumshirn@suse.de>
 References: <cover.1564046812.git.jthumshirn@suse.de>
@@ -40,34 +40,55 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Cache the super-block's checksum type field in 'struct recover_control'.
-This will be needed for further refactoring the checksum handling.
-
 Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
 ---
- cmds/rescue-chunk-recover.c | 2 ++
- 1 file changed, 2 insertions(+)
+ btrfs-sb-mod.c | 15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
 
-diff --git a/cmds/rescue-chunk-recover.c b/cmds/rescue-chunk-recover.c
-index 608af9d49407..308731ea5ea6 100644
---- a/cmds/rescue-chunk-recover.c
-+++ b/cmds/rescue-chunk-recover.c
-@@ -47,6 +47,7 @@ struct recover_control {
- 	int yes;
+diff --git a/btrfs-sb-mod.c b/btrfs-sb-mod.c
+index 932c2a0432ef..d9630f187d0f 100644
+--- a/btrfs-sb-mod.c
++++ b/btrfs-sb-mod.c
+@@ -35,11 +35,13 @@ static int check_csum_superblock(void *sb)
+ {
+ 	u8 result[csum_size];
+ 	u32 crc = ~(u32)0;
++	u16 csum_type = btrfs_super_csum_type(sb);
  
- 	u16 csum_size;
-+	u16 csum_type;
- 	u32 sectorsize;
- 	u32 nodesize;
- 	u64 generation;
-@@ -1530,6 +1531,7 @@ static int recover_prepare(struct recover_control *rc, const char *path)
- 	rc->generation = btrfs_super_generation(sb);
- 	rc->chunk_root_generation = btrfs_super_chunk_root_generation(sb);
- 	rc->csum_size = btrfs_super_csum_size(sb);
-+	rc->csum_type = btrfs_super_csum_type(sb);
+-	crc = btrfs_csum_data((char *)sb + BTRFS_CSUM_SIZE,
++	crc = btrfs_csum_data(csum_type,
++			      (char *)sb + BTRFS_CSUM_SIZE,
+ 				(u8 *)&crc,
+ 				BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
+-	btrfs_csum_final(crc, result);
++	btrfs_csum_final(csum_type, crc, result);
  
- 	/* if seed, the result of scanning below will be partial */
- 	if (btrfs_super_flags(sb) & BTRFS_SUPER_FLAG_SEEDING) {
+ 	return !memcmp(sb, &result, csum_size);
+ }
+@@ -49,17 +51,20 @@ static void update_block_csum(void *block, int is_sb)
+ 	u8 result[csum_size];
+ 	struct btrfs_header *hdr;
+ 	u32 crc = ~(u32)0;
++	u16 csum_type = btrfs_super_csum_type(block);
+ 
+ 	if (is_sb) {
+-		crc = btrfs_csum_data((char *)block + BTRFS_CSUM_SIZE,
++		crc = btrfs_csum_data(csum_type,
++				      (char *)block + BTRFS_CSUM_SIZE,
+ 				      (u8 *)&crc,
+ 				BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
+ 	} else {
+-		crc = btrfs_csum_data((char *)block + BTRFS_CSUM_SIZE,
++		crc = btrfs_csum_data(csum_type,
++				      (char *)block + BTRFS_CSUM_SIZE,
+ 				      (u8 *)&crc,
+ 				BLOCKSIZE - BTRFS_CSUM_SIZE);
+ 	}
+-	btrfs_csum_final(crc, result);
++	btrfs_csum_final(csum_type, crc, result);
+ 	memset(block, 0, BTRFS_CSUM_SIZE);
+ 	hdr = (struct btrfs_header *)block;
+ 	memcpy(&hdr->csum, result, csum_size);
 -- 
 2.16.4
 

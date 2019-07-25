@@ -2,34 +2,35 @@ Return-Path: <SRS0=fwWV=VW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+X-Spam-Status: No, score=-6.9 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	UNWANTED_LANGUAGE_BODY,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 00F9CC76191
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Jul 2019 09:34:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 13445C7618B
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Jul 2019 09:34:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C67D42084D
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Jul 2019 09:34:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CE67C2084D
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Jul 2019 09:34:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2403827AbfGYJeZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 25 Jul 2019 05:34:25 -0400
-Received: from mx2.suse.de ([195.135.220.15]:52362 "EHLO mx1.suse.de"
+        id S2403765AbfGYJeK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 25 Jul 2019 05:34:10 -0400
+Received: from mx2.suse.de ([195.135.220.15]:52318 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2403782AbfGYJeL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Jul 2019 05:34:11 -0400
+        id S2390581AbfGYJeK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 25 Jul 2019 05:34:10 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 X-Amavis-Alert: BAD HEADER SECTION, Duplicate header field: "References"
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 89B2DAFF9
+        by mx1.suse.de (Postfix) with ESMTP id 1C627AE65
         for <linux-btrfs@vger.kernel.org>; Thu, 25 Jul 2019 09:34:09 +0000 (UTC)
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 To:     David Sterba <dsterba@suse.com>
 Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
         Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [RFC PATCH 13/17] btrfs-progs: pass checksum type to btrfs_csum_data()
-Date:   Thu, 25 Jul 2019 11:34:00 +0200
-Message-Id: <bc87a2ee4f7da8bba97f006abc79ae4d612ad620.1564046972.git.jthumshirn@suse.de>
+Subject: [RFC PATCH 4/4] btrfs: sysfs: export supported checksums
+Date:   Thu, 25 Jul 2019 11:33:51 +0200
+Message-Id: <e377ded65e4f2799776596ead308658710e4c8c1.1564046812.git.jthumshirn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <cover.1564046812.git.jthumshirn@suse.de>
 References: <cover.1564046812.git.jthumshirn@suse.de>
@@ -40,55 +41,76 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+From: David Sterba <dsterba@suse.com>
+
+Export supported checksum algorithms via sysfs.
+
+Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
 ---
- btrfs-sb-mod.c | 15 ++++++++++-----
- 1 file changed, 10 insertions(+), 5 deletions(-)
+ fs/btrfs/sysfs.c | 35 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
 
-diff --git a/btrfs-sb-mod.c b/btrfs-sb-mod.c
-index 932c2a0432ef..d9630f187d0f 100644
---- a/btrfs-sb-mod.c
-+++ b/btrfs-sb-mod.c
-@@ -35,11 +35,13 @@ static int check_csum_superblock(void *sb)
- {
- 	u8 result[csum_size];
- 	u32 crc = ~(u32)0;
-+	u16 csum_type = btrfs_super_csum_type(sb);
- 
--	crc = btrfs_csum_data((char *)sb + BTRFS_CSUM_SIZE,
-+	crc = btrfs_csum_data(csum_type,
-+			      (char *)sb + BTRFS_CSUM_SIZE,
- 				(u8 *)&crc,
- 				BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
--	btrfs_csum_final(crc, result);
-+	btrfs_csum_final(csum_type, crc, result);
- 
- 	return !memcmp(sb, &result, csum_size);
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 9539f8143b7a..920282a3452b 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -182,6 +182,30 @@ static umode_t btrfs_feature_visible(struct kobject *kobj,
+ 	return mode;
  }
-@@ -49,17 +51,20 @@ static void update_block_csum(void *block, int is_sb)
- 	u8 result[csum_size];
- 	struct btrfs_header *hdr;
- 	u32 crc = ~(u32)0;
-+	u16 csum_type = btrfs_super_csum_type(block);
  
- 	if (is_sb) {
--		crc = btrfs_csum_data((char *)block + BTRFS_CSUM_SIZE,
-+		crc = btrfs_csum_data(csum_type,
-+				      (char *)block + BTRFS_CSUM_SIZE,
- 				      (u8 *)&crc,
- 				BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
- 	} else {
--		crc = btrfs_csum_data((char *)block + BTRFS_CSUM_SIZE,
-+		crc = btrfs_csum_data(csum_type,
-+				      (char *)block + BTRFS_CSUM_SIZE,
- 				      (u8 *)&crc,
- 				BLOCKSIZE - BTRFS_CSUM_SIZE);
- 	}
--	btrfs_csum_final(crc, result);
-+	btrfs_csum_final(csum_type, crc, result);
- 	memset(block, 0, BTRFS_CSUM_SIZE);
- 	hdr = (struct btrfs_header *)block;
- 	memcpy(&hdr->csum, result, csum_size);
++static ssize_t btrfs_checksums_show(struct kobject *kobj,
++				       struct kobj_attribute *a, char *buf)
++{
++	ssize_t ret = 0;
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(btrfs_csums); i++) {
++		ret += snprintf(buf + ret, PAGE_SIZE, "%s%s",
++				(i == 0 ? "" : ", "),
++				btrfs_csums[i].name);
++
++	}
++
++	ret += snprintf(buf + ret, PAGE_SIZE, "\n");
++	return ret;
++}
++
++static ssize_t btrfs_checksums_store(struct kobject *kobj,
++					struct kobj_attribute *a,
++					const char *buf, size_t count)
++{
++	return -EPERM;
++}
++
+ BTRFS_FEAT_ATTR_INCOMPAT(mixed_backref, MIXED_BACKREF);
+ BTRFS_FEAT_ATTR_INCOMPAT(default_subvol, DEFAULT_SUBVOL);
+ BTRFS_FEAT_ATTR_INCOMPAT(mixed_groups, MIXED_GROUPS);
+@@ -195,6 +219,14 @@ BTRFS_FEAT_ATTR_INCOMPAT(no_holes, NO_HOLES);
+ BTRFS_FEAT_ATTR_INCOMPAT(metadata_uuid, METADATA_UUID);
+ BTRFS_FEAT_ATTR_COMPAT_RO(free_space_tree, FREE_SPACE_TREE);
+ 
++static struct btrfs_feature_attr btrfs_attr_features_checksums_name = {
++	.kobj_attr = __INIT_KOBJ_ATTR(checksums, S_IRUGO,
++				      btrfs_checksums_show,
++				      btrfs_checksums_store),
++	.feature_set	= FEAT_INCOMPAT,
++	.feature_bit	= 0,
++};
++
+ static struct attribute *btrfs_supported_feature_attrs[] = {
+ 	BTRFS_FEAT_ATTR_PTR(mixed_backref),
+ 	BTRFS_FEAT_ATTR_PTR(default_subvol),
+@@ -208,6 +240,9 @@ static struct attribute *btrfs_supported_feature_attrs[] = {
+ 	BTRFS_FEAT_ATTR_PTR(no_holes),
+ 	BTRFS_FEAT_ATTR_PTR(metadata_uuid),
+ 	BTRFS_FEAT_ATTR_PTR(free_space_tree),
++
++	&btrfs_attr_features_checksums_name.kobj_attr.attr,
++
+ 	NULL
+ };
+ 
 -- 
 2.16.4
 

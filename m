@@ -4,50 +4,50 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2E47AC7618B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Jul 2019 13:44:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 792ABC7618B
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Jul 2019 13:47:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id EFB1022DA7
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Jul 2019 13:44:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5333422CD8
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Jul 2019 13:47:59 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1564148689;
-	bh=rG878YI2kRgajK4jol6RtcXjmLSgt98/dcnrs4emepw=;
+	s=default; t=1564148879;
+	bh=PhqPNDTFcojs0oO52RI/tBbQomu68POI4dM8VBj0mS0=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=CC7BaPZQFgXf9/ZqO4wQA5lLBWBuv+RvlJQ1s6Q+/QTLrBPdITUCtf9W91xuysIm6
-	 GUa6TAI9SVw0OAZ9JMkcD0AccPU0KRj/5VZjddN5oXVh6W1Int79qcsvz8cHbAOEhG
-	 +gNSTXxucKUj50HszVQbaZDr19iiDPD1wOSIPOq4=
+	b=JPu1TsayXNXdRAYemBJGaYQ65DUNGUAOv84okhXe3dJmPqfZZ1BA3Qdfuh+FRLlgp
+	 3B3aBlQsedKNCwI93qWRfnTMSuKxKTqqNs5h8SvtvEakBVHCueJcqKZjZFi+QjgNqp
+	 2qFLHxrh+p0hLRQvrboFOXJoig4up2mYv/Ps+SCU=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388422AbfGZNor (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 26 Jul 2019 09:44:47 -0400
-Received: from mail.kernel.org ([198.145.29.99]:53138 "EHLO mail.kernel.org"
+        id S1728222AbfGZNpm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 26 Jul 2019 09:45:42 -0400
+Received: from mail.kernel.org ([198.145.29.99]:54786 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2387898AbfGZNor (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Jul 2019 09:44:47 -0400
+        id S1728209AbfGZNpk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Jul 2019 09:45:40 -0400
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id DA18F22CD3;
-        Fri, 26 Jul 2019 13:44:45 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 309D722CBF;
+        Fri, 26 Jul 2019 13:45:39 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1564148686;
-        bh=rG878YI2kRgajK4jol6RtcXjmLSgt98/dcnrs4emepw=;
+        s=default; t=1564148739;
+        bh=PhqPNDTFcojs0oO52RI/tBbQomu68POI4dM8VBj0mS0=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=KL5lFTdodA8RzLoE4L745kSInsUMR/UnNgrGEmADVqCutKAFLIvgRLlE/VCkaIE9+
-         IO0pNbQ1O8WUQfsPnk+7HDqXazK/KfTqbBAFeo6tbc+N6Wiy6JhVLDM2xIO7KGJZGu
-         UTqQPxPSnxdCr0HayrB4BtXf+tEqyuc116+rZ7K8=
+        b=XJHB1zigRhpaT6nM/rVGAAtsKCcsv8Y4mdxfQsmozryFPnCS080JX+og8rWuyrYDC
+         NuRGrpaiYnE5m219d5V1pbHdl56J0OaUxmIbPMrdcS/e+RlQkPEmtGziU6bfM1Z9BK
+         WgGqz2lzxjK2bsXVe0WocCrUsLyHJdNteHFY2JNo=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.9 10/30] btrfs: fix minimum number of chunk errors for DUP
-Date:   Fri, 26 Jul 2019 09:44:12 -0400
-Message-Id: <20190726134432.12993-10-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 4.4 07/23] btrfs: fix minimum number of chunk errors for DUP
+Date:   Fri, 26 Jul 2019 09:45:06 -0400
+Message-Id: <20190726134522.13308-7-sashal@kernel.org>
 X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20190726134432.12993-1-sashal@kernel.org>
-References: <20190726134432.12993-1-sashal@kernel.org>
+In-Reply-To: <20190726134522.13308-1-sashal@kernel.org>
+References: <20190726134522.13308-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -86,10 +86,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 1 insertion(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 94b61afe996c..70aa22a8a9cc 100644
+index 4eb7a6ba7e47..55ce6543050d 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -5072,8 +5072,7 @@ static inline int btrfs_chunk_max_errors(struct map_lookup *map)
+@@ -4942,8 +4942,7 @@ static inline int btrfs_chunk_max_errors(struct map_lookup *map)
  
  	if (map->type & (BTRFS_BLOCK_GROUP_RAID1 |
  			 BTRFS_BLOCK_GROUP_RAID10 |

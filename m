@@ -2,154 +2,144 @@ Return-Path: <SRS0=ht5M=VX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.5 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B234CC76190
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Jul 2019 03:10:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2C88BC7618F
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Jul 2019 05:27:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6F191218B8
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Jul 2019 03:10:00 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D4CBF21901
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Jul 2019 05:27:45 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="J1+emSCd"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="LYwUCliG"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1725955AbfGZDJ7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 25 Jul 2019 23:09:59 -0400
-Received: from mout.gmx.net ([212.227.15.18]:53983 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725878AbfGZDJ7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Jul 2019 23:09:59 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1564110591;
-        bh=jpTG0GqMm8CXqRo9fzUNWrJyB9ncfY/1vxXbJZ1szg4=;
-        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
-        b=J1+emSCdVDBQ26qQqAgMp6FRVNSFUpA6aNr6gyBpVhtQLo10wdZT8FHvmqJKzbRYc
-         6GMcq8cNddS3paeR0QVuwIldNiz7VPdZMjMvEJDrT92YREoPW4nogdYBmtvpYtimnp
-         93KukrVld2z00cb9isvV4Ec4ANCWyJU6nHN99E40=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [192.168.2.137] ([34.92.239.241]) by mail.gmx.com (mrgmx001
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0MPUZ7-1hmk0d2Udt-004mYa; Fri, 26
- Jul 2019 05:09:51 +0200
-Subject: Re: [RFC PATCH 2/4] btrfs: create structure to encode checksum type
- and length
-To:     Johannes Thumshirn <jthumshirn@suse.de>,
-        David Sterba <dsterba@suse.com>
-Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
-References: <cover.1564046812.git.jthumshirn@suse.de>
- <944b685765a68c3389888159d3fe228c2e78eb22.1564046812.git.jthumshirn@suse.de>
-From:   Su Yue <Damenly_Su@gmx.com>
-Message-ID: <46419ff0-a625-0738-6a57-0ab903636fd8@gmx.com>
-Date:   Fri, 26 Jul 2019 11:09:45 +0800
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:60.0)
- Gecko/20100101 Thunderbird/60.8.0
+        id S1725869AbfGZF1o (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 26 Jul 2019 01:27:44 -0400
+Received: from esa4.hgst.iphmx.com ([216.71.154.42]:9402 "EHLO
+        esa4.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725781AbfGZF1o (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Jul 2019 01:27:44 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1564118864; x=1595654864;
+  h=from:to:cc:subject:date:message-id:mime-version:
+   content-transfer-encoding;
+  bh=VjG4mezlrcJB/bc9X2SLWG1Aw9iPjCEPMFAbs6YmLCc=;
+  b=LYwUCliGZSNbhjxs3wcI9wa5SzDZtXmwF+9ouekaHnZQoYCy+fBM2jdT
+   DVuoegJOQePGkMnKikgh8hAkWzwR7XOpS0NN8kLOjTomkIIwjPeRLdeE9
+   rO1qxf9Q7f+wm8GIg14/RXBexNKjfUaIKriThsU481LEJNbLXWMkyWV/Y
+   vjfg82mwr2VaBb7pfVBEn7kGCGJ9ZT6u8ZFSP8kXcXedoG186oRb6ysG6
+   hFyJbKHQrzjUn0IOsJXrnyRRjKvOkPLRvu4UmlWIWqKCwT4la3xfNtFoR
+   8NR6K04pxSvn6cOzEgWlrqYQpM0bm5U59ccREIN1TuoItXbMLUP1VBfPU
+   w==;
+IronPort-SDR: UIw8haikmJ1FmBMy0ZiPsqBxsU/NX9CQ/2KN+NRCW8aNqmeeevD1P0c4fpFtZqXZkG7wVwbVCM
+ VsO+fQT+u5/259cO5vw48tUwDz5VEiiMnD0SlroX/vnUXaAkukKNwHhq3KcwD1Rn722L2ruod3
+ uBYKGMHiK4lFRd8aZpIc5q7ctH705R714JCGPed+yczaoUUpWb6S1MY9XKwtHC1Sq/eOLzmwlc
+ DITvRMUlXkzepLP7zSB6xNm32kzvDqn0I59YNfJcwZdEHJuX71kFTaArPlI49Wjcw3PHirXPJV
+ O7A=
+X-IronPort-AV: E=Sophos;i="5.64,309,1559491200"; 
+   d="scan'208";a="114168748"
+Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 26 Jul 2019 13:27:44 +0800
+IronPort-SDR: D8hfeR0EpJL2ACdnygkfO0FjhX1XL8kdVFhwI2I2eqFwd4BegrTPnUU+XF2+b2HjW48JW8+Nx8
+ UsTgY7vvX7WGXzmbBk7CZGFcouPdq5iO3NA7Go4TxreCX9Zz8rAZaUmiS3oksuAEJr8HLSXp+D
+ QUi7Xk5LzzF/o8Je+N+fD5nNVs42elmQFFKctLC6c+6mU58YpSUvWw0cSj6vtMAjXP8+bBCFCD
+ KbWHJgDdfivCdkAZp3IMEf0G8VTCrAsDEX6V7TdOPiLfi5RGJ4LLNXrRPrW2OCZH8o7UuFsoI6
+ Ld+oP6Ft6TwkmwI4RctPNH/F
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep02.wdc.com with ESMTP; 25 Jul 2019 22:25:53 -0700
+IronPort-SDR: aNwjbrJW4JO17IDzB6BS8zpJ0bRyFn8kAgQ3Ub2WMTUlSI98XgJHAUKqzlnLiE7gy4NPMVURSz
+ ugzImUHStlomncGpg+T8HLBcVMEdzW2Y72E1PXyzE6A6dUey33EgzsRWm+v67Jb5iAtb6vwV5U
+ C825MZj79ch3Ec14qzlb2gNTeGqeSYkTQnP2K1Y9wYiG9SDGDmDbJOVk+oVH40uFUkSO1pVfPF
+ DuIHlP5koPLNA3qNyNanszayyK1Fl4xdl1AYYjGWu0aqLb+NMoD8qgCuSRKECvNgs88YWpqtZ8
+ t4A=
+Received: from naota.dhcp.fujisawa.hgst.com (HELO naota.fujisawa.hgst.com) ([10.149.53.115])
+  by uls-op-cesaip02.wdc.com with ESMTP; 25 Jul 2019 22:27:43 -0700
+From:   Naohiro Aota <naohiro.aota@wdc.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     David Sterba <dsterba@suse.com>,
+        Naohiro Aota <naohiro.aota@wdc.com>
+Subject: [PATCH] btrfs: fix extent buffer read/write range checks
+Date:   Fri, 26 Jul 2019 14:27:24 +0900
+Message-Id: <20190726052724.12338-1-naohiro.aota@wdc.com>
+X-Mailer: git-send-email 2.22.0
 MIME-Version: 1.0
-In-Reply-To: <944b685765a68c3389888159d3fe228c2e78eb22.1564046812.git.jthumshirn@suse.de>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:meDatBeh3F5kG1A5tapnZAYRsXoYD1w7CHYsRyvitvx6xZN9s2a
- b0ukrqznkONi6BSyXrCaAd6tHFr4ou5gEtEGsg7V9R6qhdka6hpQVMeelP1DTU1fz2PISAi
- 1fJmRg3P5J4WpwGD65aW+c8wfMEgtG+Fq/rpEVrUPxiT+tElmXIwTeXfKEr+NfJnvAlfXgh
- y/Fn0dNHU4sDb8Z7/ZTGg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:52LajNwg2Bw=:rxHziyDw4uWV2PwYudZT32
- M7u0SQYAka+f7Yi2xlwVEFG6ltkm0uCfYjAM+Kqt9ULzB/nh2y5aUFPk/XptXVpMdNPbWn1G+
- EVrB93i5/B3VNVpRVMTT5AW3yzDlkh8ZyIMf/BWtuyL+youJOxfb/XDEDuBstLxAs/tJPDc+I
- P2LJj02jWmK5YrjBZ1MFd0bgKl7lOi/9/vtXVfNyAhj4rfFInN4sqtFkQVBUj1a0x6uO83dG0
- wH6Wzt5eqErCbHbYHag3l2W3IN/6OtZTyUmqbviszXNAcGu0PTSvPZWMn4M4Wmd8sjKjzX0ky
- 3QiiqG3LP+biGm5lbVvyVrd3rJThUCDcBMlHXl/um1P4LD2ktAPxVzZ5qLy5KgAYWclXPje3m
- 6aHC/xmk6o3zqbadyzW9buGWLqKfDisXCPcUWHE02AHKvQ67JDwxILMZU1cfgWH/THShxr45X
- fP0XSiH3+PMhKWGXHw71MnsrV2OmWnR46HJx+OMVacRjaYaAxdRQnLTNPNQeoxzXugzNJkS6F
- e1cADIhHP1iGuAR9qRkKcMUBTvTjwaG+1hWyVn01bHf1L3RrP0j74RoEChgdOng/md9b3/3R6
- vAz0+ljaPzTO/ErkMjT7PyoA4eE0EckkabWKEPK2NDRO+FOu86X0y16H949ja8luivxDEe08b
- Ie0uaeRDhd4tVeAGJloxDtanpBCXEQvq/1fE8gO/1IMhWIik1Y17uwfINufI81RLpDh5UraMM
- 6ZBEDW1VWu/LaAeShC3WpkE92LR3B6iSbNV/3QralDZMGhAtGsF3Dg9m49nvCVYDiOn/Ah55N
- 2rMw1V25UwYPWxVqHBSSSEFrf+8oQwbBCGH89ISho1nvzCqKAIfTZo4nAWvcTFUN856HH676M
- 5y5ZSY9mC9GvYi57XcKlLMJn2V7HGShVzfxHitTwovt0AqcWqVr417y0IiKqC6p44Su06XqKW
- b0YVbs7ahOvaHiq9Qf85v7PgxpwKbdfEakg0F36+2xNCHNEfSPPKArSB8k/EoQWhwpIJEV+/w
- RMBpWYQbScwvodK13S+rUyXlSBm8UozfNUARW1h90jXrueP5CyD5TANsAq+Jgz68WT9mJtjRj
- RBmcNi4riimZd4ksfLeppxNrwSPsSc4K4c5
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Several functions to read/write an extent buffer check if specified offset
+range resides in the size of the extent buffer. However, those checks have
+two problems:
 
+(1) they don't catch "start == eb->len" case.
+(2) it checks offset in extent buffer against logical address using
+    eb->start.
 
-On 2019/7/25 5:33 PM, Johannes Thumshirn wrote:
-> Create a structure to encode the type and length for the known on-disk
-> checksums. Also add a table and a convenience macro for adding the
-> checksum types to the table.
->
-> This makes it easier to add new checksums later.
->
-> Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
-> ---
->   fs/btrfs/ctree.h | 16 +++++++++++-----
->   1 file changed, 11 insertions(+), 5 deletions(-)
->
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index da97ff10f421..099401f5dd47 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -82,9 +82,15 @@ struct btrfs_ref;
->    */
->   #define BTRFS_LINK_MAX 65535U
->
-> -/* four bytes for CRC32 */
-> -static const int btrfs_csum_sizes[] =3D { 4 };
-> -static const char *btrfs_csum_names[] =3D { "crc32c" };
-> +#define BTRFS_CHECKSUM_TYPE(_type, _size, _name) \
-> +	[_type] =3D { .size =3D _size, .name =3D _name }
-> +
-> +static const struct btrfs_csums {
-> +	u16		size;
-> +	const char	*name;
-> +} btrfs_csums[] =3D {
-> +	BTRFS_CHECKSUM_TYPE(BTRFS_CSUM_TYPE_CRC32, 4, "crc32c"),
-> +};
->
-How about:
+Generally, eb->start is much larger than the offset, so the second WARN_ON
+was almost useless.
 
-struct btrfs_csum {
-         u16             size;
-         const char      *name;
-};
+Fix these problems in read_extent_buffer_to_user(),
+{memcmp,write,memzero}_extent_buffer().
 
-static const struct btrfs_csum btrfs_csums[] =3D {
-#define BTRFS_CHECKSUM_TYPE(_type, _size, _name) \
-              [_type] =3D { .size =3D _size, .name =3D _name }
+Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+---
+ fs/btrfs/extent_io.c | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
 
-         BTRFS_CHECKSUM_TYPE(BTRFS_CSUM_TYPE_CRC32, 4, "crc32c"),
-};
-
-Since the macro BTRFS_CHECKSUM_TYPE is only used in array btrfs_csum
-btrfs_csums. And this makes the struct btrfs_csum clear.
-
-
-=2D--
-Su
-
->   #define BTRFS_EMPTY_DIR_SIZE 0
->
-> @@ -2373,13 +2379,13 @@ static inline int btrfs_super_csum_size(const st=
-ruct btrfs_super_block *s)
->   	/*
->   	 * csum type is validated at mount time
->   	 */
-> -	return btrfs_csum_sizes[t];
-> +	return btrfs_csums[t].size;
->   }
->
->   static inline const char *btrfs_super_csum_name(u16 csum_type)
->   {
->   	/* csum type is validated at mount time */
-> -	return btrfs_csum_names[csum_type];
-> +	return btrfs_csums[csum_type].name;
->   }
->
->   /*
->
-
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 50cbaf1dad5b..c0174f530568 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -5545,8 +5545,8 @@ int read_extent_buffer_to_user(const struct extent_buffer *eb,
+ 	unsigned long i = (start_offset + start) >> PAGE_SHIFT;
+ 	int ret = 0;
+ 
+-	WARN_ON(start > eb->len);
+-	WARN_ON(start + len > eb->start + eb->len);
++	WARN_ON(start >= eb->len);
++	WARN_ON(start + len > eb->len);
+ 
+ 	offset = offset_in_page(start_offset + start);
+ 
+@@ -5623,8 +5623,8 @@ int memcmp_extent_buffer(const struct extent_buffer *eb, const void *ptrv,
+ 	unsigned long i = (start_offset + start) >> PAGE_SHIFT;
+ 	int ret = 0;
+ 
+-	WARN_ON(start > eb->len);
+-	WARN_ON(start + len > eb->start + eb->len);
++	WARN_ON(start >= eb->len);
++	WARN_ON(start + len > eb->len);
+ 
+ 	offset = offset_in_page(start_offset + start);
+ 
+@@ -5678,8 +5678,8 @@ void write_extent_buffer(struct extent_buffer *eb, const void *srcv,
+ 	size_t start_offset = offset_in_page(eb->start);
+ 	unsigned long i = (start_offset + start) >> PAGE_SHIFT;
+ 
+-	WARN_ON(start > eb->len);
+-	WARN_ON(start + len > eb->start + eb->len);
++	WARN_ON(start >= eb->len);
++	WARN_ON(start + len > eb->len);
+ 
+ 	offset = offset_in_page(start_offset + start);
+ 
+@@ -5708,8 +5708,8 @@ void memzero_extent_buffer(struct extent_buffer *eb, unsigned long start,
+ 	size_t start_offset = offset_in_page(eb->start);
+ 	unsigned long i = (start_offset + start) >> PAGE_SHIFT;
+ 
+-	WARN_ON(start > eb->len);
+-	WARN_ON(start + len > eb->start + eb->len);
++	WARN_ON(start >= eb->len);
++	WARN_ON(start + len > eb->len);
+ 
+ 	offset = offset_in_page(start_offset + start);
+ 
+-- 
+2.22.0
 

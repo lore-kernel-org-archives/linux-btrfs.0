@@ -7,45 +7,44 @@ X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 344A5C7618B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Jul 2019 13:59:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CDEF9C7618B
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Jul 2019 13:59:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0422922CE5
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Jul 2019 13:59:46 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A8D0422CE5
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Jul 2019 13:59:47 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1564149586;
-	bh=dyzX37OIZYCFr2Y7qa+NiiW8n2qepCp8LuDQKdwJyfM=;
+	s=default; t=1564149587;
+	bh=kdDk1CBB9bt8maWhjSpCjH2YxMp3YDDBWtpFwBsVQVA=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=eIVcLLrIejiR151aiAeLOc8+/ITDJixa79FB6HdFynrXMkRFKLItDAZamaR0CfunN
-	 j+uGSl+ljnzKi4hTvtdV6hT0c/0Wc1f8tmHYjcn5I6HrY6ZXlfwUmAYvfR4KYAfZ1b
-	 5KxeLnK68KoNlq3deubqDAlUpyTMhmyNEp3u6P8g=
+	b=oL46BRC9YSkD00zXFdGx+wzEWcXibYnWPn80lIV1eDcporiw/oX38gHcU5B8BH/vn
+	 pqvbRvEerItLkZ53QiOm8FEzLrAcnxTb3f8JIeydeNnkk+nSRdxZp1e6PVFRJVCpit
+	 l5i5lWYXII0ObNAXEgr5KqkCtun/bwlPj63YIIJk=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2387464AbfGZNk0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 26 Jul 2019 09:40:26 -0400
-Received: from mail.kernel.org ([198.145.29.99]:46476 "EHLO mail.kernel.org"
+        id S2387448AbfGZNkZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 26 Jul 2019 09:40:25 -0400
+Received: from mail.kernel.org ([198.145.29.99]:46434 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2387451AbfGZNk0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Jul 2019 09:40:26 -0400
+        id S2387437AbfGZNkY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Jul 2019 09:40:24 -0400
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 796D622CBF;
-        Fri, 26 Jul 2019 13:40:24 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 83C2522BE8;
+        Fri, 26 Jul 2019 13:40:22 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1564148425;
-        bh=dyzX37OIZYCFr2Y7qa+NiiW8n2qepCp8LuDQKdwJyfM=;
+        s=default; t=1564148423;
+        bh=kdDk1CBB9bt8maWhjSpCjH2YxMp3YDDBWtpFwBsVQVA=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=BpJ9+SzBGqk5mr539sMCbpy5Th/0rezfIqCWMqCzSD86jZHW+fAtAgHGHsTCszvtD
-         1qi1fO17TPpYgmQ/MvcMS1+NVKoeI4/PBXhmVqtBMxrYtceB2/7EoL8ipaXdgSFV6K
-         y5cwEWhG+E09OM9MqKOQQqI0miFL/Lp+Oe42Q6wc=
+        b=UB+b2+3t8DdVTTgPGX8tyaD/mTK4Sa6bdsASoW9awJyTAzRcduFE9GZno4ZMVoqSV
+         6cLTuaEpZw+ubHKvbhKmG6nfWMHV/e2dwIImZ5kiUx8aPUL9TxwNKekwhsjZl5/0Gc
+         +ja8LT0wcFlnDGLBemqN0bGBsTmNenErqvgOOEZY=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Qu Wenruo <wqu@suse.com>, Filipe Manana <fdmanana@suse.com>,
-        David Sterba <dsterba@suse.com>,
+Cc:     Qu Wenruo <wqu@suse.com>, David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.2 28/85] btrfs: Flush before reflinking any extent to prevent NOCOW write falling back to COW without data reservation
-Date:   Fri, 26 Jul 2019 09:38:38 -0400
-Message-Id: <20190726133936.11177-28-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.2 26/85] btrfs: tree-checker: Check if the file extent end overflows
+Date:   Fri, 26 Jul 2019 09:38:36 -0400
+Message-Id: <20190726133936.11177-26-sashal@kernel.org>
 X-Mailer: git-send-email 2.20.1
 In-Reply-To: <20190726133936.11177-1-sashal@kernel.org>
 References: <20190726133936.11177-1-sashal@kernel.org>
@@ -60,109 +59,64 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Qu Wenruo <wqu@suse.com>
 
-[ Upstream commit a94d1d0cb3bf1983fcdf05b59d914dbff4f1f52c ]
+[ Upstream commit 4c094c33c9ed4b8d0d814bd1d7ff78e123d15d00 ]
 
-[BUG]
-The following script can cause unexpected fsync failure:
+Under certain conditions, we could have strange file extent item in log
+tree like:
 
-  #!/bin/bash
+  item 18 key (69599 108 397312) itemoff 15208 itemsize 53
+	extent data disk bytenr 0 nr 0
+	extent data offset 0 nr 18446744073709547520 ram 18446744073709547520
 
-  dev=/dev/test/test
-  mnt=/mnt/btrfs
+The num_bytes + ram_bytes overflow 64 bit type.
 
-  mkfs.btrfs -f $dev -b 512M > /dev/null
-  mount $dev $mnt -o nospace_cache
+For num_bytes part, we can detect such overflow along with file offset
+(key->offset), as file_offset + num_bytes should never go beyond u64.
 
-  # Prealloc one extent
-  xfs_io -f -c "falloc 8k 64m" $mnt/file1
-  # Fill the remaining data space
-  xfs_io -f -c "pwrite 0 -b 4k 512M" $mnt/padding
-  sync
+For ram_bytes part, it's about the decompressed size of the extent, not
+directly related to the size.
+In theory it is OK to have a large value, and put extra limitation
+on RAM bytes may cause unexpected false alerts.
 
-  # Write into the prealloc extent
-  xfs_io -c "pwrite 1m 16m" $mnt/file1
+So in tree-checker, we only check if the file offset and num bytes
+overflow.
 
-  # Reflink then fsync, fsync would fail due to ENOSPC
-  xfs_io -c "reflink $mnt/file1 8k 0 4k" -c "fsync" $mnt/file1
-  umount $dev
-
-The fsync fails with ENOSPC, and the last page of the buffered write is
-lost.
-
-[CAUSE]
-This is caused by:
-- Btrfs' back reference only has extent level granularity
-  So write into shared extent must be COWed even only part of the extent
-  is shared.
-
-So for above script we have:
-- fallocate
-  Create a preallocated extent where we can do NOCOW write.
-
-- fill all the remaining data and unallocated space
-
-- buffered write into preallocated space
-  As we have not enough space available for data and the extent is not
-  shared (yet) we fall into NOCOW mode.
-
-- reflink
-  Now part of the large preallocated extent is shared, later write
-  into that extent must be COWed.
-
-- fsync triggers writeback
-  But now the extent is shared and therefore we must fallback into COW
-  mode, which fails with ENOSPC since there's not enough space to
-  allocate data extents.
-
-[WORKAROUND]
-The workaround is to ensure any buffered write in the related extents
-(not just the reflink source range) get flushed before reflink/dedupe,
-so that NOCOW writes succeed that happened before reflinking succeed.
-
-The workaround is expensive, we could do it better by only flushing
-NOCOW range, but that needs extra accounting for NOCOW range.
-For now, fix the possible data loss first.
-
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/ioctl.c | 21 +++++++++++++++++++++
- 1 file changed, 21 insertions(+)
+ fs/btrfs/tree-checker.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 2a1be0d1a698..5b4beebf138c 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3999,6 +3999,27 @@ static int btrfs_remap_file_range_prep(struct file *file_in, loff_t pos_in,
- 	if (!same_inode)
- 		inode_dio_wait(inode_out);
+diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+index 96fce4bef4e7..ccd5706199d7 100644
+--- a/fs/btrfs/tree-checker.c
++++ b/fs/btrfs/tree-checker.c
+@@ -132,6 +132,7 @@ static int check_extent_data_item(struct extent_buffer *leaf,
+ 	struct btrfs_file_extent_item *fi;
+ 	u32 sectorsize = fs_info->sectorsize;
+ 	u32 item_size = btrfs_item_size_nr(leaf, slot);
++	u64 extent_end;
  
-+	/*
-+	 * Workaround to make sure NOCOW buffered write reach disk as NOCOW.
-+	 *
-+	 * Btrfs' back references do not have a block level granularity, they
-+	 * work at the whole extent level.
-+	 * NOCOW buffered write without data space reserved may not be able
-+	 * to fall back to CoW due to lack of data space, thus could cause
-+	 * data loss.
-+	 *
-+	 * Here we take a shortcut by flushing the whole inode, so that all
-+	 * nocow write should reach disk as nocow before we increase the
-+	 * reference of the extent. We could do better by only flushing NOCOW
-+	 * data, but that needs extra accounting.
-+	 *
-+	 * Also we don't need to check ASYNC_EXTENT, as async extent will be
-+	 * CoWed anyway, not affecting nocow part.
-+	 */
-+	ret = filemap_flush(inode_in->i_mapping);
-+	if (ret < 0)
-+		return ret;
+ 	if (!IS_ALIGNED(key->offset, sectorsize)) {
+ 		file_extent_err(leaf, slot,
+@@ -207,6 +208,16 @@ static int check_extent_data_item(struct extent_buffer *leaf,
+ 	    CHECK_FE_ALIGNED(leaf, slot, fi, num_bytes, sectorsize))
+ 		return -EUCLEAN;
+ 
++	/* Catch extent end overflow */
++	if (check_add_overflow(btrfs_file_extent_num_bytes(leaf, fi),
++			       key->offset, &extent_end)) {
++		file_extent_err(leaf, slot,
++	"extent end overflow, have file offset %llu extent num bytes %llu",
++				key->offset,
++				btrfs_file_extent_num_bytes(leaf, fi));
++		return -EUCLEAN;
++	}
 +
- 	ret = btrfs_wait_ordered_range(inode_in, ALIGN_DOWN(pos_in, bs),
- 				       wb_len);
- 	if (ret < 0)
+ 	/*
+ 	 * Check that no two consecutive file extent items, in the same leaf,
+ 	 * present ranges that overlap each other.
 -- 
 2.20.1
 

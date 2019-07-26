@@ -2,103 +2,107 @@ Return-Path: <SRS0=ht5M=VX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 792ABC7618B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Jul 2019 13:47:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B8E2CC7618B
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Jul 2019 13:50:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5333422CD8
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Jul 2019 13:47:59 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1564148879;
-	bh=PhqPNDTFcojs0oO52RI/tBbQomu68POI4dM8VBj0mS0=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=JPu1TsayXNXdRAYemBJGaYQ65DUNGUAOv84okhXe3dJmPqfZZ1BA3Qdfuh+FRLlgp
-	 3B3aBlQsedKNCwI93qWRfnTMSuKxKTqqNs5h8SvtvEakBVHCueJcqKZjZFi+QjgNqp
-	 2qFLHxrh+p0hLRQvrboFOXJoig4up2mYv/Ps+SCU=
+	by mail.kernel.org (Postfix) with ESMTP id 9D54322CE5
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Jul 2019 13:50:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728222AbfGZNpm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 26 Jul 2019 09:45:42 -0400
-Received: from mail.kernel.org ([198.145.29.99]:54786 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1728209AbfGZNpk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Jul 2019 09:45:40 -0400
-Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 309D722CBF;
-        Fri, 26 Jul 2019 13:45:39 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1564148739;
-        bh=PhqPNDTFcojs0oO52RI/tBbQomu68POI4dM8VBj0mS0=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=XJHB1zigRhpaT6nM/rVGAAtsKCcsv8Y4mdxfQsmozryFPnCS080JX+og8rWuyrYDC
-         NuRGrpaiYnE5m219d5V1pbHdl56J0OaUxmIbPMrdcS/e+RlQkPEmtGziU6bfM1Z9BK
-         WgGqz2lzxjK2bsXVe0WocCrUsLyHJdNteHFY2JNo=
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>,
-        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.4 07/23] btrfs: fix minimum number of chunk errors for DUP
-Date:   Fri, 26 Jul 2019 09:45:06 -0400
-Message-Id: <20190726134522.13308-7-sashal@kernel.org>
-X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20190726134522.13308-1-sashal@kernel.org>
-References: <20190726134522.13308-1-sashal@kernel.org>
+        id S2388678AbfGZNuK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 26 Jul 2019 09:50:10 -0400
+Received: from mx2.suse.de ([195.135.220.15]:56088 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S2388359AbfGZNog (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Jul 2019 09:44:36 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id EA119AD18;
+        Fri, 26 Jul 2019 13:44:34 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 04038DA811; Fri, 26 Jul 2019 15:45:10 +0200 (CEST)
+Date:   Fri, 26 Jul 2019 15:45:09 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Johannes Thumshirn <jthumshirn@suse.de>
+Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        David Sterba <dsterba@suse.com>,
+        Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
+Subject: Re: [RFC PATCH 3/4] btrfs: use xxhash64 for checksumming
+Message-ID: <20190726134508.GB2868@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Johannes Thumshirn <jthumshirn@suse.de>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>, David Sterba <dsterba@suse.com>,
+        Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
+References: <cover.1564046812.git.jthumshirn@suse.de>
+ <4ac3332af1fa5ba7ecb92181329151382b800f3d.1564046812.git.jthumshirn@suse.de>
+ <c2f5e995-6edf-991a-51a6-2c7ba43df41b@gmx.com>
+ <20190725141837.GA3936@x250.microfocus.com>
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
+In-Reply-To: <20190725141837.GA3936@x250.microfocus.com>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: David Sterba <dsterba@suse.com>
+On Thu, Jul 25, 2019 at 04:18:37PM +0200, Johannes Thumshirn wrote:
+> On Thu, Jul 25, 2019 at 08:02:12PM +0800, Qu Wenruo wrote:
+> > 
+> > 
+> > On 2019/7/25 下午5:33, Johannes Thumshirn wrote:
+> > > Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+> > > ---
+> > >  fs/btrfs/Kconfig                | 1 +
+> > >  fs/btrfs/ctree.h                | 1 +
+> > >  fs/btrfs/disk-io.c              | 1 +
+> > >  fs/btrfs/super.c                | 1 +
+> > >  include/uapi/linux/btrfs_tree.h | 1 +
+> > >  5 files changed, 5 insertions(+)
+> > > 
+> > > diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
+> > > index 38651fae7f21..6d5a01c57da3 100644
+> > > --- a/fs/btrfs/Kconfig
+> > > +++ b/fs/btrfs/Kconfig
+> > > @@ -5,6 +5,7 @@ config BTRFS_FS
+> > >  	select CRYPTO
+> > >  	select CRYPTO_CRC32C
+> > >  	select LIBCRC32C
+> > > +	select CRYPTO_XXHASH
+> > 
+> > Just an off topic idea, can we make such CRYPTO_* support configurable?
+> > E.g. make something like CONFIG_BTRFS_CRYPTO_XXHASH.
+> > 
+> > Not sure if everyone would like to pull all hash algorithm.
+>  
+> This is something I thought about as well, but I was afraid of people shooting
+> themselves in the foot if they forget to switch them on and mkfs with the
+> wrong option.
 
-[ Upstream commit 0ee5f8ae082e1f675a2fb6db601c31ac9958a134 ]
+> Not sure what's the better way here? Dave?
 
-The list of profiles in btrfs_chunk_max_errors lists DUP as a profile
-DUP able to tolerate 1 device missing. Though this profile is special
-with 2 copies, it still needs the device, unlike the others.
+I'd go to pull everything unconditionally, which means that all
+dependent modules are built and does not require the user to tweak the
+config.
 
-Looking at the history of changes, thre's no clear reason why DUP is
-there, functions were refactored and blocks of code merged to one
-helper.
+I understand that there are setups that don't want to provide all hash
+algorithms eg. due to space constraints. That will be still possible and
+puts the "burden" on the distributor/integrator. Simply don't provide
+the .ko files. The crypto API can detect that during mount the shash
+descriptor cannot be instantiated and will fail. In specialized setups
+this is ok, because lack of the hash algorithm is known.
 
-d20983b40e828 Btrfs: fix writing data into the seed filesystem
-  - factor code to a helper
+For everybody else, the filesystem should come with all parts included
+so the features work.
 
-de11cc12df173 Btrfs: don't pre-allocate btrfs bio
-  - unrelated change, DUP still in the list with max errors 1
+The situation with zlib/lzo/zstd is different because we use the library
+functions, not the separate .ko modules. This is a bit more convenient.
 
-a236aed14ccb0 Btrfs: Deal with failed writes in mirrored configurations
-  - introduced the max errors, leaves DUP and RAID1 in the same group
-
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/volumes.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 4eb7a6ba7e47..55ce6543050d 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4942,8 +4942,7 @@ static inline int btrfs_chunk_max_errors(struct map_lookup *map)
- 
- 	if (map->type & (BTRFS_BLOCK_GROUP_RAID1 |
- 			 BTRFS_BLOCK_GROUP_RAID10 |
--			 BTRFS_BLOCK_GROUP_RAID5 |
--			 BTRFS_BLOCK_GROUP_DUP)) {
-+			 BTRFS_BLOCK_GROUP_RAID5)) {
- 		max_errors = 1;
- 	} else if (map->type & BTRFS_BLOCK_GROUP_RAID6) {
- 		max_errors = 2;
--- 
-2.20.1
-
+We don't want to do that with the hash algorithms though because there
+are usually optimized verions that we do want to use, and the crypto API
+does all the work.

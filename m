@@ -2,70 +2,103 @@ Return-Path: <SRS0=ht5M=VX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 56CCFC7618B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Jul 2019 13:28:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2E47AC7618B
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Jul 2019 13:44:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3A6D922BE8
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Jul 2019 13:28:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id EFB1022DA7
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Jul 2019 13:44:48 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1564148689;
+	bh=rG878YI2kRgajK4jol6RtcXjmLSgt98/dcnrs4emepw=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
+	b=CC7BaPZQFgXf9/ZqO4wQA5lLBWBuv+RvlJQ1s6Q+/QTLrBPdITUCtf9W91xuysIm6
+	 GUa6TAI9SVw0OAZ9JMkcD0AccPU0KRj/5VZjddN5oXVh6W1Int79qcsvz8cHbAOEhG
+	 +gNSTXxucKUj50HszVQbaZDr19iiDPD1wOSIPOq4=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726983AbfGZN2s (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 26 Jul 2019 09:28:48 -0400
-Received: from mx2.suse.de ([195.135.220.15]:50512 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726001AbfGZN2s (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Jul 2019 09:28:48 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B3936AF1D;
-        Fri, 26 Jul 2019 13:28:46 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id BF30EDA811; Fri, 26 Jul 2019 15:29:22 +0200 (CEST)
-Date:   Fri, 26 Jul 2019 15:29:22 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Paul Menzel <pmenzel@molgen.mpg.de>
-Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        Catalin Marinas <catalin.marinas@arm.com>
-Subject: Re: BTRFS: Kmemleak errrors with do_sys_ftruncate
-Message-ID: <20190726132922.GA2868@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Paul Menzel <pmenzel@molgen.mpg.de>,
-        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        Catalin Marinas <catalin.marinas@arm.com>
-References: <8c9b2f4e-252c-fee7-ef52-4ec2b9b54042@molgen.mpg.de>
+        id S2388422AbfGZNor (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 26 Jul 2019 09:44:47 -0400
+Received: from mail.kernel.org ([198.145.29.99]:53138 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S2387898AbfGZNor (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Jul 2019 09:44:47 -0400
+Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id DA18F22CD3;
+        Fri, 26 Jul 2019 13:44:45 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1564148686;
+        bh=rG878YI2kRgajK4jol6RtcXjmLSgt98/dcnrs4emepw=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=KL5lFTdodA8RzLoE4L745kSInsUMR/UnNgrGEmADVqCutKAFLIvgRLlE/VCkaIE9+
+         IO0pNbQ1O8WUQfsPnk+7HDqXazK/KfTqbBAFeo6tbc+N6Wiy6JhVLDM2xIO7KGJZGu
+         UTqQPxPSnxdCr0HayrB4BtXf+tEqyuc116+rZ7K8=
+From:   Sasha Levin <sashal@kernel.org>
+To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc:     David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>,
+        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 4.9 10/30] btrfs: fix minimum number of chunk errors for DUP
+Date:   Fri, 26 Jul 2019 09:44:12 -0400
+Message-Id: <20190726134432.12993-10-sashal@kernel.org>
+X-Mailer: git-send-email 2.20.1
+In-Reply-To: <20190726134432.12993-1-sashal@kernel.org>
+References: <20190726134432.12993-1-sashal@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <8c9b2f4e-252c-fee7-ef52-4ec2b9b54042@molgen.mpg.de>
-User-Agent: Mutt/1.5.23.1 (2014-03-12)
+X-stable: review
+X-Patchwork-Hint: Ignore
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Jul 26, 2019 at 03:16:57PM +0200, Paul Menzel wrote:
-> Dear Linux folks,
-> 
-> 
-> On a Power 8 server
-> 
->     Linux power 5.3.0-rc1+ #1 SMP Fri Jul 26 11:34:28 CEST 2019 ppc64le ppc64le ppc64le GNU/Linux
-> 
-> Kmemleak reports the warnings below.
+From: David Sterba <dsterba@suse.com>
 
-There are memory leaks of struct extent_state introduced in 5.3 pull and
-there's a fix going to 5.3-rc2 (https://patchwork.kernel.org/patch/11060447/).
+[ Upstream commit 0ee5f8ae082e1f675a2fb6db601c31ac9958a134 ]
 
-> I believe these have been present for some releases already, but Kmemleak
-> was broken until now on that system, so that I could only report them now.
+The list of profiles in btrfs_chunk_max_errors lists DUP as a profile
+DUP able to tolerate 1 device missing. Though this profile is special
+with 2 copies, it still needs the device, unlike the others.
 
-We have a leak detector built-in btrfs so I think we'd notice and that
-you observe the known leak. You could try to apply the patch or wait for
-rc2 and restst.
+Looking at the history of changes, thre's no clear reason why DUP is
+there, functions were refactored and blocks of code merged to one
+helper.
+
+d20983b40e828 Btrfs: fix writing data into the seed filesystem
+  - factor code to a helper
+
+de11cc12df173 Btrfs: don't pre-allocate btrfs bio
+  - unrelated change, DUP still in the list with max errors 1
+
+a236aed14ccb0 Btrfs: Deal with failed writes in mirrored configurations
+  - introduced the max errors, leaves DUP and RAID1 in the same group
+
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ fs/btrfs/volumes.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 94b61afe996c..70aa22a8a9cc 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5072,8 +5072,7 @@ static inline int btrfs_chunk_max_errors(struct map_lookup *map)
+ 
+ 	if (map->type & (BTRFS_BLOCK_GROUP_RAID1 |
+ 			 BTRFS_BLOCK_GROUP_RAID10 |
+-			 BTRFS_BLOCK_GROUP_RAID5 |
+-			 BTRFS_BLOCK_GROUP_DUP)) {
++			 BTRFS_BLOCK_GROUP_RAID5)) {
+ 		max_errors = 1;
+ 	} else if (map->type & BTRFS_BLOCK_GROUP_RAID6) {
+ 		max_errors = 2;
+-- 
+2.20.1
+

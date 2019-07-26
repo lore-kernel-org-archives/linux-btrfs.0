@@ -2,103 +2,157 @@ Return-Path: <SRS0=ht5M=VX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EB5C2C7618B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Jul 2019 13:59:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 81AFEC7618B
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Jul 2019 14:18:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BC2FA22CE5
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Jul 2019 13:59:49 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1564149589;
-	bh=edvf3DTeDzU2yIlOWa9VLhVU3UJsUzw5MBZd+FpJX9k=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=TKhmJJxPj1z16msa5m2Kq5+Euwc4G1L2UVyMxAXl17hYmPNojEXwfDRlOggnPL1Le
-	 xVM4kKPwGmm0cq+VBLRD9fwaTL+L3Sncy/kLbAOFSCX5zoEWld7CZtskbYm6ZKVyZ8
-	 zdHHNUuF+CyK0zlLi+rdmxkn5C7aIzasSJntV2YA=
+	by mail.kernel.org (Postfix) with ESMTP id 555E321850
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Jul 2019 14:18:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388476AbfGZN7s (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 26 Jul 2019 09:59:48 -0400
-Received: from mail.kernel.org ([198.145.29.99]:46470 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2387438AbfGZNkZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Jul 2019 09:40:25 -0400
-Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 8712722BEF;
-        Fri, 26 Jul 2019 13:40:23 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1564148424;
-        bh=edvf3DTeDzU2yIlOWa9VLhVU3UJsUzw5MBZd+FpJX9k=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=B7L/zlhWceZGhXbqMFwfl7mk5R20Yw4pIKl9eoTNtEzq6gh/xOutBjsgQVfU1WcWm
-         hXrleFBEDAMef8ChlYvTmR1q4xvFGBDvyCfLTLwM8av5WK1tMIfJJTwiY1b6UatDNT
-         OONUVV2evFX6D282ka5cWxwdbVq/I5mXFTBL/K8E=
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>,
-        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.2 27/85] btrfs: fix minimum number of chunk errors for DUP
-Date:   Fri, 26 Jul 2019 09:38:37 -0400
-Message-Id: <20190726133936.11177-27-sashal@kernel.org>
-X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20190726133936.11177-1-sashal@kernel.org>
-References: <20190726133936.11177-1-sashal@kernel.org>
+        id S1727499AbfGZOSu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 26 Jul 2019 10:18:50 -0400
+Received: from mx2.suse.de ([195.135.220.15]:41402 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727358AbfGZOSu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Jul 2019 10:18:50 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 44458AE82;
+        Fri, 26 Jul 2019 14:18:48 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id C9770DA811; Fri, 26 Jul 2019 16:19:23 +0200 (CEST)
+Date:   Fri, 26 Jul 2019 16:19:23 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     fdmanana@kernel.org
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix race leading to fs corruption after
+ transaction abortion
+Message-ID: <20190726141922.GC2868@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
+        linux-btrfs@vger.kernel.org
+References: <20190725102704.11404-1-fdmanana@kernel.org>
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190725102704.11404-1-fdmanana@kernel.org>
+User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: David Sterba <dsterba@suse.com>
+On Thu, Jul 25, 2019 at 11:27:04AM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> When one transaction is finishing its commit, it is possible for another
+> transaction to start and enter its initial commit phase as well. If the
+> first ends up getting aborted, we have a small time window where the second
+> transaction commit does not notice that the previous transaction aborted
+> and ends up committing, writing a superblock that points to btrees that
+> reference extent buffers (nodes and leafs) that were not persisted to disk.
+> The consequence is that after mounting the filesystem again, we will be
+> unable to load some btree nodes/leafs, either because the content on disk
+> is either garbage (or just zeroes) or corresponds to the old content of a
+> previouly COWed or deleted node/leaf, resulting in the well known error
+> messages "parent transid verify failed on ...".
+> The following sequence diagram illustrates how this can happen.
+> 
+>         CPU 1                                           CPU 2
+> 
+>  <at transaction N>
+> 
+>  btrfs_commit_transaction()
+>    (...)
+>    --> sets transaction state to
+>        TRANS_STATE_UNBLOCKED
+>    --> sets fs_info->running_transaction
+>        to NULL
+> 
+>                                                     (...)
+>                                                     btrfs_start_transaction()
+>                                                       start_transaction()
+>                                                         wait_current_trans()
+>                                                           --> returns immediately
+>                                                               because
+>                                                               fs_info->running_transaction
+>                                                               is NULL
+>                                                         join_transaction()
+>                                                           --> creates transaction N + 1
+>                                                           --> sets
+>                                                               fs_info->running_transaction
+>                                                               to transaction N + 1
+>                                                           --> adds transaction N + 1 to
+>                                                               the fs_info->trans_list list
+>                                                         --> returns transaction handle
+>                                                             pointing to the new
+>                                                             transaction N + 1
+>                                                     (...)
+> 
+>                                                     btrfs_sync_file()
+>                                                       btrfs_start_transaction()
+>                                                         --> returns handle to
+>                                                             transaction N + 1
+>                                                       (...)
+> 
+>    btrfs_write_and_wait_transaction()
+>      --> writeback of some extent
+>          buffer fails, returns an
+> 	 error
+>    btrfs_handle_fs_error()
+>      --> sets BTRFS_FS_STATE_ERROR in
+>          fs_info->fs_state
+>    --> jumps to label "scrub_continue"
+>    cleanup_transaction()
+>      btrfs_abort_transaction(N)
+>        --> sets BTRFS_FS_STATE_TRANS_ABORTED
+>            flag in fs_info->fs_state
+>        --> sets aborted field in the
+>            transaction and transaction
+> 	   handle structures, for
+>            transaction N only
+>      --> removes transaction from the
+>          list fs_info->trans_list
+>                                                       btrfs_commit_transaction(N + 1)
+>                                                         --> transaction N + 1 was not
+> 							    aborted, so it proceeds
+>                                                         (...)
+>                                                         --> sets the transaction's state
+>                                                             to TRANS_STATE_COMMIT_START
+>                                                         --> does not find the previous
+>                                                             transaction (N) in the
+>                                                             fs_info->trans_list, so it
+>                                                             doesn't know that transaction
+>                                                             was aborted, and the commit
+>                                                             of transaction N + 1 proceeds
+>                                                         (...)
+>                                                         --> sets transaction N + 1 state
+>                                                             to TRANS_STATE_UNBLOCKED
+>                                                         btrfs_write_and_wait_transaction()
+>                                                           --> succeeds writing all extent
+>                                                               buffers created in the
+>                                                               transaction N + 1
+>                                                         write_all_supers()
+>                                                            --> succeeds
+>                                                            --> we now have a superblock on
+>                                                                disk that points to trees
+>                                                                that refer to at least one
+>                                                                extent buffer that was
+>                                                                never persisted
+> 
+> So fix this by updating the transaction commit path to check if the flag
+> BTRFS_FS_STATE_TRANS_ABORTED is set on fs_info->fs_state if after setting
+> the transaction to the TRANS_STATE_COMMIT_START we do not find any previous
+> transaction in the fs_info->trans_list. If the flag is set, just fail the
+> transaction commit with -EROFS, as we do in other places. The exact error
+> code for the previous transaction abort was already logged and reported.
+> 
+> Fixes: 49b25e0540904b ("btrfs: enhance transaction abort infrastructure")
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-[ Upstream commit 0ee5f8ae082e1f675a2fb6db601c31ac9958a134 ]
+Reviewed-by: David Sterba <dsterba@suse.com>
 
-The list of profiles in btrfs_chunk_max_errors lists DUP as a profile
-DUP able to tolerate 1 device missing. Though this profile is special
-with 2 copies, it still needs the device, unlike the others.
-
-Looking at the history of changes, thre's no clear reason why DUP is
-there, functions were refactored and blocks of code merged to one
-helper.
-
-d20983b40e828 Btrfs: fix writing data into the seed filesystem
-  - factor code to a helper
-
-de11cc12df173 Btrfs: don't pre-allocate btrfs bio
-  - unrelated change, DUP still in the list with max errors 1
-
-a236aed14ccb0 Btrfs: Deal with failed writes in mirrored configurations
-  - introduced the max errors, leaves DUP and RAID1 in the same group
-
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/volumes.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 1c2a6e4b39da..8508f6028c8d 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5328,8 +5328,7 @@ static inline int btrfs_chunk_max_errors(struct map_lookup *map)
- 
- 	if (map->type & (BTRFS_BLOCK_GROUP_RAID1 |
- 			 BTRFS_BLOCK_GROUP_RAID10 |
--			 BTRFS_BLOCK_GROUP_RAID5 |
--			 BTRFS_BLOCK_GROUP_DUP)) {
-+			 BTRFS_BLOCK_GROUP_RAID5)) {
- 		max_errors = 1;
- 	} else if (map->type & BTRFS_BLOCK_GROUP_RAID6) {
- 		max_errors = 2;
--- 
-2.20.1
-
+Queued for 5.3, thanks.

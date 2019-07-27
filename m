@@ -1,238 +1,100 @@
-Return-Path: <SRS0=ht5M=VX=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=dgMB=VY=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6457BC7618F
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Jul 2019 23:26:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 93E6BC7618B
+	for <linux-btrfs@archiver.kernel.org>; Sat, 27 Jul 2019 08:51:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2BC5A20869
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Jul 2019 23:26:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 54E142080C
+	for <linux-btrfs@archiver.kernel.org>; Sat, 27 Jul 2019 08:51:25 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="d4tyXf30"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="GzLD5ekh"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727260AbfGZX0m (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 26 Jul 2019 19:26:42 -0400
-Received: from mout.gmx.net ([212.227.15.19]:36429 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726651AbfGZX0l (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Jul 2019 19:26:41 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1564183593;
-        bh=FtEFAvb9YGEPhout8TbA4gFQvpP2WOo1B2so2pjEYkA=;
-        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=d4tyXf30b1Nhr8JoVtJwCuKFxa5/NNd3FSoMMmKEsYeDgoapI0DW20Z5BlTz49hjv
-         M1dNK1Jx4RxaCryjrgFsPj9cSsXNRf3VE+OrTkSsp9qHLOhj3czrnlhA0Ryyy7ntM0
-         ImhZJ5O2NNBXSMlS7bDn+dbZ6eM+gCAqAj7nbNcE=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([54.250.245.166]) by mail.gmx.com (mrgmx003
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0Lj1Cw-1iOYPm28Qo-00dCrp; Sat, 27
- Jul 2019 01:26:33 +0200
-Subject: Re: [PATCH 3/3] btrfs: tree-checker: Add ROOT_ITEM check
-To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20190716090034.11641-1-wqu@suse.com>
- <20190716090034.11641-4-wqu@suse.com> <20190726152925.GG2868@twin.jikos.cz>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <98f0c716-b7ce-df16-a86e-634f03b68b31@gmx.com>
-Date:   Sat, 27 Jul 2019 07:26:28 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.8.0
-MIME-Version: 1.0
-In-Reply-To: <20190726152925.GG2868@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="WaQowfgNAvePmszwZe1UP0D5zKjs2cgBV"
-X-Provags-ID: V03:K1:e1rUIT8TaiJBzIPJA/x+ne3DE7F2HR7D9PQOSQgW1DQCvmHosJt
- oLqmR9nsWwVKHcPyfJHE2wYYtjdTPrERvRyNZya61DsaYF7fpteQ1UsFFTB8vyCmjmnFE5X
- WkbAM6/6P3ojFgQLlGT40vJxeIBLHJ1uVfkqM/omlCBU2oNeloe82nKzsSb3dy0DpPZePh5
- fVXqVRB6kbYpguU44/aEw==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:fMP1uPWT6k4=:WpLaJ9nwaiwONcil4PgHyk
- GAJRetBWlzq9Dlw8+ylJUkWjl3SIrUEd3bXmp6GYvY0AxVZAB0Waqcc/5rJygnIVBfIfYcq1/
- 95C8abbWmu5QXoOTsu/dVCfxg/VwOcFtO6E8WO/4PYtNTtRK3S0auHAvGtkv44Av4L4UysoEF
- 3Srd6sPts4M3hLtDO5Zmf2ZJ7ynWAvYZccmP4c5yZpmPooFwfrdxG0OENWZ0bBOOHk7c78TYP
- 3z6Yl0QNV8iBtzSSO2pg4EF1m13SzDAIZKWMzw0VAQYp2Xb5a6/Pw8mltzlfbk5W+oUAsUm8p
- pzNrGmF8YBTKorFrtCNsVfk7DUcOhPQ1+PToo4IHCFu5JAXI1tYOC6Cm33ly6+lMxLcrqWcPf
- j8oAL/n+jMOifYbkKZ9qd4/eWuwwHkDknugEjUy4Y1hz4OCjnMOCuc66GOeJ/gQ5Y6lTCeH+R
- lJAoygDKr6nWalPV9zpg1LwlQRAUYLSLLaFPyaqmy4iUMteD42/FzUlAxQsxqAC14hbtNxccY
- A53p7mLwFtv03rhG+tiLt7AYa6iaUnKWCuzP8XwGRQC/JyhGUGr2U6uZglXj9B1OjRhpsCLyX
- 6j//Z5Nvy6zB6K7+kXLB/Jw9g8RZIrYF2z+JO+YWz9uBOKuS4Rj7GNfNdDXQ8rkEfXYRs8/+P
- UkhqsdSwIKNV6Eyc2KxNEeQFA3FR7X4PfpBCx4wtI2pEvpruXmIWJJQhivxlBlKtoAlqTxjka
- hXysDLKE8lomieO9JWClSLXAm+bKxprM+lvk0NCdyNf8lFf+DVt80rXzYuL0VtzEBKcfime0W
- +ff20H8ySjmin0wNIwvmPf3q1oh6aHsm4o2oQvF9c9VdPFkj7wef11VqC78Ur/o977XTFu48w
- WduAGQRyQIauX/Y/95rfHfHU0u0Zj62bdFb5vi3LIMqO8Zj41bWvpaRaqS+AKkFh2NjRR00LU
- fuuvym2q+i2K4ntF0opUKkweypaN/hL2ZAv5ogxWd5ahBiJzXCe23mqBRJVrxHE8nMTFAZEAm
- gt6L+fxBgdvVfeRtP57qqqI89JXl+hafAC/JE/7Sbpk2HTSt8cKrRRM4CtwLY85EtyXi+Wl0x
- e0upQ88WfugfnM=
+        id S2387414AbfG0IvV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 27 Jul 2019 04:51:21 -0400
+Received: from mail-pg1-f193.google.com ([209.85.215.193]:36684 "EHLO
+        mail-pg1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727885AbfG0IvV (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 27 Jul 2019 04:51:21 -0400
+Received: by mail-pg1-f193.google.com with SMTP id l21so25858632pgm.3;
+        Sat, 27 Jul 2019 01:51:21 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=from:to:cc:subject:date:message-id;
+        bh=55lHtDMtjfNlskw3j+8zYPRK4+1cB7I6V8RARCYX3GI=;
+        b=GzLD5ekhx8z/wb3QT917ttdtnrY+EQw9g4h227ZKoDRaDGntaoPSobxnJMTVxuAnLi
+         Er+lioES9H6o9VYY+sYonwfyNHLpyaCOHlHvDBDdLs/Q3fdpOi80fs713rtz7hdOEqxy
+         VMVERGr2FjK1PBUrk76jg9FOoC8CMYaXunzJVPS7467bQWINqsi8TORLeXWyzjAIiVpk
+         AAdpMeqXxlGC5kpH4hkaC3DWg9ug0Oz44xawWoXifyM9M96mvjqa4674iYdQFCnh1WFh
+         V0eUIoQN4+WdB1iCyJxncFi0R+h1OQlRKmS/8coSSudG8eiKmd38TIGmap5SrNoNAuM0
+         LMng==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id;
+        bh=55lHtDMtjfNlskw3j+8zYPRK4+1cB7I6V8RARCYX3GI=;
+        b=UFvgJU1uK1zNaRoqOZf4pQUBzBM9gmxFTWUZfqPYsvMVD27bS2gH4AomLsJUeh4uFj
+         5OfhRlwDhqWZcIIbZpfQDlAJAZUOEk9t5kEdVpK9mnqXOX81dDRabv17g4bHF8vLyRJU
+         6h3xHPgK3mxVeSYrZ/irgq/EyNtGSv/HuXBygFpWWl5q0goaEmRslXJIq9V0lPPJrDSz
+         6arrbKEgQ3LeEZCEZakayqmFLQWkK8o6asoJFpk8nlorOmB8jGOvPsC+Ar2QS1tVB8wo
+         2pkCbic0k9HuhSc2Xxpxnet3q0mBHP5E644J9fxevUpHVxdisiZnkAeefvadhjbFmTps
+         S1lw==
+X-Gm-Message-State: APjAAAVX9r3aKvCjnDinSJUCSbZFhL7chjWNNaXDoDJkV9ud86eOS2ji
+        ZPpLho+SOEiuvOd2KOYZcvg=
+X-Google-Smtp-Source: APXvYqx44yw7o82mpVABbAixZf9fnlIPZmQr+F9FqSf3L8jf5wtTzZM8CxeliTuepcZWyROQjTjJWw==
+X-Received: by 2002:a63:3046:: with SMTP id w67mr57703189pgw.37.1564217480832;
+        Sat, 27 Jul 2019 01:51:20 -0700 (PDT)
+Received: from oslab.tsinghua.edu.cn ([2402:f000:4:72:808::3ca])
+        by smtp.gmail.com with ESMTPSA id r18sm52693443pfg.77.2019.07.27.01.51.18
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Sat, 27 Jul 2019 01:51:20 -0700 (PDT)
+From:   Jia-Ju Bai <baijiaju1990@gmail.com>
+To:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.cz,
+        quwenruo.btrfs@gmx.com
+Cc:     linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Jia-Ju Bai <baijiaju1990@gmail.com>
+Subject: [PATCH] fs: btrfs: Add an assertion to warn incorrct case in insert_inline_extent()
+Date:   Sat, 27 Jul 2019 16:51:13 +0800
+Message-Id: <20190727085113.11530-1-baijiaju1990@gmail.com>
+X-Mailer: git-send-email 2.17.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---WaQowfgNAvePmszwZe1UP0D5zKjs2cgBV
-Content-Type: multipart/mixed; boundary="Ny2ZtLcjeiRAvtnpDghLjYmZ8L6hoQBUt";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <98f0c716-b7ce-df16-a86e-634f03b68b31@gmx.com>
-Subject: Re: [PATCH 3/3] btrfs: tree-checker: Add ROOT_ITEM check
-References: <20190716090034.11641-1-wqu@suse.com>
- <20190716090034.11641-4-wqu@suse.com> <20190726152925.GG2868@twin.jikos.cz>
-In-Reply-To: <20190726152925.GG2868@twin.jikos.cz>
+In insert_inline_extent(), the case that compressed_size > 0 
+and compressed_pages = NULL cannot occur, otherwise a null-pointer
+dereference may occur on line 215:
+     cpage = compressed_pages[i];
 
---Ny2ZtLcjeiRAvtnpDghLjYmZ8L6hoQBUt
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+To warn this incorrect case, an assertion is added.
+Thank Qu Wenruo and David Sterba for good advice.
 
-[snip]
->=20
->> +	}
->> +
->> +	read_extent_buffer(leaf, &ri, btrfs_item_ptr_offset(leaf, slot),
->> +			   sizeof(ri));
->> +
->> +	/* Generateion related */
->=20
-> typo here and a few more times below
->=20
->> +	if (btrfs_root_generation(&ri) >
->> +	    btrfs_super_generation(fs_info->super_copy) + 1) {
->> +		generic_err(leaf, slot,
->> +			"invalid root generaetion, have %llu expect (0, %llu]",
->> +			    btrfs_root_generation(&ri),
->> +			    btrfs_super_generation(fs_info->super_copy) + 1);
->> +		return -EUCLEAN;
->> +	}
->> +	if (btrfs_root_generation_v2(&ri) >
->> +	    btrfs_super_generation(fs_info->super_copy) + 1) {
->> +		generic_err(leaf, slot,
->> +		"invalid root v2 generaetion, have %llu expect (0, %llu]",
->=20
-> So (0, %llu] here means that it must be greater than zero, right? I'm
-> not sure that everyone uses the same notation for open/closed notation.=
+Signed-off-by: Jia-Ju Bai <baijiaju1990@gmail.com>
+---
+ fs/btrfs/inode.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 1af069a9a0c7..21d6e2dcc25f 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -178,6 +178,9 @@ static int insert_inline_extent(struct btrfs_trans_handle *trans,
+ 	size_t cur_size = size;
+ 	unsigned long offset;
+ 
++	ASSERT((compressed_size > 0 && compressed_pages) ||
++			(compressed_size == 0 && !compressed_pages))
++
+ 	if (compressed_size && compressed_pages)
+ 		cur_size = compressed_size;
+ 
+-- 
+2.17.0
 
-AFAIK in tree checker it's all the same notation.
-
-Or any better solution for that?
-
-Thanks,
-Qu
-
->=20
->> +			    btrfs_root_generation_v2(&ri),
->> +			    btrfs_super_generation(fs_info->super_copy) + 1);
->> +		return -EUCLEAN;
->> +	}
->> +	if (btrfs_root_last_snapshot(&ri) >
->> +	    btrfs_super_generation(fs_info->super_copy) + 1) {
->> +		generic_err(leaf, slot,
->> +		"invalid root last_snapshot, have %llu expect (0, %llu]",
->> +			    btrfs_root_last_snapshot(&ri),
->> +			    btrfs_super_generation(fs_info->super_copy) + 1);
->> +		return -EUCLEAN;
->> +	}
->> +
->> +	/* Alignment and level check */
->> +	if (!IS_ALIGNED(btrfs_root_bytenr(&ri), fs_info->sectorsize)) {
->> +		generic_err(leaf, slot,
->> +			"invalid root bytenr, have %llu expect to be aligned to %u",
->> +			    btrfs_root_bytenr(&ri), fs_info->sectorsize);
->> +		return -EUCLEAN;
->> +	}
->> +	if (btrfs_root_level(&ri) >=3D BTRFS_MAX_LEVEL) {
->> +		generic_err(leaf, slot,
->> +			"invalid root level, have %u expect [0, %u]",
->> +			    btrfs_root_level(&ri), BTRFS_MAX_LEVEL - 1);
->> +		return -EUCLEAN;
->> +	}
->> +	if (ri.drop_level >=3D BTRFS_MAX_LEVEL) {
->> +		generic_err(leaf, slot,
->> +			"invalid root level, have %u expect [0, %u]",
->> +			    ri.drop_level, BTRFS_MAX_LEVEL - 1);
->> +		return -EUCLEAN;
->> +	}
->> +
->> +	/* Flags check */
->> +	if (btrfs_root_flags(&ri) & ~valid_root_flags) {
->> +		generic_err(leaf, slot,
->> +			"invalid root flags, have 0x%llx expect mask 0x%llu",
->=20
->                                                                      0x=
-%llx
->=20
->> +			    btrfs_root_flags(&ri), valid_root_flags);
->> +		return -EUCLEAN;
->> +	}
->> +	return 0;
->> +}
->> +
->>  /*
->>   * Common point to switch the item-specific validation.
->>   */
->> @@ -845,6 +934,9 @@ static int check_leaf_item(struct extent_buffer *l=
-eaf,
->>  	case BTRFS_INODE_ITEM_KEY:
->>  		ret =3D check_inode_item(leaf, key, slot);
->>  		break;
->> +	case BTRFS_ROOT_ITEM_KEY:
->> +		ret =3D check_root_item(leaf, key, slot);
->> +		break;
->>  	}
->>  	return ret;
->>  }
->> --=20
->> 2.22.0
-
-
---Ny2ZtLcjeiRAvtnpDghLjYmZ8L6hoQBUt--
-
---WaQowfgNAvePmszwZe1UP0D5zKjs2cgBV
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl07jCQACgkQwj2R86El
-/qjlXgf/egCaWejrpzZhxDjjc3wzf3F2vsx6681ux+0KN89RkdB87hRKzyCA9hJE
-4K6uFeui683uDCxqlsCEOQJfLyLKUH3/Xt8NKbwtS+nu7LMWTIqrHeiDH11Ko50H
-o4FF2nbQMU78RW9VfMIo1xeELhupCtSoz+LTv8u6UuaLJLFF54WBCkgaqgPukWII
-3uCmr7Yp1g056f5DwDo6tpljM3Y+fgezp1VQ8IjnDiluRdT5gIbrKtOeA5fewcZ5
-wl2WSCREmkVI0Z/r+sQhldj6nlub/Cad39FtCeZZLA0VgbfQkKjh//Ab1SRB0kxO
-OrSF7Lto5zhD95hPpmies92n7GIbjg==
-=4xHZ
------END PGP SIGNATURE-----
-
---WaQowfgNAvePmszwZe1UP0D5zKjs2cgBV--

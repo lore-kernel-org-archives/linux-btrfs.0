@@ -6,25 +6,25 @@ X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
 	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3F16CC433FF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Jul 2019 14:55:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D2E95C7618B
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Jul 2019 15:05:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1A1522054F
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Jul 2019 14:55:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B3EF52067D
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Jul 2019 15:05:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728193AbfG2OzV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 29 Jul 2019 10:55:21 -0400
-Received: from relay8-d.mail.gandi.net ([217.70.183.201]:54009 "EHLO
-        relay8-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726197AbfG2OzU (ORCPT
+        id S2387858AbfG2PFm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 29 Jul 2019 11:05:42 -0400
+Received: from relay11.mail.gandi.net ([217.70.178.231]:38929 "EHLO
+        relay11.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2387494AbfG2PFl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Jul 2019 10:55:20 -0400
-X-Originating-IP: 88.191.131.7
+        Mon, 29 Jul 2019 11:05:41 -0400
 Received: from [10.137.0.38] (unknown [88.191.131.7])
         (Authenticated sender: swami@petaramesh.org)
-        by relay8-d.mail.gandi.net (Postfix) with ESMTPSA id 3D1401BF207;
-        Mon, 29 Jul 2019 14:55:19 +0000 (UTC)
+        by relay11.mail.gandi.net (Postfix) with ESMTPSA id DC73F100004;
+        Mon, 29 Jul 2019 15:05:39 +0000 (UTC)
 Subject: Re: Massive filesystem corruption since kernel 5.2 (ARCH)
+From:   =?UTF-8?Q?Sw=c3=a2mi_Petaramesh?= <swami@petaramesh.org>
 To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
 References: <bcb1a04b-f0b0-7699-92af-501e774de41a@petaramesh.org>
  <c336ccf4-34f5-a844-888c-cd63d8dc5c4e@petaramesh.org>
@@ -40,7 +40,7 @@ References: <bcb1a04b-f0b0-7699-92af-501e774de41a@petaramesh.org>
  <43dc92e7-cd13-81db-bbe5-68affcdd317b@gmx.com>
  <a74e3ba6-7106-f2c5-383e-1f75621605a5@petaramesh.org>
  <c5fb61ef-05dc-2bd4-a0aa-d86358d7b82a@gmx.com>
-From:   =?UTF-8?Q?Sw=c3=a2mi_Petaramesh?= <swami@petaramesh.org>
+ <5fd82812-22cf-253e-312a-1cfc33f4dfff@petaramesh.org>
 Openpgp: preference=signencrypt
 Autocrypt: addr=swami@petaramesh.org; keydata=
  xsDiBEP8C/QRBADPiYmcQstlx+HdyR2FGH+bDgRZ0ZJBAx6F0OPW+CmIa6tlwdhSFtCTJGcw
@@ -76,12 +76,12 @@ Autocrypt: addr=swami@petaramesh.org; keydata=
  TYaSBqmVw+0A3ILCZgQYEQIAJgIbDBYhBMwf46BtOfqyuRyYLi/CXB2QduMuBQJdAnbyBQki
  bGwWAAoJEC/CXB2QduMur1wAn1X3FcsmMdhMfiYwXw7LVw4FAIeWAJ9kLGer22WFWR2z2iU7
  BtUAN08OPA==
-Message-ID: <5fd82812-22cf-253e-312a-1cfc33f4dfff@petaramesh.org>
-Date:   Mon, 29 Jul 2019 16:55:18 +0200
+Message-ID: <e8a4ca58-0b5e-96ee-1fa5-552ad7e55785@petaramesh.org>
+Date:   Mon, 29 Jul 2019 17:05:38 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.7.0
 MIME-Version: 1.0
-In-Reply-To: <c5fb61ef-05dc-2bd4-a0aa-d86358d7b82a@gmx.com>
+In-Reply-To: <5fd82812-22cf-253e-312a-1cfc33f4dfff@petaramesh.org>
 Content-Type: text/plain; charset=utf-8
 Content-Transfer-Encoding: 8bit
 Content-Language: fr-FR
@@ -90,31 +90,23 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi again,
-
-On 7/29/19 4:51 PM, Qu Wenruo wrote:
-> If I understand your two threads correctly, one is this transid error,
-> the other one is tree-checker, which is completely different from this one.
+On 7/29/19 4:55 PM, Swâmi Petaramesh wrote:
+> Well  All the errors I detailed today happen on the SAME FS, and this fs
+> is a BTRFS that was created on a new HD with a recent kernel (surely >=
+> 4.19) only a few months ago.
 >
-> The tree-checker one is mostly caused by older fs, and as you mentioned,
-> reverting to 5.1 solves that problem.
->
-> This transid won't be resolved whatever kernel version you use, it's a
-> real corruption in extent tree, caused by incorrect metadata CoW.
->
-> So they are two different problems, and this transid error can be
-> completely unrelated to 5.2 kernel.
+> And the errors I have one this one, As far as I can tell, look exactly
+> like what happened on the same machines SSD as soons as I installer a
+> 5.2 kernel...
 
+Plus I just decided to “btrfs check” the SSD FS from my machine (not yet
+showing errors), which I completely reformatted using 5.2 3 days ago
+(after having fully tested the SSD error-free itself)...
 
-Well  All the errors I detailed today happen on the SAME FS, and this fs
-is a BTRFS that was created on a new HD with a recent kernel (surely >=
-4.19) only a few months ago.
+And btrfs check tells me that this FS is now completely corrupt as well
+:-(((
 
-And the errors I have one this one, As far as I can tell, look exactly
-like what happened on the same machines SSD as soons as I installer a
-5.2 kernel...
-
-Kind regards.
+The list of files in error has been scrolling for five minutes now :-(((
 
 -- 
 ॐ

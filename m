@@ -2,32 +2,34 @@ Return-Path: <SRS0=ZNbm=V2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 35F96C7618B
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Jul 2019 07:43:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 60648C7618B
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Jul 2019 07:43:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 15EE020657
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Jul 2019 07:43:46 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 407DA20657
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Jul 2019 07:43:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726837AbfG2Hnp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 29 Jul 2019 03:43:45 -0400
-Received: from mx2.suse.de ([195.135.220.15]:35556 "EHLO mx1.suse.de"
+        id S1727021AbfG2Hnr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 29 Jul 2019 03:43:47 -0400
+Received: from mx2.suse.de ([195.135.220.15]:35568 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725917AbfG2Hno (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Jul 2019 03:43:44 -0400
+        id S1726862AbfG2Hnr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 29 Jul 2019 03:43:47 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D7294AE1C
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jul 2019 07:43:43 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 1A9ACAE1C
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jul 2019 07:43:46 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/3] btrfs: tree-checker: Add extent items check
-Date:   Mon, 29 Jul 2019 15:43:34 +0800
-Message-Id: <20190729074337.10573-1-wqu@suse.com>
+Subject: [PATCH 2/3] btrfs: tree-checker: Add simple keyed refs check
+Date:   Mon, 29 Jul 2019 15:43:36 +0800
+Message-Id: <20190729074337.10573-3-wqu@suse.com>
 X-Mailer: git-send-email 2.22.0
+In-Reply-To: <20190729074337.10573-1-wqu@suse.com>
+References: <20190729074337.10573-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -35,42 +37,88 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Finally, we are going to add tree-checker support for extent items,
-which includes:
-- EXTENT_ITEM/METADATA_ITEM
-  Which futher contains inline backrefs of:
-  * TREE_BLOCK_REF
-  * SHARED_BLOCK_REF
-  * EXETNT_DATA_REF
-  * SHARED_DATA_REF
+For TREE_BLOCK_REF, SHARED_DATA_REF and SHARED_BLOCK_REF we need to
+check:
+              | TREE_BLOCK_REF | SHARED_BLOCK_REF | SHARED_BLOCK_REF
+--------------+----------------+-----------------+------------------
+key->objectid |    Alignment   |     Alignment    |    Alignment
+key->offset   |    Any value   |     Alignment    |    Alignment
+item_size     |        0       |        0         |   sizeof(le32) (*)
 
-- TREE_BLOCK_REF
-- SHARED_BLOCK_REF
-- EXTENT_DATA_REF
-- SHARED_DATA_REF
-  Keyed version of the above types
+*: sizeof(struct btrfs_shared_data_ref)
 
-The complexity of the on-disk format can be found in the first patch,
-which contains a basic introduction as comment.
+So introduce a check to check all these 3 key types together.
 
-Hidden pitfalls are everywhere, e.g. inlined EXTENT_DATA_REF don't use
-iref->offset, but put its own data at iref->offset.
-But SHARED_DATA_REF uses iref->offset, and put extra data after iref.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/tree-checker.c | 40 +++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 39 insertions(+), 1 deletion(-)
 
-Such on-disk layout makes sense, but definitely a mess to read.
-Thankfully we at least have print-tree code from btrfs-progs as a
-reference.
-
-Qu Wenruo (3):
-  btrfs: tree-checker: Add EXTENT_ITEM and METADATA_ITEM check
-  btrfs: tree-checker: Add simple keyed refs check
-  btrfs: tree-checker: Add EXTENT_DATA_REF check
-
- fs/btrfs/ctree.h        |   1 +
- fs/btrfs/extent-tree.c  |   2 +-
- fs/btrfs/tree-checker.c | 335 ++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 337 insertions(+), 1 deletion(-)
-
+diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+index 1e97bb127893..6ef174c7fb05 100644
+--- a/fs/btrfs/tree-checker.c
++++ b/fs/btrfs/tree-checker.c
+@@ -912,7 +912,9 @@ static void extent_err(const struct extent_buffer *eb, int slot,
+ 
+ 	btrfs_item_key_to_cpu(eb, &key, slot);
+ 	bytenr = key.objectid;
+-	if (key.type == BTRFS_METADATA_ITEM_KEY)
++	if (key.type == BTRFS_METADATA_ITEM_KEY ||
++	    key.type == BTRFS_TREE_BLOCK_REF_KEY ||
++	    key.type == BTRFS_SHARED_BLOCK_REF_KEY)
+ 		len = eb->fs_info->nodesize;
+ 	else
+ 		len = key.offset;
+@@ -1144,6 +1146,37 @@ static int check_extent_item(struct extent_buffer *leaf,
+ 	return -EUCLEAN;
+ }
+ 
++static int check_simple_keyed_refs(struct extent_buffer *leaf,
++				   struct btrfs_key *key, int slot)
++{
++	u32 expect_item_size = 0;
++
++	if (key->type == BTRFS_SHARED_DATA_REF_KEY)
++		expect_item_size = sizeof(struct btrfs_shared_data_ref);
++
++	if (btrfs_item_size_nr(leaf, slot) != expect_item_size) {
++		generic_err(leaf, slot,
++	"invalid item size, have %u expect %u for key type %u",
++			    btrfs_item_size_nr(leaf, slot),
++			    expect_item_size, key->type);
++		return -EUCLEAN;
++	}
++	if (!IS_ALIGNED(key->objectid, leaf->fs_info->sectorsize)) {
++		generic_err(leaf, slot,
++"invalid key objectid for shared block ref, have %llu expect aligned to %u",
++			    key->objectid, leaf->fs_info->sectorsize);
++		return -EUCLEAN;
++	}
++	if (key->type != BTRFS_TREE_BLOCK_REF_KEY &&
++	    !IS_ALIGNED(key->offset, leaf->fs_info->sectorsize)) {
++		extent_err(leaf, slot,
++		"invalid tree parent bytenr, have %llu expect aligned to %u",
++			   key->offset, leaf->fs_info->sectorsize);
++		return -EUCLEAN;
++	}
++	return 0;
++}
++
+ /*
+  * Common point to switch the item-specific validation.
+  */
+@@ -1186,6 +1219,11 @@ static int check_leaf_item(struct extent_buffer *leaf,
+ 	case BTRFS_METADATA_ITEM_KEY:
+ 		ret = check_extent_item(leaf, key, slot);
+ 		break;
++	case BTRFS_TREE_BLOCK_REF_KEY:
++	case BTRFS_SHARED_DATA_REF_KEY:
++	case BTRFS_SHARED_BLOCK_REF_KEY:
++		ret = check_simple_keyed_refs(leaf, key, slot);
++		break;
+ 	}
+ 	return ret;
+ }
 -- 
 2.22.0
 

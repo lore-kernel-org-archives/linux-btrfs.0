@@ -2,256 +2,108 @@ Return-Path: <SRS0=ZNbm=V2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 27757C433FF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Jul 2019 08:37:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 57418C7618B
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Jul 2019 12:33:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DCB1C20693
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Jul 2019 08:37:16 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1564389437;
-	bh=dQLN0Yggeu00v/FWI2FUFqWz1032sNdaQzdYzFAWs6M=;
-	h=From:To:Subject:Date:List-ID:From;
-	b=JuDfw/8rEPmNRRYrrlZVDYDZbAidIcx/U173M1OaUMRAuy5P3KO72DaVaE/FH91Tm
-	 vWmbQIwgUOIqnrixSgX3sayb9+hYmn4nDxWBiBHuDJ2rSSB0dP+a8g/ZUuLYi8eSRl
-	 CBcV0GgjVT/153zrqdO1802k1eGS3vXUkKFP8jU8=
+	by mail.kernel.org (Postfix) with ESMTP id 335CA2054F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Jul 2019 12:33:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727737AbfG2IhQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 29 Jul 2019 04:37:16 -0400
-Received: from mail.kernel.org ([198.145.29.99]:52792 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726305AbfG2IhP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Jul 2019 04:37:15 -0400
-Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 9D27620693
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jul 2019 08:37:13 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1564389434;
-        bh=dQLN0Yggeu00v/FWI2FUFqWz1032sNdaQzdYzFAWs6M=;
-        h=From:To:Subject:Date:From;
-        b=k6MHKNjWRZlxL7S3T+yQQmbpAQvHCwTZwMjuoxXsQWV1qiGLd5C9U/FUnO0WOTBWU
-         lHIHBjSw4uuHBw9aoyxGHoOkGsp2kh1cspBY+HQLzoAWEEp5WN5A26OoQfba+xnSHS
-         k+PJStFpImpXJDUXr7U8z7d4KxGvcBxlKUeKFJ4Y=
-From:   fdmanana@kernel.org
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix deadlock between fiemap and transaction commits
-Date:   Mon, 29 Jul 2019 09:37:10 +0100
-Message-Id: <20190729083710.5680-1-fdmanana@kernel.org>
-X-Mailer: git-send-email 2.11.0
+        id S1728121AbfG2MdE convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 29 Jul 2019 08:33:04 -0400
+Received: from relay3-d.mail.gandi.net ([217.70.183.195]:54785 "EHLO
+        relay3-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728108AbfG2MdD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 29 Jul 2019 08:33:03 -0400
+X-Originating-IP: 88.191.131.7
+Received: from [10.137.0.38] (unknown [88.191.131.7])
+        (Authenticated sender: swami@petaramesh.org)
+        by relay3-d.mail.gandi.net (Postfix) with ESMTPSA id 258B460010;
+        Mon, 29 Jul 2019 12:33:00 +0000 (UTC)
+To:     linux-btrfs@vger.kernel.org, swami@petaramesh.org
+From:   =?UTF-8?Q?Sw=c3=a2mi_Petaramesh?= <swami@petaramesh.org>
+Subject: Massive filesystem corruption since kernel 5.2 (ARCH)
+Openpgp: preference=signencrypt
+Autocrypt: addr=swami@petaramesh.org; keydata=
+ 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
+ BtUAN08OPA==
+Message-ID: <bcb1a04b-f0b0-7699-92af-501e774de41a@petaramesh.org>
+Date:   Mon, 29 Jul 2019 14:32:59 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.7.0
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8BIT
+Content-Language: fr-FR
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+Hi list,
 
-The fiemap handler locks a file range that can have unflushed delalloc,
-and after locking the range, it tries to attach to a running transaction.
-If the running transaction started its commit, that is, it is in state
-TRANS_STATE_COMMIT_START, and either the filesystem was mounted with the
-flushoncommit option or the transaction is creating a snapshot for the
-subvolume that contains the file that fiemap is operating on, we end up
-deadlocking. This happens because fiemap is blocked on the transaction,
-waiting for it to complete, and the transaction is waiting for the flushed
-dealloc to complete, which requires locking the file range that the fiemap
-task already locked. The following stack traces serve as an example of
-when this deadlock happens:
+I've been using BTRFS for years on a whole lot of machines witch complex
+configurations (in RAID, over LUKS, with bcache etc) and was happy I
+never lost ONE byte.
 
-  (...)
-  [404571.515510] Workqueue: btrfs-endio-write btrfs_endio_write_helper [btrfs]
-  [404571.515956] Call Trace:
-  [404571.516360]  ? __schedule+0x3ae/0x7b0
-  [404571.516730]  schedule+0x3a/0xb0
-  [404571.517104]  lock_extent_bits+0x1ec/0x2a0 [btrfs]
-  [404571.517465]  ? remove_wait_queue+0x60/0x60
-  [404571.517832]  btrfs_finish_ordered_io+0x292/0x800 [btrfs]
-  [404571.518202]  normal_work_helper+0xea/0x530 [btrfs]
-  [404571.518566]  process_one_work+0x21e/0x5c0
-  [404571.518990]  worker_thread+0x4f/0x3b0
-  [404571.519413]  ? process_one_work+0x5c0/0x5c0
-  [404571.519829]  kthread+0x103/0x140
-  [404571.520191]  ? kthread_create_worker_on_cpu+0x70/0x70
-  [404571.520565]  ret_from_fork+0x3a/0x50
-  [404571.520915] kworker/u8:6    D    0 31651      2 0x80004000
-  [404571.521290] Workqueue: btrfs-flush_delalloc btrfs_flush_delalloc_helper [btrfs]
-  (...)
-  [404571.537000] fsstress        D    0 13117  13115 0x00004000
-  [404571.537263] Call Trace:
-  [404571.537524]  ? __schedule+0x3ae/0x7b0
-  [404571.537788]  schedule+0x3a/0xb0
-  [404571.538066]  wait_current_trans+0xc8/0x100 [btrfs]
-  [404571.538349]  ? remove_wait_queue+0x60/0x60
-  [404571.538680]  start_transaction+0x33c/0x500 [btrfs]
-  [404571.539076]  btrfs_check_shared+0xa3/0x1f0 [btrfs]
-  [404571.539513]  ? extent_fiemap+0x2ce/0x650 [btrfs]
-  [404571.539866]  extent_fiemap+0x2ce/0x650 [btrfs]
-  [404571.540170]  do_vfs_ioctl+0x526/0x6f0
-  [404571.540436]  ksys_ioctl+0x70/0x80
-  [404571.540734]  __x64_sys_ioctl+0x16/0x20
-  [404571.540997]  do_syscall_64+0x60/0x1d0
-  [404571.541279]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
-  (...)
-  [404571.543729] btrfs           D    0 14210  14208 0x00004000
-  [404571.544023] Call Trace:
-  [404571.544275]  ? __schedule+0x3ae/0x7b0
-  [404571.544526]  ? wait_for_completion+0x112/0x1a0
-  [404571.544795]  schedule+0x3a/0xb0
-  [404571.545064]  schedule_timeout+0x1ff/0x390
-  [404571.545351]  ? lock_acquire+0xa6/0x190
-  [404571.545638]  ? wait_for_completion+0x49/0x1a0
-  [404571.545890]  ? wait_for_completion+0x112/0x1a0
-  [404571.546228]  wait_for_completion+0x131/0x1a0
-  [404571.546503]  ? wake_up_q+0x70/0x70
-  [404571.546775]  btrfs_wait_ordered_extents+0x27c/0x400 [btrfs]
-  [404571.547159]  btrfs_commit_transaction+0x3b0/0xae0 [btrfs]
-  [404571.547449]  ? btrfs_mksubvol+0x4a4/0x640 [btrfs]
-  [404571.547703]  ? remove_wait_queue+0x60/0x60
-  [404571.547969]  btrfs_mksubvol+0x605/0x640 [btrfs]
-  [404571.548226]  ? __sb_start_write+0xd4/0x1c0
-  [404571.548512]  ? mnt_want_write_file+0x24/0x50
-  [404571.548789]  btrfs_ioctl_snap_create_transid+0x169/0x1a0 [btrfs]
-  [404571.549048]  btrfs_ioctl_snap_create_v2+0x11d/0x170 [btrfs]
-  [404571.549307]  btrfs_ioctl+0x133f/0x3150 [btrfs]
-  [404571.549549]  ? mem_cgroup_charge_statistics+0x4c/0xd0
-  [404571.549792]  ? mem_cgroup_commit_charge+0x84/0x4b0
-  [404571.550064]  ? __handle_mm_fault+0xe3e/0x11f0
-  [404571.550306]  ? do_raw_spin_unlock+0x49/0xc0
-  [404571.550608]  ? _raw_spin_unlock+0x24/0x30
-  [404571.550976]  ? __handle_mm_fault+0xedf/0x11f0
-  [404571.551319]  ? do_vfs_ioctl+0xa2/0x6f0
-  [404571.551659]  ? btrfs_ioctl_get_supported_features+0x30/0x30 [btrfs]
-  [404571.552087]  do_vfs_ioctl+0xa2/0x6f0
-  [404571.552355]  ksys_ioctl+0x70/0x80
-  [404571.552621]  __x64_sys_ioctl+0x16/0x20
-  [404571.552864]  do_syscall_64+0x60/0x1d0
-  [404571.553104]  entry_SYSCALL_64_after_hwframe+0x49/0xbe
-  (...)
+Well, since I upgraded my main laptop to Arch Linux kernel 5.2, I
+IMMEDIATELY got my laptop's SSD BTRFS FS (over LUKS) corrupt, and have
+to rebuild and restore it.
 
-If we were joining the transaction instead of attaching to it, we would
-not risk a deadlock because a join only blocks if the transaction is in a
-state greater then or equals to TRANS_STATE_COMMIT_DOING, and the delalloc
-flush performed by a transaction is done before it reaches that state,
-when it is in the state TRANS_STATE_COMMIT_START. However a transaction
-join is intended for use cases where we do modify the filesystem, and
-fiemap only needs to peek at delayed references from the current
-transaction in order to determine if extents are shared, and, besides
-that, when there is no current transaction or when it blocks to wait for
-a current committing transaction to complete, it creates a new transaction
-without reserving any space. Such unnecessary transactions, besides doing
-unnecessary IO, can cause transaction aborts (-ENOSPC) and unnecessary
-rotation of the precious backup roots.
+Today, same machine, but this time my external BTRFS (over LUKS) backup
+USB HDD went corrupt the same.
 
-So fix this by adding a new transaction join variant, named join_nostart,
-which behaves like the regular join, but it does not create a transaction
-when none currently exists or after waiting for a committing transaction
-to complete.
+The first logged messages looks the same in both cases : « Parent
+transid verify failed on (huge number) wanted 7684 found 7499. »
 
-Fixes: 03628cdbc64db6 ("Btrfs: do not start a transaction during fiemap")
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/backref.c     |  2 +-
- fs/btrfs/transaction.c | 22 ++++++++++++++++++----
- fs/btrfs/transaction.h |  3 +++
- 3 files changed, 22 insertions(+), 5 deletions(-)
+(This time - or similar numbers)
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 89116afda7a2..e5d85311d5d5 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -1483,7 +1483,7 @@ int btrfs_check_shared(struct btrfs_root *root, u64 inum, u64 bytenr,
- 	ulist_init(roots);
- 	ulist_init(tmp);
- 
--	trans = btrfs_attach_transaction(root);
-+	trans = btrfs_join_transaction_nostart(root);
- 	if (IS_ERR(trans)) {
- 		if (PTR_ERR(trans) != -ENOENT && PTR_ERR(trans) != -EROFS) {
- 			ret = PTR_ERR(trans);
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 7b8bd9046229..9dd62647895a 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -28,15 +28,18 @@ static const unsigned int btrfs_blocked_trans_types[TRANS_STATE_MAX] = {
- 	[TRANS_STATE_COMMIT_START]	= (__TRANS_START | __TRANS_ATTACH),
- 	[TRANS_STATE_COMMIT_DOING]	= (__TRANS_START |
- 					   __TRANS_ATTACH |
--					   __TRANS_JOIN),
-+					   __TRANS_JOIN |
-+					   __TRANS_JOIN_NOSTART),
- 	[TRANS_STATE_UNBLOCKED]		= (__TRANS_START |
- 					   __TRANS_ATTACH |
- 					   __TRANS_JOIN |
--					   __TRANS_JOIN_NOLOCK),
-+					   __TRANS_JOIN_NOLOCK |
-+					   __TRANS_JOIN_NOSTART),
- 	[TRANS_STATE_COMPLETED]		= (__TRANS_START |
- 					   __TRANS_ATTACH |
- 					   __TRANS_JOIN |
--					   __TRANS_JOIN_NOLOCK),
-+					   __TRANS_JOIN_NOLOCK |
-+					   __TRANS_JOIN_NOSTART),
- };
- 
- void btrfs_put_transaction(struct btrfs_transaction *transaction)
-@@ -525,7 +528,8 @@ start_transaction(struct btrfs_root *root, unsigned int num_items,
- 		ret = join_transaction(fs_info, type);
- 		if (ret == -EBUSY) {
- 			wait_current_trans(fs_info);
--			if (unlikely(type == TRANS_ATTACH))
-+			if (unlikely(type == TRANS_ATTACH ||
-+				     type == TRANS_JOIN_NOSTART))
- 				ret = -ENOENT;
- 		}
- 	} while (ret == -EBUSY);
-@@ -642,6 +646,16 @@ struct btrfs_trans_handle *btrfs_join_transaction_nolock(struct btrfs_root *root
- }
- 
- /*
-+ * Similar to regular join but it never starts a transaction when none is
-+ * running or after waiting for the current one to finish.
-+ */
-+struct btrfs_trans_handle *btrfs_join_transaction_nostart(struct btrfs_root *root)
-+{
-+	return start_transaction(root, 0, TRANS_JOIN_NOSTART,
-+				 BTRFS_RESERVE_NO_FLUSH, true);
-+}
-+
-+/*
-  * btrfs_attach_transaction() - catch the running transaction
-  *
-  * It is used when we want to commit the current the transaction, but
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 78c446c222b7..2f695587f828 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -94,11 +94,13 @@ struct btrfs_transaction {
- #define __TRANS_JOIN		(1U << 11)
- #define __TRANS_JOIN_NOLOCK	(1U << 12)
- #define __TRANS_DUMMY		(1U << 13)
-+#define __TRANS_JOIN_NOSTART	(1U << 14)
- 
- #define TRANS_START		(__TRANS_START | __TRANS_FREEZABLE)
- #define TRANS_ATTACH		(__TRANS_ATTACH)
- #define TRANS_JOIN		(__TRANS_JOIN | __TRANS_FREEZABLE)
- #define TRANS_JOIN_NOLOCK	(__TRANS_JOIN_NOLOCK)
-+#define TRANS_JOIN_NOSTART	(__TRANS_JOIN_NOSTART)
- 
- #define TRANS_EXTWRITERS	(__TRANS_START | __TRANS_ATTACH)
- 
-@@ -183,6 +185,7 @@ struct btrfs_trans_handle *btrfs_start_transaction_fallback_global_rsv(
- 					int min_factor);
- struct btrfs_trans_handle *btrfs_join_transaction(struct btrfs_root *root);
- struct btrfs_trans_handle *btrfs_join_transaction_nolock(struct btrfs_root *root);
-+struct btrfs_trans_handle *btrfs_join_transaction_nostart(struct btrfs_root *root);
- struct btrfs_trans_handle *btrfs_attach_transaction(struct btrfs_root *root);
- struct btrfs_trans_handle *btrfs_attach_transaction_barrier(
- 					struct btrfs_root *root);
+So I'm under the impression that either my laptop's RAM is dying, or
+something is *very* broke in BTRFS in kernel 5.2.
+
+Any hint or advice very much appreciated.
+
+Kind regards.
+
+ॐ
+
 -- 
-2.11.0
+Swâmi Petaramesh <swami@petaramesh.org> PGP 9076E32E
+
 

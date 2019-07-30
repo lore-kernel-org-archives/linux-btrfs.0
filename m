@@ -2,35 +2,37 @@ Return-Path: <SRS0=c8Io=V3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 46E27C0650F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Jul 2019 17:09:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 753FAC433FF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Jul 2019 17:09:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 29FD42089E
-	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Jul 2019 17:09:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4ABAD206A2
+	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Jul 2019 17:09:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729426AbfG3RJe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 30 Jul 2019 13:09:34 -0400
-Received: from mx2.suse.de ([195.135.220.15]:41718 "EHLO mx1.suse.de"
+        id S1729512AbfG3RJh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 30 Jul 2019 13:09:37 -0400
+Received: from mx2.suse.de ([195.135.220.15]:41764 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728184AbfG3RJd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 Jul 2019 13:09:33 -0400
+        id S1729490AbfG3RJg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 30 Jul 2019 13:09:36 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id BBE5DAC10
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jul 2019 17:09:32 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 0279AAC10
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jul 2019 17:09:35 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id B4BFBDA808; Tue, 30 Jul 2019 19:10:07 +0200 (CEST)
+        id 09704DA808; Tue, 30 Jul 2019 19:10:10 +0200 (CEST)
 From:   David Sterba <dsterba@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH 0/2] Sysfs updates
-Date:   Tue, 30 Jul 2019 19:10:07 +0200
-Message-Id: <cover.1564505777.git.dsterba@suse.com>
+Subject: [PATCH 1/2] btrfs: sysfs: add debugging exports
+Date:   Tue, 30 Jul 2019 19:10:09 +0200
+Message-Id: <3f694d71e45864469c34359ee3b5a0bbc44a345d.1564505777.git.dsterba@suse.com>
 X-Mailer: git-send-email 2.22.0
+In-Reply-To: <cover.1564505777.git.dsterba@suse.com>
+References: <cover.1564505777.git.dsterba@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -38,18 +40,76 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Export the potential debugging data in the per-filesystem directories we
-already have, so we can drop debugfs. The new directories depend on
-CONFIG_BTRFS_DEBUG so they're not affecting normal builds.
+Add 'debug' directories to global sysfs and per-filesystem. This will
+replace the debugfs directory. The sysfs location is simpler and builds
+on top of the existing file hierarchy so there will hopefully be no more
+questions about the sample debugfs file.
 
-David Sterba (2):
-  btrfs: sysfs: add debugging exports
-  btrfs: delete debugfs code
+The directory is called 'debug' and only present under
+CONFIG_BTRFS_DEBUG so this will not affect productions builds.
 
- fs/btrfs/sysfs.c | 68 +++++++++++++++++++++++-------------------------
- fs/btrfs/sysfs.h |  5 ----
- 2 files changed, 32 insertions(+), 41 deletions(-)
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/sysfs.c | 32 ++++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
 
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index e6493b068294..6eef46556d75 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -247,6 +247,25 @@ static const struct attribute_group btrfs_static_feature_attr_group = {
+ 	.attrs = btrfs_supported_static_feature_attrs,
+ };
+ 
++#ifdef CONFIG_BTRFS_DEBUG
++
++/*
++ * Runtime debugging exported via sysfs
++ *
++ * /sys/fs/btrfs/debug - applies to module or all filesystems
++ * /sys/fs/btrfs/UUID  - applies only to the given filesystem
++ */
++static struct attribute *btrfs_debug_feature_attrs[] = {
++	NULL
++};
++
++static const struct attribute_group btrfs_debug_feature_attr_group = {
++	.name = "debug",
++	.attrs = btrfs_debug_feature_attrs,
++};
++
++#endif
++
+ static ssize_t btrfs_show_u64(u64 *value_ptr, spinlock_t *lock, char *buf)
+ {
+ 	u64 val;
+@@ -857,6 +876,13 @@ int btrfs_sysfs_add_mounted(struct btrfs_fs_info *fs_info)
+ 	if (error)
+ 		goto failure;
+ 
++#ifdef CONFIG_BTRFS_DEBUG
++	error = sysfs_create_group(fsid_kobj,
++				   &btrfs_debug_feature_attr_group);
++	if (error)
++		goto failure;
++#endif
++
+ 	error = addrm_unknown_feature_attrs(fs_info, true);
+ 	if (error)
+ 		goto failure;
+@@ -954,6 +980,12 @@ int __init btrfs_init_sysfs(void)
+ 	if (ret)
+ 		goto out_remove_group;
+ 
++#ifdef CONFIG_BTRFS_DEBUG
++	ret = sysfs_create_group(&btrfs_kset->kobj, &btrfs_debug_feature_attr_group);
++	if (ret)
++		goto out2;
++#endif
++
+ 	return 0;
+ 
+ out_remove_group:
 -- 
 2.22.0
 

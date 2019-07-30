@@ -2,59 +2,58 @@ Return-Path: <SRS0=c8Io=V3=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5101BC433FF
-	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Jul 2019 17:36:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 758E3C0650F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Jul 2019 17:37:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 326E420693
-	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Jul 2019 17:36:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5526720693
+	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Jul 2019 17:37:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729727AbfG3RgN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 30 Jul 2019 13:36:13 -0400
-Received: from mx2.suse.de ([195.135.220.15]:48222 "EHLO mx1.suse.de"
+        id S1731308AbfG3RhC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 30 Jul 2019 13:37:02 -0400
+Received: from mx2.suse.de ([195.135.220.15]:48360 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726713AbfG3RgN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 Jul 2019 13:36:13 -0400
+        id S1726713AbfG3RhB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 30 Jul 2019 13:37:01 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 04005AD45
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jul 2019 17:36:12 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 91A15AD45
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jul 2019 17:37:00 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 0079CDA808; Tue, 30 Jul 2019 19:36:46 +0200 (CEST)
-Date:   Tue, 30 Jul 2019 19:36:46 +0200
+        id 6D4C9DA808; Tue, 30 Jul 2019 19:37:35 +0200 (CEST)
+Date:   Tue, 30 Jul 2019 19:37:35 +0200
 From:   David Sterba <dsterba@suse.cz>
 To:     Johannes Thumshirn <jthumshirn@suse.de>
 Cc:     David Sterba <dsterba@suse.com>,
         Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
-Subject: Re: [RFC PATCH 05/17] btrfs-progs: add option for checksum type to
- mkfs
-Message-ID: <20190730173646.GH28208@twin.jikos.cz>
+Subject: Re: [RFC PATCH 07/17] btrfs-progs: use btrfs_csum_data() in
+ __csum_tree_block_size()
+Message-ID: <20190730173735.GI28208@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz, Johannes Thumshirn <jthumshirn@suse.de>,
         David Sterba <dsterba@suse.com>,
         Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
 References: <cover.1564046812.git.jthumshirn@suse.de>
- <d404e57945240f413ab62945fd1cc4bfc86364ae.1564046971.git.jthumshirn@suse.de>
+ <cf0d71c9744a1841278fc08b0c294d4b1292cb8f.1564046972.git.jthumshirn@suse.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <d404e57945240f413ab62945fd1cc4bfc86364ae.1564046971.git.jthumshirn@suse.de>
+In-Reply-To: <cf0d71c9744a1841278fc08b0c294d4b1292cb8f.1564046972.git.jthumshirn@suse.de>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Jul 25, 2019 at 11:33:52AM +0200, Johannes Thumshirn wrote:
-> Add an option to mkfs to specify which checksum algorithm will be used for
-> the filesystem.
+On Thu, Jul 25, 2019 at 11:33:54AM +0200, Johannes Thumshirn wrote:
+> Use the btrfs_csum_data() wrapper in __csum_tree_block_size() instead of
+> directly calling crc32c().
 > 
-> XXX this patch should go last in the series.
+> This helps us when plumbing new checksum algorithms into the FS.
+> 
+> Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
 
-If the code update and the mkfs option are split, I can merge the
-preparatory part independently. In case you're going to respin the
-series, please do 2 patches and sort the preparatory patches to the
-beginning of the series.
+Added to devel.

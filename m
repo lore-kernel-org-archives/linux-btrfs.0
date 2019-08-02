@@ -2,131 +2,67 @@ Return-Path: <SRS0=4fXr=V6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-6.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SPF_HELO_NONE,SPF_PASS autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C21B5C32750
-	for <linux-btrfs@archiver.kernel.org>; Fri,  2 Aug 2019 22:01:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E5895C433FF
+	for <linux-btrfs@archiver.kernel.org>; Fri,  2 Aug 2019 22:10:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9E16C206A3
-	for <linux-btrfs@archiver.kernel.org>; Fri,  2 Aug 2019 22:01:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B93752087C
+	for <linux-btrfs@archiver.kernel.org>; Fri,  2 Aug 2019 22:10:28 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1564783828;
+	bh=0ADvaENQ+brKEvELvSqXvOMv47PciEcB7jt9Ddc06OY=;
+	h=Subject:From:In-Reply-To:References:Date:To:Cc:List-ID:From;
+	b=Mdeg3lhD8GR7DT0KQrlikNbrBkevK1u3cMs8vSR+pBycc4cDBNFP0oQ2t8Tsx0ZHv
+	 lU6To8aOr258WRCTNbUjMtTSCRkT95SVbHlRtSF1mTBEneYLKznznoieoDu31eQmnh
+	 wZ03PEof2LddFGR3OyQ4kwc04dMlXIj/6HjBPcOA=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2437152AbfHBWBX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 2 Aug 2019 18:01:23 -0400
-Received: from mx2.suse.de ([195.135.220.15]:38088 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2437134AbfHBWBN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 2 Aug 2019 18:01:13 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 6FDDFB60A;
-        Fri,  2 Aug 2019 22:01:11 +0000 (UTC)
-From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
-To:     linux-fsdevel@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, hch@lst.de, darrick.wong@oracle.com,
-        ruansy.fnst@cn.fujitsu.com, Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 09/13] btrfs: Rename __endio_write_update_ordered() to btrfs_update_ordered_extent()
-Date:   Fri,  2 Aug 2019 17:00:44 -0500
-Message-Id: <20190802220048.16142-10-rgoldwyn@suse.de>
-X-Mailer: git-send-email 2.16.4
-In-Reply-To: <20190802220048.16142-1-rgoldwyn@suse.de>
-References: <20190802220048.16142-1-rgoldwyn@suse.de>
+        id S2437229AbfHBWKY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 2 Aug 2019 18:10:24 -0400
+Received: from mail.kernel.org ([198.145.29.99]:40612 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1730633AbfHBWKM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 2 Aug 2019 18:10:12 -0400
+Subject: Re: [GIT PULL] Btrfs fixes for 5.3-rc3
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1564783812;
+        bh=0ADvaENQ+brKEvELvSqXvOMv47PciEcB7jt9Ddc06OY=;
+        h=From:In-Reply-To:References:Date:To:Cc:From;
+        b=mfdpYtRI3yYscPVSqG9g3qwe7n8wrUY/fj2P9ZWADfEv9RsUF1gJrZE3uq/cKkMQs
+         wKVb0OskQ7rbZdS+2UvTghvC/oEc+n+qqf8MM1YWGBZkeKs46no1LAcQIoBwGZNB4X
+         uFaBXnp5F4pfSM2mAsp6nULs7W3EMEr6xJV/5ab8=
+From:   pr-tracker-bot@kernel.org
+In-Reply-To: <cover.1564757308.git.dsterba@suse.com>
+References: <cover.1564757308.git.dsterba@suse.com>
+X-PR-Tracked-List-Id: <linux-kernel.vger.kernel.org>
+X-PR-Tracked-Message-Id: <cover.1564757308.git.dsterba@suse.com>
+X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.3-rc2-tag
+X-PR-Tracked-Commit-Id: a6d155d2e363f26290ffd50591169cb96c2a609e
+X-PR-Merge-Tree: torvalds/linux.git
+X-PR-Merge-Refname: refs/heads/master
+X-PR-Merge-Commit-Id: d38c3fa6f959b8b5b167f120d70d66418714dbe4
+Message-Id: <156478381210.28292.4383010166227745942.pr-tracker-bot@kernel.org>
+Date:   Fri, 02 Aug 2019 22:10:12 +0000
+To:     David Sterba <dsterba@suse.com>
+Cc:     torvalds@linux-foundation.org, David Sterba <dsterba@suse.com>,
+        clm@fb.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+The pull request you sent on Fri,  2 Aug 2019 18:50:19 +0200:
 
-Since we will be calling from another file, use a
-better name to declare it non-static
+> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.3-rc2-tag
 
-Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
----
- fs/btrfs/ctree.h |  7 +++++--
- fs/btrfs/inode.c | 14 +++++---------
- 2 files changed, 10 insertions(+), 11 deletions(-)
+has been merged into torvalds/linux.git:
+https://git.kernel.org/torvalds/c/d38c3fa6f959b8b5b167f120d70d66418714dbe4
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 66232cbc2414..b8b19647b43e 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3175,8 +3175,11 @@ struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
- int btrfs_get_extent_map_write(struct extent_map **map, struct buffer_head *bh,
- 		struct inode *inode, u64 start, u64 len);
- struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
--				    struct page *page, size_t pg_offset,
--				    u64 start, u64 end, int create);
-+		struct page *page, size_t pg_offset,
-+		u64 start, u64 end, int create);
-+void btrfs_update_ordered_extent(struct inode *inode,
-+		const u64 offset, const u64 bytes,
-+		const bool uptodate);
- int btrfs_update_inode(struct btrfs_trans_handle *trans,
- 			      struct btrfs_root *root,
- 			      struct inode *inode);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 24895793fd91..d415534ce733 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -89,10 +89,6 @@ static struct extent_map *create_io_em(struct inode *inode, u64 start, u64 len,
- 				       u64 ram_bytes, int compress_type,
- 				       int type);
- 
--static void __endio_write_update_ordered(struct inode *inode,
--					 const u64 offset, const u64 bytes,
--					 const bool uptodate);
--
- /*
-  * Cleanup all submitted ordered extents in specified range to handle errors
-  * from the btrfs_run_delalloc_range() callback.
-@@ -133,7 +129,7 @@ static inline void btrfs_cleanup_ordered_extents(struct inode *inode,
- 		bytes -= PAGE_SIZE;
- 	}
- 
--	return __endio_write_update_ordered(inode, offset, bytes, false);
-+	return btrfs_update_ordered_extent(inode, offset, bytes, false);
- }
- 
- static int btrfs_dirty_inode(struct inode *inode);
-@@ -8176,7 +8172,7 @@ static void btrfs_endio_direct_read(struct bio *bio)
- 	bio_put(bio);
- }
- 
--static void __endio_write_update_ordered(struct inode *inode,
-+void btrfs_update_ordered_extent(struct inode *inode,
- 					 const u64 offset, const u64 bytes,
- 					 const bool uptodate)
- {
-@@ -8229,7 +8225,7 @@ static void btrfs_endio_direct_write(struct bio *bio)
- 	struct btrfs_dio_private *dip = bio->bi_private;
- 	struct bio *dio_bio = dip->dio_bio;
- 
--	__endio_write_update_ordered(dip->inode, dip->logical_offset,
-+	btrfs_update_ordered_extent(dip->inode, dip->logical_offset,
- 				     dip->bytes, !bio->bi_status);
- 
- 	kfree(dip);
-@@ -8546,7 +8542,7 @@ static void btrfs_submit_direct(struct bio *dio_bio, struct inode *inode,
- 		bio = NULL;
- 	} else {
- 		if (write)
--			__endio_write_update_ordered(inode,
-+			btrfs_update_ordered_extent(inode,
- 						file_offset,
- 						dio_bio->bi_iter.bi_size,
- 						false);
-@@ -8686,7 +8682,7 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
- 			 */
- 			if (dio_data.unsubmitted_oe_range_start <
- 			    dio_data.unsubmitted_oe_range_end)
--				__endio_write_update_ordered(inode,
-+				btrfs_update_ordered_extent(inode,
- 					dio_data.unsubmitted_oe_range_start,
- 					dio_data.unsubmitted_oe_range_end -
- 					dio_data.unsubmitted_oe_range_start,
+Thank you!
+
 -- 
-2.16.4
-
+Deet-doot-dot, I am a bot.
+https://korg.wiki.kernel.org/userdoc/prtracker

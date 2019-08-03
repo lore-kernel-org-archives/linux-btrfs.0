@@ -2,93 +2,67 @@ Return-Path: <SRS0=Fo2w=V7=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0DB6DC433FF
-	for <linux-btrfs@archiver.kernel.org>; Sat,  3 Aug 2019 18:01:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6E7EEC31E40
+	for <linux-btrfs@archiver.kernel.org>; Sat,  3 Aug 2019 21:44:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D1766204EC
-	for <linux-btrfs@archiver.kernel.org>; Sat,  3 Aug 2019 18:01:26 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="iJaHaN6D"
+	by mail.kernel.org (Postfix) with ESMTP id 3E2E821726
+	for <linux-btrfs@archiver.kernel.org>; Sat,  3 Aug 2019 21:44:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728457AbfHCSBZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 3 Aug 2019 14:01:25 -0400
-Received: from mail-wr1-f65.google.com ([209.85.221.65]:32894 "EHLO
-        mail-wr1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726403AbfHCSBZ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 3 Aug 2019 14:01:25 -0400
-Received: by mail-wr1-f65.google.com with SMTP id n9so80517337wru.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 03 Aug 2019 11:01:24 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=hL/vyNIs/Hnd7Cu8kofOkuFbc6M3PbPeiviMKEi5H+8=;
-        b=iJaHaN6DSiAmUitbrEU3eznhvA6RWVKsz/ncqAkQTRTopsJhE9wbSwb4tyS3PAMVKl
-         kAVsIDptVoLtSuf2t+QqubKKWYLTVTbRNrSo81PHTwj9Djy/McoEm3yg+23elfg1vGhg
-         AcJiICHf8l3IyfUBellUxSGF/g/4tJu1KN6yENW2++DRJA9bYzsKMWI73Hh3Zsv8JTPO
-         G8ncvVjkOCxRhHs8bfmpPzfhDax3Qe9HuMiDyBDQ4YEQVBbBKAbiK4fpsP/EH7LMlKji
-         E/I6UbFSpWpeaYU7cJfLzVxrfFkGKHG1uZy6UL02sutsSjTFhZ9HOjtJW06YIfDpxrFG
-         LOPg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=hL/vyNIs/Hnd7Cu8kofOkuFbc6M3PbPeiviMKEi5H+8=;
-        b=cQBfEF4UMP7PnRfsAVnXjZ21l3bC4oiuTrkktozW9RAS7mPvRBbUDCSWdzVhjyxORJ
-         0MMbus1A1ajS6phBksKAvz9zKIOLDNVEUqu4DRlTwHkLYCkmDoi89PoSpK4pFNpf9dlU
-         oPKYPFu9o9waC8rvFliW8hPNTZoB7hWqCddydbSsfWJwSYr1bsS+9SJF6nRojMceNxcp
-         NG6+h+UM48uUq2WxmU528+l0ZRZtGa4CA7qnLcE2oiFAkfWiQjWCOxmwjVH3V0KL9983
-         9dtwz7pNRDcv9LfGe/M2dozj5G1+oPJoCeLTRH6IrH33hiK+hA1bbm5Y6i6dkp61PKVa
-         9LRw==
-X-Gm-Message-State: APjAAAXYcTNf74UobYAkO3ovtHp26tU/TIFYg6JoadjM4hgVA1yRTLHR
-        LqGJCM8Sr4ChYyDnNdeLHfxW7pDPEjR2CSl8badaKsy4fkY=
-X-Google-Smtp-Source: APXvYqw6+N4o/rIJcs6HONO0Czh0JMzYhtVVRWFc1gdqgXB4XH9yzGOxFKEE5H9p7ISHglvjjiu2lN7ABPS0o3BU7cY=
-X-Received: by 2002:adf:dd01:: with SMTP id a1mr62104868wrm.12.1564855283209;
- Sat, 03 Aug 2019 11:01:23 -0700 (PDT)
+        id S1728341AbfHCVoF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 3 Aug 2019 17:44:05 -0400
+Received: from smtp.dpl.mendix.net ([83.96.177.10]:50072 "EHLO
+        smtp.dpl.mendix.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728033AbfHCVoF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 3 Aug 2019 17:44:05 -0400
+X-Greylist: delayed 448 seconds by postgrey-1.27 at vger.kernel.org; Sat, 03 Aug 2019 17:44:04 EDT
+Received: from mekker.bofh.dpl.mendix.net (mekker.bofh.dpl.mendix.net [IPv6:2001:828:13c8:10b::21])
+        by smtp.dpl.mendix.net (Postfix) with ESMTP id CBF4D202A9;
+        Sat,  3 Aug 2019 23:44:03 +0200 (CEST)
+From:   Hans van Kranenburg <hans@knorrie.org>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Subject: [PATCH] btrfs-progs: docs: fix label property description
+Date:   Sat,  3 Aug 2019 23:44:03 +0200
+Message-Id: <20190803214403.1040-1-hans@knorrie.org>
+X-Mailer: git-send-email 2.20.1
 MIME-Version: 1.0
-References: <20190803100928.GB29941@tik.uni-stuttgart.de>
-In-Reply-To: <20190803100928.GB29941@tik.uni-stuttgart.de>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Sat, 3 Aug 2019 12:01:12 -0600
-Message-ID: <CAJCQCtSm2a_UNYgue_Ha-JBCXpxrzZh2J5zHfkAXwHdRodJ8Fw@mail.gmail.com>
-Subject: Re: btrfs on RHEL7 (kernel 3.10.0) production ready?
-To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Cc:     Ulli Horlacher <framstag@rus.uni-stuttgart.de>
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, Aug 3, 2019 at 4:09 AM Ulli Horlacher
-<framstag@rus.uni-stuttgart.de> wrote:
->
-> I have RHEL 7 and CentOS 7.6 servers with kernel 3.10.0 and btrfs-progs v4.9.1
-> Is btrfs there ready for production usage(*)?
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
 
-No, Btrfs is deprecated in RHEL.
-https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/7.4_Release_Notes/chap-Red_Hat_Enterprise_Linux-7.4_Release_Notes-Deprecated_Functionality.html
+Recently, commit c9da5695b2 improved the description for the label
+property, to clarify it's a filesystem property, and not a device
+property. Follow this change in the man page for btrfs-property.
 
-Discussion here:
-https://lwn.net/Articles/729488/
-https://news.ycombinator.com/item?id=14907771
-https://access.redhat.com/discussions/3138231
+Also add a little hint about what to specify as object.
 
-If you want to use Btrfs in production, and have distribution support,
-you'd need to consider SUSE. If you want a similar feature set to
-Btrfs, but remain supported on RHEL, you'd need to discuss it with
-your Red Hat account manager.
+Signed-off-by: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+---
+ Documentation/btrfs-property.asciidoc | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-If upstream support for Btrfs is adequate then you'll want to use a
-recent stable kernel, and have a test and update strategy for
-balancing out the risk of incorporating new kernels as they're
-released vs the risk of using a fixed kernel version that grows stale
-over time.
-
-
+diff --git a/Documentation/btrfs-property.asciidoc b/Documentation/btrfs-property.asciidoc
+index b562717b..47960833 100644
+--- a/Documentation/btrfs-property.asciidoc
++++ b/Documentation/btrfs-property.asciidoc
+@@ -43,7 +43,8 @@ the following:
+ ro::::
+ read-only flag of subvolume: true or false
+ label::::
+-label of device
++label of the filesystem. For an unmounted filesystem, provide a path to a block
++device as object. For a mounted filesystem, specify a mount point.
+ compression::::
+ compression algorithm set for an inode, possible values: 'lzo', 'zlib', 'zstd'.
+ To disable compression use "" (empty string), 'no' or 'none'.
 -- 
-Chris Murphy
+2.20.1
+

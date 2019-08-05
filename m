@@ -2,100 +2,167 @@ Return-Path: <SRS0=Imwo=WB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 237C4C32751
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Aug 2019 00:23:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4F201C433FF
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Aug 2019 09:57:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id F1AEC2133F
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Aug 2019 00:23:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 23A70217D9
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Aug 2019 09:57:48 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1564999068;
+	bh=EtgzMJSlxkGJItjh3fKGo0yonNwfWVXEmpTxnmlAvPY=;
+	h=From:To:Subject:Date:List-ID:From;
+	b=LYcts1c6K3rd+RQivR8fp9JjvevUx7Be6dIKt9T7ETXqLY8ywPROEtwEnTLREq6pV
+	 TbH19cnGzmRTSl3WeA6py3ut5GN9qTPC2PlLLpp4Bt7cleORJ5CzIqA8PRtjxhxpUs
+	 hfkfQ2Z9BeR2hlPQrkXEdBQfdwZXMSpBPADpPeWY=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726877AbfHEAXf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 4 Aug 2019 20:23:35 -0400
-Received: from mail105.syd.optusnet.com.au ([211.29.132.249]:52259 "EHLO
-        mail105.syd.optusnet.com.au" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726666AbfHEAXe (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 4 Aug 2019 20:23:34 -0400
-Received: from dread.disaster.area (pa49-181-167-148.pa.nsw.optusnet.com.au [49.181.167.148])
-        by mail105.syd.optusnet.com.au (Postfix) with ESMTPS id B51742AD02C;
-        Mon,  5 Aug 2019 10:23:32 +1000 (AEST)
-Received: from dave by dread.disaster.area with local (Exim 4.92)
-        (envelope-from <david@fromorbit.com>)
-        id 1huQcn-0004z2-Cd; Mon, 05 Aug 2019 10:13:17 +1000
-Date:   Mon, 5 Aug 2019 10:13:17 +1000
-From:   Dave Chinner <david@fromorbit.com>
-To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc:     linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        hch@lst.de, darrick.wong@oracle.com, ruansy.fnst@cn.fujitsu.com,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: Re: [PATCH 05/13] btrfs: Add CoW in iomap based writes
-Message-ID: <20190805001317.GG7689@dread.disaster.area>
-References: <20190802220048.16142-1-rgoldwyn@suse.de>
- <20190802220048.16142-6-rgoldwyn@suse.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190802220048.16142-6-rgoldwyn@suse.de>
-User-Agent: Mutt/1.10.1 (2018-07-13)
-X-Optus-CM-Score: 0
-X-Optus-CM-Analysis: v=2.2 cv=D+Q3ErZj c=1 sm=1 tr=0 cx=a_idp_d
-        a=gu9DDhuZhshYSb5Zs/lkOA==:117 a=gu9DDhuZhshYSb5Zs/lkOA==:17
-        a=jpOVt7BSZ2e4Z31A5e1TngXxSK0=:19 a=kj9zAlcOel0A:10 a=FmdZ9Uzk2mMA:10
-        a=iox4zFpeAAAA:8 a=7-415B0cAAAA:8 a=xrbE8zg4DYH3kasu_qsA:9
-        a=Pi3r_Vvt8M2xccad:21 a=-2u5YDMPb6Z7_WoB:21 a=CjuIK1q_8ugA:10
-        a=WzC6qhA0u3u7Ye7llzcV:22 a=biEYGPWJfzWAr4FL6Ov7:22
+        id S1727809AbfHEJ5r (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 5 Aug 2019 05:57:47 -0400
+Received: from mail.kernel.org ([198.145.29.99]:44492 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727349AbfHEJ5r (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 5 Aug 2019 05:57:47 -0400
+Received: from localhost.localdomain (bl8-197-74.dsl.telepac.pt [85.241.197.74])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 4E7A02182B
+        for <linux-btrfs@vger.kernel.org>; Mon,  5 Aug 2019 09:57:45 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1564999065;
+        bh=EtgzMJSlxkGJItjh3fKGo0yonNwfWVXEmpTxnmlAvPY=;
+        h=From:To:Subject:Date:From;
+        b=KxXexBv4wtcMj2QvW/NaQqzLbz2eoiMrcxeD4n4ratrJVBnK8OmLg7hQAbfLqXkHt
+         vmX4wT7L2NBx1yETQrGjxsDC+HTKFHKuLP4aW1OTFrFAttydKb1sWZS/ogksJ0NYRP
+         DiV0dpNktwVE2GxFguUlACa6kA/mSBNE1LeUbPvQ=
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: make test_find_first_clear_extent_bit fail on incorrect results
+Date:   Mon,  5 Aug 2019 10:57:41 +0100
+Message-Id: <20190805095741.31265-1-fdmanana@kernel.org>
+X-Mailer: git-send-email 2.11.0
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Aug 02, 2019 at 05:00:40PM -0500, Goldwyn Rodrigues wrote:
-> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> 
-> Set iomap->type to IOMAP_COW and fill up the source map in case
-> the I/O is not page aligned.
-.....
->  static void btrfs_buffered_page_done(struct inode *inode, loff_t pos,
->  		unsigned copied, struct page *page,
->  		struct iomap *iomap)
-> @@ -188,6 +217,7 @@ static int btrfs_buffered_iomap_begin(struct inode *inode, loff_t pos,
->  	int ret;
->  	size_t write_bytes = length;
->  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-> +	size_t end;
->  	size_t sector_offset = pos & (fs_info->sectorsize - 1);
->  	struct btrfs_iomap *bi;
->  
-> @@ -255,6 +285,17 @@ static int btrfs_buffered_iomap_begin(struct inode *inode, loff_t pos,
->  	iomap->private = bi;
->  	iomap->length = round_up(write_bytes, fs_info->sectorsize);
->  	iomap->offset = round_down(pos, fs_info->sectorsize);
-> +	end = pos + write_bytes;
-> +	/* Set IOMAP_COW if start/end is not page aligned */
-> +	if (((pos & (PAGE_SIZE - 1)) || (end & (PAGE_SIZE - 1)))) {
-> +		iomap->type = IOMAP_COW;
-> +		ret = get_iomap(inode, pos, length, srcmap);
-> +		if (ret < 0)
-> +			goto release;
+From: Filipe Manana <fdmanana@suse.com>
 
-I suspect you didn't test this case, because....
+If any call to find_first_clear_extent_bit() returns an unexpected result,
+the test should fail and not just print an error message, otherwise it
+makes detection of regressions much harder to notice.
 
-> +	} else {
-> +		iomap->type = IOMAP_DELALLOC;
-> +	}
-> +
->  	iomap->addr = IOMAP_NULL_ADDR;
->  	iomap->type = IOMAP_DELALLOC;
+Fixes: 1eaebb341d2b41 ("btrfs: Don't trim returned range based on input value in find_first_clear_extent_bit")
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
 
-The iomap->type is overwritten here and so IOMAP_COW will never be
-seen by the iomap infrastructure...
+Applies on top of recent patch with subject:
 
-Cheers,
+  "Btrfs: fix memory leaks in the test test_find_first_clear_extent_bit"
 
-Dave.
+ fs/btrfs/tests/extent-io-tests.c | 29 ++++++++++++++++++++++-------
+ 1 file changed, 22 insertions(+), 7 deletions(-)
+
+diff --git a/fs/btrfs/tests/extent-io-tests.c b/fs/btrfs/tests/extent-io-tests.c
+index 705a8a7eb815..123d9a614357 100644
+--- a/fs/btrfs/tests/extent-io-tests.c
++++ b/fs/btrfs/tests/extent-io-tests.c
+@@ -438,6 +438,7 @@ static int test_find_first_clear_extent_bit(void)
+ {
+ 	struct extent_io_tree tree;
+ 	u64 start, end;
++	int ret = -EINVAL;
+ 
+ 	test_msg("running find_first_clear_extent_bit test");
+ 	extent_io_tree_init(NULL, &tree, IO_TREE_SELFTEST, NULL);
+@@ -452,9 +453,11 @@ static int test_find_first_clear_extent_bit(void)
+ 	find_first_clear_extent_bit(&tree, SZ_512K, &start, &end,
+ 				    CHUNK_TRIMMED | CHUNK_ALLOCATED);
+ 
+-	if (start != 0 || end != SZ_1M -1)
++	if (start != 0 || end != SZ_1M - 1) {
+ 		test_err("error finding beginning range: start %llu end %llu",
+ 			 start, end);
++		goto out;
++	}
+ 
+ 	/* Now add 32M-64M so that we have a hole between 4M-32M */
+ 	set_extent_bits(&tree, SZ_32M, SZ_64M - 1,
+@@ -466,9 +469,11 @@ static int test_find_first_clear_extent_bit(void)
+ 	find_first_clear_extent_bit(&tree, 12 * SZ_1M, &start, &end,
+ 				    CHUNK_TRIMMED | CHUNK_ALLOCATED);
+ 
+-	if (start != SZ_4M || end != SZ_32M - 1)
++	if (start != SZ_4M || end != SZ_32M - 1) {
+ 		test_err("error finding trimmed range: start %llu end %llu",
+ 			 start, end);
++		goto out;
++	}
+ 
+ 	/*
+ 	 * Search in the middle of allocated range, should get the next one
+@@ -477,9 +482,11 @@ static int test_find_first_clear_extent_bit(void)
+ 	find_first_clear_extent_bit(&tree, SZ_2M, &start, &end,
+ 				    CHUNK_TRIMMED | CHUNK_ALLOCATED);
+ 
+-	if (start != SZ_4M || end != SZ_32M -1)
++	if (start != SZ_4M || end != SZ_32M - 1) {
+ 		test_err("error finding next unalloc range: start %llu end %llu",
+ 			 start, end);
++		goto out;
++	}
+ 
+ 	/*
+ 	 * Set 64M-72M with CHUNK_ALLOC flag, then search for CHUNK_TRIMMED flag
+@@ -489,9 +496,11 @@ static int test_find_first_clear_extent_bit(void)
+ 	find_first_clear_extent_bit(&tree, SZ_64M + SZ_1M, &start, &end,
+ 				    CHUNK_TRIMMED);
+ 
+-	if (start != SZ_64M || end != SZ_64M + SZ_8M - 1)
++	if (start != SZ_64M || end != SZ_64M + SZ_8M - 1) {
+ 		test_err("error finding exact range: start %llu end %llu",
+ 			 start, end);
++		goto out;
++	}
+ 
+ 	find_first_clear_extent_bit(&tree, SZ_64M - SZ_8M, &start, &end,
+ 				    CHUNK_TRIMMED);
+@@ -500,23 +509,29 @@ static int test_find_first_clear_extent_bit(void)
+ 	 * Search in the middle of set range whose immediate neighbour doesn't
+ 	 * have the bits set so it must be returned
+ 	 */
+-	if (start != SZ_64M || end != SZ_64M + SZ_8M - 1)
++	if (start != SZ_64M || end != SZ_64M + SZ_8M - 1) {
+ 		test_err("error finding next alloc range: start %llu end %llu",
+ 			 start, end);
++		goto out;
++	}
+ 
+ 	/*
+ 	 * Search beyond any known range, shall return after last known range
+ 	 * and end should be -1
+ 	 */
+ 	find_first_clear_extent_bit(&tree, -1, &start, &end, CHUNK_TRIMMED);
+-	if (start != SZ_64M + SZ_8M || end != -1)
++	if (start != SZ_64M + SZ_8M || end != -1) {
+ 		test_err(
+ 		"error handling beyond end of range search: start %llu end %llu",
+ 			start, end);
++		goto out;
++	}
+ 
++	ret = 0;
++out:
+ 	clear_extent_bits(&tree, 0, (u64)-1, CHUNK_TRIMMED | CHUNK_ALLOCATED);
+ 
+-	return 0;
++	return ret;
+ }
+ 
+ int btrfs_test_extent_io(u32 sectorsize, u32 nodesize)
 -- 
-Dave Chinner
-david@fromorbit.com
+2.11.0
+

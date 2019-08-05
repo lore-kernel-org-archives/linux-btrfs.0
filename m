@@ -2,198 +2,199 @@ Return-Path: <SRS0=Imwo=WB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 00377C0650F
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Aug 2019 14:47:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9E427C0650F
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Aug 2019 15:04:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CF27C20644
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Aug 2019 14:47:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 70B82216B7
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Aug 2019 15:04:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728871AbfHEOrS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 5 Aug 2019 10:47:18 -0400
-Received: from mx2.suse.de ([195.135.220.15]:48252 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728826AbfHEOrM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 5 Aug 2019 10:47:12 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 14F00AF87
-        for <linux-btrfs@vger.kernel.org>; Mon,  5 Aug 2019 14:47:11 +0000 (UTC)
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 1/6] btrfs: Refactor run_delalloc_nocow
-Date:   Mon,  5 Aug 2019 17:47:03 +0300
-Message-Id: <20190805144708.5432-2-nborisov@suse.com>
-X-Mailer: git-send-email 2.17.1
-In-Reply-To: <20190805144708.5432-1-nborisov@suse.com>
-References: <20190805144708.5432-1-nborisov@suse.com>
+        id S1729469AbfHEPE0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 5 Aug 2019 11:04:26 -0400
+Received: from savella.carfax.org.uk ([85.119.84.138]:44334 "EHLO
+        savella.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729347AbfHEPE0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Aug 2019 11:04:26 -0400
+X-Greylist: delayed 2391 seconds by postgrey-1.27 at vger.kernel.org; Mon, 05 Aug 2019 11:04:25 EDT
+Received: from hrm by savella.carfax.org.uk with local (Exim 4.92)
+        (envelope-from <hrm@savella.carfax.org.uk>)
+        id 1hudua-0008UZ-RC; Mon, 05 Aug 2019 15:24:32 +0100
+Date:   Mon, 5 Aug 2019 15:24:32 +0100
+From:   Hugo Mills <hugo@carfax.org.uk>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+Subject: Re: [PATCH] btrfs: add an ioctl to force chunk allocation
+Message-ID: <20190805142432.GD24125@savella.carfax.org.uk>
+Mail-Followup-To: Hugo Mills <hugo@carfax.org.uk>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+References: <20190802161031.18427-1-josef@toxicpanda.com>
+ <7b0e9be3-2239-ecdc-8b7e-a386f1def64f@gmx.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha512;
+        protocol="application/pgp-signature"; boundary="XsQoSWH+UP9D9v3l"
+Content-Disposition: inline
+In-Reply-To: <7b0e9be3-2239-ecdc-8b7e-a386f1def64f@gmx.com>
+X-GPG-Fingerprint: DD84 D558 9D81 DDEE 930D  2054 585E 1475 E2AB 1DE4
+X-GPG-Key: E2AB1DE4
+X-Parrot: It is no more. It has joined the choir invisible.
+X-IRC-Nicks: darksatanic darkersatanic darkling darkthing
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Of the 22 (!!!) local variables declared in this function only 9 have
-function-wide context. Of the remaining 13, 12 are needed in the main
-while loop of the function and 1 is needed in a tiny if branch, only in
-case we have prealloc extent. This commit reduces the lifespan of every
-variable to its bare minimum. It also renames the 'nolock'boolean to
-freespace_inode to clearly indicate its purpose.
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/inode.c | 62 ++++++++++++++++++++++--------------------------
- 1 file changed, 29 insertions(+), 33 deletions(-)
+--XsQoSWH+UP9D9v3l
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index f01a2f308492..4393f986e5ad 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1301,30 +1301,18 @@ static noinline int csum_exist_in_range(struct btrfs_fs_info *fs_info,
-  */
- static noinline int run_delalloc_nocow(struct inode *inode,
- 				       struct page *locked_page,
--			      u64 start, u64 end, int *page_started, int force,
--			      unsigned long *nr_written)
-+				       const u64 start, const u64 end,
-+				       int *page_started, int force,
-+				       unsigned long *nr_written)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
--	struct extent_buffer *leaf;
- 	struct btrfs_path *path;
--	struct btrfs_file_extent_item *fi;
--	struct btrfs_key found_key;
--	struct extent_map *em;
--	u64 cow_start;
--	u64 cur_offset;
--	u64 extent_end;
--	u64 extent_offset;
--	u64 disk_bytenr;
--	u64 num_bytes;
--	u64 disk_num_bytes;
--	u64 ram_bytes;
--	int extent_type;
-+	u64 cow_start = (u64)-1;
-+	u64 cur_offset = start;
- 	int ret;
--	int type;
--	int nocow;
--	int check_prev = 1;
--	bool nolock;
-+	bool check_prev = true;
-+	bool freespace_inode = btrfs_is_free_space_inode(BTRFS_I(inode));
- 	u64 ino = btrfs_ino(BTRFS_I(inode));
- 
- 	path = btrfs_alloc_path();
-@@ -1339,11 +1327,20 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 		return -ENOMEM;
- 	}
- 
--	nolock = btrfs_is_free_space_inode(BTRFS_I(inode));
--
--	cow_start = (u64)-1;
--	cur_offset = start;
- 	while (1) {
-+		struct btrfs_key found_key;
-+		struct btrfs_file_extent_item *fi;
-+		struct extent_buffer *leaf;
-+		u64 extent_end;
-+		u64 extent_offset;
-+		u64 disk_bytenr = 0;
-+		u64 num_bytes = 0;
-+		u64 disk_num_bytes;
-+		int type;
-+		u64 ram_bytes;
-+		int extent_type;
-+		bool nocow = false;
-+
- 		ret = btrfs_lookup_file_extent(NULL, root, path, ino,
- 					       cur_offset, 0);
- 		if (ret < 0)
-@@ -1356,7 +1353,8 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 			    found_key.type == BTRFS_EXTENT_DATA_KEY)
- 				path->slots[0]--;
- 		}
--		check_prev = 0;
-+		/* Check previous only on first pass */
-+		check_prev = false;
- next_slot:
- 		leaf = path->nodes[0];
- 		if (path->slots[0] >= btrfs_header_nritems(leaf)) {
-@@ -1371,9 +1369,6 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 			leaf = path->nodes[0];
- 		}
- 
--		nocow = 0;
--		disk_bytenr = 0;
--		num_bytes = 0;
- 		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
- 
- 		if (found_key.objectid > ino)
-@@ -1420,7 +1415,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 			 * Do the same check as in btrfs_cross_ref_exist but
- 			 * without the unnecessary search.
- 			 */
--			if (!nolock &&
-+			if (!freespace_inode &&
- 			    btrfs_file_extent_generation(leaf, fi) <=
- 			    btrfs_root_last_snapshot(&root->root_item))
- 				goto out_check;
-@@ -1442,7 +1437,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 					goto error;
- 				}
- 
--				WARN_ON_ONCE(nolock);
-+				WARN_ON_ONCE(freespace_inode);
- 				goto out_check;
- 			}
- 			disk_bytenr += extent_offset;
-@@ -1452,7 +1447,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 			 * if there are pending snapshots for this root,
- 			 * we fall into common COW way.
- 			 */
--			if (!nolock && atomic_read(&root->snapshot_force_cow))
-+			if (!freespace_inode && atomic_read(&root->snapshot_force_cow))
- 				goto out_check;
- 			/*
- 			 * force cow if csum exists in the range.
-@@ -1471,12 +1466,12 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 						cur_offset = cow_start;
- 					goto error;
- 				}
--				WARN_ON_ONCE(nolock);
-+				WARN_ON_ONCE(freespace_inode);
- 				goto out_check;
- 			}
- 			if (!btrfs_inc_nocow_writers(fs_info, disk_bytenr))
- 				goto out_check;
--			nocow = 1;
-+			nocow = true;
- 		} else if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
- 			extent_end = found_key.offset +
- 				btrfs_file_extent_ram_bytes(leaf, fi);
-@@ -1518,6 +1513,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 
- 		if (extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
- 			u64 orig_start = found_key.offset - extent_offset;
-+			struct extent_map *em;
- 
- 			em = create_io_em(inode, cur_offset, num_bytes,
- 					  orig_start,
-@@ -1543,7 +1539,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 		}
- 
- 		ret = btrfs_add_ordered_extent(inode, cur_offset, disk_bytenr,
--					       num_bytes, num_bytes, type);
-+					       num_bytes, num_bytes,type);
- 		if (nocow)
- 			btrfs_dec_nocow_writers(fs_info, disk_bytenr);
- 		BUG_ON(ret); /* -ENOMEM */
--- 
-2.17.1
+   Just to throw a can of turquoise paint into the bike-shed works,
+this could be handy with a list of devids to say *where* to create the
+new block group.
 
+   This allows for some truly horrible things to happen if abused, but
+could also allow for some kind of poor-mans directed-balance: Create a
+new block group on the devices you want, balance away one block group
+on device(s) you don't want -- data should end up going to the new
+empty block group in preference to another new one being automatically
+allocated.
+
+   (Alternatively, ignore this suggestion, and I'll just wait for a
+proper "move this BG to these devices" ioctl...)
+
+   Hugo.
+
+On Mon, Aug 05, 2019 at 08:24:23PM +0800, Qu Wenruo wrote:
+>=20
+>=20
+> On 2019/8/3 =E4=B8=8A=E5=8D=8812:10, Josef Bacik wrote:
+> > In testing block group removal it's sometimes handy to be able to create
+> > block groups on demand.  Add an ioctl to allow us to force allocation
+> > from userspace.
+>=20
+> Not sure if we should add another ioctl just for debug purpose.
+>=20
+> Although I see the usefulness in such debug feature, can we move it to
+> something like sysfs so we can hide it more easily?
+>=20
+> >=20
+> > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> > ---
+> >  fs/btrfs/ioctl.c           | 30 ++++++++++++++++++++++++++++++
+> >  include/uapi/linux/btrfs.h |  1 +
+> >  2 files changed, 31 insertions(+)
+> >=20
+> > diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> > index d0743ec1231d..f100def53c29 100644
+> > --- a/fs/btrfs/ioctl.c
+> > +++ b/fs/btrfs/ioctl.c
+> > @@ -5553,6 +5553,34 @@ static int _btrfs_ioctl_send(struct file *file, =
+void __user *argp, bool compat)
+> >  	return ret;
+> >  }
+> > =20
+> > +static long btrfs_ioctl_alloc_chunk(struct file *file, void __user *ar=
+g)
+> > +{
+> > +	struct btrfs_root *root =3D BTRFS_I(file_inode(file))->root;
+> > +	struct btrfs_trans_handle *trans;
+> > +	u64 flags;
+> > +	int ret;
+> > +
+> > +	if (!capable(CAP_SYS_ADMIN))
+> > +		return -EPERM;
+> > +
+> > +	if (copy_from_user(&flags, arg, sizeof(flags)))
+> > +		return -EFAULT;
+> > +
+> > +	/* We can only specify one type at a time. */
+> > +	if (flags !=3D BTRFS_BLOCK_GROUP_DATA &&
+> > +	    flags !=3D BTRFS_BLOCK_GROUP_METADATA &&
+> > +	    flags !=3D BTRFS_BLOCK_GROUP_SYSTEM)
+> > +		return -EINVAL;
+>=20
+> It looks like MIXED bg get less and less love.
+>=20
+> > +
+> > +	trans =3D btrfs_start_transaction(root, 0);
+> > +	if (IS_ERR(trans))
+> > +		return PTR_ERR(trans);
+> > +
+> > +	ret =3D btrfs_chunk_alloc(trans, flags, CHUNK_ALLOC_FORCE);
+>=20
+> And the flags lacks the profile bits, thus default to SINGLE.
+> Is it designed or you'd better use btrfs_force_chunk_alloc()?
+>=20
+> Thanks,
+> Qu
+>=20
+> > +	btrfs_end_transaction(trans);
+> > +	return ret < 0 ? ret : 0;
+> > +}
+> > +
+> >  long btrfs_ioctl(struct file *file, unsigned int
+> >  		cmd, unsigned long arg)
+> >  {
+> > @@ -5699,6 +5727,8 @@ long btrfs_ioctl(struct file *file, unsigned int
+> >  		return btrfs_ioctl_get_subvol_rootref(file, argp);
+> >  	case BTRFS_IOC_INO_LOOKUP_USER:
+> >  		return btrfs_ioctl_ino_lookup_user(file, argp);
+> > +	case BTRFS_IOC_ALLOC_CHUNK:
+> > +		return btrfs_ioctl_alloc_chunk(file, argp);
+> >  	}
+> > =20
+> >  	return -ENOTTY;
+> > diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+> > index c195896d478f..3a6474c34ad0 100644
+> > --- a/include/uapi/linux/btrfs.h
+> > +++ b/include/uapi/linux/btrfs.h
+> > @@ -943,5 +943,6 @@ enum btrfs_err_code {
+> >  				struct btrfs_ioctl_get_subvol_rootref_args)
+> >  #define BTRFS_IOC_INO_LOOKUP_USER _IOWR(BTRFS_IOCTL_MAGIC, 62, \
+> >  				struct btrfs_ioctl_ino_lookup_user_args)
+> > +#define BTRFS_IOC_ALLOC_CHUNK _IOR(BTRFS_IOCTL_MAGIC, 63, __u64)
+> > =20
+> >  #endif /* _UAPI_LINUX_BTRFS_H */
+> >=20
+>=20
+
+
+
+
+--=20
+Hugo Mills             | We don't just borrow words; on occasion, English h=
+as
+hugo@... carfax.org.uk | pursued other languages down alleyways to beat them
+http://carfax.org.uk/  | unconscious and rifle their pockets for new
+PGP: E2AB1DE4          | vocabulary.                           James D. Nic=
+oll
+
+--XsQoSWH+UP9D9v3l
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCgAdFiEE3YTVWJ2B3e6TDSBUWF4UdeKrHeQFAl1IPBsACgkQWF4UdeKr
+HeTUSg//W2dGjbSQl4dI3n7ho5yWAs8LUsccvcWk5MK/fdRUr3CgbeMdCbnxeyEk
+kOEjUE2cgJ88tMiq/xMh9wfvkJCqBe4rU/yahbTxZKrKikX2aBUJGglSXqxvCwMS
+X1cXsdrhdauQlXTPJZSiLpFUHtWAzlwWGp5LTKkSgDVfjVAgdlCUmyjQF/jo3J8A
+dTNyNwnpqtn1KAHVmglrwmqCad8rFPh49ps5WSJr5tp+ML0tDdfmZBkbxXphdJl7
+P1FlIcFHt55Udf+6VxqzEEXHTNI+pHAyIY+cdJcvFcaUqrwxCIg/wX2sg9xxfAv4
+jm5MDYSC7jRGmJLH5X1GuXBhOeU/48C252VNS40Pt/TdFhO6q1RtdLFkYv/dzvXE
+gaP3tXNemwAGfKxOdwwcQEh2wY4B7xgYx4wNiPeF771gWdP7MKXQhf5jJbnDlmsW
+xleku71EvKbB2vcIrxlB17DHbUNIgwe5BVKf5y3PSKip1HBzM91PDOwTpkG7R5qc
+OK5OIDXF9GrmfaP2VsMaa5ij++MD7knIe1UXtlJagiOEmXOx0OGK9b1r81WqGMtz
+JnGUBj3XlPf6nHPnDUEaRym5lyoZvKemr9QWrjgFfqycEADynsNGAArJeBNdohgS
+B3mFb4ixMipCc0g7jQSwbJLf8F6YjODSDM0+NyF86WRfKoe6rl4=
+=+dNP
+-----END PGP SIGNATURE-----
+
+--XsQoSWH+UP9D9v3l--

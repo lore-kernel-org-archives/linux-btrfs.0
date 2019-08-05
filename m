@@ -1,99 +1,82 @@
-Return-Path: <SRS0=m4d4=WA=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=Imwo=WB=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 77745C19759
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Aug 2019 23:54:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6EA6CC433FF
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Aug 2019 00:23:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4AC072089F
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Aug 2019 23:54:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 503572086D
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Aug 2019 00:23:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726759AbfHDXyJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 4 Aug 2019 19:54:09 -0400
-Received: from mail105.syd.optusnet.com.au ([211.29.132.249]:42312 "EHLO
+        id S1726843AbfHEAXb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 4 Aug 2019 20:23:31 -0400
+Received: from mail105.syd.optusnet.com.au ([211.29.132.249]:51967 "EHLO
         mail105.syd.optusnet.com.au" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726532AbfHDXyJ (ORCPT
+        by vger.kernel.org with ESMTP id S1726687AbfHEAXb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 4 Aug 2019 19:54:09 -0400
+        Sun, 4 Aug 2019 20:23:31 -0400
 Received: from dread.disaster.area (pa49-181-167-148.pa.nsw.optusnet.com.au [49.181.167.148])
-        by mail105.syd.optusnet.com.au (Postfix) with ESMTPS id 734053647B7;
-        Mon,  5 Aug 2019 09:54:06 +1000 (AEST)
+        by mail105.syd.optusnet.com.au (Postfix) with ESMTPS id 6625D2AD0E8;
+        Mon,  5 Aug 2019 10:23:28 +1000 (AEST)
 Received: from dave by dread.disaster.area with local (Exim 4.92)
         (envelope-from <david@fromorbit.com>)
-        id 1huQJ9-0004oa-AA; Mon, 05 Aug 2019 09:52:59 +1000
-Date:   Mon, 5 Aug 2019 09:52:59 +1000
+        id 1huQai-0004yg-0N; Mon, 05 Aug 2019 10:11:08 +1000
+Date:   Mon, 5 Aug 2019 10:11:07 +1000
 From:   Dave Chinner <david@fromorbit.com>
 To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
 Cc:     linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         hch@lst.de, darrick.wong@oracle.com, ruansy.fnst@cn.fujitsu.com,
         Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: Re: [PATCH 02/13] iomap: Read page from srcmap for IOMAP_COW
-Message-ID: <20190804235259.GD7689@dread.disaster.area>
+Subject: Re: [PATCH 04/13] btrfs: Add a simple buffered iomap write
+Message-ID: <20190805001107.GF7689@dread.disaster.area>
 References: <20190802220048.16142-1-rgoldwyn@suse.de>
- <20190802220048.16142-3-rgoldwyn@suse.de>
+ <20190802220048.16142-5-rgoldwyn@suse.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190802220048.16142-3-rgoldwyn@suse.de>
+In-Reply-To: <20190802220048.16142-5-rgoldwyn@suse.de>
 User-Agent: Mutt/1.10.1 (2018-07-13)
 X-Optus-CM-Score: 0
-X-Optus-CM-Analysis: v=2.2 cv=FNpr/6gs c=1 sm=1 tr=0 cx=a_idp_d
+X-Optus-CM-Analysis: v=2.2 cv=D+Q3ErZj c=1 sm=1 tr=0 cx=a_idp_d
         a=gu9DDhuZhshYSb5Zs/lkOA==:117 a=gu9DDhuZhshYSb5Zs/lkOA==:17
         a=jpOVt7BSZ2e4Z31A5e1TngXxSK0=:19 a=kj9zAlcOel0A:10 a=FmdZ9Uzk2mMA:10
-        a=iox4zFpeAAAA:8 a=7-415B0cAAAA:8 a=AMSWgMcbKuDIAMYta8YA:9
-        a=CjuIK1q_8ugA:10 a=WzC6qhA0u3u7Ye7llzcV:22 a=biEYGPWJfzWAr4FL6Ov7:22
+        a=iox4zFpeAAAA:8 a=7-415B0cAAAA:8 a=ywC-tYdIaJM7w0WYXF8A:9
+        a=CjuIK1q_8ugA:10 a=igBNqPyMv6gA:10 a=WzC6qhA0u3u7Ye7llzcV:22
+        a=biEYGPWJfzWAr4FL6Ov7:22
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Aug 02, 2019 at 05:00:37PM -0500, Goldwyn Rodrigues wrote:
+On Fri, Aug 02, 2019 at 05:00:39PM -0500, Goldwyn Rodrigues wrote:
 > From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 > 
-> In case of a IOMAP_COW, read a page from the srcmap before
-> performing a write on the page.
+> Introduce a new btrfs_iomap structure which contains information
+> about the filesystem between the iomap_begin() and iomap_end() calls.
+> This contains information about reservations and extent locking.
 > 
-> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> ---
->  fs/iomap/buffered-io.c | 14 ++++++++------
->  1 file changed, 8 insertions(+), 6 deletions(-)
-> 
-> diff --git a/fs/iomap/buffered-io.c b/fs/iomap/buffered-io.c
-> index f27756c0b31c..a96cc26eec92 100644
-> --- a/fs/iomap/buffered-io.c
-> +++ b/fs/iomap/buffered-io.c
-> @@ -581,7 +581,7 @@ __iomap_write_begin(struct inode *inode, loff_t pos, unsigned len,
->  
->  static int
->  iomap_write_begin(struct inode *inode, loff_t pos, unsigned len, unsigned flags,
-> -		struct page **pagep, struct iomap *iomap)
-> +		struct page **pagep, struct iomap *iomap, struct iomap *srcmap)
->  {
->  	const struct iomap_page_ops *page_ops = iomap->page_ops;
->  	pgoff_t index = pos >> PAGE_SHIFT;
-> @@ -607,6 +607,8 @@ iomap_write_begin(struct inode *inode, loff_t pos, unsigned len, unsigned flags,
->  
->  	if (iomap->type == IOMAP_INLINE)
->  		iomap_read_inline_data(inode, page, iomap);
-> +	else if (iomap->type == IOMAP_COW)
-> +		status = __iomap_write_begin(inode, pos, len, page, srcmap);
->  	else if (iomap->flags & IOMAP_F_BUFFER_HEAD)
->  		status = __block_write_begin_int(page, pos, len, NULL, iomap);
->  	else
+> This one is a long patch. Most of the code is "inspired" by
+> fs/btrfs/file.c. To keep the size small, all removals are in
+> following patches.
 
-This looks busted w.r.t. IOMAP_F_BUFFER_HEAD.  i.e. What's to stop
-someone returning iomap->type == IOMAP_COW, iomap->flags &
-IOMAP_F_BUFFER_HEAD?
+I can't comment on the btrfs code but this:
 
-In which case we can't call __iomap_write_begin(), right?
+> +size_t btrfs_buffered_iomap_write(struct kiocb *iocb, struct iov_iter *from)
+> +{
+> +	ssize_t written;
+> +	struct inode *inode = file_inode(iocb->ki_filp);
+> +	written = iomap_file_buffered_write(iocb, from, &btrfs_buffered_iomap_ops);
+> +	if (written > 0)
+> +		iocb->ki_pos += written;
+> +	if (iocb->ki_pos > i_size_read(inode))
+> +		i_size_write(inode, iocb->ki_pos);
+> +	return written;
 
-I'm with Darrick on CONFIG_IOMAP_DEBUG here - we need to start
-locking down invalid behaviour and invalid combinations with asserts
-that tell developers they've broken something.
+Looks like it fails to handle O_[D]SYNC writes.
 
 Cheers,
 

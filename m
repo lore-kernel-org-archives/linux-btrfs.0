@@ -4,61 +4,61 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F25BBC31E40
-	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Aug 2019 16:29:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BFC91C433FF
+	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Aug 2019 16:29:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BD4262086D
-	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Aug 2019 16:29:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7CAA22086D
+	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Aug 2019 16:29:08 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="MWn5VfSL"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="njM4JtxS"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2387955AbfHFQ3E (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 6 Aug 2019 12:29:04 -0400
-Received: from mail-qt1-f195.google.com ([209.85.160.195]:36153 "EHLO
-        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2387782AbfHFQ3D (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Aug 2019 12:29:03 -0400
-Received: by mail-qt1-f195.google.com with SMTP id z4so85203456qtc.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 06 Aug 2019 09:29:02 -0700 (PDT)
+        id S2387995AbfHFQ3H (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 6 Aug 2019 12:29:07 -0400
+Received: from mail-qt1-f194.google.com ([209.85.160.194]:37471 "EHLO
+        mail-qt1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2387967AbfHFQ3H (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Aug 2019 12:29:07 -0400
+Received: by mail-qt1-f194.google.com with SMTP id y26so85168087qto.4
+        for <linux-btrfs@vger.kernel.org>; Tue, 06 Aug 2019 09:29:05 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=VKGgH/ZndUHuK6+BE7VdunrhKdpuT0Yp0EFLV5WnNeI=;
-        b=MWn5VfSLh3FXZFH1q+ho2nR5kkINA4q8OhSpYgr5wn5LjqVwqS+D6dKoeKmeUq4SL5
-         J7PtlCG9S0WLgjHtk9K1zqLAMKw+wn5XEkVhAjwpRGLptrM4paVjTDwxJIByomJHZ5Z0
-         MX5g7sXZdV0LdSw2W8Lc+Al3XlcPLc0HnsXHTXCiUy6kSzOQ237Vb6ATThlrKrdAUc5Z
-         I54ff3uxpLvT0jfpIIAiSSKHwkdY2qQywZqA0TdVq2k7TB6j6yU6s1zNe2RSsJ6qtkQg
-         mhh/Gin9CFMmMYaU15RSWs7zzZRiDk0DgrIacKgQtQlAgFHeRqP4WIAPBhpvTmkS9yZJ
-         l2kg==
+        bh=fZqS6JT4HvQC5V5NSAjR5yuY/2NCpp31Cdfgqtwe6rY=;
+        b=njM4JtxST5sojCpRi6sx/tlNKWrjoIkqV6OukS4xbKbNbDAB7gSKHlYYjYxJi/WpPj
+         ivXFlBam2B+Ixx/A/1w0mfRjWQRafuwJtWBvfW7nLxz17Nmj5Mirk9TPtjTEqrKl2K9x
+         JFPF+JSVF695FAU02t0nu14nOVc3g2YtL4DIbe3EtugdW8WnUxcq0TK6kJv29bxJKeoK
+         UtE00fUo9rm4Gl6KJFzSXGAptyXxJcy7A2buCoQYjftqJOlev6tZxbztwE49sv7cIpOu
+         G1K3+z0YPOpgil9floaZaFknv6T8l9pp3w9gKP0TaQjldJJa4TqEFe7t5t0UUX8AFvqz
+         8BqA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=VKGgH/ZndUHuK6+BE7VdunrhKdpuT0Yp0EFLV5WnNeI=;
-        b=T7O/KHkaVmFB4uQvQF4Z5iCmszIkCQAw2zhgoKSV114DNAWp6f+cIiT6ST0LJdqrIh
-         zHZfKylSA7POK+vv6zaMc9BM+z2aUsV/gSG23EwrFClGhoPCxCqYaFmoOKGOkj/z5LFl
-         p8d2+bZaQd4+Z+gxucuwJnvPQBojNgydNcOJxqMw3+Mjm2vwUcBs9/yJKwahb2MTLoFn
-         9Tfm4v0tzJhhIlreVeeIE/ELIvXBNvBlpZFVr6BvA0KJf1VUyvXGpl6wFFP0EI+5nm1C
-         K6NqjtD79WyNGykbOTOsX7wVfmF3IrIq2JfgOxw2Yc8K1H42mFqaGpF2+FjgKMEItcZJ
-         G3gg==
-X-Gm-Message-State: APjAAAXuACj5/uF39RKsbfxaZxR1rs8t1n2cOvfSW3inDQtTE8OTfxql
-        4ydMMyC6LvBKyK4h5TqPqkWPGSUr/H8i1w==
-X-Google-Smtp-Source: APXvYqyT/Oy12Vrfup95uS+A2+H22l1gCblMGcudHidDhj+jBwJ5Z0pNrjHzY0dcJ2DhJ4sD/+IiHg==
-X-Received: by 2002:a0c:818f:: with SMTP id 15mr3750243qvd.162.1565108941629;
-        Tue, 06 Aug 2019 09:29:01 -0700 (PDT)
+        bh=fZqS6JT4HvQC5V5NSAjR5yuY/2NCpp31Cdfgqtwe6rY=;
+        b=rvwlqHznhUcmNfoGKxozx76frVp4HZfvgXjX2FGIouovLFyuj204VFQhGZBX7m64c4
+         /FCqHM78IAXHh8Ugd9kenP744wnBW995m66l6jlOffDuxw+JfaOVxhs2E4mjX7oWR+oZ
+         8aeXG/QH2DUSO5alaV9hYJb2WzFgH4G0MsUp5wT5iNo0RkVtNuhg0FaOZ9y6R90nWV2z
+         0diJGEhIu2AAiQCPN8+mZIGP+hPC7JYCC38Vp45vXlmUTfqzJFtVS0UC0iyPq9gpuDDJ
+         pnKSgxykh/jek3wDcjBreR+3w5G7f6K6fLPLazIdqOlushT42EBxw2rdBKZHWHnBKlNG
+         CWbQ==
+X-Gm-Message-State: APjAAAUDarNn5UxF7cim7leNuu4pdmuCQzMXWJYiS2h1bzstjw7TiKCu
+        g7vDH+72fSg00to+EEGwrxxQvw==
+X-Google-Smtp-Source: APXvYqwMzmcFHvDkei7mzRtFA8yCaJjr46k9xvhsuvh1QtLA6ITmydtGqqpQVTYWtjtdJ5qy8/qdYg==
+X-Received: by 2002:ac8:ce:: with SMTP id d14mr3909849qtg.149.1565108945158;
+        Tue, 06 Aug 2019 09:29:05 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id s127sm38183308qkd.107.2019.08.06.09.29.00
+        by smtp.gmail.com with ESMTPSA id y67sm39754046qkd.40.2019.08.06.09.29.04
         (version=TLS1_3 cipher=AEAD-AES256-GCM-SHA384 bits=256/256);
-        Tue, 06 Aug 2019 09:29:01 -0700 (PDT)
+        Tue, 06 Aug 2019 09:29:04 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 12/15] btrfs: migrate the alloc_profile helpers
-Date:   Tue,  6 Aug 2019 12:28:34 -0400
-Message-Id: <20190806162837.15840-13-josef@toxicpanda.com>
+Subject: [PATCH 14/15] btrfs: unexport the temporary exported functions
+Date:   Tue,  6 Aug 2019 12:28:36 -0400
+Message-Id: <20190806162837.15840-15-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.21.0
 In-Reply-To: <20190806162837.15840-1-josef@toxicpanda.com>
 References: <20190806162837.15840-1-josef@toxicpanda.com>
@@ -69,309 +69,319 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-These feel more at home in block-group.c.
+These were renamed and exported to facilitate logical migration of
+different code chunks into block-group.c.  Now that all the users are in
+one file go ahead and rename them back, move the code around, and make
+them static.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/block-group.c | 100 +++++++++++++++++++++++++++++++++++
- fs/btrfs/block-group.h |  16 ++++++
- fs/btrfs/ctree.h       |   4 --
- fs/btrfs/extent-tree.c | 115 -----------------------------------------
- 4 files changed, 116 insertions(+), 119 deletions(-)
+ fs/btrfs/block-group.c | 176 ++++++++++++++++++++---------------------
+ fs/btrfs/block-group.h |   6 --
+ 2 files changed, 88 insertions(+), 94 deletions(-)
 
 diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 0221c8c6c7d4..330f96134ffb 100644
+index 451dfd64ed36..0df939285702 100644
 --- a/fs/btrfs/block-group.c
 +++ b/fs/btrfs/block-group.c
-@@ -15,6 +15,106 @@
- #include "delalloc-space.h"
- #include "math.h"
+@@ -21,7 +21,7 @@
+  *
+  * should be called with balance_lock held
+  */
+-u64 btrfs_get_restripe_target(struct btrfs_fs_info *fs_info, u64 flags)
++static u64 get_restripe_target(struct btrfs_fs_info *fs_info, u64 flags)
+ {
+ 	struct btrfs_balance_control *bctl = fs_info->balance_ctl;
+ 	u64 target = 0;
+@@ -62,7 +62,7 @@ static u64 btrfs_reduce_alloc_profile(struct btrfs_fs_info *fs_info, u64 flags)
+ 	 * try to reduce to the target profile
+ 	 */
+ 	spin_lock(&fs_info->balance_lock);
+-	target = btrfs_get_restripe_target(fs_info, flags);
++	target = get_restripe_target(fs_info, flags);
+ 	if (target) {
+ 		/* pick target profile only if it's already available */
+ 		if ((flags & target) & BTRFS_EXTENDED_PROFILE_MASK) {
+@@ -422,7 +422,7 @@ int btrfs_wait_block_group_cache_done(struct btrfs_block_group_cache *cache)
+ }
+ 
+ #ifdef CONFIG_BTRFS_DEBUG
+-void btrfs_fragment_free_space(struct btrfs_block_group_cache *block_group)
++static void fragment_free_space(struct btrfs_block_group_cache *block_group)
+ {
+ 	struct btrfs_fs_info *fs_info = block_group->fs_info;
+ 	u64 start = block_group->key.objectid;
+@@ -660,7 +660,7 @@ static noinline void caching_thread(struct btrfs_work *work)
+ 		block_group->space_info->bytes_used += bytes_used >> 1;
+ 		spin_unlock(&block_group->lock);
+ 		spin_unlock(&block_group->space_info->lock);
+-		btrfs_fragment_free_space(block_group);
++		fragment_free_space(block_group);
+ 	}
+ #endif
+ 
+@@ -767,7 +767,7 @@ int btrfs_cache_block_group(struct btrfs_block_group_cache *cache,
+ 			cache->space_info->bytes_used += bytes_used >> 1;
+ 			spin_unlock(&cache->lock);
+ 			spin_unlock(&cache->space_info->lock);
+-			btrfs_fragment_free_space(cache);
++			fragment_free_space(cache);
+ 		}
+ #endif
+ 		mutex_unlock(&caching_ctl->mutex);
+@@ -1167,6 +1167,81 @@ btrfs_start_trans_remove_block_group(struct btrfs_fs_info *fs_info,
+ 							   num_items, 1);
+ }
  
 +/*
-+ * returns target flags in extended format or 0 if restripe for this
-+ * chunk_type is not in progress
++ * Mark block group @cache read-only, so later write won't happen to block
++ * group @cache.
 + *
-+ * should be called with balance_lock held
-+ */
-+u64 btrfs_get_restripe_target(struct btrfs_fs_info *fs_info, u64 flags)
-+{
-+	struct btrfs_balance_control *bctl = fs_info->balance_ctl;
-+	u64 target = 0;
-+
-+	if (!bctl)
-+		return 0;
-+
-+	if (flags & BTRFS_BLOCK_GROUP_DATA &&
-+	    bctl->data.flags & BTRFS_BALANCE_ARGS_CONVERT) {
-+		target = BTRFS_BLOCK_GROUP_DATA | bctl->data.target;
-+	} else if (flags & BTRFS_BLOCK_GROUP_SYSTEM &&
-+		   bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) {
-+		target = BTRFS_BLOCK_GROUP_SYSTEM | bctl->sys.target;
-+	} else if (flags & BTRFS_BLOCK_GROUP_METADATA &&
-+		   bctl->meta.flags & BTRFS_BALANCE_ARGS_CONVERT) {
-+		target = BTRFS_BLOCK_GROUP_METADATA | bctl->meta.target;
-+	}
-+
-+	return target;
-+}
-+
-+/*
-+ * @flags: available profiles in extended format (see ctree.h)
++ * If @force is not set, this function will only mark the block group readonly
++ * if we have enough free space (1M) in other metadata/system block groups.
++ * If @force is not set, this function will mark the block group readonly
++ * without checking free space.
 + *
-+ * Returns reduced profile in chunk format.  If profile changing is in
-+ * progress (either running or paused) picks the target profile (if it's
-+ * already available), otherwise falls back to plain reducing.
++ * NOTE: This function doesn't care if other block groups can contain all the
++ * data in this block group. That check should be done by relocation routine,
++ * not this function.
 + */
-+static u64 btrfs_reduce_alloc_profile(struct btrfs_fs_info *fs_info, u64 flags)
++static int inc_block_group_ro(struct btrfs_block_group_cache *cache,
++			      int force)
 +{
-+	u64 num_devices = fs_info->fs_devices->rw_devices;
-+	u64 target;
-+	u64 raid_type;
-+	u64 allowed = 0;
++	struct btrfs_space_info *sinfo = cache->space_info;
++	u64 num_bytes;
++	u64 sinfo_used;
++	u64 min_allocable_bytes;
++	int ret = -ENOSPC;
 +
 +	/*
-+	 * see if restripe for this chunk_type is in progress, if so
-+	 * try to reduce to the target profile
++	 * We need some metadata space and system metadata space for
++	 * allocating chunks in some corner cases until we force to set
++	 * it to be readonly.
 +	 */
-+	spin_lock(&fs_info->balance_lock);
-+	target = btrfs_get_restripe_target(fs_info, flags);
-+	if (target) {
-+		/* pick target profile only if it's already available */
-+		if ((flags & target) & BTRFS_EXTENDED_PROFILE_MASK) {
-+			spin_unlock(&fs_info->balance_lock);
-+			return extended_to_chunk(target);
-+		}
++	if ((sinfo->flags &
++	     (BTRFS_BLOCK_GROUP_SYSTEM | BTRFS_BLOCK_GROUP_METADATA)) &&
++	    !force)
++		min_allocable_bytes = SZ_1M;
++	else
++		min_allocable_bytes = 0;
++
++	spin_lock(&sinfo->lock);
++	spin_lock(&cache->lock);
++
++	if (cache->ro) {
++		cache->ro++;
++		ret = 0;
++		goto out;
 +	}
-+	spin_unlock(&fs_info->balance_lock);
 +
-+	/* First, mask out the RAID levels which aren't possible */
-+	for (raid_type = 0; raid_type < BTRFS_NR_RAID_TYPES; raid_type++) {
-+		if (num_devices >= btrfs_raid_array[raid_type].devs_min)
-+			allowed |= btrfs_raid_array[raid_type].bg_flag;
++	num_bytes = cache->key.offset - cache->reserved - cache->pinned -
++		    cache->bytes_super - btrfs_block_group_used(&cache->item);
++	sinfo_used = btrfs_space_info_used(sinfo, true);
++
++	/*
++	 * sinfo_used + num_bytes should always <= sinfo->total_bytes.
++	 *
++	 * Here we make sure if we mark this bg RO, we still have enough
++	 * free space as buffer (if min_allocable_bytes is not 0).
++	 */
++	if (sinfo_used + num_bytes + min_allocable_bytes <=
++	    sinfo->total_bytes) {
++		sinfo->bytes_readonly += num_bytes;
++		cache->ro++;
++		list_add_tail(&cache->ro_list, &sinfo->ro_bgs);
++		ret = 0;
 +	}
-+	allowed &= flags;
-+
-+	if (allowed & BTRFS_BLOCK_GROUP_RAID6)
-+		allowed = BTRFS_BLOCK_GROUP_RAID6;
-+	else if (allowed & BTRFS_BLOCK_GROUP_RAID5)
-+		allowed = BTRFS_BLOCK_GROUP_RAID5;
-+	else if (allowed & BTRFS_BLOCK_GROUP_RAID10)
-+		allowed = BTRFS_BLOCK_GROUP_RAID10;
-+	else if (allowed & BTRFS_BLOCK_GROUP_RAID1)
-+		allowed = BTRFS_BLOCK_GROUP_RAID1;
-+	else if (allowed & BTRFS_BLOCK_GROUP_RAID0)
-+		allowed = BTRFS_BLOCK_GROUP_RAID0;
-+
-+	flags &= ~BTRFS_BLOCK_GROUP_PROFILE_MASK;
-+
-+	return extended_to_chunk(flags | allowed);
++out:
++	spin_unlock(&cache->lock);
++	spin_unlock(&sinfo->lock);
++	if (ret == -ENOSPC && btrfs_test_opt(cache->fs_info, ENOSPC_DEBUG)) {
++		btrfs_info(cache->fs_info,
++			"unable to make block group %llu ro",
++			cache->key.objectid);
++		btrfs_info(cache->fs_info,
++			"sinfo_used=%llu bg_num_bytes=%llu min_allocable=%llu",
++			sinfo_used, num_bytes, min_allocable_bytes);
++		btrfs_dump_space_info(cache->fs_info, cache->space_info, 0, 0);
++	}
++	return ret;
 +}
 +
-+u64 btrfs_get_alloc_profile(struct btrfs_fs_info *fs_info, u64 orig_flags)
-+{
-+	unsigned seq;
-+	u64 flags;
-+
-+	do {
-+		flags = orig_flags;
-+		seq = read_seqbegin(&fs_info->profiles_lock);
-+
-+		if (flags & BTRFS_BLOCK_GROUP_DATA)
-+			flags |= fs_info->avail_data_alloc_bits;
-+		else if (flags & BTRFS_BLOCK_GROUP_SYSTEM)
-+			flags |= fs_info->avail_system_alloc_bits;
-+		else if (flags & BTRFS_BLOCK_GROUP_METADATA)
-+			flags |= fs_info->avail_metadata_alloc_bits;
-+	} while (read_seqretry(&fs_info->profiles_lock, seq));
-+
-+	return btrfs_reduce_alloc_profile(fs_info, flags);
-+}
-+
- void btrfs_get_block_group(struct btrfs_block_group_cache *cache)
- {
- 	atomic_inc(&cache->count);
-diff --git a/fs/btrfs/block-group.h b/fs/btrfs/block-group.h
-index 4b8ac8e9323c..ab5434ddd7f4 100644
---- a/fs/btrfs/block-group.h
-+++ b/fs/btrfs/block-group.h
-@@ -223,6 +223,22 @@ int btrfs_chunk_alloc(struct btrfs_trans_handle *trans, u64 flags,
- 		      enum btrfs_chunk_alloc_enum force);
- int btrfs_force_chunk_alloc(struct btrfs_trans_handle *trans, u64 type);
- void check_system_chunk(struct btrfs_trans_handle *trans, const u64 type);
-+u64 btrfs_get_alloc_profile(struct btrfs_fs_info *fs_info, u64 orig_flags);
-+
-+static inline u64 btrfs_data_alloc_profile(struct btrfs_fs_info *fs_info)
-+{
-+	return btrfs_get_alloc_profile(fs_info, BTRFS_BLOCK_GROUP_DATA);
-+}
-+
-+static inline u64 btrfs_metadata_alloc_profile(struct btrfs_fs_info *fs_info)
-+{
-+	return btrfs_get_alloc_profile(fs_info, BTRFS_BLOCK_GROUP_METADATA);
-+}
-+
-+static inline u64 btrfs_system_alloc_profile(struct btrfs_fs_info *fs_info)
-+{
-+	return btrfs_get_alloc_profile(fs_info, BTRFS_BLOCK_GROUP_SYSTEM);
-+}
+ /*
+  * Process the unused_bgs list and remove any that don't have any allocated
+  * space inside of them.
+@@ -1222,7 +1297,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 		spin_unlock(&block_group->lock);
  
- static inline int btrfs_block_group_cache_done(
- 		struct btrfs_block_group_cache *cache)
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index db56a1c81843..fab6e9792d23 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2467,7 +2467,6 @@ static inline u64 btrfs_calc_trunc_metadata_size(struct btrfs_fs_info *fs_info,
- int btrfs_add_excluded_extent(struct btrfs_fs_info *fs_info,
- 			      u64 start, u64 num_bytes);
- void btrfs_free_excluded_extents(struct btrfs_block_group_cache *cache);
--u64 btrfs_get_alloc_profile(struct btrfs_fs_info *fs_info, u64 orig_flags);
- int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
- 			   unsigned long count);
- void btrfs_cleanup_ref_head_accounting(struct btrfs_fs_info *fs_info,
-@@ -2526,9 +2525,6 @@ int btrfs_extent_readonly(struct btrfs_fs_info *fs_info, u64 bytenr);
- int btrfs_free_block_groups(struct btrfs_fs_info *info);
- void btrfs_get_block_group_trimming(struct btrfs_block_group_cache *cache);
- void btrfs_put_block_group_trimming(struct btrfs_block_group_cache *cache);
--u64 btrfs_data_alloc_profile(struct btrfs_fs_info *fs_info);
--u64 btrfs_metadata_alloc_profile(struct btrfs_fs_info *fs_info);
--u64 btrfs_system_alloc_profile(struct btrfs_fs_info *fs_info);
- void btrfs_clear_space_info_full(struct btrfs_fs_info *info);
+ 		/* We don't want to force the issue, only flip if it's ok. */
+-		ret = __btrfs_inc_block_group_ro(block_group, 0);
++		ret = inc_block_group_ro(block_group, 0);
+ 		up_write(&space_info->groups_sem);
+ 		if (ret < 0) {
+ 			ret = 0;
+@@ -1750,7 +1825,7 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
  
- enum btrfs_reserve_flush_enum {
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index a218f2187ebe..40e4f2ce4952 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2545,106 +2545,6 @@ int btrfs_extent_readonly(struct btrfs_fs_info *fs_info, u64 bytenr)
- 	return readonly;
+ 		set_avail_alloc_bits(info, cache->flags);
+ 		if (btrfs_chunk_readonly(info, cache->key.objectid)) {
+-			__btrfs_inc_block_group_ro(cache, 1);
++			inc_block_group_ro(cache, 1);
+ 		} else if (btrfs_block_group_used(&cache->item) == 0) {
+ 			ASSERT(list_empty(&cache->bg_list));
+ 			btrfs_mark_bg_unused(cache);
+@@ -1771,11 +1846,11 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
+ 		list_for_each_entry(cache,
+ 				&space_info->block_groups[BTRFS_RAID_RAID0],
+ 				list)
+-			__btrfs_inc_block_group_ro(cache, 1);
++			inc_block_group_ro(cache, 1);
+ 		list_for_each_entry(cache,
+ 				&space_info->block_groups[BTRFS_RAID_SINGLE],
+ 				list)
+-			__btrfs_inc_block_group_ro(cache, 1);
++			inc_block_group_ro(cache, 1);
+ 	}
+ 
+ 	btrfs_add_raid_kobjects(info);
+@@ -1868,7 +1943,7 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans, u64 bytes_used,
+ 		u64 new_bytes_used = size - bytes_used;
+ 
+ 		bytes_used += new_bytes_used >> 1;
+-		btrfs_fragment_free_space(cache);
++		fragment_free_space(cache);
+ 	}
+ #endif
+ 	/*
+@@ -1914,7 +1989,7 @@ static u64 update_block_group_flags(struct btrfs_fs_info *fs_info, u64 flags)
+ 	 * if restripe for this chunk_type is on pick target profile and
+ 	 * return, otherwise do the usual balance
+ 	 */
+-	stripped = btrfs_get_restripe_target(fs_info, flags);
++	stripped = get_restripe_target(fs_info, flags);
+ 	if (stripped)
+ 		return extended_to_chunk(stripped);
+ 
+@@ -1953,81 +2028,6 @@ static u64 update_block_group_flags(struct btrfs_fs_info *fs_info, u64 flags)
+ 	return flags;
  }
  
 -/*
-- * returns target flags in extended format or 0 if restripe for this
-- * chunk_type is not in progress
+- * Mark block group @cache read-only, so later write won't happen to block
+- * group @cache.
 - *
-- * should be called with balance_lock held
-- */
--u64 btrfs_get_restripe_target(struct btrfs_fs_info *fs_info, u64 flags)
--{
--	struct btrfs_balance_control *bctl = fs_info->balance_ctl;
--	u64 target = 0;
--
--	if (!bctl)
--		return 0;
--
--	if (flags & BTRFS_BLOCK_GROUP_DATA &&
--	    bctl->data.flags & BTRFS_BALANCE_ARGS_CONVERT) {
--		target = BTRFS_BLOCK_GROUP_DATA | bctl->data.target;
--	} else if (flags & BTRFS_BLOCK_GROUP_SYSTEM &&
--		   bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) {
--		target = BTRFS_BLOCK_GROUP_SYSTEM | bctl->sys.target;
--	} else if (flags & BTRFS_BLOCK_GROUP_METADATA &&
--		   bctl->meta.flags & BTRFS_BALANCE_ARGS_CONVERT) {
--		target = BTRFS_BLOCK_GROUP_METADATA | bctl->meta.target;
--	}
--
--	return target;
--}
--
--/*
-- * @flags: available profiles in extended format (see ctree.h)
+- * If @force is not set, this function will only mark the block group readonly
+- * if we have enough free space (1M) in other metadata/system block groups.
+- * If @force is not set, this function will mark the block group readonly
+- * without checking free space.
 - *
-- * Returns reduced profile in chunk format.  If profile changing is in
-- * progress (either running or paused) picks the target profile (if it's
-- * already available), otherwise falls back to plain reducing.
+- * NOTE: This function doesn't care if other block groups can contain all the
+- * data in this block group. That check should be done by relocation routine,
+- * not this function.
 - */
--static u64 btrfs_reduce_alloc_profile(struct btrfs_fs_info *fs_info, u64 flags)
+-int __btrfs_inc_block_group_ro(struct btrfs_block_group_cache *cache,
+-			       int force)
 -{
--	u64 num_devices = fs_info->fs_devices->rw_devices;
--	u64 target;
--	u64 raid_type;
--	u64 allowed = 0;
+-	struct btrfs_space_info *sinfo = cache->space_info;
+-	u64 num_bytes;
+-	u64 sinfo_used;
+-	u64 min_allocable_bytes;
+-	int ret = -ENOSPC;
 -
 -	/*
--	 * see if restripe for this chunk_type is in progress, if so
--	 * try to reduce to the target profile
+-	 * We need some metadata space and system metadata space for
+-	 * allocating chunks in some corner cases until we force to set
+-	 * it to be readonly.
 -	 */
--	spin_lock(&fs_info->balance_lock);
--	target = btrfs_get_restripe_target(fs_info, flags);
--	if (target) {
--		/* pick target profile only if it's already available */
--		if ((flags & target) & BTRFS_EXTENDED_PROFILE_MASK) {
--			spin_unlock(&fs_info->balance_lock);
--			return extended_to_chunk(target);
--		}
+-	if ((sinfo->flags &
+-	     (BTRFS_BLOCK_GROUP_SYSTEM | BTRFS_BLOCK_GROUP_METADATA)) &&
+-	    !force)
+-		min_allocable_bytes = SZ_1M;
+-	else
+-		min_allocable_bytes = 0;
+-
+-	spin_lock(&sinfo->lock);
+-	spin_lock(&cache->lock);
+-
+-	if (cache->ro) {
+-		cache->ro++;
+-		ret = 0;
+-		goto out;
 -	}
--	spin_unlock(&fs_info->balance_lock);
 -
--	/* First, mask out the RAID levels which aren't possible */
--	for (raid_type = 0; raid_type < BTRFS_NR_RAID_TYPES; raid_type++) {
--		if (num_devices >= btrfs_raid_array[raid_type].devs_min)
--			allowed |= btrfs_raid_array[raid_type].bg_flag;
+-	num_bytes = cache->key.offset - cache->reserved - cache->pinned -
+-		    cache->bytes_super - btrfs_block_group_used(&cache->item);
+-	sinfo_used = btrfs_space_info_used(sinfo, true);
+-
+-	/*
+-	 * sinfo_used + num_bytes should always <= sinfo->total_bytes.
+-	 *
+-	 * Here we make sure if we mark this bg RO, we still have enough
+-	 * free space as buffer (if min_allocable_bytes is not 0).
+-	 */
+-	if (sinfo_used + num_bytes + min_allocable_bytes <=
+-	    sinfo->total_bytes) {
+-		sinfo->bytes_readonly += num_bytes;
+-		cache->ro++;
+-		list_add_tail(&cache->ro_list, &sinfo->ro_bgs);
+-		ret = 0;
 -	}
--	allowed &= flags;
--
--	if (allowed & BTRFS_BLOCK_GROUP_RAID6)
--		allowed = BTRFS_BLOCK_GROUP_RAID6;
--	else if (allowed & BTRFS_BLOCK_GROUP_RAID5)
--		allowed = BTRFS_BLOCK_GROUP_RAID5;
--	else if (allowed & BTRFS_BLOCK_GROUP_RAID10)
--		allowed = BTRFS_BLOCK_GROUP_RAID10;
--	else if (allowed & BTRFS_BLOCK_GROUP_RAID1)
--		allowed = BTRFS_BLOCK_GROUP_RAID1;
--	else if (allowed & BTRFS_BLOCK_GROUP_RAID0)
--		allowed = BTRFS_BLOCK_GROUP_RAID0;
--
--	flags &= ~BTRFS_BLOCK_GROUP_PROFILE_MASK;
--
--	return extended_to_chunk(flags | allowed);
+-out:
+-	spin_unlock(&cache->lock);
+-	spin_unlock(&sinfo->lock);
+-	if (ret == -ENOSPC && btrfs_test_opt(cache->fs_info, ENOSPC_DEBUG)) {
+-		btrfs_info(cache->fs_info,
+-			"unable to make block group %llu ro",
+-			cache->key.objectid);
+-		btrfs_info(cache->fs_info,
+-			"sinfo_used=%llu bg_num_bytes=%llu min_allocable=%llu",
+-			sinfo_used, num_bytes, min_allocable_bytes);
+-		btrfs_dump_space_info(cache->fs_info, cache->space_info, 0, 0);
+-	}
+-	return ret;
 -}
 -
--u64 btrfs_get_alloc_profile(struct btrfs_fs_info *fs_info, u64 orig_flags)
--{
--	unsigned seq;
--	u64 flags;
--
--	do {
--		flags = orig_flags;
--		seq = read_seqbegin(&fs_info->profiles_lock);
--
--		if (flags & BTRFS_BLOCK_GROUP_DATA)
--			flags |= fs_info->avail_data_alloc_bits;
--		else if (flags & BTRFS_BLOCK_GROUP_SYSTEM)
--			flags |= fs_info->avail_system_alloc_bits;
--		else if (flags & BTRFS_BLOCK_GROUP_METADATA)
--			flags |= fs_info->avail_metadata_alloc_bits;
--	} while (read_seqretry(&fs_info->profiles_lock, seq));
--
--	return btrfs_reduce_alloc_profile(fs_info, flags);
--}
--
- static u64 get_alloc_profile_by_root(struct btrfs_root *root, int data)
- {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
-@@ -2662,21 +2562,6 @@ static u64 get_alloc_profile_by_root(struct btrfs_root *root, int data)
- 	return ret;
- }
+ int btrfs_inc_block_group_ro(struct btrfs_block_group_cache *cache)
  
--u64 btrfs_data_alloc_profile(struct btrfs_fs_info *fs_info)
--{
--	return btrfs_get_alloc_profile(fs_info, BTRFS_BLOCK_GROUP_DATA);
--}
--
--u64 btrfs_metadata_alloc_profile(struct btrfs_fs_info *fs_info)
--{
--	return btrfs_get_alloc_profile(fs_info, BTRFS_BLOCK_GROUP_METADATA);
--}
--
--u64 btrfs_system_alloc_profile(struct btrfs_fs_info *fs_info)
--{
--	return btrfs_get_alloc_profile(fs_info, BTRFS_BLOCK_GROUP_SYSTEM);
--}
--
- static u64 first_logical_byte(struct btrfs_fs_info *fs_info, u64 search_start)
  {
- 	struct btrfs_block_group_cache *cache;
+@@ -2077,14 +2077,14 @@ int btrfs_inc_block_group_ro(struct btrfs_block_group_cache *cache)
+ 			goto out;
+ 	}
+ 
+-	ret = __btrfs_inc_block_group_ro(cache, 0);
++	ret = inc_block_group_ro(cache, 0);
+ 	if (!ret)
+ 		goto out;
+ 	alloc_flags = btrfs_get_alloc_profile(fs_info, cache->space_info->flags);
+ 	ret = btrfs_chunk_alloc(trans, alloc_flags, CHUNK_ALLOC_FORCE);
+ 	if (ret < 0)
+ 		goto out;
+-	ret = __btrfs_inc_block_group_ro(cache, 0);
++	ret = inc_block_group_ro(cache, 0);
+ out:
+ 	if (cache->flags & BTRFS_BLOCK_GROUP_SYSTEM) {
+ 		alloc_flags = update_block_group_flags(fs_info, cache->flags);
+diff --git a/fs/btrfs/block-group.h b/fs/btrfs/block-group.h
+index 2647c0aa76b8..6f4658b1ec94 100644
+--- a/fs/btrfs/block-group.h
++++ b/fs/btrfs/block-group.h
+@@ -169,7 +169,6 @@ static inline int btrfs_should_fragment_free_space(
+ 	       (btrfs_test_opt(fs_info, FRAGMENT_DATA) &&
+ 		block_group->flags &  BTRFS_BLOCK_GROUP_DATA);
+ }
+-void btrfs_fragment_free_space(struct btrfs_block_group_cache *block_group);
+ #endif
+ 
+ struct btrfs_block_group_cache *btrfs_lookup_first_block_group(
+@@ -249,9 +248,4 @@ static inline int btrfs_block_group_cache_done(
+ 	return cache->cached == BTRFS_CACHE_FINISHED ||
+ 		cache->cached == BTRFS_CACHE_ERROR;
+ }
+-
+-int __btrfs_inc_block_group_ro(struct btrfs_block_group_cache *cache,
+-			       int force);
+-u64 btrfs_get_restripe_target(struct btrfs_fs_info *fs_info, u64 flags);
+-
+ #endif /* BTRFS_BLOCK_GROUP_H */
 -- 
 2.21.0
 

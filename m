@@ -2,53 +2,53 @@ Return-Path: <SRS0=+IVA=WD=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6DD40C32751
-	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Aug 2019 14:18:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 872BAC433FF
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Aug 2019 14:57:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4ABF921E71
-	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Aug 2019 14:18:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 68A0521E73
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Aug 2019 14:57:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388350AbfHGOSX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 7 Aug 2019 10:18:23 -0400
-Received: from mx2.suse.de ([195.135.220.15]:56650 "EHLO mx1.suse.de"
+        id S2388240AbfHGO5s (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 7 Aug 2019 10:57:48 -0400
+Received: from mx2.suse.de ([195.135.220.15]:41178 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2387543AbfHGOSX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 7 Aug 2019 10:18:23 -0400
+        id S2387915AbfHGO5r (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 7 Aug 2019 10:57:47 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 28C66B034;
-        Wed,  7 Aug 2019 14:18:22 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 4707AACB7;
+        Wed,  7 Aug 2019 14:57:46 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id E28E8DA7D7; Wed,  7 Aug 2019 16:18:53 +0200 (CEST)
-Date:   Wed, 7 Aug 2019 16:18:53 +0200
+        id EAA36DA7D7; Wed,  7 Aug 2019 16:58:17 +0200 (CEST)
+Date:   Wed, 7 Aug 2019 16:58:17 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] btrfs: reset device stat using btrfs_dev_stat_set
-Message-ID: <20190807141853.GV28208@twin.jikos.cz>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     kernel-team@fb.com, linux-btrfs@vger.kernel.org, nborisov@suse.com
+Subject: Re: [PATCH 15/15] btrfs: remove comment and leftover cruft
+Message-ID: <20190807145817.GW28208@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
-        linux-btrfs@vger.kernel.org
-References: <20190807082120.1973-1-anand.jain@oracle.com>
+Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
+        kernel-team@fb.com, linux-btrfs@vger.kernel.org, nborisov@suse.com
+References: <20190806162837.15840-1-josef@toxicpanda.com>
+ <20190806162837.15840-16-josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190807082120.1973-1-anand.jain@oracle.com>
+In-Reply-To: <20190806162837.15840-16-josef@toxicpanda.com>
 User-Agent: Mutt/1.5.23.1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Aug 07, 2019 at 04:21:19PM +0800, Anand Jain wrote:
-> btrfs_dev_stat_reset() is an overdo in terms of wrapping. So this patch
-> open codes btrfs_dev_stat_reset().
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+On Tue, Aug 06, 2019 at 12:28:37PM -0400, Josef Bacik wrote:
+> Commit "btrfs: convert snapshot/nocow exlcusion to drw lock" removed
+> this code, but didn't remove the comment or the definitions, do that
+> now.
 
-Reviewed-by: David Sterba <dsterba@suse.com>
-
-for both patches.
+The DRW lock patchset is in for-next just as a preview and for early
+testing so any fixups should be folded to the original patchset.

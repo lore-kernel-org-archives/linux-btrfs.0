@@ -2,34 +2,35 @@ Return-Path: <SRS0=sUb0=WI=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+	UNWANTED_LANGUAGE_BODY,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C496BC433FF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Aug 2019 10:21:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9F612C31E40
+	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Aug 2019 10:51:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8F98D20820
-	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Aug 2019 10:21:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 602642085A
+	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Aug 2019 10:51:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727878AbfHLKVm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 12 Aug 2019 06:21:42 -0400
-Received: from mx2.suse.de ([195.135.220.15]:57146 "EHLO mx1.suse.de"
+        id S1727994AbfHLKvE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 12 Aug 2019 06:51:04 -0400
+Received: from mx2.suse.de ([195.135.220.15]:34660 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727518AbfHLKVm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Aug 2019 06:21:42 -0400
+        id S1727847AbfHLKvE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 12 Aug 2019 06:51:04 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A2FAAAEAE
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Aug 2019 10:21:39 +0000 (UTC)
-Subject: Re: [RFC PATCH 10/17] btrfs-progs: add checksum type to checksumming
- functions
+        by mx1.suse.de (Postfix) with ESMTP id D608EAFE1
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Aug 2019 10:51:02 +0000 (UTC)
+Subject: Re: [RFC PATCH 12/17] btrfs-progs: pass checksum type to
+ btrfs_csum_data()
 To:     Johannes Thumshirn <jthumshirn@suse.de>,
         David Sterba <dsterba@suse.com>
 Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
 References: <cover.1564046812.git.jthumshirn@suse.de>
  <cover.1564046812.git.jthumshirn@suse.de>
- <71245b857a7214b284a57989fe677101c2ea13e5.1564046972.git.jthumshirn@suse.de>
+ <e1ca8b3c89c7a07143928ba29a5eb7494fc60b53.1564046972.git.jthumshirn@suse.de>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -74,12 +75,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <f7db0360-adcc-05c7-f99a-8302ac99a06d@suse.com>
-Date:   Mon, 12 Aug 2019 13:21:38 +0300
+Message-ID: <25578854-fd24-8427-f89d-761e972762a5@suse.com>
+Date:   Mon, 12 Aug 2019 13:51:01 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.8.0
 MIME-Version: 1.0
-In-Reply-To: <71245b857a7214b284a57989fe677101c2ea13e5.1564046972.git.jthumshirn@suse.de>
+In-Reply-To: <e1ca8b3c89c7a07143928ba29a5eb7494fc60b53.1564046972.git.jthumshirn@suse.de>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -91,256 +92,301 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 On 25.07.19 г. 12:33 ч., Johannes Thumshirn wrote:
-> Add the checksum type to csum_tree_block_size(), __csum_tree_block_size()
-> and verify_tree_block_csum_silent().
-> 
+
+So patches 12/13 have identical titles, different contents and
+absolutely no commit messages :( . How about no... Squash 13 into 12 and
+put a commit explaining your change. And by the way the patch's title
+doesn't correspond to the content of the patches - you also change
+btrfs_checksum_final to take a csum_type
+
+
+Something as straightforward as the below example should suffice:
+
+"In preparation to supporting new checksum algorithm pass the checksum
+type to btrfs_csum_data/btrfs_csum_final, this allows us to encapsulate
+any differences in processing into the respective functions".
+
 > Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
 > ---
->  btrfs-corrupt-block.c       |  3 ++-
->  cmds/rescue-chunk-recover.c |  3 ++-
->  convert/common.c            |  3 ++-
->  convert/main.c              |  3 ++-
->  disk-io.c                   | 21 ++++++++++++---------
->  disk-io.h                   |  5 +++--
->  mkfs/common.c               | 21 ++++++++++++++-------
->  7 files changed, 37 insertions(+), 22 deletions(-)
+>  check/main.c                |  6 ++++--
+>  cmds/inspect-dump-super.c   |  8 ++++----
+>  cmds/rescue-chunk-recover.c | 10 ++++++----
+>  convert/common.c            |  5 +++--
+>  disk-io.c                   | 39 +++++++++++++++++++++++++++------------
+>  disk-io.h                   |  4 ++--
+>  file-item.c                 |  7 +++++--
+>  free-space-cache.c          |  2 +-
+>  image/main.c                |  2 +-
+>  9 files changed, 53 insertions(+), 30 deletions(-)
 > 
-> diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
-> index bbef0c02e5d1..1dde9594bdcc 100644
-> --- a/btrfs-corrupt-block.c
-> +++ b/btrfs-corrupt-block.c
-> @@ -158,7 +158,8 @@ static void corrupt_keys(struct btrfs_trans_handle *trans,
->  	if (!trans) {
->  		u16 csum_size =
->  			btrfs_super_csum_size(fs_info->super_copy);
-> -		csum_tree_block_size(eb, csum_size, 0);
-> +		u16 csum_type = btrfs_super_csum_type(fs_info->super_copy);
-> +		csum_tree_block_size(eb, csum_size, 0, csum_type);
-
-I'm not a big fan of open-coding this csum manipulation. Generally if we
-ensure that we always pass a well-formed eb to csum_tree_block_size and
-by well-formed I mean one which has its ->fs_info, which in turn is
-well-formed then we can encapsulate this interrogation of csum type into
-csum_tree_block.
-
->  		write_extent_to_disk(eb);
->  	}
+> diff --git a/check/main.c b/check/main.c
+> index 92a7e40c1ebf..eabe328b6800 100644
+> --- a/check/main.c
+> +++ b/check/main.c
+> @@ -5581,6 +5581,7 @@ static int check_extent_csums(struct btrfs_root *root, u64 bytenr,
+>  	struct btrfs_fs_info *fs_info = root->fs_info;
+>  	u64 offset = 0;
+>  	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
+> +	u16 csum_type = btrfs_super_csum_type(fs_info->super_copy);
+>  	char *data;
+>  	unsigned long csum_offset;
+>  	u32 csum;
+> @@ -5621,9 +5622,10 @@ static int check_extent_csums(struct btrfs_root *root, u64 bytenr,
+>  				csum = ~(u32)0;
+>  				tmp = offset + data_checked;
+>  
+> -				csum = btrfs_csum_data((char *)data + tmp,
+> +				csum = btrfs_csum_data(csum_type,
+> +						       (char *)data + tmp,
+>  						(u8 *)&csum, fs_info->sectorsize);
+> -				btrfs_csum_final(csum, (u8 *)&csum);
+> +				btrfs_csum_final(csum_type, csum, (u8 *)&csum);
+>  
+>  				csum_offset = leaf_offset +
+>  					 tmp / fs_info->sectorsize * csum_size;
+> diff --git a/cmds/inspect-dump-super.c b/cmds/inspect-dump-super.c
+> index 96ad3deca3d8..40019a6670ef 100644
+> --- a/cmds/inspect-dump-super.c
+> +++ b/cmds/inspect-dump-super.c
+> @@ -35,15 +35,15 @@
+>  #include "kernel-lib/crc32c.h"
+>  #include "common/help.h"
+>  
+> -static int check_csum_sblock(void *sb, int csum_size)
+> +static int check_csum_sblock(void *sb, int csum_size, u16 csum_type)
+>  {
+>  	u8 result[BTRFS_CSUM_SIZE];
+>  	u32 crc = ~(u32)0;
+>  
+> -	crc = btrfs_csum_data((char *)sb + BTRFS_CSUM_SIZE,
+> +	crc = btrfs_csum_data(csum_type, (char *)sb + BTRFS_CSUM_SIZE,
+>  				(u8 *)&crc,
+>  				BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
+> -	btrfs_csum_final(crc, result);
+> +	btrfs_csum_final(csum_type, crc, result);
+>  
+>  	return !memcmp(sb, &result, csum_size);
 >  }
+> @@ -348,7 +348,7 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
+>  	if (csum_type != BTRFS_CSUM_TYPE_CRC32 ||
+>  	    csum_size != btrfs_csum_sizes[BTRFS_CSUM_TYPE_CRC32])
+>  		printf(" [UNKNOWN CSUM TYPE OR SIZE]");
+> -	else if (check_csum_sblock(sb, csum_size))
+> +	else if (check_csum_sblock(sb, csum_size, csum_type))
+>  		printf(" [match]");
+>  	else
+>  		printf(" [DON'T MATCH]");
 > diff --git a/cmds/rescue-chunk-recover.c b/cmds/rescue-chunk-recover.c
-> index 308731ea5ea6..1a368310d895 100644
+> index 0fddb5dd8ead..cddae471f50c 100644
 > --- a/cmds/rescue-chunk-recover.c
 > +++ b/cmds/rescue-chunk-recover.c
-> @@ -768,7 +768,8 @@ static int scan_one_device(void *dev_scan_struct)
->  			continue;
->  		}
+> @@ -1887,7 +1887,8 @@ static u64 calc_data_offset(struct btrfs_key *key,
+>  	return dev_offset + data_offset;
+>  }
 >  
-> -		if (verify_tree_block_csum_silent(buf, rc->csum_size)) {
-> +		if (verify_tree_block_csum_silent(buf, rc->csum_size,
-> +						  rc->csum_type)) {
-
-But this is not a well-formed eb :(
-
->  			bytenr += rc->sectorsize;
->  			continue;
->  		}
+> -static int check_one_csum(int fd, u64 start, u32 len, u32 tree_csum)
+> +static int check_one_csum(int fd, u64 start, u32 len, u32 tree_csum,
+> +			  u16 csum_type)
+>  {
+>  	char *data;
+>  	int ret = 0;
+> @@ -1902,8 +1903,8 @@ static int check_one_csum(int fd, u64 start, u32 len, u32 tree_csum)
+>  		goto out;
+>  	}
+>  	ret = 0;
+> -	csum_result = btrfs_csum_data(data, (u8 *)&csum_result, len);
+> -	btrfs_csum_final(csum_result, (u8 *)&csum_result);
+> +	csum_result = btrfs_csum_data(csum_type, data, (u8 *)&csum_result, len);
+> +	btrfs_csum_final(csum_type, csum_result, (u8 *)&csum_result);
+>  	if (csum_result != tree_csum)
+>  		ret = 1;
+>  out:
+> @@ -2102,7 +2103,8 @@ next_csum:
+>  						  devext->objectid, 1));
+>  
+>  		ret = check_one_csum(dev->fd, data_offset, blocksize,
+> -				     tree_csum);
+> +				     tree_csum,
+> +				     btrfs_super_csum_type(root->fs_info->super_copy));
+>  		if (ret < 0)
+>  			goto fail_out;
+>  		else if (ret > 0)
 > diff --git a/convert/common.c b/convert/common.c
-> index dea5f5b20d50..f8bbb23cba89 100644
+> index ab8e6b9f4749..894a6ee0ba90 100644
 > --- a/convert/common.c
 > +++ b/convert/common.c
-> @@ -223,7 +223,8 @@ static inline int write_temp_extent_buffer(int fd, struct extent_buffer *buf,
+> @@ -63,12 +63,13 @@ static inline int write_temp_super(int fd, struct btrfs_super_block *sb,
+>                                    u64 sb_bytenr)
 >  {
->  	int ret;
+>         u32 crc = ~(u32)0;
+> +       u16 csum_type = btrfs_super_csum_type(sb);
+>         int ret;
 >  
-> -	csum_tree_block_size(buf, btrfs_csum_sizes[BTRFS_CSUM_TYPE_CRC32], 0);
-> +	csum_tree_block_size(buf, btrfs_csum_sizes[cfg->csum_type], 0,
-> +			     cfg->csum_type);
-
-Neither is this ...
->  
->  	/* Temporary extent buffer is always mapped 1:1 on disk */
->  	ret = pwrite(fd, buf->data, buf->len, bytenr);
-> diff --git a/convert/main.c b/convert/main.c
-> index 9711874bd137..5e6b12431f59 100644
-> --- a/convert/main.c
-> +++ b/convert/main.c
-> @@ -1058,7 +1058,8 @@ static int migrate_super_block(int fd, u64 old_bytenr)
->  	BUG_ON(btrfs_super_bytenr(super) != old_bytenr);
->  	btrfs_set_super_bytenr(super, BTRFS_SUPER_INFO_OFFSET);
->  
-> -	csum_tree_block_size(buf, btrfs_csum_sizes[BTRFS_CSUM_TYPE_CRC32], 0);
-> +	csum_tree_block_size(buf, btrfs_csum_sizes[BTRFS_CSUM_TYPE_CRC32], 0,
-> +			     btrfs_super_csum_type(super));
->  	ret = pwrite(fd, buf->data, BTRFS_SUPER_INFO_SIZE,
->  		BTRFS_SUPER_INFO_OFFSET);
->  	if (ret != BTRFS_SUPER_INFO_SIZE)
+> -       crc = btrfs_csum_data((char *)sb + BTRFS_CSUM_SIZE,
+> +       crc = btrfs_csum_data(csum_type, (char *)sb + BTRFS_CSUM_SIZE,
+>  			     (u8 *)&crc,
+>                               BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
+> -       btrfs_csum_final(crc, &sb->csum[0]);
+> +       btrfs_csum_final(csum_type, crc, &sb->csum[0]);
+>         ret = pwrite(fd, sb, BTRFS_SUPER_INFO_SIZE, sb_bytenr);
+>         if (ret < BTRFS_SUPER_INFO_SIZE)
+>                 ret = (ret < 0 ? -errno : -EIO);
 > diff --git a/disk-io.c b/disk-io.c
-> index 01314504a50a..a4995a628210 100644
+> index a0c37c569d58..7e538969c57a 100644
 > --- a/disk-io.c
 > +++ b/disk-io.c
-> @@ -149,7 +149,7 @@ void btrfs_csum_final(u32 crc, u8 *result)
+> @@ -138,14 +138,26 @@ static void print_tree_block_error(struct btrfs_fs_info *fs_info,
+>  	}
+>  }
+>  
+> -u32 btrfs_csum_data(char *data, u8 *seed, size_t len)
+> +u32 btrfs_csum_data(u16 csum_type, char *data, u8 *seed, size_t len)
+>  {
+> -	return crc32c(*(u32*)seed, data, len);
+> +	switch (csum_type) {
+> +	case BTRFS_CSUM_TYPE_CRC32:
+> +		return crc32c(*(u32*)seed, data, len);
+> +	default: /* Not reached */
+> +		return ~(u32)0;
+> +	}
+> +
+>  }
+>  
+> -void btrfs_csum_final(u32 crc, u8 *result)
+> +void btrfs_csum_final(u16 csum_type, u32 crc, u8 *result)
+>  {
+> -	put_unaligned_le32(~crc, result);
+> +	switch (csum_type) {
+> +	case BTRFS_CSUM_TYPE_CRC32:
+> +		put_unaligned_le32(~crc, result);
+> +		break;
+> +	default: /* Not reached */
+> +		break;
+> +	}
 >  }
 >  
 >  static int __csum_tree_block_size(struct extent_buffer *buf, u16 csum_size,
-> -				  int verify, int silent)
-> +				  int verify, int silent, u16 csum_type)
->  {
->  	u8 result[BTRFS_CSUM_SIZE];
->  	u32 len;
-> @@ -174,24 +174,27 @@ static int __csum_tree_block_size(struct extent_buffer *buf, u16 csum_size,
->  	return 0;
->  }
+> @@ -156,8 +168,9 @@ static int __csum_tree_block_size(struct extent_buffer *buf, u16 csum_size,
+>  	u32 crc = ~(u32)0;
 >  
-> -int csum_tree_block_size(struct extent_buffer *buf, u16 csum_size, int verify)
-> +int csum_tree_block_size(struct extent_buffer *buf, u16 csum_size, int verify,
-> +			 u16 csum_type)
->  {
-> -	return __csum_tree_block_size(buf, csum_size, verify, 0);
-> +	return __csum_tree_block_size(buf, csum_size, verify, 0, csum_type);
->  }
+>  	len = buf->len - BTRFS_CSUM_SIZE;
+> -	crc = btrfs_csum_data(buf->data + BTRFS_CSUM_SIZE, (u8 *)&crc, len);
+> -	btrfs_csum_final(crc, result);
+> +	crc = btrfs_csum_data(csum_type, buf->data + BTRFS_CSUM_SIZE,
+> +			      (u8 *)&crc, len);
+> +	btrfs_csum_final(csum_type, crc, result);
 >  
-> -int verify_tree_block_csum_silent(struct extent_buffer *buf, u16 csum_size)
-> +int verify_tree_block_csum_silent(struct extent_buffer *buf, u16 csum_size,
-> +				  u16 csum_type)
->  {
-> -	return __csum_tree_block_size(buf, csum_size, 1, 1);
-> +	return __csum_tree_block_size(buf, csum_size, 1, 1, csum_type);
->  }
-
-Now that those function take the csum_type it renders passing the
-csum_size redundant. Refactor them so that only csum_type is passed and
-make __csum_tree_block_size (perhahps it should be renamed now?) get the
-size based on the type.
-
-I think the csum interface can be simplified further:
-
-1. Leave csum_tree_block for callers that pass well-formed eb's (as is
-currently)
-
-2. Rename __csum_tree_block_size to __csum_tree_block which takes just
-the buffer, boolean flag verify and u16 (or better enum btrfs_csum_type)
-csum_type arguments and the nitty-gritty details
-
-3. Remove csum_tree_block_size and directly call the new
-__csum_tree_block. The former just wraps the 'silent' parameter...
-
-In the end we will be left with just 2 functions:
-
-(__)csum_tree_blocks .
-
-Additionally verify_tree_block_csum_silent has really one caller because
-in csum_tree_block it's enough to call __csum_tree_block_size just once
-and pass verify and fs_info->suppress_check_block_errors directly to it.
-Then you can also directly call __csum_tree_block in scan_one_device in
-rescue-chunk-recover.c . And this would put some sanity into the current
-csum interfaces in progs.
-
-I guess this could land as a follow-up to your patches...
-
+>  	if (verify) {
+>  		if (memcmp_extent_buffer(buf, result, 0, csum_size)) {
+> @@ -1376,9 +1389,10 @@ int btrfs_check_super(struct btrfs_super_block *sb, unsigned sbflags)
+>  	csum_size = btrfs_csum_sizes[csum_type];
 >  
->  int csum_tree_block(struct btrfs_fs_info *fs_info,
->  		    struct extent_buffer *buf, int verify)
->  {
-> -	u16 csum_size =
-> -		btrfs_super_csum_size(fs_info->super_copy);
-> +	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
-> +	u16 csum_type = btrfs_super_csum_type(fs_info->super_copy);
-> +
->  	if (verify && fs_info->suppress_check_block_errors)
-> -		return verify_tree_block_csum_silent(buf, csum_size);
-> -	return csum_tree_block_size(buf, csum_size, verify);
-> +		return verify_tree_block_csum_silent(buf, csum_size, csum_type);
-> +	return csum_tree_block_size(buf, csum_size, verify, csum_type);
->  }
+>  	crc = ~(u32)0;
+> -	crc = btrfs_csum_data((char *)sb + BTRFS_CSUM_SIZE, (u8 *)&crc,
+> +	crc = btrfs_csum_data(csum_type,(char *)sb + BTRFS_CSUM_SIZE,
+> +			      (u8 *)&crc,
+>  			      BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
+> -	btrfs_csum_final(crc, result);
+> +	btrfs_csum_final(csum_type, crc, result);
 >  
->  struct extent_buffer *btrfs_find_tree_block(struct btrfs_fs_info *fs_info,
+>  	if (memcmp(result, sb->csum, csum_size)) {
+>  		error("superblock checksum mismatch");
+> @@ -1616,6 +1630,7 @@ static int write_dev_supers(struct btrfs_fs_info *fs_info,
+>  	u64 bytenr;
+>  	u32 crc;
+>  	int i, ret;
+> +	u16 csum_type = btrfs_super_csum_type(sb);
+>  
+>  	/*
+>  	 * We need to write super block after all metadata written.
+> @@ -1631,9 +1646,9 @@ static int write_dev_supers(struct btrfs_fs_info *fs_info,
+>  	if (fs_info->super_bytenr != BTRFS_SUPER_INFO_OFFSET) {
+>  		btrfs_set_super_bytenr(sb, fs_info->super_bytenr);
+>  		crc = ~(u32)0;
+> -		crc = btrfs_csum_data((char *)sb + BTRFS_CSUM_SIZE, (u8 *)&crc,
+> +		crc = btrfs_csum_data(csum_type, (char *)sb + BTRFS_CSUM_SIZE, (u8 *)&crc,
+>  				      BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
+> -		btrfs_csum_final(crc, &sb->csum[0]);
+> +		btrfs_csum_final(csum_type, crc, &sb->csum[0]);
+>  
+>  		/*
+>  		 * super_copy is BTRFS_SUPER_INFO_SIZE bytes and is
+> @@ -1667,9 +1682,9 @@ static int write_dev_supers(struct btrfs_fs_info *fs_info,
+>  		btrfs_set_super_bytenr(sb, bytenr);
+>  
+>  		crc = ~(u32)0;
+> -		crc = btrfs_csum_data((char *)sb + BTRFS_CSUM_SIZE, (u8 *)&crc,
+> +		crc = btrfs_csum_data(csum_type, (char *)sb + BTRFS_CSUM_SIZE, (u8 *)&crc,
+>  				      BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
+> -		btrfs_csum_final(crc, &sb->csum[0]);
+> +		btrfs_csum_final(csum_type, crc, &sb->csum[0]);
+>  
+>  		/*
+>  		 * super_copy is BTRFS_SUPER_INFO_SIZE bytes and is
 > diff --git a/disk-io.h b/disk-io.h
-> index 7b5c3806ba98..394997ad72cb 100644
+> index 92c87f28f8b2..4b5e9ea86385 100644
 > --- a/disk-io.h
 > +++ b/disk-io.h
-> @@ -191,8 +191,9 @@ void btrfs_csum_final(u32 crc, u8 *result);
+> @@ -186,8 +186,8 @@ int btrfs_free_fs_root(struct btrfs_root *root);
+>  void btrfs_mark_buffer_dirty(struct extent_buffer *buf);
+>  int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid);
+>  int btrfs_set_buffer_uptodate(struct extent_buffer *buf);
+> -u32 btrfs_csum_data(char *data, u8 *seed, size_t len);
+> -void btrfs_csum_final(u32 crc, u8 *result);
+> +u32 btrfs_csum_data(u16 csum_type, char *data, u8 *seed, size_t len);
+> +void btrfs_csum_final(u16 csum_type, u32 crc, u8 *result);
 >  
 >  int btrfs_open_device(struct btrfs_device *dev);
 >  int csum_tree_block_size(struct extent_buffer *buf, u16 csum_sectorsize,
-> -			 int verify);
-> -int verify_tree_block_csum_silent(struct extent_buffer *buf, u16 csum_size);
-> +			 int verify, u16 csum_type);
-> +int verify_tree_block_csum_silent(struct extent_buffer *buf, u16 csum_size,
-> +				  u16 csum_type);
->  int btrfs_read_buffer(struct extent_buffer *buf, u64 parent_transid);
->  int write_tree_block(struct btrfs_trans_handle *trans,
->  		     struct btrfs_fs_info *fs_info,
-> diff --git a/mkfs/common.c b/mkfs/common.c
-> index d63a9267bca3..4a417bd7a306 100644
-> --- a/mkfs/common.c
-> +++ b/mkfs/common.c
-> @@ -101,7 +101,8 @@ static int btrfs_create_tree_root(int fd, struct btrfs_mkfs_config *cfg,
->  	}
+> diff --git a/file-item.c b/file-item.c
+> index 5f6548e9a74f..78fdcecd0bab 100644
+> --- a/file-item.c
+> +++ b/file-item.c
+> @@ -202,6 +202,9 @@ int btrfs_csum_file_block(struct btrfs_trans_handle *trans,
+>  	u16 csum_size =
+>  		btrfs_super_csum_size(root->fs_info->super_copy);
 >  
->  	/* generate checksum */
-> -	csum_tree_block_size(buf, btrfs_csum_sizes[cfg->csum_type], 0);
-> +	csum_tree_block_size(buf, btrfs_csum_sizes[cfg->csum_type], 0,
-> +			     cfg->csum_type);
+> +	u16 csum_type =
+> +		btrfs_super_csum_type(root->fs_info->super_copy);
+> +
+>  	path = btrfs_alloc_path();
+>  	if (!path)
+>  		return -ENOMEM;
+> @@ -312,8 +315,8 @@ csum:
+>  	item = (struct btrfs_csum_item *)((unsigned char *)item +
+>  					  csum_offset * csum_size);
+>  found:
+> -	csum_result = btrfs_csum_data(data, (u8 *)&csum_result, len);
+> -	btrfs_csum_final(csum_result, (u8 *)&csum_result);
+> +	csum_result = btrfs_csum_data(csum_type, data, (u8 *)&csum_result, len);
+> +	btrfs_csum_final(csum_type, csum_result, (u8 *)&csum_result);
+>  	if (csum_result == 0) {
+>  		printk("csum result is 0 for block %llu\n",
+>  		       (unsigned long long)bytenr);
+> diff --git a/free-space-cache.c b/free-space-cache.c
+> index e872eb6a00db..8a57f86dc650 100644
+> --- a/free-space-cache.c
+> +++ b/free-space-cache.c
+> @@ -213,7 +213,7 @@ static int io_ctl_check_crc(struct io_ctl *io_ctl, int index)
+>  	io_ctl_map_page(io_ctl, 0);
+>  	crc = crc32c(crc, io_ctl->orig + offset,
+>  			io_ctl->root->fs_info->sectorsize - offset);
+> -	btrfs_csum_final(crc, (u8 *)&crc);
+> +	put_unaligned_le32(~crc, (u8 *)&crc);
+>  	if (val != crc) {
+>  		printk("btrfs: csum mismatch on free space cache\n");
+>  		io_ctl_unmap_page(io_ctl);
+> diff --git a/image/main.c b/image/main.c
+> index 28ef1609b5ff..0c8ffede56f5 100644
+> --- a/image/main.c
+> +++ b/image/main.c
+> @@ -124,7 +124,7 @@ static void csum_block(u8 *buf, size_t len)
+>  	u8 result[btrfs_csum_sizes[BTRFS_CSUM_TYPE_CRC32]];
+>  	u32 crc = ~(u32)0;
+>  	crc = crc32c(crc, buf + BTRFS_CSUM_SIZE, len - BTRFS_CSUM_SIZE);
+> -	btrfs_csum_final(crc, result);
+> +	put_unaligned_le32(~crc, result);
+>  	memcpy(buf, result, btrfs_csum_sizes[BTRFS_CSUM_TYPE_CRC32]);
+>  }
 >  
->  	/* write back root tree */
->  	ret = pwrite(fd, buf->data, cfg->nodesize, cfg->blocks[MKFS_ROOT_TREE]);
-> @@ -292,7 +293,8 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
->  	btrfs_set_header_bytenr(buf, cfg->blocks[MKFS_EXTENT_TREE]);
->  	btrfs_set_header_owner(buf, BTRFS_EXTENT_TREE_OBJECTID);
->  	btrfs_set_header_nritems(buf, nritems);
-> -	csum_tree_block_size(buf, btrfs_csum_sizes[cfg->csum_type], 0);
-> +	csum_tree_block_size(buf, btrfs_csum_sizes[cfg->csum_type], 0,
-> +			     cfg->csum_type);
->  	ret = pwrite(fd, buf->data, cfg->nodesize, cfg->blocks[MKFS_EXTENT_TREE]);
->  	if (ret != cfg->nodesize) {
->  		ret = (ret < 0 ? -errno : -EIO);
-> @@ -380,7 +382,8 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
->  	btrfs_set_header_bytenr(buf, cfg->blocks[MKFS_CHUNK_TREE]);
->  	btrfs_set_header_owner(buf, BTRFS_CHUNK_TREE_OBJECTID);
->  	btrfs_set_header_nritems(buf, nritems);
-> -	csum_tree_block_size(buf, btrfs_csum_sizes[cfg->csum_type], 0);
-> +	csum_tree_block_size(buf, btrfs_csum_sizes[cfg->csum_type], 0,
-> +			     cfg->csum_type);
->  	ret = pwrite(fd, buf->data, cfg->nodesize, cfg->blocks[MKFS_CHUNK_TREE]);
->  	if (ret != cfg->nodesize) {
->  		ret = (ret < 0 ? -errno : -EIO);
-> @@ -420,7 +423,8 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
->  	btrfs_set_header_bytenr(buf, cfg->blocks[MKFS_DEV_TREE]);
->  	btrfs_set_header_owner(buf, BTRFS_DEV_TREE_OBJECTID);
->  	btrfs_set_header_nritems(buf, nritems);
-> -	csum_tree_block_size(buf, btrfs_csum_sizes[cfg->csum_type], 0);
-> +	csum_tree_block_size(buf, btrfs_csum_sizes[cfg->csum_type], 0,
-> +			     cfg->csum_type);
->  	ret = pwrite(fd, buf->data, cfg->nodesize, cfg->blocks[MKFS_DEV_TREE]);
->  	if (ret != cfg->nodesize) {
->  		ret = (ret < 0 ? -errno : -EIO);
-> @@ -433,7 +437,8 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
->  	btrfs_set_header_bytenr(buf, cfg->blocks[MKFS_FS_TREE]);
->  	btrfs_set_header_owner(buf, BTRFS_FS_TREE_OBJECTID);
->  	btrfs_set_header_nritems(buf, 0);
-> -	csum_tree_block_size(buf, btrfs_csum_sizes[cfg->csum_type], 0);
-> +	csum_tree_block_size(buf, btrfs_csum_sizes[cfg->csum_type], 0,
-> +			     cfg->csum_type);
->  	ret = pwrite(fd, buf->data, cfg->nodesize, cfg->blocks[MKFS_FS_TREE]);
->  	if (ret != cfg->nodesize) {
->  		ret = (ret < 0 ? -errno : -EIO);
-> @@ -445,7 +450,8 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
->  	btrfs_set_header_bytenr(buf, cfg->blocks[MKFS_CSUM_TREE]);
->  	btrfs_set_header_owner(buf, BTRFS_CSUM_TREE_OBJECTID);
->  	btrfs_set_header_nritems(buf, 0);
-> -	csum_tree_block_size(buf, btrfs_csum_sizes[cfg->csum_type], 0);
-> +	csum_tree_block_size(buf, btrfs_csum_sizes[cfg->csum_type], 0,
-> +			     cfg->csum_type);
->  	ret = pwrite(fd, buf->data, cfg->nodesize, cfg->blocks[MKFS_CSUM_TREE]);
->  	if (ret != cfg->nodesize) {
->  		ret = (ret < 0 ? -errno : -EIO);
-> @@ -456,7 +462,8 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
->  	memset(buf->data, 0, BTRFS_SUPER_INFO_SIZE);
->  	memcpy(buf->data, &super, sizeof(super));
->  	buf->len = BTRFS_SUPER_INFO_SIZE;
-> -	csum_tree_block_size(buf, btrfs_csum_sizes[cfg->csum_type], 0);
-> +	csum_tree_block_size(buf, btrfs_csum_sizes[cfg->csum_type], 0,
-> +			     cfg->csum_type);
->  	ret = pwrite(fd, buf->data, BTRFS_SUPER_INFO_SIZE,
->  			cfg->blocks[MKFS_SUPER_BLOCK]);
->  	if (ret != BTRFS_SUPER_INFO_SIZE) {
 > 

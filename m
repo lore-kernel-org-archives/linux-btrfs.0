@@ -2,88 +2,185 @@ Return-Path: <SRS0=W9Vl=WJ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D85A2C32750
-	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Aug 2019 07:03:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 71E0CC433FF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Aug 2019 07:26:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B5FAB205F4
-	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Aug 2019 07:03:26 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 402C920665
+	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Aug 2019 07:26:17 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="O5OqVadp"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727010AbfHMHD0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 13 Aug 2019 03:03:26 -0400
-Received: from know-smtprelay-omd-11.server.virginmedia.net ([81.104.62.43]:42535
-        "EHLO know-smtprelay-omd-11.server.virginmedia.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725981AbfHMHDZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Aug 2019 03:03:25 -0400
-Received: from [172.16.100.1] ([86.12.75.74])
-        by cmsmtp with ESMTPA
-        id xQq2hHLA9XaJRxQq3hSHYD; Tue, 13 Aug 2019 08:03:23 +0100
-X-Originating-IP: [86.12.75.74]
-X-Authenticated-User: peter.chant@ntlworld.com
-X-Spam: 0
-X-Authority: v=2.3 cv=IZIzplia c=1 sm=1 tr=0 a=RxXffCTTaIU9mOmmEQ6aGA==:117
- a=RxXffCTTaIU9mOmmEQ6aGA==:17 a=jpOVt7BSZ2e4Z31A5e1TngXxSK0=:19
- a=IkcTkHD0fZMA:10 a=nxt6yEdAfYn9l88bm4QA:9 a=QEXdDO2ut3YA:10
-Subject: Re: Mount failure with 5.2.7 but mounts with 5.1.4
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <13654030-d9c5-ad3f-283e-16e6ef6c7bcf@petezilla.co.uk>
- <9240f2ad-905d-533a-8bb6-55af0aaafbb7@gmx.com>
- <0bc24d6e-2f3f-c0b8-dc0b-59b162653d3a@petezilla.co.uk>
- <cd48f1e8-8fef-9fca-5013-e80909c9801e@gmx.com>
-From:   Pete <pete@petezilla.co.uk>
-Message-ID: <8a094eaf-bb2a-255c-59c5-bfd9ed0e64aa@petezilla.co.uk>
-Date:   Tue, 13 Aug 2019 08:02:26 +0100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.8.0
+        id S1727920AbfHMH0Q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 13 Aug 2019 03:26:16 -0400
+Received: from mail-pg1-f193.google.com ([209.85.215.193]:33128 "EHLO
+        mail-pg1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727891AbfHMH0P (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 13 Aug 2019 03:26:15 -0400
+Received: by mail-pg1-f193.google.com with SMTP id n190so9981008pgn.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Aug 2019 00:26:14 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=osandov-com.20150623.gappssmtp.com; s=20150623;
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=QJEBZdBhwOzm4V0eRy962KEnWJglzmEvU/Dvj9SwEs4=;
+        b=O5OqVadpzlOAz+c+xKa3yzYCjx563DHLu36fJWZtmbRrUrKWDP45bNet3xEclVMZKR
+         05IAvbZdZ5cAmlHy3vwDnymlVc/E/0HhKzoZJ01izcl7geNfaogBUR3F8Qs9vhX25/nK
+         2tP7xaRXfZ+jxi7AsO1Zemd3Y1VySgHTM0M2nUe1fybGQanjYqODADWTVWA79YxuGsSn
+         CPH1z1Q0Y+DGk+4NwHxwTzgGq/Vupv6n8b859htJiI1ADxZVaTiHp1RY96wH5M6C06ij
+         CvH5GVT0HtzXzsBfE5jAXW3LbpqVkKCIOP4x+DfiyJUiygPGBchqeU7l0EzY1PxiHTXM
+         zIpA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=QJEBZdBhwOzm4V0eRy962KEnWJglzmEvU/Dvj9SwEs4=;
+        b=uV2k/DDKM4CgWZI/zeu3hizTT8fu+l2oyA6Fu4JsCIHMZb+jOLqNVnHfFQAiklkija
+         pduzgjXY8V36CY+iVk9jjXP8e0JB9SSTBEtg43mh5esz3ZiukbDd+xngTo0Ka3ByFFDD
+         s8jxJdYQBoltEfT8blommWk6VMCANMivGtgYWjQydrLvKIxeiqN+jLPejNGrjhxz1a8m
+         6x0e8eZWMI8QHE4uqgQZ8SGtFONURkFgUauJC/kSzihCXiFufLqpLNDJ0LhmwbY5q9Ry
+         ZU8cJQJrrTwjtb1n3AbBHzzxLzkKGrTosONExfR+5g6fqn/qHm2lt7K79HeMfQrEdL/+
+         hwrA==
+X-Gm-Message-State: APjAAAWr757g1myyCMdq4u/X8X793x2xUGQ6ZHZaWsD/TqyOp1G9kYTq
+        A043tAnL0bfFnJ52B/JHmdsDLmttHuU=
+X-Google-Smtp-Source: APXvYqxEdOJ27zPhxxTL4fItnOdMYIja/UbMEbrGt7UnUps7mb3I8Ah9LZ6ozBO6r8irDbRAv58iGw==
+X-Received: by 2002:a63:755e:: with SMTP id f30mr33409698pgn.246.1565681173929;
+        Tue, 13 Aug 2019 00:26:13 -0700 (PDT)
+Received: from vader.thefacebook.com ([2620:10d:c090:180::66b8])
+        by smtp.gmail.com with ESMTPSA id b14sm43528151pga.20.2019.08.13.00.26.13
+        (version=TLS1_3 cipher=AEAD-AES256-GCM-SHA384 bits=256/256);
+        Tue, 13 Aug 2019 00:26:13 -0700 (PDT)
+From:   Omar Sandoval <osandov@osandov.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     kernel-team@fb.com
+Subject: [PATCH 2/2] Btrfs: get rid of pointless wtag variable in async-thread.c
+Date:   Tue, 13 Aug 2019 00:26:04 -0700
+Message-Id: <958fe7c61896c82b35b5c552d3fb5bfd4df62627.1565680721.git.osandov@fb.com>
+X-Mailer: git-send-email 2.22.0
+In-Reply-To: <cover.1565680721.git.osandov@fb.com>
+References: <cover.1565680721.git.osandov@fb.com>
 MIME-Version: 1.0
-In-Reply-To: <cd48f1e8-8fef-9fca-5013-e80909c9801e@gmx.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-GB
-Content-Transfer-Encoding: 7bit
-X-CMAE-Envelope: MS4wfLStWZf7nlaO4igIedNNWTeLX3TdKizgfEPk4bzMjvsUTVsQ39X3UooS9MDsz09J2MP6jky9urgtm+ohwK7hHoSOffvPfR0qKboxPaRr2WvVYziYM/g3
- 2USf5MLagMHu0GAp8F4SF3lMy4Idp2ObcBW2GfQgyzDGVOZEgKoTzWYtjDi5gC7wub8LJ80mMt71HsUWotXlmgPBirrtOlAJ2hY=
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 8/12/19 1:21 AM, Qu Wenruo wrote:
+From: Omar Sandoval <osandov@fb.com>
 
-> The offending inode item.
-> 
->> 		block group 0 mode 100600 links 1 uid 1002 gid 100 rdev 0
->> 		sequence 0 flags 0x0(none)
->> 		atime 1395590849.0 (2014-03-23 16:07:29)
->> 		ctime 1395436187.0 (2014-03-21 21:09:47)
->> 		mtime 1395436187.0 (2014-03-21 21:09:47)
-> 
-> It's an old fs, maybe some older kernel caused such strange behavior.
-> 
+Commit ac0c7cf8be00 ("btrfs: fix crash when tracepoint arguments are
+freed by wq callbacks") added a void pointer, wtag, which is passed into
+trace_btrfs_all_work_done() instead of the freed work item. This is
+silly for a few reasons:
 
-Whilst tidying up the system I did find some modules from a 3.* series
-kernel.
+1. The freed work item still has the same address.
+2. work is still in scope after it's freed, so assigning wtag doesn't
+   stop anyone from using it.
+3. The tracepoint has always taken a void * argument, so assigning wtag
+   doesn't actually make things any more type-safe. (Note that the
+   original bug in commit bc074524e123 ("btrfs: prefix fsid to all trace
+   events") was that the void * was implicitly casted when it was passed
+   to btrfs_work_owner() in the trace point itself).
 
+Instead, let's add some clearer warnings as comments.
 
-> So the workaround won't work until you delete all those 2014 files.
+Signed-off-by: Omar Sandoval <osandov@fb.com>
+---
+ fs/btrfs/async-thread.c      | 21 ++++++++-------------
+ include/trace/events/btrfs.h |  6 +++---
+ 2 files changed, 11 insertions(+), 16 deletions(-)
 
-I left it running to do that.
-
-> 
-> I'd recommend to copy the data to a new btrfs using 5.1 kernel.
->
-
-OK.  Its due an update shortly anyway.  Perhaps I'll treat it to a SSD,
-as it will make updates quicker.
-
-> Thanks,
-> Qu
-
-Thank you.
-
-
+diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
+index d105d3df6fa6..baeb4058e9dc 100644
+--- a/fs/btrfs/async-thread.c
++++ b/fs/btrfs/async-thread.c
+@@ -226,7 +226,6 @@ static void run_ordered_work(struct btrfs_work *self)
+ 	struct btrfs_work *work;
+ 	spinlock_t *lock = &wq->list_lock;
+ 	unsigned long flags;
+-	void *wtag;
+ 	bool free_self = false;
+ 
+ 	while (1) {
+@@ -281,21 +280,19 @@ static void run_ordered_work(struct btrfs_work *self)
+ 		} else {
+ 			/*
+ 			 * We don't want to call the ordered free functions with
+-			 * the lock held though. Save the work as tag for the
+-			 * trace event, because the callback could free the
+-			 * structure.
++			 * the lock held.
+ 			 */
+-			wtag = work;
+ 			work->ordered_free(work);
+-			trace_btrfs_all_work_done(wq->fs_info, wtag);
++			/* work must not be dereferenced past this point. */
++			trace_btrfs_all_work_done(wq->fs_info, work);
+ 		}
+ 	}
+ 	spin_unlock_irqrestore(lock, flags);
+ 
+ 	if (free_self) {
+-		wtag = self;
+ 		self->ordered_free(self);
+-		trace_btrfs_all_work_done(wq->fs_info, wtag);
++		/* self must not be dereferenced past this point. */
++		trace_btrfs_all_work_done(wq->fs_info, self);
+ 	}
+ }
+ 
+@@ -304,7 +301,6 @@ static void btrfs_work_helper(struct work_struct *normal_work)
+ 	struct btrfs_work *work = container_of(normal_work, struct btrfs_work,
+ 					       normal_work);
+ 	struct __btrfs_workqueue *wq;
+-	void *wtag;
+ 	int need_order = 0;
+ 
+ 	/*
+@@ -318,8 +314,6 @@ static void btrfs_work_helper(struct work_struct *normal_work)
+ 	if (work->ordered_func)
+ 		need_order = 1;
+ 	wq = work->wq;
+-	/* Safe for tracepoints in case work gets freed by the callback */
+-	wtag = work;
+ 
+ 	trace_btrfs_work_sched(work);
+ 	thresh_exec_hook(wq);
+@@ -327,9 +321,10 @@ static void btrfs_work_helper(struct work_struct *normal_work)
+ 	if (need_order) {
+ 		set_bit(WORK_DONE_BIT, &work->flags);
+ 		run_ordered_work(work);
++	} else {
++		/* work must not be dereferenced past this point. */
++		trace_btrfs_all_work_done(wq->fs_info, work);
+ 	}
+-	if (!need_order)
+-		trace_btrfs_all_work_done(wq->fs_info, wtag);
+ }
+ 
+ void btrfs_init_work(struct btrfs_work *work, btrfs_func_t func,
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index 5cb95646b94e..3d61e80d3c6e 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -1388,9 +1388,9 @@ DECLARE_EVENT_CLASS(btrfs__work,
+ );
+ 
+ /*
+- * For situiations when the work is freed, we pass fs_info and a tag that that
+- * matches address of the work structure so it can be paired with the
+- * scheduling event.
++ * For situations when the work is freed, we pass fs_info and a tag that that
++ * matches address of the work structure so it can be paired with the scheduling
++ * event. DO NOT add anything here that dereferences wtag.
+  */
+ DECLARE_EVENT_CLASS(btrfs__work__done,
+ 
+-- 
+2.22.0
 

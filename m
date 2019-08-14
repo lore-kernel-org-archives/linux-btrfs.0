@@ -2,234 +2,422 @@ Return-Path: <SRS0=pOIz=WK=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B73F3C32750
-	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Aug 2019 02:52:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5932EC32753
+	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Aug 2019 09:12:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8F0D620843
-	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Aug 2019 02:52:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 00EF220843
+	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Aug 2019 09:12:32 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=arhont.com header.i=@arhont.com header.b="0DiarrE1"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727261AbfHNCwq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 13 Aug 2019 22:52:46 -0400
-Received: from mail105.syd.optusnet.com.au ([211.29.132.249]:56391 "EHLO
-        mail105.syd.optusnet.com.au" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726750AbfHNCwq (ORCPT
+        id S1726383AbfHNJMb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 14 Aug 2019 05:12:31 -0400
+Received: from mail1.arhont.com ([178.248.108.111]:54726 "EHLO
+        mail1.arhont.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725863AbfHNJMb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Aug 2019 22:52:46 -0400
-Received: from dread.disaster.area (pa49-181-167-148.pa.nsw.optusnet.com.au [49.181.167.148])
-        by mail105.syd.optusnet.com.au (Postfix) with ESMTPS id 4FE0C361163;
-        Wed, 14 Aug 2019 12:52:37 +1000 (AEST)
-Received: from dave by dread.disaster.area with local (Exim 4.92)
-        (envelope-from <david@fromorbit.com>)
-        id 1hxjNq-0007K4-DZ; Wed, 14 Aug 2019 12:51:30 +1000
-Date:   Wed, 14 Aug 2019 12:51:30 +1000
-From:   Dave Chinner <david@fromorbit.com>
-To:     Johannes Weiner <hannes@cmpxchg.org>
-Cc:     Jens Axboe <axboe@kernel.dk>,
-        Andrew Morton <akpm@linux-foundation.org>, linux-mm@kvack.org,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, linux-block@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH RESEND] block: annotate refault stalls from IO submission
-Message-ID: <20190814025130.GI7777@dread.disaster.area>
-References: <20190808190300.GA9067@cmpxchg.org>
- <20190809221248.GK7689@dread.disaster.area>
- <20190813174625.GA21982@cmpxchg.org>
+        Wed, 14 Aug 2019 05:12:31 -0400
+Received: from localhost (localhost.localdomain [127.0.0.1])
+        by mail1.arhont.com (Postfix) with ESMTP id B9FFC360080;
+        Wed, 14 Aug 2019 10:12:28 +0100 (BST)
+Received: from mail1.arhont.com ([127.0.0.1])
+        by localhost (mail1.arhont.com [127.0.0.1]) (amavisd-new, port 10032)
+        with ESMTP id UDESfe7KGCDd; Wed, 14 Aug 2019 10:12:24 +0100 (BST)
+Received: from localhost (localhost.localdomain [127.0.0.1])
+        by mail1.arhont.com (Postfix) with ESMTP id D2BDE360BFA;
+        Wed, 14 Aug 2019 10:12:24 +0100 (BST)
+DKIM-Filter: OpenDKIM Filter v2.10.3 mail1.arhont.com D2BDE360BFA
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arhont.com;
+        s=157CE280-B46F-11E5-BB22-6D46E05691A3; t=1565773944;
+        bh=UlGnx2t1IsbEG6fwKrKGl0Q3BX5XgCcVOB4ctJxya+I=;
+        h=Date:From:To:Message-ID:MIME-Version;
+        b=0DiarrE1p7AOEiP5Bn/LPZ334fCZuQSieamilEvbeiWCDsbTqUK/hWocuey5KzfHC
+         46yAVzP9Pzio12hyZCpbPRIWFZUE+Yrz/eo1g7gf/D4mTL14GDG3Uwey+8MORckATg
+         JzVqdzJ5sicYMIFd/+jCbroaP20IWKs6LAdSdZ9E=
+X-Virus-Scanned: amavisd-new at arhont.com
+Received: from mail1.arhont.com ([127.0.0.1])
+        by localhost (mail1.arhont.com [127.0.0.1]) (amavisd-new, port 10026)
+        with ESMTP id h6NLjOFGY1dh; Wed, 14 Aug 2019 10:12:24 +0100 (BST)
+Received: from mail1.arhont.com (localhost.localdomain [127.0.0.1])
+        by mail1.arhont.com (Postfix) with ESMTP id A0C35360080;
+        Wed, 14 Aug 2019 10:12:24 +0100 (BST)
+Date:   Wed, 14 Aug 2019 10:12:24 +0100 (BST)
+From:   "Konstantin V. Gavrilenko" <k.gavrilenko@arhont.com>
+To:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <923264966.8.1565773937997.JavaMail.gkos@xpska>
+In-Reply-To: <3ef16706-8c2f-f47d-8057-38c567487926@gmx.com>
+References: <347523577.41.1565689723208.JavaMail.gkos@xpska> <8cdacece-32a3-daf7-3ac8-f062179ebbaf@gmx.com> <744798339.29.1565703591504.JavaMail.gkos@xpska> <f2899154-3de6-3d8b-706c-539911831d17@gmx.com> <1425294964.32.1565720950325.JavaMail.gkos@xpska> <3ef16706-8c2f-f47d-8057-38c567487926@gmx.com>
+Subject: Re: btrfs errors
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190813174625.GA21982@cmpxchg.org>
-User-Agent: Mutt/1.10.1 (2018-07-13)
-X-Optus-CM-Score: 0
-X-Optus-CM-Analysis: v=2.2 cv=FNpr/6gs c=1 sm=1 tr=0
-        a=gu9DDhuZhshYSb5Zs/lkOA==:117 a=gu9DDhuZhshYSb5Zs/lkOA==:17
-        a=jpOVt7BSZ2e4Z31A5e1TngXxSK0=:19 a=kj9zAlcOel0A:10 a=FmdZ9Uzk2mMA:10
-        a=7-415B0cAAAA:8 a=bDTW_sOx19nDKLnYJhUA:9 a=cnofGfEq4Fq2u8Yj:21
-        a=FLub2pyhoGWWgdtb:21 a=CjuIK1q_8ugA:10 a=biEYGPWJfzWAr4FL6Ov7:22
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+X-Mailer: Zimbra 8.8.12_GA_3803 (Zimbra Desktop/7.3.1_13063_Linux)
+Thread-Topic: btrfs errors
+Thread-Index: XIwUBvpW4vF2D/9G0DQ95wkNuEgDPA==
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Aug 13, 2019 at 01:46:25PM -0400, Johannes Weiner wrote:
-> On Sat, Aug 10, 2019 at 08:12:48AM +1000, Dave Chinner wrote:
-> > On Thu, Aug 08, 2019 at 03:03:00PM -0400, Johannes Weiner wrote:
-> > > psi tracks the time tasks wait for refaulting pages to become
-> > > uptodate, but it does not track the time spent submitting the IO. The
-> > > submission part can be significant if backing storage is contended or
-> > > when cgroup throttling (io.latency) is in effect - a lot of time is
-> > 
-> > Or the wbt is throttling.
-> > 
-> > > spent in submit_bio(). In that case, we underreport memory pressure.
-> > > 
-> > > Annotate submit_bio() to account submission time as memory stall when
-> > > the bio is reading userspace workingset pages.
-> > 
-> > PAtch looks fine to me, but it raises another question w.r.t. IO
-> > stalls and reclaim pressure feedback to the vm: how do we make use
-> > of the pressure stall infrastructure to track inode cache pressure
-> > and stalls?
-> > 
-> > With the congestion_wait() and wait_iff_congested() being entire
-> > non-functional for block devices since 5.0, there is no IO load
-> > based feedback going into memory reclaim from shrinkers that might
-> > require IO to free objects before they can be reclaimed. This is
-> > directly analogous to page reclaim writing back dirty pages from
-> > the LRU, and as I understand it one of things the PSI is supposed
-> > to be tracking.
-> >
-> > Lots of workloads create inode cache pressure and often it can
-> > dominate the time spent in memory reclaim, so it would seem to me
-> > that having PSI only track/calculate pressure and stalls from LRU
-> > pages misses a fair chunk of the memory pressure and reclaim stalls
-> > that can be occurring.
-> 
-> psi already tracks the entire reclaim operation. So if reclaim calls
-> into the shrinker and the shrinker scans inodes, initiates IO, or even
-> waits on IO, that time is accounted for as memory pressure stalling.
 
-hmmmm - reclaim _scanning_ is considered a stall event? i.e. even if
-scanning does not block, it's still accounting that _time_ as a
-memory pressure stall?
+Thanks for the help and clarification Qu.
 
-I'm probably missing it, but I don't see anything in vmpressure()
-that actually accounts for time spent scanning.  AFAICT it accounts
-for LRU objects scanned and reclaimed from memcgs, and then the
-memory freed from the shrinkers is accounted only to the
-sc->target_mem_cgroup once all memcgs have been iterated.
+I will wait for the 5.3 and see what it brings.
 
-So, AFAICT, there's no time aspect to this, and the amount of
-scanning that shrinkers do is not taken into account, so pressure
-can't really be determined properly there. It seems like what the
-shrinkers reclaim will actually give an incorrect interpretation of
-pressure right now...
 
-> If you can think of asynchronous events that are initiated from
-> reclaim but cause indirect stalls in other contexts, contexts which
-> can clearly link the stall back to reclaim activity, we can annotate
-> them using psi_memstall_enter() / psi_memstall_leave().
+Best regars,
+Konstantin
 
-Well, I was more thinking that issuing/waiting on IOs is a stall
-event, not scanning.
 
-The IO-less inode reclaim stuff for XFS really needs the main
-reclaim loop to back off under heavy IO load, but we cannot put the
-entire metadata writeback path under psi_memstall_enter/leave()
-because:
+----- Original Message -----
+From: "Qu Wenruo" <quwenruo.btrfs@gmx.com>
+To: "Konstantin V. Gavrilenko" <k.gavrilenko@arhont.com>, "linux-btrfs" <li=
+nux-btrfs@vger.kernel.org>
+Sent: Wednesday, 14 August, 2019 1:24:42 AM
+Subject: Re: btrfs errors
 
-	a) it's not linked to any user context - it's a
-	per-superblock kernel thread; and
+Thanks for the dump.
 
-	b) it's designed to always be stalled on IO when there is
-	metadata writeback pressure. That pressure most often comes from
-	running out of journal space rather than memory pressure, and
-	really there is no way to distinguish between the two from
-	the writeback context.
+Now it's very clear what the problem is.
 
-Hence I don't think the vmpressure mechanism does what the memory
-reclaim scanning loops really need because they do not feed back a
-clear picture of the load on the IO subsystem load into the reclaim
-loops.....
+It's an old kernel behavior which allows compressed file extents to have
+NODATASUM flag.
 
-> In that vein, what would be great to have is be a distinction between
-> read stalls on dentries/inodes that have never been touched before
-> versus those that have been recently reclaimed - analogous to cold
-> page faults vs refaults.
+The behavior is going to be fixed in v5.3 by commit 42c16da6d684
+("btrfs: inode: Don't compress if NODATASUM or NODATACOW set").
 
-See my "nonblocking inode reclaim for XFS" series. It adds new
-measures of that the shrinkers feed back to the main reclaim loop.
+Currently you can just dismiss the false alert.
+The only minor downside of the current behavior is, if one copy of your
+data is corrupted, there is no chance to recover the data even you're
+using DUP/RAID1/RAID5/RAID6/RAID10.
 
-One of those measures is the number of objects scanned. Shrinkers
-already report the number of objects they free, but that it tossed
-away and not used by the main reclaim loop.
+Or you can wait for v5.3 kernel and copy old data back to a newly
+created fs which only modified by v5.3 kernel.
 
-As for cold faults vs refaults, we could only report that for
-dentries - if the inode is still cached in memory, then the dentry
-hits the inode cache (hot fault), otherwise it's got to fetch the
-inode from disk (cold fault). There is no mechanisms for tracking
-inodes that have been recently reclaimed - the VFS uses a hash for
-tracking cached inodes and so there's nothign you can drop
-exceptional entries into to track reclaim state.
+Thanks,
+Qu
 
-That said, we /could/ do this with the XFS inode cache. It uses
-radix trees to index the cache, not the VFS level inode hash. Hence
-we could place exceptional entries into the tree on reclaim to do
-working set tracking similar to the way the page cache is used to
-track the working set of pages.
+On 2019/8/14 =E4=B8=8A=E5=8D=882:29, Konstantin V. Gavrilenko wrote:
+>=20
+>=20
+> Yours sincerely,
+> Konstantin V. Gavrilenko
+>=20
+> Director
+> Arhont Services Ltd
+>=20
+> web:    http://www.arhont.com
+> e-mail: k.gavrilenko@arhont.com
+>=20
+> tel: +44 (0) 870 44 31337
+> fax: +44 (0) 208 429 3111
+>=20
+> PGP: Key ID - 0xE81824F4
+> PGP: Server - keyserver.pgp.com
+>=20
+>=20
+> ----- Original Message -----
+> From: "Qu Wenruo" <quwenruo.btrfs@gmx.com>
+> To: "Konstantin V. Gavrilenko" <k.gavrilenko@arhont.com>
+> Cc: "linux-btrfs" <linux-btrfs@vger.kernel.org>
+> Sent: Tuesday, 13 August, 2019 4:01:30 PM
+> Subject: Re: btrfs errors
+>=20
+>=20
+>=20
+> On 2019/8/13 =E4=B8=8B=E5=8D=889:40, Konstantin V. Gavrilenko wrote:
+>>
+>> Hi Qu,
+>>
+>> thanks for the quick response. so I've booted into the latest Archiso (k=
+ernel 5.2.xx, btrfs 5.2.xx) and rerun the # btrfs check  and # btrfs scrub.=
+ The btrfs check output is rather large and is included as an attachment to=
+ this message.
+>>
+>> It seems that the problem lies in fs_roots.
+>> [1/7] checking root items
+>> [2/7] checking extents
+>> [3/7] checking free space cache
+>> [4/7] checking fs roots=20
+>> root 257 inode 6360900 errors 1000, some csum missing=20
+>> root 258 inode 364233 errors 1040, bad file extent, some csum missing
+>> root 258 inode 364234 errors 1040, bad file extent, some csum missing
+>> ....
+>> root 258 inode 5074178 errors 100, file extent discount
+>> Found file extent holes:
+>> =09start: 0, len: 4096
+>> root 258 inode 5386921 errors 1040, bad file extent, some csum missing
+>> ...
+>> ERROR: errors found in fs roots
+>>
+>>
+>> Opening filesystem to check...
+>> Checking filesystem on /dev/kubuntu-vg/lv_root
+>> UUID: 7b19fb5e-4e16-4b62-b803-f59364fd61a2
+>> cache and super generation don't match, space cache will be invalidated
+>> found 335628447749 bytes used, error(s) found
+>> total csum bytes: 292272496
+>> total tree bytes: 5118279680
+>> total fs tree bytes: 4523163648
+>> total extent tree bytes: 244498432
+>> btree space waste bytes: 1186351226
+>> file data blocks allocated: 536719597568
+>>  referenced 630181720064
+>=20
+> The result indeeds shows some *minor* problem.
+>=20
+> One is "bad file extent" normally related to some extent too large for
+> compressed inlined extent.
+>=20
+> Considering you're using lzo compression, it looks like some older
+> kernel behavior which is no longer considered sane nowadays.
+>=20
+> You don't need to panic (never run btrfs check --repair yet), as your fs
+> is mostly fine, no data loss or whatever.
+>=20
+> At least in recent kernel releases, you won't hit a problem.
+>=20
+>=20
+> KVG: Good to hear that. Actually this system is about 1.5 y/o, since the =
+release of Ubuntu 18.04LTS that was shipped with 4.15
+> and the mount options remained the same from the start. the kernel upgrad=
+e path was 4.18 in Feb'19, then 5.0 in Apr'19 followed by 5.1 in May'19.
+>=20
+> I also used to run on a monthly basis for about a year.
+>=20
+>        btrfs filesystem defrag -r -t 32m $MP 2> /dev/null
+>        btrfs balance start -musage=3D35 -dusage=3D55 $MP
+>=20
+> but once I started doing daily snapshost, I stopped doing it a it was mes=
+sing the free space calculations.
+>=20
+>=20
+>>
+>>
+>> so I've mounted the FS and run scrub, which resulted in "ALL OK" again.
+>> UUID:             7b19fb5e-4e16-4b62-b803-f59364fd61a2
+>> Scrub started:    Tue Aug 13 13:01:26 2019
+>> Status:           finished
+>> Duration:         0:02:44
+>> Total to scrub:   312.59GiB
+>> Rate:             1.91GiB/s
+>> Error summary:    no errors found
+>>
+>>
+>> I have backed up all the important data on the external disc just now, a=
+nd no errors in the dmesg were reported, so I assume the data is OK.
+>> I also have snapshots of this system stored on the external disc dating =
+back to Apr'19.
+>=20
+> Currently it looks like false alert.
+>=20
+> But to be sure, please do me a favor by running lowmem mode check, which
+> should output more useful info other than "bad file extent".
+>=20
+> # btrfs check --mode=3Dlowmem <dev>
+>=20
+> It may take a longer time to finish. But should be more useful.
+>=20
+>=20
+>=20
+> KVG: Indeed, the btrfs check generated 150k lines of text :)
+> so the more detailed errors fall into the following categories
+>=20
+> 326 lines similar to
+> ERROR: root 258 INODE[5074178] size 162 should have a file extent hole
+> ERROR: root 258 INODE[5711285] size 586 should have a file extent hole
+> ERROR: root 258 INODE[5761076] size 215 should have a file extent hole
+>=20
+> 75584 lines similar to
+> ERROR: root 258 EXTENT_DATA[364233 0] is compressed, but inode flag doesn=
+'t allow it
+> ERROR: root 258 EXTENT_DATA[364233 131072] is compressed, but inode flag =
+doesn't allow it
+> ERROR: root 258 EXTENT_DATA[364233 262144] is compressed, but inode flag =
+doesn't allow it
+>=20
+> 75693 lines similar to
+> ERROR: root 258 EXTENT_DATA[364233 0] compressed extent must have csum, b=
+ut only 0 bytes have, expect 4096
+> ERROR: root 258 EXTENT_DATA[364233 131072] compressed extent must have cs=
+um, but only 0 bytes have, expect 16384
+> ERROR: root 258 EXTENT_DATA[364233 262144] compressed extent must have cs=
+um, but only 0 bytes have, expect 4096
+>=20
+> The complete output is xz'ed and attached.
+>=20
+>=20
+>> So I guess the two important questions are=20
+>> - is it possible to reliable recover FS, or at least find out which file=
+s were affected  at the reported inode location.
+>=20
+> If it's a false alert, you don't need to recover anything.
+>=20
+> If it's too strict btrfs check, and you want to follow latest btrfs
+> *too sane* behavior, you can just try copy the old data to a newly
+> created btrfs.
+>=20
+> KVG: Sure, thats one of the possibilities. What about if I try a forceful=
+ recompression of the complete FS via=20
+> # btrfs filesystem defragment -c $MP
+>=20
+> or alternatively I can try to remove compression alltogether and run a de=
+frag to see if that helps remove the problem.
+> What do you think?
+>=20
+> thanks,
+> Kos
+>=20
+>=20
+>=20
+> Thanks,
+> Qu
+>=20
+>> - is it possible to # btrfs check <snapshot> without copying it back on =
+the main disk. maybe loopdevice?
+>>
+>>
+>> thanks,
+>> Konstantin
+>>
+>>
+>> ----- Original Message -----
+>> From: "Qu Wenruo" <quwenruo.btrfs@gmx.com>
+>> To: "Konstantin V. Gavrilenko" <k.gavrilenko@arhont.com>, "linux-btrfs" =
+<linux-btrfs@vger.kernel.org>
+>> Sent: Tuesday, 13 August, 2019 12:55:47 PM
+>> Subject: Re: btrfs errors
+>>
+>>
+>>
+>> On 2019/8/13 =E4=B8=8B=E5=8D=885:48, Konstantin V. Gavrilenko wrote:
+>>> Hi list
+>>>
+>>> I have run the btrfs check, and that reported multiple errors on the FS=
+.
+>>>
+>>> # btrfs check --readonly --force /dev/kubuntu-vg/lv_root
+>>> <SKIP>
+>>
+>> Please don't skip the output, especially for btrfs check.
+>>
+>> The first tree btrfs check checks is extent tree, if we have anything
+>> wrong in extent tree, it's way serious than the later part.
+>>
+>> And I understand you want to check your root fs, thus you have to use
+>> --force, but I'd recommend to go whatever distro you like, use its
+>> liveCD/USB to check your root fs.
+>>
+>> It looks like that since your fs is still mounted, the data structure
+>> changed during the btrfs check run, it's possible to cause false alert.
+>>
+>>> root 9214 inode 6850330 errors 2001, no inode item, link count wrong
+>>>         unresolved ref dir 266982 index 22459 namelen 36 name 962104104=
+5a17a475428a26fcfb5982f.png filetype 1 errors 6, no dir index, no inode ref
+>>>         unresolved ref dir 226516 index 9 namelen 28 name GYTSPMxjwCVp8=
+kXB7+j91O8kcq4=3D filetype 1 errors 4, no inode ref
+>>> root 9214 inode 6877070 errors 2001, no inode item, link count wrong
+>>>         unresolved ref dir 226516 index 11 namelen 28 name VSqlYzl4pFqJ=
+pvC3GA9bQ0mZK8A=3D filetype 1 errors 4, no inode ref
+>>> root 9214 inode 6878054 errors 2001, no inode item, link count wrong
+>>>         unresolved ref dir 266982 index 22460 namelen 36 name 52e74e9d2=
+b6f598038486f90f8f911c4.png filetype 1 errors 4, no inode ref
+>>> root 9214 inode 6888414 errors 2001, no inode item, link count wrong
+>>>         unresolved ref dir 226391 index 122475 namelen 14 name the-real=
+-index filetype 1 errors 4, no inode ref
+>>> root 9214 inode 6889202 errors 100, file extent discount
+>>> Found file extent holes:
+>>>         start: 0, len: 4096
+>>> root 9214 inode 6889203 errors 100, file extent discount
+>>> Found file extent holes:
+>>>         start: 0, len: 4096
+>>> ERROR: errors found in fs roots
+>>> found 334531551237 bytes used, error(s) found
+>>> total csum bytes: 291555464
+>>> total tree bytes: 1004404736
+>>> total fs tree bytes: 411713536
+>>> total extent tree bytes: 242974720
+>>> btree space waste bytes: 186523621
+>>> file data blocks allocated: 36730163200
+>>>  referenced 42646511616
+>>>
+>>>
+>>> However, scrub and badblock find no errors.
+>>>
+>>> # btrfs scrub status /mnt/
+>>> scrub status for 7b19fb5e-4e16-4b62-b803-f59364fd61a2
+>>>         scrub started at Tue Aug 13 07:31:38 2019 and finished after 00=
+:02:47
+>>>         total bytes scrubbed: 311.15GiB with 0 errors
+>>
+>> Scrub only checks checksum, doesn't care the content.
+>> (Kernel newer than v5.0 will care the content, but doesn't do full
+>> cross-check, unlike btrfs-check)
+>>
+>>>
+>>> # badblocks -sv /dev/kubuntu-vg/lv_root=20
+>>> Checking blocks 0 to 352133119
+>>> Checking for bad blocks (read-only test):  done                        =
+                        =20
+>>> Pass completed, 0 bad blocks found. (0/0/0 errors)
+>>>
+>>> # btrfs dev stats /dev/kubuntu-vg/lv_root                              =
+                                                                           =
+                                             =20
+>>> [/dev/mapper/kubuntu--vg-lv_root].write_io_errs    0
+>>> [/dev/mapper/kubuntu--vg-lv_root].read_io_errs     0
+>>> [/dev/mapper/kubuntu--vg-lv_root].flush_io_errs    0
+>>> [/dev/mapper/kubuntu--vg-lv_root].corruption_errs  0
+>>> [/dev/mapper/kubuntu--vg-lv_root].generation_errs  0
+>>>
+>>>
+>>>
+>>> FS mount fine, and is operational.
+>>> would you recommend executing the btrfs check --repair option or is the=
+re something else that I can try.
+>>
+>> Don't do anything stupid yet.
+>> Just go LiveCD/USB and check again.
+>>
+>>>
+>>> #  uname -a                                                            =
+                                                                           =
+                                                  Linux xps 5.1.16-050116-g=
+eneric #201907031232 SMP Wed Jul 3 12:35:21 UTC 2019 x86_64 x86_64 x86_64 G=
+NU/Linux
+>>
+>> Since v5.2 introduced a lot of new restrict check, I'd recommend to go
+>> mount with latest Archiso, btrfs-check first, if no problem, mount and
+>> scrub again just in case.
+>>
+>>> # btrfs --version                                                      =
+                                                                           =
+                                             =20
+>>> btrfs-progs v4.15.1
+>>
+>> Big nope. You won't really want to run btrfs check --repair on such old
+>> and buggy progs. Unless recent releases (5.2?) btrfs-progs has a bug
+>> that transaction is not committed correctly, thus if something wrong
+>> happened like BUG_ON() or transaction aborted, the fs can easily be
+>> screwed up.
+>>
+>> Thanks,
+>> Qu
+>>
+>>>
+>>>
+>>> mount options
+>>> on / type btrfs (rw,relatime,compress-force=3Dlzo,ssd,discard,space_cac=
+he=3Dv2,autodefrag,subvol=3D/@)
+>>>
+>>> thanks,
+>>> Konstantin
+>>>
+>>
+>=20
 
-The other thing we could do here is similar to the dentry cache - we
-often have inode metadata buffers in the buffer cache (we have a
-multi-level cache heirarchy that spans most of the metadata in the
-active working set in XFS) and so if we miss the inode cache we
-might hit the inode buffer in the buffer cache (hot fault).  If we
-miss the inode cache and have to do IO to read the inodes, then it's
-a cold fault.
-
-That might be misleading, however, because the inode buffers cache
-32 physical inodes and so reading 32 sequential cold inodes would
-give 1 cold fault and 31 hot faults, even though those 31 inodes
-have never been referenced by the workload before and that's not
-ideal.
-
-To complicate matters further, we can thrash the buffer cache,
-resulting in cached inodes that have no backing buffer in memory.
-then we we go to write the inode, we have to read in the inode
-buffer before we can write it. This may have nothing to do with
-working set thrashing, too. e.g. we have an inode that has been
-referenced over and over again by the workload for several hours,
-then a relatime update occurs and the inode is dirtied. when
-writeback occurs, the inode buffer is nowhere to be found because it
-was cycled out of the buffer cache hours ago and hasn't been
-referenced since. hence I think we're probably best to ignore the
-underlying filesystem metadata cache for the purposes of measuring
-and detecting inode cache working set thrashing...
-
-> It would help psi, sure, but more importantly it would help us better
-> balance pressure between filesystem metadata and the data pages. We
-> would be able to tell the difference between a `find /' and actual
-> thrashing, where hot inodes are getting kicked out and reloaded
-> repeatedly - and we could backfeed that pressure to the LRU pages to
-> allow the metadata caches to grow as needed.
-
-Well, hot inodes getting kicked out and immmediate re-used is
-something we largely already handle via caching inode buffers in the
-buffer cache.  So inode cache misses on XFS likely happen a lot more
-than is obvious as we only see inode cache thrashing when we have
-misses the metadata cache, not the inode cache.
-
-> For example, it could make sense to swap out a couple of completely
-> unused anonymous pages if it means we could hold the metadata
-> workingset fully in memory. But right now we cannot do that, because
-> we cannot risk swapping just because somebody runs find /.
-
-I have workloads that run find to produce slab cache memory
-pressure. On 5.2, they cause the system to swap madly because
-there's no file page cache to reclaim and so the only reclaim that
-can be done is inodes/dentries and swapping anonymous pages.
-
-And swap it does - if we don't throttle reclaim sufficiently to
-allow IO to make progress, then direct relcaim ends up in priority
-windup and I see lots of OOM kills on swap-in. I found quite a few
-ways to end up in "reclaim doesn't throttle on IO sufficiently and
-OOM kills" in the last 3-4 weeks...
-
-> I have semi-seriously talked to Josef about this before, but it wasn't
-> quite obvious where we could track non-residency or eviction
-> information for inodes, dentries etc. Maybe you have an idea?
-
-See above - I think only XFS could track working inodes because of
-it's unique caching infrastructure. Dentries largely don't matter,
-because dentry cache misses either hit or miss the inode cache and
-that's the working set that largely matters in terms of detecting
-IO-related thrashing...
-
-Cheers,
-
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com

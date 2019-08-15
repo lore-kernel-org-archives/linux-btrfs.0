@@ -1,76 +1,72 @@
-Return-Path: <SRS0=pOIz=WK=vger.kernel.org=linux-btrfs-owner@kernel.org>
+Return-Path: <SRS0=4smx=WL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C91FFC433FF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Aug 2019 18:40:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8B55DC433FF
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Aug 2019 02:05:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9AFCA2084F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Aug 2019 18:40:24 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=comcast.net header.i=@comcast.net header.b="nLmZCbS9"
+	by mail.kernel.org (Postfix) with ESMTP id 5CF20208C2
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Aug 2019 02:05:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728517AbfHNSkX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 14 Aug 2019 14:40:23 -0400
-Received: from resqmta-po-10v.sys.comcast.net ([96.114.154.169]:60164 "EHLO
-        resqmta-po-10v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1728265AbfHNSkX (ORCPT
+        id S1729611AbfHOCFl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 14 Aug 2019 22:05:41 -0400
+Received: from mail-wr1-f66.google.com ([209.85.221.66]:34297 "EHLO
+        mail-wr1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729535AbfHOCFl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Aug 2019 14:40:23 -0400
-X-Greylist: delayed 488 seconds by postgrey-1.27 at vger.kernel.org; Wed, 14 Aug 2019 14:40:23 EDT
-Received: from resomta-po-13v.sys.comcast.net ([96.114.154.237])
-        by resqmta-po-10v.sys.comcast.net with ESMTP
-        id xvs0hY59jELdDxy4FhLW67; Wed, 14 Aug 2019 18:32:15 +0000
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=comcast.net;
-        s=20190202a; t=1565807535;
-        bh=dwjFedyl7PFAsVX36yTCWtHF0uR7vwswCWP6t2DPWIQ=;
-        h=Received:Received:Received:Received:Date:From:To:Subject:
-         Message-ID:Reply-To:MIME-Version:Content-Type;
-        b=nLmZCbS9DiI3ZwzSLk/FepW8U+D9/b/8Zy8SnVHk1tjeccJQRnCloOjlqgs1VXa4t
-         RSMPwjR5vL4f7QLPEVAOBrG8/Nsw2xZA2/2n4xGl1gkv+2HCOjcYlhln7GJXC1s9TZ
-         Ps85Y8C0Ebdk7qcbNCsm0hRuIfAo0IlJXxeI4VP9vkXjJbL+wURu06LMGQMkHtv5H8
-         Z4xEaFyDx/B187ZV+dI7dhVB0tbz9G+wzSW+eu2VPg858n2L+JnD/+MYnSXJmmCG22
-         ZCFwP8Nfi1dWbOTriuQ6hF3QmWNADcymlxXafW+kvi9fS+CS3jdsYh0awvgpehLg0+
-         T3S12X3LyiiXg==
-Received: from beta.localdomain ([73.209.109.78])
-        by resomta-po-13v.sys.comcast.net with ESMTPA
-        id xy4DhOcvoDWf1xy4Eh2fMO; Wed, 14 Aug 2019 18:32:15 +0000
-X-Xfinity-VAAS: gggruggvucftvghtrhhoucdtuddrgeduvddruddvledgieefucetufdoteggodetrfdotffvucfrrhhofhhilhgvmecuvehomhgtrghsthdqtfgvshhipdfqfgfvpdfpqffurfetoffkrfenuceurghilhhouhhtmecufedttdenucenucfjughrpeffhffvuffkrhggtgguvggfsehttdertddtredvnecuhfhrohhmpefvihhmucghrghlsggvrhhguceothifrghlsggvrhhgsegtohhmtggrshhtrdhnvghtqeenucfkphepjeefrddvtdelrddutdelrdejkeenucfrrghrrghmpehhvghlohepsggvthgrrdhlohgtrghlughomhgrihhnpdhinhgvthepjeefrddvtdelrddutdelrdejkedpmhgrihhlfhhrohhmpehtfigrlhgsvghrghestghomhgtrghsthdrnhgvthdprhgtphhtthhopehlihhnuhigqdgsthhrfhhssehvghgvrhdrkhgvrhhnvghlrdhorhhgnecuvehluhhsthgvrhfuihiivgeptd
-X-Xfinity-VMeta: sc=0;st=legit
-Received: from calvin.localdomain ([10.0.0.8])
-        by beta.localdomain with esmtps (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128)
-        (Exim 4.84_2)
-        (envelope-from <twalberg@comcast.net>)
-        id 1hxy4D-0006OD-AY; Wed, 14 Aug 2019 13:32:13 -0500
-Received: from tew by calvin.localdomain with local (Exim 4.84_2)
-        (envelope-from <tew@calvin.localdomain>)
-        id 1hxy4D-0003AC-4B; Wed, 14 Aug 2019 13:32:13 -0500
-Date:   Wed, 14 Aug 2019 13:32:13 -0500
-From:   Tim Walberg <twalberg@comcast.net>
+        Wed, 14 Aug 2019 22:05:41 -0400
+Received: by mail-wr1-f66.google.com with SMTP id s18so124990wrn.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Aug 2019 19:05:40 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=0gktrOLgK1cW8HxO1cePp+Bj06cm3Fvqf9Dpvbx1X9c=;
+        b=chNELzuCnMxHpECYWhAI/8kqR/0qeXIWWU1UT7FR1yA71vE1+mF9p23lE8sqh+lm2X
+         9STBCQmz5mdl1QH4DxFrlHRO6ijoIoBv5XJ4i9DQSUQLGAydtleBnmg2dskidWbRSWjY
+         1Z4GbahmVMcZcm7bd+fEOlCqCpgvbmbnrwfHKRbuAjj38H5l10/BPrlJ6Ktir+6/q6ju
+         wt0MUinXVjQ2RF2rbYQbyznQLdZ1jZuF95foXP7SwzOXvl+0ib5LS1Rzkrvrs8l5r4Ii
+         cBQYbY9muvQPeWkWOGdaa0xPUmL+3Q+DRUL+majPiTjzcLpRju16MT/dNUJgnXjH6CXy
+         dxJA==
+X-Gm-Message-State: APjAAAViHqMUByNL/AgZ83qt9Cll9oZ0Kmk78DfhSLU2qp3+egMoB7Id
+        L5YaIrX9tiCjs9yV97pWkq8in3fo/EU=
+X-Google-Smtp-Source: APXvYqzfglhHpTh75iNsw3WYHsicSZo4qKwMsIZWdfO6z6EWj20OKF4SmA7OP0gZ8q2lipOeMdkpSQ==
+X-Received: by 2002:adf:f481:: with SMTP id l1mr2511239wro.123.1565834739376;
+        Wed, 14 Aug 2019 19:05:39 -0700 (PDT)
+Received: from home.thecybershadow.net ([89.28.117.31])
+        by smtp.gmail.com with ESMTPSA id i93sm2130676wri.57.2019.08.14.19.05.38
+        (version=TLS1_3 cipher=AEAD-AES256-GCM-SHA384 bits=256/256);
+        Wed, 14 Aug 2019 19:05:38 -0700 (PDT)
+From:   Vladimir Panteleev <git@thecybershadow.net>
 To:     linux-btrfs@vger.kernel.org
-Subject: recovering from "parent transid verify failed"
-Message-ID: <20190814183213.GA2731@comcast.net>
-Reply-To: Tim Walberg <twalberg@comcast.net>
+Cc:     Vladimir Panteleev <git@thecybershadow.net>
+Subject: [PATCH 0/1] btrfs: Simplify parsing max_inline mount option
+Date:   Thu, 15 Aug 2019 02:04:52 +0000
+Message-Id: <20190815020453.25150-1-git@thecybershadow.net>
+X-Mailer: git-send-email 2.22.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-User-Agent: Mutt/1.5.23 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Most of the recommendations I've found online deal with when "wanted" is
-greater than "found", which, if I understand correctly means that one or
-more transactions were interrupted/lost before fully committed.
+A nit I noticed when writing the global_reserve_size patch.
 
-Are the recommendations for recovery the same if the system is reporting a
-"wanted" that is less than "found"?
+I'm assuming that rejecting garbage in mount options (where it was
+silently accepted before) does not break the first rule of kernel
+development?
+
+Vladimir Panteleev (1):
+  btrfs: Simplify parsing max_inline mount option
+
+ fs/btrfs/super.c | 24 +++++++++---------------
+ 1 file changed, 9 insertions(+), 15 deletions(-)
 
 -- 
-twalberg@comcast.net
+2.22.0
+

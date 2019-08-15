@@ -2,127 +2,140 @@ Return-Path: <SRS0=4smx=WL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+X-Spam-Status: No, score=-7.3 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EA12BC3A589
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Aug 2019 21:04:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 82BC9C3A589
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Aug 2019 21:14:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id B6D312133F
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Aug 2019 21:04:28 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4A8DB2083B
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Aug 2019 21:14:57 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="DalCDu+u"
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="z2Xqyy3R"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1733103AbfHOVEY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 15 Aug 2019 17:04:24 -0400
-Received: from mail-pg1-f193.google.com ([209.85.215.193]:39333 "EHLO
+        id S1729898AbfHOVO4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 15 Aug 2019 17:14:56 -0400
+Received: from mail-pg1-f193.google.com ([209.85.215.193]:43295 "EHLO
         mail-pg1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1733066AbfHOVEX (ORCPT
+        with ESMTP id S1726357AbfHOVO4 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Aug 2019 17:04:23 -0400
-Received: by mail-pg1-f193.google.com with SMTP id u17so1829751pgi.6
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Aug 2019 14:04:23 -0700 (PDT)
+        Thu, 15 Aug 2019 17:14:56 -0400
+Received: by mail-pg1-f193.google.com with SMTP id k3so1828718pgb.10
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Aug 2019 14:14:55 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=CLmdrP3jD5HVPP2Cz3irDkNqURlCkLxkHINRWjSCIkg=;
-        b=DalCDu+u/1WFZ1z4Kh7e9tksjQRn5M/LpfC9YEz8MS2UGJ/L0Avoc1dAUXw7fdW87L
-         6qD8N2n4lSjJhIdDqp32RFPzZD+iMktKpAocr2AdtYeSmhnU/Ooe/BuEOEaa6JsldOSn
-         472ArrV9WO3A1Zkdfc+6/n52gb9NyEUv60gsnDW+F+xC76z0dCejGBBs8Sr0VTaSfs3M
-         2LkcENqMLBCrfWgx9KSQCGY38RNW8w+cHVS3op6Ti7LI74vxMKHxvmeOouMwJrCmNNS5
-         730YvN6qVW2R5eVGfd/nW/+eS7StIeZGBHv9B5QD9OsiCEWvsADNGCkrzlp+k8rASoFf
-         FVSg==
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to:user-agent;
+        bh=Fo8TvHNwcclOQWNPsALFAghma3YSyfd4PcynfGFYxYY=;
+        b=z2Xqyy3R0JMfA5c2vx+2M1qUbswEgAac+9/ZLOlt238aeEW5Gjd/5qWc1RHi2lz1u2
+         dKX29sm9vvn7D8fkth7N/4Yk1UF/vJ6rX2B5lw0pyZ6VGBDk/wFRZaK3BUE+88F8uZWl
+         Hge1uvHVCdvKrbJL4LDBxtmKai6xr5QSfL1nudITOEmeMuxUF68qe2vZYFeN6hFnfwQd
+         hxWfaQ4IjkIwZQzEW64PjYym1rAf7PwUhetJsy5wMst3/ZUbzEnJsDLFP539hS4LqvRL
+         AU9s7O/+GdD+Ohg6raMt2Khd3rYcbBLw65q+d0Cj1SIhkTATIPLJzNmYG1CFE+AFxcaw
+         08nQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=CLmdrP3jD5HVPP2Cz3irDkNqURlCkLxkHINRWjSCIkg=;
-        b=Vr+Si73WZNHceJaMSaDiZubVKQPZPGden2huTBhOtKhNCt4aDpaEn4neCOsharnq+y
-         Wp0mSwwhZiNxrw3pseoqcgzVdLbprlcDOd4LvJYu+s98DU/Al7ab2WZ4rbQ/R2gX8ESx
-         pXJI6Vc9dCchFYak6OQuP/mC2DzAUBAZlxM2eYFNUwB7lYHIQpIwIXSyAAttI5U6zcGO
-         ORfKA9NapCSLs9cAk6urFveJwkzOHDvRSZ7grK7IDVF4txXjNPKbEm0dGh0XSE4Ge70S
-         LkF+btYxXWvWoE00aapymM1fNWYR1efk3Z2bbm0y2RsoctGhKlndPwaW8IuzIIr6b1FX
-         7LAQ==
-X-Gm-Message-State: APjAAAXv/1zSt3QnXTktOBbk2RPZmnyXHyDf+M4i46NfSzbVCwOIgZeu
-        mXnSTMxPMFeBOrz81zN9jji3Fgh+wqk=
-X-Google-Smtp-Source: APXvYqyW9mdTGSJrnCfzDbA5xM68zGti+UeyvDAbtf8r2DmaEhaHCypxrt2WRzpIEVI77cidab2TlA==
-X-Received: by 2002:a62:1d8a:: with SMTP id d132mr3888769pfd.187.1565903062624;
-        Thu, 15 Aug 2019 14:04:22 -0700 (PDT)
-Received: from vader.thefacebook.com ([2620:10d:c090:200::3:2aa9])
-        by smtp.gmail.com with ESMTPSA id i124sm4073230pfe.61.2019.08.15.14.04.21
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to:user-agent;
+        bh=Fo8TvHNwcclOQWNPsALFAghma3YSyfd4PcynfGFYxYY=;
+        b=XmCsoUYK2aIzJxSQZfee1H2nPioPNNwA1jDrla9qXNj9lykcPTJf45gtBd3U1MV2vG
+         cu7ZWJFMgXEPRCpYuS8PUEEi2aQ4V+3z014swxCrEEy51lwdJTHMvgLThBSnzt0QEaaK
+         YgOR5UcPbOACyHU561XXHSpuSU3C1cnzS6VwpqAW1AHedZ40VMlRuoUAit6xrc1edZ5p
+         l9mqoeqIzoGnvofFzw+CZ5R5rfLL/mfqUmERAOho3s76VsfDVpqARU3/O0e1Ar9nwH4i
+         hsL3EbX9ZMbDomn5bkwPOpBMffOhEm1VR+XH5mxbbRidjJbhM3FxtZeks54zupgx25bh
+         0Fhw==
+X-Gm-Message-State: APjAAAVDu7pdep990se/F+AOjzEolmW7GWSxzQXlWstPcM7hZ9Fn09bz
+        u3MnL1duF3BSQqw3l3pFA/PTZgAmga0=
+X-Google-Smtp-Source: APXvYqwa/6hJR/Ipg3ILuIKdZIXStzOR4Q4nOtNXFwTUZF+pFQfy8/J7TYLF5e5hzHXEZCFui8EaDQ==
+X-Received: by 2002:a65:64c5:: with SMTP id t5mr5178638pgv.168.1565903695039;
+        Thu, 15 Aug 2019 14:14:55 -0700 (PDT)
+Received: from vader ([2620:10d:c090:200::3:2aa9])
+        by smtp.gmail.com with ESMTPSA id a20sm1883413pjo.0.2019.08.15.14.14.54
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 15 Aug 2019 14:04:21 -0700 (PDT)
+        Thu, 15 Aug 2019 14:14:54 -0700 (PDT)
+Date:   Thu, 15 Aug 2019 14:14:54 -0700
 From:   Omar Sandoval <osandov@osandov.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     kernel-team@fb.com
-Subject: [RFC PATCH 4/5] fs: export rw_verify_area()
-Date:   Thu, 15 Aug 2019 14:04:05 -0700
-Message-Id: <0f80a1adaf1dfd1eec71cf937db76a1b0459a0bf.1565900769.git.osandov@fb.com>
-X-Mailer: git-send-email 2.22.1
-In-Reply-To: <cover.1565900769.git.osandov@fb.com>
+Subject: Re: [RFC PATCH 0/5] Btrfs: add interface for writing compressed
+ extent directly
+Message-ID: <20190815211454.GC27472@vader>
 References: <cover.1565900769.git.osandov@fb.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <cover.1565900769.git.osandov@fb.com>
+User-Agent: Mutt/1.12.1 (2019-06-15)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Omar Sandoval <osandov@fb.com>
+On Thu, Aug 15, 2019 at 02:04:01PM -0700, Omar Sandoval wrote:
+> From: Omar Sandoval <osandov@fb.com>
+> 
+> Hello,
+> 
+> This series adds a way to write compressed data directly to Btrfs. The
+> intended use case is making send/receive on compressed file systems more
+> efficient; however, the interface is general enough that it could be
+> used in other scenarios. Patch 5 is the main change; see that for more
+> details.
+> 
+> Patches 1-3 are small fixes/cleanups that I ran into while implementing
+> this; they should go in regardless of the remainder of the series. Patch
+> 4 exports a required VFS interface.
+> 
+> An example program and test case are available at [1].
+> 
+> To preemptively address a few concerns:
+> 
+> - Writing arbitrary, untrusted data which we feed to the decompression
+>   algorithm can be a security risk. For that reason, the ioctl is
+>   restricted to CAP_SYS_ADMIN. The Btrfs code is properly hardened
+>   against invalid compressed data/incorrect lengths, and the compression
+>   libraries are mature, but better safe than sorry for now.
+> - If the user is writing their own compressed data rather than just
+>   blindly feeding in something from btrfs send, they need to know some
+>   implementation details about the compression format. For zlib, there
+>   are no special requirements. For zstd, a non-default compression
+>   parameter must be used. For lzo, we have our own wrapper format since
+>   lzo doesn't have a standard wrapper format. It feels a little wrong to
+>   expose these details, but they are part of the on-disk format, so they
+>   must be stable regardless.
+> - The permissions checks duplicated from the VFS code are fairly
+>   minimal.
+> 
+> This series is based on misc-next.
+> 
+> This is an RFC, so please, comment away.
+> 
+> Thanks!
+> 
+> 1: https://github.com/osandov/xfstests/tree/btrfs-compressed-write
+> 
+> Omar Sandoval (5):
+>   Btrfs: use correct count in btrfs_file_write_iter()
+>   Btrfs: treat RWF_{,D}SYNC writes as sync for CRCs
+>   Btrfs: stop clearing EXTENT_DIRTY in inode I/O tree
+>   fs: export rw_verify_area()
+>   Btrfs: add ioctl for directly writing compressed data
+> 
+>  fs/btrfs/compression.c       |   6 +-
+>  fs/btrfs/compression.h       |  14 +--
+>  fs/btrfs/ctree.h             |  12 ++
+>  fs/btrfs/extent_io.c         |   6 +-
+>  fs/btrfs/file.c              |  22 ++--
+>  fs/btrfs/free-space-cache.c  |   9 +-
+>  fs/btrfs/inode.c             | 232 +++++++++++++++++++++++++++++++----
+>  fs/btrfs/ioctl.c             | 101 ++++++++++++++-
+>  fs/btrfs/tests/inode-tests.c |  12 +-
+>  fs/internal.h                |   5 -
+>  fs/read_write.c              |   1 +
+>  include/linux/fs.h           |   1 +
+>  include/uapi/linux/btrfs.h   |  63 ++++++++++
+>  13 files changed, 415 insertions(+), 69 deletions(-)
 
-I'm adding a Btrfs ioctl to write compressed data, and rather than
-duplicating the checks in rw_verify_area(), let's just export it.
-
-Signed-off-by: Omar Sandoval <osandov@fb.com>
----
- fs/internal.h      | 5 -----
- fs/read_write.c    | 1 +
- include/linux/fs.h | 1 +
- 3 files changed, 2 insertions(+), 5 deletions(-)
-
-diff --git a/fs/internal.h b/fs/internal.h
-index 315fcd8d237c..94e1831d4c95 100644
---- a/fs/internal.h
-+++ b/fs/internal.h
-@@ -160,11 +160,6 @@ extern char *simple_dname(struct dentry *, char *, int);
- extern void dput_to_list(struct dentry *, struct list_head *);
- extern void shrink_dentry_list(struct list_head *);
- 
--/*
-- * read_write.c
-- */
--extern int rw_verify_area(int, struct file *, const loff_t *, size_t);
--
- /*
-  * pipe.c
-  */
-diff --git a/fs/read_write.c b/fs/read_write.c
-index 1f5088dec566..9d95491ce9ab 100644
---- a/fs/read_write.c
-+++ b/fs/read_write.c
-@@ -399,6 +399,7 @@ int rw_verify_area(int read_write, struct file *file, const loff_t *ppos, size_t
- 	return security_file_permission(file,
- 				read_write == READ ? MAY_READ : MAY_WRITE);
- }
-+EXPORT_SYMBOL(rw_verify_area);
- 
- static ssize_t new_sync_read(struct file *filp, char __user *buf, size_t len, loff_t *ppos)
- {
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 997a530ff4e9..a9a1884768e4 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -3082,6 +3082,7 @@ extern loff_t fixed_size_llseek(struct file *file, loff_t offset,
- 		int whence, loff_t size);
- extern loff_t no_seek_end_llseek_size(struct file *, loff_t, int, loff_t);
- extern loff_t no_seek_end_llseek(struct file *, loff_t, int);
-+extern int rw_verify_area(int, struct file *, const loff_t *, size_t);
- extern int generic_file_open(struct inode * inode, struct file * filp);
- extern int nonseekable_open(struct inode * inode, struct file * filp);
- extern int stream_open(struct inode * inode, struct file * filp);
--- 
-2.17.1
-
+I forgot to CC fsdevel. I'll do that for v2.

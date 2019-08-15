@@ -2,70 +2,110 @@ Return-Path: <SRS0=4smx=WL=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no
+X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 09611C3A589
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Aug 2019 14:54:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CDF3EC3A589
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Aug 2019 15:00:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D0EF12067D
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Aug 2019 14:54:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A4D0C2084D
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Aug 2019 15:00:37 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="zza1nWLq"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731873AbfHOOy3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 15 Aug 2019 10:54:29 -0400
-Received: from mail-lf1-f65.google.com ([209.85.167.65]:39404 "EHLO
-        mail-lf1-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726120AbfHOOy2 (ORCPT
+        id S1733308AbfHOPAh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 15 Aug 2019 11:00:37 -0400
+Received: from mail-qt1-f195.google.com ([209.85.160.195]:36038 "EHLO
+        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1732284AbfHOPAg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Aug 2019 10:54:28 -0400
-Received: by mail-lf1-f65.google.com with SMTP id x3so1836892lfn.6
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Aug 2019 07:54:27 -0700 (PDT)
+        Thu, 15 Aug 2019 11:00:36 -0400
+Received: by mail-qt1-f195.google.com with SMTP id z4so2650281qtc.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Aug 2019 08:00:35 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=OYSGbo2poQ0qyt6wJ+tE5Kkt4rIGLn9ysUdvvgi22no=;
+        b=zza1nWLqebk1iLYNx5DS/OPhn1g6yu4ArIKnhwdPTCIcaeVddPkl5mfdlpd1bImjV+
+         w7kAzpGzt8V5DPBxk7YsF2MpoGGtQfz369QlMNyJtTG15np6SeD/drrj9jY1HDJJQbFu
+         74vKDJBdU6FB0WDFrpBm0FH55Ax0bwCmVl1vc2df+i0e/Fi4szGh6mEfel4CgSUnvAwD
+         2N95zRRPbMR3HfLht3mIMDkE9ut3736ZhH5WaBzPNqm2M2SY0WD2Vs/xeFWhQ6mN1BF5
+         xF35CfxVR/BfZoNDnbdJ6uqPb6oMOds56tnpJl6nryKsjaxRlrBsft4BOLv4LXFozkMu
+         X+0g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=OWGym05P4A79pj/lEUQgvusiq3Zt0dAtYuM2TTca9NA=;
-        b=Redzjyxq4CbJ20GKAa/hHHzCTXnrweVeC8KGkAbyw1oDvOK9N4ZX6K24aU5+wUer33
-         NyIXX93y+jMVmV22TH9NrxT8zGWDQs2KzKoH23PQjHTJFh3Q1D6zM9z60AW57PTWFAlR
-         RNJRpkVJYC11yPRJqOWxrOdghpBvU9O0sBn8mqApvgYIKw5Di1V73lqzU4NottGj/+BB
-         yqaOY/W9QHQse7F0ecnPwxPPC7NBpXqJDCKRe2bzViSa1rAGBPnSZ2wGhHzp+QwAunMU
-         pIhQfSZ8xbk2jNO4EinYErLzZxy45YMvVtCCcjEkMJAijo1vmRRN5HQK3+bGfMKtahCv
-         WPkA==
-X-Gm-Message-State: APjAAAX5++fkI0fz04j6HPYDJcNUWZkBaZWj0MqO9FOhVjtgBJBOF8aX
-        PJBp8bmFwLoH4mKSVNuQWj0ALyCAaAI=
-X-Google-Smtp-Source: APXvYqzLEGN9K3xeQ5PXnDQJolbtyIXKzG7idnzQZ1JxzuCeyFzF8dVAUvBjV0+DtWeudMaG25VTJQ==
-X-Received: by 2002:a19:674d:: with SMTP id e13mr2603437lfj.176.1565880866418;
-        Thu, 15 Aug 2019 07:54:26 -0700 (PDT)
-Received: from mail-lj1-f176.google.com (mail-lj1-f176.google.com. [209.85.208.176])
-        by smtp.gmail.com with ESMTPSA id t1sm518964lji.52.2019.08.15.07.54.25
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 15 Aug 2019 07:54:26 -0700 (PDT)
-Received: by mail-lj1-f176.google.com with SMTP id z17so2513489ljz.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Aug 2019 07:54:25 -0700 (PDT)
-X-Received: by 2002:a2e:85d7:: with SMTP id h23mr2964081ljj.129.1565880865491;
- Thu, 15 Aug 2019 07:54:25 -0700 (PDT)
+        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=OYSGbo2poQ0qyt6wJ+tE5Kkt4rIGLn9ysUdvvgi22no=;
+        b=HsuOH+seBVv0lSMolGin+8rNimXz1jt1P/5kjwZy3GICQqNoOtp602QY10ziawGuGX
+         2z5dR5GiCuN2d9X0xlNSYKDph6Mn2tHP+OaJOyICo6rc5yqAIWl9bfE9aJCbLiYUt/3r
+         he78bTczNVrbyMy5npRTcIr5df1MTvuH4BxCqI4ChVRQPfqF5ucbD5M+Zfgk04pho5ID
+         hVL+G9vl23qsCZIvONSJzfBPa1xeHVGrCHK+3wlVyZOpTZUnRNQwRO/FzKeEQIYZLb6V
+         UdBcpzK0EMNnPxSFhFzjRgnZokJkEu4Y2EoJ4CR3lOC7C674bLDobIzlS0pm8t//+BTi
+         4MaA==
+X-Gm-Message-State: APjAAAW3w7JASyCP8JN5jwIVKr2EBtKdHlgVmY5E1JO6eCUuyZfgJb6a
+        fbfgS7uNGsZ6bi9KGzX2uT6YnaFWdZzLGw==
+X-Google-Smtp-Source: APXvYqxi1UeJYsp7Y9vq4l18226mn7ewUonKzQ3VzvTO0TmybLaOEJbsDXkr2BZgcBh0OOVoL3TAZw==
+X-Received: by 2002:a05:6214:3a5:: with SMTP id m5mr3580174qvy.7.1565881234678;
+        Thu, 15 Aug 2019 08:00:34 -0700 (PDT)
+Received: from localhost ([107.15.81.208])
+        by smtp.gmail.com with ESMTPSA id k2sm1420787qtq.84.2019.08.15.08.00.33
+        (version=TLS1_3 cipher=AEAD-AES256-GCM-SHA384 bits=256/256);
+        Thu, 15 Aug 2019 08:00:34 -0700 (PDT)
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+Subject: [PATCH 1/2] fstests: make generic/500 xfs+ext4 only
+Date:   Thu, 15 Aug 2019 11:00:31 -0400
+Message-Id: <20190815150033.15996-1-josef@toxicpanda.com>
+X-Mailer: git-send-email 2.21.0
 MIME-Version: 1.0
-References: <20190815020453.25150-1-git@thecybershadow.net>
- <20190815020453.25150-2-git@thecybershadow.net> <3a375f8c-2d13-6f23-6731-85667c92c21c@oracle.com>
-In-Reply-To: <3a375f8c-2d13-6f23-6731-85667c92c21c@oracle.com>
-From:   Vladimir Panteleev <git@thecybershadow.net>
-Date:   Thu, 15 Aug 2019 14:54:08 +0000
-X-Gmail-Original-Message-ID: <CAHhfkvzcTbVRmPOd0SHHESLYuV6zGRuuRKfczieaS9KGx3zypA@mail.gmail.com>
-Message-ID: <CAHhfkvzcTbVRmPOd0SHHESLYuV6zGRuuRKfczieaS9KGx3zypA@mail.gmail.com>
-Subject: Re: [PATCH 1/1] btrfs: Simplify parsing max_inline mount option
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, 15 Aug 2019 at 04:54, Anand Jain <anand.jain@oracle.com> wrote:
->   This causes regression, max_inline = 0 is a valid parameter.
+I recently fixed some bugs in btrfs's enospc handling that made it start
+failing generic/500.
 
-Thank you for catching that. Apologies for making such a rudimentary mistake.
+The point of this test is to make the thin provisioned device run out of
+space, which results in an EIO being seen on a device from the file
+systems perspective.  This is fine for xfs and ext4 who's metadata is
+being overwritten and already allocated on the thin provisioned device.
+They get an EIO on data writes, fstrim to free up the space, and keep it
+going.
 
-I will apply more diligence and resubmit.
+Btrfs however has dynamic metadata, so the rm -rf could result in
+metadata IO being done on the file system.  Since the thin provisioned
+device is out of space this gives us an EIO, and we flip read only.  We
+didn't remove the file, so the fstrim doesn't recover space anyway, so
+we can't even fstrim and remount.
+
+Make this test for ext4/xfs only, it just simply won't work right for
+btrfs in it's current form.
+
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ tests/generic/500 | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tests/generic/500 b/tests/generic/500
+index 201d8b9f..1cbd9d65 100755
+--- a/tests/generic/500
++++ b/tests/generic/500
+@@ -44,7 +44,7 @@ _cleanup()
+ rm -f $seqres.full
+ 
+ # real QA test starts here
+-_supported_fs generic
++_supported_fs xfs ext4
+ _supported_os Linux
+ _require_scratch_nocheck
+ _require_dm_target thin-pool
+-- 
+2.21.0
+

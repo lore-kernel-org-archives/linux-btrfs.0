@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-9.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AC375C3A59C
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DF099C41514
 	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Aug 2019 14:20:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5AA902086C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Aug 2019 14:20:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B53C52086C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Aug 2019 14:20:15 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="GEL6TFIV"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="t6VMZ4Gz"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727496AbfHPOUC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 16 Aug 2019 10:20:02 -0400
-Received: from mail-qk1-f194.google.com ([209.85.222.194]:45074 "EHLO
-        mail-qk1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727326AbfHPOUC (ORCPT
+        id S1727514AbfHPOUF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 16 Aug 2019 10:20:05 -0400
+Received: from mail-qk1-f193.google.com ([209.85.222.193]:32996 "EHLO
+        mail-qk1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727252AbfHPOUE (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Aug 2019 10:20:02 -0400
-Received: by mail-qk1-f194.google.com with SMTP id m2so4788412qki.12
-        for <linux-btrfs@vger.kernel.org>; Fri, 16 Aug 2019 07:20:00 -0700 (PDT)
+        Fri, 16 Aug 2019 10:20:04 -0400
+Received: by mail-qk1-f193.google.com with SMTP id w18so4130751qki.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 16 Aug 2019 07:20:03 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=gy7GGv1kGKas0SSIrlucNtmeQ5OueOrHxellHUGWZQs=;
-        b=GEL6TFIVSK42+X/Vd+OJwHltYJvzEMFAfjg854QSp/SorQuQlHBfvJTQYPCot1m2g7
-         AN1xCFu86CCnO2e4Z91r/kCuyFmSqoWHo8YfYRwdCW5n2j/AOAcxIRBTrChK08j81qUJ
-         xYIxoHVePLYg8b0Q4hqRu7l0HMl/RXmAwNUUkAiV4hq2OUxGb63MKLUQtE45xC+JBVX+
-         UmNjgXKsMo7g3golwX6xdcb9qtFsypyJTZeTKZXFrqgkpWhYUmVQotSuT/E1iVCc7nDI
-         Q7og1HH3qgh/a0vP7DupK6+OilA2VQXew+mW8/0XAJ/r0YiSz1ErSwRZbe0xJsDHILoQ
-         I/sg==
+        bh=dc4VGYSL3vPuuhr6wvTNO6eGeiRn3vdOpe3URcAf/2Y=;
+        b=t6VMZ4Gzi6GyheZWeCsT7zIB6H1HXSKHzhT/DoFxMwx5aoI5Gc5qf/3XrZAG9jcbdW
+         uSsoelcVuH94qf/BvvLv10XbyPtrCNTl8uyJ2kBX6u5iFTQHESmACPoOG56SfdVDaE5s
+         pgyEFJHnaA1R17VcNT5vRl8TRklv6WbnxJhpvdqVmCVPqy90UztOnsmd8JbX47EqauUl
+         wOJ2wnC3ipsgU0qIkOkYs7D+FTorguhQPHiKooX2z7lzBspObs5bqUPR/DNogN4yADRq
+         M4v6XBMypW3a7SzH+s8h1fn194ZZFKLzkF7qQA52SbotGnwwaUoU0tuhbiUsDbPeKuea
+         Bsrw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=gy7GGv1kGKas0SSIrlucNtmeQ5OueOrHxellHUGWZQs=;
-        b=RXurhRuZBHDETjVVL39LJxLJDbElPveBLhfbQt2pw6+b/BV4cZnyIuj4GTCRSEF4mm
-         nNU2gw+d6Jg8xeJZ88+hUYHF4HyaKPyXU0K719+EQEaGh7le8uktD79Jg3g2RjazXi3K
-         mQLtUldijhrI3h8B02PkKpeGwQit4nV8urvWNfyu2kfeEm84qMz5Gybzz0OOIrGtUcqo
-         tdBo6ukRA8x1l0eNWMqORyljK20cEkTG9O8doQEgZ2tSUXCbKisqcOiG/KSm9ZXuIGe0
-         Hcxk7mrqiUOPR89nKDEXp5oKu/kgY2S8WiirxYNV63f+kOGEVu4atjIZhyoCJLONuQAY
-         Vcjw==
-X-Gm-Message-State: APjAAAX1zOQqFotBbX8u+XZy+gu4KrBTbJ6GpKDL9/wnonr7yRy+T46b
-        Dj8RP6hor1C0Mnjip+OPwHK62221n/K7Vg==
-X-Google-Smtp-Source: APXvYqzi7f9aDN1osJNMVtS+uNmSP3etDDj4PD5Ppjs41f+jq054xQ1NwERJZE5BkITcROBp9xqoxA==
-X-Received: by 2002:a05:620a:52e:: with SMTP id h14mr9301629qkh.358.1565965199729;
-        Fri, 16 Aug 2019 07:19:59 -0700 (PDT)
+        bh=dc4VGYSL3vPuuhr6wvTNO6eGeiRn3vdOpe3URcAf/2Y=;
+        b=P7oURVTlu+zWQgiqF1+kEW0Oufc39gQxkJOBRbY10oq2Y8Rpxm5EpjNUO2MAsomlTD
+         JMyH2FXdLrXAgWBRPIYYvB3cdS+ezB8VsF7UILNGjFqt46LtJaIqc1WyHJXYXu5EsWmJ
+         iQ3zz8ImyQc/yReGKtzc2vPwuIhlhd+CZgdKL0wvIGeDQmcp4KfnySp4sbhGc3sez9Yh
+         oFxL5+baHxONusmG0ZDEzNMKPqhS+fZj8rQnuOjEGu8zSnwtYuP6RP0+v8wSGrry6JdX
+         3o2bTSQeYTVWnAoyUDhFHAolY3V15tcDnZJSY7WvJ+ctHXlZhCyqP4XY4K8lIQWGsQDw
+         +pJA==
+X-Gm-Message-State: APjAAAXusiG+BsUDXwVg9nqeE0z/iX8oR/ssEDPngEQfXP9WEHxUowl+
+        6zP+d2EUgOMAnYXb0wCVbRvORANehnJdPw==
+X-Google-Smtp-Source: APXvYqwGneov9RQh8YtuPEFxlGzQRaIPhoxWnekpzWS17lr0FhALBuDYN5JsNGLlUA8kXaAm8bL+VA==
+X-Received: by 2002:a37:444b:: with SMTP id r72mr8808306qka.361.1565965203115;
+        Fri, 16 Aug 2019 07:20:03 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id s4sm3019812qkb.130.2019.08.16.07.19.58
+        by smtp.gmail.com with ESMTPSA id 143sm3071424qkl.114.2019.08.16.07.20.02
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 16 Aug 2019 07:19:59 -0700 (PDT)
+        Fri, 16 Aug 2019 07:20:02 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 2/8] btrfs: roll tracepoint into btrfs_space_info_update helper
-Date:   Fri, 16 Aug 2019 10:19:46 -0400
-Message-Id: <20190816141952.19369-3-josef@toxicpanda.com>
+Subject: [PATCH 4/8] btrfs: rework btrfs_space_info_add_old_bytes
+Date:   Fri, 16 Aug 2019 10:19:48 -0400
+Message-Id: <20190816141952.19369-5-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.21.0
 In-Reply-To: <20190816141952.19369-1-josef@toxicpanda.com>
 References: <20190816141952.19369-1-josef@toxicpanda.com>
@@ -70,187 +70,97 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We duplicate this tracepoint everywhere we call these helpers, so update
-the helper to have the tracepoint as well.
+If there are pending tickets and we are overcommitted we will simply
+return free'd reservations to space_info->bytes_may_use if we cannot
+overcommit any more.  This is problematic because we assume any free
+space would have been added to the tickets, and so if we go from an
+overcommitted state to not overcommitted we could have plenty of space
+in our space_info but be unable to make progress on our tickets because
+we only refill tickets from previous reservations.
+
+Instead of doing this partial filling of tickets dance we need to simply
+add our space to the space_info, and then do the normal check to see if
+we can satisfy the whole reservation.  If we can then we wake up the
+ticket and carry on.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/block-group.c    |  3 ---
- fs/btrfs/block-rsv.c      |  5 -----
- fs/btrfs/delalloc-space.c |  4 ----
- fs/btrfs/extent-tree.c    |  9 ---------
- fs/btrfs/space-info.c     | 10 ----------
- fs/btrfs/space-info.h     | 10 +++++++---
- 6 files changed, 7 insertions(+), 34 deletions(-)
+ fs/btrfs/space-info.c | 43 ++++++++++++++++---------------------------
+ 1 file changed, 16 insertions(+), 27 deletions(-)
 
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 262e62ef52a5..9867c5d98650 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -2696,9 +2696,6 @@ int btrfs_update_block_group(struct btrfs_trans_handle *trans,
- 			spin_unlock(&cache->lock);
- 			spin_unlock(&cache->space_info->lock);
- 
--			trace_btrfs_space_reservation(info, "pinned",
--						      cache->space_info->flags,
--						      num_bytes, 1);
- 			percpu_counter_add_batch(
- 					&cache->space_info->total_bytes_pinned,
- 					num_bytes,
-diff --git a/fs/btrfs/block-rsv.c b/fs/btrfs/block-rsv.c
-index 698470b9f32d..c64b460a4301 100644
---- a/fs/btrfs/block-rsv.c
-+++ b/fs/btrfs/block-rsv.c
-@@ -283,16 +283,11 @@ void btrfs_update_global_block_rsv(struct btrfs_fs_info *fs_info)
- 			block_rsv->reserved += num_bytes;
- 			btrfs_space_info_update_bytes_may_use(fs_info, sinfo,
- 							      num_bytes);
--			trace_btrfs_space_reservation(fs_info, "space_info",
--						      sinfo->flags, num_bytes,
--						      1);
- 		}
- 	} else if (block_rsv->reserved > block_rsv->size) {
- 		num_bytes = block_rsv->reserved - block_rsv->size;
- 		btrfs_space_info_update_bytes_may_use(fs_info, sinfo,
- 						      -num_bytes);
--		trace_btrfs_space_reservation(fs_info, "space_info",
--				      sinfo->flags, num_bytes, 0);
- 		block_rsv->reserved = block_rsv->size;
- 	}
- 
-diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
-index d2dfc201b2e1..1fc6bef3ccdf 100644
---- a/fs/btrfs/delalloc-space.c
-+++ b/fs/btrfs/delalloc-space.c
-@@ -130,8 +130,6 @@ int btrfs_alloc_data_chunk_ondemand(struct btrfs_inode *inode, u64 bytes)
- 		return -ENOSPC;
- 	}
- 	btrfs_space_info_update_bytes_may_use(fs_info, data_sinfo, bytes);
--	trace_btrfs_space_reservation(fs_info, "space_info",
--				      data_sinfo->flags, bytes, 1);
- 	spin_unlock(&data_sinfo->lock);
- 
- 	return 0;
-@@ -183,8 +181,6 @@ void btrfs_free_reserved_data_space_noquota(struct inode *inode, u64 start,
- 	data_sinfo = fs_info->data_sinfo;
- 	spin_lock(&data_sinfo->lock);
- 	btrfs_space_info_update_bytes_may_use(fs_info, data_sinfo, -len);
--	trace_btrfs_space_reservation(fs_info, "space_info",
--				      data_sinfo->flags, len, 0);
- 	spin_unlock(&data_sinfo->lock);
- }
- 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index cd210550a349..32f9473c8426 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2580,8 +2580,6 @@ static int pin_down_extent(struct btrfs_block_group_cache *cache,
- 	spin_unlock(&cache->lock);
- 	spin_unlock(&cache->space_info->lock);
- 
--	trace_btrfs_space_reservation(fs_info, "pinned",
--				      cache->space_info->flags, num_bytes, 1);
- 	percpu_counter_add_batch(&cache->space_info->total_bytes_pinned,
- 		    num_bytes, BTRFS_TOTAL_BYTES_PINNED_BATCH);
- 	set_extent_dirty(fs_info->pinned_extents, bytenr,
-@@ -2839,9 +2837,6 @@ static int unpin_extent_range(struct btrfs_fs_info *fs_info,
- 		spin_lock(&cache->lock);
- 		cache->pinned -= len;
- 		btrfs_space_info_update_bytes_pinned(fs_info, space_info, -len);
--
--		trace_btrfs_space_reservation(fs_info, "pinned",
--					      space_info->flags, len, 0);
- 		space_info->max_extent_size = 0;
- 		percpu_counter_add_batch(&space_info->total_bytes_pinned,
- 			    -len, BTRFS_TOTAL_BYTES_PINNED_BATCH);
-@@ -2863,10 +2858,6 @@ static int unpin_extent_range(struct btrfs_fs_info *fs_info,
- 						space_info, to_add);
- 				if (global_rsv->reserved >= global_rsv->size)
- 					global_rsv->full = 1;
--				trace_btrfs_space_reservation(fs_info,
--							      "space_info",
--							      space_info->flags,
--							      to_add, 1);
- 				len -= to_add;
- 			}
- 			spin_unlock(&global_rsv->lock);
 diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index d671d6476eed..780be5df31b4 100644
+index 780be5df31b4..5f123b36fdcd 100644
 --- a/fs/btrfs/space-info.c
 +++ b/fs/btrfs/space-info.c
-@@ -279,8 +279,6 @@ void btrfs_space_info_add_old_bytes(struct btrfs_fs_info *fs_info,
- 		goto again;
- 	}
- 	btrfs_space_info_update_bytes_may_use(fs_info, space_info, -num_bytes);
--	trace_btrfs_space_reservation(fs_info, "space_info",
--				      space_info->flags, num_bytes, 0);
- 	spin_unlock(&space_info->lock);
- }
+@@ -233,52 +233,41 @@ void btrfs_space_info_add_old_bytes(struct btrfs_fs_info *fs_info,
+ 				    struct btrfs_space_info *space_info,
+ 				    u64 num_bytes)
+ {
+-	struct reserve_ticket *ticket;
+ 	struct list_head *head;
+-	u64 used;
+ 	enum btrfs_reserve_flush_enum flush = BTRFS_RESERVE_NO_FLUSH;
+-	bool check_overcommit = false;
  
-@@ -301,9 +299,6 @@ void btrfs_space_info_add_new_bytes(struct btrfs_fs_info *fs_info,
- 		ticket = list_first_entry(head, struct reserve_ticket,
- 					  list);
- 		if (num_bytes >= ticket->bytes) {
--			trace_btrfs_space_reservation(fs_info, "space_info",
--						      space_info->flags,
--						      ticket->bytes, 1);
+ 	spin_lock(&space_info->lock);
+ 	head = &space_info->priority_tickets;
++	btrfs_space_info_update_bytes_may_use(fs_info, space_info, -num_bytes);
+ 
+-	/*
+-	 * If we are over our limit then we need to check and see if we can
+-	 * overcommit, and if we can't then we just need to free up our space
+-	 * and not satisfy any requests.
+-	 */
+-	used = btrfs_space_info_used(space_info, true);
+-	if (used - num_bytes >= space_info->total_bytes)
+-		check_overcommit = true;
+ again:
+-	while (!list_empty(head) && num_bytes) {
+-		ticket = list_first_entry(head, struct reserve_ticket,
+-					  list);
+-		/*
+-		 * We use 0 bytes because this space is already reserved, so
+-		 * adding the ticket space would be a double count.
+-		 */
+-		if (check_overcommit &&
+-		    !can_overcommit(fs_info, space_info, 0, flush, false))
+-			break;
+-		if (num_bytes >= ticket->bytes) {
++	while (!list_empty(head)) {
++		struct reserve_ticket *ticket;
++		u64 used = btrfs_space_info_used(space_info, true);
++
++		ticket = list_first_entry(head, struct reserve_ticket, list);
++
++		/* Check and see if our ticket can be satisified now. */
++		if ((used + ticket->bytes <= space_info->total_bytes) ||
++		    can_overcommit(fs_info, space_info, ticket->bytes, flush,
++				   false)) {
++			btrfs_space_info_update_bytes_may_use(fs_info,
++							      space_info,
++							      ticket->bytes);
  			list_del_init(&ticket->list);
- 			num_bytes -= ticket->bytes;
- 			btrfs_space_info_update_bytes_may_use(fs_info,
-@@ -313,9 +308,6 @@ void btrfs_space_info_add_new_bytes(struct btrfs_fs_info *fs_info,
+-			num_bytes -= ticket->bytes;
+ 			ticket->bytes = 0;
  			space_info->tickets_id++;
  			wake_up(&ticket->wait);
  		} else {
--			trace_btrfs_space_reservation(fs_info, "space_info",
--						      space_info->flags,
--						      num_bytes, 1);
- 			btrfs_space_info_update_bytes_may_use(fs_info,
- 							      space_info,
- 							      num_bytes);
-@@ -959,8 +951,6 @@ static int __reserve_metadata_bytes(struct btrfs_fs_info *fs_info,
- 			   system_chunk))) {
- 		btrfs_space_info_update_bytes_may_use(fs_info, space_info,
- 						      orig_bytes);
--		trace_btrfs_space_reservation(fs_info, "space_info",
--					      space_info->flags, orig_bytes, 1);
- 		ret = 0;
+-			ticket->bytes -= num_bytes;
+-			num_bytes = 0;
++			break;
+ 		}
  	}
  
-diff --git a/fs/btrfs/space-info.h b/fs/btrfs/space-info.h
-index c2b54b8e1a14..025f7ce2c9b1 100644
---- a/fs/btrfs/space-info.h
-+++ b/fs/btrfs/space-info.h
-@@ -87,14 +87,18 @@ static inline bool btrfs_mixed_space_info(struct btrfs_space_info *space_info)
-  *
-  * Declare a helper function to detect underflow of various space info members
-  */
--#define DECLARE_SPACE_INFO_UPDATE(name)					\
-+#define DECLARE_SPACE_INFO_UPDATE(name, trace_name)			\
- static inline void							\
- btrfs_space_info_update_##name(struct btrfs_fs_info *fs_info,		\
- 			       struct btrfs_space_info *sinfo,		\
- 			       s64 bytes)				\
- {									\
-+	u64 abs_bytes = (bytes < 0) ? -bytes : bytes;			\
- 	lockdep_assert_held(&sinfo->lock);				\
- 	trace_update_##name(fs_info, sinfo, sinfo->name, bytes);	\
-+	trace_btrfs_space_reservation(fs_info, trace_name,		\
-+				      sinfo->flags, abs_bytes,		\
-+				      bytes > 0);			\
- 	if (bytes < 0 && sinfo->name < -bytes) {			\
- 		WARN_ON(1);						\
- 		sinfo->name = 0;					\
-@@ -103,8 +107,8 @@ btrfs_space_info_update_##name(struct btrfs_fs_info *fs_info,		\
- 	sinfo->name += bytes;						\
+-	if (num_bytes && head == &space_info->priority_tickets) {
++	if (head == &space_info->priority_tickets) {
+ 		head = &space_info->tickets;
+ 		flush = BTRFS_RESERVE_FLUSH_ALL;
+ 		goto again;
+ 	}
+-	btrfs_space_info_update_bytes_may_use(fs_info, space_info, -num_bytes);
+ 	spin_unlock(&space_info->lock);
  }
  
--DECLARE_SPACE_INFO_UPDATE(bytes_may_use);
--DECLARE_SPACE_INFO_UPDATE(bytes_pinned);
-+DECLARE_SPACE_INFO_UPDATE(bytes_may_use, "space_info");
-+DECLARE_SPACE_INFO_UPDATE(bytes_pinned, "pinned");
- 
- void btrfs_space_info_add_new_bytes(struct btrfs_fs_info *fs_info,
- 				    struct btrfs_space_info *space_info,
 -- 
 2.21.0
 

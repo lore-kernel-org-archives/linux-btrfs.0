@@ -2,64 +2,64 @@ Return-Path: <SRS0=CxMI=WM=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-9.7 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EEE7DC3A59C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Aug 2019 14:20:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B2D0AC3A59E
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Aug 2019 14:20:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C1E452086C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Aug 2019 14:20:00 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 890DD21721
+	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Aug 2019 14:20:09 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="kbGYW7j+"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="c9rmq9Ie"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727456AbfHPOT7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 16 Aug 2019 10:19:59 -0400
-Received: from mail-qt1-f194.google.com ([209.85.160.194]:42613 "EHLO
-        mail-qt1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727326AbfHPOT7 (ORCPT
+        id S1727504AbfHPOUD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 16 Aug 2019 10:20:03 -0400
+Received: from mail-qt1-f195.google.com ([209.85.160.195]:33191 "EHLO
+        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727252AbfHPOUC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Aug 2019 10:19:59 -0400
-Received: by mail-qt1-f194.google.com with SMTP id t12so6232585qtp.9
-        for <linux-btrfs@vger.kernel.org>; Fri, 16 Aug 2019 07:19:58 -0700 (PDT)
+        Fri, 16 Aug 2019 10:20:02 -0400
+Received: by mail-qt1-f195.google.com with SMTP id v38so6293822qtb.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 16 Aug 2019 07:20:02 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=cmW3UFbBlGjTisynlbpiDbAThhD0Rx5sNFO09Vwh2QA=;
-        b=kbGYW7j+gwhURgChF/lNPWA2EyVCJ5ob6ILG2GWm/6E6qB+LEHPtMPsGySU93qxNcp
-         gWXKk68DtU5JQ5CzvaNQrODzWSiy8v9QGd1Y8TOQaxo0sCU327M5f6qm59mnY78A1hSd
-         jn/x2q0xQKhp7mUwlgs3+LyfYfsvx4jLQqzWZjXMiPQxH8FyKwoFNM8SGHaLjYP4w2EG
-         3YlST8Yyjs46k/uBuhFSIbPBB01z8vwNjFsqwZnzfihC25OxpV0F9dz6vGH28DRFzq7X
-         uKre7wMFyvoA1gb7WUZ1Bthw6awnvQTPAKuN3z0Wi/kfIetHebP6IeDUnPryrLBn4pXc
-         T1hw==
+        bh=9CkSd9BE74+W51JiHMD0MEGF+qCN+/eIQz3CH+6fCG4=;
+        b=c9rmq9Iea8vpJNidfleuT0qa1INSK0/kWRw6UXyXTqIuNwA1wgKzTcZBgI3+5T5o8r
+         0Eok+9pgIDyRzvJh5prGseUsgFaV9Gbhl2TdWunCIVlo8AA3qoXQg/mbHvfvSyocmnxd
+         899sj/ljDFwL5KfPDSZRmVwo3Y3uO+3J+bvcJv1rjdkKCi831Q+speidTwZT3cz+R3CG
+         888W36fRLJMfw0wWQFopDD/gzL/ftzb4S4QC7dJQdoCRXJWDtLgH9IZGNhdTvArVQTe/
+         po5k00nYkmvKBkSVKHUd+8JFNjCXRD3Hg7bGY2GbhY9J2RQI35JPVRUL4BtLKASixOhB
+         I/UQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=cmW3UFbBlGjTisynlbpiDbAThhD0Rx5sNFO09Vwh2QA=;
-        b=V9yQP/1fJIzULfvvZjz0u3iHydx3lQog23yqZ3d9g/UwGBA0flJi4bwjUFiGF5ivg5
-         KxuRTz88mE+1z8rPBLCWh8Ch/rAl4YVzlYSjrbFDJRijSJHnsjhzXyAIVdbsjsPBNUqF
-         6kW4fF8VcHgNpX48UbRvptPx54y3rxiyPu8PdTXiN0MkfvOFBl3BMTTeaOddSEsq1D7j
-         FeKOJgVkBuCphjNYBx4pXrsFYhDOHzv9av7JbL5vUt6bc7r7lNsrGz/DtRb8eyYjKApX
-         PoxuysKVJM1rfH2WH18QugPRA0cNHhmmefWoQEifmgzTpidr5I3bJzdnXThj7VBHsLjS
-         j6Lw==
-X-Gm-Message-State: APjAAAWp/SivbzcEHx/qyarLzp3K/PEYOyWKdxe91AAQtG0G/MGC0US2
-        uCFnVIkQW4iumieLTJxaSWvxLNL/toTeMA==
-X-Google-Smtp-Source: APXvYqzxVcgUi/1KHTz8+bAtFXRTGSeb5PlTd43iXRdUxbR3wqRwWaxQZ/w7ozY61s+vr6A9yEh3ew==
-X-Received: by 2002:aed:359d:: with SMTP id c29mr9251781qte.4.1565965198120;
-        Fri, 16 Aug 2019 07:19:58 -0700 (PDT)
+        bh=9CkSd9BE74+W51JiHMD0MEGF+qCN+/eIQz3CH+6fCG4=;
+        b=emi1X05Ab8EAAOW+RRA3lf524tALVvOMBYkG+O/SmJ9gU7GdQTuc0H9I75WhPf2t8L
+         X1izFBs/f8nvqIOa3m0HVRhMuAPICfRsWIGLnF2i7euhJ/zujX8KX4kKlKHEFV5I45+v
+         TnifCIyoIiML5kCxyYPF5QtCktDkYs7bVUc5XVjnQTb9GOCJEfBtzu48YXvDc+S0YprT
+         gMerIezAj75S3XzCngvK2hAInizERX7nChAUTLwtUKhOpdU8zjT+17Q+Q2LCh5uybXiD
+         Mm6eX4X7EGsO/KigNK26Mtzlwg7ogTor55e7S638zN38Ui/MhWs/A40LRYowrjE2m/aT
+         OjlQ==
+X-Gm-Message-State: APjAAAXnPps66TvD+BKeMGpxtj8IVq/erplHcRUljyF1RNYxXeeCkfkd
+        AodaB+e43/D2fTB/xaVJarA6LLXHh4JmVg==
+X-Google-Smtp-Source: APXvYqwD+LZf+gXX6vygkZBOufu+m+Gc3C4+ckCjkY4nH0pSk9mfPMg4fIKFI9tPjBvQc9yhQVsN7A==
+X-Received: by 2002:ac8:66ce:: with SMTP id m14mr8701304qtp.206.1565965201346;
+        Fri, 16 Aug 2019 07:20:01 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id b127sm3066866qkc.22.2019.08.16.07.19.57
+        by smtp.gmail.com with ESMTPSA id e15sm2227018qtr.51.2019.08.16.07.20.00
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 16 Aug 2019 07:19:57 -0700 (PDT)
+        Fri, 16 Aug 2019 07:20:00 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 1/8] btrfs: do not allow reservations if we have pending tickets
-Date:   Fri, 16 Aug 2019 10:19:45 -0400
-Message-Id: <20190816141952.19369-2-josef@toxicpanda.com>
+Subject: [PATCH 3/8] btrfs: add space reservation tracepoint for reserved bytes
+Date:   Fri, 16 Aug 2019 10:19:47 -0400
+Message-Id: <20190816141952.19369-4-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.21.0
 In-Reply-To: <20190816141952.19369-1-josef@toxicpanda.com>
 References: <20190816141952.19369-1-josef@toxicpanda.com>
@@ -70,49 +70,33 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-If we already have tickets on the list we don't want to steal their
-reservations.  This is a preparation patch for upcoming changes,
-technically this shouldn't happen today because of the way we add bytes
-to tickets before adding them to the space_info in most cases.
+I noticed when folding the trace_btrfs_space_reservation() tracepoint
+into the btrfs_space_info_update_* helpers that we didn't emit a
+tracepoint when doing btrfs_add_reserved_bytes().  I know this is
+because we were swapping bytes_may_use for bytes_reserved, so in my mind
+there was no reason to have the tracepoint there.  But now there is
+because we always emit the unreserve for the bytes_may_use side, and
+this would have broken if compression was on anyway.  Add a tracepoint
+to cover the bytes_reserved counter so the math still comes out right.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/space-info.c | 10 +++++++---
- 1 file changed, 7 insertions(+), 3 deletions(-)
+ fs/btrfs/block-group.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index e9406b2133d1..d671d6476eed 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -938,6 +938,7 @@ static int __reserve_metadata_bytes(struct btrfs_fs_info *fs_info,
- 	u64 used;
- 	u64 reclaim_bytes = 0;
- 	int ret = 0;
-+	bool pending_tickets;
- 
- 	ASSERT(orig_bytes);
- 	ASSERT(!current->journal_info || flush != BTRFS_RESERVE_FLUSH_ALL);
-@@ -945,14 +946,17 @@ static int __reserve_metadata_bytes(struct btrfs_fs_info *fs_info,
- 	spin_lock(&space_info->lock);
- 	ret = -ENOSPC;
- 	used = btrfs_space_info_used(space_info, true);
-+	pending_tickets = !list_empty(&space_info->tickets) ||
-+		!list_empty(&space_info->priority_tickets);
- 
- 	/*
- 	 * Carry on if we have enough space (short-circuit) OR call
- 	 * can_overcommit() to ensure we can overcommit to continue.
- 	 */
--	if ((used + orig_bytes <= space_info->total_bytes) ||
--	    can_overcommit(fs_info, space_info, orig_bytes, flush,
--			   system_chunk)) {
-+	if (!pending_tickets &&
-+	    ((used + orig_bytes <= space_info->total_bytes) ||
-+	     can_overcommit(fs_info, space_info, orig_bytes, flush,
-+			   system_chunk))) {
- 		btrfs_space_info_update_bytes_may_use(fs_info, space_info,
- 						      orig_bytes);
- 		trace_btrfs_space_reservation(fs_info, "space_info",
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index 9867c5d98650..afae5c731904 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -2758,6 +2758,8 @@ int btrfs_add_reserved_bytes(struct btrfs_block_group_cache *cache,
+ 	} else {
+ 		cache->reserved += num_bytes;
+ 		space_info->bytes_reserved += num_bytes;
++		trace_btrfs_space_reservation(cache->fs_info, "space_info",
++					      space_info->flags, num_bytes, 1);
+ 		btrfs_space_info_update_bytes_may_use(cache->fs_info,
+ 						      space_info, -ram_bytes);
+ 		if (delalloc)
 -- 
 2.21.0
 

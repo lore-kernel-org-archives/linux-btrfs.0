@@ -2,50 +2,53 @@ Return-Path: <SRS0=+t5r=WR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 45639C3A5A0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Aug 2019 13:42:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DE046C3A59E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Aug 2019 13:47:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 24AB522DD3
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Aug 2019 13:42:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B7137233A1
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Aug 2019 13:47:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728740AbfHUNm2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 21 Aug 2019 09:42:28 -0400
-Received: from mx2.suse.de ([195.135.220.15]:51532 "EHLO mx1.suse.de"
+        id S1729026AbfHUNrT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 21 Aug 2019 09:47:19 -0400
+Received: from mx2.suse.de ([195.135.220.15]:52720 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728026AbfHUNm2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Aug 2019 09:42:28 -0400
+        id S1728616AbfHUNrT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Aug 2019 09:47:19 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 31BE8AD35
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Aug 2019 13:42:27 +0000 (UTC)
-Date:   Wed, 21 Aug 2019 15:42:26 +0200
-From:   Johannes Thumshirn <jthumshirn@suse.de>
+        by mx1.suse.de (Postfix) with ESMTP id 955EEAF8E
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Aug 2019 13:47:18 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id C1E3CDA7DB; Wed, 21 Aug 2019 15:47:40 +0200 (CEST)
+Date:   Wed, 21 Aug 2019 15:47:38 +0200
+From:   David Sterba <dsterba@suse.cz>
 To:     Nikolay Borisov <nborisov@suse.com>
 Cc:     linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] btrfs: Make reada_tree_block_flagged private
-Message-ID: <20190821134226.GD3539@x250>
+Message-ID: <20190821134737.GC18575@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        linux-btrfs@vger.kernel.org
 References: <20190821133815.22173-1-nborisov@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
 In-Reply-To: <20190821133815.22173-1-nborisov@suse.com>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Looks good,
-Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
--- 
-Johannes Thumshirn                            SUSE Labs Filesystems
-jthumshirn@suse.de                                +49 911 74053 689
-SUSE LINUX GmbH, Maxfeldstr. 5, 90409 Nürnberg
-GF: Felix Imendörffer, Mary Higgins, Sri Rasiah
-HRB 21284 (AG Nürnberg)
-Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850
+On Wed, Aug 21, 2019 at 04:38:15PM +0300, Nikolay Borisov wrote:
+> This function is used only for the readahead machinery. It makes no
+> sense to keep it external to reada.c file. Place it above its sole
+> caller and make it static. No functional changes.
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+
+Added to misc-next, thanks.

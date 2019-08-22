@@ -2,101 +2,62 @@ Return-Path: <SRS0=CyxS=WS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6E0DDC3A5A1
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Aug 2019 15:00:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8DC13C3A5A1
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Aug 2019 15:02:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4A91E2133F
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Aug 2019 15:00:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 68D2D21848
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Aug 2019 15:02:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389248AbfHVPAo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 22 Aug 2019 11:00:44 -0400
-Received: from mx2.suse.de ([195.135.220.15]:32828 "EHLO mx1.suse.de"
+        id S1732317AbfHVPB7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 22 Aug 2019 11:01:59 -0400
+Received: from mx2.suse.de ([195.135.220.15]:33484 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1731841AbfHVPAn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Aug 2019 11:00:43 -0400
+        id S1725886AbfHVPB7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Aug 2019 11:01:59 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 2C68EAD7C;
-        Thu, 22 Aug 2019 15:00:42 +0000 (UTC)
-Date:   Thu, 22 Aug 2019 10:00:38 -0500
-From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
-To:     RITESH HARJANI <riteshh@linux.ibm.com>
-Cc:     linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        hch@lst.de, darrick.wong@oracle.com, ruansy.fnst@cn.fujitsu.com
-Subject: Re: [PATCH 07/13] btrfs: basic direct read operation
-Message-ID: <20190822150038.rebfrmyk2m6ljzoo@fiona>
-References: <20190802220048.16142-1-rgoldwyn@suse.de>
- <20190802220048.16142-8-rgoldwyn@suse.de>
- <20190812123201.904205204F@d06av21.portsmouth.uk.ibm.com>
+        by mx1.suse.de (Postfix) with ESMTP id 3C988AF58
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Aug 2019 15:01:58 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id B0E00DA791; Thu, 22 Aug 2019 17:02:23 +0200 (CEST)
+Date:   Thu, 22 Aug 2019 17:02:23 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v1.2 2/3] btrfs: tree-checker: Add simple keyed refs check
+Message-ID: <20190822150223.GI2752@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20190809012424.11420-1-wqu@suse.com>
+ <20190809012424.11420-3-wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190812123201.904205204F@d06av21.portsmouth.uk.ibm.com>
-User-Agent: NeoMutt/20180716
+In-Reply-To: <20190809012424.11420-3-wqu@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 18:02 12/08, RITESH HARJANI wrote:
+On Fri, Aug 09, 2019 at 09:24:23AM +0800, Qu Wenruo wrote:
+> For TREE_BLOCK_REF, SHARED_DATA_REF and SHARED_BLOCK_REF we need to
+> check:
+>               | TREE_BLOCK_REF | SHARED_BLOCK_REF | SHARED_BLOCK_REF
+> --------------+----------------+-----------------+------------------
+> key->objectid |    Alignment   |     Alignment    |    Alignment
+> key->offset   |    Any value   |     Alignment    |    Alignment
+> item_size     |        0       |        0         |   sizeof(le32) (*)
 > 
-> On 8/3/19 3:30 AM, Goldwyn Rodrigues wrote:
-> > From: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> > 
-> > Add btrfs_dio_iomap_ops for iomap.begin() function. In order to
-> > accomodate dio reads, add a new function btrfs_file_read_iter()
-> > which would call btrfs_dio_iomap_read() for DIO reads and
-> > fallback to generic_file_read_iter otherwise.
-> > 
-> > Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> > ---
-> >   fs/btrfs/ctree.h |  2 ++
-> >   fs/btrfs/file.c  | 10 +++++++++-
-> >   fs/btrfs/iomap.c | 20 ++++++++++++++++++++
-> >   3 files changed, 31 insertions(+), 1 deletion(-)
-> > 
-> > diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> > index 7a4ff524dc77..9eca2d576dd1 100644
-> > --- a/fs/btrfs/ctree.h
-> > +++ b/fs/btrfs/ctree.h
-> > @@ -3247,7 +3247,9 @@ int btrfs_fdatawrite_range(struct inode *inode, loff_t start, loff_t end);
-> >   loff_t btrfs_remap_file_range(struct file *file_in, loff_t pos_in,
-> >   			      struct file *file_out, loff_t pos_out,
-> >   			      loff_t len, unsigned int remap_flags);
-> > +/* iomap.c */
-> >   size_t btrfs_buffered_iomap_write(struct kiocb *iocb, struct iov_iter *from);
-> > +ssize_t btrfs_dio_iomap_read(struct kiocb *iocb, struct iov_iter *to);
-> >   /* tree-defrag.c */
-> >   int btrfs_defrag_leaves(struct btrfs_trans_handle *trans,
-> > diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> > index f7087e28ac08..997eb152a35a 100644
-> > --- a/fs/btrfs/file.c
-> > +++ b/fs/btrfs/file.c
-> > @@ -2839,9 +2839,17 @@ static int btrfs_file_open(struct inode *inode, struct file *filp)
-> >   	return generic_file_open(inode, filp);
-> >   }
-> > +static ssize_t btrfs_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
-> > +{
-> > +	if (iocb->ki_flags & IOCB_DIRECT)
-> > +		return btrfs_dio_iomap_read(iocb, to);
+> *: sizeof(struct btrfs_shared_data_ref)
 > 
-> No provision to fallback to bufferedIO read? Not sure from btrfs
-> perspective,
-> but earlier generic_file_read_iter may fall through to bufferedIO read say
-> in case where directIO could not be completed (returned 0 or less than the
-> requested read bytes).
-> Is it not required anymore in case of btrfs when we move to iomap
-> infrastructure, to still fall back to bufferedIO read?
-> Correct me if I am missing anything here.
+> So introduce a check to check all these 3 key types together.
 > 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-No, you are right here. We should fallback to buffered reads in case of
-incomplete reads. Thanks for pointing it out. I will incorporate it in the
-next series.
-
--- 
-Goldwyn
+Reviewed-by: David Sterba <dsterba@suse.com>

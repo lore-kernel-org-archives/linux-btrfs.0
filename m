@@ -7,59 +7,59 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D22E6C3A5A1
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Aug 2019 19:11:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A87FC3A5A3
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Aug 2019 19:11:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 90C5523401
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Aug 2019 19:11:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4A55E23402
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Aug 2019 19:11:23 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="WCyZcyQ3"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="HBWnAYr4"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2391595AbfHVTLS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 22 Aug 2019 15:11:18 -0400
-Received: from mail-yw1-f67.google.com ([209.85.161.67]:40984 "EHLO
-        mail-yw1-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2387990AbfHVTLS (ORCPT
+        id S2391671AbfHVTLW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 22 Aug 2019 15:11:22 -0400
+Received: from mail-qt1-f193.google.com ([209.85.160.193]:42282 "EHLO
+        mail-qt1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2391583AbfHVTLW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Aug 2019 15:11:18 -0400
-Received: by mail-yw1-f67.google.com with SMTP id i138so2837183ywg.8
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Aug 2019 12:11:18 -0700 (PDT)
+        Thu, 22 Aug 2019 15:11:22 -0400
+Received: by mail-qt1-f193.google.com with SMTP id t12so8948055qtp.9
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Aug 2019 12:11:21 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=we0y7S/ey++sSClxrOeO9dikgeZ30O9XVlCVkiwhijY=;
-        b=WCyZcyQ3NP/CXCsfzkJU/BPR2aidTHEDjblgN8Qv10/tdEja93OEArD5UUvOEjyjjc
-         RvCqW6kC+pTDjMHLcMVTpJKoqT1X3VwdCG5wGJg3M+56uIYqr227C+xNu4FkiyZhm+th
-         ALnvHJY2RQJUTB2M6DLJX8Ol9Bl6EMcwjw6ueV5slk6HE0ELyX8qaUCk0EIozAcvmv4C
-         eDA7VMfmyrXhav8Z2E6Xru47YNp00ZJAQ2fy28XBWb+ZZuzPWKHg7EUKMQTTG32xjTYp
-         jmjgzX8A1FA5htyQ3LJ3md5N9STwDTjtBMrxAdfARu1OsrowfnLEm5NTAcN2zBU1dEYd
-         RZCA==
+        bh=REZjaWdYz4cAnlPWw0OHqoelYEM3w54t+UYa94PyMJU=;
+        b=HBWnAYr4IV/3krFvnBBw81RULBqkT2SvQ+8BNiH34+USmH1bOx9qLozhZe86gZHWwx
+         v/8MvJLYM7Rlg5wJQZfQLUmhQgXtW+O3UDoUI4Zv8GsTTxJj2cYmo91QB7FbqS28qdS7
+         csinF4uLduCfbv/8y6/50c+LuPQC2zBtSBTyqPSNgKQg+THeieXtGeY3Gy+1AO4o1tuu
+         6jYs5c0OnUctvnfsfs+m+I7kq8QRlMdRPhGC6oZQ2Q9KaAkfvS4kU2kXdFzvJIzNaivh
+         56pLr908nvl8D4/kcHCUA00jZmAqLbKvc+vYTGZQ8oPTS7lv7Ba4zw5BpN6fw0U1Aehr
+         /Kvg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=we0y7S/ey++sSClxrOeO9dikgeZ30O9XVlCVkiwhijY=;
-        b=ZXTne9Cn1BJ3KpgrghJCLgtpdSWq6OupxZgiYC5OwPiL3LmPY56/yMzle/EU9czh6n
-         mUUva361RihKHDlNKRjKOIAIti+Ocgg56b7u9ZVmRYqLipBPRdAOBDi472jrWX64BXNO
-         mWZl7H5bnf0vHBV1HhTgFyJxV8hbRk5tPLvigLPEdKhzB3/RLkg4hsG5P1FMWB4MuXHu
-         ZErWRyLi2l+u6Nk4n+ErkbAUbZ3/6rmMHhKK9/O71vW3ozqqg8DjPPxJIfMMvttC6cc1
-         KT0ZN5Afj2HStcP30CXkoqWQChTDftdxE+wOeqPDTCl1ATrJzoWfaJlrXabUFJPpQmDk
-         9aTQ==
-X-Gm-Message-State: APjAAAUitZo7zDT2uX+uEk+bR/3EVRr/+0lFNZwqhNt0kN3TKM2UFp4i
-        X1IT12+TZisS6XMpip8vyiIZXBGmm/mvUQ==
-X-Google-Smtp-Source: APXvYqyzjY5SvO4iQVYwpM/rRzF5iFnRQ/ZgYixW1YJnavnnOpXLabZv+VSzXGp2u3+V9QrNmKF1Ng==
-X-Received: by 2002:a81:3785:: with SMTP id e127mr683049ywa.242.1566501077640;
-        Thu, 22 Aug 2019 12:11:17 -0700 (PDT)
+        bh=REZjaWdYz4cAnlPWw0OHqoelYEM3w54t+UYa94PyMJU=;
+        b=tNnYSrZoJkz5kkCL1toOTJpwUkca24LOpRJzBqjeUEq5ySN3p8seUNCwPd7muKABf+
+         9PZb/8H5W2MKL36d37tHGbpTnMdRMDFBLR2fVpjz4zSmL0JG44amCZ0jgFomwy3LXfIg
+         W2h/ZXDB14xIx9EXT09kQ7aJN+Rndcpv0vVWhH/0yCo+VZNXv5Z341icjfPwDBByPXDW
+         D5+yh2HIujAG6MrCg9nR1Mo+5M3C9N73Qar85sjOKUrhOALMe9imqyOUGeX473mtkTpp
+         GRHs3tKOSwGccSn/Z3B0x2FgOOmKbCLxLRDNTFwAxYxWtY9hmvBpJrROOnvN38eA0QKq
+         e3Jg==
+X-Gm-Message-State: APjAAAUQgGIdb3sX6FGElywX6yfpWmA2bbeqNBLr18jUXV9AM3+xmAfn
+        1lOR76yPfuxh2Q3iPpB26x8/ZA==
+X-Google-Smtp-Source: APXvYqyAs2FxLMExcQ08YfmuYyTKuyPhGIzvHBStgesb3Bxd0ZGNyWHYfV+4nu30YH2FhUpKqPzYTg==
+X-Received: by 2002:ad4:41c2:: with SMTP id a2mr852442qvq.224.1566501080856;
+        Thu, 22 Aug 2019 12:11:20 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id 205sm111237ywd.26.2019.08.22.12.11.16
+        by smtp.gmail.com with ESMTPSA id z1sm338160qkg.103.2019.08.22.12.11.20
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 22 Aug 2019 12:11:16 -0700 (PDT)
+        Thu, 22 Aug 2019 12:11:20 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 7/9] btrfs: fix may_commit_transaction to deal with no partial filling
-Date:   Thu, 22 Aug 2019 15:11:00 -0400
-Message-Id: <20190822191102.13732-8-josef@toxicpanda.com>
+Subject: [PATCH 9/9] btrfs: rename btrfs_space_info_add_old_bytes
+Date:   Thu, 22 Aug 2019 15:11:02 -0400
+Message-Id: <20190822191102.13732-10-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.21.0
 In-Reply-To: <20190822191102.13732-1-josef@toxicpanda.com>
 References: <20190822191102.13732-1-josef@toxicpanda.com>
@@ -70,57 +70,63 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Now that we aren't partially filling tickets we may have some slack
-space left in the space_info.  We need to account for this in
-may_commit_transaction, otherwise we may choose to not commit the
-transaction despite it actually having enough space to satisfy our
-ticket.
-
-Calculate the free space we have in the space_info, if any, and subtract
-this from the ticket we have and use that amount to determine if we will
-need to commit to reclaim enough space.
+This name doesn't really fit with how the space reservation stuff works
+now, rename it to btrfs_space_info_free_bytes_may_use so it's clear what
+the function is doing.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/space-info.c | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+ fs/btrfs/block-rsv.c   | 5 +++--
+ fs/btrfs/delayed-ref.c | 2 +-
+ fs/btrfs/space-info.h  | 6 +++---
+ 3 files changed, 7 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index dd4adfa75a71..cec6db0c41cc 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -473,12 +473,19 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
- 	struct btrfs_trans_handle *trans;
- 	u64 bytes_needed;
- 	u64 reclaim_bytes = 0;
-+	u64 cur_free_bytes = 0;
+diff --git a/fs/btrfs/block-rsv.c b/fs/btrfs/block-rsv.c
+index c64b460a4301..60f313888a7d 100644
+--- a/fs/btrfs/block-rsv.c
++++ b/fs/btrfs/block-rsv.c
+@@ -54,8 +54,9 @@ static u64 block_rsv_release_bytes(struct btrfs_fs_info *fs_info,
+ 			spin_unlock(&dest->lock);
+ 		}
+ 		if (num_bytes)
+-			btrfs_space_info_add_old_bytes(fs_info, space_info,
+-						       num_bytes);
++			btrfs_space_info_free_bytes_may_use(fs_info,
++							    space_info,
++							    num_bytes);
+ 	}
+ 	if (qgroup_to_release_ret)
+ 		*qgroup_to_release_ret = qgroup_to_release;
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index 9a91d1eb0af4..3822edbf54a7 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -158,7 +158,7 @@ void btrfs_migrate_to_delayed_refs_rsv(struct btrfs_fs_info *fs_info,
+ 		trace_btrfs_space_reservation(fs_info, "delayed_refs_rsv",
+ 					      0, num_bytes, 1);
+ 	if (to_free)
+-		btrfs_space_info_add_old_bytes(fs_info,
++		btrfs_space_info_free_bytes_may_use(fs_info,
+ 				delayed_refs_rsv->space_info, to_free);
+ }
  
- 	trans = (struct btrfs_trans_handle *)current->journal_info;
- 	if (trans)
- 		return -EAGAIN;
+diff --git a/fs/btrfs/space-info.h b/fs/btrfs/space-info.h
+index d61550f06c94..c93fe9808dc0 100644
+--- a/fs/btrfs/space-info.h
++++ b/fs/btrfs/space-info.h
+@@ -130,9 +130,9 @@ void btrfs_try_granting_tickets(struct btrfs_fs_info *fs_info,
+ 				struct btrfs_space_info *space_info);
  
+ static inline void
+-btrfs_space_info_add_old_bytes(struct btrfs_fs_info *fs_info,
+-			       struct btrfs_space_info *space_info,
+-			       u64 num_bytes)
++btrfs_space_info_free_bytes_may_use(struct btrfs_fs_info *fs_info,
++				    struct btrfs_space_info *space_info,
++				    u64 num_bytes)
+ {
  	spin_lock(&space_info->lock);
-+	cur_free_bytes = btrfs_space_info_used(space_info, true);
-+	if (cur_free_bytes < space_info->total_bytes)
-+		cur_free_bytes = space_info->total_bytes - cur_free_bytes;
-+	else
-+		cur_free_bytes = 0;
-+
- 	if (!list_empty(&space_info->priority_tickets))
- 		ticket = list_first_entry(&space_info->priority_tickets,
- 					  struct reserve_ticket, list);
-@@ -486,6 +493,11 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
- 		ticket = list_first_entry(&space_info->tickets,
- 					  struct reserve_ticket, list);
- 	bytes_needed = (ticket) ? ticket->bytes : 0;
-+
-+	if (bytes_needed > cur_free_bytes)
-+		bytes_needed -= cur_free_bytes;
-+	else
-+		bytes_needed = 0;
- 	spin_unlock(&space_info->lock);
- 
- 	if (!bytes_needed)
+ 	btrfs_space_info_update_bytes_may_use(fs_info, space_info, -num_bytes);
 -- 
 2.21.0
 

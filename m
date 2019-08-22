@@ -2,64 +2,63 @@ Return-Path: <SRS0=CyxS=WS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C79EFC3A5A1
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Aug 2019 19:03:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 62769C3A5A1
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Aug 2019 19:11:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9988D20856
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Aug 2019 19:03:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2D7EE233FD
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Aug 2019 19:11:08 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="nS7fv5Rn"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="WemCFZxR"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2391232AbfHVTDJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 22 Aug 2019 15:03:09 -0400
-Received: from mail-yw1-f68.google.com ([209.85.161.68]:35055 "EHLO
-        mail-yw1-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731910AbfHVTDJ (ORCPT
+        id S2387971AbfHVTLH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 22 Aug 2019 15:11:07 -0400
+Received: from mail-qk1-f169.google.com ([209.85.222.169]:44254 "EHLO
+        mail-qk1-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1731701AbfHVTLG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Aug 2019 15:03:09 -0400
-Received: by mail-yw1-f68.google.com with SMTP id g19so2846667ywe.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Aug 2019 12:03:09 -0700 (PDT)
+        Thu, 22 Aug 2019 15:11:06 -0400
+Received: by mail-qk1-f169.google.com with SMTP id d79so6096110qke.11
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Aug 2019 12:11:06 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:mime-version
          :content-transfer-encoding;
-        bh=2yhcalcO46fpfNDyxdD+0q3fJKu8Fzb8zmEgrpZ4TD8=;
-        b=nS7fv5RncGX3Jo1yRZCTHw7Bh4IePORHFN9DYY95qWwsnLkcoEsk+SweR7oTewCfdd
-         1evxUJGMRW4D1W7XJ6Caeb/GL6Ud8CAjLyusAuQySYt3zbgykOaK0Ee+DzKzSqtijfmk
-         i+wMZYdC8b6G58EgO7f5aO5gYq70i1UUhskMHxLRYvNG+cj4EsCQuG4CKXTfDTO4hkb7
-         yG7h9/lU6JQWmu+Jp2YemfN0KhGOBvo4MMbP1d2l9JW8/BxgxS1LttjR4YJF95khnF8U
-         Av6+oaOXOJrEl+YBRTYD3iK/RoVgvdRHHKyrfaEcA0JNoh/ZalMt9vnqsLDMUBaiFmQQ
-         WevA==
+        bh=06ZL86zNKBP2+A+y7dDmZd+1AD66mj3VlyL5QgCiVB0=;
+        b=WemCFZxRNCViDVQAz9+iURUDnmA1TE1qpkUqrqiIrMs2fdMOUzd0+663IR8OpkcrvO
+         F6hta+ta9XIoloPoFyWrd94PdsqLf0uXgsCuHNY/jdULtGQjuk17Z7aPE3rXHMRj3Q/j
+         0B1gr1rN+HIAG1OeATgNv+AXdbZdYc8SSnA/oQRsHO/AqG2JbgAnXj9m31/Dc+oVQBfR
+         q4WBLK0mZeMJQpqLFV1j/2UCHERMCgDjZ8yFPlrftftJ3Lc7PQTMeoEKwJ7c7YUImu3Y
+         o1i2D5yJBDov1NVVuSqx5JAv69cuno4Vb9F83GDls82rf5ViyuAo7sYEy9edPYwYASbU
+         2pfQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:mime-version
          :content-transfer-encoding;
-        bh=2yhcalcO46fpfNDyxdD+0q3fJKu8Fzb8zmEgrpZ4TD8=;
-        b=bsFML5srF9LsqjrrMQUJI5IzzLRr14pAAkXS+vRpidWCPx6DRwA24IWG+6bvwkNsl6
-         tXi8eoAJ7i7HUfRIF93b+chwB5UYEMDZhqH05bwH8WhUtfs3dApJ9ipJHFCJWU2xJ2sf
-         Rkt5dFItMBJQYVoBH6mkaXewe6/flM6OfYVwRagX+WCNzB/aqAR9caySmYW7JbhbBaU5
-         IEvE0msRL3MIL+sQIzXQB23xocvY6TR8LYNEnGzEXR/FOi3SVLOugtsTSAiGMtxwfk9u
-         gUJlOD0AkJl2KrHANl8nL6yVzcmr1Q2+U3gEjUlJwGTuvWoVRVPfLsJBEWVi3ezHzqzj
-         QsUQ==
-X-Gm-Message-State: APjAAAUQqU15EhRO5yPu/7pzZWSv0AWi+t2c8X8+1CrSkYUnqIzgEcee
-        EHxnnQd6SF4KbOPSd/or5JUJRIo1XYZZuA==
-X-Google-Smtp-Source: APXvYqyfSUK7Zs2aFVc9c4CqgLO288Mf1wFoW5r3Nc7u1lgpAzJuucR6BVXDALs6aNg+SVbnJe1/YA==
-X-Received: by 2002:a81:350b:: with SMTP id c11mr639646ywa.123.1566500588113;
-        Thu, 22 Aug 2019 12:03:08 -0700 (PDT)
+        bh=06ZL86zNKBP2+A+y7dDmZd+1AD66mj3VlyL5QgCiVB0=;
+        b=WU7boHfBuyTrckmmsALyxp+2PobZUoPP4RI+MdE2FsfZPS6NBZgyFCRAOxSP9BR9n+
+         t1gkm7RfPbeQqG+6IXTySChtIhJzeOIZc4EaD8tM1wKQtScEA2kwLyGUY36sQRwytD+h
+         GevADrPbtZO1uOZeu8pLQCHjiOK2d4KodAHZRo0FFndampTENjxM4eTF6p/88zBdmM7X
+         pCdcmU4l3p7hikOtGlAIaCEavsOec7hVH5JnlZOowhbGSwKN/0OYAuaM2YPBhl7Ale6E
+         XM4lKUZEQ5cjlcMy9cWEAJTT6tVI8zdP9xQyGoH3vsvwT79fQ+v4y7qNeL/PpEWrrBDY
+         WGMQ==
+X-Gm-Message-State: APjAAAV2/zukmG2qw6NArDjZa51sYRXseqVsouqn2Y3eWzblahCnqLdq
+        63i/CLjOh/faW94DYW9ZVBrKzP69PfP8eA==
+X-Google-Smtp-Source: APXvYqyP9iYT4BL83vpydkT1IQnkaFlUSmrzbpRgf7F5hM6+r9xmdDmQYdsyhNLwMYaLjbFcd0BnUw==
+X-Received: by 2002:ae9:c00c:: with SMTP id u12mr526763qkk.75.1566501065820;
+        Thu, 22 Aug 2019 12:11:05 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id b202sm113612ywb.78.2019.08.22.12.03.06
+        by smtp.gmail.com with ESMTPSA id r205sm272250qke.115.2019.08.22.12.11.04
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 22 Aug 2019 12:03:06 -0700 (PDT)
+        Thu, 22 Aug 2019 12:11:05 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH][RESEND] btrfs: add a force_chunk_alloc to space_info's sysfs
-Date:   Thu, 22 Aug 2019 15:03:05 -0400
-Message-Id: <20190822190305.13673-1-josef@toxicpanda.com>
+To:     kernel-team@fb.com, linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/9][v3] Rework reserve ticket handling
+Date:   Thu, 22 Aug 2019 15:10:53 -0400
+Message-Id: <20190822191102.13732-1-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.21.0
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
@@ -68,114 +67,66 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-In testing various things such as the btrfsck patch to detect over
-allocation of chunks, empty block group deletion, and balance I've had
-various ways to force chunk allocations for debug purposes.  Add a sysfs
-file to enable forcing of chunk allocation for the owning space info in
-order to enable us to add testcases in the future to test these various
-features easier.
+This is the next round of my reserve ticket refinements.  Most of the changes
+are just fixing issues brought up by review.  The updated diffstat is as follows
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/sysfs.c | 64 ++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 64 insertions(+)
+ fs/btrfs/block-group.c    |   5 +-
+ fs/btrfs/block-rsv.c      |  10 +--
+ fs/btrfs/delalloc-space.c |   4 --
+ fs/btrfs/delayed-ref.c    |   2 +-
+ fs/btrfs/extent-tree.c    |  13 +---
+ fs/btrfs/space-info.c     | 171 +++++++++++++++++++---------------------------
+ fs/btrfs/space-info.h     |  30 +++++---
+ 7 files changed, 98 insertions(+), 137 deletions(-)
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index f6d3c80f2e28..c290a0cd37d2 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -68,6 +68,7 @@ static struct btrfs_feature_attr btrfs_attr_features_##_name = {	     \
- 
- static inline struct btrfs_fs_info *to_fs_info(struct kobject *kobj);
- static inline struct btrfs_fs_devices *to_fs_devs(struct kobject *kobj);
-+static inline struct kobject *get_btrfs_kobj(struct kobject *kobj);
- 
- static struct btrfs_feature_attr *to_btrfs_feature_attr(struct kobj_attribute *a)
- {
-@@ -405,6 +406,58 @@ static struct kobj_type btrfs_raid_ktype = {
- 	.default_groups = raid_groups,
- };
- 
-+static ssize_t btrfs_space_info_force_chunk_alloc_show(struct kobject *kobj,
-+						       struct kobj_attribute *a,
-+						       char *buf)
-+{
-+	return snprintf(buf, PAGE_SIZE, "0\n");
-+}
-+
-+static ssize_t btrfs_space_info_force_chunk_alloc(struct kobject *kobj,
-+						  struct kobj_attribute *a,
-+						  const char *buf, size_t len)
-+{
-+	struct btrfs_space_info *space_info = to_space_info(kobj);
-+	struct btrfs_fs_info *fs_info = to_fs_info(get_btrfs_kobj(kobj));
-+	struct btrfs_trans_handle *trans;
-+	unsigned long val;
-+	int ret;
-+
-+	if (!fs_info) {
-+		printk(KERN_ERR "couldn't get fs_info\n");
-+		return -EPERM;
-+	}
-+
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	if (sb_rdonly(fs_info->sb))
-+		return -EROFS;
-+
-+	ret = kstrtoul(buf, 10, &val);
-+	if (ret)
-+		return ret;
-+
-+	/*
-+	 * We don't really care, but if we echo 0 > force it seems silly to do
-+	 * anything.
-+	 */
-+	if (val == 0)
-+		return -EINVAL;
-+
-+	trans = btrfs_start_transaction(fs_info->extent_root, 0);
-+	if (!trans)
-+		return PTR_ERR(trans);
-+	ret = btrfs_force_chunk_alloc(trans, space_info->flags);
-+	btrfs_end_transaction(trans);
-+	if (ret == 1)
-+		return len;
-+	return -ENOSPC;
-+}
-+BTRFS_ATTR_RW(space_info, force_chunk_alloc,
-+	      btrfs_space_info_force_chunk_alloc_show,
-+	      btrfs_space_info_force_chunk_alloc);
-+
- #define SPACE_INFO_ATTR(field)						\
- static ssize_t btrfs_space_info_show_##field(struct kobject *kobj,	\
- 					     struct kobj_attribute *a,	\
-@@ -447,6 +500,7 @@ static struct attribute *space_info_attrs[] = {
- 	BTRFS_ATTR_PTR(space_info, disk_used),
- 	BTRFS_ATTR_PTR(space_info, disk_total),
- 	BTRFS_ATTR_PTR(space_info, total_bytes_pinned),
-+	BTRFS_ATTR_PTR(space_info, force_chunk_alloc),
- 	NULL,
- };
- ATTRIBUTE_GROUPS(space_info);
-@@ -641,6 +695,16 @@ static inline struct btrfs_fs_info *to_fs_info(struct kobject *kobj)
- 	return to_fs_devs(kobj)->fs_info;
- }
- 
-+static inline struct kobject *get_btrfs_kobj(struct kobject *kobj)
-+{
-+	while (kobj) {
-+		if (kobj->ktype == &btrfs_ktype)
-+			return kobj;
-+		kobj = kobj->parent;
-+	}
-+	return NULL;
-+}
-+
- #define NUM_FEATURE_BITS 64
- #define BTRFS_FEATURE_NAME_MAX 13
- static char btrfs_unknown_feature_names[FEAT_MAX][NUM_FEATURE_BITS][BTRFS_FEATURE_NAME_MAX];
--- 
-2.21.0
+v2->v3:
+- added 9/9 to rename btrfs_space_info_add_old_bytes as per discussions with
+  Nikolay.
+- added a few comments.
+- made the logic clearer in the may_commit_transaction patch.
+- a few lockdep_assert_held()'s.
+- added the reviewed-by's.
+
+v1->v2:
+- added "btrfs: fix may_commit_transaction to deal with no partial filling"
+- fixed "btrfs: refactor the ticket wakeup code" to return true if we find a
+  smaller ticket than our first ticket in the list.
+
+- Original email -
+While cleaning up some things around the global reserve and can_overcommit I
+started getting ENOSPC's with plenty of space to make reservations.  The root
+cause of the problem has to do with how we satisfy ticket reservations.
+
+Previously we would add any space we were returning to the space info to the
+first ticket we found.  The reason we did this was because new reservations just
+check the counters to see if they can continue, so we didn't want them to get
+reservations when we had waiters already queued up.  So instead of returning the
+bytes to the space info, I'd add it to the ticket.  Then if we failed to satisfy
+that ticket reservation we'd take any space we found and add it to the next guy
+in case it satisfied the next ticket reservation.
+
+This works generally well in practice, but there are several xfstests that run
+ENOSPC tests against very small file systems.  These tests uncovered a corner
+case when it comes to overcommitting.  If we overcommit the space, and then are
+no longer allowed to overcommit, we won't actually give any returned space to
+the tickets, because that would be really bad.  Instead we return that space to
+the space_info and carry on.
+
+What was biting us in these test cases was the fact that we had very small
+metadata area, 8mib, and unlink asks for about 2mib of space.  If we had
+overcommitted 8.1mib, we'd give back almost 2mib of space to the space_info,
+which could have instead been used for the reservation.  This would result in an
+early ENOSPC.
+
+Since we are only doing this partial filling dance to avoid racing with new
+reservations we just fix that race by checking if we have pending reservations
+on the list, closing that race.  Then we are free to use the normal checks to
+see if a ticket can be woken up.  This simplifies the code a bunch, we no longer
+have to keep track of how much space the tickets were given and return those
+bytes, and I could consolidate the wakeup code into one function instead of two.
+
+The diffstat is as follows, this all passes xfstests, and sets us up nicely for
+the upcoming changesets.  Thanks,
+
+Josef
 

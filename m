@@ -2,68 +2,64 @@ Return-Path: <SRS0=CyxS=WS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_GIT autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8E4EDC3A5A1
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Aug 2019 19:11:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4C60CC3A5A1
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Aug 2019 19:14:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4BE6323400
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Aug 2019 19:11:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 207BF233FD
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Aug 2019 19:14:39 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="nhvr64WN"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="Ow0D9OQO"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2391674AbfHVTLX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 22 Aug 2019 15:11:23 -0400
-Received: from mail-qk1-f193.google.com ([209.85.222.193]:41243 "EHLO
-        mail-qk1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2387990AbfHVTLU (ORCPT
+        id S2391807AbfHVTOi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 22 Aug 2019 15:14:38 -0400
+Received: from mail-yb1-f182.google.com ([209.85.219.182]:37793 "EHLO
+        mail-yb1-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2389212AbfHVTOi (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Aug 2019 15:11:20 -0400
-Received: by mail-qk1-f193.google.com with SMTP id g17so6117874qkk.8
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Aug 2019 12:11:19 -0700 (PDT)
+        Thu, 22 Aug 2019 15:14:38 -0400
+Received: by mail-yb1-f182.google.com with SMTP id t5so2967206ybt.4
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Aug 2019 12:14:37 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=CWqO91MBMGp6m7eBB6gcnYr0fxdUY3GsTNytSY+/aqk=;
-        b=nhvr64WNwQqzRExqlxK6d+cdlAKpEMQtJTqU1chyox55GGXDP7/ad0mbM7QUqkTb9+
-         Dkrq8Vy+D00uXD6/awsLDMbMQW7LmOnCyNp2SazVTvAA+6glNTn6YsZqFooQvsxojN1f
-         HxDHpq1nA1yd2+kplaS2sProe/925uCj0eA5HGaMUWfmmoF+54eagdiosoRs6xIbJchE
-         B5Ajv/d1+K1AI44uUrMpQ/55eHoJMmVlPVOUETLBHk5wqF/M9UjlZ6WXUxqIC28L0lPM
-         r9QCkpZdWtz3MD5xqb618uj/qEU6X1PWoZ9HIep8AslPZHGJYd4Uqnwek3Im7neBla7h
-         2N/A==
+        h=from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=c935jJZ81yMZBFmYOes4DYqH/42dqEjd9rlob8Finv0=;
+        b=Ow0D9OQO18DFEuBhCwopCI5Bx6JWDObG73TcVnak6IRq4o4gIu/MgoKTvfcs5jdCVy
+         hUnJrP57fpe82v6FsPWb8KYh4VHMZwA/a9EDRAPpBU+tEpGUrzYdswDPMmnDoqnc25Gi
+         X+hWa428ShpS6i6Mf8m2ptx86+gg2Edq62HG104OBPic0v1jKyYQoEXYsfLtHaM7lV/e
+         ilzuAA06NO0DCresceY52pEqg3jmX9qrVh07Baht44qUzLYsPQLtCLcoMSCVhEdOkjow
+         s8l2O/VC8o1ozkSHF1W2x5sMp8nUO6IKjkaqzcCrj71V2/N5BY6QkBNChnhA+wwszktY
+         5e8A==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=CWqO91MBMGp6m7eBB6gcnYr0fxdUY3GsTNytSY+/aqk=;
-        b=KQJFfg4qs7WUIFqESE69MXVVQ7jrgtTLLtkL/SzWbLbVvoXnNQ6FU5H4lcPRpa6SMD
-         uXMF/o+y60FWmFHWVB4ya+82aCV+FQP9PWLt2+QVlYQKdMNGaSZKPb2EnADFbKAXTGy/
-         FWGJkkd4qQai1kr4RJdgni73vFW3KRwAeHVaz8qUX+RnOhRTcI5uxLsKylFkLXrigqv9
-         JO0kCdmu2VTQpamEIsiIENE4F4OcCOvKxLw4cD1cBYJhFyTWujcjSHsA8M5pcoiLbWAB
-         h18JpKRawACJEOA6t1F5GRnJJhnhmwLJiJ0tP5e6GYxFXEtnMF/wEqi7djOBQo/Huujw
-         Nzsg==
-X-Gm-Message-State: APjAAAV1ZeV9yCx7EWkF3mINOvmEgsa/IxURdftJz96RbKA9lzZrT4cT
-        /bWK4trW7gMrdqpKhCoe6C8MxkttRQBv1A==
-X-Google-Smtp-Source: APXvYqzX8BjeyqCsTfMejaWziOY8ZWGNqvnKscrwOOJJo/K2+hfO5/pCA4D9qvAxJZ+rgq62/eRu1A==
-X-Received: by 2002:a37:a6cf:: with SMTP id p198mr523477qke.259.1566501079215;
-        Thu, 22 Aug 2019 12:11:19 -0700 (PDT)
+        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=c935jJZ81yMZBFmYOes4DYqH/42dqEjd9rlob8Finv0=;
+        b=Xwov3se/hawLRkYKYoWU7upAbnPuXicN1lmm8iHwwbn0PVlUxzePsBD5x6kZXheK4r
+         uCK9znIgHzWqAJbsbX419eQTDjglVp7wSK73Ty+6clZ/qkQqVLVAqlPCh6GFm+8yHJj2
+         mwAnBMuZ7Eq3vUCOeNNj8lMjacAtHQpZ7wAbdrW0ZlLkEvhjIop/xC7o/ajzh0jSoLAT
+         ImUbo0Kuu47DO+ltzwRvJm0Y8jIGWMKZmZueN6cvpd53g6Zy2DSNbad1ow/qIVRYiVGK
+         scpcG0ZTXC3ye8VAf7s0S0opn5ir4CgOlTYjdRq4NvIWhnBA4A+UMbdYncj4TXT9l2RX
+         B9pw==
+X-Gm-Message-State: APjAAAXdx5mJX/r7k2yj27oefbkfylqXT1O7/Q0qQYXkerAHvblUQZyb
+        +4hM8x7m44YeUGmb5cbv79bPvjjkEWgTrQ==
+X-Google-Smtp-Source: APXvYqyPwloDENa9Iv3xjBIH+axjH0zYauh18stfXSBzTGFS8pAGpQ7PrGm+sY8RQmCuj3u9kLyTuw==
+X-Received: by 2002:a25:2d09:: with SMTP id t9mr390474ybt.332.1566501276798;
+        Thu, 22 Aug 2019 12:14:36 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id o18sm259940qtt.4.2019.08.22.12.11.18
+        by smtp.gmail.com with ESMTPSA id r9sm98484ywl.108.2019.08.22.12.14.35
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 22 Aug 2019 12:11:18 -0700 (PDT)
+        Thu, 22 Aug 2019 12:14:36 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 8/9] btrfs: remove orig_bytes from reserve_ticket
-Date:   Thu, 22 Aug 2019 15:11:01 -0400
-Message-Id: <20190822191102.13732-9-josef@toxicpanda.com>
+Subject: [PATCH 0/2][v2] Rework the worst case calculations for space reservation
+Date:   Thu, 22 Aug 2019 15:14:32 -0400
+Message-Id: <20190822191434.13800-1-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.21.0
-In-Reply-To: <20190822191102.13732-1-josef@toxicpanda.com>
-References: <20190822191102.13732-1-josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -71,66 +67,29 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Now that we do not do partial filling of tickets simply remove
-orig_bytes, it is no longer needed.
+v1->v2:
+- dropped "btrfs: global reserve fallback should use metadata_size", turns out
+  I was testing without my evict changes in place so we don't even need this in
+  the first place, but it is also wrong because we need to reserve space for the
+  orphan item which is an insert.
+- Added the reviewed-by's.
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/space-info.c | 8 --------
- fs/btrfs/space-info.h | 1 -
- 2 files changed, 9 deletions(-)
+-- Original email --
+We have two worst case calculations for space reservation, one that takes into
+account splitting at every level when cow'ing down the btree, and another that
+doesn't account for splitting at all.  The first is used everywhere, and the
+second is used mostly for truncate.
 
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index cec6db0c41cc..c5939c24c963 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -905,7 +905,6 @@ static int handle_reserve_ticket(struct btrfs_fs_info *fs_info,
- 				 struct reserve_ticket *ticket,
- 				 enum btrfs_reserve_flush_enum flush)
- {
--	u64 reclaim_bytes = 0;
- 	int ret;
- 
- 	switch (flush) {
-@@ -930,17 +929,11 @@ static int handle_reserve_ticket(struct btrfs_fs_info *fs_info,
- 	spin_lock(&space_info->lock);
- 	ret = ticket->error;
- 	if (ticket->bytes || ticket->error) {
--		if (ticket->bytes < ticket->orig_bytes)
--			reclaim_bytes = ticket->orig_bytes - ticket->bytes;
- 		list_del_init(&ticket->list);
- 		if (!ret)
- 			ret = -ENOSPC;
- 	}
- 	spin_unlock(&space_info->lock);
--
--	if (reclaim_bytes)
--		btrfs_space_info_add_old_bytes(fs_info, space_info,
--					       reclaim_bytes);
- 	ASSERT(list_empty(&ticket->list));
- 	return ret;
- }
-@@ -1000,7 +993,6 @@ static int __reserve_metadata_bytes(struct btrfs_fs_info *fs_info,
- 	 * the list and we will do our own flushing further down.
- 	 */
- 	if (ret && flush != BTRFS_RESERVE_NO_FLUSH) {
--		ticket.orig_bytes = orig_bytes;
- 		ticket.bytes = orig_bytes;
- 		ticket.error = 0;
- 		init_waitqueue_head(&ticket.wait);
-diff --git a/fs/btrfs/space-info.h b/fs/btrfs/space-info.h
-index 0e805b5b1fca..d61550f06c94 100644
---- a/fs/btrfs/space-info.h
-+++ b/fs/btrfs/space-info.h
-@@ -70,7 +70,6 @@ struct btrfs_space_info {
- };
- 
- struct reserve_ticket {
--	u64 orig_bytes;
- 	u64 bytes;
- 	int error;
- 	struct list_head list;
--- 
-2.21.0
+However we also do not split when we're only changing an item, so for example
+updating the inode item.  So the name for this helper is wrong, because it can
+be used for in-place updates as well as for truncates.  Rename the helpers and
+then use the smaller worst-case reservation for inode updates in a few places.
+
+As a rule we still want to use the insert calculation when we can't be sure what
+kind of operation is going to end up happening.  But for things like delayed
+inode updates and file writes where we know there is going to be an existing
+inode item we can use the smaller reservation.  Thanks,
+
+Josef
+
 

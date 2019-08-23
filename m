@@ -4,61 +4,61 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.6 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0D101C3A5A2
-	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Aug 2019 10:11:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 55C18C3A5A2
+	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Aug 2019 10:11:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id D7F1C21726
-	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Aug 2019 10:11:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 234F8233FD
+	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Aug 2019 10:11:41 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="D/OtmKSu"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="XbKxNVtP"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2404381AbfHWKLg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 23 Aug 2019 06:11:36 -0400
-Received: from esa3.hgst.iphmx.com ([216.71.153.141]:47768 "EHLO
+        id S2404437AbfHWKLk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 23 Aug 2019 06:11:40 -0400
+Received: from esa3.hgst.iphmx.com ([216.71.153.141]:47796 "EHLO
         esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2404360AbfHWKLf (ORCPT
+        with ESMTP id S2404383AbfHWKLj (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Aug 2019 06:11:35 -0400
+        Fri, 23 Aug 2019 06:11:39 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1566555094; x=1598091094;
+  t=1566555098; x=1598091098;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=InzjgJc/CYOES7JhwRz7akPBQj1xH3+trygavvD0iao=;
-  b=D/OtmKSu/uJ5PIH28BjUWaxSDvOIhKBpLOG6qfzMXvCgnrvZS2jeqJmC
-   /DgTtKAj+0Pt0lYd5Lpr3mig7JYKPegReqhHI+E7qqfX7lhZQH6TaEMiZ
-   t4wHZUq0MQIeWFfvg9bDAXu81F5xIUVLUHbyTNOqN1rgy0/xCWFM7OpHm
-   GMfV+VnJeOmBV21F+Glt2bd5CXxSJKPwOKzc4qimaSet1K6yVi98oKinW
-   IMZt3QoeEvFIgJlVekYcG5BEweGWv77HK2nccz4F2Uu4C2ZU88TE90QGC
-   wsVJ6NEMNmxwIt2bmQMG9VArJ3Syr+2tWb8qP6IUKJMaGHIm4uMEp6qbw
-   Q==;
-IronPort-SDR: nKZxRsKENlSWvLastHfdB8ik39XNrTq9/bmEKCdVWcV9P84rQhWzXYXPAZRhGL9OwLObSTUuuH
- A77oOiduI6je/mDH1EL/fg7nxkQ2/r+wfNfvdbqdtc2B/D2x22cfUa9fBf/mizQEzGwDgWe+bj
- gOKkc5/onmgUE12rj2cRrKH16C4x74otF93FR04wzYEWlJNebyiBXsxnU5xdArfQrMEqoWtECl
- au6d7c36+0a9p3BmeZJNm+isO+97+WuNDAWd0DZNHcltuBencBJPoM/1crGWPEzP9aILA6yXqL
- wtA=
+  bh=Bmu9r9dyfmzCSO2sk7kl9FUepC5eW+BqiR751zfVd2Y=;
+  b=XbKxNVtPrrkHzMqUhqepAyeyuty9UhkfHTnEQ7/j3DzNT6NwmATZYUPY
+   +K+HNrkMnUehcM1QmhlvWnUQNglma8xEgVFUZpNMlhwX2ANyYjCN2xE+A
+   BgpwKemYZjp9QLAqOdXMJ5pPSQWQEUN/GyWkuYy5qIWREcSLBwIrgHvlO
+   KXhk56PQm3c41EzOxzVMvyHm3ZAECfk7QWU2tfNLHs9liODRktGN/Qgtv
+   D3iTNP2wikMnyK6Ip0BhCMTK4ZPBa60dNz460FlS3mOa7mg4vViqziV+K
+   K/lXm2KoFzt0C/HhA+WEvGjONcGxM7GX2BTb1v6I1M5NEewe0lzzohL/y
+   w==;
+IronPort-SDR: tRNQPcbetg/LF7aFrugQaSFzKXqaOWLO5jiD6z1Q1EyQ9j1QfUMhbkgrIhVXfn+okZXkqcfPSL
+ Rn30stW9Rrp6mK2AXc3dRQqUDSKzHTzCKjJ3/1R6H37DbY83UsgAjXCzGofkWwOSmaz6fohncb
+ eEZxvxg1X5D5KOo5h/Zbozidbn/K+wtPkJoxF28OhVTEXOrs9A8VptTLKAgYEFcfXDxEDT1DzC
+ JgAnQeZLAxTP91YHhXk9goShbDj8fNYGIBMAqmhmXK3Upvv5mRSDzi2XoNEszPFsTgmAUCN3ih
+ q3Q=
 X-IronPort-AV: E=Sophos;i="5.64,420,1559491200"; 
-   d="scan'208";a="121096248"
+   d="scan'208";a="121096253"
 Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 23 Aug 2019 18:11:34 +0800
-IronPort-SDR: Gw7pjyuJpRJjEb6XZZZpFLwqHa+RyIH5O8aFcM5t39SNQHSlbi583xjUWUPO7kutaU87EaV+8V
- CqRG8gbxWquoVcoBHVGPLwk4bLOPMmosgw4oh7yGJwjg9EMXnTATjOyJfSxVIeBMXwLoxPCbyz
- AFe6YYXvPwZyBV3WHzlvs0epcnj1SRAjr5F+RIlPJEdyIRwoPdz9EaYB141JX7Up9faGrXFIH8
- eaUyF5SsMPcpC6as29b/G7Yj4TnikaHXl0ifqegZ7vwVBPRxGcaUEIYZx1xWB3oR4TepJdLe9F
- 6luYVG4gnxxYbvAH0t1O3LSB
+  by ob1.hgst.iphmx.com with ESMTP; 23 Aug 2019 18:11:38 +0800
+IronPort-SDR: q2SrYUMrPlRCg88RnsAMjunZ77vS4F6Z3LlBtkbZ346M4EEfFlzYosv3jQB/4mT9KGPh+PxoGx
+ GW9/d0nVBU47nQGWL8k4yvU/DfxgWsYD38tEuAFzIHNi44NvHfAat9/OofMl5fm8Yx2hnjy561
+ vLW5batf5pP/HauWi4TEjCzyZMLi0v4pCQ8qyyY+0DLuQqEfKMC6nznWe0WflnmVhzm6CY64tD
+ v5SStsjvZA4WCoTaJqYH46/F33MoCXY/Ax1uPz/U3tCpDhk8kc16KNtvTESKMyH+uDq2Xvi5DQ
+ 82s1KKL4lvesxkmnsAE1uN0K
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 23 Aug 2019 03:08:52 -0700
-IronPort-SDR: qhAy7dXUmqUytCo39hN29LNefa/+FPrEabEVN4CK1oyQXzlocvKcc7RmF3YVIaBwTlFhpAwvDa
- FJRxc1WEEsPbrtKH9aJS35nLTkGup0IWatxQTmy5RPt1tS9SmpVMdKT0QYGo6AEOHqK2Gim2g+
- jAIpZSQIZbo0LDEoAWViLhOyuqHHUvvHoyEG6axx4zpKUVttyS4ErEXqX4fpBNCddsriaB7l65
- sBcWAaMVY4Y8b7zv3HxVbvp3p+ZvXcfOMvtVBkDHMTpSWrUmBirbn5XZrKfsGFvaSdSFwq+uLt
- 9f8=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 23 Aug 2019 03:08:56 -0700
+IronPort-SDR: vapz2JTb7nBIgK51gYrDmSvmvB4QcbQT4oH1y6/RZEsHjHL/zxyqiSn1fDlueEe6Q9wKlywRkB
+ M79a2AIF+upYAHhXjs9nBZ41Oj5zg05m3JRN/E6DBfRk7y5nkcMSvV4WE8l080FIDpQAGeMLYq
+ 9dznCuprcmS3C45LBpUXC8Px71q9xjDYD/BuHSL14/IHlBOXMCiXEH+c084SWe4Hkafq4xE/rj
+ pmHR2JM4Wy+BblPueyyGppgdi+8+tznwYGpJbmgbCPzyiLe94NF7OJ097Qloe1pno7KJJirA7t
+ FL4=
 WDCIronportException: Internal
 Received: from naota.dhcp.fujisawa.hgst.com (HELO naota.fujisawa.hgst.com) ([10.149.53.115])
-  by uls-op-cesaip02.wdc.com with ESMTP; 23 Aug 2019 03:11:33 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 23 Aug 2019 03:11:37 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
 Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
@@ -69,9 +69,9 @@ Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         Hannes Reinecke <hare@suse.com>,
         Anand Jain <anand.jain@oracle.com>,
         linux-fsdevel@vger.kernel.org, Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v4 12/27] btrfs: ensure metadata space available on/after degraded mount in HMZONED
-Date:   Fri, 23 Aug 2019 19:10:21 +0900
-Message-Id: <20190823101036.796932-13-naohiro.aota@wdc.com>
+Subject: [PATCH v4 14/27] btrfs: limit super block locations in HMZONED mode
+Date:   Fri, 23 Aug 2019 19:10:23 +0900
+Message-Id: <20190823101036.796932-15-naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.23.0
 In-Reply-To: <20190823101036.796932-1-naohiro.aota@wdc.com>
 References: <20190823101036.796932-1-naohiro.aota@wdc.com>
@@ -82,119 +82,110 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On/After degraded mount, we might have no writable metadata block group due
-to broken write pointers. If you e.g. balance the FS before writing any
-data, alloc_tree_block_no_bg_flush() (called from insert_balance_item())
-fails to allocate a tree block for it, due to global reservation failure.
-We can reproduce this situation with xfstests btrfs/124.
+When in HMZONED mode, make sure that device super blocks are located in
+randomly writable zones of zoned block devices. That is, do not write super
+blocks in sequential write required zones of host-managed zoned block
+devices as update would not be possible.
 
-While we can workaround the failure if we write some data and, as a result
-of writing, let a new metadata block group allocated, it's a bad practice
-to apply.
-
-This commit avoids such failures by ensuring that read-write mounted volume
-has non-zero metadata space. If metadata space is empty, it forces new
-metadata block group allocation.
-
+Signed-off-by: Damien Le Moal <damien.lemoal@wdc.com>
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- fs/btrfs/disk-io.c |  9 +++++++++
- fs/btrfs/hmzoned.c | 45 +++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/hmzoned.h |  1 +
- 3 files changed, 55 insertions(+)
+ fs/btrfs/disk-io.c     |  4 ++++
+ fs/btrfs/extent-tree.c |  8 ++++++++
+ fs/btrfs/hmzoned.h     | 12 ++++++++++++
+ fs/btrfs/scrub.c       |  3 +++
+ 4 files changed, 27 insertions(+)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 3f5ea92f546c..b25cff8af3b7 100644
+index b25cff8af3b7..38a9830b4893 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -3285,6 +3285,15 @@ int open_ctree(struct super_block *sb,
- 		}
- 	}
+@@ -3545,6 +3545,8 @@ static int write_dev_supers(struct btrfs_device *device,
+ 		if (bytenr + BTRFS_SUPER_INFO_SIZE >=
+ 		    device->commit_total_bytes)
+ 			break;
++		if (!btrfs_check_super_location(device, bytenr))
++			continue;
  
-+	ret = btrfs_hmzoned_check_metadata_space(fs_info);
-+	if (ret) {
-+		btrfs_warn(fs_info, "failed to allocate metadata space: %d",
-+			   ret);
-+		btrfs_warn(fs_info, "try remount with readonly");
-+		close_ctree(fs_info);
-+		return ret;
-+	}
-+
- 	down_read(&fs_info->cleanup_work_sem);
- 	if ((ret = btrfs_orphan_cleanup(fs_info->fs_root)) ||
- 	    (ret = btrfs_orphan_cleanup(fs_info->tree_root))) {
-diff --git a/fs/btrfs/hmzoned.c b/fs/btrfs/hmzoned.c
-index 55c00410e2f1..b5fd3e280b65 100644
---- a/fs/btrfs/hmzoned.c
-+++ b/fs/btrfs/hmzoned.c
-@@ -13,6 +13,8 @@
- #include "hmzoned.h"
- #include "rcu-string.h"
- #include "disk-io.h"
-+#include "space-info.h"
-+#include "transaction.h"
+ 		btrfs_set_super_bytenr(sb, bytenr);
  
- /* Maximum number of zones to report per blkdev_report_zones() call */
- #define BTRFS_REPORT_NR_ZONES   4096
-@@ -548,3 +550,46 @@ int btrfs_load_block_group_zone_info(struct btrfs_block_group_cache *cache)
+@@ -3611,6 +3613,8 @@ static int wait_dev_supers(struct btrfs_device *device, int max_mirrors)
+ 		if (bytenr + BTRFS_SUPER_INFO_SIZE >=
+ 		    device->commit_total_bytes)
+ 			break;
++		if (!btrfs_check_super_location(device, bytenr))
++			continue;
  
- 	return ret;
- }
+ 		bh = __find_get_block(device->bdev,
+ 				      bytenr / BTRFS_BDEV_BLOCKSIZE,
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 457252ac7782..ddf5c26b9f58 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -239,6 +239,14 @@ static int exclude_super_stripes(struct btrfs_block_group_cache *cache)
+ 			if (logical[nr] + stripe_len <= cache->key.objectid)
+ 				continue;
+ 
++			/* shouldn't have super stripes in sequential zones */
++			if (cache->alloc_type == BTRFS_ALLOC_SEQ) {
++				btrfs_err(fs_info,
++		"sequentil allocation bg %llu should not have super blocks",
++					  cache->key.objectid);
++				return -EUCLEAN;
++			}
 +
-+/*
-+ * On/After degraded mount, we might have no writable metadata block
-+ * group due to broken write pointers. If you e.g. balance the FS
-+ * before writing any data, alloc_tree_block_no_bg_flush() (called
-+ * from insert_balance_item())fails to allocate a tree block for
-+ * it. To avoid such situations, ensure we have some metadata BG here.
-+ */
-+int btrfs_hmzoned_check_metadata_space(struct btrfs_fs_info *fs_info)
-+{
-+	struct btrfs_root *root = fs_info->extent_root;
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_space_info *info;
-+	u64 left;
-+	int ret;
-+
-+	if (!btrfs_fs_incompat(fs_info, HMZONED))
-+		return 0;
-+
-+	info = btrfs_find_space_info(fs_info, BTRFS_BLOCK_GROUP_METADATA);
-+	spin_lock(&info->lock);
-+	left = info->total_bytes - btrfs_space_info_used(info, true);
-+	spin_unlock(&info->lock);
-+
-+	if (left)
-+		return 0;
-+
-+	trans = btrfs_start_transaction(root, 0);
-+	if (IS_ERR(trans))
-+		return PTR_ERR(trans);
-+
-+	mutex_lock(&fs_info->chunk_mutex);
-+	ret = btrfs_alloc_chunk(trans, btrfs_metadata_alloc_profile(fs_info));
-+	if (ret) {
-+		mutex_unlock(&fs_info->chunk_mutex);
-+		btrfs_abort_transaction(trans, ret);
-+		btrfs_end_transaction(trans);
-+		return ret;
-+	}
-+	mutex_unlock(&fs_info->chunk_mutex);
-+
-+	return btrfs_commit_transaction(trans);
-+}
+ 			start = logical[nr];
+ 			if (start < cache->key.objectid) {
+ 				start = cache->key.objectid;
 diff --git a/fs/btrfs/hmzoned.h b/fs/btrfs/hmzoned.h
-index 399d9e9543aa..e95139d4c072 100644
+index 40b4151fc935..9de26d6b8c4e 100644
 --- a/fs/btrfs/hmzoned.h
 +++ b/fs/btrfs/hmzoned.h
-@@ -32,6 +32,7 @@ int btrfs_check_mountopts_hmzoned(struct btrfs_fs_info *info);
- bool btrfs_check_allocatable_zones(struct btrfs_device *device, u64 pos,
- 				   u64 num_bytes);
- int btrfs_load_block_group_zone_info(struct btrfs_block_group_cache *cache);
-+int btrfs_hmzoned_check_metadata_space(struct btrfs_fs_info *fs_info);
+@@ -10,6 +10,7 @@
+ #define BTRFS_HMZONED_H
  
- static inline bool btrfs_dev_is_sequential(struct btrfs_device *device, u64 pos)
- {
+ #include <linux/blkdev.h>
++#include "volumes.h"
+ 
+ struct btrfs_zoned_device_info {
+ 	/*
+@@ -125,4 +126,15 @@ static inline bool btrfs_can_zone_reset(struct btrfs_device *device,
+ 	return true;
+ }
+ 
++static inline bool btrfs_check_super_location(struct btrfs_device *device,
++					      u64 pos)
++{
++	/*
++	 * On a non-zoned device, any address is OK. On a zoned
++	 * device, non-SEQUENTIAL WRITE REQUIRED zones are capable.
++	 */
++	return device->zone_info == NULL ||
++		!btrfs_dev_is_sequential(device, pos);
++}
++
+ #endif
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 0c99cf9fb595..e15d846c700a 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -18,6 +18,7 @@
+ #include "check-integrity.h"
+ #include "rcu-string.h"
+ #include "raid56.h"
++#include "hmzoned.h"
+ 
+ /*
+  * This is only the first step towards a full-features scrub. It reads all
+@@ -3732,6 +3733,8 @@ static noinline_for_stack int scrub_supers(struct scrub_ctx *sctx,
+ 		if (bytenr + BTRFS_SUPER_INFO_SIZE >
+ 		    scrub_dev->commit_total_bytes)
+ 			break;
++		if (!btrfs_check_super_location(scrub_dev, bytenr))
++			continue;
+ 
+ 		ret = scrub_pages(sctx, bytenr, BTRFS_SUPER_INFO_SIZE, bytenr,
+ 				  scrub_dev, BTRFS_EXTENT_FLAG_SUPER, gen, i,
 -- 
 2.23.0
 

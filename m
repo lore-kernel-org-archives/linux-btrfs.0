@@ -2,54 +2,81 @@ Return-Path: <SRS0=V1nM=WT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+X-Spam-Status: No, score=-3.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3FB9EC3A5A2
-	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Aug 2019 13:17:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 98DAEC3A5A2
+	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Aug 2019 17:08:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1DE4722CEC
-	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Aug 2019 13:17:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6D96C22CE3
+	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Aug 2019 17:08:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389346AbfHWNRD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 23 Aug 2019 09:17:03 -0400
-Received: from mx2.suse.de ([195.135.220.15]:53030 "EHLO mx1.suse.de"
+        id S1732750AbfHWRIS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 23 Aug 2019 13:08:18 -0400
+Received: from mx2.suse.de ([195.135.220.15]:54274 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1731783AbfHWNRC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Aug 2019 09:17:02 -0400
+        id S1732234AbfHWRIJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 23 Aug 2019 13:08:09 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 5A99AAF39;
-        Fri, 23 Aug 2019 13:17:01 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id DDC6DAC0C
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 Aug 2019 17:08:08 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 6BE45DA796; Fri, 23 Aug 2019 15:17:26 +0200 (CEST)
-Date:   Fri, 23 Aug 2019 15:17:26 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/5][v2] Fix global reserve size and can overcommit
-Message-ID: <20190823131726.GQ2752@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
-        kernel-team@fb.com, linux-btrfs@vger.kernel.org
-References: <20190822191904.13939-1-josef@toxicpanda.com>
+        id 66954DA796; Fri, 23 Aug 2019 19:08:31 +0200 (CEST)
+From:   David Sterba <dsterba@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     David Sterba <dsterba@suse.com>
+Subject: [PATCH 0/7] Move some code out of ctree.c and ctree.h
+Date:   Fri, 23 Aug 2019 19:08:31 +0200
+Message-Id: <cover.1566579823.git.dsterba@suse.com>
+X-Mailer: git-send-email 2.22.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190822191904.13939-1-josef@toxicpanda.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Aug 22, 2019 at 03:18:59PM -0400, Josef Bacik wrote:
-> This didn't series didn't change much, but I did move things around a little bit
-> in previous series so these needed to be updated.
-> 
->  fs/btrfs/block-rsv.c  | 36 ++++++++++++++++++++++++++----------
->  fs/btrfs/space-info.c | 51 ++++++++++++++++++++++++++-------------------------
->  2 files changed, 52 insertions(+), 35 deletions(-)
+The ctree.[ch] files gathered a lot of unrelated code over the years, it
+should be moved to appropriate files. This series does the easiest part,
+nes I'll split the incompate/feature handling and messages.
 
-Added as topic branch to for-next (based on the ticket rework patchset).
+David Sterba (7):
+  btrfs: move cond_wake_up functions out of ctree
+  btrfs: move math functions to misc.h
+  btrfs: move private raid56 definitions from ctree.h
+  btrfs: rename and export read_node_slot
+  btrfs: move functions for tree compare to send.c
+  btrfs: move struct io_ctl to free-space-cache.h
+  btrfs: move dev_stats helpers to volumes.c
+
+ fs/btrfs/block-group.c      |   2 +-
+ fs/btrfs/block-group.h      |   2 +
+ fs/btrfs/block-rsv.c        |   2 +-
+ fs/btrfs/compression.c      |   1 +
+ fs/btrfs/ctree.c            | 382 +-----------------------------------
+ fs/btrfs/ctree.h            |  93 +--------
+ fs/btrfs/delayed-inode.c    |   1 +
+ fs/btrfs/dev-replace.c      |   1 +
+ fs/btrfs/extent-tree.c      |   2 +-
+ fs/btrfs/free-space-cache.h |  14 +-
+ fs/btrfs/inode.c            |   1 +
+ fs/btrfs/locking.c          |   1 +
+ fs/btrfs/math.h             |  28 ---
+ fs/btrfs/misc.h             |  50 +++++
+ fs/btrfs/ordered-data.c     |   1 +
+ fs/btrfs/raid56.c           |  16 ++
+ fs/btrfs/send.c             | 374 +++++++++++++++++++++++++++++++++++
+ fs/btrfs/space-info.c       |   2 +-
+ fs/btrfs/transaction.c      |   1 +
+ fs/btrfs/tree-log.c         |   1 +
+ fs/btrfs/volumes.c          |  25 ++-
+ fs/btrfs/zstd.c             |   1 +
+ 22 files changed, 505 insertions(+), 496 deletions(-)
+ delete mode 100644 fs/btrfs/math.h
+ create mode 100644 fs/btrfs/misc.h
+
+-- 
+2.22.0
+

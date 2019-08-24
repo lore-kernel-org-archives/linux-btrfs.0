@@ -2,230 +2,425 @@ Return-Path: <SRS0=9uf2=WU=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.0 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 549AAC3A59E
-	for <linux-btrfs@archiver.kernel.org>; Sat, 24 Aug 2019 13:24:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 363EFC3A59E
+	for <linux-btrfs@archiver.kernel.org>; Sat, 24 Aug 2019 15:12:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 080AE21670
-	for <linux-btrfs@archiver.kernel.org>; Sat, 24 Aug 2019 13:24:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E601E206E0
+	for <linux-btrfs@archiver.kernel.org>; Sat, 24 Aug 2019 15:12:52 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="XzHDqbCp"
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="rvZ0vNBx"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727682AbfHXNYg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 24 Aug 2019 09:24:36 -0400
-Received: from mout.gmx.net ([212.227.15.18]:47841 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727671AbfHXNYf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 24 Aug 2019 09:24:35 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1566653066;
-        bh=bEAC7PeNZlzwWQIMHsXEhIxqoMrlKCroAq0/kBWTQAc=;
-        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=XzHDqbCp1h93+jpf8Bdw0NOjT8Bnv9dmwXqjDyf/dVNvT6c17MzY1FhnsEnIFkvpH
-         QWsBqflfc/3jSpzDs3+OhfH5J6BMvR2yntSK3wVYKUSlK64X+l7Fkts/IgFSN87onV
-         cPOqh2u2gqyXSrM6tWzU8Ip8Uh92QfWgJ7Uo19uk=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([13.231.109.76]) by mail.gmx.com (mrgmx002
- [212.227.17.184]) with ESMTPSA (Nemesis) id 0M5tU1-1iPcWW2XYf-00xqMv; Sat, 24
- Aug 2019 15:24:26 +0200
-Subject: Re: Need help: super_total_bytes mismatch with fs_devices
- total_rw_bytes
-To:     Patrick Dijkgraaf <bolderbast@duckstad.net>,
-        linux-btrfs@vger.kernel.org
-References: <42e408bdd5b38305358c961e06c0afe250a00a90.camel@duckstad.net>
- <211fbb73-6a16-a8a6-e2b3-a0799216fe9c@gmx.com>
- <579f07cdb257e15e9f79f501600ce8033353db91.camel@duckstad.net>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <2e471646-7201-f33d-a9c7-ecbe19b73a58@gmx.com>
-Date:   Sat, 24 Aug 2019 21:24:22 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.8.0
+        id S1727697AbfHXPMw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 24 Aug 2019 11:12:52 -0400
+Received: from mail-pf1-f193.google.com ([209.85.210.193]:32975 "EHLO
+        mail-pf1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727514AbfHXPMw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 24 Aug 2019 11:12:52 -0400
+Received: by mail-pf1-f193.google.com with SMTP id g2so8690628pfq.0;
+        Sat, 24 Aug 2019 08:12:51 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to:user-agent;
+        bh=dopxpir0RER7R+Chd1vkNtFR9HCbjI81XGxHHbDgoqA=;
+        b=rvZ0vNBxWIe8IZfPvec4Nlqx/QUYY/6dnu2nNnLgU+H1NWRKK3AvPKpKCdPDVglm8V
+         Gr+G6V6UtGAv2rig2oMioeqtfyvx1o6ORqnEtsp6fW+7L5CPcaxep6+qXVm9SDWzfYhj
+         4ZkgkL2pkYDSFiq+EzqxumSniVnjrodwgD9RF/tCwh389TpBhs/m6E06UXHfk5rE9WYl
+         ATpfsrqq8O6BRxa6hAHUUJv2vz7cXPqQMaxXNbaR1YPduL33+OJft8jwBV+irYdoYBJh
+         vdR8fKrHGYIi1R7DxjBepQxRrExkTwFMbS4tHJqDrSi+hVxLNIE69CSJHq7UZ5pvM0LY
+         f+Zw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to:user-agent;
+        bh=dopxpir0RER7R+Chd1vkNtFR9HCbjI81XGxHHbDgoqA=;
+        b=LwjFlE/soOAyCf9L2S0lYa9m7YmvS6QQ7fpxmyqsm7v6v7RJ69h50e+imcbJw0zZz2
+         WzuA06olEoqS+YlK0RpyQbJkvIy1XbDscDgqTpxAjFgLAHV3wa8rjbz3LIdr8xdGDZPo
+         XUaHyCB2drZCBWE9TNm2cw9OwhE1f6tvEYQG8Gn866IbZa1lcnCHjhxi8vr39UuXUXAp
+         pKd77504t9s99b0cZPaeHz8E0PjfoKkBZuyCy5kfapdKL+Yt6mlKIDsEfV0u/9Fk04Jh
+         YsuSDtFkjjFmj1+OdxbPuck+72yXEAVb4XxzDBjv94Lv0IWkG1CmjHG1vqL41QCfl8Dm
+         5g2w==
+X-Gm-Message-State: APjAAAWumkgrdvoPjH4nB8b9R1NhR120cTuhlYh4C2ZNHb5QU1MXh4LQ
+        RQfaS0IGLx62P8pGMxuPEMM=
+X-Google-Smtp-Source: APXvYqw4h9lEDSbhONCyCLgzHO5LlmBwNCInrQlWQexFLJKHYN9vo0InwYR0fO3OnN8dKBVyqMfGRg==
+X-Received: by 2002:a65:5cca:: with SMTP id b10mr8710497pgt.365.1566659570968;
+        Sat, 24 Aug 2019 08:12:50 -0700 (PDT)
+Received: from localhost ([178.128.102.47])
+        by smtp.gmail.com with ESMTPSA id r27sm5574677pgn.25.2019.08.24.08.12.47
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sat, 24 Aug 2019 08:12:49 -0700 (PDT)
+Date:   Sat, 24 Aug 2019 23:12:35 +0800
+From:   Eryu Guan <guaneryu@gmail.com>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] fstests: btrfs: Check snapshot creation and deletion
+ with dm-logwrites
+Message-ID: <20190824151235.GA2622@desktop>
+References: <20190819081806.32728-1-wqu@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <579f07cdb257e15e9f79f501600ce8033353db91.camel@duckstad.net>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="O4x4XQTjWleQEoSbp6OZ2RvuTUUBFqoXf"
-X-Provags-ID: V03:K1:rdMtOEMYqkseynzJAukDfhRoPjJa7p6bcmNmCaMrhV7IObxjl80
- yC8XWQM7FoiPoeci1N7flj/2AUVxZQCboQdlB8T7FAiyO5RKaQCjkaaW5dw5cgq7aAtTmqJ
- SXZiiExQCzDTtwC9kbpb7jStuBmPqfcfr2c9FQXnfRKrVZCowNXeuBl0/1NQSUqXTl9n7Qv
- AmC9fzvU6pF6Y66+elq+A==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:E4ehckCimT4=:jcG0YS0vnQNDNbMSNKzzcI
- n9EHzgtBSX1Ep5XvrKncUZs4dym3olMcjlfsanpGdP+eGySzU1BlS4IQ2RyBvt3FdBNTRuCCk
- LAdgl1ZGpwMbjmD175sgih/5KHs/1mNkOFTXsep1ffjNiS2192iBdsBP/KsSBULH7ZRA7tdlK
- R0GhOEjBTtNf+3L0nldycknIfWJ+oxBW5UFXQQc96KuuyXbca75SuFZurBk6mYcl9Lv3YzUHx
- DkGcNlaLeTKS2Llkrhd1UHd1QFAEVaQd/0fQAeZfsmLKRLI4WQG3rOLU9X1YhDnw7o1trVS6x
- eebOtLwxcg5wygwKw7cC78mHKWW8qv9h7ErYpBZO4R0wFzUYsuEOj2FLj0BFVBXSY1bqc0Osu
- gp9Uo3AbEvW0S9oc05AFRGHrelFZAT967526iMpJJnNVcO+pMH28MLouOR+W0/CX8TR0SZwZ3
- nORFTxfxSdGNZ29V47Pf7gVRSqdVwSyfwRPojnWzm3kmmcpsv+V+bTRl3ZM5oixbrgmbKhp5R
- EKCXITzpmKLjimqUjGN6R70oPb2INJWtcLSj4JCYs1WyjrFmuMsHYOq69xBL4mwv2azz4RRtX
- 7hYWwmf3LctZ02xZ/j7ZdeH6NsZLG4JYcxZDZnLpnqRHhh1EkZylCq7/wKtu8eeCBWWVVDonJ
- 4+o3ytl0b4NFCL1H/akOOZGDKach24NPFpiI2i70Fyou0y98lbvc/lCRzbOLyvM4RbAReCe0K
- /gyGBYOOUb2lqh5jsfWD29djP43sNIUgj387XSXp9wXztqaaAzqb+we/Iz2s6OUSFOYktIsjG
- WjF/LiTcu0jKRY/nIjh4TZx3/LbkRDeUzZBmaUvu+gPSZ/vteXcpxecvTjAyguaCXf1IPzlYo
- e9Si2TZ0JDVlr839aF728+GxcZ2ADZtWtKLaxyEO4TLdkmCy/tC+gfMkjOG+MSkYE8TGpsqLh
- Z6mLoCXWgKAJakiF5545L/KQAM+dGXhoE0/EQQGLFMkgvlttMzR246FcM39F7ZS0BsDHlUgcp
- Oh748Vuh2VwplQJoqC+cfFC/Bxb0bje/8RgRirYmTQZlHO308U2O1yTSFApwF1Pl+DwtR868z
- u7DlJfuRijDoLRy9Ki1IfeVwulcJVwrZx+ay3hHiWq/+08DFz2c8ABbg0HxdwXDhF+sj1rgqC
- pnTcB8PsXlMW2IeFlesSo+ZOPUlSsmbZMJTiFsX0/GAKh7Zg==
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190819081806.32728-1-wqu@suse.com>
+User-Agent: Mutt/1.12.1 (2019-06-15)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---O4x4XQTjWleQEoSbp6OZ2RvuTUUBFqoXf
-Content-Type: multipart/mixed; boundary="T7V6QDyrhi3OaUB8GCnbOoolyAXfvESFp";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Patrick Dijkgraaf <bolderbast@duckstad.net>, linux-btrfs@vger.kernel.org
-Message-ID: <2e471646-7201-f33d-a9c7-ecbe19b73a58@gmx.com>
-Subject: Re: Need help: super_total_bytes mismatch with fs_devices
- total_rw_bytes
-References: <42e408bdd5b38305358c961e06c0afe250a00a90.camel@duckstad.net>
- <211fbb73-6a16-a8a6-e2b3-a0799216fe9c@gmx.com>
- <579f07cdb257e15e9f79f501600ce8033353db91.camel@duckstad.net>
-In-Reply-To: <579f07cdb257e15e9f79f501600ce8033353db91.camel@duckstad.net>
+On Mon, Aug 19, 2019 at 04:18:06PM +0800, Qu Wenruo wrote:
+> We have generic dm-logwrites with fsstress test case (generic/482), but
+> it doesn't cover fs specific operations like btrfs snapshot creation and
+> deletion.
+> 
+> Furthermore, that test is not heavy enough to bump btrfs tree height by
+> its short runtime.
+> 
+> And finally, btrfs check doesn't consider dirty log as an error, unlike
+> ext*/xfs, that's to say we don't need to mount the fs to replay the log,
+> but just run btrfs check on the fs is enough.
+> 
+> So introduce a similar test case but for btrfs only.
+> 
+> The test case will stress btrfs by:
+> - Use small nodesize to bump tree height
+> - Create a base tree which is already high enough
+> - Trim tree blocks to find possible trim bugs
+> - Call snapshot creation and deletion along with fsstress
+> 
+> Also it includes certain workaround for btrfs:
+> - Use no-holes feature
+>   To avoid missing hole file extents.
+>   Although that behavior doesn't follow the on-disk format spec, it
+>   doesn't cause data loss. And will follow the new on-disk format spec
+>   of no-holes feature, so it's better to workaround it.
+> 
+> And an optimization for btrfs only:
+> - Use replay-log --fsck/--check command
+>   Since dm-log-writes records bios sequentially, there is no way to
+>   locate certain entry unless we iterate all entries.
+>   This is becoming a big performance penalty if we replay certain a
+>   range, check the fs, then re-execute replay-log to replay another
+>   range.
+> 
+>   We need to records the previous entry location, or we need to
+>   re-iterate all previous entries.
+> 
+>   Thankfully, replay-log has already address it by providing --fsck and
+>   --check command, thus we don't need to break replay-log command.
+> 
+> Please note, for fast storage (e.g. fast NVME or unsafe cache mode),
+> it's recommended to use log devices larger than 15G, or we can't record
+> the full log of just 30s fsstress run.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+> For the log devices size problem, I have submitted dm-logwrites bio flag
+> filter support, to filter out data bios.
+> 
+> But that is not yet merged into kernel, thus we need a large log device
+> for short run.
+> 
+> Changelog:
+> - Better expression/words for comment
+> - Add requirement for no-holes features
+> - Use xattr to bump up tree height
+>   So no need for max_inline mount option
+> - Coding style fixes for function definition
+> - Add -f for rm to avoid user alias setting
+> - Add new workload (update time stamp and create new files) for snapshot
+>   workload
+> - Remove an unnecessary sync call
+> - Get rid of wrong 2>&1 redirection
+> - Add to group "snapshot" and "stress"
+> ---
+>  common/config               |   1 +
+>  common/dmlogwrites          |  28 +++++++
+>  src/log-writes/replay-log.c |   2 +
+>  tests/btrfs/192             | 149 ++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/192.out         |   2 +
+>  tests/btrfs/group           |   1 +
+>  6 files changed, 183 insertions(+)
+>  create mode 100755 tests/btrfs/192
+>  create mode 100644 tests/btrfs/192.out
+> 
+> diff --git a/common/config b/common/config
+> index bd64be62..4c86a492 100644
+> --- a/common/config
+> +++ b/common/config
+> @@ -183,6 +183,7 @@ export LOGGER_PROG="$(type -P logger)"
+>  export DBENCH_PROG="$(type -P dbench)"
+>  export DMSETUP_PROG="$(type -P dmsetup)"
+>  export WIPEFS_PROG="$(type -P wipefs)"
+> +export BLKDISCARD_PROG="$(type -P blkdiscard)"
+>  export DUMP_PROG="$(type -P dump)"
+>  export RESTORE_PROG="$(type -P restore)"
+>  export LVM_PROG="$(type -P lvm)"
+> diff --git a/common/dmlogwrites b/common/dmlogwrites
+> index ae2cbc6a..3292544a 100644
+> --- a/common/dmlogwrites
+> +++ b/common/dmlogwrites
+> @@ -175,3 +175,31 @@ _log_writes_replay_log_range()
+>  		>> $seqres.full 2>&1
+>  	[ $? -ne 0 ] && _fail "replay failed"
+>  }
+> +
+> +# Replay and check each fua/flush (specified by $2) point.
+> +#
+> +# Since dm-log-writes records bio sequentially, even just replaying a range
+> +# still needs to iterate all records before the end point.
+> +# When number of records grows, it will be unacceptably slow, thus we need
+> +# to use relay-log itself to trigger fsck, avoid unnecessary seek.
+> +_log_writes_fast_replay_check()
+> +{
+> +	local check_point=$1
+> +	local blkdev=$2
+> +	local fsck_command
+> +
+> +	[ -z "$check_point" -o -z "$blkdev" ] && _fail \
+> +	"check_point and blkdev must be specified for _log_writes_fast_replay_check"
+> +
+> +	# Check program must not treat dirty log as an error.
+> +	# So only btrfs can use this feature
+> +	if [ $FSTYP = "btrfs" ]; then
+> +		fsck_command="$BTRFS_UTIL_PROG check $blkdev"
+> +	else
+> +		_notrun "fsck of $FSTYP reports dirty jounal/log as error, skipping test"
+> +	fi
 
---T7V6QDyrhi3OaUB8GCnbOoolyAXfvESFp
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Hmm, it'd better to introduce a new require rule and call it in the test
+instead of calling _notrun in a do_something function.
 
+> +	$here/src/log-writes/replay-log --log $LOGWRITES_DEV \
+> +		--replay $blkdev --check $check_point --fsck "$fsck_command" \
+> +		2>&1 | tail -n 128 >> $seqres.full
+> +	[ $? -ne 0 ] && _fail "fsck failed during replay"
+> +}
+> diff --git a/src/log-writes/replay-log.c b/src/log-writes/replay-log.c
+> index 829b18e2..1e1cd524 100644
+> --- a/src/log-writes/replay-log.c
+> +++ b/src/log-writes/replay-log.c
+> @@ -1,5 +1,6 @@
+>  // SPDX-License-Identifier: GPL-2.0
+>  #include <stdio.h>
+> +#include <errno.h>
+>  #include <unistd.h>
+>  #include <getopt.h>
+>  #include <stdlib.h>
+> @@ -375,6 +376,7 @@ int main(int argc, char **argv)
+>  				fprintf(stderr, "Fsck errored out on entry "
+>  					"%llu\n",
+>  					(unsigned long long)log->cur_entry - 1);
+> +				ret = -EUCLEAN;
 
+This part is not mentioned in commit log.
 
-On 2019/8/24 =E4=B8=8B=E5=8D=888:05, Patrick Dijkgraaf wrote:
-> Thanks for the quick reply!
-> See responses inline.
->=20
-> On Sat, 2019-08-24 at 19:01 +0800, Qu Wenruo wrote:
->> On 2019/8/24 =E4=B8=8B=E5=8D=882:48, Patrick Dijkgraaf wrote:
->>> Hi all,
->>>
->>> My server hung this morning, and I had to hard-reset is. I did not
->>> apply any updates. After the reboot, my FS won't mount:
->>>
->>> [Sat Aug 24 08:16:31 2019] BTRFS error (device sde2):
->>> super_total_bytes
->>> 92017957797888 mismatch with fs_devices total_rw_bytes
->>> 184035915595776
->>> [Sat Aug 24 08:16:31 2019] BTRFS error (device sde2): failed to
->>> read
->>> chunk tree: -22
->>> [Sat Aug 24 08:16:31 2019] BTRFS error (device sde2): open_ctree
->>> failed
->>>
->>> However, running btrfs rescue shows:
->>> root@cornelis ~]# btrfs rescue fix-device-size /dev/sdh2
->>> No device size related problem found
->>
->> That's strange.
->>
->> Would you please dump the chunk tree and super blocks?
->> # btrfs ins dump-super -fFa /dev/sdh2
->=20
-> See: https://pastebin.com/f5Wn15sx
+>  				break;
+>  			}
+>  		}
+> diff --git a/tests/btrfs/192 b/tests/btrfs/192
+> new file mode 100755
+> index 00000000..85cdb43f
+> --- /dev/null
+> +++ b/tests/btrfs/192
+> @@ -0,0 +1,149 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (C) 2019 SUSE Linux Products GmbH. All Rights Reserved.
+> +#
+> +# FS QA Test 192
+> +#
+> +# Test btrfs consistency after each FUA for a workload with snapshot creation
+> +# and removal
+> +#
+> +seq=`basename $0`
+> +seqres=$RESULT_DIR/$seq
+> +echo "QA output created by $seq"
+> +
+> +here=`pwd`
+> +tmp=/tmp/$$
+> +status=1	# failure is the default!
+> +trap "_cleanup; exit \$status" 0 1 2 3 15
+> +
+> +_cleanup()
+> +{
+> +	cd /
+> +	kill -q $pid1 &> /dev/null
+> +	kill -q $pid2 &> /dev/null
+> +	wait
+> +	$KILLALL_PROG -q $FSSTRESS_PROG &> /dev/null
 
-Did a quick calculation, from your fi show result, it's 83.72TiB, thus
-the super total_bytes is correct.
+Seems you should kill fsstress first then wait for all background
+processes.
 
-It's the kernel doing incorrect calculation for its
-fs_devices->total_rw_bytes.
+> +	_log_writes_cleanup &> /dev/null
+> +	rm -f $tmp.*
+> +}
+> +
+> +# get standard environment, filters and checks
+> +. ./common/rc
+> +. ./common/filter
+> +. ./common/dmlogwrites
+> +
+> +# remove previous $seqres.full before test
+> +rm -f $seqres.full
+> +
+> +# real QA test starts here
+> +
+> +# Modify as appropriate.
+> +_supported_fs btrfs
+> +_supported_os Linux
+> +
+> +_require_command "$KILLALL_PROG" killall
+> +_require_command "$BLKDISCARD_PROG" blkdiscard
+> +_require_btrfs_fs_feature "no_holes"
+> +_require_btrfs_mkfs_feature "no-holes"
+> +_require_log_writes
+> +_require_scratch
 
-This matches the output of dump-super. No wonder why btrfs-progs refuse
-to fix.
->=20
->> # btrfs ins dump-tree -t chunk /dev/sdh2
->=20
-> This output is too large for pastebin. The output is
-> viewable/downloadable here: https://kwek.duckstad.net/tree.txt
+_require_attrs
 
-This also proves your chunk tree is CORRECT!
-The sum of all devices is 92017957797888, which matches with super block.=
+> +
+> +# To generate 3 level fs tree for 64K nodesize, we need 32768 xattr items.
+> +# That will cause too many transactions, bumping replay check time
+> +# from ~60s to ~300s. (VM alreayd using unsafe cache for the test devices)
+> +# So here we skip non-4K page size system, in favor of a shorter default
+> +# test time
+> +if [ $(get_page_size) -ne 4096 ]; then
+> +	_notrun "This test doesn't support non-4K page size yet"
+> +fi
+> +
+> +runtime=30
+> +nr_cpus=$("$here/src/feature" -o)
+> +# cap nr_cpus to 8 to avoid spending too much time on hosts with many cpus
+> +if [ $nr_cpus -gt 8 ]; then
+> +	nr_cpus=8
+> +fi
+> +fsstress_args=$(_scale_fsstress_args -w -d $SCRATCH_MNT -n 99999 -p $nr_cpus \
+> +		$FSSTRESS_AVOID)
+> +_log_writes_init $SCRATCH_DEV
+> +
+> +# Discard the whole devices so when some tree pointer is wrong, it won't point
+> +# to some older tree blocks, and we can detect it.
+> +blkdiscard $LOGWRITES_DMDEV
 
-[...]
->=20
->> The simplest way to fix it is to just update the
->=20
-> Nice teaser! =F0=9F=98=89 What should I update?
+$BLKDISCARD_PROG $LOGWRITES_DMDEV >/dev/null 2>&1
 
-Sorry, I meant to say just update the "superblock", but it turns out,
-it's something wrong with your kernel. Probably some old bug we fixed
-before.
+Use $BLKDISCARD_PROG you just defined :) And blkdiscard will print error
+messages if the device doesn't support discard.
 
-Would you try to use latest ARCH kernel from an Archiso to try to mount
-it RO (just to be safe)?
+> +
+> +# Workaround minor file extent discountinous.
+> +# And use 4K nodesize to bump tree height
+> +_log_writes_mkfs -O no-holes -n 4k >> $seqres.full
+> +_log_writes_mount
+> +
+> +$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/src > /dev/null
+> +mkdir -p $SCRATCH_MNT/snapshots
+> +mkdir -p $SCRATCH_MNT/src/padding
+> +
+> +random_file()
+> +{
+> +	local basedir=$1
+> +	echo "$basedir/$(ls $basedir | sort -R | tail -1)"
+> +}
+> +
+> +snapshot_workload()
+> +{
 
-I checked latest v5.3-rc kernels, haven't found an obvious problem with
-the fs_devices->total_rw_bytes update routines.
+Add a trap to make sure all sub-commands exit before exiting this
+function? Like what btrfs/187 does, i.e.
 
-So it may be an old bug which is already fixed.
+	trap "wait; exit" SIGTERM
+
+> +	local i=0
+> +	while true; do
+> +		$BTRFS_UTIL_PROG subvolume snapshot \
+> +			$SCRATCH_MNT/src $SCRATCH_MNT/snapshots/$i \
+> +			> /dev/null
+> +		# Do something small to make snapshots different
+> +		rm -f "$(random_file $SCRATCH_MNT/src/padding)"
+> +		rm -f "$(random_file $SCRATCH_MNT/src/padding)"
+> +		touch "$(random_file $SCRATCH_MNT/src/padding)"
+> +		touch "$SCRATCH_MNT/src/padding/random_$RANDOM"
+> +
+> +		i=$(($i + 1))
+> +		sleep 1
+> +	done
+> +}
+> +
+> +delete_workload()
+> +{
+
+Same here.
 
 Thanks,
-Qu
+Eryu
 
->=20
->> Thanks,
->> Qu
->>> Other info:
->>> [root@cornelis ~]# uname -r
->>> 4.18.16-arch1-1-ARCH
->>>
->>> I was able to mount is using:
->>> [root@cornelis ~]# mount -o usebackuproot,ro /dev/sdh2 /mnt/data
->>>
->>> Now updating my backup, but I REALLY hope to get this fixed on the
->>> production server!
->>>
->=20
->=20
-
-
---T7V6QDyrhi3OaUB8GCnbOoolyAXfvESFp--
-
---O4x4XQTjWleQEoSbp6OZ2RvuTUUBFqoXf
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl1hOoYACgkQwj2R86El
-/qjr7gf/dt/qklJapqIaYlu6nchZi7s6C19Smg+Ryps3X3QfuSGJw3eYkn0r/4Gq
-hR8rMJBlBaurul0XzWVpJOIgzZ4GxclyFg3z6ndAn004rPEBxxyZuaIC8Zh2frG2
-eVqLDOFX6DDF5fylQVAXPcFsRfWDGcJNNLE+oBm5lipVRCv3qeZgZXtOG6AC4kxe
-jkzbdKsjKFWz+SBv9zI0au1aPfVfQGZ6aa0GjTkru/vmelHUQ2ALdGinNTs7PTTG
-WEH+RFk+pH/Be4SomCj+ErYT5jeWzTnqZidq4RIXK2GRNnZUL8BgrFDu6vZhM12O
-i78e91bbIss7VD4RCLTkPRNCqTsoFQ==
-=7kbO
------END PGP SIGNATURE-----
-
---O4x4XQTjWleQEoSbp6OZ2RvuTUUBFqoXf--
+> +	while true; do
+> +		sleep 2
+> +		$BTRFS_UTIL_PROG subvolume delete \
+> +			"$(random_file $SCRATCH_MNT/snapshots)" \
+> +			> /dev/null 2>&1
+> +	done
+> +}
+> +
+> +xattr_value=$(printf '%0.sX' $(seq 1 3800))
+> +
+> +# Bumping tree height to level 2.
+> +for ((i = 0; i < 64; i++)); do
+> +	touch "$SCRATCH_MNT/src/padding/$i"
+> +	$SETFATTR_PROG -n 'user.x1' -v $xattr_value \
+> +		"$SCRATCH_MNT/src/padding/$i"
+> +done
+> +
+> +_log_writes_mark prepare
+> +
+> +snapshot_workload &
+> +pid1=$!
+> +delete_workload &
+> +pid2=$!
+> +
+> +"$FSSTRESS_PROG" $fsstress_args > /dev/null &
+> +sleep $runtime
+> +
+> +"$KILLALL_PROG" -q "$FSSTRESS_PROG" &> /dev/null
+> +kill $pid1 &> /dev/null
+> +kill $pid2 &> /dev/null
+> +wait
+> +_log_writes_unmount
+> +_log_writes_remove
+> +
+> +_log_writes_fast_replay_check fua "$SCRATCH_DEV"
+> +
+> +echo "Silence is golden"
+> +
+> +# success, all done
+> +status=0
+> +exit
+> diff --git a/tests/btrfs/192.out b/tests/btrfs/192.out
+> new file mode 100644
+> index 00000000..6779aa77
+> --- /dev/null
+> +++ b/tests/btrfs/192.out
+> @@ -0,0 +1,2 @@
+> +QA output created by 192
+> +Silence is golden
+> diff --git a/tests/btrfs/group b/tests/btrfs/group
+> index 2474d43e..cab10d19 100644
+> --- a/tests/btrfs/group
+> +++ b/tests/btrfs/group
+> @@ -194,3 +194,4 @@
+>  189 auto quick send clone
+>  190 auto quick replay balance qgroup
+>  191 auto quick send dedupe
+> +192 auto replay snapshot stress
+> -- 
+> 2.22.0
+> 

@@ -2,69 +2,176 @@ Return-Path: <SRS0=7oLZ=WW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6BBEDC3A59F
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Aug 2019 11:17:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3FFA9C3A59F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Aug 2019 11:45:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4E01A206B7
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Aug 2019 11:17:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1771C2184D
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Aug 2019 11:45:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731194AbfHZLQn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 26 Aug 2019 07:16:43 -0400
-Received: from mx2.suse.de ([195.135.220.15]:60034 "EHLO mx1.suse.de"
+        id S1729569AbfHZLpa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 26 Aug 2019 07:45:30 -0400
+Received: from mx2.suse.de ([195.135.220.15]:37954 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726497AbfHZLQn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Aug 2019 07:16:43 -0400
+        id S1726389AbfHZLpa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Aug 2019 07:45:30 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 84FD5AC26;
-        Mon, 26 Aug 2019 11:16:41 +0000 (UTC)
-From:   Vlastimil Babka <vbabka@suse.cz>
-To:     Andrew Morton <akpm@linux-foundation.org>, linux-mm@kvack.org
-Cc:     linux-kernel@vger.kernel.org, Christoph Lameter <cl@linux.com>,
-        Pekka Enberg <penberg@kernel.org>,
-        David Rientjes <rientjes@google.com>,
-        Ming Lei <ming.lei@redhat.com>,
-        Dave Chinner <david@fromorbit.com>,
-        Matthew Wilcox <willy@infradead.org>,
-        "Darrick J . Wong" <darrick.wong@oracle.com>,
-        Christoph Hellwig <hch@lst.de>, linux-xfs@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, linux-block@vger.kernel.org,
-        James Bottomley <James.Bottomley@HansenPartnership.com>,
-        linux-btrfs@vger.kernel.org, Vlastimil Babka <vbabka@suse.cz>
-Subject: [PATCH v2 0/2] guarantee natural alignment for kmalloc()
-Date:   Mon, 26 Aug 2019 13:16:25 +0200
-Message-Id: <20190826111627.7505-1-vbabka@suse.cz>
-X-Mailer: git-send-email 2.22.1
+        by mx1.suse.de (Postfix) with ESMTP id 1FEE1AE35
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Aug 2019 11:45:28 +0000 (UTC)
+Subject: Re: [PATCH 2/2] btrfs: tree-checker: Add check for INODE_REF
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20190826074039.28517-1-wqu@suse.com>
+ <20190826074039.28517-3-wqu@suse.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <4c9195c9-5fc1-8524-e7d8-78ad1e942df7@suse.com>
+Date:   Mon, 26 Aug 2019 14:45:25 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.8.0
 MIME-Version: 1.0
+In-Reply-To: <20190826074039.28517-3-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-After a while, here's v2 of the series, also discussed at LSF/MM [1].
-I've updated the documentation bits and expanded changelog. Also measured
-effect on SLOB, and found it to be within noise. That required first adding
-some accounting for SLOB, which I believe is useful in general, so that
-became Patch 1. All other details are in Patch 2 changelog.
 
-[1] https://lwn.net/Articles/787740/
 
-Vlastimil Babka (2):
-  mm, sl[ou]b: improve memory accounting
-  mm, sl[aou]b: guarantee natural alignment for kmalloc(power-of-two)
+On 26.08.19 г. 10:40 ч., Qu Wenruo wrote:
+> For INODE_REF we will check:
+> - Objectid (ino) against previous key
+>   To detect missing INODE_ITEM.
+> 
+> - No overflow/padding in the data payload
+>   Much like DIR_ITEM, but with less members to check.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/tree-checker.c | 53 +++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 53 insertions(+)
+> 
+> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+> index 636ce1b4566e..3ce447eb591c 100644
+> --- a/fs/btrfs/tree-checker.c
+> +++ b/fs/btrfs/tree-checker.c
+> @@ -842,6 +842,56 @@ static int check_inode_item(struct extent_buffer *leaf,
+>  	return 0;
+>  }
+>  
+> +#define inode_ref_err(fs_info, eb, slot, fmt, ...)		\
+> +	inode_item_err(fs_info, eb, slot, fmt, __VA_ARGS__)
 
- Documentation/core-api/memory-allocation.rst |  4 ++
- include/linux/slab.h                         |  4 ++
- mm/slab_common.c                             | 19 +++++-
- mm/slob.c                                    | 62 +++++++++++++++-----
- mm/slub.c                                    | 14 ++++-
- 5 files changed, 82 insertions(+), 21 deletions(-)
+This define doesn't bring anything, just opencode the call to
+inode_item_err directly.
 
--- 
-2.22.1
-
+> +static int check_inode_ref(struct extent_buffer *leaf,
+> +			   struct btrfs_key *key, struct btrfs_key *prev_key,
+> +			   int slot)
+> +{
+> +	struct btrfs_inode_ref *iref;
+> +	unsigned long ptr;
+> +	unsigned long end;
+> +
+> +	/* namelen can't be 0, so item_size == sizeof() is also invalid */
+> +	if (btrfs_item_size_nr(leaf, slot) <= sizeof(*iref)) {
+> +		inode_ref_err(fs_info, leaf, slot,
+> +		"invalid item size, have %u expect (%zu, %u)",
+> +			btrfs_item_size_nr(leaf, slot),
+> +			sizeof(*iref), BTRFS_LEAF_DATA_SIZE(leaf->fs_info));
+> +		return -EUCLEAN;
+> +	}
+> +
+> +	ptr = btrfs_item_ptr_offset(leaf, slot);
+> +	end = ptr + btrfs_item_size_nr(leaf, slot);
+> +	while (ptr < end) {
+> +		u16 namelen;
+> +
+> +		if (ptr + sizeof(iref) > end) {
+> +			inode_ref_err(fs_info, leaf, slot,
+> +		"inode ref overflow, ptr %lu end %lu inode_ref_size %zu",
+> +				ptr, end, sizeof(iref));
+> +			return -EUCLEAN;
+> +		}
+> +
+> +		iref = (struct btrfs_inode_ref *)ptr;
+> +		namelen = btrfs_inode_ref_name_len(leaf, iref);
+> +		if (ptr + sizeof(*iref) + namelen > end) {
+> +			inode_ref_err(fs_info, leaf, slot,
+> +		"inode ref overflow, ptr %lu end %lu namelen %u",
+> +				ptr, end, namelen);
+> +			return -EUCLEAN;
+> +		}
+> +
+> +		/*
+> +		 * NOTE: In theory we should record all found index number
+> +		 * to find any duplicated index. But that will be too time
+> +		 * consuming for inodes with too many hard links.
+> +		 */
+> +		ptr += sizeof(*iref) + namelen;
+> +	}
+> +	return 0;
+> +}
+> +
+>  /*
+>   * Common point to switch the item-specific validation.
+>   */
+> @@ -864,6 +914,9 @@ static int check_leaf_item(struct extent_buffer *leaf,
+>  	case BTRFS_XATTR_ITEM_KEY:
+>  		ret = check_dir_item(leaf, key, prev_key, slot);
+>  		break;
+> +	case BTRFS_INODE_REF_KEY:
+> +		ret = check_inode_ref(leaf, key, prev_key, slot);
+> +		break;
+>  	case BTRFS_BLOCK_GROUP_ITEM_KEY:
+>  		ret = check_block_group_item(leaf, key, slot);
+>  		break;
+> 

@@ -2,70 +2,73 @@ Return-Path: <SRS0=7oLZ=WW=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.9 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.9 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 87117C3A59E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Aug 2019 09:06:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9F700C3A59E
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Aug 2019 09:06:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 589142173E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Aug 2019 09:06:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6D77B206BA
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Aug 2019 09:06:50 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="qsN4ol90"
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="fXA+dU10"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730639AbfHZJGr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 26 Aug 2019 05:06:47 -0400
-Received: from aserp2120.oracle.com ([141.146.126.78]:59750 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726497AbfHZJGr (ORCPT
+        id S1730525AbfHZJGt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 26 Aug 2019 05:06:49 -0400
+Received: from userp2130.oracle.com ([156.151.31.86]:41616 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726497AbfHZJGt (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Aug 2019 05:06:47 -0400
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x7Q93mGj101720
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Aug 2019 09:06:45 GMT
+        Mon, 26 Aug 2019 05:06:49 -0400
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x7Q93o0l069605
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Aug 2019 09:06:48 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
- date : message-id : mime-version : content-transfer-encoding;
- s=corp-2019-08-05; bh=dekF4Tf7Cm2shFn/WRFblJJ+2Cll4xByspQoazZOiDo=;
- b=qsN4ol907SS4rcI5E3I3p8I4mfGdNW5Z1cNB8LCIKZpFs5tkcpcINQCPL6AMCnD882iv
- y6W0EvuthLkgtuKa28nGIJ1rLOHT37xIa9pA5C4cLvBV7oQvpYenr33y0GGTJiUtyKBF
- XE17M5Gve6Mfjjr797kVrTWisMM93PhmvMDNuEkvt8+bDw9+JSMJhNYBj1HTPVqQHtMB
- YUvMVEi4uMD6sw8mfr/wwhfQWerQ8x7nDhi4UDTXObcxvBtogoIMsnpBHtPllmqgz016
- 9SkEtsQJ8hk1Tg33w+nJxQMvXYnPwkNMFB3MOUcZ+COQ5h1YCCHGwbFTBkFeONRaqVfl xw== 
+ date : message-id : in-reply-to : references : mime-version :
+ content-transfer-encoding; s=corp-2019-08-05;
+ bh=REKsCJI+crOO3/6UmhXlGz2Sk15VjRtYH9jEDYhVqjw=;
+ b=fXA+dU10O3HbgjSjVEKaObelWhLWbVSH23/oYWO95027dICb+xW0Mddpub6AuOOj8p+L
+ lIxn9bZmIG0UdrCWl0r27hZ9LU9YSV37uRctgvFjmFpN4bl6BujnxYqr5OkjxgX0Ku6J
+ 7qDgeEsAoJjJ2vq3Fl5J8pVyV7NxqIMX5mT7PMoFxEWqYGHql3JHZML4Y5x6n1RUGLCu
+ xhWfgX3Li3LhHpmsu8jOp0zZeitUywevIiDNkoWzC+D5Um0xu3WtIwsCzWzj92S8w0lh
+ pszt+BHo4Ar2VlPPrBA0xGSP+AvaP0yNToYt7Gp3WymXGil0LOel08lnKMK79xwUJHdq TA== 
 Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
-        by aserp2120.oracle.com with ESMTP id 2ujw6yyn1p-1
+        by userp2130.oracle.com with ESMTP id 2ujw717km0-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Aug 2019 09:06:45 +0000
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Aug 2019 09:06:48 +0000
 Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
-        by aserp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x7Q93lmV159042
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Aug 2019 09:04:45 GMT
+        by aserp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x7Q93l1j158948
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Aug 2019 09:04:47 GMT
 Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by aserp3030.oracle.com with ESMTP id 2ujw6umbhw-1
+        by aserp3030.oracle.com with ESMTP id 2ujw6umbjr-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Aug 2019 09:04:45 +0000
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Aug 2019 09:04:47 +0000
 Received: from abhmp0001.oracle.com (abhmp0001.oracle.com [141.146.116.7])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x7Q94ihs023099
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Aug 2019 09:04:44 GMT
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x7Q94kKG023149
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Aug 2019 09:04:46 GMT
 Received: from mb.wifi.oracle.com (/192.188.170.109)
         by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 26 Aug 2019 02:04:42 -0700
+        with ESMTP ; Mon, 26 Aug 2019 02:04:45 -0700
 From:   Anand Jain <anand.jain@oracle.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH RFC v2 0/2]  readmirror feature
-Date:   Mon, 26 Aug 2019 17:04:36 +0800
-Message-Id: <20190826090438.7044-1-anand.jain@oracle.com>
+Subject: [PATCH RFC v2] btrfs-progs: add readmirror property and ioctl to set get readmirror
+Date:   Mon, 26 Aug 2019 17:04:38 +0800
+Message-Id: <20190826090438.7044-3-anand.jain@oracle.com>
 X-Mailer: git-send-email 2.21.0 (Apple Git-120)
+In-Reply-To: <20190826090438.7044-1-anand.jain@oracle.com>
+References: <20190826090438.7044-1-anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9360 signatures=668684
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=1 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=3 malwarescore=0
+ phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=946
  adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.0.1-1906280000 definitions=main-1908260101
 X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9360 signatures=668684
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
- suspectscore=1 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
+ suspectscore=3 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
  lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
  classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1906280000
  definitions=main-1908260102
@@ -74,78 +77,166 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Function call chain  __btrfs_map_block()->find_live_mirror() uses
-thread pid to determine the %mirror_num when the mirror_num=0.
+This patch adds readmirror property to be applied at the filesystem object.
+And uses ioctl BTRFS_IOC_GET_READMIRROR and BTRFS_IOC_SET_READMIRROR to get
+and set the property respectively.
 
-This patch introduces a framework so that we can add policies to determine
-the %mirror_num. And also adds the devid as the readmirror policy.
-
-The new property is stored as an item in the device tree as show below.
-    (BTRFS_READMIRROR_OBJECTID, BTRFS_PERSISTENT_ITEM_KEY, devid)
-
-To be able to set and get this new property also introduces new ioctls
-BTRFS_IOC_GET_READMIRROR and BTRFS_IOC_SET_READMIRROR. The ioctl argument
-is defined as
-        struct btrfs_ioctl_readmirror_args {
-                __u64 type; /* RW */
-                __u64 device_bitmap; /* RW */
-        }
-
-An usage example as follows:
-        btrfs property set /btrfs readmirror devid:1,3
-        btrfs property get /btrfs readmirror
-          readmirror devid:1 3
-        btrfs property set /btrfs readmirror ""
-        btrfs property get /btrfs readmirror
-          readmirror default
-
-This patchset has been tested completely, however marked as RFC for the 
-following reasons and comments on them (or any other) are appreciated as
-usual.
- . The new objectid is defined as
-      #define BTRFS_READMIRROR_OBJECTID -1ULL
-   Need consent we are fine to use this value, and with this value it
-   shall be placed just before the DEV_STATS_OBJECTID item which is more
-   frequently used only during the device errors.
-
-.  I am using a u64 bitmap to represent the devices id, so the max device
-   id that we could represent is 63, its a kind of limitation which should
-   be addressed before integration, I wonder if there is any suggestion?
-   Kindly note that, multiple ioctls with each time representing a set of
-   device(s) is not a choice because we need to make sure the readmirror
-   changes happens in a commit transaction.
-
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
 v1->RFC v2:
-  . Property is stored as a dev-tree item instead of root inode extended
-    attribute.
-  . Rename BTRFS_DEV_STATE_READ_OPRIMIZED to BTRFS_DEV_STATE_READ_PREFERRED.
   . Changed format specifier from devid1,2,3.. to devid:1,2,3..
-
-RFC->v1:
-  Drops pid as one of the readmirror policy choices and as usual remains
-  as default. And when the devid is reset the readmirror policy falls back
-  to pid.
-  Drops the mount -o readmirror idea, it can be added at a later point of
-  time.
-  Property now accepts more than 1 devid as readmirror device. As shown
-  in the example above.
-
-Anand Jain (1):
-  btrfs: add readmirror framework and policy devid
-
- fs/btrfs/ctree.h                |   3 +
- fs/btrfs/disk-io.c              |   9 ++
- fs/btrfs/ioctl.c                | 108 ++++++++++++++++++++++++
- fs/btrfs/transaction.c          |   3 +
- fs/btrfs/volumes.c              | 145 +++++++++++++++++++++++++++++++-
- fs/btrfs/volumes.h              |   9 +-
- include/uapi/linux/btrfs.h      |  15 +++-
- include/uapi/linux/btrfs_tree.h |  11 +++
- 8 files changed, 300 insertions(+), 3 deletions(-)
-
-Anand Jain (1):
-  btrfs_progs: add readmirror property and ioctl to set get
 
  ioctl.h | 14 +++++++++
  props.c | 98 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  2 files changed, 112 insertions(+)
+
+diff --git a/ioctl.h b/ioctl.h
+index 66ee599f7a82..ccdf600bae77 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -765,6 +765,16 @@ struct btrfs_ioctl_get_subvol_rootref_args {
+ };
+ BUILD_ASSERT(sizeof(struct btrfs_ioctl_get_subvol_rootref_args) == 4096);
+ 
++enum btrfs_readmirror_policy {
++	BTRFS_READMIRROR_DEFAULT = 0,
++	BTRFS_READMIRROR_DEVID,
++};
++
++struct btrfs_ioctl_readmirror_args {
++	__u64 type; /* RW */
++	__u64 device_bitmap; /* RW */
++};
++
+ /* Error codes as returned by the kernel */
+ enum btrfs_err_code {
+ 	notused,
+@@ -929,6 +939,10 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+ 				struct btrfs_ioctl_get_subvol_rootref_args)
+ #define BTRFS_IOC_INO_LOOKUP_USER _IOWR(BTRFS_IOCTL_MAGIC, 62, \
+ 				struct btrfs_ioctl_ino_lookup_user_args)
++#define BTRFS_IOC_GET_READMIRROR _IOWR(BTRFS_IOCTL_MAGIC, 63, \
++				struct btrfs_ioctl_readmirror_args)
++#define BTRFS_IOC_SET_READMIRROR _IOWR(BTRFS_IOCTL_MAGIC, 64, \
++				struct btrfs_ioctl_readmirror_args)
+ #ifdef __cplusplus
+ }
+ #endif
+diff --git a/props.c b/props.c
+index 004022600d51..f077e55e2274 100644
+--- a/props.c
++++ b/props.c
+@@ -166,6 +166,98 @@ out:
+ 	return ret;
+ }
+ 
++static int prop_readmirror(enum prop_object_type type, const char *object,
++			   const char *name, const char *value)
++{
++	int fd;
++	int ret;
++	DIR *dirstream = NULL;
++
++	fd = open_file_or_dir3(object, &dirstream, value ? O_RDWR : O_RDONLY);
++	if (fd < 0) {
++		ret = -errno;
++		error("failed to open %s: %m", object);
++		return ret;
++	}
++
++	if (value) {
++		int ret;
++		int final_ret;
++		size_t len = strlen(value);
++		char *value_dup;
++		char *devid_str;
++		struct btrfs_ioctl_readmirror_args readmirror;
++
++		if (len > 0 && (len <= 6 || strncmp("devid:", value, 6)))
++			return -EINVAL;
++
++		/* value format - an example: readmirror devid:1,2,3,.. */
++		value_dup = strndup(value + 6, len - 6);
++		if (!value_dup)
++			return -ENOMEM;
++
++		final_ret = 0;
++		if (len == 0) {
++			readmirror.type = BTRFS_READMIRROR_DEFAULT;
++			final_ret = ioctl(fd, BTRFS_IOC_SET_READMIRROR, &readmirror);
++			if (final_ret < 0)
++				error("failed to reset readmirror: (%m)");
++		} else {
++			__u64 device_bitmap = 0;
++
++			while ((devid_str = strsep(&value_dup, ",")) != NULL)
++				device_bitmap = device_bitmap |
++						(1ULL << arg_strtou64(devid_str));
++
++			readmirror.type = BTRFS_READMIRROR_DEVID;
++			readmirror.device_bitmap = device_bitmap;
++			ret = ioctl(fd, BTRFS_IOC_SET_READMIRROR, &readmirror);
++			if (ret < 0) {
++				error("failed to set readmirror: (%m)");
++				final_ret = ret;
++			}
++		}
++		return final_ret;
++	} else {
++		struct btrfs_ioctl_readmirror_args readmirror;
++		struct btrfs_ioctl_dev_info_args *device;
++		struct btrfs_ioctl_fs_info_args fs_devices;
++
++		ret = get_fs_info(object, &fs_devices, &device);
++		if (ret)
++			return ret;
++
++		free(device);
++		if (fs_devices.num_devices > 63) {
++			error("can't set readmirror for device id more than 63");
++			return -EOPNOTSUPP;
++		}
++
++		ret = ioctl(fd, BTRFS_IOC_GET_READMIRROR, &readmirror);
++		if (ret) {
++			error("readmirror ioctl failed: %m");
++			return ret;
++		}
++		if (readmirror.type == BTRFS_READMIRROR_DEFAULT) {
++			printf("readmirror default\n");
++		} else if (readmirror.type == BTRFS_READMIRROR_DEVID) {
++			u64 cnt;
++
++			printf("readmirror devid:");
++			for (cnt = 0; cnt < 64; cnt++) {
++				if ((1ULL << cnt) & readmirror.device_bitmap)
++					printf("%llu ", cnt);
++			}
++			printf("\n");
++		}
++		return 0;
++	}
++
++	close_file_or_dir(fd, dirstream);
++
++	return ret;
++}
++
+ const struct prop_handler prop_handlers[] = {
+ 	{
+ 		.name ="ro",
+@@ -187,5 +279,11 @@ const struct prop_handler prop_handlers[] = {
+ 		.read_only = 0,
+ 	 	.types = prop_object_inode, prop_compression
+ 	},
++	{
++		.name = "readmirror",
++		.desc = "specify the device to be used for read",
++		.read_only = 0,
++		.types = prop_object_root, prop_readmirror
++	},
+ 	{NULL, NULL, 0, 0, NULL}
+ };
+-- 
+2.21.0 (Apple Git-120)
+

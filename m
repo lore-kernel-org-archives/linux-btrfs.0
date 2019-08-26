@@ -4,31 +4,31 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7B01FC3A5A4
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Aug 2019 11:49:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D4A0C3A5A8
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Aug 2019 11:49:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 59F0D20874
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Aug 2019 11:49:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2D85920874
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Aug 2019 11:49:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731188AbfHZLtA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 26 Aug 2019 07:49:00 -0400
-Received: from mx2.suse.de ([195.135.220.15]:39232 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1731107AbfHZLs6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1731168AbfHZLs6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Mon, 26 Aug 2019 07:48:58 -0400
+Received: from mx2.suse.de ([195.135.220.15]:39194 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1730823AbfHZLs5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Aug 2019 07:48:57 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id DBD33AFF4
+        by mx1.suse.de (Postfix) with ESMTP id 9D55CAF81
         for <linux-btrfs@vger.kernel.org>; Mon, 26 Aug 2019 11:48:55 +0000 (UTC)
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 To:     David Sterba <dsterba@suse.com>
 Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
         Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH v2 08/11] btrfs-progs: add option for checksum type to mkfs
-Date:   Mon, 26 Aug 2019 13:48:50 +0200
-Message-Id: <20190826114853.14860-9-jthumshirn@suse.de>
+Subject: [PATCH v2 01/11] btrfs-progs: don't blindly assume crc32c in csum_tree_block_size()
+Date:   Mon, 26 Aug 2019 13:48:43 +0200
+Message-Id: <20190826114853.14860-2-jthumshirn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20190826114853.14860-1-jthumshirn@suse.de>
 References: <20190826114853.14860-1-jthumshirn@suse.de>
@@ -37,130 +37,84 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Add an option to mkfs to specify which checksum algorithm will be used for
-the filesystem.
+The callers of csum_tree_block_size() blindly assume we're only having
+crc32c as a possible checksum and thus pass in
+btrfs_csum_sizes[BTRFS_CSUM_TYPE_CRC32] for the size argument of
+csum_tree_block_size().
 
 Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
- convert/common.c |  2 +-
- mkfs/common.c    |  2 +-
- mkfs/common.h    |  2 ++
- mkfs/main.c      | 21 ++++++++++++++++++++-
- 4 files changed, 24 insertions(+), 3 deletions(-)
+ mkfs/common.c | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/convert/common.c b/convert/common.c
-index 7936f8f10b29..8f5fdbf507a4 100644
---- a/convert/common.c
-+++ b/convert/common.c
-@@ -135,7 +135,7 @@ static int setup_temp_super(int fd, struct btrfs_mkfs_config *cfg,
- 	super->__unused_leafsize = cpu_to_le32(cfg->nodesize);
- 	btrfs_set_super_nodesize(super, cfg->nodesize);
- 	btrfs_set_super_stripesize(super, cfg->stripesize);
--	btrfs_set_super_csum_type(super, BTRFS_CSUM_TYPE_CRC32);
-+	btrfs_set_super_csum_type(super, cfg->csum_type);
- 	btrfs_set_super_chunk_root(super, chunk_bytenr);
- 	btrfs_set_super_cache_generation(super, -1);
- 	btrfs_set_super_incompat_flags(super, cfg->features);
 diff --git a/mkfs/common.c b/mkfs/common.c
-index 9762391a8d2b..4a417bd7a306 100644
+index caca5e707233..b6e549b19272 100644
 --- a/mkfs/common.c
 +++ b/mkfs/common.c
-@@ -202,7 +202,7 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
- 	super.__unused_leafsize = cpu_to_le32(cfg->nodesize);
- 	btrfs_set_super_nodesize(&super, cfg->nodesize);
- 	btrfs_set_super_stripesize(&super, cfg->stripesize);
--	btrfs_set_super_csum_type(&super, BTRFS_CSUM_TYPE_CRC32);
-+	btrfs_set_super_csum_type(&super, cfg->csum_type);
- 	btrfs_set_super_chunk_root_generation(&super, 1);
- 	btrfs_set_super_cache_generation(&super, -1);
- 	btrfs_set_super_incompat_flags(&super, cfg->features);
-diff --git a/mkfs/common.h b/mkfs/common.h
-index 28912906d0a9..1ca71a4fcce5 100644
---- a/mkfs/common.h
-+++ b/mkfs/common.h
-@@ -53,6 +53,8 @@ struct btrfs_mkfs_config {
- 	u64 features;
- 	/* Size of the filesystem in bytes */
- 	u64 num_bytes;
-+	/* checksum algorithm to use */
-+	enum btrfs_csum_type csum_type;
+@@ -101,7 +101,7 @@ static int btrfs_create_tree_root(int fd, struct btrfs_mkfs_config *cfg,
+ 	}
  
- 	/* Output fields, set during creation */
+ 	/* generate checksum */
+-	csum_tree_block_size(buf, btrfs_csum_sizes[BTRFS_CSUM_TYPE_CRC32], 0);
++	csum_tree_block_size(buf, btrfs_csum_sizes[cfg->csum_type], 0);
  
-diff --git a/mkfs/main.c b/mkfs/main.c
-index 8dbec0717b89..075e7e331ab4 100644
---- a/mkfs/main.c
-+++ b/mkfs/main.c
-@@ -346,6 +346,7 @@ static void print_usage(int ret)
- 	printf("\t--shrink                (with --rootdir) shrink the filled filesystem to minimal size\n");
- 	printf("\t-K|--nodiscard          do not perform whole device TRIM\n");
- 	printf("\t-f|--force              force overwrite of existing filesystem\n");
-+	printf("\t-C|--checksum           checksum algorithm to use (default: crc32c)\n");
- 	printf("  general:\n");
- 	printf("\t-q|--quiet              no messages except errors\n");
- 	printf("\t-V|--version            print the mkfs.btrfs version and exit\n");
-@@ -380,6 +381,18 @@ static u64 parse_profile(const char *s)
- 	return 0;
- }
- 
-+static enum btrfs_csum_type parse_csum_type(const char *s)
-+{
-+	if (strcasecmp(s, "crc32c") == 0) {
-+		return BTRFS_CSUM_TYPE_CRC32;
-+	} else {
-+		error("unknown csum type %s", s);
-+		exit(1);
-+	}
-+	/* not reached */
-+	return 0;
-+}
-+
- static char *parse_label(const char *input)
- {
- 	int len = strlen(input);
-@@ -826,6 +839,7 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
- 	u64 features = BTRFS_MKFS_DEFAULT_FEATURES;
- 	struct mkfs_allocation allocation = { 0 };
- 	struct btrfs_mkfs_config mkfs_cfg;
-+	enum btrfs_csum_type csum_type = BTRFS_CSUM_TYPE_CRC32;
- 
- 	crc32c_optimization_init();
- 
-@@ -835,6 +849,7 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
- 		static const struct option long_options[] = {
- 			{ "alloc-start", required_argument, NULL, 'A'},
- 			{ "byte-count", required_argument, NULL, 'b' },
-+			{ "checksum", required_argument, NULL, 'C' },
- 			{ "force", no_argument, NULL, 'f' },
- 			{ "leafsize", required_argument, NULL, 'l' },
- 			{ "label", required_argument, NULL, 'L'},
-@@ -854,7 +869,7 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
- 			{ NULL, 0, NULL, 0}
- 		};
- 
--		c = getopt_long(argc, argv, "A:b:fl:n:s:m:d:L:O:r:U:VMKq",
-+		c = getopt_long(argc, argv, "A:b:C:fl:n:s:m:d:L:O:r:U:VMKq",
- 				long_options, NULL);
- 		if (c < 0)
- 			break;
-@@ -932,6 +947,9 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
- 			case GETOPT_VAL_SHRINK:
- 				shrink_rootdir = true;
- 				break;
-+			case 'C':
-+				csum_type = parse_csum_type(optarg);
-+				break;
- 			case GETOPT_VAL_HELP:
- 			default:
- 				print_usage(c != GETOPT_VAL_HELP);
-@@ -1170,6 +1188,7 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
- 	mkfs_cfg.sectorsize = sectorsize;
- 	mkfs_cfg.stripesize = stripesize;
- 	mkfs_cfg.features = features;
-+	mkfs_cfg.csum_type = csum_type;
- 
- 	ret = make_btrfs(fd, &mkfs_cfg);
- 	if (ret) {
+ 	/* write back root tree */
+ 	ret = pwrite(fd, buf->data, cfg->nodesize, cfg->blocks[MKFS_ROOT_TREE]);
+@@ -292,7 +292,7 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
+ 	btrfs_set_header_bytenr(buf, cfg->blocks[MKFS_EXTENT_TREE]);
+ 	btrfs_set_header_owner(buf, BTRFS_EXTENT_TREE_OBJECTID);
+ 	btrfs_set_header_nritems(buf, nritems);
+-	csum_tree_block_size(buf, btrfs_csum_sizes[BTRFS_CSUM_TYPE_CRC32], 0);
++	csum_tree_block_size(buf, btrfs_csum_sizes[cfg->csum_type], 0);
+ 	ret = pwrite(fd, buf->data, cfg->nodesize, cfg->blocks[MKFS_EXTENT_TREE]);
+ 	if (ret != cfg->nodesize) {
+ 		ret = (ret < 0 ? -errno : -EIO);
+@@ -380,7 +380,7 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
+ 	btrfs_set_header_bytenr(buf, cfg->blocks[MKFS_CHUNK_TREE]);
+ 	btrfs_set_header_owner(buf, BTRFS_CHUNK_TREE_OBJECTID);
+ 	btrfs_set_header_nritems(buf, nritems);
+-	csum_tree_block_size(buf, btrfs_csum_sizes[BTRFS_CSUM_TYPE_CRC32], 0);
++	csum_tree_block_size(buf, btrfs_csum_sizes[cfg->csum_type], 0);
+ 	ret = pwrite(fd, buf->data, cfg->nodesize, cfg->blocks[MKFS_CHUNK_TREE]);
+ 	if (ret != cfg->nodesize) {
+ 		ret = (ret < 0 ? -errno : -EIO);
+@@ -420,7 +420,7 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
+ 	btrfs_set_header_bytenr(buf, cfg->blocks[MKFS_DEV_TREE]);
+ 	btrfs_set_header_owner(buf, BTRFS_DEV_TREE_OBJECTID);
+ 	btrfs_set_header_nritems(buf, nritems);
+-	csum_tree_block_size(buf, btrfs_csum_sizes[BTRFS_CSUM_TYPE_CRC32], 0);
++	csum_tree_block_size(buf, btrfs_csum_sizes[cfg->csum_type], 0);
+ 	ret = pwrite(fd, buf->data, cfg->nodesize, cfg->blocks[MKFS_DEV_TREE]);
+ 	if (ret != cfg->nodesize) {
+ 		ret = (ret < 0 ? -errno : -EIO);
+@@ -433,7 +433,7 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
+ 	btrfs_set_header_bytenr(buf, cfg->blocks[MKFS_FS_TREE]);
+ 	btrfs_set_header_owner(buf, BTRFS_FS_TREE_OBJECTID);
+ 	btrfs_set_header_nritems(buf, 0);
+-	csum_tree_block_size(buf, btrfs_csum_sizes[BTRFS_CSUM_TYPE_CRC32], 0);
++	csum_tree_block_size(buf, btrfs_csum_sizes[cfg->csum_type], 0);
+ 	ret = pwrite(fd, buf->data, cfg->nodesize, cfg->blocks[MKFS_FS_TREE]);
+ 	if (ret != cfg->nodesize) {
+ 		ret = (ret < 0 ? -errno : -EIO);
+@@ -445,7 +445,7 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
+ 	btrfs_set_header_bytenr(buf, cfg->blocks[MKFS_CSUM_TREE]);
+ 	btrfs_set_header_owner(buf, BTRFS_CSUM_TREE_OBJECTID);
+ 	btrfs_set_header_nritems(buf, 0);
+-	csum_tree_block_size(buf, btrfs_csum_sizes[BTRFS_CSUM_TYPE_CRC32], 0);
++	csum_tree_block_size(buf, btrfs_csum_sizes[cfg->csum_type], 0);
+ 	ret = pwrite(fd, buf->data, cfg->nodesize, cfg->blocks[MKFS_CSUM_TREE]);
+ 	if (ret != cfg->nodesize) {
+ 		ret = (ret < 0 ? -errno : -EIO);
+@@ -456,7 +456,7 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
+ 	memset(buf->data, 0, BTRFS_SUPER_INFO_SIZE);
+ 	memcpy(buf->data, &super, sizeof(super));
+ 	buf->len = BTRFS_SUPER_INFO_SIZE;
+-	csum_tree_block_size(buf, btrfs_csum_sizes[BTRFS_CSUM_TYPE_CRC32], 0);
++	csum_tree_block_size(buf, btrfs_csum_sizes[cfg->csum_type], 0);
+ 	ret = pwrite(fd, buf->data, BTRFS_SUPER_INFO_SIZE,
+ 			cfg->blocks[MKFS_SUPER_BLOCK]);
+ 	if (ret != BTRFS_SUPER_INFO_SIZE) {
 -- 
 2.16.4
 

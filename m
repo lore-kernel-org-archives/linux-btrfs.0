@@ -4,80 +4,103 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9BE93C3A5A3
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 15:53:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9A82DC3A5A3
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 16:03:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7A68D2186A
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 15:53:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 78A122186A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 16:03:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729821AbfH0PxY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 27 Aug 2019 11:53:24 -0400
-Received: from mx2.suse.de ([195.135.220.15]:48180 "EHLO mx1.suse.de"
+        id S1729616AbfH0QDO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 27 Aug 2019 12:03:14 -0400
+Received: from mx2.suse.de ([195.135.220.15]:51246 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726257AbfH0PxX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Aug 2019 11:53:23 -0400
+        id S1725804AbfH0QDO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Aug 2019 12:03:14 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id CB1B0AFDF
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Aug 2019 15:53:22 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 35619AEC4
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Aug 2019 16:03:13 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 2ED36DA8D5; Tue, 27 Aug 2019 17:53:46 +0200 (CEST)
-Date:   Tue, 27 Aug 2019 17:53:46 +0200
+        id 85215DA8D5; Tue, 27 Aug 2019 18:03:36 +0200 (CEST)
+Date:   Tue, 27 Aug 2019 18:03:36 +0200
 From:   David Sterba <dsterba@suse.cz>
 To:     Nikolay Borisov <nborisov@suse.com>
 Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/3] btrfs: Make btrfs_find_name_in_ext_backref return
- struct btrfs_inode_extref
-Message-ID: <20190827155345.GP2752@twin.jikos.cz>
+Subject: Re: [PATCH 3/3] btrfs: Use btrfs_find_name_in_backref in
+ backref_in_log
+Message-ID: <20190827160336.GQ2752@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
         linux-btrfs@vger.kernel.org
 References: <20190827114630.2425-1-nborisov@suse.com>
- <20190827114630.2425-3-nborisov@suse.com>
+ <20190827114630.2425-4-nborisov@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190827114630.2425-3-nborisov@suse.com>
+In-Reply-To: <20190827114630.2425-4-nborisov@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Aug 27, 2019 at 02:46:29PM +0300, Nikolay Borisov wrote:
-> btrfs_find_name_in_ext_backref returns either 0/1 depending on whether it
-> found a backref for the given name. If it returns true then the actual
-> inode_ref struct is returned in one of its parameters. That's pointless,
-> instead refactor the function such that it returns either a pointer
-> to the btrfs_inode_extref or NULL it it didn't find anything. This
-> streamlines the function calling convention.
-> 
+On Tue, Aug 27, 2019 at 02:46:30PM +0300, Nikolay Borisov wrote:
+> By not opencoding btrfs_find_name_in_backref most of the local variables
+> can be removed, this in turn alleviates stack pressure. Additionally,
+> backref_in_log is only used as predicate so make it return bool.
+
+While it is used as bool, it returns error numbers so the callsites
+should be updated to distinguish errors from true/false.
+
 > Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 > ---
->  fs/btrfs/ctree.h      |  9 ++++-----
->  fs/btrfs/inode-item.c | 33 +++++++++++++--------------------
->  fs/btrfs/tree-log.c   |  6 +++---
->  3 files changed, 20 insertions(+), 28 deletions(-)
+>  fs/btrfs/tree-log.c | 57 +++++++++++++--------------------------------
+>  1 file changed, 16 insertions(+), 41 deletions(-)
 > 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 11312aeb6ff6..8b9469df8e3f 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -2863,11 +2863,10 @@ btrfs_lookup_inode_extref(struct btrfs_trans_handle *trans,
->  struct btrfs_inode_ref *btrfs_find_name_in_backref(struct extent_buffer *leaf,
->  						   int slot, const char *name,
->  						   int name_len);
-> -int btrfs_find_name_in_ext_backref(struct extent_buffer *leaf, int slot,
-> -				   u64 ref_objectid, const char *name,
-> -				   int name_len,
-> -				   struct btrfs_inode_extref **extref_ret);
-> -
-> +struct btrfs_inode_extref *
-> +btrfs_find_name_in_ext_backref(struct extent_buffer *leaf, int slot,
-> +			       u64 ref_objectid, const char *name,
-> +			       int name_len);
+> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+> index 7d45a4869bc9..070016e023b8 100644
+> --- a/fs/btrfs/tree-log.c
+> +++ b/fs/btrfs/tree-log.c
+> @@ -938,60 +938,35 @@ static noinline int inode_in_dir(struct btrfs_root *root,
+>   * want to delete valid links to a file from the subvolume if that
+>   * link is also in the log.
+>   */
+> -static noinline int backref_in_log(struct btrfs_root *log,
+> -				   struct btrfs_key *key,
+> -				   u64 ref_objectid,
+> -				   const char *name, int namelen)
+> +static noinline bool backref_in_log(struct btrfs_root *log,
+> +				    struct btrfs_key *key,
+> +				    u64 ref_objectid,
+> +				    const char *name, int namelen)
+>  {
+>  	struct btrfs_path *path;
+> -	struct btrfs_inode_ref *ref;
+> -	unsigned long ptr;
+> -	unsigned long ptr_end;
+> -	unsigned long name_ptr;
+> -	int found_name_len;
+> -	int item_size;
+> +	bool found = false;
+>  	int ret;
+> -	int match = 0;
+>  
+>  	path = btrfs_alloc_path();
+>  	if (!path)
+> -		return -ENOMEM;
+> +		return false;
 
-Please use the common style for function declarations/definitions with
-type and name on one line.
+There would have to be a very good reasoning behind that but I doubt
+it's correct.
+
+>  	ret = btrfs_search_slot(NULL, log, key, path, 0, 0);
+>  	if (ret != 0)
+
+This should also check for errors, though it's not changed in your
+patch.
+
+So if you want to de-opencode btrfs_find_name_in_backref, then fine, but
+the other changes should be separate and possibly updating the whole
+callchain.

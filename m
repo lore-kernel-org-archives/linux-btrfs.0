@@ -6,27 +6,27 @@ X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
 	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 10261C3A5A4
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 08:07:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D30F7C3A5A4
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 08:12:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E501C217F5
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 08:07:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B5A87217F5
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 08:12:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1733146AbfH0IHN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 27 Aug 2019 04:07:13 -0400
-Received: from mx2.suse.de ([195.135.220.15]:57056 "EHLO mx1.suse.de"
+        id S1730866AbfH0IMH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 27 Aug 2019 04:12:07 -0400
+Received: from mx2.suse.de ([195.135.220.15]:32782 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729665AbfH0IHL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Aug 2019 04:07:11 -0400
+        id S1730546AbfH0IMG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Aug 2019 04:12:06 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id F0C7EABF1;
-        Tue, 27 Aug 2019 08:07:09 +0000 (UTC)
-Subject: Re: [PATCH 1/2] btrfs: fix BUG_ON with proper error handle in
- find_next_devid
+        by mx1.suse.de (Postfix) with ESMTP id 60EDCAD1E;
+        Tue, 27 Aug 2019 08:12:04 +0000 (UTC)
+Subject: Re: [PATCH 2/2] btrfs: fix error return on alloc fail in
+ clone_fs_devices
 To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
 References: <20190827074045.5563-1-anand.jain@oracle.com>
- <20190827074045.5563-2-anand.jain@oracle.com>
+ <20190827074045.5563-3-anand.jain@oracle.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -84,12 +84,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <bb08ad0f-4dc4-99f5-d094-f970875451ac@suse.de>
-Date:   Tue, 27 Aug 2019 10:07:09 +0200
+Message-ID: <b740bae1-9372-2f62-c042-350f19447c2f@suse.de>
+Date:   Tue, 27 Aug 2019 10:12:04 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.8.0
 MIME-Version: 1.0
-In-Reply-To: <20190827074045.5563-2-anand.jain@oracle.com>
+In-Reply-To: <20190827074045.5563-3-anand.jain@oracle.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit

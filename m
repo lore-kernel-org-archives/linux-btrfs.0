@@ -2,128 +2,95 @@ Return-Path: <SRS0=Pg1I=WX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2C0D6C3A5A3
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 09:33:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E3A7CC3A5A3
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 09:37:54 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id F123121872
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 09:33:31 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="BvrQNA9A"
+	by mail.kernel.org (Postfix) with ESMTP id C063020828
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 09:37:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729169AbfH0Jdb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 27 Aug 2019 05:33:31 -0400
-Received: from mail-wm1-f48.google.com ([209.85.128.48]:50758 "EHLO
-        mail-wm1-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729087AbfH0Jdb (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Aug 2019 05:33:31 -0400
-Received: by mail-wm1-f48.google.com with SMTP id v15so2333635wml.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Aug 2019 02:33:29 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=from:subject:to:message-id:date:user-agent:mime-version
-         :content-transfer-encoding;
-        bh=bJ2QyIWqENyTT2hWJJohBUOKSFcc0b/uY0usNC2JmYE=;
-        b=BvrQNA9AiTFzEoZtQQoGkAKnz/f3BOANBGrwUpAvgqMY9DjEnJwSq70U1sglpJyuxE
-         VO/4ncfhHsDPV3muI5hULEnvBDM+U7eW8ur2bHIuoJSLQcdiX78Qz52omzS64xAbxskO
-         qDLk+zzwaZuheC+PzwtZy7JnyX3aAKts4CY+CC8iu0PQmXjrqKaKJHdiw7CcKMulDF6k
-         y/gS8LGkRtjWHUYhee2SMqorQk1z7r6ESJ8vDi/q+rdb7h1mzPPGJcXj8YoMcUlduJ4Z
-         q8QJrZlgAyVhyMBcu4nN12dq7YLcvNQHY71/rx0hxdji3ijFS7aCW8hw5Sqdc32Yz8mS
-         3QLQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:subject:to:message-id:date:user-agent
-         :mime-version:content-transfer-encoding;
-        bh=bJ2QyIWqENyTT2hWJJohBUOKSFcc0b/uY0usNC2JmYE=;
-        b=tWsFoM6svqejEI6bcVlz3I0rIn1jvuISr7xDHfPU7Aon2vUKPFKb/caC3xvC+JvZgi
-         DSMb9aEliETTa5cb5FIgzpq9TLzX5zizIkQbQgvykmRFzQ9lMnYBc2p3Wqt8R5IItjYi
-         I+Blhf0ASXGvAUxWWPFX3PIozu5PuZW/f4BvmAncjoUqBVkRWWP0BDOeBGh9U7o1JpcW
-         VUkK+pam6nsQz3Kzh7GpsFkFwF8ERUDRHDjOGCzm1fuu2lbebXqMq2L82+Ptgpk1aroo
-         Is9qeY4la6Hujx/ROamST3gn7NoonqGUnY6HbgmOiUBWvVKMSkqbg6NHI1DqtFhzuFeY
-         1Klg==
-X-Gm-Message-State: APjAAAV5fwK/JSBWs1+Hn3bfo/qUMv1EphcZL13j/S3wVsggssC/iSZ8
-        0NIdNDTZW3tYrwSy/0LGWqs+5kb9
-X-Google-Smtp-Source: APXvYqzvEv3TGQrPFrup5o7hN66+02B4quGSVTgO5ocnK5xcU/bBWCl264WDF2vCCg4lI7GRUJX2sg==
-X-Received: by 2002:a1c:7c06:: with SMTP id x6mr27475511wmc.133.1566898408286;
-        Tue, 27 Aug 2019 02:33:28 -0700 (PDT)
-Received: from [10.19.90.60] ([193.16.224.12])
-        by smtp.gmail.com with ESMTPSA id m7sm4202558wmi.18.2019.08.27.02.33.27
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 27 Aug 2019 02:33:27 -0700 (PDT)
-From:   Thomas Schneider <74cmonty@gmail.com>
-Subject: No files in snapshot
-To:     linux-btrfs@vger.kernel.org
-Message-ID: <b729e524-3c63-cf90-7115-02dcf2fda003@gmail.com>
-Date:   Tue, 27 Aug 2019 11:33:27 +0200
-User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
- Thunderbird/60.8.0
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: 8bit
+        id S1729895AbfH0Jhy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 27 Aug 2019 05:37:54 -0400
+Received: from mx2.suse.de ([195.135.220.15]:34018 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1729254AbfH0Jhx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Aug 2019 05:37:53 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 9C247AF1F
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Aug 2019 09:37:52 +0000 (UTC)
+From:   Johannes Thumshirn <jthumshirn@suse.de>
+To:     David Sterba <dsterba@suse.com>
+Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
+        Johannes Thumshirn <jthumshirn@suse.de>
+Subject: [PATCH v4 2/4] btrfs: create structure to encode checksum type and length
+Date:   Tue, 27 Aug 2019 11:37:48 +0200
+Message-Id: <20190827093750.15310-3-jthumshirn@suse.de>
+X-Mailer: git-send-email 2.16.4
+In-Reply-To: <20190827093750.15310-1-jthumshirn@suse.de>
+References: <20190827093750.15310-1-jthumshirn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+Create a structure to encode the type and length for the known on-disk
+checksums.
 
-I'm running Debian 10 with btrfs-progs=5.2.1.
-Creating snapshots with snapper=0.8.2 works w/o errors.
-root@ld5507:~# uname -r
-5.0.18-1-pve
-root@ld5508:~# btrfs fi show
-Label: none  uuid: 70997a0b-a36f-46cf-9ddc-b88d47eabc9e
-         Total devices 1 FS bytes used 11.17GiB
-         devid    1 size 192.53GiB used 22.02GiB path /dev/sdbq3
+This makes it easier to add new checksums later.
 
-root@ld5507:~# btrfs fi df /
-Data, single: total=18.00GiB, used=10.71GiB
-System, DUP: total=8.00MiB, used=16.00KiB
-Metadata, DUP: total=2.00GiB, used=465.84MiB
-GlobalReserve, single: total=68.03MiB, used=0.00B
+Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
-However, I run into an issue and need to restore various files.
+---
+Changes to v2:
+- Really remove initializer macro *doh*
 
-I thought that I could simply take the files from a snapshot created before.
-However, the files required don't exist in any snapshot!
+Changes to v1:
+- Remove initializer macro (David)
+---
+ fs/btrfs/ctree.h | 13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
 
-Therefore I have created a new snapshot manually to verify if the files 
-will be included, but there's nothing.
-
-These files are required:
-root@ld5507:/usr/bin# ls -l /var/lib/ceph/osd/ceph-4/
-insgesamt 56
--rw-r--r-- 1 root root 402 Jun  7 12:18 activate.monmap
--rw-r--r-- 1 ceph ceph   3 Jun  7 12:18 active
-lrwxrwxrwx 1 ceph ceph  58 Jun  7 12:18 block -> 
-/dev/disk/by-partuuid/3bc0c812-2c6b-4544-bbe7-e0444c3448eb
--rw-r--r-- 1 ceph ceph  37 Jun  7 12:18 block_uuid
--rw-r--r-- 1 ceph ceph   2 Jun  7 12:18 bluefs
--rw-r--r-- 1 ceph ceph  37 Jun  7 12:18 ceph_fsid
--rw-r--r-- 1 ceph ceph  37 Jun  7 12:18 fsid
--rw------- 1 ceph ceph  56 Jun  7 12:18 keyring
--rw-r--r-- 1 ceph ceph   8 Jun  7 12:18 kv_backend
--rw-r--r-- 1 ceph ceph  21 Jun  7 12:18 magic
--rw-r--r-- 1 ceph ceph   4 Jun  7 12:18 mkfs_done
--rw-r--r-- 1 ceph ceph   6 Jun  7 12:18 ready
--rw-r--r-- 1 ceph ceph   3 Aug 23 09:56 require_osd_release
--rw-r--r-- 1 ceph ceph   0 Aug 21 12:41 systemd
--rw-r--r-- 1 ceph ceph  10 Jun  7 12:18 type
--rw-r--r-- 1 ceph ceph   2 Jun  7 12:18 whoami
-
-And there are not files in latest snapshot:
-root@ld5507:/usr/bin# ls -l 
-/btrfs/@snapshots/158/snapshot/var/lib/ceph/osd/ceph-4/
-insgesamt 0
-
-
-Why is this?
-
-THX
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index d27b39858339..9806135c8310 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -82,9 +82,12 @@ struct btrfs_ref;
+  */
+ #define BTRFS_LINK_MAX 65535U
+ 
+-/* four bytes for CRC32 */
+-static const int btrfs_csum_sizes[] = { 4 };
+-static const char *btrfs_csum_names[] = { "crc32c" };
++static const struct btrfs_csums {
++	u16		size;
++	const char	*name;
++} btrfs_csums[] = {
++	[BTRFS_CSUM_TYPE_CRC32] = { .size = 4, .name = "crc32c" },
++};
+ 
+ #define BTRFS_EMPTY_DIR_SIZE 0
+ 
+@@ -2207,13 +2210,13 @@ static inline int btrfs_super_csum_size(const struct btrfs_super_block *s)
+ 	/*
+ 	 * csum type is validated at mount time
+ 	 */
+-	return btrfs_csum_sizes[t];
++	return btrfs_csums[t].size;
+ }
+ 
+ static inline const char *btrfs_super_csum_name(u16 csum_type)
+ {
+ 	/* csum type is validated at mount time */
+-	return btrfs_csum_names[csum_type];
++	return btrfs_csums[csum_type].name;
+ }
+ 
+ /*
+-- 
+2.16.4
 

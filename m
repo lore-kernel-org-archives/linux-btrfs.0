@@ -6,28 +6,28 @@ X-Spam-Status: No, score=-9.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9092FC3A5A4
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 11:46:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 39902C3A5A6
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 11:46:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6794B217F5
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 11:46:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 11E552173E
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 11:46:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728819AbfH0Lqf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1728807AbfH0Lqf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Tue, 27 Aug 2019 07:46:35 -0400
-Received: from mx2.suse.de ([195.135.220.15]:42066 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:42078 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727380AbfH0Lqf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1726794AbfH0Lqf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 27 Aug 2019 07:46:35 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 4B999B011
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Aug 2019 11:46:33 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 25EC5AF19
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Aug 2019 11:46:34 +0000 (UTC)
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 1/3] btrfs: Make btrfs_find_name_in_backref return btrfs_inode_ref struct
-Date:   Tue, 27 Aug 2019 14:46:28 +0300
-Message-Id: <20190827114630.2425-2-nborisov@suse.com>
+Subject: [PATCH 3/3] btrfs: Use btrfs_find_name_in_backref in backref_in_log
+Date:   Tue, 27 Aug 2019 14:46:30 +0300
+Message-Id: <20190827114630.2425-4-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20190827114630.2425-1-nborisov@suse.com>
 References: <20190827114630.2425-1-nborisov@suse.com>
@@ -36,128 +36,96 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-btrfs_find_name_in_backref returns either 0/1 depending on whether it
-found a backref for the given name. If it returns true then the actual
-inode_ref struct is returned in one of its parameters. That's pointless,
-instead refactor the function such that it returns either a pointer
-to the btrfs_inode_ref or NULL it it didn't find anything. This
-streamlines the function calling convention.
+By not opencoding btrfs_find_name_in_backref most of the local variables
+can be removed, this in turn alleviates stack pressure. Additionally,
+backref_in_log is only used as predicate so make it return bool.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/ctree.h      |  6 +++---
- fs/btrfs/inode-item.c | 29 ++++++++++++++---------------
- fs/btrfs/tree-log.c   |  4 ++--
- 3 files changed, 19 insertions(+), 20 deletions(-)
+ fs/btrfs/tree-log.c | 57 +++++++++++++--------------------------------
+ 1 file changed, 16 insertions(+), 41 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 6052f7403032..11312aeb6ff6 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2860,9 +2860,9 @@ btrfs_lookup_inode_extref(struct btrfs_trans_handle *trans,
- 			  u64 inode_objectid, u64 ref_objectid, int ins_len,
- 			  int cow);
- 
--int btrfs_find_name_in_backref(struct extent_buffer *leaf, int slot,
--			       const char *name,
--			       int name_len, struct btrfs_inode_ref **ref_ret);
-+struct btrfs_inode_ref *btrfs_find_name_in_backref(struct extent_buffer *leaf,
-+						   int slot, const char *name,
-+						   int name_len);
- int btrfs_find_name_in_ext_backref(struct extent_buffer *leaf, int slot,
- 				   u64 ref_objectid, const char *name,
- 				   int name_len,
-diff --git a/fs/btrfs/inode-item.c b/fs/btrfs/inode-item.c
-index 30d62ef918b9..6f43bedd3700 100644
---- a/fs/btrfs/inode-item.c
-+++ b/fs/btrfs/inode-item.c
-@@ -8,9 +8,9 @@
- #include "transaction.h"
- #include "print-tree.h"
- 
--int btrfs_find_name_in_backref(struct extent_buffer *leaf, int slot,
--			       const char *name,
--			       int name_len, struct btrfs_inode_ref **ref_ret)
-+struct btrfs_inode_ref *btrfs_find_name_in_backref(struct extent_buffer *leaf,
-+						   int slot, const char *name,
-+						   int name_len)
- {
- 	struct btrfs_inode_ref *ref;
- 	unsigned long ptr;
-@@ -28,13 +28,10 @@ int btrfs_find_name_in_backref(struct extent_buffer *leaf, int slot,
- 		cur_offset += len + sizeof(*ref);
- 		if (len != name_len)
- 			continue;
--		if (memcmp_extent_buffer(leaf, name, name_ptr, name_len) == 0) {
--			if (ref_ret)
--				*ref_ret = ref;
--			return 1;
--		}
-+		if (memcmp_extent_buffer(leaf, name, name_ptr, name_len) == 0)
-+			return ref;
- 	}
--	return 0;
-+	return NULL;
- }
- 
- int btrfs_find_name_in_ext_backref(struct extent_buffer *leaf, int slot,
-@@ -213,8 +210,10 @@ int btrfs_del_inode_ref(struct btrfs_trans_handle *trans,
- 	} else if (ret < 0) {
- 		goto out;
- 	}
--	if (!btrfs_find_name_in_backref(path->nodes[0], path->slots[0],
--					name, name_len, &ref)) {
-+
-+	ref = btrfs_find_name_in_backref(path->nodes[0], path->slots[0], name,
-+					 name_len);
-+	if (!ref) {
- 		ret = -ENOENT;
- 		search_ext_refs = 1;
- 		goto out;
-@@ -341,9 +340,9 @@ int btrfs_insert_inode_ref(struct btrfs_trans_handle *trans,
- 				      ins_len);
- 	if (ret == -EEXIST) {
- 		u32 old_size;
--
--		if (btrfs_find_name_in_backref(path->nodes[0], path->slots[0],
--					       name, name_len, &ref))
-+		ref = btrfs_find_name_in_backref(path->nodes[0], path->slots[0],
-+					       name, name_len);
-+		if (ref)
- 			goto out;
- 
- 		old_size = btrfs_item_size_nr(path->nodes[0], path->slots[0]);
-@@ -359,7 +358,7 @@ int btrfs_insert_inode_ref(struct btrfs_trans_handle *trans,
- 		if (ret == -EOVERFLOW) {
- 			if (btrfs_find_name_in_backref(path->nodes[0],
- 						       path->slots[0],
--						       name, name_len, &ref))
-+						       name, name_len))
- 				ret = -EEXIST;
- 			else
- 				ret = -EMLINK;
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 19a4b9dc669f..12151eb81976 100644
+index 7d45a4869bc9..070016e023b8 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -1271,7 +1271,7 @@ static int unlink_old_inode_refs(struct btrfs_trans_handle *trans,
- 							     namelen, NULL);
- 		else
- 			ret = btrfs_find_name_in_backref(log_eb, log_slot, name,
--							 namelen, NULL);
-+							 namelen) != NULL;
+@@ -938,60 +938,35 @@ static noinline int inode_in_dir(struct btrfs_root *root,
+  * want to delete valid links to a file from the subvolume if that
+  * link is also in the log.
+  */
+-static noinline int backref_in_log(struct btrfs_root *log,
+-				   struct btrfs_key *key,
+-				   u64 ref_objectid,
+-				   const char *name, int namelen)
++static noinline bool backref_in_log(struct btrfs_root *log,
++				    struct btrfs_key *key,
++				    u64 ref_objectid,
++				    const char *name, int namelen)
+ {
+ 	struct btrfs_path *path;
+-	struct btrfs_inode_ref *ref;
+-	unsigned long ptr;
+-	unsigned long ptr_end;
+-	unsigned long name_ptr;
+-	int found_name_len;
+-	int item_size;
++	bool found = false;
+ 	int ret;
+-	int match = 0;
  
- 		if (!ret) {
- 			struct inode *dir;
-@@ -1338,7 +1338,7 @@ static int btrfs_inode_ref_exists(struct inode *inode, struct inode *dir,
- 						     name, namelen, NULL);
- 	else
- 		ret = btrfs_find_name_in_backref(path->nodes[0], path->slots[0],
--						 name, namelen, NULL);
-+						 name, namelen) != NULL;
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+-		return -ENOMEM;
++		return false;
  
+ 	ret = btrfs_search_slot(NULL, log, key, path, 0, 0);
+ 	if (ret != 0)
+ 		goto out;
+ 
+-	ptr = btrfs_item_ptr_offset(path->nodes[0], path->slots[0]);
+-
+-	if (key->type == BTRFS_INODE_EXTREF_KEY) {
+-		if (btrfs_find_name_in_ext_backref(path->nodes[0],
+-						   path->slots[0],
+-						   ref_objectid,
+-						   name, namelen))
+-			match = 1;
+-
+-		goto out;
+-	}
+-
+-	item_size = btrfs_item_size_nr(path->nodes[0], path->slots[0]);
+-	ptr_end = ptr + item_size;
+-	while (ptr < ptr_end) {
+-		ref = (struct btrfs_inode_ref *)ptr;
+-		found_name_len = btrfs_inode_ref_name_len(path->nodes[0], ref);
+-		if (found_name_len == namelen) {
+-			name_ptr = (unsigned long)(ref + 1);
+-			ret = memcmp_extent_buffer(path->nodes[0], name,
+-						   name_ptr, namelen);
+-			if (ret == 0) {
+-				match = 1;
+-				goto out;
+-			}
+-		}
+-		ptr = (unsigned long)(ref + 1) + found_name_len;
+-	}
++	if (key->type == BTRFS_INODE_EXTREF_KEY)
++		found = !!btrfs_find_name_in_ext_backref(path->nodes[0],
++							 path->slots[0],
++							 ref_objectid,
++							 name, namelen);
++	else
++		found = !!btrfs_find_name_in_backref(path->nodes[0],
++						     path->slots[0],
++						     name, namelen);
  out:
  	btrfs_free_path(path);
+-	return match;
++	return found;
+ }
+ 
+ static inline int __add_inode_ref(struct btrfs_trans_handle *trans,
 -- 
 2.17.1
 

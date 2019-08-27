@@ -6,26 +6,26 @@ X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
 	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 884BFC3A5A3
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 13:34:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0F600C3A5A3
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 13:35:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6514020673
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 13:34:23 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E065020673
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 13:35:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726190AbfH0NeW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 27 Aug 2019 09:34:22 -0400
-Received: from mx2.suse.de ([195.135.220.15]:53078 "EHLO mx1.suse.de"
+        id S1728188AbfH0Nft (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 27 Aug 2019 09:35:49 -0400
+Received: from mx2.suse.de ([195.135.220.15]:53764 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1725811AbfH0NeW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Aug 2019 09:34:22 -0400
+        id S1726065AbfH0Nft (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Aug 2019 09:35:49 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 3D27FACFA
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Aug 2019 13:34:20 +0000 (UTC)
-Subject: Re: [PATCH 1/7] btrfs: move cond_wake_up functions out of ctree
+        by mx1.suse.de (Postfix) with ESMTP id 29B7AB052
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Aug 2019 13:35:47 +0000 (UTC)
+Subject: Re: [PATCH 2/7] btrfs: move math functions to misc.h
 To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 References: <cover.1566579823.git.dsterba@suse.com>
- <39c04b1506061f2b94d9425eab60466f0a2146fb.1566579823.git.dsterba@suse.com>
+ <e74f79c0bed6fcbbd47d8adcd3618acf1dc5e14e.1566579823.git.dsterba@suse.com>
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 Openpgp: preference=signencrypt
 Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
@@ -83,12 +83,12 @@ Autocrypt: addr=jthumshirn@suse.de; prefer-encrypt=mutual; keydata=
  l2t2TyTuHm7wVUY2J3gJYgG723/PUGW4LaoqNrYQUr/rqo6NXw6c+EglRpm1BdpkwPwAng63
  W5VOQMdnozD2RsDM5GfA4aEFi5m00tE+8XPICCtkduyWw+Z+zIqYk2v+zraPLs9Gs0X2C7X0
  yvqY9voUoJjG6skkOToGZbqtMX9K4GOv9JAxVs075QRXL3brHtHONDt6udYobzz+
-Message-ID: <208c301f-12ef-8196-73af-6147d92e7f91@suse.de>
-Date:   Tue, 27 Aug 2019 15:34:19 +0200
+Message-ID: <43409940-f16e-e6f3-9bac-ddcb1ca2fcb4@suse.de>
+Date:   Tue, 27 Aug 2019 15:35:46 +0200
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.8.0
 MIME-Version: 1.0
-In-Reply-To: <39c04b1506061f2b94d9425eab60466f0a2146fb.1566579823.git.dsterba@suse.com>
+In-Reply-To: <e74f79c0bed6fcbbd47d8adcd3618acf1dc5e14e.1566579823.git.dsterba@suse.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -97,8 +97,17 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Looks good,
-Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
+
+> @@ -1,28 +0,0 @@
+> -/* SPDX-License-Identifier: GPL-2.0 */
+> -/*
+> - * Copyright (C) 2012 Fujitsu.  All rights reserved.
+> - * Written by Miao Xie <miaox@cn.fujitsu.com>
+> - */
+
+This copyright note will get lost with this patch.
+
+
 -- 
 Johannes Thumshirn                            SUSE Labs Filesystems
 jthumshirn@suse.de                                +49 911 74053 689

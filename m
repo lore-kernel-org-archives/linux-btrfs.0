@@ -2,169 +2,105 @@ Return-Path: <SRS0=Pg1I=WX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.5 required=3.0 tests=FREEMAIL_FORGED_FROMDOMAIN,
+	FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BA107C3A5A3
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 10:59:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 89461C3A5A4
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 11:11:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8ED6320656
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 10:59:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6968A206BA
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 11:11:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728878AbfH0K7k (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 27 Aug 2019 06:59:40 -0400
-Received: from relay7-d.mail.gandi.net ([217.70.183.200]:38027 "EHLO
-        relay7-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725793AbfH0K7k (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Aug 2019 06:59:40 -0400
-X-Originating-IP: 88.191.131.7
-Received: from [192.168.1.167] (unknown [88.191.131.7])
-        (Authenticated sender: swami@petaramesh.org)
-        by relay7-d.mail.gandi.net (Postfix) with ESMTPSA id 5AECE20006;
-        Tue, 27 Aug 2019 10:59:37 +0000 (UTC)
+        id S1726552AbfH0LLu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 27 Aug 2019 07:11:50 -0400
+Received: from mail-oln040092071093.outbound.protection.outlook.com ([40.92.71.93]:47846
+        "EHLO EUR03-DB5-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1726125AbfH0LLu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Aug 2019 07:11:50 -0400
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=UqiyoCWuCZ+bi26zYA+uJFMvgt2qR4bKptYXmjq+HMRuaXif9z7bNw+RHZgvkElrSTdR8TnLwsZJ62U31gXJAsCbQE2bWYhcRHjuX91UM+XzGtU35FVN2nx5TUhxnubm7wEmHV/ZBC5MT9lb4EaSZIhQHc1sXiNKLq1cYDoR6VIbIv+kFogFvjGZxZdOIw9UxjknqXrRRYs8zfhNaAmuVqEZ8St8KLOARPFqJVT/dHYu+cOKxt4Z0Luck4ljwROa5Kh3AEFGnnV2WihQ1DTLfoG8INAirej1FXqFYlVBlylJBd+ZjW0y0oegpZ1kTzNJZUuiz/d3Ar3lcwn7mdSZOA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=mjg/0RkY9klOKk6gvLNvi1yn0s3umlmMySXNdN0v2sE=;
+ b=H48d+xhJtCYDbj3kv//UnTF2MBetLRBk3CcopOnDbttHzk+ePDkx5saztHACEczUDwyWH+bDV1cEwBQoGWTB+yD4lTPm+phbRBhSjN/JQCEZXOZ62oZIYFSeuXDRVm5qlHGJsFE8AIVuHJEhgjyqei5oMJEbmeHHObx2Z/ucCLoXQ++FLOxFbnXxAYzSUI/iZuyiwSCTMPaFqXv7pLOv70xu5JdODFZvTjLaWQ7EY34POhcTJeUTceLXtP/lwSAUEeQNrKKJ0ZHUjaXW5xS+LKdgcOb0gQ9FfBV2IpgYUrRB7s0PQ/6sUDM7Br7qXZDI0XGfwouXtnHi4IEGF2OCzg==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=none; dmarc=none;
+ dkim=none; arc=none
+Received: from AM5EUR03FT059.eop-EUR03.prod.protection.outlook.com
+ (10.152.16.52) by AM5EUR03HT204.eop-EUR03.prod.protection.outlook.com
+ (10.152.17.9) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id 15.20.2199.13; Tue, 27 Aug
+ 2019 11:11:46 +0000
+Received: from DB7P191MB0377.EURP191.PROD.OUTLOOK.COM (10.152.16.58) by
+ AM5EUR03FT059.mail.protection.outlook.com (10.152.17.193) with Microsoft SMTP
+ Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.20.2199.13 via Frontend Transport; Tue, 27 Aug 2019 11:11:46 +0000
+Received: from DB7P191MB0377.EURP191.PROD.OUTLOOK.COM
+ ([fe80::bc80:8fa0:42bd:4be5]) by DB7P191MB0377.EURP191.PROD.OUTLOOK.COM
+ ([fe80::bc80:8fa0:42bd:4be5%5]) with mapi id 15.20.2199.021; Tue, 27 Aug 2019
+ 11:11:46 +0000
+From:   Alberto Bursi <alberto.bursi@outlook.it>
+To:     =?utf-8?B?U3fDom1pIFBldGFyYW1lc2g=?= <swami@petaramesh.org>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+CC:     Christoph Anton Mitterer <calestyo@scientia.net>
 Subject: Re: Massive filesystem corruption since kernel 5.2 (ARCH)
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
-Cc:     Christoph Anton Mitterer <calestyo@scientia.net>
+Thread-Topic: Massive filesystem corruption since kernel 5.2 (ARCH)
+Thread-Index: AQHVWqS22gbHP/giy0mM/nLVdqYtGacLopmAgAJ9HICAAFVBgIAAErQAgAACbYCAAE2mAIAAA4SA
+Date:   Tue, 27 Aug 2019 11:11:46 +0000
+Message-ID: <DB7P191MB0377516063743C8D5A382C4292A00@DB7P191MB0377.EURP191.PROD.OUTLOOK.COM>
 References: <11e4e889f903ddad682297c4420faeb0245414cf.camel@scientia.net>
  <18d24f2f-4d33-10aa-5052-c358d4f7c328@petaramesh.org>
  <a8968a812e270a0dd80c4cf431a8437d3a7daba5.camel@scientia.net>
  <5aefca34-224a-0a81-c930-4ccfcd144aef@petaramesh.org>
  <4bd70aa2-7ad0-d5c6-bc1f-22340afaac60@petaramesh.org>
  <370697f1-24c9-c8bd-01a7-c2885a7ece05@gmx.com>
-From:   =?UTF-8?Q?Sw=c3=a2mi_Petaramesh?= <swami@petaramesh.org>
-Openpgp: preference=signencrypt
-Autocrypt: addr=swami@petaramesh.org; prefer-encrypt=mutual; keydata=
- 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
- BtUAN08OPA==
-Message-ID: <fcd2e070-67e9-4889-f778-748070cc9856@petaramesh.org>
-Date:   Tue, 27 Aug 2019 12:59:36 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.8.0
+ <fcd2e070-67e9-4889-f778-748070cc9856@petaramesh.org>
+In-Reply-To: <fcd2e070-67e9-4889-f778-748070cc9856@petaramesh.org>
+Accept-Language: it-IT, en-US
+Content-Language: en-US
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+x-clientproxiedby: MR2P264CA0042.FRAP264.PROD.OUTLOOK.COM (2603:10a6:500::30)
+ To DB7P191MB0377.EURP191.PROD.OUTLOOK.COM (2603:10a6:5:10::13)
+x-incomingtopheadermarker: OriginalChecksum:4DA6B42CEEF22B9E22086133C4F01907C16FB78762FEEB0338874032F5FEC762;UpperCasedChecksum:634C978C6B25764C2AC58379B87C5B55E20CFC79095921E95AD2CA9FA13FAA9C;SizeAsReceived:7939;Count:49
+x-ms-exchange-messagesentrepresentingtype: 1
+x-tmn:  [yZ9m410rPSZB+bpNRTfbixBsKBR22lnM]
+x-microsoft-original-message-id: <45f95585-a92b-bb87-4812-b6596a87741f@outlook.it>
+x-ms-publictraffictype: Email
+x-incomingheadercount: 49
+x-eopattributedmessage: 0
+x-microsoft-antispam: BCL:0;PCL:0;RULEID:(2390118)(5050001)(7020095)(20181119110)(201702061078)(5061506573)(5061507331)(1603103135)(2017031320274)(2017031322404)(2017031323274)(2017031324274)(1601125500)(1603101475)(1701031045);SRVR:AM5EUR03HT204;
+x-ms-traffictypediagnostic: AM5EUR03HT204:
+x-microsoft-antispam-message-info: rwVieqRj+iGiNSDdM7pVrg8ErA7gLkBO0Y+P9SpI9X5yMB2aFmmhvlJJ0LGKTQxZiqk5HTAH3ei/zN+NLqJPYu2cZrpD2Sg6E6Z9uqCSiw9Ojn3pEv7lfeDiqg75D1vh9ozBkpOu34RopGojRYwXgQQAJC08LmmuR4gkbs6US5C12GKvPIRHoAZsgD4dLOGE
+x-ms-exchange-transport-forked: True
+Content-Type: text/plain; charset="utf-8"
+Content-ID: <3574C567E4C7B84FB1F033AD22A79C7B@EURP191.PROD.OUTLOOK.COM>
+Content-Transfer-Encoding: base64
 MIME-Version: 1.0
-In-Reply-To: <370697f1-24c9-c8bd-01a7-c2885a7ece05@gmx.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: fr-FR
-Content-Transfer-Encoding: 8bit
+X-OriginatorOrg: outlook.com
+X-MS-Exchange-CrossTenant-RMS-PersistedConsumerOrg: 00000000-0000-0000-0000-000000000000
+X-MS-Exchange-CrossTenant-Network-Message-Id: c60a6225-68cc-45bc-fad2-08d72adf590e
+X-MS-Exchange-CrossTenant-rms-persistedconsumerorg: 00000000-0000-0000-0000-000000000000
+X-MS-Exchange-CrossTenant-originalarrivaltime: 27 Aug 2019 11:11:46.7805
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Internet
+X-MS-Exchange-CrossTenant-id: 84df9e7f-e9f6-40af-b435-aaaaaaaaaaaa
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: AM5EUR03HT204
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi again,
-
-Le 27/08/2019 à 08:21, Qu Wenruo a écrit :
-> I'd prefer to do a "btrfs check --readonly" anyway (which also checks
-> free space cache), then go nospace_cache if you're concerned.
-
-Here's what I dit, here's what I got...:
-
-root@PartedMagic:~# uname -r
-5.1.5-pmagic64
-
-root@PartedMagic:~# btrfs --version
-btrfs-progs v5.1
-
-root@PartedMagic:~# btrfs check --readonly /dev/PPL_VG1/LINUX
-[1/7] checking root items
-[2/7] checking extents
-[3/7] checking free space cache
-block group 52677312512 has wrong amount of free space, free space cache
-has 266551296 block group has 266584064
-failed to load free space cache for block group 52677312512
-[4/7] checking fs roots
-[5/7] checking only csums items (without verifying data)
-[6/7] checking root refs
-[7/7] checking quota groups skipped (not enabled on this FS)
-Opening filesystem to check...
-Checking filesystem on /dev/PPL_VG1/LINUX
-UUID: 25fede5a-d8c2-4c7e-9e7e-b19aad319044
-found 87804731392 bytes used, no error found
-total csum bytes: 79811080
-total tree bytes: 2195832832
-total fs tree bytes: 1992900608
-total extent tree bytes: 101548032
-btree space waste bytes: 380803707
-file data blocks allocated: 626135830528
- referenced 124465221632
-
-root@PartedMagic:~# mkdir /hd
-root@PartedMagic:~# mount -t btrfs -o noatime,clear_cache
-/dev/PPL_VG1/LINUX /hd
-
-(Waited for no disk activity and top showing no btrfs processes)
-
-root@PartedMagic:~# umount /hd
-
-root@PartedMagic:~# mount -t btrfs -o noatime /dev/PPL_VG1/LINUX /hd
-
-root@PartedMagic:~# grep btrfs /proc/self/mountinfo
-40 31 0:43 / /hd rw,noatime - btrfs /dev/mapper/PPL_VG1-LINUX
-rw,ssd,space_cache,subvolid=5,subvol=/
-
-root@PartedMagic:~# umount /hd
-
-root@PartedMagic:~# btrfs check --readonly /dev/PPL_VG1/LINUX
-[1/7] checking root items
-[2/7] checking extents
-[3/7] checking free space cache
-block group 52677312512 has wrong amount of free space, free space cache
-has 266551296 block group has 266584064
-failed to load free space cache for block group 52677312512
-[4/7] checking fs roots
-[5/7] checking only csums items (without verifying data)
-[6/7] checking root refs
-[7/7] checking quota groups skipped (not enabled on this FS)
-Opening filesystem to check...
-Checking filesystem on /dev/PPL_VG1/LINUX
-UUID: 25fede5a-d8c2-4c7e-9e7e-b19aad319044
-found 87804207104 bytes used, no error found
-total csum bytes: 79811080
-total tree bytes: 2195832832
-total fs tree bytes: 1992900608
-total extent tree bytes: 101548032
-btree space waste bytes: 380804019
-file data blocks allocated: 626135306240
- referenced 124464697344
-root@PartedMagic:~#
-
-
-So it seems that mounting with “clear_cache” did not actually clear the
-cache and fix the issue ?
-
-ॐ
-
--- 
-Swâmi Petaramesh <swami@petaramesh.org> PGP 9076E32E
+DQpPbiAyNy8wOC8xOSAxMjo1OSwgU3fDom1pIFBldGFyYW1lc2ggd3JvdGU6DQo+DQo+DQo+IFNv
+IGl0IHNlZW1zIHRoYXQgbW91bnRpbmcgd2l0aCDigJxjbGVhcl9jYWNoZeKAnSBkaWQgbm90IGFj
+dHVhbGx5IGNsZWFyIHRoZQ0KPiBjYWNoZSBhbmQgZml4IHRoZSBpc3N1ZSA/DQo+DQo+IOClkA0K
+Pg0KDQptb3VudGluZyB3aXRoIGNsZWFyX2NhY2hlIGRvZXMgbm90IGFjdHVhbGx5IGNsZWFyIGNh
+Y2hlDQoNCnVubGVzcyBpdCBpcyBuZWVkZWQgb3IgbW9kaWZpZWQgb3Igc29tZXRoaW5nLg0KDQoN
+CklmIHlvdSB3YW50IHRvIGZ1bGx5IGNsZWFyIGNhY2hlIHlvdSBuZWVkIHRvIHVzZSAob24gYW4g
+dW5tb3VudGVkIA0KZmlsZXN5c3RlbSkNCg0KYnRyZnMgY2hlY2sgLS1jbGVhci1zcGFjZS1jYWNo
+ZSB2MSAvZGV2L3NkWA0KDQpvcg0KDQpidHJmcyBjaGVja8KgIC0tY2xlYXItc3BhY2UtY2FjaGUg
+djIgL2Rldi9zZFgNCg0KZGVwZW5kaW5nIG9uIHdoYXQgc3BhY2UgY2FjaGUgeW91IHVzZWQgKHYx
+IGlzIGRlZmF1bHQpDQoNCg0KLUFsYmVydG8NCg0K

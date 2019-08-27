@@ -2,81 +2,73 @@ Return-Path: <SRS0=Pg1I=WX=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.2 required=3.0
-	tests=HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B1C09C3A5A3
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 16:20:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8B3D2C3A5A3
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 16:32:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8FCD521883
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 16:20:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6ADBD214DA
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Aug 2019 16:32:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730081AbfH0QUg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 27 Aug 2019 12:20:36 -0400
-Received: from mx2.suse.de ([195.135.220.15]:56994 "EHLO mx1.suse.de"
+        id S1730413AbfH0Qck (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 27 Aug 2019 12:32:40 -0400
+Received: from mx2.suse.de ([195.135.220.15]:60332 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726435AbfH0QUg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Aug 2019 12:20:36 -0400
+        id S1730400AbfH0Qck (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Aug 2019 12:32:40 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 406A8AF41
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Aug 2019 16:20:35 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 10C90AF79
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Aug 2019 16:32:39 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 9D1D7DA8D5; Tue, 27 Aug 2019 18:20:58 +0200 (CEST)
-Date:   Tue, 27 Aug 2019 18:20:58 +0200
+        id 6767EDA8D5; Tue, 27 Aug 2019 18:33:02 +0200 (CEST)
+Date:   Tue, 27 Aug 2019 18:33:02 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     Johannes Thumshirn <jthumshirn@suse.de>,
-        David Sterba <dsterba@suse.com>,
+To:     Johannes Thumshirn <jthumshirn@suse.de>
+Cc:     David Sterba <dsterba@suse.com>,
         Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2 09/11] btrfs-progs: add xxhash sources
-Message-ID: <20190827162058.GT2752@twin.jikos.cz>
+Subject: Re: [PATCH v2 01/11] btrfs-progs: don't blindly assume crc32c in
+ csum_tree_block_size()
+Message-ID: <20190827163302.GU2752@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        Johannes Thumshirn <jthumshirn@suse.de>,
+Mail-Followup-To: dsterba@suse.cz, Johannes Thumshirn <jthumshirn@suse.de>,
         David Sterba <dsterba@suse.com>,
         Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
 References: <20190826114853.14860-1-jthumshirn@suse.de>
- <20190826114853.14860-10-jthumshirn@suse.de>
- <31238c84-9a3d-08cf-ee7e-5c8647bbf661@suse.com>
+ <20190826114853.14860-2-jthumshirn@suse.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <31238c84-9a3d-08cf-ee7e-5c8647bbf661@suse.com>
+In-Reply-To: <20190826114853.14860-2-jthumshirn@suse.de>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Aug 27, 2019 at 04:05:57PM +0300, Nikolay Borisov wrote:
+On Mon, Aug 26, 2019 at 01:48:43PM +0200, Johannes Thumshirn wrote:
+> The callers of csum_tree_block_size() blindly assume we're only having
+> crc32c as a possible checksum and thus pass in
+> btrfs_csum_sizes[BTRFS_CSUM_TYPE_CRC32] for the size argument of
+> csum_tree_block_size().
 > 
+> Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  mkfs/common.c | 14 +++++++-------
+>  1 file changed, 7 insertions(+), 7 deletions(-)
 > 
-> On 26.08.19 г. 14:48 ч., Johannes Thumshirn wrote:
-> > From: David Sterba <dsterba@suse.com>
-> > 
-> > git://github.com/Cyan4973/xxHash
-> > 
-> > Signed-off-by: David Sterba <dsterba@suse.com>
-> > Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>> ---
-> >  crypto/xxhash.c | 1024 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
-> >  crypto/xxhash.h |  445 ++++++++++++++++++++++++
-> >  2 files changed, 1469 insertions(+)
-> 
-> 
-> Existing crc32c implementation is under kernel-lib/, whereas the xxhash
-> will be under crypto. I think we should have some consistency among the
-> various hashes we might be implementing in the future. I don't have
-> strong preferences either way. I guess crypto/ makes more sense.
+> diff --git a/mkfs/common.c b/mkfs/common.c
+> index caca5e707233..b6e549b19272 100644
+> --- a/mkfs/common.c
+> +++ b/mkfs/common.c
+> @@ -101,7 +101,7 @@ static int btrfs_create_tree_root(int fd, struct btrfs_mkfs_config *cfg,
+>  	}
+>  
+>  	/* generate checksum */
+> -	csum_tree_block_size(buf, btrfs_csum_sizes[BTRFS_CSUM_TYPE_CRC32], 0);
+> +	csum_tree_block_size(buf, btrfs_csum_sizes[cfg->csum_type], 0);
 
-The kernel-lib contains 99%-copies of the kernel files and they're
-mostly unrelated. The crc32 files could be moved to crypto/ as we'll
-have more than that and xxhash there.
-
-The idea with the local versions of hashes is to provide a fallback
-implementations of everything we need but the preferred option will be
-linking to some existing crypto library like openssl. So we'll need some
-glue code etc. This isn't entirely suitable for kerne-lib.
+Where is btrfs_mkfs_config::csum_type defined?

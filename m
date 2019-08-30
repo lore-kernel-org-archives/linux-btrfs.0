@@ -6,29 +6,29 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 14A1EC3A5A7
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Aug 2019 11:36:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 87C28C3A5A4
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Aug 2019 11:36:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DE7BF22CE9
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Aug 2019 11:36:18 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6881222CE9
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Aug 2019 11:36:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727967AbfH3LgP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 30 Aug 2019 07:36:15 -0400
-Received: from mx2.suse.de ([195.135.220.15]:50276 "EHLO mx1.suse.de"
+        id S1728117AbfH3LgT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 30 Aug 2019 07:36:19 -0400
+Received: from mx2.suse.de ([195.135.220.15]:50258 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727780AbfH3LgO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Aug 2019 07:36:14 -0400
+        id S1727521AbfH3LgP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 30 Aug 2019 07:36:15 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D1A31B033;
+        by mx1.suse.de (Postfix) with ESMTP id B574DB023;
         Fri, 30 Aug 2019 11:36:13 +0000 (UTC)
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 To:     David Sterba <dsterba@suse.com>
 Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
         Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH v5 4/4] btrfs: sysfs: export supported checksums
-Date:   Fri, 30 Aug 2019 13:36:11 +0200
-Message-Id: <20190830113611.16865-5-jthumshirn@suse.de>
+Subject: [PATCH v5 1/4] btrfs: turn checksum type define into a enum
+Date:   Fri, 30 Aug 2019 13:36:08 +0200
+Message-Id: <20190830113611.16865-2-jthumshirn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20190830113611.16865-1-jthumshirn@suse.de>
 References: <20190830113611.16865-1-jthumshirn@suse.de>
@@ -37,78 +37,30 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: David Sterba <dsterba@suse.com>
+Turn the checksum type definition into a enum. This eases later addition
+of new checksums.
 
-Export supported checksum algorithms via sysfs.
-
-Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
 ---
-Changes to v2:
-- Prevent possible overflow of sysfs attribute
-Changes to v1:
-- Removed btrfs_checksums_store() function (Nik)
-- Renamed sysfs file to supported_checksums
----
- fs/btrfs/sysfs.c | 29 +++++++++++++++++++++++++++++
- 1 file changed, 29 insertions(+)
+ include/uapi/linux/btrfs_tree.h | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index f6d3c80f2e28..cae9c99253c7 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -246,6 +246,24 @@ static umode_t btrfs_feature_visible(struct kobject *kobj,
- 	return mode;
- }
+diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
+index 71246c1941aa..b65c7ee75bc7 100644
+--- a/include/uapi/linux/btrfs_tree.h
++++ b/include/uapi/linux/btrfs_tree.h
+@@ -300,7 +300,9 @@
+ #define BTRFS_CSUM_SIZE 32
  
-+static ssize_t btrfs_supported_checksums_show(struct kobject *kobj,
-+					      struct kobj_attribute *a,
-+					      char *buf)
-+{
-+	ssize_t ret = 0;
-+	int i;
-+
-+	for (i = 0; i < ARRAY_SIZE(btrfs_csums); i++) {
-+		ret += snprintf(buf + ret, PAGE_SIZE - ret, "%s%s",
-+				(i == 0 ? "" : ", "),
-+				btrfs_csums[i].name);
-+
-+	}
-+
-+	ret += snprintf(buf + ret, PAGE_SIZE - ret, "\n");
-+	return ret;
-+}
-+
- BTRFS_FEAT_ATTR_INCOMPAT(mixed_backref, MIXED_BACKREF);
- BTRFS_FEAT_ATTR_INCOMPAT(default_subvol, DEFAULT_SUBVOL);
- BTRFS_FEAT_ATTR_INCOMPAT(mixed_groups, MIXED_GROUPS);
-@@ -259,6 +277,14 @@ BTRFS_FEAT_ATTR_INCOMPAT(no_holes, NO_HOLES);
- BTRFS_FEAT_ATTR_INCOMPAT(metadata_uuid, METADATA_UUID);
- BTRFS_FEAT_ATTR_COMPAT_RO(free_space_tree, FREE_SPACE_TREE);
- 
-+static struct btrfs_feature_attr btrfs_attr_features_checksums_name = {
-+	.kobj_attr = __INIT_KOBJ_ATTR(supported_checksums, S_IRUGO,
-+				      btrfs_supported_checksums_show,
-+				      NULL),
-+	.feature_set	= FEAT_INCOMPAT,
-+	.feature_bit	= 0,
+ /* csum types */
+-#define BTRFS_CSUM_TYPE_CRC32	0
++enum btrfs_csum_type {
++	BTRFS_CSUM_TYPE_CRC32	= 0,
 +};
-+
- static struct attribute *btrfs_supported_feature_attrs[] = {
- 	BTRFS_FEAT_ATTR_PTR(mixed_backref),
- 	BTRFS_FEAT_ATTR_PTR(default_subvol),
-@@ -272,6 +298,9 @@ static struct attribute *btrfs_supported_feature_attrs[] = {
- 	BTRFS_FEAT_ATTR_PTR(no_holes),
- 	BTRFS_FEAT_ATTR_PTR(metadata_uuid),
- 	BTRFS_FEAT_ATTR_PTR(free_space_tree),
-+
-+	&btrfs_attr_features_checksums_name.kobj_attr.attr,
-+
- 	NULL
- };
  
+ /*
+  * flags definitions for directory entry item type
 -- 
 2.16.4
 

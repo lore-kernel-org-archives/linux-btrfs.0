@@ -2,115 +2,62 @@ Return-Path: <SRS0=9BDA=W2=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F363EC3A5A7
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Aug 2019 11:36:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E849FC3A5A4
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Aug 2019 11:36:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C97F921874
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Aug 2019 11:36:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C6E1B21874
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Aug 2019 11:36:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728029AbfH3LgP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1727992AbfH3LgP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Fri, 30 Aug 2019 07:36:15 -0400
-Received: from mx2.suse.de ([195.135.220.15]:50264 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:50260 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727770AbfH3LgO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1727620AbfH3LgO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Fri, 30 Aug 2019 07:36:14 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id CC600B02E;
+        by mx1.suse.de (Postfix) with ESMTP id B1A55AEBD;
         Fri, 30 Aug 2019 11:36:13 +0000 (UTC)
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 To:     David Sterba <dsterba@suse.com>
 Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
         Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH v5 3/4] btrfs: add xxhash64 to checksumming algorithms
-Date:   Fri, 30 Aug 2019 13:36:10 +0200
-Message-Id: <20190830113611.16865-4-jthumshirn@suse.de>
+Subject: [PATCH v5 0/4] btrfs: support xxhash64 checksums
+Date:   Fri, 30 Aug 2019 13:36:07 +0200
+Message-Id: <20190830113611.16865-1-jthumshirn@suse.de>
 X-Mailer: git-send-email 2.16.4
-In-Reply-To: <20190830113611.16865-1-jthumshirn@suse.de>
-References: <20190830113611.16865-1-jthumshirn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Add xxhash64 to the list of possible checksumming algorithms used by
-BTRFS.
+Now that Nikolay's XXHASH64 support for the Crypto API has landed and BTRFS is
+prepared for an easy addition of new checksums, this patchset implements
+XXHASH64 as a second, fast but not cryptographically secure checksum hash.
 
-Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+For changelogs, please see the individual patches.
 
----
-Changes to v3:
-- Reword Subject and add a commit message.
----
- fs/btrfs/Kconfig                | 1 +
- fs/btrfs/ctree.c                | 1 +
- fs/btrfs/disk-io.c              | 1 +
- fs/btrfs/super.c                | 1 +
- include/uapi/linux/btrfs_tree.h | 1 +
- 5 files changed, 5 insertions(+)
+David Sterba (1):
+  btrfs: sysfs: export supported checksums
 
-diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
-index 38651fae7f21..6d5a01c57da3 100644
---- a/fs/btrfs/Kconfig
-+++ b/fs/btrfs/Kconfig
-@@ -5,6 +5,7 @@ config BTRFS_FS
- 	select CRYPTO
- 	select CRYPTO_CRC32C
- 	select LIBCRC32C
-+	select CRYPTO_XXHASH
- 	select ZLIB_INFLATE
- 	select ZLIB_DEFLATE
- 	select LZO_COMPRESS
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 9c36b1a878ec..8372d295eb5e 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -34,6 +34,7 @@ static const struct btrfs_csums {
- 	const char	*name;
- } btrfs_csums[] = {
- 	[BTRFS_CSUM_TYPE_CRC32] = { .size = 4, .name = "crc32c" },
-+	[BTRFS_CSUM_TYPE_XXHASH] = { .size = 8, .name = "xxhash64" },
- };
- 
- int btrfs_super_csum_size(const struct btrfs_super_block *s)
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 99dfd889b9f7..ac039a4d23ff 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -352,6 +352,7 @@ static bool btrfs_supported_super_csum(u16 csum_type)
- {
- 	switch (csum_type) {
- 	case BTRFS_CSUM_TYPE_CRC32:
-+	case BTRFS_CSUM_TYPE_XXHASH:
- 		return true;
- 	default:
- 		return false;
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 1b151af25772..60116d0410e5 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -2456,3 +2456,4 @@ module_exit(exit_btrfs_fs)
- 
- MODULE_LICENSE("GPL");
- MODULE_SOFTDEP("pre: crc32c");
-+MODULE_SOFTDEP("pre: xxhash64");
-diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
-index b65c7ee75bc7..ba2f125a3a1c 100644
---- a/include/uapi/linux/btrfs_tree.h
-+++ b/include/uapi/linux/btrfs_tree.h
-@@ -302,6 +302,7 @@
- /* csum types */
- enum btrfs_csum_type {
- 	BTRFS_CSUM_TYPE_CRC32	= 0,
-+	BTRFS_CSUM_TYPE_XXHASH	= 1,
- };
- 
- /*
+Johannes Thumshirn (3):
+  btrfs: turn checksum type define into a enum
+  btrfs: create structure to encode checksum type and length
+  btrfs: add xxhash64 to checksumming algorithms
+
+ fs/btrfs/Kconfig                |  1 +
+ fs/btrfs/ctree.c                | 23 +++++++++++++++++++++++
+ fs/btrfs/ctree.h                | 20 ++------------------
+ fs/btrfs/disk-io.c              |  1 +
+ fs/btrfs/super.c                |  1 +
+ fs/btrfs/sysfs.c                | 29 +++++++++++++++++++++++++++++
+ include/uapi/linux/btrfs_tree.h |  5 ++++-
+ 7 files changed, 61 insertions(+), 19 deletions(-)
+
 -- 
 2.16.4
 

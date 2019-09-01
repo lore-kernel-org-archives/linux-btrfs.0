@@ -2,273 +2,169 @@ Return-Path: <SRS0=KdHO=W4=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1F551C3A5A7
-	for <linux-btrfs@archiver.kernel.org>; Sun,  1 Sep 2019 20:09:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C7D97C3A5A4
+	for <linux-btrfs@archiver.kernel.org>; Sun,  1 Sep 2019 20:09:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E86452190F
-	for <linux-btrfs@archiver.kernel.org>; Sun,  1 Sep 2019 20:09:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 867D72190F
+	for <linux-btrfs@archiver.kernel.org>; Sun,  1 Sep 2019 20:09:29 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="f/1D71UZ"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729090AbfIAUJT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 1 Sep 2019 16:09:19 -0400
-Received: from mx2.suse.de ([195.135.220.15]:50714 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727517AbfIAUJT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 1 Sep 2019 16:09:19 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 45DF0B661;
-        Sun,  1 Sep 2019 20:09:16 +0000 (UTC)
-From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
-To:     linux-fsdevel@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, darrick.wong@oracle.com, hch@lst.de,
-        david@fromorbit.com, riteshh@linux.ibm.com,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 14/15] btrfs: Remove btrfs_dio_data and __btrfs_direct_write
-Date:   Sun,  1 Sep 2019 15:08:35 -0500
-Message-Id: <20190901200836.14959-15-rgoldwyn@suse.de>
-X-Mailer: git-send-email 2.16.4
-In-Reply-To: <20190901200836.14959-1-rgoldwyn@suse.de>
-References: <20190901200836.14959-1-rgoldwyn@suse.de>
+        id S1729051AbfIAUJ2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 1 Sep 2019 16:09:28 -0400
+Received: from mail-wm1-f68.google.com ([209.85.128.68]:52988 "EHLO
+        mail-wm1-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725955AbfIAUJ2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Sep 2019 16:09:28 -0400
+Received: by mail-wm1-f68.google.com with SMTP id t17so12406300wmi.2
+        for <linux-btrfs@vger.kernel.org>; Sun, 01 Sep 2019 13:09:27 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc:content-transfer-encoding;
+        bh=XZGCE/B7MuC0ozEAFiOoEmuEfOCLBqczGWOG89mwQnY=;
+        b=f/1D71UZyZfVuTTFEdC8RCnSJzuSKsOR6FBqizL16f+8bZ0UQNCd+biHpFAAZf8oa8
+         oGbPri2UYRI5/Ligp7VT8ojKW8urCoTTjLK3VRpDA6lF//jbxkZdv0M/tUGc6s5AEIYH
+         wh8WcWukVolk32V7Ae/I6Kb+ZdNzeJ1d9WKL4YFS4N30vCgT5Y0+Y9sTzG+9rpuDUJJn
+         /k8d2RJ5X2P/rvjsKRdgABnm74M5cqdn7YQ/bVfsKnmlIg4YnOMe5JTS3Ee5MCl4qQ9X
+         IsegYDeoN583iJHttznrUZWCfaKSYPHasYZxMF7zC3w6jfmczxDab3XV9Np9HmPnWW+u
+         ITNQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=XZGCE/B7MuC0ozEAFiOoEmuEfOCLBqczGWOG89mwQnY=;
+        b=oe+Lm623dwF/tLHfCC4XdAWIavieAvGA2wvYy6QLpFCCK85QCjDbnM33ZyemYDNG1F
+         BwHuyXP+yk2/fXCcAbIHeQx0GrW5rL9JP5XqL8a4EXjLCP3zSBMSkbmiZ/n/4EPAvNe8
+         gZzoIydUvwQ4obW7PL7Km8i689+dICc0cZJky3kyGYxtVLgheQJtD/NuhZ3Np4kFcnjh
+         c08HDOA2H/JLXnAx+q+kjxogSdl82LRujulNqFMbEmI3qg1/AGEQnjxxka/YvYQxpDil
+         /ql0iUmz1sYcB+ZxEWnsKKZ2zsRqX0pJVtzFfUI8mUq6WOZVLbvWFhOpU+2QN9ldq2yX
+         ciqg==
+X-Gm-Message-State: APjAAAWPBq3uxLHfqMB3zLq6Jof5+MP86/nIyAvaqkzNYBebNwez5C65
+        tgtOfptS3Of6eN0IDLKn4chWa9r735gpLEfamIU3sQ==
+X-Google-Smtp-Source: APXvYqznZYzq0b9QtN9FBJPiGdkEgxVM643deyxjYmgccpTF+Aa4TxwhZRMAEnIIbyP7JvRtm9dA0wHtJWKvvw06nl0=
+X-Received: by 2002:a7b:ce8f:: with SMTP id q15mr15241478wmj.106.1567368566293;
+ Sun, 01 Sep 2019 13:09:26 -0700 (PDT)
+MIME-Version: 1.0
+References: <bdd368bc2e910523525c54844c5c47dd877f1a0d.camel@math.duke.edu>
+ <98252ab04af29eecf51b6c9ecb7f258df56c93ba.camel@math.duke.edu>
+ <CAJCQCtQRDfMb6=RtT5rNDSj_QT_nJXYx3C-Zzi9baPykHTrDDA@mail.gmail.com>
+ <cab4c26799caa8f4f9516124b5448840245a2811.camel@math.duke.edu>
+ <b3ec20d5-e9b1-4688-297b-b102b5a8fa10@gmx.com> <b855969a3108e7ef9be2e758eb8bd2f3539e5af0.camel@math.duke.edu>
+In-Reply-To: <b855969a3108e7ef9be2e758eb8bd2f3539e5af0.camel@math.duke.edu>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Sun, 1 Sep 2019 14:09:15 -0600
+Message-ID: <CAJCQCtR9feFgGtOZ0Wik2y1oQ69V5z5Q-voFtYPLtnbnbWo7TA@mail.gmail.com>
+Subject: Re: block corruption
+To:     Rann Bar-On <rann@math.duke.edu>
+Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Chris Murphy <lists@colorremedies.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+On Sun, Sep 1, 2019 at 11:39 AM Rann Bar-On <rann@math.duke.edu> wrote:
+>
+> On Sun, 2019-09-01 at 07:48 +0800, Qu Wenruo wrote:
+> >
+> > On 2019/9/1 =E4=B8=8A=E5=8D=887:39, Rann Bar-On wrote:
+> > > On Sat, 2019-08-31 at 17:04 -0600, Chris Murphy wrote:
+> > > > On Sat, Aug 31, 2019 at 2:26 PM Rann Bar-On <rann@math.duke.edu>
+> > > > wrote:
+> > > > > I just downgraded to kernel 4.19, and the supposed corruption
+> > > > > vanished.
+> > > > > This may be related to
+> > > > >
+> > > > > https://www.spinics.net/lists/linux-btrfs/msg91046.html
+> > > > >
+> > > > > If I can provide information that would help fix this issue,
+> > > > > I'd be
+> > > > > glad to, but I cannot upgrade back to kernel 5.2, as I can't
+> > > > > risk
+> > > > > this
+> > > > > system.
+> > > >
+> > > > 5.2 has more strict checks for corruption, exposing the rare case
+> > > > where metadata in a leaf is corrupt but the checksum was properly
+> > > > computed.
+> >
+> > Exactly.
+> >
+> > Although for your case, it's some older kernel doing something bad.
+> >
+> > It's also reported once for the same problem, some older kernel
+> > doesn't
+> > set the mode member properly.
+>
+> > > > > > Btrfs v3.17
+> > > >
+> > > > This is old. I suggest finding a newer version of btrfs-progs,
+> > > > ideally
+> > > > latest stable version is 5.2.1. Definitely don't use --repair
+> > > > with
+> > > > this version. It's safe to use check --readonly (which is the
+> > > > default)
+> > > > with this version but probably not that helpful to devs.
+> > > >
+> > >
+> > > Not really sure why that said 3.17:
+> > >
+> > > $ btrfs --version
+> > > btrfs-progs v5.2.1
+> > >
+> > > Anyway, running btrfs --repair on the file system didn't do
+> > > anything to
+> > > fix the above errors.
+> >
+> > That's what we need to enhance next.
+> >
+> > > I removed at least one of the corrupt files (the only one that was
+> > > mode
+> > > 0) using kernel 4.19.
+> > >
+> > > Happy to help further if I can. What would you suggest as far as
+> > > fixing
+> > > this or reporting it usefully? If you believe 5.2 isn't causing the
+> > > corruption, but rather, just exposing it, I'm more than happy to
+> > > experiment with it.
+> >
+> > Deleting the offending inodes would be enough to fix the alert.
+> >
+>
+> I deleted the file using the older kernel. I rebooted into the new
+> kernel, and things seem good for now.
+>
+> Note: The newer one wouldn't let me access the file to delete it, nor
+> did any btrfs repair tool do anything at all. This is a big problem
+> IMO!
 
-btrfs_dio_data is unnecessary since we are now storing all
-informaiton in btrfs_iomap.
+The current behavior is an improvement over propagating corruption and
+never detecting it because the leaf is assumed to be correct only
+because the checksum matches. The next step is figuring out ways to
+work around such rare detected corruptions, hopefully automatically
+and while online.
 
-Advantage: We don't abuse current->journal_info anymore :)
----
- fs/btrfs/file.c  | 40 ----------------------------
- fs/btrfs/inode.c | 81 ++------------------------------------------------------
- 2 files changed, 2 insertions(+), 119 deletions(-)
+I don't consider it user responsibility to have to do this, but I'm
+vaguely curious if it's possible to delete the offending file in a
+snapshot, then delete the original subvolume. i.e.
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 5d4347e12cdc..e6c1ffd74660 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1350,46 +1350,6 @@ static noinline int check_can_nocow(struct btrfs_inode *inode, loff_t pos,
- 	return ret;
- }
- 
--static ssize_t __btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
--{
--	struct file *file = iocb->ki_filp;
--	struct inode *inode = file_inode(file);
--	loff_t pos;
--	ssize_t written;
--	ssize_t written_buffered;
--	loff_t endbyte;
--	int err;
--
--	written = generic_file_direct_write(iocb, from);
--
--	if (written < 0 || !iov_iter_count(from))
--		return written;
--
--	pos = iocb->ki_pos;
--	written_buffered = btrfs_buffered_iomap_write(iocb, from);
--	if (written_buffered < 0) {
--		err = written_buffered;
--		goto out;
--	}
--	/*
--	 * Ensure all data is persisted. We want the next direct IO read to be
--	 * able to read what was just written.
--	 */
--	endbyte = pos + written_buffered - 1;
--	err = btrfs_fdatawrite_range(inode, pos, endbyte);
--	if (err)
--		goto out;
--	err = filemap_fdatawait_range(inode->i_mapping, pos, endbyte);
--	if (err)
--		goto out;
--	written += written_buffered;
--	iocb->ki_pos = pos + written_buffered;
--	invalidate_mapping_pages(file->f_mapping, pos >> PAGE_SHIFT,
--				 endbyte >> PAGE_SHIFT);
--out:
--	return written ? written : err;
--}
--
- static void update_time_for_write(struct inode *inode)
- {
- 	struct timespec64 now;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 323d72858c9c..87fbe73ca2e4 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -54,13 +54,6 @@ struct btrfs_iget_args {
- 	struct btrfs_root *root;
- };
- 
--struct btrfs_dio_data {
--	u64 reserve;
--	u64 unsubmitted_oe_range_start;
--	u64 unsubmitted_oe_range_end;
--	int overwrite;
--};
--
- static const struct inode_operations btrfs_dir_inode_operations;
- static const struct inode_operations btrfs_symlink_inode_operations;
- static const struct inode_operations btrfs_dir_ro_inode_operations;
-@@ -7664,7 +7657,6 @@ int btrfs_get_extent_map_write(struct extent_map **map,
- static int btrfs_get_blocks_direct_write(struct extent_map **map,
- 					 struct buffer_head *bh_result,
- 					 struct inode *inode,
--					 struct btrfs_dio_data *dio_data,
- 					 u64 start, u64 len)
- {
- 	int ret;
-@@ -7686,17 +7678,6 @@ static int btrfs_get_blocks_direct_write(struct extent_map **map,
- 	if (!test_bit(EXTENT_FLAG_PREALLOC, &em->flags))
- 		set_buffer_new(bh_result);
- 
--	/*
--	 * Need to update the i_size under the extent lock so buffered
--	 * readers will get the updated i_size when we unlock.
--	 */
--	if (!dio_data->overwrite && start + len > i_size_read(inode))
--		i_size_write(inode, start + len);
--
--	WARN_ON(dio_data->reserve < len);
--	dio_data->reserve -= len;
--	dio_data->unsubmitted_oe_range_end = start + len;
--	current->journal_info = dio_data;
- 	return ret;
- }
- 
-@@ -7706,7 +7687,6 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct extent_map *em;
- 	struct extent_state *cached_state = NULL;
--	struct btrfs_dio_data *dio_data = NULL;
- 	u64 start = iblock << inode->i_blkbits;
- 	u64 lockstart, lockend;
- 	u64 len = bh_result->b_size;
-@@ -7721,16 +7701,6 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
- 	lockstart = start;
- 	lockend = start + len - 1;
- 
--	if (current->journal_info) {
--		/*
--		 * Need to pull our outstanding extents and set journal_info to NULL so
--		 * that anything that needs to check if there's a transaction doesn't get
--		 * confused.
--		 */
--		dio_data = current->journal_info;
--		current->journal_info = NULL;
--	}
--
- 	/*
- 	 * If this errors out it's because we couldn't invalidate pagecache for
- 	 * this range and we need to fallback to buffered.
-@@ -7770,7 +7740,7 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
- 
- 	if (create) {
- 		ret = btrfs_get_blocks_direct_write(&em, bh_result, inode,
--						    dio_data, start, len);
-+						    start, len);
- 		if (ret < 0)
- 			goto unlock_err;
- 
-@@ -7808,8 +7778,6 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
- 	clear_extent_bit(&BTRFS_I(inode)->io_tree, lockstart, lockend,
- 			 unlock_bits, 1, 0, &cached_state);
- err:
--	if (dio_data)
--		current->journal_info = dio_data;
- 	return ret;
- }
- 
-@@ -8498,21 +8466,6 @@ void btrfs_submit_direct(struct bio *dio_bio, struct inode *inode,
- 		dip->subio_endio = btrfs_subio_endio_read;
- 	}
- 
--	/*
--	 * Reset the range for unsubmitted ordered extents (to a 0 length range)
--	 * even if we fail to submit a bio, because in such case we do the
--	 * corresponding error handling below and it must not be done a second
--	 * time by btrfs_direct_IO().
--	 */
--	if (write) {
--		struct btrfs_dio_data *dio_data = current->journal_info;
--
--		dio_data->unsubmitted_oe_range_end = dip->logical_offset +
--			dip->bytes;
--		dio_data->unsubmitted_oe_range_start =
--			dio_data->unsubmitted_oe_range_end;
--	}
--
- 	ret = btrfs_submit_direct_hook(dip);
- 	if (!ret)
- 		return;
-@@ -8598,7 +8551,6 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
- 	struct file *file = iocb->ki_filp;
- 	struct inode *inode = file->f_mapping->host;
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
--	struct btrfs_dio_data dio_data = { 0 };
- 	struct extent_changeset *data_reserved = NULL;
- 	loff_t offset = iocb->ki_pos;
- 	size_t count = 0;
-@@ -8631,7 +8583,6 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
- 		 * not unlock the i_mutex at this case.
- 		 */
- 		if (offset + count <= inode->i_size) {
--			dio_data.overwrite = 1;
- 			inode_unlock(inode);
- 			relock = true;
- 		} else if (iocb->ki_flags & IOCB_NOWAIT) {
-@@ -8643,16 +8594,6 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
- 		if (ret)
- 			goto out;
- 
--		/*
--		 * We need to know how many extents we reserved so that we can
--		 * do the accounting properly if we go over the number we
--		 * originally calculated.  Abuse current->journal_info for this.
--		 */
--		dio_data.reserve = round_up(count,
--					    fs_info->sectorsize);
--		dio_data.unsubmitted_oe_range_start = (u64)offset;
--		dio_data.unsubmitted_oe_range_end = (u64)offset;
--		current->journal_info = &dio_data;
- 		down_read(&BTRFS_I(inode)->dio_sem);
- 	} else if (test_bit(BTRFS_INODE_READDIO_NEED_LOCK,
- 				     &BTRFS_I(inode)->runtime_flags)) {
-@@ -8667,25 +8608,7 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
- 				   btrfs_submit_direct, flags);
- 	if (iov_iter_rw(iter) == WRITE) {
- 		up_read(&BTRFS_I(inode)->dio_sem);
--		current->journal_info = NULL;
--		if (ret < 0 && ret != -EIOCBQUEUED) {
--			if (dio_data.reserve)
--				btrfs_delalloc_release_space(inode, data_reserved,
--					offset, dio_data.reserve, true);
--			/*
--			 * On error we might have left some ordered extents
--			 * without submitting corresponding bios for them, so
--			 * cleanup them up to avoid other tasks getting them
--			 * and waiting for them to complete forever.
--			 */
--			if (dio_data.unsubmitted_oe_range_start <
--			    dio_data.unsubmitted_oe_range_end)
--				btrfs_update_ordered_extent(inode,
--					dio_data.unsubmitted_oe_range_start,
--					dio_data.unsubmitted_oe_range_end -
--					dio_data.unsubmitted_oe_range_start,
--					false);
--		} else if (ret >= 0 && (size_t)ret < count)
-+		if (ret >= 0 && (size_t)ret < count)
- 			btrfs_delalloc_release_space(inode, data_reserved,
- 					offset, count - (size_t)ret, true);
- 		btrfs_delalloc_release_extents(BTRFS_I(inode), count, false);
--- 
-2.16.4
+1.
+snapshot the subvolume containing the file (default rw snapshot)
+2.
+delete the bad file(s) in the snapshot
+3.
+delete the original subvolume (snapshot's parent)
 
+I'm curious if either 2 or 3 are permitted.
+
+
+--=20
+Chris Murphy

@@ -4,32 +4,32 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 90A81C3A5A4
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CD6AFC3A5A7
 	for <linux-btrfs@archiver.kernel.org>; Sun,  1 Sep 2019 20:08:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 6B3DC2190F
+	by mail.kernel.org (Postfix) with ESMTP id AC5572190F
 	for <linux-btrfs@archiver.kernel.org>; Sun,  1 Sep 2019 20:08:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728879AbfIAUIu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 1 Sep 2019 16:08:50 -0400
-Received: from mx2.suse.de ([195.135.220.15]:50372 "EHLO mx1.suse.de"
+        id S1728933AbfIAUIy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 1 Sep 2019 16:08:54 -0400
+Received: from mx2.suse.de ([195.135.220.15]:50408 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728610AbfIAUIt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 1 Sep 2019 16:08:49 -0400
+        id S1728888AbfIAUIy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 1 Sep 2019 16:08:54 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B2210B07B;
-        Sun,  1 Sep 2019 20:08:48 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id DBDB3AE96;
+        Sun,  1 Sep 2019 20:08:52 +0000 (UTC)
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-fsdevel@vger.kernel.org
 Cc:     linux-btrfs@vger.kernel.org, darrick.wong@oracle.com, hch@lst.de,
         david@fromorbit.com, riteshh@linux.ibm.com,
         Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 01/15] iomap: Introduce CONFIG_FS_IOMAP_DEBUG
-Date:   Sun,  1 Sep 2019 15:08:22 -0500
-Message-Id: <20190901200836.14959-2-rgoldwyn@suse.de>
+Subject: [PATCH 03/15] iomap: Read page from srcmap for IOMAP_COW
+Date:   Sun,  1 Sep 2019 15:08:24 -0500
+Message-Id: <20190901200836.14959-4-rgoldwyn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20190901200836.14959-1-rgoldwyn@suse.de>
 References: <20190901200836.14959-1-rgoldwyn@suse.de>
@@ -40,51 +40,92 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-To improve debugging abilities, especially invalid option
-asserts.
+In case of a IOMAP_COW, read a page from the srcmap before
+performing a write on the page.
 
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+Reviewed-by: Darrick J. Wong <darrick.wong@oracle.com>
 ---
- fs/Kconfig            |  3 +++
- include/linux/iomap.h | 11 +++++++++++
- 2 files changed, 14 insertions(+)
+ fs/iomap/buffered-io.c | 23 ++++++++++++++---------
+ 1 file changed, 14 insertions(+), 9 deletions(-)
 
-diff --git a/fs/Kconfig b/fs/Kconfig
-index bfb1c6095c7a..4bed5df9b55f 100644
---- a/fs/Kconfig
-+++ b/fs/Kconfig
-@@ -19,6 +19,9 @@ if BLOCK
+diff --git a/fs/iomap/buffered-io.c b/fs/iomap/buffered-io.c
+index f27756c0b31c..99d63ba14d1b 100644
+--- a/fs/iomap/buffered-io.c
++++ b/fs/iomap/buffered-io.c
+@@ -581,7 +581,7 @@ __iomap_write_begin(struct inode *inode, loff_t pos, unsigned len,
  
- config FS_IOMAP
- 	bool
-+config FS_IOMAP_DEBUG
-+	bool "Debugging for the iomap code"
-+	depends on FS_IOMAP
+ static int
+ iomap_write_begin(struct inode *inode, loff_t pos, unsigned len, unsigned flags,
+-		struct page **pagep, struct iomap *iomap)
++		struct page **pagep, struct iomap *iomap, struct iomap *srcmap)
+ {
+ 	const struct iomap_page_ops *page_ops = iomap->page_ops;
+ 	pgoff_t index = pos >> PAGE_SHIFT;
+@@ -605,12 +605,17 @@ iomap_write_begin(struct inode *inode, loff_t pos, unsigned len, unsigned flags,
+ 		goto out_no_page;
+ 	}
  
- source "fs/ext2/Kconfig"
- source "fs/ext4/Kconfig"
-diff --git a/include/linux/iomap.h b/include/linux/iomap.h
-index bc499ceae392..209b6c93674e 100644
---- a/include/linux/iomap.h
-+++ b/include/linux/iomap.h
-@@ -18,6 +18,17 @@ struct page;
- struct vm_area_struct;
- struct vm_fault;
- 
-+#ifdef CONFIG_FS_IOMAP_DEBUG
-+#define iomap_assert(expr) \
-+	if(!(expr)) { \
-+		printk( "Assertion failed! %s,%s,%s,line=%d\n",\
-+#expr,__FILE__,__func__,__LINE__); \
-+		BUG(); \
+-	if (iomap->type == IOMAP_INLINE)
++	if (iomap->type == IOMAP_INLINE) {
+ 		iomap_read_inline_data(inode, page, iomap);
+-	else if (iomap->flags & IOMAP_F_BUFFER_HEAD)
++	} else if (iomap->type == IOMAP_COW) {
++		iomap_assert(!(iomap->flags & IOMAP_F_BUFFER_HEAD));
++		iomap_assert(srcmap->type == IOMAP_HOLE || srcmap->addr > 0);
++		status = __iomap_write_begin(inode, pos, len, page, srcmap);
++	} else if (iomap->flags & IOMAP_F_BUFFER_HEAD) {
+ 		status = __block_write_begin_int(page, pos, len, NULL, iomap);
+-	else
++	} else {
+ 		status = __iomap_write_begin(inode, pos, len, page, iomap);
 +	}
-+#else
-+#define iomap_assert(expr)
-+#endif
-+
- /*
-  * Types of block ranges for iomap mappings:
-  */
+ 
+ 	if (unlikely(status))
+ 		goto out_unlock;
+@@ -772,7 +777,7 @@ iomap_write_actor(struct inode *inode, loff_t pos, loff_t length, void *data,
+ 		}
+ 
+ 		status = iomap_write_begin(inode, pos, bytes, flags, &page,
+-				iomap);
++				iomap, srcmap);
+ 		if (unlikely(status))
+ 			break;
+ 
+@@ -871,7 +876,7 @@ iomap_dirty_actor(struct inode *inode, loff_t pos, loff_t length, void *data,
+ 			return PTR_ERR(rpage);
+ 
+ 		status = iomap_write_begin(inode, pos, bytes,
+-					   AOP_FLAG_NOFS, &page, iomap);
++					   AOP_FLAG_NOFS, &page, iomap, srcmap);
+ 		put_page(rpage);
+ 		if (unlikely(status))
+ 			return status;
+@@ -917,13 +922,13 @@ iomap_file_dirty(struct inode *inode, loff_t pos, loff_t len,
+ EXPORT_SYMBOL_GPL(iomap_file_dirty);
+ 
+ static int iomap_zero(struct inode *inode, loff_t pos, unsigned offset,
+-		unsigned bytes, struct iomap *iomap)
++		unsigned bytes, struct iomap *iomap, struct iomap *srcmap)
+ {
+ 	struct page *page;
+ 	int status;
+ 
+ 	status = iomap_write_begin(inode, pos, bytes, AOP_FLAG_NOFS, &page,
+-				   iomap);
++				   iomap, srcmap);
+ 	if (status)
+ 		return status;
+ 
+@@ -961,7 +966,7 @@ iomap_zero_range_actor(struct inode *inode, loff_t pos, loff_t count,
+ 		if (IS_DAX(inode))
+ 			status = iomap_dax_zero(pos, offset, bytes, iomap);
+ 		else
+-			status = iomap_zero(inode, pos, offset, bytes, iomap);
++			status = iomap_zero(inode, pos, offset, bytes, iomap, srcmap);
+ 		if (status < 0)
+ 			return status;
+ 
 -- 
 2.16.4
 

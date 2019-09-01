@@ -6,30 +6,30 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B4D91C3A5AA
-	for <linux-btrfs@archiver.kernel.org>; Sun,  1 Sep 2019 20:08:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 13046C3A5A4
+	for <linux-btrfs@archiver.kernel.org>; Sun,  1 Sep 2019 20:09:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 897792190F
-	for <linux-btrfs@archiver.kernel.org>; Sun,  1 Sep 2019 20:08:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D80A22190F
+	for <linux-btrfs@archiver.kernel.org>; Sun,  1 Sep 2019 20:09:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728923AbfIAUIy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 1 Sep 2019 16:08:54 -0400
-Received: from mx2.suse.de ([195.135.220.15]:50396 "EHLO mx1.suse.de"
+        id S1728958AbfIAUI6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 1 Sep 2019 16:08:58 -0400
+Received: from mx2.suse.de ([195.135.220.15]:50420 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728610AbfIAUIx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 1 Sep 2019 16:08:53 -0400
+        id S1728888AbfIAUI4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 1 Sep 2019 16:08:56 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id CC513AE3F;
-        Sun,  1 Sep 2019 20:08:50 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id DE6C9AE3F;
+        Sun,  1 Sep 2019 20:08:54 +0000 (UTC)
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-fsdevel@vger.kernel.org
 Cc:     linux-btrfs@vger.kernel.org, darrick.wong@oracle.com, hch@lst.de,
         david@fromorbit.com, riteshh@linux.ibm.com,
         Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 02/15] iomap: Use a IOMAP_COW/srcmap for a read-modify-write I/O
-Date:   Sun,  1 Sep 2019 15:08:23 -0500
-Message-Id: <20190901200836.14959-3-rgoldwyn@suse.de>
+Subject: [PATCH 04/15] btrfs: Eliminate PagePrivate for btrfs data pages
+Date:   Sun,  1 Sep 2019 15:08:25 -0500
+Message-Id: <20190901200836.14959-5-rgoldwyn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20190901200836.14959-1-rgoldwyn@suse.de>
 References: <20190901200836.14959-1-rgoldwyn@suse.de>
@@ -40,351 +40,210 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-Introduces a new type IOMAP_COW, which means the data at offset
-must be read from a srcmap and copied before performing the
-write on the offset.
+While most of the code works just eliminating page's private
+field and related code, there is a problem when we are cloning.
+The extent assumes the data is uptodate. Clear the EXTENT_UPTODATE
+flag for the extent so the next time the file is read, it is
+forced to be read from the disk as opposed to pagecache.
 
-The srcmap is used to identify where the read is to be performed
-from. This is passed to iomap->begin() of the respective
-filesystem, which is supposed to put in the details for
-reading before performing the copy for CoW.
+This patch is required to make sure we don't conflict with iomap's
+usage of page->private.
 
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 ---
- fs/dax.c               |  8 +++++---
- fs/ext2/inode.c        |  2 +-
- fs/ext4/inode.c        |  2 +-
- fs/gfs2/bmap.c         |  3 ++-
- fs/iomap/apply.c       |  5 +++--
- fs/iomap/buffered-io.c | 14 +++++++-------
- fs/iomap/direct-io.c   |  2 +-
- fs/iomap/fiemap.c      |  4 ++--
- fs/iomap/seek.c        |  4 ++--
- fs/iomap/swapfile.c    |  3 ++-
- fs/xfs/xfs_iomap.c     |  9 ++++++---
- include/linux/iomap.h  |  6 ++++--
- 12 files changed, 36 insertions(+), 26 deletions(-)
+ fs/btrfs/compression.c      |  1 -
+ fs/btrfs/extent_io.c        | 13 -------------
+ fs/btrfs/extent_io.h        |  2 --
+ fs/btrfs/file.c             |  1 -
+ fs/btrfs/free-space-cache.c |  1 -
+ fs/btrfs/inode.c            | 15 +--------------
+ fs/btrfs/ioctl.c            |  4 ++--
+ fs/btrfs/relocation.c       |  2 --
+ 8 files changed, 3 insertions(+), 36 deletions(-)
 
-diff --git a/fs/dax.c b/fs/dax.c
-index 6bf81f931de3..e961d8dc23ef 100644
---- a/fs/dax.c
-+++ b/fs/dax.c
-@@ -1090,7 +1090,7 @@ EXPORT_SYMBOL_GPL(__dax_zero_page_range);
- 
- static loff_t
- dax_iomap_actor(struct inode *inode, loff_t pos, loff_t length, void *data,
--		struct iomap *iomap)
-+		struct iomap *iomap, struct iomap *srcmap)
- {
- 	struct block_device *bdev = iomap->bdev;
- 	struct dax_device *dax_dev = iomap->dax_dev;
-@@ -1248,6 +1248,7 @@ static vm_fault_t dax_iomap_pte_fault(struct vm_fault *vmf, pfn_t *pfnp,
- 	unsigned long vaddr = vmf->address;
- 	loff_t pos = (loff_t)vmf->pgoff << PAGE_SHIFT;
- 	struct iomap iomap = { 0 };
-+	struct iomap srcmap = { 0 };
- 	unsigned flags = IOMAP_FAULT;
- 	int error, major = 0;
- 	bool write = vmf->flags & FAULT_FLAG_WRITE;
-@@ -1292,7 +1293,7 @@ static vm_fault_t dax_iomap_pte_fault(struct vm_fault *vmf, pfn_t *pfnp,
- 	 * the file system block size to be equal the page size, which means
- 	 * that we never have to deal with more than a single extent here.
- 	 */
--	error = ops->iomap_begin(inode, pos, PAGE_SIZE, flags, &iomap);
-+	error = ops->iomap_begin(inode, pos, PAGE_SIZE, flags, &iomap, &srcmap);
- 	if (iomap_errp)
- 		*iomap_errp = error;
- 	if (error) {
-@@ -1472,6 +1473,7 @@ static vm_fault_t dax_iomap_pmd_fault(struct vm_fault *vmf, pfn_t *pfnp,
- 	struct inode *inode = mapping->host;
- 	vm_fault_t result = VM_FAULT_FALLBACK;
- 	struct iomap iomap = { 0 };
-+	struct iomap srcmap = { 0 };
- 	pgoff_t max_pgoff;
- 	void *entry;
- 	loff_t pos;
-@@ -1546,7 +1548,7 @@ static vm_fault_t dax_iomap_pmd_fault(struct vm_fault *vmf, pfn_t *pfnp,
- 	 * to look up our filesystem block.
- 	 */
- 	pos = (loff_t)xas.xa_index << PAGE_SHIFT;
--	error = ops->iomap_begin(inode, pos, PMD_SIZE, iomap_flags, &iomap);
-+	error = ops->iomap_begin(inode, pos, PMD_SIZE, iomap_flags, &iomap, &srcmap);
- 	if (error)
- 		goto unlock_entry;
- 
-diff --git a/fs/ext2/inode.c b/fs/ext2/inode.c
-index 7004ce581a32..467c13ff6b40 100644
---- a/fs/ext2/inode.c
-+++ b/fs/ext2/inode.c
-@@ -801,7 +801,7 @@ int ext2_get_block(struct inode *inode, sector_t iblock,
- 
- #ifdef CONFIG_FS_DAX
- static int ext2_iomap_begin(struct inode *inode, loff_t offset, loff_t length,
--		unsigned flags, struct iomap *iomap)
-+		unsigned flags, struct iomap *iomap, struct iomap *srcmap)
- {
- 	unsigned int blkbits = inode->i_blkbits;
- 	unsigned long first_block = offset >> blkbits;
-diff --git a/fs/ext4/inode.c b/fs/ext4/inode.c
-index 420fe3deed39..918f94eff799 100644
---- a/fs/ext4/inode.c
-+++ b/fs/ext4/inode.c
-@@ -3453,7 +3453,7 @@ static bool ext4_inode_datasync_dirty(struct inode *inode)
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index 60c47b417a4b..fe41fa3d2999 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -481,7 +481,6 @@ static noinline int add_ra_bio_pages(struct inode *inode,
+ 		 * for these bytes in the file.  But, we have to make
+ 		 * sure they map to this compressed extent on disk.
+ 		 */
+-		set_page_extent_mapped(page);
+ 		lock_extent(tree, last_offset, end);
+ 		read_lock(&em_tree->lock);
+ 		em = lookup_extent_mapping(em_tree, last_offset,
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 1ff438fd5bc2..27233fb6660c 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3005,15 +3005,6 @@ static void attach_extent_buffer_page(struct extent_buffer *eb,
+ 	}
  }
  
- static int ext4_iomap_begin(struct inode *inode, loff_t offset, loff_t length,
--			    unsigned flags, struct iomap *iomap)
-+			    unsigned flags, struct iomap *iomap, struct iomap *srcmap)
- {
- 	struct ext4_sb_info *sbi = EXT4_SB(inode->i_sb);
- 	unsigned int blkbits = inode->i_blkbits;
-diff --git a/fs/gfs2/bmap.c b/fs/gfs2/bmap.c
-index 4f8b5fd6c81f..0189262989f2 100644
---- a/fs/gfs2/bmap.c
-+++ b/fs/gfs2/bmap.c
-@@ -1164,7 +1164,8 @@ static int gfs2_iomap_begin_write(struct inode *inode, loff_t pos,
- }
+-void set_page_extent_mapped(struct page *page)
+-{
+-	if (!PagePrivate(page)) {
+-		SetPagePrivate(page);
+-		get_page(page);
+-		set_page_private(page, EXTENT_PAGE_PRIVATE);
+-	}
+-}
+-
+ static struct extent_map *
+ __get_extent_map(struct inode *inode, struct page *page, size_t pg_offset,
+ 		 u64 start, u64 len, get_extent_t *get_extent,
+@@ -3074,8 +3065,6 @@ static int __do_readpage(struct extent_io_tree *tree,
+ 	size_t blocksize = inode->i_sb->s_blocksize;
+ 	unsigned long this_bio_flag = 0;
  
- static int gfs2_iomap_begin(struct inode *inode, loff_t pos, loff_t length,
--			    unsigned flags, struct iomap *iomap)
-+			    unsigned flags, struct iomap *iomap,
-+			    struct iomap *srcmap)
- {
- 	struct gfs2_inode *ip = GFS2_I(inode);
- 	struct metapath mp = { .mp_aheight = 1, };
-diff --git a/fs/iomap/apply.c b/fs/iomap/apply.c
-index 54c02aecf3cd..6cdb362fff36 100644
---- a/fs/iomap/apply.c
-+++ b/fs/iomap/apply.c
-@@ -24,6 +24,7 @@ iomap_apply(struct inode *inode, loff_t pos, loff_t length, unsigned flags,
- 		const struct iomap_ops *ops, void *data, iomap_actor_t actor)
- {
- 	struct iomap iomap = { 0 };
-+	struct iomap srcmap = { 0 };
- 	loff_t written = 0, ret;
+-	set_page_extent_mapped(page);
+-
+ 	if (!PageUptodate(page)) {
+ 		if (cleancache_get_page(page) == 0) {
+ 			BUG_ON(blocksize != PAGE_SIZE);
+@@ -3589,8 +3578,6 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
  
- 	/*
-@@ -38,7 +39,7 @@ iomap_apply(struct inode *inode, loff_t pos, loff_t length, unsigned flags,
- 	 * expose transient stale data. If the reserve fails, we can safely
- 	 * back out at this point as there is nothing to undo.
+ 	pg_offset = 0;
+ 
+-	set_page_extent_mapped(page);
+-
+ 	if (!epd->extent_locked) {
+ 		ret = writepage_delalloc(inode, page, wbc, start, &nr_written);
+ 		if (ret == 1)
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 401423b16976..8082774371b5 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -416,8 +416,6 @@ int extent_readpages(struct address_space *mapping, struct list_head *pages,
+ 		     unsigned nr_pages);
+ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 		__u64 start, __u64 len);
+-void set_page_extent_mapped(struct page *page);
+-
+ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+ 					  u64 start);
+ struct extent_buffer *__alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 58a18ed11546..4466a09f2d98 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1539,7 +1539,6 @@ lock_and_cleanup_extent_if_need(struct btrfs_inode *inode, struct page **pages,
+ 	 * delalloc bits and dirty the pages as required.
  	 */
--	ret = ops->iomap_begin(inode, pos, length, flags, &iomap);
-+	ret = ops->iomap_begin(inode, pos, length, flags, &iomap, &srcmap);
- 	if (ret)
- 		return ret;
- 	if (WARN_ON(iomap.offset > pos))
-@@ -58,7 +59,7 @@ iomap_apply(struct inode *inode, loff_t pos, loff_t length, unsigned flags,
- 	 * we can do the copy-in page by page without having to worry about
- 	 * failures exposing transient data.
- 	 */
--	written = actor(inode, pos, length, data, &iomap);
-+	written = actor(inode, pos, length, data, &iomap, &srcmap);
- 
- 	/*
- 	 * Now the data has been copied, commit the range we've copied.  This
-diff --git a/fs/iomap/buffered-io.c b/fs/iomap/buffered-io.c
-index e25901ae3ff4..f27756c0b31c 100644
---- a/fs/iomap/buffered-io.c
-+++ b/fs/iomap/buffered-io.c
-@@ -205,7 +205,7 @@ iomap_read_inline_data(struct inode *inode, struct page *page,
- 
- static loff_t
- iomap_readpage_actor(struct inode *inode, loff_t pos, loff_t length, void *data,
--		struct iomap *iomap)
-+		struct iomap *iomap, struct iomap *srcmap)
- {
- 	struct iomap_readpage_ctx *ctx = data;
- 	struct page *page = ctx->cur_page;
-@@ -351,7 +351,7 @@ iomap_next_page(struct inode *inode, struct list_head *pages, loff_t pos,
- 
- static loff_t
- iomap_readpages_actor(struct inode *inode, loff_t pos, loff_t length,
--		void *data, struct iomap *iomap)
-+		void *data, struct iomap *iomap, struct iomap *srcmap)
- {
- 	struct iomap_readpage_ctx *ctx = data;
- 	loff_t done, ret;
-@@ -371,7 +371,7 @@ iomap_readpages_actor(struct inode *inode, loff_t pos, loff_t length,
- 			ctx->cur_page_in_bio = false;
- 		}
- 		ret = iomap_readpage_actor(inode, pos + done, length - done,
--				ctx, iomap);
-+				ctx, iomap, srcmap);
+ 	for (i = 0; i < num_pages; i++) {
+-		set_page_extent_mapped(pages[i]);
+ 		WARN_ON(!PageLocked(pages[i]));
  	}
  
- 	return done;
-@@ -736,7 +736,7 @@ iomap_write_end(struct inode *inode, loff_t pos, unsigned len,
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 062be9dde4c6..9a0c519bd6d4 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -395,7 +395,6 @@ static int io_ctl_prepare_pages(struct btrfs_io_ctl *io_ctl, struct inode *inode
  
- static loff_t
- iomap_write_actor(struct inode *inode, loff_t pos, loff_t length, void *data,
--		struct iomap *iomap)
-+		struct iomap *iomap, struct iomap *srcmap)
- {
- 	struct iov_iter *i = data;
- 	long status = 0;
-@@ -853,7 +853,7 @@ __iomap_read_page(struct inode *inode, loff_t offset)
+ 	for (i = 0; i < io_ctl->num_pages; i++) {
+ 		clear_page_dirty_for_io(io_ctl->pages[i]);
+-		set_page_extent_mapped(io_ctl->pages[i]);
+ 	}
  
- static loff_t
- iomap_dirty_actor(struct inode *inode, loff_t pos, loff_t length, void *data,
--		struct iomap *iomap)
-+		struct iomap *iomap, struct iomap *srcmap)
- {
- 	long status = 0;
- 	ssize_t written = 0;
-@@ -942,7 +942,7 @@ static int iomap_dax_zero(loff_t pos, unsigned offset, unsigned bytes,
+ 	return 0;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index ee582a36653d..258bacefdf5f 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4932,7 +4932,6 @@ int btrfs_truncate_block(struct inode *inode, loff_t from, loff_t len,
+ 	wait_on_page_writeback(page);
  
- static loff_t
- iomap_zero_range_actor(struct inode *inode, loff_t pos, loff_t count,
--		void *data, struct iomap *iomap)
-+		void *data, struct iomap *iomap, struct iomap *srcmap)
- {
- 	bool *did_zero = data;
- 	loff_t written = 0;
-@@ -1011,7 +1011,7 @@ EXPORT_SYMBOL_GPL(iomap_truncate_page);
+ 	lock_extent_bits(io_tree, block_start, block_end, &cached_state);
+-	set_page_extent_mapped(page);
  
- static loff_t
- iomap_page_mkwrite_actor(struct inode *inode, loff_t pos, loff_t length,
--		void *data, struct iomap *iomap)
-+		void *data, struct iomap *iomap, struct iomap *srcmap)
- {
- 	struct page *page = data;
- 	int ret;
-diff --git a/fs/iomap/direct-io.c b/fs/iomap/direct-io.c
-index 10517cea9682..5279029c7a3c 100644
---- a/fs/iomap/direct-io.c
-+++ b/fs/iomap/direct-io.c
-@@ -362,7 +362,7 @@ iomap_dio_inline_actor(struct inode *inode, loff_t pos, loff_t length,
+ 	ordered = btrfs_lookup_ordered_extent(inode, block_start);
+ 	if (ordered) {
+@@ -8754,13 +8753,7 @@ btrfs_readpages(struct file *file, struct address_space *mapping,
  
- static loff_t
- iomap_dio_actor(struct inode *inode, loff_t pos, loff_t length,
--		void *data, struct iomap *iomap)
-+		void *data, struct iomap *iomap, struct iomap *srcmap)
+ static int __btrfs_releasepage(struct page *page, gfp_t gfp_flags)
  {
- 	struct iomap_dio *dio = data;
+-	int ret = try_release_extent_mapping(page, gfp_flags);
+-	if (ret == 1) {
+-		ClearPagePrivate(page);
+-		set_page_private(page, 0);
+-		put_page(page);
+-	}
+-	return ret;
++	return try_release_extent_mapping(page, gfp_flags);
+ }
  
-diff --git a/fs/iomap/fiemap.c b/fs/iomap/fiemap.c
-index f26fdd36e383..690ef2d7c6c8 100644
---- a/fs/iomap/fiemap.c
-+++ b/fs/iomap/fiemap.c
-@@ -44,7 +44,7 @@ static int iomap_to_fiemap(struct fiemap_extent_info *fi,
+ static int btrfs_releasepage(struct page *page, gfp_t gfp_flags)
+@@ -8878,11 +8871,6 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
+ 	}
  
- static loff_t
- iomap_fiemap_actor(struct inode *inode, loff_t pos, loff_t length, void *data,
--		struct iomap *iomap)
-+		struct iomap *iomap, struct iomap *srcmap)
- {
- 	struct fiemap_ctx *ctx = data;
- 	loff_t ret = length;
-@@ -111,7 +111,7 @@ EXPORT_SYMBOL_GPL(iomap_fiemap);
- 
- static loff_t
- iomap_bmap_actor(struct inode *inode, loff_t pos, loff_t length,
--		void *data, struct iomap *iomap)
-+		void *data, struct iomap *iomap, struct iomap *srcmap)
- {
- 	sector_t *bno = data, addr;
- 
-diff --git a/fs/iomap/seek.c b/fs/iomap/seek.c
-index c04bad4b2b43..89f61d93c0bc 100644
---- a/fs/iomap/seek.c
-+++ b/fs/iomap/seek.c
-@@ -119,7 +119,7 @@ page_cache_seek_hole_data(struct inode *inode, loff_t offset, loff_t length,
- 
- static loff_t
- iomap_seek_hole_actor(struct inode *inode, loff_t offset, loff_t length,
--		      void *data, struct iomap *iomap)
-+		      void *data, struct iomap *iomap, struct iomap *srcmap)
- {
- 	switch (iomap->type) {
- 	case IOMAP_UNWRITTEN:
-@@ -165,7 +165,7 @@ EXPORT_SYMBOL_GPL(iomap_seek_hole);
- 
- static loff_t
- iomap_seek_data_actor(struct inode *inode, loff_t offset, loff_t length,
--		      void *data, struct iomap *iomap)
-+		      void *data, struct iomap *iomap, struct iomap *srcmap)
- {
- 	switch (iomap->type) {
- 	case IOMAP_HOLE:
-diff --git a/fs/iomap/swapfile.c b/fs/iomap/swapfile.c
-index 152a230f668d..a648dbf6991e 100644
---- a/fs/iomap/swapfile.c
-+++ b/fs/iomap/swapfile.c
-@@ -76,7 +76,8 @@ static int iomap_swapfile_add_extent(struct iomap_swapfile_info *isi)
-  * distinction between written and unwritten extents.
-  */
- static loff_t iomap_swapfile_activate_actor(struct inode *inode, loff_t pos,
--		loff_t count, void *data, struct iomap *iomap)
-+		loff_t count, void *data, struct iomap *iomap,
-+		struct iomap *srcmap)
- {
- 	struct iomap_swapfile_info *isi = data;
- 	int error;
-diff --git a/fs/xfs/xfs_iomap.c b/fs/xfs/xfs_iomap.c
-index 3a4310d7cb59..8321733c16c3 100644
---- a/fs/xfs/xfs_iomap.c
-+++ b/fs/xfs/xfs_iomap.c
-@@ -922,7 +922,8 @@ xfs_file_iomap_begin(
- 	loff_t			offset,
- 	loff_t			length,
- 	unsigned		flags,
--	struct iomap		*iomap)
-+	struct iomap		*iomap,
-+	struct iomap		*srcmap)
- {
- 	struct xfs_inode	*ip = XFS_I(inode);
- 	struct xfs_mount	*mp = ip->i_mount;
-@@ -1145,7 +1146,8 @@ xfs_seek_iomap_begin(
- 	loff_t			offset,
- 	loff_t			length,
- 	unsigned		flags,
--	struct iomap		*iomap)
-+	struct iomap		*iomap,
-+	struct iomap		*srcmap)
- {
- 	struct xfs_inode	*ip = XFS_I(inode);
- 	struct xfs_mount	*mp = ip->i_mount;
-@@ -1231,7 +1233,8 @@ xfs_xattr_iomap_begin(
- 	loff_t			offset,
- 	loff_t			length,
- 	unsigned		flags,
--	struct iomap		*iomap)
-+	struct iomap		*iomap,
-+	struct iomap		*srcmap)
- {
- 	struct xfs_inode	*ip = XFS_I(inode);
- 	struct xfs_mount	*mp = ip->i_mount;
-diff --git a/include/linux/iomap.h b/include/linux/iomap.h
-index 209b6c93674e..9c082d36286a 100644
---- a/include/linux/iomap.h
-+++ b/include/linux/iomap.h
-@@ -37,6 +37,7 @@ struct vm_fault;
- #define IOMAP_MAPPED	0x03	/* blocks allocated at @addr */
- #define IOMAP_UNWRITTEN	0x04	/* blocks allocated at @addr in unwritten state */
- #define IOMAP_INLINE	0x05	/* data inline in the inode */
-+#define IOMAP_COW	0x06	/* copy data from srcmap before writing */
+ 	ClearPageChecked(page);
+-	if (PagePrivate(page)) {
+-		ClearPagePrivate(page);
+-		set_page_private(page, 0);
+-		put_page(page);
+-	}
+ }
  
  /*
-  * Flags for all iomap mappings:
-@@ -121,7 +122,8 @@ struct iomap_ops {
- 	 * The actual length is returned in iomap->length.
- 	 */
- 	int (*iomap_begin)(struct inode *inode, loff_t pos, loff_t length,
--			unsigned flags, struct iomap *iomap);
-+			unsigned flags, struct iomap *iomap,
-+			struct iomap *srcmap);
+@@ -8961,7 +8949,6 @@ vm_fault_t btrfs_page_mkwrite(struct vm_fault *vmf)
+ 	wait_on_page_writeback(page);
+ 
+ 	lock_extent_bits(io_tree, page_start, page_end, &cached_state);
+-	set_page_extent_mapped(page);
  
  	/*
- 	 * Commit and/or unreserve space previous allocated using iomap_begin.
-@@ -137,7 +139,7 @@ struct iomap_ops {
-  * Main iomap iterator function.
-  */
- typedef loff_t (*iomap_actor_t)(struct inode *inode, loff_t pos, loff_t len,
--		void *data, struct iomap *iomap);
-+		void *data, struct iomap *iomap, struct iomap *srcmap);
+ 	 * we can't set the delalloc bits if there are pending ordered
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 818f7ec8bb0e..861617e3d0c9 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1355,7 +1355,6 @@ static int cluster_pages_for_defrag(struct inode *inode,
+ 	for (i = 0; i < i_done; i++) {
+ 		clear_page_dirty_for_io(pages[i]);
+ 		ClearPageChecked(pages[i]);
+-		set_page_extent_mapped(pages[i]);
+ 		set_page_dirty(pages[i]);
+ 		unlock_page(pages[i]);
+ 		put_page(pages[i]);
+@@ -3550,6 +3549,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
+ 	int ret;
+ 	const u64 len = olen_aligned;
+ 	u64 last_dest_end = destoff;
++	struct extent_io_tree *tree = &BTRFS_I(inode)->io_tree;
  
- loff_t iomap_apply(struct inode *inode, loff_t pos, loff_t length,
- 		unsigned flags, const struct iomap_ops *ops, void *data,
+ 	ret = -ENOMEM;
+ 	buf = kvmalloc(fs_info->nodesize, GFP_KERNEL);
+@@ -3864,6 +3864,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
+ 						destoff, olen, no_time_update);
+ 	}
+ 
++	clear_extent_uptodate(tree, destoff, destoff+olen, NULL);
+ out:
+ 	btrfs_free_path(path);
+ 	kvfree(buf);
+@@ -3935,7 +3936,6 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
+ 	truncate_inode_pages_range(&inode->i_data,
+ 				round_down(destoff, PAGE_SIZE),
+ 				round_up(destoff + len, PAGE_SIZE) - 1);
+-
+ 	return ret;
+ }
+ 
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 7f219851fa23..612988b7eb27 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -3300,8 +3300,6 @@ static int relocate_file_extent_cluster(struct inode *inode,
+ 
+ 		lock_extent(&BTRFS_I(inode)->io_tree, page_start, page_end);
+ 
+-		set_page_extent_mapped(page);
+-
+ 		if (nr < cluster->nr &&
+ 		    page_start + offset == cluster->boundary[nr]) {
+ 			set_extent_bits(&BTRFS_I(inode)->io_tree,
 -- 
 2.16.4
 

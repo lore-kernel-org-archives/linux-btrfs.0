@@ -4,47 +4,48 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 01F0EC3A5A2
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Sep 2019 16:35:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6C732C3A5A7
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Sep 2019 16:37:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id CCB5D2339D
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Sep 2019 16:35:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4417223400
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Sep 2019 16:37:32 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1567528541;
-	bh=K2zEh8HBO4tXSDQGVU8dQEtEWMQXYEZ9OIiPIbCR+Mg=;
+	s=default; t=1567528652;
+	bh=CtmaAsWwoZNRqt4zv2q01+SAMp6zV/HtcJVWUSCftAM=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=kAJMyBMOeYuHkxOLe5mwnXIz3SpeZEf8klFPScuJVVn7BII+TEj4Ec9X2+YAyq0vG
-	 k7A9ZyDeBZIu0+CNAE4opJDuaQj9WKW1lvpyyls5DbBD02GxEfEQDjaJ+NoHlt/ym2
-	 0a9M1H0aGU1pibfChFmhNqnGZs6u0A3GpXAaOO20=
+	b=oHzebVbo5GTu6Bq7WAI/VsVr2ALfC7ER3y8WCkIq5F2xguBX30Tk7Tbj5jrZ2WUoP
+	 9qiHeGceJU/PwUG9zLZVyDECDDk3OHORHfPX78BQNm6FR1uEkpLH5q9s/eQgTiUKTz
+	 lNDgjH8OlXOO81oLP12sPXtGxDdx905PE88f4KcM=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730083AbfICQ1q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 3 Sep 2019 12:27:46 -0400
-Received: from mail.kernel.org ([198.145.29.99]:49238 "EHLO mail.kernel.org"
+        id S1730858AbfICQhb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 3 Sep 2019 12:37:31 -0400
+Received: from mail.kernel.org ([198.145.29.99]:47690 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730512AbfICQ1o (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 3 Sep 2019 12:27:44 -0400
+        id S1730681AbfICQ0k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 3 Sep 2019 12:26:40 -0400
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id DFF14238C5;
-        Tue,  3 Sep 2019 16:27:42 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id D1C95238CD;
+        Tue,  3 Sep 2019 16:26:38 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1567528063;
-        bh=K2zEh8HBO4tXSDQGVU8dQEtEWMQXYEZ9OIiPIbCR+Mg=;
+        s=default; t=1567527999;
+        bh=CtmaAsWwoZNRqt4zv2q01+SAMp6zV/HtcJVWUSCftAM=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=nHPLRYM/rzO/oTp06xz4RfAa7Bvye2PMHIjFf8aSHTqK4Ctn0VCVKsyjTklt1q68n
-         6EuHIKZp37zrbTKWsQ7Hit2dNKRYfwPMyN0MlqfAiB67XuCilAXXkoSddiH5mwBdA0
-         fsnxqnTP5YCM3KmIivIATLAUmfo5hWfYxk1VjBxM=
+        b=Ic2JiOQPcqIEQEZ0YjDuEQUMveZhrfqz6n9swfKlx4pCr76LmWUVAPcvzFWmezygT
+         0EKoBEU5HBRo3PVh0TN4Em6gcYoZAqyQxiMVYuJR+HuNR1TPAt/iKabTt82qAFedtI
+         R2wOadfLF+tsvOfgKB4Nh4cyLUqMkyNuqQYHOo8E=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     David Sterba <dsterba@suse.com>, Sasha Levin <sashal@kernel.org>,
-        linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.19 078/167] btrfs: scrub: move scrub_setup_ctx allocation out of device_list_mutex
-Date:   Tue,  3 Sep 2019 12:23:50 -0400
-Message-Id: <20190903162519.7136-78-sashal@kernel.org>
+Cc:     Qu Wenruo <wqu@suse.com>, Filipe Manana <fdmanana@suse.com>,
+        David Sterba <dsterba@suse.com>,
+        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 4.19 047/167] btrfs: Use real device structure to verify dev extent
+Date:   Tue,  3 Sep 2019 12:23:19 -0400
+Message-Id: <20190903162519.7136-47-sashal@kernel.org>
 X-Mailer: git-send-email 2.20.1
 In-Reply-To: <20190903162519.7136-1-sashal@kernel.org>
 References: <20190903162519.7136-1-sashal@kernel.org>
@@ -57,109 +58,72 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: David Sterba <dsterba@suse.com>
+From: Qu Wenruo <wqu@suse.com>
 
-[ Upstream commit 0e94c4f45d14cf89d1f40c91b0a8517e791672a7 ]
+[ Upstream commit 1b3922a8bc74231f9a767d1be6d9a061a4d4eeab ]
 
-The scrub context is allocated with GFP_KERNEL and called from
-btrfs_scrub_dev under the fs_info::device_list_mutex. This is not safe
-regarding reclaim that could try to flush filesystem data in order to
-get the memory. And the device_list_mutex is held during superblock
-commit, so this would cause a lockup.
+[BUG]
+Linux v5.0-rc1 will fail fstests/btrfs/163 with the following kernel
+message:
 
-Move the alocation and initialization before any changes that require
-the mutex.
+  BTRFS error (device dm-6): dev extent devid 1 physical offset 13631488 len 8388608 is beyond device boundary 0
+  BTRFS error (device dm-6): failed to verify dev extents against chunks: -117
+  BTRFS error (device dm-6): open_ctree failed
 
+[CAUSE]
+Commit cf90d884b347 ("btrfs: Introduce mount time chunk <-> dev extent
+mapping check") introduced strict check on dev extents.
+
+We use btrfs_find_device() with dev uuid and fs uuid set to NULL, and
+only dependent on @devid to find the real device.
+
+For seed devices, we call clone_fs_devices() in open_seed_devices() to
+allow us search seed devices directly.
+
+However clone_fs_devices() just populates devices with devid and dev
+uuid, without populating other essential members, like disk_total_bytes.
+
+This makes any device returned by btrfs_find_device(fs_info, devid,
+NULL, NULL) is just a dummy, with 0 disk_total_bytes, and any dev
+extents on the seed device will not pass the device boundary check.
+
+[FIX]
+This patch will try to verify the device returned by btrfs_find_device()
+and if it's a dummy then re-search in seed devices.
+
+Fixes: cf90d884b347 ("btrfs: Introduce mount time chunk <-> dev extent mapping check")
+CC: stable@vger.kernel.org # 4.19+
+Reported-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/scrub.c | 30 ++++++++++++++++++------------
- 1 file changed, 18 insertions(+), 12 deletions(-)
+ fs/btrfs/volumes.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index efaad3e1b295a..56c4d2236484f 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -3837,13 +3837,18 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
- 		return -EINVAL;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index c20708bfae561..a8297e7489d98 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -7469,6 +7469,18 @@ static int verify_one_dev_extent(struct btrfs_fs_info *fs_info,
+ 		ret = -EUCLEAN;
+ 		goto out;
  	}
- 
-+	/* Allocate outside of device_list_mutex */
-+	sctx = scrub_setup_ctx(fs_info, is_dev_replace);
-+	if (IS_ERR(sctx))
-+		return PTR_ERR(sctx);
- 
- 	mutex_lock(&fs_info->fs_devices->device_list_mutex);
- 	dev = btrfs_find_device(fs_info, devid, NULL, NULL);
- 	if (!dev || (test_bit(BTRFS_DEV_STATE_MISSING, &dev->dev_state) &&
- 		     !is_dev_replace)) {
- 		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
--		return -ENODEV;
-+		ret = -ENODEV;
-+		goto out_free_ctx;
- 	}
- 
- 	if (!is_dev_replace && !readonly &&
-@@ -3851,7 +3856,8 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
- 		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
- 		btrfs_err_in_rcu(fs_info, "scrub: device %s is not writable",
- 				rcu_str_deref(dev->name));
--		return -EROFS;
-+		ret = -EROFS;
-+		goto out_free_ctx;
- 	}
- 
- 	mutex_lock(&fs_info->scrub_lock);
-@@ -3859,7 +3865,8 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
- 	    test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &dev->dev_state)) {
- 		mutex_unlock(&fs_info->scrub_lock);
- 		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
--		return -EIO;
-+		ret = -EIO;
-+		goto out_free_ctx;
- 	}
- 
- 	btrfs_dev_replace_read_lock(&fs_info->dev_replace);
-@@ -3869,7 +3876,8 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
- 		btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
- 		mutex_unlock(&fs_info->scrub_lock);
- 		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
--		return -EINPROGRESS;
-+		ret = -EINPROGRESS;
-+		goto out_free_ctx;
- 	}
- 	btrfs_dev_replace_read_unlock(&fs_info->dev_replace);
- 
-@@ -3877,16 +3885,9 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
- 	if (ret) {
- 		mutex_unlock(&fs_info->scrub_lock);
- 		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
--		return ret;
-+		goto out_free_ctx;
- 	}
- 
--	sctx = scrub_setup_ctx(fs_info, is_dev_replace);
--	if (IS_ERR(sctx)) {
--		mutex_unlock(&fs_info->scrub_lock);
--		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
--		scrub_workers_put(fs_info);
--		return PTR_ERR(sctx);
--	}
- 	sctx->readonly = readonly;
- 	dev->scrub_ctx = sctx;
- 	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-@@ -3939,6 +3940,11 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
- 
- 	scrub_put_ctx(sctx);
- 
-+	return ret;
 +
-+out_free_ctx:
-+	scrub_free_ctx(sctx);
++	/* It's possible this device is a dummy for seed device */
++	if (dev->disk_total_bytes == 0) {
++		dev = find_device(fs_info->fs_devices->seed, devid, NULL);
++		if (!dev) {
++			btrfs_err(fs_info, "failed to find seed devid %llu",
++				  devid);
++			ret = -EUCLEAN;
++			goto out;
++		}
++	}
 +
- 	return ret;
- }
- 
+ 	if (physical_offset + physical_len > dev->disk_total_bytes) {
+ 		btrfs_err(fs_info,
+ "dev extent devid %llu physical offset %llu len %llu is beyond device boundary %llu",
 -- 
 2.20.1
 

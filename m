@@ -2,121 +2,86 @@ Return-Path: <SRS0=cRuQ=W6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B93F8C3A5A2
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Sep 2019 14:56:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AD3B0C3A5A2
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Sep 2019 15:00:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 916BF22D6D
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Sep 2019 14:56:58 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="Mx6msCtH"
+	by mail.kernel.org (Postfix) with ESMTP id 8B94C238C5
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Sep 2019 15:00:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729728AbfICO4z (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 3 Sep 2019 10:56:55 -0400
-Received: from userp2130.oracle.com ([156.151.31.86]:53414 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728679AbfICO4y (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Sep 2019 10:56:54 -0400
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x83ErpU0139258;
-        Tue, 3 Sep 2019 14:56:43 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
- : subject : message-id : references : mime-version : content-type :
- in-reply-to; s=corp-2019-08-05;
- bh=J1/XR8SIYBwnS7qUVqN/+gnZ5pU/aly9Tp9KElNL18w=;
- b=Mx6msCtHFfoUOOGoKlGXGLohgPLtb4ZK4CjhKxFiEv21aYyvEOZC1qBY0PGo0F9guLtt
- 0VM6LuSK2oycz7w6vKlwh1jDJ/VxgFaUpNjH9Pf1TY1TxOue5/y3rDDf2haBPo0iMtGs
- pT8r+IXITq06LUxYUd2hVfuTWckjNz+dvhtf4TWVlODYG5yXpRENcCd5rmC1p5Q6SkkJ
- eisutsMvgEfWVq25uf/76ePEvD2sc9DUR8l4I3/qg6cCo7edKsJ2RtclM62zNpOtkTHB
- KZy7y6/4qu49XKqbCda4CXfB9jqwgXx2gRQOiKW4LBR6VY7Qk+eyKEx6ky5WnllhmTIg PA== 
-Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
-        by userp2130.oracle.com with ESMTP id 2ussxpr6ke-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 03 Sep 2019 14:56:43 +0000
-Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
-        by userp3020.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x83ErWH6088076;
-        Tue, 3 Sep 2019 14:56:43 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userp3020.oracle.com with ESMTP id 2us4we0507-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 03 Sep 2019 14:56:43 +0000
-Received: from abhmp0002.oracle.com (abhmp0002.oracle.com [141.146.116.8])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x83Euf4V023738;
-        Tue, 3 Sep 2019 14:56:42 GMT
-Received: from localhost (/67.169.218.210)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Tue, 03 Sep 2019 07:56:41 -0700
-Date:   Tue, 3 Sep 2019 07:56:44 -0700
-From:   "Darrick J. Wong" <darrick.wong@oracle.com>
-To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc:     Christoph Hellwig <hch@lst.de>, linux-fsdevel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, david@fromorbit.com,
-        riteshh@linux.ibm.com, Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: Re: [PATCH 02/15] iomap: Use a IOMAP_COW/srcmap for a
- read-modify-write I/O
-Message-ID: <20190903145644.GE5340@magnolia>
-References: <20190901200836.14959-1-rgoldwyn@suse.de>
- <20190901200836.14959-3-rgoldwyn@suse.de>
- <20190902163104.GB6263@lst.de>
- <20190903140536.5ak7phk5oydkqmx2@fiona>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190903140536.5ak7phk5oydkqmx2@fiona>
-User-Agent: Mutt/1.9.4 (2018-02-28)
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9368 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1906280000 definitions=main-1909030157
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9368 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
- suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
- lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1906280000
- definitions=main-1909030157
+        id S1729686AbfICPAt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 3 Sep 2019 11:00:49 -0400
+Received: from mx2.suse.de ([195.135.220.15]:57448 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1728854AbfICPAt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 3 Sep 2019 11:00:49 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 0DBE2AD63;
+        Tue,  3 Sep 2019 15:00:48 +0000 (UTC)
+From:   Johannes Thumshirn <jthumshirn@suse.de>
+To:     David Sterba <dsterba@suse.com>
+Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
+        Johannes Thumshirn <jthumshirn@suse.de>
+Subject: [PATCH v4 02/12] btrfs-progs: cache csum_type in recover_control
+Date:   Tue,  3 Sep 2019 17:00:36 +0200
+Message-Id: <20190903150046.14926-3-jthumshirn@suse.de>
+X-Mailer: git-send-email 2.16.4
+In-Reply-To: <20190903150046.14926-1-jthumshirn@suse.de>
+References: <20190903150046.14926-1-jthumshirn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Sep 03, 2019 at 09:05:36AM -0500, Goldwyn Rodrigues wrote:
-> On 18:31 02/09, Christoph Hellwig wrote:
-> > On Sun, Sep 01, 2019 at 03:08:23PM -0500, Goldwyn Rodrigues wrote:
-> > > --- a/include/linux/iomap.h
-> > > +++ b/include/linux/iomap.h
-> > > @@ -37,6 +37,7 @@ struct vm_fault;
-> > >  #define IOMAP_MAPPED	0x03	/* blocks allocated at @addr */
-> > >  #define IOMAP_UNWRITTEN	0x04	/* blocks allocated at @addr in unwritten state */
-> > >  #define IOMAP_INLINE	0x05	/* data inline in the inode */
-> > > +#define IOMAP_COW	0x06	/* copy data from srcmap before writing */
-> > 
-> > I don't think IOMAP_COW can be a type - it is a flag given that we
-> > can do COW operations that allocate normal written extents (e.g. for
-> > direct I/O or DAX) and for delayed allocations.
-> > 
-> 
-> Ah.. we have come a full circle on this one. From going to a flag, to a type,
-> and now back to flag. Personally, I like COW to be a flag, because we are
-> doing a write, just doining extra steps which should be a flag.
-> From previous objections, using two iomaps should help the cause and we
-> can not worry about bloating.
+Cache the super-block's checksum type field in 'struct recover_control'.
+This will be needed for further refactoring the checksum handling.
 
-Heh, ok, let's do a cow flag.  Thank you for driving the consensus. :)
+Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+---
+ cmds/rescue-chunk-recover.c | 2 ++
+ ctree.h                     | 4 +++-
+ 2 files changed, 5 insertions(+), 1 deletion(-)
 
-(Sorry it took so long while we went around in circles.)
+diff --git a/cmds/rescue-chunk-recover.c b/cmds/rescue-chunk-recover.c
+index c9b268781159..1959a2047c17 100644
+--- a/cmds/rescue-chunk-recover.c
++++ b/cmds/rescue-chunk-recover.c
+@@ -47,6 +47,7 @@ struct recover_control {
+ 	int yes;
+ 
+ 	u16 csum_size;
++	u16 csum_type;
+ 	u32 sectorsize;
+ 	u32 nodesize;
+ 	u64 generation;
+@@ -1530,6 +1531,7 @@ static int recover_prepare(struct recover_control *rc, const char *path)
+ 	rc->generation = btrfs_super_generation(sb);
+ 	rc->chunk_root_generation = btrfs_super_chunk_root_generation(sb);
+ 	rc->csum_size = btrfs_super_csum_size(sb);
++	rc->csum_type = btrfs_super_csum_type(sb);
+ 
+ 	/* if seed, the result of scanning below will be partial */
+ 	if (btrfs_super_flags(sb) & BTRFS_SUPER_FLAG_SEEDING) {
+diff --git a/ctree.h b/ctree.h
+index 0d12563b7261..870d9f4948de 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -165,7 +165,9 @@ struct btrfs_free_space_ctl;
+ #define BTRFS_CSUM_SIZE 32
+ 
+ /* csum types */
+-#define BTRFS_CSUM_TYPE_CRC32	0
++enum btrfs_csum_type {
++	BTRFS_CSUM_TYPE_CRC32	= 0,
++};
+ 
+ /* four bytes for CRC32 */
+ static int btrfs_csum_sizes[] = { 4 };
+-- 
+2.16.4
 
-Also, I'm going on vacation starting Friday at noon PDT, so please have
-the three patches that touch fs/iomap/ in before 7am Friday.  (Assuming
-you're not making drastic changes to your iomap changes, they've tested
-ok so far.)
-
---D
-
-> 
-> -- 
-> Goldwyn

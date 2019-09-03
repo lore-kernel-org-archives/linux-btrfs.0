@@ -2,104 +2,92 @@ Return-Path: <SRS0=cRuQ=W6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.4 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EEFC8C3A5A5
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Sep 2019 03:37:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5BCCCC3A5A5
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Sep 2019 03:51:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C36BB21670
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Sep 2019 03:37:46 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="GUTJYJUM"
+	by mail.kernel.org (Postfix) with ESMTP id 390A621897
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Sep 2019 03:51:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726142AbfICDhp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 2 Sep 2019 23:37:45 -0400
-Received: from aserp2120.oracle.com ([141.146.126.78]:46874 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1725821AbfICDhp (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Sep 2019 23:37:45 -0400
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x833ZY17129753;
-        Tue, 3 Sep 2019 03:37:32 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
- : subject : message-id : references : mime-version : content-type :
- in-reply-to; s=corp-2019-08-05;
- bh=50XNFIb8h061K6T8DCq0QS3N4O01GqXcj1NG5px4GVs=;
- b=GUTJYJUMoXH4BodIu3KX9fib8fpg3gxsyf9V2USXVqY3SVW/2wlzZNZrX4b5RycCiOve
- 45X1cQsj4YeB+NWl/98FZgjCe2cK4obGBuwQ0te1uX3wLpywVcxML2nA18JnaCRr/QAY
- BiF8job8ePXLmK3l0IJfLJRm6XjDLiloenNPfHi6ty/FWNmtvdGxp2TkmxzacRo/Wls/
- N8qHZixz/AyDdkMsXOFioHFbn7p+WvH37WwDJ7MLR+XSSHiE6NeLVW1fzvMkeiLtPHfp
- LfV1+b8en1uQSLlxh5Q7USh49OvEGkOx+x2oHedzztRcAkJL3h9BSmss+ekpHFeLhB1w dA== 
-Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
-        by aserp2120.oracle.com with ESMTP id 2usgdg0086-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 03 Sep 2019 03:37:32 +0000
-Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
-        by userp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x8338FIS044496;
-        Tue, 3 Sep 2019 03:18:45 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userp3030.oracle.com with ESMTP id 2uryv60nce-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 03 Sep 2019 03:18:45 +0000
-Received: from abhmp0003.oracle.com (abhmp0003.oracle.com [141.146.116.9])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id x833IhfI026999;
-        Tue, 3 Sep 2019 03:18:43 GMT
-Received: from localhost (/10.159.255.57)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Mon, 02 Sep 2019 20:18:42 -0700
-Date:   Mon, 2 Sep 2019 20:18:43 -0700
-From:   "Darrick J. Wong" <darrick.wong@oracle.com>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Goldwyn Rodrigues <rgoldwyn@suse.de>,
-        linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        david@fromorbit.com, riteshh@linux.ibm.com,
-        Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: Re: [PATCH 02/15] iomap: Use a IOMAP_COW/srcmap for a
- read-modify-write I/O
-Message-ID: <20190903031843.GC5340@magnolia>
+        id S1726200AbfICDv2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 2 Sep 2019 23:51:28 -0400
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:1843 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1725848AbfICDv2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Sep 2019 23:51:28 -0400
+X-IronPort-AV: E=Sophos;i="5.64,461,1559491200"; 
+   d="scan'208";a="74742095"
+Received: from unknown (HELO cn.fujitsu.com) ([10.167.33.5])
+  by heian.cn.fujitsu.com with ESMTP; 03 Sep 2019 11:51:26 +0800
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+        by cn.fujitsu.com (Postfix) with ESMTP id 5C39E4CE14E1;
+        Tue,  3 Sep 2019 11:51:25 +0800 (CST)
+Received: from [10.167.225.140] (10.167.225.140) by
+ G08CNEXCHPEKD01.g08.fujitsu.local (10.167.33.89) with Microsoft SMTP Server
+ (TLS) id 14.3.439.0; Tue, 3 Sep 2019 11:51:33 +0800
+Subject: Re: [PATCH v3 0/15] Btrfs iomap
+To:     Christoph Hellwig <hch@lst.de>,
+        Goldwyn Rodrigues <rgoldwyn@suse.de>
+CC:     <linux-fsdevel@vger.kernel.org>, <linux-btrfs@vger.kernel.org>,
+        <darrick.wong@oracle.com>, <david@fromorbit.com>,
+        <riteshh@linux.ibm.com>
 References: <20190901200836.14959-1-rgoldwyn@suse.de>
- <20190901200836.14959-3-rgoldwyn@suse.de>
- <20190902163104.GB6263@lst.de>
+ <20190902164331.GE6263@lst.de>
+From:   Shiyang Ruan <ruansy.fnst@cn.fujitsu.com>
+Message-ID: <4d039e8e-dc35-8092-4ee0-4a2e0f43f233@cn.fujitsu.com>
+Date:   Tue, 3 Sep 2019 11:51:24 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.2.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190902163104.GB6263@lst.de>
-User-Agent: Mutt/1.9.4 (2018-02-28)
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9368 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=999
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1906280000 definitions=main-1909030034
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9368 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
- suspectscore=0 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
- lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=999 adultscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1906280000
- definitions=main-1909030037
+In-Reply-To: <20190902164331.GE6263@lst.de>
+Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Originating-IP: [10.167.225.140]
+X-yoursite-MailScanner-ID: 5C39E4CE14E1.AD2D3
+X-yoursite-MailScanner: Found to be clean
+X-yoursite-MailScanner-From: ruansy.fnst@cn.fujitsu.com
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Sep 02, 2019 at 06:31:04PM +0200, Christoph Hellwig wrote:
-> On Sun, Sep 01, 2019 at 03:08:23PM -0500, Goldwyn Rodrigues wrote:
-> > --- a/include/linux/iomap.h
-> > +++ b/include/linux/iomap.h
-> > @@ -37,6 +37,7 @@ struct vm_fault;
-> >  #define IOMAP_MAPPED	0x03	/* blocks allocated at @addr */
-> >  #define IOMAP_UNWRITTEN	0x04	/* blocks allocated at @addr in unwritten state */
-> >  #define IOMAP_INLINE	0x05	/* data inline in the inode */
-> > +#define IOMAP_COW	0x06	/* copy data from srcmap before writing */
+
+
+On 9/3/19 12:43 AM, Christoph Hellwig wrote:
+> On Sun, Sep 01, 2019 at 03:08:21PM -0500, Goldwyn Rodrigues wrote:
+>> This is an effort to use iomap for btrfs. This would keep most
+>> responsibility of page handling during writes in iomap code, hence
+>> code reduction. For CoW support, changes are needed in iomap code
+>> to make sure we perform a copy before the write.
+>> This is in line with the discussion we had during adding dax support in
+>> btrfs.
 > 
-> I don't think IOMAP_COW can be a type - it is a flag given that we
-> can do COW operations that allocate normal written extents (e.g. for
-> direct I/O or DAX) and for delayed allocations.
+> This looks pretty good modulo a few comments.
+> 
+> Can you please convert the XFS code to use your two iomaps for COW
+> approach as well to validate it?
 
-If iomap_apply always zeros out @srcmap before calling ->iomap_begin, do
-we even need a flag/type code?  Or does it suffice to check that
-srcmap.length > 0 and use it appropriately?
+Hi,
 
---D
+The XFS part of dax CoW support has been implementing recently.  Please 
+review this[1] if necessary.  It's based on this iomap patchset(the 1st 
+version), and uses the new srcmap.
+
+[1]: https://lkml.org/lkml/2019/7/31/449
+
+-- 
+Thanks,
+Shiyang Ruan.
+> 
+> Also the iomap_file_dirty helper would really benefit from using the
+> two iomaps, any chance you could look into improving it to use your
+> new infrastructure?
+> 
+> 
+
+
+

@@ -4,48 +4,49 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6C732C3A5A7
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Sep 2019 16:37:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A608EC3A5A5
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Sep 2019 16:37:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 4417223400
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Sep 2019 16:37:32 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 76BE923400
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Sep 2019 16:37:53 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1567528652;
-	bh=CtmaAsWwoZNRqt4zv2q01+SAMp6zV/HtcJVWUSCftAM=;
+	s=default; t=1567528673;
+	bh=PjBn3F/ArEsB92idaMT9+Ob4PL0APGCB8i26BGnEN7M=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=oHzebVbo5GTu6Bq7WAI/VsVr2ALfC7ER3y8WCkIq5F2xguBX30Tk7Tbj5jrZ2WUoP
-	 9qiHeGceJU/PwUG9zLZVyDECDDk3OHORHfPX78BQNm6FR1uEkpLH5q9s/eQgTiUKTz
-	 lNDgjH8OlXOO81oLP12sPXtGxDdx905PE88f4KcM=
+	b=KIotbnWpsQtc7dJqS4BTNrpcC8Cw+iFP9XrvWPQxDu7wQqxugq8R5OwqGmXxxyfF3
+	 zLJ2EnZ2aEIfGdCcmwc02j96j5UT352YHZOt4lcRx1L3qfvGepSZ1IaMPm30EiYO3T
+	 5giyaHyMXv8zS0C1uJI1UPExa5GuI+BPl/GoLNi8=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730858AbfICQhb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 3 Sep 2019 12:37:31 -0400
-Received: from mail.kernel.org ([198.145.29.99]:47690 "EHLO mail.kernel.org"
+        id S1730637AbfICQ01 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 3 Sep 2019 12:26:27 -0400
+Received: from mail.kernel.org ([198.145.29.99]:47300 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730681AbfICQ0k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 3 Sep 2019 12:26:40 -0400
+        id S1730621AbfICQ0Y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 3 Sep 2019 12:26:24 -0400
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id D1C95238CD;
-        Tue,  3 Sep 2019 16:26:38 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id BF571238F5;
+        Tue,  3 Sep 2019 16:26:22 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1567527999;
-        bh=CtmaAsWwoZNRqt4zv2q01+SAMp6zV/HtcJVWUSCftAM=;
+        s=default; t=1567527983;
+        bh=PjBn3F/ArEsB92idaMT9+Ob4PL0APGCB8i26BGnEN7M=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=Ic2JiOQPcqIEQEZ0YjDuEQUMveZhrfqz6n9swfKlx4pCr76LmWUVAPcvzFWmezygT
-         0EKoBEU5HBRo3PVh0TN4Em6gcYoZAqyQxiMVYuJR+HuNR1TPAt/iKabTt82qAFedtI
-         R2wOadfLF+tsvOfgKB4Nh4cyLUqMkyNuqQYHOo8E=
+        b=Ma2Hbat3vd4nurI2Kf11h2GcrouZHQtNdq79pa5ALE3QbDd81t/AZlNEtZ5Ra/A60
+         wR0v24GGqwe1TaCQTM+pA/ArNnnqpsnh4nK/4RIuEFwoPypfbDtOO3pfnX9zJusc+N
+         dHTkWfGaTsriE+riedKkl9waXYWpgFkXmJ8PnynE=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Qu Wenruo <wqu@suse.com>, Filipe Manana <fdmanana@suse.com>,
+Cc:     Nikolay Borisov <nborisov@suse.com>,
+        Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.19 047/167] btrfs: Use real device structure to verify dev extent
-Date:   Tue,  3 Sep 2019 12:23:19 -0400
-Message-Id: <20190903162519.7136-47-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 4.19 038/167] btrfs: Remove extent_io_ops::fill_delalloc
+Date:   Tue,  3 Sep 2019 12:23:10 -0400
+Message-Id: <20190903162519.7136-38-sashal@kernel.org>
 X-Mailer: git-send-email 2.20.1
 In-Reply-To: <20190903162519.7136-1-sashal@kernel.org>
 References: <20190903162519.7136-1-sashal@kernel.org>
@@ -58,72 +59,148 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Qu Wenruo <wqu@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
 
-[ Upstream commit 1b3922a8bc74231f9a767d1be6d9a061a4d4eeab ]
+[ Upstream commit 5eaad97af8aeff38debe7d3c69ec3a0d71f8350f ]
 
-[BUG]
-Linux v5.0-rc1 will fail fstests/btrfs/163 with the following kernel
-message:
+This callback is called only from writepage_delalloc which in turn is
+guaranteed to be called from the data page writeout path. In the end
+there is no reason to have the call to this function to be indrected via
+the extent_io_ops structure. This patch removes the callback definition,
+exports the function and calls it directly. No functional changes.
 
-  BTRFS error (device dm-6): dev extent devid 1 physical offset 13631488 len 8388608 is beyond device boundary 0
-  BTRFS error (device dm-6): failed to verify dev extents against chunks: -117
-  BTRFS error (device dm-6): open_ctree failed
-
-[CAUSE]
-Commit cf90d884b347 ("btrfs: Introduce mount time chunk <-> dev extent
-mapping check") introduced strict check on dev extents.
-
-We use btrfs_find_device() with dev uuid and fs uuid set to NULL, and
-only dependent on @devid to find the real device.
-
-For seed devices, we call clone_fs_devices() in open_seed_devices() to
-allow us search seed devices directly.
-
-However clone_fs_devices() just populates devices with devid and dev
-uuid, without populating other essential members, like disk_total_bytes.
-
-This makes any device returned by btrfs_find_device(fs_info, devid,
-NULL, NULL) is just a dummy, with 0 disk_total_bytes, and any dev
-extents on the seed device will not pass the device boundary check.
-
-[FIX]
-This patch will try to verify the device returned by btrfs_find_device()
-and if it's a dummy then re-search in seed devices.
-
-Fixes: cf90d884b347 ("btrfs: Introduce mount time chunk <-> dev extent mapping check")
-CC: stable@vger.kernel.org # 4.19+
-Reported-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
+[ rename to btrfs_run_delalloc_range ]
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/volumes.c | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+ fs/btrfs/ctree.h     |  3 +++
+ fs/btrfs/extent_io.c | 20 +++++++++-----------
+ fs/btrfs/extent_io.h |  5 -----
+ fs/btrfs/inode.c     | 15 +++++++--------
+ 4 files changed, 19 insertions(+), 24 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index c20708bfae561..a8297e7489d98 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -7469,6 +7469,18 @@ static int verify_one_dev_extent(struct btrfs_fs_info *fs_info,
- 		ret = -EUCLEAN;
- 		goto out;
- 	}
-+
-+	/* It's possible this device is a dummy for seed device */
-+	if (dev->disk_total_bytes == 0) {
-+		dev = find_device(fs_info->fs_devices->seed, devid, NULL);
-+		if (!dev) {
-+			btrfs_err(fs_info, "failed to find seed devid %llu",
-+				  devid);
-+			ret = -EUCLEAN;
-+			goto out;
-+		}
-+	}
-+
- 	if (physical_offset + physical_len > dev->disk_total_bytes) {
- 		btrfs_err(fs_info,
- "dev extent devid %llu physical offset %llu len %llu is beyond device boundary %llu",
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 82682da5a40dd..4644f9b629a53 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3200,6 +3200,9 @@ int btrfs_prealloc_file_range_trans(struct inode *inode,
+ 				    struct btrfs_trans_handle *trans, int mode,
+ 				    u64 start, u64 num_bytes, u64 min_size,
+ 				    loff_t actual_len, u64 *alloc_hint);
++int btrfs_run_delalloc_range(void *private_data, struct page *locked_page,
++		u64 start, u64 end, int *page_started, unsigned long *nr_written,
++		struct writeback_control *wbc);
+ extern const struct dentry_operations btrfs_dentry_operations;
+ #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+ void btrfs_test_inode_set_ops(struct inode *inode);
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 90b0a6eff5350..cb598eb4f3bd1 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3199,7 +3199,7 @@ static void update_nr_written(struct writeback_control *wbc,
+ /*
+  * helper for __extent_writepage, doing all of the delayed allocation setup.
+  *
+- * This returns 1 if our fill_delalloc function did all the work required
++ * This returns 1 if btrfs_run_delalloc_range function did all the work required
+  * to write the page (copy into inline extent).  In this case the IO has
+  * been started and the page is already unlocked.
+  *
+@@ -3220,7 +3220,7 @@ static noinline_for_stack int writepage_delalloc(struct inode *inode,
+ 	int ret;
+ 	int page_started = 0;
+ 
+-	if (epd->extent_locked || !tree->ops || !tree->ops->fill_delalloc)
++	if (epd->extent_locked)
+ 		return 0;
+ 
+ 	while (delalloc_end < page_end) {
+@@ -3233,18 +3233,16 @@ static noinline_for_stack int writepage_delalloc(struct inode *inode,
+ 			delalloc_start = delalloc_end + 1;
+ 			continue;
+ 		}
+-		ret = tree->ops->fill_delalloc(inode, page,
+-					       delalloc_start,
+-					       delalloc_end,
+-					       &page_started,
+-					       nr_written, wbc);
++		ret = btrfs_run_delalloc_range(inode, page, delalloc_start,
++				delalloc_end, &page_started, nr_written, wbc);
+ 		/* File system has been set read-only */
+ 		if (ret) {
+ 			SetPageError(page);
+-			/* fill_delalloc should be return < 0 for error
+-			 * but just in case, we use > 0 here meaning the
+-			 * IO is started, so we don't want to return > 0
+-			 * unless things are going well.
++			/*
++			 * btrfs_run_delalloc_range should return < 0 for error
++			 * but just in case, we use > 0 here meaning the IO is
++			 * started, so we don't want to return > 0 unless
++			 * things are going well.
+ 			 */
+ 			ret = ret < 0 ? ret : -EIO;
+ 			goto done;
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index b4d03e677e1d7..ed27becd963c5 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -106,11 +106,6 @@ struct extent_io_ops {
+ 	/*
+ 	 * Optional hooks, called if the pointer is not NULL
+ 	 */
+-	int (*fill_delalloc)(void *private_data, struct page *locked_page,
+-			     u64 start, u64 end, int *page_started,
+-			     unsigned long *nr_written,
+-			     struct writeback_control *wbc);
+-
+ 	int (*writepage_start_hook)(struct page *page, u64 start, u64 end);
+ 	void (*writepage_end_io_hook)(struct page *page, u64 start, u64 end,
+ 				      struct extent_state *state, int uptodate);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 355ff08e9d44e..bfacce295ef1e 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -110,8 +110,8 @@ static void __endio_write_update_ordered(struct inode *inode,
+  * extent_clear_unlock_delalloc() to clear both the bits EXTENT_DO_ACCOUNTING
+  * and EXTENT_DELALLOC simultaneously, because that causes the reserved metadata
+  * to be released, which we want to happen only when finishing the ordered
+- * extent (btrfs_finish_ordered_io()). Also note that the caller of the
+- * fill_delalloc() callback already does proper cleanup for the first page of
++ * extent (btrfs_finish_ordered_io()). Also note that the caller of
++ * btrfs_run_delalloc_range already does proper cleanup for the first page of
+  * the range, that is, it invokes the callback writepage_end_io_hook() for the
+  * range of the first page.
+  */
+@@ -1599,12 +1599,12 @@ static inline int need_force_cow(struct inode *inode, u64 start, u64 end)
+ }
+ 
+ /*
+- * extent_io.c call back to do delayed allocation processing
++ * Function to process delayed allocation (create CoW) for ranges which are
++ * being touched for the first time.
+  */
+-static int run_delalloc_range(void *private_data, struct page *locked_page,
+-			      u64 start, u64 end, int *page_started,
+-			      unsigned long *nr_written,
+-			      struct writeback_control *wbc)
++int btrfs_run_delalloc_range(void *private_data, struct page *locked_page,
++		u64 start, u64 end, int *page_started, unsigned long *nr_written,
++		struct writeback_control *wbc)
+ {
+ 	struct inode *inode = private_data;
+ 	int ret;
+@@ -10598,7 +10598,6 @@ static const struct extent_io_ops btrfs_extent_io_ops = {
+ 	.readpage_io_failed_hook = btrfs_readpage_io_failed_hook,
+ 
+ 	/* optional callbacks */
+-	.fill_delalloc = run_delalloc_range,
+ 	.writepage_end_io_hook = btrfs_writepage_end_io_hook,
+ 	.writepage_start_hook = btrfs_writepage_start_hook,
+ 	.set_bit_hook = btrfs_set_bit_hook,
 -- 
 2.20.1
 

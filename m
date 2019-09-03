@@ -2,165 +2,121 @@ Return-Path: <SRS0=cRuQ=W6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.3 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D6760C3A5A2
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Sep 2019 16:38:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 579EAC3A5A2
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Sep 2019 17:15:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id AB423215EA
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Sep 2019 16:38:23 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1567528703;
-	bh=yLsZpV7cm0p5dAUlxLIQ5H3Ph/pLc3PwTRFBWbiBskM=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=T1g/12hD9e5ZpZnvXKB74DLqXqp9eiS9NmNTsaLPGLW5+Xeh1WTkyqFQevOvzvh/5
-	 HvdlRsRy0WXfySKcmn+hmY8tgoM0wzFaoxa3hwSB8DVDxn+qANH/SAZh5xwKdWT/Km
-	 WWMm0pG5NKxkoNdTzQdECKCeMgmTGSvxZ0pLnoXc=
+	by mail.kernel.org (Postfix) with ESMTP id 26CA422CED
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Sep 2019 17:15:05 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="GVwyYdp9"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730750AbfICQiT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 3 Sep 2019 12:38:19 -0400
-Received: from mail.kernel.org ([198.145.29.99]:47212 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730612AbfICQ0W (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 3 Sep 2019 12:26:22 -0400
-Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 6E3AE238CF;
-        Tue,  3 Sep 2019 16:26:20 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1567527981;
-        bh=yLsZpV7cm0p5dAUlxLIQ5H3Ph/pLc3PwTRFBWbiBskM=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=N2nZDkJEWjSJ52uBKBkSYZa65kBdz0vZGZH4COrWPJhmkGHc5nvH8h12OjtMCQOdO
-         0YB6sT0aW7gFgxbZQOO80ERCexj3+BAtkY0RnkX/t4lHL0JvgVxgsQBBNQLQGQO3xP
-         F4zFiJ8ZlweEhAdhkeaw+79woeiEOmferxnbBO2o=
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Omar Sandoval <osandov@fb.com>, David Sterba <dsterba@suse.com>,
-        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.19 036/167] Btrfs: clean up scrub is_dev_replace parameter
-Date:   Tue,  3 Sep 2019 12:23:08 -0400
-Message-Id: <20190903162519.7136-36-sashal@kernel.org>
-X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20190903162519.7136-1-sashal@kernel.org>
-References: <20190903162519.7136-1-sashal@kernel.org>
+        id S1729796AbfICRPE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 3 Sep 2019 13:15:04 -0400
+Received: from mail-pl1-f193.google.com ([209.85.214.193]:35347 "EHLO
+        mail-pl1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729113AbfICRPE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Sep 2019 13:15:04 -0400
+Received: by mail-pl1-f193.google.com with SMTP id gn20so8160285plb.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 Sep 2019 10:15:03 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=osandov-com.20150623.gappssmtp.com; s=20150623;
+        h=date:from:to:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to:user-agent;
+        bh=wzg+gL3ba+m0Il6NeK2a/dpmm1pr4NSURsq6Id0+oFg=;
+        b=GVwyYdp9X6i9LJ+jF65J204XJk9L0/tmJKvbYP6TomG4oeMPDbn0MTpDoV337hCoKp
+         GFZ/yaXs93FqYrR8GiA8n32QvwBcQW2wQ4Pznudps3CdimkSkty7YVP7PGYLB0YOQc0G
+         YfMJNLBvUtu6YkOWGfMoe7Xy0RV7Fsg9u3lejZdjz0YTfa9SnII4WW2qwsCiC4/0iJJm
+         R7PphS/6ORgipn68ihD9MJ7Yi4CDYrjvKMKP0xySzlQGimWkBgUGTJNDVNM/yZmrpIw0
+         NKZo/Ojtd36ZUj0Sll1FhwX9zo+Yz+2UgA7hRyoH1ABMFa9B4u6Ne1sy1COYxyHoDQhK
+         ZMDg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to:user-agent;
+        bh=wzg+gL3ba+m0Il6NeK2a/dpmm1pr4NSURsq6Id0+oFg=;
+        b=nZjJvyB5yCYmfop5HcDgQyWdR6Ws0Za5XqoQkyfJl1k5xL0jfXClwXs9B6zqEJl2p4
+         M4v9z9eS+SX8yqKP/Nje8KsZXHiFoQahkBFQl2lWquWldL6318x6p+tAMXYtHRT2dTAj
+         aikemBNFl0ZZxhdjwIWJXcDY5qLJocI/MTsuRK9LvMp70Rt3VDDW9lqrrzgwK0KaftC4
+         egCG7+wUUMoGSq1E5XQCQL2Zr8eVXCYBQcufuXZqrGGjLeGE/eaHISmukWZVFd4mBv76
+         K7L5r9I4i7PHbfDSMVQbXsZjqzbnT6Zn9/R5YsKl6v5jtSwSpx3nxcuHOXfNSd2iFRHX
+         jwRA==
+X-Gm-Message-State: APjAAAWn7+bpv6Y9i2DUaXm2BuuWhDgXE8qZjO5yamAObZoCaYkyfjtT
+        jCi1fZj0xAPTY9x26d1qFhDHRw==
+X-Google-Smtp-Source: APXvYqw10JHONbT8zCvg5QyDa/QomLo5VBNJtKgHX8vWNYLivfN1GolqavwIyCTFCP5Z2CDCfMz0dg==
+X-Received: by 2002:a17:902:2b87:: with SMTP id l7mr29172872plb.226.1567530903060;
+        Tue, 03 Sep 2019 10:15:03 -0700 (PDT)
+Received: from vader ([2620:10d:c090:200::3:6d6d])
+        by smtp.gmail.com with ESMTPSA id x5sm9294589pfi.165.2019.09.03.10.15.02
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 03 Sep 2019 10:15:02 -0700 (PDT)
+Date:   Tue, 3 Sep 2019 10:14:58 -0700
+From:   Omar Sandoval <osandov@osandov.com>
+To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [RFC PATCH 5/5] Btrfs: add ioctl for directly writing compressed
+ data
+Message-ID: <20190903171458.GA7452@vader>
+References: <cover.1565900769.git.osandov@fb.com>
+ <78747c3028ce91db9856e7fbd98ccbb2609acdc6.1565900769.git.osandov@fb.com>
+ <20190828120650.GZ2752@twin.jikos.cz>
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190828120650.GZ2752@twin.jikos.cz>
+User-Agent: Mutt/1.12.1 (2019-06-15)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Omar Sandoval <osandov@fb.com>
+On Wed, Aug 28, 2019 at 02:06:50PM +0200, David Sterba wrote:
+> On Thu, Aug 15, 2019 at 02:04:06PM -0700, Omar Sandoval wrote:
+> >  #define BTRFS_IOC_SEND_32 _IOW(BTRFS_IOCTL_MAGIC, 38, \
+> >  			       struct btrfs_ioctl_send_args_32)
+> > +
+> > +struct btrfs_ioctl_compressed_pwrite_args_32 {
+> > +	__u64 offset;		/* in */
+> > +	__u32 compressed_len;	/* in */
+> > +	__u32 orig_len;		/* in */
+> > +	__u32 compress_type;	/* in */
+> > +	__u32 reserved[9];
+> > +	compat_uptr_t buf;	/* in */
+> > +} __attribute__ ((__packed__));
+> > +
+> > +#define BTRFS_IOC_COMPRESSED_PWRITE_32 _IOW(BTRFS_IOCTL_MAGIC, 63, \
+> > +				 struct btrfs_ioctl_compressed_pwrite_args_32)
+> 
+> Note that the _32 is a workaround for a mistake in the send ioctl
+> definitions that slipped trhough. Any pointer in the structure changes
+> the ioctl number on 32bit and 64bit.
+> 
+> But as the raw data ioctl is new there's point to copy the mistake. The
+> alignment and width can be forced eg. like
+> 
+> > +	void __user *buf;	/* in */
+> 
+> 	union {
+> 		void __user *buf;
+> 		__u64 __buf_alignment;
+> 	};
+> 
+> This allows to user buf as a buffer without casts to a intermediate
+> type.
 
-[ Upstream commit 32934280967d00dc2b5c4d3b63b21a9c8638326e ]
+I don't think this works on big-endian architectures. Let's say a 32-bit
+application does:
 
-struct scrub_ctx has an ->is_dev_replace member, so there's no point in
-passing around is_dev_replace where sctx is available.
+struct btrfs_ioctl_compressed_pwrite_args_32 {
+	.buf = 0x12345678,
+};
 
-Signed-off-by: Omar Sandoval <osandov@fb.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/scrub.c | 23 +++++++++--------------
- 1 file changed, 9 insertions(+), 14 deletions(-)
+The pointer will be in the first 4 bytes of the 8-byte union:
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 3be1456b5116b..4bcc275f76128 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -3022,8 +3022,7 @@ static noinline_for_stack int scrub_raid56_parity(struct scrub_ctx *sctx,
- static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 					   struct map_lookup *map,
- 					   struct btrfs_device *scrub_dev,
--					   int num, u64 base, u64 length,
--					   int is_dev_replace)
-+					   int num, u64 base, u64 length)
- {
- 	struct btrfs_path *path, *ppath;
- 	struct btrfs_fs_info *fs_info = sctx->fs_info;
-@@ -3299,7 +3298,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 			extent_physical = extent_logical - logical + physical;
- 			extent_dev = scrub_dev;
- 			extent_mirror_num = mirror_num;
--			if (is_dev_replace)
-+			if (sctx->is_dev_replace)
- 				scrub_remap_extent(fs_info, extent_logical,
- 						   extent_len, &extent_physical,
- 						   &extent_dev,
-@@ -3397,8 +3396,7 @@ static noinline_for_stack int scrub_chunk(struct scrub_ctx *sctx,
- 					  struct btrfs_device *scrub_dev,
- 					  u64 chunk_offset, u64 length,
- 					  u64 dev_offset,
--					  struct btrfs_block_group_cache *cache,
--					  int is_dev_replace)
-+					  struct btrfs_block_group_cache *cache)
- {
- 	struct btrfs_fs_info *fs_info = sctx->fs_info;
- 	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
-@@ -3435,8 +3433,7 @@ static noinline_for_stack int scrub_chunk(struct scrub_ctx *sctx,
- 		if (map->stripes[i].dev->bdev == scrub_dev->bdev &&
- 		    map->stripes[i].physical == dev_offset) {
- 			ret = scrub_stripe(sctx, map, scrub_dev, i,
--					   chunk_offset, length,
--					   is_dev_replace);
-+					   chunk_offset, length);
- 			if (ret)
- 				goto out;
- 		}
-@@ -3449,8 +3446,7 @@ static noinline_for_stack int scrub_chunk(struct scrub_ctx *sctx,
- 
- static noinline_for_stack
- int scrub_enumerate_chunks(struct scrub_ctx *sctx,
--			   struct btrfs_device *scrub_dev, u64 start, u64 end,
--			   int is_dev_replace)
-+			   struct btrfs_device *scrub_dev, u64 start, u64 end)
- {
- 	struct btrfs_dev_extent *dev_extent = NULL;
- 	struct btrfs_path *path;
-@@ -3544,7 +3540,7 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
- 		 */
- 		scrub_pause_on(fs_info);
- 		ret = btrfs_inc_block_group_ro(cache);
--		if (!ret && is_dev_replace) {
-+		if (!ret && sctx->is_dev_replace) {
- 			/*
- 			 * If we are doing a device replace wait for any tasks
- 			 * that started dellaloc right before we set the block
-@@ -3609,7 +3605,7 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
- 		dev_replace->item_needs_writeback = 1;
- 		btrfs_dev_replace_write_unlock(&fs_info->dev_replace);
- 		ret = scrub_chunk(sctx, scrub_dev, chunk_offset, length,
--				  found_key.offset, cache, is_dev_replace);
-+				  found_key.offset, cache);
- 
- 		/*
- 		 * flush, submit all pending read and write bios, afterwards
-@@ -3670,7 +3666,7 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
- 		btrfs_put_block_group(cache);
- 		if (ret)
- 			break;
--		if (is_dev_replace &&
-+		if (sctx->is_dev_replace &&
- 		    atomic64_read(&dev_replace->num_write_errors) > 0) {
- 			ret = -EIO;
- 			break;
-@@ -3893,8 +3889,7 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
- 	}
- 
- 	if (!ret)
--		ret = scrub_enumerate_chunks(sctx, dev, start, end,
--					     is_dev_replace);
-+		ret = scrub_enumerate_chunks(sctx, dev, start, end);
- 
- 	wait_event(sctx->list_wait, atomic_read(&sctx->bios_in_flight) == 0);
- 	atomic_dec(&fs_info->scrubs_running);
--- 
-2.20.1
+0    1    2    3    4    5    6    7
+0x12 0x34 0x56 0x78 0x00 0x00 0x00 0x00
 
+But, the 64-bit kernel will read buf as 0x1234567800000000. Let me know
+if I messed up my analysis, but I think we need the compat stuff.

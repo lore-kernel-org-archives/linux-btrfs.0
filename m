@@ -2,75 +2,110 @@ Return-Path: <SRS0=cRuQ=W6=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2DD90C3A5A2
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Sep 2019 16:09:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 50A43C3A5A2
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Sep 2019 16:26:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 0DDEB208E4
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Sep 2019 16:09:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1C09623789
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Sep 2019 16:26:41 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1567528001;
+	bh=MVLZQSfnTmoyEXqpBENYUw+6JiZTtBhjO8y0I001DNE=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
+	b=PbmotR+4XV6+3faH0bhubW+7tiksfA/hLkejXpWQP/P+Jzr/wRmbBhpMXSgq0HZ5A
+	 u9lOWAlWKjpcCv5TOnchw0HnAxi80UXoY69tu4VHKo2jr7YMFspduUuescRrDgwhu0
+	 gr1PpxPjxbGSm+EeIMv4Dvyp6mVbkr6/mZF9ylFo=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729867AbfICQJY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 3 Sep 2019 12:09:24 -0400
-Received: from mx2.suse.de ([195.135.220.15]:45758 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728679AbfICQJX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 3 Sep 2019 12:09:23 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B9EF9AE74;
-        Tue,  3 Sep 2019 16:09:22 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 1B30BDA876; Tue,  3 Sep 2019 18:09:43 +0200 (CEST)
-Date:   Tue, 3 Sep 2019 18:09:43 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Johannes Thumshirn <jthumshirn@suse.de>
-Cc:     David Sterba <dsterba@suse.com>,
-        Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs-progs: fix zstd compression test on a kernel
- without ztsd support
-Message-ID: <20190903160942.GE2752@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Johannes Thumshirn <jthumshirn@suse.de>,
-        David Sterba <dsterba@suse.com>,
-        Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
-References: <20190903122721.9865-1-jthumshirn@suse.de>
+        id S1730687AbfICQ0k (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 3 Sep 2019 12:26:40 -0400
+Received: from mail.kernel.org ([198.145.29.99]:47676 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1730678AbfICQ0j (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 3 Sep 2019 12:26:39 -0400
+Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id C801C23789;
+        Tue,  3 Sep 2019 16:26:37 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1567527998;
+        bh=MVLZQSfnTmoyEXqpBENYUw+6JiZTtBhjO8y0I001DNE=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=2bXkJ/O7JARS5aeZkot+zMCtqc0dt/SRkCy8nV9vip8XzTU5bMFFenKtmY/YT4fCI
+         QXwT1tuonGPzMHTdBITgs2WY9ex12YnjxUdxjDgnBc3hnuMACesSzV0/PMB0Bqv6RS
+         aS+JvRAiDyVl+24fJt47RHnN06rA+NL5xnbZF3WY=
+From:   Sasha Levin <sashal@kernel.org>
+To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc:     Qu Wenruo <wqu@suse.com>, David Sterba <dsterba@suse.com>,
+        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 4.19 046/167] btrfs: volumes: Make sure no dev extent is beyond device boundary
+Date:   Tue,  3 Sep 2019 12:23:18 -0400
+Message-Id: <20190903162519.7136-46-sashal@kernel.org>
+X-Mailer: git-send-email 2.20.1
+In-Reply-To: <20190903162519.7136-1-sashal@kernel.org>
+References: <20190903162519.7136-1-sashal@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190903122721.9865-1-jthumshirn@suse.de>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-stable: review
+X-Patchwork-Hint: Ignore
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Sep 03, 2019 at 02:27:21PM +0200, Johannes Thumshirn wrote:
-> The test-case 'misc-tests/025-zstd-compression' is failing on a kernel
-> without zstd compression support.
-> 
-> Check if zstd compression is supported by the kernel and if not skip the
-> test-case.
-> 
-> Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
-> ---
->  tests/misc-tests/025-zstd-compression/test.sh | 5 +++++
->  1 file changed, 5 insertions(+)
-> 
-> diff --git a/tests/misc-tests/025-zstd-compression/test.sh b/tests/misc-tests/025-zstd-compression/test.sh
-> index 22795d27500e..f9ff1d089fd5 100755
-> --- a/tests/misc-tests/025-zstd-compression/test.sh
-> +++ b/tests/misc-tests/025-zstd-compression/test.sh
-> @@ -6,6 +6,11 @@ source "$TEST_TOP/common"
->  check_prereq btrfs
->  check_global_prereq md5sum
->  
-> +if ! [ -f "/sys/fs/btrfs/features/compress_zstd" ]; then
-> +       _not_run "kernel does not support zstd compression feature"
+From: Qu Wenruo <wqu@suse.com>
 
-Sorry, I misled you with this check. The test needs to detect zstd
-support in 'btrfs restore'. The only thing I see right now is to grep
-for zstd in output of 'ldd', because unlike for btrfs-convert, the help
-does not list the optional features.
+[ Upstream commit 05a37c48604c19b50873fd9663f9140c150469d1 ]
+
+Add extra dev extent end check against device boundary.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ fs/btrfs/volumes.c | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 6e008bd5c8cd1..c20708bfae561 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -7411,6 +7411,7 @@ static int verify_one_dev_extent(struct btrfs_fs_info *fs_info,
+ 	struct extent_map_tree *em_tree = &fs_info->mapping_tree.map_tree;
+ 	struct extent_map *em;
+ 	struct map_lookup *map;
++	struct btrfs_device *dev;
+ 	u64 stripe_len;
+ 	bool found = false;
+ 	int ret = 0;
+@@ -7460,6 +7461,22 @@ static int verify_one_dev_extent(struct btrfs_fs_info *fs_info,
+ 			physical_offset, devid);
+ 		ret = -EUCLEAN;
+ 	}
++
++	/* Make sure no dev extent is beyond device bondary */
++	dev = btrfs_find_device(fs_info, devid, NULL, NULL);
++	if (!dev) {
++		btrfs_err(fs_info, "failed to find devid %llu", devid);
++		ret = -EUCLEAN;
++		goto out;
++	}
++	if (physical_offset + physical_len > dev->disk_total_bytes) {
++		btrfs_err(fs_info,
++"dev extent devid %llu physical offset %llu len %llu is beyond device boundary %llu",
++			  devid, physical_offset, physical_len,
++			  dev->disk_total_bytes);
++		ret = -EUCLEAN;
++		goto out;
++	}
+ out:
+ 	free_extent_map(em);
+ 	return ret;
+-- 
+2.20.1
+

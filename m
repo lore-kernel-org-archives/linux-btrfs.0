@@ -4,31 +4,31 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7B9E0C3A5A8
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 40B43C3A5A2
 	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Sep 2019 15:01:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5A0EC22D6D
+	by mail.kernel.org (Postfix) with ESMTP id 1E65922D6D
 	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Sep 2019 15:01:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729777AbfICPBE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1729771AbfICPBE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Tue, 3 Sep 2019 11:01:04 -0400
-Received: from mx2.suse.de ([195.135.220.15]:57492 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:57514 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1729357AbfICPAu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 3 Sep 2019 11:00:50 -0400
+        id S1729702AbfICPAv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 3 Sep 2019 11:00:51 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 49B4CAEFF;
+        by mx1.suse.de (Postfix) with ESMTP id 90D89AF79;
         Tue,  3 Sep 2019 15:00:48 +0000 (UTC)
 From:   Johannes Thumshirn <jthumshirn@suse.de>
 To:     David Sterba <dsterba@suse.com>
 Cc:     Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>,
         Johannes Thumshirn <jthumshirn@suse.de>
-Subject: [PATCH v4 06/12] btrfs-progs: simplify update_block_csum() in btrfs-sb-mod.c
-Date:   Tue,  3 Sep 2019 17:00:40 +0200
-Message-Id: <20190903150046.14926-7-jthumshirn@suse.de>
+Subject: [PATCH v4 12/12] btrfs-progs: add test-case for mkfs with xxhash64
+Date:   Tue,  3 Sep 2019 17:00:46 +0200
+Message-Id: <20190903150046.14926-13-jthumshirn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20190903150046.14926-1-jthumshirn@suse.de>
 References: <20190903150046.14926-1-jthumshirn@suse.de>
@@ -37,60 +37,28 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-update_block_csum() in btrfs-sb-mod.c is always called with the 'is_sb'
-argument set to 1.
-
-Get rid of the special case for is_sb == 0.
+Add test-cases for creating a file-system xxhash64 as checksumming
+algorithm.
 
 Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
- btrfs-sb-mod.c | 19 ++++++-------------
- 1 file changed, 6 insertions(+), 13 deletions(-)
+ tests/mkfs-tests/001-basic-profiles/test.sh | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/btrfs-sb-mod.c b/btrfs-sb-mod.c
-index d9630f187d0f..9e64b34d2b8f 100644
---- a/btrfs-sb-mod.c
-+++ b/btrfs-sb-mod.c
-@@ -46,24 +46,17 @@ static int check_csum_superblock(void *sb)
- 	return !memcmp(sb, &result, csum_size);
- }
+diff --git a/tests/mkfs-tests/001-basic-profiles/test.sh b/tests/mkfs-tests/001-basic-profiles/test.sh
+index 6e295274119d..3fa3c8ad42d1 100755
+--- a/tests/mkfs-tests/001-basic-profiles/test.sh
++++ b/tests/mkfs-tests/001-basic-profiles/test.sh
+@@ -46,6 +46,8 @@ test_mkfs_single  -d  single  -m  dup
+ test_mkfs_single  -d  dup     -m  single
+ test_mkfs_single  -d  dup     -m  dup
+ test_mkfs_single  -d  dup     -m  dup     --mixed
++test_mkfs_single  -C xxhash64
++test_mkfs_single  -C xxhash
  
--static void update_block_csum(void *block, int is_sb)
-+static void update_block_csum(void *block)
- {
- 	u8 result[csum_size];
- 	struct btrfs_header *hdr;
- 	u32 crc = ~(u32)0;
- 	u16 csum_type = btrfs_super_csum_type(block);
- 
--	if (is_sb) {
--		crc = btrfs_csum_data(csum_type,
--				      (char *)block + BTRFS_CSUM_SIZE,
--				      (u8 *)&crc,
--				BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
--	} else {
--		crc = btrfs_csum_data(csum_type,
--				      (char *)block + BTRFS_CSUM_SIZE,
--				      (u8 *)&crc,
--				BLOCKSIZE - BTRFS_CSUM_SIZE);
--	}
-+	crc = btrfs_csum_data(csum_type, (char *)block + BTRFS_CSUM_SIZE,
-+			      (u8 *)&crc,
-+			      BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
-+
- 	btrfs_csum_final(csum_type, crc, result);
- 	memset(block, 0, BTRFS_CSUM_SIZE);
- 	hdr = (struct btrfs_header *)block;
-@@ -354,7 +347,7 @@ int main(int argc, char **argv) {
- 
- 	if (changed) {
- 		printf("Update csum\n");
--		update_block_csum(buf, 1);
-+		update_block_csum(buf);
- 		ret = pwrite(fd, buf, BLOCKSIZE, off);
- 		if (ret <= 0) {
- 			printf("pwrite error %d at offset %llu\n",
+ test_mkfs_multi
+ test_mkfs_multi   -d  single  -m  single
 -- 
 2.16.4
 

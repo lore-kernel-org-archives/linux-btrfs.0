@@ -2,55 +2,70 @@ Return-Path: <SRS0=M3o5=XA=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.8 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B5E04C43331
-	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Sep 2019 14:43:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4E710C00306
+	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Sep 2019 15:06:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id F1B2F206BA
-	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Sep 2019 14:43:27 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id AEEF72082E
+	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Sep 2019 15:06:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389763AbfIEOn0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 5 Sep 2019 10:43:26 -0400
-Received: from mx2.suse.de ([195.135.220.15]:37804 "EHLO mx1.suse.de"
+        id S2390245AbfIEPG5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 5 Sep 2019 11:06:57 -0400
+Received: from mx2.suse.de ([195.135.220.15]:55864 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726080AbfIEOn0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 5 Sep 2019 10:43:26 -0400
+        id S1732130AbfIEPG5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 5 Sep 2019 11:06:57 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 05ED9B0BF;
-        Thu,  5 Sep 2019 14:43:25 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 88B18DA8F3; Thu,  5 Sep 2019 16:43:50 +0200 (CEST)
-Date:   Thu, 5 Sep 2019 16:43:50 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs: Don't assign retval of
- btrfs_try_tree_write_lock/btrfs_tree_read_lock_atomic
-Message-ID: <20190905144350.GB2850@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20190904171635.13783-1-nborisov@suse.com>
- <20190904172239.14276-1-nborisov@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20190904172239.14276-1-nborisov@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+        by mx1.suse.de (Postfix) with ESMTP id 907A4ABC7;
+        Thu,  5 Sep 2019 15:06:55 +0000 (UTC)
+From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
+To:     linux-fsdevel@vger.kernel.org
+Cc:     linux-btrfs@vger.kernel.org, darrick.wong@oracle.com, hch@lst.de,
+        linux-xfs@vger.kernel.org
+Subject: [PATCH v4 0/15] CoW support for iomap
+Date:   Thu,  5 Sep 2019 10:06:35 -0500
+Message-Id: <20190905150650.21089-1-rgoldwyn@suse.de>
+X-Mailer: git-send-email 2.16.4
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Sep 04, 2019 at 08:22:39PM +0300, Nikolay Borisov wrote:
-> Those function are simple boolean predicates there is no need to assign
-> their return values to interim variables. Use them directly as
-> predicates. No functional changes.
-> 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+Previously called btrfs iomap.
 
-Added to misc-next, thanks.
+This is an effort to use iomap for btrfs. This would keep most
+responsibility of page handling during writes in iomap code, hence
+code reduction. For CoW support, changes are needed in iomap code
+to make sure we perform a copy before the write.
+This is in line with the discussion we had during adding dax support in
+btrfs.
+
+I din't mean to change the series topic, but I am expanding into
+XFS. However, I have not thoroughly tested XFS changes yet. I am
+sending this for the deadline set by Darrick.
+
+This patchset is based on DIO changes sent by Christoph,
+based on patches by Matthew Bobrowski.
+
+[1] https://github.com/goldwynr/linux/tree/btrfs-iomap
+
+-- 
+Goldwyn
+
+Changes since v1
+ - Added Direct I/O support
+ - Remove PagePrivate from btrfs pages for regular files
+
+Changes since v2
+ - Added CONFIG_FS_IOMAP_DEBUG and some checks
+ - Fallback to buffered read in case of short direct reads
+
+Changes since v3
+ - Review comments incorporated
+ - Added support for XFS
+
+

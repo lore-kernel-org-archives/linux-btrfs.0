@@ -4,31 +4,32 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-9.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CEA0DC0030B
-	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Sep 2019 15:07:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 90E4AC47401
+	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Sep 2019 15:07:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 33E712082E
-	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Sep 2019 15:07:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id EF32C20870
+	for <linux-btrfs@archiver.kernel.org>; Thu,  5 Sep 2019 15:07:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2390273AbfIEPHH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 5 Sep 2019 11:07:07 -0400
-Received: from mx2.suse.de ([195.135.220.15]:56062 "EHLO mx1.suse.de"
+        id S2390291AbfIEPHM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 5 Sep 2019 11:07:12 -0400
+Received: from mx2.suse.de ([195.135.220.15]:56408 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S2390264AbfIEPHF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 5 Sep 2019 11:07:05 -0400
+        id S2390255AbfIEPHK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 5 Sep 2019 11:07:10 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 39678AD1A;
-        Thu,  5 Sep 2019 15:07:03 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 7F560B635;
+        Thu,  5 Sep 2019 15:07:09 +0000 (UTC)
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-fsdevel@vger.kernel.org
 Cc:     linux-btrfs@vger.kernel.org, darrick.wong@oracle.com, hch@lst.de,
         linux-xfs@vger.kernel.org, Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 04/15] btrfs: Add a simple buffered iomap write
-Date:   Thu,  5 Sep 2019 10:06:39 -0500
-Message-Id: <20190905150650.21089-5-rgoldwyn@suse.de>
+Subject: [PATCH 07/15] fs: Export generic_file_buffered_read()
+Date:   Thu,  5 Sep 2019 10:06:42 -0500
+Message-Id: <20190905150650.21089-8-rgoldwyn@suse.de>
 X-Mailer: git-send-email 2.16.4
 In-Reply-To: <20190905150650.21089-1-rgoldwyn@suse.de>
 References: <20190905150650.21089-1-rgoldwyn@suse.de>
@@ -39,468 +40,78 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-This one is a long patch. Most of the code is "inspired" by
-fs/btrfs/file.c. To keep the size small, all removals are in
-following patches.
+Export generic_file_buffered_read() to be used to
+supplement incomplete direct reads.
+
+While we are at it, correct the comments and variable names.
 
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 ---
- fs/btrfs/Kconfig  |   1 +
- fs/btrfs/Makefile |   2 +-
- fs/btrfs/ctree.h  |   1 +
- fs/btrfs/file.c   |   4 +-
- fs/btrfs/iomap.c  | 383 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 5 files changed, 388 insertions(+), 3 deletions(-)
- create mode 100644 fs/btrfs/iomap.c
+ include/linux/fs.h |  2 ++
+ mm/filemap.c       | 13 +++++++------
+ 2 files changed, 9 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
-index 38651fae7f21..ba87d21885ca 100644
---- a/fs/btrfs/Kconfig
-+++ b/fs/btrfs/Kconfig
-@@ -14,6 +14,7 @@ config BTRFS_FS
- 	select RAID6_PQ
- 	select XOR_BLOCKS
- 	select SRCU
-+	select FS_IOMAP
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 997a530ff4e9..26d827434060 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -3041,6 +3041,8 @@ extern int generic_file_rw_checks(struct file *file_in, struct file *file_out);
+ extern int generic_copy_file_checks(struct file *file_in, loff_t pos_in,
+ 				    struct file *file_out, loff_t pos_out,
+ 				    size_t *count, unsigned int flags);
++extern ssize_t generic_file_buffered_read(struct kiocb *iocb,
++		struct iov_iter *to, ssize_t already_read);
+ extern ssize_t generic_file_read_iter(struct kiocb *, struct iov_iter *);
+ extern ssize_t __generic_file_write_iter(struct kiocb *, struct iov_iter *);
+ extern ssize_t generic_file_write_iter(struct kiocb *, struct iov_iter *);
+diff --git a/mm/filemap.c b/mm/filemap.c
+index d0cf700bf201..2121ae01eae8 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -2014,7 +2014,7 @@ static void shrink_readahead_size_eio(struct file *filp,
+  * generic_file_buffered_read - generic file read routine
+  * @iocb:	the iocb to read
+  * @iter:	data destination
+- * @written:	already copied
++ * @copied:	already copied
+  *
+  * This is a generic file read routine, and uses the
+  * mapping->a_ops->readpage() function for the actual low-level stuff.
+@@ -2023,11 +2023,11 @@ static void shrink_readahead_size_eio(struct file *filp,
+  * of the logic when it comes to error handling etc.
+  *
+  * Return:
+- * * total number of bytes copied, including those the were already @written
++ * * total number of bytes copied, including those the were @copied
+  * * negative error code if nothing was copied
+  */
+-static ssize_t generic_file_buffered_read(struct kiocb *iocb,
+-		struct iov_iter *iter, ssize_t written)
++ssize_t generic_file_buffered_read(struct kiocb *iocb,
++		struct iov_iter *iter, ssize_t copied)
+ {
+ 	struct file *filp = iocb->ki_filp;
+ 	struct address_space *mapping = filp->f_mapping;
+@@ -2168,7 +2168,7 @@ static ssize_t generic_file_buffered_read(struct kiocb *iocb,
+ 		prev_offset = offset;
  
- 	help
- 	  Btrfs is a general purpose copy-on-write filesystem with extents,
-diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
-index 76a843198bcb..f88e696b0698 100644
---- a/fs/btrfs/Makefile
-+++ b/fs/btrfs/Makefile
-@@ -11,7 +11,7 @@ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
- 	   compression.o delayed-ref.o relocation.o delayed-inode.o scrub.o \
- 	   reada.o backref.o ulist.o qgroup.o send.o dev-replace.o raid56.o \
- 	   uuid-tree.o props.o free-space-tree.o tree-checker.o space-info.o \
--	   block-rsv.o delalloc-space.o
-+	   block-rsv.o delalloc-space.o iomap.o
+ 		put_page(page);
+-		written += ret;
++		copied += ret;
+ 		if (!iov_iter_count(iter))
+ 			goto out;
+ 		if (ret < nr) {
+@@ -2276,8 +2276,9 @@ static ssize_t generic_file_buffered_read(struct kiocb *iocb,
  
- btrfs-$(CONFIG_BTRFS_FS_POSIX_ACL) += acl.o
- btrfs-$(CONFIG_BTRFS_FS_CHECK_INTEGRITY) += check-integrity.o
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 94660063a162..9c501c7826b4 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3243,6 +3243,7 @@ int btrfs_fdatawrite_range(struct inode *inode, loff_t start, loff_t end);
- loff_t btrfs_remap_file_range(struct file *file_in, loff_t pos_in,
- 			      struct file *file_out, loff_t pos_out,
- 			      loff_t len, unsigned int remap_flags);
-+size_t btrfs_buffered_iomap_write(struct kiocb *iocb, struct iov_iter *from);
+ 	*ppos = ((loff_t)index << PAGE_SHIFT) + offset;
+ 	file_accessed(filp);
+-	return written ? written : error;
++	return copied ? copied : error;
+ }
++EXPORT_SYMBOL_GPL(generic_file_buffered_read);
  
- /* tree-defrag.c */
- int btrfs_defrag_leaves(struct btrfs_trans_handle *trans,
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 4466a09f2d98..0707db04d3cc 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1829,7 +1829,7 @@ static ssize_t __btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
- 		return written;
- 
- 	pos = iocb->ki_pos;
--	written_buffered = btrfs_buffered_write(iocb, from);
-+	written_buffered = btrfs_buffered_iomap_write(iocb, from);
- 	if (written_buffered < 0) {
- 		err = written_buffered;
- 		goto out;
-@@ -1966,7 +1966,7 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
- 	if (iocb->ki_flags & IOCB_DIRECT) {
- 		num_written = __btrfs_direct_write(iocb, from);
- 	} else {
--		num_written = btrfs_buffered_write(iocb, from);
-+		num_written = btrfs_buffered_iomap_write(iocb, from);
- 		if (num_written > 0)
- 			iocb->ki_pos = pos + num_written;
- 		if (clean_page)
-diff --git a/fs/btrfs/iomap.c b/fs/btrfs/iomap.c
-new file mode 100644
-index 000000000000..025ccbf471bf
---- /dev/null
-+++ b/fs/btrfs/iomap.c
-@@ -0,0 +1,383 @@
-+// SPDX-License-Identifier: GPL-2.0
-+/*
-+ * iomap support for BTRFS
-+ *
-+ * Copyright (c) 2019  SUSE Linux
-+ * Author: Goldwyn Rodrigues <rgoldwyn@suse.com>
-+ */
-+
-+#include <linux/iomap.h>
-+#include "ctree.h"
-+#include "btrfs_inode.h"
-+#include "volumes.h"
-+#include "disk-io.h"
-+#include "delalloc-space.h"
-+
-+struct btrfs_iomap {
-+	u64 start;
-+	u64 end;
-+	bool nocow;
-+	int extents_locked;
-+	ssize_t reserved_bytes;
-+	struct extent_changeset *data_reserved;
-+	struct extent_state *cached_state;
-+};
-+
-+
-+/*
-+ * This function locks the extent and properly waits for data=ordered extents
-+ * to finish before allowing the pages to be modified if need.
-+ *
-+ * The return value:
-+ * 1 - the extent is locked
-+ * 0 - the extent is not locked, and everything is OK
-+ * -EAGAIN - need re-prepare the pages
-+ * the other < 0 number - Something wrong happens
-+ */
-+static noinline int
-+lock_and_cleanup_extent(struct btrfs_inode *inode, loff_t pos,
-+			 size_t write_bytes,
-+			 u64 *lockstart, u64 *lockend,
-+			 struct extent_state **cached_state)
-+{
-+	struct btrfs_fs_info *fs_info = inode->root->fs_info;
-+	u64 start_pos;
-+	u64 last_pos;
-+	int ret = 0;
-+
-+	start_pos = round_down(pos, fs_info->sectorsize);
-+	last_pos = start_pos
-+		+ round_up(pos + write_bytes - start_pos,
-+			   fs_info->sectorsize) - 1;
-+
-+	if (start_pos < inode->vfs_inode.i_size) {
-+		struct btrfs_ordered_extent *ordered;
-+
-+		lock_extent_bits(&inode->io_tree, start_pos, last_pos,
-+				cached_state);
-+		ordered = btrfs_lookup_ordered_range(inode, start_pos,
-+						     last_pos - start_pos + 1);
-+		if (ordered &&
-+		    ordered->file_offset + ordered->len > start_pos &&
-+		    ordered->file_offset <= last_pos) {
-+			unlock_extent_cached(&inode->io_tree, start_pos,
-+					last_pos, cached_state);
-+			btrfs_start_ordered_extent(&inode->vfs_inode,
-+					ordered, 1);
-+			btrfs_put_ordered_extent(ordered);
-+			return -EAGAIN;
-+		}
-+		if (ordered)
-+			btrfs_put_ordered_extent(ordered);
-+
-+		*lockstart = start_pos;
-+		*lockend = last_pos;
-+		ret = 1;
-+	}
-+
-+	return ret;
-+}
-+
-+static noinline int check_can_nocow(struct btrfs_inode *inode, loff_t pos,
-+				    size_t *write_bytes)
-+{
-+	struct btrfs_fs_info *fs_info = inode->root->fs_info;
-+	struct btrfs_root *root = inode->root;
-+	struct btrfs_ordered_extent *ordered;
-+	u64 lockstart, lockend;
-+	u64 num_bytes;
-+	int ret;
-+
-+	ret = btrfs_start_write_no_snapshotting(root);
-+	if (!ret)
-+		return -ENOSPC;
-+
-+	lockstart = round_down(pos, fs_info->sectorsize);
-+	lockend = round_up(pos + *write_bytes,
-+			   fs_info->sectorsize) - 1;
-+
-+	while (1) {
-+		lock_extent(&inode->io_tree, lockstart, lockend);
-+		ordered = btrfs_lookup_ordered_range(inode, lockstart,
-+						     lockend - lockstart + 1);
-+		if (!ordered) {
-+			break;
-+		}
-+		unlock_extent(&inode->io_tree, lockstart, lockend);
-+		btrfs_start_ordered_extent(&inode->vfs_inode, ordered, 1);
-+		btrfs_put_ordered_extent(ordered);
-+	}
-+
-+	num_bytes = lockend - lockstart + 1;
-+	ret = can_nocow_extent(&inode->vfs_inode, lockstart, &num_bytes,
-+			NULL, NULL, NULL);
-+	if (ret <= 0) {
-+		ret = 0;
-+		btrfs_end_write_no_snapshotting(root);
-+	} else {
-+		*write_bytes = min_t(size_t, *write_bytes ,
-+				     num_bytes - pos + lockstart);
-+	}
-+
-+	unlock_extent(&inode->io_tree, lockstart, lockend);
-+
-+	return ret;
-+}
-+
-+static int btrfs_find_new_delalloc_bytes(struct btrfs_inode *inode,
-+					 const u64 start,
-+					 const u64 len,
-+					 struct extent_state **cached_state)
-+{
-+	u64 search_start = start;
-+	const u64 end = start + len - 1;
-+
-+	while (search_start < end) {
-+		const u64 search_len = end - search_start + 1;
-+		struct extent_map *em;
-+		u64 em_len;
-+		int ret = 0;
-+
-+		em = btrfs_get_extent(inode, NULL, 0, search_start,
-+				      search_len, 0);
-+		if (IS_ERR(em))
-+			return PTR_ERR(em);
-+
-+		if (em->block_start != EXTENT_MAP_HOLE)
-+			goto next;
-+
-+		em_len = em->len;
-+		if (em->start < search_start)
-+			em_len -= search_start - em->start;
-+		if (em_len > search_len)
-+			em_len = search_len;
-+
-+		ret = set_extent_bit(&inode->io_tree, search_start,
-+				     search_start + em_len - 1,
-+				     EXTENT_DELALLOC_NEW,
-+				     NULL, cached_state, GFP_NOFS);
-+next:
-+		search_start = extent_map_end(em);
-+		free_extent_map(em);
-+		if (ret)
-+			return ret;
-+	}
-+	return 0;
-+}
-+
-+static void btrfs_buffered_page_done(struct inode *inode, loff_t pos,
-+		unsigned copied, struct page *page,
-+		struct iomap *iomap)
-+{
-+	if (!page)
-+		return;
-+	SetPageUptodate(page);
-+	ClearPageChecked(page);
-+	set_page_dirty(page);
-+	get_page(page);
-+}
-+
-+
-+static const struct iomap_page_ops btrfs_buffered_page_ops = {
-+	.page_done = btrfs_buffered_page_done,
-+};
-+
-+
-+static int btrfs_buffered_iomap_begin(struct inode *inode, loff_t pos,
-+		loff_t length, unsigned flags, struct iomap *iomap,
-+		struct iomap *srcmap)
-+{
-+	int ret;
-+	size_t write_bytes = length;
-+	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-+	size_t sector_offset = pos & (fs_info->sectorsize - 1);
-+	struct btrfs_iomap *bi;
-+
-+	bi = kzalloc(sizeof(struct btrfs_iomap), GFP_NOFS);
-+	if (!bi)
-+		return -ENOMEM;
-+
-+	bi->reserved_bytes = round_up(write_bytes + sector_offset,
-+			fs_info->sectorsize);
-+
-+	/* Reserve data space */
-+	ret = btrfs_check_data_free_space(inode, &bi->data_reserved, pos,
-+			write_bytes);
-+	if (ret < 0) {
-+		/*
-+		 * Space allocation failed. Let's check if we can
-+		 * continue I/O without allocations
-+		 */
-+		if ((BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
-+						BTRFS_INODE_PREALLOC)) &&
-+				check_can_nocow(BTRFS_I(inode), pos,
-+					&write_bytes) > 0) {
-+			bi->nocow = true;
-+			/*
-+			 * our prealloc extent may be smaller than
-+			 * write_bytes, so scale down.
-+			 */
-+			bi->reserved_bytes = round_up(write_bytes +
-+					sector_offset,
-+					fs_info->sectorsize);
-+		} else {
-+			goto error;
-+		}
-+	}
-+
-+	WARN_ON(bi->reserved_bytes == 0);
-+
-+	/* We have the data space allocated, reserve the metadata now */
-+	ret = btrfs_delalloc_reserve_metadata(BTRFS_I(inode),
-+			bi->reserved_bytes);
-+	if (ret) {
-+		struct btrfs_root *root = BTRFS_I(inode)->root;
-+		if (!bi->nocow)
-+			btrfs_free_reserved_data_space(inode,
-+					bi->data_reserved, pos,
-+					write_bytes);
-+		else
-+			btrfs_end_write_no_snapshotting(root);
-+		goto error;
-+	}
-+
-+	do {
-+		ret = lock_and_cleanup_extent(
-+				BTRFS_I(inode), pos, write_bytes, &bi->start,
-+				&bi->end, &bi->cached_state);
-+	} while (ret == -EAGAIN);
-+
-+	if (ret < 0) {
-+		btrfs_delalloc_release_extents(BTRFS_I(inode),
-+					       bi->reserved_bytes, true);
-+		goto release;
-+	} else {
-+		bi->extents_locked = ret;
-+	}
-+	iomap->private = bi;
-+	iomap->length = round_up(write_bytes, fs_info->sectorsize);
-+	iomap->offset = round_down(pos, fs_info->sectorsize);
-+	iomap->addr = IOMAP_NULL_ADDR;
-+	iomap->type = IOMAP_DELALLOC;
-+	iomap->bdev = fs_info->fs_devices->latest_bdev;
-+	iomap->page_ops = &btrfs_buffered_page_ops;
-+	return 0;
-+release:
-+	if (bi->extents_locked)
-+		unlock_extent_cached(&BTRFS_I(inode)->io_tree, bi->start,
-+				bi->end, &bi->cached_state);
-+	if (bi->nocow) {
-+		struct btrfs_root *root = BTRFS_I(inode)->root;
-+		btrfs_end_write_no_snapshotting(root);
-+		btrfs_delalloc_release_metadata(BTRFS_I(inode),
-+				bi->reserved_bytes, true);
-+	} else {
-+		btrfs_delalloc_release_space(inode, bi->data_reserved,
-+				round_down(pos, fs_info->sectorsize),
-+				bi->reserved_bytes, true);
-+	}
-+	extent_changeset_free(bi->data_reserved);
-+
-+error:
-+	kfree(bi);
-+	return ret;
-+}
-+
-+static int btrfs_buffered_iomap_end(struct inode *inode, loff_t pos,
-+		loff_t length, ssize_t written, unsigned flags,
-+		struct iomap *iomap)
-+{
-+	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-+	struct btrfs_iomap *bi = iomap->private;
-+	ssize_t release_bytes = round_down(bi->reserved_bytes - written,
-+			1 << fs_info->sb->s_blocksize_bits);
-+	unsigned int extra_bits = 0;
-+	u64 start_pos = pos & ~((u64) fs_info->sectorsize - 1);
-+	u64 num_bytes = round_up(written + pos - start_pos,
-+			fs_info->sectorsize);
-+	u64 end_of_last_block = start_pos + num_bytes - 1;
-+	int ret = 0;
-+
-+	if (release_bytes > 0) {
-+		if (bi->nocow) {
-+			btrfs_delalloc_release_metadata(BTRFS_I(inode),
-+					release_bytes, true);
-+		} else {
-+			u64 __pos = round_down(pos + written, fs_info->sectorsize);
-+			btrfs_delalloc_release_space(inode, bi->data_reserved,
-+					__pos, release_bytes, true);
-+		}
-+	}
-+
-+	/*
-+	 * The pages may have already been dirty, clear out old accounting so
-+	 * we can set things up properly
-+	 */
-+	clear_extent_bit(&BTRFS_I(inode)->io_tree, start_pos, end_of_last_block,
-+			EXTENT_DIRTY | EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING |
-+			EXTENT_DEFRAG, 0, 0, &bi->cached_state);
-+
-+	if (!btrfs_is_free_space_inode(BTRFS_I(inode))) {
-+		if (start_pos >= i_size_read(inode) &&
-+		    !(BTRFS_I(inode)->flags & BTRFS_INODE_PREALLOC)) {
-+			/*
-+			 * There can't be any extents following eof in this case
-+			 * so just set the delalloc new bit for the range
-+			 * directly.
-+			 */
-+			extra_bits |= EXTENT_DELALLOC_NEW;
-+		} else {
-+			ret = btrfs_find_new_delalloc_bytes(BTRFS_I(inode),
-+					start_pos, num_bytes,
-+					&bi->cached_state);
-+			if (ret)
-+				goto unlock;
-+		}
-+	}
-+
-+	ret = btrfs_set_extent_delalloc(inode, start_pos, end_of_last_block,
-+			extra_bits, &bi->cached_state, 0);
-+unlock:
-+	if (bi->extents_locked)
-+		unlock_extent_cached(&BTRFS_I(inode)->io_tree,
-+				bi->start, bi->end, &bi->cached_state);
-+
-+	if (bi->nocow) {
-+		struct btrfs_root *root = BTRFS_I(inode)->root;
-+		btrfs_end_write_no_snapshotting(root);
-+		if (written > 0) {
-+			u64 start = round_down(pos, fs_info->sectorsize);
-+			u64 end = round_up(pos + written, fs_info->sectorsize) - 1;
-+			set_extent_bit(&BTRFS_I(inode)->io_tree, start, end,
-+					EXTENT_NORESERVE, NULL, NULL, GFP_NOFS);
-+		}
-+
-+	}
-+	btrfs_delalloc_release_extents(BTRFS_I(inode), bi->reserved_bytes,
-+			true);
-+
-+	if (written < fs_info->nodesize)
-+		btrfs_btree_balance_dirty(fs_info);
-+
-+	extent_changeset_free(bi->data_reserved);
-+	kfree(bi);
-+	return ret;
-+}
-+
-+static const struct iomap_ops btrfs_buffered_iomap_ops = {
-+	.iomap_begin            = btrfs_buffered_iomap_begin,
-+	.iomap_end              = btrfs_buffered_iomap_end,
-+};
-+
-+size_t btrfs_buffered_iomap_write(struct kiocb *iocb, struct iov_iter *from)
-+{
-+	ssize_t written;
-+	struct inode *inode = file_inode(iocb->ki_filp);
-+	written = iomap_file_buffered_write(iocb, from, &btrfs_buffered_iomap_ops);
-+	if (written > 0)
-+		iocb->ki_pos += written;
-+	if (iocb->ki_pos > i_size_read(inode))
-+		i_size_write(inode, iocb->ki_pos);
-+	return written;
-+}
-+
+ /**
+  * generic_file_read_iter - generic filesystem read routine
 -- 
 2.16.4
 

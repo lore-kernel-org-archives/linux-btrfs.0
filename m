@@ -2,136 +2,140 @@ Return-Path: <SRS0=qsaG=XE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.5 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8F82AC4740C
-	for <linux-btrfs@archiver.kernel.org>; Mon,  9 Sep 2019 23:22:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 58B69C4740A
+	for <linux-btrfs@archiver.kernel.org>; Mon,  9 Sep 2019 23:25:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 5033920863
-	for <linux-btrfs@archiver.kernel.org>; Mon,  9 Sep 2019 23:22:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 209E420863
+	for <linux-btrfs@archiver.kernel.org>; Mon,  9 Sep 2019 23:25:17 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=gmx.net header.i=@gmx.net header.b="BHNcvX8/"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=zedlx.com header.i=@zedlx.com header.b="tU+rYiBF"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2389898AbfIIXW2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 9 Sep 2019 19:22:28 -0400
-Received: from mout.gmx.net ([212.227.17.21]:57705 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2389827AbfIIXW2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 9 Sep 2019 19:22:28 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1568071342;
-        bh=arUJvIcKnIwsa0Pcg0Yii1f1unOqGWehmk05O+wMf9E=;
-        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=BHNcvX8/1N/WC3M2ztM7N9fp6+86x2KwbtT+I0Up2i35eQF0z7kolwbpybsf7JVtn
-         lmIMz09daMvDXDKbmC9bFHZSCoep1zDPgIYcWJgA7v8bnWEZ4S1PsegfkyI0ZTvOpS
-         W3xxa0717noEoaH5AWkmwFtgIg+23O0s9WM87Kz8=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([13.231.109.76]) by mail.gmx.com (mrgmx102
- [212.227.17.174]) with ESMTPSA (Nemesis) id 0Ls7MZ-1iGu9K0moJ-013x2k; Tue, 10
- Sep 2019 01:22:21 +0200
-Subject: Re: [PATCH v2 6/6] btrfs-progs: tests/fsck: Add new images for inode
- mode repair functionality
-To:     Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20190905075800.1633-1-wqu@suse.com>
- <20190905075800.1633-7-wqu@suse.com>
- <9c772db6-74e2-6760-54bc-18b09294dc30@suse.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; prefer-encrypt=mutual; keydata=
- mQENBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAG0IlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT6JAVQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWCnQUJCWYC
- bgAKCRDCPZHzoSX+qAR8B/94VAsSNygx1C6dhb1u1Wp1Jr/lfO7QIOK/nf1PF0VpYjTQ2au8
- ihf/RApTna31sVjBx3jzlmpy+lDoPdXwbI3Czx1PwDbdhAAjdRbvBmwM6cUWyqD+zjVm4RTG
- rFTPi3E7828YJ71Vpda2qghOYdnC45xCcjmHh8FwReLzsV2A6FtXsvd87bq6Iw2axOHVUax2
- FGSbardMsHrya1dC2jF2R6n0uxaIc1bWGweYsq0LXvLcvjWH+zDgzYCUB0cfb+6Ib/ipSCYp
- 3i8BevMsTs62MOBmKz7til6Zdz0kkqDdSNOq8LgWGLOwUTqBh71+lqN2XBpTDu1eLZaNbxSI
- ilaVuQENBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAGJATwEGAEIACYWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCWdWBrwIbDAUJA8JnAAAK
- CRDCPZHzoSX+qA3xB/4zS8zYh3Cbm3FllKz7+RKBw/ETBibFSKedQkbJzRlZhBc+XRwF61mi
- f0SXSdqKMbM1a98fEg8H5kV6GTo62BzvynVrf/FyT+zWbIVEuuZttMk2gWLIvbmWNyrQnzPl
- mnjK4AEvZGIt1pk+3+N/CMEfAZH5Aqnp0PaoytRZ/1vtMXNgMxlfNnb96giC3KMR6U0E+siA
- 4V7biIoyNoaN33t8m5FwEwd2FQDG9dAXWhG13zcm9gnk63BN3wyCQR+X5+jsfBaS4dvNzvQv
- h8Uq/YGjCoV1ofKYh3WKMY8avjq25nlrhzD/Nto9jHp8niwr21K//pXVA81R2qaXqGbql+zo
-Message-ID: <b72730b8-b658-51ee-3d4d-3b2aec7be8d8@gmx.com>
-Date:   Tue, 10 Sep 2019 07:22:17 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.0
+        id S2388050AbfIIXZQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 9 Sep 2019 19:25:16 -0400
+Received: from server53-3.web-hosting.com ([198.54.126.113]:35527 "EHLO
+        server53-3.web-hosting.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1730138AbfIIXZQ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 9 Sep 2019 19:25:16 -0400
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=zedlx.com;
+         s=default; h=Content-Transfer-Encoding:MIME-Version:Content-Type:Reply-to:
+        In-Reply-To:References:Subject:Cc:To:From:Message-ID:Date:Sender:Content-ID:
+        Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
+        :Resent-Message-ID:List-Id:List-Help:List-Unsubscribe:List-Subscribe:
+        List-Post:List-Owner:List-Archive;
+        bh=j0bhePdfD0/vnNvoUnIU2xgJjnNfPtiyrZLTSAe85ks=; b=tU+rYiBF13RKe2W2jgFbEGdRYF
+        CVwH06oYVuXWgVFVo91gP3CCfG3UjXSjk676uAzOO6RUl03oJZLFBepJzP3CIXzOXRTQObYQYXFRX
+        cHfDs+P6sjVG9ERf3zZw1DRwMqyukvj1RCTDJ7yQJzAFlwJHq3Hdi9vhs/+fxnXudLKV/HnVvgU7x
+        vuOda1gZSI4zbDNV0PJMghXWAIQIeCo9ZVvbYr5lQk0U76h97eSK/nWWZs2qCiJRhFRURzayrK8gL
+        4Qy8qW3tbfGGlCatn7MisOW/SrXmxFhrNRBvyhRHfa7BErtbm4cZZM0vPHy8xHFFjygzPMH/2Xhqc
+        r9qiAwyQ==;
+Received: from [::1] (port=56658 helo=server53.web-hosting.com)
+        by server53.web-hosting.com with esmtpsa (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
+        (Exim 4.92)
+        (envelope-from <webmaster@zedlx.com>)
+        id 1i7T1y-0003Qq-Rw; Mon, 09 Sep 2019 19:25:15 -0400
+Received: from [95.178.242.92] ([95.178.242.92]) by server53.web-hosting.com
+ (Horde Framework) with HTTPS; Mon, 09 Sep 2019 19:25:10 -0400
+Date:   Mon, 09 Sep 2019 19:25:10 -0400
+Message-ID: <20190909192510.Horde.TcPhEiaioP0455GTkXqxE4Q@server53.web-hosting.com>
+From:   webmaster@zedlx.com
+To:     Graham Cobb <g.btrfs@cobb.uk.net>
+Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+Subject: Re: Feature requests: online backup - defrag - change RAID level
+References: <20190908225508.Horde.51Idygc4ykmhqRn316eLdRO@server53.web-hosting.com>
+ <5e6a9092-b9f9-58d2-d638-9e165d398747@gmx.com>
+ <20190909072518.Horde.c4SobsfDkO6FUtKo3e_kKu0@server53.web-hosting.com>
+ <fb80b97a-9bcd-5d13-0026-63e11e1a06b5@gmx.com>
+ <c4f05241-77d4-3ae4-9773-795351a26a8e@cobb.uk.net>
+In-Reply-To: <c4f05241-77d4-3ae4-9773-795351a26a8e@cobb.uk.net>
+Reply-to: webmaster@zedlx.com
+User-Agent: Horde Application Framework 5
+Content-Type: text/plain; charset=utf-8; format=flowed; DelSp=Yes
 MIME-Version: 1.0
-In-Reply-To: <9c772db6-74e2-6760-54bc-18b09294dc30@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:2BmlQyVrbTnArGvI45Dl/MFFmnko5/7epAiylqrQH5q9axwbTX9
- fk1vw346/uQG4naTS52gByCQEw2qrLqPcXok6RXhqmvgUcs7YDHbZmtLtwx9vMVihJbRRpb
- SuKcLvqSKxVXEPreKB5G/KMEmMSSiUKlNVqbbnKCitipnU9UYHyp5EkSHEiizcrfePD8Ycs
- un4DYsHSb2lzyJawyEl1A==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:XW5Y+GxclXY=:XkOfP6+tVfiG6J3NNIs5BH
- wbLbqHzX/8CGYx0Gq2m97nzep41FT6R88Uz7LJSXs5rwOV4SQ+Ww4G4TZcm6qTMLu6gV6ZvxK
- XDVCTvGfpKu+B0qQ/jdfczatC6Vvk2oyVAFCJKKB5eM7JSBvJDc+6sq4CKfk1R0e/JOmpZn5A
- zki14hOlh5XX2Oeex8s+H3moBqpS5/0F22tS/ey3H1F+KBhdLjPr8SQIBt6BaGkTrXv63Y4ww
- 6DDlRgF/ShyUH/AnIFcNXe/4f9j7/42QcDdpA3Foc/T7mBuS+rcFSFGoIvIeS2gKBptmR0jVZ
- TTcPmItCIFLRg33sbIT1kq55ku4/Ox2wQNmaeOej+/mFC6l7AM3BZAmEqSHtkFs2LGOtHaOHl
- GvBAd+PdiIwFfwhcx38ZVZWYZn0Xa8Tv69srJYwo/EY7po6Z1Nzge4OXbhQMo/AvTxd/OClj1
- HctLWax3IJ5j+NM05O1sOaOvo5XZ9dRswPBcvgICbsnXZ1lvgwPrSIQ/CdexRuTCMRFPliUe+
- 2IJw5jD0mU+B7jAEp/9B4a5dUth+QRfX7E/LZvt6s7Sr8zgQoGkUcodCZw469PQNIp4XFFBdg
- QL2xeJOKxPSFohiAYiabvEXKvh5g5EqPXZCXQP1DFQ5bM/R/LxSFR1ddFrKZWQ2ZzggsQUxOA
- fKtNb6uHBlDQ7KzHmZACFJG9MQxfNvXHvrbaS0SXrLaW0QjMtXSRlSBbDZwTnjVjCb0YI3yn7
- 1V14CDcgl2eOjXKMkaK9w96kW6PY08WPW62+2pKEGA7yDmhjUWhxxPPldM3B+IqOHgjn98J8E
- mHalWlMcPBn8Jvj7cPYABwvB0UsbvzV/lIgPgdxPTw+c2NYiL0O3uj/Q3/Yp2zdnN6fbnJVql
- n3kdSNJf6eGydidPSThhk//WvIL9/TfFFsYQH/dskIR2YXdH5s8gJYWsr0nAyYadyb09U2XHz
- uTTUwlBdBAKA/L6tOQN7HI02mdPibtT6NlNnHlBiHedq8zHOybCKpPE0Fx+OURhkQOAz+v0DH
- cFU372jFx311KIttPMVpTIyDetHItDs9hKFj5jtARzO4FoINazqAV7M5X9Z+/XOyWHGxeItjT
- 5N4oZW5mab5bLmukMjrwzvGOp0iGvIItv8R6SyPFVWtLoh5xxgZL6RZRoSzzivTBrC5vdxZ8b
- LR0mcPUIqdlijmD+tj11DfEn/wO3OVpD/55H9ZzHGU78oUtRWLyfHc2zT01z3+7I+O6r65qzd
- myvvHEcoLyUiFA0qt
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+X-OutGoing-Spam-Status: No, score=-1.0
+X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
+X-AntiAbuse: Primary Hostname - server53.web-hosting.com
+X-AntiAbuse: Original Domain - vger.kernel.org
+X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
+X-AntiAbuse: Sender Address Domain - zedlx.com
+X-Get-Message-Sender-Via: server53.web-hosting.com: authenticated_id: zedlryqc/from_h
+X-Authenticated-Sender: server53.web-hosting.com: webmaster@zedlx.com
+X-Source: 
+X-Source-Args: 
+X-Source-Dir: 
+X-From-Rewrite: unmodified, already matched
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
+Quoting Graham Cobb <g.btrfs@cobb.uk.net>:
 
-On 2019/9/9 =E4=B8=8B=E5=8D=8811:37, Nikolay Borisov wrote:
->
->
-> On 5.09.19 =D0=B3. 10:58 =D1=87., Qu Wenruo wrote:
->> Add new test image for imode repair in subvolume trees.
+> On 09/09/2019 13:18, Qu Wenruo wrote:
 >>
->> Also rename the existing test case 039-bad-free-space-cache-inode-mode
->> to 039-bad-inode-mode, since now we can fix all bad imode.
 >>
->> And add the beacon file for lowmem test.
+>> On 2019/9/9 下午7:25, zedlryqc@server53.web-hosting.com wrote:
+>>> What I am complaining about is that at one point in time, after issuing
+>>> the command:
+>>>     btrfs balance start -dconvert=single -mconvert=single
+>>> and before issuing the 'btrfs delete', the system could be in a too
+>>> fragile state, with extents unnecesarily spread out over two drives,
+>>> which is both a completely unnecessary operation, and it also seems to
+>>> me that it could be dangerous in some situations involving potentially
+>>> malfunctioning drives.
 >>
+>> In that case, you just need to replace that malfunctioning device other
+>> than fall back to SINGLE.
 >
-> What kind of corruption does the image have?
-
-Just bad imode, all 0.
-
-> Ideally it should have
-> cases where both DIR_ITEM and DIR_INDEX is used. As well as DIR_ITEM
-> containing collisions.
-
-Yes, that's the best case, but in that case, we will have more failure
-modes, e.g. we need to repair that missing DIR_ITEM before we use
-DIR_INDEX to regenerate the filetype.
-
-So I'm just sticking to one test image for one corruption.
-
-Thanks,
-Qu
-
+> Actually, this case is the (only) one of the three that I think would be
+> very useful (backup is better handled by having a choice of userspace
+> tools to choose from - I use btrbk - and does anyone really care about
+> defrag any more?).
 >
-> <split>
+> I did, recently, have a case where I had started to move my main data
+> disk to a raid1 setup but my new disk started reporting errors. I didn't
+> have a spare disk (and didn't have a spare SCSI slot for another disk
+> anyway). So, I wanted to stop using the new disk and revert to my former
+> (m=dup, d=single) setup as quickly as possible.
 >
+> I spent time trying to find a way to do that balance without risking the
+> single copy of some of the data being stored on the failing disk between
+> starting the balance and completing the remove. That has two problems:
+> obviously having the single copy on the failing disk is bad news but,
+> also, it increases the time taken for the subsequent remove which has to
+> copy that data back to the remaining disk (where there used to be a
+> perfectly good copy which was subsequently thrown away during the balance).
+>
+> In the end, I took the risk and the time of the two steps. In my case, I
+> had good backups, and actually most of my data was still in a single
+> profile on the old disk (because the errors starting happening before I
+> had done the balance to change the profile of all the old data from
+> single to raid1).
+>
+> But a balance -dconvert=single-but-force-it-to-go-on-disk-1 would have
+> been useful. (Actually a "btrfs device mark-for-removal" command would
+> be better - allow a failing device to be retained for a while, and used
+> to provide data, but ignore it when looking to store data).
+>
+> Graham
+
+Thank you. I like your very nice example/story/use case, and I also  
+like the solution: btrfs device mark-for-removal.
+
+Of course, you didn't have the spare drive. I guess most users don't  
+have it. I don't. They buy it when one of the drives in RAID1 fails.
+
+I was thinking of a more general solution, so I proposed RAID level  
+change feature, but this suggestion of yours covers most of the use  
+cases. Maybe the case of RAID10 level downgrade should also be  
+considered, in case of circumstances similar to what you described.
+
+
+

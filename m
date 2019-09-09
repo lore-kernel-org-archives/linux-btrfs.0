@@ -2,35 +2,34 @@ Return-Path: <SRS0=qsaG=XE=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4B319C4740A
-	for <linux-btrfs@archiver.kernel.org>; Mon,  9 Sep 2019 14:34:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 68223C4740C
+	for <linux-btrfs@archiver.kernel.org>; Mon,  9 Sep 2019 14:35:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1EB7120863
-	for <linux-btrfs@archiver.kernel.org>; Mon,  9 Sep 2019 14:34:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 44F5B218DE
+	for <linux-btrfs@archiver.kernel.org>; Mon,  9 Sep 2019 14:35:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727490AbfIIOeN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 9 Sep 2019 10:34:13 -0400
-Received: from mx2.suse.de ([195.135.220.15]:40332 "EHLO mx1.suse.de"
+        id S1727955AbfIIOfd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 9 Sep 2019 10:35:33 -0400
+Received: from mx2.suse.de ([195.135.220.15]:40930 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1727112AbfIIOeM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 9 Sep 2019 10:34:12 -0400
+        id S1726519AbfIIOfd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 9 Sep 2019 10:35:33 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 6FEC7ABBE;
-        Mon,  9 Sep 2019 14:34:10 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 49E8CAE84;
+        Mon,  9 Sep 2019 14:35:31 +0000 (UTC)
 Subject: Re: [PATCH v2 2/6] btrfs-progs: check/common: Introduce a function to
  find imode using INODE_REF
 To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, WenRuo Qu <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
 References: <20190905075800.1633-1-wqu@suse.com>
  <20190905075800.1633-3-wqu@suse.com>
- <4e7099d2-5b4c-1fa3-ffdf-2b3332ed0b88@suse.com>
- <37228196-3617-e253-6ad1-125e72e6628c@gmx.com>
-Cc:     David Sterba <dsterba@suse.com>
+ <1b8af49c-97b2-0119-002e-4736380fc6c2@suse.com>
+ <d7dcd61e-2c9a-4f1f-3627-f1697433ae02@gmx.com>
 From:   Nikolay Borisov <nborisov@suse.com>
 Openpgp: preference=signencrypt
 Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
@@ -75,12 +74,12 @@ Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
  TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
  RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
  5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
-Message-ID: <9e38c008-6a3e-cf90-4e65-26066710060e@suse.com>
-Date:   Mon, 9 Sep 2019 17:34:08 +0300
+Message-ID: <f6136a44-27bc-5e8f-8cdb-0d0358b283ce@suse.com>
+Date:   Mon, 9 Sep 2019 17:35:30 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
  Thunderbird/60.8.0
 MIME-Version: 1.0
-In-Reply-To: <37228196-3617-e253-6ad1-125e72e6628c@gmx.com>
+In-Reply-To: <d7dcd61e-2c9a-4f1f-3627-f1697433ae02@gmx.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
@@ -91,118 +90,35 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 9.09.19 г. 17:24 ч., Qu Wenruo wrote:
+On 9.09.19 г. 17:26 ч., Qu Wenruo wrote:
 > 
 > 
-> On 2019/9/9 下午9:25, Nikolay Borisov wrote:
+> On 2019/9/9 下午9:42, Nikolay Borisov wrote:
 >>
 >>
 >> On 5.09.19 г. 10:57 ч., Qu Wenruo wrote:
 >>> Introduce a function, find_file_type(), to find filetype using
 >>> INODE_REF.
->>>
->>> This function will:
->>> - Search DIR_INDEX first
->>>   DIR_INDEX is easier since there is only one item in it.
->>>
->>> - Valid the DIR_INDEX item
->>>   If the DIR_INDEX is valid, use the filetype and call it a day.
->>>
->>> - Search DIR_ITEM then
->>>
->>> - Valide the DIR_ITEM
->>>   If valid, call it a day. Or return -ENOENT;
->>>
->>> This would be used as the primary method to determine the imode in later
->>> imode repair code.
->>>
->>> Signed-off-by: Qu Wenruo <wqu@suse.com>
->>> ---
->>>  check/mode-common.c | 99 +++++++++++++++++++++++++++++++++++++++++++++
->>>  1 file changed, 99 insertions(+)
->>>
->>> diff --git a/check/mode-common.c b/check/mode-common.c
->>> index 195b6efaa7aa..c0ddc50a1dd0 100644
->>> --- a/check/mode-common.c
->>> +++ b/check/mode-common.c
->>> @@ -16,6 +16,7 @@
->>>
->>>  #include <time.h>
->>>  #include "ctree.h"
->>> +#include "hash.h"
->>>  #include "common/internal.h"
->>>  #include "common/messages.h"
->>>  #include "transaction.h"
->>> @@ -836,6 +837,104 @@ int reset_imode(struct btrfs_trans_handle *trans, struct btrfs_root *root,
->>>  	return ret;
->>>  }
->>>
->>> +static int find_file_type(struct btrfs_root *root, u64 ino, u64 dirid,
->>> +			  u64 index, const char *name, u32 name_len,
->>> +			  u32 *imode_ret)
->>> +{
->>> +	struct btrfs_path path;
->>> +	struct btrfs_key location;
->>> +	struct btrfs_key key;
->>> +	struct btrfs_dir_item *di;
->>> +	char namebuf[BTRFS_NAME_LEN] = {0};
->>> +	unsigned long cur;
->>> +	unsigned long end;
->>> +	bool found = false;
->>> +	u8 filetype;
->>> +	u32 len;
->>> +	int ret;
->>> +
->>> +	btrfs_init_path(&path);
->>> +
->>> +	/* Search DIR_INDEX first */
->>> +	key.objectid = dirid;
->>> +	key.offset = index;
->>> +	key.type = BTRFS_DIR_INDEX_KEY;
->>> +
->>> +	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
->>> +	if (ret > 0)
->>> +		ret = -ENOENT;
 >>
->> Even if it returns 1 meaning there is no DIR_INDEX item perhaps it still
->> makes sense to go to dir_item: label to search for DIR_ITEM, what if the
->> corruption has affected just the DIR_INDEX item?
+>> This is confusing, there is not a single reference to INODE_REF in the
+>> code. I guess you must replace this with DIR_ITEM/DIR_INDEX ?
 > 
-> I didn't get the point.
+> Don't forget how you get the @dirid @index,@name,@namelen from.
 > 
-> The next line is just going to do dir_item search, just as you mentioned.
-
-You are right, however, this is somewhat subtle and the fact I missed it
-just proves the point. The following will be much better (and explicit):
-
-if (ret)
-   goto dir_item
-
-In fact setting the -ENOENT on ret > 0 is only needed because of the
-awkward way the return value of btrfs_search_slot is handled. So yeah,
-I'm even more convinced that a simple if (ret) goto dir_item (or call a
-function) is the way to go here.
-
->>
->>> +	if (ret < 0)
->>> +		goto dir_item;
->> nit: Use elseif to make it more explicit it is a single construct.
+> All these info are from INODE_REF item.
 > 
-> Not sure such usage is recommened, but I see a lot of usage like:
-> 	ret = btrfs_search_slot();
-> 	if (ret > 0)
-> 		ret = -ENOENT;
-> 	if (ret < 0)
-> 		goto error;
+> But I totally understand your concern, it's sometimes really easy to get
+> confused about 1) what we are searching for 2) what the search indexes
+> are from.
+
+Yes but that is only apparent when one reads the next patch. When you
+take this function in isolation it really gets input data and based on
+that tries to search for relevant DIR_ITEM/DIR_INDEX. Think about
+someone stumbling on this commit 6 months from now, without necessarily
+having reviewed the whole series.
+
 > 
-> So I just followed this practice.
+> Thanks,
+> Qu
 > 
-
-I guess this is debatable. You are right that most of the retval
-handling is as you say but I think the more "purist" (so to say) way
-should be an if {} else if {}. Because ultimately you are handling one
-thing - the return value of btrfs_search_slot.
-
- David, what is your take on that ?
-
-<snip>
+> 

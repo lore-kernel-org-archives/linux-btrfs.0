@@ -2,85 +2,49 @@ Return-Path: <SRS0=dUzf=XF=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.6 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-4.0 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AEF0BC3A5A2
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Sep 2019 07:37:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7F450C3A5A2
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Sep 2019 07:40:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8291921019
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Sep 2019 07:37:57 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="Jsb+hckU"
+	by mail.kernel.org (Postfix) with ESMTP id 5B77B21019
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Sep 2019 07:40:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729505AbfIJHh4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 10 Sep 2019 03:37:56 -0400
-Received: from aserp2120.oracle.com ([141.146.126.78]:56864 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729189AbfIJHh4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Sep 2019 03:37:56 -0400
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x8A7OKPw132477
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Sep 2019 07:37:55 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : from : to :
- references : message-id : date : mime-version : in-reply-to : content-type
- : content-transfer-encoding; s=corp-2019-08-05;
- bh=Xlppr1IPgzfdmfTitDVCFJdh4vYS3fNDOM26poN/oWk=;
- b=Jsb+hckUMiRCTrQkZ5HZeUz65WYWxrOaGHxPp1NOLDTNcB0NlLJXIN+H7dm6rDUS+p37
- 5bo51ZSiZ/5s/CnRXKhdBFDOeSFyOmzlWCf0s7Sb3cvreGlURFHkFtGQSVR2csggSzPJ
- BHT3ElpA+DqyFis8lW63sNqDNK2sGjxuryz6/I90w0s6XvT5RPKcFMappTzghxb1CWfh
- p0BBiQV9r+wVzprieztDf09rluDGmBO+pj1AO+NDhXq4+9m6kz70tCbxkyU0qfiGh6uJ
- ydliRyGpQj9YlJdSca5nXdTatbYHLcEXaIttSST6p3ntOjLLvyNbAnwPSskRHTpzw92J ZQ== 
-Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
-        by aserp2120.oracle.com with ESMTP id 2uw1jy1are-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Sep 2019 07:37:55 +0000
-Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
-        by aserp3030.oracle.com (8.16.0.27/8.16.0.27) with SMTP id x8A7brjw185878
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Sep 2019 07:37:54 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserp3030.oracle.com with ESMTP id 2uwpjvfvcr-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Sep 2019 07:37:54 +0000
-Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id x8A7brKM013178
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Sep 2019 07:37:53 GMT
-Received: from [10.190.130.61] (/192.188.170.109)
-        by default (Oracle Beehive Gateway v4.0)
-        with ESMTP ; Tue, 10 Sep 2019 00:37:52 -0700
-Subject: Re: [PATCH] btrfs_progs: mkfs: match devid order to the stripe index
-From:   Anand Jain <anand.jain@oracle.com>
+        id S1729633AbfIJHkY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 10 Sep 2019 03:40:24 -0400
+Received: from mx2.suse.de ([195.135.220.15]:36512 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1729189AbfIJHkY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 10 Sep 2019 03:40:24 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 3E670B011
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Sep 2019 07:40:23 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-References: <20190628022611.2844-1-anand.jain@oracle.com>
-Message-ID: <e1d78c85-c433-ce7a-dda6-a48cec720ef4@oracle.com>
-Date:   Tue, 10 Sep 2019 15:37:45 +0800
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:52.0)
- Gecko/20100101 Thunderbird/52.9.1
+Subject: [PATCH 0/3] Small code style cleanup for ctree.c
+Date:   Tue, 10 Sep 2019 15:40:16 +0800
+Message-Id: <20190910074019.23158-1-wqu@suse.com>
+X-Mailer: git-send-email 2.23.0
 MIME-Version: 1.0
-In-Reply-To: <20190628022611.2844-1-anand.jain@oracle.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9375 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=1 malwarescore=0
- phishscore=0 bulkscore=0 spamscore=0 mlxscore=0 mlxlogscore=902
- adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.0.1-1906280000 definitions=main-1909100075
-X-Proofpoint-Virus-Version: vendor=nai engine=6000 definitions=9375 signatures=668685
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 priorityscore=1501 malwarescore=0
- suspectscore=1 phishscore=0 bulkscore=0 spamscore=0 clxscore=1015
- lowpriorityscore=0 mlxscore=0 impostorscore=0 mlxlogscore=970 adultscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.0.1-1906280000
- definitions=main-1909100074
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Some small enhance found during the btrfs_verify_level_key() rework.
 
-Ping.
+Qu Wenruo (3):
+  btrfs: ctree: Reduce one indent level for btrfs_search_slot()
+  btrfs: ctree: Reduce one indent level for btrfs_search_old_slot()
+  btrfs: ctree: Remove stalled comment of setting up path lock
 
-Thanks, Anand
+ fs/btrfs/ctree.c | 211 +++++++++++++++++++++++------------------------
+ 1 file changed, 101 insertions(+), 110 deletions(-)
+
+-- 
+2.23.0
+

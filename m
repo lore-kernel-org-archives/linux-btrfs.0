@@ -2,79 +2,85 @@ Return-Path: <SRS0=wB72=XG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2B98BC5ACAE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Sep 2019 12:02:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2C1C8ECDE20
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Sep 2019 12:27:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id E4B112085B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Sep 2019 12:02:47 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="vbIlleAg"
+	by mail.kernel.org (Postfix) with ESMTP id 0377A2075C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Sep 2019 12:27:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727889AbfIKMCr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 11 Sep 2019 08:02:47 -0400
-Received: from mail-yw1-f44.google.com ([209.85.161.44]:39173 "EHLO
-        mail-yw1-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726702AbfIKMCq (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Sep 2019 08:02:46 -0400
-Received: by mail-yw1-f44.google.com with SMTP id n11so7710861ywn.6
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Sep 2019 05:02:44 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=kk5dAnKTj+Qc1sUQptQ2wthgUbnWawKjTy/AoVBEqIw=;
-        b=vbIlleAgXzGeY8VZmThC25nOZ1RV9vnhRXIUUVnuOXGL+xFEz8QXKAlxrDqOI1ix8h
-         UvAyWgWG3VOD430c7IoJPAGWSgpFqgDLwzJ1zMu0bC2w9YL+h/yplbkvPb+WYQ11p4Ql
-         B0/td1BjiW+tJ/fpjyZV9O0Yva14ue3Smck1uLRhEtamnkgNwi9QpJHW1DFPELWlPJgU
-         kudnlgPt4SPlQVhMDrKGrBQrNxqba9zrcqyhPJ8O9nPJ+HiZBKIRgfFvQ5jPKe5/mIQe
-         /dwTjVXHiRNqeLqzBdN4uF/7MbHtbbJGSUC81rK9PPmvcnSDx59zNJJmiz4VDHwIaAS2
-         NmcA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=kk5dAnKTj+Qc1sUQptQ2wthgUbnWawKjTy/AoVBEqIw=;
-        b=XMnsjHb1nq7ceaGV3wWUod1UYV4RCGWJF0saSjDnLojjyBxsH+1gQTet3pkJ9ISdCs
-         sVMDlmkgrbH2d4MjLHamWM/ARuM7Te5ABFRGoHEwaXuThFGib+CLhIVhH2IhjXq7kDDP
-         zISSa+wpVV3KB1nbhNxxJApSVMd3mHNJ6OLC5LY4CJlRnLGCifw/Mox9RyjtxfFK8Dj9
-         HwNZQarptTO4IhlPPFBqV6JBveTOKkagf5+teeNn54Az1g/CbKMx4eCAiFWKEk16AvGx
-         PsvMwQoHECaomszhuGFVxnqktFy2CoTNupScgjrOkCwskQzGcAspI5DH5Tb2EjUp86mE
-         jQmQ==
-X-Gm-Message-State: APjAAAWv2aF5jAGcBBReIr/ck1zN+mRcOqbu6Fs/O5aK3u0K4izG/8Su
-        OFW3tp0/p/IMTMpK2np13PlQQVNGes8=
-X-Google-Smtp-Source: APXvYqyersIa770Ia/tGda0nZ0sjJsiymBgDmPoK2bo5LQXAzcHQ1jBGAyMyUVY44FhALJdbq3SRBQ==
-X-Received: by 2002:a81:3583:: with SMTP id c125mr23401425ywa.278.1568203364067;
-        Wed, 11 Sep 2019 05:02:44 -0700 (PDT)
-Received: from [191.9.209.46] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
-        by smtp.gmail.com with ESMTPSA id g40sm4415025ywk.14.2019.09.11.05.02.43
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 11 Sep 2019 05:02:43 -0700 (PDT)
-Subject: Re: Feature requests: online backup - defrag - change RAID level
-To:     webmaster@zedlx.com
-Cc:     linux-btrfs@vger.kernel.org
-References: <20190908225508.Horde.51Idygc4ykmhqRn316eLdRO@server53.web-hosting.com>
- <5e6a9092-b9f9-58d2-d638-9e165d398747@gmx.com>
- <20190909072518.Horde.c4SobsfDkO6FUtKo3e_kKu0@server53.web-hosting.com>
- <fb80b97a-9bcd-5d13-0026-63e11e1a06b5@gmx.com>
- <c4f05241-77d4-3ae4-9773-795351a26a8e@cobb.uk.net>
- <20190909152625.Horde.fICzOssZXCnCZS2vVHBK-sn@server53.web-hosting.com>
- <fc81fcf2-f8e9-1a08-52f8-136503e40494@gmail.com>
- <20190910193221.Horde.HYrKYqNVgQ10jshWWA1Gxxu@server53.web-hosting.com>
-From:   "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <d958659e-6dc0-fa0a-7da9-2d88df4588f5@gmail.com>
-Date:   Wed, 11 Sep 2019 08:02:40 -0400
-User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:68.0) Gecko/20100101
- Thunderbird/68.0
+        id S1727971AbfIKM1m (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 11 Sep 2019 08:27:42 -0400
+Received: from mx2.suse.de ([195.135.220.15]:35960 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727915AbfIKM1l (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 11 Sep 2019 08:27:41 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 3D21CB703;
+        Wed, 11 Sep 2019 12:27:39 +0000 (UTC)
+Subject: Re: [PATCH v2 3/6] btrfs-progs: check/common: Make
+ repair_imode_common() to handle inodes in subvolume trees
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, WenRuo Qu <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20190905075800.1633-1-wqu@suse.com>
+ <20190905075800.1633-4-wqu@suse.com>
+ <d78eb326-5441-94ab-f5ee-01f5526a97e5@suse.com>
+ <9ab43823-0649-f277-5b19-224aa66f781e@gmx.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ mQINBFiKBz4BEADNHZmqwhuN6EAzXj9SpPpH/nSSP8YgfwoOqwrP+JR4pIqRK0AWWeWCSwmZ
+ T7g+RbfPFlmQp+EwFWOtABXlKC54zgSf+uulGwx5JAUFVUIRBmnHOYi/lUiE0yhpnb1KCA7f
+ u/W+DkwGerXqhhe9TvQoGwgCKNfzFPZoM+gZrm+kWv03QLUCr210n4cwaCPJ0Nr9Z3c582xc
+ bCUVbsjt7BN0CFa2BByulrx5xD9sDAYIqfLCcZetAqsTRGxM7LD0kh5WlKzOeAXj5r8DOrU2
+ GdZS33uKZI/kZJZVytSmZpswDsKhnGzRN1BANGP8sC+WD4eRXajOmNh2HL4P+meO1TlM3GLl
+ EQd2shHFY0qjEo7wxKZI1RyZZ5AgJnSmehrPCyuIyVY210CbMaIKHUIsTqRgY5GaNME24w7h
+ TyyVCy2qAM8fLJ4Vw5bycM/u5xfWm7gyTb9V1TkZ3o1MTrEsrcqFiRrBY94Rs0oQkZvunqia
+ c+NprYSaOG1Cta14o94eMH271Kka/reEwSZkC7T+o9hZ4zi2CcLcY0DXj0qdId7vUKSJjEep
+ c++s8ncFekh1MPhkOgNj8pk17OAESanmDwksmzh1j12lgA5lTFPrJeRNu6/isC2zyZhTwMWs
+ k3LkcTa8ZXxh0RfWAqgx/ogKPk4ZxOXQEZetkEyTFghbRH2BIwARAQABtCNOaWtvbGF5IEJv
+ cmlzb3YgPG5ib3Jpc292QHN1c2UuY29tPokCOAQTAQIAIgUCWIo48QIbAwYLCQgHAwIGFQgC
+ CQoLBBYCAwECHgECF4AACgkQcb6CRuU/KFc0eg/9GLD3wTQz9iZHMFbjiqTCitD7B6dTLV1C
+ ddZVlC8Hm/TophPts1bWZORAmYIihHHI1EIF19+bfIr46pvfTu0yFrJDLOADMDH+Ufzsfy2v
+ HSqqWV/nOSWGXzh8bgg/ncLwrIdEwBQBN9SDS6aqsglagvwFD91UCg/TshLlRxD5BOnuzfzI
+ Leyx2c6YmH7Oa1R4MX9Jo79SaKwdHt2yRN3SochVtxCyafDlZsE/efp21pMiaK1HoCOZTBp5
+ VzrIP85GATh18pN7YR9CuPxxN0V6IzT7IlhS4Jgj0NXh6vi1DlmKspr+FOevu4RVXqqcNTSS
+ E2rycB2v6cttH21UUdu/0FtMBKh+rv8+yD49FxMYnTi1jwVzr208vDdRU2v7Ij/TxYt/v4O8
+ V+jNRKy5Fevca/1xroQBICXsNoFLr10X5IjmhAhqIH8Atpz/89ItS3+HWuE4BHB6RRLM0gy8
+ T7rN6ja+KegOGikp/VTwBlszhvfLhyoyjXI44Tf3oLSFM+8+qG3B7MNBHOt60CQlMkq0fGXd
+ mm4xENl/SSeHsiomdveeq7cNGpHi6i6ntZK33XJLwvyf00PD7tip/GUj0Dic/ZUsoPSTF/mG
+ EpuQiUZs8X2xjK/AS/l3wa4Kz2tlcOKSKpIpna7V1+CMNkNzaCOlbv7QwprAerKYywPCoOSC
+ 7P25Ag0EWIoHPgEQAMiUqvRBZNvPvki34O/dcTodvLSyOmK/MMBDrzN8Cnk302XfnGlW/YAQ
+ csMWISKKSpStc6tmD+2Y0z9WjyRqFr3EGfH1RXSv9Z1vmfPzU42jsdZn667UxrRcVQXUgoKg
+ QYx055Q2FdUeaZSaivoIBD9WtJq/66UPXRRr4H/+Y5FaUZx+gWNGmBT6a0S/GQnHb9g3nonD
+ jmDKGw+YO4P6aEMxyy3k9PstaoiyBXnzQASzdOi39BgWQuZfIQjN0aW+Dm8kOAfT5i/yk59h
+ VV6v3NLHBjHVw9kHli3jwvsizIX9X2W8tb1SefaVxqvqO1132AO8V9CbE1DcVT8fzICvGi42
+ FoV/k0QOGwq+LmLf0t04Q0csEl+h69ZcqeBSQcIMm/Ir+NorfCr6HjrB6lW7giBkQl6hhomn
+ l1mtDP6MTdbyYzEiBFcwQD4terc7S/8ELRRybWQHQp7sxQM/Lnuhs77MgY/e6c5AVWnMKd/z
+ MKm4ru7A8+8gdHeydrRQSWDaVbfy3Hup0Ia76J9FaolnjB8YLUOJPdhI2vbvNCQ2ipxw3Y3c
+ KhVIpGYqwdvFIiz0Fej7wnJICIrpJs/+XLQHyqcmERn3s/iWwBpeogrx2Lf8AGezqnv9woq7
+ OSoWlwXDJiUdaqPEB/HmGfqoRRN20jx+OOvuaBMPAPb+aKJyle8zABEBAAGJAh8EGAECAAkF
+ AliKBz4CGwwACgkQcb6CRuU/KFdacg/+M3V3Ti9JYZEiIyVhqs+yHb6NMI1R0kkAmzsGQ1jU
+ zSQUz9AVMR6T7v2fIETTT/f5Oout0+Hi9cY8uLpk8CWno9V9eR/B7Ifs2pAA8lh2nW43FFwp
+ IDiSuDbH6oTLmiGCB206IvSuaQCp1fed8U6yuqGFcnf0ZpJm/sILG2ECdFK9RYnMIaeqlNQm
+ iZicBY2lmlYFBEaMXHoy+K7nbOuizPWdUKoKHq+tmZ3iA+qL5s6Qlm4trH28/fPpFuOmgP8P
+ K+7LpYLNSl1oQUr+WlqilPAuLcCo5Vdl7M7VFLMq4xxY/dY99aZx0ZJQYFx0w/6UkbDdFLzN
+ upT7NIN68lZRucImffiWyN7CjH23X3Tni8bS9ubo7OON68NbPz1YIaYaHmnVQCjDyDXkQoKC
+ R82Vf9mf5slj0Vlpf+/Wpsv/TH8X32ajva37oEQTkWNMsDxyw3aPSps6MaMafcN7k60y2Wk/
+ TCiLsRHFfMHFY6/lq/c0ZdOsGjgpIK0G0z6et9YU6MaPuKwNY4kBdjPNBwHreucrQVUdqRRm
+ RcxmGC6ohvpqVGfhT48ZPZKZEWM+tZky0mO7bhZYxMXyVjBn4EoNTsXy1et9Y1dU3HVJ8fod
+ 5UqrNrzIQFbdeM0/JqSLrtlTcXKJ7cYFa9ZM2AP7UIN9n1UWxq+OPY9YMOewVfYtL8M=
+Message-ID: <b7ccda0e-55e4-85be-0c97-b9f80fad4862@suse.com>
+Date:   Wed, 11 Sep 2019 15:27:37 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.8.0
 MIME-Version: 1.0
-In-Reply-To: <20190910193221.Horde.HYrKYqNVgQ10jshWWA1Gxxu@server53.web-hosting.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <9ab43823-0649-f277-5b19-224aa66f781e@gmx.com>
+Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -82,93 +88,130 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 2019-09-10 19:32, webmaster@zedlx.com wrote:
+
+
+On 11.09.19 г. 3:39 ч., Qu Wenruo wrote:
+> [...]
+>>> - Search for DIR_INDEX/DIR_ITEM
+>>>   If above search fails, we falls back to locate the DIR_INDEX/DIR_ITEM
+>>>   just after the INODE_ITEM.
+>>>   If any can be found, it's definitely a directory.
+>>
+>> This needs an explicit satement that it will only work for non-empty files and directories
 > 
-> Quoting "Austin S. Hemmelgarn" <ahferroin7@gmail.com>:
+> Indeed.
 > 
+>>>
+>>> - Search for EXTENT_DATA
+>>>   If EXTENT_DATA can be found, it's either REG or LNK.
+>>>   For this case, we default to REG, as user can inspect the file to
+>>>   determine if it's a file or just a path.
+>>>
+>>> - Use rdev to detect BLK/CHR
+>>>   If all above fails, but INODE_ITEM has non-zero rdev, then it's either
+>>>   a BLK or CHR file. Then we default to BLK.
+>>>
+>>> - Fail out if none of above methods succeeded
+>>>   No educated guess to make things worse.
+>>>
+>>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>>> ---
+>>>  check/mode-common.c | 130 +++++++++++++++++++++++++++++++++++++++-----
+>>>  1 file changed, 117 insertions(+), 13 deletions(-)
+>>>
+>>> diff --git a/check/mode-common.c b/check/mode-common.c
+>>> index c0ddc50a1dd0..abea2ceda4c4 100644
+>>> --- a/check/mode-common.c
+>>> +++ b/check/mode-common.c
+>>> @@ -935,6 +935,113 @@ out:
+>>>  	return ret;
+>>>  }
+>>>
+>>> +static int detect_imode(struct btrfs_root *root, struct btrfs_path *path,
+>>> +			u32 *imode_ret)
+>>> +{
+>>> +	struct btrfs_key key;
+>>> +	struct btrfs_inode_item iitem;
+>>> +	const u32 priv = 0700;
+>>> +	bool found = false;
+>>> +	u64 ino;
+>>> +	u32 imode;
+>>> +	int ret = 0;
+>>> +
+>>> +	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
+>>> +	ino = key.objectid;
+>>> +	read_extent_buffer(path->nodes[0], &iitem,
+>>> +			btrfs_item_ptr_offset(path->nodes[0], path->slots[0]),
+>>> +			sizeof(iitem));
+>>> +	/* root inode */
+>>> +	if (ino == BTRFS_FIRST_FREE_OBJECTID) {
+>>> +		imode = S_IFDIR;
+>>> +		found = true;
+>>> +		goto out;
+>>> +	}
+>>> +
+>>> +	while (1) {
+>>> +		struct btrfs_inode_ref *iref;
+>>> +		struct extent_buffer *leaf;
+>>> +		unsigned long cur;
+>>> +		unsigned long end;
+>>> +		char namebuf[BTRFS_NAME_LEN] = {0};
+>>> +		u64 index;
+>>> +		u32 namelen;
+>>> +		int slot;
+>>> +
+>>> +		ret = btrfs_next_item(root, path);
+>>> +		if (ret > 0) {
+>>> +			/* falls back to rdev check */
+>>> +			ret = 0;
+>>> +			goto out;
+>>> +		}
+>>
+>> In my testing if an inode is the last one in the leaf and it doesn't have
+>> an INODE_REF item then it won't be repaired. But e.g. it can have perfectly
+>> valid DIR_ITEM/DIR_INDEX entries which describe this inode as being a file. E.g.
+>>
+>> 	item 2 key (256 DIR_ITEM 388586943) itemoff 16076 itemsize 35
+>> 		location key (260 INODE_ITEM 0) type FILE
+>> 		transid 7 data_len 0 name_len 5
+>> 		name: file3
+>>
+>> 	.....
+>> 	item 15 key (260 INODE_ITEM 0) itemoff 15184 itemsize 160
+>> 		generation 7 transid 7 size 0 nbytes 0
+>> 		block group 0 mode 26772225102 links 1 uid 0 gid 0 rdev 0
+>> 		sequence 1 flags 0x0(none)
+>> 		atime 1568127261.284993602 (2019-09-10 14:54:21)
+>> 		ctime 1568127261.284993602 (2019-09-10 14:54:21)
+>> 		mtime 1568127261.284993602 (2019-09-10 14:54:21)
+>> 		otime 1568127261.284993602 (2019-09-10 14:54:21)
+>>
+>> I have intentionally deleted INODE_REF too see what's happening. Is this intended?
 > 
->>> Defrag may break up extents. Defrag may fuse extents. But it shouln't 
->>> ever unshare extents.
+> Yes, completely intended.
 > 
->> Actually, spitting or merging extents will unshare them in a large 
->> majority of cases.
+> For this case, you need to iterate through the whole tree to locate the
+> DIR_INDEX to fix, which is not really possible with current code base,
+> which only search based on the INODE, not the DIR_INDEX/DIR_ITEM from
+> its parent dir.
 > 
-> Ok, this point seems to be repeated over and over without any proof, and 
-> it is illogical to me.
-> 
-> About merging extents: a defrag should merge extents ONLY when both 
-> extents are shared by the same files (and when those extents are 
-> neighbours in both files). In other words, defrag should always merge 
-> without unsharing. Let's call that operation "fusing extents", so that 
-> there are no more misunderstandings.
-And I reiterate: defrag only operates on the file it's passed in.  It 
-needs to for efficiency reasons (we had a reflink aware defrag for a 
-while a few years back, it got removed because performance limitations 
-meant it was unusable in the cases where you actually needed it). 
-Defrag doesn't even know that there are reflinks to the extents it's 
-operating on.
+> Furthermore, didn't you mention that if we don't have confident about
+> the imode, then we should fail out instead of using REG as default?
 
-Now factor in that _any_ write will result in unsharing the region being 
-written to, rounded to the nearest full filesystem block in both 
-directions (this is mandatory, it's a side effect of the copy-on-write 
-nature of BTRFS, and is why files that experience heavy internal 
-rewrites get fragmented very heavily and very quickly on BTRFS).
+I did, what I supposed could happen here is if we can't find an
+INODE_REF then do a search for DIR_INDEX/DIR_ITEM since those items also
+contain the type of the inode they are pointing to. Fixing really boils
+down to exploiting redundancy in the on-disk metadata to repair existing
+items. Here comes the question, of course, what to do if we don't have
+an INODE_REF and DIR_INDEX/DIR_ITEM are broken. I guess it's a judgement
+call, currently you decided that inode_ref will be the source of
+information. I'm fine with that I was merely pointing there is more we
+can do. Of course we need to weigh the pros/cons between code complexity
+and the returns we get.
 
-Given this, defrag isn't willfully unsharing anything, it's just a 
-side-effect of how it works (since it's rewriting the block layout of 
-the file in-place).
-> 
-> === I CHALLENGE you and anyone else on this mailing list: ===
-> 
->   - Show me an exaple where splitting an extent requires unsharing, and 
-> this split is needed to defrag.
-> 
-> Make it clear, write it yourself, I don't want any machine-made outputs.
-> 
-Start with the above comment about all writes unsharing the region being 
-written to.
+Just that I will advise to make it explicit in the changelog that you
+made a judgement call to utilize INODE_REF as the starting point of
+doing imode repair but not necessarily the only one.
 
-Now, extrapolating from there:
 
-Assume you have two files, A and B, each consisting of 64 filesystem 
-blocks in single shared extent.  Now assume somebody writes a few bytes 
-to the middle of file B, right around the boundary between blocks 31 and 
-32, and that you get similar writes to file A straddling blocks 14-15 
-and 47-48.
-
-After all of that, file A will be 5 extents:
-
-* A reflink to blocks 0-13 of the original extent.
-* A single isolated extent consisting of the new blocks 14-15
-* A reflink to blocks 16-46 of the original extent.
-* A single isolated extent consisting of the new blocks 47-48
-* A reflink to blocks 49-63 of the original extent.
-
-And file B will be 3 extents:
-
-* A reflink to blocks 0-30 of the original extent.
-* A single isolated extent consisting of the new blocks 31-32.
-* A reflink to blocks 32-63 of the original extent.
-
-Note that there are a total of four contiguous sequences of blocks that 
-are common between both files:
-
-* 0-13
-* 16-30
-* 32-46
-* 49-63
-
-There is no way to completely defragment either file without splitting 
-the original extent (which is still there, just not fully referenced by 
-either file) unless you rewrite the whole file to a new single extent 
-(which would, of course, completely unshare the whole file).  In fact, 
-if you want to ensure that those shared regions stay reflinked, there's 
-no way to defragment either file without _increasing_ the number of 
-extents in that file (either file would need 7 extents to properly share 
-only those 4 regions), and even then only one of the files could be 
-fully defragmented.
-
-Such a situation generally won't happen if you're just dealing with 
-read-only snapshots, but is not unusual when dealing with regular files 
-that are reflinked (which is not an uncommon situation on some systems, 
-as a lot of people have `cp` aliased to reflink things whenever possible).
+<snip>

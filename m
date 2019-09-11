@@ -2,184 +2,139 @@ Return-Path: <SRS0=wB72=XG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-1.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B033FECDE20
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Sep 2019 08:08:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2C17FECDE27
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Sep 2019 08:09:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 416922089F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Sep 2019 08:08:20 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=seznam.cz header.i=@seznam.cz header.b="S9Lj/p3q"
+	by mail.kernel.org (Postfix) with ESMTP id 0DC3A2089F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Sep 2019 08:09:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726696AbfIKIIT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 11 Sep 2019 04:08:19 -0400
-Received: from mxc1.seznam.cz ([77.75.79.23]:58756 "EHLO mxc1.seznam.cz"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725379AbfIKIIT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Sep 2019 04:08:19 -0400
-X-Greylist: delayed 799 seconds by postgrey-1.27 at vger.kernel.org; Wed, 11 Sep 2019 04:08:18 EDT
-Received: from email.seznam.cz
-        by email-smtpc10a.ko.seznam.cz (email-smtpc10a.ko.seznam.cz [10.53.11.45])
-        id 6f18a9217f90131d6f128460;
-        Wed, 11 Sep 2019 10:08:16 +0200 (CEST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=seznam.cz; s=beta;
-        t=1568189296; bh=Y0odnW9rjPSgnBjGiH1Dk1DhQB/OXGJZ38pJExJE0RU=;
-        h=Received:From:To:Subject:Date:Message-Id:Mime-Version:X-Mailer:
-         Content-Type:Content-Transfer-Encoding;
-        b=S9Lj/p3q0FBpGEAvhprnDgSZazk2mEArOAJE5LGyjtF3LKQBUAhZ3W3KaAMB4iVaI
-         zHniNkZOeXDnLaj5SvLfw9j+6T95cqZvhA+2hsktNXFDZILc3+yVepFodfqEw5ogVi
-         D0vjZo4d7LWoDlE/Jb4ze3dzK8i9KCEk0OU/2CJc=
-Received: from unknown ([::ffff:62.24.65.155])
-        by email.seznam.cz (szn-ebox-4.5.361) with HTTP;
-        Wed, 11 Sep 2019 09:54:52 +0200 (CEST)
-From:   "Zdenek Sojka" <zsojka@seznam.cz>
-To:     <linux-btrfs@vger.kernel.org>
-Subject: =?utf-8?q?possible_circular_locking_dependency_detected_=28sb=5Fi?=
-        =?utf-8?q?nternal/fs=5Freclaim=29?=
-Date:   Wed, 11 Sep 2019 09:54:52 +0200 (CEST)
-Message-Id: <GZb.2yo4.6GbOlvQ7LF7.1TUAXC@seznam.cz>
-Mime-Version: 1.0 (szn-mime-2.0.45)
-X-Mailer: szn-ebox-4.5.361
-Content-Type: text/plain;
-        charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+        id S1727185AbfIKIJk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 11 Sep 2019 04:09:40 -0400
+Received: from mx2.suse.de ([195.135.220.15]:39176 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1727151AbfIKIJj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 11 Sep 2019 04:09:39 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 56F70B04C;
+        Wed, 11 Sep 2019 08:09:37 +0000 (UTC)
+Subject: Re: [mainline][BUG][PPC][btrfs][bisected 00801a] kernel BUG at
+ fs/btrfs/locking.c:71!
+To:     Abdul Haleem <abdhalee@linux.vnet.ibm.com>
+Cc:     mpe <mpe@ellerman.id.au>, Brian King <brking@linux.vnet.ibm.com>,
+        chandan <chandan@linux.vnet.ibm.com>,
+        sachinp <sachinp@linux.vnet.ibm.com>,
+        linuxppc-dev <linuxppc-dev@lists.ozlabs.org>,
+        David Sterba <dsterba@suse.com>, josef@toxicpanda.com,
+        linux-btrfs@vger.kernel.org,
+        linux-kernel <linux-kernel@vger.kernel.org>
+References: <1567500907.5082.12.camel@abdul>
+ <7139ac07-db63-b984-c416-d1c94337c9bf@suse.com>
+ <1568188807.30609.6.camel@abdul.in.ibm.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <c51e672f-c5b2-13d9-afa4-8f44a1e8580a@suse.com>
+Date:   Wed, 11 Sep 2019 11:09:34 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.8.0
+MIME-Version: 1.0
+In-Reply-To: <1568188807.30609.6.camel@abdul.in.ibm.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
 
-this is my fourth attempt to post this message to the mailing list; this t=
-ime, without any attached kernel config (because it has over 100KiB). I al=
-so tried contacting the kernel btrfs maintainers directly by email, but th=
-ey probably also didn't receive the message...
 
-I am running kernel with lock debugging enabled since I am quite often enc=
-ountering various lockups and hung tasks. Several of the problems have bee=
-n fixed recently, but not all; I don't know if the following backtrace is =
-related to the hangups, or if it is just a false positive.
+On 11.09.19 г. 11:00 ч., Abdul Haleem wrote:
+> On Tue, 2019-09-03 at 13:39 +0300, Nikolay Borisov wrote:
+>>
 
-$ uname -a
-Linux zso 5.2.11-gentoo #2 SMP Fri Aug 30 07:18:03 CEST 2019 x86_64 Intel(=
-R) Core(TM) i7-6700 CPU @ 3.40GHz GenuineIntel GNU/Linux
+<split>
 
-The kernel has a distro patchset applied (which should not affect this, bu=
-t you can never say that for sure) and I am compiling at -O3 -fipa-pta -ma=
-rch=3Dnative instead of default -O2 (gcc-8.3.0).
+>> corresponds to?
+> 
+> btrfs_search_slot+0x8e8/0xb80 maps to fs/btrfs/ctree.c:2751
+>                 write_lock_level = BTRFS_MAX_LEVEL;
 
-Please let me know if I can provide any more information.
+That doesn't make sense, presumably btrfs_search_slot+0x8e8/0xb80 should
+point at or right after the instruction which called
+btrfs_set_path_blocking. So either line 2796, 2894, 2901 or 2918 .
 
-Best regards,
-Zdenek Sojka
+>     9a70:       08 00 40 39     li      r10,8
+>     9a74:       08 00 a0 3a     li      r21,8
+>>   9a78:       6c 00 41 91     stw     r10,108(r1)
+>     9a7c:       1c f8 ff 4b     b       9298 <btrfs_search_slot+0x108>
+>                 b = btrfs_root_node(root);
+> 
+> 
+> and btrfs_assert_tree_locked+0x10/0x20 maps to ./fs/btrfs/locking.c:71
+> 
+> void btrfs_assert_tree_locked(struct extent_buffer *eb)
+> {
+>         BUG_ON(!eb->write_locks);
+>       80:       14 01 23 81     lwz     r9,276(r3)
+>       84:       34 00 29 7d     cntlzw  r9,r9
+>       88:       7e d9 29 55     rlwinm  r9,r9,27,5,31
+>       8c:       20 00 29 79     clrldi  r9,r9,32
+>>     90:       00 00 09 0b     tdnei   r9,0
+>       94:       20 00 80 4e     blr
+>       98:       00 00 00 60     nop
+>       9c:       00 00 42 60     ori     r2,r2,0
+> 
+> I have sent direct message attaching vmlinux and the obj dump for
+> ctree.c and locking.c
+> 
 
-The dmesg warning I recently triggered:
+I just got a message from : InterScan Messaging Security Suite about
+some policy being broken and no vmscan.
 
-[30560.303721] =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
-[30560.303722] WARNING: possible circular locking dependency detected
-[30560.303723] 5.2.11-gentoo #2 Not tainted
-[30560.303724] ------------------------------------------------------
-[30560.303725] kswapd0/711 is trying to acquire lock:
-[30560.303726] 000000007777a663 (sb_internal){.+.+}, at: start_transaction=
-+0x3a8/0x500
-[30560.303731]
-but task is already holding lock:
-[30560.303732] 000000000ba86300 (fs_reclaim){+.+.}, at: __fs_reclaim_acqui=
-re+0x0/0x30
-[30560.303735]
-which lock already depends on the new lock.
-
-[30560.303736]
-the existing dependency chain (in reverse order) is:
-[30560.303737]
--> #1 (fs_reclaim){+.+.}:
-[30560.303740] kmem_cache_alloc+0x1f/0x1c0
-[30560.303742] btrfs_alloc_inode+0x1f/0x260
-[30560.303744] alloc_inode+0x16/0xa0
-[30560.303745] new_inode+0xe/0xb0
-[30560.303747] btrfs_new_inode+0x70/0x610
-[30560.303749] btrfs_symlink+0xd0/0x420
-[30560.303750] vfs_symlink+0x9c/0x100
-[30560.303751] do_symlinkat+0x66/0xe0
-[30560.303753] do_syscall_64+0x55/0x1c0
-[30560.303756] entry_SYSCALL_64_after_hwframe+0x49/0xbe
-[30560.303756]
--> #0 (sb_internal){.+.+}:
-[30560.303758] __sb_start_write+0xf6/0x150
-[30560.303759] start_transaction+0x3a8/0x500
-[30560.303760] btrfs_commit_inode_delayed_inode+0x59/0x110
-[30560.303761] btrfs_evict_inode+0x19e/0x4c0
-[30560.303763] evict+0xbc/0x1f0
-[30560.303763] inode_lru_isolate+0x113/0x190
-[30560.303765] __list_lru_walk_one.isra.4+0x5c/0x100
-[30560.303766] list_lru_walk_one+0x32/0x50
-[30560.303766] prune_icache_sb+0x36/0x80
-[30560.303768] super_cache_scan+0x14a/0x1d0
-[30560.303769] do_shrink_slab+0x131/0x320
-[30560.303770] shrink_node+0xf7/0x380
-[30560.303772] balance_pgdat+0x2d5/0x640
-[30560.303773] kswapd+0x2ba/0x5e0
-[30560.303774] kthread+0x147/0x160
-[30560.303775] ret_from_fork+0x24/0x30
-[30560.303776]
-other info that might help us debug this:
-
-[30560.303776] Possible unsafe locking scenario:
-
-[30560.303777] CPU0 CPU1
-[30560.303777] ---- ----
-[30560.303778] lock(fs_reclaim);
-[30560.303778] lock(sb_internal);
-[30560.303779] lock(fs_reclaim);
-[30560.303780] lock(sb_internal);
-[30560.303780]
-*** DEADLOCK ***
-
-[30560.303781] 3 locks held by kswapd0/711:
-[30560.303782] #0: 000000000ba86300 (fs_reclaim){+.+.}, at: __fs_reclaim_a=
-cquire+0x0/0x30
-[30560.303784] #1: 000000004a5100f8 (shrinker_rwsem){++++}, at: shrink_nod=
-e+0x9a/0x380
-[30560.303786] #2: 00000000f956fa46 (&type->s_umount_key#30){++++}, at: su=
-per_cache_scan+0x35/0x1d0
-[30560.303788]
-stack backtrace:
-[30560.303789] CPU: 7 PID: 711 Comm: kswapd0 Not tainted 5.2.11-gentoo #2=
-
-[30560.303790] Hardware name: Dell Inc. Precision Tower 3620/0MWYPT, BIOS =
-2.4.2 09/29/2017
-[30560.303791] Call Trace:
-[30560.303793] dump_stack+0x85/0xc7
-[30560.303795] print_circular_bug.cold.40+0x1d9/0x235
-[30560.303796] __lock_acquire+0x18b1/0x1f00
-[30560.303797] lock_acquire+0xa6/0x170
-[30560.303798] ? start_transaction+0x3a8/0x500
-[30560.303799] __sb_start_write+0xf6/0x150
-[30560.303800] ? start_transaction+0x3a8/0x500
-[30560.303801] start_transaction+0x3a8/0x500
-[30560.303802] btrfs_commit_inode_delayed_inode+0x59/0x110
-[30560.303804] btrfs_evict_inode+0x19e/0x4c0
-[30560.303805] ? var_wake_function+0x20/0x20
-[30560.303806] evict+0xbc/0x1f0
-[30560.303807] inode_lru_isolate+0x113/0x190
-[30560.303808] ? discard_new_inode+0xc0/0xc0
-[30560.303809] __list_lru_walk_one.isra.4+0x5c/0x100
-[30560.303810] ? discard_new_inode+0xc0/0xc0
-[30560.303811] list_lru_walk_one+0x32/0x50
-[30560.303812] prune_icache_sb+0x36/0x80
-[30560.303813] super_cache_scan+0x14a/0x1d0
-[30560.303815] do_shrink_slab+0x131/0x320
-[30560.303816] shrink_node+0xf7/0x380
-[30560.303817] balance_pgdat+0x2d5/0x640
-[30560.303819] kswapd+0x2ba/0x5e0
-[30560.303820] ? __wake_up_common_lock+0x90/0x90
-[30560.303822] kthread+0x147/0x160
-[30560.303823] ? balance_pgdat+0x640/0x640
-[30560.303824] ? __kthread_create_on_node+0x160/0x160
-[30560.303826] ret_from_fork+0x24/0x30

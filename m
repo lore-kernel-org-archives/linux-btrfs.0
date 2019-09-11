@@ -2,130 +2,220 @@ Return-Path: <SRS0=wB72=XG=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.1 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 67DC5C5ACAE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Sep 2019 16:02:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C84F9C49ED6
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Sep 2019 16:04:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 43C8B2075C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Sep 2019 16:02:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 954332089F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Sep 2019 16:04:57 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (1024-bit key) header.d=fb.com header.i=@fb.com header.b="EGxvj+Jx";
+	dkim=pass (1024-bit key) header.d=fb.onmicrosoft.com header.i=@fb.onmicrosoft.com header.b="bDKvKYET"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728855AbfIKQCQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 11 Sep 2019 12:02:16 -0400
-Received: from mx2.suse.de ([195.135.220.15]:60626 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1728703AbfIKQCQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Sep 2019 12:02:16 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A685DB65D;
-        Wed, 11 Sep 2019 16:02:03 +0000 (UTC)
-Subject: Re: [PATCH 4/9] btrfs: export find_delalloc_range
-To:     Josef Bacik <josef@toxicpanda.com>, kernel-team@fb.com,
-        linux-btrfs@vger.kernel.org
-References: <20190911152611.3393-1-josef@toxicpanda.com>
- <20190911152611.3393-5-josef@toxicpanda.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Openpgp: preference=signencrypt
-Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
- 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
-Message-ID: <f5f0df0c-7f60-db13-0264-6719eb51c9c7@suse.com>
-Date:   Wed, 11 Sep 2019 19:02:01 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.8.0
-MIME-Version: 1.0
-In-Reply-To: <20190911152611.3393-5-josef@toxicpanda.com>
-Content-Type: text/plain; charset=utf-8
+        id S1728992AbfIKQE4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 11 Sep 2019 12:04:56 -0400
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:3520 "EHLO
+        mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1728825AbfIKQE4 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 11 Sep 2019 12:04:56 -0400
+Received: from pps.filterd (m0148460.ppops.net [127.0.0.1])
+        by mx0a-00082601.pphosted.com (8.16.0.42/8.16.0.42) with SMTP id x8BG4hDe006515;
+        Wed, 11 Sep 2019 09:04:53 -0700
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
+ : date : message-id : references : in-reply-to : content-type :
+ content-transfer-encoding : mime-version; s=facebook;
+ bh=0Kozm37N4qLP//SMhPZjk5++lLQLEFnwYpHrp2qilFo=;
+ b=EGxvj+JxwSdYJNcfLk6LxMaXz0urkIMa8qxZJQTZNvbZw3EfZyCxZHz6uFdUjzpGifgB
+ BrzDu+1DzKpcIKpZHcT6BBIFnOldj0SRswSxlZDG0t8umEIMkVf+IczcmocXXSvmvp2J
+ LZMzsGQJ8O4c1HbNkQ2yXlOSWk+TEcbaKd0= 
+Received: from mail.thefacebook.com (mailout.thefacebook.com [199.201.64.23])
+        by mx0a-00082601.pphosted.com with ESMTP id 2uxqew2v7a-9
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-SHA384 bits=256 verify=NOT);
+        Wed, 11 Sep 2019 09:04:52 -0700
+Received: from prn-mbx01.TheFacebook.com (2620:10d:c081:6::15) by
+ prn-hub06.TheFacebook.com (2620:10d:c081:35::130) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id
+ 15.1.1713.5; Wed, 11 Sep 2019 09:04:37 -0700
+Received: from prn-hub05.TheFacebook.com (2620:10d:c081:35::129) by
+ prn-mbx01.TheFacebook.com (2620:10d:c081:6::15) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id
+ 15.1.1713.5; Wed, 11 Sep 2019 09:04:37 -0700
+Received: from NAM03-DM3-obe.outbound.protection.outlook.com (192.168.54.28)
+ by o365-in.thefacebook.com (192.168.16.29) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id 15.1.1713.5
+ via Frontend Transport; Wed, 11 Sep 2019 09:04:37 -0700
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=SK7VM06kwJJQ/h+E8Alxl8a4TDKd5bU9MLGA13c9ji4tIheHxTAUjbkWRsso6PkwwOiylrWQ/17ZlOV+zR8UWmzI6tHIyJjfM6QIHxC/NZBcES1MkQ6Tr5EtmM2wR88u1mDa32IgKM9EIKCPfLP7VYdu4dPnQQHvMlLYo2oNQp5A7I1bk3ohawMzRk+egYC/02ABQHiIdEeRaHYx+OmBWSwv3YCtwJAdM5DFeLwX9R+5LCx8B3RUSu9IeQmc/M9XyCONVM4KW88rV3P4kei4l83Li5vFIEYXU51YpEcEjYhKoZBNWrxvVNJhv/TM4mH1gQmz2XhQYbVu7UITsnzXfQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=0Kozm37N4qLP//SMhPZjk5++lLQLEFnwYpHrp2qilFo=;
+ b=ZoPKSyGPF/mkZ2nT7isCrjovPWEQJ+9XAR3odvk/PqCYen8kjV8HeB4f0GuoDK+Pm/O9FCPm9FydeuAKd7QfVZCpbdkwBikaet5bVGFvP+kFp3/MPOSXzmYxQrbcbAdT6jdlQ1dUwaEVMD7OaAHpbU8xic0he+fAQPycfMnxsTysVTFeaHMBvAqIyRxWnopuhedJofUr0IKUUxYlrJztUZVUcnV4Y7Ypk0EhUqKogOWFIZGfynSOS3IH3WuTIf8BSnRP9XzGFHssY84y+NMasdiFYN++QtzrTTRHnolzr6yHTDAQENlIDGB+Km3AsYRX+I47gWpG0oPounr3d3C4gA==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=fb.com; dmarc=pass action=none header.from=fb.com; dkim=pass
+ header.d=fb.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.onmicrosoft.com;
+ s=selector2-fb-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=0Kozm37N4qLP//SMhPZjk5++lLQLEFnwYpHrp2qilFo=;
+ b=bDKvKYETqmZp3s3ECa3bI8xAS2o/S2PXb10PTgZslEJtealB74B+Nta9G3Yj2kyk+nInUQbn7DoDkwEh0qcUgrCI8SakLx2/k8JTNCbKPOMaUjMNp0RVL0ztBo1HTyxrhWgXOB/qhsiIZ9VmkDvDqxqM/YzDUxn3pu0235fvxFM=
+Received: from DM5PR15MB1290.namprd15.prod.outlook.com (10.173.212.17) by
+ DM5PR15MB1257.namprd15.prod.outlook.com (10.173.212.13) with Microsoft SMTP
+ Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.20.2241.17; Wed, 11 Sep 2019 16:04:36 +0000
+Received: from DM5PR15MB1290.namprd15.prod.outlook.com
+ ([fe80::49e0:1c1c:5b16:8cc8]) by DM5PR15MB1290.namprd15.prod.outlook.com
+ ([fe80::49e0:1c1c:5b16:8cc8%7]) with mapi id 15.20.2263.016; Wed, 11 Sep 2019
+ 16:04:36 +0000
+From:   Chris Mason <clm@fb.com>
+To:     "fdmanana@kernel.org" <fdmanana@kernel.org>
+CC:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Dennis Zhou <dennisz@fb.com>
+Subject: Re: [PATCH] Btrfs: fix unwritten extent buffers and hangs on future
+ writeback attempts
+Thread-Topic: [PATCH] Btrfs: fix unwritten extent buffers and hangs on future
+ writeback attempts
+Thread-Index: AQHVaLEH2k+S1x5D/U2kXTADExohWacmo8+A
+Date:   Wed, 11 Sep 2019 16:04:35 +0000
+Message-ID: <18E989C2-3E39-4C87-907D-EA671099C4AE@fb.com>
+References: <20190911145542.1125-1-fdmanana@kernel.org>
+In-Reply-To: <20190911145542.1125-1-fdmanana@kernel.org>
+Accept-Language: en-US
 Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+x-mailer: MailMate (1.12.5r5635)
+x-clientproxiedby: BN6PR0101CA0024.prod.exchangelabs.com
+ (2603:10b6:405:2a::37) To DM5PR15MB1290.namprd15.prod.outlook.com
+ (2603:10b6:3:b8::17)
+x-ms-exchange-messagesentrepresentingtype: 1
+x-originating-ip: [2620:10d:c091:480::2d5d]
+x-ms-publictraffictype: Email
+x-ms-office365-filtering-correlation-id: a405f1d7-da33-4902-dd0f-08d736d1bdcc
+x-microsoft-antispam: BCL:0;PCL:0;RULEID:(2390118)(7020095)(4652040)(8989299)(4534185)(4627221)(201703031133081)(201702281549075)(8990200)(5600166)(711020)(4605104)(1401327)(2017052603328)(7193020);SRVR:DM5PR15MB1257;
+x-ms-traffictypediagnostic: DM5PR15MB1257:
+x-ms-exchange-purlcount: 4
+x-ms-exchange-transport-forked: True
+x-microsoft-antispam-prvs: <DM5PR15MB1257E9B9A0590D6E6FC455C4D3B10@DM5PR15MB1257.namprd15.prod.outlook.com>
+x-ms-oob-tlc-oobclassifiers: OLM:8273;
+x-forefront-prvs: 0157DEB61B
+x-forefront-antispam-report: SFV:NSPM;SFS:(10019020)(136003)(376002)(346002)(396003)(39860400002)(366004)(52314003)(189003)(199004)(6506007)(2906002)(6116002)(36756003)(229853002)(53546011)(8936002)(6486002)(50226002)(2351001)(305945005)(81166006)(1730700003)(81156014)(8676002)(7736002)(446003)(46003)(486006)(386003)(2616005)(14454004)(476003)(102836004)(11346002)(2501003)(76176011)(256004)(14444005)(6512007)(6306002)(99286004)(316002)(5640700003)(52116002)(478600001)(966005)(6916009)(186003)(33656002)(5660300002)(53936002)(25786009)(6246003)(4326008)(66556008)(66446008)(71190400001)(66476007)(86362001)(45080400002)(71200400001)(66946007)(64756008)(54906003)(6436002);DIR:OUT;SFP:1102;SCL:1;SRVR:DM5PR15MB1257;H:DM5PR15MB1290.namprd15.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;MX:1;A:1;
+received-spf: None (protection.outlook.com: fb.com does not designate
+ permitted sender hosts)
+x-ms-exchange-senderadcheck: 1
+x-microsoft-antispam-message-info: cayoHZDEKe3GBnnbNKOKoiLuzAl2BUD/uhR4UGDPhSmeme8+GydCx7qUSiqMtRK8ygTT9+oxdMZhUVvFS2hda2UnA2akGIY25x4WnwRS2wfGPW4ngn8Xl2bLMPROJtYAwy4zf114ps/9h7ETJnbMeV1o+Bff8Asx9WIs0FJho97xbaxN3lB26sABlZ5hZwsEhkiVh+eT55g7y9RB114nN/m4Ehb6zOO2kpF3OOMVlTzZmbj41DYDSxxebmpzy957StLiA10y0a2JdhwyxKryI4sudoZ4sO/WZjs4pmfpIm9PcxkNZbsIa0AzQrOlXC3xc2Qai9Bqzc0ueQuEFlz3B4BHgSSRFbOznOX5MgY/jPaEqvwbHxkrFEVTU4TOi1LVvOJiFGgBBv4Ieg8ySxQXd0QrRSsnIH9eUdyfmyrUTyo=
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+X-MS-Exchange-CrossTenant-Network-Message-Id: a405f1d7-da33-4902-dd0f-08d736d1bdcc
+X-MS-Exchange-CrossTenant-originalarrivaltime: 11 Sep 2019 16:04:36.0777
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: 8ae927fe-1255-47a7-a2af-5f3a069daaa2
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: lcQA4KDgRyVhCxLAMgEfO72e0iuY72mdywCFgaIKUYkuvyS0zevljNu8cSh88W1n
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: DM5PR15MB1257
+X-OriginatorOrg: fb.com
+X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10434:6.0.70,1.0.8
+ definitions=2019-09-11_08:2019-09-11,2019-09-11 signatures=0
+X-Proofpoint-Spam-Details: rule=fb_default_notspam policy=fb_default score=0 phishscore=0
+ mlxlogscore=999 suspectscore=0 impostorscore=0 lowpriorityscore=0
+ clxscore=1011 bulkscore=0 adultscore=0 spamscore=0 mlxscore=0
+ malwarescore=0 priorityscore=1501 classifier=spam adjust=0 reason=mlx
+ scancount=1 engine=8.12.0-1906280000 definitions=main-1909110147
+X-FB-Internal: deliver
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On 11 Sep 2019, at 15:55, fdmanana@kernel.org wrote:
 
-
-On 11.09.19 г. 18:26 ч., Josef Bacik wrote:
-> This utilizes internal stuff to the extent_io_tree, so we need to export
-> it before we move it.
-> 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> From: Filipe Manana <fdmanana@suse.com>
+>
+> So fix this by not overwriting the return value (ret) with the result
+> from flush_write_bio(). We also need to clear the=20
+> EXTENT_BUFFER_WRITEBACK
+> bit in case flush_write_bio() returns an error, otherwise it will hang
+> any future attempts to writeback the extent buffer.
+>
+> This is a regression introduced in the 5.2 kernel.
+>
+> Fixes: 2e3c25136adfb ("btrfs: extent_io: add proper error handling to=20
+> lock_extent_buffer_for_io()")
+> Fixes: f4340622e0226 ("btrfs: extent_io: Move the BUG_ON() in=20
+> flush_write_bio() one level up")
+> Reported-by: Zdenek Sojka <zsojka@seznam.cz>
+> Link:=20
+> https://lore.kernel.org/linux-btrfs/GpO.2yos.3WGDOLpx6t%7D.1TUDYM@seznam.=
+cz/T/#u
+> Reported-by: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+> Link:=20
+> https://lore.kernel.org/linux-btrfs/5c4688ac-10a7-fb07-70e8-c5d31a3fbb38@=
+profihost.ag/T/#t
+> Reported-by: Drazen Kacar <drazen.kacar@oradian.com>
+> Link:=20
+> https://lore.kernel.org/linux-btrfs/DB8PR03MB562876ECE2319B3E579590F799C8=
+0@DB8PR03MB5628.eurprd03.prod.outlook.com/
+> Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=3D204377
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 > ---
->  fs/btrfs/extent-io-tree.h | 2 ++
->  fs/btrfs/extent_io.c      | 5 ++---
->  2 files changed, 4 insertions(+), 3 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent-io-tree.h b/fs/btrfs/extent-io-tree.h
-> index 6f53387445ca..1c301681babe 100644
-> --- a/fs/btrfs/extent-io-tree.h
-> +++ b/fs/btrfs/extent-io-tree.h
-> @@ -223,5 +223,7 @@ void find_first_clear_extent_bit(struct extent_io_tree *tree, u64 start,
->  				 u64 *start_ret, u64 *end_ret, unsigned bits);
->  int extent_invalidatepage(struct extent_io_tree *tree,
->  			  struct page *page, unsigned long offset);
-> +bool find_delalloc_range(struct extent_io_tree *tree, u64 *start, u64 *end,
-> +			 u64 max_bytes, struct extent_state **cached_state);
-
-For non-static functions I'd rather have them prefixed with btrfs_
-
->  
->  #endif /* BTRFS_EXTENT_IO_TREE_H */
+>  fs/btrfs/extent_io.c | 23 ++++++++++++++---------
+>  1 file changed, 14 insertions(+), 9 deletions(-)
+>
 > diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index f5945f0a06da..751353c88203 100644
+> index 1ff438fd5bc2..1311ba0fc031 100644
 > --- a/fs/btrfs/extent_io.c
 > +++ b/fs/btrfs/extent_io.c
-> @@ -1687,9 +1687,8 @@ void find_first_clear_extent_bit(struct extent_io_tree *tree, u64 start,
+> @@ -3628,6 +3628,13 @@ void wait_on_extent_buffer_writeback(struct=20
+> extent_buffer *eb)
+>  		       TASK_UNINTERRUPTIBLE);
+>  }
+>
+> +static void end_extent_buffer_writeback(struct extent_buffer *eb)
+> +{
+> +	clear_bit(EXTENT_BUFFER_WRITEBACK, &eb->bflags);
+> +	smp_mb__after_atomic();
+> +	wake_up_bit(&eb->bflags, EXTENT_BUFFER_WRITEBACK);
+> +}
+> +
+>  /*
+>   * Lock eb pages and flush the bio if we can't the locks
 >   *
->   * true is returned if we find something, false if nothing was in the tree
->   */
-> -static noinline bool find_delalloc_range(struct extent_io_tree *tree,
-> -					u64 *start, u64 *end, u64 max_bytes,
-> -					struct extent_state **cached_state)
-> +bool find_delalloc_range(struct extent_io_tree *tree, u64 *start, u64 *end,
-> +			 u64 max_bytes, struct extent_state **cached_state)
->  {
->  	struct rb_node *node;
->  	struct extent_state *state;
-> 
+> @@ -3699,8 +3706,11 @@ static noinline_for_stack int=20
+> lock_extent_buffer_for_io(struct extent_buffer *eb
+>
+>  		if (!trylock_page(p)) {
+>  			if (!flush) {
+> -				ret =3D flush_write_bio(epd);
+> -				if (ret < 0) {
+> +				int err;
+> +
+> +				err =3D flush_write_bio(epd);
+> +				if (err < 0) {
+> +					ret =3D err;
+>  					failed_page_nr =3D i;
+>  					goto err_unlock;
+>  				}
+
+
+Dennis (cc'd) has been trying a similar fix against this in production,=20
+but sending it was interrupted by plumbing conferences.  I think he=20
+found that it needs to undo this as well:
+
+                 percpu_counter_add_batch(&fs_info->dirty_metadata_bytes,
+                                          -eb->len,
+                                          fs_info->dirty_metadata_batch);
+
+With the IO errors, we should end up aborting the FS.  This function=20
+also flips the the extent buffer written and dirty flags, and his patch=20
+resets them as well.  Given that we're aborting anyway, it's not=20
+critical, but it's probably a good idea to fix things up in the goto=20
+err_unlock just to make future bugs less likely.
+
+-chris

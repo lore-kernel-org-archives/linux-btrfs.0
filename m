@@ -2,71 +2,96 @@ Return-Path: <SRS0=o9HI=XH=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.0 required=3.0
-	tests=HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.6 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BCF9EC4CEC6
-	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Sep 2019 15:31:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 912F2C4CEC6
+	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Sep 2019 16:21:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 9941F2075C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Sep 2019 15:31:49 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 656FA2084D
+	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Sep 2019 16:21:10 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="SX7qUDLO"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1733067AbfILPbs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 12 Sep 2019 11:31:48 -0400
-Received: from mx2.suse.de ([195.135.220.15]:49226 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1733001AbfILPbs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Sep 2019 11:31:48 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 02245AC7F;
-        Thu, 12 Sep 2019 15:31:47 +0000 (UTC)
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: Add assert to catch nested transaction commit
-Date:   Thu, 12 Sep 2019 18:31:44 +0300
-Message-Id: <20190912153144.26638-1-nborisov@suse.com>
-X-Mailer: git-send-email 2.17.1
+        id S1728705AbfILQVJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 12 Sep 2019 12:21:09 -0400
+Received: from mail-wr1-f66.google.com ([209.85.221.66]:43313 "EHLO
+        mail-wr1-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1725775AbfILQVJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 12 Sep 2019 12:21:09 -0400
+Received: by mail-wr1-f66.google.com with SMTP id q17so24429673wrx.10
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Sep 2019 09:21:06 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=KeULQ4vF1IDcv576d/Ip9Q1ABEeMOkzGwBPeSwKIRmw=;
+        b=SX7qUDLOTpoKaMKR2CEAMg7n7ygwPUB21+8oP+KQ3i4EHECfDSDtp09+aD4uUCKZmK
+         QzHWJZtC56JrSUzEvg0g1XrnoahCztJwFm9uzwPMFaK3bmN//2ttIBoVsUaB8tqUr1Kr
+         qP6c/TNA/DzdUWf10jlc2FFPhE80j/yzvhUi9oD4Dqli+hpd+COc2z7nfEzK7jbRh8JV
+         qIycBHWvVoFxjNYFvO5uRNFv78KUvB3eMIgzS7fwz9BkyPPUFnyroepvZS9wCHSHIk3R
+         JoQEH0/VQqH6kuqO5MIIdk1fv+iLZq7FtnhebAWvnC1PRwwekOpt9E/djrmEnUKwqWpf
+         8Qfw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=KeULQ4vF1IDcv576d/Ip9Q1ABEeMOkzGwBPeSwKIRmw=;
+        b=ZFgqsr++wu1wLtDsenRSVANssupER1XwuOhswqljV4SZqwLRvi43pVZ+zYwMknrg90
+         4Qg+xLeCjEsLoB1L2biqteU62LauWRX8Rb1zfZhl+8LEd9SietRFj6Jr8bpQ00x3qZvX
+         LpY+cLj4ZTcMVSFrbhFp2vYlgo2278bqJHMzgKBe0BCO7wA8HMob86NThR6n0vTMHmvq
+         Ir8l4LfZrznmZdo2buCaGb9efZWMhpqXlIddrd4WhC8qyU5aM4T5dsNh/2Qvmyogt9DS
+         V1zBd2Esjt96qoMfbNyDtIO52ok3De4ryHo51QPs5/MPd5RUQCsfw9iXdFib5j70kFJN
+         b91g==
+X-Gm-Message-State: APjAAAXQ4v/hF5doT/pxy0R/HB9nZkkMW72aJTIRDxoBfTsGycaKqQqY
+        RfuxEl2V/CP771DNwwiEhJDfy2ffKH4=
+X-Google-Smtp-Source: APXvYqwMA2WRtjCHd2Ixy3OLU113bWtdEGbwUhOtABUjy8sIqjcFsuYf0C1jpTN4IKlYimHVUzZS3Q==
+X-Received: by 2002:adf:de0d:: with SMTP id b13mr6419208wrm.140.1568305265700;
+        Thu, 12 Sep 2019 09:21:05 -0700 (PDT)
+Received: from [192.168.1.51] (ip-78-45-105-225.net.upcbroadband.cz. [78.45.105.225])
+        by smtp.googlemail.com with ESMTPSA id q66sm525106wme.39.2019.09.12.09.21.04
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 12 Sep 2019 09:21:04 -0700 (PDT)
+Subject: Re: Massive filesystem corruption since kernel 5.2 (ARCH)
+To:     =?UTF-8?Q?Sw=c3=a2mi_Petaramesh?= <swami@petaramesh.org>,
+        Christoph Anton Mitterer <calestyo@scientia.net>,
+        fdmanana@gmail.com
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <11e4e889f903ddad682297c4420faeb0245414cf.camel@scientia.net>
+ <CAL3q7H4peDv_bQa5vGJeOM=V--yq1a1=aHat5qcsXjbnDoSkDQ@mail.gmail.com>
+ <ce6a9b8274f5af89d9378aa84e934ce3f3354acd.camel@scientia.net>
+ <CAL3q7H5qNE4rizN14qmgrAwtju9KRHspKxo3S-PoTcSUvXYuew@mail.gmail.com>
+ <41d5dae3587efa5c19262a230e3c459f8e14159b.camel@scientia.net>
+ <2cfe8d20-43f1-ae88-0712-60bb9d6d4dc0@petaramesh.org>
+From:   Zdenek Kaspar <zkaspar82@gmail.com>
+Message-ID: <d92a1321-7e79-e3a9-7dd0-c82d9545b3a0@gmail.com>
+Date:   Thu, 12 Sep 2019 18:21:02 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.0
+MIME-Version: 1.0
+In-Reply-To: <2cfe8d20-43f1-ae88-0712-60bb9d6d4dc0@petaramesh.org>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-A recent patch to btrfs showed that there was at least 1 case where a
-nesed transaction was committed. Nested transaction in this case  means
-a code which has a transaction handle calls some function which in turn
-obtains a copy of the same transaction handle. In such cases the correct
-thing to do is for the lower callee to call btrfs_end_transaction which
-contains appropriate checks so as to not commit the transaction which
-will result in stale trans handler for the caller.
+On 9/12/19 4:57 PM, Swâmi Petaramesh wrote:
 
-To catch such cases add an assert in btrfs_commit_transaction ensuring
-btrfs_trans_handle::use_count is always 1.
+> However having read that the bug is diagnosed, confirmed and fixed by
+> Filipe, I seriously consider downgrading my kernel back to 5.1 on the 2
+> Manjaro machines as it is rather straightforward, and maybe my Arch as
+> well... Until I'm sure that the fix made it to said distro kernels.
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
+It's included in [testing] right now...
 
-A full xfs test run didn't trigger this assert. 
+https://git.archlinux.org/linux.git/log/?h=v5.2.14-arch2
 
- fs/btrfs/transaction.c | 2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 8624bdee8c5b..8b75426c349e 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1949,6 +1949,8 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 	struct btrfs_transaction *prev_trans = NULL;
- 	int ret;
- 
-+	ASSERT(refcount_read(&trans->use_count) == 1);
-+
- 	/* Stop the commit early if ->aborted is set */
- 	if (unlikely(READ_ONCE(cur_trans->aborted))) {
- 		ret = cur_trans->aborted;
--- 
-2.17.1
-
+Z.

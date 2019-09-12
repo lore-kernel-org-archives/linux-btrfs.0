@@ -3,53 +3,62 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9FE76C4CEC7
-	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Sep 2019 17:44:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 144B2C4CEC7
+	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Sep 2019 17:49:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 7FD50206A5
-	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Sep 2019 17:44:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id EA3BC20830
+	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Sep 2019 17:49:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726475AbfILRok (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 12 Sep 2019 13:44:40 -0400
-Received: from mx2.suse.de ([195.135.220.15]:37170 "EHLO mx1.suse.de"
+        id S1726516AbfILRtU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 12 Sep 2019 13:49:20 -0400
+Received: from mx2.suse.de ([195.135.220.15]:39534 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1726032AbfILRok (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Sep 2019 13:44:40 -0400
+        id S1726132AbfILRtU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 12 Sep 2019 13:49:20 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 3E23AAD69;
-        Thu, 12 Sep 2019 17:44:39 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 1CDE6B823;
+        Thu, 12 Sep 2019 17:49:18 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id B083BDA835; Thu, 12 Sep 2019 19:44:38 +0200 (CEST)
-Date:   Thu, 12 Sep 2019 19:44:38 +0200
+        id 3F497DA835; Thu, 12 Sep 2019 19:49:35 +0200 (CEST)
+Date:   Thu, 12 Sep 2019 19:49:35 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: corrupt-block: Fix description of 'r' option
-Message-ID: <20190912174438.GK2850@twin.jikos.cz>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     linux-btrfs@vger.kernel.org, jthumshirn@suse.de, dsterba@suse.cz
+Subject: Re: [PATCH Fix-title-prefix] btrfs-progs: misc-tests-021 fix restore
+ overlapped on disk's stale data
+Message-ID: <20190912174935.GL2850@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20190911135552.22087-1-nborisov@suse.com>
+Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
+        linux-btrfs@vger.kernel.org, jthumshirn@suse.de
+References: <23f82b13-5050-0acd-49fb-1ecd06811b8d@suse.de>
+ <20190904132947.1232-1-anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20190911135552.22087-1-nborisov@suse.com>
+In-Reply-To: <20190904132947.1232-1-anand.jain@oracle.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Sep 11, 2019 at 04:55:52PM +0300, Nikolay Borisov wrote:
-> Since commit 04be0e4b1962 ("btrfs-progs: corrupt-block: Correctlyi
-> handle -r when passing -I") the 'r' switch is used with both -I and -d
-> options. So remove the wrong clarificatoin that -r is used only with -d
-> option.
+On Wed, Sep 04, 2019 at 09:29:47PM +0800, Anand Jain wrote:
+> As misc-tests/021 image dump is restored on the same original loop
+> device, this overlaps with the stale data and makes the test pass
+> falsely.
 > 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> Fix this by using a new device for restore.
+> 
+> And also, the btrfs-image dump and restore doesn't not collect the data,
+> so any read on the files should be avoided. So instead of file data use
+> file stat data for the md5sum.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> Reported-by: Johannes Thumshirn <jthumshirn@suse.de>
+> ---
 
 Applied, thanks.

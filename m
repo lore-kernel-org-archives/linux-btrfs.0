@@ -2,38 +2,38 @@ Return-Path: <SRS0=4xD/=XJ=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.5 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 55A86C49ED6
-	for <linux-btrfs@archiver.kernel.org>; Sat, 14 Sep 2019 04:59:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BB50DC49ED6
+	for <linux-btrfs@archiver.kernel.org>; Sat, 14 Sep 2019 04:59:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3100820717
-	for <linux-btrfs@archiver.kernel.org>; Sat, 14 Sep 2019 04:59:31 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 997DB20717
+	for <linux-btrfs@archiver.kernel.org>; Sat, 14 Sep 2019 04:59:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726229AbfINE7a (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 14 Sep 2019 00:59:30 -0400
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:48246 "EHLO
+        id S1726242AbfINE7o (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 14 Sep 2019 00:59:44 -0400
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:48306 "EHLO
         james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1726028AbfINE7a (ORCPT
+        by vger.kernel.org with ESMTP id S1726028AbfINE7o (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 14 Sep 2019 00:59:30 -0400
+        Sat, 14 Sep 2019 00:59:44 -0400
 Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
-        id E9433425A84; Sat, 14 Sep 2019 00:59:28 -0400 (EDT)
-Date:   Sat, 14 Sep 2019 00:59:28 -0400
+        id 05350425A8C; Sat, 14 Sep 2019 00:59:43 -0400 (EDT)
+Date:   Sat, 14 Sep 2019 00:59:43 -0400
 From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To:     Johannes Thumshirn <jthumshirn@suse.de>
+To:     Josef Bacik <josef@toxicpanda.com>
 Cc:     linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] btrfs: fix balance convert to single on 32-bit host CPUs
-Message-ID: <20190914045928.GN22121@hungrycats.org>
+Message-ID: <20190914045943.GO22121@hungrycats.org>
 References: <20190912235507.3DE794232AF@james.kirk.hungrycats.org>
- <7af81c39-d31a-1888-e7f3-615fa0eba877@suse.de>
+ <20190913161408.fs3i4apgrcmajmev@macbook-pro-91.dhcp.thefacebook.com>
 MIME-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="dc+cDN39EJAMEtIO"
+        protocol="application/pgp-signature"; boundary="1ccMZA6j1vT5UqiK"
 Content-Disposition: inline
-In-Reply-To: <7af81c39-d31a-1888-e7f3-615fa0eba877@suse.de>
+In-Reply-To: <20190913161408.fs3i4apgrcmajmev@macbook-pro-91.dhcp.thefacebook.com>
 User-Agent: Mutt/1.10.1 (2018-07-13)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
@@ -41,13 +41,13 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
---dc+cDN39EJAMEtIO
-Content-Type: text/plain; charset=iso-8859-1
+--1ccMZA6j1vT5UqiK
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
 
-On Fri, Sep 13, 2019 at 10:24:08AM +0200, Johannes Thumshirn wrote:
-> On 13/09/2019 01:55, Zygo Blaxell wrote:
+On Fri, Sep 13, 2019 at 09:14:08AM -0700, Josef Bacik wrote:
+> On Thu, Sep 12, 2019 at 07:55:01PM -0400, Zygo Blaxell wrote:
 > > Currently, the command:
 > >=20
 > > 	btrfs balance start -dconvert=3Dsingle,soft .
@@ -67,60 +67,27 @@ single
 > > Pis.
 > >=20
 > > Signed-off-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-> > ---
-> >  fs/btrfs/volumes.c | 6 +++++-
-> >  1 file changed, 5 insertions(+), 1 deletion(-)
-> >=20
-> > diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> > index 88a323a453d8..252c6049c6b7 100644
-> > --- a/fs/btrfs/volumes.c
-> > +++ b/fs/btrfs/volumes.c
-> > @@ -3906,7 +3906,11 @@ static int alloc_profile_is_valid(u64 flags, int=
- extended)
-> >  		return !extended; /* "0" is valid for usual profiles */
-> > =20
-> >  	/* true if exactly one bit set */
-> > -	return is_power_of_2(flags);
-> > +	/*
-> > +	 * Don't use is_power_of_2(unsigned long) because it won't work
-> > +	 * for the single profile (1ULL << 48) on 32-bit CPUs.
-> > +	 */
-> > +	return flags !=3D 0 && (flags & (flags - 1)) =3D=3D 0;
 >=20
-> Would
-> flags && IS_ALIGNED(flags)
->=20
-> Work as well? IS_ALIGNED() should be type-save due to the typeof():
-> #define IS_ALIGNED(x, a) (((x) & ((typeof(x))(a) - 1)) =3D=3D 0)
->=20
-> Or maybe I'm missing something subtle?
+> Honestly I'd rather we fixed is_power_of_2 to work on 32bit, that way any=
+ other
+> users don't get bitten by the same problem.  Thanks,
 
-Wouldn't that be
-=09
-	flags && IS_ALIGNED(flags, flags)
+is_power_of_2 doesn't live in the btrfs tree.  I considered modifying it,
+but worried about side-effects elsewhere (i.e. breaking some other 32-bit
+device I've never heard of).
 
-?
+What do you think about using the IS_ALIGNED macro?
 
-> Thanks,
-> 	Johannes
-> --=20
-> Johannes Thumshirn                            SUSE Labs Filesystems
-> jthumshirn@suse.de                                +49 911 74053 689
-> SUSE Software Solutions Germany GmbH
-> Maxfeldstr. 5
-> 90409 N=FCrnberg
-> Germany
-> (HRB 247165, AG M=FCnchen)
-> Key fingerprint =3D EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850
+> Josef
 
---dc+cDN39EJAMEtIO
+--1ccMZA6j1vT5UqiK
 Content-Type: application/pgp-signature; name="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCXXxzrAAKCRCB+YsaVrMb
-nDB4AKCScbBn00gRTi5656jfUJmF0kVwBACaA9bmh4neb8Q84zaykWz7DiF78hI=
-=rfsB
+iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCXXxzvwAKCRCB+YsaVrMb
+nLz0AKDB/h8A1fmq/WEtVmjgFp6+xD8MjwCgyiq08jF5rAXvPfqzjnFxG3Ag7NU=
+=rICQ
 -----END PGP SIGNATURE-----
 
---dc+cDN39EJAMEtIO--
+--1ccMZA6j1vT5UqiK--

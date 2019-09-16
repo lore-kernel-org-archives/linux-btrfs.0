@@ -7,60 +7,60 @@ X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 69A29C4CECD
-	for <linux-btrfs@archiver.kernel.org>; Mon, 16 Sep 2019 18:31:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3CE66C4CED0
+	for <linux-btrfs@archiver.kernel.org>; Mon, 16 Sep 2019 18:31:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 34866206C2
-	for <linux-btrfs@archiver.kernel.org>; Mon, 16 Sep 2019 18:31:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 12E91206C2
+	for <linux-btrfs@archiver.kernel.org>; Mon, 16 Sep 2019 18:31:17 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="0pah0NIp"
+	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="AN4uZD64"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2390417AbfIPSbO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 16 Sep 2019 14:31:14 -0400
-Received: from mail-pl1-f193.google.com ([209.85.214.193]:38191 "EHLO
-        mail-pl1-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2390406AbfIPSbN (ORCPT
+        id S2390432AbfIPSbQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 16 Sep 2019 14:31:16 -0400
+Received: from mail-pf1-f194.google.com ([209.85.210.194]:33510 "EHLO
+        mail-pf1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2390425AbfIPSbP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Sep 2019 14:31:13 -0400
-Received: by mail-pl1-f193.google.com with SMTP id w10so276921plq.5
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Sep 2019 11:31:13 -0700 (PDT)
+        Mon, 16 Sep 2019 14:31:15 -0400
+Received: by mail-pf1-f194.google.com with SMTP id q10so450713pfl.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Sep 2019 11:31:14 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=7Fr7hEBAJqdKnZsqh7Z+MAEHnPmRL9Z4CkXa5IIktrs=;
-        b=0pah0NIpVjYAyadQRLZk4utRyhidNz8Xk8X0u5bWTd30R0faNzdrKDI8ddY5nzc/OU
-         XbbJ2cvXpdFjyaeOXuPqaviHKkpKWUxUcXwkGCvw5zSfByf2nGRYX/9n/r7bntU2co8m
-         4fpjl9nSbQHx4uTa46bZepAq1ZMsKSGpx4b9u9WfZORDaElad/fer0cRG19ZsVzMq650
-         cT0xwrRv6wlUT13Zyzrz8Hbux0UsKa+lvBN9ManS95NHTqzcp7I4Oh5A7eE4rENZZimd
-         mVBERo2ND4aIfU7dtBBbPH3jJCadEVVueiKbd6gWvvyY0qr/xWoCm60TaQvfnWejLlSe
-         Uyag==
+        bh=RyLIZeOyC0PRErDkwVgSVHsMuvpsdNbkx+yyOwsvvQU=;
+        b=AN4uZD648dD+tnFXjyBzZ80jJgcyZi8abchOUQhmSvjMNuZqqX3qkQHZgmqiqUjThi
+         HAlPQStbd/5KLCvTZoyZ4IZvUkdO1k6++peaKD3bougehHjy0AAh/d9NCH5yniT0R+2P
+         E7XtTOUM5OH8p5+Lh7dbiHx8vDvl47oTL0sNUtMFd4B5zpUw4pMlijr0fcDebdyoUy3j
+         To5gKne8X1Yn+jKSwYu58Y5o8Bkb4X2XIJNk6hnycWkCd5NlJiJaoOn5bihTpz+oAQrg
+         OSlRCuln6ttbZHbNQp5JeuvZ7YlW5Aw50MNfMwy+wzCHYdCvR5BsOXsJq9aU33KhEHV5
+         U5vw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=7Fr7hEBAJqdKnZsqh7Z+MAEHnPmRL9Z4CkXa5IIktrs=;
-        b=cpBmC+yJOJBGjTZUQEvqNuvkqvlahy/ttnKVOSSaKVtzuzZQD0pgC9J5dyDUOB8ZtX
-         4MKCs2fic7GdQjOsdafiKnk6KhNY7L6Iv5jlscrD8gN2j6c51fTDK5rAaBAL6CpBKreh
-         TcAGRBwlyCQXlCnMXjuVCAbzlaoROycadG8wtGcsxb4RSiayfsh9sB0JqCHzemqQu064
-         zVv/8jPLavkFNRgu+sGN18LI+lnXo8t0og9LukKF8iAldNWf4DwKm05I45ztC2R2UlP7
-         SeOGFBHsthzVFxLFwzSROqGFOW1H8+9MJFZODA9obzpWI8D6HsVXh94rX1SM8IJWVjzv
-         yOEg==
-X-Gm-Message-State: APjAAAXt3qHvbzZvDgVggtdVb2I0WK0KhvzYPpXSMq9y3j3g8IpwNFNB
-        wbNEQlivawEgARNNkyQkYZfXTXXZeG4=
-X-Google-Smtp-Source: APXvYqzzT9XNo2agfQSe7kRa92RcHVf+Fcey/UDMkDdb9JX+ZYiXiBEgs+p0dqitmSAsP0hr+3KWjQ==
-X-Received: by 2002:a17:902:7615:: with SMTP id k21mr1186468pll.116.1568658672176;
-        Mon, 16 Sep 2019 11:31:12 -0700 (PDT)
+        bh=RyLIZeOyC0PRErDkwVgSVHsMuvpsdNbkx+yyOwsvvQU=;
+        b=Bs/AwYEpCJUQxBxyJbzK8X3lhcbE9+9A0ysIVwAfEQcsCTz93ZsK7SXPe2py7RBypG
+         GRRWRwWOjnjwXsv1qpPv0o+ZXVhnDazEvY86m2kHuZg3durwMGEGoo4XWqWEc3pxQ4FL
+         FmA02tWuS4h0FXVHqlSfOwxAks67BVXchqzzOJrDO3cvx2WVhrXK8HLScuL5BS3GdDEZ
+         9AGFL33mhoOcDFV3iRI30o5fk3YWBg5RnbUOFC+A3UpwqRGyX8L7PjVtpFYIVxXQjw8Y
+         Qe6rqLM9iKJydnhZ3At3N7EtcMLRDkP35ZJfUuzRL/yvx9ZBEfIUBRsitU3FwU+7PVNE
+         Q93w==
+X-Gm-Message-State: APjAAAUdn92IJNsIDX9w0xcBQxVo5qq0XspQKc6F+Cw1ky8wyWlGUBwI
+        61l+FoQ+bTGo2hjVvhLNCT+0FVJQxmE=
+X-Google-Smtp-Source: APXvYqxcY5n1RhOOOVv3MMR8TTCTn2qD+KMGrFtC84nhS4ox+uIWCc6dO2/7x0bO4+u+asAcUI/7rA==
+X-Received: by 2002:a17:90a:cf0c:: with SMTP id h12mr590939pju.110.1568658674133;
+        Mon, 16 Sep 2019 11:31:14 -0700 (PDT)
 Received: from vader.thefacebook.com ([2620:10d:c090:200::3:d0da])
-        by smtp.gmail.com with ESMTPSA id i7sm24231385pfd.126.2019.09.16.11.31.10
+        by smtp.gmail.com with ESMTPSA id i7sm24231385pfd.126.2019.09.16.11.31.13
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 16 Sep 2019 11:31:11 -0700 (PDT)
+        Mon, 16 Sep 2019 11:31:13 -0700 (PDT)
 From:   Omar Sandoval <osandov@osandov.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     kernel-team@fb.com, Tejun Heo <tj@kernel.org>
-Subject: [PATCH 2/7] btrfs: don't prematurely free work in run_ordered_work()
-Date:   Mon, 16 Sep 2019 11:30:53 -0700
-Message-Id: <ec398300e5e36b6f7ab209f082faf5994be723d4.1568658527.git.osandov@fb.com>
+Cc:     kernel-team@fb.com
+Subject: [PATCH 4/7] btrfs: don't prematurely free work in reada_start_machine_worker()
+Date:   Mon, 16 Sep 2019 11:30:55 -0700
+Message-Id: <15b3aebf569f2a2831bc852789935fae37798f8d.1568658527.git.osandov@fb.com>
 X-Mailer: git-send-email 2.23.0
 In-Reply-To: <cover.1568658527.git.osandov@fb.com>
 References: <cover.1568658527.git.osandov@fb.com>
@@ -73,144 +73,56 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Omar Sandoval <osandov@fb.com>
 
-We hit the following very strange deadlock on a system with Btrfs on a
-loop device backed by another Btrfs filesystem:
+Currently, reada_start_machine_worker() frees the reada_machine_work and
+then calls __reada_start_machine() to do readahead. This is another
+potential instance of the bug in "btrfs: don't prematurely free work in
+run_ordered_work()".
 
-1. The top (loop device) filesystem queues an async_cow work item from
-   cow_file_range_async(). We'll call this work X.
-2. Worker thread A starts work X (normal_work_helper()).
-3. Worker thread A executes the ordered work for the top filesystem
-   (run_ordered_work()).
-4. Worker thread A finishes the ordered work for work X and frees X
-   (work->ordered_free()).
-5. Worker thread A executes another ordered work and gets blocked on I/O
-   to the bottom filesystem (still in run_ordered_work()).
-6. Meanwhile, the bottom filesystem allocates and queues an async_cow
-   work item which happens to be the recently-freed X.
-7. The workqueue code sees that X is already being executed by worker
-   thread A, so it schedules X to be executed _after_ worker thread A
-   finishes (see the find_worker_executing_work() call in
-   process_one_work()).
+There _might_ already be a deadlock here: reada_start_machine_worker()
+can depend on itself through stacked filesystems (__read_start_machine()
+-> reada_start_machine_dev() -> reada_tree_block_flagged() ->
+read_extent_buffer_pages() -> submit_one_bio() ->
+btree_submit_bio_hook() -> btrfs_map_bio() -> submit_stripe_bio() ->
+submit_bio() onto a loop device can trigger readahead on the lower
+filesystem).
 
-Now, the top filesystem is waiting for I/O on the bottom filesystem, but
-the bottom filesystem is waiting for the top filesystem to finish, so we
-deadlock.
+Either way, let's fix it by freeing the work at the end.
 
-This happens because we are breaking the workqueue assumption that a
-work item cannot be recycled while it still depends on other work. Fix
-it by waiting to free the work item until we are done with all of the
-related ordered work.
-
-P.S.:
-
-One might ask why the workqueue code doesn't try to detect a recycled
-work item. It actually does try by checking whether the work item has
-the same work function (find_worker_executing_work()), but in our case
-the function is the same. This is the only key that the workqueue code
-has available to compare, short of adding an additional, layer-violating
-"custom key". Considering that we're the only ones that have ever hit
-this, we should just play by the rules.
-
-Unfortunately, we haven't been able to create a minimal reproducer other
-than our full container setup using a compress-force=zstd filesystem on
-top of another compress-force=zstd filesystem.
-
-Suggested-by: Tejun Heo <tj@kernel.org>
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/async-thread.c | 56 ++++++++++++++++++++++++++++++++---------
- 1 file changed, 44 insertions(+), 12 deletions(-)
+ fs/btrfs/reada.c | 10 ++++------
+ 1 file changed, 4 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
-index 2e9e13ffbd08..10a04b99798a 100644
---- a/fs/btrfs/async-thread.c
-+++ b/fs/btrfs/async-thread.c
-@@ -252,16 +252,17 @@ static inline void thresh_exec_hook(struct __btrfs_workqueue *wq)
- 	}
- }
- 
--static void run_ordered_work(struct __btrfs_workqueue *wq)
-+static void run_ordered_work(struct __btrfs_workqueue *wq,
-+			     struct btrfs_work *self)
+diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
+index ee6f60547a8d..dd4f9c2b7107 100644
+--- a/fs/btrfs/reada.c
++++ b/fs/btrfs/reada.c
+@@ -752,21 +752,19 @@ static int reada_start_machine_dev(struct btrfs_device *dev)
+ static void reada_start_machine_worker(struct btrfs_work *work)
  {
- 	struct list_head *list = &wq->ordered_list;
- 	struct btrfs_work *work;
- 	spinlock_t *lock = &wq->list_lock;
- 	unsigned long flags;
-+	void *wtag;
-+	bool free_self = false;
+ 	struct reada_machine_work *rmw;
+-	struct btrfs_fs_info *fs_info;
+ 	int old_ioprio;
  
- 	while (1) {
--		void *wtag;
+ 	rmw = container_of(work, struct reada_machine_work, work);
+-	fs_info = rmw->fs_info;
 -
- 		spin_lock_irqsave(lock, flags);
- 		if (list_empty(list))
- 			break;
-@@ -287,16 +288,47 @@ static void run_ordered_work(struct __btrfs_workqueue *wq)
- 		list_del(&work->ordered_list);
- 		spin_unlock_irqrestore(lock, flags);
+-	kfree(rmw);
  
--		/*
--		 * We don't want to call the ordered free functions with the
--		 * lock held though. Save the work as tag for the trace event,
--		 * because the callback could free the structure.
--		 */
--		wtag = work;
--		work->ordered_free(work);
--		trace_btrfs_all_work_done(wq->fs_info, wtag);
-+		if (work == self) {
-+			/*
-+			 * This is the work item that the worker is currently
-+			 * executing.
-+			 *
-+			 * The kernel workqueue code guarantees non-reentrancy
-+			 * of work items. I.e., if a work item with the same
-+			 * address and work function is queued twice, the second
-+			 * execution is blocked until the first one finishes. A
-+			 * work item may be freed and recycled with the same
-+			 * work function; the workqueue code assumes that the
-+			 * original work item cannot depend on the recycled work
-+			 * item in that case (see find_worker_executing_work()).
-+			 *
-+			 * Note that the work of one Btrfs filesystem may depend
-+			 * on the work of another Btrfs filesystem via, e.g., a
-+			 * loop device. Therefore, we must not allow the current
-+			 * work item to be recycled until we are really done,
-+			 * otherwise we break the above assumption and can
-+			 * deadlock.
-+			 */
-+			free_self = true;
-+		} else {
-+			/*
-+			 * We don't want to call the ordered free functions with
-+			 * the lock held though. Save the work as tag for the
-+			 * trace event, because the callback could free the
-+			 * structure.
-+			 */
-+			wtag = work;
-+			work->ordered_free(work);
-+			trace_btrfs_all_work_done(wq->fs_info, wtag);
-+		}
- 	}
- 	spin_unlock_irqrestore(lock, flags);
+ 	old_ioprio = IOPRIO_PRIO_VALUE(task_nice_ioclass(current),
+ 				       task_nice_ioprio(current));
+ 	set_task_ioprio(current, BTRFS_IOPRIO_READA);
+-	__reada_start_machine(fs_info);
++	__reada_start_machine(rmw->fs_info);
+ 	set_task_ioprio(current, old_ioprio);
+ 
+-	atomic_dec(&fs_info->reada_works_cnt);
++	atomic_dec(&rmw->fs_info->reada_works_cnt);
 +
-+	if (free_self) {
-+		wtag = self;
-+		self->ordered_free(self);
-+		trace_btrfs_all_work_done(wq->fs_info, wtag);
-+	}
++	kfree(rmw);
  }
  
- static void normal_work_helper(struct btrfs_work *work)
-@@ -324,7 +356,7 @@ static void normal_work_helper(struct btrfs_work *work)
- 	work->func(work);
- 	if (need_order) {
- 		set_bit(WORK_DONE_BIT, &work->flags);
--		run_ordered_work(wq);
-+		run_ordered_work(wq, work);
- 	}
- 	if (!need_order)
- 		trace_btrfs_all_work_done(wq->fs_info, wtag);
+ static void __reada_start_machine(struct btrfs_fs_info *fs_info)
 -- 
 2.23.0
 

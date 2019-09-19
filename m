@@ -2,266 +2,232 @@ Return-Path: <SRS0=ld6D=XO=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B9ED3C4CECE
-	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Sep 2019 06:54:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9F12BC4CEC4
+	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Sep 2019 07:21:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 8F1F321927
-	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Sep 2019 06:54:08 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="jrDnJVlC"
+	by mail.kernel.org (Postfix) with ESMTP id 761AA21924
+	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Sep 2019 07:21:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731799AbfISGyH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 19 Sep 2019 02:54:07 -0400
-Received: from mail-pg1-f196.google.com ([209.85.215.196]:35963 "EHLO
-        mail-pg1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1731598AbfISGx7 (ORCPT
+        id S1731940AbfISHVZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 19 Sep 2019 03:21:25 -0400
+Received: from m9a0002g.houston.softwaregrp.com ([15.124.64.67]:58977 "EHLO
+        m9a0002g.houston.softwaregrp.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1727435AbfISHVZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Sep 2019 02:53:59 -0400
-Received: by mail-pg1-f196.google.com with SMTP id m29so1319493pgc.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Sep 2019 23:53:59 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=osandov-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=00UZVoEv9bMl6aYlPWI0DyKDEJNPNHi4/CNs6Ie54Iw=;
-        b=jrDnJVlChxNgOovPZcZTUsHWYfXlWCjHGvjJK4lsiHGbS582w5nb21G8Lj/RsXM5DF
-         3ZA/cg0QfZUQRSk6cSXQ+A994hu9jxdV7GF1eLg8Tn7L/A/W8qxdvC7epzprdqndcw4f
-         MV1QZumgTcP0zZUsw5wDi1/9Os+VEJH++Xx9hOPjMvkRgQ6j074GsdTziwAJaHmyQaHT
-         m24j6c9QBSJJ/n6+9EMz8f/KCCdXFIzDNeREWRQtV54h4hEWRH7kSd+89qK/PMibLVhp
-         l/Yhn4g+xbPK2f659MkOScmWDMynVOqlHvA6ce5bR5V/MfmEFt9XHW5K6+zaf1ByFAf2
-         Dilg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=00UZVoEv9bMl6aYlPWI0DyKDEJNPNHi4/CNs6Ie54Iw=;
-        b=jz8qBf8KppQrgxSbQ9mth6hGB2k1VpbKXtjSxrPR022/Z2SXBVXCw+Fq/t8aaUmZJM
-         yEzV/WSJrLCE4zLKYlmOXVQugwEB5AAfYttJJHvnw/H/cIZWNoZEc8ld4F4n52zf9KQy
-         EifzYkiP+hueHoRZVZqwrRsPYHhWS3BgWMzTsNXOSP9p9xMPCcpUVNg8Ubw5BsRN7xEL
-         DkSvINaE3D+jl9IRjPWOUOs73GX9kozGWSZanUfLUWpcn47YaPMkp34RosKgLs6lhOUD
-         UvZfjdQoonCp15jAfLBMnc1XFvrfhaW3Y3az63JMQpZMMX9vkGynbx6j/sMHHr3Yg4VZ
-         X8yA==
-X-Gm-Message-State: APjAAAVJfDuvqIC7F/cCecJhSVQNO+NszNOroOdaSjLBSwdE39XI6VVf
-        l8YCelzQsGvRSpRwdzp5GZ9a8A==
-X-Google-Smtp-Source: APXvYqx4CQDWTu6IBH8idJ/Kx2FSEYv3+0fN7niSp62t8HohH8Zq8q9LiVigCuhZYFvjqOtbl8eO7g==
-X-Received: by 2002:a62:ac02:: with SMTP id v2mr8319240pfe.109.1568876038608;
-        Wed, 18 Sep 2019 23:53:58 -0700 (PDT)
-Received: from vader.thefacebook.com ([2620:10d:c090:180::332b])
-        by smtp.gmail.com with ESMTPSA id m24sm6623615pgj.71.2019.09.18.23.53.57
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 18 Sep 2019 23:53:58 -0700 (PDT)
-From:   Omar Sandoval <osandov@osandov.com>
-To:     linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org
-Cc:     Dave Chinner <david@fromorbit.com>, linux-api@vger.kernel.org,
-        kernel-team@fb.com
-Subject: [PATCH] readv.2: Document new RWF_ENCODED flag to pwritev2()
-Date:   Wed, 18 Sep 2019 23:53:45 -0700
-Message-Id: <5026db117fb57fa480706a7a77460e4288e69180.1568875837.git.osandov@fb.com>
-X-Mailer: git-send-email 2.23.0
-In-Reply-To: <cover.1568875700.git.osandov@fb.com>
-References: <cover.1568875700.git.osandov@fb.com>
+        Thu, 19 Sep 2019 03:21:25 -0400
+Received: FROM m9a0002g.houston.softwaregrp.com (15.121.0.190) BY m9a0002g.houston.softwaregrp.com WITH ESMTP
+ FOR linux-btrfs@vger.kernel.org;
+ Thu, 19 Sep 2019 07:20:23 +0000
+Received: from M4W0335.microfocus.com (2002:f78:1193::f78:1193) by
+ M9W0067.microfocus.com (2002:f79:be::f79:be) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256_P256) id
+ 15.1.1591.10; Thu, 19 Sep 2019 07:19:55 +0000
+Received: from NAM03-BY2-obe.outbound.protection.outlook.com (15.124.8.13) by
+ M4W0335.microfocus.com (15.120.17.147) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256_P256) id
+ 15.1.1591.10 via Frontend Transport; Thu, 19 Sep 2019 07:19:55 +0000
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=MB0cjXqyBNMdWb0b+XVRQwJ/wSj8zoZ3rhwBEGJX8UxSGTGNjosP8j5sEPiEVaSTyY5IMvD9DpFf5BvGEFDt6stmrwKtUHQHWH/yB6M1kL3fZ8+O2wjyXPysMDwGMHekZuSEcdsQFLW+miBp6pxnGMZxIv9fFfJ8x1FwGEcBF08cUwAgYqW4b5MEjELt8C/aZoPQ2snleIiBq+/IGHknsGlub3IZZmK5gUMbq0VnK6n+7GA9EOhA7VLlXYu/kNt1MB42aHUQURGek0kiNpdXGg664ujN+O/4yF9CmfLVEtaUFFaZiYuWwVTgbPElT0HM1CQIlpuTGxRufs/PPCaHMQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=PkFly++jVEF68O0fIyRl2hLgBgmqPg7TX4YUkU6G/+I=;
+ b=nhFKcvczEyDS9/nobpGs0eq6vggLX+rRfBqN6Ey2733VvOY5GBpOTQsDH2hCZCqS6oJH/s7lPamTxyN8CIfmJ95lEQw/5u9+5GGcYa9RnjcH9a1rprY912lZ4/+y6EAobvOjIY4OOK9vw2PAvkdK3CZdjDgIcz/W+tHVFj/rBe7PQ8AaShHBZDbfrkfd9OsiYLDGqNtAmGpPcrJKcKNEi91c8R74om6LqYcrVF8R49Aj0m7VzMy0l2l+0NllVzxm68AQSUo66Ho52hBXcPHJgeiho/F/WnludPITcNvT5tXi2zvlm1Uoyi4nECjbX6oRbga+/A0kbkMMLtvtxzoZPQ==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=suse.com; dmarc=pass action=none header.from=suse.com;
+ dkim=pass header.d=suse.com; arc=none
+Received: from BY5PR18MB3266.namprd18.prod.outlook.com (10.255.163.207) by
+ BY5PR18MB3396.namprd18.prod.outlook.com (10.255.138.22) with Microsoft SMTP
+ Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.20.2284.20; Thu, 19 Sep 2019 07:19:48 +0000
+Received: from BY5PR18MB3266.namprd18.prod.outlook.com
+ ([fe80::3993:1f66:bd4:83cc]) by BY5PR18MB3266.namprd18.prod.outlook.com
+ ([fe80::3993:1f66:bd4:83cc%5]) with mapi id 15.20.2263.023; Thu, 19 Sep 2019
+ 07:19:48 +0000
+From:   WenRuo Qu <wqu@suse.com>
+To:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v2.1 00/10] btrfs-progs: image: Enhancement with new data
+ dump feature
+Thread-Topic: [PATCH v2.1 00/10] btrfs-progs: image: Enhancement with new data
+ dump feature
+Thread-Index: AQHVbrqeG5ki3Ct79ki9jQbiiHnHHw==
+Date:   Thu, 19 Sep 2019 07:19:48 +0000
+Message-ID: <8e533879-f048-fd28-6d88-2222a4c8f019@suse.com>
+References: <20190704061103.20096-1-wqu@suse.com>
+In-Reply-To: <20190704061103.20096-1-wqu@suse.com>
+Accept-Language: zh-CN, en-US
+Content-Language: en-US
+X-MS-Has-Attach: yes
+X-MS-TNEF-Correlator: 
+x-clientproxiedby: TY2PR0101CA0013.apcprd01.prod.exchangelabs.com
+ (2603:1096:404:92::25) To BY5PR18MB3266.namprd18.prod.outlook.com
+ (2603:10b6:a03:1a1::15)
+authentication-results: spf=none (sender IP is ) smtp.mailfrom=wqu@suse.com; 
+x-ms-exchange-messagesentrepresentingtype: 1
+x-originating-ip: [13.231.109.76]
+x-ms-publictraffictype: Email
+x-ms-office365-filtering-correlation-id: 3c337049-61aa-42f1-9a42-08d73cd1c102
+x-microsoft-antispam: BCL:0;PCL:0;RULEID:(2390118)(7020095)(4652040)(8989299)(4534185)(4627221)(201703031133081)(201702281549075)(8990200)(5600167)(711020)(4605104)(1401327)(2017052603328)(49563074)(7193020);SRVR:BY5PR18MB3396;
+x-ms-traffictypediagnostic: BY5PR18MB3396:
+x-microsoft-antispam-prvs: <BY5PR18MB33962AC7C3CF2638AB0EABA4D6890@BY5PR18MB3396.namprd18.prod.outlook.com>
+x-ms-oob-tlc-oobclassifiers: OLM:5516;
+x-forefront-prvs: 016572D96D
+x-forefront-antispam-report: SFV:NSPM;SFS:(10019020)(4636009)(396003)(366004)(376002)(136003)(346002)(39860400002)(54534003)(189003)(199004)(2616005)(476003)(229853002)(11346002)(66066001)(446003)(305945005)(25786009)(14454004)(6246003)(486006)(36756003)(7736002)(5640700003)(478600001)(6486002)(71200400001)(6512007)(6436002)(6916009)(14444005)(71190400001)(86362001)(8676002)(81156014)(81166006)(8936002)(2501003)(256004)(99286004)(2906002)(5660300002)(316002)(66616009)(52116002)(2351001)(3846002)(99936001)(64756008)(66556008)(31696002)(102836004)(386003)(66446008)(26005)(66476007)(6116002)(186003)(6506007)(66946007)(76176011)(31686004);DIR:OUT;SFP:1102;SCL:1;SRVR:BY5PR18MB3396;H:BY5PR18MB3266.namprd18.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;MX:1;A:1;
+received-spf: None (protection.outlook.com: suse.com does not designate
+ permitted sender hosts)
+x-ms-exchange-senderadcheck: 1
+x-microsoft-antispam-message-info: naXQi+XHIr2tNHMf8lyd1b9U1EmCoKKzeqVxaQfqwLDGpdpKL7GZF272nIgrK81ed1cgQQc0oTQbwPm5qcj/Lnrv8hp5Y94/R0m90/jPkIAVZDuYD7FcEJIikqdgXFo9aRt/kwsEePmNWsY18FDA2uidd5v+0XyJfdBYbekvp7lAWsJTWYT3RjpNy1vxAMPxpGr0XnwdHEyoIcz+apEfIb2BQ7EIyAtwOfNpls6NPUOpZ8KMC5wfm+J7KUOMYVSgS3AUhfoztFXdfxIbUjeVQBmcJKst+n80VlKfGhS31KOLFGmDLKBAzb6RJY/sFVwQ2FlgewvsliOgRX2SXS59L53akGZtZWF5oB4u90M3BcefTNoShbDS0dRKoP7k9uGYuU/soI8WndP6K3Cvs3I/HrYZNY09+6wpPbE5sTjnd6c=
+x-ms-exchange-transport-forked: True
+Content-Type: multipart/signed; micalg=pgp-sha256;
+        protocol="application/pgp-signature";
+        boundary="sTnhQjlQ97Af4MJBn4tJhMiMI5Ni18uZt"
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+X-MS-Exchange-CrossTenant-Network-Message-Id: 3c337049-61aa-42f1-9a42-08d73cd1c102
+X-MS-Exchange-CrossTenant-originalarrivaltime: 19 Sep 2019 07:19:48.7514
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: 856b813c-16e5-49a5-85ec-6f081e13b527
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: s7rnveMr7MTNIUb715RKwB0WXV70wOSqHu3KA6ERNV34/Gt78XJfTbAtIWquZmwH
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: BY5PR18MB3396
+X-OriginatorOrg: suse.com
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Omar Sandoval <osandov@fb.com>
+--sTnhQjlQ97Af4MJBn4tJhMiMI5Ni18uZt
+Content-Type: multipart/mixed; boundary="ZvAUyehlJ6alCGfiHOBmnFW7InifzeYjK"
 
-Signed-off-by: Omar Sandoval <osandov@fb.com>
----
- man2/readv.2 | 156 +++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 156 insertions(+)
+--ZvAUyehlJ6alCGfiHOBmnFW7InifzeYjK
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-diff --git a/man2/readv.2 b/man2/readv.2
-index af27aa63e..7d32b3bd2 100644
---- a/man2/readv.2
-+++ b/man2/readv.2
-@@ -265,6 +265,135 @@ the data is always appended to the end of the file.
- However, if the
- .I offset
- argument is \-1, the current file offset is updated.
-+.TP
-+.BR RWF_ENCODED " (since Linux 5.5)"
-+Read or write encoded (e.g., compressed) data.
-+.I iov[0].iov_base
-+points to an
-+.I
-+encoded_iov
-+structure, defined in
-+.I <linux/fs.h>
-+as:
-+.IP
-+.in +4n
-+.EX
-+struct encoded_iov {
-+    __u64 unencoded_len;
-+    __u32 compression;
-+    __u32 encryption;
-+};
-+.EE
-+.in
-+.IP
-+.I iov[0].iov_len
-+must be set to
-+.IR "sizeof(struct\ encoded_iov)" .
-+.IP
-+.I compression
-+is one of
-+.B ENCODED_IOV_COMPRESSION_NONE
-+(zero),
-+.BR ENCODED_IOV_COMPRESSION_ZLIB ,
-+.BR ENCODED_IOV_COMPRESSION_LZO ,
-+or
-+.BR ENCODED_IOV_COMPRESSION_ZSTD .
-+.I encryption
-+is currently always
-+.B ENCODED_IOV_ENCRYPTION_NONE
-+(zero).
-+.I unencoded_len
-+is the length of the unencoded (i.e., decrypted and decompressed) data.
-+If
-+.I offset
-+is -1, then the current file offset is incremented by the unencoded length.
-+.IP
-+For
-+.BR pwritev2 (),
-+the remaining buffers in the
-+.I iov
-+array should point to the encoded data;
-+.I unencoded_len
-+should be set to the logical length of the data in the file; and
-+.I compression
-+and
-+.I encryption
-+should be set to indicate the encoding.
-+The calling process must have the
-+.B CAP_SYS_ADMIN
-+capability.
-+If
-+.I compression
-+is
-+.B ENCODED_IOV_COMPRESSION_NONE
-+and
-+.I encryption
-+is
-+.BR ENCODED_IOV_ENCRYPTION_NONE ,
-+then
-+.I unencoded_len
-+is ignored and the write behaves as if the
-+.B RWF_ENCODED
-+flag was not specified.
-+.IP
-+As of Linux 5.5, this flag is only implemented for
-+.BR pwritev2 (),
-+and only on Btrfs with the following requirements:
-+.RS
-+.IP \(bu 3
-+.I offset
-+(or the current file offset if
-+.I offset
-+is -1) must be aligned to the sector size of the filesystem.
-+.IP \(bu
-+.I unencoded_len
-+and the length of the encoded data must each be no more than 128 KiB.
-+This limit may increase in the future.
-+.IP \(bu
-+.I unencoded_len
-+must be non-zero.
-+.IP \(bu
-+.I unencoded_len
-+must be aligned to the sector size of the filesystem,
-+unless the data ends at or beyond the current end of the file.
-+.IP \(bu
-+If
-+.I compression
-+is not
-+.BR ENCODED_IOV_COMPRESSION_NONE ,
-+then the length of the encoded data rounded up to the nearest sector must be less than
-+.IR unencoded_len .
-+.IP \(bu
-+If
-+.I compression
-+is
-+.BR ENCODED_IOV_COMPRESSION_ZLIB ,
-+then the encoded data must be a single zlib stream.
-+.IP \(bu
-+If
-+.I compression
-+is
-+.BR ENCODED_IOV_COMPRESSION_LZO ,
-+then the encoded data must be be compressed page by page with LZO1X
-+and wrapped in the format described in the Linux kernel source file
-+.IR fs/btrfs/lzo.c .
-+.IP \(bu
-+If
-+.I compression
-+is
-+.BR ENCODED_IOV_COMPRESSION_ZSTD ,
-+then the encoded data must be a single zstd stream,
-+and the
-+.I windowLog
-+compression parameter must be no more than 17.
-+.RE
-+.IP
-+Note that the encoded data is not validated when it is written.
-+If it is not valid (e.g., it cannot be decompressed,
-+or its decompressed length does not match
-+.IR unencoded_len ),
-+then a subsequent read may result in an error or return truncated data.
-+.\" TODO: how should this interact with O_DIRECT?
- .SH RETURN VALUE
- On success,
- .BR readv (),
-@@ -284,6 +413,13 @@ than requested (see
- and
- .BR write (2)).
- .PP
-+If
-+.B
-+RWF_ENCODED
-+was specified in
-+.IR flags ,
-+then the return value is the unencoded number of bytes.
-+.PP
- On error, \-1 is returned, and \fIerrno\fP is set appropriately.
- .SH ERRORS
- The errors are as given for
-@@ -312,8 +448,28 @@ The vector count,
- .IR iovcnt ,
- is less than zero or greater than the permitted maximum.
- .TP
-+.B EINVAL
-+.B RWF_ENCODED
-+is specified in
-+.I flags
-+and the alignment and/or size requirements are not met.
-+.TP
- .B EOPNOTSUPP
- An unknown flag is specified in \fIflags\fP.
-+.TP
-+.B EOPNOTSUPP
-+.B RWF_ENCODED
-+is specified in
-+.I flags
-+and the filesystem does not implement encoded I/O.
-+.TP
-+.B EPERM
-+.B RWF_ENCODED
-+is specified in
-+.I flags
-+and the calling process does not have the
-+.B CAP_SYS_ADMIN
-+capability.
- .SH VERSIONS
- .BR preadv ()
- and
--- 
-2.23.0
+Gentle ping?
 
+This feature should be pretty useful for both full fs backup and debug
+purpose.
+
+Any feedback?
+It can still be applied to latest stable branch without any conflict.
+
+Thanks,
+Qu
+
+On 2019/7/4 =E4=B8=8B=E5=8D=882:10, Qu Wenruo wrote:
+> This updated patchset is rebased on devel branch, whose HEAD is:
+> commit 73289664917ad7c73f3f3393593e93a118228ad8 (david/devel)
+> Author: David Sterba <dsterba@suse.com>
+> Date:   Thu Jul 4 01:42:15 2019 +0200
+>=20
+>     btrfs-progs: kerncompat: define __always_inline conditionally
+>=20
+> This updated patchset includes the following features:
+>=20
+> - Small fixes to improve btrfs-image error report
+>   * Output error message for chunk tree build error
+>   * Fix error output to show correct return value
+>   Patch 1 and 2.
+>=20
+> - Reduce memory usage when decompress super block
+>   Independent change, for current btrfs-image, it will reduce buffer
+>   size from 256K to fixed 4K.
+>   Patch 3.
+>=20
+> - Rework how we search chunk tree blocks
+>   Instead of iterating clusters again and again for each chunk tree
+>   block, record system chunk array and iterate clusters once for all
+>   chunk tree blocks.
+>   This should reduce restore time for large image dump.
+>   Patch 4, 5 and 6.
+>=20
+> - Introduce data dump feature to dump the whole fs.
+>   This will introduce a new magic number to prevent old btrfs-image to
+>   hit failure as the item size limit is enlarged.
+>   Patch 7 and 8.
+>=20
+> - Reduce memory usage for data dump restore
+>   This is mostly due to the fact that we have much larger
+>   max_pending_size introduced by data dump(256K -> 256M).
+>   Using 4 * max_pending_size for each decompress thread as buffer is wa=
+y
+>   too expensive now.
+>   Use proper inflate() to replace uncompress() calls.
+>   Patch 9 and 10.
+>=20
+> Changelog:
+> v2:
+> - New small fixes:
+>   * Fix a confusing error message due to unpopulated errno
+>   * Output error message for chunk tree build error
+>  =20
+> - Fix a regression of previous version
+>   Patch "btrfs-progs: image: Rework how we search chunk tree blocks"
+>   deleted a "ret =3D 0" line which could cause false early exit.
+>=20
+> - Reduce memory usage for data dump
+>=20
+> v2.1:
+> - Rebased to devel branch
+>   Removing 4 already merged patches from the patchset.
+>=20
+> - Re-order the patchset
+>   Put small and independent patches at the top of queue, and put the
+>   data dump related feature at the end.
+>=20
+> - Fix -Wmaybe-uninitialized warnings
+>   Strangely, D=3D1 won't trigger these warnings thus they sneak into v2=
+
+>   without being detected.
+>=20
+> - Fix FROM: line
+>   Reverted to old smtp setup. The new setup will override FROM: line,
+>   messing up the name of author.
+>=20
+> Qu Wenruo (10):
+>   btrfs-progs: image: Output error message for chunk tree build error
+>   btrfs-progs: image: Fix error output to show correct return value
+>   btrfs-progs: image: Don't waste memory when we're just extracting
+>     super block
+>   btrfs-progs: image: Allow restore to record system chunk ranges for
+>     later usage
+>   btrfs-progs: image: Introduce helper to determine if a tree block is
+>     in the range of system chunks
+>   btrfs-progs: image: Rework how we search chunk tree blocks
+>   btrfs-progs: image: Introduce framework for more dump versions
+>   btrfs-progs: image: Introduce -d option to dump data
+>   btrfs-progs: image: Reduce memory requirement for decompression
+>   btrfs-progs: image: Reduce memory usage for chunk tree search
+>=20
+>  image/main.c     | 866 +++++++++++++++++++++++++++++++++++------------=
+
+>  image/metadump.h |  13 +-
+>  2 files changed, 654 insertions(+), 225 deletions(-)
+>=20
+
+
+--ZvAUyehlJ6alCGfiHOBmnFW7InifzeYjK--
+
+--sTnhQjlQ97Af4MJBn4tJhMiMI5Ni18uZt
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEELd9y5aWlW6idqkLhwj2R86El/qgFAl2DLAoACgkQwj2R86El
+/qhq5wf/eG5H76ZtZtQY9PRSEI9ZSMlVZgbL7vpT6QNZVD6vF/DD6n2A/p7p53bj
+3aWUfmk88pml0kDXGyN423AGL3G24SKhqsk81o0nmvgaRbRbkDFYWMLcMj2Opldw
+Aat8Cazq4rWCIsgqE2EiX8azPSkktYmtpKaUt762Byz83dpzJUFROQqMsWf/a3EF
+HuOlLZklOziRnF4P6h8maHeZ+O9/gxPb4qMxOEt8FjAuZTaqqAsgOH7yZJ/o6Kxy
+sA4rHBth9iwhdg3MXURVfH6m/eRPFYp/6UK6G+3Ot5g3eRt/KDJoG2vZfNIVbAC3
+UFrmf/uaNWbgKCTab1D8sLPH60IcHw==
+=Z78y
+-----END PGP SIGNATURE-----
+
+--sTnhQjlQ97Af4MJBn4tJhMiMI5Ni18uZt--

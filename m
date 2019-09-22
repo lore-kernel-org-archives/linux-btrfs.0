@@ -4,51 +4,51 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E7989C4740C
-	for <linux-btrfs@archiver.kernel.org>; Sun, 22 Sep 2019 19:08:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A9EAFC3A5A6
+	for <linux-btrfs@archiver.kernel.org>; Sun, 22 Sep 2019 19:21:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id C1A0921D6C
-	for <linux-btrfs@archiver.kernel.org>; Sun, 22 Sep 2019 19:08:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8314220673
+	for <linux-btrfs@archiver.kernel.org>; Sun, 22 Sep 2019 19:21:09 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1569179322;
-	bh=J3w6PSQJMXIgywixiduIInZgrhJkt1JWfKks4ipTZzk=;
+	s=default; t=1569180069;
+	bh=wcMVuAqbMTHTWZ9CBU+HlR2sUqfwj8hv95CeiKNkwOY=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=UiM5bng5psOJK9uLrVryTLK+0CAHGDJ2KzNHd39blkzO3gf0lcytxNIQEStMRYIUn
-	 //LXO1hp8cekHeWH+/94kOCsSQJlYQhtOzGgDL9DEBYyPUSAMmjWggCaKK/7ic+8FW
-	 vs0TzUtzHEG6ILQvLkgK073/gfNA81i4BZ1ZVDZ0=
+	b=i8OT0s9Dex33cXj3iKyGLWJgsDhzkALZcl3UHE5SZhHGiUXzNY95Aa5ETp3jBvHkq
+	 MfNN2i1Iz8zXpWEnLhKAyYLXZ1mkbGF2nBiaPw16PCd6gW1tBZ5TJ1+jWqKoI4DOhP
+	 OcbV84cPU5lpK+atfOJ81ygSj4+h3WP5H76pxRoY=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2394474AbfIVS7h (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 22 Sep 2019 14:59:37 -0400
-Received: from mail.kernel.org ([198.145.29.99]:34792 "EHLO mail.kernel.org"
+        id S2404263AbfIVSyN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 22 Sep 2019 14:54:13 -0400
+Received: from mail.kernel.org ([198.145.29.99]:54538 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2438879AbfIVS7c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 22 Sep 2019 14:59:32 -0400
+        id S2403988AbfIVSyM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 22 Sep 2019 14:54:12 -0400
 Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id BF771208C2;
-        Sun, 22 Sep 2019 18:59:30 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 8657B2190F;
+        Sun, 22 Sep 2019 18:54:10 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1569178771;
-        bh=J3w6PSQJMXIgywixiduIInZgrhJkt1JWfKks4ipTZzk=;
+        s=default; t=1569178451;
+        bh=wcMVuAqbMTHTWZ9CBU+HlR2sUqfwj8hv95CeiKNkwOY=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=riqFGmmWYcSQEDMc4L6aHt+L3bjCNNG1umsokhGVhP4wYWWEQTiNyerxTDxFZ6Gq2
-         tESidhtEKE8LS6drW9J2/pqQa0NHEblvmLVyCkViiMQtljbuABWNmlkg92/TYfsR4Z
-         wKsTI8GRPn4dD6uc+de+rfkz939vDW5m9ipYUboI=
+        b=Nq5hI1XAJ0d8QmW9sRN07d/gKo4WOHSzg5pwWym+4o/L4FpvzOmDTB2qTuHHM15yM
+         VLkN9U3xxl0/z+ICAbWdgdpPT+dWpE2VzykL5vGjfIpMHdfvs9R4jNdxQmFDkVtx8f
+         erp7RKliHEh7FAxPtv9/+jLShadUzs1MXH2YwdmM=
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Qu Wenruo <wqu@suse.com>, Jungyeon Yoon <jungyeon.yoon@gmail.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.14 89/89] btrfs: extent-tree: Make sure we only allocate extents from block groups with the same type
-Date:   Sun, 22 Sep 2019 14:57:17 -0400
-Message-Id: <20190922185717.3412-89-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.2 182/185] btrfs: extent-tree: Make sure we only allocate extents from block groups with the same type
+Date:   Sun, 22 Sep 2019 14:49:20 -0400
+Message-Id: <20190922184924.32534-182-sashal@kernel.org>
 X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20190922185717.3412-1-sashal@kernel.org>
-References: <20190922185717.3412-1-sashal@kernel.org>
+In-Reply-To: <20190922184924.32534-1-sashal@kernel.org>
+References: <20190922184924.32534-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -146,10 +146,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 8 insertions(+)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 49766721b2b14..10dee82455581 100644
+index b8f4720879021..37865929fdc22 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -7706,6 +7706,14 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+@@ -7875,6 +7875,14 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
  			 */
  			if ((flags & extra) && !(block_group->flags & extra))
  				goto loop;

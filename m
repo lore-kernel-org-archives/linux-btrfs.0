@@ -2,98 +2,168 @@ Return-Path: <SRS0=uOdT=XR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DA86BC4740C
-	for <linux-btrfs@archiver.kernel.org>; Sun, 22 Sep 2019 19:07:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E7989C4740C
+	for <linux-btrfs@archiver.kernel.org>; Sun, 22 Sep 2019 19:08:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id BF97821BE5
-	for <linux-btrfs@archiver.kernel.org>; Sun, 22 Sep 2019 19:07:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C1A0921D6C
+	for <linux-btrfs@archiver.kernel.org>; Sun, 22 Sep 2019 19:08:42 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=default; t=1569179322;
+	bh=J3w6PSQJMXIgywixiduIInZgrhJkt1JWfKks4ipTZzk=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
+	b=UiM5bng5psOJK9uLrVryTLK+0CAHGDJ2KzNHd39blkzO3gf0lcytxNIQEStMRYIUn
+	 //LXO1hp8cekHeWH+/94kOCsSQJlYQhtOzGgDL9DEBYyPUSAMmjWggCaKK/7ic+8FW
+	 vs0TzUtzHEG6ILQvLkgK073/gfNA81i4BZ1ZVDZ0=
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1730277AbfIVTHL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 22 Sep 2019 15:07:11 -0400
-Received: from know-smtprelay-omd-9.server.virginmedia.net ([81.104.62.41]:56589
-        "EHLO know-smtprelay-omd-9.server.virginmedia.net"
+        id S2394474AbfIVS7h (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 22 Sep 2019 14:59:37 -0400
+Received: from mail.kernel.org ([198.145.29.99]:34792 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730270AbfIVTHK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 22 Sep 2019 15:07:10 -0400
-Received: from [172.16.100.1] ([86.12.75.74])
-        by cmsmtp with ESMTPA
-        id C7COiYBtWVaV8C7COis8ln; Sun, 22 Sep 2019 20:07:08 +0100
-X-Originating-IP: [86.12.75.74]
-X-Authenticated-User: peter.chant@ntlworld.com
-X-Spam: 0
-X-Authority: v=2.3 cv=PcnReBpd c=1 sm=1 tr=0 a=RxXffCTTaIU9mOmmEQ6aGA==:117
- a=RxXffCTTaIU9mOmmEQ6aGA==:17 a=jpOVt7BSZ2e4Z31A5e1TngXxSK0=:19
- a=IkcTkHD0fZMA:10 a=e-rcKmGedyBdaeoZsHYA:9 a=QEXdDO2ut3YA:10
-Subject: Re: Balance ENOSPC during balance despite additional storage added
-To:     Chris Murphy <lists@colorremedies.com>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <94ebf95b-c8c2-e2d5-8db6-77a74c19644a@petezilla.co.uk>
- <CAJCQCtRAnJR+Z8Z8Bq91YXiMpfmwOiHK0tQ+9zAJvSVvexHnxg@mail.gmail.com>
-From:   Pete <pete@petezilla.co.uk>
-Message-ID: <54fa8ba3-0d02-7153-ce47-80f10732ef14@petezilla.co.uk>
-Date:   Sun, 22 Sep 2019 20:06:12 +0100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.1.0
+        id S2438879AbfIVS7c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 22 Sep 2019 14:59:32 -0400
+Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id BF771208C2;
+        Sun, 22 Sep 2019 18:59:30 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=default; t=1569178771;
+        bh=J3w6PSQJMXIgywixiduIInZgrhJkt1JWfKks4ipTZzk=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=riqFGmmWYcSQEDMc4L6aHt+L3bjCNNG1umsokhGVhP4wYWWEQTiNyerxTDxFZ6Gq2
+         tESidhtEKE8LS6drW9J2/pqQa0NHEblvmLVyCkViiMQtljbuABWNmlkg92/TYfsR4Z
+         wKsTI8GRPn4dD6uc+de+rfkz939vDW5m9ipYUboI=
+From:   Sasha Levin <sashal@kernel.org>
+To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc:     Qu Wenruo <wqu@suse.com>, Jungyeon Yoon <jungyeon.yoon@gmail.com>,
+        David Sterba <dsterba@suse.com>,
+        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 4.14 89/89] btrfs: extent-tree: Make sure we only allocate extents from block groups with the same type
+Date:   Sun, 22 Sep 2019 14:57:17 -0400
+Message-Id: <20190922185717.3412-89-sashal@kernel.org>
+X-Mailer: git-send-email 2.20.1
+In-Reply-To: <20190922185717.3412-1-sashal@kernel.org>
+References: <20190922185717.3412-1-sashal@kernel.org>
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtRAnJR+Z8Z8Bq91YXiMpfmwOiHK0tQ+9zAJvSVvexHnxg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-CMAE-Envelope: MS4wfE+n0NpXq5SmRQ5FV3LKbfstv90mTkBxPTu9jStfBQUy4yWtWwDkC21p8jyzTx5LEk2VyQEWtlYYBEIXlR2aq6LDB3MlS69z+y7mQmE4CP5uxQywjJq3
- 35vlAbphXiQ1gR7MV5i19u0QIt2LMfDugoSKJKWpASqogEMnpz3a7nTdudMh56TNrK4bd36mQezipfrUqHg2JJTT309BApUs6jc=
+X-stable: review
+X-Patchwork-Hint: Ignore
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 9/22/19 6:47 PM, Chris Murphy wrote:
+From: Qu Wenruo <wqu@suse.com>
 
->> Unfortunately I don't seem to have any more info in dmesg of the enospc
->> errors:
-> 
-> You need to mount with enospc_debug to get more information, it might
-> be useful for a developer. This -28 error is one that has mostly gone
-> away, I don't know if the cause was ever discovered, but my
-> recollection is once you're hitting it, you're better off creating a
-> new file system rather than chasing it.
-> 
-> But you could use 5.2.15 or newer, mount with enospc_debug, and do
-> filtered balance. You could start with 1% increments, e.g. -dusage=1,
-> -dusage=2, up to 5. And then do it in 5% increments up to 70. The idea
-> of that is just to try and avoid enospc while picking off the low
-> hanging fruit first (the block groups with the most free space). At
-> that point I would then start a full balance, no filter. Maybe that'll
-> get it back on track. I haven't ever experienced this so this strategy
-> is totally a spitball method of trying to fix it. There is some degree
-> of metadata rewrites that happens as part of balance, and balance is
-> pretty complicated, and not entirely deterministic - meaning it's
-> plausible the filtered balance followed by a full balance could fix
-> it. But I don't understand it well enough.
+[ Upstream commit 2a28468e525f3924efed7f29f2bc5a2926e7e19a ]
 
-OK, I'm building 5.2.17 now.  Keen to avoid the corruption errors I was
-hit by a few weeks back...  May take a time as I'm in the middle of a
-slow backup.
+[BUG]
+With fuzzed image and MIXED_GROUPS super flag, we can hit the following
+BUG_ON():
 
-I note that a filtered balance, though not hitting enospc and not
-reporting any errors did seemed to relocate a chunk/extent (sorry, I
-forget the terminology) but running it a second, third and so on time
-got the same result.  As if the balance reported doing some work, but
-did not actually do it.  I also had to reboot at one point as it seemed
-to get stuck in a loop but alas I can't repeat this.  With the extra
-logical volume added there is certainly no lack of space relative to the
-size of the filesystem.
+  kernel BUG at fs/btrfs/delayed-ref.c:491!
+  invalid opcode: 0000 [#1] PREEMPT SMP NOPTI
+  CPU: 0 PID: 1849 Comm: sync Tainted: G           O      5.2.0-custom #27
+  RIP: 0010:update_existing_head_ref.cold+0x44/0x46 [btrfs]
+  Call Trace:
+   add_delayed_ref_head+0x20c/0x2d0 [btrfs]
+   btrfs_add_delayed_tree_ref+0x1fc/0x490 [btrfs]
+   btrfs_free_tree_block+0x123/0x380 [btrfs]
+   __btrfs_cow_block+0x435/0x500 [btrfs]
+   btrfs_cow_block+0x110/0x240 [btrfs]
+   btrfs_search_slot+0x230/0xa00 [btrfs]
+   ? __lock_acquire+0x105e/0x1e20
+   btrfs_insert_empty_items+0x67/0xc0 [btrfs]
+   alloc_reserved_file_extent+0x9e/0x340 [btrfs]
+   __btrfs_run_delayed_refs+0x78e/0x1240 [btrfs]
+   ? kvm_clock_read+0x18/0x30
+   ? __sched_clock_gtod_offset+0x21/0x50
+   btrfs_run_delayed_refs.part.0+0x4e/0x180 [btrfs]
+   btrfs_run_delayed_refs+0x23/0x30 [btrfs]
+   btrfs_commit_transaction+0x53/0x9f0 [btrfs]
+   btrfs_sync_fs+0x7c/0x1c0 [btrfs]
+   ? __ia32_sys_fdatasync+0x20/0x20
+   sync_fs_one_sb+0x23/0x30
+   iterate_supers+0x95/0x100
+   ksys_sync+0x62/0xb0
+   __ia32_sys_sync+0xe/0x20
+   do_syscall_64+0x65/0x240
+   entry_SYSCALL_64_after_hwframe+0x49/0xbe
 
+[CAUSE]
+This situation is caused by several factors:
+- Fuzzed image
+  The extent tree of this fs missed one backref for extent tree root.
+  So we can allocated space from that slot.
 
+- MIXED_BG feature
+  Super block has MIXED_BG flag.
 
-> 
-> Also I'd remove any snapshots you don't really need, it'll make the
-> balance less complicated and faster.
-> 
-> 
+- No mixed block groups exists
+  All block groups are just regular ones.
 
-There are not too many, but it does not do much harm to take a look.
+This makes data space_info->block_groups[] contains metadata block
+groups.  And when we reserve space for data, we can use space in
+metadata block group.
+
+Then we hit the following file operations:
+
+- fallocate
+  We need to allocate data extents.
+  find_free_extent() choose to use the metadata block to allocate space
+  from, and choose the space of extent tree root, since its backref is
+  missing.
+
+  This generate one delayed ref head with is_data = 1.
+
+- extent tree update
+  We need to update extent tree at run_delayed_ref time.
+
+  This generate one delayed ref head with is_data = 0, for the same
+  bytenr of old extent tree root.
+
+Then we trigger the BUG_ON().
+
+[FIX]
+The quick fix here is to check block_group->flags before using it.
+
+The problem can only happen for MIXED_GROUPS fs. Regular filesystems
+won't have space_info with DATA|METADATA flag, and no way to hit the
+bug.
+
+Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=203255
+Reported-by: Jungyeon Yoon <jungyeon.yoon@gmail.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ fs/btrfs/extent-tree.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 49766721b2b14..10dee82455581 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -7706,6 +7706,14 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ 			 */
+ 			if ((flags & extra) && !(block_group->flags & extra))
+ 				goto loop;
++
++			/*
++			 * This block group has different flags than we want.
++			 * It's possible that we have MIXED_GROUP flag but no
++			 * block group is mixed.  Just skip such block group.
++			 */
++			btrfs_release_block_group(block_group, delalloc);
++			continue;
+ 		}
+ 
+ have_block_group:
+-- 
+2.20.1
 

@@ -2,134 +2,118 @@ Return-Path: <SRS0=uOdT=XR=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.1 required=3.0 tests=DKIMWL_WL_HIGH,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3C512C3A5A6
-	for <linux-btrfs@archiver.kernel.org>; Sun, 22 Sep 2019 19:30:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AD6DAC3A5A6
+	for <linux-btrfs@archiver.kernel.org>; Sun, 22 Sep 2019 22:28:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 100102054F
-	for <linux-btrfs@archiver.kernel.org>; Sun, 22 Sep 2019 19:30:39 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=default; t=1569180639;
-	bh=BfTwByiLBOEtLAiKrDFm0+a1C2cPRfgHJQH9uMU+AJg=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:List-ID:From;
-	b=NaynPcTiTr+ZJDiq5igMHUPgnXlK2OrT80cg2cZNDLpZ5CJxXym5ayhkoUph0swHe
-	 2QirFIDmm5YOOkYH0I6po8La5wt+ARoCh9Z14NcnMr7m1bMYvCz0IZ3K4Hk+whXf/k
-	 iSrfoNehK2VvfV73ZcxNoQ0Co1Gr+YFYbgejx1Jw=
+	by mail.kernel.org (Postfix) with ESMTP id 6B4FB20882
+	for <linux-btrfs@archiver.kernel.org>; Sun, 22 Sep 2019 22:28:31 +0000 (UTC)
+Authentication-Results: mail.kernel.org;
+	dkim=pass (2048-bit key) header.d=colorremedies-com.20150623.gappssmtp.com header.i=@colorremedies-com.20150623.gappssmtp.com header.b="K1NTi4sy"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2392183AbfIVTai (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 22 Sep 2019 15:30:38 -0400
-Received: from mail.kernel.org ([198.145.29.99]:46268 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S2392103AbfIVStO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 22 Sep 2019 14:49:14 -0400
-Received: from sasha-vm.mshome.net (c-73-47-72-35.hsd1.nh.comcast.net [73.47.72.35])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 594FF208C2;
-        Sun, 22 Sep 2019 18:49:12 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1569178153;
-        bh=BfTwByiLBOEtLAiKrDFm0+a1C2cPRfgHJQH9uMU+AJg=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=CqDreZYtQnCS3hIesWW+cCH4z+LduxQLbiFAuninchOD8BNydttvpvM49nk/1j3Pn
-         Bjn+OZu1DkvM8xmZuFQBOwxvU42L2ww3HoFSm326SyzOZCKvskv8bYS8lkcFB6Mx9r
-         XTDMOU8gg06k9tFPOxaoxK6hPXLBLtUxbfzA9F34=
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Qu Wenruo <wqu@suse.com>, David Sterba <dsterba@suse.com>,
-        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.3 199/203] btrfs: delayed-inode: Kill the BUG_ON() in btrfs_delete_delayed_dir_index()
-Date:   Sun, 22 Sep 2019 14:43:45 -0400
-Message-Id: <20190922184350.30563-199-sashal@kernel.org>
-X-Mailer: git-send-email 2.20.1
-In-Reply-To: <20190922184350.30563-1-sashal@kernel.org>
-References: <20190922184350.30563-1-sashal@kernel.org>
+        id S2388575AbfIVW2a (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 22 Sep 2019 18:28:30 -0400
+Received: from mail-wr1-f68.google.com ([209.85.221.68]:39863 "EHLO
+        mail-wr1-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726382AbfIVW2a (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 22 Sep 2019 18:28:30 -0400
+Received: by mail-wr1-f68.google.com with SMTP id r3so11858464wrj.6
+        for <linux-btrfs@vger.kernel.org>; Sun, 22 Sep 2019 15:28:28 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=v11f5kmg9anhuADvlPIu6z9Uc/2mgo7q8AdgKbjwKrI=;
+        b=K1NTi4sy8/1sG+0l04FtiVOE7PeFCLkYn43JJGbJJ1GjyOC99Gkmg9YXqPDD+94uRA
+         v8pKfX94Zf9v9Vx2WTSYF/fu0IQETHg+px6adWMcqT7Z4itCovY+0SEcR8LHV6upTgE0
+         EJXxYdcNoxrndJiUE6X/fMAu6owzBXDERegeYvjSFsEsuj7iDlgFW85tE/rVkgb301yI
+         exM+wvhHVrqgVhiI1waMkerlzi/bH77Cycnyud1n8T/2JQOQJVIF8GuEDaGEh3ta0mwy
+         rWwqaVpU3/nfBffJkL/FNDwL/oVySordbrwxgb1c/uaq5Y9mdYjIL86HxAH3LIzCK33P
+         pJSw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=v11f5kmg9anhuADvlPIu6z9Uc/2mgo7q8AdgKbjwKrI=;
+        b=eUqEBN22kraLB5aFBb9HOjit71gV5GlXel/iL3x4C7Vdz8O0ugDrzmFPKfh4Srx5MS
+         EHSrBy2Qe2UYXwkIHnALYb4I4fCAK16SE7V+UX7N6Bhoj8NQsIrEUqK1xI7k58b3Ov0u
+         pShKKRKqJQFHBvYnXjFU6/rRpgTd5KkbBYLv8huANKcTbNopqfqR069s/zuidxizoaJT
+         pSlXYWkr8vXQ8gWg8Kiq0bPV5mQn4ODjy8IlWyWdYLIE9VL9sMC2O0pJhkjKeTbcQk2X
+         ZCcKrPhDAIyDbMDwaWvTAk3k3MnonyYbyp6NN7AEjE5k//fEGbgzliTBnwXWyqpbhEAw
+         QPng==
+X-Gm-Message-State: APjAAAXwFkRxavJ761te66QySxcDySd5QkImTlheQb/8L9Bs9RUcoj0h
+        hlCAUL3e4+vqO9G2sqbdlqci6a8lyvB6gSskssK7/sboCcHqrg==
+X-Google-Smtp-Source: APXvYqxxtMaWcuHMz/mN7qofZ8xU3Y+zfhXrv6f+Fg06ttxZdspZdNVdu7A75JRdeL1WC0Ivw26F5/bBc3aaNpjZxH0=
+X-Received: by 2002:a5d:43d0:: with SMTP id v16mr6802523wrr.390.1569187512557;
+ Sun, 22 Sep 2019 14:25:12 -0700 (PDT)
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
-Content-Transfer-Encoding: 8bit
+References: <94ebf95b-c8c2-e2d5-8db6-77a74c19644a@petezilla.co.uk>
+ <CAJCQCtRAnJR+Z8Z8Bq91YXiMpfmwOiHK0tQ+9zAJvSVvexHnxg@mail.gmail.com> <54fa8ba3-0d02-7153-ce47-80f10732ef14@petezilla.co.uk>
+In-Reply-To: <54fa8ba3-0d02-7153-ce47-80f10732ef14@petezilla.co.uk>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Sun, 22 Sep 2019 15:25:01 -0600
+Message-ID: <CAJCQCtQLk1m8yAxPPDLVZBr3MehdDD3EpNZ6O_OCRsO-FFzRNw@mail.gmail.com>
+Subject: Re: Balance ENOSPC during balance despite additional storage added
+To:     Pete <pete@petezilla.co.uk>
+Cc:     Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Qu Wenruo <wqu@suse.com>
+On Sun, Sep 22, 2019 at 1:07 PM Pete <pete@petezilla.co.uk> wrote:
+>
+> On 9/22/19 6:47 PM, Chris Murphy wrote:
+>
+> >> Unfortunately I don't seem to have any more info in dmesg of the enospc
+> >> errors:
+> >
+> > You need to mount with enospc_debug to get more information, it might
+> > be useful for a developer. This -28 error is one that has mostly gone
+> > away, I don't know if the cause was ever discovered, but my
+> > recollection is once you're hitting it, you're better off creating a
+> > new file system rather than chasing it.
+> >
+> > But you could use 5.2.15 or newer, mount with enospc_debug, and do
+> > filtered balance. You could start with 1% increments, e.g. -dusage=1,
+> > -dusage=2, up to 5. And then do it in 5% increments up to 70. The idea
+> > of that is just to try and avoid enospc while picking off the low
+> > hanging fruit first (the block groups with the most free space). At
+> > that point I would then start a full balance, no filter. Maybe that'll
+> > get it back on track. I haven't ever experienced this so this strategy
+> > is totally a spitball method of trying to fix it. There is some degree
+> > of metadata rewrites that happens as part of balance, and balance is
+> > pretty complicated, and not entirely deterministic - meaning it's
+> > plausible the filtered balance followed by a full balance could fix
+> > it. But I don't understand it well enough.
+>
+> OK, I'm building 5.2.17 now.  Keen to avoid the corruption errors I was
+> hit by a few weeks back...  May take a time as I'm in the middle of a
+> slow backup.
 
-[ Upstream commit 933c22a7512c5c09b1fdc46b557384efe8d03233 ]
+Did you see corruption on this same file system? The 5.2 corruption
+bug has been fixed in 5.2.15.
+https://www.spinics.net/lists/stable-commits/msg129532.html
 
-There is one report of fuzzed image which leads to BUG_ON() in
-btrfs_delete_delayed_dir_index().
+I'm not aware of a way to fix it though.
 
-Although that fuzzed image can already be addressed by enhanced
-extent-tree error handler, it's still better to hunt down more BUG_ON().
 
-This patch will hunt down two BUG_ON()s in
-btrfs_delete_delayed_dir_index():
-- One for error from btrfs_delayed_item_reserve_metadata()
-  Instead of BUG_ON(), we output an error message and free the item.
-  And return the error.
-  All callers of this function handles the error by aborting current
-  trasaction.
+> I note that a filtered balance, though not hitting enospc and not
+> reporting any errors did seemed to relocate a chunk/extent (sorry, I
+> forget the terminology) but running it a second, third and so on time
+> got the same result.  As if the balance reported doing some work, but
+> did not actually do it.  I also had to reboot at one point as it seemed
+> to get stuck in a loop but alas I can't repeat this.  With the extra
+> logical volume added there is certainly no lack of space relative to the
+> size of the filesystem.
 
-- One for possible EEXIST from __btrfs_add_delayed_deletion_item()
-  That function can return -EEXIST.
-  We already have a good enough error message for that, only need to
-  clean up the reserved metadata space and allocated item.
+For sure you're running into some kind of bug.
 
-To help above cleanup, also modifiy __btrfs_remove_delayed_item() called
-in btrfs_release_delayed_item(), to skip unassociated item.
-
-Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=203253
-Signed-off-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/delayed-inode.c | 13 +++++++++++--
- 1 file changed, 11 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 43fdb2992956a..6858a05606dd3 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -474,6 +474,9 @@ static void __btrfs_remove_delayed_item(struct btrfs_delayed_item *delayed_item)
- 	struct rb_root_cached *root;
- 	struct btrfs_delayed_root *delayed_root;
- 
-+	/* Not associated with any delayed_node */
-+	if (!delayed_item->delayed_node)
-+		return;
- 	delayed_root = delayed_item->delayed_node->root->fs_info->delayed_root;
- 
- 	BUG_ON(!delayed_root);
-@@ -1525,7 +1528,12 @@ int btrfs_delete_delayed_dir_index(struct btrfs_trans_handle *trans,
- 	 * we have reserved enough space when we start a new transaction,
- 	 * so reserving metadata failure is impossible.
- 	 */
--	BUG_ON(ret);
-+	if (ret < 0) {
-+		btrfs_err(trans->fs_info,
-+"metadata reservation failed for delayed dir item deltiona, should have been reserved");
-+		btrfs_release_delayed_item(item);
-+		goto end;
-+	}
- 
- 	mutex_lock(&node->mutex);
- 	ret = __btrfs_add_delayed_deletion_item(node, item);
-@@ -1534,7 +1542,8 @@ int btrfs_delete_delayed_dir_index(struct btrfs_trans_handle *trans,
- 			  "err add delayed dir index item(index: %llu) into the deletion tree of the delayed node(root id: %llu, inode id: %llu, errno: %d)",
- 			  index, node->root->root_key.objectid,
- 			  node->inode_id, ret);
--		BUG();
-+		btrfs_delayed_item_release_metadata(dir->root, item);
-+		btrfs_release_delayed_item(item);
- 	}
- 	mutex_unlock(&node->mutex);
- end:
--- 
-2.20.1
-
+--
+Chris Murphy

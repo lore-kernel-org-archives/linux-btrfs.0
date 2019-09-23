@@ -2,132 +2,79 @@ Return-Path: <SRS0=yEAK=XS=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5B596C4CECF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 23 Sep 2019 16:36:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E3723C4CEC4
+	for <linux-btrfs@archiver.kernel.org>; Mon, 23 Sep 2019 17:00:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 3C72C20B7C
-	for <linux-btrfs@archiver.kernel.org>; Mon, 23 Sep 2019 16:36:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B078C20882
+	for <linux-btrfs@archiver.kernel.org>; Mon, 23 Sep 2019 17:00:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2388472AbfIWQgi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 23 Sep 2019 12:36:38 -0400
-Received: from mx2.suse.de ([195.135.220.15]:57188 "EHLO mx1.suse.de"
+        id S2502138AbfIWRAn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 23 Sep 2019 13:00:43 -0400
+Received: from mx2.suse.de ([195.135.220.15]:38064 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1732791AbfIWQgi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 23 Sep 2019 12:36:38 -0400
+        id S2388187AbfIWRAm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 23 Sep 2019 13:00:42 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 95C04AF41;
-        Mon, 23 Sep 2019 16:36:35 +0000 (UTC)
-Subject: Re: [PATCH v2 2/2] mm, sl[aou]b: guarantee natural alignment for
- kmalloc(power-of-two)
-To:     Andrew Morton <akpm@linux-foundation.org>, linux-mm@kvack.org
-Cc:     linux-kernel@vger.kernel.org, Christoph Lameter <cl@linux.com>,
-        Pekka Enberg <penberg@kernel.org>,
-        David Rientjes <rientjes@google.com>,
-        Ming Lei <ming.lei@redhat.com>,
-        Dave Chinner <david@fromorbit.com>,
-        Matthew Wilcox <willy@infradead.org>,
-        "Darrick J . Wong" <darrick.wong@oracle.com>,
-        Christoph Hellwig <hch@lst.de>, linux-xfs@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, linux-block@vger.kernel.org,
-        James Bottomley <James.Bottomley@HansenPartnership.com>,
-        linux-btrfs@vger.kernel.org, Roman Gushchin <guro@fb.com>,
-        Johannes Weiner <hannes@cmpxchg.org>
-References: <20190826111627.7505-1-vbabka@suse.cz>
- <20190826111627.7505-3-vbabka@suse.cz>
-From:   Vlastimil Babka <vbabka@suse.cz>
-Message-ID: <df8d1cf4-ff8f-1ee1-12fb-cfec39131b32@suse.cz>
-Date:   Mon, 23 Sep 2019 18:36:32 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Thunderbird/60.8.0
+        by mx1.suse.de (Postfix) with ESMTP id 07D75B0DA;
+        Mon, 23 Sep 2019 17:00:41 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id F00BCDA871; Mon, 23 Sep 2019 19:01:01 +0200 (CEST)
+Date:   Mon, 23 Sep 2019 19:01:01 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH 0/9][V3] btrfs: break up extent_io.c a little bit
+Message-ID: <20190923170101.GM2751@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs@vger.kernel.org, kernel-team@fb.com
+References: <20190923140525.14246-1-josef@toxicpanda.com>
 MIME-Version: 1.0
-In-Reply-To: <20190826111627.7505-3-vbabka@suse.cz>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190923140525.14246-1-josef@toxicpanda.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 8/26/19 1:16 PM, Vlastimil Babka wrote:
-> In most configurations, kmalloc() happens to return naturally aligned (i.e.
-> aligned to the block size itself) blocks for power of two sizes. That means
-> some kmalloc() users might unknowingly rely on that alignment, until stuff
-> breaks when the kernel is built with e.g.  CONFIG_SLUB_DEBUG or CONFIG_SLOB,
-> and blocks stop being aligned. Then developers have to devise workaround such
-> as own kmem caches with specified alignment [1], which is not always practical,
-> as recently evidenced in [2].
+On Mon, Sep 23, 2019 at 10:05:16AM -0400, Josef Bacik wrote:
+> v1->v2:
+> - renamed find_delalloc_range to btrfs_find_delalloc_range for now.
 > 
-> The topic has been discussed at LSF/MM 2019 [3]. Adding a 'kmalloc_aligned()'
-> variant would not help with code unknowingly relying on the implicit alignment.
-> For slab implementations it would either require creating more kmalloc caches,
-> or allocate a larger size and only give back part of it. That would be
-> wasteful, especially with a generic alignment parameter (in contrast with a
-> fixed alignment to size).
+> -- Original email --
 > 
-> Ideally we should provide to mm users what they need without difficult
-> workarounds or own reimplementations, so let's make the kmalloc() alignment to
-> size explicitly guaranteed for power-of-two sizes under all configurations.
-> What this means for the three available allocators?
+> Currently extent_io.c includes all of the extent-io-tree code, the extent buffer
+> code, the code to do IO on extent buffers and data extents, as well as a bunch
+> of other random stuff.  The random stuff just needs to be cleaned up, and is
+> probably too invasive for this point in the development cycle.  Instead I simply
+> tackled moving the big obvious things out into their own files.  I will follow
+> up with cleanups for the rest of the stuff, but those can probably wait until
+> the next cycle as they are going to be slightly more risky.  As usual I didn't
+> try to change anything, I simply moved code around.  Any time I needed to make
+> actual changes to functions I made a separate patch for that work, so for
+> example breaking up the init/exit functions for extent-io-tree.  Everything else
+> is purely cut and paste into new files.  The diffstat is as follows
 > 
-> * SLAB object layout happens to be mostly unchanged by the patch. The
->   implicitly provided alignment could be compromised with CONFIG_DEBUG_SLAB due
->   to redzoning, however SLAB disables redzoning for caches with alignment
->   larger than unsigned long long. Practically on at least x86 this includes
->   kmalloc caches as they use cache line alignment, which is larger than that.
->   Still, this patch ensures alignment on all arches and cache sizes.
-> 
-> * SLUB layout is also unchanged unless redzoning is enabled through
->   CONFIG_SLUB_DEBUG and boot parameter for the particular kmalloc cache. With
->   this patch, explicit alignment is guaranteed with redzoning as well. This
->   will result in more memory being wasted, but that should be acceptable in a
->   debugging scenario.
-> 
-> * SLOB has no implicit alignment so this patch adds it explicitly for
->   kmalloc(). The potential downside is increased fragmentation. While
->   pathological allocation scenarios are certainly possible, in my testing,
->   after booting a x86_64 kernel+userspace with virtme, around 16MB memory
->   was consumed by slab pages both before and after the patch, with difference
->   in the noise.
-> 
-> [1] https://lore.kernel.org/linux-btrfs/c3157c8e8e0e7588312b40c853f65c02fe6c957a.1566399731.git.christophe.leroy@c-s.fr/
-> [2] https://lore.kernel.org/linux-fsdevel/20190225040904.5557-1-ming.lei@redhat.com/
-> [3] https://lwn.net/Articles/787740/
-> 
-> Signed-off-by: Vlastimil Babka <vbabka@suse.cz>
+>  fs/btrfs/Makefile         |    3 +-
+>  fs/btrfs/ctree.h          |    3 +-
+>  fs/btrfs/disk-io.h        |    2 +
+>  fs/btrfs/extent-buffer.c  | 1266 ++++++++
+>  fs/btrfs/extent-buffer.h  |  152 +
+>  fs/btrfs/extent-io-tree.c | 1955 ++++++++++++
+>  fs/btrfs/extent-io-tree.h |  248 ++
+>  fs/btrfs/extent_io.c      | 7555 +++++++++++++--------------------------------
+>  fs/btrfs/extent_io.h      |  372 +--
+>  fs/btrfs/super.c          |   16 +-
+>  10 files changed, 5843 insertions(+), 5729 deletions(-)
 
-So if anyone thinks this is a good idea, please express it (preferably
-in a formal way such as Acked-by), otherwise it seems the patch will be
-dropped (due to a private NACK, apparently).
-
-Otherwise I don't think there can be an objective conclusion. On the one
-hand we avoid further problems and workarounds due to misalignment (or
-objects allocated beyond page boundary, which was only recently
-mentioned), on the other hand we potentially make future changes to
-SLAB/SLUB or hypotetical new implementation either more complicated, or
-less effective due to extra fragmentation. Different people can have
-different opinions on what's more important.
-
-Let me however explain why I think we don't have to fear the future
-implementation complications that much. There was an argument IIRC that
-extra non-debug metadata could start to be prepended/appended to an
-object in the future (i.e. RCU freeing head?).
-
-1) Caches can be already created with explicit alignment, so a naive
-pre/appending implementation would already waste memory on such caches.
-2) Even without explicit alignment, a single slab cache for 512k objects
-with few bytes added to each object would waste almost 512k as the
-objects wouldn't fit precisely in an (order-X) page. The percentage
-wasted depends on X.
-3) Roman recently posted a patchset [1] that basically adds a cgroup
-pointer to each object. The implementation doesn't append it to objects
-naively however, but adds a separately allocated array. Alignment is
-thus unchanged.
-
-[1] https://lore.kernel.org/linux-mm/20190905214553.1643060-1-guro@fb.com/
-
+I got some strange merge conflicts, it turns out patch 6/9 did not make
+it to the mailinglist (nor patchwork where I could pick it eventually).
+For that it's useful to have the list of commits too along with the
+diffstat, ie. what format-patch generates.

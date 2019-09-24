@@ -2,169 +2,81 @@ Return-Path: <SRS0=VYXz=XT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-0.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 60770C432C1
-	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Sep 2019 14:23:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 84DF7C432C1
+	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Sep 2019 14:25:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2A541214DA
-	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Sep 2019 14:23:20 +0000 (UTC)
-Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="soxWLw5p"
+	by mail.kernel.org (Postfix) with ESMTP id 55AD921655
+	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Sep 2019 14:25:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2394215AbfIXOXT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 24 Sep 2019 10:23:19 -0400
-Received: from mail-vk1-f194.google.com ([209.85.221.194]:33715 "EHLO
-        mail-vk1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2389459AbfIXOXS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Sep 2019 10:23:18 -0400
-Received: by mail-vk1-f194.google.com with SMTP id q186so441334vkb.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Sep 2019 07:23:18 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
-         :subject:to:cc:content-transfer-encoding;
-        bh=B1yqv7XmdxdzOQN6EKETSu5O6DxQlDV6R/ZHZ1cKepI=;
-        b=soxWLw5pSm/ysmCR8kZT51HpFSvhnRT5RLKV9EPzXxZxuyaMoXY9NAZEb5fALjwqER
-         jHjy6vk+BH6iJSsnpe+sXsXbg4nI8FBLH4J0SYOWvaJJAEmw2Bnk3uZ5hRx49QZMl4HF
-         yHbE8g6OL2eIG/ipXwyLdWozs5GiAnNWmwWS8ZvjwpeFBk94tbvcXG1QNdgHaXTWLBIf
-         kwgJYjq47srMX+BwJDcXXV0dNmWHcNzek/4uZ2oNBWnhaV8AYa1yKXzKzxOEjdnZj+xl
-         cHc8R3bBsl98cnzAfIr84Dtqey1RHVJGBztRuz+7z3izlJaAFqgzDGi+tRJzlC78MQNe
-         rkEA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
-         :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=B1yqv7XmdxdzOQN6EKETSu5O6DxQlDV6R/ZHZ1cKepI=;
-        b=akWhS7PqLmA8AsfFYg0c3vN8bHAcUhgNz4VJldxvzTnS//PUokl+cf89p1t7qSeID7
-         7e+QWT09MMUACPPJn4MaoEoRZCug/tTFiTSX3DZBPCCZ41mhphFyDGj5ALaMbhQbIt3g
-         7HFf8URR5ov2UJTncILyCMQfua+Ron/ppRgwJ1nRNNqcBFdkbHYqu7+/7b2PgcobfeWa
-         AnhKsngdrzMyi8Lcwb4pb0rimFsvSab7IGxKEWYqAOVbWYePYkRAVpwa3Zw0LLpT2PRz
-         sJKOqjJno2I/STgCX7y2w/KfXOkdh1XoQorJ3VYjcidUqvP8u2CqBCyjFCPGaSFvraSw
-         yCaw==
-X-Gm-Message-State: APjAAAVauTtokg9fFap9FRTZy66QRxMyAnF+K1016+VVH3NB0bWkz9Ub
-        wggbxGCFZ2QoButJbGpZlz6nTewJKoycouTDsLQ=
-X-Google-Smtp-Source: APXvYqxbAfDYaoTw/ilccX9pjX4kwbsrJf3QH+yfqi6dzE5fS0jQtOVhXfqSD5OuyJ+JB7kyWgXd8QrIJ1xaDOCOH1I=
-X-Received: by 2002:a1f:c2c3:: with SMTP id s186mr1609259vkf.88.1569334997695;
- Tue, 24 Sep 2019 07:23:17 -0700 (PDT)
+        id S2441306AbfIXOZs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 24 Sep 2019 10:25:48 -0400
+Received: from mx2.suse.de ([195.135.220.15]:38286 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S2389030AbfIXOZs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 24 Sep 2019 10:25:48 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id ADB29AD35;
+        Tue, 24 Sep 2019 14:25:46 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 81A67DA835; Tue, 24 Sep 2019 16:26:07 +0200 (CEST)
+Date:   Tue, 24 Sep 2019 16:26:07 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Johannes Thumshirn <jthumshirn@suse.de>
+Cc:     David Sterba <dsterba@suse.com>,
+        Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v4 12/12] btrfs-progs: add test-case for mkfs with
+ xxhash64
+Message-ID: <20190924142607.GS2751@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Johannes Thumshirn <jthumshirn@suse.de>,
+        David Sterba <dsterba@suse.com>,
+        Linux BTRFS Mailinglist <linux-btrfs@vger.kernel.org>
+References: <20190903150046.14926-1-jthumshirn@suse.de>
+ <20190903150046.14926-13-jthumshirn@suse.de>
 MIME-Version: 1.0
-References: <CA+X5Wn7Rtw4rTqXTG8wrEc883uFV7JpGo-zD8FhhD9gM+_Vpfg@mail.gmail.com>
- <CAL3q7H41BpuVTHOAMOFcVvVsJuc4iR10KKPDVfgEsG=ZEpwmWw@mail.gmail.com>
- <CAL3q7H4wDdzfA+H0HPk7oKNO3PDiN1nYHpRu5v6rRXvxQFVLbQ@mail.gmail.com>
- <CA+X5Wn4ZmwnJry0zjyAYow-jEU7PSdE16ROSqfaKyGavLoGVQQ@mail.gmail.com>
- <20190924132118.egtvk6mxmh37wl3h@macbook-pro-91.dhcp.thefacebook.com>
- <CAL3q7H4ZUdhZEyUsVFOmzF=L7890MxHndrXwJ=KPR1vwdNQPWQ@mail.gmail.com> <20190924141935.2qsfljijmv76door@macbook-pro-91.dhcp.thefacebook.com>
-In-Reply-To: <20190924141935.2qsfljijmv76door@macbook-pro-91.dhcp.thefacebook.com>
-Reply-To: fdmanana@gmail.com
-From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Tue, 24 Sep 2019 15:23:06 +0100
-Message-ID: <CAL3q7H7GHui8hdMO_grffhsoVo8mbDFK=mvbf8usHrFqxxNgcA@mail.gmail.com>
-Subject: Re: WITH regression patch, still btrfs-transacti blocked for... (forever)
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     James Harvey <jamespharvey20@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20190903150046.14926-13-jthumshirn@suse.de>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Sep 24, 2019 at 3:19 PM Josef Bacik <josef@toxicpanda.com> wrote:
->
-> On Tue, Sep 24, 2019 at 03:16:56PM +0100, Filipe Manana wrote:
-> > On Tue, Sep 24, 2019 at 2:21 PM Josef Bacik <josef@toxicpanda.com> wrot=
-e:
-> > >
-> > > On Tue, Sep 24, 2019 at 07:07:41AM -0400, James Harvey wrote:
-> > > > On Tue, Sep 24, 2019 at 5:58 AM Filipe Manana <fdmanana@gmail.com> =
-wrote:
-> > > > >
-> > > > > On Sun, Sep 15, 2019 at 2:55 PM Filipe Manana <fdmanana@gmail.com=
-> wrote:
-> > > > > >
-> > > > > > On Sun, Sep 15, 2019 at 1:46 PM James Harvey <jamespharvey20@gm=
-ail.com> wrote:
-> > > > > > > ...
-> > > > > > > You'll see they're different looking backtraces than without =
-the
-> > > > > > > patch, so I don't actually know if it's related to the origin=
-al
-> > > > > > > regression that several others reported or not.
-> > > > > >
-> > > > > > It's a different problem.
-> > > > >
-> > > > > So the good news is that on upcoming 5.4 the problem can't happen=
-, due
-> > > > > to a large patch series from Josef regarding space reservation
-> > > > > handling which, as a side effect, solves that problem and doesn't
-> > > > > introduce new ones with concurrent fsyncs.
-> > > > >
-> > > > > However that's a large patch set which depends on a lot of previo=
-us
-> > > > > cleanups, some of which landed in the 5.3 merge window,
-> > > > > Backporting all those patches is against the backport policies fo=
-r
-> > > > > stable release [1], since many of the dependencies are cleanup pa=
-tches
-> > > > > and many are large (well over the 100 lines limit).
-> > > > >
-> > > > > On the other it's not possible to send a fix for stable releases =
-that
-> > > > > doesn't land on Linus' tree first, as there's nothing to fix on t=
-he
-> > > > > current merge window (5.4) since that deadlock can't happen there=
-.
-> > > > >
-> > > > > So it seems like a dead end to me.
-> > > > >
-> > > > > Fortunately, as you told me privately, you only hit this once and=
- it's
-> > > > > not a frequent issue for you (unlike the 5.2 regression which
-> > > > > caused you the hang very often). You can workaround it by mountin=
-g the
-> > > > > fs with "-o notreelog", which makes fsyncs more expensive,
-> > > > > so you'll likely see some performance degradation for your
-> > > > > applications (higher latency, less throughput).
-> > > > >
-> > > > > [1] https://www.kernel.org/doc/html/v4.15/process/stable-kernel-r=
-ules.html
-> > > >
-> > > >
-> > > > All understood, thanks for letting me know.  Not a problem.  I have
-> > > > still only ran into this crash once, about 9 days ago.  I haven't h=
-ad
-> > > > another btrfs problem since then, unlike the hourly hangs on 5.2 wi=
-th
-> > > > heavy I/O.
-> > >
-> > > We are seeing this crash internally on our testing tier, we're still =
-running it
-> > > down but it's pretty elusive.  I'll CC you when we find it and fix it=
-.  Thanks,
-> >
-> > Which crash?
-> > There are 2 different deadlocks being mentioned in this thread.
-> >
->
-> The BUG_ON(!PageLocked(page)) crash, we're hunting that guy right now.  T=
-hanks,
+On Tue, Sep 03, 2019 at 05:00:46PM +0200, Johannes Thumshirn wrote:
+> Add test-cases for creating a file-system xxhash64 as checksumming
+> algorithm.
+> 
+> Signed-off-by: Johannes Thumshirn <jthumshirn@suse.de>
+> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  tests/mkfs-tests/001-basic-profiles/test.sh | 2 ++
+>  1 file changed, 2 insertions(+)
+> 
+> diff --git a/tests/mkfs-tests/001-basic-profiles/test.sh b/tests/mkfs-tests/001-basic-profiles/test.sh
+> index 6e295274119d..3fa3c8ad42d1 100755
+> --- a/tests/mkfs-tests/001-basic-profiles/test.sh
+> +++ b/tests/mkfs-tests/001-basic-profiles/test.sh
+> @@ -46,6 +46,8 @@ test_mkfs_single  -d  single  -m  dup
+>  test_mkfs_single  -d  dup     -m  single
+>  test_mkfs_single  -d  dup     -m  dup
+>  test_mkfs_single  -d  dup     -m  dup     --mixed
+> +test_mkfs_single  -C xxhash64
+> +test_mkfs_single  -C xxhash
 
-I'm confused.
-Where is that BUG_ON() mentioned in this thread? Only 2 deadlocks are
-mentioned, neither of them involves page locks nor a BUG_ON().
+We'll want to do full test coverage with any of the checksum selected
+externally, ie. ina similar way how the 'btrfs check --mode=lowmem' is
+done
 
->
-> Josef
+$ make TEST_ENABLE_OVERRIDE=true TEST_ARGS_CHECK=--mode=lowmem test-check
 
+The support code in the testing sicripts is not there but can be copied
+and adapted for mkfs.
 
-
---=20
-Filipe David Manana,
-
-=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
- right.=E2=80=9D
+A separate test that quickly enumerates over the supported mkfs hashes
+would still make sense.

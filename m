@@ -2,163 +2,85 @@ Return-Path: <SRS0=VYXz=XT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+X-Spam-Status: No, score=-2.0 required=3.0 tests=DKIM_INVALID,DKIM_SIGNED,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 549B3C4320D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Sep 2019 20:38:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D3721C432C1
+	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Sep 2019 20:50:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 2713B2146E
-	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Sep 2019 20:38:32 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A28F721655
+	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Sep 2019 20:50:20 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=osandov-com.20150623.gappssmtp.com header.i=@osandov-com.20150623.gappssmtp.com header.b="Gd5fC4ze"
+	dkim=fail reason="signature verification failed" (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="CUAX4pwb"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727071AbfIXUib (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 24 Sep 2019 16:38:31 -0400
-Received: from mail-pf1-f194.google.com ([209.85.210.194]:37280 "EHLO
-        mail-pf1-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2441976AbfIXUia (ORCPT
+        id S1731242AbfIXUuU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 24 Sep 2019 16:50:20 -0400
+Received: from bombadil.infradead.org ([198.137.202.133]:43600 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726528AbfIXUuT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Sep 2019 16:38:30 -0400
-Received: by mail-pf1-f194.google.com with SMTP id y5so2036353pfo.4
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Sep 2019 13:38:30 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=osandov-com.20150623.gappssmtp.com; s=20150623;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to:user-agent;
-        bh=XXpB+n/Qq9mbpz8JXknmFvdDRIH2ZnerYAdSnNglnD8=;
-        b=Gd5fC4ze5JKmHWdFj3mKAMzd1akYwuSIF1UCnUdjRSganaQLFo1YVQf71WGQojfnTS
-         FCtix9g9Xcit4JYPaddfFeeTSBEeZqAx4ZMNthWgfDjM6bi9TclET/34PwAV95PtuSV6
-         0OAHi/xAMztLd/HSi5RhwrwwbmBfbpLrMD4XLhRIHrA6lZypfdw2wrp7Q8eOmoXDC+ME
-         il9DsTt5y3gu8lqarWuxrtEv4fAcPkqCP5IkAcbhio/mzUAkcnhLSAdwYooW4IMvpwuE
-         unu16lT0Mgm/hqEVNXhtvLT2H4SEMK/JZBpZRu5fzwlyXffojnts7md67sPN7UgdIe5v
-         wrSw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to:user-agent;
-        bh=XXpB+n/Qq9mbpz8JXknmFvdDRIH2ZnerYAdSnNglnD8=;
-        b=b5d0J+3tTwFBVCAVEgA6z0SzNreKjraeN71q2mlsGoHPJU272ob9mMnG3GDorX5RjP
-         s2jm8aSumb0a3fH9fCImBkfZ6HvsRMJ39a8gZwTI0aj7R9WyIdyD4T1WCz7mBxoud9hN
-         Iwuibf/fTbZf1LybaK9SZ9+ceV0ZQKWbOyldwHN6JcHSWDjNtvNEJ0XKKNdiFiZBzPPX
-         2nhVfq43fkXaZBCoWkBQDam1Omn4NeVVhM416aAh9JlXtgCS+ZNBRDCfmwEQBKavS8Xq
-         QjU4ZAjk1FVnoZyryPgFtBdJJmnkfovj5mLiDU5NrEmXaVYbKDvsAMZoBM2YdOnBzZ1O
-         xRVg==
-X-Gm-Message-State: APjAAAWAVsoIH42K/ihKloXYMhgK7xu/yuaVcSA19dOy7lQ/CJIyz/WL
-        u/m5Lo4fborxS0Z4IUeZuB5Yrg==
-X-Google-Smtp-Source: APXvYqzCH5xnEzpQvW+6HYgcR0Hnm409iWIA7nsnBfvYyPFk3aNTXpcTCq9Nh30S0XuXtOFujIrV1w==
-X-Received: by 2002:a65:530c:: with SMTP id m12mr4977050pgq.309.1569357509244;
-        Tue, 24 Sep 2019 13:38:29 -0700 (PDT)
-Received: from vader ([2620:10d:c090:200::3:f972])
-        by smtp.gmail.com with ESMTPSA id 22sm3106844pfj.139.2019.09.24.13.38.28
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 24 Sep 2019 13:38:28 -0700 (PDT)
-Date:   Tue, 24 Sep 2019 13:38:27 -0700
-From:   Omar Sandoval <osandov@osandov.com>
-To:     Jann Horn <jannh@google.com>
-Cc:     Aleksa Sarai <cyphar@cyphar.com>, Jens Axboe <axboe@kernel.dk>,
+        Tue, 24 Sep 2019 16:50:19 -0400
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20170209; h=In-Reply-To:Content-Type:MIME-Version
+        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:
+        Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
+        List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+         bh=X29R68SVs2Hrds/uDkRhp/eVeg0K6JGMVMqK20FNRBk=; b=CUAX4pwbIslfhY1Yo7H56lNcB
+        QCXJXDIlbrnqwbvuFrId1DVv2Skcyw/a9mtDm/+g30U20oFy3jYxxsHdzaIwnh6CnBTg+i4WbSzVO
+        7ZWuMSow2ebag3FLN+ur+ZrG+gWR3VxcfEDQT44iIeZjRaAaf/UCebVRpB5WiCuYGQc1LhacPm9Ty
+        M8Y2aZ83ow0/9DQ/xu3XmkQke5CA6Ax5q5JBRhkWGpL10bbGU77svsPMlU+tBNUZCnxJJK2gouHnR
+        TH9/mxsEn7o/R3jazT75USUpEHZxk1UkvTZL1KjzW4VZ9WqjnLmQ7jwFInVhAtzPET3Vb9SsnMuvi
+        HHl0ZfUww==;
+Received: from willy by bombadil.infradead.org with local (Exim 4.92.2 #3 (Red Hat Linux))
+        id 1iCrlG-0005S3-7Z; Tue, 24 Sep 2019 20:50:14 +0000
+Date:   Tue, 24 Sep 2019 13:50:14 -0700
+From:   Matthew Wilcox <willy@infradead.org>
+To:     Christian Brauner <christian.brauner@ubuntu.com>
+Cc:     Jann Horn <jannh@google.com>, Omar Sandoval <osandov@osandov.com>,
+        Aleksa Sarai <cyphar@cyphar.com>, Jens Axboe <axboe@kernel.dk>,
         linux-fsdevel <linux-fsdevel@vger.kernel.org>,
         linux-btrfs@vger.kernel.org, Dave Chinner <david@fromorbit.com>,
         Linux API <linux-api@vger.kernel.org>,
         Kernel Team <kernel-team@fb.com>,
         Andy Lutomirski <luto@kernel.org>
 Subject: Re: [RFC PATCH 2/3] fs: add RWF_ENCODED for writing compressed data
-Message-ID: <20190924203827.GA46556@vader>
+Message-ID: <20190924205014.GJ1855@bombadil.infradead.org>
 References: <cover.1568875700.git.osandov@fb.com>
  <230a76e65372a8fb3ec62ce167d9322e5e342810.1568875700.git.osandov@fb.com>
  <CAG48ez2GKv15Uj6Wzv0sG5v2bXyrSaCtRTw5Ok_ovja_CiO_fQ@mail.gmail.com>
  <20190924171513.GA39872@vader>
  <20190924193513.GA45540@vader>
  <CAG48ez1NQBNR1XeVQYGoopEk=g_KedUr+7jxLQTaO+V8JCeweQ@mail.gmail.com>
+ <20190924202229.mjvjigpnrskjtk5n@wittgenstein>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <CAG48ez1NQBNR1XeVQYGoopEk=g_KedUr+7jxLQTaO+V8JCeweQ@mail.gmail.com>
-User-Agent: Mutt/1.12.2 (2019-09-21)
+In-Reply-To: <20190924202229.mjvjigpnrskjtk5n@wittgenstein>
+User-Agent: Mutt/1.12.1 (2019-06-15)
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Sep 24, 2019 at 10:01:41PM +0200, Jann Horn wrote:
-> On Tue, Sep 24, 2019 at 9:35 PM Omar Sandoval <osandov@osandov.com> wrote:
-> > On Tue, Sep 24, 2019 at 10:15:13AM -0700, Omar Sandoval wrote:
-> > > On Thu, Sep 19, 2019 at 05:44:12PM +0200, Jann Horn wrote:
-> > > > On Thu, Sep 19, 2019 at 8:54 AM Omar Sandoval <osandov@osandov.com> wrote:
-> > > > > Btrfs can transparently compress data written by the user. However, we'd
-> > > > > like to add an interface to write pre-compressed data directly to the
-> > > > > filesystem. This adds support for so-called "encoded writes" via
-> > > > > pwritev2().
-> > > > >
-> > > > > A new RWF_ENCODED flags indicates that a write is "encoded". If this
-> > > > > flag is set, iov[0].iov_base points to a struct encoded_iov which
-> > > > > contains metadata about the write: namely, the compression algorithm and
-> > > > > the unencoded (i.e., decompressed) length of the extent. iov[0].iov_len
-> > > > > must be set to sizeof(struct encoded_iov), which can be used to extend
-> > > > > the interface in the future. The remaining iovecs contain the encoded
-> > > > > extent.
-> > > > >
-> > > > > A similar interface for reading encoded data can be added to preadv2()
-> > > > > in the future.
-> > > > >
-> > > > > Filesystems must indicate that they support encoded writes by setting
-> > > > > FMODE_ENCODED_IO in ->file_open().
-> > > > [...]
-> > > > > +int import_encoded_write(struct kiocb *iocb, struct encoded_iov *encoded,
-> > > > > +                        struct iov_iter *from)
-> > > > > +{
-> > > > > +       if (iov_iter_single_seg_count(from) != sizeof(*encoded))
-> > > > > +               return -EINVAL;
-> > > > > +       if (copy_from_iter(encoded, sizeof(*encoded), from) != sizeof(*encoded))
-> > > > > +               return -EFAULT;
-> > > > > +       if (encoded->compression == ENCODED_IOV_COMPRESSION_NONE &&
-> > > > > +           encoded->encryption == ENCODED_IOV_ENCRYPTION_NONE) {
-> > > > > +               iocb->ki_flags &= ~IOCB_ENCODED;
-> > > > > +               return 0;
-> > > > > +       }
-> > > > > +       if (encoded->compression > ENCODED_IOV_COMPRESSION_TYPES ||
-> > > > > +           encoded->encryption > ENCODED_IOV_ENCRYPTION_TYPES)
-> > > > > +               return -EINVAL;
-> > > > > +       if (!capable(CAP_SYS_ADMIN))
-> > > > > +               return -EPERM;
-> > > >
-> > > > How does this capable() check interact with io_uring? Without having
-> > > > looked at this in detail, I suspect that when an encoded write is
-> > > > requested through io_uring, the capable() check might be executed on
-> > > > something like a workqueue worker thread, which is probably running
-> > > > with a full capability set.
-> > >
-> > > I discussed this more with Jens. You're right, per-IO permission checks
-> > > aren't going to work. In fully-polled mode, we never get an opportunity
-> > > to check capabilities in right context. So, this will probably require a
-> > > new open flag.
-> >
-> > Actually, file_ns_capable() accomplishes the same thing without a new
-> > open flag. Changing the capable() check to file_ns_capable() in
-> > init_user_ns should be enough.
+On Tue, Sep 24, 2019 at 10:22:29PM +0200, Christian Brauner wrote:
+> On Tue, Sep 24, 2019 at 10:01:41PM +0200, Jann Horn wrote:
+> > Mmh... but if the file descriptor has been passed through a privilege
+> > boundary, it isn't really clear whether the original opener of the
+> > file intended for this to be possible. For example, if (as a
+> > hypothetical example) the init process opens a service's logfile with
+> > root privileges, then passes the file descriptor to that logfile to
+> > the service on execve(), that doesn't mean that the service should be
+> > able to perform compressed writes into that file, I think.
 > 
-> +Aleksa for openat2() and open() space
-> 
-> Mmh... but if the file descriptor has been passed through a privilege
-> boundary, it isn't really clear whether the original opener of the
-> file intended for this to be possible. For example, if (as a
-> hypothetical example) the init process opens a service's logfile with
-> root privileges, then passes the file descriptor to that logfile to
-> the service on execve(), that doesn't mean that the service should be
-> able to perform compressed writes into that file, I think.
+> I think we should even generalize this: for most new properties a given
+> file descriptor can carry we would want it to be explicitly enabled such
+> that passing the fd around amounts to passing that property around. At
+> least as soon as we consider it to be associated with some privilege
+> boundary. I don't think we have done this generally. But I would very
+> much support moving to such a model.
 
-Ahh, you're right.
-
-> I think that an open flag (as you already suggested) or an fcntl()
-> operation would do the job; but AFAIK the open() flag space has run
-> out, so if you hook it up that way, I think you might have to wait for
-> Aleksa Sarai to get something like his sys_openat2() suggestion
-> (https://lore.kernel.org/lkml/20190904201933.10736-12-cyphar@cyphar.com/)
-> merged?
-
-If I counted correctly, there's still space for a new O_ flag. One of
-the problems that Aleksa is solving is that unknown O_ flags are
-silently ignored, which isn't an issue for an O_ENCODED flag. If the
-kernel doesn't support it, it won't support RWF_ENCODED, either, so
-you'll get EOPNOTSUPP from pwritev2(). So, open flag it is...
+I think you've got this right.  This needs to be an fcntl() flag, which
+is only settable by root.  Now, should it be an O_ flag, modifiable by
+F_SETFL, or should it be a new F_ flag?

@@ -6,30 +6,28 @@ X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 45171C432C2
-	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Sep 2019 20:57:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 19ED7C4320D
+	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Sep 2019 21:19:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1693C207FD
-	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Sep 2019 20:57:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E0C04214DA
+	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Sep 2019 21:19:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2633457AbfIXU5X (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 24 Sep 2019 16:57:23 -0400
-Received: from gentwo.org ([3.19.106.255]:49446 "EHLO gentwo.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1727890AbfIXU5X (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Sep 2019 16:57:23 -0400
-Received: by gentwo.org (Postfix, from userid 1002)
-        id 513AF3E9FB; Tue, 24 Sep 2019 20:47:52 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1])
-        by gentwo.org (Postfix) with ESMTP id 4FE343E9E5;
-        Tue, 24 Sep 2019 20:47:52 +0000 (UTC)
-Date:   Tue, 24 Sep 2019 20:47:52 +0000 (UTC)
-From:   cl@linux.com
-X-X-Sender: cl@www.lameter.com
-To:     "Darrick J. Wong" <darrick.wong@oracle.com>
-cc:     dsterba@suse.cz, Vlastimil Babka <vbabka@suse.cz>,
+        id S2410833AbfIXVTf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 24 Sep 2019 17:19:35 -0400
+Received: from mx2.suse.de ([195.135.220.15]:58134 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S2406468AbfIXVTf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 24 Sep 2019 17:19:35 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 83BA2AC84;
+        Tue, 24 Sep 2019 21:19:32 +0000 (UTC)
+Subject: Re: [PATCH v2 2/2] mm, sl[aou]b: guarantee natural alignment for
+ kmalloc(power-of-two)
+To:     "Darrick J. Wong" <darrick.wong@oracle.com>, dsterba@suse.cz,
         Andrew Morton <akpm@linux-foundation.org>, linux-mm@kvack.org,
-        linux-kernel@vger.kernel.org, Pekka Enberg <penberg@kernel.org>,
+        linux-kernel@vger.kernel.org, Christoph Lameter <cl@linux.com>,
+        Pekka Enberg <penberg@kernel.org>,
         David Rientjes <rientjes@google.com>,
         Ming Lei <ming.lei@redhat.com>,
         Dave Chinner <david@fromorbit.com>,
@@ -39,34 +37,42 @@ cc:     dsterba@suse.cz, Vlastimil Babka <vbabka@suse.cz>,
         James Bottomley <James.Bottomley@HansenPartnership.com>,
         linux-btrfs@vger.kernel.org, Roman Gushchin <guro@fb.com>,
         Johannes Weiner <hannes@cmpxchg.org>
-Subject: Re: [PATCH v2 2/2] mm, sl[aou]b: guarantee natural alignment for
- kmalloc(power-of-two)
-In-Reply-To: <20190923175146.GT2229799@magnolia>
-Message-ID: <alpine.DEB.2.21.1909242045250.17661@www.lameter.com>
-References: <20190826111627.7505-1-vbabka@suse.cz> <20190826111627.7505-3-vbabka@suse.cz> <df8d1cf4-ff8f-1ee1-12fb-cfec39131b32@suse.cz> <20190923171710.GN2751@twin.jikos.cz> <20190923175146.GT2229799@magnolia>
-User-Agent: Alpine 2.21 (DEB 202 2017-01-01)
+References: <20190826111627.7505-1-vbabka@suse.cz>
+ <20190826111627.7505-3-vbabka@suse.cz>
+ <df8d1cf4-ff8f-1ee1-12fb-cfec39131b32@suse.cz>
+ <20190923171710.GN2751@twin.jikos.cz> <20190923175146.GT2229799@magnolia>
+From:   Vlastimil Babka <vbabka@suse.cz>
+Message-ID: <172b2ed8-f260-6041-5e10-502d1c91f88c@suse.cz>
+Date:   Tue, 24 Sep 2019 23:19:29 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.8.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+In-Reply-To: <20190923175146.GT2229799@magnolia>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, 23 Sep 2019, Darrick J. Wong wrote:
-
+On 9/23/19 7:51 PM, Darrick J. Wong wrote:
 > On Mon, Sep 23, 2019 at 07:17:10PM +0200, David Sterba wrote:
-> > On Mon, Sep 23, 2019 at 06:36:32PM +0200, Vlastimil Babka wrote:
-> > > So if anyone thinks this is a good idea, please express it (preferably
-> > > in a formal way such as Acked-by), otherwise it seems the patch will be
-> > > dropped (due to a private NACK, apparently).
->
+>> On Mon, Sep 23, 2019 at 06:36:32PM +0200, Vlastimil Babka wrote:
+>>> So if anyone thinks this is a good idea, please express it (preferably
+>>> in a formal way such as Acked-by), otherwise it seems the patch will be
+>>> dropped (due to a private NACK, apparently).
+> 
 > Oh, I didn't realize  ^^^^^^^^^^^^ that *some* of us are allowed the
 > privilege of gutting a patch via private NAK without any of that open
 > development discussion incovenience. <grumble>
+> 
+> As far as XFS is concerned I merged Dave's series that checks the
+> alignment of io memory allocations and falls back to vmalloc if the
+> alignment won't work, because I got tired of scrolling past the endless
+> discussion and bug reports and inaction spanning months.
 
-There was a public discussion about this issue and from what I can tell
-the outcome was that the allocator already provides what you want. Which
-was a mechanism to misalign objects and detect these issues. This
-mechanism has been in use for over a decade.
-
-
+I think it's a big fail of kmalloc API that you have to do that, and
+especially with vmalloc, which has the overhead of setting up page
+tables, and it's a waste for allocation requests smaller than page size.
+I wish we could have nice things.

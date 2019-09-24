@@ -2,65 +2,67 @@ Return-Path: <SRS0=VYXz=XT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+X-Spam-Status: No, score=-9.8 required=3.0 tests=DKIM_SIGNED,DKIM_VALID,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,
 	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1B1D0C432C1
-	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Sep 2019 20:33:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6A94DC432C1
+	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Sep 2019 20:33:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id DCF772146E
-	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Sep 2019 20:32:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 29F972146E
+	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Sep 2019 20:33:04 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="z0p4ayr/"
+	dkim=pass (2048-bit key) header.d=toxicpanda-com.20150623.gappssmtp.com header.i=@toxicpanda-com.20150623.gappssmtp.com header.b="hWO+GWR6"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2437488AbfIXUc6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 24 Sep 2019 16:32:58 -0400
-Received: from mail-qt1-f195.google.com ([209.85.160.195]:45487 "EHLO
-        mail-qt1-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726156AbfIXUc6 (ORCPT
+        id S2441233AbfIXUdD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 24 Sep 2019 16:33:03 -0400
+Received: from mail-qt1-f196.google.com ([209.85.160.196]:46143 "EHLO
+        mail-qt1-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S2439111AbfIXUdD (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Sep 2019 16:32:58 -0400
-Received: by mail-qt1-f195.google.com with SMTP id c21so3792869qtj.12
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Sep 2019 13:32:56 -0700 (PDT)
+        Tue, 24 Sep 2019 16:33:03 -0400
+Received: by mail-qt1-f196.google.com with SMTP id u22so3794485qtq.13
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Sep 2019 13:33:02 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:mime-version
+        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=pBFqZ0mJjpLkpbOupsagM8Jl+uHVMZdrENsKttYrEYc=;
-        b=z0p4ayr/LXenta8/AVOjOn7Hmwi7u4/UVjRdaQr5SqYt/1yeXb0Yl2jlSOmgf+Whlm
-         MtHPV4H5qN/4CuFe7Iz+SjVlh7+gzwEv/nUrkXnk2ZSJVonPS+HGSa4tf6vpxLoYIHY2
-         MtehqjAKsv8sV3cU4mPOJRGrUPUMQzPD9gIUSK+3+vWADR2JGRkYZMHBxqCzSHWRjeJm
-         9gSReAHx6D7P4q6bns04qx5pxjmG+3KYMxXHxRUZtDO6EYQARWauItLyMeuyHmgMe9H9
-         OTtc8ImS0japGzBep54T5wp8R5lgpn3rmIIkrDi3CIZqGknQPcqzxoMHuG71YNLSfnkU
-         Aqhw==
+        bh=fNzTjzeQY0QFU3S7mmuwxZfDcXCCVbDfHFYUaatK8aU=;
+        b=hWO+GWR6SlJZoXQCvSBdTyE8Jp1FDqd+IWLwmPYBFlGESCa0zUtn6dFfHXWZcuntBT
+         IWhmPCu4QMWh5Xl7RJa0rWn64YSC0NPPaAZIDJEBGliRZ96fJg9HLcZKUVCP9zd0a1G+
+         uVEHcTP5wEWsFY5syn2llepm4biGonIVioJrqlyOZR+lAYhe8UL98s8pFEtBBJwjrH9g
+         vuyE7o5ymAepnIieieeDH5AY14RI499clhV7roOpK3iUOmMgjDW4XkG93/1wqhTB9l81
+         QOL/nH3N8PORWPbB1xp7lGRr0ueoZ5cm/QwoDy0EEjpfOtHqTmIGRXkJ9ElTlNbcR+yz
+         3tsQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=pBFqZ0mJjpLkpbOupsagM8Jl+uHVMZdrENsKttYrEYc=;
-        b=Wq8NeZntZdKGy5w/gRvN75mTaEpS0fJU1M7SjR/bGiq+7lUWfF7411EDrpMe231GGE
-         A/7SJS50+8s/gIphKHe+kgdAo4VfZgYTqxb9cJTAUDDmFP/E7wfArWRU4TvYc3t6FrUN
-         3lX5H+AKUTG4Xpbsy2S7v/lrB27cj3HBBvT70u4Z1FHdl5LDb7Ip3b1lwE/zvX7vtpsN
-         KKLfeMVw/LfXqe/9IPPLIxOnvzCRZ/DKdRPDTV9jHpRBdnJskm5KjAoZ6V8CIAniWoHV
-         v8yHOZKP4nR62tBJIOUmzKCna6Vdgb7ZLHxiJoTAGmXusGXDFcGECh3D5YhTzX+BREVd
-         ajAw==
-X-Gm-Message-State: APjAAAUYunoNfL2sH6HAEfU3Iwl84g2TTQJCxLoaxXQPhnx2DDJdoCDj
-        l77/lvNAnpGQuOjNr2AhWCdJtNzN8nx2JQ==
-X-Google-Smtp-Source: APXvYqy6iAFlwri6z4Dwo+5yEoIMHIjGPs+tSL+/PmjblZFbkAlwunWiAhdKRHthxAILGg1s77pi9w==
-X-Received: by 2002:a0c:fe0c:: with SMTP id x12mr4314510qvr.134.1569357175719;
-        Tue, 24 Sep 2019 13:32:55 -0700 (PDT)
+        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=fNzTjzeQY0QFU3S7mmuwxZfDcXCCVbDfHFYUaatK8aU=;
+        b=THyjHoblZrD8oYrMdVb1G4HsajslyzLmYFHOIvJkgHkcYnFz0yx/rNVhGZJC6wK9bI
+         gMb2bSTqTQ981BCvKFqwBex77+2sbebzcPkkH/CnVfrHW4CDJx3/ADc7n+xav4jDTQla
+         eiZGT7nUsUqs1TiIImfQ6e1ret8xMhBTQy1WErBVG1eqoCGURXJeaP5AOpxhoIc7GhG5
+         EbOOvCKFejc5O5JmvpOHSMb5338RLoYtL8u6VHsE8S1zICtN96PyO1b31riaVKaW5Y+u
+         gi+aTa+bVwfVdKXqm9c8RIE9xOGbcU206kejuS19xdSvw2p8porNC4LuDL16zj0ZLJNM
+         75sg==
+X-Gm-Message-State: APjAAAX83uo1xytwFZ9nOwgtuwsOHib5C/DSUgM/SU6klp61uWq71F5Y
+        qDaICtcnGjgQHd4NjvOnqGt9CIMHkCnIdw==
+X-Google-Smtp-Source: APXvYqxWAnvzFoJhR/8fLN+AiKbGrs0V452k2lIDKBMJhGUslp1eqYG9zy5DrrDSaT3Lc2xwoqJk3Q==
+X-Received: by 2002:ac8:38ef:: with SMTP id g44mr4943597qtc.277.1569357181507;
+        Tue, 24 Sep 2019 13:33:01 -0700 (PDT)
 Received: from localhost ([107.15.81.208])
-        by smtp.gmail.com with ESMTPSA id y17sm1450336qtb.82.2019.09.24.13.32.54
+        by smtp.gmail.com with ESMTPSA id v68sm1754675qkd.109.2019.09.24.13.33.00
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 24 Sep 2019 13:32:54 -0700 (PDT)
+        Tue, 24 Sep 2019 13:33:00 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 0/4] The remaining extent_io.c split code
-Date:   Tue, 24 Sep 2019 16:32:48 -0400
-Message-Id: <20190924203252.30505-1-josef@toxicpanda.com>
+Subject: [PATCH 3/4] btrfs: migrate the extent_buffer code out of extent-io.h
+Date:   Tue, 24 Sep 2019 16:32:51 -0400
+Message-Id: <20190924203252.30505-4-josef@toxicpanda.com>
 X-Mailer: git-send-email 2.21.0
+In-Reply-To: <20190924203252.30505-1-josef@toxicpanda.com>
+References: <20190924203252.30505-1-josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -68,13 +70,407 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hopefully all of it makes it this time, if you want you can pull from
+There's two main things we do with extent buffers, we mess with the
+buffers themselves, and then we do IO on those buffers.  Separate out
+the actual extent buffer manipulation code from extent_io since they are
+unrelated.
 
-git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git \
-	extent-io-rearranging
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ fs/btrfs/ctree.h         |   2 +-
+ fs/btrfs/disk-io.h       |   2 +
+ fs/btrfs/extent-buffer.h | 152 +++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/extent_io.h     | 148 +-------------------------------------
+ 4 files changed, 157 insertions(+), 147 deletions(-)
+ create mode 100644 fs/btrfs/extent-buffer.h
 
-I've rebased on top of misc-next and fixed up all the conflicts.  Thanks,
-
-Josef
-
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 5e7ff169683c..c3a7df64db32 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -29,7 +29,7 @@
+ #include <linux/refcount.h>
+ #include <linux/crc32c.h>
+ #include "extent-io-tree.h"
+-#include "extent_io.h"
++#include "extent-buffer.h"
+ #include "extent_map.h"
+ #include "async-thread.h"
+ #include "block-rsv.h"
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index a6958103d87e..affb45b1ed82 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -6,6 +6,8 @@
+ #ifndef BTRFS_DISK_IO_H
+ #define BTRFS_DISK_IO_H
+ 
++#include "extent_io.h"
++
+ #define BTRFS_SUPER_INFO_OFFSET SZ_64K
+ #define BTRFS_SUPER_INFO_SIZE 4096
+ 
+diff --git a/fs/btrfs/extent-buffer.h b/fs/btrfs/extent-buffer.h
+new file mode 100644
+index 000000000000..8bb6b695b70f
+--- /dev/null
++++ b/fs/btrfs/extent-buffer.h
+@@ -0,0 +1,152 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef BTRFS_EXTENT_BUFFER_H
++#define BTRFS_EXTENT_BUFFER_H
++
++enum {
++	EXTENT_BUFFER_UPTODATE,
++	EXTENT_BUFFER_DIRTY,
++	EXTENT_BUFFER_CORRUPT,
++	/* this got triggered by readahead */
++	EXTENT_BUFFER_READAHEAD,
++	EXTENT_BUFFER_TREE_REF,
++	EXTENT_BUFFER_STALE,
++	EXTENT_BUFFER_WRITEBACK,
++	/* read IO error */
++	EXTENT_BUFFER_READ_ERR,
++	EXTENT_BUFFER_UNMAPPED,
++	EXTENT_BUFFER_IN_TREE,
++	/* write IO error */
++	EXTENT_BUFFER_WRITE_ERR,
++};
++
++#define INLINE_EXTENT_BUFFER_PAGES 16
++#define MAX_INLINE_EXTENT_BUFFER_SIZE (INLINE_EXTENT_BUFFER_PAGES * PAGE_SIZE)
++struct extent_buffer {
++	u64 start;
++	unsigned long len;
++	unsigned long bflags;
++	struct btrfs_fs_info *fs_info;
++	spinlock_t refs_lock;
++	atomic_t refs;
++	atomic_t io_pages;
++	int read_mirror;
++	struct rcu_head rcu_head;
++	pid_t lock_owner;
++
++	int blocking_writers;
++	atomic_t blocking_readers;
++	bool lock_nested;
++	/* >= 0 if eb belongs to a log tree, -1 otherwise */
++	short log_index;
++
++	/* protects write locks */
++	rwlock_t lock;
++
++	/* readers use lock_wq while they wait for the write
++	 * lock holders to unlock
++	 */
++	wait_queue_head_t write_lock_wq;
++
++	/* writers use read_lock_wq while they wait for readers
++	 * to unlock
++	 */
++	wait_queue_head_t read_lock_wq;
++	struct page *pages[INLINE_EXTENT_BUFFER_PAGES];
++#ifdef CONFIG_BTRFS_DEBUG
++	int spinning_writers;
++	atomic_t spinning_readers;
++	atomic_t read_locks;
++	int write_locks;
++	struct list_head leak_list;
++#endif
++};
++
++/*
++ * The extent buffer bitmap operations are done with byte granularity instead of
++ * word granularity for two reasons:
++ * 1. The bitmaps must be little-endian on disk.
++ * 2. Bitmap items are not guaranteed to be aligned to a word and therefore a
++ *    single word in a bitmap may straddle two pages in the extent buffer.
++ */
++#define BIT_BYTE(nr) ((nr) / BITS_PER_BYTE)
++#define BYTE_MASK ((1 << BITS_PER_BYTE) - 1)
++#define BITMAP_FIRST_BYTE_MASK(start) \
++	((BYTE_MASK << ((start) & (BITS_PER_BYTE - 1))) & BYTE_MASK)
++#define BITMAP_LAST_BYTE_MASK(nbits) \
++	(BYTE_MASK >> (-(nbits) & (BITS_PER_BYTE - 1)))
++
++int __init extent_buffer_init(void);
++void __cold extent_buffer_exit(void);
++int try_release_extent_buffer(struct page *page);
++struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
++					  u64 start);
++struct extent_buffer *__alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
++						  u64 start, unsigned long len);
++struct extent_buffer *alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
++						u64 start);
++struct extent_buffer *alloc_test_extent_buffer(struct btrfs_fs_info *fs_info,
++					       u64 start);
++struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src);
++struct extent_buffer *find_extent_buffer(struct btrfs_fs_info *fs_info,
++					 u64 start);
++void free_extent_buffer(struct extent_buffer *eb);
++void free_extent_buffer_stale(struct extent_buffer *eb);
++
++void wait_on_extent_buffer_writeback(struct extent_buffer *eb);
++
++static inline int num_extent_pages(const struct extent_buffer *eb)
++{
++	return (round_up(eb->start + eb->len, PAGE_SIZE) >> PAGE_SHIFT) -
++	       (eb->start >> PAGE_SHIFT);
++}
++
++static inline void extent_buffer_get(struct extent_buffer *eb)
++{
++	atomic_inc(&eb->refs);
++}
++
++static inline int extent_buffer_uptodate(struct extent_buffer *eb)
++{
++	return test_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags);
++}
++
++int memcmp_extent_buffer(const struct extent_buffer *eb, const void *ptrv,
++			 unsigned long start, unsigned long len);
++void read_extent_buffer(const struct extent_buffer *eb, void *dst,
++			unsigned long start,
++			unsigned long len);
++int read_extent_buffer_to_user(const struct extent_buffer *eb,
++			       void __user *dst, unsigned long start,
++			       unsigned long len);
++void write_extent_buffer_fsid(struct extent_buffer *eb, const void *src);
++void write_extent_buffer_chunk_tree_uuid(struct extent_buffer *eb,
++		const void *src);
++void write_extent_buffer(struct extent_buffer *eb, const void *src,
++			 unsigned long start, unsigned long len);
++void copy_extent_buffer_full(struct extent_buffer *dst,
++			     struct extent_buffer *src);
++void copy_extent_buffer(struct extent_buffer *dst, struct extent_buffer *src,
++			unsigned long dst_offset, unsigned long src_offset,
++			unsigned long len);
++void memcpy_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
++			   unsigned long src_offset, unsigned long len);
++void memmove_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
++			   unsigned long src_offset, unsigned long len);
++void memzero_extent_buffer(struct extent_buffer *eb, unsigned long start,
++			   unsigned long len);
++int extent_buffer_test_bit(struct extent_buffer *eb, unsigned long start,
++			   unsigned long pos);
++void extent_buffer_bitmap_set(struct extent_buffer *eb, unsigned long start,
++			      unsigned long pos, unsigned long len);
++void extent_buffer_bitmap_clear(struct extent_buffer *eb, unsigned long start,
++				unsigned long pos, unsigned long len);
++void clear_extent_buffer_dirty(struct extent_buffer *eb);
++bool set_extent_buffer_dirty(struct extent_buffer *eb);
++void set_extent_buffer_uptodate(struct extent_buffer *eb);
++void clear_extent_buffer_uptodate(struct extent_buffer *eb);
++int extent_buffer_under_io(struct extent_buffer *eb);
++int map_private_extent_buffer(const struct extent_buffer *eb,
++			      unsigned long offset, unsigned long min_len,
++			      char **map, unsigned long *map_start,
++			      unsigned long *map_len);
++#endif /* BTRFS_EXTENT_BUFFER_H */
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index e2246956e544..c329eb3f1817 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -14,23 +14,6 @@
+ #define EXTENT_BIO_COMPRESSED 1
+ #define EXTENT_BIO_FLAG_SHIFT 16
+ 
+-enum {
+-	EXTENT_BUFFER_UPTODATE,
+-	EXTENT_BUFFER_DIRTY,
+-	EXTENT_BUFFER_CORRUPT,
+-	/* this got triggered by readahead */
+-	EXTENT_BUFFER_READAHEAD,
+-	EXTENT_BUFFER_TREE_REF,
+-	EXTENT_BUFFER_STALE,
+-	EXTENT_BUFFER_WRITEBACK,
+-	/* read IO error */
+-	EXTENT_BUFFER_READ_ERR,
+-	EXTENT_BUFFER_UNMAPPED,
+-	EXTENT_BUFFER_IN_TREE,
+-	/* write IO error */
+-	EXTENT_BUFFER_WRITE_ERR,
+-};
+-
+ /* these are flags for __process_pages_contig */
+ #define PAGE_UNLOCK		(1 << 0)
+ #define PAGE_CLEAR_DIRTY	(1 << 1)
+@@ -46,25 +29,12 @@ enum {
+  */
+ #define EXTENT_PAGE_PRIVATE 1
+ 
+-/*
+- * The extent buffer bitmap operations are done with byte granularity instead of
+- * word granularity for two reasons:
+- * 1. The bitmaps must be little-endian on disk.
+- * 2. Bitmap items are not guaranteed to be aligned to a word and therefore a
+- *    single word in a bitmap may straddle two pages in the extent buffer.
+- */
+-#define BIT_BYTE(nr) ((nr) / BITS_PER_BYTE)
+-#define BYTE_MASK ((1 << BITS_PER_BYTE) - 1)
+-#define BITMAP_FIRST_BYTE_MASK(start) \
+-	((BYTE_MASK << ((start) & (BITS_PER_BYTE - 1))) & BYTE_MASK)
+-#define BITMAP_LAST_BYTE_MASK(nbits) \
+-	(BYTE_MASK >> (-(nbits) & (BITS_PER_BYTE - 1)))
+-
+ struct btrfs_root;
+ struct btrfs_inode;
+ struct btrfs_io_bio;
+ struct io_failure_record;
+ struct extent_io_tree;
++struct extent_buffer;
+ 
+ typedef blk_status_t (extent_submit_bio_start_t)(void *private_data,
+ 		struct bio *bio, u64 bio_offset);
+@@ -81,49 +51,6 @@ struct extent_io_ops {
+ 				    int mirror);
+ };
+ 
+-
+-#define INLINE_EXTENT_BUFFER_PAGES 16
+-#define MAX_INLINE_EXTENT_BUFFER_SIZE (INLINE_EXTENT_BUFFER_PAGES * PAGE_SIZE)
+-struct extent_buffer {
+-	u64 start;
+-	unsigned long len;
+-	unsigned long bflags;
+-	struct btrfs_fs_info *fs_info;
+-	spinlock_t refs_lock;
+-	atomic_t refs;
+-	atomic_t io_pages;
+-	int read_mirror;
+-	struct rcu_head rcu_head;
+-	pid_t lock_owner;
+-
+-	int blocking_writers;
+-	atomic_t blocking_readers;
+-	bool lock_nested;
+-	/* >= 0 if eb belongs to a log tree, -1 otherwise */
+-	short log_index;
+-
+-	/* protects write locks */
+-	rwlock_t lock;
+-
+-	/* readers use lock_wq while they wait for the write
+-	 * lock holders to unlock
+-	 */
+-	wait_queue_head_t write_lock_wq;
+-
+-	/* writers use read_lock_wq while they wait for readers
+-	 * to unlock
+-	 */
+-	wait_queue_head_t read_lock_wq;
+-	struct page *pages[INLINE_EXTENT_BUFFER_PAGES];
+-#ifdef CONFIG_BTRFS_DEBUG
+-	int spinning_writers;
+-	atomic_t spinning_readers;
+-	atomic_t read_locks;
+-	int write_locks;
+-	struct list_head leak_list;
+-#endif
+-};
+-
+ /*
+  * Structure to record how many bytes and which ranges are set/cleared
+  */
+@@ -189,7 +116,6 @@ typedef struct extent_map *(get_extent_t)(struct btrfs_inode *inode,
+ 					  int create);
+ 
+ int try_release_extent_mapping(struct page *page, gfp_t mask);
+-int try_release_extent_buffer(struct page *page);
+ 
+ int extent_read_full_page(struct extent_io_tree *tree, struct page *page,
+ 			  get_extent_t *get_extent, int mirror_num);
+@@ -206,79 +132,13 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 		__u64 start, __u64 len);
+ void set_page_extent_mapped(struct page *page);
+ 
+-struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+-					  u64 start);
+-struct extent_buffer *__alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
+-						  u64 start, unsigned long len);
+-struct extent_buffer *alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
+-						u64 start);
+-struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src);
+-struct extent_buffer *find_extent_buffer(struct btrfs_fs_info *fs_info,
+-					 u64 start);
+-void free_extent_buffer(struct extent_buffer *eb);
+-void free_extent_buffer_stale(struct extent_buffer *eb);
+ #define WAIT_NONE	0
+ #define WAIT_COMPLETE	1
+ #define WAIT_PAGE_LOCK	2
++
+ int read_extent_buffer_pages(struct extent_buffer *eb, int wait,
+ 			     int mirror_num);
+-void wait_on_extent_buffer_writeback(struct extent_buffer *eb);
+-
+-static inline int num_extent_pages(const struct extent_buffer *eb)
+-{
+-	return (round_up(eb->start + eb->len, PAGE_SIZE) >> PAGE_SHIFT) -
+-	       (eb->start >> PAGE_SHIFT);
+-}
+-
+-static inline void extent_buffer_get(struct extent_buffer *eb)
+-{
+-	atomic_inc(&eb->refs);
+-}
+-
+-static inline int extent_buffer_uptodate(struct extent_buffer *eb)
+-{
+-	return test_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags);
+-}
+ 
+-int memcmp_extent_buffer(const struct extent_buffer *eb, const void *ptrv,
+-			 unsigned long start, unsigned long len);
+-void read_extent_buffer(const struct extent_buffer *eb, void *dst,
+-			unsigned long start,
+-			unsigned long len);
+-int read_extent_buffer_to_user(const struct extent_buffer *eb,
+-			       void __user *dst, unsigned long start,
+-			       unsigned long len);
+-void write_extent_buffer_fsid(struct extent_buffer *eb, const void *src);
+-void write_extent_buffer_chunk_tree_uuid(struct extent_buffer *eb,
+-		const void *src);
+-void write_extent_buffer(struct extent_buffer *eb, const void *src,
+-			 unsigned long start, unsigned long len);
+-void copy_extent_buffer_full(struct extent_buffer *dst,
+-			     struct extent_buffer *src);
+-void copy_extent_buffer(struct extent_buffer *dst, struct extent_buffer *src,
+-			unsigned long dst_offset, unsigned long src_offset,
+-			unsigned long len);
+-void memcpy_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
+-			   unsigned long src_offset, unsigned long len);
+-void memmove_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
+-			   unsigned long src_offset, unsigned long len);
+-void memzero_extent_buffer(struct extent_buffer *eb, unsigned long start,
+-			   unsigned long len);
+-int extent_buffer_test_bit(struct extent_buffer *eb, unsigned long start,
+-			   unsigned long pos);
+-void extent_buffer_bitmap_set(struct extent_buffer *eb, unsigned long start,
+-			      unsigned long pos, unsigned long len);
+-void extent_buffer_bitmap_clear(struct extent_buffer *eb, unsigned long start,
+-				unsigned long pos, unsigned long len);
+-void clear_extent_buffer_dirty(struct extent_buffer *eb);
+-bool set_extent_buffer_dirty(struct extent_buffer *eb);
+-void set_extent_buffer_uptodate(struct extent_buffer *eb);
+-void clear_extent_buffer_uptodate(struct extent_buffer *eb);
+-int extent_buffer_under_io(struct extent_buffer *eb);
+-int map_private_extent_buffer(const struct extent_buffer *eb,
+-			      unsigned long offset, unsigned long min_len,
+-			      char **map, unsigned long *map_start,
+-			      unsigned long *map_len);
+ void extent_range_clear_dirty_for_io(struct inode *inode, u64 start, u64 end);
+ void extent_range_redirty_for_io(struct inode *inode, u64 start, u64 end);
+ void extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
+@@ -330,8 +190,4 @@ bool find_lock_delalloc_range(struct inode *inode,
+ 			     struct page *locked_page, u64 *start,
+ 			     u64 *end);
+ #endif
+-struct extent_buffer *alloc_test_extent_buffer(struct btrfs_fs_info *fs_info,
+-					       u64 start);
+-int __init extent_buffer_init(void);
+-void __cold extent_buffer_exit(void);
+ #endif
+-- 
+2.21.0
 

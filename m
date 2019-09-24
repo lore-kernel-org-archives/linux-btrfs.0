@@ -2,146 +2,121 @@ Return-Path: <SRS0=VYXz=XT=vger.kernel.org=linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.7 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SIGNED_OFF_BY,SPF_HELO_NONE,SPF_PASS,
-	UNPARSEABLE_RELAY,URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4637FC432C2
-	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Sep 2019 09:58:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 99244C432C1
+	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Sep 2019 10:30:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [209.132.180.67])
-	by mail.kernel.org (Postfix) with ESMTP id 1834220872
-	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Sep 2019 09:58:51 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 737B82146E
+	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Sep 2019 10:30:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2504432AbfIXJ6u (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 24 Sep 2019 05:58:50 -0400
-Received: from m4a0041g.houston.softwaregrp.com ([15.124.2.87]:55728 "EHLO
-        m4a0041g.houston.softwaregrp.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S2504402AbfIXJ6t (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Sep 2019 05:58:49 -0400
-Received: FROM m4a0041g.houston.softwaregrp.com (15.120.17.146) BY m4a0041g.houston.softwaregrp.com WITH ESMTP
- FOR linux-btrfs@vger.kernel.org;
- Tue, 24 Sep 2019 09:56:54 +0000
-Received: from M9W0067.microfocus.com (2002:f79:be::f79:be) by
- M4W0334.microfocus.com (2002:f78:1192::f78:1192) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256_P256) id
- 15.1.1591.10; Tue, 24 Sep 2019 09:19:57 +0000
-Received: from NAM02-CY1-obe.outbound.protection.outlook.com (15.124.72.12) by
- M9W0067.microfocus.com (15.121.0.190) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256_P256) id
- 15.1.1591.10 via Frontend Transport; Tue, 24 Sep 2019 09:19:57 +0000
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=ibEoJZSmT+Xp09I4YWr1TmzvI+kvj6OqJ/C/I4pPxRT5X+hSkkoGbTK5bzbEmXyDgVZDFqLs4dbHNOq06K2IU/eIkTWL81L8+Xfyjk3YcZq4gZ51CR7J9GIo/If3ISHwwNulDq8f0duqbfQiOUaE3XBYseaBjdP2M76Gftp1XcdPDNgBEKY0kkq160jvAewgKerVs8YlLCWC/7TWna+5X+OrSx3obbFcsy4OsIwZe1BoQbM23fWQobUen3Y2T6SZuUTKVhBktv7PwX4psxnLkdeHp1mkFORHFsn8XHDMY07k+nU72Bmoji677MWZXRWl07IjoJvZHt2AJfBEgqoiUw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=WqFCiUZHRNaeVNuaCXFB9kClvlXvW3dnJXFxjvXfHLk=;
- b=V5HjMmGGE/aK9ZSdCG7hbs2xqmvNT0FNo6dRp3uMbCioS+enxUVjo4nbEt8KG5HXIk82tP2MhAXuK9xpGnd8+aBRfSCszB4QNEMaZxYWgDaKsLhvPnnomNRc+oXP41lsZsWY/cY2E3y4PzpCl3hgVUALE5Cv7fSnMPaFkpioqC/rEYA1uSWd04GOjy493aj/Hsw696jg3dlSQYdQsPjh6kZyb1F5/27GEi3Sg3zp8vjlrns8Wlxm/0Y1c3Mdsnr/vZOGK6ICM3yWJU1cR+kHeHEZqv0HU0KqYLVrlG6zKw3/+qo5y4qxHZEbY85q9RC3JR2HSrKxaHk2NjHWPKpAWw==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=suse.com; dmarc=pass action=none header.from=suse.com;
- dkim=pass header.d=suse.com; arc=none
-Received: from BY5PR18MB3266.namprd18.prod.outlook.com (10.255.163.207) by
- BY5PR18MB3218.namprd18.prod.outlook.com (10.255.137.97) with Microsoft SMTP
- Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.20.2284.19; Tue, 24 Sep 2019 09:19:55 +0000
-Received: from BY5PR18MB3266.namprd18.prod.outlook.com
- ([fe80::3993:1f66:bd4:83cc]) by BY5PR18MB3266.namprd18.prod.outlook.com
- ([fe80::3993:1f66:bd4:83cc%5]) with mapi id 15.20.2284.023; Tue, 24 Sep 2019
- 09:19:55 +0000
-From:   Qu WenRuo <wqu@suse.com>
-To:     Nikolay Borisov <nborisov@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v3 1/6] btrfs-progs: check: Export btrfs_type_to_imode
-Thread-Topic: [PATCH v3 1/6] btrfs-progs: check: Export btrfs_type_to_imode
-Thread-Index: AQHVcrP4OMjtwOUYMES2NZyGcLTcFKc6jQEA
-Date:   Tue, 24 Sep 2019 09:19:55 +0000
-Message-ID: <3d3cfcfb-d55b-a0fa-c182-a52c138c6b65@suse.com>
-References: <20190912031135.79696-1-wqu@suse.com>
- <20190912031135.79696-2-wqu@suse.com>
- <8bce1985-0bd7-2476-8276-530ab08a00d6@suse.com>
-In-Reply-To: <8bce1985-0bd7-2476-8276-530ab08a00d6@suse.com>
-Accept-Language: zh-CN, en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-x-clientproxiedby: TYAPR01CA0099.jpnprd01.prod.outlook.com
- (2603:1096:404:2a::15) To BY5PR18MB3266.namprd18.prod.outlook.com
- (2603:10b6:a03:1a1::15)
-authentication-results: spf=none (sender IP is ) smtp.mailfrom=wqu@suse.com; 
-x-ms-exchange-messagesentrepresentingtype: 1
-x-originating-ip: [13.231.109.76]
-x-ms-publictraffictype: Email
-x-ms-office365-filtering-correlation-id: 338f3112-556c-479b-898c-08d740d05d0a
-x-microsoft-antispam: BCL:0;PCL:0;RULEID:(2390118)(7020095)(4652040)(8989299)(4534185)(4627221)(201703031133081)(201702281549075)(8990200)(5600167)(711020)(4605104)(1401327)(2017052603328)(7193020);SRVR:BY5PR18MB3218;
-x-ms-traffictypediagnostic: BY5PR18MB3218:
-x-ms-exchange-transport-forked: True
-x-microsoft-antispam-prvs: <BY5PR18MB32180D8D978864F1D9B3AAF9D6840@BY5PR18MB3218.namprd18.prod.outlook.com>
-x-ms-oob-tlc-oobclassifiers: OLM:8882;
-x-forefront-prvs: 0170DAF08C
-x-forefront-antispam-report: SFV:NSPM;SFS:(10019020)(4636009)(396003)(39860400002)(376002)(346002)(366004)(136003)(189003)(199004)(36756003)(26005)(6436002)(14454004)(6506007)(446003)(99286004)(3846002)(76176011)(25786009)(386003)(52116002)(229853002)(478600001)(486006)(476003)(8936002)(2616005)(6486002)(102836004)(81166006)(81156014)(8676002)(11346002)(186003)(5660300002)(31686004)(2906002)(31696002)(110136005)(66476007)(66446008)(66556008)(316002)(6246003)(64756008)(2501003)(66946007)(305945005)(7736002)(256004)(86362001)(6512007)(71190400001)(71200400001)(6116002)(66066001);DIR:OUT;SFP:1102;SCL:1;SRVR:BY5PR18MB3218;H:BY5PR18MB3266.namprd18.prod.outlook.com;FPR:;SPF:None;LANG:en;PTR:InfoNoRecords;MX:1;A:1;
-received-spf: None (protection.outlook.com: suse.com does not designate
- permitted sender hosts)
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam-message-info: mJoj9mgfqm9hynjbmqpblSjqoIVgANU/qfEgVX7x1bB9XSvDJO4Ei0wxon4zVIh7wzhjnYal7sRln4jI08fYwAgcMgqLE46NgJav8RdhJEoFcKFtDjDtd9lYtSds17sJuOjx+q2yZpE/mVK9+qExMNAY9zelnABL5jNjjIIj30HLhKUD6qRwGUv5nlsk14xqeoWMWSpXD1n/1m1qsaqL5nzDXqd0HUKIpyIUCH0L/ZqrZ7/xvVLkET9dMwAU3jX9pUpV1tD1I4bvvXU0aAWljoa4nZKzR2/3MYziWEwK5irGODYQghRiGbhDydvkDxk3W0dAF0AMjL6U0HiohSuSxpDL1PAZ4kXaWCYWAODwaDzfUcNmZax3Lt8jo4i7Pfiizj7m9pKXvt6XiWGHeNxsSkP3vzi3Ohl7y+iR/7AqXRg=
-Content-Type: text/plain; charset="utf-8"
-Content-ID: <D40B6CFB4BAEB54A8AA0DFCF8EEEBE3C@namprd18.prod.outlook.com>
-Content-Transfer-Encoding: base64
+        id S2409456AbfIXK37 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 24 Sep 2019 06:29:59 -0400
+Received: from mx2.suse.de ([195.135.220.15]:51112 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S2387644AbfIXK37 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 24 Sep 2019 06:29:59 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id EDA06AE79;
+        Tue, 24 Sep 2019 10:29:56 +0000 (UTC)
+Subject: Re: [PATCH 2/2] btrfs: add ioctl for directly writing compressed data
+To:     Omar Sandoval <osandov@osandov.com>
+Cc:     kernel-team@fb.com, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org
+References: <cover.1567623877.git.osandov@fb.com>
+ <8eae56abb90c0fe87c350322485ce8674e135074.1567623877.git.osandov@fb.com>
+ <652f5971-2c82-e766-fde4-2076e65cf948@suse.com>
+ <20190919061404.GA105652@vader>
+ <625001e7-dd04-0550-cbb0-7437fe901944@suse.com>
+ <20190919075952.GA121676@vader>
+From:   Nikolay Borisov <nborisov@suse.com>
+Openpgp: preference=signencrypt
+Autocrypt: addr=nborisov@suse.com; prefer-encrypt=mutual; keydata=
+ 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
+Message-ID: <58c674d0-5786-c258-9b69-d5bbbf613af8@suse.com>
+Date:   Tue, 24 Sep 2019 13:29:54 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
+ Thunderbird/60.8.0
 MIME-Version: 1.0
-X-MS-Exchange-CrossTenant-Network-Message-Id: 338f3112-556c-479b-898c-08d740d05d0a
-X-MS-Exchange-CrossTenant-originalarrivaltime: 24 Sep 2019 09:19:55.6630
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: 856b813c-16e5-49a5-85ec-6f081e13b527
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: mDE46CKWAivV2Oz3PLy2fiOetttTS7Vh++ZTJspU4nUP1xXSIjMR9eckAytoIKej
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: BY5PR18MB3218
-X-OriginatorOrg: suse.com
+In-Reply-To: <20190919075952.GA121676@vader>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Sender: linux-btrfs-owner@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-DQoNCk9uIDIwMTkvOS8yNCDkuIvljYg0OjQxLCBOaWtvbGF5IEJvcmlzb3Ygd3JvdGU6DQo+IA0K
-PiANCj4gT24gMTIuMDkuMTkg0LMuIDY6MTEg0YcuLCBRdSBXZW5ydW8gd3JvdGU6DQo+PiBUaGlz
-IGZ1bmN0aW9uIHdpbGwgYmUgbGF0ZXIgdXNlZCBieSBjb21tb24gbW9kZSBjb2RlLCBzbyBleHBv
-cnQgaXQuDQo+Pg0KPj4gU2lnbmVkLW9mZi1ieTogUXUgV2VucnVvIDx3cXVAc3VzZS5jb20+DQo+
-IA0KPiBSZXZpZXdlZC1ieTogTmlrb2xheSBCb3Jpc292IDxuYm9yaXNvdkBzdXNlLmNvbT4gYnV0
-IHNlZSBvbmUgbml0IGJlbG93Lg0KPiANCj4+IC0tLQ0KPj4gIGNoZWNrL21haW4uYyAgICAgICAg
-fCAxNSAtLS0tLS0tLS0tLS0tLS0NCj4+ICBjaGVjay9tb2RlLWNvbW1vbi5oIHwgMTUgKysrKysr
-KysrKysrKysrDQo+PiAgMiBmaWxlcyBjaGFuZ2VkLCAxNSBpbnNlcnRpb25zKCspLCAxNSBkZWxl
-dGlvbnMoLSkNCj4+DQo+PiBkaWZmIC0tZ2l0IGEvY2hlY2svbWFpbi5jIGIvY2hlY2svbWFpbi5j
-DQo+PiBpbmRleCAyZTE2YjRlNmYwNWIuLjkwMjI3OTc0MDU4OSAxMDA2NDQNCj4+IC0tLSBhL2No
-ZWNrL21haW4uYw0KPj4gKysrIGIvY2hlY2svbWFpbi5jDQo+PiBAQCAtMjQ0OCwyMSArMjQ0OCw2
-IEBAIG91dDoNCj4+ICAJcmV0dXJuIHJldDsNCj4+ICB9DQo+PiAgDQo+PiAtc3RhdGljIHUzMiBi
-dHJmc190eXBlX3RvX2ltb2RlKHU4IHR5cGUpDQo+PiAtew0KPj4gLQlzdGF0aWMgdTMyIGltb2Rl
-X2J5X2J0cmZzX3R5cGVbXSA9IHsNCj4+IC0JCVtCVFJGU19GVF9SRUdfRklMRV0JPSBTX0lGUkVH
-LA0KPj4gLQkJW0JUUkZTX0ZUX0RJUl0JCT0gU19JRkRJUiwNCj4+IC0JCVtCVFJGU19GVF9DSFJE
-RVZdCT0gU19JRkNIUiwNCj4+IC0JCVtCVFJGU19GVF9CTEtERVZdCT0gU19JRkJMSywNCj4+IC0J
-CVtCVFJGU19GVF9GSUZPXQkJPSBTX0lGSUZPLA0KPj4gLQkJW0JUUkZTX0ZUX1NPQ0tdCQk9IFNf
-SUZTT0NLLA0KPj4gLQkJW0JUUkZTX0ZUX1NZTUxJTktdCT0gU19JRkxOSywNCj4+IC0JfTsNCj4+
-IC0NCj4+IC0JcmV0dXJuIGltb2RlX2J5X2J0cmZzX3R5cGVbKHR5cGUpXTsNCj4+IC19DQo+PiAt
-DQo+PiAgc3RhdGljIGludCByZXBhaXJfaW5vZGVfbm9faXRlbShzdHJ1Y3QgYnRyZnNfdHJhbnNf
-aGFuZGxlICp0cmFucywNCj4+ICAJCQkJc3RydWN0IGJ0cmZzX3Jvb3QgKnJvb3QsDQo+PiAgCQkJ
-CXN0cnVjdCBidHJmc19wYXRoICpwYXRoLA0KPj4gZGlmZiAtLWdpdCBhL2NoZWNrL21vZGUtY29t
-bW9uLmggYi9jaGVjay9tb2RlLWNvbW1vbi5oDQo+PiBpbmRleCAxNjFiODRhOGRlYjAuLjZjOGQ2
-ZDc1NzhhNiAxMDA2NDQNCj4+IC0tLSBhL2NoZWNrL21vZGUtY29tbW9uLmgNCj4+ICsrKyBiL2No
-ZWNrL21vZGUtY29tbW9uLmgNCj4+IEBAIC0xNTYsNCArMTU2LDE5IEBAIHN0YXRpYyBpbmxpbmUg
-Ym9vbCBpc192YWxpZF9pbW9kZSh1MzIgaW1vZGUpDQo+PiAgfQ0KPj4gIA0KPj4gIGludCByZWNv
-d19leHRlbnRfYnVmZmVyKHN0cnVjdCBidHJmc19yb290ICpyb290LCBzdHJ1Y3QgZXh0ZW50X2J1
-ZmZlciAqZWIpOw0KPj4gKw0KPj4gK3N0YXRpYyBpbmxpbmUgdTMyIGJ0cmZzX3R5cGVfdG9faW1v
-ZGUodTggdHlwZSkNCj4+ICt7DQo+PiArCXN0YXRpYyB1MzIgaW1vZGVfYnlfYnRyZnNfdHlwZVtd
-ID0gew0KPj4gKwkJW0JUUkZTX0ZUX1JFR19GSUxFXQk9IFNfSUZSRUcsDQo+PiArCQlbQlRSRlNf
-RlRfRElSXQkJPSBTX0lGRElSLA0KPj4gKwkJW0JUUkZTX0ZUX0NIUkRFVl0JPSBTX0lGQ0hSLA0K
-Pj4gKwkJW0JUUkZTX0ZUX0JMS0RFVl0JPSBTX0lGQkxLLA0KPj4gKwkJW0JUUkZTX0ZUX0ZJRk9d
-CQk9IFNfSUZJRk8sDQo+PiArCQlbQlRSRlNfRlRfU09DS10JCT0gU19JRlNPQ0ssDQo+PiArCQlb
-QlRSRlNfRlRfU1lNTElOS10JPSBTX0lGTE5LLA0KPj4gKwl9Ow0KPiANCj4gbml0OiBJZiB0aGUg
-YXJyYXkgaXMgZGVmaW5lZCBpbiBhIGZ1bmN0aW9uIGluIGEgaGVhZGVyIHRoaXMgbWVhbnMgaXQN
-Cj4gd2lsbCBiZSBjb3BpZWQgdG8gZXZlcnkgb2JqZWN0IGZpbGUgdGhpcyBoZWFkZXIgaXMgaW5j
-bHVkZWQgc28gaXQgd2lsbA0KPiByZXN1bHQgaW4gYSBtaW5vciBibG9hdCBvZiBzaXplLiBJdCBt
-aWdodCBiZXR0ZXIgdG8gaGF2ZSBpdCBkZWZpbmVkIGluDQo+IGNoZWNrL21haW4uYyBhbmQgaGF2
-ZSBpdCBkZWNsYXJlZCBleHRlcm4gaW4gbW9kZS1jb21tb24uaA0KDQpJJ20gd29uZGVyaW5nIHdo
-YXQgaGFwcGVucyBpbiB0aGUgZmluYWwgYmluYXJ5Lg0KDQpJSVJDIHRoZXJlIHNob3VsZCBiZSBv
-bmx5IG9uZSBjb3B5IG9mIHRoZSBzdGF0aWMgY29uc3QgYXJyYXkgaW4gLmRhdGENCnNlZ21lbnQu
-DQoNClNvIHRoYXQgc2hvdWxkIGJlIG1vc3RseSBPSyBJIGd1ZXNzPw0KDQpUaGFua3MsDQpRdQ0K
-DQo+IA0KPj4gKw0KPj4gKwlyZXR1cm4gaW1vZGVfYnlfYnRyZnNfdHlwZVsodHlwZSldOw0KPj4g
-K30NCj4+ICAjZW5kaWYNCj4+DQo=
+
+
+On 19.09.19 г. 10:59 ч., Omar Sandoval wrote:
+> On Thu, Sep 19, 2019 at 09:46:31AM +0200, Nikolay Borisov wrote:
+>>
+>>
+>> On 19.09.19 г. 9:14 ч., Omar Sandoval wrote:
+>>> On Thu, Sep 05, 2019 at 01:33:56PM +0300, Nikolay Borisov wrote:
+>>
+>> <snip>
+>>
+>>>>
+>>>> Won't btrfs_lock_and_flush_ordered_range suffice here? Perhaps call that
+>>>> function + invalidate_inode_pages2_range ?
+>>>
+>>> No, btrfs_lock_and_flush_ordered_range() doesn't write out dirty pages,
+>>> so it's not sufficient here.
+>>
+>> But it does - it calls btrfs_start_ordered_extent which calls
+>> filemap_fdatawrite_range.
+> 
+> It only calls that for ranges which already have an ordered extent,
+> which we don't create until we're writing the dirty pages out (take a
+> look at where we call btrfs_add_ordered_extent()).
+
+Right, btrfs_wait_ordered_range actually does btrfs_fdatawrite_range to
+instantiate any pending ranges and then does the lookup_first_ordered_
+extent/start_ordered_extent loop.
+
+> 
